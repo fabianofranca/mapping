@@ -229,6 +229,7 @@ export function CatalogView({
                     {layer.entries.map((entry) => {
                       return (
                         <li key={entry.type.id}>
+                          {/* Exceção ao Button: opção da lista de tipos do catálogo (docs/DESIGN-SYSTEM.md, "Botões avulsos") */}
                           <button
                             type="button"
                             class="catalog-entry"

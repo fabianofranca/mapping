@@ -66,8 +66,6 @@ export interface CanvasTokens {
   };
   /** Lado visível da alça (px de tela): `size-handle`. */
   readonly handleSize: number;
-  /** Lado (px de tela) mínimo de indicadores da marcação com componente: `size-indicator-min-marking` (hoje sem uso no desenho do canvas). */
-  readonly indicatorMinMarking: number;
   /** Nível de detalhe (px de tela): abaixo de `lodMinMarking` (largura ou altura) só a borda; abaixo de `lodHideMarking` nas duas medidas, nada. */
   readonly lodMinMarking: number;
   readonly lodHideMarking: number;
@@ -154,7 +152,6 @@ export function canvasTokensFrom(read: TokenReader): CanvasTokens {
       image: textStyle(read, 't-cv-image'),
     },
     handleSize: number(read, '--size-handle'),
-    indicatorMinMarking: number(read, '--size-indicator-min-marking'),
     lodMinMarking: number(read, '--size-lod-min-marking'),
     lodHideMarking: number(read, '--size-lod-hide-marking'),
     radius: { sm: number(read, '--radius-sm'), md: number(read, '--radius-md') },

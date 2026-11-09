@@ -42,6 +42,7 @@ function SaveItem() {
     return (
       <span class="status-item status-item-error" role="alert">
         <span class="status-item-text">{t('status.error')}</span>
+        {/* Exceção ao Button: link de texto na mensagem de erro de gravação (docs/DESIGN-SYSTEM.md, "Botões avulsos") */}
         <button type="button" class="link" onClick={() => void session.flush()}>
           {t('status.retry')}
         </button>
@@ -134,6 +135,7 @@ function ProposalsItem() {
   const fresh = review.derived.freshIds.value.length;
   if (fresh === 0) return null;
   return (
+    /* Exceção ao Button: segmento da barra de status (docs/DESIGN-SYSTEM.md, "Botões avulsos") */
     <button
       type="button"
       class="status-item status-item-button status-item-info"
@@ -151,6 +153,7 @@ function NoticesItem() {
   const count = derived.noticedCount.value;
   if (count === 0) return null;
   return (
+    /* Exceção ao Button: segmento da barra de status (docs/DESIGN-SYSTEM.md, "Botões avulsos") */
     <button
       type="button"
       class="status-item status-item-button status-item-s"
@@ -169,6 +172,7 @@ function CommentsItem() {
   const open = derived.threads.openCount.value;
   if (open === 0) return null;
   return (
+    /* Exceção ao Button: segmento da barra de status (docs/DESIGN-SYSTEM.md, "Botões avulsos") */
     <button
       type="button"
       class="status-item status-item-button status-item-s"

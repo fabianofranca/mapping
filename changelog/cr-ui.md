@@ -11,3 +11,7 @@
 - Detalhes da anotação, "Vinculada a": quando o dono gravado deixou de ser válido, o campo mostra o valor real (marcado como dona inválida) em vez de ficar em branco, e a pessoa pode trocá-lo.
 - Camadas: com uma perspectiva aberta e o projeto somente leitura (ou em revisão), a caixa de visibilidade de cada camada e "Mostrar todas" ficam desabilitadas, em vez de a caixa trocar sem mudar nada.
 - Detalhes do container (sem imagem): o erro de largura, o de altura e o de cor aparecem sob o próprio campo e somem ao selecionar outro container.
+- Pares da anotação livre: o erro de um par (e o aviso de campo inválido) fica preso a ele; ao remover uma linha, a mensagem não passa para o par que ocupa o lugar dela.
+- Seletor de referência: o trecho buscado é destacado no lugar certo também em textos com letras como "İ".
+- Seletor de referência: Enter (com ou sem Alt) só escolhe o alvo; Alt+Enter dentro do seletor não acrescenta mais uma linha vazia à tabela.
+- Tabela, "Referências vão quebrar": o nome da linha na confirmação vem sempre da linha atual, também depois de uma recarga externa com o diálogo aberto (antes podia aparecer "Linha 0").

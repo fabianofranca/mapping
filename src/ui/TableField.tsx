@@ -222,8 +222,17 @@ export function TableEditor({
   const menuButtons = useRef(new Map<string, HTMLButtonElement>());
   const addButton = useRef<HTMLButtonElement>(null);
   const requestFocus = useFocusRequest();
-  const [confirm, setConfirm] = useState<{ row: TableRow; count: number } | null>(null);
+  const [confirm, setConfirm] = useState<{
+    row: TableRow;
+    index: number;
+    count: number;
+  } | null>(null);
   const label = fieldLabel(field);
+  // A linha da confirmação, achada por `_id` nas linhas de agora (uma recarga externa troca o
+  // objeto); se ela saiu, vale a de quando o diálogo abriu.
+  const confirmFound = confirm ? rows.findIndex((r) => r._id === confirm.row._id) : -1;
+  const confirmIndex = confirmFound >= 0 ? confirmFound : (confirm?.index ?? 0);
+  const confirmRow = (confirmFound >= 0 ? rows[confirmFound] : confirm?.row) ?? null;
   const rowName = (row: TableRow, index: number) => {
     const name = field.rowLabel ? row[field.rowLabel] : null;
     return typeof name === 'string' && name !== ''
@@ -246,7 +255,7 @@ export function TableEditor({
 
   const remove = (row: TableRow) => {
     const count = brokenByRemoving?.(row) ?? 0;
-    if (count > 0) setConfirm({ row, count });
+    if (count > 0) setConfirm({ row, index: rows.indexOf(row), count });
     else onRemoveRow(row._id);
   };
 
@@ -292,7 +301,7 @@ export function TableEditor({
               title={t('typed.required')}
               aria-label={t('typed.required')}
             >
-              {' *'}
+              {t('typed.requiredMark')}
             </span>
           )}
         </span>
@@ -333,7 +342,7 @@ export function TableEditor({
           <div class="grid-row grid-head" role="row">
             <span role="columnheader" aria-hidden="true" />
             <span class="grid-cell grid-cell-num" role="columnheader">
-              #
+              {t('typed.rowNumber')}
             </span>
             {field.columns.map((c) => (
               <span
@@ -343,7 +352,7 @@ export function TableEditor({
                 title={fieldLabel(c)}
               >
                 {fieldLabel(c)}
-                {c.required ? ' *' : ''}
+                {c.required ? t('typed.requiredMark') : ''}
               </span>
             ))}
             {ext ? (
@@ -384,6 +393,7 @@ export function TableEditor({
               >
                 <span class="grid-cell grid-cell-grip" role="cell">
                   {!readOnly && (
+                    /* Exceção ao Button: alça de arraste da linha (docs/DESIGN-SYSTEM.md, "Botões avulsos") */
                     <button
                       type="button"
                       class="grid-grip"
@@ -422,7 +432,7 @@ export function TableEditor({
                     >
                       <span class="grid-cell-label" aria-hidden="true">
                         {fieldLabel(column)}
-                        {column.required ? ' *' : ''}
+                        {column.required ? t('typed.requiredMark') : ''}
                       </span>
                       {column.type === 'ref' ? (
                         renderRefCell ? (
@@ -434,6 +444,7 @@ export function TableEditor({
                             title: issue,
                           })
                         ) : (
+                          /* Exceção ao Button: campo de referência (cara de select), desabilitado (docs/DESIGN-SYSTEM.md, "Botões avulsos") */
                           <button
                             type="button"
                             class="ref-control is-empty"
@@ -507,15 +518,12 @@ export function TableEditor({
       {field.columns.map((column) => (
         <NoticeLines key={column.key} notices={column.notices} column={column.key} />
       ))}
-      {confirm && (
+      {confirm && confirmRow && (
         <Dialog
           title={t('ref.deleteTitle')}
           alert
           onCancel={() => setConfirm(null)}
-          returnFocus={focusAfterConfirm(
-            confirm.row,
-            rows.findIndex((r) => r._id === confirm.row._id),
-          )}
+          returnFocus={focusAfterConfirm(confirm.row, confirmIndex)}
           actions={
             <>
               <Button onClick={() => setConfirm(null)}>{t('common.cancel')}</Button>
@@ -533,7 +541,7 @@ export function TableEditor({
         >
           <p>
             {t('ref.deleteRow', {
-              name: rowName(confirm.row, rows.indexOf(confirm.row)),
+              name: rowName(confirmRow, confirmIndex),
               count: confirm.count,
             })}
           </p>

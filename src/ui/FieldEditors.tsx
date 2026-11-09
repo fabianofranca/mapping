@@ -6,6 +6,7 @@ import {
   type JsonValue,
   type Project,
   type SpecSimpleColumn,
+  projectIndex,
   refPathText,
 } from '../model';
 import type { ActionResult } from '../store/history';
@@ -424,11 +425,12 @@ export function BacklinkList({
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
 }) {
   if (backlinks.length === 0) return null;
+  const markings = projectIndex(project).markings;
   return (
     <ul class="backlinks" aria-label={t('ref.backlinks')}>
       {backlinks.map((b) => {
         const source = annotationSourceLabel(project, b.source);
-        const marking = project.markings.find((m) => m.id === b.source.markingId);
+        const marking = markings.get(b.source.markingId);
         return (
           <li key={`${b.source.id}:${refPathText(b)}`}>
             <button

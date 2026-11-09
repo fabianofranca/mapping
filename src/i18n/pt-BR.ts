@@ -240,8 +240,6 @@ export const ptBR = {
 
   'zoom.value': '{percent}%',
   'zoom.reset': '{percent}%: zoom atual; clique para voltar a 100%',
-  'zoom.in': 'Aproximar',
-  'zoom.out': 'Afastar',
 
   'minimap.label': 'Minimapa do canvas',
   'minimap.goTo': 'Clique para mover a vista',
@@ -262,7 +260,6 @@ export const ptBR = {
 
   'editor.projectMenuName': '{name}: ações do projeto',
   'editor.appName': 'Mapping',
-  'editor.fitAllShort': 'Enquadrar',
 
   'view.viewMode': 'Visualizar',
   'view.viewModeHint': 'Modo visualização: o canvas só para ver, sem seleção nem edição',
@@ -665,7 +662,6 @@ export const ptBR = {
   'comments.pins': 'Conversas',
   'comments.pinsTip': 'Mostrar ou esconder as conversas no canvas',
   'comments.pinsAwaiting': '{count} aguardando você',
-  'comments.pinsUnread': 'há mensagem não lida',
   'comments.add': 'Comentar',
   'comments.addTip': 'Clique num item ou num lugar vazio para comentar',
   'comments.addDisabled': 'Não dá para comentar agora',
@@ -890,6 +886,8 @@ export const ptBR = {
   'typed.removeRow': 'Remover linha',
   'typed.moveRowUp': 'Subir linha',
   'typed.moveRowDown': 'Descer linha',
+  'typed.rowNumber': '#',
+  'typed.requiredMark': ' *',
   'typed.row': 'Linha {n}',
   'typed.noRows': 'Nenhuma linha.',
   'typed.rowsOne': '1 linha',
@@ -985,6 +983,11 @@ export const ptBR = {
   'ref.keyNavigate': 'navegar',
   'ref.keyChoose': 'escolher',
   'ref.keyGoTo': 'ir para o alvo',
+  'ref.keyUp': '↑',
+  'ref.keyDown': '↓',
+  'ref.keyEnter': 'Enter',
+  'ref.keyCtrlEnter': 'Ctrl+Enter',
+  'ref.keyEsc': 'Esc',
   'ref.keyClose': 'fechar',
 
   // Trava (etapa 2.5)
@@ -1254,8 +1257,6 @@ export const ptBR = {
   'arrow.pickerEmpty': 'Não há outra marcação para ligar.',
   'arrow.pickerNoMatches': 'Nenhuma marcação encontrada.',
   'arrow.treeItem': 'Seta para {name}',
-  'arrow.treeLock': 'Trancar seta para {name}',
-  'arrow.treeUnlock': 'Destrancar seta para {name}',
   'crumbs.arrow': 'Seta {name}',
   'marking.deleteArrows': '{arrows} seta(s) ligada(s) a ela também saem.',
   'image.deleteArrows': '{arrows} seta(s) ligada(s) às marcações dele também saem.',

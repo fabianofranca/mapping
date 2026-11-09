@@ -1,5 +1,5 @@
 import { useRef, useState } from 'preact/hooks';
-import { SHORTCUT_LABELS } from '../app/shortcuts';
+import { SHORTCUT_LABELS, ariaKeys } from '../app/shortcuts';
 import { t } from '../i18n';
 import {
   parseRefValue,
@@ -98,6 +98,7 @@ export function RefCell({
         open();
       }}
     >
+      {/* Exceção ao Button: campo de referência (cara de select) (docs/DESIGN-SYSTEM.md, "Botões avulsos") */}
       <button
         ref={button}
         type="button"
@@ -118,7 +119,7 @@ export function RefCell({
               ? { kind: 'broken' }
               : { kind: 'value', value: text },
         )}
-        aria-keyshortcuts="Control+B"
+        aria-keyshortcuts={ariaKeys(SHORTCUT_LABELS.pickRef)}
         title={`${tip}\n${t('ref.choose')}  ${SHORTCUT_LABELS.pickRef}`}
         disabled={readOnly}
         onClick={(e) => {

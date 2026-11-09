@@ -163,6 +163,30 @@ describe('AnnotationEditor — anotação livre', () => {
     ]);
   });
 
+  // CR da interface (#954, item 17): o erro é do par, não da posição.
+  it('remover o par com erro não leva a mensagem para o par que ocupa o lugar dele', async () => {
+    const { harness, user } = setup('AU');
+    const [first] = screen.getAllByLabelText('Chave');
+    if (!first) throw new Error('sem chave');
+    await user.clear(first);
+    await user.type(first, 'age{Enter}');
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
+    await user.click(screen.getByRole('button', { name: 'Ações do par name' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Remover par' }));
+    const dialog = await screen.findByRole('alertdialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Excluir' }));
+    expect(annotationOf(harness.project(), 'AU').entries.map((e) => e.key)).toEqual([
+      'age',
+    ]);
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(
+      screen
+        .getByLabelText('Chave')
+        .closest('[data-entry]')
+        ?.getAttribute('aria-invalid'),
+    ).toBeNull();
+  });
+
   it('mostra quem referencia cada par e vai até a origem', async () => {
     const { onGoToAnnotation, user } = setup('AU');
     const backlink = screen.getAllByRole('button', { name: /^← / })[0];

@@ -174,8 +174,8 @@ Na mesma data entraram no DS os sete que faltavam: `size-grid-col-min` (`96px`) 
 | `spacing`                          | 8     | 8              |
 | `radius`                           | 7     | 7              |
 | `shadow`                           | 1     | 1              |
-| `size`                             | 44    | 44             |
-| `opacity`                          | 8     | 8              |
+| `size`                             | 44    | 43             |
+| `opacity`                          | 8     | 7              |
 | `duration`                         | 6     | 6              |
 | `zIndex`                           | 8     | 8              |
 | `breakpoint`                       | 2     | 2              |
@@ -200,6 +200,23 @@ Levantado em 2026-11-02. Estes arquivos aparecem na tela e nenhum guia do DS os 
 - Outros: `src/ui/Popover.tsx`, `src/ui/LibraryPalette.tsx`, `src/ui/DiagnosticsView.tsx`, `src/ui/IncompleteView.tsx`, `src/ui/LayersWindow.tsx`, `src/ui/TreeWindow.tsx`.
 
 Composições e lógica sem forma própria (não precisam de componente): `src/ui/SelectionPanel.tsx`, `src/ui/review/ReviewPanel.tsx`, `ReviewDetails.tsx`, `ProposalsWindow.tsx`, `reviewExtension.tsx`, `changeText.ts`, `levelRows.ts`, `src/canvas/reviewMarks.ts`, `src/store/proposedCatalog.ts`, `src/canvas/frame.ts`, `containment.ts`, `gestureMachine.ts`, `input/`, `viewportController.ts`.
+
+## Botões avulsos
+
+Decisão do dono de 2026-11-08 (etapa #954, item 38): o `<button>` de **ação comum** vem de `src/ui/controls/` (`Button`, `IconButton`); o de **papel próprio** fica como está, com o comentário `Exceção ao Button: <papel>` no código (um teste confere os arquivos abaixo). Nenhum controle novo e nenhuma mudança visual. Estas são as exceções dos arquivos do item 38:
+
+| Arquivo | Botão | Papel |
+| --- | --- | --- |
+| `src/ui/StatusBar.tsx` | "Tentar novamente" do erro de gravação | link de texto na mensagem (`.link`) |
+| `src/ui/StatusBar.tsx` | propostas novas, avisos e conversas abertas | segmento da barra de status (`.status-item-button`) |
+| `src/ui/ReferencedBy.tsx` | cada origem de "Referenciada por" | link de texto (`.link-button`) |
+| `src/ui/PerspectivePicker.tsx` | linha da lista | opção de lista (`role="option"`) |
+| `src/ui/PerspectivePicker.tsx` | gatilho da perspectiva | cara de select (`.menu-trigger`) |
+| `src/ui/ZoomField.tsx` | campo de zoom | mostra o valor e volta a 100% |
+| `src/ui/TypedFields.tsx`, `src/ui/RefCell.tsx` | campo e célula `ref` | campo de referência com cara de select (`.ref-control`) |
+| `src/ui/TypedForm.tsx`, `src/ui/TableField.tsx` | campo `ref` desabilitado (formulário de tipo e coluna da tabela sem seletor) | o mesmo `.ref-control` |
+| `src/ui/TableField.tsx` | alça da linha | alça de arraste (`.grid-grip`) |
+| `src/ui/catalog/CatalogView.tsx` | tipo da lista | opção de lista (`.catalog-entry`) |
 
 ## Pendências
 
