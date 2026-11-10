@@ -98,7 +98,8 @@ export interface CatalogExample {
   readonly name: string;
   readonly description?: string;
   readonly mode: 'values' | 'system';
-  readonly values?: Readonly<Record<string, string | number | null>>;
+  /** Os valores do exemplo; num campo `table`, as linhas, com `_id` como as do `preview`. */
+  readonly values?: FieldValues;
   readonly system?: string;
   readonly file?: string;
   readonly json?: unknown;
@@ -364,7 +365,7 @@ export function buildCatalog(files: readonly LibraryFile[]): Catalog {
                 }),
           };
         }
-        return { ...base, mode: 'values', values: example.values ?? {} };
+        return { ...base, mode: 'values', values: withRowIds(example.values ?? {}) };
       });
       return {
         type,

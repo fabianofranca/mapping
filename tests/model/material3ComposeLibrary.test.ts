@@ -435,6 +435,47 @@ describe('biblioteca Material 3 (Compose)', () => {
       expect(text(`components/${id}.json`), id).toContain('"type": "repeat"');
     }
   });
+
+  it('todo exemplo de values de um tipo com repeat sobre um campo table traz as linhas (decisão 25 da #897)', () => {
+    /** Os campos `table` que o componente repete (`repeat.field`), em qualquer profundidade. */
+    const repeated = (node: unknown, out = new Set<string>()): Set<string> => {
+      if (Array.isArray(node)) node.forEach((n) => repeated(n, out));
+      else if (typeof node === 'object' && node !== null) {
+        const n = node as Record<string, unknown>;
+        if (n.type === 'repeat' && typeof n.field === 'string') out.add(n.field);
+        Object.values(n).forEach((v) => repeated(v, out));
+      }
+      return out;
+    };
+    const checked: string[] = [];
+    for (const type of types) {
+      if (type.component === undefined) continue;
+      const component = JSON.parse(text(type.component)) as { template: unknown };
+      const tables = new Set(
+        type.fields.filter((f) => f.type === 'table').map((f) => f.key),
+      );
+      const fields = [...repeated(component.template)].filter((f) => tables.has(f));
+      if (fields.length === 0) continue;
+      checked.push(type.id);
+      (type.examples ?? []).forEach((example, i) => {
+        if (example.values === undefined) return;
+        for (const field of fields) {
+          const rows = example.values[field];
+          expect(
+            Array.isArray(rows) && rows.length >= 1,
+            `${type.id}, exemplo ${i} "${example.name}": o campo "${field}" sem linhas`,
+          ).toBe(true);
+        }
+      });
+    }
+    expect(checked.sort()).toEqual(
+      [
+        ...['bottom-sheet', 'carousel', 'dropdown-menu', 'navigation-bar'],
+        ...['navigation-drawer', 'navigation-rail', 'segmented-button'],
+        ...['short-navigation-bar', 'tabs'],
+      ].sort(),
+    );
+  });
 });
 
 // --- M1 da etapa "Material 3 fiel": tokens, ícones e o padrão de migração -------------------

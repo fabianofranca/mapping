@@ -517,6 +517,10 @@ export const ptBR = {
   'library.packageTooBig':
     'pacote grande demais para conferir (limite de arquivos ou de bytes)',
   'library.fileNotFound': 'arquivo não encontrado: {path}',
+  'library.exampleNotColumn': '"{key}" não é coluna de "{field}"',
+  'library.exampleRowNotObject': 'deve ser um objeto (coluna → valor)',
+  'library.exampleRefCell': 'coluna "ref" não aceita valor em exemplo',
+  'library.exampleTableNeedsRows': 'campo "table" aceita só a lista de linhas',
   'library.issues': 'Problemas do pacote',
   'spec.removeTitle': 'Remover "{name}"?',
   'spec.removeChoose': 'O que fazer com as camadas e anotações da especialização?',

@@ -106,6 +106,34 @@ beforeAll(async () => {
     ),
   );
 
+  // A biblioteca de verdade, para os exemplos com as linhas de um campo `table`.
+  cpSync('libraries/material3-compose', join(root, 'compose', 'material3-compose'), {
+    recursive: true,
+  });
+
+  // O exemplo do tabs com texto no campo `items` (table): o validador recusa.
+  cpSync(
+    'libraries/material3-compose',
+    join(root, 'texto-na-tabela', 'material3-compose'),
+    {
+      recursive: true,
+    },
+  );
+  const tableSpec = join(
+    root,
+    'texto-na-tabela',
+    'material3-compose',
+    'material3-compose.spec.json',
+  );
+  const tableJson = JSON.parse(readFileSync(tableSpec, 'utf8')) as {
+    layers: { annotationTypes: { id: string; examples: { values: unknown }[] }[] }[];
+  };
+  for (const layer of tableJson.layers) {
+    const tabs = layer.annotationTypes.find((t) => t.id === 'tabs');
+    if (tabs) tabs.examples[0]!.values = { items: 'texto' };
+  }
+  writeFileSync(tableSpec, JSON.stringify(tableJson));
+
   mkdirSync(join(root, 'vazia'));
   writeFileSync(join(root, 'vazia', 'LEIA-ME.md'), 'nada aqui');
 
@@ -317,6 +345,24 @@ describe('validate_specialization com linkedRef (v8)', () => {
 });
 
 describe('validate_library', () => {
+  it('texto num campo table de exemplo: só o message em português, sem code (EX5)', async () => {
+    const result = ok(
+      await mcp.call<Validated>('validate_library', {
+        path: 'texto-na-tabela/material3-compose',
+      }),
+    );
+    expect(result.valid).toBe(false);
+    const issue = result.errors.find((e) => e.message.includes('aceita só a lista'));
+    expect(issue?.message).toBe('campo "table" aceita só a lista de linhas');
+    expect(issue?.path).toMatch(/examples\[0\]\.values\.items$/);
+    expect(Object.keys(issue ?? {}).sort()).toEqual([
+      'file',
+      'message',
+      'path',
+      'severity',
+    ]);
+  });
+
   it('aprova o Material 3 (pasta ou arquivo): sem erros, com os avisos esperados', async () => {
     for (const path of ['lib/material3', 'lib/material3/material3.spec.json']) {
       const result = ok(await mcp.call<Validated>('validate_library', { path }));
@@ -458,6 +504,26 @@ describe('list_components e get_component', () => {
     expect(got.fields.map((f) => f.key)).toContain('label');
     expect(got.examples.length).toBeGreaterThan(0);
     expect(got.examples[0]?.values).toBeDefined();
+  });
+
+  it('get_component do tabs: cada exemplo traz as linhas de items como estão no arquivo (EX5)', async () => {
+    const got = ok(
+      await mcp.call<Component>('get_component', {
+        path: 'compose/material3-compose',
+        type: 'tabs',
+      }),
+    );
+    expect(got.examples).toHaveLength(6);
+    for (const example of got.examples) {
+      const items = example.values?.items;
+      expect(Array.isArray(items), example.name).toBe(true);
+      expect((items as { label: string; _id?: string }[]).map((r) => r.label)).toEqual([
+        'Início',
+        'Buscar',
+        'Perfil',
+      ]);
+      expect(JSON.stringify(items), example.name).not.toContain('_id');
+    }
   });
 
   it('por projeto e specId (a cópia aplicada em specs/<pasta>/)', async () => {

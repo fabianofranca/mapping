@@ -1652,8 +1652,18 @@
         },
         "values": {
           "type": "object",
+          "description": "Valor de cada campo: texto, número ou null; num campo table, a lista de linhas (objetos coluna → texto, número ou null; uma coluna ref só aceita null).",
           "additionalProperties": {
-            "type": ["string", "number", "null"]
+            "anyOf": [
+              { "type": ["string", "number", "null"] },
+              {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": { "type": ["string", "number", "null"] }
+                }
+              }
+            ]
           }
         }
       }

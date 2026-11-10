@@ -1286,7 +1286,7 @@ const ptBR: readonly HelpSection[] = [
           { term: 'doc', text: 'Em cada tipo: o documento markdown (.md) do tipo.' },
           {
             term: 'examples',
-            text: 'Em cada tipo: exemplos com name único e um só modo, values (valores dos campos do tipo; table e ref não entram) ou system com file (o JSON de um nó de um sistema de origins).',
+            text: 'Em cada tipo: exemplos com name único e um só modo, values (valores dos campos do tipo; um campo table aceita só a lista de linhas, como no preview do componente, e ref não entra) ou system com file (o JSON de um nó de um sistema de origins).',
           },
           {
             term: 'fonts',
@@ -2139,7 +2139,7 @@ const enUS: readonly HelpSection[] = [
           { term: 'doc', text: 'On each type: the type’s markdown (.md) document.' },
           {
             term: 'examples',
-            text: 'On each type: examples with a unique name and a single mode, values (values of the type’s fields; table and ref are not accepted) or system with file (the JSON of a node of an origins system).',
+            text: 'On each type: examples with a unique name and a single mode, values (values of the type’s fields; a table field takes only the list of rows, as in the component’s preview, and ref is not accepted) or system with file (the JSON of a node of an origins system).',
           },
           {
             term: 'fonts',

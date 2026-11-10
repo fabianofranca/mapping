@@ -22,6 +22,7 @@ import { Dialog } from './Dialog';
 import { openToolWindow } from './toolWindowLayout';
 import { useEditor } from './EditorContext';
 import { LibraryIssueList } from './LibraryIssueList';
+import { specIssueText } from './specIssueText';
 import { SpecTokensInfo } from './SpecTokensInfo';
 import { UpdateImpact } from './UpdateImpact';
 import {
@@ -252,8 +253,11 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
     }
     const parsed = parseSpecText(text);
     if (!parsed.ok) {
-      const shown = parsed.errors.slice(0, MAX_ERRORS);
-      const rest = parsed.errors.length - shown.length;
+      const lines = parsed.issues.map((i) =>
+        i.path ? `${i.path}: ${specIssueText(i)}` : specIssueText(i),
+      );
+      const shown = lines.slice(0, MAX_ERRORS);
+      const rest = lines.length - shown.length;
       info(t('spec.invalidTitle'), [
         t('spec.invalidMessage'),
         ...shown,

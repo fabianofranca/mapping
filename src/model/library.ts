@@ -20,6 +20,8 @@ import {
   type Spec,
   type SpecAnnotationType,
   type SpecField,
+  type SpecIssue,
+  type SpecIssueCode,
   type SpecMigrationStep,
 } from './spec';
 import { specWarnings } from './specWarnings';
@@ -77,8 +79,10 @@ export interface LibraryIssue {
    * Código estável de problemas que a interface exibe traduzidos; `message` continua com o
    * texto em português (MCP e testes). `target` é o dado que entra na tradução.
    */
-  readonly code?: 'file-not-found';
+  readonly code?: 'file-not-found' | SpecIssueCode;
   readonly target?: string;
+  /** Dados da tradução dos códigos de `SpecIssueCode` (`{key}`, `{field}`…). */
+  readonly params?: Readonly<Record<string, string>>;
 }
 
 export interface LibraryInput {
@@ -268,6 +272,17 @@ class Collector {
   error(file: string, path: string, message: string): void {
     this.issues.push({ file, path, message, severity: 'error' });
   }
+  /** Problema do `parseSpec`, com o código e os parâmetros que a interface traduz. */
+  specIssue(file: string, issue: SpecIssue): void {
+    this.issues.push({
+      file,
+      path: issue.path,
+      message: issue.message,
+      severity: 'error',
+      ...(issue.code === undefined ? {} : { code: issue.code }),
+      ...(issue.params === undefined ? {} : { params: issue.params }),
+    });
+  }
   /** Arquivo citado que não está no pacote (a interface traduz pelo `code`). */
   fileNotFound(file: string, path: string, target: string): void {
     this.issues.push({
@@ -354,7 +369,7 @@ function level1(
   }
   const parsed = parseSpecText(specFile.text);
   if (!parsed.ok) {
-    for (const issue of parsed.issues) out.error(specPath, issue.path, issue.message);
+    for (const issue of parsed.issues) out.specIssue(specPath, issue);
     return undefined;
   }
   const { spec, ignored } = parsed;

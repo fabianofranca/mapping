@@ -1,4 +1,5 @@
 import { t } from '../i18n';
+import { specIssueText } from './specIssueText';
 import type { AppLibraryIssue } from '../storage/specPackage';
 
 /** Texto do problema: os que têm código saem traduzidos; o resto vem do validador. */
@@ -7,7 +8,7 @@ function issueText(issue: AppLibraryIssue): string {
   if (issue.code === 'file-not-found' && issue.target !== undefined) {
     return t('library.fileNotFound', { path: issue.target });
   }
-  return issue.message;
+  return specIssueText(issue);
 }
 
 /** Agrupa por arquivo, na ordem em que cada arquivo aparece pela primeira vez. */
