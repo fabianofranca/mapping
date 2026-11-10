@@ -24,7 +24,10 @@ import type {
   RepeatTemplate,
   TemplateNode,
 } from './componentFormat';
-import { referencedFields } from './expressions';
+import { INDEX_FIELD, evaluate, referencedFields, toNumber } from './expressions';
+
+/** Teto de linhas de um `repeat` por `count`. */
+export const REPEAT_COUNT_LIMIT = 1000;
 
 const INHERITED_KEYS = [
   'visible',
@@ -95,12 +98,20 @@ function scoped(value: unknown, columns: ReadonlySet<string>, scope: string): un
   if (typeof value !== 'object' || value === null) return value;
   const out: Record<string, unknown> = {};
   const rename = (key: string): string => (columns.has(key) ? `${scope}:${key}` : key);
+  // Num `repeat` aninhado o `$index` do `template` é o do mais interno: este escopo não o toca.
+  const innerColumns = new Set(columns);
+  innerColumns.delete(INDEX_FIELD);
+  const isRepeat = (value as { type?: unknown }).type === 'repeat';
   for (const [key, item] of Object.entries(value)) {
+    if (isRepeat && key === 'template') {
+      out[key] = scoped(item, innerColumns, scope);
+      continue;
+    }
     if (
-      (key === '$field' || key === '$has' || key === '$switch') &&
+      (key === '$field' || key === '$has' || key === '$switch' || key === '$rows') &&
       typeof item === 'string'
     ) {
-      out[key] = rename(item);
+      out[key] = key === '$rows' ? item : rename(item);
     } else if (key === '$eq' && Array.isArray(item) && typeof item[0] === 'string') {
       out[key] = [rename(item[0]), ...item.slice(1)];
     } else {
@@ -132,10 +143,28 @@ export function expandRepeats(
   const warnings: string[] = [];
   let counter = 0;
 
-  const expandRepeat = (node: RepeatTemplate): FrameTemplate => {
-    const n = counter++;
-    if (!(node.field in values)) warnings.push(`campo não informado: ${node.field}`);
-    const rows = rowsOf(values[node.field]);
+  /** As linhas do `repeat`: a lista de um campo `table` ou, por `count`, uma por índice. */
+  const rowsFor = (
+    node: RepeatTemplate,
+  ): { rows: readonly FieldRow[]; columns: Set<string> } => {
+    if (node.count !== undefined) {
+      const wanted = toNumber(
+        evaluate<unknown>(node.count, { ...values, ...extra }, undefined),
+      );
+      const count = Math.max(0, Math.floor(wanted ?? 0));
+      if (count > REPEAT_COUNT_LIMIT)
+        warnings.push(
+          `repeat limitado a ${REPEAT_COUNT_LIMIT} linhas: ${node.name ?? 'repeat'}`,
+        );
+      const rows = Array.from(
+        { length: Math.min(count, REPEAT_COUNT_LIMIT) },
+        (): FieldRow => ({}),
+      );
+      return { rows, columns: new Set() };
+    }
+    const field = node.field ?? '';
+    if (!(field in values)) warnings.push(`campo não informado: ${field}`);
+    const rows = rowsOf(values[field]);
     // Coluna que o `template` cita, não é campo do tipo e nenhuma linha traz (linha gravada antes
     // de a coluna existir) também é coluna: fica vazia, em vez de virar "campo não informado".
     const columns = new Set(columnsOf(rows));
@@ -143,11 +172,22 @@ export function expandRepeats(
       for (const key of referencedFields(node.template))
         if (!(key in values)) columns.add(key);
     }
+    return { rows, columns };
+  };
+
+  const expandRepeat = (node: RepeatTemplate): FrameTemplate => {
+    const n = counter++;
+    const { rows, columns } = rowsFor(node);
+    columns.add(INDEX_FIELD);
     const column = (node.direction ?? 'column') === 'column';
     const children = rows.map((row, i): FrameTemplate => {
       const scope = `$r${n}_${i}`;
-      for (const name of columns) extra[`${scope}:${name}`] = row[name] ?? null;
-      const copy = scoped(node.template, columns, scope) as FrameTemplate;
+      for (const name of columns)
+        extra[`${scope}:${name}`] = name === INDEX_FIELD ? i : (row[name] ?? null);
+      // O `template` pode trazer um `repeat` (o motor o aceita, o validador não): expande a cópia.
+      const copy = expand(
+        scoped(node.template, columns, scope) as TemplateNode,
+      ) as FrameTemplate;
       return { ...copy, ...rowSize(copy, column, node.distribute === 'fill') };
     });
     return {
@@ -160,11 +200,11 @@ export function expandRepeats(
     };
   };
 
-  const expand = (node: TemplateNode): TemplateNode => {
+  function expand(node: TemplateNode): TemplateNode {
     if (node.type === 'repeat') return expandRepeat(node);
     if (node.type !== 'frame' || node.children === undefined) return node;
     return { ...node, children: node.children.map(expand) };
-  };
+  }
 
   const template = expand(component.template) as FrameTemplate;
   return {

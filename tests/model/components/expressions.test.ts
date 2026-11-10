@@ -474,3 +474,36 @@ describe('tabela das operações', () => {
     expect(Object.keys(NUMERIC_FNS).sort()).toEqual(Object.keys(NUMERIC_OPS).sort());
   });
 });
+
+describe('$rows e $size (formato 4, EX2)', () => {
+  it('$rows é o número de linhas do campo table (0 sem linhas ou sem campo)', () => {
+    const expr = { $rows: 'itens' } as unknown as Expr<number>;
+    expect(evaluate(expr, { itens: [{ a: 1 }, { a: 2 }] }, -1)).toBe(2);
+    expect(evaluate(expr, { itens: [] }, -1)).toBe(0);
+    expect(evaluate(expr, {}, -1)).toBe(0);
+    expect(evaluate(expr, { itens: 'texto' }, -1)).toBe(0);
+  });
+
+  it('$size lê a largura ou a altura da instância; sem tamanho, nenhum valor', () => {
+    const w = { $size: 'width' } as unknown as Expr<number>;
+    const h = { $size: 'height' } as unknown as Expr<number>;
+    const values = { '$size:width': 120, '$size:height': 48 };
+    expect(evaluate(w, values, -1)).toBe(120);
+    expect(evaluate(h, values, -1)).toBe(48);
+    expect(evaluate(w, {}, -1)).toBe(-1);
+  });
+
+  it('entram em operações e comparações', () => {
+    const values = { '$size:width': 200, itens: [{}, {}, {}] };
+    const half = { $mul: [{ $size: 'width' }, 0.5] } as unknown as Expr<number>;
+    expect(evaluate(half, values, -1)).toBe(100);
+    expect(evaluateCondition({ $gt: [{ $rows: 'itens' }, 2] } as never, values)).toBe(
+      true,
+    );
+  });
+
+  it('referencedFields conta o campo de $rows, não o $index', () => {
+    expect([...referencedFields({ a: { $rows: 'itens' } })]).toEqual(['itens']);
+    expect([...referencedFields({ a: { $field: '$index' } })]).toEqual([]);
+  });
+});

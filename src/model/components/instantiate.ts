@@ -69,7 +69,14 @@ import type { Box } from './box';
 import { STROKE_SIDES } from './componentFormat';
 import { clipBoxOf } from './clipBox';
 import { DEFAULT_ICON_VIEWBOX, resolveIcon, type IconPath, type IconSet } from './icons';
-import { evaluate, evaluateBoolean, evaluateText, referencedFields } from './expressions';
+import {
+  evaluate,
+  evaluateBoolean,
+  evaluateText,
+  referencedFields,
+  sizeKey,
+  toNumber,
+} from './expressions';
 import {
   LAYOUT_ALIGNS,
   LAYOUT_JUSTIFIES,
@@ -393,15 +400,11 @@ function nodeName(node: TemplateNode): string {
   return node.name ?? node.type;
 }
 
-function anchorsOf(
-  node: TemplateNode,
-  axis: Axis,
-): { start?: number; end?: number; center: boolean } {
-  const a: Anchors | undefined = node.anchors;
-  if (!a) return { center: false };
-  return axis === 'w'
-    ? { start: a.left, end: a.right, center: a.centerX === true }
-    : { start: a.top, end: a.bottom, center: a.centerY === true };
+/** As âncoras de um nó em um eixo, já avaliadas: ausente (`undefined`) quando a expressão não dá valor. */
+interface ResolvedAnchors {
+  start?: number;
+  end?: number;
+  center: boolean;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -416,6 +419,7 @@ function createEngine(
   original: ComponentFile,
   sourceValues: FieldValues,
   options: InstantiateOptions,
+  instanceSize: { readonly width: number; readonly height: number },
 ) {
   // Os `$token` viram o valor do modo antes de tudo (vale também dentro do `repeat`).
   const tokens =
@@ -424,9 +428,15 @@ function createEngine(
   // O `repeat` vira quadros com os valores de cada linha antes de o motor começar.
   const {
     component,
-    values,
+    values: expanded,
     warnings: expansionWarnings,
   } = expandRepeats(source, sourceValues);
+  // `$size`: o tamanho da instância entra como dois valores reservados (sem DOM).
+  const values: FieldValues = {
+    ...expanded,
+    [sizeKey('width')]: instanceSize.width,
+    [sizeKey('height')]: instanceSize.height,
+  };
   const warnings = new Set<string>(expansionWarnings);
   const warn = (message: string) => warnings.add(message);
   const shortfalls = new Map<string, number>();
@@ -459,6 +469,28 @@ function createEngine(
   /** Booleano (`visible`, `italic`): um `$field` com "não" é falso, via `evaluateBoolean`. */
   const bool = (expr: BoolExpr | undefined, fallback: boolean): boolean =>
     expr === undefined ? fallback : evaluateBoolean(expr, values, fallback);
+
+  /** Um valor de âncora: o número, ou nenhum (expressão sem valor vale como âncora ausente). */
+  const anchorNumber = (expr: Expr<number> | undefined): number | undefined =>
+    expr === undefined
+      ? undefined
+      : toNumber(ev<unknown>(expr as Expr<unknown>, undefined));
+
+  const anchorsOf = (node: TemplateNode, axis: Axis): ResolvedAnchors => {
+    const a: Anchors | undefined = node.anchors;
+    if (!a) return { center: false };
+    return axis === 'w'
+      ? {
+          start: anchorNumber(a.left),
+          end: anchorNumber(a.right),
+          center: a.centerX !== undefined && bool(a.centerX, false),
+        }
+      : {
+          start: anchorNumber(a.top),
+          end: anchorNumber(a.bottom),
+          center: a.centerY !== undefined && bool(a.centerY, false),
+        };
+  };
 
   const oneOf = <T extends string>(
     expr: Expr<T> | undefined,
@@ -755,9 +787,7 @@ function createEngine(
     return Math.min(bound, Math.max(0, natural));
   };
 
-  const isStretchAnchored = (
-    anchors: ReturnType<typeof anchorsOf> | undefined,
-  ): boolean =>
+  const isStretchAnchored = (anchors: ResolvedAnchors | undefined): boolean =>
     anchors !== undefined &&
     !anchors.center &&
     anchors.start !== undefined &&
@@ -765,7 +795,7 @@ function createEngine(
 
   /** Âncoras nos dois lados esticam o filho entre elas (com o pai já medido). */
   const anchoredSize = (
-    anchors: ReturnType<typeof anchorsOf> | undefined,
+    anchors: ResolvedAnchors | undefined,
     content: number | null,
   ): number | undefined =>
     isStretchAnchored(anchors) && content !== null
@@ -778,7 +808,7 @@ function createEngine(
     spec: SizeSpec,
     axis: Axis,
     content: number | null,
-    anchors: ReturnType<typeof anchorsOf> | undefined,
+    anchors: ResolvedAnchors | undefined,
   ): number | undefined => {
     if (node.type !== 'slot' || !options.slotContent) return undefined;
     const inner = options.slotContent[axis === 'w' ? 'width' : 'height'];
@@ -806,7 +836,7 @@ function createEngine(
     axis: Axis,
     space: AxisSpace,
     otherSize: number | undefined,
-    anchors: ReturnType<typeof anchorsOf> | undefined,
+    anchors: ResolvedAnchors | undefined,
   ): number => {
     const edge = (anchors?.start ?? 0) + (anchors?.end ?? 0);
     if (space.content !== null) return Math.max(0, space.content - edge);
@@ -1553,7 +1583,7 @@ export function instantiate(
   box: Box,
   options: InstantiateOptions,
 ): Instantiated {
-  const engine = createEngine(component, values, options);
+  const engine = createEngine(component, values, options, box);
   const root = engine.buildRoot(box);
   return {
     root,
@@ -1573,7 +1603,10 @@ export function measureComponent(
   size: { readonly width: number | null; readonly height: number | null },
   options: InstantiateOptions,
 ): { width: number; height: number; warnings: readonly string[] } {
-  const engine = createEngine(component, values, options);
+  const engine = createEngine(component, values, options, {
+    width: size.width ?? component.size.width,
+    height: size.height ?? component.size.height,
+  });
   const { template } = engine;
   // Num eixo hug o `max` da raiz é o limite disponível; depois do plano, o min/max da raiz
   // se aplica (a largura primeiro: a altura é medida já na largura limitada).

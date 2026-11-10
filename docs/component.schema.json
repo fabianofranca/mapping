@@ -1785,24 +1785,25 @@
       "additionalProperties": false,
       "properties": {
         "left": {
-          "type": "number"
+          "$ref": "#/$defs/expr_number"
         },
         "right": {
-          "type": "number"
+          "$ref": "#/$defs/expr_number"
         },
         "top": {
-          "type": "number"
+          "$ref": "#/$defs/expr_number"
         },
         "bottom": {
-          "type": "number"
+          "$ref": "#/$defs/expr_number"
         },
         "centerX": {
-          "type": "boolean"
+          "$ref": "#/$defs/expr_boolean"
         },
         "centerY": {
-          "type": "boolean"
+          "$ref": "#/$defs/expr_boolean"
         }
-      }
+      },
+      "description": "Âncoras no pai com layout none. Na formatVersion 4 cada valor pode ser uma expressão (centerX e centerY aceitam condições); a que não produz número vale como âncora ausente. A expressão em versão anterior à 4 é recusada pelo parseComponent."
     },
     "stroke": {
       "type": "object",
@@ -2555,8 +2556,8 @@
     "node_repeat": {
       "type": "object",
       "additionalProperties": false,
-      "description": "formatVersion 2. Repete o template (o desenho de uma linha) por linha do campo table do tipo. Dentro do template, $field/$has/$eq/$switch leem a coluna da linha, que sombreia o campo do tipo de mesmo nome. Quadro hug no eixo das linhas e fill no outro.",
-      "required": ["type", "field", "template"],
+      "description": "formatVersion 2. Repete o template (o desenho de uma linha) por linha do campo table do tipo. Dentro do template, $field/$has/$eq/$switch leem a coluna da linha, que sombreia o campo do tipo de mesmo nome. Quadro hug no eixo das linhas e fill no outro. Com count (formatVersion 4) o template se repete por contagem, sem campo table.",
+      "required": ["type", "template"],
       "properties": {
         "type": {
           "const": "repeat"
@@ -2606,8 +2607,20 @@
         },
         "template": {
           "$ref": "#/$defs/node_frame"
+        },
+        "count": {
+          "description": "formatVersion 4: o template se repete max(0, floor(count)) vezes, até 1000 (acima, 1000 linhas com o aviso \"repeat limitado a 1000 linhas: <nó>\"); literal negativo ou não inteiro é recusado pelo parseComponent. Dentro do template, { \"$field\": \"$index\" } é o índice da linha (0, 1, …), também no repeat por field. Exatamente um de field e count.",
+          "$ref": "#/$defs/expr_nonNegative"
         }
-      }
+      },
+      "oneOf": [
+        {
+          "required": ["field"]
+        },
+        {
+          "required": ["count"]
+        }
+      ]
     },
     "lit_cap": {
       "enum": ["butt", "round", "square"]
@@ -3374,7 +3387,7 @@
       "$ref": "#/$defs/expr_number"
     },
     "numericOps": {
-      "description": "Operações numéricas (formatVersion 4): $add, $sub, $mul, $div, $mod, $round, $floor, $ceil, $abs, $min, $max, $clamp, $sin e $cos (em graus). Operando sem valor (vazio, texto não numérico, divisão por zero) faz a operação não produzir valor.",
+      "description": "Operações numéricas (formatVersion 4): $add, $sub, $mul, $div, $mod, $round, $floor, $ceil, $abs, $min, $max, $clamp, $sin e $cos (em graus). Operando sem valor (vazio, texto não numérico, divisão por zero) faz a operação não produzir valor. $rows (número de linhas de um campo table; sem linhas, 0) e $size (\"width\" ou \"height\" da instância em px da imagem; na prova de desenho e no hug, o size do componente) também produzem número.",
       "anyOf": [
         {
           "type": "object",
@@ -3549,6 +3562,26 @@
               "items": {
                 "$ref": "#/$defs/operand"
               }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$rows"],
+          "properties": {
+            "$rows": {
+              "$ref": "#/$defs/fieldKey"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$size"],
+          "properties": {
+            "$size": {
+              "enum": ["width", "height"]
             }
           }
         }

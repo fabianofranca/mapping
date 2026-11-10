@@ -98,6 +98,12 @@ const MISSING_TODAY: string[] = [
   // tests/model/specTokens.test.ts, tests/model/components/tokens.test.ts, libraryTokens.test.ts e
   // pelo roteiro R25.
   'component:expr.$token',
+  // `$rows`, `$size` e o `repeat` por `count` (etapa #897, EX2): a Material 3 passa a usá-los nas
+  // fases EX4 a EX6; coberto por tests/model/components/repeat.test.ts, expressions.test.ts e
+  // libraryRepeat.test.ts.
+  'component:expr.$rows',
+  'component:expr.$size',
+  'component:node.repeat.count',
   // Ícones (formatVersion 15, etapa #747, CF7): a raiz `icons` e o nó `icon` já têm exemplo na
   // biblioteca Material 3 (etapa #833, M1); o `icon.name`/`strokeWidth` ainda não. Coberto por
   // tests/model/components/icons.test.ts, libraryIcons.test.ts, tests/mcp/libraryIcons.test.ts e

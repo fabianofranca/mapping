@@ -6,3 +6,5 @@
 - Comparações `$gt`, `$gte`, `$lt` e `$lte` nas condições (`$if`, `visible`, `$and`, `$or`, `$not`); operando sem valor dá falso.
 - Número no texto: um número não inteiro no `$concat` sai com até 6 casas, sem zeros à direita (`0.1 + 0.2` vira `0.3`).
 - O validador confere operando literal, aridade e a versão (`só é permitido com formatVersion 4` nas versões 1 a 3); o `docs/component.schema.json`, o `docs/COMPONENT-FORMAT.md`, a skill `spec-author` e o `docs/AGENT-GUIDE.md` descrevem as chaves novas.
+- `$rows` (o número de linhas de um campo `table`) e `$size` (a largura ou a altura da instância, que segue o redimensionamento da marcação) nas expressões de número, e o `repeat` por contagem: `count` no lugar de `field`, com `{ "$field": "$index" }` para o índice da linha (também no `repeat` por `field`) e o teto de 1000 linhas (aviso `repeat limitado a 1000 linhas: <nó>`).
+- Âncoras por expressão: `left`, `right`, `top` e `bottom` aceitam uma expressão de número e `centerX` e `centerY` uma condição; a que não dá número vale como âncora ausente. Tudo só na `formatVersion` 4 do componente (`só é permitido com formatVersion 4` nas anteriores).
