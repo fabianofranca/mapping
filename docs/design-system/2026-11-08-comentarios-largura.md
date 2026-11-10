@@ -16,4 +16,10 @@ Nenhuma gravação no artefato Mapping do Claude Design: o artefato é curado à
 
 ## Ficou sem gravar
 
-Todas as pendências acima (guia `CommentsWindow`: colunas, layout estreito, filtros, filtro Usuário, linha resolvida e célula da âncora; guia `BottomTabs`/`Tabs`: contador; token `size-tw-bottom` de 208 para 360 px).
+- Passou para o registro do épico `epic/sincronia-ds-2`: guia `CommentsWindow`: colunas (⋯ do tamanho do botão, reticências no selo e no Quando, Status 19%) e layout estreito abaixo de 640 px (DS3).
+- Passou para o registro do épico `epic/sincronia-ds-2`: token `size-tw-bottom` de 208 para 360 px no `tokens.json` (e na linha de `Layouts.md`) (DS3).
+- Passou para o registro do épico `epic/sincronia-ds-2`: guia `CommentsWindow`, filtro Usuário com a primeira opção "Todos" (DS3).
+- Passou para o registro do épico `epic/sincronia-ds-2`: guia `CommentsWindow`, filtros em grade de 2 colunas no layout estreito (DS3).
+- Passou para o registro do épico `epic/sincronia-ds-2`: guia `Tabs`/`BottomTabs`, contador e abas mais justas da janela inferior (hoje seis abas; `ToolWindow` junto) (DS3).
+- Passou para o registro do épico `epic/sincronia-ds-2`: guia `CommentsWindow`, linha resolvida: já resolvida (o guia diz âncora riscada e atenuada), sem edição.
+- Passou para o registro do épico `epic/sincronia-ds-2`: guia `CommentsWindow`, célula da âncora (`.comments-anchor-line`) (DS3).

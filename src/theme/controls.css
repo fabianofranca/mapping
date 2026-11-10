@@ -479,6 +479,9 @@ a.button {
   position: absolute;
   top: 0;
   right: 0;
+  /* No canto do botão, fora do glifo central (⋯ do "Mais controles"); só um quarto sai da
+     caixa, para caber na folga da faixa lateral (botão de 28px em 40px) sem corte. */
+  transform: translate(25%, -25%);
   min-width: var(--space-4);
   padding: 0 var(--space-1);
   font: var(--t-micro);

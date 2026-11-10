@@ -6,4 +6,4 @@ Nada foi gravado no artefato nesta sessão (o fechamento rodou sem acesso de esc
 
 ## Ficou sem gravar
 
-- **`TextField`:** o `TextArea` do `StringEditor` (campo `string` aberto em várias linhas pelo comprimento) passa a gravar com Enter enquanto o texto não tem quebra de linha; Shift+Enter quebra a linha, e com uma quebra no texto o Enter quebra. Depois do Enter que grava, o foco fica no campo, e passa ao campo novo (com o cursor no fim) quando o editor muda de uma linha para várias ou o contrário. Documentar a variante no `TextField` do artefato (EM2 e EM3).
+- Passou para o registro do épico `epic/sincronia-ds-2`: `TextField`: documentar no guia do `TextArea` do `StringEditor` o Enter que grava, o Shift+Enter que quebra e a troca de foco entre o campo de uma linha e o de várias.

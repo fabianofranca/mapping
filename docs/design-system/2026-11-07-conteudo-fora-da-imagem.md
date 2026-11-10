@@ -12,4 +12,4 @@ Versões 58 (conteúdo) e 59 (índice) do artefato, de 2026-11-07. **Componente 
 
 ## Ficou sem gravar
 
-- Os `preview.html` do novo `ReferencedByRow` e os estados novos nos previews de `ReferenceField` e `RefCell` (seletor com alvo de anotação, aba de tipo ativa, vazio "Nenhuma anotação dos tipos …"); só descritos em texto nos guias.
+- Passou para o registro do épico `epic/sincronia-ds-2`: a prévia nova do `ReferencedByRow` e os estados novos nas prévias de `ReferenceField` e `RefCell` (seletor com alvo de anotação, aba de tipo ativa, vazio "Nenhuma anotação dos tipos …") (DS5).

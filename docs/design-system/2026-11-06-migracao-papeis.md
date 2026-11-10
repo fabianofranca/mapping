@@ -14,5 +14,5 @@ Gravado no artefato **Mapping** em 2026-11-06, no fechamento do épico (versão 
 
 ## Ficou sem gravar
 
-- Conferência da prévia no visualizador real do artefato: foi conferida em Chrome headless local, nos temas claro e escuro, e a altura do cartão (`@dsCard height=1200`) pode pedir ajuste em colunas estreitas.
-- O guia do `SpecsDialog` só cita o `UpdateImpact` em geral e não foi alterado; as strings em en-US não aparecem em nenhuma prévia (o DS é pt-BR).
+- Passou para o registro do épico `epic/sincronia-ds-2`: a conferência do cartão `@dsCard height=1200` da prévia do `UpdateImpact` no visualizador real, nos dois temas.
+- Passou para o registro do épico `epic/sincronia-ds-2`: nada a gravar: o guia do `SpecsDialog` só cita o `UpdateImpact` em geral e as strings en-US não aparecem nas prévias (o DS é pt-BR).

@@ -20,4 +20,4 @@ Gravado no artefato Mapping em 2026-11-09 (versão 66):
 
 ## Ficou sem gravar
 
-- **`Button` com `button-link` dentro de `.notice`** (Dispensar e Tentar de novo de `CanvasNotices`): o preview do `Notice` do artefato só mostra o aviso em caixa e o parágrafo `.notice`, sem os botões de ação sobre o canvas; precisa de um preview novo, renderizado da app, com o `Button` `size="sm"` `button-link` (a cor herdada e o sublinhado vêm de `.notice .button-link`, `src/theme/base.css`).
+- Passou para o registro do épico `epic/sincronia-ds-2`: botão `Button` `size="sm"` `button-link` dentro de `.notice` (Dispensar e Tentar de novo de `CanvasNotices`): guia do `Notice` e `bundle.css` (texto, DS3) e exemplo no preview do `Notice` (prévia, DS5).

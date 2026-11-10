@@ -15,4 +15,6 @@ Gravado no artefato **Mapping** em 2026-11-05: versão 35 (conteúdo) e versão 
 
 ## Ficou sem gravar
 
-Nada. Fica só uma conferência visual: o exemplo novo do `NoticeBadge` (linha de aviso com mensagem longa) não foi olhado no viewer do DS; convém abrir a prévia "Linha do campo" nos dois temas uma vez.
+Nada. Fica só uma conferência visual:
+
+- Passou para o registro do épico `epic/sincronia-ds-2`: Conferência da prévia do `NoticeBadge` ("Linha do campo", exemplo de mensagem longa) nos dois temas.

@@ -45,6 +45,27 @@ describe('CLI em caminho com acento e espaço (itens 51 e 52)', () => {
     expect(r.stdout + r.stderr).toMatch(/saveFile/);
   });
 
+  it('cloud.mjs passo lê o guia gerado na cópia (#1232)', () => {
+    const guia = path.join(tmp, 'apoio com acento', 'guia.md');
+    const gen = run([
+      path.join(copy, 'scripts/testing/round-guide.mjs'),
+      'R0',
+      '--out',
+      guia,
+    ]);
+    expect(gen.status).toBe(0);
+    const r = run([
+      path.join(copy, 'scripts/testing/cloud.mjs'),
+      'passo',
+      'R0.1',
+      `--guia=${guia}`,
+    ]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(
+      /^\| Passo \| Ação \| Esperado \|\n\| --- \|[^\n]*\n\| R0\.1 \|/,
+    );
+  });
+
   it('round-guide.mjs: ALL e All valem como all (item 59)', () => {
     const upper = run([path.join(copy, 'scripts/testing/round-guide.mjs'), 'ALL']);
     expect(upper.stdout).toContain('### R0 ');

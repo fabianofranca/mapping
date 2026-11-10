@@ -859,6 +859,12 @@ export const enUS: Dictionary = {
     'Pick the type. The fields are predefined; just fill in the values.',
   'typed.noTypes':
     'The specialization of this layer is unavailable or has no annotation types.',
+  'typed.empty.unavailable': 'The specialization of this layer is unavailable.',
+  'typed.empty.noTypes': "This layer's specialization has no annotation types.",
+  'typed.empty.floating':
+    'Notes in this layer are created from the Palette: Catalog › Palette › Add to canvas.',
+  'typed.empty.arrow': 'No type in this layer applies to arrows.',
+  'typed.empty.marking': 'No type in this layer applies to markings.',
   'typed.searchTypes': 'Search among {count} types',
   'typed.searchOneType': 'Search among {count} type',
   'typed.noTypeMatch': 'No type matching "{query}"',

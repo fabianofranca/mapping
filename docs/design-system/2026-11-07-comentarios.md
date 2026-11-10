@@ -13,7 +13,7 @@ Versões 53 (conteúdo) e 54 (índice) do artefato, de 2026-11-07. **Componentes
 
 ## Ficou sem gravar
 
-- Os `preview.html` dos componentes novos (`CommentPin`, `CitationChip`, `ThreadMessage`, `Composer`, `ThreadsSection`, `CommentsWindow`, `ProposalCard`, `DeleteThreadDialogs`) não foram criados, e nenhum preview existente ganhou os estados novos (`SettingsDialog` com Identidade, `IconButton` com Conversas e Comentar, `StatusBar`, `ToolWindow`, `Menu`, `ProposalRow`). O `bundle.css` não ganhou as classes `.thread-*`, `.comments-*`, `.citation-*`, `.cite-picker-group`, `.proposal-card*`, `.proposal-row-thread` e `.identity-actions`. Só os guias foram gravados.
-- A seção `Canvas.md` não ganhou o pino (só o guia `CommentPin` e uma menção no `CanvasMarking`).
-- O guia (`README.md`) do próprio DS não teve a contagem de componentes atualizada.
-- A cor do texto de aviso da conversa órfã (`color-warning`) veio da pendência e não foi conferida no CSS.
+- Passou para o registro do épico `epic/sincronia-ds-2`: as prévias dos oito componentes novos (`CommentPin`, `CitationChip`, `ThreadMessage`, `Composer`, `ThreadsSection`, `CommentsWindow`, `ProposalCard`, `DeleteThreadDialogs`) e os estados novos de `SettingsDialog`, `IconButton`, `ToolWindow`, `ProposalRow` (DS4), `StatusBar` e `Menu` (DS5), e as classes `.thread-*`, `.comments-*`, `.citation-*`, `.cite-picker-group`, `.proposal-card*`, `.proposal-row-thread` e `.identity-actions` no `bundle.css` (DS3).
+- Passou para o registro do épico `epic/sincronia-ds-2`: o pino na seção `Canvas.md` (texto, DS3).
+- Passou para o registro do épico `epic/sincronia-ds-2`: a contagem do guia do próprio DS (`project/README.md`: "86 ícones", hoje 90 no DS; não há contagem de componentes lá) (texto, DS3).
+- Passou para o registro do épico `epic/sincronia-ds-2`: já resolvida: a cor de aviso da âncora da conversa órfã foi conferida em `src/theme/panels.css` (`.comments-row[data-orphan]` usa `--color-warning`).

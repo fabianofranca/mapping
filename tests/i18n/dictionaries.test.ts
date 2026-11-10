@@ -56,6 +56,7 @@ describe('dicionários', () => {
     const allowed = new Set<string>([
       'language.pt-BR',
       'perspective.count.containers',
+      'perspective.count.containersOne',
       'language.en-US',
       'image.dimensions',
       // Só {parâmetros}: o texto vem do parser.

@@ -6,6 +6,17 @@ export function buildRoundGuide(
   roteiros: string[],
   options?: { commit?: string },
 ): string;
+/** A base do guia: sem as seções `### R<n>`, cada uma trocada pela linha do `cloud.mjs passo`. */
+export function buildGuideBase(
+  markdown: string,
+  roteiros: string[],
+  options?: { commit?: string; name?: string },
+): string;
+/** O índice TSV (`tipo`, `chave`, `ini`, `fim`, `título`) com linhas 1-based do guia da rodada. */
+export function buildGuideIndex(guideText: string): string;
+/** O trecho do guia da rodada para `R<n>`, `R<n>.<m>` ou `R<n>.<a>-R<n>.<b>`; erro de item lança `Error`. */
+export function guideExcerpt(guideText: string, itens: string[]): string;
+export const EXCERPT_LIMIT: number;
 
 export const GROUP_LIMIT: number;
 export const MAX_GROUPS: number;

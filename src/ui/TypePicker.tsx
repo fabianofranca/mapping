@@ -15,6 +15,8 @@ interface TypePickerProps {
   /** Grupos declarados da camada: viram cabeçalhos (docs/SPEC-FORMAT.md). */
   readonly groups?: readonly SpecLayerGroup[];
   readonly onChoose: (type: SpecAnnotationType) => void;
+  /** Texto da lista vazia; sem ele, o aviso genérico `typed.noTypes`. */
+  readonly emptyMessage?: string;
 }
 
 function TypeOption({
@@ -61,13 +63,13 @@ function TypeSection({
 }
 
 /** Tipos da camada, com busca, grupos e a descrição de cada um. */
-export function TypePicker({ types, groups, onChoose }: TypePickerProps) {
+export function TypePicker({ types, groups, onChoose, emptyMessage }: TypePickerProps) {
   const [query, setQuery] = useState('');
   const field = useRef<HTMLInputElement>(null);
   useEffect(() => {
     field.current?.focus();
   }, []);
-  if (types.length === 0) return <p>{t('typed.noTypes')}</p>;
+  if (types.length === 0) return <p>{emptyMessage ?? t('typed.noTypes')}</p>;
   const choice = chooseTypes(types, groups, query);
   const label = t(choice.total === 1 ? 'typed.searchOneType' : 'typed.searchTypes', {
     count: choice.total,

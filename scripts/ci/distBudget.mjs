@@ -6,6 +6,8 @@
 //       "sobe: <teto> → <teto novo> (excesso E, crescimento G, subidas desde a revisão S)"
 //       "chama o dono: <motivo>"
 //       "nada a subir: ..." (o tamanho já cabe no teto)
+//     A subida é de 16 KiB e só vale com excesso de até 14 KiB (14.336 bytes): assim sobram sempre
+//     pelo menos 2 KiB de margem depois dela (etapa #1384, decisão 10). Excesso maior chama o dono.
 //     Com `--write` e a subida, troca o `INDEX_HTML_MAX_BYTES` do `ci.yml` e acrescenta a frase ao
 //     comentário que o antecede. Nunca escreve quando chama o dono.
 // As outras condições da decisão 6 (o tamanho é a única falha do PR) o chamador confere antes.
@@ -14,8 +16,12 @@ import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 
 const KIB = 1024;
-/** Quanto o teto sobe de uma vez, e o excesso máximo que a subida cobre. */
+/** Quanto o teto sobe de uma vez. */
 export const RAISE_BYTES = 16 * KIB;
+/** Margem mínima que sobra depois da subida. */
+export const MIN_MARGIN = 2 * KIB;
+/** Excesso máximo que a subida cobre: 14 KiB, para sobrar `MIN_MARGIN`. */
+export const MAX_EXCESS = RAISE_BYTES - MIN_MARGIN;
 /** Crescimento máximo do épico sobre a `main`. */
 export const MAX_GROWTH = 32 * KIB;
 /** Soma máxima das subidas automáticas desde a última revisão do dono. */
@@ -38,8 +44,10 @@ export function decide({ ceiling, size, mainSize, reviewCeiling }) {
   const next = ceiling + RAISE_BYTES;
   const since = next - reviewCeiling;
   const reasons = [];
-  if (excess > RAISE_BYTES) {
-    reasons.push(`o excesso de ${excess} bytes passa de 16 KiB (${RAISE_BYTES} bytes)`);
+  if (excess > MAX_EXCESS) {
+    reasons.push(
+      `o excesso de ${excess} bytes passa de 14 KiB (${MAX_EXCESS} bytes): com a subida de 16 KiB, a margem ficaria abaixo de 2 KiB`,
+    );
   }
   if (growth > MAX_GROWTH) {
     reasons.push(

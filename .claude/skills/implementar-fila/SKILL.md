@@ -61,6 +61,7 @@ Um resultado grande de ferramenta não some do contexto: fica nele até o fim da
 10. **O chat fica quase mudo.** Depois de um ciclo, o coordenador não escreve resumo: no máximo uma linha curta, só quando o dono precisa saber agora. O resto vai para o `log` e o `current` do painel. O chat é para três coisas: as perguntas ao dono (seletor de perguntas), as notificações do skill (`PushNotification`) e a tabela do "Fim". Se o dono perguntar algo, a resposta vai no chat, curta.
 11. **Um subagente por ciclo.** As tarefas de GitHub de um mesmo ciclo (ficha de uma `ready` nova, estado do PR antes do merge, conferência da Release, arquivar uma filha) vão num subagente só, com um briefing que lista todas e pede uma linha por tarefa. Subagentes separados só quando um depende do resultado do outro.
 12. **Rótulo sem perder os outros.** O `issue_write` com `labels` substitui todos os rótulos da issue. Onde o skill manda trocar um rótulo (`ready` por `in-progress`, por exemplo), leia os rótulos atuais e envie a lista completa: os de antes, sem o que sai e com o que entra. Depois, confira no mesmo subagente do ciclo que `bug`, `severity:`, `impact:` e `code-review` continuam.
+13. **A releitura do skill é exceção.** A releitura do `SKILL.md` novo na `main` ("Troca de sessão") é do próprio coordenador, com `Read` do arquivo inteiro: não se delega a subagente nem se resume.
 
 ### Ficha da etapa
 
@@ -68,11 +69,12 @@ Briefing do subagente (um só para todas as issues candidatas, com `model: "haik
 
 ```text
 Leia no GitHub (fabianofranca/mapping), só lendo, as issues <#a #b ...>: o corpo, as sub-issues (get_sub_issues) e o corpo de cada sub-issue. Não escreva nada. Para cada issue, devolva UMA linha, sem mais nada:
-#<n> | <título curto> | dep=<números do **Depende de:**, ou "nenhuma"> | nivel=<severity: x ou impact: x> | mcp=<não, ou minor/patch e a versão pedida> | schema=<não, ou vN> | epico=<epic/nome> | fases=<código:#sub-issue:esforço do coordenador, separados por vírgula, na ordem> | toca=<arquivos e pastas do "Toca em:" de todas as fases, separados por vírgula> | testador=<roteiros da seção Testador da última fase; "completa" se pede a rodada completa> ; visual=<lista ou "nenhuma"> ; <modelo e esforço do testador>
+#<n> | <título curto> | dep=<cada número do **Depende de:** com o estado, `#a:main,#b:aberta` (issue fechada como concluída, com o épico mesclado, vale `:main`; fechada de outro jeito, `:aberta`), ou "nenhuma"> | nivel=<severity: x ou impact: x> | mcp=<não, ou minor/patch e a versão pedida> | schema=<não, ou vN> | epico=<epic/nome> | fases=<código:#sub-issue:esforço do coordenador, separados por vírgula, na ordem> | toca=<arquivos e pastas do "Toca em:" de todas as fases, separados por vírgula, no formato da comparação do `painel.py`: o `docs/TESTING.md` por roteiro (`docs/TESTING.md#R12`) e a tabela de blocos como `docs/TESTING-NUVEM.md#blocos`> | testador=<roteiros da seção Testador da última fase; "completa" se pede a rodada completa> ; visual=<lista ou "nenhuma"> ; <modelo e esforço do testador>
 Se um campo não existir na issue, escreva "?" nele.
+Converta as citações antigas no `toca=`: o `docs/TESTING.md` citado com roteiros em prosa ("R18: …", "o R9.12, o R12.3") vira um por roteiro (`docs/TESTING.md#R9,docs/TESTING.md#R12`; passo ou faixa conta como o roteiro inteiro, e os sob demanda são `#RP`, `#RF`, `#RA` e `#RB`); sem roteiro, ou com uma seção que não é roteiro, fica `docs/TESTING.md`. O `docs/TESTING-NUVEM.md` citado só pela contagem ("contagem", "a tabela", "Passos") vira `docs/TESTING-NUVEM.md#blocos`; citado por outra coisa, fica sem âncora.
 ```
 
-Grave cada linha com `row '#n' plan="<a linha>"` (e `title`, `phases` com as fases em `open`).
+Grave cada linha com `row '#n' plan="<a linha>"` (e `title`, `phases` com as fases em `open`). Sem o estado em `dep=`, a ficha antiga conta como dependência aberta.
 
 ## 1. Começo
 
@@ -83,7 +85,7 @@ Grave cada linha com `row '#n' plan="<a linha>"` (e `title`, `phases` com as fas
    - as `mcp__github__*`: `list_issues`, `issue_write` (só para trocar rótulos e criar issues sem pai), `add_issue_comment`, `create_pull_request`, `update_pull_request` e `merge_pull_request`. Leituras de issue, PR, Actions e Release ficam com os subagentes ("Economia de contexto");
    - as `mcp__claude-code-remote__*`: `create_session`, `send_message`, `create_trigger`, `delete_trigger`, `get_session`, `list_environments` e `list_events`.
 4. Sem `retomar`, crie a conferência de reserva da sessão (seção "Conferências de reserva") e grave o id no painel assim que ele existir (passo 5 de "Fila"): `painel.py reserve <pasta> <trig_id>`.
-5. Com `retomar`, siga "Troca de sessão" › "Na sessão nova" e volte ao passo 4 de "Fila".
+5. Com `retomar`, siga "Troca de sessão" › "Na sessão nova" (que roda `painel.py start <pasta> --paralelo N` com o N da chamada) e volte ao passo 4 de "Fila".
 
 ## 2. Fila
 
@@ -101,7 +103,7 @@ Grave cada linha com `row '#n' plan="<a linha>"` (e `title`, `phases` com as fas
    - mostre no chat uma tabela com a ordem, a issue, o título, as fases, o "Depende de", o porquê da posição e o que roda em paralelo;
    - mande `PushNotification` "Fila pronta: N etapas";
    - pergunte pelo `AskUserQuestion`: "Começar nesta ordem (Recomendado)" / "Mudar a ordem". A resposta em "Outro" vale como foi escrita.
-7. `painel.py start`, log "Execução iniciada", e comece.
+7. `painel.py start <pasta> --paralelo N` (N do `paralelo=`; sem ele, 2), log "Execução iniciada", e comece pelas etapas que o `show` lista em `começar agora:` (seção "Paralelo").
 
 ## 3. Por etapa
 
@@ -136,6 +138,8 @@ Siga o `docs/FLOW.md` ("Orquestrador — passo a passo" e as mensagens), com o q
 
    Guarde a filha: `row '#n' child=<id> childAt=now` e registre a sessão: `painel.py session <pasta> '#n' <id>`. ▸ fase aberta.
 
+   **Filha que espera o coordenador** (vale para fase, correção e testador): quando, em vez do aviso final, a filha manda uma pergunta de decisão (item 8 da "Para a sessão da fase"), "CI travado" ou "chama o dono" do teto (os dois do item 6), grave `row '#n' wait="<motivo curto>"`: ela não é atrasada e o `show` a lista em "esperando o coordenador". Ao responder à filha (`send_message`), grave `row '#n' wait= childAt=now` (a contagem recomeça). Trocar ou limpar `child` (`child=` vazio) também limpa o `wait`.
+
    Quando a fase avisar: ▸ fase `ok`, o PR no passo e `child=` (vazio), e guarde os "Defeitos pendentes" no `log`. Com o PR mesclado no épico e a sub-issue fechada, **arquive a filha** (`archive_session`; item "Arquivar as sessões" abaixo).
 
 3. **Testador.**
@@ -165,11 +169,11 @@ Siga o `docs/FLOW.md` ("Orquestrador — passo a passo" e as mensagens), com o q
    - **escolha a versão do MCP** (regra 3): se `git diff --name-only origin/main...HEAD` toca algum arquivo de `scripts/release/releaseInputs.mjs`, confira o `SERVER_VERSION` da `origin/main` e, se alcançou o do épico, traga a `main` e suba a versão antes do push; a versão em `mcp/version.ts` precisa ser nova;
    - o coordenador faz o que vai no commit ou no PR, antes do push:
      - changelog e registro do DS renomeados com a data (`git mv`);
-     - pendências aplicadas no artefato do DS;
+     - **grave no artefato** as `## Pendências` do registro do DS, seguindo `docs/DESIGN-SYSTEM.md` › "Ao gravar". "Curado à mão" não é motivo para não gravar. Item que não der para gravar vai para `## Ficou sem gravar` com o motivo concreto (`Motivo:`). A gravação vai por um subagente (`model: "sonnet"`, ferramenta `Artifact`, no clone do épico), que preenche a `## Sincronização` e a `## Ficou sem gravar` do registro antes do commit e devolve uma linha: a versão gravada, os itens gravados e os sem gravar com o motivo. O coordenador não lê arquivo do artefato (item 2 de "Economia de contexto");
      - descrição final do PR do épico, com "Closes #<etapa>" (editar o corpo do PR não roda o CI);
    - no mesmo ciclo do push, **um** subagente (item 11 de "Economia de contexto") cria as issues do que ficou para depois e posta o comentário de fechamento na issue (e o da versão trocada, se houver), e devolve uma linha com os números das issues e o id do comentário. Isso corre **durante o CI** do épico; o merge não espera o retorno dele, e se ele falhar o coordenador o refaz no ciclo seguinte;
    - cada item que ficou para depois vira uma `roadmap` (com o impacto), ou um `bug` se pedir decisão. **Toda issue que a fila cria** (esses `bug` e `roadmap`, o `bug` de decisão do dono e o `bug` `ready` da correção dependente) leva no corpo a linha `Origem: etapa #<n>`; o painel só aponta para a busca dessa linha no GitHub, sem tabela de issues;
-   - **rede de segurança (decisão 11 da #1324):** se o diff do épico (`git diff --name-only origin/main...HEAD`) toca algum gatilho de risco de "Esforço do detalhamento" do skill `detalhar-backlog` (os skills `implementar-fila` e `detalhar-backlog`, o `painel.py`, regra do `docs/FLOW.md` ou do `docs/PROCESS.md`, `.github/workflows/`, `scripts/release/`, `mcp/version.ts`, `formatVersion`, `src/store/session.ts`, `pwa/csp.ts`), rode a `/code-review high` no diff inteiro do épico (base `main`) antes do merge, por subagente (item 11 de "Economia de contexto"), mesmo que as fases tenham sido medium. Os defeitos confirmados são corrigidos no próprio épico, com teste primeiro, e os gates rodam de novo;
+   - **rede de segurança (decisão 11 da #1324; gatilhos no script):** depois do `git fetch origin main`, rode `node scripts/ci/riskTriggers.mjs --base origin/main` e grave a saída no `log`. Com uma linha `gatilho:` ou mais, rode a `/code-review high` no diff inteiro do épico (base `main`) antes do merge, por subagente (item 11 de "Economia de contexto"), mesmo que as fases tenham sido medium; os defeitos confirmados são corrigidos no próprio épico, com teste primeiro, e os gates rodam de novo. Com `nenhum gatilho`, não rode. A lista de gatilhos fica só no script e em "Esforço do detalhamento" do skill `detalhar-backlog`;
    - ▸ `stage: Fechamento`. A sessão do fechamento, se houver, é registrada e arquivada como a da fase.
 6. **Merge** (seção "Merge"). Depois do merge:
    - confira o "MCP release" por um subagente (`model: "haiku"`), com o briefing "Confira, só lendo, a execução do workflow MCP release do commit `<sha do merge>` em fabianofranca/mapping (`actions_list` com `perPage: 1`) e, se a versão `<v>` é nova, a release `mcp-v<v>` (não é pre-release; tem `mapping-mcp.js`, `setup.sh`, `SKILL.md`, `AGENTS.mapping.md` e `watch-comments.mjs`, cada um com o `.sha256`; as rc da versão sumiram); sem versão nova, que o job `release` foi pulado. Devolva uma linha: ok, ainda rodando, ou falhou com o motivo e o link." Esse subagente é o do ciclo do merge (item 11 de "Economia de contexto") e faz a **primeira conferência no mesmo ciclo do merge**: lê os jobs `decide` e `release`. Com o job `release` pulado (sem versão nova, 8–15 s), a Release está conferida e acabou ali. Com `release` rodando (versão nova, 265–391 s, mediana ~330 s), a próxima conferência é um `send_later` de **5 min depois do merge** e as seguintes, **a cada 1 min**. Ignore a execução `skipped` e, com `cancelled`, vale a mais nova do commit da cabeça. Passou de 3 min (pulado) ou de 9 min (versão nova) sem terminar, o workflow está travado: leia a execução, rode de novo uma vez se morreu antes de testar e chame o dono se falhar de novo. A conferência pendente não segura o merge do próximo épico (seção "Merge");
@@ -179,8 +183,9 @@ Siga o `docs/FLOW.md` ("Orquestrador — passo a passo" e as mensagens), com o q
    - ▸ `status: concluída`, `stage: Mesclada`, `ended: now`.
 7. **Entre etapas:**
    - liste as `ready` de novo e refaça a ordem das que aguardam (seção "Mudanças na fila durante a execução");
+   - dependência fora da fila que entrou na `main` (a etapa de outro orquestrador, por exemplo): o subagente do ciclo confere e o coordenador grava `painel.py merged <pasta> '#N'`, para a nota de vagas deixar de a contar como aberta;
    - confira o contexto e se o skill mudou na `main` ("Troca de sessão"), com `git fetch -q origin main && git diff --quiet HEAD origin/main -- .claude/skills/implementar-fila/SKILL.md`;
-   - comece a próxima etapa livre.
+   - rode `painel.py show` e comece cada etapa listada em `começar agora:`, no mesmo ciclo.
 
 **Arquivar as sessões** (`archive_session`, para a lista de sessões do dono ficar legível):
 
@@ -193,17 +198,20 @@ Siga o `docs/FLOW.md` ("Orquestrador — passo a passo" e as mensagens), com o q
 
 - **Uma por sessão do coordenador**, não uma por filha: `create_trigger` sem `persistent_session_id` (dispara nesta sessão), `cron_expression: "0 * * * *"` (de hora em hora), `initiation: own_followup`, com o id guardado por `painel.py reserve`. Ela vale para todas as filhas e é apagada só na troca de sessão e no fim. Nada de `send_later` por filha, nada de `delete_trigger` a cada aviso, nunca `list_triggers`.
 - A mensagem guardada se sustenta sozinha: "Conferência da fila: rode `painel.py show` e confira as atrasadas; painel <url>; siga o skill implementar-fila".
-- Na conferência, confira primeiro se o skill mudou na `main` ("Troca de sessão"); se mudou, dê o `git pull` e aplique a regra de "Troca de sessão" › "Skill novo na `main`" (grande: troca de sessão; pequena: releitura do `SKILL.md` inteiro com prova no `log`). Depois, `show` lista as **atrasadas** (filha sem aviso há mais de 30 min). Sem atrasadas (e sem conferência de Release pendente), não faça mais nada nesse ciclo: nem publicar o painel.
+- Na conferência, o **primeiro passo** é o contexto: `get_session` sem `session_id` e `painel.py context <pasta> <pct>` com o `external_metadata.context_usage`. Se o `show` avisar "acima de 60%", faça a troca de sessão ("Troca de sessão") neste mesmo ciclo, mesmo com etapas e fases em andamento, e não siga com o resto; sem espaço na linhagem ("Limite de linhagem"), não há sucessor, e o ciclo segue com o resto.
+- Depois, confira se o skill mudou na `main` ("Troca de sessão"); se mudou, dê o `git pull` e aplique a regra de "Troca de sessão" › "Skill novo na `main`" (grande: troca de sessão; pequena: releitura do `SKILL.md` inteiro com `Read`, sem `offset` nem `limit`, com a prova no `log`). Depois, `show` lista as **atrasadas** (filha sem aviso há mais de 30 min) e o `começar agora:`: cada etapa listada começa neste ciclo (passo 1 de "Por etapa"). Se o `vagas:` mostra `dep #N` de uma dependência fora da fila, o subagente do ciclo confere se ela entrou na `main`, e o coordenador grava `painel.py merged` (e o `começar agora` vale na hora). Sem atrasadas, sem `começar agora` e sem o alerta de contexto (e sem conferência de Release pendente), não faça mais nada nesse ciclo: nem publicar o painel. A gravação do `context` sozinha não publica; ela vai no próximo ciclo que publicar.
 - Para cada atrasada, leia `get_session` (`status_bucket`) e, só se não estiver trabalhando, `list_events` com `kinds: ["assistant", "result"]` e `limit: 10`:
   - trabalhando: `row '#n' childAt=now` (volta a contar);
-  - `review_ready` ou `idle` (o último turno terminou sem o aviso): primeiro mande `send_message` a ela, "Conferência da fila: a fase não avisou. Retome do ponto em que parou (CI do PR, merge, aviso) e avise o coordenador.", e `row '#n' childAt=now`. A sessão guarda o contexto e retoma mais barato que uma nova;
+  - `review_ready` ou `idle` com o último turno terminado num `send_later` ainda por disparar (a hora do evento mais o `delay_minutes`, ou o `at`, ainda não passou, ou passou há menos de 5 min): é espera legítima, `row '#n' childAt=now`, sem mensagem;
+  - `review_ready` ou `idle` (o último turno terminou sem o aviso e sem `send_later` pendente): primeiro mande `send_message` a ela, "Conferência da fila: a fase não avisou. Retome do ponto em que parou (CI do PR, merge, aviso) e avise o coordenador.", e `row '#n' childAt=now`. A sessão guarda o contexto e retoma mais barato que uma nova;
   - falhou, parou pedindo permissão ou morreu, ou ainda atrasada e parada na conferência seguinte ao `send_message`: crie a sessão de novo uma vez, com a mesma mensagem e mais "a sessão anterior (<id>) parou em: <o que os eventos mostram>";
   - se acontecer de novo, a etapa vira `falhou`, o dono é notificado e a fila segue.
+- **Pior caso de detecção:** com a conferência de hora em hora e o corte de 30 min, uma filha parada é achada em até ~60 min, ou em até ~90 min se foi criada ou cutucada menos de 30 min antes de uma conferência. A primeira rede é a espera do CI da própria fase (4 min, de 2 em 2 min até 20 min, depois de 8 em 8); a frequência e o corte não mudam.
 
 **CI vermelho no PR do épico** (o job `epic`, a trava da versão ou o tamanho do `dist`, por exemplo): corrija no próprio épico. Se for registro (changelog, DS, versão), basta um commit do coordenador. Se for código, abra uma fase de correção.
 
 - **O coordenador não roda o CI de novo.** A reexecução é do `ci-rerun.yml` (a automática, só na tentativa 1) e, na fase, a segunda (docs/FLOW.md, "Para a sessão da fase"). No PR do épico com runner abandonado que persiste, ou ao receber o aviso "CI travado" de uma fase, chame o dono (regra 1: etapa `esperando dono`, `PushNotification` com o link da execução). A espera pela Release do MCP não muda.
-- **Teto do `dist/index.html` (sobe sozinho, sem esperar o dono).** Vale quando: (1) o tamanho do `dist` é a única falha do PR (só o `build`, no passo "Tamanho do dist/index.html", e o `check` estão vermelhos); (2) o excesso (`tamanho − teto`) é de até 16 KiB (16.384 bytes); (3) o épico cresceu no máximo 32 KiB (32.768 bytes) sobre a `main`. A subida é de 16 KiB. Fora disso, chame o dono: épico que cresceu mais de 32 KiB (provável acidente, como uma dependência embutida inteira), subidas automáticas desde a última revisão do dono que passariam de 64 KiB (65.536 bytes) contando com esta, excesso acima de 16 KiB ou outra falha além do tamanho.
+- **Teto do `dist/index.html` (sobe sozinho, sem esperar o dono).** Vale quando: (1) o tamanho do `dist` é a única falha do PR (só o `build`, no passo "Tamanho do dist/index.html", e o `check` estão vermelhos); (2) o excesso (`tamanho − teto`) é de até 14 KiB (14.336 bytes), para sobrar ao menos 2 KiB depois da subida; (3) o épico cresceu no máximo 32 KiB (32.768 bytes) sobre a `main`. A subida é de 16 KiB. Fora disso, chame o dono: épico que cresceu mais de 32 KiB (provável acidente, como uma dependência embutida inteira), subidas automáticas desde a última revisão do dono que passariam de 64 KiB (65.536 bytes) contando com esta, excesso acima de 14 KiB ou outra falha além do tamanho.
   - **Quem aplica:** quem tem o PR vermelho. No PR do épico, o coordenador, por subagente, num commit no `epic/<nome>` depois de trazer a `main`; no PR de uma fase, a própria fase (docs/FLOW.md), que cita a subida no aviso.
   - **Tamanho da `main`:** um subagente builda a `origin/main` num worktree descartável (`git worktree add`, `npm ci && npm run build`, `stat -c %s dist/index.html`, e remove o worktree). O tamanho do PR sai da anotação `::error` do passo ("<tamanho> bytes, acima do orçamento de <teto> bytes."). Se a `main` foi trazida depois dessa execução, o `--size` vem de um build do próprio head pós-merge, no mesmo worktree descartável (os dois tamanhos têm de ser do mesmo momento da `main`).
   - **Script:** `node scripts/ci/distBudget.mjs raise --ci .github/workflows/ci.yml --size <bytes> --main-size <bytes> --review-ceiling <bytes> --epic <nome> --write`; o `--review-ceiling` é a linha "Teto na última revisão do dono" da `roadmap` abaixo. Ele imprime "sobe: …" (e, com `--write`, troca o `INDEX_HTML_MAX_BYTES` e acrescenta a frase ao comentário do `ci.yml`) ou "chama o dono: <motivo>" (nada é gravado).
@@ -219,15 +227,16 @@ A fila é refeita sempre que algo muda, sem parar o que está rodando.
   - ▸ `row` da nova, `reorder` com a ordem nova e log "Nova ready #n incluída depois da #m (porquê)".
   - Se a ordem das que já estavam mudou, diga no chat em uma linha.
 - **O dono pede outra ordem** ("faça a #X primeiro", "a #Y por último", "tira a #Z"). O pedido dele vale mais que a "Ordem". Só não vale quebrar uma dependência: nesse caso, diga qual dependência impede e ponha a etapa logo depois dela.
-  - Pedido que vale para as próximas releituras (por exemplo "a #741 sempre por último") vira restrição fixa. Ela vai no log e no `current`, para a sessão seguinte também a respeitar.
+  - Pedido que vale para as próximas releituras (por exemplo "a #741 sempre por último") vira restrição fixa. Ela vai no log e no `current`, para a sessão seguinte também a respeitar, e enquanto valer a etapa leva `row '#n' hold="ordem do dono (<restrição>)"`, que a nota de vagas lê.
   - ▸ `reorder` e log.
 - **Etapa em andamento não volta para a fila.** O que já começou continua, salvo se o dono mandar parar aquela etapa. Nesse caso o épico fica aberto, a etapa fica `aguardando` com o passo "parada pelo dono", e as filhas dela recebem por `send_message` "Pare: o dono interrompeu a etapa".
-- **Pausar** ("pausa", "não comece mais nada"): as etapas em andamento terminam, e nenhuma nova começa. ▸ `current` "Pausada pelo dono". **Retomar** ("continua", "pode seguir"): volta ao passo 7.
+- **Recado que descreve um estado não segura.** Só um pedido explícito de ordem ou de retenção vira restrição (`hold`). Um recado como "entra no próximo detalhamento" ou "essa ainda não está pronta" não segura uma `ready` com as dependências na `main`: com dúvida, a etapa começa na vaga livre, e o coordenador manda `PushNotification` e pergunta pelo `AskUserQuestion` ("#n — segurar a etapa? Recado: \"<frase>\"", com "Seguir (Recomendado)" e "Segurar"). Com "Segurar", vale a regra de etapa parada pelo dono: o épico fica aberto e a etapa fica `aguardando`, com o passo "parada pelo dono" e `hold`.
+- **Pausar** ("pausa", "não comece mais nada"): as etapas em andamento terminam, e nenhuma nova começa. ▸ `current` "Pausada pelo dono" e `row '#n' hold="pausada pelo dono"` em cada `aguardando` que ainda não começou e está sem `hold` (as restrições do dono e os "Segurar" ficam como estão), inclusive nas `ready` que entrarem durante a pausa. **Retomar** ("continua", "pode seguir"): `hold=` (vazio) só nos `pausada pelo dono` e volta ao passo 7.
 - **Issue que deixou de ser `ready`** (rótulo trocado ou fechada): sai da fila, com um log.
 
 ## Merge
 
-Com o fechamento feito e o CI verde. Antes de mesclar, confira também o `SERVER_VERSION` da `origin/main`: se ele alcançou o do épico (outro épico foi mesclado no meio), o coordenador refaz a escolha da versão (regra 3), faz o push e espera o CI de novo antes de mesclar. Quem confere o CI e se o PR pode ser mesclado é um subagente (`model: "haiku"`, "Confira, só lendo, o PR #<n> de fabianofranca/mapping: os checks do último commit e se ele é mesclável. Devolva uma linha: verde e mesclável, ou o que falta, com o nome do check que falhou"):
+Com o fechamento feito e o CI verde. Antes de mesclar, confira também o `SERVER_VERSION` da `origin/main`: se ele alcançou o do épico (outro épico foi mesclado no meio), o coordenador refaz a escolha da versão (regra 3), faz o push e espera o CI de novo antes de mesclar. Quem confere o CI e se o PR pode ser mesclado é um subagente (`model: "haiku"`, "Confira, só lendo, o PR #<n> de fabianofranca/mapping: os check runs do último commit (`pull_request_read` `get_check_runs`, nunca `get_status`, que fica `pending` sem itens; ignore os `skipped`, que vêm da edição do título ou do corpo do PR ou da limpeza do snapshot; `perPage` 100) e se ele é mesclável. Verde = o check `check` com `success` e nenhum outro com `failure`, `cancelled` ou `timed_out`; sem `check` fora dos `skipped`, ainda roda (ou o `skipped` esconde o real: confira com `actions_list`). Devolva uma linha: verde e mesclável, ou o que falta, com o nome do check que falhou"):
 
 - **Padrão:**
   - mande `PushNotification` "Etapa #<n> pronta: <resumo>. PR do épico: <link>" e pergunte pelo `AskUserQuestion` ("#<n> — mesclar o épico na main?"), com as opções "Mesclar (Recomendado)" e "Ainda não";
@@ -235,7 +244,8 @@ Com o fechamento feito e o CI verde. Antes de mesclar, confira também o `SERVER
   - enquanto a resposta não chega, a próxima etapa livre já pode começar;
   - com "Mesclar", mescle (`merge_pull_request`, `merge_method: merge`).
 - **Com `mesclar=auto`** (escrito pelo dono na chamada): mescle direto e mande `PushNotification` "#<n> mesclada: <resumo>".
-- O merge, ou a pergunta ao dono, vem logo depois do CI verde e **não espera** o retorno do subagente do fechamento (passo 5 de "Por etapa").
+- **Fechamento que não gravou:** o registro do DS com `## Pendências` reais e sem gravação (a `## Sincronização` não abre por "Gravado no artefato", "Versão <n>" ou "Sem impacto") é defeito pendente, e o épico não mescla até gravar. Se a ferramenta `Artifact` falhar de verdade (sem permissão de edição, recusa repetida), a etapa fica `esperando dono`, com `PushNotification` e o erro da ferramenta. "Sem acesso" sem um erro da ferramenta não vale como motivo.
+- O merge, ou a pergunta ao dono, vem logo depois do CI verde e **não espera** o retorno do subagente das issues e do comentário de fechamento (passo 5 de "Por etapa"). A gravação no DS é outra coisa: o subagente dela já voltou e o registro com a `## Sincronização` está no commit do PR antes do push, e o coordenador confere isso (a abertura da `## Sincronização`) antes de mesclar.
 
 **Não segure o merge de outro épico** à espera da Release do anterior: um épico pronto cuja Release não depende da anterior é mesclado sem esperar. A ordem das versões estáveis é garantida pela ordem dos merges, não pela espera.
 
@@ -243,15 +253,15 @@ Pode haver algo que o agente não consegue fazer: uma aprovação que o ruleset 
 
 ## Paralelo
 
-Com `paralelo=2`, uma segunda etapa só começa ao lado da que está rodando quando:
+Com `paralelo=N`, quem decide quais etapas começam é o `painel.py`: em toda gravação ele recalcula a nota de vagas (`meta.vagas`) a partir das fichas e do estado das etapas, e o `show` imprime `vagas:` (o motivo de cada `ready` que não começou) e `começar agora:`. O coordenador não refaz a conta: grava e lê o `show`. Uma etapa só começa quando:
 
-- todas as dependências dela estão na `main`;
-- os "Toca em:" das duas não têm arquivo em comum (`mcp/version.ts` não conta: a versão do MCP é escolhida no fechamento);
+- todas as dependências dela estão na `main` (o estado vem do `dep=` da ficha, de `painel.py merged` ou de uma linha `concluída`);
+- os "Toca em:" dela e os das começadas e ainda não mescladas não têm arquivo em comum. Não contam o `mcp/version.ts` (a versão do MCP é escolhida no fechamento), o que começa por `changelog/` ou `docs/design-system/` (os registros de cada épico) e a tabela de blocos, `docs/TESTING-NUVEM.md#blocos`. O `docs/TESTING.md` se compara por roteiro (`docs/TESTING.md#R12` com `docs/TESTING.md#R6` não conflita; sem âncora conflita com todos). Pasta (`x/`) casa com tudo o que está debaixo dela; `toca=?` conflita com toda etapa começada. O `src/i18n/*` e o `docs/ARCHITECTURE.md` contam como arquivo inteiro;
 - as duas não mudam o schema ao mesmo tempo, porque o número da migração está no código.
 
-**Vaga:** só as etapas `em andamento` ocupam vaga (a contagem do `painel.py show`). Não ocupa vaga a etapa `esperando dono` (merge pedido, achado da regra 1, aprovação do ruleset) nem a já começada que espera outra etapa (fica `aguardando`, com o passo "espera #N"). A etapa parada que volta (o dono respondeu, a dependência entrou na `main`) continua de onde parou, sem esperar vaga. Os "Toca em:" e o schema de uma etapa nova são comparados com **todas** as etapas começadas e ainda não mescladas, paradas inclusive, porque o código delas ainda não está na `main`.
+**Vaga:** só as etapas `em andamento` ocupam vaga (a contagem do `painel.py show`). Não ocupa vaga a etapa `esperando dono` (merge pedido, achado da regra 1, aprovação do ruleset) nem a já começada que espera outra etapa (fica `aguardando`, com o passo "espera #N"). A etapa parada que volta (o dono respondeu, a dependência entrou na `main`) continua de onde parou, sem esperar vaga. Os "Toca em:" e o schema de uma etapa nova são comparados com **todas** as etapas começadas e ainda não mescladas, paradas inclusive, porque o código delas ainda não está na `main`. Vaga livre sem motivo no `vagas:` não existe: a etapa que o `show` lista em `começar agora:` começa no mesmo ciclo.
 
-Cada etapa tem o seu épico, as suas filhas e as suas conferências. Os avisos das filhas citam a fase, e é por ela que se sabe de que etapa é o aviso. Quando uma das duas é mesclada, a outra traz a `main` antes do fechamento se houver conflito (merge, nunca rebase).
+Cada etapa tem o seu épico, as suas filhas e as suas conferências. Os avisos das filhas citam a fase, e é por ela que se sabe de que etapa é o aviso. Quem entra depois de uma etapa com arquivo em comum traz a `main` no épico (merge, nunca rebase), com o conflito do `docs/TESTING-NUVEM.md#blocos` refeito pelo `tests/tooling/roundBlocks.test.ts`.
 
 ## Painel
 
@@ -261,19 +271,25 @@ O painel é um artifact do tipo **Dashboard**. Tem 3 datasets de arquivo JSON e 
 
 ```bash
 painel.py init <pasta>
-painel.py start <pasta>
+painel.py start <pasta> --paralelo N                  # início da execução e vagas (padrão 2); pode repetir
 painel.py row <pasta> '#n' status=… stage=… step=… pr=… started=now ended=now
+painel.py row <pasta> '#n' hold="<motivo do dono>"     # etapa segura pelo dono; hold= limpa
 painel.py row <pasta> '#n' plan="<ficha>"            # a ficha da etapa
-painel.py row <pasta> '#n' child="<id> <id>" childAt=now   # filhas que devem aviso; child= limpa
+painel.py row <pasta> '#n' child="<id> <id>" childAt=now   # filhas que devem aviso; child= limpa; trocar a filha também limpa o wait
+painel.py row <pasta> '#n' wait="<motivo>"           # a filha espera o coordenador; wait= childAt=now ao responder
 painel.py phase <pasta> '#n' CL3=ok
 painel.py reorder <pasta> '#a' '#b' …
 painel.py log <pasta> "texto"
 painel.py current <pasta> "texto"
 painel.py reserve <pasta> <trig_id>                  # a conferência de reserva da sessão
 painel.py session <pasta> '#n' <id>                  # sessão criada para a etapa (sem repetir)
-painel.py show <pasta>          # resumo: em andamento, filhas, atrasadas, reserva, últimas do log
+painel.py merged <pasta> '#N'                        # dependência fora da fila já na main (sem repetir)
+painel.py context <pasta> <pct>                      # contexto do coordenador, de 0 a 100
+painel.py show <pasta>          # resumo: em andamento, `vagas:`, `começar agora:`, `contexto:`, filhas, atrasadas, esperando o coordenador, reserva, últimas do log
 painel.py show <pasta> '#n'     # uma linha inteira, com a ficha
 ```
+
+O `show` traz, depois de `atual:`, `vagas: Vagas k/N · #n <motivo> …` (por que cada `ready` que não começou espera: `hold`, `dep #N`, `arquivo <x> com #N`, `schema com #N`, `começa` ou `vagas cheias`), `começar agora: #a #b` (ou `nenhuma`) e `contexto: <pct>% (<quando>)`, com o aviso "acima de 60%: troque de sessão agora" acima de 60. A nota está no `meta`, que toda gravação já marca como alterado: a publicação não muda, e a página mostra "Vagas k/N" no subtítulo e o card "Por que há vaga livre".
 
 O script diz quais arquivos mudou. Vários comandos seguidos vão numa só chamada do `Bash` (`&&`).
 
@@ -309,12 +325,12 @@ Grave no `painel.py` **a cada avanço** (fase aberta e mesclada, PR, testador, c
 
 ## Troca de sessão
 
-**Troca de sessão por contexto ou por skill grande.** Leia `external_metadata.context_usage` no `get_session` desta sessão entre etapas e, depois de passar de 60%, também a cada aviso de filha. **Acima de 60%**, passe a coordenação adiante: é o motivo de sempre para criar um sucessor (o outro é o skill novo grande, abaixo).
+**Troca de sessão por contexto ou por skill grande.** Leia `external_metadata.context_usage` no `get_session` desta sessão entre etapas e no primeiro passo de cada conferência de reserva, e grave-o com `painel.py context <pasta> <pct>`. **Acima de 60%**, passe a coordenação adiante na hora, sem esperar o fim de uma etapa nem de uma fase: é o motivo de sempre para criar um sucessor (o outro é o skill novo grande, abaixo).
 
 **Skill novo na `main`.** Entre etapas e em cada conferência de reserva, rode `git fetch -q origin main && git diff --quiet HEAD origin/main -- .claude/skills/implementar-fila/SKILL.md`. Saída diferente de zero quer dizer que o `SKILL.md` mudou: faça `git pull -q --ff-only origin main` e meça a mudança com `git diff --numstat <HEAD de antes> HEAD -- .claude/skills/implementar-fila/SKILL.md`.
 
 - **Grande** (mais de 60 linhas mudadas, ou mudança em "Regras desta fila"): troque de sessão, depois de conferir a linhagem ("Limite de linhagem", antes dessa troca). Sem espaço na linhagem, vale o caminho do dono daquela seção.
-- **Pequena:** releia o `SKILL.md` inteiro, nunca só o diff, na própria sessão, e grave no `log` do painel a prova: "skill <commit>: <regra> → <o que faço agora>".
+- **Pequena:** releia o `SKILL.md` inteiro, nunca só o diff, na própria sessão: abra `.claude/skills/implementar-fila/SKILL.md` com `Read`, sem `offset` nem `limit`. O `git diff --numstat` serve só para classificar; o diff do `SKILL.md` não se abre antes da releitura. Grave no `log` do painel a prova: primeiro "skill <commit>: relido inteiro, <n> linhas" e, depois, uma linha "skill <commit>: <regra> → <o que faço agora>" para cada regra que mudou.
   O `painel.py` novo vale a partir do próximo comando. Uma mudança só em `painel/` não dispara nada: a página nova do painel é publicada por quem a mudou.
 
 **Limite de linhagem.** Cada sucessor é uma sessão criada por `create_session` dentro de outra, e o ambiente para num nível de linhagem. Antes de criar o sucessor, leia `lineage.depth` e `lineage.limit` no próprio `get_session`. Se `depth + 2 > limit`, **não crie o sucessor**: ele não conseguiria criar fases. Nesse caso, publique o painel, mande ao dono uma `PushNotification` com o comando de retomada completo (`/implementar-fila retomar anterior=<id desta sessão> painel=<url>` e os mesmos argumentos), para ele abrir num chat novo, que começa no nível 0, e diga no `current` "aguardando o dono abrir a sessão nova da fila". Siga trabalhando enquanto o contexto deixar.
@@ -337,7 +353,7 @@ Grave no `painel.py` **a cada avanço** (fase aberta e mesclada, PR, testador, c
 
 1. Leia o painel: `ArtifactData` `list` de `datasets` e `Artifact` `read` com `path` = o id de cada `/_blob/<id>`, com `out_dir` na pasta do scratchpad. Não imprima os arquivos: rode `painel.py show`.
 2. Não releia as issues nem as filhas: a ficha (`plan`), as filhas (`child`) e o passo estão no painel, e a sessão antiga já avisou as filhas do seu id. Sem `list_sessions`, sem `list_events` e sem `get_session` das filhas; a conferência de reserva cuida das que atrasarem.
-3. Crie a sua conferência de reserva (`painel.py reserve`).
+3. Rode `painel.py start <pasta> --paralelo N` com o N da chamada (repetir não mexe no início da execução), grave o contexto desta sessão com `painel.py context <pasta> <pct>` (o da antiga ficou no painel) e crie a sua conferência de reserva (`painel.py reserve`).
 4. Depois de avisar as filhas (ou de confirmar que a antiga avisou), a sessão nova **arquiva a `anterior`** (`archive_session`) e grave no `log` "coordenador anterior arquivado". Continue de onde parou.
 
 ## Fim

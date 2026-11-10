@@ -30,7 +30,7 @@ Versões 49 (conteúdo) e 50 (índice) do artefato, de 2026-11-07. **`ViewModePa
 
 ## Ficou sem gravar
 
-- `components/bundle.css` não ganhou `.view-panel-*` nem `.annotations-all-hidden` (os previews novos declaram as classes no próprio `<style>`); o bundle ainda tem as mortas `.layer-chip`, `.layer-chip-name` e `.layer-row-active`, a limpar quando for regerado.
-- As alturas de cartão (`height=`) dos previews alterados ou novos são estimadas, não vistas no navegador.
-- O `README.md` do DS e o `Canvas.md` não descrevem o que o canvas desenha no modo visualização (contorno, nomes, setas, imagens, camadas com desenho); só o guia do `ViewModePanel` cobre.
-- A contagem de componentes e tokens dentro do artefato (e o `Cover`) não foi reconciliada com `docs/DESIGN-SYSTEM.md` (o `tokens.json` tinha 44 tokens de `size` e 58 de cor antes desta mudança).
+- Passou para o registro do épico `epic/sincronia-ds-2`: classes `.view-panel-*` e `.annotations-all-hidden` no `bundle.css` e retirada das mortas `.layer-chip`, `.layer-chip-name` e `.layer-row-active` (DS3).
+- Passou para o registro do épico `epic/sincronia-ds-2`: conferência das alturas `@dsCard` estimadas das prévias alteradas ou novas (DS4: `IconButton`, `ToolWindow`; DS5: as demais).
+- Passou para o registro do épico `epic/sincronia-ds-2`: o que o canvas desenha no modo visualização, em `Canvas.md` (e o "Ver limpo" que sobrou em `Canvas.md`, `Layouts.md` e `README.md`) (DS3).
+- Passou para o registro do épico `epic/sincronia-ds-2`: contagem de ícones do `README.md` do DS (86 para 92) e a de componentes e tokens, que é só do `docs/DESIGN-SYSTEM.md` (DS3).
