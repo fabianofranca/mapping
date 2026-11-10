@@ -42,6 +42,15 @@ O detalhamento de uma unidade roda em `effort: high` quando o plano depende de j
 - deve passar de umas 5 fases, ou junta 4 ou mais issues;
 - inclui uma `ready` cujo plano muda (replanejamento), ou é uma rodada `code-review` com muitos achados a planejar.
 
+Quanto às **fases** da tabela de modelos e esforço (decisão 11 da #1324): a fase que toca a infraestrutura do fluxo ou algo crítico recebe coordenador **high com `/code-review high`**, qualquer que seja o tamanho. Gatilhos de risco:
+
+- os skills `implementar-fila` e `detalhar-backlog`, o `painel.py`, ou uma regra (não só o texto) do `docs/FLOW.md` ou do `docs/PROCESS.md`;
+- `.github/workflows/`, `scripts/release/` ou `mcp/version.ts`;
+- a versão do schema ou do formato (`formatVersion`);
+- a gravação do `mapping.json` (`src/store/session.ts`) ou a CSP (`pwa/csp.ts`).
+
+A linha da fase diz qual gatilho a fez high (por exemplo, "Sonnet high, com `/code-review high` (gatilho: skill implementar-fila)"). Quem acrescenta uma decisão a uma etapa em andamento **reclassifica** o esforço das fases que ainda não terminaram; se uma passar a high, a fase é avisada de que a `/code-review high` passa a valer.
+
 O resto roda em `effort: medium`. Na dúvida, recomende high (`docs/PROCESS.md`: na dúvida, vale o maior), com o motivo. O argumento `alto=` soma unidades ou desliga a regra.
 
 ## 1. Candidatas
