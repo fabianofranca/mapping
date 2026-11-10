@@ -2,6 +2,7 @@
 export * from './types';
 export * from './errors';
 export * from './modelMessage';
+export * from './messages';
 export * from './geometry';
 export * from './hierarchy';
 export * from './hierarchySettle';

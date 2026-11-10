@@ -516,7 +516,6 @@ export const ptBR = {
   'library.package': 'Pacote',
   'library.packageTooBig':
     'pacote grande demais para conferir (limite de arquivos ou de bytes)',
-  'library.fileNotFound': 'arquivo não encontrado: {path}',
   'library.exampleNotColumn': '"{key}" não é coluna de "{field}"',
   'library.exampleRowNotObject': 'deve ser um objeto (coluna → valor)',
   'library.exampleRefCell': 'coluna "ref" não aceita valor em exemplo',

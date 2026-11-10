@@ -1,12 +1,28 @@
 import { t } from '../i18n';
+import {
+  isModelMessageTemplateCode,
+  modelMessage,
+  type ModelMessageTemplateCode,
+} from '../model';
+import { messageText } from './modelMessage';
 import { specIssueText } from './specIssueText';
 import type { AppLibraryIssue } from '../storage/specPackage';
 
+/** A mensagem com código do catálogo: o `detail` (de outro módulo) entra no `{detail}`. */
+function coded(issue: AppLibraryIssue, code: ModelMessageTemplateCode): string {
+  const params = issue.params ?? {};
+  const merged =
+    issue.detail === undefined
+      ? params
+      : { ...params, detail: messageText(issue.detail) };
+  return messageText(modelMessage(code, merged, issue.message));
+}
+
 /** Texto do problema: os que têm código saem traduzidos; o resto vem do validador. */
-function issueText(issue: AppLibraryIssue): string {
+export function issueText(issue: AppLibraryIssue): string {
   if (issue.code === 'package-too-big') return t('library.packageTooBig');
-  if (issue.code === 'file-not-found' && issue.target !== undefined) {
-    return t('library.fileNotFound', { path: issue.target });
+  if (issue.code !== undefined && isModelMessageTemplateCode(issue.code)) {
+    return coded(issue, issue.code);
   }
   return specIssueText(issue);
 }

@@ -422,11 +422,11 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
     ]);
   });
 
-  it('o erro de arquivo ausente traz código e alvo para a interface traduzir', () => {
+  it('o erro de arquivo ausente traz código e parâmetros para a interface traduzir', () => {
     const report = validate(without(miniPackage(), 'components/mini-card.json'));
     expect(report.errors[0]).toMatchObject({
-      code: 'file-not-found',
-      target: 'components/mini-card.json',
+      code: 'library.fileNotFound',
+      params: { path: 'components/mini-card.json' },
     });
   });
 

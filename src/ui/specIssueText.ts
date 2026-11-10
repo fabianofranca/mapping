@@ -7,7 +7,7 @@ import type { SpecIssueCode } from '../model';
  */
 export function specIssueText(issue: {
   readonly code?: string | undefined;
-  readonly params?: Readonly<Record<string, string>> | undefined;
+  readonly params?: Readonly<Record<string, string | number>> | undefined;
   readonly message: string;
 }): string {
   switch (issue.code as SpecIssueCode | undefined) {
