@@ -359,6 +359,8 @@ for (const width of [1280, 900]) {
     const ok = (await measureRefCells(page))[0]!;
     expect(ok.overlap, 'âncora e ✕ sobrepostos').toBe(0);
     expect(ok.cut, 'rótulo cortado').toBeLessThanOrEqual(0.5);
+    // CD6 (R24.15, achado 1.1 da #1372): "Plugin A" cabe em uma linha, sem quebrar em "Plu/gin/A".
+    expect(ok.lines, 'rótulo do alvo em uma linha').toBe(1);
     for (const theme of ['light', 'dark'] as const) {
       await page.evaluate(
         (th) => document.documentElement.setAttribute('data-theme', th),
