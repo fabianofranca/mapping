@@ -21,7 +21,7 @@
 // Nunca: registrar `page.on('filechooser')` ou `waitForEvent('filechooser')`, nem usar
 // `setInputFiles` como atalho (regra do "Nunca" do docs/TESTING-NUVEM.md); nunca enviar Enter a
 // um seletor de arquivo/pasta ou a um "Salvar como" do GTK — só alt+o / alt+s / alt+c.
-/* global document, location, CSS, MutationObserver -- só dentro das funções que rodam na página */
+/* global document, location, CSS, MutationObserver, DataTransfer, DragEvent -- só dentro das funções que rodam na página */
 import { chromium } from 'playwright';
 import { createHash } from 'node:crypto';
 import { execFile, execFileSync, spawnSync } from 'node:child_process';
@@ -449,10 +449,33 @@ async function runOpenDialog(
 }
 
 /**
+ * Caminho relativo (etapa #1256, decisão 8): o diretório do `run` não é a pasta de trabalho, então
+ * não se resolve sozinho. Fecha o seletor aberto com Cancelar (`alt+c`, receita 8), sem digitar o
+ * caminho, e lança o erro que diz o que fazer. Sem caminho relativo, não faz nada.
+ */
+async function rejectRelativePath(apoioDir, targetPath, cancel) {
+  if (path.isAbsolute(targetPath)) return;
+  try {
+    await cancel(apoioDir);
+  } catch {
+    // Sem seletor aberto: o erro do caminho é o que importa.
+  }
+  throw new Error(
+    `caminho relativo '${targetPath}': passe o caminho absoluto (path.resolve)`,
+  );
+}
+
+/**
  * `select_folder` dos roteiros: abre o seletor de pasta, resolve a lista de autocompletar do
  * GTK quando a pasta já tem conteúdo e, em seguida, trata o pedido de permissão (receita 6).
+ * Caminho relativo: cancela o seletor e lança (decisão 8 da #1256).
  */
-export async function selectFolder(apoioDir, targetPath, { timeoutMs } = {}) {
+export async function selectFolder(
+  apoioDir,
+  targetPath,
+  { timeoutMs, cancel = cancelDialog } = {},
+) {
+  await rejectRelativePath(apoioDir, targetPath, cancel);
   loadEnv(apoioDir);
   const dialogResult = await runOpenDialog(targetPath, { timeoutMs });
   const permissionResult = await allowPermission(apoioDir);
@@ -460,7 +483,12 @@ export async function selectFolder(apoioDir, targetPath, { timeoutMs } = {}) {
 }
 
 /** `open_file` dos roteiros: seletor de arquivo, sem o passo de permissão. */
-export async function openFile(apoioDir, targetPath, { timeoutMs } = {}) {
+export async function openFile(
+  apoioDir,
+  targetPath,
+  { timeoutMs, cancel = cancelDialog } = {},
+) {
+  await rejectRelativePath(apoioDir, targetPath, cancel);
   loadEnv(apoioDir);
   return runOpenDialog(targetPath, { timeoutMs });
 }
@@ -469,7 +497,12 @@ export async function openFile(apoioDir, targetPath, { timeoutMs } = {}) {
  * Receita 7 do apêndice A: "Salvar como" (Exportar › Baixar). Recusa-se a sobrescrever um
  * arquivo que já existe, porque o GTK sobrescreve sem perguntar.
  */
-export async function saveFile(apoioDir, targetPath, { timeoutMs } = {}) {
+export async function saveFile(
+  apoioDir,
+  targetPath,
+  { timeoutMs, cancel = cancelDialog } = {},
+) {
+  await rejectRelativePath(apoioDir, targetPath, cancel);
   loadEnv(apoioDir);
   if (fs.existsSync(targetPath)) {
     throw new Error(
@@ -800,6 +833,7 @@ export function formatState(state) {
   ];
   const project = state.project;
   if (project) {
+    if (project.dir) lines.push(`Pasta: ${project.dir}`);
     if (project.error) {
       lines.push(`mapping.json: ${project.error}`);
     } else if (project.changes === null) {
@@ -921,6 +955,11 @@ async function readMapping(projectDir) {
  */
 export async function state(page, apoioDir, { projectDir } = {}) {
   loadEnv(apoioDir);
+  const lastFolderFile = path.join(apoioDir, 'state', 'ultima-pasta.txt');
+  // `undefined`: a pasta gravada, se houver; `null`: não lê disco (etapa #1256, decisão 9).
+  if (projectDir === undefined && fs.existsSync(lastFolderFile)) {
+    projectDir = fs.readFileSync(lastFolderFile, 'utf8').trim() || undefined;
+  }
   await settle(page, { timeoutMs: STATE_SETTLE_MS });
   const dom = await page.evaluate(readAppDom);
   let windows;
@@ -937,12 +976,21 @@ export async function state(page, apoioDir, { projectDir } = {}) {
   }
   const result = { ...dom, windows };
   if (projectDir) {
+    const absolute = path.resolve(projectDir);
     const read = await readMapping(projectDir);
+    if (!read.error) {
+      fs.mkdirSync(path.dirname(lastFolderFile), { recursive: true });
+      fs.writeFileSync(lastFolderFile, absolute);
+    }
     if (read.error) {
-      result.project = { revision: null, changes: null, error: read.error };
+      result.project = {
+        revision: null,
+        changes: null,
+        error: read.error,
+        dir: absolute,
+      };
     } else {
       const dir = path.join(apoioDir, 'state');
-      fs.mkdirSync(dir, { recursive: true });
       const key = createHash('sha1')
         .update(path.resolve(projectDir))
         .digest('hex')
@@ -953,7 +1001,7 @@ export async function state(page, apoioDir, { projectDir } = {}) {
         changes = diffJson(JSON.parse(fs.readFileSync(snapshot, 'utf8')), read.json);
       }
       fs.writeFileSync(snapshot, JSON.stringify(read.json));
-      result.project = { revision: read.json.revision ?? null, changes };
+      result.project = { revision: read.json.revision ?? null, changes, dir: absolute };
     }
   }
   return result;
@@ -1165,36 +1213,51 @@ export async function closeWindow(page, id) {
   await setWindowOpen(page, id, false);
 }
 
-/** Distância (px) até uma alça da caixa de seleção que faz o `drag` avisar. */
-const HANDLE_REACH = 8;
+/** Raio de acerto da alça do container na app (`HANDLE_HIT_RADIUS`, `src/canvas/input/intents.ts`). */
+const HANDLE_MAX_RADIUS = 22;
+const HANDLE_MIN_RADIUS = 12;
 
 /**
- * Nome da alça (`nw`, `n`, `ne`, `e`, `se`, `s`, `sw`, `w`) da caixa (`{ x, y, width, height }`
- * em px de tela) a até 8 px de `point`, ou `null`. Pura.
+ * Raio (px de tela) da alça de uma caixa: `handleHitRadius` de `src/canvas/markingGeometry.ts` para
+ * marcação; o container usa sempre o fixo (`HANDLE_HIT_RADIUS` em `intents.ts`).
  */
-export function nearHandle(box, point) {
-  const xs = [box.x, box.x + box.width / 2, box.x + box.width];
-  const ys = [box.y, box.y + box.height / 2, box.y + box.height];
-  const names = [
-    ['nw', 'n', 'ne'],
-    ['w', null, 'e'],
-    ['sw', 's', 'se'],
+function handleRadius(box, container = false) {
+  if (container) return HANDLE_MAX_RADIUS;
+  const side = Math.min(box.width, box.height) / 3;
+  return Math.min(HANDLE_MAX_RADIUS, Math.max(HANDLE_MIN_RADIUS, side));
+}
+
+/**
+ * Nome do canto (`nw`, `ne`, `sw`, `se`) da caixa (`{ x, y, width, height }` em px de tela) que a
+ * app pegaria em `point`, ou `null` (etapa #1256, decisão 10). Igual à app: só os quatro cantos
+ * (`CORNERS`), distância em xadrez (`cornerAt`) e raio `clamp(min(largura, altura) / 3, 12, 22)`.
+ * Um ponto fora da caixa também conta (o rótulo do container fica acima da borda). Pura.
+ */
+export function nearHandle(box, point, { container = false } = {}) {
+  const radius = handleRadius(box, container);
+  const corners = [
+    ['nw', box.x, box.y],
+    ['ne', box.x + box.width, box.y],
+    ['sw', box.x, box.y + box.height],
+    ['se', box.x + box.width, box.y + box.height],
   ];
-  for (let row = 0; row < 3; row += 1) {
-    for (let col = 0; col < 3; col += 1) {
-      const name = names[row][col];
-      if (!name) continue;
-      if (Math.hypot(point.x - xs[col], point.y - ys[row]) <= HANDLE_REACH) return name;
+  let best = null;
+  let bestDistance = Infinity;
+  for (const [name, cx, cy] of corners) {
+    const d = Math.max(Math.abs(cx - point.x), Math.abs(cy - point.y));
+    if (d <= radius && d < bestDistance) {
+      best = name;
+      bestDistance = d;
     }
   }
-  return null;
+  return best;
 }
 
 /**
  * Arrasta de `de` até `para` (pontos de tela `{ x, y }`, por exemplo do `ponto`; etapa #1148,
  * decisão 9): clica em `de` para selecionar (com `select`), espera `settle`, `mouse.down`, um
- * quadro, `mouse.move` em `steps` passos e `mouse.up`. Se `de` cair a até 8 px de uma alça da
- * `data-selection-box`, avisa (`warn`) que o arrasto pode redimensionar, e segue.
+ * quadro, `mouse.move` em `steps` passos e `mouse.up`. Se `de` cair no raio de uma alça da
+ * `data-selection-box` (o da app, `nearHandle`), avisa (`warn`) que o arrasto pode redimensionar, e segue.
  */
 export async function drag(
   page,
@@ -1211,11 +1274,18 @@ export async function drag(
   const hostBox = text ? await host.boundingBox() : null;
   if (text && hostBox) {
     const [l, t, w, h] = text.split(' ').map(Number);
+    // A caixa não diz se é container ou marcação: vale o raio maior (o do container), que contém
+    // o da marcação; avisar a mais é inofensivo, avisar a menos deixa o arrasto redimensionar.
     const handle = nearHandle(
       { x: hostBox.x + l, y: hostBox.y + t, width: w, height: h },
       de,
+      { container: true },
     );
-    if (handle) warn(`perto da alça ${handle}: o arrasto pode redimensionar`);
+    if (handle) {
+      warn(
+        `perto da alça ${handle}: o arrasto pode redimensionar (a alça pega até ${Math.round(handleRadius({ width: w, height: h }, true))} px do canto; parta de mais longe)`,
+      );
+    }
   }
   await page.mouse.move(de.x, de.y);
   await page.mouse.down();
@@ -1229,6 +1299,72 @@ export async function drag(
     );
   }
   await page.mouse.up();
+}
+
+/** Dispara o arrasto da Paleta por eventos (roda na página): `dragstart`, `dragover`, `drop`, `dragend`. */
+function syntheticPaletteDrag({ tipo, para }) {
+  const item = [...document.querySelectorAll('li.library-type')].find(
+    (li) => li.querySelector('.library-type-name')?.textContent?.trim() === tipo,
+  );
+  if (!item) return;
+  const data = new DataTransfer();
+  const fire = (target, type) =>
+    target.dispatchEvent(
+      new DragEvent(type, {
+        bubbles: true,
+        cancelable: true,
+        dataTransfer: data,
+        clientX: para.x,
+        clientY: para.y,
+      }),
+    );
+  fire(item, 'dragstart');
+  const target = document.elementFromPoint(para.x, para.y) ?? document.body;
+  fire(target, 'dragover');
+  fire(target, 'drop');
+  fire(item, 'dragend');
+}
+
+/**
+ * Arrasta um tipo da Paleta aberta até um ponto de tela (etapa #1256, decisão 7). Acha o
+ * `li.library-type` pelo nome do tipo, faz o arrasto nativo pelo mouse do Playwright (`move` no
+ * item, `down`, `move` em `steps` passos até `para`, `up`) e confere que o `data-components` do
+ * `.canvas-host` subiu. Sem subida, refaz por eventos (`dragstart` no item; `dragover`, `drop` e
+ * `dragend` sob o ponto). Sem nenhuma, lança "o arrasto da Paleta não criou a instância".
+ * Limite: o sucesso se mede pelo `data-components`, que só conta componentes desenhados; um tipo
+ * sem desenho, numa camada oculta ou na vista Atual pode criar a instância sem subir o contador (aí o
+ * erro vem mesmo com a instância criada: confira o disco).
+ * `capture` (caminho de PNG) grava o recorte do canvas antes de soltar, com o destino aceso.
+ * Devolve `{ via: 'nativo' | 'sintetico' }`.
+ */
+export async function paletteDrag(page, tipo, para, { capture, steps = 10 } = {}) {
+  const host = page.locator('.canvas-host');
+  const components = async () =>
+    Number((await host.getAttribute('data-components')) ?? 0);
+  const before = await components();
+  const item = page
+    .locator('li.library-type')
+    .filter({ has: page.getByText(tipo, { exact: true }) });
+  await item.scrollIntoViewIfNeeded();
+  const box = await item.boundingBox();
+  if (!box) throw new Error(`paletteDrag: o tipo '${tipo}' não está na Paleta aberta`);
+  const from = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  for (let i = 1; i <= steps; i += 1) {
+    await page.mouse.move(
+      from.x + ((para.x - from.x) * i) / steps,
+      from.y + ((para.y - from.y) * i) / steps,
+    );
+  }
+  if (capture) await host.screenshot({ path: capture });
+  await page.mouse.up();
+  await settle(page);
+  if ((await components()) > before) return { via: 'nativo' };
+  await page.evaluate(syntheticPaletteDrag, { tipo, para });
+  await settle(page);
+  if ((await components()) > before) return { via: 'sintetico' };
+  throw new Error('o arrasto da Paleta não criou a instância');
 }
 
 /**
@@ -1481,6 +1617,7 @@ function exportsOf() {
     TOOL_WINDOW_IDS,
     drag,
     nearHandle,
+    paletteDrag,
     setViewport,
     find,
     formatCandidates,
@@ -1547,7 +1684,7 @@ export const HELP = {
   formatState: { sig: 'formatState(estado)', desc: 'texto do estado (tela e disco)' },
   state: {
     sig: 'state(page, apoioDir, { projectDir? })',
-    desc: 'estado da tela (título, diálogos, avisos, foco, janelas) e do disco',
+    desc: 'estado da tela (título, diálogos, avisos, foco, janelas) e do disco; sem projectDir lê a última pasta usada (null: não lê disco)',
   },
   waitForWindow: {
     sig: 'waitForWindow(nomes, { timeoutMs? })',
@@ -1555,15 +1692,15 @@ export const HELP = {
   },
   selectFolder: {
     sig: 'selectFolder(apoioDir, caminho, { timeoutMs? })',
-    desc: 'escolhe uma pasta no seletor nativo',
+    desc: 'escolhe uma pasta no seletor nativo; caminho absoluto (relativo: cancela e lança)',
   },
   openFile: {
     sig: 'openFile(apoioDir, caminho, { timeoutMs? })',
-    desc: 'abre um arquivo no seletor nativo',
+    desc: 'abre um arquivo no seletor nativo; caminho absoluto (relativo: cancela e lança)',
   },
   saveFile: {
     sig: 'saveFile(apoioDir, caminho, { timeoutMs? })',
-    desc: 'salva num "Salvar como" nativo',
+    desc: 'salva num "Salvar como" nativo; caminho absoluto (relativo: cancela e lança)',
   },
   cancelDialog: {
     sig: 'cancelDialog(apoioDir, { timeoutMs? })',
@@ -1599,11 +1736,15 @@ export const HELP = {
   },
   drag: {
     sig: 'drag(page, de, para, { select? = true, steps? = 10, warn? })',
-    desc: 'arrasta entre dois pontos de tela ({x, y}); avisa se de cair a 8 px de uma alça da seleção',
+    desc: 'arrasta entre dois pontos de tela ({x, y}); avisa se de cair no raio de uma alça (canto) da seleção',
   },
   nearHandle: {
     sig: 'nearHandle(box, ponto)',
-    desc: 'nome da alça (nw, n, ne, e, se, s, sw, w) a até 8 px do ponto, ou null',
+    desc: 'canto (nw, ne, sw, se) que a app pegaria no ponto (raio 12 a 22 px, xadrez), ou null',
+  },
+  paletteDrag: {
+    sig: 'paletteDrag(page, tipo, para, { capture?, steps? = 10 })',
+    desc: 'arrasta um tipo da Paleta aberta até um ponto de tela; capture = PNG antes de soltar; devolve { via: nativo | sintetico }',
   },
   setViewport: {
     sig: 'setViewport(page, largura, altura)',

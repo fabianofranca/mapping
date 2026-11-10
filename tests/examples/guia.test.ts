@@ -181,4 +181,39 @@ describe('guia interativo', () => {
     expect(data.layers).toHaveLength(10); // a camada Notas fica na lista; a nota flutuante e a anotação dela não vão ao guia
     expect(Object.keys(data.files)).toEqual(['images/cadastro.png', 'images/login.png']);
   });
+
+  it('traz as perspectivas e as chegadas do mapping.json, nunca escritas à mão no template', () => {
+    const script = blocks(html, 'script').find((s) => s.includes('const D ='));
+    const json = /const D = (\{.*\});\n/.exec(script ?? '')?.[1];
+    const data = JSON.parse(json ?? '{}') as {
+      images: { id: string; name: string }[];
+      layers: { id: string; name: string }[];
+      perspectives: { name: string; containers: string[]; hiddenLayers: string[] }[];
+      arrivals: { name: string; fromName: string }[];
+    };
+    const imageName = (id: string) => data.images.find((i) => i.id === id)?.name;
+    const layerName = (id: string) => data.layers.find((l) => l.id === id)?.name;
+    expect(data.perspectives.map((p) => p.name)).toEqual(['Dados', 'Material 3']);
+    const [dados, material] = data.perspectives;
+    expect(dados?.containers.map(imageName)).toEqual(['Cadastro', 'Login']);
+    expect(dados?.hiddenLayers.map(layerName).sort()).toEqual([
+      'Componentes',
+      'Dúvidas',
+      'Eventos',
+    ]);
+    expect(material?.containers.map(imageName)).toEqual([
+      'Configurações',
+      'Detalhes do pedido',
+    ]);
+    expect(material?.hiddenLayers).toEqual([]);
+    expect(data.arrivals).toEqual([{ name: 'Cadastro', fromName: 'Dados' }]);
+    // O template não repete os nomes das perspectivas: eles vêm de D.perspectives.
+    const template = readFileSync('scripts/guia/template.html', 'utf8');
+    expect(template).not.toMatch(/Material 3<\/option>|'Material 3'/);
+  });
+
+  it('o seletor de perspectiva é um select com rótulo, montado por DOM (CSP)', () => {
+    expect(html).toMatch(/<label[^>]*for="persp"[^>]*>Perspectiva<\/label>/);
+    expect(html).toMatch(/<select[^>]*id="persp"/);
+  });
 });
