@@ -29,7 +29,7 @@ QUEUE_EMPTY = {
     "sessions": "",
 }
 TIME_FIELDS = ["started", "ended", "childAt"]
-LATE_MINUTES = 60
+LATE_MINUTES = 30
 
 NOW_OVERRIDE = None
 

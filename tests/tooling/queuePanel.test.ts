@@ -43,7 +43,7 @@ describe('painel.py (FC1)', () => {
     expect(out).toContain('dep=nenhuma; fases=AB1:#11');
   });
 
-  it('child e childAt=now registram a filha; show lista só as atrasadas (mais de 60 min)', () => {
+  it('child e childAt=now registram a filha; show lista só as atrasadas (mais de 30 min; decisão 5 da #1324)', () => {
     runAt(
       '2026-11-09T10:00:00Z',
       'row',
@@ -65,6 +65,12 @@ describe('painel.py (FC1)', () => {
     const out = runAt('2026-11-09T11:10:00Z', 'show', dir);
     expect(out).toMatch(/atrasadas:[^\n]*#10[^\n]*session_a/);
     expect(out).not.toMatch(/atrasadas:[^\n]*#20/);
+  });
+
+  it('atrasada é só a filha com mais de 30 min: 30 não conta, 31 conta (decisão 5 da #1324)', () => {
+    runAt('2026-11-09T10:00:00Z', 'row', dir, '#10', 'child=session_a', 'childAt=now');
+    expect(runAt('2026-11-09T10:30:00Z', 'show', dir)).toMatch(/atrasadas: nenhuma/);
+    expect(runAt('2026-11-09T10:31:00Z', 'show', dir)).toMatch(/atrasadas:[^\n]*#10/);
   });
 
   it('child= vazio limpa childAt e a etapa deixa de estar atrasada', () => {
@@ -235,5 +241,131 @@ describe('painel.py: sessions por etapa (FC2, decisão 8)', () => {
 
   it('session numa etapa fora da fila é recusado', () => {
     expect(() => run('session', dir, '#99', 'session_a')).toThrow();
+  });
+});
+
+// Etapa #1324 (CR1): CI resiliente do lado da fase e do coordenador.
+describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
+  const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
+  const flow = readFileSync('docs/FLOW.md', 'utf8');
+  const detalhar = readFileSync('.claude/skills/detalhar-backlog/SKILL.md', 'utf8');
+  const process = readFileSync('docs/PROCESS.md', 'utf8');
+  const fase = flow.slice(
+    flow.indexOf('## Para a sessão da fase'),
+    flow.indexOf('## Fase de correção'),
+  );
+  const item6 = fase.split('\n').find((l) => l.startsWith('6. ')) ?? '';
+  const reserva = skill.slice(
+    skill.indexOf('**Conferências de reserva:**'),
+    skill.indexOf('**CI vermelho'),
+  );
+  const ciVermelho = skill.slice(
+    skill.indexOf('**CI vermelho'),
+    skill.indexOf('## Mudanças na fila durante a execução'),
+  );
+
+  it('"Para a sessão da fase": send_later de 8 min, segunda reexecução pela fase e aviso (decisões 1 e 2)', () => {
+    expect(item6).toMatch(/`send_later` de 8 min/);
+    expect(item6).toMatch(/nunca encerre o turno/i);
+    expect(item6).toContain('ci-rerun.yml');
+    expect(item6).toContain('node scripts/ci/ciRerun.mjs decide');
+    expect(item6).toContain('gh run rerun <id> --failed');
+    expect(item6).toMatch(/depois de \*\*2 reexecuções sem sucesso\*\*/);
+    expect(item6).toContain('CI travado: <link da execução>, tentativas 1 a 3');
+    expect(item6).toMatch(/falha legítima/i);
+  });
+
+  it('"Para a sessão da fase": margem e teto do dist para a fase (decisões 3, 6, 7 e 8)', () => {
+    expect(item6).toMatch(/abaixo de 2 KiB/);
+    expect(item6).toMatch(/enxugar/);
+    expect(item6).toContain('node scripts/ci/distBudget.mjs raise');
+    expect(item6).toMatch(/chama o dono/);
+    expect(item6).toMatch(/16 KiB/);
+    expect(item6).toMatch(/32 KiB/);
+    expect(item6).toMatch(/64 KiB/);
+    expect(item6).toMatch(/`send_message`/);
+  });
+
+  it('o CI de uma fase é um parágrafo só no item 6 (decisão do dono)', () => {
+    expect(fase.match(/^6\. /gm)).toHaveLength(1);
+    expect(fase.match(/send_later/g)).toHaveLength(1);
+  });
+
+  it('"Conferências de reserva": 30 min, review_ready/idle sem aviso e send_message antes de recriar (decisão 5)', () => {
+    expect(reserva).toMatch(/mais de 30 min/);
+    expect(reserva).not.toMatch(/mais de 60 min/);
+    expect(reserva).toContain('`review_ready`');
+    expect(reserva).toContain('`idle`');
+    const msg = 'Conferência da fila: a fase não avisou. Retome do ponto em que parou';
+    expect(reserva).toContain(msg);
+    expect(reserva.indexOf(msg)).toBeLessThan(reserva.indexOf('crie a sessão de novo'));
+    expect(reserva).toMatch(/conferência seguinte/);
+  });
+
+  it('o coordenador não roda o CI de novo; chama o dono (decisão 4)', () => {
+    expect(skill).not.toMatch(/roda de novo uma vez se morreu antes de testar/);
+    expect(ciVermelho).toMatch(/não roda o CI de novo/);
+    expect(ciVermelho).toContain('ci-rerun.yml');
+    expect(ciVermelho).toContain('CI travado');
+    expect(ciVermelho).toContain('esperando dono');
+    expect(ciVermelho).toContain('PushNotification');
+  });
+
+  it('"CI vermelho no PR do épico": regra do teto, script e roadmap (decisões 6 a 9)', () => {
+    expect(ciVermelho).toContain('Tamanho do dist/index.html');
+    expect(ciVermelho).toMatch(/16 KiB/);
+    expect(ciVermelho).toMatch(/32 KiB/);
+    expect(ciVermelho).toMatch(/64 KiB/);
+    expect(ciVermelho).toMatch(/worktree descartável/);
+    expect(ciVermelho).toContain('npm ci && npm run build');
+    expect(ciVermelho).toContain('node scripts/ci/distBudget.mjs raise');
+    expect(ciVermelho).toContain('changelog/<nome>.md');
+    expect(ciVermelho).toContain('Orçamento do dist/index.html');
+    expect(ciVermelho).toContain('Teto na última revisão do dono');
+    expect(ciVermelho).toMatch(/primeira subida/);
+    expect(ciVermelho).toMatch(/inclusive as da fase|subida feita pela fase/);
+  });
+
+  it('detalhar-backlog: gatilhos de risco (a) e reclassificação (b) (decisão 11)', () => {
+    const esforco = detalhar.slice(
+      detalhar.indexOf('## Esforço do detalhamento'),
+      detalhar.indexOf('## 1. Candidatas'),
+    );
+    for (const gatilho of [
+      '`implementar-fila`',
+      'painel.py',
+      '.github/workflows/',
+      'scripts/release/',
+      'mcp/version.ts',
+      'formatVersion',
+      'src/store/session.ts',
+      'pwa/csp.ts',
+      '`/code-review high`',
+    ]) {
+      expect(esforco).toContain(gatilho);
+    }
+    expect(esforco).toMatch(/qualquer que seja o tamanho/);
+    expect(esforco).toMatch(/gatilho/);
+    expect(esforco).toMatch(/reclassifica/);
+  });
+
+  it('implementar-fila: /code-review high no diff do épico, no Fechamento (decisão 11, c)', () => {
+    const fechamento = skill.slice(
+      skill.indexOf('5. **Fechamento**'),
+      skill.indexOf('6. **Merge**'),
+    );
+    expect(fechamento).toContain('/code-review high');
+    expect(fechamento).toMatch(/diff inteiro do épico/);
+    expect(fechamento).toMatch(/base `main`/);
+    expect(fechamento).toMatch(/antes do merge/);
+    expect(fechamento).toMatch(/teste primeiro/);
+    expect(fechamento).toMatch(/mesmo que as fases tenham sido medium/);
+  });
+
+  it('PROCESS.md: a linha do ci-rerun.yml na regra da main (decisão 10)', () => {
+    const item = process
+      .split('\n')
+      .find((l) => l.includes('A `main` só aceita PR de `epic/*`'));
+    expect(item).toContain('ci-rerun.yml');
   });
 });
