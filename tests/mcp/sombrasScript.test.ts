@@ -9,7 +9,10 @@ import { describe, expect, it } from 'vitest';
 import { createRaster } from '../../mcp/image/raster';
 import { paintScene } from '../../mcp/image/sceneRaster';
 import { approximateMeasurer, instantiate } from '../../src/model/components/instantiate';
-import { parseComponent, validateComponent } from '../../src/model/components/parseComponent';
+import {
+  parseComponent,
+  validateComponent,
+} from '../../src/model/components/parseComponent';
 import type { SceneNode } from '../../src/model/components/scene';
 
 function buildCard(): unknown {
