@@ -24,6 +24,14 @@ describe('Notice em linha', () => {
   });
 });
 
+describe('Notice em linha sem hint (DS7, achado 3)', () => {
+  it('o texto estica sozinho, com ou sem a âncora da dica', () => {
+    const text = rule(read('src/theme/review.css'), '.notice-box-line .notice-box-text');
+    expect(text).toMatch(/flex:\s*1/);
+    expect(text).toMatch(/min-width:\s*0/);
+  });
+});
+
 describe('item da barra de status que abre janela', () => {
   it('herda a cor do item (muted) para o hover ter efeito', () => {
     expect(rule(read('src/theme/review.css'), '.status-item-button')).toMatch(
@@ -35,6 +43,12 @@ describe('item da barra de status que abre janela', () => {
 describe('selo do IconButton', () => {
   it('fica no canto, fora do glifo central (⋯)', () => {
     const badge = rule(read('src/theme/controls.css'), '.icon-button-badge');
-    expect(badge).toMatch(/transform:\s*translate\(50%,\s*-50%\)/);
+    expect(badge).toMatch(/transform:\s*translate\(/);
+  });
+
+  // DS7 (#1472, achado 2): a 50% o selo saía ~8px de um botão de 28px numa faixa de 40px.
+  it('sai no máximo um quarto de si para fora da caixa do botão', () => {
+    const badge = rule(read('src/theme/controls.css'), '.icon-button-badge');
+    expect(badge).toMatch(/transform:\s*translate\(25%,\s*-25%\)/);
   });
 });

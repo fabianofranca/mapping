@@ -76,8 +76,12 @@ const listItems = (lines: string[]): string[] => {
 };
 
 // "- AB1: nenhuma (…)" ou "- Nada." não são pendência real.
-const NO_ITEM = /^[-*] (?:[A-Za-z]{1,4}\d+:\s*)?(?:\*\*)?(?:nenhuma|nada)\b/i;
-const WROTE = /^(?:Gravado no artefato|Vers(?:ão|ões) \d|Sem impacto)/;
+// "nenhuma"/"nada" sozinho (ponto, parêntese ou fim): "- Nada gravado ainda: …" é pendência real.
+const NO_ITEM =
+  /^[-*] (?:[A-Za-z]{1,4}\d+:\s*)?(?:\*\*)?(?:nenhuma|nada)(?:\*\*)?\s*(?:[.(]|$)/i;
+// "Sem impacto" é resultado válido do fechamento (docs/DESIGN-SYSTEM.md); "Versão N não foi gravada" não.
+const WROTE =
+  /^(?:Gravado no artefato|Vers(?:ão|ões) \d(?!.*não foi gravada)|Sem impacto)/;
 const MOVED = /Passou para o registro do épico `epic\/([a-z0-9-]+)`/;
 
 /** A regra da decisão 12; devolve o motivo da reprovação, ou null se o registro passa. */
@@ -104,7 +108,18 @@ function ruleViolation(
     const moved = MOVED.exec(item);
     if (moved) {
       const slug = moved[1];
-      if (!files.some((f) => NAME.exec(f)?.[2] === slug)) {
+      const own = NAME.exec(name);
+      // O destino é outro registro, sem data ou de data não anterior à deste (épico ainda aberto).
+      const target = files.some((f) => {
+        const m = NAME.exec(f);
+        return (
+          m !== null &&
+          m[2] === slug &&
+          f !== name &&
+          (!m[1] || !own?.[1] || m[1] >= own[1])
+        );
+      });
+      if (!target) {
         return `${name}: "Passou para o registro do épico" aponta para epic/${slug}, que não tem registro na pasta`;
       }
     } else if (!/Motivo:/.test(item)) {
@@ -181,6 +196,32 @@ describe('regra do registro: o fechamento grava no artefato (#1390, DS2)', () =>
   it('passa com Pendências só "- XX1: nenhuma (…)"', () => {
     const t = base('Nenhuma gravação.', '', '- XX1: nenhuma (nada mudou no DS).');
     expect(ruleViolation(NAME_, t, [])).toBeNull();
+  });
+
+  // DS7 (#1472, achados 5 a 7)
+  it('"Versão N não foi gravada" não vale como gravação', () => {
+    const b = base('Versão 3 não foi gravada.', '');
+    expect(ruleViolation(NAME_, b, [])).toContain('não tem item');
+  });
+
+  it('"- Nada gravado ainda: …" é pendência real', () => {
+    const t = base('Nenhuma gravação.', '', '- Nada gravado ainda: falta o guia de X.');
+    expect(ruleViolation(NAME_, t, [])).toContain('não tem item');
+  });
+
+  it('"Passou para" não aponta para o próprio registro nem para épico já fechado', () => {
+    const own = base(
+      'Nenhuma gravação.',
+      '- Passou para o registro do épico `epic/x`: guia.',
+    );
+    expect(ruleViolation(NAME_, own, ['2026-11-10-x.md'])).toContain('epic/x');
+    const t = base(
+      'Nenhuma gravação.',
+      '- Passou para o registro do épico `epic/velho`: guia.',
+    );
+    expect(ruleViolation(NAME_, t, ['2026-11-01-velho.md'])).toContain('epic/velho');
+    expect(ruleViolation(NAME_, t, ['2026-11-10-velho.md'])).toBeNull();
+    expect(ruleViolation(NAME_, t, ['velho.md'])).toBeNull();
   });
 
   it('reprova sem item em "Ficou sem gravar" e com item sem motivo', () => {
