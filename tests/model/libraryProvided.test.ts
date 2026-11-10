@@ -82,15 +82,18 @@ describe('biblioteca com cor herdada', () => {
       files: pack({ ink: { $field: 'ink', default: '#abcdef' } }),
     });
     expect(report.errors).toEqual([]);
-    expect(report.warnings.filter((w) => /desenho|aproximado/i.test(w))).toEqual([]);
+    expect(report.warnings.filter((w) => /desenho|aproximado/i.test(w.message))).toEqual(
+      [],
+    );
   });
 
   it('o Catálogo desenha o leitor com o default (nenhum ancestral oferece)', () => {
     const catalog = buildCatalog(pack({ ink: '#abcdef' }));
     const entry = findEntry(catalog, 'reader')!;
     const drawing = exampleDrawing(catalog, entry, undefined, approximateMeasurer);
-    const text = (drawing?.root as { children?: { fills?: { color?: string }[] }[] })
-      .children?.[0];
+    const text = (
+      drawing?.root as unknown as { children?: { fills?: { color?: string }[] }[] }
+    ).children?.[0];
     expect(text?.fills?.[0]?.color).toBe('#123456');
   });
 

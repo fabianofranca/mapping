@@ -18,7 +18,6 @@ import {
   createProject,
   parseSpecText,
   serialize,
-  setFieldValue,
 } from '../../src/model';
 import { validateComponent } from '../../src/model/components/parseComponent';
 import { runBatch, type BatchResult } from '../../mcp/batch';
@@ -30,7 +29,7 @@ import { Roots } from '../../mcp/paths';
 import { findProject, loadProject, type LoadedProject } from '../../mcp/projects';
 import { renderContainer } from '../../mcp/renderImage';
 import { NOW } from '../model/fixtures';
-import { ok } from './proposalSupport';
+import { acceptAllAndApply, ok, propose, readProject } from './proposalSupport';
 import { connect, type Connection } from './workspace';
 
 interface Validated {
@@ -190,14 +189,45 @@ describe('herdada.mjs (R25.83 a R25.86)', () => {
     expect(count(raster, BLUE, OUTSIDE)).toBe(0);
   });
 
-  it('trocar o campo ink do Card muda a filha e deixa o Text solto como estava', async () => {
+  it('propose_changes troca o ink do Card; aplicada, a filha muda de cor e o disco não guarda o desenho', async () => {
     const { project } = await setup();
-    const cardAnnotation = project.annotations.find((a) => a.type?.typeId === 'card')!;
-    const next = setFieldValue(project, cardAnnotation.id, 'ink', '#D32F2F');
-    const raster = await paint(next);
+    const dir = join(root, 'telas2');
+    mkdirSync(join(dir, 'specs'), { recursive: true });
+    cpSync(join(root, 'telas', 'specs'), join(dir, 'specs'), { recursive: true });
+    writeFileSync(join(dir, 'mapping.json'), serialize(project));
+    const list = ok(
+      await mcp.call<{
+        markings: { ref: string; component: string; parent: string | null }[];
+      }>('list_markings', { project: 'telas2' }),
+    );
+    const card = list.markings.find((m) => m.component.endsWith('/card'))!;
+    const texts = list.markings.filter((m) => m.component.endsWith('/text'));
+    expect(texts.map((m) => m.parent).sort()).toEqual([card.ref, null].sort());
+    const got = ok(
+      await mcp.call<{ layers: { annotations: { ref: string }[] }[] }>('get_marking', {
+        ref: card.ref,
+      }),
+    );
+    const annotation = got.layers[0]!.annotations[0]!.ref;
+    const before = readFileSync(join(dir, 'mapping.json'), 'utf8');
+    const proposed = await propose(
+      mcp,
+      'telas2',
+      [{ op: 'update_annotation', annotation, values: { ink: '#D32F2F' } }],
+      { title: 'Tinta do Card' },
+    );
+    expect(proposed.valid).toBe(true);
+    expect(readFileSync(join(dir, 'mapping.json'), 'utf8')).toBe(before);
+    const applied = acceptAllAndApply(dir, proposed.proposal.id);
+    const raster = await paint(applied);
     expect(count(raster, RED, INSIDE)).toBeGreaterThan(300);
     expect(count(raster, BLUE, INSIDE)).toBe(0);
     expect(count(raster, GREEN, OUTSIDE)).toBeGreaterThan(300);
     expect(count(raster, RED, OUTSIDE)).toBe(0);
+    const disk = readFileSync(join(dir, 'mapping.json'), 'utf8');
+    expect(disk).toContain('"ink": "#D32F2F"');
+    for (const drawn of ['content-color', '#1976D2', '#2E7D32', '$provided'])
+      expect(disk, drawn).not.toContain(drawn);
+    expect(readProject(dir).revision).toBe(project.revision + 1);
   });
 });
