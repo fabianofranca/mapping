@@ -1,4 +1,4 @@
-# Espera do CI mais curta — [Não lançado] (épico `epic/espera-ci-curta`, PR #0, MCP 0.30.0 sem mudança, schema v18)
+# Espera do CI mais curta — 2026-11-10 (épico `epic/espera-ci-curta`, PR #1457, MCP 0.30.0 sem mudança, schema v18)
 
 ## Alterado
 

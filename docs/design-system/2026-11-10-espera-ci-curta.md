@@ -1,4 +1,4 @@
-# Espera do CI mais curta — [Não lançado] (épico `epic/espera-ci-curta`)
+# Espera do CI mais curta — 2026-11-10 (épico `epic/espera-ci-curta`)
 
 ## Pendências
 
