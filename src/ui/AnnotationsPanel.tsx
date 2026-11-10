@@ -1,6 +1,6 @@
 import { Fragment, type ComponentChildren } from 'preact';
 import { useLayoutEffect, useRef, useState } from 'preact/hooks';
-import { t } from '../i18n';
+import { t, type TranslationKey } from '../i18n';
 import {
   annotationsOf,
   projectIndex,
@@ -37,7 +37,11 @@ import {
   ownerTypeNames,
 } from './typedText';
 import { Button, IconButton } from './controls';
-import { offeredTypes, type AnnotationOwnerKind } from './offeredTypes';
+import {
+  offeredTypeChoice,
+  type AnnotationOwnerKind,
+  type OfferedTypesEmpty,
+} from './offeredTypes';
 
 interface AnnotationsPanelProps {
   readonly project: Project;
@@ -55,6 +59,61 @@ interface AnnotationsPanelProps {
   /** Anotação para rolar até assim que estiver na tela (estado da UI). */
   readonly focusAnnotation: string | null;
   readonly onFocusDone: () => void;
+}
+
+const EMPTY_TYPES_KEY: Record<OfferedTypesEmpty, TranslationKey> = {
+  unavailable: 'typed.empty.unavailable',
+  'no-types': 'typed.empty.noTypes',
+  floating: 'typed.empty.floating',
+  'not-for-arrow': 'typed.empty.arrow',
+  'not-for-marking': 'typed.empty.marking',
+};
+
+/** O que o + da camada oferece a esta dona e, sem tipo, a mensagem do motivo. */
+function typeOffer(
+  project: Project,
+  markingId: string,
+  kind: AnnotationOwnerKind,
+  layerId: string,
+) {
+  const floating = projectIndex(project).markings.get(markingId)?.floating === true;
+  const { types, empty } = offeredTypeChoice(project, layerId, { kind, floating });
+  return { types, message: empty ? t(EMPTY_TYPES_KEY[empty]) : undefined };
+}
+
+interface TypeStepDialogProps {
+  readonly project: Project;
+  readonly markingId: string;
+  readonly ownerKind: AnnotationOwnerKind;
+  readonly layer: Layer;
+  readonly onChoose: (type: SpecAnnotationType) => void;
+  readonly onCancel: () => void;
+}
+
+/** O diálogo do + de uma camada de especialização: os tipos que ela oferece, ou o motivo de não haver. */
+function TypeStepDialog({
+  project,
+  markingId,
+  ownerKind,
+  layer,
+  onChoose,
+  onCancel,
+}: TypeStepDialogProps) {
+  const offer = typeOffer(project, markingId, ownerKind, layer.id);
+  return (
+    <Dialog
+      title={t('typed.chooseTypeTitle', { layer: layer.name })}
+      onCancel={onCancel}
+      actions={<Button onClick={onCancel}>{t('common.cancel')}</Button>}
+    >
+      <TypePicker
+        types={offer.types}
+        emptyMessage={offer.message}
+        groups={specLayerOf(project, layer)?.groups}
+        onChoose={onChoose}
+      />
+    </Dialog>
+  );
 }
 
 /** Passos da criação numa camada de especialização (docs/ARCHITECTURE.md, "Especializações no projeto e anotações tipadas"). */
@@ -242,17 +301,14 @@ export function AnnotationsPanel({
 
       <DialogSlotContext.Provider value={steps.slot}>
         {step?.kind === 'type' && (
-          <Dialog
-            title={t('typed.chooseTypeTitle', { layer: step.layer.name })}
+          <TypeStepDialog
+            project={project}
+            markingId={marking.id}
+            ownerKind={ownerKind}
+            layer={step.layer}
+            onChoose={(definition) => chooseType(step.layer, definition)}
             onCancel={() => steps.close()}
-            actions={<Button onClick={() => steps.close()}>{t('common.cancel')}</Button>}
-          >
-            <TypePicker
-              types={offeredTypes(project, step.layer.id, ownerKind)}
-              groups={specLayerOf(project, step.layer)?.groups}
-              onChoose={(definition) => chooseType(step.layer, definition)}
-            />
-          </Dialog>
+          />
         )}
 
         {step?.kind === 'owner' && (
@@ -342,7 +398,7 @@ export function PagedList({
 
 /**
  * Grupo de uma camada (LayerGroup do DS 2.0): borda, faixa de 3px na cor da camada,
- * selo da especialização, "· ativa", contagem e ⚠. Recolhido, resume a primeira
+ * selo da especialização, "· ativa", contagem e ícone de alerta. Recolhido, resume a primeira
  * anotação e não monta as anotações.
  */
 function LayerGroup({
