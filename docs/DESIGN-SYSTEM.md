@@ -12,7 +12,7 @@ Este arquivo é o registro dele no repositório. Ele diz o que o DS é, **quando
 - **Não é gerado do código.** A skill `/design-sync` do Claude Code **não se aplica** a este DS: ela espera o `dist/` de uma biblioteca de componentes publicada e transformaria o DS curado num espelho do build. Não a use aqui.
 - **O código é a fonte da verdade; o DS descreve.** Onde os dois divergirem, corrija o DS. Divergência que pareça defeito da app não se resolve aqui: registre em "Pendências" e leve ao dono.
 - **Nome.** O índice do artefato se chama **Mapping**. Se aparecer o nome antigo "Mapeador de Imagens 2.0", é o mesmo artefato.
-- **Tamanho hoje:** 79 componentes com guia (mais a capa `Cover`), 6 seções, 177 tokens (fora os 12 estilos de texto `t-*`) e 92 ícones (artefato na versão 70, DS4 do épico `sincronia-ds-2`).
+- **Tamanho hoje:** 79 componentes com guia (mais a capa `Cover`), 6 seções, 177 tokens (fora os 12 estilos de texto `t-*`) e 92 ícones (artefato na versão 71, DS5 do épico `sincronia-ds-2`).
 
 ## Quando verificar
 
@@ -197,7 +197,7 @@ Na mesma data entraram no DS os sete que faltavam: `size-grid-col-min` (`96px`) 
 | `zIndex`                           | 8     | 8               |
 | `breakpoint`                       | 2     | 2               |
 
-Contagem conferida em 2026-11-10 (DS3, `tokens.json` do artefato na versão 69 contra `src/theme/tokens.ts`, nome e valor nos dois temas): 177 tokens nas listas, 21 deles entrados na DS3 (os seis `color-thread-*`, `cv-component-unknown-fill`, `opacity-slot`, os onze `size-cv-pin-*` e `size-cv-arrival-*` e os dois `size-minimap-*`; `size-tw-bottom` passou a `360px`). Os cinco papéis de `size` (`control-height`, `control-height-sm`, `control-icon`, `control-check`, `row-height`) são alias no código e valores literais no DS. Uma divergência antiga fica para a DS5: `size-review-col-name-min` vale 194px no código e 208px no DS.
+Contagem conferida em 2026-11-10 (DS3, `tokens.json` do artefato na versão 69 contra `src/theme/tokens.ts`, nome e valor nos dois temas): 177 tokens nas listas, 21 deles entrados na DS3 (os seis `color-thread-*`, `cv-component-unknown-fill`, `opacity-slot`, os onze `size-cv-pin-*` e `size-cv-arrival-*` e os dois `size-minimap-*`; `size-tw-bottom` passou a `360px`). Os cinco papéis de `size` (`control-height`, `control-height-sm`, `control-icon`, `control-check`, `row-height`) são alias no código e valores literais no DS. A divergência antiga de `size-review-col-name-min` (194px no código, 208px no DS) foi corrigida na DS5 (versão 71): o DS passou a 194px.
 
 Falta no DS só os cinco alias de texto `t-text`, `t-text-small`, `t-text-heading`, `t-text-title` e `t-text-input`, por limite do formato (ver Pendências).
 
