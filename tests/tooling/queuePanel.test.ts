@@ -342,7 +342,7 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
     expect(leitura).toMatch(/outros workflows não contam/);
     expect(leitura).toMatch(/verde de um commit anterior não vale/);
     expect(leitura).toMatch(
-      /Sem `check` e `e2e` em `success` e sem falha, o CI ainda roda/,
+      /Sem `check` e `e2e` \(e `epic`, no PR de épico\) em `success` e sem falha, o CI ainda roda/,
     );
     expect(leitura).not.toMatch(/Ignore os check runs `skipped`/);
     expect(leitura).not.toMatch(/nenhum outro com/);
@@ -359,6 +359,7 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
     expect(item6).toMatch(/mescle o próprio PR no épico/);
     expect(item6).toMatch(/nunca deixado para o coordenador/);
     expect(item6).toMatch(/cada push[^\n]*recomeça a contagem/);
+    expect(item6).toMatch(/nunca rebase/);
     const item7 = between(fase, '\n7. ', '\n8. ');
     expect(item7).toMatch(/PR mesclado/);
     const correcao = section(flow, '## Fase de correção');
@@ -407,6 +408,7 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
     expect(espera).toMatch(/de 8 em 8/);
     expect(espera).toMatch(/push do coordenador/);
     expect(espera).toMatch(/deixou o merge/);
+    expect(espera).toMatch(/recomeça a cadeia/);
     expect(espera).toMatch(/Leitura do CI/);
     expect(reserva).toMatch(/`send_later` por PR que espera o coordenador/);
     expect(reserva).toMatch(/Nada de `send_later` por filha/);
