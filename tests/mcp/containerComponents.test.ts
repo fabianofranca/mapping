@@ -546,6 +546,44 @@ describe('create_marking com inside (filha no slot)', () => {
     expect(warning?.message).toMatch(/ficou dentro de/);
   });
 
+  it('coube no slot, mas o pai gravado é uma irmã (não a última): o aviso diz em quem ficou', async () => {
+    const first = await run([SCREEN, COLUMN]);
+    const col = marking(first, '$col').rect;
+    const seeded: LoadedProject = { ...loaded, project: first.project };
+    const colRef = `mapping://telas/m/${idOf(first, '$col')}`;
+    const container = marking(first, '$col').containerId!;
+    type Box = { x: number; y: number; width: number; height: number };
+    const plain = (as: string, rect: Box): Operation =>
+      ({ op: 'create_marking', as, container, rect }) as Operation;
+    const result = await run(
+      [
+        // `$a` cobre o slot a partir de y + 15; `$b` (a última filha) fica em cima, fora de `$a`.
+        plain('$a', { ...col, y: col.y + 15, height: col.height - 15 }),
+        plain('$b', { x: col.x, y: col.y, width: 40, height: 10 }),
+        { ...child('$c'), inside: colRef } as Operation,
+      ],
+      seeded,
+    );
+    expect(result.errors).toEqual([]);
+    expect(marking(result, '$c').parentId).toBe(idOf(result, '$a'));
+    const warning = result.deprecations.find((d) => d.index === 2);
+    expect(warning).toMatchObject({ code: 'ignored-argument', op: 'create_marking' });
+    expect(warning?.message).toMatch(/ficou dentro de/);
+  });
+
+  it('rect maior que o slot: o tamanho encolhe ao slot, com aviso', async () => {
+    const result = await run([
+      SCREEN,
+      COLUMN,
+      child('$b1', { rect: { x: 0, y: 0, width: 900, height: 40 } }),
+    ]);
+    expect(result.errors).toEqual([]);
+    expect(marking(result, '$b1').rect.width).toBe(marking(result, '$col').rect.width);
+    const warning = result.deprecations.find((d) => d.index === 2);
+    expect(warning).toMatchObject({ code: 'ignored-argument', op: 'create_marking' });
+    expect(warning?.message).toMatch(/900×40/);
+  });
+
   it('alvo que não desenha componente com slot: invalid-parent', async () => {
     const result = await run([
       SCREEN,

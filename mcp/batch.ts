@@ -2102,7 +2102,13 @@ class Batch {
           this.measurer,
         ),
       );
-      if (inside) this.noteInsideFit(notes, p, project, inside.id, markingId, rect);
+      if (inside) {
+        this.noteInsideFit(notes, p, project, inside.id, {
+          id: markingId,
+          rect,
+          asked: op.rect,
+        });
+      }
       if (annotation.name !== undefined) {
         project = renameAnnotation(project, newAnnotationId, annotation.name);
       }
@@ -2238,24 +2244,40 @@ class Batch {
     );
   }
 
-  /** Aviso de slot cheio: a filha não coube na área do slot (e, se o pai não é o alvo, em quem ficou). */
+  /**
+   * Avisos do `inside`: slot cheio (a filha não coube na área do slot), pai gravado que não é o
+   * alvo (em quem ficou, mesmo quando coube) e `rect` encolhido ao slot.
+   */
   private noteInsideFit(
     notes: string[],
     before: Project,
     after: Project,
     targetId: string,
-    markingId: string,
-    rect: Rect,
+    created: { id: string; rect: Rect; asked: Rect | undefined },
   ): void {
-    if (placementFitsSlot(before, this.catalog, targetId, rect, this.measurer)) return;
-    const parentId = after.markings.find((m) => m.id === markingId)?.parentId ?? null;
+    const target = this.markingLabel(after, targetId);
+    const { asked, rect } = created;
+    if (asked && (asked.width !== rect.width || asked.height !== rect.height)) {
+      notes.push(
+        `o tamanho do \`rect\` (${asked.width}×${asked.height}) não cabe no slot de ${target}: a marcação nasceu com ${rect.width}×${rect.height}`,
+      );
+    }
+    const parentId = projectIndex(after).markings.get(created.id)?.parentId ?? null;
     const where =
-      parentId !== null && parentId !== targetId
-        ? `; ficou dentro de ${this.markingLabel(after, parentId)}`
-        : '';
-    notes.push(
-      `a marcação não coube no slot de ${this.markingLabel(after, targetId)}: aumente o componente ou use Arrumar na app${where}`,
-    );
+      parentId === targetId
+        ? ''
+        : parentId === null
+          ? '; ficou fora dele'
+          : `; ficou dentro de ${this.markingLabel(after, parentId)}`;
+    if (!placementFitsSlot(before, this.catalog, targetId, rect, this.measurer)) {
+      notes.push(
+        `a marcação não coube no slot de ${target}: aumente o componente ou use Arrumar na app${where}`,
+      );
+    } else if (where !== '') {
+      notes.push(
+        `a marcação nasceu no slot de ${target}, mas o pai gravado não é ele${where}`,
+      );
+    }
   }
 
   /** Anotação tipada nova: camada do tipo (ou a informada), dona e valores campo a campo. */
