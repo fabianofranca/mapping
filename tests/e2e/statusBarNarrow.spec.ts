@@ -250,6 +250,49 @@ test.describe('revisão a 900×720 com as quatro janelas abertas (BS2)', () => {
 test.describe('a 1440×900', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
+  test('revisão com as quatro janelas: o último trecho encolhe por último (PV2)', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await page
+      .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
+      .setInputFiles({
+        name: 'loja.zip',
+        mimeType: 'application/zip',
+        buffer: await fixtureZip(),
+      });
+    await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+    for (const key of ['1', '2', '3', '7'])
+      await page.keyboard.press(`Control+Shift+${key}`);
+    await page
+      .getByRole('button', { name: /^Revisar/ })
+      .first()
+      .click();
+    await expect(page.locator('.review-canvas-controls')).toBeVisible();
+    await page
+      .getByRole('button', { name: /^Atual$/ })
+      .first()
+      .click();
+    await page
+      .getByRole('button', { name: 'Banner promoção', exact: true })
+      .first()
+      .click();
+    const m = await page.locator('.crumbs').evaluate((crumbs) => {
+      const items = [...crumbs.querySelectorAll<HTMLElement>('.crumb-item')];
+      const last = items.at(-1)!;
+      const name = last.querySelector<HTMLElement>('.crumb-name')!;
+      return {
+        items: items.length,
+        lastWhole: name.scrollWidth <= name.clientWidth,
+        othersAtMost32: items
+          .slice(0, -1)
+          .every((i) => i.getBoundingClientRect().width <= 32.5),
+      };
+    });
+    expect(m.items, JSON.stringify(m)).toBeGreaterThanOrEqual(2);
+    expect(m.lastWhole || m.othersAtMost32, JSON.stringify(m)).toBe(true);
+  });
+
   test('schema e canal aparecem', async ({ page }) => {
     await createProject(page, 'Barra');
     const bar = page.locator('.statusbar');

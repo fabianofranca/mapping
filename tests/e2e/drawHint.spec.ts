@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+import { addImage, canvasPoint, createProject, drag, setMode } from './helpers';
 
 // Dica do modo Desenhar na barra do canvas (etapa #810, AD1): ela não flutua mais sobre a
 // imagem; ocupa o lugar de "Nada selecionado" e, a 900 px, encolhe com reticências e `title`.
@@ -64,5 +65,57 @@ for (const size of [
     });
     expect(overflow).toEqual({ scroll: true, inside: true });
     await expect(page.locator('.canvas-bar .zoom-field')).toBeVisible();
+  });
+}
+
+// Aviso curto no pé do canvas (PV2, decisão 7): "Cada lado precisa ter pelo menos 8 px."
+// fica à esquerda, da largura do texto, sem passar sob o minimapa nem cobrir o topo da imagem.
+for (const size of [
+  { width: 1280, height: 720 },
+  { width: 900, height: 720 },
+]) {
+  test(`aviso de 8 px no pé do canvas a ${size.width}×${size.height}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(size);
+    await createProject(page, 'Aviso');
+    await addImage(page);
+    // Zoom acima de 100%: 7 px de tela são menos que os 8 px da imagem.
+    for (let i = 0; i < 2; i++) await page.keyboard.press('Control+Equal');
+    const start = await canvasPoint(page, 1 / 2);
+    await setMode(page, 'Desenhar');
+    await page.mouse.click(start.x, start.y);
+    await drag(page, start, { x: start.x + 7, y: start.y + 7 });
+    const box = (await page
+      .getByRole('main', { name: 'Canvas do projeto' })
+      .boundingBox())!;
+
+    const notice = page.locator('.canvas-overlay-foot .notice', {
+      hasText: 'Cada lado precisa ter pelo menos 8 px.',
+    });
+    await expect(notice).toBeVisible();
+    await expect(page.locator('.canvas-overlay .notice')).toHaveCount(0);
+    const m = await notice.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      const main = el.closest('main, [role=main]') ?? document.body;
+      const c = main.getBoundingClientRect();
+      const mini = document.querySelector('.minimap')?.getBoundingClientRect();
+      return {
+        left: r.left - c.left,
+        width: r.width,
+        canvasWidth: c.width,
+        bottomGap: c.bottom - r.bottom,
+        top: r.top - c.top,
+        miniLeft: mini ? mini.left - c.left : null,
+        right: r.right - c.left,
+      };
+    });
+    expect(m.left, JSON.stringify(m)).toBeLessThan(24);
+    expect(m.width, JSON.stringify(m)).toBeLessThan(m.canvasWidth * 0.8);
+    expect(m.bottomGap, JSON.stringify(m)).toBeLessThan(m.top);
+    if (m.miniLeft !== null)
+      expect(m.right, JSON.stringify(m)).toBeLessThanOrEqual(m.miniLeft);
+    // Abaixo do topo da imagem enquadrada: o aviso não cobre a metade de cima do canvas.
+    expect(m.top, JSON.stringify(m)).toBeGreaterThan(box.height / 2);
   });
 }
