@@ -584,7 +584,8 @@ if step == 'v5':  # o pacote anterior: o slider com valor em décimos (enum), se
     for f in slider['fields']:
         if f['key'] in ('value', 'valueStart', 'valueEnd'):
             f['type'], f['options'], f['default'] = 'enum', tenths, str(f['default'])
-    for e in slider.get('examples', []):
+    slider['examples'] = [e for e in slider.get('examples', []) if all(str(e['values'][k]) in tenths for k in ('value', 'valueStart', 'valueEnd') if k in e['values'])]
+    for e in slider['examples']:
         e['values'] = {k: (str(v) if k in ('value', 'valueStart', 'valueEnd') else v) for k, v in e['values'].items()}
 elif step == 'v7':  # aditiva: campo opcional novo
     s['version'] = 7

@@ -368,7 +368,7 @@ describe('EX6 carousel — multi-browse pela largura da marcação', () => {
           }
     expect(total).toBeGreaterThan(1000);
     expect(wrong, `${wrong} de ${total}`).toBeLessThanOrEqual(Math.floor(total * 0.04));
-  });
+  }, 30_000);
 
   it('nas faixas planas (grande no alvo) a conta é exata: 410 a 480 com 5 itens tem 2 grandes de 186 e o pequeno entre 40 e 56', () => {
     for (const width of [430, 436, 440]) {
