@@ -1,4 +1,4 @@
-# Foco, Esc e vista — [Não lançado] (épico `epic/foco-esc-e-vista`, PR #0, MCP sem mudança, schema v18)
+# Foco, Esc e vista — [Não lançado] (épico `epic/foco-esc-e-vista`, PR #1483, MCP sem mudança, schema v18)
 
 ## Corrigido
 
