@@ -68,10 +68,11 @@ describe('distBudget.mjs raise (CR1)', () => {
     );
   });
 
-  it('excesso exatamente 16.384 sobe; 16.385 chama o dono', () => {
-    expect(raise({ size: CEILING + KIB16, main: CEILING })).toMatch(/^sobe:/);
-    expect(raise({ size: CEILING + KIB16 + 1, main: CEILING })).toMatch(
-      /^chama o dono: .*excesso/,
+  it('excesso 14.336 sobe (margem 2.048); 14.337 chama o dono, com 14 KiB no motivo (RS1, decisão 10)', () => {
+    const max = KIB16 - 2048;
+    expect(raise({ size: CEILING + max, main: CEILING })).toMatch(/^sobe:/);
+    expect(raise({ size: CEILING + max + 1, main: CEILING })).toMatch(
+      /^chama o dono: .*excesso.*14 KiB \(14336 bytes\).*2 KiB/,
     );
   });
 

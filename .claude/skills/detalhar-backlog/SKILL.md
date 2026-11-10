@@ -49,6 +49,8 @@ Quanto às **fases** da tabela de modelos e esforço (decisão 11 da #1324): a f
 - a versão do schema ou do formato (`formatVersion`);
 - a gravação do `mapping.json` (`src/store/session.ts`) ou a CSP (`pwa/csp.ts`).
 
+No fechamento do épico, `scripts/ci/riskTriggers.mjs` confere os mesmos gatilhos no diff; quem muda esta lista muda o script no mesmo PR.
+
 A linha da fase diz qual gatilho a fez high (por exemplo, "Sonnet high, com `/code-review high` (gatilho: skill implementar-fila)"). Quem acrescenta uma decisão a uma etapa em andamento **reclassifica** o esforço das fases que ainda não terminaram; se uma passar a high, a fase é avisada de que a `/code-review high` passa a valer.
 
 O resto roda em `effort: medium`. Na dúvida, recomende high (`docs/PROCESS.md`: na dúvida, vale o maior), com o motivo. O argumento `alto=` soma unidades ou desliga a regra.
