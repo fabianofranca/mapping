@@ -58,6 +58,7 @@ import type {
   LayoutJustify,
   ImageTemplate,
   PathTemplate,
+  ShadowSpec,
   SizeSpec,
   StrokeSide,
   StrokeSpec,
@@ -88,6 +89,7 @@ import {
   parseSizeSpec,
 } from './layoutValues';
 import { expandRepeats } from './repeat';
+import { applyGaps } from './strokeGaps';
 import { WRAP_SLACK } from './textWrap';
 import {
   applyTokens,
@@ -1205,13 +1207,13 @@ function createEngine(
     return sides.length > 0 ? sides : undefined;
   };
 
-  const effectsOf = (node: TemplateNode, scale: number): Shadow[] => {
-    const shadow = node.shadow;
-    if (!shadow) return [];
+  /** Uma sombra da lista (ou a única): cor `none` não dá sombra; `spread` só entra quando não é 0. */
+  const shadowOf = (shadow: ShadowSpec, scale: number): Shadow[] => {
     const color = str(shadow.color, 'none');
     if (isNone(color)) return [];
     const blur = num(shadow.blur as Expr<number> | undefined, 0);
     if (blur < 0) invalidValue('shadow.blur', blur);
+    const spread = num(shadow.spread as Expr<number> | undefined, 0) / scale;
     return [
       {
         color,
@@ -1220,9 +1222,61 @@ function createEngine(
           y: num(shadow.y as Expr<number> | undefined, 0) / scale,
         },
         blur: Math.max(0, blur) / scale,
+        ...(spread !== 0 ? { spread } : {}),
       },
     ];
   };
+
+  /** As sombras do nó, na ordem da lista (a primeira fica por cima). */
+  const effectsOf = (node: TemplateNode, scale: number): Shadow[] => {
+    const shadow = node.shadow;
+    if (!shadow) return [];
+    const list: readonly ShadowSpec[] = Array.isArray(shadow)
+      ? (shadow as readonly ShadowSpec[])
+      : [shadow as ShadowSpec];
+    return list.flatMap((spec) => shadowOf(spec, scale));
+  };
+
+  // --- vão no contorno (`stroke.gap`) --------------------------------------------------------
+
+  /** Os nós que abrem vão e os nós montados por nó do template: o vão se resolve no fim. */
+  const gapNeeds: { id: string; name: string; padding: number }[] = [];
+  const builtIds = new Map<TemplateNode, string>();
+
+  const registerGap = (
+    node: TemplateNode,
+    id: string,
+    stroke: Stroke | undefined,
+  ): void => {
+    const gap =
+      node.type === 'frame' || node.type === 'rect' ? node.stroke?.gap : undefined;
+    if (gap && stroke)
+      gapNeeds.push({ id, name: gap.node, padding: num(gap.padding, 0) });
+  };
+
+  /** O primeiro nó do template com esse nome (a ordem do template, em profundidade). */
+  const firstNamed = (node: TemplateNode, name: string): TemplateNode | undefined => {
+    if (nodeName(node) === name) return node;
+    if (node.type !== 'frame') return undefined;
+    for (const child of node.children ?? []) {
+      const found = firstNamed(child, name);
+      if (found) return found;
+    }
+    return undefined;
+  };
+
+  const withGaps = (root: FrameNode): FrameNode =>
+    applyGaps(
+      root,
+      gapNeeds.map((need) => {
+        const target = firstNamed(component.template, need.name);
+        return {
+          id: need.id,
+          target: target && builtIds.get(target),
+          padding: need.padding,
+        };
+      }),
+    );
 
   const radiusOf = (node: TemplateNode): CornerRadius => {
     const value = ev<unknown>(node.cornerRadius as Expr<unknown> | undefined, 0);
@@ -1271,6 +1325,8 @@ function createEngine(
   ): FrameNode => {
     const plan = planFrame(frame, w, h);
     const stroke = strokeOf(frame.stroke, 'inside', 1);
+    builtIds.set(frame, `${prefix}/${path}`);
+    registerGap(frame, `${prefix}/${path}`, stroke);
     const children = plan.placements.map((p) =>
       buildNode(p.kid.node, `${path}.${p.kid.index}`, p.x, p.y, p.w, p.h),
     );
@@ -1548,6 +1604,7 @@ function createEngine(
     h: number,
   ): SceneNode => {
     const id = `${prefix}/${path}`;
+    builtIds.set(node, id);
     switch (node.type) {
       case 'frame':
         return buildFrame(node, path, x, y, w, h, false);
@@ -1568,6 +1625,7 @@ function createEngine(
       }
       case 'rect': {
         const stroke = strokeOf(node.stroke, 'inside', 1);
+        registerGap(node, id, stroke);
         return {
           ...common(node, id, x, y, w, h),
           ...(stroke ? { stroke } : {}),
@@ -1592,7 +1650,9 @@ function createEngine(
   };
 
   const buildRoot = (box: Box): FrameNode =>
-    buildFrame(component.template, 'root', box.x, box.y, box.width, box.height, true);
+    withGaps(
+      buildFrame(component.template, 'root', box.x, box.y, box.width, box.height, true),
+    );
 
   return {
     warnings,

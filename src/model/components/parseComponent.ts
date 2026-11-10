@@ -110,6 +110,9 @@ const DIRECT_CONDITION_OPS: readonly string[] = [
 const ID_PATTERN = /^[a-z0-9][a-z0-9_-]*$/;
 const PERCENT_PATTERN = /^\d+(\.\d+)?%$/;
 
+/** Máximo de sombras por nó (`shadow` como lista, v4). */
+const MAX_SHADOWS = 4;
+
 /** Chaves de estilo que o `repeat` não tem: o desenho é do `template` de cada linha. */
 const REPEAT_REJECTED_KEYS = ['fill', 'stroke', 'shadow', 'cornerRadius'];
 
@@ -580,7 +583,7 @@ function checkStroke(value: unknown, path: string, out: Ctx, nodeType?: string):
   if (!isRecord(value)) return add(out, path, 'esperava objeto');
   checkKeys(
     value,
-    ['color', 'width', 'align', 'dash', 'cap', 'join', 'sides', 'scale', 'offset'],
+    ['color', 'width', 'align', 'dash', 'cap', 'join', 'sides', 'scale', 'offset', 'gap'],
     path,
     out,
   );
@@ -592,17 +595,48 @@ function checkStroke(value: unknown, path: string, out: Ctx, nodeType?: string):
     oneOf(['inside', 'center', 'outside'])(value.align, join(path, 'align'), out);
   if ('dash' in value) checkExpr(value.dash, join(path, 'dash'), checkDash, out);
   checkStrokeV4(value, path, nodeType, out);
+  if ('gap' in value) checkGap(value, join(path, 'gap'), nodeType, out);
 }
 
-function checkShadow(value: unknown, path: string, out: Ctx): void {
+/** `stroke.gap`: `{ node, padding? }`, só em `frame` e `rect` e nunca junto com `sides`. */
+function checkGap(
+  stroke: Rec,
+  path: string,
+  nodeType: string | undefined,
+  out: Ctx,
+): void {
+  const value = stroke.gap;
+  if (nodeType !== undefined && nodeType !== 'frame' && nodeType !== 'rect')
+    return add(out, path, `só vale em frame e rect (este é ${nodeType})`);
   if (!isRecord(value)) return add(out, path, 'esperava objeto');
-  checkKeys(value, ['color', 'x', 'y', 'blur'], path, out);
+  checkKeys(value, ['node', 'padding'], path, out);
+  if ('sides' in stroke) add(out, path, 'gap não vale com sides');
+  if (!('node' in value)) add(out, join(path, 'node'), 'campo obrigatório');
+  else checkString(value.node, join(path, 'node'), out);
+  if ('padding' in value)
+    checkExpr(value.padding, join(path, 'padding'), checkNumber, out);
+}
+
+/** Uma sombra (objeto): `color`, `x`, `y`, `blur` e `spread`. */
+function checkShadowItem(value: unknown, path: string, out: Ctx): void {
+  if (!isRecord(value)) return add(out, path, 'esperava objeto');
+  checkKeys(value, ['color', 'x', 'y', 'blur', 'spread'], path, out);
   if (!('color' in value)) add(out, join(path, 'color'), 'campo obrigatório');
   else checkExpr(value.color, join(path, 'color'), checkColor, out);
   if ('x' in value) checkLiteralOrToken(value.x, join(path, 'x'), checkNumber, out);
   if ('y' in value) checkLiteralOrToken(value.y, join(path, 'y'), checkNumber, out);
   if ('blur' in value)
     checkLiteralOrToken(value.blur, join(path, 'blur'), checkNonNegative, out);
+  if ('spread' in value)
+    checkLiteralOrToken(value.spread, join(path, 'spread'), checkNumber, out);
+}
+
+/** `shadow`: uma sombra ou, na v4, uma lista de 1 a 4 (a versão é conferida à parte). */
+function checkShadow(value: unknown, path: string, out: Ctx): void {
+  if (!Array.isArray(value)) return checkShadowItem(value, path, out);
+  if (value.length < 1 || value.length > MAX_SHADOWS)
+    return add(out, path, `esperava de 1 a ${MAX_SHADOWS} sombras`);
+  value.forEach((item: unknown, i) => checkShadowItem(item, `${path}[${i}]`, out));
 }
 
 /** `font.maxLines`: inteiro maior ou igual a 1. */
@@ -955,6 +989,8 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
   ['stroke', 'sides'],
   ['stroke', 'scale'],
   ['stroke', 'offset'],
+  ['stroke', 'gap'],
+  ['shadow', 'spread'],
   ['layout', 'reverse'],
   ['minWidth'],
   ['maxWidth'],
@@ -993,6 +1029,55 @@ const V4_LITERAL_VALUES: readonly (readonly [readonly string[], string])[] = [
   [['layout', 'justify'], 'space-around'],
   [['layout', 'justify'], 'space-evenly'],
 ];
+
+/** `shadow` como lista (v4) numa versão anterior à 4: `só é permitido com formatVersion 4`, no caminho de `shadow`. */
+function shadowListVersionIssues(version: unknown, template: unknown): ComponentIssue[] {
+  const out: ComponentIssue[] = [];
+  if (typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY)
+    return out;
+  const walk = (node: unknown, at: string): void => {
+    if (!isRecord(node)) return;
+    if (Array.isArray(node.shadow)) addIssue(out, join(at, 'shadow'), V4_ONLY_MESSAGE);
+    if (Array.isArray(node.children))
+      node.children.forEach((c: unknown, i) => walk(c, `${join(at, 'children')}[${i}]`));
+    if (node.type === 'repeat') walk(node.template, join(at, 'template'));
+  };
+  walk(template, 'template');
+  return out;
+}
+
+/** O nome que o desenho dá ao nó (`name`, ou o tipo; num ícone, o nome do ícone literal). */
+function templateNodeName(node: Rec): string | undefined {
+  const type = typeof node.type === 'string' ? node.type : undefined;
+  if (type === 'icon') return typeof node.name === 'string' ? node.name : 'icon';
+  if (typeof node.name === 'string') return node.name;
+  return type;
+}
+
+/** Os nomes dos nós do template (pelos `children` e pelo `template` dos `repeat`). */
+function templateNames(node: unknown, names: Set<string> = new Set()): Set<string> {
+  if (!isRecord(node)) return names;
+  const own = templateNodeName(node);
+  if (own !== undefined) names.add(own);
+  if (Array.isArray(node.children)) node.children.forEach((c) => templateNames(c, names));
+  if (node.type === 'repeat') templateNames(node.template, names);
+  return names;
+}
+
+/** `stroke.gap.node` precisa citar o nome de um nó do template: `nó não encontrado: <nome>`. */
+function checkGapNodes(template: unknown, out: Ctx): void {
+  const names = templateNames(template);
+  const walk = (node: unknown, at: string): void => {
+    if (!isRecord(node)) return;
+    const gap = isRecord(node.stroke) ? node.stroke.gap : undefined;
+    if (isRecord(gap) && typeof gap.node === 'string' && !names.has(gap.node))
+      add(out, join(at, 'stroke.gap.node'), `nó não encontrado: ${gap.node}`);
+    if (Array.isArray(node.children))
+      node.children.forEach((c: unknown, i) => walk(c, `${join(at, 'children')}[${i}]`));
+    if (node.type === 'repeat') walk(node.template, join(at, 'template'));
+  };
+  walk(template, 'template');
+}
 
 /** `$token` em qualquer ponto do template, numa versão anterior à 4: `só é permitido com formatVersion 4`. */
 function tokenVersionIssues(version: unknown, template: unknown): ComponentIssue[] {
@@ -1277,6 +1362,7 @@ function collectIssues(input: unknown, refs: TokenRef[] | null): ComponentIssue[
     )
       add(out, 'template.rotation', 'não vale na raiz');
     checkNode(input.template, 'template', out);
+    checkGapNodes(input.template, out);
     if (version === 1) {
       for (const node of nodesOfTypes(input.template, 'template', ['repeat'])) {
         add(out, node.path, 'o nó repeat só existe na formatVersion 2');
@@ -1292,6 +1378,7 @@ function collectIssues(input: unknown, refs: TokenRef[] | null): ComponentIssue[
         V4_LITERAL_VALUES,
       ),
     );
+    issues.push(...shadowListVersionIssues(version, input.template));
     issues.push(...tokenVersionIssues(version, input.template));
     issues.push(...numericVersionIssues(version, input.template));
     issues.push(...indexIssues(version, input.template));

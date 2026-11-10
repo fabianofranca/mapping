@@ -513,6 +513,7 @@ describe('scripts/testing/ listado no repositório', () => {
         'rot.mjs',
         'round-guide.d.mts',
         'round-guide.mjs',
+        'sombras.mjs',
       ].sort(),
     );
   });
