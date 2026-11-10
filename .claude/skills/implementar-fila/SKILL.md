@@ -42,6 +42,7 @@ O dono definiu estas regras ao rodar a fila no chat "Madrugadão" (2026-11-08), 
    - Número trocado: um comentário na issue da etapa diz o antigo e o novo (no subagente do fechamento, passo 5 de "Por etapa").
    - Versão sem troca no fechamento: a rc gerada com a provisória vale, e o `mcp-release.yml` apaga as rc da versão que publica.
    - Versão trocada no fechamento: o `mcp-release.yml` só apaga rc do número que publica, então a rc do número antigo (`mcp-v<antiga>-rc.<n>`) fica solta e o número novo não tem rc. Rode o workflow MCP pre-release no `epic/<nome>` depois da troca (`actions_run_trigger`) e cite a rc do número antigo no comentário da troca, para o dono apagá-la.
+   - **Versão do schema** (mesma ideia): ao criar o épico de uma etapa que sobe o schema, leia a versão do schema na `origin/main` e use a próxima. Se o número escrito na issue for outro, comente na issue e passe o número certo na mensagem da primeira fase.
    - Se dois épicos fecham perto, o segundo traz a `main` e sobe a versão: por isso a conferência antes do merge (seção "Merge") também lê o `SERVER_VERSION` da `origin/main`.
 
 ## Economia de contexto
@@ -312,7 +313,7 @@ Grave no `painel.py` **a cada avanço** (fase aberta e mesclada, PR, testador, c
 
 **Skill novo na `main`.** Entre etapas e em cada conferência de reserva, rode `git fetch -q origin main && git diff --quiet HEAD origin/main -- .claude/skills/implementar-fila/SKILL.md`. Saída diferente de zero quer dizer que o `SKILL.md` mudou: faça `git pull -q --ff-only origin main` e meça a mudança com `git diff --numstat <HEAD de antes> HEAD -- .claude/skills/implementar-fila/SKILL.md`.
 
-- **Grande** (mais de 30 linhas mudadas, ou qualquer mudança nas seções de regra: "Regras desta fila", "Economia de contexto", "Por etapa", "Merge", "Paralelo", "Fim"): troque de sessão, depois de conferir a linhagem ("Limite de linhagem", antes dessa troca). Sem espaço na linhagem, vale o caminho do dono daquela seção.
+- **Grande** (mais de 60 linhas mudadas, ou mudança em "Regras desta fila"): troque de sessão, depois de conferir a linhagem ("Limite de linhagem", antes dessa troca). Sem espaço na linhagem, vale o caminho do dono daquela seção.
 - **Pequena:** releia o `SKILL.md` inteiro, nunca só o diff, na própria sessão, e grave no `log` do painel a prova: "skill <commit>: <regra> → <o que faço agora>".
   O `painel.py` novo vale a partir do próximo comando. Uma mudança só em `painel/` não dispara nada: a página nova do painel é publicada por quem a mudou.
 

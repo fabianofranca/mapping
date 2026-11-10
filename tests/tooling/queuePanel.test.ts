@@ -362,6 +362,18 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
     expect(fechamento).toMatch(/mesmo que as fases tenham sido medium/);
   });
 
+  it('versão do schema escolhida ao criar o épico, como a do MCP (decisão do dono de 2026-11-10)', () => {
+    const regra = skill.slice(
+      skill.indexOf('3. **Uma versão do MCP por épico'),
+      skill.indexOf('3. **Uma versão do MCP por épico') + 6000,
+    );
+    expect(regra).toMatch(/Versão do schema/);
+    expect(regra).toMatch(/origin\/main/);
+    expect(regra).toMatch(/próxima/);
+    expect(regra).toMatch(/comente na issue/);
+    expect(regra).toMatch(/mensagem da primeira fase/);
+  });
+
   it('PROCESS.md: a linha do ci-rerun.yml na regra da main (decisão 10)', () => {
     const item = process
       .split('\n')
