@@ -22,5 +22,5 @@ Gravado no artefato **Mapping** em 2026-11-06, no fechamento do épico (versão 
 
 ## Ficou sem gravar
 
-- Conferência das prévias no visualizador real do artefato: foram conferidas em Chrome headless local, nos temas claro e escuro, e as alturas dos cartões novos (`ReviewRow` 1440 e `Minimap` 1340) podem pedir ajuste no visualizador.
-- O contraste não foi recalculado: só entraram tokens e pares que o `Contraste.md` já cobre, sem cor nova.
+- Passou para o registro do épico `epic/sincronia-ds-2`: a conferência das alturas dos cartões novos de `ReviewRow` (1440) e `Minimap` (1340) no visualizador real.
+- Passou para o registro do épico `epic/sincronia-ds-2`: a conferência de contraste dos cartões novos (a legenda ancorada e o painel de filtros usam só pares já cobertos em `Contraste.md`).

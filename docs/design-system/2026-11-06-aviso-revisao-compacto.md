@@ -16,5 +16,5 @@ Gravado no artefato **Mapping** em 2026-11-06, no fechamento do épico (versão 
 
 ## Ficou sem gravar
 
-- A prévia do `ReviewRow` não ganhou um cartão com o aviso em linha (só o guia e o `Notice`); o aviso em linha aparece no cartão do `Notice`.
-- As prévias não foram conferidas no visualizador real do artefato, nem o contraste recalculado (sem cor nova).
+- Passou para o registro do épico `epic/sincronia-ds-2`: o cartão do aviso em linha (conflitos novos e proposta substituída, 240 px de janela) na prévia do `ReviewRow`.
+- Passou para o registro do épico `epic/sincronia-ds-2`: a conferência visual dos cartões de linha do `Notice` nos temas claro e escuro (sem cor nova), com o tom do cartão de conflitos novos corrigido (a app usa `warning`).

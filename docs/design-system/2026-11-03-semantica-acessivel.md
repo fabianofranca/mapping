@@ -8,5 +8,5 @@ Versões 21 (conteúdo) e 22 (índice) do artefato. **`Menu`:** o guia e o previ
 
 O fechamento do épico gravou no artefato o que dava (ver o histórico). Ficou sem gravar:
 
-- **`Segmented`, CSS e preview.** O guia já descreve o grupo dos Detalhes (quebra de linha, borda própria por opção), mas o `project/components/bundle.css` do artefato só tem `.props-value > .segmented { align-self: flex-start; }`. Faltam as regras de `src/theme/details.css` (`flex-wrap`, `gap`, `border: 0`, `overflow: visible`, borda por `.segmented-item`, `.segmented-invalid .segmented-item`, `.segmented-text { white-space: nowrap }`) e um exemplo do `Segmented` dentro de `.props-value` em coluna estreita no preview. Conferir o contraste nos dois temas ao gravar.
-- **Paleta da biblioteca.** O botão de adicionar do tipo tem nome acessível `{label}: {name}` (`library.addType`, `src/ui/LibraryPalette.tsx`), mas o artefato não tem guia da paleta (`LibraryPalette`/`Library`; só `LibraryIssueList`). Criar o guia é decisão do dono, como em "Com forma visível e sem componente no DS".
+- Passou para o registro do épico `epic/sincronia-ds-2`: `Segmented`, CSS e preview: regras de `.props-value > .segmented` (quebra de linha, borda por opção, `.segmented-text`) no `bundle.css` e um exemplo em coluna estreita no preview.
+- Passou para o registro do épico `epic/sincronia-ds-2`: Paleta da biblioteca (`LibraryPalette`): guia sem componente no DS; já está em "Com forma visível e sem componente no DS", decisão do dono.
