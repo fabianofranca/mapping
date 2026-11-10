@@ -482,6 +482,9 @@ function checkExpr(value: unknown, path: string, check: Check, out: Ctx): void {
     case '$token':
       return checkTokenExpr(value, path, check, out);
     case '$provided':
+      // Só desenho: o que muda a geometria (tamanho, espaço, texto) não herda.
+      if (check.tokenKind !== 'color')
+        return add(out, path, '$provided só vale onde se espera cor');
       checkKeys(value, ['$provided', 'default'], path, out);
       if (typeof value.$provided !== 'string' || value.$provided.trim() === '')
         add(out, at, 'esperava nome da cor oferecida (texto não vazio)');

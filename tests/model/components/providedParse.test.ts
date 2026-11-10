@@ -60,11 +60,21 @@ describe('$provided na filha (decisão 8)', () => {
   it('vale onde vale uma Expr, com default (que também é Expr)', () => {
     const read = { $provided: 'content-color', default: { $token: 'on-surface' } };
     expect(validateComponent(withChild(text(read)))).toEqual([]);
+    expect(validateComponent(withChild({ type: 'rect', fill: read }))).toEqual([]);
+  });
+
+  it('só vale em posição de cor: o que muda a geometria não herda', () => {
+    const msg = '$provided só vale onde se espera cor';
     expect(
       validateComponent(
-        withChild({ type: 'rect', fill: read, opacity: { $provided: 'o', default: 1 } }),
+        withChild({ type: 'rect', width: { $provided: 'w', default: 10 } }),
       ),
-    ).toEqual([]);
+    ).toEqual([`template.children[0].width: ${msg}`]);
+    expect(
+      validateComponent(
+        withChild({ type: 'text', text: { $provided: 't', default: 'x' } }),
+      ),
+    ).toEqual([`template.children[0].text: ${msg}`]);
   });
 
   it('sem nome (ou vazio) é erro', () => {

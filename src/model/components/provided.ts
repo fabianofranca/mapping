@@ -22,6 +22,11 @@ function walk(node: unknown, visit: (record: Record<string, unknown>) => void): 
   for (const value of Object.values(record)) walk(value, visit);
 }
 
+/** Um objeto que é a expressão `$provided` (só `$provided` e `default`), não um `provide` com esse nome. */
+function isReadExpr(record: Record<string, unknown>): boolean {
+  return Object.keys(record).every((key) => key === '$provided' || key === 'default');
+}
+
 const readsCache = new WeakMap<ComponentFile, readonly string[]>();
 
 /** Os nomes que o template lê com `$provided`, sem repetição e em ordem; memoizado por componente. */
@@ -30,7 +35,8 @@ export function providedReads(component: ComponentFile): readonly string[] {
   if (hit !== undefined) return hit;
   const names = new Set<string>();
   walk(component.template, (record) => {
-    if (typeof record.$provided === 'string') names.add(record.$provided);
+    if (typeof record.$provided === 'string' && isReadExpr(record))
+      names.add(record.$provided);
   });
   const result = names.size === 0 ? NO_NAMES : [...names].sort();
   readsCache.set(component, result);
@@ -39,6 +45,15 @@ export function providedReads(component: ComponentFile): readonly string[] {
 
 /** O primeiro `slot` do template com `provide` (o mesmo slot que `findSlot` acha), ou nenhum. */
 export function providingSlot(component: ComponentFile): SlotTemplate | undefined {
+  if (slotCache.has(component)) return slotCache.get(component);
+  const found = searchProvidingSlot(component);
+  slotCache.set(component, found);
+  return found;
+}
+
+const slotCache = new WeakMap<ComponentFile, SlotTemplate | undefined>();
+
+function searchProvidingSlot(component: ComponentFile): SlotTemplate | undefined {
   const search = (node: unknown): SlotTemplate | undefined => {
     if (typeof node !== 'object' || node === null) return undefined;
     const record = node as { type?: unknown; children?: unknown };
@@ -65,7 +80,7 @@ export function pickProvided(
   if (names.length === 0) return NO_PROVIDED;
   const picked: Record<string, string | number> = {};
   for (const name of names) {
-    const value = scope[name];
+    const value = Object.hasOwn(scope, name) ? scope[name] : undefined;
     if (value !== undefined) picked[name] = value;
   }
   return Object.keys(picked).length === 0 ? NO_PROVIDED : picked;
@@ -77,7 +92,7 @@ export function sameProvided(a: ProvidedValues, b: ProvidedValues): boolean {
   const keys = Object.keys(a);
   return (
     keys.length === Object.keys(b).length &&
-    keys.every((key) => key in b && Object.is(a[key], b[key]))
+    keys.every((key) => Object.hasOwn(b, key) && Object.is(a[key], b[key]))
   );
 }
 

@@ -10,6 +10,7 @@ import {
   approximateMeasurer,
   instantiate,
 } from '../../../src/model/components/instantiate';
+import { pickProvided } from '../../../src/model/components/provided';
 import type { SceneNode } from '../../../src/model/components/scene';
 
 const box = { x: 0, y: 0, width: 200, height: 60 };
@@ -55,6 +56,25 @@ describe('evaluate: $provided', () => {
   });
   it('não conta como campo do tipo', () => {
     expect([...referencedFields({ color: expr })]).toEqual([]);
+  });
+});
+
+describe('nomes que são membros de Object.prototype', () => {
+  it('sem ancestral que ofereça vale o default', () => {
+    const comp = component({
+      type: 'frame',
+      children: [
+        {
+          type: 'text',
+          name: 't',
+          text: 'x',
+          color: { $provided: 'constructor', default: '#010203' },
+        },
+      ],
+    });
+    expect(pickProvided({}, comp)).toEqual({});
+    const { root } = instantiate(comp, {}, box, { measure: approximateMeasurer });
+    expect(find(root, 't')).toMatchObject({ fills: [{ color: '#010203' }] });
   });
 });
 

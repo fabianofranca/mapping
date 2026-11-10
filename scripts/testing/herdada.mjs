@@ -27,7 +27,9 @@ for (const layer of spec.layers)
         description:
           'Cor (#RRGGBB) que o Card oferece ao conteúdo dele (content-color); vazia, vale o azul #1976D2.',
       });
-      type.examples = type.examples.filter((e) => e.values?.interaction === undefined);
+      type.examples = (type.examples ?? []).filter(
+        (e) => e.values?.interaction === undefined,
+      );
     }
 fs.writeFileSync(specFile, JSON.stringify(spec, null, 2));
 
