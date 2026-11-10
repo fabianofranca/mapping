@@ -283,13 +283,26 @@ describe('M5 grupo B — pull-to-refresh', () => {
       }
       expect(arrow.stroke).toMatchObject({ join: 'miter' });
       // progress = 1: adjustedPercent 1, endTrim 0,8, rotation 0,075 volta: start 27°, end 315° (288° de varredura)
+      // (EX6: o `d` é o arco canônico, do 3 horas, e a `rotation` do nó o leva a 27°)
       const n = numbers(ring.d);
-      close([n[0]!, n[1]!], at(27, 12));
+      const turned = (x: number, y: number, node: PathNode) => {
+        const a = ((node.rotation ?? 0) * Math.PI) / 180;
+        return [
+          12 + (x - 12) * Math.cos(a) - (y - 12) * Math.sin(a),
+          12 + (x - 12) * Math.sin(a) + (y - 12) * Math.cos(a),
+        ];
+      };
+      close(turned(n[0]!, n[1]!, ring), at(27, 12));
       expect([n[2], n[3], n[5], n[6]]).toEqual([R, R, 1, 1]);
-      close([n[7]!, n[8]!], at(315, 12));
+      close(turned(n[7]!, n[8]!, ring), at(315, 12));
       // seta: (0,0) (5,5) (10,0) levada ao fim do arco e girada em endAngle - strokeWidth (312,5°) em torno do centro
-      const pts = numbers(arrow.d);
-      expect(pts).toHaveLength(6);
+      const raw = numbers(arrow.d);
+      expect(raw).toHaveLength(6);
+      const pts = [
+        ...turned(raw[0]!, raw[1]!, arrow),
+        ...turned(raw[2]!, raw[3]!, arrow),
+        ...turned(raw[4]!, raw[5]!, arrow),
+      ];
       const rotate = (x: number, y: number) => {
         const a = (312.5 * Math.PI) / 180;
         const dx = x - 8;

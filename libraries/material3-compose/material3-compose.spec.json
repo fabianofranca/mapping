@@ -11141,7 +11141,7 @@
               "type": "enum",
               "default": "EqualWeight",
               "options": ["EqualWeight", "Centered"],
-              "description": "EqualWeight reparte a largura por igual (telas estreitas); Centered agrupa os itens no centro (telas médias; o desenho ocupa 80% da largura)."
+              "description": "EqualWeight reparte a largura por igual (telas estreitas); Centered agrupa os itens no centro (telas médias; o desenho ocupa 60%, 70%, 80% ou 90% da largura com 3, 4, 5 ou 6 itens, e cada item cresce até largura/itens quando o conteúdo é maior)."
             },
             {
               "key": "iconPosition",
