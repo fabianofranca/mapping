@@ -567,9 +567,9 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
       expect(guide).toMatch(/^- R18 usa a pasta própria `avisos`/m);
     });
 
-    it('tem os passos R18.1 a R18.12, em ordem, e nenhum depende do dono', () => {
+    it('tem os passos R18.1 a R18.13, em ordem, e nenhum depende do dono', () => {
       const codes = [...stepActions(r18).keys()];
-      expect(codes).toEqual(Array.from({ length: 12 }, (_, i) => `R18.${i + 1}`));
+      expect(codes).toEqual(Array.from({ length: 13 }, (_, i) => `R18.${i + 1}`));
       expect(/sem substituto/i.test(r18)).toBe(false);
       expect(r18).not.toContain('[pessoa]');
     });
@@ -584,6 +584,12 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
         [...(block ?? '').matchAll(/"kind": "(\w+)"/g)].map((m) => m[1]),
       );
       expect(kinds).toEqual(new Set(['removed', 'deprecated', 'diverges', 'pending']));
+    });
+
+    it('o JSON do roteiro é o mesmo do fixture e2e avisos-demo', () => {
+      const block = /```json\n([\s\S]*?)\n```/.exec(r18)?.[1] ?? '';
+      const fixture = read('tests/e2e/fixtures/avisos-demo.spec.json');
+      expect(JSON.parse(block)).toEqual(JSON.parse(fixture));
     });
 
     it('o prompt da nuvem lista os roteiros até o R25', () => {

@@ -3,6 +3,8 @@ import {
   codeLocalPath,
   findPlatform,
   findSpecType,
+  placedTypeNotices,
+  compareNotices,
   repoLink,
   resolveCode,
   specPlatformRepo,
@@ -14,6 +16,7 @@ import {
   type BlueprintNode,
   type BlueprintTarget,
   type Spec,
+  type SpecAnnotationType,
   type SpecCode,
   type SpecRepo,
 } from '../src/model';
@@ -278,6 +281,27 @@ function allAnnotations(node: BlueprintNode): BlueprintAnnotation[] {
 }
 
 /**
+ * `notices` do tipo para o `get_code_hints`: os avisos do tipo, dos campos e das colunas, por
+ * gravidade, cada um com o lugar (`key`, `column`). Vazio (sem a chave) se não há aviso; não
+ * filtra por plataforma (o guia manda ignorar o prefixo de outra).
+ */
+function noticesJson(type: SpecAnnotationType): Json {
+  const placed = placedTypeNotices(type);
+  if (placed.length === 0) return {};
+  const sorted = [...placed].sort((a, b) => compareNotices(a.notice, b.notice));
+  return {
+    notices: sorted.map(({ notice, key, column }) => ({
+      kind: notice.kind,
+      message: notice.message,
+      ...(notice.since === undefined ? {} : { since: notice.since }),
+      ...(notice.ref === undefined ? {} : { ref: notice.ref }),
+      ...(key === undefined ? {} : { key }),
+      ...(column === undefined ? {} : { column }),
+    })),
+  };
+}
+
+/**
  * `get_code_hints`: as chamadas a escrever na plataforma, a partir da marcação e das
  * descendentes. `types` traz, por `specId/typeId`, o código de instanciação do tipo (uma vez
  * só); a árvore traz, por anotação, só o que é da instância (`args`, `values`, `linked`).
@@ -313,6 +337,7 @@ export async function codeHintsView(
           entry,
           await resolveDefinition(ctx, a.specId, platformId, entry.path),
         ),
+        ...noticesJson(type),
       };
     }
     if (entry.variants !== undefined) {

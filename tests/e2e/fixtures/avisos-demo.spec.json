@@ -4,6 +4,14 @@
   "id": "avisos-demo",
   "name": "Avisos Demo",
   "version": 1,
+  "platforms": [
+    {
+      "id": "demo",
+      "name": "Demo",
+      "language": "kotlin",
+      "repo": { "url": "https://example.com/demo" }
+    }
+  ],
   "layers": [
     {
       "id": "ui",
@@ -13,12 +21,14 @@
         {
           "id": "legado",
           "name": "Legado",
+          "code": { "demo": { "symbol": "Legado" } },
           "notices": [{ "kind": "removed", "message": "Saiu do contrato; use Cartao." }],
           "fields": [{ "key": "titulo", "type": "string" }]
         },
         {
           "id": "cartao",
           "name": "Cartao",
+          "code": { "demo": { "symbol": "Cartao" } },
           "notices": [
             {
               "kind": "pending",
@@ -57,6 +67,7 @@
         {
           "id": "simples",
           "name": "Simples",
+          "code": { "demo": { "symbol": "Simples" } },
           "fields": [
             { "key": "texto", "type": "string" },
             {
