@@ -7,6 +7,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { between, section } from '../support/textSlice';
 
 const SCRIPT = '.claude/skills/implementar-fila/painel/painel.py';
 
@@ -98,7 +99,7 @@ describe('painel.py (FC1)', () => {
 // Etapa #1298 (FT1) e #1315 (FC2); a decisão 11 da #1322 (FS1) troca só o critério: skill grande troca de sessão.
 describe('implementar-fila: skill novo na main e troca de sessão (FT1, FC2)', () => {
   const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
-  const troca = skill.slice(skill.indexOf('## Troca de sessão'));
+  const troca = section(skill, '## Troca de sessão');
   const CHECK =
     'git fetch -q origin main && git diff --quiet HEAD origin/main -- .claude/skills/implementar-fila/SKILL.md';
 
@@ -123,15 +124,9 @@ describe('implementar-fila: skill novo na main e troca de sessão (FT1, FC2)', (
   });
 
   it('a conferência de reserva e o passo "Entre etapas" fazem a mesma conferência', () => {
-    const entre = skill.slice(
-      skill.indexOf('7. **Entre etapas:**'),
-      skill.indexOf('**Conferências de reserva:**'),
-    );
+    const entre = between(skill, '7. **Entre etapas:**', '**Conferências de reserva:**');
     expect(entre).toMatch(/skill mudou na `main`/);
-    const conferencia = skill.slice(
-      skill.indexOf('**Conferências de reserva:**'),
-      skill.indexOf('**CI vermelho'),
-    );
+    const conferencia = between(skill, '**Conferências de reserva:**', '**CI vermelho');
     expect(conferencia).toMatch(/skill mudou na `main`/);
   });
 });
@@ -249,19 +244,15 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
   const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
   const flow = readFileSync('docs/FLOW.md', 'utf8');
   const detalhar = readFileSync('.claude/skills/detalhar-backlog/SKILL.md', 'utf8');
-  const process = readFileSync('docs/PROCESS.md', 'utf8');
-  const fase = flow.slice(
-    flow.indexOf('## Para a sessão da fase'),
-    flow.indexOf('## Fase de correção'),
-  );
-  const item6 = fase.split('\n').find((l) => l.startsWith('6. ')) ?? '';
-  const reserva = skill.slice(
-    skill.indexOf('**Conferências de reserva:**'),
-    skill.indexOf('**CI vermelho'),
-  );
-  const ciVermelho = skill.slice(
-    skill.indexOf('**CI vermelho'),
-    skill.indexOf('## Mudanças na fila durante a execução'),
+  const processDoc = readFileSync('docs/PROCESS.md', 'utf8');
+  const fase = section(flow, '## Para a sessão da fase');
+  const item6 = fase.split('\n').find((l) => l.startsWith('6. '));
+  if (item6 === undefined) throw new Error('item 6 da "Para a sessão da fase" não achado');
+  const reserva = between(skill, '**Conferências de reserva:**', '**CI vermelho');
+  const ciVermelho = between(
+    skill,
+    '**CI vermelho',
+    '## Mudanças na fila durante a execução',
   );
 
   it('"Para a sessão da fase": send_later de 8 min, segunda reexecução pela fase e aviso (decisões 1 e 2)', () => {
@@ -287,8 +278,13 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
   });
 
   it('o CI de uma fase é um parágrafo só no item 6 (decisão do dono)', () => {
-    expect(fase.match(/^6\. /gm)).toHaveLength(1);
-    expect(fase.match(/send_later/g)).toHaveLength(1);
+    const outros = fase.split('\n').filter((l) => /^\d+\. /.test(l) && !l.startsWith('6. '));
+    expect(outros.length).toBeGreaterThan(0);
+    for (const linha of outros) {
+      expect(linha).not.toContain('send_later');
+      expect(linha).not.toContain('ci-rerun.yml');
+      expect(linha).not.toContain('distBudget.mjs');
+    }
   });
 
   it('"Conferências de reserva": 30 min, review_ready/idle sem aviso e send_message antes de recriar (decisão 5)', () => {
@@ -298,7 +294,9 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
     expect(reserva).toContain('`idle`');
     const msg = 'Conferência da fila: a fase não avisou. Retome do ponto em que parou';
     expect(reserva).toContain(msg);
-    expect(reserva.indexOf(msg)).toBeLessThan(reserva.indexOf('crie a sessão de novo'));
+    expect(reserva).toMatch(
+      new RegExp(`${msg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[\\s\\S]*crie a sessão de novo`),
+    );
     expect(reserva).toMatch(/conferência seguinte/);
   });
 
@@ -327,10 +325,7 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
   });
 
   it('detalhar-backlog: gatilhos de risco (a) e reclassificação (b) (decisão 11)', () => {
-    const esforco = detalhar.slice(
-      detalhar.indexOf('## Esforço do detalhamento'),
-      detalhar.indexOf('## 1. Candidatas'),
-    );
+    const esforco = section(detalhar, '## Esforço do detalhamento');
     for (const gatilho of [
       '`implementar-fila`',
       'painel.py',
@@ -350,10 +345,7 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
   });
 
   it('implementar-fila: /code-review high no diff do épico, no Fechamento (decisão 11, c)', () => {
-    const fechamento = skill.slice(
-      skill.indexOf('5. **Fechamento**'),
-      skill.indexOf('6. **Merge**'),
-    );
+    const fechamento = between(skill, '5. **Fechamento**', '6. **Merge**');
     expect(fechamento).toContain('/code-review high');
     expect(fechamento).toMatch(/diff inteiro do épico/);
     expect(fechamento).toMatch(/base `main`/);
@@ -363,10 +355,7 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
   });
 
   it('versão do schema escolhida ao criar o épico, como a do MCP (decisão do dono de 2026-11-10)', () => {
-    const regra = skill.slice(
-      skill.indexOf('3. **Uma versão do MCP por épico'),
-      skill.indexOf('3. **Uma versão do MCP por épico') + 6000,
-    );
+    const regra = between(skill, '3. **Uma versão do MCP por épico', '## Economia de contexto');
     expect(regra).toMatch(/Versão do schema/);
     expect(regra).toMatch(/origin\/main/);
     expect(regra).toMatch(/próxima/);
@@ -375,7 +364,7 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
   });
 
   it('PROCESS.md: a linha do ci-rerun.yml na regra da main (decisão 10)', () => {
-    const item = process
+    const item = processDoc
       .split('\n')
       .find((l) => l.includes('A `main` só aceita PR de `epic/*`'));
     expect(item).toContain('ci-rerun.yml');

@@ -8,32 +8,16 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { section } from '../support/textSlice';
 
 const FILA = '.claude/skills/implementar-fila';
 const read = (p: string): string => readFileSync(p, 'utf8');
 const fila = read(`${FILA}/SKILL.md`);
 const detalhar = read('.claude/skills/detalhar-backlog/SKILL.md');
 const flow = read('docs/FLOW.md');
-const process = read('docs/PROCESS.md');
+const processDoc = read('docs/PROCESS.md');
 const page = read(`${FILA}/painel/index.html`);
 const painelPy = read(`${FILA}/painel/painel.py`);
-
-/** Texto de um cabeçalho (`## ` ou `### `) até o próximo do mesmo nível ou acima. */
-function section(text: string, heading: string): string {
-  const lines = text.split('\n');
-  const start = lines.findIndex((l) => l === heading);
-  if (start < 0) throw new Error(`seção não achada: ${heading}`);
-  const level = heading.match(/^#+/)![0].length;
-  let end = lines.length;
-  for (let i = start + 1; i < lines.length; i++) {
-    const m = lines[i]!.match(/^(#+) /);
-    if (m && m[1]!.length <= level) {
-      end = i;
-      break;
-    }
-  }
-  return lines.slice(start, end).join('\n');
-}
 
 describe('implementar-fila: versão do MCP no fechamento (decisão 1)', () => {
   const regras = section(fila, '## Regras desta fila');
@@ -141,8 +125,8 @@ describe('implementar-fila: fechamento durante o CI (decisão 9)', () => {
 
 describe('docs: processo e mensagens (decisão 8)', () => {
   it('o item "Versão do MCP por épico" diz que a versão é provisória até o fechamento', () => {
-    expect(process).toContain('provisória até o fechamento');
-    expect(process).toContain('próxima livre na `origin/main`');
+    expect(processDoc).toContain('provisória até o fechamento');
+    expect(processDoc).toContain('próxima livre na `origin/main`');
   });
 
   it('o FLOW cita as novidades da fila e do detalhamento', () => {
@@ -248,7 +232,7 @@ describe('revisão /code-review high do épico (fechamento da etapa #1322)', () 
   });
 
   it('o PROCESS.md mantém o gatilho do check e o título do changelog na versão provisória', () => {
-    expect(process).toMatch(/mudou o que vai na release sem subir a versão/);
-    expect(process).toMatch(/título do changelog/);
+    expect(processDoc).toMatch(/mudou o que vai na release sem subir a versão/);
+    expect(processDoc).toMatch(/título do changelog/);
   });
 });
