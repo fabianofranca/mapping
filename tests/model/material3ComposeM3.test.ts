@@ -8,6 +8,7 @@ import {
   drawIn,
   files,
   text,
+  v1Preview,
   v1WithEstados,
   COMPOSE_SIZES,
 } from '../support/material3Library';
@@ -53,7 +54,7 @@ describe('M3 — seleção e entrada no formato 4', () => {
     const now = component(id);
     const { actual, expected } = v1WithEstados(id, type, before);
     expect(actual).toEqual(expected);
-    expect(now.preview).toEqual(before.preview);
+    expect(now.preview).toEqual(v1Preview(id, before.preview));
     expect(now.minSize).toEqual(before.minSize);
     // #863: o text-field e o secure-text-field passam de 76 (v1) a 84, que comporta o outlined com apoio.
     const heightFixed = id === 'text-field' || id === 'secure-text-field';

@@ -110,6 +110,49 @@ describe('o evolve.py do guia gera a cadeia mat-v(N+1) a mat-v(N+4)', () => {
     }
   });
 
+  it('o mat-v5 do R3.18 é válido: slider em décimos (enum) e exemplos só com décimos, sem migrations', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'evolve5-'));
+    try {
+      writeFileSync(join(dir, 'evolve.py'), script!);
+      execFileSync(
+        'python3',
+        [
+          '-I',
+          join(dir, 'evolve.py'),
+          'libraries/material3-compose',
+          join(dir, 'mat-v5'),
+          'v5',
+        ],
+        { stdio: 'pipe' },
+      );
+      const s = JSON.parse(
+        readFileSync(join(dir, 'mat-v5', 'material3-compose.spec.json'), 'utf8'),
+      ) as {
+        version: number;
+        migrations?: unknown;
+        layers: {
+          annotationTypes: {
+            id: string;
+            fields: { key: string; type: string; options?: string[] }[];
+            examples?: { values: Record<string, unknown> }[];
+          }[];
+        }[];
+      };
+      expect(s.version).toBe(5);
+      expect(s.migrations).toBeUndefined();
+      const slider = s.layers
+        .flatMap((l) => l.annotationTypes)
+        .find((t) => t.id === 'slider')!;
+      const value = slider.fields.find((f) => f.key === 'value')!;
+      expect(value.type).toBe('enum');
+      for (const e of slider.examples ?? [])
+        for (const k of ['value', 'valueStart', 'valueEnd'])
+          if (k in e.values) expect(value.options).toContain(e.values[k]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it('o R3.15 diz que o Desfazer volta à versão N+1 do specs', () => {
     expect(row('R3.15')).toContain(`volta a \`"version": ${v + 1}\``);
   });

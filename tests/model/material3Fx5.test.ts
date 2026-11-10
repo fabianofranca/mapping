@@ -285,7 +285,17 @@ describe('atualização da biblioteca (version 4 → 5)', () => {
     const previous = JSON.parse(JSON.stringify(spec)) as Spec;
     (previous as { version: number }).version = 4;
     expect(missingMigrations(previous, spec)).toEqual([]);
-    expect(spec.migrations ?? []).toEqual([]);
+    // só a EX6 (#897) tem migração: o slider passou de enum a number (`fill-field`), e os campos
+    // que estes testes comparam não mudam
+    expect(
+      (spec.migrations ?? []).flatMap((m) =>
+        m.steps.map((s) => `${s.op}:${'type' in s ? s.type : ''}`),
+      ),
+    ).toEqual(
+      Array(5)
+        .fill(['fill-field:slider', 'fill-field:slider', 'fill-field:slider'])
+        .flat(),
+    );
     const report = validateLibrary({ files, specPath: SPEC_FILE, previous });
     expect(report.errors).toEqual([]);
   });

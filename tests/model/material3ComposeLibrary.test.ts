@@ -632,14 +632,36 @@ describe('componentes migrados na M1 (text, icon, divider, surface)', () => {
   });
 });
 
-describe('atualização v1 → v2 da biblioteca Material 3 (Compose)', () => {
-  it('é aditiva: nenhuma quebra de contrato, sem passos de migração', () => {
-    // A v1 tinha os mesmos tipos, campos, chaves e opções; só faltavam tokens e ícones.
+describe('atualização da biblioteca Material 3 (Compose) com o slider numérico', () => {
+  it('a quebra do slider (enum → number) tem migração em toda versão anterior', () => {
+    // As versões 1 a 5 tinham os mesmos tipos; só o `value`, o `valueStart` e o `valueEnd` do
+    // slider eram `enum` em décimos. A versão atual os declara `number` e cobre com `fill-field`.
+    const tenths = Array.from({ length: 11 }, (_, i) => String(i / 10));
     const previous = JSON.parse(JSON.stringify(spec)) as Spec;
-    (previous as { version: number }).version = 1;
+    (previous as { version: number }).version = 5;
     (previous as { formatVersion: number }).formatVersion = 9;
+    delete (previous as { migrations?: unknown }).migrations;
+    for (const layer of previous.layers)
+      for (const type of layer.annotationTypes)
+        if (type.id === 'slider')
+          type.fields = type.fields.map((f) =>
+            ['value', 'valueStart', 'valueEnd'].includes(f.key)
+              ? ({
+                  key: f.key,
+                  type: 'enum',
+                  options: tenths,
+                  default: '0.5',
+                } as typeof f)
+              : f,
+          );
     expect(missingMigrations(previous, spec)).toEqual([]);
-    expect(spec.migrations ?? []).toEqual([]);
+    expect(spec.migrations?.map((m) => [m.from, m.to])).toEqual([
+      [1, 6],
+      [2, 6],
+      [3, 6],
+      [4, 6],
+      [5, 6],
+    ]);
     const report = validateLibrary({ files, specPath: SPEC_FILE, previous });
     expect(report.errors).toEqual([]);
   });

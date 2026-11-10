@@ -375,9 +375,16 @@ describe('M3 grupo A — progress-indicator', () => {
       expect(ind.sweep).toBe(1);
       // trilho: começa em 270 + sweep + gap e cobre 360 - sweep - 2 gap
       const trackSweep = 360 - sweep - gap * 2;
-      const trk = parseArc((named(d, 'trilho arco') as PathNode).d);
-      expectPoint(trk.start, at(270 + sweep + gap));
-      expectPoint(trk.end, at(270 + sweep + gap + trackSweep));
+      // EX6: o trilho é o arco desenhado a partir das 12h e girado (`rotation`) em volta do centro
+      const trackNode = named(d, 'trilho arco') as PathNode;
+      const trk = parseArc(trackNode.d);
+      const turn = ((trackNode.rotation ?? 0) * Math.PI) / 180;
+      const rotated = (pt: number[]) => [
+        D / 2 + (pt[0]! - D / 2) * Math.cos(turn) - (pt[1]! - D / 2) * Math.sin(turn),
+        D / 2 + (pt[0]! - D / 2) * Math.sin(turn) + (pt[1]! - D / 2) * Math.cos(turn),
+      ];
+      expectPoint(rotated(trk.start), at(270 + sweep + gap));
+      expectPoint(rotated(trk.end), at(270 + sweep + gap + trackSweep));
       expect(trk.large).toBe(Math.abs(trackSweep) > 180 ? 1 : 0);
       expect(trk.sweep).toBe(trackSweep >= 0 ? 1 : 0);
     },
@@ -479,7 +486,7 @@ describe('M3 grupo A — progress-indicator', () => {
     expect(fillOf(d, 'barra indeterminada')).toBe(tok('primary', 'light'));
   });
 
-  it('progresso fora dos centésimos (sem caso na tabela) cai no quadro do indeterminado, sem aviso', () => {
+  it('progresso entre os centésimos (0,655) desenha o arco exato, sem aviso (EX6: sem tabela)', () => {
     const d = drawIn(
       catalog,
       entryOf('progress-indicator'),
@@ -487,18 +494,12 @@ describe('M3 grupo A — progress-indicator', () => {
       'light',
     );
     expect(d.warnings).toEqual([]);
-    const undetermined = drawIn(
-      catalog,
-      entryOf('progress-indicator'),
-      { shape: 'circular' },
-      'light',
-    );
-    expect((named(d, 'indicador') as PathNode).d).toBe(
-      (named(undetermined, 'indicador indeterminado') as PathNode).d,
-    );
+    const ind = parseArc((named(d, 'indicador') as PathNode).d);
+    expectPoint(ind.end, at(270 + 0.655 * 360));
+    expect(named(d, 'indicador indeterminado')).toBeUndefined();
   });
 
-  it('arredonda o progresso ao centésimo: cada valor de 0 a 1 desenha sem aviso', () => {
+  it('cada centésimo de 0 a 1 desenha sem aviso', () => {
     for (const shape of ['circular', 'linear']) {
       for (let i = 0; i <= 100; i++) {
         const progress = i / 100;

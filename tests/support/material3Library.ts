@@ -155,7 +155,21 @@ const V1_DESCRIPTION_FIXES: Record<string, Record<string, string>> = {
   },
   slider: {
     steps:
-      'Número de pontos intermediários entre as pontas (Slider.steps). Vazio ou 0 = contínuo. O desenho mostra as marcas de 1 a 9; de 10 em diante desenha como 9.',
+      'Número de pontos intermediários entre as pontas (Slider.steps). Vazio, 0 ou menor que 1 = contínuo. Com steps, o valor vai ao passo mais próximo e o desenho mostra exatamente steps marcas, mais as duas pontas.',
+  },
+  'progress-indicator': {
+    progress:
+      'Progresso de 0 a 1, exato (o desenho calcula o arco e a largura; valor fora do intervalo é preso a ele). Vazio = indeterminado (o desenho mostra um arco ou uma barra parcial).',
+  },
+  'short-navigation-bar': {
+    arrangement:
+      'EqualWeight reparte a largura por igual (telas estreitas); Centered agrupa os itens no centro (telas médias; o desenho ocupa 60%, 70%, 80% ou 90% da largura com 3, 4, 5 ou 6 itens, e cada item cresce até largura/itens quando o conteúdo é maior).',
+  },
+  carousel: {
+    preferredItemWidth:
+      'Só no multi-browse (obrigatório no Compose): a largura que os itens grandes querem ter; o carrossel escolhe quantos grandes cabem e ajusta o tamanho deles, do médio e do pequeno (de 40 a 56) à largura da marcação.',
+    itemSpacing:
+      'Espaço entre os itens em dp (itemSpacing). Vazio = 0 no código; o desenho usa 8. No centered-hero o recuo e a largura dos itens dependem dele.',
   },
   tabs: {
     style:
@@ -176,7 +190,28 @@ export const LIMIT_EXAMPLES: Record<string, string> = {
 
 /** Campos e exemplos que a etapa de expressões (#897, EX4) acrescentou ao date-picker e ao time-picker. */
 const EX4_FIELDS: Record<string, string[]> = { 'date-picker': ['month', 'year'] };
+/** Os campos de valor do slider (EX6): eram `enum` em décimos na v1 e passaram a `number`. */
+const SLIDER_NUMBERS: Record<string, number> = {
+  value: 0.5,
+  valueStart: 0.2,
+  valueEnd: 0.8,
+};
+const toNumbers = (values: Record<string, unknown> | undefined) =>
+  values === undefined
+    ? undefined
+    : Object.fromEntries(
+        Object.entries(values).map(([k, v]) =>
+          k in SLIDER_NUMBERS && typeof v === 'string' ? [k, Number(v)] : [k, v],
+        ),
+      );
+/** A prévia da v1 como a EX6 a grava (o slider guarda número). */
+export function v1Preview(id: string, preview: unknown): unknown {
+  return id === 'slider'
+    ? toNumbers(preview as Record<string, unknown> | undefined)
+    : preview;
+}
 const EX4_EXAMPLES: Record<string, string[]> = {
+  slider: ['Encaixe no passo'],
   'date-picker': [
     'Fevereiro de 2028 (bissexto)',
     'Mês de 30 dias, 6 linhas',
@@ -238,6 +273,16 @@ export function v1WithEstados(
   const fixes = V1_DESCRIPTION_FIXES[id] ?? {};
   const noDefault = V1_NO_DEFAULT[id];
   const expectedFields = before.fields.map((f) => {
+    if (id === 'slider' && f.key !== undefined && f.key in SLIDER_NUMBERS) {
+      const nowField = now.fields.find((n) => n.key === f.key);
+      return {
+        key: f.key,
+        label: (f as Raw & { label?: string }).label,
+        type: 'number',
+        default: SLIDER_NUMBERS[f.key],
+        description: nowField?.description,
+      };
+    }
     if (f.key !== undefined && f.key === noDefault) {
       const { default: _dropped, ...rest } = f as Raw & { default?: unknown };
       void _dropped;
@@ -265,6 +310,12 @@ export function v1WithEstados(
         )
         .map((e) => withoutTableValues(now.fields, e)),
     },
-    expected: { fields: expectedFields, examples: before.examples ?? [] },
+    expected: {
+      fields: expectedFields,
+      examples:
+        id === 'slider'
+          ? (before.examples ?? []).map((e) => ({ ...e, values: toNumbers(e.values) }))
+          : (before.examples ?? []),
+    },
   };
 }
