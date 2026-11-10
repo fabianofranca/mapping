@@ -596,14 +596,17 @@ function createEngine(
     return { scene, runs };
   };
 
+  /** O `align` do layout do texto rico (sem `justify`). */
+  const richAlign = (align: string): 'left' | 'center' | 'right' =>
+    align === 'center' || align === 'right' ? align : 'left';
+
   /** O que é do nó (e não dos trechos) no layout do texto rico. */
   const richBase = (node: TextTemplate, font: MeasureFont): RichBase => ({
     size: font.size,
     lineHeight: font.lineHeight,
-    align: oneOf<'left' | 'center' | 'right'>(
-      node.font?.align,
-      ['left', 'center', 'right'],
-      'left',
+    // O texto rico (com `runs`) ainda não justifica: `justify` cai em `left`.
+    align: richAlign(
+      oneOf(node.font?.align, ['left', 'center', 'right', 'justify'], 'left'),
     ),
     ...(font.wrap === 'none' ? { wrap: 'none' as const } : {}),
     ...(font.ellipsis === true ? { ellipsis: true } : {}),
@@ -1464,7 +1467,14 @@ function createEngine(
       italic: font.italic,
       lineHeight: font.lineHeight,
       letterSpacing: font.letterSpacing,
-      align: oneOf(font0.align, ['left', 'center', 'right'], 'left'),
+      // `justify` só existe na formatVersion 4; antes, vindo de expressão, é valor fora do conjunto.
+      align: oneOf(
+        font0.align,
+        original.formatVersion >= 4
+          ? ['left', 'center', 'right', 'justify']
+          : ['left', 'center', 'right'],
+        'left',
+      ),
       verticalAlign: oneOf(
         font0.verticalAlign,
         // `cap-middle` só existe na formatVersion 4; antes, vindo de expressão, é valor fora do conjunto.

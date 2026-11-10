@@ -10,6 +10,7 @@ import {
   COMPONENT_FORMAT,
   COMPONENT_FORMAT_VERSIONS,
   COMPONENT_FORMAT_VERSION_FIDELITY,
+  IMAGE_FITS_V4,
   SCREEN_ANCHORS,
   STROKE_SIDES,
   type ComponentFile,
@@ -23,7 +24,7 @@ import {
   referencedFields,
 } from './expressions';
 import { LAYOUT_JUSTIFIES } from './layoutValues';
-import { TOKEN_NAME_PATTERN, type TokenKind } from './tokens';
+import { TOKEN_NAME_PATTERN, isLiteralColor, type TokenKind } from './tokens';
 import { isRecord } from '../isRecord';
 
 /** Um problema do arquivo: caminho JSON (vazio = arquivo inteiro) e mensagem. */
@@ -364,7 +365,7 @@ function checkFieldKey(value: unknown, path: string, out: Ctx): void {
 }
 
 function checkTokenExpr(value: Rec, path: string, check: Check, out: Ctx): void {
-  checkKeys(value, ['$token', 'alpha'], path, out);
+  checkKeys(value, ['$token', 'alpha', 'over'], path, out);
   const at = join(path, '$token');
   const kind = check.tokenKind;
   if (kind === undefined)
@@ -374,6 +375,28 @@ function checkTokenExpr(value: Rec, path: string, check: Check, out: Ctx): void 
     add(out, at, 'esperava nome de token ([a-z0-9][a-z0-9-]*)');
   else if (kind !== undefined) out.refs?.push({ path, name, kind });
   if ('alpha' in value) checkTokenAlpha(value.alpha, path, kind, out);
+  if ('over' in value) checkTokenOver(value.over, path, kind, out);
+}
+
+/**
+ * `over` de um `$token` (v4): só em posição de cor; o nome de um token de cor (coletado como
+ * referência de cor, para a biblioteca recusar o nome desconhecido) ou uma cor literal.
+ */
+function checkTokenOver(
+  over: unknown,
+  path: string,
+  kind: TokenKind | undefined,
+  out: Ctx,
+): void {
+  if (kind === undefined) return;
+  if (kind !== 'color')
+    return add(out, join(path, '$token'), 'over só vale em $token de cor');
+  const at = join(path, 'over');
+  if (typeof over !== 'string') return add(out, at, 'esperava nome de token ou cor');
+  if (isLiteralColor(over)) return;
+  if (!TOKEN_NAME_PATTERN.test(over))
+    return add(out, at, 'esperava nome de token ([a-z0-9][a-z0-9-]*) ou cor');
+  out.refs?.push({ path: at, name: over, kind: 'color' });
 }
 
 /** `alpha` de um `$token`: só em posição de cor; número de 0 a 1, literal ou `$token` de número. */
@@ -597,7 +620,7 @@ function checkFont(value: unknown, path: string, out: Ctx): void {
     italic: checkBoolean,
     lineHeight: checkNumber,
     letterSpacing: checkNumber,
-    align: oneOf(['left', 'center', 'right']),
+    align: oneOf(['left', 'center', 'right', 'justify']),
     verticalAlign: oneOf(['top', 'middle', 'bottom', 'cap-middle']),
     decoration: oneOf(['none', 'underline', 'line-through']),
     wrap: oneOf(['word', 'none']),
@@ -861,7 +884,11 @@ function checkImage(value: Rec, path: string, out: Ctx): void {
     }
   }
   if ('fit' in value)
-    oneOf(['cover', 'contain', 'fill'])(value.fit, join(path, 'fit'), out);
+    oneOf(['cover', 'contain', 'fill', ...IMAGE_FITS_V4])(
+      value.fit,
+      join(path, 'fit'),
+      out,
+    );
 }
 
 const checkRepeatCount = tokenCheck('number', (v, p, out) => {
@@ -961,6 +988,8 @@ const V4_EXPR_KEYS: readonly (readonly string[])[] = [
 /** Valores literais que só existem na formatVersion 4: a cadeia da chave e o valor. */
 const V4_LITERAL_VALUES: readonly (readonly [readonly string[], string])[] = [
   [['font', 'verticalAlign'], 'cap-middle'],
+  [['font', 'align'], 'justify'],
+  ...IMAGE_FITS_V4.map((fit): readonly [readonly string[], string] => [['fit'], fit]),
   [['layout', 'justify'], 'space-around'],
   [['layout', 'justify'], 'space-evenly'],
 ];

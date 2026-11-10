@@ -35,6 +35,7 @@ import {
   hasChildren,
   nodeMatrix,
 } from '../../model/components/scene';
+import type { ImageFit } from '../../model/components/componentFormat';
 import type { RunLayout, RunPiece } from '../../model/components/richText';
 import { textBoxLimits } from './textLimits';
 import { capMetricsOf, capMiddleShift, konvaBaseline } from './capMiddle';
@@ -712,7 +713,7 @@ function sourceSize(view: RemoteImageView): { width: number; height: number } | 
  * cobrir a caixa, `contain` encaixa a fonte inteira no centro, `fill` estica.
  */
 export function imageFit(
-  fit: 'cover' | 'contain' | 'fill',
+  fit: ImageFit,
   box: Box,
   source: { width: number; height: number },
 ): {
@@ -723,6 +724,7 @@ export function imageFit(
   crop?: { x: number; y: number; width: number; height: number };
 } {
   if (fit === 'fill') return { x: 0, y: 0, width: box.width, height: box.height };
+  if (fit !== 'cover' && fit !== 'contain') return placedFit(fit, box, source);
   if (fit === 'contain') {
     const scale = Math.min(box.width / source.width, box.height / source.height);
     const width = source.width * scale;
@@ -737,6 +739,46 @@ export function imageFit(
     y: 0,
     width: box.width,
     height: box.height,
+    crop: {
+      x: (source.width - cropWidth) / 2,
+      y: (source.height - cropHeight) / 2,
+      width: cropWidth,
+      height: cropHeight,
+    },
+  };
+}
+
+/**
+ * `fill-width`, `fill-height`, `scale-down` e `none` (formato 4): a imagem na escala do `fit`,
+ * centrada na caixa e recortada onde passa dela (o `ContentScale` `FillWidth`, `FillHeight`,
+ * `Inside` e `None`). `scale-down` nunca amplia; `none` e `scale-down` usam o tamanho natural.
+ */
+function placedFit(
+  fit: Exclude<ImageFit, 'cover' | 'contain' | 'fill'>,
+  box: Box,
+  source: { width: number; height: number },
+): ReturnType<typeof imageFit> {
+  const scale =
+    fit === 'fill-width'
+      ? box.width / source.width
+      : fit === 'fill-height'
+        ? box.height / source.height
+        : fit === 'none'
+          ? 1
+          : Math.min(1, box.width / source.width, box.height / source.height);
+  const width = Math.min(source.width * scale, box.width);
+  const height = Math.min(source.height * scale, box.height);
+  const placed = {
+    x: (box.width - width) / 2,
+    y: (box.height - height) / 2,
+    width,
+    height,
+  };
+  const cropWidth = width / scale;
+  const cropHeight = height / scale;
+  if (cropWidth >= source.width && cropHeight >= source.height) return placed;
+  return {
+    ...placed,
     crop: {
       x: (source.width - cropWidth) / 2,
       y: (source.height - cropHeight) / 2,

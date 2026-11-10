@@ -621,3 +621,56 @@ describe('imageFit', () => {
     expect(fit.crop).toEqual({ x: 0, y: 37.5, width: 50, height: 25 });
   });
 });
+
+describe('imageFit: fit novos (formato 4)', () => {
+  const box = { width: 100, height: 50 };
+  const source = { width: 40, height: 80 }; // tamanho natural conhecido
+
+  it('fill-width ocupa a largura e recorta o excesso de altura', () => {
+    // escala 2,5: a fonte vira 100 × 200; a caixa mostra 50/2,5 = 20 de altura, no centro
+    const fit = imageFit('fill-width', box, source);
+    expect(fit).toMatchObject({ x: 0, y: 0, width: 100, height: 50 });
+    expect(fit.crop).toEqual({ x: 0, y: 30, width: 40, height: 20 });
+  });
+
+  it('fill-height ocupa a altura e centraliza na largura, sem esticar', () => {
+    // escala 50/80 = 0,625: a fonte vira 25 × 50, no centro da caixa
+    const fit = imageFit('fill-height', box, source);
+    expect(fit).toEqual({ x: 37.5, y: 0, width: 25, height: 50 });
+  });
+
+  it('fill-height com fonte larga recorta as laterais', () => {
+    const fit = imageFit('fill-height', { width: 20, height: 50 }, source);
+    expect(fit.crop).toEqual({ x: 4, y: 0, width: 32, height: 80 });
+    expect(fit).toMatchObject({ x: 0, y: 0, width: 20, height: 50 });
+  });
+
+  it('scale-down encolhe como contain, mas nunca amplia', () => {
+    // a fonte 40 × 80 não cabe em 100 × 50: encolhe a 25 × 50
+    expect(imageFit('scale-down', box, source)).toEqual({
+      x: 37.5,
+      y: 0,
+      width: 25,
+      height: 50,
+    });
+    // em caixa maior que a fonte, fica no tamanho natural, centrada
+    expect(imageFit('scale-down', { width: 200, height: 200 }, source)).toEqual({
+      x: 80,
+      y: 60,
+      width: 40,
+      height: 80,
+    });
+  });
+
+  it('none usa o tamanho natural, centrado, recortando o que passa da caixa', () => {
+    expect(imageFit('none', { width: 200, height: 200 }, source)).toEqual({
+      x: 80,
+      y: 60,
+      width: 40,
+      height: 80,
+    });
+    const cut = imageFit('none', box, source);
+    expect(cut).toMatchObject({ x: 30, y: 0, width: 40, height: 50 });
+    expect(cut.crop).toEqual({ x: 0, y: 15, width: 40, height: 50 });
+  });
+});

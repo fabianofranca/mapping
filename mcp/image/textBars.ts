@@ -189,6 +189,29 @@ export function blockTop(
   return verticalAlign === 'bottom' ? node.height - total : 0;
 }
 
+/**
+ * Para cada linha, se ela fecha um parágrafo (a última linha de cada `\n`, que o `justify` deixa à
+ * esquerda, como o Konva). As linhas do medidor (`wrap: none`, `…`, `maxLines`) fecham o texto
+ * inteiro: com `wrap: none` cada linha é um parágrafo; nos outros casos só a última fecha.
+ */
+function paragraphEnds(
+  node: TextNode,
+  lines: readonly string[],
+  custom: readonly string[] | undefined,
+  widthOf: (text: string) => number,
+): boolean[] {
+  if (custom !== undefined) {
+    const each = node.style.wrap === 'none';
+    return lines.map((_, i) => each || i === lines.length - 1);
+  }
+  const ends: boolean[] = [];
+  for (const paragraph of node.text.split('\n')) {
+    const count = breakLines({ ...node, text: paragraph }, widthOf).length;
+    for (let i = 0; i < count; i++) ends.push(i === count - 1);
+  }
+  return ends;
+}
+
 /** Posição horizontal de uma linha de largura `width` no nó, pelo `align`. */
 export function lineLeft(node: TextNode, width: number): number {
   const { align } = node.style;
@@ -210,13 +233,16 @@ export function textBars(node: TextNode, measure: TextMeasurer): TextBar[] {
     letterSpacing: style.letterSpacing ?? 0,
   };
   const widthOf = (text: string) => measure(text, font).width;
-  const lines = customLines(node, measure, font) ?? breakLines(node, widthOf);
+  const custom = customLines(node, measure, font);
+  const lines = custom ?? breakLines(node, widthOf);
+  const ends =
+    style.align === 'justify' ? paragraphEnds(node, lines, custom, widthOf) : [];
   const top = blockTop(node, lines.length, lineHeight);
   const barHeight = lineHeight * BAR_RATIO;
   const bars: TextBar[] = [];
   lines.forEach((line, i) => {
     if (line === '') return;
-    const justified = style.align === 'justify' && i < lines.length - 1;
+    const justified = style.align === 'justify' && ends[i] === false;
     const width = justified
       ? node.width
       : Math.min(widthOf(line), node.width || Infinity);
