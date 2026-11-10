@@ -274,6 +274,14 @@ interface Coding {
   readonly messageParams?: Readonly<Record<string, string | number>> | undefined;
 }
 
+/** O código e os parâmetros que o parser do componente ou dos ícones pôs no problema. */
+function codingOf(issue: {
+  readonly code?: ModelMessageTemplateCode | undefined;
+  readonly params?: Readonly<Record<string, string | number>> | undefined;
+}): Coding {
+  return { messageCode: issue.code, messageParams: issue.params };
+}
+
 function codeOf(coding: Coding | undefined): Pick<LibraryIssue, 'code' | 'params'> {
   if (coding?.messageCode === undefined) return {};
   return {
@@ -475,7 +483,8 @@ function readIcons(pkg: Package, out: Collector): void {
   if (file.text === undefined) return void out.error(path, '', 'library.notRead');
   const parsed = parseIconsText(file.text);
   if (!parsed.ok) {
-    for (const issue of parsed.issues) out.passError(path, issue.path, issue.message);
+    for (const issue of parsed.issues)
+      out.passError(path, issue.path, issue.message, codingOf(issue));
     return;
   }
   pkg.icons = parsed.set;
@@ -496,11 +505,11 @@ function readComponent(file: LibraryFile, pkg: Package, out: Collector): void {
   const parsed = parseComponent(json);
   if (!parsed.ok) {
     for (const issue of parsed.issues)
-      out.passError(file.path, issue.path, issue.message);
+      out.passError(file.path, issue.path, issue.message, codingOf(issue));
     return;
   }
   for (const warning of parsed.warnings)
-    out.passWarning(file.path, warning.path, warning.message);
+    out.passWarning(file.path, warning.path, warning.message, codingOf(warning));
   pkg.components.set(file.path, parsed.component);
   pkg.componentJson.set(file.path, json);
   pkg.tokenRefs.set(file.path, parsed.tokenRefs);

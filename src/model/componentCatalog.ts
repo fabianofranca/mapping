@@ -5,7 +5,12 @@ import { resolvePathChecked } from './components/library';
 import { parseComponentText } from './components/parseComponent';
 import { resolveTokens, type HostFonts, type ResolvedTokens } from './components/tokens';
 import { MIN_STORED_MARKING_SIZE } from './geometry';
-import { modelMessage, type ModelMessage } from './modelMessage';
+import {
+  issueParts,
+  modelMessage,
+  type IssueLike,
+  type ModelMessage,
+} from './modelMessage';
 import { projectIndex } from './projectIndex';
 import type { Spec, SpecAnnotationType } from './spec';
 import { findSpecType } from './specLookup';
@@ -79,14 +84,21 @@ export function pushProblem(problems: LoadProblems, message: ModelMessage): void
 }
 
 /** O componente que não passou no parse: o erro vem do parser (texto); sem erro, o padrão. */
-function invalidComponent(typeId: string, reason: string | undefined): ModelMessage {
-  return reason === undefined
-    ? modelMessage(
-        'components.invalidFallback',
-        { typeId },
-        `${typeId}: componente inválido`,
-      )
-    : modelMessage('components.invalid', { typeId, reason }, `${typeId}: ${reason}`);
+function invalidComponent(typeId: string, issue: IssueLike | undefined): ModelMessage {
+  if (issue === undefined) {
+    return modelMessage(
+      'components.invalidFallback',
+      { typeId },
+      `${typeId}: componente inválido`,
+    );
+  }
+  const { at, reason, detail } = issueParts(issue);
+  return modelMessage(
+    'components.invalid',
+    { typeId, at, reason },
+    `${typeId}: ${at}${reason}`,
+    detail,
+  );
 }
 
 /** O conjunto de ícones da especialização; arquivo ausente ou inválido vira um problema `icons: …`. */
@@ -119,12 +131,18 @@ function loadIcons(
   }
   const parsed = parseIconsText(text);
   if (parsed.ok) return parsed.set;
-  const reason = parsed.errors[0];
+  const issue = parsed.issues[0];
+  if (issue === undefined) {
+    pushProblem(
+      problems,
+      modelMessage('icons.invalidFallback', {}, 'icons: conjunto de ícones inválido'),
+    );
+    return undefined;
+  }
+  const { at, reason, detail } = issueParts(issue);
   pushProblem(
     problems,
-    reason === undefined
-      ? modelMessage('icons.invalidFallback', {}, 'icons: conjunto de ícones inválido')
-      : modelMessage('icons.invalid', { reason }, `icons: ${reason}`),
+    modelMessage('icons.invalid', { at, reason }, `icons: ${at}${reason}`, detail),
   );
   return undefined;
 }
@@ -195,7 +213,7 @@ export function loadSpecComponents(
       }
       const parsed = parseComponentText(text);
       if (!parsed.ok) {
-        pushProblem(problems, invalidComponent(type.id, parsed.errors[0]));
+        pushProblem(problems, invalidComponent(type.id, parsed.issues[0]));
         continue;
       }
       byType.set(type.id, {

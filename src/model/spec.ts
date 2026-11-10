@@ -10,6 +10,7 @@ import {
 } from './components/origin';
 import { TOKEN_NAME_PATTERN, type SpecTokens } from './components/tokens';
 import { isPackagePath, packagePathProblem } from './packagePaths';
+import { originCodeForText } from './messages/textLookup';
 import { childSets } from './specChildren';
 import type { ModelMessageTemplateCode } from './messages';
 import {
@@ -2161,10 +2162,13 @@ function addOriginIssues(
   }
   for (const problem of originsOf(raw).problems) {
     const cut = problem.indexOf(': ');
+    const message = cut < 0 ? problem : problem.slice(cut + 2);
+    const hit = originCodeForText(message);
     ctx.addIssue({
       code: 'custom',
       path: cut < 0 ? [] : parseSpecPath(problem.slice(0, cut)),
-      message: cut < 0 ? problem : problem.slice(cut + 2),
+      message,
+      ...(hit === undefined ? {} : { params: { messageCode: hit.code, ...hit.params } }),
     });
   }
 }

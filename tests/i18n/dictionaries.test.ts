@@ -63,6 +63,7 @@ describe('dicionários', () => {
       'language.en-US',
       'image.dimensions',
       // Só {parâmetros}: o texto vem do parser.
+      'model.catalog.invalidProblem',
       'model.components.invalid',
       'model.icons.invalid',
       'marking.pathSeparator',

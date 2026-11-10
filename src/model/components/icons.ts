@@ -1,4 +1,6 @@
 import { isRecord } from '../isRecord';
+import type { ModelMessageTemplateCode } from '../messages';
+import { iconsFileCodeForText } from '../messages/textLookup';
 /**
  * Conjunto de ícones da biblioteca (formato do componente 4, etapa "componentes fiéis", CF7).
  *
@@ -46,6 +48,18 @@ export interface IconSet {
 export interface IconsIssue {
   readonly path: string;
   readonly message: string;
+  /** Código e parâmetros do catálogo (`src/model/messages/`): a interface traduz por eles. */
+  readonly code?: ModelMessageTemplateCode;
+  readonly params?: Readonly<Record<string, string | number>>;
+}
+
+/** O problema com o código e os parâmetros que o catálogo acha pelo texto. */
+function issue(path: string, message: string): IconsIssue {
+  const hit = iconsFileCodeForText(message);
+  if (hit === undefined) return { path, message };
+  return hit.params === undefined
+    ? { path, message, code: hit.code }
+    : { path, message, code: hit.code, params: hit.params };
 }
 
 export type IconsParseResult =
@@ -63,14 +77,13 @@ function checkViewBox(value: unknown, path: string, out: IconsIssue[]): void {
     Array.isArray(value) &&
     value.length === 2 &&
     value.every((n) => typeof n === 'number' && Number.isFinite(n) && n > 0);
-  if (!ok)
-    out.push({ path, message: 'esperava [largura, altura] com números maiores que 0' });
+  if (!ok) out.push(issue(path, 'esperava [largura, altura] com números maiores que 0'));
 }
 
 function checkPaint(value: unknown, path: string, out: IconsIssue[]): void {
   if (typeof value === 'boolean') return;
   if (typeof value !== 'string' || value === '')
-    out.push({ path, message: 'esperava true, false ou uma cor (texto)' });
+    out.push(issue(path, 'esperava true, false ou uma cor (texto)'));
 }
 
 function checkOneOf(
@@ -80,14 +93,14 @@ function checkOneOf(
   out: IconsIssue[],
 ): void {
   if (typeof value !== 'string' || !allowed.includes(value))
-    out.push({ path, message: `esperava um de: ${allowed.join(', ')}` });
+    out.push(issue(path, `esperava um de: ${allowed.join(', ')}`));
 }
 
 const PATH_KEYS = ['d', 'fill', 'stroke', 'width', 'cap', 'join'];
 
 function checkWidth(value: unknown, path: string, out: IconsIssue[]): void {
   if (typeof value !== 'number' || !Number.isFinite(value) || value < 0)
-    out.push({ path, message: 'esperava número maior ou igual a 0' });
+    out.push(issue(path, 'esperava número maior ou igual a 0'));
 }
 
 function checkUnknownKeys(
@@ -98,7 +111,7 @@ function checkUnknownKeys(
 ): void {
   for (const key of Object.keys(value))
     if (!allowed.includes(key))
-      out.push({ path: join(path, key), message: `chave desconhecida: ${key}` });
+      out.push(issue(join(path, key), `chave desconhecida: ${key}`));
 }
 
 /** `fill`, `stroke`, `width`, `cap` e `join` de um caminho (todos opcionais). */
@@ -117,50 +130,52 @@ function checkPathStyle(
 }
 
 function checkIconPath(value: unknown, path: string, out: IconsIssue[]): void {
-  if (!isRecord(value)) return void out.push({ path, message: 'esperava objeto' });
+  if (!isRecord(value)) return void out.push(issue(path, 'esperava objeto'));
   checkUnknownKeys(value, PATH_KEYS, path, out);
   if (typeof value.d !== 'string' || value.d.trim() === '')
-    out.push({ path: join(path, 'd'), message: 'esperava os dados do caminho (texto)' });
+    out.push(issue(join(path, 'd'), 'esperava os dados do caminho (texto)'));
   checkPathStyle(value, path, out);
 }
 
 function checkIcon(value: unknown, path: string, out: IconsIssue[]): void {
-  if (!isRecord(value)) return void out.push({ path, message: 'esperava objeto' });
+  if (!isRecord(value)) return void out.push(issue(path, 'esperava objeto'));
   checkUnknownKeys(value, ['viewBox', 'paths'], path, out);
   if ('viewBox' in value) checkViewBox(value.viewBox, join(path, 'viewBox'), out);
   const at = join(path, 'paths');
   if (!Array.isArray(value.paths) || value.paths.length === 0)
-    return void out.push({ path: at, message: 'esperava lista não vazia de caminhos' });
+    return void out.push(issue(at, 'esperava lista não vazia de caminhos'));
   value.paths.forEach((p: unknown, i) => checkIconPath(p, join(at, i), out));
 }
 
 function checkHeader(input: Record<string, unknown>, out: IconsIssue[]): void {
   if (input.format !== ICONS_FORMAT)
-    out.push({ path: 'format', message: `deve ser "${ICONS_FORMAT}"` });
+    out.push(issue('format', `deve ser "${ICONS_FORMAT}"`));
   if (input.formatVersion !== ICONS_FORMAT_VERSION)
-    out.push({
-      path: 'formatVersion',
-      message: `deve ser ${ICONS_FORMAT_VERSION} (a única versão do formato)`,
-    });
-  if (!('viewBox' in input)) out.push({ path: 'viewBox', message: 'campo obrigatório' });
+    out.push(
+      issue(
+        'formatVersion',
+        `deve ser ${ICONS_FORMAT_VERSION} (a única versão do formato)`,
+      ),
+    );
+  if (!('viewBox' in input)) out.push(issue('viewBox', 'campo obrigatório'));
   else checkViewBox(input.viewBox, 'viewBox', out);
   for (const key of Object.keys(input))
     if (!['format', 'formatVersion', 'viewBox', 'icons'].includes(key))
-      out.push({ path: key, message: `chave desconhecida: ${key}` });
+      out.push(issue(key, `chave desconhecida: ${key}`));
 }
 
 function collectIssues(input: unknown): IconsIssue[] {
-  if (!isRecord(input)) return [{ path: '', message: 'esperava um objeto' }];
+  if (!isRecord(input)) return [issue('', 'esperava um objeto')];
   const out: IconsIssue[] = [];
   checkHeader(input, out);
   if (!isRecord(input.icons) || Object.keys(input.icons).length === 0) {
-    out.push({ path: 'icons', message: 'esperava um objeto com ao menos um ícone' });
+    out.push(issue('icons', 'esperava um objeto com ao menos um ícone'));
     return out;
   }
   for (const [name, icon] of Object.entries(input.icons)) {
     const at = join('icons', name);
     if (!ICON_NAME_PATTERN.test(name))
-      out.push({ path: at, message: 'nome inválido; use [a-z0-9][a-z0-9-_]*' });
+      out.push(issue(at, 'nome inválido; use [a-z0-9][a-z0-9-_]*'));
     checkIcon(icon, at, out);
   }
   return out;
@@ -183,7 +198,14 @@ export function parseIconsText(text: string): IconsParseResult {
     json = JSON.parse(text);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    const issues = [{ path: '', message: `JSON inválido: ${message}` }];
+    const issues: IconsIssue[] = [
+      {
+        path: '',
+        message: `JSON inválido: ${message}`,
+        code: 'library.invalidJson',
+        params: { detail: message },
+      },
+    ];
     return { ok: false, issues, errors: issues.map(formatIssue) };
   }
   return parseIconsFile(json);
