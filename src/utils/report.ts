@@ -58,6 +58,9 @@ export function reportError(
 export function listenForUncaughtErrors(target: EventTarget): () => void {
   const onError = (event: Event) => {
     const { error, message } = event as ErrorEvent;
+    // Aviso do navegador (sem `error`) de que o observador de tamanho adiou uma notificação para o
+    // quadro seguinte: o desenho acontece, nada falhou, e registrá-lo acendia o alerta do Diagnóstico.
+    if (!error && /^ResizeObserver loop/.test(message)) return;
     reportError('window', error ?? message);
   };
   const onRejection = (event: Event) => {

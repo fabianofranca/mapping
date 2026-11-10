@@ -16,6 +16,7 @@ import {
   resolveCitation,
   toLibraryFiles,
   validateAccepted,
+  validateProject,
   type Project,
 } from '../../src/model';
 import { validateLibrary } from '../../src/model/library';
@@ -74,6 +75,37 @@ describe('zip do projeto de exemplo', () => {
     expect(project.annotations).toHaveLength(42);
     expect(project.layers).toHaveLength(10); // + Notas (a livre virou Dúvidas) e Layout M3
     expect(project.specializations).toHaveLength(4);
+  });
+
+  it('tem as perspectivas Dados e Material 3 (Para todos) e a chegada da nota "Cadastro"', async () => {
+    const { project } = await readExample();
+    const layerId = (name: string) => project.layers.find((l) => l.name === name)?.id;
+    const container = (name: string) =>
+      project.containers.find((c) => c.name === name)?.id;
+    const note = project.markings.find((m) => m.floating);
+    expect(note).toBeDefined();
+    expect(project.perspectives.map((p) => p.name)).toEqual(['Dados', 'Material 3']);
+    const [dados, material] = project.perspectives;
+    expect(dados?.items.map((i) => i.root).sort()).toEqual(
+      [container('Cadastro'), container('Login'), note?.id].sort(),
+    );
+    expect([...(dados?.hiddenLayers ?? [])].sort()).toEqual(
+      ['Componentes', 'Eventos', 'Dúvidas'].map((n) => layerId(n)).sort(),
+    );
+    expect(material?.items.map((i) => i.root).sort()).toEqual(
+      [container('Configurações'), container('Detalhes do pedido')].sort(),
+    );
+    expect(material?.hiddenLayers).toEqual([]);
+    expect(project.arrivals).toEqual([
+      { root: note?.id, from: dados?.id, fromName: 'Dados' },
+    ]);
+  });
+
+  it('as perspectivas e a chegada não têm aviso de leitura (perspective-*, arrival-*)', async () => {
+    const { project } = await readExample();
+    const codes = validateProject(project).map((i) => i.code);
+    expect(codes.filter((c) => /^(perspective|arrival)-/.test(c))).toEqual([]);
+    expect(codes).toEqual([]);
   });
 
   it('duas telas são fotos e duas são telas em branco; cada foto está no zip', async () => {

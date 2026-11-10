@@ -6,7 +6,7 @@ import { watchViolations } from './helpers';
 // `dist/` final (ver playwright.config.ts): o `npm run build` publica `guia/` ao lado do
 // `index.html`.
 
-const STEPS = 13;
+const STEPS = 14;
 const EXAMPLE_PROPOSAL = 'Tela de Perfil e ajuste no Cadastro';
 
 /** Erros de console e de página (uma falha de script do guia aparece aqui). */
@@ -20,7 +20,7 @@ function watchErrors(page: Page): readonly string[] {
 }
 
 test.describe('guia interativo', () => {
-  test('carrega sem erro nem violação da CSP e o Próximo percorre os 13 passos', async ({
+  test('carrega sem erro nem violação da CSP e o Próximo percorre os 14 passos', async ({
     page,
   }) => {
     const errors = watchErrors(page);
@@ -55,6 +55,46 @@ test.describe('guia interativo', () => {
     await page.getByRole('button', { name: 'Formulário', exact: true }).click();
     await expect(page.locator('#insp h2')).toHaveText('Formulário');
     await expect(page.locator('#insp .ann').first()).toBeVisible();
+  });
+
+  test('o passo 14 abre na perspectiva Dados e o seletor troca as abas e os chips', async ({
+    page,
+  }) => {
+    await page.goto('/guia/');
+    const tabs = page.locator('#tabs button');
+    const chips = page.locator('#layers button');
+    const picker = page.getByLabel('Perspectiva', { exact: true });
+
+    // Na Principal (passos 1 a 13) tudo aparece.
+    await expect(picker).toHaveValue('');
+    await expect(tabs).toHaveCount(4);
+
+    await page.locator('#steps button').nth(13).click();
+    await expect(page.locator('#lesson h3')).toHaveText('Perspectivas');
+    await expect(picker.locator('option:checked')).toHaveText('Dados');
+    await expect(tabs).toHaveText(['Cadastro', 'Login']);
+    for (const name of ['Componentes', 'Eventos', 'Dúvidas']) {
+      await expect(chips.filter({ hasText: name })).toHaveAttribute(
+        'aria-pressed',
+        'false',
+      );
+    }
+    await expect(chips.filter({ hasText: 'Telas' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+
+    await picker.selectOption({ label: 'Material 3' });
+    await expect(tabs).toHaveText([
+      'Configurações (container sem foto)',
+      'Detalhes do pedido (container sem foto)',
+    ]);
+    await expect(page.locator('#layers button[aria-pressed=false]')).toHaveCount(0);
+
+    await picker.selectOption({ label: 'Principal' });
+    await expect(tabs).toHaveCount(4);
+    await page.getByRole('tab', { name: 'Cadastro' }).click();
+    await expect(page.locator('#layers button[aria-pressed=false]')).toHaveCount(0);
   });
 
   test('segue o tema escolhido na app (mapping.theme)', async ({ page }) => {
