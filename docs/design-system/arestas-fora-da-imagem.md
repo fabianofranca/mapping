@@ -3,3 +3,4 @@
 ## Pendências
 
 - `.ref-control` (Detalhes, `src/ui/TypedFields.tsx`, `src/ui/RefCell.tsx`): o controle passa a vir dentro do `Tooltip` (no lugar do `title` nativo), com o alvo, a camada e a dica de atalho por inteiro; a âncora do `Tooltip` ocupa a largura do campo. O rótulo do alvo já tem prioridade sobre o nome da camada (`.ref-control-layer` cede primeiro). Sem token novo; nada muda a 1280×720.
+- Célula `ref` da tabela (`.ref-cell`, CL1): token novo `size-grid-ref-col-min` (216px), largura mínima da coluna `ref` (rótulo, "(referência quebrada)" e o ✕). O ✕ não estica mais (só a âncora do controle), o controle encolhe dentro da célula e a referência quebrada fica numa linha com reticências. `.ref-control-layer` passa a encolher com fator `1000000`. Nos temas claro e escuro só usam tokens de cor já existentes.

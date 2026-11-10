@@ -305,6 +305,8 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-label-col': '92px',
   /** Largura mínima de uma coluna de valor na tabela (DataGrid); acima disso a tabela rola. */
   'size-grid-col-min': '96px',
+  /** Largura mínima da coluna `ref` da tabela: rótulo do alvo, "(referência quebrada)" e o ✕ de Limpar. */
+  'size-grid-ref-col-min': '216px',
   'size-dialog': '480px',
   'size-dialog-md': '560px',
   'size-dialog-lg': '820px',

@@ -645,9 +645,33 @@ button.layer-group-label:hover {
  */
 .data-grid .grid-cell-value .input,
 .data-grid .grid-cell-value .select,
-.data-grid .grid-cell-value .ref-cell,
-.data-grid .grid-cell-value .ref-control {
+.data-grid .grid-cell-value > .ref-control {
   min-width: var(--size-grid-col-min);
+}
+
+/*
+ * Célula `ref`: o controle (rótulo + ✕ de Limpar) fica numa linha só e a coluna tem largura
+ * para o rótulo e para "(referência quebrada)"; o controle encolhe dentro da âncora, então o
+ * ✕ nunca fica sobre o rótulo. O que não couber vai para o tooltip.
+ */
+.data-grid .grid-cell-value .ref-cell {
+  flex-wrap: nowrap;
+  min-width: var(--size-grid-ref-col-min);
+}
+
+.ref-cell .ref-control {
+  min-width: 0;
+}
+
+/* O ✕ de Limpar também vem numa âncora de Tooltip: só a do controle estica. */
+.ref-field.ref-cell > .tooltip-anchor:not(:first-child) {
+  flex: none;
+}
+
+.ref-cell .ref-control.is-broken .ref-control-text {
+  overflow-wrap: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .grid-head {
@@ -971,7 +995,7 @@ button.layer-group-label:hover {
 
 .ref-control-layer {
   /* Em largura estreita a camada cede primeiro: o nome do alvo é o que importa. */
-  flex: 0 100 auto;
+  flex: 0 1000000 auto;
   min-width: 0;
   max-width: 35%;
   overflow: hidden;
