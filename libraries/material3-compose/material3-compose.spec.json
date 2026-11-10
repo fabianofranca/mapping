@@ -7801,62 +7801,23 @@
             {
               "key": "value",
               "label": "Valor",
-              "type": "enum",
-              "default": "0.5",
-              "options": [
-                "0",
-                "0.1",
-                "0.2",
-                "0.3",
-                "0.4",
-                "0.5",
-                "0.6",
-                "0.7",
-                "0.8",
-                "0.9",
-                "1"
-              ],
-              "description": "Posição da alça no tipo single, de 0 a 1 em décimos (valueRange 0f..1f). Ignorado no range."
+              "type": "number",
+              "default": 0.5,
+              "description": "Posição da alça no tipo single, de 0 a 1 (valueRange 0f..1f); com steps, a alça vai ao passo mais próximo. Ignorado no range."
             },
             {
               "key": "valueStart",
               "label": "Início do intervalo",
-              "type": "enum",
-              "default": "0.2",
-              "options": [
-                "0",
-                "0.1",
-                "0.2",
-                "0.3",
-                "0.4",
-                "0.5",
-                "0.6",
-                "0.7",
-                "0.8",
-                "0.9",
-                "1"
-              ],
-              "description": "Início do intervalo no tipo range, de 0 a 1 em décimos. Ignorado no single."
+              "type": "number",
+              "default": 0.2,
+              "description": "Início do intervalo no tipo range, de 0 a 1; com steps, vai ao passo mais próximo. Ignorado no single."
             },
             {
               "key": "valueEnd",
               "label": "Fim do intervalo",
-              "type": "enum",
-              "default": "0.8",
-              "options": [
-                "0",
-                "0.1",
-                "0.2",
-                "0.3",
-                "0.4",
-                "0.5",
-                "0.6",
-                "0.7",
-                "0.8",
-                "0.9",
-                "1"
-              ],
-              "description": "Fim do intervalo no tipo range, de 0 a 1 em décimos, maior ou igual ao início. Ignorado no single."
+              "type": "number",
+              "default": 0.8,
+              "description": "Fim do intervalo no tipo range, de 0 a 1, maior ou igual ao início; com steps, vai ao passo mais próximo. Ignorado no single."
             },
             {
               "key": "steps",
@@ -7920,14 +7881,14 @@
               "name": "Valor único",
               "values": {
                 "type": "single",
-                "value": "0.5"
+                "value": 0.5
               }
             },
             {
               "name": "Com passos",
               "values": {
                 "type": "single",
-                "value": "0.4",
+                "value": 0.4,
                 "steps": 4
               }
             },
@@ -7935,15 +7896,15 @@
               "name": "Intervalo",
               "values": {
                 "type": "range",
-                "valueStart": "0.2",
-                "valueEnd": "0.8"
+                "valueStart": 0.2,
+                "valueEnd": 0.8
               }
             },
             {
               "name": "Mouse sobre",
               "values": {
                 "type": "single",
-                "value": "0.5",
+                "value": 0.5,
                 "interaction": "hovered"
               }
             },
@@ -7951,7 +7912,7 @@
               "name": "Com foco",
               "values": {
                 "type": "single",
-                "value": "0.4",
+                "value": 0.4,
                 "steps": 4,
                 "interaction": "focused"
               }
@@ -7960,8 +7921,8 @@
               "name": "Pressionado",
               "values": {
                 "type": "range",
-                "valueStart": "0.2",
-                "valueEnd": "0.8",
+                "valueStart": 0.2,
+                "valueEnd": 0.8,
                 "interaction": "pressed"
               }
             }
@@ -13656,6 +13617,128 @@
               }
             }
           ]
+        }
+      ]
+    }
+  ],
+  "migrations": [
+    {
+      "from": 1,
+      "to": 6,
+      "steps": [
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "value",
+          "default": 0.5
+        },
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "valueStart",
+          "default": 0.2
+        },
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "valueEnd",
+          "default": 0.8
+        }
+      ]
+    },
+    {
+      "from": 2,
+      "to": 6,
+      "steps": [
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "value",
+          "default": 0.5
+        },
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "valueStart",
+          "default": 0.2
+        },
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "valueEnd",
+          "default": 0.8
+        }
+      ]
+    },
+    {
+      "from": 3,
+      "to": 6,
+      "steps": [
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "value",
+          "default": 0.5
+        },
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "valueStart",
+          "default": 0.2
+        },
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "valueEnd",
+          "default": 0.8
+        }
+      ]
+    },
+    {
+      "from": 4,
+      "to": 6,
+      "steps": [
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "value",
+          "default": 0.5
+        },
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "valueStart",
+          "default": 0.2
+        },
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "valueEnd",
+          "default": 0.8
+        }
+      ]
+    },
+    {
+      "from": 5,
+      "to": 6,
+      "steps": [
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "value",
+          "default": 0.5
+        },
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "valueStart",
+          "default": 0.2
+        },
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "valueEnd",
+          "default": 0.8
         }
       ]
     }
