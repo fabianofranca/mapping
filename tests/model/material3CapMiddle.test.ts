@@ -11,29 +11,34 @@ interface Group {
   pattern?: RegExp;
   /** `true`: basta um nó com o nome (há outro, de várias linhas, que fica como está). */
   some?: boolean;
+  /** `true`: o nó ocupa a altura da caixa (`height` `fill`, ou uma expressão que o devolve). */
+  fill?: boolean;
 }
 
 /** Componente → os rótulos de uma linha que centram pela maiúscula (decisão 23). */
 const LABELS: Record<string, Group[]> = {
-  button: [{ names: ['rótulo'] }],
-  'extended-fab': [{ names: ['texto'] }],
-  chip: [{ names: ['rótulo'] }],
-  tabs: [{ names: ['rótulo'] }],
-  'segmented-button': [{ names: ['rótulo'] }],
+  button: [{ names: ['rótulo'], fill: true }],
+  'extended-fab': [{ names: ['texto'], fill: true }],
+  chip: [{ names: ['rótulo'], fill: true }],
+  tabs: [{ names: ['rótulo'], fill: true }],
+  'segmented-button': [{ names: ['rótulo'], fill: true }],
   'navigation-bar': [{ names: ['rótulo'] }],
   'navigation-rail': [{ names: ['rótulo'] }],
   'short-navigation-bar': [{ names: ['rótulo'] }],
   'navigation-drawer': [{ names: ['título', 'rótulo', 'selo'] }],
   badge: [{ names: ['número'] }],
-  snackbar: [{ names: ['rótulo da ação'] }],
-  'alert-dialog': [{ names: ['rótulo'] }],
-  tooltip: [{ names: ['rótulo da ação'] }, { names: ['texto'], some: true }],
+  snackbar: [{ names: ['rótulo da ação'], fill: true }],
+  'alert-dialog': [{ names: ['rótulo'], fill: true }],
+  tooltip: [
+    { names: ['rótulo da ação'], fill: true },
+    { names: ['texto'], some: true },
+  ],
   'dropdown-menu': [{ names: ['rótulo', 'valor', 'texto'] }],
   'text-field': [{ names: ['rótulo', 'valor'] }],
   'secure-text-field': [{ names: ['rótulo', 'valor'] }],
   'list-item': [{ names: ['título', 'conteúdo final'] }],
   'search-bar': [{ names: ['dica', 'consulta'] }],
-  'top-app-bar': [{ names: ['título', 'título centralizado'] }],
+  'top-app-bar': [{ names: ['título', 'título centralizado'], fill: true }],
   'bottom-sheet': [{ names: ['rótulo'] }],
   carousel: [{ names: ['rótulo'] }],
   'date-picker': [{ pattern: /^(dia( da semana)? \d+|número|mês exibido)$/ }],
@@ -45,6 +50,7 @@ const LABELS: Record<string, Group[]> = {
 interface RawNode {
   type?: string;
   name?: unknown;
+  height?: unknown;
   font?: { verticalAlign?: unknown };
   children?: RawNode[];
   template?: RawNode;
@@ -76,6 +82,13 @@ describe('rótulos de uma linha da Material 3 com cap-middle (decisão 23)', () 
         const capped = hits.filter((n) =>
           JSON.stringify(n.font?.verticalAlign ?? '').includes('cap-middle'),
         );
+        if (group.fill === true)
+          expect(
+            hits
+              .filter((n) => !JSON.stringify(n.height ?? '').includes('fill'))
+              .map((n) => String(n.name)),
+            'nós sem height fill',
+          ).toEqual([]);
         if (group.some === true) expect(capped.length).toBeGreaterThan(0);
         else
           expect(
