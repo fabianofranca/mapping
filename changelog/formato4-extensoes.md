@@ -16,6 +16,7 @@
 
 ## Corrigido
 
+- Na app, o `font.verticalAlign: "cap-middle"` deixava o texto cerca de meia unidade (2 a 3 px de tela a 420%) abaixo do centro, porque o navegador devolve as medidas da fonte arredondadas ao pixel nos tamanhos pequenos; as medidas agora saem de um tamanho grande, e o centro bate com o do PNG do MCP.
 - A prova de desenho do `validate_library` roda cada caso em cada modo da especialização, com os tokens do modo resolvidos (o tamanho e a família vêm do token, não do padrão de 14 px), e o aviso cita o modo (`…, modo dark, …`; o que vale em todos os modos sai uma vez, sem modo); sem `tokens`, a mensagem não muda.
 - `font.wrap: "none"` sem `ellipsis` numa caixa de largura fixa recorta a linha por pixel na caixa (a letra que passa sai cortada no meio, como `white-space: nowrap; overflow: hidden`), com `align` `left`, `center` e `right`, na app e no PNG do MCP; antes o Konva tirava a letra inteira.
 - Uma linha de texto só quebra quando passa da caixa por mais de 0,5 px (uma folga única, no motor, no medidor do Konva e no desenho): a última palavra deixa de cair para a linha de baixo por uma fração de pixel, e um parágrafo com a largura medida do DOM quebra nas mesmas palavras.

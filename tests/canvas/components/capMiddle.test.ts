@@ -18,16 +18,20 @@ afterEach(() => measureSpy?.mockRestore());
 
 /** ascent 10, descent 3 (a linha de base do Konva fica em (10−3)/2 + lh/2) e `H` com 8 de altura. */
 function injectMetrics(): void {
-  measureSpy = vi.spyOn(Konva.Text.prototype, 'measureSize').mockImplementation(
-    (text: string) =>
-      ({
-        width: text.length * 6,
-        fontBoundingBoxAscent: 10,
-        fontBoundingBoxDescent: 3,
-        actualBoundingBoxAscent: text === 'H' ? 8 : 9,
-        actualBoundingBoxDescent: 0,
-      }) as unknown as ReturnType<Konva.Text['measureSize']>,
-  );
+  measureSpy = vi.spyOn(Konva.Text.prototype, 'measureSize').mockImplementation(function (
+    this: Konva.Text,
+    text: string,
+  ) {
+    // As métricas valem para o tamanho 10 do nó e escalam com o tamanho medido.
+    const k = this.fontSize() / 10;
+    return {
+      width: text.length * 6,
+      fontBoundingBoxAscent: 10 * k,
+      fontBoundingBoxDescent: 3 * k,
+      actualBoundingBoxAscent: (text === 'H' ? 8 : 9) * k,
+      actualBoundingBoxDescent: 0,
+    } as unknown as ReturnType<Konva.Text['measureSize']>;
+  });
 }
 
 function scene(node: Record<string, unknown>, height = 40): Scene {
