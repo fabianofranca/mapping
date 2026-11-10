@@ -115,7 +115,10 @@ export function arrivalBadgeWidth(text: string, metrics: ArrivalMetrics): number
  * sem nenhum livre, o de menor interseção. `self` é o id da raiz do selo: ela não se bloqueia.
  * Tamanho e vão em px de tela. Com `view` (a área visível, em unidades do canvas) o selo é puxado
  * para dentro dela; com `avoid` (um retângulo sobreposto ao canvas, como o minimapa) ele sai de
- * baixo dele.
+ * baixo dele. Os dois ajustes valem para cada candidato antes da escolha (um lugar empurrado para
+ * dentro da vista não pode cair sobre o título de outra raiz), e `extra` são outros retângulos a
+ * evitar, como o título da faixa (CL1, achados 1.2 e 2.1). Raiz pequena sem lugar livre ainda
+ * tenta o canto de dentro dela, o único que só cobre a própria raiz.
  */
 export function arrivalBadgeSpot(
   rect: Rect,
@@ -126,30 +129,40 @@ export function arrivalBadgeSpot(
   avoid?: Rect,
   roots: readonly ArrivalRoot[] = [],
   self?: string,
+  extra: readonly Rect[] = [],
 ): Point {
   const w = width / zoom;
   const h = metrics.height / zoom;
   const nameBand = metrics.nameBand / zoom;
-  const blockers = roots
-    .filter((r) => r.id !== self)
-    .map(({ rect: r }) => ({
-      x: r.x,
-      y: r.y - nameBand,
-      width: r.width,
-      height: r.height + nameBand,
-    }));
+  const blockers = [
+    ...roots
+      .filter((r) => r.id !== self)
+      .map(({ rect: r }) => ({
+        x: r.x,
+        y: r.y - nameBand,
+        width: r.width,
+        height: r.height + nameBand,
+      })),
+    ...extra,
+  ];
   const small = rect.width * zoom < 2 * width || rect.height * zoom < 2 * metrics.height;
-  const candidates = small
-    ? smallCandidates(rect, zoom, w, h, metrics)
-    : bigCandidates(rect, zoom, w, h, metrics, blockers);
-  const at = pickSpot(candidates, w, h, blockers);
+  const around = smallCandidates(rect, zoom, w, h, metrics);
+  const within = insideCandidates(rect, zoom, w, h, metrics, blockers);
+  const candidates = (small ? [...around, ...within] : [...within, ...around]).map((c) =>
+    fitToView(c, w, h, view, avoid),
+  );
+  return pickSpot(candidates, w, h, blockers);
+}
+
+/** O candidato puxado para dentro da área visível e para fora do minimapa, quando há. */
+function fitToView(at: Point, w: number, h: number, view?: Rect, avoid?: Rect): Point {
   if (!view) return at;
   const inside = keepInside(at, w, h, view);
   return avoid ? clearOf(inside, w, h, view, avoid) : inside;
 }
 
-/** Raiz grande: por dentro, no canto de baixo; subido acima do que o cobre; depois, os de fora. */
-function bigCandidates(
+/** Por dentro da raiz, no canto de baixo; subido acima do que o cobre. */
+function insideCandidates(
   rect: Rect,
   zoom: number,
   w: number,
@@ -165,7 +178,7 @@ function bigCandidates(
     const y = Math.min(...covering.map((r) => r.y)) - gap - h;
     if (y >= rect.y + metrics.nameBand / zoom) list.push({ x: inside.x, y });
   }
-  return [...list, ...smallCandidates(rect, zoom, w, h, metrics)];
+  return list;
 }
 
 /** Raiz pequena: abaixo do canto de baixo à esquerda, à direita da raiz e à esquerda dela. */

@@ -48,9 +48,7 @@
 .canvas-overlay-foot .notice {
   margin: 0;
   max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
   pointer-events: auto;
 }
 
