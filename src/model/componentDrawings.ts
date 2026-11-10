@@ -4,7 +4,19 @@ import type {
   FieldValues,
   ScreenAnchor,
 } from './components/componentFormat';
-import { instantiate, type TextMeasurer } from './components/instantiate';
+import {
+  instantiate,
+  type InstantiateOptions,
+  type TextMeasurer,
+} from './components/instantiate';
+import type { ResolvedTokens } from './components/tokens';
+import {
+  NO_PROVIDED,
+  extendProvided,
+  pickProvided,
+  sameProvided,
+  type ProvidedValues,
+} from './components/provided';
 import type { FrameNode } from './components/scene';
 import {
   markingComponent,
@@ -80,6 +92,10 @@ interface Entry {
   readonly mode: string | undefined;
   /** Retângulos das filhas diretas (só containers). */
   readonly childRects: readonly Rect[];
+  /** Cor herdada: só os valores oferecidos pelos ancestrais que o componente lê (`$provided`). */
+  readonly provided: ProvidedValues;
+  /** O que o slot desta marcação oferece às filhas (`provide`), já resolvido. */
+  readonly offers: ProvidedValues | undefined;
   readonly drawing: ComponentDrawing;
 }
 
@@ -147,6 +163,21 @@ function overflowsOf(
   return found;
 }
 
+/** As opções do `instantiate` de uma marcação: só leva `tokens` e `provided` quando há. */
+function instantiateOptions(
+  markingId: string,
+  measure: TextMeasurer,
+  tokens: ResolvedTokens | undefined,
+  provided: ProvidedValues,
+): InstantiateOptions {
+  return {
+    measure,
+    idPrefix: markingId,
+    ...(tokens === undefined ? {} : { tokens }),
+    ...(provided === NO_PROVIDED ? {} : { provided }),
+  };
+}
+
 function draw(
   mc: MarkingComponent,
   markingId: string,
@@ -157,28 +188,25 @@ function draw(
   childRects: readonly Rect[],
   measure: TextMeasurer,
   mode: string | undefined,
-): ComponentDrawing {
+  provided: ProvidedValues,
+): { drawing: ComponentDrawing; offers: ProvidedValues | undefined } {
   const tokens =
     mode === undefined ? undefined : mc.component.resolvedTokensByMode?.[mode];
   const screen = mc.component.screen;
   // Em pixels de tela o desenho mede o `size` do componente, na origem (o canvas o ancora).
   const box: Rect = screen === undefined ? rect : { x: 0, y: 0, ...mc.component.size };
-  const { root, warnings, shortfalls, overflowWarnings } = instantiate(
+  const { root, warnings, shortfalls, overflowWarnings, provides } = instantiate(
     mc.component,
     values,
     box,
-    {
-      measure,
-      idPrefix: markingId,
-      ...(tokens === undefined ? {} : { tokens }),
-    },
+    instantiateOptions(markingId, measure, tokens, provided),
   );
   // Com `screen` o desenho pode passar do retângulo da marcação: não há pendência "não cabe".
   const found =
     screen === undefined
       ? overflowsOf(overflowWarnings ?? [], shortfalls ?? {}, root, childRects)
       : {};
-  return {
+  const drawing: ComponentDrawing = {
     markingId,
     containerId,
     annotationId: mc.annotation.id,
@@ -191,6 +219,7 @@ function draw(
       ? {}
       : { screen: { anchor: screen.anchor ?? 'center', rect } }),
   };
+  return { drawing, offers: provides };
 }
 
 /**
@@ -231,9 +260,19 @@ export function createDrawingCache(): DrawingCache {
     const children = projectIndex(p).children;
     const next = new Map<string, Entry>();
     const drawings = new Map<string, ComponentDrawing>();
+    // Cor herdada: o que as filhas de cada marcação herdam (o do pai, com o que ele oferece por
+    // cima), de cima para baixo; o mais próximo vale e quem não oferece é atravessado.
+    const scopes = new Map<string, ProvidedValues>();
+    const scopeOf = (parentId: string | null): ProvidedValues =>
+      parentId === null ? NO_PROVIDED : (scopes.get(parentId) ?? NO_PROVIDED);
     for (const marking of topDown(p.markings)) {
+      const inherited = scopeOf(marking.parentId);
       const mc = markingComponent(p, catalog, marking.id);
-      if (mc === null) continue;
+      if (mc === null) {
+        scopes.set(marking.id, inherited);
+        continue;
+      }
+      const provided = pickProvided(inherited, mc.component);
       const { values, warnings: valueWarnings } = drawingValues(
         p,
         mc.annotation,
@@ -259,13 +298,15 @@ export function createDrawingCache(): DrawingCache {
         shallowEqual(before.values, values) &&
         before.valueWarnings.length === valueWarnings.length &&
         before.valueWarnings.every((w, i) => w.text === valueWarnings[i]?.text) &&
-        sameRects(before.childRects, childRects)
+        sameRects(before.childRects, childRects) &&
+        sameProvided(before.provided, provided)
       ) {
         next.set(marking.id, before);
         drawings.set(marking.id, before.drawing);
+        scopes.set(marking.id, extendProvided(inherited, before.offers));
         continue;
       }
-      const drawing = draw(
+      const { drawing, offers } = draw(
         mc,
         marking.id,
         marking.containerId,
@@ -275,7 +316,9 @@ export function createDrawingCache(): DrawingCache {
         childRects,
         measure,
         mode,
+        provided,
       );
+      scopes.set(marking.id, extendProvided(inherited, offers));
       next.set(marking.id, {
         markingId: marking.id,
         containerId: marking.containerId,
@@ -288,6 +331,8 @@ export function createDrawingCache(): DrawingCache {
         epoch,
         mode,
         childRects,
+        provided,
+        offers,
         drawing,
       });
       drawings.set(marking.id, drawing);

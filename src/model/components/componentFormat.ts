@@ -85,6 +85,12 @@ export type Expr<T> =
       readonly cases: Readonly<Record<string, Expr<T>>>;
       readonly default?: Expr<T>;
     }
+  /**
+   * Cor herdada (v4): o valor que o slot de um ancestral oferece (`SlotTemplate.provide`) com esse
+   * nome, o do ancestral mais próximo que o oferece. Sem ancestral que o ofereça vale `default`
+   * (uma expressão); sem `default`, o padrão do lugar.
+   */
+  | { readonly $provided: string; readonly default?: Expr<T> }
   /** Só para texto: concatena as partes (números viram texto). */
   | { readonly $concat: readonly Expr<string | number>[] }
   /**
@@ -379,6 +385,13 @@ export interface SlotTemplate extends TemplateNodeBase {
    * ausente) deixa cada filho no próprio retângulo. `gap` e `padding` podem vir de campos.
    */
   readonly layout?: LayoutSpec;
+  /**
+   * Cor herdada (v4): valores que o slot oferece às marcações filhas, pelo nome (livre, sem nome de
+   * plataforma). Cada valor é resolvido no pai (campos, tokens e modo dele) e a filha o lê com
+   * `{ "$provided": "<nome>", "default": … }`, como o `CompositionLocal` do Compose. Valor que não
+   * produz nada não oferece: o ancestral mais acima vale.
+   */
+  readonly provide?: Readonly<Record<string, Expr<string | number>>>;
 }
 
 /**

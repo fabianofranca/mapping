@@ -74,9 +74,11 @@ import {
   evaluate,
   evaluateBoolean,
   evaluateText,
+  providedKey,
   referencedFields,
   sizeKey,
   toNumber,
+  type ProvidedValues,
 } from './expressions';
 import {
   LAYOUT_ALIGNS,
@@ -88,6 +90,7 @@ import {
   mirrorMain,
   parseSizeSpec,
 } from './layoutValues';
+import { providingSlot } from './provided';
 import { expandRepeats } from './repeat';
 import { applyGaps } from './strokeGaps';
 import { WRAP_SLACK } from './textWrap';
@@ -175,10 +178,20 @@ export interface InstantiateOptions {
    * (`resolvedIcons`, posto pelo catálogo); sem nenhum, todo ícone é desconhecido.
    */
   readonly icons?: IconSet;
+  /**
+   * Cor herdada (v4): o que os slots dos ancestrais oferecem, já resolvido, pelo nome; o `$provided`
+   * do template o lê (com `default` quando falta). Ausente = nenhum ancestral oferece nada.
+   */
+  readonly provided?: ProvidedValues;
 }
 
 export interface Instantiated {
   readonly root: FrameNode;
+  /**
+   * O que o `slot` do componente oferece às filhas (`provide`), resolvido com os campos, os tokens
+   * e o modo desta instância; o valor que não produz nada não entra. Ausente = não oferece.
+   */
+  readonly provides?: ProvidedValues;
   readonly warnings: readonly string[];
   /**
    * Quanto falta (px) em cada aviso de "não cabe" (`conteúdo maior que a caixa: …`, `texto maior
@@ -413,6 +426,16 @@ interface ResolvedAnchors {
 // Instanciação
 // ---------------------------------------------------------------------------------------
 
+/** Os valores herdados como campos reservados do motor (`$provided:<nome>`), onde o `$provided` os lê. */
+function providedFields(
+  provided: ProvidedValues | undefined,
+): Record<string, string | number> {
+  const out: Record<string, string | number> = {};
+  for (const [name, value] of Object.entries(provided ?? {}))
+    out[providedKey(name)] = value;
+  return out;
+}
+
 /**
  * Monta o "motor" de um componente com seus valores: avaliação, tamanhos e planos dos quadros.
  * `instantiate` e `measureComponent` compartilham este fechamento (e o cache dos planos).
@@ -436,6 +459,7 @@ function createEngine(
     warnings: expansionWarnings,
   } = expandRepeats(source, {
     ...sourceValues,
+    ...providedFields(options.provided),
     [sizeKey('width')]: instanceSize.width,
     [sizeKey('height')]: instanceSize.height,
   });
@@ -1649,6 +1673,19 @@ function createEngine(
     }
   };
 
+  /** O que o slot oferece às filhas: cada `provide` avaliado com os valores desta instância. */
+  const provides = (): ProvidedValues | undefined => {
+    const offered = providingSlot(component)?.provide;
+    if (offered === undefined) return undefined;
+    const out: Record<string, string | number> = {};
+    for (const [name, expr] of Object.entries(offered)) {
+      const value = ev<unknown>(expr as Expr<unknown>, undefined);
+      if (typeof value === 'number' && Number.isFinite(value)) out[name] = value;
+      else if (typeof value === 'string' && value.trim() !== '') out[name] = value;
+    }
+    return Object.keys(out).length === 0 ? undefined : out;
+  };
+
   const buildRoot = (box: Box): FrameNode =>
     withGaps(
       buildFrame(component.template, 'root', box.x, box.y, box.width, box.height, true),
@@ -1657,6 +1694,7 @@ function createEngine(
   return {
     warnings,
     shortfalls,
+    provides,
     planFrame,
     buildRoot,
     template: component.template,
@@ -1673,8 +1711,10 @@ export function instantiate(
 ): Instantiated {
   const engine = createEngine(component, values, options, box);
   const root = engine.buildRoot(box);
+  const provides = engine.provides();
   return {
     root,
+    ...(provides === undefined ? {} : { provides }),
     warnings: [...engine.warnings],
     shortfalls: Object.fromEntries(engine.shortfalls),
     overflowWarnings: [...engine.shortfalls.keys()],
