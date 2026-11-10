@@ -53,6 +53,7 @@ export function shortcutGroups(): readonly ShortcutGroup[] {
         row('editor.redo', combo(SHORTCUT_LABELS.redo), ['Ctrl', 'Y']),
         row('shortcuts.delete', ['Delete'], ['Backspace']),
         row('shortcuts.escape', ['Esc']),
+        row('shortcuts.escapeWindow', ['Esc']),
         row('shortcuts.escapeToPrimary', ['Esc']),
         row(
           'shortcuts.shiftClick',

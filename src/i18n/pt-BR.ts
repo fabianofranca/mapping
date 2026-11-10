@@ -583,6 +583,7 @@ export const ptBR = {
   'shortcuts.resizeWindow': 'Redimensionar a janela em foco (16 px por vez)',
   'shortcuts.delete': 'Excluir o item selecionado',
   'shortcuts.escape': 'Cancelar o gesto ou limpar a seleção',
+  'shortcuts.escapeWindow': 'Fechar Detalhes ou Comentários (com o foco na janela)',
   'shortcuts.selectParent': 'Selecionar o item pai',
   'shortcuts.selectChild': 'Selecionar o primeiro filho',
   'shortcuts.zoomIn': 'Aproximar',
