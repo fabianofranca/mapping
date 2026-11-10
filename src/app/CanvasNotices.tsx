@@ -7,7 +7,7 @@ import type { EditorNotices } from './useEditorNotices';
 
 /**
  * Avisos sobre o canvas: somente leitura, reparo ao abrir e backup da migração, erro ao salvar (B13),
- * erros de operação, toast e progresso (a dica do Desenhar vive na barra do canvas).
+ * erros de operação (no topo) e, no pé, o aviso curto e o progresso (a dica do Desenhar vive na barra do canvas).
  */
 export function CanvasNotices({ notices }: { readonly notices: EditorNotices }) {
   const { open, session, store, ui } = useEditor();
@@ -74,17 +74,22 @@ export function CanvasNotices({ notices }: { readonly notices: EditorNotices }) 
             </Button>
           </p>
         )}
-        {toast && (
-          <p class="notice notice-info" role="status">
-            {toast}
-          </p>
-        )}
-        {progress && (
-          <p class="notice notice-info" aria-live="polite">
-            {progress}
-          </p>
-        )}
       </div>
+      {(toast || progress) && (
+        // Avisos curtos no pé do canvas (PV2): pequenos, à esquerda, sem cobrir o topo da imagem.
+        <div class="canvas-overlay-foot">
+          {toast && (
+            <p class="notice notice-info" role="status">
+              {toast}
+            </p>
+          )}
+          {progress && (
+            <p class="notice notice-info" aria-live="polite">
+              {progress}
+            </p>
+          )}
+        </div>
+      )}
     </>
   );
 }
