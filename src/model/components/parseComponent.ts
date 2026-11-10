@@ -87,6 +87,7 @@ const EXPR_OPS: readonly string[] = [
   '$token',
   '$rows',
   '$size',
+  '$provided',
   ...NUMERIC_OP_NAMES,
 ];
 const CONDITION_OPS: readonly string[] = [
@@ -340,7 +341,7 @@ function checkNumericExpr(
   out: Ctx,
 ): void {
   checkKeys(value, [op], path, out);
-  if (check.tokenKind !== 'number' && check !== checkTextOrNumber)
+  if (check.tokenKind !== 'number' && !acceptsAnyValue(check))
     return add(out, path, `${op} só vale onde se espera número`);
   checkOperands(value[op], join(path, op), NUMERIC_OPS[op] as never, out);
 }
@@ -354,7 +355,7 @@ function checkCountExpr(
   out: Ctx,
 ): void {
   checkKeys(value, [op], path, out);
-  if (check.tokenKind !== 'number' && check !== checkTextOrNumber)
+  if (check.tokenKind !== 'number' && !acceptsAnyValue(check))
     return add(out, path, `${op} só vale onde se espera número`);
   const at = join(path, op);
   if (op === '$rows') return checkFieldKey(value.$rows, at, out);
@@ -415,6 +416,26 @@ function checkTokenAlpha(
   checkLiteralOrToken(alpha, join(path, 'alpha'), checkUnit, out);
 }
 
+/** Uma posição que aceita texto ou número (o texto de um nó, o valor de um `provide`): operações numéricas valem nela. */
+function acceptsAnyValue(check: Check): boolean {
+  return check === checkTextOrNumber || check === checkProvided;
+}
+
+/** O valor de um `provide`: texto ou número, ou uma expressão (`$token` de cor entre elas). */
+const checkProvided: Check = Object.assign(
+  (v: unknown, p: string, out: Ctx) => checkTextOrNumber(v, p, out),
+  { tokenKind: 'color' as TokenKind },
+);
+
+/** `provide` do slot (v4): nome → valor, o nome não vazio. */
+function checkProvide(value: unknown, path: string, out: Ctx): void {
+  if (!isRecord(value)) return add(out, path, 'esperava objeto');
+  for (const [name, expr] of Object.entries(value)) {
+    if (name.trim() === '') add(out, path, 'nome vazio');
+    else checkExpr(expr, join(path, name), checkProvided, out);
+  }
+}
+
 /** Confere uma expressão: operador (`$field`, `$if`…) ou o literal conferido por `check`. */
 function checkExpr(value: unknown, path: string, check: Check, out: Ctx): void {
   if (!isExprObject(value)) return check(value, path, out);
@@ -460,6 +481,15 @@ function checkExpr(value: unknown, path: string, check: Check, out: Ctx): void {
     }
     case '$token':
       return checkTokenExpr(value, path, check, out);
+    case '$provided':
+      // Só desenho: o que muda a geometria (tamanho, espaço, texto) não herda.
+      if (check.tokenKind !== 'color')
+        return add(out, path, '$provided só vale onde se espera cor');
+      checkKeys(value, ['$provided', 'default'], path, out);
+      if (typeof value.$provided !== 'string' || value.$provided.trim() === '')
+        add(out, at, 'esperava nome da cor oferecida (texto não vazio)');
+      if ('default' in value) checkExpr(value.default, join(path, 'default'), check, out);
+      return;
     case '$concat':
       checkKeys(value, ['$concat'], path, out);
       if (!Array.isArray(value.$concat)) return add(out, at, 'esperava lista de partes');
@@ -808,7 +838,7 @@ function checkNode(value: unknown, path: string, out: Ctx): void {
     ellipse: [],
     text: ['text', 'runs', 'font', 'color'],
     path: ['d', 'viewBox', 'fillRule'],
-    slot: ['label', 'layout'],
+    slot: ['label', 'layout', 'provide'],
     repeat: ['field', 'count', 'direction', 'gap', 'distribute', 'template'],
     image: ['src', 'fit'],
     icon: ['name', 'color', 'strokeWidth'],
@@ -872,6 +902,7 @@ function checkNode(value: unknown, path: string, out: Ctx): void {
     case 'slot':
       if ('label' in value) checkExpr(value.label, join(path, 'label'), checkString, out);
       if ('layout' in value) checkLayout(value.layout, join(path, 'layout'), out);
+      if ('provide' in value) checkProvide(value.provide, join(path, 'provide'), out);
       return;
     case 'repeat':
       checkRepeat(value, path, out);
@@ -1003,6 +1034,7 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
   ['font', 'maxLines'],
   ['runs'],
   ['rotation'],
+  ['provide'],
 ];
 
 /** Chaves que valem em qualquer versão como literal, mas só com expressão na formatVersion 4. */
@@ -1100,6 +1132,7 @@ function isV4OnlyOp(key: string): boolean {
     isNumericOp(key) ||
     key === '$rows' ||
     key === '$size' ||
+    key === '$provided' ||
     (COMPARISON_OPS as readonly string[]).includes(key)
   );
 }

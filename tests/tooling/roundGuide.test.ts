@@ -48,6 +48,20 @@ describe('round-guide.mjs (TS1, decisão 7)', () => {
     expect(first).toContain('docs/TESTING.md');
   });
 
+  it('o quadro do "Comece aqui" leva só as linhas dos roteiros pedidos e a da seção 6', async () => {
+    const out = await build(['R0', 'R2']);
+    expect(out).toContain('| 1 | R0 — Preparação e fumaça |');
+    expect(out).toContain('| 3 | R2 — Projeto neste dispositivo e zip |');
+    expect(out).toContain('| 4 | Seção 6 — repositório de teste e MCP |');
+    expect(out).not.toContain('| 2 | R1 — Roteiro principal |');
+    expect(out).not.toContain('| 27 | R25 — Componentes fiéis |');
+    expect(out).not.toMatch(/^\| sob demanda \|/m);
+    // O quadro inteiro continua no guia completo.
+    expect(GUIDE).toContain('| 27 | R25 — Componentes fiéis |');
+    const rows = (await build(['R25'])).match(/^\| (?:\d+|sob demanda) \|/gm);
+    expect(rows).toHaveLength(2);
+  });
+
   it('fica abaixo de 35% do guia para R0, R2, R4 e R11', async () => {
     const out = await build(['R0', 'R2', 'R4', 'R11']);
     expect(Buffer.byteLength(out)).toBeLessThan(Buffer.byteLength(GUIDE) * 0.35);

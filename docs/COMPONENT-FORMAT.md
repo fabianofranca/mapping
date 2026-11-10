@@ -202,10 +202,11 @@ Desenha um ícone do conjunto declarado em `icons` na especialização (`formatV
 
 O espaço reservado para outras instâncias: a **marcação filha** de uma marcação com este tipo é desenhada dentro do slot. Um componente com slot recebe marcações filhas dentro do slot.
 
-| Chave    | Descrição                                                                                                                                                                       |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `label`  | Texto do rótulo do slot (aceita expressão). Padrão: o `name` do nó.                                                                                                             |
-| `layout` | Como as filhas se organizam: `row` ou `column` (com `gap`, `padding`, `align`, `justify`) ou `none`/ausente (cada filha fica onde está). `gap` e `padding` podem vir de campos. |
+| Chave     | Descrição                                                                                                                                                                                                                                                            |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `label`   | Texto do rótulo do slot (aceita expressão). Padrão: o `name` do nó.                                                                                                                                                                                                  |
+| `layout`  | Como as filhas se organizam: `row` ou `column` (com `gap`, `padding`, `align`, `justify`) ou `none`/ausente (cada filha fica onde está). `gap` e `padding` podem vir de campos.                                                                                      |
+| `provide` | `formatVersion` 4. Valores que o slot **oferece** às marcações filhas: `{ "<nome>": <expressão de texto ou número> }`, a cor do conteúdo, por exemplo. Cada valor é resolvido no pai (campos, tokens e modo dele) e a filha o lê com `$provided`. Ver "Cor herdada". |
 
 O slot é o espaço; quem é desenhado dentro dele são as filhas. `width`, `height` e `anchors` dele funcionam como em qualquer nó. Um slot invisível (`visible` falso) ignora as filhas.
 
@@ -538,15 +539,16 @@ O teste que prova é `tests/model/components/layout.test.ts` (grupo "cartão do 
 
 Quase todo atributo aceita, no lugar de um literal, uma **expressão** sobre os campos da anotação.
 
-| Expressão                                                             | Resultado                                                                                                                                                         |
-| --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `{ "$field": "label", "default": "Botão" }`                           | O valor do campo. Se o campo está vazio (`null`, ausente ou só espaços), vale o `default`; sem `default`, vale o padrão do atributo.                              |
-| `{ "$if": <condição>, "then": …, "else": … }`                         | `then` se a condição vale; senão `else` (opcional; sem ele vale o padrão do atributo). `then` e `else` são expressões.                                            |
-| `{ "$switch": "variant", "cases": { "a": …, "b": … }, "default": … }` | O caso cujo nome é o valor do campo; `default` (opcional) se não há caso ou o campo está vazio.                                                                   |
-| `{ "$concat": ["R$ ", { "$field": "preco" }] }`                       | Só em texto: junta as partes (números viram texto).                                                                                                               |
-| `{ "$add": […] }`, `{ "$mul": […] }`, `{ "$sin": … }`…                | `formatVersion` 4. Contas de número (veja "Contas e comparações").                                                                                                |
-| `{ "$rows": "items" }`, `{ "$size": "width" }`                        | `formatVersion` 4. O número de linhas de um campo `table` e a largura ou altura da instância (veja "Contas e comparações").                                       |
-| `{ "$token": "primary" }`                                             | `formatVersion` 4. O valor do token da especialização no modo do desenho (veja "Tokens de design (`$token`)"). Só onde se espera cor, número ou família de fonte. |
+| Expressão                                                                 | Resultado                                                                                                                                                                                                                           |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `{ "$field": "label", "default": "Botão" }`                               | O valor do campo. Se o campo está vazio (`null`, ausente ou só espaços), vale o `default`; sem `default`, vale o padrão do atributo.                                                                                                |
+| `{ "$if": <condição>, "then": …, "else": … }`                             | `then` se a condição vale; senão `else` (opcional; sem ele vale o padrão do atributo). `then` e `else` são expressões.                                                                                                              |
+| `{ "$switch": "variant", "cases": { "a": …, "b": … }, "default": … }`     | O caso cujo nome é o valor do campo; `default` (opcional) se não há caso ou o campo está vazio.                                                                                                                                     |
+| `{ "$concat": ["R$ ", { "$field": "preco" }] }`                           | Só em texto: junta as partes (números viram texto).                                                                                                                                                                                 |
+| `{ "$add": […] }`, `{ "$mul": […] }`, `{ "$sin": … }`…                    | `formatVersion` 4. Contas de número (veja "Contas e comparações").                                                                                                                                                                  |
+| `{ "$rows": "items" }`, `{ "$size": "width" }`                            | `formatVersion` 4. O número de linhas de um campo `table` e a largura ou altura da instância (veja "Contas e comparações").                                                                                                         |
+| `{ "$token": "primary" }`                                                 | `formatVersion` 4. O valor do token da especialização no modo do desenho (veja "Tokens de design (`$token`)"). Só onde se espera cor, número ou família de fonte.                                                                   |
+| `{ "$provided": "content-color", "default": { "$token": "on-surface" } }` | `formatVersion` 4. O valor que um ancestral oferece com o `provide` do slot dele (só em posição de cor); sem ancestral que o ofereça, vale o `default` (uma expressão), e sem `default`, o padrão do atributo (veja "Cor herdada"). |
 
 ```json
 {
@@ -630,6 +632,55 @@ Na `formatVersion` 4 as expressões **calculam**. Cada operando é uma expressã
 - **Tokens embutidos:** `font-sans` e `font-mono` (família) existem em toda biblioteca e valem a fonte do hospedeiro: a app usa o `--font-sans` e o `--font-mono` do tema, o visualizador usa a pilha dos tokens da app ou a opção `fonts` do `createViewer`, e o MCP usa a Mapping Sans embutida (a Mapping Mono em `font-mono`; ver "Medida do texto"). A especialização pode redefini-los em `tokens.values`, e a definição dela vence a do hospedeiro. O texto sem `font.family` usa `font-sans`.
 - **Modo:** o desenho segue o modo do projeto e do container (`drawingMode`, ver `docs/FORMAT.md`); sem modo escolhido, usa o **primeiro** de `tokens.modes`, e um modo não declarado cai no primeiro, sem aviso.
 - **Validação:** o `parseComponent` confere a forma e a posição e entrega a lista de `$token` do arquivo; o validador da biblioteca (`validate_library`, nível 2) cruza com os `tokens` da especialização e recusa o token inexistente (`o token "x" não existe nos tokens da especialização`) e o de tipo errado (`o token "primary" é cor, mas aqui se espera número`), com o caminho do nó (`template.children[0].fill`). Sem `tokens` na especialização, só os embutidos existem.
+
+### Cor herdada (`provide` e `$provided`, `formatVersion` 4)
+
+Texto, ícone e botão de ícone dentro de um contêiner (uma superfície, um scaffold, um cartão) têm a cor do **conteúdo** que o contêiner define: no Compose, o `LocalContentColor` (um `CompositionLocal`). Sem isto, cada filha repetiria a cor ou receberia um campo só para ela. O contêiner **oferece** a cor no `slot`, e a filha a **lê**.
+
+```json
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "surface",
+  "name": "Surface",
+  "size": { "width": 200, "height": 80 },
+  "template": {
+    "type": "frame",
+    "fill": { "$token": "surface" },
+    "children": [
+      {
+        "type": "slot",
+        "provide": {
+          "content-color": {
+            "$switch": "tone",
+            "cases": { "inverse": { "$token": "inverse-on-surface" } },
+            "default": { "$token": "on-surface" }
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+A filha (aqui, o componente `texto`) lê com `$provided`:
+
+```json
+{
+  "type": "text",
+  "text": { "$field": "label" },
+  "color": { "$provided": "content-color", "default": { "$token": "on-surface" } }
+}
+```
+
+- **`provide`** (só no `slot`, só na `formatVersion` 4): objeto de nome para expressão de texto ou número. O nome é livre (sem nome de plataforma) e não pode ser vazio (erro `template…provide: nome vazio`). Cada valor é resolvido **no pai**, com os campos, os tokens e o modo dele, e chega pronto à filha. Um valor que não produz nada (um `$field` vazio sem `default`) não oferece nada. Dentro de `provide`, `$token` só vale de cor; as operações numéricas valem.
+- **`$provided`** (`{ "$provided": "<nome>", "default": <expressão> }`) só vale em **posição de cor** (a cor do texto, do ícone, do fundo, do contorno e da sombra); onde mexe na geometria (tamanho, espaço, texto) é o erro `$provided só vale onde se espera cor`, e o `src` da `image` continua só literal ou `{ "$field" }`. O `default` também é uma expressão (pode ser `$token` ou `$field`). Sem nome (vazio ou não texto): `…$provided: esperava nome da cor oferecida (texto não vazio)`; outra chave junto de `$provided` e `default`: `chave desconhecida`.
+- **Quem vale:** o ancestral **mais próximo** que oferece aquele nome, subindo pela árvore de pertencimento (`parentId`), como o `CompositionLocal` do Compose. Um ancestral que não oferece o nome é atravessado; com pai e avô oferecendo o mesmo nome, vale o do pai.
+- **Sem ancestral que ofereça** (marcação flutuante, marcação do canvas sem pai, instância no nível da tela, a prova de desenho dos exemplos da biblioteca e o Catálogo): vale o `default`; sem `default`, o padrão do lugar, como um `$field` vazio.
+- **Redesenho:** o cache dos desenhos compara também os valores oferecidos que a filha lê. Trocar o campo do pai que muda o valor oferecido redesenha **só as filhas que leem** esse nome; as outras voltam com o mesmo desenho. Nas telas do visualizador e do laboratório a herança vem do `parentId` da instância. No MCP, `render_marking` de uma filha sozinha usa o valor do ancestral.
+- **É só desenho.** A herança não muda o `code` do tipo e não há parâmetro de código; a cor herdada só decide o que se vê.
+- Numa `formatVersion` 1 a 3, `provide` e `$provided` são o erro `só é permitido com formatVersion 4`, no caminho da chave (`…provide`, `…color.$provided`).
+- **Padrão para a biblioteca:** o contêiner (surface, scaffold) oferece a cor do conteúdo (`content-color`, por exemplo); o texto, o ícone e o botão de ícone a leem com `default` (o padrão do lugar, `on-surface`). Assim o texto solto, sem contêiner, continua com a cor de sempre.
 
 ## Avisos do motor
 
@@ -779,9 +830,10 @@ Quem lê um aviso terminado em **`(aproximado)`** (a prova de desenho do validad
 
 - **Um slot por componente.** Os filhos de uma instância vão sempre para o primeiro slot do template (busca em profundidade). Vários slots ficam para depois.
 - **Imagem só remota e só no nó `image`.** O arquivo do componente não carrega bitmap; a imagem vem de uma URL `https://` (um campo `string`) e não é gravada no projeto. Imagem local no pacote fica para depois (por isso o caminho relativo é recusado no `src`). Elipse e caminho não aceitam imagem como preenchimento.
-- **`formatVersion` 1, 2, 3 e 4.** A 2 acrescenta só o `repeat`, a 3 só o `image`, a 4 só `stroke.cap`, `stroke.join`, `stroke.sides`, `stroke.offset` e `stroke.gap`, `stroke.dash` por expressão, `shadow.spread` e `shadow` como lista, `$token` em sombra, raios e tracejado, `alpha` e `over` no `$token` de cor, `font.align: justify`, os `fit` novos da imagem, `layout.justify` `space-around`/`space-evenly`, `layout.reverse`, `font.wrap`, `font.ellipsis` e `font.maxLines`, a expressão no layout e no tamanho, `minWidth`/`maxWidth`/`minHeight`/`maxHeight`, `repeat.distribute`, `runs` (o texto rico), `$token` (os tokens de design) e o nó `icon` (o conjunto de ícones) (a medição em duas passagens vale em todas), e as anteriores continuam aceitas sem mudança. Mudar o formato do componente pede uma versão nova e a decisão de aceitar as antigas.
-- **Chave nova da `formatVersion` 4 num MCP antigo.** O formato 4 ganha chaves sem subir a versão (`font.align: justify`, `over` no `$token`, os `fit` novos, `shadow.spread`, a lista de sombras, `stroke.gap`). Um MCP anterior à que as trouxe lê um componente que as usa e recusa a chave ou o valor desconhecido no caminho dela (`esperava um de: …`, `chave desconhecida: over`); atualize o MCP antes de abrir uma biblioteca que as usa.
+- **`formatVersion` 1, 2, 3 e 4.** A 2 acrescenta só o `repeat`, a 3 só o `image`, a 4 só `stroke.cap`, `stroke.join`, `stroke.sides`, `stroke.offset` e `stroke.gap`, `stroke.dash` por expressão, `shadow.spread` e `shadow` como lista, `provide` no slot e `$provided` (a cor herdada), `$token` em sombra, raios e tracejado, `alpha` e `over` no `$token` de cor, `font.align: justify`, os `fit` novos da imagem, `layout.justify` `space-around`/`space-evenly`, `layout.reverse`, `font.wrap`, `font.ellipsis` e `font.maxLines`, a expressão no layout e no tamanho, `minWidth`/`maxWidth`/`minHeight`/`maxHeight`, `repeat.distribute`, `runs` (o texto rico), `$token` (os tokens de design) e o nó `icon` (o conjunto de ícones) (a medição em duas passagens vale em todas), e as anteriores continuam aceitas sem mudança. Mudar o formato do componente pede uma versão nova e a decisão de aceitar as antigas.
+- **Chave nova da `formatVersion` 4 num MCP antigo.** O formato 4 ganha chaves sem subir a versão (`font.align: justify`, `over` no `$token`, os `fit` novos, `shadow.spread`, a lista de sombras, `stroke.gap`, `provide` e `$provided`). Um MCP anterior à que as trouxe lê um componente que as usa e recusa a chave ou o valor desconhecido no caminho dela (`esperava um de: …`, `chave desconhecida: over`); atualize o MCP antes de abrir uma biblioteca que as usa. Vale também para `provide` no slot e `$provided` (a cor herdada): o MCP antigo recusa a chave desconhecida (`chave desconhecida: provide`).
 - **Contas só com número, sem datas nem texto.** As operações (`$add`, `$mul`, `$sin`…), as comparações (`$gt`…), `$rows`, `$size`, o `repeat` por `count` com `$index` e as âncoras por expressão valem só na `formatVersion` 4 do componente e só sobre números: não há função de data (`$weekday`), nem formatação de texto além do número (casas fixas, zero à esquerda, separador de milhar). Um MCP anterior a esta versão recusa a chave nova no caminho dela.
+- **Cor herdada só vale entre marcações pai e filha do mesmo desenho.** Só o primeiro `slot` do componente oferece (vale o `provide` dele); o valor é texto ou número, resolvido no pai, e não há consulta entre irmãs nem para baixo. A marcação flutuante e a do canvas sem pai usam sempre o `default`.
 - **`rotation` é só desenho e gira em volta do centro da caixa.** Ela não muda layout nem medida; o conteúdo de um `slot` dentro de um nó girado não gira; o recorte ampliado (traço e sombra fora da caixa) de um quadro com filhos girados conta a caixa do filho girado, não o que há dentro dele.
 - Gradiente só `linear`; sombra até 4 por nó, só em `frame`, `rect` e `ellipse` (ver abaixo); borda uma por nó.
 - **`shadow.spread` e lista de sombras só em `frame`, `rect` e `ellipse`.** Em outros tipos de nó o `spread` é ignorado e uma lista desenha só a primeira sombra (sem aviso).
