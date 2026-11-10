@@ -59,6 +59,21 @@ describe('painel.py: CI esperando o coordenador (CV3, decisão 16)', () => {
     expect(out).not.toContain('CI esperando o coordenador: nenhuma');
   });
 
+  it('ciWait novo sem ciWaitAt grava o horário de agora (não herda o do PR anterior)', () => {
+    runAt('2026-11-10T10:00:00Z', 'row', dir, '#10', 'ciWait=PR #7', 'ciWaitAt=now');
+    runAt('2026-11-10T10:30:00Z', 'row', dir, '#10', 'ciWait=PR #9');
+    expect(queue()[0]?.ciWaitAt).toBe('2026-11-10T10:30:00Z');
+    runAt('2026-11-10T10:31:00Z', 'row', dir, '#11', 'ciWait=PR #11');
+    expect(queue()[1]?.ciWaitAt).toBe('2026-11-10T10:31:00Z');
+  });
+
+  it('ended= (linha encerrada) limpa o ciWait esquecido', () => {
+    runAt('2026-11-10T10:00:00Z', 'row', dir, '#10', 'ciWait=PR #7', 'ciWaitAt=now');
+    runAt('2026-11-10T10:05:00Z', 'row', dir, '#10', 'ended=now');
+    expect(queue()[0]?.ciWait).toBe('');
+    expect(queue()[0]?.ciWaitAt).toBe('');
+  });
+
   it('ciWait= limpa o ciWaitAt e o show volta a "nenhuma"', () => {
     runAt('2026-11-10T10:00:00Z', 'row', dir, '#10', 'ciWait=PR #7', 'ciWaitAt=now');
     runAt('2026-11-10T10:05:00Z', 'row', dir, '#10', 'ciWait=');

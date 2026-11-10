@@ -211,7 +211,10 @@ def cmd_row(a):
         pairs["childAt"] = ""
     if pairs.get("ciWait") == "":
         pairs["ciWaitAt"] = ""
-    if pairs.get("status") in ("concluída", "falhou") and "ciWait" not in pairs:
+    if pairs.get("ciWait") and "ciWaitAt" not in pairs:
+        # PR novo na espera: o horário é o de agora, nunca o do PR anterior (nem em branco).
+        pairs["ciWaitAt"] = "now"
+    if (pairs.get("status") in ("concluída", "falhou") or pairs.get("ended")) and "ciWait" not in pairs:
         # Etapa terminada não espera CI: um ciWait esquecido não fica na conferência para sempre.
         pairs["ciWait"] = pairs["ciWaitAt"] = ""
     if "child" in pairs and "wait" not in pairs:

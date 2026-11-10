@@ -339,6 +339,7 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
       expect(leitura).toContain(`\`${job}\``);
     expect(leitura).toMatch(/`queued` ou `in_progress`/);
     expect(leitura).toMatch(/`failure`, `cancelled` ou `timed_out`/);
+    expect(leitura).toMatch(/execução mais recente de cada job/);
     expect(leitura).toMatch(/outros workflows não contam/);
     expect(leitura).toMatch(/verde de um commit anterior não vale/);
     expect(leitura).toMatch(
