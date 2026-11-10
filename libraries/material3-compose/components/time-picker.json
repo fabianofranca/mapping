@@ -4,8 +4,14 @@
   "id": "time-picker",
   "name": "Time picker",
   "description": "Seletor de hora em um diálogo de 328: no modo picker, os campos de hora e minuto e o relógio de 256 com o seletor; no modo input, só os campos com os rótulos. Sem 24 horas, mostra o AM/PM.",
-  "size": { "width": 328, "height": 528 },
-  "sizing": { "width": 328, "height": "hug" },
+  "size": {
+    "width": 328,
+    "height": 528
+  },
+  "sizing": {
+    "width": 328,
+    "height": "hug"
+  },
   "preview": {
     "title": "Selecionar horário",
     "mode": "picker",
@@ -17,45 +23,85 @@
   "template": {
     "type": "frame",
     "name": "time picker",
-    "layout": { "type": "column", "padding": 24, "align": "center" },
-    "cornerRadius": { "$token": "corner-extra-large" },
-    "fill": { "$token": "surface-container-high" },
+    "layout": {
+      "type": "column",
+      "padding": 24,
+      "align": "center"
+    },
+    "cornerRadius": {
+      "$token": "corner-extra-large"
+    },
+    "fill": {
+      "$token": "surface-container-high"
+    },
     "children": [
       {
         "type": "frame",
         "name": "cabeçalho",
-        "layout": { "type": "column" },
+        "layout": {
+          "type": "column"
+        },
         "width": "fill",
         "height": 36,
-        "visible": { "$has": "title" },
+        "visible": {
+          "$has": "title"
+        },
         "children": [
           {
             "type": "text",
             "name": "título",
-            "text": { "$field": "title" },
-            "font": {
-              "size": { "$token": "label-medium-size" },
-              "weight": { "$token": "label-medium-weight" },
-              "lineHeight": { "$token": "label-medium-line-height" },
-              "letterSpacing": { "$token": "label-medium-tracking" }
+            "text": {
+              "$field": "title"
             },
-            "color": { "$token": "on-surface-variant" }
+            "font": {
+              "size": {
+                "$token": "label-medium-size"
+              },
+              "weight": {
+                "$token": "label-medium-weight"
+              },
+              "lineHeight": {
+                "$token": "label-medium-line-height"
+              },
+              "letterSpacing": {
+                "$token": "label-medium-tracking"
+              }
+            },
+            "color": {
+              "$token": "on-surface-variant"
+            }
           }
         ]
       },
       {
         "type": "frame",
         "name": "hora e minuto",
-        "layout": { "type": "row", "align": "start", "justify": "center" },
+        "layout": {
+          "type": "row",
+          "align": "start",
+          "justify": "center"
+        },
         "width": "fill",
-        "height": { "$if": { "$eq": ["mode", "input"] }, "then": "hug", "else": 80 },
+        "height": {
+          "$if": {
+            "$eq": ["mode", "input"]
+          },
+          "then": "hug",
+          "else": 80
+        },
         "children": [
           {
             "type": "frame",
             "name": "campo da hora",
             "layout": {
               "type": "column",
-              "gap": { "$if": { "$eq": ["mode", "input"] }, "then": 7, "else": 0 }
+              "gap": {
+                "$if": {
+                  "$eq": ["mode", "input"]
+                },
+                "then": 7,
+                "else": 0
+              }
             },
             "width": 96,
             "height": "hug",
@@ -63,24 +109,50 @@
               {
                 "type": "frame",
                 "name": "hora",
-                "layout": { "type": "none" },
+                "layout": {
+                  "type": "none"
+                },
                 "width": 96,
-                "height": { "$if": { "$eq": ["mode", "input"] }, "then": 72, "else": 80 },
-                "cornerRadius": { "$token": "corner-small" },
+                "height": {
+                  "$if": {
+                    "$eq": ["mode", "input"]
+                  },
+                  "then": 72,
+                  "else": 80
+                },
+                "cornerRadius": {
+                  "$token": "corner-small"
+                },
                 "fill": {
-                  "$if": { "$not": { "$eq": ["selection", "minute"] } },
-                  "then": { "$token": "primary-container" },
-                  "else": { "$token": "surface-container-highest" }
+                  "$if": {
+                    "$not": {
+                      "$eq": ["selection", "minute"]
+                    }
+                  },
+                  "then": {
+                    "$token": "primary-container"
+                  },
+                  "else": {
+                    "$token": "surface-container-highest"
+                  }
                 },
                 "stroke": {
                   "color": {
                     "$if": {
                       "$and": [
-                        { "$eq": ["mode", "input"] },
-                        { "$not": { "$eq": ["selection", "minute"] } }
+                        {
+                          "$eq": ["mode", "input"]
+                        },
+                        {
+                          "$not": {
+                            "$eq": ["selection", "minute"]
+                          }
+                        }
                       ]
                     },
-                    "then": { "$token": "primary" },
+                    "then": {
+                      "$token": "primary"
+                    },
                     "else": "none"
                   },
                   "width": 2,
@@ -90,22 +162,45 @@
                   {
                     "type": "rect",
                     "name": "estado",
-                    "cornerRadius": { "$token": "corner-small" },
-                    "fill": { "$token": "on-primary-container" },
+                    "cornerRadius": {
+                      "$token": "corner-small"
+                    },
+                    "fill": {
+                      "$token": "on-primary-container"
+                    },
                     "opacity": {
                       "$switch": "interaction",
                       "cases": {
-                        "hovered": { "$token": "state-hover" },
-                        "focused": { "$token": "state-focus" },
-                        "pressed": { "$token": "state-pressed" }
+                        "hovered": {
+                          "$token": "state-hover"
+                        },
+                        "focused": {
+                          "$token": "state-focus"
+                        },
+                        "pressed": {
+                          "$token": "state-pressed"
+                        }
                       },
                       "default": 0
                     },
-                    "anchors": { "left": 0, "right": 0, "top": 0, "bottom": 0 },
+                    "anchors": {
+                      "left": 0,
+                      "right": 0,
+                      "top": 0,
+                      "bottom": 0
+                    },
                     "visible": {
                       "$and": [
-                        { "$not": { "$eq": ["interaction", "none"] } },
-                        { "$not": { "$eq": ["selection", "minute"] } }
+                        {
+                          "$not": {
+                            "$eq": ["interaction", "none"]
+                          }
+                        },
+                        {
+                          "$not": {
+                            "$eq": ["selection", "minute"]
+                          }
+                        }
                       ]
                     }
                   },
@@ -113,21 +208,37 @@
                     "type": "text",
                     "name": "valor",
                     "text": {
-                      "$if": { "$has": "hour" },
+                      "$if": {
+                        "$has": "hour"
+                      },
                       "then": {
                         "$if": {
                           "$lt": [
                             {
-                              "$if": { "$eq": ["is24Hour", "false"] },
+                              "$if": {
+                                "$eq": ["is24Hour", "false"]
+                              },
                               "then": {
                                 "$add": [
                                   {
-                                    "$mod": [{ "$add": [{ "$field": "hour" }, 11] }, 12]
+                                    "$mod": [
+                                      {
+                                        "$add": [
+                                          {
+                                            "$field": "hour"
+                                          },
+                                          11
+                                        ]
+                                      },
+                                      12
+                                    ]
                                   },
                                   1
                                 ]
                               },
-                              "else": { "$field": "hour" }
+                              "else": {
+                                "$field": "hour"
+                              }
                             },
                             10
                           ]
@@ -136,61 +247,125 @@
                           "$concat": [
                             "0",
                             {
-                              "$if": { "$eq": ["is24Hour", "false"] },
+                              "$if": {
+                                "$eq": ["is24Hour", "false"]
+                              },
                               "then": {
                                 "$add": [
                                   {
-                                    "$mod": [{ "$add": [{ "$field": "hour" }, 11] }, 12]
+                                    "$mod": [
+                                      {
+                                        "$add": [
+                                          {
+                                            "$field": "hour"
+                                          },
+                                          11
+                                        ]
+                                      },
+                                      12
+                                    ]
                                   },
                                   1
                                 ]
                               },
-                              "else": { "$field": "hour" }
+                              "else": {
+                                "$field": "hour"
+                              }
                             }
                           ]
                         },
                         "else": {
-                          "$if": { "$eq": ["is24Hour", "false"] },
+                          "$if": {
+                            "$eq": ["is24Hour", "false"]
+                          },
                           "then": {
                             "$add": [
-                              { "$mod": [{ "$add": [{ "$field": "hour" }, 11] }, 12] },
+                              {
+                                "$mod": [
+                                  {
+                                    "$add": [
+                                      {
+                                        "$field": "hour"
+                                      },
+                                      11
+                                    ]
+                                  },
+                                  12
+                                ]
+                              },
                               1
                             ]
                           },
-                          "else": { "$field": "hour" }
+                          "else": {
+                            "$field": "hour"
+                          }
                         }
                       },
                       "else": {
-                        "$if": { "$eq": ["is24Hour", "false"] },
+                        "$if": {
+                          "$eq": ["is24Hour", "false"]
+                        },
                         "then": "12",
                         "else": "00"
                       }
                     },
                     "font": {
                       "size": {
-                        "$if": { "$eq": ["mode", "input"] },
-                        "then": { "$token": "display-medium-size" },
-                        "else": { "$token": "display-large-size" }
+                        "$if": {
+                          "$eq": ["mode", "input"]
+                        },
+                        "then": {
+                          "$token": "display-medium-size"
+                        },
+                        "else": {
+                          "$token": "display-large-size"
+                        }
                       },
-                      "weight": { "$token": "display-large-weight" },
+                      "weight": {
+                        "$token": "display-large-weight"
+                      },
                       "lineHeight": {
-                        "$if": { "$eq": ["mode", "input"] },
-                        "then": { "$token": "display-medium-line-height" },
-                        "else": { "$token": "display-large-line-height" }
+                        "$if": {
+                          "$eq": ["mode", "input"]
+                        },
+                        "then": {
+                          "$token": "display-medium-line-height"
+                        },
+                        "else": {
+                          "$token": "display-large-line-height"
+                        }
                       },
                       "letterSpacing": {
-                        "$if": { "$eq": ["mode", "input"] },
-                        "then": { "$token": "display-medium-tracking" },
-                        "else": { "$token": "display-large-tracking" }
+                        "$if": {
+                          "$eq": ["mode", "input"]
+                        },
+                        "then": {
+                          "$token": "display-medium-tracking"
+                        },
+                        "else": {
+                          "$token": "display-large-tracking"
+                        }
                       },
                       "verticalAlign": "cap-middle"
                     },
                     "color": {
-                      "$if": { "$not": { "$eq": ["selection", "minute"] } },
-                      "then": { "$token": "on-primary-container" },
-                      "else": { "$token": "on-surface" }
+                      "$if": {
+                        "$not": {
+                          "$eq": ["selection", "minute"]
+                        }
+                      },
+                      "then": {
+                        "$token": "on-primary-container"
+                      },
+                      "else": {
+                        "$token": "on-surface"
+                      }
                     },
-                    "anchors": { "centerX": true, "top": 0, "bottom": 0 }
+                    "anchors": {
+                      "centerX": true,
+                      "top": 0,
+                      "bottom": 0
+                    }
                   }
                 ]
               },
@@ -199,22 +374,44 @@
                 "name": "rótulo da hora",
                 "text": "Hora",
                 "font": {
-                  "size": { "$token": "body-small-size" },
-                  "weight": { "$token": "body-small-weight" },
-                  "lineHeight": { "$token": "body-small-line-height" },
-                  "letterSpacing": { "$token": "body-small-tracking" }
+                  "size": {
+                    "$token": "body-small-size"
+                  },
+                  "weight": {
+                    "$token": "body-small-weight"
+                  },
+                  "lineHeight": {
+                    "$token": "body-small-line-height"
+                  },
+                  "letterSpacing": {
+                    "$token": "body-small-tracking"
+                  }
                 },
-                "color": { "$token": "on-surface-variant" },
-                "visible": { "$eq": ["mode", "input"] }
+                "color": {
+                  "$token": "on-surface-variant"
+                },
+                "visible": {
+                  "$eq": ["mode", "input"]
+                }
               }
             ]
           },
           {
             "type": "frame",
             "name": "dois pontos",
-            "layout": { "type": "row", "align": "center", "justify": "center" },
+            "layout": {
+              "type": "row",
+              "align": "center",
+              "justify": "center"
+            },
             "width": 24,
-            "height": { "$if": { "$eq": ["mode", "input"] }, "then": 72, "else": 80 },
+            "height": {
+              "$if": {
+                "$eq": ["mode", "input"]
+              },
+              "then": 72,
+              "else": 80
+            },
             "children": [
               {
                 "type": "text",
@@ -222,25 +419,47 @@
                 "text": ":",
                 "font": {
                   "size": {
-                    "$if": { "$eq": ["mode", "input"] },
-                    "then": { "$token": "display-medium-size" },
-                    "else": { "$token": "display-large-size" }
+                    "$if": {
+                      "$eq": ["mode", "input"]
+                    },
+                    "then": {
+                      "$token": "display-medium-size"
+                    },
+                    "else": {
+                      "$token": "display-large-size"
+                    }
                   },
-                  "weight": { "$token": "display-large-weight" },
+                  "weight": {
+                    "$token": "display-large-weight"
+                  },
                   "lineHeight": {
-                    "$if": { "$eq": ["mode", "input"] },
-                    "then": { "$token": "display-medium-line-height" },
-                    "else": { "$token": "display-large-line-height" }
+                    "$if": {
+                      "$eq": ["mode", "input"]
+                    },
+                    "then": {
+                      "$token": "display-medium-line-height"
+                    },
+                    "else": {
+                      "$token": "display-large-line-height"
+                    }
                   },
                   "letterSpacing": {
-                    "$if": { "$eq": ["mode", "input"] },
-                    "then": { "$token": "display-medium-tracking" },
-                    "else": { "$token": "display-large-tracking" }
+                    "$if": {
+                      "$eq": ["mode", "input"]
+                    },
+                    "then": {
+                      "$token": "display-medium-tracking"
+                    },
+                    "else": {
+                      "$token": "display-large-tracking"
+                    }
                   },
                   "align": "center",
                   "verticalAlign": "cap-middle"
                 },
-                "color": { "$token": "on-surface" },
+                "color": {
+                  "$token": "on-surface"
+                },
                 "width": "fill",
                 "height": "fill"
               }
@@ -251,7 +470,13 @@
             "name": "campo do minuto",
             "layout": {
               "type": "column",
-              "gap": { "$if": { "$eq": ["mode", "input"] }, "then": 7, "else": 0 }
+              "gap": {
+                "$if": {
+                  "$eq": ["mode", "input"]
+                },
+                "then": 7,
+                "else": 0
+              }
             },
             "width": 96,
             "height": "hug",
@@ -259,24 +484,46 @@
               {
                 "type": "frame",
                 "name": "minuto",
-                "layout": { "type": "none" },
+                "layout": {
+                  "type": "none"
+                },
                 "width": 96,
-                "height": { "$if": { "$eq": ["mode", "input"] }, "then": 72, "else": 80 },
-                "cornerRadius": { "$token": "corner-small" },
+                "height": {
+                  "$if": {
+                    "$eq": ["mode", "input"]
+                  },
+                  "then": 72,
+                  "else": 80
+                },
+                "cornerRadius": {
+                  "$token": "corner-small"
+                },
                 "fill": {
-                  "$if": { "$eq": ["selection", "minute"] },
-                  "then": { "$token": "primary-container" },
-                  "else": { "$token": "surface-container-highest" }
+                  "$if": {
+                    "$eq": ["selection", "minute"]
+                  },
+                  "then": {
+                    "$token": "primary-container"
+                  },
+                  "else": {
+                    "$token": "surface-container-highest"
+                  }
                 },
                 "stroke": {
                   "color": {
                     "$if": {
                       "$and": [
-                        { "$eq": ["mode", "input"] },
-                        { "$eq": ["selection", "minute"] }
+                        {
+                          "$eq": ["mode", "input"]
+                        },
+                        {
+                          "$eq": ["selection", "minute"]
+                        }
                       ]
                     },
-                    "then": { "$token": "primary" },
+                    "then": {
+                      "$token": "primary"
+                    },
                     "else": "none"
                   },
                   "width": 2,
@@ -286,22 +533,43 @@
                   {
                     "type": "rect",
                     "name": "estado",
-                    "cornerRadius": { "$token": "corner-small" },
-                    "fill": { "$token": "on-primary-container" },
+                    "cornerRadius": {
+                      "$token": "corner-small"
+                    },
+                    "fill": {
+                      "$token": "on-primary-container"
+                    },
                     "opacity": {
                       "$switch": "interaction",
                       "cases": {
-                        "hovered": { "$token": "state-hover" },
-                        "focused": { "$token": "state-focus" },
-                        "pressed": { "$token": "state-pressed" }
+                        "hovered": {
+                          "$token": "state-hover"
+                        },
+                        "focused": {
+                          "$token": "state-focus"
+                        },
+                        "pressed": {
+                          "$token": "state-pressed"
+                        }
                       },
                       "default": 0
                     },
-                    "anchors": { "left": 0, "right": 0, "top": 0, "bottom": 0 },
+                    "anchors": {
+                      "left": 0,
+                      "right": 0,
+                      "top": 0,
+                      "bottom": 0
+                    },
                     "visible": {
                       "$and": [
-                        { "$not": { "$eq": ["interaction", "none"] } },
-                        { "$eq": ["selection", "minute"] }
+                        {
+                          "$not": {
+                            "$eq": ["interaction", "none"]
+                          }
+                        },
+                        {
+                          "$eq": ["selection", "minute"]
+                        }
                       ]
                     }
                   },
@@ -309,39 +577,87 @@
                     "type": "text",
                     "name": "valor",
                     "text": {
-                      "$if": { "$has": "minute" },
+                      "$if": {
+                        "$has": "minute"
+                      },
                       "then": {
-                        "$if": { "$lt": [{ "$field": "minute" }, 10] },
-                        "then": { "$concat": ["0", { "$field": "minute" }] },
-                        "else": { "$field": "minute" }
+                        "$if": {
+                          "$lt": [
+                            {
+                              "$field": "minute"
+                            },
+                            10
+                          ]
+                        },
+                        "then": {
+                          "$concat": [
+                            "0",
+                            {
+                              "$field": "minute"
+                            }
+                          ]
+                        },
+                        "else": {
+                          "$field": "minute"
+                        }
                       },
                       "else": "00"
                     },
                     "font": {
                       "size": {
-                        "$if": { "$eq": ["mode", "input"] },
-                        "then": { "$token": "display-medium-size" },
-                        "else": { "$token": "display-large-size" }
+                        "$if": {
+                          "$eq": ["mode", "input"]
+                        },
+                        "then": {
+                          "$token": "display-medium-size"
+                        },
+                        "else": {
+                          "$token": "display-large-size"
+                        }
                       },
-                      "weight": { "$token": "display-large-weight" },
+                      "weight": {
+                        "$token": "display-large-weight"
+                      },
                       "lineHeight": {
-                        "$if": { "$eq": ["mode", "input"] },
-                        "then": { "$token": "display-medium-line-height" },
-                        "else": { "$token": "display-large-line-height" }
+                        "$if": {
+                          "$eq": ["mode", "input"]
+                        },
+                        "then": {
+                          "$token": "display-medium-line-height"
+                        },
+                        "else": {
+                          "$token": "display-large-line-height"
+                        }
                       },
                       "letterSpacing": {
-                        "$if": { "$eq": ["mode", "input"] },
-                        "then": { "$token": "display-medium-tracking" },
-                        "else": { "$token": "display-large-tracking" }
+                        "$if": {
+                          "$eq": ["mode", "input"]
+                        },
+                        "then": {
+                          "$token": "display-medium-tracking"
+                        },
+                        "else": {
+                          "$token": "display-large-tracking"
+                        }
                       },
                       "verticalAlign": "cap-middle"
                     },
                     "color": {
-                      "$if": { "$eq": ["selection", "minute"] },
-                      "then": { "$token": "on-primary-container" },
-                      "else": { "$token": "on-surface" }
+                      "$if": {
+                        "$eq": ["selection", "minute"]
+                      },
+                      "then": {
+                        "$token": "on-primary-container"
+                      },
+                      "else": {
+                        "$token": "on-surface"
+                      }
                     },
-                    "anchors": { "centerX": true, "top": 0, "bottom": 0 }
+                    "anchors": {
+                      "centerX": true,
+                      "top": 0,
+                      "bottom": 0
+                    }
                   }
                 ]
               },
@@ -350,13 +666,25 @@
                 "name": "rótulo do minuto",
                 "text": "Minuto",
                 "font": {
-                  "size": { "$token": "body-small-size" },
-                  "weight": { "$token": "body-small-weight" },
-                  "lineHeight": { "$token": "body-small-line-height" },
-                  "letterSpacing": { "$token": "body-small-tracking" }
+                  "size": {
+                    "$token": "body-small-size"
+                  },
+                  "weight": {
+                    "$token": "body-small-weight"
+                  },
+                  "lineHeight": {
+                    "$token": "body-small-line-height"
+                  },
+                  "letterSpacing": {
+                    "$token": "body-small-tracking"
+                  }
                 },
-                "color": { "$token": "on-surface-variant" },
-                "visible": { "$eq": ["mode", "input"] }
+                "color": {
+                  "$token": "on-surface-variant"
+                },
+                "visible": {
+                  "$eq": ["mode", "input"]
+                }
               }
             ]
           },
@@ -366,28 +694,63 @@
             "width": 12,
             "height": 1,
             "fill": "none",
-            "visible": { "$eq": ["is24Hour", "false"] }
+            "visible": {
+              "$eq": ["is24Hour", "false"]
+            }
           },
           {
             "type": "frame",
             "name": "AM e PM",
-            "layout": { "type": "column" },
+            "layout": {
+              "type": "column"
+            },
             "width": 52,
-            "height": { "$if": { "$eq": ["mode", "input"] }, "then": 72, "else": 80 },
-            "cornerRadius": { "$token": "corner-small" },
+            "height": {
+              "$if": {
+                "$eq": ["mode", "input"]
+              },
+              "then": 72,
+              "else": 80
+            },
+            "cornerRadius": {
+              "$token": "corner-small"
+            },
             "clip": true,
-            "stroke": { "color": { "$token": "outline" }, "width": 1, "align": "inside" },
-            "visible": { "$eq": ["is24Hour", "false"] },
+            "stroke": {
+              "color": {
+                "$token": "outline"
+              },
+              "width": 1,
+              "align": "inside"
+            },
+            "visible": {
+              "$eq": ["is24Hour", "false"]
+            },
             "children": [
               {
                 "type": "frame",
                 "name": "AM",
-                "layout": { "type": "row", "align": "center", "justify": "center" },
+                "layout": {
+                  "type": "row",
+                  "align": "center",
+                  "justify": "center"
+                },
                 "width": "fill",
                 "height": "fill",
                 "fill": {
-                  "$if": { "$not": { "$gte": [{ "$field": "hour" }, 12] } },
-                  "then": { "$token": "tertiary-container" },
+                  "$if": {
+                    "$not": {
+                      "$gte": [
+                        {
+                          "$field": "hour"
+                        },
+                        12
+                      ]
+                    }
+                  },
+                  "then": {
+                    "$token": "tertiary-container"
+                  },
                   "else": "none"
                 },
                 "children": [
@@ -396,16 +759,37 @@
                     "name": "texto",
                     "text": "AM",
                     "font": {
-                      "size": { "$token": "title-medium-size" },
-                      "weight": { "$token": "title-medium-weight" },
-                      "lineHeight": { "$token": "title-medium-line-height" },
-                      "letterSpacing": { "$token": "title-medium-tracking" },
+                      "size": {
+                        "$token": "title-medium-size"
+                      },
+                      "weight": {
+                        "$token": "title-medium-weight"
+                      },
+                      "lineHeight": {
+                        "$token": "title-medium-line-height"
+                      },
+                      "letterSpacing": {
+                        "$token": "title-medium-tracking"
+                      },
                       "verticalAlign": "cap-middle"
                     },
                     "color": {
-                      "$if": { "$not": { "$gte": [{ "$field": "hour" }, 12] } },
-                      "then": { "$token": "on-tertiary-container" },
-                      "else": { "$token": "on-surface-variant" }
+                      "$if": {
+                        "$not": {
+                          "$gte": [
+                            {
+                              "$field": "hour"
+                            },
+                            12
+                          ]
+                        }
+                      },
+                      "then": {
+                        "$token": "on-tertiary-container"
+                      },
+                      "else": {
+                        "$token": "on-surface-variant"
+                      }
                     },
                     "height": "fill"
                   }
@@ -416,17 +800,32 @@
                 "name": "divisor",
                 "width": "fill",
                 "height": 1,
-                "fill": { "$token": "outline" }
+                "fill": {
+                  "$token": "outline"
+                }
               },
               {
                 "type": "frame",
                 "name": "PM",
-                "layout": { "type": "row", "align": "center", "justify": "center" },
+                "layout": {
+                  "type": "row",
+                  "align": "center",
+                  "justify": "center"
+                },
                 "width": "fill",
                 "height": "fill",
                 "fill": {
-                  "$if": { "$gte": [{ "$field": "hour" }, 12] },
-                  "then": { "$token": "tertiary-container" },
+                  "$if": {
+                    "$gte": [
+                      {
+                        "$field": "hour"
+                      },
+                      12
+                    ]
+                  },
+                  "then": {
+                    "$token": "tertiary-container"
+                  },
                   "else": "none"
                 },
                 "children": [
@@ -435,16 +834,35 @@
                     "name": "texto",
                     "text": "PM",
                     "font": {
-                      "size": { "$token": "title-medium-size" },
-                      "weight": { "$token": "title-medium-weight" },
-                      "lineHeight": { "$token": "title-medium-line-height" },
-                      "letterSpacing": { "$token": "title-medium-tracking" },
+                      "size": {
+                        "$token": "title-medium-size"
+                      },
+                      "weight": {
+                        "$token": "title-medium-weight"
+                      },
+                      "lineHeight": {
+                        "$token": "title-medium-line-height"
+                      },
+                      "letterSpacing": {
+                        "$token": "title-medium-tracking"
+                      },
                       "verticalAlign": "cap-middle"
                     },
                     "color": {
-                      "$if": { "$gte": [{ "$field": "hour" }, 12] },
-                      "then": { "$token": "on-tertiary-container" },
-                      "else": { "$token": "on-surface-variant" }
+                      "$if": {
+                        "$gte": [
+                          {
+                            "$field": "hour"
+                          },
+                          12
+                        ]
+                      },
+                      "then": {
+                        "$token": "on-tertiary-container"
+                      },
+                      "else": {
+                        "$token": "on-surface-variant"
+                      }
                     },
                     "height": "fill"
                   }
@@ -460,16 +878,26 @@
         "width": "fill",
         "height": 36,
         "fill": "none",
-        "visible": { "$not": { "$eq": ["mode", "input"] } }
+        "visible": {
+          "$not": {
+            "$eq": ["mode", "input"]
+          }
+        }
       },
       {
         "type": "frame",
         "name": "relógio",
-        "layout": { "type": "none" },
+        "layout": {
+          "type": "none"
+        },
         "width": 256,
         "height": 256,
-        "cornerRadius": { "$token": "corner-full" },
-        "fill": { "$token": "surface-container-highest" },
+        "cornerRadius": {
+          "$token": "corner-full"
+        },
+        "fill": {
+          "$token": "surface-container-highest"
+        },
         "children": [
           {
             "type": "repeat",
@@ -477,8 +905,16 @@
             "count": {
               "$if": {
                 "$and": [
-                  { "$not": { "$eq": ["is24Hour", "false"] } },
-                  { "$not": { "$eq": ["selection", "minute"] } }
+                  {
+                    "$not": {
+                      "$eq": ["is24Hour", "false"]
+                    }
+                  },
+                  {
+                    "$not": {
+                      "$eq": ["selection", "minute"]
+                    }
+                  }
                 ]
               },
               "then": 24,
@@ -487,43 +923,89 @@
             "direction": "row",
             "width": 0,
             "height": 0,
-            "anchors": { "left": 0, "top": 0 },
+            "anchors": {
+              "left": 0,
+              "top": 0
+            },
             "template": {
               "type": "frame",
               "name": "posição",
               "width": 0,
               "height": 0,
-              "layout": { "type": "none" },
+              "layout": {
+                "type": "none"
+              },
               "children": [
                 {
                   "type": "text",
                   "name": "número",
                   "text": {
-                    "$if": { "$eq": ["selection", "minute"] },
-                    "then": { "$mul": [{ "$field": "$index" }, 5] },
-                    "else": {
-                      "$if": { "$gte": [{ "$field": "$index" }, 12] },
-                      "then": { "$field": "$index" },
-                      "else": {
-                        "$if": { "$eq": ["is24Hour", "false"] },
-                        "then": {
-                          "$if": { "$lt": [{ "$field": "$index" }, 1] },
-                          "then": 12,
-                          "else": { "$field": "$index" }
+                    "$if": {
+                      "$eq": ["selection", "minute"]
+                    },
+                    "then": {
+                      "$mul": [
+                        {
+                          "$field": "$index"
                         },
-                        "else": { "$field": "$index" }
+                        5
+                      ]
+                    },
+                    "else": {
+                      "$if": {
+                        "$gte": [
+                          {
+                            "$field": "$index"
+                          },
+                          12
+                        ]
+                      },
+                      "then": {
+                        "$field": "$index"
+                      },
+                      "else": {
+                        "$if": {
+                          "$eq": ["is24Hour", "false"]
+                        },
+                        "then": {
+                          "$if": {
+                            "$lt": [
+                              {
+                                "$field": "$index"
+                              },
+                              1
+                            ]
+                          },
+                          "then": 12,
+                          "else": {
+                            "$field": "$index"
+                          }
+                        },
+                        "else": {
+                          "$field": "$index"
+                        }
                       }
                     }
                   },
                   "font": {
-                    "size": { "$token": "body-large-size" },
-                    "weight": { "$token": "body-large-weight" },
-                    "lineHeight": { "$token": "body-large-line-height" },
-                    "letterSpacing": { "$token": "body-large-tracking" },
+                    "size": {
+                      "$token": "body-large-size"
+                    },
+                    "weight": {
+                      "$token": "body-large-weight"
+                    },
+                    "lineHeight": {
+                      "$token": "body-large-line-height"
+                    },
+                    "letterSpacing": {
+                      "$token": "body-large-tracking"
+                    },
                     "align": "center",
                     "verticalAlign": "cap-middle"
                   },
-                  "color": { "$token": "on-surface" },
+                  "color": {
+                    "$token": "on-surface"
+                  },
                   "width": 24,
                   "height": 24,
                   "anchors": {
@@ -535,13 +1017,30 @@
                             {
                               "$mul": [
                                 {
-                                  "$if": { "$gte": [{ "$field": "$index" }, 12] },
+                                  "$if": {
+                                    "$gte": [
+                                      {
+                                        "$field": "$index"
+                                      },
+                                      12
+                                    ]
+                                  },
                                   "then": 69,
                                   "else": 101
                                 },
                                 {
                                   "$sin": {
-                                    "$mul": [{ "$mod": [{ "$field": "$index" }, 12] }, 30]
+                                    "$mul": [
+                                      {
+                                        "$mod": [
+                                          {
+                                            "$field": "$index"
+                                          },
+                                          12
+                                        ]
+                                      },
+                                      30
+                                    ]
                                   }
                                 }
                               ]
@@ -560,13 +1059,30 @@
                             {
                               "$mul": [
                                 {
-                                  "$if": { "$gte": [{ "$field": "$index" }, 12] },
+                                  "$if": {
+                                    "$gte": [
+                                      {
+                                        "$field": "$index"
+                                      },
+                                      12
+                                    ]
+                                  },
                                   "then": 69,
                                   "else": 101
                                 },
                                 {
                                   "$cos": {
-                                    "$mul": [{ "$mod": [{ "$field": "$index" }, 12] }, 30]
+                                    "$mul": [
+                                      {
+                                        "$mod": [
+                                          {
+                                            "$field": "$index"
+                                          },
+                                          12
+                                        ]
+                                      },
+                                      30
+                                    ]
                                   }
                                 }
                               ]
@@ -597,9 +1113,24 @@
                         {
                           "$if": {
                             "$and": [
-                              { "$not": { "$eq": ["is24Hour", "false"] } },
-                              { "$not": { "$eq": ["selection", "minute"] } },
-                              { "$gte": [{ "$field": "hour" }, 12] }
+                              {
+                                "$not": {
+                                  "$eq": ["is24Hour", "false"]
+                                }
+                              },
+                              {
+                                "$not": {
+                                  "$eq": ["selection", "minute"]
+                                }
+                              },
+                              {
+                                "$gte": [
+                                  {
+                                    "$field": "hour"
+                                  },
+                                  12
+                                ]
+                              }
                             ]
                           },
                           "then": 69,
@@ -607,11 +1138,29 @@
                         },
                         {
                           "$sin": {
-                            "$if": { "$eq": ["selection", "minute"] },
-                            "then": { "$mul": [{ "$field": "minute", "default": 0 }, 6] },
+                            "$if": {
+                              "$eq": ["selection", "minute"]
+                            },
+                            "then": {
+                              "$mul": [
+                                {
+                                  "$field": "minute",
+                                  "default": 0
+                                },
+                                6
+                              ]
+                            },
                             "else": {
                               "$mul": [
-                                { "$mod": [{ "$field": "hour", "default": 0 }, 12] },
+                                {
+                                  "$mod": [
+                                    {
+                                      "$field": "hour",
+                                      "default": 0
+                                    },
+                                    12
+                                  ]
+                                },
                                 30
                               ]
                             }
@@ -630,9 +1179,24 @@
                         {
                           "$if": {
                             "$and": [
-                              { "$not": { "$eq": ["is24Hour", "false"] } },
-                              { "$not": { "$eq": ["selection", "minute"] } },
-                              { "$gte": [{ "$field": "hour" }, 12] }
+                              {
+                                "$not": {
+                                  "$eq": ["is24Hour", "false"]
+                                }
+                              },
+                              {
+                                "$not": {
+                                  "$eq": ["selection", "minute"]
+                                }
+                              },
+                              {
+                                "$gte": [
+                                  {
+                                    "$field": "hour"
+                                  },
+                                  12
+                                ]
+                              }
                             ]
                           },
                           "then": 69,
@@ -640,11 +1204,29 @@
                         },
                         {
                           "$cos": {
-                            "$if": { "$eq": ["selection", "minute"] },
-                            "then": { "$mul": [{ "$field": "minute", "default": 0 }, 6] },
+                            "$if": {
+                              "$eq": ["selection", "minute"]
+                            },
+                            "then": {
+                              "$mul": [
+                                {
+                                  "$field": "minute",
+                                  "default": 0
+                                },
+                                6
+                              ]
+                            },
                             "else": {
                               "$mul": [
-                                { "$mod": [{ "$field": "hour", "default": 0 }, 12] },
+                                {
+                                  "$mod": [
+                                    {
+                                      "$field": "hour",
+                                      "default": 0
+                                    },
+                                    12
+                                  ]
+                                },
                                 30
                               ]
                             }
@@ -657,52 +1239,377 @@
               ]
             },
             "fill": "none",
-            "stroke": { "color": { "$token": "primary" }, "width": 2, "align": "center" },
-            "anchors": { "left": 0, "top": 0 }
+            "stroke": {
+              "color": {
+                "$token": "primary"
+              },
+              "width": 2,
+              "align": "center"
+            },
+            "anchors": {
+              "left": 0,
+              "top": 0
+            }
           },
           {
             "type": "frame",
             "name": "alça",
             "width": 48,
             "height": 48,
-            "cornerRadius": { "$token": "corner-full" },
-            "fill": { "$token": "primary" },
-            "layout": { "type": "row", "align": "center", "justify": "center" },
+            "cornerRadius": {
+              "$token": "corner-full"
+            },
+            "fill": {
+              "$token": "primary"
+            },
+            "layout": {
+              "type": "none"
+            },
             "children": [
               {
-                "type": "text",
-                "name": "valor selecionado",
-                "text": {
-                  "$if": { "$eq": ["selection", "minute"] },
-                  "then": {
-                    "$if": { "$lt": [{ "$mod": [{ "$field": "minute" }, 5] }, 1] },
-                    "then": { "$field": "minute" }
-                  },
-                  "else": {
-                    "$if": { "$eq": ["is24Hour", "false"] },
-                    "then": {
-                      "$if": { "$has": "hour" },
-                      "then": {
-                        "$add": [
-                          { "$mod": [{ "$add": [{ "$field": "hour" }, 11] }, 12] },
-                          1
-                        ]
+                "type": "repeat",
+                "name": "números sob a alça",
+                "count": {
+                  "$if": {
+                    "$and": [
+                      {
+                        "$not": {
+                          "$eq": ["is24Hour", "false"]
+                        }
                       },
-                      "else": "12"
-                    },
-                    "else": { "$field": "hour", "default": 0 }
-                  }
+                      {
+                        "$not": {
+                          "$eq": ["selection", "minute"]
+                        }
+                      }
+                    ]
+                  },
+                  "then": 24,
+                  "else": 12
                 },
-                "font": {
-                  "size": { "$token": "body-large-size" },
-                  "weight": { "$token": "body-large-weight" },
-                  "lineHeight": { "$token": "body-large-line-height" },
-                  "letterSpacing": { "$token": "body-large-tracking" },
-                  "align": "center",
-                  "verticalAlign": "cap-middle"
+                "direction": "row",
+                "width": 0,
+                "height": 0,
+                "anchors": {
+                  "left": 0,
+                  "top": 0
                 },
-                "color": { "$token": "on-primary" },
-                "height": "fill"
+                "template": {
+                  "type": "frame",
+                  "name": "posição",
+                  "width": 0,
+                  "height": 0,
+                  "layout": {
+                    "type": "none"
+                  },
+                  "children": [
+                    {
+                      "type": "text",
+                      "name": "número sob a alça",
+                      "text": {
+                        "$if": {
+                          "$eq": ["selection", "minute"]
+                        },
+                        "then": {
+                          "$mul": [
+                            {
+                              "$field": "$index"
+                            },
+                            5
+                          ]
+                        },
+                        "else": {
+                          "$if": {
+                            "$gte": [
+                              {
+                                "$field": "$index"
+                              },
+                              12
+                            ]
+                          },
+                          "then": {
+                            "$field": "$index"
+                          },
+                          "else": {
+                            "$if": {
+                              "$eq": ["is24Hour", "false"]
+                            },
+                            "then": {
+                              "$if": {
+                                "$lt": [
+                                  {
+                                    "$field": "$index"
+                                  },
+                                  1
+                                ]
+                              },
+                              "then": 12,
+                              "else": {
+                                "$field": "$index"
+                              }
+                            },
+                            "else": {
+                              "$field": "$index"
+                            }
+                          }
+                        }
+                      },
+                      "font": {
+                        "size": {
+                          "$token": "body-large-size"
+                        },
+                        "weight": {
+                          "$token": "body-large-weight"
+                        },
+                        "lineHeight": {
+                          "$token": "body-large-line-height"
+                        },
+                        "letterSpacing": {
+                          "$token": "body-large-tracking"
+                        },
+                        "align": "center",
+                        "verticalAlign": "cap-middle"
+                      },
+                      "color": {
+                        "$token": "on-primary"
+                      },
+                      "width": 24,
+                      "height": 24,
+                      "anchors": {
+                        "left": {
+                          "$sub": [
+                            {
+                              "$sub": [
+                                {
+                                  "$add": [
+                                    128,
+                                    {
+                                      "$mul": [
+                                        {
+                                          "$if": {
+                                            "$gte": [
+                                              {
+                                                "$field": "$index"
+                                              },
+                                              12
+                                            ]
+                                          },
+                                          "then": 69,
+                                          "else": 101
+                                        },
+                                        {
+                                          "$sin": {
+                                            "$mul": [
+                                              {
+                                                "$mod": [
+                                                  {
+                                                    "$field": "$index"
+                                                  },
+                                                  12
+                                                ]
+                                              },
+                                              30
+                                            ]
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                12
+                              ]
+                            },
+                            {
+                              "$sub": [
+                                {
+                                  "$add": [
+                                    128,
+                                    {
+                                      "$mul": [
+                                        {
+                                          "$if": {
+                                            "$and": [
+                                              {
+                                                "$not": {
+                                                  "$eq": ["is24Hour", "false"]
+                                                }
+                                              },
+                                              {
+                                                "$not": {
+                                                  "$eq": ["selection", "minute"]
+                                                }
+                                              },
+                                              {
+                                                "$gte": [
+                                                  {
+                                                    "$field": "hour"
+                                                  },
+                                                  12
+                                                ]
+                                              }
+                                            ]
+                                          },
+                                          "then": 69,
+                                          "else": 101
+                                        },
+                                        {
+                                          "$sin": {
+                                            "$if": {
+                                              "$eq": ["selection", "minute"]
+                                            },
+                                            "then": {
+                                              "$mul": [
+                                                {
+                                                  "$field": "minute",
+                                                  "default": 0
+                                                },
+                                                6
+                                              ]
+                                            },
+                                            "else": {
+                                              "$mul": [
+                                                {
+                                                  "$mod": [
+                                                    {
+                                                      "$field": "hour",
+                                                      "default": 0
+                                                    },
+                                                    12
+                                                  ]
+                                                },
+                                                30
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                24
+                              ]
+                            }
+                          ]
+                        },
+                        "top": {
+                          "$sub": [
+                            {
+                              "$sub": [
+                                128,
+                                {
+                                  "$add": [
+                                    12,
+                                    {
+                                      "$mul": [
+                                        {
+                                          "$if": {
+                                            "$gte": [
+                                              {
+                                                "$field": "$index"
+                                              },
+                                              12
+                                            ]
+                                          },
+                                          "then": 69,
+                                          "else": 101
+                                        },
+                                        {
+                                          "$cos": {
+                                            "$mul": [
+                                              {
+                                                "$mod": [
+                                                  {
+                                                    "$field": "$index"
+                                                  },
+                                                  12
+                                                ]
+                                              },
+                                              30
+                                            ]
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "$sub": [
+                                {
+                                  "$sub": [
+                                    128,
+                                    {
+                                      "$mul": [
+                                        {
+                                          "$if": {
+                                            "$and": [
+                                              {
+                                                "$not": {
+                                                  "$eq": ["is24Hour", "false"]
+                                                }
+                                              },
+                                              {
+                                                "$not": {
+                                                  "$eq": ["selection", "minute"]
+                                                }
+                                              },
+                                              {
+                                                "$gte": [
+                                                  {
+                                                    "$field": "hour"
+                                                  },
+                                                  12
+                                                ]
+                                              }
+                                            ]
+                                          },
+                                          "then": 69,
+                                          "else": 101
+                                        },
+                                        {
+                                          "$cos": {
+                                            "$if": {
+                                              "$eq": ["selection", "minute"]
+                                            },
+                                            "then": {
+                                              "$mul": [
+                                                {
+                                                  "$field": "minute",
+                                                  "default": 0
+                                                },
+                                                6
+                                              ]
+                                            },
+                                            "else": {
+                                              "$mul": [
+                                                {
+                                                  "$mod": [
+                                                    {
+                                                      "$field": "hour",
+                                                      "default": 0
+                                                    },
+                                                    12
+                                                  ]
+                                                },
+                                                30
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                24
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
               }
             ],
             "anchors": {
@@ -716,9 +1623,24 @@
                           {
                             "$if": {
                               "$and": [
-                                { "$not": { "$eq": ["is24Hour", "false"] } },
-                                { "$not": { "$eq": ["selection", "minute"] } },
-                                { "$gte": [{ "$field": "hour" }, 12] }
+                                {
+                                  "$not": {
+                                    "$eq": ["is24Hour", "false"]
+                                  }
+                                },
+                                {
+                                  "$not": {
+                                    "$eq": ["selection", "minute"]
+                                  }
+                                },
+                                {
+                                  "$gte": [
+                                    {
+                                      "$field": "hour"
+                                    },
+                                    12
+                                  ]
+                                }
                               ]
                             },
                             "then": 69,
@@ -726,13 +1648,29 @@
                           },
                           {
                             "$sin": {
-                              "$if": { "$eq": ["selection", "minute"] },
+                              "$if": {
+                                "$eq": ["selection", "minute"]
+                              },
                               "then": {
-                                "$mul": [{ "$field": "minute", "default": 0 }, 6]
+                                "$mul": [
+                                  {
+                                    "$field": "minute",
+                                    "default": 0
+                                  },
+                                  6
+                                ]
                               },
                               "else": {
                                 "$mul": [
-                                  { "$mod": [{ "$field": "hour", "default": 0 }, 12] },
+                                  {
+                                    "$mod": [
+                                      {
+                                        "$field": "hour",
+                                        "default": 0
+                                      },
+                                      12
+                                    ]
+                                  },
                                   30
                                 ]
                               }
@@ -755,9 +1693,24 @@
                           {
                             "$if": {
                               "$and": [
-                                { "$not": { "$eq": ["is24Hour", "false"] } },
-                                { "$not": { "$eq": ["selection", "minute"] } },
-                                { "$gte": [{ "$field": "hour" }, 12] }
+                                {
+                                  "$not": {
+                                    "$eq": ["is24Hour", "false"]
+                                  }
+                                },
+                                {
+                                  "$not": {
+                                    "$eq": ["selection", "minute"]
+                                  }
+                                },
+                                {
+                                  "$gte": [
+                                    {
+                                      "$field": "hour"
+                                    },
+                                    12
+                                  ]
+                                }
                               ]
                             },
                             "then": 69,
@@ -765,13 +1718,29 @@
                           },
                           {
                             "$cos": {
-                              "$if": { "$eq": ["selection", "minute"] },
+                              "$if": {
+                                "$eq": ["selection", "minute"]
+                              },
                               "then": {
-                                "$mul": [{ "$field": "minute", "default": 0 }, 6]
+                                "$mul": [
+                                  {
+                                    "$field": "minute",
+                                    "default": 0
+                                  },
+                                  6
+                                ]
                               },
                               "else": {
                                 "$mul": [
-                                  { "$mod": [{ "$field": "hour", "default": 0 }, 12] },
+                                  {
+                                    "$mod": [
+                                      {
+                                        "$field": "hour",
+                                        "default": 0
+                                      },
+                                      12
+                                    ]
+                                  },
                                   30
                                 ]
                               }
@@ -784,18 +1753,28 @@
                   24
                 ]
               }
-            }
+            },
+            "clip": true
           },
           {
             "type": "ellipse",
             "name": "centro",
             "width": 8,
             "height": 8,
-            "fill": { "$token": "primary" },
-            "anchors": { "left": 124, "top": 124 }
+            "fill": {
+              "$token": "primary"
+            },
+            "anchors": {
+              "left": 124,
+              "top": 124
+            }
           }
         ],
-        "visible": { "$not": { "$eq": ["mode", "input"] } }
+        "visible": {
+          "$not": {
+            "$eq": ["mode", "input"]
+          }
+        }
       }
     ]
   }

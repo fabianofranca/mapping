@@ -33,7 +33,16 @@ const iconOf = (d: Drawing, name: string) => {
   return { node, color: path === undefined ? undefined : solid(path.fills) };
 };
 const label = (d: Drawing): TextNode => findText(d.root)!;
-const SHADOW = 'rgba(0, 0, 0, 0.3)';
+const POINT = 'rgba(0, 0, 0, 0.3)';
+const AMBIENT = 'rgba(0, 0, 0, 0.15)';
+/** Sombras do nó na ordem em que são desenhadas: [ponto, ambiente]. */
+const shadowsOf = (node: SceneNode) =>
+  node.effects.map((s) => ({
+    color: s.color,
+    y: s.offset.y,
+    blur: s.blur,
+    spread: s.spread ?? 0,
+  }));
 const snake = (name: string): string =>
   name.replace(/(?<!^)([A-Z])/g, '_$1').toLowerCase();
 
@@ -51,10 +60,12 @@ describe('M2 grupo D — fab, extended-fab e chip', () => {
     expect(iconOf(regular.light, 'add').color).toBe('#21005D');
     expect(iconOf(regular.dark, 'add').color).toBe('#EADDFF');
     expect(iconOf(regular.light, 'add').node?.width).toBe(24);
-    // FabPrimaryContainerTokens.ContainerElevation = Level3 (6 dp): blur 12, y 3
-    const shadow = regular.light.root.effects[0];
-    expect(shadow?.color).toBe(SHADOW);
-    expect([shadow?.blur, shadow?.offset.y]).toEqual([12, 3]);
+    // FabPrimaryContainerTokens.ContainerElevation = Level3 (6 dp): duas sombras,
+    // ponto (y 1, blur 3, spread 0) e ambiente (y 4, blur 8, spread 3)
+    expect(shadowsOf(regular.light.root)).toEqual([
+      { color: POINT, y: 1, blur: 3, spread: 0 },
+      { color: AMBIENT, y: 4, blur: 8, spread: 3 },
+    ]);
     const small = both('fab', {
       icon: 'Edit',
       size: 'small',
@@ -81,8 +92,10 @@ describe('M2 grupo D — fab, extended-fab e chip', () => {
     expect(open.light.root.type === 'frame' && open.light.root.cornerRadius).toBe(16);
     expect(solid(open.light.root.fills)).toBe('#EADDFF');
     expect(solid(open.dark.root.fills)).toBe('#4F378B');
-    const shadow = open.light.root.effects[0];
-    expect([shadow?.blur, shadow?.offset.y, shadow?.color]).toEqual([12, 3, SHADOW]);
+    expect(shadowsOf(open.light.root)).toEqual([
+      { color: POINT, y: 1, blur: 3, spread: 0 },
+      { color: AMBIENT, y: 4, blur: 8, spread: 3 },
+    ]);
     const style = label(open.light).style;
     expect([
       style.fontSize,
@@ -142,10 +155,10 @@ describe('M2 grupo D — fab, extended-fab e chip', () => {
     const elevated = both('chip', { label: 'Mapa', style: 'assist-elevated' });
     expect(solid(elevated.light.root.fills)).toBe('#F7F2FA');
     expect(solid(elevated.dark.root.fills)).toBe('#1D1B20');
-    expect([
-      elevated.light.root.effects[0]?.blur,
-      elevated.light.root.effects[0]?.offset.y,
-    ]).toEqual([2, 1]);
+    expect(shadowsOf(elevated.light.root)).toEqual([
+      { color: POINT, y: 1, blur: 2, spread: 0 },
+      { color: AMBIENT, y: 1, blur: 3, spread: 1 },
+    ]);
     expect(elevated.light.root.stroke).toBeUndefined();
 
     // filter selecionado: secondaryContainer, sem contorno (SelectedOutlineWidth 0), onSecondaryContainer

@@ -8,7 +8,12 @@ import { approximateMeasurer, instantiate } from '../../src/model/components/ins
 import { resolveTokens } from '../../src/model/components/tokens';
 import { defaultValues } from '../../src/model/libraryDrawing';
 import { absoluteBoxes, walk } from '../../src/model/components/scene';
-import type { PathNode, SceneNode, TextNode } from '../../src/model/components/scene';
+import type {
+  PathNode,
+  SceneNode,
+  Shadow,
+  TextNode,
+} from '../../src/model/components/scene';
 import { drawIn, files, solid, spec, text } from '../support/material3Library';
 
 const catalog = buildCatalog(files);
@@ -51,6 +56,26 @@ const tok = (name: string, mode: Mode): string => {
   return typeof value === 'string' ? value : value[mode];
 };
 const num = (name: string): number => tokens[name] as number;
+/** Confere as duas sombras do nível de elevação (ponto e ambiente): y, blur, spread e cor dos tokens. */
+const expectElevation = (
+  effects: readonly Shadow[],
+  level: number,
+  mode: Mode,
+  where = '',
+): void => {
+  expect(effects, where).toHaveLength(2);
+  for (const [i, kind] of (['point', 'ambient'] as const).entries()) {
+    const shadow = effects[i];
+    expect(shadow?.offset.y, `${where} ${kind}`).toBe(
+      num(`elevation-${level}-${kind}-y`),
+    );
+    expect(shadow?.blur, `${where} ${kind}`).toBe(num(`elevation-${level}-${kind}-blur`));
+    expect(shadow?.spread ?? 0, `${where} ${kind}`).toBe(
+      num(`elevation-${level}-${kind}-spread`),
+    );
+    expect(shadow?.color, `${where} ${kind}`).toBe(tok(`elevation-${kind}-shadow`, mode));
+  }
+};
 /** O alfa de uma cor `#rrggbbaa` (sem o sufixo, 1), arredondado ao centésimo. */
 const alphaOf = (color: string): number =>
   color.length === 9 ? Math.round((parseInt(color.slice(7), 16) / 255) * 100) / 100 : 1;
@@ -141,9 +166,7 @@ describe('M5 grupo B — tooltip', () => {
       const card = box(d, 'rich');
       expect(radiusOf(card.node)).toBe(num('corner-medium'));
       expect(fillOf(d, 'rich')).toBe(tok('surface-container', mode));
-      expect(card.node.effects[0]?.blur).toBe(num('elevation-2-blur'));
-      expect(card.node.effects[0]?.offset.y).toBe(num('elevation-2-y'));
-      expect(card.node.effects[0]?.color).toBe(tok('elevation-shadow', mode));
+      expectElevation(card.node.effects, 2, mode);
       expect(card.width).toBe(320);
       expect(named(d, 'plain')).toBeUndefined();
     }
@@ -240,9 +263,7 @@ describe('M5 grupo B — pull-to-refresh', () => {
         ]);
         expect(radiusOf(ind.node)).toBe(num('corner-full'));
         expect(fillOf(d, name)).toBe(tok('surface-container-high', mode));
-        expect(ind.node.effects[0]?.blur).toBe(num('elevation-2-blur'));
-        expect(ind.node.effects[0]?.offset.y).toBe(num('elevation-2-y'));
-        expect(ind.node.effects[0]?.color).toBe(tok('elevation-shadow', mode));
+        expectElevation(ind.node.effects, 2, mode);
         expect(named(d, other)).toBeUndefined();
       }
     }

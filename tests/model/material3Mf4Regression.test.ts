@@ -1,0 +1,162 @@
+// MF4 (etapa #899): regressão da cena dos exemplos dos tipos que a fase toca. A cena de antes da fase
+// (`tests/fixtures/material3-mf4-before.json`, gravada com a biblioteca v6) fica igual a ≤ 0,5 px por nó,
+// menos onde a mudança é o propósito (EXCEPTIONS: sombra, cor herdada, vão, justificado, desabilitado e
+// número sob a alça).
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { describe, expect, it } from 'vitest';
+import { buildCatalog, findEntry } from '../../src/model/catalog';
+import type { SceneNode } from '../../src/model/components/scene';
+import { drawIn, files } from '../support/material3Library';
+
+const TOUCHED = [
+  'surface',
+  'scaffold',
+  'text',
+  'icon',
+  'icon-button',
+  'icon-toggle-button',
+  'card',
+  'button',
+  'fab',
+  'extended-fab',
+  'chip',
+  'bottom-sheet',
+  'dropdown-menu',
+  'list-item',
+  'pull-to-refresh',
+  'snackbar',
+  'tooltip',
+  'switch',
+  'slider',
+  'text-field',
+  'secure-text-field',
+  'time-picker',
+  'tabs',
+];
+
+type Rec = [string, string, number, number, number, number];
+
+/**
+ * Onde a mudança da fase é o propósito (a lista abaixo é a das exceções do aceite): a cena dos outros
+ * nós fica igual a ≤ 0,5 px. Sombra (duas por nível), cor herdada, desabilitado opaco, justificado e
+ * `over` não mudam caixa nenhuma; só o vão arredondado e o número sob a alça mudam nós.
+ */
+export const EXCEPTIONS = {
+  // Vão arredondado: o contorno é um nó só (`contorno`, com `stroke.gap`); saem o `contorno (lados)` e
+  // o `trecho final`, o `trecho inicial` vira o `recuo` (só espaço) e o rótulo da borda ganha nome próprio.
+  'text-field': {
+    rename: {
+      'contorno (lados)': 'contorno',
+      recuo: 'trecho inicial',
+      'rótulo minimizado': 'rótulo',
+    },
+    drop: ['trecho final'],
+  },
+  'secure-text-field': {
+    rename: {
+      'contorno (lados)': 'contorno',
+      recuo: 'trecho inicial',
+      'rótulo minimizado': 'rótulo',
+    },
+    drop: ['trecho final'],
+  },
+  // Número sob a alça: o `valor selecionado` sai e a cópia dos números entra dentro da `alça`.
+  'time-picker': { rename: {}, drop: ['valor selecionado'] },
+} as Record<string, { rename: Record<string, string>; drop: string[] }>;
+
+/** Número sob a alça: a `alça` ganha a cópia dos números (`números sob a alça`) no lugar do `valor selecionado`. */
+export const SKIP_CHILDREN = { 'time-picker': ['alça'] } as Record<string, string[]>;
+
+function flatten(
+  node: SceneNode,
+  ox: number,
+  oy: number,
+  out: Rec[],
+  skip: readonly string[],
+): void {
+  const x = ox + node.transform[4];
+  const y = oy + node.transform[5];
+  if (node.visible) out.push([node.type, node.name, x, y, node.width, node.height]);
+  if ('children' in node && !skip.includes(node.name))
+    for (const c of node.children) flatten(c, x, y, out, skip);
+}
+
+function normalize(id: string, recs: Rec[]): Rec[] {
+  const ex = EXCEPTIONS[id];
+  if (ex === undefined) return recs;
+  return recs
+    .filter((r) => !ex.drop.includes(r[1]))
+    .map((r): Rec => [r[0], ex.rename[r[1]] ?? r[1], r[2], r[3], r[4], r[5]]);
+}
+
+function sceneOf(
+  catalog: ReturnType<typeof buildCatalog>,
+  id: string,
+): Record<string, Rec[]> {
+  const entry = findEntry(catalog, id);
+  const result: Record<string, Rec[]> = {};
+  for (const mode of ['light', 'dark'] as const) {
+    const cases: [string, Record<string, unknown>][] = [
+      ['preview', entry?.previewValues ?? {}],
+      ...(entry?.examples ?? [])
+        .filter((e) => e.mode === 'values')
+        .map((e): [string, Record<string, unknown>] => [e.name, e.values ?? {}]),
+    ];
+    for (const [name, values] of cases) {
+      const recs: Rec[] = [];
+      flatten(
+        drawIn(catalog, entry!, values as never, mode).root,
+        0,
+        0,
+        recs,
+        SKIP_CHILDREN[id] ?? [],
+      );
+      result[`${id}|${mode}|${name}`] = normalize(id, recs);
+    }
+  }
+  return result;
+}
+
+const FIXTURE = join(__dirname, '../fixtures/material3-mf4-before.json');
+const TOLERANCE = 0.5;
+
+/** Diferenças entre a cena de antes e a de agora: nó a mais ou a menos, ou caixa fora da tolerância. */
+function diffScene(before: Rec[], now: Rec[]): string[] {
+  const out: string[] = [];
+  if (before.length !== now.length) out.push(`nós: ${before.length} → ${now.length}`);
+  const byName = new Map<string, Rec[]>();
+  for (const r of now) byName.set(r[1], [...(byName.get(r[1]) ?? []), r]);
+  const used = new Map<string, number>();
+  for (const b of before) {
+    const list = byName.get(b[1]) ?? [];
+    const at = used.get(b[1]) ?? 0;
+    used.set(b[1], at + 1);
+    const n = list[at];
+    if (n === undefined) {
+      out.push(`sumiu: ${b[1]}`);
+      continue;
+    }
+    for (let k = 2; k < 6; k++)
+      if (Math.abs((b[k] as number) - (n[k] as number)) > TOLERANCE)
+        out.push(`${b[1]}: ${b.slice(2).join(',')} → ${n.slice(2).join(',')}`);
+  }
+  return out;
+}
+
+describe('MF4: regressão da cena dos tipos tocados', () => {
+  const catalog = buildCatalog(files);
+  const before = JSON.parse(readFileSync(FIXTURE, 'utf8')) as Record<string, Rec[]>;
+  it.each(TOUCHED)(
+    '%s: a cena dos exemplos fica igual a ≤ 0,5 px por nó, fora as exceções',
+    (id) => {
+      const now = sceneOf(catalog, id);
+      const keys = Object.keys(before).filter((k) => k.startsWith(`${id}|`));
+      expect(keys.length).toBeGreaterThan(0);
+      for (const key of keys) {
+        expect(now[key], key).toBeDefined();
+        expect(diffScene(normalize(id, before[key]!), now[key]!), key).toEqual([]);
+      }
+    },
+  );
+});

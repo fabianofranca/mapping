@@ -72,7 +72,7 @@ O campo escolhe a aparência parada de um estado, como o `expanded` escolhe o re
 
 **O que ainda difere do Compose**
 
-- O `y` e o `blur` da sombra vêm de `elevation-3-y` e `elevation-3-blur` (a do nó `sombra elevada`, de `elevation-4-*`), por `$token`.
-- A animação de expandir e recolher (`AnimatedVisibility`) não existe: o desenho mostra os dois estados fixos. A sombra de duas luzes e a elevação tonal também ficam de fora, como no `fab`.
+- As duas sombras vêm dos tokens `elevation-3-point-*` e `elevation-3-ambient-*` (a do nó `sombra elevada`, de `elevation-4-*`), por `$token`. Valores da elevação do Material 3 para a web: `elevation/internal/_elevation.scss` do `material-components/material-web` (versão 2.5.0, commit `37aa14b843dcaeb3a46f898679fa6fcd109b1905`), fonte de fora do Compose, que no Android entrega a elevação à plataforma e não traz os números: sombra de ponto em preto a 30% e sombra ambiente em preto a 15%, com `y`, `blur` e `spread` por nível (tokens `elevation-<n>-point-*` e `elevation-<n>-ambient-*`).
+- A animação de expandir e recolher (`AnimatedVisibility`) não existe: o desenho mostra os dois estados fixos. A elevação tonal também fica de fora, como no `fab`.
 - O conteúdo expandido fica centralizado na caixa da marcação; o Compose o centraliza do mesmo jeito no `Box` do botão, mas a largura de uma instância sem retângulo não é medida por este componente (o `sizing` `hug` só vale para telas arrumadas pelo `layoutScreen`, que mede o slot, e aqui não há slot).
 - Sem ripple animado e sem transição entre estados (o desenho é um quadro parado). O Compose não define anel de foco para este tipo no commit fixado (nenhum `*Tokens.kt` dele traz `FocusIndicatorColor`): nenhum é desenhado. A elevação `lowered` do Compose não é um campo do tipo (veja acima).

@@ -13,7 +13,12 @@ import {
 import { resolveTokens } from '../../src/model/components/tokens';
 import { defaultValues } from '../../src/model/libraryDrawing';
 import { absoluteBoxes, walk } from '../../src/model/components/scene';
-import type { PathNode, SceneNode, TextNode } from '../../src/model/components/scene';
+import type {
+  PathNode,
+  SceneNode,
+  Shadow,
+  TextNode,
+} from '../../src/model/components/scene';
 import { files, solid, spec } from '../support/material3Library';
 
 const catalog = buildCatalog(files);
@@ -78,6 +83,26 @@ const tok = (name: string, mode: Mode): string => {
   return typeof value === 'string' ? value : value[mode];
 };
 const num = (name: string): number => tokens[name] as number;
+/** Confere as duas sombras do nível de elevação (ponto e ambiente): y, blur, spread e cor dos tokens. */
+const expectElevation = (
+  effects: readonly Shadow[],
+  level: number,
+  mode: Mode,
+  where = '',
+): void => {
+  expect(effects, where).toHaveLength(2);
+  for (const [i, kind] of (['point', 'ambient'] as const).entries()) {
+    const shadow = effects[i];
+    expect(shadow?.offset.y, `${where} ${kind}`).toBe(
+      num(`elevation-${level}-${kind}-y`),
+    );
+    expect(shadow?.blur, `${where} ${kind}`).toBe(num(`elevation-${level}-${kind}-blur`));
+    expect(shadow?.spread ?? 0, `${where} ${kind}`).toBe(
+      num(`elevation-${level}-${kind}-spread`),
+    );
+    expect(shadow?.color, `${where} ${kind}`).toBe(tok(`elevation-${kind}-shadow`, mode));
+  }
+};
 
 const named = (d: Drawing, name: string): SceneNode | undefined => {
   for (const node of walk(d.root)) if (node.name === name && node.visible) return node;
@@ -279,12 +304,7 @@ describe('M5 grupo A — bottom-sheet', () => {
     for (const mode of MODES) {
       expect(sheet({ style: 'modal' }, mode).root.effects).toEqual([]);
       const standard = sheet({ style: 'standard' }, mode).root.effects;
-      expect(standard).toHaveLength(1);
-      expect(standard[0]?.color).toBe(tok('elevation-shadow', mode));
-      expect([standard[0]?.blur, standard[0]?.offset.y]).toEqual([
-        num('elevation-1-blur'),
-        num('elevation-1-y'),
-      ]);
+      expectElevation(standard, 1, mode);
     }
   });
 
@@ -412,12 +432,7 @@ describe('M5 grupo A — snackbar', () => {
       expect(fillOf(d, 'snackbar')).toBe(tok('inverse-surface', mode));
       expect(radiusOf(d.root)).toBe(num('corner-extra-small'));
       expect(num('corner-extra-small')).toBe(4);
-      const shadow = d.root.effects[0];
-      expect(shadow?.color).toBe(tok('elevation-shadow', mode));
-      expect([shadow?.blur, shadow?.offset.y]).toEqual([
-        num('elevation-3-blur'),
-        num('elevation-3-y'),
-      ]);
+      expectElevation(d.root.effects, 3, mode);
       expect(d.warnings.filter((w) => BAD_WARNING.test(w))).toEqual([]);
     }
     // o fundo do dark é claro (inverse-surface escuro↔claro)

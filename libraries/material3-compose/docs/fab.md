@@ -67,7 +67,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - O regular tem 56 e `corner-large`; o small, `corner-medium`; o large, `corner-extra-large` (a caixa vem da marcação, o desenho só escolhe o raio pelo campo `size`).
 - A cor de fundo é o papel de `containerColor` (padrão `primary-container`), nos dois modos pelo token do papel. O ícone usa a cor de conteúdo que o `contentColorFor` devolve para o papel (`primary-container` -> `on-primary-container`, `primary` -> `on-primary`, `inverse-surface` -> `inverse-on-surface`, `surface-container-*` -> `on-surface`…); os papéis que o Compose não casa caem em `on-surface`, o `LocalContentColor` do tema.
 - O ícone é o nó `icon` do conjunto da biblioteca, com o nome do Compose (`Add`) trocado pelo nome do conjunto (`add`) num `$switch` que cobre as sugestões do campo; tem 24, e 36 no large (`LargeIconSize` dos `Defaults`, que o próprio `.kt` marca como diferente do token de 32).
-- A sombra é a do nível 3 de elevação (`ContainerElevation`, 6 dp), na cor `elevation-shadow`.
+- A sombra é a do nível 3 de elevação (`ContainerElevation`, 6 dp): as duas sombras do nível 3 (ponto: `y` 1, `blur` 3; ambiente: `y` 4, `blur` 8, `spread` 3; tokens `elevation-3-point-*` e `elevation-3-ambient-*`). Valores da elevação do Material 3 para a web: `elevation/internal/_elevation.scss` do `material-components/material-web` (versão 2.5.0, commit `37aa14b843dcaeb3a46f898679fa6fcd109b1905`), fonte de fora do Compose, que no Android entrega a elevação à plataforma e não traz os números: sombra de ponto em preto a 30% e sombra ambiente em preto a 15%, com `y`, `blur` e `spread` por nível (tokens `elevation-<n>-point-*` e `elevation-<n>-ambient-*`).
 
 **Estado de interação (campo `interaction`)**
 
@@ -79,6 +79,6 @@ O campo escolhe a aparência parada de um estado, como o `size` escolhe o tamanh
 **O que ainda difere do Compose**
 
 - O `y` e o `blur` da sombra vêm de `elevation-3-y` e `elevation-3-blur` (a do nó `sombra elevada`, de `elevation-4-*`), por `$token`: trocar esses tokens na especialização chega ao desenho.
-- A sombra do Compose usa duas luzes (ambiente e direta) e a tonal da elevação sobre `surface`; o formato tem uma sombra só, e a elevação tonal do `FloatingActionButton` sobre o contêiner não é desenhada.
+- A sombra tem as duas luzes (ponto e ambiente), como a elevação do Material 3 para a web; a elevação tonal do `FloatingActionButton` sobre o contêiner não é desenhada.
 - Sem ripple animado e sem transição entre estados (o desenho é um quadro parado). O Compose não define anel de foco para este tipo no commit fixado (nenhum `*Tokens.kt` dele traz `FocusIndicatorColor`): nenhum é desenhado.
 - O ícone vem de uma lista fixa de nomes; o `FloatingActionButton` aceita qualquer `@Composable` no conteúdo.

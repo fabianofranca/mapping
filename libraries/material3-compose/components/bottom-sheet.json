@@ -57,23 +57,48 @@
         "$field": "sheetPeekHeight"
       }
     },
-    "shadow": {
-      "color": {
-        "$if": {
-          "$eq": ["style", "standard"]
+    "shadow": [
+      {
+        "color": {
+          "$if": {
+            "$eq": ["style", "standard"]
+          },
+          "then": {
+            "$token": "elevation-point-shadow"
+          },
+          "else": "none"
         },
-        "then": {
-          "$token": "elevation-shadow"
+        "y": {
+          "$token": "elevation-1-point-y"
         },
-        "else": "none"
+        "blur": {
+          "$token": "elevation-1-point-blur"
+        },
+        "spread": {
+          "$token": "elevation-1-point-spread"
+        }
       },
-      "y": {
-        "$token": "elevation-1-y"
-      },
-      "blur": {
-        "$token": "elevation-1-blur"
+      {
+        "color": {
+          "$if": {
+            "$eq": ["style", "standard"]
+          },
+          "then": {
+            "$token": "elevation-ambient-shadow"
+          },
+          "else": "none"
+        },
+        "y": {
+          "$token": "elevation-1-ambient-y"
+        },
+        "blur": {
+          "$token": "elevation-1-ambient-blur"
+        },
+        "spread": {
+          "$token": "elevation-1-ambient-spread"
+        }
       }
-    },
+    ],
     "layout": {
       "type": "column",
       "gap": 0,
