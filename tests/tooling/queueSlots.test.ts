@@ -388,3 +388,83 @@ describe('implementar-fila e detalhar-backlog: vagas, contexto e roteiros (VG2, 
     expect(section(fila, '### Ficha da etapa')).toContain('fechada como concluída');
   });
 });
+
+// Fase VG3 (etapa #1440): correções da revisão final do épico.
+describe('painel.py — correções da revisão final (VG3, #1440)', () => {
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'vagas-'));
+    run('init', dir);
+    run('start', dir, '--paralelo', '9');
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  const motivo = (a: string, b: string): string => {
+    run('init', dir, '--force');
+    run('start', dir, '--paralelo', '9');
+    etapa('#1', ficha('nenhuma', a), 'status=em andamento');
+    etapa('#2', ficha('nenhuma', b));
+    return vagas().split(' · ')[1] ?? '';
+  };
+
+  it('achado 2: glob (src/i18n/*, *.ts) e pasta sem barra final casam com o que está debaixo', () => {
+    expect(motivo('src/i18n/*', 'src/i18n/pt-BR.ts')).toBe(
+      '#2 arquivo src/i18n/pt-BR.ts com #1',
+    );
+    expect(motivo('src/i18n/pt-BR.ts', 'src/i18n/*')).toBe(
+      '#2 arquivo src/i18n/* com #1',
+    );
+    expect(motivo('src/model/*.ts', 'src/model/a.ts')).toBe(
+      '#2 arquivo src/model/a.ts com #1',
+    );
+    expect(motivo('src/model/*.ts', 'src/store/a.ts')).toBe('#2 começa');
+    expect(motivo('src/model', 'src/model/a.ts')).toBe(
+      '#2 arquivo src/model/a.ts com #1',
+    );
+    expect(motivo('src/model', 'src/modelo/a.ts')).toBe('#2 começa');
+  });
+
+  it('achado 3: anotação entre parênteses depois do caminho é descartada, mesmo com vírgula dentro', () => {
+    expect(motivo('src/store/session.ts (novo método)', 'src/store/session.ts')).toBe(
+      '#2 arquivo src/store/session.ts com #1',
+    );
+    expect(motivo('src/a.ts (um, dois), src/b.ts', 'src/b.ts')).toBe(
+      '#2 arquivo src/b.ts com #1',
+    );
+  });
+
+  it('achado 4: âncoras diferentes só separam o docs/TESTING.md; nos outros arquivos conflitam', () => {
+    expect(motivo('docs/ARCHITECTURE.md#X', 'docs/ARCHITECTURE.md#Y')).toBe(
+      '#2 arquivo docs/ARCHITECTURE.md#Y com #1',
+    );
+    expect(motivo('docs/TESTING.md#R1', 'docs/TESTING.md#R2')).toBe('#2 começa');
+  });
+
+  it('achado 5: item vazio na dependência é ignorado; hold sai quando a etapa deixa de aguardar', () => {
+    etapa('#1', ficha('#12:main,', 'a.ts'));
+    etapa('#2', ficha('#12:main,,#13:main', 'b.ts'));
+    expect(vagas()).toBe('Vagas 0/9 · #1 começa · #2 começa · nenhuma ready elegível');
+    etapa('#3', ficha('nenhuma', 'c.ts'), 'hold=pausada pelo dono');
+    run('row', dir, '#3', 'status=em andamento');
+    expect(json('queue').find((r) => r.issue === '#3')?.hold).toBe('');
+    run('row', dir, '#3', 'status=aguardando', 'hold=ordem do dono (por último)');
+    expect(json('queue').find((r) => r.issue === '#3')?.hold).toBe(
+      'ordem do dono (por último)',
+    );
+  });
+
+  it('achado 10: meta.vagasItens guarda cada pedaço inteiro, mesmo com " · " no hold, e a página o usa', () => {
+    etapa('#1', ficha('nenhuma', 'a.ts'), 'hold=ordem do dono (a · b)');
+    etapa('#2', ficha('nenhuma', 'b.ts'));
+    expect(json('meta')[0]?.vagasItens).toEqual([
+      'Vagas 0/9',
+      '#1 ordem do dono (a · b)',
+      '#2 começa',
+      'nenhuma ready elegível',
+    ]);
+    const html = readFileSync(PAGE, 'utf8');
+    expect(html).toContain('m.vagasItens');
+  });
+});

@@ -11,8 +11,10 @@ Só biblioteca padrão. Uso: painel.py [--now ISO] <subcomando> DIR ...
 """
 import argparse
 import datetime
+import fnmatch
 import json
 import os
+import re
 import sys
 
 STATUS = ["aguardando", "em andamento", "concluída", "falhou", "esperando dono"]
@@ -106,7 +108,9 @@ class Sessao:
         if not meta:
             raise Erro("meta.json está vazio")
         meta[0]["updatedAt"] = now()
-        meta[0]["vagas"] = slots_plan(self.get("queue"), meta[0])[0]
+        text, _, items = slots_plan(self.get("queue"), meta[0])
+        meta[0]["vagas"] = text
+        meta[0]["vagasItens"] = items
         self.touch("meta")
         order = [n for n in FILES if n in self.dirty]
         for n in order:
@@ -217,6 +221,8 @@ def cmd_row(a):
         if "order" not in pairs:
             row["order"] = max([r["order"] for r in q], default=0) + 1
         q.append(row)
+    if pairs.get("status", "aguardando") != "aguardando" and "hold" not in pairs:
+        pairs["hold"] = ""  # o hold só vale enquanto a etapa não começou
     row.update(pairs)
     if "phases" in pairs:
         row["phasesTotal"], row["phasesDone"] = count_phases(row["phases"])
@@ -334,6 +340,7 @@ def cmd_context(a):
 
 IGNORED_PREFIXES = ("changelog/", "docs/design-system/")
 IGNORED_EXACT = ("mcp/version.ts", "docs/TESTING-NUVEM.md#blocos")
+ROUTE_FILE = "docs/TESTING.md"  # só ele é comparado por âncora (roteiro)
 STARTED_STATUS = ("em andamento", "esperando dono", "falhou")
 
 
@@ -358,6 +365,8 @@ def toca_list(plan):
     raw = plan_field(plan, "toca")
     if raw is None or raw.strip() in ("", "?"):
         return ["?"]
+    # Anotação entre parênteses depois do caminho ("x.ts (novo método)") não faz parte dele.
+    raw = re.sub(r"\s+\([^)]*\)", "", raw)
     out = []
     for x in raw.split(","):
         x = norm_path(x)
@@ -367,23 +376,27 @@ def toca_list(plan):
     return out
 
 
-def folder_of(x):
-    if x.endswith("/**"):
-        return x[:-2]
-    return x if x.endswith("/") else None
+def covers(a, b):
+    """`a` (pasta `x/` ou `x/**`, pasta sem barra final ou glob `*`) cobre o caminho `b`?"""
+    if a.endswith("/**"):
+        a = a[:-2]
+    if a.endswith("/"):
+        return b.startswith(a)
+    if "*" in a:
+        return fnmatch.fnmatchcase(b, a)
+    return b.startswith(a + "/")
 
 
 def same_target(a, b):
     """Duas citações do `toca=` mexem no mesmo lugar? (roteiro do TESTING.md, pasta, arquivo)"""
     if a == "?" or b == "?":
         return True
-    fa, fb = folder_of(a), folder_of(b)
-    if fa or fb:
-        return (fa and b.startswith(fa)) or (fb and a.startswith(fb)) or False
     pa, _, anc_a = a.partition("#")
     pb, _, anc_b = b.partition("#")
     if pa != pb:
-        return False
+        return covers(pa, pb) or covers(pb, pa)
+    if pa != ROUTE_FILE:
+        return True
     return not anc_a or not anc_b or anc_a == anc_b
 
 
@@ -405,9 +418,11 @@ def dep_state(plan):
     deps = []
     for d in raw.split(","):
         d = d.strip()
+        if not d:
+            continue
         num, _, st = d.partition(":")
         deps.append((num.strip(), st.strip()))
-    return deps
+    return deps or None
 
 
 def changes_schema(plan):
@@ -416,7 +431,7 @@ def changes_schema(plan):
 
 
 def slots_plan(q, meta):
-    """(texto de meta.vagas, [issues que começam agora]); decisões 4 e 5 da #1440."""
+    """(texto de meta.vagas, [issues que começam agora], pedaços do texto); decisões 4 e 5 da #1440."""
     n = meta.get("paralelo") or DEFAULT_PARALELO
     merged = set(meta.get("merged", []))
     done = {r["issue"] for r in q if r["status"] == "concluída"}
@@ -464,7 +479,7 @@ def slots_plan(q, meta):
         parts.append(f"{r['issue']} {why}")
     if free > 0:
         parts.append("nenhuma ready elegível")
-    return " · ".join(parts), now_list
+    return " · ".join(parts), now_list, parts
 
 
 def minutes_since(iso):
@@ -503,7 +518,7 @@ def cmd_show(a):
         print(f"  {st}: {sum(1 for r in q if r['status'] == st)}")
     meta = m[0] if m else {}
     print(f"atual: {meta.get('current') or '—'}")
-    vagas, agora = slots_plan(q, meta)
+    vagas, agora, _ = slots_plan(q, meta)
     print(f"vagas: {vagas}")
     print("começar agora: " + (" ".join(agora) or "nenhuma"))
     print(f"início: {meta.get('runStart') or '—'}  atualizado: {meta.get('updatedAt', '—')}")
