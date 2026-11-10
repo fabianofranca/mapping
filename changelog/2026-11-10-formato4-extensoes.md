@@ -1,4 +1,4 @@
-# Formato 4: extensões baratas — [Não lançado] (épico `epic/formato4-extensoes`, PR #1343, MCP 0.29.0, schema v18)
+# Formato 4: extensões baratas — 2026-11-10 (épico `epic/formato4-extensoes`, PR #1343, MCP 0.29.0, schema v18)
 
 ## Adicionado
 
@@ -24,3 +24,5 @@
 - `layout.reverse` vale também ao criar uma instância num componente com slot: a primeira filha vai para o fim do eixo e as seguintes ficam antes da última (antes seguiam a ordem direta, à direita ou abaixo da última).
 - Na biblioteca Material 3 (Compose), `Top` (`LazyColumn`) e `Start` (`LazyRow`) explícitos com `reverseLayout` mantêm o bloco no começo do eixo; o campo `verticalArrangement`/`horizontalArrangement` deixa de ter padrão (vazio = o padrão do Compose, que com `reverseLayout` é `Bottom`/`End`).
 - Fluxo de entrega: o teto do `dist/index.html` sobe 16 KiB (de 1.933.312 para 1.949.696 bytes), uma vez, porque a correção do `layout.reverse` na colocação passou do orçamento por 163 bytes.
+- Uma cor de token em hex com 5 ou 7 dígitos (`#12345`, `#1234567`) deixa de valer como cor (antes passava na validação e o `alpha` do `$token` era ignorado em silêncio, pintando a cor opaca); só 3, 4, 6 e 8 dígitos são cor.
+- O servidor MCP só lê as medidas da maiúscula da fonte quando o texto usa `cap-middle` (antes lia em todo texto de cada render).

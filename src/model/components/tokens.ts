@@ -44,7 +44,8 @@ export const TOKEN_NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 const DEFAULT_SANS = 'sans-serif';
 const DEFAULT_MONO = 'monospace';
 
-const COLOR_VALUE = /^(#[0-9a-f]{3,8}|(rgb|hsl)a?\(.*\)|none|transparent)$/i;
+const COLOR_VALUE =
+  /^(#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})|(rgb|hsl)a?\(.*\)|none|transparent)$/i;
 
 /** O tipo de um valor de token: número, cor (`#…`, `rgb()`, `hsl()`, `none`) ou família. */
 export function tokenKind(value: TokenValue): TokenKind {

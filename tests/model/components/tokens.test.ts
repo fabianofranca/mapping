@@ -14,7 +14,7 @@ import {
   parseComponent,
   validateComponent,
 } from '../../../src/model/components/parseComponent';
-import { resolveTokens } from '../../../src/model/components/tokens';
+import { resolveTokens, tokenKind } from '../../../src/model/components/tokens';
 
 const V4 = 'só é permitido com formatVersion 4';
 
@@ -279,5 +279,14 @@ describe('fonte padrão do hospedeiro', () => {
     };
     walk('src/model');
     expect(hits).toEqual([]);
+  });
+});
+
+describe('tokenKind com hex de tamanho inválido (revisão do épico)', () => {
+  it('só 3, 4, 6 e 8 dígitos são cor; #12345 e #1234567 não viram cor opaca em silêncio', () => {
+    for (const ok of ['#abc', '#abcd', '#aabbcc', '#aabbccdd'])
+      expect(tokenKind(ok)).toBe('color');
+    for (const bad of ['#12345', '#1234567', '#12'])
+      expect(tokenKind(bad)).not.toBe('color');
   });
 });

@@ -96,7 +96,12 @@ function plainInk(node: TextNode, measure: TextMeasurer, book: FontBook): TextIn
   const widthOf = (text: string) => textWidth(book, text, spec);
   const lines =
     customLines(node, measure, { ...spec, lineHeight }) ?? breakLines(node, widthOf);
-  const top = blockTop(node, lines.length, lineHeight, capMetricsOf(book, spec));
+  const top = blockTop(
+    node,
+    lines.length,
+    lineHeight,
+    node.style.verticalAlign === 'cap-middle' ? capMetricsOf(book, spec) : undefined,
+  );
   const polygons: Polygon[] = [];
   lines.forEach((line, i) => {
     if (line === '') return;
@@ -164,7 +169,11 @@ function richInk(node: TextNode, layout: RunLayout, book: FontBook): TextInk {
     italic: node.style.italic,
     letterSpacing: 0,
   };
-  const shift = richShift(node, layout, capMetricsOf(book, base));
+  const shift = richShift(
+    node,
+    layout,
+    node.style.verticalAlign === 'cap-middle' ? capMetricsOf(book, base) : undefined,
+  );
   const out: TextInk = { glyphs: [], boxes: [] };
   for (const line of layout.lines) {
     for (const piece of line.pieces) {
