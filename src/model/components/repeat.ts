@@ -26,6 +26,7 @@ import type {
   TemplateNode,
 } from './componentFormat';
 import { templateMessage } from '../messages';
+import { textsOf } from '../messages/collector';
 import type { ModelMessage } from '../modelMessage';
 import { INDEX_FIELD, evaluate, referencedFields, toNumber } from './expressions';
 
@@ -234,7 +235,7 @@ export function expandRepeats(
   return {
     component: { ...component, template },
     values: { ...values, ...extra },
-    warnings: messages.map((m) => m.text),
+    warnings: textsOf(messages),
     messages,
   };
 }

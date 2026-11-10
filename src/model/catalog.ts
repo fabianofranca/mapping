@@ -522,7 +522,7 @@ export function drawEntry(
     box,
     { measure },
   );
-  return { root: drawn.root, warnings: [...drawn.messages] };
+  return { root: drawn.root, warnings: drawn.messages };
 }
 
 /**

@@ -8,6 +8,8 @@ import type { LibraryIssue } from './library';
 import { libraryIssue } from './libraryIssue';
 import { modelMessage, rawMessage, type ModelMessage } from './modelMessage';
 import {
+  MODEL_MESSAGE_TEMPLATES,
+  fillTemplate,
   isModelMessageTemplateCode,
   templateMessage,
   type ModelMessageTemplateCode,
@@ -54,11 +56,14 @@ const messageOf = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
 /** "campo não informado" do motor para um campo que o tipo nem declara: o nível 2 já deu o erro. */
-const NOT_INFORMED_CODE = 'engine.fieldMissing';
+const NOT_INFORMED_CODE: ModelMessageTemplateCode = 'engine.fieldMissing';
 
 /** O aviso do motor com o sufixo de medida aproximada (o aviso vai em `detail`, que a interface traduz). */
-const approximate = (message: ModelMessage): ModelMessage =>
-  modelMessage('engine.approximate', {}, `${message.text}${APPROXIMATE_SUFFIX}`, message);
+const approximate = (message: ModelMessage): ModelMessage => {
+  const params = { reason: message.text };
+  const text = fillTemplate(MODEL_MESSAGE_TEMPLATES['engine.approximate'], params);
+  return modelMessage('engine.approximate', params, text, message);
+};
 
 export function defaultValues(
   type: SpecAnnotationType,
@@ -180,9 +185,10 @@ function typeDrawing(
         return {
           mode,
           texts: messages
-            .filter(
-              (m) => m.code !== NOT_INFORMED_CODE || keys.has(String(m.params.key ?? '')),
-            )
+            .filter((m) => {
+              const key = String(m.params.key ?? '');
+              return m.code !== NOT_INFORMED_CODE || key === '' || keys.has(key);
+            })
             .map(approximate),
           error: undefined as string | undefined,
         };
@@ -247,12 +253,14 @@ export const withoutNodePrefix = (message: string): string =>
  */
 export function withoutNodePrefixMessage(message: ModelMessage): ModelMessage {
   const path = message.params.path;
-  if (typeof path !== 'string' || !isModelMessageTemplateCode(message.code))
-    return message;
-  return templateMessage(message.code, {
-    ...message.params,
-    path: withoutNodePrefix(path),
-  });
+  if (typeof path === 'string' && isModelMessageTemplateCode(message.code))
+    return templateMessage(message.code, {
+      ...message.params,
+      path: withoutNodePrefix(path),
+    });
+  // Sem `path` (ou sem tradução): o texto perde o prefixo, como antes, e deixa de ter código.
+  const text = withoutNodePrefix(message.text);
+  return text === message.text ? message : rawMessage(text);
 }
 
 export function drawingIssues(ctx: DrawingContext): LibraryIssue[] {
