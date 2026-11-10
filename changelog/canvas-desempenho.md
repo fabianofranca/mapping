@@ -11,5 +11,5 @@
 ## Corrigido
 
 - Abrir e fechar projetos grandes várias vezes na mesma aba deixava formas do canvas na memória e deixava cada abertura mais lenta.
-- A coluna do campo de referência (ex.: `item`) das tabelas de alvos não encolhe mais a 40 px com os Detalhes estreitos (900 px): o rótulo do alvo cabe em vez de quebrar em três linhas.
+- A coluna do campo de referência (ex.: `item`) das tabelas de alvos não encolhe mais a 40 px com os Detalhes estreitos (900 px): o rótulo do alvo cabe em uma linha, sem barra horizontal (a coluna ganha um piso e os campos de texto da tabela cedem um pouco).
 - O roteiro R12.30 esperava `data-arrows` menor que 1000 no zoom mínimo do projeto grande, mas nele todas as setas ligam ao menos uma marcação visível; o guia agora descreve o que a app faz.
