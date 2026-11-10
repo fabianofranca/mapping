@@ -115,7 +115,11 @@ describe('formato 4 do componente', () => {
     const template = { type: 'frame', fictional: { deep: 1 } };
     const out = v4OnlyKeyIssues(3, template, 'template', [['fictional', 'deep']]);
     expect(out).toEqual([
-      { path: 'template.fictional.deep', message: 'só é permitido com formatVersion 4' },
+      {
+        path: 'template.fictional.deep',
+        message: 'só é permitido com formatVersion 4',
+        code: 'component.v4Only',
+      },
     ]);
     expect(v4OnlyKeyIssues(4, template, 'template', [['fictional', 'deep']])).toEqual([]);
   });

@@ -10,6 +10,7 @@ const HAND_WRITTEN: readonly ModelMessageCode[] = [
   'catalog.invalidComponent',
   'catalog.typeOutside',
   'catalog.typeNoComponent',
+  'catalog.invalidProblem',
   'arrange.overflow',
   'arrange.outside',
   'value.refBroken',
@@ -33,5 +34,9 @@ const CODES: ReadonlySet<string> = new Set<string>([
 
 export function messageText(message: ModelMessage): string {
   if (message.code === RAW_MESSAGE_CODE || !CODES.has(message.code)) return message.text;
-  return t(`model.${message.code}` as TranslationKey, message.params);
+  const params =
+    message.detail === undefined
+      ? message.params
+      : { ...message.params, reason: messageText(message.detail) };
+  return t(`model.${message.code}` as TranslationKey, params);
 }

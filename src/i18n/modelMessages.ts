@@ -6,6 +6,7 @@
 import { libraryMessages } from '../model/messages/library';
 import { specMessages } from '../model/messages/spec';
 import { versionMessages } from '../model/messages/versions';
+import { componentEnUS, iconsFileEnUS, originsEnUS } from './modelMessagesComponent';
 import {
   MODEL_MESSAGE_TEMPLATES,
   type ModelMessageTemplateCode,
@@ -23,6 +24,7 @@ export const modelMessagesPtBR = {
   'model.catalog.invalidComponent': 'componente inválido',
   'model.catalog.typeOutside': 'tipo "{typeId}" fora da especialização',
   'model.catalog.typeNoComponent': 'tipo "{typeId}" sem componente',
+  'model.catalog.invalidProblem': '{at}{reason}',
   // Arrumar (src/model/componentArrange.ts)
   'model.arrange.overflow': '{label}: conteúdo maior que o container',
   'model.arrange.outside': '{label}: não cabe em {where}',
@@ -33,11 +35,11 @@ export const modelMessagesPtBR = {
   // Carga dos componentes da especialização (src/model/componentCatalog.ts)
   'model.components.outsideLibrary': '{typeId}: caminho fora da biblioteca: {path}',
   'model.components.fileMissing': '{typeId}: arquivo ausente ({path})',
-  'model.components.invalid': '{typeId}: {reason}',
+  'model.components.invalid': '{typeId}: {at}{reason}',
   'model.components.invalidFallback': '{typeId}: componente inválido',
   'model.icons.outsideLibrary': 'icons: caminho fora da biblioteca: {path}',
   'model.icons.fileMissing': 'icons: arquivo ausente ({path})',
-  'model.icons.invalid': 'icons: {reason}',
+  'model.icons.invalid': 'icons: {at}{reason}',
   'model.icons.invalidFallback': 'icons: conjunto de ícones inválido',
 } as const;
 
@@ -427,10 +429,14 @@ export const modelMessagesEnUS: Record<keyof typeof modelMessagesPtBR, string> =
   ...libraryEnUS,
   ...specEnUS,
   ...versionsEnUS,
+  ...componentEnUS,
+  ...iconsFileEnUS,
+  ...originsEnUS,
   'model.catalog.fileMissing': 'missing file ({path})',
   'model.catalog.invalidComponent': 'invalid component',
   'model.catalog.typeOutside': 'type "{typeId}" is outside the specialization',
   'model.catalog.typeNoComponent': 'type "{typeId}" has no component',
+  'model.catalog.invalidProblem': '{at}{reason}',
   'model.arrange.overflow': '{label}: content is larger than the container',
   'model.arrange.outside': '{label}: does not fit in {where}',
   'model.value.refBroken': 'broken reference: {key}',
@@ -438,10 +444,10 @@ export const modelMessagesEnUS: Record<keyof typeof modelMessagesPtBR, string> =
   'model.value.refDeep': 'reference through more than one level: {key}',
   'model.components.outsideLibrary': '{typeId}: path outside the library: {path}',
   'model.components.fileMissing': '{typeId}: missing file ({path})',
-  'model.components.invalid': '{typeId}: {reason}',
+  'model.components.invalid': '{typeId}: {at}{reason}',
   'model.components.invalidFallback': '{typeId}: invalid component',
   'model.icons.outsideLibrary': 'icons: path outside the library: {path}',
   'model.icons.fileMissing': 'icons: missing file ({path})',
-  'model.icons.invalid': 'icons: {reason}',
+  'model.icons.invalid': 'icons: {at}{reason}',
   'model.icons.invalidFallback': 'icons: invalid icon set',
 };
