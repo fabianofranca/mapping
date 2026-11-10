@@ -84,14 +84,51 @@ const fontOf = (node: TextNode | undefined) =>
         node.style.fontWeight,
         node.style.letterSpacing,
       ];
-/** As faixas do intervalo com largura (uma por semana que o intervalo toca). */
-const bands = (d: Drawing) =>
+/** As faixas do intervalo (uma por célula do intervalo), unidas numa por semana que o intervalo toca. */
+const bands = (d: Drawing) => {
+  const rows = new Map<number, { x0: number; x1: number; h: number; fill?: string }>();
+  for (const n of walk(d.root)) {
+    if (n.name !== 'faixa' || !n.visible || n.width <= 0) continue;
+    const { x, y, width, height } = absOf(d, n);
+    const cur = rows.get(y);
+    rows.set(y, {
+      x0: Math.min(cur?.x0 ?? x, x),
+      x1: Math.max(cur?.x1 ?? x + width, x + width),
+      h: height,
+      fill: solid(n.fills),
+    });
+  }
+  return [...rows.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([y, r]) => ({ rect: [r.x0, y, r.x1 - r.x0, r.h], fill: r.fill }));
+};
+/** A célula de um dia (o texto `dia`) que aparece dentro da janela da grade. */
+const dayNode = (d: Drawing, day: number): TextNode => {
+  const grid = box(d, 'grade');
+  const found = [...walk(d.root)].find((n): n is TextNode => {
+    if (n.type !== 'text' || n.name !== 'dia' || !n.visible || n.text !== String(day))
+      return false;
+    const r = absOf(d, n);
+    return r.x >= grid.x + 12 && r.x + r.width <= grid.x + grid.width - 12;
+  });
+  if (found === undefined) throw new Error(`dia ausente: ${day}`);
+  return found;
+};
+const dayRect = (d: Drawing, day: number) => {
+  const { x, y, width, height } = absOf(d, dayNode(d, day));
+  return [x, y, width, height];
+};
+/** Os círculos primary do dia escolhido e das pontas do intervalo (o nó `marcado`), com o número que levam. */
+const markedAll = (d: Drawing) =>
   [...walk(d.root)]
-    .filter((n) => n.name === 'faixa' && n.visible && n.width > 0)
+    .filter((n) => n.name === 'marcado' && n.visible)
     .map((n) => {
       const { x, y, width, height } = absOf(d, n);
-      return { rect: [x, y, width, height], fill: solid(n.fills) };
+      const label = [...walk(n)].find((c): c is TextNode => c.type === 'text')!;
+      return { node: n, rect: [x, y, width, height], label };
     });
+const markedOf = (d: Drawing, text: string) =>
+  markedAll(d).find((m) => m.label.text === text);
 const BAD = /não cabe|texto maior que a caixa|ícone desconhecido|ícone esticado|token/i;
 
 describe('M5 date-picker — contêiner e cabeçalho (modo single)', () => {
@@ -215,11 +252,11 @@ describe('M5 date-picker — grade de dias', () => {
   it('31 dias começando na quarta, células de 48 (RecommendedSizeForAccessibility), em body-large e on-surface', () => {
     for (const mode of MODES) {
       const d = draw(SINGLE, mode);
-      expect(rect(d, 'dia 1')).toEqual([156, 224, 48, 48]);
-      expect(rect(d, 'dia 4')).toEqual([300, 224, 48, 48]);
-      expect(rect(d, 'dia 5')).toEqual([12, 272, 48, 48]);
-      expect(rect(d, 'dia 31')).toEqual([252, 416, 48, 48]);
-      const day = named(d, 'dia 14') as TextNode;
+      expect(dayRect(d, 1)).toEqual([156, 224, 48, 48]);
+      expect(dayRect(d, 4)).toEqual([300, 224, 48, 48]);
+      expect(dayRect(d, 5)).toEqual([12, 272, 48, 48]);
+      expect(dayRect(d, 31)).toEqual([252, 416, 48, 48]);
+      const day = dayNode(d, 14);
       expect(fontOf(day)).toEqual(scale('body-large'));
       expect(solid(day.fills)).toBe(tok('on-surface', mode));
       expect(day.text).toBe('14');
@@ -236,40 +273,41 @@ describe('M5 date-picker — grade de dias', () => {
   it('dia escolhido: círculo de 40 (DateContainerWidth/Height) corner-full em primary dentro da célula de 48, número em on-primary, em light e dark', () => {
     for (const mode of MODES) {
       const d = draw(SINGLE, mode);
-      expect(rect(d, 'dia escolhido')).toEqual([160, 324, 40, 40]);
-      expect(fillOf(d, 'dia escolhido')).toBe(tok('primary', mode));
-      const node = named(d, 'dia escolhido') as { cornerRadius?: number };
+      const marked = markedAll(d);
+      expect(marked).toHaveLength(1);
+      expect(marked[0]!.rect).toEqual([160, 324, 40, 40]);
+      expect(solid(marked[0]!.node.fills)).toBe(tok('primary', mode));
+      const node = marked[0]!.node as { cornerRadius?: number };
       expect(node.cornerRadius).toBe(num('corner-full'));
-      const label = textOf(d, 'dia escolhido')!;
+      const label = marked[0]!.label;
       expect(label.text).toBe('15');
       expect(solid(label.fills)).toBe(tok('on-primary', mode));
       expect(fontOf(label)).toEqual(scale('body-large'));
     }
     // a cor do selecionado muda de um modo para o outro
     expect(tok('primary', 'light')).not.toBe(tok('primary', 'dark'));
-    expect(fillOf(draw(SINGLE, 'light'), 'dia escolhido')).not.toBe(
-      fillOf(draw(SINGLE, 'dark'), 'dia escolhido'),
+    expect(solid(markedAll(draw(SINGLE, 'light'))[0]!.node.fills)).not.toBe(
+      solid(markedAll(draw(SINGLE, 'dark'))[0]!.node.fills),
     );
   });
 
   it('o dia escolhido acompanha selectedDay (1 e 31) e some sem seleção', () => {
-    expect(rect(draw({ ...SINGLE, selectedDay: 1 }), 'dia escolhido')).toEqual([
+    expect(markedOf(draw({ ...SINGLE, selectedDay: 1 }), '1')!.rect).toEqual([
       160, 228, 40, 40,
     ]);
-    expect(rect(draw({ ...SINGLE, selectedDay: 31 }), 'dia escolhido')).toEqual([
+    expect(markedOf(draw({ ...SINGLE, selectedDay: 31 }), '31')!.rect).toEqual([
       256, 420, 40, 40,
     ]);
     const none = draw({ selection: 'single', displayedMonth: 'Outubro de 2025' });
-    expect(named(none, 'dia escolhido')).toBeUndefined();
-    expect(named(none, 'início do intervalo')).toBeUndefined();
+    expect(markedAll(none)).toEqual([]);
     expect(bands(none)).toEqual([]);
   });
 
   it('no estilo single não aparece intervalo, mesmo com dias de intervalo preenchidos', () => {
     const d = draw({ ...SINGLE, rangeStartDay: 9, rangeEndDay: 16 });
     expect(bands(d)).toEqual([]);
-    expect(named(d, 'início do intervalo')).toBeUndefined();
-    expect(named(d, 'fim do intervalo')).toBeUndefined();
+    // só o dia escolhido: as pontas do intervalo (9 e 16) não desenham
+    expect(markedAll(d).map((m) => m.label.text)).toEqual(['15']);
   });
 });
 
@@ -301,7 +339,7 @@ describe('M5 date-picker — intervalo (DateRangePicker)', () => {
       expect(fontOf(month)).toEqual(scale('title-small'));
       expect(solid(month.fills)).toBe(tok('on-surface-variant', mode));
       expect([absOf(d, month).x, absOf(d, month).y]).toEqual([24, 149]);
-      expect(rect(d, 'dia 1')).toEqual([156, 177, 48, 48]);
+      expect(dayRect(d, 1)).toEqual([156, 177, 48, 48]);
       // 81 + 48 + 48 + 240
       expect(rect(d, 'grade')).toEqual([0, 177, 360, 240]);
     }
@@ -310,16 +348,13 @@ describe('M5 date-picker — intervalo (DateRangePicker)', () => {
   it('extremos do intervalo: círculos de 40 em primary com número em on-primary, em light e dark', () => {
     for (const mode of MODES) {
       const d = draw(RANGE, mode);
-      expect(named(d, 'dia escolhido')).toBeUndefined();
-      expect(rect(d, 'início do intervalo')).toEqual([208, 229, 40, 40]);
-      expect(rect(d, 'fim do intervalo')).toEqual([208, 277, 40, 40]);
-      for (const [name, label] of [
-        ['início do intervalo', '9'],
-        ['fim do intervalo', '16'],
-      ] as const) {
-        expect(fillOf(d, name)).toBe(tok('primary', mode));
-        expect(textOf(d, name)!.text).toBe(label);
-        expect(solid(textOf(d, name)!.fills)).toBe(tok('on-primary', mode));
+      expect(markedAll(d)).toHaveLength(2);
+      expect(markedOf(d, '9')!.rect).toEqual([208, 229, 40, 40]);
+      expect(markedOf(d, '16')!.rect).toEqual([208, 277, 40, 40]);
+      for (const label of ['9', '16']) {
+        const m = markedOf(d, label)!;
+        expect(solid(m.node.fills)).toBe(tok('primary', mode));
+        expect(solid(m.label.fills)).toBe(tok('on-primary', mode));
       }
     }
   });
@@ -354,16 +389,22 @@ describe('M5 date-picker — intervalo (DateRangePicker)', () => {
     ]);
   });
 
-  it('dia fora de 1 a 31 não desenha faixa (nem a de uma semana inteira por engano)', () => {
+  it('dia fora do mês: o início depois do mês não desenha faixa e o fim depois do mês leva a faixa até o último dia', () => {
     expect(bands(draw({ ...RANGE, rangeStartDay: 45, rangeEndDay: 50 }))).toEqual([]);
-    expect(bands(draw({ ...RANGE, rangeStartDay: 3, rangeEndDay: 50 }))).toEqual([]);
+    const d = draw({ ...RANGE, rangeStartDay: 3, rangeEndDay: 50 });
+    const rows = bands(d);
+    // o dia 3 é a coluna 5 da primeira semana (centro em 276); o 31 fecha a semana de 26 a 31 na coluna 5 (borda em 300)
+    expect(rows[0]!.rect[0]).toBe(276);
+    const last = rows[rows.length - 1]!.rect;
+    expect(last[0]! + last[2]!).toBe(300);
+    expect(markedAll(d).map((m) => m.label.text)).toEqual(['3']);
   });
 
   it('intervalo sem o dia final: só o círculo do dia inicial, sem faixa', () => {
     const d = draw({ ...RANGE, rangeEndDay: undefined });
     expect(bands(d)).toEqual([]);
-    expect(named(d, 'fim do intervalo')).toBeUndefined();
-    expect(rect(d, 'início do intervalo')).toEqual([208, 229, 40, 40]);
+    expect(markedAll(d).map((m) => m.label.text)).toEqual(['9']);
+    expect(markedOf(d, '9')!.rect).toEqual([208, 229, 40, 40]);
   });
 });
 

@@ -148,6 +148,10 @@ export const V1_NO_DEFAULT: Record<string, string> = {
 };
 
 const V1_DESCRIPTION_FIXES: Record<string, Record<string, string>> = {
+  'date-picker': {
+    displayedMonth:
+      'Nome do mês e do ano mostrados no calendário, como em Outubro de 2025. É o estado inicial, não um parâmetro: é só o rótulo, e a grade vem de month e year.',
+  },
   slider: {
     steps:
       'Número de pontos intermediários entre as pontas (Slider.steps). Vazio ou 0 = contínuo. O desenho mostra as marcas de 1 a 9; de 10 em diante desenha como 9.',
@@ -167,6 +171,18 @@ export const LIMIT_EXAMPLES: Record<string, string> = {
   button: 'Rótulo longo',
   'time-picker': '24 horas, campos',
   'date-picker': 'Intervalo até o fim do mês',
+};
+
+/** Campos e exemplos que a etapa de expressões (#897, EX4) acrescentou ao date-picker e ao time-picker. */
+const EX4_FIELDS: Record<string, string[]> = { 'date-picker': ['month', 'year'] };
+const EX4_EXAMPLES: Record<string, string[]> = {
+  'date-picker': [
+    'Fevereiro de 2028 (bissexto)',
+    'Mês de 30 dias, 6 linhas',
+    'Mês de 28 dias, 4 linhas',
+    'Intervalo que atravessa semanas',
+  ],
+  'time-picker': ['10:37 em 24 horas, minutos', '22:05 em 12 horas (PM)'],
 };
 
 /** Tamanhos que a ME2 (#913) subiu aos do Compose (decisão 9); os demais ficam os da v1. */
@@ -220,10 +236,15 @@ export function v1WithEstados(
   return {
     actual: {
       fields: now.fields
-        .filter((f) => f.key !== 'interaction')
+        .filter(
+          (f) => f.key !== 'interaction' && !EX4_FIELDS[id]?.includes(f.key as string),
+        )
         .map((f) => withoutAddedColumns(id, f)),
       examples: (now.examples ?? []).filter(
-        (e) => !isState(e) && e.name !== LIMIT_EXAMPLES[id],
+        (e) =>
+          !isState(e) &&
+          e.name !== LIMIT_EXAMPLES[id] &&
+          !EX4_EXAMPLES[id]?.includes(e.name as string),
       ),
     },
     expected: { fields: expectedFields, examples: before.examples ?? [] },
