@@ -137,7 +137,7 @@ Siga o `docs/FLOW.md` ("Orquestrador — passo a passo" e as mensagens), com o q
 
    Guarde a filha: `row '#n' child=<id> childAt=now` e registre a sessão: `painel.py session <pasta> '#n' <id>`. ▸ fase aberta.
 
-   **Filha que espera o coordenador** (vale para fase, correção e testador): quando, em vez do aviso final, a filha manda uma pergunta de decisão (item 8 da "Para a sessão da fase"), "CI travado" ou "chama o dono" do teto (os dois do item 6), grave `row '#n' wait="<motivo curto>"`: ela não é atrasada e o `show` a lista em "esperando o coordenador". Ao responder à filha (`send_message`), grave `row '#n' wait= childAt=now` (a contagem recomeça). `child=` vazio também limpa o `wait`.
+   **Filha que espera o coordenador** (vale para fase, correção e testador): quando, em vez do aviso final, a filha manda uma pergunta de decisão (item 8 da "Para a sessão da fase"), "CI travado" ou "chama o dono" do teto (os dois do item 6), grave `row '#n' wait="<motivo curto>"`: ela não é atrasada e o `show` a lista em "esperando o coordenador". Ao responder à filha (`send_message`), grave `row '#n' wait= childAt=now` (a contagem recomeça). Trocar ou limpar `child` (`child=` vazio) também limpa o `wait`.
 
    Quando a fase avisar: ▸ fase `ok`, o PR no passo e `child=` (vazio), e guarde os "Defeitos pendentes" no `log`. Com o PR mesclado no épico e a sub-issue fechada, **arquive a filha** (`archive_session`; item "Arquivar as sessões" abaixo).
 
@@ -269,7 +269,7 @@ painel.py init <pasta>
 painel.py start <pasta>
 painel.py row <pasta> '#n' status=… stage=… step=… pr=… started=now ended=now
 painel.py row <pasta> '#n' plan="<ficha>"            # a ficha da etapa
-painel.py row <pasta> '#n' child="<id> <id>" childAt=now   # filhas que devem aviso; child= limpa (e limpa o wait)
+painel.py row <pasta> '#n' child="<id> <id>" childAt=now   # filhas que devem aviso; child= limpa; trocar a filha também limpa o wait
 painel.py row <pasta> '#n' wait="<motivo>"           # a filha espera o coordenador; wait= childAt=now ao responder
 painel.py phase <pasta> '#n' CL3=ok
 painel.py reorder <pasta> '#a' '#b' …

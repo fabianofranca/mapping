@@ -188,6 +188,8 @@ def cmd_row(a):
         validate_choice("stage", pairs["stage"], STAGES)
     if pairs.get("child") == "":
         pairs["childAt"] = ""
+    if "child" in pairs and "wait" not in pairs:
+        # Filha trocada (sessão recriada) ou removida: a espera da anterior não vale para a nova.
         pairs["wait"] = ""
     for k in TIME_FIELDS:
         if k in pairs:

@@ -24,8 +24,13 @@ const PATH_TRIGGERS = [
   { id: 'pwa/csp.ts', path: 'pwa/csp.ts' },
 ];
 
-/** Gatilho por conteúdo: linha de constante de versão do schema ou de formato em `src/model/`. */
-export const FORMAT_VERSION_REGEX = '[A-Z_]*(FORMAT|SCHEMA)_VERSION = [0-9]+';
+/**
+ * Gatilho por conteúdo: linha de constante de versão do schema ou de formato em `src/model/`.
+ * Aceita sufixo (`COMPONENT_FORMAT_VERSION_REPEAT = 2`) e tipo (`: number`); o array das versões
+ * aceitas (`SPEC_FORMAT_VERSIONS = [...]`) não casa, porque o valor não é um número.
+ */
+export const FORMAT_VERSION_REGEX =
+  '[A-Z_]*(FORMAT|SCHEMA)_VERSION[A-Z_]*(: [a-z]+)? = [0-9]+';
 
 export const TRIGGERS = [
   ...PATH_TRIGGERS.map(({ id, path }) => ({ id, kind: 'path', path })),
@@ -54,9 +59,10 @@ export function triggerLines(files, contentFiles) {
   return lines;
 }
 
+/** Saída do git com `-z`: nomes sem aspas nem escape, mesmo com acento. */
 function git(args) {
   return execFileSync('git', args, { encoding: 'utf8' })
-    .split('\n')
+    .split('\0')
     .filter((l) => l !== '');
 }
 
@@ -77,12 +83,14 @@ export function parseArgs(argv) {
 export function main(argv) {
   const { base } = parseArgs(argv);
   const range = `${base}...HEAD`;
-  const files = git(['diff', '--name-only', range]);
+  const files = git(['diff', '--name-only', '--no-renames', '-z', range]);
   const content = TRIGGERS.find((t) => t.kind === 'content');
   const contentFiles = git([
     'diff',
     `-G${content.regex}`,
     '--name-only',
+    '--no-renames',
+    '-z',
     range,
     '--',
     content.dir,

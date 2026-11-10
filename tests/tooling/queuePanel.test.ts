@@ -120,6 +120,22 @@ describe('painel.py (FC1)', () => {
     expect(out).toMatch(/esperando o coordenador: nenhuma/);
   });
 
+  it('trocar a filha (sessão recriada) sem passar wait também limpa o wait', () => {
+    runAt(
+      '2026-11-09T10:00:00Z',
+      'row',
+      dir,
+      '#10',
+      'child=session_a',
+      'childAt=now',
+      'wait=pergunta',
+    );
+    runAt('2026-11-09T10:05:00Z', 'row', dir, '#10', 'child=session_b', 'childAt=now');
+    const queue = json('queue') as Array<Record<string, unknown>>;
+    expect(queue[0]?.wait).toBe('');
+    expect(runAt('2026-11-09T10:40:00Z', 'show', dir)).toMatch(/atrasadas:[^\n]*#10/);
+  });
+
   it('child= vazio limpa o wait', () => {
     runAt(
       '2026-11-09T10:00:00Z',

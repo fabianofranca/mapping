@@ -2,8 +2,8 @@
 
 ## Adicionado
 
-- `scripts/ci/riskTriggers.mjs --base <ref>`: decide os gatilhos da `/code-review high` no Fechamento do épico. Imprime `gatilho: <id>: <arquivos>` por gatilho atingido, ou `nenhum gatilho`; erro de uso sai com 2. Cobre os caminhos de risco (skills `implementar-fila` e `detalhar-backlog`, `painel.py`, `docs/FLOW.md` e `docs/PROCESS.md` por qualquer mudança, workflows, release, `mcp/version.ts`, `src/store/session.ts`, `pwa/csp.ts`) e a mudança de uma constante de versão do schema ou de formato em `src/model/` (`git diff -G`); o `formatVersion` dos JSON de `libraries/` não conta.
-- `painel.py`: campo `wait` na linha da fila para a filha que espera o coordenador. `show` não a lista como atrasada e imprime `esperando o coordenador: …` (ou `nenhuma`).
+- `scripts/ci/riskTriggers.mjs --base <ref>`: decide os gatilhos da `/code-review high` no Fechamento do épico. Imprime `gatilho: <id>: <arquivos>` por gatilho atingido, ou `nenhum gatilho`; erro de uso sai com 2. Cobre os caminhos de risco (skills `implementar-fila` e `detalhar-backlog`, `painel.py`, `docs/FLOW.md` e `docs/PROCESS.md` por qualquer mudança, workflows, release, `mcp/version.ts`, `src/store/session.ts`, `pwa/csp.ts`) e a mudança de uma constante de versão do schema ou de formato em `src/model/` (`git diff -G`, com sufixo como `COMPONENT_FORMAT_VERSION_REPEAT`); o `formatVersion` dos JSON de `libraries/` e os arrays de versões aceitas não contam. Arquivo de gatilho renomeado ainda conta (`--no-renames`).
+- `painel.py`: campo `wait` na linha da fila para a filha que espera o coordenador. `show` não a lista como atrasada e imprime `esperando o coordenador: …` (ou `nenhuma`). Trocar ou limpar `child` também limpa o `wait`.
 - `tests/support/textSlice.ts` (`section` e `between`): recortes de texto que lançam erro quando falta uma âncora.
 
 ## Alterado

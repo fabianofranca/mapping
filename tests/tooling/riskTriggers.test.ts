@@ -92,6 +92,45 @@ describe('riskTriggers.mjs (RS1)', () => {
     );
   });
 
+  it('constante de versão com sufixo ou tipada também conta; o array de versões aceitas não', () => {
+    write(
+      'src/model/components/componentFormat.ts',
+      'export const COMPONENT_FORMAT_VERSION_REPEAT = 2;\nexport const COMPONENT_FORMAT_VERSIONS = [1, 2] as const;\n',
+    );
+    git('add', '-A');
+    git('commit', '-qm', 'componente');
+    git('tag', '-f', 'base');
+    expect(
+      changed('src/model/components/componentFormat.ts', 'REPEAT = 2', 'REPEAT = 3'),
+    ).toBe('gatilho: formatVersion: src/model/components/componentFormat.ts');
+    git('tag', '-f', 'base');
+    expect(
+      changed('src/model/components/componentFormat.ts', '[1, 2]', '[1, 2, 3]'),
+    ).toBe('nenhum gatilho');
+  });
+
+  it.each([
+    ['.claude/skills/detalhar-backlog/SKILL.md', 'detalhar-backlog'],
+    ['docs/PROCESS.md', 'docs/PROCESS.md'],
+    ['.github/workflows/ci.yml', '.github/workflows/'],
+    ['scripts/release/a.mjs', 'scripts/release/'],
+    ['mcp/version.ts', 'mcp/version.ts'],
+    ['src/store/session.ts', 'src/store/session.ts'],
+    ['pwa/csp.ts', 'pwa/csp.ts'],
+  ])('%s é o gatilho %s', (file, id) => {
+    write(file, 'a\n');
+    git('add', '-A');
+    git('commit', '-qm', 'gatilho');
+    git('tag', '-f', 'base');
+    expect(changed(file, 'a', 'b')).toBe(`gatilho: ${id}: ${file}`);
+  });
+
+  it('arquivo de gatilho renomeado para fora do caminho ainda conta', () => {
+    git('mv', 'docs/FLOW.md', 'docs/OUTRO.md');
+    git('commit', '-qm', 'renomeia');
+    expect(run('--base', 'base').out).toBe('gatilho: docs/FLOW.md: docs/FLOW.md');
+  });
+
   it('erro de uso sai com 2 e a mensagem no stderr', () => {
     for (const args of [[], ['--base'], ['--outra', 'x'], ['--base', 'x', 'y']]) {
       const r = run(...args);
