@@ -893,8 +893,6 @@ Prepare um segundo print de tela, `login.png` (qualquer tela de login; pode ser 
 
 ### R13 — Proposto com componentes
 
-**O que cobre:** a etapa Proposto com componentes (PC1 e PC2): na revisão de uma proposta, a visão **Proposto** desenha os componentes que a proposta cria, com as marcas da revisão por cima. Cada passo confere um caso: criado **pendente**, **aceito**, **rejeitado** (só o fantasma), **inválido**, **existente alterado**, com **campo obrigatório faltando**, de tipo **no pacote da proposta**; depois a visão **Atual**, o disco e a legenda nas duas línguas.
-
 **Preparo.** O arquivo é `proposta-componentes.zip` (no repositório, em `examples/`; seção 2). Ele traz o projeto **Telas** (uma tela em branco **Tela**, 360 × 800, com a biblioteca `material3-compose` aplicada e o componente existente **Existente**, um `button` com Rótulo `Antigo`) e a proposta aberta **Componentes novos**, com as decisões já gravadas. Ela cria cinco `button` e um `chip` e altera o Rótulo do **Existente** para `Novo valor`:
 
 | Marcação | Caso | Decisão gravada |
@@ -1881,8 +1879,6 @@ idb() { node "$W23/idb.mjs"; }
 | R23.24 | **O MCP lê as perspectivas.** `snap > "$W23/antes.txt"`. Pelo cliente stdio, com `project` `perspectivas`: `get_project`; `get_perspective` com `id` `Analytics`; `get_perspective` com `id` `analytics`; `get_marking` de `mapping://perspectivas/m/m2`; `get_container` de `mapping://perspectivas/i/c3`; `get_perspective` com `id` `Rascunho`. Depois `snap`. | **Resposta:** `get_project` traz `schemaVersion` `18` (sem `migratedFrom`), `arrivals` vazio e `perspectives` com **Dev mobile** (2 raízes) e **Analytics** (4 raízes, `hiddenLayers` com **Dados**), sem a Rascunho (a "Só eu" fica no navegador). `get_perspective` traz `roots` (`ref`, `kind` `container`, `name`, `x` e `y`: Tela A em 0, 0 e Tela B em 500, 0, mais Relatório e Funil) e `hiddenLayers`; `analytics` devolve a mesma. O `get_marking` da Lista traz `root` (a Tela B) e `perspectives` com Dev mobile e Analytics e a posição em cada; o `get_container` da Tela C, `perspectives` vazio. A Rascunho: `not-found` com um `hint` que cita `get_project`. **Disco:** `snap` igual ao `antes.txt`: ler não grava. |
 
 ### R24 — Conteúdo fora da imagem
-
-**O que cobre:** a etapa Conteúdo fora da imagem (CF1 a CF4, `formatVersion` 14, schema v17, MCP 0.27.0): o `ref` para a anotação inteira (`accepts.annotations`); o lote do guia do agente com o container "depois", o evento com a tabela de alvos e a seta; na app, o canvas, os Detalhes do evento, a linha **Referenciada por** e o seletor da célula (só os tipos aceitos); o `get_code_hints` com `targets`; e a referência quebrada ao apagar um alvo, com **Desfazer**.
 
 **Preparo.** Seção 6 pronta (o repositório de teste e o `mapping-mcp.js`); os pedidos ao MCP são feitos pelo cliente stdio (apêndice A: `WS=<workspace> node scripts/testing/mcp-stdio-client.mjs calls.json`, com os argumentos de cada tool tirados de `[{"list":true}]`). `RAIZ` é a raiz de projetos do servidor (`design/mapeamentos` na seção 6); o `create_project` leva `root` `design/mapeamentos`. A especialização é pequena e vai inline: a shell a grava em `RAIZ/fora-demo.json` no R24.1. A camada **Componentes** tem o **Button** (papel **Clique**) e o **List-item**; a **Eventos**, o **Replace-plugins** (campo `containerId`, a tabela `plugins` com a coluna `item`, uma `ref` que aceita só o `list-item`, e o campo `qualquer`, uma `ref` que aceita a camada **Componentes** inteira) e o **Open-deeplink**.
 
