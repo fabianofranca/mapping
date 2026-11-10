@@ -329,6 +329,73 @@ describe('Diagnóstico: arquivo não encontrado em en-US', () => {
   });
 });
 
+describe('Diagnóstico: exemplo com linhas de table (decisão 24 da #897)', () => {
+  const issues = new Map([
+    [
+      'abas',
+      [
+        {
+          file: 'abas.spec.json',
+          path: 'layers[0].annotationTypes[0].examples[0].values.rows',
+          message: 'campo "table" aceita só a lista de linhas',
+          severity: 'error' as const,
+          code: 'example-table-needs-rows' as const,
+        },
+        {
+          file: 'abas.spec.json',
+          path: 'layers[0].annotationTypes[0].examples[1].values.rows[0].nada',
+          message: '"nada" não é coluna de "rows"',
+          severity: 'error' as const,
+          code: 'example-not-column' as const,
+          params: { key: 'nada', field: 'rows' },
+        },
+        {
+          file: 'abas.spec.json',
+          path: 'layers[0].annotationTypes[0].examples[1].values.rows[1]',
+          message: 'deve ser um objeto (coluna → valor)',
+          severity: 'error' as const,
+          code: 'example-row-not-object' as const,
+        },
+        {
+          file: 'abas.spec.json',
+          path: 'layers[0].annotationTypes[0].examples[1].values.rows[2].to',
+          message: 'coluna "ref" não aceita valor em exemplo',
+          severity: 'error' as const,
+          code: 'example-ref-cell' as const,
+        },
+      ],
+    ],
+  ]);
+  const renderList = () => {
+    const harness = createHarness(sampleProject(), false, { libraryIssues: issues });
+    render(
+      <EditorContext.Provider value={harness.context}>
+        <Diagnostics />
+      </EditorContext.Provider>,
+    );
+  };
+
+  it('em English (US), os quatro problemas saem traduzidos', () => {
+    locale.value = 'en-US';
+    renderList();
+    expect(screen.getByText('a "table" field takes only the list of rows')).toBeTruthy();
+    expect(screen.getByText('"nada" is not a column of "rows"')).toBeTruthy();
+    expect(screen.getByText('must be an object (column → value)')).toBeTruthy();
+    expect(screen.getByText('a "ref" column takes no value in an example')).toBeTruthy();
+    expect(screen.queryByText(/aceita só/)).toBeNull();
+    locale.value = 'pt-BR';
+  });
+
+  it('em Português, os quatro problemas saem em português', () => {
+    locale.value = 'pt-BR';
+    renderList();
+    expect(screen.getByText('campo "table" aceita só a lista de linhas')).toBeTruthy();
+    expect(screen.getByText('"nada" não é coluna de "rows"')).toBeTruthy();
+    expect(screen.getByText('deve ser um objeto (coluna → valor)')).toBeTruthy();
+    expect(screen.getByText('coluna "ref" não aceita valor em exemplo')).toBeTruthy();
+  });
+});
+
 // Fase 1 da #954 (item 7): o "Copiado" volta ao normal e não sobra para um registro vazio.
 describe('Diagnóstico: o resultado da cópia some sozinho', () => {
   function mockWrite() {

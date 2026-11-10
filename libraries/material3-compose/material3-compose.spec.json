@@ -6288,34 +6288,119 @@
             {
               "name": "Sempre com rótulo",
               "values": {
-                "alwaysShowLabel": "true"
+                "alwaysShowLabel": "true",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Rótulo só no ativo",
               "values": {
-                "alwaysShowLabel": "false"
+                "alwaysShowLabel": "false",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Mouse sobre",
               "values": {
                 "alwaysShowLabel": "true",
-                "interaction": "hovered"
+                "interaction": "hovered",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Com foco",
               "values": {
                 "alwaysShowLabel": "true",
-                "interaction": "focused"
+                "interaction": "focused",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Pressionado",
               "values": {
                 "alwaysShowLabel": "true",
-                "interaction": "pressed"
+                "interaction": "pressed",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             }
           ]
@@ -6568,7 +6653,21 @@
               "values": {
                 "title": "Compartilhar",
                 "style": "modal",
-                "dragHandle": "true"
+                "dragHandle": "true",
+                "items": [
+                  {
+                    "label": "Favoritos",
+                    "icon": "Favorite"
+                  },
+                  {
+                    "label": "Editar",
+                    "icon": "Edit"
+                  },
+                  {
+                    "label": "Configurações",
+                    "icon": "Settings"
+                  }
+                ]
               }
             },
             {
@@ -6576,7 +6675,21 @@
               "values": {
                 "title": "Detalhes",
                 "style": "standard",
-                "sheetPeekHeight": 96
+                "sheetPeekHeight": 96,
+                "items": [
+                  {
+                    "label": "Favoritos",
+                    "icon": "Favorite"
+                  },
+                  {
+                    "label": "Editar",
+                    "icon": "Edit"
+                  },
+                  {
+                    "label": "Configurações",
+                    "icon": "Settings"
+                  }
+                ]
               }
             }
           ]
@@ -7430,41 +7543,143 @@
             {
               "name": "Seleção única",
               "values": {
-                "selection": "single"
+                "selection": "single",
+                "options": [
+                  {
+                    "label": "Dia",
+                    "icon": "",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Semana",
+                    "icon": "",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Mês",
+                    "icon": "",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Seleção múltipla",
               "values": {
-                "selection": "multi"
+                "selection": "multi",
+                "options": [
+                  {
+                    "label": "Dia",
+                    "icon": "",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Semana",
+                    "icon": "",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Mês",
+                    "icon": "",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Desabilitado",
               "values": {
                 "selection": "single",
-                "enabled": "false"
+                "enabled": "false",
+                "options": [
+                  {
+                    "label": "Dia",
+                    "icon": "",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Semana",
+                    "icon": "",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Mês",
+                    "icon": "",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Mouse sobre",
               "values": {
                 "selection": "single",
-                "interaction": "hovered"
+                "interaction": "hovered",
+                "options": [
+                  {
+                    "label": "Dia",
+                    "icon": "",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Semana",
+                    "icon": "",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Mês",
+                    "icon": "",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Com foco",
               "values": {
                 "selection": "multi",
-                "interaction": "focused"
+                "interaction": "focused",
+                "options": [
+                  {
+                    "label": "Dia",
+                    "icon": "",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Semana",
+                    "icon": "",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Mês",
+                    "icon": "",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Pressionado",
               "values": {
                 "selection": "single",
-                "interaction": "pressed"
+                "interaction": "pressed",
+                "options": [
+                  {
+                    "label": "Dia",
+                    "icon": "",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Semana",
+                    "icon": "",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Mês",
+                    "icon": "",
+                    "selected": "false"
+                  }
+                ]
               }
             }
           ]
@@ -10200,7 +10415,30 @@
               "name": "Menu aberto",
               "values": {
                 "style": "menu",
-                "expanded": "true"
+                "expanded": "true",
+                "items": [
+                  {
+                    "text": "Editar",
+                    "leadingIcon": "Edit",
+                    "trailingIcon": "",
+                    "enabled": "true",
+                    "selected": "false"
+                  },
+                  {
+                    "text": "Compartilhar",
+                    "leadingIcon": "Share",
+                    "trailingIcon": "",
+                    "enabled": "true",
+                    "selected": "false"
+                  },
+                  {
+                    "text": "Excluir",
+                    "leadingIcon": "Delete",
+                    "trailingIcon": "",
+                    "enabled": "true",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -10209,7 +10447,30 @@
                 "style": "exposed",
                 "expanded": "false",
                 "label": "País",
-                "value": "Brasil"
+                "value": "Brasil",
+                "items": [
+                  {
+                    "text": "Editar",
+                    "leadingIcon": "Edit",
+                    "trailingIcon": "",
+                    "enabled": "true",
+                    "selected": "false"
+                  },
+                  {
+                    "text": "Compartilhar",
+                    "leadingIcon": "Share",
+                    "trailingIcon": "",
+                    "enabled": "true",
+                    "selected": "false"
+                  },
+                  {
+                    "text": "Excluir",
+                    "leadingIcon": "Delete",
+                    "trailingIcon": "",
+                    "enabled": "true",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -10218,7 +10479,16 @@
                 "style": "exposed",
                 "expanded": "true",
                 "label": "Idioma",
-                "value": "Português"
+                "value": "Português",
+                "items": [
+                  {
+                    "text": "Editar",
+                    "leadingIcon": "Edit",
+                    "trailingIcon": "",
+                    "enabled": "true",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -10228,7 +10498,30 @@
                 "expanded": "false",
                 "label": "País",
                 "value": "Brasil",
-                "interaction": "hovered"
+                "interaction": "hovered",
+                "items": [
+                  {
+                    "text": "Editar",
+                    "leadingIcon": "Edit",
+                    "trailingIcon": "",
+                    "enabled": "true",
+                    "selected": "false"
+                  },
+                  {
+                    "text": "Compartilhar",
+                    "leadingIcon": "Share",
+                    "trailingIcon": "",
+                    "enabled": "true",
+                    "selected": "false"
+                  },
+                  {
+                    "text": "Excluir",
+                    "leadingIcon": "Delete",
+                    "trailingIcon": "",
+                    "enabled": "true",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -10238,7 +10531,16 @@
                 "expanded": "true",
                 "label": "Idioma",
                 "value": "Português",
-                "interaction": "focused"
+                "interaction": "focused",
+                "items": [
+                  {
+                    "text": "Editar",
+                    "leadingIcon": "Edit",
+                    "trailingIcon": "",
+                    "enabled": "true",
+                    "selected": "false"
+                  }
+                ]
               }
             }
           ]
@@ -10524,21 +10826,72 @@
               "name": "Rail estreita",
               "values": {
                 "style": "rail",
-                "alwaysShowLabel": "true"
+                "alwaysShowLabel": "true",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Wide expandida",
               "values": {
                 "style": "wide",
-                "initialValue": "Expanded"
+                "initialValue": "Expanded",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Modal expandida",
               "values": {
                 "style": "modal-wide",
-                "initialValue": "Expanded"
+                "initialValue": "Expanded",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -10546,7 +10899,24 @@
               "values": {
                 "style": "rail",
                 "alwaysShowLabel": "true",
-                "interaction": "hovered"
+                "interaction": "hovered",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -10554,7 +10924,24 @@
               "values": {
                 "style": "rail",
                 "alwaysShowLabel": "true",
-                "interaction": "focused"
+                "interaction": "focused",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -10562,7 +10949,24 @@
               "values": {
                 "style": "rail",
                 "alwaysShowLabel": "true",
-                "interaction": "pressed"
+                "interaction": "pressed",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             }
           ]
@@ -10820,21 +11224,72 @@
               "name": "Ícone acima, distribuída",
               "values": {
                 "arrangement": "EqualWeight",
-                "iconPosition": "Top"
+                "iconPosition": "Top",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Ícone ao lado, centralizada",
               "values": {
                 "arrangement": "Centered",
-                "iconPosition": "Start"
+                "iconPosition": "Start",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Ícone acima, centralizada",
               "values": {
                 "arrangement": "Centered",
-                "iconPosition": "Top"
+                "iconPosition": "Top",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -10842,7 +11297,24 @@
               "values": {
                 "arrangement": "EqualWeight",
                 "iconPosition": "Top",
-                "interaction": "hovered"
+                "interaction": "hovered",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -10850,7 +11322,24 @@
               "values": {
                 "arrangement": "EqualWeight",
                 "iconPosition": "Top",
-                "interaction": "focused"
+                "interaction": "focused",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -10858,7 +11347,24 @@
               "values": {
                 "arrangement": "EqualWeight",
                 "iconPosition": "Top",
-                "interaction": "pressed"
+                "interaction": "pressed",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             }
           ]
@@ -11121,20 +11627,74 @@
               "name": "Modal com cabeçalho",
               "values": {
                 "style": "modal",
-                "headline": "Mapping"
+                "headline": "Mapping",
+                "items": [
+                  {
+                    "label": "Caixa de entrada",
+                    "icon": "Email",
+                    "selected": "true",
+                    "badge": "24"
+                  },
+                  {
+                    "label": "Favoritos",
+                    "icon": "Favorite",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Configurações",
+                    "icon": "Settings",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Dismissible",
               "values": {
                 "style": "dismissible",
-                "headline": "Pastas"
+                "headline": "Pastas",
+                "items": [
+                  {
+                    "label": "Caixa de entrada",
+                    "icon": "Email",
+                    "selected": "true",
+                    "badge": "24"
+                  },
+                  {
+                    "label": "Favoritos",
+                    "icon": "Favorite",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Configurações",
+                    "icon": "Settings",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Permanente sem cabeçalho",
               "values": {
-                "style": "permanent"
+                "style": "permanent",
+                "items": [
+                  {
+                    "label": "Caixa de entrada",
+                    "icon": "Email",
+                    "selected": "true",
+                    "badge": "24"
+                  },
+                  {
+                    "label": "Favoritos",
+                    "icon": "Favorite",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Configurações",
+                    "icon": "Settings",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -11142,7 +11702,25 @@
               "values": {
                 "style": "modal",
                 "headline": "Mapping",
-                "interaction": "hovered"
+                "interaction": "hovered",
+                "items": [
+                  {
+                    "label": "Caixa de entrada",
+                    "icon": "Email",
+                    "selected": "true",
+                    "badge": "24"
+                  },
+                  {
+                    "label": "Favoritos",
+                    "icon": "Favorite",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Configurações",
+                    "icon": "Settings",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -11150,7 +11728,25 @@
               "values": {
                 "style": "modal",
                 "headline": "Mapping",
-                "interaction": "focused"
+                "interaction": "focused",
+                "items": [
+                  {
+                    "label": "Caixa de entrada",
+                    "icon": "Email",
+                    "selected": "true",
+                    "badge": "24"
+                  },
+                  {
+                    "label": "Favoritos",
+                    "icon": "Favorite",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Configurações",
+                    "icon": "Settings",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -11158,7 +11754,25 @@
               "values": {
                 "style": "modal",
                 "headline": "Mapping",
-                "interaction": "pressed"
+                "interaction": "pressed",
+                "items": [
+                  {
+                    "label": "Caixa de entrada",
+                    "icon": "Email",
+                    "selected": "true",
+                    "badge": "24"
+                  },
+                  {
+                    "label": "Favoritos",
+                    "icon": "Favorite",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Configurações",
+                    "icon": "Settings",
+                    "selected": "false"
+                  }
+                ]
               }
             }
           ]
@@ -11422,21 +12036,72 @@
               "name": "Primárias com ícone acima",
               "values": {
                 "style": "primary",
-                "iconPosition": "top"
+                "iconPosition": "top",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Secundárias com ícone à esquerda",
               "values": {
                 "style": "secondary",
-                "iconPosition": "leading"
+                "iconPosition": "leading",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Primárias roláveis",
               "values": {
                 "style": "primary-scrollable",
-                "iconPosition": "leading"
+                "iconPosition": "leading",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -11444,7 +12109,24 @@
               "values": {
                 "style": "primary",
                 "iconPosition": "top",
-                "interaction": "hovered"
+                "interaction": "hovered",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -11452,7 +12134,24 @@
               "values": {
                 "style": "primary",
                 "iconPosition": "top",
-                "interaction": "focused"
+                "interaction": "focused",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -11460,7 +12159,24 @@
               "values": {
                 "style": "primary",
                 "iconPosition": "top",
-                "interaction": "pressed"
+                "interaction": "pressed",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             }
           ]
@@ -12483,7 +13199,21 @@
                 "preferredItemWidth": 186,
                 "itemSpacing": 8,
                 "width": "fill",
-                "height": "fixed"
+                "height": "fixed",
+                "items": [
+                  {
+                    "image": "https://example.com/praia.jpg",
+                    "label": "Praia"
+                  },
+                  {
+                    "image": "https://example.com/serra.jpg",
+                    "label": "Serra"
+                  },
+                  {
+                    "image": "https://example.com/cidade.jpg",
+                    "label": "Cidade"
+                  }
+                ]
               }
             },
             {
@@ -12493,7 +13223,21 @@
                 "itemWidth": 140,
                 "itemSpacing": 12,
                 "width": "fill",
-                "height": "fixed"
+                "height": "fixed",
+                "items": [
+                  {
+                    "image": "https://example.com/praia.jpg",
+                    "label": "Praia"
+                  },
+                  {
+                    "image": "https://example.com/serra.jpg",
+                    "label": "Serra"
+                  },
+                  {
+                    "image": "https://example.com/cidade.jpg",
+                    "label": "Cidade"
+                  }
+                ]
               }
             },
             {
@@ -12502,7 +13246,21 @@
                 "style": "centered-hero",
                 "itemSpacing": 8,
                 "width": "fill",
-                "height": "fixed"
+                "height": "fixed",
+                "items": [
+                  {
+                    "image": "https://example.com/praia.jpg",
+                    "label": "Praia"
+                  },
+                  {
+                    "image": "https://example.com/serra.jpg",
+                    "label": "Serra"
+                  },
+                  {
+                    "image": "https://example.com/cidade.jpg",
+                    "label": "Cidade"
+                  }
+                ]
               }
             }
           ]

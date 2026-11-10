@@ -48,7 +48,7 @@ function parsed(spec: Json): Spec {
 
 /** O caminho exato e a mensagem exata estão entre os erros. */
 function expectIssue(spec: Json, path: string, message: string): void {
-  expect(issuesOf(spec)).toContainEqual({ path, message });
+  expect(issuesOf(spec)).toContainEqual(expect.objectContaining({ path, message }));
 }
 
 /** O caminho exato está entre os erros e a mensagem dele começa com o texto. */
@@ -318,7 +318,16 @@ describe('examples do tipo', () => {
     spec.layers[0].annotationTypes[1].fields.push(
       { key: 'when', type: 'date' },
       { key: 'size', type: 'enum', options: ['s', 'm'] },
-      { key: 'rows', type: 'table', columns: [{ key: 'col', type: 'string' }] },
+      {
+        key: 'rows',
+        type: 'table',
+        columns: [
+          { key: 'col', type: 'string' },
+          { key: 'num', type: 'number' },
+          { key: 'kind', type: 'enum', options: ['a', 'b'] },
+          { key: 'day', type: 'date' },
+        ],
+      },
       { key: 'link', type: 'ref', accepts: { free: true } },
     );
     return spec;
@@ -414,17 +423,125 @@ describe('examples do tipo', () => {
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
 
-  it.each([
-    ['rows', 'table'],
-    ['link', 'ref'],
-  ])('campo %s (%s) não aceita valor em exemplo, nem texto', (key, type) => {
+  it('campo ref não aceita valor em exemplo, nem texto', () => {
     const spec = withFields();
-    spec.layers[0].annotationTypes[1].examples = [{ name: 'A', values: { [key]: 'x' } }];
+    spec.layers[0].annotationTypes[1].examples = [{ name: 'A', values: { link: 'x' } }];
     expectIssue(
       spec,
-      `${BADGE}.examples[0].values.${key}`,
-      `campo "${type}" não aceita valor em exemplo`,
+      `${BADGE}.examples[0].values.link`,
+      'campo "ref" não aceita valor em exemplo',
     );
+  });
+
+  describe('campo table: a lista de linhas (decisão 24 da #897)', () => {
+    const ROWS = `${BADGE}.examples[0].values.rows`;
+    const withRows = (rows: unknown, mutate?: (spec: Json) => void): Json => {
+      const spec = withFields();
+      mutate?.(spec);
+      spec.layers[0].annotationTypes[1].examples = [{ name: 'A', values: { rows } }];
+      return spec;
+    };
+
+    it('duas linhas válidas (texto, número, enum, data e null) passam', () => {
+      const spec = withRows([
+        { col: 'Início', num: 3, kind: 'a', day: '2026-02-28' },
+        { col: null, num: null, kind: null, day: null },
+        {},
+      ]);
+      expect(parseSpec(spec).ok).toBe(true);
+      expect(jsonValidator.safeParse(spec).success).toBe(true);
+    });
+
+    it('a lista vazia vale', () => {
+      const spec = withRows([]);
+      expect(parseSpec(spec).ok).toBe(true);
+      expect(jsonValidator.safeParse(spec).success).toBe(true);
+    });
+
+    it('a formatVersion não mudou', () => {
+      const spec = withRows([{ col: 'x' }]);
+      expect(spec.formatVersion).toBe(4);
+      expect(parsed(spec).formatVersion).toBe(4);
+    });
+
+    it.each([
+      ['num', 'abc', 'deve ser número'],
+      ['kind', 'z', 'deve ser uma das options'],
+      ['day', '2026-02-30', 'deve ser uma data AAAA-MM-DD válida'],
+      ['col', 5, 'deve ser texto'],
+    ])('célula fora do tipo da coluna %s: %j', (column, value, message) => {
+      const spec = withRows([{ col: 'ok' }, { [column]: value }]);
+      expectIssue(spec, `${ROWS}[1].${column}`, message);
+    });
+
+    it('chave que não é coluna, inclusive _id', () => {
+      const spec = withRows([{ col: 'ok' }, { nada: 'x', _id: 'r1' }]);
+      expectIssue(spec, `${ROWS}[1].nada`, '"nada" não é coluna de "rows"');
+      expectIssue(spec, `${ROWS}[1]._id`, '"_id" não é coluna de "rows"');
+    });
+
+    it('linha que não é objeto', () => {
+      for (const row of ['x', 3, null, ['a']]) {
+        expectIssue(withRows([row]), `${ROWS}[0]`, 'deve ser um objeto (coluna → valor)');
+      }
+    });
+
+    it('coluna ref só aceita null no exemplo (formatVersion 7 ou mais)', () => {
+      const addRef = (spec: Json) => {
+        spec.formatVersion = 7;
+        spec.layers[0].annotationTypes[1].fields
+          .find((f: Json) => f.key === 'rows')
+          .columns.push({ key: 'to', type: 'ref', accepts: { free: true } });
+      };
+      expect(parseSpec(withRows([{ to: null }], addRef)).ok).toBe(true);
+      expectIssue(
+        withRows([{ col: 'a' }, { to: 'alvo' }], addRef),
+        `${ROWS}[1].to`,
+        'coluna "ref" não aceita valor em exemplo',
+      );
+    });
+
+    it.each([['x'], [5]])('texto ou número no campo table: %j', (value) => {
+      expectIssue(withRows(value), ROWS, 'campo "table" aceita só a lista de linhas');
+    });
+
+    it('null no campo table vale', () => {
+      expect(parseSpec(withRows(null)).ok).toBe(true);
+    });
+
+    it('lista de linhas em campo que não é table não vale', () => {
+      const spec = withFields();
+      spec.layers[0].annotationTypes[1].examples = [
+        { name: 'A', values: { text: [{ col: 'x' }] } },
+      ];
+      expect(parseSpec(spec).ok).toBe(false);
+    });
+
+    it('o JSON Schema recusa célula composta e lista em campo não-table só pelo formato', () => {
+      const spec = withRows([{ col: { a: 1 } }]);
+      expect(jsonValidator.safeParse(spec).success).toBe(false);
+      expect(parseSpec(spec).ok).toBe(false);
+    });
+
+    it('as mensagens novas levam código e parâmetros no modelo', () => {
+      const issues = issuesOf(withRows([{ nada: 1 }, 'x']));
+      expect(issues).toContainEqual({
+        path: `${ROWS}[0].nada`,
+        message: '"nada" não é coluna de "rows"',
+        code: 'example-not-column',
+        params: { key: 'nada', field: 'rows' },
+      });
+      expect(issues).toContainEqual({
+        path: `${ROWS}[1]`,
+        message: 'deve ser um objeto (coluna → valor)',
+        code: 'example-row-not-object',
+      });
+      expect(issuesOf(withRows('x'))).toContainEqual({
+        path: ROWS,
+        message: 'campo "table" aceita só a lista de linhas',
+        code: 'example-table-needs-rows',
+      });
+    });
   });
 
   describe('exemplo de um sistema externo (system + file)', () => {

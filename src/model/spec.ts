@@ -176,6 +176,12 @@ export interface SpecFont {
   style?: 'normal' | 'italic';
 }
 
+/** Uma linha de um campo `table` num exemplo: coluna → texto, número ou `null`. */
+export type SpecExampleRow = Record<string, string | number | null>;
+
+/** Valor de um campo num exemplo: texto, número, `null` ou, num campo `table`, a lista de linhas. */
+export type SpecExampleValue = string | number | null | SpecExampleRow[];
+
 /**
  * Exemplo de um tipo (v4), em um de dois modos: `values` (valores dos campos do tipo) ou
  * `system` + `file` (o JSON de um nó de um sistema externo declarado em `origins`).
@@ -183,7 +189,7 @@ export interface SpecFont {
 export interface SpecExample {
   name: string;
   description?: string;
-  values?: Record<string, string | number | null>;
+  values?: Record<string, SpecExampleValue>;
   system?: string;
   file?: string;
 }
@@ -974,7 +980,9 @@ const exampleShape = z
     values: z
       .record(
         z.string(),
-        z.union([z.string(), z.number(), z.null()], {
+        // A lista de linhas de um campo `table`; as linhas e as células são conferidas em
+        // `checkExamples`, com a mensagem e o caminho exatos.
+        z.union([z.string(), z.number(), z.null(), z.array(z.unknown())], {
           error: 'deve ser texto, número ou null',
         }),
       )
@@ -1019,11 +1027,71 @@ function checkExamples(
         add(['values', k], `"${k}" não é um campo do tipo`);
       } else if (value === null) {
         continue;
-      } else if (field.type === 'table' || field.type === 'ref') {
-        add(['values', k], `campo "${field.type}" não aceita valor em exemplo`);
+      } else if (field.type === 'table') {
+        if (Array.isArray(value))
+          checkExampleRows(field, value, [...p, 'values', k], ctx);
+        else
+          addCoded(ctx, [...p, 'values', k], 'example-table-needs-rows', {
+            message: 'campo "table" aceita só a lista de linhas',
+          });
+      } else if (field.type === 'ref') {
+        add(['values', k], 'campo "ref" não aceita valor em exemplo');
       } else {
         const problem = valueProblem(field.type, field.options, value);
         if (problem !== undefined) add(['values', k], problem);
+      }
+    }
+  });
+}
+
+/** Problema com `code` e `params`, que o `parseSpec` copia para o `SpecIssue`. */
+function addCoded(
+  ctx: z.RefinementCtx,
+  path: (string | number)[],
+  code: SpecIssueCode,
+  { message, params }: { message: string; params?: Record<string, string> },
+): void {
+  ctx.addIssue({ code: 'custom', path, message, params: { code, ...params } });
+}
+
+/** As linhas do exemplo de um campo `table`: objetos coluna → valor, cada célula do tipo da coluna. */
+function checkExampleRows(
+  field: RawField,
+  rows: readonly unknown[],
+  path: (string | number)[],
+  ctx: z.RefinementCtx,
+): void {
+  const columns = new Map<string, RawField>();
+  for (const raw of field.columns ?? []) {
+    const column = parseColumn(raw);
+    if (column.success) columns.set(column.data.key, column.data);
+  }
+  rows.forEach((row, i) => {
+    const rowPath = [...path, i];
+    if (typeof row !== 'object' || row === null || Array.isArray(row)) {
+      addCoded(ctx, rowPath, 'example-row-not-object', {
+        message: 'deve ser um objeto (coluna → valor)',
+      });
+      return;
+    }
+    for (const [key, cell] of Object.entries(row)) {
+      const cellPath = [...rowPath, key];
+      const column = columns.get(key);
+      if (column === undefined) {
+        addCoded(ctx, cellPath, 'example-not-column', {
+          message: `"${key}" não é coluna de "${field.key}"`,
+          params: { key, field: field.key },
+        });
+      } else if (cell === null) {
+        continue;
+      } else if (column.type === 'ref') {
+        addCoded(ctx, cellPath, 'example-ref-cell', {
+          message: 'coluna "ref" não aceita valor em exemplo',
+        });
+      } else {
+        const problem = valueProblem(column.type, column.options, cell);
+        if (problem !== undefined)
+          ctx.addIssue({ code: 'custom', path: cellPath, message: problem });
       }
     }
   });
@@ -2786,7 +2854,22 @@ export const specSchema = z
     checkIcons(spec, ctx);
   });
 
-export type SpecIssue = { path: string; message: string };
+/**
+ * Códigos estáveis dos problemas que a interface mostra traduzidos (o `message` em português
+ * continua para os testes e o MCP, que não expõe o código).
+ */
+export type SpecIssueCode =
+  | 'example-not-column'
+  | 'example-row-not-object'
+  | 'example-ref-cell'
+  | 'example-table-needs-rows';
+
+export type SpecIssue = {
+  path: string;
+  message: string;
+  code?: SpecIssueCode;
+  params?: Readonly<Record<string, string>>;
+};
 
 /** `layers[1].annotationTypes[0].fields[2].type` a partir de um caminho do zod. */
 export function formatSpecPath(path: readonly PropertyKey[]): string {
@@ -2915,14 +2998,23 @@ export function removedFieldKeys(data: unknown): Map<string, Set<string>> {
   return result;
 }
 
+/** O problema do zod como `SpecIssue`: o `code` e os `params` de `addCoded` viram campos. */
+function toSpecIssue(issue: z.core.$ZodIssue): SpecIssue {
+  const base = { path: formatSpecPath(issue.path), message: issue.message };
+  const params: unknown = 'params' in issue ? issue.params : undefined;
+  if (!isRecord(params) || typeof params.code !== 'string') return base;
+  const { code, ...rest } = params;
+  const out: SpecIssue = { ...base, code: code as SpecIssueCode };
+  return Object.keys(rest).length > 0
+    ? { ...out, params: rest as Record<string, string> }
+    : out;
+}
+
 /** Valida um JSON já lido; erros no formato `caminho: mensagem`. */
 export function parseSpec(data: unknown): SpecParseResult {
   const result = specSchema.safeParse(data);
   if (result.success) return { ok: true, ...dropRemovedFields(result.data) };
-  const issues = result.error.issues.map((i) => ({
-    path: formatSpecPath(i.path),
-    message: i.message,
-  }));
+  const issues = result.error.issues.map(toSpecIssue);
   return {
     ok: false,
     issues,

@@ -132,6 +132,7 @@ export const MIGRATED = [
 
 type Raw = {
   key?: string;
+  type?: string;
   name?: string;
   description?: string;
   values?: Record<string, unknown>;
@@ -209,6 +210,21 @@ function withoutAddedColumns(id: string, field: Raw): Raw {
 }
 
 /**
+ * O exemplo sem as linhas dos campos `table` (a EX5 da #897 pôs as do `preview` em todo exemplo
+ * de tipo com tabela; a v1 não tinha, porque o exemplo não aceitava linhas).
+ */
+function withoutTableValues(fields: readonly Raw[], example: Raw): Raw {
+  if (example.values === undefined) return example;
+  const tables = new Set(fields.filter((f) => f.type === 'table').map((f) => f.key));
+  return {
+    ...example,
+    values: Object.fromEntries(
+      Object.entries(example.values).filter(([k]) => !tables.has(k)),
+    ),
+  };
+}
+
+/**
  * Compara os campos e os exemplos de um tipo com os da v1, sem o que a etapa Material 3 com estados acrescentou
  * (o campo `interaction` e os exemplos que o usam, e os exemplos dos limites da ME2) e com as descrições corrigidas de `V1_DESCRIPTION_FIXES`.
  */
@@ -240,12 +256,14 @@ export function v1WithEstados(
           (f) => f.key !== 'interaction' && !EX4_FIELDS[id]?.includes(f.key as string),
         )
         .map((f) => withoutAddedColumns(id, f)),
-      examples: (now.examples ?? []).filter(
-        (e) =>
-          !isState(e) &&
-          e.name !== LIMIT_EXAMPLES[id] &&
-          !EX4_EXAMPLES[id]?.includes(e.name as string),
-      ),
+      examples: (now.examples ?? [])
+        .filter(
+          (e) =>
+            !isState(e) &&
+            e.name !== LIMIT_EXAMPLES[id] &&
+            !EX4_EXAMPLES[id]?.includes(e.name as string),
+        )
+        .map((e) => withoutTableValues(now.fields, e)),
     },
     expected: { fields: expectedFields, examples: before.examples ?? [] },
   };
