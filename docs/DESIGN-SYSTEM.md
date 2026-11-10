@@ -8,7 +8,7 @@ Este arquivo é o registro dele no repositório. Ele diz o que o DS é, **quando
 
 ## O que o DS é, e o que ele não é
 
-- **É curado à mão.** Cada componente tem um guia (`README.md`) e um preview em HTML escritos por pessoas, com os estados desenhados um por um. O conteúdo tem autores: ao atualizar, mexa só no que a entrega mudou.
+- **É curado à mão.** Cada componente tem um guia (`README.md`) e um preview em HTML escritos por pessoas, com os estados desenhados um por um. O conteúdo tem autores: ao atualizar, mexa só no que a entrega mudou. Isso não impede o fechamento de gravar: quer dizer mexer só no que a entrega mudou, sem `/design-sync`.
 - **Não é gerado do código.** A skill `/design-sync` do Claude Code **não se aplica** a este DS: ela espera o `dist/` de uma biblioteca de componentes publicada e transformaria o DS curado num espelho do build. Não a use aqui.
 - **O código é a fonte da verdade; o DS descreve.** Onde os dois divergirem, corrija o DS. Divergência que pareça defeito da app não se resolve aqui: registre em "Pendências" e leve ao dono.
 - **Nome.** O índice do artefato se chama **Mapping**. Se aparecer o nome antigo "Mapeador de Imagens 2.0", é o mesmo artefato.
@@ -52,6 +52,8 @@ Nenhuma fase grava no artefato do DS.
 
 Ao gravar:
 
+- **Ferramenta:** `Artifact`, com `read` (`url` e `path`) para ler e `publish` (`url`, `root` e `files`) para gravar. Leia o `SKILL.md` e o `artifact-type/reference/` do artefato antes.
+- **`## Sincronização`** do registro abre por uma destas três formas: "Gravado no artefato **Mapping** em AAAA-MM-DD: versão <n>…", "Versão <n>…" (ou "Versões <n> e <m>…") ou "Sem impacto…". Qualquer outra abertura conta como "não gravou", e o teste `tests/tooling/designSystemLog.test.ts` exige então `## Ficou sem gravar` com cada item explicado.
 - **O índice vai por último**, numa chamada só, lido imediatamente antes, com `lastChange` preenchido (`by`, `at`, `via`, `note`).
 - **Nenhum arquivo do DS é apagado** sem o dono pedir.
 - Confira o contraste nos temas claro e escuro em tudo o que tocar.
@@ -279,3 +281,5 @@ Os cinco papéis de texto do código não entraram no DS: a família `type` do f
 ## Histórico de sincronização
 
 Um arquivo por épico em [`docs/design-system/`](design-system/), com o que o fechamento gravou no artefato (ou "Sem impacto") e o que ficou sem gravar. `ls docs/design-system/` sai em ordem cronológica, com os não lançados (`<nome>.md`, sem data) no fim; épicos do mesmo dia ficam em ordem alfabética, e a ordem exata do merge é a de `git log --first-parent main`. A primeira linha de cada arquivo é `# <Etapa> — <AAAA-MM-DD | [Não lançado]> (épico \`epic/<nome>\`)`, e as seções são só `## Pendências`, `## Sincronização`e`## Ficou sem gravar`. As pendências abertas acham-se com `grep -rn -A99 '^## Ficou sem gravar' docs/design-system/`.
+
+Cada item de `## Ficou sem gravar` traz `Motivo:` (o que impediu a gravação, concreto) ou "Passou para o registro do épico `epic/<nome>`: <resumo>", quando outro épico passou a gravá-lo; o registro desse épico tem de existir na pasta.
