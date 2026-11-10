@@ -199,8 +199,11 @@ describe('implementar-fila: skill novo na main (decisão 11)', () => {
   const troca = section(fila, '## Troca de sessão');
 
   it('mudança grande vira troca de sessão, com a linhagem conferida antes', () => {
-    expect(troca).toContain('mais de 30 linhas');
-    expect(troca).toContain('seções de regra');
+    // CR1 (decisão do dono de 2026-11-10, comentário na #1324): 60 linhas, ou mudança em "Regras desta fila".
+    expect(troca).toContain('mais de 60 linhas');
+    expect(troca).not.toContain('mais de 30 linhas');
+    expect(troca).toContain('mudança em "Regras desta fila"');
+    expect(troca).not.toContain('Economia de contexto", "Por etapa"');
     expect(troca).toContain('git diff --numstat');
     expect(troca).toMatch(
       /linhagem[\s\S]*antes dessa troca|antes dessa troca[\s\S]*linhagem/,
