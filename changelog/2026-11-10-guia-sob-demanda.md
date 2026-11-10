@@ -1,4 +1,4 @@
-# Guia da rodada sob demanda — [Não lançado] (épico `epic/guia-sob-demanda`, PR #0, MCP 0.30.0 sem mudança, schema v18)
+# Guia da rodada sob demanda — 2026-11-10 (épico `epic/guia-sob-demanda`, PR #1458, MCP 0.30.0 sem mudança, schema v18)
 
 ## Alterado
 
