@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "date-picker",
   "name": "Date picker",
-  "description": "Seletor de data de 360 de largura em surface container high, com cantos de 28: cabeçalho (título, manchete e o botão que alterna o modo), o mês com as setas (single) ou o subtítulo do mês (range), os dias da semana e a grade de dias de 48 com o dia escolhido em primary (single) ou o intervalo em secondary container com as pontas em primary (range). A grade é a do mês de `month` e `year` (4, 5 ou 6 linhas, com o bissexto); sem os dois, um mês de 31 dias que começa numa quarta-feira.",
+  "description": "Seletor de data de 360 de largura em surface container high, com cantos de 28: cabeçalho (título, manchete e o botão que alterna o modo), o mês com as setas (single) ou o subtítulo do mês (range), os dias da semana e a grade de dias de 48 com o dia escolhido em primary (single) ou o intervalo em secondary container com as pontas em primary (range). A grade é a do mês de `month` e `year` (4, 5 ou 6 linhas, com o bissexto); sem os dois, um mês de 31 dias que começa numa quarta-feira. O dia de hoje (`today`) leva o contorno de 1 e o número em primary, salvo se for o dia escolhido.",
   "size": { "width": 360, "height": 512 },
   "sizing": { "width": 360, "height": "hug" },
   "preview": {
@@ -875,6 +875,81 @@
                       }
                     },
                     {
+                      "type": "rect",
+                      "name": "contorno de hoje",
+                      "width": 40,
+                      "height": 40,
+                      "anchors": { "left": 4, "top": 4 },
+                      "cornerRadius": { "$token": "corner-full" },
+                      "fill": "none",
+                      "stroke": {
+                        "color": { "$token": "primary" },
+                        "width": 1,
+                        "align": "inside"
+                      },
+                      "visible": {
+                        "$and": [
+                          {
+                            "$and": [
+                              { "$has": "today" },
+                              {
+                                "$lt": [
+                                  {
+                                    "$abs": {
+                                      "$sub": [
+                                        { "$add": [{ "$field": "$index" }, 1] },
+                                        { "$field": "today" }
+                                      ]
+                                    }
+                                  },
+                                  0.5
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "$not": {
+                              "$or": [
+                                {
+                                  "$lt": [
+                                    {
+                                      "$abs": {
+                                        "$sub": [
+                                          { "$add": [{ "$field": "$index" }, 1] },
+                                          {
+                                            "$if": { "$eq": ["selection", "range"] },
+                                            "then": { "$field": "rangeStartDay" },
+                                            "else": { "$field": "selectedDay" }
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    0.5
+                                  ]
+                                },
+                                {
+                                  "$lt": [
+                                    {
+                                      "$abs": {
+                                        "$sub": [
+                                          { "$add": [{ "$field": "$index" }, 1] },
+                                          {
+                                            "$if": { "$eq": ["selection", "range"] },
+                                            "then": { "$field": "rangeEndDay" }
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    0.5
+                                  ]
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
                       "type": "text",
                       "name": "dia",
                       "text": { "$add": [{ "$field": "$index" }, 1] },
@@ -888,7 +963,53 @@
                         "align": "center",
                         "verticalAlign": "cap-middle"
                       },
-                      "color": { "$token": "on-surface" }
+                      "color": {
+                        "$if": {
+                          "$and": [
+                            {
+                              "$and": [
+                                { "$has": "today" },
+                                {
+                                  "$lt": [
+                                    {
+                                      "$abs": {
+                                        "$sub": [
+                                          { "$add": [{ "$field": "$index" }, 1] },
+                                          { "$field": "today" }
+                                        ]
+                                      }
+                                    },
+                                    0.5
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "$not": {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  { "$has": "rangeStartDay" },
+                                  { "$has": "rangeEndDay" },
+                                  {
+                                    "$gte": [
+                                      { "$add": [{ "$field": "$index" }, 1] },
+                                      { "$field": "rangeStartDay" }
+                                    ]
+                                  },
+                                  {
+                                    "$lte": [
+                                      { "$add": [{ "$field": "$index" }, 1] },
+                                      { "$field": "rangeEndDay" }
+                                    ]
+                                  }
+                                ]
+                              }
+                            }
+                          ]
+                        },
+                        "then": { "$token": "primary" },
+                        "else": { "$token": "on-surface" }
+                      }
                     },
                     {
                       "type": "frame",
