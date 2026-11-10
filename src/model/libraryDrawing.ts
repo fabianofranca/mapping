@@ -6,8 +6,12 @@ import type { IconSet } from './components/icons';
 import { type ResolvedTokens, resolveTokens } from './components/tokens';
 import type { LibraryIssue } from './library';
 import { libraryIssue } from './libraryIssue';
-import { rawMessage, type ModelMessage } from './modelMessage';
-import { templateMessage, type ModelMessageTemplateCode } from './messages';
+import { modelMessage, rawMessage, type ModelMessage } from './modelMessage';
+import {
+  isModelMessageTemplateCode,
+  templateMessage,
+  type ModelMessageTemplateCode,
+} from './messages';
 import type { Spec, SpecAnnotationType } from './spec';
 
 // Nível 3 do validador da biblioteca: a prova de desenho. Instancia cada componente com os
@@ -49,8 +53,12 @@ export interface DrawingContext {
 const messageOf = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
-/** `"campo não informado: x"` do motor para um campo que o tipo nem declara: o nível 2 já deu o erro. */
-const NOT_INFORMED = /^campo não informado: (.+)$/;
+/** "campo não informado" do motor para um campo que o tipo nem declara: o nível 2 já deu o erro. */
+const NOT_INFORMED_CODE = 'engine.fieldMissing';
+
+/** O aviso do motor com o sufixo de medida aproximada (o aviso vai em `detail`, que a interface traduz). */
+const approximate = (message: ModelMessage): ModelMessage =>
+  modelMessage('engine.approximate', {}, `${message.text}${APPROXIMATE_SUFFIX}`, message);
 
 export function defaultValues(
   type: SpecAnnotationType,
@@ -165,38 +173,40 @@ function typeDrawing(
     // O aviso que vale em todos os modos sai uma vez, sem modo; o que depende do modo cita o modo.
     const perMode = modes.map(({ mode, tokens }) => {
       try {
-        const { warnings } = instantiate(component, drawCase.values, box, {
+        const { messages } = instantiate(component, drawCase.values, box, {
           measure: approximateMeasurer,
           ...(tokens === undefined ? {} : { tokens }),
         });
         return {
           mode,
-          texts: warnings
-            .filter((w) => {
-              const missing = NOT_INFORMED.exec(w);
-              return missing === null || keys.has(missing[1] ?? '');
-            })
-            .map((w) => `${w}${APPROXIMATE_SUFFIX}`),
+          texts: messages
+            .filter(
+              (m) => m.code !== NOT_INFORMED_CODE || keys.has(String(m.params.key ?? '')),
+            )
+            .map(approximate),
           error: undefined as string | undefined,
         };
       } catch (error) {
-        return { mode, texts: [] as string[], error: messageOf(error) };
+        return { mode, texts: [] as ModelMessage[], error: messageOf(error) };
       }
     });
     const common =
       modes.length > 1
         ? (perMode[0]?.texts ?? []).filter((t) =>
-            perMode.every((m) => m.error === undefined && m.texts.includes(t)),
+            perMode.every(
+              (m) => m.error === undefined && m.texts.some((x) => x.text === t.text),
+            ),
           )
         : [];
-    for (const text of common) out.push(issue(undefined, rawMessage(text), 'warning'));
+    for (const message of common) out.push(issue(undefined, message, 'warning'));
     for (const { mode, texts, error } of perMode) {
       if (error !== undefined) {
         out.push(issue(mode, templateMessage('library.drawFailed', { error }), 'error'));
         continue;
       }
-      for (const text of texts) {
-        if (!common.includes(text)) out.push(issue(mode, rawMessage(text), 'warning'));
+      for (const message of texts) {
+        if (!common.some((c) => c.text === message.text))
+          out.push(issue(mode, message, 'warning'));
       }
     }
   }
@@ -230,6 +240,20 @@ export function nodeProbeLibrary(lib: Library, origin: Origin): Library {
 /** Tira o `node.` que o quadro sintético põe na frente do caminho de um aviso da origem. */
 export const withoutNodePrefix = (message: string): string =>
   message.replace(/^node\.?/, '');
+
+/**
+ * O aviso da origem sem o `node.` que o quadro sintético põe na frente do caminho: o `path` do
+ * parâmetro perde o prefixo e o texto é montado de novo (igual a `withoutNodePrefix(text)`).
+ */
+export function withoutNodePrefixMessage(message: ModelMessage): ModelMessage {
+  const path = message.params.path;
+  if (typeof path !== 'string' || !isModelMessageTemplateCode(message.code))
+    return message;
+  return templateMessage(message.code, {
+    ...message.params,
+    path: withoutNodePrefix(path),
+  });
+}
 
 export function drawingIssues(ctx: DrawingContext): LibraryIssue[] {
   const { spec, specPath } = ctx;
@@ -282,20 +306,14 @@ export function drawingIssues(ctx: DrawingContext): LibraryIssue[] {
           { system: origin.system, measure: approximateMeasurer },
         );
         const params = { name: example.name, system: origin.system };
-        const systemIssue = (severity: 'error' | 'warning', text: string) =>
-          libraryIssue(
-            severity,
-            specPath,
-            at,
-            'library.systemExample',
-            params,
-            rawMessage(withoutNodePrefix(text)),
-          );
+        const systemIssue = (severity: 'error' | 'warning', detail: ModelMessage) =>
+          libraryIssue(severity, specPath, at, 'library.systemExample', params, detail);
         if (result.error !== undefined) {
-          out.push(systemIssue('error', result.error));
+          out.push(systemIssue('error', rawMessage(withoutNodePrefix(result.error))));
           return;
         }
-        for (const warning of result.warnings) out.push(systemIssue('warning', warning));
+        for (const message of result.messages)
+          out.push(systemIssue('warning', withoutNodePrefixMessage(message)));
         const root = result.screen?.instances.find((i) => i.parentId === undefined);
         if (root !== undefined && root.typeId !== type.id) {
           out.push(
@@ -322,20 +340,13 @@ export function drawingIssues(ctx: DrawingContext): LibraryIssue[] {
         measure: approximateMeasurer,
       });
       const params = { name: example.name, system: origin.system };
-      const screenIssue = (severity: 'error' | 'warning', text: string) =>
-        libraryIssue(
-          severity,
-          specPath,
-          at,
-          'library.originScreen',
-          params,
-          rawMessage(text),
-        );
+      const screenIssue = (severity: 'error' | 'warning', detail: ModelMessage) =>
+        libraryIssue(severity, specPath, at, 'library.originScreen', params, detail);
       if (result.error !== undefined) {
-        out.push(screenIssue('error', result.error));
+        out.push(screenIssue('error', rawMessage(result.error)));
         return;
       }
-      for (const warning of result.warnings) out.push(screenIssue('warning', warning));
+      for (const message of result.messages) out.push(screenIssue('warning', message));
     });
   });
   return out;

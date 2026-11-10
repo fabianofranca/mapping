@@ -1,5 +1,6 @@
 import { modelMessage, type ModelMessage } from '../modelMessage';
 import { componentMessages } from './component';
+import { engineMessages } from './engine';
 import { iconsFileMessages } from './icons';
 import { libraryMessages } from './library';
 import { originMessages } from './origins';
@@ -18,6 +19,7 @@ export const MODEL_MESSAGE_TEMPLATES = {
   ...componentMessages,
   ...iconsFileMessages,
   ...originMessages,
+  ...engineMessages,
 } as const;
 
 export type ModelMessageTemplateCode = keyof typeof MODEL_MESSAGE_TEMPLATES;

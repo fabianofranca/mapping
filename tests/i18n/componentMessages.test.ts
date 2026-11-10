@@ -418,6 +418,9 @@ describe('catálogos component, iconsFile e origins', () => {
       for (const [code, template] of Object.entries(catalog)) {
         // O parser monta este com a constante `COMPONENT_FORMAT`; o caso 0 acima o produz.
         if (code === 'component.formatInvalid') continue;
+        // Os avisos de desenho (`origins.draw.*`) saem do catálogo por `templateMessage` (MB5), sem o
+        // texto no código; `engineMessages.test.ts` os produz.
+        if (code.startsWith('origins.draw.')) continue;
         const parts = template
           .split(/\{\w+\}/)
           .map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));

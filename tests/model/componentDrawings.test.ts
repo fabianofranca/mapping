@@ -274,10 +274,11 @@ describe('overflow', () => {
     expect(drawing.warnings.map((w) => w.text)).toContain(
       'texto maior que a caixa: rotulo',
     );
-    // Aviso do motor: sem código, segue em texto.
-    expect(drawing.warnings.find((w) => w.text.startsWith('texto maior'))?.code).toBe(
-      'raw',
-    );
+    // Aviso do motor: com código (MB5), a interface o traduz.
+    expect(drawing.warnings.find((w) => w.text.startsWith('texto maior'))).toMatchObject({
+      code: 'engine.textTooBig',
+      params: { name: 'rotulo' },
+    });
     expect(drawing.overflow).toBe(true);
   });
 

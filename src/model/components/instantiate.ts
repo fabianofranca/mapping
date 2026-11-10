@@ -87,6 +87,9 @@ import {
   mirrorMain,
   parseSizeSpec,
 } from './layoutValues';
+import { createMessageSet, textsOf, type Params } from '../messages/collector';
+import type { ModelMessageTemplateCode } from '../messages';
+import type { ModelMessage } from '../modelMessage';
 import { expandRepeats } from './repeat';
 import { WRAP_SLACK } from './textWrap';
 import {
@@ -178,6 +181,8 @@ export interface InstantiateOptions {
 export interface Instantiated {
   readonly root: FrameNode;
   readonly warnings: readonly string[];
+  /** Os mesmos avisos com código e parâmetros (a interface os traduz): `warnings` = textos destes. */
+  readonly messages: readonly ModelMessage[];
   /**
    * Quanto falta (px) em cada aviso de "não cabe" (`conteúdo maior que a caixa: …`, `texto maior
    * que a caixa: …`), pela mensagem do aviso; o maior, se o mesmo aviso se repete. Ausente = vazio.
@@ -431,24 +436,25 @@ function createEngine(
   const {
     component,
     values,
-    warnings: expansionWarnings,
+    messages: expansionMessages,
   } = expandRepeats(source, {
     ...sourceValues,
     [sizeKey('width')]: instanceSize.width,
     [sizeKey('height')]: instanceSize.height,
   });
-  const warnings = new Set<string>(expansionWarnings);
-  const warn = (message: string) => warnings.add(message);
+  const messageSet = createMessageSet(expansionMessages);
+  const warn = (code: ModelMessageTemplateCode, params?: Params) =>
+    messageSet.add(code, params);
   const shortfalls = new Map<string, number>();
   /** Aviso de "não cabe": a mensagem de sempre e quanto falta, para a prova de desenho dizer. */
-  const warnShort = (message: string, missing: number) => {
-    warn(message);
-    shortfalls.set(message, Math.max(shortfalls.get(message) ?? 0, missing));
+  const warnShort = (code: ModelMessageTemplateCode, name: string, missing: number) => {
+    const { text } = warn(code, { name });
+    shortfalls.set(text, Math.max(shortfalls.get(text) ?? 0, missing));
   };
   const prefix = options.idPrefix ?? 'c';
 
   for (const key of referencedFields(component.template))
-    if (!(key in values)) warn(`campo não informado: ${key}`);
+    if (!(key in values)) warn('engine.fieldMissing', { key });
 
   // --- avaliação de expressões ----------------------------------------------------------
 
@@ -616,7 +622,7 @@ function createEngine(
 
   const measureText = (node: TextTemplate, maxWidth?: number): TextMetrics => {
     if (maxWidth !== undefined && maxWidth <= EPS)
-      warn(`texto medido com largura 0: ${nodeName(node)}`);
+      warn('engine.textZeroWidth', { name: nodeName(node) });
     const font = textFont(node);
     if (node.runs === undefined) return options.measure(plainText(node), font, maxWidth);
     const rich = richRuns(node, font);
@@ -626,7 +632,7 @@ function createEngine(
   // --- valores conferidos (tamanho e layout) ----------------------------------------------
 
   const invalidValue = (label: string, value: unknown) =>
-    warn(`valor inválido em ${label}: ${describeValue(value)}`);
+    warn('engine.invalidValue', { label, value: describeValue(value) });
 
   /** Valor de um conjunto fechado; sem valor = padrão; fora do conjunto = padrão com aviso. */
   const checked = <T extends string>(
@@ -922,11 +928,11 @@ function createEngine(
     const fixed = sizes.reduce<number>((sum, s) => sum + (s === 'fill' ? 0 : s), 0);
     let free = 0;
     if (content === null) {
-      if (fills > 0) warn('fill dentro de hug vira 0');
+      if (fills > 0) warn('engine.fillInHug');
     } else {
       const remaining = content - fixed - layout.gap * Math.max(0, sizes.length - 1);
       if (remaining < -tolerance)
-        warnShort(`conteúdo maior que a caixa: ${nodeName(frame)}`, -remaining);
+        warnShort('engine.contentTooBig', nodeName(frame), -remaining);
       free = Math.max(0, remaining);
     }
     const shares = distributeFill(
@@ -959,7 +965,7 @@ function createEngine(
       const content = space.content;
       const widest = Math.max(...numbers);
       if (widest > content + tolerance)
-        warnShort(`conteúdo maior que a caixa: ${nodeName(frame)}`, widest - content);
+        warnShort('engine.contentTooBig', nodeName(frame), widest - content);
     }
     return numbers;
   };
@@ -1295,7 +1301,7 @@ function createEngine(
     const sx = vbW > 0 ? w / vbW : 1;
     const sy = vbH > 0 ? h / vbH : 1;
     if (Math.abs(sx - sy) > 1e-6 * Math.max(1, Math.abs(sx), Math.abs(sy))) {
-      warn('ícone esticado: escala diferente nos dois eixos');
+      warn('engine.iconStretched');
     }
     const scale = (Math.abs(sx) + Math.abs(sy)) / 2 || 1;
     const stroke = strokeOf(node.stroke, 'center', scale);
@@ -1387,14 +1393,14 @@ function createEngine(
     const found = resolveIcon(icons, name);
     const base = { ...common(node, id, x, y, w, h), name: name || 'icon' };
     if (found === undefined) {
-      warn(`ícone desconhecido: ${name}`);
+      warn('engine.iconUnknown', { name });
       return { ...base, type: 'unknown', sourceType: 'icon' };
     }
     const [vbW, vbH] = found.viewBox;
     const sx = vbW > 0 ? w / vbW : 1;
     const sy = vbH > 0 ? h / vbH : 1;
     if (Math.abs(sx - sy) > 1e-6 * Math.max(1, Math.abs(sx), Math.abs(sy)))
-      warn('ícone esticado: escala diferente nos dois eixos');
+      warn('engine.iconStretched');
     const color = str(node.color, '#000000');
     const strokeWidth =
       node.strokeWidth === undefined ? undefined : Math.max(0, num(node.strokeWidth, 1));
@@ -1420,7 +1426,7 @@ function createEngine(
     if (!checksOverflow(font, w)) return;
     const measured = typeof height === 'number' ? height : height();
     if (measured > h + TEXT_TOLERANCE)
-      warnShort(`texto maior que a caixa: ${nodeName(node)}`, measured - h);
+      warnShort('engine.textTooBig', nodeName(node), measured - h);
   };
 
   /** O texto da cena e, com `runs`, os trechos resolvidos e o layout deles na caixa. */
@@ -1578,7 +1584,7 @@ function createEngine(
     buildFrame(component.template, 'root', box.x, box.y, box.width, box.height, true);
 
   return {
-    warnings,
+    messages: messageSet.list,
     shortfalls,
     planFrame,
     buildRoot,
@@ -1596,9 +1602,11 @@ export function instantiate(
 ): Instantiated {
   const engine = createEngine(component, values, options, box);
   const root = engine.buildRoot(box);
+  const messages = engine.messages();
   return {
     root,
-    warnings: [...engine.warnings],
+    warnings: textsOf(messages),
+    messages,
     shortfalls: Object.fromEntries(engine.shortfalls),
     overflowWarnings: [...engine.shortfalls.keys()],
   };
@@ -1613,7 +1621,12 @@ export function measureComponent(
   values: FieldValues,
   size: { readonly width: number | null; readonly height: number | null },
   options: InstantiateOptions,
-): { width: number; height: number; warnings: readonly string[] } {
+): {
+  width: number;
+  height: number;
+  warnings: readonly string[];
+  messages: readonly ModelMessage[];
+} {
   const engine = createEngine(component, values, options, {
     width: size.width ?? component.size.width,
     height: size.height ?? component.size.height,
@@ -1634,5 +1647,6 @@ export function measureComponent(
   const plan =
     width === first.w ? first : engine.planFrame(template, width, size.height, limits);
   const height = size.height ?? engine.clampSize(template, 'h', plan.h);
-  return { width, height, warnings: [...engine.warnings] };
+  const messages = engine.messages();
+  return { width, height, warnings: textsOf(messages), messages };
 }

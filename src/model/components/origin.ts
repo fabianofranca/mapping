@@ -12,6 +12,9 @@
  * sem geometria (`LayoutScreen`); `screenFromSource` a arruma (`layoutScreen`) numa `Screen`.
  * Puro, sem DOM, e nunca lança: o que não deu certo vira `error` ou aviso.
  */
+import { mergeMessages, textsOf } from '../messages/collector';
+import { templateMessage } from '../messages';
+import type { ModelMessage } from '../modelMessage';
 import type { FieldValue, FieldValues } from './componentFormat';
 import type { TextMeasurer } from './instantiate';
 import {
@@ -145,12 +148,15 @@ export interface FieldSource {
 export interface TranslateResult {
   readonly layout?: LayoutScreen;
   readonly warnings: string[];
+  /** Os mesmos avisos com código e parâmetros (`warnings` = textos destes, na mesma ordem). */
+  readonly messages: readonly ModelMessage[];
   readonly error?: string;
 }
 
 export interface SourceResult {
   readonly screen?: Screen;
   readonly warnings: readonly string[];
+  readonly messages: readonly ModelMessage[];
   readonly error?: string;
 }
 
@@ -782,7 +788,7 @@ function positiveNumber(value: unknown): number | undefined {
 interface Context {
   readonly origin: Origin;
   readonly byName: ReadonlyMap<string, TypeDef>;
-  readonly warnings: string[];
+  readonly messages: ModelMessage[];
 }
 
 function sourceOf(type: TypeDef, system: string, name: string): TypeSource | undefined {
@@ -810,7 +816,7 @@ export interface FieldContext {
   readonly origin: Pick<Origin, 'system' | 'booleans'> & {
     readonly node: Pick<Origin['node'], 'props'>;
   };
-  readonly warnings: string[];
+  readonly messages: ModelMessage[];
 }
 
 /** O valor de um campo lido de `props` pelo `path` da `source` do sistema (com `values`); avisa o que não serve. */
@@ -830,7 +836,7 @@ export function translateFieldValue(
   const where = `${nodePath}.${ctx.origin.node.props}.${source.path}`;
   const raw = read.value;
   if (!isScalar(raw)) {
-    ctx.warnings.push(`${where}: esperava valor simples`);
+    ctx.messages.push(templateMessage('origins.draw.notScalar', { path: where }));
     return null;
   }
   const values = source.values;
@@ -857,28 +863,39 @@ export function translateFieldValue(
     value !== undefined &&
     !field.options.includes(String(value))
   ) {
-    ctx.warnings.push(
-      `${where}: valor fora das opções de ${field.key}: ${String(value)}`,
+    ctx.messages.push(
+      templateMessage('origins.draw.optionOutside', {
+        path: where,
+        key: field.key,
+        value: String(value),
+      }),
     );
   }
   return value;
 }
 
 function translateNode(raw: unknown, path: string, ctx: Context): LayoutNode | undefined {
-  const { origin, warnings } = ctx;
+  const { origin, messages } = ctx;
   if (!isRecord(raw)) {
-    warnings.push(`${path}: nó inválido (esperava objeto)`);
+    messages.push(templateMessage('origins.draw.nodeInvalid', { path }));
     return undefined;
   }
   const typeName = raw[origin.node.type];
   if (typeof typeName !== 'string' || typeName === '') {
-    warnings.push(`${path}.${origin.node.type}: tipo ausente`);
+    messages.push(
+      templateMessage('origins.draw.typeMissing', {
+        path: `${path}.${origin.node.type}`,
+      }),
+    );
     return undefined;
   }
   const type = ctx.byName.get(typeName);
   if (!type) {
-    warnings.push(
-      `${path}.${origin.node.type}: tipo externo sem tipo de anotação: ${typeName}`,
+    messages.push(
+      templateMessage('origins.draw.typeUnknown', {
+        path: `${path}.${origin.node.type}`,
+        name: typeName,
+      }),
     );
     return undefined;
   }
@@ -886,7 +903,11 @@ function translateNode(raw: unknown, path: string, ctx: Context): LayoutNode | u
   const rawProps = raw[origin.node.props];
   if (isRecord(rawProps)) props = rawProps;
   else if (rawProps !== undefined && rawProps !== null) {
-    warnings.push(`${path}.${origin.node.props}: esperava objeto`);
+    messages.push(
+      templateMessage('origins.draw.expectedObject', {
+        path: `${path}.${origin.node.props}`,
+      }),
+    );
   }
   const values: Record<string, FieldValue> = {};
   const known = new Set<string>();
@@ -899,8 +920,11 @@ function translateNode(raw: unknown, path: string, ctx: Context): LayoutNode | u
   const ignore = sourceOf(type, origin.system, typeName)?.ignore ?? [];
   for (const key of Object.keys(props)) {
     if (known.has(key) || ignore.includes(key)) continue;
-    warnings.push(
-      `${path}.${origin.node.props}.${key}: propriedade desconhecida em ${typeName}`,
+    messages.push(
+      templateMessage('origins.draw.unknownProp', {
+        path: `${path}.${origin.node.props}.${key}`,
+        name: typeName,
+      }),
     );
   }
   const children: LayoutNode[] = [];
@@ -911,7 +935,11 @@ function translateNode(raw: unknown, path: string, ctx: Context): LayoutNode | u
       if (node) children.push(node);
     });
   } else if (rawChildren !== undefined && rawChildren !== null) {
-    warnings.push(`${path}.${origin.node.children}: esperava lista`);
+    messages.push(
+      templateMessage('origins.draw.expectedList', {
+        path: `${path}.${origin.node.children}`,
+      }),
+    );
   }
   return { id: path, typeId: type.id, values: values as FieldValues, children };
 }
@@ -931,8 +959,11 @@ function translateRoot(
     } else if (LAYOUT_ANCHORS.includes(value as LayoutAnchor)) {
       anchor = value as LayoutAnchor;
     } else {
-      ctx.warnings.push(
-        `${node.id}.${describeSourceKey(source.anchor, 'anchor')}: âncora inválida: ${String(value)}; usando top-start`,
+      ctx.messages.push(
+        templateMessage('origins.draw.anchorInvalid', {
+          path: `${node.id}.${describeSourceKey(source.anchor, 'anchor')}`,
+          value: String(value),
+        }),
       );
       anchor = 'top-start';
     }
@@ -943,8 +974,10 @@ function translateRoot(
           typeof value2 === 'string' && value2.trim() !== '' ? Number(value2) : value2;
         if (typeof n === 'number' && Number.isFinite(n) && n >= 0) margin = n;
         else {
-          ctx.warnings.push(
-            `${node.id}.${describeSourceKey(source.margin, 'margin')}: esperava número maior ou igual a 0`,
+          ctx.messages.push(
+            templateMessage('origins.draw.marginInvalid', {
+              path: `${node.id}.${describeSourceKey(source.margin, 'margin')}`,
+            }),
           );
         }
       }
@@ -993,24 +1026,22 @@ function translate(
   json: unknown,
   options: SourceOptions,
 ): TranslateResult {
-  const warnings: string[] = [];
+  const messages: ModelMessage[] = [];
   const picked = pickOrigin(library.origins, options.system);
-  if (!picked.origin) return { warnings, error: picked.error };
+  if (!picked.origin) return result(messages, { error: picked.error });
   const origin = picked.origin;
 
   const width = positiveNumber(readSource(origin.screen.width, json));
   if (width === undefined) {
-    return {
-      warnings,
+    return result(messages, {
       error: `largura da tela ausente ou inválida (${describeSource(origin.screen.width)})`,
-    };
+    });
   }
   const height = positiveNumber(readSource(origin.screen.height, json));
   if (height === undefined) {
-    return {
-      warnings,
+    return result(messages, {
       error: `altura da tela ausente ou inválida (${describeSource(origin.screen.height)})`,
-    };
+    });
   }
   const byName = new Map<string, TypeDef>();
   for (const type of library.types) {
@@ -1019,7 +1050,7 @@ function translate(
       if (!byName.has(source.name)) byName.set(source.name, type);
     }
   }
-  const ctx: Context = { origin, byName, warnings };
+  const ctx: Context = { origin, byName, messages };
   const text = (source: ValueSource | undefined, fallback: string): string => {
     const value = readSource(source, json);
     return isScalar(value) ? String(value) : fallback;
@@ -1041,7 +1072,15 @@ function translate(
     background: text(origin.screen.background, '#FFFFFF'),
     roots,
   };
-  return { layout, warnings };
+  return result(messages, { layout });
+}
+
+/** O resultado da tradução: `warnings` são os textos das `messages`, na mesma ordem. */
+function result(
+  messages: ModelMessage[],
+  rest: { readonly layout?: LayoutScreen; readonly error?: string },
+): TranslateResult {
+  return { ...rest, warnings: textsOf(messages), messages };
 }
 
 function messageOf(error: unknown): string {
@@ -1062,7 +1101,7 @@ export function translateSource(
   try {
     return translate(library, json, options);
   } catch (error) {
-    return { warnings: [], error: messageOf(error) };
+    return result([], { error: messageOf(error) });
   }
 }
 
@@ -1076,14 +1115,19 @@ export function screenFromSource(
   if (translated.error !== undefined || !translated.layout) {
     return {
       warnings: translated.warnings,
+      messages: translated.messages,
       error: translated.error ?? 'tradução sem resultado',
     };
   }
   try {
     const laid = layoutScreen(translated.layout, library, options.measure);
-    const warnings = [...new Set([...translated.warnings, ...laid.warnings])];
-    return { screen: laid.screen, warnings };
+    const messages = mergeMessages(translated.messages, laid.messages);
+    return { screen: laid.screen, warnings: textsOf(messages), messages };
   } catch (error) {
-    return { warnings: translated.warnings, error: messageOf(error) };
+    return {
+      warnings: translated.warnings,
+      messages: translated.messages,
+      error: messageOf(error),
+    };
   }
 }

@@ -18,6 +18,9 @@
  * - A tela é uma coluna sem padding nem gap; as raízes sem `anchor` entram nela, as ancoradas
  *   ficam fora do fluxo (com `margin` nas bordas tocadas).
  */
+import { createMessageSet, textsOf, type Params } from '../messages/collector';
+import type { ModelMessageTemplateCode } from '../messages';
+import type { ModelMessage } from '../modelMessage';
 import { findSlot, resolveSlotLayout, type ResolvedSlotLayout } from './arrange';
 import type { ComponentFile, FieldValues, SlotTemplate } from './componentFormat';
 import {
@@ -93,6 +96,8 @@ export interface LayoutResult {
   readonly screen: Screen;
   /** `"<id do nó>: <mensagem>"` (ou `"tela: …"`). */
   readonly warnings: readonly string[];
+  /** Os mesmos avisos com código e parâmetros (o id do nó vai em `path`). */
+  readonly messages: readonly ModelMessage[];
 }
 
 // ---------------------------------------------------------------------------------------
@@ -226,8 +231,9 @@ export function layoutScreen(
   library: Library,
   measure: TextMeasurer,
 ): LayoutResult {
-  const warnings = new Set<string>();
-  const warn = (message: string) => warnings.add(message);
+  const messageSet = createMessageSet();
+  const warn = (code: ModelMessageTemplateCode, params?: Params) =>
+    messageSet.add(code, params);
   const types = new Map(library.types.map((t) => [t.id, t]));
 
   // --- preparo: tipo, componente, slot e layout de cada nó ---------------------------------
@@ -235,12 +241,12 @@ export function layoutScreen(
   const prepare = (node: LayoutNode): Prepared | undefined => {
     const component = types.get(node.typeId)?.component;
     if (!component) {
-      warn(`${node.id}: tipo sem componente: ${node.typeId}`);
+      warn('engine.typeNoComponent', { path: node.id, typeId: node.typeId });
       return undefined;
     }
     const slot = findSlot(component);
     if (!slot && node.children.length > 0)
-      warn(`${node.id}: filhos ignorados (componente sem slot)`);
+      warn('engine.childrenIgnored', { path: node.id });
     const kids = slot
       ? node.children.map(prepare).filter((k): k is Prepared => k !== undefined)
       : [];
@@ -398,7 +404,7 @@ export function layoutScreen(
           return { h: withMin(kid, 'height', spec), hug: false };
         if (spec === 'hug' || ch === null) {
           if (spec === 'fill' && emit)
-            warn(`${kid.node.id}: fill dentro de hug: usando hug`);
+            warn('engine.fillInHugUsing', { path: kid.node.id });
           const { w, hug } = widths[i] ?? { w: 0, hug: false };
           return { h: intrinsicHeight(kid, w, hug), hug: true };
         }
@@ -553,7 +559,7 @@ export function layoutScreen(
     if (!p.slot || p.kids.length === 0) return;
     const probe = slotBoxOf(p, box, { width: slotContentWidth(p), height: 0 });
     if (!probe) {
-      warn(`${node.id}: slot invisível: filhos ignorados`);
+      warn('engine.slotInvisible', { path: node.id });
       return;
     }
     const { layout } = p;
@@ -597,8 +603,7 @@ export function layoutScreen(
     input.height,
     true,
   );
-  if (flowed.usedH > input.height + EPS)
-    warn('tela: conteúdo maior que a altura da tela');
+  if (flowed.usedH > input.height + EPS) warn('engine.screenTooTall');
 
   const rootBox = (
     root: LayoutRoot,
@@ -648,7 +653,8 @@ export function layoutScreen(
     if (root.scrimTypeId !== undefined) {
       const scrim = types.get(root.scrimTypeId);
       const scrimId = `${root.node.id}#scrim`;
-      if (!scrim?.component) warn(`${scrimId}: tipo sem componente: ${root.scrimTypeId}`);
+      if (!scrim?.component)
+        warn('engine.typeNoComponent', { path: scrimId, typeId: root.scrimTypeId });
       else {
         const values: Record<string, FieldValues[string]> = {};
         for (const field of scrim.fields) values[field.key] = field.default ?? null;
@@ -664,6 +670,7 @@ export function layoutScreen(
     place(prepared, placed.box, placed.hugW, placed.hugH, undefined, instances);
   }
 
+  const messages = messageSet.list();
   return {
     screen: {
       id: input.id,
@@ -673,6 +680,7 @@ export function layoutScreen(
       background: input.background,
       instances,
     },
-    warnings: [...warnings],
+    warnings: textsOf(messages),
+    messages,
   };
 }

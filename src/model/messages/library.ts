@@ -78,7 +78,7 @@ export const libraryMessages = {
   'library.iconOptionMissing':
     'a opção "{option}" do campo "{key}" não está no conjunto de ícones; o desenho cai no reservado',
   // Prova de desenho: um código por caso (valores padrão, preview, exemplo), com e sem modo.
-  // O texto do motor entra em `{detail}` (`rawMessage` até a MB5).
+  // O aviso do motor (com código) entra em `{detail}`.
   'library.draw.defaults':
     'tipo "{typeId}", os valores padrão, tamanho inicial {size}: {detail}',
   'library.draw.defaultsMode':

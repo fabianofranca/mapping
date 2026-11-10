@@ -154,4 +154,23 @@ export const originsEnUS: {
   'model.origins.needsIdOrName': 'needs id or name',
   'model.origins.expectedTextList': 'expected a list of texts',
   'model.origins.needsNameOrPath': 'needs name or path',
+  'model.origins.draw.notScalar': '{path}: expected a simple value',
+  'model.origins.draw.optionOutside':
+    '{path}: value outside the options of {key}: {value}',
+  'model.origins.draw.nodeInvalid': '{path}: invalid node (expected an object)',
+  'model.origins.draw.typeMissing': '{path}: missing type',
+  'model.origins.draw.typeUnknown':
+    '{path}: external type without an annotation type: {name}',
+  'model.origins.draw.expectedObject': '{path}: expected an object',
+  'model.origins.draw.expectedList': '{path}: expected a list',
+  'model.origins.draw.unknownProp': '{path}: unknown property in {name}',
+  'model.origins.draw.anchorInvalid': '{path}: invalid anchor: {value}; using top-start',
+  'model.origins.draw.marginInvalid':
+    '{path}: expected a number greater than or equal to 0',
+  'model.origins.draw.rectInvalid': '{path}: expected numeric { x, y, width, height }',
+  'model.origins.draw.nodeUntyped':
+    '{path}: node without an annotation type ({label}); ignored',
+  'model.origins.draw.nodeUntypedBare':
+    '{path}: node without an annotation type (no type); ignored',
+  'model.origins.draw.emptyRect': '{path}: empty rectangle ({width}×{height}); ignored',
 };
