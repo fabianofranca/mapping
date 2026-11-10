@@ -838,6 +838,11 @@ Uma especialização `formatVersion` 10 pode declarar `notices` no tipo, no camp
 
 Ao propor, cite os avisos que aparecem em `notices.new` na mensagem ao usuário: ele os vê também na revisão da proposta.
 
+**Avisos de fidelidade ao escrever código.** Um `diverges` diz onde a biblioteca aproxima a plataforma e **muda o que você escreve**: que parâmetro passar, que composable ou view trocar, o que conferir na tela. Leia os avisos dos tipos que você vai instanciar antes de escrever e **conte ao usuário** cada `diverges` que afeta a solução (o que difere e o que você fez a respeito). Os critérios do que vira aviso estão no [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Avisos de fidelidade e origens do aviso".
+
+- **De onde vem cada aviso** (o `ref`): `ref` de **doc** (`docs/<tipo>.md`) é aviso curado à mão pelo autor da biblioteca; `ref` de **ficha** (um arquivo de entrada de ferramenta, como a ficha `signatures/…` do importador) é aviso gerado, que a ferramenta regrava a cada rodada. Se a ficha ainda não existe na biblioteca, só há o primeiro caso. O `pending` gerado e o curado têm o mesmo `kind`; o `ref` (em `Origem: <ref>` nos Detalhes da app) é o que os distingue.
+- **Prefixo de plataforma:** a `message` de um aviso ligado a uma plataforma começa com o id dela (`compose: …`). **Ignore** o aviso cujo prefixo é de outra plataforma que não a do código que você escreve. A regra vale para os avisos curados e também para os do importador. O `notices` não tem campo de plataforma e o núcleo não filtra por texto.
+
 ### Papéis no vínculo e documento externo
 
 Uma especialização `formatVersion` 11 pode dizer **em que ponto da dona** uma filha se liga (os papéis, `childRoles`) e apontar o documento de um tipo para **outro repositório** (`docRepos`). O quadro do formato está no [`SPEC-FORMAT.md`](SPEC-FORMAT.md); aqui, o que o agente faz.
