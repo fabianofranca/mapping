@@ -25,6 +25,9 @@ import type {
   RepeatTemplate,
   TemplateNode,
 } from './componentFormat';
+import { templateMessage } from '../messages';
+import { textsOf } from '../messages/collector';
+import type { ModelMessage } from '../modelMessage';
 import { INDEX_FIELD, evaluate, referencedFields, toNumber } from './expressions';
 
 /** Teto de linhas de um `repeat` por `count`. */
@@ -137,6 +140,8 @@ export interface ExpandedComponent {
   readonly values: FieldValues;
   /** Avisos da expansão (o campo `table` do `repeat` não foi informado). */
   readonly warnings: readonly string[];
+  /** Os mesmos avisos com código e parâmetros (`warnings` = textos destes). */
+  readonly messages: readonly ModelMessage[];
 }
 
 /**
@@ -148,10 +153,11 @@ export function expandRepeats(
   component: ComponentFile,
   values: FieldValues,
 ): ExpandedComponent {
-  if (!hasRepeat(component.template)) return { component, values, warnings: [] };
+  if (!hasRepeat(component.template))
+    return { component, values, warnings: [], messages: [] };
 
   const extra: Record<string, FieldValue> = {};
-  const warnings: string[] = [];
+  const messages: ModelMessage[] = [];
   let counter = 0;
 
   /** As linhas de um `repeat` por `count`: uma por índice, vazias, até o teto. */
@@ -163,8 +169,11 @@ export function expandRepeats(
         : toNumber(evaluate<unknown>(expr, { ...values, ...extra }, undefined));
     const count = Math.max(0, Math.floor(wanted ?? 0));
     if (count > REPEAT_COUNT_LIMIT)
-      warnings.push(
-        `repeat limitado a ${REPEAT_COUNT_LIMIT} linhas: ${node.name ?? 'repeat'}`,
+      messages.push(
+        templateMessage('engine.repeatLimited', {
+          limit: REPEAT_COUNT_LIMIT,
+          name: node.name ?? 'repeat',
+        }),
       );
     return Array.from(
       { length: Math.min(count, REPEAT_COUNT_LIMIT) },
@@ -178,7 +187,8 @@ export function expandRepeats(
   ): { rows: readonly FieldRow[]; columns: Set<string> } => {
     if (node.count !== undefined) return { rows: countRows(node), columns: new Set() };
     const field = node.field ?? '';
-    if (!(field in values)) warnings.push(`campo não informado: ${field}`);
+    if (!(field in values))
+      messages.push(templateMessage('engine.fieldMissing', { key: field }));
     const rows = rowsOf(values[field]);
     // Coluna que o `template` cita, não é campo do tipo e nenhuma linha traz (linha gravada antes
     // de a coluna existir) também é coluna: fica vazia, em vez de virar "campo não informado".
@@ -225,6 +235,7 @@ export function expandRepeats(
   return {
     component: { ...component, template },
     values: { ...values, ...extra },
-    warnings,
+    warnings: textsOf(messages),
+    messages,
   };
 }

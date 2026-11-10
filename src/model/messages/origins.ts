@@ -1,0 +1,51 @@
+// Mensagens da leitura da declaração das origens (`origin.ts`, `parseOrigins`): código → modelo
+// do texto pt-BR de hoje, com `{parâmetros}`. O caminho vem à parte (`origins[0].screen…`); aqui
+// fica só a mensagem. O caminho de pacote (`examples[].file`) usa as mensagens do catálogo `spec`.
+
+export const originMessages = {
+  'origins.expectedList': 'esperava uma lista',
+  'origins.expectedObject': 'esperava um objeto',
+  'origins.expectedPath': 'esperava um caminho (texto não vazio)',
+  'origins.wildcardOnlyRoots': '"[*]" só vale em roots[].path',
+  'origins.expectedMap': 'esperava um objeto (origem → destino)',
+  'origins.expectedText': 'esperava texto',
+  'origins.expectedLiteralOrPath': 'esperava um literal ou { path }',
+  'origins.expectedTextOrNumber': 'esperava texto ou número',
+  'origins.anchorInvalid': 'âncora inválida: {anchor}; use {anchors}',
+  'origins.marginNeedsAnchor': 'margin só vale com anchor',
+  'origins.expectedScrim': 'esperava o id de um tipo (texto não vazio)',
+  'origins.expectedRoots': 'esperava uma lista com pelo menos uma raiz',
+  'origins.expectedBooleans': 'esperava { "true": texto, "false": texto }',
+  'origins.expectedNonEmptyText': 'esperava texto não vazio',
+  'origins.expectedKind': 'esperava um de: {kinds}',
+  'origins.expectedNode': 'esperava um objeto com type, props e children',
+  'origins.requiredKeyName': 'obrigatório (nome da chave, texto não vazio)',
+  'origins.expectedExampleFile': 'esperava o caminho de um arquivo .json do pacote',
+  'origins.systemRepeated': 'origem repetida: {system}',
+  'origins.needsIdOrName': 'precisa de id ou name',
+  'origins.expectedTextList': 'esperava uma lista de textos',
+  'origins.needsNameOrPath': 'precisa de name ou path',
+  // Avisos de desenho (`translateSource`, `importMeasured`): `{path}` é o caminho do valor no JSON.
+  'origins.draw.notScalar': '{path}: esperava valor simples',
+  'origins.draw.optionOutside': '{path}: valor fora das opções de {key}: {value}',
+  'origins.draw.nodeInvalid': '{path}: nó inválido (esperava objeto)',
+  'origins.draw.typeMissing': '{path}: tipo ausente',
+  'origins.draw.typeUnknown': '{path}: tipo externo sem tipo de anotação: {name}',
+  'origins.draw.expectedObject': '{path}: esperava objeto',
+  'origins.draw.expectedList': '{path}: esperava lista',
+  'origins.draw.unknownProp': '{path}: propriedade desconhecida em {name}',
+  'origins.draw.anchorInvalid': '{path}: âncora inválida: {value}; usando top-start',
+  'origins.draw.marginInvalid': '{path}: esperava número maior ou igual a 0',
+  'origins.draw.rectInvalid': '{path}: esperava { x, y, width, height } numéricos',
+  'origins.draw.nodeUntyped': '{path}: nó sem tipo de anotação ({label}); ignorado',
+  'origins.draw.nodeUntypedBare': '{path}: nó sem tipo de anotação (sem type); ignorado',
+  // Erros que impedem a tradução da tela (`translateSource`, `screenFromSource`): `errorMessage`.
+  'origins.error.systemUndeclared': 'origem não declarada na especialização: {system}',
+  'origins.error.noOrigins': 'a especialização não declara origens',
+  'origins.error.onlyMeasured':
+    'a especialização só declara origens measured (que não geram tela); passe o system da origem',
+  'origins.error.widthInvalid': 'largura da tela ausente ou inválida ({source})',
+  'origins.error.heightInvalid': 'altura da tela ausente ou inválida ({source})',
+  'origins.error.noResult': 'tradução sem resultado',
+  'origins.draw.emptyRect': '{path}: retângulo vazio ({width}×{height}); ignorado',
+} as const;

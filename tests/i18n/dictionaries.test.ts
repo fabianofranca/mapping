@@ -38,6 +38,9 @@ describe('dicionários', () => {
   it.each(entries)(
     '%s: sem crase (markdown não é interpretado na interface)',
     (key, pt) => {
+      // Os avisos de `model.versions.*` levam a crase de termo de formato (`code`, `path`, `repo`,
+      // `doc`) no pt-BR porque este é igual ao texto do modelo (decisão 3 da etapa #1263).
+      if (key.startsWith('model.versions.')) return;
       expect(pt).not.toContain('`');
       expect(enUS[key]).not.toContain('`');
     },
@@ -60,6 +63,7 @@ describe('dicionários', () => {
       'language.en-US',
       'image.dimensions',
       // Só {parâmetros}: o texto vem do parser.
+      'model.catalog.invalidProblem',
       'model.components.invalid',
       'model.icons.invalid',
       'marking.pathSeparator',

@@ -206,6 +206,10 @@ describe('erros: os mesmos da importação da app, com o caminho exato', () => {
     ],
   ];
 
+  // O MCP não expõe o código do modelo (decisão 2 da #1263): só `path` e `message`.
+  const pathAndMessage = (issues: readonly { path: string; message: string }[]) =>
+    issues.map(({ path, message }) => ({ path, message }));
+
   for (const [name, make] of broken) {
     it(`${name}`, async () => {
       const content = text(make());
@@ -219,7 +223,7 @@ describe('erros: os mesmos da importação da app, com o caminho exato', () => {
       );
       expect(byText.valid).toBe(false);
       expect(byText.errors).toEqual(expected.errors);
-      expect(byText.issues).toEqual(expected.issues);
+      expect(byText.issues).toEqual(pathAndMessage(expected.issues));
       expect(byText.errorCount).toBe(expected.errors.length);
       expect(byText.warnings).toBeUndefined();
 
@@ -252,6 +256,18 @@ describe('erros: os mesmos da importação da app, com o caminho exato', () => {
       }),
     ]);
     expect(result.errors[0]).toContain(`${BUTTON}.fields[2].sources[0].values.Primary: `);
+  });
+
+  it('`issues` leva só `path` e `message`: o código do modelo não sai pelo MCP', async () => {
+    const spec = v3();
+    spec.layers[0].annotationTypes[0].fields[0].key = 'a b';
+    const result = ok(
+      await mcp.call<Validated>('validate_specialization', { text: text(spec) }),
+    );
+    expect(result.issues?.length).toBeGreaterThan(0);
+    for (const issue of result.issues ?? []) {
+      expect(Object.keys(issue).sort()).toEqual(['message', 'path']);
+    }
   });
 
   it('JSON inválido volta como erro, não como falha da tool', async () => {

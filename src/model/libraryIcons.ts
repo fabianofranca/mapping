@@ -1,5 +1,6 @@
 import type { IconNodeRef, IconSet } from './components/icons';
 import type { LibraryIssue } from './library';
+import { libraryIssue } from './libraryIssue';
 import type { SpecAnnotationType } from './spec';
 import { isRecord } from './isRecord';
 
@@ -64,11 +65,16 @@ export function iconLiteralIssues(
       if (set !== undefined && Object.hasOwn(set.icons, literal.value)) continue;
       // Conjunto declarado mas ilegível: o erro do arquivo já foi dado no nível 1.
       if (iconsPath !== undefined && set === undefined) continue;
-      const message =
+      out.push(
         iconsPath === undefined
-          ? `o ícone "${literal.value}" não pode ser conferido: a especialização não declara icons`
-          : `o ícone "${literal.value}" não existe no conjunto de ícones (${iconsPath})`;
-      out.push({ file, path: literal.path, message, severity: 'error' });
+          ? libraryIssue('error', file, literal.path, 'library.iconUnverifiable', {
+              name: literal.value,
+            })
+          : libraryIssue('error', file, literal.path, 'library.iconMissing', {
+              name: literal.value,
+              path: iconsPath,
+            }),
+      );
     }
   }
   return out;
@@ -89,12 +95,15 @@ export function iconOptionIssues(
     if (field.type !== 'enum' || !read.has(field.key)) return;
     (field.options ?? []).forEach((option, oi) => {
       if (Object.hasOwn(set.icons, option)) return;
-      out.push({
-        file: specPath,
-        path: `${base}.fields[${fi}].options[${oi}]`,
-        message: `a opção "${option}" do campo "${field.key}" não está no conjunto de ícones; o desenho cai no reservado`,
-        severity: 'warning',
-      });
+      out.push(
+        libraryIssue(
+          'warning',
+          specPath,
+          `${base}.fields[${fi}].options[${oi}]`,
+          'library.iconOptionMissing',
+          { option, key: field.key },
+        ),
+      );
     });
   });
   return out;

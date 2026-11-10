@@ -12,7 +12,7 @@ import {
   type MarkingComponent,
 } from './componentCatalog';
 import { drawingValues } from './componentValues';
-import { rawMessage, type ModelMessage } from './modelMessage';
+import type { ModelMessage } from './modelMessage';
 import { DEFAULT_LABEL_TEXTS } from './refs';
 import { effectiveDrawingMode } from './drawingMode';
 import { topDown } from './hierarchy';
@@ -163,7 +163,7 @@ function draw(
   const screen = mc.component.screen;
   // Em pixels de tela o desenho mede o `size` do componente, na origem (o canvas o ancora).
   const box: Rect = screen === undefined ? rect : { x: 0, y: 0, ...mc.component.size };
-  const { root, warnings, shortfalls, overflowWarnings } = instantiate(
+  const { root, messages, shortfalls, overflowWarnings } = instantiate(
     mc.component,
     values,
     box,
@@ -184,7 +184,7 @@ function draw(
     annotationId: mc.annotation.id,
     layerId: mc.annotation.layerId,
     root,
-    warnings: [...warnings.map(rawMessage), ...valueWarnings],
+    warnings: [...messages, ...valueWarnings],
     overflow: Object.keys(found).length > 0,
     shortfalls: found,
     ...(screen === undefined

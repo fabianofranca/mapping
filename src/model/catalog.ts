@@ -1,5 +1,5 @@
 import { hasSlotComponent } from './componentCatalog';
-import { modelMessage, rawMessage, type ModelMessage } from './modelMessage';
+import { issueParts, modelMessage, type ModelMessage } from './modelMessage';
 import type { ComponentFile, FieldValues } from './components/componentFormat';
 import {
   type TextMeasurer,
@@ -8,13 +8,17 @@ import {
 } from './components/instantiate';
 import { type Library, loadLibrary, resolvePath } from './components/library';
 import { screenFromSource } from './components/origin';
-import { parseComponentText } from './components/parseComponent';
+import { parseComponentText, type ComponentIssue } from './components/parseComponent';
 import { type FrameNode, baseNode, translate } from './components/scene';
 import { renderOrder } from './components/screen';
 import { resolveTokens } from './components/tokens';
 import type { Size } from './geometry';
 import { type LibraryFile, type LibraryReport, validateLibrary } from './library';
-import { defaultValues, nodeProbeLibrary, withoutNodePrefix } from './libraryDrawing';
+import {
+  defaultValues,
+  nodeProbeLibrary,
+  withoutNodePrefixMessage,
+} from './libraryDrawing';
 import { resolveCode } from './codeVariants';
 import { repoLink } from './codeLocations';
 import { packageSpecNameOf } from './libraryPackage';
@@ -342,7 +346,7 @@ export function buildCatalog(files: readonly LibraryFile[]): Catalog {
         } else {
           const parsed = parseComponentText(text);
           if (parsed.ok) component = themed(parsed.component);
-          else componentProblem = parseProblem(parsed.errors[0]);
+          else componentProblem = parseProblem(parsed.issues[0]);
         }
       }
       const examples = (type.examples ?? []).map((example): CatalogExample => {
@@ -405,11 +409,13 @@ export function findEntry(catalog: Catalog, typeId: string): CatalogEntry | unde
   return byId.get(typeId);
 }
 
-/** O problema de um componente que não passou no parse: o erro vem do parser, em texto. */
-function parseProblem(error: string | undefined): ModelMessage {
-  return error === undefined
-    ? modelMessage('catalog.invalidComponent', {}, 'componente inválido')
-    : rawMessage(error);
+/** O problema de um componente que não passou no parse: o primeiro erro do parser, com o motivo traduzível. */
+function parseProblem(issue: ComponentIssue | undefined): ModelMessage {
+  if (issue === undefined) {
+    return modelMessage('catalog.invalidComponent', {}, 'componente inválido');
+  }
+  const { at, reason, detail } = issueParts(issue);
+  return modelMessage('catalog.invalidProblem', { at, reason }, `${at}${reason}`, detail);
 }
 
 /** Entradas por id de tipo, uma vez por catálogo (o catálogo é imutável). */
@@ -516,8 +522,7 @@ export function drawEntry(
     box,
     { measure },
   );
-  // Os avisos do motor não têm código: seguem em texto.
-  return { root: drawn.root, warnings: drawn.warnings.map(rawMessage) };
+  return { root: drawn.root, warnings: drawn.messages };
 }
 
 /**
@@ -572,9 +577,7 @@ function systemDrawing(
     { node: example.json },
     { system: origin.system, measure },
   );
-  const warnings: ModelMessage[] = (result.warnings ?? []).map((w) =>
-    rawMessage(withoutNodePrefix(w)),
-  );
+  const warnings: ModelMessage[] = result.messages.map(withoutNodePrefixMessage);
   if (result.error !== undefined) {
     return null;
   }

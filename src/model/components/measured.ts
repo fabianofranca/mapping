@@ -12,6 +12,9 @@
  * quem as cria (o lote do MCP) deixa a geometria decidir quem contém quem (`settleHierarchy`).
  * Puro, sem API de navegador, e nunca lança: o que não deu certo vira `error` ou aviso.
  */
+import { textsOf } from '../messages/collector';
+import { templateMessage } from '../messages';
+import type { ModelMessage } from '../modelMessage';
 import type { FieldValue } from './componentFormat';
 import {
   readPath,
@@ -49,6 +52,8 @@ export interface MeasuredMarking {
 export interface MeasuredImport {
   readonly markings: readonly MeasuredMarking[];
   readonly warnings: readonly string[];
+  /** Os mesmos avisos com código e parâmetros (`warnings` = textos destes, na mesma ordem). */
+  readonly messages: readonly ModelMessage[];
   readonly error?: string;
 }
 
@@ -71,7 +76,7 @@ interface Run {
   readonly scale: number;
   readonly offset: { readonly x: number; readonly y: number };
   readonly markings: MeasuredMarking[];
-  readonly warnings: string[];
+  readonly messages: ModelMessage[];
 }
 
 const isNumber = (value: unknown): value is number =>
@@ -177,7 +182,7 @@ function valuesOf(
       booleans: candidate.booleans,
       node: { props: 'props' },
     },
-    warnings: run.warnings,
+    messages: run.messages,
   };
   for (const field of candidate.type.fields) {
     if (field.type === 'table' || field.type === 'ref') continue;
@@ -191,19 +196,23 @@ function valuesOf(
 
 function visit(raw: unknown, path: string, run: Run): void {
   if (!isRecord(raw)) {
-    run.warnings.push(`${path}: nó inválido (esperava objeto)`);
+    run.messages.push(templateMessage('origins.draw.nodeInvalid', { path }));
     return;
   }
   const rect = rectOf(raw.rect, run);
   if (rect === undefined) {
-    run.warnings.push(`${path}.rect: esperava { x, y, width, height } numéricos`);
+    run.messages.push(
+      templateMessage('origins.draw.rectInvalid', { path: `${path}.rect` }),
+    );
   } else {
     place(raw, rect, path, run);
   }
   if (Array.isArray(raw.children)) {
     raw.children.forEach((child, i) => visit(child, `${path}.children[${i}]`, run));
   } else if (raw.children !== undefined && raw.children !== null) {
-    run.warnings.push(`${path}.children: esperava lista`);
+    run.messages.push(
+      templateMessage('origins.draw.expectedList', { path: `${path}.children` }),
+    );
   }
 }
 
@@ -211,12 +220,20 @@ function place(raw: Record<string, unknown>, rect: Box, path: string, run: Run):
   const found = findCandidate(run, raw);
   if (found === undefined) {
     const label = describe(raw);
-    run.warnings.push(`${path}: nó sem tipo de anotação (${label}); ignorado`);
+    run.messages.push(
+      label === undefined
+        ? templateMessage('origins.draw.nodeUntypedBare', { path })
+        : templateMessage('origins.draw.nodeUntyped', { path, label }),
+    );
     return;
   }
   if (rect.width < 1 || rect.height < 1) {
-    run.warnings.push(
-      `${path}: retângulo vazio (${rect.width}×${rect.height}); ignorado`,
+    run.messages.push(
+      templateMessage('origins.draw.emptyRect', {
+        path,
+        width: rect.width,
+        height: rect.height,
+      }),
     );
     return;
   }
@@ -230,15 +247,15 @@ function place(raw: Record<string, unknown>, rect: Box, path: string, run: Run):
   });
 }
 
-/** `type`, `id` e classes do nó, para a mensagem de aviso. */
-function describe(node: Record<string, unknown>): string {
+/** `type`, `id` e classes do nó, para a mensagem de aviso; `undefined` quando o nó não traz nenhum. */
+function describe(node: Record<string, unknown>): string | undefined {
   const parts: string[] = [];
   if (typeof node.type === 'string') parts.push(node.type);
   if (typeof node.id === 'string') parts.push(`#${node.id}`);
   if (Array.isArray(node.classes)) {
     for (const c of node.classes) if (typeof c === 'string') parts.push(`.${c}`);
   }
-  return parts.join(' ') || 'sem type';
+  return parts.join(' ') || undefined;
 }
 
 /** A árvore medida → as marcações (pré-ordem), pelas `sources` dos tipos das especializações. Nunca lança. */
@@ -260,19 +277,22 @@ export function importMeasured(
   if (!isRecord(input.tree.rect)) {
     return fail('o nó raiz não tem rect: esperava { x, y, width, height }');
   }
-  const warnings: string[] = [];
   const run: Run = {
     system: input.system,
     index: indexCandidates(candidates, input.system),
     scale: input.scale ?? 1,
     offset: input.offset ?? { x: 0, y: 0 },
     markings: [],
-    warnings,
+    messages: [],
   };
   visit(input.tree, 'root', run);
-  return { markings: run.markings, warnings };
+  return {
+    markings: run.markings,
+    warnings: textsOf(run.messages),
+    messages: run.messages,
+  };
 }
 
 function fail(error: string): MeasuredImport {
-  return { markings: [], warnings: [], error };
+  return { markings: [], warnings: [], messages: [], error };
 }

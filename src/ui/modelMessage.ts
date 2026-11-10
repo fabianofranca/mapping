@@ -1,15 +1,16 @@
 import { t, type TranslationKey } from '../i18n';
 import type { ModelMessageCode } from '../i18n/modelMessages';
-import { RAW_MESSAGE_CODE, type ModelMessage } from '../model';
+import { MODEL_MESSAGE_TEMPLATES, RAW_MESSAGE_CODE, type ModelMessage } from '../model';
 
 // Texto de uma mensagem do modelo no idioma da interface: o código conhecido vira
 // `t('model.<código>', params)`; `raw` (e qualquer código sem tradução) segue em texto.
 
-const CODES: ReadonlySet<string> = new Set<ModelMessageCode>([
+const HAND_WRITTEN: readonly ModelMessageCode[] = [
   'catalog.fileMissing',
   'catalog.invalidComponent',
   'catalog.typeOutside',
   'catalog.typeNoComponent',
+  'catalog.invalidProblem',
   'arrange.overflow',
   'arrange.outside',
   'value.refBroken',
@@ -23,9 +24,19 @@ const CODES: ReadonlySet<string> = new Set<ModelMessageCode>([
   'icons.fileMissing',
   'icons.invalid',
   'icons.invalidFallback',
+];
+
+// Os do catálogo do modelo (`src/model/messages/`) são lidos de lá, não listados à mão.
+const CODES: ReadonlySet<string> = new Set<string>([
+  ...HAND_WRITTEN,
+  ...Object.keys(MODEL_MESSAGE_TEMPLATES),
 ]);
 
 export function messageText(message: ModelMessage): string {
   if (message.code === RAW_MESSAGE_CODE || !CODES.has(message.code)) return message.text;
-  return t(`model.${message.code}` as TranslationKey, message.params);
+  const params =
+    message.detail === undefined
+      ? message.params
+      : { ...message.params, reason: messageText(message.detail) };
+  return t(`model.${message.code}` as TranslationKey, params);
 }

@@ -169,6 +169,12 @@ describe('formatVersion 11: cláusula de allowedChildren', () => {
     ]);
   });
 
+  it('groups que não é lista é erro de forma, sem derrubar o parseSpec', () => {
+    expect(issuesOf(v11Json(clause({ layer: 'eventos', groups: 3 })))).toEqual([
+      { path: `${at}.groups`, message: 'deve ser uma lista de ids de grupo' },
+    ]);
+  });
+
   it('propriedade a mais na cláusula', () => {
     expect(issuesOf(v11Json(clause({ layer: 'eventos', extra: 1 })))).toEqual([
       { path: at, message: 'propriedade desconhecida: "extra"' },

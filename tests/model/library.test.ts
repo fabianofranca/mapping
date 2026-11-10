@@ -422,11 +422,11 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
     ]);
   });
 
-  it('o erro de arquivo ausente traz código e alvo para a interface traduzir', () => {
+  it('o erro de arquivo ausente traz código e parâmetros para a interface traduzir', () => {
     const report = validate(without(miniPackage(), 'components/mini-card.json'));
     expect(report.errors[0]).toMatchObject({
-      code: 'file-not-found',
-      target: 'components/mini-card.json',
+      code: 'library.fileNotFound',
+      params: { path: 'components/mini-card.json' },
     });
   });
 
@@ -447,13 +447,13 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
       file: SPEC,
       path: 'layers[0].annotationTypes[0].examples[0].values.rows[0].nada',
       message: '"nada" não é coluna de "rows"',
-      code: 'example-not-column',
+      code: 'spec.exampleNotColumn',
       params: { key: 'nada', field: 'rows' },
     });
     expect(report.errors[1]).toMatchObject({
       path: 'layers[0].annotationTypes[0].examples[0].values.rows[1]',
       message: 'deve ser um objeto (coluna → valor)',
-      code: 'example-row-not-object',
+      code: 'spec.exampleRowNotObject',
     });
     expect(report.errors[1]).not.toHaveProperty('params');
   });
