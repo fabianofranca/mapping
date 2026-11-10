@@ -317,7 +317,7 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
     '## Mudanças na fila durante a execução',
   );
 
-  it('"Para a sessão da fase": send_later de 8 min, segunda reexecução pela fase e aviso (decisões 1 e 2)', () => {
+  it('"Para a sessão da fase": send_later de 4 min e de 2 em 2 min, segunda reexecução pela fase e aviso (decisões 1 e 2)', () => {
     expect(item6).toMatch(/primeira conferência com um `send_later` de 4 min/);
     expect(item6).toMatch(/de 2 em 2 min até 20 min/);
     expect(item6).toMatch(/depois disso, de 8 em 8/);
