@@ -766,3 +766,83 @@ describe('drawingMode (modo dos tokens)', () => {
     expect(fills(el)).toContain('#1a73e8');
   });
 });
+
+describe('rotation (EX3)', () => {
+  const spinnerSpec = {
+    format: 'mapping-spec',
+    formatVersion: 4,
+    id: 'turn',
+    name: 'Giro',
+    version: 1,
+    layers: [
+      {
+        id: 'c',
+        name: 'C',
+        color: '#1E88E5',
+        annotationTypes: [
+          {
+            id: 'bar',
+            name: 'Barra',
+            component: 'components/bar.json',
+            fields: [{ key: 'angle', label: 'Ângulo', type: 'number' }],
+          },
+        ],
+      },
+    ],
+  };
+  const barComponent = {
+    format: 'mapping-component',
+    formatVersion: 4,
+    id: 'bar',
+    name: 'Barra',
+    size: { width: 100, height: 100 },
+    template: {
+      type: 'frame',
+      layout: { type: 'row', align: 'center', justify: 'center' },
+      children: [
+        {
+          type: 'rect',
+          name: 'turning',
+          width: 40,
+          height: 10,
+          fill: '#ff0000',
+          rotation: { $field: 'angle' },
+        },
+      ],
+    },
+  };
+  const turnLibrary = loadLibrary([
+    { path: 'turn.spec.json', text: JSON.stringify(spinnerSpec) },
+    { path: 'components/bar.json', text: JSON.stringify(barComponent) },
+  ]);
+
+  it('desenha o nó girado em volta do centro da caixa, igual à app', () => {
+    const el = container();
+    const viewer = make(el);
+    const screen: Screen = {
+      id: 's',
+      name: 'S',
+      width: 200,
+      height: 200,
+      background: '#ffffff',
+      instances: [
+        {
+          id: 'i1',
+          typeId: 'bar',
+          box: { x: 10, y: 20, width: 100, height: 100 },
+          values: { angle: '90' },
+        },
+      ],
+    };
+    viewer.update({ library: turnLibrary, screen });
+    const stage = stageOf(el);
+    const node = stage.findOne<Konva.Group>((n: Konva.Node) => n.name() === 'turning');
+    expect(node).toBeDefined();
+    const abs = node!.getAbsoluteTransform().copy();
+    // a 90° em torno do centro, a barra 40×10 vira 10×40 em volta do mesmo ponto
+    const local = (x: number, y: number) => abs.point({ x, y });
+    const [a, b] = [local(0, 0), local(40, 10)];
+    expect(Math.abs(a.x - b.x)).toBeCloseTo(10 * stage.getAbsoluteScale().x, 6);
+    expect(Math.abs(a.y - b.y)).toBeCloseTo(40 * stage.getAbsoluteScale().y, 6);
+  });
+});

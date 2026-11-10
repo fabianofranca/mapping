@@ -788,3 +788,109 @@ describe('achados 4, 6 e 7 da CR do MCP', () => {
     expect(bounds(points)).toEqual({ x: 0, y: 0, width: 999, height: 6 });
   });
 });
+
+describe('rotation (EX3)', () => {
+  const RED = [255, 0, 0, 255];
+
+  /** Instancia um componente v4 de 100×100 com os filhos dados e pinta a cena. */
+  function drawn(children: unknown[], extra: Record<string, unknown> = {}): Raster {
+    const parsed = parseComponent({
+      format: 'mapping-component',
+      formatVersion: 4,
+      id: 'r',
+      name: 'R',
+      size: { width: 100, height: 100 },
+      template: {
+        type: 'frame',
+        layout: { type: 'row', align: 'center', justify: 'center' },
+        children,
+        ...extra,
+      },
+    });
+    if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
+    const { root } = instantiate(
+      parsed.component,
+      {},
+      { x: 0, y: 0, width: 100, height: 100 },
+      { measure: approximateMeasurer },
+    );
+    const raster = canvas(100, 100);
+    paint(raster, root);
+    return raster;
+  }
+
+  const bar = (rotation?: number) => ({
+    type: 'rect',
+    width: 40,
+    height: 10,
+    fill: '#ff0000',
+    ...(rotation === undefined ? {} : { rotation }),
+  });
+
+  it('90° desenha a barra vertical 10×40 centrada no mesmo ponto', () => {
+    const raster = drawn([bar(90)]);
+    // centro em (50, 50): a barra ocupa x 45..55 e y 30..70
+    expect(pixel(raster, 50, 31)).toEqual(RED);
+    expect(pixel(raster, 50, 68)).toEqual(RED);
+    expect(pixel(raster, 46, 50)).toEqual(RED);
+    expect(pixel(raster, 53, 50)).toEqual(RED);
+    expect(pixel(raster, 50, 28)).toEqual(WHITE);
+    expect(pixel(raster, 50, 72)).toEqual(WHITE);
+    expect(pixel(raster, 40, 50)).toEqual(WHITE);
+    expect(pixel(raster, 60, 50)).toEqual(WHITE);
+  });
+
+  it('45°: pontos dentro e fora da forma girada, a até 1 px da borda', () => {
+    const raster = drawn([bar(45)]);
+    const rad = Math.PI / 4;
+    // distância do centro do pixel aos eixos do retângulo girado
+    const along = (x: number, y: number) =>
+      (x + 0.5 - 50) * Math.cos(rad) + (y + 0.5 - 50) * Math.sin(rad);
+    const across = (x: number, y: number) =>
+      -(x + 0.5 - 50) * Math.sin(rad) + (y + 0.5 - 50) * Math.cos(rad);
+    let inside = 0;
+    let outside = 0;
+    for (let y = 0; y < 100; y++) {
+      for (let x = 0; x < 100; x++) {
+        const margin = Math.min(20 - Math.abs(along(x, y)), 5 - Math.abs(across(x, y)));
+        if (Math.abs(margin) <= 1) continue;
+        if (margin > 0) {
+          inside++;
+          expect(pixel(raster, x, y)).toEqual(RED);
+        } else {
+          outside++;
+          expect(pixel(raster, x, y)).toEqual(WHITE);
+        }
+      }
+    }
+    expect(inside).toBeGreaterThan(150);
+    expect(outside).toBeGreaterThan(9000);
+  });
+
+  it('o recorte do quadro gira com ele; o conteúdo fora do quadrado girado some', () => {
+    const raster = drawn([
+      {
+        type: 'frame',
+        clip: true,
+        width: 40,
+        height: 40,
+        rotation: 45,
+        fill: '#ff0000',
+        children: [{ type: 'rect', width: 200, height: 200, fill: '#0000ff' }],
+      },
+    ]);
+    // o quadrado de 40 girado 45° é um losango de raio ~28 em torno de (50, 50)
+    expect(pixel(raster, 50, 50)).toEqual([0, 0, 255, 255]);
+    expect(pixel(raster, 50, 25)).toEqual([0, 0, 255, 255]);
+    // o canto do quadrado sem giro (30, 30) fica fora do losango
+    expect(pixel(raster, 31, 31)).toEqual(WHITE);
+    expect(pixel(raster, 50, 20)).toEqual(WHITE);
+    expect(pixel(raster, 80, 50)).toEqual(WHITE);
+  });
+
+  it('sem rotation, ou com 0, o desenho é o mesmo de antes', () => {
+    const plain = drawn([bar()]);
+    expect([...drawn([bar(0)]).data]).toEqual([...plain.data]);
+    expect(pixel(plain, 50, 50)).toEqual(RED);
+  });
+});

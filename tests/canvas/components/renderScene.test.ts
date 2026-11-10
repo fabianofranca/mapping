@@ -272,6 +272,44 @@ describe('renderScene', () => {
     expect(fontStyle(500, true)).toBe('italic 500');
   });
 
+  it('rotation gira o contêiner em volta do centro da caixa; os filhos e o recorte vão junto', () => {
+    const turned: FrameNode = {
+      ...baseNode({
+        id: 'turned',
+        name: 'Turned',
+        width: 40,
+        height: 10,
+        transform: translate(30, 45),
+      }),
+      type: 'frame',
+      clip: true,
+      cornerRadius: 0,
+      rotation: 90,
+      children: [
+        {
+          ...baseNode({ id: 'kid', name: 'Kid', width: 40, height: 10 }),
+          type: 'rect',
+          cornerRadius: 0,
+          fills: [{ type: 'solid', color: '#ff0000' }],
+        },
+      ],
+    };
+    const { byId } = renderScene(scene(turned));
+    const abs = byId.get('turned')!.getAbsoluteTransform();
+    // 40×10 a 90° em torno do centro (50, 50): o canto (0, 0) local vai para (55, 30)
+    const corner = abs.point({ x: 0, y: 0 });
+    expect(corner.x).toBeCloseTo(55, 6);
+    expect(corner.y).toBeCloseTo(30, 6);
+    // o filho herda a rotação: seu canto oposto (40, 10) vai para (45, 70)
+    const far = byId.get('kid')!.getAbsoluteTransform().point({ x: 40, y: 10 });
+    expect(far.x).toBeCloseTo(45, 6);
+    expect(far.y).toBeCloseTo(70, 6);
+    // o nó não girado continua só com a translação
+    const { byId: plain } = renderScene(scene({ ...turned, rotation: undefined }));
+    expect(plain.get('turned')!.rotation()).toBeCloseTo(0, 9);
+    expect(plain.get('turned')!.position()).toEqual({ x: 30, y: 45 });
+  });
+
   it('as cores do reservado e do nó desconhecido vêm da paleta (padrão do laboratório)', () => {
     const unknown: SceneNode = {
       ...baseNode({ id: 'u', name: 'u', width: 20, height: 10 }),

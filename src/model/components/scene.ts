@@ -46,6 +46,34 @@ export function translate(x: number, y: number): Matrix {
   return [1, 0, 0, 1, x, y];
 }
 
+/**
+ * A matriz que leva o espaço local do nó ao do pai: `transform` mais a `rotation` em volta do
+ * centro da caixa. Sem `rotation` é o próprio `transform`.
+ */
+export function nodeMatrix(node: {
+  readonly transform: Matrix;
+  readonly rotation?: number;
+  readonly width: number;
+  readonly height: number;
+}): Matrix {
+  if (!node.rotation) return node.transform;
+  const rad = (node.rotation * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  const cx = node.width / 2;
+  const cy = node.height / 2;
+  // translate(c) · rotate · translate(-c)
+  const turn: Matrix = [
+    cos,
+    sin,
+    -sin,
+    cos,
+    cx - cos * cx + sin * cy,
+    cy - sin * cx - cos * cy,
+  ];
+  return multiply(node.transform, turn);
+}
+
 export interface GradientStop {
   /** 0..1 ao longo do gradiente. */
   readonly offset: number;
@@ -149,6 +177,12 @@ interface NodeBase {
   /** 0..1, do nó inteiro (filhos incluídos). */
   readonly opacity: number;
   readonly transform: Matrix;
+  /**
+   * Rotação em graus, sentido horário, em volta do centro da caixa (`width` × `height`) do nó,
+   * aplicada no espaço local antes de `transform` (ver `nodeMatrix`). Ausente = não gira. Os
+   * filhos giram junto e o recorte do quadro também; a caixa e o layout não mudam.
+   */
+  readonly rotation?: number;
   /** Caixa local do nó (px); em `path` e `line` é a caixa dos pontos, informativa. */
   readonly width: number;
   readonly height: number;

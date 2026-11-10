@@ -1233,6 +1233,12 @@ function createEngine(
 
   // --- montagem dos nós -----------------------------------------------------------------
 
+  /** A `rotation` avaliada (graus); sem valor, 0 ou não finita, o nó não gira. */
+  const rotationOf = (node: TemplateNode): { rotation?: number } => {
+    const degrees = num(node.rotation, 0);
+    return degrees === 0 ? {} : { rotation: degrees };
+  };
+
   const common = (
     node: TemplateNode,
     id: string,
@@ -1244,6 +1250,7 @@ function createEngine(
     ...baseNode({ id, name: nodeName(node) }),
     opacity: Math.min(1, Math.max(0, num(node.opacity, 1))),
     transform: translate(x, y),
+    ...rotationOf(node),
     width: w,
     height: h,
     fills: fillsOf(node.fill, w, h),

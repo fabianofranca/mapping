@@ -8,10 +8,13 @@ import {
 } from '../../src/model/components/strokeSides';
 import {
   multiply,
+  nodeMatrix,
   type CornerRadius,
   type Matrix,
   type Paint,
   type Point,
+  type FrameNode,
+  type GroupNode,
   type SceneNode,
   type TextNode,
 } from '../../src/model/components/scene';
@@ -826,7 +829,7 @@ class Painter {
 
   paint(node: SceneNode, parent: Matrix, opacity: number, clip: PixelRect): void {
     if (!node.visible) return;
-    const matrix = multiply(parent, node.transform);
+    const matrix = multiply(parent, nodeMatrix(node));
     const alpha = opacity * node.opacity;
     if (alpha <= 0) return;
 
@@ -864,9 +867,47 @@ class Painter {
               { x: box.x, y: box.y + box.height },
             ]
           : roundedRect(node.width, node.height, 0);
-        childClip = intersect(clip, bounds(this.toRaster(rect, matrix)));
+        const corners = this.toRaster(rect, matrix);
+        childClip = intersect(clip, bounds(corners));
+        if (!isAxisAligned(matrix)) {
+          this.paintTurned(node, matrix, alpha, childClip, corners);
+          return;
+        }
       }
       for (const child of node.children) this.paint(child, matrix, alpha, childClip);
+    }
+  }
+
+  /**
+   * Os filhos de um quadro com `clip` girado: pintados numa camada à parte e compostos pela
+   * cobertura do retângulo girado (o recorte reto só serve a quadros alinhados aos eixos).
+   */
+  private paintTurned(
+    node: FrameNode | GroupNode,
+    matrix: Matrix,
+    alpha: number,
+    clip: PixelRect,
+    corners: Polygon,
+  ): void {
+    if (clip.width <= 0 || clip.height <= 0) return;
+    const { raster } = this;
+    const layer = createRaster(raster.width, raster.height);
+    const inner = new Painter(layer, this.measure, this.scale, this.fonts);
+    for (const child of node.children) inner.paint(child, matrix, alpha, clip);
+    const mask = createRaster(raster.width, raster.height);
+    fillPolygons(mask, [corners], 'nonzero', { rgb: [0, 0, 0], alpha: 1 }, clip);
+    const x0 = Math.max(0, Math.floor(clip.x));
+    const x1 = Math.min(raster.width, Math.ceil(clip.x + clip.width));
+    const y0 = Math.max(0, Math.floor(clip.y));
+    const y1 = Math.min(raster.height, Math.ceil(clip.y + clip.height));
+    for (let y = y0; y < y1; y++) {
+      for (let x = x0; x < x1; x++) {
+        const i = (y * raster.width + x) * 4;
+        const covered = mask.data[i + 3]! / 255;
+        if (covered <= 0 || layer.data[i + 3]! === 0) continue;
+        const rgb: Rgb = [layer.data[i]!, layer.data[i + 1]!, layer.data[i + 2]!];
+        blend(raster, i, { rgb, alpha: layer.data[i + 3]! / 255 }, covered);
+      }
     }
   }
 
@@ -1117,6 +1158,12 @@ export function bounds(points: readonly Point[]): PixelRect {
     if (p.y > maxY) maxY = p.y;
   }
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+}
+
+/** A matriz só escala e translada (ou gira de 90 em 90°): um retângulo continua alinhado aos eixos. */
+function isAxisAligned(m: Matrix): boolean {
+  const flat = (a: number, b: number) => Math.abs(a) < 1e-9 * (Math.abs(b) + 1);
+  return (flat(m[1], m[0]) && flat(m[2], m[3])) || (flat(m[0], m[1]) && flat(m[3], m[2]));
 }
 
 function intersect(a: PixelRect, b: PixelRect): PixelRect {

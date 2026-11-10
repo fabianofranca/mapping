@@ -4,7 +4,13 @@
  * entram no recorte. O conteúdo (formas e texto) continua recortado na caixa: um filho que passa
  * da caixa pelo conteúdo não alarga o recorte além do que o traço e a sombra dele alcançam.
  */
-import type { ClipBox, FrameNode, SceneNode, Stroke } from './scene';
+import {
+  type ClipBox,
+  type FrameNode,
+  type SceneNode,
+  type Stroke,
+  nodeMatrix,
+} from './scene';
 
 interface Extent {
   left: number;
@@ -70,8 +76,28 @@ function isNone(e: Extent): boolean {
   return e.left <= 0 && e.top <= 0 && e.right <= 0 && e.bottom <= 0;
 }
 
-/** Retângulo do nó no espaço do quadro que recorta, sem rotação (translação e escala). */
+/** A caixa que contém o retângulo girado do nó (a `rotation` em volta do centro). */
+function turnedRectOf(node: SceneNode, ox: number, oy: number): ClipBox {
+  const [a, b, c, d, e, f] = nodeMatrix(node);
+  const xs: number[] = [];
+  const ys: number[] = [];
+  for (const [x, y] of [
+    [0, 0],
+    [node.width, 0],
+    [node.width, node.height],
+    [0, node.height],
+  ] as const) {
+    xs.push(ox + a * x + c * y + e);
+    ys.push(oy + b * x + d * y + f);
+  }
+  const x0 = Math.min(...xs);
+  const y0 = Math.min(...ys);
+  return { x: x0, y: y0, width: Math.max(...xs) - x0, height: Math.max(...ys) - y0 };
+}
+
+/** Retângulo do nó no espaço do quadro que recorta; com `rotation`, a caixa do retângulo girado. */
 function rectOf(node: SceneNode, ox: number, oy: number): ClipBox {
+  if (node.rotation) return turnedRectOf(node, ox, oy);
   const m = node.transform;
   return {
     x: ox + m[4],
@@ -143,7 +169,8 @@ function addDescendants(
   let out = acc;
   for (const child of node.children) {
     if (!child.visible) continue;
-    if (child.type === 'frame' && !child.clip) {
+    // Quadro girado sem recorte: o que há dentro dele gira e não é seguido (só a caixa dele conta).
+    if (child.type === 'frame' && !child.clip && !child.rotation) {
       const at = rectOf(child, ox, oy);
       out = addDescendants(child, box, at.x, at.y, out);
     }
