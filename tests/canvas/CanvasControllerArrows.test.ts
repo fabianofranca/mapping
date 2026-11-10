@@ -101,6 +101,35 @@ describe('CanvasController: setas', () => {
     controller.destroy();
   });
 
+  it('no zoom mínimo a seta entre marcações invisíveis não é pintada; selecionar uma ponta a devolve', () => {
+    const { container, controller, internals, ui } = setup();
+    expect(container.dataset.arrows).toBe('1');
+    controller.zoomTo(0.005); // a1 (300) e a3 (200) ficam com 1,5 px e 1 px: invisíveis.
+    flush();
+    expect(container.dataset.arrows).toBe('0');
+    expect(internals.arrows.size).toBe(0);
+    ui.selection.value = { kind: 'marking', id: 'a1' };
+    flush();
+    expect(container.dataset.arrows).toBe('1');
+    ui.selection.value = null;
+    flush();
+    expect(container.dataset.arrows).toBe('0');
+    controller.destroy();
+  });
+
+  it('a seta fora da área visível não é pintada', () => {
+    const { container, controller, internals } = setup();
+    controller.zoomTo(1);
+    controller.centerOnPoint({ x: 450, y: 450 });
+    flush();
+    expect(container.dataset.arrows).toBe('1');
+    controller.centerOnPoint({ x: 50_000, y: 50_000 });
+    flush();
+    expect(container.dataset.arrows).toBe('0');
+    expect(internals.arrows.size).toBe(0);
+    controller.destroy();
+  });
+
   it('pan e seleção não refazem as setas; zoom só muda o tamanho de tela', () => {
     const { controller, internals, ui, container } = setup();
     const shape = internals.arrows.drawn[0];

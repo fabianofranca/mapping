@@ -204,7 +204,16 @@ export const IMAGE_KEYS = [
 /** O que muda a camada de componentes (as posições das imagens também, comparadas à parte). */
 export const COMPONENT_KEYS = ['drawings', 'drawn', 'floating', 'tokens'] as const;
 /** O que muda a camada das setas (o zoom, que muda a espessura, é comparado à parte). */
-export const ARROW_KEYS = ['arrows', 'tokens'] as const;
+export const ARROW_KEYS = [
+  'arrows',
+  'tokens',
+  'project',
+  'selection',
+  'items',
+  'hoverMarking',
+  'review',
+  'view',
+] as const;
 /** O que muda as sobreposições (seleção, alças, rascunho, alvo de soltar). */
 export const OVERLAY_KEYS = [
   'project',

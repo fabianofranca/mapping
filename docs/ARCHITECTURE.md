@@ -418,6 +418,20 @@ Vale para toda imagem que entra pela app (arquivo, câmera, colar, arrastar e tr
   `ComponentLayerRenderer.reveal` (monta o que entrou, esconde o que saiu, sem reinstanciar nem refazer a ordem inteira), e o
   `render` de sempre só roda quando os desenhos, o conjunto visível, as posições ou o tema mudam. `data-components` continua
   contando todos os desenhos que aparecem (`size`), esteja a vista onde estiver; `mountedCount` conta os montados.
+- **Nível de detalhe das setas** (`renderers/arrowDetail.ts`, `renderers/arrows.ts`; CD3 da etapa canvas-desempenho, decisão 7; portão
+  aberto na CD1: com 1.000 setas o pan e o zoom de 2.000 marcações em Enquadrar tudo ficaram 47,5% e 28,5% acima de `--sem-setas`
+  no Chromium): `arrowDetail` é uma função pura, como `levelOfDetail`, que dá `full`, `thin` ou `hidden` pelo comprimento do traço na
+  tela (soma dos trechos do `path` × zoom, `arrowPathLength`, guardado por `ArrowShape`) e pelo tamanho das duas pontas, lendo os
+  tokens `size-lod-min-marking` (24 px) e `size-lod-hide-marking` (2 px); nenhum token novo. **`hidden`** (não é pintada nem tem
+  rótulo): as duas pontas são marcações invisíveis pela regra das marcações. **`thin`** (comprimento < 24 px): só o traço, sem halo,
+  sem ponta e sem rótulo; o corpo entra na mesma passagem do traço das inteiras (`BodiesMerge`), então não há passagem nova.
+  **`full`**: a seta selecionada (inclusive na seleção múltipla), a que liga uma marcação selecionada ou sob o mouse (ou com marca da
+  revisão) e as demais. Além do nível, a seta cuja caixa (`bounds`, com a folga do rótulo) não cruza a área visível não é pintada nem
+  tem rótulo. O `DetailPlan` do `ArrowRenderer` guarda a medida de cada seta (comprimento e tamanho das pontas, com o zoom em 1) até o
+  projeto, as posições ou o tema mudarem; cada quadro só aplica o zoom, a área visível e as exceções. Pan e posições novas passam
+  por `ArrowRenderer.reveal` (só a área visível e o nível, nada mais), e o `render` roda com a seleção, o mouse, o tema, o zoom e o
+  projeto. `data-arrows` conta as setas pintadas (`full` + `thin`, grupo de arrasto incluído). O arrasto de uma marcação continua
+  levando as setas dela para o grupo de arrasto, cada uma no seu nível.
 - **Orçamentos da etapa canvas-escala (conferência final, DA5):** arrasto ≤ 16 ms (atingido: ~3 a 4 ms em jsdom, 2 camadas
   redesenhadas); pan e zoom inteiro à vista ≤ 33 ms (jsdom: atingido; Chromium com 2.000: ~42 e ~45 ms, não atingido); edição ≤
   16 ms (jsdom 16 a 24 ms com teto de 35 ms em `renderPerformance.test.ts`; Chromium com 2.000: ~17 ms); abrir ≤ metade da linha

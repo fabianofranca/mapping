@@ -46,7 +46,7 @@ import { openHarness } from '../store/proposalHarness';
 import { buildLargeTypedProject } from '../model/largeTypedProject';
 import { material3Spec } from '../storage/packageFixture';
 import { componentSources, installFakeCanvas } from './harness';
-import { openWholeProject } from './wholeProjectScenario';
+import { openWholeProject, wholeProject } from './wholeProjectScenario';
 
 // Orçamento de uma renderização do canvas (docs/ARCHITECTURE.md, "Desempenho") com o projeto grande já
 // indexado: Konva de verdade em jsdom, com um contexto 2D falso (nada é pintado;
@@ -825,6 +825,40 @@ describe('primeiro quadro em Enquadrar tudo (2.000 marcações)', () => {
       }
       const median = [...times].sort((a, b) => a - b)[2] ?? Number.NaN;
       expect(median).toBeLessThan(111.5);
+    },
+  );
+});
+
+// Decisão 7 da etapa canvas-desempenho: de longe a seta curta é só o traço e não tem rótulo, e a fora da
+// área visível não é pintada. Com as 1.000 setas nomeadas, pan e zoom em Enquadrar tudo e aproximados
+// cabem na meta da decisão 10 (33 ms; jsdom, mediana de 15).
+describe('pan e zoom com 2.000 marcações e 1.000 setas nomeadas', () => {
+  budgetIt(
+    'cabem em 33 ms, de longe e aproximados',
+    { ...BUDGET_OPTIONS, timeout: 120_000 },
+    () => {
+      const base = wholeProject(2000);
+      const project = {
+        ...base,
+        arrows: base.arrows.map((a, i) => ({ ...a, name: `Seta ${i}` })),
+      };
+      const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[7] ?? Number.NaN;
+      for (const open of ['fit', 'close'] as const) {
+        const s = openWholeProject(2000, open, { project });
+        let step = 0;
+        const round = (): { pan: number; zoom: number } => {
+          step++;
+          s.controller.centerOnPoint({ x: 500 + 20 * (step % 5), y: 500 });
+          const pan = s.flush();
+          s.controller.zoomBy(step % 2 ? 1.1 : 1 / 1.1);
+          return { pan, zoom: s.flush() };
+        };
+        for (let i = 0; i < 3; i++) round();
+        const samples = Array.from({ length: 15 }, round);
+        expect(median(samples.map((r) => r.pan)), `pan (${open})`).toBeLessThan(33);
+        expect(median(samples.map((r) => r.zoom)), `zoom (${open})`).toBeLessThan(33);
+        s.destroy();
+      }
     },
   );
 });

@@ -4,6 +4,8 @@
 
 - Abrir mais rápido com o projeto grande: as partes de cada marcação (halo, selo, alerta, nome) e os desenhos de componente só são criados quando aparecem na tela.
 
+- De longe, a seta curta (menos de 24 px na tela) aparece só com o traço, sem halo, ponta nem rótulo, e a que liga duas marcações invisíveis não aparece; a seta selecionada e as ligadas a uma marcação selecionada ou sob o mouse ficam inteiras. A seta fora da área visível também deixa de ser desenhada. Aproximado, nada muda.
+
 ## Corrigido
 
 - Abrir e fechar projetos grandes várias vezes na mesma aba deixava formas do canvas na memória e deixava cada abertura mais lenta.
