@@ -3,14 +3,14 @@
   "formatVersion": 4,
   "id": "slider",
   "name": "Slider",
-  "description": "Slider de 44: trilha de 16 em secondary container, trecho ativo em primary e alça de 4 × 44 com vão de 6 (SliderTokens). No intervalo há duas alças; os valores vão de 0 a 1 em décimos e as marcas de steps aparecem de 1 a 9 passos.",
+  "description": "Slider de 44: trilha de 16 em secondary container, trecho ativo em primary e alça de 4 × 44 com vão de 6 (SliderTokens). Os valores são números de 0 a 1; com steps a alça vai ao passo mais próximo e as marcas são exatamente as de steps, em qualquer quantidade. No intervalo há duas alças.",
   "size": { "width": 328, "height": 48 },
   "sizing": { "width": "fill", "height": 48 },
   "preview": {
     "type": "single",
-    "value": "0.5",
-    "valueStart": "0.2",
-    "valueEnd": "0.8",
+    "value": 0.5,
+    "valueStart": 0.2,
+    "valueEnd": 0.8,
     "steps": null,
     "enabled": "true"
   },
@@ -23,1966 +23,625 @@
         "type": "frame",
         "name": "faixa",
         "height": 44,
-        "layout": { "type": "none" },
         "anchors": { "left": 2, "right": 2, "centerY": true },
+        "layout": { "type": "row" },
         "children": [
           {
             "type": "frame",
-            "name": "trilhas",
-            "width": "fill",
-            "height": "fill",
-            "layout": { "type": "row" },
-            "children": [
-              {
-                "type": "frame",
-                "name": "recuo",
-                "width": {
-                  "$if": {
-                    "$and": [
+            "name": "antes do início",
+            "width": {
+              "$if": { "$eq": ["type", "range"] },
+              "then": {
+                "$add": [
+                  {
+                    "$mul": [
                       {
-                        "$and": [
-                          { "$has": "steps" },
-                          { "$not": { "$eq": ["steps", "0"] } }
+                        "$div": [
+                          {
+                            "$round": {
+                              "$mul": [
+                                {
+                                  "$clamp": [
+                                    { "$field": "valueStart", "default": 0.2 },
+                                    0,
+                                    1
+                                  ]
+                                },
+                                {
+                                  "$if": { "$gte": [{ "$field": "steps" }, 1] },
+                                  "then": {
+                                    "$add": [{ "$floor": { "$field": "steps" } }, 1]
+                                  },
+                                  "else": 1000000000
+                                }
+                              ]
+                            }
+                          },
+                          {
+                            "$if": { "$gte": [{ "$field": "steps" }, 1] },
+                            "then": { "$add": [{ "$floor": { "$field": "steps" } }, 1] },
+                            "else": 1000000000
+                          }
                         ]
                       },
                       {
-                        "$not": {
-                          "$and": [
-                            { "$not": { "$eq": ["type", "range"] } },
-                            {
-                              "$or": [
-                                { "$eq": ["value", "0"] },
-                                { "$eq": ["value", "1"] }
-                              ]
-                            }
-                          ]
-                        }
-                      }
-                    ]
-                  },
-                  "then": 8,
-                  "else": 0
-                },
-                "height": "fill",
-                "layout": { "type": "none" }
-              },
-              {
-                "type": "frame",
-                "name": "pista",
-                "width": "fill",
-                "height": "fill",
-                "layout": { "type": "row" },
-                "children": [
-                  {
-                    "type": "frame",
-                    "name": "antes do início",
-                    "width": {
-                      "$if": { "$eq": ["type", "range"] },
-                      "then": {
-                        "$switch": "valueStart",
-                        "cases": {
-                          "0": "0%",
-                          "0.1": "10%",
-                          "0.2": "20%",
-                          "0.3": "30%",
-                          "0.4": "40%",
-                          "0.5": "50%",
-                          "0.6": "60%",
-                          "0.7": "70%",
-                          "0.8": "80%",
-                          "0.9": "90%",
-                          "1": "100%"
-                        }
-                      },
-                      "else": "0%"
-                    },
-                    "height": "fill",
-                    "layout": { "type": "none" },
-                    "visible": { "$eq": ["type", "range"] },
-                    "children": [
-                      {
-                        "type": "rect",
-                        "name": "trilho inativo",
-                        "height": 16,
-                        "anchors": { "centerY": true, "left": 0, "right": 8 },
-                        "cornerRadius": [
-                          { "$token": "corner-track-outer" },
-                          { "$token": "corner-track-inside" },
-                          { "$token": "corner-track-inside" },
-                          { "$token": "corner-track-outer" }
-                        ],
-                        "fill": {
-                          "$if": { "$eq": ["enabled", "false"] },
-                          "then": { "$token": "on-surface" },
-                          "else": { "$token": "secondary-container" }
-                        },
-                        "opacity": {
-                          "$if": { "$eq": ["enabled", "false"] },
-                          "then": { "$token": "state-disabled-container" },
-                          "else": 1
-                        },
-                        "visible": {
-                          "$and": [
-                            { "$eq": ["type", "range"] },
-                            { "$not": { "$eq": ["valueStart", "0"] } },
-                            {
-                              "$not": {
-                                "$and": [
-                                  {
-                                    "$and": [
-                                      { "$has": "steps" },
-                                      { "$not": { "$eq": ["steps", "0"] } }
-                                    ]
-                                  },
-                                  {
-                                    "$not": {
-                                      "$and": [
-                                        {
-                                          "$not": { "$eq": ["type", "range"] }
-                                        },
-                                        {
-                                          "$or": [
-                                            { "$eq": ["value", "0"] },
-                                            { "$eq": ["value", "1"] }
-                                          ]
-                                        }
-                                      ]
-                                    }
-                                  }
-                                ]
+                        "$sub": [
+                          { "$sub": [{ "$size": "width" }, 4] },
+                          {
+                            "$mul": [
+                              16,
+                              {
+                                "$if": { "$gte": [{ "$field": "steps" }, 1] },
+                                "then": 1,
+                                "else": 0
                               }
-                            }
-                          ]
-                        }
-                      },
-                      {
-                        "type": "rect",
-                        "name": "trilho inativo",
-                        "height": 16,
-                        "anchors": { "centerY": true, "left": -8, "right": 8 },
-                        "cornerRadius": [
-                          { "$token": "corner-track-outer" },
-                          { "$token": "corner-track-inside" },
-                          { "$token": "corner-track-inside" },
-                          { "$token": "corner-track-outer" }
-                        ],
-                        "fill": {
-                          "$if": { "$eq": ["enabled", "false"] },
-                          "then": { "$token": "on-surface" },
-                          "else": { "$token": "secondary-container" }
-                        },
-                        "opacity": {
-                          "$if": { "$eq": ["enabled", "false"] },
-                          "then": { "$token": "state-disabled-container" },
-                          "else": 1
-                        },
-                        "visible": {
-                          "$and": [
-                            { "$eq": ["type", "range"] },
-                            { "$not": { "$eq": ["valueStart", "0"] } },
-                            {
-                              "$and": [
-                                {
-                                  "$and": [
-                                    { "$has": "steps" },
-                                    { "$not": { "$eq": ["steps", "0"] } }
-                                  ]
-                                },
-                                {
-                                  "$not": {
-                                    "$and": [
-                                      {
-                                        "$not": { "$eq": ["type", "range"] }
-                                      },
-                                      {
-                                        "$or": [
-                                          { "$eq": ["value", "0"] },
-                                          { "$eq": ["value", "1"] }
-                                        ]
-                                      }
-                                    ]
-                                  }
-                                }
-                              ]
-                            }
-                          ]
-                        }
+                            ]
+                          }
+                        ]
                       }
                     ]
                   },
                   {
-                    "type": "frame",
-                    "name": "trecho ativo",
-                    "width": "fill",
-                    "height": "fill",
-                    "layout": { "type": "none" },
-                    "children": [
+                    "$mul": [
+                      8,
                       {
-                        "type": "rect",
-                        "name": "trilho ativo",
-                        "height": 16,
-                        "anchors": { "centerY": true, "left": 0, "right": 8 },
-                        "cornerRadius": [
-                          { "$token": "corner-track-outer" },
-                          { "$token": "corner-track-inside" },
-                          { "$token": "corner-track-inside" },
-                          { "$token": "corner-track-outer" }
-                        ],
-                        "fill": {
-                          "$if": { "$eq": ["enabled", "false"] },
-                          "then": { "$token": "on-surface" },
-                          "else": { "$token": "primary" }
-                        },
-                        "opacity": {
-                          "$if": { "$eq": ["enabled", "false"] },
-                          "then": { "$token": "state-disabled-content" },
-                          "else": 1
-                        },
-                        "visible": {
-                          "$and": [
-                            { "$not": { "$eq": ["type", "range"] } },
-                            {
-                              "$not": {
-                                "$and": [
-                                  {
-                                    "$and": [
-                                      { "$has": "steps" },
-                                      { "$not": { "$eq": ["steps", "0"] } }
-                                    ]
-                                  },
-                                  {
-                                    "$not": {
-                                      "$and": [
-                                        {
-                                          "$not": { "$eq": ["type", "range"] }
-                                        },
-                                        {
-                                          "$or": [
-                                            { "$eq": ["value", "0"] },
-                                            { "$eq": ["value", "1"] }
-                                          ]
-                                        }
-                                      ]
-                                    }
-                                  }
-                                ]
-                              }
-                            },
-                            { "$not": { "$eq": ["value", "0"] } }
-                          ]
-                        }
-                      },
-                      {
-                        "type": "rect",
-                        "name": "trilho ativo",
-                        "height": 16,
-                        "anchors": { "centerY": true, "left": -8, "right": 8 },
-                        "cornerRadius": [
-                          { "$token": "corner-track-outer" },
-                          { "$token": "corner-track-inside" },
-                          { "$token": "corner-track-inside" },
-                          { "$token": "corner-track-outer" }
-                        ],
-                        "fill": {
-                          "$if": { "$eq": ["enabled", "false"] },
-                          "then": { "$token": "on-surface" },
-                          "else": { "$token": "primary" }
-                        },
-                        "opacity": {
-                          "$if": { "$eq": ["enabled", "false"] },
-                          "then": { "$token": "state-disabled-content" },
-                          "else": 1
-                        },
-                        "visible": {
-                          "$and": [
-                            { "$not": { "$eq": ["type", "range"] } },
-                            {
-                              "$and": [
-                                {
-                                  "$and": [
-                                    { "$has": "steps" },
-                                    { "$not": { "$eq": ["steps", "0"] } }
-                                  ]
-                                },
-                                {
-                                  "$not": {
-                                    "$and": [
-                                      {
-                                        "$not": { "$eq": ["type", "range"] }
-                                      },
-                                      {
-                                        "$or": [
-                                          { "$eq": ["value", "0"] },
-                                          { "$eq": ["value", "1"] }
-                                        ]
-                                      }
-                                    ]
-                                  }
-                                }
-                              ]
-                            },
-                            { "$not": { "$eq": ["value", "0"] } }
-                          ]
-                        }
-                      },
-                      {
-                        "type": "rect",
-                        "name": "trilho ativo",
-                        "height": 16,
-                        "anchors": { "centerY": true, "left": 8, "right": 8 },
-                        "cornerRadius": { "$token": "corner-track-inside" },
-                        "fill": {
-                          "$if": { "$eq": ["enabled", "false"] },
-                          "then": { "$token": "on-surface" },
-                          "else": { "$token": "primary" }
-                        },
-                        "opacity": {
-                          "$if": { "$eq": ["enabled", "false"] },
-                          "then": { "$token": "state-disabled-content" },
-                          "else": 1
-                        },
-                        "visible": { "$eq": ["type", "range"] }
-                      }
-                    ]
-                  },
-                  {
-                    "type": "frame",
-                    "name": "depois do fim",
-                    "width": {
-                      "$if": { "$eq": ["type", "range"] },
-                      "then": {
-                        "$switch": "valueEnd",
-                        "cases": {
-                          "0": "100%",
-                          "0.1": "90%",
-                          "0.2": "80%",
-                          "0.3": "70%",
-                          "0.4": "60%",
-                          "0.5": "50%",
-                          "0.6": "40%",
-                          "0.7": "30%",
-                          "0.8": "20%",
-                          "0.9": "10%",
-                          "1": "0%"
-                        }
-                      },
-                      "else": {
-                        "$switch": "value",
-                        "cases": {
-                          "0": "100%",
-                          "0.1": "90%",
-                          "0.2": "80%",
-                          "0.3": "70%",
-                          "0.4": "60%",
-                          "0.5": "50%",
-                          "0.6": "40%",
-                          "0.7": "30%",
-                          "0.8": "20%",
-                          "0.9": "10%",
-                          "1": "0%"
-                        }
-                      }
-                    },
-                    "height": "fill",
-                    "layout": { "type": "none" },
-                    "children": [
-                      {
-                        "type": "rect",
-                        "name": "trilho inativo",
-                        "height": 16,
-                        "anchors": { "centerY": true, "left": 8, "right": 0 },
-                        "cornerRadius": [
-                          { "$token": "corner-track-inside" },
-                          { "$token": "corner-track-outer" },
-                          { "$token": "corner-track-outer" },
-                          { "$token": "corner-track-inside" }
-                        ],
-                        "fill": {
-                          "$if": { "$eq": ["enabled", "false"] },
-                          "then": { "$token": "on-surface" },
-                          "else": { "$token": "secondary-container" }
-                        },
-                        "opacity": {
-                          "$if": { "$eq": ["enabled", "false"] },
-                          "then": { "$token": "state-disabled-container" },
-                          "else": 1
-                        },
-                        "visible": {
-                          "$and": [
-                            {
-                              "$not": {
-                                "$or": [
-                                  {
-                                    "$and": [
-                                      {
-                                        "$not": { "$eq": ["type", "range"] }
-                                      },
-                                      { "$eq": ["value", "1"] }
-                                    ]
-                                  },
-                                  {
-                                    "$and": [
-                                      { "$eq": ["type", "range"] },
-                                      { "$eq": ["valueEnd", "1"] }
-                                    ]
-                                  }
-                                ]
-                              }
-                            },
-                            {
-                              "$not": {
-                                "$and": [
-                                  {
-                                    "$and": [
-                                      { "$has": "steps" },
-                                      { "$not": { "$eq": ["steps", "0"] } }
-                                    ]
-                                  },
-                                  {
-                                    "$not": {
-                                      "$and": [
-                                        {
-                                          "$not": { "$eq": ["type", "range"] }
-                                        },
-                                        {
-                                          "$or": [
-                                            { "$eq": ["value", "0"] },
-                                            { "$eq": ["value", "1"] }
-                                          ]
-                                        }
-                                      ]
-                                    }
-                                  }
-                                ]
-                              }
-                            }
-                          ]
-                        }
-                      },
-                      {
-                        "type": "rect",
-                        "name": "trilho inativo",
-                        "height": 16,
-                        "anchors": { "centerY": true, "left": 8, "right": -8 },
-                        "cornerRadius": [
-                          { "$token": "corner-track-inside" },
-                          { "$token": "corner-track-outer" },
-                          { "$token": "corner-track-outer" },
-                          { "$token": "corner-track-inside" }
-                        ],
-                        "fill": {
-                          "$if": { "$eq": ["enabled", "false"] },
-                          "then": { "$token": "on-surface" },
-                          "else": { "$token": "secondary-container" }
-                        },
-                        "opacity": {
-                          "$if": { "$eq": ["enabled", "false"] },
-                          "then": { "$token": "state-disabled-container" },
-                          "else": 1
-                        },
-                        "visible": {
-                          "$and": [
-                            {
-                              "$not": {
-                                "$or": [
-                                  {
-                                    "$and": [
-                                      {
-                                        "$not": { "$eq": ["type", "range"] }
-                                      },
-                                      { "$eq": ["value", "1"] }
-                                    ]
-                                  },
-                                  {
-                                    "$and": [
-                                      { "$eq": ["type", "range"] },
-                                      { "$eq": ["valueEnd", "1"] }
-                                    ]
-                                  }
-                                ]
-                              }
-                            },
-                            {
-                              "$and": [
-                                {
-                                  "$and": [
-                                    { "$has": "steps" },
-                                    { "$not": { "$eq": ["steps", "0"] } }
-                                  ]
-                                },
-                                {
-                                  "$not": {
-                                    "$and": [
-                                      {
-                                        "$not": { "$eq": ["type", "range"] }
-                                      },
-                                      {
-                                        "$or": [
-                                          { "$eq": ["value", "0"] },
-                                          { "$eq": ["value", "1"] }
-                                        ]
-                                      }
-                                    ]
-                                  }
-                                }
-                              ]
-                            }
-                          ]
-                        }
+                        "$if": { "$gte": [{ "$field": "steps" }, 1] },
+                        "then": 1,
+                        "else": 0
                       }
                     ]
                   }
                 ]
               },
+              "else": 0
+            },
+            "height": "fill",
+            "visible": { "$eq": ["type", "range"] },
+            "layout": { "type": "none" },
+            "children": [
               {
-                "type": "frame",
-                "name": "recuo",
-                "width": {
-                  "$if": {
-                    "$and": [
-                      {
-                        "$and": [
-                          { "$has": "steps" },
-                          { "$not": { "$eq": ["steps", "0"] } }
-                        ]
-                      },
-                      {
-                        "$not": {
-                          "$and": [
-                            { "$not": { "$eq": ["type", "range"] } },
-                            {
-                              "$or": [
-                                { "$eq": ["value", "0"] },
-                                { "$eq": ["value", "1"] }
-                              ]
-                            }
-                          ]
-                        }
-                      }
-                    ]
-                  },
-                  "then": 8,
-                  "else": 0
+                "type": "rect",
+                "name": "trilho inativo",
+                "height": 16,
+                "anchors": { "centerY": true, "left": 0, "right": 8 },
+                "cornerRadius": [
+                  { "$token": "corner-track-outer" },
+                  { "$token": "corner-track-inside" },
+                  { "$token": "corner-track-inside" },
+                  { "$token": "corner-track-outer" }
+                ],
+                "fill": {
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "on-surface" },
+                  "else": { "$token": "secondary-container" }
                 },
-                "height": "fill",
-                "layout": { "type": "none" }
+                "opacity": {
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "state-disabled-container" },
+                  "else": 1
+                }
+              },
+              {
+                "type": "rect",
+                "name": "alça",
+                "height": 44,
+                "width": 4,
+                "anchors": { "centerY": true, "right": -2 },
+                "cornerRadius": { "$token": "corner-full" },
+                "fill": {
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "on-surface" },
+                  "else": { "$token": "primary" }
+                },
+                "opacity": {
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "state-disabled-content" },
+                  "else": 1
+                }
               }
             ]
           },
           {
             "type": "frame",
-            "name": "marcas sobre o trecho ativo",
-            "anchors": { "centerY": true, "left": -2, "right": -2 },
-            "height": 4,
-            "layout": {
-              "type": "row",
-              "padding": [0, 8],
-              "justify": "space-between"
-            },
-            "visible": {
-              "$and": [{ "$has": "steps" }, { "$not": { "$eq": ["steps", "0"] } }]
-            },
+            "name": "trecho ativo",
+            "width": "fill",
+            "height": "fill",
+            "layout": { "type": "none" },
             "children": [
               {
-                "type": "ellipse",
-                "name": "marca",
-                "width": 4,
-                "height": 4,
+                "type": "rect",
+                "name": "trilho ativo",
+                "height": 16,
+                "anchors": { "centerY": true, "left": 0, "right": 8 },
+                "cornerRadius": [
+                  { "$token": "corner-track-outer" },
+                  { "$token": "corner-track-inside" },
+                  { "$token": "corner-track-inside" },
+                  { "$token": "corner-track-outer" }
+                ],
+                "visible": { "$not": { "$eq": ["type", "range"] } },
                 "fill": {
-                  "$if": { "$eq": ["type", "range"] },
-                  "then": "none",
-                  "else": {
-                    "$if": { "$eq": ["enabled", "false"] },
-                    "then": { "$token": "on-surface" },
-                    "else": { "$token": "secondary-container" }
-                  }
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "on-surface" },
+                  "else": { "$token": "primary" }
                 },
                 "opacity": {
                   "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "state-disabled-container" },
+                  "then": { "$token": "state-disabled-content" },
                   "else": 1
                 }
               },
               {
-                "type": "ellipse",
-                "name": "marca",
-                "width": 4,
-                "height": 4,
+                "type": "rect",
+                "name": "trilho ativo",
+                "height": 16,
+                "anchors": { "centerY": true, "left": 8, "right": 8 },
+                "cornerRadius": { "$token": "corner-track-inside" },
+                "visible": { "$eq": ["type", "range"] },
                 "fill": {
                   "$if": { "$eq": ["enabled", "false"] },
                   "then": { "$token": "on-surface" },
-                  "else": { "$token": "secondary-container" }
+                  "else": { "$token": "primary" }
                 },
                 "opacity": {
                   "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "state-disabled-container" },
+                  "then": { "$token": "state-disabled-content" },
                   "else": 1
                 }
-              },
-              {
-                "type": "ellipse",
-                "name": "marca",
-                "width": 4,
-                "height": 4,
-                "fill": {
-                  "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "on-surface" },
-                  "else": { "$token": "secondary-container" }
-                },
-                "opacity": {
-                  "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "state-disabled-container" },
-                  "else": 1
-                },
-                "visible": {
-                  "$not": {
-                    "$or": [
-                      { "$not": { "$has": "steps" } },
-                      { "$eq": ["steps", "0"] },
-                      { "$eq": ["steps", "1"] }
-                    ]
-                  }
-                }
-              },
-              {
-                "type": "ellipse",
-                "name": "marca",
-                "width": 4,
-                "height": 4,
-                "fill": {
-                  "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "on-surface" },
-                  "else": { "$token": "secondary-container" }
-                },
-                "opacity": {
-                  "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "state-disabled-container" },
-                  "else": 1
-                },
-                "visible": {
-                  "$not": {
-                    "$or": [
-                      { "$not": { "$has": "steps" } },
-                      { "$eq": ["steps", "0"] },
-                      { "$eq": ["steps", "1"] },
-                      { "$eq": ["steps", "2"] }
-                    ]
-                  }
-                }
-              },
-              {
-                "type": "ellipse",
-                "name": "marca",
-                "width": 4,
-                "height": 4,
-                "fill": {
-                  "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "on-surface" },
-                  "else": { "$token": "secondary-container" }
-                },
-                "opacity": {
-                  "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "state-disabled-container" },
-                  "else": 1
-                },
-                "visible": {
-                  "$not": {
-                    "$or": [
-                      { "$not": { "$has": "steps" } },
-                      { "$eq": ["steps", "0"] },
-                      { "$eq": ["steps", "1"] },
-                      { "$eq": ["steps", "2"] },
-                      { "$eq": ["steps", "3"] }
-                    ]
-                  }
-                }
-              },
-              {
-                "type": "ellipse",
-                "name": "marca",
-                "width": 4,
-                "height": 4,
-                "fill": {
-                  "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "on-surface" },
-                  "else": { "$token": "secondary-container" }
-                },
-                "opacity": {
-                  "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "state-disabled-container" },
-                  "else": 1
-                },
-                "visible": {
-                  "$not": {
-                    "$or": [
-                      { "$not": { "$has": "steps" } },
-                      { "$eq": ["steps", "0"] },
-                      { "$eq": ["steps", "1"] },
-                      { "$eq": ["steps", "2"] },
-                      { "$eq": ["steps", "3"] },
-                      { "$eq": ["steps", "4"] }
-                    ]
-                  }
-                }
-              },
-              {
-                "type": "ellipse",
-                "name": "marca",
-                "width": 4,
-                "height": 4,
-                "fill": {
-                  "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "on-surface" },
-                  "else": { "$token": "secondary-container" }
-                },
-                "opacity": {
-                  "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "state-disabled-container" },
-                  "else": 1
-                },
-                "visible": {
-                  "$not": {
-                    "$or": [
-                      { "$not": { "$has": "steps" } },
-                      { "$eq": ["steps", "0"] },
-                      { "$eq": ["steps", "1"] },
-                      { "$eq": ["steps", "2"] },
-                      { "$eq": ["steps", "3"] },
-                      { "$eq": ["steps", "4"] },
-                      { "$eq": ["steps", "5"] }
-                    ]
-                  }
-                }
-              },
-              {
-                "type": "ellipse",
-                "name": "marca",
-                "width": 4,
-                "height": 4,
-                "fill": {
-                  "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "on-surface" },
-                  "else": { "$token": "secondary-container" }
-                },
-                "opacity": {
-                  "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "state-disabled-container" },
-                  "else": 1
-                },
-                "visible": {
-                  "$not": {
-                    "$or": [
-                      { "$not": { "$has": "steps" } },
-                      { "$eq": ["steps", "0"] },
-                      { "$eq": ["steps", "1"] },
-                      { "$eq": ["steps", "2"] },
-                      { "$eq": ["steps", "3"] },
-                      { "$eq": ["steps", "4"] },
-                      { "$eq": ["steps", "5"] },
-                      { "$eq": ["steps", "6"] }
-                    ]
-                  }
-                }
-              },
-              {
-                "type": "ellipse",
-                "name": "marca",
-                "width": 4,
-                "height": 4,
-                "fill": {
-                  "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "on-surface" },
-                  "else": { "$token": "secondary-container" }
-                },
-                "opacity": {
-                  "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "state-disabled-container" },
-                  "else": 1
-                },
-                "visible": {
-                  "$not": {
-                    "$or": [
-                      { "$not": { "$has": "steps" } },
-                      { "$eq": ["steps", "0"] },
-                      { "$eq": ["steps", "1"] },
-                      { "$eq": ["steps", "2"] },
-                      { "$eq": ["steps", "3"] },
-                      { "$eq": ["steps", "4"] },
-                      { "$eq": ["steps", "5"] },
-                      { "$eq": ["steps", "6"] },
-                      { "$eq": ["steps", "7"] }
-                    ]
-                  }
-                }
-              },
-              {
-                "type": "ellipse",
-                "name": "marca",
-                "width": 4,
-                "height": 4,
-                "fill": {
-                  "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "on-surface" },
-                  "else": { "$token": "secondary-container" }
-                },
-                "opacity": {
-                  "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "state-disabled-container" },
-                  "else": 1
-                },
-                "visible": {
-                  "$not": {
-                    "$or": [
-                      { "$not": { "$has": "steps" } },
-                      { "$eq": ["steps", "0"] },
-                      { "$eq": ["steps", "1"] },
-                      { "$eq": ["steps", "2"] },
-                      { "$eq": ["steps", "3"] },
-                      { "$eq": ["steps", "4"] },
-                      { "$eq": ["steps", "5"] },
-                      { "$eq": ["steps", "6"] },
-                      { "$eq": ["steps", "7"] },
-                      { "$eq": ["steps", "8"] }
-                    ]
-                  }
-                }
-              },
-              { "type": "frame", "name": "fim", "width": 4, "height": 4 }
+              }
             ]
           },
           {
             "type": "frame",
-            "name": "marcas e alças",
-            "width": "fill",
-            "height": "fill",
-            "layout": { "type": "row" },
-            "children": [
-              {
-                "type": "frame",
-                "name": "recuo",
-                "width": {
+            "name": "depois do fim",
+            "width": {
+              "$sub": [
+                { "$sub": [{ "$size": "width" }, 4] },
+                {
                   "$if": {
                     "$and": [
+                      { "$gte": [{ "$field": "steps" }, 1] },
                       {
-                        "$and": [
-                          { "$has": "steps" },
-                          { "$not": { "$eq": ["steps", "0"] } }
-                        ]
-                      },
-                      {
-                        "$not": {
-                          "$and": [
-                            { "$not": { "$eq": ["type", "range"] } },
-                            {
-                              "$or": [
-                                { "$eq": ["value", "0"] },
-                                { "$eq": ["value", "1"] }
-                              ]
-                            }
-                          ]
-                        }
-                      }
-                    ]
-                  },
-                  "then": 8,
-                  "else": 0
-                },
-                "height": "fill",
-                "layout": { "type": "none" }
-              },
-              {
-                "type": "frame",
-                "name": "pista",
-                "width": "fill",
-                "height": "fill",
-                "layout": { "type": "row" },
-                "children": [
-                  {
-                    "type": "frame",
-                    "name": "antes do início",
-                    "width": {
-                      "$if": { "$eq": ["type", "range"] },
-                      "then": {
-                        "$switch": "valueStart",
-                        "cases": {
-                          "0": "0%",
-                          "0.1": "10%",
-                          "0.2": "20%",
-                          "0.3": "30%",
-                          "0.4": "40%",
-                          "0.5": "50%",
-                          "0.6": "60%",
-                          "0.7": "70%",
-                          "0.8": "80%",
-                          "0.9": "90%",
-                          "1": "100%"
-                        }
-                      },
-                      "else": "0%"
-                    },
-                    "height": "fill",
-                    "layout": { "type": "none" },
-                    "visible": { "$eq": ["type", "range"] },
-                    "children": [
-                      {
-                        "type": "frame",
-                        "name": "recorte",
-                        "layout": { "type": "none" },
-                        "anchors": { "left": -8, "right": 0, "top": 0, "bottom": 0 },
-                        "clip": true,
-                        "visible": {
-                          "$and": [
-                            { "$eq": ["type", "range"] },
-                            { "$not": { "$eq": ["valueStart", "0"] } }
-                          ]
-                        },
-                        "children": [
+                        "$or": [
+                          { "$eq": ["type", "range"] },
                           {
-                            "type": "frame",
-                            "name": "base",
-                            "layout": { "type": "none" },
-                            "anchors": {
-                              "left": 8,
-                              "right": 0,
-                              "top": 0,
-                              "bottom": 0
-                            },
-                            "children": [
+                            "$lt": [
                               {
-                                "type": "frame",
-                                "name": "régua",
-                                "anchors": { "centerY": true, "left": 0 },
-                                "width": {
-                                  "$switch": "valueStart",
-                                  "cases": {
-                                    "0": "100%",
-                                    "0.1": "1000%",
-                                    "0.2": "500%",
-                                    "0.3": "333.333333%",
-                                    "0.4": "250%",
-                                    "0.5": "200%",
-                                    "0.6": "166.666667%",
-                                    "0.7": "142.857143%",
-                                    "0.8": "125%",
-                                    "0.9": "111.111111%",
-                                    "1": "100%"
-                                  }
-                                },
-                                "height": 4,
-                                "layout": { "type": "none" },
-                                "children": [
-                                  {
-                                    "type": "frame",
-                                    "name": "marcas sobre o trecho inativo",
-                                    "anchors": {
-                                      "centerY": true,
-                                      "left": -2,
-                                      "right": -2
-                                    },
-                                    "height": 4,
-                                    "layout": {
-                                      "type": "row",
-                                      "padding": {
-                                        "$if": {
-                                          "$and": [
-                                            {
-                                              "$and": [
-                                                { "$has": "steps" },
-                                                {
-                                                  "$not": {
-                                                    "$eq": ["steps", "0"]
-                                                  }
-                                                }
-                                              ]
-                                            },
-                                            {
-                                              "$not": {
-                                                "$and": [
+                                "$abs": {
+                                  "$sub": [
+                                    {
+                                      "$mul": [
+                                        {
+                                          "$round": {
+                                            "$mul": [
+                                              {
+                                                "$clamp": [
                                                   {
-                                                    "$not": {
-                                                      "$eq": ["type", "range"]
+                                                    "$if": { "$eq": ["type", "range"] },
+                                                    "then": {
+                                                      "$field": "valueEnd",
+                                                      "default": 0.8
+                                                    },
+                                                    "else": {
+                                                      "$field": "value",
+                                                      "default": 0.5
                                                     }
                                                   },
-                                                  {
-                                                    "$or": [
-                                                      {
-                                                        "$eq": ["value", "0"]
-                                                      },
-                                                      {
-                                                        "$eq": ["value", "1"]
-                                                      }
-                                                    ]
-                                                  }
+                                                  0,
+                                                  1
+                                                ]
+                                              },
+                                              {
+                                                "$add": [
+                                                  { "$floor": { "$field": "steps" } },
+                                                  1
                                                 ]
                                               }
-                                            }
-                                          ]
+                                            ]
+                                          }
                                         },
-                                        "then": 0,
-                                        "else": [0, 8]
-                                      },
-                                      "justify": "space-between"
+                                        2
+                                      ]
                                     },
-                                    "children": [
-                                      {
-                                        "type": "ellipse",
-                                        "name": "marca",
-                                        "width": 4,
-                                        "height": 4,
-                                        "fill": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": { "$token": "on-surface" },
-                                          "else": { "$token": "primary" }
-                                        },
-                                        "opacity": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": {
-                                            "$token": "state-disabled-content"
-                                          },
-                                          "else": 1
-                                        }
-                                      },
-                                      {
-                                        "type": "ellipse",
-                                        "name": "marca",
-                                        "width": 4,
-                                        "height": 4,
-                                        "fill": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": { "$token": "on-surface" },
-                                          "else": { "$token": "primary" }
-                                        },
-                                        "opacity": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": {
-                                            "$token": "state-disabled-content"
-                                          },
-                                          "else": 1
-                                        }
-                                      },
-                                      {
-                                        "type": "ellipse",
-                                        "name": "marca",
-                                        "width": 4,
-                                        "height": 4,
-                                        "fill": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": { "$token": "on-surface" },
-                                          "else": { "$token": "primary" }
-                                        },
-                                        "opacity": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": {
-                                            "$token": "state-disabled-content"
-                                          },
-                                          "else": 1
-                                        },
-                                        "visible": {
-                                          "$not": {
-                                            "$or": [
-                                              {
-                                                "$not": { "$has": "steps" }
-                                              },
-                                              { "$eq": ["steps", "0"] }
-                                            ]
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "ellipse",
-                                        "name": "marca",
-                                        "width": 4,
-                                        "height": 4,
-                                        "fill": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": { "$token": "on-surface" },
-                                          "else": { "$token": "primary" }
-                                        },
-                                        "opacity": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": {
-                                            "$token": "state-disabled-content"
-                                          },
-                                          "else": 1
-                                        },
-                                        "visible": {
-                                          "$not": {
-                                            "$or": [
-                                              {
-                                                "$not": { "$has": "steps" }
-                                              },
-                                              { "$eq": ["steps", "0"] },
-                                              { "$eq": ["steps", "1"] }
-                                            ]
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "ellipse",
-                                        "name": "marca",
-                                        "width": 4,
-                                        "height": 4,
-                                        "fill": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": { "$token": "on-surface" },
-                                          "else": { "$token": "primary" }
-                                        },
-                                        "opacity": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": {
-                                            "$token": "state-disabled-content"
-                                          },
-                                          "else": 1
-                                        },
-                                        "visible": {
-                                          "$not": {
-                                            "$or": [
-                                              {
-                                                "$not": { "$has": "steps" }
-                                              },
-                                              { "$eq": ["steps", "0"] },
-                                              { "$eq": ["steps", "1"] },
-                                              { "$eq": ["steps", "2"] }
-                                            ]
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "ellipse",
-                                        "name": "marca",
-                                        "width": 4,
-                                        "height": 4,
-                                        "fill": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": { "$token": "on-surface" },
-                                          "else": { "$token": "primary" }
-                                        },
-                                        "opacity": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": {
-                                            "$token": "state-disabled-content"
-                                          },
-                                          "else": 1
-                                        },
-                                        "visible": {
-                                          "$not": {
-                                            "$or": [
-                                              {
-                                                "$not": { "$has": "steps" }
-                                              },
-                                              { "$eq": ["steps", "0"] },
-                                              { "$eq": ["steps", "1"] },
-                                              { "$eq": ["steps", "2"] },
-                                              { "$eq": ["steps", "3"] }
-                                            ]
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "ellipse",
-                                        "name": "marca",
-                                        "width": 4,
-                                        "height": 4,
-                                        "fill": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": { "$token": "on-surface" },
-                                          "else": { "$token": "primary" }
-                                        },
-                                        "opacity": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": {
-                                            "$token": "state-disabled-content"
-                                          },
-                                          "else": 1
-                                        },
-                                        "visible": {
-                                          "$not": {
-                                            "$or": [
-                                              {
-                                                "$not": { "$has": "steps" }
-                                              },
-                                              { "$eq": ["steps", "0"] },
-                                              { "$eq": ["steps", "1"] },
-                                              { "$eq": ["steps", "2"] },
-                                              { "$eq": ["steps", "3"] },
-                                              { "$eq": ["steps", "4"] }
-                                            ]
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "ellipse",
-                                        "name": "marca",
-                                        "width": 4,
-                                        "height": 4,
-                                        "fill": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": { "$token": "on-surface" },
-                                          "else": { "$token": "primary" }
-                                        },
-                                        "opacity": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": {
-                                            "$token": "state-disabled-content"
-                                          },
-                                          "else": 1
-                                        },
-                                        "visible": {
-                                          "$not": {
-                                            "$or": [
-                                              {
-                                                "$not": { "$has": "steps" }
-                                              },
-                                              { "$eq": ["steps", "0"] },
-                                              { "$eq": ["steps", "1"] },
-                                              { "$eq": ["steps", "2"] },
-                                              { "$eq": ["steps", "3"] },
-                                              { "$eq": ["steps", "4"] },
-                                              { "$eq": ["steps", "5"] }
-                                            ]
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "ellipse",
-                                        "name": "marca",
-                                        "width": 4,
-                                        "height": 4,
-                                        "fill": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": { "$token": "on-surface" },
-                                          "else": { "$token": "primary" }
-                                        },
-                                        "opacity": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": {
-                                            "$token": "state-disabled-content"
-                                          },
-                                          "else": 1
-                                        },
-                                        "visible": {
-                                          "$not": {
-                                            "$or": [
-                                              {
-                                                "$not": { "$has": "steps" }
-                                              },
-                                              { "$eq": ["steps", "0"] },
-                                              { "$eq": ["steps", "1"] },
-                                              { "$eq": ["steps", "2"] },
-                                              { "$eq": ["steps", "3"] },
-                                              { "$eq": ["steps", "4"] },
-                                              { "$eq": ["steps", "5"] },
-                                              { "$eq": ["steps", "6"] }
-                                            ]
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "ellipse",
-                                        "name": "marca",
-                                        "width": 4,
-                                        "height": 4,
-                                        "fill": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": { "$token": "on-surface" },
-                                          "else": { "$token": "primary" }
-                                        },
-                                        "opacity": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": {
-                                            "$token": "state-disabled-content"
-                                          },
-                                          "else": 1
-                                        },
-                                        "visible": {
-                                          "$not": {
-                                            "$or": [
-                                              {
-                                                "$not": { "$has": "steps" }
-                                              },
-                                              { "$eq": ["steps", "0"] },
-                                              { "$eq": ["steps", "1"] },
-                                              { "$eq": ["steps", "2"] },
-                                              { "$eq": ["steps", "3"] },
-                                              { "$eq": ["steps", "4"] },
-                                              { "$eq": ["steps", "5"] },
-                                              { "$eq": ["steps", "6"] },
-                                              { "$eq": ["steps", "7"] }
-                                            ]
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "ellipse",
-                                        "name": "marca",
-                                        "width": 4,
-                                        "height": 4,
-                                        "fill": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": { "$token": "on-surface" },
-                                          "else": { "$token": "primary" }
-                                        },
-                                        "opacity": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": {
-                                            "$token": "state-disabled-content"
-                                          },
-                                          "else": 1
-                                        },
-                                        "visible": {
-                                          "$not": {
-                                            "$or": [
-                                              {
-                                                "$not": { "$has": "steps" }
-                                              },
-                                              { "$eq": ["steps", "0"] },
-                                              { "$eq": ["steps", "1"] },
-                                              { "$eq": ["steps", "2"] },
-                                              { "$eq": ["steps", "3"] },
-                                              { "$eq": ["steps", "4"] },
-                                              { "$eq": ["steps", "5"] },
-                                              { "$eq": ["steps", "6"] },
-                                              { "$eq": ["steps", "7"] },
-                                              { "$eq": ["steps", "8"] }
-                                            ]
-                                          }
-                                        }
-                                      }
-                                    ]
-                                  }
-                                ]
-                              }
+                                    { "$add": [{ "$floor": { "$field": "steps" } }, 1] }
+                                  ]
+                                }
+                              },
+                              { "$add": [{ "$floor": { "$field": "steps" } }, 1] }
                             ]
                           }
                         ]
-                      },
-                      {
-                        "type": "rect",
-                        "name": "alça",
-                        "width": 4,
-                        "height": 44,
-                        "anchors": { "centerY": true, "right": -2 },
-                        "cornerRadius": { "$token": "corner-full" },
-                        "fill": {
-                          "$if": { "$eq": ["enabled", "false"] },
-                          "then": { "$token": "on-surface" },
-                          "else": { "$token": "primary" }
-                        },
-                        "opacity": {
-                          "$if": { "$eq": ["enabled", "false"] },
-                          "then": { "$token": "state-disabled-content" },
-                          "else": 1
-                        }
                       }
                     ]
                   },
-                  {
-                    "type": "frame",
-                    "name": "meio",
-                    "width": "fill",
-                    "height": "fill",
-                    "layout": { "type": "none" }
-                  },
-                  {
-                    "type": "frame",
-                    "name": "depois do fim",
-                    "width": {
-                      "$if": { "$eq": ["type", "range"] },
-                      "then": {
-                        "$switch": "valueEnd",
-                        "cases": {
-                          "0": "100%",
-                          "0.1": "90%",
-                          "0.2": "80%",
-                          "0.3": "70%",
-                          "0.4": "60%",
-                          "0.5": "50%",
-                          "0.6": "40%",
-                          "0.7": "30%",
-                          "0.8": "20%",
-                          "0.9": "10%",
-                          "1": "0%"
-                        }
-                      },
-                      "else": {
-                        "$switch": "value",
-                        "cases": {
-                          "0": "100%",
-                          "0.1": "90%",
-                          "0.2": "80%",
-                          "0.3": "70%",
-                          "0.4": "60%",
-                          "0.5": "50%",
-                          "0.6": "40%",
-                          "0.7": "30%",
-                          "0.8": "20%",
-                          "0.9": "10%",
-                          "1": "0%"
-                        }
-                      }
-                    },
-                    "height": "fill",
-                    "layout": { "type": "none" },
-                    "children": [
+                  "then": {
+                    "$add": [
+                      8,
                       {
-                        "type": "frame",
-                        "name": "recorte",
-                        "layout": { "type": "none" },
-                        "anchors": { "left": 0, "right": -8, "top": 0, "bottom": 0 },
-                        "clip": true,
-                        "visible": {
-                          "$not": {
-                            "$or": [
+                        "$mul": [
+                          {
+                            "$div": [
                               {
-                                "$and": [
-                                  { "$not": { "$eq": ["type", "range"] } },
-                                  { "$eq": ["value", "1"] }
-                                ]
+                                "$round": {
+                                  "$mul": [
+                                    {
+                                      "$clamp": [
+                                        {
+                                          "$if": { "$eq": ["type", "range"] },
+                                          "then": {
+                                            "$field": "valueEnd",
+                                            "default": 0.8
+                                          },
+                                          "else": { "$field": "value", "default": 0.5 }
+                                        },
+                                        0,
+                                        1
+                                      ]
+                                    },
+                                    {
+                                      "$if": { "$gte": [{ "$field": "steps" }, 1] },
+                                      "then": {
+                                        "$add": [{ "$floor": { "$field": "steps" } }, 1]
+                                      },
+                                      "else": 1000000000
+                                    }
+                                  ]
+                                }
                               },
                               {
-                                "$and": [
-                                  { "$eq": ["type", "range"] },
-                                  { "$eq": ["valueEnd", "1"] }
-                                ]
-                              }
-                            ]
-                          }
-                        },
-                        "children": [
-                          {
-                            "type": "frame",
-                            "name": "base",
-                            "layout": { "type": "none" },
-                            "anchors": {
-                              "left": 0,
-                              "right": 8,
-                              "top": 0,
-                              "bottom": 0
-                            },
-                            "children": [
-                              {
-                                "type": "frame",
-                                "name": "régua",
-                                "anchors": { "centerY": true, "right": 0 },
-                                "width": {
-                                  "$if": { "$eq": ["type", "range"] },
-                                  "then": {
-                                    "$switch": "valueEnd",
-                                    "cases": {
-                                      "0": "100%",
-                                      "0.1": "111.111111%",
-                                      "0.2": "125%",
-                                      "0.3": "142.857143%",
-                                      "0.4": "166.666667%",
-                                      "0.5": "200%",
-                                      "0.6": "250%",
-                                      "0.7": "333.333333%",
-                                      "0.8": "500%",
-                                      "0.9": "1000%",
-                                      "1": "100%"
-                                    }
-                                  },
-                                  "else": {
-                                    "$switch": "value",
-                                    "cases": {
-                                      "0": "100%",
-                                      "0.1": "111.111111%",
-                                      "0.2": "125%",
-                                      "0.3": "142.857143%",
-                                      "0.4": "166.666667%",
-                                      "0.5": "200%",
-                                      "0.6": "250%",
-                                      "0.7": "333.333333%",
-                                      "0.8": "500%",
-                                      "0.9": "1000%",
-                                      "1": "100%"
-                                    }
-                                  }
+                                "$if": { "$gte": [{ "$field": "steps" }, 1] },
+                                "then": {
+                                  "$add": [{ "$floor": { "$field": "steps" } }, 1]
                                 },
-                                "height": 4,
-                                "layout": { "type": "none" },
-                                "children": [
-                                  {
-                                    "type": "frame",
-                                    "name": "marcas sobre o trecho inativo",
-                                    "anchors": {
-                                      "centerY": true,
-                                      "left": -2,
-                                      "right": -2
-                                    },
-                                    "height": 4,
-                                    "layout": {
-                                      "type": "row",
-                                      "padding": {
-                                        "$if": {
-                                          "$and": [
-                                            {
-                                              "$and": [
-                                                { "$has": "steps" },
-                                                {
-                                                  "$not": {
-                                                    "$eq": ["steps", "0"]
-                                                  }
-                                                }
-                                              ]
-                                            },
-                                            {
-                                              "$not": {
-                                                "$and": [
-                                                  {
-                                                    "$not": {
-                                                      "$eq": ["type", "range"]
-                                                    }
-                                                  },
-                                                  {
-                                                    "$or": [
-                                                      {
-                                                        "$eq": ["value", "0"]
-                                                      },
-                                                      {
-                                                        "$eq": ["value", "1"]
-                                                      }
-                                                    ]
-                                                  }
-                                                ]
-                                              }
-                                            }
-                                          ]
-                                        },
-                                        "then": 0,
-                                        "else": [0, 8]
-                                      },
-                                      "justify": "space-between"
-                                    },
-                                    "children": [
-                                      {
-                                        "type": "ellipse",
-                                        "name": "marca",
-                                        "width": 4,
-                                        "height": 4,
-                                        "fill": "none",
-                                        "opacity": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": {
-                                            "$token": "state-disabled-content"
-                                          },
-                                          "else": 1
-                                        }
-                                      },
-                                      {
-                                        "type": "ellipse",
-                                        "name": "marca",
-                                        "width": 4,
-                                        "height": 4,
-                                        "fill": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": { "$token": "on-surface" },
-                                          "else": { "$token": "primary" }
-                                        },
-                                        "opacity": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": {
-                                            "$token": "state-disabled-content"
-                                          },
-                                          "else": 1
-                                        }
-                                      },
-                                      {
-                                        "type": "ellipse",
-                                        "name": "marca",
-                                        "width": 4,
-                                        "height": 4,
-                                        "fill": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": { "$token": "on-surface" },
-                                          "else": { "$token": "primary" }
-                                        },
-                                        "opacity": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": {
-                                            "$token": "state-disabled-content"
-                                          },
-                                          "else": 1
-                                        },
-                                        "visible": {
-                                          "$not": {
-                                            "$or": [
-                                              {
-                                                "$not": { "$has": "steps" }
-                                              },
-                                              { "$eq": ["steps", "0"] }
-                                            ]
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "ellipse",
-                                        "name": "marca",
-                                        "width": 4,
-                                        "height": 4,
-                                        "fill": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": { "$token": "on-surface" },
-                                          "else": { "$token": "primary" }
-                                        },
-                                        "opacity": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": {
-                                            "$token": "state-disabled-content"
-                                          },
-                                          "else": 1
-                                        },
-                                        "visible": {
-                                          "$not": {
-                                            "$or": [
-                                              {
-                                                "$not": { "$has": "steps" }
-                                              },
-                                              { "$eq": ["steps", "0"] },
-                                              { "$eq": ["steps", "1"] }
-                                            ]
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "ellipse",
-                                        "name": "marca",
-                                        "width": 4,
-                                        "height": 4,
-                                        "fill": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": { "$token": "on-surface" },
-                                          "else": { "$token": "primary" }
-                                        },
-                                        "opacity": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": {
-                                            "$token": "state-disabled-content"
-                                          },
-                                          "else": 1
-                                        },
-                                        "visible": {
-                                          "$not": {
-                                            "$or": [
-                                              {
-                                                "$not": { "$has": "steps" }
-                                              },
-                                              { "$eq": ["steps", "0"] },
-                                              { "$eq": ["steps", "1"] },
-                                              { "$eq": ["steps", "2"] }
-                                            ]
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "ellipse",
-                                        "name": "marca",
-                                        "width": 4,
-                                        "height": 4,
-                                        "fill": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": { "$token": "on-surface" },
-                                          "else": { "$token": "primary" }
-                                        },
-                                        "opacity": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": {
-                                            "$token": "state-disabled-content"
-                                          },
-                                          "else": 1
-                                        },
-                                        "visible": {
-                                          "$not": {
-                                            "$or": [
-                                              {
-                                                "$not": { "$has": "steps" }
-                                              },
-                                              { "$eq": ["steps", "0"] },
-                                              { "$eq": ["steps", "1"] },
-                                              { "$eq": ["steps", "2"] },
-                                              { "$eq": ["steps", "3"] }
-                                            ]
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "ellipse",
-                                        "name": "marca",
-                                        "width": 4,
-                                        "height": 4,
-                                        "fill": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": { "$token": "on-surface" },
-                                          "else": { "$token": "primary" }
-                                        },
-                                        "opacity": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": {
-                                            "$token": "state-disabled-content"
-                                          },
-                                          "else": 1
-                                        },
-                                        "visible": {
-                                          "$not": {
-                                            "$or": [
-                                              {
-                                                "$not": { "$has": "steps" }
-                                              },
-                                              { "$eq": ["steps", "0"] },
-                                              { "$eq": ["steps", "1"] },
-                                              { "$eq": ["steps", "2"] },
-                                              { "$eq": ["steps", "3"] },
-                                              { "$eq": ["steps", "4"] }
-                                            ]
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "ellipse",
-                                        "name": "marca",
-                                        "width": 4,
-                                        "height": 4,
-                                        "fill": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": { "$token": "on-surface" },
-                                          "else": { "$token": "primary" }
-                                        },
-                                        "opacity": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": {
-                                            "$token": "state-disabled-content"
-                                          },
-                                          "else": 1
-                                        },
-                                        "visible": {
-                                          "$not": {
-                                            "$or": [
-                                              {
-                                                "$not": { "$has": "steps" }
-                                              },
-                                              { "$eq": ["steps", "0"] },
-                                              { "$eq": ["steps", "1"] },
-                                              { "$eq": ["steps", "2"] },
-                                              { "$eq": ["steps", "3"] },
-                                              { "$eq": ["steps", "4"] },
-                                              { "$eq": ["steps", "5"] }
-                                            ]
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "ellipse",
-                                        "name": "marca",
-                                        "width": 4,
-                                        "height": 4,
-                                        "fill": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": { "$token": "on-surface" },
-                                          "else": { "$token": "primary" }
-                                        },
-                                        "opacity": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": {
-                                            "$token": "state-disabled-content"
-                                          },
-                                          "else": 1
-                                        },
-                                        "visible": {
-                                          "$not": {
-                                            "$or": [
-                                              {
-                                                "$not": { "$has": "steps" }
-                                              },
-                                              { "$eq": ["steps", "0"] },
-                                              { "$eq": ["steps", "1"] },
-                                              { "$eq": ["steps", "2"] },
-                                              { "$eq": ["steps", "3"] },
-                                              { "$eq": ["steps", "4"] },
-                                              { "$eq": ["steps", "5"] },
-                                              { "$eq": ["steps", "6"] }
-                                            ]
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "ellipse",
-                                        "name": "marca",
-                                        "width": 4,
-                                        "height": 4,
-                                        "fill": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": { "$token": "on-surface" },
-                                          "else": { "$token": "primary" }
-                                        },
-                                        "opacity": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": {
-                                            "$token": "state-disabled-content"
-                                          },
-                                          "else": 1
-                                        },
-                                        "visible": {
-                                          "$not": {
-                                            "$or": [
-                                              {
-                                                "$not": { "$has": "steps" }
-                                              },
-                                              { "$eq": ["steps", "0"] },
-                                              { "$eq": ["steps", "1"] },
-                                              { "$eq": ["steps", "2"] },
-                                              { "$eq": ["steps", "3"] },
-                                              { "$eq": ["steps", "4"] },
-                                              { "$eq": ["steps", "5"] },
-                                              { "$eq": ["steps", "6"] },
-                                              { "$eq": ["steps", "7"] }
-                                            ]
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "ellipse",
-                                        "name": "marca",
-                                        "width": 4,
-                                        "height": 4,
-                                        "fill": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": { "$token": "on-surface" },
-                                          "else": { "$token": "primary" }
-                                        },
-                                        "opacity": {
-                                          "$if": { "$eq": ["enabled", "false"] },
-                                          "then": {
-                                            "$token": "state-disabled-content"
-                                          },
-                                          "else": 1
-                                        },
-                                        "visible": {
-                                          "$not": {
-                                            "$or": [
-                                              {
-                                                "$not": { "$has": "steps" }
-                                              },
-                                              { "$eq": ["steps", "0"] },
-                                              { "$eq": ["steps", "1"] },
-                                              { "$eq": ["steps", "2"] },
-                                              { "$eq": ["steps", "3"] },
-                                              { "$eq": ["steps", "4"] },
-                                              { "$eq": ["steps", "5"] },
-                                              { "$eq": ["steps", "6"] },
-                                              { "$eq": ["steps", "7"] },
-                                              { "$eq": ["steps", "8"] }
-                                            ]
-                                          }
-                                        }
-                                      }
-                                    ]
-                                  }
-                                ]
+                                "else": 1000000000
                               }
                             ]
-                          }
+                          },
+                          { "$sub": [{ "$sub": [{ "$size": "width" }, 4] }, 16] }
                         ]
-                      },
-                      {
-                        "type": "rect",
-                        "name": "alça",
-                        "width": 4,
-                        "height": 44,
-                        "anchors": { "centerY": true, "left": -2 },
-                        "cornerRadius": { "$token": "corner-full" },
-                        "fill": {
-                          "$if": { "$eq": ["enabled", "false"] },
-                          "then": { "$token": "on-surface" },
-                          "else": { "$token": "primary" }
-                        },
-                        "opacity": {
-                          "$if": { "$eq": ["enabled", "false"] },
-                          "then": { "$token": "state-disabled-content" },
-                          "else": 1
-                        },
-                        "visible": {
-                          "$not": {
-                            "$and": [
-                              { "$not": { "$eq": ["enabled", "false"] } },
-                              {
-                                "$or": [
-                                  { "$eq": ["interaction", "focused"] },
-                                  { "$eq": ["interaction", "pressed"] }
-                                ]
-                              }
-                            ]
-                          }
-                        }
-                      },
-                      {
-                        "type": "rect",
-                        "name": "alça",
-                        "width": 2,
-                        "height": 44,
-                        "anchors": { "centerY": true, "left": -1 },
-                        "cornerRadius": { "$token": "corner-full" },
-                        "fill": {
-                          "$if": { "$eq": ["enabled", "false"] },
-                          "then": { "$token": "on-surface" },
-                          "else": { "$token": "primary" }
-                        },
-                        "opacity": {
-                          "$if": { "$eq": ["enabled", "false"] },
-                          "then": { "$token": "state-disabled-content" },
-                          "else": 1
-                        },
-                        "visible": {
-                          "$and": [
-                            { "$not": { "$eq": ["enabled", "false"] } },
-                            {
-                              "$or": [
-                                { "$eq": ["interaction", "focused"] },
-                                { "$eq": ["interaction", "pressed"] }
-                              ]
-                            }
-                          ]
-                        }
-                      }
-                    ]
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "recuo",
-                "width": {
-                  "$if": {
-                    "$and": [
-                      {
-                        "$and": [
-                          { "$has": "steps" },
-                          { "$not": { "$eq": ["steps", "0"] } }
-                        ]
-                      },
-                      {
-                        "$not": {
-                          "$and": [
-                            { "$not": { "$eq": ["type", "range"] } },
-                            {
-                              "$or": [
-                                { "$eq": ["value", "0"] },
-                                { "$eq": ["value", "1"] }
-                              ]
-                            }
-                          ]
-                        }
                       }
                     ]
                   },
-                  "then": 8,
-                  "else": 0
+                  "else": {
+                    "$mul": [
+                      {
+                        "$div": [
+                          {
+                            "$round": {
+                              "$mul": [
+                                {
+                                  "$clamp": [
+                                    {
+                                      "$if": { "$eq": ["type", "range"] },
+                                      "then": { "$field": "valueEnd", "default": 0.8 },
+                                      "else": { "$field": "value", "default": 0.5 }
+                                    },
+                                    0,
+                                    1
+                                  ]
+                                },
+                                {
+                                  "$if": { "$gte": [{ "$field": "steps" }, 1] },
+                                  "then": {
+                                    "$add": [{ "$floor": { "$field": "steps" } }, 1]
+                                  },
+                                  "else": 1000000000
+                                }
+                              ]
+                            }
+                          },
+                          {
+                            "$if": { "$gte": [{ "$field": "steps" }, 1] },
+                            "then": { "$add": [{ "$floor": { "$field": "steps" } }, 1] },
+                            "else": 1000000000
+                          }
+                        ]
+                      },
+                      { "$sub": [{ "$size": "width" }, 4] }
+                    ]
+                  }
+                }
+              ]
+            },
+            "height": "fill",
+            "layout": { "type": "none" },
+            "children": [
+              {
+                "type": "rect",
+                "name": "trilho inativo",
+                "height": 16,
+                "anchors": { "centerY": true, "left": 8, "right": 0 },
+                "cornerRadius": [
+                  { "$token": "corner-track-inside" },
+                  { "$token": "corner-track-outer" },
+                  { "$token": "corner-track-outer" },
+                  { "$token": "corner-track-inside" }
+                ],
+                "fill": {
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "on-surface" },
+                  "else": { "$token": "secondary-container" }
                 },
-                "height": "fill",
-                "layout": { "type": "none" }
+                "opacity": {
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "state-disabled-container" },
+                  "else": 1
+                }
+              },
+              {
+                "type": "rect",
+                "name": "alça",
+                "height": 44,
+                "width": {
+                  "$if": {
+                    "$and": [
+                      { "$not": { "$eq": ["enabled", "false"] } },
+                      {
+                        "$or": [
+                          { "$eq": ["interaction", "focused"] },
+                          { "$eq": ["interaction", "pressed"] }
+                        ]
+                      }
+                    ]
+                  },
+                  "then": 2,
+                  "else": 4
+                },
+                "anchors": {
+                  "centerY": true,
+                  "left": {
+                    "$if": {
+                      "$and": [
+                        { "$not": { "$eq": ["enabled", "false"] } },
+                        {
+                          "$or": [
+                            { "$eq": ["interaction", "focused"] },
+                            { "$eq": ["interaction", "pressed"] }
+                          ]
+                        }
+                      ]
+                    },
+                    "then": -1,
+                    "else": -2
+                  }
+                },
+                "cornerRadius": { "$token": "corner-full" },
+                "fill": {
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "on-surface" },
+                  "else": { "$token": "primary" }
+                },
+                "opacity": {
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "state-disabled-content" },
+                  "else": 1
+                }
               }
             ]
           }
         ]
+      },
+      {
+        "type": "repeat",
+        "name": "marcas",
+        "count": {
+          "$add": [{ "$max": [{ "$floor": { "$field": "steps", "default": 0 } }, 0] }, 2]
+        },
+        "direction": "row",
+        "gap": {
+          "$sub": [
+            {
+              "$div": [
+                { "$sub": [{ "$size": "width" }, 20] },
+                {
+                  "$if": { "$gte": [{ "$field": "steps" }, 1] },
+                  "then": { "$add": [{ "$floor": { "$field": "steps" } }, 1] },
+                  "else": 1
+                }
+              ]
+            },
+            4
+          ]
+        },
+        "template": {
+          "type": "frame",
+          "name": "posição",
+          "width": 4,
+          "height": 4,
+          "layout": { "type": "none" },
+          "children": [
+            {
+              "type": "ellipse",
+              "name": "marca",
+              "width": 4,
+              "height": 4,
+              "fill": {
+                "$if": { "$eq": ["enabled", "false"] },
+                "then": { "$token": "on-surface" },
+                "else": { "$token": "secondary-container" }
+              },
+              "opacity": {
+                "$if": { "$eq": ["enabled", "false"] },
+                "then": { "$token": "state-disabled-container" },
+                "else": 1
+              },
+              "visible": {
+                "$and": [
+                  { "$gte": [{ "$field": "steps" }, 1] },
+                  {
+                    "$gt": [
+                      { "$field": "$index" },
+                      {
+                        "$if": { "$eq": ["type", "range"] },
+                        "then": {
+                          "$if": { "$gte": [{ "$field": "steps" }, 1] },
+                          "then": {
+                            "$round": {
+                              "$mul": [
+                                {
+                                  "$clamp": [
+                                    { "$field": "valueStart", "default": 0.2 },
+                                    0,
+                                    1
+                                  ]
+                                },
+                                { "$add": [{ "$floor": { "$field": "steps" } }, 1] }
+                              ]
+                            }
+                          },
+                          "else": {
+                            "$clamp": [{ "$field": "valueStart", "default": 0.2 }, 0, 1]
+                          }
+                        },
+                        "else": -1
+                      }
+                    ]
+                  },
+                  {
+                    "$lt": [
+                      { "$field": "$index" },
+                      {
+                        "$if": { "$gte": [{ "$field": "steps" }, 1] },
+                        "then": {
+                          "$round": {
+                            "$mul": [
+                              {
+                                "$clamp": [
+                                  {
+                                    "$if": { "$eq": ["type", "range"] },
+                                    "then": { "$field": "valueEnd", "default": 0.8 },
+                                    "else": { "$field": "value", "default": 0.5 }
+                                  },
+                                  0,
+                                  1
+                                ]
+                              },
+                              { "$add": [{ "$floor": { "$field": "steps" } }, 1] }
+                            ]
+                          }
+                        },
+                        "else": {
+                          "$clamp": [
+                            {
+                              "$if": { "$eq": ["type", "range"] },
+                              "then": { "$field": "valueEnd", "default": 0.8 },
+                              "else": { "$field": "value", "default": 0.5 }
+                            },
+                            0,
+                            1
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "type": "ellipse",
+              "name": "marca",
+              "width": 4,
+              "height": 4,
+              "fill": {
+                "$if": { "$eq": ["enabled", "false"] },
+                "then": { "$token": "on-surface" },
+                "else": { "$token": "primary" }
+              },
+              "opacity": {
+                "$if": { "$eq": ["enabled", "false"] },
+                "then": { "$token": "state-disabled-content" },
+                "else": 1
+              },
+              "visible": {
+                "$and": [
+                  {
+                    "$or": [
+                      {
+                        "$lt": [
+                          { "$field": "$index" },
+                          {
+                            "$if": { "$eq": ["type", "range"] },
+                            "then": {
+                              "$if": { "$gte": [{ "$field": "steps" }, 1] },
+                              "then": {
+                                "$round": {
+                                  "$mul": [
+                                    {
+                                      "$clamp": [
+                                        { "$field": "valueStart", "default": 0.2 },
+                                        0,
+                                        1
+                                      ]
+                                    },
+                                    { "$add": [{ "$floor": { "$field": "steps" } }, 1] }
+                                  ]
+                                }
+                              },
+                              "else": {
+                                "$clamp": [
+                                  { "$field": "valueStart", "default": 0.2 },
+                                  0,
+                                  1
+                                ]
+                              }
+                            },
+                            "else": -1
+                          }
+                        ]
+                      },
+                      {
+                        "$gt": [
+                          { "$field": "$index" },
+                          {
+                            "$if": { "$gte": [{ "$field": "steps" }, 1] },
+                            "then": {
+                              "$round": {
+                                "$mul": [
+                                  {
+                                    "$clamp": [
+                                      {
+                                        "$if": { "$eq": ["type", "range"] },
+                                        "then": { "$field": "valueEnd", "default": 0.8 },
+                                        "else": { "$field": "value", "default": 0.5 }
+                                      },
+                                      0,
+                                      1
+                                    ]
+                                  },
+                                  { "$add": [{ "$floor": { "$field": "steps" } }, 1] }
+                                ]
+                              }
+                            },
+                            "else": {
+                              "$clamp": [
+                                {
+                                  "$if": { "$eq": ["type", "range"] },
+                                  "then": { "$field": "valueEnd", "default": 0.8 },
+                                  "else": { "$field": "value", "default": 0.5 }
+                                },
+                                0,
+                                1
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "$or": [
+                      { "$gte": [{ "$field": "steps" }, 1] },
+                      { "$eq": ["type", "range"] },
+                      { "$gte": [{ "$field": "$index" }, 1] }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "anchors": { "left": 8, "centerY": true },
+        "height": 4
       }
     ]
   }

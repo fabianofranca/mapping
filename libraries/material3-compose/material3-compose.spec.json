@@ -7823,7 +7823,7 @@
               "key": "steps",
               "label": "Passos",
               "type": "number",
-              "description": "Número de pontos intermediários entre as pontas (Slider.steps). Vazio ou 0 = contínuo. O desenho mostra as marcas de 1 a 9; de 10 em diante desenha como 9."
+              "description": "Número de pontos intermediários entre as pontas (Slider.steps). Vazio, 0 ou menor que 1 = contínuo. Com steps, o valor vai ao passo mais próximo e o desenho mostra exatamente steps marcas, mais as duas pontas."
             },
             {
               "key": "enabled",
@@ -7889,6 +7889,14 @@
               "values": {
                 "type": "single",
                 "value": 0.4,
+                "steps": 4
+              }
+            },
+            {
+              "name": "Encaixe no passo",
+              "values": {
+                "type": "single",
+                "value": 0.37,
                 "steps": 4
               }
             },
