@@ -1,4 +1,4 @@
-# CI verde lido certo e coordenador com despertador — [Não lançado] (épico `epic/ci-verde-e-espera`, PR #1484, MCP 0.30.0 sem mudança, schema v18)
+# CI verde lido certo e coordenador com despertador — 2026-11-10 (épico `epic/ci-verde-e-espera`, PR #1484, MCP 0.30.0 sem mudança, schema v18)
 
 ## Alterado
 

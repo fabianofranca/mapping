@@ -1,4 +1,4 @@
-# CI verde lido certo e coordenador com despertador — [Não lançado] (épico `epic/ci-verde-e-espera`)
+# CI verde lido certo e coordenador com despertador — 2026-11-10 (épico `epic/ci-verde-e-espera`)
 
 ## Pendências
 
