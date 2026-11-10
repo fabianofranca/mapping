@@ -130,9 +130,12 @@ async function measureRef(page: Page) {
     const text = document.querySelector<HTMLElement>('.ref-field .ref-control-text')!;
     const field = text.closest<HTMLElement>('.ref-field')!;
     const box = (el: Element) => Math.round(el.getBoundingClientRect().width);
+    // O texto desenhado (Range) contra a caixa, em fração de pixel: 0,3 px a menos já põe reticências.
+    const range = document.createRange();
+    range.selectNodeContents(text);
     return {
-      shown: text.clientWidth,
-      full: text.scrollWidth,
+      shown: text.getBoundingClientRect().width,
+      full: range.getBoundingClientRect().width,
       control: box(text.closest('.ref-control')!),
       field: box(field),
     };
@@ -173,6 +176,219 @@ test('o nome do alvo do campo ref cabe a 900 e a 1280 px', async ({ page }, info
   for (const width of [900, 1280]) {
     await page.setViewportSize({ width, height: 720 });
     const m = await measureRef(page);
-    expect(m.shown, `largura ${width}`).toBeGreaterThanOrEqual(m.full - 1);
+    expect(m.shown, `largura ${width}`).toBeGreaterThanOrEqual(m.full - 0.05);
+    // Os ícones de Ir para e Limpar mantêm o tamanho do botão (a âncora do Tooltip não estica).
+    const row = await page.evaluate(() => {
+      const field = document.querySelector('.ref-field:not(.ref-cell)');
+      return [...(field?.children ?? [])].map((c) => {
+        const box = c.getBoundingClientRect();
+        return { top: Math.round(box.top), width: Math.round(box.width) };
+      });
+    });
+    for (const icon of row.slice(1))
+      expect(icon.width, `ícone a ${width}`).toBeLessThanOrEqual(40);
   }
 });
+
+// AF2 (#784, decisão 4): a 900×720 com Árvore, Camadas e Detalhes abertos (Detalhes ~279 px), o
+// rótulo do alvo tem prioridade sobre o nome da camada: ele aparece inteiro e o texto completo
+// (alvo e camada) está no tooltip.
+test('com 3 janelas abertas o rotulo do alvo fica inteiro e o tooltip traz tudo', async ({
+  page,
+}, info) => {
+  const file = info.outputPath('fora.json');
+  writeFileSync(file, JSON.stringify(spec));
+  await createProject(page, 'Fora da imagem');
+  await addImage(page);
+  await drawMarking(page, await canvasPoint(page, 1 / 4));
+  await applySpecialization(page, file);
+  await page.keyboard.press('Control+Shift+1');
+  await page.keyboard.press('Control+Shift+2');
+  await page.keyboard.press('Control+Shift+3');
+  await page
+    .getByRole('button', { name: /Adicionar anotação na camada Componentes/ })
+    .first()
+    .click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: /Item de lista/ })
+    .click();
+  const title = page.getByRole('textbox', { name: 'titulo' });
+  await title.fill('Plugin B');
+  await title.press('Enter');
+  await drawMarking(page, await canvasPoint(page, 2 / 3));
+  await page
+    .getByRole('button', { name: /Adicionar anotação na camada Eventos/ })
+    .first()
+    .click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: /Evento/ })
+    .click();
+  await page.getByRole('button', { name: /^Escolher: principal/i }).click();
+  await page.getByRole('dialog').getByRole('option').first().click();
+
+  const m = await measureRef(page);
+  expect(m.shown, 'rótulo cortado').toBeGreaterThanOrEqual(m.full - 0.05);
+
+  // O que ficar cortado (aqui, o nome da camada) mostra o texto inteiro no tooltip.
+  const control = page.locator('.ref-field .ref-control');
+  await control.hover();
+  const tip = page.locator('[data-tooltip]', { hasText: 'Plugin B' }).first();
+  await expect(tip).toBeVisible();
+  await expect(tip).toContainText('Componentes');
+});
+
+// CL1 (#784, achados 1 e 2 do relato da #827): o controle de `ref` em célula de tabela não deixa o
+// ✕ de Limpar sobre o rótulo nem quebra a "(referência quebrada)" em várias linhas; e o rótulo do
+// campo `qualquer` não é cortado nem por meio pixel. Mede o texto desenhado (Range), não o scrollWidth.
+const tableSpec = {
+  ...spec,
+  layers: [
+    spec.layers[0],
+    {
+      ...spec.layers[1],
+      annotationTypes: [
+        {
+          id: 'evento',
+          name: 'Evento',
+          fields: [
+            {
+              key: 'plugins',
+              type: 'table',
+              columns: [
+                { key: 'nota', type: 'string' },
+                {
+                  key: 'item',
+                  type: 'ref',
+                  accepts: { annotations: ['item'] },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+// CL2 (#784, achado 1-R): a tabela não rola na horizontal e o ✕ de Limpar e a célula ficam dentro
+// da área visível da tabela (`.data-grid`).
+async function measureGrid(page: Page) {
+  return page.evaluate(() => {
+    const grid = document.querySelector<HTMLElement>('.data-grid')!;
+    const g = grid.getBoundingClientRect();
+    const out = { scroll: grid.scrollWidth - grid.clientWidth, outside: 0 };
+    for (const cell of grid.querySelectorAll<HTMLElement>('.ref-cell')) {
+      for (const el of [cell, ...cell.querySelectorAll<HTMLElement>('button')]) {
+        const r = el.getBoundingClientRect();
+        out.outside = Math.max(out.outside, g.left - r.left, r.right - g.right);
+      }
+    }
+    return out;
+  });
+}
+
+async function measureRefCells(page: Page) {
+  return page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>('.ref-cell')].map((cell) => {
+      const control = cell.querySelector<HTMLElement>('.ref-control')!;
+      const text = control.querySelector<HTMLElement>('.ref-control-text')!;
+      const clear = cell.querySelector<HTMLElement>('button:not(.ref-control)')!;
+      const range = document.createRange();
+      range.selectNodeContents(text);
+      const c = control.getBoundingClientRect();
+      const x = clear.getBoundingClientRect();
+      return {
+        text: text.textContent,
+        // Só conta se o ✕ está na mesma faixa vertical do controle (ele pode descer para a linha de baixo).
+        overlap:
+          x.top < c.bottom - 1 && x.bottom > c.top + 1
+            ? Math.max(0, c.right - x.left)
+            : 0,
+        cut: Math.max(
+          0,
+          range.getBoundingClientRect().width - text.getBoundingClientRect().width,
+        ),
+        lines: Math.round(range.getBoundingClientRect().height / 14),
+      };
+    }),
+  );
+}
+
+for (const width of [1280, 900]) {
+  test(`celulas ref da tabela: X de limpar fora do rotulo e referencia quebrada legivel a ${width} px`, async ({
+    page,
+  }, info) => {
+    const file = info.outputPath('fora.json');
+    writeFileSync(file, JSON.stringify(tableSpec));
+    await page.setViewportSize({ width, height: 720 });
+    await createProject(page, 'Fora da imagem');
+    await addImage(page);
+    await page.keyboard.press('Control+Shift+1');
+    await page.keyboard.press('Control+Shift+2');
+    await page.keyboard.press('Control+Shift+3');
+    await expect(page.getByRole('region', { name: 'Detalhes' })).toBeVisible();
+    await page.waitForTimeout(300); // o canvas reajusta o tamanho depois que as janelas abrem
+    await drawMarking(page, await canvasPoint(page, 1 / 4));
+    await applySpecialization(page, file);
+    await page
+      .getByRole('button', { name: /Adicionar anotação na camada Componentes/ })
+      .first()
+      .click();
+    await page
+      .getByRole('dialog')
+      .getByRole('button', { name: /Item de lista/ })
+      .click();
+    const title = page.getByRole('textbox', { name: 'titulo' });
+    await title.fill('Plugin A');
+    await title.press('Enter');
+    await drawMarking(page, await canvasPoint(page, 2 / 3));
+    await page
+      .getByRole('button', { name: /Adicionar anotação na camada Eventos/ })
+      .first()
+      .click();
+    await page
+      .getByRole('dialog')
+      .getByRole('button', { name: /Evento/ })
+      .click();
+    await page.getByRole('button', { name: '+ Linha' }).click();
+    await page.getByRole('button', { name: /^Escolher: item/i }).click();
+    await page.getByRole('dialog').getByRole('option').first().click();
+
+    const ok = (await measureRefCells(page))[0]!;
+    expect(ok.overlap, 'âncora e ✕ sobrepostos').toBe(0);
+    expect(ok.cut, 'rótulo cortado').toBeLessThanOrEqual(0.5);
+    for (const theme of ['light', 'dark'] as const) {
+      await page.evaluate(
+        (th) => document.documentElement.setAttribute('data-theme', th),
+        theme,
+      );
+      const g = await measureGrid(page);
+      expect(g.scroll, `rolagem horizontal (${theme})`).toBeLessThanOrEqual(0);
+      expect(g.outside, `fora da tabela (${theme})`).toBeLessThanOrEqual(0.5);
+    }
+
+    // Exclui o alvo (Plugin A) e volta ao evento: a célula fica quebrada.
+    const tree = page.getByRole('list', { name: 'Árvore de marcações' });
+    await tree.getByRole('button', { name: 'Marcação sem nome' }).first().click();
+    await page.getByRole('button', { name: 'Excluir marcação' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Excluir' }).click();
+    await tree.getByRole('button', { name: 'Marcação sem nome' }).first().click();
+    await expect(page.locator('.ref-cell .ref-control.is-broken')).toBeVisible();
+    const broken = (await measureRefCells(page))[0]!;
+    expect(broken.text).toContain('quebrada');
+    expect(broken.lines, 'quebra em poucas linhas').toBeLessThanOrEqual(8);
+    expect(broken.overlap, 'âncora e ✕ sobrepostos').toBe(0);
+    expect(broken.cut, 'rótulo cortado').toBeLessThanOrEqual(0.5);
+    for (const theme of ['light', 'dark'] as const) {
+      await page.evaluate(
+        (th) => document.documentElement.setAttribute('data-theme', th),
+        theme,
+      );
+      const g = await measureGrid(page);
+      expect(g.scroll, `rolagem horizontal (${theme})`).toBeLessThanOrEqual(0);
+      expect(g.outside, `fora da tabela (${theme})`).toBeLessThanOrEqual(0.5);
+    }
+  });
+}

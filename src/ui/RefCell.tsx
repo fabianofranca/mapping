@@ -13,7 +13,7 @@ import {
 } from '../model';
 import type { ActionResult } from '../store/history';
 import type { AnnotationLocation } from '../store/ui';
-import { IconButton } from './controls';
+import { IconButton, Tooltip } from './controls';
 import { classes } from './controls/classes';
 import { Icon } from './icons';
 import { RefPicker } from './RefPicker';
@@ -83,7 +83,7 @@ export function RefCell({
     title ?? '',
   ]
     .filter((s) => s !== '')
-    .join('\n');
+    .join(' · ');
 
   const open = () => {
     if (!readOnly) setPicking(true);
@@ -98,38 +98,39 @@ export function RefCell({
         open();
       }}
     >
-      {/* Exceção ao Button: campo de referência (cara de select) (docs/DESIGN-SYSTEM.md, "Botões avulsos") */}
-      <button
-        ref={button}
-        type="button"
-        class={classes(
-          'ref-control',
-          !hasValue && 'is-empty',
-          broken && 'is-broken',
-          invalid && !broken && 'input-invalid',
-        )}
-        aria-haspopup="dialog"
-        aria-expanded={picking}
-        aria-invalid={invalid || undefined}
-        aria-label={refButtonName(
-          label,
-          !hasValue
-            ? { kind: 'empty' }
-            : broken || !target
-              ? { kind: 'broken' }
-              : { kind: 'value', value: text },
-        )}
-        aria-keyshortcuts={ariaKeys(SHORTCUT_LABELS.pickRef)}
-        title={`${tip}\n${t('ref.choose')}  ${SHORTCUT_LABELS.pickRef}`}
-        disabled={readOnly}
-        onClick={(e) => {
-          if ((e.ctrlKey || e.metaKey) && target) onGoToAnnotation(target.annotation);
-          else open();
-        }}
-      >
-        <Icon name={!hasValue ? 'search' : broken ? 'warning' : 'arrowRight'} />
-        <span class="ref-control-text">{text}</span>
-      </button>
+      <Tooltip label={`${tip} · ${t('ref.choose')}  ${SHORTCUT_LABELS.pickRef}`}>
+        {/* Exceção ao Button: campo de referência (cara de select) (docs/DESIGN-SYSTEM.md, "Botões avulsos") */}
+        <button
+          ref={button}
+          type="button"
+          class={classes(
+            'ref-control',
+            !hasValue && 'is-empty',
+            broken && 'is-broken',
+            invalid && !broken && 'input-invalid',
+          )}
+          aria-haspopup="dialog"
+          aria-expanded={picking}
+          aria-invalid={invalid || undefined}
+          aria-label={refButtonName(
+            label,
+            !hasValue
+              ? { kind: 'empty' }
+              : broken || !target
+                ? { kind: 'broken' }
+                : { kind: 'value', value: text },
+          )}
+          aria-keyshortcuts={ariaKeys(SHORTCUT_LABELS.pickRef)}
+          disabled={readOnly}
+          onClick={(e) => {
+            if ((e.ctrlKey || e.metaKey) && target) onGoToAnnotation(target.annotation);
+            else open();
+          }}
+        >
+          <Icon name={!hasValue ? 'search' : broken ? 'warning' : 'arrowRight'} />
+          <span class="ref-control-text">{text}</span>
+        </button>
+      </Tooltip>
       <IconButton
         icon="close"
         label={`${t('ref.clear')} (${label})`}

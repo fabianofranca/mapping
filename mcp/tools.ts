@@ -398,7 +398,7 @@ export function registerTools(
     'get_marking',
     {
       description:
-        'Tudo sobre uma marcação (ou uma seta): caminho (numa marcação do canvas começa em "Canvas"), container (`null` no canvas), `space` (`container` ou `canvas`), `floating`, retângulo (pixels do container; no canvas, unidades do canvas), trava, filhas, `members` (as marcações e os containers que têm esta marcação como pai, pela geometria), `arrows` (as setas presas a ela), anotações por camada (próprias e herdadas, com a origem), árvore de vínculos, referências de saída resolvidas, backlinks e pendências. ' +
+        'Tudo sobre uma marcação (ou uma seta): caminho (numa marcação do canvas começa em "Canvas"), container (`null` no canvas), `space` (`container` ou `canvas`), `floating`, retângulo (pixels do container; no canvas, unidades do canvas), trava, filhas, `members` (as marcações e os containers que têm esta marcação como pai, pela geometria), `arrows` (as setas presas a ela), anotações por camada (próprias e herdadas, com a origem), árvore de vínculos, referências de saída resolvidas (`refs`, cada uma com `row` 0-based e `column` de uma célula, ou `null` de um campo; `field` é o texto 1-based para ler), backlinks (`backlinks`: uma entrada por anotação de origem, com `fields`) e pendências. ' +
         'Nas anotações tipadas, `code` traz o código de instanciação do tipo por plataforma: `symbol` (o que se chama para criar uma instância), `definition` (o arquivo que define o `symbol`, para ler a assinatura: `path`, `url` e `ref` do `repo` da especialização, `localFile` relativo ao diretório de trabalho do cliente e `exists` pelo clone local do projeto; `null` sem `path`), `params`, `values` e `notes`. O servidor só confere se o arquivo existe: nunca lê código.',
       inputSchema: {
         ref: refArg,
@@ -468,7 +468,7 @@ export function registerTools(
     'get_annotation',
     {
       description:
-        'Uma anotação (livre ou tipada): conteúdo, camada, marcação, dona e vinculadas, referências de saída resolvidas, backlinks e pendências. Uma vinculada traz o papel que ocupa na dona (`parentRole` e `roleName`); uma dona cujo tipo declara papéis traz `linkedByRole` (`label`, `roles` com os filhos de cada papel na ordem do tipo e `unassigned`: os sem papel ou com um papel que a dona não oferece, que são pendência `missing-role` / `unknown-role`). Para achar os filhos de uma dona leia `linkedByRole` (ou `linked`), não a lista crua `allowedChildren`.',
+        'Uma anotação (livre ou tipada): conteúdo, camada, marcação, dona e vinculadas, referências de saída resolvidas (`refs`, com `row` 0-based e `column`), backlinks (uma entrada por origem, com `fields`) e pendências. Uma vinculada traz o papel que ocupa na dona (`parentRole` e `roleName`); uma dona cujo tipo declara papéis traz `linkedByRole` (`label`, `roles` com os filhos de cada papel na ordem do tipo e `unassigned`: os sem papel ou com um papel que a dona não oferece, que são pendência `missing-role` / `unknown-role`). Para achar os filhos de uma dona leia `linkedByRole` (ou `linked`), não a lista crua `allowedChildren`.',
       inputSchema: { ref: refArg, project: optionalProjectArg },
       annotations: READ_ONLY,
     },

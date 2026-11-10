@@ -211,9 +211,26 @@ describe('lote: ref para a anotação inteira', () => {
   });
 });
 
+interface BacklinkField {
+  field: string;
+  row: number | null;
+  column: string | null;
+  to: string;
+}
 interface View {
-  refs?: { field: string; to: string; target: { kind: string } }[];
-  backlinks?: { from: string; fromLabel: string; field: string; to: string }[];
+  refs?: {
+    field: string;
+    row: number | null;
+    column: string | null;
+    to: string;
+    target: { kind: string };
+  }[];
+  backlinks?: {
+    from: string;
+    fromLabel: string;
+    fromMarking: string;
+    fields: BacklinkField[];
+  }[];
 }
 
 describe('leituras', () => {
@@ -236,6 +253,8 @@ describe('leituras', () => {
     expect(fromOrigin.refs).toEqual([
       expect.objectContaining({
         field: 'plugins[1].item',
+        row: 0,
+        column: 'item',
         to: 'Alvo L',
         target: expect.objectContaining({ kind: 'annotation' }),
       }),
@@ -249,10 +268,121 @@ describe('leituras', () => {
       expect.objectContaining({
         from: aRef(origin),
         fromLabel: 'Substituir plugins Origem L',
-        field: 'plugins[1].item',
-        to: 'Alvo L',
+        fields: [{ field: 'plugins[1].item', row: 0, column: 'item', to: 'Alvo L' }],
       }),
     ]);
+  });
+
+  it('refs: row/column de uma célula (0-based) e null de um campo; field segue 1-based', async () => {
+    const p = await apply([
+      item('$m1', '$p1', 'Alvo R1', 0),
+      item('$m2', '$p2', 'Alvo R2', 200),
+      {
+        op: 'create_marking',
+        rect: { ...rect, x: 400 },
+        annotation: {
+          type: 'sdui/replace-plugins',
+          values: {
+            titulo: 'Origem R',
+            unico: { annotation: '$p1' },
+            plugins: [{ item: { annotation: '$p1' } }, { item: { annotation: '$p2' } }],
+          },
+        },
+      },
+    ]);
+    const view = ok(
+      await mcp.call<View>('get_annotation', { ref: aRef(byTitle(p, 'Origem R')) }),
+    );
+    expect(view.refs!.map((r) => [r.field, r.row, r.column])).toEqual([
+      ['unico', null, null],
+      ['plugins[1].item', 0, 'item'],
+      ['plugins[2].item', 1, 'item'],
+    ]);
+  });
+
+  it('backlinks: uma entrada por origem, com os fields na ordem dos campos', async () => {
+    const p = await apply([
+      item('$m1', '$p1', 'Alvo G1', 0),
+      item('$m2', '$p2', 'Alvo G2', 200),
+      {
+        op: 'create_marking',
+        rect: { ...rect, x: 400 },
+        annotation: {
+          type: 'sdui/replace-plugins',
+          values: {
+            titulo: 'Origem G1',
+            unico: { annotation: '$p2' },
+            plugins: [{ item: { annotation: '$p1' } }, { item: { annotation: '$p2' } }],
+          },
+        },
+      },
+      {
+        op: 'create_marking',
+        rect: { ...rect, x: 600 },
+        annotation: {
+          type: 'sdui/replace-plugins',
+          values: { titulo: 'Origem G2', unico: { annotation: '$p2' } },
+        },
+      },
+    ]);
+    const target = byTitle(p, 'Alvo G2');
+    const view = ok(await mcp.call<View>('get_annotation', { ref: aRef(target) }));
+    expect(view.backlinks).toEqual([
+      expect.objectContaining({
+        from: aRef(byTitle(p, 'Origem G1')),
+        fields: [
+          { field: 'unico', row: null, column: null, to: 'Alvo G2' },
+          { field: 'plugins[2].item', row: 1, column: 'item', to: 'Alvo G2' },
+        ],
+      }),
+      expect.objectContaining({
+        from: aRef(byTitle(p, 'Origem G2')),
+        fields: [{ field: 'unico', row: null, column: null, to: 'Alvo G2' }],
+      }),
+    ]);
+  });
+});
+
+describe('lote: add_container com beside', () => {
+  const container = (as: string, name: string, height: number, extra = {}) => ({
+    op: 'add_container',
+    as,
+    name,
+    width: 390,
+    height,
+    background: '#FFFFFF',
+    ...extra,
+  });
+
+  it('beside "$tela" dá ao "depois" a escala da tela', async () => {
+    const p = await apply([
+      container('$tela', 'Tela BS', 844),
+      container('$depois', 'Depois BS', 300, { beside: '$tela' }),
+    ]);
+    const tela = p.containers.find((c) => c.name === 'Tela BS')!;
+    const depois = p.containers.find((c) => c.name === 'Depois BS')!;
+    expect(depois.placement.scale).toBe(tela.placement.scale);
+    expect(depois.placement.y).toBe(tela.placement.y);
+    expect(depois.placement.x).toBeGreaterThan(tela.placement.x);
+  });
+
+  it('sem beside as escalas seguem diferentes (regra padrão)', async () => {
+    const p = await apply([
+      container('$tela', 'Tela SB', 844),
+      container('$depois', 'Depois SB', 300),
+    ]);
+    const tela = p.containers.find((c) => c.name === 'Tela SB')!;
+    const depois = p.containers.find((c) => c.name === 'Depois SB')!;
+    expect(depois.placement.scale).not.toBe(tela.placement.scale);
+  });
+
+  it('beside com center é invalid-arguments', async () => {
+    const planned = await plan([
+      container('$tela', 'Tela BC', 844),
+      container('$depois', 'Depois BC', 300, { beside: '$tela', center: { x: 0, y: 0 } }),
+    ]);
+    expect(planned.valid).toBe(false);
+    expect(planned.errors![0]).toMatchObject({ index: 1, code: 'invalid-arguments' });
   });
 });
 
@@ -521,6 +651,11 @@ describe('o lote do AGENT-GUIDE', () => {
           x.type?.typeId === 'replace-plugins' && x.values?.titulo === 'Trocar plugins',
       )
       .at(-1)!;
+    const tela = p.containers.filter((c) => c.name === 'Pedido').at(-1)!;
+    const depois = p.containers
+      .filter((c) => c.name === 'Pedido (depois de Trocar plugins)')
+      .at(-1)!;
+    expect(depois.placement.scale).toBe(tela.placement.scale);
     expect(event.parentAnnotationId).toBe(button.id);
     expect(event.parentRole).toBe('click');
     expect(p.arrows.length).toBeGreaterThan(0);
