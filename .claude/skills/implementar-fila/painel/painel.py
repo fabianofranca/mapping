@@ -3,6 +3,9 @@
 
 Arquivos numa pasta: queue.json, meta.json, log.json (listas JSON).
 Cada comando imprime, no fim, `alterados: <arquivos gravados>`.
+A nota "Vagas k/N" (meta.vagas) é recalculada em toda gravação, a partir das fichas (`plan`),
+de `meta.paralelo` (`start --paralelo N`) e de `meta.merged` (`merged`); `context` guarda o contexto
+do coordenador (alerta acima de CONTEXT_LIMIT). `show` imprime `vagas:`, `começar agora:`, `contexto:`.
 Só biblioteca padrão. Uso: painel.py [--now ISO] <subcomando> DIR ...
 (o subcomando vem ANTES da pasta: `painel.py row <pasta> '#n' status=...`).
 """
@@ -16,6 +19,8 @@ STATUS = ["aguardando", "em andamento", "concluída", "falhou", "esperando dono"
 KINDS = ["etapa", "bug", "patch"]
 STAGES = ["", "Fases", "Testador", "Correção", "Fechamento", "Mesclada"]
 FILES = ["queue", "meta", "log"]
+CONTEXT_LIMIT = 60
+DEFAULT_PARALELO = 2
 INT_FIELDS = ["order", "phasesTotal", "phasesDone"]
 QUEUE_EMPTY = {
     "order": 0, "issue": "", "title": "", "kind": "etapa", "step": "",
@@ -29,6 +34,9 @@ QUEUE_EMPTY = {
     "wait": "",
     # Sessões criadas para a etapa (ids separados por espaço), para arquivar no fim.
     "sessions": "",
+    # Motivo do dono para segurar uma etapa que não começou ("esperando dono (…)",
+    # "ordem do dono (…)", "pausada pelo dono"); vazio: não está segura.
+    "hold": "",
 }
 TIME_FIELDS = ["started", "ended", "childAt"]
 LATE_MINUTES = 30
@@ -98,6 +106,7 @@ class Sessao:
         if not meta:
             raise Erro("meta.json está vazio")
         meta[0]["updatedAt"] = now()
+        meta[0]["vagas"] = slots_plan(self.get("queue"), meta[0])[0]
         self.touch("meta")
         order = [n for n in FILES if n in self.dirty]
         for n in order:
@@ -166,6 +175,10 @@ def cmd_start(a):
     m = s.get("meta")[0]
     if not m.get("runStart"):
         m["runStart"] = now()
+    if a.paralelo is not None:
+        if a.paralelo < 1:
+            raise Erro("--paralelo precisa ser um inteiro a partir de 1")
+        m["paralelo"] = a.paralelo
     s.touch("meta")
     s.commit()
 
@@ -291,6 +304,169 @@ def cmd_session(a):
     s.commit()
 
 
+def cmd_merged(a):
+    s = Sessao(a.dir)
+    n = norm_issue(a.issue)
+    m = s.get("meta")[0]
+    merged = m.setdefault("merged", [])
+    if n not in merged:
+        merged.append(n)
+    s.touch("meta")
+    s.commit()
+
+
+def cmd_context(a):
+    s = Sessao(a.dir)
+    try:
+        pct = int(a.pct)
+    except ValueError:
+        raise Erro(f"pct precisa ser inteiro de 0 a 100, veio '{a.pct}'")
+    if not 0 <= pct <= 100:
+        raise Erro(f"pct precisa ser inteiro de 0 a 100, veio '{a.pct}'")
+    m = s.get("meta")[0]
+    m["context"] = pct
+    m["contextAt"] = now()
+    s.touch("meta")
+    s.commit()
+
+
+# --- vagas (etapa #1440) ---
+
+IGNORED_PREFIXES = ("changelog/", "docs/design-system/")
+IGNORED_EXACT = ("mcp/version.ts", "docs/TESTING-NUVEM.md#blocos")
+STARTED_STATUS = ("em andamento", "esperando dono", "falhou")
+
+
+def plan_field(plan, key):
+    """Valor de `key=` na ficha (campos separados por `|` ou `;`); None se faltar."""
+    for part in plan.replace(";", "|").split("|"):
+        part = part.strip()
+        if part.startswith(key + "="):
+            return part[len(key) + 1:].strip()
+    return None
+
+
+def norm_path(x):
+    x = x.replace("`", "").replace(" ", "")
+    while x.startswith("./"):
+        x = x[2:]
+    return x
+
+
+def toca_list(plan):
+    """Citações do `toca=` já normalizadas, sem as que não contam; `?` se a ficha não diz."""
+    raw = plan_field(plan, "toca")
+    if raw is None or raw.strip() in ("", "?"):
+        return ["?"]
+    out = []
+    for x in raw.split(","):
+        x = norm_path(x)
+        if not x or x in IGNORED_EXACT or x.startswith(IGNORED_PREFIXES):
+            continue
+        out.append(x)
+    return out
+
+
+def folder_of(x):
+    if x.endswith("/**"):
+        return x[:-2]
+    return x if x.endswith("/") else None
+
+
+def same_target(a, b):
+    """Duas citações do `toca=` mexem no mesmo lugar? (roteiro do TESTING.md, pasta, arquivo)"""
+    if a == "?" or b == "?":
+        return True
+    fa, fb = folder_of(a), folder_of(b)
+    if fa or fb:
+        return (fa and b.startswith(fa)) or (fb and a.startswith(fb)) or False
+    pa, _, anc_a = a.partition("#")
+    pb, _, anc_b = b.partition("#")
+    if pa != pb:
+        return False
+    return not anc_a or not anc_b or anc_a == anc_b
+
+
+def first_conflict(mine, other):
+    for x in mine:
+        for y in other:
+            if same_target(x, y):
+                return x
+    return None
+
+
+def dep_state(plan):
+    """Dependências da ficha: ('?', []) se faltar; senão ('ok', [(#n, estado)])."""
+    raw = plan_field(plan, "dep")
+    if raw is None or raw.strip() in ("", "?"):
+        return None
+    if raw.strip().lower() == "nenhuma":
+        return []
+    deps = []
+    for d in raw.split(","):
+        d = d.strip()
+        num, _, st = d.partition(":")
+        deps.append((num.strip(), st.strip()))
+    return deps
+
+
+def changes_schema(plan):
+    v = plan_field(plan, "schema")
+    return v is None or v.strip() != "não"
+
+
+def slots_plan(q, meta):
+    """(texto de meta.vagas, [issues que começam agora]); decisões 4 e 5 da #1440."""
+    n = meta.get("paralelo") or DEFAULT_PARALELO
+    merged = set(meta.get("merged", []))
+    done = {r["issue"] for r in q if r["status"] == "concluída"}
+    busy = sum(1 for r in q if r["status"] == "em andamento")
+    started = [r for r in q if r["status"] in STARTED_STATUS
+               or (r["status"] == "aguardando" and r.get("started"))]
+    cands = sorted((r for r in q if r["status"] == "aguardando" and not r.get("started")),
+                   key=lambda r: r["order"])
+    free = n - busy
+    parts = [f"Vagas {busy}/{n}"]
+    now_list = []
+    taking = list(started)
+    for r in cands:
+        plan = r.get("plan", "")
+        why = r.get("hold") or ""
+        if not why:
+            deps = dep_state(plan)
+            if deps is None:
+                why = "ficha sem dep"
+            else:
+                miss = [d for d, st in deps
+                        if not (st == "main" or d in merged or d in done)]
+                if miss:
+                    why = "dep " + ", ".join(miss)
+        mine = toca_list(plan)
+        if not why:
+            for o in taking:
+                c = first_conflict(mine, toca_list(o.get("plan", "")))
+                if c:
+                    why = f"arquivo {c} com {o['issue']}"
+                    break
+        if not why:
+            for o in taking:
+                if changes_schema(plan) and changes_schema(o.get("plan", "")):
+                    why = f"schema com {o['issue']}"
+                    break
+        if not why:
+            if free > 0:
+                why = "começa"
+                free -= 1
+                now_list.append(r["issue"])
+                taking.append(r)
+            else:
+                why = "vagas cheias"
+        parts.append(f"{r['issue']} {why}")
+    if free > 0:
+        parts.append("nenhuma ready elegível")
+    return " · ".join(parts), now_list
+
+
 def minutes_since(iso):
     t = datetime.datetime.strptime(iso, "%Y-%m-%dT%H:%M:%SZ")
     n = datetime.datetime.strptime(now(), "%Y-%m-%dT%H:%M:%SZ")
@@ -327,8 +503,18 @@ def cmd_show(a):
         print(f"  {st}: {sum(1 for r in q if r['status'] == st)}")
     meta = m[0] if m else {}
     print(f"atual: {meta.get('current') or '—'}")
+    vagas, agora = slots_plan(q, meta)
+    print(f"vagas: {vagas}")
+    print("começar agora: " + (" ".join(agora) or "nenhuma"))
     print(f"início: {meta.get('runStart') or '—'}  atualizado: {meta.get('updatedAt', '—')}")
     print(f"reserva: {meta.get('reserve') or '—'}")
+    ctx = meta.get("context")
+    if ctx is None:
+        print("contexto: —")
+    else:
+        alert = (f" — acima de {CONTEXT_LIMIT}%: troque de sessão agora (\"Troca de sessão\")"
+                 if ctx > CONTEXT_LIMIT else "")
+        print(f"contexto: {ctx}% ({meta.get('contextAt', '—')}){alert}")
     for r in q:
         if r["status"] == "em andamento":
             print(f"  {r['issue']} {r['stage']} · {r['step']} · filhas: {r.get('child') or '—'}")
@@ -355,7 +541,8 @@ def build_parser():
 
     sp = add("init", cmd_init, "cria os 3 arquivos vazios")
     sp.add_argument("--force", action="store_true")
-    add("start", cmd_start, "marca o início da execução")
+    sp = add("start", cmd_start, "marca o início da execução (e as vagas com --paralelo N)")
+    sp.add_argument("--paralelo", type=int, help="número de vagas (padrão 2)")
     sp = add("row", cmd_row, "insere ou atualiza uma linha da fila")
     sp.add_argument("issue")
     sp.add_argument("pairs", nargs="*")
@@ -373,6 +560,10 @@ def build_parser():
     sp = add("session", cmd_session, "registra uma sessão criada para a etapa (sem repetir)")
     sp.add_argument("issue")
     sp.add_argument("session")
+    sp = add("merged", cmd_merged, "registra uma etapa mesclada na main (sem repetir)")
+    sp.add_argument("issue")
+    sp = add("context", cmd_context, "registra o contexto do coordenador (0 a 100)")
+    sp.add_argument("pct")
     sp = add("show", cmd_show, "resumo legível; com '#n', a linha inteira (com a ficha)")
     sp.add_argument("issue", nargs="?")
     return p
