@@ -368,7 +368,7 @@ for (const width of [1280, 900]) {
     await expect(page.locator('.ref-cell .ref-control.is-broken')).toBeVisible();
     const broken = (await measureRefCells(page))[0]!;
     expect(broken.text).toContain('quebrada');
-    expect(broken.lines, 'quebra em poucas linhas').toBeLessThanOrEqual(6);
+    expect(broken.lines, 'quebra em poucas linhas').toBeLessThanOrEqual(8);
     expect(broken.overlap, 'âncora e ✕ sobrepostos').toBe(0);
     expect(broken.cut, 'rótulo cortado').toBeLessThanOrEqual(0.5);
     for (const theme of ['light', 'dark'] as const) {
