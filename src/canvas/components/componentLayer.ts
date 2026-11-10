@@ -537,7 +537,7 @@ function onScreen(
       width,
       height,
     };
-  } else box = sceneBox(root);
+  } else box = cachedSceneBox(root);
   const margin = ON_SCREEN_MARGIN / zoom;
   const x = placement.x + box.x * placement.scale;
   const y = placement.y + box.y * placement.scale;
@@ -547,6 +547,18 @@ function onScreen(
     y + box.height * placement.scale + margin > area.y &&
     y - margin < area.y + area.height
   );
+}
+
+/** A caixa só depende da cena (dado do projeto): pan e zoom não a recalculam. */
+const sceneBoxes = new WeakMap<FrameNode, Rect>();
+
+function cachedSceneBox(root: FrameNode): Rect {
+  let box = sceneBoxes.get(root);
+  if (!box) {
+    box = sceneBox(root);
+    sceneBoxes.set(root, box);
+  }
+  return box;
 }
 
 /** Caixa (espaço da marcação) de uma cena com matriz `[a, b, c, d, e, f]` e medida `width × height`. */
