@@ -307,9 +307,9 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
   const detalhar = readFileSync('.claude/skills/detalhar-backlog/SKILL.md', 'utf8');
   const processDoc = readFileSync('docs/PROCESS.md', 'utf8');
   const fase = section(flow, '## Para a sessão da fase');
-  const item6 = fase.split('\n').find((l) => l.startsWith('6. '));
-  if (item6 === undefined)
-    throw new Error('item 6 da "Para a sessão da fase" não achado');
+  // O item 6 é uma lista: o bloco vai do "6." até o "7." (etapa #1466, decisão 9).
+  const item6 = between(fase, '\n6. ', '\n7. ');
+  const leitura = between(item6, '**Leitura do CI:**', '\n   - **');
   const reserva = between(skill, '**Conferências de reserva:**', '**CI vermelho');
   const ciVermelho = between(
     skill,
@@ -331,19 +331,103 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
     expect(item6).toMatch(/falha legítima/i);
   });
 
-  it('leitura do CI por check runs, sem get_status e sem os skipped (EC2)', () => {
-    expect(item6).toContain('get_check_runs');
-    expect(item6).toMatch(/nunca com `get_status`/);
-    expect(item6).toMatch(/Ignore os check runs `skipped`/);
-    expect(item6).toMatch(/nenhum outro com `failure`, `cancelled` ou `timed_out`/);
+  it('Leitura do CI: check runs, sem get_status, commit atual e só o workflow CI (decisões 1 a 4)', () => {
+    expect(leitura).toContain('`get_check_runs`');
+    expect(leitura).toMatch(/nunca com `get_status`/);
+    expect(leitura).toMatch(/`perPage` 100/);
+    for (const job of ['epic', 'static', 'test', 'coverage', 'build', 'check', 'e2e'])
+      expect(leitura).toContain(`\`${job}\``);
+    expect(leitura).toMatch(/`queued` ou `in_progress`/);
+    expect(leitura).toMatch(/`failure`, `cancelled` ou `timed_out`/);
+    expect(leitura).toMatch(/outros workflows não contam/);
+    expect(leitura).toMatch(/verde de um commit anterior não vale/);
+    expect(leitura).toMatch(
+      /Sem `check` e `e2e` em `success` e sem falha, o CI ainda roda/,
+    );
+    expect(leitura).not.toMatch(/Ignore os check runs `skipped`/);
+    expect(leitura).not.toMatch(/nenhum outro com/);
+  });
+
+  it('o item 6 é uma lista com Espera do CI, Leitura do CI, Runner abandonado e Teto; a fase mescla o próprio PR (decisões 9 e 12)', () => {
+    for (const sub of [
+      'Espera do CI',
+      'Leitura do CI',
+      'Runner abandonado',
+      'Teto do `dist/index.html`',
+    ])
+      expect(item6).toContain(`   - **${sub}:**`);
+    expect(item6).toMatch(/mescle o próprio PR no épico/);
+    expect(item6).toMatch(/nunca deixado para o coordenador/);
+    expect(item6).toMatch(/cada push[^\n]*recomeça a contagem/);
+    const item7 = between(fase, '\n7. ', '\n8. ');
+    expect(item7).toMatch(/PR mesclado/);
+    const correcao = section(flow, '## Fase de correção');
+    expect(correcao).toMatch(/mescla o próprio PR/);
+  });
+
+  it('o verde exige cada job do ci.yml fora do needs do check, junto com success (achado 6, decisão 11)', () => {
+    const ci = readFileSync('.github/workflows/ci.yml', 'utf8');
+    const afterJobs = ci.slice(ci.indexOf('\njobs:\n'));
+    const jobs = [...afterJobs.matchAll(/^ {2}([\w-]+):\s*$/gm)].map((m) => m[1]!);
+    expect(jobs).toContain('check');
+    const needsLine = afterJobs.match(
+      /^ {2}check:\n(?:(?: {4}|\n).*\n)*? {4}needs: \[([^\]]*)\]/m,
+    );
+    if (needsLine === null) throw new Error('needs do job check não achado');
+    const needs = needsLine[1]!.split(',').map((n) => n.trim());
+    for (const job of jobs) expect(leitura).toContain(`\`${job}\``);
+    const verde = between(leitura, 'Verde = ', 'O `check` não espera');
+    const fora = jobs.filter((j) => j !== 'check' && !needs.includes(j));
+    expect(fora).toContain('e2e');
+    expect(fora).toContain('epic');
+    for (const job of fora) {
+      expect(verde).toContain(`\`${job}\``);
+      expect(verde).toContain('`success`');
+    }
+  });
+
+  it('o briefing do Merge aponta para a Leitura do CI e não repete a definição (decisão 10)', () => {
     const conferencia = between(
       skill,
       'Quem confere o CI e se o PR pode ser mesclado',
       '\n\n',
     );
-    expect(conferencia).toContain('get_check_runs');
-    expect(conferencia).toMatch(/ignore os `skipped`/i);
-    expect(conferencia).toMatch(/nunca `get_status`/);
+    expect(conferencia).toContain('Leitura do CI');
+    expect(conferencia).toContain('docs/FLOW.md');
+    expect(conferencia).not.toContain('nenhum outro com');
+    expect(conferencia).not.toMatch(/ignore os `skipped`/i);
+    expect(skill).not.toMatch(/Ignore os check runs `skipped`/);
+    expect(flow).not.toMatch(/Ignore os check runs `skipped`/);
+  });
+
+  it('PR que espera o coordenador: send_later, gatilhos, log do aviso e merge no mesmo turno (#1476, decisões 12 a 15)', () => {
+    const espera = between(skill, '**PR que espera o coordenador:**', '\n\n');
+    expect(espera).toMatch(/`send_later` de 4 min/);
+    expect(espera).toMatch(/de 2 em 2 min até 20 min/);
+    expect(espera).toMatch(/de 8 em 8/);
+    expect(espera).toMatch(/push do coordenador/);
+    expect(espera).toMatch(/deixou o merge/);
+    expect(espera).toMatch(/Leitura do CI/);
+    expect(reserva).toMatch(/`send_later` por PR que espera o coordenador/);
+    expect(reserva).toMatch(/Nada de `send_later` por filha/);
+    expect(reserva).toMatch(/Pior caso de detecção:[^\n]*PR que espera o coordenador/);
+    expect(reserva).toMatch(/não usa `subscribe_pr_activity`/);
+    const economia = section(skill, '## Economia de contexto');
+    const item7 = economia.split('\n').find((l) => l.startsWith('7. '));
+    expect(item7).toMatch(/outro ciclo/);
+    expect(item7).toMatch(/linha no `log`/);
+    expect(item7).toMatch(/mesmo turno/);
+    const fases = between(skill, '2. **Fases**', '3. **Testador.**');
+    expect(fases).toMatch(/mescla[^\n]*mesmo turno/);
+  });
+
+  it('"Para o dono, nos três chats": resumos do Depende de, do paralelo e da conferência (#1442, decisão 18)', () => {
+    const dono = section(flow, '## Para o dono, nos três chats');
+    expect(dono).toMatch(/`Depende de`[^\n]*`docs\/TESTING\.md` por roteiro/);
+    expect(dono).toContain('docs/TESTING-NUVEM.md#blocos');
+    expect(dono).toMatch(/`paralelo=N`[^\n]*`Vagas k\/N`/);
+    expect(dono).not.toMatch(/arquivos disjuntos/);
+    expect(dono).toMatch(/conferência de hora em hora[^\n]*contexto[^\n]*60%/);
   });
 
   it('"Para a sessão da fase": margem e teto do dist para a fase (decisões 3, 6, 7 e 8)', () => {
@@ -358,7 +442,7 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
     expect(item6).toMatch(/`send_message`/);
   });
 
-  it('o CI de uma fase é um parágrafo só no item 6 (decisão do dono)', () => {
+  it('o CI de uma fase fica só no item 6 (decisão do dono)', () => {
     const outros = fase
       .split('\n')
       .filter((l) => /^\d+\. /.test(l) && !l.startsWith('6. '));
