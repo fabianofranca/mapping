@@ -30,7 +30,8 @@ const badgeSpot = (
   avoid?: Rect,
   roots?: readonly ArrivalRoot[],
   self?: string,
-) => spotOf(rect, zoom, width, A, view, avoid, roots, self);
+  extra?: readonly Rect[],
+) => spotOf(rect, zoom, width, A, view, avoid, roots, self, extra);
 const bandLabelSpot = (
   band: Rect,
   zoom: number,
@@ -364,5 +365,61 @@ describe('arrivalBadgeSpot: sem cair sob o minimapa', () => {
     expect(badgeSpot(rect, 1, width, view, minimap)).toEqual(
       badgeSpot(rect, 1, width, view),
     );
+  });
+});
+
+// Achados 1.2 e 2.1 da rodada do testador da PV2 (#1406, correção CL1): o selo não cobre o título
+// de nenhum container nem o da faixa, nem quando a área visível o empurra para onde ele estava.
+describe('arrivalBadgeSpot: sem cobrir títulos (CL1, achados 1.2 e 2.1)', () => {
+  const crosses = (at: { x: number; y: number }, w: number, h: number, r: Rect) =>
+    at.x < r.x + r.width && at.x + w > r.x && at.y < r.y + r.height && at.y + h > r.y;
+
+  it('1.2: a Principal enquadrada (11%): o selo da Relatório não cai no título da Funil', () => {
+    const zoom = 0.11;
+    const width = 120;
+    const c = { x: 0, y: 0, width: 1400, height: 1000 };
+    const relatorio = { x: 1450, y: 0, width: 1600, height: 1000 };
+    const funil = { x: 1450, y: 1050, width: 1600, height: 1000 };
+    const roots = [
+      { id: 'C', rect: c },
+      { id: 'R', rect: relatorio },
+      { id: 'F', rect: funil },
+    ];
+    // Canvas de 360 px: a área visível termina logo depois da faixa, e o lugar à direita da
+    // Relatório, puxado para dentro dela, caía sobre o título da Funil.
+    const view = { x: -100, y: -400, width: 3270, height: 5000 };
+    const spot = badgeSpot(relatorio, zoom, width, view, undefined, roots, 'R');
+    const w = width / zoom;
+    const h = A.height / zoom;
+    for (const other of [c, funil]) {
+      const named = {
+        x: other.x,
+        y: other.y - A.nameBand / zoom,
+        width: other.width,
+        height: other.height + A.nameBand / zoom,
+      };
+      expect(crosses(spot, w, h, named), JSON.stringify({ spot, named })).toBe(false);
+    }
+    expect(spot.x).toBeGreaterThanOrEqual(view.x);
+    expect(spot.x + w).toBeLessThanOrEqual(view.x + view.width);
+  });
+
+  it('2.1: o título da faixa abaixo dela (topo fora da vista): o selo da Funil não o cobre', () => {
+    const zoom = 0.23;
+    const width = 120;
+    const funil = { x: 1450, y: 1050, width: 700, height: 1000 };
+    const band = { x: 1426, y: -24, width: 748, height: 2098 };
+    const view = { x: 100, y: 300, width: 2500, height: 2600 };
+    const size = { width: 160, height: 40 };
+    const at = bandLabelSpot(band, zoom, size, view, 20);
+    // O topo da faixa saiu da vista: o título fica abaixo dela.
+    expect(at.y).toBeGreaterThan(band.y + band.height);
+    const label = { ...at, width: size.width / zoom, height: size.height / zoom };
+    const roots = [{ id: 'F', rect: funil }];
+    const spot = badgeSpot(funil, zoom, width, view, undefined, roots, 'F', [label]);
+    expect(
+      crosses(spot, width / zoom, A.height / zoom, label),
+      JSON.stringify({ spot, label }),
+    ).toBe(false);
   });
 });

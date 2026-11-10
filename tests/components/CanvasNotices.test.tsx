@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { cleanup, render, screen } from '@testing-library/preact';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act } from '@testing-library/preact';
@@ -62,6 +63,17 @@ describe('CanvasNotices — pé do canvas (PV2, decisão 7)', () => {
     const progress = screen.getByText('Importando');
     expect(foot?.contains(progress)).toBe(true);
     expect(progress.getAttribute('aria-live')).toBe('polite');
+  });
+
+  // Achado 1.1 (CL1): numa coluna estreita (canvas de 360 px, pé de ~200 px) o aviso quebra em
+  // linhas em vez de cortar o texto com reticências (a medida de verdade está no e2e).
+  it('o aviso do pé quebra linha: sem nowrap nem reticências', () => {
+    const css = readFileSync('src/theme/canvas.css', 'utf8');
+    const rule = /\.canvas-overlay-foot \.notice\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
+    expect(rule).not.toBe('');
+    expect(rule).not.toMatch(/white-space:\s*nowrap/);
+    expect(rule).not.toMatch(/text-overflow:\s*ellipsis/);
+    expect(rule).not.toMatch(/overflow:\s*hidden/);
   });
 
   it('sem aviso curto nem progresso, não há pé', () => {

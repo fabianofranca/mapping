@@ -70,15 +70,25 @@ for (const size of [
 
 // Aviso curto no pé do canvas (PV2, decisão 7): "Cada lado precisa ter pelo menos 8 px."
 // fica à esquerda, da largura do texto, sem passar sob o minimapa nem cobrir o topo da imagem.
+// Com Árvore e Detalhes abertos a 900×720 o canvas fica com ~360 px e o pé com ~200 px (CL1, 1.1):
+// o aviso quebra em duas linhas em vez de ser cortado com reticências.
 for (const size of [
-  { width: 1280, height: 720 },
-  { width: 900, height: 720 },
+  { width: 1280, height: 720, panels: false },
+  { width: 900, height: 720, panels: false },
+  { width: 900, height: 720, panels: true },
+  { width: 1440, height: 900, panels: false },
 ]) {
-  test(`aviso de 8 px no pé do canvas a ${size.width}×${size.height}`, async ({
+  test(`aviso de 8 px no pé do canvas a ${size.width}×${size.height}${size.panels ? ' com Árvore e Detalhes' : ''}`, async ({
     page,
   }) => {
-    await page.setViewportSize(size);
+    await page.setViewportSize({ width: size.width, height: size.height });
     await createProject(page, 'Aviso');
+    if (size.panels) {
+      for (const name of ['Árvore de marcações', 'Detalhes']) {
+        const toggle = page.getByRole('button', { name, exact: true });
+        if ((await toggle.getAttribute('aria-pressed')) !== 'true') await toggle.click();
+      }
+    }
     await addImage(page);
     // Zoom acima de 100%: 7 px de tela são menos que os 8 px da imagem.
     for (let i = 0; i < 2; i++) await page.keyboard.press('Control+Equal');
@@ -110,6 +120,9 @@ for (const size of [
         right: r.right - c.left,
       };
     });
+    // O texto inteiro: nada cortado por `overflow` (CL1, achado 1.1).
+    const cut = await notice.evaluate((el) => el.scrollWidth > el.clientWidth);
+    expect(cut, JSON.stringify(m)).toBe(false);
     expect(m.left, JSON.stringify(m)).toBeLessThan(24);
     expect(m.width, JSON.stringify(m)).toBeLessThan(m.canvasWidth * 0.8);
     expect(m.bottomGap, JSON.stringify(m)).toBeLessThan(m.top);
