@@ -19,6 +19,7 @@ import {
   type Project,
 } from '../../src/model';
 import { runBatch, type BatchResult } from '../../mcp/batch';
+import { planChanges } from '../../mcp/changes';
 import { decodeImage } from '../../mcp/image/codecs';
 import { markingImage } from '../../mcp/imageTools';
 import { Refs } from '../../mcp/items';
@@ -434,5 +435,208 @@ describe('replace_container respeita o minSize do componente (#953)', () => {
     expect(button?.rect.width).toBeGreaterThanOrEqual(48);
     expect(button?.rect.height).toBeGreaterThanOrEqual(40);
     expect(button?.needsReview).toBe(true);
+  });
+});
+
+describe('create_marking com inside (filha no slot)', () => {
+  const COLUMN = {
+    op: 'create_marking',
+    as: '$col',
+    container: '$tela',
+    annotation: { type: 'material3/m3-column' },
+  } as const;
+  const child = (as: string, extra: Partial<Operation> = {}): Operation =>
+    ({
+      op: 'create_marking',
+      as,
+      inside: '$col',
+      annotation: { type: 'material3/m3-button' },
+      ...extra,
+    }) as Operation;
+  const idOf = (result: BatchResult, alias: string) =>
+    (result.aliases.get(alias) as { id: string }).id;
+  const marking = (result: BatchResult, alias: string) =>
+    result.project.markings.find((m) => m.id === idOf(result, alias))!;
+  const codes = (result: BatchResult) => result.errors.map((e) => e.code);
+
+  it('Column com 3 Buttons sem rect: empilhados com o gap do slot e o pai é a Column', async () => {
+    const batch = [SCREEN, COLUMN, child('$b1'), child('$b2'), child('$b3')];
+    const result = await run(batch);
+    expect(result.errors).toEqual([]);
+    expect(result.invariantIssues).toEqual([]);
+    const column = marking(result, '$col');
+    const buttons = ['$b1', '$b2', '$b3'].map((a) => marking(result, a));
+    expect(buttons.map((b) => b.parentId)).toEqual([column.id, column.id, column.id]);
+    // O padding da Column começa em 0 e o gap em 8: 40 de altura + 8 entre elas.
+    expect(buttons.map((b) => b.rect.x)).toEqual([
+      column.rect.x,
+      column.rect.x,
+      column.rect.x,
+    ]);
+    expect(buttons.map((b) => b.rect.y)).toEqual([
+      column.rect.y,
+      column.rect.y + 48,
+      column.rect.y + 96,
+    ]);
+    expect(buttons.map((b) => [b.rect.width, b.rect.height])).toEqual([
+      [120, 40],
+      [120, 40],
+      [120, 40],
+    ]);
+    expect(result.deprecations).toEqual([]);
+    // O plan_changes e o propose_changes usam o mesmo lote preparado (`prepareBatch`).
+    const plan = await planChanges(roots, loaded.location, batch, () => Date.parse(NOW));
+    expect(plan.valid).toBe(true);
+    const hex = (line: unknown) => String(line).replace(/\b[0-9a-f]{8}\b/g, '#');
+    expect((plan.summary as string[]).map(hex)).toEqual(
+      result.steps.map((s) => hex(`${s.index}. ${s.description}`)),
+    );
+  });
+
+  it('com rect, o rect dá só o tamanho (x e y são ignorados)', async () => {
+    const result = await run([
+      SCREEN,
+      COLUMN,
+      child('$b1', { rect: { x: 0, y: 0, width: 200, height: 60 } }),
+    ]);
+    expect(result.errors).toEqual([]);
+    const column = marking(result, '$col');
+    expect(marking(result, '$b1').rect).toEqual({
+      x: column.rect.x,
+      y: column.rect.y,
+      width: 200,
+      height: 60,
+    });
+  });
+
+  it('rect menor que o minSize do componente continua rect-too-small', async () => {
+    const result = await run([
+      SCREEN,
+      COLUMN,
+      child('$b1', { rect: { x: 0, y: 0, width: 20, height: 20 } }),
+    ]);
+    expect(codes(result)).toEqual(['rect-too-small']);
+  });
+
+  it('slot cheio: aceita, presa ao componente, com o aviso de que não coube', async () => {
+    const result = await run([
+      SCREEN,
+      COLUMN,
+      child('$b1', { rect: { x: 0, y: 0, width: 200, height: 180 } }),
+      child('$b2'),
+    ]);
+    expect(result.errors).toEqual([]);
+    const warning = result.deprecations.find((d) => d.index === 3);
+    expect(warning).toMatchObject({ code: 'ignored-argument', op: 'create_marking' });
+    expect(warning?.message).toMatch(/não coube no slot de/);
+    expect(warning?.message).toMatch(/aumente o componente ou use Arrumar na app/);
+  });
+
+  it('slot cheio e a filha cai dentro de uma irmã: o aviso diz também em quem ficou', async () => {
+    const result = await run([
+      SCREEN,
+      COLUMN,
+      child('$b1', { rect: { x: 0, y: 0, width: 380, height: 200 } }),
+      child('$b2'),
+    ]);
+    expect(result.errors).toEqual([]);
+    expect(marking(result, '$b2').parentId).toBe(idOf(result, '$b1'));
+    const warning = result.deprecations.find((d) => d.index === 3);
+    expect(warning?.message).toMatch(/não coube no slot de/);
+    expect(warning?.message).toMatch(/ficou dentro de/);
+  });
+
+  it('alvo que não desenha componente com slot: invalid-parent', async () => {
+    const result = await run([
+      SCREEN,
+      { ...COLUMN, annotation: { type: 'material3/m3-button' } },
+      child('$b1'),
+    ]);
+    expect(codes(result)).toEqual(['invalid-parent']);
+  });
+
+  it('alvo sem anotação de componente (marcação comum): invalid-parent', async () => {
+    const result = await run([
+      SCREEN,
+      {
+        op: 'create_marking',
+        as: '$col',
+        container: '$tela',
+        rect: { x: 0, y: 0, width: 100, height: 100 },
+      },
+      child('$b1'),
+    ]);
+    expect(codes(result)).toEqual(['invalid-parent']);
+  });
+
+  it('container informado e diferente do do alvo: invalid-parent; igual ao do alvo vale', async () => {
+    const other: Operation = {
+      op: 'add_container',
+      as: '$outra',
+      name: 'Outra',
+      width: 390,
+      height: 844,
+      background: '#FFFFFF',
+    };
+    const divergent = await run([
+      SCREEN,
+      other,
+      COLUMN,
+      child('$b1', { container: '$outra' }),
+    ]);
+    expect(codes(divergent)).toEqual(['invalid-parent']);
+    const same = await run([SCREEN, other, COLUMN, child('$b1', { container: '$tela' })]);
+    expect(same.errors).toEqual([]);
+  });
+
+  it('alvo do canvas: a filha nasce no canvas, no slot dele', async () => {
+    const result = await run([{ ...COLUMN, container: undefined }, child('$b1')]);
+    expect(result.errors).toEqual([]);
+    const column = marking(result, '$col');
+    const button = marking(result, '$b1');
+    expect(button.containerId).toBeNull();
+    expect(button.parentId).toBe(column.id);
+  });
+
+  it('inside sem annotation, ou com tipo sem componente: invalid-arguments', async () => {
+    const noAnnotation = await run([
+      SCREEN,
+      COLUMN,
+      {
+        op: 'create_marking',
+        inside: '$col',
+        rect: { x: 0, y: 0, width: 50, height: 50 },
+      },
+    ]);
+    expect(codes(noAnnotation)).toEqual(['invalid-arguments']);
+  });
+
+  it('inside junto com near: invalid-arguments', async () => {
+    const result = await run([SCREEN, COLUMN, child('$b1', { near: '$tela' })]);
+    expect(codes(result)).toEqual(['invalid-arguments']);
+  });
+
+  it('inside com referência que não existe: invalid-ref', async () => {
+    const result = await run([SCREEN, { ...child('$b1'), inside: '???' } as Operation]);
+    expect(codes(result)).toEqual(['invalid-ref']);
+  });
+
+  it('inside de uma marcação que já está no projeto', async () => {
+    const first = await run([SCREEN, COLUMN]);
+    expect(first.errors).toEqual([]);
+    const colRef = `mapping://telas/m/${idOf(first, '$col')}`;
+    const seeded: LoadedProject = { ...loaded, project: first.project };
+    const result = await run([{ ...child('$b1'), inside: colRef } as Operation], seeded);
+    expect(result.errors).toEqual([]);
+    expect(marking(result, '$b1').parentId).toBe(idOf(first, '$col'));
+  });
+
+  it('parent continua ignorado com aviso, também junto de inside', async () => {
+    const result = await run([SCREEN, COLUMN, child('$b1', { parent: '$col' })]);
+    expect(result.errors).toEqual([]);
+    expect(result.deprecations.map((d) => [d.index, d.code])).toContainEqual([
+      2,
+      'ignored-argument',
+    ]);
   });
 });
