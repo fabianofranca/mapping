@@ -97,8 +97,8 @@ describe('R25.22 e R25.23: o tokens.mjs do guia mescla os tokens do pacote', () 
 });
 
 describe('R25.43 e R25.44: as pastas de tela do guia', () => {
-  const dividerColors = (typeOf('divider').fields.find((f) => f.key === 'color')
-    ?.options ?? []) as string[];
+  const colorField = typeOf('divider').fields.find((f) => f.key === 'color');
+  const dividerColors = colorField?.type === 'enum' ? colorField.options : [];
   const divider = (dir: string) => join(dir, 'components/divider.json');
   const specOf = (dir: string) => join(dir, 'material3-compose.spec.json');
   const issues = (dir: string) =>

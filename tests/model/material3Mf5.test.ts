@@ -5,6 +5,8 @@ import { buildCatalog, findEntry } from '../../src/model/catalog';
 import type { Spec } from '../../src/model/spec';
 import { diffSpecs, missingMigrations } from '../../src/model/specVersions';
 import { validateLibrary } from '../../src/model/library';
+import { approximateMeasurer, instantiate } from '../../src/model/components/instantiate';
+import { defaultValues } from '../../src/model/libraryDrawing';
 import { resolveTokens } from '../../src/model/components/tokens';
 import type { SceneNode } from '../../src/model/components/scene';
 import { SPEC_FILE, drawIn, files, spec, typeOf } from '../support/material3Library';
@@ -437,3 +439,83 @@ describe('MF5: exemplos novos (decisão 22)', () => {
     );
   });
 });
+
+describe('MF5: teste final da etapa (os campos novos não mexem no que a MF4 deixou)', () => {
+  const t = (mode: Mode) => tokens(mode);
+  const opaque = (c: string | undefined) => c !== undefined && /^#[0-9a-f]{6}$/i.test(c);
+
+  it('os tipos tocados desenham, sem os campos novos, o mesmo que desenhavam (nenhum campo novo muda o padrão)', () => {
+    // Sem `today`, `avatar`, `color`, `insetStart`, `insetEnd`, `trackColor` e `strokeCap`, o desenho padrão
+    // tem a cor, o recuo, o trilho e a ponta de antes.
+    const divider = draw('divider', { inset: 12 }).root;
+    expect(visibleOf(divider, 'linha')[0]!.transform[4]).toBe(12);
+    expect(solid(visibleOf(divider, 'linha')[0]!.fills)).toBe(
+      rgb(t('light')['outline-variant'] as string),
+    );
+    const bar = draw('progress-indicator', { shape: 'linear', progress: 0.5 }).root;
+    expect(solid(visibleOf(bar, 'faixa')[0]!.fills)).toBe(
+      rgb(t('light')['secondary-container'] as string),
+    );
+    expect(
+      visibleOf(draw('chip', { style: 'input', label: 'a' }).root, 'avatar'),
+    ).toEqual([]);
+  });
+
+  it.each(['light', 'dark'] as const)(
+    'a cor herdada, as duas sombras, o vão e o desabilitado opaco seguem como a MF4 deixou (%s)',
+    (mode) => {
+      // cor herdada: o texto sem `color` lê o que o pai ofereceu (on-primary sobre primary)
+      const inherited = instantiateProvided(mode);
+      expect(solid(inherited)).toBe(rgb(t(mode)['on-primary'] as string));
+      // duas sombras no card elevated
+      expect(draw('card', { style: 'elevated' }, mode).root.effects).toHaveLength(2);
+      // o vão do contorno do text-field outlined com valor
+      const outline = findAll(
+        draw('text-field', { style: 'outlined', label: 'E-mail', value: 'a@b.c' }, mode)
+          .root,
+        'contorno',
+      ).filter((n) => n.visible)[0]!;
+      expect(outline.stroke?.gaps).toHaveLength(1);
+      // o switch desabilitado não empilha transparência
+      const sw = draw('switch', { checked: 'true', enabled: 'false' }, mode).root;
+      const track = findAll(sw, 'trilho').filter((n) => n.visible)[0];
+      expect(track === undefined || opaque(solid(track.fills))).toBe(true);
+    },
+  );
+
+  it('às 10:37 o número sob a alça segue na alça, em on-primary', () => {
+    const root = draw('time-picker', {
+      mode: 'picker',
+      hour: 10,
+      minute: 37,
+      is24Hour: 'true',
+      selection: 'minute',
+    }).root;
+    const handle = findAll(root, 'alça')[0]!;
+    const copies = findAll(handle, 'número sob a alça');
+    expect(copies).toHaveLength(12);
+    for (const c of copies)
+      expect(solid(c.fills)).toBe(rgb(t('light')['on-primary'] as string));
+  });
+});
+
+/** A cor do `text` sem `color` quando o pai ofereceu o `content-color` (`on-primary` sobre `primary`). */
+function instantiateProvided(mode: Mode) {
+  const entry = entryOf('text');
+  const library = catalog.library!;
+  const box = { x: 0, y: 0, ...entry.component!.size };
+  const drawing = instantiate(
+    entry.component!,
+    { ...defaultValues(entry.type), text: 'Olá' } as never,
+    box,
+    {
+      measure: approximateMeasurer,
+      tokens: resolveTokens(library.tokens, {}, mode),
+      ...(library.icons === undefined ? {} : { icons: library.icons }),
+      provided: {
+        'content-color': resolveTokens(library.tokens, {}, mode)['on-primary'],
+      } as never,
+    },
+  );
+  return texts(drawing.root, 'Olá')[0]?.fills;
+}
