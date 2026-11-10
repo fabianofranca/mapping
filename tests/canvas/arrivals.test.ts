@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   ARRIVAL_BAND_PAD,
   arrivalBadgeSpot as spotOf,
+  arrivalBandLabelFit as bandFitOf,
   arrivalBandLabelSpot as bandSpotOf,
   arrivalBadgeWidth as widthOf,
   arrivalMarks,
+  type ArrivalRoot,
 } from '../../src/canvas/arrivals';
 import {
   addContainer,
@@ -26,8 +28,9 @@ const badgeSpot = (
   width: number,
   view?: Rect,
   avoid?: Rect,
-  roots?: readonly Rect[],
-) => spotOf(rect, zoom, width, A, view, avoid, roots);
+  roots?: readonly ArrivalRoot[],
+  self?: string,
+) => spotOf(rect, zoom, width, A, view, avoid, roots, self);
 const bandLabelSpot = (
   band: Rect,
   zoom: number,
@@ -163,7 +166,9 @@ describe('arrivalBadgeSpot: o lugar do selo', () => {
     const zoom = 0.22;
     const below = { x: 100, y: 200 + 30 + 5, width: 40, height: 30 };
     const width = 100;
-    const spot = badgeSpot(small, zoom, width, undefined, undefined, [below]);
+    const spot = badgeSpot(small, zoom, width, undefined, undefined, [
+      { id: 'B', rect: below },
+    ]);
     const nameBand = 24 / zoom;
     const hits =
       spot.x < below.x + below.width &&
@@ -173,6 +178,54 @@ describe('arrivalBadgeSpot: o lugar do selo', () => {
     expect(hits).toBe(false);
     // Sem obstáculo, o lugar de sempre: abaixo do canto.
     expect(badgeSpot(small, zoom, width).x).toBe(100);
+  });
+
+  // R23.10: a Relatório em y 0 e a Funil logo abaixo, no mesmo x; a ~39% de zoom a faixa do nome
+  // da Funil (24 px de tela) invade o fundo da Relatório, onde o selo ficava.
+  const relatorio = { x: 0, y: 0, width: 1000, height: 700 };
+  const funil = { x: 0, y: 720, width: 1000, height: 600 };
+  const both = [
+    { id: 'R', rect: relatorio },
+    { id: 'F', rect: funil },
+  ];
+  const crosses = (at: { x: number; y: number }, w: number, h: number, r: Rect) =>
+    at.x < r.x + r.width && at.x + w > r.x && at.y < r.y + r.height && at.y + h > r.y;
+
+  it('raiz grande com outra raiz logo abaixo (~39%): o selo não cruza a faixa do nome dela', () => {
+    const zoom = 0.39;
+    const width = 150;
+    const spot = badgeSpot(relatorio, zoom, width, undefined, undefined, both, 'R');
+    const band = {
+      x: funil.x,
+      y: funil.y - A.nameBand / zoom,
+      width: funil.width,
+      height: funil.height + A.nameBand / zoom,
+    };
+    expect(crosses(spot, width / zoom, A.height / zoom, band)).toBe(false);
+    // Ainda por dentro da Relatório, abaixo da faixa do nome dela.
+    expect(spot.y).toBeGreaterThanOrEqual(relatorio.y + A.nameBand / zoom);
+    expect(spot.y + A.height / zoom).toBeLessThanOrEqual(relatorio.y + relatorio.height);
+  });
+
+  it('a raiz não se bloqueia a si mesma: a comparação é por id, não pelo objeto', () => {
+    const copy = [{ id: 'R', rect: { ...relatorio } }];
+    const alone = badgeSpot(relatorio, 1, 150);
+    expect(badgeSpot(relatorio, 1, 150, undefined, undefined, copy, 'R')).toEqual(alone);
+  });
+
+  it('sem candidato livre: o de menor interseção', () => {
+    const a = { x: 0, y: 0, width: 300, height: 60 };
+    const b = { x: -50, y: 60, width: 200, height: 100 };
+    const c = { x: 300, y: 30, width: 60, height: 60 };
+    const roots = [
+      { id: 'A', rect: a },
+      { id: 'B', rect: b },
+      { id: 'C', rect: c },
+    ];
+    // O de dentro cairia por inteiro sobre a faixa do nome da B (2000), o de baixo sobre o corpo
+    // dela (2000), o da direita sobre a C (1120); o da esquerda é o que menos cobre (920).
+    const spot = badgeSpot(a, 1, 100, undefined, undefined, roots, 'A');
+    expect(spot).toEqual({ x: a.x - A.gap - 100, y: a.y + 60 + A.gap - A.height });
   });
 
   it('o selo não sai da área visível: encosta na borda direita e na de baixo', () => {
@@ -233,6 +286,44 @@ describe('arrivalBandLabelSpot: o lugar do rótulo da faixa', () => {
     const spot = bandLabelSpot(band, 1, size, view, 20);
     expect(spot.y).toBeGreaterThanOrEqual(305);
     expect(spot.y + size.height).toBeLessThanOrEqual(view.y + view.height);
+  });
+
+  it('o rótulo fica a tokens.arrival.pad (px de tela) de cada borda da área visível', () => {
+    const margin = A.pad / 0.5;
+    const wide = { x: 0, y: 0, width: 1800, height: 1200 };
+    const right = bandLabelSpot(
+      { x: 1700, y: 600, width: 60, height: 100 },
+      0.5,
+      size,
+      wide,
+      20,
+    );
+    expect(right.x + size.width / 0.5).toBeLessThanOrEqual(wide.x + wide.width - margin);
+    const left = bandLabelSpot(
+      { x: 2, y: 600, width: 60, height: 100 },
+      0.5,
+      size,
+      wide,
+      20,
+    );
+    expect(left.x).toBeGreaterThanOrEqual(wide.x + margin);
+    const top = bandLabelSpot(
+      { x: 300, y: 2, width: 60, height: 100 },
+      0.5,
+      size,
+      wide,
+      20,
+    );
+    expect(top.y).toBeGreaterThanOrEqual(wide.y + margin);
+  });
+
+  it('mais largo que a área visível menos as margens: ganha largura e reticências', () => {
+    expect(bandFitOf(160, 1, view, A)).toBeNull();
+    expect(bandFitOf(1000, 1, view, A)).toBe(view.width - 2 * A.pad);
+    expect(bandFitOf(1000, 0.5, view, A)).toBe(view.width * 0.5 - 2 * A.pad);
+    const band = { x: 100, y: 300, width: 200, height: 200 };
+    const spot = bandLabelSpot(band, 1, { width: 1000, height: 40 }, view, 20);
+    expect(spot.x).toBe(view.x + A.pad);
   });
 
   it('não sai pela direita nem pela esquerda da área visível', () => {
