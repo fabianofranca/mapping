@@ -178,10 +178,10 @@ function fieldReferences(
       typeof value === 'string'
     ) {
       // `$index` é o índice da linha de um `repeat`, não um campo do tipo.
-      if (!out.has(value) && !(key === '$field' && value === INDEX_FIELD))
+      if (!out.has(value) && (value !== INDEX_FIELD || key === '$rows'))
         out.set(value, at);
     } else if (key === '$eq' && Array.isArray(value) && typeof value[0] === 'string') {
-      if (!out.has(value[0])) out.set(value[0], `${at}[0]`);
+      if (!out.has(value[0]) && value[0] !== INDEX_FIELD) out.set(value[0], `${at}[0]`);
     } else {
       fieldReferences(value, at, out);
     }

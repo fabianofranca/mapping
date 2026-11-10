@@ -1055,3 +1055,27 @@ describe('o schema JSON conhece as chaves da EX2', () => {
     expect(checkSchema(schema, c).length).toBeGreaterThan(0);
   });
 });
+
+describe('achados da revisão da EX2', () => {
+  it('count por $size segue a largura da instância', () => {
+    const c = countComponent({ count: { $div: [{ $size: 'width' }, 20] } });
+    const at = (width: number) =>
+      texts(draw(c, {}, { x: 0, y: 0, width, height: 100 }).root);
+    expect(at(100)).toHaveLength(5);
+    expect(at(200)).toHaveLength(10);
+  });
+
+  it('$index em $eq, $has e $switch não é campo do tipo', () => {
+    expect([...referencedFields({ v: { $eq: ['$index', 0] } })]).toEqual([]);
+    expect([...referencedFields({ v: { $has: '$index' } })]).toEqual([]);
+    expect([...referencedFields({ v: { $switch: '$index', cases: {} } })]).toEqual([]);
+  });
+
+  it('a primeira linha por $eq do índice desenha só a linha 0', () => {
+    const c = countComponent({
+      count: 3,
+      template: row([{ ...num('x'), visible: { $eq: ['$index', 0] } }]),
+    });
+    expect(texts(drawn(c).root).map((t) => t.text)).toEqual(['x']);
+  });
+});

@@ -312,3 +312,26 @@ describe('validateLibrary: $rows, $index e repeat por count (formato 4)', () => 
     ]);
   });
 });
+
+describe('validateLibrary: $index em condições', () => {
+  it('$eq, $has e $switch sobre $index não são campos do tipo', () => {
+    const comp = component();
+    comp.formatVersion = 4;
+    comp.template.children = [
+      {
+        type: 'repeat',
+        count: 3,
+        template: {
+          type: 'frame',
+          layout: { type: 'row' },
+          children: [
+            { ...text('titulo'), visible: { $eq: ['$index', 0] } },
+            { ...text('titulo'), visible: { $has: '$index' } },
+            { ...text('titulo'), width: { $switch: '$index', cases: { '0': 10 } } },
+          ],
+        },
+      },
+    ];
+    expect(validate(comp).errors).toEqual([]);
+  });
+});

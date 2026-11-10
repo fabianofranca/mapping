@@ -426,17 +426,17 @@ function createEngine(
     options.tokens ?? original.resolvedTokens ?? resolveTokens(undefined, {});
   const source = applyTokens(original, tokens);
   // O `repeat` vira quadros com os valores de cada linha antes de o motor começar.
+  // `$size`: o tamanho da instância entra como dois valores reservados (sem DOM), já na expansão,
+  // para o `count` de um `repeat` também poder segui-lo.
   const {
     component,
-    values: expanded,
+    values,
     warnings: expansionWarnings,
-  } = expandRepeats(source, sourceValues);
-  // `$size`: o tamanho da instância entra como dois valores reservados (sem DOM).
-  const values: FieldValues = {
-    ...expanded,
+  } = expandRepeats(source, {
+    ...sourceValues,
     [sizeKey('width')]: instanceSize.width,
     [sizeKey('height')]: instanceSize.height,
-  };
+  });
   const warnings = new Set<string>(expansionWarnings);
   const warn = (message: string) => warnings.add(message);
   const shortfalls = new Map<string, number>();
@@ -483,12 +483,16 @@ function createEngine(
       ? {
           start: anchorNumber(a.left),
           end: anchorNumber(a.right),
-          center: a.centerX !== undefined && bool(a.centerX, false),
+          center:
+            a.centerX === true ||
+            (typeof a.centerX === 'object' && bool(a.centerX, false)),
         }
       : {
           start: anchorNumber(a.top),
           end: anchorNumber(a.bottom),
-          center: a.centerY !== undefined && bool(a.centerY, false),
+          center:
+            a.centerY === true ||
+            (typeof a.centerY === 'object' && bool(a.centerY, false)),
         };
   };
 

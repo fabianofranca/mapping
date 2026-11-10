@@ -332,9 +332,9 @@ export function referencedFields(
       typeof value === 'string'
     ) {
       // `$index` é o índice da linha de um `repeat`, não um campo do tipo.
-      if (!(key === '$field' && value === INDEX_FIELD)) out.add(value);
+      if (value !== INDEX_FIELD || key === '$rows') out.add(value);
     } else if (key === '$eq' && Array.isArray(value) && typeof value[0] === 'string') {
-      out.add(value[0]);
+      if (value[0] !== INDEX_FIELD) out.add(value[0]);
     } else {
       referencedFields(value, out);
     }

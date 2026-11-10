@@ -289,11 +289,6 @@
       "count": 4
     }
   },
-  "src/model/components/repeat.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
   "src/model/containers.ts": {
     "complexity": {
       "count": 2
