@@ -654,6 +654,10 @@ button.layer-group-label:hover {
  * coluna é estreita demais, desce para a linha de baixo em vez de cobrir o rótulo ou esconder
  * o texto; o rótulo e "(referência quebrada)" quebram de linha em vez de ser cortados.
  */
+.data-grid .grid-cell-value:has(> .ref-cell) {
+  min-width: var(--size-grid-col-min);
+}
+
 .data-grid .grid-cell-value .ref-cell {
   flex-wrap: wrap;
   min-width: 0;

@@ -63,3 +63,13 @@ describe('célula ref da tabela', () => {
     expect(cell).toMatch(/min-width:\s*0/);
   });
 });
+
+// CD6 (achado 1.1 da #1372, R24.15): a 900 px a coluna `item` ficava com 40 px (o texto quebra em
+// qualquer ponto, então o mínimo da coluna `1fr` era ~0) e o rótulo caía em 3 linhas ("Plu/gin/A").
+// A célula com o campo de referência tem o mesmo piso dos inputs das outras colunas.
+describe('coluna de referência da tabela em largura estreita', () => {
+  it('a célula com ref-cell tem piso de largura pelo token da coluna', () => {
+    const cell = rule('.data-grid .grid-cell-value:has(> .ref-cell)');
+    expect(cell).toMatch(/min-width:\s*var\(--size-grid-col-min\)/);
+  });
+});
