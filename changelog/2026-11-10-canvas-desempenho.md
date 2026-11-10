@@ -1,4 +1,4 @@
-# Desempenho do canvas — [Não lançado] (épico `epic/canvas-desempenho`, PR #1436, MCP 0.30.0, schema v18)
+# Desempenho do canvas — 2026-11-10 (épico `epic/canvas-desempenho`, PR #1436, MCP 0.30.0, schema v18)
 
 ## Alterado
 

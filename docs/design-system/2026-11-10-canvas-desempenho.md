@@ -1,4 +1,4 @@
-# Desempenho do canvas — [Não lançado] (épico `epic/canvas-desempenho`)
+# Desempenho do canvas — 2026-11-10 (épico `epic/canvas-desempenho`)
 
 ## Pendências
 
@@ -6,4 +6,8 @@
 
 ## Sincronização
 
+Gravado no artefato **Mapping** em 2026-11-10: versões 75 e 76 (a 76 é o índice, com `lastChange`). `project/Canvas.md` (seção Setas: nível de detalhe) e `project/components/Arrow/README.md` (parágrafo "De longe (nível de detalhe)").
+
 ## Ficou sem gravar
+
+Nada: a única pendência foi gravada.
