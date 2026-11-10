@@ -305,21 +305,31 @@ export function stageOf(container: HTMLElement): Konva.Stage {
 
 /**
  * Medidor de camadas redesenhadas por quadro: espia o `drawScene` de cada `Konva.Layer`
- * (identificada pelo `name`). `take()` devolve as contagens desde a última chamada e zera.
+ * (identificada pelo `name`). `take()` devolve as contagens desde a última chamada e zera;
+ * `takeMs()` devolve, do mesmo jeito, o tempo (ms) gasto no `drawScene` de cada camada, para separar
+ * o `CanvasController.render` do desenho de cada camada.
  */
 export function layerDrawMeter(stage: Konva.Stage): {
   take(): Record<string, number>;
+  takeMs(): Record<string, number>;
   restore(): void;
 } {
   const counts: Record<string, number> = {};
+  const times: Record<string, number> = {};
   const restores: (() => void)[] = [];
   for (const layer of stage.getLayers()) {
     const name = layer.name() || `layer${layer.zIndex()}`;
     counts[name] = 0;
+    times[name] = 0;
     const original = layer.drawScene.bind(layer);
     const wrapped = ((...args: Parameters<Konva.Layer['drawScene']>) => {
       counts[name] = (counts[name] ?? 0) + 1;
-      return original(...args);
+      const start = performance.now();
+      try {
+        return original(...args);
+      } finally {
+        times[name] = (times[name] ?? 0) + performance.now() - start;
+      }
     }) as Konva.Layer['drawScene'];
     layer.drawScene = wrapped;
     restores.push(() => {
@@ -330,6 +340,11 @@ export function layerDrawMeter(stage: Konva.Stage): {
     take() {
       const out = { ...counts };
       for (const key of Object.keys(counts)) counts[key] = 0;
+      return out;
+    },
+    takeMs() {
+      const out = { ...times };
+      for (const key of Object.keys(times)) times[key] = 0;
       return out;
     },
     restore() {
