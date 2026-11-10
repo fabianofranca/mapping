@@ -93,6 +93,7 @@ export const enUS: Dictionary = {
   'editor.redo': 'Redo',
   'editor.fitAll': 'Fit all',
   'editor.fitSelection': 'Fit selection',
+  'editor.moreControls': 'More controls',
   'editor.closeProject': 'Close project',
   'editor.emptyCanvas': 'No images yet. Add photos to build the canvas.',
   'editor.canvasLabel': 'Project canvas',
@@ -240,6 +241,8 @@ export const enUS: Dictionary = {
   'crumbs.image': 'Image {name}',
   'crumbs.marking': 'Marking {name}',
   'crumbs.canvas': 'Canvas',
+  'crumbs.showFull': 'Show full path',
+  'crumbs.menu': 'Full path',
 
   'zoom.value': '{percent}%',
   'zoom.reset': '{percent}%: current zoom; click to go back to 100%',

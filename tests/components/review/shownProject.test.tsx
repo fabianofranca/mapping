@@ -27,6 +27,11 @@ afterEach(cleanup);
 // Lido a cada uso: o idioma só é fixado no `beforeEach`.
 const nothing = () => t('panel.nothingSelected');
 
+// Os trechos do caminho: o "…" (BC1) é outro botão da trilha.
+const crumbButtons = (root: HTMLElement | Document = document) => [
+  ...root.querySelectorAll<HTMLElement>('button.crumb'),
+];
+
 async function openProposed() {
   const { base, proposal } = firstImport();
   const h = await openReviewHarness({ project: base, proposals: [proposal] });
@@ -47,7 +52,7 @@ describe('projeto à vista na revisão (contrato do shownProject)', () => {
     const h = await openProposed();
     const onSelect = vi.fn();
     renderInEditor(h, <Breadcrumbs onSelect={onSelect} />);
-    const crumbs = screen.getAllByRole('button');
+    const crumbs = crumbButtons();
     expect(crumbs.map((c) => c.getAttribute('aria-label'))).toEqual([
       t('crumbs.image', { name: 'images/cadastro.webp' }),
       t('crumbs.marking', { name: 'Formulário' }),
@@ -57,7 +62,7 @@ describe('projeto à vista na revisão (contrato do shownProject)', () => {
     expect(onSelect).toHaveBeenCalledWith({ kind: 'image', id: 'I1' });
 
     act(() => h.review.setView('current'));
-    expect(screen.queryAllByRole('button')).toHaveLength(0);
+    expect(crumbButtons()).toHaveLength(0);
     expect(screen.getByText(nothing())).toBeTruthy();
   });
 
@@ -116,7 +121,7 @@ describe('projeto à vista na revisão (contrato do shownProject)', () => {
       );
     }
     renderInEditor(h, <Wired />);
-    expect(within(screen.getByRole('navigation')).getAllByRole('button')).toHaveLength(2);
+    expect(crumbButtons(screen.getByRole('navigation'))).toHaveLength(2);
     await act(async () => {
       await h.review.decide({ level: 'change', id: marking.id }, 'rejected');
     });
@@ -126,9 +131,9 @@ describe('projeto à vista na revisão (contrato do shownProject)', () => {
     );
     expect(h.ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
     expect(
-      within(screen.getByRole('navigation'))
-        .getAllByRole('button')
-        .map((c) => c.getAttribute('aria-label')),
+      crumbButtons(screen.getByRole('navigation')).map((c) =>
+        c.getAttribute('aria-label'),
+      ),
     ).toEqual([
       t('crumbs.image', { name: 'images/cadastro.webp' }),
       t('crumbs.marking', { name: 'Formulário' }),
@@ -148,7 +153,7 @@ describe('projeto à vista na revisão (contrato do shownProject)', () => {
   it('fora da revisão, tudo volta ao projeto confirmado', async () => {
     const h = await openProposed();
     renderInEditor(h, <Breadcrumbs onSelect={() => {}} />);
-    expect(screen.getAllByRole('button')).toHaveLength(2);
+    expect(crumbButtons()).toHaveLength(2);
     act(() => h.review.close());
     // Ao sair, a seleção de um item que só existia na prévia é limpa pelo `useReviewSync`;
     // aqui, sem o hook, a trilha simplesmente não o encontra no confirmado.

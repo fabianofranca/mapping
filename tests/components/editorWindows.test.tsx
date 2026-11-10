@@ -191,7 +191,10 @@ describe('breadcrumbs', () => {
     const onSelect = vi.fn();
     harness.ui.selection.value = { kind: 'marking', id: 'M2' };
     withContext(harness, <Breadcrumbs onSelect={onSelect} />);
-    const crumbs = screen.getAllByRole('button');
+    // O "…" (BC1) não é um trecho do caminho.
+    const crumbs = screen
+      .getAllByRole('button')
+      .filter((b) => b.classList.contains('crumb'));
     // Imagem › Porta › Maçaneta: o último é o item selecionado.
     expect(crumbs).toHaveLength(3);
     expect(crumbs[2]?.getAttribute('aria-current')).toBe('location');
