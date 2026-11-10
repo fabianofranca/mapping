@@ -432,11 +432,17 @@ Vale para toda imagem que entra pela app (arquivo, câmera, colar, arrastar e tr
   por `ArrowRenderer.reveal` (só a área visível e o nível, nada mais), e o `render` roda com a seleção, o mouse, o tema, o zoom e o
   projeto. `data-arrows` conta as setas pintadas (`full` + `thin`, grupo de arrasto incluído). O arrasto de uma marcação continua
   levando as setas dela para o grupo de arrasto, cada uma no seu nível.
-- **Orçamentos da etapa canvas-escala (conferência final, DA5):** arrasto ≤ 16 ms (atingido: ~3 a 4 ms em jsdom, 2 camadas
-  redesenhadas); pan e zoom inteiro à vista ≤ 33 ms (jsdom: atingido; Chromium com 2.000: ~42 e ~45 ms, não atingido); edição ≤
-  16 ms (jsdom 16 a 24 ms com teto de 35 ms em `renderPerformance.test.ts`; Chromium com 2.000: ~17 ms); abrir ≤ metade da linha
-  de base (atingido aproximado; não atingido em **Enquadrar tudo**). Medições e linha de base na issue #888; `npm run perf:canvas`
-  gera a tabela do Chromium.
+- **Orçamentos e metas (conferência final, CD5 da etapa canvas-desempenho; linha de base na #888 e na #1219):** a CD4 (imagem pronta
+  por container) foi fechada `not_planned`: o portão (decisão 8) não abriu, porque com 2.000 marcações o pan (19,5 ms) e o zoom
+  (26,5 ms) já ficavam abaixo de 33 ms no Chromium (medida da CD3). Medida final, Chromium 153, 1280×860, mediana de 3 execuções
+  (`npm run perf:canvas -- 2000 5000 --vezes 3`), em ms, com 2.000 marcações e 1.000 setas: abrir em Enquadrar tudo 128,5, pan 20,6,
+  zoom 31,1, edição 9,8, arrasto 23,2 (10 moves); com 5.000: 210,9, 55,0, 54,4, 11,3 e 30,8. Metas da decisão 10 com 2.000:
+  edição ≤ 16 ms **atingida**; pan e zoom ≤ 33 ms **atingidos**; abrir ≤ 128 ms **não atingida por 0,5 ms** (128,5; as três execuções
+  deram 125,7, 128,5 e 196,2, a máquina da nuvem oscila). Sem setas: abrir 101,1, pan 21,7, zoom 26,8, edição 2,9; com componentes
+  (21 telas por container): abrir 293,8, pan 65,7, zoom 58,8, edição 14,0. Com 5.000 marcações pan e zoom ficam em ~55 ms e não
+  têm meta. Orçamentos do jsdom (`renderPerformance.test.ts`): arrasto ≤ 16 ms (atingido), pan e zoom ≤ 33 ms (atingidos), edição
+  ≤ 16 ms como meta com teto de 35 ms (com 16 ms o teste passou 6 de 10 vezes, então o teto fica), primeiro quadro em Enquadrar
+  tudo < 111,5 ms. `npm run test:scale` (`GROWTH_RETRY=0`): canvas pan 3,34×, zoom 4,01× e primeiro quadro 2,22×, todos < 6×.
 - **Grupo de arrasto** (`CanvasController.syncDrag`/`applyDrag`, `canvas/dragSet.ts`; decisões 5 a 7 da etapa canvas-escala):
   durante um gesto do store (`store.gestureActive`: mover ou redimensionar marcação, mover itens ou container, rota e ponta de
   seta), o que se move vai para um **grupo no fundo da camada de sobreposições** (abaixo da faixa de chegada, das marcas da

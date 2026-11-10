@@ -6,6 +6,8 @@
 
 - De longe, a seta curta (menos de 24 px na tela) aparece só com o traço, sem halo, ponta nem rótulo, e a que liga duas marcações invisíveis não aparece; a seta selecionada e as ligadas a uma marcação selecionada ou sob o mouse ficam inteiras. A seta fora da área visível também deixa de ser desenhada. Aproximado, nada muda.
 
+- Projeto grande (2.000 marcações, 1.000 setas, Chromium): editar leva ~10 ms, pan ~21 ms e zoom ~31 ms por quadro; abrir em Enquadrar tudo leva ~128 ms. Números e metas em `docs/ARCHITECTURE.md`, "Desempenho".
+
 ## Corrigido
 
 - Abrir e fechar projetos grandes várias vezes na mesma aba deixava formas do canvas na memória e deixava cada abertura mais lenta.
