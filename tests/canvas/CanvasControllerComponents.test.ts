@@ -272,6 +272,8 @@ describe('CanvasController: componentes', () => {
       });
       if (!regular.ok || !note.ok) throw new Error('addComponent');
       expect(actions.setMarkingFloating(note.value, true).ok).toBe(true);
+      // Os desenhos e as bordas nascem sob demanda: leva as duas à vista.
+      controller.centerOnPoint({ x: 3000, y: 250 });
       flush();
       // Imagens, componentes, setas e marcações (uma camada, um grupo para cada), flutuantes, sobreposições.
       expect(markingNodes(layers[1], regular.value)).toHaveLength(1);
@@ -280,9 +282,6 @@ describe('CanvasController: componentes', () => {
       expect(markingNodes(layers[3], regular.value)).toHaveLength(0);
       // T1, T2 e as duas do canvas (a do canvas desenha sempre: não há foto por baixo).
       expect(container.dataset.components).toBe('4');
-      // Os nós das bordas nascem sob demanda: leva as duas à vista.
-      controller.centerOnPoint({ x: 3000, y: 250 });
-      flush();
       // As bordas da flutuante ficam no grupo de cima, depois do desenho dela.
       const floatingLayer = layers[3] as Konva.Layer;
       expect(floatingLayer.getChildren()).toHaveLength(2);
@@ -325,6 +324,8 @@ describe('CanvasController: componentes', () => {
         center: { x: 3000, y: 400 },
       });
       if (!note.ok) throw new Error('addComponent');
+      // O desenho nasce sob demanda: leva a marcação à vista.
+      controller.centerOnPoint({ x: 3000, y: 400 });
       flush();
       expect(markingNodes(internals.stage.getLayers()[1], note.value)).toHaveLength(1);
       store.undo();
@@ -404,10 +405,13 @@ describe('CanvasController: componentes', () => {
   });
 
   it('zoom semântico: a marcação desenhada não tem cartão; a da foto (sem desenho) tem', () => {
-    const { controller, internals, store, drawing } = setup();
+    const { controller, internals, store, drawing, actions } = setup();
+    // O nome só ganha nó quando aparece (partes sob demanda): a marcação da foto tem nome.
+    actions.renameMarking('TP', 'Perfil');
     controller.zoomTo(3);
     flush();
-    const text = (id: string) => internals.markings.node(id)?.text.group.visible();
+    const text = (id: string) =>
+      internals.markings.node(id)?.text?.group.visible() ?? false;
     // A visibilidade do texto depende de caber na tela: enquadra a marcação conferida.
     const focus = (id: string) => {
       const marking = store.project.value?.markings.find((m) => m.id === id);

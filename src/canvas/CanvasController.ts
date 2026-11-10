@@ -39,6 +39,7 @@ import {
   createInteractionState,
   requestFrame,
   sameFrame,
+  visibleArea,
   type DropTarget,
   type Frame,
   type HoverLock,
@@ -745,6 +746,7 @@ export class CanvasController {
     this.floatingLayer.destroy();
     this.arrivalLayer.destroy();
     this.arrows.destroy();
+    this.markings.destroy();
     this.stage.destroy();
   }
 
@@ -916,9 +918,14 @@ export class CanvasController {
         ).length ?? 0;
     }
     // Os desenhos dos componentes só se refazem quando eles, o conjunto visível, as posições
-    // das imagens ou o tema mudam: pan e zoom não passam por aqui.
+    // das imagens ou o tema mudam.
     if (placementsChanged || dragChanged || !sameFrame(last, frame, COMPONENT_KEYS)) {
       this.renderComponents(frame);
+    } else if (moved) {
+      // Pan e zoom: o desenho nasce sob demanda (só na tela) e se esconde fora dela.
+      const area = visibleArea(size, v);
+      this.mark(this.layers.components, this.componentLayer.reveal(area, v.scale));
+      this.mark(this.layers.floating, this.floatingLayer.reveal(area, v.scale));
     }
     // Os desenhos em pixels de tela (`screen`) só reajustam escala e posição com o zoom.
     if (scaleChanged) {
@@ -1099,6 +1106,7 @@ export class CanvasController {
     }
     const { drawn, floating } = frame;
     const zoom = frame.viewport.scale;
+    const area = visibleArea(frame.size, frame.viewport);
     this.mark(
       this.layers.components,
       this.componentLayer.render(
@@ -1106,6 +1114,7 @@ export class CanvasController {
         (drawing) => drawn.has(drawing.markingId) && !floating.has(drawing.markingId),
         this.placements,
         zoom,
+        area,
       ),
     );
     this.mark(
@@ -1115,6 +1124,7 @@ export class CanvasController {
         (drawing) => drawn.has(drawing.markingId) && floating.has(drawing.markingId),
         this.placements,
         zoom,
+        area,
       ),
     );
     this.drawnComponents = this.componentLayer.size + this.floatingLayer.size;

@@ -404,6 +404,20 @@ Vale para toda imagem que entra pela app (arquivo, câmera, colar, arrastar e tr
   `CanvasController` o publica em `data-drawn-markings` no `.canvas-host`. Efeito: abrir já aproximado cria só os nós à vista
   (65 de 2.000 no cenário de teste, ~50 ms contra ~175 a 285 ms de quadro); com **Enquadrar tudo** todas passam de 2 px e
   todas ganham nó, então abrir inteiro à vista não encurta (`tests/canvas/lazyNodes.test.ts`).
+- **Partes do nó sob demanda** (`markings.ts`, `semanticCard.ts`; CD2 da etapa canvas-desempenho, decisão 5): o `createNode` cria só
+  o grupo e a borda (2 nós por marcação em Enquadrar tudo). O halo, a linha dupla (`inner`), o selo, o alerta (`alertClip` e
+  `alert`) e o nome (`createSemanticNode`, só com nome e modo diferente de `none`) nascem no primeiro quadro em que ficam visíveis;
+  os campos do `MarkingNode` são opcionais e quem os lê trata a ausência. Criadas, as partes ficam (escondidas e fora da pendura do
+  `syncParts` quando não aparecem). A marcação selecionada, sob o mouse ou com marca da revisão é completa por exceção e cria as
+  suas. `MarkingRenderer.destroy` (chamado por `CanvasController.destroy`) e a remoção de uma marcação destroem também as partes
+  desencaixadas: elas não são filhas do grupo, e sem isso as formas ficavam no registro de cores de acerto do Konva.
+- **Desenhos de componente sob demanda** (`componentLayer.ts`; decisão 3, portão aberto na CD1: abrir 2.000 marcações passou de
+  206,6 para 406,7 ms com componentes, +96,9%): o desenho só é montado (`renderScene`) no primeiro quadro em que a caixa dele
+  (matriz da cena, ou a âncora no retângulo, nos de pixels de tela, mais 64 px de margem) cruza a área visível, e fica até a
+  marcação sair do projeto ou o objeto do desenho mudar. Montado e fora da tela, o nó só se esconde. Pan e zoom passam por
+  `ComponentLayerRenderer.reveal` (monta o que entrou, esconde o que saiu, sem reinstanciar nem refazer a ordem inteira), e o
+  `render` de sempre só roda quando os desenhos, o conjunto visível, as posições ou o tema mudam. `data-components` continua
+  contando todos os desenhos que aparecem (`size`), esteja a vista onde estiver; `mountedCount` conta os montados.
 - **Orçamentos da etapa canvas-escala (conferência final, DA5):** arrasto ≤ 16 ms (atingido: ~3 a 4 ms em jsdom, 2 camadas
   redesenhadas); pan e zoom inteiro à vista ≤ 33 ms (jsdom: atingido; Chromium com 2.000: ~42 e ~45 ms, não atingido); edição ≤
   16 ms (jsdom 16 a 24 ms com teto de 35 ms em `renderPerformance.test.ts`; Chromium com 2.000: ~17 ms); abrir ≤ metade da linha
