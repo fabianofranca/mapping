@@ -864,6 +864,12 @@ export const ptBR = {
     'Escolha o tipo. Os campos já vêm definidos; é só preencher os valores.',
   'typed.noTypes':
     'A especialização desta camada não está disponível ou não tem tipos de anotação.',
+  'typed.empty.unavailable': 'A especialização desta camada não está disponível.',
+  'typed.empty.noTypes': 'A especialização desta camada não tem tipos de anotação.',
+  'typed.empty.floating':
+    'As notas desta camada nascem pela Paleta: Catálogo › Paleta › Adicionar no canvas.',
+  'typed.empty.arrow': 'Nenhum tipo desta camada se aplica a setas.',
+  'typed.empty.marking': 'Nenhum tipo desta camada se aplica a marcações.',
   'typed.searchTypes': 'Buscar entre {count} tipos',
   'typed.searchOneType': 'Buscar entre {count} tipo',
   'typed.noTypeMatch': 'Nenhum tipo com "{query}"',

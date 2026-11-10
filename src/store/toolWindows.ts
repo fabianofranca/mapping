@@ -83,7 +83,8 @@ export const WINDOW_LIMITS: Readonly<
     { readonly default: number; readonly min: number; readonly max: number }
   >
 > = {
-  left: { default: px('size-tw-left'), min: 200, max: 480 },
+  // Os mínimos somam, com o canvas, a área da janela mínima (900px menos as duas faixas): 180 + 280 + 360 = 820.
+  left: { default: px('size-tw-left'), min: 180, max: 480 },
   right: { default: px('size-tw-right'), min: 280, max: 560 },
   // A janela inferior vai até 60% da altura do corpo do editor (`maxFraction` abaixo).
   bottom: { default: px('size-tw-bottom'), min: 120, max: Number.POSITIVE_INFINITY },
@@ -276,7 +277,8 @@ export function setPaneWidth(width: number): void {
  * Larguras que as laterais ocupam de fato: as guardadas, encolhidas (primeiro a direita,
  * depois a esquerda, até o mínimo de cada uma) para o canvas manter `--size-canvas-min`
  * numa janela mais estreita que a do layout guardado. Com 900px ou mais os mínimos
- * sempre cabem (200 + 280 + 320 < 820), então nada fica fora da tela. `avail` 0
+ * sempre cabem (180 + 280 + 360 = 820, a área da janela mínima), então nada passa por baixo
+ * das faixas (#1464). `avail` 0
  * (não medido) mantém as guardadas; lado recolhido passa 0. Função pura.
  */
 export function fitSideWidths(

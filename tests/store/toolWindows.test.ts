@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { BREAKPOINTS } from '../../src/theme/breakpoints';
+import { tokenValue } from '../../src/theme/tokens';
 import {
   RESIZE_STEP,
   WINDOW_LIMITS,
@@ -127,7 +129,7 @@ describe('tamanhos', () => {
 
   it('não deixa o canvas abaixo de 360px', () => {
     const tight = { width: 900, height: 800, otherWidth: 360 };
-    // 900 − 360 (Detalhes) − 360 (canvas) = 180: vale o mínimo do lado (200).
+    // 900 − 360 (Detalhes) − 360 (canvas) = 180: vale o mínimo do lado (180).
     expect(clampWindowSize('left', 480, tight)).toBe(WINDOW_LIMITS.left.min);
     expect(clampWindowSize('left', 480, { ...tight, otherWidth: 280 })).toBe(260);
     // Sem espaço nenhum, vale o mínimo do lado.
@@ -278,12 +280,26 @@ describe('fitSideWidths', () => {
   });
 
   it('a partir de 900px o canvas mantém o mínimo e as laterais nunca o invadem', () => {
+    const canvasMin = Number.parseFloat(tokenValue('size-canvas-min', 'light'));
     for (const avail of [820, 900, 1000]) {
       const { left, right } = fitSideWidths(480, 560, avail);
-      expect(left + right + 360).toBeLessThanOrEqual(Math.max(avail, 200 + 280 + 360));
-      expect(left).toBeGreaterThanOrEqual(200);
-      expect(right).toBeGreaterThanOrEqual(280);
+      expect(left + right + canvasMin).toBeLessThanOrEqual(avail);
+      expect(left).toBeGreaterThanOrEqual(WINDOW_LIMITS.left.min);
+      expect(right).toBeGreaterThanOrEqual(WINDOW_LIMITS.right.min);
     }
+  });
+
+  it('na largura mínima da app os mínimos das duas laterais e o do canvas cabem entre as faixas (#1464)', () => {
+    // 900px de janela menos as duas faixas: é a área que o `fitSideWidths` recebe. Se os
+    // mínimos somarem mais, a janela da direita passa por baixo da faixa e cobre o X.
+    const stripe = Number.parseFloat(tokenValue('size-stripe', 'light'));
+    const canvasMin = Number.parseFloat(tokenValue('size-canvas-min', 'light'));
+    const avail = BREAKPOINTS.appMin - 2 * stripe;
+    expect(
+      WINDOW_LIMITS.left.min + WINDOW_LIMITS.right.min + canvasMin,
+    ).toBeLessThanOrEqual(avail);
+    const fit = fitSideWidths(WINDOW_LIMITS.left.max, WINDOW_LIMITS.right.max, avail);
+    expect(fit.left + fit.right + canvasMin).toBeLessThanOrEqual(avail);
   });
 
   it('lado recolhido (0) não ocupa nem recebe corte', () => {
