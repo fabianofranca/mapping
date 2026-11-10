@@ -1,4 +1,4 @@
-# Passada visual das perspectivas e do canvas — [Não lançado] (épico `epic/passada-perspectivas-canvas`)
+# Passada visual das perspectivas e do canvas — 2026-11-10 (épico `epic/passada-perspectivas-canvas`)
 
 ## Pendências
 
@@ -10,7 +10,7 @@
 
 ## Sincronização
 
-A gravar no artefato **Mapping** pelo fechamento do épico (as pendências acima e as da PV2).
+Gravado no artefato **Mapping** em 2026-11-10: versão 78. As cinco pendências acima foram gravadas: `components/Menu/README.md` (variante `menu-popover-control`), `components/PerspectivesSection/README.md` (gatilho com a aparência do `Button`), `Canvas.md` (selo "Veio de…" e rótulo da Área de chegada; o guia `CanvasMarking` não descreve essas marcas, então não mudou), `components/Notice/README.md` (avisos curtos e de progresso no pé do canvas) e `components/Breadcrumbs/README.md` (encolhimento dos trechos na barra larga).
 
 ## Ficou sem gravar
 
