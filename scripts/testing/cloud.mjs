@@ -31,6 +31,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
+import { guideExcerpt } from './round-guide.mjs';
 
 const execFileAsync = promisify(execFile);
 
@@ -1819,6 +1820,10 @@ const CLI_HELP = [
     'find <texto>',
     'lista até 10 elementos visíveis cujo nome contém o texto (papel, nome, região)',
   ],
+  [
+    'passo <item…> [--guia=<arquivo>]',
+    'imprime do guia da rodada (<APOIO>/guia.md) o roteiro (R12), um passo (R12.4) ou uma faixa (R12.1-R12.8), sem abrir o Chrome; passa de 25 mil caracteres, corta e diz como continuar',
+  ],
   ['help', 'esta lista'],
 ];
 
@@ -1851,7 +1856,37 @@ function resolveApoio(explicit) {
   return null;
 }
 
-/** Roda a CLI (`mark`, `state`, `tempos`, `ponto`, `run` e `help`); lê a pasta de apoio de `APOIO` (ou, sem ela, da rodada mais recente). */
+/** `passo <item…> [--guia=<arquivo>]`: imprime o trecho do guia da rodada (etapa #1232, GL1). */
+function runPasso(args) {
+  const guiaArg = args.find((a) => a.startsWith('--guia='));
+  const items = args.filter((a) => !a.startsWith('--guia='));
+  if (items.length === 0 || (guiaArg && guiaArg.length === 7)) {
+    console.error('Uso: node cloud.mjs passo <item…> [--guia=<arquivo>]');
+    process.exitCode = 2;
+    return;
+  }
+  let file = guiaArg?.slice(7);
+  if (!file) {
+    const apoioDir = resolveApoio();
+    if (!apoioDir) {
+      process.exitCode = 2;
+      return;
+    }
+    file = path.join(apoioDir, 'guia.md');
+  }
+  try {
+    console.log(guideExcerpt(fs.readFileSync(file, 'utf8'), items));
+  } catch (error) {
+    console.error(
+      error.code === 'ENOENT'
+        ? `Não achei o guia da rodada: ${file}. Gere-o com round-guide.mjs --out.`
+        : error.message,
+    );
+    process.exitCode = 2;
+  }
+}
+
+/** Roda a CLI (`mark`, `state`, `tempos`, `ponto`, `run`, `passo` e `help`); lê a pasta de apoio de `APOIO` (ou, sem ela, da rodada mais recente). */
 async function runCli(argv) {
   const [command, ...rest] = argv;
   if (command === 'mark') {
@@ -1941,6 +1976,10 @@ async function runCli(argv) {
     console.log(formatHelp());
     return;
   }
+  if (command === 'passo') {
+    runPasso(rest);
+    return;
+  }
   if (command === 'run') {
     const prazoArg = rest.find((a) => a.startsWith('--prazo='));
     const prazo = prazoArg ? Number(prazoArg.slice(8)) : undefined;
@@ -1973,7 +2012,7 @@ async function runCli(argv) {
     return;
   }
   console.error(
-    `Comando desconhecido: ${command}. Comandos: mark, state, tempos, ponto, run, find, help.`,
+    `Comando desconhecido: ${command}. Comandos: mark, state, tempos, ponto, run, find, passo, help.`,
   );
   process.exitCode = 2;
 }

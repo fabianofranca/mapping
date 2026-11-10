@@ -92,7 +92,7 @@ describe('Lista em tabela (P7)', () => {
     expect(screen.getAllByText(t('list.noAnnotations')).length).toBeGreaterThan(0);
 
     // Só incompletas: o projeto não tem pendência.
-    await user.click(screen.getByLabelText(`⚠ ${t('list.incomplete')}`));
+    await user.click(screen.getByLabelText(t('list.incomplete')));
     expect(screen.getByText(t('list.emptyIncomplete'))).toBeTruthy();
     expect(screen.queryByRole('table')).toBeNull();
   });

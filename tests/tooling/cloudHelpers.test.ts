@@ -15,7 +15,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { HANDLE_HIT_RADIUS } from '../../src/canvas/input/intents';
 import { handleHitRadius } from '../../src/canvas/markingGeometry';
 
@@ -1062,7 +1062,16 @@ describe('cloud.mjs run, --prazo e help (etapa #1148, TR1)', () => {
     });
     expect(r.status).toBe(0);
     for (const name of names) expect(r.stdout, name).toContain(name);
-    for (const cmd of ['mark', 'state', 'tempos', 'ponto', 'run', 'find', 'help']) {
+    for (const cmd of [
+      'mark',
+      'state',
+      'tempos',
+      'ponto',
+      'run',
+      'find',
+      'passo',
+      'help',
+    ]) {
       expect(r.stdout, cmd).toMatch(new RegExp(`cloud\\.mjs ${cmd}\\b`));
     }
     const dts = read('scripts/testing/cloud.d.mts');
@@ -1747,5 +1756,70 @@ describe('paletteDrag, caminho absoluto e pasta lembrada (etapa #1256, RT2)', ()
       }) as string;
       expect(text).toContain('Pasta: /tmp/espaco');
     });
+  });
+});
+
+// Etapa #1232 (GL1): `cloud.mjs passo` imprime o trecho do guia da rodada, sem abrir o Chrome.
+describe('cloud.mjs passo (#1232, GL1)', () => {
+  let apoio: string;
+
+  beforeAll(() => {
+    apoio = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-passo-'));
+    const guide = spawnSync('node', ['scripts/testing/round-guide.mjs', 'R0', 'R22'], {
+      encoding: 'utf8',
+    });
+    writeFileSync(path.join(apoio, 'guia.md'), guide.stdout);
+  });
+
+  afterAll(() => rmSync(apoio, { recursive: true, force: true }));
+
+  function passo(
+    args: string[],
+    env: Record<string, string | undefined> = { APOIO: apoio },
+  ) {
+    const r = spawnSync('node', ['scripts/testing/cloud.mjs', 'passo', ...args], {
+      env: { ...process.env, ...env },
+      encoding: 'utf8',
+    });
+    return { status: r.status, stdout: r.stdout, stderr: r.stderr };
+  }
+
+  it('R22.4 imprime o cabeçalho da tabela e a linha do passo', () => {
+    const r = passo(['R22.4']);
+    expect(r.status).toBe(0);
+    const lines = r.stdout.trimEnd().split('\n');
+    expect(lines.slice(0, 2)).toEqual([
+      '| Passo | Ação | Esperado |',
+      '| --- | --- | --- |',
+    ]);
+    expect(lines[2]).toMatch(/^\| R22\.4 \|/);
+    expect(lines).toHaveLength(3);
+  });
+
+  it('vários itens, em ordem, separados por ---; --guia aponta outro arquivo', () => {
+    const r = passo(['R22.4', 'R0.1', `--guia=${path.join(apoio, 'guia.md')}`], {
+      APOIO: undefined,
+    });
+    expect(r.status).toBe(0);
+    expect(r.stdout.indexOf('| R22.4 |')).toBeLessThan(r.stdout.indexOf('| R0.1 |'));
+    expect(r.stdout).toContain('\n---\n');
+  });
+
+  it('R22.99 sai com 2 e diz o que o guia tem; sem item sai com 2 e mostra o uso', () => {
+    const bad = passo(['R22.99']);
+    expect(bad.status).toBe(2);
+    expect(bad.stdout).toBe('');
+    expect(bad.stderr).toContain(
+      'R22.99 não está no guia da rodada; o R22 tem R22.1 a R22.22',
+    );
+    const none = passo([]);
+    expect(none.status).toBe(2);
+    expect(none.stderr).toContain('Uso: node cloud.mjs passo <item…> [--guia=<arquivo>]');
+  });
+
+  it('guia que não existe sai com 2 e diz como gerá-lo', () => {
+    const r = passo(['R0'], { APOIO: path.join(apoio, 'nada') });
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain('round-guide.mjs');
   });
 });

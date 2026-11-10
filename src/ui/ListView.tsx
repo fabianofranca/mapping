@@ -185,7 +185,12 @@ export function ListView({ onSelect }: ListViewProps) {
         />
         <Choice
           checked={incompleteOnly}
-          label={`⚠ ${t('list.incomplete')}`}
+          label={
+            <>
+              <Icon name="warning" />
+              {t('list.incomplete')}
+            </>
+          }
           onChange={(e) => (ui.listIncompleteOnly.value = e.currentTarget.checked)}
         />
       </div>
