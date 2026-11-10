@@ -1,4 +1,4 @@
-# Sincronia do DS — [Não lançado] (épico `epic/sincronia-ds-2`)
+# Sincronia do DS — 2026-11-10 (épico `epic/sincronia-ds-2`)
 
 ## Pendências
 
@@ -441,6 +441,12 @@ Gravado no artefato **Mapping** em 2026-11-10 (DS5, gravação 3, demais prévia
 
 No `docs/DESIGN-SYSTEM.md` mudaram "Tamanho hoje" (79 componentes com guia, 6 seções, 177 tokens, 92 ícones) e as conferências de "Tokens" e "Ícones".
 
+Gravado no artefato **Mapping** em 2026-11-10 (DS6, gravação 4, regras de CSS corrigidas no código): versão 72 (`1794310648-56af`), numa publicação só, com o índice por último e `lastChange` "Claude Code (épico sincronia-ds-2, DS6)":
+
+- `project/components/bundle.css`: `.notice-box-line > .tooltip-anchor:has(> .notice-box-text) { flex: 1; min-width: 0 }` (no lugar de `.notice-box-line .tooltip-anchor`, de `src/theme/review.css`), `color: inherit` em `.status-item-button` (`src/theme/review.css`) e `transform: translate(50%, -50%)` em `.icon-button-badge` (`src/theme/controls.css`).
+- `components/Notice/preview.html`: tirado o `style="flex:none"` das duas âncoras do X (linhas de 576 e 360 px), que mascarava o defeito.
+- Conferência visual: a prévia do `Notice` em linha aberta num Chromium local nos temas claro e escuro, sem barra horizontal (scrollWidth 1000 = clientWidth 1000) e com o X dentro da caixa nas duas linhas. Não medi o selo do `icon-button-badge` nem o `color: inherit` do `.status-item-button` na prévia.
+
 ## Ficou sem gravar
 
 - Hover e foco de `.thread-row`, dos botões e do selo `Flag` (dica `.tooltip`) em `CommentsWindow`, `ThreadsSection`, `ReviewRow` e `ProposalRow`, e o hover do `.link-button` do `ReferencedByRow`. Motivo: as prévias são HTML estático e o `bundle.css` não tem `.ds-state-*` para essas classes (no `.link-button` o código também não define hover); o DOM e o texto oculto (`.visually-hidden`) estão desenhados, só o estado interativo não.
@@ -449,4 +455,3 @@ No `docs/DESIGN-SYSTEM.md` mudaram "Tamanho hoje" (79 componentes com guia, 6 se
 - Botão **Arrumar** desabilitado na `PerspectivesSection`. Motivo: o botão não é renderizado para a marcação usada na prévia; só o **Excluir container** desabilitado aparece.
 - `title` de `ref-control` ainda em um cartão da prévia do `MarkingPanel`. Motivo: o item da fase só pedia o `Tooltip` em `RefCell` e `ReferenceField`; o cartão fica como estava.
 - Ids repetidos (`P0-0`, `P0-1`, `R1`…) nas prévias de `SettingsDialog`, `ChangePopover`, `ArrowPanel` e `DataGrid`. Motivo: vêm do DOM renderizado de vários estados num arquivo só e não quebram a prévia; renumerar é mudança sem efeito visível.
-- `project/components/bundle.css` (DS6, #1468): as três regras de CSS corrigidas no código não foram regravadas no artefato: `.notice-box-line > .tooltip-anchor:has(> .notice-box-text)` (no lugar de `.notice-box-line .tooltip-anchor`; a prévia do `Notice` pode largar o `style="flex:none"` que mascarava o X), `color: inherit` em `.status-item-button` e `transform: translate(50%, -50%)` em `.icon-button-badge` (selo no canto, fora do ⋯). Motivo: a gravação (`Artifact publish` no DS) foi negada pelo classificador de permissões da sessão; o fechamento do épico grava estas três regras no `bundle.css` e, se quiser, tira o `style` da prévia do `Notice`.

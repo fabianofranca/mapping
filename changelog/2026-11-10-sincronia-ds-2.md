@@ -1,4 +1,4 @@
-# Sincronia do DS — [Não lançado] (épico `epic/sincronia-ds-2`, PR #0, MCP 0.30.0 sem mudança, schema v18)
+# Sincronia do DS — 2026-11-10 (épico `epic/sincronia-ds-2`, PR #1439, MCP 0.30.0 sem mudança, schema v18)
 
 ## Alterado
 
