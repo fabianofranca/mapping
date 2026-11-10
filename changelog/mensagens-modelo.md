@@ -1,4 +1,4 @@
-# Mensagens do modelo na língua da app — [Não lançado] (épico `epic/mensagens-modelo`, PR #0, MCP 0.31.1, schema v18)
+# Mensagens do modelo na língua da app — [Não lançado] (épico `epic/mensagens-modelo`, PR #1512, MCP 0.31.1, schema v18)
 
 ## Corrigido
 
