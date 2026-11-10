@@ -2,7 +2,13 @@
 
 ## Pendências
 
-Nenhuma aberta: as duas pendências do épico (tokens dos pinos e selos, fase 1; tokens do desenho dos componentes, fase 3) estão em `## Ficou sem gravar
+Nenhuma aberta: as duas pendências do épico (tokens dos pinos e selos, fase 1; tokens do desenho dos componentes, fase 3) estão em `## Ficou sem gravar`.
+
+## Sincronização
+
+Nada foi gravado no artefato Mapping do Claude Design: o fechamento automatizado não grava no artefato curado à mão (as pessoas o editam ao vivo e a gravação pede a leitura prévia do índice). As duas pendências do épico passam para `## Ficou sem gravar`.
+
+## Ficou sem gravar
 
 - Passou para o registro do épico `epic/sincronia-ds-2`: tokens `size-cv-pin-*` e `size-cv-arrival-*` (onze) em `tokens.json`, `Canvas.md` e guia `CommentPin` (texto, DS3; mudou: o pino ganhou o glifo do estado).
 - Passou para o registro do épico `epic/sincronia-ds-2`: tokens `cv-component-unknown-fill` e `opacity-slot` em `tokens.json`, `Canvas.md` e guia `ComponentDrawing` (texto, DS3).
