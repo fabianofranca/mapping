@@ -19,7 +19,7 @@ import {
 } from './FieldEditors';
 import { ActionMenu } from './ActionMenu';
 import { useCiteMenuItems } from './CiteMenuItems';
-import { IconButton } from './controls';
+import { IconButton, Tooltip } from './controls';
 import { classes } from './controls/classes';
 import { useDetailsExtension } from './DetailsExtension';
 import { useEditor } from './EditorContext';
@@ -183,41 +183,44 @@ function RefField({
         open();
       }}
     >
-      {/* Exceção ao Button: campo de referência (cara de select) (docs/DESIGN-SYSTEM.md, "Botões avulsos") */}
-      <button
-        ref={button}
-        id={id}
-        type="button"
-        class={classes(
-          'ref-control',
-          !hasValue && 'is-empty',
-          broken && 'is-broken',
-          invalid && !broken && 'input-invalid',
-        )}
-        aria-haspopup="dialog"
-        aria-expanded={picking}
-        aria-invalid={invalid || undefined}
-        aria-label={refButtonName(
-          fieldLabel(field),
-          !hasValue
-            ? { kind: 'empty' }
-            : broken || !target
-              ? { kind: 'broken' }
-              : { kind: 'value', value: text, layer: layer?.name },
-        )}
-        aria-keyshortcuts={ariaKeys(SHORTCUT_LABELS.pickRef)}
-        // O valor pode sair cortado no campo ("→ User.no…"): inteiro na dica.
-        title={`${tip}${layer ? ` (${layer.name})` : ''}\n${t('ref.choose')}  ${SHORTCUT_LABELS.pickRef}`}
-        disabled={readOnly}
-        onClick={(e) => {
-          if ((e.ctrlKey || e.metaKey) && target) goTo();
-          else open();
-        }}
+      {/* O valor pode sair cortado no campo ("→ User.no…"): o texto inteiro vai no Tooltip. */}
+      <Tooltip
+        label={`${tip}${layer ? ` (${layer.name})` : ''} · ${t('ref.choose')}  ${SHORTCUT_LABELS.pickRef}`}
       >
-        <Icon name={!hasValue ? 'search' : broken ? 'warning' : 'arrowRight'} />
-        <span class="ref-control-text">{text}</span>
-        {layer && <span class="ref-control-layer">{layer.name}</span>}
-      </button>
+        {/* Exceção ao Button: campo de referência (cara de select) (docs/DESIGN-SYSTEM.md, "Botões avulsos") */}
+        <button
+          ref={button}
+          id={id}
+          type="button"
+          class={classes(
+            'ref-control',
+            !hasValue && 'is-empty',
+            broken && 'is-broken',
+            invalid && !broken && 'input-invalid',
+          )}
+          aria-haspopup="dialog"
+          aria-expanded={picking}
+          aria-invalid={invalid || undefined}
+          aria-label={refButtonName(
+            fieldLabel(field),
+            !hasValue
+              ? { kind: 'empty' }
+              : broken || !target
+                ? { kind: 'broken' }
+                : { kind: 'value', value: text, layer: layer?.name },
+          )}
+          aria-keyshortcuts={ariaKeys(SHORTCUT_LABELS.pickRef)}
+          disabled={readOnly}
+          onClick={(e) => {
+            if ((e.ctrlKey || e.metaKey) && target) goTo();
+            else open();
+          }}
+        >
+          <Icon name={!hasValue ? 'search' : broken ? 'warning' : 'arrowRight'} />
+          <span class="ref-control-text">{text}</span>
+          {layer && <span class="ref-control-layer">{layer.name}</span>}
+        </button>
+      </Tooltip>
       <IconButton
         icon="externalLink"
         label={t('ref.goTo')}

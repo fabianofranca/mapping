@@ -6,6 +6,7 @@ import {
   siblingPosition,
   annotationShortLabel,
   getBacklinks,
+  type AnnotationRef,
   getLinkedAnnotations,
   linkedByRole,
   roleLabelOf,
@@ -168,6 +169,36 @@ function refTarget(refs: Refs, target: ResolvedRef): Json {
   }
 }
 
+/** `row` (0-based) e `column` de uma referência; `null` nos dois quando ela está num campo e não numa célula. */
+function refCell(link: Pick<AnnotationRef, 'rowIndex' | 'column'>): {
+  row: number | null;
+  column: string | null;
+} {
+  return { row: link.rowIndex ?? null, column: link.column ?? null };
+}
+
+/** Quem aponta para a anotação: uma entrada por origem (na ordem do projeto), com os `fields` que apontam. */
+function backlinksView(refs: Refs, annotation: Annotation): Json[] {
+  const p = refs.project;
+  const bySource = new Map<string, { source: Annotation; fields: Json[] }>();
+  for (const link of getBacklinks(p, annotation.id)) {
+    const field = {
+      field: refPathText(link),
+      ...refCell(link),
+      to: refLabel(p, link.ref),
+    };
+    const entry = bySource.get(link.source.id);
+    if (entry) entry.fields.push(field);
+    else bySource.set(link.source.id, { source: link.source, fields: [field] });
+  }
+  return [...bySource.values()].map(({ source, fields }) => ({
+    from: refs.ref('a', source.id),
+    fromLabel: annotationShortLabel(p, source),
+    fromMarking: refs.ref('m', source.markingId),
+    fields,
+  }));
+}
+
 /** A anotação com tudo o que a descreve: conteúdo, vínculos, referências de saída, backlinks e pendências. */
 export function annotationView(
   refs: Refs,
@@ -188,17 +219,12 @@ export function annotationView(
     // Numa célula de coluna `ref`, o campo é `tabela[2].coluna`.
     const field = refPathText(link);
     const target = resolveRef(p, ref);
+    const cell = refCell(link);
     return target
-      ? { field, to: refLabel(p, ref), target: refTarget(refs, target) }
-      : { field, broken: true, ref };
+      ? { field, ...cell, to: refLabel(p, ref), target: refTarget(refs, target) }
+      : { field, ...cell, broken: true, ref };
   });
-  const backlinks = getBacklinks(p, annotation.id).map((link) => ({
-    from: refs.ref('a', link.source.id),
-    fromLabel: annotationShortLabel(p, link.source),
-    fromMarking: refs.ref('m', link.source.markingId),
-    field: refPathText(link),
-    to: refLabel(p, link.ref),
-  }));
+  const backlinks = backlinksView(refs, annotation);
   const linked = getLinkedAnnotations(p, annotation.id).map((a) => refs.ref('a', a.id));
   const byRole = linkedByRoleView(refs, annotation);
   const roleName = roleLabelOf(p, annotation);

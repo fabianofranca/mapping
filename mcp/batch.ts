@@ -1553,6 +1553,21 @@ class Batch {
     };
   }
 
+  /** `beside` do `add_container`: o id do container de referência; com `center` é `invalid-arguments`. */
+  private besideId(
+    op: { readonly beside?: string; readonly center?: unknown },
+    p: Project,
+  ): string | undefined {
+    if (op.beside === undefined) return undefined;
+    if (op.center !== undefined) {
+      throw new ToolError(
+        'invalid-arguments',
+        '`beside` e `center` são exclusivos: use `beside` para pôr o container ao lado de outro, ou `center` para um ponto do canvas',
+      );
+    }
+    return this.containerItem(op.beside, p);
+  }
+
   /** Container com arquivo de imagem: `add_container` com `file`/`base64` e a antiga `add_image`. */
   private async addContainerFromFile(
     op: Extract<Operation, { op: 'add_container' | 'add_image' }>,
@@ -1567,6 +1582,7 @@ class Batch {
         'add_container ambígua: com `file`/`base64` a largura e a altura vêm do arquivo; informe `file` ou `base64`, ou então `width`, `height` e `background`, nunca os dois grupos',
       );
     }
+    const beside = this.besideId(op, p);
     const image = await this.image(op, p);
     const id = crypto.randomUUID();
     let project = addContainer(p, {
@@ -1575,6 +1591,7 @@ class Batch {
       width: image.width,
       height: image.height,
       ...(op.center ? { center: op.center } : {}),
+      ...(beside !== undefined ? { beside } : {}),
     });
     if (op.name !== undefined) project = renameContainer(project, id, op.name);
     if (op.source !== undefined) {
@@ -1607,6 +1624,7 @@ class Batch {
         `add_container precisa de \`file\` (ou \`base64\`), ou de \`width\`, \`height\` e \`background\`; faltam: ${missing.join(', ')}`,
       );
     }
+    const beside = this.besideId(op, p);
     const id = crypto.randomUUID();
     let project = addBackgroundContainer(p, {
       id,
@@ -1615,6 +1633,7 @@ class Batch {
       height,
       background,
       ...(op.center ? { center: op.center } : {}),
+      ...(beside !== undefined ? { beside } : {}),
     });
     if (op.source !== undefined) {
       project = setImageSource(project, id, toSource(op.source));

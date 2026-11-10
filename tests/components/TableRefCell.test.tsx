@@ -99,7 +99,9 @@ describe('TableField: célula de coluna ref', () => {
     });
     await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(cellButton().textContent).toContain('Cliente.nome');
-    expect(cellButton().title).toContain('→ Cliente.nome');
+    expect(cellButton().closest('.tooltip-anchor')?.textContent).toContain(
+      '→ Cliente.nome',
+    );
     expect(document.activeElement).toBe(cellButton());
   });
 
