@@ -69,11 +69,12 @@ Briefing do subagente (um só para todas as issues candidatas, com `model: "haik
 
 ```text
 Leia no GitHub (fabianofranca/mapping), só lendo, as issues <#a #b ...>: o corpo, as sub-issues (get_sub_issues) e o corpo de cada sub-issue. Não escreva nada. Para cada issue, devolva UMA linha, sem mais nada:
-#<n> | <título curto> | dep=<números do **Depende de:**, ou "nenhuma"> | nivel=<severity: x ou impact: x> | mcp=<não, ou minor/patch e a versão pedida> | schema=<não, ou vN> | epico=<epic/nome> | fases=<código:#sub-issue:esforço do coordenador, separados por vírgula, na ordem> | toca=<arquivos e pastas do "Toca em:" de todas as fases, separados por vírgula> | testador=<roteiros da seção Testador da última fase; "completa" se pede a rodada completa> ; visual=<lista ou "nenhuma"> ; <modelo e esforço do testador>
+#<n> | <título curto> | dep=<cada número do **Depende de:** com o estado, `#a:main,#b:aberta` (issue fechada como concluída, com o épico mesclado, vale `:main`; fechada de outro jeito, `:aberta`), ou "nenhuma"> | nivel=<severity: x ou impact: x> | mcp=<não, ou minor/patch e a versão pedida> | schema=<não, ou vN> | epico=<epic/nome> | fases=<código:#sub-issue:esforço do coordenador, separados por vírgula, na ordem> | toca=<arquivos e pastas do "Toca em:" de todas as fases, separados por vírgula, no formato da comparação do `painel.py`: o `docs/TESTING.md` por roteiro (`docs/TESTING.md#R12`) e a tabela de blocos como `docs/TESTING-NUVEM.md#blocos`> | testador=<roteiros da seção Testador da última fase; "completa" se pede a rodada completa> ; visual=<lista ou "nenhuma"> ; <modelo e esforço do testador>
 Se um campo não existir na issue, escreva "?" nele.
+Converta as citações antigas no `toca=`: o `docs/TESTING.md` citado com roteiros em prosa ("R18: …", "o R9.12, o R12.3") vira um por roteiro (`docs/TESTING.md#R9,docs/TESTING.md#R12`; passo ou faixa conta como o roteiro inteiro, e os sob demanda são `#RP`, `#RF`, `#RA` e `#RB`); sem roteiro, ou com uma seção que não é roteiro, fica `docs/TESTING.md`. O `docs/TESTING-NUVEM.md` citado só pela contagem ("contagem", "a tabela", "Passos") vira `docs/TESTING-NUVEM.md#blocos`; citado por outra coisa, fica sem âncora.
 ```
 
-Grave cada linha com `row '#n' plan="<a linha>"` (e `title`, `phases` com as fases em `open`).
+Grave cada linha com `row '#n' plan="<a linha>"` (e `title`, `phases` com as fases em `open`). Sem o estado em `dep=`, a ficha antiga conta como dependência aberta.
 
 ## 1. Começo
 
@@ -84,7 +85,7 @@ Grave cada linha com `row '#n' plan="<a linha>"` (e `title`, `phases` com as fas
    - as `mcp__github__*`: `list_issues`, `issue_write` (só para trocar rótulos e criar issues sem pai), `add_issue_comment`, `create_pull_request`, `update_pull_request` e `merge_pull_request`. Leituras de issue, PR, Actions e Release ficam com os subagentes ("Economia de contexto");
    - as `mcp__claude-code-remote__*`: `create_session`, `send_message`, `create_trigger`, `delete_trigger`, `get_session`, `list_environments` e `list_events`.
 4. Sem `retomar`, crie a conferência de reserva da sessão (seção "Conferências de reserva") e grave o id no painel assim que ele existir (passo 5 de "Fila"): `painel.py reserve <pasta> <trig_id>`.
-5. Com `retomar`, siga "Troca de sessão" › "Na sessão nova" e volte ao passo 4 de "Fila".
+5. Com `retomar`, siga "Troca de sessão" › "Na sessão nova" (que roda `painel.py start <pasta> --paralelo N` com o N da chamada) e volte ao passo 4 de "Fila".
 
 ## 2. Fila
 
@@ -102,7 +103,7 @@ Grave cada linha com `row '#n' plan="<a linha>"` (e `title`, `phases` com as fas
    - mostre no chat uma tabela com a ordem, a issue, o título, as fases, o "Depende de", o porquê da posição e o que roda em paralelo;
    - mande `PushNotification` "Fila pronta: N etapas";
    - pergunte pelo `AskUserQuestion`: "Começar nesta ordem (Recomendado)" / "Mudar a ordem". A resposta em "Outro" vale como foi escrita.
-7. `painel.py start`, log "Execução iniciada", e comece.
+7. `painel.py start <pasta> --paralelo N` (N do `paralelo=`; sem ele, 2), log "Execução iniciada", e comece pelas etapas que o `show` lista em `começar agora:` (seção "Paralelo").
 
 ## 3. Por etapa
 
@@ -182,8 +183,9 @@ Siga o `docs/FLOW.md` ("Orquestrador — passo a passo" e as mensagens), com o q
    - ▸ `status: concluída`, `stage: Mesclada`, `ended: now`.
 7. **Entre etapas:**
    - liste as `ready` de novo e refaça a ordem das que aguardam (seção "Mudanças na fila durante a execução");
+   - dependência fora da fila que entrou na `main` (a etapa de outro orquestrador, por exemplo): o subagente do ciclo confere e o coordenador grava `painel.py merged <pasta> '#N'`, para a nota de vagas deixar de a contar como aberta;
    - confira o contexto e se o skill mudou na `main` ("Troca de sessão"), com `git fetch -q origin main && git diff --quiet HEAD origin/main -- .claude/skills/implementar-fila/SKILL.md`;
-   - comece a próxima etapa livre.
+   - rode `painel.py show` e comece cada etapa listada em `começar agora:`, no mesmo ciclo.
 
 **Arquivar as sessões** (`archive_session`, para a lista de sessões do dono ficar legível):
 
@@ -196,14 +198,15 @@ Siga o `docs/FLOW.md` ("Orquestrador — passo a passo" e as mensagens), com o q
 
 - **Uma por sessão do coordenador**, não uma por filha: `create_trigger` sem `persistent_session_id` (dispara nesta sessão), `cron_expression: "0 * * * *"` (de hora em hora), `initiation: own_followup`, com o id guardado por `painel.py reserve`. Ela vale para todas as filhas e é apagada só na troca de sessão e no fim. Nada de `send_later` por filha, nada de `delete_trigger` a cada aviso, nunca `list_triggers`.
 - A mensagem guardada se sustenta sozinha: "Conferência da fila: rode `painel.py show` e confira as atrasadas; painel <url>; siga o skill implementar-fila".
-- Na conferência, confira primeiro se o skill mudou na `main` ("Troca de sessão"); se mudou, dê o `git pull` e aplique a regra de "Troca de sessão" › "Skill novo na `main`" (grande: troca de sessão; pequena: releitura do `SKILL.md` inteiro com `Read`, sem `offset` nem `limit`, com a prova no `log`). Depois, `show` lista as **atrasadas** (filha sem aviso há mais de 30 min). Sem atrasadas (e sem conferência de Release pendente), não faça mais nada nesse ciclo: nem publicar o painel.
+- Na conferência, o **primeiro passo** é o contexto: `get_session` sem `session_id` e `painel.py context <pasta> <pct>` com o `external_metadata.context_usage`. Se o `show` avisar "acima de 60%", faça a troca de sessão ("Troca de sessão") neste mesmo ciclo, mesmo com etapas e fases em andamento, e não siga com o resto; sem espaço na linhagem ("Limite de linhagem"), não há sucessor, e o ciclo segue com o resto.
+- Depois, confira se o skill mudou na `main` ("Troca de sessão"); se mudou, dê o `git pull` e aplique a regra de "Troca de sessão" › "Skill novo na `main`" (grande: troca de sessão; pequena: releitura do `SKILL.md` inteiro com `Read`, sem `offset` nem `limit`, com a prova no `log`). Depois, `show` lista as **atrasadas** (filha sem aviso há mais de 30 min) e o `começar agora:`: cada etapa listada começa neste ciclo (passo 1 de "Por etapa"). Se o `vagas:` mostra `dep #N` de uma dependência fora da fila, o subagente do ciclo confere se ela entrou na `main`, e o coordenador grava `painel.py merged` (e o `começar agora` vale na hora). Sem atrasadas, sem `começar agora` e sem o alerta de contexto (e sem conferência de Release pendente), não faça mais nada nesse ciclo: nem publicar o painel. A gravação do `context` sozinha não publica; ela vai no próximo ciclo que publicar.
 - Para cada atrasada, leia `get_session` (`status_bucket`) e, só se não estiver trabalhando, `list_events` com `kinds: ["assistant", "result"]` e `limit: 10`:
   - trabalhando: `row '#n' childAt=now` (volta a contar);
   - `review_ready` ou `idle` com o último turno terminado num `send_later` ainda por disparar (a hora do evento mais o `delay_minutes`, ou o `at`, ainda não passou, ou passou há menos de 5 min): é espera legítima, `row '#n' childAt=now`, sem mensagem;
   - `review_ready` ou `idle` (o último turno terminou sem o aviso e sem `send_later` pendente): primeiro mande `send_message` a ela, "Conferência da fila: a fase não avisou. Retome do ponto em que parou (CI do PR, merge, aviso) e avise o coordenador.", e `row '#n' childAt=now`. A sessão guarda o contexto e retoma mais barato que uma nova;
   - falhou, parou pedindo permissão ou morreu, ou ainda atrasada e parada na conferência seguinte ao `send_message`: crie a sessão de novo uma vez, com a mesma mensagem e mais "a sessão anterior (<id>) parou em: <o que os eventos mostram>";
   - se acontecer de novo, a etapa vira `falhou`, o dono é notificado e a fila segue.
-- **Pior caso de detecção:** com a conferência de hora em hora e o corte de 30 min, uma filha parada é achada em até ~60 min, ou em até ~90 min se foi criada ou cutucada menos de 30 min antes de uma conferência. A primeira rede é a da própria fase (o `send_later` de 8 min); a frequência e o corte não mudam.
+- **Pior caso de detecção:** com a conferência de hora em hora e o corte de 30 min, uma filha parada é achada em até ~60 min, ou em até ~90 min se foi criada ou cutucada menos de 30 min antes de uma conferência. A primeira rede é a espera do CI da própria fase (4 min, de 2 em 2 min até 20 min, depois de 8 em 8); a frequência e o corte não mudam.
 
 **CI vermelho no PR do épico** (o job `epic`, a trava da versão ou o tamanho do `dist`, por exemplo): corrija no próprio épico. Se for registro (changelog, DS, versão), basta um commit do coordenador. Se for código, abra uma fase de correção.
 
@@ -224,15 +227,16 @@ A fila é refeita sempre que algo muda, sem parar o que está rodando.
   - ▸ `row` da nova, `reorder` com a ordem nova e log "Nova ready #n incluída depois da #m (porquê)".
   - Se a ordem das que já estavam mudou, diga no chat em uma linha.
 - **O dono pede outra ordem** ("faça a #X primeiro", "a #Y por último", "tira a #Z"). O pedido dele vale mais que a "Ordem". Só não vale quebrar uma dependência: nesse caso, diga qual dependência impede e ponha a etapa logo depois dela.
-  - Pedido que vale para as próximas releituras (por exemplo "a #741 sempre por último") vira restrição fixa. Ela vai no log e no `current`, para a sessão seguinte também a respeitar.
+  - Pedido que vale para as próximas releituras (por exemplo "a #741 sempre por último") vira restrição fixa. Ela vai no log e no `current`, para a sessão seguinte também a respeitar, e enquanto valer a etapa leva `row '#n' hold="ordem do dono (<restrição>)"`, que a nota de vagas lê.
   - ▸ `reorder` e log.
 - **Etapa em andamento não volta para a fila.** O que já começou continua, salvo se o dono mandar parar aquela etapa. Nesse caso o épico fica aberto, a etapa fica `aguardando` com o passo "parada pelo dono", e as filhas dela recebem por `send_message` "Pare: o dono interrompeu a etapa".
-- **Pausar** ("pausa", "não comece mais nada"): as etapas em andamento terminam, e nenhuma nova começa. ▸ `current` "Pausada pelo dono". **Retomar** ("continua", "pode seguir"): volta ao passo 7.
+- **Recado que descreve um estado não segura.** Só um pedido explícito de ordem ou de retenção vira restrição (`hold`). Um recado como "entra no próximo detalhamento" ou "essa ainda não está pronta" não segura uma `ready` com as dependências na `main`: com dúvida, a etapa começa na vaga livre, e o coordenador manda `PushNotification` e pergunta pelo `AskUserQuestion` ("#n — segurar a etapa? Recado: \"<frase>\"", com "Seguir (Recomendado)" e "Segurar"). Com "Segurar", vale a regra de etapa parada pelo dono: o épico fica aberto e a etapa fica `aguardando`, com o passo "parada pelo dono" e `hold`.
+- **Pausar** ("pausa", "não comece mais nada"): as etapas em andamento terminam, e nenhuma nova começa. ▸ `current` "Pausada pelo dono" e `row '#n' hold="pausada pelo dono"` em cada `aguardando` que ainda não começou e está sem `hold` (as restrições do dono e os "Segurar" ficam como estão), inclusive nas `ready` que entrarem durante a pausa. **Retomar** ("continua", "pode seguir"): `hold=` (vazio) só nos `pausada pelo dono` e volta ao passo 7.
 - **Issue que deixou de ser `ready`** (rótulo trocado ou fechada): sai da fila, com um log.
 
 ## Merge
 
-Com o fechamento feito e o CI verde. Antes de mesclar, confira também o `SERVER_VERSION` da `origin/main`: se ele alcançou o do épico (outro épico foi mesclado no meio), o coordenador refaz a escolha da versão (regra 3), faz o push e espera o CI de novo antes de mesclar. Quem confere o CI e se o PR pode ser mesclado é um subagente (`model: "haiku"`, "Confira, só lendo, o PR #<n> de fabianofranca/mapping: os checks do último commit e se ele é mesclável. Devolva uma linha: verde e mesclável, ou o que falta, com o nome do check que falhou"):
+Com o fechamento feito e o CI verde. Antes de mesclar, confira também o `SERVER_VERSION` da `origin/main`: se ele alcançou o do épico (outro épico foi mesclado no meio), o coordenador refaz a escolha da versão (regra 3), faz o push e espera o CI de novo antes de mesclar. Quem confere o CI e se o PR pode ser mesclado é um subagente (`model: "haiku"`, "Confira, só lendo, o PR #<n> de fabianofranca/mapping: os check runs do último commit (`pull_request_read` `get_check_runs`, nunca `get_status`, que fica `pending` sem itens; ignore os `skipped`, que vêm da edição do título ou do corpo do PR ou da limpeza do snapshot; `perPage` 100) e se ele é mesclável. Verde = o check `check` com `success` e nenhum outro com `failure`, `cancelled` ou `timed_out`; sem `check` fora dos `skipped`, ainda roda (ou o `skipped` esconde o real: confira com `actions_list`). Devolva uma linha: verde e mesclável, ou o que falta, com o nome do check que falhou"):
 
 - **Padrão:**
   - mande `PushNotification` "Etapa #<n> pronta: <resumo>. PR do épico: <link>" e pergunte pelo `AskUserQuestion` ("#<n> — mesclar o épico na main?"), com as opções "Mesclar (Recomendado)" e "Ainda não";
@@ -248,15 +252,15 @@ Pode haver algo que o agente não consegue fazer: uma aprovação que o ruleset 
 
 ## Paralelo
 
-Com `paralelo=2`, uma segunda etapa só começa ao lado da que está rodando quando:
+Com `paralelo=N`, quem decide quais etapas começam é o `painel.py`: em toda gravação ele recalcula a nota de vagas (`meta.vagas`) a partir das fichas e do estado das etapas, e o `show` imprime `vagas:` (o motivo de cada `ready` que não começou) e `começar agora:`. O coordenador não refaz a conta: grava e lê o `show`. Uma etapa só começa quando:
 
-- todas as dependências dela estão na `main`;
-- os "Toca em:" das duas não têm arquivo em comum (`mcp/version.ts` não conta: a versão do MCP é escolhida no fechamento);
+- todas as dependências dela estão na `main` (o estado vem do `dep=` da ficha, de `painel.py merged` ou de uma linha `concluída`);
+- os "Toca em:" dela e os das começadas e ainda não mescladas não têm arquivo em comum. Não contam o `mcp/version.ts` (a versão do MCP é escolhida no fechamento), o que começa por `changelog/` ou `docs/design-system/` (os registros de cada épico) e a tabela de blocos, `docs/TESTING-NUVEM.md#blocos`. O `docs/TESTING.md` se compara por roteiro (`docs/TESTING.md#R12` com `docs/TESTING.md#R6` não conflita; sem âncora conflita com todos). Pasta (`x/`) casa com tudo o que está debaixo dela; `toca=?` conflita com toda etapa começada. O `src/i18n/*` e o `docs/ARCHITECTURE.md` contam como arquivo inteiro;
 - as duas não mudam o schema ao mesmo tempo, porque o número da migração está no código.
 
-**Vaga:** só as etapas `em andamento` ocupam vaga (a contagem do `painel.py show`). Não ocupa vaga a etapa `esperando dono` (merge pedido, achado da regra 1, aprovação do ruleset) nem a já começada que espera outra etapa (fica `aguardando`, com o passo "espera #N"). A etapa parada que volta (o dono respondeu, a dependência entrou na `main`) continua de onde parou, sem esperar vaga. Os "Toca em:" e o schema de uma etapa nova são comparados com **todas** as etapas começadas e ainda não mescladas, paradas inclusive, porque o código delas ainda não está na `main`.
+**Vaga:** só as etapas `em andamento` ocupam vaga (a contagem do `painel.py show`). Não ocupa vaga a etapa `esperando dono` (merge pedido, achado da regra 1, aprovação do ruleset) nem a já começada que espera outra etapa (fica `aguardando`, com o passo "espera #N"). A etapa parada que volta (o dono respondeu, a dependência entrou na `main`) continua de onde parou, sem esperar vaga. Os "Toca em:" e o schema de uma etapa nova são comparados com **todas** as etapas começadas e ainda não mescladas, paradas inclusive, porque o código delas ainda não está na `main`. Vaga livre sem motivo no `vagas:` não existe: a etapa que o `show` lista em `começar agora:` começa no mesmo ciclo.
 
-Cada etapa tem o seu épico, as suas filhas e as suas conferências. Os avisos das filhas citam a fase, e é por ela que se sabe de que etapa é o aviso. Quando uma das duas é mesclada, a outra traz a `main` antes do fechamento se houver conflito (merge, nunca rebase).
+Cada etapa tem o seu épico, as suas filhas e as suas conferências. Os avisos das filhas citam a fase, e é por ela que se sabe de que etapa é o aviso. Quem entra depois de uma etapa com arquivo em comum traz a `main` no épico (merge, nunca rebase), com o conflito do `docs/TESTING-NUVEM.md#blocos` refeito pelo `tests/tooling/roundBlocks.test.ts`.
 
 ## Painel
 
@@ -266,8 +270,9 @@ O painel é um artifact do tipo **Dashboard**. Tem 3 datasets de arquivo JSON e 
 
 ```bash
 painel.py init <pasta>
-painel.py start <pasta>
+painel.py start <pasta> --paralelo N                  # início da execução e vagas (padrão 2); pode repetir
 painel.py row <pasta> '#n' status=… stage=… step=… pr=… started=now ended=now
+painel.py row <pasta> '#n' hold="<motivo do dono>"     # etapa segura pelo dono; hold= limpa
 painel.py row <pasta> '#n' plan="<ficha>"            # a ficha da etapa
 painel.py row <pasta> '#n' child="<id> <id>" childAt=now   # filhas que devem aviso; child= limpa; trocar a filha também limpa o wait
 painel.py row <pasta> '#n' wait="<motivo>"           # a filha espera o coordenador; wait= childAt=now ao responder
@@ -277,9 +282,13 @@ painel.py log <pasta> "texto"
 painel.py current <pasta> "texto"
 painel.py reserve <pasta> <trig_id>                  # a conferência de reserva da sessão
 painel.py session <pasta> '#n' <id>                  # sessão criada para a etapa (sem repetir)
-painel.py show <pasta>          # resumo: em andamento, filhas, atrasadas, esperando o coordenador, reserva, últimas do log
+painel.py merged <pasta> '#N'                        # dependência fora da fila já na main (sem repetir)
+painel.py context <pasta> <pct>                      # contexto do coordenador, de 0 a 100
+painel.py show <pasta>          # resumo: em andamento, `vagas:`, `começar agora:`, `contexto:`, filhas, atrasadas, esperando o coordenador, reserva, últimas do log
 painel.py show <pasta> '#n'     # uma linha inteira, com a ficha
 ```
+
+O `show` traz, depois de `atual:`, `vagas: Vagas k/N · #n <motivo> …` (por que cada `ready` que não começou espera: `hold`, `dep #N`, `arquivo <x> com #N`, `schema com #N`, `começa` ou `vagas cheias`), `começar agora: #a #b` (ou `nenhuma`) e `contexto: <pct>% (<quando>)`, com o aviso "acima de 60%: troque de sessão agora" acima de 60. A nota está no `meta`, que toda gravação já marca como alterado: a publicação não muda, e a página mostra "Vagas k/N" no subtítulo e o card "Por que há vaga livre".
 
 O script diz quais arquivos mudou. Vários comandos seguidos vão numa só chamada do `Bash` (`&&`).
 
@@ -315,7 +324,7 @@ Grave no `painel.py` **a cada avanço** (fase aberta e mesclada, PR, testador, c
 
 ## Troca de sessão
 
-**Troca de sessão por contexto ou por skill grande.** Leia `external_metadata.context_usage` no `get_session` desta sessão entre etapas e, depois de passar de 60%, também a cada aviso de filha. **Acima de 60%**, passe a coordenação adiante: é o motivo de sempre para criar um sucessor (o outro é o skill novo grande, abaixo).
+**Troca de sessão por contexto ou por skill grande.** Leia `external_metadata.context_usage` no `get_session` desta sessão entre etapas e no primeiro passo de cada conferência de reserva, e grave-o com `painel.py context <pasta> <pct>`. **Acima de 60%**, passe a coordenação adiante na hora, sem esperar o fim de uma etapa nem de uma fase: é o motivo de sempre para criar um sucessor (o outro é o skill novo grande, abaixo).
 
 **Skill novo na `main`.** Entre etapas e em cada conferência de reserva, rode `git fetch -q origin main && git diff --quiet HEAD origin/main -- .claude/skills/implementar-fila/SKILL.md`. Saída diferente de zero quer dizer que o `SKILL.md` mudou: faça `git pull -q --ff-only origin main` e meça a mudança com `git diff --numstat <HEAD de antes> HEAD -- .claude/skills/implementar-fila/SKILL.md`.
 
@@ -343,7 +352,7 @@ Grave no `painel.py` **a cada avanço** (fase aberta e mesclada, PR, testador, c
 
 1. Leia o painel: `ArtifactData` `list` de `datasets` e `Artifact` `read` com `path` = o id de cada `/_blob/<id>`, com `out_dir` na pasta do scratchpad. Não imprima os arquivos: rode `painel.py show`.
 2. Não releia as issues nem as filhas: a ficha (`plan`), as filhas (`child`) e o passo estão no painel, e a sessão antiga já avisou as filhas do seu id. Sem `list_sessions`, sem `list_events` e sem `get_session` das filhas; a conferência de reserva cuida das que atrasarem.
-3. Crie a sua conferência de reserva (`painel.py reserve`).
+3. Rode `painel.py start <pasta> --paralelo N` com o N da chamada (repetir não mexe no início da execução), grave o contexto desta sessão com `painel.py context <pasta> <pct>` (o da antiga ficou no painel) e crie a sua conferência de reserva (`painel.py reserve`).
 4. Depois de avisar as filhas (ou de confirmar que a antiga avisou), a sessão nova **arquiva a `anterior`** (`archive_session`) e grave no `log` "coordenador anterior arquivado". Continue de onde parou.
 
 ## Fim
