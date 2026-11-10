@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
 import { applyCsp } from '../pwa/csp';
 import { ptBR } from '../src/i18n/pt-BR';
-import { deserialize } from '../src/model';
+import { deserialize, type Project } from '../src/model';
 import { TOOL_WINDOWS, WINDOW_NUMBER, type ToolWindowId } from '../src/store/toolWindows';
 import { renderTokensCss } from '../src/theme/tokens';
 
@@ -21,6 +21,17 @@ const MIME: Readonly<Record<string, string>> = {
   '.jpeg': 'image/jpeg',
   '.webp': 'image/webp',
 };
+
+/** Nome da marcação que chegou; a nota solta não tem nome, vale o `titulo` da anotação dela. */
+function arrivalName(project: Project, rootId: string): string {
+  const marking = project.markings.find((m) => m.id === rootId);
+  if (marking?.name) return marking.name;
+  for (const a of project.annotations) {
+    const title = a.markingId === rootId ? a.values?.['titulo'] : undefined;
+    if (typeof title === 'string' && title !== '') return title;
+  }
+  return '';
+}
 
 /** O que a página sabe do projeto: o subconjunto do `mapping.json` que ela desenha e inspeciona. */
 function guiaData(root: string): unknown {
@@ -81,6 +92,19 @@ function guiaData(root: string): unknown {
         values: a.values,
         entries: a.entries,
       })),
+    // Perspectivas "Para todos": o guia só filtra containers (os itens que são containers) e camadas
+    // escondidas; a posição e as notas soltas ficam na app. As chegadas levam o nome da marcação.
+    perspectives: project.perspectives.map((p) => ({
+      name: p.name,
+      containers: p.items
+        .map((item) => item.root)
+        .filter((root) => project.containers.some((c) => c.id === root)),
+      hiddenLayers: p.hiddenLayers,
+    })),
+    arrivals: project.arrivals.map((arrival) => ({
+      name: arrivalName(project, arrival.root),
+      fromName: arrival.fromName,
+    })),
     files,
   };
 }
