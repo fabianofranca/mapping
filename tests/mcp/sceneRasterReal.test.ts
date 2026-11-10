@@ -416,4 +416,30 @@ describe('rotation (EX3)', () => {
     expect(dark(raster, 31, 36)).toBe(false);
     expect(inkBox(raster).width).toBeGreaterThan(5);
   });
+
+  it('o texto cortado (`wrap: none`) de um nó girado 90° é cortado na largura da caixa', () => {
+    const raster = canvas(100, 100);
+    const text = label('XXXXXXXXXXXXXXXX', 900, {
+      width: 30,
+      height: 20,
+      transform: [1, 0, 0, 1, 35, 40],
+      rotation: 90,
+      style: {
+        fontFamily: 'sans-serif',
+        fontSize: 14,
+        fontWeight: 900,
+        italic: false,
+        lineHeight: 20,
+        align: 'left',
+        verticalAlign: 'middle',
+        wrap: 'none',
+      },
+    });
+    paint(raster, frame([text], 100, 100));
+    const ink = inkBox(raster);
+    // a caixa 30 × 20 girada ocupa 20 × 30 em volta de (50, 50): a tinta não passa de y 35..65
+    expect(ink.height).toBeGreaterThan(10);
+    expect(ink.y0).toBeGreaterThanOrEqual(34);
+    expect(ink.y0 + ink.height).toBeLessThanOrEqual(66);
+  });
 });

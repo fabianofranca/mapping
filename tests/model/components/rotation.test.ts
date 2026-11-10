@@ -15,10 +15,14 @@ import {
   parseComponent,
   validateComponent,
 } from '../../../src/model/components/parseComponent';
+import { clipBoxOf } from '../../../src/model/components/clipBox';
 import {
   type FrameNode,
+  type RectNode,
   type SceneNode,
+  baseNode,
   nodeMatrix,
+  translate,
   walk,
 } from '../../../src/model/components/scene';
 
@@ -87,6 +91,12 @@ describe('rotation no validador', () => {
   it('na raiz é erro', () => {
     expect(validateComponent(file(root([], { rotation: 10 })))).toEqual([
       'template.rotation: não vale na raiz',
+    ]);
+  });
+
+  it('na raiz de uma formatVersion 3 só o erro de versão aparece', () => {
+    expect(validateComponent(file(root([], { rotation: 10 }), 3))).toEqual([
+      `template.rotation: ${V4}`,
     ]);
   });
 
@@ -196,5 +206,57 @@ describe('nodeMatrix', () => {
     const corner = at(0, 0);
     expect(corner.x).toBeCloseTo(tx + 20 + 5, 9);
     expect(corner.y).toBeCloseTo(ty + 5 - 20, 9);
+  });
+});
+
+describe('recorte ampliado com filhos girados', () => {
+  const stroked = (extra: Partial<RectNode> = {}): RectNode => ({
+    ...baseNode({ id: 'r', name: 'r', width: 20, height: 20 }),
+    type: 'rect',
+    cornerRadius: 0,
+    stroke: { paints: [{ type: 'solid', color: '#000000' }], width: 6, align: 'outside' },
+    ...extra,
+  });
+  const frameOf = (children: SceneNode[], extra: Partial<FrameNode> = {}): FrameNode => ({
+    ...baseNode({ id: 'f', name: 'f', width: 100, height: 100 }),
+    type: 'frame',
+    clip: true,
+    cornerRadius: 0,
+    children,
+    ...extra,
+  });
+  const inner = (extra: Partial<FrameNode> = {}): FrameNode =>
+    frameOf([stroked()], {
+      id: 'inner',
+      clip: false,
+      width: 20,
+      height: 20,
+      transform: translate(80, 40),
+      ...extra,
+    });
+
+  it('o traço de um filho dentro de um quadro girado sem recorte ainda alarga o recorte', () => {
+    const plain = clipBoxOf(frameOf([inner()]));
+    const turned = clipBoxOf(frameOf([inner({ rotation: 45 })]));
+    expect(plain).toBeDefined();
+    expect(turned).toBeDefined();
+    // 0,001° não pode mudar o que se vê: o recorte continua passando da caixa pelo traço
+    expect(clipBoxOf(frameOf([inner({ rotation: 0.001 })]))).toBeDefined();
+    expect(turned!.x + turned!.width).toBeGreaterThanOrEqual(100);
+  });
+
+  it('o recorte ampliado de um quadro com recorte girado vira a caixa dele depois do giro', () => {
+    const child = frameOf([stroked()], {
+      id: 'c',
+      width: 20,
+      height: 20,
+      transform: translate(40, 40),
+      rotation: 90,
+      clipBox: { x: -6, y: -6, width: 32, height: 32 },
+    });
+    const box = clipBoxOf(frameOf([child]));
+    // o filho (20 × 20 em 40, 40) gira em volta de (50, 50); o recorte dele (32 × 32) fica
+    // centrado no mesmo ponto e cabe no quadro de 100 × 100: nada passa da caixa do pai
+    expect(box).toBeUndefined();
   });
 });

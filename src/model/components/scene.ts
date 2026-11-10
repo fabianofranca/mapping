@@ -318,8 +318,10 @@ export function baseNode(
 export type AbsoluteBox = Box;
 
 /**
- * Caixa de cada nó no espaço da raiz, compondo só as translações (rotação e escala são
- * ignoradas: servem os quadros e slots de um template, que não giram).
+ * Caixa de cada nó no espaço da raiz, compondo só as translações (a `rotation` e a
+ * escala são ignoradas de propósito: a `rotation` é só desenho, então a caixa de um quadro ou
+ * slot é a sem giro, a que a arrumação e o conteúdo do slot usam; ver `nodeMatrix` para a
+ * matriz que desenha).
  */
 export function absoluteBoxes(root: SceneNode): ReadonlyMap<string, AbsoluteBox> {
   const out = new Map<string, AbsoluteBox>();

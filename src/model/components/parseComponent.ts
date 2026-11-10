@@ -1240,7 +1240,12 @@ function collectIssues(input: unknown, refs: TokenRef[] | null): ComponentIssue[
     const type = isRecord(input.template) ? input.template.type : undefined;
     if (type !== 'frame' && (NODE_TYPES as readonly unknown[]).includes(type))
       add(out, 'template.type', 'a raiz do template deve ser do tipo "frame"');
-    if (isRecord(input.template) && 'rotation' in input.template)
+    if (
+      typeof version === 'number' &&
+      version >= COMPONENT_FORMAT_VERSION_FIDELITY &&
+      isRecord(input.template) &&
+      'rotation' in input.template
+    )
       add(out, 'template.rotation', 'não vale na raiz');
     checkNode(input.template, 'template', out);
     if (version === 1) {

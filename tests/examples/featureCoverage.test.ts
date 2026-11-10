@@ -104,6 +104,10 @@ const MISSING_TODAY: string[] = [
   'component:expr.$rows',
   'component:expr.$size',
   'component:node.repeat.count',
+  // `rotation` por nó (etapa #897, EX3): a Material 3 passa a usá-la na EX4 e na EX6 (ponteiro do
+  // `time-picker`, `pull-to-refresh`); coberto por tests/model/components/rotation.test.ts,
+  // tests/mcp/sceneRaster.test.ts, tests/e2e/rotation.spec.ts e pelo roteiro R25.
+  'component:node.rotation',
   // Ícones (formatVersion 15, etapa #747, CF7): a raiz `icons` e o nó `icon` já têm exemplo na
   // biblioteca Material 3 (etapa #833, M1); o `icon.name`/`strokeWidth` ainda não. Coberto por
   // tests/model/components/icons.test.ts, libraryIcons.test.ts, tests/mcp/libraryIcons.test.ts e
