@@ -348,7 +348,10 @@
       }
       dash.onData(() => {
         const m = q('meta')[0] || {};
-        const vagas = (m.vagas || '').split(' · ').filter(Boolean);
+        // vagasItens vem pronto do painel.py; o split só atende painel antigo (sem o campo).
+        const vagas = Array.isArray(m.vagasItens)
+          ? m.vagasItens
+          : (m.vagas || '').split(' · ').filter(Boolean);
         document.getElementById('mp-cur').textContent =
           (m.current || '—') +
           (vagas[0] ? ' · ' + vagas[0] : '') +
