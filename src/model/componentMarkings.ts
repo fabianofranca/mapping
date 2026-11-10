@@ -140,13 +140,20 @@ function slotArea(
   measure: TextMeasurer,
 ): {
   area: Rect;
-  padding: { left: number; top: number };
+  padding: { left: number; top: number; right: number; bottom: number };
   gap: number;
   flow: 'row' | 'column' | 'none';
+  reverse: boolean;
 } {
   const container = findById(p.markings, containerId);
-  const none = { left: 0, top: 0 };
-  const whole = { area: container.rect, padding: none, gap: 0, flow: 'none' as const };
+  const none = { left: 0, top: 0, right: 0, bottom: 0 };
+  const whole = {
+    area: container.rect,
+    padding: none,
+    gap: 0,
+    flow: 'none' as const,
+    reverse: false,
+  };
   const mc = markingComponent(p, catalog, containerId);
   const drawn =
     mc === null ? null : componentForDrawing(p, mc.component, container.containerId);
@@ -168,9 +175,10 @@ function slotArea(
   const layout = resolveSlotLayout(slot, values);
   return {
     area: { x, y, width: r - x, height: b - y },
-    padding: { left: layout.padding.left, top: layout.padding.top },
+    padding: layout.padding,
     gap: layout.gap,
     flow: layout.type,
+    reverse: layout.reverse,
   };
 }
 
@@ -182,7 +190,8 @@ function slotArea(
  * No canvas (`containerId` nulo, sem componente com slot alvo): o `size` do componente em unidades do
  * canvas, centrado em `center` (padrão `{ x: 0, y: 0 }`), sem limite. Com
  * componente com slot: dentro da caixa do slot, logo depois da última filha no eixo do layout (linha:
- * à direita; coluna: abaixo; com o `gap` e o `padding` do slot), ou no início do conteúdo do
+ * à direita; coluna: abaixo; com o `gap` e o `padding` do slot; com `layout.reverse`, a primeira no fim do
+ * slot e as seguintes antes da última), ou no início do conteúdo do
  * slot se o layout é `none` ou não há filhas; se passar do slot, presa dentro do componente com slot.
  */
 export function componentPlacement(
@@ -238,7 +247,17 @@ export function componentPlacement(
   let x = slotBox.x + slot.padding.left;
   let y = slotBox.y + slot.padding.top;
   const last = childrenOf(p, parent.id).at(-1);
-  if (last !== undefined && slot.flow === 'row') x = right(last.rect) + slot.gap;
+  if (slot.reverse && slot.flow !== 'none') {
+    // `layout.reverse`: a primeira filha encosta no fim do slot e as seguintes ficam antes da última.
+    const column = slot.flow === 'column';
+    const edge = column
+      ? bottom(slotBox) - slot.padding.bottom
+      : right(slotBox) - slot.padding.right;
+    const near =
+      last === undefined ? edge : (column ? last.rect.y : last.rect.x) - slot.gap;
+    if (column) y = near - height;
+    else x = near - width;
+  } else if (last !== undefined && slot.flow === 'row') x = right(last.rect) + slot.gap;
   else if (last !== undefined && slot.flow === 'column') y = bottom(last.rect) + slot.gap;
   const placed: Rect = { x: Math.round(x), y: Math.round(y), width, height };
   if (containsRect(slotBox, placed)) return placed;

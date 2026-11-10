@@ -13,7 +13,6 @@
     "height": "fill"
   },
   "preview": {
-    "verticalArrangement": "Top",
     "horizontalAlignment": "Start",
     "spacing": 8,
     "contentPadding": 16,
@@ -148,7 +147,7 @@
             "then": {
               "$switch": "verticalArrangement",
               "cases": {
-                "Top": "start",
+                "Top": "end",
                 "Bottom": "start",
                 "Center": "center",
                 "SpaceBetween": "space-between",

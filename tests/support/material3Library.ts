@@ -138,6 +138,15 @@ type Raw = {
 };
 
 /** Descrições de campo que a etapa Material 3 com estados (#869, ME1) corrigiu em relação à v1 (decisão 10). */
+/**
+ * Campos de arranjo que perderam o `default` (e o valor de prévia) para o padrão e o `Top`/`Start`
+ * explícito se distinguirem com `reverseLayout` (CL1, FX5): a descrição ganha a frase do padrão.
+ */
+export const V1_NO_DEFAULT: Record<string, string> = {
+  'lazy-column': 'verticalArrangement',
+  'lazy-row': 'horizontalArrangement',
+};
+
 const V1_DESCRIPTION_FIXES: Record<string, Record<string, string>> = {
   slider: {
     steps:
@@ -195,11 +204,18 @@ export function v1WithEstados(
   const now = nowType as { fields: Raw[]; examples?: Raw[] };
   const before = beforeType as { fields: Raw[]; examples?: Raw[] };
   const fixes = V1_DESCRIPTION_FIXES[id] ?? {};
-  const expectedFields = before.fields.map((f) =>
-    f.key !== undefined && fixes[f.key] !== undefined
+  const noDefault = V1_NO_DEFAULT[id];
+  const expectedFields = before.fields.map((f) => {
+    if (f.key !== undefined && f.key === noDefault) {
+      const { default: _dropped, ...rest } = f as Raw & { default?: unknown };
+      void _dropped;
+      const nowField = now.fields.find((n) => n.key === f.key);
+      return { ...rest, description: nowField?.description };
+    }
+    return f.key !== undefined && fixes[f.key] !== undefined
       ? { ...f, description: fixes[f.key] }
-      : f,
-  );
+      : f;
+  });
   const isState = (e: Raw): boolean => e.values?.interaction !== undefined;
   return {
     actual: {

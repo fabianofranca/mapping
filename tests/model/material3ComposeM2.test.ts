@@ -8,6 +8,7 @@ import {
   drawIn,
   files,
   text,
+  V1_NO_DEFAULT,
   v1WithEstados,
   COMPOSE_SIZES,
 } from '../support/material3Library';
@@ -63,7 +64,10 @@ describe('M2 — layout e ações no formato 4', () => {
     const now = component(id);
     const { actual, expected } = v1WithEstados(id, type, before);
     expect(actual).toEqual(expected);
-    expect(now.preview).toEqual(before.preview);
+    const dropped = V1_NO_DEFAULT[id];
+    const previewBefore = { ...(before.preview as Rec) };
+    if (dropped !== undefined) delete previewBefore[dropped];
+    expect(now.preview).toEqual(previewBefore);
     expect(now.minSize).toEqual(before.minSize);
     expect(now.size).toEqual(COMPOSE_SIZES[id] ?? before.size);
   });

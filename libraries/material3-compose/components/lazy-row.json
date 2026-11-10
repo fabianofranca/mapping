@@ -13,7 +13,6 @@
     "height": "hug"
   },
   "preview": {
-    "horizontalArrangement": "Start",
     "verticalAlignment": "Top",
     "spacing": 8,
     "contentPadding": 16,
@@ -148,7 +147,7 @@
             "then": {
               "$switch": "horizontalArrangement",
               "cases": {
-                "Start": "start",
+                "Start": "end",
                 "End": "start",
                 "Center": "center",
                 "SpaceBetween": "space-between",

@@ -82,6 +82,22 @@ function container(id: string, size: Json, slot: SlotOptions, extra: Json = {}):
   };
 }
 
+/** Container com slot em `layout.reverse` (formato 4), para trocar um tipo de `COMPONENTS` no catálogo. */
+export function reversedContainer(
+  id: string,
+  flow: 'row' | 'column',
+  size: Json,
+  justify = 'start',
+): Json {
+  const base = container(id, size, { flow, justify }) as {
+    template: { children: { layout: Json }[] };
+  };
+  const slot = base.template.children[0];
+  if (slot === undefined) throw new Error('sem slot');
+  slot.layout = { ...slot.layout, reverse: true };
+  return { ...base, formatVersion: 4 };
+}
+
 const CONTAINER_FIELDS = [
   { key: 'spacing', type: 'number', default: 8 },
   { key: 'padding', type: 'number', default: 0 },

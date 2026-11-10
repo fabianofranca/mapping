@@ -48,6 +48,16 @@ describe('M2 grupo B — foundation no formato 4', () => {
     expect(slotLayout('lazy-column', { reverseLayout: 'true' }).reverse).toBe(true);
     expect(slotLayout('lazy-column', { reverseLayout: 'false' }).reverse).toBe(false);
     expect(slotLayout('lazy-column', { reverseLayout: 'true' }).justify).toBe('start');
+    // Top explícito com reverseLayout mantém o bloco no topo (justify `end` antes do espelho); sem o
+    // campo (o padrão) o bloco vai ao fim, como o Bottom que o Compose passa nessa combinação (FX5).
+    expect(
+      slotLayout('lazy-column', { reverseLayout: 'true', verticalArrangement: 'Top' })
+        .justify,
+    ).toBe('end');
+    expect(
+      slotLayout('lazy-column', { reverseLayout: 'false', verticalArrangement: 'Top' })
+        .justify,
+    ).toBe('start');
     expect(
       slotLayout('lazy-column', { reverseLayout: 'true', verticalArrangement: 'Bottom' })
         .justify,
@@ -76,6 +86,14 @@ describe('M2 grupo B — foundation no formato 4', () => {
     expect(slotLayout('lazy-row', { verticalAlignment: 'Bottom' }).align).toBe('end');
     expect(slotLayout('lazy-row', { reverseLayout: 'true' }).reverse).toBe(true);
     expect(slotLayout('lazy-row', { reverseLayout: 'true' }).justify).toBe('start');
+    expect(
+      slotLayout('lazy-row', { reverseLayout: 'true', horizontalArrangement: 'Start' })
+        .justify,
+    ).toBe('end');
+    expect(
+      slotLayout('lazy-row', { reverseLayout: 'true', horizontalArrangement: 'End' })
+        .justify,
+    ).toBe('start');
   });
 
   it('lazy-vertical-grid: formato 4 e contentPadding no quadro', () => {
