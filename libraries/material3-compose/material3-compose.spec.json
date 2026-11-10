@@ -13086,7 +13086,7 @@
               "key": "preferredItemWidth",
               "label": "Largura preferida do item (dp)",
               "type": "number",
-              "description": "Só no multi-browse (obrigatório no Compose): a largura que os itens grandes querem ter; o carrossel a ajusta para caber um número inteiro de itens."
+              "description": "Só no multi-browse (obrigatório no Compose): a largura que os itens grandes querem ter; o carrossel escolhe quantos grandes cabem e ajusta o tamanho deles, do médio e do pequeno (de 40 a 56) à largura da marcação."
             },
             {
               "key": "itemWidth",
@@ -13098,7 +13098,7 @@
               "key": "itemSpacing",
               "label": "Espaço entre itens (dp)",
               "type": "number",
-              "description": "Espaço entre os itens em dp (itemSpacing). Vazio = 0 no código; o desenho usa 8."
+              "description": "Espaço entre os itens em dp (itemSpacing). Vazio = 0 no código; o desenho usa 8. No centered-hero o recuo e a largura dos itens dependem dele."
             },
             {
               "key": "width",

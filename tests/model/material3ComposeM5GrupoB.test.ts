@@ -460,15 +460,15 @@ describe('M5 grupo B — carousel', () => {
     }
   });
 
-  it('multi-browse: largura do item é a preferredItemWidth, com itemSpacing entre eles', () => {
+  it('multi-browse: a largura do item vem da estratégia do Compose (EX6: dois grandes de 148 e o pequeno de 40 em 360, com 150 preferidos), com itemSpacing entre eles', () => {
     for (const mode of MODES) {
       const d = both(
         'carousel',
         withItems({ style: 'multi-browse', preferredItemWidth: 150, itemSpacing: 12 }),
       )[mode];
       const boxes = itemsOf(d).map((n) => absOf(d, n));
-      expect(boxes.map((b) => b.width)).toEqual([150, 150, 150]);
-      expect(boxes.map((b) => b.x)).toEqual([0, 162, 324]);
+      expect(boxes.map((b) => b.width)).toEqual([148, 148, 40]);
+      expect(boxes.map((b) => b.x)).toEqual([0, 160, 320]);
       expect(boxes[0]!.height).toBe(205);
     }
   });
