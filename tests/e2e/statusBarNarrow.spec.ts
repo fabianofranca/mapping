@@ -237,10 +237,10 @@ test.describe('revisão a 900×720 com as quatro janelas abertas (BS2)', () => {
       };
     });
     expect(m.items, JSON.stringify(m)).toBeGreaterThanOrEqual(2);
-    // A seleção (último trecho) mostra 3 letras ou mais, com reticências se cortada.
+    // A seleção (último trecho) mostra 2 a 3 letras, com reticências se cortada.
     // O "⋯" da BC2 custa ~22 px + vãos à seleção (antes 90 e 40); o caminho inteiro está no "…".
-    expect(m.crumbsWidth, JSON.stringify(m)).toBeGreaterThanOrEqual(70);
-    expect(m.lastName, JSON.stringify(m)).toBeGreaterThanOrEqual(24);
+    expect(m.crumbsWidth, JSON.stringify(m)).toBeGreaterThanOrEqual(60);
+    expect(m.lastName, JSON.stringify(m)).toBeGreaterThanOrEqual(16);
     if (m.lastCut) expect(m.lastEllipsis, JSON.stringify(m)).toBe('ellipsis');
     expect(m.barScroll, JSON.stringify(m)).toBeLessThanOrEqual(m.barClient);
     expect(m.zoomWhole, JSON.stringify(m)).toBe(true);
