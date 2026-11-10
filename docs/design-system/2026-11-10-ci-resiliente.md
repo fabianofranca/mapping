@@ -1,4 +1,4 @@
-# CI resiliente — [Não lançado] (épico `epic/ci-resiliente`)
+# CI resiliente — 2026-11-10 (épico `epic/ci-resiliente`)
 
 ## Pendências
 

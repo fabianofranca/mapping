@@ -120,4 +120,29 @@ describe('distBudget.mjs raise (CR1)', () => {
     expect(out).toMatch(/^chama o dono/);
     expect(readFileSync(ci, 'utf8')).toBe(FIXTURE);
   });
+
+  it('rejeita flag desconhecida e valor ausente ou que começa com --', () => {
+    const run = (extra: string[]) => {
+      try {
+        raise({ size: CEILING + 10, extra });
+        return { status: 0, err: '' };
+      } catch (e) {
+        const x = e as { status: number; stderr: string };
+        return { status: x.status, err: x.stderr };
+      }
+    };
+    expect(run(['--mainsize', '5'])).toMatchObject({ status: 2 });
+    expect(run(['--epic'])).toMatchObject({ status: 2 });
+    expect(run(['--epic', '--write'])).toMatchObject({ status: 2 });
+  });
+
+  it('teto que não é múltiplo de 1 KiB não gera número quebrado no comentário', () => {
+    const odd = CEILING + 512;
+    writeFileSync(ci, FIXTURE.replace(String(CEILING), String(odd)));
+    raise({ size: odd + 10, main: odd, write: true });
+    const after = readFileSync(ci, 'utf8');
+    expect(after).toContain(`INDEX_HTML_MAX_BYTES: ${odd + KIB16}\n`);
+    expect(after).not.toMatch(/\d\.\d{3}\.\d+ KiB|\d+\.\d+\.\d+ KiB/);
+    expect(after).toContain('(1.904,5 KiB)');
+  });
 });

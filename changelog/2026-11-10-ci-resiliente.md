@@ -1,4 +1,4 @@
-# CI resiliente — [Não lançado] (épico `epic/ci-resiliente`, PR #0, MCP 0.28.15 sem mudança, schema v18)
+# CI resiliente — 2026-11-10 (épico `epic/ci-resiliente`, PR #1381, MCP 0.28.15 sem mudança, schema v18)
 
 ## Adicionado
 
@@ -13,3 +13,4 @@
 - `implementar-fila`, "Fechamento": o épico que toca algum desses gatilhos roda a `/code-review high` no diff inteiro (base `main`) antes do merge, e os defeitos confirmados são corrigidos no próprio épico.
 - `tests/tooling/ciConfig.test.ts`: o orçamento do `dist/index.html` é um múltiplo de 16 KiB numa linha só, sem o número fixo.
 - `implementar-fila`: o skill novo na `main` só vira troca de sessão se mudar mais de 60 linhas ou "Regras desta fila" (era 30 linhas ou qualquer seção de regra); o resto é releitura do `SKILL.md` inteiro. A versão do schema é escolhida ao criar o épico, lendo a `origin/main`, como a do MCP.
+- `scripts/ci/distBudget.mjs`: rejeita flag desconhecida e valor ausente (antes engolia o argumento seguinte) e escreve o teto fora de múltiplo de 1 KiB com decimal (`1.904,5 KiB`), em vez de número quebrado. `implementar-fila`: o `--size` da subida vem de um build do head depois de trazer a `main`.

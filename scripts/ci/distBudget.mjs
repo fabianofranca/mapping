@@ -61,6 +61,14 @@ export function describeDecision(d) {
   return `sobe: ${d.ceiling} → ${d.next} (excesso ${d.excess}, crescimento ${d.growth}, subidas desde a revisão ${d.since})`;
 }
 
+/** KiB com vírgula decimal só quando o teto não é múltiplo de 1 KiB: `1904` ou `1.904,5`. */
+function kib(bytes) {
+  const v = bytes / KIB;
+  if (Number.isInteger(v)) return grouped(v);
+  const [int, frac] = v.toFixed(1).split('.');
+  return `${grouped(int)},${frac}`;
+}
+
 /** Devolve o texto do `ci.yml` com o teto novo e a frase no comentário da linha anterior. */
 export function applyRaise(yaml, d, { epic, date }) {
   const match = BUDGET_LINE.exec(yaml);
@@ -69,7 +77,7 @@ export function applyRaise(yaml, d, { epic, date }) {
   if (current !== d.ceiling) {
     throw new Error(`O ci.yml tem teto ${current}, não ${d.ceiling}.`);
   }
-  const sentence = ` Subido para ${grouped(d.next)} (${grouped(d.next / KIB)} KiB) pela regra do orçamento (${date}, épico \`${epic}\`): excesso de ${d.excess} bytes, crescimento de ${d.growth} bytes sobre a \`main\`.`;
+  const sentence = ` Subido para ${grouped(d.next)} (${kib(d.next)} KiB) pela regra do orçamento (${date}, épico \`${epic}\`): excesso de ${d.excess} bytes, crescimento de ${d.growth} bytes sobre a \`main\`.`;
   const lines = yaml.split('\n');
   const at = lines.findIndex((l) => BUDGET_LINE.test(l));
   const prev = lines[at - 1] ?? '';
@@ -83,6 +91,8 @@ export function applyRaise(yaml, d, { epic, date }) {
   return lines.join('\n');
 }
 
+const VALUE_FLAGS = ['ci', 'size', 'main-size', 'review-ceiling', 'epic', 'date'];
+
 function parseArgs(argv) {
   const out = { _: [] };
   for (let i = 0; i < argv.length; i++) {
@@ -92,8 +102,16 @@ function parseArgs(argv) {
       continue;
     }
     const key = a.slice(2);
-    if (key === 'write') out.write = true;
-    else out[key] = argv[++i];
+    if (key === 'write') {
+      out.write = true;
+      continue;
+    }
+    if (!VALUE_FLAGS.includes(key)) throw new Error(`Flag desconhecida: ${a}.`);
+    const value = argv[++i];
+    if (value === undefined || value.startsWith('--')) {
+      throw new Error(`${a} precisa de um valor.`);
+    }
+    out[key] = value;
   }
   return out;
 }
