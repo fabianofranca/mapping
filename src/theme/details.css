@@ -849,6 +849,23 @@ button.layer-group-label:hover {
   border: none;
   border-radius: var(--radius-sm);
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Itens que ligam e desligam: a coluna do visto; o atalho vai ao fim. */
+.action-menu-check {
+  display: inline-flex;
+  flex: none;
+  width: var(--control-icon);
+}
+
+.action-menu-shortcut {
+  margin-left: auto;
+  padding-left: var(--space-3);
+  font: var(--t-kbd);
+  color: var(--color-text-muted);
 }
 
 .action-menu-item:hover:not(:disabled),

@@ -492,9 +492,37 @@
   display: contents;
 }
 
+/* O "⋯" (BC2) guarda os controles que somem: aparece onde o grupo cede. */
+.canvas-bar .canvas-bar-more {
+  display: none;
+}
+
 @container (max-width: 470px) {
   .canvas-bar:has(.review-canvas-controls) .canvas-bar-low {
     display: none;
+  }
+
+  .canvas-bar:has(.review-canvas-controls) .canvas-bar-more {
+    display: inline-flex;
+  }
+
+  /* Sem o botão, o host do painel "Mostrar no canvas" não ocupa vão (o painel é fixo). */
+  .canvas-bar:has(.review-canvas-controls) .view-panel-host {
+    position: absolute;
+  }
+
+  /* O "⋯" custa ~30 px ao caminho: ele, a folga e os vãos ficam justos para a seleção manter letras. */
+  .canvas-bar:has(.review-canvas-controls) {
+    gap: var(--space-1);
+  }
+
+  .canvas-bar:has(.review-canvas-controls) .canvas-bar-end {
+    gap: var(--space-0-5);
+  }
+
+  .canvas-bar-more .icon-button {
+    min-width: 0;
+    padding: 0 var(--space-0-5);
   }
 }
 

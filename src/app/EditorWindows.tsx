@@ -28,7 +28,13 @@ import { ZoomField } from '../ui/ZoomField';
 import { HELP_PROPOSALS } from '../ui/HelpDialog';
 import { ProposalsHeaderActions, ProposalsWindow } from '../ui/review/ProposalsWindow';
 import { ReviewCanvasControls } from '../ui/review/ReviewCanvasControls';
-import { FitButton, FitSelectionButton, PinsButton, ViewModeButton } from './EditorTools';
+import {
+  FitButton,
+  FitSelectionButton,
+  OverflowMenu,
+  PinsButton,
+  ViewModeButton,
+} from './EditorTools';
 import { ViewModePanel } from '../ui/ViewModePanel';
 import { EditorPanel, type EditorPanelProps } from './EditorPanel';
 
@@ -185,14 +191,15 @@ export function EditorWindows({ panel, onSelect, canvas }: EditorWindowsProps) {
               <span class="canvas-bar-low">
                 <PinsButton />
               </span>
-              <span class="canvas-bar-low">
+              <span class="canvas-bar-low" data-canvas-low>
                 <ViewModeButton />
-                <ViewModePanel />
               </span>
+              <ViewModePanel />
               <span class="canvas-bar-low">
                 <FitButton />
                 <FitSelectionButton />
               </span>
+              <OverflowMenu />
               <ZoomField />
             </div>
           </div>
