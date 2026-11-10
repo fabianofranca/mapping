@@ -324,36 +324,42 @@ describe('uma validação por commit', () => {
     expect(on).not.toMatch(/^ {2}push:/m);
   });
 
-  // Etapa #974, decisão 6: o CI ouve `edited`, mas só roda quando a base do PR mudou.
-  describe('CI na troca de base do PR', () => {
-    const condition = "github.event.action != 'edited' || github.event.changes.base";
-
-    it('o pull_request declara opened, synchronize, reopened e edited', () => {
+  // Etapa #1466, decisões 5 e 6: editar o PR (título, corpo ou base) não roda o CI.
+  describe('CI sem `edited` no gatilho (etapa #1466)', () => {
+    it('o pull_request declara opened, synchronize e reopened, sem edited', () => {
       const on = ci.slice(ci.indexOf('\non:'), ci.indexOf('\npermissions:'));
       expect(on).toMatch(
-        /^ {2}pull_request:\n(?: {4}#.*\n)* {4}types: \[opened, synchronize, reopened, edited\]/m,
+        /^ {2}pull_request:\n(?: {4}#.*\n)* {4}types: \[opened, synchronize, reopened\]\n/m,
       );
+      expect(on).not.toContain('edited,');
     });
 
-    it.each(['epic', 'static', 'test', 'build', 'e2e', 'check'])(
-      'o job %s só roda na edição que troca a base',
+    it.each(['epic', 'static', 'test', 'coverage', 'build', 'e2e', 'check'])(
+      'o job %s não olha github.event.action nem changes.base',
       (name) => {
-        expect(job(ci, name)).toContain(condition);
+        const text = job(ci, name);
+        expect(text).not.toContain('github.event.action');
+        expect(text).not.toContain('changes.base');
       },
     );
+
+    it('o check roda sempre e o epic só em pull_request', () => {
+      expect(job(ci, 'check')).toContain('if: ${{ always() }}');
+      expect(job(ci, 'epic')).toMatch(/^ {4}if: github\.event_name == 'pull_request'$/m);
+    });
 
     it('o coverage continua pulando junto com o test', () => {
       expect(job(ci, 'coverage')).toMatch(/needs\.test\.result != 'skipped'/);
     });
 
-    it('o grupo de concurrency separa a edição sem troca de base', () => {
+    it('o grupo de concurrency não tem sufixo de run_id nem de troca de base', () => {
       const concurrency = ci.slice(ci.indexOf('\nconcurrency:'), ci.indexOf('\njobs:'));
-      expect(concurrency).toContain('github.run_id');
-      expect(concurrency).toContain('github.event.changes.base');
+      expect(concurrency).not.toContain('github.run_id');
+      expect(concurrency).not.toContain('changes.base');
     });
 
-    it('o comentário registra o risco aceito do check pulado', () => {
-      expect(ci).toMatch(/conta job pulado como sucesso/);
+    it('o arquivo não guarda mais o risco aceito do job pulado', () => {
+      expect(ci).not.toMatch(/conta job pulado como sucesso/);
     });
   });
 
@@ -454,7 +460,7 @@ describe('job check em paralelo e caches', () => {
   it('o check agrega os quatro jobs, sempre, e falha se algum não for success', () => {
     const check = block('check');
     expect(check).toMatch(/needs: \[static, test, coverage, build\]/);
-    expect(check).toMatch(/if: \$\{\{ always\(\) &&/);
+    expect(check).toContain('if: ${{ always() }}');
     expect(check).toContain('!= "success"');
     expect(check).toContain('exit 1');
   });
