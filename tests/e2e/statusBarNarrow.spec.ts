@@ -250,6 +250,60 @@ test.describe('revisão a 900×720 com as quatro janelas abertas (BS2)', () => {
 test.describe('a 1440×900', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
+  test('revisão com as quatro janelas: o último trecho encolhe por último (PV2)', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await page
+      .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
+      .setInputFiles({
+        name: 'loja.zip',
+        mimeType: 'application/zip',
+        buffer: await fixtureZip(),
+      });
+    await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+    for (const key of ['1', '2', '3', '7'])
+      await page.keyboard.press(`Control+Shift+${key}`);
+    await page
+      .getByRole('button', { name: /^Revisar/ })
+      .first()
+      .click();
+    await expect(page.locator('.review-canvas-controls')).toBeVisible();
+    await page
+      .getByRole('button', { name: /^Atual$/ })
+      .first()
+      .click();
+    await page
+      .getByRole('button', { name: 'Banner promoção', exact: true })
+      .first()
+      .click();
+    const m = await page.locator('.crumbs').evaluate((crumbs) => {
+      const items = [...crumbs.querySelectorAll<HTMLElement>('.crumb-item')];
+      // Quanto de cada nome fica escondido (o encolhimento é proporcional ao `flex-shrink`).
+      const hidden = (el: HTMLElement) => {
+        const n = el.querySelector<HTMLElement>('.crumb-name');
+        return n ? Math.max(0, n.scrollWidth - n.clientWidth) : 0;
+      };
+      const last = items.at(-1)!;
+      return {
+        items: items.length,
+        lastHidden: hidden(last),
+        othersHidden: items.slice(0, -1).map(hidden),
+        othersAtMost32: items
+          .slice(0, -1)
+          .every((i) => i.getBoundingClientRect().width <= 32.5),
+      };
+    });
+    expect(m.items, JSON.stringify(m)).toBeGreaterThanOrEqual(2);
+    // O último trecho está inteiro, ou os outros já estão com 32 px ou menos, ou ele perde
+    // menos que cada um dos outros que estão cortados.
+    const lastBest =
+      m.lastHidden === 0 ||
+      m.othersAtMost32 ||
+      m.othersHidden.every((h) => h === 0 || h >= m.lastHidden);
+    expect(lastBest, JSON.stringify(m)).toBe(true);
+  });
+
   test('schema e canal aparecem', async ({ page }) => {
     await createProject(page, 'Barra');
     const bar = page.locator('.statusbar');

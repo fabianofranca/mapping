@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { cleanup, render, screen, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -151,6 +152,27 @@ describe('Detalhes — seção Perspectivas', () => {
       (screen.getByRole('menuitemcheckbox', { name: /Vista/ }) as HTMLButtonElement)
         .disabled,
     ).toBe(true);
+  });
+
+  it('o gatilho do Enviar leva menu-popover-control e a classe .menu-trigger', () => {
+    const h = createHarness(world());
+    panels(h, { image: 'I1' });
+    const trigger = within(section()!).getByRole('button', {
+      name: t('perspective.section.send'),
+    });
+    expect(trigger.classList.contains('menu-trigger')).toBe(true);
+    expect(
+      trigger.closest('.menu-popover')?.classList.contains('menu-popover-control'),
+    ).toBe(true);
+  });
+
+  it('o CSS dá ao gatilho a fonte, a altura e a borda do Button (só tokens)', () => {
+    const css = readFileSync('src/theme/editor.css', 'utf8');
+    const rule =
+      /\.menu-popover-control \.menu-trigger\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
+    expect(rule).toContain('font: var(--t-text);');
+    expect(rule).toContain('min-height: var(--control-height);');
+    expect(rule).toContain('border: 1px solid var(--color-border-control);');
   });
 
   it('somente leitura: o botão Enviar fica desabilitado', () => {

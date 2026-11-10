@@ -44,7 +44,7 @@ export function PerspectiveSendMenu({
     if (!result.ok) showToast(ui, t('perspective.error'));
   };
   return (
-    <MenuPopover label={label} buttonLabel={label}>
+    <MenuPopover label={label} buttonLabel={label} class="menu-popover-control">
       {rows.map((row) => (
         <Button
           key={row.perspective?.id ?? 'principal'}

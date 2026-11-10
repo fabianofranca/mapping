@@ -31,12 +31,18 @@ export interface ArrivalBadge {
   readonly rect: Rect;
 }
 
+/** Uma raiz do canvas: o id (para a raiz não se bloquear a si mesma) e a pegada dela. */
+export interface ArrivalRoot {
+  readonly id: string;
+  readonly rect: Rect;
+}
+
 export interface ArrivalMarks {
   readonly badges: readonly ArrivalBadge[];
   /** A faixa "Área de chegada" (canvas, com folga); `null` quando não há o que envolver. */
   readonly band: Rect | null;
   /** A pegada de cada raiz (canvas): o selo de uma raiz pequena foge delas. */
-  readonly roots: readonly Rect[];
+  readonly roots: readonly ArrivalRoot[];
 }
 
 /**
@@ -79,10 +85,10 @@ function compute(project: Project): ArrivalMarks | null {
   const orphans = new Set(
     badges.filter((b) => !arrivalHasReference(project, b.root)).map((b) => b.root),
   );
-  const roots: Rect[] = [];
+  const roots: ArrivalRoot[] = [];
   for (const id of projectIndex(project).roots) {
     const rect = rootFootprint(project, id);
-    if (rect) roots.push(rect);
+    if (rect) roots.push({ id, rect });
   }
   return { badges, band: bandOf(project, orphans), roots };
 }
@@ -103,10 +109,16 @@ export function arrivalBadgeWidth(text: string, metrics: ArrivalMetrics): number
 
 /**
  * Onde o selo fica (canto de cima à esquerda dele, em unidades do canvas). Nunca no topo da raiz,
- * onde ficam o nome do container e o título da faixa: raiz grande, por dentro do canto de baixo à
- * esquerda; pequena na tela, por fora, abaixo do canto. Tamanho e vão em px de tela. Com `view` (a
- * área visível, em unidades do canvas) o selo é puxado para dentro dela; com `avoid` (um retângulo
- * sobreposto ao canvas, como o minimapa) ele sai de baixo dele.
+ * onde ficam o nome do container e o título da faixa. Raiz grande: por dentro do canto de baixo à
+ * esquerda; se isso cruza a faixa do nome (ou o corpo) de outra raiz, subido até logo acima dela;
+ * depois, os lugares da raiz pequena (abaixo, à direita, à esquerda). Vale o primeiro sem bloqueio;
+ * sem nenhum livre, o de menor interseção. `self` é o id da raiz do selo: ela não se bloqueia.
+ * Tamanho e vão em px de tela. Com `view` (a área visível, em unidades do canvas) o selo é puxado
+ * para dentro dela; com `avoid` (um retângulo sobreposto ao canvas, como o minimapa) ele sai de
+ * baixo dele. Os dois ajustes valem para cada candidato antes da escolha (um lugar empurrado para
+ * dentro da vista não pode cair sobre o título de outra raiz), e `extra` são outros retângulos a
+ * evitar, como o título da faixa (CL1, achados 1.2 e 2.1). Raiz pequena sem lugar livre ainda
+ * tenta o canto de dentro dela, o único que só cobre a própria raiz.
  */
 export function arrivalBadgeSpot(
   rect: Rect,
@@ -115,52 +127,101 @@ export function arrivalBadgeSpot(
   metrics: ArrivalMetrics,
   view?: Rect,
   avoid?: Rect,
-  roots: readonly Rect[] = [],
+  roots: readonly ArrivalRoot[] = [],
+  self?: string,
+  extra: readonly Rect[] = [],
 ): Point {
-  const gap = metrics.gap / zoom;
-  const height = metrics.height / zoom;
   const w = width / zoom;
+  const h = metrics.height / zoom;
+  const nameBand = metrics.nameBand / zoom;
+  const blockers = [
+    ...roots
+      .filter((r) => r.id !== self)
+      .map(({ rect: r }) => ({
+        x: r.x,
+        y: r.y - nameBand,
+        width: r.width,
+        height: r.height + nameBand,
+      })),
+    ...extra,
+  ];
   const small = rect.width * zoom < 2 * width || rect.height * zoom < 2 * metrics.height;
-  const at = small
-    ? smallSpot(rect, zoom, w, height, roots, metrics)
-    : { x: rect.x + gap, y: bottom(rect) - gap - height };
-  if (!view) return at;
-  const inside = keepInside(at, w, height, view);
-  return avoid ? clearOf(inside, w, height, view, avoid) : inside;
+  const around = smallCandidates(rect, zoom, w, h, metrics);
+  const within = insideCandidates(rect, zoom, w, h, metrics, blockers);
+  const candidates = (small ? [...around, ...within] : [...within, ...around]).map((c) =>
+    fitToView(c, w, h, view, avoid),
+  );
+  return pickSpot(candidates, w, h, blockers);
 }
 
-/**
- * Lugar do selo de uma raiz pequena: abaixo do canto de baixo à esquerda; se isso cai sobre outra
- * raiz ou sobre o nome dela (a faixa logo acima), à direita da raiz e, depois, à esquerda.
- */
-function smallSpot(
+/** O candidato puxado para dentro da área visível e para fora do minimapa, quando há. */
+function fitToView(at: Point, w: number, h: number, view?: Rect, avoid?: Rect): Point {
+  if (!view) return at;
+  const inside = keepInside(at, w, h, view);
+  return avoid ? clearOf(inside, w, h, view, avoid) : inside;
+}
+
+/** Por dentro da raiz, no canto de baixo; subido acima do que o cobre. */
+function insideCandidates(
   rect: Rect,
   zoom: number,
   w: number,
   h: number,
-  roots: readonly Rect[],
   metrics: ArrivalMetrics,
-): Point {
-  const below = { x: rect.x, y: bottom(rect) + metrics.gapBelow / zoom };
+  blockers: readonly Rect[],
+): Point[] {
   const gap = metrics.gap / zoom;
-  const candidates = [
-    below,
+  const inside = { x: rect.x + gap, y: bottom(rect) - gap - h };
+  const list = [inside];
+  const covering = blockers.filter((r) => hits(inside, w, h, r));
+  if (covering.length > 0) {
+    const y = Math.min(...covering.map((r) => r.y)) - gap - h;
+    if (y >= rect.y + metrics.nameBand / zoom) list.push({ x: inside.x, y });
+  }
+  return list;
+}
+
+/** Raiz pequena: abaixo do canto de baixo à esquerda, à direita da raiz e à esquerda dela. */
+function smallCandidates(
+  rect: Rect,
+  zoom: number,
+  w: number,
+  h: number,
+  metrics: ArrivalMetrics,
+): Point[] {
+  const gap = metrics.gap / zoom;
+  return [
+    { x: rect.x, y: bottom(rect) + metrics.gapBelow / zoom },
     { x: right(rect) + gap, y: bottom(rect) + gap - h },
     { x: rect.x - gap - w, y: bottom(rect) + gap - h },
   ];
-  const nameBand = metrics.nameBand / zoom;
-  const blocked = (at: Point): boolean =>
-    roots.some(
-      (r) =>
-        r !== rect &&
-        hits(at, w, h, {
-          x: r.x,
-          y: r.y - nameBand,
-          width: r.width,
-          height: r.height + nameBand,
-        }),
-    );
-  return candidates.find((c) => !blocked(c)) ?? below;
+}
+
+/** Área da interseção do selo em `at` (w × h) com `r`. */
+function overlapArea(at: Point, w: number, h: number, r: Rect): number {
+  const dx = Math.min(at.x + w, right(r)) - Math.max(at.x, r.x);
+  const dy = Math.min(at.y + h, bottom(r)) - Math.max(at.y, r.y);
+  return dx > 0 && dy > 0 ? dx * dy : 0;
+}
+
+/** O primeiro candidato sem interseção com `blockers`; sem nenhum, o de menor área (empate: o primeiro). */
+function pickSpot(
+  candidates: readonly Point[],
+  w: number,
+  h: number,
+  blockers: readonly Rect[],
+): Point {
+  let best = candidates[0] as Point;
+  let bestArea = Infinity;
+  for (const c of candidates) {
+    const area = blockers.reduce((sum, r) => sum + overlapArea(c, w, h, r), 0);
+    if (area === 0) return c;
+    if (area < bestArea) {
+      best = c;
+      bestArea = area;
+    }
+  }
+  return best;
 }
 
 const hits = (at: Point, w: number, h: number, r: Rect): boolean =>
@@ -190,13 +251,39 @@ function nameClearance(zoom: number, nameClear: number): number {
   return Math.max(0, nameClear - ARRIVAL_BAND_PAD * zoom);
 }
 
+/** A área visível (unidades do canvas) menos a margem de `tokens.arrival.pad` em cada lado. */
+function labelArea(view: Rect, zoom: number, pad: number): Rect {
+  const m = pad / zoom;
+  return {
+    x: view.x + m,
+    y: view.y + m,
+    width: Math.max(0, view.width - 2 * m),
+    height: Math.max(0, view.height - 2 * m),
+  };
+}
+
+/**
+ * A largura (px de tela) que o rótulo da faixa passa a ter quando o texto, de `textWidth`, não
+ * cabe na área visível menos as duas margens (título e dica ganham `width`, `wrap: 'none'` e
+ * reticências); `null` quando cabe.
+ */
+export function arrivalBandLabelFit(
+  textWidth: number,
+  zoom: number,
+  view: Rect,
+  metrics: ArrivalMetrics,
+): number | null {
+  const room = labelArea(view, zoom, metrics.pad).width * zoom;
+  return textWidth > room ? room : null;
+}
+
 /**
  * Onde o rótulo da faixa ("Área de chegada" e a dica) fica (canto de cima à esquerda dele, em
  * unidades do canvas). `size` é o tamanho dele em px de tela e `nameClear` a altura (px de tela) do
  * nome dos containers, que fica logo acima do conteúdo. A folga da faixa é em unidades do canvas e
  * encolhe com o zoom; por isso o rótulo sobe o que faltar para ficar acima da linha do nome, nunca
  * sobre ela. Sem espaço em cima na área visível, vai para baixo da faixa; em qualquer caso é puxado
- * para dentro de `view`.
+ * para dentro de `view`, a `metrics.pad` de cada borda; mais largo que isso, usa a largura que sobra.
  */
 export function arrivalBandLabelSpot(
   band: Rect,
@@ -206,10 +293,11 @@ export function arrivalBandLabelSpot(
   nameClear: number,
   metrics: ArrivalMetrics,
 ): Point {
-  const w = size.width / zoom;
+  const area = labelArea(view, zoom, metrics.pad);
+  const w = Math.min(size.width / zoom, area.width);
   const h = size.height / zoom;
   const lift = (nameClearance(zoom, nameClear) + metrics.gap) / zoom;
   const above = band.y - lift - h;
-  const y = above >= view.y ? above : bottom(band) + metrics.gap / zoom;
-  return keepInside({ x: band.x, y }, w, h, view);
+  const y = above >= area.y ? above : bottom(band) + metrics.gap / zoom;
+  return keepInside({ x: band.x, y }, w, h, area);
 }
