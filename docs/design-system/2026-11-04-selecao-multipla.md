@@ -6,5 +6,5 @@ Versões 25 (conteúdo) e 26 (índice) do artefato. **`Atalhos.md`:** a linha do
 
 ## Ficou sem gravar
 
-- **Preview do `HelpDialog` (e a frase da introdução, SM3).** O preview estático `project/components/HelpDialog/preview.html` ainda mostra a lista de atalhos antiga ("Acrescentar ou tirar da seleção (Shift+clique no canvas e na Árvore)", sem as linhas "Selecionar por retângulo" e "Mover a seleção") e a introdução sem o "(só o clique da seleção usa Cmd)" (`help.shortcuts.intro` em `src/i18n/`). Refazer o preview inteiro a partir de `src/ui/shortcutList.ts` e da introdução, junto de "Previews não mostram o estado novo"; remendar só a frase o deixaria pela metade.
-- **Contraste do retângulo de seleção.** `renderMarquee` (`src/canvas/renderers/overlay.ts`) desenha só a borda e o preenchimento, sem o halo `cv-halo` da seleção comum: a borda mede 2,26:1 sobre o canvas claro (abaixo de 3:1). Registrado em `project/Contraste.md`; a decisão é do dono (issue `roadmap` #456).
+- Passou para o registro do épico `epic/sincronia-ds-2`: Preview do `HelpDialog` e a frase da introdução: refazer a lista e a introdução (`help.shortcuts.intro`) a partir do código de hoje.
+- Passou para o registro do épico `epic/sincronia-ds-2`: Contraste do retângulo de seleção (#456): já resolvida; o halo `cv-halo` está em `renderMarquee`, em `Canvas.md` e em `Contraste.md`.

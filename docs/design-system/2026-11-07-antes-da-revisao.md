@@ -11,4 +11,5 @@ Nada a gravar no artefato **Mapping** neste fechamento: o bloco "Antes da revis�
 
 ## Ficou sem gravar
 
-As duas pendências acima (bloco "Antes da revisão" do popover da mudança e posição do `Popover` com limite).
+- Passou para o registro do épico `epic/sincronia-ds-2`: o bloco "Antes da revisão" por campo: guia do `ChangePopover` (texto, DS3) e estado novo na prévia do `ChangePopover` (DS4).
+- Passou para o registro do épico `epic/sincronia-ds-2`: a posição do `Popover` com `limit`: uma frase nos guias de `ChangeMark` e `ChangePopover` (texto, DS3); sem token nem prévia.

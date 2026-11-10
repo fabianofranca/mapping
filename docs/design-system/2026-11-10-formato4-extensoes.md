@@ -10,4 +10,4 @@ Gravado no artefato **Mapping** (versão 68): guia do `ComponentDrawing` ganhou 
 
 ## Ficou sem gravar
 
-O preview do `ComponentDrawing` é uma rendição estática e não desenha texto de componente; não foi alterado.
+Nada. (O preview do ComponentDrawing é uma rendição estática e não desenha texto de componente; não foi alterado.)

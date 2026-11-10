@@ -21,8 +21,9 @@ Se o "Toca em:" da fase (na sub-issue da fase, no GitHub) cruzar qualquer caminh
 | Mudou no código | Olhe no DS |
 | --- | --- |
 | `src/ui/controls/**` | `Button`, `IconButton`, `TextField`, `Select`, `Choice`, `Segmented`, `Tabs`, `Tooltip`, `HelpTip`, `Tags` |
-| `src/ui/**` (fora de `controls/` e `review/`) | o componente correspondente no mapa: painéis, janelas, diálogos e barras |
+| `src/ui/**` (fora de `controls/`, `review/` e `comments/`) | o componente correspondente no mapa: painéis, janelas, diálogos e barras |
 | `src/ui/review/**` | os componentes de revisão e a seção `Revisao.md` |
+| `src/ui/comments/**`, `src/canvas/commentPins.ts`, `src/canvas/renderers/commentPins.ts`, `src/theme/threads.css` | os componentes de comentários (`CommentPin`, `CitationChip`, `ThreadMessage`, `ThreadsSection`, `Composer`, `CommentsWindow`, `ProposalCard`, `DeleteThreadDialogs`) e a seção `Canvas.md` (pino) |
 | `src/ui/catalog/**` | `CatalogPage`, `CatalogScreen`, `CatalogWindow` |
 | `src/app/Home.tsx`, `NarrowWindow.tsx`, `CatalogScreen.tsx`, `Editor*.tsx`, `*Dialog*.tsx` | `Home`, `NarrowWindow`, `ConfirmDialogs`, `ToolWindow` e a seção `Layouts.md` |
 | `src/canvas/renderers/**`, `src/canvas/components/**`, `theme.ts`, `viewport.ts`, `minimap.ts` | `Arrow`, `CanvasMarking`, `Container`, `ComponentDrawing`, `Minimap` e a seção `Canvas.md` |
@@ -77,7 +78,7 @@ Cada componente do DS e a origem dele no código. Um nome do DS pode cobrir vár
 | `Dialog` | `src/ui/Dialog.tsx` |  |
 | `ConfirmDialogs` | `src/app/EditorDialogs.tsx`, `src/app/useEditorDialogs.ts` | `ConfirmDialog` e `ExternalChangeDialog` moram no `EditorDialogs.tsx`. |
 | `Banner` | `src/ui/Banner.tsx`, `src/ui/PreviewBanner.tsx`, `src/ui/UpdateBanner.tsx` |  |
-| `Notice` | `src/ui/Notice.tsx` | O `.notice` de parágrafo também está em `src/ui/InstallHint.tsx`. |
+| `Notice` | `src/ui/Notice.tsx`, `src/ui/InstallHint.tsx` | O `InstallHint` usa o `Notice` (tom `info`, com `title` e `actions`); o `.notice` de parágrafo continua no CSS. |
 | `NoticeBadge` | `src/ui/NoticeBadge.tsx` | Selo, bloco e linha dos quatro `kind` de aviso da especialização (`NoticeBadge`, `TypeNoticeBadge`, `NoticeBlock`, `NoticeLines`); cor sempre com ícone e texto. |
 | `Tags` | `src/ui/controls/Chip.tsx` | Etiqueta de camada em `src/ui/ListView.tsx`. |
 | `Breadcrumbs` | `src/ui/Breadcrumbs.tsx` | Controles à direita da barra em `src/app/EditorTools.tsx` e `src/ui/ZoomField.tsx`. |
@@ -112,7 +113,7 @@ Cada componente do DS e a origem dele no código. Um nome do DS pode cobrir vár
 | `TreeRow` | `src/ui/MarkingTree.tsx` | Linha da Árvore; janela em `src/ui/TreeWindow.tsx`. |
 | `KeyValueGrid` | `src/ui/KeyValueGrid.tsx` |  |
 | `PropertyGrid` | `src/ui/PropertyGrid.tsx` |  |
-| `DataGrid` | `src/ui/TableField.tsx`, `src/ui/ListView.tsx` | Dois usos sob um nome: campo `table` dos Detalhes e Lista em tabela. |
+| `DataGrid` | `src/ui/TableField.tsx`, `src/ui/ListView.tsx` | Dois usos sob um nome: campo `table` dos Detalhes e Lista em tabela. `LayerCell` e `MarkingCell` (botão da primeira coluna) são exportados do `ListView.tsx` e também usados por `IncompleteView.tsx` e `NoticesView.tsx`. |
 | `RefCell` | `src/ui/RefCell.tsx`, `src/ui/RefPicker.tsx` | Seletor em modo `compact`. |
 | `ReferenceField` | `src/ui/TypedFields.tsx`, `src/ui/RefPicker.tsx` | `RefField` é função interna do `TypedFields.tsx`. |
 | `InconsistentProjectDialog` | `src/ui/InconsistentProjectDialog.tsx` | Aberto por `src/app/Home.tsx`. |
@@ -146,6 +147,20 @@ Cada componente do DS e a origem dele no código. Um nome do DS pode cobrir vár
 | `NoticesView` | `src/ui/NoticesView.tsx`, `src/ui/BottomTabs.tsx` | Janela Avisos (`Ctrl+Shift+8`): filtros, grupos por aviso e a aba com contagem. |
 | Janela Comentários | `src/ui/toolWindowMeta.ts`, `src/store/toolWindows.ts` | Aba da janela inferior, a última (`WINDOW_NUMBER.comments = 0`, atalho `Ctrl+Shift+0`, ícone `chat`). |
 | `SettingsDialog` | `src/ui/SettingsDialog.tsx` | Também `SettingsBar.tsx`, `PlatformRepos.tsx` e `PrivacySettings.tsx`. |
+
+### Componentes: conversas e comentários
+
+| Componente | Origem no código | Observação |
+| --- | --- | --- |
+| `CommentPin` | `src/canvas/commentPins.ts`, `src/canvas/renderers/commentPins.ts`, `src/canvas/theme.ts` | Pino desenhado no Konva; sem `.tsx`; só guia, sem preview. |
+| `CitationChip` | `src/ui/comments/CitationChip.tsx`, `CitationEditor.tsx`, `CitePicker.tsx` | Só guia, sem preview. |
+| `ThreadMessage` | `src/ui/comments/ThreadMessage.tsx`, `ThreadView.tsx` | Só guia, sem preview. |
+| `ThreadsSection` | `src/ui/comments/ThreadsSection.tsx` | Seção Conversas dos Detalhes; só guia, sem preview. |
+| `Composer` | `src/ui/comments/Composer.tsx` | Só guia, sem preview. |
+| `CommentsWindow` | `src/ui/comments/CommentsWindow.tsx`, `StandaloneThreadPanel.tsx` | Conteúdo da janela Comentários (a aba está em "Janela Comentários", acima); só guia, sem preview. |
+| `ProposalCard` | `src/ui/comments/ProposalCard.tsx` | Só guia, sem preview. |
+| `DeleteThreadDialogs` | `src/ui/comments/useDeleteThread.tsx`, `BulkDeleteDialog.tsx`, `deleteText.ts` | Só guia, sem preview. |
+| `ReferencedByRow` | `src/ui/ReferencedBy.tsx` | Linha "Referenciada por" do `AnnotationEditor`; só guia, sem preview. |
 
 ### Seções
 
@@ -192,12 +207,12 @@ Conferido em 2026-11-04: **86 ícones no DS, 86 em `icons.tsx`, correspondência
 
 Levantado em 2026-11-02. Estes arquivos aparecem na tela e nenhum guia do DS os cobre. **Não são pendência:** entrar ou não no DS é decisão do dono, e criar componente novo está fora do escopo da etapa de sincronia.
 
-- Diálogos: `src/ui/review/ExitReviewDialog.tsx`, `src/app/ExportDialog.tsx`, `src/ui/SpecsDialog.tsx`, `src/ui/InconsistentProjectDialog.tsx` (os três últimos só citados no guia de `Dialog`).
+- Diálogos: `src/ui/review/ExitReviewDialog.tsx`, `src/app/ExportDialog.tsx`, `src/ui/SpecsDialog.tsx`, `src/ui/InconsistentProjectDialog.tsx` (os três últimos só citados no guia de `Dialog`), `src/ui/LinkDialog.tsx`, `src/ui/TypePicker.tsx`.
 - Barras e faixas: `src/app/EditorMainBar.tsx`, `src/app/EditorTools.tsx`, `src/ui/SettingsBar.tsx`, `src/ui/ImageConsentBanner.tsx`, `src/ui/InstallHint.tsx`, `src/ui/review/ProposalNotices.tsx`.
-- Revisão: `src/ui/review/ReviewLevels.tsx` (a barra de progresso; os filtros recolhidos e o painel aberto estão no guia e na prévia do `ReviewRow`), `src/ui/review/ProposalList.tsx` (a busca e o estado vazio), `src/ui/review/ReviewCanvasControls.tsx` (o alternador Atual/Proposto e a legenda das marcas).
-- Detalhes e campos: `src/ui/FieldEditors.tsx`, `src/ui/CommitInput.tsx`, `src/ui/AnnotationEditor.tsx`, `src/ui/AnnotationSummary.tsx`, `src/ui/DetailsSection.tsx`, `src/ui/DetailsIdentity.tsx`, `src/ui/MarkingColorField.tsx`.
+- Revisão: `src/ui/review/ReviewLevels.tsx` (a barra de progresso; os filtros recolhidos e o painel aberto estão no guia e na prévia do `ReviewRow`), `src/ui/review/ProposalList.tsx` (a busca e o estado vazio), `src/ui/review/ReviewCanvasControls.tsx` (o alternador Atual/Proposto e a legenda das marcas), `src/ui/review/RevisedBefore.tsx` (o bloco "Antes da revisão").
+- Detalhes e campos: `src/ui/FieldEditors.tsx`, `src/ui/CommitInput.tsx`, `src/ui/AnnotationEditor.tsx`, `src/ui/AnnotationSummary.tsx`, `src/ui/DetailsSection.tsx`, `src/ui/DetailsIdentity.tsx`, `src/ui/MarkingColorField.tsx`, `src/ui/OwnerRoleField.tsx`, `src/ui/LinkedAnnotations.tsx`, `src/ui/IdentitySettings.tsx`.
 - Configurações: `src/ui/PrivacySettings.tsx`, `src/ui/PlatformRepos.tsx`.
-- Outros: `src/ui/Popover.tsx`, `src/ui/LibraryPalette.tsx`, `src/ui/DiagnosticsView.tsx`, `src/ui/IncompleteView.tsx`, `src/ui/LayersWindow.tsx`, `src/ui/TreeWindow.tsx`.
+- Outros: `src/ui/Popover.tsx`, `src/ui/LibraryPalette.tsx`, `src/ui/DiagnosticsView.tsx`, `src/ui/IncompleteView.tsx`, `src/ui/LayersWindow.tsx`, `src/ui/TreeWindow.tsx`, `src/ui/comments/CitePicker.tsx`, `src/ui/comments/StandaloneThreadPanel.tsx`, `src/ui/comments/CitedIn.tsx`.
 
 Composições e lógica sem forma própria (não precisam de componente): `src/ui/SelectionPanel.tsx`, `src/ui/review/ReviewPanel.tsx`, `ReviewDetails.tsx`, `ProposalsWindow.tsx`, `reviewExtension.tsx`, `changeText.ts`, `levelRows.ts`, `src/canvas/reviewMarks.ts`, `src/store/proposedCatalog.ts`, `src/canvas/frame.ts`, `containment.ts`, `gestureMachine.ts`, `input/`, `viewportController.ts`.
 

@@ -22,4 +22,10 @@ Gravado no artefato **Mapping** em 2026-11-05: versão 37 (conteúdo) e versão 
 
 ## Ficou sem gravar
 
-Nada deixou de ser gravado. Fica só a conferência visual no viewer do DS: a verificação foi num render local (Chrome headless), nos dois temas para `Tooltip`, `MarkingPanel` (card estreito) e `LayerGroup` (cabeçalhos estreitos), e só no claro para `Menu`. Convém abrir essas quatro prévias nos dois temas e ver se o card do `Tooltip` (310) não corta. A prévia do `ToolStripButton` segue com `tooltip-bottom` no HTML estático, sem efeito visual.
+Nada deixou de ser gravado. Fica só a conferência visual no viewer do DS:
+
+- Passou para o registro do épico `epic/sincronia-ds-2`: Conferência da prévia do `Tooltip` (exemplo `end`, altura do cartão) nos dois temas.
+- Passou para o registro do épico `epic/sincronia-ds-2`: Conferência da prévia do `MarkingPanel` (card do painel estreito de 280 px) nos dois temas.
+- Passou para o registro do épico `epic/sincronia-ds-2`: Conferência da prévia do `LayerGroup` (cabeçalhos estreitos) nos dois temas.
+- Passou para o registro do épico `epic/sincronia-ds-2`: Conferência da prévia do `Menu` (entrada com atalho), que só foi vista no tema claro.
+- Passou para o registro do épico `epic/sincronia-ds-2`: Prévia do `ToolStripButton` com `tooltip-bottom` no HTML estático: sem efeito visual, não é pendência.

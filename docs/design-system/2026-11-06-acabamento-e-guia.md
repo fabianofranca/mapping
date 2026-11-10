@@ -23,4 +23,9 @@ Gravado no artefato **Mapping** em 2026-11-06: versão 41 (conteúdo) e versão 
 
 ## Ficou sem gravar
 
-Nada. Fica só a conferência visual, porque nenhuma prévia foi aberta no viewer do DS: (1) cartão "Removida" do `CanvasMarking`: o risco SVG usa uma largura estimada de 37 px para "Banner"; (2) cartão "Removida e selecionada": altura do risco na etiqueta (`top: 55%`); (3) cartões novos do `LayerGroup` (`is-split`), do `Minimap` (legenda sobre o minimapa) e do `CanvasMarking`, nos dois temas, com os `height` estimados (2080, 800 e 1680) para ver se algum corta.
+Nada. Fica só a conferência visual, porque nenhuma prévia foi aberta no viewer do DS:
+
+- Passou para o registro do épico `epic/sincronia-ds-2`: Conferência do cartão "Removida" do `CanvasMarking` (largura estimada do risco SVG).
+- Passou para o registro do épico `epic/sincronia-ds-2`: Conferência do cartão "Removida e selecionada" do `CanvasMarking` (altura do risco na etiqueta).
+- Passou para o registro do épico `epic/sincronia-ds-2`: Conferência dos cartões novos do `LayerGroup` (`is-split`), nos dois temas e com a altura do cartão.
+- Passou para o registro do épico `epic/sincronia-ds-2`: Conferência do cartão novo do `Minimap` (legenda sobre o minimapa) e da altura do cartão.

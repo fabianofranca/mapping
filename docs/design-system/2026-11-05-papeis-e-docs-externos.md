@@ -35,7 +35,7 @@ Gravado no artefato **Mapping** em 2026-11-05: versão 39 (conteúdo, 9 arquivos
 
 ## Ficou sem gravar
 
-- Não há componente no mapa para `TypePicker`, `LinkDialog`, `AnnotationEditor`/`LinkedRow`/`OwnerRoleField` nem `PlatformRepos`: ficaram descritos nos guias de `LayerGroup`, `Dialog` e `SettingsDialog`. Decidir se algum merece componente próprio.
-- A prévia do `LayerGroup` (61 KB, renderizada da app) não ganhou os estados de PD3 e PD4 (busca com grupos, linhas por papel, `Select` do papel), e não há prévia do `LinkDialog`.
-- Conferência visual, nos temas claro e escuro, das prévias de `CatalogPage` (cinco cartões "Documento externo") e de `SettingsDialog` (cartão "No editor" com Código e Documentos): contraste, alturas estimadas e o link `.external-doc-link` no tema escuro.
-- Classes que faltam no `bundle.css` (somadas em `docs/DESIGN-SYSTEM.md`, "Classes que faltam no `bundle.css`"): `.external-doc*`, `.repos-group`, `.repos-subtitle`; e, só descritas nos guias, `.type-search`, `.type-section`, `.type-group-title`, `.linked-role-*`.
+- Passou para o registro do épico `epic/sincronia-ds-2`: Componente próprio para `TypePicker`, `LinkDialog`, `AnnotationEditor`/`LinkedRow`/`OwnerRoleField` e `PlatformRepos`: decisão do dono, para a lista "Com forma visível e sem componente no DS" (`PlatformRepos` e `AnnotationEditor` já estão nela).
+- Passou para o registro do épico `epic/sincronia-ds-2`: Prévia do `LayerGroup` sem os estados de PD3 e PD4 (busca com grupos, linhas por papel, `Select` do papel), e sem prévia do `LinkDialog` (esta, decisão do dono).
+- Passou para o registro do épico `epic/sincronia-ds-2`: Conferência visual das prévias de `CatalogPage` (cinco cartões "Documento externo") e de `SettingsDialog` (cartão "No editor"): contraste, alturas e o link no tema escuro.
+- Passou para o registro do épico `epic/sincronia-ds-2`: Classes que faltam no `bundle.css` (`.external-doc*`, `.repos-group`, `.repos-subtitle`, `.type-search`, `.type-section`, `.type-group-title`, `.linked-role-*`, `.annotation-linked-roles`) e os previews que as declaram à parte.

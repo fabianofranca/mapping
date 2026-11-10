@@ -12,12 +12,7 @@ Não gravado: a ferramenta Artifact foi negada pelo classificador de permissões
 
 ## Ficou sem gravar
 
-Motivo: `Artifact` (publish) em https://claude.ai/artifact/HEoYNh91CqK1YDDpjXBxi9 negado pelo classificador de permissões (External System Writes); a leitura funcionou. A troca exata, a gravar num próximo passo (guias curados à mão, sem `/design-sync`; o índice por último, lido imediatamente antes):
-
-1. `project/components/ReferenceField/README.md`:
-   - em "O que o consumidor fornece", trocar "O `title` traz o alvo inteiro e a camada." por "O controle vem dentro do `Tooltip` (no lugar do `title` nativo), que traz o alvo inteiro, a camada e a dica de atalho; a âncora dele ocupa a largura do campo e as dos botões ↗ e ✕ mantêm o tamanho do botão.";
-   - em "Largura estreita", trocar `flex: 0 100 auto` por `flex: 0 1000000 auto` e acrescentar "O rótulo do alvo tem prioridade: a camada cede primeiro e o nome aparece inteiro a 900×720, com o texto completo no tooltip."; trocar "na célula de tabela (RefCell) nada muda" por "na célula de tabela (RefCell) veja o guia dela".
-2. `project/components/RefCell/README.md`, em "Medidas e tokens", acrescentar: o botão vem dentro do `Tooltip` (alvo e dica de atalho inteiros); a coluna `ref` não tem largura mínima própria e divide a tabela como as outras, sem rolagem horizontal; o ícone do botão some, o ✕ desce para a linha de baixo quando a coluna é estreita e "(referência quebrada)" quebra entre as palavras, sem corte.
-3. `project/design-system.json`: só `lastChange` (`by` "Claude", `at` 2026-11-10, `via` "claude", `note` "Fechamento do epic/arestas-fora-da-imagem: guias de ReferenceField e RefCell").
-
-Sem token, ícone nem controle novo; os previews de `ReferenceField` e `RefCell` não foram alterados (conferir se o `title` nativo que eles imitam precisa virar o tooltip).
+- Passou para o registro do épico `epic/sincronia-ds-2`: guia `ReferenceField` (o `Tooltip` no lugar do `title`, a camada que cede primeiro, o botão quebrado que quebra linha) e `bundle.css` (texto, DS3; mudou: a troca do registro vira o texto de hoje, no plano).
+- Passou para o registro do épico `epic/sincronia-ds-2`: guia `RefCell` (`Tooltip`, coluna sem largura mínima, ✕ que desce, texto que quebra) (texto, DS3; mudou: o motivo da pendência agora vai no `Tooltip`).
+- Passou para o registro do épico `epic/sincronia-ds-2`: `lastChange` do índice `design-system.json`: não é pendência (o índice é gravado por quem grava, por último, ver "Quando atualizar" do `docs/DESIGN-SYSTEM.md`).
+- Passou para o registro do épico `epic/sincronia-ds-2`: previews de `ReferenceField` e `RefCell` ainda imitam o `title` nativo do botão `ref-control`: trocar pelo `Tooltip` (prévia, DS5).

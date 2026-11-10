@@ -10,4 +10,4 @@ Nada gravado no artefato **Mapping** neste fechamento: a única pendência (atri
 
 ## Ficou sem gravar
 
-- `ReviewRow`: se o guia do artefato descrever os atributos ARIA do `treeitem` (`id`, `aria-setsize`, `aria-posinset`) e o `aria-activedescendant` da árvore, anotá-los na próxima sincronização. Não gravado: sem impacto visual e o artefato é editado ao vivo por pessoas.
+- Passou para o registro do épico `epic/sincronia-ds-2`: atributos ARIA do `treeitem` do `ReviewRow` e `aria-activedescendant` da árvore: não é pendência (nem o guia nem o preview do `ReviewRow` descrevem atributos ARIA além de `role="treeitem"`; a condição da nota não se cumpre).

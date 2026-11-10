@@ -25,7 +25,7 @@ Gravado no artefato **Mapping** em 2026-11-06, no fechamento do épico (versão 
 
 ## Ficou sem gravar
 
-- Os previews (`Flag`, `ProposalRow`, `ChangePopover`, `ReviewHeader`, `NoteField`, `ReviewRow`) não ganharam os estados novos (selo Revisada, bloco Antes da revisão, linha Revisada · N para conferir, aviso de revisão nova, filtro Só revisadas): só os guias foram atualizados, para não desenhar estado sem o desenho de referência do app.
-- Nem o bloco **Antes da revisão** nem o aviso de revisão nova têm componente próprio no Mapa; ficaram descritos nos guias de `ChangePopover` e `ProposalRow`. Criar componente novo é decisão do dono.
-- Contraste do selo `new` e do bloco `.revised-before` nos dois temas não foi conferido num navegador (só tokens existentes).
-- O `.revised-before` não entrou no `bundle.css` do artefato.
+- Passou para o registro do épico `epic/sincronia-ds-2`: os estados novos (selo Revisada, linha Revisada · N para conferir, bloco Antes da revisão, linha de revisão no cabeçalho, nota da mudança retirada, filtro Só revisadas) nas prévias de `Flag`, `ProposalRow`, `ChangePopover`, `ReviewHeader`, `NoteField` e `ReviewRow`, e três correções de guia (filtro, cabeçalho, selo).
+- Passou para o registro do épico `epic/sincronia-ds-2`: sem componente próprio: `RevisedBefore.tsx` entra na lista "Com forma visível e sem componente no DS"; o aviso de revisão nova (`ProposalNotices.tsx`) já estava nela; criar componente fica com o dono.
+- Passou para o registro do épico `epic/sincronia-ds-2`: a conferência de contraste do selo `new` e do bloco `.revised-before` nos dois temas.
+- Passou para o registro do épico `epic/sincronia-ds-2`: a regra `.revised-before` (e `.revised-before-title`) no `bundle.css`.

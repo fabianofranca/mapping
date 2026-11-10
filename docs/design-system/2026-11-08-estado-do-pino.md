@@ -10,4 +10,5 @@ Nenhuma gravação no artefato Mapping do Claude Design: o artefato é curado à
 
 ## Ficou sem gravar
 
-A pendência da EP1 acima: o glifo de estado no `CommentPin` e nos selos, os ícones `thread-awaiting-human` e `thread-awaiting-agent` (grupo "Conversas") e os trechos de `Canvas.md` e `Contraste.md`. Também em aberto, na issue #925: decidir se a cor do estado se unifica entre pino, janela e Detalhes.
+- Passou para o registro do épico `epic/sincronia-ds-2`: glifo de estado no `CommentPin` (guia), selos de estado com ícone (`CommentsWindow`, `ThreadMessage`), ícones `thread-awaiting-human` e `thread-awaiting-agent` (upload no grupo Icons, contagem 90 para 92 e o grupo "Conversas") e os trechos de `Canvas.md` e `Contraste.md` (DS3).
+- Passou para o registro do épico `epic/sincronia-ds-2`: cor do estado unificada entre pino, janela e Detalhes (#925): já resolvida pelo épico `epic/cor-do-estado` (`2026-11-09-cor-do-estado`), sem edição.

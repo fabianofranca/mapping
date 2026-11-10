@@ -14,4 +14,8 @@ Nenhuma gravação feita pelo agente: artefato curado à mão.
 
 ## Ficou sem gravar
 
-- As pendências acima (guias `Breadcrumbs`, `ActionMenu`, `Popover` e a barra do canvas), para aplicar à mão no artefato.
+- Passou para o registro do épico `epic/sincronia-ds-2`: `Breadcrumbs` na barra estreita, o "…" com o `ActionMenu` e as chaves `crumbs.showFull` e `crumbs.menu`: guia (texto, DS3), `bundle.css` (texto, DS3) e preview (prévia, DS5).
+- Passou para o registro do épico `epic/sincronia-ds-2`: `ActionMenu`, props `icon`, `menuLabel`, `className` e `current` no item: guia do `Menu` (texto, DS3) e `bundle.css` (texto, DS3).
+- Passou para o registro do épico `epic/sincronia-ds-2`: barra do canvas estreita na revisão, `OverflowMenu` ("Mais controles") e o painel "Mostrar no canvas" ancorado no "⋯": guias `Breadcrumbs` e `ViewModePanel` (texto, DS3), `bundle.css` (texto, DS3) e previews de `Breadcrumbs` e `Menu` (prévia, DS5).
+- Passou para o registro do épico `epic/sincronia-ds-2`: `ActionMenu`, props `badge` e `alert` e, no item, `checked` e `shortcut`: guia do `Menu` (texto, DS3), `bundle.css` (texto, DS3) e preview do `Menu` (prévia, DS5).
+- Passou para o registro do épico `epic/sincronia-ds-2`: `Popover`, prop `anchor`: guia do `Menu`, que cobre o `Popover` (texto, DS3).
