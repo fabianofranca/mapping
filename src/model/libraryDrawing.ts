@@ -247,6 +247,14 @@ export function nodeProbeLibrary(lib: Library, origin: Origin): Library {
 export const withoutNodePrefix = (message: string): string =>
   message.replace(/^node\.?/, '');
 
+/** O erro da tradução como `detail`: com código, ou o texto cru (uma exceção do motor). */
+function errorDetail(
+  result: { readonly error?: string; readonly errorMessage?: ModelMessage },
+  strip: (text: string) => string = (text) => text,
+): ModelMessage {
+  return result.errorMessage ?? rawMessage(strip(result.error ?? ''));
+}
+
 /**
  * O aviso da origem sem o `node.` que o quadro sintético põe na frente do caminho: o `path` do
  * parâmetro perde o prefixo e o texto é montado de novo (igual a `withoutNodePrefix(text)`).
@@ -317,7 +325,7 @@ export function drawingIssues(ctx: DrawingContext): LibraryIssue[] {
         const systemIssue = (severity: 'error' | 'warning', detail: ModelMessage) =>
           libraryIssue(severity, specPath, at, 'library.systemExample', params, detail);
         if (result.error !== undefined) {
-          out.push(systemIssue('error', rawMessage(withoutNodePrefix(result.error))));
+          out.push(systemIssue('error', errorDetail(result, withoutNodePrefix)));
           return;
         }
         for (const message of result.messages)
@@ -351,7 +359,7 @@ export function drawingIssues(ctx: DrawingContext): LibraryIssue[] {
       const screenIssue = (severity: 'error' | 'warning', detail: ModelMessage) =>
         libraryIssue(severity, specPath, at, 'library.originScreen', params, detail);
       if (result.error !== undefined) {
-        out.push(screenIssue('error', rawMessage(result.error)));
+        out.push(screenIssue('error', errorDetail(result)));
         return;
       }
       for (const message of result.messages) out.push(screenIssue('warning', message));

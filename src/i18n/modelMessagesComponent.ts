@@ -172,5 +172,13 @@ export const originsEnUS: {
     '{path}: node without an annotation type ({label}); ignored',
   'model.origins.draw.nodeUntypedBare':
     '{path}: node without an annotation type (no type); ignored',
+  'model.origins.error.systemUndeclared':
+    'origin not declared in the specialization: {system}',
+  'model.origins.error.noOrigins': 'the specialization declares no origins',
+  'model.origins.error.onlyMeasured':
+    'the specialization only declares measured origins (which do not produce a screen); pass the origin system',
+  'model.origins.error.widthInvalid': 'screen width missing or invalid ({source})',
+  'model.origins.error.heightInvalid': 'screen height missing or invalid ({source})',
+  'model.origins.error.noResult': 'translation produced no result',
   'model.origins.draw.emptyRect': '{path}: empty rectangle ({width}×{height}); ignored',
 };

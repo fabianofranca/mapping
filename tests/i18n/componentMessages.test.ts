@@ -420,7 +420,9 @@ describe('catálogos component, iconsFile e origins', () => {
         if (code === 'component.formatInvalid') continue;
         // Os avisos de desenho (`origins.draw.*`) saem do catálogo por `templateMessage` (MB5), sem o
         // texto no código; `engineMessages.test.ts` os produz.
-        if (code.startsWith('origins.draw.')) continue;
+        // Os erros da tradução (`origins.error.*`, guarda da MB6) também.
+        if (code.startsWith('origins.draw.') || code.startsWith('origins.error.'))
+          continue;
         const parts = template
           .split(/\{\w+\}/)
           .map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));

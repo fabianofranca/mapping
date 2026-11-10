@@ -151,6 +151,8 @@ export interface TranslateResult {
   /** Os mesmos avisos com código e parâmetros (`warnings` = textos destes, na mesma ordem). */
   readonly messages: readonly ModelMessage[];
   readonly error?: string;
+  /** O `error` com código e parâmetros (`error` = o texto dele); ausente se o erro foi uma exceção. */
+  readonly errorMessage?: ModelMessage;
 }
 
 export interface SourceResult {
@@ -158,6 +160,7 @@ export interface SourceResult {
   readonly warnings: readonly string[];
   readonly messages: readonly ModelMessage[];
   readonly error?: string;
+  readonly errorMessage?: ModelMessage;
 }
 
 export interface SourceOptions {
@@ -1004,20 +1007,19 @@ function pickOrigin(
   system: string | undefined,
 ):
   | { readonly origin: Origin; readonly error?: never }
-  | { readonly origin?: never; readonly error: string } {
+  | { readonly origin?: never; readonly error: ModelMessage } {
   if (system) {
     const found = origins.find((o) => o.system === system);
     return found
       ? { origin: found }
-      : { error: `origem não declarada na especialização: ${system}` };
+      : { error: templateMessage('origins.error.systemUndeclared', { system }) };
   }
   const tree = origins.find((o) => o.kind !== 'measured');
   if (tree) return { origin: tree };
   return {
-    error:
-      origins.length === 0
-        ? 'a especialização não declara origens'
-        : 'a especialização só declara origens measured (que não geram tela); passe o system da origem',
+    error: templateMessage(
+      origins.length === 0 ? 'origins.error.noOrigins' : 'origins.error.onlyMeasured',
+    ),
   };
 }
 
@@ -1028,19 +1030,23 @@ function translate(
 ): TranslateResult {
   const messages: ModelMessage[] = [];
   const picked = pickOrigin(library.origins, options.system);
-  if (!picked.origin) return result(messages, { error: picked.error });
+  if (!picked.origin) return result(messages, { errorMessage: picked.error });
   const origin = picked.origin;
 
   const width = positiveNumber(readSource(origin.screen.width, json));
   if (width === undefined) {
     return result(messages, {
-      error: `largura da tela ausente ou inválida (${describeSource(origin.screen.width)})`,
+      errorMessage: templateMessage('origins.error.widthInvalid', {
+        source: describeSource(origin.screen.width),
+      }),
     });
   }
   const height = positiveNumber(readSource(origin.screen.height, json));
   if (height === undefined) {
     return result(messages, {
-      error: `altura da tela ausente ou inválida (${describeSource(origin.screen.height)})`,
+      errorMessage: templateMessage('origins.error.heightInvalid', {
+        source: describeSource(origin.screen.height),
+      }),
     });
   }
   const byName = new Map<string, TypeDef>();
@@ -1078,9 +1084,20 @@ function translate(
 /** O resultado da tradução: `warnings` são os textos das `messages`, na mesma ordem. */
 function result(
   messages: ModelMessage[],
-  rest: { readonly layout?: LayoutScreen; readonly error?: string },
+  rest: {
+    readonly layout?: LayoutScreen;
+    /** Erro que a exceção trouxe (texto do motor JavaScript, sem código). */
+    readonly error?: string;
+    readonly errorMessage?: ModelMessage;
+  },
 ): TranslateResult {
-  return { ...rest, warnings: textsOf(messages), messages };
+  const { errorMessage, ...others } = rest;
+  return {
+    ...others,
+    ...(errorMessage === undefined ? {} : { error: errorMessage.text, errorMessage }),
+    warnings: textsOf(messages),
+    messages,
+  };
 }
 
 function messageOf(error: unknown): string {
@@ -1105,6 +1122,19 @@ export function translateSource(
   }
 }
 
+/** O erro da tradução com o código; sem erro (nem layout), o `origins.error.noResult`. */
+function errorOf(
+  translated: TranslateResult,
+): Pick<SourceResult, 'error' | 'errorMessage'> {
+  if (translated.error === undefined) {
+    const errorMessage = templateMessage('origins.error.noResult');
+    return { error: errorMessage.text, errorMessage };
+  }
+  return translated.errorMessage === undefined
+    ? { error: translated.error }
+    : { error: translated.error, errorMessage: translated.errorMessage };
+}
+
 /** `translateSource` + `layoutScreen`: do JSON externo à `Screen` pronta para desenhar. Nunca lança. */
 export function screenFromSource(
   library: Library,
@@ -1116,7 +1146,7 @@ export function screenFromSource(
     return {
       warnings: translated.warnings,
       messages: translated.messages,
-      error: translated.error ?? 'tradução sem resultado',
+      ...errorOf(translated),
     };
   }
   try {
