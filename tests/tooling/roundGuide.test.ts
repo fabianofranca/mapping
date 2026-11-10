@@ -1,7 +1,7 @@
 // @vitest-environment node
 // Fase TS1 (etapa #421, decisão 7): `round-guide.mjs` gera o guia da rodada a partir do
 // docs/TESTING.md, sem os roteiros não pedidos, os sob demanda, a seção 9 e o registro do Uso real.
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -351,6 +351,337 @@ describe('round-guide.mjs --grupos (TR4, decisões 15 a 17)', () => {
       for (const item of chain.items) {
         expect(section, item).toContain(item.replace('-', ' a '));
       }
+    }
+  });
+});
+
+// Etapa #1232 (GL1): o guia da rodada em base, índice e trechos sob demanda (`cloud.mjs passo`).
+describe('round-guide.mjs: base, índice e trechos (#1232, GL1)', () => {
+  const STEP_LINE = /^\|\s*(?:\*\*)?(R\d+\.\d+[a-z]?)(?:\*\*)?[^|]*\|/;
+  const HEADER = ['| Passo | Ação | Esperado |', '| --- | --- | --- |'];
+
+  async function load() {
+    return import('../../scripts/testing/round-guide.mjs');
+  }
+
+  async function guideOf(roteiros: string[]): Promise<string> {
+    const { buildRoundGuide } = await load();
+    return buildRoundGuide(GUIDE, roteiros, { commit: 'abc1234' });
+  }
+
+  /** Linhas (1-based) e códigos dos passos de cada roteiro do guia gerado, fora de bloco de código. */
+  function stepsOf(guide: string): Map<string, string[]> {
+    const map = new Map<string, string[]>();
+    let id = '';
+    let fence = false;
+    for (const line of guide.split('\n')) {
+      if (/^\s*(`{3,}|~{3,})/.test(line)) fence = !fence;
+      const heading = fence ? null : /^### (R\d+)\b/.exec(line);
+      if (heading) {
+        id = heading[1] as string;
+        map.set(id, []);
+        continue;
+      }
+      if (/^#{2,3} /.test(line) && !fence) id = '';
+      const code = !fence && id ? STEP_LINE.exec(line)?.[1] : undefined;
+      if (code) map.get(id)?.push(code);
+    }
+    return map;
+  }
+
+  describe('buildGuideBase', () => {
+    it('R0 R22: sem nenhuma seção de roteiro, só uma linha de comando por roteiro', async () => {
+      const { buildGuideBase } = await load();
+      const base = buildGuideBase(GUIDE, ['R0', 'R22'], { commit: 'abc1234' });
+      const headings = base.split('\n').filter((l) => /^### R\d+/.test(l));
+      expect(headings).toHaveLength(2);
+      expect(headings[0]).toMatch(
+        /^### R0 — .+: `node scripts\/testing\/cloud\.mjs passo R0`$/,
+      );
+      expect(headings[1]).toMatch(
+        /^### R22 — .+: `node scripts\/testing\/cloud\.mjs passo R22`$/,
+      );
+      expect(base).not.toMatch(/^\| R(?:0|22)\.\d+[a-z]? \|/m);
+      expect(base).not.toContain('**O que cobre:**');
+      expect(base).not.toMatch(/^#### R12\./m);
+    });
+
+    it('mantém o "Comece aqui", as seções 1 a 7, o template e os apêndices A e B', async () => {
+      const { buildGuideBase } = await load();
+      const base = buildGuideBase(GUIDE, ['R0', 'R22'], { commit: 'abc1234' });
+      expect(base).toContain('## Comece aqui');
+      for (const n of [1, 2, 3, 4, 5, 6, 7]) {
+        expect(base, `seção ${n}`).toMatch(new RegExp(`^## ${n}\\. `, 'm'));
+      }
+      expect(base).toMatch(/^## 8\. /m);
+      expect(base).toContain('### Relato de uma rodada de teste');
+      expect(base).toContain('## Apêndice A');
+      expect(base).toContain('## Apêndice B');
+      expect(base).not.toContain('## 9. Teste manual avançado');
+    });
+
+    it('a nota de topo é a mesma, com a frase do índice na linha seguinte', async () => {
+      const { buildGuideBase } = await load();
+      const guide = await guideOf(['R0', 'R22']);
+      const base = buildGuideBase(GUIDE, ['R0', 'R22'], { commit: 'abc1234' });
+      const [note, sentence] = base.split('\n');
+      expect(note).toBe(guide.split('\n')[0]);
+      expect(sentence).toBe(
+        '> Os roteiros saem por `cloud.mjs passo`; o índice está em `guia-indice.tsv`.',
+      );
+      const named = buildGuideBase(GUIDE, ['R0'], { commit: 'abc1234', name: 'rodada' });
+      expect(named.split('\n')[1]).toContain('`rodada-indice.tsv`');
+    });
+
+    it('os trechos marcados seguem a regra do guia: só entram os que citam um roteiro pedido', async () => {
+      const { buildGuideBase } = await load();
+      const base = buildGuideBase(GUIDE, ['R0', 'R22'], { commit: 'abc1234' });
+      // Trechos marcados fora de qualquer seção de roteiro (os de dentro saem junto com a seção).
+      let heading = '';
+      let open: { ids: string[]; first?: string; outside: boolean } | null = null;
+      let checked = 0;
+      for (const line of GUIDE.split('\n')) {
+        const h = /^#{2,3} (.*)$/.exec(line);
+        if (h && !open) heading = h[1] as string;
+        const mark = /^<!-- roteiros: ([^>]*?) -->$/.exec(line);
+        if (mark) {
+          open = {
+            ids: (mark[1] as string).trim().split(/\s+/),
+            outside: !/^R\d+\b/.test(heading),
+          };
+        } else if (line === '<!-- /roteiros -->') {
+          if (open?.outside && open.first) {
+            const keep = open.ids.some((id) => ['R0', 'R22'].includes(id));
+            expect(base.includes(open.first), open.first).toBe(keep);
+            checked += 1;
+          }
+          open = null;
+        } else if (open && !open.first && line.trim() && !h) {
+          open.first = line;
+        }
+      }
+      expect(checked).toBeGreaterThan(0);
+    });
+  });
+
+  describe('cobertura (decisão 9)', () => {
+    async function missingLines(roteiros: string[]): Promise<string[]> {
+      const { buildGuideBase, guideExcerpt } = await load();
+      const guide = await guideOf(roteiros);
+      const covered = new Set(
+        buildGuideBase(GUIDE, roteiros, { commit: 'abc1234' }).split('\n'),
+      );
+      for (const [id, codes] of stepsOf(guide)) {
+        for (const line of guideExcerpt(guide, [id]).split('\n')) covered.add(line);
+        for (let i = 0; i < codes.length; i += 8) {
+          const batch = codes.slice(i, i + 8);
+          const first = batch[0] as string;
+          const last = batch[batch.length - 1] as string;
+          const out = guideExcerpt(guide, [first === last ? first : `${first}-${last}`]);
+          expect(out, `${first}-${last}`).not.toContain('… corte em');
+          for (const line of out.split('\n')) covered.add(line);
+        }
+      }
+      return guide.split('\n').filter((line) => line.trim() && !covered.has(line));
+    }
+
+    it('R0 R12 R22: toda linha do guia está na base ou no passo de algum roteiro', async () => {
+      expect(await missingLines(['R0', 'R12', 'R22'])).toEqual([]);
+    });
+
+    it('all: nada do guia da rodada fica sem caminho de leitura', async () => {
+      expect(await missingLines(['all'])).toEqual([]);
+    }, 60000);
+  });
+
+  describe('buildGuideIndex', () => {
+    it('cabeçalho, tipos e chaves: seções, roteiros e passos', async () => {
+      const { buildGuideIndex } = await load();
+      const guide = await guideOf(['R0', 'R12', 'R22']);
+      const rows = buildGuideIndex(guide).trimEnd().split('\n');
+      expect(rows[0]).toBe('tipo\tchave\tini\tfim\ttítulo');
+      const cells = rows.slice(1).map((r) => r.split('\t'));
+      for (const c of cells) {
+        expect(c, c.join('|')).toHaveLength(5);
+        expect(['secao', 'roteiro', 'passo']).toContain(c[0]);
+        expect(Number(c[2])).toBeGreaterThan(0);
+        expect(Number(c[3])).toBeGreaterThanOrEqual(Number(c[2]));
+      }
+      const roteiros = cells.filter((c) => c[0] === 'roteiro');
+      expect(roteiros.map((c) => c[1])).toEqual(['R0', 'R12', 'R22']);
+      const secoes = cells.filter((c) => c[0] === 'secao').map((c) => c[1]);
+      expect(secoes).toContain('Comece aqui');
+      expect(secoes.some((s) => /^R\d+/.test(s as string))).toBe(false);
+      expect(secoes.some((s) => /^Apêndice A/.test(s as string))).toBe(true);
+    });
+
+    it('as linhas ini a fim do guia.md são a linha do passo, e os roteiros e seções começam no cabeçalho', async () => {
+      const { buildGuideIndex } = await load();
+      const guide = await guideOf(['R0', 'R12', 'R22']);
+      const lines = guide.split('\n');
+      const cells = buildGuideIndex(guide)
+        .trimEnd()
+        .split('\n')
+        .slice(1)
+        .map((r) => r.split('\t'));
+      const passos = cells.filter((c) => c[0] === 'passo');
+      let total = 0;
+      for (const codes of stepsOf(guide).values()) total += codes.length;
+      expect(passos).toHaveLength(total);
+      for (const [, key, ini, fim, title] of passos) {
+        const row = lines.slice(Number(ini) - 1, Number(fim)).join('\n');
+        expect(ini).toBe(fim);
+        expect(STEP_LINE.exec(row)?.[1], key).toBe(key);
+        expect((title as string).length).toBeLessThanOrEqual(80);
+      }
+      for (const [tipo, key, ini, fim, title] of cells.filter((c) => c[0] !== 'passo')) {
+        const first = lines[Number(ini) - 1] as string;
+        expect(first.startsWith('#'), `${tipo} ${key}`).toBe(true);
+        expect(first.endsWith(title as string), `${tipo} ${key}`).toBe(true);
+        if (tipo === 'roteiro') {
+          expect(first).toMatch(new RegExp(`^### ${key} `));
+          expect(lines[Number(fim)] ?? '').toMatch(/^#{2,3} |^$/);
+        }
+      }
+    });
+  });
+
+  describe('guideExcerpt', () => {
+    it('R22: o "O que cobre", o preparo e uma linha Passos no lugar das linhas de passo', async () => {
+      const { guideExcerpt } = await load();
+      const guide = await guideOf(['R22']);
+      const out = guideExcerpt(guide, ['R22']);
+      expect(out).toContain('**O que cobre:**');
+      expect(out).toContain('**Preparo.**');
+      expect(out).toContain('Passos (23): R22.1, R22.2, …, R22.22');
+      expect(out).not.toMatch(/^\| R22\.\d/m);
+      expect(out.split('\n').filter((l) => l.startsWith('Passos ('))).toHaveLength(1);
+    });
+
+    it('R12: as duas subseções com os preparos e uma linha Passos por trecho de tabela', async () => {
+      const { guideExcerpt } = await load();
+      const guide = await guideOf(['R12']);
+      const out = guideExcerpt(guide, ['R12']);
+      expect(out).toContain('#### R12.17 a R12.22');
+      expect(out).toContain('#### R12.23 a R12.28');
+      expect(out.match(/\*\*Preparo\.\*\*/g)?.length).toBeGreaterThanOrEqual(3);
+      const passos = out.split('\n').filter((l) => l.startsWith('Passos ('));
+      expect(passos).toHaveLength(3);
+      const sum = passos.reduce(
+        (n, l) => n + Number(/^Passos \((\d+)\)/.exec(l)?.[1]),
+        0,
+      );
+      expect(sum).toBe(52);
+      expect(out).not.toMatch(/^\| R12\.\d/m);
+    });
+
+    it('R22.4: o cabeçalho da tabela e a linha do passo', async () => {
+      const { guideExcerpt } = await load();
+      const out = guideExcerpt(await guideOf(['R22']), ['R22.4']).split('\n');
+      expect(out.slice(0, 2)).toEqual(HEADER);
+      expect(out).toHaveLength(3);
+      expect(out[2]).toMatch(/^\| R22\.4 \|/);
+    });
+
+    it('R22.3-R22.6: o cabeçalho e as cinco linhas, com o R22.6a', async () => {
+      const { guideExcerpt } = await load();
+      const out = guideExcerpt(await guideOf(['R22']), ['R22.3-R22.6']).split('\n');
+      expect(out.slice(0, 2)).toEqual(HEADER);
+      expect(out.slice(2).map((l) => STEP_LINE.exec(l)?.[1])).toEqual([
+        'R22.3',
+        'R22.4',
+        'R22.5',
+        'R22.6',
+        'R22.6a',
+      ]);
+    });
+
+    it('R12.16-R12.17 mantém a subseção e o preparo que ficam entre as duas linhas', async () => {
+      const { guideExcerpt } = await load();
+      const out = guideExcerpt(await guideOf(['R12']), ['R12.16-R12.17']);
+      const at = (needle: string) => out.indexOf(needle);
+      expect(at('| R12.16 |')).toBeGreaterThan(0);
+      expect(at('#### R12.17 a R12.22')).toBeGreaterThan(at('| R12.16 |'));
+      expect(at('**Preparo.**')).toBeGreaterThan(at('#### R12.17 a R12.22'));
+      expect(at('| R12.17 |')).toBeGreaterThan(at('**Preparo.**'));
+    });
+
+    it('vários itens saem na ordem pedida, separados por ---', async () => {
+      const { guideExcerpt } = await load();
+      const out = guideExcerpt(await guideOf(['R12', 'R22']), ['R22.4', 'R12.12']);
+      const parts = out.split('\n---\n');
+      expect(parts).toHaveLength(2);
+      expect(parts[0]).toMatch(/^\| Passo \|[^\n]*\n\| --- \|[^\n]*\n\| R22\.4 \|/);
+      expect(parts[1]).toMatch(/\n\| R12\.12 \|/);
+    });
+
+    it('passa de 25.000 caracteres: corta na última linha inteira e diz como continuar', async () => {
+      const { guideExcerpt } = await load();
+      const guide = await guideOf(['all']);
+      const out = guideExcerpt(guide, ['R25.1-R25.66']);
+      expect(out.length).toBeLessThanOrEqual(25000);
+      const lines = out.split('\n');
+      const last = lines[lines.length - 1] as string;
+      const match =
+        /^… corte em 25\.000 caracteres: continue com cloud\.mjs passo (R25\.\w+)-R25\.66$/.exec(
+          last,
+        );
+      expect(match).not.toBeNull();
+      const next = match?.[1] as string;
+      const guideLines = new Set(guide.split('\n'));
+      for (const line of lines.slice(0, -1)) expect(guideLines.has(line)).toBe(true);
+      expect(out).not.toMatch(new RegExp(`^\\| ${next.replace('.', '\\.')} \\|`, 'm'));
+      const before = lines.slice(0, -1).filter((l) => STEP_LINE.test(l));
+      const prev = STEP_LINE.exec(before[before.length - 1] as string)?.[1] as string;
+      const codes = stepsOf(guide).get('R25') as string[];
+      expect(codes.indexOf(next)).toBe(codes.indexOf(prev) + 1);
+    });
+
+    it('erros: passo fora do guia, roteiro fora do guia e faixa invertida ou de dois roteiros', async () => {
+      const { guideExcerpt } = await load();
+      const guide = await guideOf(['R0', 'R12', 'R22']);
+      expect(() => guideExcerpt(guide, ['R22.99'])).toThrow(
+        'R22.99 não está no guia da rodada; o R22 tem R22.1 a R22.22 (23 passos)',
+      );
+      expect(() => guideExcerpt(guide, ['R22.1-R22.99'])).toThrow(/R22\.99 não está/);
+      expect(() => guideExcerpt(guide, ['R99'])).toThrow(
+        /R99 não está no guia da rodada.*R0, R12, R22.*round-guide\.mjs.*Grep.*docs\/TESTING\.md/s,
+      );
+      expect(() => guideExcerpt(guide, ['R99.1'])).toThrow(/R99\.1 não está/);
+      expect(() => guideExcerpt(guide, ['R22.5-R22.3'])).toThrow(/Faixa inválida/);
+      expect(() => guideExcerpt(guide, ['R22.1-R12.2'])).toThrow(
+        /Faixa de passos de roteiros diferentes/,
+      );
+    });
+
+    it('um erro num item não imprime trecho: o item bom antes dele não sai', async () => {
+      const { guideExcerpt } = await load();
+      const guide = await guideOf(['R22']);
+      expect(() => guideExcerpt(guide, ['R22.4', 'R22.99'])).toThrow();
+    });
+  });
+
+  it('a CLI com --out grava o guia, a base e o índice', () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'round-guide-'));
+    try {
+      const out = path.join(dir, 'x', 'guia.md');
+      const r = spawnSync('node', [SCRIPT, 'R0', 'R12', '--out', out], {
+        encoding: 'utf8',
+      });
+      expect(r.status).toBe(0);
+      expect(r.stderr).toContain('guia-base.md');
+      expect(r.stderr).toContain('guia-indice.tsv');
+      const stdout = execFileSync('node', [SCRIPT, 'R0', 'R12'], { encoding: 'utf8' });
+      expect(`${readFileSync(out, 'utf8')}\n`).toBe(stdout);
+      const base = readFileSync(path.join(dir, 'x', 'guia-base.md'), 'utf8');
+      expect(base).not.toMatch(/^\| R12\.\d/m);
+      expect(base).toContain('`node scripts/testing/cloud.mjs passo R12`');
+      expect(base).toContain('`guia-indice.tsv`');
+      const index = readFileSync(path.join(dir, 'x', 'guia-indice.tsv'), 'utf8');
+      expect(index.split('\n')[0]).toBe('tipo\tchave\tini\tfim\ttítulo');
+      expect(index).toMatch(/^roteiro\tR12\t/m);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
     }
   });
 });
