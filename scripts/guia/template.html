@@ -137,6 +137,7 @@
       }
       .steps button:focus-visible,
       .tab:focus-visible,
+      .persp select:focus-visible,
       .chip:focus-visible,
       .btn:focus-visible,
       .link:focus-visible,
@@ -215,6 +216,24 @@
         background: var(--color-accent);
         color: var(--color-accent-text);
         border-color: var(--color-accent);
+      }
+      .persp {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        margin-bottom: var(--space-3);
+      }
+      .persp label {
+        color: var(--color-text-muted);
+      }
+      .persp select {
+        height: var(--control-height);
+        padding: 0 var(--space-2);
+        border: 1px solid var(--color-border-control);
+        border-radius: var(--control-radius);
+        background: var(--color-surface);
+        color: var(--color-text);
+        font: var(--t-text);
       }
       .stage {
         background: var(--color-canvas-bg);
@@ -449,6 +468,10 @@
         </aside>
 
         <main class="panel" aria-label="Container anotado">
+          <div class="persp">
+            <label for="persp">Perspectiva</label>
+            <select id="persp"></select>
+          </div>
           <div class="tabs" role="tablist" id="tabs"></div>
           <div class="stage">
             <svg id="svg" role="group" aria-label="Container com marcações"></svg>
@@ -456,7 +479,7 @@
           <div class="layers" id="layers" aria-label="Camadas"></div>
           <div class="hint">
             Cada contorno é uma marcação, na cor da camada da sua anotação. Clique na
-            camada para ocultar ou mostrar.
+            camada para ocultar ou mostrar. A perspectiva recorta as abas e as camadas.
           </div>
         </main>
 
@@ -515,7 +538,15 @@
       const IM = Object.fromEntries(D.images.map((i) => [i.id, i]));
       const byName = (img, name) =>
         D.markings.find((m) => IM[m.containerId].name === img && m.name === name);
-      const state = { img: D.images[0].id, sel: null, hidden: new Set(), step: 0 };
+      const P = D.perspectives;
+      // persp: índice em P, ou null para a Principal (tudo).
+      const state = {
+        img: D.images[0].id,
+        sel: null,
+        hidden: new Set(),
+        step: 0,
+        persp: null,
+      };
       const $ = (id) => document.getElementById(id);
       const NS = 'http://www.w3.org/2000/svg';
       function el(tag, attrs, kids) {
@@ -545,6 +576,19 @@
           m = m.parentId ? M[m.parentId] : null;
         }
         return p;
+      }
+      function inPersp(img) {
+        return state.persp === null || P[state.persp].containers.includes(img.id);
+      }
+      /* Escolhe a perspectiva: filtra as abas e liga/desliga os chips das camadas escondidas. */
+      function setPersp(index) {
+        state.persp = index;
+        state.hidden = new Set(index === null ? [] : P[index].hiddenLayers);
+        $('persp').value = index === null ? '' : String(index);
+        if (!inPersp(IM[state.img])) {
+          state.img = D.images.find(inPersp).id;
+          state.sel = null;
+        }
       }
       function visible(m) {
         const as = anns(m.id);
@@ -832,7 +876,7 @@
         svg.onclick = () => select(null);
         // abas
         $('tabs').replaceChildren(
-          ...D.images.map((i) => {
+          ...D.images.filter(inPersp).map((i) => {
             const b = document.createElement('button');
             b.className = 'tab';
             b.setAttribute('role', 'tab');
@@ -877,6 +921,7 @@
       function select(id) {
         if (id && M[id].containerId !== state.img) {
           state.img = M[id].containerId;
+          if (!inPersp(IM[state.img])) setPersp(null);
         }
         state.sel = id;
         render();
@@ -990,6 +1035,25 @@
       }
 
       /* Roteiro */
+      function perspectivesText() {
+        const names = P.map((p) => '<b>' + esc(p.name) + '</b>').join(' e ');
+        const arrival = D.arrivals[0];
+        return (
+          'Uma <b>perspectiva</b> é um recorte do projeto: quais itens aparecem, onde ficam e quais camadas se veem. A <b>Principal</b> mostra tudo e é onde as propostas são aceitas. O seletor acima das abas faz o que o da app faz; este exemplo traz ' +
+          names +
+          ': cada uma mostra só os containers dela (nas abas) e esconde as camadas dela (nos chips). Na app, <b>Nova perspectiva…</b> cria outra, para <b>Todos do projeto</b> (grava no <code>mapping.json</code>) ou <b>Só eu</b> (fica neste navegador, por isso não está no exemplo). <b>Enviar para perspectiva</b> mostra um item também em outra e <b>Tirar desta perspectiva</b> o tira só dali; arrastar muda só a posição na perspectiva aberta. ' +
+          (arrival
+            ? 'O que nasce numa perspectiva chega à Principal com o selo <b>Veio de…</b>: a nota “' +
+              esc(arrival.name) +
+              '” veio de ' +
+              esc(arrival.fromName) +
+              ' (a barra de status diz <b>Chegadas: ' +
+              D.arrivals.length +
+              '</b>), e <b>Dispensar</b> tira o aviso. '
+            : '') +
+          'Este guia não desenha a nota nem as posições.'
+        );
+      }
       const S = [
         {
           t: 'Containers e marcações',
@@ -1082,6 +1146,14 @@
           p: 'Detalhes do pedido usa Top app bar, Card, List items, Button e FAB. Tudo vem do catálogo do Material 3, aba <b>Paleta</b> (<kbd>Ctrl+Shift+9</kbd>).',
           try: 'Abra o Catálogo na app e adicione um componente aqui.',
         },
+        {
+          t: 'Perspectivas',
+          img: 'Cadastro',
+          sel: null,
+          persp: P.length ? P[0].name : null,
+          p: perspectivesText(),
+          try: 'Troque a perspectiva no seletor acima das abas e veja as abas e os chips mudarem.',
+        },
       ];
       function stepRender() {
         $('steps').replaceChildren(
@@ -1116,13 +1188,29 @@
         state.step = i;
         const s = S[i];
         const im = D.images.find((x) => x.name === s.img);
+        const pi = P.findIndex((x) => x.name === s.persp);
+        setPersp(pi < 0 ? null : pi);
         state.img = im.id;
-        state.hidden.clear();
         state.sel = s.sel ? byName(s.sel[0], s.sel[1]).id : null;
         stepRender();
         render();
         inspect();
       }
+      $('persp').replaceChildren(
+        ...[['', 'Principal'], ...P.map((p, i) => [String(i), p.name])].map(
+          ([value, label]) => {
+            const o = document.createElement('option');
+            o.value = value;
+            o.textContent = label;
+            return o;
+          },
+        ),
+      );
+      $('persp').onchange = (e) => {
+        setPersp(e.target.value === '' ? null : Number(e.target.value));
+        render();
+        inspect();
+      };
       $('prev').onclick = () => go(Math.max(0, state.step - 1));
       $('next').onclick = () => go(Math.min(S.length - 1, state.step + 1));
       go(0);
