@@ -8,3 +8,7 @@
 
 - MCP: `backlinks` de `get_marking`/`get_annotation` agora agrupa por origem: uma entrada por anotação de origem, `{ from, fromLabel, fromMarking, fields: [{ field, row, column, to }] }`. Quebra quem lia `field` ou `to` direto na entrada.
 - MCP: `refs` e `backlinks` trazem `row` (índice 0-based da linha, como no `get_code_hints`) e `column` de uma célula de tabela, ou `null` nos dois quando o `ref` é um campo. O texto `field` continua como se lê na app (1-based).
+
+## Corrigido
+
+- A 900×720 o valor de uma referência mostra o nome do alvo inteiro; o que não cabe aparece no tooltip.
