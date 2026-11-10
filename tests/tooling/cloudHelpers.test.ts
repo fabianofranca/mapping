@@ -510,6 +510,7 @@ describe('scripts/testing/ listado no repositório', () => {
         'large-project.mjs',
         'mcp-stdio-client.mjs',
         'mock-github-release.mjs',
+        'r85-prep.sh',
         'rot.mjs',
         'round-guide.d.mts',
         'round-guide.mjs',

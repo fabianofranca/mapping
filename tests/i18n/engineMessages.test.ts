@@ -212,6 +212,8 @@ function layoutCases() {
 
 const NODE = { type: 'type', props: 'props', children: 'children' };
 
+let sourceLibrary: ReturnType<typeof loadLibrary> | undefined;
+
 function sourceCases() {
   const btn = {
     format: 'mapping-component',
@@ -298,6 +300,7 @@ function sourceCases() {
     { path: 'components/box.json', text: JSON.stringify(boxComponent) },
   ]);
   expect(library.problems).toEqual([]);
+  sourceLibrary = library;
   const from = (json: unknown) =>
     screenFromSource(library, json, { system: 'sdui', measure: approximateMeasurer });
   return [
@@ -434,5 +437,36 @@ describe('avisos do motor de desenho: messages ao lado de warnings', () => {
         expect(shown, message.code).not.toBe(message.text);
       }
     }
+  });
+});
+
+// Os erros que impedem a tradução da tela (`errorMessage`, ao lado de `error`).
+describe('erros da tradução da tela: errorMessage ao lado de error', () => {
+  const lib = (): NonNullable<typeof sourceLibrary> => {
+    if (sourceLibrary === undefined) throw new Error('biblioteca de origem não montada');
+    return sourceLibrary;
+  };
+  const run = (json: unknown, system = 'sdui') =>
+    screenFromSource(lib(), json, { system, measure: approximateMeasurer });
+
+  it.each([
+    [
+      'origem não declarada',
+      () => run({}, 'nao-existe'),
+      'origins.error.systemUndeclared',
+    ],
+    ['largura ausente', () => run({ screen: { h: 400 } }), 'origins.error.widthInvalid'],
+    ['altura ausente', () => run({ screen: { w: 300 } }), 'origins.error.heightInvalid'],
+  ])('%s: tem código, texto igual a error e en-US sem português', (_l, make, code) => {
+    const result = make();
+    const message = result.errorMessage;
+    expect(message?.code).toBe(code);
+    expect(result.error).toBe(message?.text);
+    locale.value = 'pt-BR';
+    expect(message === undefined ? '' : messageText(message)).toBe(result.error);
+    locale.value = 'en-US';
+    const shown = message === undefined ? '' : messageText(message);
+    expect(withoutParams(shown, message as ModelMessage)).not.toMatch(PORTUGUESE);
+    expect(shown).not.toBe(result.error);
   });
 });

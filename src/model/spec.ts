@@ -3021,7 +3021,14 @@ export function parseSpecText(text: string): SpecParseResult {
     const message = e instanceof Error ? e.message : String(e);
     return {
       ok: false,
-      issues: [{ path: '', message: `JSON inválido: ${message}` }],
+      issues: [
+        {
+          path: '',
+          message: `JSON inválido: ${message}`,
+          code: 'library.invalidJson',
+          params: { detail: message },
+        },
+      ],
       errors: [`JSON inválido: ${message}`],
     };
   }

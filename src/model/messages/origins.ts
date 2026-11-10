@@ -39,5 +39,13 @@ export const originMessages = {
   'origins.draw.rectInvalid': '{path}: esperava { x, y, width, height } numéricos',
   'origins.draw.nodeUntyped': '{path}: nó sem tipo de anotação ({label}); ignorado',
   'origins.draw.nodeUntypedBare': '{path}: nó sem tipo de anotação (sem type); ignorado',
+  // Erros que impedem a tradução da tela (`translateSource`, `screenFromSource`): `errorMessage`.
+  'origins.error.systemUndeclared': 'origem não declarada na especialização: {system}',
+  'origins.error.noOrigins': 'a especialização não declara origens',
+  'origins.error.onlyMeasured':
+    'a especialização só declara origens measured (que não geram tela); passe o system da origem',
+  'origins.error.widthInvalid': 'largura da tela ausente ou inválida ({source})',
+  'origins.error.heightInvalid': 'altura da tela ausente ou inválida ({source})',
+  'origins.error.noResult': 'tradução sem resultado',
   'origins.draw.emptyRect': '{path}: retângulo vazio ({width}×{height}); ignorado',
 } as const;

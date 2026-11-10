@@ -80,4 +80,17 @@ describe('ajuda: especializações', () => {
       );
     }
   });
+
+  it('a ajuda diz que cada origem regrava só os avisos do próprio ref', () => {
+    for (const [locale, origin] of [
+      ['pt-BR', /da sua origem \(o mesmo ref\)/],
+      ['en-US', /of its own origin \(the same ref\)/],
+    ] as const) {
+      const text = JSON.stringify(specHelpSections(locale));
+      expect(text, locale).not.toMatch(
+        /regravar todos os avisos a cada rodada|rewrite all notices on every run/,
+      );
+      expect(text, locale).toMatch(origin);
+    }
+  });
 });
