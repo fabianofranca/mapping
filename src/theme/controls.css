@@ -479,6 +479,8 @@ a.button {
   position: absolute;
   top: 0;
   right: 0;
+  /* No canto do botão, fora do glifo central (⋯ do "Mais controles"). */
+  transform: translate(50%, -50%);
   min-width: var(--space-4);
   padding: 0 var(--space-1);
   font: var(--t-micro);

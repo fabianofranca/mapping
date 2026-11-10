@@ -2,26 +2,16 @@ import { useComputed } from '@preact/signals';
 import { useLayoutEffect, useRef } from 'preact/hooks';
 import type { EditorDialogs } from '../app/useEditorDialogs';
 import { t } from '../i18n';
-import { perspectiveContentCount, type Perspective, type Project } from '../model';
 import { Button, Tooltip } from './controls';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
 import { Popover } from './Popover';
+import { perspectiveContentText } from './perspectiveContentText';
 
 // Seletor de perspectivas da barra principal (etapa #659, PE3): o botão mostra a aberta e
 // quem a vê; a lista tem o grupo "Para todos" (Principal primeiro) e o "Só minhas".
 
 const STOPS = '[role="option"], .perspective-action';
-
-/** "N containers · N marcações" (só o que existe), ou "vazia". */
-function contentText(project: Project, perspective: Perspective): string {
-  const { containers, markings } = perspectiveContentCount(project, perspective);
-  const parts: string[] = [];
-  if (containers > 0)
-    parts.push(t('perspective.count.containers', { count: containers }));
-  if (markings > 0) parts.push(t('perspective.count.markings', { count: markings }));
-  return parts.length === 0 ? t('perspective.count.empty') : parts.join(' · ');
-}
 
 interface RowProps {
   readonly name: string;
@@ -108,7 +98,7 @@ function PickerList({ dialogs, close }: ListProps) {
             <Row
               key={p.id}
               name={p.name}
-              note={contentText(project, p)}
+              note={perspectiveContentText(project, p)}
               selected={openId === p.id}
               onPick={() => pick(p.id)}
             />
@@ -123,7 +113,9 @@ function PickerList({ dialogs, close }: ListProps) {
               <Row
                 key={p.id}
                 name={p.name}
-                note={t('perspective.noteMine', { content: contentText(project, p) })}
+                note={t('perspective.noteMine', {
+                  content: perspectiveContentText(project, p),
+                })}
                 selected={openId === p.id}
                 onPick={() => pick(p.id)}
               />
