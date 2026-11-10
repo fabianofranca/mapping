@@ -133,7 +133,7 @@ A rodada completa (R0 a R25) roda em **5 sessões ao mesmo tempo**, uma por bloc
 
 | Bloco | Roteiros, na ordem do guia                                                     | Passos |
 | ----- | ------------------------------------------------------------------------------ | ------ |
-| 1     | R0, R1, seção 6, R3, R6.3 a R6.7, R6.12 a R6.14, R7, R5, R8 e R14              | 117    |
+| 1     | R0, R1, seção 6, R3, R6.3 a R6.7, R6.12 a R6.14, R7, R5, R8 e R14              | 118    |
 | 2     | R0, R2, seção 6, R15 e R25                                                     | 103    |
 | 3     | R0, seção 6, R12, R18 e R19                                                    | 111    |
 | 4     | R0, seção 6, R4, R6.8a a R6.11, R9, R10, R11, R13, R16, R24 e a passada visual | 121    |

@@ -515,7 +515,6 @@ export const enUS: Dictionary = {
   'library.warning': 'warning',
   'library.package': 'Package',
   'library.packageTooBig': 'package too big to check (file or byte limit)',
-  'library.fileNotFound': 'file not found: {path}',
   'library.exampleNotColumn': '"{key}" is not a column of "{field}"',
   'library.exampleRowNotObject': 'must be an object (column → value)',
   'library.exampleRefCell': 'a "ref" column takes no value in an example',

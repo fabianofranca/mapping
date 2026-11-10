@@ -13,7 +13,7 @@ import {
   type IconNodeRef,
   type IconSet,
 } from './components/icons';
-import { TOKEN_KIND_NAMES, knownTokenKinds } from './components/tokens';
+import { knownTokenKinds, type TokenKind } from './components/tokens';
 import { iconLiteralIssues, iconOptionIssues } from './libraryIcons';
 import {
   parseSpecText,
@@ -27,6 +27,9 @@ import {
 import { specWarnings } from './specWarnings';
 import { missingMigrations } from './specVersions';
 import { drawingIssues } from './libraryDrawing';
+import { libraryIssue } from './libraryIssue';
+import type { ModelMessageTemplateCode } from './messages';
+import type { ModelMessage } from './modelMessage';
 
 // Validador da biblioteca em três níveis (etapa Biblioteca, fase B1). Puro: recebe os arquivos
 // do pacote JÁ LIDOS (texto dos `.json` e `.md`, presença dos binários) e devolve a lista de
@@ -76,13 +79,14 @@ export interface LibraryIssue {
   readonly message: string;
   readonly severity: 'error' | 'warning';
   /**
-   * Código estável de problemas que a interface exibe traduzidos; `message` continua com o
-   * texto em português (MCP e testes). `target` é o dado que entra na tradução.
+   * Código estável de problemas que a interface exibe traduzidos (`src/model/messages/`, ou
+   * `SpecIssueCode` até a MB2); `message` continua com o texto em português (MCP e testes).
    */
-  readonly code?: 'file-not-found' | SpecIssueCode;
-  readonly target?: string;
-  /** Dados da tradução dos códigos de `SpecIssueCode` (`{key}`, `{field}`…). */
-  readonly params?: Readonly<Record<string, string>>;
+  readonly code?: ModelMessageTemplateCode | SpecIssueCode;
+  /** Dados da tradução (`{key}`, `{path}`…). */
+  readonly params?: Readonly<Record<string, string | number>>;
+  /** Mensagem de outro módulo que a interface traduz e põe no `{detail}` do texto de fora. */
+  readonly detail?: ModelMessage;
 }
 
 export interface LibraryInput {
@@ -128,8 +132,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 const messageOf = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
-
-const NOT_READ = 'o conteúdo do arquivo não foi lido (esperava o texto)';
 
 /** Percorre os tipos na ordem da especialização, com o caminho de cada um. */
 function eachType(
@@ -269,8 +271,22 @@ function imageFieldNodes(
 
 class Collector {
   readonly issues: LibraryIssue[] = [];
-  error(file: string, path: string, message: string): void {
+  /** Erro montado pelo catálogo de mensagens. */
+  error(
+    file: string,
+    path: string,
+    code: ModelMessageTemplateCode,
+    params?: Readonly<Record<string, string | number>>,
+  ): void {
+    this.issues.push(libraryIssue('error', file, path, code, params));
+  }
+  /** Erro repassado de um parser (ainda sem código; as fases seguintes da etapa dão um). */
+  passError(file: string, path: string, message: string): void {
     this.issues.push({ file, path, message, severity: 'error' });
+  }
+  /** Aviso repassado de um parser (ainda sem código). */
+  passWarning(file: string, path: string, message: string): void {
+    this.issues.push({ file, path, message, severity: 'warning' });
   }
   /** Problema do `parseSpec`, com o código e os parâmetros que a interface traduz. */
   specIssue(file: string, issue: SpecIssue): void {
@@ -283,19 +299,17 @@ class Collector {
       ...(issue.params === undefined ? {} : { params: issue.params }),
     });
   }
-  /** Arquivo citado que não está no pacote (a interface traduz pelo `code`). */
+  /** Arquivo citado que não está no pacote. */
   fileNotFound(file: string, path: string, target: string): void {
-    this.issues.push({
-      file,
-      path,
-      message: `arquivo não encontrado: ${target}`,
-      severity: 'error',
-      code: 'file-not-found',
-      target,
-    });
+    this.error(file, path, 'library.fileNotFound', { path: target });
   }
-  warning(file: string, path: string, message: string): void {
-    this.issues.push({ file, path, message, severity: 'warning' });
+  warning(
+    file: string,
+    path: string,
+    code: ModelMessageTemplateCode,
+    params?: Readonly<Record<string, string | number>>,
+  ): void {
+    this.issues.push(libraryIssue('warning', file, path, code, params));
   }
 }
 
@@ -308,12 +322,9 @@ function locateSpec(
     return byPath.has(specPath)
       ? { path: specPath }
       : {
-          issue: {
-            file: specPath,
-            path: '',
-            message: `arquivo da especialização não encontrado: ${specPath}`,
-            severity: 'error',
-          },
+          issue: libraryIssue('error', specPath, '', 'library.specFileNotFound', {
+            path: specPath,
+          }),
         };
   }
   const found: string[] = [];
@@ -327,11 +338,14 @@ function locateSpec(
     }
   }
   if (found.length === 1 && found[0] !== undefined) return { path: found[0] };
-  const message =
+  const issue =
     found.length === 0
-      ? 'nenhuma especialização encontrada: o pacote precisa de um arquivo .json com "format": "mapping-spec"'
-      : `há ${found.length} especializações no pacote (${found.join(', ')}): indique qual validar`;
-  return { issue: { file: '', path: '', message, severity: 'error' } };
+      ? libraryIssue('error', '', '', 'library.specNotFound')
+      : libraryIssue('error', '', '', 'library.specAmbiguous', {
+          count: found.length,
+          files: found.join(', '),
+        });
+  return { issue };
 }
 
 /** Nível 1 e 2 compartilham o que o 1 leu dos arquivos. */
@@ -364,7 +378,7 @@ function level1(
 ): Package | undefined {
   const specFile = byPath.get(specPath);
   if (specFile?.text === undefined) {
-    out.error(specPath, '', NOT_READ);
+    out.error(specPath, '', 'library.notRead');
     return undefined;
   }
   const parsed = parseSpecText(specFile.text);
@@ -374,7 +388,7 @@ function level1(
   }
   const { spec, ignored } = parsed;
   for (const warning of specWarnings(spec, ignored)) {
-    out.warning(specPath, warning.path, warning.message);
+    out.passWarning(specPath, warning.path, warning.message);
   }
 
   const resolve = (ref: string): string => resolvePath(specPath, ref);
@@ -410,7 +424,7 @@ function level1(
       if (file === undefined) {
         out.fileNotFound(specPath, `${base}.doc`, path);
       } else if ((file.text ?? '').trim() === '') {
-        out.warning(path, '', 'documento vazio');
+        out.warning(path, '', 'library.emptyDoc');
       }
     }
     (type.examples ?? []).forEach((example) => {
@@ -430,7 +444,7 @@ function level1(
     const lower = file.path.toLowerCase();
     if (referenced.has(file.path)) continue;
     if (lower.endsWith('.json') || lower.endsWith('.md')) {
-      out.warning(file.path, '', 'arquivo não referenciado pela especialização');
+      out.warning(file.path, '', 'library.notReferenced');
     }
   }
   return pkg;
@@ -445,10 +459,10 @@ function readIcons(pkg: Package, out: Collector): void {
     out.fileNotFound(pkg.specPath, 'icons', path);
     return;
   }
-  if (file.text === undefined) return void out.error(path, '', NOT_READ);
+  if (file.text === undefined) return void out.error(path, '', 'library.notRead');
   const parsed = parseIconsText(file.text);
   if (!parsed.ok) {
-    for (const issue of parsed.issues) out.error(path, issue.path, issue.message);
+    for (const issue of parsed.issues) out.passError(path, issue.path, issue.message);
     return;
   }
   pkg.icons = parsed.set;
@@ -456,23 +470,24 @@ function readIcons(pkg: Package, out: Collector): void {
 
 function readComponent(file: LibraryFile, pkg: Package, out: Collector): void {
   if (file.text === undefined) {
-    out.error(file.path, '', NOT_READ);
+    out.error(file.path, '', 'library.notRead');
     return;
   }
   let json: unknown;
   try {
     json = JSON.parse(file.text);
   } catch (error) {
-    out.error(file.path, '', `JSON inválido: ${messageOf(error)}`);
+    out.error(file.path, '', 'library.invalidJson', { detail: messageOf(error) });
     return;
   }
   const parsed = parseComponent(json);
   if (!parsed.ok) {
-    for (const issue of parsed.issues) out.error(file.path, issue.path, issue.message);
+    for (const issue of parsed.issues)
+      out.passError(file.path, issue.path, issue.message);
     return;
   }
   for (const warning of parsed.warnings)
-    out.warning(file.path, warning.path, warning.message);
+    out.passWarning(file.path, warning.path, warning.message);
   pkg.components.set(file.path, parsed.component);
   pkg.componentJson.set(file.path, json);
   pkg.tokenRefs.set(file.path, parsed.tokenRefs);
@@ -500,14 +515,19 @@ function readJsonFile(
   if (seen.has(full)) return;
   seen.add(full);
   if (file.text === undefined) {
-    out.error(full, '', NOT_READ);
+    out.error(full, '', 'library.notRead');
     return;
   }
   try {
     cache.set(full, JSON.parse(file.text));
   } catch (error) {
-    out.error(full, '', `JSON inválido: ${messageOf(error)}`);
+    out.error(full, '', 'library.invalidJson', { detail: messageOf(error) });
   }
+}
+
+/** O código do par (tipo do token, tipo esperado na posição): um por par de `TOKEN_KIND_NAMES`. */
+function wrongKindCode(found: TokenKind, expected: TokenKind): ModelMessageTemplateCode {
+  return `library.tokenWrongKind.${found}.${expected}` as ModelMessageTemplateCode;
 }
 
 /** Cada `$token` do componente existe nos `tokens` da especialização (ou é embutido) e tem o tipo da posição. */
@@ -516,17 +536,9 @@ function tokenChecks(pkg: Package, path: string, out: Collector): void {
   for (const ref of pkg.tokenRefs.get(path) ?? []) {
     const kind = known.get(ref.name);
     if (kind === undefined) {
-      out.error(
-        path,
-        ref.path,
-        `o token "${ref.name}" não existe nos tokens da especialização`,
-      );
+      out.error(path, ref.path, 'library.tokenMissing', { name: ref.name });
     } else if (kind !== ref.kind) {
-      out.error(
-        path,
-        ref.path,
-        `o token "${ref.name}" é ${TOKEN_KIND_NAMES[kind]}, mas aqui se espera ${TOKEN_KIND_NAMES[ref.kind]}`,
-      );
+      out.error(path, ref.path, wrongKindCode(kind, ref.kind), { name: ref.name });
     }
   }
 }
@@ -542,11 +554,10 @@ function typeCoherence(
   const path = pkg.resolve(type.component);
   const other = used.get(path);
   if (other !== undefined) {
-    out.warning(
-      pkg.specPath,
-      `${base}.component`,
-      `o arquivo ${path} já é o componente do tipo "${other}"`,
-    );
+    out.warning(pkg.specPath, `${base}.component`, 'library.componentAlreadyUsed', {
+      path,
+      typeId: other,
+    });
   } else {
     used.set(path, type.id);
   }
@@ -558,13 +569,13 @@ function typeCoherence(
     if (source.slot === undefined) return;
     const at = `${base}.sources[${index}].slot`;
     if (slot === undefined) {
-      out.error(pkg.specPath, at, `o componente ${path} não tem slot`);
+      out.error(pkg.specPath, at, 'library.noSlot', { path });
     } else if (slot.name !== source.slot) {
-      out.error(
-        pkg.specPath,
-        at,
-        `o slot do componente ${path} é "${slot.name ?? ''}", não "${source.slot}"`,
-      );
+      out.error(pkg.specPath, at, 'library.slotMismatch', {
+        path,
+        slot: slot.name ?? '',
+        expected: source.slot,
+      });
     }
   });
 
@@ -575,11 +586,10 @@ function typeCoherence(
   const used2 = collectFieldKeys(component);
   for (const key of used2) {
     if (keys.has(key)) continue;
-    out.error(
-      path,
-      where.get(key) ?? 'template',
-      `o desenho usa o campo "${key}", que o tipo "${type.id}" não declara`,
-    );
+    out.error(path, where.get(key) ?? 'template', 'library.fieldUndeclared', {
+      key,
+      typeId: type.id,
+    });
   }
   tokenChecks(pkg, path, out);
   const innerUsed = repeatChecks(type, path, rawTemplate, out);
@@ -588,15 +598,17 @@ function typeCoherence(
   for (const [key, value] of Object.entries(component.preview ?? {})) {
     const field = type.fields.find((f) => f.key === key);
     if (field === undefined) {
-      out.warning(path, `preview.${key}`, `o tipo "${type.id}" não tem o campo "${key}"`);
+      out.warning(path, `preview.${key}`, 'library.previewNoField', {
+        typeId: type.id,
+        key,
+      });
     } else if (field.type === 'table') {
       previewRows(type, field, key, value, path, out);
     } else if (Array.isArray(value)) {
-      out.warning(
-        path,
-        `preview.${key}`,
-        `"${key}" não é uma table do tipo "${type.id}"; o preview dele deve ser um valor simples`,
-      );
+      out.warning(path, `preview.${key}`, 'library.previewNotTable', {
+        key,
+        typeId: type.id,
+      });
     }
   }
   const drawn = new Set([...used2, ...innerUsed]);
@@ -605,11 +617,11 @@ function typeCoherence(
     // Um campo que o desenho não usa mas o `code` usa (modificadores, descrição de acessibilidade)
     // não é um campo esquecido: ele existe para o código.
     if (drawn.has(field.key) || coded.has(field.key)) return;
-    out.warning(
-      pkg.specPath,
-      `${base}.fields[${index}]`,
-      `o campo "${field.key}" do tipo "${type.id}" não é usado pelo desenho do componente ${path}`,
-    );
+    out.warning(pkg.specPath, `${base}.fields[${index}]`, 'library.fieldUnused', {
+      key: field.key,
+      typeId: type.id,
+      path,
+    });
   });
 }
 
@@ -655,11 +667,10 @@ function previewRows(
 ): void {
   if (value === null) return;
   if (!Array.isArray(value)) {
-    out.warning(
-      path,
-      `preview.${key}`,
-      `"${key}" é uma table do tipo "${type.id}"; o preview dele deve ser uma lista de linhas`,
-    );
+    out.warning(path, `preview.${key}`, 'library.previewTableNotList', {
+      key,
+      typeId: type.id,
+    });
     return;
   }
   const columns = new Set(field.columns.map((c) => c.key));
@@ -670,7 +681,12 @@ function previewRows(
       out.warning(
         path,
         `preview.${key}[${i}].${column}`,
-        `"${column}" não é coluna da table "${key}" do tipo "${type.id}"`,
+        'library.previewColumnUnknown',
+        {
+          column,
+          key,
+          typeId: type.id,
+        },
       );
     }
   });
@@ -695,11 +711,11 @@ function repeatChecks(
     const table = key === undefined ? undefined : fields.get(key);
     // Campo inexistente já foi apontado ("o desenho usa o campo ..., que o tipo não declara").
     if (table !== undefined && table.type !== 'table') {
-      out.error(
-        path,
-        `${at}.field`,
-        `o repeat repete as linhas de "${key}", que é um campo ${table.type} do tipo "${type.id}", não uma table`,
-      );
+      out.error(path, `${at}.field`, 'library.repeatNotTable', {
+        key: key ?? '',
+        fieldType: table.type,
+        typeId: type.id,
+      });
     }
     const columns = new Set(
       table?.type === 'table' ? table.columns.map((c) => c.key) : [],
@@ -709,13 +725,15 @@ function repeatChecks(
       if (columns.has(name)) continue;
       const own = fields.get(name);
       if (own === undefined) {
-        out.error(
-          path,
-          where,
-          table?.type === 'table'
-            ? `o desenho da linha usa "${name}", que não é coluna da table "${key}" nem campo do tipo "${type.id}"`
-            : `o desenho da linha usa "${name}", que o tipo "${type.id}" não declara`,
-        );
+        if (table?.type === 'table') {
+          out.error(path, where, 'library.repeatRowUnknownColumn', {
+            name,
+            key: key ?? '',
+            typeId: type.id,
+          });
+        } else {
+          out.error(path, where, 'library.repeatRowUnknown', { name, typeId: type.id });
+        }
       } else {
         innerUsed.add(name);
       }
@@ -735,11 +753,11 @@ function rowsChecks(
   for (const { key, path: at } of rowsReferences(rawTemplate, 'template')) {
     const field = fields.get(key);
     if (field !== undefined && field.type !== 'table')
-      out.error(
-        path,
-        at,
-        `$rows conta as linhas de "${key}", que é um campo ${field.type} do tipo "${type.id}", não uma table`,
-      );
+      out.error(path, at, 'library.rowsNotTable', {
+        key,
+        fieldType: field.type,
+        typeId: type.id,
+      });
   }
 }
 
@@ -766,21 +784,22 @@ function imageChecks(
       table?.type === 'table' ? table.columns.find((c) => c.key === key) : undefined;
     if (column !== undefined) {
       if (column.type !== 'string') {
-        out.error(
-          path,
-          srcPath,
-          `o src da imagem lê a coluna "${key}" da table "${table?.key ?? ''}" do tipo "${type.id}", que é ${column.type}, não string`,
-        );
+        out.error(path, srcPath, 'library.imageColumnNotString', {
+          key,
+          table: table?.key ?? '',
+          typeId: type.id,
+          fieldType: column.type,
+        });
       }
       continue;
     }
     const own = fields.get(key);
     if (own !== undefined && own.type !== 'string') {
-      out.error(
-        path,
-        srcPath,
-        `o src da imagem lê "${key}", que é um campo ${own.type} do tipo "${type.id}", não string`,
-      );
+      out.error(path, srcPath, 'library.imageFieldNotString', {
+        key,
+        fieldType: own.type,
+        typeId: type.id,
+      });
     }
   }
 }
@@ -792,7 +811,11 @@ interface RoleReferences {
   readonly before: ReadonlyMap<string, ReadonlySet<string>>;
   /** id novo do tipo → id antigo, dos `rename-type` da migração. */
   readonly renamedFrom: ReadonlyMap<string, string>;
-  readonly warn: (path: string, message: string) => void;
+  readonly warn: (
+    path: string,
+    code: ModelMessageTemplateCode,
+    params: Readonly<Record<string, string | number>>,
+  ) => void;
 }
 
 /**
@@ -805,14 +828,15 @@ function roleReference(step: SpecMigrationStep, at: string, refs: RoleReferences
   const role = step.op === 'rename-role' ? step.from : step.role;
   const roles = refs.before.get(refs.renamedFrom.get(step.type) ?? step.type);
   if (roles === undefined) {
-    refs.warn(
-      `${at}.type`,
-      `o tipo "${step.type}" não existia na versão ${refs.version}`,
-    );
+    refs.warn(`${at}.type`, 'library.typeNotInVersion', {
+      typeId: step.type,
+      version: refs.version,
+    });
   } else if (!roles.has(role)) {
     refs.warn(
       step.op === 'rename-role' ? `${at}.from` : `${at}.role`,
-      `o papel "${role}" do tipo "${step.type}" não existia na versão ${refs.version}`,
+      'library.roleNotInVersion',
+      { role, typeId: step.type, version: refs.version },
     );
   }
 }
@@ -841,10 +865,13 @@ function migrationReferences(
     version: previous.version,
     before: rolesBefore,
     renamedFrom,
-    warn: (path, message) => out.warning(specPath, path, message),
+    warn: (path, code, params) => out.warning(specPath, path, code, params),
   };
   const missingType = (id: string, at: string): void =>
-    out.warning(specPath, at, `o tipo "${id}" não existia na versão ${previous.version}`);
+    out.warning(specPath, at, 'library.typeNotInVersion', {
+      typeId: id,
+      version: previous.version,
+    });
   const oldType = (step: Extract<SpecMigrationStep, { type: string }>, at: string) => {
     const fields = before.get(renamedFrom.get(step.type) ?? step.type);
     if (fields === undefined) missingType(step.type, `${at}.type`);
@@ -862,32 +889,32 @@ function migrationReferences(
       const key = step.op === 'rename-field' ? step.from : step.field;
       const keyPath = step.op === 'rename-field' ? `${at}.from` : `${at}.field`;
       if (fields !== undefined && !fields.has(key)) {
-        out.warning(
-          specPath,
-          keyPath,
-          `o campo "${key}" do tipo "${step.type}" não existia na versão ${previous.version}`,
-        );
+        out.warning(specPath, keyPath, 'library.fieldNotInVersion', {
+          key,
+          typeId: step.type,
+          version: previous.version,
+        });
       }
     } else if (step.op === 'map-values') {
       const fields = oldType(step, at);
       if (fields === undefined) return;
       const field = fields.get(step.field);
       if (field === undefined) {
-        out.warning(
-          specPath,
-          `${at}.field`,
-          `o campo "${step.field}" do tipo "${step.type}" não existia na versão ${previous.version}`,
-        );
+        out.warning(specPath, `${at}.field`, 'library.fieldNotInVersion', {
+          key: step.field,
+          typeId: step.type,
+          version: previous.version,
+        });
         return;
       }
       const options = field.type === 'enum' ? field.options : [];
       for (const value of Object.keys(step.values)) {
         if (!options.includes(value)) {
-          out.warning(
-            specPath,
-            `${at}.values.${value}`,
-            `"${value}" não era opção do campo "${step.field}" na versão ${previous.version}`,
-          );
+          out.warning(specPath, `${at}.values.${value}`, 'library.optionNotInVersion', {
+            value,
+            field: step.field,
+            version: previous.version,
+          });
         }
       }
     } else {
@@ -903,22 +930,20 @@ function versionContract(
   out: Collector,
 ): void {
   if (previous.id !== spec.id) {
-    out.error(
-      specPath,
-      'id',
-      `a versão anterior é da especialização "${previous.id}", não "${spec.id}"`,
-    );
+    out.error(specPath, 'id', 'library.versionOtherSpec', {
+      previous: previous.id,
+      id: spec.id,
+    });
     return;
   }
   if (spec.version <= previous.version) {
-    out.error(
-      specPath,
-      'version',
-      `a versão não cresceu: a anterior é ${previous.version} e esta é ${spec.version}`,
-    );
+    out.error(specPath, 'version', 'library.versionNotGrown', {
+      previous: previous.version,
+      version: spec.version,
+    });
   }
   for (const change of missingMigrations(previous, spec)) {
-    out.error(specPath, change.path, change.message);
+    out.passError(specPath, change.path, change.message);
   }
   migrationReferences(previous, spec, out, specPath);
 }
@@ -957,11 +982,10 @@ function level2(
   (spec.fonts ?? []).forEach((font, index) => {
     const path = pkg.resolve(font.file);
     if (pkg.byPath.has(path)) return;
-    out.warning(
-      specPath,
-      `fonts[${index}].file`,
-      `arquivo da fonte "${font.family}" não encontrado: ${path}; o desenho usa a fonte do sistema`,
-    );
+    out.warning(specPath, `fonts[${index}].file`, 'library.fontMissing', {
+      family: font.family,
+      path,
+    });
   });
 
   const typeIds = new Set<string>();
@@ -972,7 +996,8 @@ function level2(
         out.error(
           specPath,
           `origins[${oi}].screen.roots[${ri}].scrim`,
-          `o tipo "${root.scrim}" não existe na especialização`,
+          'library.scrimMissing',
+          { typeId: root.scrim },
         );
       }
     });
