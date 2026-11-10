@@ -10,8 +10,10 @@ import type { Rect } from '../../model';
 import {
   arrivalBadgeSpot,
   arrivalBadgeWidth,
+  arrivalBandLabelFit,
   arrivalBandLabelSpot,
   type ArrivalBadge,
+  type ArrivalRoot,
 } from '../arrivals';
 import { visibleArea, type Frame } from '../frame';
 import type { CanvasTokens } from '../theme';
@@ -108,23 +110,24 @@ export class ArrivalRenderer {
     return this.badges.get(root);
   }
 
-  /** Desenha os selos e a faixa do quadro; os selos que sobram são destruídos. */
+  /** Desenha a faixa e os selos do quadro; os selos que sobram são destruídos. */
   render(frame: ArrivalFrame): void {
     const { arrivals, tokens } = frame;
     const zoom = frame.viewport.scale;
     const view = visibleArea(frame.size, frame.viewport);
     const avoid = this.minimapArea(frame);
+    // A faixa primeiro: o título dela (que muda de lado com a vista) é um lugar a evitar.
+    const label = this.drawBand(arrivals?.band ?? null, zoom, tokens, view);
     const seen = new Set<string>();
     for (const badge of arrivals?.badges ?? []) {
       seen.add(badge.root);
-      this.drawBadge(badge, zoom, tokens, view, avoid, arrivals?.roots);
+      this.drawBadge(badge, zoom, tokens, view, avoid, arrivals?.roots, label);
     }
     for (const [root, node] of this.badges) {
       if (seen.has(root)) continue;
       node.group.destroy();
       this.badges.delete(root);
     }
-    this.drawBand(arrivals?.band ?? null, zoom, tokens, view);
   }
 
   /** O minimapa (HTML sobre o canvas) em unidades do canvas, ou `undefined` sem ele. */
@@ -203,7 +206,8 @@ export class ArrivalRenderer {
     tokens: CanvasTokens,
     view: Rect,
     avoid: Rect | undefined,
-    roots: readonly Rect[] | undefined,
+    roots: readonly ArrivalRoot[] | undefined,
+    label: Rect | null,
   ): void {
     const node = this.badgeFor(badge.root);
     const text = t('perspective.canvas.cameFrom', { name: badge.name });
@@ -225,6 +229,8 @@ export class ArrivalRenderer {
       view,
       avoid,
       roots,
+      badge.root,
+      label ? [label] : [],
     );
     node.group.setAttrs({ x: at.x, y: at.y, scaleX: 1 / zoom, scaleY: 1 / zoom });
     node.box.setAttrs({
@@ -243,15 +249,16 @@ export class ArrivalRenderer {
     });
   }
 
+  /** Desenha a faixa e devolve o retângulo do título dela (canvas), ou `null` sem faixa. */
   private drawBand(
     band: Rect | null,
     zoom: number,
     tokens: CanvasTokens,
     view: Rect,
-  ): void {
+  ): Rect | null {
     const node = this.band;
     node.group.visible(band !== null);
-    if (!band) return;
+    if (!band) return null;
     const line = tokens.type.name.line;
     node.group.setAttrs({ x: band.x, y: band.y });
     node.box.setAttrs({
@@ -276,10 +283,15 @@ export class ArrivalRenderer {
       x: 0,
       y: line,
     });
-    const size = {
-      width: Math.max(node.title.getTextWidth(), node.hint.getTextWidth()),
-      height: 2 * line,
-    };
+    // Largura natural do texto (sem depender de `width`, que as reticências encurtam).
+    const natural = Math.max(
+      node.title.measureSize(node.title.text()).width,
+      node.hint.measureSize(node.hint.text()).width,
+    );
+    const size = { width: natural, height: 2 * line };
+    const fit = arrivalBandLabelFit(natural, zoom, view, tokens.arrival);
+    // Sem `width` o Konva mede o texto inteiro; com ela, uma linha só, cortada com reticências.
+    const clip = { width: fit ?? undefined, ellipsis: fit !== null };
     const at = arrivalBandLabelSpot(
       band,
       zoom,
@@ -288,11 +300,17 @@ export class ArrivalRenderer {
       line + TITLE_GAP,
       tokens.arrival,
     );
-    node.title.setAttrs({ scaleX: 1 / zoom, scaleY: 1 / zoom });
-    node.hint.setAttrs({ scaleX: 1 / zoom, scaleY: 1 / zoom });
+    node.title.setAttrs({ scaleX: 1 / zoom, scaleY: 1 / zoom, ...clip });
+    node.hint.setAttrs({ scaleX: 1 / zoom, scaleY: 1 / zoom, ...clip });
     node.title.x(at.x - band.x);
     node.title.y(at.y - band.y);
     node.hint.x(at.x - band.x);
     node.hint.y(at.y - band.y + line / zoom);
+    return {
+      x: at.x,
+      y: at.y,
+      width: (fit ?? natural) / zoom,
+      height: size.height / zoom,
+    };
   }
 }

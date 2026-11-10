@@ -586,6 +586,7 @@ export const enUS: Dictionary = {
   'shortcuts.resizeWindow': 'Resize the focused window (16 px at a time)',
   'shortcuts.delete': 'Delete the selected item',
   'shortcuts.escape': 'Cancel the gesture or clear the selection',
+  'shortcuts.escapeWindow': 'Close Details or Comments (with focus in the window)',
   'shortcuts.selectParent': 'Select the parent item',
   'shortcuts.selectChild': 'Select the first child',
   'shortcuts.zoomIn': 'Zoom in',

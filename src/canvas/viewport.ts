@@ -52,6 +52,19 @@ export function zoomAt(v: Viewport, anchor: Point, factor: number): Viewport {
   };
 }
 
+/**
+ * Viewport depois de o canvas mudar de tamanho de `from` para `to`: o ponto do canvas que estava
+ * no centro continua no centro, com a mesma escala. Sem mudança, devolve o próprio `v`.
+ */
+export function keepCenter(v: Viewport, from: Size, to: Size): Viewport {
+  if (from.width === to.width && from.height === to.height) return v;
+  return {
+    x: v.x + (to.width - from.width) / 2,
+    y: v.y + (to.height - from.height) / 2,
+    scale: v.scale,
+  };
+}
+
 export function panBy(v: Viewport, dx: number, dy: number): Viewport {
   return { x: v.x + dx, y: v.y + dy, scale: v.scale };
 }

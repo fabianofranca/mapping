@@ -120,4 +120,65 @@ describe('ViewportController', () => {
       ),
     );
   });
+
+  // #1337: abrir ou fechar uma janela de ferramenta muda a largura do canvas; o centro fica.
+  describe('mudança de tamanho do container', () => {
+    function resize(el: HTMLElement, width: number, height: number): void {
+      Object.defineProperty(el, 'clientWidth', { value: width, configurable: true });
+      Object.defineProperty(el, 'clientHeight', { value: height, configurable: true });
+    }
+
+    it('depois do primeiro enquadramento, mantém o centro e a escala', () => {
+      const el = container(800, 600);
+      const view = new ViewportController(el, () => canvasProject());
+      view.measure();
+      view.zoomAt({ x: 100, y: 100 }, 2);
+      const center = view.center();
+      const scale = view.scale;
+      resize(el, 536, 480);
+      view.measure();
+      expect(view.size.value).toEqual({ width: 536, height: 480 });
+      expect(view.scale).toBe(scale);
+      expect(view.center().x).toBeCloseTo(center.x, 6);
+      expect(view.center().y).toBeCloseTo(center.y, 6);
+    });
+
+    it('ir a 0 e voltar compara com o último tamanho não nulo', () => {
+      const el = container(800, 600);
+      const view = new ViewportController(el, () => canvasProject());
+      view.measure();
+      const center = view.center();
+      const scale = view.scale;
+      resize(el, 0, 0);
+      view.measure();
+      expect(view.viewport.value.scale).toBe(scale);
+      resize(el, 536, 600);
+      view.measure();
+      expect(view.scale).toBe(scale);
+      expect(view.center().x).toBeCloseTo(center.x, 6);
+      expect(view.center().y).toBeCloseTo(center.y, 6);
+    });
+
+    it('antes do primeiro enquadramento, só o fitAll de sempre', () => {
+      const el = container(0, 0);
+      const view = new ViewportController(el, () => canvasProject());
+      view.measure();
+      resize(el, 536, 480);
+      view.measure();
+      expect(view.viewport.value).toEqual(
+        fitRect({ x: 0, y: 0, width: 1600, height: 800 }, { width: 536, height: 480 }),
+      );
+    });
+
+    it('fitAll depois de uma mudança enquadra como antes', () => {
+      const el = container(800, 600);
+      const view = new ViewportController(el, () => canvasProject());
+      view.measure();
+      resize(el, 536, 480);
+      view.fitAll();
+      expect(view.viewport.value).toEqual(
+        fitRect({ x: 0, y: 0, width: 1600, height: 800 }, { width: 536, height: 480 }),
+      );
+    });
+  });
 });

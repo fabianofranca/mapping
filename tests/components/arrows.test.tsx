@@ -1,4 +1,12 @@
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/preact';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EditorDialogs } from '../../src/app/EditorDialogs';
@@ -197,6 +205,53 @@ describe('Ligar a…', () => {
     const arrow = arrowOf(harness.project());
     expect(arrow).toMatchObject({ from: 'M1', to: 'M2' });
     expect(harness.ui.selection.value).toEqual({ kind: 'arrow', id: arrow.id });
+  });
+
+  it('depois de escolher, o foco fica na janela Detalhes (que troca para a seta), e não no primeiro controle da app', async () => {
+    const harness = createHarness(sampleProject());
+    renderLive(harness, (p) => {
+      const sel = harness.ui.selection.value;
+      const arrow = sel?.kind === 'arrow' ? p.arrows.find((a) => a.id === sel.id) : null;
+      const marking = p.markings.find((m) => m.id === 'M1') as Marking;
+      const image = p.containers.find((c) => c.id === marking.containerId) ?? null;
+      return (
+        <div data-focus-root>
+          <button type="button">antes de tudo</button>
+          <section data-window="details" tabIndex={-1} aria-label="Detalhes">
+            {arrow ? (
+              <ArrowPanel
+                project={p}
+                arrow={arrow}
+                readOnly={false}
+                onDelete={vi.fn()}
+                onGoToAnnotation={vi.fn()}
+              />
+            ) : (
+              <MarkingPanel
+                project={p}
+                marking={marking}
+                image={image}
+                readOnly={false}
+                onDelete={vi.fn()}
+                onGoToAnnotation={vi.fn()}
+              />
+            )}
+          </section>
+        </div>
+      );
+    });
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: t('arrow.linkTo') }));
+    const input = await screen.findByRole('combobox', {
+      name: t('arrow.pickerSearch'),
+      hidden: true,
+    });
+    await user.type(input, 'Maçaneta');
+    await user.keyboard('{Enter}');
+    await waitFor(() => expect(document.querySelector('dialog')).toBeNull());
+    const details = document.querySelector('section[data-window="details"]');
+    expect(arrowOf(harness.project())).toMatchObject({ from: 'M1', to: 'M2' });
+    expect(document.activeElement).toBe(details);
   });
 
   it('desabilitado somente leitura', () => {

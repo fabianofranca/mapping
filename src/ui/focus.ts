@@ -55,9 +55,13 @@ function tryFocus(el: Element | null | undefined, scope: Element): boolean {
 /** Raiz da app (`App.tsx`): o último recurso é o primeiro controle dentro dela. */
 const FOCUS_ROOT = '[data-focus-root]';
 
+/** Janela de ferramenta (`ToolWindow`): uma `section` com `tabIndex=-1`. */
+const TOOL_WINDOW = '[data-window]';
+
 /**
  * Devolve o foco ao fechar `scope` (um modal, um menu sem gatilho), chamada depois de ele
- * sair: a quem abriu; se saiu do DOM, ao alvo explícito; sem alvo explícito, ao contêiner
+ * sair: a quem abriu; se saiu do DOM, ao alvo explícito e, faltando ele, à janela de
+ * ferramenta que continha quem abriu; sem alvo explícito, ao contêiner
  * focável mais próximo de quem abriu (ou ao primeiro controle dentro dele); por último, ao primeiro
  * controle da app (`data-focus-root`), para o teclado não ficar perdido no `body`. O `body`
  * nunca. Não mexe se o foco já foi para outro lugar de propósito (fora de `scope` e do
@@ -74,9 +78,13 @@ export function restoreFocus(
   if (tryFocus(origin.opener, scope)) return;
   if (returnFocus !== undefined) {
     // Com alvo explícito, ele é a decisão de quem fecha: sem ele no DOM, nada de adivinhar
-    // um contêiner (etapa 8, F2); vai direto ao último recurso.
+    // um contêiner (etapa 8, F2). Só a janela de ferramenta inteira que continha quem abriu
+    // entra antes do último recurso (etapa #1273, decisão 1): o foco fica na janela, que
+    // já mostra o que mudou, e não vai para o primeiro controle da app.
     const explicit = typeof returnFocus === 'function' ? returnFocus() : returnFocus;
     if (tryFocus(explicit, scope)) return;
+    const win = origin.containers.find((c) => c.isConnected && c.matches(TOOL_WINDOW));
+    if (tryFocus(win, scope)) return;
   } else {
     for (const container of origin.containers) {
       if (!container.isConnected) continue;

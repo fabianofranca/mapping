@@ -63,6 +63,24 @@
   background: var(--color-pressed);
 }
 
+/* "Enviar para perspectiva…" dos Detalhes: o gatilho com a aparência do .button (controls.css) */
+.menu-popover-control .menu-trigger {
+  min-height: var(--control-height);
+  padding: 0 var(--space-3);
+  font: var(--t-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--control-radius);
+}
+
+.menu-popover-control .menu-trigger:hover {
+  background: var(--color-hover);
+}
+
+.menu-popover-control .menu-trigger:active {
+  background: var(--color-pressed);
+}
+
 .menu-trigger-text {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -570,6 +588,21 @@
   .crumb-more .icon-button {
     min-width: 0;
     padding: 0 var(--space-0-5);
+  }
+}
+
+/*
+ * Barra larga (PV2, #1383): a seleção (o último trecho) é a última a encolher; os outros trechos
+ * cedem até 32 px cada antes de ela perder letras. Até 470 px valem as regras da BC1 acima.
+ */
+@container (min-width: 471px) {
+  .crumbs .crumb-item:not(:last-child) {
+    flex-shrink: 20;
+    min-width: var(--space-8);
+  }
+
+  .crumbs .crumb-item:last-child {
+    flex-shrink: 1;
   }
 }
 

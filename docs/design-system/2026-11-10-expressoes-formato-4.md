@@ -1,4 +1,4 @@
-# Expressões que calculam no formato 4 — [Não lançado] (épico `epic/expressoes-formato-4`)
+# Expressões que calculam no formato 4 — 2026-11-10 (épico `epic/expressoes-formato-4`)
 
 ## Pendências
 

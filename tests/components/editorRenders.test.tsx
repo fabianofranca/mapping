@@ -19,6 +19,8 @@ const MOVES = 30;
 const WATCHED = ['EditorScreen', 'EditorPanel', 'EditorMainBar'] as const;
 /** Um render ao soltar o gesto e, no máximo, mais um de folga. */
 const MAX_RENDERS = 2;
+/** Monta o editor inteiro; sob cobertura em runner compartilhado do CI passa fácil dos 5 s padrão. */
+const MOUNT_TIMEOUT_MS = 30_000;
 
 describe('renderizações da interface durante um gesto', () => {
   const counts = new Map<string, number>();
@@ -71,67 +73,75 @@ describe('renderizações da interface durante um gesto', () => {
     return { project, session, ui: context.ui, context };
   }
 
-  it(`${MOVES} movimentos renderizam EditorScreen, EditorPanel e EditorMainBar no máximo ${MAX_RENDERS} vezes`, async () => {
-    const { project, session, ui } = mountEditor();
-    const { store, actions } = session;
-    const marking = project.markings.find((m) => m.parentId === null);
-    if (!marking) throw new Error('fixture');
+  it(
+    `${MOVES} movimentos renderizam EditorScreen, EditorPanel e EditorMainBar no máximo ${MAX_RENDERS} vezes`,
+    async () => {
+      const { project, session, ui } = mountEditor();
+      const { store, actions } = session;
+      const marking = project.markings.find((m) => m.parentId === null);
+      if (!marking) throw new Error('fixture');
 
-    // Seleciona a marcação (o painel mostra os campos x/y/largura/altura) e deixa assentar.
-    ui.selection.value = { kind: 'marking', id: marking.id };
-    await act(async () => {
-      await Promise.resolve();
-    });
+      // Seleciona a marcação (o painel mostra os campos x/y/largura/altura) e deixa assentar.
+      ui.selection.value = { kind: 'marking', id: marking.id };
+      await act(async () => {
+        await Promise.resolve();
+      });
 
-    counts.clear();
-    const before = store.committed.value;
-    // Sem `act`: ele agruparia as renderizações; aqui a fila do Preact roda entre os
-    // movimentos, como entre dois eventos do dedo.
-    const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
-    {
-      expect(actions.beginGesture().ok).toBe(true);
-      for (let i = 1; i <= MOVES; i++) {
-        expect(actions.previewMarkingMove(marking.id, i, 0).ok).toBe(true);
+      counts.clear();
+      const before = store.committed.value;
+      // Sem `act`: ele agruparia as renderizações; aqui a fila do Preact roda entre os
+      // movimentos, como entre dois eventos do dedo.
+      const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+      {
+        expect(actions.beginGesture().ok).toBe(true);
+        for (let i = 1; i <= MOVES; i++) {
+          expect(actions.previewMarkingMove(marking.id, i, 0).ok).toBe(true);
+          await settle();
+        }
+        expect(counts.get('EditorScreen') ?? 0).toBe(0);
+        expect(counts.get('EditorPanel') ?? 0).toBe(0);
+        expect(counts.get('EditorMainBar') ?? 0).toBe(0);
+        // Nem o painel da marcação selecionada (suas seções leem o projeto confirmado, não a prévia).
+        expect(counts.get('MarkingPanel') ?? 0).toBe(0);
+        // A prévia mudou o projeto, mas não o confirmado.
+        expect(store.project.value).not.toBe(before);
+        expect(store.committed.value).toBe(before);
+        actions.commitGesture();
+      }
+      await settle();
+
+      expect(store.committed.value).toBe(store.project.value);
+      for (const name of WATCHED) {
+        expect(counts.get(name) ?? 0, name).toBeLessThanOrEqual(MAX_RENDERS);
+      }
+    },
+    MOUNT_TIMEOUT_MS,
+  );
+
+  it(
+    'pan e zoom com uma perspectiva aberta não renderizam a interface nem refazem o projeto à vista',
+    async () => {
+      const { session, context } = mountEditor(true);
+      expect(session.perspective.open('V')).toBe(true);
+      await act(async () => {
+        await Promise.resolve();
+      });
+      const shown = context.review.derived.shownProject.value;
+      const visible = context.derived.visibleLayers.value;
+      const controller = context.canvas.current;
+      if (!controller) throw new Error('canvas não montado');
+
+      counts.clear();
+      const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+      for (let i = 0; i < MOVES; i++) {
+        controller.zoomBy(i % 2 === 0 ? 1.1 : 1 / 1.1);
+        controller.centerOnPoint({ x: i * 10, y: i * 10 });
         await settle();
       }
-      expect(counts.get('EditorScreen') ?? 0).toBe(0);
-      expect(counts.get('EditorPanel') ?? 0).toBe(0);
-      expect(counts.get('EditorMainBar') ?? 0).toBe(0);
-      // Nem o painel da marcação selecionada (suas seções leem o projeto confirmado, não a prévia).
-      expect(counts.get('MarkingPanel') ?? 0).toBe(0);
-      // A prévia mudou o projeto, mas não o confirmado.
-      expect(store.project.value).not.toBe(before);
-      expect(store.committed.value).toBe(before);
-      actions.commitGesture();
-    }
-    await settle();
-
-    expect(store.committed.value).toBe(store.project.value);
-    for (const name of WATCHED) {
-      expect(counts.get(name) ?? 0, name).toBeLessThanOrEqual(MAX_RENDERS);
-    }
-  });
-
-  it('pan e zoom com uma perspectiva aberta não renderizam a interface nem refazem o projeto à vista', async () => {
-    const { session, context } = mountEditor(true);
-    expect(session.perspective.open('V')).toBe(true);
-    await act(async () => {
-      await Promise.resolve();
-    });
-    const shown = context.review.derived.shownProject.value;
-    const visible = context.derived.visibleLayers.value;
-    const controller = context.canvas.current;
-    if (!controller) throw new Error('canvas não montado');
-
-    counts.clear();
-    const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
-    for (let i = 0; i < MOVES; i++) {
-      controller.zoomBy(i % 2 === 0 ? 1.1 : 1 / 1.1);
-      controller.centerOnPoint({ x: i * 10, y: i * 10 });
-      await settle();
-    }
-    expect(context.review.derived.shownProject.value).toBe(shown);
-    expect(context.derived.visibleLayers.value).toBe(visible);
-    for (const name of WATCHED) expect(counts.get(name) ?? 0, name).toBe(0);
-  });
+      expect(context.review.derived.shownProject.value).toBe(shown);
+      expect(context.derived.visibleLayers.value).toBe(visible);
+      for (const name of WATCHED) expect(counts.get(name) ?? 0, name).toBe(0);
+    },
+    MOUNT_TIMEOUT_MS,
+  );
 });

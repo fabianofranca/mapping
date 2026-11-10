@@ -7,14 +7,9 @@ name: CI
 # de validações, que não diverge entre o PR e a publicação.
 on:
   pull_request:
-    # `edited` entra só pela troca de base (etapa #974): um PR de `fix/x` com base `epic/y` passa
-    # no job `epic`, e ao trocar a base para a `main` o CI precisa rodar de novo. Na edição de
-    # título ou corpo (sem `changes.base`) todo job é pulado pela condição `github.event.action != 'edited' || github.event.changes.base` abaixo.
-    # Risco conhecido e aceito pelo dono (2026-11-08): o GitHub conta job pulado como sucesso,
-    # então editar o título de um PR com `check` ou `epic` vermelho cria checks "pulados" mais
-    # novos no mesmo commit, que contam como verdes. No `workflow_call` (deploy) não há
-    # `github.event.action`, e a condição é verdadeira.
-    types: [opened, synchronize, reopened, edited]
+    # Editar o PR (título, corpo ou base) não roda o CI. Base errada se corrige com um PR novo,
+    # cujo `opened` roda o CI, não com troca de base (etapa #1466).
+    types: [opened, synchronize, reopened]
   workflow_call:
     inputs:
       ref:
@@ -35,10 +30,7 @@ concurrency:
   # Num PR, o ref (`refs/pull/<n>/merge`) cancela o commit superado. No deploy
   # (`workflow_call`), o evento é o do Deploy (push na main ou workflow_dispatch) e
   # `inputs.ref` separa as duas chamadas dele (main e preview).
-  # A edição sem troca de base ganha um sufixo único (`run_id`): sua execução (toda pulada) não
-  # cancela o CI em andamento do mesmo commit. A troca de base fica no grupo de sempre e
-  # substitui a execução anterior.
-  group: ci-${{ github.event_name }}-${{ github.ref }}-${{ inputs.ref }}${{ github.event.action == 'edited' && !github.event.changes.base && format('-{0}', github.run_id) || '' }}
+  group: ci-${{ github.event_name }}-${{ github.ref }}-${{ inputs.ref }}
   cancel-in-progress: true
 
 # `timeout-minutes` em cada job (etapa #1325): perto do dobro do maior tempo medido nas 10
@@ -53,7 +45,7 @@ jobs:
   # do Dependabot (`dependabot/*`), pequenos e aprovados pelo dono. No deploy
   # (`workflow_call`) não há PR: o job é pulado, o que o GitHub conta como sucesso.
   epic:
-    if: github.event_name == 'pull_request' && (github.event.action != 'edited' || github.event.changes.base)
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
@@ -153,7 +145,6 @@ jobs:
   # `static`, `test` (+ `coverage`) e `build`. Os nomes dos checks obrigatórios (`check`,
   # `e2e`, `epic`) não mudam (etapa #375, decisão 4).
   static:
-    if: github.event.action != 'edited' || github.event.changes.base
     runs-on: ubuntu-latest
     timeout-minutes: 4
     steps:
@@ -176,7 +167,6 @@ jobs:
   # (tests/support/timedSequencer.ts; `npm run test:durations` regenera os tempos); cada um
   # sobe o blob com os dados de cobertura, sem gerar relatório (o job `coverage` junta e relata).
   test:
-    if: github.event.action != 'edited' || github.event.changes.base
     runs-on: ubuntu-latest
     timeout-minutes: 6
     strategy:
@@ -237,7 +227,6 @@ jobs:
           if-no-files-found: ignore
 
   build:
-    if: github.event.action != 'edited' || github.event.changes.base
     runs-on: ubuntu-latest
     timeout-minutes: 7
     env:
@@ -283,7 +272,7 @@ jobs:
   # Agregador: o check obrigatório `check` falha se algum dos quatro jobs não terminou em sucesso.
   check:
     needs: [static, test, coverage, build]
-    if: ${{ always() && (github.event.action != 'edited' || github.event.changes.base) }}
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
@@ -302,7 +291,6 @@ jobs:
   # Ponta a ponta no `dist/index.html` final, no desktop (a app é só desktop desde a fase 5.8).
   # Só roda aqui: o ambiente de desenvolvimento pode não conseguir baixar o navegador.
   e2e:
-    if: github.event.action != 'edited' || github.event.changes.base
     runs-on: ubuntu-latest
     timeout-minutes: 7
     steps:

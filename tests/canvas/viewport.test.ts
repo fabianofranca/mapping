@@ -5,6 +5,7 @@ import {
   canvasToScreen,
   centerOn,
   fitRect,
+  keepCenter,
   panBy,
   pinch,
   revealRect,
@@ -135,5 +136,21 @@ describe('revealRect', () => {
     expect(r.y).toBe(0);
     const left = revealRect(v, { x: -200, y: 100, width: 50, height: 50 }, size, 10);
     expect(left.x).toBe(210);
+  });
+
+  it('keepCenter mantém o ponto do centro (em unidades do canvas) e a escala', () => {
+    const from = { width: 800, height: 600 };
+    const to = { width: 536, height: 480 };
+    const next = keepCenter(v, from, to);
+    expect(next.scale).toBe(v.scale);
+    close(
+      screenToCanvas(next, { x: to.width / 2, y: to.height / 2 }),
+      screenToCanvas(v, { x: from.width / 2, y: from.height / 2 }),
+    );
+  });
+
+  it('keepCenter sem mudança de tamanho devolve o mesmo viewport', () => {
+    const size = { width: 800, height: 600 };
+    expect(keepCenter(v, size, { ...size })).toBe(v);
   });
 });
