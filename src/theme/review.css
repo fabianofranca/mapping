@@ -102,12 +102,13 @@
   padding-top: 0;
 }
 
-.notice-box-line .tooltip-anchor {
+.notice-box-line > .tooltip-anchor:has(> .notice-box-text) {
   flex: 1;
   min-width: 0;
 }
 
 .notice-box-line .notice-box-text {
+  flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -511,6 +512,7 @@
 /* ---------- Barra de status: item que abre a janela ---------- */
 .status-item-button {
   font: inherit;
+  color: inherit;
   cursor: pointer;
   background: none;
   border: none;

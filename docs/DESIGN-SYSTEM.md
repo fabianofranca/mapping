@@ -8,11 +8,11 @@ Este arquivo é o registro dele no repositório. Ele diz o que o DS é, **quando
 
 ## O que o DS é, e o que ele não é
 
-- **É curado à mão.** Cada componente tem um guia (`README.md`) e um preview em HTML escritos por pessoas, com os estados desenhados um por um. O conteúdo tem autores: ao atualizar, mexa só no que a entrega mudou.
+- **É curado à mão.** Cada componente tem um guia (`README.md`) e um preview em HTML escritos por pessoas, com os estados desenhados um por um. O conteúdo tem autores: ao atualizar, mexa só no que a entrega mudou. Isso não impede o fechamento de gravar: quer dizer mexer só no que a entrega mudou, sem `/design-sync`.
 - **Não é gerado do código.** A skill `/design-sync` do Claude Code **não se aplica** a este DS: ela espera o `dist/` de uma biblioteca de componentes publicada e transformaria o DS curado num espelho do build. Não a use aqui.
 - **O código é a fonte da verdade; o DS descreve.** Onde os dois divergirem, corrija o DS. Divergência que pareça defeito da app não se resolve aqui: registre em "Pendências" e leve ao dono.
 - **Nome.** O índice do artefato se chama **Mapping**. Se aparecer o nome antigo "Mapeador de Imagens 2.0", é o mesmo artefato.
-- **Tamanho hoje:** 70 componentes com guia (mais a capa `Cover`), 6 seções, 149 tokens e 89 ícones.
+- **Tamanho hoje:** 79 componentes com guia (mais a capa `Cover`), 6 seções, 177 tokens (fora os 12 estilos de texto `t-*`) e 92 ícones (artefato na versão 71, DS5 do épico `sincronia-ds-2`).
 
 ## Quando verificar
 
@@ -21,8 +21,9 @@ Se o "Toca em:" da fase (na sub-issue da fase, no GitHub) cruzar qualquer caminh
 | Mudou no código | Olhe no DS |
 | --- | --- |
 | `src/ui/controls/**` | `Button`, `IconButton`, `TextField`, `Select`, `Choice`, `Segmented`, `Tabs`, `Tooltip`, `HelpTip`, `Tags` |
-| `src/ui/**` (fora de `controls/` e `review/`) | o componente correspondente no mapa: painéis, janelas, diálogos e barras |
+| `src/ui/**` (fora de `controls/`, `review/` e `comments/`) | o componente correspondente no mapa: painéis, janelas, diálogos e barras |
 | `src/ui/review/**` | os componentes de revisão e a seção `Revisao.md` |
+| `src/ui/comments/**`, `src/canvas/commentPins.ts`, `src/canvas/renderers/commentPins.ts`, `src/theme/threads.css` | os componentes de comentários (`CommentPin`, `CitationChip`, `ThreadMessage`, `ThreadsSection`, `Composer`, `CommentsWindow`, `ProposalCard`, `DeleteThreadDialogs`) e a seção `Canvas.md` (pino) |
 | `src/ui/catalog/**` | `CatalogPage`, `CatalogScreen`, `CatalogWindow` |
 | `src/app/Home.tsx`, `NarrowWindow.tsx`, `CatalogScreen.tsx`, `Editor*.tsx`, `*Dialog*.tsx` | `Home`, `NarrowWindow`, `ConfirmDialogs`, `ToolWindow` e a seção `Layouts.md` |
 | `src/canvas/renderers/**`, `src/canvas/components/**`, `theme.ts`, `viewport.ts`, `minimap.ts` | `Arrow`, `CanvasMarking`, `Container`, `ComponentDrawing`, `Minimap` e a seção `Canvas.md` |
@@ -51,6 +52,8 @@ Nenhuma fase grava no artefato do DS.
 
 Ao gravar:
 
+- **Ferramenta:** `Artifact`, com `read` (`url` e `path`) para ler e `publish` (`url`, `root` e `files`) para gravar. Leia o `SKILL.md` e o `artifact-type/reference/` do artefato antes.
+- **`## Sincronização`** do registro abre por uma destas três formas: "Gravado no artefato **Mapping** em AAAA-MM-DD: versão <n>…", "Versão <n>…" (ou "Versões <n> e <m>…") ou "Sem impacto…". Qualquer outra abertura conta como "não gravou", e o teste `tests/tooling/designSystemLog.test.ts` exige então `## Ficou sem gravar` com cada item explicado.
 - **O índice vai por último**, numa chamada só, lido imediatamente antes, com `lastChange` preenchido (`by`, `at`, `via`, `note`).
 - **Nenhum arquivo do DS é apagado** sem o dono pedir.
 - Confira o contraste nos temas claro e escuro em tudo o que tocar.
@@ -77,7 +80,7 @@ Cada componente do DS e a origem dele no código. Um nome do DS pode cobrir vár
 | `Dialog` | `src/ui/Dialog.tsx` |  |
 | `ConfirmDialogs` | `src/app/EditorDialogs.tsx`, `src/app/useEditorDialogs.ts` | `ConfirmDialog` e `ExternalChangeDialog` moram no `EditorDialogs.tsx`. |
 | `Banner` | `src/ui/Banner.tsx`, `src/ui/PreviewBanner.tsx`, `src/ui/UpdateBanner.tsx` |  |
-| `Notice` | `src/ui/Notice.tsx` | O `.notice` de parágrafo também está em `src/ui/InstallHint.tsx`. |
+| `Notice` | `src/ui/Notice.tsx`, `src/ui/InstallHint.tsx` | O `InstallHint` usa o `Notice` (tom `info`, com `title` e `actions`); o `.notice` de parágrafo continua no CSS. |
 | `NoticeBadge` | `src/ui/NoticeBadge.tsx` | Selo, bloco e linha dos quatro `kind` de aviso da especialização (`NoticeBadge`, `TypeNoticeBadge`, `NoticeBlock`, `NoticeLines`); cor sempre com ícone e texto. |
 | `Tags` | `src/ui/controls/Chip.tsx` | Etiqueta de camada em `src/ui/ListView.tsx`. |
 | `Breadcrumbs` | `src/ui/Breadcrumbs.tsx` | Controles à direita da barra em `src/app/EditorTools.tsx` e `src/ui/ZoomField.tsx`. |
@@ -112,7 +115,7 @@ Cada componente do DS e a origem dele no código. Um nome do DS pode cobrir vár
 | `TreeRow` | `src/ui/MarkingTree.tsx` | Linha da Árvore; janela em `src/ui/TreeWindow.tsx`. |
 | `KeyValueGrid` | `src/ui/KeyValueGrid.tsx` |  |
 | `PropertyGrid` | `src/ui/PropertyGrid.tsx` |  |
-| `DataGrid` | `src/ui/TableField.tsx`, `src/ui/ListView.tsx` | Dois usos sob um nome: campo `table` dos Detalhes e Lista em tabela. |
+| `DataGrid` | `src/ui/TableField.tsx`, `src/ui/ListView.tsx` | Dois usos sob um nome: campo `table` dos Detalhes e Lista em tabela. `LayerCell` e `MarkingCell` (botão da primeira coluna) são exportados do `ListView.tsx` e também usados por `IncompleteView.tsx` e `NoticesView.tsx`. |
 | `RefCell` | `src/ui/RefCell.tsx`, `src/ui/RefPicker.tsx` | Seletor em modo `compact`. |
 | `ReferenceField` | `src/ui/TypedFields.tsx`, `src/ui/RefPicker.tsx` | `RefField` é função interna do `TypedFields.tsx`. |
 | `InconsistentProjectDialog` | `src/ui/InconsistentProjectDialog.tsx` | Aberto por `src/app/Home.tsx`. |
@@ -147,6 +150,20 @@ Cada componente do DS e a origem dele no código. Um nome do DS pode cobrir vár
 | Janela Comentários | `src/ui/toolWindowMeta.ts`, `src/store/toolWindows.ts` | Aba da janela inferior, a última (`WINDOW_NUMBER.comments = 0`, atalho `Ctrl+Shift+0`, ícone `chat`). |
 | `SettingsDialog` | `src/ui/SettingsDialog.tsx` | Também `SettingsBar.tsx`, `PlatformRepos.tsx` e `PrivacySettings.tsx`. |
 
+### Componentes: conversas e comentários
+
+| Componente | Origem no código | Observação |
+| --- | --- | --- |
+| `CommentPin` | `src/canvas/commentPins.ts`, `src/canvas/renderers/commentPins.ts`, `src/canvas/theme.ts` | Pino desenhado no Konva; sem `.tsx`; só guia, sem preview. |
+| `CitationChip` | `src/ui/comments/CitationChip.tsx`, `CitationEditor.tsx`, `CitePicker.tsx` | Só guia, sem preview. |
+| `ThreadMessage` | `src/ui/comments/ThreadMessage.tsx`, `ThreadView.tsx` | Só guia, sem preview. |
+| `ThreadsSection` | `src/ui/comments/ThreadsSection.tsx` | Seção Conversas dos Detalhes; só guia, sem preview. |
+| `Composer` | `src/ui/comments/Composer.tsx` | Só guia, sem preview. |
+| `CommentsWindow` | `src/ui/comments/CommentsWindow.tsx`, `StandaloneThreadPanel.tsx` | Conteúdo da janela Comentários (a aba está em "Janela Comentários", acima); só guia, sem preview. |
+| `ProposalCard` | `src/ui/comments/ProposalCard.tsx` | Só guia, sem preview. |
+| `DeleteThreadDialogs` | `src/ui/comments/useDeleteThread.tsx`, `BulkDeleteDialog.tsx`, `deleteText.ts` | Só guia, sem preview. |
+| `ReferencedByRow` | `src/ui/ReferencedBy.tsx` | Linha "Referenciada por" do `AnnotationEditor`; só guia, sem preview. |
+
 ### Seções
 
 | Seção | Origem | Estado |
@@ -167,18 +184,20 @@ Conferido em 2026-11-02 por nome e por valor, nos dois temas: nenhum token do DS
 
 Na mesma data entraram no DS os sete que faltavam: `size-grid-col-min` (`96px`) e os papéis `control-height`, `control-height-sm`, `control-icon`, `control-check`, `row-height` (família `size`) e `control-radius` (família `radius`). Os papéis importam porque o `CLAUDE.md` manda o CSS usar só os `--control-*`, não os tokens crus; como o formato só aceita alias em cor, cada papel entrou com o valor literal e o `usage` diz qual token ele representa.
 
-| Família                            | No DS | No código      |
-| ---------------------------------- | ----- | -------------- |
-| `color` (inclui `cv-*`, `layer-*`) | 57    | 57             |
-| `type` (estilos `t-*`)             | 12    | 12 (+ 5 alias) |
-| `spacing`                          | 8     | 8              |
-| `radius`                           | 7     | 7              |
-| `shadow`                           | 1     | 1              |
-| `size`                             | 44    | 43             |
-| `opacity`                          | 8     | 7              |
-| `duration`                         | 6     | 6              |
-| `zIndex`                           | 8     | 8              |
-| `breakpoint`                       | 2     | 2              |
+| Família                            | No DS | No código       |
+| ---------------------------------- | ----- | --------------- |
+| `color` (inclui `cv-*`, `layer-*`) | 72    | 72              |
+| `type` (estilos `t-*`)             | 12    | 12 (+ 5 alias)  |
+| `spacing`                          | 9     | 9               |
+| `radius`                           | 7     | 7               |
+| `shadow`                           | 1     | 1               |
+| `size`                             | 61    | 56 (+ 5 papéis) |
+| `opacity`                          | 11    | 11              |
+| `duration`                         | 6     | 6               |
+| `zIndex`                           | 8     | 8               |
+| `breakpoint`                       | 2     | 2               |
+
+Contagem conferida em 2026-11-10 (DS3, `tokens.json` do artefato na versão 69 contra `src/theme/tokens.ts`, nome e valor nos dois temas): 177 tokens nas listas, 21 deles entrados na DS3 (os seis `color-thread-*`, `cv-component-unknown-fill`, `opacity-slot`, os onze `size-cv-pin-*` e `size-cv-arrival-*` e os dois `size-minimap-*`; `size-tw-bottom` passou a `360px`). Os cinco papéis de `size` (`control-height`, `control-height-sm`, `control-icon`, `control-check`, `row-height`) são alias no código e valores literais no DS. A divergência antiga de `size-review-col-name-min` (194px no código, 208px no DS) foi corrigida na DS5 (versão 71): o DS passou a 194px.
 
 Falta no DS só os cinco alias de texto `t-text`, `t-text-small`, `t-text-heading`, `t-text-title` e `t-text-input`, por limite do formato (ver Pendências).
 
@@ -186,18 +205,18 @@ Falta no DS só os cinco alias de texto `t-text`, `t-text-small`, `t-text-headin
 
 Fonte única: `src/ui/icons.tsx` (SVG inline, grade de 16 px, traço de 1,25, `currentColor`). O DS guarda cada ícone como um upload no grupo `Icons`.
 
-Conferido em 2026-11-04: **86 ícones no DS, 86 em `icons.tsx`, correspondência 1:1**, sem sobra de nenhum lado (o 86º é `container-mark`, chave `containerMark`, logo depois de `container`). A única diferença é a convenção de nome — o DS usa o nome do arquivo em kebab-case (`zoom-in.svg`), o código usa a chave em camelCase (`zoomIn`). Ao acrescentar um ícone, mantenha os dois nomes correspondentes.
+Conferido em 2026-11-10 (DS3): **92 ícones no DS, 92 em `icons.tsx`**, com os dois novos `thread-awaiting-human` e `thread-awaiting-agent` (chaves `threadAwaitingHuman` e `threadAwaitingAgent`). Antes, em 2026-11-04: **86 ícones no DS, 86 em `icons.tsx`, correspondência 1:1**, sem sobra de nenhum lado (o 86º é `container-mark`, chave `containerMark`, logo depois de `container`). A única diferença é a convenção de nome — o DS usa o nome do arquivo em kebab-case (`zoom-in.svg`), o código usa a chave em camelCase (`zoomIn`). Ao acrescentar um ícone, mantenha os dois nomes correspondentes.
 
 ## Com forma visível e sem componente no DS
 
 Levantado em 2026-11-02. Estes arquivos aparecem na tela e nenhum guia do DS os cobre. **Não são pendência:** entrar ou não no DS é decisão do dono, e criar componente novo está fora do escopo da etapa de sincronia.
 
-- Diálogos: `src/ui/review/ExitReviewDialog.tsx`, `src/app/ExportDialog.tsx`, `src/ui/SpecsDialog.tsx`, `src/ui/InconsistentProjectDialog.tsx` (os três últimos só citados no guia de `Dialog`).
+- Diálogos: `src/ui/review/ExitReviewDialog.tsx`, `src/app/ExportDialog.tsx`, `src/ui/SpecsDialog.tsx`, `src/ui/InconsistentProjectDialog.tsx` (os três últimos só citados no guia de `Dialog`), `src/ui/LinkDialog.tsx`, `src/ui/TypePicker.tsx`.
 - Barras e faixas: `src/app/EditorMainBar.tsx`, `src/app/EditorTools.tsx`, `src/ui/SettingsBar.tsx`, `src/ui/ImageConsentBanner.tsx`, `src/ui/InstallHint.tsx`, `src/ui/review/ProposalNotices.tsx`.
-- Revisão: `src/ui/review/ReviewLevels.tsx` (a barra de progresso; os filtros recolhidos e o painel aberto estão no guia e na prévia do `ReviewRow`), `src/ui/review/ProposalList.tsx` (a busca e o estado vazio), `src/ui/review/ReviewCanvasControls.tsx` (o alternador Atual/Proposto e a legenda das marcas).
-- Detalhes e campos: `src/ui/FieldEditors.tsx`, `src/ui/CommitInput.tsx`, `src/ui/AnnotationEditor.tsx`, `src/ui/AnnotationSummary.tsx`, `src/ui/DetailsSection.tsx`, `src/ui/DetailsIdentity.tsx`, `src/ui/MarkingColorField.tsx`.
+- Revisão: `src/ui/review/ReviewLevels.tsx` (a barra de progresso; os filtros recolhidos e o painel aberto estão no guia e na prévia do `ReviewRow`), `src/ui/review/ProposalList.tsx` (a busca e o estado vazio), `src/ui/review/ReviewCanvasControls.tsx` (o alternador Atual/Proposto e a legenda das marcas), `src/ui/review/RevisedBefore.tsx` (o bloco "Antes da revisão").
+- Detalhes e campos: `src/ui/FieldEditors.tsx`, `src/ui/CommitInput.tsx`, `src/ui/AnnotationEditor.tsx`, `src/ui/AnnotationSummary.tsx`, `src/ui/DetailsSection.tsx`, `src/ui/DetailsIdentity.tsx`, `src/ui/MarkingColorField.tsx`, `src/ui/OwnerRoleField.tsx`, `src/ui/LinkedAnnotations.tsx`, `src/ui/IdentitySettings.tsx`.
 - Configurações: `src/ui/PrivacySettings.tsx`, `src/ui/PlatformRepos.tsx`.
-- Outros: `src/ui/Popover.tsx`, `src/ui/LibraryPalette.tsx`, `src/ui/DiagnosticsView.tsx`, `src/ui/IncompleteView.tsx`, `src/ui/LayersWindow.tsx`, `src/ui/TreeWindow.tsx`.
+- Outros: `src/ui/Popover.tsx`, `src/ui/LibraryPalette.tsx`, `src/ui/DiagnosticsView.tsx`, `src/ui/IncompleteView.tsx`, `src/ui/LayersWindow.tsx`, `src/ui/TreeWindow.tsx`, `src/ui/comments/CitePicker.tsx`, `src/ui/comments/StandaloneThreadPanel.tsx`, `src/ui/comments/CitedIn.tsx`.
 
 Composições e lógica sem forma própria (não precisam de componente): `src/ui/SelectionPanel.tsx`, `src/ui/review/ReviewPanel.tsx`, `ReviewDetails.tsx`, `ProposalsWindow.tsx`, `reviewExtension.tsx`, `changeText.ts`, `levelRows.ts`, `src/canvas/reviewMarks.ts`, `src/store/proposedCatalog.ts`, `src/canvas/frame.ts`, `containment.ts`, `gestureMachine.ts`, `input/`, `viewportController.ts`.
 
@@ -264,3 +283,5 @@ Os cinco papéis de texto do código não entraram no DS: a família `type` do f
 ## Histórico de sincronização
 
 Um arquivo por épico em [`docs/design-system/`](design-system/), com o que o fechamento gravou no artefato (ou "Sem impacto") e o que ficou sem gravar. `ls docs/design-system/` sai em ordem cronológica, com os não lançados (`<nome>.md`, sem data) no fim; épicos do mesmo dia ficam em ordem alfabética, e a ordem exata do merge é a de `git log --first-parent main`. A primeira linha de cada arquivo é `# <Etapa> — <AAAA-MM-DD | [Não lançado]> (épico \`epic/<nome>\`)`, e as seções são só `## Pendências`, `## Sincronização`e`## Ficou sem gravar`. As pendências abertas acham-se com `grep -rn -A99 '^## Ficou sem gravar' docs/design-system/`.
+
+Cada item de `## Ficou sem gravar` traz `Motivo:` (o que impediu a gravação, concreto) ou "Passou para o registro do épico `epic/<nome>`: <resumo>", quando outro épico passou a gravá-lo; o registro desse épico tem de existir na pasta.

@@ -10,4 +10,4 @@ Nada foi gravado no artefato **Mapping**: a gravação do preview do `HelpDialog
 
 ## Ficou sem gravar
 
-- `components/HelpDialog/preview.html`: trocar "Um passeio de 12 passos … containers com Material 3 e a revisão de uma proposta." por "Um passeio de 14 passos … containers com Material 3, a revisão de uma proposta e as perspectivas." (igual a `help.guide.intro` em `src/i18n/pt-BR.ts`), com `lastChange` do índice atualizado. Motivo: a chamada de publicação no artefato foi negada pela permissão da sessão; o README do `HelpDialog` não cita a contagem e não muda.
+- Passou para o registro do épico `epic/sincronia-ds-2`: preview do `HelpDialog` com o texto antigo do passeio ("12 passos", sem as perspectivas) em vez de `help.guide.intro` de hoje (prévia, DS5).

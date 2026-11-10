@@ -12,4 +12,4 @@ Nenhuma gravação feita pelo agente: artefato curado à mão.
 
 ## Ficou sem gravar
 
-- As duas pendências acima (guias `StatusBar` e `Breadcrumbs`), para aplicar à mão no artefato.
+- Passou para o registro do épico `epic/sincronia-ds-2`: guia `StatusBar` (prioridade dos itens, container query de 1100 px) e guia `Breadcrumbs` (barra do canvas como container de 470 px; o `title` do nome cortado já estava gravado), com as classes no `bundle.css` (DS3).

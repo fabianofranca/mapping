@@ -169,7 +169,7 @@ Siga o `docs/FLOW.md` ("Orquestrador — passo a passo" e as mensagens), com o q
    - **escolha a versão do MCP** (regra 3): se `git diff --name-only origin/main...HEAD` toca algum arquivo de `scripts/release/releaseInputs.mjs`, confira o `SERVER_VERSION` da `origin/main` e, se alcançou o do épico, traga a `main` e suba a versão antes do push; a versão em `mcp/version.ts` precisa ser nova;
    - o coordenador faz o que vai no commit ou no PR, antes do push:
      - changelog e registro do DS renomeados com a data (`git mv`);
-     - pendências aplicadas no artefato do DS;
+     - **grave no artefato** as `## Pendências` do registro do DS, seguindo `docs/DESIGN-SYSTEM.md` › "Ao gravar". "Curado à mão" não é motivo para não gravar. Item que não der para gravar vai para `## Ficou sem gravar` com o motivo concreto (`Motivo:`). A gravação vai por um subagente (`model: "sonnet"`, ferramenta `Artifact`, no clone do épico), que preenche a `## Sincronização` e a `## Ficou sem gravar` do registro antes do commit e devolve uma linha: a versão gravada, os itens gravados e os sem gravar com o motivo. O coordenador não lê arquivo do artefato (item 2 de "Economia de contexto");
      - descrição final do PR do épico, com "Closes #<etapa>" (editar o corpo do PR não roda o CI);
    - no mesmo ciclo do push, **um** subagente (item 11 de "Economia de contexto") cria as issues do que ficou para depois e posta o comentário de fechamento na issue (e o da versão trocada, se houver), e devolve uma linha com os números das issues e o id do comentário. Isso corre **durante o CI** do épico; o merge não espera o retorno dele, e se ele falhar o coordenador o refaz no ciclo seguinte;
    - cada item que ficou para depois vira uma `roadmap` (com o impacto), ou um `bug` se pedir decisão. **Toda issue que a fila cria** (esses `bug` e `roadmap`, o `bug` de decisão do dono e o `bug` `ready` da correção dependente) leva no corpo a linha `Origem: etapa #<n>`; o painel só aponta para a busca dessa linha no GitHub, sem tabela de issues;
@@ -244,7 +244,8 @@ Com o fechamento feito e o CI verde. Antes de mesclar, confira também o `SERVER
   - enquanto a resposta não chega, a próxima etapa livre já pode começar;
   - com "Mesclar", mescle (`merge_pull_request`, `merge_method: merge`).
 - **Com `mesclar=auto`** (escrito pelo dono na chamada): mescle direto e mande `PushNotification` "#<n> mesclada: <resumo>".
-- O merge, ou a pergunta ao dono, vem logo depois do CI verde e **não espera** o retorno do subagente do fechamento (passo 5 de "Por etapa").
+- **Fechamento que não gravou:** o registro do DS com `## Pendências` reais e sem gravação (a `## Sincronização` não abre por "Gravado no artefato", "Versão <n>" ou "Sem impacto") é defeito pendente, e o épico não mescla até gravar. Se a ferramenta `Artifact` falhar de verdade (sem permissão de edição, recusa repetida), a etapa fica `esperando dono`, com `PushNotification` e o erro da ferramenta. "Sem acesso" sem um erro da ferramenta não vale como motivo.
+- O merge, ou a pergunta ao dono, vem logo depois do CI verde e **não espera** o retorno do subagente das issues e do comentário de fechamento (passo 5 de "Por etapa"). A gravação no DS é outra coisa: o subagente dela já voltou e o registro com a `## Sincronização` está no commit do PR antes do push, e o coordenador confere isso (a abertura da `## Sincronização`) antes de mesclar.
 
 **Não segure o merge de outro épico** à espera da Release do anterior: um épico pronto cuja Release não depende da anterior é mesclado sem esperar. A ordem das versões estáveis é garantida pela ordem dos merges, não pela espera.
 

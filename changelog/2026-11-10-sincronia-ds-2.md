@@ -1,0 +1,18 @@
+# Sincronia do DS — 2026-11-10 (épico `epic/sincronia-ds-2`, PR #1439, MCP 0.30.0 sem mudança, schema v18)
+
+## Alterado
+
+- DS1: as pendências abertas em `## Ficou sem gravar` de `docs/design-system/` (30 registros da tabela da #1390, mais os que entraram depois) passam para `docs/design-system/sincronia-ds-2.md`, conferidas contra a `main`, cada uma com a classe, a prova e a fase que a grava (DS3 texto, DS4 e DS5 prévias e conferências). Nos registros antigos, cada item vira "Passou para o registro do épico `epic/sincronia-ds-2`".
+- `docs/DESIGN-SYSTEM.md`: o mapa ganha a tabela "Componentes: conversas e comentários" (`CommentPin`, `CitationChip`, `ThreadMessage`, `ThreadsSection`, `Composer`, `CommentsWindow`, `ProposalCard`, `DeleteThreadDialogs`, `ReferencedByRow`), o `InstallHint` aparece como usuário do `Notice`, `LayerCell` e `MarkingCell` ficam anotados no `DataGrid`, e `src/ui/comments/**` entra em "Quando verificar".
+- Regra nova do fechamento (DS2): o fechamento de todo épico grava no artefato do DS as `## Pendências` do registro, por um subagente Sonnet com a ferramenta `Artifact` (`docs/DESIGN-SYSTEM.md` › "Ao gravar"); "curado à mão" não é motivo para não gravar. Fechamento que não gravou, tendo pendências reais, é defeito pendente e segura o merge; falha real da ferramenta deixa a etapa `esperando dono`. O `designSystemLog.test.ts` reprova o registro com data que não gravou e não explica cada item de `## Ficou sem gravar` (`Motivo:` ou "Passou para o registro do épico"). `Artifact` entrou em `permissions.allow` do `.claude/settings.json`, com teste.
+
+## Corrigido
+
+- `Notice` em linha (`size="line"`): a regra `flex: 1` pegava também a âncora do X (`IconButton`) e o afastava do botão de ação; agora vale só para a âncora do texto (`.notice-box-line > .tooltip-anchor:has(> .notice-box-text)`) (#1468).
+- Botões da barra de status que abrem janela (conversas e avisos): `.status-item-button` ganha `color: inherit`, então usam a cor do item (`color-text-muted`) e o hover para `color-text` passa a ter efeito (#1468).
+- Selo numérico do `IconButton` (`.icon-button-badge`): fica no canto do botão (`translate(50%, -50%)`) e não cobre mais o glifo ⋯ de "Mais controles" a 360px (#1468).
+- Plural de containers: "1 container" (chave nova `perspective.count.containersOne`, pt-BR e en-US) no seletor de perspectivas, no Gerenciar e no Apagar; o seletor passa a usar o texto compartilhado `perspectiveContentText` em vez de uma cópia (#1468).
+- DS7 (revisão final do épico, #1472): plural de marcações ("1 marcação" / "1 marking", chave nova `perspective.count.markingsOne`) no seletor de perspectivas, no Gerenciar e no Apagar, pelo helper `markingsCountText`.
+- DS7: o selo numérico do `IconButton` sai só um quarto de si da caixa do botão (`translate(25%, -25%)`, antes `50%`), então cabe na folga da faixa lateral (botão de 28px em 40px) e não é cortado por `.editor` (`overflow: clip`).
+- DS7: o texto do `Notice` em linha (`.notice-box-line .notice-box-text`) ganha `flex: 1`, então ações e X ficam à direita também quando não há `hint` (sem a âncora da dica).
+- DS7 (testes do registro do DS): `Versão N não foi gravada` deixa de contar como gravação; `- Nada gravado ainda: …` deixa de ser descartado como "sem pendência"; `Passou para o registro do épico` não pode apontar para o próprio registro nem para um épico de data anterior (já fechado). Descartados com motivo: "Sem impacto" continua válido com `## Pendências` (resultado documentado em `docs/DESIGN-SYSTEM.md`, usado por `2026-11-05-foco-e-nomes`); o helper único de plural (achado 8) tocaria ~8 módulos (comentários, revisão, propostas, `TableField`), fora do escopo.

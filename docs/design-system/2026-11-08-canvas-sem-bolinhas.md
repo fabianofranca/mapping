@@ -10,4 +10,4 @@ Nenhuma gravação feita pelo agente: artefato curado à mão.
 
 ## Ficou sem gravar
 
-- A pendência de `CanvasMarking` e da seção `Canvas.md` acima (bolinhas e `+N` saem do desenho; ⚠ no canto), para aplicar à mão no artefato.
+- Passou para o registro do épico `epic/sincronia-ds-2`: `CanvasMarking` (guia, prévia) e `Canvas.md` sem as bolinhas de camada e o "+N", com o ⚠ no canto (guia e seção em DS3; prévia em DS5).

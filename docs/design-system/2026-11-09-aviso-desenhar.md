@@ -16,4 +16,4 @@ Gravado no artefato **Mapping** em 2026-11-09, no fechamento do épico (versão 
 
 ## Ficou sem gravar
 
-- As prévias não foram conferidas no visualizador real do artefato (sem cor nem token novo, então o contraste não muda).
+- Passou para o registro do épico `epic/sincronia-ds-2`: conferência das prévias de `Breadcrumbs` (dica do Desenhar e dica encolhida) nos temas claro e escuro (DS5), com `.crumbs-empty` completa e a morta `.canvas-hint` retirada do `bundle.css` (DS3).

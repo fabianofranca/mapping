@@ -16,4 +16,4 @@ Versões 51 (conteúdo) e 52 (índice) do artefato, de 2026-11-07. **`MarkingPan
 
 ## Ficou sem gravar
 
-- O `preview.html` do `MarkingPanel` não ganhou o estado com a seção **Ligado por seta**, nem o `bundle.css` as classes `.arrow-link*` (o preview tem 119 KB e a gravação ficou só no guia).
+- Passou para o registro do épico `epic/sincronia-ds-2`: estado "Ligado por seta" na prévia do `MarkingPanel` (DS5) e as classes `.arrow-links`/`.arrow-link*` no `bundle.css` (DS3).
