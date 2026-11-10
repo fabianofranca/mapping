@@ -239,3 +239,99 @@ describe('validateLibrary com repeat', () => {
     );
   });
 });
+
+describe('validateLibrary: $rows, $index e repeat por count (formato 4)', () => {
+  const v4 = (children: Raw[]): Raw => {
+    const comp = component();
+    comp.formatVersion = 4;
+    comp.template.children = children;
+    return comp;
+  };
+
+  it('$rows sobre uma table do tipo é válido e conta o campo como usado', () => {
+    const report = validate(
+      v4([text('titulo'), { ...text('x'), text: { $rows: 'linhas' } }]),
+    );
+    expect(report.errors).toEqual([]);
+    expect(report.warnings.map((w) => w.message).join('\n')).not.toContain('"linhas"');
+  });
+
+  it('$rows sobre campo que não é table é erro, no caminho do $rows', () => {
+    const report = validate(v4([{ ...text('x'), text: { $rows: 'titulo' } }]));
+    expect(report.errors.map(brief)).toContainEqual([
+      'error',
+      'components/tab.json',
+      'template.children[0].text.$rows',
+      '$rows conta as linhas de "titulo", que é um campo string do tipo "tabela", não uma table',
+    ]);
+  });
+
+  it('$rows sobre campo inexistente é erro de campo não declarado', () => {
+    const report = validate(v4([{ ...text('x'), text: { $rows: 'nada' } }]));
+    expect(report.errors.map((e) => e.message)).toContain(
+      'o desenho usa o campo "nada", que o tipo "tabela" não declara',
+    );
+  });
+
+  it('$index não é campo do tipo: nem erro nem exigência de campo', () => {
+    const report = validate(
+      v4([
+        {
+          type: 'repeat',
+          count: 3,
+          template: {
+            type: 'frame',
+            layout: { type: 'row' },
+            children: [{ ...text('x'), text: { $field: '$index' } }, text('titulo')],
+          },
+        },
+      ]),
+    );
+    expect(report.errors).toEqual([]);
+  });
+
+  it('o repeat por count lê campos do tipo no template; campo inexistente é erro', () => {
+    const report = validate(
+      v4([
+        {
+          type: 'repeat',
+          count: { $rows: 'linhas' },
+          template: {
+            type: 'frame',
+            layout: { type: 'row' },
+            children: [text('inexistente')],
+          },
+        },
+      ]),
+    );
+    expect(report.errors.map(brief)).toContainEqual([
+      'error',
+      'components/tab.json',
+      'template.children[0].template.children[0].text.$field',
+      'o desenho da linha usa "inexistente", que o tipo "tabela" não declara',
+    ]);
+  });
+});
+
+describe('validateLibrary: $index em condições', () => {
+  it('$eq, $has e $switch sobre $index não são campos do tipo', () => {
+    const comp = component();
+    comp.formatVersion = 4;
+    comp.template.children = [
+      {
+        type: 'repeat',
+        count: 3,
+        template: {
+          type: 'frame',
+          layout: { type: 'row' },
+          children: [
+            { ...text('titulo'), visible: { $eq: ['$index', 0] } },
+            { ...text('titulo'), visible: { $has: '$index' } },
+            { ...text('titulo'), width: { $switch: '$index', cases: { '0': 10 } } },
+          ],
+        },
+      },
+    ];
+    expect(validate(comp).errors).toEqual([]);
+  });
+});

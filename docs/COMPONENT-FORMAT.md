@@ -233,7 +233,8 @@ Repete o desenho de **uma linha** por linha de um campo `table` do tipo: é como
 
 | Chave        | Descrição                                                                                                                                                      |
 | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `field`      | Obrigatório. A `key` do campo `table` do tipo cujas linhas se repetem.                                                                                         |
+| `field`      | A `key` do campo `table` do tipo cujas linhas se repetem. **Exatamente um de `field` e `count`.**                                                              |
+| `count`      | `formatVersion` 4. Repete o `template` `max(0, floor(count))` vezes, sem campo `table` (ver "Repeat por contagem" abaixo). Número ou expressão de número.      |
 | `template`   | Obrigatório. Um nó `frame`: o desenho de **uma** linha. Não pode ter `repeat` nem `slot` dentro.                                                               |
 | `direction`  | `column` (padrão: as linhas se empilham) ou `row` (lado a lado).                                                                                               |
 | `distribute` | `formatVersion` 4. `"none"` (padrão) ou `"fill"`: com `fill`, o `repeat` ocupa o eixo do pai e as linhas dividem o eixo das linhas por igual (ver abaixo).     |
@@ -265,6 +266,26 @@ Como o `repeat` se dimensiona (é um quadro por baixo): `hug` no **eixo das linh
 ```
 
 `distribute` numa `formatVersion` menor que 4 é erro (`template.children[0].distribute: só é permitido com formatVersion 4`).
+
+**Repeat por contagem e `$index` (`formatVersion` 4).** O `repeat` aceita `count` no lugar de `field`: o `template` se repete `max(0, floor(count))` vezes, sem tabela. Serve para o que é um número e não dados: os dias de um mês, as marcas de um mostrador, os pontos de um indicador de páginas.
+
+```json
+{
+  "type": "repeat",
+  "count": 31,
+  "direction": "row",
+  "template": {
+    "type": "frame",
+    "children": [{ "type": "text", "text": { "$add": [{ "$field": "$index" }, 1] } }]
+  }
+}
+```
+
+- **`count`** é um número ou uma expressão de número (`{ "$field": "n" }`, `{ "$rows": "items" }`, uma conta). Um literal negativo ou não inteiro é erro (`template.children[0].count: esperava inteiro maior ou igual a 0`); uma expressão que dá negativo ou sem valor vale 0, e a parte fracionária cai (`3.9` vale 3).
+- **Teto de 1000 linhas.** Acima disso saem 1000 linhas e o desenho avisa `repeat limitado a 1000 linhas: <nome do nó>` (`repeat` quando o nó não tem `name`).
+- **`{ "$field": "$index" }`** dentro do `template` é o **índice da linha** (0, 1, …), no `repeat` por `count` e no por `field`. Ele entra pelo mesmo sombreamento das colunas e **não é campo do tipo**: não precisa ser declarado nem conta como campo sem uso. Num `repeat` dentro de outro, vale o do mais interno. `$index` fora do `template` de um `repeat` é erro (`template.children[0].text.$field: $index só vale dentro de um repeat`).
+- Num `repeat` por `count`, o resto do `template` lê **campos do tipo** (não há colunas); o validador da biblioteca confere que cada chave citada é campo do tipo.
+- `count` e `$index` numa `formatVersion` menor que 4 são erro (`só é permitido com formatVersion 4`, no caminho da chave).
 
 ### Traço: ponta, canto e lados (`formatVersion` 4)
 
@@ -404,6 +425,21 @@ Num quadro `none` os filhos não se empilham: cada um parte do canto de cima à 
 - `left`/`right` (e `top`/`bottom`) são distâncias em px da borda. **Com os dois lados**, o filho se estica entre eles, mesmo que tenha tamanho fixo (`left` + `right` e `top` + `bottom` fazem o filho ocupar o pai inteiro menos as distâncias).
 - `centerX` e `centerY` centralizam no eixo e ignoram `left`/`right` ou `top`/`bottom`.
 - Âncoras fora de um pai `none` não têm efeito.
+- **Âncora por expressão (`formatVersion` 4).** `left`, `right`, `top` e `bottom` aceitam uma expressão de número, e `centerX` e `centerY` uma condição ou expressão booleana (`visible` tem a mesma forma). Uma expressão que não produz número vale como **âncora ausente**, como se a chave não existisse:
+
+```json
+{
+  "type": "rect",
+  "width": 12,
+  "height": 12,
+  "anchors": {
+    "left": { "$mul": [{ "$size": "width" }, 0.5] },
+    "centerY": { "$gt": [{ "$field": "n" }, 5] }
+  }
+}
+```
+
+Os literais são conferidos como sempre (`anchors.left: esperava número`). Numa `formatVersion` menor que 4, a expressão é erro (`template.children[0].anchors.left: só é permitido com formatVersion 4`).
 
 ### Arrumação por tamanhos de uma tela
 
@@ -458,6 +494,7 @@ Quase todo atributo aceita, no lugar de um literal, uma **expressão** sobre os 
 | `{ "$switch": "variant", "cases": { "a": …, "b": … }, "default": … }` | O caso cujo nome é o valor do campo; `default` (opcional) se não há caso ou o campo está vazio.                                                                   |
 | `{ "$concat": ["R$ ", { "$field": "preco" }] }`                       | Só em texto: junta as partes (números viram texto).                                                                                                               |
 | `{ "$add": […] }`, `{ "$mul": […] }`, `{ "$sin": … }`…                | `formatVersion` 4. Contas de número (veja "Contas e comparações").                                                                                                |
+| `{ "$rows": "items" }`, `{ "$size": "width" }`                        | `formatVersion` 4. O número de linhas de um campo `table` e a largura ou altura da instância (veja "Contas e comparações").                                       |
 | `{ "$token": "primary" }`                                             | `formatVersion` 4. O valor do token da especialização no modo do desenho (veja "Tokens de design (`$token`)"). Só onde se espera cor, número ou família de fonte. |
 
 ```json
@@ -505,7 +542,8 @@ Na `formatVersion` 4 as expressões **calculam**. Cada operando é uma expressã
 - **Sem número, sem valor.** Um operando vazio, ou cujo texto aparado não é número (a vírgula não vale: `"0,5"` não é número), faz a operação **não produzir valor**, como o `$field` vazio sem `default`: vale o padrão do lugar. A divisão e o resto por zero também. O desenho não avisa; o validador recusa o operando **literal** que não é número (`template.width.$add[1]: precisa ser número`) e a aridade errada (`template.width.$sub: precisa de 2 operandos`).
 - **Número no texto.** No `$concat` e no `text`, um número não inteiro sai com até 6 casas, sem zeros à direita (`0.1 + 0.2` vira `0.3`, não `0.30000000000000004`); o inteiro sai como sempre.
 - **Comparações** são condições: `{ "$gt": [a, b] }`, `$gte`, `$lt` e `$lte`, cada uma com dois operandos de número. Valem em `$if`, `visible`, `$and`, `$or` e `$not`; operando sem valor dá **falso**. O `$eq` continua `[campo, valor]`.
-- **Campos citados.** Os campos dentro de uma operação ou comparação contam para o redesenho como em qualquer outra expressão.
+- **`$rows` e `$size`.** `{ "$rows": "<campo table>" }` é o **número de linhas** do campo (sem linhas, 0); o validador da biblioteca recusa campo que não é `table` do tipo (`$rows conta as linhas de "titulo", que é um campo string do tipo "tabela", não uma table`). `{ "$size": "width" }` ou `"height"` é a **largura ou a altura da instância**, em px da imagem (o retângulo da marcação): é o que deixa um carousel ou uma barra seguir a largura disponível, e `left: { "$mul": [{ "$size": "width" }, 0.5] }` segue a marcação ao ser redimensionada. Na prova de desenho e na medida do `hug` da instância (`measureComponent`), vale o `size` do componente. `$size` com outro valor é erro (`template.width.$size: esperava "width" ou "height"`).
+- **Campos citados.** Os campos dentro de uma operação, de `$rows` ou de uma comparação contam para o redesenho como em qualquer outra expressão. `{ "$field": "$index" }` (o índice da linha de um `repeat`) não é campo do tipo.
 - **Calcule em vez de enumerar.** Não escreva um `$switch` de dezenas de casos sobre um número (nem um `$eq` por valor): use a conta. Numa `formatVersion` menor que 4, cada chave nova é erro `só é permitido com formatVersion 4`, no caminho dela (`template.width.$mul`).
 
 ### Tokens de design (`$token`, `formatVersion` 4)
@@ -690,10 +728,10 @@ Quem lê um aviso terminado em **`(aproximado)`** (a prova de desenho do validad
 - **Um slot por componente.** Os filhos de uma instância vão sempre para o primeiro slot do template (busca em profundidade). Vários slots ficam para depois.
 - **Imagem só remota e só no nó `image`.** O arquivo do componente não carrega bitmap; a imagem vem de uma URL `https://` (um campo `string`) e não é gravada no projeto. Imagem local no pacote fica para depois (por isso o caminho relativo é recusado no `src`). Elipse e caminho não aceitam imagem como preenchimento.
 - **`formatVersion` 1, 2, 3 e 4.** A 2 acrescenta só o `repeat`, a 3 só o `image`, a 4 só `stroke.cap`, `stroke.join`, `stroke.sides` e `stroke.offset`, `stroke.dash` por expressão, `$token` em sombra, raios e tracejado, `alpha` no `$token` de cor, `layout.justify` `space-around`/`space-evenly`, `layout.reverse`, `font.wrap`, `font.ellipsis` e `font.maxLines`, a expressão no layout e no tamanho, `minWidth`/`maxWidth`/`minHeight`/`maxHeight`, `repeat.distribute`, `runs` (o texto rico), `$token` (os tokens de design) e o nó `icon` (o conjunto de ícones) (a medição em duas passagens vale em todas), e as anteriores continuam aceitas sem mudança. Mudar o formato do componente pede uma versão nova e a decisão de aceitar as antigas.
-- **Contas só com número, sem datas nem texto.** As operações (`$add`, `$mul`, `$sin`…) e as comparações (`$gt`…) valem só na `formatVersion` 4 do componente e só sobre números: não há função de data (`$weekday`), nem formatação de texto além do número (casas fixas, zero à esquerda, separador de milhar). Um MCP anterior a esta versão recusa a chave nova no caminho dela.
+- **Contas só com número, sem datas nem texto.** As operações (`$add`, `$mul`, `$sin`…), as comparações (`$gt`…), `$rows`, `$size`, o `repeat` por `count` com `$index` e as âncoras por expressão valem só na `formatVersion` 4 do componente e só sobre números: não há função de data (`$weekday`), nem formatação de texto além do número (casas fixas, zero à esquerda, separador de milhar). Um MCP anterior a esta versão recusa a chave nova no caminho dela.
 - Gradiente só `linear`; sombra só uma por nó; borda uma por nó.
 - Listas que viram campos numerados (`label1`, `label2`…) são frágeis: para um dado em forma de tabela (os eventos de uma tela, as propriedades de uma chamada), declare um campo `table` e desenhe-o com `repeat`. Os componentes do Material 3 (a barra de navegação, a folha com N itens) ainda usam campos numerados.
-- O `repeat` não aninha (uma `table` não tem `table` dentro) e não mede a tabela para crescer a marcação: a caixa é da marcação. Um desenho de linha com colunas de largura alinhada entre linhas (uma grade) precisa de larguras fixas ou em `%`; `hug` mede cada linha à parte. Para linhas de alturas iguais que ocupam o espaço do pai, use `distribute: "fill"` (`formatVersion` 4).
+- O `repeat` não aninha no validador (uma `table` não tem `table` dentro; o motor expande um `repeat` dentro de outro, mas o arquivo é recusado) e não mede a tabela para crescer a marcação: a caixa é da marcação. Um desenho de linha com colunas de largura alinhada entre linhas (uma grade) precisa de larguras fixas ou em `%`; `hug` mede cada linha à parte. Para linhas de alturas iguais que ocupam o espaço do pai, use `distribute: "fill"` (`formatVersion` 4).
 - **`fill` no eixo principal de um pai `hug` continua valendo 0** (com o aviso `fill dentro de hug vira 0`): não há de onde tirar o tamanho. O que a medição em duas passagens resolve é o `fill` e o `%` no eixo **cruzado**, como um texto que quebra numa coluna `hug`.
 - A medida do texto no Node é aproximada (ver acima).
 - **Sombra interna não existe.** `shadow` é sempre externa; para um efeito de fundo afundado, desenhe um nó a mais.

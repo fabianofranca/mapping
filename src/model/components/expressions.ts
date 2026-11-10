@@ -53,7 +53,7 @@ export function truthy(value: FieldValue): boolean {
 }
 
 /** O número de um operando avaliado, ou nenhum: vazio, texto não numérico (a vírgula não vale) e não finito. */
-function toNumber(value: unknown): number | undefined {
+export function toNumber(value: unknown): number | undefined {
   if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
   if (typeof value !== 'string' || value.trim() === '') return undefined;
   const n = Number(value.trim());
@@ -66,6 +66,28 @@ function snap(n: number): number {
 }
 
 const RAD = Math.PI / 180;
+
+/** O campo de valores onde o motor entrega o tamanho da instância (`$size`). */
+export function sizeKey(axis: 'width' | 'height'): string {
+  return `$size:${axis}`;
+}
+
+/** O nome de campo do índice da linha de um `repeat` (`{ "$field": "$index" }`). */
+export const INDEX_FIELD = '$index';
+
+/** As linhas de um campo `table` (valor que não é lista conta 0). */
+function rowCount(value: FieldValue): number {
+  return Array.isArray(value) ? value.length : 0;
+}
+
+/** `$rows` e `$size`: o número que a expressão produz, ou nenhum. */
+function evaluateCount(
+  expr: Record<string, unknown>,
+  values: FieldValues,
+): number | undefined {
+  if ('$rows' in expr) return rowCount(values[expr.$rows as string]);
+  return toNumber(values[sizeKey(expr.$size === 'height' ? 'height' : 'width')]);
+}
 
 type NumericFn = (n: readonly number[]) => number | undefined;
 
@@ -158,6 +180,8 @@ function isExprObject(value: unknown): value is Record<string, unknown> {
       '$if' in value ||
       '$switch' in value ||
       '$concat' in value ||
+      '$rows' in value ||
+      '$size' in value ||
       Object.keys(value).some(isNumericOp))
   );
 }
@@ -192,6 +216,10 @@ export function evaluate<T>(expr: Expr<T>, values: FieldValues, fallback: T): T 
       !isEmpty(key) && Object.hasOwn(e.cases, name) ? e.cases[name] : undefined;
     if (chosen !== undefined) return evaluate(chosen, values, fallback);
     return e.default === undefined ? fallback : evaluate(e.default, values, fallback);
+  }
+  if ('$rows' in expr || '$size' in expr) {
+    const n = evaluateCount(expr as Record<string, unknown>, values);
+    return (n === undefined ? fallback : n) as T;
   }
   const numericOp = Object.keys(expr).find(isNumericOp);
   if (numericOp !== undefined) {
@@ -300,12 +328,13 @@ export function referencedFields(
     if (isRepeat && key === 'field' && typeof value === 'string') {
       out.add(value);
     } else if (
-      (key === '$field' || key === '$has' || key === '$switch') &&
+      (key === '$field' || key === '$has' || key === '$switch' || key === '$rows') &&
       typeof value === 'string'
     ) {
-      out.add(value);
+      // `$index` é o índice da linha de um `repeat`, não um campo do tipo.
+      if (value !== INDEX_FIELD || key === '$rows') out.add(value);
     } else if (key === '$eq' && Array.isArray(value) && typeof value[0] === 'string') {
-      out.add(value[0]);
+      if (value[0] !== INDEX_FIELD) out.add(value[0]);
     } else {
       referencedFields(value, out);
     }
