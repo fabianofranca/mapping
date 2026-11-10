@@ -8269,7 +8269,7 @@
               "key": "month",
               "label": "Mês",
               "type": "number",
-              "description": "Mês do calendário, de 1 a 12. Com year, a grade desenhada é a do mês (o número de dias, com o bissexto, o dia da semana do dia 1 e 4, 5 ou 6 linhas). Sem um dos dois, ou com month fora de 1 a 12, fica a grade de hoje: 31 dias a partir da quarta. Forma o initialDisplayedMonthMillis do código."
+              "description": "Mês do calendário, de 1 a 12. Com year, a grade desenhada é a do mês (o número de dias, com o bissexto, o dia da semana do dia 1 e 4, 5 ou 6 linhas). Sem um dos dois, fica a grade de hoje: 31 dias a partir da quarta. Fora de 1 a 12 não é conferido (13 rola para janeiro do ano seguinte). Forma o initialDisplayedMonthMillis do código."
             },
             {
               "key": "year",

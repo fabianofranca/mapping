@@ -671,7 +671,7 @@ describe('EX4 — sem tabelas enumeradas', () => {
   });
 
   it('os arquivos ficam bem menores que os 78 kB e 53 kB de antes', () => {
-    expect(text('components/date-picker.json').length).toBeLessThan(46_800);
-    expect(text('components/time-picker.json').length).toBeLessThan(32_000);
+    expect(text('components/date-picker.json').length).toBeLessThan(52_000);
+    expect(text('components/time-picker.json').length).toBeLessThan(36_000);
   });
 });

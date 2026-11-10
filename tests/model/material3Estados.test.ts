@@ -256,7 +256,7 @@ describe('atualização da versão anterior da biblioteca para a nova', () => {
         if (type.id in INTERACTION_OPTIONS)
           type.fields = type.fields.filter((f) => f.key !== 'interaction');
       }
-    expect(spec.version).toBeGreaterThanOrEqual(5);
+    expect(spec.version).toBe(6);
     expect(missingMigrations(previous, spec)).toEqual([]);
     expect(spec.migrations ?? []).toEqual([]);
     const report = validateLibrary({ files, specPath: SPEC_FILE, previous });
