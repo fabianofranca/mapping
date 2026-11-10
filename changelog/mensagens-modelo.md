@@ -10,3 +10,4 @@
 
 - Teto do `dist/index.html` subiu 16 KiB, de 1.966.080 para 1.982.464 bytes, pela regra do orçamento (as traduções en-US do validador da biblioteca somam ~10 KB ao arquivo).
 - Teto do `dist/index.html` subiu 16 KiB, de 1.982.464 para 1.998.848 bytes, pela regra do orçamento (as traduções en-US da especialização e dos textos padrão do zod).
+- Teto do `dist/index.html` subiu 16 KiB, de 1.998.848 para 2.015.232, pela regra do orçamento (as traduções en-US do resto da especialização, dos avisos e das quebras sem migração).
