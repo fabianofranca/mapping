@@ -396,7 +396,8 @@
                 },
                 "letterSpacing": {
                   "$token": "label-medium-tracking"
-                }
+                },
+                "verticalAlign": "cap-middle"
               },
               "color": {
                 "$if": {

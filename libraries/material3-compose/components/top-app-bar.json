@@ -295,12 +295,14 @@
                   },
                   "wrap": "none",
                   "ellipsis": true,
-                  "maxLines": 1
+                  "maxLines": 1,
+                  "verticalAlign": "cap-middle"
                 },
                 "color": {
                   "$token": "on-surface"
                 },
-                "width": "fill"
+                "width": "fill",
+                "height": "fill"
               }
             ]
           },
@@ -798,12 +800,14 @@
               "align": "center",
               "wrap": "none",
               "ellipsis": true,
-              "maxLines": 1
+              "maxLines": 1,
+              "verticalAlign": "cap-middle"
             },
             "color": {
               "$token": "on-surface"
             },
-            "width": "fill"
+            "width": "fill",
+            "height": "fill"
           }
         ]
       },

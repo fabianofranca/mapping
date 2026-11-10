@@ -36,8 +36,12 @@
     "type": "frame",
     "name": "bottom sheet",
     "cornerRadius": [
-      { "$token": "corner-extra-large" },
-      { "$token": "corner-extra-large" },
+      {
+        "$token": "corner-extra-large"
+      },
+      {
+        "$token": "corner-extra-large"
+      },
       0,
       0
     ],
@@ -373,7 +377,8 @@
                   "$token": "body-large-tracking"
                 },
                 "maxLines": 1,
-                "ellipsis": true
+                "ellipsis": true,
+                "verticalAlign": "cap-middle"
               },
               "color": {
                 "$token": "on-surface"

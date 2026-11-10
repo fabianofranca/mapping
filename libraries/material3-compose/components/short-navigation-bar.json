@@ -376,7 +376,8 @@
                     },
                     "letterSpacing": {
                       "$token": "label-medium-tracking"
-                    }
+                    },
+                    "verticalAlign": "cap-middle"
                   },
                   "color": {
                     "$if": {
@@ -683,7 +684,8 @@
                         },
                         "letterSpacing": {
                           "$token": "label-medium-tracking"
-                        }
+                        },
+                        "verticalAlign": "cap-middle"
                       },
                       "color": {
                         "$if": {
@@ -698,7 +700,8 @@
                       },
                       "visible": {
                         "$has": "label"
-                      }
+                      },
+                      "height": "fill"
                     }
                   ]
                 }

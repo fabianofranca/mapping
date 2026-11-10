@@ -90,7 +90,8 @@
               },
               "letterSpacing": {
                 "$token": "label-small-tracking"
-              }
+              },
+              "verticalAlign": "cap-middle"
             },
             "color": {
               "$token": "on-error"
