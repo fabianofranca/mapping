@@ -317,8 +317,11 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
     '## Mudanças na fila durante a execução',
   );
 
-  it('"Para a sessão da fase": send_later de 8 min, segunda reexecução pela fase e aviso (decisões 1 e 2)', () => {
-    expect(item6).toMatch(/`send_later` de 8 min/);
+  it('"Para a sessão da fase": send_later de 4 min e de 2 em 2 min, segunda reexecução pela fase e aviso (decisões 1 e 2)', () => {
+    expect(item6).toMatch(/primeira conferência com um `send_later` de 4 min/);
+    expect(item6).toMatch(/de 2 em 2 min até 20 min/);
+    expect(item6).toMatch(/depois disso, de 8 em 8/);
+    expect(item6).not.toMatch(/`send_later` de 8 min/);
     expect(item6).toMatch(/nunca encerre o turno/i);
     expect(item6).toContain('ci-rerun.yml');
     expect(item6).toContain('node scripts/ci/ciRerun.mjs decide');
@@ -384,7 +387,9 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
     expect(reserva).toMatch(/`row '#n' childAt=now`, sem mensagem/);
     expect(reserva).toMatch(/~60 min/);
     expect(reserva).toMatch(/~90 min/);
-    expect(reserva).toMatch(/`send_later` de 8 min/);
+    expect(reserva).toMatch(
+      /espera do CI da própria fase \(4 min, de 2 em 2 min até 20 min, depois de 8 em 8\)/,
+    );
     expect(reserva).toMatch(/frequência e o corte não mudam/);
   });
 
