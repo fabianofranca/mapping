@@ -73,6 +73,19 @@ describe('MF1: font.align "justify"', () => {
     expect(node.style.align).toBe('justify');
   });
 
+  it('texto rico (runs) desenha à esquerda e a cena diz left, sem prometer o justify', () => {
+    const { root } = sceneOf({
+      type: 'text',
+      runs: [{ text: 'um dois tres quatro' }],
+      width: 60,
+      font: { align: 'justify' },
+    });
+    const node = (root as FrameNode).children[0] as SceneNode & {
+      style: { align: string };
+    };
+    expect(node.style.align).toBe('left');
+  });
+
   it('vindo de expressão também chega como justify', () => {
     const { root } = sceneOf(
       { type: 'text', text: 'a b', font: { align: { $field: 'a', default: 'left' } } },

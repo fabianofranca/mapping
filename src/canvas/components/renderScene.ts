@@ -748,6 +748,8 @@ export function imageFit(
   };
 }
 
+const EPSILON = 1e-9;
+
 /**
  * `fill-width`, `fill-height`, `scale-down` e `none` (formato 4): a imagem na escala do `fit`,
  * centrada na caixa e recortada onde passa dela (o `ContentScale` `FillWidth`, `FillHeight`,
@@ -758,6 +760,8 @@ function placedFit(
   box: Box,
   source: { width: number; height: number },
 ): ReturnType<typeof imageFit> {
+  if (box.width <= 0 || box.height <= 0 || source.width <= 0 || source.height <= 0)
+    return { x: 0, y: 0, width: Math.max(0, box.width), height: Math.max(0, box.height) };
   const scale =
     fit === 'fill-width'
       ? box.width / source.width
@@ -776,7 +780,8 @@ function placedFit(
   };
   const cropWidth = width / scale;
   const cropHeight = height / scale;
-  if (cropWidth >= source.width && cropHeight >= source.height) return placed;
+  if (cropWidth >= source.width - EPSILON && cropHeight >= source.height - EPSILON)
+    return placed;
   return {
     ...placed,
     crop: {

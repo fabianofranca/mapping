@@ -673,4 +673,17 @@ describe('imageFit: fit novos (formato 4)', () => {
     expect(cut).toMatchObject({ x: 30, y: 0, width: 40, height: 50 });
     expect(cut.crop).toEqual({ x: 0, y: 15, width: 40, height: 50 });
   });
+
+  it('caixa sem área ou imagem sem tamanho não gera recorte com NaN', () => {
+    for (const fit of ['fill-width', 'fill-height', 'scale-down', 'none'] as const) {
+      const empty = imageFit(fit, { width: 0, height: 0 }, source);
+      expect(empty).toEqual({ x: 0, y: 0, width: 0, height: 0 });
+    }
+  });
+
+  it('escala que não é exata não cria recorte quando a imagem inteira aparece', () => {
+    expect(
+      imageFit('scale-down', { width: 10, height: 10 }, { width: 3, height: 7 }),
+    ).not.toHaveProperty('crop');
+  });
 });

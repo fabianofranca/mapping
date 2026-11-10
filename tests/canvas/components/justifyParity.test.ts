@@ -71,4 +71,26 @@ describe('justify: paridade entre o Konva e o raster', () => {
     const bars = textBars(two, measure);
     expect(bars.map((b) => b.width)).toEqual([60, 54, 24]);
   });
+
+  it('linha de uma palavra só (sem espaço) não é esticada, como no Konva', () => {
+    const word = node('abcdefgh ijklmnop');
+    const bars = textBars(word, measure);
+    // 1ª linha: "abcdefgh" (48 px, sem espaço, não se estica); 2ª: "ijklmnop", a última
+    expect(bars.map((b) => b.width)).toEqual([48, 48]);
+    const lines = konvaText(word).textArr;
+    expect(lines.map((l) => l.text)).toEqual(['abcdefgh', 'ijklmnop']);
+  });
+
+  it('com maxLines, o \\n continua fechando o parágrafo; sem largura, não há barra esticada', () => {
+    const plain = node('aaaa bbbb\ncccc dddd eeee');
+    const capped = { ...plain, style: { ...plain.style, maxLines: 4 } };
+    const measured = (text: string) => ({
+      width: text.length * 6,
+      height: 14,
+      lines: ['aaaa bbbb', 'cccc dddd', 'eeee'],
+    });
+    expect(textBars(capped, measured).map((b) => b.width)).toEqual([54, 60, 24]);
+    const free = { ...node('aaaa bbbb cccc'), width: 0 };
+    expect(textBars(free, measure).every((b) => b.width > 0)).toBe(true);
+  });
 });

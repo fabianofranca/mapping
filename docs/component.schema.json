@@ -773,7 +773,7 @@
               ]
             },
             "over": {
-              "description": "Só em posição de cor (formatVersion 4): compõe a cor (já com o alpha) sobre esta e a deixa opaca; nome de um token de cor ou cor literal.",
+              "description": "Só em posição de cor (formatVersion 4): compõe a cor (já com o alpha) sobre esta e a deixa opaca sobre uma base opaca (a base translúcida passa o alfa dela); nome de um token de cor ou cor literal.",
               "type": "string",
               "minLength": 1
             }

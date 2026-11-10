@@ -1445,6 +1445,19 @@ function createEngine(
     return { text, extra: { runs: rich.scene, runLayout } };
   };
 
+  /** O `align` da cena. O texto rico (`runs`) não justifica: a cena diz `left`, que é o que se arrumou. */
+  const styleAlign = (
+    node: TextTemplate,
+    align: FontSpec['align'],
+  ): TextStyle['align'] => {
+    const allowed: readonly TextStyle['align'][] =
+      original.formatVersion >= 4
+        ? ['left', 'center', 'right', 'justify']
+        : ['left', 'center', 'right'];
+    const value = oneOf(align, allowed, 'left');
+    return value === 'justify' && node.runs !== undefined ? 'left' : value;
+  };
+
   const buildText = (
     node: TextTemplate,
     id: string,
@@ -1468,13 +1481,7 @@ function createEngine(
       lineHeight: font.lineHeight,
       letterSpacing: font.letterSpacing,
       // `justify` só existe na formatVersion 4; antes, vindo de expressão, é valor fora do conjunto.
-      align: oneOf(
-        font0.align,
-        original.formatVersion >= 4
-          ? ['left', 'center', 'right', 'justify']
-          : ['left', 'center', 'right'],
-        'left',
-      ),
+      align: styleAlign(node, font0.align),
       verticalAlign: oneOf(
         font0.verticalAlign,
         // `cap-middle` só existe na formatVersion 4; antes, vindo de expressão, é valor fora do conjunto.
