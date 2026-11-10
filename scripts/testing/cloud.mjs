@@ -977,9 +977,11 @@ export async function state(page, apoioDir, { projectDir } = {}) {
   const result = { ...dom, windows };
   if (projectDir) {
     const absolute = path.resolve(projectDir);
-    fs.mkdirSync(path.dirname(lastFolderFile), { recursive: true });
-    fs.writeFileSync(lastFolderFile, absolute);
     const read = await readMapping(projectDir);
+    if (!read.error) {
+      fs.mkdirSync(path.dirname(lastFolderFile), { recursive: true });
+      fs.writeFileSync(lastFolderFile, absolute);
+    }
     if (read.error) {
       result.project = {
         revision: null,
@@ -1295,7 +1297,7 @@ export async function drag(
 /** Dispara o arrasto da Paleta por eventos (roda na página): `dragstart`, `dragover`, `drop`, `dragend`. */
 function syntheticPaletteDrag({ tipo, para }) {
   const item = [...document.querySelectorAll('li.library-type')].find(
-    (li) => li.querySelector('.library-type-name')?.textContent === tipo,
+    (li) => li.querySelector('.library-type-name')?.textContent?.trim() === tipo,
   );
   if (!item) return;
   const data = new DataTransfer();
@@ -1333,6 +1335,7 @@ export async function paletteDrag(page, tipo, para, { capture, steps = 10 } = {}
   const item = page
     .locator('li.library-type')
     .filter({ has: page.getByText(tipo, { exact: true }) });
+  await item.scrollIntoViewIfNeeded();
   const box = await item.boundingBox();
   if (!box) throw new Error(`paletteDrag: o tipo '${tipo}' não está na Paleta aberta`);
   const from = { x: box.x + box.width / 2, y: box.y + box.height / 2 };

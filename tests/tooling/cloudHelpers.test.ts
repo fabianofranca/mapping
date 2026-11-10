@@ -1520,6 +1520,7 @@ describe('paletteDrag, caminho absoluto e pasta lembrada (etapa #1256, RT2)', ()
     const events: string[] = [];
     let components = 1;
     const item = {
+      scrollIntoViewIfNeeded: async () => events.push('rola'),
       boundingBox: async () => ({ x: 10, y: 100, width: 200, height: 40 }),
     };
     const page = {
@@ -1566,6 +1567,7 @@ describe('paletteDrag, caminho absoluto e pasta lembrada (etapa #1256, RT2)', ()
       );
       expect(result).toEqual({ via: 'nativo' });
       expect(d.events).toEqual([
+        'rola',
         'move 110,120',
         'down',
         'move 305,210',
@@ -1676,6 +1678,21 @@ describe('paletteDrag, caminho absoluto e pasta lembrada (etapa #1256, RT2)', ()
         };
         expect(result.project.revision).toBe(7);
         expect(result.project.dir).toBe(path.resolve(projeto));
+      } finally {
+        rmSync(apoio, { recursive: true, force: true });
+        rmSync(projeto, { recursive: true, force: true });
+      }
+    });
+
+    it('pasta que não existe não é gravada como a última', async () => {
+      const mod = await load();
+      const { apoio, projeto } = setup();
+      try {
+        await mod.state(page, apoio, { projectDir: projeto });
+        await mod.state(page, apoio, { projectDir: path.join(apoio, 'nao-existe') });
+        expect(
+          readFileSync(path.join(apoio, 'state', 'ultima-pasta.txt'), 'utf8').trim(),
+        ).toBe(path.resolve(projeto));
       } finally {
         rmSync(apoio, { recursive: true, force: true });
         rmSync(projeto, { recursive: true, force: true });
