@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'preact/hooks';
 import { t } from '../i18n';
 import { useEditor } from '../ui/EditorContext';
-import { viewModeButton } from '../ui/ViewModePanel';
+import { overflowButton, viewControl, viewModeButton } from '../ui/ViewModePanel';
+import { ActionMenu, type ActionMenuItem } from '../ui/ActionMenu';
 import { IconButton, Segmented } from '../ui/controls';
 import { armComment, cancelComment } from '../store/threadUi';
 import { selectedItems, setViewMode, showToast } from '../store/ui';
@@ -92,12 +93,21 @@ export function CommentButton() {
  * Conversas (decisão 24), na barra do canvas ao lado do Visualizar: liga e desliga os pinos. Desligado,
  * mostra a contagem das conversas que aguardam humano e um ponto se há mensagem não lida.
  */
-export function PinsButton() {
+function usePinsState() {
   const { ui, derived } = useEditor();
   const on = ui.commentPins.value;
   const waiting = derived.threads.awaitingHumanCount.value;
-  const unread = derived.threads.unreadIds.value.size > 0;
-  const showCount = !on && waiting > 0;
+  return {
+    on,
+    waiting,
+    showCount: !on && waiting > 0,
+    alert: !on && derived.threads.unreadIds.value.size > 0,
+  };
+}
+
+export function PinsButton() {
+  const { ui } = useEditor();
+  const { on, waiting, showCount, alert } = usePinsState();
   return (
     <IconButton
       icon="chat"
@@ -109,7 +119,7 @@ export function PinsButton() {
       }
       pressed={on}
       {...(showCount ? { badge: String(waiting) } : {})}
-      alert={!on && unread}
+      alert={alert}
       onClick={() => (ui.commentPins.value = !ui.commentPins.peek())}
     />
   );
@@ -192,7 +202,7 @@ export function ViewModeButton() {
         !active ||
         active === document.body ||
         (active instanceof HTMLButtonElement && active.disabled);
-      if (lost) button.current?.focus();
+      if (lost) viewControl()?.focus();
     }
     wasOn.current = on;
   }, [on, button]);
@@ -206,6 +216,57 @@ export function ViewModeButton() {
       pressed={on}
       buttonRef={button}
       onClick={() => setViewMode(ui, !ui.viewMode.peek())}
+    />
+  );
+}
+
+/**
+ * O "⋯" da barra do canvas estreita na revisão (BC2): guarda os controles que a barra esconde
+ * (Conversas, Visualizar, Mostrar no canvas, Enquadrar tudo e seleção), com as mesmas ações e
+ * textos dos botões, e o selo e o ponto das conversas. Só o CSS o mostra.
+ */
+export function OverflowMenu() {
+  const { ui, canvas } = useEditor();
+  const { on: pins, showCount, waiting, alert } = usePinsState();
+  const view = ui.viewMode.value;
+  const items: ActionMenuItem[] = [
+    {
+      label: t('comments.pins'),
+      checked: pins,
+      onSelect: () => (ui.commentPins.value = !ui.commentPins.peek()),
+    },
+    {
+      label: t('view.viewMode'),
+      checked: view,
+      shortcut: SHORTCUT_LABELS.viewMode,
+      onSelect: () => setViewMode(ui, !ui.viewMode.peek()),
+    },
+    {
+      label: t('view.panelOpen'),
+      disabled: !view,
+      onSelect: () => (ui.viewPanel.value = true),
+    },
+    {
+      label: t('editor.fitAll'),
+      shortcut: SHORTCUT_LABELS.fitAll,
+      onSelect: () => canvas.current?.fitAll(),
+    },
+    {
+      label: t('editor.fitSelection'),
+      shortcut: SHORTCUT_LABELS.fitSelection,
+      disabled: selectedItems(ui).length === 0 || view,
+      onSelect: () => canvas.current?.fitSelection(),
+    },
+  ];
+  return (
+    <ActionMenu
+      className="canvas-bar-more"
+      icon="more"
+      label={t('editor.moreControls')}
+      items={items}
+      triggerRef={overflowButton}
+      {...(showCount ? { badge: String(waiting) } : {})}
+      alert={alert}
     />
   );
 }

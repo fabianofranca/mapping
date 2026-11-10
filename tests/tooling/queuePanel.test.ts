@@ -43,7 +43,7 @@ describe('painel.py (FC1)', () => {
     expect(out).toContain('dep=nenhuma; fases=AB1:#11');
   });
 
-  it('child e childAt=now registram a filha; show lista só as atrasadas (mais de 60 min)', () => {
+  it('child e childAt=now registram a filha; show lista só as atrasadas (mais de 30 min; decisão 5 da #1324)', () => {
     runAt(
       '2026-11-09T10:00:00Z',
       'row',
@@ -65,6 +65,12 @@ describe('painel.py (FC1)', () => {
     const out = runAt('2026-11-09T11:10:00Z', 'show', dir);
     expect(out).toMatch(/atrasadas:[^\n]*#10[^\n]*session_a/);
     expect(out).not.toMatch(/atrasadas:[^\n]*#20/);
+  });
+
+  it('atrasada é só a filha com mais de 30 min: 30 não conta, 31 conta (decisão 5 da #1324)', () => {
+    runAt('2026-11-09T10:00:00Z', 'row', dir, '#10', 'child=session_a', 'childAt=now');
+    expect(runAt('2026-11-09T10:30:00Z', 'show', dir)).toMatch(/atrasadas: nenhuma/);
+    expect(runAt('2026-11-09T10:31:00Z', 'show', dir)).toMatch(/atrasadas:[^\n]*#10/);
   });
 
   it('child= vazio limpa childAt e a etapa deixa de estar atrasada', () => {
@@ -89,19 +95,31 @@ describe('painel.py (FC1)', () => {
   });
 });
 
-// Etapa #1298 (FT1): a fila troca de coordenador assim que o skill muda na main.
-describe('implementar-fila: troca de coordenador por skill novo (FT1)', () => {
+// Etapa #1298 (FT1) e #1315 (FC2); a decisão 11 da #1322 (FS1) troca só o critério: skill grande troca de sessão.
+describe('implementar-fila: skill novo na main e troca de sessão (FT1, FC2)', () => {
   const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
   const troca = skill.slice(skill.indexOf('## Troca de sessão'));
-  const CHECK = 'git diff --quiet HEAD origin/main -- .claude/skills/implementar-fila';
+  const CHECK =
+    'git fetch -q origin main && git diff --quiet HEAD origin/main -- .claude/skills/implementar-fila/SKILL.md';
 
-  it('"Troca de sessão" manda conferir o skill da main e trocar quando ele mudou', () => {
+  it('"Troca de sessão" manda dar pull e reler o SKILL.md inteiro (decisão 5; decisão 11 da #1322)', () => {
     expect(troca).toContain(CHECK);
-    expect(troca).toMatch(/mesmo abaixo de 60%/);
-    expect(troca).toContain(
-      'git checkout origin/main -- .claude/skills/implementar-fila',
-    );
-    expect(troca).toContain('skill atualizado na main');
+    expect(troca).toContain('git pull -q --ff-only origin main');
+    expect(troca).toMatch(/releia o `SKILL.md` inteiro/);
+    expect(troca).not.toContain('mesmo abaixo de 60%');
+    expect(troca).not.toContain('skill atualizado na main');
+  });
+
+  it('a troca é por contexto acima de 60% ou por skill grande (decisão 6; decisão 11 da #1322)', () => {
+    expect(troca).toMatch(/Troca de sessão por contexto ou por skill grande/);
+    expect(troca).toMatch(/Acima de 60%/);
+  });
+
+  it('antes de criar o sucessor confere lineage.depth + 2 > limit (decisão 7)', () => {
+    expect(troca).toContain('lineage.depth');
+    expect(troca).toContain('lineage.limit');
+    expect(troca).toContain('depth + 2 > limit');
+    expect(troca).toMatch(/aguardando o dono abrir a sessão nova da fila/);
   });
 
   it('a conferência de reserva e o passo "Entre etapas" fazem a mesma conferência', () => {
@@ -115,5 +133,251 @@ describe('implementar-fila: troca de coordenador por skill novo (FT1)', () => {
       skill.indexOf('**CI vermelho'),
     );
     expect(conferencia).toMatch(/skill mudou na `main`/);
+  });
+});
+
+// Etapa #1315 (FC2): ajustes finos de contexto, arquivamento das sessões e espera por workflow.
+describe('implementar-fila: ajustes finos do coordenador (FC2)', () => {
+  const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
+  const flow = readFileSync('docs/FLOW.md', 'utf8');
+  const detalhar = readFileSync('.claude/skills/detalhar-backlog/SKILL.md', 'utf8');
+  const TITLES = [
+    'Para a sessão da fase',
+    'Fase de correção',
+    'Para o testador',
+    'Rodada dirigida em grupos',
+    'Reteste junto',
+    'Rodada completa em 5 blocos',
+  ];
+
+  it('lista os títulos exatos das mensagens do FLOW.md e o comando de leitura (decisão 2)', () => {
+    for (const title of TITLES) {
+      expect(skill).toContain(`"${title}"`);
+      expect(flow).toMatch(new RegExp(`^## ${title}$`, 'm'));
+    }
+    expect(skill).toContain(
+      "awk '/^## <título>$/{f=1;print;next} /^## /{f=0} f' docs/FLOW.md",
+    );
+    expect(skill).toMatch(/nunca por `grep`/);
+  });
+
+  it('o painel é publicado uma vez por ciclo, a cada avanço (decisão 1)', () => {
+    expect(skill).toMatch(/Nunca há duas publicações no mesmo ciclo/);
+    expect(skill).toMatch(/só com os arquivos alterados/);
+    expect(skill).toMatch(/conferência de hora em hora sem atrasadas não publica/i);
+  });
+
+  it('o chat fica quase mudo (decisão 3)', () => {
+    expect(skill).toMatch(/O chat fica quase mudo/);
+    expect(skill).toMatch(/não escreve resumo/);
+  });
+
+  it('um subagente por ciclo para as tarefas de GitHub (decisão 4)', () => {
+    expect(skill).toMatch(/Um subagente por ciclo/);
+    expect(skill).toMatch(/uma linha por tarefa/);
+  });
+
+  it('arquiva cada filha ao terminar, registra as sessões e arquiva a anterior (decisão 8)', () => {
+    expect(skill).toContain('archive_session');
+    expect(skill).toContain("painel.py session <pasta> '#n' <id>");
+    expect(skill).toMatch(/<código> arquivada/);
+    expect(skill).toMatch(/não se arquiva/i);
+    expect(skill).toMatch(/arquiva a `anterior`/);
+    expect(skill).toMatch(/não arquiva a si mesmo/);
+  });
+
+  it('a espera por workflow segue a duração medida (decisão 10)', () => {
+    expect(skill).toMatch(/no mesmo ciclo do merge/);
+    expect(skill).toMatch(/job `release` pulado/);
+    expect(skill).toMatch(/5 min depois do merge/);
+    expect(skill).toMatch(/a cada 1 min/);
+    expect(skill).toMatch(/Não segure o merge de outro épico/);
+  });
+
+  it('a troca de rótulo manda a lista completa (decisão 11), no skill e no detalhar-backlog', () => {
+    for (const text of [skill, detalhar]) {
+      expect(text).toMatch(/substitui todos os rótulos/);
+      expect(text).toMatch(/lista completa/);
+      expect(text).toMatch(/`severity:`/);
+    }
+  });
+
+  it('o detalhar-backlog arquiva cada subagente de detalhamento ou agrupamento (decisão 9)', () => {
+    expect(detalhar).toContain('archive_session');
+    expect(detalhar).toMatch(/arquiva/i);
+    expect(detalhar).toMatch(/resumo final/);
+  });
+
+  it('o FLOW.md diz como fica a troca e o arquivamento', () => {
+    const linha = flow
+      .split('\n')
+      .find((l) => l.startsWith('Para implementar em sequência'));
+    expect(linha).toMatch(/por contexto/);
+    expect(linha).toMatch(/limite de linhagem/);
+    expect(linha).toMatch(/arquivadas/);
+  });
+});
+
+describe('painel.py: sessions por etapa (FC2, decisão 8)', () => {
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'painel-'));
+    runAt('2026-11-09T10:00:00Z', 'init', dir);
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('session acrescenta o id em sessions sem repetir, e show da etapa o mostra', () => {
+    run('row', dir, '#10', 'title=Etapa dez');
+    run('session', dir, '#10', 'session_a');
+    run('session', dir, '#10', 'session_b');
+    const out = run('session', dir, '#10', 'session_a');
+    expect(out).toContain('queue.json');
+    const queue = json('queue') as Array<Record<string, unknown>>;
+    expect(queue[0]?.sessions).toBe('session_a session_b');
+    expect(run('show', dir, '#10')).toContain('sessions: session_a session_b');
+  });
+
+  it('session numa etapa fora da fila é recusado', () => {
+    expect(() => run('session', dir, '#99', 'session_a')).toThrow();
+  });
+});
+
+// Etapa #1324 (CR1): CI resiliente do lado da fase e do coordenador.
+describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
+  const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
+  const flow = readFileSync('docs/FLOW.md', 'utf8');
+  const detalhar = readFileSync('.claude/skills/detalhar-backlog/SKILL.md', 'utf8');
+  const process = readFileSync('docs/PROCESS.md', 'utf8');
+  const fase = flow.slice(
+    flow.indexOf('## Para a sessão da fase'),
+    flow.indexOf('## Fase de correção'),
+  );
+  const item6 = fase.split('\n').find((l) => l.startsWith('6. ')) ?? '';
+  const reserva = skill.slice(
+    skill.indexOf('**Conferências de reserva:**'),
+    skill.indexOf('**CI vermelho'),
+  );
+  const ciVermelho = skill.slice(
+    skill.indexOf('**CI vermelho'),
+    skill.indexOf('## Mudanças na fila durante a execução'),
+  );
+
+  it('"Para a sessão da fase": send_later de 8 min, segunda reexecução pela fase e aviso (decisões 1 e 2)', () => {
+    expect(item6).toMatch(/`send_later` de 8 min/);
+    expect(item6).toMatch(/nunca encerre o turno/i);
+    expect(item6).toContain('ci-rerun.yml');
+    expect(item6).toContain('node scripts/ci/ciRerun.mjs decide');
+    expect(item6).toContain('gh run rerun <id> --failed');
+    expect(item6).toMatch(/depois de \*\*2 reexecuções sem sucesso\*\*/);
+    expect(item6).toContain('CI travado: <link da execução>, tentativas 1 a 3');
+    expect(item6).toMatch(/falha legítima/i);
+  });
+
+  it('"Para a sessão da fase": margem e teto do dist para a fase (decisões 3, 6, 7 e 8)', () => {
+    expect(item6).toMatch(/abaixo de 2 KiB/);
+    expect(item6).toMatch(/enxugar/);
+    expect(item6).toContain('node scripts/ci/distBudget.mjs raise');
+    expect(item6).toMatch(/chama o dono/);
+    expect(item6).toMatch(/16 KiB/);
+    expect(item6).toMatch(/32 KiB/);
+    expect(item6).toMatch(/64 KiB/);
+    expect(item6).toMatch(/`send_message`/);
+  });
+
+  it('o CI de uma fase é um parágrafo só no item 6 (decisão do dono)', () => {
+    expect(fase.match(/^6\. /gm)).toHaveLength(1);
+    expect(fase.match(/send_later/g)).toHaveLength(1);
+  });
+
+  it('"Conferências de reserva": 30 min, review_ready/idle sem aviso e send_message antes de recriar (decisão 5)', () => {
+    expect(reserva).toMatch(/mais de 30 min/);
+    expect(reserva).not.toMatch(/mais de 60 min/);
+    expect(reserva).toContain('`review_ready`');
+    expect(reserva).toContain('`idle`');
+    const msg = 'Conferência da fila: a fase não avisou. Retome do ponto em que parou';
+    expect(reserva).toContain(msg);
+    expect(reserva.indexOf(msg)).toBeLessThan(reserva.indexOf('crie a sessão de novo'));
+    expect(reserva).toMatch(/conferência seguinte/);
+  });
+
+  it('o coordenador não roda o CI de novo; chama o dono (decisão 4)', () => {
+    expect(skill).not.toMatch(/roda de novo uma vez se morreu antes de testar/);
+    expect(ciVermelho).toMatch(/não roda o CI de novo/);
+    expect(ciVermelho).toContain('ci-rerun.yml');
+    expect(ciVermelho).toContain('CI travado');
+    expect(ciVermelho).toContain('esperando dono');
+    expect(ciVermelho).toContain('PushNotification');
+  });
+
+  it('"CI vermelho no PR do épico": regra do teto, script e roadmap (decisões 6 a 9)', () => {
+    expect(ciVermelho).toContain('Tamanho do dist/index.html');
+    expect(ciVermelho).toMatch(/16 KiB/);
+    expect(ciVermelho).toMatch(/32 KiB/);
+    expect(ciVermelho).toMatch(/64 KiB/);
+    expect(ciVermelho).toMatch(/worktree descartável/);
+    expect(ciVermelho).toContain('npm ci && npm run build');
+    expect(ciVermelho).toContain('node scripts/ci/distBudget.mjs raise');
+    expect(ciVermelho).toContain('changelog/<nome>.md');
+    expect(ciVermelho).toContain('Orçamento do dist/index.html');
+    expect(ciVermelho).toContain('Teto na última revisão do dono');
+    expect(ciVermelho).toMatch(/primeira subida/);
+    expect(ciVermelho).toMatch(/inclusive as da fase|subida feita pela fase/);
+  });
+
+  it('detalhar-backlog: gatilhos de risco (a) e reclassificação (b) (decisão 11)', () => {
+    const esforco = detalhar.slice(
+      detalhar.indexOf('## Esforço do detalhamento'),
+      detalhar.indexOf('## 1. Candidatas'),
+    );
+    for (const gatilho of [
+      '`implementar-fila`',
+      'painel.py',
+      '.github/workflows/',
+      'scripts/release/',
+      'mcp/version.ts',
+      'formatVersion',
+      'src/store/session.ts',
+      'pwa/csp.ts',
+      '`/code-review high`',
+    ]) {
+      expect(esforco).toContain(gatilho);
+    }
+    expect(esforco).toMatch(/qualquer que seja o tamanho/);
+    expect(esforco).toMatch(/gatilho/);
+    expect(esforco).toMatch(/reclassifica/);
+  });
+
+  it('implementar-fila: /code-review high no diff do épico, no Fechamento (decisão 11, c)', () => {
+    const fechamento = skill.slice(
+      skill.indexOf('5. **Fechamento**'),
+      skill.indexOf('6. **Merge**'),
+    );
+    expect(fechamento).toContain('/code-review high');
+    expect(fechamento).toMatch(/diff inteiro do épico/);
+    expect(fechamento).toMatch(/base `main`/);
+    expect(fechamento).toMatch(/antes do merge/);
+    expect(fechamento).toMatch(/teste primeiro/);
+    expect(fechamento).toMatch(/mesmo que as fases tenham sido medium/);
+  });
+
+  it('versão do schema escolhida ao criar o épico, como a do MCP (decisão do dono de 2026-11-10)', () => {
+    const regra = skill.slice(
+      skill.indexOf('3. **Uma versão do MCP por épico'),
+      skill.indexOf('3. **Uma versão do MCP por épico') + 6000,
+    );
+    expect(regra).toMatch(/Versão do schema/);
+    expect(regra).toMatch(/origin\/main/);
+    expect(regra).toMatch(/próxima/);
+    expect(regra).toMatch(/comente na issue/);
+    expect(regra).toMatch(/mensagem da primeira fase/);
+  });
+
+  it('PROCESS.md: a linha do ci-rerun.yml na regra da main (decisão 10)', () => {
+    const item = process
+      .split('\n')
+      .find((l) => l.includes('A `main` só aceita PR de `epic/*`'));
+    expect(item).toContain('ci-rerun.yml');
   });
 });

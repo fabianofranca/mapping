@@ -129,7 +129,7 @@ function stepsWithoutSubstitute(md: string, allowed: readonly string[]): string[
 /**
  * Exceções aceitas pelo dono: passos dos roteiros principais que continuam sem substituto para
  * o agente. Vazia: o R0.5 e o R6.2 saíram dos roteiros principais (RF e RA, sob demanda).
- * Para acrescentar um, escreva aqui o porquê e leve a decisão ao dono (CLAUDE.md, Fluxo de trabalho).
+ * Para acrescentar um, escreva aqui o porquê e leve a decisão ao dono (docs/PROCESS.md, Fluxo de trabalho).
  */
 const NO_SUBSTITUTE_EXCEPTIONS: readonly string[] = [];
 
@@ -332,7 +332,7 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
     }
     expect(prompt).toContain('não executado (precisa do dono)');
     expect(prompt).toContain('pendente de decisão');
-    expect(read('CLAUDE.md')).toContain('pendente de decisão');
+    expect(read('docs/PROCESS.md')).toContain('pendente de decisão');
   });
 
   it('o relato é um comentário na sub-issue, em partes acima de 65 mil caracteres, sem branch nem PR', () => {
@@ -673,7 +673,7 @@ describe('docs/TESTING-NUVEM.md (prompt do testador da nuvem)', () => {
     for (const path of ['README.md', 'CLAUDE.md', 'docs/TESTING.md']) {
       expect(read(path), path).toContain('TESTING-NUVEM.md');
     }
-    expect(read('CLAUDE.md')).toContain('Fluxo automatizado');
+    expect(read('docs/PROCESS.md')).toContain('Fluxo automatizado');
     expect(read('CLAUDE.md')).toContain('docs/FLOW.md');
   });
 });
@@ -699,9 +699,9 @@ describe('docs/FLOW.md (mensagens do fluxo automatizado)', () => {
     expect(flow).toContain('Parte de #');
   });
 
-  it('a regra "teste primeiro" está no CLAUDE.md e a mensagem da fase aponta para ela', () => {
-    expect(read('CLAUDE.md')).toContain('**teste primeiro**');
-    expect(flow).toContain('"teste primeiro" do `CLAUDE.md`');
+  it('a regra "teste primeiro" está no docs/PROCESS.md e a mensagem da fase aponta para ela', () => {
+    expect(read('docs/PROCESS.md')).toContain('**teste primeiro**');
+    expect(flow).toContain('"teste primeiro" do `docs/PROCESS.md`');
   });
 
   it('a mensagem do testador segue o formato do TESTING-NUVEM e a notificação cita PushNotification', () => {
@@ -711,8 +711,8 @@ describe('docs/FLOW.md (mensagens do fluxo automatizado)', () => {
     expect(flow).toContain('PushNotification');
   });
 
-  it('o CLAUDE.md descreve o fluxo e não tem mais a seção antiga', () => {
-    const claude = read('CLAUDE.md');
+  it('o docs/PROCESS.md descreve o fluxo e não tem mais a seção antiga', () => {
+    const claude = read('docs/PROCESS.md');
     for (const term of [
       'Orquestrador',
       'PushNotification',
@@ -731,7 +731,7 @@ describe('TR2 — R0 reduzido no reteste, passada visual e tempo real', () => {
   const cloud = read('docs/TESTING-NUVEM.md');
   const guide = read('docs/TESTING.md');
   const flow = read('docs/FLOW.md');
-  const claude = read('CLAUDE.md');
+  const claude = read('docs/PROCESS.md');
 
   it('o reteste por achados roda só o R0.1 e os passos de que os achados dependem, não o R0 inteiro', () => {
     const directed = cloud.slice(cloud.indexOf('**Rodada dirigida.**'));
@@ -786,7 +786,7 @@ describe('TR2 — R0 reduzido no reteste, passada visual e tempo real', () => {
     expect(retest).toContain('R0 só o R0.1 e os passos de que os achados dependem');
   });
 
-  it('o CLAUDE.md manda o orquestrador passar a passada visual ao testador e a sub-issue da última fase trazer a linha', () => {
+  it('o docs/PROCESS.md manda o orquestrador passar a passada visual ao testador e a sub-issue da última fase trazer a linha', () => {
     expect(claude).toMatch(/os roteiros e a passada visual/);
     expect(claude).toContain('Passada visual:');
   });
@@ -954,7 +954,7 @@ describe('TS2 — prompt com o guia da rodada, primeiro plano, state() e relato 
 describe('rodada completa em 5 blocos (etapas #424 e #841)', () => {
   const cloud = read('docs/TESTING-NUVEM.md');
   const flow = read('docs/FLOW.md');
-  const claude = read('CLAUDE.md');
+  const claude = read('docs/PROCESS.md');
   const guide = read('docs/TESTING.md');
 
   it('o prompt tem o modo "completo, bloco k de 5", o R0 inteiro primeiro e o guia da rodada do bloco', () => {
@@ -1007,7 +1007,7 @@ describe('rodada completa em 5 blocos (etapas #424 e #841)', () => {
     expect(flow).toMatch(/issue `bug`[^\n]*duplicadas/i);
   });
 
-  it('o CLAUDE.md: o orquestrador cria as 5 sessões quando a sub-issue pede a rodada completa', () => {
+  it('o docs/PROCESS.md: o orquestrador cria as 5 sessões quando a sub-issue pede a rodada completa', () => {
     expect(claude).toMatch(/rodada completa[^\n]*5 sessões/);
     expect(claude).toContain('bloco k de 5');
     expect(claude).toMatch(/\bk\.n\b/);
@@ -1102,7 +1102,7 @@ describe('GT2 — guia acertado com a app (etapa #482)', () => {
 describe('TR4 — rodada dirigida em grupos e reteste junto', () => {
   const cloud = read('docs/TESTING-NUVEM.md');
   const flow = read('docs/FLOW.md');
-  const claude = read('CLAUDE.md');
+  const claude = read('docs/PROCESS.md');
   const skill = read('.claude/skills/implementar-fila/SKILL.md');
 
   it('o prompt tem o limite (40 passos sem o R0, até 5 sessões) e o modo "grupo k de n"', () => {
@@ -1139,7 +1139,7 @@ describe('TR4 — rodada dirigida em grupos e reteste junto', () => {
     expect(section).toMatch(/enquanto o reteste ainda não começou/);
   });
 
-  it('o CLAUDE.md e a skill implementar-fila citam a rodada em grupos e o reteste junto', () => {
+  it('o docs/PROCESS.md e a skill implementar-fila citam a rodada em grupos e o reteste junto', () => {
     expect(claude).toContain('round-guide.mjs --grupos');
     expect(claude).toMatch(
       /numa sessão só\*\* com os achados de todos os grupos ou blocos/,

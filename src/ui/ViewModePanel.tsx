@@ -95,6 +95,20 @@ function PanelBody() {
 /** O botão Visualizar (a barra o liga a este ref), para devolver o foco a ele. */
 export const viewModeButton: { current: HTMLButtonElement | null } = { current: null };
 
+/** O "⋯" da barra do canvas (`OverflowMenu`), que guarda o lugar dos botões escondidos. */
+export const overflowButton: { current: HTMLButtonElement | null } = { current: null };
+
+/** A barra estreita escondeu os controles de vista (`.canvas-bar-low` sem caixa)? */
+function lowHidden(): boolean {
+  const low = viewModeButton.current?.closest('[data-canvas-low]');
+  return !!low && getComputedStyle(low).display === 'none';
+}
+
+/** Para onde o foco volta: o Visualizar, ou o "⋯" se a barra estreita escondeu o botão. */
+export function viewControl(): HTMLElement | null {
+  return lowHidden() ? overflowButton.current : viewModeButton.current;
+}
+
 /**
  * O botão "Mostrar no canvas" (só habilitado no modo) e o painel que ele abre. O painel que
  * abriu ao ligar o modo devolve o foco, ao fechar, ao Visualizar (o botão ativo na barra); o
@@ -109,29 +123,34 @@ export function ViewModePanel() {
     ui.viewPanel.value = next;
     if (next) return;
     if (!fromTrigger.current) {
-      viewModeButton.current?.focus();
+      viewControl()?.focus();
     }
     fromTrigger.current = false;
   };
   return (
     <Popover
+      class="view-panel-host"
       align="end"
       label={t('view.panelTitle')}
       panelClass="view-panel-popover"
+      anchor={() => (lowHidden() ? overflowButton.current : null)}
       open={on && ui.viewPanel.value}
       onOpenChange={onOpenChange}
       trigger={({ open, toggle }) => (
-        <IconButton
-          icon="layers"
-          label={t('view.panelOpen')}
-          aria-haspopup="dialog"
-          aria-expanded={open}
-          disabled={!on}
-          onClick={() => {
-            fromTrigger.current = true;
-            toggle();
-          }}
-        />
+        // Só o botão cede na barra estreita; o painel (fora do grupo) segue renderizável.
+        <span class="canvas-bar-low">
+          <IconButton
+            icon="layers"
+            label={t('view.panelOpen')}
+            aria-haspopup="dialog"
+            aria-expanded={open}
+            disabled={!on}
+            onClick={() => {
+              fromTrigger.current = true;
+              toggle();
+            }}
+          />
+        </span>
       )}
     >
       <PanelBody />

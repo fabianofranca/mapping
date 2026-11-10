@@ -92,6 +92,7 @@ export const ptBR = {
   'editor.redo': 'Refazer',
   'editor.fitAll': 'Enquadrar tudo',
   'editor.fitSelection': 'Enquadrar seleção',
+  'editor.moreControls': 'Mais controles',
   'editor.closeProject': 'Fechar projeto',
   'editor.emptyCanvas': 'Nenhuma imagem ainda. Adicione fotos para montar o canvas.',
   'editor.canvasLabel': 'Canvas do projeto',
@@ -239,6 +240,8 @@ export const ptBR = {
   'crumbs.image': 'Imagem {name}',
   'crumbs.marking': 'Marcação {name}',
   'crumbs.canvas': 'Canvas',
+  'crumbs.showFull': 'Mostrar o caminho inteiro',
+  'crumbs.menu': 'Caminho inteiro',
 
   'zoom.value': '{percent}%',
   'zoom.reset': '{percent}%: zoom atual; clique para voltar a 100%',

@@ -48,6 +48,8 @@ interface PopoverProps {
   readonly scroll?: 'close' | 'follow';
   /** Limite lido a cada posicionamento (ex: a base da barra da revisão); `null`: sem limite. */
   readonly limit?: () => PlaceLimit | null;
+  /** Elemento em que o painel se ancora, no lugar do host (o dele está escondido); lido a cada posicionamento. */
+  readonly anchor?: () => HTMLElement | null | undefined;
   /** Conteúdo; a função recebe `close` para fechar ao escolher algo. */
   readonly children: ComponentChildren | ((close: () => void) => ComponentChildren);
 }
@@ -147,6 +149,7 @@ export function Popover({
   panelClass,
   scroll = 'close',
   limit,
+  anchor,
   children,
 }: PopoverProps) {
   const [ownOpen, setOwnOpen] = useState(false);
@@ -163,14 +166,16 @@ export function Popover({
     [...(host.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? [])].find(
       (el) => !panel.current?.contains(el),
     );
+  /** Onde o painel se ancora: o `anchor` de fora (um botão que o substitui) ou o host. */
+  const anchorEl = () => anchor?.() ?? host.current;
   const close = () => {
     returnFocusToTrigger(host.current, triggerEl());
     setOpen(false);
   };
 
   useLayoutEffect(() => {
-    if (open && host.current && panel.current)
-      place(host.current, panel.current, align, limit?.());
+    const at = anchorEl();
+    if (open && at && panel.current) place(at, panel.current, align, limit?.());
     // `limit` é lido a cada posicionamento, não é uma dependência.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, align]);
@@ -189,8 +194,8 @@ export function Popover({
       if (panel.current?.contains(e.target as Node)) return;
       if (scroll === 'close') {
         if (scrollCounts(e)) close();
-      } else if (host.current && panel.current)
-        place(host.current, panel.current, align, limit?.());
+      } else if (anchorEl() && panel.current)
+        place(anchorEl()!, panel.current, align, limit?.());
     };
     document.addEventListener('pointerdown', onDown);
     document.addEventListener('scroll', onScroll, true);

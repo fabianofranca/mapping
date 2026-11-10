@@ -93,6 +93,7 @@ describe('entradas da release do MCP', () => {
       'docs/MCP.md',
       'docs/FLOW.md',
       'CLAUDE.md',
+      'docs/PROCESS.md',
       'package-lock.json',
       'tests/mcp/server.test.ts',
       'changelog/x.md',

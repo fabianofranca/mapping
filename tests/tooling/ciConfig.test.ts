@@ -87,9 +87,11 @@ describe('deploy.yml roda o mesmo que o ci.yml antes de publicar', () => {
   });
 
   it('orçamento do dist/index.html num só lugar, com o tamanho no resumo do job', () => {
-    expect(ci.match(/INDEX_HTML_MAX_BYTES: (\d+)/)?.[1]).toBe(
-      String(1.859375 * 1024 * 1024),
-    );
+    // Decisão 9 da #1324: o número não é fixado aqui; a subida automática (`distBudget.mjs`)
+    // soma 16 KiB e não precisa mexer no teste.
+    const budget = Number(ci.match(/^ {6}INDEX_HTML_MAX_BYTES: (\d+)$/m)?.[1]);
+    expect(budget).toBeGreaterThan(0);
+    expect(budget % (16 * 1024)).toBe(0);
     expect(ci.match(/INDEX_HTML_MAX_BYTES:/g)).toHaveLength(1);
     expect(ci).toContain('GITHUB_STEP_SUMMARY');
   });
@@ -269,8 +271,8 @@ describe('ci.yml exige o changelog do épico nos PRs de épico para a main', () 
     expect(step).toContain('changelog/AAAA-MM-DD-$name.md');
   });
 
-  it('o CLAUDE.md descreve a regra e a pasta changelog/ existe', () => {
-    const claude = read('CLAUDE.md');
+  it('o docs/PROCESS.md descreve a regra e a pasta changelog/ existe', () => {
+    const claude = read('docs/PROCESS.md');
     expect(claude).toContain('**Changelog por épico:**');
     expect(claude).toContain('`changelog/<nome>.md`');
     expect(existsSync('changelog/README.md')).toBe(true);
@@ -299,8 +301,8 @@ describe('ci.yml exige o registro do DS do épico nos PRs de épico para a main'
     expect(step).toContain('docs/design-system/AAAA-MM-DD-$name.md');
   });
 
-  it('o CLAUDE.md descreve a regra e a pasta existe', () => {
-    const claude = read('CLAUDE.md');
+  it('o docs/PROCESS.md descreve a regra e a pasta existe', () => {
+    const claude = read('docs/PROCESS.md');
     expect(claude).toContain('`docs/design-system/<nome>.md`');
     expect(existsSync('docs/design-system')).toBe(true);
   });
@@ -718,6 +720,7 @@ describe('nenhum workflow interpola dado de PR, entrada ou evento em run:', () =
     'mcp-prerelease.yml',
     'mcp-release.yml',
     'preview-on-pr.yml',
+    'ci-rerun.yml',
   ];
   it.each(files)('%s', (file) => {
     for (const body of runBodies(read(`.github/workflows/${file}`))) {
@@ -725,5 +728,120 @@ describe('nenhum workflow interpola dado de PR, entrada ou evento em run:', () =
         /\$\{\{[^}]*(github\.event|github\.head_ref|github\.base_ref|inputs\.)/,
       );
     }
+  });
+});
+
+// Etapa #1325, fase CA1 (decisão 2): todo job do ci.yml tem timeout, perto do dobro do maior
+// tempo medido em 2026-11-09, para o check obrigatório terminar em vez de ficar pendente.
+describe('timeout-minutes em cada job do ci.yml', () => {
+  const table: Record<string, number> = {
+    epic: 3,
+    static: 4,
+    test: 6,
+    coverage: 3,
+    build: 7,
+    check: 2,
+    e2e: 7,
+  };
+  it.each(Object.entries(table))('%s: %i min', (name, minutes) => {
+    expect(jobOf(ci, name)).toMatch(new RegExp(`^ {4}timeout-minutes: ${minutes}$`, 'm'));
+  });
+
+  it('a tabela cobre todos os jobs do arquivo', () => {
+    const jobsBlock = ci.slice(ci.indexOf('\njobs:\n'));
+    const all = [...jobsBlock.matchAll(/^ {2}([a-z0-9-]+):$/gm)].map((m) => m[1]);
+    expect(all.sort()).toEqual(Object.keys(table).sort());
+  });
+
+  it('o comentário registra a medida e a data', () => {
+    expect(ci).toMatch(/`timeout-minutes` em cada job[\s\S]*2026-11-09/);
+    expect(ci).toContain('dobro do maior tempo medido');
+  });
+});
+
+// Etapa #1325, fase CA1 (decisões 6 e 7): margem do dist/index.html no resumo, no fim do build.
+describe('passo "Tamanho do dist/index.html"', () => {
+  const build = jobOf(ci, 'build');
+  const stepAt = build.indexOf('- name: Tamanho do dist/index.html');
+  const step = build.slice(stepAt);
+
+  it('é o último passo do job build', () => {
+    expect(stepAt).toBeGreaterThan(-1);
+    expect(build.indexOf('npm run build:mcp')).toBeLessThan(stepAt);
+    expect(build.indexOf('npm run build:viewer')).toBeLessThan(stepAt);
+    expect(step.match(/^ {6}- /gm)).toBeNull();
+  });
+
+  it('escreve a margem no resumo e avisa abaixo de 2.048 bytes', () => {
+    expect(step).toContain('GITHUB_STEP_SUMMARY');
+    expect(step).toContain('margin=$((INDEX_HTML_MAX_BYTES - size))');
+    expect(step).toContain('-lt 2048');
+    expect(step).toContain('::warning file=dist/index.html::');
+    expect(step).toContain('abaixo de 2 KiB: enxugue antes de subir o teto');
+  });
+
+  it('mantém o ::error com a frase de sempre', () => {
+    expect(step).toContain(
+      '::error file=dist/index.html::$size bytes, acima do orçamento de $INDEX_HTML_MAX_BYTES bytes.',
+    );
+  });
+});
+
+// Etapa #1325, fase CA1 (decisões 3 e 4): reexecução de runner abandonado.
+describe('ci-rerun.yml', () => {
+  const rerun = read('.github/workflows/ci-rerun.yml');
+
+  it('dispara por workflow_run do CI, quando completed', () => {
+    expect(rerun).toMatch(/^name: 'CI: reexecução de runner abandonado'$/m);
+    expect(rerun).toMatch(
+      /^ {2}workflow_run:\n {4}workflows: \[CI\]\n {4}types: \[completed\]/m,
+    );
+  });
+
+  it('o if: do job tem as cinco condições', () => {
+    for (const condition of [
+      "github.event.workflow_run.conclusion == 'failure'",
+      "github.event.workflow_run.event == 'pull_request'",
+      'github.event.workflow_run.head_repository.full_name == github.repository',
+      'github.event.workflow_run.run_attempt == 1',
+      "github.event.workflow_run.actor.login != 'dependabot[bot]'",
+    ]) {
+      expect(rerun).toContain(condition);
+    }
+  });
+
+  it('permissões só no job, sem permissões no topo', () => {
+    expect(rerun).not.toMatch(/^permissions:/m);
+    expect(rerun).toMatch(/^ {4}permissions:\n {6}contents: read\n {6}actions: write$/m);
+  });
+
+  it('checkout da main sem código do PR, só ci.yml e scripts/ci', () => {
+    expect(rerun).toContain('ref: main');
+    expect(rerun).toContain('sparse-checkout');
+    expect(rerun).toContain('.github/workflows/ci.yml');
+    expect(rerun).toContain('scripts/ci');
+    expect(rerun).not.toMatch(/head_sha|head_branch|head_ref/);
+  });
+
+  it('lê os jobs, decide pelo script e reexecuta só os falhos', () => {
+    expect(rerun).toContain('actions/runs/$RUN_ID/jobs?filter=latest&per_page=100');
+    expect(rerun).toContain(
+      'node scripts/ci/ciRerun.mjs decide --ci .github/workflows/ci.yml --jobs',
+    );
+    expect(rerun).toContain('gh run rerun "$RUN_ID" --failed --repo "$REPO"');
+    expect(rerun).toContain('reexecuta: abandonados');
+    expect(rerun).toContain('não reexecuta:');
+  });
+
+  it('o resumo sai sempre, mesmo quando o decide falha', () => {
+    const summary = rerun.slice(rerun.indexOf('- name: Resumo'));
+    expect(summary).toMatch(/^ {8}if: always\(\)$/m);
+    expect(summary).toContain('OUTCOME: ${{ steps.decide.outcome }}');
+  });
+
+  it('timeout de 3 min e concurrency por execução, sem cancelar', () => {
+    expect(rerun).toMatch(/^ {4}timeout-minutes: 3$/m);
+    expect(rerun).toMatch(/group: ci-rerun-\$\{\{ github\.event\.workflow_run\.id \}\}/);
+    expect(rerun).toMatch(/cancel-in-progress: false/);
   });
 });

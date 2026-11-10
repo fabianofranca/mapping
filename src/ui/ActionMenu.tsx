@@ -1,5 +1,6 @@
 import type { Ref } from 'preact';
 import { useLayoutEffect, useRef, useState } from 'preact/hooks';
+import { Icon } from './icons';
 import { IconButton } from './controls';
 import { assignRef, returnFocusToTrigger } from './focus';
 import { createOpenScrollGuard } from './openScrollGuard';
@@ -17,6 +18,12 @@ export interface ActionMenuItem {
   /** Dica do item, em especial a de por que ele está desabilitado. */
   readonly title?: string;
   readonly danger?: boolean;
+  /** O item que marca onde se está (`aria-current`), como o último trecho do caminho. */
+  readonly current?: boolean;
+  /** Liga/desliga: o item vira `menuitemcheckbox` e mostra o estado marcado. */
+  readonly checked?: boolean;
+  /** Atalho, à direita do texto. */
+  readonly shortcut?: string;
 }
 
 interface ActionMenuProps {
@@ -24,11 +31,30 @@ interface ActionMenuProps {
   readonly label: string;
   readonly items: readonly ActionMenuItem[];
   readonly disabled?: boolean;
+  /** Ícone do botão; o padrão é o ⋯ vertical das linhas. */
+  readonly icon?: 'moreVertical' | 'more';
+  /** Nome do menu aberto, se for outro que o do botão. */
+  readonly menuLabel?: string;
+  /** Classe extra da raiz (o CSS que mostra ou esconde o menu inteiro). */
+  readonly className?: string;
   /** O botão que abre o menu (ex.: alvo do foco depois de um diálogo aberto pelo item). */
   readonly triggerRef?: Ref<HTMLButtonElement>;
+  /** Selo e ponto de alerta no botão (ex.: a contagem das conversas num menu de excesso). */
+  readonly badge?: string;
+  readonly alert?: boolean;
 }
 
-export function ActionMenu({ label, items, disabled, triggerRef }: ActionMenuProps) {
+export function ActionMenu({
+  label,
+  items,
+  disabled,
+  icon = 'moreVertical',
+  menuLabel,
+  className,
+  triggerRef,
+  badge,
+  alert,
+}: ActionMenuProps) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLSpanElement>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
@@ -67,13 +93,19 @@ export function ActionMenu({ label, items, disabled, triggerRef }: ActionMenuPro
   const onKeyDown = menuKeyDown(root, open, close);
 
   return (
-    <span class="action-menu" ref={root} onKeyDown={onKeyDown}>
+    <span
+      class={className ? `action-menu ${className}` : 'action-menu'}
+      ref={root}
+      onKeyDown={onKeyDown}
+    >
       <IconButton
-        icon="moreVertical"
+        icon={icon}
         label={label}
         aria-haspopup="menu"
         aria-expanded={open}
         disabled={disabled}
+        {...(badge ? { badge } : {})}
+        alert={alert}
         buttonRef={(el) => {
           trigger.current = el;
           assignRef(triggerRef, el);
@@ -81,21 +113,34 @@ export function ActionMenu({ label, items, disabled, triggerRef }: ActionMenuPro
         onClick={() => setOpen(!open)}
       />
       {open && (
-        <span class="action-menu-list" role="menu" aria-label={label} ref={list}>
-          {items.map((item) => (
+        <span
+          class="action-menu-list"
+          role="menu"
+          aria-label={menuLabel ?? label}
+          ref={list}
+        >
+          {items.map((item, i) => (
             <button
-              key={item.label}
+              key={i}
               type="button"
-              role="menuitem"
+              role={item.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
+              aria-checked={item.checked}
               class={item.danger ? 'action-menu-item danger' : 'action-menu-item'}
               disabled={item.disabled}
               title={item.title}
+              aria-current={item.current ? 'location' : undefined}
               onClick={() => {
                 close();
                 item.onSelect();
               }}
             >
+              {item.checked !== undefined && (
+                <span class="action-menu-check" aria-hidden="true">
+                  {item.checked && <Icon name="check" />}
+                </span>
+              )}
               {item.label}
+              {item.shortcut && <kbd class="action-menu-shortcut">{item.shortcut}</kbd>}
             </button>
           ))}
         </span>
