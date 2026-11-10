@@ -1,8 +1,13 @@
 // Guia da rodada (etapa #421, decisão 7): gera o docs/TESTING.md só com os roteiros pedidos.
 //
 // Uso:
-//   node scripts/testing/round-guide.mjs <roteiro…> [--out <arquivo>]   (ex.: R0 R2 R4 R11; `all` = todos)
+//   node scripts/testing/round-guide.mjs <roteiro…> [--out <pasta>/<nome>.md]   (ex.: R0 R2 R4 R11; `all` = todos)
 //   node scripts/testing/round-guide.mjs --grupos <roteiro…>            (divide a dirigida em grupos; ver abaixo)
+//
+// Com `--out`, grava três arquivos (etapa #1232, GL1): `<nome>.md` (o guia da rodada), `<nome>-base.md`
+// (o mesmo guia sem as seções `### R<n>`, que viram uma linha com o comando) e `<nome>-indice.tsv`
+// (seção, roteiro e passo → linhas do `<nome>.md`). O roteiro e os passos saem por demanda com
+// `node scripts/testing/cloud.mjs passo <item…>` (`guideExcerpt`, abaixo).
 //
 // Um roteiro pode ser pedido por faixa de passos (`R6.3-R6.7`): o guia leva só as linhas da tabela
 // do roteiro nessa faixa (mais o cabeçalho e o texto de preparo). Duas faixas do mesmo roteiro se
@@ -188,6 +193,237 @@ export function buildRoundGuide(markdown, roteiros, { commit = 'desconhecido' } 
     );
   const note = `> Guia da rodada (commit ${commit}): roteiros ${ids.join(', ')}. O guia inteiro é o docs/TESTING.md; consulte-o por trecho (Grep) para o que faltar aqui.`;
   return `${note}\n\n${applyMarks(kept.join('\n'), wanted, existing)}`;
+}
+
+// --- Guia da rodada sob demanda (etapa #1232, GL1) ---
+
+/** Linhas de passo de um trecho (fora de bloco de código): o código e o índice da linha. */
+function stepRows(lines) {
+  const rows = [];
+  let fence = false;
+  lines.forEach((line, i) => {
+    if (/^\s*(`{3,}|~{3,})/.test(line)) {
+      fence = !fence;
+      return;
+    }
+    const code = fence ? undefined : STEP_ROW.exec(line)?.[1];
+    if (code) rows.push({ code, i });
+  });
+  return rows;
+}
+
+/**
+ * A base do guia da rodada: o mesmo guia do `buildRoundGuide`, sem as seções `### R<n>`, cada uma
+ * trocada por uma linha com o comando que a imprime (`cloud.mjs passo R<n>`). `name` é o nome do
+ * arquivo do índice (`<name>-indice.tsv`).
+ */
+export function buildGuideBase(
+  markdown,
+  roteiros,
+  { commit = 'desconhecido', name = 'guia' } = {},
+) {
+  const out = [];
+  for (const section of splitSections(buildRoundGuide(markdown, roteiros, { commit }))) {
+    const id = section.level === 3 ? ROTEIRO.exec(section.title)?.[1] : undefined;
+    if (id) {
+      out.push(
+        `### ${section.title}: \`node scripts/testing/cloud.mjs passo ${id}\``,
+        '',
+      );
+    } else if (section.level === 0) {
+      const [note = '', ...rest] = section.lines;
+      out.push(
+        note,
+        `> Os roteiros saem por \`cloud.mjs passo\`; o índice está em \`${name}-indice.tsv\`.`,
+        ...rest,
+      );
+    } else {
+      out.push(...section.lines);
+    }
+  }
+  return out.join('\n');
+}
+
+/**
+ * O índice do guia da rodada, em TSV (`tipo`, `chave`, `ini`, `fim`, `título`), com linhas 1-based
+ * do próprio guia: uma `secao` por cabeçalho que não é roteiro, um `roteiro` por `### R<n>` e um
+ * `passo` por linha de passo.
+ */
+export function buildGuideIndex(guideText) {
+  const lines = guideText.split('\n');
+  const cell = (text) =>
+    String(text)
+      .replace(/[\t\r\n]+/g, ' ')
+      .trim();
+  const rows = [['tipo', 'chave', 'ini', 'fim', 'título']];
+  let consumed = 0;
+  for (const section of splitSections(guideText)) {
+    const ini = consumed + 1;
+    consumed += section.lines.length;
+    if (section.level === 0) continue;
+    let fim = consumed;
+    while (fim > ini && !lines[fim - 1].trim()) fim -= 1;
+    const id = section.level === 3 ? ROTEIRO.exec(section.title)?.[1] : undefined;
+    rows.push([
+      id ? 'roteiro' : 'secao',
+      id ?? cell(section.title),
+      ini,
+      fim,
+      cell(section.title),
+    ]);
+    if (!id) continue;
+    for (const { code, i } of stepRows(section.lines)) {
+      const action = section.lines[i].split(/(?<!\\)\|/)[2] ?? '';
+      rows.push(['passo', code, ini + i, ini + i, cell(action).slice(0, 80)]);
+    }
+  }
+  return `${rows.map((row) => row.join('\t')).join('\n')}\n`;
+}
+
+/** Limite de caracteres do que o `cloud.mjs passo` imprime (abaixo dos 30 mil do Bash). */
+export const EXCERPT_LIMIT = 25000;
+const CUT_RESERVE = 200;
+const STEP_ITEM = /^(R\d+)\.(\d+[a-z]?)$/i;
+const STEP_HEADER = /^\|\s*Passo\b/;
+
+/** Interpreta um item do `passo`: `R12`, `R12.4` ou `R12.4-R12.9`. */
+function parseExcerptItem(raw) {
+  const range = RANGE.exec(raw);
+  if (range) {
+    const id = range[1].toUpperCase();
+    if (id !== range[3].toUpperCase()) {
+      throw new Error(`Faixa de passos de roteiros diferentes: ${raw}.`);
+    }
+    return {
+      raw,
+      id,
+      from: `${id}.${range[2].toLowerCase()}`,
+      to: `${id}.${range[4].toLowerCase()}`,
+    };
+  }
+  const step = STEP_ITEM.exec(raw);
+  if (step) {
+    const code = `${step[1].toUpperCase()}.${step[2].toLowerCase()}`;
+    return { raw, id: step[1].toUpperCase(), from: code, to: code };
+  }
+  if (/^R\d+$/i.test(raw)) return { raw, id: raw.toUpperCase() };
+  throw new Error(`Item inválido: ${raw}. Use R<n>, R<n>.<m> ou R<n>.<a>-R<n>.<b>.`);
+}
+
+/** O roteiro inteiro sem as linhas de passo: cada sequência delas vira `Passos (k): a, b, …, z`. */
+function wholeRoteiro(section, rows) {
+  const stepAt = new Map(rows.map((r) => [r.i, r.code]));
+  const entries = [];
+  let run = [];
+  const flush = () => {
+    if (run.length === 0) return;
+    const shown = run.length <= 3 ? run : [run[0], run[1], '…', run[run.length - 1]];
+    entries.push({ text: `Passos (${run.length}): ${shown.join(', ')}` });
+    run = [];
+  };
+  section.lines.forEach((line, i) => {
+    if (stepAt.has(i)) run.push(stepAt.get(i));
+    else {
+      flush();
+      entries.push({ text: line });
+    }
+  });
+  flush();
+  while (entries.length && !entries[entries.length - 1].text.trim()) entries.pop();
+  return entries;
+}
+
+/** As linhas do primeiro ao último passo pedido, com o cabeçalho da tabela do primeiro. */
+function stepRange(section, rows, item, guideId) {
+  const codes = rows.map((r) => r.code);
+  const absent = (code) => {
+    const span = codes.length
+      ? `tem ${codes[0]} a ${codes[codes.length - 1]} (${codes.length} passos)`
+      : 'não tem passos';
+    return new Error(`${code} não está no guia da rodada; o ${guideId} ${span}`);
+  };
+  const a = codes.indexOf(item.from);
+  let b = codes.indexOf(item.to);
+  if (a < 0) throw absent(item.from);
+  if (b < 0) throw absent(item.to);
+  if (b < a)
+    throw new Error(
+      `Faixa inválida: ${item.from}-${item.to}. Passos: ${codes.join(', ')}.`,
+    );
+  // O último passo pedido leva consigo os que dependem dele (R22.6 traz o R22.6a).
+  while (
+    /\d$/.test(item.to) &&
+    codes[b + 1]?.startsWith(item.to) &&
+    /^[a-z]$/.test(codes[b + 1].slice(item.to.length))
+  ) {
+    b += 1;
+  }
+  const first = rows[a].i;
+  const entries = [];
+  for (let h = first - 1; h >= 0; h -= 1) {
+    if (STEP_HEADER.test(section.lines[h])) {
+      entries.push({ text: section.lines[h] }, { text: section.lines[h + 1] });
+      break;
+    }
+  }
+  const stepAt = new Map(rows.map((r) => [r.i, r.code]));
+  for (let i = first; i <= rows[b].i; i += 1) {
+    entries.push({ text: section.lines[i], code: stepAt.get(i) });
+  }
+  return entries;
+}
+
+/** Corta as linhas em `EXCERPT_LIMIT` caracteres, na última linha inteira, e diz como continuar. */
+function cutExcerpt(entries, items) {
+  const total = entries.reduce((n, e) => n + e.text.length + 1, -1);
+  if (total <= EXCERPT_LIMIT) return entries.map((e) => e.text).join('\n');
+  let size = 0;
+  let end = 0;
+  while (end < entries.length) {
+    const next = size + entries[end].text.length + (end ? 1 : 0);
+    if (next > EXCERPT_LIMIT - CUT_RESERVE && end > 0) break;
+    size = next;
+    end += 1;
+  }
+  const rest = entries.slice(end);
+  const item = items[rest[0].item];
+  const next = rest.find((e) => e.code && e.item === rest[0].item)?.code;
+  const target = next ? (next === item.to ? next : `${next}-${item.to}`) : item.raw;
+  const later = [...new Set(rest.map((e) => e.item))]
+    .filter((n) => items[n] !== item)
+    .map((n) => items[n].raw);
+  const tail = later.length ? `; depois, os itens ${later.join(' ')}` : '';
+  const message = `… corte em 25.000 caracteres: continue com cloud.mjs passo ${target}${tail}`;
+  return [...entries.slice(0, end).map((e) => e.text), message].join('\n');
+}
+
+/**
+ * O trecho do guia da rodada para o `cloud.mjs passo`: `R<n>` (o roteiro sem as linhas de passo),
+ * `R<n>.<m>` ou `R<n>.<a>-R<n>.<b>` (as linhas dos passos, com o cabeçalho da tabela). Os itens saem
+ * na ordem pedida, separados por `---`; erro de item lança `Error` sem imprimir trecho.
+ */
+export function guideExcerpt(guideText, itens) {
+  const sections = new Map();
+  for (const section of splitSections(guideText)) {
+    const id = section.level === 3 ? ROTEIRO.exec(section.title)?.[1] : undefined;
+    if (id) sections.set(id, { section, rows: stepRows(section.lines) });
+  }
+  const items = itens.map(parseExcerptItem);
+  const entries = [];
+  items.forEach((item, n) => {
+    const found = sections.get(item.id);
+    if (!found) {
+      throw new Error(
+        `${item.from ?? item.id} não está no guia da rodada; o guia tem ${[...sections.keys()].join(', ')}. Para outro roteiro, gere o guia de novo com round-guide.mjs ou procure o trecho com Grep no docs/TESTING.md.`,
+      );
+    }
+    const part = item.from
+      ? stepRange(found.section, found.rows, item, item.id)
+      : wholeRoteiro(found.section, found.rows);
+    if (n > 0) entries.push({ text: '---', item: n });
+    for (const entry of part) entries.push({ ...entry, item: n });
+  });
+  return cutExcerpt(entries, items);
 }
 
 // --- Rodada dirigida em grupos paralelos (etapa #1148, TR4, decisões 15 a 17) ---
@@ -404,23 +640,35 @@ function runCli(argv) {
     return;
   }
   const markdown = fs.readFileSync(GUIDE_FILE, 'utf8');
+  const commit = currentCommit();
   let guide;
   try {
-    guide = buildRoundGuide(markdown, roteiros, { commit: currentCommit() });
+    guide = buildRoundGuide(markdown, roteiros, { commit });
   } catch (error) {
     console.error(error.message);
     process.exitCode = 2;
     return;
   }
-  const percent = Math.round(
-    (Buffer.byteLength(guide) / Buffer.byteLength(markdown)) * 100,
-  );
   if (out) {
+    const stem = out.replace(/\.md$/i, '');
+    const files = [
+      [out, guide],
+      [
+        `${stem}-base.md`,
+        buildGuideBase(markdown, roteiros, { commit, name: path.basename(stem) }),
+      ],
+      [`${stem}-indice.tsv`, buildGuideIndex(guide)],
+    ];
     fs.mkdirSync(path.dirname(path.resolve(out)), { recursive: true });
-    fs.writeFileSync(out, guide);
-    console.error(
-      `${out}: ${Buffer.byteLength(guide)} bytes (${percent}% do docs/TESTING.md)`,
-    );
+    for (const [file, text] of files) {
+      fs.writeFileSync(file, text);
+      const percent = Math.round(
+        (Buffer.byteLength(text) / Buffer.byteLength(markdown)) * 100,
+      );
+      console.error(
+        `${file}: ${Buffer.byteLength(text)} bytes (${percent}% do docs/TESTING.md)`,
+      );
+    }
   } else {
     process.stdout.write(`${guide}\n`);
   }
