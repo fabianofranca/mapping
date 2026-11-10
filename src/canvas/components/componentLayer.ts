@@ -80,14 +80,29 @@ export class ComponentLayerRenderer {
   /** Zoom do stage: o desenho em pixels de tela se contrai por ele (e pela escala da imagem). */
   private zoom = 1;
   private placements: ReadonlyMap<string, Placement> = new Map();
+  /** Os espaços do último `render`, com todos os desenhos que aparecem (montados ou ainda por montar). */
+  private readonly spaces = new Map<
+    string | null,
+    { list: readonly LayerDrawing[]; placement: Placement }
+  >();
 
   constructor(
     private readonly parent: Parent,
     private readonly options: ComponentLayerOptions = {},
   ) {}
 
-  /** Quantos desenhos estão montados (publicado no container para os testes e2e). */
+  /**
+   * Quantos desenhos aparecem no último quadro, montados ou não (publicado no container para os
+   * testes e2e e os roteiros: não depende de onde está a vista).
+   */
   get size(): number {
+    let total = 0;
+    for (const { list } of this.spaces.values()) total += list.length;
+    return total;
+  }
+
+  /** Quantos desenhos estão montados de fato (`renderScene`): só os que já estiveram na tela. */
+  get mountedCount(): number {
     return this.mounted.size;
   }
 
@@ -126,25 +141,27 @@ export class ComponentLayerRenderer {
     visible: (drawing: LayerDrawing) => boolean,
     placements: ReadonlyMap<string, Placement>,
     zoom: number = this.zoom,
+    area: Rect | null = null,
   ): boolean {
-    let changed = false;
     this.zoom = zoom;
     this.placements = placements;
-    // Ordem de desenho por espaço, só do que aparece.
-    const wanted = new Map<string | null, LayerDrawing[]>();
-    for (const drawing of drawings.values()) {
-      if (
-        placementOf(placements, drawing.containerId) === undefined ||
-        !visible(drawing)
-      ) {
-        continue;
-      }
-      const list = wanted.get(drawing.containerId);
-      if (list) list.push(drawing);
-      else wanted.set(drawing.containerId, [drawing]);
+    this.spaces.clear();
+    const wanted = wantedBySpace(drawings, visible, placements);
+    let changed = this.prune(wanted);
+    const usedMirrors = new Set<string | null>();
+    for (const [containerId, list] of wanted) {
+      const placement = placementOf(placements, containerId);
+      if (!placement) continue;
+      if (this.renderSpace(containerId, list, placement, area, usedMirrors))
+        changed = true;
     }
+    if (this.dropMirrors(usedMirrors)) this.dragChanged = true;
+    return changed;
+  }
 
-    // Some o que não está mais na lista (ou trocou de imagem).
+  /** Some o que não está mais na lista (ou trocou de imagem); `true` se destruiu algo. */
+  private prune(wanted: ReadonlyMap<string | null, readonly LayerDrawing[]>): boolean {
+    let changed = false;
     const keep = new Set<string>();
     for (const list of wanted.values()) for (const d of list) keep.add(d.markingId);
     for (const [markingId, entry] of this.mounted) {
@@ -159,37 +176,125 @@ export class ComponentLayerRenderer {
       this.imageGroups.delete(containerId);
       changed = true;
     }
+    return changed;
+  }
 
-    const usedMirrors = new Set<string | null>();
-    for (const [containerId, list] of wanted) {
-      const placement = placementOf(placements, containerId);
-      if (!placement) continue;
-      const { group, created } = this.groupOf(containerId);
-      if (created) changed = true;
-      if (placeGroup(group, placement)) changed = true;
-      const moving = this.dragIds
-        ? list.filter((d) => this.dragIds?.has(d.markingId))
-        : [];
-      const mirror = moving.length > 0 ? this.mirrorOf(containerId, placement) : null;
-      if (mirror) usedMirrors.add(containerId);
-      for (const drawing of list) {
-        const home = this.dragIds?.has(drawing.markingId) && mirror ? mirror : group;
-        const touched = this.place(drawing, home, group);
-        if ((touched & TOUCHED_GROUP) !== 0) changed = true;
-        if ((touched & TOUCHED_MIRROR) !== 0) this.dragChanged = true;
-      }
-      for (const drawing of list) {
-        const entry = this.mounted.get(drawing.markingId);
-        if (entry && placeScreen(entry.node, drawing, placement.scale, zoom)) {
-          if (this.inMirror(entry.node)) this.dragChanged = true;
-          else changed = true;
-        }
-      }
-      const rest = moving.length > 0 ? list.filter((d) => !moving.includes(d)) : list;
-      if (sortChildren(group, rest, this.mounted)) changed = true;
-      if (mirror && sortChildren(mirror, moving, this.mounted)) this.dragChanged = true;
+  /**
+   * Um espaço (container ou canvas): põe os desenhos de `list` no grupo dele. Sob demanda (decisão 3
+   * da etapa canvas-desempenho): o desenho ainda não montado só nasce quando a caixa dele cruza
+   * `area` (a parte visível do canvas; `null` = tudo); montado, fica, e só se esconde fora da área.
+   */
+  private renderSpace(
+    containerId: string | null,
+    list: readonly LayerDrawing[],
+    placement: Placement,
+    area: Rect | null,
+    usedMirrors: Set<string | null>,
+  ): boolean {
+    const { group, created } = this.groupOf(containerId);
+    let changed = created;
+    if (placeGroup(group, placement)) changed = true;
+    this.spaces.set(containerId, { list, placement });
+    const moving = this.movingOf(list);
+    const mirror = moving.length > 0 ? this.mirrorOf(containerId, placement) : null;
+    if (mirror) usedMirrors.add(containerId);
+    const present: LayerDrawing[] = [];
+    for (const drawing of list) {
+      const dragged = mirror !== null && this.isDragged(drawing);
+      const on = dragged || onScreen(drawing, placement, this.zoom, area);
+      if (!on && !this.mounted.has(drawing.markingId)) continue;
+      present.push(drawing);
+      const home = dragged && mirror ? mirror : group;
+      if (this.mountOne(drawing, home, group, placement, on)) changed = true;
     }
-    if (this.dropMirrors(usedMirrors)) this.dragChanged = true;
+    const rest = present.filter((d) => !moving.includes(d));
+    if (sortChildren(group, rest, this.mounted)) changed = true;
+    if (
+      mirror &&
+      sortChildren(
+        mirror,
+        present.filter((d) => moving.includes(d)),
+        this.mounted,
+      )
+    ) {
+      this.dragChanged = true;
+    }
+    return changed;
+  }
+
+  private isDragged(drawing: LayerDrawing): boolean {
+    return this.dragIds !== null && this.dragIds.has(drawing.markingId);
+  }
+
+  private movingOf(list: readonly LayerDrawing[]): LayerDrawing[] {
+    return this.dragIds === null ? [] : list.filter((d) => this.isDragged(d));
+  }
+
+  /**
+   * Monta (ou reaproveita) o desenho em `home`, ajusta a posição em pixels de tela e a visibilidade.
+   * Devolve `true` se mexeu na camada de sempre (o que mexe no grupo de arrasto vai em `dragChanged`).
+   */
+  private mountOne(
+    drawing: LayerDrawing,
+    home: Konva.Group,
+    group: Konva.Group,
+    placement: Placement,
+    on: boolean,
+  ): boolean {
+    const touched = this.place(drawing, home, group);
+    if ((touched & TOUCHED_MIRROR) !== 0) this.dragChanged = true;
+    let changed = (touched & TOUCHED_GROUP) !== 0;
+    const entry = this.mounted.get(drawing.markingId);
+    if (!entry) return changed;
+    const moved =
+      placeScreen(entry.node, drawing, placement.scale, this.zoom) ||
+      showNode(entry.node, on);
+    if (moved && this.inMirror(entry.node)) this.dragChanged = true;
+    else if (moved) changed = true;
+    return changed;
+  }
+
+  /**
+   * Pan ou zoom: monta o desenho que passou a cruzar a tela e esconde o montado que saiu dela
+   * (nada é redesenhado nem reinstanciado). `area` é a parte visível do canvas e `zoom` a escala do
+   * stage. Devolve `true` se algum nó mudou.
+   */
+  reveal(area: Rect | null, zoom: number): boolean {
+    let changed = false;
+    for (const [containerId, space] of this.spaces) {
+      if (this.revealSpace(containerId, space, area, zoom)) changed = true;
+    }
+    return changed;
+  }
+
+  private revealSpace(
+    containerId: string | null,
+    { list, placement }: { list: readonly LayerDrawing[]; placement: Placement },
+    area: Rect | null,
+    zoom: number,
+  ): boolean {
+    const group = this.imageGroups.get(containerId);
+    if (!group) return false;
+    let changed = false;
+    let mountedNow = false;
+    for (const drawing of list) {
+      if (this.isDragged(drawing)) continue;
+      const on = onScreen(drawing, placement, zoom, area);
+      const entry = this.mounted.get(drawing.markingId);
+      if (entry) {
+        if (showNode(entry.node, on)) changed = true;
+      } else if (on) {
+        this.mountOne(drawing, group, group, placement, true);
+        mountedNow = true;
+        changed = true;
+      }
+    }
+    if (mountedNow) {
+      const present = list.filter(
+        (d) => !this.isDragged(d) && this.mounted.has(d.markingId),
+      );
+      sortChildren(group, present, this.mounted);
+    }
     return changed;
   }
 
@@ -355,6 +460,24 @@ export class ComponentLayerRenderer {
   }
 }
 
+/** Os desenhos que aparecem, por espaço, na ordem de desenho (só os que têm posição). */
+function wantedBySpace(
+  drawings: ReadonlyMap<string, LayerDrawing>,
+  visible: (drawing: LayerDrawing) => boolean,
+  placements: ReadonlyMap<string, Placement>,
+): Map<string | null, LayerDrawing[]> {
+  const wanted = new Map<string | null, LayerDrawing[]>();
+  for (const drawing of drawings.values()) {
+    if (placementOf(placements, drawing.containerId) === undefined || !visible(drawing)) {
+      continue;
+    }
+    const list = wanted.get(drawing.containerId);
+    if (list) list.push(drawing);
+    else wanted.set(drawing.containerId, [drawing]);
+  }
+  return wanted;
+}
+
 /** Posição do espaço: a do container ou, no canvas (`null`), a identidade. */
 function placementOf(
   placements: ReadonlyMap<string, Placement>,
@@ -383,6 +506,63 @@ function placeScreen(
     return false;
   }
   node.setAttrs({ x, y, scaleX: k, scaleY: k });
+  return true;
+}
+
+/** Margem (px de tela) em volta da caixa do desenho: sombra, traço e o que passa da caixa. */
+const ON_SCREEN_MARGIN = 64;
+
+/**
+ * A caixa do desenho cruza a parte visível do canvas? Só para decidir se o desenho nasce e se
+ * aparece; `area` `null` = tudo à vista. A caixa vem da própria cena (matriz e medida do `root`) ou,
+ * no desenho em pixels de tela, da âncora no retângulo da marcação.
+ */
+function onScreen(
+  drawing: LayerDrawing,
+  placement: Placement,
+  zoom: number,
+  area: Rect | null,
+): boolean {
+  if (area === null) return true;
+  const { root, screen } = drawing;
+  let box: Rect;
+  if (screen) {
+    const k = 1 / (zoom * placement.scale);
+    const [fx, fy] = ANCHOR_FRACTION[screen.anchor];
+    const width = root.width * k;
+    const height = root.height * k;
+    box = {
+      x: screen.rect.x + fx * (screen.rect.width - width),
+      y: screen.rect.y + fy * (screen.rect.height - height),
+      width,
+      height,
+    };
+  } else box = sceneBox(root);
+  const margin = ON_SCREEN_MARGIN / zoom;
+  const x = placement.x + box.x * placement.scale;
+  const y = placement.y + box.y * placement.scale;
+  return (
+    x + box.width * placement.scale + margin > area.x &&
+    x - margin < area.x + area.width &&
+    y + box.height * placement.scale + margin > area.y &&
+    y - margin < area.y + area.height
+  );
+}
+
+/** Caixa (espaço da marcação) de uma cena com matriz `[a, b, c, d, e, f]` e medida `width × height`. */
+function sceneBox({ transform, width, height }: FrameNode): Rect {
+  const [a, b, c, d, e, f] = transform;
+  const xs = [e, a * width + e, c * height + e, a * width + c * height + e];
+  const ys = [f, b * width + f, d * height + f, b * width + d * height + f];
+  const x = Math.min(...xs);
+  const y = Math.min(...ys);
+  return { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y };
+}
+
+/** Esconde ou mostra o nó; `true` se mudou. */
+function showNode(node: Konva.Group, show: boolean): boolean {
+  if (node.visible() === show) return false;
+  node.visible(show);
   return true;
 }
 

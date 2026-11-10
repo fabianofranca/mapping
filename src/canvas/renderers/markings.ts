@@ -35,6 +35,7 @@ import {
   updateSemanticText,
   type HeaderBand,
   type SemanticNode,
+  type SemanticText,
 } from './semanticCard';
 
 /** Espessura da borda das marcações (px de tela): normal e selecionada. */
@@ -43,23 +44,27 @@ const MARKING_SELECTED_STROKE = 2;
 /** Linha dupla da marcação alterada na revisão (px de tela). */
 const REVIEW_DOUBLE_STROKE = 3;
 /** Traço da borda da marcação do canvas (px de tela): traço longo e vão, para não lembrar a "a revisar". */
-/** Máscara de todas as partes do nó penduradas (6 partes em `partsOf`). */
-const ALL_PARTS = 0b111111;
+/** Máscara das partes penduradas ao criar o nó: só a borda (índice 1 em `partsOf`). */
+const BORDER_ONLY = 0b000010;
 const CANVAS_DASH: readonly [number, number] = [10, 6];
 
+/**
+ * Nó de uma marcação. Nasce só com o grupo e a borda; as demais partes (opcionais) nascem no
+ * primeiro quadro em que ficam visíveis e, criadas, ficam (decisão 5 da etapa canvas-desempenho).
+ */
 export interface MarkingNode {
   readonly group: Konva.Group;
-  readonly halo: KonvaRect;
   readonly border: KonvaRect;
+  halo?: KonvaRect;
   /** Linha do meio da "linha dupla" (alterada, na revisão de propostas). */
-  readonly inner: KonvaRect;
-  readonly badge: KonvaText;
+  inner?: KonvaRect;
+  badge?: KonvaText;
   /** Recorta o alerta no retângulo da marcação. */
-  readonly alertClip: Konva.Group;
+  alertClip?: Konva.Group;
   /** Alerta de anotação incompleta, no canto depois do selo "a revisar". */
-  readonly alert: KonvaText;
+  alert?: KonvaText;
   /** Texto do zoom semântico, recortado no retângulo da marcação. */
-  readonly text: SemanticNode;
+  text?: SemanticNode;
   /** Entradas do último `updateMarkingNode`: iguais, o nó já está certo. */
   drawn: readonly unknown[] | null;
   /** Entradas do último `updateSemanticText`: iguais, o nome já está certo. */
@@ -137,14 +142,14 @@ function selectedMarkingIds(frame: MarkingFrame): ReadonlySet<string> {
 }
 
 /** Partes do nó na ordem de desenho. */
-function partsOf(node: MarkingNode): readonly (Konva.Group | Konva.Shape)[] {
+function partsOf(node: MarkingNode): readonly (Konva.Group | Konva.Shape | undefined)[] {
   return [
     node.halo,
     node.border,
     node.inner,
     node.badge,
     node.alertClip,
-    node.text.group,
+    node.text?.group,
   ];
 }
 
@@ -157,12 +162,26 @@ function syncParts(node: MarkingNode): void {
   const parts = partsOf(node);
   let mask = 0;
   parts.forEach((part, i) => {
-    if (part.visible()) mask |= 1 << i;
+    if (part?.visible()) mask |= 1 << i;
   });
   if (mask === node.attached) return;
   node.attached = mask;
   node.group.removeChildren();
-  node.group.add(...parts.filter((_, i) => (mask & (1 << i)) !== 0));
+  node.group.add(
+    ...parts.filter(
+      (part, i): part is Konva.Group | Konva.Shape =>
+        part !== undefined && (mask & (1 << i)) !== 0,
+    ),
+  );
+}
+
+/**
+ * Destrói o grupo e as partes. As partes desencaixadas pelo `syncParts` não são filhas do grupo, e
+ * `Shape.destroy` é o que as tira do registro de cores de acerto do Konva: sem isso elas vazam.
+ */
+function destroyNode(node: MarkingNode): void {
+  for (const part of partsOf(node)) part?.destroy();
+  node.group.destroy();
 }
 
 /** Marcações de cima para baixo na hierarquia, uma vez por versão do projeto. */
@@ -399,8 +418,8 @@ export class MarkingRenderer {
       ];
       if (!sameInputs(node.textDrawn, textInputs)) {
         node.textDrawn = textInputs;
-        node.band = updateSemanticText(
-          node.text,
+        node.band = updateNodeText(
+          node,
           {
             marking,
             markingRect,
@@ -421,15 +440,21 @@ export class MarkingRenderer {
     for (const [id, node] of this.nodes) {
       if (seen.has(id)) continue;
       this.touchParent(changes, node.group.getParent());
-      node.group.destroy();
+      destroyNode(node);
       this.nodes.delete(id);
     }
     return changes;
   }
 
+  /** Destrói todos os nós (inclusive as partes desencaixadas, que o grupo não alcança). */
+  destroy(): void {
+    for (const node of this.nodes.values()) destroyNode(node);
+    this.nodes.clear();
+  }
+
   private headerRect(id: string): Rect | undefined {
     const node = this.nodes.get(id);
-    if (!node?.group.visible() || !node.text.group.visible()) return undefined;
+    if (!node?.group.visible() || !node.text?.group.visible()) return undefined;
     const { header } = node.text;
     if (!header.visible()) return undefined;
     return {
@@ -443,27 +468,13 @@ export class MarkingRenderer {
   private createNode(id: string, parent: Konva.Container): MarkingNode {
     const node: MarkingNode = {
       group: new Konva.Group(),
-      halo: new KonvaRect(),
       border: new KonvaRect(),
-      inner: new KonvaRect(),
-      badge: new KonvaText({ text: '⚠' }),
-      alertClip: new Konva.Group(),
-      alert: new KonvaText({ text: ALERT_GLYPH }),
-      text: createSemanticNode(),
       drawn: null,
       textDrawn: null,
       band: null,
-      attached: ALL_PARTS,
+      attached: BORDER_ONLY,
     };
-    node.alertClip.add(node.alert);
-    node.group.add(
-      node.halo,
-      node.border,
-      node.inner,
-      node.badge,
-      node.alertClip,
-      node.text.group,
-    );
+    node.group.add(node.border);
     parent.add(node.group);
     this.nodes.set(id, node);
     return node;
@@ -519,13 +530,15 @@ function updateMarkingNode(
   // a linha aparece sobre fotos claras e escuras.
   // De longe (`border`): só a borda, sem halo, linha dupla, selo nem ⚠.
   const full = detail === 'full';
-  node.halo.setAttrs({
-    ...rect,
-    visible: showBorder && full,
-    stroke: tokens.halo,
-    strokeWidth: stroke + (2 * HALO_WIDTH) / zoom,
-    dash,
-  });
+  if (showBorder && full) {
+    ensureHalo(node).setAttrs({
+      ...rect,
+      visible: true,
+      stroke: tokens.halo,
+      strokeWidth: stroke + (2 * HALO_WIDTH) / zoom,
+      dash,
+    });
+  } else node.halo?.visible(false);
   node.border.setAttrs({
     ...rect,
     visible: showBorder,
@@ -535,37 +548,79 @@ function updateMarkingNode(
   });
   // Alterada: linha dupla (o traço de 3px com um fio do halo no meio).
   if (line === 'changed' && showBorder && full) {
-    node.inner.setAttrs({
+    ensureInner(node).setAttrs({
       ...rect,
       visible: true,
       stroke: tokens.halo,
       strokeWidth: 1 / zoom,
       dash,
     });
-  } else {
-    node.inner.visible(false);
-  }
+  } else node.inner?.visible(false);
   // Texto do Konva remede a cada mudança de atributo: só mexe nos que aparecem.
   // Ancestral de contexto (modo Ocultar): só a borda, sem alerta.
   const outline = visibility === 'outline' || !indicators || !full;
-  if (marking.needsReview && !outline) {
-    const badge = REVIEW_BADGE_SIZE / zoom;
-    node.badge.setAttrs({
-      visible: true,
-      x: rect.x + badge / 3,
-      y: rect.y + badge / 3,
-      fontSize: badge,
-      fontFamily: tokens.fontFamily,
-      fontStyle: fontStyle(tokens.type.name.weight),
-      fill: tokens.warning,
-      stroke: tokens.halo,
-      strokeWidth: 3 / zoom,
-      fillAfterStrokeEnabled: true,
-    });
-  } else {
-    node.badge.visible(false);
-  }
+  updateBadge(node, marking.needsReview && !outline, rect, tokens, zoom);
   updateAlert(node, marking, rect, incomplete && !outline, tokens, zoom);
+}
+
+/** Partes que nascem sob demanda (decisão 5): criadas na primeira vez que ficam visíveis. */
+function ensureHalo(node: MarkingNode): KonvaRect {
+  return (node.halo ??= new KonvaRect());
+}
+
+function ensureInner(node: MarkingNode): KonvaRect {
+  return (node.inner ??= new KonvaRect());
+}
+
+/** Selo "a revisar" no canto superior esquerdo. */
+function updateBadge(
+  node: MarkingNode,
+  show: boolean,
+  rect: Rect,
+  tokens: CanvasTokens,
+  zoom: number,
+): void {
+  if (!show) {
+    node.badge?.visible(false);
+    return;
+  }
+  const badge = REVIEW_BADGE_SIZE / zoom;
+  (node.badge ??= new KonvaText({ text: '⚠' })).setAttrs({
+    visible: true,
+    x: rect.x + badge / 3,
+    y: rect.y + badge / 3,
+    fontSize: badge,
+    fontFamily: tokens.fontFamily,
+    fontStyle: fontStyle(tokens.type.name.weight),
+    fill: tokens.warning,
+    stroke: tokens.halo,
+    strokeWidth: 3 / zoom,
+    fillAfterStrokeEnabled: true,
+  });
+}
+
+/** O recorte e o alerta nascem juntos, na primeira vez que a marcação aparece incompleta. */
+function ensureAlert(node: MarkingNode): { clip: Konva.Group; alert: KonvaText } {
+  if (!node.alertClip || !node.alert) {
+    node.alert = new KonvaText({ text: ALERT_GLYPH });
+    node.alertClip = new Konva.Group();
+    node.alertClip.add(node.alert);
+  }
+  return { clip: node.alertClip, alert: node.alert };
+}
+
+/** O nome nasce quando aparece pela primeira vez; marcação sem nome ou sem modo não o cria. */
+function updateNodeText(
+  node: MarkingNode,
+  input: SemanticText,
+  tokens: CanvasTokens,
+  zoom: number,
+): HeaderBand | null {
+  if (!node.text) {
+    if (input.mode === 'none' || (input.marking.name ?? '') === '') return null;
+    node.text = createSemanticNode();
+  }
+  return updateSemanticText(node.text, input, tokens, zoom);
 }
 
 /** Alerta de incompleta no canto superior esquerdo, depois do selo "a revisar" (se houver). */
@@ -578,18 +633,19 @@ function updateAlert(
   zoom: number,
 ): void {
   if (!incomplete) {
-    node.alertClip.visible(false);
-    node.alert.visible(false);
+    node.alertClip?.visible(false);
+    node.alert?.visible(false);
     return;
   }
-  node.alertClip.setAttrs({
+  const { clip, alert } = ensureAlert(node);
+  clip.setAttrs({
     visible: true,
     clip: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
   });
   // Com o selo de revisão no canto, o alerta começa depois dele.
   const left = marking.needsReview ? REVIEW_BADGE_SIZE : 0;
   const size = ALERT_SIZE / zoom;
-  node.alert.setAttrs({
+  alert.setAttrs({
     visible: true,
     x: rect.x + (left + CORNER_MARGIN) / zoom,
     y: rect.y + TEXT_HEADER_HEIGHT / 2 / zoom - size / 2,

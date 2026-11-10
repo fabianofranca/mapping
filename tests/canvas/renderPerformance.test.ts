@@ -810,6 +810,25 @@ describe('quadro de arrasto com o projeto inteiro à vista (2.000 marcações)',
   );
 });
 
+// Decisão 5 da etapa canvas-desempenho: o `createNode` cria só o grupo e a borda; o primeiro quadro em
+// Enquadrar tudo (2.000 marcações, jsdom) cabe na metade dos 223 ms da DA1.
+describe('primeiro quadro em Enquadrar tudo (2.000 marcações)', () => {
+  budgetIt(
+    'abrir em Enquadrar tudo cabe em 111,5 ms',
+    { ...BUDGET_OPTIONS, timeout: 120_000 },
+    () => {
+      const times: number[] = [];
+      for (let i = 0; i < 5; i++) {
+        const s = openWholeProject(2000, 'fit');
+        times.push(s.firstFrameMs);
+        s.destroy();
+      }
+      const median = [...times].sort((a, b) => a - b)[2] ?? Number.NaN;
+      expect(median).toBeLessThan(111.5);
+    },
+  );
+});
+
 describe('quadro de edição com o projeto inteiro à vista (2.000 marcações)', () => {
   budgetIt(
     `editar o nome de uma marcação cabe em ${EDIT_FRAME_CEILING_MS} ms (meta: ${RENDER_BUDGET_MS} ms)`,
