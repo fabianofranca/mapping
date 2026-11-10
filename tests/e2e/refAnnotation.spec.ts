@@ -262,6 +262,23 @@ const tableSpec = {
   ],
 };
 
+// CL2 (#784, achado 1-R): a tabela não rola na horizontal e o ✕ de Limpar e a célula ficam dentro
+// da área visível da tabela (`.data-grid`).
+async function measureGrid(page: Page) {
+  return page.evaluate(() => {
+    const grid = document.querySelector<HTMLElement>('.data-grid')!;
+    const g = grid.getBoundingClientRect();
+    const out = { scroll: grid.scrollWidth - grid.clientWidth, outside: 0 };
+    for (const cell of grid.querySelectorAll<HTMLElement>('.ref-cell')) {
+      for (const el of [cell, ...cell.querySelectorAll<HTMLElement>('button')]) {
+        const r = el.getBoundingClientRect();
+        out.outside = Math.max(out.outside, g.left - r.left, r.right - g.right);
+      }
+    }
+    return out;
+  });
+}
+
 async function measureRefCells(page: Page) {
   return page.evaluate(() =>
     [...document.querySelectorAll<HTMLElement>('.ref-cell')].map((cell) => {
@@ -274,7 +291,11 @@ async function measureRefCells(page: Page) {
       const x = clear.getBoundingClientRect();
       return {
         text: text.textContent,
-        overlap: Math.max(0, c.right - x.left),
+        // Só conta se o ✕ está na mesma faixa vertical do controle (ele pode descer para a linha de baixo).
+        overlap:
+          x.top < c.bottom - 1 && x.bottom > c.top + 1
+            ? Math.max(0, c.right - x.left)
+            : 0,
         cut: Math.max(
           0,
           range.getBoundingClientRect().width - text.getBoundingClientRect().width,
@@ -328,6 +349,15 @@ for (const width of [1280, 900]) {
     const ok = (await measureRefCells(page))[0]!;
     expect(ok.overlap, 'âncora e ✕ sobrepostos').toBe(0);
     expect(ok.cut, 'rótulo cortado').toBeLessThanOrEqual(0.5);
+    for (const theme of ['light', 'dark'] as const) {
+      await page.evaluate(
+        (th) => document.documentElement.setAttribute('data-theme', th),
+        theme,
+      );
+      const g = await measureGrid(page);
+      expect(g.scroll, `rolagem horizontal (${theme})`).toBeLessThanOrEqual(0);
+      expect(g.outside, `fora da tabela (${theme})`).toBeLessThanOrEqual(0.5);
+    }
 
     // Exclui o alvo (Plugin A) e volta ao evento: a célula fica quebrada.
     const tree = page.getByRole('list', { name: 'Árvore de marcações' });
@@ -338,8 +368,17 @@ for (const width of [1280, 900]) {
     await expect(page.locator('.ref-cell .ref-control.is-broken')).toBeVisible();
     const broken = (await measureRefCells(page))[0]!;
     expect(broken.text).toContain('quebrada');
-    expect(broken.lines, 'uma linha só').toBe(1);
+    expect(broken.lines, 'quebra em poucas linhas').toBeLessThanOrEqual(6);
     expect(broken.overlap, 'âncora e ✕ sobrepostos').toBe(0);
     expect(broken.cut, 'rótulo cortado').toBeLessThanOrEqual(0.5);
+    for (const theme of ['light', 'dark'] as const) {
+      await page.evaluate(
+        (th) => document.documentElement.setAttribute('data-theme', th),
+        theme,
+      );
+      const g = await measureGrid(page);
+      expect(g.scroll, `rolagem horizontal (${theme})`).toBeLessThanOrEqual(0);
+      expect(g.outside, `fora da tabela (${theme})`).toBeLessThanOrEqual(0.5);
+    }
   });
 }

@@ -650,28 +650,38 @@ button.layer-group-label:hover {
 }
 
 /*
- * Célula `ref`: o controle (rótulo + ✕ de Limpar) fica numa linha só e a coluna tem largura
- * para o rótulo e para "(referência quebrada)"; o controle encolhe dentro da âncora, então o
- * ✕ nunca fica sobre o rótulo. O que não couber vai para o tooltip.
+ * Célula `ref`: a coluna divide a tabela como as outras (sem largura mínima própria, que
+ * fazia a tabela rolar na horizontal). O ✕ de Limpar fica ao lado do controle e, quando a
+ * coluna é estreita demais, desce para a linha de baixo em vez de cobrir o rótulo ou esconder
+ * o texto; o rótulo e "(referência quebrada)" quebram de linha em vez de ser cortados.
  */
 .data-grid .grid-cell-value .ref-cell {
-  flex-wrap: nowrap;
-  min-width: var(--size-grid-ref-col-min);
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .ref-cell .ref-control {
   min-width: 0;
 }
 
-/* O ✕ de Limpar também vem numa âncora de Tooltip: só a do controle estica. */
-.ref-field.ref-cell > .tooltip-anchor:not(:first-child) {
-  flex: none;
+/* O ícone é decorativo: na tabela estreita o espaço dele vai para o texto. */
+.ref-cell .ref-control > .icon {
+  display: none;
 }
 
-.ref-cell .ref-control.is-broken .ref-control-text {
-  overflow-wrap: normal;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.ref-cell .ref-control .ref-control-text {
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+/* O ✕ de Limpar também vem numa âncora de Tooltip: só a do controle estica. */
+.ref-field.ref-cell > .tooltip-anchor:first-child {
+  flex: 1 1 auto;
+}
+
+.ref-field.ref-cell > .tooltip-anchor:not(:first-child) {
+  flex: none;
 }
 
 .grid-head {

@@ -12,4 +12,4 @@
 ## Corrigido
 
 - A 900×720 o valor de uma referência mostra o nome do alvo inteiro; o que não cabe aparece no tooltip.
-- Na tabela, o ✕ de Limpar da célula `ref` não cobre mais o rótulo do alvo e "(referência quebrada)" fica numa linha (o que não couber vai para o tooltip); a coluna `ref` ganhou largura mínima própria. A 900×720 o nome do alvo no campo `ref` não perde mais fração de pixel para a camada.
+- Na tabela, o ✕ de Limpar da célula `ref` não cobre mais o rótulo do alvo e "(referência quebrada)" aparece inteira (o que não couber vai para o tooltip); a coluna `ref` divide a tabela como as outras, sem rolagem horizontal (CL2), e a referência quebrada quebra entre as palavras. A 900×720 o nome do alvo no campo `ref` não perde mais fração de pixel para a camada.
