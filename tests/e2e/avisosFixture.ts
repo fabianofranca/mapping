@@ -14,6 +14,7 @@ import {
 
 // Projeto "Avisos" do R18 (`docs/TESTING.md`): a especialização `avisos-demo` aplicada e as
 // marcações Cartão e Simples com anotação tipada, para conferir os cabeçalhos dos Detalhes.
+// O JSON (com a plataforma `demo` e o `code.demo` dos três tipos) acompanha o do R18.
 
 const NOW = '2026-11-05T12:00:00.000Z';
 

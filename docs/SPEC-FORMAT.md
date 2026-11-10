@@ -732,16 +732,42 @@ Cada aviso é um objeto estrito:
 
 Os quatro `kind` têm **gravidade fixa**, na ordem `removed` > `deprecated` = `diverges` > `pending`; a lista é exibida na ordem `removed`, `deprecated`, `diverges`, `pending` e, dentro do mesmo `kind`, na ordem do arquivo.
 
-| `kind`       | Rótulo (pt-BR / en-US) | Significa                                                                                                                               |
-| ------------ | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `removed`    | Removido / Removed     | Saiu do contrato e não deve ser usado.                                                                                                  |
-| `deprecated` | Obsoleto / Deprecated  | Obsoleto; a `message` diz o que usar no lugar.                                                                                          |
-| `diverges`   | Diverge / Diverges     | As fontes discordam; a `message` diz em quê.                                                                                            |
-| `pending`    | Pendente / Pending     | Uma fonte já tem e a outra ainda não; o nome da plataforma ou da origem vai na `message` (o núcleo da app não leva nome de plataforma). |
+| `kind`       | Rótulo (pt-BR / en-US) | Significa                                                                                                                                                  |
+| ------------ | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `removed`    | Removido / Removed     | Saiu do contrato e não deve ser usado.                                                                                                                     |
+| `deprecated` | Obsoleto / Deprecated  | Obsoleto; a `message` diz o que usar no lugar.                                                                                                             |
+| `diverges`   | Diverge / Diverges     | As fontes discordam; a `message` diz em quê.                                                                                                               |
+| `pending`    | Pendente / Pending     | Uma fonte já tem e a outra ainda não; o nome da plataforma ou da origem abre a `message`, como `compose: …` (o núcleo da app não leva nome de plataforma). |
 
 - `notices`: lista (pode ser vazia) no tipo (`layers[n].annotationTypes[m].notices`), no campo (`…fields[k].notices`) e na coluna de `table` (`…fields[k].columns[j].notices`). Dois avisos com o mesmo `kind` e a mesma `message` na lista são o erro `aviso repetido`, no caminho do segundo. Um `kind` fora dos quatro, uma `message` vazia ou só de espaços, uma `since` que não é data real, uma `ref` vazia e qualquer outra propriedade são erros. Numa versão anterior à 10 o erro é `só é permitido com formatVersion 10`, no caminho exato.
 - **O aviso só informa.** Nenhum aviso, nem `removed`, impede importar a especialização, aplicá-la, criar uma anotação do tipo ou aceitar uma proposta que o use. O aviso também não é pendência: a janela **Incompletas** e os códigos de problema das anotações não mudam. Os Detalhes mostram o aviso do campo mesmo vazio; a janela Avisos e a contagem só contam o campo com valor.
-- **Fora do contrato de versão:** incluir, mudar ou tirar `notices` é compatível e nunca pede migração (ver "Contrato de versão"). `diffSpecs` ignora `notices` e não gera diferença, então quem gera a especialização pode regravar **todos** os avisos a cada rodada, e o aviso some sozinho quando a diferença entre as fontes some. Atualizar a especialização só por avisos não mostra impacto.
+- **Fora do contrato de versão:** incluir, mudar ou tirar `notices` é compatível e nunca pede migração (ver "Contrato de versão"). `diffSpecs` ignora `notices` e não gera diferença, então quem gera a especialização regrava todos os avisos da sua origem (o mesmo `ref`; ver "Avisos de fidelidade e origens do aviso"), e o aviso some sozinho quando a diferença entre as fontes some. Atualizar a especialização só por avisos não mostra impacto.
+
+### Avisos de fidelidade e origens do aviso
+
+Os `notices` também registram a **fidelidade**: onde o desenho ou o comportamento de uma biblioteca aproxima a plataforma. Esta subseção vale para qualquer biblioteca e plataforma.
+
+**Critério.** Vira aviso a divergência de **desenho** ou de **comportamento** entre a biblioteca e a plataforma que **muda uma decisão** de quem marca (como recortar, que tipo ou campo escolher, o que esperar do desenho) ou de quem escreve o código (que parâmetro passar, que composable ou view trocar, o que conferir na tela). O resto fica **só no doc** do componente: estados interativos que o desenho estático não mostra (pressionado, foco, passar o mouse), valores literais em vez de token, diferenças de subpixel e a referência dos arquivos usados. Parâmetro que não é campo não é assunto desta regra: é do importador de assinaturas.
+
+- **Exemplo que vira aviso:** `compose: as filhas de um slot não têm weight; marque a largura real de cada uma`. **Exemplo que fica no doc:** `sem o estado pressionado`.
+- **`ref`:** o caminho, dentro do pacote, do documento que descreve a diferença, normalmente o `doc` do tipo (`docs/<tipo>.md`).
+- **`kind`:** `diverges`. Use `pending` só quando o limite tem um **pedido registrado** (uma issue, um ticket da biblioteca), citado na `message`.
+- **Prefixo da plataforma (regra):** a `message` de um aviso ligado a uma plataforma ou a uma origem **começa com o id dela e dois-pontos** (`compose: …`). O `notices` não tem campo de plataforma e o núcleo não filtra por texto: quem lê (a pessoa ou o agente) ignora o aviso cujo prefixo é de outra plataforma.
+
+**Duas origens de aviso**, diferenciadas pelo `ref`:
+
+| Origem                    | `ref`                                                                                                        | Quem grava                                                                                                                                            |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Gerado por ferramenta** | O arquivo de entrada da ferramenta que produz o aviso (por exemplo, a ficha de assinatura de um importador). | A ferramenta **regrava todos** os avisos com esse `ref` a cada rodada e não toca nos outros.                                                          |
+| **Curado à mão**          | Qualquer outro `ref`, como o doc do tipo.                                                                    | O autor (ou a skill `spec-author`), ao escrever ou rever o doc. A ferramenta nunca o apaga; ele só sai quando o autor revê o doc e a diferença sumiu. |
+
+- Ninguém escreve à mão um aviso com o `ref` de uma ferramenta: ele sumiria na próxima rodada dela.
+- Um aviso de fidelidade não repete o que um `pending` gerado por ferramenta já diz.
+
+**Como a app mostra os dois (sem controle novo):**
+
+- **Janela Avisos:** os avisos de fidelidade e os gerados por ferramenta são `notices` da especialização e entram na **mesma lista**, agrupados por aviso e ordenados por gravidade. O filtro de `kind` separa `diverges` de `pending`, mas **não** separa o `pending` curado (de doc) do `pending` gerado (de ficha): os dois são `pending`. O cabeçalho do grupo mostra o selo, o lugar, a mensagem, o `since` e a contagem, **não o `ref`**.
+- **A origem só aparece nos Detalhes:** `Origem: <ref>`, no aviso do tipo (`NoticeBlock`, no topo da anotação) e no do campo e da coluna (`NoticeLine`, abaixo do controle). Escolher a linha de um grupo na janela abre os Detalhes da anotação, onde a origem está.
 
 ## Origens (sources)
 
