@@ -1,4 +1,4 @@
-# Filha no slot — [Não lançado] (épico `epic/filha-no-slot`, PR #1517, MCP 0.33.0, schema v17)
+# Filha no slot — [Não lançado] (épico `epic/filha-no-slot`, PR #1519, MCP 0.33.0, schema v17)
 
 ## Adicionado
 
