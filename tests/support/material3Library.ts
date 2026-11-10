@@ -277,7 +277,7 @@ export function v1WithEstados(
       const nowField = now.fields.find((n) => n.key === f.key);
       return {
         key: f.key,
-        label: f.label,
+        label: (f as Raw & { label?: string }).label,
         type: 'number',
         default: SLIDER_NUMBERS[f.key],
         description: nowField?.description,

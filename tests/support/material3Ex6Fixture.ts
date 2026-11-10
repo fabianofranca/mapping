@@ -153,7 +153,11 @@ const close = (a: readonly number[], b: readonly number[], tol: number) =>
   a.length === b.length && a.every((v, i) => Math.abs(v - b[i]!) <= tol);
 
 /** Os nós de antes que não aparecem no desenho de agora (lista vazia = regressão cumprida). */
-export function missingNodes(d: Drawing, old: readonly OldNode[], opts: CompareOptions = {}) {
+export function missingNodes(
+  d: Drawing,
+  old: readonly OldNode[],
+  opts: CompareOptions = {},
+) {
   const tol = opts.tol ?? 0.5;
   const boxes = absoluteBoxes(d.root);
   const now = [...walk(d.root)].filter((n: SceneNode) => n.visible);
