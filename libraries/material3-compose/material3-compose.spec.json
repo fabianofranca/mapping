@@ -9045,7 +9045,7 @@
               "key": "progress",
               "label": "Progresso",
               "type": "number",
-              "description": "Progresso de 0 a 1. Vazio = indeterminado (o desenho mostra um arco ou uma barra parcial; o desenho aproxima o valor ao centésimo)."
+              "description": "Progresso de 0 a 1, exato (o desenho calcula o arco e a largura; valor fora do intervalo é preso a ele). Vazio = indeterminado (o desenho mostra um arco ou uma barra parcial)."
             }
           ],
           "code": {
