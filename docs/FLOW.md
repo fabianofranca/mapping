@@ -78,7 +78,7 @@ Depois edita-se o corpo da issue com `![descrição curta](https://github.com/fa
 
 ## CI e preview
 
-O CI roda só nos PRs (`pull_request`), uma vez por commit: branch sem PR não tem CI. Quando o CI de um PR termina verde, o `preview-on-pr.yml` (por `workflow_run`) dispara o Deploy com o branch e o SHA, que publica esse commit no preview (`/preview/`) sem validar de novo; há um preview só, o do último PR com CI verde. O `workflow_dispatch` do Deploy (sem `sha`) continua para publicar outro branch, rodando o `ci.yml` antes.
+O CI roda só nos PRs (`pull_request`), uma vez por commit: branch sem PR não tem CI. Quando o CI de um PR termina verde, o `preview-on-pr.yml` (por `workflow_run`) dispara o Deploy com o branch e o SHA, que publica esse commit no preview (`/preview/`) sem validar de novo; há um preview só, o do último PR com CI verde. O `workflow_dispatch` do Deploy (sem `sha`) continua para publicar outro branch, rodando o `ci.yml` antes. Editar o PR (título, corpo ou base) não roda o CI, e não se troca a base de um PR aberto: com a base errada, abra um PR novo com a base certa, cujo `opened` roda o CI, e feche o antigo sem reabrir; nada de commit vazio nem de fechar e reabrir PR para rodar o CI.
 
 ## Para a sessão da fase
 
