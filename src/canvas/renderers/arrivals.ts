@@ -10,8 +10,10 @@ import type { Rect } from '../../model';
 import {
   arrivalBadgeSpot,
   arrivalBadgeWidth,
+  arrivalBandLabelFit,
   arrivalBandLabelSpot,
   type ArrivalBadge,
+  type ArrivalRoot,
 } from '../arrivals';
 import { visibleArea, type Frame } from '../frame';
 import type { CanvasTokens } from '../theme';
@@ -203,7 +205,7 @@ export class ArrivalRenderer {
     tokens: CanvasTokens,
     view: Rect,
     avoid: Rect | undefined,
-    roots: readonly Rect[] | undefined,
+    roots: readonly ArrivalRoot[] | undefined,
   ): void {
     const node = this.badgeFor(badge.root);
     const text = t('perspective.canvas.cameFrom', { name: badge.name });
@@ -225,6 +227,7 @@ export class ArrivalRenderer {
       view,
       avoid,
       roots,
+      badge.root,
     );
     node.group.setAttrs({ x: at.x, y: at.y, scaleX: 1 / zoom, scaleY: 1 / zoom });
     node.box.setAttrs({
@@ -276,10 +279,15 @@ export class ArrivalRenderer {
       x: 0,
       y: line,
     });
-    const size = {
-      width: Math.max(node.title.getTextWidth(), node.hint.getTextWidth()),
-      height: 2 * line,
-    };
+    // Largura natural do texto (sem depender de `width`, que as reticências encurtam).
+    const natural = Math.max(
+      node.title.measureSize(node.title.text()).width,
+      node.hint.measureSize(node.hint.text()).width,
+    );
+    const size = { width: natural, height: 2 * line };
+    const fit = arrivalBandLabelFit(natural, zoom, view, tokens.arrival);
+    // Sem `width` o Konva mede o texto inteiro; com ela, uma linha só, cortada com reticências.
+    const clip = { width: fit ?? undefined, ellipsis: fit !== null };
     const at = arrivalBandLabelSpot(
       band,
       zoom,
@@ -288,8 +296,8 @@ export class ArrivalRenderer {
       line + TITLE_GAP,
       tokens.arrival,
     );
-    node.title.setAttrs({ scaleX: 1 / zoom, scaleY: 1 / zoom });
-    node.hint.setAttrs({ scaleX: 1 / zoom, scaleY: 1 / zoom });
+    node.title.setAttrs({ scaleX: 1 / zoom, scaleY: 1 / zoom, ...clip });
+    node.hint.setAttrs({ scaleX: 1 / zoom, scaleY: 1 / zoom, ...clip });
     node.title.x(at.x - band.x);
     node.title.y(at.y - band.y);
     node.hint.x(at.x - band.x);
