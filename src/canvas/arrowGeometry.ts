@@ -269,6 +269,23 @@ export function visibleArrowShapes(
   return result;
 }
 
+const lengthCache = new WeakMap<ArrowShape, number>();
+
+/**
+ * O comprimento do traço (soma dos trechos do `path`, unidades do canvas), guardado por
+ * `ArrowShape`: pan e zoom não o recalculam (o comprimento na tela é ele × o zoom).
+ */
+export function arrowPathLength(shape: ArrowShape): number {
+  const cached = lengthCache.get(shape);
+  if (cached !== undefined) return cached;
+  let total = 0;
+  for (let i = 1; i < shape.path.length; i++) {
+    total += dist(shape.path[i - 1] as Point, shape.path[i] as Point);
+  }
+  lengthCache.set(shape, total);
+  return total;
+}
+
 // ---------------------------------------------------------------------------
 // Toque
 

@@ -34,8 +34,11 @@ function setup(project: Project = arrowProject()) {
   const layer = new Konva.Layer();
   const renderer = new ArrowRenderer(layer);
   const editor = editorFor(project);
+  // A tela é grande de propósito: a seta fora da área visível não é pintada (CD3, decisão 7).
   const render = (overrides: Parameters<typeof frameOf>[1] = {}) =>
-    renderer.render(frameOf(editor, overrides));
+    renderer.render(
+      frameOf(editor, { size: { width: 20_000, height: 20_000 }, ...overrides }),
+    );
   const paint = () => {
     const r = recorder();
     renderer.paint(r.painter);

@@ -59,7 +59,7 @@ import { watchSpaceKey } from './input/keyboard';
 import { PointerInput } from './input/pointer';
 import { hitChain } from './input/intents';
 import { canvasToImagePixel, markingCanvasRect } from './markingGeometry';
-import { ArrowRenderer } from './renderers/arrows';
+import { ArrowRenderer, type ArrowChanges } from './renderers/arrows';
 import { ImageRenderer } from './renderers/images';
 import { MarkingRenderer } from './renderers/markings';
 import { OverlayRenderer } from './renderers/overlay';
@@ -932,12 +932,13 @@ export class CanvasController {
       this.mark(this.layers.components, this.componentLayer.setZoom(v.scale));
       this.mark(this.layers.floating, this.floatingLayer.setZoom(v.scale));
     }
-    // As setas só se refazem com elas, o tema ou o zoom (a espessura e a ponta são de tela).
+    // As setas só se refazem com elas, o tema ou o zoom (a espessura e a ponta são de tela), e com
+    // o que decide o nível de detalhe de cada uma: a seleção e o mouse. No pan, só se confere a área
+    // visível (`reveal`), como nos desenhos dos componentes.
     if (scaleChanged || dragChanged || !sameFrame(last, frame, ARROW_KEYS)) {
-      const changes = this.arrows.render(frame);
-      this.mark(this.layers.markings, changes.main);
-      this.mark(this.layers.overlay, changes.drag);
-      this.drawnArrows = this.arrows.size + this.arrows.liftedDrawn.length;
+      this.updateArrows(this.arrows.render(frame, this.placements));
+    } else if (moved || placementsChanged) {
+      this.updateArrows(this.arrows.reveal(frame, this.placements));
     }
     const marked = this.markings.render(frame, this.placements);
     this.mark(this.layers.markings, marked.main);
@@ -1035,6 +1036,13 @@ export class CanvasController {
   }
 
   /** Suja a camada se o renderizador mexeu em algum nó dela. */
+  /** Marca as camadas que as setas mexeram e guarda quantas estão pintadas (`data-arrows`). */
+  private updateArrows(changes: ArrowChanges): void {
+    this.mark(this.layers.markings, changes.main);
+    this.mark(this.layers.overlay, changes.drag);
+    this.drawnArrows = this.arrows.painted;
+  }
+
   private mark(layer: Konva.Layer, changed: boolean): void {
     if (changed) this.dirty.add(layer);
   }
