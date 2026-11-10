@@ -50,11 +50,14 @@ describe('célula ref da tabela', () => {
     );
   });
 
-  it('o controle encolhe dentro da célula e o texto quebrado fica numa linha', () => {
+  // CL2 (achado 1-R): o mínimo de 216px da coluna fazia a tabela rolar na horizontal.
+  it('o controle encolhe dentro da célula, sem largura mínima própria, e o texto quebrado quebra entre palavras', () => {
     expect(rule('.ref-cell .ref-control')).toMatch(/min-width:\s*0/);
-    expect(rule('.ref-cell .ref-control.is-broken .ref-control-text')).toMatch(
-      /white-space:\s*nowrap/,
+    expect(rule('.ref-cell .ref-control .ref-control-text')).toMatch(
+      /white-space:\s*normal/,
     );
-    expect(rule('.data-grid .grid-cell-value .ref-cell')).toMatch(/nowrap/);
+    const cell = rule('.data-grid .grid-cell-value .ref-cell');
+    expect(cell).toMatch(/flex-wrap:\s*wrap/);
+    expect(cell).toMatch(/min-width:\s*0/);
   });
 });
