@@ -11,6 +11,15 @@ import {
 import { TOKEN_NAME_PATTERN, type SpecTokens } from './components/tokens';
 import { isPackagePath, packagePathProblem } from './packagePaths';
 import { childSets } from './specChildren';
+import type { ModelMessageTemplateCode } from './messages';
+import {
+  addSpecIssue,
+  forwardIssue,
+  issueCoding,
+  specMsg,
+  type MessageParams,
+  type SpecMsg,
+} from './specIssueCode';
 
 export { isPackagePath };
 
@@ -628,14 +637,14 @@ const MAX_SUGGESTIONS = 200;
 /** `suggestions` (v8): lista não vazia, até 200 textos únicos, não vazios e sem espaço nas pontas. */
 function checkSuggestions(
   suggestions: readonly string[],
-  add: (sub: string, message: string) => void,
+  add: (sub: string, message: string | SpecMsg) => void,
 ): void {
   if (suggestions.length === 0) {
     add('suggestions', 'não pode ser vazio; tire a chave ou liste ao menos uma sugestão');
     return;
   }
   if (suggestions.length > MAX_SUGGESTIONS) {
-    add('suggestions', `no máximo ${MAX_SUGGESTIONS} sugestões`);
+    add('suggestions', specMsg('spec.suggestionsMax', { max: MAX_SUGGESTIONS }));
   }
   if (suggestions.some((x) => x === ''))
     add('suggestions', 'sugestões não podem ser vazias');
@@ -655,17 +664,14 @@ function checkField(
   column: boolean,
   siblings: ReadonlyMap<string, string>,
 ): void {
-  const add = (sub: string, message: string) =>
-    ctx.addIssue({ code: 'custom', path: [...path, sub], message });
-  const add2 = (sub: (string | number)[], message: string) =>
-    ctx.addIssue({ code: 'custom', path: [...path, ...sub], message });
+  const add = (sub: string, message: string | SpecMsg) =>
+    addSpecIssue(ctx, [...path, sub], message);
+  const add2 = (sub: (string | number)[], message: string | SpecMsg) =>
+    addSpecIssue(ctx, [...path, ...sub], message);
 
   const { type } = field;
   if (column && (type === 'table' || type === REMOVED_FIELD_TYPE)) {
-    add(
-      'type',
-      `"${type}" não é permitido dentro de table; use "string", "number", "date", "enum" ou "ref"`,
-    );
+    add('type', specMsg('spec.columnTypeNotAllowed', { type }));
     return;
   }
   // Tipo removido: o campo é ignorado inteiro (com um aviso de quem importa), sem conferir nada.
@@ -696,13 +702,18 @@ function checkField(
       add('linkedRef', 'só é permitido em campo ou coluna string');
     } else {
       const target = siblings.get(field.linkedRef);
-      const where = column ? 'uma coluna da tabela' : 'um campo do tipo';
+      const key = field.linkedRef;
       if (target === undefined) {
-        add('linkedRef', `"${field.linkedRef}" não é ${where}`);
+        add(
+          'linkedRef',
+          specMsg(column ? 'spec.linkedRefNotColumn' : 'spec.notTypeField', { key }),
+        );
       } else if (target !== 'ref') {
         add(
           'linkedRef',
-          `"${field.linkedRef}" deve ser ${column ? 'uma coluna' : 'um campo'} ref`,
+          specMsg(column ? 'spec.linkedRefNotRefColumn' : 'spec.linkedRefNotRefField', {
+            key,
+          }),
         );
       }
     }
@@ -736,7 +747,7 @@ function checkField(
     }
     for (const [from, to] of Object.entries(source.values)) {
       if (!(field.options ?? []).includes(to)) {
-        add2(['sources', i, 'values', from], `"${to}" não está nas options`);
+        add2(['sources', i, 'values', from], specMsg('spec.notInOptions', { value: to }));
       }
     }
   });
@@ -747,16 +758,21 @@ function checkField(
   }
 }
 
+/** Os problemas do zod levam o `input`, de onde sai o `received` do texto padrão (não sai do modelo). */
+const REPORT_INPUT = { reportInput: true } as const;
+
 /** Valida e normaliza os campos de um tipo (inclusive colunas de table). */
 type ColumnParse = ReturnType<typeof fieldShape.safeParse>;
 let columnParses = new WeakMap<object, ColumnParse>();
 
 /** Lê uma coluna de `table` pela forma dos campos; a mesma coluna é lida uma vez só. */
 function parseColumn(raw: unknown): ColumnParse {
-  if (typeof raw !== 'object' || raw === null) return fieldShape.safeParse(raw);
+  if (typeof raw !== 'object' || raw === null) {
+    return fieldShape.safeParse(raw, REPORT_INPUT);
+  }
   let hit = columnParses.get(raw);
   if (hit === undefined) {
-    hit = fieldShape.safeParse(raw);
+    hit = fieldShape.safeParse(raw, REPORT_INPUT);
     columnParses.set(raw, hit);
   }
   return hit;
@@ -772,11 +788,7 @@ function checkFields(
   fields.forEach((field, i) => {
     const p = [...path, i];
     if (seen.has(field.key)) {
-      ctx.addIssue({
-        code: 'custom',
-        path: [...p, 'key'],
-        message: `chave "${field.key}" repetida`,
-      });
+      addSpecIssue(ctx, [...p, 'key'], specMsg('spec.keyRepeated', { key: field.key }));
     }
     seen.add(field.key);
     checkField(field, ctx, p, false, siblings);
@@ -803,22 +815,12 @@ function checkFields(
       const cp = [...p, 'columns', j];
       const parsed = parseColumn(raw);
       if (!parsed.success) {
-        for (const issue of parsed.error.issues) {
-          ctx.addIssue({
-            code: 'custom',
-            path: [...cp, ...issue.path],
-            message: issue.message,
-          });
-        }
+        for (const issue of parsed.error.issues) forwardIssue(ctx, issue, cp, false);
         return;
       }
       const col = parsed.data;
       if (colSeen.has(col.key)) {
-        ctx.addIssue({
-          code: 'custom',
-          path: [...cp, 'key'],
-          message: `chave "${col.key}" repetida`,
-        });
+        addSpecIssue(ctx, [...cp, 'key'], specMsg('spec.keyRepeated', { key: col.key }));
       }
       colSeen.add(col.key);
       colTypes.set(col.key, col.type);
@@ -835,11 +837,11 @@ function checkFields(
       }
     }
     if (field.rowLabel !== undefined && colTypes.get(field.rowLabel) !== 'string') {
-      ctx.addIssue({
-        code: 'custom',
-        path: [...p, 'rowLabel'],
-        message: `"${field.rowLabel}" deve ser uma coluna string da tabela`,
-      });
+      addSpecIssue(
+        ctx,
+        [...p, 'rowLabel'],
+        specMsg('spec.rowLabelNotStringColumn', { key: field.rowLabel }),
+      );
     }
   });
 }
@@ -901,24 +903,28 @@ function checkCodeMaps(
   entry: Pick<z.infer<typeof codeCaseShape>, 'params' | 'values'>,
   fields: RawFieldMap,
   base: (string | number)[],
-  add: (path: (string | number)[], message: string) => void,
+  add: (path: (string | number)[], message: string | SpecMsg) => void,
 ): void {
   for (const k of Object.keys(entry.params ?? {})) {
-    if (!fields.has(k)) add([...base, 'params', k], `"${k}" não é um campo do tipo`);
+    if (!fields.has(k))
+      add([...base, 'params', k], specMsg('spec.notTypeField', { key: k }));
   }
   for (const [k, translation] of Object.entries(entry.values ?? {})) {
     const field = fields.get(k);
     if (!field) {
-      add([...base, 'values', k], `"${k}" não é um campo do tipo`);
+      add([...base, 'values', k], specMsg('spec.notTypeField', { key: k }));
       continue;
     }
     if (field.type !== 'enum') {
-      add([...base, 'values', k], `"${k}" deve ser um campo enum do tipo`);
+      add([...base, 'values', k], specMsg('spec.codeFieldNotEnum', { key: k }));
       continue;
     }
     for (const option of Object.keys(translation)) {
       if (!(field.options ?? []).includes(option)) {
-        add([...base, 'values', k, option], `"${option}" não está nas options de "${k}"`);
+        add(
+          [...base, 'values', k, option],
+          specMsg('spec.notInOptionsOf', { value: option, field: k }),
+        );
       }
     }
   }
@@ -929,15 +935,15 @@ function checkCodeVariants(
   variants: z.infer<typeof codeVariantsShape>,
   fields: RawFieldMap,
   base: (string | number)[],
-  add: (path: (string | number)[], message: string) => void,
+  add: (path: (string | number)[], message: string | SpecMsg) => void,
 ): void {
   const vp = [...base, 'variants'];
   const field = fields.get(variants.field);
   let options: readonly string[] | undefined;
   if (!field) {
-    add([...vp, 'field'], `"${variants.field}" não é um campo do tipo`);
+    add([...vp, 'field'], specMsg('spec.notTypeField', { key: variants.field }));
   } else if (field.type !== 'enum') {
-    add([...vp, 'field'], `"${variants.field}" deve ser um campo enum do tipo`);
+    add([...vp, 'field'], specMsg('spec.codeFieldNotEnum', { key: variants.field }));
   } else {
     options = field.options ?? [];
   }
@@ -946,7 +952,7 @@ function checkCodeVariants(
   for (const [value, kase] of entries) {
     const cp = [...vp, 'cases', value];
     if (options !== undefined && !options.includes(value)) {
-      add(cp, `"${value}" não está nas options de "${variants.field}"`);
+      add(cp, specMsg('spec.notInOptionsOf', { value, field: variants.field }));
     }
     if (Object.keys(kase).length === 0) {
       add(cp, 'caso vazio: declare symbol, path, params, values ou notes');
@@ -962,8 +968,8 @@ function checkCode(
   ctx: z.RefinementCtx,
 ): void {
   const fields = new Map(type.fields.map((f) => [f.key, f]));
-  const add = (path: (string | number)[], message: string) =>
-    ctx.addIssue({ code: 'custom', path, message });
+  const add = (path: (string | number)[], message: string | SpecMsg) =>
+    addSpecIssue(ctx, path, message);
 
   for (const [platform, entry] of Object.entries(type.code ?? {})) {
     const base = ['code', platform];
@@ -1006,10 +1012,12 @@ function checkExamples(
   const names = new Set<string>();
   (type.examples ?? []).forEach((example, i) => {
     const p = ['examples', i];
-    const add = (sub: (string | number)[], message: string) =>
-      ctx.addIssue({ code: 'custom', path: [...p, ...sub], message });
+    const add = (sub: (string | number)[], message: string | SpecMsg) =>
+      addSpecIssue(ctx, [...p, ...sub], message);
 
-    if (names.has(example.name)) add(['name'], `nome "${example.name}" repetido`);
+    if (names.has(example.name)) {
+      add(['name'], specMsg('spec.exampleNameRepeated', { name: example.name }));
+    }
     names.add(example.name);
 
     const external = example.system !== undefined || example.file !== undefined;
@@ -1025,16 +1033,13 @@ function checkExamples(
     for (const [k, value] of Object.entries(example.values ?? {})) {
       const field = fields.get(k);
       if (!field) {
-        add(['values', k], `"${k}" não é um campo do tipo`);
+        add(['values', k], specMsg('spec.notTypeField', { key: k }));
       } else if (value === null) {
         continue;
       } else if (field.type === 'table') {
         if (Array.isArray(value))
           checkExampleRows(field, value, [...p, 'values', k], ctx);
-        else
-          addCoded(ctx, [...p, 'values', k], 'example-table-needs-rows', {
-            message: 'campo "table" aceita só a lista de linhas',
-          });
+        else add(['values', k], specMsg('spec.exampleTableNeedsRows'));
       } else if (field.type === 'ref') {
         add(['values', k], 'campo "ref" não aceita valor em exemplo');
       } else {
@@ -1043,16 +1048,6 @@ function checkExamples(
       }
     }
   });
-}
-
-/** Problema com `code` e `params`, que o `parseSpec` copia para o `SpecIssue`. */
-function addCoded(
-  ctx: z.RefinementCtx,
-  path: (string | number)[],
-  code: SpecIssueCode,
-  { message, params }: { message: string; params?: Record<string, string> },
-): void {
-  ctx.addIssue({ code: 'custom', path, message, params: { code, ...params } });
 }
 
 /** As linhas do exemplo de um campo `table`: objetos coluna → valor, cada célula do tipo da coluna. */
@@ -1070,25 +1065,22 @@ function checkExampleRows(
   rows.forEach((row, i) => {
     const rowPath = [...path, i];
     if (typeof row !== 'object' || row === null || Array.isArray(row)) {
-      addCoded(ctx, rowPath, 'example-row-not-object', {
-        message: 'deve ser um objeto (coluna → valor)',
-      });
+      addSpecIssue(ctx, rowPath, specMsg('spec.exampleRowNotObject'));
       return;
     }
     for (const [key, cell] of Object.entries(row)) {
       const cellPath = [...rowPath, key];
       const column = columns.get(key);
       if (column === undefined) {
-        addCoded(ctx, cellPath, 'example-not-column', {
-          message: `"${key}" não é coluna de "${field.key}"`,
-          params: { key, field: field.key },
-        });
+        addSpecIssue(
+          ctx,
+          cellPath,
+          specMsg('spec.exampleNotColumn', { key, field: field.key }),
+        );
       } else if (cell === null) {
         continue;
       } else if (column.type === 'ref') {
-        addCoded(ctx, cellPath, 'example-ref-cell', {
-          message: 'coluna "ref" não aceita valor em exemplo',
-        });
+        addSpecIssue(ctx, cellPath, specMsg('spec.exampleRefCell'));
       } else {
         const problem = valueProblem(column.type, column.options, cell);
         if (problem !== undefined)
@@ -1106,7 +1098,7 @@ function checkAppliesTo(
   const { appliesTo } = type;
   if (appliesTo === undefined) return;
   const add = (path: (string | number)[], message: string) =>
-    ctx.addIssue({ code: 'custom', path, message });
+    addSpecIssue(ctx, path, message);
   if (appliesTo.length === 0) {
     add(['appliesTo'], 'não pode ser vazio; use "marking", "arrow" ou os dois');
     return;
@@ -1146,24 +1138,13 @@ const childClauseShape = z
   })
   .strict();
 
-/** Propriedade a mais (`.strict()` do zod) em português, no molde dos outros erros da spec. */
-function unknownKeysMessage(issue: { readonly keys: readonly string[] }): string {
-  return `propriedade desconhecida: ${issue.keys.map((k) => `"${k}"`).join(', ')}`;
-}
-
 /** Reemite no `ctx` os problemas de um objeto lido por outro schema, no mesmo caminho relativo. */
 function forwardIssues(
   result: { success: boolean; error?: { issues: readonly z.core.$ZodIssue[] } },
   ctx: z.RefinementCtx,
 ): void {
-  for (const issue of result.error?.issues ?? []) {
-    ctx.addIssue({
-      code: 'custom',
-      path: [...issue.path],
-      message:
-        issue.code === 'unrecognized_keys' ? unknownKeysMessage(issue) : issue.message,
-    });
-  }
+  // A propriedade a mais sai em português, no molde dos outros erros da especialização.
+  for (const issue of result.error?.issues ?? []) forwardIssue(ctx, issue, [], true);
 }
 
 /** Um item de `allowedChildren`: o id de um tipo ou uma cláusula `{ layer, groups? }`. */
@@ -1176,7 +1157,7 @@ function checkAllowedChild(value: unknown, ctx: z.RefinementCtx): void {
     ctx.addIssue({ code: 'custom', message: ALLOWED_CHILD_SHAPE_MESSAGE });
     return;
   }
-  const parsed = childClauseShape.safeParse(value);
+  const parsed = childClauseShape.safeParse(value, REPORT_INPUT);
   forwardIssues(parsed, ctx);
   if (parsed.success && parsed.data.groups?.length === 0) {
     ctx.addIssue({ code: 'custom', path: ['groups'], message: GROUPS_EMPTY });
@@ -1216,9 +1197,9 @@ const docPackageShape = packagePath('.md');
 /** `doc`: um caminho `.md` do pacote ou, na v11, `{ repo, path }` de um repositório de `docRepos`. */
 const docShape = z.custom<string | SpecDocRef>().superRefine((value: unknown, ctx) => {
   if (typeof value === 'string') {
-    forwardIssues(docPackageShape.safeParse(value), ctx);
+    forwardIssues(docPackageShape.safeParse(value, REPORT_INPUT), ctx);
   } else if (isRecord(value)) {
-    forwardIssues(docRefShape.safeParse(value), ctx);
+    forwardIssues(docRefShape.safeParse(value, REPORT_INPUT), ctx);
   } else {
     ctx.addIssue({ code: 'custom', message: DOC_SHAPE_MESSAGE });
   }
@@ -1241,8 +1222,8 @@ function checkChildRoles(
   },
   ctx: z.RefinementCtx,
 ): void {
-  const add = (path: (string | number)[], message: string) =>
-    ctx.addIssue({ code: 'custom', path, message });
+  const add = (path: (string | number)[], message: string | SpecMsg) =>
+    addSpecIssue(ctx, path, message);
   const { childRoles } = type;
   if (childRoles === undefined) {
     if (type.childRolesLabel !== undefined) {
@@ -1258,7 +1239,9 @@ function checkChildRoles(
   }
   const seen = new Set<string>();
   childRoles.forEach((role, i) => {
-    if (seen.has(role.id)) add(['childRoles', i, 'id'], `id "${role.id}" repetido`);
+    if (seen.has(role.id)) {
+      add(['childRoles', i, 'id'], specMsg('spec.idRepeated', { id: role.id }));
+    }
     seen.add(role.id);
   });
 }
@@ -1276,11 +1259,7 @@ function checkTypeGroups(
   const seen = new Set<string>();
   groups.forEach((group, i) => {
     if (seen.has(group)) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['groups', i],
-        message: `grupo "${group}" repetido`,
-      });
+      addSpecIssue(ctx, ['groups', i], specMsg('spec.groupRepeated', { group }));
     }
     seen.add(group);
   });
@@ -1336,11 +1315,11 @@ const annotationTypeShape = z
     if (type.labelField != null) {
       const f = type.fields.find((x) => x.key === type.labelField);
       if (!f || f.type !== 'string') {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['labelField'],
-          message: `"${type.labelField}" deve ser um campo string do tipo`,
-        });
+        addSpecIssue(
+          ctx,
+          ['labelField'],
+          specMsg('spec.labelFieldNotString', { key: type.labelField }),
+        );
       }
     }
   });
@@ -2311,8 +2290,10 @@ function checkChildClause(
     );
     return;
   }
-  (clause.groups ?? []).forEach((group, gi) => {
-    if (target.groups.has(group)) return;
+  // `groups` que não é lista já foi recusado pela forma da cláusula.
+  const groups: readonly unknown[] = Array.isArray(clause.groups) ? clause.groups : [];
+  groups.forEach((group, gi) => {
+    if (typeof group !== 'string' || target.groups.has(group)) return;
     add(
       [...path, 'groups', gi],
       `grupo "${group}" não existe na camada "${clause.layer}"`,
@@ -2856,20 +2837,15 @@ export const specSchema = z
   });
 
 /**
- * Códigos estáveis dos problemas que a interface mostra traduzidos (o `message` em português
- * continua para os testes e o MCP, que não expõe o código).
+ * Problema da especialização: o `message` em português (o que o MCP e os testes leem) e, quando
+ * há, o `code` e os `params` do catálogo de mensagens do modelo (`src/model/messages/spec.ts`),
+ * que a interface traduz.
  */
-export type SpecIssueCode =
-  | 'example-not-column'
-  | 'example-row-not-object'
-  | 'example-ref-cell'
-  | 'example-table-needs-rows';
-
 export type SpecIssue = {
   path: string;
   message: string;
-  code?: SpecIssueCode;
-  params?: Readonly<Record<string, string>>;
+  code?: ModelMessageTemplateCode;
+  params?: MessageParams;
 };
 
 /** `layers[1].annotationTypes[0].fields[2].type` a partir de um caminho do zod. */
@@ -2999,21 +2975,19 @@ export function removedFieldKeys(data: unknown): Map<string, Set<string>> {
   return result;
 }
 
-/** O problema do zod como `SpecIssue`: o `code` e os `params` de `addCoded` viram campos. */
+/** O problema do zod como `SpecIssue`, com o código e os parâmetros do catálogo (sem o `input`). */
 function toSpecIssue(issue: z.core.$ZodIssue): SpecIssue {
   const base = { path: formatSpecPath(issue.path), message: issue.message };
-  const params: unknown = 'params' in issue ? issue.params : undefined;
-  if (!isRecord(params) || typeof params.code !== 'string') return base;
-  const { code, ...rest } = params;
-  const out: SpecIssue = { ...base, code: code as SpecIssueCode };
-  return Object.keys(rest).length > 0
-    ? { ...out, params: rest as Record<string, string> }
-    : out;
+  const coding = issueCoding(issue);
+  if (coding === undefined) return base;
+  return coding.params === undefined
+    ? { ...base, code: coding.code }
+    : { ...base, code: coding.code, params: coding.params };
 }
 
 /** Valida um JSON já lido; erros no formato `caminho: mensagem`. */
 export function parseSpec(data: unknown): SpecParseResult {
-  const result = specSchema.safeParse(data);
+  const result = specSchema.safeParse(data, REPORT_INPUT);
   if (result.success) return { ok: true, ...dropRemovedFields(result.data) };
   const issues = result.error.issues.map(toSpecIssue);
   return {

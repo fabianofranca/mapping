@@ -21,7 +21,6 @@ import {
   type SpecAnnotationType,
   type SpecField,
   type SpecIssue,
-  type SpecIssueCode,
   type SpecMigrationStep,
 } from './spec';
 import { specWarnings } from './specWarnings';
@@ -79,10 +78,10 @@ export interface LibraryIssue {
   readonly message: string;
   readonly severity: 'error' | 'warning';
   /**
-   * Código estável de problemas que a interface exibe traduzidos (`src/model/messages/`, ou
-   * `SpecIssueCode` até a MB2); `message` continua com o texto em português (MCP e testes).
+   * Código estável de problemas que a interface exibe traduzidos (`src/model/messages/`);
+   * `message` continua com o texto em português (MCP e testes).
    */
-  readonly code?: ModelMessageTemplateCode | SpecIssueCode;
+  readonly code?: ModelMessageTemplateCode;
   /** Dados da tradução (`{key}`, `{path}`…). */
   readonly params?: Readonly<Record<string, string | number>>;
   /** Mensagem de outro módulo que a interface traduz e põe no `{detail}` do texto de fora. */

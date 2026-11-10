@@ -4,6 +4,7 @@
 // idiomas; o pt-BR é idêntico ao `text` que o modelo devolve (o que o MCP segue emitindo).
 
 import { libraryMessages } from '../model/messages/library';
+import { specMessages } from '../model/messages/spec';
 import {
   MODEL_MESSAGE_TEMPLATES,
   type ModelMessageTemplateCode,
@@ -148,8 +149,131 @@ const libraryEnUS: {
     'example screen "{name}" of the system "{system}": {detail}',
 };
 
+/** en-US dos códigos do catálogo `spec` (termos do formato, chaves, ids e caminhos não se traduzem). */
+const specEnUS: { readonly [C in keyof typeof specMessages as `model.${C}`]: string } = {
+  'model.spec.required': 'required',
+  'model.spec.mustBeText': 'must be text',
+  'model.spec.mustBeBoolean': 'must be true or false',
+  'model.spec.mustBeObject': 'must be an object',
+  'model.spec.notEmpty': 'cannot be empty',
+  'model.spec.colorInvalid': 'invalid color; use the format #RRGGBB',
+  'model.spec.tagInvalid': 'invalid tag; use [a-z0-9-]+',
+  'model.spec.keyInvalid': 'invalid key; use only [A-Za-z0-9_], without spaces',
+  'model.spec.keyReserved': 'a key cannot start with "_" (reserved)',
+  'model.spec.platformIdInvalid': 'invalid platform id; use [a-z0-9-]+',
+  'model.spec.fieldTypeInvalid':
+    '"{value}" is invalid; use "string", "number", "date", "enum", "table" or "ref"',
+  'model.spec.dateInvalid': 'invalid date; use YYYY-MM-DD',
+  'model.spec.dateNonexistent': 'nonexistent date',
+  'model.spec.packagePathInvalid':
+    'invalid path: use a path relative to the specialization folder, with "/", without "." or ".." and without a drive (e.g. components/button.json)',
+  'model.spec.invalidExtension': 'invalid extension: expected {exts}',
+  'model.spec.unknownKeys': 'unknown property: {keys}',
+  'model.spec.typeSourceNeedsIdOrName': 'needs "id" or "name"',
+  'model.spec.acceptsAnnotationsEmpty':
+    'cannot be empty; remove the key or list at least one item',
+  'model.spec.acceptsNeedsOne': 'needs at least one tag, "free": true or "annotations"',
+  'model.spec.noticeKindInvalid':
+    '"{value}" is invalid; use "removed", "deprecated", "diverges" or "pending"',
+  'model.spec.noticeKindShape':
+    'must be "removed", "deprecated", "diverges" or "pending"',
+  'model.spec.noticeRepeated': 'repeated notice',
+  'model.spec.valueMustBeNumber': 'must be a number',
+  'model.spec.valueMustBeDate': 'must be a valid date YYYY-MM-DD',
+  'model.spec.valueMustBeOption': 'must be one of the options',
+  'model.spec.valueNotForTable': 'does not exist for table',
+  'model.spec.valueNotForRef': 'does not exist for ref',
+  'model.spec.suggestionsEmpty':
+    'cannot be empty; remove the key or list at least one suggestion',
+  'model.spec.suggestionsMax': 'at most {max} suggestions',
+  'model.spec.suggestionsBlank': 'suggestions cannot be empty',
+  'model.spec.suggestionsTrim': 'suggestions cannot have spaces at the start or the end',
+  'model.spec.suggestionsRepeated': 'repeated suggestions',
+  'model.spec.columnTypeNotAllowed':
+    '"{type}" is not allowed inside a table; use "string", "number", "date", "enum" or "ref"',
+  'model.spec.optionsRequired': 'required and not empty in an enum',
+  'model.spec.optionsBlank': 'options cannot be empty',
+  'model.spec.optionsRepeated': 'repeated options',
+  'model.spec.optionsOnlyEnum': 'only allowed in an enum',
+  'model.spec.onlyStringField': 'only allowed in a string field or column',
+  'model.spec.notTypeField': '"{key}" is not a field of the type',
+  'model.spec.linkedRefNotColumn': '"{key}" is not a column of the table',
+  'model.spec.linkedRefNotRefField': '"{key}" must be a ref field',
+  'model.spec.linkedRefNotRefColumn': '"{key}" must be a ref column',
+  'model.spec.onlyTable': 'only allowed in a table',
+  'model.spec.onlyRef': 'only allowed in a ref',
+  'model.spec.notAllowedForFieldType': 'not allowed in this field type',
+  'model.spec.acceptsRequired': 'required in a ref',
+  'model.spec.refNoTags': 'a ref cannot have tags',
+  'model.spec.valuesOnlyEnum': 'only allowed in enum fields',
+  'model.spec.notInOptions': '"{value}" is not in the options',
+  'model.spec.columnNoTags': 'columns have no tags; use "tags" on the table',
+  'model.spec.keyRepeated': 'key "{key}" repeated',
+  'model.spec.columnsRequired': 'required and not empty in a table',
+  'model.spec.rowLabelRequired': 'required in a table with tags',
+  'model.spec.rowLabelNotStringColumn': '"{key}" must be a string column of the table',
+  'model.spec.codePathInvalid':
+    'invalid path: use a path relative to the repository root, with "/", without "." or ".." and without a drive (e.g. app/src/Main.kt)',
+  'model.spec.codeFieldNotEnum': '"{key}" must be an enum field of the type',
+  'model.spec.notInOptionsOf': '"{value}" is not in the options of "{field}"',
+  'model.spec.variantsNoCases': 'declare at least one case',
+  'model.spec.variantsEmptyCase':
+    'empty case: declare symbol, path, params, values or notes',
+  'model.spec.exampleValueShape':
+    'must be text, a number or null (or a list of rows, in a table field)',
+  'model.spec.exampleNameRepeated': 'name "{name}" repeated',
+  'model.spec.exampleBothModes':
+    'use "values" or "system" with "file", not both modes together',
+  'model.spec.exampleNoMode': 'needs "values" or "system" with "file"',
+  'model.spec.requiredWithFile': 'required with "file"',
+  'model.spec.requiredWithSystem': 'required with "system"',
+  'model.spec.exampleRefNoValue': 'a "ref" field takes no value in an example',
+  'model.spec.exampleTableNeedsRows': 'a "table" field takes only the list of rows',
+  'model.spec.exampleRowNotObject': 'must be an object (column → value)',
+  'model.spec.exampleNotColumn': '"{key}" is not a column of "{field}"',
+  'model.spec.exampleRefCell': 'a "ref" column takes no value in an example',
+  'model.spec.appliesToEmpty': 'cannot be empty; use "marking", "arrow" or both',
+  'model.spec.repeatedValues': 'repeated values',
+  'model.spec.arrowOnlyNoComponent': 'an arrow-only type cannot have a component',
+  'model.spec.arrowOnlyNoFloating': 'an arrow-only type cannot have floating',
+  'model.spec.appliesToInvalid': '"{value}" is invalid; use "marking" or "arrow"',
+  'model.spec.appliesToShape': 'must be "marking" or "arrow"',
+  'model.spec.groupsEmpty': 'cannot be empty; remove the key or list at least one group',
+  'model.spec.groupsList': 'must be a list of group ids',
+  'model.spec.allowedChildShape':
+    'must be a type id (text) or a clause { layer, groups }',
+  'model.spec.docShape': 'must be text (a package file) or an object { repo, path }',
+  'model.spec.docPathInvalid':
+    'invalid path: use a path relative to the repository root, with "/", without "." or ".." and without a drive (e.g. components/button.md)',
+  'model.spec.docAnchor': 'cannot have "#" (anchor)',
+  'model.spec.childRolesLabelNeedsRoles': 'only allowed with childRoles',
+  'model.spec.childRolesNeedsChildren': 'only allowed in a type with allowedChildren',
+  'model.spec.childRolesEmpty':
+    'cannot be empty; remove the key or declare at least one role',
+  'model.spec.idRepeated': 'id "{id}" repeated',
+  'model.spec.groupRepeated': 'group "{group}" repeated',
+  'model.spec.structuralNoComponent':
+    'a structural type does not draw: it cannot have a component',
+  'model.spec.labelFieldNotString': '"{key}" must be a string field of the type',
+  'model.spec.onlyFormat15': 'only allowed with formatVersion 15',
+  'model.spec.onlyFormat10': 'only allowed with formatVersion 10',
+  // Textos padrão do zod, no inglês do zod
+  'model.spec.zod.invalid_type':
+    'Invalid input: expected {expected}, received {received}',
+  'model.spec.zod.unrecognized_keys': 'Unrecognized keys: {keys}',
+  'model.spec.zod.too_small': 'Too small: the minimum is {minimum}',
+  'model.spec.zod.too_big': 'Too big: the maximum is {maximum}',
+  'model.spec.zod.invalid_value': 'Invalid value: expected one of {values}',
+  'model.spec.zod.invalid_format': 'Invalid text format',
+  'model.spec.zod.invalid_union': 'Invalid input: matches none of the accepted shapes',
+  'model.spec.zod.invalid_key': 'Invalid key',
+  'model.spec.zod.invalid_element': 'Invalid item',
+  'model.spec.zod.not_multiple_of': 'Invalid number: must be a multiple of {divisor}',
+};
+
 export const modelMessagesEnUS: Record<keyof typeof modelMessagesPtBR, string> = {
   ...libraryEnUS,
+  ...specEnUS,
   'model.catalog.fileMissing': 'missing file ({path})',
   'model.catalog.invalidComponent': 'invalid component',
   'model.catalog.typeOutside': 'type "{typeId}" is outside the specialization',

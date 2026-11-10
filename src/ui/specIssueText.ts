@@ -1,28 +1,17 @@
-import { t } from '../i18n';
-import type { SpecIssueCode } from '../model';
+import { modelMessage, isModelMessageTemplateCode } from '../model';
+import { messageText } from './modelMessage';
 
 /**
- * O texto traduzido dos problemas da especialização que têm `code` (os exemplos com linhas de
- * `table`); sem `code` conhecido, o `message` em português do modelo.
+ * O texto traduzido de um problema da especialização: com `code` do catálogo, na língua da app
+ * (`messageText`); sem ele, o `message` em português do modelo.
  */
 export function specIssueText(issue: {
   readonly code?: string | undefined;
   readonly params?: Readonly<Record<string, string | number>> | undefined;
   readonly message: string;
 }): string {
-  switch (issue.code as SpecIssueCode | undefined) {
-    case 'example-not-column':
-      return t('library.exampleNotColumn', {
-        key: issue.params?.key ?? '',
-        field: issue.params?.field ?? '',
-      });
-    case 'example-row-not-object':
-      return t('library.exampleRowNotObject');
-    case 'example-ref-cell':
-      return t('library.exampleRefCell');
-    case 'example-table-needs-rows':
-      return t('library.exampleTableNeedsRows');
-    default:
-      return issue.message;
+  if (issue.code === undefined || !isModelMessageTemplateCode(issue.code)) {
+    return issue.message;
   }
+  return messageText(modelMessage(issue.code, issue.params ?? {}, issue.message));
 }

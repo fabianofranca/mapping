@@ -5,7 +5,7 @@ import { sameLayerSpec, type Json } from './sameLayerFixtures';
 
 const issuesOf = (spec: Json) => {
   const r = parseSpec(spec);
-  return r.ok ? [] : r.issues;
+  return r.ok ? [] : r.issues.map(({ path, message }) => ({ path, message }));
 };
 
 const button = (s: Json) => s.layers[0].annotationTypes[0] as Json;

@@ -528,18 +528,18 @@ describe('examples do tipo', () => {
       expect(issues).toContainEqual({
         path: `${ROWS}[0].nada`,
         message: '"nada" não é coluna de "rows"',
-        code: 'example-not-column',
+        code: 'spec.exampleNotColumn',
         params: { key: 'nada', field: 'rows' },
       });
       expect(issues).toContainEqual({
         path: `${ROWS}[1]`,
         message: 'deve ser um objeto (coluna → valor)',
-        code: 'example-row-not-object',
+        code: 'spec.exampleRowNotObject',
       });
       expect(issuesOf(withRows('x'))).toContainEqual({
         path: ROWS,
         message: 'campo "table" aceita só a lista de linhas',
-        code: 'example-table-needs-rows',
+        code: 'spec.exampleTableNeedsRows',
       });
     });
   });

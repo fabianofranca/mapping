@@ -58,7 +58,7 @@ function withSteps(...steps: Json[]): Json {
 function issuesOf(spec: Json): SpecIssue[] {
   const result = parseSpec(spec);
   if (result.ok) throw new Error('era para falhar');
-  return result.issues;
+  return result.issues.map(({ path, message }) => ({ path, message }));
 }
 
 function expectIssue(spec: Json, path: string, message: string): void {
