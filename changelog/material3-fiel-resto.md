@@ -8,3 +8,7 @@
 - Formato do componente 4: `shadow` aceita uma lista de 1 a 4 sombras (a primeira fica por cima, como o `box-shadow` do CSS) e ganha `spread` (px, literal ou `$token`, negativo encolhe; os raios crescem junto). A app, o visualizador e o PNG do MCP desenham todas; o aviso "só a primeira sombra externa" deixou de existir, e o recorte ampliado da raiz conta o `spread` e todas as sombras.
 - Formato do componente 4: `stroke.gap` (`{ "node": "<nome>", "padding": 4 }`, em `frame` e `rect`) abre um vão no contorno com cantos arredondados onde a caixa do nó nomeado o cruza, como o contorno do `OutlinedTextField` sob o rótulo; na app, no visualizador e no PNG do MCP.
 - Numa `formatVersion` 1 a 3 cada chave nova é o erro `só é permitido com formatVersion 4`, no caminho dela. A skill `spec-author`, o `docs/COMPONENT-FORMAT.md`, o `docs/component.schema.json` e o `docs/AGENT-GUIDE.md` trazem as chaves e as mensagens.
+
+## Alterado
+
+- Teto do `dist/index.html` subiu 16 KiB, de 1.966.080 para 1.982.464 bytes, pela regra do orçamento.
