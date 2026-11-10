@@ -1200,3 +1200,29 @@ describe('TR4 — rodada dirigida em grupos e reteste junto', () => {
     );
   });
 });
+
+describe('CL1 — roteiro do R9.24 a R9.28 (etapa #701)', () => {
+  const rows = read('docs/TESTING.md')
+    .split('\n')
+    .filter((l) => /^\| R9\.2[4-8] /.test(l));
+  const row = (id: string): string => rows.find((l) => l.startsWith(`| ${id} `)) ?? '';
+
+  it('a Column do R9.25 e do R9.26 cabe no Cartão de 300 × 200 do R9.18 (x 20 + largura ≤ 300)', () => {
+    for (const id of ['R9.25', 'R9.26']) {
+      const m = /Column com `rect` `\{"x":(\d+),"y":\d+,"width":(\d+),/.exec(row(id));
+      expect(m, id).not.toBeNull();
+      expect(Number(m?.[1]) + Number(m?.[2]), id).toBeLessThanOrEqual(300);
+    }
+  });
+
+  it('o R9.28 (c) separa invalid-ref (???) de not-found (referência bem formada que não existe)', () => {
+    const r = row('R9.28');
+    expect(r).toMatch(/`inside` `\?\?\?`/);
+    expect(r).toMatch(/`inside` `mapping:\/\/telas\/m\/inexistente`/);
+    expect(r).toMatch(/\(c1\) `invalid-ref`; \(c2\) `not-found`/);
+  });
+
+  it('o R9.24 não espera membership (só lista quem mudou de pai)', () => {
+    expect(row('R9.24')).not.toContain('membership');
+  });
+});
