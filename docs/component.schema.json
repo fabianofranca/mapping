@@ -281,6 +281,9 @@
               "$ref": "#/$defs/tokenName"
             }
           }
+        },
+        {
+          "$ref": "#/$defs/numericOps"
         }
       ]
     },
@@ -360,6 +363,9 @@
               "$ref": "#/$defs/tokenName"
             }
           }
+        },
+        {
+          "$ref": "#/$defs/numericOps"
         }
       ]
     },
@@ -439,6 +445,9 @@
               "$ref": "#/$defs/tokenName"
             }
           }
+        },
+        {
+          "$ref": "#/$defs/numericOps"
         }
       ]
     },
@@ -518,6 +527,9 @@
               "$ref": "#/$defs/tokenName"
             }
           }
+        },
+        {
+          "$ref": "#/$defs/numericOps"
         }
       ]
     },
@@ -666,6 +678,9 @@
               }
             }
           }
+        },
+        {
+          "$ref": "#/$defs/numericOps"
         }
       ]
     },
@@ -1001,6 +1016,9 @@
               "$ref": "#/$defs/tokenName"
             }
           }
+        },
+        {
+          "$ref": "#/$defs/numericOps"
         }
       ]
     },
@@ -1080,6 +1098,9 @@
               "$ref": "#/$defs/tokenName"
             }
           }
+        },
+        {
+          "$ref": "#/$defs/numericOps"
         }
       ]
     },
@@ -1159,6 +1180,9 @@
               "$ref": "#/$defs/tokenName"
             }
           }
+        },
+        {
+          "$ref": "#/$defs/numericOps"
         }
       ]
     },
@@ -1583,6 +1607,66 @@
               "type": "array",
               "items": {
                 "$ref": "#/$defs/condition"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$gt"],
+          "properties": {
+            "$gt": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "$ref": "#/$defs/operand"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$gte"],
+          "properties": {
+            "$gte": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "$ref": "#/$defs/operand"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$lt"],
+          "properties": {
+            "$lt": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "$ref": "#/$defs/operand"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$lte"],
+          "properties": {
+            "$lte": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "$ref": "#/$defs/operand"
               }
             }
           }
@@ -3023,6 +3107,9 @@
               "$ref": "#/$defs/tokenName"
             }
           }
+        },
+        {
+          "$ref": "#/$defs/numericOps"
         }
       ]
     },
@@ -3102,6 +3189,9 @@
               "$ref": "#/$defs/tokenName"
             }
           }
+        },
+        {
+          "$ref": "#/$defs/numericOps"
         }
       ]
     },
@@ -3257,6 +3347,9 @@
               "$ref": "#/$defs/tokenName"
             }
           }
+        },
+        {
+          "$ref": "#/$defs/numericOps"
         }
       ]
     },
@@ -3275,6 +3368,191 @@
       "description": "Nome de um token da especialização (formatVersion 15 da especialização; formatVersion 4 do componente).",
       "type": "string",
       "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "operand": {
+      "description": "Operando de uma operação ou comparação (formatVersion 4): número, $field, $token, outra operação, $if ou $switch.",
+      "$ref": "#/$defs/expr_number"
+    },
+    "numericOps": {
+      "description": "Operações numéricas (formatVersion 4): $add, $sub, $mul, $div, $mod, $round, $floor, $ceil, $abs, $min, $max, $clamp, $sin e $cos (em graus). Operando sem valor (vazio, texto não numérico, divisão por zero) faz a operação não produzir valor.",
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$round"],
+          "properties": {
+            "$round": {
+              "$ref": "#/$defs/operand"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$floor"],
+          "properties": {
+            "$floor": {
+              "$ref": "#/$defs/operand"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$ceil"],
+          "properties": {
+            "$ceil": {
+              "$ref": "#/$defs/operand"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$abs"],
+          "properties": {
+            "$abs": {
+              "$ref": "#/$defs/operand"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$sin"],
+          "properties": {
+            "$sin": {
+              "$ref": "#/$defs/operand"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$cos"],
+          "properties": {
+            "$cos": {
+              "$ref": "#/$defs/operand"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$add"],
+          "properties": {
+            "$add": {
+              "type": "array",
+              "minItems": 2,
+              "items": {
+                "$ref": "#/$defs/operand"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$mul"],
+          "properties": {
+            "$mul": {
+              "type": "array",
+              "minItems": 2,
+              "items": {
+                "$ref": "#/$defs/operand"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$min"],
+          "properties": {
+            "$min": {
+              "type": "array",
+              "minItems": 2,
+              "items": {
+                "$ref": "#/$defs/operand"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$max"],
+          "properties": {
+            "$max": {
+              "type": "array",
+              "minItems": 2,
+              "items": {
+                "$ref": "#/$defs/operand"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$sub"],
+          "properties": {
+            "$sub": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "$ref": "#/$defs/operand"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$div"],
+          "properties": {
+            "$div": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "$ref": "#/$defs/operand"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$mod"],
+          "properties": {
+            "$mod": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "$ref": "#/$defs/operand"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$clamp"],
+          "properties": {
+            "$clamp": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": {
+                "$ref": "#/$defs/operand"
+              }
+            }
+          }
+        }
+      ]
     }
   }
 }
