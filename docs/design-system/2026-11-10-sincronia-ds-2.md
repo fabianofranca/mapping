@@ -447,6 +447,10 @@ Gravado no artefato **Mapping** em 2026-11-10 (DS6, gravação 4, regras de CSS 
 - `components/Notice/preview.html`: tirado o `style="flex:none"` das duas âncoras do X (linhas de 576 e 360 px), que mascarava o defeito.
 - Conferência visual: a prévia do `Notice` em linha aberta num Chromium local nos temas claro e escuro, sem barra horizontal (scrollWidth 1000 = clientWidth 1000) e com o X dentro da caixa nas duas linhas. Não medi o selo do `icon-button-badge` nem o `color: inherit` do `.status-item-button` na prévia.
 
+DS7 (correções da revisão final, #1472): gravado no artefato **Mapping** em 2026-11-10: versão 74 (`1794311629-04a9`), com o índice na mesma chamada e `lastChange` "Claude Code (épico sincronia-ds-2, DS7)":
+
+- `project/components/bundle.css`: `.icon-button-badge` a `translate(25%, -25%)` (antes `50%`, que levava o selo ~8px para fora de um botão de 28px na faixa de 40px) e `flex: 1` em `.notice-box-line .notice-box-text` (`src/theme/controls.css` e `src/theme/review.css`). As prévias usam o `bundle.css`, então não precisaram de edição; não reconferi o visual do selo num Chromium.
+
 ## Ficou sem gravar
 
 - Hover e foco de `.thread-row`, dos botões e do selo `Flag` (dica `.tooltip`) em `CommentsWindow`, `ThreadsSection`, `ReviewRow` e `ProposalRow`, e o hover do `.link-button` do `ReferencedByRow`. Motivo: as prévias são HTML estático e o `bundle.css` não tem `.ds-state-*` para essas classes (no `.link-button` o código também não define hover); o DOM e o texto oculto (`.visually-hidden`) estão desenhados, só o estado interativo não.
