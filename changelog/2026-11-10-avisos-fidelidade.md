@@ -1,4 +1,4 @@
-# Avisos de fidelidade — [Não lançado] (épico `epic/avisos-fidelidade`, PR #1510, MCP 0.32.0, schema v18)
+# Avisos de fidelidade — 2026-11-10 (épico `epic/avisos-fidelidade`, PR #1510, MCP 0.32.0, schema v18)
 
 ## Adicionado
 

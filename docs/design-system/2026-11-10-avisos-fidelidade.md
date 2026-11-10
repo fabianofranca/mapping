@@ -1,4 +1,4 @@
-# Avisos de fidelidade — [Não lançado] (épico `epic/avisos-fidelidade`)
+# Avisos de fidelidade — 2026-11-10 (épico `epic/avisos-fidelidade`)
 
 ## Pendências
 
