@@ -1,5 +1,6 @@
 import type { Ref } from 'preact';
 import { useLayoutEffect, useRef, useState } from 'preact/hooks';
+import { Icon } from './icons';
 import { IconButton } from './controls';
 import { assignRef, returnFocusToTrigger } from './focus';
 import { createOpenScrollGuard } from './openScrollGuard';
@@ -19,6 +20,10 @@ export interface ActionMenuItem {
   readonly danger?: boolean;
   /** O item que marca onde se está (`aria-current`), como o último trecho do caminho. */
   readonly current?: boolean;
+  /** Liga/desliga: o item vira `menuitemcheckbox` e mostra o estado marcado. */
+  readonly checked?: boolean;
+  /** Atalho, à direita do texto. */
+  readonly shortcut?: string;
 }
 
 interface ActionMenuProps {
@@ -34,6 +39,9 @@ interface ActionMenuProps {
   readonly className?: string;
   /** O botão que abre o menu (ex.: alvo do foco depois de um diálogo aberto pelo item). */
   readonly triggerRef?: Ref<HTMLButtonElement>;
+  /** Selo e ponto de alerta no botão (ex.: a contagem das conversas num menu de excesso). */
+  readonly badge?: string;
+  readonly alert?: boolean;
 }
 
 export function ActionMenu({
@@ -44,6 +52,8 @@ export function ActionMenu({
   menuLabel,
   className,
   triggerRef,
+  badge,
+  alert,
 }: ActionMenuProps) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLSpanElement>(null);
@@ -94,6 +104,8 @@ export function ActionMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         disabled={disabled}
+        {...(badge ? { badge } : {})}
+        alert={alert}
         buttonRef={(el) => {
           trigger.current = el;
           assignRef(triggerRef, el);
@@ -111,7 +123,8 @@ export function ActionMenu({
             <button
               key={i}
               type="button"
-              role="menuitem"
+              role={item.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
+              aria-checked={item.checked}
               class={item.danger ? 'action-menu-item danger' : 'action-menu-item'}
               disabled={item.disabled}
               title={item.title}
@@ -121,7 +134,13 @@ export function ActionMenu({
                 item.onSelect();
               }}
             >
+              {item.checked !== undefined && (
+                <span class="action-menu-check" aria-hidden="true">
+                  {item.checked && <Icon name="check" />}
+                </span>
+              )}
               {item.label}
+              {item.shortcut && <kbd class="action-menu-shortcut">{item.shortcut}</kbd>}
             </button>
           ))}
         </span>

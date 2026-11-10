@@ -93,6 +93,7 @@ export const enUS: Dictionary = {
   'editor.redo': 'Redo',
   'editor.fitAll': 'Fit all',
   'editor.fitSelection': 'Fit selection',
+  'editor.moreControls': 'More controls',
   'editor.closeProject': 'Close project',
   'editor.emptyCanvas': 'No images yet. Add photos to build the canvas.',
   'editor.canvasLabel': 'Project canvas',
