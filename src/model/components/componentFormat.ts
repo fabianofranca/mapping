@@ -61,7 +61,12 @@ export type Condition =
   | { readonly $has: string }
   | { readonly $not: Condition }
   | { readonly $and: readonly Condition[] }
-  | { readonly $or: readonly Condition[] };
+  | { readonly $or: readonly Condition[] }
+  /** Comparações numéricas (v4): operando sem valor dá falso. */
+  | { readonly $gt: readonly [Expr<number>, Expr<number>] }
+  | { readonly $gte: readonly [Expr<number>, Expr<number>] }
+  | { readonly $lt: readonly [Expr<number>, Expr<number>] }
+  | { readonly $lte: readonly [Expr<number>, Expr<number>] };
 
 /**
  * Expressão booleana: um literal, uma `Expr<boolean>` ou uma condição direta
@@ -82,6 +87,28 @@ export type Expr<T> =
     }
   /** Só para texto: concatena as partes (números viram texto). */
   | { readonly $concat: readonly Expr<string | number>[] }
+  /**
+   * Só para número (v4): operações aritméticas e trigonométricas (`$sin`/`$cos` em graus). Operando
+   * sem valor (vazio, texto não numérico, divisão por zero) faz a operação não produzir valor.
+   */
+  | { readonly $add: readonly Expr<number>[] }
+  | { readonly $sub: readonly [Expr<number>, Expr<number>] }
+  | { readonly $mul: readonly Expr<number>[] }
+  | { readonly $div: readonly [Expr<number>, Expr<number>] }
+  | { readonly $mod: readonly [Expr<number>, Expr<number>] }
+  | { readonly $round: Expr<number> }
+  | { readonly $floor: Expr<number> }
+  | { readonly $ceil: Expr<number> }
+  | { readonly $abs: Expr<number> }
+  | { readonly $min: readonly Expr<number>[] }
+  | { readonly $max: readonly Expr<number>[] }
+  | { readonly $clamp: readonly [Expr<number>, Expr<number>, Expr<number>] }
+  | { readonly $sin: Expr<number> }
+  | { readonly $cos: Expr<number> }
+  /** Número de linhas do campo `table` (v4; sem linhas, 0). */
+  | { readonly $rows: string }
+  /** Largura ou altura da instância em px da imagem (v4; na prova de desenho e no `hug`, o `size` do componente). */
+  | { readonly $size: 'width' | 'height' }
   /**
    * Valor nomeado da especialização, no modo do desenho (v4; ver `tokens.ts`). Em posição de cor,
    * `alpha` (0 a 1, literal ou `$token` de número) multiplica o alfa da cor.
@@ -179,15 +206,19 @@ export interface FontSpec {
  */
 export type SizeSpec = number | 'fill' | 'hug' | `${number}%`;
 
-/** Âncoras no pai com `layout: none`: distância fixa da borda, como as constraints do Figma. */
+/**
+ * Âncoras no pai com `layout: none`: distância da borda, como as constraints do Figma. Na
+ * `formatVersion` 4 cada valor pode ser uma expressão; a que não produz número vale como âncora
+ * ausente.
+ */
 export interface Anchors {
-  readonly left?: number;
-  readonly right?: number;
-  readonly top?: number;
-  readonly bottom?: number;
+  readonly left?: Expr<number>;
+  readonly right?: Expr<number>;
+  readonly top?: Expr<number>;
+  readonly bottom?: Expr<number>;
   /** Centraliza no eixo (ignora left/right ou top/bottom). */
-  readonly centerX?: boolean;
-  readonly centerY?: boolean;
+  readonly centerX?: BoolExpr;
+  readonly centerY?: BoolExpr;
 }
 
 /** Tipo de layout de um quadro ou slot. */
@@ -228,6 +259,12 @@ interface TemplateNodeBase {
   readonly name?: string;
   readonly visible?: BoolExpr;
   readonly opacity?: Expr<number>;
+  /**
+   * `formatVersion` 4: gira o nó (e os filhos de um quadro, com o `clip` dele) em graus, no
+   * sentido horário, em volta do centro da caixa. É só desenho, como o `transform` do CSS: não
+   * muda layout, medida, `hug` nem a caixa do nó. Não vale na raiz. Sem valor, ou 0, não gira.
+   */
+  readonly rotation?: Expr<number>;
   /** Tamanho no eixo; aceita expressão na `formatVersion` 4 (valor inválido cai no padrão, com aviso). */
   readonly width?: Expr<SizeSpec>;
   readonly height?: Expr<SizeSpec>;
@@ -337,8 +374,14 @@ export interface SlotTemplate extends TemplateNodeBase {
  */
 export interface RepeatTemplate extends TemplateNodeBase {
   readonly type: 'repeat';
-  /** Chave do campo `table` do tipo cujas linhas se repetem. */
-  readonly field: string;
+  /** Chave do campo `table` do tipo cujas linhas se repetem (exatamente um de `field` e `count`). */
+  readonly field?: string;
+  /**
+   * `formatVersion` 4: o `template` se repete `max(0, floor(count))` vezes, até 1000 (acima, 1000
+   * com o aviso `repeat limitado a 1000 linhas: <nó>`). Dentro dele, `{ "$field": "$index" }` é o
+   * índice da linha (0, 1, …), também no `repeat` por `field`; o do `repeat` mais interno vale.
+   */
+  readonly count?: Expr<number>;
   readonly direction?: 'column' | 'row';
   /** Espaço entre as linhas (px). */
   readonly gap?: Expr<number>;

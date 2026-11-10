@@ -104,7 +104,7 @@ O campo escolhe a aparência parada de um estado; não entra no `code` nem nas `
 
 - **Camada de estado:** o nó `estado` é um `rect` do tamanho do item (a pílula de 56, `corner-full`), por cima dele, na cor do conteúdo do item selecionado, `on-secondary-container` (o ripple do `Surface` usa o `contentColor` do fundo `secondary-container`). A opacidade vem dos tokens `state-hover` (0,08), `state-focus` (0,10) e `state-pressed` (0,10). Os tokens do drawer **não nomeiam** a camada nem a opacidade: é o ripple do `Surface`, parado.
 - **Cores do conteúdo:** os `Active*Hover/Focus/Pressed*` repetem `on-secondary-container`: ícone, rótulo e selo não mudam.
-- **Item do estado:** vale para o item selecionado (decisão 6 da etapa); com nenhum item selecionado nada muda. O Compose desenha o estado no item que o mouse, o foco ou o toque alcança; escolher "o primeiro" pediria o índice do item no `repeat` (#897), e um campo de índice do item fica fora. Os exemplos de estado guardam só valores simples e a tabela `items` não cabe neles: no Catálogo o exemplo desenha o tipo sem destinos, e o estado aparece na prévia (Playground, com os `items` do `preview`) e na marcação com `items`.
+- **Item do estado:** vale para o item selecionado (decisão 6 da etapa); com nenhum item selecionado nada muda. O Compose desenha o estado no item que o mouse, o foco ou o toque alcança; escolher "o primeiro" pediria o índice do item no `repeat` (#897), e um campo de índice do item fica fora. Os exemplos de estado trazem os `items` do `preview`: no Catálogo o exemplo desenha os destinos, com a camada de estado no item selecionado.
 
 **O que ainda difere do Compose**
 

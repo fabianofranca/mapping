@@ -1,6 +1,7 @@
 import type { ComponentFile } from './components/componentFormat';
 import { findSlot } from './components/arrange';
 import { resolvePath, type TextFile } from './components/library';
+import { INDEX_FIELD } from './components/expressions';
 import {
   collectFieldKeys,
   parseComponent,
@@ -19,6 +20,8 @@ import {
   type Spec,
   type SpecAnnotationType,
   type SpecField,
+  type SpecIssue,
+  type SpecIssueCode,
   type SpecMigrationStep,
 } from './spec';
 import { specWarnings } from './specWarnings';
@@ -76,8 +79,10 @@ export interface LibraryIssue {
    * Código estável de problemas que a interface exibe traduzidos; `message` continua com o
    * texto em português (MCP e testes). `target` é o dado que entra na tradução.
    */
-  readonly code?: 'file-not-found';
+  readonly code?: 'file-not-found' | SpecIssueCode;
   readonly target?: string;
+  /** Dados da tradução dos códigos de `SpecIssueCode` (`{key}`, `{field}`…). */
+  readonly params?: Readonly<Record<string, string>>;
 }
 
 export interface LibraryInput {
@@ -173,15 +178,36 @@ function fieldReferences(
     if (isRepeat && key === 'field' && typeof value === 'string') {
       if (!out.has(value)) out.set(value, at);
     } else if (
-      (key === '$field' || key === '$has' || key === '$switch') &&
+      (key === '$field' || key === '$has' || key === '$switch' || key === '$rows') &&
       typeof value === 'string'
     ) {
-      if (!out.has(value)) out.set(value, at);
+      // `$index` é o índice da linha de um `repeat`, não um campo do tipo.
+      if (!out.has(value) && (value !== INDEX_FIELD || key === '$rows'))
+        out.set(value, at);
     } else if (key === '$eq' && Array.isArray(value) && typeof value[0] === 'string') {
-      if (!out.has(value[0])) out.set(value[0], `${at}[0]`);
+      if (!out.has(value[0]) && value[0] !== INDEX_FIELD) out.set(value[0], `${at}[0]`);
     } else {
       fieldReferences(value, at, out);
     }
+  }
+  return out;
+}
+
+/** Onde o JSON do template usa `$rows` (a chave do campo e o caminho dela). */
+function rowsReferences(
+  node: unknown,
+  path: string,
+  out: { key: string; path: string }[] = [],
+): { key: string; path: string }[] {
+  if (Array.isArray(node)) {
+    node.forEach((item, i) => rowsReferences(item, `${path}[${i}]`, out));
+    return out;
+  }
+  if (!isRecord(node)) return out;
+  for (const [key, value] of Object.entries(node)) {
+    if (key === '$rows' && typeof value === 'string')
+      out.push({ key: value, path: `${path}.${key}` });
+    else rowsReferences(value, `${path}.${key}`, out);
   }
   return out;
 }
@@ -245,6 +271,17 @@ class Collector {
   readonly issues: LibraryIssue[] = [];
   error(file: string, path: string, message: string): void {
     this.issues.push({ file, path, message, severity: 'error' });
+  }
+  /** Problema do `parseSpec`, com o código e os parâmetros que a interface traduz. */
+  specIssue(file: string, issue: SpecIssue): void {
+    this.issues.push({
+      file,
+      path: issue.path,
+      message: issue.message,
+      severity: 'error',
+      ...(issue.code === undefined ? {} : { code: issue.code }),
+      ...(issue.params === undefined ? {} : { params: issue.params }),
+    });
   }
   /** Arquivo citado que não está no pacote (a interface traduz pelo `code`). */
   fileNotFound(file: string, path: string, target: string): void {
@@ -332,7 +369,7 @@ function level1(
   }
   const parsed = parseSpecText(specFile.text);
   if (!parsed.ok) {
-    for (const issue of parsed.issues) out.error(specPath, issue.path, issue.message);
+    for (const issue of parsed.issues) out.specIssue(specPath, issue);
     return undefined;
   }
   const { spec, ignored } = parsed;
@@ -546,6 +583,7 @@ function typeCoherence(
   }
   tokenChecks(pkg, path, out);
   const innerUsed = repeatChecks(type, path, rawTemplate, out);
+  rowsChecks(type, path, rawTemplate, out);
   imageChecks(type, path, rawTemplate, out);
   for (const [key, value] of Object.entries(component.preview ?? {})) {
     const field = type.fields.find((f) => f.key === key);
@@ -684,6 +722,25 @@ function repeatChecks(
     }
   }
   return innerUsed;
+}
+
+/** `$rows` conta as linhas de uma `table` do tipo (campo de outro tipo é erro; inexistente já foi apontado). */
+function rowsChecks(
+  type: SpecAnnotationType,
+  path: string,
+  rawTemplate: unknown,
+  out: Collector,
+): void {
+  const fields = new Map(type.fields.map((f) => [f.key, f]));
+  for (const { key, path: at } of rowsReferences(rawTemplate, 'template')) {
+    const field = fields.get(key);
+    if (field !== undefined && field.type !== 'table')
+      out.error(
+        path,
+        at,
+        `$rows conta as linhas de "${key}", que é um campo ${field.type} do tipo "${type.id}", não uma table`,
+      );
+  }
 }
 
 /**

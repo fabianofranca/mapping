@@ -43,6 +43,9 @@ const INTERACTION_OPTIONS: Record<string, string[]> = {
   'short-navigation-bar': ['none', 'hovered', 'focused', 'pressed'],
   'navigation-rail': ['none', 'hovered', 'focused', 'pressed'],
   'navigation-drawer': ['none', 'hovered', 'focused', 'pressed'],
+  // EX4 da etapa de expressões (#897)
+  'date-picker': ['none', 'hovered', 'focused', 'pressed'],
+  'time-picker': ['none', 'hovered', 'focused', 'pressed'],
 };
 
 describe('tokens de estado (StateTokens.kt)', () => {
@@ -211,11 +214,11 @@ describe('teste final: os tipos com o interaction (ME1 a ME5)', () => {
   const types = spec.layers.flatMap((l) => l.annotationTypes);
   const withField = types.filter((t) => t.fields.some((f) => f.key === 'interaction'));
 
-  it('são os 22 tipos da etapa, cada um com as opções e o padrão', () => {
+  it('são os 22 tipos da etapa e os 2 seletores da #897, cada um com as opções e o padrão', () => {
     expect(withField.map((t) => t.id).sort()).toEqual(
       Object.keys(INTERACTION_OPTIONS).sort(),
     );
-    expect(withField).toHaveLength(22);
+    expect(withField).toHaveLength(24);
     for (const t of withField) {
       const f = t.fields.find((x) => x.key === 'interaction');
       expect(f, t.id).toMatchObject({
@@ -253,9 +256,19 @@ describe('atualização da versão anterior da biblioteca para a nova', () => {
         if (type.id in INTERACTION_OPTIONS)
           type.fields = type.fields.filter((f) => f.key !== 'interaction');
       }
-    expect(spec.version).toBe(5);
+    expect(spec.version).toBe(6);
     expect(missingMigrations(previous, spec)).toEqual([]);
-    expect(spec.migrations ?? []).toEqual([]);
+    // só a EX6 (#897) tem migração: o slider passou de enum a number (`fill-field`), e os campos
+    // que estes testes comparam não mudam
+    expect(
+      (spec.migrations ?? []).flatMap((m) =>
+        m.steps.map((s) => `${s.op}:${'type' in s ? s.type : ''}`),
+      ),
+    ).toEqual(
+      Array(5)
+        .fill(['fill-field:slider', 'fill-field:slider', 'fill-field:slider'])
+        .flat(),
+    );
     const report = validateLibrary({ files, specPath: SPEC_FILE, previous });
     expect(report.errors).toEqual([]);
   });

@@ -430,6 +430,34 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
     });
   });
 
+  it('exemplo com linhas de table fora do formato: código e parâmetros no nível 1', () => {
+    const files = patch(
+      patch(miniPackage(), SPEC, [...TYPE0, 'fields', 2], {
+        key: 'rows',
+        type: 'table',
+        columns: [{ key: 'c', type: 'string' }],
+      }),
+      SPEC,
+      [...TYPE0, 'examples', 0, 'values'],
+      { rows: [{ nada: 'x' }, 'y'] },
+    );
+    const report = validate(files, { level: 1 });
+    expect(report.errors).toHaveLength(2);
+    expect(report.errors[0]).toMatchObject({
+      file: SPEC,
+      path: 'layers[0].annotationTypes[0].examples[0].values.rows[0].nada',
+      message: '"nada" não é coluna de "rows"',
+      code: 'example-not-column',
+      params: { key: 'nada', field: 'rows' },
+    });
+    expect(report.errors[1]).toMatchObject({
+      path: 'layers[0].annotationTypes[0].examples[0].values.rows[1]',
+      message: 'deve ser um objeto (coluna → valor)',
+      code: 'example-row-not-object',
+    });
+    expect(report.errors[1]).not.toHaveProperty('params');
+  });
+
   it('doc para arquivo que não existe', () => {
     const report = validate(without(miniPackage(), 'docs/mini-button.md'));
     expect(report.errors.map(brief)).toEqual([

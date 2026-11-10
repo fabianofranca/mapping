@@ -204,6 +204,58 @@ describe('SpecsDialog', () => {
     expect(harness.project().specializations).toHaveLength(0);
   });
 
+  describe('exemplo com texto num campo table', () => {
+    const tableExample = JSON.stringify({
+      format: 'mapping-spec',
+      formatVersion: 4,
+      id: 'abas',
+      name: 'Abas',
+      version: 1,
+      layers: [
+        {
+          id: 'ui',
+          name: 'UI',
+          color: '#112233',
+          annotationTypes: [
+            {
+              id: 'abas',
+              name: 'Abas',
+              fields: [
+                { key: 'rows', type: 'table', columns: [{ key: 'c', type: 'string' }] },
+              ],
+              examples: [{ name: 'Exemplo', values: { rows: 'texto' } }],
+            },
+          ],
+        },
+      ],
+    });
+
+    it('em Português, o problema sai traduzido com o caminho', async () => {
+      const { harness, choose } = setup();
+      choose(tableExample);
+      const dialog = await dialogTitled('Arquivo de especialização inválido');
+      expect(
+        within(dialog).getByText(
+          'layers[0].annotationTypes[0].examples[0].values.rows: campo "table" aceita só a lista de linhas',
+        ),
+      ).toBeTruthy();
+      expect(harness.project().specializations).toHaveLength(0);
+    });
+
+    it('em English (US), o problema sai na língua da app', async () => {
+      locale.value = 'en-US';
+      const { choose } = setup();
+      choose(tableExample);
+      const dialog = await dialogTitled('Invalid specialization file');
+      expect(
+        within(dialog).getByText(
+          'layers[0].annotationTypes[0].examples[0].values.rows: a "table" field takes only the list of rows',
+        ),
+      ).toBeTruthy();
+      expect(within(dialog).queryByText(/aceita só a lista/)).toBeNull();
+    });
+  });
+
   it('mesma versão: avisa que não há nada a fazer', async () => {
     const { harness, choose } = setup();
     choose(exampleText('sdui'));

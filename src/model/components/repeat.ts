@@ -17,6 +17,7 @@
  */
 import type {
   ComponentFile,
+  Expr,
   FieldRow,
   FieldValue,
   FieldValues,
@@ -24,11 +25,15 @@ import type {
   RepeatTemplate,
   TemplateNode,
 } from './componentFormat';
-import { referencedFields } from './expressions';
+import { INDEX_FIELD, evaluate, referencedFields, toNumber } from './expressions';
+
+/** Teto de linhas de um `repeat` por `count`. */
+export const REPEAT_COUNT_LIMIT = 1000;
 
 const INHERITED_KEYS = [
   'visible',
   'opacity',
+  'rotation',
   'anchors',
   'minWidth',
   'maxWidth',
@@ -89,25 +94,42 @@ export function columnsOf(rows: readonly FieldRow[]): string[] {
   return [...columns];
 }
 
+/** Uma entrada do JSON no escopo da linha: troca a chave de campo que é coluna pelo campo extra. */
+function scopedEntry(
+  key: string,
+  item: unknown,
+  columns: ReadonlySet<string>,
+  scope: string,
+): unknown {
+  const rename = (name: string): string =>
+    columns.has(name) ? `${scope}:${name}` : name;
+  if (
+    (key === '$field' || key === '$has' || key === '$switch') &&
+    typeof item === 'string'
+  )
+    return rename(item);
+  if (key === '$eq' && Array.isArray(item) && typeof item[0] === 'string')
+    return [rename(item[0]), ...item.slice(1)];
+  return scoped(item, columns, scope);
+}
+
 /** Copia o JSON trocando as chaves de campo que são colunas pelo campo extra da linha. */
 function scoped(value: unknown, columns: ReadonlySet<string>, scope: string): unknown {
   if (Array.isArray(value)) return value.map((item) => scoped(item, columns, scope));
   if (typeof value !== 'object' || value === null) return value;
-  const out: Record<string, unknown> = {};
-  const rename = (key: string): string => (columns.has(key) ? `${scope}:${key}` : key);
-  for (const [key, item] of Object.entries(value)) {
-    if (
-      (key === '$field' || key === '$has' || key === '$switch') &&
-      typeof item === 'string'
-    ) {
-      out[key] = rename(item);
-    } else if (key === '$eq' && Array.isArray(item) && typeof item[0] === 'string') {
-      out[key] = [rename(item[0]), ...item.slice(1)];
-    } else {
-      out[key] = scoped(item, columns, scope);
-    }
-  }
-  return out;
+  // Num `repeat` aninhado o `$index` do `template` é o do mais interno: este escopo não o toca.
+  const isRepeat = (value as { type?: unknown }).type === 'repeat';
+  const inner = (): ReadonlySet<string> => {
+    const set = new Set(columns);
+    set.delete(INDEX_FIELD);
+    return set;
+  };
+  return Object.fromEntries(
+    Object.entries(value).map(([key, item]) => [
+      key,
+      scopedEntry(key, item, isRepeat && key === 'template' ? inner() : columns, scope),
+    ]),
+  );
 }
 
 export interface ExpandedComponent {
@@ -132,10 +154,32 @@ export function expandRepeats(
   const warnings: string[] = [];
   let counter = 0;
 
-  const expandRepeat = (node: RepeatTemplate): FrameTemplate => {
-    const n = counter++;
-    if (!(node.field in values)) warnings.push(`campo não informado: ${node.field}`);
-    const rows = rowsOf(values[node.field]);
+  /** As linhas de um `repeat` por `count`: uma por índice, vazias, até o teto. */
+  const countRows = (node: RepeatTemplate): FieldRow[] => {
+    const expr = node.count as Expr<number>;
+    const wanted =
+      typeof expr === 'number'
+        ? expr
+        : toNumber(evaluate<unknown>(expr, { ...values, ...extra }, undefined));
+    const count = Math.max(0, Math.floor(wanted ?? 0));
+    if (count > REPEAT_COUNT_LIMIT)
+      warnings.push(
+        `repeat limitado a ${REPEAT_COUNT_LIMIT} linhas: ${node.name ?? 'repeat'}`,
+      );
+    return Array.from(
+      { length: Math.min(count, REPEAT_COUNT_LIMIT) },
+      (): FieldRow => ({}),
+    );
+  };
+
+  /** As linhas do `repeat`: a lista de um campo `table` ou, por `count`, uma por índice. */
+  const rowsFor = (
+    node: RepeatTemplate,
+  ): { rows: readonly FieldRow[]; columns: Set<string> } => {
+    if (node.count !== undefined) return { rows: countRows(node), columns: new Set() };
+    const field = node.field ?? '';
+    if (!(field in values)) warnings.push(`campo não informado: ${field}`);
+    const rows = rowsOf(values[field]);
     // Coluna que o `template` cita, não é campo do tipo e nenhuma linha traz (linha gravada antes
     // de a coluna existir) também é coluna: fica vazia, em vez de virar "campo não informado".
     const columns = new Set(columnsOf(rows));
@@ -143,11 +187,22 @@ export function expandRepeats(
       for (const key of referencedFields(node.template))
         if (!(key in values)) columns.add(key);
     }
+    return { rows, columns };
+  };
+
+  const expandRepeat = (node: RepeatTemplate): FrameTemplate => {
+    const n = counter++;
+    const { rows, columns } = rowsFor(node);
+    columns.add(INDEX_FIELD);
     const column = (node.direction ?? 'column') === 'column';
     const children = rows.map((row, i): FrameTemplate => {
       const scope = `$r${n}_${i}`;
-      for (const name of columns) extra[`${scope}:${name}`] = row[name] ?? null;
-      const copy = scoped(node.template, columns, scope) as FrameTemplate;
+      for (const name of columns)
+        extra[`${scope}:${name}`] = name === INDEX_FIELD ? i : (row[name] ?? null);
+      // O `template` pode trazer um `repeat` (o motor o aceita, o validador não): expande a cópia.
+      const copy = expand(
+        scoped(node.template, columns, scope) as TemplateNode,
+      ) as FrameTemplate;
       return { ...copy, ...rowSize(copy, column, node.distribute === 'fill') };
     });
     return {
@@ -160,11 +215,11 @@ export function expandRepeats(
     };
   };
 
-  const expand = (node: TemplateNode): TemplateNode => {
+  function expand(node: TemplateNode): TemplateNode {
     if (node.type === 'repeat') return expandRepeat(node);
     if (node.type !== 'frame' || node.children === undefined) return node;
     return { ...node, children: node.children.map(expand) };
-  };
+  }
 
   const template = expand(component.template) as FrameTemplate;
   return {

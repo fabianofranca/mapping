@@ -275,7 +275,15 @@ export const NODE_TYPES = [
   'image',
   'icon',
 ] as const;
-export const EXPR_OPS = ['$field', '$if', '$switch', '$concat', '$token'] as const;
+export const EXPR_OPS = [
+  '$field',
+  '$if',
+  '$switch',
+  '$concat',
+  '$token',
+  '$rows',
+  '$size',
+] as const;
 export const CONDITION_OPS = ['$field', '$eq', '$has', '$not', '$and', '$or'] as const;
 export const ROOT_KEYS = [
   'format',
@@ -295,6 +303,7 @@ export const BASE_KEYS = [
   'name',
   'visible',
   'opacity',
+  'rotation',
   'width',
   'height',
   'anchors',
@@ -315,7 +324,7 @@ export const EXTRA_KEYS: Record<(typeof NODE_TYPES)[number], readonly string[]> 
   text: ['text', 'runs', 'font', 'color'],
   path: ['d', 'viewBox', 'fillRule'],
   slot: ['label', 'layout'],
-  repeat: ['field', 'direction', 'gap', 'distribute', 'template'],
+  repeat: ['field', 'count', 'direction', 'gap', 'distribute', 'template'],
   image: ['src', 'fit'],
   icon: ['name', 'color', 'strokeWidth'],
 };
@@ -324,6 +333,7 @@ export const REPEAT_BASE_KEYS = [
   'name',
   'visible',
   'opacity',
+  'rotation',
   'width',
   'height',
   'anchors',
@@ -487,6 +497,7 @@ function exprFeatures(value: unknown, out: Set<string>, inCondition = false): vo
     exprFeatures(value.$concat, out);
     return;
   }
+  for (const op of ['$rows', '$size']) if (op in value) out.add(`expr.${op}`);
   if ('$field' in value) {
     out.add('expr.$field');
     if ('default' in value) out.add('expr.$field.default');

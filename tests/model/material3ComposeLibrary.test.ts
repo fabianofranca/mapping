@@ -270,11 +270,11 @@ describe('biblioteca Material 3 (Compose)', () => {
     expect(report.warnings.map((w) => `${w.file}:${w.path}: ${w.message}`)).toEqual([]);
   });
 
-  it('é a formatVersion 15, versão 5, com tokens nos modos light e dark e a plataforma compose no androidx fixado no commit', () => {
+  it('é a formatVersion 15, versão 6, com tokens nos modos light e dark e a plataforma compose no androidx fixado no commit', () => {
     expect(spec).toMatchObject({
       formatVersion: 15,
       id: 'material3-compose',
-      version: 5,
+      version: 6,
       icons: 'icons/material-icons.json',
     });
     expect(spec.tokens?.modes).toEqual(['light', 'dark']);
@@ -435,6 +435,47 @@ describe('biblioteca Material 3 (Compose)', () => {
       expect(text(`components/${id}.json`), id).toContain('"type": "repeat"');
     }
   });
+
+  it('todo exemplo de values de um tipo com repeat sobre um campo table traz as linhas (decisão 25 da #897)', () => {
+    /** Os campos `table` que o componente repete (`repeat.field`), em qualquer profundidade. */
+    const repeated = (node: unknown, out = new Set<string>()): Set<string> => {
+      if (Array.isArray(node)) node.forEach((n) => repeated(n, out));
+      else if (typeof node === 'object' && node !== null) {
+        const n = node as Record<string, unknown>;
+        if (n.type === 'repeat' && typeof n.field === 'string') out.add(n.field);
+        Object.values(n).forEach((v) => repeated(v, out));
+      }
+      return out;
+    };
+    const checked: string[] = [];
+    for (const type of types) {
+      if (type.component === undefined) continue;
+      const component = JSON.parse(text(type.component)) as { template: unknown };
+      const tables = new Set(
+        type.fields.filter((f) => f.type === 'table').map((f) => f.key),
+      );
+      const fields = [...repeated(component.template)].filter((f) => tables.has(f));
+      if (fields.length === 0) continue;
+      checked.push(type.id);
+      (type.examples ?? []).forEach((example, i) => {
+        if (example.values === undefined) return;
+        for (const field of fields) {
+          const rows = example.values[field];
+          expect(
+            Array.isArray(rows) && rows.length >= 1,
+            `${type.id}, exemplo ${i} "${example.name}": o campo "${field}" sem linhas`,
+          ).toBe(true);
+        }
+      });
+    }
+    expect(checked.sort()).toEqual(
+      [
+        ...['bottom-sheet', 'carousel', 'dropdown-menu', 'navigation-bar'],
+        ...['navigation-drawer', 'navigation-rail', 'segmented-button'],
+        ...['short-navigation-bar', 'tabs'],
+      ].sort(),
+    );
+  });
 });
 
 // --- M1 da etapa "Material 3 fiel": tokens, ícones e o padrão de migração -------------------
@@ -591,14 +632,36 @@ describe('componentes migrados na M1 (text, icon, divider, surface)', () => {
   });
 });
 
-describe('atualização v1 → v2 da biblioteca Material 3 (Compose)', () => {
-  it('é aditiva: nenhuma quebra de contrato, sem passos de migração', () => {
-    // A v1 tinha os mesmos tipos, campos, chaves e opções; só faltavam tokens e ícones.
+describe('atualização da biblioteca Material 3 (Compose) com o slider numérico', () => {
+  it('a quebra do slider (enum → number) tem migração em toda versão anterior', () => {
+    // As versões 1 a 5 tinham os mesmos tipos; só o `value`, o `valueStart` e o `valueEnd` do
+    // slider eram `enum` em décimos. A versão atual os declara `number` e cobre com `fill-field`.
+    const tenths = Array.from({ length: 11 }, (_, i) => String(i / 10));
     const previous = JSON.parse(JSON.stringify(spec)) as Spec;
-    (previous as { version: number }).version = 1;
+    (previous as { version: number }).version = 5;
     (previous as { formatVersion: number }).formatVersion = 9;
+    delete (previous as { migrations?: unknown }).migrations;
+    for (const layer of previous.layers)
+      for (const type of layer.annotationTypes)
+        if (type.id === 'slider')
+          type.fields = type.fields.map((f) =>
+            ['value', 'valueStart', 'valueEnd'].includes(f.key)
+              ? ({
+                  key: f.key,
+                  type: 'enum',
+                  options: tenths,
+                  default: '0.5',
+                } as typeof f)
+              : f,
+          );
     expect(missingMigrations(previous, spec)).toEqual([]);
-    expect(spec.migrations ?? []).toEqual([]);
+    expect(spec.migrations?.map((m) => [m.from, m.to])).toEqual([
+      [1, 6],
+      [2, 6],
+      [3, 6],
+      [4, 6],
+      [5, 6],
+    ]);
     const report = validateLibrary({ files, specPath: SPEC_FILE, previous });
     expect(report.errors).toEqual([]);
   });

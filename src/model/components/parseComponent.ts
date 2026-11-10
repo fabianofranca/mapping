@@ -16,7 +16,12 @@ import {
 } from './componentFormat';
 import { checkRemoteImageUrl } from '../remoteImages';
 import { isValidFontFamily } from './fontFamily';
-import { referencedFields } from './expressions';
+import {
+  COMPARISON_OPS,
+  NUMERIC_OPS,
+  isNumericOp,
+  referencedFields,
+} from './expressions';
 import { LAYOUT_JUSTIFIES } from './layoutValues';
 import { TOKEN_NAME_PATTERN, type TokenKind } from './tokens';
 import { isRecord } from '../isRecord';
@@ -72,10 +77,35 @@ const NODE_TYPES = [
   'image',
   'icon',
 ] as const;
-const EXPR_OPS = ['$field', '$if', '$switch', '$concat', '$token'] as const;
-const CONDITION_OPS = ['$field', '$eq', '$has', '$not', '$and', '$or'] as const;
+const NUMERIC_OP_NAMES = Object.keys(NUMERIC_OPS);
+const EXPR_OPS: readonly string[] = [
+  '$field',
+  '$if',
+  '$switch',
+  '$concat',
+  '$token',
+  '$rows',
+  '$size',
+  ...NUMERIC_OP_NAMES,
+];
+const CONDITION_OPS: readonly string[] = [
+  '$field',
+  '$eq',
+  '$has',
+  '$not',
+  '$and',
+  '$or',
+  ...COMPARISON_OPS,
+];
 /** Operadores que só existem em condição (`$field` é ambíguo e fica como expressão). */
-const DIRECT_CONDITION_OPS: readonly string[] = ['$eq', '$has', '$not', '$and', '$or'];
+const DIRECT_CONDITION_OPS: readonly string[] = [
+  '$eq',
+  '$has',
+  '$not',
+  '$and',
+  '$or',
+  ...COMPARISON_OPS,
+];
 const ID_PATTERN = /^[a-z0-9][a-z0-9_-]*$/;
 const PERCENT_PATTERN = /^\d+(\.\d+)?%$/;
 
@@ -87,6 +117,7 @@ const BASE_KEYS = [
   'name',
   'visible',
   'opacity',
+  'rotation',
   'width',
   'height',
   'minWidth',
@@ -225,9 +256,7 @@ const checkFill = tokenCheck('color', (v, p, out) => {
 
 function checkCondition(value: unknown, path: string, out: Ctx): void {
   if (!isRecord(value)) return add(out, path, 'esperava condição (objeto)');
-  const ops = Object.keys(value).filter((k) =>
-    (CONDITION_OPS as readonly string[]).includes(k),
-  );
+  const ops = Object.keys(value).filter((k) => CONDITION_OPS.includes(k));
   if (ops.length !== 1) {
     if (ops.length === 0) {
       add(out, path, `condição sem operador (${CONDITION_OPS.join(', ')})`);
@@ -236,7 +265,7 @@ function checkCondition(value: unknown, path: string, out: Ctx): void {
     }
     return;
   }
-  const op = ops[0] as (typeof CONDITION_OPS)[number];
+  const op = ops[0] as string;
   checkKeys(value, [op], path, out);
   const at = join(path, op);
   const operand = value[op];
@@ -261,11 +290,72 @@ function checkCondition(value: unknown, path: string, out: Ctx): void {
       return;
     case '$not':
       return checkCondition(operand, at, out);
+    case '$gt':
+    case '$gte':
+    case '$lt':
+    case '$lte':
+      return checkOperands(operand, at, { min: 2, max: 2 }, out);
     case '$and':
     case '$or':
       if (!Array.isArray(operand)) return add(out, at, 'esperava lista de condições');
       operand.forEach((c: unknown, i) => checkCondition(c, `${at}[${i}]`, out));
   }
+}
+
+const checkOperand = tokenCheck('number', (v, p, out) => {
+  if (!isFiniteNumber(v)) add(out, p, 'precisa ser número');
+});
+
+/** Os operandos de uma operação numérica ou comparação: a aridade e cada `Expr<number>`. */
+function checkOperands(
+  operand: unknown,
+  at: string,
+  arity: { readonly min: number; readonly max: number | null },
+  out: Ctx,
+): void {
+  if (arity.max === 1) {
+    if (Array.isArray(operand)) return add(out, at, 'precisa de 1 operando');
+    return checkExpr(operand, at, checkOperand, out);
+  }
+  if (!Array.isArray(operand)) return add(out, at, 'esperava lista de operandos');
+  if (arity.max === arity.min && operand.length !== arity.min)
+    return add(out, at, `precisa de ${arity.min} operandos`);
+  if (operand.length < arity.min)
+    return add(out, at, `precisa de ${arity.min} ou mais operandos`);
+  operand.forEach((item: unknown, i) =>
+    checkExpr(item, `${at}[${i}]`, checkOperand, out),
+  );
+}
+
+/** `$add`, `$mul`, `$sin`…: só onde se espera número (ou como parte de um `$concat`). */
+function checkNumericExpr(
+  op: string,
+  value: Rec,
+  path: string,
+  check: Check,
+  out: Ctx,
+): void {
+  checkKeys(value, [op], path, out);
+  if (check.tokenKind !== 'number' && check !== checkTextOrNumber)
+    return add(out, path, `${op} só vale onde se espera número`);
+  checkOperands(value[op], join(path, op), NUMERIC_OPS[op] as never, out);
+}
+
+/** `$rows` e `$size` (v4): números, então só onde se espera número (ou como parte de um `$concat`). */
+function checkCountExpr(
+  op: '$rows' | '$size',
+  value: Rec,
+  path: string,
+  check: Check,
+  out: Ctx,
+): void {
+  checkKeys(value, [op], path, out);
+  if (check.tokenKind !== 'number' && check !== checkTextOrNumber)
+    return add(out, path, `${op} só vale onde se espera número`);
+  const at = join(path, op);
+  if (op === '$rows') return checkFieldKey(value.$rows, at, out);
+  if (value.$size !== 'width' && value.$size !== 'height')
+    add(out, at, 'esperava "width" ou "height"');
 }
 
 function checkFieldKey(value: unknown, path: string, out: Ctx): void {
@@ -313,8 +403,11 @@ function checkExpr(value: unknown, path: string, check: Check, out: Ctx): void {
     add(out, path, `expressão com mais de um operador: ${ops.join(', ')}`);
     return;
   }
-  const op = ops[0] as (typeof EXPR_OPS)[number];
+  const op = ops[0] as string;
   const at = join(path, op);
+  if (isNumericOp(op)) return checkNumericExpr(op, value, path, check, out);
+  if (op === '$rows' || op === '$size')
+    return checkCountExpr(op, value, path, check, out);
   switch (op) {
     case '$field':
       checkKeys(value, ['$field', 'default'], path, out);
@@ -400,10 +493,10 @@ function checkAnchors(value: unknown, path: string, out: Ctx): void {
   if (!isRecord(value)) return add(out, path, 'esperava objeto');
   checkKeys(value, ['left', 'right', 'top', 'bottom', 'centerX', 'centerY'], path, out);
   for (const key of ['left', 'right', 'top', 'bottom']) {
-    if (key in value) checkNumber(value[key], join(path, key), out);
+    if (key in value) checkExpr(value[key], join(path, key), checkNumber, out);
   }
   for (const key of ['centerX', 'centerY']) {
-    if (key in value) checkBoolean(value[key], join(path, key), out);
+    if (key in value) checkBoolExpr(value[key], join(path, key), out);
   }
 }
 
@@ -659,7 +752,7 @@ function checkNode(value: unknown, path: string, out: Ctx): void {
     text: ['text', 'runs', 'font', 'color'],
     path: ['d', 'viewBox', 'fillRule'],
     slot: ['label', 'layout'],
-    repeat: ['field', 'direction', 'gap', 'distribute', 'template'],
+    repeat: ['field', 'count', 'direction', 'gap', 'distribute', 'template'],
     image: ['src', 'fit'],
     icon: ['name', 'color', 'strokeWidth'],
   };
@@ -684,6 +777,8 @@ function checkNode(value: unknown, path: string, out: Ctx): void {
     checkString(value.name, join(path, 'name'), out);
   if ('visible' in value) checkBoolExpr(value.visible, join(path, 'visible'), out);
   if ('opacity' in value) checkExpr(value.opacity, join(path, 'opacity'), checkUnit, out);
+  if ('rotation' in value)
+    checkExpr(value.rotation, join(path, 'rotation'), checkNumber, out);
   checkNodeSizes(value, path, type, out);
   if ('anchors' in value) checkAnchors(value.anchors, join(path, 'anchors'), out);
   if ('fill' in value) checkExpr(value.fill, join(path, 'fill'), checkFill, out);
@@ -769,10 +864,24 @@ function checkImage(value: Rec, path: string, out: Ctx): void {
     oneOf(['cover', 'contain', 'fill'])(value.fit, join(path, 'fit'), out);
 }
 
+const checkRepeatCount = tokenCheck('number', (v, p, out) => {
+  if (!isFiniteNumber(v) || v < 0 || !Number.isInteger(v))
+    add(out, p, 'esperava inteiro maior ou igual a 0');
+});
+
+/** `repeat`: exatamente um de `field` (as linhas de uma `table`) e `count` (uma contagem, v4). */
+function checkRepeatSource(value: Rec, path: string, out: Ctx): void {
+  const hasField = value.field !== undefined;
+  const hasCount = value.count !== undefined;
+  if (hasField && hasCount) add(out, path, 'use count ou field, não os dois');
+  else if (!hasField && !hasCount) add(out, join(path, 'field'), 'campo obrigatório');
+  if (hasField) checkFieldKey(value.field, join(path, 'field'), out);
+  if (hasCount) checkExpr(value.count, join(path, 'count'), checkRepeatCount, out);
+}
+
 /** `repeat`: o campo `table`, a direção, o espaço e o `template` (um quadro, sem `repeat` nem `slot`). */
 function checkRepeat(value: Rec, path: string, out: Ctx): void {
-  if (!('field' in value)) add(out, join(path, 'field'), 'campo obrigatório');
-  else checkFieldKey(value.field, join(path, 'field'), out);
+  checkRepeatSource(value, path, out);
   if ('direction' in value)
     oneOf(['column', 'row'])(value.direction, join(path, 'direction'), out);
   if ('gap' in value) checkExpr(value.gap, join(path, 'gap'), checkNonNegative, out);
@@ -825,10 +934,12 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
   ['minHeight'],
   ['maxHeight'],
   ['distribute'],
+  ['count'],
   ['font', 'wrap'],
   ['font', 'ellipsis'],
   ['font', 'maxLines'],
   ['runs'],
+  ['rotation'],
 ];
 
 /** Chaves que valem em qualquer versão como literal, mas só com expressão na formatVersion 4. */
@@ -839,6 +950,12 @@ const V4_EXPR_KEYS: readonly (readonly string[])[] = [
   ['layout', 'type'],
   ['layout', 'align'],
   ['layout', 'justify'],
+  ['anchors', 'left'],
+  ['anchors', 'right'],
+  ['anchors', 'top'],
+  ['anchors', 'bottom'],
+  ['anchors', 'centerX'],
+  ['anchors', 'centerY'],
 ];
 
 /** Valores literais que só existem na formatVersion 4: a cadeia da chave e o valor. */
@@ -860,6 +977,68 @@ function tokenVersionIssues(version: unknown, template: unknown): ComponentIssue
     for (const [key, value] of Object.entries(node)) walk(value, join(at, key));
   };
   walk(template, 'template');
+  return out;
+}
+
+/** As chaves de expressão novas da v4 (operações, comparações, `$rows` e `$size`). */
+function isV4OnlyOp(key: string): boolean {
+  return (
+    isNumericOp(key) ||
+    key === '$rows' ||
+    key === '$size' ||
+    (COMPARISON_OPS as readonly string[]).includes(key)
+  );
+}
+
+/** Operação numérica ou comparação (`$mul`, `$gt`…) numa versão anterior à 4: `só é permitido com formatVersion 4`, no caminho da chave. */
+function numericVersionIssues(version: unknown, template: unknown): ComponentIssue[] {
+  const out: ComponentIssue[] = [];
+  if (typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY)
+    return out;
+  const walk = (node: unknown, at: string): void => {
+    if (Array.isArray(node)) return node.forEach((n, i) => walk(n, `${at}[${i}]`));
+    if (!isRecord(node)) return;
+    for (const [key, value] of Object.entries(node)) {
+      const here = join(at, key);
+      if (isV4OnlyOp(key)) addIssue(out, here, V4_ONLY_MESSAGE);
+      walk(value, here);
+    }
+  };
+  walk(template, 'template');
+  return out;
+}
+
+/** A chave cita `$index` (`$field`, `$has`, `$switch` ou o primeiro item de `$eq`)? Devolve o sufixo do caminho. */
+function indexCitation(key: string, value: unknown): string | undefined {
+  if ((key === '$field' || key === '$has' || key === '$switch') && value === '$index')
+    return '';
+  if (key === '$eq' && Array.isArray(value) && value[0] === '$index') return '[0]';
+  return undefined;
+}
+
+/**
+ * `$index` (o índice da linha de um `repeat`): antes da 4 `só é permitido com formatVersion 4`; na 4,
+ * só vale dentro do `template` de um `repeat`. O caminho é o da chave que o cita.
+ */
+function indexIssues(version: unknown, template: unknown): ComponentIssue[] {
+  const out: ComponentIssue[] = [];
+  const v4 = typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY;
+  const flag = (at: string, inRepeat: boolean): void => {
+    if (!v4) addIssue(out, at, V4_ONLY_MESSAGE);
+    else if (!inRepeat) addIssue(out, at, '$index só vale dentro de um repeat');
+  };
+  const walk = (node: unknown, at: string, inRepeat: boolean): void => {
+    if (Array.isArray(node))
+      return node.forEach((n, i) => walk(n, `${at}[${i}]`, inRepeat));
+    if (!isRecord(node)) return;
+    for (const [key, value] of Object.entries(node)) {
+      const here = join(at, key);
+      const cited = indexCitation(key, value);
+      if (cited !== undefined) flag(`${here}${cited}`, inRepeat);
+      walk(value, here, inRepeat || (node.type === 'repeat' && key === 'template'));
+    }
+  };
+  walk(template, 'template', false);
   return out;
 }
 
@@ -1061,6 +1240,13 @@ function collectIssues(input: unknown, refs: TokenRef[] | null): ComponentIssue[
     const type = isRecord(input.template) ? input.template.type : undefined;
     if (type !== 'frame' && (NODE_TYPES as readonly unknown[]).includes(type))
       add(out, 'template.type', 'a raiz do template deve ser do tipo "frame"');
+    if (
+      typeof version === 'number' &&
+      version >= COMPONENT_FORMAT_VERSION_FIDELITY &&
+      isRecord(input.template) &&
+      'rotation' in input.template
+    )
+      add(out, 'template.rotation', 'não vale na raiz');
     checkNode(input.template, 'template', out);
     if (version === 1) {
       for (const node of nodesOfTypes(input.template, 'template', ['repeat'])) {
@@ -1078,6 +1264,8 @@ function collectIssues(input: unknown, refs: TokenRef[] | null): ComponentIssue[
       ),
     );
     issues.push(...tokenVersionIssues(version, input.template));
+    issues.push(...numericVersionIssues(version, input.template));
+    issues.push(...indexIssues(version, input.template));
     if (version === 1 || version === 2) {
       for (const node of nodesOfTypes(input.template, 'template', ['image'])) {
         add(out, node.path, 'o nó image só existe na formatVersion 3');

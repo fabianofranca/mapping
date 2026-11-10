@@ -351,3 +351,95 @@ describe('sombra, tracejado, align, cap, join e sides', () => {
     expect(dark(raster, 31, 30)).toBe(false);
   });
 });
+
+describe('rotation (EX3)', () => {
+  /** Caixa (x, y, largura, altura) de todos os pixels escuros. */
+  function inkBox(raster: Raster) {
+    let x0 = Infinity;
+    let y0 = Infinity;
+    let x1 = -1;
+    let y1 = -1;
+    for (let y = 0; y < raster.height; y++) {
+      for (let x = 0; x < raster.width; x++) {
+        if (!dark(raster, x, y)) continue;
+        x0 = Math.min(x0, x);
+        y0 = Math.min(y0, y);
+        x1 = Math.max(x1, x);
+        y1 = Math.max(y1, y);
+      }
+    }
+    return { x0, y0, width: x1 - x0 + 1, height: y1 - y0 + 1 };
+  }
+
+  it('o texto de um nó girado 90° ocupa uma coluna, em volta do centro da caixa', () => {
+    const flat = canvas(100, 100);
+    const turned = canvas(100, 100);
+    const make = (extra: Partial<TextNode>) =>
+      frame(
+        [label('Girando', 700, { transform: [1, 0, 0, 1, 20, 40], ...extra })],
+        100,
+        100,
+      );
+    paint(flat, make({}));
+    paint(turned, make({ rotation: 90 }));
+    const a = inkBox(flat);
+    const b = inkBox(turned);
+    expect(a.width).toBeGreaterThan(a.height);
+    expect(b.height).toBeGreaterThan(b.width);
+    // o centro da tinta fica perto do centro da caixa (50, 50) nos dois
+    expect(Math.abs(b.x0 + b.width / 2 - 50)).toBeLessThan(12);
+    expect(Math.abs(b.y0 + b.height / 2 - 50)).toBeLessThan(12);
+  });
+
+  it('o texto de um quadro girado a 45° com recorte não vaza para fora do losango', () => {
+    const raster = canvas(100, 100);
+    const text = label('XXXXXXXXXXXXXXXX', 900, {
+      transform: [1, 0, 0, 1, -50, 5],
+      width: 200,
+    });
+    paint(
+      raster,
+      frame(
+        [
+          frame([text], 40, 30, {
+            id: 'f',
+            clip: true,
+            rotation: 45,
+            transform: [1, 0, 0, 1, 30, 35],
+          }),
+        ],
+        100,
+        100,
+      ),
+    );
+    // o canto do quadrado sem giro, (30, 35), fica fora do retângulo girado
+    expect(dark(raster, 31, 36)).toBe(false);
+    expect(inkBox(raster).width).toBeGreaterThan(5);
+  });
+
+  it('o texto cortado (`wrap: none`) de um nó girado 90° é cortado na largura da caixa', () => {
+    const raster = canvas(100, 100);
+    const text = label('XXXXXXXXXXXXXXXX', 900, {
+      width: 30,
+      height: 20,
+      transform: [1, 0, 0, 1, 35, 40],
+      rotation: 90,
+      style: {
+        fontFamily: 'sans-serif',
+        fontSize: 14,
+        fontWeight: 900,
+        italic: false,
+        lineHeight: 20,
+        align: 'left',
+        verticalAlign: 'middle',
+        wrap: 'none',
+      },
+    });
+    paint(raster, frame([text], 100, 100));
+    const ink = inkBox(raster);
+    // a caixa 30 × 20 girada ocupa 20 × 30 em volta de (50, 50): a tinta não passa de y 35..65
+    expect(ink.height).toBeGreaterThan(10);
+    expect(ink.y0).toBeGreaterThanOrEqual(34);
+    expect(ink.y0 + ink.height).toBeLessThanOrEqual(66);
+  });
+});

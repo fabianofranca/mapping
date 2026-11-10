@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mapping.local/component.schema.json",
   "title": "Mapping — componente (mapping-component, formatVersion 1, 2, 3 e 4)",
-  "description": "Valida só a estrutura do arquivo de componente. A fonte da verdade é o código (src/model/components/parseComponent.ts), que também confere o que o schema não vê: campos citados pelas expressões que existem no tipo da especialização, minSize não maior que size, raiz do template obrigatoriamente do tipo frame, o slot único e a prova de desenho. Veja COMPONENT-FORMAT.md. O nó repeat (a tabela desenhada) vale a partir da formatVersion 2: numa formatVersion 1 é erro do parseComponent; o repeat não pode ter repeat nem slot dentro, e o schema não confere que o campo citado é uma table do tipo. O nó image (imagem remota) só existe na formatVersion 3: numa 1 ou 2 é erro do parseComponent; o schema confere que o src é um literal https:// ou exatamente {\"$field\"}, mas não que o campo ligado é do tipo string nem a forma completa da URL (sem usuário e senha, até 2048 caracteres). A formatVersion 4 acrescenta stroke.cap, stroke.join e stroke.sides, minWidth, maxWidth, minHeight e maxHeight (qualquer nó), repeat.distribute e expressão em width, height, layout.type, layout.align e layout.justify (numa versão menor é erro do parseComponent; o literal nessas cinco chaves vale em todas as versões). O schema não confere que minWidth não é maior que maxWidth. A formatVersion 4 também acrescenta stroke.offset (frame, rect e ellipse), stroke.dash por expressão, $token em shadow.x, shadow.y e shadow.blur e em cada item de cornerRadius e de stroke.dash, layout.justify space-around e space-evenly, layout.reverse e alpha no $token de cor (o schema não confere a versão nem o tipo da posição: isso é do parseComponent). A formatVersion 4 também aceita { \"$token\": \"nome\" } onde se espera cor, número ou família de fonte (o schema deixa a expressão nas chaves de tipo compatível, mas não confere a posição nem que o token existe nos tokens da especialização: isso é do parseComponent e do validate_library).",
+  "description": "Valida só a estrutura do arquivo de componente. A fonte da verdade é o código (src/model/components/parseComponent.ts), que também confere o que o schema não vê: campos citados pelas expressões que existem no tipo da especialização, minSize não maior que size, raiz do template obrigatoriamente do tipo frame, o slot único e a prova de desenho. Veja COMPONENT-FORMAT.md. O nó repeat (a tabela desenhada) vale a partir da formatVersion 2: numa formatVersion 1 é erro do parseComponent; o repeat não pode ter repeat nem slot dentro, e o schema não confere que o campo citado é uma table do tipo. O nó image (imagem remota) só existe na formatVersion 3: numa 1 ou 2 é erro do parseComponent; o schema confere que o src é um literal https:// ou exatamente {\"$field\"}, mas não que o campo ligado é do tipo string nem a forma completa da URL (sem usuário e senha, até 2048 caracteres). A formatVersion 4 acrescenta rotation (qualquer nó menos a raiz, o que o schema não confere: é do parseComponent; graus, sentido horário, em volta do centro da caixa, só desenho), stroke.cap, stroke.join e stroke.sides, minWidth, maxWidth, minHeight e maxHeight (qualquer nó), repeat.distribute e expressão em width, height, layout.type, layout.align e layout.justify (numa versão menor é erro do parseComponent; o literal nessas cinco chaves vale em todas as versões). O schema não confere que minWidth não é maior que maxWidth. A formatVersion 4 também acrescenta stroke.offset (frame, rect e ellipse), stroke.dash por expressão, $token em shadow.x, shadow.y e shadow.blur e em cada item de cornerRadius e de stroke.dash, layout.justify space-around e space-evenly, layout.reverse e alpha no $token de cor (o schema não confere a versão nem o tipo da posição: isso é do parseComponent). A formatVersion 4 também aceita { \"$token\": \"nome\" } onde se espera cor, número ou família de fonte (o schema deixa a expressão nas chaves de tipo compatível, mas não confere a posição nem que o token existe nos tokens da especialização: isso é do parseComponent e do validate_library).",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "formatVersion", "id", "name", "size", "template"],
@@ -281,6 +281,9 @@
               "$ref": "#/$defs/tokenName"
             }
           }
+        },
+        {
+          "$ref": "#/$defs/numericOps"
         }
       ]
     },
@@ -360,6 +363,9 @@
               "$ref": "#/$defs/tokenName"
             }
           }
+        },
+        {
+          "$ref": "#/$defs/numericOps"
         }
       ]
     },
@@ -439,6 +445,9 @@
               "$ref": "#/$defs/tokenName"
             }
           }
+        },
+        {
+          "$ref": "#/$defs/numericOps"
         }
       ]
     },
@@ -518,6 +527,9 @@
               "$ref": "#/$defs/tokenName"
             }
           }
+        },
+        {
+          "$ref": "#/$defs/numericOps"
         }
       ]
     },
@@ -666,6 +678,9 @@
               }
             }
           }
+        },
+        {
+          "$ref": "#/$defs/numericOps"
         }
       ]
     },
@@ -1001,6 +1016,9 @@
               "$ref": "#/$defs/tokenName"
             }
           }
+        },
+        {
+          "$ref": "#/$defs/numericOps"
         }
       ]
     },
@@ -1080,6 +1098,9 @@
               "$ref": "#/$defs/tokenName"
             }
           }
+        },
+        {
+          "$ref": "#/$defs/numericOps"
         }
       ]
     },
@@ -1159,6 +1180,9 @@
               "$ref": "#/$defs/tokenName"
             }
           }
+        },
+        {
+          "$ref": "#/$defs/numericOps"
         }
       ]
     },
@@ -1586,6 +1610,66 @@
               }
             }
           }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$gt"],
+          "properties": {
+            "$gt": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "$ref": "#/$defs/operand"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$gte"],
+          "properties": {
+            "$gte": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "$ref": "#/$defs/operand"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$lt"],
+          "properties": {
+            "$lt": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "$ref": "#/$defs/operand"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$lte"],
+          "properties": {
+            "$lte": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "$ref": "#/$defs/operand"
+              }
+            }
+          }
         }
       ]
     },
@@ -1701,24 +1785,25 @@
       "additionalProperties": false,
       "properties": {
         "left": {
-          "type": "number"
+          "$ref": "#/$defs/expr_number"
         },
         "right": {
-          "type": "number"
+          "$ref": "#/$defs/expr_number"
         },
         "top": {
-          "type": "number"
+          "$ref": "#/$defs/expr_number"
         },
         "bottom": {
-          "type": "number"
+          "$ref": "#/$defs/expr_number"
         },
         "centerX": {
-          "type": "boolean"
+          "$ref": "#/$defs/expr_boolean"
         },
         "centerY": {
-          "type": "boolean"
+          "$ref": "#/$defs/expr_boolean"
         }
-      }
+      },
+      "description": "Âncoras no pai com layout none. Na formatVersion 4 cada valor pode ser uma expressão (centerX e centerY aceitam condições); a que não produz número vale como âncora ausente. A expressão em versão anterior à 4 é recusada pelo parseComponent."
     },
     "stroke": {
       "type": "object",
@@ -1949,6 +2034,9 @@
         "opacity": {
           "$ref": "#/$defs/expr_unit"
         },
+        "rotation": {
+          "$ref": "#/$defs/expr_number"
+        },
         "width": {
           "$ref": "#/$defs/expr_size"
         },
@@ -2013,6 +2101,9 @@
         "opacity": {
           "$ref": "#/$defs/expr_unit"
         },
+        "rotation": {
+          "$ref": "#/$defs/expr_number"
+        },
         "width": {
           "$ref": "#/$defs/expr_size"
         },
@@ -2064,6 +2155,9 @@
         },
         "opacity": {
           "$ref": "#/$defs/expr_unit"
+        },
+        "rotation": {
+          "$ref": "#/$defs/expr_number"
         },
         "width": {
           "$ref": "#/$defs/expr_size"
@@ -2125,6 +2219,9 @@
         },
         "opacity": {
           "$ref": "#/$defs/expr_unit"
+        },
+        "rotation": {
+          "$ref": "#/$defs/expr_number"
         },
         "width": {
           "$ref": "#/$defs/expr_size"
@@ -2195,6 +2292,9 @@
         "opacity": {
           "$ref": "#/$defs/expr_unit"
         },
+        "rotation": {
+          "$ref": "#/$defs/expr_number"
+        },
         "width": {
           "$ref": "#/$defs/expr_size"
         },
@@ -2261,6 +2361,9 @@
         },
         "opacity": {
           "$ref": "#/$defs/expr_unit"
+        },
+        "rotation": {
+          "$ref": "#/$defs/expr_number"
         },
         "width": {
           "$ref": "#/$defs/expr_size"
@@ -2353,6 +2456,9 @@
         "opacity": {
           "$ref": "#/$defs/expr_unit"
         },
+        "rotation": {
+          "$ref": "#/$defs/expr_number"
+        },
         "width": {
           "$ref": "#/$defs/expr_size"
         },
@@ -2411,6 +2517,9 @@
         },
         "opacity": {
           "$ref": "#/$defs/expr_unit"
+        },
+        "rotation": {
+          "$ref": "#/$defs/expr_number"
         },
         "width": {
           "$ref": "#/$defs/expr_sizeNoHug"
@@ -2471,8 +2580,8 @@
     "node_repeat": {
       "type": "object",
       "additionalProperties": false,
-      "description": "formatVersion 2. Repete o template (o desenho de uma linha) por linha do campo table do tipo. Dentro do template, $field/$has/$eq/$switch leem a coluna da linha, que sombreia o campo do tipo de mesmo nome. Quadro hug no eixo das linhas e fill no outro.",
-      "required": ["type", "field", "template"],
+      "description": "formatVersion 2. Repete o template (o desenho de uma linha) por linha do campo table do tipo. Dentro do template, $field/$has/$eq/$switch leem a coluna da linha, que sombreia o campo do tipo de mesmo nome. Quadro hug no eixo das linhas e fill no outro. Com count (formatVersion 4) o template se repete por contagem, sem campo table.",
+      "required": ["type", "template"],
       "properties": {
         "type": {
           "const": "repeat"
@@ -2485,6 +2594,9 @@
         },
         "opacity": {
           "$ref": "#/$defs/expr_unit"
+        },
+        "rotation": {
+          "$ref": "#/$defs/expr_number"
         },
         "width": {
           "$ref": "#/$defs/expr_size"
@@ -2522,8 +2634,20 @@
         },
         "template": {
           "$ref": "#/$defs/node_frame"
+        },
+        "count": {
+          "description": "formatVersion 4: o template se repete max(0, floor(count)) vezes, até 1000 (acima, 1000 linhas com o aviso \"repeat limitado a 1000 linhas: <nó>\"); literal negativo ou não inteiro é recusado pelo parseComponent. Dentro do template, { \"$field\": \"$index\" } é o índice da linha (0, 1, …), também no repeat por field. Exatamente um de field e count.",
+          "$ref": "#/$defs/expr_nonNegative"
         }
-      }
+      },
+      "oneOf": [
+        {
+          "required": ["field"]
+        },
+        {
+          "required": ["count"]
+        }
+      ]
     },
     "lit_cap": {
       "enum": ["butt", "round", "square"]
@@ -3023,6 +3147,9 @@
               "$ref": "#/$defs/tokenName"
             }
           }
+        },
+        {
+          "$ref": "#/$defs/numericOps"
         }
       ]
     },
@@ -3102,6 +3229,9 @@
               "$ref": "#/$defs/tokenName"
             }
           }
+        },
+        {
+          "$ref": "#/$defs/numericOps"
         }
       ]
     },
@@ -3257,6 +3387,9 @@
               "$ref": "#/$defs/tokenName"
             }
           }
+        },
+        {
+          "$ref": "#/$defs/numericOps"
         }
       ]
     },
@@ -3275,6 +3408,211 @@
       "description": "Nome de um token da especialização (formatVersion 15 da especialização; formatVersion 4 do componente).",
       "type": "string",
       "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "operand": {
+      "description": "Operando de uma operação ou comparação (formatVersion 4): número, $field, $token, outra operação, $if ou $switch.",
+      "$ref": "#/$defs/expr_number"
+    },
+    "numericOps": {
+      "description": "Operações numéricas (formatVersion 4): $add, $sub, $mul, $div, $mod, $round, $floor, $ceil, $abs, $min, $max, $clamp, $sin e $cos (em graus). Operando sem valor (vazio, texto não numérico, divisão por zero) faz a operação não produzir valor. $rows (número de linhas de um campo table; sem linhas, 0) e $size (\"width\" ou \"height\" da instância em px da imagem; na prova de desenho e no hug, o size do componente) também produzem número.",
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$round"],
+          "properties": {
+            "$round": {
+              "$ref": "#/$defs/operand"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$floor"],
+          "properties": {
+            "$floor": {
+              "$ref": "#/$defs/operand"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$ceil"],
+          "properties": {
+            "$ceil": {
+              "$ref": "#/$defs/operand"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$abs"],
+          "properties": {
+            "$abs": {
+              "$ref": "#/$defs/operand"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$sin"],
+          "properties": {
+            "$sin": {
+              "$ref": "#/$defs/operand"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$cos"],
+          "properties": {
+            "$cos": {
+              "$ref": "#/$defs/operand"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$add"],
+          "properties": {
+            "$add": {
+              "type": "array",
+              "minItems": 2,
+              "items": {
+                "$ref": "#/$defs/operand"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$mul"],
+          "properties": {
+            "$mul": {
+              "type": "array",
+              "minItems": 2,
+              "items": {
+                "$ref": "#/$defs/operand"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$min"],
+          "properties": {
+            "$min": {
+              "type": "array",
+              "minItems": 2,
+              "items": {
+                "$ref": "#/$defs/operand"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$max"],
+          "properties": {
+            "$max": {
+              "type": "array",
+              "minItems": 2,
+              "items": {
+                "$ref": "#/$defs/operand"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$sub"],
+          "properties": {
+            "$sub": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "$ref": "#/$defs/operand"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$div"],
+          "properties": {
+            "$div": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "$ref": "#/$defs/operand"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$mod"],
+          "properties": {
+            "$mod": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "$ref": "#/$defs/operand"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$clamp"],
+          "properties": {
+            "$clamp": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": {
+                "$ref": "#/$defs/operand"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$rows"],
+          "properties": {
+            "$rows": {
+              "$ref": "#/$defs/fieldKey"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$size"],
+          "properties": {
+            "$size": {
+              "enum": ["width", "height"]
+            }
+          }
+        }
+      ]
     }
   }
 }

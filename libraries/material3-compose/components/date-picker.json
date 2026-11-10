@@ -3,15 +3,9 @@
   "formatVersion": 4,
   "id": "date-picker",
   "name": "Date picker",
-  "description": "Seletor de data de 360 de largura em surface container high, com cantos de 28: cabeçalho (título, manchete e o botão que alterna o modo), o mês com as setas (single) ou o subtítulo do mês (range), os dias da semana e a grade de dias de 48 com o dia escolhido em primary (single) ou o intervalo em secondary container com as pontas em primary (range). A grade é sempre um mês de 31 dias que começa numa quarta-feira.",
-  "size": {
-    "width": 360,
-    "height": 512
-  },
-  "sizing": {
-    "width": 360,
-    "height": "hug"
-  },
+  "description": "Seletor de data de 360 de largura em surface container high, com cantos de 28: cabeçalho (título, manchete e o botão que alterna o modo), o mês com as setas (single) ou o subtítulo do mês (range), os dias da semana e a grade de dias de 48 com o dia escolhido em primary (single) ou o intervalo em secondary container com as pontas em primary (range). A grade é a do mês de `month` e `year` (4, 5 ou 6 linhas, com o bissexto); sem os dois, um mês de 31 dias que começa numa quarta-feira.",
+  "size": { "width": 360, "height": 512 },
+  "sizing": { "width": 360, "height": "hug" },
   "preview": {
     "title": "",
     "headline": "qua., 15 de out.",
@@ -26,15 +20,9 @@
     "type": "frame",
     "name": "date picker",
     "minWidth": 360,
-    "layout": {
-      "type": "column"
-    },
-    "fill": {
-      "$token": "surface-container-high"
-    },
-    "cornerRadius": {
-      "$token": "corner-extra-large"
-    },
+    "layout": { "type": "column" },
+    "fill": { "$token": "surface-container-high" },
+    "cornerRadius": { "$token": "corner-extra-large" },
     "children": [
       {
         "type": "frame",
@@ -42,16 +30,11 @@
         "width": "fill",
         "height": "hug",
         "minHeight": {
-          "$if": {
-            "$eq": ["selection", "range"]
-          },
+          "$if": { "$eq": ["selection", "range"] },
           "then": 68,
           "else": 120
         },
-        "layout": {
-          "type": "column",
-          "justify": "space-between"
-        },
+        "layout": { "type": "column", "justify": "space-between" },
         "children": [
           {
             "type": "frame",
@@ -61,9 +44,7 @@
             "layout": {
               "type": "row",
               "padding": {
-                "$if": {
-                  "$eq": ["selection", "range"]
-                },
+                "$if": { "$eq": ["selection", "range"] },
                 "then": [0, 12, 0, 64],
                 "else": [16, 12, 0, 24]
               }
@@ -74,37 +55,21 @@
                 "name": "título",
                 "width": "fill",
                 "text": {
-                  "$if": {
-                    "$has": "title"
-                  },
-                  "then": {
-                    "$field": "title"
-                  },
+                  "$if": { "$has": "title" },
+                  "then": { "$field": "title" },
                   "else": {
                     "$switch": "selection",
-                    "cases": {
-                      "range": "Selecionar datas"
-                    },
+                    "cases": { "range": "Selecionar datas" },
                     "default": "Selecionar data"
                   }
                 },
                 "font": {
-                  "size": {
-                    "$token": "label-large-size"
-                  },
-                  "weight": {
-                    "$token": "label-large-weight"
-                  },
-                  "lineHeight": {
-                    "$token": "label-large-line-height"
-                  },
-                  "letterSpacing": {
-                    "$token": "label-large-tracking"
-                  }
+                  "size": { "$token": "label-large-size" },
+                  "weight": { "$token": "label-large-weight" },
+                  "lineHeight": { "$token": "label-large-line-height" },
+                  "letterSpacing": { "$token": "label-large-tracking" }
                 },
-                "color": {
-                  "$token": "on-surface-variant"
-                }
+                "color": { "$token": "on-surface-variant" }
               }
             ]
           },
@@ -113,19 +78,14 @@
             "name": "base do cabeçalho",
             "width": "fill",
             "height": "hug",
-            "layout": {
-              "type": "column"
-            },
+            "layout": { "type": "column" },
             "children": [
               {
                 "type": "frame",
                 "name": "linha",
                 "width": "fill",
                 "height": "hug",
-                "layout": {
-                  "type": "row",
-                  "align": "center"
-                },
+                "layout": { "type": "row", "align": "center" },
                 "children": [
                   {
                     "type": "frame",
@@ -135,9 +95,7 @@
                     "layout": {
                       "type": "row",
                       "padding": {
-                        "$if": {
-                          "$eq": ["selection", "range"]
-                        },
+                        "$if": { "$eq": ["selection", "range"] },
                         "then": [0, 12, 12, 64],
                         "else": [0, 12, 12, 24]
                       }
@@ -148,70 +106,38 @@
                         "name": "manchete",
                         "width": "fill",
                         "text": {
-                          "$if": {
-                            "$has": "headline"
-                          },
-                          "then": {
-                            "$field": "headline"
-                          },
+                          "$if": { "$has": "headline" },
+                          "then": { "$field": "headline" },
                           "else": {
                             "$switch": "selection",
-                            "cases": {
-                              "range": "Início – Fim"
-                            },
+                            "cases": { "range": "Início – Fim" },
                             "default": "Data selecionada"
                           }
                         },
                         "font": {
                           "size": {
-                            "$if": {
-                              "$eq": ["selection", "range"]
-                            },
-                            "then": {
-                              "$token": "title-large-size"
-                            },
-                            "else": {
-                              "$token": "headline-large-size"
-                            }
+                            "$if": { "$eq": ["selection", "range"] },
+                            "then": { "$token": "title-large-size" },
+                            "else": { "$token": "headline-large-size" }
                           },
                           "weight": {
-                            "$if": {
-                              "$eq": ["selection", "range"]
-                            },
-                            "then": {
-                              "$token": "title-large-weight"
-                            },
-                            "else": {
-                              "$token": "headline-large-weight"
-                            }
+                            "$if": { "$eq": ["selection", "range"] },
+                            "then": { "$token": "title-large-weight" },
+                            "else": { "$token": "headline-large-weight" }
                           },
                           "lineHeight": {
-                            "$if": {
-                              "$eq": ["selection", "range"]
-                            },
-                            "then": {
-                              "$token": "title-large-line-height"
-                            },
-                            "else": {
-                              "$token": "headline-large-line-height"
-                            }
+                            "$if": { "$eq": ["selection", "range"] },
+                            "then": { "$token": "title-large-line-height" },
+                            "else": { "$token": "headline-large-line-height" }
                           },
                           "letterSpacing": {
-                            "$if": {
-                              "$eq": ["selection", "range"]
-                            },
-                            "then": {
-                              "$token": "title-large-tracking"
-                            },
-                            "else": {
-                              "$token": "headline-large-tracking"
-                            }
+                            "$if": { "$eq": ["selection", "range"] },
+                            "then": { "$token": "title-large-tracking" },
+                            "else": { "$token": "headline-large-tracking" }
                           },
                           "maxLines": 1
                         },
-                        "color": {
-                          "$token": "on-surface-variant"
-                        }
+                        "color": { "$token": "on-surface-variant" }
                       }
                     ]
                   },
@@ -220,15 +146,8 @@
                     "name": "alternar modo",
                     "width": "hug",
                     "height": "hug",
-                    "visible": {
-                      "$not": {
-                        "$eq": ["showModeToggle", "false"]
-                      }
-                    },
-                    "layout": {
-                      "type": "row",
-                      "padding": [0, 12, 12, 0]
-                    },
+                    "visible": { "$not": { "$eq": ["showModeToggle", "false"] } },
+                    "layout": { "type": "row", "padding": [0, 12, 12, 0] },
                     "children": [
                       {
                         "type": "frame",
@@ -244,9 +163,7 @@
                           {
                             "type": "icon",
                             "name": "edit",
-                            "color": {
-                              "$token": "on-surface-variant"
-                            },
+                            "color": { "$token": "on-surface-variant" },
                             "width": 24,
                             "height": 24
                           }
@@ -261,9 +178,7 @@
                 "name": "divisor",
                 "width": "fill",
                 "height": 1,
-                "fill": {
-                  "$token": "outline-variant"
-                }
+                "fill": { "$token": "outline-variant" }
               }
             ]
           }
@@ -274,11 +189,7 @@
         "name": "navegação do mês",
         "width": "fill",
         "height": 56,
-        "visible": {
-          "$not": {
-            "$eq": ["selection", "range"]
-          }
-        },
+        "visible": { "$not": { "$eq": ["selection", "range"] } },
         "layout": {
           "type": "row",
           "align": "center",
@@ -291,49 +202,27 @@
             "name": "botão do ano",
             "width": "hug",
             "height": 40,
-            "cornerRadius": {
-              "$token": "corner-full"
-            },
-            "layout": {
-              "type": "row",
-              "align": "center",
-              "gap": 8,
-              "padding": [0, 12]
-            },
+            "cornerRadius": { "$token": "corner-full" },
+            "layout": { "type": "row", "align": "center", "gap": 8, "padding": [0, 12] },
             "children": [
               {
                 "type": "text",
                 "name": "mês exibido",
-                "text": {
-                  "$field": "displayedMonth",
-                  "default": "-"
-                },
+                "text": { "$field": "displayedMonth", "default": "-" },
                 "font": {
-                  "size": {
-                    "$token": "label-large-size"
-                  },
-                  "weight": {
-                    "$token": "label-large-weight"
-                  },
-                  "lineHeight": {
-                    "$token": "label-large-line-height"
-                  },
-                  "letterSpacing": {
-                    "$token": "label-large-tracking"
-                  },
+                  "size": { "$token": "label-large-size" },
+                  "weight": { "$token": "label-large-weight" },
+                  "lineHeight": { "$token": "label-large-line-height" },
+                  "letterSpacing": { "$token": "label-large-tracking" },
                   "verticalAlign": "cap-middle"
                 },
-                "color": {
-                  "$token": "on-surface-variant"
-                },
+                "color": { "$token": "on-surface-variant" },
                 "height": "fill"
               },
               {
                 "type": "icon",
                 "name": "arrow_drop_down",
-                "color": {
-                  "$token": "on-surface-variant"
-                },
+                "color": { "$token": "on-surface-variant" },
                 "width": 24,
                 "height": 24
               }
@@ -344,27 +233,19 @@
             "name": "setas",
             "width": "hug",
             "height": "hug",
-            "layout": {
-              "type": "row"
-            },
+            "layout": { "type": "row" },
             "children": [
               {
                 "type": "frame",
                 "name": "seta anterior",
                 "width": 48,
                 "height": 48,
-                "layout": {
-                  "type": "row",
-                  "align": "center",
-                  "justify": "center"
-                },
+                "layout": { "type": "row", "align": "center", "justify": "center" },
                 "children": [
                   {
                     "type": "icon",
                     "name": "keyboard_arrow_left",
-                    "color": {
-                      "$token": "on-surface-variant"
-                    },
+                    "color": { "$token": "on-surface-variant" },
                     "width": 24,
                     "height": 24
                   }
@@ -375,18 +256,12 @@
                 "name": "seta próxima",
                 "width": 48,
                 "height": 48,
-                "layout": {
-                  "type": "row",
-                  "align": "center",
-                  "justify": "center"
-                },
+                "layout": { "type": "row", "align": "center", "justify": "center" },
                 "children": [
                   {
                     "type": "icon",
                     "name": "keyboard_arrow_right",
-                    "color": {
-                      "$token": "on-surface-variant"
-                    },
+                    "color": { "$token": "on-surface-variant" },
                     "width": 24,
                     "height": 24
                   }
@@ -401,10 +276,7 @@
         "name": "dias da semana",
         "width": "fill",
         "height": 48,
-        "layout": {
-          "type": "row",
-          "padding": [0, 12]
-        },
+        "layout": { "type": "row", "padding": [0, 12] },
         "children": [
           {
             "type": "text",
@@ -413,24 +285,14 @@
             "width": 48,
             "height": 48,
             "font": {
-              "size": {
-                "$token": "body-large-size"
-              },
-              "weight": {
-                "$token": "body-large-weight"
-              },
-              "lineHeight": {
-                "$token": "body-large-line-height"
-              },
-              "letterSpacing": {
-                "$token": "body-large-tracking"
-              },
+              "size": { "$token": "body-large-size" },
+              "weight": { "$token": "body-large-weight" },
+              "lineHeight": { "$token": "body-large-line-height" },
+              "letterSpacing": { "$token": "body-large-tracking" },
               "align": "center",
               "verticalAlign": "cap-middle"
             },
-            "color": {
-              "$token": "on-surface"
-            }
+            "color": { "$token": "on-surface" }
           },
           {
             "type": "text",
@@ -439,24 +301,14 @@
             "width": 48,
             "height": 48,
             "font": {
-              "size": {
-                "$token": "body-large-size"
-              },
-              "weight": {
-                "$token": "body-large-weight"
-              },
-              "lineHeight": {
-                "$token": "body-large-line-height"
-              },
-              "letterSpacing": {
-                "$token": "body-large-tracking"
-              },
+              "size": { "$token": "body-large-size" },
+              "weight": { "$token": "body-large-weight" },
+              "lineHeight": { "$token": "body-large-line-height" },
+              "letterSpacing": { "$token": "body-large-tracking" },
               "align": "center",
               "verticalAlign": "cap-middle"
             },
-            "color": {
-              "$token": "on-surface"
-            }
+            "color": { "$token": "on-surface" }
           },
           {
             "type": "text",
@@ -465,24 +317,14 @@
             "width": 48,
             "height": 48,
             "font": {
-              "size": {
-                "$token": "body-large-size"
-              },
-              "weight": {
-                "$token": "body-large-weight"
-              },
-              "lineHeight": {
-                "$token": "body-large-line-height"
-              },
-              "letterSpacing": {
-                "$token": "body-large-tracking"
-              },
+              "size": { "$token": "body-large-size" },
+              "weight": { "$token": "body-large-weight" },
+              "lineHeight": { "$token": "body-large-line-height" },
+              "letterSpacing": { "$token": "body-large-tracking" },
               "align": "center",
               "verticalAlign": "cap-middle"
             },
-            "color": {
-              "$token": "on-surface"
-            }
+            "color": { "$token": "on-surface" }
           },
           {
             "type": "text",
@@ -491,24 +333,14 @@
             "width": 48,
             "height": 48,
             "font": {
-              "size": {
-                "$token": "body-large-size"
-              },
-              "weight": {
-                "$token": "body-large-weight"
-              },
-              "lineHeight": {
-                "$token": "body-large-line-height"
-              },
-              "letterSpacing": {
-                "$token": "body-large-tracking"
-              },
+              "size": { "$token": "body-large-size" },
+              "weight": { "$token": "body-large-weight" },
+              "lineHeight": { "$token": "body-large-line-height" },
+              "letterSpacing": { "$token": "body-large-tracking" },
               "align": "center",
               "verticalAlign": "cap-middle"
             },
-            "color": {
-              "$token": "on-surface"
-            }
+            "color": { "$token": "on-surface" }
           },
           {
             "type": "text",
@@ -517,24 +349,14 @@
             "width": 48,
             "height": 48,
             "font": {
-              "size": {
-                "$token": "body-large-size"
-              },
-              "weight": {
-                "$token": "body-large-weight"
-              },
-              "lineHeight": {
-                "$token": "body-large-line-height"
-              },
-              "letterSpacing": {
-                "$token": "body-large-tracking"
-              },
+              "size": { "$token": "body-large-size" },
+              "weight": { "$token": "body-large-weight" },
+              "lineHeight": { "$token": "body-large-line-height" },
+              "letterSpacing": { "$token": "body-large-tracking" },
               "align": "center",
               "verticalAlign": "cap-middle"
             },
-            "color": {
-              "$token": "on-surface"
-            }
+            "color": { "$token": "on-surface" }
           },
           {
             "type": "text",
@@ -543,24 +365,14 @@
             "width": 48,
             "height": 48,
             "font": {
-              "size": {
-                "$token": "body-large-size"
-              },
-              "weight": {
-                "$token": "body-large-weight"
-              },
-              "lineHeight": {
-                "$token": "body-large-line-height"
-              },
-              "letterSpacing": {
-                "$token": "body-large-tracking"
-              },
+              "size": { "$token": "body-large-size" },
+              "weight": { "$token": "body-large-weight" },
+              "lineHeight": { "$token": "body-large-line-height" },
+              "letterSpacing": { "$token": "body-large-tracking" },
               "align": "center",
               "verticalAlign": "cap-middle"
             },
-            "color": {
-              "$token": "on-surface"
-            }
+            "color": { "$token": "on-surface" }
           },
           {
             "type": "text",
@@ -569,24 +381,14 @@
             "width": 48,
             "height": 48,
             "font": {
-              "size": {
-                "$token": "body-large-size"
-              },
-              "weight": {
-                "$token": "body-large-weight"
-              },
-              "lineHeight": {
-                "$token": "body-large-line-height"
-              },
-              "letterSpacing": {
-                "$token": "body-large-tracking"
-              },
+              "size": { "$token": "body-large-size" },
+              "weight": { "$token": "body-large-weight" },
+              "lineHeight": { "$token": "body-large-line-height" },
+              "letterSpacing": { "$token": "body-large-tracking" },
               "align": "center",
               "verticalAlign": "cap-middle"
             },
-            "color": {
-              "$token": "on-surface"
-            }
+            "color": { "$token": "on-surface" }
           }
         ]
       },
@@ -595,38 +397,20 @@
         "name": "mês do intervalo",
         "width": "fill",
         "height": "hug",
-        "visible": {
-          "$eq": ["selection", "range"]
-        },
-        "layout": {
-          "type": "row",
-          "padding": [20, 0, 8, 24]
-        },
+        "visible": { "$eq": ["selection", "range"] },
+        "layout": { "type": "row", "padding": [20, 0, 8, 24] },
         "children": [
           {
             "type": "text",
             "name": "mês do intervalo",
-            "text": {
-              "$field": "displayedMonth",
-              "default": "-"
-            },
+            "text": { "$field": "displayedMonth", "default": "-" },
             "font": {
-              "size": {
-                "$token": "title-small-size"
-              },
-              "weight": {
-                "$token": "title-small-weight"
-              },
-              "lineHeight": {
-                "$token": "title-small-line-height"
-              },
-              "letterSpacing": {
-                "$token": "title-small-tracking"
-              }
+              "size": { "$token": "title-small-size" },
+              "weight": { "$token": "title-small-weight" },
+              "lineHeight": { "$token": "title-small-line-height" },
+              "letterSpacing": { "$token": "title-small-tracking" }
             },
-            "color": {
-              "$token": "on-surface-variant"
-            }
+            "color": { "$token": "on-surface-variant" }
           }
         ]
       },
@@ -634,1773 +418,631 @@
         "type": "frame",
         "name": "grade",
         "width": "fill",
-        "height": 240,
-        "layout": {
-          "type": "none"
-        },
+        "height": "hug",
+        "layout": { "type": "none" },
         "children": [
           {
-            "type": "frame",
-            "name": "faixas do intervalo",
-            "anchors": {
-              "left": 12,
-              "right": 12,
-              "top": 0,
-              "bottom": 0
-            },
-            "visible": {
-              "$and": [
-                {
-                  "$eq": ["selection", "range"]
-                },
-                {
-                  "$has": "rangeStartDay"
-                },
-                {
-                  "$has": "rangeEndDay"
-                }
-              ]
-            },
-            "layout": {
-              "type": "column"
-            },
-            "children": [
-              {
-                "type": "frame",
-                "name": "semana",
-                "width": "fill",
-                "height": 48,
-                "layout": {
-                  "type": "row",
-                  "align": "center"
-                },
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "antes",
-                    "width": {
-                      "$switch": "rangeStartDay",
-                      "cases": {
-                        "1": 168,
-                        "2": 216,
-                        "3": 264,
-                        "4": 312,
-                        "5": 336,
-                        "6": 336,
-                        "7": 336,
-                        "8": 336,
-                        "9": 336,
-                        "10": 336,
-                        "11": 336,
-                        "12": 336,
-                        "13": 336,
-                        "14": 336,
-                        "15": 336,
-                        "16": 336,
-                        "17": 336,
-                        "18": 336,
-                        "19": 336,
-                        "20": 336,
-                        "21": 336,
-                        "22": 336,
-                        "23": 336,
-                        "24": 336,
-                        "25": 336,
-                        "26": 336,
-                        "27": 336,
-                        "28": 336,
-                        "29": 336,
-                        "30": 336,
-                        "31": 336
-                      },
-                      "default": 336
-                    },
-                    "height": 1,
-                    "fill": "none"
-                  },
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "width": "fill",
-                    "height": 40,
-                    "fill": {
-                      "$token": "secondary-container"
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "depois",
-                    "width": {
-                      "$switch": "rangeEndDay",
-                      "cases": {
-                        "1": 168,
-                        "2": 120,
-                        "3": 72,
-                        "4": 24,
-                        "5": 0,
-                        "6": 0,
-                        "7": 0,
-                        "8": 0,
-                        "9": 0,
-                        "10": 0,
-                        "11": 0,
-                        "12": 0,
-                        "13": 0,
-                        "14": 0,
-                        "15": 0,
-                        "16": 0,
-                        "17": 0,
-                        "18": 0,
-                        "19": 0,
-                        "20": 0,
-                        "21": 0,
-                        "22": 0,
-                        "23": 0,
-                        "24": 0,
-                        "25": 0,
-                        "26": 0,
-                        "27": 0,
-                        "28": 0,
-                        "29": 0,
-                        "30": 0,
-                        "31": 0
-                      },
-                      "default": 336
-                    },
-                    "height": 1,
-                    "fill": "none"
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "semana",
-                "width": "fill",
-                "height": 48,
-                "layout": {
-                  "type": "row",
-                  "align": "center"
-                },
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "antes",
-                    "width": {
-                      "$switch": "rangeStartDay",
-                      "cases": {
-                        "1": 0,
-                        "2": 0,
-                        "3": 0,
-                        "4": 0,
-                        "5": 24,
-                        "6": 72,
-                        "7": 120,
-                        "8": 168,
-                        "9": 216,
-                        "10": 264,
-                        "11": 312,
-                        "12": 336,
-                        "13": 336,
-                        "14": 336,
-                        "15": 336,
-                        "16": 336,
-                        "17": 336,
-                        "18": 336,
-                        "19": 336,
-                        "20": 336,
-                        "21": 336,
-                        "22": 336,
-                        "23": 336,
-                        "24": 336,
-                        "25": 336,
-                        "26": 336,
-                        "27": 336,
-                        "28": 336,
-                        "29": 336,
-                        "30": 336,
-                        "31": 336
-                      },
-                      "default": 336
-                    },
-                    "height": 1,
-                    "fill": "none"
-                  },
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "width": "fill",
-                    "height": 40,
-                    "fill": {
-                      "$token": "secondary-container"
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "depois",
-                    "width": {
-                      "$switch": "rangeEndDay",
-                      "cases": {
-                        "1": 336,
-                        "2": 336,
-                        "3": 336,
-                        "4": 336,
-                        "5": 312,
-                        "6": 264,
-                        "7": 216,
-                        "8": 168,
-                        "9": 120,
-                        "10": 72,
-                        "11": 24,
-                        "12": 0,
-                        "13": 0,
-                        "14": 0,
-                        "15": 0,
-                        "16": 0,
-                        "17": 0,
-                        "18": 0,
-                        "19": 0,
-                        "20": 0,
-                        "21": 0,
-                        "22": 0,
-                        "23": 0,
-                        "24": 0,
-                        "25": 0,
-                        "26": 0,
-                        "27": 0,
-                        "28": 0,
-                        "29": 0,
-                        "30": 0,
-                        "31": 0
-                      },
-                      "default": 336
-                    },
-                    "height": 1,
-                    "fill": "none"
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "semana",
-                "width": "fill",
-                "height": 48,
-                "layout": {
-                  "type": "row",
-                  "align": "center"
-                },
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "antes",
-                    "width": {
-                      "$switch": "rangeStartDay",
-                      "cases": {
-                        "1": 0,
-                        "2": 0,
-                        "3": 0,
-                        "4": 0,
-                        "5": 0,
-                        "6": 0,
-                        "7": 0,
-                        "8": 0,
-                        "9": 0,
-                        "10": 0,
-                        "11": 0,
-                        "12": 24,
-                        "13": 72,
-                        "14": 120,
-                        "15": 168,
-                        "16": 216,
-                        "17": 264,
-                        "18": 312,
-                        "19": 336,
-                        "20": 336,
-                        "21": 336,
-                        "22": 336,
-                        "23": 336,
-                        "24": 336,
-                        "25": 336,
-                        "26": 336,
-                        "27": 336,
-                        "28": 336,
-                        "29": 336,
-                        "30": 336,
-                        "31": 336
-                      },
-                      "default": 336
-                    },
-                    "height": 1,
-                    "fill": "none"
-                  },
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "width": "fill",
-                    "height": 40,
-                    "fill": {
-                      "$token": "secondary-container"
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "depois",
-                    "width": {
-                      "$switch": "rangeEndDay",
-                      "cases": {
-                        "1": 336,
-                        "2": 336,
-                        "3": 336,
-                        "4": 336,
-                        "5": 336,
-                        "6": 336,
-                        "7": 336,
-                        "8": 336,
-                        "9": 336,
-                        "10": 336,
-                        "11": 336,
-                        "12": 312,
-                        "13": 264,
-                        "14": 216,
-                        "15": 168,
-                        "16": 120,
-                        "17": 72,
-                        "18": 24,
-                        "19": 0,
-                        "20": 0,
-                        "21": 0,
-                        "22": 0,
-                        "23": 0,
-                        "24": 0,
-                        "25": 0,
-                        "26": 0,
-                        "27": 0,
-                        "28": 0,
-                        "29": 0,
-                        "30": 0,
-                        "31": 0
-                      },
-                      "default": 336
-                    },
-                    "height": 1,
-                    "fill": "none"
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "semana",
-                "width": "fill",
-                "height": 48,
-                "layout": {
-                  "type": "row",
-                  "align": "center"
-                },
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "antes",
-                    "width": {
-                      "$switch": "rangeStartDay",
-                      "cases": {
-                        "1": 0,
-                        "2": 0,
-                        "3": 0,
-                        "4": 0,
-                        "5": 0,
-                        "6": 0,
-                        "7": 0,
-                        "8": 0,
-                        "9": 0,
-                        "10": 0,
-                        "11": 0,
-                        "12": 0,
-                        "13": 0,
-                        "14": 0,
-                        "15": 0,
-                        "16": 0,
-                        "17": 0,
-                        "18": 0,
-                        "19": 24,
-                        "20": 72,
-                        "21": 120,
-                        "22": 168,
-                        "23": 216,
-                        "24": 264,
-                        "25": 312,
-                        "26": 336,
-                        "27": 336,
-                        "28": 336,
-                        "29": 336,
-                        "30": 336,
-                        "31": 336
-                      },
-                      "default": 336
-                    },
-                    "height": 1,
-                    "fill": "none"
-                  },
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "width": "fill",
-                    "height": 40,
-                    "fill": {
-                      "$token": "secondary-container"
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "depois",
-                    "width": {
-                      "$switch": "rangeEndDay",
-                      "cases": {
-                        "1": 336,
-                        "2": 336,
-                        "3": 336,
-                        "4": 336,
-                        "5": 336,
-                        "6": 336,
-                        "7": 336,
-                        "8": 336,
-                        "9": 336,
-                        "10": 336,
-                        "11": 336,
-                        "12": 336,
-                        "13": 336,
-                        "14": 336,
-                        "15": 336,
-                        "16": 336,
-                        "17": 336,
-                        "18": 336,
-                        "19": 312,
-                        "20": 264,
-                        "21": 216,
-                        "22": 168,
-                        "23": 120,
-                        "24": 72,
-                        "25": 24,
-                        "26": 0,
-                        "27": 0,
-                        "28": 0,
-                        "29": 0,
-                        "30": 0,
-                        "31": 0
-                      },
-                      "default": 336
-                    },
-                    "height": 1,
-                    "fill": "none"
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "semana",
-                "width": "fill",
-                "height": 48,
-                "layout": {
-                  "type": "row",
-                  "align": "center"
-                },
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "antes",
-                    "width": {
-                      "$switch": "rangeStartDay",
-                      "cases": {
-                        "1": 0,
-                        "2": 0,
-                        "3": 0,
-                        "4": 0,
-                        "5": 0,
-                        "6": 0,
-                        "7": 0,
-                        "8": 0,
-                        "9": 0,
-                        "10": 0,
-                        "11": 0,
-                        "12": 0,
-                        "13": 0,
-                        "14": 0,
-                        "15": 0,
-                        "16": 0,
-                        "17": 0,
-                        "18": 0,
-                        "19": 0,
-                        "20": 0,
-                        "21": 0,
-                        "22": 0,
-                        "23": 0,
-                        "24": 0,
-                        "25": 0,
-                        "26": 24,
-                        "27": 72,
-                        "28": 120,
-                        "29": 168,
-                        "30": 216,
-                        "31": 264
-                      },
-                      "default": 336
-                    },
-                    "height": 1,
-                    "fill": "none"
-                  },
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "width": "fill",
-                    "height": 40,
-                    "fill": {
-                      "$token": "secondary-container"
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "depois",
-                    "width": {
-                      "$switch": "rangeEndDay",
-                      "cases": {
-                        "1": 336,
-                        "2": 336,
-                        "3": 336,
-                        "4": 336,
-                        "5": 336,
-                        "6": 336,
-                        "7": 336,
-                        "8": 336,
-                        "9": 336,
-                        "10": 336,
-                        "11": 336,
-                        "12": 336,
-                        "13": 336,
-                        "14": 336,
-                        "15": 336,
-                        "16": 336,
-                        "17": 336,
-                        "18": 336,
-                        "19": 336,
-                        "20": 336,
-                        "21": 336,
-                        "22": 336,
-                        "23": 336,
-                        "24": 336,
-                        "25": 336,
-                        "26": 312,
-                        "27": 264,
-                        "28": 216,
-                        "29": 168,
-                        "30": 120,
-                        "31": 72
-                      },
-                      "default": 336
-                    },
-                    "height": 1,
-                    "fill": "none"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "type": "frame",
+            "type": "repeat",
             "name": "dias",
-            "anchors": {
-              "left": 12,
-              "right": 12,
-              "top": 0,
-              "bottom": 0
+            "count": {
+              "$if": { "$and": [{ "$has": "month" }, { "$has": "year" }] },
+              "then": {
+                "$if": {
+                  "$and": [
+                    { "$gte": [{ "$field": "month" }, 2] },
+                    { "$lte": [{ "$field": "month" }, 2] }
+                  ]
+                },
+                "then": {
+                  "$add": [
+                    28,
+                    {
+                      "$if": {
+                        "$or": [
+                          { "$lt": [{ "$mod": [{ "$field": "year" }, 400] }, 1] },
+                          {
+                            "$and": [
+                              { "$lt": [{ "$mod": [{ "$field": "year" }, 4] }, 1] },
+                              { "$gt": [{ "$mod": [{ "$field": "year" }, 100] }, 0] }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": 1,
+                      "else": 0
+                    }
+                  ]
+                },
+                "else": {
+                  "$add": [
+                    30,
+                    {
+                      "$mod": [
+                        {
+                          "$add": [
+                            { "$field": "month" },
+                            { "$floor": { "$div": [{ "$field": "month" }, 8] } }
+                          ]
+                        },
+                        2
+                      ]
+                    }
+                  ]
+                }
+              },
+              "else": 31
             },
-            "layout": {
-              "type": "column"
-            },
-            "children": [
-              {
-                "type": "frame",
-                "name": "semana",
-                "width": "fill",
-                "height": 48,
-                "layout": {
-                  "type": "row",
-                  "padding": [0, 0, 0, 144]
-                },
-                "children": [
-                  {
-                    "type": "text",
-                    "name": "dia 1",
-                    "text": "1",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "dia 2",
-                    "text": "2",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "dia 3",
-                    "text": "3",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "dia 4",
-                    "text": "4",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "semana",
-                "width": "fill",
-                "height": 48,
-                "layout": {
-                  "type": "row"
-                },
-                "children": [
-                  {
-                    "type": "text",
-                    "name": "dia 5",
-                    "text": "5",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "dia 6",
-                    "text": "6",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "dia 7",
-                    "text": "7",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "dia 8",
-                    "text": "8",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "dia 9",
-                    "text": "9",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "dia 10",
-                    "text": "10",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "dia 11",
-                    "text": "11",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "semana",
-                "width": "fill",
-                "height": 48,
-                "layout": {
-                  "type": "row"
-                },
-                "children": [
-                  {
-                    "type": "text",
-                    "name": "dia 12",
-                    "text": "12",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "dia 13",
-                    "text": "13",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "dia 14",
-                    "text": "14",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "dia 15",
-                    "text": "15",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "dia 16",
-                    "text": "16",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "dia 17",
-                    "text": "17",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "dia 18",
-                    "text": "18",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "semana",
-                "width": "fill",
-                "height": 48,
-                "layout": {
-                  "type": "row"
-                },
-                "children": [
-                  {
-                    "type": "text",
-                    "name": "dia 19",
-                    "text": "19",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "dia 20",
-                    "text": "20",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "dia 21",
-                    "text": "21",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "dia 22",
-                    "text": "22",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "dia 23",
-                    "text": "23",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "dia 24",
-                    "text": "24",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "dia 25",
-                    "text": "25",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "semana",
-                "width": "fill",
-                "height": 48,
-                "layout": {
-                  "type": "row"
-                },
-                "children": [
-                  {
-                    "type": "text",
-                    "name": "dia 26",
-                    "text": "26",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "dia 27",
-                    "text": "27",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "dia 28",
-                    "text": "28",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "dia 29",
-                    "text": "29",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "dia 30",
-                    "text": "30",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "dia 31",
-                    "text": "31",
-                    "width": 48,
-                    "height": 48,
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "align": "center",
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-surface"
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "type": "frame",
-            "name": "camada do dia escolhido",
-            "anchors": {
-              "left": 12,
-              "right": 12,
-              "top": 0,
-              "bottom": 0
-            },
-            "visible": {
-              "$and": [
+            "direction": "row",
+            "width": 0,
+            "height": "hug",
+            "anchors": { "left": 12, "top": 0 },
+            "template": {
+              "type": "frame",
+              "name": "posição",
+              "width": 0,
+              "height": "hug",
+              "layout": { "type": "none" },
+              "children": [
                 {
-                  "$not": {
-                    "$eq": ["selection", "range"]
-                  }
-                },
-                {
-                  "$has": "selectedDay"
+                  "type": "frame",
+                  "name": "célula",
+                  "width": 48,
+                  "height": 48,
+                  "layout": { "type": "none" },
+                  "anchors": {
+                    "left": {
+                      "$mul": [
+                        48,
+                        {
+                          "$mod": [
+                            {
+                              "$add": [
+                                { "$field": "$index" },
+                                {
+                                  "$if": {
+                                    "$and": [{ "$has": "month" }, { "$has": "year" }]
+                                  },
+                                  "then": {
+                                    "$mod": [
+                                      {
+                                        "$add": [
+                                          {
+                                            "$floor": {
+                                              "$div": [
+                                                {
+                                                  "$add": [
+                                                    {
+                                                      "$mul": [12, { "$field": "year" }]
+                                                    },
+                                                    { "$field": "month" },
+                                                    -3
+                                                  ]
+                                                },
+                                                12
+                                              ]
+                                            }
+                                          },
+                                          {
+                                            "$floor": {
+                                              "$div": [
+                                                {
+                                                  "$add": [
+                                                    {
+                                                      "$mul": [12, { "$field": "year" }]
+                                                    },
+                                                    { "$field": "month" },
+                                                    -3
+                                                  ]
+                                                },
+                                                48
+                                              ]
+                                            }
+                                          },
+                                          {
+                                            "$mul": [
+                                              -1,
+                                              {
+                                                "$floor": {
+                                                  "$div": [
+                                                    {
+                                                      "$add": [
+                                                        {
+                                                          "$mul": [
+                                                            12,
+                                                            { "$field": "year" }
+                                                          ]
+                                                        },
+                                                        { "$field": "month" },
+                                                        -3
+                                                      ]
+                                                    },
+                                                    1200
+                                                  ]
+                                                }
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "$floor": {
+                                              "$div": [
+                                                {
+                                                  "$add": [
+                                                    {
+                                                      "$mul": [12, { "$field": "year" }]
+                                                    },
+                                                    { "$field": "month" },
+                                                    -3
+                                                  ]
+                                                },
+                                                4800
+                                              ]
+                                            }
+                                          },
+                                          {
+                                            "$floor": {
+                                              "$div": [
+                                                {
+                                                  "$add": [
+                                                    {
+                                                      "$mul": [
+                                                        153,
+                                                        {
+                                                          "$mod": [
+                                                            {
+                                                              "$add": [
+                                                                {
+                                                                  "$mul": [
+                                                                    12,
+                                                                    { "$field": "year" }
+                                                                  ]
+                                                                },
+                                                                { "$field": "month" },
+                                                                -3
+                                                              ]
+                                                            },
+                                                            12
+                                                          ]
+                                                        }
+                                                      ]
+                                                    },
+                                                    2
+                                                  ]
+                                                },
+                                                5
+                                              ]
+                                            }
+                                          },
+                                          3
+                                        ]
+                                      },
+                                      7
+                                    ]
+                                  },
+                                  "else": 3
+                                }
+                              ]
+                            },
+                            7
+                          ]
+                        }
+                      ]
+                    },
+                    "top": {
+                      "$mul": [
+                        48,
+                        {
+                          "$floor": {
+                            "$div": [
+                              {
+                                "$add": [
+                                  { "$field": "$index" },
+                                  {
+                                    "$if": {
+                                      "$and": [{ "$has": "month" }, { "$has": "year" }]
+                                    },
+                                    "then": {
+                                      "$mod": [
+                                        {
+                                          "$add": [
+                                            {
+                                              "$floor": {
+                                                "$div": [
+                                                  {
+                                                    "$add": [
+                                                      {
+                                                        "$mul": [12, { "$field": "year" }]
+                                                      },
+                                                      { "$field": "month" },
+                                                      -3
+                                                    ]
+                                                  },
+                                                  12
+                                                ]
+                                              }
+                                            },
+                                            {
+                                              "$floor": {
+                                                "$div": [
+                                                  {
+                                                    "$add": [
+                                                      {
+                                                        "$mul": [12, { "$field": "year" }]
+                                                      },
+                                                      { "$field": "month" },
+                                                      -3
+                                                    ]
+                                                  },
+                                                  48
+                                                ]
+                                              }
+                                            },
+                                            {
+                                              "$mul": [
+                                                -1,
+                                                {
+                                                  "$floor": {
+                                                    "$div": [
+                                                      {
+                                                        "$add": [
+                                                          {
+                                                            "$mul": [
+                                                              12,
+                                                              { "$field": "year" }
+                                                            ]
+                                                          },
+                                                          { "$field": "month" },
+                                                          -3
+                                                        ]
+                                                      },
+                                                      1200
+                                                    ]
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "$floor": {
+                                                "$div": [
+                                                  {
+                                                    "$add": [
+                                                      {
+                                                        "$mul": [12, { "$field": "year" }]
+                                                      },
+                                                      { "$field": "month" },
+                                                      -3
+                                                    ]
+                                                  },
+                                                  4800
+                                                ]
+                                              }
+                                            },
+                                            {
+                                              "$floor": {
+                                                "$div": [
+                                                  {
+                                                    "$add": [
+                                                      {
+                                                        "$mul": [
+                                                          153,
+                                                          {
+                                                            "$mod": [
+                                                              {
+                                                                "$add": [
+                                                                  {
+                                                                    "$mul": [
+                                                                      12,
+                                                                      { "$field": "year" }
+                                                                    ]
+                                                                  },
+                                                                  { "$field": "month" },
+                                                                  -3
+                                                                ]
+                                                              },
+                                                              12
+                                                            ]
+                                                          }
+                                                        ]
+                                                      },
+                                                      2
+                                                    ]
+                                                  },
+                                                  5
+                                                ]
+                                              }
+                                            },
+                                            3
+                                          ]
+                                        },
+                                        7
+                                      ]
+                                    },
+                                    "else": 3
+                                  }
+                                ]
+                              },
+                              7
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "children": [
+                    {
+                      "type": "rect",
+                      "name": "faixa",
+                      "width": {
+                        "$sub": [
+                          48,
+                          {
+                            "$add": [
+                              {
+                                "$mul": [
+                                  24,
+                                  {
+                                    "$max": [
+                                      0,
+                                      {
+                                        "$sub": [
+                                          1,
+                                          {
+                                            "$abs": {
+                                              "$sub": [
+                                                { "$add": [{ "$field": "$index" }, 1] },
+                                                { "$field": "rangeStartDay" }
+                                              ]
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              },
+                              {
+                                "$mul": [
+                                  24,
+                                  {
+                                    "$max": [
+                                      0,
+                                      {
+                                        "$sub": [
+                                          1,
+                                          {
+                                            "$abs": {
+                                              "$sub": [
+                                                { "$add": [{ "$field": "$index" }, 1] },
+                                                { "$field": "rangeEndDay" }
+                                              ]
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "height": 40,
+                      "anchors": {
+                        "left": {
+                          "$mul": [
+                            24,
+                            {
+                              "$max": [
+                                0,
+                                {
+                                  "$sub": [
+                                    1,
+                                    {
+                                      "$abs": {
+                                        "$sub": [
+                                          { "$add": [{ "$field": "$index" }, 1] },
+                                          { "$field": "rangeStartDay" }
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        "top": 4
+                      },
+                      "fill": { "$token": "secondary-container" },
+                      "visible": {
+                        "$and": [
+                          { "$eq": ["selection", "range"] },
+                          { "$has": "rangeStartDay" },
+                          { "$has": "rangeEndDay" },
+                          {
+                            "$gte": [
+                              { "$add": [{ "$field": "$index" }, 1] },
+                              { "$field": "rangeStartDay" }
+                            ]
+                          },
+                          {
+                            "$lte": [
+                              { "$add": [{ "$field": "$index" }, 1] },
+                              { "$field": "rangeEndDay" }
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "name": "dia",
+                      "text": { "$add": [{ "$field": "$index" }, 1] },
+                      "width": 48,
+                      "height": 48,
+                      "font": {
+                        "size": { "$token": "body-large-size" },
+                        "weight": { "$token": "body-large-weight" },
+                        "lineHeight": { "$token": "body-large-line-height" },
+                        "letterSpacing": { "$token": "body-large-tracking" },
+                        "align": "center",
+                        "verticalAlign": "cap-middle"
+                      },
+                      "color": { "$token": "on-surface" }
+                    },
+                    {
+                      "type": "frame",
+                      "name": "marcado",
+                      "width": 40,
+                      "height": 40,
+                      "anchors": { "left": 4, "top": 4 },
+                      "layout": { "type": "row", "align": "center", "justify": "center" },
+                      "cornerRadius": { "$token": "corner-full" },
+                      "fill": { "$token": "primary" },
+                      "visible": {
+                        "$or": [
+                          {
+                            "$lt": [
+                              {
+                                "$abs": {
+                                  "$sub": [
+                                    { "$add": [{ "$field": "$index" }, 1] },
+                                    {
+                                      "$if": { "$eq": ["selection", "range"] },
+                                      "then": { "$field": "rangeStartDay" },
+                                      "else": { "$field": "selectedDay" }
+                                    }
+                                  ]
+                                }
+                              },
+                              0.5
+                            ]
+                          },
+                          {
+                            "$lt": [
+                              {
+                                "$abs": {
+                                  "$sub": [
+                                    { "$add": [{ "$field": "$index" }, 1] },
+                                    {
+                                      "$if": { "$eq": ["selection", "range"] },
+                                      "then": { "$field": "rangeEndDay" }
+                                    }
+                                  ]
+                                }
+                              },
+                              0.5
+                            ]
+                          }
+                        ]
+                      },
+                      "children": [
+                        {
+                          "type": "text",
+                          "name": "número",
+                          "text": { "$add": [{ "$field": "$index" }, 1] },
+                          "font": {
+                            "size": { "$token": "body-large-size" },
+                            "weight": { "$token": "body-large-weight" },
+                            "lineHeight": { "$token": "body-large-line-height" },
+                            "letterSpacing": { "$token": "body-large-tracking" },
+                            "verticalAlign": "cap-middle"
+                          },
+                          "color": { "$token": "on-primary" },
+                          "height": "fill"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "rect",
+                      "name": "estado",
+                      "width": 40,
+                      "height": 40,
+                      "anchors": { "left": 4, "top": 4 },
+                      "cornerRadius": { "$token": "corner-full" },
+                      "fill": {
+                        "$if": {
+                          "$or": [
+                            {
+                              "$and": [
+                                { "$not": { "$eq": ["selection", "range"] } },
+                                { "$has": "selectedDay" }
+                              ]
+                            },
+                            {
+                              "$and": [
+                                { "$eq": ["selection", "range"] },
+                                { "$has": "rangeStartDay" }
+                              ]
+                            }
+                          ]
+                        },
+                        "then": { "$token": "on-primary" },
+                        "else": { "$token": "on-surface" }
+                      },
+                      "opacity": {
+                        "$switch": "interaction",
+                        "cases": {
+                          "hovered": { "$token": "state-hover" },
+                          "focused": { "$token": "state-focus" },
+                          "pressed": { "$token": "state-pressed" }
+                        },
+                        "default": 0
+                      },
+                      "visible": {
+                        "$and": [
+                          { "$not": { "$eq": ["interaction", "none"] } },
+                          {
+                            "$or": [
+                              {
+                                "$lt": [
+                                  {
+                                    "$abs": {
+                                      "$sub": [
+                                        { "$add": [{ "$field": "$index" }, 1] },
+                                        {
+                                          "$if": { "$eq": ["selection", "range"] },
+                                          "then": { "$field": "rangeStartDay" },
+                                          "else": { "$field": "selectedDay" }
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  0.5
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  {
+                                    "$not": {
+                                      "$or": [
+                                        {
+                                          "$and": [
+                                            { "$not": { "$eq": ["selection", "range"] } },
+                                            { "$has": "selectedDay" }
+                                          ]
+                                        },
+                                        {
+                                          "$and": [
+                                            { "$eq": ["selection", "range"] },
+                                            { "$has": "rangeStartDay" }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  { "$lt": [{ "$field": "$index" }, 0.5] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ]
                 }
               ]
-            },
-            "layout": {
-              "type": "column",
-              "padding": {
-                "$switch": "selectedDay",
-                "cases": {
-                  "1": [4, 0, 0, 148],
-                  "2": [4, 0, 0, 196],
-                  "3": [4, 0, 0, 244],
-                  "4": [4, 0, 0, 292],
-                  "5": [52, 0, 0, 4],
-                  "6": [52, 0, 0, 52],
-                  "7": [52, 0, 0, 100],
-                  "8": [52, 0, 0, 148],
-                  "9": [52, 0, 0, 196],
-                  "10": [52, 0, 0, 244],
-                  "11": [52, 0, 0, 292],
-                  "12": [100, 0, 0, 4],
-                  "13": [100, 0, 0, 52],
-                  "14": [100, 0, 0, 100],
-                  "15": [100, 0, 0, 148],
-                  "16": [100, 0, 0, 196],
-                  "17": [100, 0, 0, 244],
-                  "18": [100, 0, 0, 292],
-                  "19": [148, 0, 0, 4],
-                  "20": [148, 0, 0, 52],
-                  "21": [148, 0, 0, 100],
-                  "22": [148, 0, 0, 148],
-                  "23": [148, 0, 0, 196],
-                  "24": [148, 0, 0, 244],
-                  "25": [148, 0, 0, 292],
-                  "26": [196, 0, 0, 4],
-                  "27": [196, 0, 0, 52],
-                  "28": [196, 0, 0, 100],
-                  "29": [196, 0, 0, 148],
-                  "30": [196, 0, 0, 196],
-                  "31": [196, 0, 0, 244]
-                },
-                "default": [1000, 0, 0, 1000]
-              }
-            },
-            "children": [
-              {
-                "type": "frame",
-                "name": "dia escolhido",
-                "width": 40,
-                "height": 40,
-                "layout": {
-                  "type": "row",
-                  "align": "center",
-                  "justify": "center"
-                },
-                "children": [
-                  {
-                    "type": "text",
-                    "name": "número",
-                    "text": {
-                      "$field": "selectedDay"
-                    },
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-primary"
-                    },
-                    "height": "fill"
-                  }
-                ],
-                "cornerRadius": {
-                  "$token": "corner-full"
-                },
-                "fill": {
-                  "$token": "primary"
-                }
-              }
-            ]
-          },
-          {
-            "type": "frame",
-            "name": "camada do início",
-            "anchors": {
-              "left": 12,
-              "right": 12,
-              "top": 0,
-              "bottom": 0
-            },
-            "visible": {
-              "$and": [
-                {
-                  "$eq": ["selection", "range"]
-                },
-                {
-                  "$has": "rangeStartDay"
-                }
-              ]
-            },
-            "layout": {
-              "type": "column",
-              "padding": {
-                "$switch": "rangeStartDay",
-                "cases": {
-                  "1": [4, 0, 0, 148],
-                  "2": [4, 0, 0, 196],
-                  "3": [4, 0, 0, 244],
-                  "4": [4, 0, 0, 292],
-                  "5": [52, 0, 0, 4],
-                  "6": [52, 0, 0, 52],
-                  "7": [52, 0, 0, 100],
-                  "8": [52, 0, 0, 148],
-                  "9": [52, 0, 0, 196],
-                  "10": [52, 0, 0, 244],
-                  "11": [52, 0, 0, 292],
-                  "12": [100, 0, 0, 4],
-                  "13": [100, 0, 0, 52],
-                  "14": [100, 0, 0, 100],
-                  "15": [100, 0, 0, 148],
-                  "16": [100, 0, 0, 196],
-                  "17": [100, 0, 0, 244],
-                  "18": [100, 0, 0, 292],
-                  "19": [148, 0, 0, 4],
-                  "20": [148, 0, 0, 52],
-                  "21": [148, 0, 0, 100],
-                  "22": [148, 0, 0, 148],
-                  "23": [148, 0, 0, 196],
-                  "24": [148, 0, 0, 244],
-                  "25": [148, 0, 0, 292],
-                  "26": [196, 0, 0, 4],
-                  "27": [196, 0, 0, 52],
-                  "28": [196, 0, 0, 100],
-                  "29": [196, 0, 0, 148],
-                  "30": [196, 0, 0, 196],
-                  "31": [196, 0, 0, 244]
-                },
-                "default": [1000, 0, 0, 1000]
-              }
-            },
-            "children": [
-              {
-                "type": "frame",
-                "name": "início do intervalo",
-                "width": 40,
-                "height": 40,
-                "layout": {
-                  "type": "row",
-                  "align": "center",
-                  "justify": "center"
-                },
-                "children": [
-                  {
-                    "type": "text",
-                    "name": "número",
-                    "text": {
-                      "$field": "rangeStartDay"
-                    },
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-primary"
-                    },
-                    "height": "fill"
-                  }
-                ],
-                "cornerRadius": {
-                  "$token": "corner-full"
-                },
-                "fill": {
-                  "$token": "primary"
-                }
-              }
-            ]
-          },
-          {
-            "type": "frame",
-            "name": "camada do fim",
-            "anchors": {
-              "left": 12,
-              "right": 12,
-              "top": 0,
-              "bottom": 0
-            },
-            "visible": {
-              "$and": [
-                {
-                  "$eq": ["selection", "range"]
-                },
-                {
-                  "$has": "rangeEndDay"
-                }
-              ]
-            },
-            "layout": {
-              "type": "column",
-              "padding": {
-                "$switch": "rangeEndDay",
-                "cases": {
-                  "1": [4, 0, 0, 148],
-                  "2": [4, 0, 0, 196],
-                  "3": [4, 0, 0, 244],
-                  "4": [4, 0, 0, 292],
-                  "5": [52, 0, 0, 4],
-                  "6": [52, 0, 0, 52],
-                  "7": [52, 0, 0, 100],
-                  "8": [52, 0, 0, 148],
-                  "9": [52, 0, 0, 196],
-                  "10": [52, 0, 0, 244],
-                  "11": [52, 0, 0, 292],
-                  "12": [100, 0, 0, 4],
-                  "13": [100, 0, 0, 52],
-                  "14": [100, 0, 0, 100],
-                  "15": [100, 0, 0, 148],
-                  "16": [100, 0, 0, 196],
-                  "17": [100, 0, 0, 244],
-                  "18": [100, 0, 0, 292],
-                  "19": [148, 0, 0, 4],
-                  "20": [148, 0, 0, 52],
-                  "21": [148, 0, 0, 100],
-                  "22": [148, 0, 0, 148],
-                  "23": [148, 0, 0, 196],
-                  "24": [148, 0, 0, 244],
-                  "25": [148, 0, 0, 292],
-                  "26": [196, 0, 0, 4],
-                  "27": [196, 0, 0, 52],
-                  "28": [196, 0, 0, 100],
-                  "29": [196, 0, 0, 148],
-                  "30": [196, 0, 0, 196],
-                  "31": [196, 0, 0, 244]
-                },
-                "default": [1000, 0, 0, 1000]
-              }
-            },
-            "children": [
-              {
-                "type": "frame",
-                "name": "fim do intervalo",
-                "width": 40,
-                "height": 40,
-                "layout": {
-                  "type": "row",
-                  "align": "center",
-                  "justify": "center"
-                },
-                "children": [
-                  {
-                    "type": "text",
-                    "name": "número",
-                    "text": {
-                      "$field": "rangeEndDay"
-                    },
-                    "font": {
-                      "size": {
-                        "$token": "body-large-size"
-                      },
-                      "weight": {
-                        "$token": "body-large-weight"
-                      },
-                      "lineHeight": {
-                        "$token": "body-large-line-height"
-                      },
-                      "letterSpacing": {
-                        "$token": "body-large-tracking"
-                      },
-                      "verticalAlign": "cap-middle"
-                    },
-                    "color": {
-                      "$token": "on-primary"
-                    },
-                    "height": "fill"
-                  }
-                ],
-                "cornerRadius": {
-                  "$token": "corner-full"
-                },
-                "fill": {
-                  "$token": "primary"
-                }
-              }
-            ]
+            }
           }
         ]
       }

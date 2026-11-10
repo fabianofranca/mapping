@@ -3,7 +3,7 @@
   "formatVersion": 15,
   "id": "material3-compose",
   "name": "Material 3 (Compose)",
-  "version": 5,
+  "version": 6,
   "description": "Material Design 3 (baseline, tema claro e escuro) para Jetpack Compose, com o composable de cada tipo no `code`. Os símbolos e os parâmetros vêm do código do androidx na versão compose.material3 1.4.0 (commit 5113b82a4ed6416d6344efa50e41db8cb65928ff). Padrões: os espaços (lambdas) de cada composable ficam no `notes`; o tamanho vem de width, height e weight; os ícones são sugestões de Icons.Filled; a imagem remota usa o carregador de imagens do app; o Scaffold coloca cada filha no espaço certo pelo tipo dela.",
   "platforms": [
     {
@@ -6288,34 +6288,119 @@
             {
               "name": "Sempre com rótulo",
               "values": {
-                "alwaysShowLabel": "true"
+                "alwaysShowLabel": "true",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Rótulo só no ativo",
               "values": {
-                "alwaysShowLabel": "false"
+                "alwaysShowLabel": "false",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Mouse sobre",
               "values": {
                 "alwaysShowLabel": "true",
-                "interaction": "hovered"
+                "interaction": "hovered",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Com foco",
               "values": {
                 "alwaysShowLabel": "true",
-                "interaction": "focused"
+                "interaction": "focused",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Pressionado",
               "values": {
                 "alwaysShowLabel": "true",
-                "interaction": "pressed"
+                "interaction": "pressed",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             }
           ]
@@ -6568,7 +6653,21 @@
               "values": {
                 "title": "Compartilhar",
                 "style": "modal",
-                "dragHandle": "true"
+                "dragHandle": "true",
+                "items": [
+                  {
+                    "label": "Favoritos",
+                    "icon": "Favorite"
+                  },
+                  {
+                    "label": "Editar",
+                    "icon": "Edit"
+                  },
+                  {
+                    "label": "Configurações",
+                    "icon": "Settings"
+                  }
+                ]
               }
             },
             {
@@ -6576,7 +6675,21 @@
               "values": {
                 "title": "Detalhes",
                 "style": "standard",
-                "sheetPeekHeight": 96
+                "sheetPeekHeight": 96,
+                "items": [
+                  {
+                    "label": "Favoritos",
+                    "icon": "Favorite"
+                  },
+                  {
+                    "label": "Editar",
+                    "icon": "Edit"
+                  },
+                  {
+                    "label": "Configurações",
+                    "icon": "Settings"
+                  }
+                ]
               }
             }
           ]
@@ -7430,41 +7543,143 @@
             {
               "name": "Seleção única",
               "values": {
-                "selection": "single"
+                "selection": "single",
+                "options": [
+                  {
+                    "label": "Dia",
+                    "icon": "",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Semana",
+                    "icon": "",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Mês",
+                    "icon": "",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Seleção múltipla",
               "values": {
-                "selection": "multi"
+                "selection": "multi",
+                "options": [
+                  {
+                    "label": "Dia",
+                    "icon": "",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Semana",
+                    "icon": "",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Mês",
+                    "icon": "",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Desabilitado",
               "values": {
                 "selection": "single",
-                "enabled": "false"
+                "enabled": "false",
+                "options": [
+                  {
+                    "label": "Dia",
+                    "icon": "",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Semana",
+                    "icon": "",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Mês",
+                    "icon": "",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Mouse sobre",
               "values": {
                 "selection": "single",
-                "interaction": "hovered"
+                "interaction": "hovered",
+                "options": [
+                  {
+                    "label": "Dia",
+                    "icon": "",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Semana",
+                    "icon": "",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Mês",
+                    "icon": "",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Com foco",
               "values": {
                 "selection": "multi",
-                "interaction": "focused"
+                "interaction": "focused",
+                "options": [
+                  {
+                    "label": "Dia",
+                    "icon": "",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Semana",
+                    "icon": "",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Mês",
+                    "icon": "",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Pressionado",
               "values": {
                 "selection": "single",
-                "interaction": "pressed"
+                "interaction": "pressed",
+                "options": [
+                  {
+                    "label": "Dia",
+                    "icon": "",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Semana",
+                    "icon": "",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Mês",
+                    "icon": "",
+                    "selected": "false"
+                  }
+                ]
               }
             }
           ]
@@ -7586,68 +7801,29 @@
             {
               "key": "value",
               "label": "Valor",
-              "type": "enum",
-              "default": "0.5",
-              "options": [
-                "0",
-                "0.1",
-                "0.2",
-                "0.3",
-                "0.4",
-                "0.5",
-                "0.6",
-                "0.7",
-                "0.8",
-                "0.9",
-                "1"
-              ],
-              "description": "Posição da alça no tipo single, de 0 a 1 em décimos (valueRange 0f..1f). Ignorado no range."
+              "type": "number",
+              "default": 0.5,
+              "description": "Posição da alça no tipo single, de 0 a 1 (valueRange 0f..1f); com steps, a alça vai ao passo mais próximo. Ignorado no range."
             },
             {
               "key": "valueStart",
               "label": "Início do intervalo",
-              "type": "enum",
-              "default": "0.2",
-              "options": [
-                "0",
-                "0.1",
-                "0.2",
-                "0.3",
-                "0.4",
-                "0.5",
-                "0.6",
-                "0.7",
-                "0.8",
-                "0.9",
-                "1"
-              ],
-              "description": "Início do intervalo no tipo range, de 0 a 1 em décimos. Ignorado no single."
+              "type": "number",
+              "default": 0.2,
+              "description": "Início do intervalo no tipo range, de 0 a 1; com steps, vai ao passo mais próximo. Ignorado no single."
             },
             {
               "key": "valueEnd",
               "label": "Fim do intervalo",
-              "type": "enum",
-              "default": "0.8",
-              "options": [
-                "0",
-                "0.1",
-                "0.2",
-                "0.3",
-                "0.4",
-                "0.5",
-                "0.6",
-                "0.7",
-                "0.8",
-                "0.9",
-                "1"
-              ],
-              "description": "Fim do intervalo no tipo range, de 0 a 1 em décimos, maior ou igual ao início. Ignorado no single."
+              "type": "number",
+              "default": 0.8,
+              "description": "Fim do intervalo no tipo range, de 0 a 1, maior ou igual ao início; com steps, vai ao passo mais próximo. Ignorado no single."
             },
             {
               "key": "steps",
               "label": "Passos",
               "type": "number",
-              "description": "Número de pontos intermediários entre as pontas (Slider.steps). Vazio ou 0 = contínuo. O desenho mostra as marcas de 1 a 9; de 10 em diante desenha como 9."
+              "description": "Número de pontos intermediários entre as pontas (Slider.steps). Vazio, 0 ou menor que 1 = contínuo. Com steps, o valor vai ao passo mais próximo e o desenho mostra exatamente steps marcas, mais as duas pontas."
             },
             {
               "key": "enabled",
@@ -7705,14 +7881,22 @@
               "name": "Valor único",
               "values": {
                 "type": "single",
-                "value": "0.5"
+                "value": 0.5
               }
             },
             {
               "name": "Com passos",
               "values": {
                 "type": "single",
-                "value": "0.4",
+                "value": 0.4,
+                "steps": 4
+              }
+            },
+            {
+              "name": "Encaixe no passo",
+              "values": {
+                "type": "single",
+                "value": 0.37,
                 "steps": 4
               }
             },
@@ -7720,15 +7904,15 @@
               "name": "Intervalo",
               "values": {
                 "type": "range",
-                "valueStart": "0.2",
-                "valueEnd": "0.8"
+                "valueStart": 0.2,
+                "valueEnd": 0.8
               }
             },
             {
               "name": "Mouse sobre",
               "values": {
                 "type": "single",
-                "value": "0.5",
+                "value": 0.5,
                 "interaction": "hovered"
               }
             },
@@ -7736,7 +7920,7 @@
               "name": "Com foco",
               "values": {
                 "type": "single",
-                "value": "0.4",
+                "value": 0.4,
                 "steps": 4,
                 "interaction": "focused"
               }
@@ -7745,8 +7929,8 @@
               "name": "Pressionado",
               "values": {
                 "type": "range",
-                "valueStart": "0.2",
-                "valueEnd": "0.8",
+                "valueStart": 0.2,
+                "valueEnd": 0.8,
                 "interaction": "pressed"
               }
             }
@@ -8263,7 +8447,19 @@
               "key": "displayedMonth",
               "label": "Mês exibido",
               "type": "string",
-              "description": "Nome do mês e do ano mostrados no calendário, como em Outubro de 2025. É o estado inicial, não um parâmetro. A grade desenhada é sempre de 31 dias começando numa quarta-feira."
+              "description": "Nome do mês e do ano mostrados no calendário, como em Outubro de 2025. É o estado inicial, não um parâmetro: é só o rótulo, e a grade vem de month e year."
+            },
+            {
+              "key": "month",
+              "label": "Mês",
+              "type": "number",
+              "description": "Mês do calendário, de 1 a 12. Com year, a grade desenhada é a do mês (o número de dias, com o bissexto, o dia da semana do dia 1 e 4, 5 ou 6 linhas). Sem um dos dois, fica a grade de hoje: 31 dias a partir da quarta. Fora de 1 a 12 não é conferido (13 rola para janeiro do ano seguinte). Forma o initialDisplayedMonthMillis do código."
+            },
+            {
+              "key": "year",
+              "label": "Ano",
+              "type": "number",
+              "description": "Ano do calendário (de 1 em diante). Com month, a grade desenhada é a do mês; sem um dos dois, a grade de hoje. Forma o initialDisplayedMonthMillis do código."
             },
             {
               "key": "selection",
@@ -8298,6 +8494,14 @@
               "default": "true",
               "options": ["true", "false"],
               "description": "false esconde o ícone que alterna entre calendário e digitação."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed"],
+              "description": "Aparência parada do estado de interação do item escolhido (o dia escolhido; no intervalo, o dia inicial; sem escolha, o dia 1): mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem estado. Só muda o desenho, não entra no código. O tipo não tem enabled, então não existe um desabilitado que vença: o estado sempre desenha."
             }
           ],
           "code": {
@@ -8307,14 +8511,14 @@
               "params": {
                 "showModeToggle": "showModeToggle"
               },
-              "notes": "Não exige opt-in: `DatePicker`, `DateRangePicker`, `DatePickerDialog` e `rememberDatePickerState` com milissegundos (`Long`) são estáveis; só as sobrecargas com `java.time` pedem @OptIn(ExperimentalMaterial3Api::class). O estado vem de `val state = rememberDatePickerState(initialSelectedDateMillis = <selectedDay no mês de displayedMonth, em milissegundos UTC>, initialDisplayedMonthMillis = <primeiro dia de displayedMonth, em milissegundos UTC>)` e a chamada é `DatePicker(state = state, showModeToggle = <showModeToggle>)`; `title = { Text(<title>) }` e `headline = { Text(<headline>) }` só entram quando preenchidos (sem eles o composable desenha os padrões, e a manchete sai sozinha da data escolhida). `displayedMonth` e `selectedDay` não são parâmetros: são o estado inicial. O resultado vem de `state.selectedDateMillis`. Em diálogo, envolva com `DatePickerDialog(onDismissRequest = …, confirmButton = { TextButton(onClick = …) { Text(\"OK\") } }, dismissButton = { … }) { DatePicker(state = state) }`.",
+              "notes": "Não exige opt-in: `DatePicker`, `DateRangePicker`, `DatePickerDialog` e `rememberDatePickerState` com milissegundos (`Long`) são estáveis; só as sobrecargas com `java.time` pedem @OptIn(ExperimentalMaterial3Api::class). O estado vem de `val state = rememberDatePickerState(initialSelectedDateMillis = <selectedDay no mês de displayedMonth, em milissegundos UTC>, initialDisplayedMonthMillis = <primeiro dia do mês de month e year, em milissegundos UTC (sem eles, o de displayedMonth)>)` e a chamada é `DatePicker(state = state, showModeToggle = <showModeToggle>)`; `title = { Text(<title>) }` e `headline = { Text(<headline>) }` só entram quando preenchidos (sem eles o composable desenha os padrões, e a manchete sai sozinha da data escolhida). `displayedMonth`, `month`, `year` e `selectedDay` não são parâmetros: são o estado inicial. O resultado vem de `state.selectedDateMillis`. Em diálogo, envolva com `DatePickerDialog(onDismissRequest = …, confirmButton = { TextButton(onClick = …) { Text(\"OK\") } }, dismissButton = { … }) { DatePicker(state = state) }`.",
               "variants": {
                 "field": "selection",
                 "cases": {
                   "range": {
                     "symbol": "androidx.compose.material3.DateRangePicker",
                     "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/DateRangePicker.kt",
-                    "notes": "Não exige opt-in. O estado vem de `val state = rememberDateRangePickerState(initialSelectedStartDateMillis = <rangeStartDay em milissegundos UTC>, initialSelectedEndDateMillis = <rangeEndDay em milissegundos UTC>, initialDisplayedMonthMillis = <primeiro dia de displayedMonth, em milissegundos UTC>)` e a chamada é `DateRangePicker(state = state, showModeToggle = <showModeToggle>)`, com `title` e `headline` como na base. O resultado vem de `state.selectedStartDateMillis` e `state.selectedEndDateMillis`. Em diálogo, envolva com `DatePickerDialog` (arquivo `DatePickerDialog.kt`), como o `DatePicker`."
+                    "notes": "Não exige opt-in. O estado vem de `val state = rememberDateRangePickerState(initialSelectedStartDateMillis = <rangeStartDay em milissegundos UTC>, initialSelectedEndDateMillis = <rangeEndDay em milissegundos UTC>, initialDisplayedMonthMillis = <primeiro dia do mês de month e year, em milissegundos UTC (sem eles, o de displayedMonth)>)` e a chamada é `DateRangePicker(state = state, showModeToggle = <showModeToggle>)`, com `title` e `headline` como na base. O resultado vem de `state.selectedStartDateMillis` e `state.selectedEndDateMillis`. Em diálogo, envolva com `DatePickerDialog` (arquivo `DatePickerDialog.kt`), como o `DatePicker`."
                   }
                 }
               }
@@ -8356,6 +8560,80 @@
                 "selection": "range",
                 "rangeStartDay": 27,
                 "rangeEndDay": 31
+              }
+            },
+            {
+              "name": "Fevereiro de 2028 (bissexto)",
+              "values": {
+                "headline": "ter., 29 de fev.",
+                "displayedMonth": "Fevereiro de 2028",
+                "month": 2,
+                "year": 2028,
+                "selection": "single",
+                "selectedDay": 29
+              }
+            },
+            {
+              "name": "Mês de 30 dias, 6 linhas",
+              "values": {
+                "headline": "dom., 30 de nov.",
+                "displayedMonth": "Novembro de 2025",
+                "month": 11,
+                "year": 2025,
+                "selection": "single",
+                "selectedDay": 30
+              }
+            },
+            {
+              "name": "Mês de 28 dias, 4 linhas",
+              "values": {
+                "headline": "sáb., 14 de fev.",
+                "displayedMonth": "Fevereiro de 2026",
+                "month": 2,
+                "year": 2026,
+                "selection": "single",
+                "selectedDay": 14
+              }
+            },
+            {
+              "name": "Intervalo que atravessa semanas",
+              "values": {
+                "headline": "3 fev – 12 fev",
+                "displayedMonth": "Fevereiro de 2028",
+                "month": 2,
+                "year": 2028,
+                "selection": "range",
+                "rangeStartDay": 3,
+                "rangeEndDay": 12
+              }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "headline": "qua., 15 de out.",
+                "displayedMonth": "Outubro de 2025",
+                "selection": "single",
+                "selectedDay": 15,
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "headline": "9 out – 16 out",
+                "displayedMonth": "Outubro de 2025",
+                "selection": "range",
+                "rangeStartDay": 9,
+                "rangeEndDay": 16,
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "displayedMonth": "Outubro de 2025",
+                "selection": "single",
+                "interaction": "pressed"
               }
             }
           ]
@@ -8409,6 +8687,14 @@
               "default": "hour",
               "options": ["hour", "minute"],
               "description": "Qual parte está sendo escolhida (o relógio mostra as horas ou os minutos). É o estado inicial, não um parâmetro."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed"],
+              "description": "Aparência parada do estado de interação do item escolhido (o seletor da hora ou o do minuto, o que o selection escolhe): mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem estado. Só muda o desenho, não entra no código. O tipo não tem enabled, então não existe um desabilitado que vença: o estado sempre desenha."
             }
           ],
           "code": {
@@ -8473,6 +8759,64 @@
                 "hour": 18,
                 "minute": 5,
                 "is24Hour": "true"
+              }
+            },
+            {
+              "name": "10:37 em 24 horas, minutos",
+              "values": {
+                "title": "Selecionar horário",
+                "mode": "picker",
+                "hour": 10,
+                "minute": 37,
+                "is24Hour": "true",
+                "selection": "minute"
+              }
+            },
+            {
+              "name": "22:05 em 12 horas (PM)",
+              "values": {
+                "title": "Selecionar horário",
+                "mode": "picker",
+                "hour": 22,
+                "minute": 5,
+                "is24Hour": "false",
+                "selection": "hour"
+              }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "title": "Selecionar horário",
+                "mode": "picker",
+                "hour": 14,
+                "minute": 30,
+                "is24Hour": "true",
+                "selection": "hour",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "title": "Selecionar horário",
+                "mode": "picker",
+                "hour": 9,
+                "minute": 45,
+                "is24Hour": "false",
+                "selection": "minute",
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "title": "Informe o horário",
+                "mode": "input",
+                "hour": 8,
+                "minute": 5,
+                "is24Hour": "false",
+                "selection": "hour",
+                "interaction": "pressed"
               }
             }
           ]
@@ -8709,7 +9053,7 @@
               "key": "progress",
               "label": "Progresso",
               "type": "number",
-              "description": "Progresso de 0 a 1. Vazio = indeterminado (o desenho mostra um arco ou uma barra parcial; o desenho aproxima o valor ao centésimo)."
+              "description": "Progresso de 0 a 1, exato (o desenho calcula o arco e a largura; valor fora do intervalo é preso a ele). Vazio = indeterminado (o desenho mostra um arco ou uma barra parcial)."
             }
           ],
           "code": {
@@ -10040,7 +10384,30 @@
               "name": "Menu aberto",
               "values": {
                 "style": "menu",
-                "expanded": "true"
+                "expanded": "true",
+                "items": [
+                  {
+                    "text": "Editar",
+                    "leadingIcon": "Edit",
+                    "trailingIcon": "",
+                    "enabled": "true",
+                    "selected": "false"
+                  },
+                  {
+                    "text": "Compartilhar",
+                    "leadingIcon": "Share",
+                    "trailingIcon": "",
+                    "enabled": "true",
+                    "selected": "false"
+                  },
+                  {
+                    "text": "Excluir",
+                    "leadingIcon": "Delete",
+                    "trailingIcon": "",
+                    "enabled": "true",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -10049,7 +10416,30 @@
                 "style": "exposed",
                 "expanded": "false",
                 "label": "País",
-                "value": "Brasil"
+                "value": "Brasil",
+                "items": [
+                  {
+                    "text": "Editar",
+                    "leadingIcon": "Edit",
+                    "trailingIcon": "",
+                    "enabled": "true",
+                    "selected": "false"
+                  },
+                  {
+                    "text": "Compartilhar",
+                    "leadingIcon": "Share",
+                    "trailingIcon": "",
+                    "enabled": "true",
+                    "selected": "false"
+                  },
+                  {
+                    "text": "Excluir",
+                    "leadingIcon": "Delete",
+                    "trailingIcon": "",
+                    "enabled": "true",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -10058,7 +10448,16 @@
                 "style": "exposed",
                 "expanded": "true",
                 "label": "Idioma",
-                "value": "Português"
+                "value": "Português",
+                "items": [
+                  {
+                    "text": "Editar",
+                    "leadingIcon": "Edit",
+                    "trailingIcon": "",
+                    "enabled": "true",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -10068,7 +10467,30 @@
                 "expanded": "false",
                 "label": "País",
                 "value": "Brasil",
-                "interaction": "hovered"
+                "interaction": "hovered",
+                "items": [
+                  {
+                    "text": "Editar",
+                    "leadingIcon": "Edit",
+                    "trailingIcon": "",
+                    "enabled": "true",
+                    "selected": "false"
+                  },
+                  {
+                    "text": "Compartilhar",
+                    "leadingIcon": "Share",
+                    "trailingIcon": "",
+                    "enabled": "true",
+                    "selected": "false"
+                  },
+                  {
+                    "text": "Excluir",
+                    "leadingIcon": "Delete",
+                    "trailingIcon": "",
+                    "enabled": "true",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -10078,7 +10500,16 @@
                 "expanded": "true",
                 "label": "Idioma",
                 "value": "Português",
-                "interaction": "focused"
+                "interaction": "focused",
+                "items": [
+                  {
+                    "text": "Editar",
+                    "leadingIcon": "Edit",
+                    "trailingIcon": "",
+                    "enabled": "true",
+                    "selected": "false"
+                  }
+                ]
               }
             }
           ]
@@ -10364,21 +10795,72 @@
               "name": "Rail estreita",
               "values": {
                 "style": "rail",
-                "alwaysShowLabel": "true"
+                "alwaysShowLabel": "true",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Wide expandida",
               "values": {
                 "style": "wide",
-                "initialValue": "Expanded"
+                "initialValue": "Expanded",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Modal expandida",
               "values": {
                 "style": "modal-wide",
-                "initialValue": "Expanded"
+                "initialValue": "Expanded",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -10386,7 +10868,24 @@
               "values": {
                 "style": "rail",
                 "alwaysShowLabel": "true",
-                "interaction": "hovered"
+                "interaction": "hovered",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -10394,7 +10893,24 @@
               "values": {
                 "style": "rail",
                 "alwaysShowLabel": "true",
-                "interaction": "focused"
+                "interaction": "focused",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -10402,7 +10918,24 @@
               "values": {
                 "style": "rail",
                 "alwaysShowLabel": "true",
-                "interaction": "pressed"
+                "interaction": "pressed",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             }
           ]
@@ -10616,7 +11149,7 @@
               "type": "enum",
               "default": "EqualWeight",
               "options": ["EqualWeight", "Centered"],
-              "description": "EqualWeight reparte a largura por igual (telas estreitas); Centered agrupa os itens no centro (telas médias; o desenho ocupa 80% da largura)."
+              "description": "EqualWeight reparte a largura por igual (telas estreitas); Centered agrupa os itens no centro (telas médias; o desenho ocupa 60%, 70%, 80% ou 90% da largura com 3, 4, 5 ou 6 itens, e cada item cresce até largura/itens quando o conteúdo é maior)."
             },
             {
               "key": "iconPosition",
@@ -10660,21 +11193,72 @@
               "name": "Ícone acima, distribuída",
               "values": {
                 "arrangement": "EqualWeight",
-                "iconPosition": "Top"
+                "iconPosition": "Top",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Ícone ao lado, centralizada",
               "values": {
                 "arrangement": "Centered",
-                "iconPosition": "Start"
+                "iconPosition": "Start",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Ícone acima, centralizada",
               "values": {
                 "arrangement": "Centered",
-                "iconPosition": "Top"
+                "iconPosition": "Top",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -10682,7 +11266,24 @@
               "values": {
                 "arrangement": "EqualWeight",
                 "iconPosition": "Top",
-                "interaction": "hovered"
+                "interaction": "hovered",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -10690,7 +11291,24 @@
               "values": {
                 "arrangement": "EqualWeight",
                 "iconPosition": "Top",
-                "interaction": "focused"
+                "interaction": "focused",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -10698,7 +11316,24 @@
               "values": {
                 "arrangement": "EqualWeight",
                 "iconPosition": "Top",
-                "interaction": "pressed"
+                "interaction": "pressed",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             }
           ]
@@ -10961,20 +11596,74 @@
               "name": "Modal com cabeçalho",
               "values": {
                 "style": "modal",
-                "headline": "Mapping"
+                "headline": "Mapping",
+                "items": [
+                  {
+                    "label": "Caixa de entrada",
+                    "icon": "Email",
+                    "selected": "true",
+                    "badge": "24"
+                  },
+                  {
+                    "label": "Favoritos",
+                    "icon": "Favorite",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Configurações",
+                    "icon": "Settings",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Dismissible",
               "values": {
                 "style": "dismissible",
-                "headline": "Pastas"
+                "headline": "Pastas",
+                "items": [
+                  {
+                    "label": "Caixa de entrada",
+                    "icon": "Email",
+                    "selected": "true",
+                    "badge": "24"
+                  },
+                  {
+                    "label": "Favoritos",
+                    "icon": "Favorite",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Configurações",
+                    "icon": "Settings",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Permanente sem cabeçalho",
               "values": {
-                "style": "permanent"
+                "style": "permanent",
+                "items": [
+                  {
+                    "label": "Caixa de entrada",
+                    "icon": "Email",
+                    "selected": "true",
+                    "badge": "24"
+                  },
+                  {
+                    "label": "Favoritos",
+                    "icon": "Favorite",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Configurações",
+                    "icon": "Settings",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -10982,7 +11671,25 @@
               "values": {
                 "style": "modal",
                 "headline": "Mapping",
-                "interaction": "hovered"
+                "interaction": "hovered",
+                "items": [
+                  {
+                    "label": "Caixa de entrada",
+                    "icon": "Email",
+                    "selected": "true",
+                    "badge": "24"
+                  },
+                  {
+                    "label": "Favoritos",
+                    "icon": "Favorite",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Configurações",
+                    "icon": "Settings",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -10990,7 +11697,25 @@
               "values": {
                 "style": "modal",
                 "headline": "Mapping",
-                "interaction": "focused"
+                "interaction": "focused",
+                "items": [
+                  {
+                    "label": "Caixa de entrada",
+                    "icon": "Email",
+                    "selected": "true",
+                    "badge": "24"
+                  },
+                  {
+                    "label": "Favoritos",
+                    "icon": "Favorite",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Configurações",
+                    "icon": "Settings",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -10998,7 +11723,25 @@
               "values": {
                 "style": "modal",
                 "headline": "Mapping",
-                "interaction": "pressed"
+                "interaction": "pressed",
+                "items": [
+                  {
+                    "label": "Caixa de entrada",
+                    "icon": "Email",
+                    "selected": "true",
+                    "badge": "24"
+                  },
+                  {
+                    "label": "Favoritos",
+                    "icon": "Favorite",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Configurações",
+                    "icon": "Settings",
+                    "selected": "false"
+                  }
+                ]
               }
             }
           ]
@@ -11262,21 +12005,72 @@
               "name": "Primárias com ícone acima",
               "values": {
                 "style": "primary",
-                "iconPosition": "top"
+                "iconPosition": "top",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Secundárias com ícone à esquerda",
               "values": {
                 "style": "secondary",
-                "iconPosition": "leading"
+                "iconPosition": "leading",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
               "name": "Primárias roláveis",
               "values": {
                 "style": "primary-scrollable",
-                "iconPosition": "leading"
+                "iconPosition": "leading",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -11284,7 +12078,24 @@
               "values": {
                 "style": "primary",
                 "iconPosition": "top",
-                "interaction": "hovered"
+                "interaction": "hovered",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -11292,7 +12103,24 @@
               "values": {
                 "style": "primary",
                 "iconPosition": "top",
-                "interaction": "focused"
+                "interaction": "focused",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             },
             {
@@ -11300,7 +12128,24 @@
               "values": {
                 "style": "primary",
                 "iconPosition": "top",
-                "interaction": "pressed"
+                "interaction": "pressed",
+                "items": [
+                  {
+                    "label": "Início",
+                    "icon": "Home",
+                    "selected": "true"
+                  },
+                  {
+                    "label": "Buscar",
+                    "icon": "Search",
+                    "selected": "false"
+                  },
+                  {
+                    "label": "Perfil",
+                    "icon": "Person",
+                    "selected": "false"
+                  }
+                ]
               }
             }
           ]
@@ -12249,7 +13094,7 @@
               "key": "preferredItemWidth",
               "label": "Largura preferida do item (dp)",
               "type": "number",
-              "description": "Só no multi-browse (obrigatório no Compose): a largura que os itens grandes querem ter; o carrossel a ajusta para caber um número inteiro de itens."
+              "description": "Só no multi-browse (obrigatório no Compose): a largura que os itens grandes querem ter; o carrossel escolhe quantos grandes cabem e ajusta o tamanho deles, do médio e do pequeno (de 40 a 56) à largura da marcação."
             },
             {
               "key": "itemWidth",
@@ -12261,7 +13106,7 @@
               "key": "itemSpacing",
               "label": "Espaço entre itens (dp)",
               "type": "number",
-              "description": "Espaço entre os itens em dp (itemSpacing). Vazio = 0 no código; o desenho usa 8."
+              "description": "Espaço entre os itens em dp (itemSpacing). Vazio = 0 no código; o desenho usa 8. No centered-hero o recuo e a largura dos itens dependem dele."
             },
             {
               "key": "width",
@@ -12323,7 +13168,21 @@
                 "preferredItemWidth": 186,
                 "itemSpacing": 8,
                 "width": "fill",
-                "height": "fixed"
+                "height": "fixed",
+                "items": [
+                  {
+                    "image": "https://example.com/praia.jpg",
+                    "label": "Praia"
+                  },
+                  {
+                    "image": "https://example.com/serra.jpg",
+                    "label": "Serra"
+                  },
+                  {
+                    "image": "https://example.com/cidade.jpg",
+                    "label": "Cidade"
+                  }
+                ]
               }
             },
             {
@@ -12333,7 +13192,21 @@
                 "itemWidth": 140,
                 "itemSpacing": 12,
                 "width": "fill",
-                "height": "fixed"
+                "height": "fixed",
+                "items": [
+                  {
+                    "image": "https://example.com/praia.jpg",
+                    "label": "Praia"
+                  },
+                  {
+                    "image": "https://example.com/serra.jpg",
+                    "label": "Serra"
+                  },
+                  {
+                    "image": "https://example.com/cidade.jpg",
+                    "label": "Cidade"
+                  }
+                ]
               }
             },
             {
@@ -12342,7 +13215,21 @@
                 "style": "centered-hero",
                 "itemSpacing": 8,
                 "width": "fill",
-                "height": "fixed"
+                "height": "fixed",
+                "items": [
+                  {
+                    "image": "https://example.com/praia.jpg",
+                    "label": "Praia"
+                  },
+                  {
+                    "image": "https://example.com/serra.jpg",
+                    "label": "Serra"
+                  },
+                  {
+                    "image": "https://example.com/cidade.jpg",
+                    "label": "Cidade"
+                  }
+                ]
               }
             }
           ]
@@ -12738,6 +13625,128 @@
               }
             }
           ]
+        }
+      ]
+    }
+  ],
+  "migrations": [
+    {
+      "from": 1,
+      "to": 6,
+      "steps": [
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "value",
+          "default": 0.5
+        },
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "valueStart",
+          "default": 0.2
+        },
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "valueEnd",
+          "default": 0.8
+        }
+      ]
+    },
+    {
+      "from": 2,
+      "to": 6,
+      "steps": [
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "value",
+          "default": 0.5
+        },
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "valueStart",
+          "default": 0.2
+        },
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "valueEnd",
+          "default": 0.8
+        }
+      ]
+    },
+    {
+      "from": 3,
+      "to": 6,
+      "steps": [
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "value",
+          "default": 0.5
+        },
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "valueStart",
+          "default": 0.2
+        },
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "valueEnd",
+          "default": 0.8
+        }
+      ]
+    },
+    {
+      "from": 4,
+      "to": 6,
+      "steps": [
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "value",
+          "default": 0.5
+        },
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "valueStart",
+          "default": 0.2
+        },
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "valueEnd",
+          "default": 0.8
+        }
+      ]
+    },
+    {
+      "from": 5,
+      "to": 6,
+      "steps": [
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "value",
+          "default": 0.5
+        },
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "valueStart",
+          "default": 0.2
+        },
+        {
+          "op": "fill-field",
+          "type": "slider",
+          "field": "valueEnd",
+          "default": 0.8
         }
       ]
     }

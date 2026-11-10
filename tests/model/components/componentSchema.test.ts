@@ -344,4 +344,38 @@ describe('component.schema.json', () => {
         expect(checkSchema(schema, c).length, JSON.stringify(c)).toBeGreaterThan(0);
     });
   });
+  it('aceita as operações numéricas e as comparações (formatVersion 4) e o parser concorda', () => {
+    const c: Record<string, unknown> = { ...clone(), formatVersion: 4 };
+    (c.template as Record<string, unknown>).children = [
+      {
+        type: 'rect',
+        width: { $mul: [{ $field: 'p', default: 0.37 }, 200] },
+        height: { $clamp: [{ $add: [4, { $sin: 30 }] }, 0, { $abs: -8 }] },
+        visible: { $gte: [{ $field: 'p' }, { $round: 0.5 }] },
+      },
+    ];
+    expect(checkSchema(schema, c)).toEqual([]);
+    expect(parseComponent(c).ok).toBe(true);
+    const bad = clone();
+    (bad.template as Record<string, unknown>).children = [
+      { type: 'rect', width: { $sub: [1] }, visible: { $gt: [1, 2, 3] } },
+    ];
+    expect(checkSchema(schema, bad).length).toBeGreaterThan(0);
+  });
+});
+
+describe('component.schema.json — rotation (EX3)', () => {
+  it('aceita rotation, literal ou expressão, em qualquer nó, e recusa o que não é número', () => {
+    const component = clone();
+    const template = component.template as { children?: Record<string, unknown>[] };
+    const turned = { type: 'rect', width: 4, height: 4, rotation: 45 };
+    template.children = [
+      turned,
+      { ...turned, rotation: { $mul: [{ $field: 'a' }, 90] } },
+      { type: 'frame', rotation: -30, children: [] },
+    ];
+    expect(checkSchema(schema, component)).toEqual([]);
+    template.children = [{ ...turned, rotation: 'girado' }];
+    expect(checkSchema(schema, component)).not.toEqual([]);
+  });
 });

@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "short-navigation-bar",
   "name": "Short navigation bar",
-  "description": "Barra de navegação curta de 64 em surface container, com um destino por linha de Itens; ícone acima do rótulo (indicador de 56 × 32) ou ao lado dele (pílula de 40); centralizada, os itens ficam agrupados no meio (margem de 10% de cada lado: o Compose usa 20% com 3 itens, 15% com 4, 10% com 5 e 5% com 6).",
+  "description": "Barra de navegação curta de 64 em surface container, com um destino por linha de Itens; ícone acima do rótulo (indicador de 56 × 32) ou ao lado dele (pílula de 40); centralizada, os itens ficam agrupados no meio (margem de 20% de cada lado com 3 itens, 15% com 4, 10% com 5 e 5% com 6, como no Compose; o item cresce até a largura / itens se o conteúdo for mais largo).",
   "size": {
     "width": 412,
     "height": 64
@@ -47,7 +47,7 @@
       {
         "type": "frame",
         "name": "margem",
-        "width": "10%",
+        "width": "fill",
         "height": 1,
         "visible": {
           "$eq": ["arrangement", "Centered"]
@@ -58,13 +58,13 @@
         "name": "destinos",
         "field": "items",
         "direction": "row",
-        "distribute": "fill",
-        "width": "fill",
+        "distribute": "none",
+        "width": "hug",
         "height": "fill",
         "template": {
           "type": "frame",
           "name": "destino",
-          "width": "fill",
+          "width": "hug",
           "height": "fill",
           "layout": {
             "type": "column",
@@ -707,13 +707,71 @@
                 }
               ]
             }
-          ]
+          ],
+          "minWidth": {
+            "$div": [
+              {
+                "$mul": [
+                  {
+                    "$size": "width"
+                  },
+                  {
+                    "$if": {
+                      "$eq": ["arrangement", "Centered"]
+                    },
+                    "then": {
+                      "$sub": [
+                        1,
+                        {
+                          "$mul": [
+                            2,
+                            {
+                              "$max": [
+                                0,
+                                {
+                                  "$sub": [
+                                    0.35,
+                                    {
+                                      "$mul": [
+                                        0.05,
+                                        {
+                                          "$rows": "items"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    "else": 1
+                  }
+                ]
+              },
+              {
+                "$rows": "items"
+              }
+            ]
+          },
+          "maxWidth": {
+            "$div": [
+              {
+                "$size": "width"
+              },
+              {
+                "$rows": "items"
+              }
+            ]
+          }
         }
       },
       {
         "type": "frame",
         "name": "margem",
-        "width": "10%",
+        "width": "fill",
         "height": 1,
         "visible": {
           "$eq": ["arrangement", "Centered"]

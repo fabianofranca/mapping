@@ -3,29 +3,14 @@
   "formatVersion": 4,
   "id": "carousel",
   "name": "Carousel",
-  "description": "Carrossel horizontal de itens com imagem e rótulo opcional, um item por linha de Itens: multi-browse (item grande e vizinhos que espiam), uncontained (itens de largura fixa) e centered-hero (um item grande centrado). Itens de largura uniforme; no Compose o tamanho varia com a rolagem.",
-  "size": {
-    "width": 360,
-    "height": 205
-  },
-  "sizing": {
-    "width": "fill",
-    "height": 205
-  },
+  "description": "Carrossel horizontal de itens com imagem e rótulo opcional, um item por linha de Itens: multi-browse (item grande, médio e pequeno que seguem a largura da marcação), uncontained (itens de largura fixa) e centered-hero (um item grande entre dois pequenos). Os tamanhos são os da estratégia do Compose no início da rolagem; a rolagem não existe.",
+  "size": { "width": 360, "height": 205 },
+  "sizing": { "width": "fill", "height": 205 },
   "preview": {
     "items": [
-      {
-        "image": "https://example.com/praia.jpg",
-        "label": "Praia"
-      },
-      {
-        "image": "https://example.com/serra.jpg",
-        "label": "Serra"
-      },
-      {
-        "image": "https://example.com/cidade.jpg",
-        "label": "Cidade"
-      }
+      { "image": "https://example.com/praia.jpg", "label": "Praia" },
+      { "image": "https://example.com/serra.jpg", "label": "Serra" },
+      { "image": "https://example.com/cidade.jpg", "label": "Cidade" }
     ],
     "style": "multi-browse",
     "preferredItemWidth": 186,
@@ -38,147 +23,1793 @@
   "template": {
     "type": "frame",
     "name": "carousel",
-    "layout": {
-      "type": "none"
-    },
+    "layout": { "type": "none" },
     "children": [
       {
         "type": "frame",
         "name": "faixa",
         "width": 4000,
-        "anchors": {
-          "left": 0,
-          "top": 0,
-          "bottom": 0
-        },
-        "layout": {
-          "type": "row",
-          "padding": {
-            "$if": {
-              "$eq": ["style", "centered-hero"]
-            },
-            "then": [0, 0, 0, 64],
-            "else": 0
-          }
-        },
+        "anchors": { "left": 0, "top": 0, "bottom": 0 },
+        "layout": { "type": "row" },
         "children": [
+          {
+            "type": "frame",
+            "name": "recuo",
+            "width": {
+              "$if": {
+                "$and": [
+                  { "$gte": [{ "$rows": "items" }, 3] },
+                  { "$gte": [{ "$size": "width" }, 130] }
+                ]
+              },
+              "then": {
+                "$add": [
+                  { "$clamp": [{ "$div": [{ "$size": "width" }, 3] }, 40, 56] },
+                  { "$field": "itemSpacing", "default": 8 }
+                ]
+              },
+              "else": 0
+            },
+            "layout": { "type": "none" },
+            "visible": { "$eq": ["style", "centered-hero"] }
+          },
           {
             "type": "repeat",
             "name": "itens",
             "field": "items",
             "direction": "row",
-            "gap": {
-              "$field": "itemSpacing",
-              "default": 8
-            },
+            "gap": { "$field": "itemSpacing", "default": 8 },
             "template": {
               "type": "frame",
               "name": "item",
               "width": {
                 "$switch": "style",
                 "cases": {
-                  "uncontained": {
-                    "$field": "itemWidth",
-                    "default": 140
-                  },
-                  "centered-hero": 232
+                  "uncontained": { "$field": "itemWidth", "default": 140 },
+                  "centered-hero": {
+                    "$if": {
+                      "$gte": [
+                        { "$size": "width" },
+                        {
+                          "$add": [
+                            {
+                              "$mul": [
+                                40,
+                                {
+                                  "$if": { "$gte": [{ "$rows": "items" }, 3] },
+                                  "then": 2,
+                                  "else": 1
+                                }
+                              ]
+                            },
+                            50
+                          ]
+                        }
+                      ]
+                    },
+                    "then": {
+                      "$sub": [
+                        { "$size": "width" },
+                        {
+                          "$mul": [
+                            {
+                              "$if": { "$gte": [{ "$rows": "items" }, 3] },
+                              "then": 2,
+                              "else": 1
+                            },
+                            {
+                              "$add": [
+                                { "$field": "itemSpacing", "default": 8 },
+                                {
+                                  "$clamp": [
+                                    { "$div": [{ "$size": "width" }, 3] },
+                                    40,
+                                    56
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    "else": { "$size": "width" }
+                  }
                 },
                 "default": {
-                  "$field": "preferredItemWidth",
-                  "default": 186
+                  "$if": {
+                    "$gte": [
+                      { "$field": "preferredItemWidth", "default": 186 },
+                      { "$size": "width" }
+                    ]
+                  },
+                  "then": {
+                    "$if": { "$lt": [{ "$field": "$index" }, 1] },
+                    "then": {
+                      "$if": { "$gte": [{ "$rows": "items" }, 2] },
+                      "then": {
+                        "$sub": [
+                          { "$size": "width" },
+                          { "$add": [{ "$field": "itemSpacing", "default": 8 }, 40] }
+                        ]
+                      },
+                      "else": { "$size": "width" }
+                    },
+                    "else": 40
+                  },
+                  "else": {
+                    "$if": {
+                      "$gte": [
+                        {
+                          "$mod": [
+                            {
+                              "$add": [
+                                { "$size": "width" },
+                                {
+                                  "$mul": [
+                                    0.265,
+                                    { "$field": "preferredItemWidth", "default": 186 }
+                                  ]
+                                },
+                                -70
+                              ]
+                            },
+                            {
+                              "$add": [
+                                { "$field": "preferredItemWidth", "default": 186 },
+                                { "$field": "itemSpacing", "default": 8 }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "$add": [
+                            {
+                              "$mul": [
+                                0.435,
+                                { "$field": "preferredItemWidth", "default": 186 }
+                              ]
+                            },
+                            { "$mul": [0.45, { "$field": "itemSpacing", "default": 8 }] },
+                            -13
+                          ]
+                        }
+                      ]
+                    },
+                    "then": {
+                      "$if": {
+                        "$gte": [
+                          { "$rows": "items" },
+                          {
+                            "$add": [
+                              {
+                                "$max": [
+                                  1,
+                                  {
+                                    "$floor": {
+                                      "$div": [
+                                        {
+                                          "$add": [
+                                            { "$size": "width" },
+                                            {
+                                              "$mul": [
+                                                0.265,
+                                                {
+                                                  "$field": "preferredItemWidth",
+                                                  "default": 186
+                                                }
+                                              ]
+                                            },
+                                            -70
+                                          ]
+                                        },
+                                        {
+                                          "$add": [
+                                            {
+                                              "$field": "preferredItemWidth",
+                                              "default": 186
+                                            },
+                                            { "$field": "itemSpacing", "default": 8 }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ]
+                              },
+                              2
+                            ]
+                          }
+                        ]
+                      },
+                      "then": {
+                        "$if": {
+                          "$lt": [
+                            { "$field": "$index" },
+                            {
+                              "$max": [
+                                1,
+                                {
+                                  "$floor": {
+                                    "$div": [
+                                      {
+                                        "$add": [
+                                          { "$size": "width" },
+                                          {
+                                            "$mul": [
+                                              0.265,
+                                              {
+                                                "$field": "preferredItemWidth",
+                                                "default": 186
+                                              }
+                                            ]
+                                          },
+                                          -70
+                                        ]
+                                      },
+                                      {
+                                        "$add": [
+                                          {
+                                            "$field": "preferredItemWidth",
+                                            "default": 186
+                                          },
+                                          { "$field": "itemSpacing", "default": 8 }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        "then": "fill",
+                        "else": {
+                          "$if": {
+                            "$lt": [
+                              { "$field": "$index" },
+                              {
+                                "$add": [
+                                  {
+                                    "$max": [
+                                      1,
+                                      {
+                                        "$floor": {
+                                          "$div": [
+                                            {
+                                              "$add": [
+                                                { "$size": "width" },
+                                                {
+                                                  "$mul": [
+                                                    0.265,
+                                                    {
+                                                      "$field": "preferredItemWidth",
+                                                      "default": 186
+                                                    }
+                                                  ]
+                                                },
+                                                -70
+                                              ]
+                                            },
+                                            {
+                                              "$add": [
+                                                {
+                                                  "$field": "preferredItemWidth",
+                                                  "default": 186
+                                                },
+                                                { "$field": "itemSpacing", "default": 8 }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ]
+                                  },
+                                  1
+                                ]
+                              }
+                            ]
+                          },
+                          "then": {
+                            "$clamp": [
+                              {
+                                "$sub": [
+                                  {
+                                    "$add": [
+                                      {
+                                        "$mul": [
+                                          -0.265,
+                                          {
+                                            "$field": "preferredItemWidth",
+                                            "default": 186
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "$mod": [
+                                          {
+                                            "$add": [
+                                              { "$size": "width" },
+                                              {
+                                                "$mul": [
+                                                  0.265,
+                                                  {
+                                                    "$field": "preferredItemWidth",
+                                                    "default": 186
+                                                  }
+                                                ]
+                                              },
+                                              -70
+                                            ]
+                                          },
+                                          {
+                                            "$add": [
+                                              {
+                                                "$field": "preferredItemWidth",
+                                                "default": 186
+                                              },
+                                              { "$field": "itemSpacing", "default": 8 }
+                                            ]
+                                          }
+                                        ]
+                                      },
+                                      70
+                                    ]
+                                  },
+                                  {
+                                    "$add": [
+                                      { "$field": "itemSpacing", "default": 8 },
+                                      {
+                                        "$clamp": [
+                                          {
+                                            "$sub": [
+                                              {
+                                                "$add": [
+                                                  {
+                                                    "$mul": [
+                                                      -0.265,
+                                                      {
+                                                        "$field": "preferredItemWidth",
+                                                        "default": 186
+                                                      }
+                                                    ]
+                                                  },
+                                                  {
+                                                    "$mod": [
+                                                      {
+                                                        "$add": [
+                                                          { "$size": "width" },
+                                                          {
+                                                            "$mul": [
+                                                              0.265,
+                                                              {
+                                                                "$field": "preferredItemWidth",
+                                                                "default": 186
+                                                              }
+                                                            ]
+                                                          },
+                                                          -70
+                                                        ]
+                                                      },
+                                                      {
+                                                        "$add": [
+                                                          {
+                                                            "$field": "preferredItemWidth",
+                                                            "default": 186
+                                                          },
+                                                          {
+                                                            "$field": "itemSpacing",
+                                                            "default": 8
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  },
+                                                  70
+                                                ]
+                                              },
+                                              {
+                                                "$add": [
+                                                  {
+                                                    "$field": "itemSpacing",
+                                                    "default": 8
+                                                  },
+                                                  {
+                                                    "$mul": [
+                                                      0.5,
+                                                      {
+                                                        "$add": [
+                                                          {
+                                                            "$field": "preferredItemWidth",
+                                                            "default": 186
+                                                          },
+                                                          {
+                                                            "$clamp": [
+                                                              {
+                                                                "$div": [
+                                                                  {
+                                                                    "$field": "preferredItemWidth",
+                                                                    "default": 186
+                                                                  },
+                                                                  3
+                                                                ]
+                                                              },
+                                                              40,
+                                                              56
+                                                            ]
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          },
+                                          40,
+                                          56
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              },
+                              {
+                                "$mul": [
+                                  0.9,
+                                  {
+                                    "$add": [
+                                      {
+                                        "$mul": [
+                                          0.5,
+                                          {
+                                            "$add": [
+                                              {
+                                                "$field": "preferredItemWidth",
+                                                "default": 186
+                                              },
+                                              40
+                                            ]
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "$div": [
+                                          {
+                                            "$add": [
+                                              {
+                                                "$mul": [
+                                                  2,
+                                                  {
+                                                    "$add": [
+                                                      {
+                                                        "$mul": [
+                                                          -0.265,
+                                                          {
+                                                            "$field": "preferredItemWidth",
+                                                            "default": 186
+                                                          }
+                                                        ]
+                                                      },
+                                                      {
+                                                        "$mod": [
+                                                          {
+                                                            "$add": [
+                                                              { "$size": "width" },
+                                                              {
+                                                                "$mul": [
+                                                                  0.265,
+                                                                  {
+                                                                    "$field": "preferredItemWidth",
+                                                                    "default": 186
+                                                                  }
+                                                                ]
+                                                              },
+                                                              -70
+                                                            ]
+                                                          },
+                                                          {
+                                                            "$add": [
+                                                              {
+                                                                "$field": "preferredItemWidth",
+                                                                "default": 186
+                                                              },
+                                                              {
+                                                                "$field": "itemSpacing",
+                                                                "default": 8
+                                                              }
+                                                            ]
+                                                          }
+                                                        ]
+                                                      },
+                                                      70
+                                                    ]
+                                                  }
+                                                ]
+                                              },
+                                              {
+                                                "$mul": [
+                                                  -2,
+                                                  {
+                                                    "$field": "itemSpacing",
+                                                    "default": 8
+                                                  }
+                                                ]
+                                              },
+                                              {
+                                                "$mul": [
+                                                  -1,
+                                                  {
+                                                    "$field": "preferredItemWidth",
+                                                    "default": 186
+                                                  }
+                                                ]
+                                              },
+                                              -120
+                                            ]
+                                          },
+                                          {
+                                            "$mul": [
+                                              2,
+                                              {
+                                                "$add": [
+                                                  {
+                                                    "$mul": [
+                                                      2,
+                                                      {
+                                                        "$max": [
+                                                          1,
+                                                          {
+                                                            "$floor": {
+                                                              "$div": [
+                                                                {
+                                                                  "$add": [
+                                                                    { "$size": "width" },
+                                                                    {
+                                                                      "$mul": [
+                                                                        0.265,
+                                                                        {
+                                                                          "$field": "preferredItemWidth",
+                                                                          "default": 186
+                                                                        }
+                                                                      ]
+                                                                    },
+                                                                    -70
+                                                                  ]
+                                                                },
+                                                                {
+                                                                  "$add": [
+                                                                    {
+                                                                      "$field": "preferredItemWidth",
+                                                                      "default": 186
+                                                                    },
+                                                                    {
+                                                                      "$field": "itemSpacing",
+                                                                      "default": 8
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  },
+                                                  1
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              },
+                              {
+                                "$mul": [
+                                  1.1,
+                                  {
+                                    "$add": [
+                                      {
+                                        "$mul": [
+                                          0.5,
+                                          {
+                                            "$add": [
+                                              {
+                                                "$field": "preferredItemWidth",
+                                                "default": 186
+                                              },
+                                              56
+                                            ]
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "$div": [
+                                          {
+                                            "$add": [
+                                              {
+                                                "$mul": [
+                                                  2,
+                                                  {
+                                                    "$add": [
+                                                      {
+                                                        "$mul": [
+                                                          -0.265,
+                                                          {
+                                                            "$field": "preferredItemWidth",
+                                                            "default": 186
+                                                          }
+                                                        ]
+                                                      },
+                                                      {
+                                                        "$mod": [
+                                                          {
+                                                            "$add": [
+                                                              { "$size": "width" },
+                                                              {
+                                                                "$mul": [
+                                                                  0.265,
+                                                                  {
+                                                                    "$field": "preferredItemWidth",
+                                                                    "default": 186
+                                                                  }
+                                                                ]
+                                                              },
+                                                              -70
+                                                            ]
+                                                          },
+                                                          {
+                                                            "$add": [
+                                                              {
+                                                                "$field": "preferredItemWidth",
+                                                                "default": 186
+                                                              },
+                                                              {
+                                                                "$field": "itemSpacing",
+                                                                "default": 8
+                                                              }
+                                                            ]
+                                                          }
+                                                        ]
+                                                      },
+                                                      70
+                                                    ]
+                                                  }
+                                                ]
+                                              },
+                                              {
+                                                "$mul": [
+                                                  -2,
+                                                  {
+                                                    "$field": "itemSpacing",
+                                                    "default": 8
+                                                  }
+                                                ]
+                                              },
+                                              {
+                                                "$mul": [
+                                                  -1,
+                                                  {
+                                                    "$field": "preferredItemWidth",
+                                                    "default": 186
+                                                  }
+                                                ]
+                                              },
+                                              -168
+                                            ]
+                                          },
+                                          {
+                                            "$mul": [
+                                              2,
+                                              {
+                                                "$add": [
+                                                  {
+                                                    "$mul": [
+                                                      2,
+                                                      {
+                                                        "$max": [
+                                                          1,
+                                                          {
+                                                            "$floor": {
+                                                              "$div": [
+                                                                {
+                                                                  "$add": [
+                                                                    { "$size": "width" },
+                                                                    {
+                                                                      "$mul": [
+                                                                        0.265,
+                                                                        {
+                                                                          "$field": "preferredItemWidth",
+                                                                          "default": 186
+                                                                        }
+                                                                      ]
+                                                                    },
+                                                                    -70
+                                                                  ]
+                                                                },
+                                                                {
+                                                                  "$add": [
+                                                                    {
+                                                                      "$field": "preferredItemWidth",
+                                                                      "default": 186
+                                                                    },
+                                                                    {
+                                                                      "$field": "itemSpacing",
+                                                                      "default": 8
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  },
+                                                  1
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "else": {
+                            "$clamp": [
+                              {
+                                "$sub": [
+                                  {
+                                    "$add": [
+                                      {
+                                        "$mul": [
+                                          -0.265,
+                                          {
+                                            "$field": "preferredItemWidth",
+                                            "default": 186
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "$mod": [
+                                          {
+                                            "$add": [
+                                              { "$size": "width" },
+                                              {
+                                                "$mul": [
+                                                  0.265,
+                                                  {
+                                                    "$field": "preferredItemWidth",
+                                                    "default": 186
+                                                  }
+                                                ]
+                                              },
+                                              -70
+                                            ]
+                                          },
+                                          {
+                                            "$add": [
+                                              {
+                                                "$field": "preferredItemWidth",
+                                                "default": 186
+                                              },
+                                              { "$field": "itemSpacing", "default": 8 }
+                                            ]
+                                          }
+                                        ]
+                                      },
+                                      70
+                                    ]
+                                  },
+                                  {
+                                    "$add": [
+                                      { "$field": "itemSpacing", "default": 8 },
+                                      {
+                                        "$mul": [
+                                          0.5,
+                                          {
+                                            "$add": [
+                                              {
+                                                "$field": "preferredItemWidth",
+                                                "default": 186
+                                              },
+                                              {
+                                                "$clamp": [
+                                                  {
+                                                    "$div": [
+                                                      {
+                                                        "$field": "preferredItemWidth",
+                                                        "default": 186
+                                                      },
+                                                      3
+                                                    ]
+                                                  },
+                                                  40,
+                                                  56
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              },
+                              40,
+                              56
+                            ]
+                          }
+                        }
+                      },
+                      "else": {
+                        "$if": {
+                          "$lt": [
+                            { "$field": "$index" },
+                            {
+                              "$max": [
+                                1,
+                                {
+                                  "$floor": {
+                                    "$div": [
+                                      {
+                                        "$add": [
+                                          { "$size": "width" },
+                                          {
+                                            "$mul": [
+                                              0.2,
+                                              {
+                                                "$field": "preferredItemWidth",
+                                                "default": 186
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "$mul": [
+                                              0.3,
+                                              { "$field": "itemSpacing", "default": 8 }
+                                            ]
+                                          },
+                                          0.5
+                                        ]
+                                      },
+                                      {
+                                        "$add": [
+                                          {
+                                            "$field": "preferredItemWidth",
+                                            "default": 186
+                                          },
+                                          { "$field": "itemSpacing", "default": 8 }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        "then": {
+                          "$clamp": [
+                            { "$field": "preferredItemWidth", "default": 186 },
+                            {
+                              "$mul": [
+                                {
+                                  "$sub": [
+                                    {
+                                      "$div": [
+                                        {
+                                          "$add": [
+                                            { "$size": "width" },
+                                            {
+                                              "$mul": [
+                                                0.5,
+                                                { "$field": "itemSpacing", "default": 8 }
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "$add": [
+                                            {
+                                              "$max": [
+                                                1,
+                                                {
+                                                  "$floor": {
+                                                    "$div": [
+                                                      {
+                                                        "$add": [
+                                                          { "$size": "width" },
+                                                          {
+                                                            "$mul": [
+                                                              0.2,
+                                                              {
+                                                                "$field": "preferredItemWidth",
+                                                                "default": 186
+                                                              }
+                                                            ]
+                                                          },
+                                                          {
+                                                            "$mul": [
+                                                              0.3,
+                                                              {
+                                                                "$field": "itemSpacing",
+                                                                "default": 8
+                                                              }
+                                                            ]
+                                                          },
+                                                          0.5
+                                                        ]
+                                                      },
+                                                      {
+                                                        "$add": [
+                                                          {
+                                                            "$field": "preferredItemWidth",
+                                                            "default": 186
+                                                          },
+                                                          {
+                                                            "$field": "itemSpacing",
+                                                            "default": 8
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            0.5
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    { "$field": "itemSpacing", "default": 8 }
+                                  ]
+                                },
+                                {
+                                  "$sub": [
+                                    1,
+                                    {
+                                      "$div": [
+                                        0.05,
+                                        {
+                                          "$max": [
+                                            1,
+                                            {
+                                              "$floor": {
+                                                "$div": [
+                                                  {
+                                                    "$add": [
+                                                      { "$size": "width" },
+                                                      {
+                                                        "$mul": [
+                                                          0.2,
+                                                          {
+                                                            "$field": "preferredItemWidth",
+                                                            "default": 186
+                                                          }
+                                                        ]
+                                                      },
+                                                      {
+                                                        "$mul": [
+                                                          0.3,
+                                                          {
+                                                            "$field": "itemSpacing",
+                                                            "default": 8
+                                                          }
+                                                        ]
+                                                      },
+                                                      0.5
+                                                    ]
+                                                  },
+                                                  {
+                                                    "$add": [
+                                                      {
+                                                        "$field": "preferredItemWidth",
+                                                        "default": 186
+                                                      },
+                                                      {
+                                                        "$field": "itemSpacing",
+                                                        "default": 8
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "$mul": [
+                                {
+                                  "$sub": [
+                                    {
+                                      "$div": [
+                                        {
+                                          "$add": [
+                                            { "$size": "width" },
+                                            {
+                                              "$mul": [
+                                                0.5,
+                                                { "$field": "itemSpacing", "default": 8 }
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "$add": [
+                                            {
+                                              "$max": [
+                                                1,
+                                                {
+                                                  "$floor": {
+                                                    "$div": [
+                                                      {
+                                                        "$add": [
+                                                          { "$size": "width" },
+                                                          {
+                                                            "$mul": [
+                                                              0.2,
+                                                              {
+                                                                "$field": "preferredItemWidth",
+                                                                "default": 186
+                                                              }
+                                                            ]
+                                                          },
+                                                          {
+                                                            "$mul": [
+                                                              0.3,
+                                                              {
+                                                                "$field": "itemSpacing",
+                                                                "default": 8
+                                                              }
+                                                            ]
+                                                          },
+                                                          0.5
+                                                        ]
+                                                      },
+                                                      {
+                                                        "$add": [
+                                                          {
+                                                            "$field": "preferredItemWidth",
+                                                            "default": 186
+                                                          },
+                                                          {
+                                                            "$field": "itemSpacing",
+                                                            "default": 8
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            0.5
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    { "$field": "itemSpacing", "default": 8 }
+                                  ]
+                                },
+                                {
+                                  "$add": [
+                                    {
+                                      "$div": [
+                                        0.05,
+                                        {
+                                          "$max": [
+                                            1,
+                                            {
+                                              "$floor": {
+                                                "$div": [
+                                                  {
+                                                    "$add": [
+                                                      { "$size": "width" },
+                                                      {
+                                                        "$mul": [
+                                                          0.2,
+                                                          {
+                                                            "$field": "preferredItemWidth",
+                                                            "default": 186
+                                                          }
+                                                        ]
+                                                      },
+                                                      {
+                                                        "$mul": [
+                                                          0.3,
+                                                          {
+                                                            "$field": "itemSpacing",
+                                                            "default": 8
+                                                          }
+                                                        ]
+                                                      },
+                                                      0.5
+                                                    ]
+                                                  },
+                                                  {
+                                                    "$add": [
+                                                      {
+                                                        "$field": "preferredItemWidth",
+                                                        "default": 186
+                                                      },
+                                                      {
+                                                        "$field": "itemSpacing",
+                                                        "default": 8
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    1
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        "else": "fill"
+                      }
+                    },
+                    "else": {
+                      "$if": {
+                        "$gte": [
+                          { "$rows": "items" },
+                          {
+                            "$add": [
+                              {
+                                "$max": [
+                                  1,
+                                  {
+                                    "$floor": {
+                                      "$div": [
+                                        {
+                                          "$add": [
+                                            { "$size": "width" },
+                                            {
+                                              "$mul": [
+                                                0.265,
+                                                {
+                                                  "$field": "preferredItemWidth",
+                                                  "default": 186
+                                                }
+                                              ]
+                                            },
+                                            -70
+                                          ]
+                                        },
+                                        {
+                                          "$add": [
+                                            {
+                                              "$field": "preferredItemWidth",
+                                              "default": 186
+                                            },
+                                            { "$field": "itemSpacing", "default": 8 }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ]
+                              },
+                              1
+                            ]
+                          }
+                        ]
+                      },
+                      "then": {
+                        "$if": {
+                          "$lt": [
+                            { "$field": "$index" },
+                            {
+                              "$max": [
+                                1,
+                                {
+                                  "$floor": {
+                                    "$div": [
+                                      {
+                                        "$add": [
+                                          { "$size": "width" },
+                                          {
+                                            "$mul": [
+                                              0.265,
+                                              {
+                                                "$field": "preferredItemWidth",
+                                                "default": 186
+                                              }
+                                            ]
+                                          },
+                                          -70
+                                        ]
+                                      },
+                                      {
+                                        "$add": [
+                                          {
+                                            "$field": "preferredItemWidth",
+                                            "default": 186
+                                          },
+                                          { "$field": "itemSpacing", "default": 8 }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        "then": "fill",
+                        "else": {
+                          "$clamp": [
+                            {
+                              "$add": [
+                                {
+                                  "$mul": [
+                                    -0.265,
+                                    { "$field": "preferredItemWidth", "default": 186 }
+                                  ]
+                                },
+                                {
+                                  "$mod": [
+                                    {
+                                      "$add": [
+                                        { "$size": "width" },
+                                        {
+                                          "$mul": [
+                                            0.265,
+                                            {
+                                              "$field": "preferredItemWidth",
+                                              "default": 186
+                                            }
+                                          ]
+                                        },
+                                        -70
+                                      ]
+                                    },
+                                    {
+                                      "$add": [
+                                        {
+                                          "$field": "preferredItemWidth",
+                                          "default": 186
+                                        },
+                                        { "$field": "itemSpacing", "default": 8 }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                70
+                              ]
+                            },
+                            40,
+                            56
+                          ]
+                        }
+                      },
+                      "else": {
+                        "$div": [
+                          {
+                            "$sub": [
+                              { "$size": "width" },
+                              {
+                                "$mul": [
+                                  {
+                                    "$sub": [
+                                      {
+                                        "$max": [
+                                          1,
+                                          {
+                                            "$floor": {
+                                              "$div": [
+                                                {
+                                                  "$add": [
+                                                    { "$size": "width" },
+                                                    {
+                                                      "$mul": [
+                                                        0.785,
+                                                        {
+                                                          "$field": "preferredItemWidth",
+                                                          "default": 186
+                                                        }
+                                                      ]
+                                                    },
+                                                    {
+                                                      "$mul": [
+                                                        1.64,
+                                                        {
+                                                          "$field": "itemSpacing",
+                                                          "default": 8
+                                                        }
+                                                      ]
+                                                    },
+                                                    -6.7
+                                                  ]
+                                                },
+                                                {
+                                                  "$add": [
+                                                    {
+                                                      "$field": "preferredItemWidth",
+                                                      "default": 186
+                                                    },
+                                                    {
+                                                      "$field": "itemSpacing",
+                                                      "default": 8
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        ]
+                                      },
+                                      1
+                                    ]
+                                  },
+                                  { "$field": "itemSpacing", "default": 8 }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "$max": [
+                              1,
+                              {
+                                "$floor": {
+                                  "$div": [
+                                    {
+                                      "$add": [
+                                        { "$size": "width" },
+                                        {
+                                          "$mul": [
+                                            0.785,
+                                            {
+                                              "$field": "preferredItemWidth",
+                                              "default": 186
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "$mul": [
+                                            1.64,
+                                            { "$field": "itemSpacing", "default": 8 }
+                                          ]
+                                        },
+                                        -6.7
+                                      ]
+                                    },
+                                    {
+                                      "$add": [
+                                        {
+                                          "$field": "preferredItemWidth",
+                                          "default": 186
+                                        },
+                                        { "$field": "itemSpacing", "default": 8 }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  }
                 }
               },
               "height": "fill",
-              "cornerRadius": {
-                "$token": "corner-extra-large"
+              "visible": {
+                "$or": [
+                  { "$eq": ["style", "uncontained"] },
+                  { "$eq": ["style", "centered-hero"] },
+                  {
+                    "$lt": [
+                      { "$field": "$index" },
+                      {
+                        "$if": {
+                          "$gte": [
+                            { "$field": "preferredItemWidth", "default": 186 },
+                            { "$size": "width" }
+                          ]
+                        },
+                        "then": 2,
+                        "else": {
+                          "$if": {
+                            "$gte": [
+                              {
+                                "$mod": [
+                                  {
+                                    "$add": [
+                                      { "$size": "width" },
+                                      {
+                                        "$mul": [
+                                          0.265,
+                                          {
+                                            "$field": "preferredItemWidth",
+                                            "default": 186
+                                          }
+                                        ]
+                                      },
+                                      -70
+                                    ]
+                                  },
+                                  {
+                                    "$add": [
+                                      { "$field": "preferredItemWidth", "default": 186 },
+                                      { "$field": "itemSpacing", "default": 8 }
+                                    ]
+                                  }
+                                ]
+                              },
+                              {
+                                "$add": [
+                                  {
+                                    "$mul": [
+                                      0.435,
+                                      { "$field": "preferredItemWidth", "default": 186 }
+                                    ]
+                                  },
+                                  {
+                                    "$mul": [
+                                      0.45,
+                                      { "$field": "itemSpacing", "default": 8 }
+                                    ]
+                                  },
+                                  -13
+                                ]
+                              }
+                            ]
+                          },
+                          "then": {
+                            "$if": {
+                              "$gte": [
+                                { "$rows": "items" },
+                                {
+                                  "$add": [
+                                    {
+                                      "$max": [
+                                        1,
+                                        {
+                                          "$floor": {
+                                            "$div": [
+                                              {
+                                                "$add": [
+                                                  { "$size": "width" },
+                                                  {
+                                                    "$mul": [
+                                                      0.265,
+                                                      {
+                                                        "$field": "preferredItemWidth",
+                                                        "default": 186
+                                                      }
+                                                    ]
+                                                  },
+                                                  -70
+                                                ]
+                                              },
+                                              {
+                                                "$add": [
+                                                  {
+                                                    "$field": "preferredItemWidth",
+                                                    "default": 186
+                                                  },
+                                                  {
+                                                    "$field": "itemSpacing",
+                                                    "default": 8
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    2
+                                  ]
+                                }
+                              ]
+                            },
+                            "then": {
+                              "$add": [
+                                {
+                                  "$max": [
+                                    1,
+                                    {
+                                      "$floor": {
+                                        "$div": [
+                                          {
+                                            "$add": [
+                                              { "$size": "width" },
+                                              {
+                                                "$mul": [
+                                                  0.265,
+                                                  {
+                                                    "$field": "preferredItemWidth",
+                                                    "default": 186
+                                                  }
+                                                ]
+                                              },
+                                              -70
+                                            ]
+                                          },
+                                          {
+                                            "$add": [
+                                              {
+                                                "$field": "preferredItemWidth",
+                                                "default": 186
+                                              },
+                                              { "$field": "itemSpacing", "default": 8 }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                },
+                                2
+                              ]
+                            },
+                            "else": {
+                              "$add": [
+                                {
+                                  "$max": [
+                                    1,
+                                    {
+                                      "$floor": {
+                                        "$div": [
+                                          {
+                                            "$add": [
+                                              { "$size": "width" },
+                                              {
+                                                "$mul": [
+                                                  0.2,
+                                                  {
+                                                    "$field": "preferredItemWidth",
+                                                    "default": 186
+                                                  }
+                                                ]
+                                              },
+                                              {
+                                                "$mul": [
+                                                  0.3,
+                                                  {
+                                                    "$field": "itemSpacing",
+                                                    "default": 8
+                                                  }
+                                                ]
+                                              },
+                                              0.5
+                                            ]
+                                          },
+                                          {
+                                            "$add": [
+                                              {
+                                                "$field": "preferredItemWidth",
+                                                "default": 186
+                                              },
+                                              { "$field": "itemSpacing", "default": 8 }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                },
+                                1
+                              ]
+                            }
+                          },
+                          "else": {
+                            "$if": {
+                              "$gte": [
+                                { "$rows": "items" },
+                                {
+                                  "$add": [
+                                    {
+                                      "$max": [
+                                        1,
+                                        {
+                                          "$floor": {
+                                            "$div": [
+                                              {
+                                                "$add": [
+                                                  { "$size": "width" },
+                                                  {
+                                                    "$mul": [
+                                                      0.265,
+                                                      {
+                                                        "$field": "preferredItemWidth",
+                                                        "default": 186
+                                                      }
+                                                    ]
+                                                  },
+                                                  -70
+                                                ]
+                                              },
+                                              {
+                                                "$add": [
+                                                  {
+                                                    "$field": "preferredItemWidth",
+                                                    "default": 186
+                                                  },
+                                                  {
+                                                    "$field": "itemSpacing",
+                                                    "default": 8
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    1
+                                  ]
+                                }
+                              ]
+                            },
+                            "then": {
+                              "$add": [
+                                {
+                                  "$max": [
+                                    1,
+                                    {
+                                      "$floor": {
+                                        "$div": [
+                                          {
+                                            "$add": [
+                                              { "$size": "width" },
+                                              {
+                                                "$mul": [
+                                                  0.265,
+                                                  {
+                                                    "$field": "preferredItemWidth",
+                                                    "default": 186
+                                                  }
+                                                ]
+                                              },
+                                              -70
+                                            ]
+                                          },
+                                          {
+                                            "$add": [
+                                              {
+                                                "$field": "preferredItemWidth",
+                                                "default": 186
+                                              },
+                                              { "$field": "itemSpacing", "default": 8 }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                },
+                                1
+                              ]
+                            },
+                            "else": {
+                              "$max": [
+                                1,
+                                {
+                                  "$floor": {
+                                    "$div": [
+                                      {
+                                        "$add": [
+                                          { "$size": "width" },
+                                          {
+                                            "$mul": [
+                                              0.785,
+                                              {
+                                                "$field": "preferredItemWidth",
+                                                "default": 186
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "$mul": [
+                                              1.64,
+                                              { "$field": "itemSpacing", "default": 8 }
+                                            ]
+                                          },
+                                          -6.7
+                                        ]
+                                      },
+                                      {
+                                        "$add": [
+                                          {
+                                            "$field": "preferredItemWidth",
+                                            "default": 186
+                                          },
+                                          { "$field": "itemSpacing", "default": 8 }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
               },
+              "cornerRadius": { "$token": "corner-extra-large" },
               "clip": true,
-              "layout": {
-                "type": "none"
-              },
+              "layout": { "type": "none" },
               "children": [
                 {
                   "type": "image",
                   "name": "imagem",
-                  "src": {
-                    "$field": "image"
-                  },
+                  "src": { "$field": "image" },
                   "fit": "cover",
                   "width": "fill",
                   "height": "fill",
-                  "fill": {
-                    "$token": "surface-container-highest"
-                  }
+                  "fill": { "$token": "surface-container-highest" }
                 },
                 {
                   "type": "rect",
                   "name": "véu",
                   "height": 48,
-                  "anchors": {
-                    "left": 0,
-                    "right": 0,
-                    "bottom": 0
-                  },
+                  "anchors": { "left": 0, "right": 0, "bottom": 0 },
                   "fill": {
                     "type": "linear",
                     "angle": 90,
                     "stops": [
-                      {
-                        "offset": 0,
-                        "color": {
-                          "$token": "scrim",
-                          "alpha": 0
-                        }
-                      },
-                      {
-                        "offset": 1,
-                        "color": {
-                          "$token": "scrim",
-                          "alpha": 0.32
-                        }
-                      }
+                      { "offset": 0, "color": { "$token": "scrim", "alpha": 0 } },
+                      { "offset": 1, "color": { "$token": "scrim", "alpha": 0.32 } }
                     ]
                   },
-                  "visible": {
-                    "$has": "label"
-                  }
+                  "visible": { "$has": "label" }
                 },
                 {
                   "type": "text",
                   "name": "rótulo",
-                  "text": {
-                    "$field": "label"
-                  },
-                  "color": {
-                    "$token": "secondary-fixed"
-                  },
-                  "anchors": {
-                    "left": 16,
-                    "right": 16,
-                    "bottom": 14
-                  },
+                  "text": { "$field": "label" },
+                  "color": { "$token": "secondary-fixed" },
+                  "anchors": { "left": 16, "right": 16, "bottom": 14 },
                   "font": {
-                    "size": {
-                      "$token": "label-large-size"
-                    },
-                    "weight": {
-                      "$token": "label-large-weight"
-                    },
-                    "lineHeight": {
-                      "$token": "label-large-line-height"
-                    },
-                    "letterSpacing": {
-                      "$token": "label-large-tracking"
-                    },
+                    "size": { "$token": "label-large-size" },
+                    "weight": { "$token": "label-large-weight" },
+                    "lineHeight": { "$token": "label-large-line-height" },
+                    "letterSpacing": { "$token": "label-large-tracking" },
                     "maxLines": 1,
                     "ellipsis": true,
                     "verticalAlign": "cap-middle"
                   },
-                  "visible": {
-                    "$has": "label"
-                  }
+                  "visible": { "$has": "label" }
                 }
               ]
+            },
+            "width": {
+              "$if": {
+                "$or": [
+                  { "$eq": ["style", "uncontained"] },
+                  { "$eq": ["style", "centered-hero"] }
+                ]
+              },
+              "then": "hug",
+              "else": { "$size": "width" }
             }
           }
         ]

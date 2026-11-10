@@ -31,6 +31,11 @@ const named = (d: Drawing, name: string): SceneNode | undefined => {
   for (const node of walk(d.root)) if (node.name === name && node.visible) return node;
   return undefined;
 };
+/** Como `named`, mas o trecho que não existe (largura 0, EX6: o trilho vazio não é mais ocultado) não conta. */
+const shown = (d: Drawing, name: string): SceneNode | undefined => {
+  const node = named(d, name);
+  return node !== undefined && boxOf(d, node).width > 1e-6 ? node : undefined;
+};
 const allNamed = (d: Drawing, name: string): SceneNode[] =>
   [...walk(d.root)].filter((n) => n.name === name && n.visible);
 const boxes = (d: Drawing) => absoluteBoxes(d.root);
@@ -127,8 +132,8 @@ describe('M3 grupo C — slider', () => {
       const f = Number(value);
       const d = draw('slider', { type: 'single', value });
       near(box(d, 'alça').x, T * f);
-      const active = named(d, 'trilho ativo');
-      const inactive = named(d, 'trilho inativo');
+      const active = shown(d, 'trilho ativo');
+      const inactive = shown(d, 'trilho inativo');
       if (f === 0) expect(active).toBeUndefined();
       else near(boxOf(d, active!).width, T * f - GAP);
       if (f === 1) expect(inactive).toBeUndefined();
@@ -237,19 +242,19 @@ describe('M3 grupo C — slider', () => {
   it('passos: no primeiro e no último passo a alça vai para a ponta (largura inteira), como em Slider.kt', () => {
     const first = draw('slider', { type: 'single', value: '0', steps: 4 });
     near(box(first, 'alça').x, 0);
-    expect(named(first, 'trilho ativo')).toBeUndefined();
+    expect(shown(first, 'trilho ativo')).toBeUndefined();
     near(box(first, 'trilho inativo').x, 2 + GAP);
     const last = draw('slider', { type: 'single', value: '1', steps: 4 });
     near(box(last, 'alça').x, T);
     near(box(last, 'trilho ativo').width, T - GAP);
-    expect(named(last, 'trilho inativo')).toBeUndefined();
+    expect(shown(last, 'trilho inativo')).toBeUndefined();
     // sem o trecho inativo não há indicador de parada
     expect(dotsOf(last).filter((dot) => dot.x > 300)).toEqual([]);
   });
 
-  it('passos: 1, 2 e 9 passos desenham passos + 2 posições de marca, igualmente espaçadas (single e range)', () => {
+  it('passos: 1, 2 e 9 passos desenham passos + 2 posições de marca, igualmente espaçadas (single e range), menos a que cai sob a alça', () => {
     for (const steps of [1, 2, 9]) {
-      const expected = Array.from(
+      const positions = Array.from(
         { length: steps + 2 },
         (_, k) => 2 + 8 + ((T - 16) * k) / (steps + 1),
       );
@@ -257,12 +262,17 @@ describe('M3 grupo C — slider', () => {
         { type: 'single', value: '0.5', steps },
         { type: 'range', valueStart: '0.2', valueEnd: '0.8', steps },
       ]) {
-        const xs = [
-          ...new Set(dotCenters(draw('slider', values)).map((x) => x.toFixed(3))),
-        ]
+        const d = draw('slider', values);
+        // EX6: a marca que cairia sob uma alça não é desenhada (a alça a cobria)
+        const thumbs = allNamed(d, 'alça').map((n) => boxOf(d, n).x + 2);
+        const expected = positions.filter((p) =>
+          thumbs.every((t) => Math.abs(t - p) > 0.01),
+        );
+        const xs = [...new Set(dotCenters(d).map((x) => x.toFixed(3)))]
           .map(Number)
           .sort((a, b) => a - b);
-        expect(xs).toHaveLength(steps + 2);
+        expect(xs).toHaveLength(expected.length);
+        expect(expected.length).toBeGreaterThan(steps - 1);
         xs.forEach((x, k) => near(x, expected[k]!));
       }
     }

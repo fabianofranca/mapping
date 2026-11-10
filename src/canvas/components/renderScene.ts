@@ -33,6 +33,7 @@ import {
   type TextNode,
   type TextStyle,
   hasChildren,
+  nodeMatrix,
 } from '../../model/components/scene';
 import type { RunLayout, RunPiece } from '../../model/components/richText';
 import { textBoxLimits } from './textLimits';
@@ -115,7 +116,7 @@ class Renderer {
 
   render(node: SceneNode, pendingShadow?: Shadow): Konva.Group {
     const container = new Konva.Group({
-      ...decompose(node.transform),
+      ...decompose(nodeMatrix(node)),
       opacity: node.opacity,
       visible: node.visible,
       name: node.name,

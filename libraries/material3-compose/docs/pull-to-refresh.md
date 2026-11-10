@@ -43,7 +43,7 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 
 ## Desenho
 
-O indicador é o padrão do Material 3: círculo de 40 em surface container high com sombra e um anel de 16 em on surface variant, a 40 do topo (o limiar de 80 menos o tamanho do indicador) nos dois estados. Com `isRefreshing` verdadeiro mostra o spinner; com falso, o quadro do limiar com o arco e a seta, que no Compose só existe enquanto a pessoa puxa (em repouso o indicador fica escondido). O anel é estático.
+O indicador é o padrão do Material 3: círculo de 40 em surface container high com sombra e um anel de 16 em on surface variant, a 40 do topo (o limiar de 80 menos o tamanho do indicador) nos dois estados. Com `isRefreshing` verdadeiro mostra o spinner; com falso, o quadro do limiar com o arco e a seta, que no Compose só existe enquanto a pessoa puxa (em repouso o indicador fica escondido). O arco e a seta do arrasto são desenhados na orientação canônica e girados por `rotation`, com os ângulos do Compose escritos como conta no componente; o spinner de "atualizando" é um quadro congelado, sem giro.
 
 ## Exemplos
 
@@ -63,13 +63,16 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 
 - Indicador de 40 em `corner-full` (`CircleShape`), em `surface-container-high` com a sombra do nível 2 (`elevation-shadow`, deslocamento 2 e desfoque 6), centrado no topo. O Compose o põe em `distanceFraction * 80 - 40`, então com a fração em 1 (o limiar, que é também o ponto onde ele fica enquanto atualiza) o topo está a 40: é onde o desenho o põe nos dois estados.
 - Atualizando (`isRefreshing` verdadeiro): spinner de 16 (`SpinnerSize`) com traço de 2,5 de ponta redonda em `on-surface-variant`; raio do centro do traço 6,75 e o quadro congelado do indeterminado, um arco das 12h até (0,1 + 0,87) / 2 de volta, como no `progress-indicator`.
-- Puxando (`isRefreshing` falso): o quadro de `progress` = 1, o instante em que se atinge o limiar (`targetAlpha` 1). `ArrowValues(1)` dá `adjustedPercent` 1, `endTrim` 0,8 e `startAngle`/`endAngle` de 27° e 315°: um arco de 288° com ponta reta (`StrokeCap.Butt`) de raio 6,75 e, no fim dele, a seta aberta de 10 por 5 (`ArrowWidth`, `ArrowHeight`) com traço de 2,5 e canto em ponta (`Stroke` padrão), levada ao fim do arco e girada em `endAngle - strokeWidth` (312,5°) em torno do centro. As duas peças são `path`, em 24 de caixa com o círculo de 16 no meio.
+- Puxando (`isRefreshing` falso): o quadro de `progress` = 1, o instante em que se atinge o limiar (`targetAlpha` 1). `ArrowValues(1)` (`PullToRefresh.kt` 690 a 708) dá `adjustedPercent` 1, `endTrim` 0,8 (`MaxProgressArc`, 734), `rotation` = (−0,25 + 0,4 × 1 + 0) × 0,5 = 0,075 (702), `startAngle` = `rotation` × 360 = 27° (703) e `endAngle` = (`rotation` + `endTrim`) × 360 = 315° (704). As duas peças são `path` na orientação canônica, em 24 de caixa com o círculo de 16 no meio, e o ângulo sai de `rotation` por expressão (em graus, no sentido horário, em volta do centro da caixa, que é o centro do indicador), sem coordenadas giradas à mão:
+  - O arco (`drawCircularIndicator`, 663 a 681; `drawArc` de `startAngle` com varredura `endAngle − startAngle`, ponta reta `StrokeCap.Butt`): o `d` é o arco de 288° que parte do 3 horas (o 0° do `drawArc`) no raio 6,75, e o nó leva `rotation` = `startAngle` + `rotation` de `ArrowValues` (o `rotate(degrees = values.rotation)` de 654) = 27,075°, escrito como `(rotation × 360) + rotation` com `rotation` = `(−0,25 + 0,4) × 0,5`.
+  - A seta aberta de 10 por 5 (`ArrowWidth`, `ArrowHeight`, 741 e 742) com traço de 2,5 e canto em ponta (`Stroke` padrão; `drawArrow`, 710 a 732): o `d` é o desenho do `moveTo(0, 0)`, `lineTo(5, 5)`, `lineTo(10, 0)` (719 a 722) levado a (raio + centro − `inset`, centro − `strokeWidth`) (724 a 728), isto é, `M13.75 9.5L18.75 14.5L23.75 9.5`, e o nó leva `rotation` = `endAngle − strokeWidth` (729) mais a `rotation` de `ArrowValues` (654) = 312,575°, escrito como `((rotation + 0,8) × 360) − 2,5 + rotation`.
 - Fundo da área em `surface`; as marcações filhas formam o conteúdo (o `slot`).
 
 **O que ainda difere do Compose**
 
 - O estado de arrasto é um quadro só (`progress` = 1): o Compose escala a seta (`scale`) e muda a opacidade de 0,3 a 1 conforme o dedo desce, e o indicador sobe e desce com a fração. Antes o desenho mostrava o indicador a 8 do topo com uma seta pequena; agora o quadro é o do limiar, a 40.
-- Em `ArrowValues` o `rotation` (0,075 volta) é passado como graus ao `rotate(degrees = values.rotation)`; o desenho ignora esse 0,075° (invisível).
+- Em `ArrowValues` o `rotation` (0,075 volta) é passado como graus ao `rotate(degrees = values.rotation)` (654); o desenho faz o mesmo e soma esse 0,075° aos dois ângulos (a diferença para o 27° e o 312,5° de antes é de 0,01 px).
+- O spinner de "atualizando" não leva `rotation`: o `d` dele já parte das 12h e o arco canônico (do 3 horas, com `rotation` de −90°) teria o mesmo número de coordenadas, sem tirar conta nenhuma.
 - O spinner é o quadro congelado da animação (não gira), e o arco não leva o ajuste que o Compose faz nas pontas redondas do indeterminado.
 - O recorte do `IndicatorBox` acima do topo (`clipRect(top = 0)`) e a sombra que só aparece com a fração maior que 0 não existem no desenho estático.
 - `contentAlignment` e o `weight` não mudam o desenho (o conteúdo é um `slot`), e o `state`, o `indicator` e o `onRefresh` são do código.
