@@ -1,4 +1,4 @@
-# Arestas do conteúdo fora da imagem — [Não lançado] (épico `epic/arestas-fora-da-imagem`, PR #1417, MCP 0.30.0, schema v18)
+# Arestas do conteúdo fora da imagem — 2026-11-10 (épico `epic/arestas-fora-da-imagem`, PR #1417, MCP 0.30.0, schema v18)
 
 ## Adicionado
 
