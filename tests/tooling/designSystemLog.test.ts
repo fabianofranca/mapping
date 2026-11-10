@@ -1,7 +1,6 @@
 // @vitest-environment node
 // Etapa #478, fase RE3: o registro do DS é um arquivo por épico em docs/design-system/.
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 
 const DIR = 'docs/design-system';
@@ -59,7 +58,7 @@ describe('docs/design-system/', () => {
 // data que tem `## Pendências` reais e não diz que gravou precisa explicar cada item sem gravar.
 const sectionOf = (text: string, heading: string): string[] | null => {
   const lines = text.split('\n');
-  const at = lines.findIndex((l) => l === heading);
+  const at = lines.findIndex((l) => l.trimEnd() === heading);
   if (at < 0) return null;
   const rest = lines.slice(at + 1);
   const end = rest.findIndex((l) => /^## /.test(l));
@@ -93,7 +92,9 @@ function ruleViolation(
   );
   if (pending.length === 0) return null;
   const firstSync =
-    (sectionOf(text, '## Sincronização') ?? []).find((l) => l.trim() !== '') ?? '';
+    (sectionOf(text, '## Sincronização') ?? [])
+      .map((l) => l.trim())
+      .find((l) => l !== '') ?? '';
   if (WROTE.test(firstSync)) return null;
   const left = listItems(sectionOf(text, '## Ficou sem gravar') ?? []);
   if (left.length === 0) {
@@ -103,7 +104,7 @@ function ruleViolation(
     const moved = MOVED.exec(item);
     if (moved) {
       const slug = moved[1];
-      if (!files.some((f) => f === `${slug}.md` || f.endsWith(`-${slug}.md`))) {
+      if (!files.some((f) => NAME.exec(f)?.[2] === slug)) {
         return `${name}: "Passou para o registro do épico" aponta para epic/${slug}, que não tem registro na pasta`;
       }
     } else if (!/Motivo:/.test(item)) {
@@ -119,21 +120,24 @@ const base = (sync: string, left: string, pending = '- **Guia:** algo novo.'): s
 describe('regra do registro: o fechamento grava no artefato (#1390, DS2)', () => {
   const NAME_ = '2026-11-10-x.md';
   it('reprova o texto de 2026-11-10-barra-canvas-estreita.md de antes da DS1 (commit cf50aaec)', () => {
-    let old: string;
-    try {
-      old = execFileSync(
-        'git',
-        ['show', 'cf50aaec:docs/design-system/2026-11-10-barra-canvas-estreita.md'],
-        { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
-      );
-    } catch {
-      // clone raso sem o commit: a fixture abaixo tem o mesmo texto da seção que decide
-      old = base(
-        'Nenhuma gravação feita pelo agente: artefato curado à mão.',
-        '- As pendências acima (guias `Breadcrumbs`, `ActionMenu`, `Popover` e a barra do canvas), para aplicar à mão no artefato.',
-        '- **`Breadcrumbs`:** o meio do caminho recolhe.',
-      );
-    }
+    // Texto das seções que decidem, como estava em `cf50aaec` (antes da DS1), sem depender do git.
+    const old = [
+      '# Barra do canvas estreita — 2026-11-10 (épico `epic/barra-canvas-estreita`)',
+      '',
+      '## Pendências',
+      '',
+      '- **`Breadcrumbs`:** na barra do canvas estreita o meio do caminho recolhe e aparece o **…**.',
+      '- **`Popover`:** prop nova `anchor` (elemento que ancora o painel no lugar do host).',
+      '',
+      '## Sincronização',
+      '',
+      'Nenhuma gravação feita pelo agente: artefato curado à mão.',
+      '',
+      '## Ficou sem gravar',
+      '',
+      '- As pendências acima (guias `Breadcrumbs`, `ActionMenu`, `Popover` e a barra do canvas), para aplicar à mão no artefato.',
+      '',
+    ].join('\n');
     const why = ruleViolation('2026-11-10-barra-canvas-estreita.md', old, []);
     expect(why).toContain('2026-11-10-barra-canvas-estreita.md');
     expect(why).toContain('Motivo:');
@@ -164,6 +168,14 @@ describe('regra do registro: o fechamento grava no artefato (#1390, DS2)', () =>
     expect(ruleViolation(NAME_, t, ['outro.md'])).toBeNull();
     expect(ruleViolation(NAME_, t, ['2026-11-11-outro.md'])).toBeNull();
     expect(ruleViolation(NAME_, t, [])).toContain('epic/outro');
+    // o registro de `epic/barra-canvas` não é o de `epic/canvas`
+    const other = base(
+      'Nenhuma gravação.',
+      '- Passou para o registro do épico `epic/canvas`: guia.',
+    );
+    expect(ruleViolation(NAME_, other, ['2026-11-09-barra-canvas.md'])).toContain(
+      'epic/canvas',
+    );
   });
 
   it('passa com Pendências só "- XX1: nenhuma (…)"', () => {
@@ -193,12 +205,15 @@ describe('regra do registro: o fechamento grava no artefato (#1390, DS2)', () =>
 describe('textos da regra: o fechamento grava no artefato (#1390, DS2)', () => {
   const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
   const ds = readFileSync('docs/DESIGN-SYSTEM.md', 'utf8');
-  const part = (text: string, from: RegExp, to: RegExp): string => {
+  // Do começo de `from` até `to`; sem `to`, até o fim. O título final que sumir reprova.
+  const part = (text: string, from: RegExp, to?: RegExp): string => {
     const a = text.search(from);
     expect(a).toBeGreaterThanOrEqual(0);
     const rest = text.slice(a + 1);
+    if (!to) return rest;
     const b = rest.search(to);
-    return b < 0 ? rest : rest.slice(0, b);
+    expect(b).toBeGreaterThanOrEqual(0);
+    return rest.slice(0, b);
   };
 
   it('o passo "Fechamento" do SKILL.md manda gravar, cita "Ao gravar" e nega "curado à mão"', () => {
@@ -237,7 +252,7 @@ describe('textos da regra: o fechamento grava no artefato (#1390, DS2)', () => {
   });
 
   it('"Histórico de sincronização" traz o formato do item de "Ficou sem gravar"', () => {
-    const log = part(ds, /^## Histórico de sincronização$/m, /^\0/);
+    const log = part(ds, /^## Histórico de sincronização$/m);
     expect(log).toContain('Motivo:');
     expect(log).toContain('Passou para o registro do épico');
   });

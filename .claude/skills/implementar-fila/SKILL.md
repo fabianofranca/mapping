@@ -241,7 +241,7 @@ Com o fechamento feito e o CI verde. Antes de mesclar, confira também o `SERVER
   - com "Mesclar", mescle (`merge_pull_request`, `merge_method: merge`).
 - **Com `mesclar=auto`** (escrito pelo dono na chamada): mescle direto e mande `PushNotification` "#<n> mesclada: <resumo>".
 - **Fechamento que não gravou:** o registro do DS com `## Pendências` reais e sem gravação (a `## Sincronização` não abre por "Gravado no artefato", "Versão <n>" ou "Sem impacto") é defeito pendente, e o épico não mescla até gravar. Se a ferramenta `Artifact` falhar de verdade (sem permissão de edição, recusa repetida), a etapa fica `esperando dono`, com `PushNotification` e o erro da ferramenta. "Sem acesso" sem um erro da ferramenta não vale como motivo.
-- O merge, ou a pergunta ao dono, vem logo depois do CI verde e **não espera** o retorno do subagente do fechamento (passo 5 de "Por etapa").
+- O merge, ou a pergunta ao dono, vem logo depois do CI verde e **não espera** o retorno do subagente das issues e do comentário de fechamento (passo 5 de "Por etapa"). A gravação no DS é outra coisa: o subagente dela já voltou e o registro com a `## Sincronização` está no commit do PR antes do push, e o coordenador confere isso (a abertura da `## Sincronização`) antes de mesclar.
 
 **Não segure o merge de outro épico** à espera da Release do anterior: um épico pronto cuja Release não depende da anterior é mesclado sem esperar. A ordem das versões estáveis é garantida pela ordem dos merges, não pela espera.
 
