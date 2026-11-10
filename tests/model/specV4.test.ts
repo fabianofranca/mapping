@@ -418,7 +418,7 @@ describe('examples do tipo', () => {
     expectIssue(
       spec,
       `${BADGE}.examples[0].values.text`,
-      'deve ser texto, número ou null',
+      'deve ser texto, número ou null (ou uma lista de linhas, num campo table)',
     );
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });

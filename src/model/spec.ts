@@ -983,7 +983,8 @@ const exampleShape = z
         // A lista de linhas de um campo `table`; as linhas e as células são conferidas em
         // `checkExamples`, com a mensagem e o caminho exatos.
         z.union([z.string(), z.number(), z.null(), z.array(z.unknown())], {
-          error: 'deve ser texto, número ou null',
+          error:
+            'deve ser texto, número ou null (ou uma lista de linhas, num campo table)',
         }),
       )
       .optional(),

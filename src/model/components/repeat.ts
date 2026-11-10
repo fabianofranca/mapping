@@ -118,13 +118,16 @@ function scoped(value: unknown, columns: ReadonlySet<string>, scope: string): un
   if (Array.isArray(value)) return value.map((item) => scoped(item, columns, scope));
   if (typeof value !== 'object' || value === null) return value;
   // Num `repeat` aninhado o `$index` do `template` é o do mais interno: este escopo não o toca.
-  const inner = new Set(columns);
-  inner.delete(INDEX_FIELD);
   const isRepeat = (value as { type?: unknown }).type === 'repeat';
+  const inner = (): ReadonlySet<string> => {
+    const set = new Set(columns);
+    set.delete(INDEX_FIELD);
+    return set;
+  };
   return Object.fromEntries(
     Object.entries(value).map(([key, item]) => [
       key,
-      scopedEntry(key, item, isRepeat && key === 'template' ? inner : columns, scope),
+      scopedEntry(key, item, isRepeat && key === 'template' ? inner() : columns, scope),
     ]),
   );
 }

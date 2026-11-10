@@ -195,9 +195,13 @@ function reach(
   }
   const own = extentOf(child);
   // Girado, os lados do traço e da sombra giram: vale o maior em volta, com o que há dentro dele.
-  const inside = child.type === 'frame' && child.clip ? NONE : deepExtent(child);
-  const e = child.rotation ? isotropic(maxExtent(own, inside)) : own;
+  const e = child.rotation ? isotropic(maxExtent(own, rotatedInside(child))) : own;
   return isNone(e) ? null : { region: grow(rect, e), limit: e };
+}
+
+/** O que há dentro de um filho girado (quadro que recorta não conta: o recorte vale por ele). */
+function rotatedInside(child: SceneNode): Extent {
+  return child.type === 'frame' && child.clip ? NONE : deepExtent(child);
 }
 
 /**
