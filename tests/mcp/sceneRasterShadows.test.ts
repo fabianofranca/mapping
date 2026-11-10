@@ -124,3 +124,26 @@ describe('contorno com vão (stroke.gaps) no raster', () => {
     expect(pixel(raster, 10 + 40 - k - 1, 10 + 24 - k - 1)[1]).toBeLessThan(200); // canto de baixo
   });
 });
+
+describe('lista de sombras em nó que não é frame, rect nem ellipse', () => {
+  it('desenha só a primeira sombra, como a app', () => {
+    const line: SceneNode = {
+      ...baseNode({
+        id: 'p',
+        name: 'p',
+        width: 20,
+        height: 20,
+        effects: [sharp('#ff0000', undefined, 0, 0), sharp('#0000ff', undefined, 8, 0)],
+        fills: [],
+      }),
+      type: 'path',
+      d: 'M0 0H20V20H0Z',
+      fillRule: 'nonzero',
+      transform: [1, 0, 0, 1, 10, 10],
+    };
+    const raster = canvas(60, 40);
+    paint(raster, line);
+    expect(pixel(raster, 15, 20)).toEqual([255, 0, 0, 255]);
+    expect(pixel(raster, 35, 20)).toEqual(WHITE);
+  });
+});

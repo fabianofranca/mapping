@@ -110,10 +110,10 @@ const DIRECT_CONDITION_OPS: readonly string[] = [
 const ID_PATTERN = /^[a-z0-9][a-z0-9_-]*$/;
 const PERCENT_PATTERN = /^\d+(\.\d+)?%$/;
 
-/** Chaves de estilo que o `repeat` não tem: o desenho é do `template` de cada linha. */
 /** Máximo de sombras por nó (`shadow` como lista, v4). */
 const MAX_SHADOWS = 4;
 
+/** Chaves de estilo que o `repeat` não tem: o desenho é do `template` de cada linha. */
 const REPEAT_REJECTED_KEYS = ['fill', 'stroke', 'shadow', 'cornerRadius'];
 
 const BASE_KEYS = [

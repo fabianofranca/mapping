@@ -115,12 +115,15 @@ export function gapOutlines(
       if (!last || !same(last, p)) current.push(p);
     }
   };
+  let cutAny = false;
   const cut = (): void => {
+    cutAny = true;
     if (!started) clean = false;
     started = true;
     flush();
   };
   const straight = (run: Run): void => {
+    if (same(run.a, run.b)) return add(run.a); // lado sem parte reta (pílula): só passa
     const parts = kept(run, gaps);
     if (parts.length === 0) return cut();
     parts.forEach(([t0, t1], i) => {
@@ -139,6 +142,7 @@ export function gapOutlines(
   straight({ side: 'left', a: { x: x0, y: y1 - bl }, b: { x: x0, y: y0 + tl } });
   add(...arc(x0 + tl, y0 + tl, tl, Math.PI));
 
+  if (!cutAny) return [];
   if (current.length > 1 && clean && out.length > 0) {
     const head = out[0]!;
     const join = same(current[current.length - 1]!, head[0]!) ? head.slice(1) : head;

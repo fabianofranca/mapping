@@ -819,6 +819,12 @@ function alignedShapes(node: SceneNode, shapes: Subpath[]): Subpath[] {
   return [{ points: points.map((p) => ({ x: p.x + d, y: p.y + d })), closed: true }];
 }
 
+/** As sombras que o nó desenha: a lista em frame, rect e ellipse; nos outros tipos, a primeira externa (como a app). */
+function castingEffects(node: SceneNode): readonly Shadow[] {
+  const boxed = node.type === 'frame' || node.type === 'rect' || node.type === 'ellipse';
+  return boxed ? node.effects : node.effects.filter((e) => !e.inner).slice(0, 1);
+}
+
 /** O raio de um canto da sombra: o do nó mais o `spread`, sem passar de 0 (canto reto continua reto). */
 function spreadRadius(radius: CornerRadius, spread: number): CornerRadius {
   const grow = (r: number): number => (r > 0 ? Math.max(0, r + spread) : 0);
@@ -1016,7 +1022,8 @@ class Painter {
   ): void {
     if (node.type === 'text' || shapes.length === 0) return;
     // A primeira sombra da lista fica por cima: a última é pintada primeiro.
-    for (const shadow of [...node.effects].reverse()) {
+    const effects = castingEffects(node);
+    for (const shadow of [...effects].reverse()) {
       const color = parseColor(shadow.color);
       if (shadow.inner || color === null) continue;
       const casting = spreadShapes(node, shapes, shadow.spread ?? 0);

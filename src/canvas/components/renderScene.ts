@@ -225,9 +225,14 @@ class Renderer {
         if (node.stroke) {
           if (partialSides(node.stroke))
             shapes.push(...this.sideStrokes(node.stroke, box));
-          else if (node.stroke.gaps?.length)
-            shapes.push(...this.gapStrokes(node.stroke, box, node.cornerRadius));
-          else shapes.push(this.rectStroke(node.stroke, box, node.cornerRadius));
+          else {
+            const gapped = this.gapStrokes(node.stroke, box, node.cornerRadius);
+            shapes.push(
+              ...(gapped.length > 0
+                ? gapped
+                : [this.rectStroke(node.stroke, box, node.cornerRadius)]),
+            );
+          }
         }
         if (node.fills.length === 0 && !node.stroke && node.type === 'frame') {
           // Quadro transparente: uma área clicável invisível, para o hover achar o quadro.
@@ -1029,13 +1034,13 @@ export function decompose(m: Matrix): {
   return new Konva.Transform([...m]).decompose();
 }
 
-/** Caminho de retângulo arredondado no contexto (para o clip dos quadros). */
 /** O que `roundedRectPath` usa do contexto: serve ao do Konva e ao nativo do canvas 2D. */
 type PathContext = Pick<
   CanvasRenderingContext2D,
   'beginPath' | 'moveTo' | 'lineTo' | 'arcTo' | 'closePath'
 >;
 
+/** Caminho de retângulo arredondado no contexto (para o clip dos quadros). */
 function roundedRectPath(
   ctx: PathContext,
   width: number,

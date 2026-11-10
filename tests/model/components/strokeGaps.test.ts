@@ -79,4 +79,20 @@ describe('gapOutlines', () => {
     expect(top.length).toBeGreaterThan(0);
     for (const p of top) expect(near(p.y, 1)).toBe(true);
   });
+
+  it('uma pílula (lados retos de tamanho 0) com vão em cima continua uma linha só', () => {
+    const pill = gapOutlines(
+      stroke({ gaps: [{ side: 'top', from: 30, to: 60 }] }),
+      100,
+      40,
+      20,
+    );
+    expect(pill).toHaveLength(1);
+  });
+
+  it('sem nenhum trecho cortado, não há linhas (vale o contorno de sempre)', () => {
+    expect(
+      gapOutlines(stroke({ gaps: [{ side: 'top', from: 200, to: 300 }] }), 100, 40, 6),
+    ).toEqual([]);
+  });
 });
