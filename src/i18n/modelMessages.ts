@@ -6,6 +6,7 @@
 import { libraryMessages } from '../model/messages/library';
 import { specMessages } from '../model/messages/spec';
 import { versionMessages } from '../model/messages/versions';
+import { engineEnUS } from './modelMessagesEngine';
 import { componentEnUS, iconsFileEnUS, originsEnUS } from './modelMessagesComponent';
 import {
   MODEL_MESSAGE_TEMPLATES,
@@ -432,6 +433,7 @@ export const modelMessagesEnUS: Record<keyof typeof modelMessagesPtBR, string> =
   ...componentEnUS,
   ...iconsFileEnUS,
   ...originsEnUS,
+  ...engineEnUS,
   'model.catalog.fileMissing': 'missing file ({path})',
   'model.catalog.invalidComponent': 'invalid component',
   'model.catalog.typeOutside': 'type "{typeId}" is outside the specialization',

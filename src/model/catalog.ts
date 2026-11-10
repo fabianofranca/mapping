@@ -1,5 +1,5 @@
 import { hasSlotComponent } from './componentCatalog';
-import { issueParts, modelMessage, rawMessage, type ModelMessage } from './modelMessage';
+import { issueParts, modelMessage, type ModelMessage } from './modelMessage';
 import type { ComponentFile, FieldValues } from './components/componentFormat';
 import {
   type TextMeasurer,
@@ -14,7 +14,11 @@ import { renderOrder } from './components/screen';
 import { resolveTokens } from './components/tokens';
 import type { Size } from './geometry';
 import { type LibraryFile, type LibraryReport, validateLibrary } from './library';
-import { defaultValues, nodeProbeLibrary, withoutNodePrefix } from './libraryDrawing';
+import {
+  defaultValues,
+  nodeProbeLibrary,
+  withoutNodePrefixMessage,
+} from './libraryDrawing';
 import { resolveCode } from './codeVariants';
 import { repoLink } from './codeLocations';
 import { packageSpecNameOf } from './libraryPackage';
@@ -518,8 +522,7 @@ export function drawEntry(
     box,
     { measure },
   );
-  // Os avisos do motor não têm código: seguem em texto.
-  return { root: drawn.root, warnings: drawn.warnings.map(rawMessage) };
+  return { root: drawn.root, warnings: drawn.messages };
 }
 
 /**
@@ -574,9 +577,7 @@ function systemDrawing(
     { node: example.json },
     { system: origin.system, measure },
   );
-  const warnings: ModelMessage[] = (result.warnings ?? []).map((w) =>
-    rawMessage(withoutNodePrefix(w)),
-  );
+  const warnings: ModelMessage[] = result.messages.map(withoutNodePrefixMessage);
   if (result.error !== undefined) {
     return null;
   }
