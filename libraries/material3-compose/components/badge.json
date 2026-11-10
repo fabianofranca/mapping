@@ -59,8 +59,9 @@
           "justify": "center"
         },
         "width": "hug",
-        "height": 16,
+        "height": "hug",
         "minWidth": 16,
+        "minHeight": 16,
         "cornerRadius": {
           "$token": "corner-full"
         },
@@ -89,12 +90,12 @@
               },
               "letterSpacing": {
                 "$token": "label-small-tracking"
-              }
+              },
+              "verticalAlign": "cap-middle"
             },
             "color": {
               "$token": "on-error"
-            },
-            "height": 16
+            }
           }
         ]
       }

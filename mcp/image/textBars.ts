@@ -1,6 +1,7 @@
 import type { TextMeasurer } from '../../src/model/components/instantiate';
 import type { RunLayout, RunPiece } from '../../src/model/components/richText';
 import type { SceneTextRun, TextNode } from '../../src/model/components/scene';
+import { WRAP_SLACK } from '../../src/model/components/textWrap';
 import type { PixelRect } from './raster';
 
 // Barras do texto de uma cena no servidor (o desenho simplificado, sem fonte): uma por linha medida.
@@ -20,7 +21,7 @@ export function breakLines(node: TextNode, widthOf: (text: string) => number): s
     let line = '';
     for (const word of words) {
       const candidate = line === '' ? word : `${line} ${word}`;
-      if (line !== '' && node.width > 0 && widthOf(candidate) > node.width + 1e-6) {
+      if (line !== '' && node.width > 0 && widthOf(candidate) > node.width + WRAP_SLACK) {
         lines.push(line);
         line = word;
       } else {
@@ -66,10 +67,59 @@ export interface TextBar extends PixelRect {
   readonly color?: string;
 }
 
-/** Deslocamento vertical do texto rico na caixa do nó (`verticalAlign`). */
-export function richShift(node: TextNode, contentHeight: number): number {
+/** Medidas verticais da fonte do nó, para o `cap-middle` (px no tamanho do nó). */
+export interface CapMetrics {
+  readonly ascent: number;
+  readonly descent: number;
+  readonly capHeight: number;
+}
+
+/** Sem fonte (as barras), as proporções usuais: ascendente 0,8, descendente 0,2, maiúscula 0,7 do corpo. */
+export const capMetricsFallback = (size: number): CapMetrics => ({
+  ascent: 0.8 * size,
+  descent: 0.2 * size,
+  capHeight: 0.7 * size,
+});
+
+/**
+ * `cap-middle` (decisão 3 da #896): quanto descer o texto, posto no topo, para o bloco do topo da
+ * maiúscula da primeira linha à linha de base da última ficar no centro da caixa. A linha de base
+ * de uma linha de altura `height` que começa em `top` é `top + height / 2 + (ascent − descent) / 2`
+ * (a mesma da app e do desenho dos glifos).
+ */
+export function capMiddleShift(input: {
+  readonly boxHeight: number;
+  readonly metrics: CapMetrics;
+  /** Topo e altura da primeira e da última linha, com o texto no topo. */
+  readonly first: { readonly y: number; readonly height: number };
+  readonly last: { readonly y: number; readonly height: number };
+}): number {
+  const { boxHeight, metrics, first, last } = input;
+  if (boxHeight <= 0) return 0;
+  const baseline = (line: { y: number; height: number }) =>
+    line.y + line.height / 2 + (metrics.ascent - metrics.descent) / 2;
+  const block = baseline(last) - baseline(first) + metrics.capHeight;
+  return (boxHeight - block) / 2 + metrics.capHeight - baseline(first);
+}
+
+/**
+ * Deslocamento vertical do texto rico na caixa do nó (`verticalAlign`). No `cap-middle` vale o
+ * `capHeight` da fonte base do nó (`metrics`) e as linhas de base da primeira e da última linha.
+ */
+export function richShift(
+  node: TextNode,
+  layout: RunLayout,
+  metrics: CapMetrics = capMetricsFallback(node.style.fontSize),
+): number {
   if (node.height <= 0) return 0;
-  const free = node.height - contentHeight;
+  if (node.style.verticalAlign === 'cap-middle') {
+    const first = layout.lines[0];
+    const last = layout.lines[layout.lines.length - 1];
+    return first && last
+      ? capMiddleShift({ boxHeight: node.height, metrics, first, last })
+      : 0;
+  }
+  const free = node.height - layout.height;
   if (node.style.verticalAlign === 'middle') return free / 2;
   return node.style.verticalAlign === 'bottom' ? free : 0;
 }
@@ -100,7 +150,7 @@ function richBars(
   layout: RunLayout,
   runs: readonly SceneTextRun[],
 ): TextBar[] {
-  const shift = richShift(node, layout.height);
+  const shift = richShift(node, layout);
   return layout.lines.flatMap((line) =>
     line.pieces.flatMap((piece) => {
       const run = runs[piece.run];
@@ -116,10 +166,25 @@ type LineStyle = TextNode['style'];
 export const lineHeightOf = (style: LineStyle): number =>
   style.lineHeight ?? style.fontSize * 1.2;
 
-/** Topo do bloco de `count` linhas no nó, pelo `verticalAlign`. */
-export function blockTop(node: TextNode, count: number, lineHeight: number): number {
+/**
+ * Topo do bloco de `count` linhas no nó, pelo `verticalAlign`. No `cap-middle`, `metrics` são as da
+ * fonte do nó (sem elas, as proporções de reserva das barras).
+ */
+export function blockTop(
+  node: TextNode,
+  count: number,
+  lineHeight: number,
+  metrics: CapMetrics = capMetricsFallback(node.style.fontSize),
+): number {
   const total = count * lineHeight;
   const { verticalAlign } = node.style;
+  if (verticalAlign === 'cap-middle')
+    return capMiddleShift({
+      boxHeight: node.height,
+      metrics,
+      first: { y: 0, height: lineHeight },
+      last: { y: (count - 1) * lineHeight, height: lineHeight },
+    });
   if (verticalAlign === 'middle') return (node.height - total) / 2;
   return verticalAlign === 'bottom' ? node.height - total : 0;
 }

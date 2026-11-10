@@ -7,7 +7,12 @@
  * shape e todo contêiner levam o atributo `sceneId`, para o visualizador achar o nó da cena
  * a partir do alvo de um evento do Konva.
  */
-import { sideSegments } from '../../model/components/strokeSides';
+import {
+  growRadius,
+  partialSides,
+  sideSegments,
+} from '../../model/components/strokeSides';
+import { CUT_REACH, WRAP_SLACK, cutsText } from '../../model/components/textWrap';
 import { canvasFontFamily } from '../../model/components/fontFamily';
 import Konva from 'konva/lib/Core';
 import { Ellipse as KonvaEllipse } from 'konva/lib/shapes/Ellipse';
@@ -29,8 +34,9 @@ import {
   type TextStyle,
   hasChildren,
 } from '../../model/components/scene';
-import type { RunPiece } from '../../model/components/richText';
+import type { RunLayout, RunPiece } from '../../model/components/richText';
 import { textBoxLimits } from './textLimits';
+import { capMetricsOf, capMiddleShift, konvaBaseline } from './capMiddle';
 import { cachedEmbeddedImage, loadEmbeddedImage } from './imageLoader';
 import { DEFAULT_PALETTE, type RenderPalette } from './palette';
 import type { RenderWarning, RenderWarningCode } from './renderWarnings';
@@ -134,6 +140,16 @@ class Renderer {
       });
     }
 
+    if (node.type === 'text' && cutsText(node)) {
+      const { width } = node;
+      // Recorte só na horizontal (a caixa do texto); na vertical, o que o texto desenha fica.
+      container.clipFunc((ctx) => {
+        ctx.beginPath();
+        ctx.rect(0, -CUT_REACH, width, 2 * CUT_REACH);
+        ctx.closePath();
+      });
+    }
+
     const shapes = this.shapesOf(node);
     // A área clicável invisível de um quadro transparente não pinta: não é dona da sombra.
     const shadowOwner = shadow
@@ -193,7 +209,8 @@ class Renderer {
           shapes.push(...this.fillShape(shape, paint, box));
         }
         if (node.stroke) {
-          if (node.stroke.sides) shapes.push(...this.sideStrokes(node.stroke, box));
+          if (partialSides(node.stroke))
+            shapes.push(...this.sideStrokes(node.stroke, box));
           else shapes.push(this.rectStroke(node.stroke, box, node.cornerRadius));
         }
         if (node.fills.length === 0 && !node.stroke && node.type === 'frame') {
@@ -221,7 +238,7 @@ class Renderer {
           shapes.push(...this.fillShape(new KonvaEllipse(geometry), paint, box));
         }
         if (node.stroke) {
-          const inset = strokeInset(node.stroke);
+          const inset = strokeInset(node.stroke) - (node.stroke.offset ?? 0);
           const shape = new KonvaEllipse({
             ...geometry,
             radiusX: Math.max(0, geometry.radiusX - inset),
@@ -266,23 +283,38 @@ class Renderer {
           fontSize: style.fontSize,
           fontStyle: fontStyle(style.fontWeight, style.italic),
           align: style.align,
-          verticalAlign: style.verticalAlign,
+          // `cap-middle` é do `capMiddleY`: o Konva desenha em `top` e o nó desce o deslocamento.
+          verticalAlign:
+            style.verticalAlign === 'cap-middle' ? 'top' : style.verticalAlign,
           lineHeight: style.lineHeight ? style.lineHeight / style.fontSize : 1.2,
           letterSpacing: style.letterSpacing ?? 0,
           textDecoration: style.decoration ?? '',
           wrap: style.wrap === 'none' ? 'none' : 'word',
           ellipsis: style.ellipsis === true,
         };
-        if (node.width > 0) attrs.width = node.width;
+        // `wrap: none` sem `ellipsis` numa caixa fixa: o Text não leva `width` (o Konva tiraria a
+        // letra inteira) e o grupo recorta por pixel na caixa; o `align` é do `x` (decisão 19).
+        const cut = cutsText(node);
+        if (node.width > 0 && !cut) {
+          // A folga da quebra (0,5 px), a mesma do medidor; o `x` desfaz o deslocamento do `align`.
+          attrs.width = node.width + WRAP_SLACK;
+          attrs.x = slackShift(style.align);
+        }
         if (node.height > 0) attrs.height = node.height;
         const clipped = maxLinesBox(attrs, node, style);
         if (clipped) {
           attrs.height = clipped.height;
           attrs.y = clipped.offsetY;
         }
+        if (style.verticalAlign === 'cap-middle')
+          attrs.y = capMiddleY(attrs, node, style);
         // Texto do SVG sem largura: o x é a âncora (`text-anchor`), então o texto centrado
         // ou à direita cresce para a esquerda a partir dela.
         const anchor = (shape: KonvaText): KonvaText => {
+          if (cut) {
+            shape.x(cutLeft(style.align, node.width, shape.width()));
+            return shape;
+          }
           if (node.width > 0 || style.align === 'left' || style.align === 'justify')
             return shape;
           shape.offsetX(style.align === 'center' ? shape.width() / 2 : shape.width());
@@ -334,7 +366,10 @@ class Renderer {
     const shapes: Konva.Shape[] = [];
     const layout = node.runLayout;
     if (!layout) return shapes;
-    const shift = verticalShift(node, layout.height);
+    const shift =
+      node.style.verticalAlign === 'cap-middle'
+        ? capMiddleRunsShift(node, layout)
+        : verticalShift(node, layout.height);
     for (const line of layout.lines) {
       for (const piece of line.pieces) {
         const run = runs[piece.run];
@@ -488,13 +523,16 @@ class Renderer {
   }
 
   private rectStroke(stroke: Stroke, box: Box, radius: CornerRadius): Konva.Shape {
-    const inset = strokeInset(stroke);
+    // `offset`: o contorno afastado da forma (o anel cresce de cada lado, com o raio + offset).
+    const offset = stroke.offset ?? 0;
+    const align = strokeInset(stroke);
+    const inset = align - offset;
     const shape = new KonvaRect({
       x: inset,
       y: inset,
       width: Math.max(0, box.width - inset * 2),
       height: Math.max(0, box.height - inset * 2),
-      cornerRadius: konvaRadius(shrinkRadius(radius, inset)),
+      cornerRadius: konvaRadius(shrinkRadius(growRadius(radius, offset), align)),
     });
     this.applyStroke(shape, stroke);
     return shape;
@@ -554,6 +592,55 @@ function verticalShift(node: TextNode, contentHeight: number): number {
     default:
       return 0;
   }
+}
+
+/**
+ * `cap-middle` no texto simples: o `y` do nó para o bloco (topo da maiúscula da primeira linha à
+ * base da última) ficar no centro da caixa. `attrs` já traz a largura, a altura (a do `maxLines`,
+ * se cortou) e `verticalAlign: top`; as linhas são as que o Konva desenha com eles.
+ */
+function capMiddleY(attrs: TextConfig, node: TextNode, style: TextStyle): number {
+  if (node.height <= 0) return 0;
+  const probe = new KonvaText(attrs);
+  const metrics = capMetricsOf(probe, style.fontSize);
+  const lines = Math.max(1, probe.textArr.length);
+  probe.destroy();
+  const lineHeight = (attrs.lineHeight ?? 1.2) * style.fontSize;
+  const first = konvaBaseline(0, lineHeight, metrics);
+  return capMiddleShift({
+    boxHeight: node.height,
+    capHeight: metrics.capHeight,
+    firstBaseline: first,
+    lastBaseline: first + (lines - 1) * lineHeight,
+  });
+}
+
+/**
+ * `cap-middle` nos trechos: a mesma regra com o `capHeight` da fonte base do nó e as linhas de
+ * base da primeira e da última linha do `runLayout` (o pedaço fica centrado na altura da linha,
+ * então a base é a do pedaço com a fonte base).
+ */
+function capMiddleRunsShift(node: TextNode, layout: RunLayout): number {
+  const first = layout.lines[0];
+  const last = layout.lines[layout.lines.length - 1];
+  if (node.height <= 0 || !first || !last) return 0;
+  const { style } = node;
+  const sample = new KonvaText({
+    text: 'M',
+    fontFamily: canvasFontFamily(style.fontFamily),
+    fontSize: style.fontSize,
+    fontStyle: fontStyle(style.fontWeight, style.italic),
+  });
+  const metrics = capMetricsOf(sample, style.fontSize);
+  sample.destroy();
+  const baseline = (line: { y: number; height: number }): number =>
+    konvaBaseline(line.y, line.height, metrics);
+  return capMiddleShift({
+    boxHeight: node.height,
+    capHeight: metrics.capHeight,
+    firstBaseline: baseline(first),
+    lastBaseline: baseline(last),
+  });
 }
 
 /** A cor do trecho como preenchimento do Konva (`none` = sem preenchimento). */
@@ -728,6 +815,19 @@ function applyShadow(shape: Konva.Shape, shadow: Shadow): void {
   shape.shadowOffset(shadow.offset);
   shape.shadowOpacity(1);
   shape.shadowEnabled(true);
+}
+
+/** Onde começa a linha de largura `text` numa caixa `box` (uma linha que passa da caixa começa na borda). */
+function cutLeft(align: TextStyle['align'], box: number, text: number): number {
+  if (text >= box) return 0;
+  if (align === 'center') return (box - text) / 2;
+  return align === 'right' ? box - text : 0;
+}
+
+/** A largura do Text leva a folga da quebra; o `x` volta o que o `align` desloca por causa dela. */
+function slackShift(align: TextStyle['align']): number {
+  if (align === 'center') return -WRAP_SLACK / 2;
+  return align === 'right' ? -WRAP_SLACK : 0;
 }
 
 /** Metade do traço que entra na caixa: por dentro, o traço inteiro fica dentro; por fora, nada. */

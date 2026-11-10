@@ -121,6 +121,54 @@
         }
       },
       {
+        "type": "rect",
+        "name": "anel de foco",
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0
+        },
+        "height": 56,
+        "cornerRadius": {
+          "$if": {
+            "$and": [
+              {
+                "$eq": ["expanded", "true"]
+              },
+              {
+                "$eq": ["style", "bar"]
+              }
+            ]
+          },
+          "then": {
+            "$token": "corner-none"
+          },
+          "else": {
+            "$if": {
+              "$eq": ["style", "bar"]
+            },
+            "then": {
+              "$token": "corner-full"
+            },
+            "else": {
+              "$token": "corner-extra-large"
+            }
+          }
+        },
+        "fill": "none",
+        "stroke": {
+          "color": {
+            "$token": "secondary"
+          },
+          "width": 3,
+          "align": "outside",
+          "offset": 2
+        },
+        "visible": {
+          "$eq": ["interaction", "focused"]
+        }
+      },
+      {
         "type": "frame",
         "name": "campo de entrada",
         "clip": false,
@@ -378,7 +426,8 @@
                         "$token": "body-large-tracking"
                       },
                       "wrap": "none",
-                      "maxLines": 1
+                      "maxLines": 1,
+                      "verticalAlign": "cap-middle"
                     },
                     "color": {
                       "$token": "on-surface"
@@ -405,7 +454,8 @@
                   },
                   "letterSpacing": {
                     "$token": "body-large-tracking"
-                  }
+                  },
+                  "verticalAlign": "cap-middle"
                 },
                 "color": {
                   "$token": "on-surface-variant"

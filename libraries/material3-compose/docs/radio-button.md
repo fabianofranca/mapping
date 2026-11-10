@@ -73,7 +73,7 @@ O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o des
 
 **O que ainda difere do Compose**
 
-- Sem ripple animado, sem transição entre estados e sem a animação do ponto (`animateDpAsState`): o desenho é um quadro parado do estado final. O anel de foco por fora da forma não é desenhado: a raiz recorta (#896).
+- Sem ripple animado, sem transição entre estados e sem a animação do ponto (`animateDpAsState`): o desenho é um quadro parado do estado final. O Compose não define anel de foco para este tipo no commit fixado (nenhum `*Tokens.kt` dele traz `FocusIndicatorColor`): nenhum é desenhado.
 - A camada de 40 é maior que a área de 24 do desenho e passa 8 para cada lado; a raiz recorta o que sai da caixa da instância, então a camada aparece cortada em 8 na borda esquerda. No Compose a camada sai do `selectable` da `Row` e do `minimumInteractiveComponentSize`.
 - Com `onClick` preenchido o Compose aumenta a área para 48 (`minimumInteractiveComponentSize`); o desenho fica com os 24 da chamada com `onClick = null`.
 - O rótulo a 0,38 quando desabilitado é convenção do desenho: o `Text` do Compose herda a cor do conteúdo e não diminui sozinho.

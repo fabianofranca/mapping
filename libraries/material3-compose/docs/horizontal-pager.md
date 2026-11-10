@@ -65,4 +65,4 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 
 **O que ainda difere do Compose**
 
-- `reverseLayout`, `userScrollEnabled`, `pageSize` e o estado de página não existem num desenho estático; as páginas aparecem lado a lado, na ordem da marcação.
+- `userScrollEnabled`, `pageSize` e o estado de página não existem num desenho estático; as páginas aparecem lado a lado, na ordem da marcação, e `reverseLayout` as põe em ordem inversa a partir do fim (`layout.reverse`).

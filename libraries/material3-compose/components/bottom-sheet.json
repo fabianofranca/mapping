@@ -35,7 +35,16 @@
   "template": {
     "type": "frame",
     "name": "bottom sheet",
-    "cornerRadius": [28, 28, 0, 0],
+    "cornerRadius": [
+      {
+        "$token": "corner-extra-large"
+      },
+      {
+        "$token": "corner-extra-large"
+      },
+      0,
+      0
+    ],
     "fill": {
       "$token": "surface-container-low"
     },
@@ -58,8 +67,12 @@
         },
         "else": "none"
       },
-      "y": 1,
-      "blur": 2
+      "y": {
+        "$token": "elevation-1-y"
+      },
+      "blur": {
+        "$token": "elevation-1-blur"
+      }
     },
     "layout": {
       "type": "column",
@@ -364,7 +377,8 @@
                   "$token": "body-large-tracking"
                 },
                 "maxLines": 1,
-                "ellipsis": true
+                "ellipsis": true,
+                "verticalAlign": "cap-middle"
               },
               "color": {
                 "$token": "on-surface"

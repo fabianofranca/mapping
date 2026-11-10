@@ -123,6 +123,7 @@
             },
             "default": "center"
           },
+          "reverse": { "$eq": ["reverseLayout", "true"] },
           "justify": "start"
         }
       }

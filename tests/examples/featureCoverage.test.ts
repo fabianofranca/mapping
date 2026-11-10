@@ -74,9 +74,9 @@ const MISSING_TODAY: string[] = [
   // `font.family` literal: o último componente da Material 3 que o usava migrou (etapa #833, M5) e
   // herda a Roboto do token `font-sans`; coberto por tests/model/components/ e pelo roteiro R25.
   'component:font.family',
-  // `stroke.align: outside`: o `text-field` e o `switch` deixaram de usá-lo ao migrar para o formato 4
-  // (etapa #833, M3); coberto por tests/model/components/ e pelo roteiro R25.
-  'component:stroke.align=outside',
+  // `font.verticalAlign: "middle"`: a Material 3 passou os rótulos e os números a `cap-middle` (etapa #896,
+  // FX6, decisão 23); o `middle` segue coberto por tests/e2e/textMetrics.spec.ts e pelo roteiro R25.
+  'component:font.verticalAlign=middle',
   // Texto do componente v4 (etapa #747, CF3): a biblioteca Material 3 já usa o `font.maxLines` no
   // `text` (etapa #833, M1); o resto das bibliotecas distribuídas não migrou. Coberto por
   // tests/model/components/textWrap.test.ts, tests/e2e/textMetrics.spec.ts e pelo roteiro R25.

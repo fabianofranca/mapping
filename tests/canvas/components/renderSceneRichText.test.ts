@@ -5,6 +5,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { installFakeCanvas } from '../harness';
 import { canvasFontFamily } from '../../../src/model/components/fontFamily';
 import { renderScene } from '../../../src/canvas/components/renderScene';
+import { WRAP_SLACK } from '../../../src/model/components/textWrap';
 import type {
   ComponentFile,
   FieldValues,
@@ -218,6 +219,6 @@ describe('texto rico no Konva', () => {
     expect(texts).toHaveLength(1);
     expect(texts[0]?.text()).toBe('olá mundo');
     expect(texts[0]?.wrap()).toBe('word');
-    expect(texts[0]?.width()).toBe(100);
+    expect(texts[0]?.width()).toBe(100 + WRAP_SLACK);
   });
 });

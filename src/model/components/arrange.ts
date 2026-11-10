@@ -10,15 +10,18 @@ import type {
   ComponentFile,
   Expr,
   FieldValues,
+  LayoutJustify,
   SlotTemplate,
   TemplateNode,
 } from './componentFormat';
-import { evaluate } from './expressions';
+import { evaluate, evaluateBoolean } from './expressions';
 import {
   LAYOUT_ALIGNS,
   LAYOUT_JUSTIFIES,
   LAYOUT_TYPES,
   allowedValue,
+  justifySpacing,
+  mirrorMain,
 } from './layoutValues';
 import {
   type Box,
@@ -37,7 +40,9 @@ export interface ResolvedSlotLayout {
   readonly gap: number;
   readonly padding: Padding;
   readonly align: 'start' | 'center' | 'end' | 'stretch';
-  readonly justify: 'start' | 'center' | 'end' | 'space-between';
+  readonly justify: LayoutJustify;
+  /** Filhos em ordem inversa e `start` no fim (`layout.reverse`). */
+  readonly reverse: boolean;
 }
 
 const NO_LAYOUT: ResolvedSlotLayout = {
@@ -46,6 +51,7 @@ const NO_LAYOUT: ResolvedSlotLayout = {
   padding: { top: 0, right: 0, bottom: 0, left: 0 },
   align: 'start',
   justify: 'start',
+  reverse: false,
 };
 
 /** Primeiro nó `slot` do template (busca em profundidade pelos `children` dos frames), ou nenhum. */
@@ -119,6 +125,8 @@ export function resolveSlotLayout(
     padding,
     align: choice(layout.align, LAYOUT_ALIGNS, 'start', values),
     justify: choice(layout.justify, LAYOUT_JUSTIFIES, 'start', values),
+    reverse:
+      layout.reverse !== undefined && evaluateBoolean(layout.reverse, values, false),
   };
 }
 
@@ -187,19 +195,18 @@ export function layoutChildren(
   const mains = children.map((c) => (row ? c.box.width : c.box.height));
   const total = mains.reduce((sum, s) => sum + s, 0) + layout.gap * (n - 1);
   const free = Math.max(0, mainContent - total);
-  let offset = 0;
-  let extra = 0;
-  if (layout.justify === 'center') offset = free / 2;
-  else if (layout.justify === 'end') offset = free;
-  else if (layout.justify === 'space-between' && n > 1) extra = free / (n - 1);
+  const { offset, extra } = justifySpacing(layout.justify, free, n);
 
   let cursor = mainStart + offset;
   return children.map((child, i) => {
     const main = mains[i] ?? 0;
     const crossSize = row ? child.box.height : child.box.width;
     const cross = crossAxis(layout, crossStart, crossContent, crossSize);
-    const mainPos = cursor;
+    const forward = cursor;
     cursor += main + layout.gap + extra;
+    const mainPos = layout.reverse
+      ? mirrorMain(forward, main, mainStart, mainContent)
+      : forward;
     const raw: Box = row
       ? { x: mainPos, y: cross.pos, width: main, height: cross.size }
       : { x: cross.pos, y: mainPos, width: cross.size, height: main };
@@ -279,9 +286,11 @@ export function dropIndex(
 ): number {
   const siblings = childrenOf(screen, parentId).filter((i) => i.id !== excludeId);
   if (layout.type === 'none') return siblings.length;
-  return siblings.filter((s) =>
-    layout.type === 'row'
-      ? s.box.x + s.box.width / 2 < point.x
-      : s.box.y + s.box.height / 2 < point.y,
-  ).length;
+  return siblings.filter((s) => {
+    const center =
+      layout.type === 'row' ? s.box.x + s.box.width / 2 : s.box.y + s.box.height / 2;
+    const at = layout.type === 'row' ? point.x : point.y;
+    // Em `reverse` a ordem corre do fim para o início: antes dele são os irmãos depois do ponto.
+    return layout.reverse ? center > at : center < at;
+  }).length;
 }

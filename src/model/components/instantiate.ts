@@ -55,6 +55,7 @@ import type {
   LayoutSpec,
   GradientSpec,
   IconTemplate,
+  LayoutJustify,
   ImageTemplate,
   PathTemplate,
   SizeSpec,
@@ -75,9 +76,12 @@ import {
   LAYOUT_TYPES,
   allowedValue,
   describeValue,
+  justifySpacing,
+  mirrorMain,
   parseSizeSpec,
 } from './layoutValues';
 import { expandRepeats } from './repeat';
+import { WRAP_SLACK } from './textWrap';
 import {
   applyTokens,
   defaultFontFamily,
@@ -195,7 +199,7 @@ function wrapWords(
   let current = words[0] ?? '';
   for (const word of words.slice(1)) {
     const candidate = `${current} ${word}`;
-    if (widthOf(candidate) > maxWidth + 1e-9) {
+    if (widthOf(candidate) > maxWidth + WRAP_SLACK) {
       lines.push(current);
       current = word;
     } else {
@@ -216,7 +220,7 @@ function withEllipsis(
   while (
     maxWidth !== undefined &&
     kept.length > 0 &&
-    widthOf(`${kept}…`) > maxWidth + 1e-9
+    widthOf(`${kept}…`) > maxWidth + WRAP_SLACK
   )
     kept = dropLastChar(kept).trimEnd();
   return `${kept}…`;
@@ -235,7 +239,7 @@ function clipLines(
   if (font.ellipsis !== true) return kept;
   const last = kept.length - 1;
   return kept.map((line, i) => {
-    const tooWide = maxWidth !== undefined && widthOf(line) > maxWidth + 1e-9;
+    const tooWide = maxWidth !== undefined && widthOf(line) > maxWidth + WRAP_SLACK;
     return (cut && i === last) || tooWide ? withEllipsis(line, widthOf, maxWidth) : line;
   });
 }
@@ -315,7 +319,9 @@ interface FrameLayout {
   readonly gap: number;
   readonly pad: Padding;
   readonly align: 'start' | 'center' | 'end' | 'stretch';
-  readonly justify: 'start' | 'center' | 'end' | 'space-between';
+  readonly justify: LayoutJustify;
+  /** Filhos em ordem inversa e `start` no fim (`layout.reverse`). */
+  readonly reverse: boolean;
 }
 
 interface Placement {
@@ -364,6 +370,7 @@ const NONE_LAYOUT: FrameLayout = {
   pad: { top: 0, right: 0, bottom: 0, left: 0 },
   align: 'start',
   justify: 'start',
+  reverse: false,
 };
 
 function isNone(color: string): boolean {
@@ -676,6 +683,7 @@ function createEngine(
       pad: paddingOf(spec.padding),
       align: checked(spec.align, LAYOUT_ALIGNS, 'start', 'layout.align'),
       justify: checked(spec.justify, LAYOUT_JUSTIFIES, 'start', 'layout.justify'),
+      reverse: bool(spec.reverse, false),
     };
   };
 
@@ -972,17 +980,12 @@ function createEngine(
       const used =
         sizes.reduce((sum, s) => sum + s, 0) + layout.gap * Math.max(0, sizes.length - 1);
       const free = Math.max(0, content - used);
-      let offset = 0;
-      let extra = 0;
-      if (layout.justify === 'center') offset = free / 2;
-      else if (layout.justify === 'end') offset = free;
-      else if (layout.justify === 'space-between' && sizes.length > 1)
-        extra = free / (sizes.length - 1);
+      const { offset, extra } = justifySpacing(layout.justify, free, sizes.length);
       let cursor = startPad + offset;
       return sizes.map((size) => {
         const position = cursor;
         cursor += size + layout.gap + extra;
-        return position;
+        return layout.reverse ? mirrorMain(position, size, startPad, content) : position;
       });
     }
     return sizes.map((size) => {
@@ -1099,13 +1102,36 @@ function createEngine(
     const color = str(spec.color, 'none');
     if (isNone(color)) return undefined;
     const width = Math.max(0, num(spec.width, 1));
+    const dash = dashOf(spec.dash);
+    const offset = offsetOf(spec.offset);
     return {
       paints: [{ type: 'solid', color }],
       width: width / scale,
       align: spec.align ?? defaultAlign,
-      ...(spec.dash ? { dash: spec.dash } : {}),
+      ...(dash ? { dash } : {}),
+      ...(offset > 0 ? { offset: offset / scale } : {}),
       ...strokeStyleOf(spec),
     };
+  };
+
+  /** `stroke.dash` (lista, ou expressão que devolve a lista): inválido = sem tracejado, com aviso. */
+  const dashOf = (expr: StrokeSpec['dash']): readonly number[] | undefined => {
+    if (expr === undefined) return undefined;
+    const value = ev<unknown>(expr as Expr<unknown>, undefined);
+    if (value === undefined || value === null) return undefined;
+    const valid =
+      Array.isArray(value) &&
+      value.every((n) => typeof n === 'number' && Number.isFinite(n) && n >= 0);
+    if (!valid) invalidValue('stroke.dash', value);
+    return valid ? (value as readonly number[]) : undefined;
+  };
+
+  /** `stroke.offset` em px: negativo (vindo de um token) cai em 0 com aviso. */
+  const offsetOf = (expr: StrokeSpec['offset']): number => {
+    if (expr === undefined) return 0;
+    const value = num(expr as Expr<number>, 0);
+    if (value < 0) invalidValue('stroke.offset', value);
+    return Math.max(0, value);
   };
 
   /** `cap`, `join` e `sides` (formato 4): só entram na cena quando a chave existe e é válida. */
@@ -1147,11 +1173,16 @@ function createEngine(
     if (!shadow) return [];
     const color = str(shadow.color, 'none');
     if (isNone(color)) return [];
+    const blur = num(shadow.blur as Expr<number> | undefined, 0);
+    if (blur < 0) invalidValue('shadow.blur', blur);
     return [
       {
         color,
-        offset: { x: (shadow.x ?? 0) / scale, y: (shadow.y ?? 0) / scale },
-        blur: (shadow.blur ?? 0) / scale,
+        offset: {
+          x: num(shadow.x as Expr<number> | undefined, 0) / scale,
+          y: num(shadow.y as Expr<number> | undefined, 0) / scale,
+        },
+        blur: Math.max(0, blur) / scale,
       },
     ];
   };
@@ -1393,7 +1424,14 @@ function createEngine(
       lineHeight: font.lineHeight,
       letterSpacing: font.letterSpacing,
       align: oneOf(font0.align, ['left', 'center', 'right'], 'left'),
-      verticalAlign: oneOf(font0.verticalAlign, ['top', 'middle', 'bottom'], 'top'),
+      verticalAlign: oneOf(
+        font0.verticalAlign,
+        // `cap-middle` só existe na formatVersion 4; antes, vindo de expressão, é valor fora do conjunto.
+        original.formatVersion >= 4
+          ? ['top', 'middle', 'bottom', 'cap-middle']
+          : ['top', 'middle', 'bottom'],
+        'top',
+      ),
       ...(decoration === 'none' ? {} : { decoration }),
       ...(font.wrap === 'none' ? { wrap: 'none' as const } : {}),
       ...(font.ellipsis === true ? { ellipsis: true } : {}),

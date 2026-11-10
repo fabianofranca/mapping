@@ -203,7 +203,7 @@ describe('expressão em layout.type, align e justify', () => {
         frameWith({ type: 'row', justify: { $field: 'j', default: 'around' } }),
       ),
     ).toEqual([
-      'template.layout.justify.default: esperava um de: start, center, end, space-between',
+      'template.layout.justify.default: esperava um de: start, center, end, space-between, space-around, space-evenly',
     ]);
   });
 

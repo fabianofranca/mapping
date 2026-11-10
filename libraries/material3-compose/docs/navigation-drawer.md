@@ -96,6 +96,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - Margem de 12 dos lados (`NavigationDrawerItemDefaults.ItemPadding`) e de 12 em cima; itens de 56 de altura mínima e 336 de largura, na forma `corner-full`, sem espaço entre eles. `secondary-container` no selecionado.
 - Item: 16 de recuo no começo, ícone de 24, 12 até o rótulo (que ocupa o resto, `weight(1f)`), 12 até o selo e 24 de recuo no fim. Ícone, rótulo e selo usam a mesma cor: `on-secondary-container` no selecionado e `on-surface-variant` nos demais.
 - Rótulo e selo em `label-large` (14 / 20, peso 500, 0,1); cabeçalho opcional de 56 de altura com 16 de recuo, em `title-small` e `on-surface-variant` (`HeadlineFont` e `HeadlineColor`).
+- Rótulos centrados pela maiúscula (`cap-middle`): `título`, `rótulo` e `selo` usam `font.verticalAlign: "cap-middle"`; o `título` ocupa a altura do cabeçalho de 56 (`height: "fill"`), e `rótulo` e `selo` seguem `hug` no destino, que mede pelo conteúdo com altura mínima de 56. O `Text` do Compose centra pela caixa de linha da fonte (ascent e descent); o desenho centra a altura da maiúscula na caixa, e com o Roboto as duas coincidem a menos de 1 px.
 
 **Estado de interação (campo `interaction`)**
 
@@ -108,6 +109,6 @@ O campo escolhe a aparência parada de um estado; não entra no `code` nem nas `
 **O que ainda difere do Compose**
 
 - O `NavigationDrawerItem` não aplica estilo de texto: a tipografia vem do `Text` que a tela passa. O desenho usa a do arquivo de tokens (`LabelTextFont`, `LargeBadgeLabelFont`, `HeadlineFont`); o exemplo oficial do cabeçalho usa `titleLarge`. O cabeçalho de 56 e o espaço de 12 em cima são convenção do desenho (do exemplo), não do composable.
-- O raio `[0, 16, 16, 0]` da modal é literal: a lista de raios do formato não aceita `$token`, então o 16 de `CornerLargeEnd` não vem do token `corner-large`.
+- O raio da modal é a lista `[0, corner-large, corner-large, 0]` (`$token` por item): o 16 de `CornerLargeEnd` vem de `corner-large`.
 - A largura do Compose fica entre 240 e 360 (`sizeIn`); aqui a folha ocupa a largura da marcação. Scrim, gesto, animação, o selo como composable (aqui é texto) e as variantes `DrawerState` ficam fora do desenho.
-- O `interaction` é um quadro parado: sem o ripple animado e sem o anel de foco por fora da forma (`FocusIndicatorColor`, #896).
+- O `interaction` é um quadro parado: sem o ripple animado e o anel de foco (`FocusIndicatorColor`, `NavigationDrawerTokens.kt` linha 40) vale para o item do estado: em `focused` desenha o anel de 3 em `secondary`, afastado 2 da forma (`stroke.offset`), por fora da caixa (a largura e o afastamento são os da decisão da etapa; o `*Tokens.kt` só traz a cor).

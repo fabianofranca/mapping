@@ -153,13 +153,15 @@
                         "$if": { "$eq": ["mode", "input"] },
                         "then": { "$token": "display-medium-tracking" },
                         "else": { "$token": "display-large-tracking" }
-                      }
+                      },
+                      "verticalAlign": "cap-middle"
                     },
                     "color": {
                       "$if": { "$not": { "$eq": ["selection", "minute"] } },
                       "then": { "$token": "on-primary-container" },
                       "else": { "$token": "on-surface" }
-                    }
+                    },
+                    "height": "fill"
                   }
                 ]
               },
@@ -206,10 +208,12 @@
                     "then": { "$token": "display-medium-tracking" },
                     "else": { "$token": "display-large-tracking" }
                   },
-                  "align": "center"
+                  "align": "center",
+                  "verticalAlign": "cap-middle"
                 },
                 "color": { "$token": "on-surface" },
-                "width": "fill"
+                "width": "fill",
+                "height": "fill"
               }
             ]
           },
@@ -285,13 +289,15 @@
                         "$if": { "$eq": ["mode", "input"] },
                         "then": { "$token": "display-medium-tracking" },
                         "else": { "$token": "display-large-tracking" }
-                      }
+                      },
+                      "verticalAlign": "cap-middle"
                     },
                     "color": {
                       "$if": { "$eq": ["selection", "minute"] },
                       "then": { "$token": "on-primary-container" },
                       "else": { "$token": "on-surface" }
-                    }
+                    },
+                    "height": "fill"
                   }
                 ]
               },
@@ -366,7 +372,8 @@
                       "size": { "$token": "title-medium-size" },
                       "weight": { "$token": "title-medium-weight" },
                       "lineHeight": { "$token": "title-medium-line-height" },
-                      "letterSpacing": { "$token": "title-medium-tracking" }
+                      "letterSpacing": { "$token": "title-medium-tracking" },
+                      "verticalAlign": "cap-middle"
                     },
                     "color": {
                       "$if": {
@@ -389,7 +396,8 @@
                       },
                       "then": { "$token": "on-tertiary-container" },
                       "else": { "$token": "on-surface-variant" }
-                    }
+                    },
+                    "height": "fill"
                   }
                 ]
               },
@@ -435,7 +443,8 @@
                       "size": { "$token": "title-medium-size" },
                       "weight": { "$token": "title-medium-weight" },
                       "lineHeight": { "$token": "title-medium-line-height" },
-                      "letterSpacing": { "$token": "title-medium-tracking" }
+                      "letterSpacing": { "$token": "title-medium-tracking" },
+                      "verticalAlign": "cap-middle"
                     },
                     "color": {
                       "$if": {
@@ -456,7 +465,8 @@
                       },
                       "then": { "$token": "on-tertiary-container" },
                       "else": { "$token": "on-surface-variant" }
-                    }
+                    },
+                    "height": "fill"
                   }
                 ]
               }
@@ -498,7 +508,8 @@
               "weight": { "$token": "body-large-weight" },
               "lineHeight": { "$token": "body-large-line-height" },
               "letterSpacing": { "$token": "body-large-tracking" },
-              "align": "center"
+              "align": "center",
+              "verticalAlign": "cap-middle"
             },
             "color": { "$token": "on-surface" },
             "width": 24,
@@ -518,7 +529,8 @@
               "weight": { "$token": "body-large-weight" },
               "lineHeight": { "$token": "body-large-line-height" },
               "letterSpacing": { "$token": "body-large-tracking" },
-              "align": "center"
+              "align": "center",
+              "verticalAlign": "cap-middle"
             },
             "color": { "$token": "on-surface" },
             "width": 24,
@@ -538,7 +550,8 @@
               "weight": { "$token": "body-large-weight" },
               "lineHeight": { "$token": "body-large-line-height" },
               "letterSpacing": { "$token": "body-large-tracking" },
-              "align": "center"
+              "align": "center",
+              "verticalAlign": "cap-middle"
             },
             "color": { "$token": "on-surface" },
             "width": 24,
@@ -558,7 +571,8 @@
               "weight": { "$token": "body-large-weight" },
               "lineHeight": { "$token": "body-large-line-height" },
               "letterSpacing": { "$token": "body-large-tracking" },
-              "align": "center"
+              "align": "center",
+              "verticalAlign": "cap-middle"
             },
             "color": { "$token": "on-surface" },
             "width": 24,
@@ -578,7 +592,8 @@
               "weight": { "$token": "body-large-weight" },
               "lineHeight": { "$token": "body-large-line-height" },
               "letterSpacing": { "$token": "body-large-tracking" },
-              "align": "center"
+              "align": "center",
+              "verticalAlign": "cap-middle"
             },
             "color": { "$token": "on-surface" },
             "width": 24,
@@ -598,7 +613,8 @@
               "weight": { "$token": "body-large-weight" },
               "lineHeight": { "$token": "body-large-line-height" },
               "letterSpacing": { "$token": "body-large-tracking" },
-              "align": "center"
+              "align": "center",
+              "verticalAlign": "cap-middle"
             },
             "color": { "$token": "on-surface" },
             "width": 24,
@@ -618,7 +634,8 @@
               "weight": { "$token": "body-large-weight" },
               "lineHeight": { "$token": "body-large-line-height" },
               "letterSpacing": { "$token": "body-large-tracking" },
-              "align": "center"
+              "align": "center",
+              "verticalAlign": "cap-middle"
             },
             "color": { "$token": "on-surface" },
             "width": 24,
@@ -638,7 +655,8 @@
               "weight": { "$token": "body-large-weight" },
               "lineHeight": { "$token": "body-large-line-height" },
               "letterSpacing": { "$token": "body-large-tracking" },
-              "align": "center"
+              "align": "center",
+              "verticalAlign": "cap-middle"
             },
             "color": { "$token": "on-surface" },
             "width": 24,
@@ -658,7 +676,8 @@
               "weight": { "$token": "body-large-weight" },
               "lineHeight": { "$token": "body-large-line-height" },
               "letterSpacing": { "$token": "body-large-tracking" },
-              "align": "center"
+              "align": "center",
+              "verticalAlign": "cap-middle"
             },
             "color": { "$token": "on-surface" },
             "width": 24,
@@ -678,7 +697,8 @@
               "weight": { "$token": "body-large-weight" },
               "lineHeight": { "$token": "body-large-line-height" },
               "letterSpacing": { "$token": "body-large-tracking" },
-              "align": "center"
+              "align": "center",
+              "verticalAlign": "cap-middle"
             },
             "color": { "$token": "on-surface" },
             "width": 24,
@@ -698,7 +718,8 @@
               "weight": { "$token": "body-large-weight" },
               "lineHeight": { "$token": "body-large-line-height" },
               "letterSpacing": { "$token": "body-large-tracking" },
-              "align": "center"
+              "align": "center",
+              "verticalAlign": "cap-middle"
             },
             "color": { "$token": "on-surface" },
             "width": 24,
@@ -718,7 +739,8 @@
               "weight": { "$token": "body-large-weight" },
               "lineHeight": { "$token": "body-large-line-height" },
               "letterSpacing": { "$token": "body-large-tracking" },
-              "align": "center"
+              "align": "center",
+              "verticalAlign": "cap-middle"
             },
             "color": { "$token": "on-surface" },
             "width": 24,
@@ -734,7 +756,8 @@
               "weight": { "$token": "body-large-weight" },
               "lineHeight": { "$token": "body-large-line-height" },
               "letterSpacing": { "$token": "body-large-tracking" },
-              "align": "center"
+              "align": "center",
+              "verticalAlign": "cap-middle"
             },
             "color": { "$token": "on-surface" },
             "width": 24,
@@ -756,7 +779,8 @@
               "weight": { "$token": "body-large-weight" },
               "lineHeight": { "$token": "body-large-line-height" },
               "letterSpacing": { "$token": "body-large-tracking" },
-              "align": "center"
+              "align": "center",
+              "verticalAlign": "cap-middle"
             },
             "color": { "$token": "on-surface" },
             "width": 24,
@@ -778,7 +802,8 @@
               "weight": { "$token": "body-large-weight" },
               "lineHeight": { "$token": "body-large-line-height" },
               "letterSpacing": { "$token": "body-large-tracking" },
-              "align": "center"
+              "align": "center",
+              "verticalAlign": "cap-middle"
             },
             "color": { "$token": "on-surface" },
             "width": 24,
@@ -800,7 +825,8 @@
               "weight": { "$token": "body-large-weight" },
               "lineHeight": { "$token": "body-large-line-height" },
               "letterSpacing": { "$token": "body-large-tracking" },
-              "align": "center"
+              "align": "center",
+              "verticalAlign": "cap-middle"
             },
             "color": { "$token": "on-surface" },
             "width": 24,
@@ -822,7 +848,8 @@
               "weight": { "$token": "body-large-weight" },
               "lineHeight": { "$token": "body-large-line-height" },
               "letterSpacing": { "$token": "body-large-tracking" },
-              "align": "center"
+              "align": "center",
+              "verticalAlign": "cap-middle"
             },
             "color": { "$token": "on-surface" },
             "width": 24,
@@ -844,7 +871,8 @@
               "weight": { "$token": "body-large-weight" },
               "lineHeight": { "$token": "body-large-line-height" },
               "letterSpacing": { "$token": "body-large-tracking" },
-              "align": "center"
+              "align": "center",
+              "verticalAlign": "cap-middle"
             },
             "color": { "$token": "on-surface" },
             "width": 24,
@@ -866,7 +894,8 @@
               "weight": { "$token": "body-large-weight" },
               "lineHeight": { "$token": "body-large-line-height" },
               "letterSpacing": { "$token": "body-large-tracking" },
-              "align": "center"
+              "align": "center",
+              "verticalAlign": "cap-middle"
             },
             "color": { "$token": "on-surface" },
             "width": 24,
@@ -888,7 +917,8 @@
               "weight": { "$token": "body-large-weight" },
               "lineHeight": { "$token": "body-large-line-height" },
               "letterSpacing": { "$token": "body-large-tracking" },
-              "align": "center"
+              "align": "center",
+              "verticalAlign": "cap-middle"
             },
             "color": { "$token": "on-surface" },
             "width": 24,
@@ -910,7 +940,8 @@
               "weight": { "$token": "body-large-weight" },
               "lineHeight": { "$token": "body-large-line-height" },
               "letterSpacing": { "$token": "body-large-tracking" },
-              "align": "center"
+              "align": "center",
+              "verticalAlign": "cap-middle"
             },
             "color": { "$token": "on-surface" },
             "width": 24,
@@ -932,7 +963,8 @@
               "weight": { "$token": "body-large-weight" },
               "lineHeight": { "$token": "body-large-line-height" },
               "letterSpacing": { "$token": "body-large-tracking" },
-              "align": "center"
+              "align": "center",
+              "verticalAlign": "cap-middle"
             },
             "color": { "$token": "on-surface" },
             "width": 24,
@@ -954,7 +986,8 @@
               "weight": { "$token": "body-large-weight" },
               "lineHeight": { "$token": "body-large-line-height" },
               "letterSpacing": { "$token": "body-large-tracking" },
-              "align": "center"
+              "align": "center",
+              "verticalAlign": "cap-middle"
             },
             "color": { "$token": "on-surface" },
             "width": 24,
@@ -976,7 +1009,8 @@
               "weight": { "$token": "body-large-weight" },
               "lineHeight": { "$token": "body-large-line-height" },
               "letterSpacing": { "$token": "body-large-tracking" },
-              "align": "center"
+              "align": "center",
+              "verticalAlign": "cap-middle"
             },
             "color": { "$token": "on-surface" },
             "width": 24,
@@ -1335,9 +1369,11 @@
                       "weight": { "$token": "body-large-weight" },
                       "lineHeight": { "$token": "body-large-line-height" },
                       "letterSpacing": { "$token": "body-large-tracking" },
-                      "align": "center"
+                      "align": "center",
+                      "verticalAlign": "cap-middle"
                     },
-                    "color": { "$token": "on-primary" }
+                    "color": { "$token": "on-primary" },
+                    "height": "fill"
                   }
                 ]
               }

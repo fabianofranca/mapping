@@ -80,6 +80,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - Ícone acima: item de 64 com 6 de recuo (`topIconItemVerticalPadding`), indicador de 56 × 32 em `corner-full`, ícone de 24 no centro dele, 4 de espaço e o rótulo em `label-medium` (12 / 16, peso 500, 0,5): o conteúdo mede 6 + 32 + 4 + 16 + 6 = 64.
 - Ícone ao lado: pílula de 40 de altura (24 do ícone mais 8 em cima e em baixo) em `corner-full`, com 16 de respiro nos lados e 4 entre ícone e rótulo, centrada na altura. O rótulo usa `label-medium` também aqui (`NavigationBarTokens.LabelTextFont`).
 - Cores: indicador `secondary-container` (só no selecionado), ícone `on-secondary-container` selecionado e `on-surface-variant` nos demais, rótulo `secondary` selecionado e `on-surface-variant` nos demais.
+- Rótulo centrado pela maiúscula (`cap-middle`): o nó `rótulo` usa `font.verticalAlign: "cap-middle"`; com o ícone ao lado ocupa a altura da pílula (`height: "fill"`) e, com o ícone acima, segue `hug` numa coluna. O `Text` do Compose centra pela caixa de linha da fonte (ascent e descent); o desenho centra a altura da maiúscula na caixa, e com o Roboto as duas coincidem a menos de 1 px.
 
 **Estado de interação (campo `interaction`)**
 
@@ -91,5 +92,5 @@ O campo escolhe a aparência parada de um estado; não entra no `code` nem nas `
 **O que ainda difere do Compose**
 
 - A margem do `Centered` é fixa em 10% de cada lado (o caso de 5 itens). O Compose usa 20% com 3 itens, 15% com 4, 10% com 5 e 5% com 6 (`calculateCenteredContentHorizontalPadding`), e deixa um item crescer até `largura / itens` quando o rótulo é mais largo. O formato não conta as linhas de uma `table` em expressão.
-- O `interaction` é um quadro parado: sem o ripple animado, sem a animação do indicador (o desenho é o estado final), sem o anel de foco por fora da forma (#896) e sem `enabled`.
+- O `interaction` é um quadro parado: sem o ripple animado, sem a animação do indicador (o desenho é o estado final), sem anel de foco (o Compose não define `FocusIndicatorColor` para ele no commit fixado) e sem `enabled`.
 - A altura mínima de 48 de toque do item e `windowInsets` não aparecem no desenho; `ShortNavigationBarItemColors` próprio não é campo do tipo.

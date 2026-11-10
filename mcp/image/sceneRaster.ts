@@ -1,6 +1,11 @@
 import type { TextMeasurer } from '../../src/model/components/instantiate';
 import type { ScreenAnchor } from '../../src/model/components/componentFormat';
-import { sideSegments } from '../../src/model/components/strokeSides';
+import { CUT_REACH, cutsText } from '../../src/model/components/textWrap';
+import {
+  growRadius,
+  partialSides,
+  sideSegments,
+} from '../../src/model/components/strokeSides';
 import {
   multiply,
   type CornerRadius,
@@ -778,20 +783,33 @@ function shiftRadius(radius: CornerRadius, d: number): CornerRadius {
 /**
  * O contorno que o traço percorre: `center` é o próprio contorno; `inside`/`outside` movem a
  * linha de centro meia largura para dentro/fora, em quadros, retângulos e elipses (a faixa do
- * traço cobre então só um lado do contorno). Caminhos e linhas ficam ao centro.
+ * traço cobre então só um lado do contorno). O `offset` afasta o contorno da forma, de cada
+ * lado, e soma ao raio de cada canto arredondado. Caminhos e linhas ficam ao centro.
  */
 function alignedShapes(node: SceneNode, shapes: Subpath[]): Subpath[] {
   const stroke = node.stroke;
-  if (!stroke || stroke.align === 'center') return shapes;
+  if (!stroke) return shapes;
   if (node.type !== 'frame' && node.type !== 'rect' && node.type !== 'ellipse')
     return shapes;
-  const d = stroke.align === 'inside' ? stroke.width / 2 : -stroke.width / 2;
+  const offset = stroke.offset ?? 0;
+  const align =
+    stroke.align === 'inside'
+      ? stroke.width / 2
+      : stroke.align === 'outside'
+        ? -stroke.width / 2
+        : 0;
+  const d = align - offset;
+  if (d === 0) return shapes;
   const width = Math.max(0.01, node.width - 2 * d);
   const height = Math.max(0.01, node.height - 2 * d);
   const points =
     node.type === 'ellipse'
       ? ellipse(width, height)
-      : roundedRect(width, height, shiftRadius(node.cornerRadius, d));
+      : roundedRect(
+          width,
+          height,
+          shiftRadius(growRadius(node.cornerRadius, offset), align),
+        );
   return [{ points: points.map((p) => ({ x: p.x + d, y: p.y + d })), closed: true }];
 }
 
@@ -921,8 +939,9 @@ class Painter {
 
   /** `stroke.sides` num `frame`/`rect`: os lados pedidos como linhas retas (sem os cantos). */
   private sideLines(node: SceneNode): Subpath[] | null {
-    if ((node.type !== 'frame' && node.type !== 'rect') || !node.stroke?.sides)
-      return null;
+    if ((node.type !== 'frame' && node.type !== 'rect') || !node.stroke) return null;
+    // Os quatro lados são o contorno inteiro, com o raio dos cantos (decisão 21).
+    if (!partialSides(node.stroke)) return null;
     return sideSegments(node.stroke, node.width, node.height).map((seg) => ({
       points: [
         { x: seg.x1, y: seg.y1 },
@@ -1008,6 +1027,9 @@ class Painter {
   ): void {
     const ink = textInk(node, this.measure, fonts);
     const own = firstColor(node.fills);
+    // `wrap: none` sem `ellipsis` numa caixa fixa: o glifo que passa da caixa sai cortado por pixel.
+    const cut = cutsText(node);
+    const area = cut ? this.cutClip(node, matrix, clip) : clip;
     for (const box of ink.boxes) {
       const color = parseColor(box.color);
       if (color === null) continue;
@@ -1015,13 +1037,25 @@ class Painter {
         x: p.x + box.x,
         y: p.y + box.y,
       }));
-      this.fill([poly], matrix, 'nonzero', color, opacity, clip);
+      this.fill([poly], matrix, 'nonzero', color, opacity, area);
     }
     for (const glyphs of ink.glyphs) {
       const color = glyphs.color === undefined ? own : parseColor(glyphs.color);
       if (color !== null)
-        this.fill(glyphs.polygons, matrix, 'nonzero', color, opacity, clip);
+        this.fill(glyphs.polygons, matrix, 'nonzero', color, opacity, area);
     }
+  }
+
+  /** O recorte do texto cortado: a largura da caixa, na horizontal; na vertical nada se corta. */
+  private cutClip(node: TextNode, matrix: Matrix, clip: PixelRect): PixelRect {
+    const reach = CUT_REACH;
+    const box = [
+      { x: 0, y: -reach },
+      { x: node.width, y: -reach },
+      { x: node.width, y: reach },
+      { x: 0, y: reach },
+    ];
+    return intersect(clip, bounds(this.toRaster(box, matrix)));
   }
 
   /** Texto rico: o fundo de cada chip e uma barra por pedaço de texto, em ordem, cada um na sua cor. */

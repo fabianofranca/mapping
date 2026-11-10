@@ -375,7 +375,8 @@
                     },
                     "letterSpacing": {
                       "$token": "label-large-tracking"
-                    }
+                    },
+                    "verticalAlign": "cap-middle"
                   },
                   "color": {
                     "$if": {
@@ -407,7 +408,8 @@
                   },
                   "visible": {
                     "$has": "label"
-                  }
+                  },
+                  "height": "fill"
                 }
               ]
             },

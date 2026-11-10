@@ -6,6 +6,7 @@
 import { Text as KonvaText } from 'konva/lib/shapes/Text';
 import { canvasFontFamily } from '../../model/components/fontFamily';
 import type { MeasureFont, TextMeasurer } from '../../model/components/instantiate';
+import { WRAP_SLACK } from '../../model/components/textWrap';
 import { textBoxLimits } from './textLimits';
 
 function fontStyle(font: MeasureFont): string {
@@ -27,7 +28,8 @@ function probeOf(
     letterSpacing: font.letterSpacing,
     wrap: font.wrap === 'none' ? 'none' : 'word',
     ellipsis: font.ellipsis === true,
-    ...(maxWidth !== undefined ? { width: maxWidth } : {}),
+    // A folga de 0,5 px: a linha só quebra além dela (o desenho usa a mesma).
+    ...(maxWidth !== undefined ? { width: maxWidth + WRAP_SLACK } : {}),
   });
 }
 

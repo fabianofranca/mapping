@@ -6,16 +6,16 @@ Tipo de anotação: `lazy-row` (camada Layout).
 
 ## Campos
 
-| Chave                   | Rótulo                       | Tipo   | Obrigatório | Opções                                                                 | Padrão  | Descrição                                                                                             |
-| ----------------------- | ---------------------------- | ------ | ----------- | ---------------------------------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------- |
-| `horizontalArrangement` | Distribuição horizontal      | enum   | não         | `Start`, `End`, `Center`, `SpaceBetween`, `SpaceAround`, `SpaceEvenly` | `Start` | Como os itens se distribuem no eixo horizontal (Arrangement).                                         |
-| `verticalAlignment`     | Alinhamento vertical         | enum   | não         | `Top`, `CenterVertically`, `Bottom`                                    | `Top`   | Como os itens se alinham no eixo vertical (Alignment).                                                |
-| `spacing`               | Espaçamento entre itens (dp) | number | não         |                                                                        |         | Espaço entre os filhos em dp (Arrangement.spacedBy). Vazio = 0.                                       |
-| `contentPadding`        | Margem do conteúdo (dp)      | number | não         |                                                                        |         | Margem interna da lista em dp (PaddingValues). Vazio = 0.                                             |
-| `reverseLayout`         | Layout invertido             | enum   | não         | `true`, `false`                                                        | `false` | true começa pelo fim da lista (reverseLayout).                                                        |
-| `width`                 | Largura                      | enum   | não         | `wrap`, `fill`, `fixed`                                                | `wrap`  | wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp). |
-| `height`                | Altura                       | enum   | não         | `wrap`, `fill`, `fixed`                                                | `wrap`  | wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp).   |
-| `weight`                | Peso (weight)                | number | não         |                                                                        |         | Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso.                     |
+| Chave                   | Rótulo                       | Tipo   | Obrigatório | Opções                                                                 | Padrão  | Descrição                                                                                                                                                                               |
+| ----------------------- | ---------------------------- | ------ | ----------- | ---------------------------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `horizontalArrangement` | Distribuição horizontal      | enum   | não         | `Start`, `End`, `Center`, `SpaceBetween`, `SpaceAround`, `SpaceEvenly` | —       | Como os itens se distribuem no eixo horizontal (Arrangement). Vazio = o padrão do Compose: Start, ou End com reverseLayout; Start explícito com reverseLayout mantém o bloco no começo. |
+| `verticalAlignment`     | Alinhamento vertical         | enum   | não         | `Top`, `CenterVertically`, `Bottom`                                    | `Top`   | Como os itens se alinham no eixo vertical (Alignment).                                                                                                                                  |
+| `spacing`               | Espaçamento entre itens (dp) | number | não         |                                                                        |         | Espaço entre os filhos em dp (Arrangement.spacedBy). Vazio = 0.                                                                                                                         |
+| `contentPadding`        | Margem do conteúdo (dp)      | number | não         |                                                                        |         | Margem interna da lista em dp (PaddingValues). Vazio = 0.                                                                                                                               |
+| `reverseLayout`         | Layout invertido             | enum   | não         | `true`, `false`                                                        | `false` | true começa pelo fim da lista (reverseLayout).                                                                                                                                          |
+| `width`                 | Largura                      | enum   | não         | `wrap`, `fill`, `fixed`                                                | `wrap`  | wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp).                                                                                   |
+| `height`                | Altura                       | enum   | não         | `wrap`, `fill`, `fixed`                                                | `wrap`  | wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp).                                                                                     |
+| `weight`                | Peso (weight)                | number | não         |                                                                        |         | Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso.                                                                                                       |
 
 ## Compose
 
@@ -58,11 +58,11 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 
 - `horizontalArrangement` vira o `justify` do slot (`Start` `start`, `Center` `center`, `End` `end`, `SpaceBetween` `space-between`) e `verticalAlignment` vira o `align` (`Top` `start`, `CenterVertically` `center`, `Bottom` `end`), por `$switch` (formato 4: expressão em `layout.justify` e `layout.align`).
 - `spacing` é o `gap` e `contentPadding` é o `padding` do slot.
-- `reverseLayout` ligado com `Start` vira `end`, o padrão do Compose nessa combinação (`Arrangement.End`).
+- `reverseLayout` liga o `layout.reverse` do slot; com a distribuição padrão (campo vazio) o bloco fica no fim do eixo, como o `Arrangement.End` que o Compose usa nessa combinação. Com `Start` explícito o bloco fica no começo, na ordem invertida; com `End` explícito, no fim.
 - Nenhuma cor, fonte ou raio é desenhado.
 
 **O que ainda difere do Compose**
 
-- `SpaceAround` e `SpaceEvenly` caem em `space-between`: o `justify` do formato só tem `start`, `center`, `end` e `space-between`.
-- O formato não inverte a ordem dos filhos com `reverseLayout`.
+- `SpaceAround` e `SpaceEvenly` viram `space-around` e `space-evenly` do `justify`.
+- A ordem das filhas se inverte com `reverseLayout` (`layout.reverse`), como no Compose.
 - Rolagem, `state` e `flingBehavior` não existem num desenho estático.

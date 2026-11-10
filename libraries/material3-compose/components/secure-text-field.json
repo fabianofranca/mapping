@@ -66,11 +66,14 @@
               "left": 0,
               "right": 0,
               "top": 0,
-              "bottom": -4
+              "bottom": 0
             },
-            "cornerRadius": {
-              "$token": "corner-extra-small"
-            },
+            "cornerRadius": [
+              { "$token": "corner-extra-small" },
+              { "$token": "corner-extra-small" },
+              0,
+              0
+            ],
             "fill": {
               "$token": "surface-container-highest"
             },
@@ -733,7 +736,8 @@
                             "else": {
                               "$token": "body-large-tracking"
                             }
-                          }
+                          },
+                          "verticalAlign": "cap-middle"
                         },
                         "color": {
                           "$if": {
@@ -857,7 +861,8 @@
                                 "$token": "body-large-tracking"
                               },
                               "wrap": "none",
-                              "maxLines": 1
+                              "maxLines": 1,
+                              "verticalAlign": "cap-middle"
                             },
                             "color": {
                               "$token": "on-surface"
@@ -893,7 +898,8 @@
                           },
                           "letterSpacing": {
                             "$token": "body-large-tracking"
-                          }
+                          },
+                          "verticalAlign": "cap-middle"
                         },
                         "color": {
                           "$if": {
@@ -1300,7 +1306,8 @@
                       },
                       "letterSpacing": {
                         "$token": "body-small-tracking"
-                      }
+                      },
+                      "verticalAlign": "cap-middle"
                     },
                     "color": {
                       "$if": {

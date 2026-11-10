@@ -52,7 +52,16 @@
       "$if": {
         "$eq": ["style", "modal"]
       },
-      "then": [0, 16, 16, 0],
+      "then": [
+        0,
+        {
+          "$token": "corner-large"
+        },
+        {
+          "$token": "corner-large"
+        },
+        0
+      ],
       "else": 0
     },
     "layout": {
@@ -92,12 +101,14 @@
               },
               "letterSpacing": {
                 "$token": "title-small-tracking"
-              }
+              },
+              "verticalAlign": "cap-middle"
             },
             "color": {
               "$token": "on-surface-variant"
             },
-            "width": "fill"
+            "width": "fill",
+            "height": "fill"
           }
         ]
       },
@@ -350,7 +361,8 @@
                     },
                     "letterSpacing": {
                       "$token": "label-large-tracking"
-                    }
+                    },
+                    "verticalAlign": "cap-middle"
                   },
                   "color": {
                     "$if": {
@@ -386,7 +398,8 @@
                     },
                     "letterSpacing": {
                       "$token": "label-large-tracking"
-                    }
+                    },
+                    "verticalAlign": "cap-middle"
                   },
                   "color": {
                     "$if": {
@@ -444,6 +457,38 @@
                     "$not": {
                       "$eq": ["interaction", "none"]
                     }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "rect",
+              "name": "anel de foco",
+              "anchors": {
+                "left": 0,
+                "right": 0,
+                "top": 0,
+                "bottom": 0
+              },
+              "cornerRadius": {
+                "$token": "corner-full"
+              },
+              "fill": "none",
+              "stroke": {
+                "color": {
+                  "$token": "secondary"
+                },
+                "width": 3,
+                "align": "outside",
+                "offset": 2
+              },
+              "visible": {
+                "$and": [
+                  {
+                    "$field": "selected"
+                  },
+                  {
+                    "$eq": ["interaction", "focused"]
                   }
                 ]
               }

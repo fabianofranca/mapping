@@ -262,8 +262,8 @@
               "Bottom": "end",
               "Center": "center",
               "SpaceBetween": "space-between",
-              "SpaceAround": "space-between",
-              "SpaceEvenly": "space-between"
+              "SpaceAround": "space-around",
+              "SpaceEvenly": "space-evenly"
             },
             "default": "start"
           }

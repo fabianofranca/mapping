@@ -32,8 +32,12 @@
       "color": {
         "$token": "elevation-shadow"
       },
-      "y": 3,
-      "blur": 12
+      "y": {
+        "$token": "elevation-3-y"
+      },
+      "blur": {
+        "$token": "elevation-3-blur"
+      }
     },
     "layout": {
       "type": "column"
@@ -147,11 +151,13 @@
                   },
                   "letterSpacing": {
                     "$token": "label-large-tracking"
-                  }
+                  },
+                  "verticalAlign": "cap-middle"
                 },
                 "color": {
                   "$token": "inverse-primary"
-                }
+                },
+                "height": "fill"
               }
             ]
           },
@@ -292,11 +298,13 @@
                       },
                       "letterSpacing": {
                         "$token": "label-large-tracking"
-                      }
+                      },
+                      "verticalAlign": "cap-middle"
                     },
                     "color": {
                       "$token": "inverse-primary"
-                    }
+                    },
+                    "height": "fill"
                   }
                 ]
               },

@@ -35,13 +35,26 @@ window.drawRich = (runs, width, height) => {
     .map((shape) => ({ kind: shape.className, text: shape.className === 'Text' ? shape.text() : '', x: shape.x(), y: shape.y(), width: shape.width(), height: shape.height() }));
   return { layout: text.runLayout, shapes };
 };
-window.inkCenter = (zoom) => {
+window.inkCenter = (zoom, align = 'middle') => {
   const W = 120, H = 28;
   const host = document.body.appendChild(document.createElement('div'));
   const stage = new Stage({ container: host, width: W * zoom, height: H * zoom, scaleX: zoom, scaleY: zoom });
   const layer = new Layer();
   stage.add(layer);
-  layer.add(new Text({ text: 'HHHH', width: W, height: H, verticalAlign: 'middle', fontFamily: 'sans-serif', fontSize: 13, lineHeight: 1.2, fill: '#000' }));
+  if (align === 'cap-middle') {
+    // O mesmo caminho do desenho: o nó da cena com cap-middle, pelo renderScene.
+    const component = {
+      format: 'mapping-component', formatVersion: 4, id: 'k', name: 'K', size: { width: W, height: H },
+      template: { type: 'frame', layout: { type: 'none' }, children: [{
+        type: 'text', name: 't', anchors: { left: 0, top: 0 }, width: W, height: H, text: 'HHHH',
+        font: { size: 13, lineHeight: 1.2, family: 'sans-serif', verticalAlign: 'cap-middle' }, color: '#000000',
+      }] },
+    };
+    const { root } = instantiate(component, {}, { x: 0, y: 0, width: W, height: H }, { measure: konvaMeasurer });
+    layer.add(renderScene({ root, warnings: [] }).root);
+  } else {
+    layer.add(new Text({ text: 'HHHH', width: W, height: H, verticalAlign: 'middle', fontFamily: 'sans-serif', fontSize: 13, lineHeight: 1.2, fill: '#000' }));
+  }
   layer.draw();
   const canvas = layer.getCanvas()._canvas;
   const { data } = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
@@ -163,6 +176,23 @@ test.describe('texto no Chromium', () => {
     expect(Math.abs(zoomed - base)).toBeLessThanOrEqual(1);
   });
 
+  test('FX1: cap-middle centra o texto pela maiúscula a ≤ 0,5 px do centro da caixa, a 100% e a 420%', async ({
+    page,
+  }) => {
+    await load(page);
+    const at = (zoom: number) =>
+      page.evaluate(
+        (z) =>
+          (window as never as { inkCenter: (z: number, a: string) => number }).inkCenter(
+            z,
+            'cap-middle',
+          ),
+        zoom,
+      );
+    expect(Math.abs(await at(1))).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(await at(4.2))).toBeLessThanOrEqual(0.5);
+  });
+
   test('#941: com maxWidth a largura é a natural do texto, não o limite', async ({
     page,
   }) => {
@@ -176,6 +206,62 @@ test.describe('texto no Chromium', () => {
     expect(wrapped.lines.length).toBeGreaterThan(1);
     expect(wrapped.width).toBeLessThanOrEqual(80);
     expect(wrapped.width).toBeGreaterThan(0);
+  });
+
+  test('FX4: um parágrafo com a largura medida do DOM quebra nas mesmas palavras (folga de 0,5 px)', async ({
+    page,
+  }) => {
+    await load(page);
+    const text = 'Pagar fatura do cartão de crédito com vencimento amanhã cedo';
+    const words = text.split(' ');
+    // Para cada prefixo de palavras, a largura do DOM (sem quebra) vira a largura da caixa: o
+    // DOM mantém tudo numa linha, e o medidor do Konva tem de fazer o mesmo (sem tirar a palavra
+    // por uma fração de pixel). Depois, a mesma caixa 3 px menor quebra igual nos dois.
+    const domLines = (width: number) =>
+      page.evaluate(
+        ([t, w]) => {
+          const div = document.body.appendChild(document.createElement('div'));
+          div.style.cssText = `font:13px sans-serif;width:${w}px;position:absolute;left:0;top:0`;
+          div.textContent = String(t);
+          const node = div.firstChild as Text;
+          const lines: string[][] = [];
+          let top = -1;
+          let start = 0;
+          for (const word of String(t).split(' ')) {
+            const range = document.createRange();
+            range.setStart(node, start);
+            range.setEnd(node, start + word.length);
+            const y = Math.round(range.getBoundingClientRect().top);
+            if (y !== top) lines.push([]);
+            top = y;
+            lines[lines.length - 1]!.push(word);
+            start += word.length + 1;
+          }
+          div.remove();
+          return lines.map((l) => l.join(' '));
+        },
+        [text, width] as const,
+      );
+    const domWidth = (prefix: string) =>
+      page.evaluate((t) => {
+        const span = document.body.appendChild(document.createElement('span'));
+        span.style.cssText = 'font:13px sans-serif;white-space:nowrap;position:absolute';
+        span.textContent = t;
+        const w = span.getBoundingClientRect().width;
+        span.remove();
+        return w;
+      }, prefix);
+    for (let n = 2; n <= words.length; n++) {
+      const prefix = words.slice(0, n).join(' ');
+      const width = await domWidth(prefix);
+      const konva = await measure(page, 16, text, width);
+      const dom = await domLines(width);
+      expect(konva.lines, `largura ${width} (${n} palavras)`).toEqual(dom);
+      // Uma fração de pixel a menos (a soma das larguras das palavras difere do DOM na ponta
+      // do float) não tira a última palavra da linha: é a folga de 0,5 px.
+      const slack = await measure(page, 16, text, width - 0.3);
+      expect(slack.lines, `largura ${width} − 0,3 (${n} palavras)`).toEqual(dom);
+    }
   });
 
   test('C1: wrap none é uma linha só; com ellipsis termina em … e cabe na largura', async ({

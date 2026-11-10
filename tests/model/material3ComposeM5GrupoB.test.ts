@@ -51,6 +51,9 @@ const tok = (name: string, mode: Mode): string => {
   return typeof value === 'string' ? value : value[mode];
 };
 const num = (name: string): number => tokens[name] as number;
+/** O alfa de uma cor `#rrggbbaa` (sem o sufixo, 1), arredondado ao centésimo. */
+const alphaOf = (color: string): number =>
+  color.length === 9 ? Math.round((parseInt(color.slice(7), 16) / 255) * 100) / 100 : 1;
 
 const named = (d: Drawing, name: string): SceneNode | undefined => {
   for (const node of walk(d.root)) if (node.name === name && node.visible) return node;
@@ -477,7 +480,7 @@ describe('M5 grupo B — carousel', () => {
     expect(boxes[1]!.x).toBe(56 + 8 + 232 + 8);
   });
 
-  it('rótulo sobre o item: label-large em cor fixa nos dois modos, sobre o véu de scrim a 0,32 (ScrimTokens.ContainerOpacity)', () => {
+  it('rótulo sobre o item: label-large em cor fixa nos dois modos, sobre o véu em degradê de scrim com alpha 0 a 0,32 (ScrimTokens.ContainerOpacity)', () => {
     const light = both('carousel', withItems({ style: 'multi-browse' })).light;
     const dark = both('carousel', withItems({ style: 'multi-browse' })).dark;
     for (const [mode, d] of [
@@ -490,8 +493,17 @@ describe('M5 grupo B — carousel', () => {
       expect(solid(label.fills)).toBe(tok('secondary-fixed', mode));
       expect(label.style).toMatchObject({ maxLines: 1, ellipsis: true });
       const veil = named(d, 'véu')!;
-      expect(solid(veil.fills)).toBe(tok('scrim', mode));
-      expect(veil.opacity).toBe(0.32);
+      const paint = veil.fills[0];
+      const scrim = tok('scrim', mode).slice(0, 7);
+      expect(paint?.type).toBe('linear');
+      const stops = paint?.type === 'linear' ? paint.stops : [];
+      expect(stops.map((x) => x.offset)).toEqual([0, 1]);
+      expect(stops.map((x) => x.color.slice(0, 7).toLowerCase())).toEqual([
+        scrim.toLowerCase(),
+        scrim.toLowerCase(),
+      ]);
+      expect(stops.map((x) => alphaOf(x.color))).toEqual([0, 0.32]);
+      expect(veil.opacity).toBe(1);
     }
     expect(tok('secondary-fixed', 'light')).toBe(tok('secondary-fixed', 'dark'));
     const bare = both('carousel', {

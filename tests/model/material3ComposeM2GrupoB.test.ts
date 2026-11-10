@@ -43,12 +43,31 @@ describe('M2 grupo B — foundation no formato 4', () => {
     expect(
       slotLayout('lazy-column', { verticalArrangement: 'SpaceBetween' }).justify,
     ).toBe('space-between');
-    // reverseLayout: o padrão do Compose passa a Bottom (LazyDsl.kt, linhas 393 e 394)
-    expect(slotLayout('lazy-column', { reverseLayout: 'true' }).justify).toBe('end');
+    // reverseLayout liga o `reverse` do slot; o padrão do Compose passa a Bottom (LazyDsl.kt, linhas
+    // 393 e 394), que no eixo invertido é o `start`
+    expect(slotLayout('lazy-column', { reverseLayout: 'true' }).reverse).toBe(true);
+    expect(slotLayout('lazy-column', { reverseLayout: 'false' }).reverse).toBe(false);
+    expect(slotLayout('lazy-column', { reverseLayout: 'true' }).justify).toBe('start');
+    // Top explícito com reverseLayout mantém o bloco no topo (justify `end` antes do espelho); sem o
+    // campo (o padrão) o bloco vai ao fim, como o Bottom que o Compose passa nessa combinação (FX5).
+    expect(
+      slotLayout('lazy-column', { reverseLayout: 'true', verticalArrangement: 'Top' })
+        .justify,
+    ).toBe('end');
+    expect(
+      slotLayout('lazy-column', { reverseLayout: 'false', verticalArrangement: 'Top' })
+        .justify,
+    ).toBe('start');
     expect(
       slotLayout('lazy-column', { reverseLayout: 'true', verticalArrangement: 'Bottom' })
         .justify,
-    ).toBe('end');
+    ).toBe('start');
+    expect(
+      slotLayout('lazy-column', { verticalArrangement: 'SpaceAround' }).justify,
+    ).toBe('space-around');
+    expect(
+      slotLayout('lazy-column', { verticalArrangement: 'SpaceEvenly' }).justify,
+    ).toBe('space-evenly');
     expect(
       slotLayout('lazy-column', { reverseLayout: 'true', verticalArrangement: 'Center' })
         .justify,
@@ -65,7 +84,16 @@ describe('M2 grupo B — foundation no formato 4', () => {
     });
     expect(l).toMatchObject({ type: 'row', gap: 12, justify: 'end', align: 'center' });
     expect(slotLayout('lazy-row', { verticalAlignment: 'Bottom' }).align).toBe('end');
-    expect(slotLayout('lazy-row', { reverseLayout: 'true' }).justify).toBe('end');
+    expect(slotLayout('lazy-row', { reverseLayout: 'true' }).reverse).toBe(true);
+    expect(slotLayout('lazy-row', { reverseLayout: 'true' }).justify).toBe('start');
+    expect(
+      slotLayout('lazy-row', { reverseLayout: 'true', horizontalArrangement: 'Start' })
+        .justify,
+    ).toBe('end');
+    expect(
+      slotLayout('lazy-row', { reverseLayout: 'true', horizontalArrangement: 'End' })
+        .justify,
+    ).toBe('start');
   });
 
   it('lazy-vertical-grid: formato 4 e contentPadding no quadro', () => {

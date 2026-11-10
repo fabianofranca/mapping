@@ -74,6 +74,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - Altura 40, largura mínima 58 e forma `corner-full`; o contêiner é um retângulo atrás do conteúdo, que fica centrado.
 - Padding do conteúdo: 24 dos lados e 8 em cima e embaixo (16 no início com ícone); no `text`, 12 (12 no início e 16 no fim com ícone).
 - Ícone de 18 desenhado pelo nó `icon` (nome do Compose para o nome do conjunto, como no `icon`), 8 de espaço até o rótulo. O rótulo usa os tokens `label-large-*` (14, peso 500, linha 20, espaçamento 0,1) e a fonte do tema (`font-sans`), sem `family` no arquivo.
+- O rótulo centra pela altura da maiúscula (`font.verticalAlign: "cap-middle"`): o nó ocupa a altura do botão (`fill`) e o centro da letra cai no centro da caixa de 40, qualquer que seja a fonte. O `Text` do Compose centra pela caixa de linha da fonte; com a Roboto as duas coincidem a menos de 1 px.
 - Cores (iguais nos dois modos, com os valores de cada um): filled `primary` / `on-primary`; tonal `secondary-container` / `on-secondary-container`; elevated `surface-container-low` / `primary`, com a sombra do nível 1 (`elevation-shadow`, y 1, blur 2); outlined sem fundo, conteúdo `on-surface-variant` e contorno de 1 em `outline-variant`; text sem fundo e conteúdo `primary` (o `defaultTextButtonColors` do commit usa `Primary`, não o token `OnSurfaceVariant`).
 - Desabilitado: o contêiner vira `on-surface` a 0,1 (`state-disabled-container-filled`; 0,12 no tonal, `state-disabled-container`) e o conteúdo, a 0,38 (`state-disabled-content`), em `on-surface-variant` (em `on-surface` no tonal); o outlined tem o contorno a 0,1; o elevated perde a sombra.
 
@@ -88,7 +89,7 @@ O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o des
 
 **O que ainda difere do Compose**
 
-- Sem a forma `pressed` do Material expressivo, sem ripple animado e sem transição entre estados (o desenho é um quadro parado). O anel de foco por fora do botão não é desenhado: a raiz recorta (#896).
-- A sombra tem y e blur literais (1 e 2, os de `elevation-1-y` e `elevation-1-blur`; no nível 2 do elevated com o mouse, 2 e 6, os de `elevation-2-*`): o `shadow` do formato só aceita número literal, não `$token`. Por isso a sombra do nível 2 é de um nó à parte (`sombra elevada`), visível só no elevated com o mouse sobre.
+- Sem a forma `pressed` do Material expressivo, sem ripple animado e sem transição entre estados (o desenho é um quadro parado). O Compose não define anel de foco para este tipo no commit fixado (nenhum `*Tokens.kt` dele traz `FocusIndicatorColor`): nenhum é desenhado.
+- A sombra lê os tokens de elevação (`$token` em `shadow.y` e `shadow.blur`: `elevation-1-*` na raiz e, no nível 2 do elevated com o mouse, `elevation-2-*`). O `y` e o `blur` não aceitam expressão, então a sombra do nível 2 é de um nó à parte (`sombra elevada`), visível só no elevated com o mouse sobre.
 - O rótulo longo quebra em linhas; o botão do Compose também, mas aqui a altura de 40 do `sizing` não cresce com as linhas e a largura vem do retângulo, não do texto: o exemplo "Rótulo longo" mostra o limite (o texto passa da caixa de 136) e a roadmap #898 (medida pelo conteúdo) o resolve.
 - `ButtonDefaults.shape` é redondo; o `shape` trocável e o `contentPadding` próprio de uma chamada não são campos do tipo.

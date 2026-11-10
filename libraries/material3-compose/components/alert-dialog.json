@@ -366,11 +366,13 @@
                   },
                   "letterSpacing": {
                     "$token": "label-large-tracking"
-                  }
+                  },
+                  "verticalAlign": "cap-middle"
                 },
                 "color": {
                   "$token": "primary"
-                }
+                },
+                "height": "fill"
               }
             ]
           },
@@ -408,11 +410,13 @@
                   },
                   "letterSpacing": {
                     "$token": "label-large-tracking"
-                  }
+                  },
+                  "verticalAlign": "cap-middle"
                 },
                 "color": {
                   "$token": "primary"
-                }
+                },
+                "height": "fill"
               }
             ]
           }

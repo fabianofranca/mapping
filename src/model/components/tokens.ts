@@ -44,7 +44,8 @@ export const TOKEN_NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 const DEFAULT_SANS = 'sans-serif';
 const DEFAULT_MONO = 'monospace';
 
-const COLOR_VALUE = /^(#[0-9a-f]{3,8}|(rgb|hsl)a?\(.*\)|none|transparent)$/i;
+const COLOR_VALUE =
+  /^(#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})|(rgb|hsl)a?\(.*\)|none|transparent)$/i;
 
 /** O tipo de um valor de token: número, cor (`#…`, `rgb()`, `hsl()`, `none`) ou família. */
 export function tokenKind(value: TokenValue): TokenKind {
@@ -75,19 +76,158 @@ export function resolveTokens(
   return out;
 }
 
-function isTokenRef(value: unknown): value is { $token: string } {
+/** Um `{ "$token": … }`, com o `alpha` opcional (a opacidade de uma cor; v4). */
+type TokenRef = { $token: string; alpha?: unknown };
+
+function isTokenRef(value: unknown): value is TokenRef {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
   const keys = Object.keys(value);
-  return keys.length === 1 && keys[0] === '$token';
+  return keys.includes('$token') && keys.every((k) => k === '$token' || k === 'alpha');
+}
+
+interface Rgba {
+  readonly r: number;
+  readonly g: number;
+  readonly b: number;
+  readonly a: number;
+}
+
+const HEX_COLOR = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+const FUNCTIONAL_COLOR = /^(rgb|hsl)a?\(([^)]*)\)$/i;
+
+function parseHex(text: string): Rgba | undefined {
+  const match = HEX_COLOR.exec(text);
+  if (!match) return undefined;
+  const digits =
+    (match[1] ?? '').length <= 4
+      ? [...(match[1] ?? '')].map((c) => c + c).join('')
+      : (match[1] ?? '');
+  const byte = (i: number): number => parseInt(digits.slice(i * 2, i * 2 + 2), 16);
+  return {
+    r: byte(0),
+    g: byte(1),
+    b: byte(2),
+    a: digits.length === 8 ? byte(3) / 255 : 1,
+  };
+}
+
+/** Converte `hsl(h, s, l)` (h em graus, s e l de 0 a 1) em RGB (0 a 255). */
+function hslToRgb(h: number, s: number, l: number): [number, number, number] {
+  const hue = ((h % 360) + 360) % 360;
+  const k = (n: number): number => (n + hue / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number): number =>
+    Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1))));
+  return [f(0), f(8), f(4)];
+}
+
+const NUMBER_PART = '[+-]?(?:\\d+\\.?\\d*|\\.\\d+)';
+const WITH_PERCENT = new RegExp(`^(${NUMBER_PART})(%?)$`);
+const WITH_ANGLE_UNIT = new RegExp(`^(${NUMBER_PART})(deg|grad|rad|turn)?$`);
+const DEGREES_PER_UNIT: Readonly<Record<string, number>> = {
+  deg: 1,
+  grad: 0.9,
+  rad: 180 / Math.PI,
+  turn: 360,
+};
+
+/** Um argumento numérico de cor; `50%` vale `percentOf × 0,5`. */
+function colorNumber(text: string, percentOf: number): number | undefined {
+  const match = WITH_PERCENT.exec(text);
+  if (!match) return undefined;
+  const n = parseFloat(match[1] ?? '');
+  return match[2] === '%' ? (n / 100) * percentOf : n;
+}
+
+/** O matiz de um `hsl()` em graus (aceita `deg`, `grad`, `rad` e `turn`). */
+function hueDegrees(text: string): number | undefined {
+  const match = WITH_ANGLE_UNIT.exec(text);
+  if (!match) return undefined;
+  return parseFloat(match[1] ?? '') * (DEGREES_PER_UNIT[match[2] ?? 'deg'] ?? 1);
+}
+
+/** Os argumentos de `rgb()`/`hsl()` separados (vírgula, espaço ou barra); 3 ou 4, senão nenhum. */
+function functionalParts(args: string): string[] | undefined {
+  const parts = args.split(/[\s,/]+/).filter((p) => p !== '');
+  return parts.length === 3 || parts.length === 4 ? parts : undefined;
+}
+
+function hslArgs(parts: readonly string[], a: number): Rgba | undefined {
+  const [h, sat, light] = [
+    hueDegrees(parts[0] ?? ''),
+    colorNumber(parts[1] ?? '', 100),
+    colorNumber(parts[2] ?? '', 100),
+  ];
+  if (h === undefined || sat === undefined || light === undefined) return undefined;
+  const [r, g, b] = hslToRgb(h, sat / 100, light / 100);
+  return { r, g, b, a };
+}
+
+function rgbArgs(parts: readonly string[], a: number): Rgba | undefined {
+  const [r, g, b] = parts.slice(0, 3).map((p) => colorNumber(p, 255));
+  return r === undefined || g === undefined || b === undefined
+    ? undefined
+    : { r, g, b, a };
+}
+
+/** `rgb`/`rgba` ou `hsl`/`hsla` com os argumentos já separados; nenhum se algum não for número. */
+function functionalToRgba(fn: string, parts: readonly string[]): Rgba | undefined {
+  const a = parts[3] === undefined ? 1 : colorNumber(parts[3], 1);
+  if (a === undefined) return undefined;
+  return fn.toLowerCase() === 'hsl' ? hslArgs(parts, a) : rgbArgs(parts, a);
+}
+
+function parseFunctional(text: string): Rgba | undefined {
+  const match = FUNCTIONAL_COLOR.exec(text);
+  const parts = match ? functionalParts(match[2] ?? '') : undefined;
+  return match && parts ? functionalToRgba(match[1] ?? '', parts) : undefined;
+}
+
+const toByte = (n: number): string =>
+  Math.max(0, Math.min(255, Math.round(n)))
+    .toString(16)
+    .padStart(2, '0');
+
+/**
+ * A cor com o alfa multiplicado por `alpha` (0 a 1), em `#rrggbbaa`. `none`, `transparent` e o
+ * que não for uma cor que se entenda ficam como estão.
+ */
+function withAlpha(color: string, alpha: number): string {
+  const text = color.trim();
+  const rgba = parseHex(text) ?? parseFunctional(text);
+  if (!rgba) return color;
+  return `#${toByte(rgba.r)}${toByte(rgba.g)}${toByte(rgba.b)}${toByte(rgba.a * alpha * 255)}`;
+}
+
+/** O `alpha` do `$token` como número de 0 a 1 (literal ou `$token` de número); nenhum se faltar ou não valer. */
+function alphaOf(ref: TokenRef, tokens: ResolvedTokens): number | undefined {
+  const raw = isTokenRef(ref.alpha) ? tokens[ref.alpha.$token] : ref.alpha;
+  return typeof raw === 'number' && Number.isFinite(raw)
+    ? Math.min(1, Math.max(0, raw))
+    : undefined;
+}
+
+/** O valor do `$token` na tabela (com o `alpha` aplicado, se houver), ou nenhum se o nome não existe. */
+function resolveRef(ref: TokenRef, tokens: ResolvedTokens): TokenValue | undefined {
+  const resolved = tokens[ref.$token];
+  if (resolved === undefined || ref.alpha === undefined || typeof resolved !== 'string')
+    return resolved;
+  const alpha = alphaOf(ref, tokens);
+  return alpha === undefined ? resolved : withAlpha(resolved, alpha);
 }
 
 function substitute(node: unknown, tokens: ResolvedTokens): unknown {
-  if (Array.isArray(node)) return node.map((item) => substitute(item, tokens));
+  if (Array.isArray(node)) {
+    // Um item de lista (`cornerRadius`, `dash`) não some: o `$token` sem valor fica como está.
+    return node.map((item) =>
+      isTokenRef(item) ? (resolveRef(item, tokens) ?? item) : substitute(item, tokens),
+    );
+  }
   if (typeof node !== 'object' || node === null) return node;
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(node)) {
     if (isTokenRef(value)) {
-      const resolved = tokens[value.$token];
+      const resolved = resolveRef(value, tokens);
       if (resolved !== undefined) out[key] = resolved;
     } else {
       out[key] = substitute(value, tokens);

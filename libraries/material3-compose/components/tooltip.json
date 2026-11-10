@@ -78,7 +78,8 @@
               },
               "letterSpacing": {
                 "$token": "body-small-tracking"
-              }
+              },
+              "verticalAlign": "cap-middle"
             },
             "color": {
               "$token": "inverse-on-surface"
@@ -108,8 +109,12 @@
           "color": {
             "$token": "elevation-shadow"
           },
-          "y": 2,
-          "blur": 6
+          "y": {
+            "$token": "elevation-2-y"
+          },
+          "blur": {
+            "$token": "elevation-2-blur"
+          }
         },
         "visible": {
           "$eq": ["style", "rich"]
@@ -251,11 +256,13 @@
                       },
                       "letterSpacing": {
                         "$token": "label-large-tracking"
-                      }
+                      },
+                      "verticalAlign": "cap-middle"
                     },
                     "color": {
                       "$token": "primary"
-                    }
+                    },
+                    "height": "fill"
                   }
                 ]
               }

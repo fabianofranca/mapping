@@ -67,11 +67,14 @@
               "left": 0,
               "right": 0,
               "top": 0,
-              "bottom": -4
+              "bottom": 0
             },
-            "cornerRadius": {
-              "$token": "corner-extra-small"
-            },
+            "cornerRadius": [
+              { "$token": "corner-extra-small" },
+              { "$token": "corner-extra-small" },
+              0,
+              0
+            ],
             "fill": {
               "$token": "surface-container-highest"
             },
@@ -734,7 +737,8 @@
                             "else": {
                               "$token": "body-large-tracking"
                             }
-                          }
+                          },
+                          "verticalAlign": "cap-middle"
                         },
                         "color": {
                           "$if": {
@@ -874,6 +878,11 @@
                                 "else": {
                                   "$field": "maxLines"
                                 }
+                              },
+                              "verticalAlign": {
+                                "$if": { "$eq": ["singleLine", "true"] },
+                                "then": "cap-middle",
+                                "else": "top"
                               }
                             },
                             "color": {
@@ -916,7 +925,8 @@
                           },
                           "letterSpacing": {
                             "$token": "body-large-tracking"
-                          }
+                          },
+                          "verticalAlign": "cap-middle"
                         },
                         "color": {
                           "$if": {
@@ -1323,7 +1333,8 @@
                       },
                       "letterSpacing": {
                         "$token": "body-small-tracking"
-                      }
+                      },
+                      "verticalAlign": "cap-middle"
                     },
                     "color": {
                       "$if": {

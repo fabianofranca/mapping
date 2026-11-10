@@ -97,6 +97,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - Wide recolhida: folha de 96 em `surface`, 44 de topo, destinos de 64 com 4 entre eles, o indicador de 56 × 32 a 20 da borda e o conteúdo (indicador, ícone, rótulo em `label-medium`) no topo do item.
 - Wide expandida: largura de no mínimo 220 e no máximo 360, que cresce com a pílula mais larga mais 20 (`hug` com `minWidth` e `maxWidth`); itens de 56 sem espaço entre eles; a pílula de 56 de altura em `corner-full` fica a 20 da borda e mede `16 + ícone 24 + 8 + rótulo + 16`, com o rótulo em `label-large` (14 / 20, peso 500, 0,1).
 - Modal expandida: `surface-container` com os quatro cantos de 16 (`corner-large`); recolhida, igual à wide recolhida. Cores como no Compose: ícone `on-secondary-container` selecionado e `on-surface-variant` nos demais, rótulo `secondary` selecionado, indicador `secondary-container`.
+- Rótulo centrado pela maiúscula (`cap-middle`): o nó `rótulo` usa `font.verticalAlign: "cap-middle"`; no destino expandido (ícone ao lado) ocupa a altura do quadro `conteúdo` (`height: "fill"`) e, com o ícone acima, segue `hug` numa coluna. O `Text` do Compose centra pela caixa de linha da fonte (ascent e descent); o desenho centra a altura da maiúscula na caixa, e com o Roboto as duas coincidem a menos de 1 px.
 
 **Estado de interação (campo `interaction`)**
 
@@ -109,4 +110,4 @@ O campo escolhe a aparência parada de um estado; não entra no `code` nem nas `
 
 - O scrim, a elevação do rail modal (Level2 nos tokens, sem sombra no composable), a animação de expandir e recolher, o cabeçalho (`header`) e o botão do rail não fazem parte do desenho; o estilo `modal-wide` desenha só a folha.
 - A largura do rail estreito é `hug` com mínimo de 80 (o `widthIn(min = 80)` do Compose); a wide recolhida é limitada a 96 mesmo com rótulo mais largo, como o `actualMinWidth` do Compose.
-- O `interaction` é um quadro parado: sem o ripple animado nem o anel de foco por fora da forma (#896), sem `enabled` e sem o ícone sozinho (item sem rótulo, de indicador redondo de 56 × 56): o tipo exige o rótulo.
+- O `interaction` é um quadro parado: sem o ripple animado nem anel de foco (o Compose não define `FocusIndicatorColor` para ele no commit fixado), sem `enabled` e sem o ícone sozinho (item sem rótulo, de indicador redondo de 56 × 56): o tipo exige o rótulo.

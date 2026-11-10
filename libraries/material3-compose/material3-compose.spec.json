@@ -3,7 +3,7 @@
   "formatVersion": 15,
   "id": "material3-compose",
   "name": "Material 3 (Compose)",
-  "version": 4,
+  "version": 5,
   "description": "Material Design 3 (baseline, tema claro e escuro) para Jetpack Compose, com o composable de cada tipo no `code`. Os símbolos e os parâmetros vêm do código do androidx na versão compose.material3 1.4.0 (commit 5113b82a4ed6416d6344efa50e41db8cb65928ff). Padrões: os espaços (lambdas) de cada composable ficam no `notes`; o tamanho vem de width, height e weight; os ícones são sugestões de Icons.Filled; a imagem remota usa o carregador de imagens do app; o Scaffold coloca cada filha no espaço certo pelo tipo dela.",
   "platforms": [
     {
@@ -343,6 +343,8 @@
       "state-pressed": 0.1,
       "state-dragged": 0.16,
       "corner-checkbox": 2,
+      "corner-track-inside": 2,
+      "corner-track-outer": 8,
       "font-sans": "Roboto, sans-serif"
     }
   },
@@ -1293,7 +1295,6 @@
               "key": "verticalArrangement",
               "label": "Distribuição vertical",
               "type": "enum",
-              "default": "Top",
               "options": [
                 "Top",
                 "Bottom",
@@ -1302,7 +1303,7 @@
                 "SpaceAround",
                 "SpaceEvenly"
               ],
-              "description": "Como os itens se distribuem no eixo vertical (Arrangement)."
+              "description": "Como os itens se distribuem no eixo vertical (Arrangement). Vazio = o padrão do Compose: Top, ou Bottom com reverseLayout; Top explícito com reverseLayout mantém o bloco no topo."
             },
             {
               "key": "horizontalAlignment",
@@ -1413,7 +1414,6 @@
               "key": "horizontalArrangement",
               "label": "Distribuição horizontal",
               "type": "enum",
-              "default": "Start",
               "options": [
                 "Start",
                 "End",
@@ -1422,7 +1422,7 @@
                 "SpaceAround",
                 "SpaceEvenly"
               ],
-              "description": "Como os itens se distribuem no eixo horizontal (Arrangement)."
+              "description": "Como os itens se distribuem no eixo horizontal (Arrangement). Vazio = o padrão do Compose: Start, ou End com reverseLayout; Start explícito com reverseLayout mantém o bloco no começo."
             },
             {
               "key": "verticalAlignment",

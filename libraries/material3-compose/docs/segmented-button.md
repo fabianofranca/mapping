@@ -89,6 +89,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - O ícone (18) e o rótulo ficam separados por 8 e o conjunto é centrado no segmento, com o espaço de `TextButtonContentPadding` (12 dos lados, 8 em cima e embaixo). Sem ícone e desmarcado, só o rótulo, centrado.
 - Contorno de 1 em `outline`, dentro da caixa e com a forma full; o `clip` da raiz arredonda as pontas do fundo do selecionado. Entre os segmentos há um divisor de 1 em `outline` (a borda dupla do Compose, sobreposta em 1).
 - Desabilitado: contorno e divisores `outline` a `state-disabled-container` (0,12, como `disabledActiveBorderColor` e `disabledInactiveBorderColor`: o código usa `OutlineColor`, não o `on-surface` que o token cita), rótulo e ícone `on-surface` a `state-disabled-content` (0,38) e o fundo do selecionado continua `secondary-container` (`disabledActiveContainerColor`).
+- Rótulo de uma linha centrado pela maiúscula (`cap-middle`): o nó `rótulo` usa `font.verticalAlign: "cap-middle"` e ocupa a altura da caixa (`height: "fill"`), sem mudar a posição horizontal. O `Text` do Compose centra pela caixa de linha da fonte (ascent e descent); o desenho centra a altura da maiúscula na caixa, e com o Roboto as duas coincidem a menos de 1 px.
 
 **Estado de interação (campo `interaction`)**
 
@@ -104,5 +105,5 @@ O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o des
 - Os segmentos se encostam e o divisor é o lado esquerdo de cada um (o do primeiro fica fora da caixa), em vez de se sobrepor em 1: a largura de cada segmento é `(largura + 1) / n`, e não `(largura + n - 1) / n`, então a fronteira cai a menos de 1 do Compose.
 - A linha ocupa a largura da marcação (`fill`); o Compose usa `width(IntrinsicSize.Min)` e mede os segmentos pelo conteúdo.
 - O rótulo não corta nem quebra de propósito; um rótulo maior que o segmento avisa `texto maior que a caixa`. O Compose só limita pelo `Row`.
-- Os estados de interação são quadros parados: sem ripple animado, sem transição e sem o movimento da troca do check e do deslocamento do rótulo (`SegmentedButtonContentMeasurePolicy` anima o `offsetX`). O anel de foco por fora do segmento não é desenhado: a raiz recorta (#896). O estado vale só para o segmento selecionado (ver "Qual segmento").
+- Os estados de interação são quadros parados: sem ripple animado, sem transição e sem o movimento da troca do check e do deslocamento do rótulo (`SegmentedButtonContentMeasurePolicy` anima o `offsetX`). O Compose não define anel de foco para este tipo no commit fixado (nenhum `*Tokens.kt` dele traz `FocusIndicatorColor`): nenhum é desenhado. O estado vale só para o segmento selecionado (ver "Qual segmento").
 - O `selection` não muda o desenho (single e multi usam o mesmo check); só muda o símbolo do código.

@@ -76,6 +76,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - Mensagem de duas linhas: o respiro de 14 em cima e embaixo faz a altura ser 68 (`TwoLinesContainerHeight`) e a ação continua centrada, como o Compose; uma linha continua em 48 com o mesmo respiro.
 - Ação em nova linha (`actionOnNewLine` com ação preenchida; sem ação o Compose cai na linha única, e o desenho também): mensagem a 15 do topo (`paddingFromBaseline(30)` com a linha de base do Roboto 14/20 em 15), 7 abaixo dela (12 menos os 5 da linha de base ao fim da linha), as ações numa fileira de 48 à direita e 2 de margem embaixo: 15 + 20 + 7 + 48 + 2 = 92 para uma linha de texto.
 - Largura máxima de 600 (`ContainerMaxWidth`, o `maxWidth` da raiz).
+- Rótulo de uma linha centrado pela maiúscula (`cap-middle`): o nó `rótulo da ação` (a `mensagem` fica como está) usa `font.verticalAlign: "cap-middle"` e ocupa a altura da caixa (`height: "fill"`), sem mudar a posição horizontal. O `Text` do Compose centra pela caixa de linha da fonte (ascent e descent); o desenho centra a altura da maiúscula na caixa, e com o Roboto as duas coincidem a menos de 1 px.
 
 **O que ainda difere do Compose**
 
@@ -83,5 +84,5 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - Com a ação em nova linha a altura é a do código (92 com uma linha de texto); os 68 são o `TwoLinesContainerHeight` da linha única de duas linhas, e a descrição do campo diz isso desde a versão 4 da biblioteca.
 - A posição vertical vem da linha de base do Compose (30, 12, `FirstBaseline`); o motor não alinha por linha de base, então o 15 e o 7 são estimados para o Roboto 14/20 e valem para essa fonte e esse tamanho.
 - O limite de 600 vale só quando o componente é medido sem retângulo (`hug`), e o `sizing` deste componente é `fill` na largura; com a marcação desenhada a largura é a dela.
-- A sombra é uma só, em preto a 30%, com o `y` e o `blur` em números no componente (o `shadow` só aceita `$token` na cor); o Compose compõe a sombra ambiente e a do ponto.
+- A sombra é uma só, em preto a 30%, com o `y` e o `blur` pelos tokens de elevação (`$token` em `shadow.y` e `shadow.blur`); o Compose compõe a sombra ambiente e a do ponto.
 - Fora do desenho: o `SnackbarHost` (posição na tela, os 12 de margem do `Snackbar(snackbarData)`, a fila, o tempo de exibição e a animação), o estado de pressionado, foco e passar o mouse, e o `contentDescription` do fechar.

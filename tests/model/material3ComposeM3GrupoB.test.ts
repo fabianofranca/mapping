@@ -78,10 +78,9 @@ describe('M3 grupo B — text-field', () => {
     const fundo = named(light.root, 'fundo');
     expect(color(fundo)).toBe('#E6E0E9');
     expect(color(named(dark.root, 'fundo'))).toBe('#36343B');
-    // raio superior 4 por token (CornerExtraSmallTop): o retângulo passa 4 do fundo do contêiner,
-    // que recorta, porque a lista de 4 raios não aceita token
-    expect(fundo?.type === 'rect' && fundo.cornerRadius).toBe(4);
-    expect(fundo?.height).toBe(56 + 4);
+    // raio superior 4 por token (CornerExtraSmallTop): a lista de 4 raios aceita `$token` por item
+    expect(fundo?.type === 'rect' && fundo.cornerRadius).toEqual([4, 4, 0, 0]);
+    expect(fundo?.height).toBe(56);
     expect(
       named(light.root, 'contêiner')?.type === 'frame' &&
         (named(light.root, 'contêiner') as { clip: boolean }).clip,

@@ -157,8 +157,12 @@
         },
         "else": "none"
       },
-      "y": 3,
-      "blur": 12
+      "y": {
+        "$token": "elevation-3-y"
+      },
+      "blur": {
+        "$token": "elevation-3-blur"
+      }
     },
     "minWidth": {
       "$if": {
@@ -307,8 +311,12 @@
           "color": {
             "$token": "elevation-shadow"
           },
-          "y": 4,
-          "blur": 16
+          "y": {
+            "$token": "elevation-4-y"
+          },
+          "blur": {
+            "$token": "elevation-4-blur"
+          }
         }
       },
       {
@@ -391,7 +399,7 @@
           "centerY": true
         },
         "width": "hug",
-        "height": "hug",
+        "height": "fill",
         "layout": {
           "type": "row",
           "gap": 12,
@@ -662,7 +670,8 @@
               },
               "letterSpacing": {
                 "$token": "label-large-tracking"
-              }
+              },
+              "verticalAlign": "cap-middle"
             },
             "color": {
               "$switch": "containerColor",
@@ -719,7 +728,8 @@
                   }
                 ]
               }
-            }
+            },
+            "height": "fill"
           }
         ]
       }

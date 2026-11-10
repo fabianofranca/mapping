@@ -60,8 +60,12 @@
           "color": {
             "$token": "elevation-shadow"
           },
-          "y": 2,
-          "blur": 6
+          "y": {
+            "$token": "elevation-2-y"
+          },
+          "blur": {
+            "$token": "elevation-2-blur"
+          }
         }
       },
       {
@@ -166,8 +170,12 @@
             },
             "else": "none"
           },
-          "y": 1,
-          "blur": 2
+          "y": {
+            "$token": "elevation-1-y"
+          },
+          "blur": {
+            "$token": "elevation-1-blur"
+          }
         }
       },
       {
@@ -258,7 +266,7 @@
           "centerY": true
         },
         "width": "hug",
-        "height": "hug",
+        "height": "fill",
         "layout": {
           "type": "row",
           "gap": 8,
@@ -532,7 +540,8 @@
               },
               "letterSpacing": {
                 "$token": "label-large-tracking"
-              }
+              },
+              "verticalAlign": "cap-middle"
             },
             "color": {
               "$if": {
@@ -581,7 +590,8 @@
                 "$token": "state-disabled-content"
               },
               "else": 1
-            }
+            },
+            "height": "fill"
           }
         ]
       }
