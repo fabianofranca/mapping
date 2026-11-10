@@ -301,6 +301,61 @@ describe('Dialog: foco quando quem abriu não existe mais', () => {
     expect(document.activeElement?.textContent).toBe('Primeiro');
   });
 
+  /** Dentro de uma janela de ferramenta: ao sumir quem abriu, o foco vai à janela. */
+  function InWindow({ withWindow }: { readonly withWindow: boolean }) {
+    const [open, setOpen] = useState(false);
+    const [gone, setGone] = useState(false);
+    const inner = (
+      <div>
+        {!gone && <button onClick={() => setOpen(true)}>Abrir</button>}
+        <button>Vizinho</button>
+      </div>
+    );
+    return (
+      <div data-focus-root>
+        <button>Primeiro</button>
+        {withWindow ? (
+          <section data-window="details" tabIndex={-1} aria-label="Detalhes">
+            {inner}
+          </section>
+        ) : (
+          inner
+        )}
+        {open && (
+          <Dialog
+            title="Confirmar"
+            onCancel={() => setOpen(false)}
+            returnFocus={() => null}
+            actions={
+              <button
+                onClick={() => {
+                  setGone(true);
+                  setOpen(false);
+                }}
+              >
+                Ok
+              </button>
+            }
+          />
+        )}
+      </div>
+    );
+  }
+
+  it('com alvo explícito que sumiu e quem abriu numa janela de ferramenta, vai à janela', async () => {
+    render(<InWindow withWindow />);
+    await openAndConfirm();
+    expect(document.activeElement).toBe(
+      document.querySelector('section[data-window="details"]'),
+    );
+  });
+
+  it('com alvo explícito que sumiu e sem janela em volta, vai ao primeiro controle da app', async () => {
+    render(<InWindow withWindow={false} />);
+    await openAndConfirm();
+    expect(document.activeElement?.textContent).toBe('Primeiro');
+  });
+
   it('quem abriu continua no DOM: o foco volta para ele (o alvo explícito fica de reserva)', async () => {
     const user = userEvent.setup();
     render(<Vanishing explicit />);
