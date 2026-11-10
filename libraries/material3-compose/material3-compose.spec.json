@@ -1295,7 +1295,6 @@
               "key": "verticalArrangement",
               "label": "Distribuição vertical",
               "type": "enum",
-              "default": "Top",
               "options": [
                 "Top",
                 "Bottom",
@@ -1304,7 +1303,7 @@
                 "SpaceAround",
                 "SpaceEvenly"
               ],
-              "description": "Como os itens se distribuem no eixo vertical (Arrangement)."
+              "description": "Como os itens se distribuem no eixo vertical (Arrangement). Vazio = o padrão do Compose: Top, ou Bottom com reverseLayout; Top explícito com reverseLayout mantém o bloco no topo."
             },
             {
               "key": "horizontalAlignment",
@@ -1415,7 +1414,6 @@
               "key": "horizontalArrangement",
               "label": "Distribuição horizontal",
               "type": "enum",
-              "default": "Start",
               "options": [
                 "Start",
                 "End",
@@ -1424,7 +1422,7 @@
                 "SpaceAround",
                 "SpaceEvenly"
               ],
-              "description": "Como os itens se distribuem no eixo horizontal (Arrangement)."
+              "description": "Como os itens se distribuem no eixo horizontal (Arrangement). Vazio = o padrão do Compose: Start, ou End com reverseLayout; Start explícito com reverseLayout mantém o bloco no começo."
             },
             {
               "key": "verticalAlignment",

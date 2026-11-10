@@ -18,6 +18,7 @@ import {
   COMPONENTS,
   SPEC_ID,
   componentProject,
+  reversedContainer,
   testCatalog,
   tokenSlotCatalog,
 } from './componentFixtures';
@@ -215,6 +216,49 @@ describe('componentPlacement: dentro de um container', () => {
     p = add(p, 'T2', 'text', { parentId: 'C' });
     expect(rectOf(p, 'T1')).toEqual({ x: 50, y: 50, width: 100, height: 40 });
     expect(rectOf(p, 'T2')).toEqual({ x: 50, y: 98, width: 100, height: 40 });
+    expectValid(p);
+  });
+
+  it('layout.reverse em linha: a primeira filha no fim do slot, as seguintes à esquerda da última (FX3)', () => {
+    const reverse = testCatalog({
+      ...COMPONENTS,
+      row: reversedContainer('row', 'row', { width: 300, height: 100 }),
+    });
+    let p = add(
+      componentProject(),
+      'C',
+      'row',
+      { rect: { x: 100, y: 100, width: 300, height: 100 } },
+      reverse,
+    );
+    p = add(p, 'T1', 'text', { parentId: 'C' }, reverse);
+    p = add(p, 'T2', 'text', { parentId: 'C' }, reverse);
+    expect(rectOf(p, 'T1')).toEqual({ x: 300, y: 100, width: 100, height: 40 });
+    expect(rectOf(p, 'T2')).toEqual({ x: 192, y: 100, width: 100, height: 40 });
+    p = setFieldValue(p, 'A_C', 'padding', 4);
+    p = add(p, 'T3', 'text', { parentId: 'C' }, reverse);
+    expect(rectOf(p, 'T3').x).toBeGreaterThanOrEqual(100);
+    expectValid(p);
+  });
+
+  it('layout.reverse em coluna: a primeira filha no fim do slot, as seguintes acima da última (FX3)', () => {
+    const reverse = testCatalog({
+      ...COMPONENTS,
+      column: reversedContainer('column', 'column', { width: 300, height: 300 }),
+    });
+    let p = add(
+      componentProject(),
+      'C',
+      'column',
+      { rect: { x: 50, y: 50, width: 300, height: 300 } },
+      reverse,
+    );
+    p = setFieldValue(p, 'A_C', 'padding', 4);
+    p = add(p, 'T1', 'text', { parentId: 'C' }, reverse);
+    p = add(p, 'T2', 'text', { parentId: 'C' }, reverse);
+    // O slot acaba em y = 350; com o padding de 4 a primeira filha termina em 346.
+    expect(rectOf(p, 'T1')).toEqual({ x: 54, y: 306, width: 100, height: 40 });
+    expect(rectOf(p, 'T2')).toEqual({ x: 54, y: 258, width: 100, height: 40 });
     expectValid(p);
   });
 
