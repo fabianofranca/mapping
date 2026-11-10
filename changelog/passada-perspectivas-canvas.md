@@ -1,4 +1,4 @@
-# Passada visual das perspectivas e do canvas — [Não lançado] (épico `epic/passada-perspectivas-canvas`, PR #0, MCP sem mudança, schema v18)
+# Passada visual das perspectivas e do canvas — [Não lançado] (épico `epic/passada-perspectivas-canvas`, PR #1496, MCP sem mudança, schema v18)
 
 ## Corrigido
 
