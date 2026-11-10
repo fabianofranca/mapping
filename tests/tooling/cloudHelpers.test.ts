@@ -1366,6 +1366,26 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
       expect(mod.nearHandle(mid, { x: 45 + rm + 1, y: 90 })).toBeNull();
     });
 
+    it('o container tem raio fixo de 22 px mesmo com a caixa pequena (HANDLE_HIT_RADIUS)', async () => {
+      const mod = await load();
+      const small = { x: 0, y: 0, width: 30, height: 90 };
+      const r = HANDLE_HIT_RADIUS;
+      // Marcação: clamp(30 / 3, 12, 22) = 12; container: sempre 22.
+      expect(mod.nearHandle(small, { x: 0, y: r })).toBeNull();
+      expect(mod.nearHandle(small, { x: 0, y: r }, { container: true })).toBe('nw');
+      expect(mod.nearHandle(small, { x: 0, y: r + 1 }, { container: true })).toBeNull();
+      // O drag não sabe se o selecionado é container ou marcação: avisa pelo raio maior.
+      const d = fakeDragPage('100 100 30 90');
+      const warnings: string[] = [];
+      await mod.drag(
+        d.page,
+        { x: 200, y: 168 },
+        { x: 260, y: 168 },
+        { steps: 1, warn: (m: string) => warnings.push(m) },
+      );
+      expect(warnings.join('')).toMatch(/perto da alça nw/);
+    });
+
     it('drag avisa perto do canto fora da caixa, como o rótulo do container', async () => {
       const mod = await load();
       const d = fakeDragPage('100 100 200 100');

@@ -179,6 +179,7 @@ export function closeWindow(page: unknown, id: string): Promise<void>;
 export function nearHandle(
   box: { x: number; y: number; width: number; height: number },
   point: { x: number; y: number },
+  options?: { container?: boolean },
 ): string | null;
 export function paletteDrag(
   page: unknown,

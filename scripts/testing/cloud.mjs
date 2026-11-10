@@ -1217,8 +1217,12 @@ export async function closeWindow(page, id) {
 const HANDLE_MAX_RADIUS = 22;
 const HANDLE_MIN_RADIUS = 12;
 
-/** Raio (px de tela) da alça de uma caixa: `handleHitRadius` de `src/canvas/markingGeometry.ts`. */
-function handleRadius(box) {
+/**
+ * Raio (px de tela) da alça de uma caixa: `handleHitRadius` de `src/canvas/markingGeometry.ts` para
+ * marcação; o container usa sempre o fixo (`HANDLE_HIT_RADIUS` em `intents.ts`).
+ */
+function handleRadius(box, container = false) {
+  if (container) return HANDLE_MAX_RADIUS;
   const side = Math.min(box.width, box.height) / 3;
   return Math.min(HANDLE_MAX_RADIUS, Math.max(HANDLE_MIN_RADIUS, side));
 }
@@ -1229,8 +1233,8 @@ function handleRadius(box) {
  * (`CORNERS`), distância em xadrez (`cornerAt`) e raio `clamp(min(largura, altura) / 3, 12, 22)`.
  * Um ponto fora da caixa também conta (o rótulo do container fica acima da borda). Pura.
  */
-export function nearHandle(box, point) {
-  const radius = handleRadius(box);
+export function nearHandle(box, point, { container = false } = {}) {
+  const radius = handleRadius(box, container);
   const corners = [
     ['nw', box.x, box.y],
     ['ne', box.x + box.width, box.y],
@@ -1270,13 +1274,16 @@ export async function drag(
   const hostBox = text ? await host.boundingBox() : null;
   if (text && hostBox) {
     const [l, t, w, h] = text.split(' ').map(Number);
+    // A caixa não diz se é container ou marcação: vale o raio maior (o do container), que contém
+    // o da marcação; avisar a mais é inofensivo, avisar a menos deixa o arrasto redimensionar.
     const handle = nearHandle(
       { x: hostBox.x + l, y: hostBox.y + t, width: w, height: h },
       de,
+      { container: true },
     );
     if (handle) {
       warn(
-        `perto da alça ${handle}: o arrasto pode redimensionar (a alça pega até ${Math.round(handleRadius({ width: w, height: h }))} px do canto; parta de mais longe)`,
+        `perto da alça ${handle}: o arrasto pode redimensionar (a alça pega até ${Math.round(handleRadius({ width: w, height: h }, true))} px do canto; parta de mais longe)`,
       );
     }
   }
@@ -1324,6 +1331,9 @@ function syntheticPaletteDrag({ tipo, para }) {
  * item, `down`, `move` em `steps` passos até `para`, `up`) e confere que o `data-components` do
  * `.canvas-host` subiu. Sem subida, refaz por eventos (`dragstart` no item; `dragover`, `drop` e
  * `dragend` sob o ponto). Sem nenhuma, lança "o arrasto da Paleta não criou a instância".
+ * Limite: o sucesso se mede pelo `data-components`, que só conta componentes desenhados; um tipo
+ * sem desenho, numa camada oculta ou na vista Atual pode criar a instância sem subir o contador (aí o
+ * erro vem mesmo com a instância criada: confira o disco).
  * `capture` (caminho de PNG) grava o recorte do canvas antes de soltar, com o destino aceso.
  * Devolve `{ via: 'nativo' | 'sintetico' }`.
  */
