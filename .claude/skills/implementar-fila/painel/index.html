@@ -195,6 +195,10 @@
   </div>
   <div class="gap">
     <div class="card">
+      <h2>Por que há vaga livre</h2>
+      <ul id="mp-vagas"></ul>
+    </div>
+    <div class="card">
       <h2>Passo a passo</h2>
       <div class="scroll">
         <table data-source="queue" data-row-key="issue" id="mp-table">
@@ -344,11 +348,20 @@
       }
       dash.onData(() => {
         const m = q('meta')[0] || {};
+        const vagas = (m.vagas || '').split(' · ').filter(Boolean);
         document.getElementById('mp-cur').textContent =
           (m.current || '—') +
+          (vagas[0] ? ' · ' + vagas[0] : '') +
           (m.updatedAt
             ? ' · atualizado ' + new Date(m.updatedAt).toLocaleTimeString('pt-BR')
             : '');
+        const vul = document.getElementById('mp-vagas');
+        vul.replaceChildren();
+        for (const part of vagas.length ? vagas : ['—']) {
+          const li = document.createElement('li');
+          li.textContent = part;
+          vul.appendChild(li);
+        }
         const sm = dash.data('summary');
         if (sm.status === 'ok' && sm.data[0]) {
           document.getElementById('mp-bar').style.width =
