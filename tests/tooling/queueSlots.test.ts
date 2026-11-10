@@ -374,4 +374,17 @@ describe('implementar-fila e detalhar-backlog: vagas, contexto e roteiros (VG2, 
     expect(detalhe).toContain('docs/TESTING.md#R12');
     expect(detalhe).toContain('docs/TESTING-NUVEM.md#blocos');
   });
+
+  it('achados da revisão: pausa sem apagar hold, linhagem, contexto da sessão nova, dep fechada e merged na conferência', () => {
+    const mudancas = section(fila, '## Mudanças na fila durante a execução');
+    expect(mudancas).toContain('sem `hold`');
+    expect(mudancas).toContain('só nos `pausada pelo dono`');
+    const reserva = between(fila, '**Conferências de reserva:**', '**CI vermelho');
+    expect(reserva).toContain('Limite de linhagem');
+    expect(reserva).toContain('painel.py merged');
+    expect(reserva).toContain('não publica');
+    const nova = between(fila, '**Na sessão nova**', '## Fim');
+    expect(nova).toContain('painel.py context');
+    expect(section(fila, '### Ficha da etapa')).toContain('fechada como concluída');
+  });
 });
