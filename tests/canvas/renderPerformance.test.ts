@@ -776,8 +776,9 @@ describe('visão Proposto com 60 componentes novos', () => {
 // só a borda e pendura no grupo só o que está visível (nível de detalhe). A meta da decisão 9 é
 // `RENDER_BUDGET_MS` (16 ms), mas em jsdom o quadro de edição mede ~16 a 24 ms (mediana de 15; o
 // `drawScene` das marcações caiu de ~21 para ~9 ms, de 18 mil para 4 mil nós, e sobram ~6 ms do
-// `CanvasController.render` e as sobreposições): o teto abaixo guarda contra regressão até a DA5
-// (nós sob demanda) e a #888 registra o número.
+// `CanvasController.render` e as sobreposições): o teto abaixo guarda contra regressão. Conferência final
+// (CD5 da etapa canvas-desempenho): com 16 ms o orçamento passou só 6 de 10 execuções seguidas, então o
+// teto continua 35 ms; a meta de 16 ms está atingida no Chromium (edição 9,8 ms com 2.000).
 const EDIT_FRAME_CEILING_MS = 35;
 
 // Decisões 5 a 7 e 9 da etapa canvas-escala: depois do quadro que leva os nós ao grupo de arrasto, cada
