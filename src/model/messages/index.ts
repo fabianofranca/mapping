@@ -1,12 +1,16 @@
 import { modelMessage, type ModelMessage } from '../modelMessage';
 import { libraryMessages } from './library';
+import { specMessages } from './spec';
 
 // Catálogo das mensagens do modelo que a interface traduz (etapa #1263). Cada módulo da pasta é
 // uma área (`library.ts`, ...) e exporta código → modelo do texto pt-BR de hoje, com
 // `{parâmetros}`. A interface monta o pt-BR dos dicionários daqui (`src/i18n/modelMessages.ts`),
 // então o texto em pt-BR é igual ao do modelo por construção. Sem DOM.
 
-export const MODEL_MESSAGE_TEMPLATES = { ...libraryMessages } as const;
+export const MODEL_MESSAGE_TEMPLATES = {
+  ...libraryMessages,
+  ...specMessages,
+} as const;
 
 export type ModelMessageTemplateCode = keyof typeof MODEL_MESSAGE_TEMPLATES;
 

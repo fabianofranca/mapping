@@ -675,6 +675,8 @@ describe('validação do formatVersion 2 (plataformas e code)', () => {
     expect(result.issues).toContainEqual({
       path: `${BUTTON}.code.android.params.naoExiste`,
       message: '"naoExiste" não é um campo do tipo',
+      code: 'spec.notTypeField',
+      params: { key: 'naoExiste' },
     });
   });
 

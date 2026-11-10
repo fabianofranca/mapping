@@ -33,7 +33,7 @@ function spec(formatVersion: number, type: Json = {}, extraType: Json[] = []): J
 function errorsOf(raw: unknown): { path: string; message: string }[] {
   const result = parseSpec(raw);
   if (result.ok) throw new Error('era para falhar');
-  return [...result.issues];
+  return result.issues.map(({ path, message }) => ({ path, message }));
 }
 
 const typeOf = (s: Spec) => s.layers[0]!.annotationTypes[0]!;

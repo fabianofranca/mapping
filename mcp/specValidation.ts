@@ -70,7 +70,10 @@ export async function validateSpecialization(
       ...origin,
       errorCount: parsed.errors.length,
       errors: parsed.errors.slice(0, MAX_ERRORS),
-      issues: parsed.issues.slice(0, MAX_ERRORS),
+      // Só `path` e `message`: o código do modelo (`code`/`params`) é da interface, não do MCP.
+      issues: parsed.issues
+        .slice(0, MAX_ERRORS)
+        .map(({ path, message }) => ({ path, message })),
       ...(parsed.errors.length > MAX_ERRORS
         ? { moreErrors: parsed.errors.length - MAX_ERRORS }
         : {}),
