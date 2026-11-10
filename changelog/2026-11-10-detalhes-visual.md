@@ -1,4 +1,4 @@
-# Passada visual dos Detalhes — [Não lançado] (épico `epic/detalhes-visual`, PR #0 (o coordenador numera ao abrir o PR do épico), MCP sem mudança, schema v18)
+# Passada visual dos Detalhes — 2026-11-10 (épico `epic/detalhes-visual`, PR #1460, MCP 0.30.0 sem mudança, schema v18)
 
 ## Corrigido
 
