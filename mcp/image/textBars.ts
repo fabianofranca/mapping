@@ -189,6 +189,48 @@ export function blockTop(
   return verticalAlign === 'bottom' ? node.height - total : 0;
 }
 
+const wordCount = (text: string): number =>
+  text.split(' ').filter((w) => w !== '').length;
+
+/**
+ * Parágrafos das linhas do medidor (`wrap: none`, `…`, `maxLines`): uma linha fecha o parágrafo
+ * quando as palavras dela completam as do `\\n` corrente; a última linha sempre fecha.
+ */
+function customEnds(node: TextNode, lines: readonly string[]): boolean[] {
+  if (node.style.wrap === 'none') return lines.map(() => true);
+  const counts = node.text.split('\n').map(wordCount);
+  let paragraph = 0;
+  let left = counts[0] ?? 0;
+  return lines.map((line, i) => {
+    left -= wordCount(line);
+    if (i === lines.length - 1) return true;
+    if (left > 0) return false;
+    paragraph += 1;
+    left = counts[paragraph] ?? 0;
+    return true;
+  });
+}
+
+/**
+ * Para cada linha, se ela fecha um parágrafo (a última linha de cada `\n`, que o `justify` deixa à
+ * esquerda, como o Konva). As linhas do medidor (`wrap: none`, `…`, `maxLines`) fecham o texto
+ * inteiro: com `wrap: none` cada linha é um parágrafo; nos outros casos só a última fecha.
+ */
+function paragraphEnds(
+  node: TextNode,
+  lines: readonly string[],
+  custom: readonly string[] | undefined,
+  widthOf: (text: string) => number,
+): boolean[] {
+  if (custom !== undefined) return customEnds(node, lines);
+  const ends: boolean[] = [];
+  for (const paragraph of node.text.split('\n')) {
+    const count = breakLines({ ...node, text: paragraph }, widthOf).length;
+    for (let i = 0; i < count; i++) ends.push(i === count - 1);
+  }
+  return ends;
+}
+
 /** Posição horizontal de uma linha de largura `width` no nó, pelo `align`. */
 export function lineLeft(node: TextNode, width: number): number {
   const { align } = node.style;
@@ -210,13 +252,21 @@ export function textBars(node: TextNode, measure: TextMeasurer): TextBar[] {
     letterSpacing: style.letterSpacing ?? 0,
   };
   const widthOf = (text: string) => measure(text, font).width;
-  const lines = customLines(node, measure, font) ?? breakLines(node, widthOf);
+  const custom = customLines(node, measure, font);
+  const lines = custom ?? breakLines(node, widthOf);
+  const ends =
+    style.align === 'justify' ? paragraphEnds(node, lines, custom, widthOf) : [];
   const top = blockTop(node, lines.length, lineHeight);
   const barHeight = lineHeight * BAR_RATIO;
   const bars: TextBar[] = [];
   lines.forEach((line, i) => {
     if (line === '') return;
-    const justified = style.align === 'justify' && i < lines.length - 1;
+    // Como o Konva: só se estica uma linha que tem espaço (a palavra sozinha fica no tamanho dela).
+    const justified =
+      style.align === 'justify' &&
+      ends[i] === false &&
+      node.width > 0 &&
+      line.includes(' ');
     const width = justified
       ? node.width
       : Math.min(widthOf(line), node.width || Infinity);

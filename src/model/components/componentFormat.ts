@@ -111,9 +111,14 @@ export type Expr<T> =
   | { readonly $size: 'width' | 'height' }
   /**
    * Valor nomeado da especialização, no modo do desenho (v4; ver `tokens.ts`). Em posição de cor,
-   * `alpha` (0 a 1, literal ou `$token` de número) multiplica o alfa da cor.
+   * `alpha` (0 a 1, literal ou `$token` de número) multiplica o alfa da cor, e `over` (nome de
+   * um token de cor ou cor literal) compõe o resultado sobre essa cor, que o deixa opaco.
    */
-  | { readonly $token: string; readonly alpha?: number | { readonly $token: string } };
+  | {
+      readonly $token: string;
+      readonly alpha?: number | { readonly $token: string };
+      readonly over?: string;
+    };
 
 // ---------------------------------------------------------------------------------------
 // Estilo
@@ -183,7 +188,8 @@ export interface FontSpec {
   /** Múltiplo do tamanho (1.2) ou px quando > 3. */
   readonly lineHeight?: Expr<number>;
   readonly letterSpacing?: Expr<number>;
-  readonly align?: Expr<'left' | 'center' | 'right'>;
+  /** `justify` (v4): o texto ocupa a largura da caixa, e a última linha de cada parágrafo fica à esquerda. */
+  readonly align?: Expr<'left' | 'center' | 'right' | 'justify'>;
   /** `cap-middle` centra pela altura da maiúscula (só formatVersion 4). */
   readonly verticalAlign?: Expr<'top' | 'middle' | 'bottom' | 'cap-middle'>;
   readonly decoration?: Expr<'none' | 'underline' | 'line-through'>;
@@ -396,6 +402,18 @@ export interface RepeatTemplate extends TemplateNodeBase {
   readonly template: FrameTemplate;
 }
 
+/** Como a imagem ocupa a caixa. `fill-width`, `fill-height`, `scale-down` e `none` são da `formatVersion` 4. */
+export type ImageFit =
+  'cover' | 'contain' | 'fill' | 'fill-width' | 'fill-height' | 'scale-down' | 'none';
+
+/** Os valores de `ImageFit` que só existem na `formatVersion` 4. */
+export const IMAGE_FITS_V4: readonly ImageFit[] = [
+  'fill-width',
+  'fill-height',
+  'scale-down',
+  'none',
+];
+
 /**
  * Imagem remota (`formatVersion` 3). O `src` é a URL `https://` da imagem e é **restrito**: só um
  * texto literal ou exatamente `{ "$field": "<campo>" }` (campo `string` do tipo, ou coluna
@@ -409,7 +427,7 @@ export interface RepeatTemplate extends TemplateNodeBase {
 export interface ImageTemplate extends TemplateNodeBase {
   readonly type: 'image';
   readonly src: string | { readonly $field: string };
-  readonly fit?: 'cover' | 'contain' | 'fill';
+  readonly fit?: ImageFit;
 }
 
 /**

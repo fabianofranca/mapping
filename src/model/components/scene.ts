@@ -16,6 +16,7 @@
  */
 
 import type { Box } from './box';
+import type { ImageFit } from './componentFormat';
 import type { RunLayout } from './richText';
 
 export interface Point {
@@ -108,7 +109,7 @@ export type Paint =
       readonly src?: string;
       readonly url?: string;
       /** Como a imagem ocupa a caixa (ausente = `cover`). */
-      readonly fit?: 'cover' | 'contain' | 'fill';
+      readonly fit?: ImageFit;
       readonly opacity?: number;
     };
 

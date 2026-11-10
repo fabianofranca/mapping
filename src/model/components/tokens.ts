@@ -76,13 +76,16 @@ export function resolveTokens(
   return out;
 }
 
-/** Um `{ "$token": … }`, com o `alpha` opcional (a opacidade de uma cor; v4). */
-type TokenRef = { $token: string; alpha?: unknown };
+/** Um `{ "$token": … }`, com `alpha` (a opacidade de uma cor) e `over` (a cor de baixo) opcionais (v4). */
+type TokenRef = { $token: string; alpha?: unknown; over?: unknown };
 
 function isTokenRef(value: unknown): value is TokenRef {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
   const keys = Object.keys(value);
-  return keys.includes('$token') && keys.every((k) => k === '$token' || k === 'alpha');
+  return (
+    keys.includes('$token') &&
+    keys.every((k) => k === '$token' || k === 'alpha' || k === 'over')
+  );
 }
 
 interface Rgba {
@@ -188,13 +191,22 @@ const toByte = (n: number): string =>
     .toString(16)
     .padStart(2, '0');
 
+function parseColor(text: string): Rgba | undefined {
+  return parseHex(text) ?? parseFunctional(text);
+}
+
+/** O texto é uma cor literal (`#rgb`, `#rrggbb`, `#rrggbbaa`, `rgb(...)`, `hsl(...)`)? */
+export function isLiteralColor(text: string): boolean {
+  return parseColor(text.trim()) !== undefined;
+}
+
 /**
  * A cor com o alfa multiplicado por `alpha` (0 a 1), em `#rrggbbaa`. `none`, `transparent` e o
  * que não for uma cor que se entenda ficam como estão.
  */
 function withAlpha(color: string, alpha: number): string {
   const text = color.trim();
-  const rgba = parseHex(text) ?? parseFunctional(text);
+  const rgba = parseColor(text);
   if (!rgba) return color;
   return `#${toByte(rgba.r)}${toByte(rgba.g)}${toByte(rgba.b)}${toByte(rgba.a * alpha * 255)}`;
 }
@@ -207,13 +219,33 @@ function alphaOf(ref: TokenRef, tokens: ResolvedTokens): number | undefined {
     : undefined;
 }
 
-/** O valor do `$token` na tabela (com o `alpha` aplicado, se houver), ou nenhum se o nome não existe. */
+/** A cor `top` composta sobre `base` (`compositeOver` do Compose); o alfa da base entra no resultado. */
+function compositeOver(top: string, base: string): string {
+  const above = parseColor(top.trim());
+  const below = parseColor(base.trim());
+  if (!above || !below) return top;
+  const alpha = above.a + below.a * (1 - above.a);
+  if (alpha === 0) return `#00000000`;
+  const mix = (a: number, b: number): number =>
+    (a * above.a + b * below.a * (1 - above.a)) / alpha;
+  return `#${toByte(mix(above.r, below.r))}${toByte(mix(above.g, below.g))}${toByte(mix(above.b, below.b))}${toByte(alpha * 255)}`;
+}
+
+/** A cor de baixo do `over`: o token de cor (da tabela) ou a cor literal; nenhuma se não valer. */
+function overColor(ref: TokenRef, tokens: ResolvedTokens): string | undefined {
+  if (typeof ref.over !== 'string') return undefined;
+  const value = isLiteralColor(ref.over) ? ref.over : tokens[ref.over];
+  return typeof value === 'string' ? value : undefined;
+}
+
+/** O valor do `$token` na tabela (com `alpha` e `over` aplicados, se houver), ou nenhum se o nome não existe. */
 function resolveRef(ref: TokenRef, tokens: ResolvedTokens): TokenValue | undefined {
   const resolved = tokens[ref.$token];
-  if (resolved === undefined || ref.alpha === undefined || typeof resolved !== 'string')
-    return resolved;
-  const alpha = alphaOf(ref, tokens);
-  return alpha === undefined ? resolved : withAlpha(resolved, alpha);
+  if (typeof resolved !== 'string') return resolved;
+  const alpha = ref.alpha === undefined ? undefined : alphaOf(ref, tokens);
+  const faded = alpha === undefined ? resolved : withAlpha(resolved, alpha);
+  const base = overColor(ref, tokens);
+  return base === undefined ? faded : compositeOver(faded, base);
 }
 
 function substitute(node: unknown, tokens: ResolvedTokens): unknown {
