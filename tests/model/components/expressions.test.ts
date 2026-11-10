@@ -6,6 +6,8 @@ import {
   evaluateBoolean,
   evaluateCondition,
   evaluateText,
+  NUMERIC_FNS,
+  NUMERIC_OPS,
   isEmpty,
   referencedFields,
   truthy,
@@ -457,5 +459,18 @@ describe('referencedFields com operações e comparações', () => {
       gap: { $round: { $if: { $has: 't' }, then: { $field: 'u' }, else: 0 } },
     });
     expect([...fields].sort()).toEqual(['p', 'q', 'r', 's', 't', 'u']);
+  });
+});
+
+describe('chaves herdadas do Object não são operações', () => {
+  it('um objeto com constructor ou valueOf continua sendo o literal', () => {
+    const literal = { constructor: 1, valueOf: 2 };
+    expect(evaluate(literal as unknown as Expr<unknown>, {}, 'x')).toBe(literal);
+  });
+});
+
+describe('tabela das operações', () => {
+  it('toda operação com aridade tem implementação, e vice-versa', () => {
+    expect(Object.keys(NUMERIC_FNS).sort()).toEqual(Object.keys(NUMERIC_OPS).sort());
   });
 });

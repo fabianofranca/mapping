@@ -809,6 +809,22 @@ describe('parseComponent: operações numéricas e comparações (formato 4)', (
     );
   });
 
+  it('chave herdada do Object (constructor, toString) num caso do $switch não vira operação', () => {
+    for (const version of [3, 4]) {
+      expect(
+        problems(
+          {
+            fill: {
+              $switch: 'k',
+              cases: { constructor: '#fff', toString: '#000', valueOf: '#111' },
+            },
+          },
+          version,
+        ),
+      ).toEqual([]);
+    }
+  });
+
   it('operação fora de posição numérica é recusada; chave estranha também', () => {
     expectProblem(problems({ fill: { $add: [1, 2] } }), 'template.fill', 'número');
     expectProblem(

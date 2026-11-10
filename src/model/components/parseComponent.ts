@@ -16,7 +16,12 @@ import {
 } from './componentFormat';
 import { checkRemoteImageUrl } from '../remoteImages';
 import { isValidFontFamily } from './fontFamily';
-import { COMPARISON_OPS, NUMERIC_OPS, referencedFields } from './expressions';
+import {
+  COMPARISON_OPS,
+  NUMERIC_OPS,
+  isNumericOp,
+  referencedFields,
+} from './expressions';
 import { LAYOUT_JUSTIFIES } from './layoutValues';
 import { TOKEN_NAME_PATTERN, type TokenKind } from './tokens';
 import { isRecord } from '../isRecord';
@@ -380,7 +385,7 @@ function checkExpr(value: unknown, path: string, check: Check, out: Ctx): void {
   }
   const op = ops[0] as string;
   const at = join(path, op);
-  if (op in NUMERIC_OPS) return checkNumericExpr(op, value, path, check, out);
+  if (isNumericOp(op)) return checkNumericExpr(op, value, path, check, out);
   switch (op) {
     case '$field':
       checkKeys(value, ['$field', 'default'], path, out);
@@ -939,7 +944,7 @@ function numericVersionIssues(version: unknown, template: unknown): ComponentIss
     if (!isRecord(node)) return;
     for (const [key, value] of Object.entries(node)) {
       const here = join(at, key);
-      if (key in NUMERIC_OPS || (COMPARISON_OPS as readonly string[]).includes(key))
+      if (isNumericOp(key) || (COMPARISON_OPS as readonly string[]).includes(key))
         addIssue(out, here, V4_ONLY_MESSAGE);
       walk(value, here);
     }

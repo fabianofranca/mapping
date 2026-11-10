@@ -29,6 +29,10 @@ export const NUMERIC_OPS: Readonly<
   $sin: { min: 1, max: 1 },
   $cos: { min: 1, max: 1 },
 };
+/** A chave é uma operação numérica (só as próprias: `constructor` e afins não contam). */
+export function isNumericOp(key: string): boolean {
+  return Object.hasOwn(NUMERIC_OPS, key);
+}
 /** Comparações numéricas: `[a, b]`. */
 export const COMPARISON_OPS = ['$gt', '$gte', '$lt', '$lte'] as const;
 
@@ -65,7 +69,7 @@ const RAD = Math.PI / 180;
 
 type NumericFn = (n: readonly number[]) => number | undefined;
 
-const NUMERIC_FNS: Readonly<Record<string, NumericFn>> = {
+export const NUMERIC_FNS: Readonly<Record<string, NumericFn>> = {
   $add: (n) => n.reduce((x, y) => x + y, 0),
   $mul: (n) => n.reduce((x, y) => x * y, 1),
   $min: (n) => Math.min(...n),
@@ -154,7 +158,7 @@ function isExprObject(value: unknown): value is Record<string, unknown> {
       '$if' in value ||
       '$switch' in value ||
       '$concat' in value ||
-      Object.keys(value).some((k) => k in NUMERIC_OPS))
+      Object.keys(value).some(isNumericOp))
   );
 }
 
@@ -189,7 +193,7 @@ export function evaluate<T>(expr: Expr<T>, values: FieldValues, fallback: T): T 
     if (chosen !== undefined) return evaluate(chosen, values, fallback);
     return e.default === undefined ? fallback : evaluate(e.default, values, fallback);
   }
-  const numericOp = Object.keys(expr).find((k) => k in NUMERIC_OPS);
+  const numericOp = Object.keys(expr).find(isNumericOp);
   if (numericOp !== undefined) {
     const n = evaluateNumeric(
       numericOp,
