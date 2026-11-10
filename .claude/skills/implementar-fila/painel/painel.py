@@ -211,6 +211,9 @@ def cmd_row(a):
         pairs["childAt"] = ""
     if pairs.get("ciWait") == "":
         pairs["ciWaitAt"] = ""
+    if pairs.get("status") in ("concluída", "falhou") and "ciWait" not in pairs:
+        # Etapa terminada não espera CI: um ciWait esquecido não fica na conferência para sempre.
+        pairs["ciWait"] = pairs["ciWaitAt"] = ""
     if "child" in pairs and "wait" not in pairs:
         # Filha trocada (sessão recriada) ou removida: a espera da anterior não vale para a nova.
         pairs["wait"] = ""

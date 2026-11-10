@@ -80,6 +80,25 @@ describe('painel.py: CI esperando o coordenador (CV3, decisão 16)', () => {
     expect(queue()[0]?.ciWaitAt).toBe('2026-11-10T10:00:00Z');
   });
 
+  it('status concluída ou falhou limpa o ciWait esquecido; esperando dono não', () => {
+    runAt('2026-11-10T10:00:00Z', 'row', dir, '#10', 'ciWait=PR #7', 'ciWaitAt=now');
+    runAt('2026-11-10T10:01:00Z', 'row', dir, '#10', 'status=esperando dono');
+    expect(queue()[0]?.ciWait).toBe('PR #7');
+    runAt(
+      '2026-11-10T10:02:00Z',
+      'row',
+      dir,
+      '#10',
+      'status=concluída',
+      'stage=Mesclada',
+    );
+    expect(queue()[0]?.ciWait).toBe('');
+    expect(queue()[0]?.ciWaitAt).toBe('');
+    runAt('2026-11-10T10:03:00Z', 'row', dir, '#11', 'ciWait=PR #9', 'ciWaitAt=now');
+    runAt('2026-11-10T10:04:00Z', 'row', dir, '#11', 'status=falhou');
+    expect(queue()[1]?.ciWait).toBe('');
+  });
+
   it('ciWaitAt inválido é recusado, como o childAt', () => {
     expect(() => run('row', dir, '#10', 'ciWaitAt=ontem')).toThrow(/horário inválido/);
   });
