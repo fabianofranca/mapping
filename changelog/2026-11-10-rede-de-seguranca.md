@@ -1,4 +1,4 @@
-# Rede de segurança da fila — [Não lançado] (épico `epic/rede-de-seguranca`, PR #0, MCP 0.29.0 sem mudança, schema v18)
+# Rede de segurança da fila — 2026-11-10 (épico `epic/rede-de-seguranca`, PR #1434, MCP 0.30.0 sem mudança, schema v18)
 
 ## Adicionado
 
