@@ -1,4 +1,4 @@
-# Perspectivas no guia e no exemplo — [Não lançado] (épico `epic/guia-perspectivas`, MCP 0.28.2 sem mudança, schema v18)
+# Perspectivas no guia e no exemplo — [Não lançado] (épico `epic/guia-perspectivas`, PR #1415, MCP 0.28.2 sem mudança, schema v18)
 
 ## Adicionado
 
