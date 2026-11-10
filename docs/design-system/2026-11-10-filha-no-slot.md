@@ -1,4 +1,4 @@
-# Filha no slot — [Não lançado] (épico `epic/filha-no-slot`)
+# Filha no slot — 2026-11-10 (épico `epic/filha-no-slot`)
 
 ## Pendências
 
