@@ -1,4 +1,4 @@
-# Avisos de fidelidade — [Não lançado] (épico `epic/avisos-fidelidade`, PR #1507, MCP 0.32.0, schema v18)
+# Avisos de fidelidade — [Não lançado] (épico `epic/avisos-fidelidade`, PR #1508, MCP 0.32.0, schema v18)
 
 ## Adicionado
 
