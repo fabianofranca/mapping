@@ -206,7 +206,7 @@ Siga o `docs/FLOW.md` ("Orquestrador — passo a passo" e as mensagens), com o q
   - `review_ready` ou `idle` (o último turno terminou sem o aviso e sem `send_later` pendente): primeiro mande `send_message` a ela, "Conferência da fila: a fase não avisou. Retome do ponto em que parou (CI do PR, merge, aviso) e avise o coordenador.", e `row '#n' childAt=now`. A sessão guarda o contexto e retoma mais barato que uma nova;
   - falhou, parou pedindo permissão ou morreu, ou ainda atrasada e parada na conferência seguinte ao `send_message`: crie a sessão de novo uma vez, com a mesma mensagem e mais "a sessão anterior (<id>) parou em: <o que os eventos mostram>";
   - se acontecer de novo, a etapa vira `falhou`, o dono é notificado e a fila segue.
-- **Pior caso de detecção:** com a conferência de hora em hora e o corte de 30 min, uma filha parada é achada em até ~60 min, ou em até ~90 min se foi criada ou cutucada menos de 30 min antes de uma conferência. A primeira rede é a da própria fase (o `send_later` de 8 min); a frequência e o corte não mudam.
+- **Pior caso de detecção:** com a conferência de hora em hora e o corte de 30 min, uma filha parada é achada em até ~60 min, ou em até ~90 min se foi criada ou cutucada menos de 30 min antes de uma conferência. A primeira rede é a espera do CI da própria fase (4 min, de 2 em 2 min até 20 min, depois de 8 em 8); a frequência e o corte não mudam.
 
 **CI vermelho no PR do épico** (o job `epic`, a trava da versão ou o tamanho do `dist`, por exemplo): corrija no próprio épico. Se for registro (changelog, DS, versão), basta um commit do coordenador. Se for código, abra uma fase de correção.
 
@@ -236,7 +236,7 @@ A fila é refeita sempre que algo muda, sem parar o que está rodando.
 
 ## Merge
 
-Com o fechamento feito e o CI verde. Antes de mesclar, confira também o `SERVER_VERSION` da `origin/main`: se ele alcançou o do épico (outro épico foi mesclado no meio), o coordenador refaz a escolha da versão (regra 3), faz o push e espera o CI de novo antes de mesclar. Quem confere o CI e se o PR pode ser mesclado é um subagente (`model: "haiku"`, "Confira, só lendo, o PR #<n> de fabianofranca/mapping: os checks do último commit e se ele é mesclável. Devolva uma linha: verde e mesclável, ou o que falta, com o nome do check que falhou"):
+Com o fechamento feito e o CI verde. Antes de mesclar, confira também o `SERVER_VERSION` da `origin/main`: se ele alcançou o do épico (outro épico foi mesclado no meio), o coordenador refaz a escolha da versão (regra 3), faz o push e espera o CI de novo antes de mesclar. Quem confere o CI e se o PR pode ser mesclado é um subagente (`model: "haiku"`, "Confira, só lendo, o PR #<n> de fabianofranca/mapping: os check runs do último commit (`pull_request_read` `get_check_runs`, nunca `get_status`, que fica `pending` sem itens; ignore os `skipped`, que vêm da edição do título ou do corpo do PR ou da limpeza do snapshot; `perPage` 100) e se ele é mesclável. Verde = o check `check` com `success` e nenhum outro com `failure`, `cancelled` ou `timed_out`; sem `check` fora dos `skipped`, ainda roda (ou o `skipped` esconde o real: confira com `actions_list`). Devolva uma linha: verde e mesclável, ou o que falta, com o nome do check que falhou"):
 
 - **Padrão:**
   - mande `PushNotification` "Etapa #<n> pronta: <resumo>. PR do épico: <link>" e pergunte pelo `AskUserQuestion` ("#<n> — mesclar o épico na main?"), com as opções "Mesclar (Recomendado)" e "Ainda não";
