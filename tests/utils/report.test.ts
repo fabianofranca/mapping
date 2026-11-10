@@ -106,6 +106,18 @@ describe('erros que escapam dos handlers', () => {
     target.dispatchEvent(rejection(new Error('depois')));
     expect(reportedErrors.value).toHaveLength(3);
   });
+
+  it('o aviso benigno "ResizeObserver loop" do navegador não vai para o Diagnóstico', () => {
+    const target = new EventTarget();
+    listenForUncaughtErrors(target);
+    target.dispatchEvent(
+      uncaught(null, 'ResizeObserver loop completed with undelivered notifications.'),
+    );
+    target.dispatchEvent(uncaught(null, 'ResizeObserver loop limit exceeded'));
+    expect(reportedErrors.value).toEqual([]);
+    target.dispatchEvent(uncaught(null, 'Script error.'));
+    expect(reportedErrors.value.map((e) => e.message)).toEqual(['Script error.']);
+  });
 });
 
 describe('texto copiado do Diagnóstico', () => {
