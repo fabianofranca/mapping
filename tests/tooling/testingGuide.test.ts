@@ -877,6 +877,45 @@ describe('TS2 — prompt com o guia da rodada, primeiro plano, state() e relato 
     expect(cloud).not.toMatch(/leia os dois inteiros/);
   });
 
+  it('GL2 — lê a base do guia no começo e os roteiros sob demanda, pelo cloud.mjs passo (#1232, decisão 10)', () => {
+    const item3 = first10.slice(first10.indexOf('\n3. '), first10.indexOf('\n4. '));
+    expect(first10).toContain('apoio/guia-base.md');
+    expect(first10).toContain('apoio/guia-indice.tsv');
+    expect(first10).toContain('cloud.mjs passo');
+    expect(first10).not.toMatch(/Leia o `apoio\/guia\.md` inteiro/);
+    expect(cloud.slice(0, cloud.indexOf('## Papel e limites'))).toMatch(
+      /guia-base da rodada[^\n]*roteiros, sob demanda/,
+    );
+    expect(item3).toMatch(/guia-base\.md` inteiro, em pedaços abaixo de 25 mil tokens/);
+    expect(item3).toMatch(/cloud\.mjs passo <Rn>` antes de começá-lo/);
+    expect(item3).toMatch(/lotes de até 8 \(`cloud\.mjs passo <Rn\.a>-<Rn\.b>`\)/);
+    expect(item3).toMatch(/`guia\.md`[^\n]*Grep[^\n]*nunca com `Read` inteiro/);
+    expect(item3).toMatch(/`guia\.md`, `guia-base\.md` e `guia-indice\.tsv`/);
+    expect(first10).toMatch(/item 3 gera o \*\*guia da rodada\*\* e a base/);
+  });
+
+  it('GL2 — o "Como agir" lista o passo e manda o esperado vir do passo impresso na hora', () => {
+    expect(howTo).toMatch(/`run`, `help`, `passo`, `connect`/);
+    expect(howTo).toMatch(
+      /esperado de um passo vem do `cloud\.mjs passo` impresso na hora, não da memória/,
+    );
+  });
+
+  it('GL2 — os itens 1 dos modos de bloco e de grupo citam o guia-base e o passo, e o relato registra o que o passo não deu', () => {
+    for (const heading of [
+      '**Modo "completo, bloco k de 5".**',
+      '**Modo "dirigido, grupo k de n".**',
+    ]) {
+      const from = cloud.indexOf(heading);
+      const item1 = cloud.slice(cloud.indexOf('1. ', from), cloud.indexOf('\n2. ', from));
+      expect(item1).toMatch(
+        /leia o `guia-base\.md` e peça os roteiros pelo `passo` \(item 3\)/,
+      );
+    }
+    const relato = cloud.slice(cloud.indexOf('## Relato'));
+    expect(relato).toMatch(/`passo` não deu o que o passo precisava/);
+  });
+
   it('o cloud-up.sh roda em primeiro plano, com timeout de 600000 ms e sem run_in_background', () => {
     expect(first10).toMatch(/primeiro plano/);
     expect(first10).toContain('run_in_background');
@@ -894,7 +933,7 @@ describe('TS2 — prompt com o guia da rodada, primeiro plano, state() e relato 
   it('todo script de passo vai pelo cloud.mjs run, com exemplo de heredoc, e a lista inclui run e help (#1148, decisão 6)', () => {
     expect(howTo).toContain('cloud.mjs run');
     expect(howTo).toContain("<<'JS'");
-    expect(howTo).toMatch(/`run`, `help`, `connect`/);
+    expect(howTo).toMatch(/`run`, `help`, `passo`, `connect`/);
     expect(howTo).toMatch(/O que atrapalhou/);
     expect(guide).toContain("<<'JS'");
     expect(cloud).toContain('apoio/env.sh');
@@ -948,6 +987,10 @@ describe('TS2 — prompt com o guia da rodada, primeiro plano, state() e relato 
     expect(generated).toContain('## Apêndice A');
     expect(generated).toContain('Relato de uma rodada de teste');
     expect(generated.length).toBeLessThan(guide.length / 2);
+    expect(read(out.replace(/\.md$/, '-base.md'))).toContain('cloud.mjs passo R4');
+    expect(read(out.replace(/\.md$/, '-indice.tsv'))).toMatch(
+      /^tipo\tchave\tini\tfim\ttítulo/,
+    );
   });
 });
 
