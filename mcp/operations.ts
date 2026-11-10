@@ -412,10 +412,15 @@ export const operationSchema = z.discriminatedUnion('op', [
       .describe(
         'Só para um tipo de anotação flutuante: a marcação nasce num lugar livre na margem deste container ou desta marcação, empilhada de cima para baixo (referência, id ou apelido). Posiciona e o `rect`, se vier, dá só o tamanho (x e y são ignorados). Para um tipo ou marcação não flutuante, é ignorado com aviso.',
       ),
+    inside: item('Componente com slot')
+      .optional()
+      .describe(
+        'Posiciona a filha no slot deste componente, depois da última filha (referência, id ou apelido de uma marcação do lote ou do projeto); o pai continua vindo da geometria. Exige `annotation` de um tipo com componente e um alvo que desenhe componente com slot (`invalid-parent` se não desenha ou se `container` for outro). Com `rect`, o `rect` dá só o tamanho (x e y são ignorados). Slot cheio: a filha fica presa ao componente, com aviso `ignored-argument`. Não vale com `near`.',
+      ),
     rect: rect
       .optional()
       .describe(
-        'Retângulo em pixels do container (sem `container`: unidades do canvas, podendo ser negativo). Obrigatório, a menos que `annotation` seja de um tipo com componente: então, omitido, a marcação nasce no tamanho inicial do componente (no centro do container). O mínimo de cada lado é 8 px numa marcação comum e 1 px numa marcação com anotação de um tipo com componente (se o componente declara `minSize`, esse mínimo vale); abaixo dele falha com `rect-too-small`.',
+        'Retângulo em pixels do container (sem `container`: unidades do canvas, podendo ser negativo). Obrigatório, a menos que `annotation` seja de um tipo com componente: então, omitido, a marcação nasce no tamanho inicial do componente (no centro do container; dentro do slot com `inside`). O mínimo de cada lado é 8 px numa marcação comum e 1 px numa marcação com anotação de um tipo com componente (se o componente declara `minSize`, esse mínimo vale); abaixo dele falha com `rect-too-small`.',
       ),
     name: name.optional(),
     source: externalSource.optional(),

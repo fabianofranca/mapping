@@ -567,9 +567,9 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
       expect(guide).toMatch(/^- R18 usa a pasta própria `avisos`/m);
     });
 
-    it('tem os passos R18.1 a R18.12, em ordem, e nenhum depende do dono', () => {
+    it('tem os passos R18.1 a R18.13, em ordem, e nenhum depende do dono', () => {
       const codes = [...stepActions(r18).keys()];
-      expect(codes).toEqual(Array.from({ length: 12 }, (_, i) => `R18.${i + 1}`));
+      expect(codes).toEqual(Array.from({ length: 13 }, (_, i) => `R18.${i + 1}`));
       expect(/sem substituto/i.test(r18)).toBe(false);
       expect(r18).not.toContain('[pessoa]');
     });
@@ -584,6 +584,12 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
         [...(block ?? '').matchAll(/"kind": "(\w+)"/g)].map((m) => m[1]),
       );
       expect(kinds).toEqual(new Set(['removed', 'deprecated', 'diverges', 'pending']));
+    });
+
+    it('o JSON do roteiro é o mesmo do fixture e2e avisos-demo', () => {
+      const block = /```json\n([\s\S]*?)\n```/.exec(r18)?.[1] ?? '';
+      const fixture = read('tests/e2e/fixtures/avisos-demo.spec.json');
+      expect(JSON.parse(block)).toEqual(JSON.parse(fixture));
     });
 
     it('o prompt da nuvem lista os roteiros até o R25', () => {
@@ -1192,5 +1198,31 @@ describe('TR4 — rodada dirigida em grupos e reteste junto', () => {
     expect(skill).toMatch(
       /numa sessão só\*\* com os achados de todos os grupos ou blocos/,
     );
+  });
+});
+
+describe('CL1 — roteiro do R9.24 a R9.28 (etapa #701)', () => {
+  const rows = read('docs/TESTING.md')
+    .split('\n')
+    .filter((l) => /^\| R9\.2[4-8] /.test(l));
+  const row = (id: string): string => rows.find((l) => l.startsWith(`| ${id} `)) ?? '';
+
+  it('a Column do R9.25 e do R9.26 cabe no Cartão de 300 × 200 do R9.18 (x 20 + largura ≤ 300)', () => {
+    for (const id of ['R9.25', 'R9.26']) {
+      const m = /Column com `rect` `\{"x":(\d+),"y":\d+,"width":(\d+),/.exec(row(id));
+      expect(m, id).not.toBeNull();
+      expect(Number(m?.[1]) + Number(m?.[2]), id).toBeLessThanOrEqual(300);
+    }
+  });
+
+  it('o R9.28 (c) separa invalid-ref (???) de not-found (referência bem formada que não existe)', () => {
+    const r = row('R9.28');
+    expect(r).toMatch(/`inside` `\?\?\?`/);
+    expect(r).toMatch(/`inside` `mapping:\/\/telas\/m\/inexistente`/);
+    expect(r).toMatch(/\(c1\) `invalid-ref`; \(c2\) `not-found`/);
+  });
+
+  it('o R9.24 não espera membership (só lista quem mudou de pai)', () => {
+    expect(row('R9.24')).not.toContain('membership');
   });
 });

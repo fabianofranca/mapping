@@ -5,6 +5,7 @@ import {
   addContainer,
   componentPlacement,
   componentTypes,
+  placementFitsSlot,
   setContainerDrawingMode,
   setFieldValue,
   settleHierarchy,
@@ -665,5 +666,143 @@ describe('tipo flutuante (biblioteca de notas)', () => {
       parentId: null,
     });
     expect(settleHierarchy(p)).toBe(p);
+  });
+});
+
+describe('componentPlacement: tamanho opcional (size)', () => {
+  const column = (): Project =>
+    add(componentProject(), 'C', 'column', {
+      rect: { x: 50, y: 50, width: 300, height: 300 },
+    });
+  const place = (p: Project, size?: { width: number; height: number }): Rect =>
+    componentPlacement(
+      p,
+      catalog,
+      {
+        containerId: 'I1',
+        parentId: 'C',
+        specId: SPEC_ID,
+        typeId: 'text',
+        ...(size === undefined ? {} : { size }),
+      },
+      approximateMeasurer,
+    );
+
+  it('substitui o size do componente e a posição continua vindo do slot', () => {
+    let p = column();
+    expect(place(p, { width: 200, height: 60 })).toEqual({
+      x: 50,
+      y: 50,
+      width: 200,
+      height: 60,
+    });
+    p = add(p, 'T1', 'text', { parentId: 'C' });
+    // Depois da última filha (50 + 40) e do gap de 8.
+    expect(place(p, { width: 200, height: 60 })).toEqual({
+      x: 50,
+      y: 98,
+      width: 200,
+      height: 60,
+    });
+  });
+
+  it('sem size, igual ao size do componente', () => {
+    const p = column();
+    expect(place(p)).toEqual({ x: 50, y: 50, width: 100, height: 40 });
+  });
+
+  it('preso à área do slot', () => {
+    expect(place(column(), { width: 900, height: 900 })).toEqual({
+      x: 50,
+      y: 50,
+      width: 300,
+      height: 300,
+    });
+  });
+
+  it('nunca abaixo do minSize do componente', () => {
+    const rect = place(column(), { width: 1, height: 1 });
+    const min = catalog.get(SPEC_ID)!.byType.get('text')!.minSize;
+    expect(rect.width).toBeGreaterThanOrEqual(min?.width ?? 1);
+    expect(rect.height).toBeGreaterThanOrEqual(min?.height ?? 1);
+  });
+
+  it('nem o mínimo cabe no slot: rect-outside-parent', () => {
+    const p = add(componentProject(), 'C', 'row', {
+      rect: { x: 100, y: 100, width: 50, height: 30 },
+    });
+    expect(() =>
+      componentPlacement(
+        p,
+        catalog,
+        {
+          containerId: 'I1',
+          parentId: 'C',
+          specId: SPEC_ID,
+          typeId: 'text',
+          size: { width: 10, height: 10 },
+        },
+        approximateMeasurer,
+      ),
+    ).toThrow('rect-outside-parent');
+  });
+});
+
+describe('placementFitsSlot', () => {
+  const fits = (p: Project, rect: Rect): boolean =>
+    placementFitsSlot(p, catalog, 'C', rect, approximateMeasurer);
+
+  it('slot livre: o retângulo calculado cabe', () => {
+    const p = add(componentProject(), 'C', 'column', {
+      rect: { x: 50, y: 50, width: 300, height: 300 },
+    });
+    const rect = componentPlacement(
+      p,
+      catalog,
+      { containerId: 'I1', parentId: 'C', specId: SPEC_ID, typeId: 'text' },
+      approximateMeasurer,
+    );
+    expect(fits(p, rect)).toBe(true);
+  });
+
+  it('slot cheio: a filha presa ao componente não cabe na área do slot', () => {
+    // O slot de `inset` fica 20 px para dentro do componente: x de 120 a 380.
+    let p = add(componentProject(), 'C', 'inset', {
+      rect: { x: 100, y: 100, width: 300, height: 200 },
+    });
+    p = add(p, 'T1', 'text', { parentId: 'C' });
+    p = add(p, 'T2', 'text', { parentId: 'C' });
+    const rect = componentPlacement(
+      p,
+      catalog,
+      { containerId: 'I1', parentId: 'C', specId: SPEC_ID, typeId: 'text' },
+      approximateMeasurer,
+    );
+    // 120 + 100 + 8 + 100 + 8 = 336; 336 + 100 passa de 380: presa ao componente (x = 300).
+    expect(rect).toEqual({ x: 300, y: 120, width: 100, height: 40 });
+    expect(fits(p, rect)).toBe(false);
+  });
+
+  it('slot cheio do tamanho do componente: presa dentro dele, mas em cima da última filha', () => {
+    let p = add(componentProject(), 'C', 'row', {
+      rect: { x: 100, y: 100, width: 300, height: 100 },
+    });
+    p = add(p, 'T1', 'text', { parentId: 'C' });
+    p = add(p, 'T2', 'text', { parentId: 'C' });
+    const rect = componentPlacement(
+      p,
+      catalog,
+      { containerId: 'I1', parentId: 'C', specId: SPEC_ID, typeId: 'text' },
+      approximateMeasurer,
+    );
+    expect(rect).toEqual({ x: 300, y: 100, width: 100, height: 40 });
+    expect(fits(p, rect)).toBe(false);
+  });
+
+  it('alvo sem slot: não cabe', () => {
+    const p = add(componentProject(), 'C', 'text', {
+      rect: { x: 100, y: 100, width: 300, height: 100 },
+    });
+    expect(fits(p, { x: 100, y: 100, width: 10, height: 10 })).toBe(false);
   });
 });

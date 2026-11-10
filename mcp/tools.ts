@@ -428,7 +428,8 @@ export function registerTools(
       description:
         'As chamadas a escrever numa plataforma a partir de uma marcação, com o código de instanciação de cada tipo. `types` traz, por `specId/typeId`, o `symbol` (o que se chama para criar uma instância), a `definition` (o arquivo que o define, para ler a assinatura: `path`, `url` e `ref` do `repo` da especialização, `localFile` e `exists` pelo clone local), `params`, `values` e `notes`. `repos` traz o repositório da plataforma (`url`, `ref`, `localPath`). A `tree` espelha a marcação e as descendentes e, em cada anotação tipada, traz `type` (a chave de `types`), `label`, `layer`, `args` (os argumentos da chamada, com os valores da instância já traduzidos), `values` (valores de referência resolvidos, ex: `User.name`) e os eventos vinculados sob a dona (`linked`), sem arquivo por anotação. ' +
         'Especialização 9: `types` traz o `code` cru da base (pode ter `variants`) e, nas anotações de tipo com `variants`, a `tree` traz `code` com o código resolvido da variante (`symbol`, `definition`, `params`, `values`, `notes`, sem `variants`; o `symbol` de um Button `outlined` é o do caso `outlined`): quando a anotação tem `code`, use-o no lugar do de `types`. ' +
-        'Tipos em `unmappedTypes` não têm código de instanciação nesta plataforma.',
+        'Em cada tipo de `types`, `notices` (só quando há) traz os avisos de fidelidade da especialização, do tipo, dos campos e das colunas, por gravidade: `kind`, `message`, `since?`, `ref?` (a origem) e o lugar (`key?`, `column?`). Leia-os antes de escrever e conte ao usuário os `diverges`; ignore os cuja `message` começa com o id de outra plataforma (não há filtro por plataforma). ' +
+        'Tipos em `unmappedTypes` não têm código de instanciação nesta plataforma e não trazem avisos (veja `get_specialization`).',
       inputSchema: { ref: refArg, platform: platformArg, project: optionalProjectArg },
       annotations: READ_ONLY,
     },
