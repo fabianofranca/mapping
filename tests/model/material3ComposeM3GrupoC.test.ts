@@ -179,7 +179,7 @@ describe('M3 grupo C — slider', () => {
     const active = box(light, 'trilho ativo');
     near(active.x, 2 + T * 0.2 + GAP);
     near(active.width, T * 0.6 - 2 * GAP);
-    expect(radiusOf(active.node)).toEqual([2, 2, 2, 2]);
+    expect(radiusOf(active.node)).toBe(2);
     expect(fillOf(active.node)).toBe(tok('primary', 'light'));
     expect(fillOf(box(dark, 'trilho ativo').node)).toBe(tok('primary', 'dark'));
 

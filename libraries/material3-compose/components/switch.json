@@ -182,6 +182,34 @@
             }
           },
           {
+            "type": "rect",
+            "name": "anel de foco",
+            "cornerRadius": {
+              "$token": "corner-full"
+            },
+            "fill": "none",
+            "stroke": {
+              "color": {
+                "$token": "secondary"
+              },
+              "width": 3,
+              "align": "outside",
+              "offset": 2
+            },
+            "visible": {
+              "$and": [
+                {
+                  "$eq": ["interaction", "focused"]
+                },
+                {
+                  "$not": {
+                    "$eq": ["enabled", "false"]
+                  }
+                }
+              ]
+            }
+          },
+          {
             "type": "frame",
             "name": "curso",
             "layout": {

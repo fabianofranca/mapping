@@ -63,5 +63,5 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 
 **O que ainda difere do Compose**
 
-- `SpaceAround` e `SpaceEvenly` caem em `space-between`: o `justify` do formato só tem `start`, `center`, `end` e `space-between`.
+- `SpaceAround` e `SpaceEvenly` viram `space-around` e `space-evenly` do `justify`.
 - O slot é uma `row` sem quebra de linha: `maxItemsInEachRow`, `maxLines` e `verticalSpacing` (e a `verticalArrangement` entre as linhas) não têm efeito no desenho.

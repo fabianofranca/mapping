@@ -52,7 +52,7 @@
       "$if": {
         "$eq": ["style", "modal"]
       },
-      "then": [0, 16, 16, 0],
+      "then": [0, { "$token": "corner-large" }, { "$token": "corner-large" }, 0],
       "else": 0
     },
     "layout": {
@@ -444,6 +444,38 @@
                     "$not": {
                       "$eq": ["interaction", "none"]
                     }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "rect",
+              "name": "anel de foco",
+              "anchors": {
+                "left": 0,
+                "right": 0,
+                "top": 0,
+                "bottom": 0
+              },
+              "cornerRadius": {
+                "$token": "corner-full"
+              },
+              "fill": "none",
+              "stroke": {
+                "color": {
+                  "$token": "secondary"
+                },
+                "width": 3,
+                "align": "outside",
+                "offset": 2
+              },
+              "visible": {
+                "$and": [
+                  {
+                    "$field": "selected"
+                  },
+                  {
+                    "$eq": ["interaction", "focused"]
                   }
                 ]
               }

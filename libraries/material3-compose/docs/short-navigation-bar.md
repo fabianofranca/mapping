@@ -91,5 +91,5 @@ O campo escolhe a aparência parada de um estado; não entra no `code` nem nas `
 **O que ainda difere do Compose**
 
 - A margem do `Centered` é fixa em 10% de cada lado (o caso de 5 itens). O Compose usa 20% com 3 itens, 15% com 4, 10% com 5 e 5% com 6 (`calculateCenteredContentHorizontalPadding`), e deixa um item crescer até `largura / itens` quando o rótulo é mais largo. O formato não conta as linhas de uma `table` em expressão.
-- O `interaction` é um quadro parado: sem o ripple animado, sem a animação do indicador (o desenho é o estado final), sem o anel de foco por fora da forma (#896) e sem `enabled`.
+- O `interaction` é um quadro parado: sem o ripple animado, sem a animação do indicador (o desenho é o estado final), sem anel de foco (o Compose não define `FocusIndicatorColor` para ele no commit fixado) e sem `enabled`.
 - A altura mínima de 48 de toque do item e `windowInsets` não aparecem no desenho; `ShortNavigationBarItemColors` próprio não é campo do tipo.

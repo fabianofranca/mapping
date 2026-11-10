@@ -61,4 +61,4 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 
 - O posicionamento no canto do ícone (`BadgedBox`, deslocamento de 6 sem conteúdo e de 12 por 14 com conteúdo) é da marcação ao redor, não deste componente.
 - Sem o limite de texto do contador do Compose (quem chama corta, por exemplo `99+`).
-- A altura do contador (e a do texto) é 16 fixa, não `defaultMinSize` com `hug`: a prova de desenho da biblioteca desenha sem tokens, e a linha de 14 × 1,2 do fallback estouraria a caixa de 16 (aviso `conteúdo maior que a caixa`). Com o `label-small-line-height` de 16 o resultado é o mesmo do Compose.
+- A altura do contador é a do texto (`hug`), com o mínimo de 16 (`minHeight`), como o `defaultMinSize` do Compose: a prova de desenho da biblioteca mede o texto com o tamanho e a linha do token do modo (`label-small-line-height`, 16), então não avisa.

@@ -140,6 +140,7 @@
             },
             "default": "start"
           },
+          "reverse": { "$eq": ["reverseLayout", "true"] },
           "justify": {
             "$if": {
               "$eq": ["reverseLayout", "true"]
@@ -147,14 +148,14 @@
             "then": {
               "$switch": "verticalArrangement",
               "cases": {
-                "Top": "end",
-                "Bottom": "end",
+                "Top": "start",
+                "Bottom": "start",
                 "Center": "center",
                 "SpaceBetween": "space-between",
-                "SpaceAround": "space-between",
-                "SpaceEvenly": "space-between"
+                "SpaceAround": "space-around",
+                "SpaceEvenly": "space-evenly"
               },
-              "default": "end"
+              "default": "start"
             },
             "else": {
               "$switch": "verticalArrangement",
@@ -163,8 +164,8 @@
                 "Bottom": "end",
                 "Center": "center",
                 "SpaceBetween": "space-between",
-                "SpaceAround": "space-between",
-                "SpaceEvenly": "space-between"
+                "SpaceAround": "space-around",
+                "SpaceEvenly": "space-evenly"
               },
               "default": "start"
             }

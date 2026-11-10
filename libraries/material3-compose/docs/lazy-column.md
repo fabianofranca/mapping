@@ -58,11 +58,11 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 
 - `verticalArrangement` vira o `justify` do slot (`Top` `start`, `Center` `center`, `Bottom` `end`, `SpaceBetween` `space-between`) e `horizontalAlignment` vira o `align` (`Start` `start`, `CenterHorizontally` `center`, `End` `end`), por `$switch` (formato 4: expressão em `layout.justify` e `layout.align`).
 - `spacing` é o `gap` e `contentPadding` é o `padding` do slot, como `Arrangement.spacedBy` e `PaddingValues`.
-- `reverseLayout` ligado com `Top` vira `end`: é o padrão que o Compose usa nessa combinação (`Arrangement.Bottom`); as demais distribuições ficam como estão.
+- `reverseLayout` liga o `layout.reverse` do slot; com a distribuição padrão o bloco fica no fim do eixo, como o `Arrangement.Bottom` que o Compose usa nessa combinação.
 - Nenhuma cor, fonte ou raio é desenhado; o rótulo do slot mostra o resumo da configuração.
 
 **O que ainda difere do Compose**
 
-- `SpaceAround` e `SpaceEvenly` caem em `space-between`: o `justify` do formato só tem `start`, `center`, `end` e `space-between`.
-- O formato não inverte a ordem dos filhos: com `reverseLayout`, só o bloco vai para o fim; a ordem das filhas continua a da marcação.
+- `SpaceAround` e `SpaceEvenly` viram `space-around` e `space-evenly` do `justify`.
+- A ordem das filhas se inverte com `reverseLayout` (`layout.reverse`), como no Compose.
 - Rolagem, `state`, `flingBehavior` e a composição preguiçosa não existem num desenho estático.

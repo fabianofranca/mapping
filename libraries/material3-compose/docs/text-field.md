@@ -106,11 +106,11 @@ O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o des
 
 **O que ainda difere do Compose**
 
-- O `interaction` é um quadro parado: sem foco real, cursor, seleção, `pressed` e animação do rótulo (o rótulo só fica pequeno com valor ou dica). O anel de foco por fora da forma não é desenhado: a raiz recorta (#896).
+- O `interaction` é um quadro parado: sem foco real, cursor, seleção, `pressed` e animação do rótulo (o rótulo só fica pequeno com valor ou dica). O Compose não define anel de foco para este tipo no commit fixado (nenhum `*Tokens.kt` dele traz `FocusIndicatorColor`): nenhum é desenhado.
 - O desenho mostra a dica com o rótulo minimizado; no Compose a dica só aparece com foco (sem foco, vazio, o rótulo fica expandido e a dica some).
 - O contêiner desabilitado do filled segue o código (`TextFieldDefaults.colors` usa `ContainerColor` também desabilitado), não o token `DisabledContainerOpacity` de 0,04 sobre `on-surface`.
 - No vão do contorno do outlined os cantos ficam quadrados: `stroke.sides` traça segmentos retos, sem arco no canto. Sem valor nem dica o contorno inteiro tem o raio 4.
-- A lista de 4 raios (`cornerRadius`) não aceita `$token`: o raio superior do filled vem de um retângulo com raio 4 por token, 4 mais alto que o contêiner, que o recorta.
+- O raio superior do filled é a lista de 4 raios com `$token` por item (`corner-extra-small` em cima, 0 embaixo), sem retângulo mais alto recortado.
 - Os mínimos de `TextFieldDefaults` (280 por 56) valem no contêiner e no `minSize`; a raiz sempre tem o tamanho da marcação, então `minWidth` na raiz não agiria. O tamanho inicial de 84 comporta o outlined com apoio (8 + 56 + 4 + 16); o desenho sempre tem a altura do `size`, então o filled com apoio (76) fica com 8 vazios embaixo e o filled sem apoio (56) com 28.
 - `singleLine` mostra o começo do texto (o `BasicTextField` rola até o cursor); `maxLines` corta o texto, sem rolagem vertical.
 - Sem prefixo, sufixo, contador, `labelPosition` acima, área de toque de 48 dos ícones e demais parâmetros de `TextField`.

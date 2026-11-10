@@ -107,8 +107,12 @@
         },
         "else": "none"
       },
-      "y": 1,
-      "blur": 2
+      "y": {
+        "$token": "elevation-1-y"
+      },
+      "blur": {
+        "$token": "elevation-1-blur"
+      }
     },
     "layout": {
       "type": "none"
@@ -148,8 +152,12 @@
           "color": {
             "$token": "elevation-shadow"
           },
-          "y": 2,
-          "blur": 6
+          "y": {
+            "$token": "elevation-2-y"
+          },
+          "blur": {
+            "$token": "elevation-2-blur"
+          }
         }
       },
       {
@@ -193,8 +201,12 @@
           "color": {
             "$token": "elevation-shadow"
           },
-          "y": 3,
-          "blur": 12
+          "y": {
+            "$token": "elevation-3-y"
+          },
+          "blur": {
+            "$token": "elevation-3-blur"
+          }
         },
         "stroke": {
           "color": {
@@ -244,8 +256,12 @@
           "color": {
             "$token": "elevation-shadow"
           },
-          "y": 4,
-          "blur": 16
+          "y": {
+            "$token": "elevation-4-y"
+          },
+          "blur": {
+            "$token": "elevation-4-blur"
+          }
         }
       },
       {
@@ -402,6 +418,34 @@
           "$not": {
             "$eq": ["interaction", "none"]
           }
+        }
+      },
+      {
+        "type": "rect",
+        "name": "anel de foco",
+        "cornerRadius": {
+          "$token": "corner-medium"
+        },
+        "fill": "none",
+        "stroke": {
+          "color": {
+            "$token": "secondary"
+          },
+          "width": 3,
+          "align": "outside",
+          "offset": 2
+        },
+        "visible": {
+          "$and": [
+            {
+              "$eq": ["interaction", "focused"]
+            },
+            {
+              "$not": {
+                "$eq": ["style", "outlined"]
+              }
+            }
+          ]
         }
       }
     ]

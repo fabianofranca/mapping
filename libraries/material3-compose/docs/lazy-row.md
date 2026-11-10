@@ -58,11 +58,11 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 
 - `horizontalArrangement` vira o `justify` do slot (`Start` `start`, `Center` `center`, `End` `end`, `SpaceBetween` `space-between`) e `verticalAlignment` vira o `align` (`Top` `start`, `CenterVertically` `center`, `Bottom` `end`), por `$switch` (formato 4: expressão em `layout.justify` e `layout.align`).
 - `spacing` é o `gap` e `contentPadding` é o `padding` do slot.
-- `reverseLayout` ligado com `Start` vira `end`, o padrão do Compose nessa combinação (`Arrangement.End`).
+- `reverseLayout` liga o `layout.reverse` do slot; com a distribuição padrão o bloco fica no fim do eixo, como o `Arrangement.End` que o Compose usa nessa combinação.
 - Nenhuma cor, fonte ou raio é desenhado.
 
 **O que ainda difere do Compose**
 
-- `SpaceAround` e `SpaceEvenly` caem em `space-between`: o `justify` do formato só tem `start`, `center`, `end` e `space-between`.
-- O formato não inverte a ordem dos filhos com `reverseLayout`.
+- `SpaceAround` e `SpaceEvenly` viram `space-around` e `space-evenly` do `justify`.
+- A ordem das filhas se inverte com `reverseLayout` (`layout.reverse`), como no Compose.
 - Rolagem, `state` e `flingBehavior` não existem num desenho estático.

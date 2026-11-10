@@ -98,7 +98,9 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 
 - O conteúdo da folha é livre (`ColumnScope.() -> Unit`): o título, o espaço dele e o de baixo não são constantes do composable. O desenho usa 16 nas laterais do título (o `ListItemStartPadding`), 8 em cima e 16 embaixo, e 16 de respiro embaixo da lista no lugar do `contentWindowInsets` (a barra do sistema), que são convenções do desenho e não valores do código.
 - O `ListItem` sem `colors` pinta o contêiner de `surface`, e é o que o desenho faz; a faixa fica um pouco mais clara que a folha em `surface-container-low`. Quem passa `ListItemDefaults.colors(containerColor = Color.Transparent)` não vê a faixa, e o tipo não tem campo para isso.
-- Os cantos de cima são `[28, 28, 0, 0]` literais: a lista de quatro raios (`cornerRadius`) não aceita `$token`, então o 28 não segue `corner-extra-large` se a especialização mudar o token.
-- A sombra do standard é uma só (a do formato), em preto a 30% e com o `y` e o `blur` em números no componente, porque o `shadow` só aceita `$token` na cor; o Compose compõe a sombra ambiente, a do ponto e a tonal. Com 1 dp ela quase não aparece no topo da folha.
+- Os cantos de cima são a lista `[corner-extra-large, corner-extra-large, 0, 0]` (a lista de raios aceita `$token` por item), então seguem o token se a especialização mudar.
+- A sombra do standard é uma só (a do formato), em preto a 30% e com o `y` e o `blur` pelos tokens `elevation-1-y` e `elevation-1-blur`; o Compose compõe a sombra ambiente, a do ponto e a tonal. Com 1 dp ela quase não aparece no topo da folha.
 - O desenho é o estado aberto e estático: sem o `scrim` (a película do `scrim` a 32%, do composable), sem arrastar, sem os estados recolhido, parcial e escondido (a forma `CornerNone` do `DockedMinimizedContainerShape` não é desenhada), sem a dica da alça (`DragHandleWithTooltip`), sem a animação e sem o recuo do sistema.
 - O standard recolhido não corta o conteúdo na altura de `sheetPeekHeight`: o Compose mostra só esse trecho da folha, e o desenho a mostra inteira, com essa altura como mínimo.
+
+- O `SheetBottomTokens.kt` define `FocusIndicatorColor` (linha 32), mas o tipo não tem `interaction`: o anel de foco não é desenhado.

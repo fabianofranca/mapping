@@ -87,3 +87,5 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - O separador dos campos usa `display-medium`, a fonte do `LocalTextStyle` do `TimeInputImpl`; o token `TimeFieldSeparatorFont` diz `display-large`, mas o `DisplaySeparator` lê o estilo local.
 - Sem estados de foco real, cursor, passar o mouse, pressionado, animação do relógio nem `Crossfade`: o desenho é uma imagem de um estado só (`selection` e os valores dizem qual).
 - Os rótulos "Hora" e "Minuto" são texto fixo em português (o Compose os lê de `Strings`).
+
+- O `TimeInputTokens.kt` define `FocusIndicatorColor` (linha 27) para o campo do modo de digitação, mas o tipo não tem `interaction`: o anel de foco não é desenhado.

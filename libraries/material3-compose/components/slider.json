@@ -105,7 +105,12 @@
                         "name": "trilho inativo",
                         "height": 16,
                         "anchors": { "centerY": true, "left": 0, "right": 8 },
-                        "cornerRadius": [8, 2, 2, 8],
+                        "cornerRadius": [
+                          { "$token": "corner-track-outer" },
+                          { "$token": "corner-track-inside" },
+                          { "$token": "corner-track-inside" },
+                          { "$token": "corner-track-outer" }
+                        ],
                         "fill": {
                           "$if": { "$eq": ["enabled", "false"] },
                           "then": { "$token": "on-surface" },
@@ -155,7 +160,12 @@
                         "name": "trilho inativo",
                         "height": 16,
                         "anchors": { "centerY": true, "left": -8, "right": 8 },
-                        "cornerRadius": [8, 2, 2, 8],
+                        "cornerRadius": [
+                          { "$token": "corner-track-outer" },
+                          { "$token": "corner-track-inside" },
+                          { "$token": "corner-track-inside" },
+                          { "$token": "corner-track-outer" }
+                        ],
                         "fill": {
                           "$if": { "$eq": ["enabled", "false"] },
                           "then": { "$token": "on-surface" },
@@ -212,7 +222,12 @@
                         "name": "trilho ativo",
                         "height": 16,
                         "anchors": { "centerY": true, "left": 0, "right": 8 },
-                        "cornerRadius": [8, 2, 2, 8],
+                        "cornerRadius": [
+                          { "$token": "corner-track-outer" },
+                          { "$token": "corner-track-inside" },
+                          { "$token": "corner-track-inside" },
+                          { "$token": "corner-track-outer" }
+                        ],
                         "fill": {
                           "$if": { "$eq": ["enabled", "false"] },
                           "then": { "$token": "on-surface" },
@@ -262,7 +277,12 @@
                         "name": "trilho ativo",
                         "height": 16,
                         "anchors": { "centerY": true, "left": -8, "right": 8 },
-                        "cornerRadius": [8, 2, 2, 8],
+                        "cornerRadius": [
+                          { "$token": "corner-track-outer" },
+                          { "$token": "corner-track-inside" },
+                          { "$token": "corner-track-inside" },
+                          { "$token": "corner-track-outer" }
+                        ],
                         "fill": {
                           "$if": { "$eq": ["enabled", "false"] },
                           "then": { "$token": "on-surface" },
@@ -310,7 +330,7 @@
                         "name": "trilho ativo",
                         "height": 16,
                         "anchors": { "centerY": true, "left": 8, "right": 8 },
-                        "cornerRadius": [2, 2, 2, 2],
+                        "cornerRadius": { "$token": "corner-track-inside" },
                         "fill": {
                           "$if": { "$eq": ["enabled", "false"] },
                           "then": { "$token": "on-surface" },
@@ -371,7 +391,12 @@
                         "name": "trilho inativo",
                         "height": 16,
                         "anchors": { "centerY": true, "left": 8, "right": 0 },
-                        "cornerRadius": [2, 8, 8, 2],
+                        "cornerRadius": [
+                          { "$token": "corner-track-inside" },
+                          { "$token": "corner-track-outer" },
+                          { "$token": "corner-track-outer" },
+                          { "$token": "corner-track-inside" }
+                        ],
                         "fill": {
                           "$if": { "$eq": ["enabled", "false"] },
                           "then": { "$token": "on-surface" },
@@ -439,7 +464,12 @@
                         "name": "trilho inativo",
                         "height": 16,
                         "anchors": { "centerY": true, "left": 8, "right": -8 },
-                        "cornerRadius": [2, 8, 8, 2],
+                        "cornerRadius": [
+                          { "$token": "corner-track-inside" },
+                          { "$token": "corner-track-outer" },
+                          { "$token": "corner-track-outer" },
+                          { "$token": "corner-track-inside" }
+                        ],
                         "fill": {
                           "$if": { "$eq": ["enabled", "false"] },
                           "then": { "$token": "on-surface" },

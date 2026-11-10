@@ -66,11 +66,14 @@
               "left": 0,
               "right": 0,
               "top": 0,
-              "bottom": -4
+              "bottom": 0
             },
-            "cornerRadius": {
-              "$token": "corner-extra-small"
-            },
+            "cornerRadius": [
+              { "$token": "corner-extra-small" },
+              { "$token": "corner-extra-small" },
+              0,
+              0
+            ],
             "fill": {
               "$token": "surface-container-highest"
             },

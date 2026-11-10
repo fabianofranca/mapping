@@ -74,6 +74,6 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - Altura da ação: o `Box` com `requiredHeightIn(min = 36)` envolve o `TextButton` que a tela passa, que mede 40 (`MinHeight`); o desenho assume o `TextButton` padrão, como o `code` do tipo. Uma ação de outro tamanho não é desenhada.
 - O rótulo da ação fica a 12 da borda do texto (o `TextButtonContentPadding`): o Compose também o recua, e o rótulo não alinha com o texto do corpo.
 - Sem a seta (`caretShape`) nem o posicionamento em relação à âncora (`TooltipBox`, `TooltipAnchorPosition`, `spacingBetweenTooltipAndAnchor` 4): o tooltip é desenhado sozinho no canto da marcação.
-- A sombra é uma só, em preto a 30%, com o `y` e o `blur` em números no componente (o `shadow` só aceita `$token` na cor); o Compose compõe a sombra ambiente e a do ponto, e o plain não tem sombra (`shadowElevation` 0).
+- A sombra é uma só, em preto a 30%, com o `y` e o `blur` pelos tokens de elevação (`$token` em `shadow.y` e `shadow.blur`); o Compose compõe a sombra ambiente e a do ponto, e o plain não tem sombra (`shadowElevation` 0).
 - O `RichTooltip` com `maxWidth` maior que a largura da marcação é limitado pela marcação (`fill`); o rich sem retângulo (medido) fica em 320 no máximo.
 - Sem a animação de entrada e saída, os estados de foco e pressionado, nem o `contentDescription` do `TooltipBox`.

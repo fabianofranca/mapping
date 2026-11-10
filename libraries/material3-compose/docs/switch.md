@@ -75,7 +75,7 @@ O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o des
 
 **O que ainda difere do Compose**
 
-- Sem ripple animado, sem transição entre estados e sem a animação do deslizar da alça: o desenho é um quadro parado. O anel de foco por fora da forma (`FocusIndicatorColor`, linha 36) não é desenhado: a raiz recorta (#896).
+- Sem ripple animado, sem transição entre estados e sem a animação do deslizar da alça: o desenho é um quadro parado. Em `focused` a chave ganha o anel de foco (`FocusIndicatorColor`, `SwitchTokens.kt` linha 36): o anel de 3 em `secondary`, afastado 2 da forma (`stroke.offset`), por fora da caixa (a largura e o afastamento são os da decisão da etapa; o `*Tokens.kt` só traz a cor), em volta do trilho de 52 × 32.
 - A camada de 40 passa 4 acima e abaixo do trilho de 32 e, com a chave encostada na borda direita da instância, 4 além dela; a raiz recorta, então a camada aparece cortada nesses lados. No pressionado o Compose também desloca a alça para dentro do trilho (o recuo); o desenho mantém a posição de parada.
 - O `thumbContent` do Compose é livre; o campo `thumbIcon` desenha `check` ligado e `close` desligado (o par do Material), e o `code` do tipo só passa o `check`.
 - O espaço de 16 entre o rótulo e a chave e o rótulo a 0,38 quando desabilitado são convenção do desenho: o Compose não tem rótulo.

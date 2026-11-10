@@ -69,11 +69,14 @@
               "left": 0,
               "right": 0,
               "top": 0,
-              "bottom": -4
+              "bottom": 0
             },
-            "cornerRadius": {
-              "$token": "corner-extra-small"
-            },
+            "cornerRadius": [
+              { "$token": "corner-extra-small" },
+              { "$token": "corner-extra-small" },
+              0,
+              0
+            ],
             "fill": {
               "$token": "surface-container-highest"
             }
@@ -306,8 +309,12 @@
           "color": {
             "$token": "elevation-shadow"
           },
-          "y": 2,
-          "blur": 6
+          "y": {
+            "$token": "elevation-2-y"
+          },
+          "blur": {
+            "$token": "elevation-2-blur"
+          }
         },
         "visible": {
           "$not": {
@@ -893,6 +900,34 @@
                         "$not": {
                           "$eq": ["interaction", "none"]
                         }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "type": "rect",
+                  "name": "anel de foco",
+                  "fill": "none",
+                  "stroke": {
+                    "color": {
+                      "$token": "secondary"
+                    },
+                    "width": 3,
+                    "align": "outside",
+                    "offset": 2
+                  },
+                  "visible": {
+                    "$and": [
+                      {
+                        "$eq": ["selected", "true"]
+                      },
+                      {
+                        "$not": {
+                          "$eq": ["enabled", "false"]
+                        }
+                      },
+                      {
+                        "$eq": ["interaction", "focused"]
                       }
                     ]
                   }
