@@ -6,6 +6,8 @@ Cada comando imprime, no fim, `alterados: <arquivos gravados>`.
 A nota "Vagas k/N" (meta.vagas) é recalculada em toda gravação, a partir das fichas (`plan`),
 de `meta.paralelo` (`start --paralelo N`) e de `meta.merged` (`merged`); `context` guarda o contexto
 do coordenador (alerta acima de CONTEXT_LIMIT). `show` imprime `vagas:`, `começar agora:`, `contexto:`.
+`ciWait` (o PR cujo CI espera o coordenador, ex. `PR #7`) e `ciWaitAt` (desde quando; `ciWait=` limpa os
+dois) entram na linha `CI esperando o coordenador:` do `show`; trocar ou limpar `child` não mexe neles.
 Só biblioteca padrão. Uso: painel.py [--now ISO] <subcomando> DIR ...
 (o subcomando vem ANTES da pasta: `painel.py row <pasta> '#n' status=...`).
 """
@@ -32,6 +34,8 @@ QUEUE_EMPTY = {
     "plan": "",
     # Filhas que ainda devem aviso (ids separados por espaço) e desde quando.
     "child": "", "childAt": "",
+    # PR cujo CI espera o coordenador (ex.: "PR #1467") e desde quando; vazio se nenhum.
+    "ciWait": "", "ciWaitAt": "",
     # Motivo curto de a filha esperar o coordenador (pergunta, CI travado, chama o dono); vazio se não espera.
     "wait": "",
     # Sessões criadas para a etapa (ids separados por espaço), para arquivar no fim.
@@ -40,7 +44,7 @@ QUEUE_EMPTY = {
     # "ordem do dono (…)", "pausada pelo dono"); vazio: não está segura.
     "hold": "",
 }
-TIME_FIELDS = ["started", "ended", "childAt"]
+TIME_FIELDS = ["started", "ended", "childAt", "ciWaitAt"]
 LATE_MINUTES = 30
 
 NOW_OVERRIDE = None
@@ -205,6 +209,14 @@ def cmd_row(a):
         validate_choice("stage", pairs["stage"], STAGES)
     if pairs.get("child") == "":
         pairs["childAt"] = ""
+    if pairs.get("ciWait") == "":
+        pairs["ciWaitAt"] = ""
+    if pairs.get("ciWait") and "ciWaitAt" not in pairs:
+        # PR novo na espera: o horário é o de agora, nunca o do PR anterior (nem em branco).
+        pairs["ciWaitAt"] = "now"
+    if (pairs.get("status") in ("concluída", "falhou") or pairs.get("ended")) and "ciWait" not in pairs:
+        # Etapa terminada não espera CI: um ciWait esquecido não fica na conferência para sempre.
+        pairs["ciWait"] = pairs["ciWaitAt"] = ""
     if "child" in pairs and "wait" not in pairs:
         # Filha trocada (sessão recriada) ou removida: a espera da anterior não vale para a nova.
         pairs["wait"] = ""
@@ -498,6 +510,16 @@ def waiting_rows(q):
     return [r for r in q if r.get("child") and r.get("wait")]
 
 
+def ci_wait_rows(q):
+    return [r for r in q if r.get("ciWait")]
+
+
+def ci_wait_text(r):
+    since = r.get("ciWaitAt")
+    mins = f" ({minutes_since(since)} min)" if since else ""
+    return f"{r['issue']} {r['ciWait']}{mins}"
+
+
 def show_row(r):
     print(f"{r['issue']} {r['title']}")
     for k, v in r.items():
@@ -538,6 +560,8 @@ def cmd_show(a):
         f"{r['issue']} {r['child']} ({minutes_since(r['childAt'])} min)" for r in late) or "nenhuma"))
     print("esperando o coordenador: " + ("; ".join(
         f"{r['issue']} ({r['wait']})" for r in waiting_rows(q)) or "nenhuma"))
+    print("CI esperando o coordenador: " + ("; ".join(
+        ci_wait_text(r) for r in ci_wait_rows(q)) or "nenhuma"))
     print("últimas do log:")
     for e in lg[-5:]:
         print(f"  {e['at']}  {e['text']}")
