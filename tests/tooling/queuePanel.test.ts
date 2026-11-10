@@ -331,6 +331,21 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
     expect(item6).toMatch(/falha legítima/i);
   });
 
+  it('leitura do CI por check runs, sem get_status e sem os skipped (EC2)', () => {
+    expect(item6).toContain('get_check_runs');
+    expect(item6).toMatch(/nunca com `get_status`/);
+    expect(item6).toMatch(/Ignore os check runs `skipped`/);
+    expect(item6).toMatch(/nenhum outro com `failure`, `cancelled` ou `timed_out`/);
+    const conferencia = between(
+      skill,
+      'Quem confere o CI e se o PR pode ser mesclado',
+      '\n\n',
+    );
+    expect(conferencia).toContain('get_check_runs');
+    expect(conferencia).toMatch(/ignore os `skipped`/i);
+    expect(conferencia).toMatch(/nunca `get_status`/);
+  });
+
   it('"Para a sessão da fase": margem e teto do dist para a fase (decisões 3, 6, 7 e 8)', () => {
     expect(item6).toMatch(/abaixo de 2 KiB/);
     expect(item6).toMatch(/enxugar/);
