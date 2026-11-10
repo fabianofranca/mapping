@@ -109,7 +109,7 @@ O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o des
 
 **O que ainda difere do Compose**
 
-- O `y` e o `blur` da sombra vêm dos tokens `elevation-1-y` e `elevation-1-blur` (`$token` em `shadow.y` e `shadow.blur`).
+- As duas sombras (ponto e ambiente) vêm dos tokens `elevation-<n>-point-*` e `elevation-<n>-ambient-*` (`$token` em `shadow`, lista de duas sombras com `spread`); os tokens `elevation-<n>-y`, `elevation-<n>-blur` e `elevation-shadow` seguem na especialização por compatibilidade, mas nenhum componente os usa.
 - O avatar do `InputChip` não é campo do tipo; o desenho não o tem.
 - A largura é a da marcação: o chip não mede o rótulo para crescer (o `hug` do eixo largura só vale em tela arrumada pelo `layoutScreen`, e este componente não tem slot). O Compose mede o conteúdo.
 - O rótulo não corta nem quebra de propósito (o `Text` do Compose também não); um rótulo maior que a caixa avisa `texto maior que a caixa`.

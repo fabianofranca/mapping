@@ -42,7 +42,7 @@ type Rec = [string, string, number, number, number, number];
  * nós fica igual a ≤ 0,5 px. Sombra (duas por nível), cor herdada, desabilitado opaco, justificado e
  * `over` não mudam caixa nenhuma; só o vão arredondado e o número sob a alça mudam nós.
  */
-export const EXCEPTIONS = {
+const EXCEPTIONS = {
   // Vão arredondado: o contorno é um nó só (`contorno`, com `stroke.gap`); saem o `contorno (lados)` e
   // o `trecho final`, o `trecho inicial` vira o `recuo` (só espaço) e o rótulo da borda ganha nome próprio.
   'text-field': {
@@ -66,7 +66,7 @@ export const EXCEPTIONS = {
 } as Record<string, { rename: Record<string, string>; drop: string[] }>;
 
 /** Número sob a alça: a `alça` ganha a cópia dos números (`números sob a alça`) no lugar do `valor selecionado`. */
-export const SKIP_CHILDREN = { 'time-picker': ['alça'] } as Record<string, string[]>;
+const SKIP_CHILDREN = { 'time-picker': ['alça'] } as Record<string, string[]>;
 
 function flatten(
   node: SceneNode,
