@@ -3,7 +3,7 @@
   "formatVersion": 15,
   "id": "material3-compose",
   "name": "Material 3 (Compose)",
-  "version": 5,
+  "version": 6,
   "description": "Material Design 3 (baseline, tema claro e escuro) para Jetpack Compose, com o composable de cada tipo no `code`. Os símbolos e os parâmetros vêm do código do androidx na versão compose.material3 1.4.0 (commit 5113b82a4ed6416d6344efa50e41db8cb65928ff). Padrões: os espaços (lambdas) de cada composable ficam no `notes`; o tamanho vem de width, height e weight; os ícones são sugestões de Icons.Filled; a imagem remota usa o carregador de imagens do app; o Scaffold coloca cada filha no espaço certo pelo tipo dela.",
   "platforms": [
     {
@@ -8263,7 +8263,19 @@
               "key": "displayedMonth",
               "label": "Mês exibido",
               "type": "string",
-              "description": "Nome do mês e do ano mostrados no calendário, como em Outubro de 2025. É o estado inicial, não um parâmetro. A grade desenhada é sempre de 31 dias começando numa quarta-feira."
+              "description": "Nome do mês e do ano mostrados no calendário, como em Outubro de 2025. É o estado inicial, não um parâmetro: é só o rótulo, e a grade vem de month e year."
+            },
+            {
+              "key": "month",
+              "label": "Mês",
+              "type": "number",
+              "description": "Mês do calendário, de 1 a 12. Com year, a grade desenhada é a do mês (o número de dias, com o bissexto, o dia da semana do dia 1 e 4, 5 ou 6 linhas). Sem um dos dois, ou com month fora de 1 a 12, fica a grade de hoje: 31 dias a partir da quarta. Forma o initialDisplayedMonthMillis do código."
+            },
+            {
+              "key": "year",
+              "label": "Ano",
+              "type": "number",
+              "description": "Ano do calendário (de 1 em diante). Com month, a grade desenhada é a do mês; sem um dos dois, a grade de hoje. Forma o initialDisplayedMonthMillis do código."
             },
             {
               "key": "selection",
@@ -8298,6 +8310,14 @@
               "default": "true",
               "options": ["true", "false"],
               "description": "false esconde o ícone que alterna entre calendário e digitação."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed"],
+              "description": "Aparência parada do estado de interação do item escolhido (o dia escolhido; no intervalo, o dia inicial; sem escolha, o dia 1): mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem estado. Só muda o desenho, não entra no código. O tipo não tem enabled, então não existe um desabilitado que vença: o estado sempre desenha."
             }
           ],
           "code": {
@@ -8307,14 +8327,14 @@
               "params": {
                 "showModeToggle": "showModeToggle"
               },
-              "notes": "Não exige opt-in: `DatePicker`, `DateRangePicker`, `DatePickerDialog` e `rememberDatePickerState` com milissegundos (`Long`) são estáveis; só as sobrecargas com `java.time` pedem @OptIn(ExperimentalMaterial3Api::class). O estado vem de `val state = rememberDatePickerState(initialSelectedDateMillis = <selectedDay no mês de displayedMonth, em milissegundos UTC>, initialDisplayedMonthMillis = <primeiro dia de displayedMonth, em milissegundos UTC>)` e a chamada é `DatePicker(state = state, showModeToggle = <showModeToggle>)`; `title = { Text(<title>) }` e `headline = { Text(<headline>) }` só entram quando preenchidos (sem eles o composable desenha os padrões, e a manchete sai sozinha da data escolhida). `displayedMonth` e `selectedDay` não são parâmetros: são o estado inicial. O resultado vem de `state.selectedDateMillis`. Em diálogo, envolva com `DatePickerDialog(onDismissRequest = …, confirmButton = { TextButton(onClick = …) { Text(\"OK\") } }, dismissButton = { … }) { DatePicker(state = state) }`.",
+              "notes": "Não exige opt-in: `DatePicker`, `DateRangePicker`, `DatePickerDialog` e `rememberDatePickerState` com milissegundos (`Long`) são estáveis; só as sobrecargas com `java.time` pedem @OptIn(ExperimentalMaterial3Api::class). O estado vem de `val state = rememberDatePickerState(initialSelectedDateMillis = <selectedDay no mês de displayedMonth, em milissegundos UTC>, initialDisplayedMonthMillis = <primeiro dia do mês de month e year, em milissegundos UTC (sem eles, o de displayedMonth)>)` e a chamada é `DatePicker(state = state, showModeToggle = <showModeToggle>)`; `title = { Text(<title>) }` e `headline = { Text(<headline>) }` só entram quando preenchidos (sem eles o composable desenha os padrões, e a manchete sai sozinha da data escolhida). `displayedMonth`, `month`, `year` e `selectedDay` não são parâmetros: são o estado inicial. O resultado vem de `state.selectedDateMillis`. Em diálogo, envolva com `DatePickerDialog(onDismissRequest = …, confirmButton = { TextButton(onClick = …) { Text(\"OK\") } }, dismissButton = { … }) { DatePicker(state = state) }`.",
               "variants": {
                 "field": "selection",
                 "cases": {
                   "range": {
                     "symbol": "androidx.compose.material3.DateRangePicker",
                     "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/DateRangePicker.kt",
-                    "notes": "Não exige opt-in. O estado vem de `val state = rememberDateRangePickerState(initialSelectedStartDateMillis = <rangeStartDay em milissegundos UTC>, initialSelectedEndDateMillis = <rangeEndDay em milissegundos UTC>, initialDisplayedMonthMillis = <primeiro dia de displayedMonth, em milissegundos UTC>)` e a chamada é `DateRangePicker(state = state, showModeToggle = <showModeToggle>)`, com `title` e `headline` como na base. O resultado vem de `state.selectedStartDateMillis` e `state.selectedEndDateMillis`. Em diálogo, envolva com `DatePickerDialog` (arquivo `DatePickerDialog.kt`), como o `DatePicker`."
+                    "notes": "Não exige opt-in. O estado vem de `val state = rememberDateRangePickerState(initialSelectedStartDateMillis = <rangeStartDay em milissegundos UTC>, initialSelectedEndDateMillis = <rangeEndDay em milissegundos UTC>, initialDisplayedMonthMillis = <primeiro dia do mês de month e year, em milissegundos UTC (sem eles, o de displayedMonth)>)` e a chamada é `DateRangePicker(state = state, showModeToggle = <showModeToggle>)`, com `title` e `headline` como na base. O resultado vem de `state.selectedStartDateMillis` e `state.selectedEndDateMillis`. Em diálogo, envolva com `DatePickerDialog` (arquivo `DatePickerDialog.kt`), como o `DatePicker`."
                   }
                 }
               }
@@ -8356,6 +8376,80 @@
                 "selection": "range",
                 "rangeStartDay": 27,
                 "rangeEndDay": 31
+              }
+            },
+            {
+              "name": "Fevereiro de 2028 (bissexto)",
+              "values": {
+                "headline": "ter., 29 de fev.",
+                "displayedMonth": "Fevereiro de 2028",
+                "month": 2,
+                "year": 2028,
+                "selection": "single",
+                "selectedDay": 29
+              }
+            },
+            {
+              "name": "Mês de 30 dias, 6 linhas",
+              "values": {
+                "headline": "dom., 30 de nov.",
+                "displayedMonth": "Novembro de 2025",
+                "month": 11,
+                "year": 2025,
+                "selection": "single",
+                "selectedDay": 30
+              }
+            },
+            {
+              "name": "Mês de 28 dias, 4 linhas",
+              "values": {
+                "headline": "sáb., 14 de fev.",
+                "displayedMonth": "Fevereiro de 2026",
+                "month": 2,
+                "year": 2026,
+                "selection": "single",
+                "selectedDay": 14
+              }
+            },
+            {
+              "name": "Intervalo que atravessa semanas",
+              "values": {
+                "headline": "3 fev – 12 fev",
+                "displayedMonth": "Fevereiro de 2028",
+                "month": 2,
+                "year": 2028,
+                "selection": "range",
+                "rangeStartDay": 3,
+                "rangeEndDay": 12
+              }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "headline": "qua., 15 de out.",
+                "displayedMonth": "Outubro de 2025",
+                "selection": "single",
+                "selectedDay": 15,
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "headline": "9 out – 16 out",
+                "displayedMonth": "Outubro de 2025",
+                "selection": "range",
+                "rangeStartDay": 9,
+                "rangeEndDay": 16,
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "displayedMonth": "Outubro de 2025",
+                "selection": "single",
+                "interaction": "pressed"
               }
             }
           ]
@@ -8409,6 +8503,14 @@
               "default": "hour",
               "options": ["hour", "minute"],
               "description": "Qual parte está sendo escolhida (o relógio mostra as horas ou os minutos). É o estado inicial, não um parâmetro."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed"],
+              "description": "Aparência parada do estado de interação do item escolhido (o seletor da hora ou o do minuto, o que o selection escolhe): mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem estado. Só muda o desenho, não entra no código. O tipo não tem enabled, então não existe um desabilitado que vença: o estado sempre desenha."
             }
           ],
           "code": {
@@ -8473,6 +8575,64 @@
                 "hour": 18,
                 "minute": 5,
                 "is24Hour": "true"
+              }
+            },
+            {
+              "name": "10:37 em 24 horas, minutos",
+              "values": {
+                "title": "Selecionar horário",
+                "mode": "picker",
+                "hour": 10,
+                "minute": 37,
+                "is24Hour": "true",
+                "selection": "minute"
+              }
+            },
+            {
+              "name": "22:05 em 12 horas (PM)",
+              "values": {
+                "title": "Selecionar horário",
+                "mode": "picker",
+                "hour": 22,
+                "minute": 5,
+                "is24Hour": "false",
+                "selection": "hour"
+              }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "title": "Selecionar horário",
+                "mode": "picker",
+                "hour": 14,
+                "minute": 30,
+                "is24Hour": "true",
+                "selection": "hour",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "title": "Selecionar horário",
+                "mode": "picker",
+                "hour": 9,
+                "minute": 45,
+                "is24Hour": "false",
+                "selection": "minute",
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "title": "Informe o horário",
+                "mode": "input",
+                "hour": 8,
+                "minute": 5,
+                "is24Hour": "false",
+                "selection": "hour",
+                "interaction": "pressed"
               }
             }
           ]

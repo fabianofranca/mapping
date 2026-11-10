@@ -231,6 +231,15 @@ describe('M5 — time-picker: seletor AM/PM', () => {
   });
 });
 
+/** Os números do mostrador, na ordem em que o `repeat` os desenha (o anel externo e, em 24 horas, o interno). */
+const clockNumbers = (d: Drawing) =>
+  [...walk(d.root)]
+    .filter((n): n is TextNode => n.type === 'text' && n.name === 'número' && n.visible)
+    .map((node) => {
+      const { x, y, width, height } = absoluteBoxes(d.root).get(node.id)!;
+      return { node, rect: [x, y, width, height] };
+    });
+
 describe('M5 — time-picker: mostrador (relógio)', () => {
   it('relógio de 256 (ClockDialContainerSize) em surface-container-highest, forma full, a 36 dos seletores', () => {
     for (const mode of MODES) {
@@ -317,19 +326,21 @@ describe('M5 — time-picker: mostrador (relógio)', () => {
     for (const mode of MODES) {
       const d = draw(PICKER_24, mode);
       const face = box(d, 'relógio');
+      const numbers = clockNumbers(d);
+      expect(numbers).toHaveLength(24);
       for (let k = 0; k < 12; k += 1) {
-        const outer = box(d, `número ${k}`);
+        const outer = numbers[k]!;
         const [ox, oy] = handleCenter(k * 30, 101);
-        near(outer.x - face.x + outer.width / 2, ox);
-        near(outer.y - face.y + outer.height / 2, oy);
-        const inner = box(d, `número interno ${k}`);
+        near(outer.rect[0]! - face.x + outer.rect[2]! / 2, ox);
+        near(outer.rect[1]! - face.y + outer.rect[3]! / 2, oy);
+        const inner = numbers[12 + k]!;
         const [ix, iy] = handleCenter(k * 30, 69);
-        near(inner.x - face.x + inner.width / 2, ix);
-        near(inner.y - face.y + inner.height / 2, iy);
-        expect(textOf(d, `número ${k}`)).toBe(String(k));
-        expect(textOf(d, `número interno ${k}`)).toBe(String(12 + k));
+        near(inner.rect[0]! - face.x + inner.rect[2]! / 2, ix);
+        near(inner.rect[1]! - face.y + inner.rect[3]! / 2, iy);
+        expect(outer.node.text).toBe(String(k));
+        expect(inner.node.text).toBe(String(12 + k));
       }
-      const label = textIn(d, 'número 3')!;
+      const label = numbers[3]!.node;
       expect(fontOf(label)).toEqual(scale('body-large'));
       expect(solid(label.fills)).toBe(tok('on-surface', mode));
       expect(label.style.align).toBe('center');
@@ -337,8 +348,8 @@ describe('M5 — time-picker: mostrador (relógio)', () => {
   });
 
   it('12 horas mostra 12, 1 a 11 no anel externo e nenhum interno; minutos mostram 0, 5 a 55', () => {
-    const hours = draw({ ...PICKER_24, is24Hour: 'false' }, 'light');
-    expect(Array.from({ length: 12 }, (_, k) => textOf(hours, `número ${k}`))).toEqual([
+    const hours = clockNumbers(draw({ ...PICKER_24, is24Hour: 'false' }, 'light'));
+    expect(hours.map((n) => n.node.text)).toEqual([
       '12',
       '1',
       '2',
@@ -352,9 +363,8 @@ describe('M5 — time-picker: mostrador (relógio)', () => {
       '10',
       '11',
     ]);
-    expect(named(hours, 'número interno 0')).toBeUndefined();
-    const minutes = draw(PICKER_12_MINUTE, 'light');
-    expect(Array.from({ length: 12 }, (_, k) => textOf(minutes, `número ${k}`))).toEqual([
+    const minutes = clockNumbers(draw(PICKER_12_MINUTE, 'light'));
+    expect(minutes.map((n) => n.node.text)).toEqual([
       '0',
       '5',
       '10',
@@ -368,9 +378,10 @@ describe('M5 — time-picker: mostrador (relógio)', () => {
       '50',
       '55',
     ]);
-    expect(named(minutes, 'número interno 0')).toBeUndefined();
-    const day = draw({ ...PICKER_24, selection: 'minute' }, 'light');
-    expect(named(day, 'número interno 0')).toBeUndefined();
+    // em 24 horas, escolhendo o minuto, também só o anel externo
+    expect(
+      clockNumbers(draw({ ...PICKER_24, selection: 'minute' }, 'light')),
+    ).toHaveLength(12);
   });
 });
 

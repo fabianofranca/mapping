@@ -98,12 +98,11 @@ const MISSING_TODAY: string[] = [
   // tests/model/specTokens.test.ts, tests/model/components/tokens.test.ts, libraryTokens.test.ts e
   // pelo roteiro R25.
   'component:expr.$token',
-  // `$rows`, `$size` e o `repeat` por `count` (etapa #897, EX2): a Material 3 passa a usá-los nas
-  // fases EX4 a EX6; coberto por tests/model/components/repeat.test.ts, expressions.test.ts e
-  // libraryRepeat.test.ts.
+  // `$rows` e `$size` (etapa #897, EX2): a Material 3 passa a usá-los na EX6; coberto por
+  // tests/model/components/repeat.test.ts, expressions.test.ts e libraryRepeat.test.ts. O `repeat`
+  // por `count` já tem exemplo (o `date-picker` e o `time-picker` da Material 3, EX4).
   'component:expr.$rows',
   'component:expr.$size',
-  'component:node.repeat.count',
   // `rotation` por nó (etapa #897, EX3): a Material 3 passa a usá-la na EX4 e na EX6 (ponteiro do
   // `time-picker`, `pull-to-refresh`); coberto por tests/model/components/rotation.test.ts,
   // tests/mcp/sceneRaster.test.ts, tests/e2e/rotation.spec.ts e pelo roteiro R25.
