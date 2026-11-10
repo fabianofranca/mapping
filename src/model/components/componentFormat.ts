@@ -259,6 +259,12 @@ interface TemplateNodeBase {
   readonly name?: string;
   readonly visible?: BoolExpr;
   readonly opacity?: Expr<number>;
+  /**
+   * `formatVersion` 4: gira o nó (e os filhos de um quadro, com o `clip` dele) em graus, no
+   * sentido horário, em volta do centro da caixa. É só desenho, como o `transform` do CSS: não
+   * muda layout, medida, `hug` nem a caixa do nó. Não vale na raiz. Sem valor, ou 0, não gira.
+   */
+  readonly rotation?: Expr<number>;
   /** Tamanho no eixo; aceita expressão na `formatVersion` 4 (valor inválido cai no padrão, com aviso). */
   readonly width?: Expr<SizeSpec>;
   readonly height?: Expr<SizeSpec>;

@@ -363,3 +363,19 @@ describe('component.schema.json', () => {
     expect(checkSchema(schema, bad).length).toBeGreaterThan(0);
   });
 });
+
+describe('component.schema.json — rotation (EX3)', () => {
+  it('aceita rotation, literal ou expressão, em qualquer nó, e recusa o que não é número', () => {
+    const component = clone();
+    const template = component.template as { children?: Record<string, unknown>[] };
+    const turned = { type: 'rect', width: 4, height: 4, rotation: 45 };
+    template.children = [
+      turned,
+      { ...turned, rotation: { $mul: [{ $field: 'a' }, 90] } },
+      { type: 'frame', rotation: -30, children: [] },
+    ];
+    expect(checkSchema(schema, component)).toEqual([]);
+    template.children = [{ ...turned, rotation: 'girado' }];
+    expect(checkSchema(schema, component)).not.toEqual([]);
+  });
+});

@@ -117,6 +117,7 @@ const BASE_KEYS = [
   'name',
   'visible',
   'opacity',
+  'rotation',
   'width',
   'height',
   'minWidth',
@@ -776,6 +777,8 @@ function checkNode(value: unknown, path: string, out: Ctx): void {
     checkString(value.name, join(path, 'name'), out);
   if ('visible' in value) checkBoolExpr(value.visible, join(path, 'visible'), out);
   if ('opacity' in value) checkExpr(value.opacity, join(path, 'opacity'), checkUnit, out);
+  if ('rotation' in value)
+    checkExpr(value.rotation, join(path, 'rotation'), checkNumber, out);
   checkNodeSizes(value, path, type, out);
   if ('anchors' in value) checkAnchors(value.anchors, join(path, 'anchors'), out);
   if ('fill' in value) checkExpr(value.fill, join(path, 'fill'), checkFill, out);
@@ -936,6 +939,7 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
   ['font', 'ellipsis'],
   ['font', 'maxLines'],
   ['runs'],
+  ['rotation'],
 ];
 
 /** Chaves que valem em qualquer versão como literal, mas só com expressão na formatVersion 4. */
@@ -1236,6 +1240,13 @@ function collectIssues(input: unknown, refs: TokenRef[] | null): ComponentIssue[
     const type = isRecord(input.template) ? input.template.type : undefined;
     if (type !== 'frame' && (NODE_TYPES as readonly unknown[]).includes(type))
       add(out, 'template.type', 'a raiz do template deve ser do tipo "frame"');
+    if (
+      typeof version === 'number' &&
+      version >= COMPONENT_FORMAT_VERSION_FIDELITY &&
+      isRecord(input.template) &&
+      'rotation' in input.template
+    )
+      add(out, 'template.rotation', 'não vale na raiz');
     checkNode(input.template, 'template', out);
     if (version === 1) {
       for (const node of nodesOfTypes(input.template, 'template', ['repeat'])) {

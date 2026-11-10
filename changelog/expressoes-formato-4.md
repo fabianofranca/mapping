@@ -8,6 +8,8 @@
 - O validador confere operando literal, aridade e a versão (`só é permitido com formatVersion 4` nas versões 1 a 3); o `docs/component.schema.json`, o `docs/COMPONENT-FORMAT.md`, a skill `spec-author` e o `docs/AGENT-GUIDE.md` descrevem as chaves novas.
 - `$rows` (o número de linhas de um campo `table`) e `$size` (a largura ou a altura da instância, que segue o redimensionamento da marcação) nas expressões de número, e o `repeat` por contagem: `count` no lugar de `field`, com `{ "$field": "$index" }` para o índice da linha (também no `repeat` por `field`) e o teto de 1000 linhas (aviso `repeat limitado a 1000 linhas: <nó>`).
 - Âncoras por expressão: `left`, `right`, `top` e `bottom` aceitam uma expressão de número e `centerX` e `centerY` uma condição; a que não dá número vale como âncora ausente. Tudo só na `formatVersion` 4 do componente (`só é permitido com formatVersion 4` nas anteriores).
+- `rotation` em qualquer nó (menos na raiz) do componente `formatVersion` 4: gira o nó em graus, no sentido horário, em volta do centro da caixa, só no desenho. Os filhos e o recorte de um quadro giram junto; o hover segue a forma girada; layout, `hug` e Arrumar não mudam. A app, o visualizador e o PNG do MCP (`render_marking`, `render_container`, `get_marking_image`) desenham igual, e o recorte girado também. Numa `formatVersion` menor que 4: `só é permitido com formatVersion 4`; na raiz: `não vale na raiz`.
+- Roteiro R25.75 a R25.78: a barra por `$size`/`$mul` e o retângulo girado 45° no PNG do MCP e na app.
 
 ## Alterado
 

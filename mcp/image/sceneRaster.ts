@@ -8,10 +8,14 @@ import {
 } from '../../src/model/components/strokeSides';
 import {
   multiply,
+  nodeMatrix,
+  translate,
   type CornerRadius,
   type Matrix,
   type Paint,
   type Point,
+  type FrameNode,
+  type GroupNode,
   type SceneNode,
   type TextNode,
 } from '../../src/model/components/scene';
@@ -816,6 +820,16 @@ function alignedShapes(node: SceneNode, shapes: Subpath[]): Subpath[] {
 // ---------------------------------------------------------------------------
 // Cena
 
+/** A faixa do texto cortado: a largura da caixa, na horizontal; na vertical nada se corta. */
+function cutStrip(node: TextNode): Polygon {
+  return [
+    { x: 0, y: -CUT_REACH },
+    { x: node.width, y: -CUT_REACH },
+    { x: node.width, y: CUT_REACH },
+    { x: 0, y: CUT_REACH },
+  ];
+}
+
 class Painter {
   constructor(
     private readonly raster: Raster,
@@ -826,7 +840,7 @@ class Painter {
 
   paint(node: SceneNode, parent: Matrix, opacity: number, clip: PixelRect): void {
     if (!node.visible) return;
-    const matrix = multiply(parent, node.transform);
+    const matrix = multiply(parent, nodeMatrix(node));
     const alpha = opacity * node.opacity;
     if (alpha <= 0) return;
 
@@ -864,9 +878,73 @@ class Painter {
               { x: box.x, y: box.y + box.height },
             ]
           : roundedRect(node.width, node.height, 0);
-        childClip = intersect(clip, bounds(this.toRaster(rect, matrix)));
+        const corners = this.toRaster(rect, matrix);
+        childClip = intersect(clip, bounds(corners));
+        if (!isAxisAligned(matrix)) {
+          this.paintTurned(node, matrix, alpha, childClip, corners);
+          return;
+        }
       }
       for (const child of node.children) this.paint(child, matrix, alpha, childClip);
+    }
+  }
+
+  /**
+   * Os filhos de um quadro com `clip` girado: pintados numa camada à parte e compostos pela
+   * cobertura do retângulo girado (o recorte reto só serve a quadros alinhados aos eixos).
+   */
+  private paintTurned(
+    node: FrameNode | GroupNode,
+    matrix: Matrix,
+    alpha: number,
+    clip: PixelRect,
+    corners: Polygon,
+  ): void {
+    this.masked(corners, clip, (inner, shift, area) => {
+      const into = multiply(shift, matrix);
+      for (const child of node.children) inner.paint(child, into, alpha, area);
+    });
+  }
+
+  /**
+   * Pinta com `draw` numa camada do tamanho da região (`clip` ∩ caixa de `mask`) e compõe o
+   * resultado pela cobertura do polígono `mask`: um recorte que não é reto. `draw` recebe o
+   * pintor da camada, a translação que leva o raster à camada (multiplique-a às matrizes) e a
+   * região em coordenadas da camada.
+   */
+  private masked(
+    mask: Polygon,
+    clip: PixelRect,
+    draw: (painter: Painter, shift: Matrix, area: PixelRect) => void,
+  ): void {
+    const { raster } = this;
+    const region = intersect(clip, bounds(mask));
+    const x0 = Math.max(0, Math.floor(region.x));
+    const y0 = Math.max(0, Math.floor(region.y));
+    const x1 = Math.min(raster.width, Math.ceil(region.x + region.width));
+    const y1 = Math.min(raster.height, Math.ceil(region.y + region.height));
+    if (x1 <= x0 || y1 <= y0) return;
+    const [width, height] = [x1 - x0, y1 - y0];
+    const layer = createRaster(width, height);
+    draw(new Painter(layer, this.measure, this.scale, this.fonts), translate(-x0, -y0), {
+      x: region.x - x0,
+      y: region.y - y0,
+      width: region.width,
+      height: region.height,
+    });
+    const coverage = createRaster(width, height);
+    const shifted = mask.map((p) => ({ x: p.x - x0, y: p.y - y0 }));
+    const whole = { x: 0, y: 0, width, height };
+    fillPolygons(coverage, [shifted], 'nonzero', { rgb: [0, 0, 0], alpha: 1 }, whole);
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const at = (y * width + x) * 4;
+        const covered = coverage.data[at + 3]! / 255;
+        if (covered <= 0 || layer.data[at + 3]! === 0) continue;
+        const rgb: Rgb = [layer.data[at]!, layer.data[at + 1]!, layer.data[at + 2]!];
+        const into = ((y + y0) * raster.width + x + x0) * 4;
+        blend(raster, into, { rgb, alpha: layer.data[at + 3]! / 255 }, covered);
+      }
     }
   }
 
@@ -1028,8 +1106,24 @@ class Painter {
     const ink = textInk(node, this.measure, fonts);
     const own = firstColor(node.fills);
     // `wrap: none` sem `ellipsis` numa caixa fixa: o glifo que passa da caixa sai cortado por pixel.
-    const cut = cutsText(node);
-    const area = cut ? this.cutClip(node, matrix, clip) : clip;
+    if (!cutsText(node)) return this.drawInk(ink, own, matrix, opacity, clip);
+    const strip = this.toRaster(cutStrip(node), matrix);
+    if (isAxisAligned(matrix))
+      return this.drawInk(ink, own, matrix, opacity, intersect(clip, bounds(strip)));
+    // Texto girado: a faixa do corte é um retângulo girado, que só uma máscara recorta.
+    this.masked(strip, clip, (inner, shift, area) =>
+      inner.drawInk(ink, own, multiply(shift, matrix), opacity, area),
+    );
+  }
+
+  /** Os polígonos de tinta (fundo dos chips e glifos), cada um na sua cor, dentro de `area`. */
+  private drawInk(
+    ink: ReturnType<typeof textInk>,
+    own: Color | null,
+    matrix: Matrix,
+    opacity: number,
+    area: PixelRect,
+  ): void {
     for (const box of ink.boxes) {
       const color = parseColor(box.color);
       if (color === null) continue;
@@ -1044,18 +1138,6 @@ class Painter {
       if (color !== null)
         this.fill(glyphs.polygons, matrix, 'nonzero', color, opacity, area);
     }
-  }
-
-  /** O recorte do texto cortado: a largura da caixa, na horizontal; na vertical nada se corta. */
-  private cutClip(node: TextNode, matrix: Matrix, clip: PixelRect): PixelRect {
-    const reach = CUT_REACH;
-    const box = [
-      { x: 0, y: -reach },
-      { x: node.width, y: -reach },
-      { x: node.width, y: reach },
-      { x: 0, y: reach },
-    ];
-    return intersect(clip, bounds(this.toRaster(box, matrix)));
   }
 
   /** Texto rico: o fundo de cada chip e uma barra por pedaço de texto, em ordem, cada um na sua cor. */
@@ -1117,6 +1199,12 @@ export function bounds(points: readonly Point[]): PixelRect {
     if (p.y > maxY) maxY = p.y;
   }
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+}
+
+/** A matriz só escala e translada (ou gira de 90 em 90°): um retângulo continua alinhado aos eixos. */
+function isAxisAligned(m: Matrix): boolean {
+  const flat = (a: number, b: number) => Math.abs(a) < 1e-9 * (Math.abs(b) + 1);
+  return (flat(m[1], m[0]) && flat(m[2], m[3])) || (flat(m[0], m[1]) && flat(m[3], m[2]));
 }
 
 function intersect(a: PixelRect, b: PixelRect): PixelRect {

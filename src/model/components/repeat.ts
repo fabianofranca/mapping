@@ -33,6 +33,7 @@ export const REPEAT_COUNT_LIMIT = 1000;
 const INHERITED_KEYS = [
   'visible',
   'opacity',
+  'rotation',
   'anchors',
   'minWidth',
   'maxWidth',
