@@ -15,6 +15,7 @@ import {
   containerLockStates,
   isSameAspect,
   moveContainer,
+  overlappingContainer,
   removeContainer,
   replaceContainer,
   resizeContainer,
@@ -720,5 +721,86 @@ describe('imagens: nome livre sem diferenciar maiúsculas e minúsculas', () => 
       ],
     };
     expect(validateProject(old).map((i) => i.code)).not.toContain('duplicate-file');
+  });
+});
+
+describe('containers: beside', () => {
+  it('beside: nasce à direita do de referência, topo alinhado e a mesma scale', () => {
+    let p = emptyProject();
+    p = addBackgroundContainer(p, {
+      id: 'T',
+      width: 390,
+      height: 844,
+      background: '#ffffff',
+    });
+    const ref = image(p, 'T').placement;
+    p = addBackgroundContainer(p, {
+      id: 'D',
+      width: 390,
+      height: 300,
+      background: '#ffffff',
+      beside: 'T',
+    });
+    const after = image(p, 'D').placement;
+    expect(after.scale).toBe(ref.scale);
+    expect(after.y).toBe(ref.y);
+    expect(after.x).toBe(ref.x + 390 * ref.scale + IMAGE_GAP);
+  });
+
+  it('beside: lugar ocupado vai para o espaço livre mais próximo e mantém a scale', () => {
+    let p = emptyProject();
+    p = addBackgroundContainer(p, {
+      id: 'T',
+      width: 400,
+      height: 400,
+      background: '#ffffff',
+    });
+    const t = image(p, 'T').placement;
+    p = addBackgroundContainer(p, {
+      id: 'X',
+      width: 400,
+      height: 400,
+      background: '#ffffff',
+      beside: 'T',
+    });
+    p = addBackgroundContainer(p, {
+      id: 'Y',
+      width: 400,
+      height: 400,
+      background: '#ffffff',
+      beside: 'T',
+    });
+    const y = image(p, 'Y').placement;
+    expect(y.scale).toBe(t.scale);
+    expect(overlappingContainer(p, 'Y', y)).toBeNull();
+  });
+
+  it('beside: container de referência inexistente falha', () => {
+    expect(() =>
+      addBackgroundContainer(emptyProject(), {
+        id: 'D',
+        width: 10,
+        height: 10,
+        background: '#ffffff',
+        beside: 'nao-existe',
+      }),
+    ).toThrow();
+  });
+
+  it('beside também vale com arquivo', () => {
+    let p = addBackgroundContainer(emptyProject(), {
+      id: 'T',
+      width: 390,
+      height: 844,
+      background: '#ffffff',
+    });
+    p = addContainer(p, {
+      id: 'F',
+      file: 'images/f.png',
+      width: 800,
+      height: 200,
+      beside: 'T',
+    });
+    expect(image(p, 'F').placement.scale).toBe(image(p, 'T').placement.scale);
   });
 });

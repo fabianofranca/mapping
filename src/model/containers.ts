@@ -264,6 +264,44 @@ export function uniqueImageFile(
 }
 
 /**
+ * Lugar e escala de um container novo ao lado de `besideId`: à direita dele (borda direita mais
+ * `IMAGE_GAP`), com o topo alinhado e a mesma `scale`; ocupado, vai para o espaço livre mais
+ * próximo, mantendo a escala. `besideId` inexistente falha com `not-found`.
+ */
+function placementBeside(
+  p: Project,
+  size: { readonly width: number; readonly height: number },
+  besideId: string,
+): Placement {
+  const reference = p.containers.find((c) => c.id === besideId);
+  if (!reference) fail('not-found', besideId);
+  const { scale } = reference.placement;
+  const referenceRect = imageCanvasRect(reference, reference.placement);
+  const wanted = { x: right(referenceRect) + IMAGE_GAP, y: referenceRect.y };
+  const obstacles = p.containers.map((c) => imageCanvasRect(c, c.placement));
+  return snapPlacement({
+    ...nearestFreeSpot(obstacles, size.width * scale, size.height * scale, wanted),
+    scale,
+  });
+}
+
+/** Escala e lugar de um container novo: ao lado de `beside`, perto de `center` ou à direita de todos. */
+function newContainerPlacement(
+  p: Project,
+  size: { readonly width: number; readonly height: number },
+  args: {
+    readonly center?: { readonly x: number; readonly y: number };
+    readonly beside?: string;
+  },
+): Placement {
+  if (args.beside !== undefined) return placementBeside(p, size, args.beside);
+  const scale = INITIAL_IMAGE_SIZE / Math.max(size.width, size.height);
+  return args.center
+    ? placementNear(p, size, scale, args.center)
+    : placementAtRight(p, scale);
+}
+
+/**
  * Adiciona a imagem, com o lado maior medindo `INITIAL_IMAGE_SIZE` unidades do
  * canvas: perto de `center`, se informado; senão à direita da imagem mais à direita. Nasce
  * sem pai (`parentId: null`); o assentar decide se alguma marcação do canvas a contém.
@@ -274,6 +312,8 @@ export function addContainer(
     readonly id: string;
     /** Onde o centro da imagem deve ficar (vai para o espaço livre mais próximo). */
     readonly center?: { readonly x: number; readonly y: number };
+    /** Id de um container: o novo nasce à direita dele, com a mesma escala. */
+    readonly beside?: string;
   },
   options?: SettleOptions,
 ): Project {
@@ -282,7 +322,6 @@ export function addContainer(
   if (p.containers.some((i) => i.file !== null && sameFile(i.file, args.file))) {
     fail('duplicate-file');
   }
-  const scale = INITIAL_IMAGE_SIZE / Math.max(args.width, args.height);
   const image: ProjectContainer = {
     id: args.id,
     name: null,
@@ -294,9 +333,7 @@ export function addContainer(
     background: null,
     width: args.width,
     height: args.height,
-    placement: args.center
-      ? placementNear(p, args, scale, args.center)
-      : placementAtRight(p, scale),
+    placement: newContainerPlacement(p, args, args),
   };
   return settleFrom(p, { ...p, containers: [...p.containers, image] }, options);
 }
@@ -316,6 +353,8 @@ export function addBackgroundContainer(
     readonly background: string;
     /** Onde o centro da imagem deve ficar (vai para o espaço livre mais próximo). */
     readonly center?: { readonly x: number; readonly y: number };
+    /** Id de um container: o novo nasce à direita dele, com a mesma escala. */
+    readonly beside?: string;
   },
   options?: SettleOptions,
 ): Project {
@@ -323,7 +362,6 @@ export function addBackgroundContainer(
   checkBackgroundDimensions(args);
   const background = checkBackground(args.background);
   const name = normalizeOptionalName(args.name ?? null);
-  const scale = INITIAL_IMAGE_SIZE / Math.max(args.width, args.height);
   const image: ProjectContainer = {
     id: args.id,
     name,
@@ -335,9 +373,7 @@ export function addBackgroundContainer(
     background,
     width: args.width,
     height: args.height,
-    placement: args.center
-      ? placementNear(p, args, scale, args.center)
-      : placementAtRight(p, scale),
+    placement: newContainerPlacement(p, args, args),
   };
   return settleFrom(p, { ...p, containers: [...p.containers, image] }, options);
 }

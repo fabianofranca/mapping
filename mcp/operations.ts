@@ -319,6 +319,11 @@ export const operationSchema = z.discriminatedUnion('op', [
       .describe(
         'Ponto do canvas perto do qual o container fica (padrão: à direita dos outros containers).',
       ),
+    beside: item('Container de referência')
+      .optional()
+      .describe(
+        'Container de referência (referência, id ou apelido `$nome`): o novo nasce à direita dele, com o topo alinhado e a MESMA escala (use para o conteúdo fora da imagem, ao lado da tela). Lugar ocupado: vai para o espaço livre mais próximo. Não combine com `center`.',
+      ),
   }),
   z.object({
     // Antiga, aceita com aviso: use `add_container` com `file`.
