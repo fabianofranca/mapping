@@ -1,11 +1,12 @@
 // @vitest-environment node
-// Fase VG1 (etapa #1440): o painel calcula a nota "Vagas k/N" com o motivo de cada `ready` que não
+// Fases VG1 e VG2 (etapa #1440). VG1: o painel calcula a nota "Vagas k/N" com o motivo de cada `ready` que não
 // começou, diz quais começam agora e guarda o contexto do coordenador (alerta acima de 60%).
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { between, section } from '../support/textSlice';
 
 const SCRIPT = '.claude/skills/implementar-fila/painel/painel.py';
 const PAGE = '.claude/skills/implementar-fila/painel/index.html';
@@ -275,5 +276,102 @@ describe('painel.py — vagas (VG1, #1440)', () => {
     expect(html.indexOf('Por que há vaga livre')).toBeLessThan(
       html.indexOf('Passo a passo'),
     );
+  });
+});
+
+// Fase VG2 (etapa #1440): os skills e o PROCESS.md usam a nota de vagas, o contexto e a comparação por roteiro.
+describe('implementar-fila e detalhar-backlog: vagas, contexto e roteiros (VG2, #1440)', () => {
+  const fila = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
+  const detalhar = readFileSync('.claude/skills/detalhar-backlog/SKILL.md', 'utf8');
+  const processo = readFileSync('docs/PROCESS.md', 'utf8');
+
+  it('"Ficha da etapa" pede o estado das dependências e o toca por roteiro (decisão 7)', () => {
+    const ficha = section(fila, '### Ficha da etapa');
+    expect(ficha).toContain(':main');
+    expect(ficha).toContain(':aberta');
+    expect(ficha).toContain('docs/TESTING.md#R');
+    expect(ficha).toContain('docs/TESTING-NUVEM.md#blocos');
+  });
+
+  it('"1. Começo" e "Na sessão nova" rodam o start --paralelo N (decisão 1.1)', () => {
+    expect(between(fila, '## 2. Fila', '## 3. Por etapa')).toContain(
+      'painel.py start <pasta> --paralelo N',
+    );
+    expect(between(fila, '**Na sessão nova**', '## Fim')).toContain(
+      'start <pasta> --paralelo N',
+    );
+  });
+
+  it('"Conferências de reserva" começa pelo contexto e depois usa o começar agora (decisões 3.1 e 3.3)', () => {
+    const reserva = between(fila, '**Conferências de reserva:**', '**CI vermelho');
+    expect(reserva).toContain('painel.py context');
+    expect(reserva).toContain('começar agora');
+    expect(reserva.indexOf('painel.py context')).toBeLessThan(
+      reserva.indexOf('skill mudou na `main`'),
+    );
+    expect(reserva).toMatch(/Sem atrasadas, sem `começar agora`/);
+  });
+
+  it('"Paralelo" aponta para o painel.py, o roteiro e a tabela de blocos (decisões 4 a 6 e 8)', () => {
+    const paralelo = section(fila, '## Paralelo');
+    expect(paralelo).toContain('painel.py');
+    expect(paralelo).toContain('docs/TESTING.md#R12');
+    expect(paralelo).toContain('docs/TESTING-NUVEM.md#blocos');
+    expect(paralelo).toContain('vagas:');
+    expect(paralelo).toContain('começar agora:');
+  });
+
+  it('"Painel" lista os comandos novos e as linhas novas do show (decisão 10)', () => {
+    const painel = section(fila, '## Painel');
+    for (const termo of [
+      'start <pasta> --paralelo N',
+      'hold=',
+      "merged <pasta> '#N'",
+      'context <pasta> <pct>',
+      'contexto:',
+    ]) {
+      expect(painel).toContain(termo);
+    }
+  });
+
+  it('"Mudanças na fila" tem o recado de estado, o Seguir/Segurar e o hold (decisões 9 e 3.4)', () => {
+    const mudancas = section(fila, '## Mudanças na fila durante a execução');
+    expect(mudancas).toContain('Seguir (Recomendado)');
+    expect(mudancas).toContain('Segurar');
+    expect(mudancas).toContain('hold=');
+    expect(mudancas).toContain('pausada pelo dono');
+    expect(mudancas).toContain('ordem do dono (');
+  });
+
+  it('"Troca de sessão" mantém Acima de 60%, troca na hora e perde o aviso de filha (decisões 3.1 e 3.2)', () => {
+    const troca = section(fila, '## Troca de sessão');
+    expect(troca).toContain('Acima de 60%');
+    expect(troca).toContain('na hora');
+    expect(troca).not.toContain('a cada aviso de filha');
+  });
+
+  it('"Entre etapas" marca a dependência fora da fila como merged e começa o que o começar agora lista', () => {
+    const entre = between(fila, '7. **Entre etapas:**', '**Arquivar as sessões**');
+    expect(entre).toContain('painel.py merged');
+    expect(entre).toContain('começar agora');
+  });
+
+  it('o detalhar-backlog compara o Toca em: por roteiro (decisão 11)', () => {
+    const passos = between(
+      detalhar,
+      '3. Rascunhe o plano inteiro',
+      '5. Decisão de produto',
+    );
+    expect(passos).toContain('docs/TESTING.md#R12');
+    expect(passos).toContain('docs/TESTING-NUVEM.md#blocos');
+    expect(passos).toContain('arquivo em comum');
+    expect(detalhar).toContain('mcp/version.ts');
+  });
+
+  it('o PROCESS.md cita o roteiro no Toca em: do detalhamento (decisão 12)', () => {
+    const detalhe =
+      processo.split('\n').find((l) => l.includes('**Detalhar uma etapa:**')) ?? '';
+    expect(detalhe).toContain('docs/TESTING.md#R12');
+    expect(detalhe).toContain('docs/TESTING-NUVEM.md#blocos');
   });
 });
