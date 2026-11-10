@@ -16,6 +16,8 @@ import {
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
+import { HANDLE_HIT_RADIUS } from '../../src/canvas/input/intents';
+import { handleHitRadius } from '../../src/canvas/markingGeometry';
 
 const read = (file: string): string => readFileSync(file, 'utf8');
 
@@ -47,6 +49,7 @@ const EXPECTED_EXPORTS = [
   'mark',
   'OPEN_DIALOG_TITLES',
   'openFile',
+  'paletteDrag',
   'parseEnvFile',
   'pickAppPage',
   'pickAutocompletePopup',
@@ -1325,13 +1328,57 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
       expect(d.events).toContain('up');
     });
 
-    it('não avisa longe das alças; nearHandle devolve o nome da alça ou null', async () => {
+    it('não avisa longe das alças; nearHandle devolve o nome do canto ou null', async () => {
       const mod = await load();
       const box = { x: 200, y: 150, width: 200, height: 100 };
       expect(mod.nearHandle(box, { x: 300, y: 200 })).toBeNull();
       expect(mod.nearHandle(box, { x: 400, y: 250 })).toBe('se');
-      expect(mod.nearHandle(box, { x: 300, y: 146 })).toBe('n');
+      // A app não tem alça no meio das bordas (CORNERS): o meio do lado de cima não avisa.
+      expect(mod.nearHandle(box, { x: 300, y: 146 })).toBeNull();
       expect(mod.nearHandle(box, { x: 209, y: 200 })).toBeNull();
+    });
+
+    it('nearHandle usa o raio e a distância em xadrez da app (handleHitRadius, HANDLE_HIT_RADIUS)', async () => {
+      const mod = await load();
+      // Caixa grande (>= 66 px de lado menor): o raio é o fixo do container.
+      const big = { x: 200, y: 150, width: 200, height: 100 };
+      expect(handleHitRadius(100)).toBe(HANDLE_HIT_RADIUS);
+      const r = HANDLE_HIT_RADIUS;
+      expect(mod.nearHandle(big, { x: 200 + r, y: 150 })).toBe('nw');
+      expect(mod.nearHandle(big, { x: 200 + r + 1, y: 150 })).toBeNull();
+      // Xadrez: o canto do quadrado r × r conta, ainda que a distância euclidiana passe de r.
+      expect(mod.nearHandle(big, { x: 200 + r, y: 150 + r })).toBe('nw');
+      expect(mod.nearHandle(big, { x: 400 - r, y: 150 + r })).toBe('ne');
+      expect(mod.nearHandle(big, { x: 200 + r, y: 250 - r })).toBe('sw');
+      // Fora da caixa também conta (o rótulo do container fica acima da borda).
+      expect(mod.nearHandle(big, { x: 200, y: 150 - r })).toBe('nw');
+      expect(mod.nearHandle(big, { x: 200, y: 150 - r - 1 })).toBeNull();
+      // Caixa pequena: raio clamp(min / 3, 12, 22).
+      const small = { x: 0, y: 0, width: 30, height: 90 };
+      const rs = handleHitRadius(30);
+      expect(rs).toBe(12);
+      expect(mod.nearHandle(small, { x: rs, y: 0 })).toBe('nw');
+      expect(mod.nearHandle(small, { x: rs + 1, y: 0 })).toBeNull();
+      const mid = { x: 0, y: 0, width: 45, height: 90 };
+      const rm = handleHitRadius(45);
+      expect(rm).toBe(15);
+      expect(mod.nearHandle(mid, { x: 45 + rm, y: 90 })).toBe('se');
+      expect(mod.nearHandle(mid, { x: 45 + rm + 1, y: 90 })).toBeNull();
+    });
+
+    it('drag avisa perto do canto fora da caixa, como o rótulo do container', async () => {
+      const mod = await load();
+      const d = fakeDragPage('100 100 200 100');
+      const warnings: string[] = [];
+      // canto nw na tela: (200, 150); o ponto está 20 px acima dele.
+      await mod.drag(
+        d.page,
+        { x: 205, y: 130 },
+        { x: 260, y: 130 },
+        { steps: 1, select: false, warn: (m: string) => warnings.push(m) },
+      );
+      expect(warnings.join('')).toMatch(/perto da alça nw/);
+      expect(warnings.join('')).toMatch(/22 px/);
     });
   });
 
@@ -1448,6 +1495,237 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
       const all = err.join('\n');
       expect(all).toContain('Timeout 5000ms');
       expect(all).toContain('button "Revisar" em Propostas');
+    });
+  });
+});
+
+describe('paletteDrag, caminho absoluto e pasta lembrada (etapa #1256, RT2)', () => {
+  type Fn = (...args: unknown[]) => unknown;
+  type Mod = {
+    paletteDrag: Fn;
+    selectFolder: Fn;
+    openFile: Fn;
+    saveFile: Fn;
+    state: Fn;
+    formatState: Fn;
+    HELP: Record<string, unknown>;
+  };
+  const load = async (): Promise<Mod> => {
+    process.env.DISPLAY ??= ':99';
+    return (await import('../../scripts/testing/cloud.mjs')) as unknown as Mod;
+  };
+
+  /** Página falsa: o `data-components` sobe no `mouse.up` (nativo) ou no `evaluate` (sintético). */
+  function fakePalettePage(rises: 'nativo' | 'sintetico' | 'nenhum') {
+    const events: string[] = [];
+    let components = 1;
+    const item = {
+      scrollIntoViewIfNeeded: async () => events.push('rola'),
+      boundingBox: async () => ({ x: 10, y: 100, width: 200, height: 40 }),
+    };
+    const page = {
+      mouse: {
+        move: async (x: number, y: number) => events.push(`move ${x},${y}`),
+        down: async () => events.push('down'),
+        up: async () => {
+          events.push('up');
+          if (rises === 'nativo') components += 1;
+        },
+      },
+      getByText: (text: string) => ({ text }),
+      locator: (selector: string) => {
+        if (selector === 'li.library-type') {
+          return { filter: () => item };
+        }
+        return {
+          getAttribute: async () => String(components),
+          screenshot: async ({ path: file }: { path: string }) =>
+            events.push(`captura ${file}`),
+        };
+      },
+      evaluate: async (_fn: Fn, arg: Record<string, unknown>) => {
+        if (arg && 'timeoutMs' in arg) return null;
+        events.push('sintetico');
+        if (rises === 'sintetico') components += 1;
+        return null;
+      },
+    };
+    return { page, events };
+  }
+
+  describe('paletteDrag (decisão 7)', () => {
+    it('o arrasto nativo cria a instância: via nativo, sem o evento sintético', async () => {
+      const mod = await load();
+      const d = fakePalettePage('nativo');
+      const result = await mod.paletteDrag(
+        d.page,
+        'Button',
+        { x: 500, y: 300 },
+        {
+          steps: 2,
+        },
+      );
+      expect(result).toEqual({ via: 'nativo' });
+      expect(d.events).toEqual([
+        'rola',
+        'move 110,120',
+        'down',
+        'move 305,210',
+        'move 500,300',
+        'up',
+      ]);
+    });
+
+    it('sem subida no nativo, refaz pelo evento sintético: via sintetico', async () => {
+      const mod = await load();
+      const d = fakePalettePage('sintetico');
+      const result = await mod.paletteDrag(
+        d.page,
+        'Box',
+        { x: 500, y: 300 },
+        {
+          steps: 1,
+        },
+      );
+      expect(result).toEqual({ via: 'sintetico' });
+      expect(d.events.at(-1)).toBe('sintetico');
+    });
+
+    it('sem nenhuma das duas, lança que o arrasto não criou a instância', async () => {
+      const mod = await load();
+      const d = fakePalettePage('nenhum');
+      await expect(
+        mod.paletteDrag(d.page, 'Button', { x: 500, y: 300 }, { steps: 1 }),
+      ).rejects.toThrow('o arrasto da Paleta não criou a instância');
+    });
+
+    it('capture grava o recorte do canvas antes de soltar', async () => {
+      const mod = await load();
+      const d = fakePalettePage('nativo');
+      await mod.paletteDrag(
+        d.page,
+        'Box',
+        { x: 500, y: 300 },
+        {
+          steps: 1,
+          capture: '/tmp/destino.png',
+        },
+      );
+      const shot = d.events.indexOf('captura /tmp/destino.png');
+      expect(shot).toBeGreaterThan(d.events.indexOf('down'));
+      expect(shot).toBeLessThan(d.events.indexOf('up'));
+    });
+  });
+
+  describe('caminho absoluto (decisão 8)', () => {
+    for (const name of ['selectFolder', 'openFile', 'saveFile'] as const) {
+      it(`${name} com caminho relativo cancela o seletor (alt+c) e diz o que fazer`, async () => {
+        const mod = await load();
+        const apoio = mkdtempSync(path.join(tmpdir(), 'mapping-rel-'));
+        let cancelled = 0;
+        try {
+          await expect(
+            mod[name](apoio, 'pasta/rel', {
+              cancel: async () => {
+                cancelled += 1;
+              },
+            }),
+          ).rejects.toThrow(
+            "caminho relativo 'pasta/rel': passe o caminho absoluto (path.resolve)",
+          );
+        } finally {
+          rmSync(apoio, { recursive: true, force: true });
+        }
+        expect(cancelled).toBe(1);
+      });
+    }
+  });
+
+  describe('pasta lembrada no state() (decisão 9)', () => {
+    const dom = { title: 'Mapping', url: 'x', dialogs: [], notices: [], focus: null };
+    const page = {
+      evaluate: async (_fn: Fn, arg: unknown) =>
+        arg && typeof arg === 'object' && 'timeoutMs' in arg ? null : dom,
+    };
+    const setup = () => {
+      const apoio = mkdtempSync(path.join(tmpdir(), 'mapping-lem-'));
+      const projeto = mkdtempSync(path.join(tmpdir(), 'mapping-proj-'));
+      writeFileSync(path.join(projeto, 'mapping.json'), JSON.stringify({ revision: 7 }));
+      return { apoio, projeto };
+    };
+
+    it('com projectDir grava o caminho absoluto em state/ultima-pasta.txt', async () => {
+      const mod = await load();
+      const { apoio, projeto } = setup();
+      try {
+        await mod.state(page, apoio, { projectDir: projeto });
+        expect(
+          readFileSync(path.join(apoio, 'state', 'ultima-pasta.txt'), 'utf8').trim(),
+        ).toBe(path.resolve(projeto));
+      } finally {
+        rmSync(apoio, { recursive: true, force: true });
+        rmSync(projeto, { recursive: true, force: true });
+      }
+    });
+
+    it('sem projectDir usa a pasta gravada e devolve o caminho lido', async () => {
+      const mod = await load();
+      const { apoio, projeto } = setup();
+      try {
+        await mod.state(page, apoio, { projectDir: projeto });
+        const result = (await mod.state(page, apoio)) as {
+          project: { revision: number; dir: string };
+        };
+        expect(result.project.revision).toBe(7);
+        expect(result.project.dir).toBe(path.resolve(projeto));
+      } finally {
+        rmSync(apoio, { recursive: true, force: true });
+        rmSync(projeto, { recursive: true, force: true });
+      }
+    });
+
+    it('pasta que não existe não é gravada como a última', async () => {
+      const mod = await load();
+      const { apoio, projeto } = setup();
+      try {
+        await mod.state(page, apoio, { projectDir: projeto });
+        await mod.state(page, apoio, { projectDir: path.join(apoio, 'nao-existe') });
+        expect(
+          readFileSync(path.join(apoio, 'state', 'ultima-pasta.txt'), 'utf8').trim(),
+        ).toBe(path.resolve(projeto));
+      } finally {
+        rmSync(apoio, { recursive: true, force: true });
+        rmSync(projeto, { recursive: true, force: true });
+      }
+    });
+
+    it('sem pasta gravada, nada é lido; com projectDir null, não lê disco', async () => {
+      const mod = await load();
+      const { apoio, projeto } = setup();
+      try {
+        expect(((await mod.state(page, apoio)) as { project?: unknown }).project).toBe(
+          undefined,
+        );
+        await mod.state(page, apoio, { projectDir: projeto });
+        expect(
+          ((await mod.state(page, apoio, { projectDir: null })) as { project?: unknown })
+            .project,
+        ).toBe(undefined);
+      } finally {
+        rmSync(apoio, { recursive: true, force: true });
+        rmSync(projeto, { recursive: true, force: true });
+      }
+    });
+
+    it('formatState imprime a pasta lida', async () => {
+      const mod = await load();
+      const text = mod.formatState({
+        ...dom,
+        saveStatus: null,
+        windows: [],
+        project: { revision: 3, changes: null, dir: '/tmp/espaco' },
+      }) as string;
+      expect(text).toContain('Pasta: /tmp/espaco');
     });
   });
 });

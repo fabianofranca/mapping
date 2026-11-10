@@ -67,6 +67,7 @@ export interface TesterState {
   project?: {
     revision: number | null;
     changes: string[] | null;
+    dir?: string;
     error?: string;
   } | null;
 }
@@ -74,7 +75,7 @@ export function formatState(state: TesterState): string;
 export function state(
   page: unknown,
   apoioDir: string,
-  options?: { projectDir?: string },
+  options?: { projectDir?: string | null },
 ): Promise<TesterState>;
 export function clickNoWait(
   page: unknown,
@@ -93,17 +94,17 @@ export function waitForWindow(
 export function selectFolder(
   apoioDir: string,
   targetPath: string,
-  options?: { timeoutMs?: number },
+  options?: { timeoutMs?: number; cancel?: (apoioDir: string) => Promise<unknown> },
 ): Promise<{ hadAutocomplete: boolean; permission: string }>;
 export function openFile(
   apoioDir: string,
   targetPath: string,
-  options?: { timeoutMs?: number },
+  options?: { timeoutMs?: number; cancel?: (apoioDir: string) => Promise<unknown> },
 ): Promise<{ hadAutocomplete: boolean }>;
 export function saveFile(
   apoioDir: string,
   targetPath: string,
-  options?: { timeoutMs?: number },
+  options?: { timeoutMs?: number; cancel?: (apoioDir: string) => Promise<unknown> },
 ): Promise<void>;
 export function cancelDialog(
   apoioDir: string,
@@ -179,6 +180,12 @@ export function nearHandle(
   box: { x: number; y: number; width: number; height: number },
   point: { x: number; y: number },
 ): string | null;
+export function paletteDrag(
+  page: unknown,
+  tipo: string,
+  para: { x: number; y: number },
+  options?: { capture?: string; steps?: number },
+): Promise<{ via: 'nativo' | 'sintetico' }>;
 export function drag(
   page: unknown,
   de: { x: number; y: number },
