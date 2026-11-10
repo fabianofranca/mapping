@@ -60,7 +60,11 @@ interface AnnotationData {
     broken?: boolean;
     target?: Record<string, unknown>;
   }[];
-  backlinks?: { from: string; fromLabel: string; field: string; to: string }[];
+  backlinks?: {
+    from: string;
+    fromLabel: string;
+    fields: { field: string; row: number | null; column: string | null; to: string }[];
+  }[];
   issues?: { code: string; key?: string }[];
 }
 interface MarkingData {
@@ -461,6 +465,8 @@ describe('get_marking', () => {
     expect(input.refs).toEqual([
       {
         field: 'dado',
+        row: null,
+        column: null,
         to: 'User.name',
         target: expect.objectContaining({
           annotation: expect.stringMatching(/^mapping:\/\/cadastro\/a\/[0-9a-f]{8}$/),
@@ -479,19 +485,20 @@ describe('get_marking', () => {
     expect(user.backlinks).toEqual([
       expect.objectContaining({
         fromLabel: 'Input input_nome',
-        field: 'dado',
-        to: 'User.name',
+        fields: [{ field: 'dado', row: null, column: null, to: 'User.name' }],
       }),
       expect.objectContaining({
         fromLabel: 'Input input_idade',
-        field: 'dado',
-        to: 'User.age',
+        fields: [{ field: 'dado', row: null, column: null, to: 'User.age' }],
       }),
     ]);
     const classe = form.layers.find((l) => l.layer.name === 'Classes')!.annotations[0]!;
     expect(classe).toMatchObject({ title: 'Classe Contato', name: null });
     expect(classe.backlinks).toEqual([
-      expect.objectContaining({ fromLabel: 'Input input_email', to: 'Contato.email' }),
+      expect.objectContaining({
+        fromLabel: 'Input input_email',
+        fields: [expect.objectContaining({ to: 'Contato.email' })],
+      }),
     ]);
     expect(form.children.map((c) => c.name)).toEqual([
       'Nome',
