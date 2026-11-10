@@ -77,7 +77,7 @@ O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o des
 
 **O que ainda difere do Compose**
 
-- Sem ripple animado e sem transição entre estados (o desenho é um quadro parado). O anel de foco por fora do botão não é desenhado: a raiz recorta (#896).
+- Sem ripple animado e sem transição entre estados (o desenho é um quadro parado). O Compose não define anel de foco para este tipo no commit fixado (nenhum `*Tokens.kt` dele traz `FocusIndicatorColor`): nenhum é desenhado.
 - A camada de estado do standard e do outlined usa `on-surface-variant`, a cor que os tokens dão ao estado; o ícone e o contorno parados continuam em `on-surface` (a divergência acima), então a camada não tem a mesma cor do ícone nesses dois estilos.
 - O conteúdo do Compose herda `LocalContentColor`, que é `on-surface` dentro de um `Surface`; o desenho fixa `on-surface` e não herda a cor de quem o contém.
 - O desabilitado de 0,1 no contêiner é literal no componente (o token `state-disabled-container` vale 0,12).

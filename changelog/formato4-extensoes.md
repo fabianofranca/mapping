@@ -11,6 +11,7 @@
 ## Alterado
 
 - O PNG do MCP (`render_marking`, `render_container` e o `get_marking_image` de container sem arquivo) centra o `font.verticalAlign: "cap-middle"` pela altura da maiúscula da fonte (`sCapHeight`), igual à app, em texto simples, com várias linhas e com `runs`; o `middle` não muda. Sem fonte (barras), o `cap-middle` já não cai no topo.
+- A biblioteca Material 3 (Compose) sobe para a versão 5 (aditiva: troca o desenho, sem mudar campo nem migração) e deixa os paliativos: a sombra, os raios por canto (o `text-field` e o `dropdown-menu` filled, o `slider`, o `bottom-sheet` e o `navigation-drawer`) e o `y`/`blur` leem tokens; o véu do `carousel` é um degradê de `scrim` com `alpha` 0 a 0,32; o `badge` deixa a altura fixa; `SpaceAround`/`SpaceEvenly` e o `reverseLayout` dos tipos de layout viram `space-around`/`space-evenly` e `layout.reverse`. Com `interaction: "focused"`, o `chip`, o `card` (filled e elevated), o `list-item`, o `search-bar`, o `switch`, o item selecionado do `dropdown-menu` e o do `navigation-drawer` ganham o anel de foco (3 em `secondary`, afastado 2, por fora da caixa).
 
 ## Corrigido
 

@@ -60,8 +60,12 @@
           "color": {
             "$token": "elevation-shadow"
           },
-          "y": 2,
-          "blur": 6
+          "y": {
+            "$token": "elevation-2-y"
+          },
+          "blur": {
+            "$token": "elevation-2-blur"
+          }
         }
       },
       {
@@ -166,8 +170,12 @@
             },
             "else": "none"
           },
-          "y": 1,
-          "blur": 2
+          "y": {
+            "$token": "elevation-1-y"
+          },
+          "blur": {
+            "$token": "elevation-1-blur"
+          }
         }
       },
       {

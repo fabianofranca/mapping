@@ -108,6 +108,6 @@ O campo escolhe a aparência parada de um estado; não entra no `code` nem nas `
 **O que ainda difere do Compose**
 
 - O `NavigationDrawerItem` não aplica estilo de texto: a tipografia vem do `Text` que a tela passa. O desenho usa a do arquivo de tokens (`LabelTextFont`, `LargeBadgeLabelFont`, `HeadlineFont`); o exemplo oficial do cabeçalho usa `titleLarge`. O cabeçalho de 56 e o espaço de 12 em cima são convenção do desenho (do exemplo), não do composable.
-- O raio `[0, 16, 16, 0]` da modal é literal: a lista de raios do formato não aceita `$token`, então o 16 de `CornerLargeEnd` não vem do token `corner-large`.
+- O raio da modal é a lista `[0, corner-large, corner-large, 0]` (`$token` por item): o 16 de `CornerLargeEnd` vem de `corner-large`.
 - A largura do Compose fica entre 240 e 360 (`sizeIn`); aqui a folha ocupa a largura da marcação. Scrim, gesto, animação, o selo como composable (aqui é texto) e as variantes `DrawerState` ficam fora do desenho.
-- O `interaction` é um quadro parado: sem o ripple animado e sem o anel de foco por fora da forma (`FocusIndicatorColor`, #896).
+- O `interaction` é um quadro parado: sem o ripple animado e o anel de foco (`FocusIndicatorColor`, `NavigationDrawerTokens.kt` linha 40) vale para o item do estado: em `focused` desenha o anel de 3 em `secondary`, afastado 2 da forma (`stroke.offset`), por fora da caixa (a largura e o afastamento são os da decisão da etapa; o `*Tokens.kt` só traz a cor).

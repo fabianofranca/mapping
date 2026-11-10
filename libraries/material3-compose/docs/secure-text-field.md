@@ -91,6 +91,6 @@ O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o des
 
 **O que ainda difere do Compose**
 
-- As mesmas diferenças do `text-field`: o `interaction` é um quadro parado (sem foco real, cursor, `pressed` e animação do rótulo; o anel de foco por fora da forma não é desenhado, #896); dica mostrada com o rótulo minimizado; cantos quadrados no vão do contorno do outlined; raio superior do filled por um retângulo recortado (a lista de 4 raios não aceita `$token`); contêiner desabilitado do filled como no código (`ContainerColor`), não o 0,04 do token; o tamanho inicial é 84, que comporta o outlined com apoio; o filled com apoio fica com 8 vazios embaixo e o filled sem apoio com 28.
+- As mesmas diferenças do `text-field`: o `interaction` é um quadro parado (sem foco real, cursor, `pressed` e animação do rótulo; sem anel de foco (o Compose não define `FocusIndicatorColor` para ele no commit fixado); dica mostrada com o rótulo minimizado; cantos quadrados no vão do contorno do outlined; raio superior do filled pela lista de 4 raios com `$token` por item; contêiner desabilitado do filled como no código (`ContainerColor`), não o 0,04 do token; o tamanho inicial é 84, que comporta o outlined com apoio; o filled com apoio fica com 8 vazios embaixo e o filled sem apoio com 28.
 - Os oito `•` são fixos: o Compose desenha um por caractere digitado e, com `RevealLastTyped`, mostra o último por um instante.
 - Sem o ícone de mostrar ou esconder a senha: ele é o `trailingIcon` que a tela escolhe.

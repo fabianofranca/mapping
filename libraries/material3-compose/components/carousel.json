@@ -120,9 +120,25 @@
                     "bottom": 0
                   },
                   "fill": {
-                    "$token": "scrim"
+                    "type": "linear",
+                    "angle": 90,
+                    "stops": [
+                      {
+                        "offset": 0,
+                        "color": {
+                          "$token": "scrim",
+                          "alpha": 0
+                        }
+                      },
+                      {
+                        "offset": 1,
+                        "color": {
+                          "$token": "scrim",
+                          "alpha": 0.32
+                        }
+                      }
+                    ]
                   },
-                  "opacity": 0.32,
                   "visible": {
                     "$has": "label"
                   }

@@ -650,6 +650,22 @@
             "$eq": ["interaction", "none"]
           }
         }
+      },
+      {
+        "type": "rect",
+        "name": "anel de foco",
+        "fill": "none",
+        "stroke": {
+          "color": {
+            "$token": "secondary"
+          },
+          "width": 3,
+          "align": "outside",
+          "offset": 2
+        },
+        "visible": {
+          "$eq": ["interaction", "focused"]
+        }
       }
     ],
     "layout": {
@@ -665,8 +681,12 @@
         },
         "else": "none"
       },
-      "y": 4,
-      "blur": 16
+      "y": {
+        "$token": "elevation-4-y"
+      },
+      "blur": {
+        "$token": "elevation-4-blur"
+      }
     }
   }
 }

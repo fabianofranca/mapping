@@ -105,7 +105,7 @@ O campo escolhe a aparência parada de um estado; não entra no `code` nem nas `
 **O que ainda difere do Compose**
 
 - Cor das abas não selecionadas: no Compose, sem `selectedContentColor` e `unselectedContentColor`, a `Tab` pinta todas as abas com a cor do conteúdo da fileira (`unselectedContentColor` vale o `selectedContentColor`), e as inativas só ficam em `OnSurfaceVariant` quando a tela passa as cores. O desenho segue os tokens (`InactiveLabelTextColor`) e o `code` do tipo não passa as cores.
-- Sem o ripple animado nem o anel de foco por fora da forma (#896), sem a animação do indicador e da cor, sem a rolagem (`scrollState`) nem o deslocamento que centraliza a aba selecionada: nas roláveis, o que passa da largura sai cortado.
+- Sem o ripple animado nem anel de foco (o Compose não define `FocusIndicatorColor` para ele no commit fixado), sem a animação do indicador e da cor, sem a rolagem (`scrollState`) nem o deslocamento que centraliza a aba selecionada: nas roláveis, o que passa da largura sai cortado.
 - A altura da fileira depende do conteúdo no Compose (72 se alguma aba tem ícone e texto empilhados); aqui é a da marcação. Sem retângulo (tela vinda de um JSON), o `sizing.height` é o literal 48, porque `sizing` não aceita expressão.
 - Rótulo longo: o Compose quebra em até duas linhas e sobe o texto (`DoubleLineTextBaselineWithIcon` 6); o desenho mantém uma linha, sem quebra, e o indicador acompanha a largura inteira do texto mesmo quando passa da aba (o Compose limita ao `tabWidth`).
 - A posição vertical do texto parte da linha de base do Compose; o motor não alinha por linha de base, então o 15 é uma estimativa do Roboto 14/20 (`ascent` de 0,928 e meia entrelinha extra) e vale para essa fonte e esse tamanho.

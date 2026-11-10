@@ -101,7 +101,7 @@ O campo escolhe a aparência parada de um estado; não entra no `code` nem nas `
 
 **O que ainda difere do Compose**
 
-- O `interaction` é um quadro parado: sem cursor e sem animação de expandir. O `FocusIndicatorColor` (`secondary`) é o anel de foco por fora da forma, que não é desenhado (#896); com `focused` só aparece a camada de estado. Na barra expandida do estilo `docked` a camada leva o raio do componente, não só os cantos de cima.
+- O `interaction` é um quadro parado: sem cursor e sem animação de expandir. Em `focused` o campo ganha, além da camada de estado, o anel de foco (`FocusIndicatorColor`, `secondary`, `SearchBarTokens.kt` linha 30): o anel de 3 em `secondary`, afastado 2 da forma (`stroke.offset`), por fora da caixa (a largura e o afastamento são os da decisão da etapa; o `*Tokens.kt` só traz a cor), em volta da linha de 56. Na barra expandida do estilo `docked` a camada leva o raio do componente, não só os cantos de cima.
 - A `bar` expandida do Compose ocupa a tela e soma os `WindowInsets` ao respiro de cima; aqui o tamanho é o da marcação e o respiro é só o 8 fixo.
 - Os limites de largura (360 a 720; `docked` fixa em 360) valem pelo `minSize`: a raiz sempre tem o tamanho da marcação, então `minWidth` e `maxWidth` na raiz não agiriam, e o teto de 720 e os 360 fixos do docked não são impostos.
 - O tamanho inicial de 56 não comporta a barra expandida: o divisor fica logo abaixo da caixa (docked) e a marcação tem de crescer para os resultados.

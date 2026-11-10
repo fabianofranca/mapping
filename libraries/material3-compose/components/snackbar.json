@@ -32,8 +32,12 @@
       "color": {
         "$token": "elevation-shadow"
       },
-      "y": 3,
-      "blur": 12
+      "y": {
+        "$token": "elevation-3-y"
+      },
+      "blur": {
+        "$token": "elevation-3-blur"
+      }
     },
     "layout": {
       "type": "column"

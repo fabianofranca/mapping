@@ -109,4 +109,4 @@ O campo escolhe a aparência parada de um estado; não entra no `code` nem nas `
 
 - O scrim, a elevação do rail modal (Level2 nos tokens, sem sombra no composable), a animação de expandir e recolher, o cabeçalho (`header`) e o botão do rail não fazem parte do desenho; o estilo `modal-wide` desenha só a folha.
 - A largura do rail estreito é `hug` com mínimo de 80 (o `widthIn(min = 80)` do Compose); a wide recolhida é limitada a 96 mesmo com rótulo mais largo, como o `actualMinWidth` do Compose.
-- O `interaction` é um quadro parado: sem o ripple animado nem o anel de foco por fora da forma (#896), sem `enabled` e sem o ícone sozinho (item sem rótulo, de indicador redondo de 56 × 56): o tipo exige o rótulo.
+- O `interaction` é um quadro parado: sem o ripple animado nem anel de foco (o Compose não define `FocusIndicatorColor` para ele no commit fixado), sem `enabled` e sem o ícone sozinho (item sem rótulo, de indicador redondo de 56 × 56): o tipo exige o rótulo.

@@ -88,7 +88,7 @@ O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o des
 
 **O que ainda difere do Compose**
 
-- Sem a forma `pressed` do Material expressivo, sem ripple animado e sem transição entre estados (o desenho é um quadro parado). O anel de foco por fora do botão não é desenhado: a raiz recorta (#896).
-- A sombra tem y e blur literais (1 e 2, os de `elevation-1-y` e `elevation-1-blur`; no nível 2 do elevated com o mouse, 2 e 6, os de `elevation-2-*`): o `shadow` do formato só aceita número literal, não `$token`. Por isso a sombra do nível 2 é de um nó à parte (`sombra elevada`), visível só no elevated com o mouse sobre.
+- Sem a forma `pressed` do Material expressivo, sem ripple animado e sem transição entre estados (o desenho é um quadro parado). O Compose não define anel de foco para este tipo no commit fixado (nenhum `*Tokens.kt` dele traz `FocusIndicatorColor`): nenhum é desenhado.
+- A sombra lê os tokens de elevação (`$token` em `shadow.y` e `shadow.blur`: `elevation-1-*` na raiz e, no nível 2 do elevated com o mouse, `elevation-2-*`). O `y` e o `blur` não aceitam expressão, então a sombra do nível 2 é de um nó à parte (`sombra elevada`), visível só no elevated com o mouse sobre.
 - O rótulo longo quebra em linhas; o botão do Compose também, mas aqui a altura de 40 do `sizing` não cresce com as linhas e a largura vem do retângulo, não do texto: o exemplo "Rótulo longo" mostra o limite (o texto passa da caixa de 136) e a roadmap #898 (medida pelo conteúdo) o resolve.
 - `ButtonDefaults.shape` é redondo; o `shape` trocável e o `contentPadding` próprio de uma chamada não são campos do tipo.

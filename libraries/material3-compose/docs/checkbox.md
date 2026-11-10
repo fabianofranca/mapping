@@ -82,7 +82,7 @@ O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o des
 
 **O que ainda difere do Compose**
 
-- Sem ripple animado, sem transição entre estados e sem a animação do traço do check (`checkDrawFraction`): o desenho é um quadro parado do estado final. O anel de foco por fora da forma não é desenhado: a raiz recorta (#896).
+- Sem ripple animado, sem transição entre estados e sem a animação do traço do check (`checkDrawFraction`): o desenho é um quadro parado do estado final. O Compose não define anel de foco para este tipo no commit fixado (nenhum `*Tokens.kt` dele traz `FocusIndicatorColor`): nenhum é desenhado.
 - Sem o estado de erro: `CheckboxTokens.kt` tem as cores `Error` dos papéis `SelectedError*` e `UnselectedError*` (linhas 34 a 44 e 61 a 67), mas o tipo não tem campo de erro; a camada e o contorno usam só os papéis normais.
 - O raio 2 vem do token `corner-checkbox` (`compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/CheckboxTokens.kt`, linha 26: `ContainerShape = RoundedCornerShape(2.0.dp)`); `corner-extra-small` vale 4.
 - A área é de 48 por 40: a altura de 40 vem do `sizing` do tipo, abaixo dos 48 do toque mínimo. Com `onClick = null` o Compose desenha só 24.

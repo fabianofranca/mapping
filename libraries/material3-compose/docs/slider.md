@@ -87,7 +87,7 @@ O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o des
 
 **O que ainda difere do Compose**
 
-- Os raios assimétricos da trilha (8 e 2) são números dentro da lista de `cornerRadius`: o formato não aceita `$token` nos itens dela (a alça e as demais formas usam `corner-full`).
+- Os raios assimétricos da trilha são `$token` por item da lista de `cornerRadius`: `corner-track-outer` (8, metade da altura da trilha de 16) e `corner-track-inside` (2, `TrackInsideCornerSize`), tokens da biblioteca (a alça e as demais formas usam `corner-full`).
 - O Compose encaixa o valor no passo mais próximo; o desenho só leva a alça ao valor escolhido (as posições com `steps` são as do Compose, mas o valor de um décimo não é arredondado para a marca). `steps` de 10 ou mais desenha como 9; um valor de `steps` não inteiro não é tratado.
 - No range, com `steps`, a alça do começo em 0 e a do fim em 1 ficam em `(trilho - 16) * valor + 8`, não na ponta como no Compose (só o single trata as pontas).
 - No desabilitado a alça é `on-surface` a 0,38 sobre o que estiver atrás; o Compose compõe essa cor sobre `surface` e a entrega opaca. As marcas também empilham a transparência (a fileira de baixo e a de cima se somam nos trechos de fora).
@@ -95,5 +95,5 @@ O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o des
 - Um range com início maior que o fim, ou valores iguais, é desenhado sem tratamento especial (o trecho ativo some ou fica de largura 0).
 - O `Slider` do Compose mede 48 de altura (`minimumInteractiveComponentSize`, `Slider.kt` linhas 789 e 1023, no `Slider` e no `RangeSlider`) com a alça de 44 (`SliderTokens.HandleHeight`) centrada, e o `size` e o `sizing` são 328 × 48: a faixa de 44 fica centrada, com 2 de sobra em cima e embaixo.
 - Sem ripple animado e sem transição entre estados (o desenho é um quadro parado); sem o rótulo de valor (`ValueIndicator`) e sem o `valueRange` livre: o tipo só tem valores de 0 a 1 em décimos.
-- Sem camada de estado em volta da alça: nem o `SliderTokens.kt` nem a `Thumb` do `Slider.kt` do commit têm uma (não há `StateLayerSize` no slider). O anel de foco por fora da forma também não é desenhado: a raiz recorta (#896).
+- Sem camada de estado em volta da alça: nem o `SliderTokens.kt` nem a `Thumb` do `Slider.kt` do commit têm uma (não há `StateLayerSize` no slider). O Compose não define anel de foco para este tipo no commit fixado (nenhum `*Tokens.kt` dele traz `FocusIndicatorColor`): nenhum é desenhado.
 - O vão entre a alça e as trilhas fica em 8 mesmo com a alça de 2: o Compose o recalcula como metade da largura medida da alça mais 6 (7 com a alça estreita) e a trilha ganha 1 de cada lado (`Slider.kt`, linhas 1913 a 1919).
