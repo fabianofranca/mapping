@@ -279,18 +279,29 @@ test.describe('a 1440×900', () => {
       .click();
     const m = await page.locator('.crumbs').evaluate((crumbs) => {
       const items = [...crumbs.querySelectorAll<HTMLElement>('.crumb-item')];
+      // Quanto de cada nome fica escondido (o encolhimento é proporcional ao `flex-shrink`).
+      const hidden = (el: HTMLElement) => {
+        const n = el.querySelector<HTMLElement>('.crumb-name');
+        return n ? Math.max(0, n.scrollWidth - n.clientWidth) : 0;
+      };
       const last = items.at(-1)!;
-      const name = last.querySelector<HTMLElement>('.crumb-name')!;
       return {
         items: items.length,
-        lastWhole: name.scrollWidth <= name.clientWidth,
+        lastHidden: hidden(last),
+        othersHidden: items.slice(0, -1).map(hidden),
         othersAtMost32: items
           .slice(0, -1)
           .every((i) => i.getBoundingClientRect().width <= 32.5),
       };
     });
     expect(m.items, JSON.stringify(m)).toBeGreaterThanOrEqual(2);
-    expect(m.lastWhole || m.othersAtMost32, JSON.stringify(m)).toBe(true);
+    // O último trecho está inteiro, ou os outros já estão com 32 px ou menos, ou ele perde
+    // menos que cada um dos outros que estão cortados.
+    const lastBest =
+      m.lastHidden === 0 ||
+      m.othersAtMost32 ||
+      m.othersHidden.every((h) => h === 0 || h >= m.lastHidden);
+    expect(lastBest, JSON.stringify(m)).toBe(true);
   });
 
   test('schema e canal aparecem', async ({ page }) => {
