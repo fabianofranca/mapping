@@ -33,28 +33,38 @@ describe('formatVersion 13: camada do próprio dono', () => {
   });
 
   it('camada inexistente e tipo inexistente continuam erro na 13', () => {
-    expect(issuesOf(sameLayerSpec(13, clause({ layer: 'nada' })))).toContainEqual({
-      path: `${at}.layer`,
-      message: 'camada "nada" não existe na especialização',
-    });
-    expect(issuesOf(sameLayerSpec(13, clause('nada')))).toContainEqual({
-      path: at,
-      message: 'tipo "nada" não existe na especialização',
-    });
+    expect(issuesOf(sameLayerSpec(13, clause({ layer: 'nada' })))).toContainEqual(
+      expect.objectContaining({
+        path: `${at}.layer`,
+        message: 'camada "nada" não existe na especialização',
+      }),
+    );
+    expect(issuesOf(sameLayerSpec(13, clause('nada')))).toContainEqual(
+      expect.objectContaining({
+        path: at,
+        message: 'tipo "nada" não existe na especialização',
+      }),
+    );
   });
 
   it('na 12 a cláusula da própria camada segue recusada, com o texto de sempre', () => {
-    expect(issuesOf(sameLayerSpec(12, clause({ layer: 'eventos' })))).toContainEqual({
-      path: `${at}.layer`,
-      message: 'camada "eventos" é a do próprio tipo; filhos devem estar em outra camada',
-    });
+    expect(issuesOf(sameLayerSpec(12, clause({ layer: 'eventos' })))).toContainEqual(
+      expect.objectContaining({
+        path: `${at}.layer`,
+        message:
+          'camada "eventos" é a do próprio tipo; filhos devem estar em outra camada',
+      }),
+    );
   });
 
   it('na 12 o id da mesma camada segue recusado, com o texto de sempre', () => {
-    expect(issuesOf(sameLayerSpec(12, clause('request')))).toContainEqual({
-      path: at,
-      message: 'tipo "request" está na mesma camada; filhos devem estar em outra camada',
-    });
+    expect(issuesOf(sameLayerSpec(12, clause('request')))).toContainEqual(
+      expect.objectContaining({
+        path: at,
+        message:
+          'tipo "request" está na mesma camada; filhos devem estar em outra camada',
+      }),
+    );
   });
 
   it('o conjunto resolvido da própria camada inclui o próprio dono', () => {

@@ -7,6 +7,7 @@ import type {
   SpecMigration,
   SpecMigrationStep,
 } from './spec';
+import { templateMessage, type ModelMessageTemplateCode } from './messages';
 
 // Contrato de versão de um pacote de biblioteca (formatVersion 4): classifica a diferença entre
 // duas versões da mesma especialização em aditiva ou quebra, e diz quais quebras as `migrations`
@@ -83,6 +84,21 @@ export interface SpecChange {
   /** O `id` do papel (em `added-role` e `removed-role`). */
   readonly role?: string;
   readonly message: string;
+  /** Código da mensagem no catálogo `versions` (a interface a traduz); `message` segue em pt-BR. */
+  readonly messageCode?: ModelMessageTemplateCode;
+  /** Os `{parâmetros}` do `messageCode`. */
+  readonly messageParams?: Readonly<Record<string, string | number>>;
+}
+
+type Params = Readonly<Record<string, string | number>>;
+
+/** `message`, `messageCode` e `messageParams` de uma mensagem do catálogo. */
+function said(
+  code: ModelMessageTemplateCode,
+  params: Params,
+): Pick<SpecChange, 'message' | 'messageCode' | 'messageParams'> {
+  const m = templateMessage(code, params);
+  return { message: m.text, messageCode: code, messageParams: params };
 }
 
 /** Onde estamos: o tipo e, dentro de uma `table`, o campo da tabela. */
@@ -97,27 +113,19 @@ interface Where {
 const fieldKeyOf = (w: Where, key: string): string =>
   w.tableKey === undefined ? key : `${w.tableKey}.${key}`;
 
-/** `o campo "k" do tipo "t"` ou `a coluna "c" do campo "tabela" do tipo "t"`, com o gênero. */
-function subject(w: Where, key: string): { text: string; g: 'o' | 'a' } {
+/** Parâmetros da frase de um campo ou coluna; `ref` é o `tabela.coluna` que o passo cita. */
+function subjectParams(w: Where, key: string): Params {
   return w.tableKey === undefined
-    ? { text: `o campo "${key}" do tipo "${w.typeId}"`, g: 'o' }
-    : {
-        text: `a coluna "${key}" do campo "${w.tableKey}" do tipo "${w.typeId}"`,
-        g: 'a',
-      };
+    ? { key, typeId: w.typeId }
+    : { key, typeId: w.typeId, table: w.tableKey, ref: fieldKeyOf(w, key) };
 }
 
-/** Concorda o sufixo com o sujeito (`removid` + `o`/`a`). */
-const ag = (g: 'o' | 'a', stem: string): string => `${stem}${g}`;
-
-/** O pedido de passo; numa coluna, diz como o passo a cita (`tabela.coluna`). */
-function declare(w: Where, key: string, steps: string): string {
-  return w.tableKey === undefined
-    ? `declare ${steps} em migrations`
-    : `declare ${steps} em migrations com field "${fieldKeyOf(w, key)}"`;
-}
-
-const FILL = 'um passo "fill-field"';
+/** O código do campo ou o da coluna, conforme onde estamos (um código por variante). */
+const variant = (
+  w: Where,
+  field: ModelMessageTemplateCode,
+  column: ModelMessageTemplateCode,
+): ModelMessageTemplateCode => (w.tableKey === undefined ? field : column);
 
 function forwardFields(
   previous: readonly SpecField[],
@@ -129,7 +137,7 @@ function forwardFields(
   next.forEach((field, i) => {
     const path = `${w.listPath}[${i}]`;
     const base = { path, typeId: w.typeId, fieldKey: fieldKeyOf(w, field.key) };
-    const { text, g } = subject(w, field.key);
+    const params = subjectParams(w, field.key);
     const old = before.get(field.key);
 
     if (old === undefined) {
@@ -138,14 +146,17 @@ function forwardFields(
           kind: 'breaking',
           code: 'field-required',
           ...base,
-          message: `${text} é ${ag(g, 'nov')} e já ${ag(g, 'obrigatóri')}; ${declare(w, field.key, FILL)}`,
+          ...said(
+            variant(w, 'versions.fieldNewRequired', 'versions.columnNewRequired'),
+            params,
+          ),
         });
       } else {
         out.push({
           kind: 'additive',
           code: 'added-field',
           ...base,
-          message: `${text} é ${ag(g, 'nov')}`,
+          ...said(variant(w, 'versions.fieldNew', 'versions.columnNew'), params),
         });
       }
       return;
@@ -156,7 +167,11 @@ function forwardFields(
         kind: 'breaking',
         code: 'field-type',
         ...base,
-        message: `${text} mudou de tipo ("${old.type}" para "${field.type}"); ${declare(w, field.key, FILL)}`,
+        ...said(variant(w, 'versions.fieldTypeChanged', 'versions.columnTypeChanged'), {
+          ...params,
+          from: old.type,
+          to: field.type,
+        }),
       });
     }
     if (field.required === true && old.required !== true) {
@@ -164,7 +179,10 @@ function forwardFields(
         kind: 'breaking',
         code: 'field-required',
         ...base,
-        message: `${text} passou a ser ${ag(g, 'obrigatóri')}; ${declare(w, field.key, FILL)}`,
+        ...said(
+          variant(w, 'versions.fieldBecameRequired', 'versions.columnBecameRequired'),
+          params,
+        ),
       });
     }
     if (old.type !== field.type) return;
@@ -180,7 +198,10 @@ function forwardFields(
           typeId: w.typeId,
           fieldKey: base.fieldKey,
           option,
-          message: `${text} ganhou a opção "${option}"`,
+          ...said(variant(w, 'versions.fieldOptionAdded', 'versions.columnOptionAdded'), {
+            ...params,
+            option,
+          }),
         });
       });
     } else if (old.type === 'table' && field.type === 'table') {
@@ -204,7 +225,7 @@ function goneFields(
   previous.forEach((old, i) => {
     const path = `${w.listPath}[${i}]`;
     const fieldKey = fieldKeyOf(w, old.key);
-    const { text, g } = subject(w, old.key);
+    const params = subjectParams(w, old.key);
     const field = after.get(old.key);
 
     if (field === undefined) {
@@ -214,7 +235,7 @@ function goneFields(
         path,
         typeId: w.typeId,
         fieldKey,
-        message: `${text} foi ${ag(g, 'removid')}; ${declare(w, old.key, 'um passo "remove-field" ou "rename-field"')}`,
+        ...said(variant(w, 'versions.fieldRemoved', 'versions.columnRemoved'), params),
       });
       return;
     }
@@ -231,7 +252,10 @@ function goneFields(
           typeId: w.typeId,
           fieldKey,
           option,
-          message: `a opção "${option}" d${text} foi removida; ${declare(w, old.key, `um passo "map-values" com "${option}" em values`)}`,
+          ...said(
+            variant(w, 'versions.fieldOptionRemoved', 'versions.columnOptionRemoved'),
+            { ...params, option },
+          ),
         });
       });
     } else if (old.type === 'table' && field.type === 'table') {
@@ -244,8 +268,6 @@ function goneFields(
     }
   });
 }
-
-const ROLES_STEPS = 'um passo "rename-role" ou "remove-role"';
 
 /** Papéis novos (`added-role`) ou, num tipo que não tinha nenhum, `roles-required`. */
 function forwardRoles(
@@ -262,7 +284,7 @@ function forwardRoles(
       code: 'roles-required',
       path: `${path}.childRoles`,
       typeId,
-      message: `o tipo "${typeId}" passou a ter papéis; declare um passo "set-role" em migrations (formatVersion 12)`,
+      ...said('versions.rolesRequired', { typeId }),
     });
     return;
   }
@@ -275,7 +297,7 @@ function forwardRoles(
       path: `${path}.childRoles[${i}]`,
       typeId,
       role: role.id,
-      message: `o tipo "${typeId}" ganhou o papel "${role.id}"`,
+      ...said('versions.roleAdded', { typeId, role: role.id }),
     });
   });
 }
@@ -297,7 +319,7 @@ function goneRoles(
       path: `${path}.childRoles[${i}]`,
       typeId,
       role: old.id,
-      message: `o papel "${old.id}" do tipo "${typeId}" foi removido; declare ${ROLES_STEPS} em migrations (formatVersion 12)`,
+      ...said('versions.roleRemoved', { typeId, role: old.id }),
     });
   });
 }
@@ -338,7 +360,7 @@ export function diffSpecs(previous: Spec, next: Spec): SpecChange[] {
         code: 'added-type',
         path,
         typeId: id,
-        message: `o tipo "${id}" é novo`,
+        ...said('versions.typeNew', { typeId: id }),
       });
       continue;
     }
@@ -355,7 +377,7 @@ export function diffSpecs(previous: Spec, next: Spec): SpecChange[] {
           code: 'added-component',
           path: `${path}.component`,
           typeId: id,
-          message: `o tipo "${id}" ganhou o componente "${type.component}"`,
+          ...said('versions.componentAdded', { typeId: id, component: type.component }),
         });
       } else if (old.type.component !== type.component) {
         out.push({
@@ -363,7 +385,11 @@ export function diffSpecs(previous: Spec, next: Spec): SpecChange[] {
           code: 'changed-component',
           path: `${path}.component`,
           typeId: id,
-          message: `o componente do tipo "${id}" passou de "${old.type.component}" para "${type.component}"`,
+          ...said('versions.componentChanged', {
+            typeId: id,
+            from: old.type.component,
+            to: type.component,
+          }),
         });
       }
     }
@@ -375,7 +401,11 @@ export function diffSpecs(previous: Spec, next: Spec): SpecChange[] {
         code: 'changed-applies-to',
         path: `${path}.appliesTo`,
         typeId: id,
-        message: `o tipo "${id}" passou a se aplicar a: ${newApplies} (antes: ${oldApplies}); anotações que deixaram de se aplicar viram pendência`,
+        ...said('versions.appliesToChanged', {
+          typeId: id,
+          now: newApplies,
+          before: oldApplies,
+        }),
       });
     }
     // O `doc` objeto (repositório externo, v11) fica fora do contrato, como a troca entre as formas.
@@ -385,7 +415,7 @@ export function diffSpecs(previous: Spec, next: Spec): SpecChange[] {
         code: 'added-doc',
         path: `${path}.doc`,
         typeId: id,
-        message: `o tipo "${id}" ganhou o documento "${type.doc}"`,
+        ...said('versions.docAdded', { typeId: id, doc: type.doc }),
       });
     }
     const hadExamples = new Set((old.type.examples ?? []).map((e) => e.name));
@@ -396,7 +426,7 @@ export function diffSpecs(previous: Spec, next: Spec): SpecChange[] {
         code: 'added-example',
         path: `${path}.examples[${ei}]`,
         typeId: id,
-        message: `o tipo "${id}" ganhou o exemplo "${example.name}"`,
+        ...said('versions.exampleAdded', { typeId: id, name: example.name }),
       });
     });
     forwardRoles(old.type.childRoles, type.childRoles, id, path, out);
@@ -408,7 +438,7 @@ export function diffSpecs(previous: Spec, next: Spec): SpecChange[] {
       kind: 'additive',
       code: 'added-font',
       path: `fonts[${i}]`,
-      message: `a fonte "${font.family}" é nova`,
+      ...said('versions.fontNew', { family: font.family }),
     });
   });
 
@@ -421,7 +451,7 @@ export function diffSpecs(previous: Spec, next: Spec): SpecChange[] {
         code: 'removed-type',
         path,
         typeId: id,
-        message: `o tipo "${id}" foi removido; declare um passo "remove-type" ou "rename-type" em migrations`,
+        ...said('versions.typeRemoved', { typeId: id }),
       });
       continue;
     }

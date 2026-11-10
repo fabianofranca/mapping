@@ -9,6 +9,7 @@ import {
   type SpecUpdateImpact,
 } from '../model';
 import { markingPath } from './labels';
+import { specIssueText } from './specIssueText';
 import { annotationDisplayName } from './typedText';
 
 /** Perdas listadas por passo; o resto vira "+N". */
@@ -190,7 +191,11 @@ export function UpdateImpact({
           <ul>
             {impact.missingMigrations.map((m, i) => (
               <li key={i} class="wrap-anywhere">
-                {m.message}
+                {specIssueText({
+                  code: m.messageCode,
+                  params: m.messageParams,
+                  message: m.message,
+                })}
               </li>
             ))}
           </ul>

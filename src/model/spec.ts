@@ -1612,15 +1612,27 @@ function checkNoLibraryKeys(
   });
 }
 
+/** O erro do `parsePath` (texto fixo do leitor de caminhos) na mensagem com código da variante. */
+function pathErrorMsg(path: string, error: string): SpecMsg {
+  const index = /^índice inválido: \[(.*)\]$/.exec(error)?.[1];
+  if (index !== undefined) return specMsg('spec.fieldPathBadIndex', { path, index });
+  const char = /^caractere inesperado: (.*)$/.exec(error)?.[1];
+  if (char !== undefined) return specMsg('spec.fieldPathBadChar', { path, char });
+  return specMsg(
+    error === 'faltou "]"'
+      ? 'spec.fieldPathMissingBracket'
+      : 'spec.fieldPathEmptySegment',
+    { path },
+  );
+}
+
 /**
  * `path` de uma origem de campo (`a.b[0].c`): sintaxe válida e sem `[*]`. `undefined` se vale.
  */
-function fieldPathProblem(path: string): string | undefined {
+function fieldPathProblem(path: string): SpecMsg | undefined {
   const parsed = parsePath(path);
-  if (!parsed.ok) return `caminho inválido "${path}" (${parsed.error})`;
-  if (parsed.segments.includes(null)) {
-    return `caminho inválido "${path}" ("[*]" só vale em roots[].path de uma origem)`;
-  }
+  if (!parsed.ok) return pathErrorMsg(path, parsed.error);
+  if (parsed.segments.includes(null)) return specMsg('spec.fieldPathWildcard', { path });
   return undefined;
 }
 
@@ -1638,8 +1650,8 @@ function checkFieldSources(
 ): void {
   (sources ?? []).forEach((source, i) => {
     const at = [...path, 'sources', i];
-    const add = (key: string, message: string) =>
-      ctx.addIssue({ code: 'custom', path: [...at, key], message });
+    const add = (key: string, message: string | SpecMsg) =>
+      addSpecIssue(ctx, [...at, key], message);
     const isExecutable = version >= 4 && executable.has(source.system);
     if (source.path !== undefined) {
       if (version < 4) add('path', 'só é permitido com formatVersion 4');
@@ -1687,11 +1699,11 @@ function checkTypeSources(
     const seen = new Set<string>();
     (source.ignore ?? []).forEach((prop, pi) => {
       if (seen.has(prop)) {
-        ctx.addIssue({
-          code: 'custom',
-          path: [...at, 'ignore', pi],
-          message: `"${prop}" repetido`,
-        });
+        addSpecIssue(
+          ctx,
+          [...at, 'ignore', pi],
+          specMsg('spec.ignoreRepeated', { prop }),
+        );
       }
       seen.add(prop);
     });
@@ -1741,19 +1753,14 @@ function checkExampleSystems(
     layer.annotationTypes.forEach((type, ti) => {
       (type.examples ?? []).forEach((example, ei) => {
         if (example.system === undefined || executable.has(example.system)) return;
-        ctx.addIssue({
-          code: 'custom',
-          path: ['layers', li, 'annotationTypes', ti, 'examples', ei, 'system'],
-          message: `sistema "${example.system}" não declarado em origins`,
-        });
+        addSpecIssue(
+          ctx,
+          ['layers', li, 'annotationTypes', ti, 'examples', ei, 'system'],
+          specMsg('spec.exampleSystemUndeclared', { system: example.system }),
+        );
       });
     });
   });
-}
-
-/** Texto do peso para a mensagem de fonte repetida. */
-function weightLabel(weight: number | string | undefined): string {
-  return weight === undefined ? 'sem peso' : `peso ${weight}`;
 }
 
 /** Par `family` + `weight` + `style` repetido em `fonts`. */
@@ -1766,11 +1773,14 @@ function checkFonts(
     const style = font.style ?? 'normal';
     const id = JSON.stringify([font.family, font.weight ?? null, style]);
     if (seen.has(id)) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['fonts', i],
-        message: `fonte "${font.family}" (${weightLabel(font.weight)}, ${style}) repetida`,
-      });
+      const params = { family: font.family, style };
+      addSpecIssue(
+        ctx,
+        ['fonts', i],
+        font.weight === undefined
+          ? specMsg('spec.fontRepeatedNoWeight', params)
+          : specMsg('spec.fontRepeated', { ...params, weight: font.weight }),
+      );
     }
     seen.add(id);
   });
@@ -1789,23 +1799,17 @@ function columnOf(table: RawField, key: string): RawField | undefined {
 type FieldRef =
   | { kind: 'field' }
   | { kind: 'column'; table: string; column: string }
-  | { kind: 'invalid'; message: string };
+  | { kind: 'invalid'; message: SpecMsg };
 
 function parseFieldRef(ref: string): FieldRef {
   const parts = ref.split('.');
   if (parts.length === 1) return { kind: 'field' };
   if (parts.length > 2) {
-    return {
-      kind: 'invalid',
-      message: `"${ref}" tem mais de um ponto; use "campo" ou "tabela.coluna"`,
-    };
+    return { kind: 'invalid', message: specMsg('spec.fieldRefManyDots', { ref }) };
   }
   const [table = '', column = ''] = parts;
   if (table === '' || column === '') {
-    return {
-      kind: 'invalid',
-      message: `"${ref}" tem uma parte vazia; use "campo" ou "tabela.coluna"`,
-    };
+    return { kind: 'invalid', message: specMsg('spec.fieldRefEmptyPart', { ref }) };
   }
   return { kind: 'column', table, column };
 }
@@ -1823,7 +1827,7 @@ interface RoleStepEnv {
   readonly roles: ReadonlyMap<string, ReadonlySet<string>>;
   readonly hasType: (id: string) => boolean;
   /** Erro no caminho `migrations[i].steps[j].<key>`. */
-  readonly add: (key: string, message: string) => void;
+  readonly add: (key: string, message: string | SpecMsg) => void;
 }
 
 /** O papel existe no tipo (lado novo). */
@@ -1834,7 +1838,7 @@ function roleHere(
   where: string,
   env: RoleStepEnv,
 ): void {
-  if (!roles.has(role)) env.add(where, `"${role}" não é um papel do tipo "${typeId}"`);
+  if (!roles.has(role)) env.add(where, specMsg('spec.roleNotOfType', { role, typeId }));
 }
 
 /** O papel não existe mais no tipo (lado antigo). */
@@ -1846,7 +1850,7 @@ function roleGone(
   env: RoleStepEnv,
 ): void {
   if (roles?.has(role)) {
-    env.add(where, `papel "${role}" ainda existe no tipo "${typeId}" nesta versão`);
+    env.add(where, specMsg('spec.roleStillExists', { role, typeId }));
   }
 }
 
@@ -1861,7 +1865,7 @@ function checkRoleStep(step: RoleStep, env: RoleStepEnv): void {
     return;
   }
   if (!env.hasType(step.type)) {
-    env.add('type', `tipo "${step.type}" não existe nesta versão`);
+    env.add('type', specMsg('spec.typeNotInVersion', { typeId: step.type }));
     return;
   }
   const roles = env.roles.get(step.type);
@@ -1870,7 +1874,7 @@ function checkRoleStep(step: RoleStep, env: RoleStepEnv): void {
     return;
   }
   if (roles === undefined) {
-    env.add('type', `o tipo "${step.type}" não tem papéis (childRoles) nesta versão`);
+    env.add('type', specMsg('spec.typeNoRoles', { typeId: step.type }));
     return;
   }
   if (step.op === 'set-role') {
@@ -1901,7 +1905,7 @@ function rolesByType(
   return roles;
 }
 
-type StepAdd = (key: string | PathKeys, message: string) => void;
+type StepAdd = (key: string | PathKeys, message: string | SpecMsg) => void;
 type FieldsByKey = ReadonlyMap<string, RawField>;
 
 /** O tipo existe nesta versão (o passo trata de um campo dele). */
@@ -1911,7 +1915,7 @@ function typeHere(
   stepAdd: StepAdd,
 ): FieldsByKey | undefined {
   const fields = types.get(id);
-  if (!fields) stepAdd('type', `tipo "${id}" não existe nesta versão`);
+  if (!fields) stepAdd('type', specMsg('spec.typeNotInVersion', { typeId: id }));
   return fields;
 }
 
@@ -1930,24 +1934,21 @@ function fieldHere(
   }
   if (ref.kind === 'field') {
     const field = fields.get(key);
-    if (!field) stepAdd(where, `"${key}" não é um campo do tipo "${typeId}"`);
+    if (!field) stepAdd(where, specMsg('spec.notFieldOfType', { key, typeId }));
     return field;
   }
   const table = fields.get(ref.table);
   if (!table) {
-    stepAdd(where, `"${ref.table}" não é um campo do tipo "${typeId}"`);
+    stepAdd(where, specMsg('spec.notFieldOfType', { key: ref.table, typeId }));
     return undefined;
   }
   if (table.type !== 'table') {
-    stepAdd(where, `"${ref.table}" não é uma tabela do tipo "${typeId}"`);
+    stepAdd(where, specMsg('spec.notTableOfType', { key: ref.table, typeId }));
     return undefined;
   }
   const column = columnOf(table, ref.column);
   if (!column) {
-    stepAdd(
-      where,
-      `"${key}" não é uma coluna da tabela "${ref.table}" do tipo "${typeId}"`,
-    );
+    stepAdd(where, specMsg('spec.notColumnOfTable', { key, table: ref.table, typeId }));
   }
   return column;
 }
@@ -1965,18 +1966,22 @@ function fieldGone(
     stepAdd(where, ref.message);
   } else if (ref.kind === 'field') {
     if (fields.has(key)) {
-      stepAdd(where, `campo "${key}" ainda existe no tipo "${typeId}" nesta versão`);
+      stepAdd(where, specMsg('spec.fieldStillExists', { key, typeId }));
     }
   } else {
     // Tabela que não existe mais: a coluna foi junto, e é isso que o passo declara.
     const table = fields.get(ref.table);
     if (!table) return;
     if (table.type !== 'table') {
-      stepAdd(where, `"${ref.table}" não é uma tabela do tipo "${typeId}"`);
+      stepAdd(where, specMsg('spec.notTableOfType', { key: ref.table, typeId }));
     } else if (columnOf(table, ref.column)) {
       stepAdd(
         where,
-        `coluna "${ref.column}" ainda existe na tabela "${ref.table}" do tipo "${typeId}" nesta versão`,
+        specMsg('spec.columnStillExists', {
+          column: ref.column,
+          table: ref.table,
+          typeId,
+        }),
       );
     }
   }
@@ -1988,7 +1993,7 @@ function typeGone(
   where: string,
   stepAdd: StepAdd,
 ): void {
-  if (types.has(id)) stepAdd(where, `tipo "${id}" ainda existe nesta versão`);
+  if (types.has(id)) stepAdd(where, specMsg('spec.typeStillExists', { typeId: id }));
 }
 
 /**
@@ -2029,18 +2034,18 @@ function checkMigrations(
   const fromSeen = new Set<number>();
   migrations.forEach((migration, mi) => {
     const mp: PathKeys = ['migrations', mi];
-    const add = (sub: PathKeys, message: string) =>
-      ctx.addIssue({ code: 'custom', path: [...mp, ...sub], message });
+    const add = (sub: PathKeys, message: string | SpecMsg) =>
+      addSpecIssue(ctx, [...mp, ...sub], message);
 
     if (fromSeen.has(migration.from)) {
-      add(['from'], `já existe uma migração a partir da versão ${migration.from}`);
+      add(['from'], specMsg('spec.migrationFromRepeated', { from: migration.from }));
     }
     fromSeen.add(migration.from);
     if (migration.to <= migration.from) {
-      add(['to'], `deve ser maior que "from" (${migration.from})`);
+      add(['to'], specMsg('spec.migrationToGreater', { from: migration.from }));
     }
     if (migration.to > spec.version) {
-      add(['to'], `não pode passar de "version" (${spec.version})`);
+      add(['to'], specMsg('spec.migrationToMax', { version: spec.version }));
     }
 
     migration.steps.forEach((step, si) => {
@@ -2050,7 +2055,7 @@ function checkMigrations(
       switch (step.op) {
         case 'rename-type':
           if (!types.has(step.to))
-            stepAdd('to', `tipo "${step.to}" não existe nesta versão`);
+            stepAdd('to', specMsg('spec.typeNotInVersion', { typeId: step.to }));
           typeGone(types, step.from, 'from', stepAdd);
           break;
         case 'remove-type':
@@ -2076,15 +2081,18 @@ function checkMigrations(
           if (field.type !== 'enum') {
             stepAdd(
               'field',
-              step.field.includes('.')
-                ? `"${step.field}" deve ser uma coluna enum da tabela`
-                : `"${step.field}" deve ser um campo enum do tipo`,
+              specMsg(
+                step.field.includes('.')
+                  ? 'spec.migrationColumnNotEnum'
+                  : 'spec.codeFieldNotEnum',
+                { key: step.field },
+              ),
             );
             break;
           }
           for (const [from, to] of Object.entries(step.values)) {
             if (!(field.options ?? []).includes(to)) {
-              stepAdd(['values', from], `"${to}" não está nas options`);
+              stepAdd(['values', from], specMsg('spec.notInOptions', { value: to }));
             }
           }
           break;
@@ -2211,12 +2219,12 @@ interface V11Layer {
   readonly annotationTypes: readonly V11Type[];
 }
 
-type IssueAdder = (path: (string | number)[], message: string) => void;
+type IssueAdder = (path: (string | number)[], message: string | SpecMsg) => void;
 
 const issueAdder =
   (ctx: z.RefinementCtx): IssueAdder =>
   (path, message) =>
-    ctx.addIssue({ code: 'custom', path, message });
+    addSpecIssue(ctx, path, message);
 
 /** Caminho de cada tipo: `['layers', li, 'annotationTypes', ti]`. */
 function eachV11Type(
@@ -2280,14 +2288,11 @@ function checkChildClause(
 ): void {
   const target = layers.get(clause.layer);
   if (target === undefined) {
-    add([...path, 'layer'], `camada "${clause.layer}" não existe na especialização`);
+    add([...path, 'layer'], specMsg('spec.layerNotFound', { layer: clause.layer }));
     return;
   }
   if (target.index === li && !sameLayerAllowed) {
-    add(
-      [...path, 'layer'],
-      `camada "${clause.layer}" é a do próprio tipo; filhos devem estar em outra camada`,
-    );
+    add([...path, 'layer'], specMsg('spec.layerIsOwn', { layer: clause.layer }));
     return;
   }
   // `groups` que não é lista já foi recusado pela forma da cláusula.
@@ -2296,7 +2301,7 @@ function checkChildClause(
     if (typeof group !== 'string' || target.groups.has(group)) return;
     add(
       [...path, 'groups', gi],
-      `grupo "${group}" não existe na camada "${clause.layer}"`,
+      specMsg('spec.groupNotInLayer', { group, layer: clause.layer }),
     );
   });
 }
@@ -2312,12 +2317,9 @@ function checkChildId(
 ): void {
   const childLayer = typeLayer.get(childId);
   if (childLayer === undefined) {
-    add(path, `tipo "${childId}" não existe na especialização`);
+    add(path, specMsg('spec.typeNotFound', { typeId: childId }));
   } else if (childLayer === li && !sameLayerAllowed) {
-    add(
-      path,
-      `tipo "${childId}" está na mesma camada; filhos devem estar em outra camada`,
-    );
+    add(path, specMsg('spec.typeSameLayer', { typeId: childId }));
   }
 }
 
@@ -2398,7 +2400,10 @@ function checkAcceptsAnnotations(
   eachV11Type(spec.layers, (type, _layer, path, li) => {
     eachAccepts(type, path, (items, itemsPath) => {
       if (!current) {
-        add(itemsPath, `só é permitido com formatVersion ${ACCEPTS_ANNOTATIONS_VERSION}`);
+        add(
+          itemsPath,
+          specMsg('spec.onlyFormat', { version: ACCEPTS_ANNOTATIONS_VERSION }),
+        );
         return;
       }
       items.forEach((item, ii) => {
@@ -2421,7 +2426,10 @@ function checkLayerGroups(layers: readonly V11Layer[], ctx: z.RefinementCtx): vo
     const declared = new Set<string>();
     (layer.groups ?? []).forEach((group, gi) => {
       if (declared.has(group.id)) {
-        add(['layers', li, 'groups', gi, 'id'], `id "${group.id}" repetido`);
+        add(
+          ['layers', li, 'groups', gi, 'id'],
+          specMsg('spec.idRepeated', { id: group.id }),
+        );
       }
       declared.add(group.id);
     });
@@ -2430,7 +2438,7 @@ function checkLayerGroups(layers: readonly V11Layer[], ctx: z.RefinementCtx): vo
         if (declared.has(group)) return;
         add(
           ['layers', li, 'annotationTypes', ti, 'groups', gi],
-          `grupo "${group}" não existe na camada "${layer.id}"`,
+          specMsg('spec.groupNotInLayer', { group, layer: layer.id }),
         );
       });
     });
@@ -2448,13 +2456,15 @@ function checkDocRepos(
   const add = issueAdder(ctx);
   const declared = new Set<string>();
   (spec.docRepos ?? []).forEach((repo, ri) => {
-    if (declared.has(repo.id)) add(['docRepos', ri, 'id'], `id "${repo.id}" repetido`);
+    if (declared.has(repo.id)) {
+      add(['docRepos', ri, 'id'], specMsg('spec.idRepeated', { id: repo.id }));
+    }
     declared.add(repo.id);
   });
   eachV11Type(spec.layers, (type, _layer, path) => {
     const { doc } = type;
     if (!isRecord(doc) || typeof doc.repo !== 'string' || declared.has(doc.repo)) return;
-    add([...path, 'doc', 'repo'], `repositório "${doc.repo}" não declarado em docRepos`);
+    add([...path, 'doc', 'repo'], specMsg('spec.docRepoUndeclared', { repo: doc.repo }));
   });
 }
 
@@ -2474,12 +2484,9 @@ function checkRequiresOwner(
       const list = owners.get(type.id);
       const path = ['layers', li, 'annotationTypes', ti, 'requiresOwner'];
       if (list === undefined) {
-        add(path, `"${type.id}" exige dono, mas nenhum tipo o lista em allowedChildren`);
+        add(path, specMsg('spec.ownerNoneLists', { typeId: type.id }));
       } else if (list.every((id) => id === type.id)) {
-        add(
-          path,
-          `"${type.id}" exige dono, mas nenhum outro tipo o aceita como filho (só ele mesmo o lista em allowedChildren)`,
-        );
+        add(path, specMsg('spec.ownerOnlySelf', { typeId: type.id }));
       }
     });
   });
@@ -2504,7 +2511,7 @@ function tokenModes(
       add(['tokens', 'modes', i], 'modo inválido; use [a-z0-9][a-z0-9-]*');
       ok = false;
     } else if (seen.has(mode)) {
-      add(['tokens', 'modes', i], `modo "${mode}" repetido`);
+      add(['tokens', 'modes', i], specMsg('spec.tokenModeRepeated', { mode }));
       ok = false;
     }
     if (typeof mode === 'string') seen.add(mode);
@@ -2531,8 +2538,12 @@ function checkTokenValue(
   const given = Object.keys(value);
   const missing = modes.filter((m) => !given.includes(m));
   const extra = given.filter((m) => !modes.includes(m));
-  if (missing.length > 0) add(path, `falta o modo ${missing.join(', ')}`);
-  if (extra.length > 0) add(path, `modo não declarado em modes: ${extra.join(', ')}`);
+  if (missing.length > 0) {
+    add(path, specMsg('spec.tokenModeMissing', { modes: missing.join(', ') }));
+  }
+  if (extra.length > 0) {
+    add(path, specMsg('spec.tokenModeExtra', { modes: extra.join(', ') }));
+  }
   const literals = given.map((m) => value[m]);
   if (!literals.every(isTokenLiteral)) {
     add(path, 'cada modo deve ter texto ou número');
@@ -2545,7 +2556,7 @@ function checkTokenValue(
 function checkTokenKeys(tokens: Record<string, unknown>, add: IssueAdder): void {
   for (const key of Object.keys(tokens)) {
     if (key !== 'modes' && key !== 'values') {
-      add(['tokens', key], `chave desconhecida: ${key}`);
+      add(['tokens', key], specMsg('spec.tokenKeyUnknown', { key }));
     }
   }
 }
@@ -2558,7 +2569,7 @@ function checkTokens(
   if (spec.tokens === undefined) return;
   const add = issueAdder(ctx);
   if (spec.formatVersion < 15) {
-    add(['tokens'], 'só é permitido com formatVersion 15');
+    add(['tokens'], specMsg('spec.onlyFormat15'));
     return;
   }
   if (!isRecord(spec.tokens))
@@ -2637,11 +2648,11 @@ export const specSchema = z
     const platformIds = new Set<string>();
     (spec.platforms ?? []).forEach((platform, pi) => {
       if (platformIds.has(platform.id)) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['platforms', pi, 'id'],
-          message: `id "${platform.id}" repetido`,
-        });
+        addSpecIssue(
+          ctx,
+          ['platforms', pi, 'id'],
+          specMsg('spec.idRepeated', { id: platform.id }),
+        );
       }
       platformIds.add(platform.id);
     });
@@ -2738,11 +2749,11 @@ export const specSchema = z
     const containerIds = new Set<string>();
     (spec.containers ?? []).forEach((container, ci) => {
       if (containerIds.has(container.id)) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['containers', ci, 'id'],
-          message: `id "${container.id}" repetido`,
-        });
+        addSpecIssue(
+          ctx,
+          ['containers', ci, 'id'],
+          specMsg('spec.idRepeated', { id: container.id }),
+        );
       }
       containerIds.add(container.id);
     });
@@ -2780,20 +2791,20 @@ export const specSchema = z
 
     spec.layers.forEach((layer, li) => {
       if (layerIds.has(layer.id)) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['layers', li, 'id'],
-          message: `id "${layer.id}" repetido`,
-        });
+        addSpecIssue(
+          ctx,
+          ['layers', li, 'id'],
+          specMsg('spec.idRepeated', { id: layer.id }),
+        );
       }
       layerIds.add(layer.id);
       layer.annotationTypes.forEach((type, ti) => {
         if (typeLayer.has(type.id)) {
-          ctx.addIssue({
-            code: 'custom',
-            path: ['layers', li, 'annotationTypes', ti, 'id'],
-            message: `id "${type.id}" repetido na especialização`,
-          });
+          addSpecIssue(
+            ctx,
+            ['layers', li, 'annotationTypes', ti, 'id'],
+            specMsg('spec.typeIdRepeated', { id: type.id }),
+          );
         } else {
           typeLayer.set(type.id, li);
         }
@@ -2820,11 +2831,11 @@ export const specSchema = z
           } else {
             for (const id of Object.keys(type.code)) {
               if (platformIds.has(id)) continue;
-              ctx.addIssue({
-                code: 'custom',
-                path: [...tp, 'code', id],
-                message: `plataforma "${id}" não declarada em platforms`,
-              });
+              addSpecIssue(
+                ctx,
+                [...tp, 'code', id],
+                specMsg('spec.platformUndeclared', { id }),
+              );
             }
           }
         }

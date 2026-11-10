@@ -1,6 +1,7 @@
 import { modelMessage, type ModelMessage } from '../modelMessage';
 import { libraryMessages } from './library';
 import { specMessages } from './spec';
+import { versionMessages } from './versions';
 
 // Catálogo das mensagens do modelo que a interface traduz (etapa #1263). Cada módulo da pasta é
 // uma área (`library.ts`, ...) e exporta código → modelo do texto pt-BR de hoje, com
@@ -10,6 +11,7 @@ import { specMessages } from './spec';
 export const MODEL_MESSAGE_TEMPLATES = {
   ...libraryMessages,
   ...specMessages,
+  ...versionMessages,
 } as const;
 
 export type ModelMessageTemplateCode = keyof typeof MODEL_MESSAGE_TEMPLATES;
