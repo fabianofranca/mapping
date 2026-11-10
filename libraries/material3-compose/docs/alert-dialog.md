@@ -96,6 +96,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - Botões de texto à direita, o de dispensar antes do de confirmar e 8 entre eles. Cada um é um `TextButton`: rótulo em `label-large` (14/20, peso 500, espaçamento 0,1) em `primary`, 12 de cada lado (`TextButtonContentPadding`), largura mínima de 58 (`ButtonDefaults.MinWidth`, o `minWidth` do quadro) e 40 de altura (`ButtonDefaults.MinHeight`), com 24 até a borda de baixo, como no Material.
 - Largura de 280 a 560 (`DialogMinWidth` e `DialogMaxWidth`, o `minWidth` e o `maxWidth` da raiz) e altura que abraça o conteúdo (`sizing` com `height: "hug"`). O `sizing` da largura continua 312, o valor de partida do Material.
 - O estilo `basic` desenha o mesmo diálogo: o `BasicAlertDialog` só abre a janela e o exemplo do Compose monta o conteúdo com a mesma forma, os mesmos 24 de margem e os mesmos espaços.
+- Rótulo de uma linha centrado pela maiúscula (`cap-middle`): o nó `rótulo` dos dois botões usa `font.verticalAlign: "cap-middle"` e ocupa a altura da caixa (`height: "fill"`), sem mudar a posição horizontal. O `Text` do Compose centra pela caixa de linha da fonte (ascent e descent); o desenho centra a altura da maiúscula na caixa, e com o Roboto as duas coincidem a menos de 1 px.
 
 **O que ainda difere do Compose**
 
@@ -104,4 +105,4 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - Título de mais de uma linha com ícone: o Compose centraliza a caixa do título e deixa as linhas à esquerda dentro dela; o desenho centraliza cada linha (`font.align: "center"`).
 - O texto não rola quando passa da altura da janela (`weight(1f, fill = false)` com o `verticalScroll` da tela), e o conteúdo livre dos slots `title`, `text` e `icon` (composables) não existe: só texto e ícone do conjunto.
 - A linha dos botões mede 48 e o `size` é 312 × 248 (o diálogo do exemplo "Confirmação com ícone"): o `TextButton` ocupa 48 no layout, os 40 do botão mais a área de toque mínima de `minimumInteractiveComponentSize` (`Surface.kt` linha 219). O botão desenhado continua com 40 de altura, centrado nos 48, e o rótulo fica a 28 da borda de baixo como no Compose. Os exemplos sem ícone ou com menos texto sobram embaixo (efeito aceito, como na #863).
-- A posição vertical do rótulo é o centro da caixa de 40, e não a linha de base do `TextButton`, porque o motor não alinha por linha de base.
+- A posição vertical do rótulo é o centro da maiúscula na caixa de 40 (`cap-middle`), e não a linha de base do `TextButton`, porque o motor não alinha por linha de base; com o Roboto a diferença para o Compose fica abaixo de 1 px.

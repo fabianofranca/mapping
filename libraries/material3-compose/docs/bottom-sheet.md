@@ -93,6 +93,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - Alça de 32 × 4 em `on-surface-variant` com a forma `corner-extra-large` (a cápsula do `shapes.extraLarge`), numa área de 48 (22 + 4 + 22), centralizada. A cor é cheia: o `DragHandle` do commit usa o token sem a opacidade 0,4 que o desenho tinha. Com `dragHandle: false` a área some.
 - Título em `title-large` (22/28, peso 400) em `on-surface` e uma linha por item como `ListItem` de uma linha: 56 de altura mínima, contêiner `surface`, ícone do conjunto de 24 em `on-surface-variant` a 16 da borda, 16 até o rótulo e rótulo em `body-large` (16/24) em `on-surface`, numa linha só com `…` (a convenção do `list-item`). O item sem ícone começa a 16.
 - Largura máxima de 640 (`SheetMaxWidth`, o `maxWidth` da raiz) e, no standard, altura mínima de `sheetPeekHeight` (`requiredHeightIn(min = peekHeight)`, o `minHeight` da raiz lido do campo). O modal não tem altura mínima.
+- Rótulo de uma linha centrado pela maiúscula (`cap-middle`): o nó `rótulo` de cada item (o `título` fica como está) usa `font.verticalAlign: "cap-middle"` e segue `hug` na altura, porque o pai também mede pelo texto; a caixa do texto é a linha, centrada no pai. O `Text` do Compose centra pela caixa de linha da fonte (ascent e descent); o desenho centra a altura da maiúscula na caixa, e com o Roboto as duas coincidem a menos de 1 px.
 
 **O que ainda difere do Compose**
 

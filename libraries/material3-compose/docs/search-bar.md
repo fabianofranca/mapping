@@ -90,6 +90,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - Consulta em `body-large` (16/24, 0,5), `on-surface`, numa linha só (`font.wrap: "none"`, `maxLines: 1`), recortada na largura, sem reticências; dica em `body-large`, `on-surface-variant`.
 - Expandida `docked`: raio `corner-extra-large` e divisor de 1 em `outline` logo abaixo do campo, em y = 56 (`HorizontalDivider` do `DockedSearchBarLayout`).
 - Expandida `bar` (tela cheia): raio `corner-none`, campo a 8 do topo e divisor em y = 72 (8 + 56 + 8, o cabeçalho de 72 de `FullScreenHeaderContainerHeight`).
+- A dica e a consulta (uma linha) centram pela altura da maiúscula (`font.verticalAlign: "cap-middle"`). O `Text` do Compose centra pela caixa de linha da fonte; com Roboto as duas coincidem a menos de 1 px.
 
 **Estado de interação (campo `interaction`)**
 

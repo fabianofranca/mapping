@@ -56,6 +56,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - Pequeno: círculo de 6 em `error`. Com contador: pílula de 16 de altura e no mínimo 16 de largura, com 4 de padding dos lados, em `error`, com a forma `corner-full`; cresce com o texto (`99+` fica mais larga que um dígito, que fica em 16).
 - O texto usa `label-small-*` (11, peso 500, linha 16, espaçamento 0,5) em `on-error`, na fonte do tema (`font-sans`), sem `family` no arquivo.
 - Nos dois modos a cor vem do papel `error` e `on-error` do modo.
+- Rótulo de uma linha centrado pela maiúscula (`cap-middle`): o nó `número` usa `font.verticalAlign: "cap-middle"` e segue `hug` na altura, porque o pai também mede pelo texto; a caixa do texto é a linha, centrada no pai. O `Text` do Compose centra pela caixa de linha da fonte (ascent e descent); o desenho centra a altura da maiúscula na caixa, e com o Roboto as duas coincidem a menos de 1 px.
 
 **O que ainda difere do Compose**
 

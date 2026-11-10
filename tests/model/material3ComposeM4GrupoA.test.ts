@@ -144,8 +144,10 @@ describe('M4 grupo A — top-app-bar', () => {
       expect(fontOf(title)).toEqual(scale('title-large'));
       expect(solid(title.fills)).toBe(tok('on-surface', mode));
       expect(absOf(withNav, title).x).toBe(56);
-      // (64 - 28) / 2
-      expect(absOf(withNav, title).y).toBe(18);
+      // o nó ocupa a altura da barra (fill) e o `cap-middle` centra a maiúscula nela (FX6)
+      expect(absOf(withNav, title).y).toBe(0);
+      expect(title.height).toBe(64);
+      expect(title.style.verticalAlign).toBe('cap-middle');
       const bare = both('top-app-bar', { title: 'Início' })[mode];
       expect(absOf(bare, textIn(bare, 'título')!).x).toBe(16);
     }

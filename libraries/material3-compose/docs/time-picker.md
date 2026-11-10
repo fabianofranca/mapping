@@ -76,6 +76,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - Seletor: a alça de 48 em `primary` (`corner-full`) fica no raio 101 ou, em 24 horas com a hora de 12 a 23, no 69, no ângulo da hora (30° por hora) ou do minuto (6° por minuto) a partir do topo; leva dentro o número selecionado em `body-large` e `on-primary` (o minuto fora da grade de 5 fica sem número, como no Compose). O trilho de 2 em `primary` vai do centro à alça e o centro de 8 em `primary` fecha o ponteiro.
 - Campos (`mode` = `input`): campos de 96 × 72 na forma `corner-small` com o número em `display-medium` 45/52; o campo em foco usa `primary-container` com `on-primary-container` e contorno de 2 em `primary`, e o outro `surface-container-highest` com `on-surface` e sem contorno. Rótulos "Hora" e "Minuto" em `body-small` 12/16 e `on-surface-variant`, a 7 (`SupportLabelTop`) abaixo do campo.
 - Os dois modos usam a mesma linha de hora, minuto e período: o `mode` troca só a altura (80 ou 72), a fonte (`display-large` ou `display-medium`), o contorno do campo em foco e o rótulo de apoio, o que mantém o arquivo menor que nas versões 1 a 3.
+- Os números de hora e minuto, os dois pontos, o AM/PM, os números do relógio e o número da alça centram pela altura da maiúscula (`font.verticalAlign: "cap-middle"`); o título e os rótulos "Hora" e "Minuto" seguem como estão. O `Text` do Compose centra pela caixa de linha da fonte; com Roboto as duas coincidem a menos de 1 px.
 
 **O que ainda difere do Compose**
 

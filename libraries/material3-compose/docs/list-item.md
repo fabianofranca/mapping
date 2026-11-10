@@ -68,6 +68,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - Título em `body-large` (16/24, `on-surface`), sobretítulo em `label-small` (11/16, `on-surface-variant`) acima dele e apoio em `body-medium` (14/20, `on-surface-variant`) abaixo, tudo pelos tokens e sem `family`. Texto final em `label-small` (`ListItemTrailingSupportingTextFont`) em `on-surface-variant`.
 - Ícones inicial e final pelo nó `icon` do conjunto da biblioteca, de 24 em `on-surface-variant`. Avatar de 40 (`ListItemLeadingAvatarSize`) em `corner-full`, com o preenchimento `primary-container` (`ListItemLeadingAvatarColor`) enquanto a imagem não carrega.
 - Texto cortado como o `Text` dos exemplos do Material: título e sobretítulo em uma linha com `…`, apoio em uma linha com `…` quando há sobretítulo e em até duas sem ele (`font.maxLines` e `font.ellipsis`), o que mantém o item dentro de 88.
+- Título e conteúdo final (uma linha) centram pela altura da maiúscula (`font.verticalAlign: "cap-middle"`); o sobretítulo e o apoio seguem como estão. O `Text` do Compose centra pela caixa de linha da fonte; com Roboto as duas coincidem a menos de 1 px.
 
 **Estado de interação (campo `interaction`)**
 
