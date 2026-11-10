@@ -163,6 +163,17 @@ export interface StrokeSpec {
    * em pixels de tela, em qualquer zoom.
    */
   readonly scale?: boolean;
+  /**
+   * Vão no contorno (v4, em `frame` e `rect`, sem `sides`): o lado que a caixa do nó `node` (o
+   * primeiro com esse nome no template) atravessa fica interrompido no trecho que ela cobre, mais
+   * `padding` (px, padrão 0) de cada lado: o recorte do contorno do `OutlinedTextField`.
+   */
+  readonly gap?: StrokeGapSpec;
+}
+
+export interface StrokeGapSpec {
+  readonly node: string;
+  readonly padding?: Expr<number>;
 }
 
 export type StrokeSide = 'top' | 'right' | 'bottom' | 'left';
@@ -177,6 +188,8 @@ export interface ShadowSpec {
   readonly x?: number | { readonly $token: string };
   readonly y?: number | { readonly $token: string };
   readonly blur?: number | { readonly $token: string };
+  /** Cresce (ou, negativo, encolhe) a forma da sombra em cada lado (v4, px; literal ou `$token`). */
+  readonly spread?: number | { readonly $token: string };
 }
 
 export interface FontSpec {
@@ -287,7 +300,8 @@ interface TemplateNodeBase {
   readonly anchors?: Anchors;
   readonly fill?: Expr<FillSpec>;
   readonly stroke?: StrokeSpec;
-  readonly shadow?: ShadowSpec;
+  /** Uma sombra, ou (v4) de 1 a 4: a primeira fica por cima, como o `box-shadow` do CSS. */
+  readonly shadow?: ShadowSpec | readonly ShadowSpec[];
   /** Na v4 cada item da lista também aceita `$token` de número. */
   readonly cornerRadius?: Expr<number | readonly [Radius, Radius, Radius, Radius]>;
 }

@@ -131,6 +131,18 @@ export interface Stroke {
   readonly scale?: boolean;
   /** Só estes lados da caixa têm traço (`frame` e `rect`); ausente = os quatro, em contorno. */
   readonly sides?: readonly ('top' | 'right' | 'bottom' | 'left')[];
+  /**
+   * Vãos do contorno (`frame` e `rect`, sem `sides`), já calculados pela arrumação: no lado `side`,
+   * o trecho de `from` a `to` (px ao longo do lado, no espaço local do nó; x em cima e embaixo, y
+   * nos lados) não tem traço. Quem desenha só interrompe o contorno (ver `gapOutlines`).
+   */
+  readonly gaps?: readonly StrokeGap[];
+}
+
+export interface StrokeGap {
+  readonly side: 'top' | 'right' | 'bottom' | 'left';
+  readonly from: number;
+  readonly to: number;
 }
 
 /** Retângulo no espaço local do nó (px): o recorte ampliado de um quadro. */

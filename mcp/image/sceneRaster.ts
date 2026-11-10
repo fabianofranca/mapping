@@ -1,6 +1,7 @@
 import type { TextMeasurer } from '../../src/model/components/instantiate';
 import type { ScreenAnchor } from '../../src/model/components/componentFormat';
 import { CUT_REACH, cutsText } from '../../src/model/components/textWrap';
+import { gapOutlines } from '../../src/model/components/strokeGaps';
 import {
   growRadius,
   partialSides,
@@ -17,6 +18,7 @@ import {
   type FrameNode,
   type GroupNode,
   type SceneNode,
+  type Shadow,
   type TextNode,
 } from '../../src/model/components/scene';
 import { MAX_SHADOW_PIXELS, compositeShadow, dashPaths } from './effects';
@@ -817,6 +819,39 @@ function alignedShapes(node: SceneNode, shapes: Subpath[]): Subpath[] {
   return [{ points: points.map((p) => ({ x: p.x + d, y: p.y + d })), closed: true }];
 }
 
+/** O raio de um canto da sombra: o do nó mais o `spread`, sem passar de 0 (canto reto continua reto). */
+function spreadRadius(radius: CornerRadius, spread: number): CornerRadius {
+  const grow = (r: number): number => (r > 0 ? Math.max(0, r + spread) : 0);
+  return typeof radius === 'number'
+    ? grow(radius)
+    : [grow(radius[0]), grow(radius[1]), grow(radius[2]), grow(radius[3])];
+}
+
+/**
+ * A forma que a sombra desenha: a do nó crescida (ou encolhida) de `spread` em cada lado, com os
+ * raios mais `spread`, num `frame`, `rect` ou `ellipse`; nos outros nós o `spread` não vale.
+ * Vazia quando a forma encolhida some.
+ */
+function spreadShapes(node: SceneNode, shapes: Subpath[], spread: number): Subpath[] {
+  if (spread === 0) return shapes;
+  const width = node.width + 2 * spread;
+  const height = node.height + 2 * spread;
+  const place = (points: Point[]): Subpath[] => [
+    { points: points.map((p) => ({ x: p.x - spread, y: p.y - spread })), closed: true },
+  ];
+  switch (node.type) {
+    case 'frame':
+    case 'rect':
+      return width > 0 && height > 0
+        ? place(roundedRect(width, height, spreadRadius(node.cornerRadius, spread)))
+        : [];
+    case 'ellipse':
+      return width > 0 && height > 0 ? place(ellipse(width, height)) : [];
+    default:
+      return shapes;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Cena
 
@@ -964,7 +999,8 @@ class Painter {
       cap: node.stroke.cap ?? 'butt',
       join: node.stroke.join ?? 'miter',
     };
-    const base = this.sideLines(node) ?? alignedShapes(node, shapes);
+    const base =
+      this.sideLines(node) ?? this.gapLines(node) ?? alignedShapes(node, shapes);
     const dash = node.stroke.dash;
     const lines = dash && dash.length > 0 ? dashPaths(base, dash) : base;
     this.fill(strokePolygons(lines, width, style), matrix, 'nonzero', color, alpha, clip);
@@ -979,40 +1015,62 @@ class Painter {
     clip: PixelRect,
   ): void {
     if (node.type === 'text' || shapes.length === 0) return;
-    for (const shadow of node.effects) {
+    // A primeira sombra da lista fica por cima: a última é pintada primeiro.
+    for (const shadow of [...node.effects].reverse()) {
       const color = parseColor(shadow.color);
       if (shadow.inner || color === null) continue;
-      const polygons = shapes.map((sub) => this.toRaster(sub.points, matrix));
-      const sigma = (shadow.blur * this.scale) / 2;
-      const margin = Math.ceil(sigma * 3) + 2;
-      const edge = bounds(polygons.flat());
-      const box: PixelRect = {
-        x: Math.floor(edge.x) - margin,
-        y: Math.floor(edge.y) - margin,
-        width: Math.ceil(edge.width) + 2 * margin,
-        height: Math.ceil(edge.height) + 2 * margin,
-      };
-      if (box.width * box.height > MAX_SHADOW_PIXELS) continue;
-      const temp = createRaster(box.width, box.height);
-      fillPolygons(
-        temp,
-        polygons.map((poly) => poly.map((p) => ({ x: p.x - box.x, y: p.y - box.y }))),
-        node.type === 'path' ? node.fillRule : 'nonzero',
-        { rgb: [0, 0, 0], alpha: 1 },
-        { x: 0, y: 0, width: box.width, height: box.height },
-      );
-      const mask = new Float32Array(box.width * box.height);
-      for (let i = 0; i < mask.length; i++) mask[i] = temp.data[i * 4 + 3]! / 255;
-      compositeShadow(
-        this.raster,
-        mask,
-        box,
-        sigma,
-        { dx: shadow.offset.x * this.scale, dy: shadow.offset.y * this.scale },
-        { rgb: color.rgb, alpha: color.alpha * alpha },
-        clip,
-      );
+      const casting = spreadShapes(node, shapes, shadow.spread ?? 0);
+      if (casting.length === 0) continue;
+      const rule = node.type === 'path' ? node.fillRule : 'nonzero';
+      this.shadow(casting, shadow, matrix, { rule, color, alpha, clip });
     }
+  }
+
+  /** Uma sombra: a máscara da forma (`casting`), desfocada e deslocada, composta sobre o raster. */
+  private shadow(
+    casting: Subpath[],
+    shadow: Shadow,
+    matrix: Matrix,
+    paint: { rule: 'nonzero' | 'evenodd'; color: Color; alpha: number; clip: PixelRect },
+  ): void {
+    const polygons = casting.map((sub) => this.toRaster(sub.points, matrix));
+    const sigma = (shadow.blur * this.scale) / 2;
+    const margin = Math.ceil(sigma * 3) + 2;
+    const edge = bounds(polygons.flat());
+    const box: PixelRect = {
+      x: Math.floor(edge.x) - margin,
+      y: Math.floor(edge.y) - margin,
+      width: Math.ceil(edge.width) + 2 * margin,
+      height: Math.ceil(edge.height) + 2 * margin,
+    };
+    if (box.width * box.height > MAX_SHADOW_PIXELS) return;
+    const temp = createRaster(box.width, box.height);
+    fillPolygons(
+      temp,
+      polygons.map((poly) => poly.map((p) => ({ x: p.x - box.x, y: p.y - box.y }))),
+      paint.rule,
+      { rgb: [0, 0, 0], alpha: 1 },
+      { x: 0, y: 0, width: box.width, height: box.height },
+    );
+    const mask = new Float32Array(box.width * box.height);
+    for (let i = 0; i < mask.length; i++) mask[i] = temp.data[i * 4 + 3]! / 255;
+    compositeShadow(
+      this.raster,
+      mask,
+      box,
+      sigma,
+      { dx: shadow.offset.x * this.scale, dy: shadow.offset.y * this.scale },
+      { rgb: paint.color.rgb, alpha: paint.color.alpha * paint.alpha },
+      paint.clip,
+    );
+  }
+
+  /** `stroke.gap` num `frame`/`rect`: o contorno com o raio dos cantos, interrompido nos vãos. */
+  private gapLines(node: SceneNode): Subpath[] | null {
+    if ((node.type !== 'frame' && node.type !== 'rect') || !node.stroke?.gaps?.length)
+      return null;
+    const lines = gapOutlines(node.stroke, node.width, node.height, node.cornerRadius);
+    return lines.length > 0 ? lines.map((points) => ({ points, closed: false })) : null;
   }
 
   /** `stroke.sides` num `frame`/`rect`: os lados pedidos como linhas retas (sem os cantos). */

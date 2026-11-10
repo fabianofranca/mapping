@@ -137,7 +137,7 @@ describe('avisos do desenho levam código e parâmetros', () => {
     ]);
   });
 
-  it('sombra interna e várias sombras externas', () => {
+  it('sombra interna avisa; várias sombras externas não avisam mais', () => {
     const node: SceneNode = {
       ...baseNode({
         id: 'r',
@@ -156,7 +156,7 @@ describe('avisos do desenho levam código e parâmetros', () => {
     };
     const { warnings } = renderScene(scene(node));
     expect(warnings).toContainEqual({ code: 'inner-shadow' });
-    expect(warnings).toContainEqual({ code: 'extra-shadows' });
+    expect(warnings).toEqual([{ code: 'inner-shadow' }]);
   });
 
   it('o mesmo aviso não se repete', () => {

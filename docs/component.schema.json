@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mapping.local/component.schema.json",
   "title": "Mapping — componente (mapping-component, formatVersion 1, 2, 3 e 4)",
-  "description": "Valida só a estrutura do arquivo de componente. A fonte da verdade é o código (src/model/components/parseComponent.ts), que também confere o que o schema não vê: campos citados pelas expressões que existem no tipo da especialização, minSize não maior que size, raiz do template obrigatoriamente do tipo frame, o slot único e a prova de desenho. Veja COMPONENT-FORMAT.md. O nó repeat (a tabela desenhada) vale a partir da formatVersion 2: numa formatVersion 1 é erro do parseComponent; o repeat não pode ter repeat nem slot dentro, e o schema não confere que o campo citado é uma table do tipo. O nó image (imagem remota) só existe na formatVersion 3: numa 1 ou 2 é erro do parseComponent; o schema confere que o src é um literal https:// ou exatamente {\"$field\"}, mas não que o campo ligado é do tipo string nem a forma completa da URL (sem usuário e senha, até 2048 caracteres). A formatVersion 4 acrescenta rotation (qualquer nó menos a raiz, o que o schema não confere: é do parseComponent; graus, sentido horário, em volta do centro da caixa, só desenho), stroke.cap, stroke.join e stroke.sides, minWidth, maxWidth, minHeight e maxHeight (qualquer nó), repeat.distribute e expressão em width, height, layout.type, layout.align e layout.justify (numa versão menor é erro do parseComponent; o literal nessas cinco chaves vale em todas as versões). O schema não confere que minWidth não é maior que maxWidth. A formatVersion 4 também acrescenta stroke.offset (frame, rect e ellipse), stroke.dash por expressão, $token em shadow.x, shadow.y e shadow.blur e em cada item de cornerRadius e de stroke.dash, layout.justify space-around e space-evenly, layout.reverse e alpha no $token de cor (o schema não confere a versão nem o tipo da posição: isso é do parseComponent). A formatVersion 4 também acrescenta font.align justify, over no $token de cor (a cor composta sobre outra, opaca) e os fit fill-width, fill-height, scale-down e none da imagem (o schema não confere a versão nem a posição: isso é do parseComponent). A formatVersion 4 também aceita { \"$token\": \"nome\" } onde se espera cor, número ou família de fonte (o schema deixa a expressão nas chaves de tipo compatível, mas não confere a posição nem que o token existe nos tokens da especialização: isso é do parseComponent e do validate_library).",
+  "description": "Valida só a estrutura do arquivo de componente. A fonte da verdade é o código (src/model/components/parseComponent.ts), que também confere o que o schema não vê: campos citados pelas expressões que existem no tipo da especialização, minSize não maior que size, raiz do template obrigatoriamente do tipo frame, o slot único e a prova de desenho. Veja COMPONENT-FORMAT.md. O nó repeat (a tabela desenhada) vale a partir da formatVersion 2: numa formatVersion 1 é erro do parseComponent; o repeat não pode ter repeat nem slot dentro, e o schema não confere que o campo citado é uma table do tipo. O nó image (imagem remota) só existe na formatVersion 3: numa 1 ou 2 é erro do parseComponent; o schema confere que o src é um literal https:// ou exatamente {\"$field\"}, mas não que o campo ligado é do tipo string nem a forma completa da URL (sem usuário e senha, até 2048 caracteres). A formatVersion 4 acrescenta rotation (qualquer nó menos a raiz, o que o schema não confere: é do parseComponent; graus, sentido horário, em volta do centro da caixa, só desenho), stroke.cap, stroke.join e stroke.sides, minWidth, maxWidth, minHeight e maxHeight (qualquer nó), repeat.distribute e expressão em width, height, layout.type, layout.align e layout.justify (numa versão menor é erro do parseComponent; o literal nessas cinco chaves vale em todas as versões). O schema não confere que minWidth não é maior que maxWidth. A formatVersion 4 também acrescenta stroke.offset (frame, rect e ellipse), stroke.dash por expressão, $token em shadow.x, shadow.y e shadow.blur e em cada item de cornerRadius e de stroke.dash, layout.justify space-around e space-evenly, layout.reverse e alpha no $token de cor (o schema não confere a versão nem o tipo da posição: isso é do parseComponent). A formatVersion 4 também acrescenta stroke.gap (frame e rect, sem sides; o nó citado precisa existir no template, o que o schema não confere), shadow como lista de 1 a 4 sombras e shadow.spread (o schema não confere a versão: isso é do parseComponent). A formatVersion 4 também acrescenta font.align justify, over no $token de cor (a cor composta sobre outra, opaca) e os fit fill-width, fill-height, scale-down e none da imagem (o schema não confere a versão nem a posição: isso é do parseComponent). A formatVersion 4 também aceita { \"$token\": \"nome\" } onde se espera cor, número ou família de fonte (o schema deixa a expressão nas chaves de tipo compatível, mas não confere a posição nem que o token existe nos tokens da especialização: isso é do parseComponent e do validate_library).",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "formatVersion", "id", "name", "size", "template"],
@@ -1856,11 +1856,42 @@
         "scale": {
           "type": "boolean",
           "description": "true (padrão): a largura escala com o zoom; false: a largura é em pixels de tela, em qualquer zoom."
+        },
+        "gap": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["node"],
+          "description": "O contorno interrompido sobre a caixa de um nó do template (formatVersion 4; só em frame e rect, e não junto com sides: o parseComponent confere, o schema não). node é o nome de um nó do template (o padrão é o tipo dele); padding (padrão 0) é a folga em cada lado do trecho coberto.",
+          "properties": {
+            "node": {
+              "type": "string",
+              "minLength": 1
+            },
+            "padding": {
+              "$ref": "#/$defs/expr_number"
+            }
+          }
         }
       },
-      "description": "cap, join, sides, scale e offset só existem na formatVersion 4, e a expressão em dash (a lista literal vale em todas) (numa 1, 2 ou 3 o parseComponent recusa com 'só é permitido com formatVersion 4'). sides só vale em frame e rect (em ellipse e path é erro do parseComponent, que o schema não confere)."
+      "description": "cap, join, sides, scale, offset e gap só existem na formatVersion 4, e a expressão em dash (a lista literal vale em todas) (numa 1, 2 ou 3 o parseComponent recusa com 'só é permitido com formatVersion 4'). sides só vale em frame e rect (em ellipse e path é erro do parseComponent, que o schema não confere)."
     },
     "shadow": {
+      "description": "Uma sombra (objeto) ou, na formatVersion 4, uma lista de 1 a 4 sombras (a primeira fica por cima, como o box-shadow do CSS). A lista numa versão menor é erro do parseComponent ('só é permitido com formatVersion 4', no caminho de shadow); o schema não confere a versão. Só frame, rect e ellipse desenham a lista inteira e o spread: nos outros tipos vale só a primeira sombra.",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/shadow_item"
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/shadow_item"
+          }
+        }
+      ]
+    },
+    "shadow_item": {
       "type": "object",
       "additionalProperties": false,
       "required": ["color"],
@@ -1898,9 +1929,20 @@
               "$ref": "#/$defs/tokenRef"
             }
           ]
+        },
+        "spread": {
+          "description": "Quanto a forma da sombra cresce (ou encolhe, se negativo) em cada lado, em px (formatVersion 4; só em frame, rect e ellipse).",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/$defs/tokenRef"
+            }
+          ]
         }
       },
-      "description": "x, y e blur aceitam { \"$token\": \"nome\" } de número na formatVersion 4."
+      "description": "x, y, blur e spread aceitam { \"$token\": \"nome\" } de número na formatVersion 4. O spread só existe na formatVersion 4 (numa versão menor o parseComponent recusa com 'só é permitido com formatVersion 4')."
     },
     "font": {
       "type": "object",
