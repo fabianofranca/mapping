@@ -90,6 +90,17 @@ describe('MF5: dia de hoje no date-picker (decisão 19)', () => {
       expect(stroke.width).toBe(1);
       expect(solid(stroke.paints)).toBe(rgb(tokens(mode)['primary'] as string));
       // O contorno fica na célula do dia 22 (as colunas são de 48): a mesma do número `22`.
+      const cellOf = (n: SceneNode, name: string): SceneNode | undefined =>
+        n.name === name
+          ? n
+          : 'children' in n
+            ? n.children.map((c) => cellOf(c, name)).find((x) => x !== undefined)
+            : undefined;
+      const cell = findAll(d.root, 'célula').find((c) =>
+        findAll(c, 'contorno de hoje').some((r) => r.visible),
+      )!;
+      expect(texts(cell, '22').length).toBeGreaterThan(0);
+      void cellOf;
       const dayCell = texts(d.root, '22');
       expect(dayCell.length).toBeGreaterThan(0);
       for (const t of dayCell)
@@ -215,7 +226,7 @@ describe('MF5: avatar do chip (decisão 20)', () => {
     ).toHaveLength(0);
   });
 
-  it('o avatar recua o rótulo e abre com 4 de folga no início (inputChipPadding, Chip.kt 2946)', () => {
+  it('o avatar recua o rótulo e abre como o chip sem ícone inicial (inputChipPadding, Chip.kt 2946: início 4 com avatar ou sem ícone)', () => {
     const withAvatar = draw('chip', input);
     const without = draw('chip', { ...input, avatar: undefined });
     const label = (d: ReturnType<typeof draw>) => visibleOf(d.root, 'rótulo')[0]!;
@@ -288,6 +299,13 @@ describe('MF5: divider com cor e recuo por ponta (decisão 20)', () => {
   it('no vertical os recuos valem no alto (início) e embaixo (fim)', () => {
     const l = line({ orientation: 'vertical', insetStart: 10, insetEnd: 20 });
     expect(l.transform[5]).toBe(10);
+    // a ponta final tem a altura de insetEnd
+    const root = draw('divider', {
+      orientation: 'vertical',
+      insetStart: 10,
+      insetEnd: 20,
+    }).root;
+    expect(findAll(root, 'ponta final')[0]!.height).toBe(20);
   });
 });
 

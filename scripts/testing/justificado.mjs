@@ -17,6 +17,7 @@
 import fs from 'node:fs';
 
 const dir = process.argv[2];
+if (!dir) throw new Error('uso: node justificado.mjs <pasta da biblioteca>');
 const specFile = dir + '/material3-compose.spec.json';
 const spec = JSON.parse(fs.readFileSync(specFile, 'utf8'));
 for (const layer of spec.layers)

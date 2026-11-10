@@ -1223,6 +1223,7 @@ describe('CL1 — roteiro do R9.24 a R9.28 (etapa #701)', () => {
   });
 
   it('o R9.24 não espera membership (só lista quem mudou de pai)', () => {
+    expect(row('R9.24')).not.toBe('');
     expect(row('R9.24')).not.toContain('membership');
   });
 });
