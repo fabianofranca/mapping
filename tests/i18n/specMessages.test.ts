@@ -450,6 +450,17 @@ describe('mensagens da especialização (até layerShape)', () => {
     for (const code of catalog) expect(produced, code).toContain(code);
   });
 
+  it('cada texto fixo do catálogo `spec` é de um código só (o código é achado pelo texto)', () => {
+    const fixed = Object.entries(MODEL_MESSAGE_TEMPLATES).filter(
+      ([code, text]) =>
+        code.startsWith('spec.') &&
+        !code.startsWith('spec.zod.') &&
+        !/\{\w+\}/.test(text),
+    );
+    const texts = fixed.map(([, text]) => text);
+    expect(new Set(texts).size).toBe(texts.length);
+  });
+
   it('o `input` não sai do modelo', () => {
     for (const [, mutate] of CASES) {
       for (const issue of issuesOf(mutate)) expect('input' in issue).toBe(false);
