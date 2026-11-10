@@ -731,7 +731,7 @@ describe('EX4 — sem tabelas enumeradas', () => {
 
   it('os arquivos ficam bem menores que os 78 kB e 53 kB de antes', () => {
     expect(text('components/date-picker.json').length).toBeLessThan(52_000);
-    // O time-picker passou de 36 kB com a cópia dos números dentro da `alça` (MF4, número sob a alça; cresce ~2x pela indentação do JSON): teto de 61 kB (hoje 60.758).
-    expect(text('components/time-picker.json').length).toBeLessThan(61_000);
+    // O time-picker passou de 36 kB com a cópia dos números dentro da `alça` (MF4, número sob a alça; cresce de 31 kB a ~40 kB): teto de 41 kB (hoje 39.718).
+    expect(text('components/time-picker.json').length).toBeLessThan(41_000);
   });
 });

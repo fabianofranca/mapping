@@ -156,7 +156,11 @@ describe('M3 grupo C — slider', () => {
       [dark, 'dark'],
     ] as const) {
       const over = (alpha: string) =>
-        compositeOver(tok('on-surface', mode), Number(tok(alpha, mode)), tok('surface', mode));
+        compositeOver(
+          tok('on-surface', mode),
+          Number(tok(alpha, mode)),
+          tok('surface', mode),
+        );
       for (const name of ['alça', 'trilho ativo']) {
         const node = named(d, name)!;
         expectComposite(fillOf(node), over('state-disabled-content'));

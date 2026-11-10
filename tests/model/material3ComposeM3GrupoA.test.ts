@@ -262,8 +262,8 @@ describe('M3 grupo A — switch', () => {
     for (const mode of ['light', 'dark'] as const) {
       const over = (top: string, alpha: number) =>
         compositeOver(tok(top, mode), alpha, tok('surface', mode));
-      const container = (tokens['state-disabled-container'] as number);
-      const content = (tokens['state-disabled-content'] as number);
+      const container = tokens['state-disabled-container'] as number;
+      const content = tokens['state-disabled-content'] as number;
       // ligado: trilho on-surface a 0,12 sobre surface (cor opaca, sem camada de opacidade); alça surface; ícone on-surface a 0,38
       expectComposite(fillOf(on[mode], 'trilho'), over('on-surface', container));
       expect(named(on[mode], 'trilho')?.opacity).toBe(1);

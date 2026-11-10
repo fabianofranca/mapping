@@ -4,14 +4,8 @@
   "id": "slider",
   "name": "Slider",
   "description": "Slider de 44: trilha de 16 em secondary container, trecho ativo em primary e alça de 4 × 44 com vão de 6 (SliderTokens). Os valores são números de 0 a 1; com steps a alça vai ao passo mais próximo e as marcas são exatamente as de steps, em qualquer quantidade. No intervalo há duas alças.",
-  "size": {
-    "width": 328,
-    "height": 48
-  },
-  "sizing": {
-    "width": "fill",
-    "height": 48
-  },
+  "size": { "width": 328, "height": 48 },
+  "sizing": { "width": "fill", "height": 48 },
   "preview": {
     "type": "single",
     "value": 0.5,
@@ -23,30 +17,20 @@
   "template": {
     "type": "frame",
     "name": "slider",
-    "layout": {
-      "type": "none"
-    },
+    "layout": { "type": "none" },
     "children": [
       {
         "type": "frame",
         "name": "faixa",
         "height": 44,
-        "anchors": {
-          "left": 2,
-          "right": 2,
-          "centerY": true
-        },
-        "layout": {
-          "type": "row"
-        },
+        "anchors": { "left": 2, "right": 2, "centerY": true },
+        "layout": { "type": "row" },
         "children": [
           {
             "type": "frame",
             "name": "antes do início",
             "width": {
-              "$if": {
-                "$eq": ["type", "range"]
-              },
+              "$if": { "$eq": ["type", "range"] },
               "then": {
                 "$add": [
                   {
@@ -58,32 +42,15 @@
                               "$mul": [
                                 {
                                   "$clamp": [
-                                    {
-                                      "$field": "valueStart",
-                                      "default": 0.2
-                                    },
+                                    { "$field": "valueStart", "default": 0.2 },
                                     0,
                                     1
                                   ]
                                 },
                                 {
-                                  "$if": {
-                                    "$gte": [
-                                      {
-                                        "$field": "steps"
-                                      },
-                                      1
-                                    ]
-                                  },
+                                  "$if": { "$gte": [{ "$field": "steps" }, 1] },
                                   "then": {
-                                    "$add": [
-                                      {
-                                        "$floor": {
-                                          "$field": "steps"
-                                        }
-                                      },
-                                      1
-                                    ]
+                                    "$add": [{ "$floor": { "$field": "steps" } }, 1]
                                   },
                                   "else": 1000000000
                                 }
@@ -91,50 +58,20 @@
                             }
                           },
                           {
-                            "$if": {
-                              "$gte": [
-                                {
-                                  "$field": "steps"
-                                },
-                                1
-                              ]
-                            },
-                            "then": {
-                              "$add": [
-                                {
-                                  "$floor": {
-                                    "$field": "steps"
-                                  }
-                                },
-                                1
-                              ]
-                            },
+                            "$if": { "$gte": [{ "$field": "steps" }, 1] },
+                            "then": { "$add": [{ "$floor": { "$field": "steps" } }, 1] },
                             "else": 1000000000
                           }
                         ]
                       },
                       {
                         "$sub": [
-                          {
-                            "$sub": [
-                              {
-                                "$size": "width"
-                              },
-                              4
-                            ]
-                          },
+                          { "$sub": [{ "$size": "width" }, 4] },
                           {
                             "$mul": [
                               16,
                               {
-                                "$if": {
-                                  "$gte": [
-                                    {
-                                      "$field": "steps"
-                                    },
-                                    1
-                                  ]
-                                },
+                                "$if": { "$gte": [{ "$field": "steps" }, 1] },
                                 "then": 1,
                                 "else": 0
                               }
@@ -148,14 +85,7 @@
                     "$mul": [
                       8,
                       {
-                        "$if": {
-                          "$gte": [
-                            {
-                              "$field": "steps"
-                            },
-                            1
-                          ]
-                        },
+                        "$if": { "$gte": [{ "$field": "steps" }, 1] },
                         "then": 1,
                         "else": 0
                       }
@@ -166,50 +96,28 @@
               "else": 0
             },
             "height": "fill",
-            "visible": {
-              "$eq": ["type", "range"]
-            },
-            "layout": {
-              "type": "none"
-            },
+            "visible": { "$eq": ["type", "range"] },
+            "layout": { "type": "none" },
             "children": [
               {
                 "type": "rect",
                 "name": "trilho inativo",
                 "height": 16,
-                "anchors": {
-                  "centerY": true,
-                  "left": 0,
-                  "right": 8
-                },
+                "anchors": { "centerY": true, "left": 0, "right": 8 },
                 "cornerRadius": [
-                  {
-                    "$token": "corner-track-outer"
-                  },
-                  {
-                    "$token": "corner-track-inside"
-                  },
-                  {
-                    "$token": "corner-track-inside"
-                  },
-                  {
-                    "$token": "corner-track-outer"
-                  }
+                  { "$token": "corner-track-outer" },
+                  { "$token": "corner-track-inside" },
+                  { "$token": "corner-track-inside" },
+                  { "$token": "corner-track-outer" }
                 ],
                 "fill": {
-                  "$if": {
-                    "$eq": ["enabled", "false"]
-                  },
+                  "$if": { "$eq": ["enabled", "false"] },
                   "then": {
                     "$token": "on-surface",
-                    "alpha": {
-                      "$token": "state-disabled-container"
-                    },
+                    "alpha": { "$token": "state-disabled-container" },
                     "over": "surface"
                   },
-                  "else": {
-                    "$token": "secondary-container"
-                  }
+                  "else": { "$token": "secondary-container" }
                 }
               },
               {
@@ -217,27 +125,16 @@
                 "name": "alça",
                 "height": 44,
                 "width": 4,
-                "anchors": {
-                  "centerY": true,
-                  "right": -2
-                },
-                "cornerRadius": {
-                  "$token": "corner-full"
-                },
+                "anchors": { "centerY": true, "right": -2 },
+                "cornerRadius": { "$token": "corner-full" },
                 "fill": {
-                  "$if": {
-                    "$eq": ["enabled", "false"]
-                  },
+                  "$if": { "$eq": ["enabled", "false"] },
                   "then": {
                     "$token": "on-surface",
-                    "alpha": {
-                      "$token": "state-disabled-content"
-                    },
+                    "alpha": { "$token": "state-disabled-content" },
                     "over": "surface"
                   },
-                  "else": {
-                    "$token": "primary"
-                  }
+                  "else": { "$token": "primary" }
                 }
               }
             ]
@@ -247,83 +144,45 @@
             "name": "trecho ativo",
             "width": "fill",
             "height": "fill",
-            "layout": {
-              "type": "none"
-            },
+            "layout": { "type": "none" },
             "children": [
               {
                 "type": "rect",
                 "name": "trilho ativo",
                 "height": 16,
-                "anchors": {
-                  "centerY": true,
-                  "left": 0,
-                  "right": 8
-                },
+                "anchors": { "centerY": true, "left": 0, "right": 8 },
                 "cornerRadius": [
-                  {
-                    "$token": "corner-track-outer"
-                  },
-                  {
-                    "$token": "corner-track-inside"
-                  },
-                  {
-                    "$token": "corner-track-inside"
-                  },
-                  {
-                    "$token": "corner-track-outer"
-                  }
+                  { "$token": "corner-track-outer" },
+                  { "$token": "corner-track-inside" },
+                  { "$token": "corner-track-inside" },
+                  { "$token": "corner-track-outer" }
                 ],
-                "visible": {
-                  "$not": {
-                    "$eq": ["type", "range"]
-                  }
-                },
+                "visible": { "$not": { "$eq": ["type", "range"] } },
                 "fill": {
-                  "$if": {
-                    "$eq": ["enabled", "false"]
-                  },
+                  "$if": { "$eq": ["enabled", "false"] },
                   "then": {
                     "$token": "on-surface",
-                    "alpha": {
-                      "$token": "state-disabled-content"
-                    },
+                    "alpha": { "$token": "state-disabled-content" },
                     "over": "surface"
                   },
-                  "else": {
-                    "$token": "primary"
-                  }
+                  "else": { "$token": "primary" }
                 }
               },
               {
                 "type": "rect",
                 "name": "trilho ativo",
                 "height": 16,
-                "anchors": {
-                  "centerY": true,
-                  "left": 8,
-                  "right": 8
-                },
-                "cornerRadius": {
-                  "$token": "corner-track-inside"
-                },
-                "visible": {
-                  "$eq": ["type", "range"]
-                },
+                "anchors": { "centerY": true, "left": 8, "right": 8 },
+                "cornerRadius": { "$token": "corner-track-inside" },
+                "visible": { "$eq": ["type", "range"] },
                 "fill": {
-                  "$if": {
-                    "$eq": ["enabled", "false"]
-                  },
+                  "$if": { "$eq": ["enabled", "false"] },
                   "then": {
                     "$token": "on-surface",
-                    "alpha": {
-                      "$token": "state-disabled-content"
-                    },
+                    "alpha": { "$token": "state-disabled-content" },
                     "over": "surface"
                   },
-                  "else": {
-                    "$token": "primary"
-                  }
+                  "else": { "$token": "primary" }
                 }
               }
             ]
@@ -333,30 +192,14 @@
             "name": "depois do fim",
             "width": {
               "$sub": [
-                {
-                  "$sub": [
-                    {
-                      "$size": "width"
-                    },
-                    4
-                  ]
-                },
+                { "$sub": [{ "$size": "width" }, 4] },
                 {
                   "$if": {
                     "$and": [
-                      {
-                        "$gte": [
-                          {
-                            "$field": "steps"
-                          },
-                          1
-                        ]
-                      },
+                      { "$gte": [{ "$field": "steps" }, 1] },
                       {
                         "$or": [
-                          {
-                            "$eq": ["type", "range"]
-                          },
+                          { "$eq": ["type", "range"] },
                           {
                             "$lt": [
                               {
@@ -370,9 +213,7 @@
                                               {
                                                 "$clamp": [
                                                   {
-                                                    "$if": {
-                                                      "$eq": ["type", "range"]
-                                                    },
+                                                    "$if": { "$eq": ["type", "range"] },
                                                     "then": {
                                                       "$field": "valueEnd",
                                                       "default": 0.8
@@ -388,11 +229,7 @@
                                               },
                                               {
                                                 "$add": [
-                                                  {
-                                                    "$floor": {
-                                                      "$field": "steps"
-                                                    }
-                                                  },
+                                                  { "$floor": { "$field": "steps" } },
                                                   1
                                                 ]
                                               }
@@ -402,29 +239,11 @@
                                         2
                                       ]
                                     },
-                                    {
-                                      "$add": [
-                                        {
-                                          "$floor": {
-                                            "$field": "steps"
-                                          }
-                                        },
-                                        1
-                                      ]
-                                    }
+                                    { "$add": [{ "$floor": { "$field": "steps" } }, 1] }
                                   ]
                                 }
                               },
-                              {
-                                "$add": [
-                                  {
-                                    "$floor": {
-                                      "$field": "steps"
-                                    }
-                                  },
-                                  1
-                                ]
-                              }
+                              { "$add": [{ "$floor": { "$field": "steps" } }, 1] }
                             ]
                           }
                         ]
@@ -444,40 +263,21 @@
                                     {
                                       "$clamp": [
                                         {
-                                          "$if": {
-                                            "$eq": ["type", "range"]
-                                          },
+                                          "$if": { "$eq": ["type", "range"] },
                                           "then": {
                                             "$field": "valueEnd",
                                             "default": 0.8
                                           },
-                                          "else": {
-                                            "$field": "value",
-                                            "default": 0.5
-                                          }
+                                          "else": { "$field": "value", "default": 0.5 }
                                         },
                                         0,
                                         1
                                       ]
                                     },
                                     {
-                                      "$if": {
-                                        "$gte": [
-                                          {
-                                            "$field": "steps"
-                                          },
-                                          1
-                                        ]
-                                      },
+                                      "$if": { "$gte": [{ "$field": "steps" }, 1] },
                                       "then": {
-                                        "$add": [
-                                          {
-                                            "$floor": {
-                                              "$field": "steps"
-                                            }
-                                          },
-                                          1
-                                        ]
+                                        "$add": [{ "$floor": { "$field": "steps" } }, 1]
                                       },
                                       "else": 1000000000
                                     }
@@ -485,41 +285,15 @@
                                 }
                               },
                               {
-                                "$if": {
-                                  "$gte": [
-                                    {
-                                      "$field": "steps"
-                                    },
-                                    1
-                                  ]
-                                },
+                                "$if": { "$gte": [{ "$field": "steps" }, 1] },
                                 "then": {
-                                  "$add": [
-                                    {
-                                      "$floor": {
-                                        "$field": "steps"
-                                      }
-                                    },
-                                    1
-                                  ]
+                                  "$add": [{ "$floor": { "$field": "steps" } }, 1]
                                 },
                                 "else": 1000000000
                               }
                             ]
                           },
-                          {
-                            "$sub": [
-                              {
-                                "$sub": [
-                                  {
-                                    "$size": "width"
-                                  },
-                                  4
-                                ]
-                              },
-                              16
-                            ]
-                          }
+                          { "$sub": [{ "$sub": [{ "$size": "width" }, 4] }, 16] }
                         ]
                       }
                     ]
@@ -534,40 +308,18 @@
                                 {
                                   "$clamp": [
                                     {
-                                      "$if": {
-                                        "$eq": ["type", "range"]
-                                      },
-                                      "then": {
-                                        "$field": "valueEnd",
-                                        "default": 0.8
-                                      },
-                                      "else": {
-                                        "$field": "value",
-                                        "default": 0.5
-                                      }
+                                      "$if": { "$eq": ["type", "range"] },
+                                      "then": { "$field": "valueEnd", "default": 0.8 },
+                                      "else": { "$field": "value", "default": 0.5 }
                                     },
                                     0,
                                     1
                                   ]
                                 },
                                 {
-                                  "$if": {
-                                    "$gte": [
-                                      {
-                                        "$field": "steps"
-                                      },
-                                      1
-                                    ]
-                                  },
+                                  "$if": { "$gte": [{ "$field": "steps" }, 1] },
                                   "then": {
-                                    "$add": [
-                                      {
-                                        "$floor": {
-                                          "$field": "steps"
-                                        }
-                                      },
-                                      1
-                                    ]
+                                    "$add": [{ "$floor": { "$field": "steps" } }, 1]
                                   },
                                   "else": 1000000000
                                 }
@@ -575,83 +327,40 @@
                             }
                           },
                           {
-                            "$if": {
-                              "$gte": [
-                                {
-                                  "$field": "steps"
-                                },
-                                1
-                              ]
-                            },
-                            "then": {
-                              "$add": [
-                                {
-                                  "$floor": {
-                                    "$field": "steps"
-                                  }
-                                },
-                                1
-                              ]
-                            },
+                            "$if": { "$gte": [{ "$field": "steps" }, 1] },
+                            "then": { "$add": [{ "$floor": { "$field": "steps" } }, 1] },
                             "else": 1000000000
                           }
                         ]
                       },
-                      {
-                        "$sub": [
-                          {
-                            "$size": "width"
-                          },
-                          4
-                        ]
-                      }
+                      { "$sub": [{ "$size": "width" }, 4] }
                     ]
                   }
                 }
               ]
             },
             "height": "fill",
-            "layout": {
-              "type": "none"
-            },
+            "layout": { "type": "none" },
             "children": [
               {
                 "type": "rect",
                 "name": "trilho inativo",
                 "height": 16,
-                "anchors": {
-                  "centerY": true,
-                  "left": 8,
-                  "right": 0
-                },
+                "anchors": { "centerY": true, "left": 8, "right": 0 },
                 "cornerRadius": [
-                  {
-                    "$token": "corner-track-inside"
-                  },
-                  {
-                    "$token": "corner-track-outer"
-                  },
-                  {
-                    "$token": "corner-track-outer"
-                  },
-                  {
-                    "$token": "corner-track-inside"
-                  }
+                  { "$token": "corner-track-inside" },
+                  { "$token": "corner-track-outer" },
+                  { "$token": "corner-track-outer" },
+                  { "$token": "corner-track-inside" }
                 ],
                 "fill": {
-                  "$if": {
-                    "$eq": ["enabled", "false"]
-                  },
+                  "$if": { "$eq": ["enabled", "false"] },
                   "then": {
                     "$token": "on-surface",
-                    "alpha": {
-                      "$token": "state-disabled-container"
-                    },
+                    "alpha": { "$token": "state-disabled-container" },
                     "over": "surface"
                   },
-                  "else": {
-                    "$token": "secondary-container"
-                  }
+                  "else": { "$token": "secondary-container" }
                 }
               },
               {
@@ -661,19 +370,11 @@
                 "width": {
                   "$if": {
                     "$and": [
-                      {
-                        "$not": {
-                          "$eq": ["enabled", "false"]
-                        }
-                      },
+                      { "$not": { "$eq": ["enabled", "false"] } },
                       {
                         "$or": [
-                          {
-                            "$eq": ["interaction", "focused"]
-                          },
-                          {
-                            "$eq": ["interaction", "pressed"]
-                          }
+                          { "$eq": ["interaction", "focused"] },
+                          { "$eq": ["interaction", "pressed"] }
                         ]
                       }
                     ]
@@ -686,19 +387,11 @@
                   "left": {
                     "$if": {
                       "$and": [
-                        {
-                          "$not": {
-                            "$eq": ["enabled", "false"]
-                          }
-                        },
+                        { "$not": { "$eq": ["enabled", "false"] } },
                         {
                           "$or": [
-                            {
-                              "$eq": ["interaction", "focused"]
-                            },
-                            {
-                              "$eq": ["interaction", "pressed"]
-                            }
+                            { "$eq": ["interaction", "focused"] },
+                            { "$eq": ["interaction", "pressed"] }
                           ]
                         }
                       ]
@@ -707,23 +400,15 @@
                     "else": -2
                   }
                 },
-                "cornerRadius": {
-                  "$token": "corner-full"
-                },
+                "cornerRadius": { "$token": "corner-full" },
                 "fill": {
-                  "$if": {
-                    "$eq": ["enabled", "false"]
-                  },
+                  "$if": { "$eq": ["enabled", "false"] },
                   "then": {
                     "$token": "on-surface",
-                    "alpha": {
-                      "$token": "state-disabled-content"
-                    },
+                    "alpha": { "$token": "state-disabled-content" },
                     "over": "surface"
                   },
-                  "else": {
-                    "$token": "primary"
-                  }
+                  "else": { "$token": "primary" }
                 }
               }
             ]
@@ -734,53 +419,17 @@
         "type": "repeat",
         "name": "marcas",
         "count": {
-          "$add": [
-            {
-              "$max": [
-                {
-                  "$floor": {
-                    "$field": "steps",
-                    "default": 0
-                  }
-                },
-                0
-              ]
-            },
-            2
-          ]
+          "$add": [{ "$max": [{ "$floor": { "$field": "steps", "default": 0 } }, 0] }, 2]
         },
         "direction": "row",
         "gap": {
           "$sub": [
             {
               "$div": [
+                { "$sub": [{ "$size": "width" }, 20] },
                 {
-                  "$sub": [
-                    {
-                      "$size": "width"
-                    },
-                    20
-                  ]
-                },
-                {
-                  "$if": {
-                    "$gte": [
-                      {
-                        "$field": "steps"
-                      },
-                      1
-                    ]
-                  },
-                  "then": {
-                    "$add": [
-                      {
-                        "$floor": {
-                          "$field": "steps"
-                        }
-                      },
-                      1
-                    ]
-                  },
+                  "$if": { "$gte": [{ "$field": "steps" }, 1] },
+                  "then": { "$add": [{ "$floor": { "$field": "steps" } }, 1] },
                   "else": 1
                 }
               ]
@@ -793,9 +442,7 @@
           "name": "posição",
           "width": 4,
           "height": 4,
-          "layout": {
-            "type": "none"
-          },
+          "layout": { "type": "none" },
           "children": [
             {
               "type": "ellipse",
@@ -803,83 +450,40 @@
               "width": 4,
               "height": 4,
               "fill": {
-                "$if": {
-                  "$eq": ["enabled", "false"]
-                },
+                "$if": { "$eq": ["enabled", "false"] },
                 "then": {
                   "$token": "on-surface",
-                  "alpha": {
-                    "$token": "state-disabled-container"
-                  },
+                  "alpha": { "$token": "state-disabled-container" },
                   "over": "surface"
                 },
-                "else": {
-                  "$token": "secondary-container"
-                }
+                "else": { "$token": "secondary-container" }
               },
               "visible": {
                 "$and": [
-                  {
-                    "$gte": [
-                      {
-                        "$field": "steps"
-                      },
-                      1
-                    ]
-                  },
+                  { "$gte": [{ "$field": "steps" }, 1] },
                   {
                     "$gt": [
+                      { "$field": "$index" },
                       {
-                        "$field": "$index"
-                      },
-                      {
-                        "$if": {
-                          "$eq": ["type", "range"]
-                        },
+                        "$if": { "$eq": ["type", "range"] },
                         "then": {
-                          "$if": {
-                            "$gte": [
-                              {
-                                "$field": "steps"
-                              },
-                              1
-                            ]
-                          },
+                          "$if": { "$gte": [{ "$field": "steps" }, 1] },
                           "then": {
                             "$round": {
                               "$mul": [
                                 {
                                   "$clamp": [
-                                    {
-                                      "$field": "valueStart",
-                                      "default": 0.2
-                                    },
+                                    { "$field": "valueStart", "default": 0.2 },
                                     0,
                                     1
                                   ]
                                 },
-                                {
-                                  "$add": [
-                                    {
-                                      "$floor": {
-                                        "$field": "steps"
-                                      }
-                                    },
-                                    1
-                                  ]
-                                }
+                                { "$add": [{ "$floor": { "$field": "steps" } }, 1] }
                               ]
                             }
                           },
                           "else": {
-                            "$clamp": [
-                              {
-                                "$field": "valueStart",
-                                "default": 0.2
-                              },
-                              0,
-                              1
-                            ]
+                            "$clamp": [{ "$field": "valueStart", "default": 0.2 }, 0, 1]
                           }
                         },
                         "else": -1
@@ -888,67 +492,33 @@
                   },
                   {
                     "$lt": [
+                      { "$field": "$index" },
                       {
-                        "$field": "$index"
-                      },
-                      {
-                        "$if": {
-                          "$gte": [
-                            {
-                              "$field": "steps"
-                            },
-                            1
-                          ]
-                        },
+                        "$if": { "$gte": [{ "$field": "steps" }, 1] },
                         "then": {
                           "$round": {
                             "$mul": [
                               {
                                 "$clamp": [
                                   {
-                                    "$if": {
-                                      "$eq": ["type", "range"]
-                                    },
-                                    "then": {
-                                      "$field": "valueEnd",
-                                      "default": 0.8
-                                    },
-                                    "else": {
-                                      "$field": "value",
-                                      "default": 0.5
-                                    }
+                                    "$if": { "$eq": ["type", "range"] },
+                                    "then": { "$field": "valueEnd", "default": 0.8 },
+                                    "else": { "$field": "value", "default": 0.5 }
                                   },
                                   0,
                                   1
                                 ]
                               },
-                              {
-                                "$add": [
-                                  {
-                                    "$floor": {
-                                      "$field": "steps"
-                                    }
-                                  },
-                                  1
-                                ]
-                              }
+                              { "$add": [{ "$floor": { "$field": "steps" } }, 1] }
                             ]
                           }
                         },
                         "else": {
                           "$clamp": [
                             {
-                              "$if": {
-                                "$eq": ["type", "range"]
-                              },
-                              "then": {
-                                "$field": "valueEnd",
-                                "default": 0.8
-                              },
-                              "else": {
-                                "$field": "value",
-                                "default": 0.5
-                              }
+                              "$if": { "$eq": ["type", "range"] },
+                              "then": { "$field": "valueEnd", "default": 0.8 },
+                              "else": { "$field": "value", "default": 0.5 }
                             },
                             0,
                             1
@@ -966,19 +536,13 @@
               "width": 4,
               "height": 4,
               "fill": {
-                "$if": {
-                  "$eq": ["enabled", "false"]
-                },
+                "$if": { "$eq": ["enabled", "false"] },
                 "then": {
                   "$token": "on-surface",
-                  "alpha": {
-                    "$token": "state-disabled-content"
-                  },
+                  "alpha": { "$token": "state-disabled-content" },
                   "over": "surface"
                 },
-                "else": {
-                  "$token": "primary"
-                }
+                "else": { "$token": "primary" }
               },
               "visible": {
                 "$and": [
@@ -986,54 +550,28 @@
                     "$or": [
                       {
                         "$lt": [
+                          { "$field": "$index" },
                           {
-                            "$field": "$index"
-                          },
-                          {
-                            "$if": {
-                              "$eq": ["type", "range"]
-                            },
+                            "$if": { "$eq": ["type", "range"] },
                             "then": {
-                              "$if": {
-                                "$gte": [
-                                  {
-                                    "$field": "steps"
-                                  },
-                                  1
-                                ]
-                              },
+                              "$if": { "$gte": [{ "$field": "steps" }, 1] },
                               "then": {
                                 "$round": {
                                   "$mul": [
                                     {
                                       "$clamp": [
-                                        {
-                                          "$field": "valueStart",
-                                          "default": 0.2
-                                        },
+                                        { "$field": "valueStart", "default": 0.2 },
                                         0,
                                         1
                                       ]
                                     },
-                                    {
-                                      "$add": [
-                                        {
-                                          "$floor": {
-                                            "$field": "steps"
-                                          }
-                                        },
-                                        1
-                                      ]
-                                    }
+                                    { "$add": [{ "$floor": { "$field": "steps" } }, 1] }
                                   ]
                                 }
                               },
                               "else": {
                                 "$clamp": [
-                                  {
-                                    "$field": "valueStart",
-                                    "default": 0.2
-                                  },
+                                  { "$field": "valueStart", "default": 0.2 },
                                   0,
                                   1
                                 ]
@@ -1045,67 +583,33 @@
                       },
                       {
                         "$gt": [
+                          { "$field": "$index" },
                           {
-                            "$field": "$index"
-                          },
-                          {
-                            "$if": {
-                              "$gte": [
-                                {
-                                  "$field": "steps"
-                                },
-                                1
-                              ]
-                            },
+                            "$if": { "$gte": [{ "$field": "steps" }, 1] },
                             "then": {
                               "$round": {
                                 "$mul": [
                                   {
                                     "$clamp": [
                                       {
-                                        "$if": {
-                                          "$eq": ["type", "range"]
-                                        },
-                                        "then": {
-                                          "$field": "valueEnd",
-                                          "default": 0.8
-                                        },
-                                        "else": {
-                                          "$field": "value",
-                                          "default": 0.5
-                                        }
+                                        "$if": { "$eq": ["type", "range"] },
+                                        "then": { "$field": "valueEnd", "default": 0.8 },
+                                        "else": { "$field": "value", "default": 0.5 }
                                       },
                                       0,
                                       1
                                     ]
                                   },
-                                  {
-                                    "$add": [
-                                      {
-                                        "$floor": {
-                                          "$field": "steps"
-                                        }
-                                      },
-                                      1
-                                    ]
-                                  }
+                                  { "$add": [{ "$floor": { "$field": "steps" } }, 1] }
                                 ]
                               }
                             },
                             "else": {
                               "$clamp": [
                                 {
-                                  "$if": {
-                                    "$eq": ["type", "range"]
-                                  },
-                                  "then": {
-                                    "$field": "valueEnd",
-                                    "default": 0.8
-                                  },
-                                  "else": {
-                                    "$field": "value",
-                                    "default": 0.5
-                                  }
+                                  "$if": { "$eq": ["type", "range"] },
+                                  "then": { "$field": "valueEnd", "default": 0.8 },
+                                  "else": { "$field": "value", "default": 0.5 }
                                 },
                                 0,
                                 1
@@ -1118,25 +622,9 @@
                   },
                   {
                     "$or": [
-                      {
-                        "$gte": [
-                          {
-                            "$field": "steps"
-                          },
-                          1
-                        ]
-                      },
-                      {
-                        "$eq": ["type", "range"]
-                      },
-                      {
-                        "$gte": [
-                          {
-                            "$field": "$index"
-                          },
-                          1
-                        ]
-                      }
+                      { "$gte": [{ "$field": "steps" }, 1] },
+                      { "$eq": ["type", "range"] },
+                      { "$gte": [{ "$field": "$index" }, 1] }
                     ]
                   }
                 ]
@@ -1144,10 +632,7 @@
             }
           ]
         },
-        "anchors": {
-          "left": 8,
-          "centerY": true
-        },
+        "anchors": { "left": 8, "centerY": true },
         "height": 4
       }
     ]
