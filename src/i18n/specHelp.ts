@@ -1200,7 +1200,7 @@ const ptBR: readonly HelpSection[] = [
         items: [
           'Os avisos aparecem na ordem removed, deprecated, diverges, pending e, dentro do mesmo kind, na ordem do arquivo. Dois avisos com o mesmo kind e a mesma message na lista são o erro aviso repetido.',
           'O aviso só informa: nenhum, nem removed, impede importar a especialização, aplicá-la, criar uma anotação do tipo ou aceitar uma proposta. Também não é pendência: a janela Incompletas não muda. Os Detalhes mostram o aviso do campo mesmo vazio; a janela Avisos e a contagem só contam o campo com valor.',
-          'Fora do contrato de versão: incluir, mudar ou tirar notices é compatível e nunca pede migração. Quem gera a especialização pode regravar todos os avisos a cada rodada; o aviso some sozinho quando a diferença entre as fontes some. Atualizar a especialização só por avisos não mostra impacto.',
+          'Fora do contrato de versão: incluir, mudar ou tirar notices é compatível e nunca pede migração. Quem gera a especialização regrava a cada rodada todos os avisos da sua origem (o mesmo ref) e não toca nos outros; o aviso curado à mão só sai quando o autor revê o doc. O aviso gerado some sozinho quando a diferença entre as fontes some. Atualizar a especialização só por avisos não mostra impacto.',
         ],
       },
     ],
@@ -2053,7 +2053,7 @@ const enUS: readonly HelpSection[] = [
         items: [
           'Notices are shown in the order removed, deprecated, diverges, pending and, within the same kind, in file order. Two notices with the same kind and message in the list are the error aviso repetido.',
           "A notice only informs: none, not even removed, prevents importing the specialization, applying it, creating an annotation of the type or accepting a proposal. It is not an incompleteness either: the Incomplete window does not change. The Details show a field's notice even when it is empty; the Notices window and the count only include a field that has a value.",
-          'Outside the version contract: adding, changing or removing notices is compatible and never asks for a migration. Whoever generates the specialization may rewrite all notices on every run; a notice disappears by itself when the difference between the sources disappears. Updating the specialization only through notices shows no impact.',
+          'Outside the version contract: adding, changing or removing notices is compatible and never asks for a migration. Whoever generates the specialization rewrites on every run all notices of its own origin (the same ref) and leaves the others alone; a hand-curated notice only goes when its author reviews the doc. A generated notice disappears by itself when the difference between the sources disappears. Updating the specialization only through notices shows no impact.',
         ],
       },
     ],
