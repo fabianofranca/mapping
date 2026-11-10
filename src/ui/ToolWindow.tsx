@@ -1,4 +1,5 @@
 import type { ComponentChildren } from 'preact';
+import { isTypingField } from '../app/shortcuts';
 import { t } from '../i18n';
 import {
   WINDOW_SIDE,
@@ -14,6 +15,7 @@ import {
 } from '../store/toolWindows';
 import { BottomTabs } from './BottomTabs';
 import { IconButton } from './controls';
+import { modalOpen } from './focus';
 import { closeToolWindow, spaceFor } from './toolWindowLayout';
 import { toolWindowMeta } from './toolWindowMeta';
 
@@ -39,6 +41,23 @@ function windowStyle(side: ToolWindowSide, size: number, stacked: boolean) {
   return stacked ? { height: `${layersWindowHeight.value}px` } : undefined;
 }
 
+/** Janelas que o Esc fecha quando o foco está dentro delas (etapa #1273, decisão 2). */
+const ESC_CLOSES: readonly ToolWindowId[] = ['details', 'comments'];
+
+/**
+ * Esc sem modificadores, não consumido por um menu, popover ou dica, sem modal aberto e fora de
+ * um campo de texto (o Esc do campo é dele): fecha a janela pelo mesmo caminho do X e não deixa
+ * o Esc chegar aos atalhos do editor (não limpa a seleção).
+ */
+function closeOnEscape(id: ToolWindowId, e: KeyboardEvent): void {
+  if (!ESC_CLOSES.includes(id) || e.key !== 'Escape') return;
+  if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey || e.defaultPrevented) return;
+  if (modalOpen.peek() !== 0 || isTypingField(e.target)) return;
+  e.preventDefault();
+  e.stopPropagation();
+  closeToolWindow(id);
+}
+
 export function ToolWindow({ id, actions, stacked = false, children }: ToolWindowProps) {
   const side = WINDOW_SIDE[id];
   const title = toolWindowMeta(id).title();
@@ -51,6 +70,7 @@ export function ToolWindow({ id, actions, stacked = false, children }: ToolWindo
       data-side={side}
       data-window={id}
       tabIndex={-1}
+      onKeyDown={(e) => closeOnEscape(id, e)}
     >
       <ToolResizer side={side} name={title} />
       {stacked && <ToolSplitter name={title} />}

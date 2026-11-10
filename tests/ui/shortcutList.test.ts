@@ -105,6 +105,14 @@ describe('lista de atalhos da Ajuda (P10)', () => {
     expect(row?.label).toBe(t('shortcuts.selectRect'));
   });
 
+  it('lista o Esc que fecha Detalhes ou Comentários, logo depois do Esc da seleção', () => {
+    const edit = groups.find((g) => g.id === 'edit');
+    const labels = edit?.rows.map((r) => r.label) ?? [];
+    const at = labels.indexOf(t('shortcuts.escape'));
+    expect(labels[at + 1]).toBe(t('shortcuts.escapeWindow'));
+    expect(edit?.rows[at + 1]?.combos.map(comboText)).toEqual(['Esc']);
+  });
+
   it('nenhuma linha vazia e nenhum texto repetido', () => {
     const labels = groups.flatMap((g) => g.rows.map((r) => r.label));
     expect(new Set(labels).size).toBe(labels.length);
