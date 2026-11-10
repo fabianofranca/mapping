@@ -409,7 +409,7 @@
             r.kind,
             'PH',
             'FL',
-            r.step,
+            r.ciWait ? (r.step ? r.step + ' · CI: ' : 'CI: ') + r.ciWait : r.step,
             null,
             r.pr,
             '',
