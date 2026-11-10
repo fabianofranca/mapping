@@ -4,6 +4,12 @@
 // nos `*Tokens.kt` do commit fixado), pelo `stroke.offset`. A `version` sobe uma vez (4 → 5), de forma aditiva.
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
+import {
+  findSlot,
+  layoutChildren,
+  resolveSlotLayout,
+} from '../../src/model/components/arrange';
+import { defaultValues } from '../../src/model/libraryDrawing';
 import type { FrameNode, SceneNode } from '../../src/model/components/scene';
 import { validateLibrary } from '../../src/model/library';
 import type { Spec } from '../../src/model/spec';
@@ -187,6 +193,22 @@ describe('anel de foco no interaction: focused (A15, pelo stroke.offset)', () =>
     });
   }
 
+  it('o card outlined não tem anel (o OutlinedCardTokens.kt não define FocusIndicatorColor)', () => {
+    for (const mode of MODES) {
+      const drawn = drawIn(
+        catalog,
+        entryOf('card'),
+        {
+          ...(entryOf('card').previewValues ?? {}),
+          style: 'outlined',
+          interaction: 'focused',
+        },
+        mode,
+      );
+      expect(rings(drawn.root)).toEqual([]);
+    }
+  });
+
   it('o recorte da raiz alarga 5 de cada lado em focused quando a raiz recorta, e não alarga em none', () => {
     for (const id of ['card', 'list-item']) {
       const none = drawIn(
@@ -220,6 +242,38 @@ describe('anel de foco no interaction: focused (A15, pelo stroke.offset)', () =>
       if (a.clip !== undefined) expect(a.clip.x).toBeGreaterThan(-5);
     }
   });
+});
+
+describe('reverseLayout liga o layout.reverse: a ordem se inverte e o bloco fica no fim do eixo', () => {
+  const CASES: [string, 'x' | 'y'][] = [
+    ['lazy-column', 'y'],
+    ['lazy-row', 'x'],
+    ['horizontal-pager', 'x'],
+  ];
+  for (const [id, axis] of CASES) {
+    it(`${id}: com reverseLayout a primeira filha vai para o fim, sem ele para o começo`, () => {
+      const e = entryOf(id);
+      const slot = { x: 0, y: 0, width: 400, height: 400 };
+      const kids = [1, 2, 3].map(() => ({ box: { x: 0, y: 0, width: 50, height: 50 } }));
+      const place = (reverseLayout: string) => {
+        const layout = resolveSlotLayout(findSlot(e.component!)!, {
+          ...defaultValues(e.type),
+          reverseLayout,
+        });
+        return { layout, boxes: layoutChildren(slot, layout, kids) };
+      };
+      const off = place('false');
+      const on = place('true');
+      expect(on.layout.reverse).toBe(true);
+      expect(off.layout.reverse).toBe(false);
+      const size = axis === 'x' ? 'width' : 'height';
+      const end = (axis === 'x' ? on.layout.padding.right : on.layout.padding.bottom) + 0;
+      // a primeira filha encosta no fim do eixo e a última fica mais perto do começo
+      expect(on.boxes[0]![axis] + on.boxes[0]![size]).toBe(400 - end);
+      expect(on.boxes[0]![axis]).toBeGreaterThan(on.boxes[2]![axis]);
+      expect(off.boxes[0]![axis]).toBeLessThan(off.boxes[2]![axis]);
+    });
+  }
 });
 
 describe('atualização da biblioteca (version 4 → 5)', () => {
