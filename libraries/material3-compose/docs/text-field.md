@@ -91,6 +91,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - Texto de apoio `body-small`, a 4 do campo e com 16 dos lados. Cor `on-surface-variant`, `error` em erro.
 - Ícone inicial `on-surface-variant` (também em erro, como `errorLeadingIconColor`); ícone final `on-surface-variant`, `error` em erro.
 - Desabilitado: rótulo, valor, dica, apoio e ícones em `on-surface` a 0,38 (`state-disabled-content`); indicador do filled em `on-surface` a 0,38; contorno do outlined em `on-surface` a 0,12 (`state-disabled-container`). O desabilitado vence o erro.
+- Rótulo (o grande e o minimizado), dica e valor de uma linha centram pela altura da maiúscula (`font.verticalAlign: "cap-middle"`; o valor só com `singleLine`, o multilinha segue no topo). O `Text` do Compose centra pela caixa de linha da fonte; com Roboto as duas coincidem a menos de 1 px.
 
 **Estado de interação (campo `interaction`)**
 

@@ -76,6 +76,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 
 - Tudo o que o `text-field` desenha: campo de 56, filled com fundo `surface-container-highest`, raio superior `corner-extra-small` e indicador de 1 só embaixo por `stroke.sides: ["bottom"]`; outlined com contorno de 1, raio `corner-extra-small`, 8 de cima do rótulo e vão de verdade no contorno; rótulo `body-large` ou `body-small` minimizado; apoio `body-small`; ícones de 24 pelo nó `icon`; cores de erro e desabilitado (0,38 e 0,12) iguais.
 - Texto digitado: com `hasText`, oito `•` em `body-large` e `on-surface`, numa linha só, sem quebra nem reticências (o campo seguro é sempre `SingleLine`) e recortado na largura. Sem `hasText`, aparece a dica (rótulo minimizado) ou só o rótulo expandido.
+- Rótulo (o grande e o minimizado), dica e os oito `•` do valor centram pela altura da maiúscula (`font.verticalAlign: "cap-middle"`). O `Text` do Compose centra pela caixa de linha da fonte; com Roboto as duas coincidem a menos de 1 px.
 
 **Estado de interação (campo `interaction`)**
 

@@ -266,7 +266,7 @@
           "centerY": true
         },
         "width": "hug",
-        "height": "hug",
+        "height": "fill",
         "layout": {
           "type": "row",
           "gap": 8,
@@ -540,7 +540,8 @@
               },
               "letterSpacing": {
                 "$token": "label-large-tracking"
-              }
+              },
+              "verticalAlign": "cap-middle"
             },
             "color": {
               "$if": {
@@ -589,7 +590,8 @@
                 "$token": "state-disabled-content"
               },
               "else": 1
-            }
+            },
+            "height": "fill"
           }
         ]
       }

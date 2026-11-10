@@ -737,7 +737,8 @@
                             "else": {
                               "$token": "body-large-tracking"
                             }
-                          }
+                          },
+                          "verticalAlign": "cap-middle"
                         },
                         "color": {
                           "$if": {
@@ -877,6 +878,11 @@
                                 "else": {
                                   "$field": "maxLines"
                                 }
+                              },
+                              "verticalAlign": {
+                                "$if": { "$eq": ["singleLine", "true"] },
+                                "then": "cap-middle",
+                                "else": "top"
                               }
                             },
                             "color": {
@@ -919,7 +925,8 @@
                           },
                           "letterSpacing": {
                             "$token": "body-large-tracking"
-                          }
+                          },
+                          "verticalAlign": "cap-middle"
                         },
                         "color": {
                           "$if": {
@@ -1326,7 +1333,8 @@
                       },
                       "letterSpacing": {
                         "$token": "body-small-tracking"
-                      }
+                      },
+                      "verticalAlign": "cap-middle"
                     },
                     "color": {
                       "$if": {

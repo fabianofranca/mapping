@@ -95,6 +95,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - Filter selecionado sem `leadingIcon` desenha o check (`done`), que é o costume do Compose para o filtro marcado; com `leadingIcon` preenchido, desenha o ícone escolhido, como o Compose (que desenha só o que recebe).
 - Desabilitado: rótulo e ícones em `on-surface` com a opacidade `state-disabled-content` (0,38); o contêiner dos elevated e dos selecionados em `on-surface` com `state-disabled-container` (0,12); o contorno dos planos não selecionados em `on-surface` com 0,12; sem sombra.
 - Os ícones são nós `icon` do conjunto da biblioteca, com o `$switch` do nome do Compose para o nome do conjunto, cobrindo as sugestões de `leadingIcon` e `trailingIcon`.
+- Rótulo de uma linha centrado pela maiúscula (`cap-middle`): o nó `rótulo` usa `font.verticalAlign: "cap-middle"` e ocupa a altura da caixa (`height: "fill"`), sem mudar a posição horizontal. O `Text` do Compose centra pela caixa de linha da fonte (ascent e descent); o desenho centra a altura da maiúscula na caixa, e com o Roboto as duas coincidem a menos de 1 px.
 
 **Estado de interação (campo `interaction`)**
 

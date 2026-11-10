@@ -171,7 +171,8 @@
                       "$token": "label-large-tracking"
                     },
                     "maxLines": 1,
-                    "ellipsis": true
+                    "ellipsis": true,
+                    "verticalAlign": "cap-middle"
                   },
                   "visible": {
                     "$has": "label"

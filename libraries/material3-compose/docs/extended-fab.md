@@ -60,6 +60,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - O texto lê `label-large-size`, `label-large-line-height`, `label-large-weight` e `label-large-tracking`, sem `family`; o texto e o ícone usam a cor de conteúdo do `contentColorFor` (`primary-container` -> `on-primary-container`…).
 - O ícone é o nó `icon`, com o `$switch` do nome do Compose para o nome do conjunto, cobrindo as sugestões do campo.
 - Estrutura do desenho: a raiz tem fundo, forma e sombra e guarda os nós de estado e o quadro `conteúdo` (a linha com o ícone e o texto, centralizada), para a camada de estado cobrir o botão inteiro sem entrar na linha; a posição do ícone e do texto é a de antes.
+- Rótulo de uma linha centrado pela maiúscula (`cap-middle`): o nó `texto` (e o quadro `conteúdo`, que passa a ocupar a altura da caixa) usa `font.verticalAlign: "cap-middle"` e ocupa a altura da caixa (`height: "fill"`), sem mudar a posição horizontal. O `Text` do Compose centra pela caixa de linha da fonte (ascent e descent); o desenho centra a altura da maiúscula na caixa, e com o Roboto as duas coincidem a menos de 1 px.
 
 **Estado de interação (campo `interaction`)**
 

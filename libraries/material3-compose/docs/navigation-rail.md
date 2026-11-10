@@ -97,6 +97,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - Wide recolhida: folha de 96 em `surface`, 44 de topo, destinos de 64 com 4 entre eles, o indicador de 56 × 32 a 20 da borda e o conteúdo (indicador, ícone, rótulo em `label-medium`) no topo do item.
 - Wide expandida: largura de no mínimo 220 e no máximo 360, que cresce com a pílula mais larga mais 20 (`hug` com `minWidth` e `maxWidth`); itens de 56 sem espaço entre eles; a pílula de 56 de altura em `corner-full` fica a 20 da borda e mede `16 + ícone 24 + 8 + rótulo + 16`, com o rótulo em `label-large` (14 / 20, peso 500, 0,1).
 - Modal expandida: `surface-container` com os quatro cantos de 16 (`corner-large`); recolhida, igual à wide recolhida. Cores como no Compose: ícone `on-secondary-container` selecionado e `on-surface-variant` nos demais, rótulo `secondary` selecionado, indicador `secondary-container`.
+- Rótulo centrado pela maiúscula (`cap-middle`): o nó `rótulo` usa `font.verticalAlign: "cap-middle"`; no destino expandido (ícone ao lado) ocupa a altura do quadro `conteúdo` (`height: "fill"`) e, com o ícone acima, segue `hug` numa coluna. O `Text` do Compose centra pela caixa de linha da fonte (ascent e descent); o desenho centra a altura da maiúscula na caixa, e com o Roboto as duas coincidem a menos de 1 px.
 
 **Estado de interação (campo `interaction`)**
 

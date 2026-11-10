@@ -198,7 +198,8 @@
                         "else": {
                           "$token": "body-large-tracking"
                         }
-                      }
+                      },
+                      "verticalAlign": "cap-middle"
                     },
                     "color": {
                       "$if": {
@@ -249,7 +250,8 @@
                             "$token": "body-large-tracking"
                           },
                           "wrap": "none",
-                          "maxLines": 1
+                          "maxLines": 1,
+                          "verticalAlign": "cap-middle"
                         },
                         "color": {
                           "$token": "on-surface"
@@ -633,7 +635,8 @@
                             },
                             "letterSpacing": {
                               "$token": "label-large-tracking"
-                            }
+                            },
+                            "verticalAlign": "cap-middle"
                           },
                           "color": {
                             "$if": {

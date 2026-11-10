@@ -78,6 +78,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - Os destinos têm a mesma largura (`weight(1f)`), com 8 entre eles e nenhuma margem nas pontas: o `repeat` com `distribute: "fill"` e `gap` 8.
 - Indicador do selecionado de 56 × 32 (`IndicatorHorizontalPadding` 16 e `IndicatorVerticalPadding` 4 em volta do ícone de 24) na forma `corner-full`, em `secondary-container`; o não selecionado não pinta o fundo. O ícone de 24 (nó `icon`) fica no centro do indicador: `on-secondary-container` selecionado, `on-surface-variant` nos demais.
 - Com rótulo, o conteúdo é indicador (a 12 do topo), 4 de espaço e o rótulo em `label-medium` (12 / 16, peso 500, 0,5 de espaçamento): `secondary` selecionado, `on-surface-variant` nos demais. Com `alwaysShowLabel` falso o rótulo some nos não selecionados e o ícone desce para o centro da altura (`unselectedIconY = (height - icon) / 2`, 28); a posição do conteúdo muda com o `justify` e o `padding` por expressão.
+- Rótulo de uma linha centrado pela maiúscula (`cap-middle`): o nó `rótulo` usa `font.verticalAlign: "cap-middle"` e segue `hug` na altura, porque o pai também mede pelo texto; a caixa do texto é a linha, centrada no pai. O `Text` do Compose centra pela caixa de linha da fonte (ascent e descent); o desenho centra a altura da maiúscula na caixa, e com o Roboto as duas coincidem a menos de 1 px.
 
 **Estado de interação (campo `interaction`)**
 

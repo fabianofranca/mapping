@@ -78,7 +78,8 @@
               },
               "letterSpacing": {
                 "$token": "body-small-tracking"
-              }
+              },
+              "verticalAlign": "cap-middle"
             },
             "color": {
               "$token": "inverse-on-surface"
@@ -255,11 +256,13 @@
                       },
                       "letterSpacing": {
                         "$token": "label-large-tracking"
-                      }
+                      },
+                      "verticalAlign": "cap-middle"
                     },
                     "color": {
                       "$token": "primary"
-                    }
+                    },
+                    "height": "fill"
                   }
                 ]
               }

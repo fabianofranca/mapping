@@ -1434,7 +1434,8 @@
               },
               "letterSpacing": {
                 "$token": "label-large-tracking"
-              }
+              },
+              "verticalAlign": "cap-middle"
             },
             "color": {
               "$if": {
@@ -1514,7 +1515,8 @@
                 "$token": "state-disabled-content"
               },
               "else": 1
-            }
+            },
+            "height": "fill"
           },
           {
             "type": "icon",
