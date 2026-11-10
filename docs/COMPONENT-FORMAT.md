@@ -457,6 +457,7 @@ Quase todo atributo aceita, no lugar de um literal, uma **expressão** sobre os 
 | `{ "$if": <condição>, "then": …, "else": … }`                         | `then` se a condição vale; senão `else` (opcional; sem ele vale o padrão do atributo). `then` e `else` são expressões.                                            |
 | `{ "$switch": "variant", "cases": { "a": …, "b": … }, "default": … }` | O caso cujo nome é o valor do campo; `default` (opcional) se não há caso ou o campo está vazio.                                                                   |
 | `{ "$concat": ["R$ ", { "$field": "preco" }] }`                       | Só em texto: junta as partes (números viram texto).                                                                                                               |
+| `{ "$add": […] }`, `{ "$mul": […] }`, `{ "$sin": … }`…                | `formatVersion` 4. Contas de número (veja "Contas e comparações").                                                                                                |
 | `{ "$token": "primary" }`                                             | `formatVersion` 4. O valor do token da especialização no modo do desenho (veja "Tokens de design (`$token`)"). Só onde se espera cor, número ou família de fonte. |
 
 ```json
@@ -469,18 +470,43 @@ Quase todo atributo aceita, no lugar de um literal, uma **expressão** sobre os 
 
 **Condições** (`$if`, `visible`, `italic`): um objeto com **um** operador.
 
-| Condição                          | Verdadeira quando                                                           |
-| --------------------------------- | --------------------------------------------------------------------------- |
-| `{ "$field": "selected" }`        | O campo é "verdadeiro" (veracidade, abaixo).                                |
-| `{ "$eq": ["variant", "ghost"] }` | O campo é igual ao valor (comparado como texto; campo vazio nunca é igual). |
-| `{ "$has": "label" }`             | O campo não está vazio.                                                     |
-| `{ "$not": <condição> }`          | A condição é falsa.                                                         |
-| `{ "$and": [<condição>, …] }`     | Todas valem.                                                                |
-| `{ "$or": [<condição>, …] }`      | Alguma vale.                                                                |
+| Condição                                   | Verdadeira quando                                                                                    |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| `{ "$field": "selected" }`                 | O campo é "verdadeiro" (veracidade, abaixo).                                                         |
+| `{ "$eq": ["variant", "ghost"] }`          | O campo é igual ao valor (comparado como texto; campo vazio nunca é igual).                          |
+| `{ "$has": "label" }`                      | O campo não está vazio.                                                                              |
+| `{ "$not": <condição> }`                   | A condição é falsa.                                                                                  |
+| `{ "$and": [<condição>, …] }`              | Todas valem.                                                                                         |
+| `{ "$or": [<condição>, …] }`               | Alguma vale.                                                                                         |
+| `{ "$gt": [a, b] }`, `$gte`, `$lt`, `$lte` | `formatVersion` 4. Comparação de números; operando sem valor dá falso (veja "Contas e comparações"). |
 
-**`$field` numa condição lê o campo por veracidade**, nunca como texto: o campo é verdadeiro quando não está vazio e o valor, sem diferença de maiúsculas, não é `""`, `"não"`, `"nao"`, `"no"`, `"false"`, `"0"` nem `"off"`; um número é verdadeiro quando diferente de 0. É assim que os booleanos funcionam: **um booleano é um campo `enum` com `["sim", "não"]`**, e `{ "$field": "selected" }` vale `sim`. O mesmo vale em `visible: { "$field": "x" }`. Os operadores `$eq`, `$has`, `$not`, `$and` e `$or` podem aparecer direto em `visible` e `italic`; `$field` fica como expressão.
+**`$field` numa condição lê o campo por veracidade**, nunca como texto: o campo é verdadeiro quando não está vazio e o valor, sem diferença de maiúsculas, não é `""`, `"não"`, `"nao"`, `"no"`, `"false"`, `"0"` nem `"off"`; um número é verdadeiro quando diferente de 0. É assim que os booleanos funcionam: **um booleano é um campo `enum` com `["sim", "não"]`**, e `{ "$field": "selected" }` vale `sim`. O mesmo vale em `visible: { "$field": "x" }`. Os operadores `$eq`, `$has`, `$not`, `$and`, `$or`, `$gt`, `$gte`, `$lt` e `$lte` podem aparecer direto em `visible` e `italic`; `$field` fica como expressão.
 
 Uma expressão que cita um campo que o **tipo não declara** é erro do validador da biblioteca (o desenho não acha o valor); campo do tipo que o desenho não usa é aviso, **a menos que o `code` do tipo o use**: chave de `params` ou de `values`, o `field` de `variants` (ou dos casos dela) ou uma palavra inteira das `notes` (é o caso de `width`, `height`, `weight` e `contentDescription`, que viram modificador ou argumento no código e não mudam o desenho).
+
+### Contas e comparações (`formatVersion` 4)
+
+Na `formatVersion` 4 as expressões **calculam**. Cada operando é uma expressão de número: um literal, `$field`, `$token` numérico, outra operação, `$if` ou `$switch`. As operações valem onde vale um número (tamanhos, `gap`, `padding`, `opacity`, `cornerRadius`, `font.size`…) e dentro de `$concat`.
+
+| Operação                                         | Resultado                                                                      |
+| ------------------------------------------------ | ------------------------------------------------------------------------------ |
+| `{ "$add": [a, b, …] }`, `{ "$mul": [a, b, …] }` | Soma e produto de 2 ou mais operandos.                                         |
+| `{ "$sub": [a, b] }`, `{ "$div": [a, b] }`       | Exatamente 2 operandos.                                                        |
+| `{ "$mod": [a, b] }`                             | Resto com o **sinal do divisor** (`((a % b) + b) % b`): `-1 mod 12` vale `11`. |
+| `{ "$round": a }`, `$floor`, `$ceil`, `$abs`     | Um operando.                                                                   |
+| `{ "$min": [a, b, …] }`, `{ "$max": [a, b, …] }` | O menor e o maior de 2 ou mais.                                                |
+| `{ "$clamp": [valor, mínimo, máximo] }`          | O valor preso ao intervalo.                                                    |
+| `{ "$sin": a }`, `{ "$cos": a }`                 | Seno e cosseno, com `a` em **graus**.                                          |
+
+```json
+{ "width": { "$mul": [{ "$field": "progress" }, 200] } }
+```
+
+- **Sem número, sem valor.** Um operando vazio, ou cujo texto aparado não é número (a vírgula não vale: `"0,5"` não é número), faz a operação **não produzir valor**, como o `$field` vazio sem `default`: vale o padrão do lugar. A divisão e o resto por zero também. O desenho não avisa; o validador recusa o operando **literal** que não é número (`template.width.$add[1]: precisa ser número`) e a aridade errada (`template.width.$sub: precisa de 2 operandos`).
+- **Número no texto.** No `$concat` e no `text`, um número não inteiro sai com até 6 casas, sem zeros à direita (`0.1 + 0.2` vira `0.3`, não `0.30000000000000004`); o inteiro sai como sempre.
+- **Comparações** são condições: `{ "$gt": [a, b] }`, `$gte`, `$lt` e `$lte`, cada uma com dois operandos de número. Valem em `$if`, `visible`, `$and`, `$or` e `$not`; operando sem valor dá **falso**. O `$eq` continua `[campo, valor]`.
+- **Campos citados.** Os campos dentro de uma operação ou comparação contam para o redesenho como em qualquer outra expressão.
+- **Calcule em vez de enumerar.** Não escreva um `$switch` de dezenas de casos sobre um número (nem um `$eq` por valor): use a conta. Numa `formatVersion` menor que 4, cada chave nova é erro `só é permitido com formatVersion 4`, no caminho dela (`template.width.$mul`).
 
 ### Tokens de design (`$token`, `formatVersion` 4)
 
@@ -664,6 +690,7 @@ Quem lê um aviso terminado em **`(aproximado)`** (a prova de desenho do validad
 - **Um slot por componente.** Os filhos de uma instância vão sempre para o primeiro slot do template (busca em profundidade). Vários slots ficam para depois.
 - **Imagem só remota e só no nó `image`.** O arquivo do componente não carrega bitmap; a imagem vem de uma URL `https://` (um campo `string`) e não é gravada no projeto. Imagem local no pacote fica para depois (por isso o caminho relativo é recusado no `src`). Elipse e caminho não aceitam imagem como preenchimento.
 - **`formatVersion` 1, 2, 3 e 4.** A 2 acrescenta só o `repeat`, a 3 só o `image`, a 4 só `stroke.cap`, `stroke.join`, `stroke.sides` e `stroke.offset`, `stroke.dash` por expressão, `$token` em sombra, raios e tracejado, `alpha` no `$token` de cor, `layout.justify` `space-around`/`space-evenly`, `layout.reverse`, `font.wrap`, `font.ellipsis` e `font.maxLines`, a expressão no layout e no tamanho, `minWidth`/`maxWidth`/`minHeight`/`maxHeight`, `repeat.distribute`, `runs` (o texto rico), `$token` (os tokens de design) e o nó `icon` (o conjunto de ícones) (a medição em duas passagens vale em todas), e as anteriores continuam aceitas sem mudança. Mudar o formato do componente pede uma versão nova e a decisão de aceitar as antigas.
+- **Contas só com número, sem datas nem texto.** As operações (`$add`, `$mul`, `$sin`…) e as comparações (`$gt`…) valem só na `formatVersion` 4 do componente e só sobre números: não há função de data (`$weekday`), nem formatação de texto além do número (casas fixas, zero à esquerda, separador de milhar). Um MCP anterior a esta versão recusa a chave nova no caminho dela.
 - Gradiente só `linear`; sombra só uma por nó; borda uma por nó.
 - Listas que viram campos numerados (`label1`, `label2`…) são frágeis: para um dado em forma de tabela (os eventos de uma tela, as propriedades de uma chamada), declare um campo `table` e desenhe-o com `repeat`. Os componentes do Material 3 (a barra de navegação, a folha com N itens) ainda usam campos numerados.
 - O `repeat` não aninha (uma `table` não tem `table` dentro) e não mede a tabela para crescer a marcação: a caixa é da marcação. Um desenho de linha com colunas de largura alinhada entre linhas (uma grade) precisa de larguras fixas ou em `%`; `hug` mede cada linha à parte. Para linhas de alturas iguais que ocupam o espaço do pai, use `distribute: "fill"` (`formatVersion` 4).

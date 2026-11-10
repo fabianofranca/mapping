@@ -10,6 +10,28 @@ import type {
   FieldValues,
 } from './componentFormat';
 
+/** Operações numéricas (formato 4): a chave e a aridade (lista de `min` ou mais, ou fixa). */
+export const NUMERIC_OPS: Readonly<
+  Record<string, { readonly min: number; readonly max: number | null }>
+> = {
+  $add: { min: 2, max: null },
+  $mul: { min: 2, max: null },
+  $min: { min: 2, max: null },
+  $max: { min: 2, max: null },
+  $sub: { min: 2, max: 2 },
+  $div: { min: 2, max: 2 },
+  $mod: { min: 2, max: 2 },
+  $clamp: { min: 3, max: 3 },
+  $round: { min: 1, max: 1 },
+  $floor: { min: 1, max: 1 },
+  $ceil: { min: 1, max: 1 },
+  $abs: { min: 1, max: 1 },
+  $sin: { min: 1, max: 1 },
+  $cos: { min: 1, max: 1 },
+};
+/** Comparações numéricas: `[a, b]`. */
+export const COMPARISON_OPS = ['$gt', '$gte', '$lt', '$lte'] as const;
+
 const FALSY_TEXT = new Set(['', 'não', 'nao', 'false', '0', 'off', 'no']);
 
 /** Vazio: `null`, `undefined`, texto só com espaços ou uma tabela sem linhas. */
@@ -26,7 +48,88 @@ export function truthy(value: FieldValue): boolean {
   return !FALSY_TEXT.has(String(value).trim().toLowerCase());
 }
 
+/** O número de um operando avaliado, ou nenhum: vazio, texto não numérico (a vírgula não vale) e não finito. */
+function toNumber(value: unknown): number | undefined {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
+  if (typeof value !== 'string' || value.trim() === '') return undefined;
+  const n = Number(value.trim());
+  return Number.isFinite(n) ? n : undefined;
+}
+
+/** Arredonda o ruído de ponto flutuante da trigonometria (`cos(90°)` vale 0, não 6e-17). */
+function snap(n: number): number {
+  return Math.round(n * 1e12) / 1e12 + 0;
+}
+
+const RAD = Math.PI / 180;
+
+type NumericFn = (n: readonly number[]) => number | undefined;
+
+const NUMERIC_FNS: Readonly<Record<string, NumericFn>> = {
+  $add: (n) => n.reduce((x, y) => x + y, 0),
+  $mul: (n) => n.reduce((x, y) => x * y, 1),
+  $min: (n) => Math.min(...n),
+  $max: (n) => Math.max(...n),
+  $sub: ([a, b]) => (a as number) - (b as number),
+  $div: ([a, b]) => (b === 0 ? undefined : (a as number) / (b as number)),
+  $mod: ([a, b]) =>
+    b === 0
+      ? undefined
+      : (((a as number) % (b as number)) + (b as number)) % (b as number),
+  $clamp: ([a, b, c]) => Math.min(Math.max(a as number, b as number), c as number),
+  $round: ([a]) => Math.round(a as number),
+  $floor: ([a]) => Math.floor(a as number),
+  $ceil: ([a]) => Math.ceil(a as number),
+  $abs: ([a]) => Math.abs(a as number),
+  $sin: ([a]) => snap(Math.sin((a as number) * RAD)),
+  $cos: ([a]) => snap(Math.cos((a as number) * RAD)),
+};
+
+function applyNumeric(op: string, n: readonly number[]): number | undefined {
+  return NUMERIC_FNS[op]?.(n);
+}
+
+/** Avalia uma operação numérica (`$add`…): o número, ou nenhum se algum operando não tem valor. */
+function evaluateNumeric(
+  op: string,
+  operand: unknown,
+  values: FieldValues,
+): number | undefined {
+  const list = Array.isArray(operand) ? (operand as unknown[]) : [operand];
+  const numbers: number[] = [];
+  for (const item of list) {
+    const n = toNumber(evaluate<unknown>(item as Expr<unknown>, values, undefined));
+    if (n === undefined) return undefined;
+    numbers.push(n);
+  }
+  const result = applyNumeric(op, numbers);
+  return result !== undefined && Number.isFinite(result) ? result : undefined;
+}
+
+function compare(op: string, operand: unknown, values: FieldValues): boolean {
+  if (!Array.isArray(operand)) return false;
+  const [a, b] = operand.map((item) =>
+    toNumber(evaluate<unknown>(item as Expr<unknown>, values, undefined)),
+  );
+  if (a === undefined || b === undefined) return false;
+  if (op === '$gt') return a > b;
+  if (op === '$gte') return a >= b;
+  return op === '$lt' ? a < b : a <= b;
+}
+
+/** Texto de um número: inteiro como é; não inteiro com até 6 casas, sem zeros à direita. */
+export function formatNumber(n: number): string {
+  return Number.isInteger(n) ? String(n) : String(Number(n.toFixed(6)));
+}
+
+function partText(value: unknown): string {
+  return typeof value === 'number' ? formatNumber(value) : String(value);
+}
+
 export function evaluateCondition(condition: Condition, values: FieldValues): boolean {
+  for (const op of COMPARISON_OPS)
+    if (op in condition)
+      return compare(op, (condition as Record<string, unknown>)[op], values);
   if ('$field' in condition) return truthy(values[condition.$field]);
   if ('$eq' in condition) {
     const [field, expected] = condition.$eq;
@@ -38,7 +141,8 @@ export function evaluateCondition(condition: Condition, values: FieldValues): bo
   if ('$not' in condition) return !evaluateCondition(condition.$not, values);
   if ('$and' in condition)
     return condition.$and.every((c) => evaluateCondition(c, values));
-  return condition.$or.some((c) => evaluateCondition(c, values));
+  if ('$or' in condition) return condition.$or.some((c) => evaluateCondition(c, values));
+  return false;
 }
 
 function isExprObject(value: unknown): value is Record<string, unknown> {
@@ -46,7 +150,11 @@ function isExprObject(value: unknown): value is Record<string, unknown> {
     typeof value === 'object' &&
     value !== null &&
     !Array.isArray(value) &&
-    ('$field' in value || '$if' in value || '$switch' in value || '$concat' in value)
+    ('$field' in value ||
+      '$if' in value ||
+      '$switch' in value ||
+      '$concat' in value ||
+      Object.keys(value).some((k) => k in NUMERIC_OPS))
   );
 }
 
@@ -81,13 +189,22 @@ export function evaluate<T>(expr: Expr<T>, values: FieldValues, fallback: T): T 
     if (chosen !== undefined) return evaluate(chosen, values, fallback);
     return e.default === undefined ? fallback : evaluate(e.default, values, fallback);
   }
+  const numericOp = Object.keys(expr).find((k) => k in NUMERIC_OPS);
+  if (numericOp !== undefined) {
+    const n = evaluateNumeric(
+      numericOp,
+      (expr as Record<string, unknown>)[numericOp],
+      values,
+    );
+    return (n === undefined ? fallback : n) as T;
+  }
   const parts = (expr as { $concat: Expr<string | number>[] }).$concat;
   return parts
-    .map((part) => String(evaluate<string | number>(part, values, '')))
+    .map((part) => partText(evaluate<string | number>(part, values, '')))
     .join('') as T;
 }
 
-const CONDITION_KEYS = ['$eq', '$has', '$not', '$and', '$or'];
+const CONDITION_KEYS = ['$eq', '$has', '$not', '$and', '$or', ...COMPARISON_OPS];
 
 function isCondition(value: unknown): value is Condition {
   return (
@@ -135,7 +252,7 @@ export function evaluateText(
   fallback = '',
 ): string {
   const value = evaluate<string | number>(expr, values, fallback);
-  return isEmpty(value) ? fallback : String(value);
+  return isEmpty(value) ? fallback : partText(value);
 }
 
 /**

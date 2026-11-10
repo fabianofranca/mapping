@@ -61,7 +61,12 @@ export type Condition =
   | { readonly $has: string }
   | { readonly $not: Condition }
   | { readonly $and: readonly Condition[] }
-  | { readonly $or: readonly Condition[] };
+  | { readonly $or: readonly Condition[] }
+  /** Comparações numéricas (v4): operando sem valor dá falso. */
+  | { readonly $gt: readonly [Expr<number>, Expr<number>] }
+  | { readonly $gte: readonly [Expr<number>, Expr<number>] }
+  | { readonly $lt: readonly [Expr<number>, Expr<number>] }
+  | { readonly $lte: readonly [Expr<number>, Expr<number>] };
 
 /**
  * Expressão booleana: um literal, uma `Expr<boolean>` ou uma condição direta
@@ -82,6 +87,24 @@ export type Expr<T> =
     }
   /** Só para texto: concatena as partes (números viram texto). */
   | { readonly $concat: readonly Expr<string | number>[] }
+  /**
+   * Só para número (v4): operações aritméticas e trigonométricas (`$sin`/`$cos` em graus). Operando
+   * sem valor (vazio, texto não numérico, divisão por zero) faz a operação não produzir valor.
+   */
+  | { readonly $add: readonly Expr<number>[] }
+  | { readonly $sub: readonly [Expr<number>, Expr<number>] }
+  | { readonly $mul: readonly Expr<number>[] }
+  | { readonly $div: readonly [Expr<number>, Expr<number>] }
+  | { readonly $mod: readonly [Expr<number>, Expr<number>] }
+  | { readonly $round: Expr<number> }
+  | { readonly $floor: Expr<number> }
+  | { readonly $ceil: Expr<number> }
+  | { readonly $abs: Expr<number> }
+  | { readonly $min: readonly Expr<number>[] }
+  | { readonly $max: readonly Expr<number>[] }
+  | { readonly $clamp: readonly [Expr<number>, Expr<number>, Expr<number>] }
+  | { readonly $sin: Expr<number> }
+  | { readonly $cos: Expr<number> }
   /**
    * Valor nomeado da especialização, no modo do desenho (v4; ver `tokens.ts`). Em posição de cor,
    * `alpha` (0 a 1, literal ou `$token` de número) multiplica o alfa da cor.

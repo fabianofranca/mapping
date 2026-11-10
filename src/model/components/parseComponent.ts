@@ -16,7 +16,7 @@ import {
 } from './componentFormat';
 import { checkRemoteImageUrl } from '../remoteImages';
 import { isValidFontFamily } from './fontFamily';
-import { referencedFields } from './expressions';
+import { COMPARISON_OPS, NUMERIC_OPS, referencedFields } from './expressions';
 import { LAYOUT_JUSTIFIES } from './layoutValues';
 import { TOKEN_NAME_PATTERN, type TokenKind } from './tokens';
 import { isRecord } from '../isRecord';
@@ -72,10 +72,33 @@ const NODE_TYPES = [
   'image',
   'icon',
 ] as const;
-const EXPR_OPS = ['$field', '$if', '$switch', '$concat', '$token'] as const;
-const CONDITION_OPS = ['$field', '$eq', '$has', '$not', '$and', '$or'] as const;
+const NUMERIC_OP_NAMES = Object.keys(NUMERIC_OPS);
+const EXPR_OPS: readonly string[] = [
+  '$field',
+  '$if',
+  '$switch',
+  '$concat',
+  '$token',
+  ...NUMERIC_OP_NAMES,
+];
+const CONDITION_OPS: readonly string[] = [
+  '$field',
+  '$eq',
+  '$has',
+  '$not',
+  '$and',
+  '$or',
+  ...COMPARISON_OPS,
+];
 /** Operadores que só existem em condição (`$field` é ambíguo e fica como expressão). */
-const DIRECT_CONDITION_OPS: readonly string[] = ['$eq', '$has', '$not', '$and', '$or'];
+const DIRECT_CONDITION_OPS: readonly string[] = [
+  '$eq',
+  '$has',
+  '$not',
+  '$and',
+  '$or',
+  ...COMPARISON_OPS,
+];
 const ID_PATTERN = /^[a-z0-9][a-z0-9_-]*$/;
 const PERCENT_PATTERN = /^\d+(\.\d+)?%$/;
 
@@ -225,9 +248,7 @@ const checkFill = tokenCheck('color', (v, p, out) => {
 
 function checkCondition(value: unknown, path: string, out: Ctx): void {
   if (!isRecord(value)) return add(out, path, 'esperava condição (objeto)');
-  const ops = Object.keys(value).filter((k) =>
-    (CONDITION_OPS as readonly string[]).includes(k),
-  );
+  const ops = Object.keys(value).filter((k) => CONDITION_OPS.includes(k));
   if (ops.length !== 1) {
     if (ops.length === 0) {
       add(out, path, `condição sem operador (${CONDITION_OPS.join(', ')})`);
@@ -236,7 +257,7 @@ function checkCondition(value: unknown, path: string, out: Ctx): void {
     }
     return;
   }
-  const op = ops[0] as (typeof CONDITION_OPS)[number];
+  const op = ops[0] as string;
   checkKeys(value, [op], path, out);
   const at = join(path, op);
   const operand = value[op];
@@ -261,11 +282,55 @@ function checkCondition(value: unknown, path: string, out: Ctx): void {
       return;
     case '$not':
       return checkCondition(operand, at, out);
+    case '$gt':
+    case '$gte':
+    case '$lt':
+    case '$lte':
+      return checkOperands(operand, at, { min: 2, max: 2 }, out);
     case '$and':
     case '$or':
       if (!Array.isArray(operand)) return add(out, at, 'esperava lista de condições');
       operand.forEach((c: unknown, i) => checkCondition(c, `${at}[${i}]`, out));
   }
+}
+
+const checkOperand = tokenCheck('number', (v, p, out) => {
+  if (!isFiniteNumber(v)) add(out, p, 'precisa ser número');
+});
+
+/** Os operandos de uma operação numérica ou comparação: a aridade e cada `Expr<number>`. */
+function checkOperands(
+  operand: unknown,
+  at: string,
+  arity: { readonly min: number; readonly max: number | null },
+  out: Ctx,
+): void {
+  if (arity.max === 1) {
+    if (Array.isArray(operand)) return add(out, at, 'precisa de 1 operando');
+    return checkExpr(operand, at, checkOperand, out);
+  }
+  if (!Array.isArray(operand)) return add(out, at, 'esperava lista de operandos');
+  if (arity.max === arity.min && operand.length !== arity.min)
+    return add(out, at, `precisa de ${arity.min} operandos`);
+  if (operand.length < arity.min)
+    return add(out, at, `precisa de ${arity.min} ou mais operandos`);
+  operand.forEach((item: unknown, i) =>
+    checkExpr(item, `${at}[${i}]`, checkOperand, out),
+  );
+}
+
+/** `$add`, `$mul`, `$sin`…: só onde se espera número (ou como parte de um `$concat`). */
+function checkNumericExpr(
+  op: string,
+  value: Rec,
+  path: string,
+  check: Check,
+  out: Ctx,
+): void {
+  checkKeys(value, [op], path, out);
+  if (check.tokenKind !== 'number' && check !== checkTextOrNumber)
+    return add(out, path, `${op} só vale onde se espera número`);
+  checkOperands(value[op], join(path, op), NUMERIC_OPS[op] as never, out);
 }
 
 function checkFieldKey(value: unknown, path: string, out: Ctx): void {
@@ -313,8 +378,9 @@ function checkExpr(value: unknown, path: string, check: Check, out: Ctx): void {
     add(out, path, `expressão com mais de um operador: ${ops.join(', ')}`);
     return;
   }
-  const op = ops[0] as (typeof EXPR_OPS)[number];
+  const op = ops[0] as string;
   const at = join(path, op);
+  if (op in NUMERIC_OPS) return checkNumericExpr(op, value, path, check, out);
   switch (op) {
     case '$field':
       checkKeys(value, ['$field', 'default'], path, out);
@@ -863,6 +929,25 @@ function tokenVersionIssues(version: unknown, template: unknown): ComponentIssue
   return out;
 }
 
+/** Operação numérica ou comparação (`$mul`, `$gt`…) numa versão anterior à 4: `só é permitido com formatVersion 4`, no caminho da chave. */
+function numericVersionIssues(version: unknown, template: unknown): ComponentIssue[] {
+  const out: ComponentIssue[] = [];
+  if (typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY)
+    return out;
+  const walk = (node: unknown, at: string): void => {
+    if (Array.isArray(node)) return node.forEach((n, i) => walk(n, `${at}[${i}]`));
+    if (!isRecord(node)) return;
+    for (const [key, value] of Object.entries(node)) {
+      const here = join(at, key);
+      if (key in NUMERIC_OPS || (COMPARISON_OPS as readonly string[]).includes(key))
+        addIssue(out, here, V4_ONLY_MESSAGE);
+      walk(value, here);
+    }
+  };
+  walk(template, 'template');
+  return out;
+}
+
 /** O nó `icon` numa versão anterior à 4: `só é permitido com formatVersion 4`, no caminho do `type`. */
 function iconVersionIssues(version: unknown, template: unknown): ComponentIssue[] {
   if (typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY)
@@ -1078,6 +1163,7 @@ function collectIssues(input: unknown, refs: TokenRef[] | null): ComponentIssue[
       ),
     );
     issues.push(...tokenVersionIssues(version, input.template));
+    issues.push(...numericVersionIssues(version, input.template));
     if (version === 1 || version === 2) {
       for (const node of nodesOfTypes(input.template, 'template', ['image'])) {
         add(out, node.path, 'o nó image só existe na formatVersion 3');

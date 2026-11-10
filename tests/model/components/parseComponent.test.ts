@@ -647,3 +647,179 @@ describe('aviso de font.family', () => {
     expect(warningsOf({ $field: 'fonte' })).toEqual([]);
   });
 });
+
+describe('parseComponent: operações numéricas e comparações (formato 4)', () => {
+  const V4 = 'só é permitido com formatVersion 4';
+  const opsComponent = (extra: Record<string, unknown>, version = 4): unknown => ({
+    format: 'mapping-component',
+    formatVersion: version,
+    id: 'c',
+    name: 'C',
+    size: { width: 200, height: 100 },
+    template: { type: 'frame', ...extra },
+  });
+  const problems = (extra: Record<string, unknown>, version = 4): string[] => {
+    const { gap, ...rest } = extra;
+    const layout = gap === undefined ? {} : { layout: { type: 'column', gap } };
+    return validateComponent(opsComponent({ ...rest, ...layout }, version));
+  };
+
+  it('aceita cada operação onde vale número, inclusive aninhada', () => {
+    const ok = {
+      width: { $mul: [{ $field: 'p' }, 200] },
+      height: { $add: [{ $sub: [100, 4] }, { $round: { $field: 'h', default: 1.4 } }] },
+      gap: { $min: [{ $max: [1, 2] }, 8] },
+      children: [{ type: 'rect', width: { $mod: [{ $field: 'i' }, 3] }, height: 4 }],
+      opacity: { $clamp: [{ $field: 'o' }, 0, 1] },
+      cornerRadius: { $floor: 4.5 },
+    };
+    expect(problems(ok)).toEqual([]);
+    expect(
+      validateComponent(opsComponent({ layout: { type: 'row', padding: { $abs: -3 } } })),
+    ).toEqual([]);
+    expect(
+      problems({
+        children: [
+          {
+            type: 'text',
+            text: { $concat: ['x', { $div: [1, 3] }] },
+            font: {
+              size: { $ceil: 11.2 },
+            },
+            anchors: { left: 0, top: 0 },
+          },
+          { type: 'rect', width: { $sin: 30 }, height: { $cos: 60 } },
+        ],
+      }),
+    ).toEqual([]);
+  });
+
+  it('aceita as comparações em $if, visible, $and, $or e $not', () => {
+    expect(
+      problems({
+        visible: {
+          $and: [{ $gt: [{ $field: 'a' }, 1] }, { $not: { $lte: [2, { $field: 'b' }] } }],
+        },
+        gap: { $if: { $or: [{ $gte: [1, 2] }, { $lt: [3, 4] }] }, then: 4, else: 8 },
+      }),
+    ).toEqual([]);
+    expect(problems({ visible: { $gt: [1, 2] } })).toEqual([]);
+  });
+
+  it('numa formatVersion 1 a 3, cada chave nova é só da 4, no caminho da chave', () => {
+    for (const version of [1, 2, 3]) {
+      const found = problems(
+        {
+          width: { $mul: [{ $field: 'p' }, 200] },
+          visible: { $gt: [1, 2] },
+          gap: { $if: { $and: [{ $lte: [1, 2] }] }, then: { $sin: 3 }, else: 0 },
+        },
+        version,
+      );
+      expectProblem(found, 'template.width.$mul', V4);
+      expectProblem(found, 'template.visible.$gt', V4);
+      expectProblem(found, 'template.layout.gap.$if.$and[0].$lte', V4);
+      expectProblem(found, 'template.layout.gap.then.$sin', V4);
+    }
+  });
+
+  it('a aridade errada é recusada', () => {
+    expectProblem(
+      problems({ gap: { $sub: [1, 2, 3] } }),
+      'template.layout.gap.$sub',
+      'precisa de 2 operandos',
+    );
+    expectProblem(
+      problems({ gap: { $div: [1] } }),
+      'template.layout.gap.$div',
+      'precisa de 2 operandos',
+    );
+    expectProblem(
+      problems({ gap: { $mod: [1, 2, 3] } }),
+      'template.layout.gap.$mod',
+      'precisa de 2 operandos',
+    );
+    expectProblem(
+      problems({ gap: { $add: [1] } }),
+      'template.layout.gap.$add',
+      'precisa de 2 ou mais operandos',
+    );
+    expectProblem(
+      problems({ gap: { $mul: [] } }),
+      'template.layout.gap.$mul',
+      'precisa de 2 ou mais operandos',
+    );
+    expectProblem(
+      problems({ gap: { $min: [1] } }),
+      'template.layout.gap.$min',
+      'precisa de 2 ou mais operandos',
+    );
+    expectProblem(
+      problems({ gap: { $max: 3 } }),
+      'template.layout.gap.$max',
+      'esperava lista',
+    );
+    expectProblem(
+      problems({ gap: { $clamp: [1, 2] } }),
+      'template.layout.gap.$clamp',
+      'precisa de 3 operandos',
+    );
+    expectProblem(
+      problems({ gap: { $round: [1, 2] } }),
+      'template.layout.gap.$round',
+      'precisa de 1 operando',
+    );
+    expectProblem(
+      problems({ gap: { $sin: [1, 2] } }),
+      'template.layout.gap.$sin',
+      'precisa de 1 operando',
+    );
+    expectProblem(
+      problems({ visible: { $gt: [1] } }),
+      'template.visible.$gt',
+      'precisa de 2 operandos',
+    );
+  });
+
+  it('operando literal que não é número é recusado, no caminho do operando', () => {
+    expectProblem(
+      problems({ gap: { $add: [1, 'x'] } }),
+      'template.layout.gap.$add[1]',
+      'precisa ser número',
+    );
+    expectProblem(
+      problems({ gap: { $abs: 'x' } }),
+      'template.layout.gap.$abs',
+      'precisa ser número',
+    );
+    expectProblem(
+      problems({ gap: { $clamp: [1, 0, true] } }),
+      'template.layout.gap.$clamp[2]',
+      'precisa ser número',
+    );
+    expectProblem(
+      problems({ visible: { $lt: ['a', 1] } }),
+      'template.visible.$lt[0]',
+      'precisa ser número',
+    );
+    expectProblem(
+      problems({ gap: { $add: [1, { $mul: [2, 'y'] }] } }),
+      'template.layout.gap.$add[1].$mul[1]',
+      'precisa ser número',
+    );
+  });
+
+  it('operação fora de posição numérica é recusada; chave estranha também', () => {
+    expectProblem(problems({ fill: { $add: [1, 2] } }), 'template.fill', 'número');
+    expectProblem(
+      problems({ gap: { $add: [1, 2], extra: 1 } }),
+      'template.layout.gap.extra',
+      'chave desconhecida',
+    );
+    expectProblem(
+      problems({ gap: { $add: [1, 2], $mul: [1, 2] } }),
+      'template.layout.gap',
+      'mais de um operador',
+    );
+  });
+});

@@ -316,6 +316,28 @@ describe('expandRepeats', () => {
     expect(out.values.titulo).toBe('T');
   });
 
+  it('as colunas dentro de operações e comparações viram o campo próprio da linha (formatVersion 4)', () => {
+    const c = component(
+      {},
+      {
+        template: row([
+          text('chave', {
+            width: { $mul: [{ $field: 'valor' }, 2] },
+            visible: { $gt: [{ $add: [{ $field: 'valor' }, 1] }, 0] },
+          }),
+        ]),
+      },
+      4,
+    );
+    const out = expandRepeats(c, { linhas: ROWS });
+    const frame = out.component.template.children![1] as FrameTemplate;
+    const json = JSON.stringify(frame.children![0]);
+    expect(json).toContain('"$mul":[{"$field":"$r0_0:valor"},2]');
+    expect(json).toContain('"$gt":[{"$add":[{"$field":"$r0_0:valor"},1]},0]');
+    expect(out.values['$r0_0:valor']).toBe('carrinho');
+    expect(referencedFields(frame.children![0]).has('$r0_0:valor')).toBe(true);
+  });
+
   it('o repeat em linha é hug na largura e fill na altura; o template da linha é hug na largura', () => {
     const out = expandRepeats(component({}, { direction: 'row' }), { linhas: ROWS });
     const frame = out.component.template.children![1] as FrameTemplate;

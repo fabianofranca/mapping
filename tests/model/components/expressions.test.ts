@@ -288,3 +288,174 @@ describe('evaluateBoolean com $field e default (#951)', () => {
     expect(evaluateBoolean({ $field: 'f' }, { f: 'sim' }, false)).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------------------
+// Etapa "expressões que calculam" (EX1): operações numéricas, comparações, número no texto
+// ---------------------------------------------------------------------------------------
+
+const num = (expr: unknown, values: Record<string, string | number | null> = {}) =>
+  evaluate<number | undefined>(expr as Expr<number | undefined>, values, undefined);
+
+describe('operações numéricas', () => {
+  it('$add, $sub, $mul, $div', () => {
+    expect(num({ $add: [1, 2, 3] })).toBe(6);
+    expect(num({ $sub: [10, 4] })).toBe(6);
+    expect(num({ $mul: [2, 3, 4] })).toBe(24);
+    expect(num({ $div: [9, 4] })).toBe(2.25);
+  });
+
+  it('$mod tem o sinal do divisor', () => {
+    expect(num({ $mod: [7, 3] })).toBe(1);
+    expect(num({ $mod: [-1, 12] })).toBe(11);
+    expect(num({ $mod: [7, -3] })).toBe(-2);
+    expect(num({ $mod: [-7, -3] })).toBe(-1);
+  });
+
+  it('$round, $floor, $ceil e $abs', () => {
+    expect(num({ $round: 2.5 })).toBe(3);
+    expect(num({ $round: 2.4 })).toBe(2);
+    expect(num({ $floor: -1.2 })).toBe(-2);
+    expect(num({ $ceil: 1.2 })).toBe(2);
+    expect(num({ $abs: -4.5 })).toBe(4.5);
+  });
+
+  it('$min, $max e $clamp', () => {
+    expect(num({ $min: [3, 1, 2] })).toBe(1);
+    expect(num({ $max: [3, 1, 2] })).toBe(3);
+    expect(num({ $clamp: [5, 0, 3] })).toBe(3);
+    expect(num({ $clamp: [-5, 0, 3] })).toBe(0);
+    expect(num({ $clamp: [2, 0, 3] })).toBe(2);
+  });
+
+  it('$sin e $cos em graus', () => {
+    expect(num({ $sin: 0 })).toBe(0);
+    expect(num({ $sin: 90 })).toBe(1);
+    expect(num({ $cos: 90 })).toBe(0);
+    expect(num({ $cos: 180 })).toBe(-1);
+    expect(num({ $sin: 30 })).toBeCloseTo(0.5, 12);
+  });
+
+  it('operações aninhadas e com $field, $if e $switch como operando', () => {
+    const values = { p: 0.37, kind: 'b', on: 'sim' };
+    expect(num({ $mul: [{ $field: 'p' }, 200] }, values)).toBeCloseTo(74, 10);
+    expect(num({ $add: [{ $mul: [2, 3] }, { $sub: [10, { $abs: -4 }] }] })).toBe(12);
+    expect(num({ $add: [{ $if: { $field: 'on' }, then: 10, else: 1 }, 1] }, values)).toBe(
+      11,
+    );
+    expect(
+      num({ $mul: [{ $switch: 'kind', cases: { a: 1, b: 5 }, default: 0 }, 2] }, values),
+    ).toBe(10);
+    expect(num({ $add: [{ $field: 'q', default: 4 }, 1] }, values)).toBe(5);
+  });
+
+  it('operando vazio, texto não numérico ou com vírgula: sem valor (vale o fallback)', () => {
+    expect(num({ $add: [{ $field: 'a' }, 1] }, { a: null })).toBeUndefined();
+    expect(num({ $add: [{ $field: 'a' }, 1] }, {})).toBeUndefined();
+    expect(num({ $mul: [{ $field: 'a' }, 200] }, { a: 'abc' })).toBeUndefined();
+    expect(num({ $mul: [{ $field: 'a' }, 200] }, { a: '0,5' })).toBeUndefined();
+    expect(num({ $mul: [{ $field: 'a' }, 200] }, { a: '  ' })).toBeUndefined();
+    expect(evaluate({ $mul: [{ $field: 'a' }, 200] }, { a: 'abc' }, 7)).toBe(7);
+    expect(num({ $abs: { $field: 'a' } }, { a: 'x' })).toBeUndefined();
+  });
+
+  it('texto numérico vale, com espaços aparados', () => {
+    expect(num({ $mul: [{ $field: 'a' }, 200] }, { a: ' 0.5 ' })).toBe(100);
+    expect(num({ $add: [{ $field: 'a' }, 1] }, { a: '3' })).toBe(4);
+  });
+
+  it('divisão e resto por zero: sem valor', () => {
+    expect(num({ $div: [1, 0] })).toBeUndefined();
+    expect(num({ $mod: [1, 0] })).toBeUndefined();
+    expect(num({ $div: [1, { $field: 'z' }] }, { z: 0 })).toBeUndefined();
+  });
+
+  it('um operando sem valor faz a operação aninhada inteira ficar sem valor', () => {
+    expect(num({ $add: [1, { $div: [1, 0] }] })).toBeUndefined();
+  });
+});
+
+describe('número no texto', () => {
+  it('0.1 + 0.2 no $concat vira 0.3', () => {
+    expect(evaluateText({ $concat: [{ $add: [0.1, 0.2] }] }, {})).toBe('0.3');
+  });
+
+  it('não inteiro sai com até 6 casas, sem zeros à direita; inteiro como hoje', () => {
+    expect(evaluateText({ $concat: [{ $div: [1, 3] }] }, {})).toBe('0.333333');
+    expect(evaluateText({ $concat: [{ $div: [1, 4] }, '%'] }, {})).toBe('0.25%');
+    expect(evaluateText({ $concat: [{ $mul: [2, 3] }, 'px'] }, {})).toBe('6px');
+    expect(evaluateText({ $concat: ['a', 1.5, 'b'] }, {})).toBe('a1.5b');
+  });
+
+  it('operação sem valor dentro do $concat vira texto vazio', () => {
+    expect(evaluateText({ $concat: ['x', { $div: [1, 0] }, 'y'] }, {})).toBe('xy');
+  });
+
+  it('um número não inteiro como texto avaliado também usa até 6 casas', () => {
+    expect(evaluateText({ $add: [0.1, 0.2] } as unknown as Expr<number>, {})).toBe('0.3');
+  });
+});
+
+describe('comparações', () => {
+  const cmp = (condition: unknown, values: Record<string, string | number | null> = {}) =>
+    evaluateCondition(condition as Condition, values);
+
+  it('$gt, $gte, $lt e $lte', () => {
+    expect(cmp({ $gt: [2, 1] })).toBe(true);
+    expect(cmp({ $gt: [1, 1] })).toBe(false);
+    expect(cmp({ $gte: [1, 1] })).toBe(true);
+    expect(cmp({ $lt: [1, 2] })).toBe(true);
+    expect(cmp({ $lt: [2, 2] })).toBe(false);
+    expect(cmp({ $lte: [2, 2] })).toBe(true);
+  });
+
+  it('operandos são expressões', () => {
+    const values = { p: 0.5 };
+    expect(cmp({ $gt: [{ $mul: [{ $field: 'p' }, 100] }, 49] }, values)).toBe(true);
+    expect(cmp({ $lt: [{ $field: 'p' }, 0.5] }, values)).toBe(false);
+  });
+
+  it('operando sem valor dá falso (também em $lt e $lte)', () => {
+    const values = { a: null, b: 'abc' };
+    for (const op of ['$gt', '$gte', '$lt', '$lte'])
+      expect(cmp({ [op]: [{ $field: 'a' }, 1] }, values)).toBe(false);
+    expect(cmp({ $lte: [1, { $field: 'b' }] }, values)).toBe(false);
+    expect(cmp({ $gte: [{ $div: [1, 0] }, 0] })).toBe(false);
+  });
+
+  it('compõem com $and, $or e $not; $not de operando vazio dá verdadeiro', () => {
+    expect(cmp({ $and: [{ $gt: [2, 1] }, { $lt: [1, 2] }] })).toBe(true);
+    expect(cmp({ $or: [{ $gt: [1, 2] }, { $lt: [1, 2] }] })).toBe(true);
+    expect(cmp({ $not: { $gt: [{ $field: 'a' }, 1] } }, { a: null })).toBe(true);
+  });
+
+  it('valem em $if e em visible (evaluateBoolean)', () => {
+    expect(evaluate({ $if: { $gte: [3, 3] }, then: 'sim', else: 'não' }, {}, 'x')).toBe(
+      'sim',
+    );
+    expect(
+      evaluateBoolean(
+        { $lt: [{ $field: 'n' }, 2] } as unknown as Condition,
+        { n: 1 },
+        false,
+      ),
+    ).toBe(true);
+    expect(
+      evaluateBoolean(
+        { $lt: [{ $field: 'n' }, 2] } as unknown as Condition,
+        { n: 5 },
+        true,
+      ),
+    ).toBe(false);
+  });
+});
+
+describe('referencedFields com operações e comparações', () => {
+  it('conta os campos dentro das operações, das comparações e de $if/$switch aninhados', () => {
+    const fields = referencedFields({
+      width: { $mul: [{ $field: 'p' }, { $add: [{ $field: 'q' }, 1] }] },
+      visible: { $gt: [{ $field: 'r' }, { $sub: [{ $field: 's' }, 1] }] },
+      gap: { $round: { $if: { $has: 't' }, then: { $field: 'u' }, else: 0 } },
+    });
+    expect([...fields].sort()).toEqual(['p', 'q', 'r', 's', 't', 'u']);
+  });
+});
