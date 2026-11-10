@@ -177,6 +177,16 @@ test('o nome do alvo do campo ref cabe a 900 e a 1280 px', async ({ page }, info
     await page.setViewportSize({ width, height: 720 });
     const m = await measureRef(page);
     expect(m.shown, `largura ${width}`).toBeGreaterThanOrEqual(m.full - 0.05);
+    // Os ícones de Ir para e Limpar mantêm o tamanho do botão (a âncora do Tooltip não estica).
+    const row = await page.evaluate(() => {
+      const field = document.querySelector('.ref-field:not(.ref-cell)');
+      return [...(field?.children ?? [])].map((c) => {
+        const box = c.getBoundingClientRect();
+        return { top: Math.round(box.top), width: Math.round(box.width) };
+      });
+    });
+    for (const icon of row.slice(1))
+      expect(icon.width, `ícone a ${width}`).toBeLessThanOrEqual(40);
   }
 });
 

@@ -644,8 +644,7 @@ button.layer-group-label:hover {
  * na própria caixa; as linhas ocupam a largura toda rolada.
  */
 .data-grid .grid-cell-value .input,
-.data-grid .grid-cell-value .select,
-.data-grid .grid-cell-value > .ref-control {
+.data-grid .grid-cell-value .select {
   min-width: var(--size-grid-col-min);
 }
 
@@ -675,13 +674,9 @@ button.layer-group-label:hover {
   white-space: normal;
 }
 
-/* O ✕ de Limpar também vem numa âncora de Tooltip: só a do controle estica. */
+/* Os ícones de Ir para e Limpar também vêm numa âncora de Tooltip: só a do controle estica. */
 .ref-field.ref-cell > .tooltip-anchor:first-child {
   flex: 1 1 auto;
-}
-
-.ref-field.ref-cell > .tooltip-anchor:not(:first-child) {
-  flex: none;
 }
 
 .grid-head {
@@ -930,14 +925,19 @@ button.layer-group-label:hover {
   flex-wrap: wrap;
 }
 
-.ref-field:not(.ref-cell) > .tooltip-anchor {
-  flex-basis: 14ch;
+/* O Tooltip envolve o controle: a âncora dele ocupa a largura e o controle enche a âncora;
+   as dos ícones (Ir para, Limpar) mantêm o tamanho do botão. */
+.ref-field > .tooltip-anchor {
+  flex: none;
 }
 
-/* O Tooltip envolve o controle: a âncora ocupa a largura e o controle enche a âncora. */
-.ref-field > .tooltip-anchor {
+.ref-field > .tooltip-anchor:first-child {
   flex: 1;
   min-width: 0;
+}
+
+.ref-field:not(.ref-cell) > .tooltip-anchor:first-child {
+  flex-basis: 14ch;
 }
 
 .ref-control {

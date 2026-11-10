@@ -44,9 +44,11 @@ describe('célula de referência quebrada', () => {
 // CL1 (achado 1 da #827): na célula `ref` da tabela o ✕ de Limpar (que também vem numa âncora de
 // Tooltip) ficava com metade da célula e cobria o rótulo; a referência quebrada quebrava em 4 linhas.
 describe('célula ref da tabela', () => {
-  it('só a âncora do controle estica; o ✕ não', () => {
-    expect(rule('.ref-field.ref-cell > .tooltip-anchor:not(:first-child)')).toMatch(
-      /flex:\s*none/,
+  it('só a âncora do controle estica; os ícones não (célula e campo dos Detalhes)', () => {
+    expect(rule('.ref-field > .tooltip-anchor')).toMatch(/flex:\s*none/);
+    expect(rule('.ref-field > .tooltip-anchor:first-child')).toMatch(/flex:\s*1/);
+    expect(rule('.ref-field.ref-cell > .tooltip-anchor:first-child')).toMatch(
+      /flex:\s*1 1 auto/,
     );
   });
 
