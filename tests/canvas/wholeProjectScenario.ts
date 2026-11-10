@@ -4,14 +4,15 @@
 import { vi } from 'vitest';
 import { CanvasController } from '../../src/canvas/CanvasController';
 import { createCanvasViewState } from '../../src/canvas/viewState';
-import { createArrow, projectIndex, projectIssues, type Project } from '../../src/model';
+import { projectIndex, projectIssues, type Project } from '../../src/model';
+import { textMeasurer } from '../../src/store/textMeasure';
 import { createEditorDerived } from '../../src/store/derived';
 import { createDisplayImages } from '../../src/store/displayImages';
 import { createProjectStore } from '../../src/store/history';
 import { createProjectActions } from '../../src/store/project';
 import { createEditorUi } from '../../src/store/ui';
-import { buildLargeProject } from '../model/largeProject';
-import { installFakeCanvas, layerDrawMeter, stageOf } from './harness';
+import { material3Catalog, scenarioProject } from '../model/scenarioProject';
+import { componentSources, installFakeCanvas, layerDrawMeter, stageOf } from './harness';
 
 // A fila é do módulo: o Konva guarda a fila dos seus quadros por janela (`animQueues`), então um
 // quadro agendado num teste e perdido por outra fila deixaria as camadas sem desenhar no seguinte.
@@ -41,25 +42,21 @@ export function stubFrames(): () => number {
 /** Tamanhos medidos: número de marcações (as setas são metade). */
 export type ScenarioSize = 500 | 2000 | 5000;
 
-// 100 marcações por imagem (maior que isso a receita gera marcações de largura 0).
-const PER_IMAGE = 100;
+/** Opções do cenário (etapa canvas-desempenho, CD1); sem nenhuma, é o cenário de sempre. */
+export interface ScenarioOptions {
+  /** Número de setas; padrão metade das marcações. */
+  readonly arrows?: number;
+  /** Acrescenta, em cada container, as 21 instâncias da tela `M3_SCREEN` (biblioteca Material 3). */
+  readonly components?: boolean;
+  /** Marcações por container; padrão 100 (maior que isso a receita gera marcações de largura 0). */
+  readonly perImage?: number;
+  /** Projeto já montado (o teste de crescimento monta uma vez e abre várias); ignora as outras opções. */
+  readonly project?: Project;
+}
 
-/** Projeto grande com `size` marcações e `size / 2` setas entre marcações vizinhas. */
-export function wholeProject(size: ScenarioSize): Project {
-  const base = buildLargeProject({
-    images: size / PER_IMAGE,
-    markingsPerImage: PER_IMAGE,
-  });
-  const arrows = size / 2;
-  const roots = base.markings.filter((m) => m.parentId === null);
-  let project = base;
-  for (let i = 0; i < arrows; i++) {
-    const from = roots[i % roots.length];
-    const to = roots[(i + 3) % roots.length];
-    if (!from || !to || from.id === to.id) continue;
-    project = createArrow(project, { id: `R${i}`, from: from.id, to: to.id });
-  }
-  return project;
+/** Projeto grande com `size` marcações e, por padrão, `size / 2` setas entre marcações vizinhas. */
+export function wholeProject(size: number, options: ScenarioOptions = {}): Project {
+  return scenarioProject({ size, ...options });
 }
 
 export interface WholeProjectScenario {
@@ -84,18 +81,26 @@ export interface WholeProjectScenario {
  * precisa ter `installFakeCanvas()` e o stub de `requestAnimationFrame` (veja `openScenario`).
  */
 export function openWholeProject(
-  size: ScenarioSize,
+  size: number,
   open: 'fit' | 'close' = 'fit',
+  options: ScenarioOptions = {},
 ): WholeProjectScenario {
   installFakeCanvas();
   const flush = stubFrames();
 
-  const project = wholeProject(size);
+  const project = options.project ?? wholeProject(size, options);
   const store = createProjectStore({ now: () => '2026-10-02T12:00:00.000Z' });
   store.load(project, { readOnly: false });
-  const actions = createProjectActions(store);
+  // Com componentes, o catálogo do Material 3 vai nas fontes do estado derivado e nas ações, como a sessão faz.
+  const sources = options.components ? componentSources(material3Catalog()) : undefined;
+  const actions = createProjectActions(
+    store,
+    sources
+      ? { components: () => sources.catalog.peek(), measure: () => textMeasurer.peek() }
+      : undefined,
+  );
   const ui = createEditorUi();
-  const derived = createEditorDerived(store, ui);
+  const derived = createEditorDerived(store, ui, undefined, sources);
   const container = document.createElement('div');
   Object.defineProperty(container, 'clientWidth', { value: 1280 });
   Object.defineProperty(container, 'clientHeight', { value: 800 });

@@ -643,7 +643,10 @@ button.layer-group-label:hover {
  * não da célula (o segmentado continua dimensionando a própria coluna). Tabela larga rola
  * na própria caixa; as linhas ocupam a largura toda rolada.
  */
-.data-grid .grid-cell-value .input,
+.data-grid .grid-cell-value .input {
+  min-width: calc(var(--size-grid-col-min) * 0.75);
+}
+
 .data-grid .grid-cell-value .select {
   min-width: var(--size-grid-col-min);
 }
@@ -654,6 +657,10 @@ button.layer-group-label:hover {
  * coluna é estreita demais, desce para a linha de baixo em vez de cobrir o rótulo ou esconder
  * o texto; o rótulo e "(referência quebrada)" quebram de linha em vez de ser cortados.
  */
+.data-grid .grid-cell-value:has(> .ref-cell) {
+  min-width: calc(var(--size-grid-col-min) * 0.85);
+}
+
 .data-grid .grid-cell-value .ref-cell {
   flex-wrap: wrap;
   min-width: 0;

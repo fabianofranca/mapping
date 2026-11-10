@@ -46,7 +46,7 @@ import { openHarness } from '../store/proposalHarness';
 import { buildLargeTypedProject } from '../model/largeTypedProject';
 import { material3Spec } from '../storage/packageFixture';
 import { componentSources, installFakeCanvas } from './harness';
-import { openWholeProject } from './wholeProjectScenario';
+import { openWholeProject, wholeProject } from './wholeProjectScenario';
 
 // Orçamento de uma renderização do canvas (docs/ARCHITECTURE.md, "Desempenho") com o projeto grande já
 // indexado: Konva de verdade em jsdom, com um contexto 2D falso (nada é pintado;
@@ -776,8 +776,9 @@ describe('visão Proposto com 60 componentes novos', () => {
 // só a borda e pendura no grupo só o que está visível (nível de detalhe). A meta da decisão 9 é
 // `RENDER_BUDGET_MS` (16 ms), mas em jsdom o quadro de edição mede ~16 a 24 ms (mediana de 15; o
 // `drawScene` das marcações caiu de ~21 para ~9 ms, de 18 mil para 4 mil nós, e sobram ~6 ms do
-// `CanvasController.render` e as sobreposições): o teto abaixo guarda contra regressão até a DA5
-// (nós sob demanda) e a #888 registra o número.
+// `CanvasController.render` e as sobreposições): o teto abaixo guarda contra regressão. Conferência final
+// (CD5 da etapa canvas-desempenho): com 16 ms o orçamento passou só 6 de 10 execuções seguidas, então o
+// teto continua 35 ms; a meta de 16 ms está atingida no Chromium (edição 9,8 ms com 2.000).
 const EDIT_FRAME_CEILING_MS = 35;
 
 // Decisões 5 a 7 e 9 da etapa canvas-escala: depois do quadro que leva os nós ao grupo de arrasto, cada
@@ -806,6 +807,59 @@ describe('quadro de arrasto com o projeto inteiro à vista (2.000 marcações)',
       const median = [...times].sort((a, b) => a - b)[7] ?? Number.NaN;
       expect(median).toBeLessThan(RENDER_BUDGET_MS);
       s.destroy();
+    },
+  );
+});
+
+// Decisão 5 da etapa canvas-desempenho: o `createNode` cria só o grupo e a borda; o primeiro quadro em
+// Enquadrar tudo (2.000 marcações, jsdom) cabe na metade dos 223 ms da DA1.
+describe('primeiro quadro em Enquadrar tudo (2.000 marcações)', () => {
+  budgetIt(
+    'abrir em Enquadrar tudo cabe em 111,5 ms',
+    { ...BUDGET_OPTIONS, timeout: 120_000 },
+    () => {
+      const times: number[] = [];
+      for (let i = 0; i < 5; i++) {
+        const s = openWholeProject(2000, 'fit');
+        times.push(s.firstFrameMs);
+        s.destroy();
+      }
+      const median = [...times].sort((a, b) => a - b)[2] ?? Number.NaN;
+      expect(median).toBeLessThan(111.5);
+    },
+  );
+});
+
+// Decisão 7 da etapa canvas-desempenho: de longe a seta curta é só o traço e não tem rótulo, e a fora da
+// área visível não é pintada. Com as 1.000 setas nomeadas, pan e zoom em Enquadrar tudo e aproximados
+// cabem na meta da decisão 10 (33 ms; jsdom, mediana de 15).
+describe('pan e zoom com 2.000 marcações e 1.000 setas nomeadas', () => {
+  budgetIt(
+    'cabem em 33 ms, de longe e aproximados',
+    { ...BUDGET_OPTIONS, timeout: 120_000 },
+    () => {
+      const base = wholeProject(2000);
+      const project = {
+        ...base,
+        arrows: base.arrows.map((a, i) => ({ ...a, name: `Seta ${i}` })),
+      };
+      const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[7] ?? Number.NaN;
+      for (const open of ['fit', 'close'] as const) {
+        const s = openWholeProject(2000, open, { project });
+        let step = 0;
+        const round = (): { pan: number; zoom: number } => {
+          step++;
+          s.controller.centerOnPoint({ x: 500 + 20 * (step % 5), y: 500 });
+          const pan = s.flush();
+          s.controller.zoomBy(step % 2 ? 1.1 : 1 / 1.1);
+          return { pan, zoom: s.flush() };
+        };
+        for (let i = 0; i < 3; i++) round();
+        const samples = Array.from({ length: 15 }, round);
+        expect(median(samples.map((r) => r.pan)), `pan (${open})`).toBeLessThan(33);
+        expect(median(samples.map((r) => r.zoom)), `zoom (${open})`).toBeLessThan(33);
+        s.destroy();
+      }
     },
   );
 });

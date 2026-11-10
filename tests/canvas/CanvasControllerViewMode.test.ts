@@ -6,7 +6,7 @@ import type { ArrowRenderer } from '../../src/canvas/renderers/arrows';
 import type { ImageRenderer } from '../../src/canvas/renderers/images';
 import type { MarkingRenderer } from '../../src/canvas/renderers/markings';
 import type { OverlayRenderer } from '../../src/canvas/renderers/overlay';
-import { approximateMeasurer } from '../../src/model';
+import { approximateMeasurer, renameMarking } from '../../src/model';
 import { createDisplayImages } from '../../src/store/displayImages';
 import { setShowArrows, setShowComponentsOnPhotos } from '../../src/store/settings';
 import { textMeasurer } from '../../src/store/textMeasure';
@@ -50,7 +50,10 @@ describe('CanvasController: modo visualização', () => {
     localStorage.clear();
   });
 
-  function setup(project = withArrow(viewProject(), 'R1', 'TA', 'P')) {
+  // A marcação P tem nome: o nome só ganha nó quando aparece (partes sob demanda).
+  function setup(
+    project = renameMarking(withArrow(viewProject(), 'R1', 'TA', 'P'), 'P', 'Porta'),
+  ) {
     const sources = componentSources(viewCatalog());
     const editor = editorFor(project, false, sources);
     const container = document.createElement('div');
@@ -110,8 +113,8 @@ describe('CanvasController: modo visualização', () => {
     expect(node?.border.visible()).toBe(true);
     // Sem a seleção, a borda não é a da seleção; sem indicadores (⚠, alerta).
     expect(node?.border.stroke()).not.toBe(internals.overlay.handles.get('nw')?.stroke());
-    expect(node?.alertClip.visible()).toBe(false);
-    expect(node?.badge.visible()).toBe(false);
+    expect(node?.alertClip?.visible() ?? false).toBe(false);
+    expect(node?.badge?.visible() ?? false).toBe(false);
     // O toque não alcança nada: nenhuma marcação está visível para o toque.
     expect(
       [...derived.markingVisibility.peek().values()].every((v) => v === 'hidden'),
@@ -166,12 +169,12 @@ describe('CanvasController: modo visualização', () => {
     // Começa sem o contorno e com o nome.
     expect(marking('P')?.group.visible()).toBe(true);
     expect(marking('P')?.border.visible()).toBe(false);
-    expect(marking('P')?.text.group.visible()).toBe(true);
+    expect(marking('P')?.text?.group.visible()).toBe(true);
     setViewShow(ui, { outline: true, names: false });
     flush();
     expect(marking('P')?.border.visible()).toBe(true);
-    expect(marking('P')?.halo.visible()).toBe(true);
-    expect(marking('P')?.text.group.visible()).toBe(false);
+    expect(marking('P')?.halo?.visible()).toBe(true);
+    expect(marking('P')?.text?.group.visible() ?? false).toBe(false);
     // Nem contorno nem nome: a marcação sai inteira.
     setViewShow(ui, { outline: false });
     flush();
@@ -185,7 +188,7 @@ describe('CanvasController: modo visualização', () => {
     setViewShow(ui, { outline: true });
     flush();
     expect(marking('TA')?.border.visible()).toBe(false);
-    expect(marking('TA')?.text.group.visible()).toBe(false);
+    expect(marking('TA')?.text?.group.visible() ?? false).toBe(false);
     hideViewDrawingLayer(ui, ids.a);
     flush();
     expect(marking('TA')?.border.visible()).toBe(true);
@@ -278,7 +281,7 @@ describe('CanvasController: modo visualização', () => {
     showEverything(ui);
     flush();
     expect(marking('P')?.border.visible()).toBe(true);
-    expect(marking('P')?.text.group.visible()).toBe(true);
+    expect(marking('P')?.text?.group.visible()).toBe(true);
     controller.destroy();
   });
 

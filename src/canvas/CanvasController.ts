@@ -39,6 +39,7 @@ import {
   createInteractionState,
   requestFrame,
   sameFrame,
+  visibleArea,
   type DropTarget,
   type Frame,
   type HoverLock,
@@ -58,7 +59,7 @@ import { watchSpaceKey } from './input/keyboard';
 import { PointerInput } from './input/pointer';
 import { hitChain } from './input/intents';
 import { canvasToImagePixel, markingCanvasRect } from './markingGeometry';
-import { ArrowRenderer } from './renderers/arrows';
+import { ArrowRenderer, type ArrowChanges } from './renderers/arrows';
 import { ImageRenderer } from './renderers/images';
 import { MarkingRenderer } from './renderers/markings';
 import { OverlayRenderer } from './renderers/overlay';
@@ -745,6 +746,7 @@ export class CanvasController {
     this.floatingLayer.destroy();
     this.arrivalLayer.destroy();
     this.arrows.destroy();
+    this.markings.destroy();
     this.stage.destroy();
   }
 
@@ -916,21 +918,27 @@ export class CanvasController {
         ).length ?? 0;
     }
     // Os desenhos dos componentes só se refazem quando eles, o conjunto visível, as posições
-    // das imagens ou o tema mudam: pan e zoom não passam por aqui.
+    // das imagens ou o tema mudam.
     if (placementsChanged || dragChanged || !sameFrame(last, frame, COMPONENT_KEYS)) {
       this.renderComponents(frame);
+    } else if (moved) {
+      // Pan e zoom: o desenho nasce sob demanda (só na tela) e se esconde fora dela.
+      const area = visibleArea(size, v);
+      this.mark(this.layers.components, this.componentLayer.reveal(area, v.scale));
+      this.mark(this.layers.floating, this.floatingLayer.reveal(area, v.scale));
     }
     // Os desenhos em pixels de tela (`screen`) só reajustam escala e posição com o zoom.
     if (scaleChanged) {
       this.mark(this.layers.components, this.componentLayer.setZoom(v.scale));
       this.mark(this.layers.floating, this.floatingLayer.setZoom(v.scale));
     }
-    // As setas só se refazem com elas, o tema ou o zoom (a espessura e a ponta são de tela).
+    // As setas só se refazem com elas, o tema ou o zoom (a espessura e a ponta são de tela), e com
+    // o que decide o nível de detalhe de cada uma: a seleção e o mouse. No pan, só se confere a área
+    // visível (`reveal`), como nos desenhos dos componentes.
     if (scaleChanged || dragChanged || !sameFrame(last, frame, ARROW_KEYS)) {
-      const changes = this.arrows.render(frame);
-      this.mark(this.layers.markings, changes.main);
-      this.mark(this.layers.overlay, changes.drag);
-      this.drawnArrows = this.arrows.size + this.arrows.liftedDrawn.length;
+      this.updateArrows(this.arrows.render(frame, this.placements));
+    } else if (moved || placementsChanged) {
+      this.updateArrows(this.arrows.reveal(frame, this.placements));
     }
     const marked = this.markings.render(frame, this.placements);
     this.mark(this.layers.markings, marked.main);
@@ -1027,6 +1035,13 @@ export class CanvasController {
     this.arrows.setDragged(on ? set.arrows : null, groups.arrows);
   }
 
+  /** Marca as camadas que as setas mexeram e guarda quantas estão pintadas (`data-arrows`). */
+  private updateArrows(changes: ArrowChanges): void {
+    this.mark(this.layers.markings, changes.main);
+    this.mark(this.layers.overlay, changes.drag);
+    this.drawnArrows = this.arrows.painted;
+  }
+
   /** Suja a camada se o renderizador mexeu em algum nó dela. */
   private mark(layer: Konva.Layer, changed: boolean): void {
     if (changed) this.dirty.add(layer);
@@ -1099,6 +1114,7 @@ export class CanvasController {
     }
     const { drawn, floating } = frame;
     const zoom = frame.viewport.scale;
+    const area = visibleArea(frame.size, frame.viewport);
     this.mark(
       this.layers.components,
       this.componentLayer.render(
@@ -1106,6 +1122,7 @@ export class CanvasController {
         (drawing) => drawn.has(drawing.markingId) && !floating.has(drawing.markingId),
         this.placements,
         zoom,
+        area,
       ),
     );
     this.mark(
@@ -1115,6 +1132,7 @@ export class CanvasController {
         (drawing) => drawn.has(drawing.markingId) && floating.has(drawing.markingId),
         this.placements,
         zoom,
+        area,
       ),
     );
     this.drawnComponents = this.componentLayer.size + this.floatingLayer.size;

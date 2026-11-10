@@ -404,11 +404,45 @@ Vale para toda imagem que entra pela app (arquivo, câmera, colar, arrastar e tr
   `CanvasController` o publica em `data-drawn-markings` no `.canvas-host`. Efeito: abrir já aproximado cria só os nós à vista
   (65 de 2.000 no cenário de teste, ~50 ms contra ~175 a 285 ms de quadro); com **Enquadrar tudo** todas passam de 2 px e
   todas ganham nó, então abrir inteiro à vista não encurta (`tests/canvas/lazyNodes.test.ts`).
-- **Orçamentos da etapa canvas-escala (conferência final, DA5):** arrasto ≤ 16 ms (atingido: ~3 a 4 ms em jsdom, 2 camadas
-  redesenhadas); pan e zoom inteiro à vista ≤ 33 ms (jsdom: atingido; Chromium com 2.000: ~42 e ~45 ms, não atingido); edição ≤
-  16 ms (jsdom 16 a 24 ms com teto de 35 ms em `renderPerformance.test.ts`; Chromium com 2.000: ~17 ms); abrir ≤ metade da linha
-  de base (atingido aproximado; não atingido em **Enquadrar tudo**). Medições e linha de base na issue #888; `npm run perf:canvas`
-  gera a tabela do Chromium.
+- **Partes do nó sob demanda** (`markings.ts`, `semanticCard.ts`; CD2 da etapa canvas-desempenho, decisão 5): o `createNode` cria só
+  o grupo e a borda (2 nós por marcação em Enquadrar tudo). O halo, a linha dupla (`inner`), o selo, o alerta (`alertClip` e
+  `alert`) e o nome (`createSemanticNode`, só com nome e modo diferente de `none`) nascem no primeiro quadro em que ficam visíveis;
+  os campos do `MarkingNode` são opcionais e quem os lê trata a ausência. Criadas, as partes ficam (escondidas e fora da pendura do
+  `syncParts` quando não aparecem). A marcação selecionada, sob o mouse ou com marca da revisão é completa por exceção e cria as
+  suas. `MarkingRenderer.destroy` (chamado por `CanvasController.destroy`) e a remoção de uma marcação destroem também as partes
+  desencaixadas: elas não são filhas do grupo, e sem isso as formas ficavam no registro de cores de acerto do Konva.
+- **Desenhos de componente sob demanda** (`componentLayer.ts`; decisão 3, portão aberto na CD1: abrir 2.000 marcações passou de
+  206,6 para 406,7 ms com componentes, +96,9%): o desenho só é montado (`renderScene`) no primeiro quadro em que a caixa dele
+  (matriz da cena, ou a âncora no retângulo, nos de pixels de tela, mais 64 px de margem) cruza a área visível, e fica até a
+  marcação sair do projeto ou o objeto do desenho mudar. Montado e fora da tela, o nó só se esconde. Pan e zoom passam por
+  `ComponentLayerRenderer.reveal` (monta o que entrou, esconde o que saiu, sem reinstanciar nem refazer a ordem inteira), e o
+  `render` de sempre só roda quando os desenhos, o conjunto visível, as posições ou o tema mudam. `data-components` continua
+  contando todos os desenhos que aparecem (`size`), esteja a vista onde estiver; `mountedCount` conta os montados.
+- **Nível de detalhe das setas** (`renderers/arrowDetail.ts`, `renderers/arrows.ts`; CD3 da etapa canvas-desempenho, decisão 7; portão
+  aberto na CD1: com 1.000 setas o pan e o zoom de 2.000 marcações em Enquadrar tudo ficaram 47,5% e 28,5% acima de `--sem-setas`
+  no Chromium): `arrowDetail` é uma função pura, como `levelOfDetail`, que dá `full`, `thin` ou `hidden` pelo comprimento do traço na
+  tela (soma dos trechos do `path` × zoom, `arrowPathLength`, guardado por `ArrowShape`) e pelo tamanho das duas pontas, lendo os
+  tokens `size-lod-min-marking` (24 px) e `size-lod-hide-marking` (2 px); nenhum token novo. **`hidden`** (não é pintada nem tem
+  rótulo): as duas pontas são marcações invisíveis pela regra das marcações. **`thin`** (comprimento < 24 px): só o traço, sem halo,
+  sem ponta e sem rótulo; o corpo entra na mesma passagem do traço das inteiras (`BodiesMerge`), então não há passagem nova.
+  **`full`**: a seta selecionada (inclusive na seleção múltipla), a que liga uma marcação selecionada ou sob o mouse (ou com marca da
+  revisão) e as demais. Além do nível, a seta cuja caixa (`bounds`, com a folga do rótulo) não cruza a área visível não é pintada nem
+  tem rótulo. O `DetailPlan` do `ArrowRenderer` guarda a medida de cada seta (comprimento e tamanho das pontas, com o zoom em 1) até o
+  projeto, as posições ou o tema mudarem; cada quadro só aplica o zoom, a área visível e as exceções. Pan e posições novas passam
+  por `ArrowRenderer.reveal` (só a área visível e o nível, nada mais), e o `render` roda com a seleção, o mouse, o tema, o zoom e o
+  projeto. `data-arrows` conta as setas pintadas (`full` + `thin`, grupo de arrasto incluído). O arrasto de uma marcação continua
+  levando as setas dela para o grupo de arrasto, cada uma no seu nível.
+- **Orçamentos e metas (conferência final, CD5 da etapa canvas-desempenho; linha de base na #888 e na #1219):** a CD4 (imagem pronta
+  por container) foi fechada `not_planned`: o portão (decisão 8) não abriu, porque com 2.000 marcações o pan (19,5 ms) e o zoom
+  (26,5 ms) já ficavam abaixo de 33 ms no Chromium (medida da CD3). Medida final, Chromium 153, 1280×860, mediana de 3 execuções
+  (`npm run perf:canvas -- 2000 5000 --vezes 3`), em ms, com 2.000 marcações e 1.000 setas: abrir em Enquadrar tudo 128,5, pan 20,6,
+  zoom 31,1, edição 9,8, arrasto 23,2 (10 moves); com 5.000: 210,9, 55,0, 54,4, 11,3 e 30,8. Metas da decisão 10 com 2.000:
+  edição ≤ 16 ms **atingida**; pan e zoom ≤ 33 ms **atingidos**; abrir ≤ 128 ms **não atingida por 0,5 ms** (128,5; as três execuções
+  deram 125,7, 128,5 e 196,2, a máquina da nuvem oscila). Sem setas: abrir 101,1, pan 21,7, zoom 26,8, edição 2,9; com componentes
+  (21 telas por container): abrir 293,8, pan 65,7, zoom 58,8, edição 14,0. Com 5.000 marcações pan e zoom ficam em ~55 ms e não
+  têm meta. Orçamentos do jsdom (`renderPerformance.test.ts`): arrasto ≤ 16 ms (atingido), pan e zoom ≤ 33 ms (atingidos), edição
+  ≤ 16 ms como meta com teto de 35 ms (com 16 ms o teste passou 6 de 10 vezes, então o teto fica), primeiro quadro em Enquadrar
+  tudo < 111,5 ms. `npm run test:scale` (`GROWTH_RETRY=0`): canvas pan 3,34×, zoom 4,01× e primeiro quadro 2,22×, todos < 6×.
 - **Grupo de arrasto** (`CanvasController.syncDrag`/`applyDrag`, `canvas/dragSet.ts`; decisões 5 a 7 da etapa canvas-escala):
   durante um gesto do store (`store.gestureActive`: mover ou redimensionar marcação, mover itens ou container, rota e ponta de
   seta), o que se move vai para um **grupo no fundo da camada de sobreposições** (abaixo da faixa de chegada, das marcas da

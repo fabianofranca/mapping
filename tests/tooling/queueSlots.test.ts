@@ -11,6 +11,8 @@ import { between, section } from '../support/textSlice';
 const SCRIPT = '.claude/skills/implementar-fila/painel/painel.py';
 const PAGE = '.claude/skills/implementar-fila/painel/index.html';
 const NOW = '2026-11-10T10:00:00Z';
+// Testes que sobem dezenas de subprocessos do painel.py: folga para o CI sob carga.
+const TEMPO_SUBPROCESSOS = 30_000;
 
 let dir = '';
 
@@ -154,53 +156,57 @@ describe('painel.py — vagas (VG1, #1440)', () => {
     expect(vagas()).toBe('Vagas 0/1 · nenhuma ready elegível');
   });
 
-  it('comparação do Toca em: roteiro, arquivo inteiro, ignorados, pasta, crases e ?', () => {
-    run('start', dir, '--paralelo', '9');
-    const motivo = (a: string, b: string): string => {
-      run('init', dir, '--force');
+  it(
+    'comparação do Toca em: roteiro, arquivo inteiro, ignorados, pasta, crases e ?',
+    () => {
       run('start', dir, '--paralelo', '9');
-      etapa('#1', ficha('nenhuma', a), 'status=em andamento');
-      etapa('#2', ficha('nenhuma', b));
-      return vagas().split(' · ')[1] ?? '';
-    };
-    expect(motivo('docs/TESTING.md#R12', 'docs/TESTING.md#R25')).toBe('#2 começa');
-    expect(motivo('docs/TESTING.md#R12', 'docs/TESTING.md#R12')).toBe(
-      '#2 arquivo docs/TESTING.md#R12 com #1',
-    );
-    expect(motivo('docs/TESTING.md#R12', 'docs/TESTING.md')).toBe(
-      '#2 arquivo docs/TESTING.md com #1',
-    );
-    expect(motivo('docs/TESTING.md', 'docs/TESTING.md#R12')).toBe(
-      '#2 arquivo docs/TESTING.md#R12 com #1',
-    );
-    expect(motivo('docs/TESTING-NUVEM.md#blocos', 'docs/TESTING-NUVEM.md#blocos')).toBe(
-      '#2 começa',
-    );
-    expect(motivo('mcp/version.ts', 'mcp/version.ts')).toBe('#2 começa');
-    expect(motivo('changelog/a.md', 'changelog/a.md')).toBe('#2 começa');
-    expect(motivo('docs/design-system/a.md', 'docs/design-system/a.md')).toBe(
-      '#2 começa',
-    );
-    expect(motivo('docs/TESTING-NUVEM.md', 'docs/TESTING-NUVEM.md')).toBe(
-      '#2 arquivo docs/TESTING-NUVEM.md com #1',
-    );
-    expect(motivo('tests/tooling/', 'tests/tooling/a.test.ts')).toBe(
-      '#2 arquivo tests/tooling/a.test.ts com #1',
-    );
-    expect(motivo('tests/tooling/**', 'tests/tooling/a.test.ts')).toBe(
-      '#2 arquivo tests/tooling/a.test.ts com #1',
-    );
-    expect(motivo('tests/tooling/a.test.ts', 'tests/tooling/**')).toBe(
-      '#2 arquivo tests/tooling/** com #1',
-    );
-    expect(motivo('`./src/a.ts`, `src/b.ts`', ' src/a.ts ')).toBe(
-      '#2 arquivo src/a.ts com #1',
-    );
-    expect(motivo('src/a.ts', '?')).toBe('#2 arquivo ? com #1');
-    expect(motivo('src/i18n/pt-BR.ts', 'src/i18n/pt-BR.ts')).toBe(
-      '#2 arquivo src/i18n/pt-BR.ts com #1',
-    );
-  });
+      const motivo = (a: string, b: string): string => {
+        run('init', dir, '--force');
+        run('start', dir, '--paralelo', '9');
+        etapa('#1', ficha('nenhuma', a), 'status=em andamento');
+        etapa('#2', ficha('nenhuma', b));
+        return vagas().split(' · ')[1] ?? '';
+      };
+      expect(motivo('docs/TESTING.md#R12', 'docs/TESTING.md#R25')).toBe('#2 começa');
+      expect(motivo('docs/TESTING.md#R12', 'docs/TESTING.md#R12')).toBe(
+        '#2 arquivo docs/TESTING.md#R12 com #1',
+      );
+      expect(motivo('docs/TESTING.md#R12', 'docs/TESTING.md')).toBe(
+        '#2 arquivo docs/TESTING.md com #1',
+      );
+      expect(motivo('docs/TESTING.md', 'docs/TESTING.md#R12')).toBe(
+        '#2 arquivo docs/TESTING.md#R12 com #1',
+      );
+      expect(motivo('docs/TESTING-NUVEM.md#blocos', 'docs/TESTING-NUVEM.md#blocos')).toBe(
+        '#2 começa',
+      );
+      expect(motivo('mcp/version.ts', 'mcp/version.ts')).toBe('#2 começa');
+      expect(motivo('changelog/a.md', 'changelog/a.md')).toBe('#2 começa');
+      expect(motivo('docs/design-system/a.md', 'docs/design-system/a.md')).toBe(
+        '#2 começa',
+      );
+      expect(motivo('docs/TESTING-NUVEM.md', 'docs/TESTING-NUVEM.md')).toBe(
+        '#2 arquivo docs/TESTING-NUVEM.md com #1',
+      );
+      expect(motivo('tests/tooling/', 'tests/tooling/a.test.ts')).toBe(
+        '#2 arquivo tests/tooling/a.test.ts com #1',
+      );
+      expect(motivo('tests/tooling/**', 'tests/tooling/a.test.ts')).toBe(
+        '#2 arquivo tests/tooling/a.test.ts com #1',
+      );
+      expect(motivo('tests/tooling/a.test.ts', 'tests/tooling/**')).toBe(
+        '#2 arquivo tests/tooling/** com #1',
+      );
+      expect(motivo('`./src/a.ts`, `src/b.ts`', ' src/a.ts ')).toBe(
+        '#2 arquivo src/a.ts com #1',
+      );
+      expect(motivo('src/a.ts', '?')).toBe('#2 arquivo ? com #1');
+      expect(motivo('src/i18n/pt-BR.ts', 'src/i18n/pt-BR.ts')).toBe(
+        '#2 arquivo src/i18n/pt-BR.ts com #1',
+      );
+    },
+    TEMPO_SUBPROCESSOS,
+  );
 
   it('o texto da issue (decisão 1.5) vira teste e toda gravação o recalcula, inclusive log e current', () => {
     run('start', dir, '--paralelo', '5');
@@ -409,22 +415,26 @@ describe('painel.py — correções da revisão final (VG3, #1440)', () => {
     return vagas().split(' · ')[1] ?? '';
   };
 
-  it('achado 2: glob (src/i18n/*, *.ts) e pasta sem barra final casam com o que está debaixo', () => {
-    expect(motivo('src/i18n/*', 'src/i18n/pt-BR.ts')).toBe(
-      '#2 arquivo src/i18n/pt-BR.ts com #1',
-    );
-    expect(motivo('src/i18n/pt-BR.ts', 'src/i18n/*')).toBe(
-      '#2 arquivo src/i18n/* com #1',
-    );
-    expect(motivo('src/model/*.ts', 'src/model/a.ts')).toBe(
-      '#2 arquivo src/model/a.ts com #1',
-    );
-    expect(motivo('src/model/*.ts', 'src/store/a.ts')).toBe('#2 começa');
-    expect(motivo('src/model', 'src/model/a.ts')).toBe(
-      '#2 arquivo src/model/a.ts com #1',
-    );
-    expect(motivo('src/model', 'src/modelo/a.ts')).toBe('#2 começa');
-  });
+  it(
+    'achado 2: glob (src/i18n/*, *.ts) e pasta sem barra final casam com o que está debaixo',
+    () => {
+      expect(motivo('src/i18n/*', 'src/i18n/pt-BR.ts')).toBe(
+        '#2 arquivo src/i18n/pt-BR.ts com #1',
+      );
+      expect(motivo('src/i18n/pt-BR.ts', 'src/i18n/*')).toBe(
+        '#2 arquivo src/i18n/* com #1',
+      );
+      expect(motivo('src/model/*.ts', 'src/model/a.ts')).toBe(
+        '#2 arquivo src/model/a.ts com #1',
+      );
+      expect(motivo('src/model/*.ts', 'src/store/a.ts')).toBe('#2 começa');
+      expect(motivo('src/model', 'src/model/a.ts')).toBe(
+        '#2 arquivo src/model/a.ts com #1',
+      );
+      expect(motivo('src/model', 'src/modelo/a.ts')).toBe('#2 começa');
+    },
+    TEMPO_SUBPROCESSOS,
+  );
 
   it('achado 3: anotação entre parênteses depois do caminho é descartada, mesmo com vírgula dentro', () => {
     expect(motivo('src/store/session.ts (novo método)', 'src/store/session.ts')).toBe(

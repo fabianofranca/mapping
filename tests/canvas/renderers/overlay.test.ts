@@ -254,7 +254,7 @@ describe('OverlayRenderer', () => {
       );
       overlay.render(frame, PLACEMENTS, markings.headers);
 
-      const label = markings.node('M1')?.text.header;
+      const label = markings.node('M1')?.text?.header;
       if (!label) throw new Error('sem rótulo do pai');
       expect(label.visible()).toBe(true);
       const labelBox = {

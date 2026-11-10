@@ -26,7 +26,7 @@ npm run test:coverage # vitest com relatório de cobertura (coverage/); pula os 
 npm run test:durations # regenera tests/support/durations.json (tempos por arquivo que balanceiam os 4 shards do CI; roda a suíte com cobertura)
 npm run test:perf # só os orçamentos de desempenho (sem cobertura; o CI roda separado)
 npm run test:scale # testes de crescimento (n e 4n marcações, razão < 6×), fora do npm test; roda no CI depois do test:perf
-npm run perf:canvas # mede o canvas num Chromium de verdade contra o dist/index.html (2.000 e 5.000 marcações; quadros de pan, zoom, edição, arrasto e abertura; tabela no stdout); fora do CI; localmente: npm run build e PLAYWRIGHT_CHROMIUM_EXECUTABLE=<chrome>
+npm run perf:canvas # mede o canvas num Chromium de verdade contra o dist/index.html (2.000 e 5.000 marcações; quadros de pan, zoom, edição, arrasto e abertura; tabela no stdout; opções `--setas <n>`, `--sem-setas`, `--componentes` e `--vezes <k>` (mediana de k execuções)); fora do CI; localmente: npm run build e PLAYWRIGHT_CHROMIUM_EXECUTABLE=<chrome>
 npm run test:e2e  # Playwright contra dist/index.html; roda no CI (localmente: npm run build e PLAYWRIGHT_CHROMIUM_EXECUTABLE=<chrome>)
 npm run build:mcp # gera dist-mcp/mapping-mcp.js (servidor MCP, etapa 3a)
 npm run dev:viewer # demonstração do visualizador embutível num hospedeiro React (viewer/demo)

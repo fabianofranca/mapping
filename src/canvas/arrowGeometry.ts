@@ -269,6 +269,23 @@ export function visibleArrowShapes(
   return result;
 }
 
+const lengthCache = new WeakMap<ArrowShape, number>();
+
+/**
+ * O comprimento do traço (soma dos trechos do `path`, unidades do canvas), guardado por
+ * `ArrowShape`: pan e zoom não o recalculam (o comprimento na tela é ele × o zoom).
+ */
+export function arrowPathLength(shape: ArrowShape): number {
+  const cached = lengthCache.get(shape);
+  if (cached !== undefined) return cached;
+  let total = 0;
+  for (let i = 1; i < shape.path.length; i++) {
+    total += dist(shape.path[i - 1] as Point, shape.path[i] as Point);
+  }
+  lengthCache.set(shape, total);
+  return total;
+}
+
 // ---------------------------------------------------------------------------
 // Toque
 
@@ -594,13 +611,15 @@ export function arrowStrokes(
   for (const shape of shapes) {
     const tip = shape.path[shape.path.length - 1];
     if (!tip) continue;
-    const trimmed = trimPathEnd(shape.path, length * HEAD_OVERLAP);
+    // Sem ponta (`headPx` 0: a seta curta, só o traço), o traço vai até o fim e não há triângulo.
+    const trimmed =
+      length > 0 ? trimPathEnd(shape.path, length * HEAD_OVERLAP) : shape.path;
     // O canto não é afinado: tirar um ponto perto do outro comeria a dobra de um trecho curto.
     const flat = flatPoints(
       shape.arrow.style === 'elbow' ? trimmed : thinPath(trimmed, DRAW_SPACING / zoom),
     );
     (shape.arrow.style === 'elbow' ? corners : bodies).push(flat);
-    heads.push(headPoints(tip, headDirection(shape.path), length));
+    if (length > 0) heads.push(headPoints(tip, headDirection(shape.path), length));
   }
   return { bodies, corners, heads };
 }

@@ -44,6 +44,12 @@ function node(renderer: MarkingRenderer, id: string) {
   return n;
 }
 
+function textOf(renderer: MarkingRenderer, id: string) {
+  const text = node(renderer, id).text;
+  if (!text) throw new Error(`sem nome criado para ${id}`);
+  return text;
+}
+
 function withReview(p: Project, id: string): Project {
   return {
     ...p,
@@ -65,7 +71,7 @@ describe('MarkingRenderer', () => {
       strokeWidth: 1,
     });
     // Halo em toda marcação: um traço 2 px mais largo (1 px de cada lado) por baixo da linha.
-    expect(m1.halo.getAttrs()).toMatchObject({
+    expect(m1.halo?.getAttrs()).toMatchObject({
       visible: true,
       stroke: TOKENS.halo,
       strokeWidth: 3,
@@ -82,7 +88,7 @@ describe('MarkingRenderer', () => {
     const m1 = node(renderer, 'M1');
     // 2 px de tela com zoom 2; o halo soma 1 px de cada lado.
     expect(m1.border.getAttrs()).toMatchObject({ stroke: TOKENS.select, strokeWidth: 1 });
-    expect(m1.halo.getAttrs()).toMatchObject({ stroke: TOKENS.halo, strokeWidth: 2 });
+    expect(m1.halo?.getAttrs()).toMatchObject({ stroke: TOKENS.halo, strokeWidth: 2 });
   });
 
   it('cor de borda escolhida para a imagem', () => {
@@ -109,8 +115,8 @@ describe('MarkingRenderer', () => {
       ]),
     });
     expect(node(renderer, 'M1').group.opacity()).toBe(TOKENS.opacity.ancestor);
-    expect(node(renderer, 'M1').alertClip.visible()).toBe(false);
-    expect(node(renderer, 'M1').text.group.visible()).toBe(false);
+    expect(node(renderer, 'M1').alertClip?.visible() ?? false).toBe(false);
+    expect(node(renderer, 'M1').text?.group.visible() ?? false).toBe(false);
     expect(node(renderer, 'M2').group.opacity()).toBe(TOKENS.opacity.dimmed);
   });
 
@@ -133,7 +139,7 @@ describe('MarkingRenderer', () => {
     it('num canto sem selo e sem ⚠ começa na margem do texto, na mesma altura de cabeçalho', () => {
       const { renderer, render } = setup();
       render();
-      const header = node(renderer, 'M1').text.header;
+      const header = textOf(renderer, 'M1').header;
       expect(header.visible()).toBe(true);
       expect(header.x()).toBe(100 + 4);
       expect(header.y()).toBe(100 + (14 - TOKENS.type.name.size) / 2);
@@ -142,7 +148,7 @@ describe('MarkingRenderer', () => {
     it('depois do ⚠ de incompleta', () => {
       const { renderer, render } = setup();
       render({ incomplete: new Set(['M1']) });
-      expect(node(renderer, 'M1').text.header.x()).toBe(100 + ALERT_SIZE + 2);
+      expect(node(renderer, 'M1').text?.header.x()).toBe(100 + ALERT_SIZE + 2);
     });
   });
 
@@ -153,31 +159,31 @@ describe('MarkingRenderer', () => {
       const { renderer, render } = setup();
       render({ incomplete });
       const m1 = node(renderer, 'M1');
-      expect(m1.alertClip.visible()).toBe(true);
-      expect(m1.alert.visible()).toBe(true);
-      expect(m1.alert.x()).toBe(100 + CORNER_MARGIN);
-      expect(m1.alert.getAttrs()).toMatchObject({
+      expect(m1.alertClip?.visible()).toBe(true);
+      expect(m1.alert?.visible()).toBe(true);
+      expect(m1.alert?.x()).toBe(100 + CORNER_MARGIN);
+      expect(m1.alert?.getAttrs()).toMatchObject({
         fill: TOKENS.warning,
         stroke: TOKENS.halo,
       });
-      expect(m1.badge.visible()).toBe(false);
+      expect(m1.badge?.visible() ?? false).toBe(false);
     });
 
     it('com o selo "a revisar": o selo no canto e o ⚠ depois dele', () => {
       const { renderer, render } = setup();
       render({ project: withReview(canvasProject(), 'M1'), incomplete });
       const m1 = node(renderer, 'M1');
-      expect(m1.badge.visible()).toBe(true);
-      expect(m1.badge.x()).toBeLessThan(100 + REVIEW_BADGE_SIZE);
-      expect(m1.alert.x()).toBe(100 + REVIEW_BADGE_SIZE + CORNER_MARGIN);
+      expect(m1.badge?.visible()).toBe(true);
+      expect(m1.badge?.x()).toBeLessThan(100 + REVIEW_BADGE_SIZE);
+      expect(m1.alert?.x()).toBe(100 + REVIEW_BADGE_SIZE + CORNER_MARGIN);
     });
 
     it('sem pendência: o grupo do alerta fica invisível', () => {
       const { renderer, render } = setup();
       render();
       const m1 = node(renderer, 'M1');
-      expect(m1.alertClip.visible()).toBe(false);
-      expect(m1.alert.visible()).toBe(false);
+      expect(m1.alertClip?.visible() ?? false).toBe(false);
+      expect(m1.alert?.visible() ?? false).toBe(false);
     });
   });
 
@@ -188,13 +194,13 @@ describe('MarkingRenderer', () => {
       incomplete: new Set(['M1']),
     });
     const m1 = node(renderer, 'M1');
-    expect(m1.alert.visible()).toBe(true);
-    expect(m1.alert.getAttrs()).toMatchObject({
+    expect(m1.alert?.visible()).toBe(true);
+    expect(m1.alert?.getAttrs()).toMatchObject({
       fill: TOKENS.warning,
       stroke: TOKENS.halo,
     });
-    expect(m1.badge.visible()).toBe(true);
-    expect(m1.badge.fill()).toBe(TOKENS.warning);
+    expect(m1.badge?.visible()).toBe(true);
+    expect(m1.badge?.fill()).toBe(TOKENS.warning);
     expect(m1.border.dash()).toEqual([6, 4]);
   });
 
@@ -208,9 +214,9 @@ describe('MarkingRenderer', () => {
       const incomplete = new Set(['M1']);
       render({ drawn, incomplete, viewport: SMALL });
       const m1 = node(renderer, 'M1');
-      expect(m1.alert.visible()).toBe(false);
+      expect(m1.alert?.visible() ?? false).toBe(false);
       render({ drawn, incomplete, viewport: BIG });
-      expect(m1.alert.visible()).toBe(true);
+      expect(m1.alert?.visible()).toBe(true);
     });
   });
 
@@ -222,12 +228,12 @@ describe('MarkingRenderer', () => {
       render({ drawn });
       const m1 = node(renderer, 'M1');
       expect(m1.border.visible()).toBe(false);
-      expect(m1.halo.visible()).toBe(false);
-      expect(m1.alertClip.visible()).toBe(false);
-      expect(m1.alert.visible()).toBe(false);
+      expect(m1.halo?.visible() ?? false).toBe(false);
+      expect(m1.alertClip?.visible() ?? false).toBe(false);
+      expect(m1.alert?.visible() ?? false).toBe(false);
       // As outras marcações não mudam.
       expect(node(renderer, 'M2').border.visible()).toBe(true);
-      expect(node(renderer, 'M2').halo.visible()).toBe(true);
+      expect(node(renderer, 'M2').halo?.visible()).toBe(true);
     });
 
     it('a pendência de anotação continua visível sem a borda', () => {
@@ -235,7 +241,7 @@ describe('MarkingRenderer', () => {
       render({ drawn, incomplete: new Set(['M1']) });
       const m1 = node(renderer, 'M1');
       expect(m1.border.visible()).toBe(false);
-      expect(m1.alert.visible()).toBe(true);
+      expect(m1.alert?.visible()).toBe(true);
     });
 
     it('sob o mouse ou selecionada: a borda e o halo aparecem', () => {
@@ -243,7 +249,7 @@ describe('MarkingRenderer', () => {
       render({ drawn });
       render({ drawn, hoverMarking: 'M1' });
       expect(node(renderer, 'M1').border.visible()).toBe(true);
-      expect(node(renderer, 'M1').halo.visible()).toBe(true);
+      expect(node(renderer, 'M1').halo?.visible()).toBe(true);
       render({ drawn, hoverMarking: null });
       expect(node(renderer, 'M1').border.visible()).toBe(false);
       render({ drawn, selection: { kind: 'marking', id: 'M1' } });
@@ -257,13 +263,13 @@ describe('MarkingRenderer', () => {
     it('zoom semântico: sem cartão nem nome; as outras marcações mantêm o rótulo', () => {
       const { renderer, render } = setup();
       render();
-      expect(node(renderer, 'M1').text.group.visible()).toBe(true);
+      expect(node(renderer, 'M1').text?.group.visible()).toBe(true);
       render({ drawn });
-      expect(node(renderer, 'M1').text.group.visible()).toBe(false);
+      expect(node(renderer, 'M1').text?.group.visible() ?? false).toBe(false);
       // M3 (sem nome, em I2) e as demais seguem o caminho de sempre.
       render({ drawn: new Set(['M2']) });
-      expect(node(renderer, 'M1').text.group.visible()).toBe(true);
-      expect(node(renderer, 'M1').text.header.text()).toBe('Porta');
+      expect(node(renderer, 'M1').text?.group.visible()).toBe(true);
+      expect(node(renderer, 'M1').text?.header.text()).toBe('Porta');
     });
   });
 
@@ -280,7 +286,7 @@ describe('MarkingRenderer', () => {
   it('zoom semântico: só o nome no cabeçalho, sem cartão de anotações', () => {
     const { renderer, render } = setup();
     render();
-    const text = node(renderer, 'M1').text;
+    const text = textOf(renderer, 'M1');
     expect(text.group.visible()).toBe(true);
     expect(text.header.text()).toBe('Porta');
     expect(text.header.getAttrs()).toMatchObject({
@@ -296,7 +302,7 @@ describe('MarkingRenderer', () => {
   it('zoom semântico: marcação grande sem filhas mostra só o nome', () => {
     const { renderer, render } = setup();
     render({ viewport: { x: -1100, y: -1100, scale: 6 } });
-    const text = node(renderer, 'M2').text;
+    const text = textOf(renderer, 'M2');
     expect(text.group.visible()).toBe(true);
     expect(text.header.text()).toBe('Maçaneta');
     expect(text.group.getChildren()).toEqual([text.header]);
@@ -314,8 +320,8 @@ describe('MarkingRenderer', () => {
       ),
     };
     render({ project });
-    const parent = node(renderer, 'M1').text.header;
-    const child = node(renderer, 'M2').text.header;
+    const parent = textOf(renderer, 'M1').header;
+    const child = textOf(renderer, 'M2').header;
     expect(parent.visible()).toBe(true);
     expect(child.visible()).toBe(true);
     expect(child.y()).toBeGreaterThanOrEqual(parent.y() + parent.height());
@@ -324,7 +330,7 @@ describe('MarkingRenderer', () => {
   it('zoom semântico: marcação pequena na tela não mostra o nome', () => {
     const { renderer, render } = setup();
     render({ viewport: { x: 0, y: 0, scale: 0.1 } });
-    expect(node(renderer, 'M1').text.group.visible()).toBe(false);
+    expect(node(renderer, 'M1').text?.group.visible() ?? false).toBe(false);
   });
 
   it('remove o nó de uma marcação apagada', () => {
@@ -379,7 +385,7 @@ describe('MarkingRenderer: marcações do canvas', () => {
       stroke: TOKENS.canvasMarking,
       dash: [5, 3],
     });
-    expect(c1.halo.dash()).toEqual([5, 3]);
+    expect(c1.halo?.dash()).toEqual([5, 3]);
     // A de container não é tracejada nem usa o token do canvas.
     expect(node(renderer, 'M1').border.dash()).toEqual([]);
     expect(node(renderer, 'M1').border.stroke()).toBe(TOKENS.line);
@@ -439,7 +445,7 @@ describe('MarkingRenderer: marcações do canvas', () => {
       }),
       PLACEMENTS,
     );
-    expect(node(renderer, 'C2').text.header.text()).toBe('Grupo');
+    expect(node(renderer, 'C2').text?.header.text()).toBe('Grupo');
   });
 });
 
@@ -461,11 +467,11 @@ describe('nível de detalhe pelo zoom', () => {
     const m1 = node(renderer, 'M1');
     expect(m1.group.visible()).toBe(true);
     expect(m1.border.visible()).toBe(true);
-    expect(m1.halo.visible()).toBe(false);
-    expect(m1.inner.visible()).toBe(false);
-    expect(m1.badge.visible()).toBe(false);
-    expect(m1.alertClip.visible()).toBe(false);
-    expect(m1.alert.visible()).toBe(false);
+    expect(m1.halo?.visible() ?? false).toBe(false);
+    expect(m1.inner?.visible() ?? false).toBe(false);
+    expect(m1.badge?.visible() ?? false).toBe(false);
+    expect(m1.alertClip?.visible() ?? false).toBe(false);
+    expect(m1.alert?.visible() ?? false).toBe(false);
   });
 
   it('de longe, com marca "alterada" da revisão: a linha dupla continua (completa)', () => {
@@ -479,9 +485,30 @@ describe('nível de detalhe pelo zoom', () => {
     };
     render({ ...fullDetail(), review, viewport: FAR });
     const m1 = node(renderer, 'M1');
-    expect(m1.halo.visible()).toBe(true);
-    expect(m1.inner.visible()).toBe(true);
-    expect(m1.badge.visible()).toBe(true);
+    expect(m1.halo?.visible()).toBe(true);
+    expect(m1.inner?.visible()).toBe(true);
+    expect(m1.badge?.visible()).toBe(true);
+  });
+
+  it('de longe só nascem o grupo e a borda; a marca da revisão cria as partes da marcação pequena', () => {
+    const { renderer, render } = setup();
+    render({ ...fullDetail(), viewport: FAR });
+    const m1 = node(renderer, 'M1');
+    expect([m1.halo, m1.inner, m1.badge, m1.alertClip, m1.alert, m1.text]).toEqual(
+      Array(6).fill(undefined),
+    );
+    const review = {
+      view: 'proposed' as const,
+      markings: new Map([['M1', { line: 'changed' as const, dim: false, badges: [] }]]),
+      images: new Map(),
+      ghosts: [],
+      removed: [],
+    };
+    render({ ...fullDetail(), review, viewport: FAR });
+    expect(m1.halo?.visible()).toBe(true);
+    expect(m1.inner?.visible()).toBe(true);
+    expect(m1.badge?.visible()).toBe(true);
+    expect(m1.alert?.visible()).toBe(true);
   });
 
   it('abaixo de 2 px nas duas medidas: não ganha nó', () => {
@@ -499,14 +526,14 @@ describe('nível de detalhe pelo zoom', () => {
     });
     const m1 = node(renderer, 'M1');
     expect(m1.group.visible()).toBe(true);
-    expect(m1.halo.visible()).toBe(true);
-    expect(m1.badge.visible()).toBe(true);
-    expect(m1.alert.visible()).toBe(true);
+    expect(m1.halo?.visible()).toBe(true);
+    expect(m1.badge?.visible()).toBe(true);
+    expect(m1.alert?.visible()).toBe(true);
 
     const other = setup();
     other.render({ ...fullDetail(), viewport: FAR, hoverMarking: 'M1' });
-    expect(node(other.renderer, 'M1').halo.visible()).toBe(true);
-    expect(node(other.renderer, 'M1').badge.visible()).toBe(true);
+    expect(node(other.renderer, 'M1').halo?.visible()).toBe(true);
+    expect(node(other.renderer, 'M1').badge?.visible()).toBe(true);
   });
 
   it('seleção múltipla: cada marcação selecionada aparece completa', () => {
@@ -520,10 +547,10 @@ describe('nível de detalhe pelo zoom', () => {
         { kind: 'marking', id: 'M2' },
       ],
     });
-    expect(node(renderer, 'M1').halo.visible()).toBe(true);
-    expect(node(renderer, 'M1').alert.visible()).toBe(true);
-    expect(node(renderer, 'M2').halo.visible()).toBe(true);
-    expect(node(renderer, 'M2').alert.visible()).toBe(true);
+    expect(node(renderer, 'M1').halo?.visible()).toBe(true);
+    expect(node(renderer, 'M1').alert?.visible()).toBe(true);
+    expect(node(renderer, 'M2').halo?.visible()).toBe(true);
+    expect(node(renderer, 'M2').alert?.visible()).toBe(true);
   });
 
   it('voltando ao zoom aproximado, o detalhe volta', () => {
@@ -531,8 +558,8 @@ describe('nível de detalhe pelo zoom', () => {
     render({ ...fullDetail(), viewport: FAR });
     render({ ...fullDetail(), viewport: { x: 0, y: 0, scale: 1 } });
     const m1 = node(renderer, 'M1');
-    expect(m1.halo.visible()).toBe(true);
-    expect(m1.badge.visible()).toBe(true);
-    expect(m1.alert.visible()).toBe(true);
+    expect(m1.halo?.visible()).toBe(true);
+    expect(m1.badge?.visible()).toBe(true);
+    expect(m1.alert?.visible()).toBe(true);
   });
 });

@@ -55,10 +55,10 @@ describe('linha das marcações na revisão', () => {
     );
     const m1 = renderer.node('M1');
     expect(m1?.border.strokeWidth()).toBe(3);
-    expect(m1?.inner.visible()).toBe(true);
-    expect(m1?.inner.stroke()).toBe(TOKENS.halo);
+    expect(m1?.inner?.visible()).toBe(true);
+    expect(m1?.inner?.stroke()).toBe(TOKENS.halo);
     expect(renderer.node('M2')?.border.dash()).toEqual([6, 4]);
-    expect(renderer.node('M2')?.inner.visible()).toBe(false);
+    expect(renderer.node('M2')?.inner?.visible() ?? false).toBe(false);
     expect(renderer.node('M3')?.border.dash()).toEqual([1.5, 2.5]);
 
     // Rejeitada (visão Atual): esmaecida (M1 tem anotação, então não está esmaecida por isso).
