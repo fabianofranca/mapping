@@ -234,6 +234,32 @@ describe('página', () => {
     expect(page.textContent).not.toMatch(/arquivo ausente/);
   });
 
+  it('trocar o idioma com a página aberta troca o aviso do componente ausente, sem montar a vista de novo (#1256, R8.3)', async () => {
+    const component = base.layers
+      .flatMap((l) => l.entries)
+      .find((e) => e.type.id === 'm3-button')?.type.component;
+    expect(component).toBeTruthy();
+    const missing = files.filter((f) => !f.path.endsWith(String(component)));
+    view({ initialTypeId: 'm3-button' }, buildCatalog(missing));
+    const alert = (): string =>
+      document.querySelector('.catalog-page .field-error[role="alert"]')?.textContent ??
+      '';
+    expect(alert()).toBe(
+      `O componente não carregou: arquivo ausente (${String(component)})`,
+    );
+
+    locale.value = 'en-US';
+    await waitFor(() =>
+      expect(alert()).toBe(
+        `The component did not load: missing file (${String(component)})`,
+      ),
+    );
+    expect(alert()).not.toMatch(/arquivo ausente|não carregou/);
+
+    locale.value = 'pt-BR';
+    await waitFor(() => expect(alert()).toMatch(/^O componente não carregou/));
+  });
+
   it('origens aparecem agrupadas por sistema', () => {
     view({ initialTypeId: 'm3-button' });
     const section = screen.getByRole('region', { name: t('catalog.page.sources') });
