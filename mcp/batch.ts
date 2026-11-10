@@ -28,6 +28,8 @@ import {
   componentFileMinSize,
   componentMinSize,
   componentPlacement,
+  placementFitsSlot,
+  hasComponentSlot,
   componentTypes,
   findSpecType,
   loadSpecComponents,
@@ -106,6 +108,7 @@ import {
   type Layer,
   type Marking,
   type Project,
+  type Rect,
   type RefValue,
   type Spec,
   type SpecField,
@@ -2001,9 +2004,14 @@ class Batch {
       );
     }
     const containerRef = op.container ?? op.image;
+    // `inside`: o alvo (componente com slot) dá o container; o pai gravado continua da geometria.
+    const inside = op.inside === undefined ? null : this.insideTarget(op, containerRef);
     // Sem `container`: marcação do canvas (rect em unidades do canvas, podendo ser negativo).
-    const containerId =
-      containerRef === undefined ? null : this.containerItem(containerRef, p);
+    const containerId = inside
+      ? inside.containerId
+      : containerRef === undefined
+        ? null
+        : this.containerItem(containerRef, p);
     const markingId = crypto.randomUUID();
     const typeRef = annotation ? this.type(annotation.type) : null;
     const component =
@@ -2011,6 +2019,12 @@ class Batch {
         ? null
         : (this.componentTypeMap(p, catalog).get(`${typeRef.specId}/${typeRef.typeId}`) ??
           null);
+    if (inside !== null && component === null) {
+      throw new ToolError(
+        'invalid-arguments',
+        '`inside` só vale com `annotation` de um tipo com componente (veja list_components)',
+      );
+    }
     if (op.rect === undefined && component === null) {
       throw new ToolError(
         'invalid-arguments',
@@ -2055,6 +2069,7 @@ class Batch {
       // O pai sai da geometria (o modelo assenta ao criar): sem `rect`, no centro do container.
       const rect =
         nearRect ??
+        (inside ? this.insideRect(op, inside.id, containerId, typeRef, minSize) : null) ??
         op.rect ??
         componentPlacement(
           p,
@@ -2079,7 +2094,7 @@ class Batch {
             markingId,
             annotationId: newAnnotationId,
             containerId,
-            parentId: null,
+            parentId: inside?.id ?? null,
             ...typeRef,
             rect,
             name: op.name ?? null,
@@ -2087,6 +2102,13 @@ class Batch {
           this.measurer,
         ),
       );
+      if (inside) {
+        this.noteInsideFit(notes, p, project, inside.id, {
+          id: markingId,
+          rect,
+          asked: op.rect,
+        });
+      }
       if (annotation.name !== undefined) {
         project = renameAnnotation(project, newAnnotationId, annotation.name);
       }
@@ -2139,6 +2161,123 @@ class Batch {
       ],
       rowAliases,
     };
+  }
+
+  /**
+   * Alvo do `inside` de `create_marking`: uma marcação (do lote ou do projeto) que desenha um
+   * componente com slot. Só posiciona: o pai gravado sai da geometria. `container`, se vier,
+   * precisa ser o do alvo.
+   */
+  private insideTarget(
+    op: Extract<Operation, { op: 'create_marking' }>,
+    containerRef: string | undefined,
+  ): { id: string; containerId: string | null } {
+    if (op.near !== undefined) {
+      throw new ToolError(
+        'invalid-arguments',
+        '`inside` e `near` são duas posições: informe só um',
+      );
+    }
+    if (op.annotation === undefined) {
+      throw new ToolError(
+        'invalid-arguments',
+        '`inside` só vale com `annotation` de um tipo com componente (veja list_components)',
+      );
+    }
+    const id = this.item(op.inside!, 'm');
+    const target = this.p.markings.find((m) => m.id === id);
+    if (
+      target === undefined ||
+      !hasComponentSlot(this.p, this.catalog, id, this.measurer)
+    ) {
+      throw new ModelError(
+        'invalid-parent',
+        '`inside` precisa ser uma marcação que desenha um componente com slot (veja list_components: só o componente com slot, como Column ou Row, recebe filhas)',
+      );
+    }
+    if (
+      containerRef !== undefined &&
+      this.containerItem(containerRef, this.p) !== target.containerId
+    ) {
+      throw new ModelError(
+        'invalid-parent',
+        '`container` não é o container do alvo de `inside`: omita `container` (ele vem do alvo)',
+      );
+    }
+    return { id, containerId: target.containerId };
+  }
+
+  /** Retângulo da filha no slot do alvo; o `rect` do passo dá só o tamanho (x e y são ignorados). */
+  private insideRect(
+    op: Extract<Operation, { op: 'create_marking' }>,
+    targetId: string,
+    containerId: string | null,
+    typeRef: AnnotationTypeRef,
+    minSize: { width: number; height: number } | null,
+  ): Rect {
+    const { rect } = op;
+    if (
+      rect !== undefined &&
+      minSize !== null &&
+      (rect.width < minSize.width || rect.height < minSize.height)
+    ) {
+      this.checkMinSize(minSize, `"${typeRef.specId}/${typeRef.typeId}"`, () => {
+        throw new ModelError('rect-too-small', undefined, {
+          received: { width: rect.width, height: rect.height },
+          min: { ...minSize },
+          source: 'component',
+        });
+      });
+    }
+    return componentPlacement(
+      this.p,
+      this.catalog,
+      {
+        containerId,
+        parentId: targetId,
+        ...typeRef,
+        ...(rect === undefined
+          ? {}
+          : { size: { width: rect.width, height: rect.height } }),
+      },
+      this.measurer,
+    );
+  }
+
+  /**
+   * Avisos do `inside`: slot cheio (a filha não coube na área do slot), pai gravado que não é o
+   * alvo (em quem ficou, mesmo quando coube) e `rect` encolhido ao slot.
+   */
+  private noteInsideFit(
+    notes: string[],
+    before: Project,
+    after: Project,
+    targetId: string,
+    created: { id: string; rect: Rect; asked: Rect | undefined },
+  ): void {
+    const target = this.markingLabel(after, targetId);
+    const { asked, rect } = created;
+    if (asked && (asked.width !== rect.width || asked.height !== rect.height)) {
+      notes.push(
+        `o tamanho do \`rect\` (${asked.width}×${asked.height}) não cabe no slot de ${target}: a marcação nasceu com ${rect.width}×${rect.height}`,
+      );
+    }
+    const parentId = projectIndex(after).markings.get(created.id)?.parentId ?? null;
+    const where =
+      parentId === targetId
+        ? ''
+        : parentId === null
+          ? '; ficou fora dele'
+          : `; ficou dentro de ${this.markingLabel(after, parentId)}`;
+    if (!placementFitsSlot(before, this.catalog, targetId, rect, this.measurer)) {
+      notes.push(
+        `a marcação não coube no slot de ${target}: aumente o componente ou use Arrumar na app${where}`,
+      );
+    } else if (where !== '') {
+      notes.push(
+        `a marcação nasceu no slot de ${target}, mas o pai gravado não é ele${where}`,
+      );
+    }
   }
 
   /** Anotação tipada nova: camada do tipo (ou a informada), dona e valores campo a campo. */
