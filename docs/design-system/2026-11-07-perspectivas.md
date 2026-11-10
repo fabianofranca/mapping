@@ -21,6 +21,6 @@ Versões 56 (conteúdo) e 57 (índice) do artefato, de 2026-11-07. **Componentes
 
 ## Ficou sem gravar
 
-- Os `preview.html` dos três guias novos e os estados de perspectiva nos previews existentes de `ConfirmDialogs`, `Menu` e `StatusBar`; o desenho das marcas de chegada nos previews de `Canvas`/`CanvasMarking` (só descrito em texto no `Canvas.md`).
-- A conferência de contraste nos temas claro e escuro (nada foi visto no navegador).
-- O texto do guia `PerspectiveDialogs` sobre a cópia do nome na duplicação (`perspective.manage.copyName`) foi inferido, sem ler `duplicatePerspective`.
+- Passou para o registro do épico `epic/sincronia-ds-2`: prévias novas de `PerspectivePicker`, `PerspectiveDialogs` e `PerspectivesSection` e estados de perspectiva em `ConfirmDialogs`, `Menu`, `StatusBar` e `CanvasMarking` (marcas de chegada) (DS5), mais `.menu-items-group` no `bundle.css` (DS3).
+- Passou para o registro do épico `epic/sincronia-ds-2`: conferência de contraste e temas das prévias de perspectiva (DS5).
+- Passou para o registro do épico `epic/sincronia-ds-2`: texto do guia `PerspectiveDialogs` sobre o nome da cópia na duplicação, conferido com o código (`<nome> (cópia)`, a cópia herda o Quem vê) (DS3).

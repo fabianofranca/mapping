@@ -22,4 +22,8 @@ Gravado no artefato **Mapping** (versão 60, `lastChange` "Claude Code (fechamen
 
 ## Ficou sem gravar
 
-Nenhum `preview.html` foi alterado: os previews de `Select`, `SettingsDialog`, `SpecsDialog`, `ReferenceField` e `CanvasMarking` não mostram os estados novos (modo do desenho, bloco de tokens, campo estreito, bolinha oculta por tamanho), e mostrá-los pediria estados ou seções novas no DS. Fica para uma rodada do dono, se quiser os estados desenhados.
+- Passou para o registro do épico `epic/sincronia-ds-2`: prévia do `Select` com o "Modo do desenho" do projeto e do container (DS5).
+- Passou para o registro do épico `epic/sincronia-ds-2`: prévia do `SettingsDialog` com a seção "Modo do desenho" (DS4), e a correção do guia (sem modo gravado vale o primeiro declarado) (DS3).
+- Passou para o registro do épico `epic/sincronia-ds-2`: prévia do `SpecsDialog` com o bloco "Modos, tokens e ícones" (DS5) e as classes `.spec-design*` no `bundle.css` (DS3).
+- Passou para o registro do épico `epic/sincronia-ds-2`: prévia do `ReferenceField` com o campo em largura estreita (DS5).
+- Passou para o registro do épico `epic/sincronia-ds-2`: prévia do `CanvasMarking` com a bolinha oculta por tamanho: sem efeito, as bolinhas e o token `size-indicator-min-marking` saíram do código.

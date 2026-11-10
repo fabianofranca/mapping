@@ -6,7 +6,5 @@ Versões 21 (conteúdo) e 22 (índice) do artefato. **`Menu`:** o guia e o previ
 
 ## Ficou sem gravar
 
-O fechamento do épico gravou no artefato o que dava (ver o histórico). Ficou sem gravar:
-
 - Passou para o registro do épico `epic/sincronia-ds-2`: `Segmented`, CSS e preview: regras de `.props-value > .segmented` (quebra de linha, borda por opção, `.segmented-text`) no `bundle.css` e um exemplo em coluna estreita no preview.
 - Passou para o registro do épico `epic/sincronia-ds-2`: Paleta da biblioteca (`LibraryPalette`): guia sem componente no DS; já está em "Com forma visível e sem componente no DS", decisão do dono.
