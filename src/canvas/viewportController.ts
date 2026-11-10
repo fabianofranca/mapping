@@ -1,6 +1,6 @@
 // Viewport do canvas: tamanho do container, pan, zoom, enquadrar e centralizar.
 // As contas ficam em `viewport.ts` (puras); aqui ficam os signals e o DOM.
-import { signal } from '@preact/signals';
+import { batch, signal } from '@preact/signals';
 import type { Project, Rect } from '../model';
 import { ARRIVAL_FIT_EXTRA } from './arrivals';
 import { imagesBounds } from './imageGeometry';
@@ -9,6 +9,7 @@ import {
   FIT_PADDING,
   centerOn,
   fitRect,
+  keepCenter,
   panBy,
   pinch,
   revealRect,
@@ -29,6 +30,8 @@ export class ViewportController {
     | null;
   /** Já enquadrou na primeira vez que o container teve tamanho. */
   private fitted = false;
+  /** Último tamanho com largura e altura maiores que zero (o 0 do aviso de janela pequena não conta). */
+  private lastSize: Size | null = null;
   /** Quantas vezes enquadrou; o canvas publica no container para os testes e2e. */
   fits = 0;
 
@@ -86,14 +89,25 @@ export class ViewportController {
     this.viewport.value = fitRect(rect, size);
   }
 
-  /** Tamanho atual do container; atualiza `size` só se ele mudou. */
+  /**
+   * Tamanho atual do container; atualiza `size` só se ele mudou. Se mudou de um tamanho não nulo
+   * para outro, depois do primeiro enquadramento, a vista mantém o centro e a escala.
+   */
   private readSize(): Size {
     const current = this.size.peek();
     const width = this.container.clientWidth;
     const height = this.container.clientHeight;
     if (width === current.width && height === current.height) return current;
     const size = { width, height };
-    this.size.value = size;
+    const previous = this.lastSize;
+    const nonZero = width > 0 && height > 0;
+    if (nonZero) this.lastSize = size;
+    batch(() => {
+      this.size.value = size;
+      if (this.fitted && nonZero && previous) {
+        this.viewport.value = keepCenter(this.viewport.peek(), previous, size);
+      }
+    });
     return size;
   }
 
