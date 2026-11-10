@@ -34,15 +34,7 @@ export function sortNotices(notices: readonly SpecNotice[]): SpecNotice[] {
 
 /** Avisos do tipo, depois dos campos e depois das colunas, na ordem do arquivo. */
 export function typeNotices(type: SpecAnnotationType): SpecNotice[] {
-  const list: SpecNotice[] = [...(type.notices ?? [])];
-  const columns: SpecNotice[] = [];
-  for (const field of type.fields) {
-    list.push(...(field.notices ?? []));
-    if (field.type === 'table') {
-      for (const column of field.columns) columns.push(...(column.notices ?? []));
-    }
-  }
-  return [...list, ...columns];
+  return placedTypeNotices(type).map((p) => p.notice);
 }
 
 /**

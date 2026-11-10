@@ -586,6 +586,12 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
       expect(kinds).toEqual(new Set(['removed', 'deprecated', 'diverges', 'pending']));
     });
 
+    it('o JSON do roteiro é o mesmo do fixture e2e avisos-demo', () => {
+      const block = /```json\n([\s\S]*?)\n```/.exec(r18)?.[1] ?? '';
+      const fixture = read('tests/e2e/fixtures/avisos-demo.spec.json');
+      expect(JSON.parse(block)).toEqual(JSON.parse(fixture));
+    });
+
     it('o prompt da nuvem lista os roteiros até o R25', () => {
       expect(prompt).toContain('R0 a R25');
     });
