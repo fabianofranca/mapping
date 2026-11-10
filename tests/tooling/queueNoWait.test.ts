@@ -8,32 +8,16 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { between, section } from '../support/textSlice';
 
 const FILA = '.claude/skills/implementar-fila';
 const read = (p: string): string => readFileSync(p, 'utf8');
 const fila = read(`${FILA}/SKILL.md`);
 const detalhar = read('.claude/skills/detalhar-backlog/SKILL.md');
 const flow = read('docs/FLOW.md');
-const process = read('docs/PROCESS.md');
+const processDoc = read('docs/PROCESS.md');
 const page = read(`${FILA}/painel/index.html`);
 const painelPy = read(`${FILA}/painel/painel.py`);
-
-/** Texto de um cabeçalho (`## ` ou `### `) até o próximo do mesmo nível ou acima. */
-function section(text: string, heading: string): string {
-  const lines = text.split('\n');
-  const start = lines.findIndex((l) => l === heading);
-  if (start < 0) throw new Error(`seção não achada: ${heading}`);
-  const level = heading.match(/^#+/)![0].length;
-  let end = lines.length;
-  for (let i = start + 1; i < lines.length; i++) {
-    const m = lines[i]!.match(/^(#+) /);
-    if (m && m[1]!.length <= level) {
-      end = i;
-      break;
-    }
-  }
-  return lines.slice(start, end).join('\n');
-}
 
 describe('implementar-fila: versão do MCP no fechamento (decisão 1)', () => {
   const regras = section(fila, '## Regras desta fila');
@@ -141,8 +125,8 @@ describe('implementar-fila: fechamento durante o CI (decisão 9)', () => {
 
 describe('docs: processo e mensagens (decisão 8)', () => {
   it('o item "Versão do MCP por épico" diz que a versão é provisória até o fechamento', () => {
-    expect(process).toContain('provisória até o fechamento');
-    expect(process).toContain('próxima livre na `origin/main`');
+    expect(processDoc).toContain('provisória até o fechamento');
+    expect(processDoc).toContain('próxima livre na `origin/main`');
   });
 
   it('o FLOW cita as novidades da fila e do detalhamento', () => {
@@ -214,6 +198,28 @@ describe('implementar-fila: skill novo na main (decisão 11)', () => {
     expect(troca).toContain('`SKILL.md` inteiro, nunca só o diff');
     expect(troca).toContain('skill <commit>: <regra> → <o que faço agora>');
   });
+
+  it('a releitura é com Read sem offset nem limit, e a prova começa por "relido inteiro, <n> linhas" (RS1, decisão 8)', () => {
+    const pequena = troca.slice(troca.indexOf('**Pequena:**'));
+    expect(pequena).toContain('`Read`');
+    expect(pequena).toContain('sem `offset` nem `limit`');
+    expect(pequena).toContain('skill <commit>: relido inteiro, <n> linhas');
+    expect(pequena).toMatch(/`git diff --numstat` serve só para classificar/);
+    expect(pequena).toMatch(/diff do `SKILL.md` não se abre antes/);
+    const reserva = between(fila, '**Conferências de reserva:**', '**CI vermelho');
+    expect(reserva).toContain('`Read`');
+    expect(reserva).toContain('sem `offset` nem `limit`');
+  });
+
+  it('a releitura é exceção da economia de contexto: não se delega nem se resume (RS1, decisão 8)', () => {
+    const economia = section(fila, '## Economia de contexto');
+    const item = economia
+      .split('\n')
+      .find((l) => /^\d+\. \*\*A releitura do skill/.test(l));
+    expect(item).toBeDefined();
+    expect(item).toMatch(/exceção/);
+    expect(item).toMatch(/não se delega a subagente nem se resume/);
+  });
 });
 
 describe('revisão /code-review high do épico (fechamento da etapa #1322)', () => {
@@ -223,6 +229,17 @@ describe('revisão /code-review high do épico (fechamento da etapa #1322)', () 
       .find((l) => l.startsWith('Para implementar em sequência'))!;
     expect(linha).not.toMatch(/é só por contexto/);
     expect(linha).toMatch(/skill novo na `main` grande/);
+  });
+
+  it('o FLOW.md usa o critério de 60 linhas ou "Regras desta fila" e a releitura com Read (RS1, decisão 9)', () => {
+    const linha = flow
+      .split('\n')
+      .find((l) => l.startsWith('Para implementar em sequência'))!;
+    expect(linha).toContain(
+      'mais de 60 linhas alteradas ou mudança em "Regras desta fila"',
+    );
+    expect(linha).not.toContain('mais de 30 linhas');
+    expect(linha).toMatch(/releitura do `SKILL.md` inteiro com `Read` e prova no `log`/);
   });
 
   it('versão trocada no fechamento: a rc antiga não some sozinha e o número novo refaz a rc', () => {
@@ -248,7 +265,7 @@ describe('revisão /code-review high do épico (fechamento da etapa #1322)', () 
   });
 
   it('o PROCESS.md mantém o gatilho do check e o título do changelog na versão provisória', () => {
-    expect(process).toMatch(/mudou o que vai na release sem subir a versão/);
-    expect(process).toMatch(/título do changelog/);
+    expect(processDoc).toMatch(/mudou o que vai na release sem subir a versão/);
+    expect(processDoc).toMatch(/título do changelog/);
   });
 });
