@@ -176,3 +176,52 @@ test('o nome do alvo do campo ref cabe a 900 e a 1280 px', async ({ page }, info
     expect(m.shown, `largura ${width}`).toBeGreaterThanOrEqual(m.full - 1);
   }
 });
+
+// AF2 (#784, decisão 4): a 900×720 com Árvore, Camadas e Detalhes abertos (Detalhes ~279 px), o
+// rótulo do alvo tem prioridade sobre o nome da camada: ele aparece inteiro e o texto completo
+// (alvo e camada) está no tooltip.
+test('com 3 janelas abertas o rotulo do alvo fica inteiro e o tooltip traz tudo', async ({
+  page,
+}, info) => {
+  const file = info.outputPath('fora.json');
+  writeFileSync(file, JSON.stringify(spec));
+  await createProject(page, 'Fora da imagem');
+  await addImage(page);
+  await drawMarking(page, await canvasPoint(page, 1 / 4));
+  await applySpecialization(page, file);
+  await page.keyboard.press('Control+Shift+1');
+  await page.keyboard.press('Control+Shift+2');
+  await page.keyboard.press('Control+Shift+3');
+  await page
+    .getByRole('button', { name: /Adicionar anotação na camada Componentes/ })
+    .first()
+    .click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: /Item de lista/ })
+    .click();
+  const title = page.getByRole('textbox', { name: 'titulo' });
+  await title.fill('Plugin B');
+  await title.press('Enter');
+  await drawMarking(page, await canvasPoint(page, 2 / 3));
+  await page
+    .getByRole('button', { name: /Adicionar anotação na camada Eventos/ })
+    .first()
+    .click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: /Evento/ })
+    .click();
+  await page.getByRole('button', { name: /^Escolher: principal/i }).click();
+  await page.getByRole('dialog').getByRole('option').first().click();
+
+  const m = await measureRef(page);
+  expect(m.shown, 'rótulo cortado').toBeGreaterThanOrEqual(m.full - 1);
+
+  // O que ficar cortado (aqui, o nome da camada) mostra o texto inteiro no tooltip.
+  const control = page.locator('.ref-field .ref-control');
+  await control.hover();
+  const tip = page.locator('[data-tooltip]', { hasText: 'Plugin B' }).first();
+  await expect(tip).toBeVisible();
+  await expect(tip).toContainText('Componentes');
+});

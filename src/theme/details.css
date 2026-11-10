@@ -896,8 +896,14 @@ button.layer-group-label:hover {
   flex-wrap: wrap;
 }
 
-.ref-field:not(.ref-cell) > .ref-control {
+.ref-field:not(.ref-cell) > .tooltip-anchor {
   flex-basis: 14ch;
+}
+
+/* O Tooltip envolve o controle: a âncora ocupa a largura e o controle enche a âncora. */
+.ref-field > .tooltip-anchor {
+  flex: 1;
+  min-width: 0;
 }
 
 .ref-control {
