@@ -25,6 +25,8 @@ QUEUE_EMPTY = {
     "plan": "",
     # Filhas que ainda devem aviso (ids separados por espaço) e desde quando.
     "child": "", "childAt": "",
+    # Motivo curto de a filha esperar o coordenador (pergunta, CI travado, chama o dono); vazio se não espera.
+    "wait": "",
     # Sessões criadas para a etapa (ids separados por espaço), para arquivar no fim.
     "sessions": "",
 }
@@ -186,6 +188,7 @@ def cmd_row(a):
         validate_choice("stage", pairs["stage"], STAGES)
     if pairs.get("child") == "":
         pairs["childAt"] = ""
+        pairs["wait"] = ""
     for k in TIME_FIELDS:
         if k in pairs:
             pairs[k] = now() if pairs[k] == "now" else (check_iso(pairs[k]) if pairs[k] else "")
@@ -293,8 +296,13 @@ def minutes_since(iso):
 
 
 def late_rows(q):
-    return [r for r in q if r.get("child") and r.get("childAt")
+    """Filha sem aviso há mais de 30 min; a que espera o coordenador (`wait`) não conta."""
+    return [r for r in q if r.get("child") and r.get("childAt") and not r.get("wait")
             and minutes_since(r["childAt"]) > LATE_MINUTES]
+
+
+def waiting_rows(q):
+    return [r for r in q if r.get("child") and r.get("wait")]
 
 
 def show_row(r):
@@ -325,6 +333,8 @@ def cmd_show(a):
     late = late_rows(q)
     print("atrasadas: " + ("; ".join(
         f"{r['issue']} {r['child']} ({minutes_since(r['childAt'])} min)" for r in late) or "nenhuma"))
+    print("esperando o coordenador: " + ("; ".join(
+        f"{r['issue']} ({r['wait']})" for r in waiting_rows(q)) or "nenhuma"))
     print("últimas do log:")
     for e in lg[-5:]:
         print(f"  {e['at']}  {e['text']}")

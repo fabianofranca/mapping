@@ -8,7 +8,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { section } from '../support/textSlice';
+import { between, section } from '../support/textSlice';
 
 const FILA = '.claude/skills/implementar-fila';
 const read = (p: string): string => readFileSync(p, 'utf8');
@@ -198,6 +198,28 @@ describe('implementar-fila: skill novo na main (decisão 11)', () => {
     expect(troca).toContain('`SKILL.md` inteiro, nunca só o diff');
     expect(troca).toContain('skill <commit>: <regra> → <o que faço agora>');
   });
+
+  it('a releitura é com Read sem offset nem limit, e a prova começa por "relido inteiro, <n> linhas" (RS1, decisão 8)', () => {
+    const pequena = troca.slice(troca.indexOf('**Pequena:**'));
+    expect(pequena).toContain('`Read`');
+    expect(pequena).toContain('sem `offset` nem `limit`');
+    expect(pequena).toContain('skill <commit>: relido inteiro, <n> linhas');
+    expect(pequena).toMatch(/`git diff --numstat` serve só para classificar/);
+    expect(pequena).toMatch(/diff do `SKILL.md` não se abre antes/);
+    const reserva = between(fila, '**Conferências de reserva:**', '**CI vermelho');
+    expect(reserva).toContain('`Read`');
+    expect(reserva).toContain('sem `offset` nem `limit`');
+  });
+
+  it('a releitura é exceção da economia de contexto: não se delega nem se resume (RS1, decisão 8)', () => {
+    const economia = section(fila, '## Economia de contexto');
+    const item = economia
+      .split('\n')
+      .find((l) => /^\d+\. \*\*A releitura do skill/.test(l));
+    expect(item).toBeDefined();
+    expect(item).toMatch(/exceção/);
+    expect(item).toMatch(/não se delega a subagente nem se resume/);
+  });
 });
 
 describe('revisão /code-review high do épico (fechamento da etapa #1322)', () => {
@@ -207,6 +229,17 @@ describe('revisão /code-review high do épico (fechamento da etapa #1322)', () 
       .find((l) => l.startsWith('Para implementar em sequência'))!;
     expect(linha).not.toMatch(/é só por contexto/);
     expect(linha).toMatch(/skill novo na `main` grande/);
+  });
+
+  it('o FLOW.md usa o critério de 60 linhas ou "Regras desta fila" e a releitura com Read (RS1, decisão 9)', () => {
+    const linha = flow
+      .split('\n')
+      .find((l) => l.startsWith('Para implementar em sequência'))!;
+    expect(linha).toContain(
+      'mais de 60 linhas alteradas ou mudança em "Regras desta fila"',
+    );
+    expect(linha).not.toContain('mais de 30 linhas');
+    expect(linha).toMatch(/releitura do `SKILL.md` inteiro com `Read` e prova no `log`/);
   });
 
   it('versão trocada no fechamento: a rc antiga não some sozinha e o número novo refaz a rc', () => {

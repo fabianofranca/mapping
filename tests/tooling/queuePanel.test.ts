@@ -91,6 +91,51 @@ describe('painel.py (FC1)', () => {
     expect(run('show', dir)).toContain('reserva: trig_abc');
   });
 
+  it('filha com wait não é atrasada e aparece em "esperando o coordenador" (RS1, decisão 5)', () => {
+    runAt('2026-11-09T10:00:00Z', 'row', dir, '#10', 'child=session_a', 'childAt=now');
+    runAt('2026-11-09T10:01:00Z', 'row', dir, '#10', 'wait=pergunta de produto');
+    const out = runAt('2026-11-09T12:00:00Z', 'show', dir);
+    expect(out).toMatch(/atrasadas: nenhuma/);
+    expect(out).toMatch(/esperando o coordenador: #10 \(pergunta de produto\)/);
+  });
+
+  it('sem filha esperando, o show diz "esperando o coordenador: nenhuma"', () => {
+    expect(run('show', dir)).toMatch(/esperando o coordenador: nenhuma/);
+  });
+
+  it('wait= com childAt=now devolve a filha à contagem', () => {
+    runAt(
+      '2026-11-09T10:00:00Z',
+      'row',
+      dir,
+      '#10',
+      'child=session_a',
+      'childAt=now',
+      'wait=CI travado',
+    );
+    runAt('2026-11-09T12:00:00Z', 'row', dir, '#10', 'wait=', 'childAt=now');
+    expect(runAt('2026-11-09T12:20:00Z', 'show', dir)).toMatch(/atrasadas: nenhuma/);
+    const out = runAt('2026-11-09T12:31:00Z', 'show', dir);
+    expect(out).toMatch(/atrasadas:[^\n]*#10/);
+    expect(out).toMatch(/esperando o coordenador: nenhuma/);
+  });
+
+  it('child= vazio limpa o wait', () => {
+    runAt(
+      '2026-11-09T10:00:00Z',
+      'row',
+      dir,
+      '#10',
+      'child=session_a',
+      'childAt=now',
+      'wait=chama o dono',
+    );
+    run('row', dir, '#10', 'child=');
+    const queue = json('queue') as Array<Record<string, unknown>>;
+    expect(queue[0]?.wait).toBe('');
+    expect(run('show', dir)).toMatch(/esperando o coordenador: nenhuma/);
+  });
+
   it('childAt inválido é recusado', () => {
     expect(() => run('row', dir, '#10', 'childAt=ontem')).toThrow();
   });
@@ -247,7 +292,8 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
   const processDoc = readFileSync('docs/PROCESS.md', 'utf8');
   const fase = section(flow, '## Para a sessão da fase');
   const item6 = fase.split('\n').find((l) => l.startsWith('6. '));
-  if (item6 === undefined) throw new Error('item 6 da "Para a sessão da fase" não achado');
+  if (item6 === undefined)
+    throw new Error('item 6 da "Para a sessão da fase" não achado');
   const reserva = between(skill, '**Conferências de reserva:**', '**CI vermelho');
   const ciVermelho = between(
     skill,
@@ -272,13 +318,16 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
     expect(item6).toContain('node scripts/ci/distBudget.mjs raise');
     expect(item6).toMatch(/chama o dono/);
     expect(item6).toMatch(/16 KiB/);
+    expect(item6).toMatch(/até 14 KiB/);
     expect(item6).toMatch(/32 KiB/);
     expect(item6).toMatch(/64 KiB/);
     expect(item6).toMatch(/`send_message`/);
   });
 
   it('o CI de uma fase é um parágrafo só no item 6 (decisão do dono)', () => {
-    const outros = fase.split('\n').filter((l) => /^\d+\. /.test(l) && !l.startsWith('6. '));
+    const outros = fase
+      .split('\n')
+      .filter((l) => /^\d+\. /.test(l) && !l.startsWith('6. '));
     expect(outros.length).toBeGreaterThan(0);
     for (const linha of outros) {
       expect(linha).not.toContain('send_later');
@@ -295,9 +344,32 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
     const msg = 'Conferência da fila: a fase não avisou. Retome do ponto em que parou';
     expect(reserva).toContain(msg);
     expect(reserva).toMatch(
-      new RegExp(`${msg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[\\s\\S]*crie a sessão de novo`),
+      new RegExp(
+        `${msg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[\\s\\S]*crie a sessão de novo`,
+      ),
     );
     expect(reserva).toMatch(/conferência seguinte/);
+  });
+
+  it('"Por etapa" › 2 e "Painel" dizem quando o wait é gravado e limpo (RS1, decisão 5)', () => {
+    const fases = between(skill, '2. **Fases**', '3. **Testador.**');
+    expect(fases).toContain('espera o coordenador');
+    expect(fases).toContain('CI travado');
+    expect(fases).toContain('chama o dono');
+    expect(fases).toContain('row \'#n\' wait="<motivo curto>"');
+    expect(fases).toContain('wait= childAt=now');
+    const painel = section(skill, '## Painel');
+    expect(painel).toContain('wait="<motivo>"');
+  });
+
+  it('"Conferências de reserva": send_later pendente é espera legítima, e o pior caso está escrito (RS1, decisões 6 e 7)', () => {
+    expect(reserva).toMatch(/`send_later`[^\n]*ainda por disparar/);
+    expect(reserva).toMatch(/há menos de 5 min/);
+    expect(reserva).toMatch(/`row '#n' childAt=now`, sem mensagem/);
+    expect(reserva).toMatch(/~60 min/);
+    expect(reserva).toMatch(/~90 min/);
+    expect(reserva).toMatch(/`send_later` de 8 min/);
+    expect(reserva).toMatch(/frequência e o corte não mudam/);
   });
 
   it('o coordenador não roda o CI de novo; chama o dono (decisão 4)', () => {
@@ -312,6 +384,10 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
   it('"CI vermelho no PR do épico": regra do teto, script e roadmap (decisões 6 a 9)', () => {
     expect(ciVermelho).toContain('Tamanho do dist/index.html');
     expect(ciVermelho).toMatch(/16 KiB/);
+    expect(ciVermelho).toContain(
+      'até 14 KiB (14.336 bytes), para sobrar ao menos 2 KiB depois da subida',
+    );
+    expect(ciVermelho).toContain('excesso acima de 14 KiB');
     expect(ciVermelho).toMatch(/32 KiB/);
     expect(ciVermelho).toMatch(/64 KiB/);
     expect(ciVermelho).toMatch(/worktree descartável/);
@@ -354,8 +430,32 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
     expect(fechamento).toMatch(/mesmo que as fases tenham sido medium/);
   });
 
+  it('o item "rede de segurança" decide pela saída do riskTriggers, sem lista de caminhos própria (RS1, decisão 3)', () => {
+    const fechamento = between(skill, '5. **Fechamento**', '6. **Merge**');
+    const item = fechamento.split('\n').find((l) => l.includes('**rede de segurança'));
+    expect(item).toBeDefined();
+    expect(item).toContain('node scripts/ci/riskTriggers.mjs --base origin/main');
+    expect(item).toContain('`log`');
+    expect(item).toContain('`gatilho:`');
+    expect(item).toContain('`nenhum gatilho`');
+    for (const caminho of [
+      'src/store/session.ts',
+      'pwa/csp.ts',
+      'scripts/release/',
+      'mcp/version.ts',
+      '.github/workflows/',
+    ]) {
+      expect(item).not.toContain(caminho);
+    }
+    expect(fechamento).toContain('git diff --name-only origin/main...HEAD'); // a escolha da versão do MCP fica
+  });
+
   it('versão do schema escolhida ao criar o épico, como a do MCP (decisão do dono de 2026-11-10)', () => {
-    const regra = between(skill, '3. **Uma versão do MCP por épico', '## Economia de contexto');
+    const regra = between(
+      skill,
+      '3. **Uma versão do MCP por épico',
+      '## Economia de contexto',
+    );
     expect(regra).toMatch(/Versão do schema/);
     expect(regra).toMatch(/origin\/main/);
     expect(regra).toMatch(/próxima/);
