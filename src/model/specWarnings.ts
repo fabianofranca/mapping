@@ -5,6 +5,7 @@ import {
   type Spec,
   type SpecCode,
 } from './spec';
+import { templateMessage, type ModelMessageTemplateCode } from './messages';
 
 // Avisos de uma especialização válida (etapa 4): coisas que não impedem a importação, mas
 // costumam ser descuido de quem escreve o arquivo, ou campos lidos e ignorados (etapa 9). Puro:
@@ -37,17 +38,39 @@ export interface SpecWarning {
   /** Caminho no mesmo formato dos erros (ex: `layers[0].annotationTypes[2]`). */
   readonly path: string;
   readonly message: string;
+  /** Código da mensagem no catálogo `versions` (a interface a traduz); `message` segue em pt-BR. */
+  readonly messageCode: ModelMessageTemplateCode;
+  /** Os `{parâmetros}` do `messageCode`. */
+  readonly messageParams: Readonly<Record<string, string | number>>;
+}
+
+/** O aviso com a mensagem do catálogo (`message` é o texto pt-BR de sempre). */
+function warning(
+  code: SpecWarningCode,
+  path: string,
+  messageCode: ModelMessageTemplateCode,
+  params: Readonly<Record<string, string | number>>,
+): SpecWarning {
+  return {
+    code,
+    path,
+    message: templateMessage(messageCode, params).text,
+    messageCode,
+    messageParams: params,
+  };
 }
 
 /** Aviso de cada campo ignorado na leitura (`parseSpec` devolve a lista em `ignored`). */
 export function ignoredFieldWarnings(
   ignored: readonly IgnoredSpecField[],
 ): SpecWarning[] {
-  return ignored.map((field) => ({
-    code: 'ignored-field',
-    path: field.path,
-    message: `o campo "${field.key}" do tipo "${field.typeId}" é "${REMOVED_FIELD_TYPE}", que saiu do formato: foi ignorado (os valores dele não são gravados); remova-o do arquivo`,
-  }));
+  return ignored.map((field) =>
+    warning('ignored-field', field.path, 'versions.ignoredField', {
+      key: field.key,
+      typeId: field.typeId,
+      removed: REMOVED_FIELD_TYPE,
+    }),
+  );
 }
 
 /** Quantos ids em texto no `allowedChildren` de um tipo bastam para sugerir uma cláusula. */
@@ -60,11 +83,14 @@ function manyChildIdsWarnings(spec: Spec): SpecWarning[] {
     layer.annotationTypes.forEach((type, ti) => {
       const ids = (type.allowedChildren ?? []).filter((c) => typeof c === 'string');
       if (ids.length < MANY_CHILD_IDS) return;
-      warnings.push({
-        code: 'many-children-ids',
-        path: `layers[${li}].annotationTypes[${ti}].allowedChildren`,
-        message: `${ids.length} tipos listados um a um; uma cláusula { layer, groups } cobre a camada ou os grupos`,
-      });
+      warnings.push(
+        warning(
+          'many-children-ids',
+          `layers[${li}].annotationTypes[${ti}].allowedChildren`,
+          'versions.manyChildrenIds',
+          { count: ids.length },
+        ),
+      );
     });
   });
   return warnings;
@@ -77,11 +103,12 @@ function unusedGroupWarnings(spec: Spec): SpecWarning[] {
     const used = new Set(layer.annotationTypes.flatMap((type) => type.groups ?? []));
     (layer.groups ?? []).forEach((group, gi) => {
       if (used.has(group.id)) return;
-      warnings.push({
-        code: 'unused-group',
-        path: `layers[${li}].groups[${gi}]`,
-        message: `o grupo "${group.id}" da camada "${layer.id}" é declarado, mas nenhum tipo está nele`,
-      });
+      warnings.push(
+        warning('unused-group', `layers[${li}].groups[${gi}]`, 'versions.unusedGroup', {
+          group: group.id,
+          layer: layer.id,
+        }),
+      );
     });
   });
   return warnings;
@@ -98,11 +125,11 @@ function unusedDocRepoWarnings(spec: Spec): SpecWarning[] {
   const warnings: SpecWarning[] = [];
   (spec.docRepos ?? []).forEach((repo, i) => {
     if (used.has(repo.id)) return;
-    warnings.push({
-      code: 'unused-doc-repo',
-      path: `docRepos[${i}]`,
-      message: `o repositório "${repo.id}" de docRepos é declarado, mas nenhum \`doc\` o usa`,
-    });
+    warnings.push(
+      warning('unused-doc-repo', `docRepos[${i}]`, 'versions.unusedDocRepo', {
+        repo: repo.id,
+      }),
+    );
   });
   return warnings;
 }
@@ -127,11 +154,11 @@ export function specWarnings(
 ): SpecWarning[] {
   const warnings: SpecWarning[] = [];
   if (spec.format === LEGACY_SPEC_FORMAT) {
-    warnings.push({
-      code: 'legacy-format',
-      path: 'format',
-      message: `"${LEGACY_SPEC_FORMAT}" é o nome antigo do formato; use "mapping-spec"`,
-    });
+    warnings.push(
+      warning('legacy-format', 'format', 'versions.legacyFormat', {
+        legacy: LEGACY_SPEC_FORMAT,
+      }),
+    );
   }
 
   warnings.push(...ignoredFieldWarnings(ignored));
@@ -148,30 +175,34 @@ export function specWarnings(
         if (paths > 0) withPath.set(platform, (withPath.get(platform) ?? 0) + paths);
       }
       if (platforms.length > 0 && Object.keys(type.code ?? {}).length === 0) {
-        warnings.push({
-          code: 'type-without-code',
-          path: `layers[${li}].annotationTypes[${ti}]`,
-          message: `o tipo "${type.id}" não tem \`code\`: nenhuma plataforma diz como criar uma instância dele`,
-        });
+        warnings.push(
+          warning(
+            'type-without-code',
+            `layers[${li}].annotationTypes[${ti}]`,
+            'versions.typeWithoutCode',
+            { typeId: type.id },
+          ),
+        );
       }
     });
   });
   platforms.forEach((platform, i) => {
     if (used.has(platform.id)) return;
-    warnings.push({
-      code: 'unused-platform',
-      path: `platforms[${i}]`,
-      message: `a plataforma "${platform.id}" é declarada, mas nenhum tipo a usa em \`code\``,
-    });
+    warnings.push(
+      warning('unused-platform', `platforms[${i}]`, 'versions.unusedPlatform', {
+        id: platform.id,
+      }),
+    );
   });
   platforms.forEach((platform, i) => {
     const count = withPath.get(platform.id) ?? 0;
     if (platform.repo !== undefined || count === 0) return;
-    warnings.push({
-      code: 'path-without-repo',
-      path: `platforms[${i}]`,
-      message: `a plataforma "${platform.id}" tem tipos com \`path\` (${count}), mas não declara \`repo\`: o agente não sabe em que repositório estão esses arquivos; declare \`repo\` (formatVersion 5)`,
-    });
+    warnings.push(
+      warning('path-without-repo', `platforms[${i}]`, 'versions.pathWithoutRepo', {
+        id: platform.id,
+        count,
+      }),
+    );
   });
   warnings.push(
     ...manyChildIdsWarnings(spec),

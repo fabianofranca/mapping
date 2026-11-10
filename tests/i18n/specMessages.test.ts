@@ -44,6 +44,51 @@ const layer = (s: Raw): Raw => s.layers[0];
 const type = (s: Raw, i = 0): Raw => layer(s).annotationTypes[i];
 const field = (s: Raw, i = 0): Raw => type(s).fields[i];
 
+const container = (extra: Raw): Raw => ({
+  id: 'c',
+  name: 'C',
+  width: 10,
+  height: 10,
+  ...extra,
+});
+const font = (extra: Raw): Raw => ({ family: 'F', file: 'fonts/a.ttf', ...extra });
+
+/** Uma migração 1 → 2 com o passo dado (a versão da especialização sobe para 2). */
+function steps(step: Raw): (s: Raw) => void {
+  return (s) => {
+    s.version = 2;
+    s.migrations = [{ from: 1, to: 2, steps: [step] }];
+  };
+}
+
+/** O tipo `t` ganha a tabela `tb` com a coluna string `c`. */
+function tableOf(s: Raw): void {
+  type(s).fields = [
+    { key: 'k', type: 'string' },
+    { key: 'tb', type: 'table', columns: [{ key: 'c', type: 'string' }] },
+  ];
+}
+
+/** O tipo `t` ganha `allowedChildren` e o papel `r1`. */
+function withRoles(s: Raw): void {
+  type(s).allowedChildren = ['u'];
+  type(s).childRoles = [{ id: 'r1', name: 'R1' }];
+  s.formatVersion = 15;
+  layer(s).annotationTypes.push({ id: 'w', name: 'W', fields: [] });
+}
+
+/** Origem declarada em `origins`; o campo cita o sistema sem `path`. */
+function withOrigin(s: Raw, origin: Raw): void {
+  s.origins = [origin];
+  field(s).sources = [{ system: origin.system }];
+}
+
+/** O campo cita o sistema declarado com o `path` dado. */
+function fieldPath(s: Raw, path: string): void {
+  s.origins = [{ system: 'sys' }];
+  field(s).sources = [{ system: 'sys', path }];
+}
+
 /** Cada caso: o código esperado e a mudança que o produz a partir da especialização válida. */
 const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
   ['spec.notEmpty', (s) => (layer(s).id = '')],
@@ -392,6 +437,208 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
       (type(s).notices = [{ kind: 'removed', message: 'm' }])
     ),
   ],
+  // MB3: repositórios, plataformas, containers, fontes e migrações (formas do arquivo).
+  [
+    'spec.urlInvalid',
+    (s) => (s.platforms = [{ id: 'a', name: 'A', repo: { url: 'x' } }]),
+  ],
+  [
+    'spec.urlTemplateNeedsPath',
+    (s) =>
+      (s.platforms = [
+        {
+          id: 'a',
+          name: 'A',
+          repo: { url: 'https://a.b', urlTemplate: 'https://a.b/x' },
+        },
+      ]),
+  ],
+  ['spec.repoIdInvalid', (s) => (s.docRepos = [{ id: 'A b', url: 'https://a.b' }])],
+  ['spec.mustBeNumber', (s) => (s.containers = [container({ width: 'x' })])],
+  ['spec.mustBeInteger', (s) => (s.containers = [container({ width: 1.5 })])],
+  ['spec.minOne', (s) => (s.containers = [container({ width: 0 })])],
+  ['spec.containerSideMax', (s) => (s.containers = [container({ width: 999999 })])],
+  ['spec.containerIdInvalid', (s) => (s.containers = [container({ id: 'A b' })])],
+  ['spec.fontWeightInvalid', (s) => (s.fonts = [font({ weight: 5 })])],
+  ['spec.fontStyleInvalid', (s) => (s.fonts = [font({ style: 'x' })])],
+  [
+    'spec.mustBeTextOrNumber',
+    steps({ op: 'fill-field', type: 't', field: 'k', default: true }),
+  ],
+  ['spec.migrationModeRemoveType', steps({ op: 'remove-type', type: 'zz', mode: 'x' })],
+  [
+    'spec.migrationModeRemoveRole',
+    steps({ op: 'remove-role', type: 't', role: 'r', mode: 'x' }),
+  ],
+  ['spec.migrationOpInvalid', steps({ op: 'zz' })],
+  [
+    'spec.notEmptyList',
+    (s) => ((s.version = 2), (s.migrations = [{ from: 1, to: 2, steps: [] }])),
+  ],
+  ['spec.formatInvalid', (s) => (s.format = 'x')],
+  ['spec.formatVersionInvalid', (s) => (s.formatVersion = 99)],
+  [
+    'spec.onlyFormat',
+    (s) => ((s.formatVersion = 1), (s.platforms = [{ id: 'a', name: 'A' }])),
+  ],
+  // Fontes externas e origens
+  [
+    'spec.sourceOnlyOrigins',
+    (s) => (field(s).sources = [{ system: 'figma', name: 'n', path: 'a' }]),
+  ],
+  ['spec.sourcePathRequired', (s) => withOrigin(s, { system: 'sys' })],
+  ['spec.sourceNameRequired', (s) => (field(s).sources = [{ system: 'figma' }])],
+  ['spec.fieldPathEmptySegment', (s) => fieldPath(s, 'a.')],
+  ['spec.fieldPathMissingBracket', (s) => fieldPath(s, 'a[')],
+  ['spec.fieldPathBadIndex', (s) => fieldPath(s, 'a[x]')],
+  ['spec.fieldPathBadChar', (s) => fieldPath(s, 'a]')],
+  ['spec.fieldPathWildcard', (s) => fieldPath(s, 'a[*]')],
+  [
+    'spec.ignoreRepeated',
+    (s) => (
+      (s.origins = [{ system: 'sys' }]),
+      (type(s).sources = [{ system: 'sys', ignore: ['a', 'a'] }])
+    ),
+  ],
+  [
+    'spec.exampleSystemUndeclared',
+    (s) => (type(s).examples = [{ name: 'x', system: 'zz', file: 'a.json' }]),
+  ],
+  [
+    'spec.fontRepeated',
+    (s) => (s.fonts = [font({ weight: 400 }), font({ weight: 400 })]),
+  ],
+  ['spec.fontRepeatedNoWeight', (s) => (s.fonts = [font({}), font({})])],
+  [
+    'spec.platformUndeclared',
+    (s) => (
+      (s.platforms = [{ id: 'a', name: 'A' }]),
+      (type(s).code = { zz: { symbol: 'S' } })
+    ),
+  ],
+  ['spec.codeNeedsPlatforms', (s) => (type(s).code = { a: { symbol: 'S' } })],
+  [
+    'spec.typeIdRepeated',
+    (s) => layer(s).annotationTypes.push({ id: 't', name: 'X', fields: [] }),
+  ],
+  // Migrações
+  [
+    'spec.migrationFromRepeated',
+    (s) => (
+      (s.version = 3),
+      (s.migrations = [
+        { from: 1, to: 2, steps: [{ op: 'remove-type', type: 'zz', mode: 'delete' }] },
+        { from: 1, to: 3, steps: [{ op: 'remove-type', type: 'zz', mode: 'delete' }] },
+      ])
+    ),
+  ],
+  [
+    'spec.migrationToGreater',
+    (s) => (
+      (s.version = 3),
+      (s.migrations = [
+        { from: 2, to: 1, steps: [{ op: 'remove-type', type: 'zz', mode: 'delete' }] },
+      ])
+    ),
+  ],
+  [
+    'spec.migrationToMax',
+    (s) => (
+      (s.version = 2),
+      (s.migrations = [
+        { from: 1, to: 5, steps: [{ op: 'remove-type', type: 'zz', mode: 'delete' }] },
+      ])
+    ),
+  ],
+  [
+    'spec.migrationColumnNotEnum',
+    (s) => (
+      tableOf(s),
+      steps({ op: 'map-values', type: 't', field: 'tb.c', values: { a: 'b' } })(s)
+    ),
+  ],
+  ['spec.fieldRefManyDots', steps({ op: 'remove-field', type: 't', field: 'a.b.c' })],
+  ['spec.fieldRefEmptyPart', steps({ op: 'remove-field', type: 't', field: 'tb.' })],
+  [
+    'spec.roleNotOfType',
+    (s) => (withRoles(s), steps({ op: 'set-role', type: 't', role: 'zz' })(s)),
+  ],
+  [
+    'spec.roleStillExists',
+    (s) => (
+      withRoles(s),
+      steps({ op: 'remove-role', type: 't', role: 'r1', mode: 'clear' })(s)
+    ),
+  ],
+  ['spec.typeNotInVersion', steps({ op: 'remove-field', type: 'zz', field: 'k' })],
+  [
+    'spec.typeNoRoles',
+    (s) => (withRoles(s), steps({ op: 'set-role', type: 'u', role: 'r1' })(s)),
+  ],
+  ['spec.typeStillExists', steps({ op: 'remove-type', type: 't', mode: 'delete' })],
+  [
+    'spec.notFieldOfType',
+    steps({ op: 'rename-field', type: 't', from: 'old', to: 'zz' }),
+  ],
+  [
+    'spec.notTableOfType',
+    steps({ op: 'fill-field', type: 't', field: 'k.c', default: 'x' }),
+  ],
+  [
+    'spec.notColumnOfTable',
+    (s) => (
+      tableOf(s),
+      steps({ op: 'fill-field', type: 't', field: 'tb.zz', default: 'x' })(s)
+    ),
+  ],
+  ['spec.fieldStillExists', steps({ op: 'remove-field', type: 't', field: 'k' })],
+  [
+    'spec.columnStillExists',
+    (s) => (tableOf(s), steps({ op: 'remove-field', type: 't', field: 'tb.c' })(s)),
+  ],
+  // Filhos permitidos, grupos, repositórios de documento e dono
+  ['spec.layerNotFound', (s) => (type(s).allowedChildren = [{ layer: 'zz' }])],
+  [
+    'spec.layerIsOwn',
+    (s) => ((s.formatVersion = 12), (type(s).allowedChildren = [{ layer: 'l' }])),
+  ],
+  [
+    'spec.typeSameLayer',
+    (s) => ((s.formatVersion = 12), (type(s).allowedChildren = ['u'])),
+  ],
+  ['spec.typeNotFound', (s) => (type(s).allowedChildren = ['zz'])],
+  [
+    'spec.groupNotInLayer',
+    (s) => (type(s).allowedChildren = [{ layer: 'l', groups: ['g'] }]),
+  ],
+  ['spec.docRepoUndeclared', (s) => (type(s).doc = { repo: 'zz', path: 'a.md' })],
+  ['spec.ownerNoneLists', (s) => (type(s).requiresOwner = true)],
+  [
+    'spec.ownerOnlySelf',
+    (s) => ((type(s).allowedChildren = ['t']), (type(s).requiresOwner = true)),
+  ],
+  // Tokens e ícones
+  ['spec.tokensShape', (s) => (s.tokens = 'x')],
+  ['spec.tokenKeyUnknown', (s) => (s.tokens = { modes: ['a'], values: {}, zz: 1 })],
+  ['spec.tokenModesEmpty', (s) => (s.tokens = { modes: [], values: {} })],
+  ['spec.tokenModeInvalid', (s) => (s.tokens = { modes: ['A b'], values: {} })],
+  ['spec.tokenModeRepeated', (s) => (s.tokens = { modes: ['a', 'a'], values: {} })],
+  ['spec.tokenNameInvalid', (s) => (s.tokens = { modes: ['a'], values: { 'A b': 'x' } })],
+  ['spec.tokenValueShape', (s) => (s.tokens = { modes: ['a'], values: { x: true } })],
+  ['spec.tokenModeMissing', (s) => (s.tokens = { modes: ['a'], values: { x: {} } })],
+  [
+    'spec.tokenModeExtra',
+    (s) => (s.tokens = { modes: ['a'], values: { x: { a: 'v', b: 'w' } } }),
+  ],
+  [
+    'spec.tokenModeValueShape',
+    (s) => (s.tokens = { modes: ['a'], values: { x: { a: true } } }),
+  ],
+  [
+    'spec.tokenModesSameType',
+    (s) => (s.tokens = { modes: ['a', 'b'], values: { x: { a: 'v', b: 1 } } }),
+  ],
+  ['spec.iconsPathShape', (s) => (s.icons = 3)],
   // Os textos padrão do zod, um por código que a especialização produz.
   ['spec.zod.invalid_type', (s) => (s.name = 3)],
   ['spec.zod.unrecognized_keys', (s) => (layer(s).zz = 1)],

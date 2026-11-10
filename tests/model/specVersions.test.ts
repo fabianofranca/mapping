@@ -18,6 +18,7 @@ import {
   type SpecMigrationStep,
 } from '../../src/model';
 import { idGen } from './specFixtures';
+import { withoutMessageCode } from '../support/withoutMessageCode';
 import { emptyProject } from './fixtures';
 
 // Contrato de versão: `diffSpecs` (aditiva ou quebra), `migrationChain`/`migrationFor` (o que as
@@ -25,6 +26,9 @@ import { emptyProject } from './fixtures';
 // estruturais das `migrations` (um arquivo só) estão em specMigrations.test.ts.
 
 const BTN_PATH = 'layers[0].annotationTypes[0]';
+
+/** Sem o código de mensagem da interface: os testes comparam o texto. */
+const plain = (changes: readonly SpecChange[]) => changes.map(withoutMessageCode);
 
 function button(over: Partial<SpecAnnotationType> = {}): SpecAnnotationType {
   return {
@@ -125,7 +129,7 @@ describe('diffSpecs: aditivas', () => {
       badge,
     ]);
     const changes = diffSpecs(v1, next);
-    expect(changes).toEqual([
+    expect(plain(changes)).toEqual([
       {
         kind: 'additive',
         code: 'added-field',
@@ -162,7 +166,7 @@ describe('diffSpecs: aditivas', () => {
       ]),
       badge,
     ]);
-    expect(diffSpecs(v1, next)).toEqual([
+    expect(plain(diffSpecs(v1, next))).toEqual([
       {
         kind: 'additive',
         code: 'added-option',
@@ -316,7 +320,7 @@ describe('diffSpecs: aditivas', () => {
 
   it('a ordem dos campos e dos tipos não importa (compara por id e key)', () => {
     const next = spec(2, [badge, withFields((f) => [...f].reverse())]);
-    expect(diffSpecs(v1, next)).toEqual([]);
+    expect(plain(diffSpecs(v1, next))).toEqual([]);
   });
 });
 
@@ -324,7 +328,7 @@ describe('diffSpecs: quebras', () => {
   it('tipo removido', () => {
     const [change, ...rest] = diffSpecs(v1, spec(2, [button()]));
     expect(rest).toEqual([]);
-    expect(change).toEqual({
+    expect(plain(change === undefined ? [] : [change])[0]).toEqual({
       kind: 'breaking',
       code: 'removed-type',
       path: 'layers[0].annotationTypes[1]',
@@ -336,7 +340,7 @@ describe('diffSpecs: quebras', () => {
 
   it('campo removido', () => {
     const next = spec(2, [withFields((f) => f.filter((x) => x.key !== 'label')), badge]);
-    expect(diffSpecs(v1, next)).toEqual([
+    expect(plain(diffSpecs(v1, next))).toEqual([
       {
         kind: 'breaking',
         code: 'removed-field',
@@ -358,7 +362,7 @@ describe('diffSpecs: quebras', () => {
       ]),
       badge,
     ]);
-    expect(diffSpecs(v1, next)).toEqual([
+    expect(plain(diffSpecs(v1, next))).toEqual([
       {
         kind: 'breaking',
         code: 'removed-option',
@@ -377,7 +381,7 @@ describe('diffSpecs: quebras', () => {
       withFields((f) => [{ ...f[0]!, required: true } as SpecField, ...f.slice(1)]),
       badge,
     ]);
-    expect(diffSpecs(v1, next)).toEqual([
+    expect(plain(diffSpecs(v1, next))).toEqual([
       {
         kind: 'breaking',
         code: 'field-required',
@@ -395,7 +399,7 @@ describe('diffSpecs: quebras', () => {
       withFields((f) => [...f, { key: 'icon', type: 'string', required: true }]),
       badge,
     ]);
-    expect(diffSpecs(v1, next)).toEqual([
+    expect(plain(diffSpecs(v1, next))).toEqual([
       {
         kind: 'breaking',
         code: 'field-required',
@@ -413,7 +417,7 @@ describe('diffSpecs: quebras', () => {
       withFields((f) => [f[0]!, f[1]!, { key: 'size', type: 'string' }, f[3]!]),
       badge,
     ]);
-    expect(diffSpecs(v1, next)).toEqual([
+    expect(plain(diffSpecs(v1, next))).toEqual([
       {
         kind: 'breaking',
         code: 'field-type',
@@ -438,7 +442,7 @@ describe('diffSpecs: quebras', () => {
       ]),
       badge,
     ]);
-    expect(diffSpecs(v1, next)).toEqual([
+    expect(plain(diffSpecs(v1, next))).toEqual([
       {
         kind: 'breaking',
         code: 'removed-field',
@@ -1057,7 +1061,7 @@ describe('diffSpecs: papéis (childRoles)', () => {
       at(1, [card(['a', 'b', 'c']), badge]),
       at(2, [card(['a', 'c']), badge]),
     );
-    expect(changes).toEqual([
+    expect(plain(changes)).toEqual([
       {
         kind: 'breaking',
         code: 'removed-role',
@@ -1080,7 +1084,7 @@ describe('diffSpecs: papéis (childRoles)', () => {
 
   it('tipo que passa a ter childRoles: só roles-required, no caminho de childRoles da nova', () => {
     const changes = diffSpecs(at(1, [card(), badge]), at(2, [card(['a', 'b']), badge]));
-    expect(changes).toEqual([
+    expect(plain(changes)).toEqual([
       {
         kind: 'breaking',
         code: 'roles-required',
@@ -1097,7 +1101,7 @@ describe('diffSpecs: papéis (childRoles)', () => {
       at(1, [card(['a']), badge]),
       at(2, [card(['a', 'b']), badge]),
     );
-    expect(changes).toEqual([
+    expect(plain(changes)).toEqual([
       {
         kind: 'additive',
         code: 'added-role',

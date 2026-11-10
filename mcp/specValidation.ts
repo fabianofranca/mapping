@@ -1,5 +1,18 @@
 import { readFile, stat } from 'node:fs/promises';
-import { parseSpecText, specWarnings, usesPackageFiles, type Spec } from '../src/model';
+import {
+  parseSpecText,
+  specWarnings,
+  usesPackageFiles,
+  type Spec,
+  type SpecWarning,
+} from '../src/model';
+
+/** Os avisos como o MCP os devolve: `code`, `path` e `message` (sem o código de mensagem da interface). */
+export function plainWarnings(
+  warnings: readonly SpecWarning[],
+): { code: string; path: string; message: string }[] {
+  return warnings.map(({ code, path, message }) => ({ code, path, message }));
+}
 import { ToolError } from './errors';
 import { libraryCounts } from './library';
 import type { Roots } from './paths';
@@ -80,7 +93,8 @@ export async function validateSpecialization(
       hint: 'corrija os erros (o caminho de cada um aponta o trecho do JSON) e valide de novo; o arquivo não foi aplicado a nenhum projeto',
     };
   }
-  const warnings = specWarnings(parsed.spec, parsed.ignored);
+  // Só `code`, `path` e `message`: o código de mensagem do modelo é da interface, não do MCP.
+  const warnings = plainWarnings(specWarnings(parsed.spec, parsed.ignored));
   return {
     valid: true,
     ...origin,

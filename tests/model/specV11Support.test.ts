@@ -1,5 +1,6 @@
 // formatVersion 11 nos consumidores da especialização: avisos, contrato de versão e pacote
 // (etapa #559, PD1).
+import { withoutMessageCode } from '../support/withoutMessageCode';
 import { describe, expect, it } from 'vitest';
 import {
   diffSpecs,
@@ -23,8 +24,9 @@ function withEvents(spec: Json, n: number): string[] {
   return ids;
 }
 
+/** Os avisos do código, sem o código de mensagem da interface (`messageCode` e `messageParams`). */
 const codes = (warnings: SpecWarning[], code: string) =>
-  warnings.filter((w) => w.code === code);
+  warnings.filter((w) => w.code === code).map(withoutMessageCode);
 
 describe('specWarnings: formatVersion 11', () => {
   it('allowedChildren com 20 ids em texto avisa; com 19 não', () => {

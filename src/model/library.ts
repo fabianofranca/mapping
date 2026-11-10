@@ -268,6 +268,20 @@ function imageFieldNodes(
   return out;
 }
 
+/** O código e os parâmetros que um parser (avisos, contrato de versão) já traz. */
+interface Coding {
+  readonly messageCode?: ModelMessageTemplateCode | undefined;
+  readonly messageParams?: Readonly<Record<string, string | number>> | undefined;
+}
+
+function codeOf(coding: Coding | undefined): Pick<LibraryIssue, 'code' | 'params'> {
+  if (coding?.messageCode === undefined) return {};
+  return {
+    code: coding.messageCode,
+    ...(coding.messageParams === undefined ? {} : { params: coding.messageParams }),
+  };
+}
+
 class Collector {
   readonly issues: LibraryIssue[] = [];
   /** Erro montado pelo catálogo de mensagens. */
@@ -280,12 +294,12 @@ class Collector {
     this.issues.push(libraryIssue('error', file, path, code, params));
   }
   /** Erro repassado de um parser (ainda sem código; as fases seguintes da etapa dão um). */
-  passError(file: string, path: string, message: string): void {
-    this.issues.push({ file, path, message, severity: 'error' });
+  passError(file: string, path: string, message: string, coding?: Coding): void {
+    this.issues.push({ file, path, message, severity: 'error', ...codeOf(coding) });
   }
-  /** Aviso repassado de um parser (ainda sem código). */
-  passWarning(file: string, path: string, message: string): void {
-    this.issues.push({ file, path, message, severity: 'warning' });
+  /** Aviso repassado de um parser (com o código que ele já traz, quando há). */
+  passWarning(file: string, path: string, message: string, coding?: Coding): void {
+    this.issues.push({ file, path, message, severity: 'warning', ...codeOf(coding) });
   }
   /** Problema do `parseSpec`, com o código e os parâmetros que a interface traduz. */
   specIssue(file: string, issue: SpecIssue): void {
@@ -387,7 +401,7 @@ function level1(
   }
   const { spec, ignored } = parsed;
   for (const warning of specWarnings(spec, ignored)) {
-    out.passWarning(specPath, warning.path, warning.message);
+    out.passWarning(specPath, warning.path, warning.message, warning);
   }
 
   const resolve = (ref: string): string => resolvePath(specPath, ref);
@@ -942,7 +956,7 @@ function versionContract(
     });
   }
   for (const change of missingMigrations(previous, spec)) {
-    out.passError(specPath, change.path, change.message);
+    out.passError(specPath, change.path, change.message, change);
   }
   migrationReferences(previous, spec, out, specPath);
 }

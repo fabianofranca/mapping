@@ -5,6 +5,7 @@
 
 import { libraryMessages } from '../model/messages/library';
 import { specMessages } from '../model/messages/spec';
+import { versionMessages } from '../model/messages/versions';
 import {
   MODEL_MESSAGE_TEMPLATES,
   type ModelMessageTemplateCode,
@@ -257,6 +258,91 @@ const specEnUS: { readonly [C in keyof typeof specMessages as `model.${C}`]: str
   'model.spec.labelFieldNotString': '"{key}" must be a string field of the type',
   'model.spec.onlyFormat15': 'only allowed with formatVersion 15',
   'model.spec.onlyFormat10': 'only allowed with formatVersion 10',
+  'model.spec.urlInvalid': 'must start with http:// or https://, without spaces',
+  'model.spec.urlTemplateNeedsPath': 'must contain {path}',
+  'model.spec.repoIdInvalid': 'invalid repository id; use [a-z0-9-]+',
+  'model.spec.mustBeNumber': 'must be a number',
+  'model.spec.mustBeInteger': 'must be an integer',
+  'model.spec.minOne': 'must be >= 1',
+  'model.spec.containerSideMax': 'must be <= {max}',
+  'model.spec.containerIdInvalid': 'invalid container id; use [a-z0-9-]+',
+  'model.spec.fontWeightInvalid':
+    'invalid weight; use an integer from {min} to {max} or a range "100 900" (the first smaller than the second)',
+  'model.spec.fontStyleInvalid': 'invalid style; use "normal" or "italic"',
+  'model.spec.mustBeTextOrNumber': 'must be text or a number',
+  'model.spec.migrationModeRemoveType': 'use "convert" or "delete"',
+  'model.spec.migrationModeRemoveRole': 'use "clear" or "unlink"',
+  'model.spec.migrationOpInvalid':
+    'invalid "op"; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role" or "set-role"',
+  'model.spec.notEmptyList': 'cannot be empty',
+  'model.spec.formatInvalid': 'must be "{format}"',
+  'model.spec.formatVersionInvalid': 'must be {versions} or {last}',
+  'model.spec.onlyFormat': 'only allowed with formatVersion {version}',
+  'model.spec.sourceOnlyOrigins': 'only allowed in a system declared in origins',
+  'model.spec.sourcePathRequired': 'required in a system declared in origins',
+  'model.spec.sourceNameRequired': 'required in a system that is not in origins',
+  'model.spec.fieldPathEmptySegment': 'invalid path "{path}" (empty segment)',
+  'model.spec.fieldPathMissingBracket': 'invalid path "{path}" (missing "]")',
+  'model.spec.fieldPathBadIndex': 'invalid path "{path}" (invalid index: [{index}])',
+  'model.spec.fieldPathBadChar': 'invalid path "{path}" (unexpected character: {char})',
+  'model.spec.fieldPathWildcard':
+    'invalid path "{path}" ("[*]" is only valid in roots[].path of an origin)',
+  'model.spec.ignoreRepeated': '"{prop}" repeated',
+  'model.spec.exampleSystemUndeclared': 'system "{system}" is not declared in origins',
+  'model.spec.fontRepeated': 'font "{family}" (weight {weight}, {style}) repeated',
+  'model.spec.fontRepeatedNoWeight': 'font "{family}" (no weight, {style}) repeated',
+  'model.spec.platformUndeclared': 'platform "{id}" is not declared in platforms',
+  'model.spec.codeNeedsPlatforms':
+    'only allowed in specializations that declare platforms',
+  'model.spec.typeIdRepeated': 'id "{id}" repeated in the specialization',
+  'model.spec.migrationFromRepeated': 'there is already a migration from version {from}',
+  'model.spec.migrationToGreater': 'must be greater than "from" ({from})',
+  'model.spec.migrationToMax': 'cannot exceed "version" ({version})',
+  'model.spec.migrationColumnNotEnum': '"{key}" must be an enum column of the table',
+  'model.spec.fieldRefManyDots':
+    '"{ref}" has more than one dot; use "field" or "table.column"',
+  'model.spec.fieldRefEmptyPart':
+    '"{ref}" has an empty part; use "field" or "table.column"',
+  'model.spec.roleNotOfType': '"{role}" is not a role of the type "{typeId}"',
+  'model.spec.roleStillExists':
+    'role "{role}" still exists in the type "{typeId}" in this version',
+  'model.spec.typeNotInVersion': 'type "{typeId}" does not exist in this version',
+  'model.spec.typeNoRoles':
+    'the type "{typeId}" has no roles (childRoles) in this version',
+  'model.spec.typeStillExists': 'type "{typeId}" still exists in this version',
+  'model.spec.notFieldOfType': '"{key}" is not a field of the type "{typeId}"',
+  'model.spec.notTableOfType': '"{key}" is not a table of the type "{typeId}"',
+  'model.spec.notColumnOfTable':
+    '"{key}" is not a column of the table "{table}" of the type "{typeId}"',
+  'model.spec.fieldStillExists':
+    'field "{key}" still exists in the type "{typeId}" in this version',
+  'model.spec.columnStillExists':
+    'column "{column}" still exists in the table "{table}" of the type "{typeId}" in this version',
+  'model.spec.layerNotFound': 'layer "{layer}" does not exist in the specialization',
+  'model.spec.layerIsOwn':
+    'layer "{layer}" is the type\'s own layer; children must be in another layer',
+  'model.spec.groupNotInLayer': 'group "{group}" does not exist in the layer "{layer}"',
+  'model.spec.typeNotFound': 'type "{typeId}" does not exist in the specialization',
+  'model.spec.typeSameLayer':
+    'type "{typeId}" is in the same layer; children must be in another layer',
+  'model.spec.docRepoUndeclared': 'repository "{repo}" is not declared in docRepos',
+  'model.spec.ownerNoneLists':
+    '"{typeId}" requires an owner, but no type lists it in allowedChildren',
+  'model.spec.ownerOnlySelf':
+    '"{typeId}" requires an owner, but no other type accepts it as a child (only itself lists it in allowedChildren)',
+  'model.spec.tokensShape': 'must be an object with modes and values',
+  'model.spec.tokenKeyUnknown': 'unknown key: {key}',
+  'model.spec.tokenModesEmpty': 'must be a list with at least one mode',
+  'model.spec.tokenModeInvalid': 'invalid mode; use [a-z0-9][a-z0-9-]*',
+  'model.spec.tokenModeRepeated': 'mode "{mode}" repeated',
+  'model.spec.tokenNameInvalid': 'invalid name; use [a-z0-9][a-z0-9-]*',
+  'model.spec.tokenValueShape': 'must be text, a number or one value per mode',
+  'model.spec.tokenModeMissing': 'missing the mode {modes}',
+  'model.spec.tokenModeExtra': 'mode not declared in modes: {modes}',
+  'model.spec.tokenModeValueShape': 'each mode must have text or a number',
+  'model.spec.tokenModesSameType':
+    'the modes of a token must have the same type (text or number)',
+  'model.spec.iconsPathShape': 'must be the path of a .json file in the package',
   // Textos padrão do zod, no inglês do zod
   'model.spec.zod.invalid_type':
     'Invalid input: expected {expected}, received {received}',
@@ -271,9 +357,76 @@ const specEnUS: { readonly [C in keyof typeof specMessages as `model.${C}`]: str
   'model.spec.zod.not_multiple_of': 'Invalid number: must be a multiple of {divisor}',
 };
 
+/** en-US dos códigos do catálogo `versions` (avisos da especialização e quebras sem migração). */
+const versionsEnUS: {
+  readonly [C in keyof typeof versionMessages as `model.${C}`]: string;
+} = {
+  'model.versions.ignoredField':
+    'the field "{key}" of the type "{typeId}" is "{removed}", which was removed from the format: it was ignored (its values are not saved); remove it from the file',
+  'model.versions.manyChildrenIds':
+    '{count} types listed one by one; a { layer, groups } clause covers the layer or the groups',
+  'model.versions.unusedGroup':
+    'the group "{group}" of the layer "{layer}" is declared, but no type is in it',
+  'model.versions.unusedDocRepo':
+    'the repository "{repo}" in docRepos is declared, but no `doc` uses it',
+  'model.versions.legacyFormat':
+    '"{legacy}" is the old name of the format; use "mapping-spec"',
+  'model.versions.typeWithoutCode':
+    'the type "{typeId}" has no `code`: no platform says how to create an instance of it',
+  'model.versions.unusedPlatform':
+    'the platform "{id}" is declared, but no type uses it in `code`',
+  'model.versions.pathWithoutRepo':
+    'the platform "{id}" has types with `path` ({count}), but does not declare `repo`: the agent does not know which repository holds those files; declare `repo` (formatVersion 5)',
+  'model.versions.fieldNew': 'the field "{key}" of the type "{typeId}" is new',
+  'model.versions.columnNew':
+    'the column "{key}" of the field "{table}" of the type "{typeId}" is new',
+  'model.versions.fieldNewRequired':
+    'the field "{key}" of the type "{typeId}" is new and already required; declare a "fill-field" step in migrations',
+  'model.versions.columnNewRequired':
+    'the column "{key}" of the field "{table}" of the type "{typeId}" is new and already required; declare a "fill-field" step in migrations with field "{ref}"',
+  'model.versions.fieldTypeChanged':
+    'the field "{key}" of the type "{typeId}" changed type ("{from}" to "{to}"); declare a "fill-field" step in migrations',
+  'model.versions.columnTypeChanged':
+    'the column "{key}" of the field "{table}" of the type "{typeId}" changed type ("{from}" to "{to}"); declare a "fill-field" step in migrations with field "{ref}"',
+  'model.versions.fieldBecameRequired':
+    'the field "{key}" of the type "{typeId}" became required; declare a "fill-field" step in migrations',
+  'model.versions.columnBecameRequired':
+    'the column "{key}" of the field "{table}" of the type "{typeId}" became required; declare a "fill-field" step in migrations with field "{ref}"',
+  'model.versions.fieldOptionAdded':
+    'the field "{key}" of the type "{typeId}" gained the option "{option}"',
+  'model.versions.columnOptionAdded':
+    'the column "{key}" of the field "{table}" of the type "{typeId}" gained the option "{option}"',
+  'model.versions.fieldRemoved':
+    'the field "{key}" of the type "{typeId}" was removed; declare a "remove-field" or "rename-field" step in migrations',
+  'model.versions.columnRemoved':
+    'the column "{key}" of the field "{table}" of the type "{typeId}" was removed; declare a "remove-field" or "rename-field" step in migrations with field "{ref}"',
+  'model.versions.fieldOptionRemoved':
+    'the option "{option}" of the field "{key}" of the type "{typeId}" was removed; declare a "map-values" step with "{option}" in values in migrations',
+  'model.versions.columnOptionRemoved':
+    'the option "{option}" of the column "{key}" of the field "{table}" of the type "{typeId}" was removed; declare a "map-values" step with "{option}" in values in migrations with field "{ref}"',
+  'model.versions.rolesRequired':
+    'the type "{typeId}" now has roles; declare a "set-role" step in migrations (formatVersion 12)',
+  'model.versions.roleAdded': 'the type "{typeId}" gained the role "{role}"',
+  'model.versions.roleRemoved':
+    'the role "{role}" of the type "{typeId}" was removed; declare a "rename-role" or "remove-role" step in migrations (formatVersion 12)',
+  'model.versions.typeNew': 'the type "{typeId}" is new',
+  'model.versions.componentAdded':
+    'the type "{typeId}" gained the component "{component}"',
+  'model.versions.componentChanged':
+    'the component of the type "{typeId}" changed from "{from}" to "{to}"',
+  'model.versions.appliesToChanged':
+    'the type "{typeId}" now applies to: {now} (before: {before}); annotations that no longer apply become pending',
+  'model.versions.docAdded': 'the type "{typeId}" gained the document "{doc}"',
+  'model.versions.exampleAdded': 'the type "{typeId}" gained the example "{name}"',
+  'model.versions.fontNew': 'the font "{family}" is new',
+  'model.versions.typeRemoved':
+    'the type "{typeId}" was removed; declare a "remove-type" or "rename-type" step in migrations',
+};
+
 export const modelMessagesEnUS: Record<keyof typeof modelMessagesPtBR, string> = {
   ...libraryEnUS,
   ...specEnUS,
+  ...versionsEnUS,
   'model.catalog.fileMissing': 'missing file ({path})',
   'model.catalog.invalidComponent': 'invalid component',
   'model.catalog.typeOutside': 'type "{typeId}" is outside the specialization',

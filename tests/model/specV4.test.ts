@@ -840,14 +840,18 @@ describe('origins', () => {
     const spec = v4();
     spec.origins[0].screen.roots.push({ path: 'a[', color: 'x' });
     const issues = issuesOf(spec);
-    expect(issues).toContainEqual({
-      path: 'origins[0].screen.roots[1].path',
-      message: 'caminho inválido "a[" (faltou "]")',
-    });
-    expect(issues).toContainEqual({
-      path: 'origins[0].screen.roots[1].color',
-      message: 'chave desconhecida: color',
-    });
+    expect(issues).toContainEqual(
+      expect.objectContaining({
+        path: 'origins[0].screen.roots[1].path',
+        message: 'caminho inválido "a[" (faltou "]")',
+      }),
+    );
+    expect(issues).toContainEqual(
+      expect.objectContaining({
+        path: 'origins[0].screen.roots[1].color',
+        message: 'chave desconhecida: color',
+      }),
+    );
   });
 
   it.each([
