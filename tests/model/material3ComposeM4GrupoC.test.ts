@@ -271,8 +271,9 @@ describe('M4 grupo C — tabs', () => {
       size,
     );
     const label = textBox(t, 'Início');
-    near(label.y, 14);
-    expect(label.height).toBe(20);
+    // o rótulo ocupa a altura da aba (fill) e o `cap-middle` centra a maiúscula (FX6)
+    near(label.y, 0);
+    expect(label.height).toBe(48);
     const i = draw(
       'tabs',
       { items: iconOnly, style: 'primary', iconPosition: 'top' },
@@ -296,7 +297,7 @@ describe('M4 grupo C — tabs', () => {
     const iconBox = boxOf(d, iconsOf(d)[0]!.node);
     const label = textBox(d, 'Início');
     near(iconBox.y, 12);
-    near(label.y, 14);
+    near(label.y, 0);
     near(label.x - (iconBox.x + 24), 8);
     near((iconBox.x + label.x + label.width) / 2, tab.x + tab.width / 2);
     // o indicador cobre o ícone, o espaço e o texto
