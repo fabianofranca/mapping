@@ -1035,7 +1035,6 @@ export class CanvasController {
     this.arrows.setDragged(on ? set.arrows : null, groups.arrows);
   }
 
-  /** Suja a camada se o renderizador mexeu em algum nó dela. */
   /** Marca as camadas que as setas mexeram e guarda quantas estão pintadas (`data-arrows`). */
   private updateArrows(changes: ArrowChanges): void {
     this.mark(this.layers.markings, changes.main);
@@ -1043,6 +1042,7 @@ export class CanvasController {
     this.drawnArrows = this.arrows.painted;
   }
 
+  /** Suja a camada se o renderizador mexeu em algum nó dela. */
   private mark(layer: Konva.Layer, changed: boolean): void {
     if (changed) this.dirty.add(layer);
   }

@@ -136,4 +136,22 @@ describe('setas de longe (2.000 marcações em Enquadrar tudo)', () => {
     expect(s.container.dataset.arrows).toBe('0');
     expect(renderer.size).toBe(0);
   }, 120_000);
+
+  it('o rótulo de uma seta que sai da área visível e volta é o mesmo nó (pan não recria rótulos)', () => {
+    const s = (scenario = openWholeProject(2000, 'fit', { project: namedProject() }));
+    const renderer = internals(s).arrows;
+    s.controller.zoomTo(1);
+    s.controller.centerOnPoint({ x: 0, y: 0 });
+    s.flush();
+    const shape = renderer.drawn.find((candidate) => renderer.label(candidate.arrow.id));
+    if (!shape) throw new Error('fixture: nenhum rótulo à vista');
+    const id = shape.arrow.id;
+    const node = renderer.label(id);
+    s.controller.centerOnPoint({ x: 1_000_000, y: 1_000_000 });
+    s.flush();
+    expect(renderer.label(id)).toBeUndefined();
+    s.controller.centerOnPoint({ x: 0, y: 0 });
+    s.flush();
+    expect(renderer.label(id)).toBe(node);
+  }, 120_000);
 });

@@ -107,6 +107,10 @@ function exceptionsOf(frame: ArrowsFrame): Exceptions {
   return { arrows, markings };
 }
 
+/**
+ * Sobreposição inclusiva: a caixa do traço de uma seta reta na horizontal ou na vertical tem altura
+ * ou largura zero, e `rectsOverlap` do modelo (área positiva) a descartaria.
+ */
 function overlaps(a: Rect, b: Rect): boolean {
   return (
     a.x <= b.x + b.width &&
@@ -130,7 +134,7 @@ function paddedArea(frame: ArrowsFrame): Rect {
 
 /**
  * O nível de detalhe das setas (decisão 7 da etapa canvas-desempenho): a medida de cada seta fica
- * guardada até o projeto, as posições ou o tema mudarem, e cada quadro só confere o zoom, a área
+ * guardada até o projeto ou as posições mudarem, e cada quadro só confere o zoom, a área
  * visível e as exceções (seleção e mouse). Os arrays se repetem enquanto as setas pintadas forem
  * as mesmas, para o desenho dos traços e dos halos não ser refeito.
  */
@@ -139,7 +143,6 @@ class DetailPlan {
     readonly arrows: readonly ArrowShape[];
     readonly project: ArrowsFrame['project'];
     readonly placements: ReadonlyMap<string, Placement>;
-    readonly tokens: CanvasTokens;
     readonly value: readonly Measured[];
   } | null = null;
   private last: DetailSplit = NO_SPLIT;
@@ -186,19 +189,18 @@ class DetailPlan {
     frame: ArrowsFrame,
     placements: ReadonlyMap<string, Placement>,
   ): readonly Measured[] {
-    const { arrows, project, tokens } = frame;
+    const { arrows, project } = frame;
     const cached = this.measured;
     if (
       cached &&
       cached.arrows === arrows &&
       cached.project === project &&
-      cached.placements === placements &&
-      cached.tokens === tokens
+      cached.placements === placements
     ) {
       return cached.value;
     }
     const value = measureArrows(frame, placements);
-    this.measured = { arrows, project, placements, tokens, value };
+    this.measured = { arrows, project, placements, value };
     return value;
   }
 }
@@ -248,6 +250,24 @@ function splitMoving(
   const moving: ArrowShape[] = [];
   for (const shape of shapes) (ids.has(shape.arrow.id) ? moving : parked).push(shape);
   return { parked, moving };
+}
+
+/** As setas inteiras e depois as curtas num array só, o mesmo enquanto os dois forem. */
+class ShapesJoin {
+  private entry: {
+    readonly full: readonly ArrowShape[];
+    readonly thin: readonly ArrowShape[];
+    readonly value: readonly ArrowShape[];
+  } | null = null;
+
+  get(full: readonly ArrowShape[], thin: readonly ArrowShape[]): readonly ArrowShape[] {
+    if (thin.length === 0) return full;
+    const cached = this.entry;
+    if (cached && cached.full === full && cached.thin === thin) return cached.value;
+    const value = [...full, ...thin];
+    this.entry = { full, thin, value };
+    return value;
+  }
 }
 
 /** Os corpos de `a` e de `b` juntos, na mesma passagem do traço (o mesmo objeto enquanto os dois forem). */
@@ -322,6 +342,10 @@ export class ArrowRenderer {
   private readonly body: Konva.Shape;
   private readonly labelsGroup = new Konva.Group({ listening: false });
   private readonly labels = new Map<string, LabelNode>();
+  private known: {
+    readonly arrows: readonly ArrowShape[];
+    readonly ids: ReadonlySet<string>;
+  } | null = null;
   /** As setas inteiras (paradas) e as só com o traço, escolhidas pelo `DetailPlan`. */
   private shapes: readonly ArrowShape[] = [];
   private thinShapes: readonly ArrowShape[] = NO_SHAPES;
@@ -331,6 +355,8 @@ export class ArrowRenderer {
   private readonly strokes = new StrokeCache();
   private readonly thinStrokes = new StrokeCache();
   private readonly merge = new BodiesMerge();
+  private readonly parkedJoin = new ShapesJoin();
+  private readonly liftedJoin = new ShapesJoin();
   private readonly dragMerge = new BodiesMerge();
   /**
    * As setas que se movem num gesto (decisões 5 e 7): têm um corpo e um grupo de rótulos próprios,
@@ -362,9 +388,7 @@ export class ArrowRenderer {
 
   /** As setas pintadas no último quadro (inteiras e depois as só com o traço), fora o grupo de arrasto. */
   get drawn(): readonly ArrowShape[] {
-    return this.thinShapes.length === 0
-      ? this.shapes
-      : [...this.shapes, ...this.thinShapes];
+    return this.parkedJoin.get(this.shapes, this.thinShapes);
   }
 
   /** As setas curtas do último quadro, pintadas só com o traço (sem halo, ponta nem rótulo). */
@@ -384,14 +408,13 @@ export class ArrowRenderer {
 
   /** As setas que se movem num gesto, desenhadas no grupo de arrasto (vazio fora dele). */
   get liftedDrawn(): readonly ArrowShape[] {
-    return this.dragThin.length === 0
-      ? this.dragShapes
-      : [...this.dragShapes, ...this.dragThin];
+    return this.liftedJoin.get(this.dragShapes, this.dragThin);
   }
 
   /** O nó do rótulo da seta (`undefined` se ela não tem nome ou não está à vista). */
   label(id: string): LabelNode | undefined {
-    return this.labels.get(id);
+    const node = this.labels.get(id);
+    return node?.group.visible() ? node : undefined;
   }
 
   /**
@@ -439,7 +462,7 @@ export class ArrowRenderer {
     const before = { shapes: this.shapes, thin: this.thinShapes };
     const dragging = this.dragIds !== null;
     this.place(this.plan.classify(frame, placements));
-    const labelsMain = this.renderLabels(frame.tokens);
+    const labelsMain = this.renderLabels(frame);
     // O desenho é função de `shapes`, `zoom` e `tokens`, que o Konva não enxerga: quem pede o
     // quadro (`CanvasController`) repinta a camada depois de renderizar.
     const main =
@@ -568,10 +591,13 @@ export class ArrowRenderer {
   }
 
   /**
-   * Rótulos: um nó por seta com nome, reaproveitado; os das setas que saíram do quadro somem. O da
-   * seta que se move fica no grupo de arrasto. Devolve `true` se mexeu num rótulo das paradas.
+   * Rótulos: um nó por seta com nome, reaproveitado. O da seta que deixou de ser inteira (curta,
+   * invisível ou fora da área visível) só se esconde, para o pan não recriar nós; o da seta que
+   * saiu do projeto é destruído. O da seta que se move fica no grupo de arrasto. Devolve `true` se
+   * mexeu num rótulo das paradas.
    */
-  private renderLabels(tokens: CanvasTokens): boolean {
+  private renderLabels(frame: ArrowsFrame): boolean {
+    const { tokens } = frame;
     const zoom = this.zoom;
     const seen = new Set<string>();
     let main = false;
@@ -584,13 +610,34 @@ export class ArrowRenderer {
         if (this.syncLabel(shape, name, zoom, tokens)) main = true;
       }
     }
+    if (this.labels.size > seen.size && this.retireLabels(frame, seen)) main = true;
+    return main;
+  }
+
+  /** Esconde os rótulos das setas que seguem à vista sem rótulo e destrói os das que saíram. */
+  private retireLabels(frame: ArrowsFrame, seen: ReadonlySet<string>): boolean {
+    const known = this.knownIds(frame.arrows);
+    let changed = false;
     for (const [id, node] of this.labels) {
       if (seen.has(id)) continue;
-      node.group.destroy();
-      this.labels.delete(id);
-      main = true;
+      if (!known.has(id)) {
+        node.group.destroy();
+        this.labels.delete(id);
+        changed = true;
+      } else if (node.group.visible()) {
+        node.group.visible(false);
+        changed = true;
+      }
     }
-    return main;
+    return changed;
+  }
+
+  /** Os ids das setas à vista (qualquer nível ou posição), guardados por array. */
+  private knownIds(arrows: readonly ArrowShape[]): ReadonlySet<string> {
+    if (this.known?.arrows !== arrows) {
+      this.known = { arrows, ids: new Set(arrows.map((shape) => shape.arrow.id)) };
+    }
+    return this.known.ids;
   }
 
   /** O grupo do rótulo: o de arrasto se a seta se move, senão o de sempre. */
@@ -611,9 +658,11 @@ export class ArrowRenderer {
     const node = this.labels.get(id) ?? this.createLabel(id, home);
     const moved = node.group.getParent() !== home;
     if (moved) node.group.moveTo(home);
+    const revealed = !node.group.visible();
+    if (revealed) node.group.visible(true);
     const same = node.shape === shape && node.zoom === zoom && node.tokens === tokens;
     if (!same) this.updateLabel(node, shape, name, zoom, tokens);
-    return moved || (!same && home === this.labelsGroup);
+    return moved || ((!same || revealed) && home === this.labelsGroup);
   }
 
   private createLabel(id: string, home: Konva.Group): LabelNode {
