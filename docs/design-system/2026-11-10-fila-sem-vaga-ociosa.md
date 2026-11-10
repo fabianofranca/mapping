@@ -1,4 +1,4 @@
-# Fila sem vaga ociosa — [Não lançado] (épico `epic/fila-sem-vaga-ociosa`)
+# Fila sem vaga ociosa — 2026-11-10 (épico `epic/fila-sem-vaga-ociosa`)
 
 ## Pendências
 

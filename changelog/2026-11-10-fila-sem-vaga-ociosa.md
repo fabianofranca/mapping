@@ -1,4 +1,4 @@
-# Fila sem vaga ociosa — [Não lançado] (épico `epic/fila-sem-vaga-ociosa`, PR #0, MCP 0.30.0 sem mudança, schema v18)
+# Fila sem vaga ociosa — 2026-11-10 (épico `epic/fila-sem-vaga-ociosa`, PR #1449, MCP 0.30.0 sem mudança, schema v18)
 
 ## Adicionado
 
