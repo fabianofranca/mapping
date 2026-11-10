@@ -673,22 +673,47 @@
     "layout": {
       "type": "none"
     },
-    "shadow": {
-      "color": {
-        "$if": {
-          "$eq": ["interaction", "dragged"]
+    "shadow": [
+      {
+        "color": {
+          "$if": {
+            "$eq": ["interaction", "dragged"]
+          },
+          "then": {
+            "$token": "elevation-point-shadow"
+          },
+          "else": "none"
         },
-        "then": {
-          "$token": "elevation-shadow"
+        "y": {
+          "$token": "elevation-4-point-y"
         },
-        "else": "none"
+        "blur": {
+          "$token": "elevation-4-point-blur"
+        },
+        "spread": {
+          "$token": "elevation-4-point-spread"
+        }
       },
-      "y": {
-        "$token": "elevation-4-y"
-      },
-      "blur": {
-        "$token": "elevation-4-blur"
+      {
+        "color": {
+          "$if": {
+            "$eq": ["interaction", "dragged"]
+          },
+          "then": {
+            "$token": "elevation-ambient-shadow"
+          },
+          "else": "none"
+        },
+        "y": {
+          "$token": "elevation-4-ambient-y"
+        },
+        "blur": {
+          "$token": "elevation-4-ambient-blur"
+        },
+        "spread": {
+          "$token": "elevation-4-ambient-spread"
+        }
       }
-    }
+    ]
   }
 }

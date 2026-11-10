@@ -11,10 +11,14 @@ const catalog = buildCatalog(files);
 const MODES = ['light', 'dark'] as const;
 type Values = Record<string, unknown>;
 
-/** As sombras de nós visíveis (o nó invisível leva a subárvore junto), com y e desfoque. */
-function shadows(node: SceneNode, out: { y: number; blur: number }[] = []) {
+/** As sombras de nós visíveis (o nó invisível leva a subárvore junto), com y, desfoque, spread e cor. */
+function shadows(
+  node: SceneNode,
+  out: { y: number; blur: number; spread: number; color: string }[] = [],
+) {
   if (!node.visible) return out;
-  for (const e of node.effects) out.push({ y: e.offset.y, blur: e.blur });
+  for (const e of node.effects)
+    out.push({ y: e.offset.y, blur: e.blur, spread: e.spread ?? 0, color: e.color });
   if ('children' in node) node.children.forEach((c) => shadows(c, out));
   return out;
 }
@@ -25,10 +29,18 @@ function layers(node: SceneNode, out: SceneNode[] = []): SceneNode[] {
   if ('children' in node) node.children.forEach((c) => layers(c, out));
   return out;
 }
-const L1 = { y: 1, blur: 2 };
-const L2 = { y: 2, blur: 6 };
-const L3 = { y: 3, blur: 12 };
-const L4 = { y: 4, blur: 16 };
+/** Sombras de um nível de elevação: ponto (preto a 30%) e ambiente (preto a 15%). */
+const level = (
+  point: [y: number, blur: number, spread: number],
+  ambient: [y: number, blur: number, spread: number],
+) => [
+  { y: point[0], blur: point[1], spread: point[2], color: 'rgba(0, 0, 0, 0.3)' },
+  { y: ambient[0], blur: ambient[1], spread: ambient[2], color: 'rgba(0, 0, 0, 0.15)' },
+];
+const L1 = level([1, 2, 0], [1, 3, 1]);
+const L2 = level([1, 2, 0], [2, 6, 2]);
+const L3 = level([1, 3, 0], [4, 8, 3]);
+const L4 = level([2, 3, 0], [6, 10, 4]);
 
 function interactionField(id: string) {
   return typeOf(id).fields.find((f) => f.key === 'interaction');
@@ -152,11 +164,11 @@ describe('chip: campo interaction', () => {
     for (const style of ['assist-elevated', 'filter-elevated', 'suggestion-elevated']) {
       const at = (interaction: string) =>
         shadows(draw({ style, interaction }, 'light').root);
-      expect(at('none'), style).toEqual([L1]);
-      expect(at('focused'), style).toEqual([L1]);
-      expect(at('pressed'), style).toEqual([L1]);
-      expect(at('hovered'), style).toEqual([L2]);
-      expect(at('dragged'), style).toEqual([L4]);
+      expect(at('none'), style).toEqual(L1);
+      expect(at('focused'), style).toEqual(L1);
+      expect(at('pressed'), style).toEqual(L1);
+      expect(at('hovered'), style).toEqual(L2);
+      expect(at('dragged'), style).toEqual(L4);
     }
   });
 
@@ -167,12 +179,12 @@ describe('chip: campo interaction', () => {
       expect(at('none'), style).toEqual([]);
       expect(at('focused'), style).toEqual([]);
       expect(at('pressed'), style).toEqual([]);
-      expect(at('dragged'), style).toEqual([L4]);
+      expect(at('dragged'), style).toEqual(L4);
       expect(at('hovered'), style).toEqual([]);
     }
     const sel = (interaction: string) =>
       shadows(draw({ style: 'filter', selected: 'true', interaction }, 'light').root);
-    expect(sel('hovered')).toEqual([L1]);
+    expect(sel('hovered')).toEqual(L1);
     expect(sel('focused')).toEqual([]);
     expect(sel('pressed')).toEqual([]);
   });
@@ -252,22 +264,22 @@ describe('card: campo interaction', () => {
       shadows(draw({ style, interaction }, 'light').root);
     // filled: 0, mouse 1, foco 0, pressionado 0, arrastado 3
     expect(at('filled', 'none')).toEqual([]);
-    expect(at('filled', 'hovered')).toEqual([L1]);
+    expect(at('filled', 'hovered')).toEqual(L1);
     expect(at('filled', 'focused')).toEqual([]);
     expect(at('filled', 'pressed')).toEqual([]);
-    expect(at('filled', 'dragged')).toEqual([L3]);
+    expect(at('filled', 'dragged')).toEqual(L3);
     // elevated: 1, mouse 2, foco 1, pressionado 1, arrastado 4
-    expect(at('elevated', 'none')).toEqual([L1]);
-    expect(at('elevated', 'hovered')).toEqual([L2]);
-    expect(at('elevated', 'focused')).toEqual([L1]);
-    expect(at('elevated', 'pressed')).toEqual([L1]);
-    expect(at('elevated', 'dragged')).toEqual([L4]);
+    expect(at('elevated', 'none')).toEqual(L1);
+    expect(at('elevated', 'hovered')).toEqual(L2);
+    expect(at('elevated', 'focused')).toEqual(L1);
+    expect(at('elevated', 'pressed')).toEqual(L1);
+    expect(at('elevated', 'dragged')).toEqual(L4);
     // outlined: como o filled
     expect(at('outlined', 'none')).toEqual([]);
-    expect(at('outlined', 'hovered')).toEqual([L1]);
+    expect(at('outlined', 'hovered')).toEqual(L1);
     expect(at('outlined', 'focused')).toEqual([]);
     expect(at('outlined', 'pressed')).toEqual([]);
-    expect(at('outlined', 'dragged')).toEqual([L3]);
+    expect(at('outlined', 'dragged')).toEqual(L3);
   });
 
   it('o contorno do outlined muda só no foco (OutlinedCardTokens.FocusOutlineColor)', () => {

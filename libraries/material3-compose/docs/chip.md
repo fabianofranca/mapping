@@ -109,10 +109,10 @@ O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o des
 
 **O que ainda difere do Compose**
 
-- O `y` e o `blur` da sombra vêm dos tokens `elevation-1-y` e `elevation-1-blur` (`$token` em `shadow.y` e `shadow.blur`).
+- As duas sombras (ponto e ambiente) vêm dos tokens `elevation-<n>-point-*` e `elevation-<n>-ambient-*` (`$token` em `shadow`, lista de duas sombras com `spread`); os tokens `elevation-<n>-y`, `elevation-<n>-blur` e `elevation-shadow` seguem na especialização por compatibilidade, mas nenhum componente os usa.
 - O avatar do `InputChip` não é campo do tipo; o desenho não o tem.
 - A largura é a da marcação: o chip não mede o rótulo para crescer (o `hug` do eixo largura só vale em tela arrumada pelo `layoutScreen`, e este componente não tem slot). O Compose mede o conteúdo.
 - O rótulo não corta nem quebra de propósito (o `Text` do Compose também não); um rótulo maior que a caixa avisa `texto maior que a caixa`.
 - Sem ripple animado, sem transição entre estados nem a animação dos ícones do `SelectableChip` (o desenho é um quadro parado). Em `focused` o chip ganha o anel de foco (`FocusIndicatorColor`: `AssistChipTokens.kt` linha 44, `FilterChipTokens.kt` 54, `InputChipTokens.kt` 34 e `SuggestionChipTokens.kt` 44): o anel de 3 em `secondary`, afastado 2 da forma (`stroke.offset`), por fora da caixa (a largura e o afastamento são os da decisão da etapa; o `*Tokens.kt` só traz a cor).
-- Nos chips planos de fundo `none` (assist, suggestion, filter desmarcado e input desmarcado) a sombra do nível 1 ou 4 sai do contorno e do conteúdo que o canvas desenha, porque não há fundo para projetá-la: a forma da sombra é aproximada.
+- Nos chips planos de fundo `none` (assist, suggestion, filter desmarcado e input desmarcado) as duas sombras do nível 1 ou 4 saem do contorno e do conteúdo que o canvas desenha, porque não há fundo para projetá-la: a forma da sombra é aproximada.
 - O `Chip.kt` só usa os tokens de estado para a elevação (`ChipElevation`, linhas 2333 a 2340); a cor do contorno no foco e a do ícone nos estados dos `*ChipTokens.kt` não são lidas por ele. O desenho segue os tokens, como a etapa pede. Por outro lado, os valores padrão de `filterChipElevation` (linhas 1365 a 1372) dão o nível 1 no mouse a todo `FilterChip` plano, selecionado ou não; o desenho segue o token (só o selecionado).

@@ -11,6 +11,7 @@ import { resolveTokens } from '../../src/model/components/tokens';
 import { absoluteBoxes, hasChildren } from '../../src/model/components/scene';
 import type { SceneNode } from '../../src/model/components/scene';
 import { defaultValues } from '../../src/model/libraryDrawing';
+import { compositeOver, isComposite } from '../support/material3Composite';
 import { solid, spec, text, typeOf } from '../support/material3Library';
 import { catalog, draw, missingNodes, oldScenes } from '../support/material3Ex6Fixture';
 import type {
@@ -307,9 +308,29 @@ const tok = (name: string, mode: Mode): string => {
   return typeof value === 'string' ? value : value[mode];
 };
 
-/** O tipo de uma marca desenhada: `secondary-container` sobre o trecho ativo, `primary` fora dele. */
+/** O desabilitado do Compose em cor opaca (MF4): on-surface a `alpha` composto sobre surface. */
+const disabledColor = (
+  alpha: 'state-disabled-container' | 'state-disabled-content',
+  mode: Mode,
+) =>
+  compositeOver(tok('on-surface', mode), tokens[alpha] as number, tok('surface', mode));
+
+/**
+ * O tipo de uma marca desenhada: `secondary-container` sobre o trecho ativo, `primary` fora dele. No
+ * desabilitado a marca é opaca: on-surface a 0,12 sobre surface (a que era `secondary`) ou a 0,38 (a `primary`).
+ */
 function kindOf(d: Drawing, node: SceneNode, mode: Mode, enabled: boolean): Kind {
-  if (!enabled) return Math.abs(node.opacity - 0.12) < 0.01 ? 'secondary' : 'primary';
+  if (!enabled) {
+    expect(node.opacity, 'marca desabilitada sem camada de opacidade').toBe(1);
+    const color = solid(node.fills);
+    if (isComposite(color, disabledColor('state-disabled-container', mode)))
+      return 'secondary';
+    expect(color, 'marca desabilitada: on-surface a 0,38 sobre surface').toSatisfy(
+      (c: string | undefined) =>
+        isComposite(c, disabledColor('state-disabled-content', mode)),
+    );
+    return 'primary';
+  }
   return solid(node.fills) === tok('secondary-container', mode) ? 'secondary' : 'primary';
 }
 
@@ -522,6 +543,53 @@ function skipOld(scene: OldScene, mode: Mode) {
   };
 }
 
+/**
+ * Os nós de antes que não aparecem agora (≤ 0,5 px de geometria). Exceção do desabilitado (MF4, a cor é
+ * opaca e o nó fica com opacidade 1): nesses nós a cena de antes vale pelo nome, pelo tipo e pela caixa, e a
+ * cor é conferida à parte, em `disabledProblems`, como on-surface a 0,38 / 0,12 composto sobre surface.
+ */
+function missing(d: Drawing, scene: OldScene, mode: Mode): string[] {
+  const skip = skipOld(scene, mode);
+  const enabled = (scene.values as Record<string, unknown>)['enabled'] !== 'false';
+  const nodes = scene.nodes
+    .filter((o) => !skip(o))
+    .map((o): OldNode => {
+      if (enabled || o.o === undefined) return o;
+      return { t: o.t, n: o.n, r: o.r, ...(o.x === undefined ? {} : { x: o.x }) };
+    });
+  return [
+    ...missingNodes(d, nodes),
+    ...(enabled ? [] : disabledProblems(d, scene, mode)),
+  ];
+}
+
+/** A cor do desabilitado: alça e trecho ativo a 0,38, trecho inativo a 0,12, sempre opacos e com opacidade 1. */
+function disabledProblems(d: Drawing, scene: OldScene, mode: Mode): string[] {
+  const out: string[] = [];
+  const want: Record<string, string> = {
+    alça: disabledColor('state-disabled-content', mode),
+    'trilho ativo': disabledColor('state-disabled-content', mode),
+    'trilho inativo': disabledColor('state-disabled-container', mode),
+  };
+  for (const { node } of collect(d, (n) => n.name in want)) {
+    if (node.opacity !== 1)
+      out.push(`${scene.key} ${node.name}: opacidade ${node.opacity}`);
+    if (!isComposite(solid(node.fills), want[node.name]!))
+      out.push(
+        `${scene.key} ${node.name}: ${solid(node.fills)} em vez de ${want[node.name]}`,
+      );
+  }
+  for (const { node } of collect(d, (n) => n.name === 'marca')) {
+    const color = solid(node.fills);
+    const ok =
+      isComposite(color, disabledColor('state-disabled-container', mode)) ||
+      isComposite(color, disabledColor('state-disabled-content', mode));
+    if (node.opacity !== 1 || !ok)
+      out.push(`${scene.key} marca: ${color} ${node.opacity}`);
+  }
+  return out;
+}
+
 describe('EX6 slider — regressão contra as cenas de antes', () => {
   const all = oldScenes('slider-');
 
@@ -534,10 +602,7 @@ describe('EX6 slider — regressão contra as cenas de antes', () => {
     expect(same.length).toBeGreaterThan(100);
     for (const scene of same) {
       const d = draw(scene.id, numeric(scene.values), scene.mode);
-      expect(
-        missingNodes(d, scene.nodes, { skip: skipOld(scene, scene.mode) }),
-        scene.key,
-      ).toEqual([]);
+      expect(missing(d, scene, scene.mode), scene.key).toEqual([]);
     }
   });
 
@@ -546,9 +611,7 @@ describe('EX6 slider — regressão contra as cenas de antes', () => {
     expect(examples.length).toBe(12);
     for (const scene of examples)
       expect(
-        missingNodes(draw(scene.id, numeric(scene.values), scene.mode), scene.nodes, {
-          skip: skipOld(scene, scene.mode),
-        }),
+        missing(draw(scene.id, numeric(scene.values), scene.mode), scene, scene.mode),
         scene.key,
       ).toEqual([]);
   });
@@ -563,9 +626,7 @@ describe('EX6 slider — regressão contra as cenas de antes', () => {
     expect(scenes.length).toBeGreaterThan(20);
     for (const scene of scenes)
       expect(
-        missingNodes(draw(scene.id, numeric(scene.values), scene.mode), scene.nodes, {
-          skip: skipOld(scene, scene.mode),
-        }),
+        missing(draw(scene.id, numeric(scene.values), scene.mode), scene, scene.mode),
         scene.key,
       ).toEqual([]);
   });
@@ -598,10 +659,7 @@ describe('EX6 slider — regressão contra as cenas de antes', () => {
         );
       });
       expect(reference, `${scene.key} arredondada`).toBeDefined();
-      expect(
-        missingNodes(d, reference!.nodes, { skip: skipOld(reference!, scene.mode) }),
-        scene.key,
-      ).toEqual([]);
+      expect(missing(d, reference!, scene.mode), scene.key).toEqual([]);
     }
   });
 

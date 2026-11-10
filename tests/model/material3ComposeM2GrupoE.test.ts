@@ -54,11 +54,22 @@ describe('card (Card.kt, FilledCardTokens, ElevatedCardTokens, OutlinedCardToken
           expect(strokeColor, where).toBe(spec.stroke[mode]);
           expect(root.stroke?.width, where).toBe(1);
         }
-        // ElevatedCardTokens.ContainerElevation = Level1 (blur 2, y 1); filled e outlined = Level0 (sem sombra)
+        // ElevatedCardTokens.ContainerElevation = Level1: duas sombras, ponto (y 1, blur 2, spread 0)
+        // em preto a 30% e ambiente (y 1, blur 3, spread 1) em preto a 15%; filled e outlined = Level0 (sem sombra)
         if (spec.shadow) {
-          expect(root.effects, where).toHaveLength(1);
-          expect(root.effects[0]).toMatchObject({ blur: 2, offset: { x: 0, y: 1 } });
-          expect(root.effects[0]?.color).toBe('rgba(0, 0, 0, 0.3)');
+          expect(root.effects, where).toHaveLength(2);
+          expect(root.effects[0], where).toMatchObject({
+            blur: 2,
+            offset: { x: 0, y: 1 },
+            color: 'rgba(0, 0, 0, 0.3)',
+          });
+          expect(root.effects[0]?.spread ?? 0, where).toBe(0);
+          expect(root.effects[1], where).toMatchObject({
+            blur: 3,
+            offset: { x: 0, y: 1 },
+            spread: 1,
+            color: 'rgba(0, 0, 0, 0.15)',
+          });
         } else {
           expect(root.effects, where).toEqual([]);
         }

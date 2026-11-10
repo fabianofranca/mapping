@@ -12,4 +12,5 @@
 
 ## Alterado
 
+- Biblioteca Material 3 (Compose), versão 7 (atualização aditiva): adota o motor novo — o texto, o ícone e o botão de ícone herdam a cor do conteúdo do `surface` e do `scaffold` (`on-primary` sobre `primary`, como o `LocalContentColor`); os tipos com sombra desenham as duas sombras de cada nível de elevação (ponto e ambiente, com `spread`); o `switch` e o `slider` desabilitados saem em cor opaca, sem empilhar transparência; o `text-field` e o `secure-text-field` outlined abrem o vão sobre o rótulo com os cantos arredondados; o `text` com `textAlign = Justify` desenha justificado; e o `time-picker` mostra, em `on-primary`, a parte dos números que a alça cobre.
 - Teto do `dist/index.html` subiu 16 KiB, de 1.966.080 para 1.982.464 bytes, pela regra do orçamento.

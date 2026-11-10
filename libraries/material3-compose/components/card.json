@@ -60,60 +60,122 @@
       "width": 1,
       "align": "inside"
     },
-    "shadow": {
-      "color": {
-        "$if": {
-          "$or": [
-            {
-              "$and": [
-                {
-                  "$eq": ["style", "elevated"]
-                },
-                {
-                  "$not": {
+    "shadow": [
+      {
+        "color": {
+          "$if": {
+            "$or": [
+              {
+                "$and": [
+                  {
+                    "$eq": ["style", "elevated"]
+                  },
+                  {
+                    "$not": {
+                      "$or": [
+                        {
+                          "$eq": ["interaction", "hovered"]
+                        },
+                        {
+                          "$eq": ["interaction", "dragged"]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "$and": [
+                  {
                     "$or": [
                       {
-                        "$eq": ["interaction", "hovered"]
+                        "$eq": ["style", "filled"]
                       },
                       {
-                        "$eq": ["interaction", "dragged"]
+                        "$eq": ["style", "outlined"]
                       }
                     ]
+                  },
+                  {
+                    "$eq": ["interaction", "hovered"]
                   }
-                }
-              ]
-            },
-            {
-              "$and": [
-                {
-                  "$or": [
-                    {
-                      "$eq": ["style", "filled"]
-                    },
-                    {
-                      "$eq": ["style", "outlined"]
+                ]
+              }
+            ]
+          },
+          "then": {
+            "$token": "elevation-point-shadow"
+          },
+          "else": "none"
+        },
+        "y": {
+          "$token": "elevation-1-point-y"
+        },
+        "blur": {
+          "$token": "elevation-1-point-blur"
+        },
+        "spread": {
+          "$token": "elevation-1-point-spread"
+        }
+      },
+      {
+        "color": {
+          "$if": {
+            "$or": [
+              {
+                "$and": [
+                  {
+                    "$eq": ["style", "elevated"]
+                  },
+                  {
+                    "$not": {
+                      "$or": [
+                        {
+                          "$eq": ["interaction", "hovered"]
+                        },
+                        {
+                          "$eq": ["interaction", "dragged"]
+                        }
+                      ]
                     }
-                  ]
-                },
-                {
-                  "$eq": ["interaction", "hovered"]
-                }
-              ]
-            }
-          ]
+                  }
+                ]
+              },
+              {
+                "$and": [
+                  {
+                    "$or": [
+                      {
+                        "$eq": ["style", "filled"]
+                      },
+                      {
+                        "$eq": ["style", "outlined"]
+                      }
+                    ]
+                  },
+                  {
+                    "$eq": ["interaction", "hovered"]
+                  }
+                ]
+              }
+            ]
+          },
+          "then": {
+            "$token": "elevation-ambient-shadow"
+          },
+          "else": "none"
         },
-        "then": {
-          "$token": "elevation-shadow"
+        "y": {
+          "$token": "elevation-1-ambient-y"
         },
-        "else": "none"
-      },
-      "y": {
-        "$token": "elevation-1-y"
-      },
-      "blur": {
-        "$token": "elevation-1-blur"
+        "blur": {
+          "$token": "elevation-1-ambient-blur"
+        },
+        "spread": {
+          "$token": "elevation-1-ambient-spread"
+        }
       }
-    },
+    ],
     "layout": {
       "type": "none"
     },
@@ -148,17 +210,36 @@
             }
           ]
         },
-        "shadow": {
-          "color": {
-            "$token": "elevation-shadow"
+        "shadow": [
+          {
+            "color": {
+              "$token": "elevation-point-shadow"
+            },
+            "y": {
+              "$token": "elevation-2-point-y"
+            },
+            "blur": {
+              "$token": "elevation-2-point-blur"
+            },
+            "spread": {
+              "$token": "elevation-2-point-spread"
+            }
           },
-          "y": {
-            "$token": "elevation-2-y"
-          },
-          "blur": {
-            "$token": "elevation-2-blur"
+          {
+            "color": {
+              "$token": "elevation-ambient-shadow"
+            },
+            "y": {
+              "$token": "elevation-2-ambient-y"
+            },
+            "blur": {
+              "$token": "elevation-2-ambient-blur"
+            },
+            "spread": {
+              "$token": "elevation-2-ambient-spread"
+            }
           }
-        }
+        ]
       },
       {
         "type": "rect",
@@ -197,17 +278,36 @@
             }
           ]
         },
-        "shadow": {
-          "color": {
-            "$token": "elevation-shadow"
+        "shadow": [
+          {
+            "color": {
+              "$token": "elevation-point-shadow"
+            },
+            "y": {
+              "$token": "elevation-3-point-y"
+            },
+            "blur": {
+              "$token": "elevation-3-point-blur"
+            },
+            "spread": {
+              "$token": "elevation-3-point-spread"
+            }
           },
-          "y": {
-            "$token": "elevation-3-y"
-          },
-          "blur": {
-            "$token": "elevation-3-blur"
+          {
+            "color": {
+              "$token": "elevation-ambient-shadow"
+            },
+            "y": {
+              "$token": "elevation-3-ambient-y"
+            },
+            "blur": {
+              "$token": "elevation-3-ambient-blur"
+            },
+            "spread": {
+              "$token": "elevation-3-ambient-spread"
+            }
           }
-        },
+        ],
         "stroke": {
           "color": {
             "$if": {
@@ -252,17 +352,36 @@
             }
           ]
         },
-        "shadow": {
-          "color": {
-            "$token": "elevation-shadow"
+        "shadow": [
+          {
+            "color": {
+              "$token": "elevation-point-shadow"
+            },
+            "y": {
+              "$token": "elevation-4-point-y"
+            },
+            "blur": {
+              "$token": "elevation-4-point-blur"
+            },
+            "spread": {
+              "$token": "elevation-4-point-spread"
+            }
           },
-          "y": {
-            "$token": "elevation-4-y"
-          },
-          "blur": {
-            "$token": "elevation-4-blur"
+          {
+            "color": {
+              "$token": "elevation-ambient-shadow"
+            },
+            "y": {
+              "$token": "elevation-4-ambient-y"
+            },
+            "blur": {
+              "$token": "elevation-4-ambient-blur"
+            },
+            "spread": {
+              "$token": "elevation-4-ambient-spread"
+            }
           }
-        }
+        ]
       },
       {
         "type": "frame",

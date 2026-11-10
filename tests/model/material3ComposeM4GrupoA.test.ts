@@ -330,9 +330,15 @@ describe('M4 grupo A — dropdown-menu', () => {
         num('corner-extra-small'),
       );
       expect(fillOf(d, 'menu')).toBe(tok('surface-container', mode));
-      expect(m.node.effects[0]?.blur).toBe(num('elevation-2-blur'));
-      expect(m.node.effects[0]?.offset.y).toBe(num('elevation-2-y'));
-      expect(m.node.effects[0]?.color).toBe(tok('elevation-shadow', mode));
+      // nível 2: duas sombras, ponto e ambiente, cada uma com y, blur, spread e cor do token
+      expect(m.node.effects).toHaveLength(2);
+      for (const [i, kind] of (['point', 'ambient'] as const).entries()) {
+        const shadow = m.node.effects[i];
+        expect(shadow?.blur, kind).toBe(num(`elevation-2-${kind}-blur`));
+        expect(shadow?.offset.y, kind).toBe(num(`elevation-2-${kind}-y`));
+        expect(shadow?.spread ?? 0, kind).toBe(num(`elevation-2-${kind}-spread`));
+        expect(shadow?.color, kind).toBe(tok(`elevation-${kind}-shadow`, mode));
+      }
       // 8 + 3 itens de 48 + 8
       expect(m.height).toBe(160);
       const first = box(d, 'item');

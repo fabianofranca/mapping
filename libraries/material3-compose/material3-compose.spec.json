@@ -3,7 +3,7 @@
   "formatVersion": 15,
   "id": "material3-compose",
   "name": "Material 3 (Compose)",
-  "version": 6,
+  "version": 7,
   "description": "Material Design 3 (baseline, tema claro e escuro) para Jetpack Compose, com o composable de cada tipo no `code`. Os símbolos e os parâmetros vêm do código do androidx na versão compose.material3 1.4.0 (commit 5113b82a4ed6416d6344efa50e41db8cb65928ff). Padrões: os espaços (lambdas) de cada composable ficam no `notes`; o tamanho vem de width, height e weight; os ícones são sugestões de Icons.Filled; a imagem remota usa o carregador de imagens do app; o Scaffold coloca cada filha no espaço certo pelo tipo dela.",
   "platforms": [
     {
@@ -335,6 +335,44 @@
         "light": "rgba(0, 0, 0, 0.3)",
         "dark": "rgba(0, 0, 0, 0.3)"
       },
+      "elevation-point-shadow": {
+        "light": "rgba(0, 0, 0, 0.3)",
+        "dark": "rgba(0, 0, 0, 0.3)"
+      },
+      "elevation-ambient-shadow": {
+        "light": "rgba(0, 0, 0, 0.15)",
+        "dark": "rgba(0, 0, 0, 0.15)"
+      },
+      "elevation-1-point-y": 1,
+      "elevation-1-point-blur": 2,
+      "elevation-1-point-spread": 0,
+      "elevation-1-ambient-y": 1,
+      "elevation-1-ambient-blur": 3,
+      "elevation-1-ambient-spread": 1,
+      "elevation-2-point-y": 1,
+      "elevation-2-point-blur": 2,
+      "elevation-2-point-spread": 0,
+      "elevation-2-ambient-y": 2,
+      "elevation-2-ambient-blur": 6,
+      "elevation-2-ambient-spread": 2,
+      "elevation-3-point-y": 1,
+      "elevation-3-point-blur": 3,
+      "elevation-3-point-spread": 0,
+      "elevation-3-ambient-y": 4,
+      "elevation-3-ambient-blur": 8,
+      "elevation-3-ambient-spread": 3,
+      "elevation-4-point-y": 2,
+      "elevation-4-point-blur": 3,
+      "elevation-4-point-spread": 0,
+      "elevation-4-ambient-y": 6,
+      "elevation-4-ambient-blur": 10,
+      "elevation-4-ambient-spread": 4,
+      "elevation-5-point-y": 4,
+      "elevation-5-point-blur": 4,
+      "elevation-5-point-spread": 0,
+      "elevation-5-ambient-y": 8,
+      "elevation-5-ambient-blur": 12,
+      "elevation-5-ambient-spread": 6,
       "state-disabled-content": 0.38,
       "state-disabled-container": 0.12,
       "state-disabled-container-filled": 0.1,
@@ -674,6 +712,14 @@
                 "shape": "none",
                 "width": "fill",
                 "height": "fill"
+              }
+            },
+            {
+              "name": "Primário",
+              "values": {
+                "color": "primary",
+                "shape": "medium",
+                "width": "fill"
               }
             }
           ]
@@ -2153,6 +2199,15 @@
                 "text": "Salvar",
                 "style": "labelLarge",
                 "textAlign": "Center",
+                "width": "fill"
+              }
+            },
+            {
+              "name": "Parágrafo justificado",
+              "values": {
+                "text": "O Material 3 organiza a interface em camadas de cor, forma e elevação, para que cada componente mantenha a mesma aparência em qualquer tela do aplicativo.",
+                "style": "bodyMedium",
+                "textAlign": "Justify",
                 "width": "fill"
               }
             }
@@ -13632,7 +13687,7 @@
   "migrations": [
     {
       "from": 1,
-      "to": 6,
+      "to": 7,
       "steps": [
         {
           "op": "fill-field",
@@ -13656,7 +13711,7 @@
     },
     {
       "from": 2,
-      "to": 6,
+      "to": 7,
       "steps": [
         {
           "op": "fill-field",
@@ -13680,7 +13735,7 @@
     },
     {
       "from": 3,
-      "to": 6,
+      "to": 7,
       "steps": [
         {
           "op": "fill-field",
@@ -13704,7 +13759,7 @@
     },
     {
       "from": 4,
-      "to": 6,
+      "to": 7,
       "steps": [
         {
           "op": "fill-field",
@@ -13728,7 +13783,7 @@
     },
     {
       "from": 5,
-      "to": 6,
+      "to": 7,
       "steps": [
         {
           "op": "fill-field",

@@ -97,11 +97,6 @@ const MISSING_TODAY: string[] = [
   // (etapa #833, M1); o `$token` nos componentes das outras bibliotecas ainda não. Coberto por
   // tests/model/specTokens.test.ts, tests/model/components/tokens.test.ts, libraryTokens.test.ts e
   // pelo roteiro R25.
-  // Cor herdada (formato 4, etapa #899, MF3): a Material 3 passa a usá-la na MF4; até lá nenhuma
-  // biblioteca distribuída a usa. Coberto por tests/model/componentProvided.test.ts,
-  // tests/canvas/components/screenProvided.test.ts e pelo roteiro R25 (R25.83 a R25.86).
-  'component:expr.$provided',
-  'component:node.slot.provide',
   'component:expr.$token',
   // Ícones (formatVersion 15, etapa #747, CF7): a raiz `icons` e o nó `icon` já têm exemplo na
   // biblioteca Material 3 (etapa #833, M1); o `icon.name`/`strokeWidth` ainda não. Coberto por

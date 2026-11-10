@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import { absoluteBoxes, walk } from '../../src/model/components/scene';
 import type { PathNode, SceneNode, TextNode } from '../../src/model/components/scene';
+import { compositeOver, expectComposite } from '../support/material3Composite';
 import { drawIn, files, solid, spec } from '../support/material3Library';
 
 const catalog = buildCatalog(files);
@@ -144,7 +145,7 @@ describe('M3 grupo C — slider', () => {
     }
   });
 
-  it('desabilitado (SliderTokens): alça e trecho ativo on-surface a 0,38, trecho inativo a 0,12', () => {
+  it('desabilitado (SliderTokens): alça e trecho ativo on-surface a 0,38, trecho inativo a 0,12, compostos sobre surface em cor opaca', () => {
     const { light, dark } = both('slider', {
       type: 'single',
       value: '0.5',
@@ -154,15 +155,20 @@ describe('M3 grupo C — slider', () => {
       [light, 'light'],
       [dark, 'dark'],
     ] as const) {
-      const onSurface = tok('on-surface', mode);
+      const over = (alpha: string) =>
+        compositeOver(
+          tok('on-surface', mode),
+          Number(tok(alpha, mode)),
+          tok('surface', mode),
+        );
       for (const name of ['alça', 'trilho ativo']) {
         const node = named(d, name)!;
-        expect(fillOf(node)).toBe(onSurface);
-        expect(node.opacity).toBe(Number(tok('state-disabled-content', mode)));
+        expectComposite(fillOf(node), over('state-disabled-content'));
+        expect(node.opacity).toBe(1);
       }
       const inactive = named(d, 'trilho inativo')!;
-      expect(fillOf(inactive)).toBe(onSurface);
-      expect(inactive.opacity).toBe(Number(tok('state-disabled-container', mode)));
+      expectComposite(fillOf(inactive), over('state-disabled-container'));
+      expect(inactive.opacity).toBe(1);
     }
   });
 

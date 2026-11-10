@@ -309,6 +309,25 @@ const textIn = (d: Drawing, parent: string): string | undefined => {
   return (t as TextNode | undefined)?.text;
 };
 
+/**
+ * O número sob a alça (MF4): a cópia dos números em on-primary, dentro da `alça` (que recorta), cujo centro
+ * cai no centro da alça. Sem número na posição (minuto fora da grade de 5), nenhum.
+ */
+function underHandle(d: Drawing): string | undefined {
+  const handle = named(d, 'alça')[0]!;
+  const boxes = boxesOf(d);
+  const at = boxes.get(handle.id)!;
+  const found = [...walk(handle)].find((n) => {
+    if (n.type !== 'text' || n.name !== 'número sob a alça') return false;
+    const b = boxes.get(n.id)!;
+    return (
+      Math.abs(b.x + b.width / 2 - (at.x + at.width / 2)) <= 1 &&
+      Math.abs(b.y + b.height / 2 - (at.y + at.height / 2)) <= 1
+    );
+  });
+  return (found as TextNode | undefined)?.text;
+}
+
 describe('EX4 time-picker — ponteiro, mostrador e PM sem tabelas', () => {
   it('às 10:37 em 24 horas, escolhendo o minuto, a alça fica no minuto 37 (222°), no raio externo', () => {
     const d = drawTime({
@@ -320,8 +339,8 @@ describe('EX4 time-picker — ponteiro, mostrador e PM sem tabelas', () => {
     });
     expect(near(handleCenter(d), polar(101, 222))).toBe(true);
     expect(near(trackEnd(d), polar(101, 222))).toBe(true);
-    // 37 não está na grade de 5: o Compose não escreve o número dentro da alça
-    expect(textIn(d, 'alça') ?? '').toBe('');
+    // 37 não está na grade de 5: o Compose não escreve o número dentro da alça (a cópia dos números só cobre 35 e 40 pela metade)
+    expect(underHandle(d)).toBeUndefined();
     expect(textIn(d, 'minuto')).toBe('37');
     expect(textIn(d, 'hora')).toBe('10');
   });
@@ -335,7 +354,7 @@ describe('EX4 time-picker — ponteiro, mostrador e PM sem tabelas', () => {
       selection: 'hour',
     });
     expect(near(handleCenter(d), polar(101, 300))).toBe(true);
-    expect(textIn(d, 'alça')).toBe('10');
+    expect(underHandle(d)).toBe('10');
   });
 
   it('às 22:05 em 24 horas, a alça da hora vai para o anel interno (raio 69, 20 h = 300°)', () => {
@@ -356,7 +375,7 @@ describe('EX4 time-picker — ponteiro, mostrador e PM sem tabelas', () => {
     expect(textIn(minute, 'hora')).toBe('10');
     expect(textIn(minute, 'minuto')).toBe('05');
     expect(near(handleCenter(minute), polar(101, 30))).toBe(true);
-    expect(textIn(minute, 'alça')).toBe('5');
+    expect(underHandle(minute)).toBe('5');
     const pm = named(minute, 'PM')[0]!;
     const am = named(minute, 'AM')[0]!;
     expect(solid(pm.fills)).toBe(tok('tertiary-container', 'light'));
@@ -509,6 +528,26 @@ const RENAMED: Record<string, string> = {
   'fim do intervalo': 'marcado',
 };
 
+/**
+ * Exceção da MF4 (número sob a alça): o nó `valor selecionado` de antes sumiu; o número escolhido é agora a
+ * cópia dos números em on-primary dentro da `alça` (`número sob a alça`). A cena de antes não o exige mais,
+ * mas o número escolhido continua lá: com o mesmo texto e o centro no do `valor selecionado` de antes.
+ */
+const MOVED = 'valor selecionado';
+const movedIntoHandle = (
+  old: Entry,
+  nodes: { name: string; text?: string; rect: number[] }[],
+): boolean =>
+  // sem texto (minuto fora da grade de 5) não havia número a mover (o teste do ponteiro afirma que nenhuma cópia fica centrada)
+  old.x === '' ||
+  nodes.some(
+    (n) =>
+      n.name === 'número sob a alça' &&
+      n.text === old.x &&
+      Math.abs(n.rect[0]! + n.rect[2]! / 2 - (old.r[0]! + old.r[2]! / 2)) <= TOL &&
+      Math.abs(n.rect[1]! + n.rect[3]! / 2 - (old.r[1]! + old.r[3]! / 2)) <= TOL,
+  );
+
 function compareScene(scene: Scene, draw: (v: Values, m: Mode) => Drawing) {
   const d = draw(scene.values, scene.mode);
   const boxes = boxesOf(d);
@@ -526,6 +565,11 @@ function compareScene(scene: Scene, draw: (v: Values, m: Mode) => Drawing) {
   for (const old of scene.nodes) {
     // as faixas de largura 0 (linhas fora do intervalo) não desenham; as demais vão pela união das linhas
     if (old.n === 'faixa') continue;
+    if (old.n === MOVED) {
+      if (!movedIntoHandle(old, now))
+        missing.push(`${scene.id} ${old.n} ${old.x ?? ''} não está sob a alça`);
+      continue;
+    }
     const name = RENAMED[old.n] ?? old.n;
     const found = now.some(
       (n) =>
@@ -605,7 +649,22 @@ describe('EX4 regressão — as cenas de antes das tabelas, a ≤ 0,5 px por nó
       });
       const boxes = boxesOf(d);
       const now = visibleNodes(d);
+      const nowBoxes = now.map((n) => {
+        const b = boxes.get(n.id)!;
+        return {
+          name: n.name,
+          text: n.type === 'text' ? n.text : undefined,
+          rect: [b.x, b.y, b.width, b.height],
+        };
+      });
       for (const old of entries) {
+        if (old.n === MOVED) {
+          expect(
+            movedIntoHandle(old, nowBoxes),
+            `${key} ${old.n} ${old.x ?? ''} não está sob a alça`,
+          ).toBe(true);
+          continue;
+        }
         if (old.t === 'path') {
           const m = /L(-?[\d.]+) (-?[\d.]+)$/.exec(old.d ?? '')!;
           expect(closeRect(trackEnd(d), [Number(m[1]), Number(m[2])]), key).toBe(true);
@@ -672,6 +731,7 @@ describe('EX4 — sem tabelas enumeradas', () => {
 
   it('os arquivos ficam bem menores que os 78 kB e 53 kB de antes', () => {
     expect(text('components/date-picker.json').length).toBeLessThan(52_000);
-    expect(text('components/time-picker.json').length).toBeLessThan(36_000);
+    // O time-picker passou de 36 kB com a cópia dos números dentro da `alça` (MF4, número sob a alça; cresce de 31 kB a ~40 kB): teto de 41 kB (hoje 39.718).
+    expect(text('components/time-picker.json').length).toBeLessThan(41_000);
   });
 });

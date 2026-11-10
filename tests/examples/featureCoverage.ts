@@ -493,6 +493,11 @@ function exprFeatures(value: unknown, out: Set<string>, inCondition = false): vo
     exprFeatures(value.default, out);
     return;
   }
+  if ('$provided' in value) {
+    out.add('expr.$provided');
+    exprFeatures(value.default, out);
+    return;
+  }
   if ('$concat' in value) {
     out.add('expr.$concat');
     exprFeatures(value.$concat, out);
