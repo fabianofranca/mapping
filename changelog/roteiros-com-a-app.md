@@ -1,4 +1,4 @@
-# Roteiros que batem com a app e auxiliares do testador — [Não lançado] (épico `epic/roteiros-com-a-app`, PR #1416, MCP 0.29.0, schema v18)
+# Roteiros que batem com a app e auxiliares do testador — [Não lançado] (épico `epic/roteiros-com-a-app`, PR #1418, MCP 0.29.0, schema v18)
 
 ## Alterado
 
