@@ -1650,10 +1650,34 @@ describe('paletteDrag, caminho absoluto e pasta lembrada (etapa #1256, RT2)', ()
         d.page,
         'Box',
         { x: 500, y: 300 },
-        { steps: 1, projectDir: d.projeto },
+        { steps: 1, projectDir: d.projeto, waitMs: 20 },
       );
       expect(result).toEqual({ via: 'sintetico' });
       expect(d.events.at(-1)).toBe('sintetico');
+    });
+
+    it('a marcação que chega ao disco depois do settle (autosave) ainda conta como nativa', async () => {
+      const mod = await load();
+      const d = setup('nenhum');
+      const up = d.page.mouse.up;
+      d.page.mouse.up = async () => {
+        await up();
+        setTimeout(() => {
+          const json = JSON.parse(readFileSync(d.file, 'utf8')) as {
+            markings: unknown[];
+          };
+          json.markings.push({ id: 'tarde' });
+          writeFileSync(d.file, JSON.stringify(json));
+        }, 120);
+      };
+      const result = await mod.paletteDrag(
+        d.page,
+        'Button',
+        { x: 500, y: 300 },
+        { steps: 1, projectDir: d.projeto, waitMs: 1000 },
+      );
+      expect(result).toEqual({ via: 'nativo' });
+      expect(d.events).not.toContain('sintetico');
     });
 
     it('o nativo criou: o sintético não roda (sem instância duplicada)', async () => {
@@ -1679,7 +1703,7 @@ describe('paletteDrag, caminho absoluto e pasta lembrada (etapa #1256, RT2)', ()
           d.page,
           'Button',
           { x: 500, y: 300 },
-          { steps: 1, projectDir: d.projeto },
+          { steps: 1, projectDir: d.projeto, waitMs: 20 },
         ),
       ).rejects.toThrow('o arrasto da Paleta não criou a instância');
     });
@@ -2178,6 +2202,76 @@ describe('servidor persistente do run, check e runs.log (etapa #1533, TE2)', () 
     expect(r.err).toMatch(/aviso: .*servidor/);
   });
 
+  it('resposta perdida (o servidor caiu no meio do run) não repete o corpo em outro servidor', async () => {
+    const net = await import('node:net');
+    let requests = 0;
+    const raw = net.createServer((socket) => {
+      socket.on('data', () => {
+        requests += 1;
+        socket.destroy();
+      });
+    });
+    await new Promise<void>((resolve) =>
+      raw.listen(path.join(apoio, 'cloud.sock'), resolve),
+    );
+    try {
+      const r = await run('1');
+      expect(r.code).toBe(1);
+      expect(r.err).toMatch(/servidor do run caiu/);
+      expect(requests).toBe(1);
+      expect(spawned).toBe(0);
+    } finally {
+      raw.close();
+    }
+  });
+
+  it('o corpo e a saída com acentos passam inteiros mesmo acima de um pedaço do soquete', async () => {
+    const filler = 'ãé✅'.repeat(60000);
+    const r = await run(`/* ${filler} */ console.log("fim ${'ç'.repeat(70000)}")`);
+    expect(r.code).toBe(0);
+    expect(r.out).toContain(`fim ${'ç'.repeat(70000)}`);
+    expect(readFileSync(path.join(apoio, 'runs', '1.js'), 'utf8')).toContain(filler);
+  });
+
+  it('run na fila atrás de um prazo esgotado recebe o erro e o corpo dele não roda', async () => {
+    const slow = run('await new Promise(() => {})', { prazoSeconds: 0.3 });
+    await new Promise((r) => setTimeout(r, 50));
+    const queued = await run('globalThis.__naoDeveRodar = true');
+    expect((await slow).code).toBe(124);
+    expect(queued.code).toBe(1);
+    expect(queued.err).toMatch(/prazo|saiu/);
+    expect((globalThis as { __naoDeveRodar?: boolean }).__naoDeveRodar).toBeUndefined();
+  });
+
+  it('um segundo servidor na mesma pasta não sobe (o primeiro segue de pé)', async () => {
+    const mod = await load();
+    await run('ctx.n = 1');
+    await expect(
+      mod.startRunServer({ apoioDir: apoio, connectFn, onExit: () => {} }),
+    ).rejects.toThrow(/já existe um servidor/);
+    const b = await run('console.log("n=" + ctx.n)');
+    expect(b.out).toContain('n=1');
+  });
+
+  it('paletteDrag no corpo do run usa a pasta do run e, sem ela, a última pasta lembrada', async () => {
+    const projeto = mkdtempSync(path.join(tmpdir(), 'mapping-srv-proj-'));
+    try {
+      mkdirSync(path.join(apoio, 'state'), { recursive: true });
+      writeFileSync(path.join(apoio, 'state', 'ultima-pasta.txt'), projeto);
+      const body = `try { await paletteDrag(page, 'X', { x: 1, y: 1 }); } catch (e) { console.log('ERRO ' + e.message); }`;
+      const lembrada = await run(body);
+      expect(lembrada.out).toContain('ERRO');
+      expect(lembrada.out).not.toContain('precisa da pasta');
+    } finally {
+      rmSync(projeto, { recursive: true, force: true });
+    }
+    rmSync(path.join(apoio, 'state'), { recursive: true, force: true });
+    const sem = await run(
+      `try { await paletteDrag(page, 'X', { x: 1, y: 1 }); } catch (e) { console.log('ERRO ' + e.message); }`,
+    );
+    expect(sem.out).toContain('ERRO paletteDrag precisa da pasta do projeto');
+  });
+
   describe('check', () => {
     it('um check com falha não interrompe o corpo, sai uma linha por check antes do estado e o run sai 1', async () => {
       const r = await run(`
@@ -2201,6 +2295,18 @@ describe('servidor persistente do run, check e runs.log (etapa #1533, TE2)', () 
       const stateAt = lines.findIndex((l) => l.includes('Mapping'));
       expect(stateAt).toBeGreaterThan(lines.indexOf('❌ R4.7 — condição falsa'));
       expect(lines.indexOf('corpo seguiu')).toBeLessThan(lines.indexOf('✅ R4.2'));
+    });
+
+    it('corpo que lança ou passa do prazo ainda imprime os checks pendentes', async () => {
+      const r = await run(`
+        check('R9.1', async () => { await new Promise((r) => setTimeout(r, 30)); return false; }, 'tarde');
+        throw new Error('quebrou depois');
+      `);
+      expect(r.code).toBe(1);
+      expect(r.out).toContain('❌ R9.1 — tarde');
+      expect(readFileSync(path.join(apoio, 'runs.log'), 'utf8')).toMatch(
+        /checks=1 falhas=1/,
+      );
     });
 
     it('todos passando: o run sai 0; check sem await também é esperado', async () => {

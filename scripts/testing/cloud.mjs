@@ -990,6 +990,18 @@ async function readMapping(projectDir) {
   return { error: 'JSON inválido' };
 }
 
+/** A pasta que o `state()` lembra (`apoio/state/ultima-pasta.txt`), ou `undefined`. */
+function lastFolder(apoioDir) {
+  try {
+    return (
+      fs.readFileSync(path.join(apoioDir, 'state', 'ultima-pasta.txt'), 'utf8').trim() ||
+      undefined
+    );
+  } catch {
+    return undefined;
+  }
+}
+
 /** Grava `ultima-pasta.txt` só quando o conteúdo muda (a pasta lembrada não fica velha nem é regravada à toa). */
 function rememberFolder(file, absolute) {
   try {
@@ -1405,6 +1417,19 @@ function syntheticPaletteDrag({ tipo, para, grupo }) {
   return { ok: true };
 }
 
+/** Quanto o `paletteDrag` espera o autosave gravar a marcação nova antes de dar o arrasto por falho. */
+const PALETTE_WAIT_MS = 2000;
+
+/** Espera (até `waitMs`) o `mapping.json` passar de `before` marcações: o autosave grava depois do `settle`. */
+async function markingsGrewTo(projectDir, before, waitMs) {
+  const start = Date.now();
+  for (;;) {
+    if ((await countMarkings(projectDir)) > before) return true;
+    if (Date.now() - start >= waitMs) return false;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+}
+
 /** Número de marcações do `mapping.json` da pasta (a medida do `paletteDrag`); lança se não lê. */
 async function countMarkings(projectDir) {
   const read = await readMapping(projectDir);
@@ -1426,13 +1451,14 @@ async function countMarkings(projectDir) {
  * `projectDir` é obrigatório (no corpo do `run`, vale a pasta do `run`): sem ela lança
  * "paletteDrag precisa da pasta do projeto".
  * `capture` (caminho de PNG) grava o recorte do canvas antes de soltar, com o destino aceso.
- * Devolve `{ via: 'nativo' | 'sintetico' }`.
+ * `waitMs` (padrão 2000) é quanto espera o autosave gravar a marcação nova antes de dar o arrasto
+ * por falho. Devolve `{ via: 'nativo' | 'sintetico' }`.
  */
 export async function paletteDrag(
   page,
   tipo,
   para,
-  { capture, steps = 10, grupo, projectDir } = {},
+  { capture, steps = 10, grupo, projectDir, waitMs = PALETTE_WAIT_MS } = {},
 ) {
   if (!projectDir) throw new Error('paletteDrag precisa da pasta do projeto');
   const groups = await page.evaluate(paletteGroupsOf, { tipo });
@@ -1473,7 +1499,7 @@ export async function paletteDrag(
   if (capture) await host.screenshot({ path: capture });
   await page.mouse.up();
   await settle(page);
-  if ((await countMarkings(projectDir)) > before) return { via: 'nativo' };
+  if (await markingsGrewTo(projectDir, before, waitMs)) return { via: 'nativo' };
   const synthetic = await page.evaluate(syntheticPaletteDrag, {
     tipo,
     para,
@@ -1481,7 +1507,7 @@ export async function paletteDrag(
   });
   if (synthetic?.motivo) throw new Error(`paletteDrag: ${synthetic.motivo}`);
   await settle(page);
-  if ((await countMarkings(projectDir)) > before) return { via: 'sintetico' };
+  if (await markingsGrewTo(projectDir, before, waitMs)) return { via: 'sintetico' };
   throw new Error('o arrasto da Paleta não criou a instância');
 }
 
@@ -1739,7 +1765,10 @@ async function execStep(
       ...exportsOf(),
       // No corpo, vale a pasta do `run` quando a chamada não passa `{ projectDir }`.
       paletteDrag: (p, tipo, para, options = {}) =>
-        paletteDrag(p, tipo, para, { projectDir, ...options }),
+        paletteDrag(p, tipo, para, {
+          projectDir: projectDir ?? lastFolder(apoioDir),
+          ...options,
+        }),
       ctx,
       check: makeCheck(checks, pending),
       console: bodyConsole(io),
@@ -1768,6 +1797,11 @@ async function execStep(
   } finally {
     clearTimeout(timer);
   }
+  // Checks ainda no ar (o corpo lançou ou estourou o prazo) têm até 2 s para entrar no resumo.
+  await Promise.race([
+    Promise.all(pending),
+    new Promise((resolve) => setTimeout(resolve, 2000).unref()),
+  ]);
   for (const line of formatChecks(checks)) io.log(line);
   if (code === 0 && checks.some((c) => !c.ok)) code = 1;
   await printState();
@@ -1869,16 +1903,23 @@ export async function startRunServer({
 }) {
   const sock = path.join(apoioDir, SOCKET_NAME);
   fs.mkdirSync(apoioDir, { recursive: true });
+  if (fs.existsSync(sock) && (await serverAnswers(sock))) {
+    throw new Error('já existe um servidor do run nesta pasta de apoio');
+  }
   fs.rmSync(sock, { force: true });
   let connection = null;
   let ctx = {};
   let queue = Promise.resolve();
+  let stopping = false;
   let closed = false;
   const sockets = new Set();
 
   const close = async () => {
+    stopping = true;
     if (closed) return;
     closed = true;
+    // Os `run` que já esperavam na fila recebem o erro antes de os soquetes caírem.
+    await queue.catch(() => {});
     for (const socket of sockets) socket.destroy();
     await new Promise((resolve) => server.close(resolve));
     fs.rmSync(sock, { force: true });
@@ -1934,9 +1975,10 @@ export async function startRunServer({
     sockets.add(socket);
     socket.on('close', () => sockets.delete(socket));
     socket.on('error', () => {});
+    socket.setEncoding('utf8');
     let buffer = '';
     socket.on('data', (chunk) => {
-      buffer += chunk.toString('utf8');
+      buffer += chunk;
       const end = buffer.indexOf('\n');
       if (end < 0) return;
       const line = buffer.slice(0, end);
@@ -1949,15 +1991,24 @@ export async function startRunServer({
         return;
       }
       if (request.cmd === 'quit') {
+        stopping = true;
         socket.end(`${JSON.stringify({ code: 0, lines: [] })}\n`, () => {
           close().then(onExit);
         });
         return;
       }
       queue = queue.then(async () => {
-        if (closed) return;
+        if (stopping) {
+          const text =
+            'o servidor do run saiu (prazo esgotado no run anterior); rode de novo';
+          socket.end(
+            `${JSON.stringify({ code: 1, lines: [{ s: 'err', text }], checks: [] })}\n`,
+          );
+          return;
+        }
         const result = await handle(request);
         const expired = result.code === 124;
+        if (expired) stopping = true;
         socket.write(`${JSON.stringify(result)}\n`, () => {
           if (expired) close().then(onExit);
         });
@@ -1976,6 +2027,8 @@ export async function startRunServer({
 function sendToServer(sock, request, timeoutMs) {
   return new Promise((resolve) => {
     const socket = net.createConnection(sock);
+    socket.setEncoding('utf8');
+    let connected = false;
     let buffer = '';
     let settled = false;
     const finish = (value) => {
@@ -1986,9 +2039,12 @@ function sendToServer(sock, request, timeoutMs) {
       resolve(value);
     };
     const timer = setTimeout(() => finish({ timeout: true }), timeoutMs);
-    socket.on('connect', () => socket.write(`${JSON.stringify(request)}\n`));
+    socket.on('connect', () => {
+      connected = true;
+      socket.write(`${JSON.stringify(request)}\n`);
+    });
     socket.on('data', (chunk) => {
-      buffer += chunk.toString('utf8');
+      buffer += chunk;
       const end = buffer.indexOf('\n');
       if (end >= 0) {
         try {
@@ -1998,8 +2054,21 @@ function sendToServer(sock, request, timeoutMs) {
         }
       }
     });
-    socket.on('error', () => finish(null));
-    socket.on('close', () => finish(null));
+    // `null`: ninguém atende (nada foi enviado); `{ lost }`: o servidor aceitou e caiu sem responder.
+    socket.on('error', () => finish(connected ? { lost: true } : null));
+    socket.on('close', () => finish(connected ? { lost: true } : null));
+  });
+}
+
+/** O soquete responde a uma conexão? (um servidor de pé; o arquivo sozinho pode ser de um servidor morto) */
+function serverAnswers(sock) {
+  return new Promise((resolve) => {
+    const socket = net.createConnection(sock);
+    socket.on('connect', () => {
+      socket.destroy();
+      resolve(true);
+    });
+    socket.on('error', () => resolve(false));
   });
 }
 
@@ -2007,7 +2076,9 @@ function sendToServer(sock, request, timeoutMs) {
 function killServer(apoioDir) {
   try {
     const pid = Number(fs.readFileSync(path.join(apoioDir, PID_NAME), 'utf8'));
-    if (pid > 0) process.kill(pid, 'SIGTERM');
+    // Só mata se o pid ainda é de um `cloud.mjs` (o número pode ter sido reaproveitado).
+    const cmdline = fs.readFileSync(`/proc/${pid}/cmdline`, 'utf8');
+    if (pid > 0 && cmdline.includes('cloud.mjs')) process.kill(pid, 'SIGTERM');
   } catch {
     // Sem servidor.
   }
@@ -2092,6 +2163,12 @@ export async function runViaServer(
     recordRun(apoioDir, { body, ...result });
     return print(result);
   }
+  if (response.lost) {
+    io.error(
+      'o servidor do run caiu durante este run; o corpo pode ter rodado até certo ponto: confira o estado antes de repetir',
+    );
+    return 1;
+  }
   if (response.timeout) {
     killServer(apoioDir);
     io.error(`prazo de ${prazoSeconds} s esgotado no passo`);
@@ -2102,7 +2179,19 @@ export async function runViaServer(
 
 /** `cloud.mjs serve`: o processo que o primeiro `run` sobe; sai no prazo esgotado, no `--novo` ou no SIGTERM. */
 async function runServe(apoioDir) {
-  const { close } = await startRunServer({ apoioDir });
+  // Uma promessa solta do corpo não derruba o servidor (e a conexão e o ctx com ele).
+  process.on('unhandledRejection', (error) => {
+    console.error(`rejeição sem tratamento no corpo: ${error?.message ?? error}`);
+  });
+  let server;
+  try {
+    server = await startRunServer({ apoioDir });
+  } catch (error) {
+    // Outro `run` subiu o servidor primeiro: este sai e os dois clientes usam o mesmo.
+    console.error(error.message);
+    return;
+  }
+  const { close } = server;
   const stop = () => close().then(() => process.exit(0));
   process.on('SIGTERM', stop);
   process.on('SIGINT', stop);
@@ -2263,7 +2352,7 @@ export const HELP = {
     desc: 'canto (nw, ne, sw, se) que a app pegaria no ponto (raio 12 a 22 px, xadrez), ou null',
   },
   paletteDrag: {
-    sig: 'paletteDrag(page, tipo, para, { capture?, steps? = 10, grupo?, projectDir? })',
+    sig: 'paletteDrag(page, tipo, para, { capture?, steps? = 10, grupo?, projectDir?, waitMs? })',
     desc: 'arrasta um tipo da Paleta aberta até um ponto de tela e confere a marcação nova no mapping.json (projectDir; no run vale a pasta do run); grupo escolhe entre dois grupos com o mesmo tipo; capture = PNG antes de soltar; devolve { via: nativo | sintetico }',
   },
   setViewport: {

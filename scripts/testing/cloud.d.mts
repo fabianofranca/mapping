@@ -190,7 +190,13 @@ export function paletteDrag(
   page: unknown,
   tipo: string,
   para: { x: number; y: number },
-  options?: { capture?: string; steps?: number; grupo?: string; projectDir?: string },
+  options?: {
+    capture?: string;
+    steps?: number;
+    grupo?: string;
+    projectDir?: string;
+    waitMs?: number;
+  },
 ): Promise<{ via: 'nativo' | 'sintetico' }>;
 export function drag(
   page: unknown,

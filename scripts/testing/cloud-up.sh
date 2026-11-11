@@ -76,7 +76,10 @@ if [ "$RESTART_CHROME" -eq 1 ]; then
   # O servidor persistente do `cloud.mjs run` segura a conexão CDP: para antes de fechar o Chrome
   # (o próximo `run` sobe outro, ligado ao Chrome novo).
   if [ -f "$S/cloud.pid" ]; then
-    kill "$(cat "$S/cloud.pid")" 2>/dev/null || true
+    # Só mata se o pid ainda é de um `cloud.mjs` (o número pode ter sido reaproveitado).
+    if tr '\0' ' ' <"/proc/$(cat "$S/cloud.pid")/cmdline" 2>/dev/null | grep -q 'cloud.mjs'; then
+      kill "$(cat "$S/cloud.pid")" 2>/dev/null || true
+    fi
   fi
   rm -f "$S/cloud.sock" "$S/cloud.pid"
   # Receita 3 (nuvem): nunca `pkill -f chrome` (mata a própria shell também e conta como
