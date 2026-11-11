@@ -553,6 +553,21 @@ export function arrangesByFit(
   );
 }
 
+function optionalMaxWidth(value: number | undefined): { maxWidth?: number } {
+  return value === undefined || value < MIN_STORED_MARKING_SIZE
+    ? {}
+    : { maxWidth: value };
+}
+
+/** A largura que sobra da posição `x` até a borda da imagem do container; no canvas não há limite. */
+function widthToImageEdge(p: Project, marking: Marking): number | undefined {
+  if (marking.containerId === null) return undefined;
+  const container = projectIndex(p).containers.get(marking.containerId);
+  return container === undefined
+    ? undefined
+    : right(imagePixelRect(container)) - marking.rect.x;
+}
+
 /** O retângulo preso à imagem do container (o ajuste não passa dela); no canvas não há limite. */
 function withinImage(p: Project, marking: Marking, rect: Rect): Rect {
   if (marking.containerId === null) return rect;
@@ -594,7 +609,11 @@ export function fitMarking(
     target.component,
     target.values,
     { measure, ...tokensOption(target.tokens) },
-    { base: marking.rect, auto },
+    {
+      base: marking.rect,
+      auto,
+      ...optionalMaxWidth(widthToImageEdge(p, marking)),
+    },
   );
   if (fitted === undefined) return p;
   const rect = withinImage(p, marking, {
