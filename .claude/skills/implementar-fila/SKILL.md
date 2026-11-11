@@ -200,7 +200,7 @@ Siga o `docs/FLOW.md` ("Orquestrador — passo a passo" e as mensagens), com o q
 - **O que não se arquiva:** uma filha que avisou que parou, falhou ou pediu decisão; as filhas de uma etapa `falhou` ou `esperando dono`; uma filha que ainda está rodando. O dono pode precisar delas; elas são arquivadas quando a etapa é entregue.
 - **Registro:** cada sessão criada para a etapa vai para o campo `sessions` da linha dela e para `meta.sessions` (`painel.py session <pasta> '#n' <id> kind=<tipo>`, sem repetir). Depois do merge do épico, arquive o que ainda estiver aberto ali.
 - **Custo:** o custo de cada filha sai do mesmo subagente que a arquiva: antes de arquivar, ele lê o `get_session` dela e devolve, na mesma linha, `usd` (`external_metadata.usage.cost_usd`), `ctx` (`context_usage.used_tokens`), `model` e `effort` (`session_context.model` e `effort_level`) e `served` (`last_served_model`, só quando difere do `model`). O coordenador grava `painel.py cost <pasta> <id> usd=… ctx=… model=… effort=…` no mesmo `apply` do log "<código> arquivada". Sessão arquivada sem o custo gravado perde o dado: sem `get_session`, não arquive.
-- **Só se arquivam ids registrados no painel:** os `sessions` das etapas, os de `meta.sessions` e a `anterior` do mesmo papel (a que o `roles` registrava antes). Id que o painel não conhece não se arquiva.
+- **Só se arquivam ids registrados no painel:** os `sessions` das etapas, os de `meta.sessions` e a `anterior` do mesmo papel (o `previous` do `roles`). Id que o painel não conhece não se arquiva.
 - O coordenador não arquiva a si mesmo.
 
 **Conferências de reserva:**
@@ -382,6 +382,7 @@ Grave no `painel.py` **a cada avanço** (fase aberta e mesclada, PR, testador, c
    - `source_url` do repositório, `source_revision` `main`;
    - título "Fila — coordenador <n>", com <n> = o `n` do `roles` (`painel.py roles <pasta>`) mais 1;
    - mensagem: **só** `/implementar-fila retomar anterior=<id desta sessão> painel=<url>`, seguida dos mesmos argumentos desta sessão e de `sem-confirmar`. Copie `mesclar=auto` só se o dono o escreveu na chamada desta sessão. Sem notas de passagem: o que não está no painel, grave no `log` antes.
+   - Logo que o `create_session` devolver o id, registre o sucessor: `painel.py role <pasta> coordenador <id novo> link=https://claude.ai/code/<id novo>` (o `previous` guarda o id desta sessão), e publique o painel. A partir daí esta sessão não é a registrada e não age.
 3. Mande a cada filha que ainda deve aviso (os `child` do painel) `send_message`: "O coordenador mudou: mande seus avisos para `<id novo>`".
 4. Apague a sua conferência (`delete_trigger` com o `reserve` do painel).
 5. Mande `PushNotification` "Fila passou para uma sessão nova" (contexto acima de 35%).
@@ -392,7 +393,7 @@ Grave no `painel.py` **a cada avanço** (fase aberta e mesclada, PR, testador, c
 1. Leia o painel: `ArtifactData` `list` de `datasets` e `Artifact` `read` com `path` = o id de cada `/_blob/<id>`, com `out_dir` na pasta do scratchpad. Não imprima os arquivos: rode `painel.py show`.
 2. Não releia as issues nem as filhas: a ficha (`plan`), as filhas (`child`) e o passo estão no painel, e a sessão antiga já avisou as filhas do seu id. Sem `list_sessions`, sem `list_events` e sem `get_session` das filhas; a conferência de reserva cuida das que atrasarem.
 3. Rode `painel.py start <pasta> --paralelo N` com o N da chamada (repetir não mexe no início da execução), grave o contexto desta sessão com `painel.py context <pasta> <pct>` (o da antiga ficou no painel) e crie a sua conferência de reserva (`painel.py reserve`).
-4. Registre-se como a sessão atual: `painel.py role <pasta> coordenador <id desta sessão> link=<link desta sessão>`. Depois de avisar as filhas (ou de confirmar que a antiga avisou), a sessão nova **arquiva a `anterior`** (`archive_session`) e confere o estado arquivado no `get_session` dela. Sem ele, faça uma nova tentativa do `archive_session`; sem ele de novo, grave no `log` "coordenador anterior não arquivou: <id>" e mande `PushNotification` ao dono. Com o arquivamento conferido, grave no `log` "coordenador anterior arquivado". Continue de onde parou.
+4. Confira no `painel.py roles <pasta>` que o `coordenador` registrado é esta sessão (a antiga o registrou; se não, registre-se: `painel.py role <pasta> coordenador <id desta sessão> link=https://claude.ai/code/<id desta sessão>`). Depois de avisar as filhas (ou de confirmar que a antiga avisou), a sessão nova **arquiva a `anterior`** (`archive_session`) e confere o estado arquivado no `get_session` dela. Sem ele, faça uma nova tentativa do `archive_session`; sem ele de novo, grave no `log` "coordenador anterior não arquivou: <id>" e mande `PushNotification` ao dono. Com o arquivamento conferido, grave no `log` "coordenador anterior arquivado". Continue de onde parou.
 
 ## Fim
 

@@ -27,7 +27,7 @@ served=] [issue= kind=]` grava o custo da sessão (`kind` obrigatório com id no
 e imprime o total, uma linha por tipo (sessões, US$, mediana) e uma por etapa (com `--desde`, só as com `created` a partir
 da data); o `show` traz a linha `custo:`.
 Sessão atual de cada papel (decisão 7 da #1532): `role DIR <coordenador|supervisor> <id> [link=<url>]` grava
-`meta.roles.<papel> = {id, n, at, link}` com `n` = o anterior + 1 (ou 1); `roles DIR` lê só o `meta` e imprime
+`meta.roles.<papel> = {id, n, at, link, previous}` (`previous` = o id registrado antes) com `n` = o anterior + 1 (ou 1); `roles DIR` lê só o `meta` e imprime
 `coordenador <n>: <id>` e `supervisor <n>: <id> (<link>)`, ou `—`. A sessão que não é a registrada não age.
 Só biblioteca padrão. Uso: painel.py [--now ISO] <subcomando> DIR ...
 (o subcomando vem ANTES da pasta: `painel.py row <pasta> '#n' status=...`).
@@ -530,6 +530,8 @@ def cmd_context(a):
 def cmd_role(a):
     if a.role not in ROLES:
         raise Erro(f"papel inválido '{a.role}'; válidos: {', '.join(ROLES)}")
+    if not a.session.strip():
+        raise Erro("o id da sessão não pode ser vazio")
     pairs = parse_pairs(a.pairs)
     for k in pairs:
         if k != "link":
@@ -538,7 +540,14 @@ def cmd_role(a):
     m = s.get("meta")[0]
     roles = m.setdefault("roles", {})
     prev = roles.get(a.role) or {}
-    roles[a.role] = {"id": a.session, "n": int(prev.get("n", 0)) + 1, "at": now(), "link": pairs.get("link", "")}
+    n = prev.get("n")
+    roles[a.role] = {
+        "id": a.session,
+        "n": (n if isinstance(n, int) else 0) + 1,
+        "at": now(),
+        "link": pairs.get("link", ""),
+        "previous": prev.get("id", ""),
+    }
     s.touch("meta")
     s.commit()
 
@@ -551,7 +560,7 @@ def cmd_roles(a):
             print(f"{name} —")
             continue
         link = f" ({r['link']})" if r.get("link") else ""
-        print(f"{name} {r['n']}: {r['id']}{link}")
+        print(f"{name} {r.get('n', 0)}: {r.get('id', '')}{link}")
 
 
 def cmd_touch(a):

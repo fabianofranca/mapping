@@ -2,7 +2,7 @@
 // Etapa #1532, fase FM4 (decisões 7 e 8): o painel registra a sessão atual de cada papel (coordenador e
 // supervisor), a troca de coordenador é aos 35% e só se arquivam ids registrados.
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -40,6 +40,7 @@ describe('painel.py role / roles (decisão 7)', () => {
       n: 1,
       at: NOW,
       link: '',
+      previous: '',
     });
     run('role', dir, 'coordenador', 'session_b', 'link=https://x/y');
     expect(
@@ -49,6 +50,22 @@ describe('painel.py role / roles (decisão 7)', () => {
       n: 2,
       link: 'https://x/y',
     });
+  });
+
+  it('role guarda o id anterior em previous, e id vazio ou n inválido não quebram (revisão)', () => {
+    run('role', dir, 'coordenador', 'session_a');
+    run('role', dir, 'coordenador', 'session_b');
+    expect(
+      (meta().roles as Record<string, Record<string, unknown>>).coordenador?.previous,
+    ).toBe('session_a');
+    expect(runRaw('role', dir, 'coordenador', '').status).toBe(2);
+    const m = JSON.parse(readFileSync(path.join(dir, 'meta.json'), 'utf8')) as Array<
+      Record<string, unknown>
+    >;
+    (m[0]!.roles as Record<string, Record<string, unknown>>).coordenador!.n = null;
+    writeFileSync(path.join(dir, 'meta.json'), JSON.stringify(m));
+    expect(runRaw('role', dir, 'coordenador', 'session_c').status).toBe(0);
+    expect(runRaw('roles', dir).status).toBe(0);
   });
 
   it('os papéis têm contagem própria e o papel inválido sai com código 2', () => {
@@ -103,7 +120,18 @@ describe('implementar-fila: troca aos 35% e uma sessão ativa por papel (decisõ
     const nova = troca.slice(troca.indexOf('**Na sessão nova**'));
     expect(nova).toContain('role');
     expect(nova).toContain('archive_session');
-    expect(nova).toMatch(/get_session[^\n]*arquiv/);
+    const passo4 = nova.slice(nova.indexOf('4. '));
+    expect(passo4).toMatch(
+      /get_session[^\n]*estado arquivado|estado arquivado[^\n]*get_session/,
+    );
+    expect(
+      troca.slice(
+        troca.indexOf('**Na sessão antiga:**'),
+        troca.indexOf('**Na sessão nova**'),
+      ),
+    ).toMatch(/role <pasta> coordenador <id novo>/);
+    expect(troca).toContain('`previous`');
+    expect(troca).toContain('https://claude.ai/code/<id novo>');
     expect(nova).toMatch(/nova tentativa/);
     expect(nova).toContain('PushNotification');
     const antiga = between(troca, '**Na sessão antiga:**', '**Na sessão nova**');
