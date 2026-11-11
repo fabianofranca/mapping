@@ -1,4 +1,4 @@
-# Tema escuro e acabamentos — [Não lançado] (épico `epic/tema-escuro-acabamento`, PR #1566, MCP 0.33.1 sem mudança, schema v18)
+# Tema escuro e acabamentos — 2026-11-11 (épico `epic/tema-escuro-acabamento`, PR #1566, MCP 0.33.1 sem mudança, schema v18)
 
 ## Corrigido
 
