@@ -34,15 +34,7 @@ export function sortNotices(notices: readonly SpecNotice[]): SpecNotice[] {
 
 /** Avisos do tipo, depois dos campos e depois das colunas, na ordem do arquivo. */
 export function typeNotices(type: SpecAnnotationType): SpecNotice[] {
-  const list: SpecNotice[] = [...(type.notices ?? [])];
-  const columns: SpecNotice[] = [];
-  for (const field of type.fields) {
-    list.push(...(field.notices ?? []));
-    if (field.type === 'table') {
-      for (const column of field.columns) columns.push(...(column.notices ?? []));
-    }
-  }
-  return [...list, ...columns];
+  return placedTypeNotices(type).map((p) => p.notice);
 }
 
 /**
@@ -103,70 +95,55 @@ interface TypeContext {
   readonly annotations: readonly Annotation[];
 }
 
-type UsageBase = Pick<NoticeUsage, 'specId' | 'layerId' | 'typeId'>;
-
-function fieldUsages(
-  base: UsageBase,
-  type: SpecAnnotationType,
-  annotations: readonly Annotation[],
-): NoticeUsage[] {
-  return type.fields.flatMap((field) => {
-    const notices = field.notices ?? [];
-    if (notices.length === 0) return [];
-    const used = ids(annotations, (a) => hasValue(a, field.key));
-    return notices.map((notice): NoticeUsage => ({
-      ...base,
-      scope: 'field',
-      key: field.key,
-      notice,
-      annotationIds: used,
-    }));
-  });
+/** Um aviso do tipo com o lugar onde está: o tipo, um campo (`key`) ou uma coluna de `table`. */
+export interface PlacedNotice {
+  readonly scope: NoticeScope;
+  /** Chave do campo (escopo `field`) ou da tabela (escopo `column`). */
+  readonly key?: string;
+  /** Chave da coluna (escopo `column`). */
+  readonly column?: string;
+  readonly notice: SpecNotice;
 }
 
-function columnUsages(
-  base: UsageBase,
-  type: SpecAnnotationType,
-  annotations: readonly Annotation[],
-): NoticeUsage[] {
-  const out: NoticeUsage[] = [];
+/**
+ * Cada aviso do tipo com o lugar, na ordem do `typeNotices`: os do tipo, depois os dos campos
+ * e depois os das colunas (dentro de cada grupo, a ordem do arquivo).
+ */
+export function placedTypeNotices(type: SpecAnnotationType): PlacedNotice[] {
+  const own = (type.notices ?? []).map((notice): PlacedNotice => ({
+    scope: 'type',
+    notice,
+  }));
+  const fields: PlacedNotice[] = [];
+  const columns: PlacedNotice[] = [];
   for (const field of type.fields) {
+    for (const notice of field.notices ?? [])
+      fields.push({ scope: 'field', key: field.key, notice });
     if (field.type !== 'table') continue;
-    for (const column of field.columns) {
-      const notices = column.notices ?? [];
-      if (notices.length === 0) continue;
-      const used = ids(annotations, (a) => hasColumnValue(a, field.key, column.key));
-      for (const notice of notices) {
-        out.push({
-          ...base,
-          scope: 'column',
-          key: field.key,
-          column: column.key,
-          notice,
-          annotationIds: used,
-        });
-      }
-    }
+    for (const column of field.columns)
+      for (const notice of column.notices ?? [])
+        columns.push({ scope: 'column', key: field.key, column: column.key, notice });
   }
-  return out;
+  return [...own, ...fields, ...columns];
+}
+
+/** Ids das anotações que o aviso afeta, pelo escopo (ver `noticeUsage`). */
+function affected(placed: PlacedNotice, annotations: readonly Annotation[]): string[] {
+  const { scope, key, column } = placed;
+  if (scope === 'type') return ids(annotations, () => true);
+  if (scope === 'field') return ids(annotations, (a) => hasValue(a, key ?? ''));
+  return ids(annotations, (a) => hasColumnValue(a, key ?? '', column ?? ''));
 }
 
 function typeUsages(ctx: TypeContext): NoticeUsage[] {
   const { specId, layerId, type, annotations } = ctx;
-  const base = { specId, layerId, typeId: type.id };
-  const typeNoticeList = type.notices ?? [];
-  const all = typeNoticeList.length > 0 ? ids(annotations, () => true) : [];
-  const own = typeNoticeList.map((notice): NoticeUsage => ({
-    ...base,
-    scope: 'type',
-    notice,
-    annotationIds: all,
+  return placedTypeNotices(type).map((placed): NoticeUsage => ({
+    specId,
+    layerId,
+    typeId: type.id,
+    ...placed,
+    annotationIds: affected(placed, annotations),
   }));
-  return [
-    ...own,
-    ...fieldUsages(base, type, annotations),
-    ...columnUsages(base, type, annotations),
-  ];
 }
 
 /**

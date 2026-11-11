@@ -10,9 +10,11 @@ import {
   NOTICE_KINDS,
   noticeUsage,
   parseSpec,
+  placedTypeNotices,
   setFieldValue,
   setTableCell,
   sortNotices,
+  typeNotices,
   type Project,
   type Spec,
   type SpecAnnotationType,
@@ -250,5 +252,38 @@ describe('noticeUsage', () => {
 
   it('projeto sem especialização não tem avisos', () => {
     expect(noticeUsage(emptyProject())).toEqual([]);
+  });
+});
+
+describe('placedTypeNotices', () => {
+  const type: SpecAnnotationType = {
+    id: 't',
+    name: 'T',
+    fields: [
+      { key: 'a', type: 'string', notices: [n('pending', 'a1'), n('removed', 'a2')] },
+      {
+        key: 'itens',
+        type: 'table',
+        columns: [{ key: 'rotulo', type: 'string', notices: [n('diverges', 'c1')] }],
+      },
+      { key: 'b', type: 'string', notices: [n('deprecated', 'b1')] },
+    ],
+    notices: [n('diverges', 't1')],
+  } as unknown as SpecAnnotationType;
+
+  it('devolve o lugar de cada aviso, na ordem do typeNotices (tipo, campos, colunas)', () => {
+    const placed = placedTypeNotices(type);
+    expect(placed.map((p) => [p.scope, p.key, p.column, p.notice.message])).toEqual([
+      ['type', undefined, undefined, 't1'],
+      ['field', 'a', undefined, 'a1'],
+      ['field', 'a', undefined, 'a2'],
+      ['field', 'b', undefined, 'b1'],
+      ['column', 'itens', 'rotulo', 'c1'],
+    ]);
+    expect(placed.map((p) => p.notice)).toEqual(typeNotices(type));
+  });
+
+  it('tipo sem aviso devolve lista vazia', () => {
+    expect(placedTypeNotices({ id: 't', name: 'T', fields: [] } as never)).toEqual([]);
   });
 });

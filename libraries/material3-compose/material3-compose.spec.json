@@ -5207,6 +5207,12 @@
               "description": "Ícone antes do texto. Vazio = sem ícone."
             },
             {
+              "key": "avatar",
+              "label": "Avatar",
+              "type": "string",
+              "description": "Endereço https:// da imagem do avatar, no estilo input: imagem circular de 24 no início do chip, no lugar do ícone inicial (InputChip avatar). Vazio = sem avatar."
+            },
+            {
               "key": "trailingIcon",
               "label": "Ícone final",
               "type": "string",
@@ -5412,7 +5418,7 @@
                     "params": {
                       "selected": "selected"
                     },
-                    "notes": "`selected` e `onClick` ligam ao estado do valor e `label = { Text(<label>) }`. `trailingIcon` costuma ser `Icons.Filled.Close` para remover o valor; o `avatar` (imagem circular) é opcional e não é campo."
+                    "notes": "`selected` e `onClick` ligam ao estado do valor e `label = { Text(<label>) }`. `trailingIcon` costuma ser `Icons.Filled.Close` para remover o valor; o campo `avatar`, preenchido, vira `avatar = { AsyncImage(model = <avatar>, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.size(InputChipDefaults.AvatarSize)) }` (o carregador de imagens do app, fora do androidx): o InputChip recorta o avatar no círculo (`InputChipTokens.AvatarShape`) e, com ele, não mostra o `leadingIcon`."
                   },
                   "suggestion": {
                     "symbol": "androidx.compose.material3.SuggestionChip",
@@ -5484,6 +5490,15 @@
                 "style": "input",
                 "trailingIcon": "Close",
                 "interaction": "dragged"
+              }
+            },
+            {
+              "name": "Com avatar",
+              "values": {
+                "label": "Ana Souza",
+                "style": "input",
+                "avatar": "https://example.com/ana.png",
+                "trailingIcon": "Close"
               }
             }
           ]
@@ -8531,6 +8546,12 @@
               "description": "Dia do mês (1 a 31) marcado no estilo single. Vazio = nenhum dia."
             },
             {
+              "key": "today",
+              "label": "Dia de hoje",
+              "type": "number",
+              "description": "Dia do mês (de 1 a 31) que marca \"hoje\": contorno de 1 em primary e número em primary (DateTodayContainerOutlineColor e DateTodayLabelTextColor). Vazio = nenhum dia de hoje. O dia escolhido vale mais que o de hoje (sem contorno, com o círculo cheio). Com month e year, um dia que o mês não tem não desenha nada. Não é parâmetro do código: o Compose usa o relógio do aparelho."
+            },
+            {
               "key": "rangeStartDay",
               "label": "Dia inicial",
               "type": "number",
@@ -8566,7 +8587,7 @@
               "params": {
                 "showModeToggle": "showModeToggle"
               },
-              "notes": "Não exige opt-in: `DatePicker`, `DateRangePicker`, `DatePickerDialog` e `rememberDatePickerState` com milissegundos (`Long`) são estáveis; só as sobrecargas com `java.time` pedem @OptIn(ExperimentalMaterial3Api::class). O estado vem de `val state = rememberDatePickerState(initialSelectedDateMillis = <selectedDay no mês de displayedMonth, em milissegundos UTC>, initialDisplayedMonthMillis = <primeiro dia do mês de month e year, em milissegundos UTC (sem eles, o de displayedMonth)>)` e a chamada é `DatePicker(state = state, showModeToggle = <showModeToggle>)`; `title = { Text(<title>) }` e `headline = { Text(<headline>) }` só entram quando preenchidos (sem eles o composable desenha os padrões, e a manchete sai sozinha da data escolhida). `displayedMonth`, `month`, `year` e `selectedDay` não são parâmetros: são o estado inicial. O resultado vem de `state.selectedDateMillis`. Em diálogo, envolva com `DatePickerDialog(onDismissRequest = …, confirmButton = { TextButton(onClick = …) { Text(\"OK\") } }, dismissButton = { … }) { DatePicker(state = state) }`.",
+              "notes": "Não exige opt-in: `DatePicker`, `DateRangePicker`, `DatePickerDialog` e `rememberDatePickerState` com milissegundos (`Long`) são estáveis; só as sobrecargas com `java.time` pedem @OptIn(ExperimentalMaterial3Api::class). O estado vem de `val state = rememberDatePickerState(initialSelectedDateMillis = <selectedDay no mês de displayedMonth, em milissegundos UTC>, initialDisplayedMonthMillis = <primeiro dia do mês de month e year, em milissegundos UTC (sem eles, o de displayedMonth)>)` e a chamada é `DatePicker(state = state, showModeToggle = <showModeToggle>)`; `title = { Text(<title>) }` e `headline = { Text(<headline>) }` só entram quando preenchidos (sem eles o composable desenha os padrões, e a manchete sai sozinha da data escolhida). `displayedMonth`, `month`, `year` e `selectedDay` não são parâmetros: são o estado inicial. O resultado vem de `state.selectedDateMillis`. Em diálogo, envolva com `DatePickerDialog(onDismissRequest = …, confirmButton = { TextButton(onClick = …) { Text(\"OK\") } }, dismissButton = { … }) { DatePicker(state = state) }`. `today` não é parâmetro: o `DatePicker` marca o dia de hoje pelo relógio do aparelho (`CalendarModel.today`, `todayMillis` interno); o campo só serve ao desenho.",
               "variants": {
                 "field": "selection",
                 "cases": {
@@ -8689,6 +8710,16 @@
                 "displayedMonth": "Outubro de 2025",
                 "selection": "single",
                 "interaction": "pressed"
+              }
+            },
+            {
+              "name": "Dia de hoje",
+              "values": {
+                "headline": "qua., 15 de out.",
+                "displayedMonth": "Outubro de 2025",
+                "selection": "single",
+                "selectedDay": 15,
+                "today": 22
               }
             }
           ]
@@ -9109,6 +9140,58 @@
               "label": "Progresso",
               "type": "number",
               "description": "Progresso de 0 a 1, exato (o desenho calcula o arco e a largura; valor fora do intervalo é preso a ele). Vazio = indeterminado (o desenho mostra um arco ou uma barra parcial)."
+            },
+            {
+              "key": "trackColor",
+              "label": "Cor do trilho",
+              "type": "enum",
+              "options": [
+                "primary",
+                "onPrimary",
+                "primaryContainer",
+                "onPrimaryContainer",
+                "secondary",
+                "onSecondary",
+                "secondaryContainer",
+                "onSecondaryContainer",
+                "tertiary",
+                "onTertiary",
+                "tertiaryContainer",
+                "onTertiaryContainer",
+                "error",
+                "onError",
+                "errorContainer",
+                "onErrorContainer",
+                "background",
+                "onBackground",
+                "surface",
+                "onSurface",
+                "surfaceVariant",
+                "onSurfaceVariant",
+                "surfaceTint",
+                "inverseSurface",
+                "inverseOnSurface",
+                "inversePrimary",
+                "outline",
+                "outlineVariant",
+                "scrim",
+                "surfaceBright",
+                "surfaceDim",
+                "surfaceContainerLowest",
+                "surfaceContainerLow",
+                "surfaceContainer",
+                "surfaceContainerHigh",
+                "surfaceContainerHighest"
+              ],
+              "description": "Papel de cor do tema usado no trilho (parâmetro trackColor). Vazio = o padrão do Compose: secondary container (o circular indeterminado não leva trilho)."
+            },
+            {
+              "key": "strokeCap",
+              "label": "Ponta",
+              "type": "enum",
+              "default": "Round",
+              "options": ["Round", "Butt", "Square"],
+              "description": "Ponta do traço (parâmetro strokeCap, StrokeCap). O padrão do Compose é Round nos dois formatos."
             }
           ],
           "code": {
@@ -9116,9 +9199,11 @@
               "symbol": "androidx.compose.material3.CircularProgressIndicator",
               "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ProgressIndicator.kt",
               "params": {
-                "progress": "progress"
+                "progress": "progress",
+                "trackColor": "trackColor",
+                "strokeCap": "strokeCap"
               },
-              "notes": "Estável, sem opt-in. Com `progress` preenchido, passe-o como lambda: `progress = { <progress>f }` (ou ligado ao estado da tela, por exemplo `progress = { uploadProgress }`); o overload com `progress: Float` está `@Deprecated`. Com `progress` vazio, chame sem o parâmetro (indeterminado). O tamanho vem do `Modifier` (`Modifier.size(<largura da marcação>.dp)` no circular, que tem 40 dp por padrão; `Modifier.fillMaxWidth()` no linear).",
+              "notes": "Estável, sem opt-in. Com `progress` preenchido, passe-o como lambda: `progress = { <progress>f }` (ou ligado ao estado da tela, por exemplo `progress = { uploadProgress }`); o overload com `progress: Float` está `@Deprecated`. Com `progress` vazio, chame sem o parâmetro (indeterminado). O tamanho vem do `Modifier` (`Modifier.size(<largura da marcação>.dp)` no circular, que tem 40 dp por padrão; `Modifier.fillMaxWidth()` no linear). Com `trackColor` preenchido, passe `trackColor = <trackColor>`; `strokeCap = <strokeCap>` (`StrokeCap` de `androidx.compose.ui.graphics`) só quando o campo difere de Round, o padrão do Compose.",
               "variants": {
                 "field": "shape",
                 "cases": {
@@ -9126,6 +9211,51 @@
                     "symbol": "androidx.compose.material3.LinearProgressIndicator",
                     "notes": "Estável, sem opt-in. Com `progress` preenchido, `progress = { <progress>f }`; vazio é indeterminado (sem o parâmetro). A barra ocupa a largura da marcação: `Modifier.fillMaxWidth()` ou `Modifier.width(<largura da marcação>.dp)`."
                   }
+                }
+              },
+              "values": {
+                "trackColor": {
+                  "primary": "MaterialTheme.colorScheme.primary",
+                  "onPrimary": "MaterialTheme.colorScheme.onPrimary",
+                  "primaryContainer": "MaterialTheme.colorScheme.primaryContainer",
+                  "onPrimaryContainer": "MaterialTheme.colorScheme.onPrimaryContainer",
+                  "secondary": "MaterialTheme.colorScheme.secondary",
+                  "onSecondary": "MaterialTheme.colorScheme.onSecondary",
+                  "secondaryContainer": "MaterialTheme.colorScheme.secondaryContainer",
+                  "onSecondaryContainer": "MaterialTheme.colorScheme.onSecondaryContainer",
+                  "tertiary": "MaterialTheme.colorScheme.tertiary",
+                  "onTertiary": "MaterialTheme.colorScheme.onTertiary",
+                  "tertiaryContainer": "MaterialTheme.colorScheme.tertiaryContainer",
+                  "onTertiaryContainer": "MaterialTheme.colorScheme.onTertiaryContainer",
+                  "error": "MaterialTheme.colorScheme.error",
+                  "onError": "MaterialTheme.colorScheme.onError",
+                  "errorContainer": "MaterialTheme.colorScheme.errorContainer",
+                  "onErrorContainer": "MaterialTheme.colorScheme.onErrorContainer",
+                  "background": "MaterialTheme.colorScheme.background",
+                  "onBackground": "MaterialTheme.colorScheme.onBackground",
+                  "surface": "MaterialTheme.colorScheme.surface",
+                  "onSurface": "MaterialTheme.colorScheme.onSurface",
+                  "surfaceVariant": "MaterialTheme.colorScheme.surfaceVariant",
+                  "onSurfaceVariant": "MaterialTheme.colorScheme.onSurfaceVariant",
+                  "surfaceTint": "MaterialTheme.colorScheme.surfaceTint",
+                  "inverseSurface": "MaterialTheme.colorScheme.inverseSurface",
+                  "inverseOnSurface": "MaterialTheme.colorScheme.inverseOnSurface",
+                  "inversePrimary": "MaterialTheme.colorScheme.inversePrimary",
+                  "outline": "MaterialTheme.colorScheme.outline",
+                  "outlineVariant": "MaterialTheme.colorScheme.outlineVariant",
+                  "scrim": "MaterialTheme.colorScheme.scrim",
+                  "surfaceBright": "MaterialTheme.colorScheme.surfaceBright",
+                  "surfaceDim": "MaterialTheme.colorScheme.surfaceDim",
+                  "surfaceContainerLowest": "MaterialTheme.colorScheme.surfaceContainerLowest",
+                  "surfaceContainerLow": "MaterialTheme.colorScheme.surfaceContainerLow",
+                  "surfaceContainer": "MaterialTheme.colorScheme.surfaceContainer",
+                  "surfaceContainerHigh": "MaterialTheme.colorScheme.surfaceContainerHigh",
+                  "surfaceContainerHighest": "MaterialTheme.colorScheme.surfaceContainerHighest"
+                },
+                "strokeCap": {
+                  "Round": "StrokeCap.Round",
+                  "Butt": "StrokeCap.Butt",
+                  "Square": "StrokeCap.Square"
                 }
               }
             }
@@ -9149,6 +9279,15 @@
               "values": {
                 "shape": "linear",
                 "progress": 0.3
+              }
+            },
+            {
+              "name": "Trilho colorido e ponta reta",
+              "values": {
+                "shape": "linear",
+                "progress": 0.4,
+                "trackColor": "errorContainer",
+                "strokeCap": "Butt"
               }
             }
           ]
@@ -9676,10 +9815,66 @@
               "description": "Espessura da linha em dp. Vazio = 1 (o padrão do Compose). O desenho aproxima valores de 1 a 4."
             },
             {
+              "key": "color",
+              "label": "Cor",
+              "type": "enum",
+              "options": [
+                "primary",
+                "onPrimary",
+                "primaryContainer",
+                "onPrimaryContainer",
+                "secondary",
+                "onSecondary",
+                "secondaryContainer",
+                "onSecondaryContainer",
+                "tertiary",
+                "onTertiary",
+                "tertiaryContainer",
+                "onTertiaryContainer",
+                "error",
+                "onError",
+                "errorContainer",
+                "onErrorContainer",
+                "background",
+                "onBackground",
+                "surface",
+                "onSurface",
+                "surfaceVariant",
+                "onSurfaceVariant",
+                "surfaceTint",
+                "inverseSurface",
+                "inverseOnSurface",
+                "inversePrimary",
+                "outline",
+                "outlineVariant",
+                "scrim",
+                "surfaceBright",
+                "surfaceDim",
+                "surfaceContainerLowest",
+                "surfaceContainerLow",
+                "surfaceContainer",
+                "surfaceContainerHigh",
+                "surfaceContainerHighest"
+              ],
+              "description": "Papel de cor do tema usado na linha (parâmetro color). Vazio = outline variant (DividerDefaults.color)."
+            },
+            {
               "key": "inset",
               "label": "Recuo (dp)",
               "type": "number",
               "description": "Recuo nas duas pontas da linha, em dp. Vazio = de ponta a ponta (sem recuo)."
+            },
+            {
+              "key": "insetStart",
+              "label": "Recuo no início (dp)",
+              "type": "number",
+              "description": "Recuo da ponta inicial da linha (esquerda no horizontal, alto no vertical), em dp. Vazio com o insetEnd também vazio = vale o inset nas duas pontas."
+            },
+            {
+              "key": "insetEnd",
+              "label": "Recuo no fim (dp)",
+              "type": "number",
+              "description": "Recuo da ponta final da linha (direita no horizontal, embaixo no vertical), em dp. Vazio com o insetStart também vazio = vale o inset nas duas pontas."
             }
           ],
           "code": {
@@ -9687,16 +9882,57 @@
               "symbol": "androidx.compose.material3.HorizontalDivider",
               "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Divider.kt",
               "params": {
-                "thickness": "thickness"
+                "thickness": "thickness",
+                "color": "color"
               },
-              "notes": "Estável, sem opt-in. `thickness` é um `Dp`: escreva `thickness = <thickness>.dp` (sem o campo, fica o padrão de 1 dp). O `HorizontalDivider` já ocupa a largura toda do pai (`fillMaxWidth()` por dentro); para um recuo nas pontas use `Modifier.padding(horizontal = <inset>.dp)`. A cor padrão é `DividerDefaults.color` (outline variant); só passe `color` se o tema pedir outra. Numa `Column` ou `LazyColumn` vai entre os itens; dentro de um `ListItem` use a posição entre um item e o seguinte.",
+              "notes": "Estável, sem opt-in. `thickness` é um `Dp`: escreva `thickness = <thickness>.dp` (sem o campo, fica o padrão de 1 dp). O `HorizontalDivider` já ocupa a largura toda do pai (`fillMaxWidth()` por dentro); para um recuo nas pontas use `Modifier.padding(horizontal = <inset>.dp)`. A cor padrão é `DividerDefaults.color` (outline variant); com o campo `color` preenchido, passe `color = <color>`. Para recuos diferentes nas pontas use `Modifier.padding(start = <insetStart>.dp, end = <insetEnd>.dp)`. Numa `Column` ou `LazyColumn` vai entre os itens; dentro de um `ListItem` use a posição entre um item e o seguinte.",
               "variants": {
                 "field": "orientation",
                 "cases": {
                   "vertical": {
                     "symbol": "androidx.compose.material3.VerticalDivider",
-                    "notes": "Estável, sem opt-in. `thickness = <thickness>.dp` (sem o campo, 1 dp). O `VerticalDivider` já ocupa a altura toda do pai (`fillMaxHeight()` por dentro); dentro de uma `Row`, dê a altura à linha com `Modifier.height(<altura da marcação>.dp)` ou deixe a `Row` limitar. Para um recuo no alto e embaixo use `Modifier.padding(vertical = <inset>.dp)`."
+                    "notes": "Estável, sem opt-in. `thickness = <thickness>.dp` (sem o campo, 1 dp). O `VerticalDivider` já ocupa a altura toda do pai (`fillMaxHeight()` por dentro); dentro de uma `Row`, dê a altura à linha com `Modifier.height(<altura da marcação>.dp)` ou deixe a `Row` limitar. Com `color` preenchido, passe `color = <color>`. Para um recuo no alto e embaixo use `Modifier.padding(vertical = <inset>.dp)`, ou `Modifier.padding(top = <insetStart>.dp, bottom = <insetEnd>.dp)` com os recuos por ponta."
                   }
+                }
+              },
+              "values": {
+                "color": {
+                  "primary": "MaterialTheme.colorScheme.primary",
+                  "onPrimary": "MaterialTheme.colorScheme.onPrimary",
+                  "primaryContainer": "MaterialTheme.colorScheme.primaryContainer",
+                  "onPrimaryContainer": "MaterialTheme.colorScheme.onPrimaryContainer",
+                  "secondary": "MaterialTheme.colorScheme.secondary",
+                  "onSecondary": "MaterialTheme.colorScheme.onSecondary",
+                  "secondaryContainer": "MaterialTheme.colorScheme.secondaryContainer",
+                  "onSecondaryContainer": "MaterialTheme.colorScheme.onSecondaryContainer",
+                  "tertiary": "MaterialTheme.colorScheme.tertiary",
+                  "onTertiary": "MaterialTheme.colorScheme.onTertiary",
+                  "tertiaryContainer": "MaterialTheme.colorScheme.tertiaryContainer",
+                  "onTertiaryContainer": "MaterialTheme.colorScheme.onTertiaryContainer",
+                  "error": "MaterialTheme.colorScheme.error",
+                  "onError": "MaterialTheme.colorScheme.onError",
+                  "errorContainer": "MaterialTheme.colorScheme.errorContainer",
+                  "onErrorContainer": "MaterialTheme.colorScheme.onErrorContainer",
+                  "background": "MaterialTheme.colorScheme.background",
+                  "onBackground": "MaterialTheme.colorScheme.onBackground",
+                  "surface": "MaterialTheme.colorScheme.surface",
+                  "onSurface": "MaterialTheme.colorScheme.onSurface",
+                  "surfaceVariant": "MaterialTheme.colorScheme.surfaceVariant",
+                  "onSurfaceVariant": "MaterialTheme.colorScheme.onSurfaceVariant",
+                  "surfaceTint": "MaterialTheme.colorScheme.surfaceTint",
+                  "inverseSurface": "MaterialTheme.colorScheme.inverseSurface",
+                  "inverseOnSurface": "MaterialTheme.colorScheme.inverseOnSurface",
+                  "inversePrimary": "MaterialTheme.colorScheme.inversePrimary",
+                  "outline": "MaterialTheme.colorScheme.outline",
+                  "outlineVariant": "MaterialTheme.colorScheme.outlineVariant",
+                  "scrim": "MaterialTheme.colorScheme.scrim",
+                  "surfaceBright": "MaterialTheme.colorScheme.surfaceBright",
+                  "surfaceDim": "MaterialTheme.colorScheme.surfaceDim",
+                  "surfaceContainerLowest": "MaterialTheme.colorScheme.surfaceContainerLowest",
+                  "surfaceContainerLow": "MaterialTheme.colorScheme.surfaceContainerLow",
+                  "surfaceContainer": "MaterialTheme.colorScheme.surfaceContainer",
+                  "surfaceContainerHigh": "MaterialTheme.colorScheme.surfaceContainerHigh",
+                  "surfaceContainerHighest": "MaterialTheme.colorScheme.surfaceContainerHighest"
                 }
               }
             }
@@ -9721,6 +9957,14 @@
               "values": {
                 "orientation": "vertical",
                 "thickness": 1
+              }
+            },
+            {
+              "name": "Recuo por ponta",
+              "values": {
+                "orientation": "horizontal",
+                "insetStart": 16,
+                "insetEnd": 48
               }
             }
           ]

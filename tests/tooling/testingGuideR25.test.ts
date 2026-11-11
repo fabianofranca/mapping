@@ -7,6 +7,7 @@ import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { isFontPath } from '../../src/model/components/library';
 import { validateLibrary } from '../../src/model/library';
+import { typeOf } from '../support/material3Library';
 
 const REPO = join(__dirname, '../..');
 const PACKAGE = join(REPO, 'libraries/material3-compose');
@@ -96,6 +97,8 @@ describe('R25.22 e R25.23: o tokens.mjs do guia mescla os tokens do pacote', () 
 });
 
 describe('R25.43 e R25.44: as pastas de tela do guia', () => {
+  const colorField = typeOf('divider').fields.find((f) => f.key === 'color');
+  const dividerColors = colorField?.type === 'enum' ? colorField.options : [];
   const divider = (dir: string) => join(dir, 'components/divider.json');
   const specOf = (dir: string) => join(dir, 'material3-compose.spec.json');
   const issues = (dir: string) =>
@@ -136,7 +139,7 @@ describe('R25.43 e R25.44: as pastas de tela do guia', () => {
     expect(report.warnings).toEqual([]);
   });
 
-  it('m3-tela-v3: seis erros "só é permitido com formatVersion 4", todos no divider', () => {
+  it('m3-tela-v3: erros "só é permitido com formatVersion 4", todos no divider', () => {
     const msg = 'só é permitido com formatVersion 4';
     expect(issues(telaV3).sort()).toEqual(
       [
@@ -145,7 +148,16 @@ describe('R25.43 e R25.44: as pastas de tela do guia', () => {
         'template.children[0].layout.type',
         'template.children[0].children[1].width',
         'template.children[0].children[1].height',
-        'template.children[0].children[1].fill',
+        // a cor do papel escolhido (MF5): um `$token` em cada caso do `$switch` e no padrão
+        ...dividerColors.map(
+          (role) => `template.children[0].children[1].fill.cases.${role}`,
+        ),
+        'template.children[0].children[1].fill.default',
+        // o recuo por ponta (MF5): o tamanho das duas pontas vem de expressão
+        'template.children[0].children[0].width',
+        'template.children[0].children[0].height',
+        'template.children[0].children[2].width',
+        'template.children[0].children[2].height',
       ]
         .map((path) => `components/divider.json:${path}:${msg}`)
         .sort(),

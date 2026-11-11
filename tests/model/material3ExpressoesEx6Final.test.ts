@@ -20,7 +20,8 @@ const SEVEN = [
 /**
  * Cada `$switch` com mais de 12 casos e cada `$eq` sobre um campo `number` do tipo. A exceção é o
  * `$switch` sobre o campo `icon` (nome do ícone no Compose → id do conjunto de ícones): é uma
- * tradução de nome, não uma tabela de números, e o formato não tem função de texto para ela.
+ * tradução de nome, não uma tabela de números, e o formato não tem função de texto para ela. O mesmo
+ * vale para o `$switch` sobre `trackColor` (MF5): escolhe um papel do ColorScheme.
  */
 function offenders(id: (typeof SEVEN)[number]): string[] {
   const numberFields = new Set(
@@ -37,6 +38,7 @@ function offenders(id: (typeof SEVEN)[number]): string[] {
     if (
       '$switch' in obj &&
       obj['$switch'] !== 'icon' &&
+      obj['$switch'] !== 'trackColor' &&
       typeof cases === 'object' &&
       cases !== null
     ) {

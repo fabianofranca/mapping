@@ -60,13 +60,13 @@ Referência: Compose `foundation` do commit `5113b82a4ed6416d6344efa50e41db8cb65
 
 **Como o desenho segue o Compose**
 
-- `Crop`, `FillWidth` e `FillHeight` desenham a imagem em `cover`, `FillBounds` em `fill` e as demais em `contain`, como o `contentScale` do campo.
+- Cada `contentScale` vai ao `fit` do nó `image` do formato 4: `Crop` em `cover`, `Fit` em `contain`, `FillBounds` em `fill`, `FillWidth` em `fill-width`, `FillHeight` em `fill-height`, `Inside` em `scale-down` e `None` em `none` (`ContentScale.kt`). `None` e `scale-down` usam o tamanho natural da imagem baixada.
 - A imagem vem de uma URL `https` pelo nó `image` do formato; o fundo atrás dela (e o reservado, antes de carregar) usa o token `surface-variant`, que muda com o modo claro e escuro. Não há cor literal.
 - Sem URL, a legenda mostra a descrição e as medidas, em `on-surface-variant`, com o estilo `label-small` dos tokens (sem `family`).
 
 **O que ainda difere do Compose**
 
-- Os dois `contentScale` `Inside` e `None` caem em `contain`; o `FillWidth` e o `FillHeight` caem em `cover` (o nó `image` só tem `cover`, `contain` e `fill`, sem escala só por eixo nem tamanho original).
+- O servidor MCP desenha o reservado da imagem (sem a imagem de verdade), então os `fit` novos só aparecem na app e no visualizador.
 - Sem `alignment`, `alpha` nem `colorFilter` (não são campos do tipo).
 - A imagem só é pedida à rede com a permissão da origem na app, e o servidor MCP desenha sempre o reservado; o Compose carrega a imagem pelo carregador do app.
 - O fundo `surface-variant` é uma escolha de desenho: o `Image` do Compose não tem fundo nem reservado.

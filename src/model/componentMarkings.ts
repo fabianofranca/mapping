@@ -14,6 +14,7 @@ import {
   clamp,
   containsRect,
   imagePixelRect,
+  rectsOverlap,
   right,
   bottom,
 } from './geometry';
@@ -144,6 +145,7 @@ function slotArea(
   gap: number;
   flow: 'row' | 'column' | 'none';
   reverse: boolean;
+  hasSlot: boolean;
 } {
   const container = findById(p.markings, containerId);
   const none = { left: 0, top: 0, right: 0, bottom: 0 };
@@ -153,6 +155,7 @@ function slotArea(
     gap: 0,
     flow: 'none' as const,
     reverse: false,
+    hasSlot: false,
   };
   const mc = markingComponent(p, catalog, containerId);
   const drawn =
@@ -179,7 +182,39 @@ function slotArea(
     gap: layout.gap,
     flow: layout.type,
     reverse: layout.reverse,
+    hasSlot: true,
   };
+}
+
+/**
+ * O retângulo de `rect` ficou dentro da área do slot do componente com slot `targetId` (a mesma
+ * `slotArea` do `componentPlacement`) e, em layout de linha ou coluna, fora da última filha? `false`
+ * também quando o alvo não desenha componente com slot. Serve para saber se uma instância nova
+ * coube ou ficou presa ao componente (slot cheio).
+ */
+export function placementFitsSlot(
+  p: Project,
+  catalog: ComponentCatalog,
+  targetId: string,
+  rect: Rect,
+  measure: TextMeasurer,
+): boolean {
+  const slot = slotArea(p, catalog, targetId, measure);
+  if (!slot.hasSlot || !containsRect(slot.area, rect)) return false;
+  // Layout em linha ou coluna: presa ao componente, a filha pode ficar dentro da área do slot e ainda
+  // assim em cima da última irmã (slot do tamanho do componente): também não coube.
+  const last = childrenOf(p, targetId).at(-1);
+  return slot.flow === 'none' || last === undefined || !rectsOverlap(last.rect, rect);
+}
+
+/** O alvo desenha um componente com slot? (o que o `componentPlacement` usa para posicionar a filha) */
+export function hasComponentSlot(
+  p: Project,
+  catalog: ComponentCatalog,
+  targetId: string,
+  measure: TextMeasurer,
+): boolean {
+  return slotArea(p, catalog, targetId, measure).hasSlot;
 }
 
 /**
@@ -200,7 +235,10 @@ export function componentPlacement(
   args: Pick<
     NewComponentArgs,
     'containerId' | 'parentId' | 'specId' | 'typeId' | 'center'
-  >,
+  > & {
+    /** Substitui o `size` do componente (MCP: o `rect` de `inside`), com as mesmas regras. */
+    readonly size?: { readonly width: number; readonly height: number };
+  },
   measure: TextMeasurer,
 ): Rect {
   const { component } = resolveType(p, catalog, args.specId, args.typeId);
@@ -225,8 +263,9 @@ export function componentPlacement(
       fail(parent === null ? 'rect-out-of-image' : 'rect-outside-parent');
     return value;
   };
-  const width = fit(component.size.width, min?.width ?? 0, area?.width ?? Infinity);
-  const height = fit(component.size.height, min?.height ?? 0, area?.height ?? Infinity);
+  const wanted = args.size ?? component.size;
+  const width = fit(wanted.width, min?.width ?? 0, area?.width ?? Infinity);
+  const height = fit(wanted.height, min?.height ?? 0, area?.height ?? Infinity);
 
   if (parent === null || slot === null) {
     const center =
