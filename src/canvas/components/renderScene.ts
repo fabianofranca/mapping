@@ -7,13 +7,14 @@
  * shape e todo contêiner levam o atributo `sceneId`, para o visualizador achar o nó da cena
  * a partir do alvo de um evento do Konva.
  */
-import {
-  growRadius,
-  partialSides,
-  sideSegments,
-} from '../../model/components/strokeSides';
+import { growRadius, sideSegments } from '../../model/components/strokeSides';
 import { gapOutlines } from '../../model/components/strokeGaps';
-import { CUT_REACH, WRAP_SLACK, cutsText } from '../../model/components/textWrap';
+import {
+  CUT_REACH,
+  WRAP_SLACK,
+  cutLineLeft,
+  cutsText,
+} from '../../model/components/textWrap';
 import { canvasFontFamily } from '../../model/components/fontFamily';
 import Konva from 'konva/lib/Core';
 import { Ellipse as KonvaEllipse } from 'konva/lib/shapes/Ellipse';
@@ -40,7 +41,8 @@ import {
 import type { ImageFit } from '../../model/components/componentFormat';
 import type { RunLayout, RunPiece } from '../../model/components/richText';
 import { textBoxLimits } from './textLimits';
-import { capMetricsOf, capMiddleShift, konvaBaseline } from './capMiddle';
+import { capMiddleShift, lineBaseline } from '../../model/components/baseline';
+import { capMetricsOf } from './capMiddle';
 import { cachedEmbeddedImage, loadEmbeddedImage } from './imageLoader';
 import { DEFAULT_PALETTE, type RenderPalette } from './palette';
 import type { RenderWarning, RenderWarningCode } from './renderWarnings';
@@ -223,8 +225,7 @@ class Renderer {
           shapes.push(...this.fillShape(shape, paint, box));
         }
         if (node.stroke) {
-          if (partialSides(node.stroke))
-            shapes.push(...this.sideStrokes(node.stroke, box));
+          if (node.stroke.sides) shapes.push(...this.sideStrokes(node.stroke, box));
           else {
             const gapped = this.gapStrokes(node.stroke, box, node.cornerRadius);
             shapes.push(
@@ -333,7 +334,8 @@ class Renderer {
         // ou à direita cresce para a esquerda a partir dela.
         const anchor = (shape: KonvaText): KonvaText => {
           if (cut) {
-            shape.x(cutLeft(style.align, node.width, shape.width()));
+            // O bloco (a linha mais larga) se alinha na caixa; o Konva alinha as linhas dentro dele.
+            shape.x(cutLineLeft(style.align, node.width, shape.width(), shape.width()));
             return shape;
           }
           if (node.width > 0 || style.align === 'left' || style.align === 'justify')
@@ -636,7 +638,7 @@ function capMiddleY(attrs: TextConfig, node: TextNode, style: TextStyle): number
   const lines = Math.max(1, probe.textArr.length);
   probe.destroy();
   const lineHeight = (attrs.lineHeight ?? 1.2) * style.fontSize;
-  const first = konvaBaseline(0, lineHeight, metrics);
+  const first = lineBaseline(0, lineHeight, metrics);
   return capMiddleShift({
     boxHeight: node.height,
     capHeight: metrics.capHeight,
@@ -664,7 +666,7 @@ function capMiddleRunsShift(node: TextNode, layout: RunLayout): number {
   const metrics = capMetricsOf(sample, style.fontSize);
   sample.destroy();
   const baseline = (line: { y: number; height: number }): number =>
-    konvaBaseline(line.y, line.height, metrics);
+    lineBaseline(line.y, line.height, metrics);
   return capMiddleShift({
     boxHeight: node.height,
     capHeight: metrics.capHeight,
@@ -966,13 +968,6 @@ function applyShadow(shape: Konva.Shape, shadow: Shadow): void {
   shape.shadowOffset(shadow.offset);
   shape.shadowOpacity(1);
   shape.shadowEnabled(true);
-}
-
-/** Onde começa a linha de largura `text` numa caixa `box` (uma linha que passa da caixa começa na borda). */
-function cutLeft(align: TextStyle['align'], box: number, text: number): number {
-  if (text >= box) return 0;
-  if (align === 'center') return (box - text) / 2;
-  return align === 'right' ? box - text : 0;
 }
 
 /** A largura do Text leva a folga da quebra; o `x` volta o que o `align` desloca por causa dela. */

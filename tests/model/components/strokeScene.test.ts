@@ -50,6 +50,37 @@ describe('traço na cena (formato 4)', () => {
     });
   });
 
+  it('os quatro lados dão a cena sem stroke.sides (o contorno inteiro, MC0)', () => {
+    const root = run({
+      type: 'frame',
+      children: [
+        {
+          type: 'rect',
+          width: 100,
+          height: 40,
+          cornerRadius: 8,
+          stroke: { color: '#000', sides: ['left', 'bottom', 'right', 'top'] },
+        },
+      ],
+    });
+    expect(root.children[0]?.stroke).not.toHaveProperty('sides');
+  });
+
+  it('três lados ficam, na ordem de STROKE_SIDES', () => {
+    const root = run({
+      type: 'frame',
+      children: [
+        {
+          type: 'rect',
+          width: 100,
+          height: 40,
+          stroke: { color: '#000', sides: ['left', 'bottom', 'top'] },
+        },
+      ],
+    });
+    expect(root.children[0]?.stroke?.sides).toEqual(['top', 'bottom', 'left']);
+  });
+
   it('sem as chaves novas o traço não ganha cap, join nem sides', () => {
     const root = run({
       type: 'frame',

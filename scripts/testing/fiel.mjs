@@ -288,6 +288,46 @@ write(
   { preview: { label: 'novo' } },
 );
 
+// MC0 (R25.91 e R25.92): o `badge` vira duas caixas de texto de 40 × 28 numa peça de 140 × 50. A da
+// esquerda (azul `#0D47A1`, em 10, 10) é um texto cortado (`wrap` `none`) de dois parágrafos com
+// `align` `center`: `HHHHHHH` (cerca de 50 de largura, mais larga que a caixa) e `H`, então a linha
+// curta começa no bloco, não no centro da caixa. A da direita (vermelha `#B71C1C`, em 90, 10) é um
+// `cap-middle` de três linhas numa caixa de duas: só duas se desenham, centradas pelo bloco delas
+// (o `maxLines` 3 só cala o aviso `texto maior que a caixa`: não corta nada).
+// Só na versão 4 (as duas chaves não existem antes dela; o R25.2 segue com as oito peças e 15 erros).
+if (version >= 4) {
+  const box = (name, left, color, text, font) => ({
+    type: 'text',
+    name,
+    text,
+    anchors: { left, top: 10 },
+    width: 40,
+    height: 28,
+    color,
+    font: { size: 10, lineHeight: 14, ...font },
+  });
+  write(
+    'badge',
+    'Badge',
+    { width: 140, height: 50 },
+    {
+      type: 'frame',
+      name: 'cortes',
+      width: 140,
+      height: 50,
+      layout: { type: 'none' },
+      fill: '#FFFFFF',
+      children: [
+        box('cortado', 10, '#0D47A1', 'HHHHHHH\nH', { align: 'center', wrap: 'none' }),
+        box('cap', 90, '#B71C1C', 'HHH\nHHH\nHHH', {
+          verticalAlign: 'cap-middle',
+          maxLines: 3,
+        }),
+      ],
+    },
+  );
+}
+
 // Os componentes mínimos acima não desenham o `interaction`: sem tirar o campo e os exemplos que o
 // usam, o validador avisa "campo não usado" (R25.1).
 const specFile = process.argv[2] + '/material3-compose.spec.json';

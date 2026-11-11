@@ -1,17 +1,9 @@
+import { lineBaseline, type CapMetrics } from '../../src/model/components/baseline';
 import type { TextMeasurer } from '../../src/model/components/instantiate';
 import type { RunLayout, RunPiece } from '../../src/model/components/richText';
 import type { SceneTextRun, TextNode } from '../../src/model/components/scene';
 import { capHeightOf, fontExtents, textPolygons, type Polygon } from './glyphs';
-import {
-  blockTop,
-  type CapMetrics,
-  breakLines,
-  customLines,
-  paragraphEnds,
-  lineHeightOf,
-  lineLeft,
-  richShift,
-} from './textBars';
+import { blockTop, lineHeightOf, lineLeft, plainLines, richShift } from './textBars';
 import { textWidth, type FontBook } from './textMeasurer';
 
 // Disposição do texto de uma cena com fonte real: os contornos dos glifos de cada linha e trecho
@@ -75,7 +67,7 @@ function lineInk(
 ): Polygon[] {
   const face = book.fontFor(spec.family, spec.weight, spec.italic);
   const { ascent, descent } = fontExtents(face, spec.size);
-  const baseline = top + (lineHeight - (ascent + descent)) / 2 + ascent;
+  const baseline = lineBaseline(top, lineHeight, { ascent, descent });
   const polygons = textPolygons(face, text, x, baseline, spec);
   if (decoration === undefined) return polygons;
   return [
@@ -123,7 +115,7 @@ function justifiedInk(
   if (decoration === undefined) return polygons;
   const face = book.fontFor(spec.family, spec.weight, spec.italic);
   const { ascent, descent } = fontExtents(face, spec.size);
-  const baseline = top + (lineHeight - (ascent + descent)) / 2 + ascent;
+  const baseline = lineBaseline(top, lineHeight, { ascent, descent });
   return [...polygons, decorationBar(decoration, spec, 0, baseline, nodeWidth)];
 }
 
@@ -138,24 +130,17 @@ function plainInk(node: TextNode, measure: TextMeasurer, book: FontBook): TextIn
     letterSpacing: style.letterSpacing ?? 0,
   };
   const widthOf = (text: string) => textWidth(book, text, spec);
-  const lines =
-    customLines(node, measure, { ...spec, lineHeight }) ?? breakLines(node, widthOf);
+  // Só as linhas que cabem na altura da caixa (decisão 31); o `cap-middle` centra por elas.
+  const { lines, ends } = plainLines(node, measure, widthOf);
   const top = blockTop(
     node,
     lines.length,
     lineHeight,
     node.style.verticalAlign === 'cap-middle' ? capMetricsOf(book, spec) : undefined,
   );
+  const widths = lines.map(widthOf);
+  const block = widths.reduce((max, w) => Math.max(max, w), 0);
   const polygons: Polygon[] = [];
-  const ends =
-    style.align === 'justify'
-      ? paragraphEnds(
-          node,
-          lines,
-          customLines(node, measure, { ...spec, lineHeight }),
-          widthOf,
-        )
-      : [];
   lines.forEach((line, i) => {
     if (line === '') return;
     if (ends[i] === false && node.width > 0 && line.includes(' ')) {
@@ -172,13 +157,12 @@ function plainInk(node: TextNode, measure: TextMeasurer, book: FontBook): TextIn
       );
       return;
     }
-    const width = Math.min(widthOf(line), node.width || Infinity);
     polygons.push(
       ...lineInk(
         book,
         line,
         spec,
-        lineLeft(node, width),
+        lineLeft(node, widths[i] ?? 0, block),
         top + i * lineHeight,
         lineHeight,
         style.decoration,
