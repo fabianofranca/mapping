@@ -8,14 +8,9 @@ import { messageText } from './modelMessage';
 import { specIssueText } from './specIssueText';
 import type { AppLibraryIssue } from '../storage/specPackage';
 
-/** A mensagem com código do catálogo: o `detail` (de outro módulo) entra no `{detail}`. */
+/** A mensagem com código do catálogo: o `detail` (de outro módulo) entra no `{reason}`. */
 function coded(issue: AppLibraryIssue, code: ModelMessageTemplateCode): string {
-  const params = issue.params ?? {};
-  const merged =
-    issue.detail === undefined
-      ? params
-      : { ...params, detail: messageText(issue.detail) };
-  return messageText(modelMessage(code, merged, issue.message));
+  return messageText(modelMessage(code, issue.params ?? {}, issue.message, issue.detail));
 }
 
 /** Texto do problema: os que têm código saem traduzidos; o resto vem do validador. */

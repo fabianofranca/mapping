@@ -78,25 +78,25 @@ export const libraryMessages = {
   'library.iconOptionMissing':
     'a opção "{option}" do campo "{key}" não está no conjunto de ícones; o desenho cai no reservado',
   // Prova de desenho: um código por caso (valores padrão, preview, exemplo), com e sem modo.
-  // O aviso do motor (com código) entra em `{detail}`.
+  // A mensagem de dentro (o aviso do motor, com código) entra em `{reason}`.
   'library.draw.defaults':
-    'tipo "{typeId}", os valores padrão, tamanho inicial {size}: {detail}',
+    'tipo "{typeId}", os valores padrão, tamanho inicial {size}: {reason}',
   'library.draw.defaultsMode':
-    'tipo "{typeId}", os valores padrão, modo {mode}, tamanho inicial {size}: {detail}',
-  'library.draw.preview': 'tipo "{typeId}", o preview, tamanho inicial {size}: {detail}',
+    'tipo "{typeId}", os valores padrão, modo {mode}, tamanho inicial {size}: {reason}',
+  'library.draw.preview': 'tipo "{typeId}", o preview, tamanho inicial {size}: {reason}',
   'library.draw.previewMode':
-    'tipo "{typeId}", o preview, modo {mode}, tamanho inicial {size}: {detail}',
+    'tipo "{typeId}", o preview, modo {mode}, tamanho inicial {size}: {reason}',
   'library.draw.example':
-    'tipo "{typeId}", o exemplo "{name}", tamanho inicial {size}: {detail}',
+    'tipo "{typeId}", o exemplo "{name}", tamanho inicial {size}: {reason}',
   'library.draw.exampleMode':
-    'tipo "{typeId}", o exemplo "{name}", modo {mode}, tamanho inicial {size}: {detail}',
+    'tipo "{typeId}", o exemplo "{name}", modo {mode}, tamanho inicial {size}: {reason}',
   'library.drawFailed': 'falha ao desenhar: {error}',
   'library.buildFailed':
     'não foi possível montar a biblioteca para provar os exemplos de sistema externo: {reason}',
   'library.buildFailedUnknown':
     'não foi possível montar a biblioteca para provar os exemplos de sistema externo: motivo desconhecido',
-  'library.systemExample': 'exemplo "{name}" do sistema "{system}": {detail}',
+  'library.systemExample': 'exemplo "{name}" do sistema "{system}": {reason}',
   'library.systemExampleType':
     'exemplo "{name}" do sistema "{system}": o nó corresponde ao tipo "{found}", não a "{typeId}"',
-  'library.originScreen': 'tela de exemplo "{name}" do sistema "{system}": {detail}',
+  'library.originScreen': 'tela de exemplo "{name}" do sistema "{system}": {reason}',
 } as const;
