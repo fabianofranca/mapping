@@ -19,7 +19,12 @@ import {
   bottom,
   type Size,
 } from './geometry';
-import { freeRectIn, isFreeInLevel, placementLevel } from './freePlacement';
+import {
+  crowdedRectIn,
+  freeRectIn,
+  isFreeInLevel,
+  placementLevel,
+} from './freePlacement';
 import { childrenOf } from './hierarchy';
 import { createMarking, placeFloatingNear, type FloatingNearTarget } from './markings';
 import { findById } from './project';
@@ -379,7 +384,9 @@ export function componentPlacement(
   const placed = slotRect(p, parent, slot, size);
   const level = placementLevel(p, args.containerId, placed, { parent, area: slot.area });
   const free = freeRectIn(level, placed);
-  return free ?? clampToParent(parent, slot.area, placed);
+  // Slot cheio: a posição de antes, mas nunca contida nem igual a uma irmã (3.1): senão o assentar
+  // a faria filha dela, e não do componente do slot.
+  return free ?? crowdedRectIn(level, clampToParent(parent, slot.area, placed));
 }
 
 /**

@@ -54,6 +54,7 @@ CHROME_CMD=(
 # Caminhos conferidos na pré-conferência (as variáveis só existem para o teste).
 ATSPI_LAUNCHER="${CLOUD_UP_ATSPI_LAUNCHER:-/usr/libexec/at-spi-bus-launcher}"
 CHROME_BIN="${CLOUD_UP_CHROME:-/opt/pw-browsers/chromium}"
+ATSPI_PYTHON="${CLOUD_UP_PYTHON:-/usr/bin/python3.12}"
 PACKAGES=(xdotool at-spi2-core python3-pyatspi openbox imagemagick)
 
 # Imprime, um por linha, o que falta no ambiente (vazio = tudo no lugar).
@@ -63,7 +64,10 @@ missing_packages() {
     command -v "$c" >/dev/null 2>&1 || echo "$c"
   done
   [ -e "$ATSPI_LAUNCHER" ] || echo "$ATSPI_LAUNCHER"
-  python3 -c 'import pyatspi' >/dev/null 2>&1 || echo "python3 pyatspi"
+  # O pyatspi do apt vale para o python do sistema (o que o cloud.mjs e o atspi-allow.py usam); o
+  # `python3` do PATH pode ser outra versão, onde ele não carrega: tenta o do sistema e, de reserva, o do PATH.
+  "$ATSPI_PYTHON" -c 'import pyatspi' >/dev/null 2>&1 \
+    || python3 -c 'import pyatspi' >/dev/null 2>&1 || echo "python3 pyatspi"
   [ -e "$CHROME_BIN" ] || echo "$CHROME_BIN"
 }
 

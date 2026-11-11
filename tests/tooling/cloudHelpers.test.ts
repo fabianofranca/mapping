@@ -2464,7 +2464,11 @@ exit 0`,
     );
   }
 
-  function checkPackages(): { status: number | null; stdout: string; stderr: string } {
+  function checkPackages(extraEnv: Record<string, string> = {}): {
+    status: number | null;
+    stdout: string;
+    stderr: string;
+  } {
     const r = spawnSync(
       'bash',
       [CLOUD_UP, path.join(dir, 'rodada'), '--check-packages'],
@@ -2475,6 +2479,7 @@ exit 0`,
           CLOUD_UP_RETRY_SLEEP: '0',
           CLOUD_UP_ATSPI_LAUNCHER: path.join(dir, 'launcher'),
           CLOUD_UP_CHROME: path.join(dir, 'chromium'),
+          ...extraEnv,
         },
         encoding: 'utf8',
       },
@@ -2513,6 +2518,26 @@ exit 0`,
     expect(r.stderr).not.toMatch(/imagemagick|chromium/);
     const log = readFileSync(path.join(dir, 'apt-log'), 'utf8');
     expect(log.match(/apt-get update/g)).toHaveLength(5);
+  });
+
+  it('o pyatspi só existe no /usr/bin/python3.12 (o python3 do PATH não o carrega): sai 0 sem o apt-get (achado 4.1)', () => {
+    setup([]);
+    fake('python3', 'exit 1');
+    fake('python312', 'exit 0');
+    fakeApt(0);
+    const r = checkPackages({ CLOUD_UP_PYTHON: path.join(dir, 'bin', 'python312') });
+    expect(r.status).toBe(0);
+    expect(existsSync(path.join(dir, 'apt-log'))).toBe(false);
+  });
+
+  it('sem o pyatspi em nenhum python: sai 14 e lista python3 pyatspi', () => {
+    setup([]);
+    fake('python3', 'exit 1');
+    fake('python312', 'exit 1');
+    fakeApt(99);
+    const r = checkPackages({ CLOUD_UP_PYTHON: path.join(dir, 'bin', 'python312') });
+    expect(r.status).toBe(14);
+    expect(r.stderr).toMatch(/python3 pyatspi/);
   });
 
   it('sem o Chrome: sai 14 direto, sem chamar o apt-get', () => {

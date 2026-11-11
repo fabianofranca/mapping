@@ -106,8 +106,13 @@ button.tree-toggle:hover {
   font-weight: 600;
 }
 
+/*
+ * Com a Árvore estreita (900×720 com três janelas abertas) a indentação e os botões fixos da linha
+ * comiam a largura toda e o nome ficava com 0 px, sem reticências: o nome guarda um piso e a lista
+ * rola na horizontal, em vez de sumir.
+ */
 .tree-label {
-  min-width: 0;
+  min-width: calc(var(--size-grid-col-min) * 0.5);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
