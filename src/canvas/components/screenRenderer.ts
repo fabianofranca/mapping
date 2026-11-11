@@ -17,6 +17,8 @@ import { Text as KonvaText } from 'konva/lib/shapes/Text';
 import { type RemoteImageResult, renderScene } from './renderScene';
 import { DEFAULT_PALETTE, type RenderPalette } from './palette';
 import type { RenderWarning } from './renderWarnings';
+import { slotBoxOfScene } from '../../model/components/arrange';
+import type { Box } from '../../model/components/box';
 import type { FieldValues } from '../../model/components/componentFormat';
 import { type TextMeasurer, instantiate } from '../../model/components/instantiate';
 import {
@@ -32,6 +34,7 @@ import {
   type ProvidedValues,
 } from '../../model/components/provided';
 import { type Instance, type Screen, renderOrder } from '../../model/components/screen';
+import { type FrameNode, walk } from '../../model/components/scene';
 import { konvaMeasurer } from './konvaMeasurer';
 
 /** Área clicável da instância: transparente, mas que recebe o ponteiro. */
@@ -92,6 +95,8 @@ interface Mounted {
   provided: ProvidedValues;
   /** O que o slot da instância oferece às filhas no último desenho (`provide`). */
   offers: ProvidedValues | undefined;
+  /** Caixa do slot (na tela) quando ele tem `clip`: as filhas só aparecem dentro dela. */
+  slotClip: Box | undefined;
 }
 
 export class ScreenRenderer {
@@ -170,13 +175,46 @@ export class ScreenRenderer {
       sameProvided(current.provided, provided)
     ) {
       scopes.set(instance.id, extendProvided(inherited, current.offers));
-      return this.setZ(current.node, z);
+      const clipped = this.clipByParent(current);
+      return this.setZ(current.node, z) || clipped;
     }
     const entry = current ?? this.mount(instance);
     this.renderInto(entry, instance, provided);
     if (!current) this.options.onInstanceCreated?.(instance.id, entry.node);
     scopes.set(instance.id, extendProvided(inherited, entry.offers));
+    this.clipByParent(entry);
     this.setZ(entry.node, z);
+    return true;
+  }
+
+  /**
+   * Recorta a instância pela caixa do slot da mãe, quando o slot tem `clip` (a mãe é sempre
+   * desenhada antes). Devolve true se o recorte mudou.
+   */
+  private clipByParent(entry: Mounted): boolean {
+    const parentId = entry.instance.parentId;
+    const clip =
+      parentId === undefined ? undefined : this.mounted.get(parentId)?.slotClip;
+    const { node } = entry;
+    const { box } = entry.instance;
+    const next =
+      clip === undefined
+        ? undefined
+        : {
+            x: clip.x - box.x,
+            y: clip.y - box.y,
+            width: clip.width,
+            height: clip.height,
+          };
+    const before = node.clipWidth()
+      ? [node.clipX(), node.clipY(), node.clipWidth(), node.clipHeight()]
+      : undefined;
+    const after = next && [next.x, next.y, next.width, next.height];
+    if (before?.join() === after?.join()) return false;
+    node.clipX(next?.x);
+    node.clipY(next?.y);
+    node.clipWidth(next?.width);
+    node.clipHeight(next?.height);
     return true;
   }
 
@@ -197,6 +235,7 @@ export class ScreenRenderer {
       imageUrls: [],
       provided: NO_PROVIDED,
       offers: undefined,
+      slotClip: undefined,
     };
     this.group.add(node);
     this.mounted.set(instance.id, entry);
@@ -308,6 +347,7 @@ export class ScreenRenderer {
     entry.imageUrls = [];
     entry.provided = provided;
     entry.offers = undefined;
+    entry.slotClip = undefined;
     node.destroyChildren();
     node.position({ x: instance.box.x, y: instance.box.y });
     node.scale({ x: 1, y: 1 });
@@ -353,6 +393,7 @@ export class ScreenRenderer {
       ...(provided === NO_PROVIDED ? {} : { provided }),
     });
     entry.offers = result.provides;
+    entry.slotClip = clippedSlotBox(result.root, instance.box);
     const rendered = renderScene(
       { root: result.root, warnings: [] },
       {
@@ -375,4 +416,14 @@ export class ScreenRenderer {
     entry.label = instanceLabel(type, instance.values);
     node.setAttr('label', entry.label);
   }
+}
+
+/** A caixa do slot, na tela, quando ele tem `clip`; `origin` é a caixa da instância (a cena parte de 0,0). */
+function clippedSlotBox(root: FrameNode, origin: Box): Box | undefined {
+  for (const node of walk(root)) {
+    if (node.type !== 'unknown' || node.sourceType !== 'slot') continue;
+    const slot = node.clipChildren === true ? slotBoxOfScene(root) : undefined;
+    return slot && { ...slot, x: slot.x + origin.x, y: slot.y + origin.y };
+  }
+  return undefined;
 }

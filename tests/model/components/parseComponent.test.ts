@@ -1077,11 +1077,7 @@ describe('parseComponent: none alinhado e clip (L2, formato 4)', () => {
   it('clip do quadro: literal em toda versão, expressão só na 4', () => {
     expect(validateComponent(file({ type: 'frame', clip: true }, 1))).toEqual([]);
     expect(validateComponent(file({ type: 'frame', clip: { $field: 'c' } }))).toEqual([]);
-    expect(
-      validateComponent(
-        file({ type: 'frame', clip: { $has: 'c' } }),
-      ),
-    ).toEqual([]);
+    expect(validateComponent(file({ type: 'frame', clip: { $has: 'c' } }))).toEqual([]);
     expect(validateComponent(file({ type: 'frame', clip: { $field: 'c' } }, 3))).toEqual([
       `template.clip: ${V4}`,
     ]);

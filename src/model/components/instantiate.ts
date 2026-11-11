@@ -89,6 +89,8 @@ import {
   LAYOUT_ALIGNS,
   LAYOUT_JUSTIFIES,
   LAYOUT_TYPES,
+  NONE_ALIGNS,
+  NONE_JUSTIFIES,
   LAYOUT_WRAPS,
   allowedValue,
   describeValue,
@@ -1016,10 +1018,21 @@ function createEngine(
     };
   };
 
+  /** O layout `none`: `align` (vertical) e `justify` (horizontal) só valem na formatVersion 4. */
+  const noneLayoutOf = (spec: LayoutSpec | undefined): FrameLayout => {
+    if (!spec || original.formatVersion < 4) return NONE_LAYOUT;
+    if (spec.align === undefined && spec.justify === undefined) return NONE_LAYOUT;
+    return {
+      ...NONE_LAYOUT,
+      align: checked(spec.align, NONE_ALIGNS, 'start', 'layout.align'),
+      justify: checked(spec.justify, NONE_JUSTIFIES, 'start', 'layout.justify'),
+    };
+  };
+
   const layoutOf = (frame: FrameTemplate): FrameLayout => {
     const spec = frame.layout;
     const kind = checked(spec?.type, LAYOUT_TYPES, 'none', 'layout.type');
-    if (!spec || kind === 'none') return NONE_LAYOUT;
+    if (!spec || kind === 'none') return noneLayoutOf(spec);
     return {
       kind,
       main: kind === 'row' ? 'w' : 'h',
@@ -1100,6 +1113,9 @@ function createEngine(
     return Math.min(bound, Math.max(0, natural));
   };
 
+  const hasAnchor = (anchors: ResolvedAnchors): boolean =>
+    anchors.center || anchors.start !== undefined || anchors.end !== undefined;
+
   const isStretchAnchored = (anchors: ResolvedAnchors | undefined): boolean =>
     anchors !== undefined &&
     !anchors.center &&
@@ -1131,15 +1147,26 @@ function createEngine(
     return takesContent ? Math.max(0, inner) : undefined;
   };
 
+  /** O filho `hug` estica no eixo? Em `row`/`column`, no cruzado; no `none`, sem âncora naquele eixo. */
+  const stretchesKid = (
+    layout: FrameLayout,
+    axis: Axis,
+    anchors: ResolvedAnchors | undefined,
+  ): boolean => {
+    if (layout.kind !== 'none') return layout.main !== axis && layout.align === 'stretch';
+    const free = anchors === undefined || !hasAnchor(anchors);
+    return free && (axis === 'h' ? layout.align : layout.justify) === 'stretch';
+  };
+
   const hugKid = (
     node: TemplateNode,
     axis: Axis,
     space: AxisSpace,
     otherSize: number | undefined,
     layout: FrameLayout,
+    anchors: ResolvedAnchors | undefined,
   ): number => {
-    const stretched =
-      layout.main !== axis && layout.kind !== 'none' && layout.align === 'stretch';
+    const stretched = stretchesKid(layout, axis, anchors);
     if (stretched && space.content !== null) return space.content;
     return Math.max(0, hugSize(node, axis, otherSize, space.content ?? space.bound));
   };
@@ -1179,7 +1206,7 @@ function createEngine(
       (typeof spec === 'number' ? spec : undefined) ??
       slotSize(node, spec, axis, space.content, anchors);
     if (early !== undefined) return early;
-    if (spec === 'hug') return hugKid(node, axis, space, otherSize, layout);
+    if (spec === 'hug') return hugKid(node, axis, space, otherSize, layout, anchors);
     if (spec === 'fill')
       return layout.main === axis
         ? 'fill'
@@ -1246,6 +1273,21 @@ function createEngine(
     return sizes.map((s) => (s === 'fill' ? (shares[next++] ?? 0) : s));
   };
 
+  /**
+   * A extensão de cada filho de um quadro `none` num eixo: âncora inicial + tamanho + âncora final
+   * (só o tamanho quando centrado por âncora ou alinhado pelo quadro); devolve a maior.
+   */
+  const noneExtent = (
+    kids: readonly Kid[],
+    axis: Axis,
+    sizes: readonly number[],
+  ): number =>
+    kids.reduce((widest, kid, i) => {
+      const a = anchorsOf(kid.node, axis);
+      const size = sizes[i] ?? 0;
+      return Math.max(widest, a.center ? size : (a.start ?? 0) + size + (a.end ?? 0));
+    }, -Infinity);
+
   /** Tamanhos dos filhos num eixo; `space.content` nulo = o pai está sendo medido (hug). */
   const resolveAxis = (
     frame: FrameTemplate,
@@ -1264,9 +1306,10 @@ function createEngine(
     if (layout.main === axis)
       return resolveMain(frame, layout, sizes, limits, space.content, tolerance);
     const numbers = sizes.map((s) => (s === 'fill' ? 0 : s));
-    if (layout.kind !== 'none' && space.content !== null) {
+    if (space.content !== null) {
       const content = space.content;
-      const widest = Math.max(...numbers);
+      const widest =
+        layout.kind === 'none' ? noneExtent(kids, axis, numbers) : Math.max(...numbers);
       if (widest > content + tolerance)
         warnShort('engine.contentTooBig', nodeName(frame), widest - content);
     }
@@ -1298,6 +1341,13 @@ function createEngine(
     return Math.max(...sizes) + padding;
   };
 
+  /** A posição de um filho sem âncora no eixo de um quadro `none` (`start` e `stretch`: 0). */
+  const alignFree = (
+    align: LayoutAlign | LayoutJustify,
+    content: number,
+    size: number,
+  ) => (align === 'center' ? (content - size) / 2 : align === 'end' ? content - size : 0);
+
   /** Posição (relativa ao pai) de cada filho num eixo. */
   const positionAxis = (
     layout: FrameLayout,
@@ -1316,7 +1366,7 @@ function createEngine(
         if (a.center) return (content - size) / 2;
         if (a.start !== undefined) return a.start;
         if (a.end !== undefined) return content - a.end - size;
-        return 0;
+        return alignFree(axis === 'h' ? layout.align : layout.justify, content, size);
       });
     }
     if (layout.main === axis) {
@@ -1881,7 +1931,7 @@ function createEngine(
       ...common(frame, `${prefix}/${path}`, x, y, w, h),
       ...(stroke ? { stroke } : {}),
       type: 'frame' as const,
-      clip: frame.clip ?? isRoot,
+      clip: bool(frame.clip, isRoot),
       cornerRadius: radiusOf(frame),
       children,
     };
@@ -2197,6 +2247,7 @@ function createEngine(
           name: label,
           type: 'unknown',
           sourceType: 'slot',
+          ...(bool(node.clip, false) ? { clipChildren: true as const } : {}),
         };
       }
       case 'rect': {

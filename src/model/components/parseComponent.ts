@@ -1174,18 +1174,23 @@ function noneAlignVersionIssues(version: unknown, template: unknown): ComponentI
     return out;
   const walk = (node: unknown, at: string): void => {
     if (!isRecord(node)) return;
-    const layout = node.layout;
-    if (isRecord(layout) && layout.type === 'none')
-      for (const key of ['align', 'justify'])
-        if (key in layout) addIssue(out, join(at, `layout.${key}`), V4_ONLY_MESSAGE);
-    if (node.type === 'slot' && 'clip' in node && !isExprObject(node.clip))
-      addIssue(out, join(at, 'clip'), V4_ONLY_MESSAGE);
+    noneAlignNodeIssues(node, at, out);
     if (Array.isArray(node.children))
       node.children.forEach((c: unknown, i) => walk(c, `${join(at, 'children')}[${i}]`));
     if (node.type === 'repeat') walk(node.template, join(at, 'template'));
   };
   walk(template, 'template');
   return out;
+}
+
+/** As chaves da v4 de um nó só: `align`/`justify` do layout `none` e o `clip` literal do slot. */
+function noneAlignNodeIssues(node: Rec, at: string, out: ComponentIssue[]): void {
+  const layout = node.layout;
+  if (isRecord(layout) && layout.type === 'none')
+    for (const key of ['align', 'justify'])
+      if (key in layout) addIssue(out, join(at, `layout.${key}`), V4_ONLY_MESSAGE);
+  if (node.type === 'slot' && 'clip' in node && !isExprObject(node.clip))
+    addIssue(out, join(at, 'clip'), V4_ONLY_MESSAGE);
 }
 
 /** `shadow` como lista (v4) numa versão anterior à 4: `só é permitido com formatVersion 4`, no caminho de `shadow`. */

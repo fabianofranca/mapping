@@ -54,7 +54,7 @@ function clipRect(node: Konva.Group): number[] | null {
     closePath() {},
     rect: (...a: number[]) => rects.push(a),
   };
-  fn(ctx as unknown as Konva.Context);
+  fn(ctx as unknown as Parameters<typeof fn>[0], node);
   return rects[0] ?? null;
 }
 
@@ -129,8 +129,8 @@ describe('recorte da filha de um slot com clip', () => {
 
   it('a filha cuja parte visível (caixa ∩ clip) está fora da tela não nasce', () => {
     const { layer } = setup();
-    // a caixa da filha (10..110) cruza a tela (80..300), mas o clip (20..50) não
-    const area: Rect = { x: 80, y: 0, width: 220, height: 100 };
+    // com a margem de 64, a caixa da filha (10..110) alcança a tela (x ≥ 120), o clip (20..50) não
+    const area: Rect = { x: 120, y: 0, width: 180, height: 100 };
     layer.render(new Map([['a', child('a', { clip: CLIP })]]), all, PLACEMENTS, 1, area);
     expect(layer.mountedCount).toBe(0);
     layer.render(new Map([['b', child('b')]]), all, PLACEMENTS, 1, area);
