@@ -104,6 +104,22 @@ describe('painel.py apply (FM1, decisão 2)', () => {
     },
   );
 
+  it('-h dentro do lote é erro (código 2, cita a linha) e não grava nada', () => {
+    const before = snapshot();
+    const r = tryRun("log ok\nrow '#1' -h\n", 'apply', dir, '-');
+    expect(r.code).toBe(2);
+    expect(r.err).toMatch(/linha 2\b/);
+    expect(snapshot()).toEqual(before);
+  });
+
+  it('só open_session e cmd_apply criam Sessao: os outros comandos entram no lote', () => {
+    const src = readFileSync(SCRIPT, 'utf8');
+    const uses = src
+      .split('\n')
+      .filter((l) => /\bSessao\(/.test(l) && !l.includes('class Sessao'));
+    expect(uses).toHaveLength(2);
+  });
+
   it('a numeração da linha conta as linhas vazias e os comentários', () => {
     const r = tryRun("# a\n\nlog ok\nrow '#1' bogus=1\n", 'apply', dir, '-');
     expect(r.code).toBe(2);
@@ -173,6 +189,22 @@ describe('meta.unpublished, published e touch (FM1, decisão 3)', () => {
       since: '2026-11-09T12:00:00Z',
       files: ['queue.json', 'meta.json', 'log.json'],
     });
+  });
+
+  it('context sozinho não marca nada como não publicado, e junto de outro comando vale o outro', () => {
+    runAt('2026-11-09T10:05:00Z', 'context', dir, '40');
+    expect(unpublished()).toBeUndefined();
+    expect(run('show', dir)).toMatch(/^não publicado: nenhum$/m);
+    tryRun('context 41\nlog x\n', '--now', '2026-11-09T10:06:00Z', 'apply', dir, '-');
+    expect(unpublished()?.files).toEqual(['meta.json', 'log.json']);
+  });
+
+  it('o show não quebra com unpublished sem since', () => {
+    const file = path.join(dir, 'meta.json');
+    const m = json('meta');
+    m[0]!.unpublished = { files: ['meta.json'] };
+    writeFileSync(file, JSON.stringify(m));
+    expect(run('show', dir)).toMatch(/^não publicado desde —: meta\.json$/m);
   });
 
   it('os outros comandos mantêm a saída (uma linha alterados:)', () => {

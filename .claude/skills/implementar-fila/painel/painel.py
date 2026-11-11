@@ -107,6 +107,7 @@ class Sessao:
         self.data = {}
         self.dirty = []
         self.deferred = False  # num `apply`, o commit de cada linha espera o fim do lote
+        self.loud = False  # algum comando que conta como "não publicado" (o `context` sozinho não conta)
 
     def get(self, name):
         if name not in self.data:
@@ -117,7 +118,8 @@ class Sessao:
         if name not in self.dirty:
             self.dirty.append(name)
 
-    def commit(self):
+    def commit(self, quiet=False):
+        self.loud = self.loud or not quiet
         if self.deferred:
             return
         self.flush()
@@ -132,7 +134,8 @@ class Sessao:
         meta[0]["vagasItens"] = items
         self.touch("meta")
         order = [n for n in FILES if n in self.dirty]
-        mark_unpublished(meta[0], order)
+        if self.loud:
+            mark_unpublished(meta[0], order)
         for n in order:
             save(self.d, n, self.data[n])
         print("alterados: " + " ".join(n + ".json" for n in order))
@@ -376,7 +379,7 @@ def cmd_context(a):
     m["context"] = pct
     m["contextAt"] = now()
     s.touch("meta")
-    s.commit()
+    s.commit(quiet=True)  # o contexto sozinho não faz a conferência de hora em hora publicar
 
 
 def cmd_touch(a):
@@ -449,6 +452,8 @@ def cmd_apply(a):
                 sub.fn(sub)
             except Erro as e:
                 raise Erro(e if str(e).startswith(f"linha {n}:") else f"linha {n}: {e}")
+            except SystemExit:  # `-h` do argparse: não é um comando
+                raise Erro(f"linha {n}: ajuda (-h) não entra no lote")
         BATCH.deferred = False
         BATCH.flush()
     finally:
@@ -654,7 +659,7 @@ def cmd_show(a):
     print(f"reserva: {meta.get('reserve') or '—'}")
     pend = meta.get("unpublished") or {}
     if pend.get("files"):
-        print(f"não publicado desde {pend['since'][11:16]}: " + " ".join(pend["files"]))
+        print(f"não publicado desde {(pend.get('since') or '')[11:16] or '—'}: " + " ".join(pend["files"]))
     else:
         print("não publicado: nenhum")
     ctx = meta.get("context")
