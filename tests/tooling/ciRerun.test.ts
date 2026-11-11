@@ -362,6 +362,25 @@ describe('decideQueued: execução presa na fila (#1669)', () => {
   });
 });
 
+describe('decideQueued: entrada inválida (#1669, revisão)', () => {
+  it('now inválido é erro, não preso=true com NaN', () => {
+    expect(() =>
+      decideQ({ runs: [r2677], jobsTotal: 0, head: HEAD, now: 'amanha' }),
+    ).toThrow(/now/);
+  });
+
+  it('created_at ilegível é erro', () => {
+    expect(() =>
+      decideQ({
+        runs: [run(1, HEAD, 'ontem')],
+        jobsTotal: 0,
+        head: HEAD,
+        now: '2026-11-11T21:50:00Z',
+      }),
+    ).toThrow(/created_at/);
+  });
+});
+
 describe('comando queued (#1669)', () => {
   const dir = mkdtempSync(join(tmpdir(), 'ci-queued-'));
   const write = (name: string, value: unknown): string => {
@@ -440,6 +459,31 @@ describe('comando queued (#1669)', () => {
     const result = exec(['--runs', runs, '--jobs', jobs, '--head', HEAD]);
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('run_id');
+  });
+
+  it('--now ilegível sai com erro', () => {
+    const runs = write('runs6.json', { workflow_runs: [r2677] });
+    const jobs = write('jobs6.json', { total_count: 0, jobs: [] });
+    const result = exec([
+      '--runs',
+      runs,
+      '--jobs',
+      jobs,
+      '--head',
+      HEAD,
+      '--now',
+      'amanha',
+    ]);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('--now');
+  });
+
+  it('valor de opção que é outra flag conta como argumento faltando', () => {
+    const runs = write('runs7.json', { workflow_runs: [r2677] });
+    const jobs = write('jobs7.json', { total_count: 0, jobs: [] });
+    const result = exec(['--runs', runs, '--jobs', jobs, '--head', '--now', 'x']);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('Uso: node scripts/ci/ciRerun.mjs queued');
   });
 
   it('argumento faltando sai com erro e a mensagem de uso', () => {

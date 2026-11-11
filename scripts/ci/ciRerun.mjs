@@ -86,6 +86,19 @@ export function decideRerun({ expected, jobs }) {
 /** Limite da execução na fila sem jobs: mais de 900 s desde o `created_at` (decisão 1 da #1669). */
 const QUEUED_LIMIT_SECONDS = 900;
 
+/** Execuções do commit e a mais recente delas (maior `created_at`); `latest` é nulo sem execução. */
+export function latestRunOfCommit(runs, head) {
+  const ofCommit = runs.filter((run) => run.head_sha === head);
+  let latest = null;
+  for (const run of ofCommit) {
+    const at = Date.parse(run.created_at);
+    if (Number.isNaN(at))
+      throw new Error(`A execução ${run.id} tem created_at ilegível.`);
+    if (latest === null || at > Date.parse(latest.created_at)) latest = run;
+  }
+  return { ofCommit, latest };
+}
+
 /**
  * `runs`: execuções do `ci.yml` (`workflow_runs`); `jobsTotal`: `total_count` dos jobs da mais
  * recente do commit; `head`: o `head.sha` do PR; `now`: ISO (ou `Date`).
@@ -93,7 +106,7 @@ const QUEUED_LIMIT_SECONDS = 900;
  * 15 min. `reaberto` = o commit já tem 2 ou mais execuções (o PR já foi fechado e reaberto).
  */
 export function decideQueued({ runs, jobsTotal, head, now }) {
-  const ofCommit = runs.filter((run) => run.head_sha === head);
+  const { ofCommit, latest } = latestRunOfCommit(runs, head);
   const empty = {
     preso: false,
     run: '',
@@ -102,15 +115,10 @@ export function decideQueued({ runs, jobsTotal, head, now }) {
     execucoes: 0,
     reaberto: false,
   };
-  if (ofCommit.length === 0) {
-    return { ...empty, reason: 'sem execução do CI no commit' };
-  }
-  const latest = ofCommit.reduce((best, run) =>
-    Date.parse(run.created_at) > Date.parse(best.created_at) ? run : best,
-  );
-  const seconds = Math.floor(
-    (new Date(now).getTime() - Date.parse(latest.created_at)) / 1000,
-  );
+  if (latest === null) return { ...empty, reason: 'sem execução do CI no commit' };
+  const nowMs = new Date(now).getTime();
+  if (Number.isNaN(nowMs)) throw new Error(`O now (--now) "${now}" não é uma data ISO.`);
+  const seconds = Math.floor((nowMs - Date.parse(latest.created_at)) / 1000);
   const minutos = Math.max(0, Math.floor(seconds / 60));
   const decision = {
     preso: false,
@@ -131,7 +139,8 @@ export function decideQueued({ runs, jobsTotal, head, now }) {
 
 function option(argv, name) {
   const at = argv.indexOf(name);
-  return at >= 0 ? argv[at + 1] : undefined;
+  const value = at >= 0 ? argv[at + 1] : undefined;
+  return value?.startsWith('--') ? undefined : value;
 }
 
 function runDecide(argv) {
@@ -168,9 +177,11 @@ function runQueued(argv) {
   if (!Array.isArray(runsPayload.workflow_runs))
     throw new Error('O arquivo de execuções não tem a lista workflow_runs.');
   const runs = runsPayload.workflow_runs;
-  const latestId = decideQueued({ runs, jobsTotal: 0, head, now: new Date() }).run;
+  const latest = latestRunOfCommit(runs, head).latest;
+  const now = option(argv, '--now') ?? new Date().toISOString();
   let jobsTotal = 0;
-  if (latestId !== '') {
+  if (latest !== null) {
+    const latestId = String(latest.id);
     const payload = JSON.parse(readFileSync(jobsFile, 'utf8'));
     if (!Array.isArray(payload.jobs) || typeof payload.total_count !== 'number')
       throw new Error('O arquivo de jobs não tem total_count nem a lista jobs.');
@@ -181,7 +192,6 @@ function runQueued(argv) {
       );
     jobsTotal = payload.total_count;
   }
-  const now = option(argv, '--now') ?? new Date().toISOString();
   const d = decideQueued({ runs, jobsTotal, head, now });
   const text =
     `preso=${d.preso}\n` +
