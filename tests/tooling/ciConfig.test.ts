@@ -1,7 +1,18 @@
 // @vitest-environment node
 // Fase 5.6: o que bloqueia uma publicação ruim é configuração (workflows, lint,
 // Playwright, Node). Estes testes leem os arquivos e falham se ela regredir.
-import { readFileSync, existsSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { ESLint } from 'eslint';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -87,12 +98,17 @@ describe('deploy.yml roda o mesmo que o ci.yml antes de publicar', () => {
   });
 
   it('orçamento do dist/index.html num só lugar, com o tamanho no resumo do job', () => {
-    // Decisão 9 da #1324: o número não é fixado aqui; a subida automática (`distBudget.mjs`)
-    // soma 16 KiB e não precisa mexer no teste.
-    const budget = Number(ci.match(/^ {6}INDEX_HTML_MAX_BYTES: (\d+)$/m)?.[1]);
-    expect(budget).toBeGreaterThan(0);
-    expect(budget % (16 * 1024)).toBe(0);
-    expect(ci.match(/INDEX_HTML_MAX_BYTES:/g)).toHaveLength(1);
+    // Etapa #1614 (decisões 1 e 2): o teto mora no `scripts/ci/dist-budget.json`, que o
+    // `distBudget.mjs raise --write` sobe sem mexer em `.github/`. O número não é fixado aqui.
+    const data = JSON.parse(read('scripts/ci/dist-budget.json')) as {
+      indexHtmlMaxBytes: number;
+      history: string[];
+    };
+    expect(data.indexHtmlMaxBytes).toBeGreaterThan(0);
+    expect(data.indexHtmlMaxBytes % (16 * 1024)).toBe(0);
+    expect(data.history.length).toBeGreaterThan(0);
+    expect(ci).not.toMatch(/^\s*INDEX_HTML_MAX_BYTES: \d+/m);
+    expect(jobOf(ci, 'build')).not.toMatch(/^ {4}env:/m);
     expect(ci).toContain('GITHUB_STEP_SUMMARY');
   });
 });
@@ -789,6 +805,111 @@ describe('passo "Tamanho do dist/index.html"', () => {
   it('mantém o ::error com a frase de sempre', () => {
     expect(step).toContain(
       '::error file=dist/index.html::$size bytes, acima do orçamento de $INDEX_HTML_MAX_BYTES bytes.',
+    );
+  });
+
+  it('lê o teto pelo `node scripts/ci/distBudget.mjs ceiling` (etapa #1614, decisão 2)', () => {
+    expect(step).toContain('node scripts/ci/distBudget.mjs ceiling');
+    expect(step).toContain('scripts/ci/dist-budget.json');
+  });
+});
+
+// Etapa #1614 (decisão 2): o `run:` do passo, extraído do ci.yml e rodado com `bash`, acha o teto no
+// JSON, no `ci.yml` antigo do checkout (ref anterior à etapa) ou dá erro.
+describe('passo "Tamanho do dist/index.html": de onde vem o teto (etapa #1614)', () => {
+  const build = jobOf(ci, 'build');
+  const stepAt = build.indexOf('- name: Tamanho do dist/index.html');
+  const lines = build.slice(stepAt).split('\n');
+  const runAt = lines.findIndex((l) => /^ {8}run: \|$/.test(l));
+  const body = lines
+    .slice(runAt + 1)
+    .filter((l, i, all) => l.trim() !== '' || all.slice(i).some((x) => x.trim() !== ''))
+    .map((l) => l.replace(/^ {10}/, ''))
+    .join('\n');
+  const SIZE = 1000;
+  const JSON_CEILING = 1500;
+
+  const runStep = (
+    setup: (dir: string) => void,
+  ): { status: number; out: string; summary: string } => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'dist-step-'));
+    try {
+      mkdirSync(path.join(dir, 'dist'), { recursive: true });
+      writeFileSync(path.join(dir, 'dist/index.html'), 'x'.repeat(SIZE));
+      setup(dir);
+      const summary = path.join(dir, 'summary.md');
+      writeFileSync(summary, '');
+      writeFileSync(path.join(dir, 'step.sh'), body);
+      const r = spawnSync('bash', ['-e', '-o', 'pipefail', 'step.sh'], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: { ...process.env, GITHUB_STEP_SUMMARY: summary },
+      });
+      return {
+        status: r.status ?? -1,
+        out: r.stdout,
+        summary: readFileSync(summary, 'utf8'),
+      };
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  };
+
+  const withJson = (ceiling: number) => (dir: string) => {
+    mkdirSync(path.join(dir, 'scripts/ci'), { recursive: true });
+    copyFileSync(
+      'scripts/ci/distBudget.mjs',
+      path.join(dir, 'scripts/ci/distBudget.mjs'),
+    );
+    writeFileSync(
+      path.join(dir, 'scripts/ci/dist-budget.json'),
+      `${JSON.stringify({ indexHtmlMaxBytes: ceiling, history: ['x'] }, null, 2)}\n`,
+    );
+  };
+
+  it('com o dist-budget.json e o distBudget.mjs no checkout: usa o teto do JSON', () => {
+    const r = runStep(withJson(JSON_CEILING));
+    expect(r.status).toBe(0);
+    expect(r.summary).toContain(`${SIZE} bytes (0 KiB) de ${JSON_CEILING} bytes`);
+    expect(r.summary).toContain(`Margem: ${JSON_CEILING - SIZE} bytes`);
+  });
+
+  it('com o JSON, acima do teto: sai com 1 e o ::error de sempre', () => {
+    const r = runStep(withJson(SIZE - 1));
+    expect(r.status).toBe(1);
+    expect(r.out).toContain(
+      `::error file=dist/index.html::${SIZE} bytes, acima do orçamento de ${SIZE - 1} bytes.`,
+    );
+  });
+
+  it('sem o JSON e com um ci.yml antigo (INDEX_HTML_MAX_BYTES: <n>): usa esse n', () => {
+    const r = runStep((dir) => {
+      mkdirSync(path.join(dir, '.github/workflows'), { recursive: true });
+      writeFileSync(
+        path.join(dir, '.github/workflows/ci.yml'),
+        'jobs:\n  build:\n    env:\n      # Orçamento.\n      INDEX_HTML_MAX_BYTES: 2500\n',
+      );
+    });
+    expect(r.status).toBe(0);
+    expect(r.summary).toContain(`${SIZE} bytes (0 KiB) de 2500 bytes`);
+  });
+
+  it('sem o JSON e sem o ci.yml antigo: sai com 1 e o ::error de teto não encontrado', () => {
+    const r = runStep(() => undefined);
+    expect(r.status).toBe(1);
+    expect(r.out).toContain(
+      '::error file=dist/index.html::Teto do orçamento não encontrado',
+    );
+  });
+
+  it('com o JSON inválido: sai com 1 e o ::error de teto não encontrado', () => {
+    const r = runStep((dir) => {
+      withJson(JSON_CEILING)(dir);
+      writeFileSync(path.join(dir, 'scripts/ci/dist-budget.json'), '{}');
+    });
+    expect(r.status).toBe(1);
+    expect(r.out).toContain(
+      '::error file=dist/index.html::Teto do orçamento não encontrado',
     );
   });
 });

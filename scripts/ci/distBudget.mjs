@@ -1,6 +1,9 @@
-// Subida automática do teto do `dist/index.html` (etapa #1324, decisões 6, 8 e 9). Só Node, sem
-// dependências.
-//   raise --ci <ci.yml> --size <bytes> --main-size <bytes> --review-ceiling <bytes>
+// Subida automática do teto do `dist/index.html` (etapa #1324, decisões 6, 8 e 9) e o teto num arquivo
+// de dados (etapa #1614, decisão 3). Só Node, sem dependências.
+//   ceiling [--budget <arquivo>]
+//     Imprime o `indexHtmlMaxBytes` do arquivo. É o que o passo "Tamanho do dist/index.html" do
+//     `ci.yml` chama. Arquivo inválido sai com 2 e a mensagem no stderr.
+//   raise --size <bytes> --main-size <bytes> --review-ceiling <bytes> [--budget <arquivo>]
 //         [--write [--epic <nome>] [--date <AAAA-MM-DD>]]
 //     Confere as condições numéricas e imprime uma linha:
 //       "sobe: <teto> → <teto novo> (excesso E, crescimento G, subidas desde a revisão S)"
@@ -8,8 +11,10 @@
 //       "nada a subir: ..." (o tamanho já cabe no teto)
 //     A subida é de 16 KiB e só vale com excesso de até 14 KiB (14.336 bytes): assim sobram sempre
 //     pelo menos 2 KiB de margem depois dela (etapa #1384, decisão 10). Excesso maior chama o dono.
-//     Com `--write` e a subida, troca o `INDEX_HTML_MAX_BYTES` do `ci.yml` e acrescenta a frase ao
-//     comentário que o antecede. Nunca escreve quando chama o dono.
+//     Com `--write` e a subida, troca o `indexHtmlMaxBytes` do arquivo e acrescenta a frase ao fim do
+//     `history`. Nunca escreve quando chama o dono.
+// `--budget` tem como padrão `scripts/ci/dist-budget.json`, relativo à pasta corrente (a raiz do clone).
+// O `--ci <ci.yml>` saiu na etapa #1614 e é recusado.
 // As outras condições da decisão 6 (o tamanho é a única falha do PR) o chamador confere antes.
 import { readFileSync, writeFileSync } from 'node:fs';
 import process from 'node:process';
@@ -27,7 +32,8 @@ export const MAX_GROWTH = 32 * KIB;
 /** Soma máxima das subidas automáticas desde a última revisão do dono. */
 export const MAX_SINCE_REVIEW = 64 * KIB;
 
-const BUDGET_LINE = /^( *)INDEX_HTML_MAX_BYTES: (\d+)$/m;
+/** Arquivo do teto, relativo à pasta corrente. */
+export const DEFAULT_BUDGET = 'scripts/ci/dist-budget.json';
 
 /** `1933312` → `1.933.312`. */
 function grouped(n) {
@@ -77,29 +83,39 @@ function kib(bytes) {
   return `${grouped(int)},${frac}`;
 }
 
-/** Devolve o texto do `ci.yml` com o teto novo e a frase no comentário da linha anterior. */
-export function applyRaise(yaml, d, { epic, date }) {
-  const match = BUDGET_LINE.exec(yaml);
-  if (!match) throw new Error('ci.yml sem INDEX_HTML_MAX_BYTES.');
-  const current = Number(match[2]);
-  if (current !== d.ceiling) {
-    throw new Error(`O ci.yml tem teto ${current}, não ${d.ceiling}.`);
-  }
-  const sentence = ` Subido para ${grouped(d.next)} (${kib(d.next)} KiB) pela regra do orçamento (${date}, épico \`${epic}\`): excesso de ${d.excess} bytes, crescimento de ${d.growth} bytes sobre a \`main\`.`;
-  const lines = yaml.split('\n');
-  const at = lines.findIndex((l) => BUDGET_LINE.test(l));
-  const prev = lines[at - 1] ?? '';
-  if (!/^ *#/.test(prev)) {
+/** Lê e valida o arquivo do teto: `{ indexHtmlMaxBytes: <inteiro positivo>, history: string[] }`. */
+export function loadBudget(file) {
+  let data;
+  try {
+    data = JSON.parse(readFileSync(file, 'utf8'));
+  } catch (e) {
     throw new Error(
-      'A linha antes do INDEX_HTML_MAX_BYTES não é o comentário do orçamento.',
+      `${file}: não foi possível ler o arquivo do teto (${e instanceof Error ? e.message : String(e)}).`,
+      { cause: e },
     );
   }
-  lines[at - 1] = prev.trimEnd() + sentence;
-  lines[at] = `${match[1]}INDEX_HTML_MAX_BYTES: ${d.next}`;
-  return lines.join('\n');
+  const ceiling = data?.indexHtmlMaxBytes;
+  if (!Number.isInteger(ceiling) || ceiling <= 0) {
+    throw new Error(
+      `${file}: indexHtmlMaxBytes precisa ser um número inteiro positivo de bytes.`,
+    );
+  }
+  if (!Array.isArray(data.history) || !data.history.every((h) => typeof h === 'string')) {
+    throw new Error(`${file}: history precisa ser uma lista de frases (strings).`);
+  }
+  return data;
 }
 
-const VALUE_FLAGS = ['ci', 'size', 'main-size', 'review-ceiling', 'epic', 'date'];
+/** Devolve os dados com o teto novo e a frase da subida no fim do `history`. */
+export function applyRaise(data, d, { epic, date }) {
+  if (data.indexHtmlMaxBytes !== d.ceiling) {
+    throw new Error(`O arquivo tem teto ${data.indexHtmlMaxBytes}, não ${d.ceiling}.`);
+  }
+  const sentence = `Subido para ${grouped(d.next)} (${kib(d.next)} KiB) pela regra do orçamento (${date}, épico \`${epic}\`): excesso de ${d.excess} bytes, crescimento de ${d.growth} bytes sobre a \`main\`.`;
+  return { ...data, indexHtmlMaxBytes: d.next, history: [...data.history, sentence] };
+}
+
+const VALUE_FLAGS = ['budget', 'size', 'main-size', 'review-ceiling', 'epic', 'date'];
 
 function parseArgs(argv) {
   const out = { _: [] };
@@ -113,6 +129,11 @@ function parseArgs(argv) {
     if (key === 'write') {
       out.write = true;
       continue;
+    }
+    if (key === 'ci') {
+      throw new Error(
+        `--ci saiu na etapa #1614: o teto fica em ${DEFAULT_BUDGET} (use --budget <arquivo> ou omita)`,
+      );
     }
     if (!VALUE_FLAGS.includes(key)) throw new Error(`Flag desconhecida: ${a}.`);
     const value = argv[++i];
@@ -132,19 +153,18 @@ function intArg(args, name) {
   return Number(raw);
 }
 
+const USAGE =
+  'Uso: distBudget.mjs ceiling [--budget <arquivo>] | distBudget.mjs raise --size <bytes> --main-size <bytes> --review-ceiling <bytes> [--budget <arquivo>] [--write --epic <nome> [--date <AAAA-MM-DD>]]';
+
 export function main(argv) {
   const args = parseArgs(argv);
-  if (args._[0] !== 'raise') {
-    throw new Error(
-      'Uso: distBudget.mjs raise --ci <ci.yml> --size <bytes> --main-size <bytes> --review-ceiling <bytes> [--write --epic <nome> [--date <AAAA-MM-DD>]]',
-    );
-  }
-  if (!args.ci) throw new Error('--ci precisa do caminho do ci.yml.');
-  const yaml = readFileSync(args.ci, 'utf8');
-  const ceilingMatch = BUDGET_LINE.exec(yaml);
-  if (!ceilingMatch) throw new Error('ci.yml sem INDEX_HTML_MAX_BYTES.');
+  const command = args._[0];
+  if (command !== 'raise' && command !== 'ceiling') throw new Error(USAGE);
+  const file = args.budget ?? DEFAULT_BUDGET;
+  const data = loadBudget(file);
+  if (command === 'ceiling') return String(data.indexHtmlMaxBytes);
   const d = decide({
-    ceiling: Number(ceilingMatch[2]),
+    ceiling: data.indexHtmlMaxBytes,
     size: intArg(args, 'size'),
     mainSize: intArg(args, 'main-size'),
     reviewCeiling: intArg(args, 'review-ceiling'),
@@ -152,7 +172,10 @@ export function main(argv) {
   if (args.write && d.action === 'raise') {
     if (!args.epic) throw new Error('--write precisa de --epic <nome>.');
     const date = args.date ?? new Date().toISOString().slice(0, 10);
-    writeFileSync(args.ci, applyRaise(yaml, d, { epic: args.epic, date }));
+    const next = applyRaise(data, d, { epic: args.epic, date });
+    // O texto que o Prettier deixa para JSON enquanto o `history` tem frases longas (o array não cabe
+    // numa linha); `tests/tooling/distBudget.test.ts` confere.
+    writeFileSync(file, `${JSON.stringify(next, null, 2)}\n`);
   }
   return describeDecision(d);
 }
