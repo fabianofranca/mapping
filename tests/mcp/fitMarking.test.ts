@@ -33,7 +33,6 @@ import {
   applyAcceptedOnDisk,
   ok,
   propose,
-  readProject,
   readProposal,
   reviewDecide,
 } from './proposalSupport';
