@@ -138,6 +138,11 @@ function parseArgs(argv) {
       out.write = true;
       continue;
     }
+    if (key === 'ci') {
+      throw new Error(
+        `--ci saiu na etapa #1614: o teto fica em ${DEFAULT_BUDGET} (use --budget <arquivo> ou omita)`,
+      );
+    }
     if (!VALUE_FLAGS.includes(key)) throw new Error(`Flag desconhecida: ${a}.`);
     const value = argv[++i];
     if (value === undefined || value.startsWith('--')) {
@@ -163,11 +168,6 @@ export function main(argv) {
   const args = parseArgs(argv);
   const command = args._[0];
   if (command !== 'raise' && command !== 'ceiling') throw new Error(USAGE);
-  if (args.ci !== undefined) {
-    throw new Error(
-      `--ci saiu na etapa #1614: o teto fica em ${DEFAULT_BUDGET} (use --budget <arquivo> ou omita)`,
-    );
-  }
   const file = args.budget ?? DEFAULT_BUDGET;
   const data = loadBudget(file);
   if (command === 'ceiling') return String(data.indexHtmlMaxBytes);
@@ -181,7 +181,8 @@ export function main(argv) {
     if (!args.epic) throw new Error('--write precisa de --epic <nome>.');
     const date = args.date ?? new Date().toISOString().slice(0, 10);
     const next = applyRaise(data, d, { epic: args.epic, date });
-    // O mesmo texto que o Prettier deixa para JSON (`tests/tooling/distBudget.test.ts` confere).
+    // O texto que o Prettier deixa para JSON enquanto o `history` tem frases longas (o array não cabe
+    // numa linha); `tests/tooling/distBudget.test.ts` confere.
     writeFileSync(file, `${JSON.stringify(next, null, 2)}\n`);
   }
   return describeDecision(d);

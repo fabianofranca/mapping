@@ -192,6 +192,12 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     expect(r.err).toContain('scripts/ci/dist-budget.json');
   });
 
+  it('--ci sem valor também sai com 2 e a mensagem da etapa #1614', () => {
+    const r = run(['raise', '--ci', '--size', '1']);
+    expect(r.status).toBe(2);
+    expect(r.err).toContain('--ci saiu na etapa #1614');
+  });
+
   it('sem --budget, o raise lê o scripts/ci/dist-budget.json da pasta corrente', () => {
     const sub = path.join(dir, 'raiz');
     execFileSync('mkdir', ['-p', path.join(sub, 'scripts/ci')]);
