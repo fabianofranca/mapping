@@ -1,4 +1,4 @@
-# CR noturno sem repetição — [Não lançado] (épico `epic/cr-noturno`)
+# CR noturno sem repetição — 2026-11-11 (épico `epic/cr-noturno`)
 
 ## Pendências
 
