@@ -2445,7 +2445,7 @@ const CLI_HELP = [
   ],
   [
     'passo <item…> [--guia=<arquivo>]',
-    'imprime do guia da rodada (<APOIO>/guia.md) o roteiro (R12), um passo (R12.4) ou uma faixa (R12.1-R12.8), sem abrir o Chrome; passa de 25 mil caracteres, corta e diz como continuar',
+    'imprime do guia da rodada (<APOIO>/guia.md) o roteiro (R12), um passo (R12.4) ou uma faixa (R12.1-R12.8), sem abrir o Chrome; item que o guia da rodada não tem sai do docs/TESTING.md, com a primeira linha dizendo; passa de 25 mil caracteres, corta e diz como continuar',
   ],
   [
     'secao [<chave…>] [--guia=<arquivo>]',
@@ -2502,7 +2502,7 @@ function runPasso(args) {
     file = path.join(apoioDir, 'guia.md');
   }
   try {
-    console.log(guideExcerpt(fs.readFileSync(file, 'utf8'), items));
+    console.log(guideExcerpt(fs.readFileSync(file, 'utf8'), items, readTestingGuide()));
   } catch (error) {
     console.error(
       error.code === 'ENOENT'
@@ -2510,6 +2510,22 @@ function runPasso(args) {
         : error.message,
     );
     process.exitCode = 2;
+  }
+}
+
+/** O `docs/TESTING.md` do clone (ao lado do `scripts/`), ou `undefined`: o `passo` cai nele para item fora do guia da rodada. */
+function readTestingGuide() {
+  const file = path.join(
+    path.dirname(fileURLToPath(import.meta.url)),
+    '..',
+    '..',
+    'docs',
+    'TESTING.md',
+  );
+  try {
+    return fs.readFileSync(file, 'utf8');
+  } catch {
+    return undefined;
   }
 }
 
