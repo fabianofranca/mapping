@@ -449,3 +449,33 @@ describe('docs: o effort do create_session (FM3, decisão 6)', () => {
     expect(skill).not.toMatch(/só aceitaria o modelo/);
   });
 });
+
+describe('painel.py cost e upgrade (achados da revisão do fechamento)', () => {
+  it('cost de sessão nova (sem created) entra em costs --desde pela hora do custo', () => {
+    runAt('2026-11-11T10:00:00Z', 'cost', dir, 's1', 'usd=1', 'ctx=10', 'kind=fase');
+    const out = run('costs', dir, '--desde', '2026-11-11T00:00:00Z');
+    expect(out).toMatch(/1[,.]00/);
+  });
+
+  it('cost guarda a issue normalizada (sem espaços)', () => {
+    runAt(
+      '2026-11-11T10:00:00Z',
+      'cost',
+      dir,
+      's1',
+      'usd=1',
+      'ctx=10',
+      'kind=fase',
+      'issue= #10 ',
+    );
+    expect(sessions()[0]!.issue).toBe('#10');
+  });
+
+  it('upgrade sem mudança dentro do apply não imprime alterados: duas vezes', () => {
+    const r = spawnSync('python3', [SCRIPT, 'apply', dir, '-'], {
+      encoding: 'utf8',
+      input: 'upgrade\nlog "x"\n',
+    });
+    expect(r.stdout.match(/alterados:/g)).toHaveLength(1);
+  });
+});

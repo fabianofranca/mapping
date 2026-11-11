@@ -458,7 +458,7 @@ def cmd_cost(a):
     if "kind" in pairs:
         validate_choice("kind", pairs["kind"], SESSION_KINDS)
     if "issue" in pairs:
-        norm_issue(pairs["issue"])
+        pairs["issue"] = norm_issue(pairs["issue"])
     m = s.get("meta")[0]
     known = any(e.get("id") == a.session for e in m.get("sessions", []))
     if not known and "kind" not in pairs:
@@ -483,7 +483,8 @@ def costed(meta, since=None):
     for e in meta.get("sessions", []):
         if not e.get("cost"):
             continue
-        if since and not (e.get("created") and e["created"] >= since):
+        started = e.get("created") or e["cost"].get("at")  # sem `created`, vale a hora do custo
+        if since and not (started and started >= since):
             continue
         out.append(e)
     return out
@@ -739,7 +740,8 @@ def cmd_upgrade(a):
     s = open_session(a.dir)
     changed = [r["issue"] for r in s.get("queue") if convert_hold(r)]
     if not changed:
-        print("alterados: nenhum")
+        if BATCH is None:  # dentro do `apply` quem imprime `alterados:` é o fim do lote
+            print("alterados: nenhum")
         return
     s.get("log").append({"at": now(), "text": "upgrade: " + ", ".join(
         f"{i} '{HOLD_EMPTY_QUEUE}' → exclusive=sim" for i in changed)})
@@ -873,10 +875,11 @@ def cmd_apply(a):
         raise Erro("o lote não tem nenhum comando")
     BATCH = Sessao(a.dir)
     BATCH.deferred = True
+    parser = build_parser()
     try:
         for n, argv in parsed:
             try:
-                sub = build_parser().parse_args(argv)
+                sub = parser.parse_args(argv)
                 sub.fn(sub)
             except Erro as e:
                 raise Erro(e if str(e).startswith(f"linha {n}:") else f"linha {n}: {e}")

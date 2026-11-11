@@ -1,4 +1,4 @@
-# Fila medida e mais barata — [Não lançado] (épico `epic/fila-medida`)
+# Fila medida e mais barata — 2026-11-11 (épico `epic/fila-medida`)
 
 ## Pendências
 
