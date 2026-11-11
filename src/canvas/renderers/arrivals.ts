@@ -2,6 +2,8 @@
 // à Principal e a faixa tracejada "Área de chegada" com o título e o subtítulo. No molde do
 // `CommentPinRenderer`: um pool de nós por raiz, tamanho em px de tela (escala inversa do zoom) e os
 // nós que sobram destruídos. Cores e fonte só dos tokens; o desenho é do quadro de sempre.
+// A pílula do selo é invertida, como a dica: caixa `text` e rótulo `surface` (escura no tema claro,
+// clara no escuro), para aparecer sobre o fundo do canvas nos dois temas (TE1).
 import Konva from 'konva/lib/Core';
 import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
 import { Text as KonvaText } from 'konva/lib/shapes/Text';
@@ -213,7 +215,7 @@ export class ArrivalRenderer {
     const text = t('perspective.canvas.cameFrom', { name: badge.name });
     // A fonte do token entra antes de medir: o primeiro desenho mediria com a fonte padrão.
     node.label.setAttrs({
-      ...textAttrs(tokens, tokens.line, tokens.type.name.weight),
+      ...textAttrs(tokens, tokens.surface, tokens.type.name.weight),
       text,
     });
     // O texto medido pode passar da estimativa (letras largas): o selo cresce com ele.
@@ -237,12 +239,12 @@ export class ArrivalRenderer {
       width,
       height: tokens.arrival.height,
       cornerRadius: BADGE_RADIUS,
-      fill: tokens.badge,
+      fill: tokens.text,
       stroke: tokens.halo,
       strokeWidth: HALO_WIDTH,
     });
     node.label.setAttrs({
-      ...textAttrs(tokens, tokens.line, tokens.type.name.weight),
+      ...textAttrs(tokens, tokens.surface, tokens.type.name.weight),
       width,
       height: tokens.arrival.height,
       text,

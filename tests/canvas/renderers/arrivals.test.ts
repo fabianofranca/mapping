@@ -47,8 +47,9 @@ describe('ArrivalRenderer', () => {
     expect(badge?.label.text()).toBe(
       t('perspective.canvas.cameFrom', { name: 'Frente' }),
     );
-    expect(badge?.box.fill()).toBe(TOKENS.badge);
-    expect(badge?.label.fill()).toBe(TOKENS.line);
+    // Pílula invertida, como a dica: clara no escuro, escura no claro (TE1, decisão 1).
+    expect(badge?.box.fill()).toBe(TOKENS.text);
+    expect(badge?.label.fill()).toBe(TOKENS.surface);
   });
 
   it('o primeiro desenho do selo mede o texto com a fonte do token', () => {

@@ -18,6 +18,26 @@ function dateFormat(lang: string): Intl.DateTimeFormat {
   return format;
 }
 
+/** Data e hora com segundos, só para a descrição do leitor de tela (TE1): distingue usos do mesmo minuto. */
+const fullDateFormats = new Map<string, Intl.DateTimeFormat>();
+
+function fullDateFormat(lang: string): Intl.DateTimeFormat {
+  let format = fullDateFormats.get(lang);
+  if (!format) {
+    format = new Intl.DateTimeFormat(lang, { dateStyle: 'short', timeStyle: 'medium' });
+    fullDateFormats.set(lang, format);
+  }
+  return format;
+}
+
+function formatFullDate(iso: string): string {
+  try {
+    return fullDateFormat(locale.value).format(new Date(iso));
+  } catch {
+    return iso;
+  }
+}
+
 function formatDate(iso: string): string {
   try {
     return dateFormat(locale.value).format(new Date(iso));
@@ -101,7 +121,7 @@ function ProjectRow({
   const describedBy = [
     rowDomId(project, 'origin'),
     ...(showFolder ? [rowDomId(project, 'folder')] : []),
-    rowDomId(project, 'used'),
+    rowDomId(project, 'usedFull'),
   ].join(' ');
   const name = { name: project.name };
   return (
@@ -120,7 +140,12 @@ function ProjectRow({
           {t(project.kind === 'folder' ? 'status.targetFolder' : 'status.targetLocal')}
         </span>
       </td>
-      <td id={rowDomId(project, 'used')}>{formatDate(project.usedAt)}</td>
+      <td>
+        {formatDate(project.usedAt)}
+        <span class="visually-hidden" id={rowDomId(project, 'usedFull')}>
+          {formatFullDate(project.usedAt)}
+        </span>
+      </td>
       <td>
         <div class="project-actions">
           <Button
