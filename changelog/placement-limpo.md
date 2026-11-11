@@ -1,4 +1,4 @@
-# Placement limpo — [Não lançado] (épico `epic/placement-limpo`, PR #0, MCP 0.35.1, schema v18)
+# Placement limpo — [Não lançado] (épico `epic/placement-limpo`, PR #1650, MCP 0.35.1, schema v18)
 
 ## Corrigido
 
