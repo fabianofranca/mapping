@@ -1,4 +1,5 @@
 import { isSameAspect, scaleRect } from './containers';
+import { snapPlacement } from './geometry';
 import { setProjectDrawingMode } from './drawingMode';
 import { clearArrowRoutes, settleHierarchy } from './hierarchySettle';
 import { reconcilePerspectives } from './perspectiveReconcile';
@@ -205,7 +206,8 @@ function withField(
           height: to.height as number,
         };
       }
-      if (field === 'placement') return { ...i, placement: to as unknown as Placement };
+      if (field === 'placement')
+        return { ...i, placement: snapPlacement(to as unknown as Placement) };
       if (field === 'source')
         return { ...i, source: to as unknown as ExternalSource | null };
       return { ...i, [field]: to };

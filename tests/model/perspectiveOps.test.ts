@@ -329,6 +329,13 @@ describe('mover na perspectiva', () => {
     expect(code(() => moveRootsInPerspective(p, 'zzz', []))).toBe('not-found');
   });
 
+  it('a posição gravada tem no máximo 6 casas (o y do gesto, sem cauda de ponto flutuante)', () => {
+    const next = moveRootsInPerspective(p, 'P', [
+      { root: 'D', dx: 0.1 + 0.2, dy: 250.2979740000001 },
+    ]);
+    expect(next.perspectives[0]?.items[0]).toEqual({ root: 'D', x: 10.3, y: 270.297974 });
+  });
+
   it('deslocamento zero devolve a mesma perspectiva; a versão valor também', () => {
     const target = p.perspectives[0] as Perspective;
     expect(moveRoots(p, target, [{ root: 'D', dx: 0, dy: 0 }])).toBe(target);

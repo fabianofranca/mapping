@@ -9,9 +9,9 @@ import {
   imagePixelRect,
   isIntegerRect,
   rectsOverlap,
-  slideToTouch,
   snapNearInteger,
   snapPlacement,
+  touchDelta,
   translateRect,
 } from './geometry';
 import { ancestorsOf, descendantsOf } from './hierarchy';
@@ -137,14 +137,16 @@ export function canMoveItems(p: Project, items: readonly ItemRef[]): boolean {
  * e vale também para os containers: o retângulo da marcação é inteiro e o do container não,
  * então cada um com o seu deslocamento deixaria um container colado na borda da marcação
  * poucas frações para fora dela e o assentar o tiraria do pertencimento. Sem marcação do canvas
- * o container anda pelo `dx`, `dy` exatos (arrasto suave com zoom); só o ruído de ponto
- * flutuante perto de um inteiro some do `placement` (`snapNearInteger`), para ir e voltar não
- * deixar `-2.27e-13` no `mapping.json`.
+ * o container anda pelo `dx`, `dy` exatos (arrasto suave com zoom); o `placement` passa por
+ * `snapPlacement` (perto de um inteiro vira o inteiro; senão x e y ficam com 6 casas e a escala
+ * com 12 algarismos), para ir e voltar não deixar cauda de ponto flutuante no `mapping.json`.
  *
  * Tudo ou nada: com qualquer item de `movingItems` travado falha com `locked`; um container
  * movido que passe a sobrepor um container que NÃO se move falha com `image-overlap` (os
  * movidos mantêm a posição relativa entre si e não são testados entre si). Deslocamento zero,
- * ou nada para mover, devolve `p` como está, sem conferir a trava. No fim assenta uma só vez,
+ * ou nada para mover, devolve `p` como está, **sem conferir a trava** (decisão do dono, etapa
+ * #1190): o encosto que zera o deslocamento é um no-op mesmo com item trancado, e a interface não
+ * começa esse arrasto (intenção `locked`); o MCP não usa esta função. No fim assenta uma só vez,
  * sobre o resultado inteiro (salvo `settle: false`, das prévias de gesto): é o assentar que
  * refaz o `parentId` e que faz uma marcação do canvas que acabou inteira dentro de um container
  * passar a ser dele.
@@ -219,7 +221,10 @@ function hasCanvasMarking(p: Project, moving: readonly ItemRef[]): boolean {
  * deslocamento que cabe volta como está. É o que as prévias e o fim do gesto passam a `moveItems`,
  * que continua recusando a sobreposição com `image-overlap`. Com marcação do canvas na seleção o
  * deslocamento do canvas é inteiro (como em `moveItems`) e o limite é o inteiro de menor módulo
- * (sobra menos de 1 unidade com vizinho fracionário, sem sobrepor).
+ * (sobra menos de 1 unidade com vizinho fracionário, sem sobrepor). Só os containers que andam
+ * entram no cálculo, contra os que ficam (`touchDelta`, que filtra os que a caixa varrida nem
+ * alcança). O encosto que zera o deslocamento é um no-op: `moveItems` devolve o projeto como está,
+ * mesmo com item trancado, e a interface não começa esse arrasto (intenção `locked`).
  */
 export function limitItemsMove(
   p: Project,
@@ -230,19 +235,17 @@ export function limitItemsMove(
   const moving = movingItems(p, items);
   const ids = new Set(moving.filter((m) => m.kind === 'image').map((m) => m.id));
   if (ids.size === 0 || (dx === 0 && dy === 0)) return { dx, dy };
-  const sharesCanvasDelta = hasCanvasMarking(p, moving);
-  const [wantedX, wantedY] = sharesCanvasDelta
-    ? [Math.round(dx), Math.round(dy)]
-    : [dx, dy];
-  const footprint = (c: ProjectContainer) => imageCanvasRect(c, c.placement);
-  const limited = slideToTouch(
-    p.containers.filter((c) => ids.has(c.id)).map(footprint),
-    p.containers.filter((c) => !ids.has(c.id)).map(footprint),
-    wantedX,
-    wantedY,
-  );
-  if (!sharesCanvasDelta) return limited;
-  return { dx: Math.trunc(limited.dx), dy: Math.trunc(limited.dy) };
+  const { containers } = projectIndex(p);
+  const walking: Rect[] = [];
+  for (const id of ids) {
+    const c = containers.get(id);
+    if (c) walking.push(imageCanvasRect(c, c.placement));
+  }
+  const fixed: Rect[] = [];
+  for (const c of p.containers) {
+    if (!ids.has(c.id)) fixed.push(imageCanvasRect(c, c.placement));
+  }
+  return touchDelta(walking, fixed, dx, dy, hasCanvasMarking(p, moving));
 }
 
 /**

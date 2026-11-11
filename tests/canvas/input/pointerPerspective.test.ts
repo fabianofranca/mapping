@@ -21,11 +21,12 @@ function setup(project: Project, perspectiveOpen: boolean) {
   const container = document.createElement('div');
   document.body.append(container);
   const viewport = new ViewportController(container, () => editor.store.project.peek());
+  const state = createInteractionState();
   const input = new PointerInput({
     container,
     ...editor,
     viewport,
-    state: createInteractionState(),
+    state,
     spaceDown: () => false,
     perspectiveOpen: () => perspectiveOpen,
   });
@@ -66,6 +67,9 @@ function setup(project: Project, perspectiveOpen: boolean) {
   const index = () => projectIndex(editor.store.project.peek() as Project);
   return {
     ...editor,
+    viewport,
+    state,
+    fire,
     drag,
     doubleClick,
     index,
@@ -157,5 +161,33 @@ describe.each([
     const marking = s2.index().markings.get(id);
     expect(marking?.containerId ?? null).toBe(open ? null : 'I2');
     s2.cleanup();
+  });
+});
+
+describe.each([
+  { open: false, label: 'na Principal' },
+  { open: true, label: 'com perspectiva aberta' },
+])('arrasto só vertical do container $label', ({ open }) => {
+  it('não regrava o x (zoom fracionário, bit a bit)', () => {
+    const base = canvasProject();
+    const x0 = 3300.0000513292603;
+    const project: Project = {
+      ...base,
+      containers: base.containers.map((c) =>
+        c.id === 'I1' ? { ...c, placement: { ...c.placement, x: x0 } } : c,
+      ),
+    };
+    const s = setup(project, open);
+    s.viewport.viewport.value = { x: 0, y: 78.9, scale: 0.557 };
+    s.ui.selection.value = { kind: 'image', id: 'I1' };
+    // 1900 em tela vira 3411.131… no canvas: `(x0 + c) - c` ≠ `x0` (a fórmula antiga regravava).
+    const sx = 1900;
+    const sy = 700 * 0.557 + 78.9;
+    s.fire('pointerdown', sx, sy);
+    s.fire('pointermove', sx, sy + 40);
+    expect(s.state.preview.value?.placement.x).toBe(x0);
+    s.fire('pointerup', sx, sy + 40);
+    expect(s.index().containers.get('I1')?.placement.x).toBe(Number(x0.toFixed(6)));
+    s.cleanup();
   });
 });
