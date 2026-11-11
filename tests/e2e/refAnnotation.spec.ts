@@ -383,6 +383,24 @@ for (const width of [1280, 900]) {
     expect(broken.lines, 'quebra em poucas linhas').toBeLessThanOrEqual(8);
     expect(broken.overlap, 'âncora e ✕ sobrepostos').toBe(0);
     expect(broken.cut, 'rótulo cortado').toBeLessThanOrEqual(0.5);
+    // TE1 (#1477): a quebra é entre palavras; cada palavra de "(referência quebrada)" fica numa
+    // linha só (um Range sobre a palavra tem um retângulo por linha que ela ocupa).
+    const split = await page.evaluate(() => {
+      const text = document.querySelector<HTMLElement>(
+        '.ref-cell .ref-control.is-broken .ref-control-text',
+      )!;
+      const node = text.firstChild!;
+      const words = [...(node.textContent ?? '').matchAll(/\S+/g)];
+      return words
+        .map((m) => {
+          const range = document.createRange();
+          range.setStart(node, m.index);
+          range.setEnd(node, m.index + m[0].length);
+          return { word: m[0], lines: range.getClientRects().length };
+        })
+        .filter((w) => w.lines > 1);
+    });
+    expect(split, 'palavra partida entre linhas').toEqual([]);
     for (const theme of ['light', 'dark'] as const) {
       await page.evaluate(
         (th) => document.documentElement.setAttribute('data-theme', th),
@@ -392,5 +410,8 @@ for (const width of [1280, 900]) {
       expect(g.scroll, `rolagem horizontal (${theme})`).toBeLessThanOrEqual(0);
       expect(g.outside, `fora da tabela (${theme})`).toBeLessThanOrEqual(0.5);
     }
+    // Volta com Ctrl+Z: o alvo reaparece e a célula deixa de ser quebrada.
+    await page.keyboard.press('Control+Z');
+    await expect(page.locator('.ref-cell .ref-control.is-broken')).toHaveCount(0);
   });
 }
