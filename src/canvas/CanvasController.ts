@@ -10,6 +10,7 @@ import {
   isMarkingGeometryLocked,
   type Placement,
   type Project,
+  type ProjectContainer,
 } from '../model';
 import type { EditorDerived } from '../store/derived';
 import type { DisplayImages } from '../store/displayImages';
@@ -22,6 +23,11 @@ import { projectInPerspective } from '../store/perspectiveShown';
 import { textMeasurer } from '../store/textMeasure';
 import { selectionCanvasBounds } from './selectionBounds';
 import { formatSelectionBox, formatViewport, selectionScreenBox } from './selectionBox';
+import {
+  formatArrowHandles,
+  formatContainerBoxes,
+  formatSelection,
+} from './hostAttributes';
 import { composingAnchor, selectedThreadId } from '../store/threadUi';
 import {
   itemsOf,
@@ -70,13 +76,19 @@ import { ReviewRenderer } from './renderers/review';
 import { pinHit, pinPlaces, pointCanvas, type PinPlace } from './commentPins';
 import { proposedDisplay, reviewMarks, type ReviewCanvas } from './reviewMarks';
 import { readCanvasTokens, watchTheme, type CanvasTokens } from './theme';
-import { clampZoom, type Point } from './viewport';
+import { clampZoom, type Point, type Viewport } from './viewport';
 import { ViewportController } from './viewportController';
 import { sameCursor, type CanvasViewState } from './viewState';
 
 export type { DropTarget } from './frame';
 
 /** Mesmas imagens com as mesmas posições (por referência): zoom e pan não mudam isso. */
+/** Escreve ou apaga (valor nulo) um `data-*` do host. */
+function setDataAttr(host: HTMLElement, key: string, value: string | null): void {
+  if (value === null) delete host.dataset[key];
+  else host.dataset[key] = value;
+}
+
 function samePlacements(
   a: ReadonlyMap<string, Placement>,
   b: ReadonlyMap<string, Placement>,
@@ -472,6 +484,10 @@ export class CanvasController {
   private countedProject: Project | null = null;
   private canvasMarkingCount = 0;
   private published = '';
+  /** `data-container-boxes`: texto guardado, array `containers` de que saiu e versão do texto. */
+  private boxesText: string | null = null;
+  private boxesContainers: readonly ProjectContainer[] | null = null;
+  private boxesVersion = 0;
   private readonly cleanups: (() => void)[] = [];
 
   constructor(options: CanvasControllerOptions) {
@@ -962,36 +978,69 @@ export class CanvasController {
       this.overlay.render(frame, this.placements, this.markings.headers);
     }
     this.drawDirtyLayers(moved);
-    // Para os testes e2e esperarem o quadro, e não um tempo fixo: enquadramentos e
-    // imagens com bitmap já desenhados (o DOM só é tocado quando eles mudam).
+    this.refreshContainerBoxes(frame, placementsChanged);
+    this.publishHostAttributes(frame, v);
+  }
+
+  /**
+   * O texto do `data-container-boxes` (colocações desenhadas): só se refaz com outra colocação ou
+   * outro array `containers` no projeto desenhado (um container redimensionado muda a largura sem
+   * mudar a colocação); pan e zoom não passam por aqui. Cada texto novo sobe a versão.
+   */
+  private refreshContainerBoxes(frame: Frame, placementsChanged: boolean): void {
+    const containers = frame.project?.containers ?? null;
+    if (!placementsChanged && containers === this.boxesContainers) return;
+    this.boxesContainers = containers;
+    const text = containers ? formatContainerBoxes(containers, this.placements) : null;
+    if (text === this.boxesText) return;
+    this.boxesText = text;
+    this.boxesVersion += 1;
+  }
+
+  /** O texto do `data-arrow-handles`: só com uma seta desenhada como seleção primária. */
+  private arrowHandlesText(frame: Frame): string | null {
+    const selection = frame.selection;
+    if (selection?.kind !== 'arrow') return null;
+    const shape = frame.arrows.find((s) => s.arrow.id === selection.id);
+    return shape ? formatArrowHandles(shape, frame.viewport) : null;
+  }
+
+  /**
+   * Os atributos `data-*` do host (só leitura, para os testes e2e esperarem o quadro em vez de um
+   * tempo fixo): enquadramento, imagens com bitmap, contagens desenhadas, vista, caixa da
+   * seleção, `data-selection`, `data-arrow-handles` e `data-container-boxes`. O DOM só é tocado
+   * quando a chave `drawn` muda; o `data-container-boxes` entra nela só pela versão do texto.
+   */
+  private publishHostAttributes(frame: Frame, v: Viewport): void {
     const canvasMarkings = this.countCanvasMarkings(frame.project);
     const componentImages =
       this.componentLayer.imageCount + this.floatingLayer.imageCount;
     const pins = this.pinLayer.size;
     const pinStates = this.pinLayer.states.join(',');
-    // A vista e a caixa da seleção (px de tela, só leitura para os testes): pan e zoom as
-    // reescrevem sem recalcular dado do projeto, usando a vista e as colocações já prontas.
     const viewportText = formatViewport(v);
     const boxText = formatSelectionBox(
       selectionScreenBox(frame.project, frame.selection, this.placements, v),
     );
-    const drawn = `${this.view.fits}:${this.readyImages}:${this.drawnComponents}:${canvasMarkings}:${this.drawnArrows}:${this.markings.shown}:${componentImages}:${pins}:${pinStates}:${viewportText}:${boxText ?? ''}`;
-    if (drawn !== this.published) {
-      this.published = drawn;
-      const host = this.stage.container();
-      host.dataset.viewport = viewportText;
-      if (boxText === null) delete host.dataset.selectionBox;
-      else host.dataset.selectionBox = boxText;
-      host.dataset.fits = String(this.view.fits);
-      host.dataset.images = String(this.readyImages);
-      host.dataset.components = String(this.drawnComponents);
-      host.dataset.canvasMarkings = String(canvasMarkings);
-      host.dataset.arrows = String(this.drawnArrows);
-      host.dataset.drawnMarkings = String(this.markings.shown);
-      host.dataset.componentImages = String(componentImages);
-      host.dataset.pins = String(pins);
-      host.dataset.pinStates = pinStates;
-    }
+    const selectionText = formatSelection(frame.project, frame.selection);
+    const handlesText = this.arrowHandlesText(frame);
+    const drawn = `${this.view.fits}:${this.readyImages}:${this.drawnComponents}:${canvasMarkings}:${this.drawnArrows}:${this.markings.shown}:${componentImages}:${pins}:${pinStates}:${viewportText}:${boxText ?? ''}:${selectionText ?? ''}:${handlesText ?? ''}:${this.boxesVersion}`;
+    if (drawn === this.published) return;
+    this.published = drawn;
+    const host = this.stage.container();
+    host.dataset.viewport = viewportText;
+    setDataAttr(host, 'selectionBox', boxText);
+    setDataAttr(host, 'selection', selectionText);
+    setDataAttr(host, 'arrowHandles', handlesText);
+    setDataAttr(host, 'containerBoxes', this.boxesText);
+    host.dataset.fits = String(this.view.fits);
+    host.dataset.images = String(this.readyImages);
+    host.dataset.components = String(this.drawnComponents);
+    host.dataset.canvasMarkings = String(canvasMarkings);
+    host.dataset.arrows = String(this.drawnArrows);
+    host.dataset.drawnMarkings = String(this.markings.shown);
+    host.dataset.componentImages = String(componentImages);
+    host.dataset.pins = String(pins);
+    host.dataset.pinStates = pinStates;
   }
 
   /**
