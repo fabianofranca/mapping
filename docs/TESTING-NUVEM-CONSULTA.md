@@ -1,6 +1,48 @@
 # Consulta do testador — leitura sob demanda
 
-Trechos do prompt do testador ([`docs/TESTING-NUVEM.md`](TESTING-NUVEM.md)) que só alguns testadores leem. Cada seção tem uma chave do `node scripts/testing/cloud.mjs secao <chave>` (corte de 25.000 caracteres): `consulta.grupos`, `consulta.passada`, `consulta.regras` e `consulta.historico`. Os parágrafos vieram do prompt sem reescrita (etapa #1533, TE1).
+Trechos do prompt do testador ([`docs/TESTING-NUVEM.md`](TESTING-NUVEM.md)) que só alguns testadores leem. Cada seção tem uma chave do `node scripts/testing/cloud.mjs secao <chave>` (corte de 25.000 caracteres): `consulta.subagente`, `consulta.grupos`, `consulta.passada`, `consulta.regras` e `consulta.historico`. Os parágrafos vieram do prompt sem reescrita (etapa #1533, TE1).
+
+## Subagente por lote
+
+A sessão principal do testador não executa passos: entrega cada **lote** a um **subagente** (ferramenta `Agent`, o mesmo modelo da sessão, Sonnet) na mesma máquina, com o mesmo Chrome, o mesmo disco e o mesmo servidor do `cloud.mjs run` (com o `ctx`), e **um lote por vez, nunca dois ao mesmo tempo**, na ordem da lista da rodada (etapa [#1639](https://github.com/fabianofranca/mapping/issues/1639)). As cadeias (`principal`, `loja`, `telas`) ficam intactas, porque a pasta e o `ctx` são os mesmos.
+
+**Os lotes.** O **R0** (inteiro, ou só o R0.1 pela regra do modo) e a **seção 6** (repositório de teste e MCP) são lotes próprios; a **passada visual** é o lote `visual`; os roteiros da lista saem de `node scripts/testing/round-guide.mjs --faixas <lista sem o R0>`, que imprime uma linha por lote, na ordem do guia: o roteiro de até 20 passos é um lote (`R13`), e acima disso vêm faixas consecutivas de até 20 passos (`R25.1-R25.20`, `R25.21-R25.40`…); uma faixa pedida (`R6.3-R6.7`) é respeitada e só se parte acima de 20; o passo que o `passo` junta ao anterior (R22.6a com o R22.6) não se separa. Roteiros pequenos não se juntam.
+
+**Briefing.** A sessão principal preenche o modelo abaixo para cada lote e o passa como o prompt do subagente:
+
+```text
+Você executa o lote <lote> da rodada de teste da app Mapping, como subagente da sessão principal do testador. Não há dono para perguntar: o que impedir o lote vai para o relato.
+
+Dados do lote
+- Lote: <R25.21-R25.40 | R13 | R0 | R0.1 | secao6 | visual>
+- Pasta de trabalho: ~/mapping-testes/<AAAA-MM-DD>-<alvo>/ (o `apoio/` é <pasta>/apoio; as capturas vão para <pasta>/anexos/)
+- Pasta do projeto do roteiro: <pasta>/<nome> (a do `run`)
+- Modo: <dirigido | completo, bloco k de 5 | dirigido, grupo k de n | reteste>
+- Próximo número livre de achado: <k.n | n>
+
+O que ler, nesta ordem
+1. `docs/TESTING-NUVEM.md` inteiro e o `apoio/guia-base.md` inteiro (em pedaços abaixo de 25 mil tokens).
+2. `node scripts/testing/cloud.mjs passo <Rn> --preparo` (todo lote de roteiro, inclusive a primeira faixa) e depois os passos do lote em grupos de até 8, com `cloud.mjs passo <Rn.a>-<Rn.b>`; o esperado vem do trecho impresso, não da memória.
+3. As seções sob demanda com `cloud.mjs secao <chave>`, na hora que a linha delas na base indica.
+
+Como agir
+As regras de "Como agir", "Conferir e registrar" e "Nunca" do `docs/TESTING-NUVEM.md` valem para você como para a sessão principal: um `run` por grupo de até 8 passos, um `check` por esperado da Tela, o `state()` no fim para o Disco, a Reprodução de cada ❌ rodada duas vezes.
+
+O que gravar
+- Em `apoio/relato-<lote>.md`, no template da seção 10 do guia: as linhas da tabela de passos do lote (✅ seguidos sem observação em faixa de uma linha; ❌, "não executado (motivo)" e passos com observação em linha própria) e os achados, **já com o código final** (<k.n | n>, na ordem a partir do número livre), a severidade da escala do guia e a Reprodução de cada ❌.
+- As capturas e os anexos em `anexos/`.
+- No fim do arquivo, uma linha "Chamadas: passo <n>, secao <n>; guia.md lido por Read: sim|não", mais o que atrapalhou (passo ambíguo, contorno, `.mjs` próprio).
+
+O que não fazer
+Não poste nada no GitHub, não avise ninguém, não use `mark` (os `start` e `end` do roteiro são da sessão principal), não edite o `relato.md` nem nada no repositório.
+
+O que devolver (uma linha só)
+<lote>: N ✅, N ❌, N não executado; achados: <código severidade título curto…> ou nenhum; <caminho completo do arquivo>
+```
+
+**Montagem.** A sessão principal acrescenta cada `apoio/relato-<lote>.md` ao `relato.md` com `cat >>`, **sem abrir o arquivo**: os totais e os achados vêm da linha de retorno, e os códigos já chegam certos. O `mark(apoioDir, '<roteiro>', 'start' | 'end')` é dela: antes do primeiro lote do roteiro e depois do último. Para os anexos dos ❌ (as evidências no branch `evidencias` e o `mapping.json` em bloco de código), ela lê só o achado, pelo trecho do arquivo que o `relato-<lote>.md` indica.
+
+**O subagente que falha.** O subagente que volta sem terminar o lote (erro, ferramenta, limite) é trocado **uma vez** por um novo, com o mesmo briefing e o pedido de começar no passo seguinte ao último gravado no `relato-<lote>.md`. Se o segundo também falhar, o resto do lote fica "não executado (subagente falhou: <motivo>)", e o fato vai para "O que atrapalhou".
 
 ## Rodada dirigida em grupos
 

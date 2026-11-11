@@ -725,6 +725,7 @@ describe('round-guide.mjs: base obrigatória e secao (#1533, TE1)', () => {
   const GUIDE_KEYS = ['1', '2', '3', '5', '6', '7', 'A.seletores', 'B'];
   const ALL_KEYS = [
     ...GUIDE_KEYS,
+    'consulta.subagente',
     'consulta.grupos',
     'consulta.passada',
     'consulta.regras',
@@ -857,4 +858,203 @@ describe('passo R25: o preparo inteiro (etapa #1533, TE3)', () => {
       expect(out).not.toContain('… corte em 25.000 caracteres');
     });
   }
+});
+
+// Etapa #1639 (TC1, decisão 3): `--faixas` divide cada roteiro em lotes de até 20 passos para os subagentes.
+interface Faixa {
+  token: string;
+  steps: number;
+}
+interface FaixasModule {
+  FAIXA_LIMIT: number;
+  planFaixas: (md: string, roteiros: string[], o?: { limit?: number }) => Faixa[];
+  formatFaixas: (lotes: Faixa[]) => string;
+  guidePreparo: (guide: string, itens: string[], fallback?: string) => string;
+  buildRoundGuide: (md: string, r: string[], o?: { commit?: string }) => string;
+  guideExcerpt: (guide: string, itens: string[]) => string;
+}
+const loadFaixas = (): Promise<FaixasModule> =>
+  import('../../scripts/testing/round-guide.mjs') as unknown as Promise<FaixasModule>;
+
+describe('round-guide.mjs --faixas (#1639, TC1, decisão 3)', () => {
+  const porRoteiro = (lotes: Faixa[]): Record<string, number[]> => {
+    const out: Record<string, number[]> = {};
+    for (const l of lotes) (out[l.token.split('.')[0] ?? ''] ??= []).push(l.steps);
+    return out;
+  };
+
+  it('FAIXA_LIMIT é 20', async () => {
+    expect((await loadFaixas()).FAIXA_LIMIT).toBe(20);
+  });
+
+  it('o aceite: R25 em 5 lotes, R12 em 3, R17, R9 e R3 em 2, R13 inteiro; a soma é a dos passos do guia', async () => {
+    const { planFaixas } = await loadFaixas();
+    const roteiros = ['R25', 'R12', 'R3', 'R13', 'R17', 'R9'];
+    const lotes = planFaixas(GUIDE, roteiros);
+    const by = porRoteiro(lotes);
+    const g =
+      (await import('../../scripts/testing/round-guide.mjs')) as unknown as GroupsModule;
+    const passos = Object.fromEntries(
+      g.planGroups(GUIDE, roteiros).items.map((i) => [i.token, i.steps]),
+    );
+    const esperado = { R25: 5, R12: 3, R17: 2, R9: 2, R3: 2, R13: 1 } as const;
+    for (const [id, n] of Object.entries(esperado)) {
+      expect(by[id], id).toHaveLength(n);
+      expect(
+        by[id]?.reduce((a, b) => a + b, 0),
+        id,
+      ).toBe(passos[id]);
+    }
+    // O limite é 20 passos de base: os passos com letra (R12.11a…) não se separam do anterior
+    // (docs/TESTING-NUVEM.md, "as cadeias não se separam"), então um lote que termina numa
+    // cadeia dessas pode passar de 20 (R12.1-R12.11d tem 21).
+    for (const l of lotes) {
+      if (l.steps > 20) expect(l.token, l.token).toMatch(/-R\d+\.\d+[a-z]$/);
+    }
+  });
+
+  it('roteiro de até 20 passos é um lote com o token do roteiro; acima, faixas R<n>.<a>-R<n>.<b>', async () => {
+    const { planFaixas } = await loadFaixas();
+    const lotes = planFaixas(GUIDE, ['R13', 'R25']);
+    expect(lotes[0]?.token).toBe('R13');
+    expect(lotes[0]?.steps).toBeLessThanOrEqual(20);
+    expect(lotes[1]?.token).toBe('R25.1-R25.20');
+    expect(lotes[2]?.token).toBe('R25.21-R25.40');
+  });
+
+  it('as faixas cobrem os passos de cada roteiro, sem repetir nem pular', async () => {
+    const { planFaixas } = await loadFaixas();
+    for (const id of ['R25', 'R12', 'R22', 'R3', 'R9', 'R17']) {
+      const guide = (await loadFaixas()).buildRoundGuide(GUIDE, [id], {
+        commit: 'abc1234',
+      });
+      const inicio = guide.search(new RegExp(`^### ${id}\\b`, 'm'));
+      const resto = guide.slice(inicio + 4);
+      const fim = resto.search(/^### /m);
+      const secao = fim < 0 ? resto : resto.slice(0, fim);
+      const codes = [
+        ...secao.matchAll(new RegExp(`^\\|\\s*(?:\\*\\*)?(${id}\\.\\d+[a-z]?)`, 'gm')),
+      ].map((m) => m[1] as string);
+      const covered: string[] = [];
+      for (const l of planFaixas(GUIDE, [id])) {
+        const m = /^(R\d+)\.(\d+[a-z]?)-(R\d+)\.(\d+[a-z]?)$/.exec(l.token);
+        if (!m) {
+          covered.push(...codes);
+          continue;
+        }
+        const a = codes.indexOf(`${m[1]}.${m[2]}`);
+        const b = codes.indexOf(`${m[3]}.${m[4]}`);
+        expect(a, l.token).toBeGreaterThan(-1);
+        expect(b - a + 1, l.token).toBe(l.steps);
+        covered.push(...codes.slice(a, b + 1));
+      }
+      expect(covered, id).toEqual(codes);
+    }
+  });
+
+  it('o passo que o guideExcerpt junta ao anterior (R22.6a com R22.6) não se separa', async () => {
+    const { planFaixas } = await loadFaixas();
+    const lotes = planFaixas(GUIDE, ['R22'], { limit: 6 });
+    expect(lotes[0]?.token).toBe('R22.1-R22.6a');
+    expect(lotes[1]?.token.startsWith('R22.7-')).toBe(true);
+  });
+
+  it('uma faixa pedida é respeitada e só se parte acima do limite', async () => {
+    const { planFaixas } = await loadFaixas();
+    const um = planFaixas(GUIDE, ['R6.3-R6.7']);
+    expect(um.map((l) => l.token)).toEqual(['R6.3-R6.7']);
+    const partido = planFaixas(GUIDE, ['R6.3-R6.7'], { limit: 2 });
+    expect(partido.length).toBeGreaterThan(1);
+    expect(partido[0]?.token.startsWith('R6.3-')).toBe(true);
+    expect(partido[0]?.steps).toBe(2);
+    expect(partido.reduce((n, l) => n + l.steps, 0)).toBe(um[0]?.steps);
+  });
+
+  it('o R0 fica fora e roteiros pequenos não se juntam; a ordem é a do guia', async () => {
+    const { planFaixas } = await loadFaixas();
+    const lotes = planFaixas(GUIDE, ['R12', 'R0', 'R2']);
+    expect(lotes.map((l) => l.token.split('.')[0])).toEqual(['R2', 'R12', 'R12', 'R12']);
+    expect(planFaixas(GUIDE, ['R0'])).toEqual([]);
+  });
+
+  it('uma faixa pedida que termina em R12.11 leva todos os passos com letra e conta certo', async () => {
+    const { planFaixas } = await loadFaixas();
+    const lotes = planFaixas(GUIDE, ['R12.1-R12.11']);
+    const total = lotes.reduce((n, l) => n + l.steps, 0);
+    expect(lotes.at(-1)?.token.endsWith('R12.11')).toBe(true);
+    const excerpt = (await loadFaixas()).guideExcerpt(GUIDE, ['R12.1-R12.11']);
+    const linhas = [...excerpt.matchAll(/^\|\s*(?:\*\*)?R12\.\d+[a-z]?\b/gm)];
+    expect(total).toBe(linhas.length);
+  });
+
+  it('o corte automático não separa R12.11c de R12.11d', async () => {
+    const { planFaixas } = await loadFaixas();
+    for (const l of planFaixas(GUIDE, ['R12'])) {
+      expect(l.token.endsWith('R12.11c')).toBe(false);
+    }
+  });
+
+  it('faixas pedidas que se sobrepõem não repetem passos', async () => {
+    const { planFaixas } = await loadFaixas();
+    const lotes = planFaixas(GUIDE, ['R25.1-R25.20', 'R25.5-R25.30']);
+    expect(lotes.reduce((n, l) => n + l.steps, 0)).toBe(
+      planFaixas(GUIDE, ['R25.1-R25.30']).reduce((n, l) => n + l.steps, 0),
+    );
+    expect(lotes[0]?.token).toBe('R25.1-R25.20');
+  });
+
+  it('roteiro inexistente lança', async () => {
+    const { planFaixas } = await loadFaixas();
+    expect(() => planFaixas(GUIDE, ['R99'])).toThrow(/R99/);
+  });
+
+  it('a CLI imprime uma linha por lote, na ordem do guia; sem item sai com 2', () => {
+    const r = spawnSync(
+      'node',
+      [SCRIPT, '--faixas', 'R25', 'R12', 'R3', 'R13', 'R17', 'R9'],
+      {
+        encoding: 'utf8',
+      },
+    );
+    expect(r.status).toBe(0);
+    const lines = r.stdout.trimEnd().split('\n');
+    expect(lines).toHaveLength(15);
+    expect(lines[0]).toMatch(/^lote 1 de 15: R3\.1-R3\.\d+[a-z]? \(20 passos\)$/);
+    expect(lines.at(-1)).toMatch(
+      /^lote 15 de 15: R25\.\d+[a-z]?-R25\.\d+[a-z]? \(\d+ passos\)$/,
+    );
+    const none = spawnSync('node', [SCRIPT, '--faixas'], { encoding: 'utf8' });
+    expect(none.status).toBe(2);
+    expect(none.stderr).toContain('Uso: node scripts/testing/round-guide.mjs --faixas');
+  });
+});
+
+describe('round-guide.mjs: o preparo de um roteiro (#1639, TC1, decisão 4)', () => {
+  it('guidePreparo do R25 traz o título, o Preparo e as funções, sem nenhuma linha de passo', async () => {
+    const { guidePreparo, buildRoundGuide } = await loadFaixas();
+    const guide = buildRoundGuide(GUIDE, ['all'], { commit: 'abc1234' });
+    const out = guidePreparo(guide, ['R25']);
+    expect(out.split('\n')[0]).toMatch(/^### R25\b/);
+    for (const fn of ['tinta() {', 'sonda()', 'medir()']) expect(out).toContain(fn);
+    expect(out).toContain('O `scripts/testing/tokens.mjs` do repositório');
+    expect(out).not.toMatch(/^\| R25\./m);
+    expect(out).not.toMatch(/^\| Passo\b/m);
+    expect(out).not.toContain('… corte em 25.000 caracteres');
+  });
+
+  it('item que não é roteiro inteiro lança com o uso', async () => {
+    const { guidePreparo, buildRoundGuide } = await loadFaixas();
+    const guide = buildRoundGuide(GUIDE, ['R25'], { commit: 'abc1234' });
+    expect(() => guidePreparo(guide, ['R25.30-R25.31'])).toThrow(/--preparo/);
+    expect(() => guidePreparo(guide, ['R25.3'])).toThrow(/--preparo/);
+  });
+
+  it('consulta.subagente está em SECOES_SOB_DEMANDA com o "quando ler"', async () => {
+    const mod: {
+      SECOES_SOB_DEMANDA: { chave: string; quando: string; fonte: string }[];
+    } = await import('../../scripts/testing/round-guide.mjs');
+    const e = mod.SECOES_SOB_DEMANDA.find((s) => s.chave === 'consulta.subagente');
+    expect(e?.fonte).toBe('consulta');
+    expect(e?.quando).toBe('antes do primeiro lote (o R0)');
+  });
 });

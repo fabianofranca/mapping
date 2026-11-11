@@ -10,7 +10,7 @@ import { paintScene } from '../../mcp/image/sceneRaster';
 import { approximateMeasurer, instantiate } from '../../src/model/components/instantiate';
 import { parseComponent } from '../../src/model/components/parseComponent';
 
-function drawCard(width: number, height: number) {
+function drawCard(width: number, height: number, scale = 1) {
   const dir = mkdtempSync(path.join(tmpdir(), 'mapping-rot-'));
   try {
     mkdirSync(path.join(dir, 'components'));
@@ -25,17 +25,41 @@ function drawCard(width: number, height: number) {
       { x: 0, y: 0, width, height },
       { measure: approximateMeasurer },
     );
-    const raster = createRaster(width, height);
+    const w = Math.round(width * scale);
+    const h = Math.round(height * scale);
+    const raster = createRaster(w, h);
     raster.data.fill(255);
     paintScene(raster, [{ root }], approximateMeasurer, {
-      scaleX: 1,
-      scaleY: 1,
-      clip: { x: 0, y: 0, width, height },
+      scaleX: scale,
+      scaleY: scale,
+      clip: { x: 0, y: 0, width: w, height: h },
     });
-    return (x: number, y: number) => {
-      const i = (y * width + x) * 4;
+    const at = (x: number, y: number) => {
+      const i = (Math.round(y * scale) * w + Math.round(x * scale)) * 4;
       return [...raster.data.subarray(i, i + 3)];
     };
+    // Largura e altura, em unidades, da tinta de `color` (como o `tinta` do TESTING.md, com
+    // `FUZZ` em fração de 255).
+    const inkSize = (color: number[], fuzz: number) => {
+      let x0 = w,
+        y0 = h,
+        x1 = -1,
+        y1 = -1;
+      for (let y = 0; y < h; y++)
+        for (let x = 0; x < w; x++) {
+          const i = (y * w + x) * 4;
+          if (
+            color.every((v, k) => Math.abs((raster.data[i + k] ?? 0) - v) <= 255 * fuzz)
+          ) {
+            x0 = Math.min(x0, x);
+            x1 = Math.max(x1, x);
+            y0 = Math.min(y0, y);
+            y1 = Math.max(y1, y);
+          }
+        }
+      return { width: (x1 - x0 + 1) / scale, height: (y1 - y0 + 1) / scale };
+    };
+    return Object.assign(at, { inkSize });
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -61,5 +85,15 @@ describe('rot.mjs (R25.75 ao R25.78)', () => {
     const at = drawCard(200, 120);
     expect(at(118, 25)).toEqual(BLUE);
     expect(at(122, 25)).toEqual(WHITE);
+  });
+
+  it('R25.78: na app (escala não inteira) o vermelho girado mede 55 a 58 com FUZZ=15', () => {
+    for (const scale of [1.76, 2.08, 2.8, 4.2]) {
+      const { width, height } = drawCard(300, 120, scale).inkSize(RED, 0.15);
+      expect(width).toBeGreaterThanOrEqual(55);
+      expect(width).toBeLessThanOrEqual(58);
+      expect(height).toBeGreaterThanOrEqual(55);
+      expect(height).toBeLessThanOrEqual(58);
+    }
   });
 });

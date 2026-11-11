@@ -32,7 +32,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import util, { promisify } from 'node:util';
-import { guideExcerpt, guideSection, listSecoes } from './round-guide.mjs';
+import { guideExcerpt, guidePreparo, guideSection, listSecoes } from './round-guide.mjs';
 
 const execFileAsync = promisify(execFile);
 
@@ -2699,12 +2699,12 @@ const CLI_HELP = [
     'lista até 10 elementos visíveis cujo nome contém o texto (papel, nome, região)',
   ],
   [
-    'passo <item…> [--guia=<arquivo>]',
-    'imprime do guia da rodada (<APOIO>/guia.md) o roteiro (R12), um passo (R12.4) ou uma faixa (R12.1-R12.8), sem abrir o Chrome; item que o guia da rodada não tem sai do docs/TESTING.md, com a primeira linha dizendo; passa de 25 mil caracteres, corta e diz como continuar',
+    'passo <item…> [--guia=<arquivo>] [--preparo]',
+    'imprime do guia da rodada (<APOIO>/guia.md) o roteiro (R12), um passo (R12.4) ou uma faixa (R12.1-R12.8), sem abrir o Chrome; com --preparo, só o trecho do roteiro inteiro antes do primeiro passo (título, O que cobre, Preparo e blocos de código: as funções de um roteiro que a faixa não traz); item que o guia da rodada não tem sai do docs/TESTING.md, com a primeira linha dizendo; passa de 25 mil caracteres, corta e diz como continuar',
   ],
   [
     'secao [<chave…>] [--guia=<arquivo>]',
-    'imprime uma seção sob demanda do guia da rodada (1, 2, 3, 5, 6, 7, A.seletores, B) ou do docs/TESTING-NUVEM-CONSULTA.md (consulta.grupos, consulta.passada, consulta.historico), sem abrir o Chrome; sem chave, lista as chaves com o tamanho e o quando ler; corta em 25 mil caracteres',
+    'imprime uma seção sob demanda do guia da rodada (1, 2, 3, 5, 6, 7, A.seletores, B) ou do docs/TESTING-NUVEM-CONSULTA.md (consulta.subagente, consulta.grupos, consulta.passada, consulta.regras, consulta.historico), sem abrir o Chrome; sem chave, lista as chaves com o tamanho e o quando ler; corta em 25 mil caracteres',
   ],
   ['help', 'esta lista'],
 ];
@@ -2738,12 +2738,15 @@ function resolveApoio(explicit) {
   return null;
 }
 
-/** `passo <item…> [--guia=<arquivo>]`: imprime o trecho do guia da rodada (etapa #1232, GL1). */
+/** `passo <item…> [--guia=<arquivo>] [--preparo]`: imprime o trecho do guia da rodada (etapa #1232, GL1; `--preparo`, #1639, TC1). */
 function runPasso(args) {
   const guiaArg = args.find((a) => a.startsWith('--guia='));
-  const items = args.filter((a) => !a.startsWith('--guia='));
+  const preparo = args.includes('--preparo');
+  const items = args.filter((a) => !a.startsWith('--guia=') && a !== '--preparo');
   if (items.length === 0 || (guiaArg && guiaArg.length === 7)) {
-    console.error('Uso: node cloud.mjs passo <item…> [--guia=<arquivo>]');
+    console.error(
+      'Uso: node cloud.mjs passo <item…> [--guia=<arquivo>]\n     node cloud.mjs passo <Rn…> --preparo   (só o trecho antes do primeiro passo, de roteiros inteiros)',
+    );
     process.exitCode = 2;
     return;
   }
@@ -2757,7 +2760,12 @@ function runPasso(args) {
     file = path.join(apoioDir, 'guia.md');
   }
   try {
-    console.log(guideExcerpt(fs.readFileSync(file, 'utf8'), items, readTestingGuide()));
+    const text = fs.readFileSync(file, 'utf8');
+    console.log(
+      preparo
+        ? guidePreparo(text, items, readTestingGuide())
+        : guideExcerpt(text, items, readTestingGuide()),
+    );
   } catch (error) {
     console.error(
       error.code === 'ENOENT'

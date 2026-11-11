@@ -2068,6 +2068,23 @@ describe('cloud.mjs passo (#1232, GL1)', () => {
     expect(none.stderr).toContain('Uso: node cloud.mjs passo <item…> [--guia=<arquivo>]');
   });
 
+  it('passo R22 --preparo imprime só o trecho antes do primeiro passo (#1639, TC1)', () => {
+    const r = passo(['R22', '--preparo']);
+    expect(r.status).toBe(0);
+    expect(r.stdout.split('\n')[0]).toMatch(/^### R22\b/);
+    expect(r.stdout).not.toMatch(/^\| R22\./m);
+    expect(r.stdout).not.toMatch(/^\| Passo\b/m);
+  });
+
+  it('passo --preparo com item que não é roteiro inteiro sai com 2 e mostra o uso', () => {
+    const r = passo(['R22.4', '--preparo']);
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe('');
+    expect(r.stderr).toContain('--preparo');
+    const none = passo(['--preparo']);
+    expect(none.status).toBe(2);
+  });
+
   it('guia que não existe sai com 2 e diz como gerá-lo', () => {
     const r = passo(['R0'], { APOIO: path.join(apoio, 'nada') });
     expect(r.status).toBe(2);
@@ -2112,7 +2129,14 @@ describe('cloud.mjs secao (#1533, TE1)', () => {
     expect(r.status).toBe(2);
     expect(r.stdout).toBe('');
     expect(r.stderr).toContain('xyz');
-    for (const key of ['1', '5', 'A.seletores', 'B', 'consulta.grupos']) {
+    for (const key of [
+      '1',
+      '5',
+      'A.seletores',
+      'B',
+      'consulta.grupos',
+      'consulta.subagente',
+    ]) {
       expect(r.stderr, key).toContain(key);
     }
   });
