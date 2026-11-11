@@ -59,6 +59,11 @@ export interface ComponentDrawing {
    * canvas o ancora em `anchor` no `rect` (retângulo da marcação, nos pixels da imagem).
    */
   readonly screen?: { readonly anchor: ScreenAnchor; readonly rect: Rect };
+  /**
+   * Recorte da filha de um slot com `clip` (v4): a caixa do slot da mãe, no mesmo espaço do
+   * `root.transform` (pixels da imagem ou unidades do canvas). O desenho só aparece dentro dela.
+   */
+  readonly clip?: Rect;
 }
 
 /** Por id de marcação, inserido em ordem de desenho (pais antes das filhas; irmãs na ordem do array). */

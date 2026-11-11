@@ -293,6 +293,12 @@ export interface UnknownNode extends NodeBase {
   readonly type: 'unknown';
   /** Tipo de origem (ex.: `BOOLEAN_OPERATION`, `<foreignObject>`). */
   readonly sourceType: string;
+  /**
+   * Só no `slot` (v4, `clip` do slot): as marcações filhas desenhadas dentro dele são recortadas
+   * pela caixa do slot. A camada de componentes e o raster aplicam o recorte à filha; o nó em si
+   * só desenha a caixa.
+   */
+  readonly clipChildren?: true;
 }
 
 export type SceneNode =

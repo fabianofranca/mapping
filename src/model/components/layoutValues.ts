@@ -26,6 +26,15 @@ export const LAYOUT_JUSTIFIES: readonly LayoutJustify[] = [
   'space-around',
   'space-evenly',
 ];
+/** `align` (eixo vertical) de um quadro `none`: sem `baseline`. */
+export const NONE_ALIGNS: readonly LayoutAlign[] = ['start', 'center', 'end', 'stretch'];
+/** `justify` (eixo horizontal) de um quadro `none` (v4): só os quatro, `stretch` incluído. */
+export const NONE_JUSTIFIES: readonly LayoutJustify[] = [
+  'start',
+  'center',
+  'end',
+  'stretch',
+];
 export const LAYOUT_WRAPS: readonly LayoutWrap[] = ['none', 'wrap', 'wrap-reverse'];
 
 /**
