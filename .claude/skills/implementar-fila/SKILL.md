@@ -55,7 +55,7 @@ Um resultado grande de ferramenta não some do contexto: fica nele até o fim da
 4. **Uma conferência de reserva por sessão**, não uma por filha (seção "Conferências de reserva").
 5. **Mensagens curtas para as filhas**: os valores e o nome da mensagem do `docs/FLOW.md`, não o texto inteiro copiado (passo 2 de "Por etapa").
 6. **O JSON do painel nunca vai inteiro para o chat.** O `painel.py` imprime só `alterados: …`; para ver o estado, `show` (resumo) ou `show '#n'` (uma linha, com a ficha). Nada de `cat` dos arquivos.
-7. **O painel é o canal com o dono, publicado a cada avanço, uma vez por ciclo.** Cada aviso que chega é um ciclo: faça todos os passos dele, grave tudo no `painel.py` (cada avanço tem a sua linha no `log` e o `current` atualizado) e publique o painel **uma vez**, no fim, só com os arquivos alterados. Nunca há duas publicações no mesmo ciclo. **Aviso que chega com outro ciclo em andamento** não se perde: vira uma linha no `log` no mesmo turno em que chega, com o que ele pede ao coordenador, e o pedido entra no ciclo em andamento (a publicação continua uma por ciclo, no fim). A conferência de hora em hora sem atrasadas não publica.
+7. **O painel é o canal com o dono: todo turno que gravou termina publicando.** Cada aviso que chega é um ciclo: faça todos os passos dele, grave tudo no `painel.py` (os comandos do ciclo vão num `apply` só; cada avanço tem a sua linha no `log` e o `current` atualizado) e publique o que ficou não publicado **uma vez por turno, no fim**, só com os arquivos alterados, **mesmo com o subagente do ciclo ainda rodando**: "Entra na próxima publicação" não vale. O `show` diz o que falta (`não publicado desde <HH:MM>: <arquivos>`). **Aviso que chega com outro ciclo em andamento** não se perde: vira uma linha no `log` no mesmo turno em que chega, com o que ele pede ao coordenador, e o pedido entra no ciclo em andamento. A conferência de hora em hora sem atrasadas e sem arquivo não publicado não publica.
 8. **Uma leitura por coisa.** O que já está no contexto (o aviso da filha, a ficha, o número do PR) não se lê de novo para conferir.
 9. **Mensagens do `docs/FLOW.md` pelo nome da seção, nunca por `grep`.** As que a fila usa são, pelo título exato: "Para a sessão da fase", "Fase de correção", "Para o testador", "Rodada dirigida em grupos", "Reteste junto" e "Rodada completa em 5 blocos". Leia uma por um comando só, que imprime a seção inteira e nada mais: `awk '/^## <título>$/{f=1;print;next} /^## /{f=0} f' docs/FLOW.md`. Uma mensagem já lida nesta sessão não se lê de novo.
 10. **O chat fica quase mudo.** Depois de um ciclo, o coordenador não escreve resumo: no máximo uma linha curta, só quando o dono precisa saber agora. O resto vai para o `log` e o `current` do painel. O chat é para três coisas: as perguntas ao dono (seletor de perguntas), as notificações do skill (`PushNotification`) e a tabela do "Fim". Se o dono perguntar algo, a resposta vai no chat, curta.
@@ -201,7 +201,7 @@ Siga o `docs/FLOW.md` ("Orquestrador — passo a passo" e as mensagens), com o q
 - **Uma por sessão do coordenador**, não uma por filha: `create_trigger` sem `persistent_session_id` (dispara nesta sessão), `cron_expression: "0 * * * *"` (de hora em hora), `initiation: own_followup`, com o id guardado por `painel.py reserve`. Ela vale para todas as filhas e é apagada só na troca de sessão e no fim. Nada de `send_later` por filha, salvo o `send_later` por PR que espera o coordenador (parágrafo "PR que espera o coordenador", passo 2 de "Por etapa"); nada de `delete_trigger` a cada aviso, nunca `list_triggers`. O coordenador não usa `subscribe_pr_activity`: os eventos de check run acordariam a sessão longa a cada job e encheriam o contexto, e o PR de fase é da fase.
 - A mensagem guardada se sustenta sozinha: "Conferência da fila: rode `painel.py show` e confira as atrasadas; painel <url>; siga o skill implementar-fila".
 - Na conferência, o **primeiro passo** é o contexto: `get_session` sem `session_id` e `painel.py context <pasta> <pct>` com o `external_metadata.context_usage`. Se o `show` avisar "acima de 60%", faça a troca de sessão ("Troca de sessão") neste mesmo ciclo, mesmo com etapas e fases em andamento, e não siga com o resto; sem espaço na linhagem ("Limite de linhagem"), não há sucessor, e o ciclo segue com o resto.
-- Depois, confira se o skill mudou na `main` ("Troca de sessão"); se mudou, dê o `git pull` e aplique a regra de "Troca de sessão" › "Skill novo na `main`" (grande: troca de sessão; pequena: releitura do `SKILL.md` inteiro com `Read`, sem `offset` nem `limit`, com a prova no `log`). Depois, `show` lista as **atrasadas** (filha sem aviso há mais de 30 min) e o `começar agora:`: cada etapa listada começa neste ciclo (passo 1 de "Por etapa"). Se o `vagas:` mostra `dep #N` de uma dependência fora da fila, o subagente do ciclo confere se ela entrou na `main`, e o coordenador grava `painel.py merged` (e o `começar agora` vale na hora). Cada PR do `CI esperando o coordenador:` do `show` também se confere (um subagente, uma linha por PR, pela **Leitura do CI**): mescle o PR de fase verde e siga para o "Merge" com o PR de épico verde; vermelho vai para a correção ou o épico, e o `ciWait` é limpo. Sem atrasadas, sem `começar agora`, sem esses PRs e sem o alerta de contexto (e sem conferência de Release pendente), não faça mais nada nesse ciclo: nem publicar o painel. A gravação do `context` sozinha não publica; ela vai no próximo ciclo que publicar.
+- Depois, confira se o skill mudou na `main` ("Troca de sessão"); se mudou, dê o `git pull` e aplique a regra de "Troca de sessão" › "Skill novo na `main`" (grande: troca de sessão; pequena: releitura do `SKILL.md` inteiro com `Read`, sem `offset` nem `limit`, com a prova no `log`). Depois, `show` lista as **atrasadas** (filha sem aviso há mais de 30 min) e o `começar agora:`: cada etapa listada começa neste ciclo (passo 1 de "Por etapa"). Se o `vagas:` mostra `dep #N` de uma dependência fora da fila, o subagente do ciclo confere se ela entrou na `main`, e o coordenador grava `painel.py merged` (e o `começar agora` vale na hora). Cada PR do `CI esperando o coordenador:` do `show` também se confere (um subagente, uma linha por PR, pela **Leitura do CI**): mescle o PR de fase verde e siga para o "Merge" com o PR de épico verde; vermelho vai para a correção ou o épico, e o `ciWait` é limpo. Sem atrasadas, sem `começar agora`, sem esses PRs e sem o alerta de contexto (e sem conferência de Release pendente), não faça mais nada nesse ciclo, e a conferência só publica o painel quando o `show` mostra arquivo não publicado (a gravação do `context` sozinha já conta, porque o `show` a mostra como não publicada).
 - Para cada atrasada, leia `get_session` (`status_bucket`) e, só se não estiver trabalhando, `list_events` com `kinds: ["assistant", "result"]` e `limit: 10`:
   - trabalhando: `row '#n' childAt=now` (volta a contar);
   - `review_ready` ou `idle` com o último turno terminado num `send_later` ainda por disparar (a hora do evento mais o `delay_minutes`, ou o `at`, ainda não passou, ou passou há menos de 5 min): é espera legítima, `row '#n' childAt=now`, sem mensagem;
@@ -282,13 +282,16 @@ painel.py row <pasta> '#n' wait="<motivo>"           # a filha espera o coordena
 painel.py row <pasta> '#n' ciWait="PR #<n>" ciWaitAt=now   # o CI do PR espera o coordenador; ciWait= limpa os dois; child não mexe
 painel.py phase <pasta> '#n' CL3=ok
 painel.py reorder <pasta> '#a' '#b' …
+painel.py apply <pasta> <arquivo|->                  # vários comandos de uma vez (abaixo)
 painel.py log <pasta> "texto"
 painel.py current <pasta> "texto"
 painel.py reserve <pasta> <trig_id>                  # a conferência de reserva da sessão
 painel.py session <pasta> '#n' <id>                  # sessão criada para a etapa (sem repetir)
 painel.py merged <pasta> '#N'                        # dependência fora da fila já na main (sem repetir)
 painel.py context <pasta> <pct>                      # contexto do coordenador, de 0 a 100
-painel.py show <pasta>          # resumo: em andamento, `vagas:`, `começar agora:`, `contexto:`, filhas, atrasadas, esperando o coordenador, `CI esperando o coordenador:`, reserva, últimas do log
+painel.py published <pasta>                          # imprime `at:` (a hora real) e os arquivos a enviar; limpa o que falta publicar
+painel.py touch <pasta>                              # a publicação falhou: marca de novo os 3 arquivos
+painel.py show <pasta>          # resumo: em andamento, `vagas:`, `começar agora:`, `contexto:`, filhas, atrasadas, esperando o coordenador, `CI esperando o coordenador:`, reserva, `não publicado`, últimas do log
 painel.py show <pasta> '#n'     # uma linha inteira, com a ficha
 ```
 
@@ -296,19 +299,32 @@ O `show` traz, depois de `atual:`, `vagas: Vagas k/N · #n <motivo> …` (por qu
 
 A linha `CI esperando o coordenador: #n PR #p (k min); …` (ou `nenhuma`) lista os PRs com `ciWait`, com os minutos desde o `ciWaitAt`, e a página mostra o campo na coluna "Passo atual", como `<passo> · CI: PR #p`.
 
-O script diz quais arquivos mudou. Vários comandos seguidos vão numa só chamada do `Bash` (`&&`).
+O script diz quais arquivos mudou, e o `show` diz quais ainda faltam publicar (`não publicado desde <HH:MM>: <arquivos>` ou `não publicado: nenhum`, de `meta.unpublished`).
+
+**Vários comandos de um ciclo vão num `apply` só**, com heredoc: cada linha é um subcomando na sintaxe da linha de comando, sem `painel.py` e sem a pasta; linha vazia e linha com `#` são ignoradas. Tudo ou nada: com erro em qualquer linha, nada é gravado e o script sai com código 2, citando o número da linha. `show`, `init`, `published` e `apply` não entram no lote.
+
+```bash
+python3 .claude/skills/implementar-fila/painel/painel.py apply <pasta> - <<'EOF'
+row '#n' stage=Testador step="testador criado"
+phase '#n' CL3=ok
+log "fase CL3 mesclada"
+current "Testador da #n"
+EOF
+```
 
 **Publicar uma atualização:**
 
-1. Para cada arquivo que mudou, chame `Artifact` com `url` = o painel, `asset: true` e `file_path` (um JSON por chamada). O resultado traz o `url` (`/_blob/<id>`).
-2. Faça um `ArtifactData` `batch` com um `update` em cada `datasets/<id>`:
+1. Rode `painel.py published <pasta>` numa chamada do `Bash`, **logo antes de enviar**. Ele imprime `at: <ISO UTC>` (a hora real do relógio, nunca estimada) e `enviar:` com os arquivos não publicados (o `meta.json` vai sempre), grava `meta.publishedAt` e limpa o que falta publicar, de modo que o `meta.json` enviado já sai limpo.
+2. Para cada arquivo de `enviar:`, chame `Artifact` com `url` = o painel, `asset: true` e `file_path` (um JSON por chamada). O resultado traz o `url` (`/_blob/<id>`).
+3. Faça um `ArtifactData` `batch` com um `update` em cada `datasets/<id>`:
    - `source: {kind: "file", url, name: "<id>.json", format: "json"}`;
-   - `updated: {at, by: "Claude"}`;
-   - `edit: {via: "claude", at}`;
+   - `updated: {at, by: "Claude"}`, com o `at` do `published` em `updated.at`;
+   - `edit: {via: "claude", at}`, com o mesmo `at` em `edit.at`;
    - `if_version`: a versão que o resultado anterior devolveu (na primeira vez, faça um `list` de `datasets`). Se a versão mudou no meio, leia de novo e refaça.
-3. Diga em `current`, numa frase, o que está acontecendo agora.
+4. Se o envio ou o `batch` falhar e não for refeito no mesmo turno, rode `painel.py touch <pasta>`: os três arquivos voltam a constar como não publicados, e a próxima publicação os envia.
+5. Diga em `current`, numa frase, o que está acontecendo agora (grave-o no `apply` do ciclo, antes do `published`).
 
-Grave no `painel.py` **a cada avanço** (fase aberta e mesclada, PR, testador, correção, fechamento, merge, nova `ready`), cada um com a sua linha no `log` e o `current` atualizado, e **publique uma vez por ciclo**, no fim, só os arquivos que mudaram ("Economia de contexto", item 7). Nunca há duas publicações no mesmo ciclo; a conferência de hora em hora sem atrasadas não publica. Se um blob voltar 404, envie de novo e repõe o dataset.
+Grave no `painel.py` **a cada avanço** (fase aberta e mesclada, PR, testador, correção, fechamento, merge, nova `ready`), cada um com a sua linha no `log` e o `current` atualizado, e **publique o que ficou não publicado**: uma publicação por turno, no fim, só os arquivos que mudaram, mesmo com o subagente do ciclo ainda rodando ("Economia de contexto", item 7). A conferência de hora em hora publica quando o `show` mostra arquivo não publicado, e sem ele não publica. Se um blob voltar 404, envie de novo e repõe o dataset.
 
 **Achar ou criar** (sem `painel=<url>`):
 
