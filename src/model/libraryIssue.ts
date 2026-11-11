@@ -5,7 +5,7 @@ import type { ModelMessage } from './modelMessage';
 /**
  * Problema da biblioteca montado pelo catálogo de mensagens (`src/model/messages/`): o `message`
  * é o texto pt-BR de sempre; `code`, `params` e `detail` seguem para a interface traduzir. O
- * `detail` é a mensagem de outro módulo que entra no `{detail}` do texto de fora.
+ * `detail` é a mensagem de outro módulo que entra no `{reason}` do texto de fora.
  */
 export function libraryIssue(
   severity: LibraryIssue['severity'],
@@ -15,7 +15,7 @@ export function libraryIssue(
   params: Readonly<Record<string, string | number>> = {},
   detail?: ModelMessage,
 ): LibraryIssue {
-  const filled = detail === undefined ? params : { ...params, detail: detail.text };
+  const filled = detail === undefined ? params : { ...params, reason: detail.text };
   return {
     file,
     path,

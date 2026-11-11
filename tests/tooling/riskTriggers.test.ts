@@ -111,6 +111,8 @@ describe('riskTriggers.mjs (RS1)', () => {
 
   it.each([
     ['.claude/skills/detalhar-backlog/SKILL.md', 'detalhar-backlog'],
+    ['.claude/skills/supervisionar-fila/SKILL.md', 'supervisionar-fila'],
+    ['.claude/skills/supervisionar-fila/custo.py', 'supervisionar-fila'],
     ['docs/PROCESS.md', 'docs/PROCESS.md'],
     ['.github/workflows/ci.yml', '.github/workflows/'],
     ['scripts/release/a.mjs', 'scripts/release/'],

@@ -172,9 +172,9 @@ describe('implementar-fila: skill novo na main e troca de sessão (FT1, FC2)', (
     expect(troca).not.toContain('skill atualizado na main');
   });
 
-  it('a troca é por contexto acima de 60% ou por skill grande (decisão 6; decisão 11 da #1322)', () => {
+  it('a troca é por contexto acima de 35% ou por skill grande (decisão 6; decisão 11 da #1322)', () => {
     expect(troca).toMatch(/Troca de sessão por contexto ou por skill grande/);
-    expect(troca).toMatch(/Acima de 60%/);
+    expect(troca).toMatch(/Acima de 35%/);
   });
 
   it('antes de criar o sucessor confere lineage.depth + 2 > limit (decisão 7)', () => {
@@ -217,10 +217,14 @@ describe('implementar-fila: ajustes finos do coordenador (FC2)', () => {
     expect(skill).toMatch(/nunca por `grep`/);
   });
 
-  it('o painel é publicado uma vez por ciclo, a cada avanço (decisão 1)', () => {
-    expect(skill).toMatch(/Nunca há duas publicações no mesmo ciclo/);
+  it('o painel é publicado uma vez por turno que gravou, mesmo com o subagente rodando (decisão 3 da #1532)', () => {
+    expect(skill).toMatch(/uma vez por turno, no fim/);
+    expect(skill).toMatch(/mesmo com o subagente do ciclo ainda rodando/);
     expect(skill).toMatch(/só com os arquivos alterados/);
-    expect(skill).toMatch(/conferência de hora em hora sem atrasadas não publica/i);
+    expect(skill).toMatch(
+      /conferência de hora em hora sem atrasadas e sem arquivo não publicado não publica/i,
+    );
+    expect(skill).not.toMatch(/Nunca há duas publicações no mesmo ciclo/);
   });
 
   it('o chat fica quase mudo (decisão 3)', () => {
@@ -430,7 +434,7 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
     expect(dono).toContain('docs/TESTING-NUVEM.md#blocos');
     expect(dono).toMatch(/`paralelo=N`[^\n]*`Vagas k\/N`/);
     expect(dono).not.toMatch(/arquivos disjuntos/);
-    expect(dono).toMatch(/conferência de hora em hora[^\n]*contexto[^\n]*60%/);
+    expect(dono).toMatch(/conferência de hora em hora[^\n]*contexto[^\n]*35%/);
   });
 
   it('"Para a sessão da fase": margem e teto do dist para a fase (decisões 3, 6, 7 e 8)', () => {
