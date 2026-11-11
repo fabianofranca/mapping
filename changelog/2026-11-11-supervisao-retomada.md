@@ -1,4 +1,4 @@
-# Supervisão: retomada sem argumentos e passagem em database — [Não lançado] (épico `epic/supervisao-retomada`, PR #0, MCP 0.35.1 sem mudança, schema v18)
+# Supervisão: retomada sem argumentos e passagem em database — 2026-11-11 (épico `epic/supervisao-retomada`, PR #1672, MCP 0.35.1 sem mudança, schema v18)
 
 ## Adicionado
 

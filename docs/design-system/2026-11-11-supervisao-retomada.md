@@ -1,4 +1,4 @@
-# Supervisão: retomada sem argumentos e passagem em database — [Não lançado] (épico `epic/supervisao-retomada`)
+# Supervisão: retomada sem argumentos e passagem em database — 2026-11-11 (épico `epic/supervisao-retomada`)
 
 ## Pendências
 
