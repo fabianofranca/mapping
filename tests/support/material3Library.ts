@@ -60,20 +60,34 @@ export const solid = (paints: readonly Paint[]): string | undefined => {
   return first?.type === 'solid' ? first.color : undefined;
 };
 
+/** As opções com que os testes instanciam um componente da biblioteca (medidor aproximado, tokens do modo, ícones). */
+export function instantiateOptions(
+  catalog: ReturnType<typeof buildCatalog>,
+  mode: 'light' | 'dark',
+): Parameters<typeof instantiate>[3] {
+  const library = catalog.library;
+  if (library === null) throw new Error('sem biblioteca');
+  return {
+    measure: approximateMeasurer,
+    tokens: resolveTokens(library.tokens, {}, mode),
+    ...(library.icons === undefined ? {} : { icons: library.icons }),
+  };
+}
+
 export function drawIn(
   catalog: ReturnType<typeof buildCatalog>,
   entry: NonNullable<ReturnType<typeof findEntry>>,
   values: Parameters<typeof instantiate>[1],
   mode: 'light' | 'dark',
 ) {
-  const library = catalog.library;
-  if (library === null || entry.component === null) throw new Error('sem biblioteca');
+  if (entry.component === null) throw new Error('sem biblioteca');
   const box = { x: 0, y: 0, ...entry.component.size };
-  return instantiate(entry.component, { ...defaultValues(entry.type), ...values }, box, {
-    measure: approximateMeasurer,
-    tokens: resolveTokens(library.tokens, {}, mode),
-    ...(library.icons === undefined ? {} : { icons: library.icons }),
-  });
+  return instantiate(
+    entry.component,
+    { ...defaultValues(entry.type), ...values },
+    box,
+    instantiateOptions(catalog, mode),
+  );
 }
 
 /** Componentes já migrados para o formato 4 (M1: 4; M2: +19; M3: +9; M4: +9; M5: +9 = 50). Cresce a cada fase. */

@@ -1,11 +1,10 @@
 // MC5 (#1033, etapa #898): desenho da biblioteca Material 3 (Compose) no tamanho ajustado ao conteúdo,
 // a medida que o Arrumar, o `fit_marking` e a instância nova usam (`fitComponentSize`).
 import { buildCatalog, findEntry } from '../../src/model/catalog';
-import { approximateMeasurer, instantiate } from '../../src/model/components/instantiate';
+import { instantiate } from '../../src/model/components/instantiate';
 import { fitComponentSize } from '../../src/model/components/sizing';
-import { resolveTokens } from '../../src/model/components/tokens';
 import { defaultValues } from '../../src/model/libraryDrawing';
-import { files } from './material3Library';
+import { files, instantiateOptions } from './material3Library';
 
 export const catalog = buildCatalog(files);
 
@@ -20,15 +19,7 @@ export function entryOf(id: string): NonNullable<ReturnType<typeof findEntry>> {
   return entry;
 }
 
-function optionsOf(mode: Mode) {
-  const library = catalog.library;
-  if (library === null) throw new Error('sem biblioteca');
-  return {
-    measure: approximateMeasurer,
-    tokens: resolveTokens(library.tokens, {}, mode),
-    ...(library.icons === undefined ? {} : { icons: library.icons }),
-  };
-}
+const optionsOf = (mode: Mode) => instantiateOptions(catalog, mode);
 
 /**
  * O tamanho que o componente tem com o conteúdo de `values` (o do ajuste, com o medidor aproximado):
