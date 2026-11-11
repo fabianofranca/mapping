@@ -2,7 +2,7 @@
 // Fase FM8 (etapa #1532, decisões 19 e 20): a skill `supervisionar-fila`, o `custo.py` e a seção
 // `## Supervisão da fila` do `docs/FLOW.md`.
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -38,9 +38,15 @@ describe('skill supervisionar-fila (decisão 19)', () => {
     'claude-opus-5-5',
     'effort: high',
     'effort_level',
-    '~25%',
-    '~250k',
-    '150k',
+    '~50%',
+    '~500k',
+    'used_tokens',
+    '2× a base',
+    '--sessao',
+    'requests --desde',
+    'Estado da execução',
+    'pinned',
+    'passagem',
     'Supervisor <n>',
     'retomar anterior=',
     'Supervisão da fila',
@@ -52,6 +58,121 @@ describe('skill supervisionar-fila (decisão 19)', () => {
     'SUP-<n>',
   ])('cita %s', (text) => {
     expect(SKILL).toContain(text);
+  });
+
+  it('não tem mais o critério dos ~150k nem os limites de ~25% e ~250k (decisão 7)', () => {
+    expect(SKILL).not.toContain('~150k');
+    expect(SKILL).not.toContain('~25%');
+    expect(SKILL).not.toContain('~250k');
+  });
+
+  it('o description diz o que a retomada sem argumentos faz, em até ~500 caracteres', () => {
+    const d = SKILL.match(
+      /^---\nname: supervisionar-fila\ndescription: (.+)\n---\n/,
+    )![1]!;
+    expect(d.length).toBeLessThanOrEqual(500);
+    expect(d).toContain('sem argumentos');
+    expect(d).toContain('troca');
+    expect(d).toContain('~50%');
+    expect(d).toContain('Supervisão da fila');
+    expect(d).toContain('database');
+  });
+
+  it('## Argumentos mostra a forma sem argumentos e lista os argumentos que seguem valendo (decisão 1)', () => {
+    const s = section(SKILL, '## Argumentos');
+    expect(s).toContain('/supervisionar-fila` sem argumentos');
+    expect(s).toContain(
+      '/supervisionar-fila [retomar] [anterior=<id>] [painel=<url>] [custo] [varredura desde=<ISO>]',
+    );
+    for (const arg of [
+      'retomar',
+      'anterior=<id>',
+      'painel=<url>',
+      'custo',
+      'varredura desde=<ISO>',
+    ]) {
+      expect(s).toContain(`- \`${arg}`);
+    }
+    expect(s).toContain('o `roles`');
+  });
+
+  it('## Papel e limites: o último item lê a linha `esta sessão:` do roles --sessao (decisão 3)', () => {
+    const items = section(SKILL, '## Papel e limites')
+      .split('\n')
+      .filter((l) => l.startsWith('- '));
+    const last = items[items.length - 1]!;
+    expect(last).toContain('esta sessão:');
+    expect(last).toContain('roles --sessao');
+    expect(last).toContain('https://claude.ai/code/<id');
+    expect(last).toContain(
+      'este chat é o coordenador; abra uma sessão nova para a supervisão',
+    );
+  });
+
+  it('## Pedidos ao coordenador: a leitura de cada turno é a da decisão 13', () => {
+    const s = section(SKILL, '## Pedidos ao coordenador');
+    const leitura = s.split('\n').find((l) => l.startsWith('- **Leitura:**'))!;
+    expect(leitura).toContain('ArtifactData');
+    expect(leitura).toContain('datasets');
+    expect(leitura).toContain('out_dir');
+    expect(leitura).toContain('requests --desde');
+    expect(leitura).toContain('roles --sessao');
+  });
+
+  it('## Leitura das fontes: o meta nunca entra no contexto e o painel se acha pelo fixado (decisões 2 e 13)', () => {
+    const s = section(SKILL, '## Leitura das fontes');
+    expect(s).not.toContain('JSON pequeno');
+    expect(s).toContain('nunca');
+    expect(s).toContain('Mapping Fila');
+    expect(s).toContain('Fila de desenvolvimento');
+    expect(s).toContain('limit: 50');
+    expect(s).toContain('`get_session` do antecessor');
+  });
+
+  it('## Troca de sessão: tamanho, base, lembrete, troca no retorno e os cinco estados (decisões 3 e 6 a 8)', () => {
+    const s = section(SKILL, '## Troca de sessão');
+    for (const state of ['registrada', 'sucessora', 'antiga', 'coordenador', 'nova']) {
+      expect(s).toContain(`\`${state}`);
+    }
+    expect(s).toContain('external_metadata.context_usage.used_tokens');
+    expect(s).toContain('no fim do primeiro turno');
+    expect(s).toContain('120 mil');
+    expect(s).toContain('2× a base');
+    expect(s).toContain('Contexto: <n> mil, mais de 2× a base (<b> mil).');
+    expect(s).toContain('mais de 1 h');
+    expect(s).toContain('claude-opus-5-5');
+    expect(s).toContain('acima de ~50%');
+    expect(s).toContain('A troca não tem turno de passagem');
+    expect(s).toContain(
+      '/supervisionar-fila retomar anterior=<id desta sessão> painel=<url>',
+    );
+    expect(s).toContain('archive_session');
+    expect(s).toContain('delete_trigger');
+    expect(s).toContain('Supervisão acima de 50% e sem vaga na linhagem');
+    expect(s).toContain('kind=supervisor');
+  });
+
+  it('## Passagem: coleção, quatro tipos, if_version e migração (decisões 9 e 10)', () => {
+    const s = section(SKILL, '## Passagem');
+    expect(s).toContain('`passagem`');
+    for (const tipo of ['decisao', 'issue', 'agendamento', 'licao']) {
+      expect(s).toContain(`\`${tipo}\``);
+    }
+    expect(s).toContain('ArtifactData');
+    expect(s).toContain('if_version');
+    expect(s).toContain('artifact-design');
+    expect(s).toContain('migra');
+    expect(s).toContain('capabilities: {db: {}}');
+    expect(s).toContain('no mesmo turno');
+    expect(s).toContain('delete');
+    expect(SKILL.indexOf('## Passagem')).toBeGreaterThan(
+      SKILL.indexOf('## Troca de sessão'),
+    );
+  });
+
+  it('## Subagentes: o briefing pede o retorno em até 10 linhas (decisão 13)', () => {
+    const s = section(SKILL, '## Subagentes');
+    expect(s).toContain('até 10 linhas');
   });
 
   it('a lista do tipo A é igual, item por item, à de "Pedidos do supervisor" do implementar-fila', () => {
@@ -80,6 +201,47 @@ describe('docs/FLOW.md: ## Supervisão da fila', () => {
   it('tem a seção e cita /supervisionar-fila', () => {
     const s = section(FLOW, '## Supervisão da fila');
     expect(s).toContain('/supervisionar-fila');
+  });
+
+  it('abre e retoma sem argumentos, troca ao voltar depois de mais de 1 h e só troca sozinha acima de ~50% (decisões 6 e 7)', () => {
+    const s = section(FLOW, '## Supervisão da fila');
+    expect(s).toContain('/supervisionar-fila` sem argumentos');
+    expect(s).toContain('mais de 1 h');
+    expect(s).toContain('~50%');
+    expect(s).toContain('Supervisão da fila');
+    expect(s).toContain('database');
+    expect(s).not.toContain('~25%');
+  });
+});
+
+describe('passagem/index.html: a página do artefato "Supervisão da fila" (decisão 9)', () => {
+  const PAGE_PATH = `${DIR}/passagem/index.html`;
+  const page = existsSync(PAGE_PATH) ? readFileSync(PAGE_PATH, 'utf8') : '';
+
+  it('existe e tem o título do artefato', () => {
+    expect(existsSync(PAGE_PATH)).toBe(true);
+    expect(page).toContain('<title>Supervisão da fila</title>');
+  });
+
+  it('abre a database e lê a coleção passagem em tempo real', () => {
+    expect(page).toMatch(/claude\.use\(\s*['"]db['"]\s*\)/);
+    expect(page).toContain('passagem');
+    expect(page).toContain('onSnapshot');
+  });
+
+  it('mostra os quatro tipos de regra e só lê', () => {
+    for (const tipo of ['decisao', 'issue', 'agendamento', 'licao']) {
+      expect(page).toContain(tipo);
+    }
+    for (const w of ['.set(', '.update(', '.delete(', '.add('])
+      expect(page).not.toContain(w);
+  });
+
+  it('tem tema escuro e não usa innerHTML, fetch nem script externo', () => {
+    expect(page).toContain('prefers-color-scheme: dark');
+    expect(page).not.toContain('innerHTML');
+    expect(page).not.toContain('fetch(');
+    expect(page).not.toContain('<script src');
   });
 });
 
