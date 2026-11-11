@@ -505,7 +505,7 @@ def tester_over_limit_text(q, meta):
     done = set(meta.get("merged") or []) | {r["issue"] for r in q if r["status"] == "concluída"}
     return "; ".join(
         f"{e.get('issue') or '—'} {e.get('label') or e['id']} {math.ceil(e['cost']['ctx'] / 1000)}k"
-        for e in meta.get("sessions", []) if over_tester_limit(e) and e.get("issue") not in done) or "nenhum"
+        for e in meta.get("sessions", []) if over_tester_limit(e) and e.get("issue") and e["issue"] not in done) or "nenhum"
 
 
 def costed(meta, since=None):

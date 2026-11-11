@@ -553,6 +553,11 @@ describe('painel.py: o teto de 300 mil do testador (TC2, decisão 9 da #1639)', 
     expect(run('show', dir)).toMatch(/^testador acima do teto: nenhum$/m);
   });
 
+  it('o show não prende para sempre o testador acima do teto sem etapa registrada', () => {
+    runAt(at, 'cost', dir, 'sess_n', 'usd=1', 'ctx=400000', 'kind=testador');
+    expect(run('show', dir)).toMatch(/^testador acima do teto: nenhum$/m);
+  });
+
   it('o show diz nenhum sem excesso e com o custo sem rótulo usa o id', () => {
     expect(run('show', dir)).toMatch(/^testador acima do teto: nenhum$/m);
     custo('sess_a', 'testador', 300000);

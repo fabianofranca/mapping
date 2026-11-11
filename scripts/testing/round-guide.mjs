@@ -937,6 +937,18 @@ export function formatGroupPlan(plan, { limit = GROUP_LIMIT } = {}) {
 /** Passos por lote de subagente: com a base do subagente (~25 mil), 20 passos ficam abaixo de ~200 mil. */
 export const FAIXA_LIMIT = 20;
 
+/** Avança `i` por todos os passos com letra (R12.11a, R12.11b…) do código-base que o `guideExcerpt` junta. */
+function extendOverSuffixes(codes, i) {
+  const base = codes[i].replace(/[a-z]$/, '');
+  while (
+    codes[i + 1]?.startsWith(base) &&
+    /^[a-z]$/.test(codes[i + 1].slice(base.length))
+  ) {
+    i += 1;
+  }
+  return i;
+}
+
 /**
  * Parte os códigos de um item em faixas consecutivas de até `limit` passos. O passo que o
  * `guideExcerpt` junta ao anterior (R22.6a com R22.6) fica no mesmo lote.
@@ -946,13 +958,7 @@ function chunkCodes(codes, limit) {
   let start = 0;
   while (start < codes.length) {
     let end = Math.min(start + limit, codes.length) - 1;
-    while (
-      /\d$/.test(codes[end]) &&
-      codes[end + 1]?.startsWith(codes[end]) &&
-      /^[a-z]$/.test(codes[end + 1].slice(codes[end].length))
-    ) {
-      end += 1;
-    }
+    end = extendOverSuffixes(codes, end);
     chunks.push(codes.slice(start, end + 1));
     start = end + 1;
   }
@@ -986,23 +992,31 @@ export function planFaixas(markdown, roteiros, { limit = FAIXA_LIMIT } = {}) {
       add(id, codes);
       continue;
     }
+    // Faixas pedidas que se sobrepõem viram uma só: nenhum passo cai em dois lotes.
+    const spans = [];
     for (const { from, to } of ranges.get(id) ?? []) {
       const a = codes.indexOf(`${id}.${from}`);
-      let b = codes.indexOf(`${id}.${to}`);
+      const b = codes.indexOf(`${id}.${to}`);
       if (a < 0 || b < 0 || b < a) {
         throw new Error(
           `Faixa inválida: ${id}.${from}-${id}.${to}. Passos: ${codes.join(', ')}.`,
         );
       }
-      while (
-        /\d$/.test(codes[b]) &&
-        codes[b + 1]?.startsWith(codes[b]) &&
-        /^[a-z]$/.test(codes[b + 1].slice(codes[b].length))
-      ) {
-        b += 1;
-      }
-      const slice = codes.slice(a, b + 1);
-      add(`${id}.${from}-${id}.${to}`, slice);
+      spans.push({ a, b: extendOverSuffixes(codes, b), from, to });
+    }
+    spans.sort((x, y) => x.a - y.a);
+    const merged = [];
+    for (const sp of spans) {
+      const last = merged[merged.length - 1];
+      if (last && sp.a <= last.b + 1) {
+        if (sp.b > last.b) {
+          last.b = sp.b;
+          last.to = sp.to;
+        }
+      } else merged.push({ ...sp });
+    }
+    for (const { a, b, from, to } of merged) {
+      add(`${id}.${from}-${id}.${to}`, codes.slice(a, b + 1));
     }
   }
   return lotes;

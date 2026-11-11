@@ -972,6 +972,32 @@ describe('round-guide.mjs --faixas (#1639, TC1, decisão 3)', () => {
     expect(planFaixas(GUIDE, ['R0'])).toEqual([]);
   });
 
+  it('uma faixa pedida que termina em R12.11 leva todos os passos com letra e conta certo', async () => {
+    const { planFaixas } = await loadFaixas();
+    const lotes = planFaixas(GUIDE, ['R12.1-R12.11']);
+    const total = lotes.reduce((n, l) => n + l.steps, 0);
+    expect(lotes.at(-1)?.token.endsWith('R12.11')).toBe(true);
+    const excerpt = (await loadFaixas()).guideExcerpt(GUIDE, ['R12.1-R12.11']);
+    const linhas = [...excerpt.matchAll(/^\|\s*(?:\*\*)?R12\.\d+[a-z]?\b/gm)];
+    expect(total).toBe(linhas.length);
+  });
+
+  it('o corte automático não separa R12.11c de R12.11d', async () => {
+    const { planFaixas } = await loadFaixas();
+    for (const l of planFaixas(GUIDE, ['R12'])) {
+      expect(l.token.endsWith('R12.11c')).toBe(false);
+    }
+  });
+
+  it('faixas pedidas que se sobrepõem não repetem passos', async () => {
+    const { planFaixas } = await loadFaixas();
+    const lotes = planFaixas(GUIDE, ['R25.1-R25.20', 'R25.5-R25.30']);
+    expect(lotes.reduce((n, l) => n + l.steps, 0)).toBe(
+      planFaixas(GUIDE, ['R25.1-R25.30']).reduce((n, l) => n + l.steps, 0),
+    );
+    expect(lotes[0]?.token).toBe('R25.1-R25.20');
+  });
+
   it('roteiro inexistente lança', async () => {
     const { planFaixas } = await loadFaixas();
     expect(() => planFaixas(GUIDE, ['R99'])).toThrow(/R99/);
