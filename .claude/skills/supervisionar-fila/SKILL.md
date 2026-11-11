@@ -24,7 +24,7 @@ Rode este chat em **`claude-opus-5-5` com `effort: high`**. Um supervisor no esf
 - Permissão nunca vai em mensagem de fase nem de coordenador.
 - O prompt agendado de outra sessão só muda por `send_message` a ela, com conferência por `get_trigger`.
 - Quem executa na fila é o coordenador. A supervisão não grava no painel, salvo o artefato da passagem.
-- A sessão que deixou de ser a registrada (`painel.py roles`) **não age**: encaminha, sem mudar, o pedido ou o aviso que chegar à atual (`send_message`) e responde ao dono só com o link da atual.
+- A sessão que deixou de ser a registrada (`painel.py roles`) **não age**: encaminha, sem mudar, o pedido ou o aviso que chegar à atual (`send_message`) e responde ao dono só com o link da atual. A sucessora, até o coordenador aplicar o registro dela, só lê e manda o pedido de registro (tipo A, o único que a não registrada manda); o antecessor, enquanto isso, já não age.
 
 ## Pedidos ao coordenador
 
@@ -63,7 +63,7 @@ Cada mensagem depois de mais de 1 h regrava o contexto inteiro, e a supervisão 
 
 **Na sessão antiga:**
 
-1. Confira o limite de linhagem como no coordenador ("Limite de linhagem" do `implementar-fila`): `lineage.depth + 2 > lineage.limit` impede o sucessor; avise o dono com o comando para abrir uma sessão nova.
+1. Confira o limite de linhagem ("Limite de linhagem" do `implementar-fila`). O sucessor não cria sessões da fila, então basta uma vaga: `lineage.depth + 1 > lineage.limit` impede o sucessor; avise o dono com o comando para abrir uma sessão nova.
 2. Escreva a passagem no artefato Markdown **"Supervisão da fila"** (sempre o mesmo link; só a sessão registrada escreve), como regras: decisões do dono, issues abertas, agendamentos com a condição de parada, lições. Estado conferível fica nas fontes, não nela.
 3. `create_session` com `source_url` do repositório, `model: claude-opus-5-5`, `effort: high`, título "Supervisor <n>" (<n> = o `n` do `roles` mais 1) e a mensagem `/supervisionar-fila retomar anterior=<id desta sessão> painel=<url>`.
 4. Confira o `effort_level` da nova no `get_session`; se não for `high`, avise o dono.
@@ -73,12 +73,12 @@ Cada mensagem depois de mais de 1 h regrava o contexto inteiro, e a supervisão 
 
 1. Leia a passagem, o `painel.py requests` e o `painel.py roles`; confira o coordenador e responda ao dono em poucas linhas.
 2. Mande ao coordenador o pedido de registro (tipo A): `role supervisor <id desta sessão> link=<link da passagem>` e o custo do antecessor (do `get_session` dele).
-3. Com o registro aplicado, arquive o antecessor (`archive_session`; só ids registrados no painel) e confira no `get_session` que ficou arquivado. Se não ficou, tente mais uma vez; se ainda não, avise o dono.
-4. O limite de linhagem é o do coordenador.
+3. O coordenador não avisa o pedido aplicado, e a supervisão não vigia: no começo de cada turno seguinte (o `painel.py roles` já é lido ali), quando o `roles.supervisor` for esta sessão, arquive o antecessor (`archive_session`; só ids registrados no painel) e confira no `get_session` que ficou arquivado. Se não ficou, tente mais uma vez; se ainda não, avise o dono. Pedido de registro `atrasado` no `requests` é recusa em potencial: avise o dono.
+4. A sessão antiga, já avisada, fica parada até ser arquivada; se o dono falar com ela, ela só responde com o link da atual.
 
 ## Vigiar uma condição
 
-A sessão Opus fica sem conferências periódicas (sem conferências periódicas, em uma regra): das 14 conferências de 2026-11-10, só 3 acharam algo, e cada uma custou a releitura do contexto. A supervisão age quando o dono pergunta. Para vigiar uma condição, crie uma tarefa agendada que abre sessão nova a cada disparo (`create_trigger` com `create_new_session_on_fire`), troque o modelo para Sonnet ou Haiku com `update_trigger` logo depois de criar, e escreva o prompt para só notificar quando houver algo. O `send_later` nesta sessão só vale quando o dono pede.
+Regra: sem conferências periódicas na sessão Opus. Das 14 conferências de 2026-11-10, só 3 acharam algo, e cada uma custou a releitura do contexto. A supervisão age quando o dono pergunta. Para vigiar uma condição, crie uma tarefa agendada que abre sessão nova a cada disparo (`create_trigger` com `create_new_session_on_fire`), troque o modelo para Sonnet ou Haiku com `update_trigger` logo depois de criar (decisão do dono de 2026-11-10, que vale como o pedido explícito que a ferramenta exige), e escreva o prompt para só notificar quando houver algo. O `send_later` nesta sessão só vale quando o dono pede.
 
 ## Subagentes
 

@@ -115,7 +115,7 @@ describe('custo.py (decisão 19)', () => {
       session('Fila — coordenador 3', 16, 'claude-opus-5-5'),
       session('Detalhamento — #1533', 4, 'claude-opus-5-5'),
       session('Supervisor 2', 10, 'claude-opus-5-5'),
-      session('Conversa qualquer', 1, 'claude-fable-5-2'),
+      session('CR — coordenador (não arquivar)', 1, 'claude-fable-5-2'),
     ];
     const file = path.join(tmp, 's.jsonl');
     writeFileSync(file, rows.join('\n') + '\n');
@@ -150,6 +150,23 @@ describe('custo.py (decisão 19)', () => {
     const r = spawnSync('python3', ['-I', `${DIR}/custo.py`, file], { encoding: 'utf8' });
     expect(r.status).toBe(0);
     expect(r.stdout).toContain('Supervisão: 1 sessões, US$ 3.00');
+  });
+
+  it('sessão sem custo não entra nas contas e campos de tipo errado não derrubam o script', () => {
+    const file = path.join(tmp, 's.jsonl');
+    writeFileSync(
+      file,
+      [
+        session('Supervisor 1', 3, 'claude-opus-5-5'),
+        JSON.stringify({ ccr: { title: 'Supervisor 2', external_metadata: null } }),
+        JSON.stringify({ ccr: { title: 7, external_metadata: { usage: 'x' } } }),
+      ].join('\n') + '\n',
+    );
+    const r = spawnSync('python3', ['-I', `${DIR}/custo.py`, file], { encoding: 'utf8' });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain('total: 1 sessões, US$ 3.00');
+    expect(r.stdout).toContain('sem custo (fora das contas): 2 sessões');
+    expect(r.stdout).toContain('Supervisão: 1 sessões, US$ 3.00, mediana US$ 3.00');
   });
 
   it('erro de uso ou linha que não é JSON sai com 2', () => {
