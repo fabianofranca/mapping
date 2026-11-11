@@ -14,6 +14,11 @@ sem etapa começada e não mesclada, e segura todas as outras enquanto roda (`ex
 (`docs/FLOW.md#<slug>`, como o `docs/TESTING.md` por roteiro); `slug "<título>"` imprime o slug de um `##`.
 `ciWait` (o PR cujo CI espera o coordenador, ex. `PR #7`) e `ciWaitAt` (desde quando; `ciWait=` limpa os
 dois) entram na linha `CI esperando o coordenador:` do `show`; trocar ou limpar `child` não mexe neles.
+Fase que espera o dono no chat dela (decisão 7 da #1602): a linha com `child` e `wait` começando por `dono no chat da fase:`
+(a marca; o `status` não entra, porque `esperando dono` vale também para merge pedido e achado de severidade alta) sai em
+`esperando o dono no chat da fase:` do `show`, e não em `esperando o coordenador:` nem em `atrasadas:` (o `wait` a tira da
+contagem). Como o `wait` a tira de `atrasadas:`, a linha `esperando o dono há mais de 1 h:` a devolve à conferência de
+hora em hora (`get_session` da filha), com "prazo vencido" a partir de 240 min (CL1, #1627).
 `apply DIR <arquivo|->` grava vários subcomandos de uma vez (um por linha, na sintaxe da linha de comando
 sem `painel.py` e sem a pasta; linha vazia e `#` são ignoradas; `show`, `init`, `published` e `apply` não
 entram): tudo ou nada, com uma linha `alterados:` e, no erro, código 2 citando o número da linha.
@@ -41,7 +46,7 @@ Troca a quente e migração (decisões 17 e 25 da #1532): `upgrade DIR` troca, i
 `ordem do dono (só com a fila vazia)` por `exclusive=sim` (sem hold) e grava no `log` o que mudou (nada, se nada mudou).
 `import DIR-NOVA DIR-ANTIGA` (pasta nova recém-criada com `init`, fila vazia; senão código 2) traz do painel antigo as linhas
 `aguardando`, `em andamento`, `esperando dono` e `falhou`, na ordem e renumeradas, com a ficha, as fases, o passo, o PR, o
-`started` e o `hold` (as `em andamento` levam também `child`, `childAt`, `wait`, `ciWait`, `ciWaitAt` e `sessions`); as
+`started` e o `hold` (as `em andamento` e as `esperando dono` com `child` e `wait` levam também `child`, `childAt`, `wait`, `ciWait`, `ciWaitAt` e `sessions`); as
 `concluída` vão para `meta.merged` (com o antigo, sem repetir) e as regras em vigor de `meta.rules` vêm com a origem. Não vem
 o `ended`, nem do `meta` o `sessions`, `requests`, `current`, `paralelo`, `reserve`, `context`, `roles` e `unpublished`, nem o
 log. Os holds usam a conversão do `upgrade`; o `pausada pelo dono` (a drenagem da transição) é apagado. Uma linha no `log`
@@ -72,6 +77,9 @@ HOLD_PAUSED = "pausada pelo dono"  # a drenagem da transição: o `import` o apa
 IMPORT_STATUS = ["aguardando", "em andamento", "esperando dono", "falhou"]
 IMPORT_FIELDS = ["issue", "title", "kind", "plan", "phases", "phasesTotal", "phasesDone", "stage", "step", "pr",
                  "started", "hold"]
+OWNER_WAIT_PREFIX = "dono no chat da fase:"  # a marca do `wait` da fase que espera o dono no chat dela
+OWNER_RECHECK_MINUTES = 60  # a conferência de hora em hora relê a fase esperando o dono
+OWNER_DEADLINE_MINUTES = 240  # sem resposta do dono até aqui, o coordenador interrompe a pergunta
 IMPORT_RUNNING_FIELDS = ["child", "childAt", "wait", "ciWait", "ciWaitAt", "sessions"]
 DEFAULT_PARALELO = 2
 INT_FIELDS = ["order", "phasesTotal", "phasesDone"]
@@ -753,7 +761,9 @@ def cmd_upgrade(a):
 def imported_row(old, order):
     """A linha nova, só com o que o `import` traz (o resto fica no vazio padrão)."""
     row = dict(QUEUE_EMPTY)
-    for k in IMPORT_FIELDS + (IMPORT_RUNNING_FIELDS if old.get("status") == "em andamento" else []):
+    # a fase que espera o dono no chat dela (#1602) leva a sessão; o merge pedido não leva nada disso
+    running = carries_session(old)
+    for k in IMPORT_FIELDS + (IMPORT_RUNNING_FIELDS if running else []):
         if k in old:
             row[k] = old[k]
     row["order"] = order
@@ -795,7 +805,7 @@ def cmd_import(a):
     rules = [r for r in old_m.get("rules") or [] if not r.get("endedAt")]
     if rules:
         meta["rules"] = rules
-    running = sum(1 for r in rows if r["status"] == "em andamento")
+    running = sum(1 for r in rows if carries_session(r))
     new.get("log").append({"at": now(), "text": (
         f"importado de {a.old}: {len(rows)} linhas ({running} em andamento); "
         f"exclusivas {' '.join(exclusive) or 'nenhuma'}; holds {', '.join(holds) or 'nenhum'}; merged {len(merged)}")})
@@ -1084,8 +1094,39 @@ def late_rows(q):
             and minutes_since(r["childAt"]) > LATE_MINUTES]
 
 
+def is_owner_wait(r):
+    """Fase que espera o dono no chat dela: `child` e `wait` marcado com OWNER_WAIT_PREFIX (decisão 7 da #1602).
+
+    A marca está no `wait`, não no `status`: `esperando dono` também vale para merge pedido, achado de severidade
+    alta e aprovação de ruleset, e a pergunta de uma fase de correção ao coordenador pode cair numa etapa assim.
+    """
+    return bool(r.get("child") and (r.get("wait") or "").startswith(OWNER_WAIT_PREFIX))
+
+
+def carries_session(r):
+    """Linha que ainda tem a sessão da fase rodando: `em andamento` ou esperando o dono no chat dela."""
+    return r.get("status") == "em andamento" or is_owner_wait(r)
+
+
+def owner_waiting_rows(q):
+    return [r for r in q if is_owner_wait(r)]
+
+
+def owner_recheck_rows(q):
+    """Fase esperando o dono há mais de OWNER_RECHECK_MINUTES (o `wait` a tira de `late_rows`); `childAt` = início."""
+    return [r for r in owner_waiting_rows(q) if r.get("childAt")
+            and minutes_since(r["childAt"]) > OWNER_RECHECK_MINUTES]
+
+
+def owner_recheck_text(r):
+    mins = minutes_since(r["childAt"])
+    due = ", prazo vencido" if mins >= OWNER_DEADLINE_MINUTES else ""
+    return f"{r['issue']} {r['child']} ({mins} min{due})"
+
+
 def waiting_rows(q):
-    return [r for r in q if r.get("child") and r.get("wait")]
+    """Filha que espera o coordenador: `child` e `wait`, sem as que esperam o dono."""
+    return [r for r in q if r.get("child") and r.get("wait") and not is_owner_wait(r)]
 
 
 def ci_wait_rows(q):
@@ -1157,6 +1198,10 @@ def cmd_show(a):
     late = late_rows(q)
     print("atrasadas: " + ("; ".join(
         f"{r['issue']} {r['child']} ({minutes_since(r['childAt'])} min)" for r in late) or "nenhuma"))
+    print("esperando o dono no chat da fase: " + ("; ".join(
+        f"{r['issue']} ({r['wait']})" for r in owner_waiting_rows(q)) or "nenhuma"))
+    print(f"esperando o dono há mais de {OWNER_RECHECK_MINUTES // 60} h: " + ("; ".join(
+        owner_recheck_text(r) for r in owner_recheck_rows(q)) or "nenhuma"))
     print("esperando o coordenador: " + ("; ".join(
         f"{r['issue']} ({r['wait']})" for r in waiting_rows(q)) or "nenhuma"))
     print("CI esperando o coordenador: " + ("; ".join(
