@@ -160,6 +160,16 @@ describe('formatRef', () => {
 });
 
 describe('parseRef', () => {
+  it('aceita `_` no código (ids de componentes como A_N0)', () => {
+    expect(parseRef('mapping://componentes/a/a_n0')).toEqual({
+      project: 'componentes',
+      kind: 'a',
+      code: 'a_n0',
+    });
+    expect(parseRef('m/B_x1')).toEqual({ project: null, kind: 'm', code: 'b_x1' });
+    expect(parseRef('A_N0')).toEqual({ project: null, kind: null, code: 'a_n0' });
+  });
+
   it('lê a referência completa', () => {
     expect(parseRef('mapping://carro/m/3f2a9c1e')).toEqual({
       project: 'carro',

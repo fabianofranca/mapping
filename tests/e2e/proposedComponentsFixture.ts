@@ -223,10 +223,14 @@ export interface Showcase {
   readonly proposal: Proposal;
   /**
    * Id da mudança de criação da marcação, por caso (`marking:create`); no "invalid", o da
-   * criação da anotação adulterada (`annotation:create`), que é a que a revisão aponta.
+   * criação da anotação adulterada (`annotation:create`), que é a que a revisão aponta; no
+   * `acceptedAnnotation`, a da anotação do "accepted" (decidida, para o Aceito não ficar parcial).
    */
   readonly createIds: Readonly<
-    Record<Exclude<keyof typeof SHOWCASE_NAMES, 'existing'>, string>
+    Record<
+      Exclude<keyof typeof SHOWCASE_NAMES, 'existing'> | 'acceptedAnnotation',
+      string
+    >
   >;
   readonly files: Map<string, string | Buffer>;
 }
@@ -341,6 +345,7 @@ export function showcase(): Showcase {
   let proposal = tampered;
   for (const [change, state] of [
     [createOf('N2'), 'accepted'],
+    [annotationOf('N2'), 'accepted'],
     [createOf('N3'), 'rejected'],
     [createOf('N4'), 'accepted'],
     [annotationOf('N4'), 'accepted'],
@@ -370,6 +375,7 @@ export function showcase(): Showcase {
     createIds: {
       pending: createOf('N1').id,
       accepted: createOf('N2').id,
+      acceptedAnnotation: annotationOf('N2').id,
       rejected: createOf('N3').id,
       invalid: annotationOf('N4').id,
       noLabel: createOf('N5').id,

@@ -18,3 +18,6 @@
 ## Corrigido
 
 - PNG do MCP: o texto cortado de vários parágrafos e o texto mais alto que a caixa (inclusive no `cap-middle`) saem iguais aos da app.
+- MCP: a referência de uma marcação, anotação ou container com `_` no id (como `mapping://componentes/a/a_n0`) volta a ser aceita pelas tools (`update_annotation` recusava com `invalid-ref`).
+- Rótulo de button, extended-fab e chip com largura pelo conteúdo nasce em uma linha: o `$size` do tipo não limita mais a medida de um eixo `hug`.
+- "Sair da revisão" logo após aplicar não abre mais o lembrete contraditório ("0 aceita(s) aguardando"): sai direto.
