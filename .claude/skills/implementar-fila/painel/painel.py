@@ -14,6 +14,8 @@ sem etapa começada e não mesclada, e segura todas as outras enquanto roda (`ex
 (`docs/FLOW.md#<slug>`, como o `docs/TESTING.md` por roteiro); `slug "<título>"` imprime o slug de um `##`.
 `ciWait` (o PR cujo CI espera o coordenador, ex. `PR #7`) e `ciWaitAt` (desde quando; `ciWait=` limpa os
 dois) entram na linha `CI esperando o coordenador:` do `show`; trocar ou limpar `child` não mexe neles.
+Fase que espera o dono no chat dela (decisão 7 da #1602): a linha com `child`, `wait` e `status` `esperando dono` sai em
+`esperando o dono no chat da fase:` do `show`, e não em `esperando o coordenador:` nem em `atrasadas:` (o `wait` a tira da contagem).
 `apply DIR <arquivo|->` grava vários subcomandos de uma vez (um por linha, na sintaxe da linha de comando
 sem `painel.py` e sem a pasta; linha vazia e `#` são ignoradas; `show`, `init`, `published` e `apply` não
 entram): tudo ou nada, com uma linha `alterados:` e, no erro, código 2 citando o número da linha.
@@ -1084,8 +1086,14 @@ def late_rows(q):
             and minutes_since(r["childAt"]) > LATE_MINUTES]
 
 
+def owner_waiting_rows(q):
+    """Fase que espera o dono no chat dela: `child`, `wait` e `status` `esperando dono` (decisão 7 da #1602)."""
+    return [r for r in q if r.get("child") and r.get("wait") and r.get("status") == "esperando dono"]
+
+
 def waiting_rows(q):
-    return [r for r in q if r.get("child") and r.get("wait")]
+    """Filha que espera o coordenador: `child` e `wait`, sem as que esperam o dono."""
+    return [r for r in q if r.get("child") and r.get("wait") and r.get("status") != "esperando dono"]
 
 
 def ci_wait_rows(q):
@@ -1157,6 +1165,8 @@ def cmd_show(a):
     late = late_rows(q)
     print("atrasadas: " + ("; ".join(
         f"{r['issue']} {r['child']} ({minutes_since(r['childAt'])} min)" for r in late) or "nenhuma"))
+    print("esperando o dono no chat da fase: " + ("; ".join(
+        f"{r['issue']} ({r['wait']})" for r in owner_waiting_rows(q)) or "nenhuma"))
     print("esperando o coordenador: " + ("; ".join(
         f"{r['issue']} ({r['wait']})" for r in waiting_rows(q)) or "nenhuma"))
     print("CI esperando o coordenador: " + ("; ".join(
