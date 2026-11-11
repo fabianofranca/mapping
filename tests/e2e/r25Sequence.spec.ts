@@ -102,9 +102,6 @@ const RECTS = {
   checkbox: { x: 300, y: 350, width: 240, height: 60 },
 } satisfies Record<string, Rect>;
 
-/** O que vale logo depois do R25.8, antes de devolver o Card: ele vai junto com o Navigation bar. */
-const CARRIED = { ...RECTS, card: { x: 320, y: 60, width: 200, height: 100 } };
-
 type Expected = Partial<Record<keyof typeof RECTS, Rect>>;
 
 /** Espera a gravação assentar (a `revision` para de subir) e devolve o texto cru. */
@@ -290,28 +287,23 @@ test('R25.3 a R25.12: nenhuma marcação muda de lugar sem pedido', async ({ pag
     await cell.press('Enter');
   }
   raw = await settled(page);
-  // R25.8: a Paleta cria o Navigation bar em (10,250), por cima do Card (30,290,200,100).
-  // Pela geometria o Card vira filho dele, e mover o pai (para 300,20) o leva junto: o Card
-  // vai de (30,290) para (320,60). É o comportamento documentado (decisão de produto B/C na
-  // issue #1087); o roteiro R25.8 avisa da adoção e devolve o Card a (30,290) pelos Detalhes.
-  mapping = expectRects(raw, CARRIED, 'R25.8');
+  // R25.8: a Paleta cria o Navigation bar em lugar livre (a peça nova não cobre nem coincide com
+  // marcações existentes, issue #1087): o Card (30,290,200,100) fica parado, sem pai, e não
+  // precisa ser devolvido; o Navigation bar vai para (300,20) sem levá-lo.
+  mapping = expectRects(raw, RECTS, 'R25.8');
   const markingOf = (type: string) =>
     mapping.markings.find(
       (m) => m.id === mapping.annotations.find((a) => a.type?.typeId === type)?.markingId,
     );
-  expect(markingOf('card')?.parentId, 'R25.8: o Card é filho do Navigation bar').toBe(
-    markingOf('navigation-bar')?.id,
-  );
+  expect(markingOf('card')?.parentId, 'R25.8: o Card continua sem pai').toBeNull();
+  expect(
+    markingOf('navigation-bar')?.parentId,
+    'R25.8: o Navigation bar nasce sem pai',
+  ).toBeNull();
   const nav = mapping.annotations.find((a) => a.type?.typeId === 'navigation-bar');
   expect(
     (nav?.values?.['items'] as readonly { label: string }[]).map((r) => r.label),
   ).toEqual(['A', 'B', 'C']);
-  // R25.8 (devolver o Card): X 30 / Y 290 pelos Detalhes tira o Card do Navigation bar.
-  await selectInTree(page, 'Card');
-  await setPosition(page, 30, 290);
-  raw = await settled(page);
-  mapping = expectRects(raw, RECTS, 'R25.8 (Card devolvido)');
-  expect(markingOf('card')?.parentId, 'R25.8: o Card sai do Navigation bar').toBeNull();
   before = raw;
 
   // R25.9 a R25.11: zoom em cada peça, sem mexer nas marcações.

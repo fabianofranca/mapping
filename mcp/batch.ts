@@ -28,6 +28,7 @@ import {
   componentFileMinSize,
   componentMinSize,
   componentPlacement,
+  componentSize,
   placementFitsSlot,
   hasComponentSlot,
   componentTypes,
@@ -2042,7 +2043,7 @@ class Batch {
         const target = this.nearTarget(op.near);
         const size =
           op.rect ??
-          componentPlacement(
+          componentSize(
             p,
             catalog,
             { containerId: null, parentId: null, ...typeRef! },
