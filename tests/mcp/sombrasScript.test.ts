@@ -26,7 +26,7 @@ function buildCard(): unknown {
   }
 }
 
-function drawCard() {
+function drawCard(scale = 1) {
   const parsed = parseComponent(buildCard());
   if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
   const { root } = instantiate(
@@ -35,15 +35,17 @@ function drawCard() {
     { x: 0, y: 0, width: 300, height: 120 },
     { measure: approximateMeasurer },
   );
-  const raster = createRaster(300, 120);
+  const w = Math.round(300 * scale);
+  const h = Math.round(120 * scale);
+  const raster = createRaster(w, h);
   raster.data.fill(255);
   paintScene(raster, [{ root }], approximateMeasurer, {
-    scaleX: 1,
-    scaleY: 1,
-    clip: { x: 0, y: 0, width: 300, height: 120 },
+    scaleX: scale,
+    scaleY: scale,
+    clip: { x: 0, y: 0, width: w, height: h },
   });
   const at = (x: number, y: number) => {
-    const i = (y * 300 + x) * 4;
+    const i = (Math.round(y * scale) * w + Math.round(x * scale)) * 4;
     return [...raster.data.subarray(i, i + 3)];
   };
   const children: readonly SceneNode[] = 'children' in root ? root.children : [];
@@ -102,5 +104,20 @@ describe('sombras.mjs (R25.79 a R25.82)', () => {
     expect(at(150, 60)).toEqual(RED);
     expect(at(210, 89)).toEqual(RED);
     expect(at(269, 89)).toEqual(WHITE);
+  });
+
+  it('R25.82: em escala não inteira o contorno, na metade do traço, e os cinzas seguem o critério', () => {
+    for (const scale of [1.76, 2.8, 4.2]) {
+      const { at } = drawCard(scale);
+      expect(at(151, 60)).toEqual(RED); // meio do traço de 2 (o 150 é a borda dele)
+      const dark = at(70, 66);
+      expect(dark[0]).toBe(dark[1]);
+      expect(dark[1]).toBe(dark[2]);
+      expect(dark[0]).toBeLessThan(0x80); // 2B a 47 conforme `s`, nunca um valor fixo
+      const light = at(70, 72);
+      expect(light[0]).toBe(light[1]);
+      expect(light[1]).toBe(light[2]);
+      expect(light[0]).toBeGreaterThanOrEqual(0xf0);
+    }
   });
 });
