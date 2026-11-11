@@ -172,8 +172,10 @@
     var statusEl = document.getElementById('status');
     var gruposEl = document.getElementById('grupos');
     var respondeu = false;
+    var falhado = false;
 
     function falhou() {
+      falhado = true;
       statusEl.hidden = false;
       statusEl.className = 'status erro';
       statusEl.textContent =
@@ -220,7 +222,19 @@
         statusEl.className = 'status';
         statusEl.textContent = 'A passagem está vazia: nenhuma regra gravada ainda.';
       }
-      GRUPOS.forEach(function (g) {
+      var conhecidos = GRUPOS.map(function (g) {
+        return g.tipo;
+      });
+      var outras = [];
+      Object.keys(porTipo).forEach(function (t) {
+        if (conhecidos.indexOf(t) < 0) outras = outras.concat(porTipo[t]);
+      });
+      var grupos = GRUPOS.slice();
+      if (outras.length > 0) {
+        porTipo.outras = outras;
+        grupos.push({ tipo: 'outras', titulo: 'Outras regras', vazio: '' });
+      }
+      grupos.forEach(function (g) {
         var itens = (porTipo[g.tipo] || []).sort(function (a, b) {
           return (
             String(b.d.desde || '').localeCompare(String(a.d.desde || '')) ||
@@ -249,32 +263,38 @@
       if (!respondeu) falhou();
     }, 10000);
 
-    var uso =
-      window.claude && window.claude.use
-        ? window.claude.use('db')
-        : Promise.resolve(null);
-    uso.then(
-      function (db) {
-        if (!db) {
-          clearTimeout(prazo);
+    function conectar(db) {
+      db.collection('passagem').onSnapshot(
+        function (snap) {
+          desenhar(snap);
+        },
+        function () {
           falhou();
-          return;
-        }
-        db.collection('passagem').onSnapshot(
-          function (snap) {
-            clearTimeout(prazo);
-            desenhar(snap);
-          },
-          function () {
+        },
+      );
+    }
+
+    // O window.claude pode chegar depois da primeira execução: tenta de novo até o prazo de 10 s.
+    function tentar() {
+      if (respondeu || falhado) return;
+      if (!(window.claude && window.claude.use)) {
+        setTimeout(tentar, 250);
+        return;
+      }
+      window.claude.use('db').then(
+        function (db) {
+          if (db) conectar(db);
+          else {
             clearTimeout(prazo);
             falhou();
-          },
-        );
-      },
-      function () {
-        clearTimeout(prazo);
-        falhou();
-      },
-    );
+          }
+        },
+        function () {
+          clearTimeout(prazo);
+          falhou();
+        },
+      );
+    }
+    tentar();
   })();
 </script>

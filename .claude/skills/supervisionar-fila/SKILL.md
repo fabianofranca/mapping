@@ -75,7 +75,7 @@ Cada mensagem depois de mais de 1 h regrava o contexto inteiro, e a supervisão 
 
 **Na sessão antiga** (só a troca automática). A troca não tem turno de passagem: a passagem já está em dia ("Passagem"), e a sessão só confere que nada deste turno ficou por escrever e cria a sucessora.
 
-1. Confira o limite de linhagem ("Limite de linhagem" do `implementar-fila`). O sucessor não cria sessões da fila, então basta uma vaga: com `lineage.depth + 1 > lineage.limit`, **não crie a sucessora**, mande ao dono `PushNotification` "Supervisão acima de 50% e sem vaga na linhagem: abra uma sessão nova e mande `/supervisionar-fila`" e siga respondendo.
+1. Confira o limite de linhagem ("Limite de linhagem" do `implementar-fila`). O sucessor não cria sessões da fila, então basta uma vaga: com `lineage.depth + 1 > lineage.limit`, **não crie a sucessora**, mande ao dono `PushNotification` "Supervisão acima de 50% e sem vaga na linhagem: abra uma sessão nova e mande `/supervisionar-fila`" e siga respondendo. Avise uma só vez por sessão: se já avisou neste chat, não repita a cada turno.
 2. Confira que a passagem está em dia.
 3. `create_session` com `source_url` do repositório, `model: claude-opus-5-5`, `effort: high`, título "Supervisor <n>" (<n> = o `n` do `roles` mais 1) e a mensagem `/supervisionar-fila retomar anterior=<id desta sessão> painel=<url>`.
 4. Confira o `effort_level` da nova no `get_session`; se não for `high`, avise o dono.
@@ -90,26 +90,26 @@ Cada mensagem depois de mais de 1 h regrava o contexto inteiro, e a supervisão 
 
 A retomada da `sucessora`:
 
-1. Leia a passagem pela database ("Passagem"), o `painel.py requests` (a tabela inteira) e o `painel.py roles`; confira o coordenador e responda ao dono em poucas linhas.
+1. Leia a passagem pela database ("Passagem"); na primeira retomada depois do merge deste épico o `list` vem vazio porque a passagem ainda é o Markdown antigo, e então leia o Markdown (o `Artifact` `read` do link) e migre-o depois do registro ("Passagem" › "Migrar"). Leia também o `painel.py requests` (a tabela inteira) e o `painel.py roles`; confira o coordenador e responda ao dono em poucas linhas.
 2. Mande ao coordenador o pedido de registro (tipo A): `role supervisor <id desta sessão> link=<link da passagem>` e o custo do antecessor (do `get_session` dele). O registro grava esse custo com `kind=supervisor` em `meta.sessions`, e é isso que faz o `painel.py` reconhecer o antecessor como `antiga` e o de duas gerações atrás como `sucessora`: o pedido sempre traz o custo, com `kind=supervisor`.
 3. O coordenador não avisa o pedido aplicado, e a supervisão não vigia: no começo de cada turno seguinte, quando o `esta sessão:` disser `registrada`, arquive o antecessor (`archive_session`; só ids registrados no painel) e confira no `get_session` que ficou arquivado. Se não ficou, tente mais uma vez; se ainda não, avise o dono. Pedido de registro `atrasado` no `requests` é recusa em potencial: avise o dono.
-4. Com o registro aplicado, recrie os agendamentos do antecessor: leia os documentos `agendamento` da passagem e, para cada um, crie o agendamento nesta sessão, apague o antigo (`delete_trigger` com o `trigger` do documento) e atualize o `trigger` do documento. Pule o que já aponta para esta sessão (`get_trigger`).
+4. Com o registro aplicado, recrie os agendamentos presos à sessão do antecessor (os de `persistent_session_id` igual ao dele, como o `send_later`; os de vigia, de `create_new_session_on_fire`, não pertencem a sessão nenhuma e ficam como estão): leia os documentos `agendamento` da passagem (na primeira retomada, as linhas de agendamento do Markdown) e, para cada um desses, crie o agendamento nesta sessão, apague o antigo (`delete_trigger` com o `trigger` do documento) e atualize o `trigger` do documento. Pule o que já aponta para esta sessão (`get_trigger`).
 5. A sessão antiga, já avisada, fica parada até ser arquivada; se o dono falar com ela, ela só responde com o link da atual.
 
 ## Passagem
 
-A passagem mora na **database** do artefato "Supervisão da fila" (sempre o mesmo link): a página `.claude/skills/supervisionar-fila/passagem/index.html`, publicada com a capacidade `db`, só lê e mostra a coleção `passagem`. Só a sessão `registrada` escreve. Cada regra é um documento:
+A passagem mora na **database** do artefato "Supervisão da fila" (sempre o mesmo link): a página `.claude/skills/supervisionar-fila/passagem/index.html`, publicada com a capacidade `db`, só lê e mostra a coleção `passagem`. Só a sessão `registrada` escreve regras; a `nova` só cria o artefato ("Criar") e grava as decisões do dono dadas antes do registro. Cada regra é um documento:
 
 - id `<tipo>-<nome curto>`; campos `tipo` (`decisao`, `issue`, `agendamento` ou `licao`), `texto` (a regra, nunca um estado), `origem` (ex.: "dono, 2026-11-11, chat do supervisor" ou "#1643") e `desde` (AAAA-MM-DD);
 - o `agendamento` tem também `trigger` (o id do agendamento) e `parada` (a condição de parada).
 
-**Ler:** `ArtifactData` `list` da coleção `passagem` (só JSON, sem HTML nem CSS). **Gravar:** um `set`, `update` ou `delete` por mudança (um `batch` quando são várias), com o `if_version` lido do documento. Nunca republique a página para mudar uma regra, e não carregue a skill `artifact-design` para isso.
+**Ler:** `ArtifactData` `list` da coleção `passagem` (só JSON, sem HTML nem CSS), seguindo o `next_cursor` até o fim. **Gravar:** um `set`, `update` ou `delete` por mudança (um `batch` quando são várias), com o `if_version` lido do documento; documento novo não tem versão e se grava sem ele. Nunca republique a página para mudar uma regra, e não carregue a skill `artifact-design` para isso.
 
 **Em dia no mesmo turno.** A passagem fica em dia no mesmo turno de cada decisão do dono, issue aberta, agendamento ou lição, e a regra com a condição de saída vencida sai no mesmo turno (`delete`). Por isso a troca de sessão não tem turno de passagem. Escreva regras, não estados ("Regras de escrita").
 
-**Criar (`nova`).** Publique a página `passagem/index.html` com `Artifact` (`file_path` = ela, sem reescrevê-la) e `capabilities: {db: {}}`, e grave as regras que o dono já deu.
+**Criar (`nova`).** Antes, procure um artefato "Supervisão da fila" já existente (`Artifact` `list`): se existe, é a passagem, e vale o "Migrar" abaixo com o link dele; não crie um segundo. Senão, publique a página `passagem/index.html` com `Artifact` (`file_path` = ela, sem reescrevê-la) e `capabilities: {db: {}}`, e grave as regras que o dono já deu.
 
-**Migrar, uma vez.** A primeira supervisora já registrada depois do merge deste épico, se o `list` da coleção `passagem` vier vazio, migra a passagem Markdown: leia-a uma vez (a retomada já a lê), leia o arquivo inteiro do artefato como a ferramenta exige de arquivo que ela não escreveu, republique o mesmo link com a página `passagem/index.html` e `capabilities: {db: {}}`, e grave as regras num `batch`, sem as que têm a condição de saída vencida (as "até a #1643 ser mesclada" dos comentários). Antes do registro ela só lê ("Papel e limites").
+**Migrar, uma vez.** A primeira supervisora já registrada depois do merge deste épico, se o `list` da coleção `passagem` vier vazio **e o artefato ainda é o Markdown** (a coleção vazia sozinha não basta: ela também fica assim quando todas as regras saem por vencidas), migra a passagem Markdown: leia-a uma vez (a retomada já a lê), leia o arquivo inteiro do artefato como a ferramenta exige de arquivo que ela não escreveu, republique o mesmo link com a página `passagem/index.html` e `capabilities: {db: {}}`, e grave as regras num `batch`, sem as que têm a condição de saída vencida (as "até a #1643 ser mesclada" dos comentários). Antes do registro ela só lê ("Papel e limites").
 
 ## Vigiar uma condição
 

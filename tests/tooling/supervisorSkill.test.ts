@@ -170,6 +170,26 @@ describe('skill supervisionar-fila (decisão 19)', () => {
     );
   });
 
+  it('revisão: migração na primeira retomada, agendamentos de vigia, nova e leitura completa', () => {
+    const troca = section(SKILL, '## Troca de sessão');
+    const passagem = section(SKILL, '## Passagem');
+    // a primeira retomada depois do merge ainda lê o Markdown e migra depois do registro
+    expect(troca).toContain('ainda é o Markdown');
+    // só os agendamentos presos à sessão do antecessor são recriados; os de vigia ficam
+    expect(troca).toContain('persistent_session_id');
+    expect(troca).toContain('create_new_session_on_fire');
+    // a nova escreve o mínimo antes do registro e não duplica o artefato
+    expect(passagem).toContain('Artifact` `list`');
+    expect(passagem).toContain('antes do registro');
+    // a migração tem um marcador durável: a coleção vazia sozinha não basta
+    expect(passagem).toContain('o artefato ainda é o Markdown');
+    // documento novo não tem if_version, e a leitura segue o cursor
+    expect(passagem).toContain('documento novo');
+    expect(passagem).toContain('next_cursor');
+    // a notificação sem vaga na linhagem vai uma vez só
+    expect(troca).toContain('uma só vez');
+  });
+
   it('## Subagentes: o briefing pede o retorno em até 10 linhas (decisão 13)', () => {
     const s = section(SKILL, '## Subagentes');
     expect(s).toContain('até 10 linhas');
@@ -235,6 +255,11 @@ describe('passagem/index.html: a página do artefato "Supervisão da fila" (deci
     }
     for (const w of ['.set(', '.update(', '.delete(', '.add('])
       expect(page).not.toContain(w);
+  });
+
+  it('espera o window.claude até o prazo e mostra os documentos de tipo desconhecido', () => {
+    expect(page).toContain('setTimeout(tentar');
+    expect(page).toContain('Outras regras');
   });
 
   it('tem tema escuro e não usa innerHTML, fetch nem script externo', () => {
