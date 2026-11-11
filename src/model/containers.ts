@@ -86,7 +86,7 @@ function checkPlacement({ x, y, scale }: Placement): void {
 function placementAtRight(p: Project, scale: number, excludeId?: string): Placement {
   const others = p.containers.filter((i) => i.id !== excludeId);
   const rects = others.map((i) => imageCanvasRect(i, i.placement));
-  if (rects.length === 0) return { x: 0, y: 0, scale };
+  if (rects.length === 0) return snapPlacement({ x: 0, y: 0, scale });
   const rightmost = rects.reduce((a, b) => (right(b) > right(a) ? b : a));
   return snapPlacement({ x: right(rightmost) + IMAGE_GAP, y: rightmost.y, scale });
 }

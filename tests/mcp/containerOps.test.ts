@@ -242,6 +242,36 @@ describe('update_container, replace_container e delete_container', () => {
     expect(written.containers[0]!.placement.x).toBe(275);
   });
 
+  it('update_container com x fracionário grava 6 casas e o texto mostra o valor gravado; add_container com centro fracionário grava sem cauda', async () => {
+    const { name, dir } = await newProject();
+    const created = await propose(mcp, name, [
+      {
+        op: 'add_container',
+        name: 'Cartão',
+        width: 100,
+        height: 100,
+        background: '#FFFFFF',
+        center: { x: 100.1234567891, y: 50.9876543219 },
+      },
+    ]);
+    const box = created.created[0]!.ref!;
+    const after = acceptAllAndApply(dir, created.proposal.id);
+    expect(after.containers[0]!.placement).toEqual({
+      x: -399.876543,
+      y: -449.012346,
+      scale: 10,
+    });
+    const update = await plan(name, [
+      { op: 'update_container', container: box, x: 100.1234567 },
+    ]);
+    expect(update.summary[0]).toContain('posição (100.123457, -449.012346)');
+    const changed = await propose(mcp, name, [
+      { op: 'update_container', container: box, x: 100.1234567 },
+    ]);
+    const written = acceptAllAndApply(dir, changed.proposal.id);
+    expect(written.containers[0]!.placement.x).toBe(100.123457);
+  });
+
   it('as antigas update_image, replace_image e delete_image seguem valendo, com aviso', async () => {
     const { name, dir } = await newProject();
     const created = await propose(mcp, name, [

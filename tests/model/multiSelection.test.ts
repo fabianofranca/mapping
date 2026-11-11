@@ -20,8 +20,12 @@ import {
   setItemsLocked,
   setMarkingLocked,
   settleHierarchy,
+  slideToTouch,
+  touchDelta,
   type ItemRef,
+  type Rect,
 } from '../../src/model';
+import { rng, type Rand } from './proposalFuzzSupport';
 import { expectValid, image, marking } from './fixtures';
 import {
   container,
@@ -761,5 +765,39 @@ describe('limitItemsMove: o arrasto que encosta', () => {
     const p = multiProject();
     expect(limitItemsMove(p, [mark('N')], 30, 0)).toEqual({ dx: 30, dy: 0 });
     expect(limitItemsMove(p, [img('A')], 0, 0)).toEqual({ dx: 0, dy: 0 });
+  });
+});
+
+// Decisão 9 da etapa #1190: `touchDelta` filtra os fixos pela caixa varrida e dá o mesmo resultado
+// que o cálculo sem filtro (`slideToTouch` direto, com o arredondamento e o truncamento do `whole`).
+describe('touchDelta: o filtro pela caixa varrida não muda o resultado', () => {
+  const grid = (r: Rand, n: number, span: number, size: number): Rect[] =>
+    Array.from({ length: n }, () => ({
+      x: Math.round(r() * span * 4) / 4,
+      y: Math.round(r() * span * 4) / 4,
+      width: 20 + Math.round(r() * size * 4) / 4,
+      height: 20 + Math.round(r() * size * 4) / 4,
+    }));
+
+  it('em 200 cenários com semente fixa dá o mesmo que slideToTouch sem o filtro', () => {
+    const r = rng(1190);
+    let touched = 0;
+    for (let i = 0; i < 200; i++) {
+      const moving = grid(r, 1 + Math.floor(r() * 3), 300, 80);
+      const fixed = grid(r, 3 + Math.floor(r() * 12), 600, 120);
+      const whole = r() < 0.5;
+      const dx = (r() - 0.5) * 500;
+      const dy = (r() - 0.5) * 500;
+      const wantedX = whole ? Math.round(dx) : dx;
+      const wantedY = whole ? Math.round(dy) : dy;
+      const slid = slideToTouch(moving, fixed, wantedX, wantedY);
+      const expected = whole
+        ? { dx: Math.trunc(slid.dx), dy: Math.trunc(slid.dy) }
+        : slid;
+      if (slid.dx !== wantedX || slid.dy !== wantedY) touched++;
+      expect(touchDelta(moving, fixed, dx, dy, whole)).toEqual(expected);
+    }
+    // o gerador exercita o encosto de verdade, não só o destino livre
+    expect(touched).toBeGreaterThan(20);
   });
 });

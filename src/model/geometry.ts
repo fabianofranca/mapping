@@ -55,23 +55,54 @@ export const EPSILON = 1e-6;
  * nunca `-0`; fração de verdade (`1868.13`, `0.5`) fica como está. Valor não finito passa.
  */
 export function snapNearInteger(v: number, eps: number = EPSILON): number {
+  if (!Number.isFinite(v)) return v;
   const rounded = Math.round(v);
-  if (!(Math.abs(v - rounded) < eps)) return v; // também devolve v se não for finito
+  if (Math.abs(v - rounded) >= eps) return v;
   return rounded || 0;
 }
 
 /**
- * Limpa o ruído de ponto flutuante do `placement` de um container: `x`, `y` e `scale` passam pelo
- * `snapNearInteger`, mas a escala só vira inteiro se ele for >= 1 (uma escala minúscula nunca vira 0).
- * Fração de verdade (arrasto com zoom, `1868.13`) fica como está.
+ * Posição (`x`, `y`) gravada: perto de um inteiro vira o inteiro (`274.9999999` → `275`); senão
+ * a fração é cortada a 6 casas (`-739.6551724137931` → `-739.655172`). Nunca devolve `-0`. O desvio
+ * (até 5e-7) fica abaixo da folga `EPSILON` do modelo, então nenhum encosto vira sobreposição.
+ * Valor não finito passa como está (o `checkPlacement` o recusa depois).
+ */
+export function snapCoordinate(v: number): number {
+  if (!Number.isFinite(v)) return v;
+  const near = snapNearInteger(v);
+  if (Number.isInteger(near)) return near;
+  return Number(v.toFixed(6)) || 0;
+}
+
+/**
+ * Escala gravada: perto de um inteiro >= 1 vira o inteiro (a regra de sempre); senão fica com 12
+ * algarismos significativos (`17.24137931034483` → `17.2413793103`), um desvio relativo de 5e-13.
+ * Uma escala pequena nunca vira 0. Valor não finito passa como está.
+ */
+export function snapScale(v: number): number {
+  if (!Number.isFinite(v)) return v;
+  const near = snapNearInteger(v);
+  if (Number.isInteger(near) && near >= 1) return near;
+  return Number(v.toPrecision(12));
+}
+
+/**
+ * Limpa a cauda de ponto flutuante do `placement` de um container (`snapCoordinate` em `x` e `y`,
+ * `snapScale` na escala). Todas as portas que gravam posição ou escala de container passam por aqui:
+ * - `setContainerPlacement` (mover, redimensionar, `update_container`), `moveContainer` e
+ *   `resizeContainer`;
+ * - `moveItems` (arrasto conjunto);
+ * - `placementNear` e `placementAtRight` (criar: `addContainer`, `addBackgroundContainer` com e
+ *   sem `center`, o **Tamanho da seleção** e o `add_container`);
+ * - `replaceContainer` (trocar a imagem, que muda a escala);
+ * - o reparo `images-overlap` (`repair.ts`);
+ * - as posições das perspectivas (`items[].x/y`, o mesmo que `placement.x/y`), por
+ *   `snapCoordinate`: `movedItem`, o item reconciliado, `placeCreatedRoot`, a posição relativa e
+ *   `placeInArrivalArea`, e o `base` do redimensionar em `perspectiveGestures.ts`.
+ * A raiz que é marcação continua inteira (`Math.round` ou `Math.ceil` antes).
  */
 export function snapPlacement(p: Placement): Placement {
-  const scale = snapNearInteger(p.scale);
-  return {
-    x: snapNearInteger(p.x),
-    y: snapNearInteger(p.y),
-    scale: scale >= 1 ? scale : p.scale,
-  };
+  return { x: snapCoordinate(p.x), y: snapCoordinate(p.y), scale: snapScale(p.scale) };
 }
 
 export function right(r: Rect): number {
@@ -113,10 +144,10 @@ export function rectsOverlap(a: Rect, b: Rect): boolean {
 
 /**
  * O maior deslocamento de `moving` (retângulos que andam juntos) até `dx`, `dy` sem sobrepor
- * `fixed`, **eixo a eixo**: primeiro o x (contra os fixos que o y atual cruza), depois o y (com o
- * x já aplicado), só quando o destino pedido sobrepõe um fixo, de modo que o movimento encosta no obstáculo (borda igual, distância 0) e
- * desliza ao longo dele no outro eixo. Deslocamento que cabe volta como está. Quem já se
- * sobrepõe não limita (não há "passar por dentro" a evitar).
+ * `fixed`: se o destino pedido não sobrepõe um fixo, volta como está; senão encosta e desliza,
+ * eixo a eixo (primeiro o x, contra os fixos que o y atual cruza; depois o y, com o x já
+ * aplicado). O movimento encosta no obstáculo (borda igual, distância 0) e desliza ao longo dele
+ * no outro eixo. Quem já se sobrepõe não limita (não há "passar por dentro" a evitar).
  */
 export function slideToTouch(
   moving: readonly Rect[],
@@ -148,6 +179,38 @@ function limitX(moving: readonly Rect[], fixed: readonly Rect[], delta: number):
     }
   }
   return Math.sign(delta) * limit || 0;
+}
+
+/**
+ * O deslocamento de um gesto depois de encostar: com `whole` (há marcação do canvas na seleção)
+ * arredonda o pedido; filtra `fixed` pela caixa varrida (a envoltória de `moving` e de `moving`
+ * deslocado por `dx`, `dy`, com folga `EPSILON`: um fixo fora dela não limita nenhum eixo, então o
+ * resultado é o do cálculo sem filtro); chama `slideToTouch` e, com `whole`, trunca o resultado.
+ */
+export function touchDelta(
+  moving: readonly Rect[],
+  fixed: readonly Rect[],
+  dx: number,
+  dy: number,
+  whole: boolean,
+): { readonly dx: number; readonly dy: number } {
+  const wantedX = whole ? Math.round(dx) : dx;
+  const wantedY = whole ? Math.round(dy) : dy;
+  const swept = boundingBox([
+    ...moving,
+    ...moving.map((r) => translateRect(r, wantedX, wantedY)),
+  ]);
+  const near = swept
+    ? fixed.filter(
+        (f) =>
+          f.x <= right(swept) + EPSILON &&
+          right(f) >= swept.x - EPSILON &&
+          f.y <= bottom(swept) + EPSILON &&
+          bottom(f) >= swept.y - EPSILON,
+      )
+    : fixed;
+  const limited = slideToTouch(moving, near, wantedX, wantedY);
+  return whole ? { dx: Math.trunc(limited.dx), dy: Math.trunc(limited.dy) } : limited;
 }
 
 export function boundingBox(rects: readonly Rect[]): Rect | null {
