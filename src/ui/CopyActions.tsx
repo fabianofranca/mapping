@@ -18,6 +18,7 @@ import {
 import { CiteItem, CommentItem } from './CiteMenuItems';
 import { useEditor } from './EditorContext';
 import { Button, IconButton } from './controls';
+import { keepFocusAfterAction } from './focus';
 import { Popover } from './Popover';
 
 // "Copiar referência" e "Copiar recorte" na interface: botões em Detalhes e no cartão da
@@ -197,7 +198,17 @@ export function ItemMenu({
         />
       )}
     >
-      {(close) => <CopyMenuItems target={target} close={close} copyable={copyable} />}
+      {(close) => (
+        <CopyMenuItems
+          target={target}
+          close={() => {
+            // O fechamento devolve o foco ao ⋯; a ação que vem depois pode tirar a linha do lugar.
+            close();
+            keepFocusAfterAction(null);
+          }}
+          copyable={copyable}
+        />
+      )}
     </Popover>
   );
 }
