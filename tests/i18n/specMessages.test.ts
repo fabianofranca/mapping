@@ -5,6 +5,7 @@ import { parseSpec, type SpecIssue } from '../../src/model/spec';
 import { validateLibrary } from '../../src/model/library';
 import { locale } from '../../src/store/settings';
 import { messageText } from '../../src/ui/modelMessage';
+import { specCodeForText } from '../../src/model/messages/textLookup';
 import { issueText } from '../../src/ui/LibraryIssueList';
 
 // MB2 (#1357): os problemas da especialização até `layerShape` (campos, sugestões, `code`,
@@ -770,5 +771,168 @@ describe('mensagens da especialização (até layerShape)', () => {
     expect(issue).toBeDefined();
     expect(issue?.params).toEqual({ key: 'a' });
     expect(issueText(issue!)).toBe('key "a" repeated');
+  });
+});
+
+// Item 2 da #1530 (decisões 2 e 7): o código da mensagem da especialização não vem de um regex
+// do texto pt-BR, salvo os três textos que o zod monta com o valor recebido.
+describe('código da mensagem da especialização sem falso casamento', () => {
+  it('texto que só parece com um modelo com parâmetro não ganha código', () => {
+    expect(specCodeForText('deve ser "a" ou "b"')).toBeUndefined();
+    expect(specCodeForText('nome "a" e "b" repetido')).toBeUndefined();
+    expect(specCodeForText('só é permitido com formatVersion 4')).toBeUndefined();
+  });
+
+  it('o padrão vale só para os três códigos dos enums', () => {
+    expect(specCodeForText('"x" inválido; use "marking" ou "arrow"')).toEqual({
+      code: 'spec.appliesToInvalid',
+      params: { value: 'x' },
+    });
+    expect(
+      specCodeForText(
+        '"x" inválido; use "removed", "deprecated", "diverges" ou "pending"',
+      ),
+    ).toEqual({ code: 'spec.noticeKindInvalid', params: { value: 'x' } });
+    expect(
+      specCodeForText(
+        '"x" inválido; use "string", "number", "date", "enum", "table" ou "ref"',
+      ),
+    ).toEqual({ code: 'spec.fieldTypeInvalid', params: { value: 'x' } });
+  });
+
+  it('o texto exato de um modelo sem parâmetro segue achando o código', () => {
+    expect(specCodeForText('obrigatório')).toEqual({ code: 'spec.required' });
+  });
+
+  // O mesmo `code` e os mesmos `params` de antes, um caso por grupo da decisão 2.
+  const GROUPS: readonly (readonly [
+    string,
+    (s: Raw) => void,
+    string,
+    Record<string, string | number> | undefined,
+  ])[] = [
+    // padrão (os três enums)
+    ['padrão', (s) => (field(s).type = 'foo'), 'spec.fieldTypeInvalid', { value: 'foo' }],
+    [
+      'padrão',
+      (s) => (type(s).notices = [{ kind: 'zz', message: 'm' }]),
+      'spec.noticeKindInvalid',
+      { value: 'zz' },
+    ],
+    [
+      'padrão',
+      (s) => (type(s).appliesTo = ['x']),
+      'spec.appliesToInvalid',
+      { value: 'x' },
+    ],
+    // `known` (mensagens do zod com valores constantes)
+    ['known', (s) => (s.format = 'x'), 'spec.formatInvalid', { format: 'mapping-spec' }],
+    [
+      'known',
+      (s) => (s.formatVersion = 99),
+      'spec.formatVersionInvalid',
+      { versions: '@versions', last: '@last' },
+    ],
+    [
+      'known',
+      (s) => (s.containers = [container({ width: 999999 })]),
+      'spec.containerSideMax',
+      { max: '@max' },
+    ],
+    [
+      'known',
+      (s) => (s.fonts = [font({ weight: 5 })]),
+      'spec.fontWeightInvalid',
+      { min: '100', max: '1000' },
+    ],
+    // emissor
+    [
+      'emissor',
+      (s) => ((s.formatVersion = 1), (s.platforms = [{ id: 'a', name: 'A' }])),
+      'spec.onlyFormat',
+      { version: '@version' },
+    ],
+    [
+      'emissor',
+      (s) => (type(s).component = 'components/a.txt'),
+      'spec.invalidExtension',
+      { exts: '.json' },
+    ],
+    [
+      'emissor',
+      (s) => (type(s).doc = { repo: 'r', path: 'docs/a.txt' }),
+      'spec.invalidExtension',
+      { exts: '.md' },
+    ],
+    [
+      'emissor',
+      (s) =>
+        (s.platforms = [
+          {
+            id: 'a',
+            name: 'A',
+            repo: { url: 'https://a.b', urlTemplate: 'https://a.b/x' },
+          },
+        ]),
+      'spec.urlTemplateNeedsPath',
+      { path: '{path}' },
+    ],
+    // o código que se perdia no caminho
+    [
+      'perdido',
+      (s) => (s.tokens = { modes: ['a'], values: {}, zz: 1 }),
+      'spec.tokenKeyUnknown',
+      { key: 'zz' },
+    ],
+    [
+      'perdido',
+      (s) =>
+        (type(s).examples = [
+          { name: 'x', values: {} },
+          { name: 'x', values: {} },
+        ]),
+      'spec.exampleNameRepeated',
+      { name: 'x' },
+    ],
+    [
+      'perdido',
+      (s) => fieldPath(s, 'a['),
+      'spec.fieldPathMissingBracket',
+      { path: 'a[' },
+    ],
+  ];
+
+  it.each(GROUPS.map((g, i) => [`${i} ${g[0]}: ${g[2]}`, g] as const))(
+    'parseSpec devolve o code e os params de antes: %s',
+    (_name, [, mutate, code, params]) => {
+      const hit = issuesOf(mutate).find((i) => i.code === code);
+      expect(hit, code).toBeDefined();
+      if (params === undefined) return;
+      const got = hit?.params ?? {};
+      for (const [key, value] of Object.entries(params)) {
+        if (value.toString().startsWith('@')) expect(got[key], key).toBeTypeOf('string');
+        else expect(got[key], key).toBe(value);
+      }
+      expect(Object.keys(got).sort()).toEqual(Object.keys(params).sort());
+    },
+  );
+
+  it('o formatVersion que não existe e o lado do container levam os números no texto', () => {
+    const version = issuesOf((s) => (s.formatVersion = 99)).find(
+      (i) => i.code === 'spec.formatVersionInvalid',
+    );
+    expect(version?.message).toBe(
+      `deve ser ${version?.params?.versions} ou ${version?.params?.last}`,
+    );
+    const side = issuesOf((s) => (s.containers = [container({ width: 999999 })])).find(
+      (i) => i.code === 'spec.containerSideMax',
+    );
+    expect(side?.message).toBe(`deve ser <= ${side?.params?.max}`);
+    const only = issuesOf(
+      (s) => ((s.formatVersion = 1), (s.platforms = [{ id: 'a', name: 'A' }])),
+    ).find((i) => i.code === 'spec.onlyFormat');
+    expect(only?.message).toBe(
+      `só é permitido com formatVersion ${only?.params?.version}`,
+    );
   });
 });

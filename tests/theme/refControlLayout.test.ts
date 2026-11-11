@@ -74,10 +74,43 @@ describe('célula ref da tabela', () => {
 // CD6 (achado 1.1 da #1372, R24.15): a 900 px a coluna `item` ficava com 40 px (o texto quebra em
 // qualquer ponto, então o mínimo da coluna `1fr` era ~0) e o rótulo caía em 3 linhas ("Plu/gin/A").
 // O piso sozinho (96 px) fazia a tabela rolar na horizontal; a célula com o campo de referência ganha
-// 0,85 do token e os inputs de texto da tabela 0,75, o que cabe nos Detalhes de 900 px (e2e em refAnnotation).
+// 0,85 do token e os inputs de texto da tabela 0,5 (CL1, 4.3; eram 0,75), o que cabe nos Detalhes de 900 px (e2e em refAnnotation).
 describe('coluna de referência da tabela em largura estreita', () => {
   it('a célula com ref-cell tem piso de largura pelo token da coluna', () => {
     const cell = rule('.data-grid .grid-cell-value:has(> .ref-cell)');
     expect(cell).toMatch(/min-width:\s*calc\(var\(--size-grid-col-min\)\s*\*\s*0\.85\)/);
+  });
+});
+
+// CL1 (achado 4.3 da #1533, R24.15): a 900×720, com Árvore, Camadas e Detalhes abertos, os Detalhes
+// têm 220 px de largura útil e a tabela `plugins` (texto + referência) media 234 px de rolagem
+// (a coluna de texto pedia 0,75 do token, 72 px). Soma dos pisos das duas colunas + as três
+// colunas fixas (alça, índice e remover) tem de caber nos 220 px, sem barra horizontal.
+describe('tabela de texto e referência cabe nos Detalhes de 900 px', () => {
+  const token = Number(
+    /'size-grid-col-min':\s*'(\d+)px'/.exec(
+      readFileSync('src/theme/tokens.ts', 'utf8'),
+    )?.[1],
+  );
+  const factor = (selector: string): number =>
+    Number(
+      /calc\(var\(--size-grid-col-min\)\s*\*\s*([\d.]+)\)/.exec(rule(selector))?.[1],
+    );
+
+  it('os pisos somados (com o respiro das células) ficam abaixo de 220 px', () => {
+    const input = factor('.data-grid .grid-cell-value .input') * token;
+    const ref = factor('.data-grid .grid-cell-value:has(> .ref-cell)') * token;
+    const fixed = 24 + 24 + 28; // size-target-min x2 e control-height
+    const rest = 4.4; // bordas e respiro, pela medida de 234 px antes: 234 - 76 - 72 - 81,6
+    expect(fixed + rest + input + ref).toBeLessThanOrEqual(220);
+  });
+
+  // CL2 (achado A2, R24.15): o piso do campo de texto (0,5 do token) cabe em 220 px, mas o texto que
+  // passa dele saía cortado sem aviso ("primeii" no lugar de "primeiro"). Como no nome da Árvore
+  // (5.1), o que não cabe termina em reticências; a dica (`title`) do campo traz o valor inteiro.
+  it('o texto que passa do piso do campo termina em reticências, não cortado sem aviso', () => {
+    expect(rule('.data-grid .grid-cell-value .input')).toMatch(
+      /text-overflow:\s*ellipsis/,
+    );
   });
 });

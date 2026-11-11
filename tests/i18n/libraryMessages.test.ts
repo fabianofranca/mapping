@@ -5,10 +5,12 @@ import { validateLibrary, type LibraryIssue } from '../../src/model/library';
 import { TOKEN_KIND_NAMES, type TokenKind } from '../../src/model/components/tokens';
 import {
   isModelMessageTemplateCode,
+  MODEL_MESSAGE_TEMPLATES,
   templateMessage,
   type ModelMessageTemplateCode,
 } from '../../src/model/messages';
 import { parseSpecText } from '../../src/model/spec';
+import { modelMessagesEnUS } from '../../src/i18n/modelMessages';
 import { locale } from '../../src/store/settings';
 import { issueText } from '../../src/ui/LibraryIssueList';
 
@@ -220,6 +222,29 @@ describe('mensagens do validador da biblioteca', () => {
     );
     expect(text('library.emptyDoc')).toBe('empty document');
     expect(text('library.fileNotFound')).toMatch(/^file not found: /);
+  });
+
+  it('`{detail}` só fica em `library.invalidJson` (a mensagem de dentro entra em `{reason}`)', () => {
+    const withDetail = (entries: [string, string][]) =>
+      entries.filter(([, text]) => text.includes('{detail}')).map(([code]) => code);
+    expect(withDetail(Object.entries(MODEL_MESSAGE_TEMPLATES))).toEqual([
+      'library.invalidJson',
+    ]);
+    expect(withDetail(Object.entries(modelMessagesEnUS))).toEqual([
+      'model.library.invalidJson',
+    ]);
+  });
+
+  it('en-US: o `library.draw.*` com a mensagem de dentro sai com ela traduzida', () => {
+    locale.value = 'en-US';
+    const drawing = allIssues().find((i) => i.code === 'library.draw.preview');
+    expect(drawing?.detail).toBeDefined();
+    expect(drawing?.params).not.toHaveProperty('detail');
+    const text = issueText(drawing as LibraryIssue);
+    expect(text).toContain('unknown icon');
+    expect(text).not.toContain('ícone desconhecido');
+    expect(text).not.toContain('{reason}');
+    expect(text).not.toContain('{detail}');
   });
 
   it('há um código de token por par de tipos, com o texto de `TOKEN_KIND_NAMES`', () => {

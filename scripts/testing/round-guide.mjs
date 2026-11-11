@@ -18,6 +18,10 @@
 // aninhar). O trecho só entra no guia se um desses roteiros for pedido; trecho sem marca vai em
 // todos os guias. A marca é um comentário HTML: não aparece no guia lido por gente.
 //
+// Base obrigatória (etapa #1533, TE1): o `<nome>-base.md` leva só o que o testador precisa antes de
+// começar (ver `SECOES_SOB_DEMANDA`); as outras seções do guia viram uma linha com o comando
+// `cloud.mjs secao <chave>`, que `guideSection` atende.
+//
 // Tira do guia os roteiros não pedidos, os "Roteiros sob demanda (manuais)", a seção 9 e o
 // "Registro do marco Uso real"; no quadro do "Comece aqui" ficam só as linhas dos roteiros pedidos
 // (MF3, #1025: o quadro inteiro pesa uns 5 mil caracteres em todo guia de bloco); mantém o resto na
@@ -178,16 +182,148 @@ function trimOverview(lines, wanted) {
   });
 }
 
-/** O guia sem os roteiros não pedidos, os sob demanda, a seção 9 e o registro do Uso real. */
-export function buildRoundGuide(markdown, roteiros, { commit = 'desconhecido' } = {}) {
+/**
+ * Seções que o testador lê sob demanda (etapa #1533, TE1, decisões 1 e 4): a chave do `cloud.mjs
+ * secao`, o início do título (`titulo`), o `nivel` do cabeçalho, a `fonte` (`guia`: o `apoio/guia.md`;
+ * `consulta`: o `docs/TESTING-NUVEM-CONSULTA.md` do clone; `consulta.regras` guarda as regras do R21 e do passo que exige o dono) e o `quando` ler.
+ */
+export const SECOES_SOB_DEMANDA = [
+  {
+    chave: '1',
+    titulo: '1. Onde pegar a app',
+    nivel: 2,
+    fonte: 'guia',
+    quando: 'se a URL da app ou o canal (estável ou prévia) estiver em dúvida',
+  },
+  {
+    chave: '2',
+    titulo: '2. Requisitos',
+    nivel: 2,
+    fonte: 'guia',
+    quando:
+      'se faltar pasta de trabalho, imagem de teste ou se uma extensão atrapalhar a digitação',
+  },
+  {
+    chave: '3',
+    titulo: '3. Conferir a versão que está aberta',
+    nivel: 2,
+    fonte: 'guia',
+    quando:
+      'antes do R0.1, para achar o build id na barra de status ou em Configurações › Sobre',
+  },
+  {
+    chave: '5',
+    titulo: '5. Mapa da interface',
+    nivel: 2,
+    fonte: 'guia',
+    quando:
+      'quando um passo citar um nome, ícone, janela ou notação da interface que você não achar',
+  },
+  {
+    chave: '6',
+    titulo: '6. Instalar o servidor MCP',
+    nivel: 2,
+    fonte: 'guia',
+    quando:
+      'antes da seção 6 da rodada (repositório de teste e MCP), no bloco ou grupo que a tem',
+  },
+  {
+    chave: '7',
+    titulo: '7. Como relatar um problema',
+    nivel: 2,
+    fonte: 'guia',
+    quando:
+      'antes do primeiro achado e antes de escrever o relato (severidade e Diagnóstico)',
+  },
+  {
+    chave: 'A.seletores',
+    titulo: 'Seletores e nomes que enganam',
+    nivel: 3,
+    fonte: 'guia',
+    quando:
+      'quando um localizador falhar por timeout, por modo estrito ou por nome repetido',
+  },
+  {
+    chave: 'B',
+    titulo: 'Apêndice B',
+    nivel: 2,
+    fonte: 'guia',
+    quando:
+      'nas operações de disco (mover, copiar, tirar a permissão de escrita): R6.8b e R6.11',
+  },
+  {
+    chave: 'consulta.grupos',
+    titulo: 'Rodada dirigida em grupos',
+    nivel: 2,
+    fonte: 'consulta',
+    quando:
+      'se a mensagem disser "grupo k de n" ou se você tiver de dividir uma dirigida',
+  },
+  {
+    chave: 'consulta.passada',
+    titulo: 'Passada visual',
+    nivel: 2,
+    fonte: 'consulta',
+    quando:
+      'antes da passada visual (bloco 4, ou a dirigida que a pede) e no reteste de janelas',
+  },
+  {
+    chave: 'consulta.regras',
+    titulo: 'Regras de exceção',
+    nivel: 2,
+    fonte: 'consulta',
+    quando: 'antes do R21 (tag da release) ou de um passo que só a pessoa faria',
+  },
+  {
+    chave: 'consulta.historico',
+    titulo: 'Histórico dos blocos',
+    nivel: 2,
+    fonte: 'consulta',
+    quando: 'só para comparar tempos e contagens com as rodadas anteriores',
+  },
+];
+
+/** A entrada de `SECOES_SOB_DEMANDA` do guia (`fonte: 'guia'`) que esta seção é, se for. */
+function onDemandEntry(section) {
+  if (section.level < 2) return undefined;
+  return SECOES_SOB_DEMANDA.find(
+    (e) =>
+      e.fonte === 'guia' &&
+      e.nivel === section.level &&
+      section.title.startsWith(e.titulo),
+  );
+}
+
+/** A linha do comando que no lugar da seção sob demanda diz como lê-la. */
+function onDemandPointer(section, entry) {
+  return [
+    `${'#'.repeat(section.level)} ${section.title}: \`node scripts/testing/cloud.mjs secao ${entry.chave}\``,
+    '',
+    `Quando ler: ${entry.quando}.`,
+    '',
+  ];
+}
+
+/**
+ * O guia sem os roteiros não pedidos, os sob demanda, a seção 9 e o registro do Uso real. Com
+ * `mandatoryOnly`, também sem as seções de `SECOES_SOB_DEMANDA`, cada uma trocada por uma linha com o
+ * comando `cloud.mjs secao` (o que o testador lê antes dos roteiros; é a medida do limite dos blocos).
+ */
+export function buildRoundGuide(
+  markdown,
+  roteiros,
+  { commit = 'desconhecido', mandatoryOnly = false } = {},
+) {
   const existing = listRoteiros(markdown);
   const { whole, ranges } = parseRequest(roteiros, existing);
   const wanted = new Set([...whole, ...ranges.keys()]);
   let dropParent = false;
+  let pointedLevel2 = false;
   const kept = [];
   for (const section of splitSections(markdown)) {
     if (section.level === 2) {
       dropParent = /^9\./.test(section.title);
+      pointedLevel2 = false;
       if (/^Comece aqui/.test(section.title))
         section.lines = trimOverview(section.lines, wanted);
     }
@@ -200,6 +336,13 @@ export function buildRoundGuide(markdown, roteiros, { commit = 'desconhecido' } 
           /^Roteiros sob demanda/.test(section.title) ||
           /^Registro do marco/.test(section.title)));
     if (drop) continue;
+    const entry = mandatoryOnly ? onDemandEntry(section) : undefined;
+    if (entry) {
+      pointedLevel2 = section.level === 2;
+      kept.push(onDemandPointer(section, entry).join('\n'));
+      continue;
+    }
+    if (pointedLevel2 && section.level === 3) continue;
     const cut = roteiro && !whole.has(roteiro) && ranges.has(roteiro);
     kept.push(
       (cut ? cutRanges(section.lines, ranges.get(roteiro), roteiro) : section.lines).join(
@@ -239,8 +382,9 @@ function stepRows(lines) {
 }
 
 /**
- * A base do guia da rodada: o mesmo guia do `buildRoundGuide`, sem as seções `### R<n>`, cada uma
- * trocada por uma linha com o comando que a imprime (`cloud.mjs passo R<n>`). `name` é o nome do
+ * A base do guia da rodada: o `buildRoundGuide` com `mandatoryOnly` (a base obrigatória), sem as
+ * seções `### R<n>`, cada uma trocada por uma linha com o comando que a imprime (`cloud.mjs passo
+ * R<n>`). `name` é o nome do
  * arquivo do índice (`<name>-indice.tsv`).
  */
 export function buildGuideBase(
@@ -249,7 +393,8 @@ export function buildGuideBase(
   { commit = 'desconhecido', name = 'guia' } = {},
 ) {
   const out = [];
-  for (const section of splitSections(buildRoundGuide(markdown, roteiros, { commit }))) {
+  const guide = buildRoundGuide(markdown, roteiros, { commit, mandatoryOnly: true });
+  for (const section of splitSections(guide)) {
     const id = section.level === 3 ? ROTEIRO.exec(section.title)?.[1] : undefined;
     if (id) {
       out.push(
@@ -260,7 +405,7 @@ export function buildGuideBase(
       const [note = '', ...rest] = section.lines;
       out.push(
         note,
-        `> Os roteiros saem por \`cloud.mjs passo\`; o índice está em \`${name}-indice.tsv\`.`,
+        `> Os roteiros saem por \`cloud.mjs passo\`; o índice está em \`${name}-indice.tsv\`. As seções sob demanda saem por \`cloud.mjs secao <chave>\` (sem chave, lista).`,
         ...rest,
       );
     } else {
@@ -427,16 +572,24 @@ function cutExcerpt(entries, items) {
  * `R<n>.<m>` ou `R<n>.<a>-R<n>.<b>` (as linhas dos passos, com o cabeçalho da tabela). Os itens saem
  * na ordem pedida, separados por `---`; erro de item lança `Error` sem imprimir trecho.
  */
-export function guideExcerpt(guideText, itens) {
-  const sections = new Map();
-  for (const section of splitSections(guideText)) {
-    const id = section.level === 3 ? ROTEIRO.exec(section.title)?.[1] : undefined;
-    if (id) sections.set(id, { section, rows: stepRows(section.lines) });
-  }
+export function guideExcerpt(guideText, itens, fallbackText) {
+  const rotulos = (text) => {
+    const map = new Map();
+    for (const section of splitSections(text)) {
+      const id = section.level === 3 ? ROTEIRO.exec(section.title)?.[1] : undefined;
+      if (id) map.set(id, { section, rows: stepRows(section.lines) });
+    }
+    return map;
+  };
+  const sections = rotulos(guideText);
+  // Item que o guia da rodada não tem: lido do docs/TESTING.md (`fallbackText`), com a marca (TE3).
+  const fallback = fallbackText === undefined ? undefined : rotulos(fallbackText);
   const items = itens.map(parseExcerptItem);
   const entries = [];
   items.forEach((item, n) => {
-    const found = sections.get(item.id);
+    let found = sections.get(item.id);
+    const fora = !found && fallback?.has(item.id);
+    if (fora) found = fallback.get(item.id);
     if (!found) {
       throw new Error(
         `${item.from ?? item.id} não está no guia da rodada; o guia tem ${[...sections.keys()].join(', ')}. Para outro roteiro, gere o guia de novo com round-guide.mjs ou procure o trecho com Grep no docs/TESTING.md.`,
@@ -446,9 +599,109 @@ export function guideExcerpt(guideText, itens) {
       ? stepRange(found.section, found.rows, item, item.id)
       : wholeRoteiro(found.section, found.rows);
     if (n > 0) entries.push({ text: '---', item: n });
+    if (fora) entries.push({ text: FORA_DO_GUIA, item: n });
     for (const entry of part) entries.push({ ...entry, item: n });
   });
   return cutExcerpt(entries, items);
+}
+
+/** Primeira linha do trecho de um item que veio do `docs/TESTING.md` e não do guia da rodada. */
+export const FORA_DO_GUIA = 'fora do guia da rodada (lido do docs/TESTING.md)';
+
+// --- Seções sob demanda (etapa #1533, TE1, decisão 2) ---
+
+/** O texto da seção da `entrada`: o cabeçalho, o corpo e as subseções de nível maior. */
+function extractSection(text, entry, origem) {
+  const sections = splitSections(text);
+  const i = sections.findIndex(
+    (s) => s.level === entry.nivel && s.title.startsWith(entry.titulo),
+  );
+  if (i < 0) {
+    throw new Error(`A seção ${entry.chave} (${entry.titulo}) não está em ${origem}.`);
+  }
+  const lines = [...sections[i].lines];
+  for (let j = i + 1; j < sections.length && sections[j].level > entry.nivel; j += 1) {
+    lines.push(...sections[j].lines);
+  }
+  while (lines.length && !lines[lines.length - 1].trim()) lines.pop();
+  return lines.join('\n');
+}
+
+/** As chaves de `SECOES_SOB_DEMANDA`, para a mensagem de chave desconhecida. */
+function keyList() {
+  return SECOES_SOB_DEMANDA.map((e) => e.chave).join(', ');
+}
+
+/**
+ * As seções sob demanda pedidas por chave (`SECOES_SOB_DEMANDA`), na ordem pedida, separadas por
+ * `---`. `guideText` é o guia da rodada (`apoio/guia.md`); as chaves `consulta.*` leem `consultaText`
+ * (o `docs/TESTING-NUVEM-CONSULTA.md`). Corta em `EXCERPT_LIMIT` na última seção ou linha inteira e diz
+ * como continuar; chave desconhecida lança `Error` com a lista das chaves.
+ */
+export function guideSection(guideText, chaves, consultaText) {
+  const entries = chaves.map((chave) => {
+    const entry = SECOES_SOB_DEMANDA.find((e) => e.chave === chave);
+    if (!entry) throw new Error(`Chave desconhecida: ${chave}. Chaves: ${keyList()}.`);
+    if (entry.fonte === 'consulta' && consultaText === undefined) {
+      throw new Error(
+        `A chave ${chave} lê o docs/TESTING-NUVEM-CONSULTA.md do clone, que não foi lido.`,
+      );
+    }
+    return entry;
+  });
+  const texts = entries.map((e) =>
+    e.fonte === 'consulta'
+      ? extractSection(consultaText, e, 'docs/TESTING-NUVEM-CONSULTA.md')
+      : extractSection(guideText, e, 'o guia da rodada'),
+  );
+  const sep = '\n\n---\n\n';
+  const budget = EXCERPT_LIMIT - CUT_RESERVE;
+  const out = [];
+  let size = 0;
+  for (let i = 0; i < texts.length; i += 1) {
+    const add = (out.length ? sep.length : 0) + texts[i].length;
+    if (size + add <= budget) {
+      out.push(texts[i]);
+      size += add;
+      continue;
+    }
+    if (out.length > 0) {
+      const rest = entries.slice(i).map((e) => e.chave);
+      out.push(
+        `… corte em 25.000 caracteres: continue com cloud.mjs secao ${rest.join(' ')}`,
+      );
+    } else {
+      const kept = [];
+      let n = 0;
+      for (const line of texts[i].split('\n')) {
+        if (n + line.length + 1 > budget) break;
+        kept.push(line);
+        n += line.length + 1;
+      }
+      kept.push(
+        `… corte em 25.000 caracteres: o resto da seção ${entries[i].chave} está no guia (Grep pelo título "${entries[i].titulo}" no apoio/guia.md)`,
+      );
+      out.push(kept.join('\n'));
+    }
+    break;
+  }
+  return out.join(sep);
+}
+
+/** A lista do `cloud.mjs secao` sem chave: uma linha por chave, com o tamanho e o "quando ler". */
+export function listSecoes(guideText, consultaText) {
+  const lines = ['Chaves do cloud.mjs secao (chave, caracteres, quando ler):'];
+  for (const e of SECOES_SOB_DEMANDA) {
+    const source = e.fonte === 'consulta' ? consultaText : guideText;
+    let size = '?';
+    try {
+      if (source !== undefined) size = String(extractSection(source, e, '').length);
+    } catch {
+      size = '?';
+    }
+    lines.push(`${e.chave}\t${size}\t${e.quando}`);
+  }
+  return lines.join('\n');
 }
 
 // --- Rodada dirigida em grupos paralelos (etapa #1148, TR4, decisões 15 a 17) ---

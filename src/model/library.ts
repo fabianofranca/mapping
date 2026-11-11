@@ -84,7 +84,7 @@ export interface LibraryIssue {
   readonly code?: ModelMessageTemplateCode;
   /** Dados da tradução (`{key}`, `{path}`…). */
   readonly params?: Readonly<Record<string, string | number>>;
-  /** Mensagem de outro módulo que a interface traduz e põe no `{detail}` do texto de fora. */
+  /** Mensagem de outro módulo que a interface traduz e põe no `{reason}` do texto de fora. */
   readonly detail?: ModelMessage;
 }
 
@@ -301,7 +301,7 @@ class Collector {
   ): void {
     this.issues.push(libraryIssue('error', file, path, code, params));
   }
-  /** Erro repassado de um parser (ainda sem código; as fases seguintes da etapa dão um). */
+  /** Erro repassado de um parser (com o código que ele já traz, quando há). */
   passError(file: string, path: string, message: string, coding?: Coding): void {
     this.issues.push({ file, path, message, severity: 'error', ...codeOf(coding) });
   }

@@ -4,18 +4,21 @@
 // (decisão 4) e a parte pura de `cloud.mjs` (`mark`) tem teste unitário.
 import { spawnSync } from 'node:child_process';
 import {
+  chmodSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
   readdirSync,
   rmSync,
+  statSync,
+  symlinkSync,
   utimesSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { HANDLE_HIT_RADIUS } from '../../src/canvas/input/intents';
 import { handleHitRadius } from '../../src/canvas/markingGeometry';
 
@@ -65,6 +68,8 @@ const EXPECTED_EXPORTS = [
   'formatHelp',
   'HELP',
   'runStep',
+  'runViaServer',
+  'startRunServer',
   'waitForWindow',
   'windowShortcut',
   'settle',
@@ -73,6 +78,11 @@ const EXPECTED_EXPORTS = [
   'TOOL_WINDOW_IDS',
   'drag',
   'nearHandle',
+  'onCanvas',
+  'parseContainerBoxes',
+  'parseArrowHandles',
+  'viewCenter',
+  'arrowHandlesOf',
   'setViewport',
   'find',
   'formatCandidates',
@@ -1076,6 +1086,7 @@ describe('cloud.mjs run, --prazo e help (etapa #1148, TR1)', () => {
       'run',
       'find',
       'passo',
+      'secao',
       'help',
     ]) {
       expect(r.stdout, cmd).toMatch(new RegExp(`cloud\\.mjs ${cmd}\\b`));
@@ -1094,6 +1105,7 @@ describe('cloud.mjs run, --prazo e help (etapa #1148, TR1)', () => {
             'TesterState',
             'TempoItem',
             'HelpEntry',
+            'ContainerBox',
             'Candidate',
             'Tempos',
           ].includes(n),
@@ -1284,7 +1296,13 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
   });
 
   describe('drag e nearHandle', () => {
-    function fakeDragPage(selectionBox: string | null) {
+    function fakeDragPage(
+      selectionBox: string | null,
+      {
+        selection = 'marking m1',
+        onCanvas = { ok: true, element: 'canvas' },
+      }: { selection?: string | null; onCanvas?: { ok: boolean; element: string } } = {},
+    ) {
       const events: string[] = [];
       const page = {
         mouse: {
@@ -1294,10 +1312,17 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
           up: async () => events.push('up'),
         },
         locator: () => ({
-          getAttribute: async () => selectionBox,
+          getAttribute: async (name: string) =>
+            name === 'data-selection' ? selection : selectionBox,
           boundingBox: async () => ({ x: 100, y: 50, width: 800, height: 600 }),
         }),
-        evaluate: async () => null,
+        evaluate: async (_fn: unknown, arg?: Record<string, unknown>) => {
+          if (arg && 'x' in arg && 'y' in arg) {
+            events.push(`confere ${String(arg.x)},${String(arg.y)}`);
+            return onCanvas;
+          }
+          return null;
+        },
       };
       return { page, events };
     }
@@ -1306,23 +1331,77 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
       const mod = await load();
       const d = fakeDragPage(null);
       await mod.drag(d.page, { x: 300, y: 300 }, { x: 340, y: 380 }, { steps: 4 });
-      expect(d.events[0]).toBe('click 300,300');
-      expect(d.events[1]).toBe('move 300,300');
-      expect(d.events[2]).toBe('down');
-      expect(d.events.slice(3, 7)).toEqual([
+      expect(d.events[0]).toBe('confere 300,300');
+      expect(d.events[1]).toBe('click 300,300');
+      expect(d.events[2]).toBe('move 300,300');
+      expect(d.events[3]).toBe('down');
+      expect(d.events.slice(4, 8)).toEqual([
         'move 310,320',
         'move 320,340',
         'move 330,360',
         'move 340,380',
       ]);
-      expect(d.events[7]).toBe('up');
+      expect(d.events[8]).toBe('up');
     });
 
     it('select: false não clica antes', async () => {
       const mod = await load();
       const d = fakeDragPage(null);
       await mod.drag(d.page, { x: 1, y: 2 }, { x: 3, y: 4 }, { select: false, steps: 1 });
-      expect(d.events.slice(0, 2)).toEqual(['move 1,2', 'down']);
+      expect(d.events.slice(1, 3)).toEqual(['move 1,2', 'down']);
+    });
+
+    it('`de` fora do canvas lança antes de qualquer ação do mouse; allowOffCanvas segue', async () => {
+      const mod = await load();
+      const off = { ok: false, element: 'div.dock "Janelas"' };
+      const d = fakeDragPage(null, { onCanvas: off });
+      await expect(
+        mod.drag(d.page, { x: 300, y: 300 }, { x: 340, y: 380 }, { steps: 1 }),
+      ).rejects.toThrow(
+        'drag: o ponto de partida (300, 300) não cai no canvas (div.dock "Janelas")',
+      );
+      expect(d.events.some((e) => /^(click|move|down|up)/.test(e))).toBe(false);
+      const e = fakeDragPage(null, { onCanvas: off });
+      await mod.drag(
+        e.page,
+        { x: 300, y: 300 },
+        { x: 340, y: 380 },
+        { steps: 1, allowOffCanvas: true },
+      );
+      expect(e.events).toContain('up');
+    });
+
+    it('o clique de seleção sem data-selection avisa "não selecionou nada" e segue', async () => {
+      const mod = await load();
+      const warnings: string[] = [];
+      const d = fakeDragPage(null, { selection: null });
+      await mod.drag(
+        d.page,
+        { x: 300, y: 300 },
+        { x: 340, y: 380 },
+        { steps: 1, warn: (m: string) => warnings.push(m) },
+      );
+      expect(warnings.join('')).toContain('o clique em (300, 300) não selecionou nada');
+      expect(d.events).toContain('up');
+      const ok = fakeDragPage(null);
+      const quiet: string[] = [];
+      await mod.drag(
+        ok.page,
+        { x: 300, y: 300 },
+        { x: 340, y: 380 },
+        { steps: 1, warn: (m: string) => quiet.push(m) },
+      );
+      expect(quiet).toEqual([]);
+      // sem `select`, não há clique e nada a conferir
+      const free = fakeDragPage(null, { selection: null });
+      const none: string[] = [];
+      await mod.drag(
+        free.page,
+        { x: 1, y: 2 },
+        { x: 3, y: 4 },
+        { select: false, steps: 1, warn: (m: string) => none.push(m) },
+      );
+      expect(none).toEqual([]);
     });
 
     it('avisa quando `de` cai a até 8 px de uma alça da caixa da seleção', async () => {
@@ -1550,55 +1629,85 @@ describe('paletteDrag, caminho absoluto e pasta lembrada (etapa #1256, RT2)', ()
     return (await import('../../scripts/testing/cloud.mjs')) as unknown as Mod;
   };
 
-  /** Página falsa: o `data-components` sobe no `mouse.up` (nativo) ou no `evaluate` (sintético). */
-  function fakePalettePage(rises: 'nativo' | 'sintetico' | 'nenhum') {
+  /**
+   * Página falsa: a instância nasce no `mapping.json` da pasta do projeto, no `mouse.up`
+   * (nativo) ou no `evaluate` do sintético; `groups` são os grupos da Paleta que têm o tipo.
+   */
+  function fakePalettePage(
+    rises: 'nativo' | 'sintetico' | 'nenhum',
+    {
+      groups = ['Biblioteca'],
+      syntheticReason,
+    }: { groups?: string[]; syntheticReason?: string } = {},
+  ) {
+    const projeto = mkdtempSync(path.join(tmpdir(), 'mapping-palette-'));
+    const file = path.join(projeto, 'mapping.json');
+    writeFileSync(file, JSON.stringify({ markings: [{ id: 'm1' }] }));
+    const addMarking = () => {
+      const json = JSON.parse(readFileSync(file, 'utf8')) as { markings: unknown[] };
+      json.markings.push({ id: `m${json.markings.length + 1}` });
+      writeFileSync(file, JSON.stringify(json));
+    };
     const events: string[] = [];
-    let components = 1;
+    const selectors: string[] = [];
     const item = {
       scrollIntoViewIfNeeded: async () => events.push('rola'),
       boundingBox: async () => ({ x: 10, y: 100, width: 200, height: 40 }),
     };
+    const generic = (selector: string): Record<string, unknown> => ({
+      filter: () => item,
+      getByText: () => ({ text: selector }),
+      getAttribute: async () => '0',
+      screenshot: async ({ path: out }: { path: string }) =>
+        events.push(`captura ${out}`),
+    });
     const page = {
       mouse: {
         move: async (x: number, y: number) => events.push(`move ${x},${y}`),
         down: async () => events.push('down'),
         up: async () => {
           events.push('up');
-          if (rises === 'nativo') components += 1;
+          if (rises === 'nativo') addMarking();
         },
       },
-      getByText: (text: string) => ({ text }),
       locator: (selector: string) => {
-        if (selector === 'li.library-type') {
-          return { filter: () => item };
-        }
-        return {
-          getAttribute: async () => String(components),
-          screenshot: async ({ path: file }: { path: string }) =>
-            events.push(`captura ${file}`),
-        };
+        selectors.push(selector);
+        return generic(selector);
       },
       evaluate: async (_fn: Fn, arg: Record<string, unknown>) => {
         if (arg && 'timeoutMs' in arg) return null;
-        events.push('sintetico');
-        if (rises === 'sintetico') components += 1;
-        return null;
+        if (arg && 'x' in arg && !('para' in arg)) return { ok: true, element: 'canvas' };
+        if (arg && 'para' in arg) {
+          events.push('sintetico');
+          if (syntheticReason) return { motivo: syntheticReason };
+          if (rises === 'sintetico') addMarking();
+          return { ok: true };
+        }
+        return groups;
       },
     };
-    return { page, events };
+    return { page, events, selectors, projeto, file };
   }
 
-  describe('paletteDrag (decisão 7)', () => {
-    it('o arrasto nativo cria a instância: via nativo, sem o evento sintético', async () => {
+  describe('paletteDrag (decisões 9 e 10)', () => {
+    const cleanup: string[] = [];
+    afterEach(() => {
+      for (const dir of cleanup.splice(0)) rmSync(dir, { recursive: true, force: true });
+    });
+    const setup = (...args: Parameters<typeof fakePalettePage>) => {
+      const d = fakePalettePage(...args);
+      cleanup.push(d.projeto);
+      return d;
+    };
+
+    it('o arrasto nativo cria a instância (marcações do disco): via nativo, sem o evento sintético', async () => {
       const mod = await load();
-      const d = fakePalettePage('nativo');
+      const d = setup('nativo');
       const result = await mod.paletteDrag(
         d.page,
         'Button',
         { x: 500, y: 300 },
-        {
-          steps: 2,
-        },
+        { steps: 2, projectDir: d.projeto },
       );
       expect(result).toEqual({ via: 'nativo' });
       expect(d.events).toEqual([
@@ -1611,40 +1720,148 @@ describe('paletteDrag, caminho absoluto e pasta lembrada (etapa #1256, RT2)', ()
       ]);
     });
 
-    it('sem subida no nativo, refaz pelo evento sintético: via sintetico', async () => {
+    it('sem marcação nova no nativo, refaz pelo evento sintético: via sintetico', async () => {
       const mod = await load();
-      const d = fakePalettePage('sintetico');
+      const d = setup('sintetico');
       const result = await mod.paletteDrag(
         d.page,
         'Box',
         { x: 500, y: 300 },
-        {
-          steps: 1,
-        },
+        { steps: 1, projectDir: d.projeto, waitMs: 20 },
       );
       expect(result).toEqual({ via: 'sintetico' });
       expect(d.events.at(-1)).toBe('sintetico');
     });
 
-    it('sem nenhuma das duas, lança que o arrasto não criou a instância', async () => {
+    it('a marcação que chega ao disco depois do settle (autosave) ainda conta como nativa', async () => {
       const mod = await load();
-      const d = fakePalettePage('nenhum');
-      await expect(
-        mod.paletteDrag(d.page, 'Button', { x: 500, y: 300 }, { steps: 1 }),
-      ).rejects.toThrow('o arrasto da Paleta não criou a instância');
+      const d = setup('nenhum');
+      const up = d.page.mouse.up;
+      d.page.mouse.up = async () => {
+        await up();
+        setTimeout(() => {
+          const json = JSON.parse(readFileSync(d.file, 'utf8')) as {
+            markings: unknown[];
+          };
+          json.markings.push({ id: 'tarde' });
+          writeFileSync(d.file, JSON.stringify(json));
+        }, 120);
+      };
+      const result = await mod.paletteDrag(
+        d.page,
+        'Button',
+        { x: 500, y: 300 },
+        { steps: 1, projectDir: d.projeto, waitMs: 1000 },
+      );
+      expect(result).toEqual({ via: 'nativo' });
+      expect(d.events).not.toContain('sintetico');
     });
 
-    it('capture grava o recorte do canvas antes de soltar', async () => {
+    it('o nativo criou: o sintético não roda (sem instância duplicada)', async () => {
       const mod = await load();
-      const d = fakePalettePage('nativo');
+      const d = setup('nativo');
       await mod.paletteDrag(
         d.page,
         'Box',
         { x: 500, y: 300 },
-        {
-          steps: 1,
-          capture: '/tmp/destino.png',
-        },
+        { steps: 1, projectDir: d.projeto },
+      );
+      expect(d.events).not.toContain('sintetico');
+      expect(
+        (JSON.parse(readFileSync(d.file, 'utf8')) as { markings: unknown[] }).markings,
+      ).toHaveLength(2);
+    });
+
+    it('sem nenhuma das duas, lança que o arrasto não criou a instância', async () => {
+      const mod = await load();
+      const d = setup('nenhum');
+      await expect(
+        mod.paletteDrag(
+          d.page,
+          'Button',
+          { x: 500, y: 300 },
+          { steps: 1, projectDir: d.projeto, waitMs: 20 },
+        ),
+      ).rejects.toThrow('o arrasto da Paleta não criou a instância');
+    });
+
+    it('sem a pasta do projeto, lança "paletteDrag precisa da pasta do projeto"', async () => {
+      const mod = await load();
+      const d = setup('nativo');
+      await expect(
+        mod.paletteDrag(d.page, 'Button', { x: 500, y: 300 }, { steps: 1 }),
+      ).rejects.toThrow('paletteDrag precisa da pasta do projeto');
+      expect(d.events).toEqual([]);
+    });
+
+    it('o motivo do sintético vira a mensagem: item sumiu e ponto fora do canvas', async () => {
+      const mod = await load();
+      for (const motivo of [
+        "o item 'Button' sumiu da Paleta",
+        'o ponto (500, 300) não cai no canvas (div.dock)',
+      ]) {
+        const d = setup('nenhum', { syntheticReason: motivo });
+        await expect(
+          mod.paletteDrag(
+            d.page,
+            'Button',
+            { x: 500, y: 300 },
+            { steps: 1, projectDir: d.projeto },
+          ),
+        ).rejects.toThrow(motivo);
+      }
+    });
+
+    it('tipo repetido em dois grupos lança com os grupos; { grupo } escolhe', async () => {
+      const mod = await load();
+      const d = setup('nativo', { groups: ['Material', 'Ícones'] });
+      await expect(
+        mod.paletteDrag(
+          d.page,
+          'Button',
+          { x: 500, y: 300 },
+          { steps: 1, projectDir: d.projeto },
+        ),
+      ).rejects.toThrow(/mais de um grupo.*Material.*Ícones/);
+      const result = await mod.paletteDrag(
+        d.page,
+        'Button',
+        { x: 500, y: 300 },
+        { steps: 1, projectDir: d.projeto, grupo: 'Ícones' },
+      );
+      expect(result).toEqual({ via: 'nativo' });
+      expect(d.selectors.some((s) => s.includes('aria-label="Ícones"'))).toBe(true);
+      await expect(
+        mod.paletteDrag(
+          d.page,
+          'Button',
+          { x: 500, y: 300 },
+          { steps: 1, projectDir: d.projeto, grupo: 'Outro' },
+        ),
+      ).rejects.toThrow(/Outro.*Material.*Ícones/);
+    });
+
+    it('tipo que nenhum grupo tem: lança que não está na Paleta aberta', async () => {
+      const mod = await load();
+      const d = setup('nativo', { groups: [] });
+      await expect(
+        mod.paletteDrag(
+          d.page,
+          'Nada',
+          { x: 500, y: 300 },
+          { steps: 1, projectDir: d.projeto },
+        ),
+      ).rejects.toThrow("o tipo 'Nada' não está na Paleta aberta");
+    });
+
+    it('capture grava o recorte do canvas antes de soltar', async () => {
+      const mod = await load();
+      const d = setup('nativo');
+      await mod.paletteDrag(
+        d.page,
+        'Box',
+        { x: 500, y: 300 },
+        { steps: 1, capture: '/tmp/destino.png', projectDir: d.projeto },
       );
       const shot = d.events.indexOf('captura /tmp/destino.png');
       expect(shot).toBeGreaterThan(d.events.indexOf('down'));
@@ -1719,15 +1936,43 @@ describe('paletteDrag, caminho absoluto e pasta lembrada (etapa #1256, RT2)', ()
       }
     });
 
-    it('pasta que não existe não é gravada como a última', async () => {
+    it('pasta explícita sem mapping.json também é gravada como a última (a leitura falha, #1430 e)', async () => {
       const mod = await load();
       const { apoio, projeto } = setup();
       try {
-        await mod.state(page, apoio, { projectDir: projeto });
-        await mod.state(page, apoio, { projectDir: path.join(apoio, 'nao-existe') });
+        const vazia = path.join(apoio, 'nao-existe');
+        const result = (await mod.state(page, apoio, { projectDir: vazia })) as {
+          project: { error: string };
+        };
+        expect(result.project.error).toContain('não existe');
         expect(
           readFileSync(path.join(apoio, 'state', 'ultima-pasta.txt'), 'utf8').trim(),
-        ).toBe(path.resolve(projeto));
+        ).toBe(path.resolve(vazia));
+      } finally {
+        rmSync(apoio, { recursive: true, force: true });
+        rmSync(projeto, { recursive: true, force: true });
+      }
+    });
+
+    it('o ultima-pasta.txt só é regravado quando o conteúdo muda; a pasta lembrada não o regrava', async () => {
+      const mod = await load();
+      const { apoio, projeto } = setup();
+      try {
+        const file = path.join(apoio, 'state', 'ultima-pasta.txt');
+        await mod.state(page, apoio, { projectDir: projeto });
+        const old = new Date('2020-01-01T00:00:00Z');
+        utimesSync(file, old, old);
+        await mod.state(page, apoio, { projectDir: projeto });
+        await mod.state(page, apoio);
+        expect(statSync(file).mtimeMs).toBe(old.getTime());
+        const outra = mkdtempSync(path.join(tmpdir(), 'mapping-proj2-'));
+        try {
+          await mod.state(page, apoio, { projectDir: outra });
+          expect(statSync(file).mtimeMs).not.toBe(old.getTime());
+          expect(readFileSync(file, 'utf8').trim()).toBe(path.resolve(outra));
+        } finally {
+          rmSync(outra, { recursive: true, force: true });
+        }
       } finally {
         rmSync(apoio, { recursive: true, force: true });
         rmSync(projeto, { recursive: true, force: true });
@@ -1827,5 +2072,1053 @@ describe('cloud.mjs passo (#1232, GL1)', () => {
     const r = passo(['R0'], { APOIO: path.join(apoio, 'nada') });
     expect(r.status).toBe(2);
     expect(r.stderr).toContain('round-guide.mjs');
+  });
+});
+
+// Etapa #1533 (TE1, decisão 2): `cloud.mjs secao` imprime uma seção do guia da rodada, sem abrir o Chrome.
+describe('cloud.mjs secao (#1533, TE1)', () => {
+  let apoio: string;
+
+  beforeAll(() => {
+    apoio = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-secao-'));
+    const guide = spawnSync('node', ['scripts/testing/round-guide.mjs', 'R0'], {
+      encoding: 'utf8',
+    });
+    writeFileSync(path.join(apoio, 'guia.md'), guide.stdout);
+  });
+
+  afterAll(() => rmSync(apoio, { recursive: true, force: true }));
+
+  function secao(
+    args: string[],
+    env: Record<string, string | undefined> = { APOIO: apoio },
+  ) {
+    const r = spawnSync('node', ['scripts/testing/cloud.mjs', 'secao', ...args], {
+      env: { ...process.env, ...env },
+      encoding: 'utf8',
+    });
+    return { status: r.status, stdout: r.stdout, stderr: r.stderr };
+  }
+
+  it('secao 7 imprime a seção 7 e só ela', () => {
+    const r = secao(['7']);
+    expect(r.status).toBe(0);
+    expect(r.stdout.startsWith('## 7. Como relatar um problema')).toBe(true);
+    expect(r.stdout).not.toContain('## 8. Roteiros');
+  });
+
+  it('secao xyz sai com 2 e lista as chaves', () => {
+    const r = secao(['xyz']);
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe('');
+    expect(r.stderr).toContain('xyz');
+    for (const key of ['1', '5', 'A.seletores', 'B', 'consulta.grupos']) {
+      expect(r.stderr, key).toContain(key);
+    }
+  });
+
+  it('sem chave lista as chaves com o tamanho e o "quando ler"', () => {
+    const r = secao([]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/^5\b.*\d+.*\S/m);
+    expect(r.stdout).toContain('consulta.historico');
+  });
+
+  it('as chaves consulta.* leem o docs/TESTING-NUVEM-CONSULTA.md do clone', () => {
+    const r = secao(['consulta.passada']);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain('Passada visual');
+  });
+
+  it('--guia aponta outro arquivo; guia que não existe sai com 2', () => {
+    const r = secao(['1', `--guia=${path.join(apoio, 'guia.md')}`], { APOIO: undefined });
+    expect(r.status).toBe(0);
+    const bad = secao(['1'], { APOIO: path.join(apoio, 'nada') });
+    expect(bad.status).toBe(2);
+    expect(bad.stderr).toContain('round-guide.mjs');
+  });
+});
+
+// Etapa #1533 (TE2, decisões 6 a 8): servidor persistente do `run`, `check`, `runs.log` e `apoio/runs/`.
+describe('servidor persistente do run, check e runs.log (etapa #1533, TE2)', () => {
+  type Mod = {
+    startRunServer: (o: {
+      apoioDir: string;
+      connectFn: () => Promise<unknown>;
+      onExit?: () => void;
+    }) => Promise<{ close: () => Promise<void> }>;
+    runViaServer: (body: string, o: Record<string, unknown>) => Promise<number>;
+    temposFromLog: (log: string, runs?: string) => unknown;
+    formatTempos: (t: unknown) => string;
+  };
+  const load = async (): Promise<Mod> => {
+    process.env.DISPLAY ??= ':99';
+    return (await import('../../scripts/testing/cloud.mjs')) as unknown as Mod;
+  };
+  const dom = {
+    title: 'Mapping',
+    url: 'http://localhost:8080/',
+    dialogs: [],
+    notices: [],
+    saveStatus: null,
+    focus: null,
+  };
+
+  let apoio: string;
+  let servers: { close: () => Promise<void> }[];
+  let exits: number;
+  let connections: { connected: boolean }[];
+  let spawned: number;
+
+  beforeEach(() => {
+    apoio = mkdtempSync(path.join(tmpdir(), 'mapping-srv-'));
+    servers = [];
+    exits = 0;
+    connections = [];
+    spawned = 0;
+  });
+  afterEach(async () => {
+    for (const s of servers) await s.close().catch(() => {});
+    rmSync(apoio, { recursive: true, force: true });
+  });
+
+  const connectFn = async () => {
+    const conn = { connected: true };
+    connections.push(conn);
+    return {
+      browser: { close: async () => {}, isConnected: () => conn.connected },
+      page: { evaluate: async () => dom, isClosed: () => false },
+    };
+  };
+
+  async function run(body: string, extra: Record<string, unknown> = {}) {
+    const mod = await load();
+    const out: string[] = [];
+    const err: string[] = [];
+    const code = await mod.runViaServer(body, {
+      apoioDir: apoio,
+      io: { log: (m: string) => out.push(m), error: (m: string) => err.push(m) },
+      spawnServer: async () => {
+        spawned += 1;
+        servers.push(
+          await mod.startRunServer({
+            apoioDir: apoio,
+            connectFn,
+            onExit: () => {
+              exits += 1;
+            },
+          }),
+        );
+      },
+      ...extra,
+    });
+    return { code, out: out.join('\n'), err: err.join('\n') };
+  }
+
+  it('dois run seguidos usam a mesma conexão e veem o mesmo ctx', async () => {
+    const a = await run('ctx.n = 41; console.log("um")');
+    const b = await run('console.log("n=" + (ctx.n + 1))');
+    expect([a.code, b.code]).toEqual([0, 0]);
+    expect(a.out).toContain('um');
+    expect(b.out).toContain('n=42');
+    expect(connections).toHaveLength(1);
+    expect(spawned).toBe(1);
+  });
+
+  it('o prazo esgotado sai 124, o servidor sai e o run seguinte sobe outro (ctx vazio)', async () => {
+    await run('ctx.n = 1');
+    const slow = await run('await new Promise(() => {})', { prazoSeconds: 0.05 });
+    expect(slow.code).toBe(124);
+    expect(slow.err).toContain('prazo de 0.05 s esgotado no passo');
+    expect(exits).toBe(1);
+    const next = await run('console.log("ctx=" + JSON.stringify(ctx))');
+    expect(next.code).toBe(0);
+    expect(next.out).toContain('ctx={}');
+    expect(spawned).toBe(2);
+    expect(connections).toHaveLength(2);
+  });
+
+  it('uma conexão caída reconecta no run seguinte, com o aviso e o ctx vazio', async () => {
+    await run('ctx.n = 1');
+    connections[0]!.connected = false;
+    const b = await run('console.log("ctx=" + JSON.stringify(ctx))');
+    expect(b.code).toBe(0);
+    expect(b.out).toContain('ctx={}');
+    expect(b.err).toMatch(/aviso: .*reconect/);
+    expect(connections).toHaveLength(2);
+    expect(spawned).toBe(1);
+  });
+
+  it('run --novo reinicia o servidor', async () => {
+    await run('ctx.n = 1');
+    const b = await run('console.log("ctx=" + JSON.stringify(ctx))', { novo: true });
+    expect(b.out).toContain('ctx={}');
+    expect(spawned).toBe(2);
+  });
+
+  it('um run por vez: o segundo espera o primeiro', async () => {
+    const order: string[] = [];
+    const first = run(
+      'await new Promise((r) => setTimeout(r, 120)); ctx.log = (ctx.log ?? []).concat("a")',
+    ).then((r) => (order.push('a'), r));
+    await new Promise((r) => setTimeout(r, 30));
+    const second = run('console.log("log=" + ctx.log)').then((r) => (order.push('b'), r));
+    const [, b] = await Promise.all([first, second]);
+    expect(order).toEqual(['a', 'b']);
+    expect(b.out).toContain('log=a');
+  });
+
+  it('sem servidor que suba, cai no caminho de hoje e avisa', async () => {
+    const r = await run('console.log("direto")', {
+      spawnServer: async () => {},
+      socketWaitMs: 100,
+      connectFn,
+    });
+    expect(r.code).toBe(0);
+    expect(r.out).toContain('direto');
+    expect(r.err).toMatch(/aviso: .*servidor/);
+  });
+
+  it('resposta perdida (o servidor caiu no meio do run) não repete o corpo em outro servidor', async () => {
+    const net = await import('node:net');
+    let requests = 0;
+    const raw = net.createServer((socket) => {
+      socket.on('data', () => {
+        requests += 1;
+        socket.destroy();
+      });
+    });
+    await new Promise<void>((resolve) =>
+      raw.listen(path.join(apoio, 'cloud.sock'), resolve),
+    );
+    try {
+      const r = await run('1');
+      expect(r.code).toBe(1);
+      expect(r.err).toMatch(/servidor do run caiu/);
+      expect(requests).toBe(1);
+      expect(spawned).toBe(0);
+    } finally {
+      raw.close();
+    }
+  });
+
+  it('o corpo e a saída com acentos passam inteiros mesmo acima de um pedaço do soquete', async () => {
+    const filler = 'ãé✅'.repeat(60000);
+    const r = await run(`/* ${filler} */ console.log("fim ${'ç'.repeat(70000)}")`);
+    expect(r.code).toBe(0);
+    expect(r.out).toContain(`fim ${'ç'.repeat(70000)}`);
+    expect(readFileSync(path.join(apoio, 'runs', '1.js'), 'utf8')).toContain(filler);
+  });
+
+  it('run na fila atrás de um prazo esgotado recebe o erro e o corpo dele não roda', async () => {
+    const slow = run('await new Promise(() => {})', { prazoSeconds: 0.3 });
+    await new Promise((r) => setTimeout(r, 50));
+    const queued = await run('globalThis.__naoDeveRodar = true');
+    expect((await slow).code).toBe(124);
+    expect(queued.code).toBe(1);
+    expect(queued.err).toMatch(/prazo|saiu/);
+    expect((globalThis as { __naoDeveRodar?: boolean }).__naoDeveRodar).toBeUndefined();
+  });
+
+  it('um segundo servidor na mesma pasta não sobe (o primeiro segue de pé)', async () => {
+    const mod = await load();
+    await run('ctx.n = 1');
+    await expect(
+      mod.startRunServer({ apoioDir: apoio, connectFn, onExit: () => {} }),
+    ).rejects.toThrow(/já existe um servidor/);
+    const b = await run('console.log("n=" + ctx.n)');
+    expect(b.out).toContain('n=1');
+  });
+
+  it('paletteDrag no corpo do run usa a pasta do run e, sem ela, a última pasta lembrada', async () => {
+    const projeto = mkdtempSync(path.join(tmpdir(), 'mapping-srv-proj-'));
+    try {
+      mkdirSync(path.join(apoio, 'state'), { recursive: true });
+      writeFileSync(path.join(apoio, 'state', 'ultima-pasta.txt'), projeto);
+      const body = `try { await paletteDrag(page, 'X', { x: 1, y: 1 }); } catch (e) { console.log('ERRO ' + e.message); }`;
+      const lembrada = await run(body);
+      expect(lembrada.out).toContain('ERRO');
+      expect(lembrada.out).not.toContain('precisa da pasta');
+    } finally {
+      rmSync(projeto, { recursive: true, force: true });
+    }
+    rmSync(path.join(apoio, 'state'), { recursive: true, force: true });
+    const sem = await run(
+      `try { await paletteDrag(page, 'X', { x: 1, y: 1 }); } catch (e) { console.log('ERRO ' + e.message); }`,
+    );
+    expect(sem.out).toContain('ERRO paletteDrag precisa da pasta do projeto');
+  });
+
+  describe('check', () => {
+    it('um check com falha não interrompe o corpo, sai uma linha por check antes do estado e o run sai 1', async () => {
+      const r = await run(`
+        check('R4.2', true);
+        check('R4.3', false, 'faltou o aviso');
+        check('R4.4', async () => { throw new Error('não achei o botão'); });
+        check('R4.5', () => true);
+        check('R4.6', Promise.resolve(true));
+        check('R4.7', () => false);
+        console.log('corpo seguiu');
+      `);
+      expect(r.code).toBe(1);
+      const lines = r.out.split('\n');
+      expect(lines).toContain('corpo seguiu');
+      expect(lines).toContain('✅ R4.2');
+      expect(lines).toContain('❌ R4.3 — faltou o aviso');
+      expect(lines).toContain('❌ R4.4 — não achei o botão');
+      expect(lines).toContain('✅ R4.5');
+      expect(lines).toContain('✅ R4.6');
+      expect(lines.find((l) => l.startsWith('❌ R4.7'))).toMatch(/condição falsa/);
+      const stateAt = lines.findIndex((l) => l.includes('Mapping'));
+      expect(stateAt).toBeGreaterThan(lines.indexOf('❌ R4.7 — condição falsa'));
+      expect(lines.indexOf('corpo seguiu')).toBeLessThan(lines.indexOf('✅ R4.2'));
+    });
+
+    it('corpo que lança ou passa do prazo ainda imprime os checks pendentes', async () => {
+      const r = await run(`
+        check('R9.1', async () => { await new Promise((r) => setTimeout(r, 30)); return false; }, 'tarde');
+        throw new Error('quebrou depois');
+      `);
+      expect(r.code).toBe(1);
+      expect(r.out).toContain('❌ R9.1 — tarde');
+      expect(readFileSync(path.join(apoio, 'runs.log'), 'utf8')).toMatch(
+        /checks=1 falhas=1/,
+      );
+    });
+
+    it('todos passando: o run sai 0; check sem await também é esperado', async () => {
+      const r = await run(
+        `check('ok', async () => { await new Promise((r) => setTimeout(r, 30)); return true; })`,
+      );
+      expect(r.code).toBe(0);
+      expect(r.out).toContain('✅ ok');
+    });
+  });
+
+  describe('runs.log e apoio/runs/', () => {
+    it('cada run grava uma linha em runs.log e o corpo e a saída em runs/<n>.js e .out', async () => {
+      await run(`check('a', true); console.log('primeiro')`);
+      await run(`check('b', false, 'x'); check('c', true)`);
+      const log = readFileSync(path.join(apoio, 'runs.log'), 'utf8').trim().split('\n');
+      expect(log).toHaveLength(2);
+      expect(log[0]).toMatch(
+        /^\d{4}-\d\d-\d\dT[\d:.]+Z run=1 codigo=0 checks=1 falhas=0$/,
+      );
+      expect(log[1]).toMatch(/ run=2 codigo=1 checks=2 falhas=1$/);
+      expect(readFileSync(path.join(apoio, 'runs', '1.js'), 'utf8')).toContain(
+        "console.log('primeiro')",
+      );
+      expect(readFileSync(path.join(apoio, 'runs', '1.out'), 'utf8')).toContain(
+        'primeiro',
+      );
+      expect(readFileSync(path.join(apoio, 'runs', '2.out'), 'utf8')).toContain(
+        '❌ b — x',
+      );
+    });
+
+    it('o contador continua depois de um servidor novo', async () => {
+      await run('1');
+      await run('await new Promise(() => {})', { prazoSeconds: 0.05 });
+      await run('1');
+      expect(readdirSync(path.join(apoio, 'runs')).sort()).toEqual([
+        '1.js',
+        '1.out',
+        '2.js',
+        '2.out',
+        '3.js',
+        '3.out',
+      ]);
+    });
+
+    it('o caminho de reserva também grava', async () => {
+      await run('1', { spawnServer: async () => {}, socketWaitMs: 50, connectFn });
+      expect(readFileSync(path.join(apoio, 'runs.log'), 'utf8')).toMatch(
+        /run=1 codigo=0/,
+      );
+    });
+  });
+
+  describe('tempos com run e checks', () => {
+    it('conta os run e os checks de cada roteiro pelas marcas do tempos.log', async () => {
+      const mod = await load();
+      const tempos = [
+        'R4 start 2026-11-11T10:00:00.000Z',
+        'R4 end 2026-11-11T10:10:00.000Z',
+        'R5 start 2026-11-11T10:10:30.000Z',
+        'R5 end 2026-11-11T10:20:00.000Z',
+      ].join('\n');
+      const runs = [
+        '2026-11-11T10:01:00.000Z run=1 codigo=0 checks=3 falhas=0',
+        '2026-11-11T10:02:00.000Z run=2 codigo=1 checks=2 falhas=1',
+        '2026-11-11T10:15:00.000Z run=3 codigo=0 checks=4 falhas=0',
+        '2026-11-11T10:30:00.000Z run=4 codigo=0 checks=9 falhas=0',
+      ].join('\n');
+      const out = mod.formatTempos(mod.temposFromLog(tempos, runs));
+      expect(out).toMatch(/R4 +10min00s +2 run, 5 checks/);
+      expect(out).toMatch(/R5 +9min30s +1 run, 4 checks/);
+      expect(out).toMatch(/total +19min30s +3 run, 9 checks/);
+      // Sem runs.log o texto de antes não muda.
+      expect(mod.formatTempos(mod.temposFromLog(tempos))).not.toMatch(/run/);
+    });
+  });
+
+  it('o cloud-up.sh --restart-chrome para o servidor do run antes de fechar o Chrome', () => {
+    const up = read(CLOUD_UP);
+    const stop = up.indexOf('"$S/cloud.pid"');
+    expect(stop).toBeGreaterThan(-1);
+    expect(up.indexOf('Browser.close')).toBeGreaterThan(stop);
+    expect(up).toContain('"$S/cloud.sock"');
+  });
+});
+
+// Etapa #1533 (TE3, decisão 12): pré-conferência dos pacotes com retry e código 14.
+describe('cloud-up.sh --check-packages (etapa #1533, TE3)', () => {
+  const BASIC = [
+    'bash',
+    'sh',
+    'cat',
+    'dirname',
+    'mkdir',
+    'sleep',
+    'seq',
+    'grep',
+    'tr',
+    'id',
+    'printf',
+    'echo',
+    'rm',
+    'touch',
+    'head',
+    'tail',
+    'wc',
+    'sed',
+    'env',
+    'date',
+    'node',
+  ];
+  let dir = '';
+
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'cloud-up-'));
+    mkdirSync(path.join(dir, 'bin'));
+    for (const name of BASIC) {
+      const found = spawnSync('bash', ['-c', `command -v ${name}`], { encoding: 'utf8' });
+      const target = found.stdout.trim();
+      if (target) symlinkSync(target, path.join(dir, 'bin', name));
+    }
+  });
+  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+
+  /** Um comando falso: `body` é o corpo do script. */
+  function fake(name: string, body = 'exit 0'): void {
+    const file = path.join(dir, 'bin', name);
+    writeFileSync(file, `#!/bin/bash\n${body}\n`);
+    chmodSync(file, 0o755);
+  }
+
+  /** Tudo instalado, menos o que `missing` lista. */
+  function setup(missing: string[], { chrome = true } = {}): void {
+    for (const name of ['xdotool', 'openbox', 'import', 'python3']) {
+      if (!missing.includes(name)) fake(name);
+    }
+    fake('sudo', 'if [ "$1" = -n ]; then shift; fi; exec "$@"');
+    writeFileSync(path.join(dir, 'launcher'), '');
+    if (chrome) writeFileSync(path.join(dir, 'chromium'), '');
+  }
+
+  /** `apt-get` falso: falha `fails` vezes e na seguinte instala (cria `xdotool`). */
+  function fakeApt(fails: number): void {
+    const counter = path.join(dir, 'apt-count');
+    fake(
+      'apt-get',
+      `n=$(cat "${counter}" 2>/dev/null || echo 0); n=$((n+1)); echo $n >"${counter}"
+echo "apt-get $*" >>"${dir}/apt-log"
+if [ "$n" -le ${fails} ]; then exit 100; fi
+[ "$1" = install ] && printf '#!/bin/bash\\nexit 0\\n' >"${dir}/bin/xdotool" && chmod +x "${dir}/bin/xdotool"
+exit 0`,
+    );
+  }
+
+  function checkPackages(extraEnv: Record<string, string> = {}): {
+    status: number | null;
+    stdout: string;
+    stderr: string;
+  } {
+    const r = spawnSync(
+      'bash',
+      [CLOUD_UP, path.join(dir, 'rodada'), '--check-packages'],
+      {
+        env: {
+          PATH: path.join(dir, 'bin'),
+          HOME: dir,
+          CLOUD_UP_RETRY_SLEEP: '0',
+          CLOUD_UP_ATSPI_LAUNCHER: path.join(dir, 'launcher'),
+          CLOUD_UP_CHROME: path.join(dir, 'chromium'),
+          ...extraEnv,
+        },
+        encoding: 'utf8',
+      },
+    );
+    return { status: r.status, stdout: r.stdout, stderr: r.stderr };
+  }
+
+  it('tudo instalado: sai 0 sem chamar o apt-get', () => {
+    setup([]);
+    fakeApt(0);
+    const r = checkPackages();
+    expect(r.status).toBe(0);
+    expect(existsSync(path.join(dir, 'apt-log'))).toBe(false);
+  });
+
+  it('falta o xdotool: o apt-get falha duas vezes, instala na terceira e sai 0', () => {
+    setup(['xdotool']);
+    fakeApt(2);
+    const r = checkPackages();
+    expect(r.stderr).toBe(r.stderr);
+    expect(r.status).toBe(0);
+    const log = readFileSync(path.join(dir, 'apt-log'), 'utf8');
+    expect(log.match(/apt-get update/g)).toHaveLength(3);
+    expect(log).toContain(
+      'install -y -q xdotool at-spi2-core python3-pyatspi openbox imagemagick',
+    );
+  });
+
+  it('o apt-get falha sempre: sai 14 com a lista do que falta', () => {
+    setup(['xdotool', 'openbox']);
+    fakeApt(99);
+    const r = checkPackages();
+    expect(r.status).toBe(14);
+    expect(r.stderr).toMatch(/xdotool/);
+    expect(r.stderr).toMatch(/openbox/);
+    expect(r.stderr).not.toMatch(/imagemagick|chromium/);
+    const log = readFileSync(path.join(dir, 'apt-log'), 'utf8');
+    expect(log.match(/apt-get update/g)).toHaveLength(5);
+  });
+
+  it('o pyatspi só existe no /usr/bin/python3.12 (o python3 do PATH não o carrega): sai 0 sem o apt-get (achado 4.1)', () => {
+    setup([]);
+    fake('python3', 'exit 1');
+    fake('python312', 'exit 0');
+    fakeApt(0);
+    const r = checkPackages({ CLOUD_UP_PYTHON: path.join(dir, 'bin', 'python312') });
+    expect(r.status).toBe(0);
+    expect(existsSync(path.join(dir, 'apt-log'))).toBe(false);
+  });
+
+  it('sem o pyatspi em nenhum python: sai 14 e lista python3 pyatspi', () => {
+    setup([]);
+    fake('python3', 'exit 1');
+    fake('python312', 'exit 1');
+    fakeApt(99);
+    const r = checkPackages({ CLOUD_UP_PYTHON: path.join(dir, 'bin', 'python312') });
+    expect(r.status).toBe(14);
+    expect(r.stderr).toMatch(/python3 pyatspi/);
+  });
+
+  it('sem o Chrome: sai 14 direto, sem chamar o apt-get', () => {
+    setup([], { chrome: false });
+    fakeApt(0);
+    const r = checkPackages();
+    expect(r.status).toBe(14);
+    expect(r.stderr).toContain('chromium');
+    expect(existsSync(path.join(dir, 'apt-log'))).toBe(false);
+  });
+});
+
+describe('cloud.mjs passo: item fora do guia da rodada (etapa #1533, TE3, decisão 14 (4))', () => {
+  let dir = '';
+  let guide = '';
+  beforeAll(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'passo-fora-'));
+    guide = path.join(dir, 'guia.md');
+    spawnSync('node', ['scripts/testing/round-guide.mjs', 'R0', 'R22', '--out', guide]);
+  });
+  afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+  const passo = (...itens: string[]) =>
+    spawnSync(
+      'node',
+      ['scripts/testing/cloud.mjs', 'passo', ...itens, `--guia=${guide}`],
+      {
+        encoding: 'utf8',
+      },
+    );
+
+  it('R12.4 sem o R12 no guia imprime o passo do docs/TESTING.md, com a primeira linha dizendo', () => {
+    const r = passo('R12.4');
+    expect(r.status).toBe(0);
+    const lines = r.stdout.split('\n');
+    expect(lines[0]).toBe('fora do guia da rodada (lido do docs/TESTING.md)');
+    expect(r.stdout).toMatch(/^\| R12\.4 \|/m);
+  });
+
+  it('um item do guia e outro de fora saem juntos, cada um com a sua marca', () => {
+    const r = passo('R22.4', 'R12.4');
+    expect(r.status).toBe(0);
+    expect(r.stdout.match(/fora do guia da rodada/g)).toHaveLength(1);
+    expect(r.stdout.indexOf('R22.4')).toBeLessThan(r.stdout.indexOf('fora do guia'));
+  });
+
+  it('item que o guia inteiro também não tem sai com código 2', () => {
+    const r = passo('R99.1');
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/R99\.1 não está/);
+    expect(passo('R12.999').status).toBe(2);
+  });
+});
+
+// Etapa #1076 (VC2): ponto pela posição desenhada, onCanvas, viewCenter, alças da seta e `Seleção:`.
+describe('vista do canvas para o testador (etapa #1076, VC2)', () => {
+  type Fn = (...args: unknown[]) => unknown;
+  type Mod = Record<
+    | 'parseContainerBoxes'
+    | 'containerScreenPoint'
+    | 'ponto'
+    | 'viewCenter'
+    | 'parseArrowHandles'
+    | 'arrowHandlesOf'
+    | 'onCanvas'
+    | 'paletteDrag'
+    | 'formatState'
+    | 'state',
+    Fn
+  >;
+  const load = async (): Promise<Mod> => {
+    process.env.DISPLAY ??= ':99';
+    return (await import('../../scripts/testing/cloud.mjs')) as unknown as Mod;
+  };
+
+  describe('parseContainerBoxes', () => {
+    it('devolve um Map de id para { x, y, width, height, scale }', async () => {
+      const mod = await load();
+      const map = mod.parseContainerBoxes('c1 10 20.5 300 200 2;c2 -5 0 100 50 1') as Map<
+        string,
+        unknown
+      >;
+      expect([...map.keys()]).toEqual(['c1', 'c2']);
+      expect(map.get('c1')).toEqual({
+        x: 10,
+        y: 20.5,
+        width: 300,
+        height: 200,
+        scale: 2,
+      });
+      expect(map.get('c2')).toEqual({ x: -5, y: 0, width: 100, height: 50, scale: 1 });
+      expect((mod.parseContainerBoxes(null) as Map<string, unknown>).size).toBe(0);
+    });
+
+    it('entrada inválida lança com o texto', async () => {
+      const mod = await load();
+      expect(() => mod.parseContainerBoxes('c1 10 20 300')).toThrow(
+        'data-container-boxes inválido: "c1 10 20 300"',
+      );
+      expect(() => mod.parseContainerBoxes('c1 10 20 300 200 x')).toThrow(
+        'data-container-boxes inválido: "c1 10 20 300 200 x"',
+      );
+    });
+  });
+
+  describe('containerScreenPoint com boxes', () => {
+    const mapping = {
+      containers: [
+        { id: 'c1', name: 'Cadastro', placement: { x: 100, y: 50, scale: 2 } },
+        { id: 'c2', name: 'Outro', placement: { x: 0, y: 0, scale: 1 } },
+      ],
+      markings: [{ id: 'm1', name: 'Botão', containerId: 'c1', rect: { x: 10, y: 20 } }],
+      perspectives: [{ name: 'Dev mobile', items: [{ root: 'c1', x: 400, y: 300 }] }],
+    };
+    const base = { mapping, viewport: '0 0 1', host: { x: 0, y: 0 } };
+
+    it('a posição de boxes vale sobre a do disco e sobre a da perspectiva', async () => {
+      const mod = await load();
+      // boxes: x=1000, y=900, escala 4 → canvas = (1000 + 5*4, 900 + 7*4)
+      const boxes = 'c1 1000 900 300 200 4';
+      expect(
+        mod.containerScreenPoint({ ...base, container: 'Cadastro', x: 5, y: 7, boxes }),
+      ).toEqual({ x: 1020, y: 928 });
+      expect(
+        mod.containerScreenPoint({
+          ...base,
+          container: 'Cadastro',
+          x: 5,
+          y: 7,
+          boxes,
+          perspective: 'Dev mobile',
+        }),
+      ).toEqual({ x: 1020, y: 928 });
+    });
+
+    it('a marcação usa a caixa do container dela', async () => {
+      const mod = await load();
+      // canvas = (1000 + (10+3)*4, 900 + (20+4)*4) = (1052, 996)
+      expect(
+        mod.containerScreenPoint({
+          ...base,
+          container: 'Botão',
+          x: 3,
+          y: 4,
+          marking: true,
+          boxes: 'c1 1000 900 300 200 4',
+        }),
+      ).toEqual({ x: 1052, y: 996 });
+    });
+
+    it('sem o container em boxes, vale a conta de hoje', async () => {
+      const mod = await load();
+      expect(
+        mod.containerScreenPoint({
+          ...base,
+          container: 'Cadastro',
+          x: 5,
+          y: 7,
+          boxes: 'c2 1000 900 300 200 4',
+        }),
+      ).toEqual({ x: 110, y: 64 });
+      expect(
+        mod.containerScreenPoint({
+          ...base,
+          container: 'Cadastro',
+          x: 5,
+          y: 7,
+          boxes: '',
+          perspective: 'Dev mobile',
+        }),
+      ).toEqual({ x: 410, y: 314 });
+    });
+
+    it('avisa (warn) quando a perspectiva pedida difere da desenhada', async () => {
+      const mod = await load();
+      const warnings: string[] = [];
+      mod.containerScreenPoint({
+        ...base,
+        container: 'Cadastro',
+        x: 0,
+        y: 0,
+        boxes: 'c1 1000 900 300 200 4',
+        perspective: 'Dev mobile',
+        warn: (m: string) => warnings.push(m),
+      });
+      expect(warnings).toEqual([
+        'a perspectiva Dev mobile não é a desenhada; vale a posição desenhada',
+      ]);
+      const same: string[] = [];
+      mod.containerScreenPoint({
+        ...base,
+        container: 'Cadastro',
+        x: 0,
+        y: 0,
+        boxes: 'c1 400 300 300 200 4',
+        perspective: 'Dev mobile',
+        warn: (m: string) => same.push(m),
+      });
+      expect(same).toEqual([]);
+    });
+  });
+
+  describe('ponto (página falsa)', () => {
+    const cleanup: string[] = [];
+    afterEach(() => {
+      for (const dir of cleanup.splice(0)) rmSync(dir, { recursive: true, force: true });
+    });
+    function fakePage(onCanvas: { ok: boolean; element: string }) {
+      const attrs: Record<string, string | null> = {
+        'data-viewport': '0 0 1',
+        'data-container-boxes': 'c1 1000 900 300 200 4',
+      };
+      return {
+        locator: () => ({
+          getAttribute: async (name: string) => attrs[name] ?? null,
+          boundingBox: async () => ({ x: 10, y: 20, width: 800, height: 600 }),
+        }),
+        evaluate: async (_fn: unknown, arg?: Record<string, unknown>) =>
+          arg && 'x' in arg && 'y' in arg ? onCanvas : null,
+      };
+    }
+    function project() {
+      const dir = mkdtempSync(path.join(tmpdir(), 'mapping-ponto-'));
+      cleanup.push(dir);
+      writeFileSync(
+        path.join(dir, 'mapping.json'),
+        JSON.stringify({
+          containers: [
+            { id: 'c1', name: 'Cadastro', placement: { x: 100, y: 50, scale: 2 } },
+          ],
+          markings: [],
+          perspectives: [{ name: 'Dev', items: [{ root: 'c1', x: 400, y: 300 }] }],
+        }),
+      );
+      return dir;
+    }
+
+    it('usa a posição desenhada e avisa quando a perspectiva é outra', async () => {
+      const mod = await load();
+      const warnings: string[] = [];
+      const at = await mod.ponto(
+        fakePage({ ok: true, element: 'canvas' }),
+        project(),
+        'Cadastro',
+        5,
+        7,
+        { perspective: 'Dev', warn: (m: string) => warnings.push(m) },
+      );
+      expect(at).toEqual({ x: 10 + 1020, y: 20 + 928 });
+      expect(warnings).toEqual([
+        'a perspectiva Dev não é a desenhada; vale a posição desenhada',
+      ]);
+    });
+
+    it('o ponto fora do canvas avisa, com a caixa do host, e devolve o ponto', async () => {
+      const mod = await load();
+      const warnings: string[] = [];
+      const at = await mod.ponto(
+        fakePage({ ok: false, element: 'div.dock "Janelas"' }),
+        project(),
+        'Cadastro',
+        5,
+        7,
+        { warn: (m: string) => warnings.push(m) },
+      );
+      expect(at).toEqual({ x: 1030, y: 948 });
+      expect(warnings.join('\n')).toContain(
+        'o ponto (1030, 948) não cai no canvas (div.dock "Janelas")',
+      );
+      expect(warnings.join('\n')).toContain('10, 20, 800 × 600');
+    });
+  });
+
+  describe('viewCenter', () => {
+    it('dá o ponto de tela do centro do host e o mesmo ponto no canvas', async () => {
+      const mod = await load();
+      const page = {
+        locator: () => ({
+          getAttribute: async () => '100 50 2',
+          boundingBox: async () => ({ x: 10, y: 20, width: 800, height: 600 }),
+        }),
+        evaluate: async () => null,
+      };
+      expect(await mod.viewCenter(page)).toEqual({
+        x: 410,
+        y: 320,
+        canvas: { x: 150, y: 125 },
+      });
+    });
+  });
+
+  describe('parseArrowHandles e arrowHandlesOf', () => {
+    it('soma o canto do host a cada alça', async () => {
+      const mod = await load();
+      expect(
+        mod.parseArrowHandles('center 50 60;from 10.5 20;to 90 100', { x: 100, y: 200 }),
+      ).toEqual({
+        center: { x: 150, y: 260 },
+        from: { x: 110.5, y: 220 },
+        to: { x: 190, y: 300 },
+      });
+      expect(() => mod.parseArrowHandles('center 50', { x: 0, y: 0 })).toThrow(
+        'data-arrow-handles inválido: "center 50"',
+      );
+    });
+
+    it('arrowHandlesOf sem o atributo devolve null; com ele, os pontos de tela', async () => {
+      const mod = await load();
+      const make = (text: string | null) => ({
+        locator: () => ({
+          getAttribute: async () => text,
+          boundingBox: async () => ({ x: 10, y: 20, width: 800, height: 600 }),
+        }),
+        evaluate: async () => null,
+      });
+      expect(await mod.arrowHandlesOf(make(null))).toBeNull();
+      expect(await mod.arrowHandlesOf(make('center 1 2;to 3 4'))).toEqual({
+        center: { x: 11, y: 22 },
+        to: { x: 13, y: 24 },
+      });
+    });
+  });
+
+  describe('onCanvas', () => {
+    it('devolve { ok, element } da conferência feita na página', async () => {
+      const mod = await load();
+      const seen: unknown[] = [];
+      const page = {
+        evaluate: async (_fn: unknown, arg: unknown) => {
+          seen.push(arg);
+          return { ok: false, element: 'div.dock' };
+        },
+      };
+      expect(await mod.onCanvas(page, { x: 5, y: 6 })).toEqual({
+        ok: false,
+        element: 'div.dock',
+      });
+      expect(seen).toEqual([{ x: 5, y: 6 }]);
+    });
+  });
+
+  describe('paletteDrag usa a mesma conferência do ponto no canvas', () => {
+    it('ponto fora do canvas lança antes do arrasto sintético', async () => {
+      const mod = await load();
+      const projeto = mkdtempSync(path.join(tmpdir(), 'mapping-palette-onc-'));
+      try {
+        writeFileSync(
+          path.join(projeto, 'mapping.json'),
+          JSON.stringify({ markings: [{ id: 'm1' }] }),
+        );
+        const fired: string[] = [];
+        const item = {
+          scrollIntoViewIfNeeded: async () => undefined,
+          boundingBox: async () => ({ x: 10, y: 100, width: 200, height: 40 }),
+        };
+        const page = {
+          mouse: {
+            move: async () => undefined,
+            down: async () => undefined,
+            up: async () => undefined,
+          },
+          locator: () => ({
+            filter: () => item,
+            getByText: () => ({}),
+            getAttribute: async () => '0',
+            screenshot: async () => undefined,
+          }),
+          evaluate: async (_fn: unknown, arg: Record<string, unknown>) => {
+            if (arg && 'timeoutMs' in arg) return null;
+            if (arg && 'para' in arg) {
+              fired.push('sintetico');
+              return { ok: true };
+            }
+            if (arg && 'x' in arg) return { ok: false, element: 'div.dock' };
+            return ['Biblioteca'];
+          },
+        };
+        await expect(
+          mod.paletteDrag(
+            page,
+            'Button',
+            { x: 500, y: 300 },
+            {
+              steps: 1,
+              projectDir: projeto,
+              waitMs: 20,
+            },
+          ),
+        ).rejects.toThrow('o ponto (500, 300) não cai no canvas (div.dock)');
+        expect(fired).toEqual([]);
+      } finally {
+        rmSync(projeto, { recursive: true, force: true });
+      }
+    });
+  });
+
+  describe('formatState: linha Seleção', () => {
+    const base = {
+      title: 'Mapping',
+      url: 'x',
+      dialogs: [],
+      notices: [],
+      saveStatus: null,
+      focus: null,
+      windows: [],
+    };
+    it('com o nome vindo do disco', async () => {
+      const mod = await load();
+      const text = (selection: unknown) =>
+        mod.formatState({ ...base, selection }) as string;
+      expect(text({ type: 'marking', id: 'm1', name: 'Lado' })).toContain(
+        'Seleção: marcação "Lado" (m1)',
+      );
+      expect(text({ type: 'arrow', id: 'a1', name: 'A → B' })).toContain(
+        'Seleção: seta "A → B" (a1)',
+      );
+      expect(text({ type: 'image', id: 'c1', name: 'Tela' })).toContain(
+        'Seleção: container "Tela" (c1)',
+      );
+      expect(text(null)).toContain('Seleção: nenhuma');
+    });
+    it('vem depois do Foco; sem disco, mostra o tipo e o id; sem o campo, não imprime', async () => {
+      const mod = await load();
+      const lines = (
+        mod.formatState({
+          ...base,
+          selection: { type: 'marking', id: 'm1' },
+        }) as string
+      ).split('\n');
+      const focus = lines.findIndex((l) => l.startsWith('Foco:'));
+      expect(lines[focus + 1]).toBe('Seleção: marking m1');
+      expect(mod.formatState(base) as string).not.toContain('Seleção:');
+    });
+  });
+
+  describe('state() lê a seleção', () => {
+    const run = async (selection: string | null, mapping: object | null) => {
+      const mod = await load();
+      const apoio = mkdtempSync(path.join(tmpdir(), 'mapping-sel-apoio-'));
+      const projeto = mkdtempSync(path.join(tmpdir(), 'mapping-sel-proj-'));
+      try {
+        if (mapping) {
+          writeFileSync(path.join(projeto, 'mapping.json'), JSON.stringify(mapping));
+        }
+        const page = {
+          evaluate: async (_fn: unknown, arg: unknown) =>
+            arg && typeof arg === 'object' && 'timeoutMs' in arg
+              ? null
+              : {
+                  title: 't',
+                  url: 'u',
+                  dialogs: [],
+                  notices: [],
+                  saveStatus: null,
+                  focus: null,
+                  selection,
+                },
+        };
+        const result = (await mod.state(
+          page,
+          apoio,
+          mapping ? { projectDir: projeto } : { projectDir: null },
+        )) as { selection: unknown };
+        return result.selection;
+      } finally {
+        rmSync(apoio, { recursive: true, force: true });
+        rmSync(projeto, { recursive: true, force: true });
+      }
+    };
+    const mapping = {
+      revision: 1,
+      containers: [{ id: 'c1', name: 'Tela' }],
+      markings: [
+        { id: 'm1', name: 'Lado' },
+        { id: 'm2', name: null },
+      ],
+      arrows: [{ id: 'a1', from: 'm1', to: 'm2' }],
+    };
+
+    it('resolve o nome pelo mapping.json lido', async () => {
+      expect(await run('marking m1', mapping)).toEqual({
+        type: 'marking',
+        id: 'm1',
+        name: 'Lado',
+      });
+      expect(await run('marking m2', mapping)).toEqual({
+        type: 'marking',
+        id: 'm2',
+        name: 'sem nome',
+      });
+      expect(await run('image c1', mapping)).toEqual({
+        type: 'image',
+        id: 'c1',
+        name: 'Tela',
+      });
+      expect(await run('arrow a1', mapping)).toEqual({
+        type: 'arrow',
+        id: 'a1',
+        name: 'Lado → sem nome',
+      });
+    });
+
+    it('sem pasta ou com o id fora do disco, fica só o tipo e o id; sem seleção, null', async () => {
+      expect(await run('marking m1', null)).toEqual({ type: 'marking', id: 'm1' });
+      expect(await run('marking zz', mapping)).toEqual({ type: 'marking', id: 'zz' });
+      expect(await run(null, mapping)).toBeNull();
+    });
   });
 });

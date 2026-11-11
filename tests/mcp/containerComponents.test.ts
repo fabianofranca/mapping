@@ -548,7 +548,7 @@ describe('create_marking com inside (filha no slot)', () => {
     expect(warning?.message).toMatch(/ficou dentro de/);
   });
 
-  it('coube no slot, mas o pai gravado é uma irmã (não a última): o aviso diz em quem ficou', async () => {
+  it('irmã cobre o slot: a filha fica no componente, e não dentro da irmã (CL1, achado 3.1)', async () => {
     const first = await run([SCREEN, COLUMN]);
     const col = marking(first, '$col').rect;
     const seeded: LoadedProject = { ...loaded, project: first.project };
@@ -567,10 +567,10 @@ describe('create_marking com inside (filha no slot)', () => {
       seeded,
     );
     expect(result.errors).toEqual([]);
-    expect(marking(result, '$c').parentId).toBe(idOf(result, '$a'));
+    // Antes da CL1 a peça nascia contida em `$a` e virava filha dela, com o aviso "ficou dentro de".
+    expect(marking(result, '$c').parentId).toBe(idOf(first, '$col'));
     const warning = result.deprecations.find((d) => d.index === 2);
-    expect(warning).toMatchObject({ code: 'ignored-argument', op: 'create_marking' });
-    expect(warning?.message).toMatch(/ficou dentro de/);
+    expect(warning?.message ?? '').not.toMatch(/ficou dentro de/);
   });
 
   it('rect maior que o slot: o tamanho encolhe ao slot, com aviso', async () => {

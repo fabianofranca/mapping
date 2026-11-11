@@ -156,6 +156,11 @@ Em `get_marking`, `get_annotation`, `find_by_code`, `get_component` (campo `code
 - **`create_marking` sem `rect`** com `annotation` de um tipo cujo componente tem `sizing` que depende do conteúdo (e sem slot) **nasce no tamanho medido** com o `preview` do componente e os `values` do passo (texto, número e vazio; tabela e referência ficam no `default`), no lugar livre de sempre (0.34.1). Com `rect`, o `rect` manda. Um componente com slot nasce no `size`. Vale também para o `near` e o `inside` sem `rect`.
 - Versão minor, compatível (uma op nova; nenhuma tool nem argumento mudou); `formatVersion` e schema sem mudança. A versão do épico é a `0.35.0` (a definitiva é escolhida no fechamento).
 
+### Mudança da 0.34.3 — peça em slot cheio não nasce sobre a irmã
+
+- **`create_marking` com `inside`** (e a colocação do componente num slot sem lugar livre): a peça deixa de nascer contida em ou igual a uma irmã, o que a faria filha dela e não do componente do slot; ela vai para a posição que cobre menos as outras e que nenhuma contém. Com lugar livre, nada muda.
+- Versão patch, compatível; nenhuma tool nem argumento novo; `formatVersion` e schema sem mudança.
+
 ### Mudança da 0.34.1 — `create_marking` sem `rect` nasce em lugar livre
 
 - **`create_marking` com `annotation` de um tipo com componente e sem `rect`** (e sem `inside` nem `near`) nasce no lugar livre mais perto do centro do container (no canvas, de 0,0), **sem cobrir nem coincidir** com outras marcações do mesmo espaço (no canvas, nem com containers), com o vão de 8 unidades, a mesma colocação do **Adicionar na tela** da app. Antes todos nasciam no centro, sobrepostos: o segundo componente igual virava filho do primeiro e um componente grande adotava as marcações que cobria. Dois componentes iguais no mesmo lote nascem lado a lado, os dois sem pai.

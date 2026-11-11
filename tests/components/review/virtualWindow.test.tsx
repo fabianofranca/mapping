@@ -133,4 +133,64 @@ describe('árvore da revisão: janela virtual', () => {
     act(() => screen.getByRole('button', { name: t('review.expandAll') }).click());
     expect(tree.scrollTop).toBe(0);
   });
+
+  // #1184 (item 8 da #1530): a seleção sai da janela virtual com End/Home/setas e o elemento do
+  // `aria-activedescendant` continua desenhado, selecionado e com a posição certa.
+  it('End, Home e seta a partir do fim: o activedescendant é uma linha desenhada e selecionada', async () => {
+    const count = 100;
+    const { base, proposal } = manyMarkings(count);
+    const h = await openReviewHarness({ project: base, proposals: [proposal] });
+    expect(h.review.open('P1').ok).toBe(true);
+    renderInEditor(h, <ReviewLevels />);
+    const tree = screen.getByRole('tree');
+    tree.focus();
+
+    // A árvore da fixture é uma corrente: proposta > container > marcação 0 > [criação da
+    // marcação 1, marcação 1] > ... Cada marcação k < count - 1 tem dois filhos (a mudança que a
+    // cria e a marcação k + 1); a última tem só a mudança que a cria. A mudança da última
+    // marcação é a última da proposta e está na profundidade count + 3.
+    const lastChange = proposal.changes.at(-1);
+    if (!lastChange) throw new Error('fixture');
+    const lastItemLevel = { posinset: 2, setsize: 2, level: count + 2 }; // marcação count - 1
+    const lastChangeLevel = { posinset: 1, setsize: 1, level: count + 3 };
+    const proposalLevel = { posinset: 1, setsize: 1, level: 1 };
+
+    const press = (key: string): HTMLElement => {
+      act(() => {
+        tree.dispatchEvent(
+          new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }),
+        );
+      });
+      const id = tree.getAttribute('aria-activedescendant');
+      expect(id, `${key}: aria-activedescendant`).toBeTruthy();
+      const row = document.getElementById(id ?? '');
+      expect(row, `${key}: a linha do activedescendant está no DOM`).not.toBeNull();
+      return row as HTMLElement;
+    };
+    const expectRow = (
+      row: HTMLElement,
+      id: string,
+      at: { posinset: number; setsize: number; level: number },
+    ): void => {
+      expect(row.id).toBe(id);
+      expect(row.getAttribute('aria-selected')).toBe('true');
+      expect(row.getAttribute('aria-posinset')).toBe(String(at.posinset));
+      expect(row.getAttribute('aria-setsize')).toBe(String(at.setsize));
+      expect(row.getAttribute('aria-level')).toBe(String(at.level));
+    };
+
+    const end = press('End');
+    expectRow(end, rowDomId(`change:${lastChange.id}`), lastChangeLevel);
+    expect(tree.scrollTop).toBeGreaterThan(0);
+
+    const up = press('ArrowUp');
+    expectRow(up, rowDomId(`item:M${count - 1}`), lastItemLevel);
+    expect(tree.scrollTop).toBeGreaterThan(0);
+
+    const home = press('Home');
+    expectRow(home, rowDomId('proposal:'), proposalLevel);
+    expect(tree.scrollTop).toBe(0);
+
+    expectRow(press('End'), rowDomId(`change:${lastChange.id}`), lastChangeLevel);
+  });
 });

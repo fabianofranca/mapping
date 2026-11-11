@@ -1,6 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { CanvasController } from '../../src/canvas/CanvasController';
 import { createDisplayImages } from '../../src/store/displayImages';
+import { arrowShape } from '../../src/canvas/arrowGeometry';
+import { showArrows } from '../../src/store/settings';
+import { moveContainer } from '../../src/model';
 import { selectItems } from '../../src/store/ui';
 import { arrowProject } from '../model/arrowFixtures';
 import { editorFor, installFakeCanvas } from './harness';
@@ -130,6 +133,102 @@ describe('CanvasController: data-viewport e data-selection-box', () => {
     selectItems(ui, []);
     flush();
     expect(container.dataset.selectionBox).toBeUndefined();
+    controller.destroy();
+  });
+  it('data-selection acompanha a seleção primária e some sem seleção', () => {
+    const { container, controller, ui } = setup();
+    expect(container.dataset.selection).toBeUndefined();
+    selectItems(ui, [{ kind: 'marking', id: 'a1' }]);
+    flush();
+    expect(container.dataset.selection).toBe('marking a1');
+    selectItems(ui, [{ kind: 'image', id: 'B' }]);
+    flush();
+    expect(container.dataset.selection).toBe('image B');
+    selectItems(ui, [{ kind: 'arrow', id: 'r1' }]);
+    flush();
+    expect(container.dataset.selection).toBe('arrow r1');
+    selectItems(ui, []);
+    flush();
+    expect(container.dataset.selection).toBeUndefined();
+    controller.destroy();
+  });
+
+  const handlesOf = (el: HTMLElement) =>
+    new Map(
+      (el.dataset.arrowHandles ?? '')
+        .split(';')
+        .filter(Boolean)
+        .map((entry) => {
+          const [name, x, y] = entry.split(' ');
+          return [name!, { x: Number(x), y: Number(y) }] as const;
+        }),
+    );
+
+  it('data-arrow-handles: só com a seta selecionada, center no meio e acompanha o zoom', () => {
+    const { container, controller, ui, store } = setup();
+    expect(container.dataset.arrowHandles).toBeUndefined();
+    selectItems(ui, [{ kind: 'arrow', id: 'r1' }]);
+    flush();
+    const shape = arrowShape(store.project.peek()!, store.project.peek()!.arrows[0]!)!;
+    let v = viewportOf(container);
+    let handles = handlesOf(container);
+    expect([...handles.keys()].slice(0, 3)).toEqual(['center', 'from', 'to']);
+    expect(handles.get('center')!.x).toBeCloseTo(shape.label.x * v.scale + v.x, 1);
+    expect(handles.get('center')!.y).toBeCloseTo(shape.label.y * v.scale + v.y, 1);
+    expect(container.dataset.selectionBox).toBeUndefined();
+    controller.zoomBy(2);
+    flush();
+    v = viewportOf(container);
+    handles = handlesOf(container);
+    expect(handles.get('center')!.x).toBeCloseTo(shape.label.x * v.scale + v.x, 1);
+    selectItems(ui, [{ kind: 'marking', id: 'a1' }]);
+    flush();
+    expect(container.dataset.arrowHandles).toBeUndefined();
+    controller.destroy();
+  });
+
+  it('data-arrow-handles some com Mostrar setas desligado', () => {
+    const { container, controller, ui } = setup();
+    selectItems(ui, [{ kind: 'arrow', id: 'r1' }]);
+    flush();
+    expect(container.dataset.arrowHandles).toBeDefined();
+    showArrows.value = false;
+    flush();
+    expect(container.dataset.arrowHandles).toBeUndefined();
+    showArrows.value = true;
+    flush();
+    expect(container.dataset.arrowHandles).toBeDefined();
+    controller.destroy();
+  });
+
+  it('data-container-boxes traz as colocações e não muda com zoom nem pan', () => {
+    const { container, controller } = setup();
+    const text = container.dataset.containerBoxes ?? '';
+    const b = text.split(';').find((e) => e.startsWith('B '));
+    expect(b).toBe('B 2000 0 1000 1000 2');
+    controller.zoomBy(2);
+    flush();
+    controller.zoomTo(0.2);
+    flush();
+    expect(container.dataset.containerBoxes).toBe(text);
+    controller.destroy();
+  });
+
+  it('data-container-boxes se refaz ao redimensionar um container', () => {
+    const { container, controller, store } = setup();
+    const before = container.dataset.containerBoxes;
+    store.apply((p) => moveContainer(p, 'B', 3000, 0));
+    flush();
+    expect(container.dataset.containerBoxes).not.toBe(before);
+    expect(container.dataset.containerBoxes).toContain('B 3000 0 1000 1000 2');
+    const moved = container.dataset.containerBoxes;
+    store.apply((p) => ({
+      ...p,
+      containers: p.containers.map((c) => (c.id === 'B' ? { ...c, width: 250 } : c)),
+    }));
+    flush();
+    expect(container.dataset.containerBoxes).not.toBe(moved);
+    expect(container.dataset.containerBoxes).toContain('B 3000 0 500 1000 2');
     controller.destroy();
   });
 });

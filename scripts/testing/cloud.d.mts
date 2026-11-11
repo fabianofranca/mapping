@@ -63,6 +63,8 @@ export interface TesterState {
   notices: string[];
   saveStatus: string | null;
   focus: { role: string; name: string } | null;
+  /** O que está selecionado (`data-selection`); `name` só com o `mapping.json` lido. */
+  selection?: { type: string; id: string; name?: string } | null;
   windows: string[];
   project?: {
     revision: number | null;
@@ -120,13 +122,18 @@ export interface TempoItem {
   nome: string;
   /** Duração do primeiro `start` ao último `end`; `null` quando falta uma marca (tempo não medido). */
   segundos: number | null;
+  /** Com o `runs.log`: os `run` e os checks gravados entre o `start` e o `end` do roteiro. */
+  runs?: number;
+  checks?: number;
 }
 export interface Tempos {
   itens: TempoItem[];
   avisos: string[];
   totalSegundos: number;
+  totalRuns?: number;
+  totalChecks?: number;
 }
-export function temposFromLog(text: string): Tempos;
+export function temposFromLog(text: string, runsText?: string): Tempos;
 export function temposFromDir(apoioDir: string): Tempos;
 /** A `apoio/` da rodada mais recente em `~/mapping-testes`, ou `null` (usada quando `APOIO` não está exportado). */
 export function defaultApoioDir(home?: string): string | null;
@@ -154,15 +161,42 @@ export function containerScreenPoint(args: {
   host: { x: number; y: number };
   perspective?: string;
   marking?: boolean;
+  /** O texto do `data-container-boxes` (ou o `Map` já lido): a posição desenhada. */
+  boxes?: string | Map<string, ContainerBox> | null;
+  warn?: (message: string) => void;
 }): { x: number; y: number };
+export interface ContainerBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  scale: number;
+}
+export function parseContainerBoxes(
+  text: string | null | undefined,
+): Map<string, ContainerBox>;
 export function ponto(
   page: unknown,
   projectDir: string,
   container: string,
   x: number,
   y: number,
-  options?: { perspective?: string; marking?: boolean },
+  options?: { perspective?: string; marking?: boolean; warn?: (message: string) => void },
 ): Promise<{ x: number; y: number }>;
+export function onCanvas(
+  page: unknown,
+  point: { x: number; y: number },
+): Promise<{ ok: boolean; element: string }>;
+export function viewCenter(
+  page: unknown,
+): Promise<{ x: number; y: number; canvas: { x: number; y: number } }>;
+export function parseArrowHandles(
+  text: string | null | undefined,
+  host: { x: number; y: number },
+): Record<string, { x: number; y: number }>;
+export function arrowHandlesOf(
+  page: unknown,
+): Promise<Record<string, { x: number; y: number }> | null>;
 
 export interface Candidate {
   role: string;
@@ -185,13 +219,24 @@ export function paletteDrag(
   page: unknown,
   tipo: string,
   para: { x: number; y: number },
-  options?: { capture?: string; steps?: number },
+  options?: {
+    capture?: string;
+    steps?: number;
+    grupo?: string;
+    projectDir?: string;
+    waitMs?: number;
+  },
 ): Promise<{ via: 'nativo' | 'sintetico' }>;
 export function drag(
   page: unknown,
   de: { x: number; y: number },
   para: { x: number; y: number },
-  options?: { select?: boolean; steps?: number; warn?: (message: string) => void },
+  options?: {
+    select?: boolean;
+    steps?: number;
+    warn?: (message: string) => void;
+    allowOffCanvas?: boolean;
+  },
 ): Promise<void>;
 export function setViewport(
   page: unknown,
@@ -214,6 +259,25 @@ export function runStep(
     apoioDir?: string;
     projectDir?: string;
     prazoSeconds?: number;
+    connectFn?: (apoioDir?: string) => Promise<{ browser: unknown; page: unknown }>;
+    ctx?: Record<string, unknown>;
+    io?: { log: (message: string) => void; error: (message: string) => void };
+  },
+): Promise<number>;
+export function startRunServer(options: {
+  apoioDir: string;
+  connectFn?: (apoioDir?: string) => Promise<{ browser: unknown; page: unknown }>;
+  onExit?: () => void;
+}): Promise<{ close: () => Promise<void> }>;
+export function runViaServer(
+  body: string,
+  options: {
+    apoioDir: string;
+    projectDir?: string;
+    prazoSeconds?: number;
+    novo?: boolean;
+    socketWaitMs?: number;
+    spawnServer?: (apoioDir: string) => unknown;
     connectFn?: (apoioDir?: string) => Promise<{ browser: unknown; page: unknown }>;
     io?: { log: (message: string) => void; error: (message: string) => void };
   },

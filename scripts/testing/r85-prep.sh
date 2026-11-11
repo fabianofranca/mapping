@@ -2,7 +2,7 @@
 # Preparo do R8.5 (docs/TESTING.md): cria, na pasta dada, o que o roteiro usa, sem mexer no pacote
 # do repositório (`libraries/material3-compose/`):
 #   solta.json     especialização solta inválida (tipo de campo desconhecido e uma chave a mais);
-#   mat-sem-badge  o Material 3 (Compose) sem o tipo badge e sem migração (versão 7);
+#   mat-sem-badge  o Material 3 (Compose) sem o tipo badge e sem migração (versão 8, uma acima do pacote instalado);
 #   mat-aviso      o Material 3 (Compose) com o rótulo do primeiro exemplo do Switch grande demais.
 #
 # Uso: scripts/testing/r85-prep.sh <pasta-de-destino>   (na raiz do repositório; precisa de python3)
@@ -32,7 +32,7 @@ def edit(folder, change):
     json.dump(s, open(p, "w"), ensure_ascii=False, indent=2)
 
 def no_badge(s):
-    s["version"] = 7
+    s["version"] = 8  # o pacote instalado está na 7: com a mesma versão a app diz "Nada a fazer"
     for layer in s["layers"]:
         layer["annotationTypes"] = [t for t in layer["annotationTypes"] if t["id"] != "badge"]
 
