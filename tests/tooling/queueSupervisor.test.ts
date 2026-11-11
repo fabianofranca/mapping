@@ -189,6 +189,158 @@ describe('painel.py requests e a linha do show (FM5, decisão 9)', () => {
     expect(runAt('2026-11-12T10:00:00Z', 'requests', dir)).not.toContain('atrasado');
   });
 
+  describe('requests --desde (etapa #1643, SV1, decisão 5)', () => {
+    const DESDE = '2026-11-11T10:00:00Z';
+    const AGORA = '2026-11-11T12:00:00Z';
+
+    /** SUP-1 e SUP-2 fechados antes de DESDE; SUP-3 e SUP-6 abertos e velhos; SUP-4 e SUP-5 de DESDE em diante. */
+    function seed() {
+      runAt(
+        '2026-11-11T07:00:00Z',
+        'sup',
+        dir,
+        'SUP-1',
+        'tipo=A',
+        'pedido=um',
+        'estado=enviado',
+      );
+      runAt(
+        '2026-11-11T08:00:00Z',
+        'sup',
+        dir,
+        'SUP-1',
+        'estado=aplicado',
+        'evidencia=ok',
+      );
+      runAt(
+        '2026-11-11T08:30:00Z',
+        'sup',
+        dir,
+        'SUP-2',
+        'tipo=B',
+        'pedido=dois',
+        'estado=enviado',
+      );
+      runAt(
+        '2026-11-11T09:00:00Z',
+        'sup',
+        dir,
+        'SUP-2',
+        'estado=recusado',
+        'evidencia=x',
+      );
+      runAt(
+        '2026-11-11T07:00:00Z',
+        'sup',
+        dir,
+        'SUP-3',
+        'tipo=A',
+        'pedido=tres',
+        'estado=enviado',
+      );
+      runAt(
+        '2026-11-11T09:30:00Z',
+        'sup',
+        dir,
+        'SUP-4',
+        'tipo=A',
+        'pedido=quatro',
+        'estado=enviado',
+      );
+      runAt(DESDE, 'sup', dir, 'SUP-4', 'estado=aplicado', 'evidencia=ok');
+      runAt(
+        '2026-11-11T11:00:00Z',
+        'sup',
+        dir,
+        'SUP-5',
+        'tipo=B',
+        'pedido=cinco',
+        'estado=enviado',
+      );
+      runAt('2026-11-11T11:10:00Z', 'sup', dir, 'SUP-5', 'estado=negado');
+      runAt(
+        '2026-11-11T06:00:00Z',
+        'sup',
+        dir,
+        'SUP-6',
+        'tipo=B',
+        'pedido=seis',
+        'estado=perguntado ao dono',
+      );
+    }
+
+    it('mostra os com at a partir de --desde (inclusive) e todos os abertos, na ordem e no formato de hoje, e conta os de fora', () => {
+      seed();
+      const tudo = runAt(AGORA, 'requests', dir).trimEnd().split('\n');
+      expect(tudo).toHaveLength(6);
+      const out = runAt(AGORA, 'requests', '--desde', DESDE, dir).trimEnd().split('\n');
+      expect(out).toEqual([
+        tudo[2], // SUP-3 (enviado, com o atrasado)
+        tudo[3], // SUP-4 (aplicado em --desde)
+        tudo[4], // SUP-5
+        tudo[5], // SUP-6 (perguntado ao dono)
+        `2 pedidos fechados antes de ${DESDE} fora da lista`,
+      ]);
+      expect(out[0]).toContain('SUP-3 | tipo A | enviado (atrasado)');
+    });
+
+    it('sem pedido de fora, não imprime a linha de contagem', () => {
+      seed();
+      const out = runAt(AGORA, 'requests', '--desde', '2026-11-11T06:00:00Z', dir);
+      expect(out).not.toContain('fora da lista');
+      expect(out).toBe(runAt(AGORA, 'requests', dir));
+    });
+
+    it('sem nada a mostrar, imprime "nenhum desde <ISO>"; sem pedido nenhum, "nenhum"', () => {
+      expect(runAt(AGORA, 'requests', '--desde', DESDE, dir)).toBe('nenhum\n');
+      runAt(
+        '2026-11-11T07:00:00Z',
+        'sup',
+        dir,
+        'SUP-1',
+        'tipo=A',
+        'pedido=um',
+        'estado=enviado',
+      );
+      runAt(
+        '2026-11-11T08:00:00Z',
+        'sup',
+        dir,
+        'SUP-1',
+        'estado=aplicado',
+        'evidencia=ok',
+      );
+      expect(runAt(AGORA, 'requests', '--desde', DESDE, dir)).toBe(
+        `nenhum desde ${DESDE}\n`,
+      );
+    });
+
+    it('--desde que não é ISO UTC sai com código 2', () => {
+      seed();
+      for (const ruim of [
+        'ontem',
+        '2026-11-11',
+        '2026-11-11T10:00:00',
+        '2026-11-11T10:00:00-03:00',
+      ]) {
+        const r = tryRun(AGORA, 'requests', '--desde', ruim, dir);
+        expect(r.code).toBe(2);
+        expect(r.err).toContain('horário inválido');
+        expect(r.out).toBe('');
+      }
+    });
+
+    it('sem --desde a saída é a de hoje e o requests segue fora do apply', () => {
+      seed();
+      expect(runAt(AGORA, 'requests', dir).trimEnd().split('\n')).toHaveLength(6);
+      const r = spawnSync('python3', [SCRIPT, '--now', T0, 'apply', dir, '-'], {
+        encoding: 'utf8',
+        input: `requests --desde ${DESDE}\n`,
+      });
+      expect(r.status).toBe(2);
+    });
+  });
+
   it('show: abertos e atrasados, ou nenhum', () => {
     expect(runAt(T0, 'show', dir)).toContain('pedidos do supervisor: nenhum');
     runAt(T0, 'sup', dir, 'SUP-1', 'tipo=A', 'pedido=a', 'estado=enviado');

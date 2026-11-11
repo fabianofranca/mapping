@@ -150,6 +150,150 @@ describe('painel.py role / roles (decisão 7)', () => {
   });
 });
 
+describe('painel.py roles --sessao (etapa #1643, SV1, decisões 3 e 4)', () => {
+  const BASE_LINES = 'coordenador 2: session_c2\nsupervisor 2: session_s2\n';
+
+  function setMeta(patch: Record<string, unknown>) {
+    const file = path.join(dir, 'meta.json');
+    const m = JSON.parse(readFileSync(file, 'utf8')) as Array<Record<string, unknown>>;
+    Object.assign(m[0]!, patch);
+    writeFileSync(file, JSON.stringify(m));
+  }
+  /** Coordenador `session_c1` → `session_c2` e supervisor `session_s1` → `session_s2`. */
+  function registerBoth() {
+    run('role', dir, 'coordenador', 'session_c1');
+    run('role', dir, 'coordenador', 'session_c2');
+    run('role', dir, 'supervisor', 'session_s1');
+    run('role', dir, 'supervisor', 'session_s2');
+  }
+  const sessao = (id: string) => run('roles', '--sessao', id, dir);
+
+  it('registrada: o id é o roles.supervisor.id', () => {
+    registerBoth();
+    expect(sessao('session_s2')).toBe(`${BASE_LINES}esta sessão: registrada\n`);
+  });
+
+  it('coordenador: o roles.coordenador.id, o .previous ou uma entrada kind=coordenador em meta.sessions', () => {
+    registerBoth();
+    const linha = 'esta sessão: coordenador (não supervisiona)\n';
+    expect(sessao('session_c2')).toBe(BASE_LINES + linha);
+    expect(sessao('session_c1')).toBe(BASE_LINES + linha);
+    setMeta({ sessions: [{ id: 'session_c0', kind: 'coordenador' }] });
+    expect(sessao('session_c0')).toBe(BASE_LINES + linha);
+  });
+
+  it('antiga: o roles.supervisor.previous ou uma entrada kind=supervisor em meta.sessions', () => {
+    registerBoth();
+    const linha = 'esta sessão: antiga (atual: session_s2)\n';
+    expect(sessao('session_s1')).toBe(BASE_LINES + linha);
+    setMeta({ sessions: [{ id: 'session_s0', kind: 'supervisor' }] });
+    expect(sessao('session_s0')).toBe(BASE_LINES + linha);
+  });
+
+  it('sucessora: outro id, com um supervisor registrado', () => {
+    registerBoth();
+    expect(sessao('session_nova')).toBe(
+      `${BASE_LINES}esta sessão: sucessora (antecessor: session_s2)\n`,
+    );
+    setMeta({ sessions: [{ id: 'session_f', kind: 'fase' }] });
+    expect(sessao('session_f')).toContain('sucessora (antecessor: session_s2)');
+  });
+
+  it('nova: sem roles.supervisor, e também com o painel sem roles', () => {
+    expect(sessao('session_x')).toBe(
+      'coordenador —\nsupervisor —\nesta sessão: nova (nenhum supervisor registrado)\n',
+    );
+    run('role', dir, 'coordenador', 'session_c1');
+    expect(sessao('session_x')).toBe(
+      'coordenador 1: session_c1\nsupervisor —\nesta sessão: nova (nenhum supervisor registrado)\n',
+    );
+    expect(sessao('session_c1')).toContain('coordenador (não supervisiona)');
+    const file = path.join(dir, 'meta.json');
+    const m = JSON.parse(readFileSync(file, 'utf8')) as Array<Record<string, unknown>>;
+    delete m[0]!.roles;
+    writeFileSync(file, JSON.stringify(m));
+    expect(sessao('session_x')).toContain('nova (nenhum supervisor registrado)');
+  });
+
+  it('a primeira que casa vale: registrada, coordenador, antiga, sucessora, nova', () => {
+    registerBoth();
+    // o mesmo id como supervisor registrado e como coordenador anterior: vale registrada
+    setMeta({ sessions: [{ id: 'session_s2', kind: 'coordenador' }] });
+    expect(sessao('session_s2')).toContain('esta sessão: registrada');
+    // o mesmo id como supervisor anterior e como coordenador: vale coordenador
+    setMeta({
+      sessions: [
+        { id: 'session_s1', kind: 'coordenador' },
+        { id: 'session_s1', kind: 'supervisor' },
+      ],
+    });
+    expect(sessao('session_s1')).toContain('esta sessão: coordenador (não supervisiona)');
+  });
+
+  it('--sessao com espaços ou quebra de linha em volta vale o id sem eles (revisão)', () => {
+    registerBoth();
+    expect(sessao(' session_s2\n')).toBe(`${BASE_LINES}esta sessão: registrada\n`);
+    expect(sessao('session_s1 ')).toContain('antiga (atual: session_s2)');
+  });
+
+  it('--sessao vazio (ou só espaços) sai com código 2 e a mensagem', () => {
+    for (const vazio of ['', '  ']) {
+      const r = runRaw('roles', '--sessao', vazio, dir);
+      expect(r.status).toBe(2);
+      expect(r.stderr).toContain('o id da sessão não pode ser vazio');
+      expect(r.stdout).toBe('');
+    }
+  });
+
+  it('sem --sessao a saída é a de hoje, byte a byte', () => {
+    registerBoth();
+    expect(run('roles', dir)).toBe(BASE_LINES);
+  });
+
+  it('roles --sessao não entra no apply e não grava nada', () => {
+    registerBoth();
+    const antes = readFileSync(path.join(dir, 'meta.json'), 'utf8');
+    sessao('session_nova');
+    expect(readFileSync(path.join(dir, 'meta.json'), 'utf8')).toBe(antes);
+    const lote = path.join(dir, 'lote.txt');
+    writeFileSync(lote, 'roles --sessao session_nova\n');
+    expect(runRaw('apply', dir, lote).status).toBe(2);
+  });
+});
+
+describe('implementar-fila: "Achar ou criar", passo 1, acha o painel pelo fixado (etapa #1643, SV1, decisão 2)', () => {
+  const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
+  const achar = section(skill, '## Painel');
+  const passo1 = between(achar, '\n1. `Artifact` `list`', '\n2. Achou:');
+
+  it('lista os candidatos pelos três títulos, com limit 50, os fixados primeiro e depois o mais recente', () => {
+    expect(passo1).toContain('scope: "mine"');
+    expect(passo1).toContain('limit: 50');
+    for (const titulo of [
+      'Estado da execução',
+      'Fila de desenvolvimento',
+      'Mapping Fila',
+    ]) {
+      expect(passo1).toContain(`"${titulo}"`);
+    }
+    expect(passo1).toContain('pinned');
+    expect(passo1).toMatch(/do mais recente ao mais antigo/);
+  });
+
+  it('o painel é o primeiro cujo meta tem roles, lido por ArtifactData get e Artifact read com out_dir', () => {
+    expect(passo1).toContain('ArtifactData');
+    expect(passo1).toContain('datasets');
+    expect(passo1).toContain('`meta`');
+    expect(passo1).toContain('out_dir');
+    expect(passo1).toMatch(/painel\.py roles/);
+    expect(passo1).toMatch(/—/);
+    expect(passo1).toContain('painel=novo');
+    // ao menos um papel registrado (não os dois) e para no primeiro que serve (revisão)
+    expect(passo1).toMatch(/ao menos um papel/);
+    expect(passo1).toMatch(/pare no primeiro/);
+  });
+});
+
 describe('implementar-fila: troca aos 35% e uma sessão ativa por papel (decisões 7 e 8)', () => {
   const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
   const flow = readFileSync('docs/FLOW.md', 'utf8');
