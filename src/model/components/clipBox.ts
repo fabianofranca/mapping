@@ -54,18 +54,24 @@ function strokeExtent(stroke: Stroke | undefined): Extent {
   };
 }
 
-/** Quanto a primeira sombra externa sai da caixa, por lado (blur e deslocamento). */
+/**
+ * Quanto as sombras externas saem da caixa, por lado: o `blur`, o `spread` (cresce a forma, ou
+ * encolhe, se negativo) e o deslocamento de cada uma; vale a que passa mais.
+ */
 function shadowExtent(node: SceneNode): Extent {
-  const shadow = node.effects.find((e) => !e.inner);
-  if (!shadow || (shadow.blur <= 0 && shadow.offset.x === 0 && shadow.offset.y === 0))
-    return NONE;
-  const { blur, offset } = shadow;
-  return {
-    left: Math.max(0, blur - offset.x),
-    right: Math.max(0, blur + offset.x),
-    top: Math.max(0, blur - offset.y),
-    bottom: Math.max(0, blur + offset.y),
-  };
+  let out = NONE;
+  for (const shadow of node.effects) {
+    if (shadow.inner) continue;
+    const reach = shadow.blur + (shadow.spread ?? 0);
+    const { offset } = shadow;
+    out = maxExtent(out, {
+      left: Math.max(0, reach - offset.x),
+      right: Math.max(0, reach + offset.x),
+      top: Math.max(0, reach - offset.y),
+      bottom: Math.max(0, reach + offset.y),
+    });
+  }
+  return out;
 }
 
 function extentOf(node: SceneNode): Extent {

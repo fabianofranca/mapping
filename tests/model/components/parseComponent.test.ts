@@ -382,10 +382,14 @@ describe('parseComponent: nós', () => {
   it('fonte com peso fora de 100..900 e alinhamento inválido', () => {
     const problems = problemsAfter((c) => {
       c.template.children[1].font.weight = 1000;
-      c.template.children[1].font.align = 'justify';
+      c.template.children[1].font.align = 'distribuido';
     });
     expectProblem(problems, 'template.children[1].font.weight', '100 e 900');
-    expectProblem(problems, 'template.children[1].font.align', 'left, center, right');
+    expectProblem(
+      problems,
+      'template.children[1].font.align',
+      'left, center, right, justify',
+    );
   });
 
   it('path sem viewBox ou com viewBox inválido', () => {

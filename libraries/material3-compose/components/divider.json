@@ -3,84 +3,128 @@
   "formatVersion": 4,
   "id": "divider",
   "name": "Divider",
-  "description": "Linha de 1 dp em outline variant, horizontal ou vertical, centrada na caixa da marcação, com a espessura do campo e recuo opcional nas pontas.",
-  "size": {
-    "width": 360,
-    "height": 16
-  },
-  "sizing": {
-    "width": "fill",
-    "height": 1
-  },
-  "preview": {
-    "orientation": "horizontal",
-    "thickness": 1,
-    "inset": 0
-  },
+  "description": "Linha de 1 dp, horizontal ou vertical, centrada na caixa da marcação, com a espessura do campo, a cor do papel escolhido (outline variant por padrão) e recuo opcional em cada ponta.",
+  "size": { "width": 360, "height": 16 },
+  "sizing": { "width": "fill", "height": 1 },
+  "preview": { "orientation": "horizontal", "thickness": 1, "inset": 0 },
   "template": {
     "type": "frame",
     "name": "divider",
-    "layout": {
-      "type": "none"
-    },
+    "layout": { "type": "none" },
     "children": [
       {
         "type": "frame",
         "name": "linha com recuo",
         "layout": {
           "type": {
-            "$if": {
-              "$eq": ["orientation", "vertical"]
-            },
+            "$if": { "$eq": ["orientation", "vertical"] },
             "then": "column",
             "else": "row"
           },
-          "gap": {
-            "$field": "inset",
-            "default": 0
-          },
+          "gap": 0,
           "align": "center"
         },
         "children": [
           {
             "type": "frame",
             "name": "ponta inicial",
-            "width": 0,
-            "height": 0,
+            "width": {
+              "$if": { "$eq": ["orientation", "vertical"] },
+              "then": 0,
+              "else": {
+                "$if": { "$or": [{ "$has": "insetStart" }, { "$has": "insetEnd" }] },
+                "then": { "$field": "insetStart", "default": 0 },
+                "else": { "$field": "inset", "default": 0 }
+              }
+            },
+            "height": {
+              "$if": { "$eq": ["orientation", "vertical"] },
+              "then": {
+                "$if": { "$or": [{ "$has": "insetStart" }, { "$has": "insetEnd" }] },
+                "then": { "$field": "insetStart", "default": 0 },
+                "else": { "$field": "inset", "default": 0 }
+              },
+              "else": 0
+            },
             "children": []
           },
           {
             "type": "rect",
             "name": "linha",
             "fill": {
-              "$token": "outline-variant"
+              "$switch": "color",
+              "cases": {
+                "primary": { "$token": "primary" },
+                "onPrimary": { "$token": "on-primary" },
+                "primaryContainer": { "$token": "primary-container" },
+                "onPrimaryContainer": { "$token": "on-primary-container" },
+                "secondary": { "$token": "secondary" },
+                "onSecondary": { "$token": "on-secondary" },
+                "secondaryContainer": { "$token": "secondary-container" },
+                "onSecondaryContainer": { "$token": "on-secondary-container" },
+                "tertiary": { "$token": "tertiary" },
+                "onTertiary": { "$token": "on-tertiary" },
+                "tertiaryContainer": { "$token": "tertiary-container" },
+                "onTertiaryContainer": { "$token": "on-tertiary-container" },
+                "error": { "$token": "error" },
+                "onError": { "$token": "on-error" },
+                "errorContainer": { "$token": "error-container" },
+                "onErrorContainer": { "$token": "on-error-container" },
+                "background": { "$token": "background" },
+                "onBackground": { "$token": "on-background" },
+                "surface": { "$token": "surface" },
+                "onSurface": { "$token": "on-surface" },
+                "surfaceVariant": { "$token": "surface-variant" },
+                "onSurfaceVariant": { "$token": "on-surface-variant" },
+                "surfaceTint": { "$token": "surface-tint" },
+                "inverseSurface": { "$token": "inverse-surface" },
+                "inverseOnSurface": { "$token": "inverse-on-surface" },
+                "inversePrimary": { "$token": "inverse-primary" },
+                "outline": { "$token": "outline" },
+                "outlineVariant": { "$token": "outline-variant" },
+                "scrim": { "$token": "scrim" },
+                "surfaceBright": { "$token": "surface-bright" },
+                "surfaceDim": { "$token": "surface-dim" },
+                "surfaceContainerLowest": { "$token": "surface-container-lowest" },
+                "surfaceContainerLow": { "$token": "surface-container-low" },
+                "surfaceContainer": { "$token": "surface-container" },
+                "surfaceContainerHigh": { "$token": "surface-container-high" },
+                "surfaceContainerHighest": { "$token": "surface-container-highest" }
+              },
+              "default": { "$token": "outline-variant" }
             },
             "width": {
-              "$if": {
-                "$eq": ["orientation", "vertical"]
-              },
-              "then": {
-                "$field": "thickness",
-                "default": 1
-              },
+              "$if": { "$eq": ["orientation", "vertical"] },
+              "then": { "$field": "thickness", "default": 1 },
               "else": "fill"
             },
             "height": {
-              "$if": {
-                "$eq": ["orientation", "vertical"]
-              },
+              "$if": { "$eq": ["orientation", "vertical"] },
               "then": "fill",
-              "else": {
-                "$field": "thickness",
-                "default": 1
-              }
+              "else": { "$field": "thickness", "default": 1 }
             }
           },
           {
             "type": "frame",
             "name": "ponta final",
-            "width": 0,
-            "height": 0,
+            "width": {
+              "$if": { "$eq": ["orientation", "vertical"] },
+              "then": 0,
+              "else": {
+                "$if": { "$or": [{ "$has": "insetStart" }, { "$has": "insetEnd" }] },
+                "then": { "$field": "insetEnd", "default": 0 },
+                "else": { "$field": "inset", "default": 0 }
+              }
+            },
+            "height": {
+              "$if": { "$eq": ["orientation", "vertical"] },
+              "then": {
+                "$if": { "$or": [{ "$has": "insetStart" }, { "$has": "insetEnd" }] },
+                "then": { "$field": "insetEnd", "default": 0 },
+                "else": { "$field": "inset", "default": 0 }
+              },
+              "else": 0
+            },
             "children": []
           }
         ]

@@ -3,15 +3,15 @@
 // `...modelMessagesPtBR` / `...modelMessagesEnUS`. Mesmas chaves e mesmos {parâmetros} nos dois
 // idiomas; o pt-BR é idêntico ao `text` que o modelo devolve (o que o MCP segue emitindo).
 
-import { libraryMessages } from '../model/messages/library';
-import { specMessages } from '../model/messages/spec';
-import { versionMessages } from '../model/messages/versions';
-import { engineEnUS } from './modelMessagesEngine';
-import { componentEnUS, iconsFileEnUS, originsEnUS } from './modelMessagesComponent';
 import {
   MODEL_MESSAGE_TEMPLATES,
   type ModelMessageTemplateCode,
 } from '../model/messages';
+import type { libraryMessages } from '../model/messages/library';
+import type { specMessages } from '../model/messages/spec';
+import type { versionMessages } from '../model/messages/versions';
+import { engineEnUS } from './modelMessagesEngine';
+import { componentEnUS, iconsFileEnUS, originsEnUS } from './modelMessagesComponent';
 
 /** As chaves `model.<código>` do catálogo do modelo, com o texto pt-BR dele (sem repetir o texto). */
 const templatePtBR = Object.fromEntries(
@@ -130,27 +130,27 @@ const libraryEnUS: {
   'model.library.iconOptionMissing':
     'the option "{option}" of the field "{key}" is not in the icon set; the drawing falls back to the placeholder',
   'model.library.draw.defaults':
-    'type "{typeId}", the default values, initial size {size}: {detail}',
+    'type "{typeId}", the default values, initial size {size}: {reason}',
   'model.library.draw.defaultsMode':
-    'type "{typeId}", the default values, mode {mode}, initial size {size}: {detail}',
+    'type "{typeId}", the default values, mode {mode}, initial size {size}: {reason}',
   'model.library.draw.preview':
-    'type "{typeId}", the preview, initial size {size}: {detail}',
+    'type "{typeId}", the preview, initial size {size}: {reason}',
   'model.library.draw.previewMode':
-    'type "{typeId}", the preview, mode {mode}, initial size {size}: {detail}',
+    'type "{typeId}", the preview, mode {mode}, initial size {size}: {reason}',
   'model.library.draw.example':
-    'type "{typeId}", the example "{name}", initial size {size}: {detail}',
+    'type "{typeId}", the example "{name}", initial size {size}: {reason}',
   'model.library.draw.exampleMode':
-    'type "{typeId}", the example "{name}", mode {mode}, initial size {size}: {detail}',
+    'type "{typeId}", the example "{name}", mode {mode}, initial size {size}: {reason}',
   'model.library.drawFailed': 'failed to draw: {error}',
   'model.library.buildFailed':
     'could not build the library to prove the external system examples: {reason}',
   'model.library.buildFailedUnknown':
     'could not build the library to prove the external system examples: unknown reason',
-  'model.library.systemExample': 'example "{name}" of the system "{system}": {detail}',
+  'model.library.systemExample': 'example "{name}" of the system "{system}": {reason}',
   'model.library.systemExampleType':
     'example "{name}" of the system "{system}": the node matches the type "{found}", not "{typeId}"',
   'model.library.originScreen':
-    'example screen "{name}" of the system "{system}": {detail}',
+    'example screen "{name}" of the system "{system}": {reason}',
 };
 
 /** en-US dos códigos do catálogo `spec` (termos do formato, chaves, ids e caminhos não se traduzem). */

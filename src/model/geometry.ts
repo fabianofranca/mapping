@@ -86,6 +86,11 @@ export function area(r: Rect): number {
   return r.width * r.height;
 }
 
+/** Os dois retângulos são exatamente iguais (mesmo canto e mesmo tamanho)? */
+export function sameRect(a: Rect, b: Rect): boolean {
+  return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+}
+
 /** `inner` totalmente dentro de `outer` (bordas coincidentes contam como dentro). */
 export function containsRect(outer: Rect, inner: Rect): boolean {
   return (

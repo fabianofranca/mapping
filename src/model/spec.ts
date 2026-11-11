@@ -9,8 +9,8 @@ import {
   type SpecOrigin,
 } from './components/origin';
 import { TOKEN_NAME_PATTERN, type SpecTokens } from './components/tokens';
-import { isPackagePath, packagePathProblem } from './packagePaths';
-import { originCodeForText } from './messages/textLookup';
+import { isPackagePath, packagePathError, type PackagePathError } from './packagePaths';
+import { originCodeForText, originSpecCodeForText } from './messages/textLookup';
 import { childSets } from './specChildren';
 import type { ModelMessageTemplateCode } from './messages';
 import {
@@ -23,6 +23,11 @@ import {
 } from './specIssueCode';
 
 export { isPackagePath };
+
+/** "só é permitido com formatVersion N" (os N sem mensagem própria no catálogo), com o código. */
+function onlyFormat(version: number): SpecMsg {
+  return specMsg('spec.onlyFormat', { version: String(version) });
+}
 
 // Formato da especialização (`formatVersion` 1 a 15), ver docs/SPEC-FORMAT.md. A versão 2 acrescenta `platforms` e `code`; a
 // versão 1 é a 2 sem plataformas e sem `code`; a versão 3 é a 2 mais `sources` (origens
@@ -483,11 +488,18 @@ const dateString = z
   .regex(DATE_RE, 'data inválida; use AAAA-MM-DD')
   .refine(isIsoDate, 'data inexistente');
 
+/** O erro de caminho do pacote como mensagem com código (o mesmo texto de `packagePathProblem`). */
+function packagePathMsg(error: PackagePathError): SpecMsg {
+  return error.kind === 'path'
+    ? specMsg('spec.packagePathInvalid')
+    : specMsg('spec.invalidExtension', { exts: error.exts.join(', ') });
+}
+
 /** Caminho de arquivo do pacote com a extensão (ou uma das extensões) dada. */
 function packagePath(ext: string | readonly string[]) {
   return z.string({ error: () => 'deve ser texto' }).superRefine((path, ctx) => {
-    const problem = packagePathProblem(path, ext);
-    if (problem !== undefined) ctx.addIssue({ code: 'custom', message: problem });
+    const error = packagePathError(path, ext);
+    if (error !== undefined) addSpecIssue(ctx, [], packagePathMsg(error));
   });
 }
 
@@ -816,7 +828,8 @@ function checkFields(
       const cp = [...p, 'columns', j];
       const parsed = parseColumn(raw);
       if (!parsed.success) {
-        for (const issue of parsed.error.issues) forwardIssue(ctx, issue, cp, false);
+        for (const issue of parsed.error.issues)
+          forwardIssue(ctx, issue, cp, false, KNOWN_SPEC_MSGS);
         return;
       }
       const col = parsed.data;
@@ -1122,8 +1135,6 @@ const ALLOWED_CHILD_SHAPE_MESSAGE =
   'deve ser um id de tipo (texto) ou uma cláusula { layer, groups }';
 const DOC_SHAPE_MESSAGE =
   'deve ser texto (arquivo do pacote) ou um objeto { repo, path }';
-const DOC_PATH_MESSAGE =
-  'caminho inválido: use um caminho relativo à raiz do repositório, com "/", sem "." nem ".." e sem unidade (ex: components/button.md)';
 
 /** Texto obrigatório e não vazio (as mensagens dos objetos novos da v11). */
 const requiredText = z
@@ -1145,7 +1156,8 @@ function forwardIssues(
   ctx: z.RefinementCtx,
 ): void {
   // A propriedade a mais sai em português, no molde dos outros erros da especialização.
-  for (const issue of result.error?.issues ?? []) forwardIssue(ctx, issue, [], true);
+  for (const issue of result.error?.issues ?? [])
+    forwardIssue(ctx, issue, [], true, KNOWN_SPEC_MSGS);
 }
 
 /** Um item de `allowedChildren`: o id de um tipo ou uma cláusula `{ layer, groups? }`. */
@@ -1170,13 +1182,13 @@ const allowedChildShape = z
   .superRefine((value: unknown, ctx) => checkAllowedChild(value, ctx));
 
 /** Por que o `path` não vale como arquivo `.md` de um repositório; `undefined` se vale. */
-function docPathProblem(path: string): string | undefined {
-  if (path.includes('#')) return 'não pode ter "#" (âncora)';
-  if (!isValidCodePath(path)) return DOC_PATH_MESSAGE;
+function docPathProblem(path: string): SpecMsg | undefined {
+  if (path.includes('#')) return specMsg('spec.docAnchor');
+  if (!isValidCodePath(path)) return specMsg('spec.docPathInvalid');
   const base = path.slice(path.lastIndexOf('/') + 1);
   return base.length > '.md'.length && base.endsWith('.md')
     ? undefined
-    : 'extensão inválida: esperava .md';
+    : specMsg('spec.invalidExtension', { exts: '.md' });
 }
 
 const docRefShape = z
@@ -1188,7 +1200,7 @@ const docRefShape = z
       })
       .superRefine((path, ctx) => {
         const problem = docPathProblem(path);
-        if (problem !== undefined) ctx.addIssue({ code: 'custom', message: problem });
+        if (problem !== undefined) addSpecIssue(ctx, [], problem);
       }),
   })
   .strict();
@@ -1333,11 +1345,11 @@ function checkNoStructural(
   layers.forEach((layer, li) => {
     layer.annotationTypes.forEach((type, ti) => {
       if (type.structural === undefined) return;
-      ctx.addIssue({
-        code: 'custom',
-        path: ['layers', li, 'annotationTypes', ti, 'structural'],
-        message: 'só é permitido com formatVersion 15',
-      });
+      addSpecIssue(
+        ctx,
+        ['layers', li, 'annotationTypes', ti, 'structural'],
+        specMsg('spec.onlyFormat15'),
+      );
     });
   });
 }
@@ -1348,11 +1360,7 @@ function checkNoNotices(
   ctx: z.RefinementCtx,
 ): void {
   const only10 = (path: (string | number)[]) =>
-    ctx.addIssue({
-      code: 'custom',
-      path: [...path, 'notices'],
-      message: 'só é permitido com formatVersion 10',
-    });
+    addSpecIssue(ctx, [...path, 'notices'], specMsg('spec.onlyFormat10'));
   layers.forEach((layer, li) => {
     layer.annotationTypes.forEach((type, ti) => {
       const typePath = ['layers', li, 'annotationTypes', ti];
@@ -1385,6 +1393,14 @@ const layerShape = z
   })
   .strict();
 
+/** A mensagem com código para o `refine` do zod: o texto e o `messageCode` no `params`. */
+const refineMsg = (msg: SpecMsg) => ({
+  message: msg.text,
+  params: { messageCode: msg.code, ...msg.params },
+});
+
+const URL_TEMPLATE_NEEDS_PATH = specMsg('spec.urlTemplateNeedsPath', { path: '{path}' });
+
 const repoShape = z
   .object({
     url: z
@@ -1400,7 +1416,7 @@ const repoShape = z
       )
       .refine(
         (t) => !/^https?:\/\/\S+$/i.test(t) || isValidUrlTemplate(t),
-        'deve conter {path}',
+        refineMsg(URL_TEMPLATE_NEEDS_PATH),
       )
       .optional(),
     ref: nonEmpty.optional(),
@@ -1423,11 +1439,34 @@ const platformShape = z
   })
   .strict();
 
+// Mensagens prontas que o zod recebe, com valores constantes: o `issueCoding` as acha pelo texto
+// exato (`KNOWN_SPEC_MSGS`), sem padrão de regex. Parâmetros em texto, como o regex os entregava.
+const FORMAT_INVALID = specMsg('spec.formatInvalid', { format: SPEC_FORMAT });
+const FORMAT_VERSION_INVALID = specMsg('spec.formatVersionInvalid', {
+  versions: SPEC_FORMAT_VERSIONS.slice(0, -1).join(', '),
+  last: String(SPEC_FORMAT_VERSIONS.at(-1)),
+});
+const CONTAINER_SIDE_MAX = specMsg('spec.containerSideMax', {
+  max: String(MAX_CONTAINER_SIZE),
+});
+const WEIGHT_MIN = 100;
+const WEIGHT_MAX = 1000;
+const FONT_WEIGHT_INVALID = specMsg('spec.fontWeightInvalid', {
+  min: String(WEIGHT_MIN),
+  max: String(WEIGHT_MAX),
+});
+const KNOWN_SPEC_MSGS: readonly SpecMsg[] = [
+  FORMAT_INVALID,
+  FORMAT_VERSION_INVALID,
+  CONTAINER_SIDE_MAX,
+  FONT_WEIGHT_INVALID,
+];
+
 const containerSide = z
   .number({ error: 'deve ser um número' })
   .int('deve ser inteiro')
   .min(1, 'deve ser >= 1')
-  .max(MAX_CONTAINER_SIZE, `deve ser <= ${MAX_CONTAINER_SIZE}`);
+  .max(MAX_CONTAINER_SIZE, CONTAINER_SIDE_MAX.text);
 
 const containerShape = z
   .object({
@@ -1440,10 +1479,8 @@ const containerShape = z
   .strict();
 
 const FONT_EXTENSIONS = ['.ttf', '.otf', '.woff', '.woff2'] as const;
-const WEIGHT_MIN = 100;
-const WEIGHT_MAX = 1000;
 const WEIGHT_RANGE_RE = /^(\d+) (\d+)$/;
-const WEIGHT_MESSAGE = `peso inválido; use um inteiro de ${WEIGHT_MIN} a ${WEIGHT_MAX} ou uma faixa "100 900" (o primeiro menor que o segundo)`;
+const WEIGHT_MESSAGE = FONT_WEIGHT_INVALID.text;
 
 const fontWeight = z.union([z.number(), z.string()], { error: WEIGHT_MESSAGE }).refine(
   (w) => {
@@ -1563,8 +1600,7 @@ function checkNoSources(
   }[],
   ctx: z.RefinementCtx,
 ): void {
-  const add = (path: (string | number)[]) =>
-    ctx.addIssue({ code: 'custom', path, message: 'só é permitido com formatVersion 3' });
+  const add = (path: (string | number)[]) => addSpecIssue(ctx, path, onlyFormat(3));
   layers.forEach((layer, li) => {
     layer.annotationTypes.forEach((type, ti) => {
       const tp = ['layers', li, 'annotationTypes', ti];
@@ -1602,11 +1638,7 @@ function checkNoLibraryKeys(
     layer.annotationTypes.forEach((type, ti) => {
       for (const k of ['component', 'doc', 'examples'] as const) {
         if (type[k] !== undefined) {
-          ctx.addIssue({
-            code: 'custom',
-            path: ['layers', li, 'annotationTypes', ti, k],
-            message: 'só é permitido com formatVersion 4',
-          });
+          addSpecIssue(ctx, ['layers', li, 'annotationTypes', ti, k], onlyFormat(4));
         }
       }
     });
@@ -1655,7 +1687,7 @@ function checkFieldSources(
       addSpecIssue(ctx, [...at, key], message);
     const isExecutable = version >= 4 && executable.has(source.system);
     if (source.path !== undefined) {
-      if (version < 4) add('path', 'só é permitido com formatVersion 4');
+      if (version < 4) add('path', onlyFormat(4));
       else if (!isExecutable)
         add('path', 'só é permitido em sistema declarado em origins');
       else {
@@ -1684,11 +1716,7 @@ function checkTypeSources(
     for (const key of ['slot', 'ignore'] as const) {
       if (source[key] === undefined) continue;
       if (version < 4) {
-        ctx.addIssue({
-          code: 'custom',
-          path: [...at, key],
-          message: 'só é permitido com formatVersion 4',
-        });
+        addSpecIssue(ctx, [...at, key], onlyFormat(4));
       } else if (!executable.has(source.system)) {
         ctx.addIssue({
           code: 'custom',
@@ -1862,7 +1890,7 @@ function roleGone(
  */
 function checkRoleStep(step: RoleStep, env: RoleStepEnv): void {
   if (env.formatVersion < 12) {
-    env.add('op', 'só é permitido com formatVersion 12');
+    env.add('op', onlyFormat(12));
     return;
   }
   if (!env.hasType(step.type)) {
@@ -2152,18 +2180,14 @@ function addOriginIssues(
   if (formatVersion < 15 && Array.isArray(raw)) {
     raw.forEach((item, index) => {
       if (isRecord(item) && item.kind !== undefined) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['origins', index, 'kind'],
-          message: 'só é permitido com formatVersion 15',
-        });
+        addSpecIssue(ctx, ['origins', index, 'kind'], specMsg('spec.onlyFormat15'));
       }
     });
   }
   for (const problem of originsOf(raw).problems) {
     const cut = problem.indexOf(': ');
     const message = cut < 0 ? problem : problem.slice(cut + 2);
-    const hit = originCodeForText(message);
+    const hit = originCodeForText(message) ?? originSpecCodeForText(message);
     ctx.addIssue({
       code: 'custom',
       path: cut < 0 ? [] : parseSpecPath(problem.slice(0, cut)),
@@ -2248,8 +2272,7 @@ function checkNoV11Keys(
   ctx: z.RefinementCtx,
 ): void {
   const add = issueAdder(ctx);
-  const only11 = (path: (string | number)[]) =>
-    add(path, 'só é permitido com formatVersion 11');
+  const only11 = (path: (string | number)[]) => add(path, onlyFormat(11));
   if (spec.docRepos !== undefined) only11(['docRepos']);
   spec.layers.forEach((layer, li) => {
     if (layer.groups !== undefined) only11(['layers', li, 'groups']);
@@ -2598,19 +2621,18 @@ function checkIcons(
 ): void {
   if (spec.icons === undefined) return;
   const add = issueAdder(ctx);
-  if (spec.formatVersion < 15)
-    return add(['icons'], 'só é permitido com formatVersion 15');
+  if (spec.formatVersion < 15) return add(['icons'], specMsg('spec.onlyFormat15'));
   if (typeof spec.icons !== 'string') {
     return add(['icons'], 'deve ser o caminho de um arquivo .json do pacote');
   }
-  const problem = packagePathProblem(spec.icons, '.json');
-  if (problem !== undefined) add(['icons'], problem);
+  const error = packagePathError(spec.icons, '.json');
+  if (error !== undefined) add(['icons'], packagePathMsg(error));
 }
 
 export const specSchema = z
   .object({
     format: z.union([z.literal(SPEC_FORMAT), z.literal(LEGACY_SPEC_FORMAT)], {
-      error: `deve ser "${SPEC_FORMAT}"`,
+      error: FORMAT_INVALID.text,
     }),
     formatVersion: z.union(
       SPEC_FORMAT_VERSIONS.map((v) => z.literal(v)) as unknown as [
@@ -2619,7 +2641,7 @@ export const specSchema = z
         ...z.ZodLiteral<SpecFormatVersion>[],
       ],
       {
-        error: `deve ser ${SPEC_FORMAT_VERSIONS.slice(0, -1).join(', ')} ou ${String(SPEC_FORMAT_VERSIONS.at(-1))}`,
+        error: FORMAT_VERSION_INVALID.text,
       },
     ),
     id: nonEmpty,
@@ -2643,11 +2665,7 @@ export const specSchema = z
   .superRefine((spec, ctx) => {
     resetParseCaches();
     if (spec.platforms !== undefined && spec.formatVersion < 2) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['platforms'],
-        message: 'só é permitido com formatVersion 2',
-      });
+      addSpecIssue(ctx, ['platforms'], onlyFormat(2));
     }
     const platformIds = new Set<string>();
     (spec.platforms ?? []).forEach((platform, pi) => {
@@ -2664,11 +2682,7 @@ export const specSchema = z
     if (spec.formatVersion < 5) {
       (spec.platforms ?? []).forEach((platform, pi) => {
         if (platform.repo === undefined) return;
-        ctx.addIssue({
-          code: 'custom',
-          path: ['platforms', pi, 'repo'],
-          message: 'só é permitido com formatVersion 5',
-        });
+        addSpecIssue(ctx, ['platforms', pi, 'repo'], onlyFormat(5));
       });
     }
     // v7: `floating` e `appliesTo` no tipo e `ref` como coluna de `table`. Antes dela, é erro
@@ -2678,11 +2692,7 @@ export const specSchema = z
         layer.annotationTypes.forEach((type, ti) => {
           const typePath = ['layers', li, 'annotationTypes', ti];
           const only7 = (sub: (string | number)[]) =>
-            ctx.addIssue({
-              code: 'custom',
-              path: [...typePath, ...sub],
-              message: 'só é permitido com formatVersion 7',
-            });
+            addSpecIssue(ctx, [...typePath, ...sub], onlyFormat(7));
           if (type.floating !== undefined) only7(['floating']);
           if (type.appliesTo !== undefined) only7(['appliesTo']);
           type.fields.forEach((field, fi) => {
@@ -2702,11 +2712,7 @@ export const specSchema = z
           type.fields.forEach((field, fi) => {
             const fieldPath = ['layers', li, 'annotationTypes', ti, 'fields', fi];
             const only8 = (sub: (string | number)[]) =>
-              ctx.addIssue({
-                code: 'custom',
-                path: [...fieldPath, ...sub],
-                message: 'só é permitido com formatVersion 8',
-              });
+              addSpecIssue(ctx, [...fieldPath, ...sub], onlyFormat(8));
             if (field.suggestions !== undefined) only8(['suggestions']);
             if (field.linkedRef !== undefined) only8(['linkedRef']);
             (field.columns ?? []).forEach((column, ci) => {
@@ -2727,11 +2733,11 @@ export const specSchema = z
         layer.annotationTypes.forEach((type, ti) => {
           for (const [platform, entry] of Object.entries(type.code ?? {})) {
             if (entry.variants === undefined) continue;
-            ctx.addIssue({
-              code: 'custom',
-              path: ['layers', li, 'annotationTypes', ti, 'code', platform, 'variants'],
-              message: 'só é permitido com formatVersion 9',
-            });
+            addSpecIssue(
+              ctx,
+              ['layers', li, 'annotationTypes', ti, 'code', platform, 'variants'],
+              onlyFormat(9),
+            );
           }
         });
       });
@@ -2744,11 +2750,7 @@ export const specSchema = z
     if (spec.formatVersion < 11) checkNoV11Keys(spec, ctx);
     // v6: `containers`. Antes dela, é erro no caminho exato.
     if (spec.containers !== undefined && spec.formatVersion < 6) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['containers'],
-        message: 'só é permitido com formatVersion 6',
-      });
+      addSpecIssue(ctx, ['containers'], onlyFormat(6));
     }
     const containerIds = new Set<string>();
     (spec.containers ?? []).forEach((container, ci) => {
@@ -2770,11 +2772,7 @@ export const specSchema = z
     if (!v4) {
       for (const key of ['fonts', 'origins', 'migrations'] as const) {
         if (spec[key] !== undefined) {
-          ctx.addIssue({
-            code: 'custom',
-            path: [key],
-            message: 'só é permitido com formatVersion 4',
-          });
+          addSpecIssue(ctx, [key], onlyFormat(4));
         }
       }
       checkNoLibraryKeys(spec.layers, ctx);
@@ -2993,7 +2991,7 @@ export function removedFieldKeys(data: unknown): Map<string, Set<string>> {
 /** O problema do zod como `SpecIssue`, com o código e os parâmetros do catálogo (sem o `input`). */
 function toSpecIssue(issue: z.core.$ZodIssue): SpecIssue {
   const base = { path: formatSpecPath(issue.path), message: issue.message };
-  const coding = issueCoding(issue);
+  const coding = issueCoding(issue, KNOWN_SPEC_MSGS);
   if (coding === undefined) return base;
   return coding.params === undefined
     ? { ...base, code: coding.code }

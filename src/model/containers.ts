@@ -31,6 +31,8 @@ import type { Marking, Placement, Project, ProjectContainer, Rect } from './type
 export const INITIAL_IMAGE_SIZE = 1000;
 /** Espaço entre a nova imagem e a imagem mais à direita, em unidades do canvas. */
 export const IMAGE_GAP = 50;
+/** Vão entre uma peça nova e os obstáculos, nas unidades do espaço (pixels da imagem ou do canvas). */
+export const PLACEMENT_GAP = 8;
 /** Diferença máxima de proporção considerada "a mesma" na troca de imagem. */
 export const ASPECT_TOLERANCE = 0.01;
 
@@ -167,6 +169,86 @@ export function nearestFreeSpot(
   if (obstacles.length === 0) return { x: wanted.x, y: wanted.y };
   const rightmost = obstacles.reduce((a, b) => (right(b) > right(a) ? b : a));
   return { x: right(rightmost) + gap, y: rightmost.y };
+}
+
+/**
+ * O retângulo é livre? Cabe em `area` (quando há) e não se sobrepõe a nenhum dos `obstacles`
+ * (`rectsOverlap`, área positiva: encostar não é sobrepor).
+ */
+export function isFreeRect(
+  rect: Rect,
+  obstacles: readonly Rect[],
+  area: Rect | null,
+): boolean {
+  if (area !== null && !containsRect(area, rect)) return false;
+  return !obstacles.some((o) => rectsOverlap(rect, o));
+}
+
+/** Coordenadas candidatas de um eixo, inteiras e sempre para longe do obstáculo (teto à frente, piso atrás). */
+function spotAxis(
+  wanted: number,
+  size: number,
+  gap: number,
+  edges: readonly (readonly [number, number])[],
+  bounds: readonly [number, number] | null,
+): number[] {
+  const values = [wanted];
+  if (bounds !== null) values.push(Math.ceil(bounds[0]), Math.floor(bounds[1] - size));
+  for (const [low, high] of edges) {
+    values.push(Math.ceil(high + gap), Math.floor(low - gap - size));
+  }
+  // Sem repetidos (grades e peças repetidas dão a mesma borda várias vezes); a ordem de
+  // primeira aparição fica, e ela desempata a distância.
+  const unique = [...new Set(values)];
+  return bounds === null
+    ? unique
+    : unique.filter((v) => v >= bounds[0] && v + size <= bounds[1]);
+}
+
+/**
+ * O lugar livre mais próximo de `wanted` (canto de cima à esquerda) para um retângulo de
+ * `width` × `height` que não se sobreponha a nenhum dos `obstacles`, **dentro de `area`** (quando
+ * há). Os candidatos são o próprio `wanted`, os encaixes junto às bordas dos obstáculos (com o
+ * vão `gap`) e as bordas da `area` (sem vão: a peça pode encostar nelas); vale só o que cabe na
+ * área e é livre. O de menor distância vence e o primeiro empata. Com `area`, sem candidato válido
+ * devolve `null`; sem `area` sempre há um (à direita de todos). Coordenadas inteiras.
+ */
+export function nearestFreeSpotIn(
+  obstacles: readonly Rect[],
+  width: number,
+  height: number,
+  wanted: { readonly x: number; readonly y: number },
+  area: Rect | null,
+  gap: number = PLACEMENT_GAP,
+): { x: number; y: number } | null {
+  const xs = spotAxis(
+    wanted.x,
+    width,
+    gap,
+    obstacles.map((o) => [o.x, right(o)] as const),
+    area === null ? null : [area.x, right(area)],
+  );
+  const ys = spotAxis(
+    wanted.y,
+    height,
+    gap,
+    obstacles.map((o) => [o.y, bottom(o)] as const),
+    area === null ? null : [area.y, bottom(area)],
+  );
+  let best: { x: number; y: number } | null = null;
+  let bestDistance = Infinity;
+  for (const x of xs) {
+    const blocked = forbiddenYs(obstacles, x, width, height);
+    for (const y of ys) {
+      if (isBlocked(blocked, y)) continue;
+      const distance = Math.hypot(x - wanted.x, y - wanted.y);
+      if (distance < bestDistance) {
+        best = { x, y };
+        bestDistance = distance;
+      }
+    }
+  }
+  return best;
 }
 
 /**

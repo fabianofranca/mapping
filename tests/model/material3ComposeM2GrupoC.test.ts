@@ -61,9 +61,13 @@ describe('M2 grupo C — valores do Compose', () => {
       const elevated = draw('button', { label: 'A', style: 'elevated' }, mode);
       const box = named(elevated.root, 'container')!;
       expect(solid(box.fills)).toBe(color('surface-container-low', mode));
-      expect(box.effects[0]?.blur).toBe(number('elevation-1-blur'));
-      expect(box.effects[0]?.offset.y).toBe(number('elevation-1-y'));
-      expect(box.effects[0]?.color).toBe(color('elevation-shadow', mode));
+      expect(box.effects).toHaveLength(2);
+      for (const [i, kind] of ['point', 'ambient'].entries()) {
+        expect(box.effects[i]?.blur).toBe(number(`elevation-1-${kind}-blur`));
+        expect(box.effects[i]?.offset.y).toBe(number(`elevation-1-${kind}-y`));
+        expect(box.effects[i]?.spread ?? 0).toBe(number(`elevation-1-${kind}-spread`));
+        expect(box.effects[i]?.color).toBe(color(`elevation-${kind}-shadow`, mode));
+      }
       expect(solid(findText(elevated.root)!.fills)).toBe(color('primary', mode));
 
       const filled = draw('button', { label: 'A', style: 'filled' }, mode);

@@ -24,6 +24,13 @@ import {
   type TypeDef,
   instanceLabel,
 } from '../../model/components/library';
+import {
+  NO_PROVIDED,
+  extendProvided,
+  pickProvided,
+  sameProvided,
+  type ProvidedValues,
+} from '../../model/components/provided';
 import { type Instance, type Screen, renderOrder } from '../../model/components/screen';
 import { konvaMeasurer } from './konvaMeasurer';
 
@@ -81,6 +88,10 @@ interface Mounted {
   label: string | undefined;
   /** URLs remotas que o último desenho da instância pediu. */
   imageUrls: readonly string[];
+  /** Cor herdada: os valores oferecidos pelos ancestrais que o último desenho leu. */
+  provided: ProvidedValues;
+  /** O que o slot da instância oferece às filhas no último desenho (`provide`). */
+  offers: ProvidedValues | undefined;
 }
 
 export class ScreenRenderer {
@@ -120,32 +131,13 @@ export class ScreenRenderer {
     let changed = false;
     const seen = new Set<string>();
     const order: string[] = [];
+    // Cor herdada: o que as filhas de cada instância herdam (o que o pai herdou, com o que ele
+    // oferece por cima), de cima para baixo na ordem de desenho; quem não oferece é atravessado.
+    const scopes = new Map<string, ProvidedValues>();
     renderOrder(screen).forEach((instance, index) => {
       seen.add(instance.id);
       order.push(instance.id);
-      const z = zBase + index;
-      const current = this.mounted.get(instance.id);
-      if (current && current.instance === instance && !force) {
-        if (current.node.zIndex() !== z) {
-          current.node.zIndex(z);
-          changed = true;
-        }
-        return;
-      }
-      changed = true;
-      if (current) {
-        this.renderInto(current, instance);
-      } else {
-        const node = new Konva.Group();
-        node.setAttr('instanceId', instance.id);
-        const entry: Mounted = { instance, node, label: undefined, imageUrls: [] };
-        this.group.add(node);
-        this.mounted.set(instance.id, entry);
-        this.renderInto(entry, instance);
-        this.options.onInstanceCreated?.(instance.id, node);
-      }
-      const node = this.mounted.get(instance.id)?.node;
-      if (node && node.zIndex() !== z) node.zIndex(z);
+      if (this.syncInstance(instance, zBase + index, force, scopes)) changed = true;
     });
     for (const [id, entry] of this.mounted) {
       if (seen.has(id)) continue;
@@ -156,6 +148,65 @@ export class ScreenRenderer {
     }
     this.order = order;
     return changed;
+  }
+
+  /**
+   * Cria, redesenha ou só reordena uma instância (o diff por identidade, mais a cor herdada: ela
+   * também é redesenhada quando muda o valor oferecido que o componente lê). Devolve true se algo mudou.
+   */
+  private syncInstance(
+    instance: Instance,
+    z: number,
+    force: boolean,
+    scopes: Map<string, ProvidedValues>,
+  ): boolean {
+    const current = this.mounted.get(instance.id);
+    const inherited = scopes.get(instance.parentId ?? '') ?? NO_PROVIDED;
+    const provided = this.readProvided(instance, inherited);
+    if (
+      current &&
+      current.instance === instance &&
+      !force &&
+      sameProvided(current.provided, provided)
+    ) {
+      scopes.set(instance.id, extendProvided(inherited, current.offers));
+      return this.setZ(current.node, z);
+    }
+    const entry = current ?? this.mount(instance);
+    this.renderInto(entry, instance, provided);
+    if (!current) this.options.onInstanceCreated?.(instance.id, entry.node);
+    scopes.set(instance.id, extendProvided(inherited, entry.offers));
+    this.setZ(entry.node, z);
+    return true;
+  }
+
+  /** Dos valores herdados, os que o componente da instância lê (nenhum se ele não lê nada). */
+  private readProvided(instance: Instance, inherited: ProvidedValues): ProvidedValues {
+    const component = this.typesById.get(instance.typeId)?.component;
+    return component === undefined ? NO_PROVIDED : pickProvided(inherited, component);
+  }
+
+  /** Cria o grupo da instância e o registra (o desenho vem de `renderInto`). */
+  private mount(instance: Instance): Mounted {
+    const node = new Konva.Group();
+    node.setAttr('instanceId', instance.id);
+    const entry: Mounted = {
+      instance,
+      node,
+      label: undefined,
+      imageUrls: [],
+      provided: NO_PROVIDED,
+      offers: undefined,
+    };
+    this.group.add(node);
+    this.mounted.set(instance.id, entry);
+    return entry;
+  }
+
+  private setZ(node: Konva.Group, z: number): boolean {
+    if (node.zIndex() === z) return false;
+    node.zIndex(z);
+    return true;
   }
 
   /**
@@ -247,10 +298,16 @@ export class ScreenRenderer {
     this.order = [];
   }
 
-  private renderInto(entry: Mounted, instance: Instance): void {
+  private renderInto(
+    entry: Mounted,
+    instance: Instance,
+    provided: ProvidedValues = entry.provided,
+  ): void {
     const { node } = entry;
     entry.instance = instance;
     entry.imageUrls = [];
+    entry.provided = provided;
+    entry.offers = undefined;
     node.destroyChildren();
     node.position({ x: instance.box.x, y: instance.box.y });
     node.scale({ x: 1, y: 1 });
@@ -293,7 +350,9 @@ export class ScreenRenderer {
     const result = instantiate(type.component, instance.values as FieldValues, local, {
       measure: this.measure,
       idPrefix: instance.id,
+      ...(provided === NO_PROVIDED ? {} : { provided }),
     });
+    entry.offers = result.provides;
     const rendered = renderScene(
       { root: result.root, warnings: [] },
       {

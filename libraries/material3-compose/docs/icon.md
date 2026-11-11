@@ -51,7 +51,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 
 - O nó `icon` do formato 4 escolhe o desenho no conjunto da biblioteca. O campo `imageVector` guarda o nome do Compose (`Home`, `KeyboardArrowRight`, o que vai em `Icons.Default.<nome>`) e o componente o traduz para o nome do conjunto (`home`, `keyboard_arrow_right`) por um `$switch`; os `$switch` de caminhos SVG saíram do componente.
 - O tamanho é o do `viewBox` do ícone (24 por 24), escalado para a caixa da marcação.
-- A cor é o papel de `tint`; sem `tint`, `on-surface` (o `LocalContentColor` padrão).
+- A cor é o papel de `tint`; sem `tint`, a cor do conteúdo herdada (`Icon.kt`, linha 69: `tint = LocalContentColor.current`): dentro de um `surface` ou `scaffold` sai na cor que o pai oferece, e sem pai, em `on-surface`.
 
 **O que ainda difere do Compose**
 

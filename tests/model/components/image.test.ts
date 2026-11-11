@@ -138,7 +138,7 @@ describe('parseComponent: image', () => {
 
   it('fit inválido', () => {
     expect(problems(raw(image({ fit: 'zoom' })))).toEqual([
-      'template.children[0].fit: esperava um de: cover, contain, fill',
+      'template.children[0].fit: esperava um de: cover, contain, fill, fill-width, fill-height, scale-down, none',
     ]);
   });
 

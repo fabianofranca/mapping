@@ -5,8 +5,12 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-/** Etapa #841 (decisão 6): o guia gerado de cada bloco tem até 200 mil caracteres. */
-const MAX_BLOCK_GUIDE_CHARS = 200_000;
+/**
+ * Etapa #841 (decisão 6): o guia gerado de cada bloco tem até 200 mil caracteres. A TE1 (#1557)
+ * subiu o teto em 500 (para 200.500): os acréscimos do R23.12 e do R23.13 (tema escuro) levaram o
+ * bloco 5 a 200.2 mil, e os cinco blocos já estavam colados no teto.
+ */
+const MAX_BLOCK_GUIDE_CHARS = 200_500;
 
 const GUIDE = readFileSync('docs/TESTING.md', 'utf8');
 const NUVEM = readFileSync('docs/TESTING-NUVEM.md', 'utf8');
@@ -35,8 +39,10 @@ interface Block {
   n: number;
   /** Os passos do bloco (R0 incluído). */
   steps: string[];
-  /** Os roteiros inteiros que o guia da rodada do bloco precisa (R6 entra por R6.3 e R6.8a). */
+  /** Os roteiros que o guia da rodada do bloco precisa (R6 entra por R6.3 e R6.8a). */
   roteiros: string[];
+  /** Os itens que o `round-guide.mjs` recebe: o roteiro inteiro ou a faixa de passos (`R6.3-R6.7`) que a tabela dá ao bloco. */
+  guideItems: string[];
   section6: boolean;
   visual: boolean;
   declared: number;
@@ -86,6 +92,9 @@ function readBlocks(steps: string[]): Block[] {
       n: Number(m[1]),
       steps: own,
       roteiros: [...new Set(own.map(roteiroOf))],
+      guideItems: items
+        .filter((t) => /^R\d+/.test(t))
+        .map((t) => t.replace(/^(R\d+\.\d+[a-z]?) a (R\d+\.\d+[a-z]?)$/, '$1-$2')),
       section6: items.includes('seção 6'),
       visual: items.includes('passada visual'),
       declared: Number(m[3]),
@@ -188,7 +197,9 @@ describe('divisão da rodada completa em 5 blocos (etapas #424 e #841)', () => {
     } = await import('../../scripts/testing/round-guide.mjs');
     expect(blocks.length).toBe(5);
     for (const b of blocks) {
-      const out = mod.buildRoundGuide(GUIDE, b.roteiros, { commit: 'abc1234' });
+      // Como o item 1 do "Modo completo, bloco k de 5": o roteiro que a tabela divide entre blocos entra só
+      // pela faixa de passos do bloco (`R6.3-R6.7`), sem o resto do roteiro.
+      const out = mod.buildRoundGuide(GUIDE, b.guideItems, { commit: 'abc1234' });
       for (const r of b.roteiros)
         expect(out, `bloco ${b.n}`).toMatch(new RegExp(`^### ${r} `, 'm'));
       expect(out.length, `bloco ${b.n}`).toBeLessThanOrEqual(MAX_BLOCK_GUIDE_CHARS);

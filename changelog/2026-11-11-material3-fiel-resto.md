@@ -1,0 +1,23 @@
+# Material 3 fiel, resto — 2026-11-11 (épico `epic/material3-fiel-resto`, PR #1513, MCP 0.34.0, schema v18)
+
+## Adicionado
+
+- Formato do componente 4: `font.align: "justify"` justifica o texto na largura da caixa, com a última linha de cada parágrafo à esquerda (o `TextAlign.Justify` do Compose); a app, o visualizador e o PNG do MCP quebram igual. O texto rico (`runs`) ainda desenha à esquerda.
+- Formato do componente 4: `over` no `$token` de cor (`{ "$token": "on-surface", "alpha": 0.38, "over": "surface" }`) compõe a cor sobre outra e a entrega opaca sobre uma base opaca (o `compositeOver` do Compose; base translúcida passa o alfa dela); `over` é o nome de um token de cor ou uma cor literal, e a biblioteca recusa o token desconhecido.
+- Formato do componente 4: o nó `image` ganha os `fit` `fill-width`, `fill-height`, `scale-down` e `none` (o `FillWidth`, `FillHeight`, `Inside` e `None` do Compose), na app e no visualizador; o PNG do MCP continua desenhando o reservado da imagem.
+- Formato do componente 4: `shadow` aceita uma lista de 1 a 4 sombras (a primeira fica por cima, como o `box-shadow` do CSS) e ganha `spread` (px, literal ou `$token`, negativo encolhe; os raios crescem junto). A app, o visualizador e o PNG do MCP desenham todas; o aviso "só a primeira sombra externa" deixou de existir, e o recorte ampliado da raiz conta o `spread` e todas as sombras.
+- Formato do componente 4: `stroke.gap` (`{ "node": "<nome>", "padding": 4 }`, em `frame` e `rect`) abre um vão no contorno com cantos arredondados onde a caixa do nó nomeado o cruza, como o contorno do `OutlinedTextField` sob o rótulo; na app, no visualizador e no PNG do MCP.
+- Formato do componente 4: `provide` no `slot` e `$provided` na filha (cor herdada, o `CompositionLocal` do Compose): o contêiner oferece um valor (a cor do conteúdo, por exemplo) resolvido nele, e o texto, o ícone ou o botão de ícone dentro dele o leem com `default` (só em posição de cor); vale o ancestral mais próximo que oferece o nome, e sem ancestral vale o `default`. A app, o visualizador (telas) e o PNG do MCP herdam, e trocar o campo do pai redesenha só a filha que lê. É só desenho: o `code` não muda.
+- Numa `formatVersion` 1 a 3 cada chave nova é o erro `só é permitido com formatVersion 4`, no caminho dela. A skill `spec-author`, o `docs/COMPONENT-FORMAT.md`, o `docs/component.schema.json` e o `docs/AGENT-GUIDE.md` trazem as chaves e as mensagens.
+- Biblioteca Material 3 (Compose), campos opcionais novos (a atualização da versão 6 para a 7 continua aditiva, sem perda): `today` no `date-picker` (o dia do mês que marca "hoje": contorno de 1 e número em `primary`; o dia escolhido vale mais, e com `month` e `year` um dia que o mês não tem não desenha nada), `avatar` no `chip` `input` (imagem circular de 24 no início, no lugar do ícone inicial), `color`, `insetStart` e `insetEnd` no `divider` (papel de cor e recuo por ponta; o `inset` vale quando os dois estão vazios), `trackColor` e `strokeCap` (`Round`, `Butt`, `Square`) no `progress-indicator`, e os `contentScale` `FillWidth`, `FillHeight`, `Inside` e `None` do `image`, que passam aos `fit` novos. O `code` leva o parâmetro quando o campo está preenchido.
+
+## Corrigido
+
+- PNG do MCP: o texto `font.align: "justify"` com a fonte embutida agora é justificado como na app (a linha que não fecha o parágrafo vai até a largura da caixa); o quadro com `clip` e raio de canto recorta pela forma (o círculo da alça do time-picker não vaza mais pelo retângulo); o resumo do `plan_changes` de `add_container` com arquivo cita o nome do container.
+- Formato do componente 4: `stroke.gap.node` dentro de um `repeat` ou citando o próprio nó agora é recusado na validação (antes passava e não abria o vão).
+- Catálogo: a seção **Código** renderiza o Markdown inline das notas (sem crases literais) e mostra `chave → valor` nos parâmetros.
+
+## Alterado
+
+- Biblioteca Material 3 (Compose), versão 7 (atualização aditiva): adota o motor novo — o texto, o ícone e o botão de ícone herdam a cor do conteúdo do `surface` e do `scaffold` (`on-primary` sobre `primary`, como o `LocalContentColor`); os tipos com sombra desenham as duas sombras de cada nível de elevação (ponto e ambiente, com `spread`); o `switch` e o `slider` desabilitados saem em cor opaca, sem empilhar transparência; o `text-field` e o `secure-text-field` outlined abrem o vão sobre o rótulo com os cantos arredondados; o `text` com `textAlign = Justify` desenha justificado; e o `time-picker` mostra, em `on-primary`, a parte dos números que a alça cobre.
+- Teto do `dist/index.html` subiu 16 KiB, de 1.966.080 para 1.982.464 bytes, pela regra do orçamento.

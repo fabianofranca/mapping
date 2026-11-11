@@ -145,25 +145,52 @@
         "$token": "primary-container"
       }
     },
-    "shadow": {
-      "color": {
-        "$if": {
-          "$not": {
-            "$eq": ["interaction", "hovered"]
-          }
+    "shadow": [
+      {
+        "color": {
+          "$if": {
+            "$not": {
+              "$eq": ["interaction", "hovered"]
+            }
+          },
+          "then": {
+            "$token": "elevation-point-shadow"
+          },
+          "else": "none"
         },
-        "then": {
-          "$token": "elevation-shadow"
+        "y": {
+          "$token": "elevation-3-point-y"
         },
-        "else": "none"
+        "blur": {
+          "$token": "elevation-3-point-blur"
+        },
+        "spread": {
+          "$token": "elevation-3-point-spread"
+        }
       },
-      "y": {
-        "$token": "elevation-3-y"
-      },
-      "blur": {
-        "$token": "elevation-3-blur"
+      {
+        "color": {
+          "$if": {
+            "$not": {
+              "$eq": ["interaction", "hovered"]
+            }
+          },
+          "then": {
+            "$token": "elevation-ambient-shadow"
+          },
+          "else": "none"
+        },
+        "y": {
+          "$token": "elevation-3-ambient-y"
+        },
+        "blur": {
+          "$token": "elevation-3-ambient-blur"
+        },
+        "spread": {
+          "$token": "elevation-3-ambient-spread"
+        }
       }
-    },
+    ],
     "minWidth": {
       "$if": {
         "$and": [
@@ -307,17 +334,36 @@
         "visible": {
           "$eq": ["interaction", "hovered"]
         },
-        "shadow": {
-          "color": {
-            "$token": "elevation-shadow"
+        "shadow": [
+          {
+            "color": {
+              "$token": "elevation-point-shadow"
+            },
+            "y": {
+              "$token": "elevation-4-point-y"
+            },
+            "blur": {
+              "$token": "elevation-4-point-blur"
+            },
+            "spread": {
+              "$token": "elevation-4-point-spread"
+            }
           },
-          "y": {
-            "$token": "elevation-4-y"
-          },
-          "blur": {
-            "$token": "elevation-4-blur"
+          {
+            "color": {
+              "$token": "elevation-ambient-shadow"
+            },
+            "y": {
+              "$token": "elevation-4-ambient-y"
+            },
+            "blur": {
+              "$token": "elevation-4-ambient-blur"
+            },
+            "spread": {
+              "$token": "elevation-4-ambient-spread"
+            }
           }
-        }
+        ]
       },
       {
         "type": "rect",

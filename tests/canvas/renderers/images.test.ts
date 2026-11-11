@@ -1,6 +1,7 @@
 import Konva from 'konva/lib/Core';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { ImageRenderer } from '../../../src/canvas/renderers/images';
+import { HALO_WIDTH } from '../../../src/canvas/renderers/metrics';
 import { t } from '../../../src/i18n';
 import {
   addBackgroundContainer,
@@ -106,15 +107,34 @@ describe('ImageRenderer', () => {
     renderer.render(frameOf(editor));
     expect(renderer.node('I1')?.title.text()).toBe('images/a.jpg');
     expect(renderer.node('I1')?.title.fill()).toBe(TOKENS.textMuted);
+    expect(renderer.node('I1')?.title.stroke()).toBe(TOKENS.surface);
 
     const named = renameContainer(canvasProject(), 'I1', 'Lateral');
     renderer.render(frameOf(editor, { project: named }));
     expect(renderer.node('I1')?.title.text()).toBe('Lateral');
     expect(renderer.node('I1')?.title.fill()).toBe(TOKENS.text);
+    expect(renderer.node('I1')?.title.stroke()).toBe(TOKENS.surface);
 
     // 500 px de largura × 0,05 = 25 px de tela: menos que o mínimo legível.
     renderer.render(frameOf(editor, { viewport: { x: 0, y: 0, scale: 0.05 } }));
     expect(renderer.node('I2')?.title.visible()).toBe(false);
+  });
+
+  // TE1, decisão 2: o título lê-se sobre qualquer raiz; o contorno da cor da superfície tem
+  // espessura em px de tela (2 * HALO_WIDTH / zoom) e fica atrás das letras.
+  it('rótulo: contorno da cor da superfície em px de tela, com e sem nome', () => {
+    const { renderer, editor } = setup();
+    for (const scale of [1, 2]) {
+      renderer.render(frameOf(editor, { viewport: { x: 0, y: 0, scale } }));
+      const title = renderer.node('I1')?.title;
+      expect(title?.stroke()).toBe(TOKENS.surface);
+      expect(title?.strokeWidth()).toBeCloseTo((2 * HALO_WIDTH) / scale);
+      expect(title?.fillAfterStrokeEnabled()).toBe(true);
+    }
+    const named = renameContainer(canvasProject(), 'I1', 'Lateral');
+    renderer.render(frameOf(editor, { project: named }));
+    expect(renderer.node('I1')?.title.stroke()).toBe(TOKENS.surface);
+    expect(renderer.node('I1')?.title.fillAfterStrokeEnabled()).toBe(true);
   });
 
   it('titleRects: só o texto do rótulo visível, em coordenadas do canvas; some com zoom e remoção', () => {

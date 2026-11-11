@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "image",
   "name": "Image",
-  "description": "Image do Foundation (sem token do Material): imagem remota (URL https) com o contentScale do Compose sobre o fundo surface variant; sem URL, mostra a descrição e as medidas.",
+  "description": "Image do Foundation (sem token do Material): imagem remota (URL https) com o contentScale do Compose (Crop, Fit, FillBounds, FillWidth, FillHeight, Inside e None) sobre o fundo surface variant; sem URL, mostra a descrição e as medidas.",
   "size": {
     "width": 160,
     "height": 120
@@ -39,17 +39,7 @@
           "$token": "surface-variant"
         },
         "visible": {
-          "$or": [
-            {
-              "$eq": ["contentScale", "Crop"]
-            },
-            {
-              "$eq": ["contentScale", "FillWidth"]
-            },
-            {
-              "$eq": ["contentScale", "FillHeight"]
-            }
-          ]
+          "$eq": ["contentScale", "Crop"]
         }
       },
       {
@@ -63,11 +53,63 @@
           "$token": "surface-variant"
         },
         "visible": {
-          "$or": [
-            {
-              "$eq": ["contentScale", "FillBounds"]
-            }
-          ]
+          "$eq": ["contentScale", "FillBounds"]
+        }
+      },
+      {
+        "type": "image",
+        "name": "imagem fill-width",
+        "src": {
+          "$field": "url"
+        },
+        "fit": "fill-width",
+        "fill": {
+          "$token": "surface-variant"
+        },
+        "visible": {
+          "$eq": ["contentScale", "FillWidth"]
+        }
+      },
+      {
+        "type": "image",
+        "name": "imagem fill-height",
+        "src": {
+          "$field": "url"
+        },
+        "fit": "fill-height",
+        "fill": {
+          "$token": "surface-variant"
+        },
+        "visible": {
+          "$eq": ["contentScale", "FillHeight"]
+        }
+      },
+      {
+        "type": "image",
+        "name": "imagem scale-down",
+        "src": {
+          "$field": "url"
+        },
+        "fit": "scale-down",
+        "fill": {
+          "$token": "surface-variant"
+        },
+        "visible": {
+          "$eq": ["contentScale", "Inside"]
+        }
+      },
+      {
+        "type": "image",
+        "name": "imagem none",
+        "src": {
+          "$field": "url"
+        },
+        "fit": "none",
+        "fill": {
+          "$token": "surface-variant"
+        },
+        "visible": {
+          "$eq": ["contentScale", "None"]
         }
       },
       {
@@ -87,13 +129,19 @@
                 "$eq": ["contentScale", "Crop"]
               },
               {
+                "$eq": ["contentScale", "FillBounds"]
+              },
+              {
                 "$eq": ["contentScale", "FillWidth"]
               },
               {
                 "$eq": ["contentScale", "FillHeight"]
               },
               {
-                "$eq": ["contentScale", "FillBounds"]
+                "$eq": ["contentScale", "Inside"]
+              },
+              {
+                "$eq": ["contentScale", "None"]
               }
             ]
           }

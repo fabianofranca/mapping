@@ -28,6 +28,7 @@ import {
   componentFileMinSize,
   componentMinSize,
   componentPlacement,
+  componentSize,
   placementFitsSlot,
   hasComponentSlot,
   componentTypes,
@@ -292,6 +293,10 @@ const DEPRECATED_OPS: Partial<Record<Operation['op'], string>> = {
 function fold(text: string): string {
   return text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
 }
+
+/** O nome entre aspas e um espaço, ou nada (para frases "o container <nome> com …"). */
+const nameLabel = (name: string | undefined): string =>
+  name === undefined ? '' : `${quoted(name)} `;
 
 function quoted(text: string | null): string {
   return text === null ? '(sem nome)' : `"${text}"`;
@@ -1602,7 +1607,7 @@ class Batch {
     }
     return {
       project,
-      description: `Adicionar o container com a imagem ${image.file} (${image.width}×${image.height} px, ${image.note}${
+      description: `Adicionar o container ${nameLabel(op.name)}com a imagem ${image.file} (${image.width}×${image.height} px, ${image.note}${
         op.source ? `, ${sourceLabel(toSource(op.source))}` : ''
       })`,
       created: [{ kind: 'i', id }],
@@ -2042,7 +2047,7 @@ class Batch {
         const target = this.nearTarget(op.near);
         const size =
           op.rect ??
-          componentPlacement(
+          componentSize(
             p,
             catalog,
             { containerId: null, parentId: null, ...typeRef! },

@@ -85,6 +85,12 @@ export type Expr<T> =
       readonly cases: Readonly<Record<string, Expr<T>>>;
       readonly default?: Expr<T>;
     }
+  /**
+   * Cor herdada (v4): o valor que o slot de um ancestral oferece (`SlotTemplate.provide`) com esse
+   * nome, o do ancestral mais próximo que o oferece. Sem ancestral que o ofereça vale `default`
+   * (uma expressão); sem `default`, o padrão do lugar.
+   */
+  | { readonly $provided: string; readonly default?: Expr<T> }
   /** Só para texto: concatena as partes (números viram texto). */
   | { readonly $concat: readonly Expr<string | number>[] }
   /**
@@ -111,9 +117,14 @@ export type Expr<T> =
   | { readonly $size: 'width' | 'height' }
   /**
    * Valor nomeado da especialização, no modo do desenho (v4; ver `tokens.ts`). Em posição de cor,
-   * `alpha` (0 a 1, literal ou `$token` de número) multiplica o alfa da cor.
+   * `alpha` (0 a 1, literal ou `$token` de número) multiplica o alfa da cor, e `over` (nome de
+   * um token de cor ou cor literal) compõe o resultado sobre essa cor, que o deixa opaco.
    */
-  | { readonly $token: string; readonly alpha?: number | { readonly $token: string } };
+  | {
+      readonly $token: string;
+      readonly alpha?: number | { readonly $token: string };
+      readonly over?: string;
+    };
 
 // ---------------------------------------------------------------------------------------
 // Estilo
@@ -158,6 +169,17 @@ export interface StrokeSpec {
    * em pixels de tela, em qualquer zoom.
    */
   readonly scale?: boolean;
+  /**
+   * Vão no contorno (v4, em `frame` e `rect`, sem `sides`): o lado que a caixa do nó `node` (o
+   * primeiro com esse nome no template) atravessa fica interrompido no trecho que ela cobre, mais
+   * `padding` (px, padrão 0) de cada lado: o recorte do contorno do `OutlinedTextField`.
+   */
+  readonly gap?: StrokeGapSpec;
+}
+
+export interface StrokeGapSpec {
+  readonly node: string;
+  readonly padding?: Expr<number>;
 }
 
 export type StrokeSide = 'top' | 'right' | 'bottom' | 'left';
@@ -172,6 +194,8 @@ export interface ShadowSpec {
   readonly x?: number | { readonly $token: string };
   readonly y?: number | { readonly $token: string };
   readonly blur?: number | { readonly $token: string };
+  /** Cresce (ou, negativo, encolhe) a forma da sombra em cada lado (v4, px; literal ou `$token`). */
+  readonly spread?: number | { readonly $token: string };
 }
 
 export interface FontSpec {
@@ -183,7 +207,8 @@ export interface FontSpec {
   /** Múltiplo do tamanho (1.2) ou px quando > 3. */
   readonly lineHeight?: Expr<number>;
   readonly letterSpacing?: Expr<number>;
-  readonly align?: Expr<'left' | 'center' | 'right'>;
+  /** `justify` (v4): o texto ocupa a largura da caixa, e a última linha de cada parágrafo fica à esquerda. */
+  readonly align?: Expr<'left' | 'center' | 'right' | 'justify'>;
   /** `cap-middle` centra pela altura da maiúscula (só formatVersion 4). */
   readonly verticalAlign?: Expr<'top' | 'middle' | 'bottom' | 'cap-middle'>;
   readonly decoration?: Expr<'none' | 'underline' | 'line-through'>;
@@ -281,7 +306,8 @@ interface TemplateNodeBase {
   readonly anchors?: Anchors;
   readonly fill?: Expr<FillSpec>;
   readonly stroke?: StrokeSpec;
-  readonly shadow?: ShadowSpec;
+  /** Uma sombra, ou (v4) de 1 a 4: a primeira fica por cima, como o `box-shadow` do CSS. */
+  readonly shadow?: ShadowSpec | readonly ShadowSpec[];
   /** Na v4 cada item da lista também aceita `$token` de número. */
   readonly cornerRadius?: Expr<number | readonly [Radius, Radius, Radius, Radius]>;
 }
@@ -359,6 +385,13 @@ export interface SlotTemplate extends TemplateNodeBase {
    * ausente) deixa cada filho no próprio retângulo. `gap` e `padding` podem vir de campos.
    */
   readonly layout?: LayoutSpec;
+  /**
+   * Cor herdada (v4): valores que o slot oferece às marcações filhas, pelo nome (livre, sem nome de
+   * plataforma). Cada valor é resolvido no pai (campos, tokens e modo dele) e a filha o lê com
+   * `{ "$provided": "<nome>", "default": … }`, como o `CompositionLocal` do Compose. Valor que não
+   * produz nada não oferece: o ancestral mais acima vale.
+   */
+  readonly provide?: Readonly<Record<string, Expr<string | number>>>;
 }
 
 /**
@@ -396,6 +429,18 @@ export interface RepeatTemplate extends TemplateNodeBase {
   readonly template: FrameTemplate;
 }
 
+/** Como a imagem ocupa a caixa. `fill-width`, `fill-height`, `scale-down` e `none` são da `formatVersion` 4. */
+export type ImageFit =
+  'cover' | 'contain' | 'fill' | 'fill-width' | 'fill-height' | 'scale-down' | 'none';
+
+/** Os valores de `ImageFit` que só existem na `formatVersion` 4. */
+export const IMAGE_FITS_V4: readonly ImageFit[] = [
+  'fill-width',
+  'fill-height',
+  'scale-down',
+  'none',
+];
+
 /**
  * Imagem remota (`formatVersion` 3). O `src` é a URL `https://` da imagem e é **restrito**: só um
  * texto literal ou exatamente `{ "$field": "<campo>" }` (campo `string` do tipo, ou coluna
@@ -409,7 +454,7 @@ export interface RepeatTemplate extends TemplateNodeBase {
 export interface ImageTemplate extends TemplateNodeBase {
   readonly type: 'image';
   readonly src: string | { readonly $field: string };
-  readonly fit?: 'cover' | 'contain' | 'fill';
+  readonly fit?: ImageFit;
 }
 
 /**

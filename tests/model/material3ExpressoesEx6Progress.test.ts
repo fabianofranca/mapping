@@ -304,7 +304,9 @@ function offenders(id: string): string[] {
     const cases = obj['cases'];
     if ('$switch' in obj && typeof cases === 'object' && cases !== null) {
       const count = Object.keys(cases).length;
-      if (count > 12) found.push(`${path}: $switch de ${count} casos`);
+      // O `trackColor` escolhe um papel do ColorScheme (MF5): é um enum de cor, não uma tabela de números.
+      if (count > 12 && obj['$switch'] !== 'trackColor')
+        found.push(`${path}: $switch de ${count} casos`);
     }
     const eq = obj['$eq'];
     if (Array.isArray(eq) && typeof eq[0] === 'string' && numberFields.has(eq[0]))
@@ -320,7 +322,8 @@ describe('EX6 progress-indicator — sem tabelas enumeradas', () => {
     expect(offenders('progress-indicator')).toEqual([]);
   });
 
-  it('o arquivo fica menos da metade dos 23 kB de antes', () => {
-    expect(text('components/progress-indicator.json').length).toBeLessThan(11_000);
+  it('o arquivo fica enxuto (os 23 kB de antes; os papéis de cor do trackColor da MF5 respondem pelo resto)', () => {
+    // Antes da MF5 o limite era de 11 kB. O `trackColor` leva o `$switch` dos 36 papéis do ColorScheme em cada nó do trilho.
+    expect(text('components/progress-indicator.json').length).toBeLessThan(27_000);
   });
 });

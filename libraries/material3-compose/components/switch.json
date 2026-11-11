@@ -84,7 +84,23 @@
                 "$eq": ["enabled", "false"]
               },
               "then": {
-                "$token": "surface"
+                "$if": {
+                  "$field": "checked"
+                },
+                "then": {
+                  "$token": "on-surface",
+                  "alpha": {
+                    "$token": "state-disabled-container"
+                  },
+                  "over": "surface"
+                },
+                "else": {
+                  "$token": "surface-container-highest",
+                  "alpha": {
+                    "$token": "state-disabled-container"
+                  },
+                  "over": "surface"
+                }
               },
               "else": {
                 "$if": {
@@ -97,30 +113,6 @@
                   "$token": "surface-container-highest"
                 }
               }
-            }
-          },
-          {
-            "type": "rect",
-            "name": "trilho desabilitado",
-            "cornerRadius": {
-              "$token": "corner-full"
-            },
-            "visible": {
-              "$eq": ["enabled", "false"]
-            },
-            "fill": {
-              "$if": {
-                "$field": "checked"
-              },
-              "then": {
-                "$token": "on-surface"
-              },
-              "else": {
-                "$token": "surface-container-highest"
-              }
-            },
-            "opacity": {
-              "$token": "state-disabled-container"
             }
           },
           {
@@ -141,7 +133,11 @@
                   "$eq": ["enabled", "false"]
                 },
                 "then": {
-                  "$token": "surface"
+                  "$token": "on-surface",
+                  "alpha": {
+                    "$token": "state-disabled-container"
+                  },
+                  "over": "surface"
                 },
                 "else": {
                   "$token": "outline"
@@ -149,36 +145,6 @@
               },
               "width": 2,
               "align": "inside"
-            }
-          },
-          {
-            "type": "rect",
-            "name": "contorno desabilitado",
-            "cornerRadius": {
-              "$token": "corner-full"
-            },
-            "visible": {
-              "$and": [
-                {
-                  "$eq": ["enabled", "false"]
-                },
-                {
-                  "$not": {
-                    "$field": "checked"
-                  }
-                }
-              ]
-            },
-            "fill": "none",
-            "stroke": {
-              "color": {
-                "$token": "on-surface"
-              },
-              "width": 2,
-              "align": "inside"
-            },
-            "opacity": {
-              "$token": "state-disabled-container"
             }
           },
           {
@@ -350,7 +316,19 @@
                         "$eq": ["enabled", "false"]
                       },
                       "then": {
-                        "$token": "surface"
+                        "$if": {
+                          "$field": "checked"
+                        },
+                        "then": {
+                          "$token": "surface"
+                        },
+                        "else": {
+                          "$token": "on-surface",
+                          "alpha": {
+                            "$token": "state-disabled-content"
+                          },
+                          "over": "surface"
+                        }
                       },
                       "else": {
                         "$if": {
@@ -399,60 +377,6 @@
                           }
                         }
                       }
-                    },
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    }
-                  },
-                  {
-                    "type": "ellipse",
-                    "name": "alça desabilitada",
-                    "width": {
-                      "$if": {
-                        "$or": [
-                          {
-                            "$field": "checked"
-                          },
-                          {
-                            "$eq": ["thumbIcon", "true"]
-                          }
-                        ]
-                      },
-                      "then": 24,
-                      "else": 16
-                    },
-                    "height": {
-                      "$if": {
-                        "$or": [
-                          {
-                            "$field": "checked"
-                          },
-                          {
-                            "$eq": ["thumbIcon", "true"]
-                          }
-                        ]
-                      },
-                      "then": 24,
-                      "else": 16
-                    },
-                    "visible": {
-                      "$and": [
-                        {
-                          "$eq": ["enabled", "false"]
-                        },
-                        {
-                          "$not": {
-                            "$field": "checked"
-                          }
-                        }
-                      ]
-                    },
-                    "fill": {
-                      "$token": "on-surface"
-                    },
-                    "opacity": {
-                      "$token": "state-disabled-content"
                     },
                     "anchors": {
                       "centerX": true,

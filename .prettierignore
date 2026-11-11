@@ -22,3 +22,6 @@ examples/exemplo-completo
 mappings-workspace
 .cache
 .vitest
+
+# Cena de antes da MF4 (etapa #899), gravada em uma linha por tests/model/material3Mf4Regression.test.ts
+tests/fixtures/material3-mf4-before.json

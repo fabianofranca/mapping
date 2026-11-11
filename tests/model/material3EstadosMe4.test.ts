@@ -207,37 +207,46 @@ function textFieldSuite(id: 'text-field' | 'secure-text-field', base: Values) {
       }
     });
 
+    // Com valor, o rótulo minimizado abre o vão no contorno; sem valor nem dica, o rótulo fica dentro e não há vão.
+    const hasValue = base.hasText !== undefined || base.value !== undefined;
+    const labelName = hasValue ? 'rótulo minimizado' : 'rótulo';
+    const outlineOf = (values: Values, mode: Mode) => {
+      const nodes = visibleNamed(id, values, mode, 'contorno');
+      expect(nodes, 'um contorno só').toHaveLength(1);
+      return nodes[0]!;
+    };
+    const gapsOf = (values: Values, mode: Mode) =>
+      (outlineOf(values, mode).stroke?.gaps ?? []).length;
+
     it('outlined com foco: contorno de 2 em primary (inclusive o vão do rótulo) e rótulo em primary', () => {
       for (const mode of MODES) {
         const v = { ...outlined, interaction: 'focused' };
-        const names =
-          base.hasText === undefined && base.value === undefined
-            ? ['contorno']
-            : ['contorno (lados)', 'trecho inicial', 'trecho final'];
-        for (const name of names)
-          expect(strokeOf(id, v, mode, name), name).toEqual({
-            width: 2,
-            color: hex('primary', mode),
-          });
-        expect(paintedWith(id, v, mode, 'rótulo', 'primary')).toBe(true);
+        // o contorno é um nó só (o vão é o `stroke.gap`): a mesma linha de 2 em primary passa pelo vão
+        expect(strokeOf(id, v, mode, 'contorno')).toEqual({
+          width: 2,
+          color: hex('primary', mode),
+        });
+        expect(gapsOf(v, mode)).toBe(hasValue ? 1 : 0);
+        for (const gone of ['contorno (lados)', 'trecho final'])
+          expect(visibleNamed(id, v, mode, gone), gone).toEqual([]);
+        expect(paintedWith(id, v, mode, labelName, 'primary')).toBe(true);
       }
     });
 
     it('outlined com o mouse: contorno de 1 em on-surface e rótulo em on-surface; em erro, on-error-container', () => {
       for (const mode of MODES) {
         const v = { ...outlined, interaction: 'hovered' };
-        const name =
-          base.hasText === undefined && base.value === undefined
-            ? 'contorno'
-            : 'contorno (lados)';
-        expect(strokeOf(id, v, mode, name)).toEqual({
+        expect(strokeOf(id, v, mode, 'contorno')).toEqual({
           width: 1,
           color: hex('on-surface', mode),
         });
-        expect(paintedWith(id, v, mode, 'rótulo', 'on-surface')).toBe(true);
+        expect(gapsOf(v, mode)).toBe(hasValue ? 1 : 0);
+        expect(paintedWith(id, v, mode, labelName, 'on-surface')).toBe(true);
         const e = { ...v, ...err };
-        expect(strokeOf(id, e, mode, name).color).toBe(hex('on-error-container', mode));
-        expect(paintedWith(id, e, mode, 'rótulo', 'on-error-container')).toBe(true);
+        expect(strokeOf(id, e, mode, 'contorno').color).toBe(
+          hex('on-error-container', mode),
+        );
+        expect(paintedWith(id, e, mode, labelName, 'on-error-container')).toBe(true);
       }
     });
 

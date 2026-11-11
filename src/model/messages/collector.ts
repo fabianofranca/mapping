@@ -14,9 +14,17 @@ export interface MessageSet {
   readonly list: () => ModelMessage[];
 }
 
-/** A identidade de um aviso, sem montar o texto: o código e os valores dos parâmetros. */
-const keyOf = (code: string, params: Params): string =>
-  `${code}\u0000${Object.values(params).join('\u0000')}`;
+/**
+ * A identidade de um aviso, sem montar o texto: o código e os pares nome e valor dos parâmetros,
+ * ordenados pelo nome (a ordem em que entraram não conta; nomes diferentes não se fundem). O tipo
+ * do valor fica de fora de propósito: `1` e `'1'` dão o mesmo texto, e o coletor continua
+ * deduplicando como o `Set<string>` de `warnings` que ele substituiu.
+ */
+const keyOf = (code: string, params: Params): string => {
+  const names = Object.keys(params);
+  if (names.length > 1) names.sort();
+  return [code, ...names.map((name) => `${name}\u0001${params[name]}`)].join('\u0000');
+};
 
 export function createMessageSet(initial: readonly ModelMessage[] = []): MessageSet {
   const byKey = new Map<string, ModelMessage>();

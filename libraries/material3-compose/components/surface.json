@@ -272,6 +272,175 @@
         },
         "layout": {
           "type": "none"
+        },
+        "provide": {
+          "content-color": {
+            "$switch": "color",
+            "cases": {
+              "primary": {
+                "$token": "on-primary"
+              },
+              "onPrimary": {
+                "$provided": "content-color",
+                "default": {
+                  "$token": "on-surface"
+                }
+              },
+              "primaryContainer": {
+                "$token": "on-primary-container"
+              },
+              "onPrimaryContainer": {
+                "$provided": "content-color",
+                "default": {
+                  "$token": "on-surface"
+                }
+              },
+              "secondary": {
+                "$token": "on-secondary"
+              },
+              "onSecondary": {
+                "$provided": "content-color",
+                "default": {
+                  "$token": "on-surface"
+                }
+              },
+              "secondaryContainer": {
+                "$token": "on-secondary-container"
+              },
+              "onSecondaryContainer": {
+                "$provided": "content-color",
+                "default": {
+                  "$token": "on-surface"
+                }
+              },
+              "tertiary": {
+                "$token": "on-tertiary"
+              },
+              "onTertiary": {
+                "$provided": "content-color",
+                "default": {
+                  "$token": "on-surface"
+                }
+              },
+              "tertiaryContainer": {
+                "$token": "on-tertiary-container"
+              },
+              "onTertiaryContainer": {
+                "$provided": "content-color",
+                "default": {
+                  "$token": "on-surface"
+                }
+              },
+              "error": {
+                "$token": "on-error"
+              },
+              "onError": {
+                "$provided": "content-color",
+                "default": {
+                  "$token": "on-surface"
+                }
+              },
+              "errorContainer": {
+                "$token": "on-error-container"
+              },
+              "onErrorContainer": {
+                "$provided": "content-color",
+                "default": {
+                  "$token": "on-surface"
+                }
+              },
+              "background": {
+                "$token": "on-background"
+              },
+              "onBackground": {
+                "$provided": "content-color",
+                "default": {
+                  "$token": "on-surface"
+                }
+              },
+              "surface": {
+                "$token": "on-surface"
+              },
+              "onSurface": {
+                "$provided": "content-color",
+                "default": {
+                  "$token": "on-surface"
+                }
+              },
+              "surfaceVariant": {
+                "$token": "on-surface-variant"
+              },
+              "onSurfaceVariant": {
+                "$provided": "content-color",
+                "default": {
+                  "$token": "on-surface"
+                }
+              },
+              "surfaceTint": {
+                "$provided": "content-color",
+                "default": {
+                  "$token": "on-surface"
+                }
+              },
+              "inverseSurface": {
+                "$token": "inverse-on-surface"
+              },
+              "inverseOnSurface": {
+                "$provided": "content-color",
+                "default": {
+                  "$token": "on-surface"
+                }
+              },
+              "inversePrimary": {
+                "$provided": "content-color",
+                "default": {
+                  "$token": "on-surface"
+                }
+              },
+              "outline": {
+                "$provided": "content-color",
+                "default": {
+                  "$token": "on-surface"
+                }
+              },
+              "outlineVariant": {
+                "$provided": "content-color",
+                "default": {
+                  "$token": "on-surface"
+                }
+              },
+              "scrim": {
+                "$provided": "content-color",
+                "default": {
+                  "$token": "on-surface"
+                }
+              },
+              "surfaceBright": {
+                "$token": "on-surface"
+              },
+              "surfaceDim": {
+                "$token": "on-surface"
+              },
+              "surfaceContainerLowest": {
+                "$token": "on-surface"
+              },
+              "surfaceContainerLow": {
+                "$token": "on-surface"
+              },
+              "surfaceContainer": {
+                "$token": "on-surface"
+              },
+              "surfaceContainerHigh": {
+                "$token": "on-surface"
+              },
+              "surfaceContainerHighest": {
+                "$token": "on-surface"
+              }
+            },
+            "default": {
+              "$token": "on-surface"
+            }
+          }
         }
       }
     ]

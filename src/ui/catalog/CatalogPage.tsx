@@ -217,7 +217,10 @@ function CodeSection({
               )}
             </p>
             {code.params !== undefined && (
-              <dl class="catalog-kv" aria-label={t('catalog.page.codeParams')}>
+              <dl
+                class="catalog-kv catalog-kv-params"
+                aria-label={t('catalog.page.codeParams')}
+              >
                 {Object.entries(code.params).map(([key, value]) => (
                   <div key={key}>
                     <dt>
@@ -248,7 +251,11 @@ function CodeSection({
                 ))}
               </dl>
             )}
-            {code.notes !== undefined && <p class="muted">{code.notes}</p>}
+            {code.notes !== undefined && (
+              <div class="muted">
+                <Markdown text={code.notes} />
+              </div>
+            )}
             {code.variants !== undefined && (
               <VariantsTable
                 variants={code.variants}

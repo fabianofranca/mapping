@@ -47,7 +47,7 @@ export function captureFocusOrigin(): FocusOrigin {
 function tryFocus(el: Element | null | undefined, scope: Element): boolean {
   if (!(el instanceof HTMLElement) || !el.isConnected || el === document.body)
     return false;
-  if (scope.contains(el)) return false;
+  if (scope.contains(el) || el.matches(':disabled')) return false;
   el.focus();
   return document.activeElement === el;
 }
@@ -73,7 +73,13 @@ export function restoreFocus(
   returnFocus?: FocusReturn,
 ): void {
   const active = document.activeElement;
-  const lost = active === null || active === document.body || scope.contains(active);
+  // Um controle que ficou desabilitado com o foco (o botão de ordem que chegou ao fim) está
+  // perdido: o navegador não entrega mais teclas a ele.
+  const lost =
+    active === null ||
+    active === document.body ||
+    scope.contains(active) ||
+    active.matches(':disabled');
   if (!lost) return;
   if (tryFocus(origin.opener, scope)) return;
   if (returnFocus !== undefined) {
@@ -113,6 +119,26 @@ export function restoreFocusAfterRender(
 ): void {
   if (!origin) return;
   queueMicrotask(() => restoreFocus(scope, origin, returnFocus.current));
+}
+
+/**
+ * Mantém o foco depois de uma ação que reorganiza a tela ou desabilita o controle que o tinha
+ * (o ⋯ de uma linha da Árvore que muda de pai, o botão de ordem que chega ao fim): guarda quem
+ * tem o foco agora e, depois da renderização, se ele caiu no `body`, devolve-o pela regra do
+ * `restoreFocus` (a quem tinha; sem ele, a `returnFocus`, a janela de ferramenta que o continha
+ * ou o primeiro controle da app). Chamar com o foco ainda no controle de origem. Se o foco já
+ * foi a outro lugar de propósito, não mexe.
+ */
+export function keepFocusAfterAction(returnFocus?: FocusReturn): void {
+  const origin = captureFocusOrigin();
+  if (!origin.opener) return;
+  // Duas microtarefas: a primeira passa a vez à renderização que a ação (ainda por vir, no
+  // mesmo gesto) pediu; a segunda é a que confere o foco depois dela.
+  queueMicrotask(() =>
+    queueMicrotask(() =>
+      restoreFocus(document.createElement('span'), origin, returnFocus),
+    ),
+  );
 }
 
 /**

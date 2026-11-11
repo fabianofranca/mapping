@@ -34,10 +34,22 @@ function byName(node: SceneNode, name: string): SceneNode | undefined {
   return undefined;
 }
 
-/** Sombras (y e blur) dos nós visíveis, na ordem do desenho. */
-function shadows(node: SceneNode, out: { y: number; blur: number }[] = []) {
+/** Sombras de um nível de elevação: ponto (preto a 30%) e ambiente (preto a 15%). */
+const level = (
+  point: [y: number, blur: number, spread: number],
+  ambient: [y: number, blur: number, spread: number],
+) => [
+  { y: point[0], blur: point[1], spread: point[2], color: 'rgba(0, 0, 0, 0.3)' },
+  { y: ambient[0], blur: ambient[1], spread: ambient[2], color: 'rgba(0, 0, 0, 0.15)' },
+];
+/** Sombras (y, blur, spread e cor) dos nós visíveis, na ordem do desenho. */
+function shadows(
+  node: SceneNode,
+  out: { y: number; blur: number; spread: number; color: string }[] = [],
+) {
   if (!node.visible) return out;
-  for (const e of node.effects) out.push({ y: e.offset.y, blur: e.blur });
+  for (const e of node.effects)
+    out.push({ y: e.offset.y, blur: e.blur, spread: e.spread ?? 0, color: e.color });
   if ('children' in node) node.children.forEach((c) => shadows(c, out));
   return out;
 }
@@ -145,16 +157,16 @@ describe.each(['fab', 'extended-fab'])('%s: campo interaction', (id) => {
 
   it('só o mouse sobre sobe a elevação (nível 4); foco e pressionado ficam no nível 3', () => {
     for (const mode of MODES) {
-      expect(shadows(draw(id, { ...base, interaction: 'none' }, mode).root)).toEqual([
-        { y: 3, blur: 12 },
-      ]);
-      expect(shadows(draw(id, { ...base, interaction: 'hovered' }, mode).root)).toEqual([
-        { y: 4, blur: 16 },
-      ]);
+      expect(shadows(draw(id, { ...base, interaction: 'none' }, mode).root)).toEqual(
+        level([1, 3, 0], [4, 8, 3]),
+      );
+      expect(shadows(draw(id, { ...base, interaction: 'hovered' }, mode).root)).toEqual(
+        level([2, 3, 0], [6, 10, 4]),
+      );
       for (const interaction of ['focused', 'pressed']) {
-        expect(shadows(draw(id, { ...base, interaction }, mode).root)).toEqual([
-          { y: 3, blur: 12 },
-        ]);
+        expect(shadows(draw(id, { ...base, interaction }, mode).root)).toEqual(
+          level([1, 3, 0], [4, 8, 3]),
+        );
       }
     }
   });

@@ -84,6 +84,6 @@ O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o des
 
 - Sem ripple animado e sem transição entre estados nem animação da troca de cor (o desenho é um quadro parado). O Compose não define anel de foco para este tipo no commit fixado (nenhum `*Tokens.kt` dele traz `FocusIndicatorColor`): nenhum é desenhado.
 - A camada de estado do standard e do outlined desligados usa `on-surface-variant`, a cor que os tokens dão ao estado; o ícone e o contorno parados continuam em `on-surface`, então a camada não tem a mesma cor do ícone nesses dois casos.
-- O conteúdo do Compose herda `LocalContentColor`; o desenho fixa `on-surface`.
+- O conteúdo do `standard` desmarcado e do `outlined` desmarcado é o `LocalContentColor` (`IconButtonDefaults.kt`, linhas 166 e 638): o desenho lê a cor do conteúdo herdada (`on-surface` sem pai) quando o botão está habilitado. Marcado, o `filled` e o `tonal` têm conteúdo próprio; o desabilitado segue `on-surface`: esses não herdam.
 - O desabilitado de 0,1 no contêiner é literal no componente (o token `state-disabled-container` vale 0,12).
 - A forma do estado ligado do Material expressivo (`SelectedContainerShape*`) e as larguras `Narrow` e `Wide` não são campos do tipo.

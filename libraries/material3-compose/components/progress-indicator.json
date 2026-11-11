@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "progress-indicator",
   "name": "Progress indicator",
-  "description": "Indicador de progresso circular (40, traço de 4) ou linear (barra de 4 com parada), com o indicador em primary e o trilho em secondary-container, de ponta redonda e com gap de 4. Sem valor de progresso é indeterminado e o desenho mostra um quadro congelado da animação (um arco ou uma barra parcial).",
+  "description": "Indicador de progresso circular (40, traço de 4) ou linear (barra de 4 com parada), com o indicador em primary e o trilho em secondary-container (ou no papel de trackColor), de ponta redonda (ou Butt/Square, pelo strokeCap) e com gap de 4. Sem valor de progresso é indeterminado e o desenho mostra um quadro congelado da animação (um arco ou uma barra parcial).",
   "size": { "width": 240, "height": 48 },
   "sizing": { "width": "fill", "height": 48 },
   "preview": { "shape": "circular", "progress": 0.6 },
@@ -27,11 +27,57 @@
             "height": 40,
             "fill": "none",
             "stroke": {
-              "color": { "$token": "secondary-container" },
+              "color": {
+                "$switch": "trackColor",
+                "cases": {
+                  "primary": { "$token": "primary" },
+                  "onPrimary": { "$token": "on-primary" },
+                  "primaryContainer": { "$token": "primary-container" },
+                  "onPrimaryContainer": { "$token": "on-primary-container" },
+                  "secondary": { "$token": "secondary" },
+                  "onSecondary": { "$token": "on-secondary" },
+                  "secondaryContainer": { "$token": "secondary-container" },
+                  "onSecondaryContainer": { "$token": "on-secondary-container" },
+                  "tertiary": { "$token": "tertiary" },
+                  "onTertiary": { "$token": "on-tertiary" },
+                  "tertiaryContainer": { "$token": "tertiary-container" },
+                  "onTertiaryContainer": { "$token": "on-tertiary-container" },
+                  "error": { "$token": "error" },
+                  "onError": { "$token": "on-error" },
+                  "errorContainer": { "$token": "error-container" },
+                  "onErrorContainer": { "$token": "on-error-container" },
+                  "background": { "$token": "background" },
+                  "onBackground": { "$token": "on-background" },
+                  "surface": { "$token": "surface" },
+                  "onSurface": { "$token": "on-surface" },
+                  "surfaceVariant": { "$token": "surface-variant" },
+                  "onSurfaceVariant": { "$token": "on-surface-variant" },
+                  "surfaceTint": { "$token": "surface-tint" },
+                  "inverseSurface": { "$token": "inverse-surface" },
+                  "inverseOnSurface": { "$token": "inverse-on-surface" },
+                  "inversePrimary": { "$token": "inverse-primary" },
+                  "outline": { "$token": "outline" },
+                  "outlineVariant": { "$token": "outline-variant" },
+                  "scrim": { "$token": "scrim" },
+                  "surfaceBright": { "$token": "surface-bright" },
+                  "surfaceDim": { "$token": "surface-dim" },
+                  "surfaceContainerLowest": { "$token": "surface-container-lowest" },
+                  "surfaceContainerLow": { "$token": "surface-container-low" },
+                  "surfaceContainer": { "$token": "surface-container" },
+                  "surfaceContainerHigh": { "$token": "surface-container-high" },
+                  "surfaceContainerHighest": { "$token": "surface-container-highest" }
+                },
+                "default": { "$token": "secondary-container" }
+              },
               "width": 4,
               "align": "inside"
             },
-            "visible": { "$lte": [{ "$field": "progress" }, 0] }
+            "visible": {
+              "$or": [
+                { "$lte": [{ "$field": "progress" }, 0] },
+                { "$and": [{ "$not": { "$has": "progress" } }, { "$has": "trackColor" }] }
+              ]
+            }
           },
           {
             "type": "path",
@@ -111,10 +157,55 @@
             },
             "fill": "none",
             "stroke": {
-              "color": { "$token": "secondary-container" },
+              "color": {
+                "$switch": "trackColor",
+                "cases": {
+                  "primary": { "$token": "primary" },
+                  "onPrimary": { "$token": "on-primary" },
+                  "primaryContainer": { "$token": "primary-container" },
+                  "onPrimaryContainer": { "$token": "on-primary-container" },
+                  "secondary": { "$token": "secondary" },
+                  "onSecondary": { "$token": "on-secondary" },
+                  "secondaryContainer": { "$token": "secondary-container" },
+                  "onSecondaryContainer": { "$token": "on-secondary-container" },
+                  "tertiary": { "$token": "tertiary" },
+                  "onTertiary": { "$token": "on-tertiary" },
+                  "tertiaryContainer": { "$token": "tertiary-container" },
+                  "onTertiaryContainer": { "$token": "on-tertiary-container" },
+                  "error": { "$token": "error" },
+                  "onError": { "$token": "on-error" },
+                  "errorContainer": { "$token": "error-container" },
+                  "onErrorContainer": { "$token": "on-error-container" },
+                  "background": { "$token": "background" },
+                  "onBackground": { "$token": "on-background" },
+                  "surface": { "$token": "surface" },
+                  "onSurface": { "$token": "on-surface" },
+                  "surfaceVariant": { "$token": "surface-variant" },
+                  "onSurfaceVariant": { "$token": "on-surface-variant" },
+                  "surfaceTint": { "$token": "surface-tint" },
+                  "inverseSurface": { "$token": "inverse-surface" },
+                  "inverseOnSurface": { "$token": "inverse-on-surface" },
+                  "inversePrimary": { "$token": "inverse-primary" },
+                  "outline": { "$token": "outline" },
+                  "outlineVariant": { "$token": "outline-variant" },
+                  "scrim": { "$token": "scrim" },
+                  "surfaceBright": { "$token": "surface-bright" },
+                  "surfaceDim": { "$token": "surface-dim" },
+                  "surfaceContainerLowest": { "$token": "surface-container-lowest" },
+                  "surfaceContainerLow": { "$token": "surface-container-low" },
+                  "surfaceContainer": { "$token": "surface-container" },
+                  "surfaceContainerHigh": { "$token": "surface-container-high" },
+                  "surfaceContainerHighest": { "$token": "surface-container-highest" }
+                },
+                "default": { "$token": "secondary-container" }
+              },
               "width": 4,
               "align": "center",
-              "cap": "round",
+              "cap": {
+                "$switch": "strokeCap",
+                "cases": { "Butt": "butt", "Square": "square" },
+                "default": "round"
+              },
               "join": "round"
             },
             "rotation": {
@@ -175,7 +266,11 @@
               "color": { "$token": "primary" },
               "width": 4,
               "align": "center",
-              "cap": "round",
+              "cap": {
+                "$switch": "strokeCap",
+                "cases": { "Butt": "butt", "Square": "square" },
+                "default": "round"
+              },
               "join": "round"
             }
           },
@@ -201,7 +296,11 @@
               "color": { "$token": "primary" },
               "width": 4,
               "align": "center",
-              "cap": "round",
+              "cap": {
+                "$switch": "strokeCap",
+                "cases": { "Butt": "butt", "Square": "square" },
+                "default": "round"
+              },
               "join": "round"
             }
           }
@@ -226,9 +325,61 @@
               {
                 "type": "rect",
                 "name": "faixa antes",
-                "fill": { "$token": "secondary-container" },
-                "cornerRadius": { "$token": "corner-full" },
-                "anchors": { "left": 0, "right": 6 }
+                "fill": {
+                  "$switch": "trackColor",
+                  "cases": {
+                    "primary": { "$token": "primary" },
+                    "onPrimary": { "$token": "on-primary" },
+                    "primaryContainer": { "$token": "primary-container" },
+                    "onPrimaryContainer": { "$token": "on-primary-container" },
+                    "secondary": { "$token": "secondary" },
+                    "onSecondary": { "$token": "on-secondary" },
+                    "secondaryContainer": { "$token": "secondary-container" },
+                    "onSecondaryContainer": { "$token": "on-secondary-container" },
+                    "tertiary": { "$token": "tertiary" },
+                    "onTertiary": { "$token": "on-tertiary" },
+                    "tertiaryContainer": { "$token": "tertiary-container" },
+                    "onTertiaryContainer": { "$token": "on-tertiary-container" },
+                    "error": { "$token": "error" },
+                    "onError": { "$token": "on-error" },
+                    "errorContainer": { "$token": "error-container" },
+                    "onErrorContainer": { "$token": "on-error-container" },
+                    "background": { "$token": "background" },
+                    "onBackground": { "$token": "on-background" },
+                    "surface": { "$token": "surface" },
+                    "onSurface": { "$token": "on-surface" },
+                    "surfaceVariant": { "$token": "surface-variant" },
+                    "onSurfaceVariant": { "$token": "on-surface-variant" },
+                    "surfaceTint": { "$token": "surface-tint" },
+                    "inverseSurface": { "$token": "inverse-surface" },
+                    "inverseOnSurface": { "$token": "inverse-on-surface" },
+                    "inversePrimary": { "$token": "inverse-primary" },
+                    "outline": { "$token": "outline" },
+                    "outlineVariant": { "$token": "outline-variant" },
+                    "scrim": { "$token": "scrim" },
+                    "surfaceBright": { "$token": "surface-bright" },
+                    "surfaceDim": { "$token": "surface-dim" },
+                    "surfaceContainerLowest": { "$token": "surface-container-lowest" },
+                    "surfaceContainerLow": { "$token": "surface-container-low" },
+                    "surfaceContainer": { "$token": "surface-container" },
+                    "surfaceContainerHigh": { "$token": "surface-container-high" },
+                    "surfaceContainerHighest": { "$token": "surface-container-highest" }
+                  },
+                  "default": { "$token": "secondary-container" }
+                },
+                "cornerRadius": {
+                  "$switch": "strokeCap",
+                  "cases": { "Butt": 0, "Square": 0 },
+                  "default": { "$token": "corner-full" }
+                },
+                "anchors": {
+                  "left": 0,
+                  "right": {
+                    "$if": { "$eq": ["strokeCap", "Butt"] },
+                    "then": 4,
+                    "else": 6
+                  }
+                }
               }
             ]
           },
@@ -253,16 +404,42 @@
                 "name": "barra",
                 "visible": { "$gt": [{ "$field": "progress" }, 0] },
                 "fill": { "$token": "primary" },
-                "cornerRadius": { "$token": "corner-full" },
-                "anchors": { "left": 0, "right": -2 }
+                "cornerRadius": {
+                  "$switch": "strokeCap",
+                  "cases": { "Butt": 0, "Square": 0 },
+                  "default": { "$token": "corner-full" }
+                },
+                "anchors": {
+                  "left": 0,
+                  "right": {
+                    "$if": { "$eq": ["strokeCap", "Butt"] },
+                    "then": 0,
+                    "else": -2
+                  }
+                }
               },
               {
                 "type": "rect",
                 "name": "barra indeterminada",
                 "visible": { "$not": { "$has": "progress" } },
                 "fill": { "$token": "primary" },
-                "cornerRadius": { "$token": "corner-full" },
-                "anchors": { "left": -2, "right": -2 }
+                "cornerRadius": {
+                  "$switch": "strokeCap",
+                  "cases": { "Butt": 0, "Square": 0 },
+                  "default": { "$token": "corner-full" }
+                },
+                "anchors": {
+                  "left": {
+                    "$if": { "$eq": ["strokeCap", "Butt"] },
+                    "then": 0,
+                    "else": -2
+                  },
+                  "right": {
+                    "$if": { "$eq": ["strokeCap", "Butt"] },
+                    "then": 0,
+                    "else": -2
+                  }
+                }
               }
             ]
           },
@@ -278,16 +455,112 @@
                 "type": "rect",
                 "name": "faixa",
                 "visible": { "$not": { "$lte": [{ "$field": "progress" }, 0] } },
-                "fill": { "$token": "secondary-container" },
-                "cornerRadius": { "$token": "corner-full" },
-                "anchors": { "left": 6 }
+                "fill": {
+                  "$switch": "trackColor",
+                  "cases": {
+                    "primary": { "$token": "primary" },
+                    "onPrimary": { "$token": "on-primary" },
+                    "primaryContainer": { "$token": "primary-container" },
+                    "onPrimaryContainer": { "$token": "on-primary-container" },
+                    "secondary": { "$token": "secondary" },
+                    "onSecondary": { "$token": "on-secondary" },
+                    "secondaryContainer": { "$token": "secondary-container" },
+                    "onSecondaryContainer": { "$token": "on-secondary-container" },
+                    "tertiary": { "$token": "tertiary" },
+                    "onTertiary": { "$token": "on-tertiary" },
+                    "tertiaryContainer": { "$token": "tertiary-container" },
+                    "onTertiaryContainer": { "$token": "on-tertiary-container" },
+                    "error": { "$token": "error" },
+                    "onError": { "$token": "on-error" },
+                    "errorContainer": { "$token": "error-container" },
+                    "onErrorContainer": { "$token": "on-error-container" },
+                    "background": { "$token": "background" },
+                    "onBackground": { "$token": "on-background" },
+                    "surface": { "$token": "surface" },
+                    "onSurface": { "$token": "on-surface" },
+                    "surfaceVariant": { "$token": "surface-variant" },
+                    "onSurfaceVariant": { "$token": "on-surface-variant" },
+                    "surfaceTint": { "$token": "surface-tint" },
+                    "inverseSurface": { "$token": "inverse-surface" },
+                    "inverseOnSurface": { "$token": "inverse-on-surface" },
+                    "inversePrimary": { "$token": "inverse-primary" },
+                    "outline": { "$token": "outline" },
+                    "outlineVariant": { "$token": "outline-variant" },
+                    "scrim": { "$token": "scrim" },
+                    "surfaceBright": { "$token": "surface-bright" },
+                    "surfaceDim": { "$token": "surface-dim" },
+                    "surfaceContainerLowest": { "$token": "surface-container-lowest" },
+                    "surfaceContainerLow": { "$token": "surface-container-low" },
+                    "surfaceContainer": { "$token": "surface-container" },
+                    "surfaceContainerHigh": { "$token": "surface-container-high" },
+                    "surfaceContainerHighest": { "$token": "surface-container-highest" }
+                  },
+                  "default": { "$token": "secondary-container" }
+                },
+                "cornerRadius": {
+                  "$switch": "strokeCap",
+                  "cases": { "Butt": 0, "Square": 0 },
+                  "default": { "$token": "corner-full" }
+                },
+                "anchors": {
+                  "left": {
+                    "$if": { "$eq": ["strokeCap", "Butt"] },
+                    "then": 4,
+                    "else": 6
+                  }
+                }
               },
               {
                 "type": "rect",
                 "name": "faixa total",
                 "visible": { "$lte": [{ "$field": "progress" }, 0] },
-                "fill": { "$token": "secondary-container" },
-                "cornerRadius": { "$token": "corner-full" }
+                "fill": {
+                  "$switch": "trackColor",
+                  "cases": {
+                    "primary": { "$token": "primary" },
+                    "onPrimary": { "$token": "on-primary" },
+                    "primaryContainer": { "$token": "primary-container" },
+                    "onPrimaryContainer": { "$token": "on-primary-container" },
+                    "secondary": { "$token": "secondary" },
+                    "onSecondary": { "$token": "on-secondary" },
+                    "secondaryContainer": { "$token": "secondary-container" },
+                    "onSecondaryContainer": { "$token": "on-secondary-container" },
+                    "tertiary": { "$token": "tertiary" },
+                    "onTertiary": { "$token": "on-tertiary" },
+                    "tertiaryContainer": { "$token": "tertiary-container" },
+                    "onTertiaryContainer": { "$token": "on-tertiary-container" },
+                    "error": { "$token": "error" },
+                    "onError": { "$token": "on-error" },
+                    "errorContainer": { "$token": "error-container" },
+                    "onErrorContainer": { "$token": "on-error-container" },
+                    "background": { "$token": "background" },
+                    "onBackground": { "$token": "on-background" },
+                    "surface": { "$token": "surface" },
+                    "onSurface": { "$token": "on-surface" },
+                    "surfaceVariant": { "$token": "surface-variant" },
+                    "onSurfaceVariant": { "$token": "on-surface-variant" },
+                    "surfaceTint": { "$token": "surface-tint" },
+                    "inverseSurface": { "$token": "inverse-surface" },
+                    "inverseOnSurface": { "$token": "inverse-on-surface" },
+                    "inversePrimary": { "$token": "inverse-primary" },
+                    "outline": { "$token": "outline" },
+                    "outlineVariant": { "$token": "outline-variant" },
+                    "scrim": { "$token": "scrim" },
+                    "surfaceBright": { "$token": "surface-bright" },
+                    "surfaceDim": { "$token": "surface-dim" },
+                    "surfaceContainerLowest": { "$token": "surface-container-lowest" },
+                    "surfaceContainerLow": { "$token": "surface-container-low" },
+                    "surfaceContainer": { "$token": "surface-container" },
+                    "surfaceContainerHigh": { "$token": "surface-container-high" },
+                    "surfaceContainerHighest": { "$token": "surface-container-highest" }
+                  },
+                  "default": { "$token": "secondary-container" }
+                },
+                "cornerRadius": {
+                  "$switch": "strokeCap",
+                  "cases": { "Butt": 0, "Square": 0 },
+                  "default": { "$token": "corner-full" }
+                }
               },
               {
                 "type": "ellipse",
