@@ -121,6 +121,23 @@ describe('painel.py sup (FM5, decisão 9)', () => {
     });
   });
 
+  it('repetir o mesmo estado não muda o at nem o histórico, então o atrasado não some (revisão)', () => {
+    runAt(T0, 'sup', dir, 'SUP-1', 'tipo=A', 'pedido=segurar a #7', 'estado=enviado');
+    runAt('2026-11-11T11:40:00Z', 'sup', dir, 'SUP-1', 'estado=enviado');
+    expect(requests()[0]!.at).toBe(T0);
+    expect(requests()[0]!.history).toEqual([{ estado: 'enviado', at: T0 }]);
+    expect(runAt('2026-11-11T11:40:00Z', 'requests', dir)).toContain('atrasado');
+  });
+
+  it('a evidencia de um estado anterior não fica no estado novo (revisão)', () => {
+    runAt(T0, 'sup', dir, 'SUP-1', 'tipo=A', 'pedido=pausar', 'estado=enviado');
+    runAt(T0, 'sup', dir, 'SUP-1', 'estado=recusado', 'evidencia=fora da lista');
+    runAt(T0, 'sup', dir, 'SUP-1', 'estado=enviado');
+    expect(requests()[0]!.evidencia).toBeUndefined();
+    runAt(T0, 'sup', dir, 'SUP-1', 'estado=perguntado ao dono', 'evidencia=perguntei');
+    expect(requests()[0]!.evidencia).toBe('perguntei');
+  });
+
   it('atualizar um SUP que não existe, sem tipo e pedido, sai com código 2', () => {
     expect(tryRun(T0, 'sup', dir, 'SUP-9', 'estado=aprovado').code).toBe(2);
   });

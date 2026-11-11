@@ -608,11 +608,13 @@ def cmd_sup(a):
         for k in ("tipo", "pedido"):
             if k in pairs and pairs[k] != req.get(k):
                 raise Erro(f"{rid} já existe com {k}={req.get(k)!r}: o {k} não muda")
-    req["estado"] = estado
-    req["at"] = now()
+    if req.get("estado") != estado:  # repetir o estado não recomeça a contagem do atrasado
+        req["estado"] = estado
+        req["at"] = now()
+        req.pop("evidencia", None)  # a evidência é do estado, não do pedido
+        req.setdefault("history", []).append({"estado": estado, "at": req["at"]})
     if pairs.get("evidencia"):
         req["evidencia"] = pairs["evidencia"]
-    req.setdefault("history", []).append({"estado": estado, "at": req["at"]})
     s.touch("meta")
     s.commit()
 
