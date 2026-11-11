@@ -3,6 +3,7 @@
 // Uso:
 //   node scripts/testing/round-guide.mjs <roteiro…> [--out <pasta>/<nome>.md]   (ex.: R0 R2 R4 R11; `all` = todos)
 //   node scripts/testing/round-guide.mjs --grupos <roteiro…>            (divide a dirigida em grupos; ver abaixo)
+//   node scripts/testing/round-guide.mjs --faixas <roteiro|faixa…>      (lotes de até 20 passos para os subagentes do testador)
 //
 // Com `--out`, grava três arquivos (etapa #1232, GL1): `<nome>.md` (o guia da rodada), `<nome>-base.md`
 // (o mesmo guia sem as seções `### R<n>`, que viram uma linha com o comando) e `<nome>-indice.tsv`
@@ -250,6 +251,13 @@ export const SECOES_SOB_DEMANDA = [
     fonte: 'guia',
     quando:
       'nas operações de disco (mover, copiar, tirar a permissão de escrita): R6.8b e R6.11',
+  },
+  {
+    chave: 'consulta.subagente',
+    titulo: 'Subagente por lote',
+    nivel: 2,
+    fonte: 'consulta',
+    quando: 'antes do primeiro lote (o R0)',
   },
   {
     chave: 'consulta.grupos',
@@ -567,20 +575,74 @@ function cutExcerpt(entries, items) {
   return [...entries.slice(0, end).map((e) => e.text), message].join('\n');
 }
 
+/** Os roteiros (`R<n>`) de um texto de guia, com a seção e as linhas de passo de cada um. */
+function roteiroSections(text) {
+  const map = new Map();
+  for (const section of splitSections(text)) {
+    const id = section.level === 3 ? ROTEIRO.exec(section.title)?.[1] : undefined;
+    if (id) map.set(id, { section, rows: stepRows(section.lines) });
+  }
+  return map;
+}
+
+/**
+ * O Preparo de roteiros inteiros para o `cloud.mjs passo <Rn> --preparo` (etapa #1639, TC1, decisão 4):
+ * o trecho do roteiro antes do cabeçalho da tabela do primeiro passo (título, "O que cobre", Preparo,
+ * com os blocos de código), com o corte de `EXCERPT_LIMIT`. Item que não é roteiro inteiro lança.
+ */
+export function guidePreparo(guideText, itens, fallbackText) {
+  const sections = roteiroSections(guideText);
+  const fallback = fallbackText === undefined ? undefined : roteiroSections(fallbackText);
+  const entries = [];
+  itens.forEach((raw, n) => {
+    if (!/^R\d+$/i.test(raw)) {
+      throw new Error(
+        `Item inválido com --preparo: ${raw}. Use só roteiros inteiros: cloud.mjs passo R<n> --preparo.`,
+      );
+    }
+    const id = raw.toUpperCase();
+    let found = sections.get(id);
+    const fora = !found && fallback?.has(id);
+    if (fora) found = fallback.get(id);
+    if (!found) {
+      throw new Error(
+        `${id} não está no guia da rodada; o guia tem ${[...sections.keys()].join(', ')}.`,
+      );
+    }
+    const { section, rows } = found;
+    let end = rows.length ? rows[0].i : section.lines.length;
+    if (rows.length && end > 0 && STEP_HEADER.test(section.lines[end - 2] ?? '')) {
+      end -= 2;
+    }
+    const lines = section.lines.slice(0, end);
+    while (lines.length && !lines[lines.length - 1].trim()) lines.pop();
+    if (n > 0) entries.push('---');
+    if (fora) entries.push(FORA_DO_GUIA);
+    entries.push(...lines);
+  });
+  const total = entries.reduce((n, e) => n + e.length + 1, -1);
+  if (total <= EXCERPT_LIMIT) return entries.join('\n');
+  let size = 0;
+  let end = 0;
+  while (end < entries.length) {
+    const next = size + entries[end].length + (end ? 1 : 0);
+    if (next > EXCERPT_LIMIT - CUT_RESERVE && end > 0) break;
+    size = next;
+    end += 1;
+  }
+  return [
+    ...entries.slice(0, end),
+    `… corte em 25.000 caracteres: o resto do Preparo está no apoio/guia.md (Read com offset a partir de "${entries[end]?.slice(0, 40)}")`,
+  ].join('\n');
+}
+
 /**
  * O trecho do guia da rodada para o `cloud.mjs passo`: `R<n>` (o roteiro sem as linhas de passo),
  * `R<n>.<m>` ou `R<n>.<a>-R<n>.<b>` (as linhas dos passos, com o cabeçalho da tabela). Os itens saem
  * na ordem pedida, separados por `---`; erro de item lança `Error` sem imprimir trecho.
  */
 export function guideExcerpt(guideText, itens, fallbackText) {
-  const rotulos = (text) => {
-    const map = new Map();
-    for (const section of splitSections(text)) {
-      const id = section.level === 3 ? ROTEIRO.exec(section.title)?.[1] : undefined;
-      if (id) map.set(id, { section, rows: stepRows(section.lines) });
-    }
-    return map;
-  };
+  const rotulos = roteiroSections;
   const sections = rotulos(guideText);
   // Item que o guia da rodada não tem: lido do docs/TESTING.md (`fallbackText`), com a marca (TE3).
   const fallback = fallbackText === undefined ? undefined : rotulos(fallbackText);
@@ -870,6 +932,104 @@ export function formatGroupPlan(plan, { limit = GROUP_LIMIT } = {}) {
   return lines.join('\n');
 }
 
+// --- Lotes dos subagentes do testador (etapa #1639, TC1, decisão 3) ---
+
+/** Passos por lote de subagente: com a base do subagente (~25 mil), 20 passos ficam abaixo de ~200 mil. */
+export const FAIXA_LIMIT = 20;
+
+/**
+ * Parte os códigos de um item em faixas consecutivas de até `limit` passos. O passo que o
+ * `guideExcerpt` junta ao anterior (R22.6a com R22.6) fica no mesmo lote.
+ */
+function chunkCodes(codes, limit) {
+  const chunks = [];
+  let start = 0;
+  while (start < codes.length) {
+    let end = Math.min(start + limit, codes.length) - 1;
+    while (
+      /\d$/.test(codes[end]) &&
+      codes[end + 1]?.startsWith(codes[end]) &&
+      /^[a-z]$/.test(codes[end + 1].slice(codes[end].length))
+    ) {
+      end += 1;
+    }
+    chunks.push(codes.slice(start, end + 1));
+    start = end + 1;
+  }
+  return chunks;
+}
+
+/**
+ * Os lotes dos subagentes do testador, na ordem do guia, sem o R0 (lote próprio): o roteiro de até
+ * `limit` passos é um lote (`R13`); acima disso, faixas consecutivas (`R25.1-R25.20`); uma faixa
+ * pedida é respeitada e só se parte acima do limite. Cada lote é `{ token, steps }`.
+ */
+export function planFaixas(markdown, roteiros, { limit = FAIXA_LIMIT } = {}) {
+  const existing = listRoteiros(markdown);
+  const byRoteiro = stepsByRoteiro(markdown);
+  const { whole, ranges } = parseRequest(roteiros, existing);
+  const lotes = [];
+  // Um lote só leva o token pedido (`R13`, `R6.3-R6.7`); partido, o de cada faixa de códigos.
+  const add = (token, codes) => {
+    const chunks = chunkCodes(codes, limit);
+    for (const chunk of chunks) {
+      lotes.push({
+        token: chunks.length === 1 ? token : `${chunk[0]}-${chunk[chunk.length - 1]}`,
+        steps: chunk.length,
+      });
+    }
+  };
+  for (const id of existing) {
+    if (id === 'R0') continue;
+    const codes = byRoteiro.get(id) ?? [];
+    if (whole.has(id)) {
+      add(id, codes);
+      continue;
+    }
+    for (const { from, to } of ranges.get(id) ?? []) {
+      const a = codes.indexOf(`${id}.${from}`);
+      let b = codes.indexOf(`${id}.${to}`);
+      if (a < 0 || b < 0 || b < a) {
+        throw new Error(
+          `Faixa inválida: ${id}.${from}-${id}.${to}. Passos: ${codes.join(', ')}.`,
+        );
+      }
+      while (
+        /\d$/.test(codes[b]) &&
+        codes[b + 1]?.startsWith(codes[b]) &&
+        /^[a-z]$/.test(codes[b + 1].slice(codes[b].length))
+      ) {
+        b += 1;
+      }
+      const slice = codes.slice(a, b + 1);
+      add(`${id}.${from}-${id}.${to}`, slice);
+    }
+  }
+  return lotes;
+}
+
+/** O texto do `--faixas`: uma linha `lote k de n: <token> (<m> passos)` por lote. */
+export function formatFaixas(lotes) {
+  return lotes
+    .map((l, i) => `lote ${i + 1} de ${lotes.length}: ${l.token} (${l.steps} passos)`)
+    .join('\n');
+}
+
+function runFaixasCli(roteiros) {
+  if (roteiros.length === 0) {
+    console.error('Uso: node scripts/testing/round-guide.mjs --faixas <roteiro|faixa…>');
+    process.exitCode = 2;
+    return;
+  }
+  try {
+    const lotes = planFaixas(fs.readFileSync(GUIDE_FILE, 'utf8'), roteiros);
+    process.stdout.write(`${formatFaixas(lotes)}\n`);
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+  }
+}
+
 function currentCommit() {
   try {
     return execFileSync('git', ['rev-parse', '--short', 'HEAD'], {
@@ -897,6 +1057,10 @@ function runGroupsCli(roteiros) {
 }
 
 function runCli(argv) {
+  if (argv.includes('--faixas')) {
+    runFaixasCli(argv.filter((a) => a !== '--faixas'));
+    return;
+  }
   if (argv.includes('--grupos')) {
     runGroupsCli(argv.filter((a) => a !== '--grupos'));
     return;
