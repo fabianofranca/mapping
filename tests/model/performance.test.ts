@@ -30,6 +30,7 @@ import {
   type Project,
 } from '../../src/model';
 import { expectLinearGrowth, GROWTH_OPTIONS } from '../support/growth';
+import { expectBelow } from '../support/perfReport';
 import { SPEC_ID, componentProject, testCatalog } from './componentFixtures';
 import { buildLargeProject } from './largeProject';
 import { buildLargeTypedProject } from './largeTypedProject';
@@ -209,7 +210,7 @@ describe('projeto grande com tipadas e referências', () => {
         markingVisibility(p, active, 'hide', null);
         return dots;
       }, project);
-      expect(ms).toBeLessThan(FRAME_BUDGET_MS);
+      expectBelow(ms, FRAME_BUDGET_MS);
     },
   );
 
@@ -226,7 +227,7 @@ describe('projeto grande com tipadas e referências', () => {
       };
       queryAll(); // Aquece o JIT.
       const runs = Array.from({ length: 5 }, () => time(queryAll).ms);
-      expect(median(runs)).toBeLessThan(FRAME_BUDGET_MS * 4);
+      expectBelow(median(runs), FRAME_BUDGET_MS * 4);
     },
   );
 });
@@ -335,7 +336,7 @@ describe('edição: crescimento e orçamento', () => {
     const project = buildLargeProject();
     const created = time(() => createMany(project, 1000));
     expect(created.value.markings).toHaveLength(1500);
-    expect(created.ms).toBeLessThan(2000);
+    expectBelow(created.ms, 2000);
   });
 
   /** Mediana de uma edição sobre versões novas do projeto, cujo índice já está montado (o app o lê a cada quadro). */
@@ -355,8 +356,8 @@ describe('edição: crescimento e orçamento', () => {
   budgetIt('uma edição com 10.000 marcações abaixo de 16 ms', BUDGET_OPTIONS, () => {
     const project = largeOf(10000);
     expect(project.markings).toHaveLength(10000);
-    expect(medianEditMs(project, create)).toBeLessThan(16);
-    expect(medianEditMs(project, move)).toBeLessThan(16);
+    expectBelow(medianEditMs(project, create), 16, 'criar');
+    expectBelow(medianEditMs(project, move), 16, 'mover');
   });
 
   // Com perspectivas a reconciliação roda a cada edição: ela olha só o que a edição mexeu (decisão 6),
@@ -375,8 +376,8 @@ describe('edição: crescimento e orçamento', () => {
         buildPerspective(project, { id: 'P2', name: 'Vazia', startFrom: 'empty' }),
       );
       expect(project.perspectives[0]?.items.length).toBeGreaterThan(100);
-      expect(medianEditMs(project, create)).toBeLessThan(16);
-      expect(medianEditMs(project, move)).toBeLessThan(16);
+      expectBelow(medianEditMs(project, create), 16, 'criar');
+      expectBelow(medianEditMs(project, move), 16, 'mover');
     },
   );
 });
@@ -403,7 +404,7 @@ describe('nearestFreeSpot', () => {
           value.y < o.y + 100,
       ),
     ).toBe(false);
-    expect(ms).toBeLessThan(200);
+    expectBelow(ms, 200);
   });
 });
 
@@ -439,7 +440,7 @@ describe('colocação em espaço livre (#1087)', () => {
       expect(
         placementIsFree(p, catalog, { ...args, rect: value }, approximateMeasurer),
       ).toBe(true);
-      expect(ms).toBeLessThan(50);
+      expectBelow(ms, 50);
     },
   );
 });
