@@ -1,14 +1,8 @@
 name: CI
 
-# Valida todo PR antes do merge, uma vez por commit: os merges são feitos pelo
-# celular, sem rodar nada localmente. Não há gatilho `push` (etapa #375): ele repetia
-# a validação do PR; branch sem PR não tem CI. O deploy.yml chama este mesmo workflow
-# (`workflow_call`) para a `main` e para o preview antes de publicar: uma só lista
-# de validações, que não diverge entre o PR e a publicação.
+# Cópia descartável de teste (teste/ci-abandono): sem o job `epic`; `check` falha na tentativa 1.
 on:
   pull_request:
-    # Editar o PR (título, corpo ou base) não roda o CI. Base errada se corrige com um PR novo,
-    # cujo `opened` roda o CI, não com troca de base (etapa #1466).
     types: [opened, synchronize, reopened]
   workflow_call:
     inputs:
@@ -27,123 +21,10 @@ permissions:
   contents: read
 
 concurrency:
-  # Num PR, o ref (`refs/pull/<n>/merge`) cancela o commit superado. No deploy
-  # (`workflow_call`), o evento é o do Deploy (push na main ou workflow_dispatch) e
-  # `inputs.ref` separa as duas chamadas dele (main e preview).
   group: ci-${{ github.event_name }}-${{ github.ref }}-${{ inputs.ref }}
   cancel-in-progress: true
 
-# `timeout-minutes` em cada job (etapa #1325): perto do dobro do maior tempo medido nas 10
-# últimas execuções verdes de 2026-11-09, com cache (epic 11 s, static 105 s, test 175 s por
-# shard, coverage 31 s, build 186 s, check 4 s, e2e 179 s + 1 min do `playwright install` sem
-# cache). Job que passa do tempo para com a anotação de tempo máximo excedido e o `check` (ou o
-# `e2e`) fica vermelho: o check obrigatório termina em vez de ficar pendente. Timeout não é
-# reexecutado (`ci-rerun.yml`): é defeito real. Revise estes valores com medidas novas.
 jobs:
-  # A `main` só recebe PR de um branch `epic/*` (docs/PROCESS.md, "Fluxo de trabalho"): o ruleset
-  # "main protegida" exige este check, que falha para qualquer outra origem. Exceção: os PRs
-  # do Dependabot (`dependabot/*`), pequenos e aprovados pelo dono. No deploy
-  # (`workflow_call`) não há PR: o job é pulado, o que o GitHub conta como sucesso.
-  epic:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 3
-    steps:
-      - name: Origem do PR
-        env:
-          BASE: ${{ github.base_ref }}
-          HEAD: ${{ github.head_ref }}
-        run: |
-          case "$HEAD" in
-            epic/*|dependabot/*) allowed=1 ;;
-            *) allowed=0 ;;
-          esac
-          if [ "$BASE" = "main" ] && [ "$allowed" = 0 ]; then
-            echo "::error::A main só recebe PR de um branch epic/* (origem: $HEAD). Abra o PR com base no branch do épico, não na main."
-            exit 1
-          fi
-          echo "PR de $HEAD para $BASE: permitido."
-      # Toda entrega de epic/<nome> para a main traz changelog/<nome>.md (ou
-      # changelog/AAAA-MM-DD-<nome>.md) no próprio PR do épico
-      # (docs/PROCESS.md, "Fluxo de trabalho"). Dependabot e PRs para outro branch não entram.
-      - name: Changelog atualizado
-        env:
-          BASE: ${{ github.base_ref }}
-          HEAD: ${{ github.head_ref }}
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          PR: ${{ github.event.pull_request.number }}
-        run: |
-          if [ "$BASE" != "main" ]; then
-            echo "PR para $BASE: o changelog só é exigido nos PRs para a main."
-            exit 0
-          fi
-          case "$HEAD" in
-            epic/*) ;;
-            *) echo "PR de $HEAD: o changelog só é exigido nos épicos."; exit 0 ;;
-          esac
-          name="${HEAD#epic/}"
-          if ! files="$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename' 2>&1)"; then
-            echo "::error::Não foi possível listar os arquivos do PR #$PR: $files"
-            exit 1
-          fi
-          # O nome do épico é comparado como texto (`-F`), nunca como regex; só a data opcional
-          # do começo do arquivo sai por `sed`.
-          if printf '%s\n' "$files" | sed -n 's#^changelog/\([0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}-\)\{0,1\}##p' | grep -qxF "$name.md"; then
-            echo "changelog do épico $name presente neste PR."
-          else
-            echo "::error::A entrega de $HEAD para a main precisa trazer changelog/$name.md (ou changelog/AAAA-MM-DD-$name.md)."
-            exit 1
-          fi
-      # O fechamento de todo épico aplica as pendências no design system e registra a
-      # sincronização em docs/design-system/<nome>.md (ou docs/design-system/AAAA-MM-DD-<nome>.md)
-      # (docs/PROCESS.md, "Fluxo de trabalho"). O artefato do DS vive fora do repositório e o CI não
-      # o alcança; o registro aqui, sim. Um épico sem impacto no DS também cria o arquivo, para
-      # dizer que não houve.
-      - name: Design system registrado
-        env:
-          BASE: ${{ github.base_ref }}
-          HEAD: ${{ github.head_ref }}
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          PR: ${{ github.event.pull_request.number }}
-        run: |
-          if [ "$BASE" != "main" ]; then
-            echo "PR para $BASE: o registro do design system só é exigido nos PRs para a main."
-            exit 0
-          fi
-          case "$HEAD" in
-            epic/*) ;;
-            *) echo "PR de $HEAD: o registro do design system só é exigido nos épicos."; exit 0 ;;
-          esac
-          name="${HEAD#epic/}"
-          if ! files="$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename' 2>&1)"; then
-            echo "::error::Não foi possível listar os arquivos do PR #$PR: $files"
-            exit 1
-          fi
-          if printf '%s\n' "$files" | sed -n 's#^docs/design-system/\([0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}-\)\{0,1\}##p' | grep -qxF "$name.md"; then
-            echo "registro do design system do épico $name presente neste PR."
-          else
-            echo "::error::A entrega de $HEAD para a main precisa trazer docs/design-system/$name.md (ou docs/design-system/AAAA-MM-DD-$name.md): pendências aplicadas e sincronização, ou o registro de que não houve impacto."
-            exit 1
-          fi
-      # A estável do MCP sai sozinha no merge do épico na main quando a `SERVER_VERSION` é nova
-      # (`mcp-release.yml`, etapa #920). Por isso o épico que muda o que vai na release (entradas
-      # em `scripts/release/releaseInputs.mjs`) precisa subir a versão: falha aqui, não no merge.
-      # Dependabot e PRs para outro branch não entram. O checkout traz o histórico e as tags.
-      - uses: actions/checkout@v7
-        if: github.base_ref == 'main' && startsWith(github.head_ref, 'epic/')
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
-          fetch-tags: true
-      - name: Versão do MCP
-        if: github.base_ref == 'main' && startsWith(github.head_ref, 'epic/')
-        run: node scripts/release/stableRelease.mjs epic --version-file mcp/version.ts
-
-  # O `check` (check obrigatório do ruleset) é só o agregador de quatro jobs em paralelo:
-  # `static`, `test` (+ `coverage`) e `build`. Os nomes dos checks obrigatórios (`check`,
-  # `e2e`, `epic`) não mudam (etapa #375, decisão 4).
   static:
     runs-on: ubuntu-latest
     timeout-minutes: 4
@@ -151,9 +32,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref }}
-      # Node, cache de node_modules e `npm ci` (ação local; refs anteriores à fase 5.6 caem no Node 22).
       - uses: ./.github/actions/setup-deps
-      # Caches do ESLint e do Prettier (`lint:ci`); o `npm run lint` local não usa cache.
       - uses: actions/cache@v5
         with:
           path: .cache
@@ -163,9 +42,6 @@ jobs:
       - run: npm run lint:ci
       - run: npm run typecheck
 
-  # Testes unitários e de componentes com cobertura, em 4 shards balanceados por tempo
-  # (tests/support/timedSequencer.ts; `npm run test:durations` regenera os tempos); cada um
-  # sobe o blob com os dados de cobertura, sem gerar relatório (o job `coverage` junta e relata).
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 6
@@ -177,7 +53,6 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref }}
-      # Node, cache de node_modules e `npm ci` (ação local; refs anteriores à fase 5.6 caem no Node 22).
       - uses: ./.github/actions/setup-deps
       - run: npx vitest run --coverage --shard=${{ matrix.shard }}/4 --reporter=blob
         env:
@@ -189,8 +64,6 @@ jobs:
           path: .vitest/blob
           if-no-files-found: ignore
 
-  # Junta os blobs dos shards: resultado completo, relatório de cobertura (sem limite mínimo)
-  # e resumo no job.
   coverage:
     needs: test
     if: ${{ !cancelled() && needs.test.result != 'skipped' }}
@@ -200,7 +73,6 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref }}
-      # Node, cache de node_modules e `npm ci` (ação local; refs anteriores à fase 5.6 caem no Node 22).
       - uses: ./.github/actions/setup-deps
       - uses: actions/download-artifact@v7
         with:
@@ -208,17 +80,6 @@ jobs:
           path: .vitest/blob
           merge-multiple: true
       - run: npx vitest run --merge-reports --coverage
-      - name: Resumo da cobertura
-        if: always()
-        run: |
-          if [ -f coverage/coverage-summary.json ]; then
-            node -e '
-              const t = require("./coverage/coverage-summary.json").total;
-              const row = (k) => `| ${k} | ${t[k].pct}% | ${t[k].covered}/${t[k].total} |`;
-              console.log(["### Cobertura (src/)", "", "| Métrica | % | Cobertos |", "|---|---|---|",
-                ...["lines", "statements", "functions", "branches"].map(row)].join("\n"));
-            ' >> "$GITHUB_STEP_SUMMARY"
-          fi
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -230,46 +91,25 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 7
     env:
-      # Orçamento do dist/index.html (autocontido; 1.376.757 bytes, ~1,38 MB em 2026-10-19, com o exemplo embutido: ~80 KB em base64). Só aqui. Subido para 1.703.936 (1,625 MiB) na etapa #559 (decisão do dono, 2026-11-05): o épico estava a 151 bytes do teto e a PD5 soma ~7,4 KB de código real. Subido para 1.769.472 (1.728 KiB) na CM5 da etapa #645: o compositor com chips, o `@`, os menus de citação e o chip vivo somam ~38 KB de código real (1.738.403 bytes), com ~31 KB de folga. Subido para 1.867.776 (1.824 KiB) na PE3 da etapa #659: a interface das perspectivas (seletor, três diálogos, submenu, seção e aviso nos Detalhes, selo e área de chegada no canvas) soma ~66 KB de código real (1.804.237 bytes), com ~63 KB de folga. Subido para 1.884.160 (1.840 KiB) na etapa #842 (decisão do dono, 2026-11-08): a `main` já estava a ~300 bytes do teto e os atributos `data-viewport` e `data-selection-box` somam ~700 bytes. Subido para 1.900.544 (1.856 KiB) na etapa revisao-propostas (decisão do dono, 2026-11-09): o épico, com a `main` trazida, passou 227 bytes do teto antigo. Subido para 1.933.312 (1.888 KiB) na etapa #964 (decisão do dono, 2026-11-09): a Ajuda da formatVersion 15 (`src/i18n/specHelp.ts`, +156 linhas) levou o épico, com a `main` trazida, a 1.905.789 bytes. Subido para 1.949.696 (1.904 KiB) na CL1 da etapa #896 (decisão do dono, 2026-11-09): o `layout.reverse` na colocação de componente passou o épico 163 bytes do teto. Subido para 1.966.080 (1.920 KiB) pela regra do orçamento (2026-11-10, épico `expressoes-formato-4`): excesso de 2375 bytes, crescimento de 5815 bytes sobre a `main`. Subido para 1.982.464 (1.936 KiB) pela regra do orçamento (2026-11-10, épico `mensagens-modelo`): excesso de 3567 bytes, crescimento de 10344 bytes sobre a `main`. Subido para 1.998.848 (1.952 KiB) pela regra do orçamento (2026-11-10, épico `mensagens-modelo`): excesso de 1726 bytes, crescimento de 24887 bytes sobre a `main`. Subido para 2.015.232 (1.968 KiB) pela regra do orçamento (2026-11-10, épico `mensagens-modelo`): excesso de 3134 bytes, crescimento de 42667 bytes sobre a `main`, com os limites do épico elevados a 96 KiB pelo dono (#1493). Subido para 2.031.616 (1.984 KiB) pela regra do orçamento (2026-11-10, épico `mensagens-modelo`): excesso de 4640 bytes, crescimento de 60557 bytes sobre a `main`, ainda dentro dos 96 KiB do dono (#1493).
       INDEX_HTML_MAX_BYTES: 2031616
     steps:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref }}
-      # Node, cache de node_modules e `npm ci` (ação local; refs anteriores à fase 5.6 caem no Node 22).
       - uses: ./.github/actions/setup-deps
-      # Orçamentos de desempenho por quadro: sem cobertura (ela deixa o código mais lento).
       - run: npm run test:perf
-      # Testes de crescimento: a mesma operação com n e 4n marcações, razão das medianas abaixo de 6×.
       - run: npm run test:scale
-      # Os tipos ficam só no `typecheck` (job `static`): `build` e `build:mcp` não repetem o `tsc`.
       - run: npm run build
       - run: npm run build:mcp
-      # `--if-present`: o deploy roda este ci.yml (o do branch) também contra a `main`
-      # (`checks-main`), que pode ainda não ter o script do visualizador (fase L1).
       - run: npm run build:viewer --if-present
-      # Último passo do job (etapa #1325, decisão 7): um `dist` acima do teto não esconde uma falha
-      # do `build:mcp` ou do `build:viewer`, e o `::error` abaixo é a única falha quando só o tamanho passa.
       - name: Tamanho do dist/index.html
         run: |
           size=$(stat -c %s dist/index.html)
-          margin=$((INDEX_HTML_MAX_BYTES - size))
-          {
-            echo "### dist/index.html"
-            echo ""
-            echo "$size bytes ($((size / 1024)) KiB) de $INDEX_HTML_MAX_BYTES bytes ($((INDEX_HTML_MAX_BYTES / 1024)) KiB) do orçamento."
-            echo ""
-            echo "Margem: $margin bytes ($((margin / 1024)) KiB)."
-          } >> "$GITHUB_STEP_SUMMARY"
           if [ "$size" -gt "$INDEX_HTML_MAX_BYTES" ]; then
             echo "::error file=dist/index.html::$size bytes, acima do orçamento de $INDEX_HTML_MAX_BYTES bytes."
             exit 1
           fi
-          if [ "$margin" -lt 2048 ]; then
-            echo "::warning file=dist/index.html::Margem de $margin bytes até o orçamento de $INDEX_HTML_MAX_BYTES bytes, abaixo de 2 KiB: enxugue antes de subir o teto."
-          fi
 
-  # Agregador: o check obrigatório `check` falha se algum dos quatro jobs não terminou em sucesso.
   check:
     needs: [static, test, coverage, build]
     if: ${{ always() }}
@@ -287,9 +127,11 @@ jobs:
               exit 1
             fi
           done
+          if [ "$GITHUB_RUN_ATTEMPT" = "1" ]; then
+            echo "::error::Teste: falha forçada na tentativa 1."
+            exit 1
+          fi
 
-  # Ponta a ponta no `dist/index.html` final, no desktop (a app é só desktop desde a fase 5.8).
-  # Só roda aqui: o ambiente de desenvolvimento pode não conseguir baixar o navegador.
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 7
@@ -297,7 +139,6 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref }}
-      # Node, cache de node_modules e `npm ci` (ação local; refs anteriores à fase 5.6 caem no Node 22).
       - uses: ./.github/actions/setup-deps
       - name: Versão do Playwright
         id: playwright
@@ -309,9 +150,6 @@ jobs:
           key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
       - if: steps.browser.outputs.cache-hit != 'true'
         run: npx playwright install chromium
-      # As bibliotecas do sistema não ficam no cache do navegador, mas a imagem do runner
-      # costuma tê-las: o `install-deps` (quase tudo `apt-get update`) só roda se o Chromium
-      # não abrir (biblioteca faltando no `ldd` ou falha ao iniciar).
       - name: Chromium abre?
         id: chromium
         run: |
@@ -319,7 +157,6 @@ jobs:
           if [ -x "$exe" ] && ! ldd "$exe" | grep -q 'not found' && "$exe" --headless --no-sandbox --version; then
             echo "ok=true" >> "$GITHUB_OUTPUT"
           else
-            echo "O Chromium não abre; rodando o install-deps."
             echo "ok=false" >> "$GITHUB_OUTPUT"
           fi
       - if: steps.chromium.outputs.ok != 'true'
