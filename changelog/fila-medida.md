@@ -1,4 +1,4 @@
-# Fila medida e mais barata — [Não lançado] (épico `epic/fila-medida`, PR #0, MCP 0.33.0 sem mudança, schema v18)
+# Fila medida e mais barata — [Não lançado] (épico `epic/fila-medida`, PR #1546, MCP 0.33.0 sem mudança, schema v18)
 
 ## Adicionado
 
