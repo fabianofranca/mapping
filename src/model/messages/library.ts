@@ -90,6 +90,19 @@ export const libraryMessages = {
     'tipo "{typeId}", o exemplo "{name}", tamanho inicial {size}: {detail}',
   'library.draw.exampleMode':
     'tipo "{typeId}", o exemplo "{name}", modo {mode}, tamanho inicial {size}: {detail}',
+  // O mesmo caso no tamanho ajustado ao conteúdo (o ajuste da decisão 14 da #898).
+  'library.drawFitted.defaults':
+    'tipo "{typeId}", os valores padrão, tamanho ajustado {size}: {detail}',
+  'library.drawFitted.defaultsMode':
+    'tipo "{typeId}", os valores padrão, modo {mode}, tamanho ajustado {size}: {detail}',
+  'library.drawFitted.preview':
+    'tipo "{typeId}", o preview, tamanho ajustado {size}: {detail}',
+  'library.drawFitted.previewMode':
+    'tipo "{typeId}", o preview, modo {mode}, tamanho ajustado {size}: {detail}',
+  'library.drawFitted.example':
+    'tipo "{typeId}", o exemplo "{name}", tamanho ajustado {size}: {detail}',
+  'library.drawFitted.exampleMode':
+    'tipo "{typeId}", o exemplo "{name}", modo {mode}, tamanho ajustado {size}: {detail}',
   'library.drawFailed': 'falha ao desenhar: {error}',
   'library.buildFailed':
     'não foi possível montar a biblioteca para provar os exemplos de sistema externo: {reason}',

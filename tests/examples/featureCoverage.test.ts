@@ -86,6 +86,9 @@ const MISSING_TODAY: string[] = [
   // Linha de base (etapa #898, MC1): a Material 3 só adota `baselinePadding` na MC5; até lá, coberto por
   // tests/model/components/baselineLayout.test.ts, tests/e2e/textMetrics.spec.ts e pelo roteiro R25.
   'component:node.text.baselinePadding',
+  // `$lines` (etapa #898, MC2): a Material 3 só adota `$lines` na MC5; até lá, coberto por
+  // tests/model/components/instantiate.test.ts, tests/model/libraryDrawingFitted.test.ts e pelo roteiro R25.
+  'component:expr.$lines',
   'component:run.text',
   'component:run.weight',
   'component:run.italic',

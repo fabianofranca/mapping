@@ -735,3 +735,63 @@ describe('arrangeMarking: align "baseline" no slot (MC1, decisão 4)', () => {
     expect(rectOf(project, 'C').height).toBe(47);
   });
 });
+
+describe('arrangeMarking: sizing por expressão no componente com slot (MC2, decisão 9)', () => {
+  /** `row` com a altura pelo `spacing`: 8 → 64, 16 → 112, 24 → 152, 32 → hug. */
+  function sizedCatalog(): ComponentCatalog {
+    const row = JSON.parse(JSON.stringify(COMPONENTS.row)) as Record<string, unknown>;
+    row.formatVersion = 4;
+    row.sizing = {
+      height: {
+        $switch: 'spacing',
+        cases: { '8': 64, '16': 112, '24': 152, '32': 'hug' },
+      },
+    };
+    return testCatalog({ ...COMPONENTS, row });
+  }
+
+  function arranged(spacing: number): Rect {
+    const cat = sizedCatalog();
+    let p = add(componentProject(), 'C', 'row', box(100, 100, 300, 100), null, {}, cat);
+    p = setFieldValue(p, 'A_C', 'spacing', spacing);
+    p = add(p, 'T1', 'text', box(120, 120, 100, 40), 'C', {}, cat);
+    return rectOf(arrange(p, 'C', cat).project, 'C');
+  }
+
+  it('o px que a expressão dá vira a altura do container', () => {
+    expect(arranged(8).height).toBe(64);
+    expect(arranged(16).height).toBe(112);
+    expect(arranged(24).height).toBe(152);
+    expect(arranged(8)).toMatchObject({ x: 100, y: 100, width: 300 });
+  });
+
+  it('hug vindo da expressão mede o conteúdo (o filho de 40 de altura)', () => {
+    expect(arranged(32).height).toBe(40);
+  });
+
+  it('valor inválido deixa a altura como está e o arrumar segue', () => {
+    expect(arranged(99).height).toBe(100);
+  });
+});
+
+describe('arrangeMarking: eixo hug junto de eixo em px por expressão (/code-review high da MC2)', () => {
+  it('o hug é medido na largura que a expressão dá, não na do retângulo antigo', () => {
+    const text = JSON.parse(JSON.stringify(COMPONENTS.text)) as Record<string, unknown>;
+    text.formatVersion = 4;
+    const label = (text.template as { children: Record<string, unknown>[] }).children[0];
+    if (label === undefined) throw new Error('sem texto');
+    label.width = 'fill';
+    // Largura 200 pela expressão (o campo `kind` vale `a`) e altura do conteúdo.
+    text.sizing = { width: { $switch: 'kind', cases: { a: 200 } }, height: 'hug' };
+    const cat = testCatalog({ ...COMPONENTS, text });
+    let p = add(componentProject(), 'C', 'row', box(100, 100, 400, 100), null, {}, cat);
+    p = add(p, 'T1', 'text', box(120, 120, 100, 40), 'C', {}, cat);
+    p = setFieldValue(p, 'A_T1', 'label', 'aaaaaaaaaa bbbbbbbbbb');
+    p = setFieldValue(p, 'A_T1', 'kind', 'a');
+    const out = rectOf(arrange(p, 'C', cat).project, 'T1');
+    // 21 caracteres cabem em uma linha a 200 de largura (≈ 162 px): a altura é o piso do minSize (24);
+    // medida a 100 de largura (o retângulo antigo) seriam duas linhas (40).
+    expect(out.width).toBe(200);
+    expect(out.height).toBe(24);
+  });
+});

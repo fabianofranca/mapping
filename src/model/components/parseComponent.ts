@@ -97,6 +97,7 @@ const EXPR_OPS: readonly string[] = [
   '$token',
   '$rows',
   '$size',
+  '$lines',
   '$provided',
   ...NUMERIC_OP_NAMES,
 ];
@@ -365,9 +366,9 @@ function checkNumericExpr(
   checkOperands(value[op], join(path, op), NUMERIC_OPS[op] as never, out);
 }
 
-/** `$rows` e `$size` (v4): números, então só onde se espera número (ou como parte de um `$concat`). */
+/** `$rows`, `$size` e `$lines` (v4): números, então só onde se espera número (ou como parte de um `$concat`). */
 function checkCountExpr(
-  op: '$rows' | '$size',
+  op: '$rows' | '$size' | '$lines',
   value: Rec,
   path: string,
   check: Check,
@@ -378,6 +379,11 @@ function checkCountExpr(
     return add(out, path, `${op} só vale onde se espera número`);
   const at = join(path, op);
   if (op === '$rows') return checkFieldKey(value.$rows, at, out);
+  if (op === '$lines') {
+    if (typeof value.$lines !== 'string' || value.$lines.trim() === '')
+      add(out, at, 'esperava nome de um nó text (texto não vazio)');
+    return;
+  }
   if (value.$size !== 'width' && value.$size !== 'height')
     add(out, at, 'esperava "width" ou "height"');
 }
@@ -437,7 +443,9 @@ function checkTokenAlpha(
 
 /** Uma posição que aceita texto ou número (o texto de um nó, o valor de um `provide`): operações numéricas valem nela. */
 function acceptsAnyValue(check: Check): boolean {
-  return check === checkTextOrNumber || check === checkProvided;
+  return (
+    check === checkTextOrNumber || check === checkProvided || check === checkSizingAxis
+  );
 }
 
 /** O valor de um `provide`: texto ou número, ou uma expressão (`$token` de cor entre elas). */
@@ -472,7 +480,7 @@ function checkExpr(value: unknown, path: string, check: Check, out: Ctx): void {
   const op = ops[0] as string;
   const at = join(path, op);
   if (isNumericOp(op)) return checkNumericExpr(op, value, path, check, out);
-  if (op === '$rows' || op === '$size')
+  if (op === '$rows' || op === '$size' || op === '$lines')
     return checkCountExpr(op, value, path, check, out);
   switch (op) {
     case '$field':
@@ -1200,9 +1208,84 @@ function isV4OnlyOp(key: string): boolean {
     isNumericOp(key) ||
     key === '$rows' ||
     key === '$size' ||
+    key === '$lines' ||
     key === '$provided' ||
     (COMPARISON_OPS as readonly string[]).includes(key)
   );
+}
+
+/** O nome de um nó `text` do template; `undefined` se o nó não é `text` ou não tem nome. */
+function textNodeName(node: Rec): string | undefined {
+  return node.type === 'text' && typeof node.name === 'string' ? node.name : undefined;
+}
+
+/** Onde se está no template ao varrer o `$lines`: o nó `text` que contém o trecho e os `repeat` (pelo caminho) em volta. */
+interface LinesContext {
+  readonly owner: string | undefined;
+  readonly chain: readonly string[];
+}
+
+interface LinesScan {
+  /** Os nós `text` por nome: quantos são e dentro de quais `repeat`. */
+  readonly texts: Map<string, { count: number; chain: readonly string[] }>;
+  readonly citations: { name: string; at: string; context: LinesContext }[];
+}
+
+/** O contexto do filho `key` de `node` (um `repeat` abre uma linha no `template` dele). */
+function linesChild(node: Rec, at: string, key: string, ctx: LinesContext): LinesContext {
+  const owner = textNodeName(node) ?? ctx.owner;
+  const chain =
+    node.type === 'repeat' && key === 'template' ? [...ctx.chain, at] : ctx.chain;
+  return { owner, chain };
+}
+
+/** Registra um nó `text` (quantos há com o nome e dentro de quais `repeat`). */
+function recordText(node: Rec, ctx: LinesContext, scan: LinesScan): void {
+  const name = textNodeName(node);
+  if (name === undefined) return;
+  const known = scan.texts.get(name);
+  scan.texts.set(name, {
+    count: (known?.count ?? 0) + 1,
+    chain: known?.chain ?? ctx.chain,
+  });
+}
+
+function scanLines(tree: unknown, at: string, ctx: LinesContext, scan: LinesScan): void {
+  if (Array.isArray(tree)) {
+    tree.forEach((n, i) => scanLines(n, `${at}[${i}]`, ctx, scan));
+    return;
+  }
+  if (!isRecord(tree)) return;
+  recordText(tree, ctx, scan);
+  for (const [key, value] of Object.entries(tree)) {
+    const here = join(at, key);
+    const child = linesChild(tree, at, key, ctx);
+    if (key === '$lines' && typeof value === 'string' && value !== '')
+      scan.citations.push({ name: value, at: here, context: child });
+    scanLines(value, here, child, scan);
+  }
+}
+
+/**
+ * `$lines` (v4): o nome precisa ser de um nó `text` do template, único (`nó text "x" não existe`,
+ * `mais de um nó text "x"`), e o próprio nó não pode depender das próprias linhas. Um nó dentro de
+ * `repeat` só se cita de dentro do mesmo `repeat` (vale o nó da mesma linha): de fora, a expansão não
+ * saberia qual linha (`nó text "x" está dentro de um repeat`).
+ */
+function linesIssues(template: unknown): ComponentIssue[] {
+  const out: ComponentIssue[] = [];
+  const scan: LinesScan = { texts: new Map(), citations: [] };
+  scanLines(template, 'template', { owner: undefined, chain: [] }, scan);
+  for (const { name, at, context } of scan.citations) {
+    const found = scan.texts.get(name);
+    if (found === undefined) addIssue(out, at, `nó text "${name}" não existe`);
+    else if (found.count > 1) addIssue(out, at, `mais de um nó text "${name}"`);
+    else if (context.owner === name)
+      addIssue(out, at, 'o nó não pode depender das próprias linhas');
+    else if (!found.chain.every((repeat, i) => context.chain[i] === repeat))
+      addIssue(out, at, `nó text "${name}" está dentro de um repeat`);
+  }
+  return out;
 }
 
 /** Operação numérica ou comparação (`$mul`, `$gt`…) numa versão anterior à 4: `só é permitido com formatVersion 4`, no caminho da chave. */
@@ -1371,15 +1454,50 @@ const ROOT_KEYS = [
   'template',
 ];
 
-/** `sizing`: `{ width?, height? }`, cada eixo px (≥ 0), `"fill"` ou `"hug"`. */
-function checkSizing(value: unknown, path: string, out: Ctx): void {
+/** Um eixo do `sizing` já avaliado: px (≥ 0), `"fill"` ou `"hug"`. */
+const checkSizingAxis: Check = (value, path, out) => {
+  if (isFiniteNumber(value) && value >= 0) return;
+  if (value === 'fill' || value === 'hug') return;
+  add(out, path, 'esperava número maior ou igual a 0, "fill" ou "hug"');
+};
+
+/** O `sizing` é avaliado antes de medir: `$size` e `$lines` não existem ainda. */
+const SIZING_FORBIDDEN: Readonly<Record<string, string>> = {
+  $size: '$size não vale em sizing',
+  $lines: '$lines não vale em sizing',
+};
+
+function sizingForbiddenOps(value: unknown, path: string, out: Ctx): void {
+  const found = new Set<string>();
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) return node.forEach(walk);
+    if (!isRecord(node)) return;
+    for (const [key, v] of Object.entries(node)) {
+      if (Object.hasOwn(SIZING_FORBIDDEN, key)) found.add(key);
+      walk(v);
+    }
+  };
+  walk(value);
+  for (const [op, message] of Object.entries(SIZING_FORBIDDEN))
+    if (found.has(op)) add(out, path, message);
+}
+
+/**
+ * `sizing`: `{ width?, height? }`, cada eixo px (≥ 0), `"fill"` ou `"hug"`; na v4, também uma
+ * expressão que dá um deles (avaliada com os valores da instância).
+ */
+function checkSizing(value: unknown, path: string, v4: boolean, out: Ctx): void {
   if (!isRecord(value)) return add(out, path, 'esperava objeto { width?, height? }');
   checkKeys(value, ['width', 'height'], path, out);
   for (const key of ['width', 'height']) {
     if (!(key in value)) continue;
-    const v = value[key];
-    if (v === 'fill' || v === 'hug' || (isFiniteNumber(v) && v >= 0)) continue;
-    add(out, join(path, key), 'esperava número maior ou igual a 0, "fill" ou "hug"');
+    const at = join(path, key);
+    const axis = value[key];
+    if (isExprObject(axis) && !v4) add(out, at, V4_ONLY_MESSAGE);
+    else {
+      checkExpr(axis, at, checkSizingAxis, out);
+      if (isExprObject(axis)) sizingForbiddenOps(axis, at, out);
+    }
   }
 }
 
@@ -1426,7 +1544,13 @@ function collectIssues(input: unknown, refs: TokenRef[] | null): ComponentIssue[
       add(out, 'minSize', 'não pode ser maior que size');
   }
 
-  if ('sizing' in input) checkSizing(input.sizing, 'sizing', out);
+  if ('sizing' in input)
+    checkSizing(
+      input.sizing,
+      'sizing',
+      typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY,
+      out,
+    );
 
   if ('screen' in input) {
     checkScreen(input.screen, 'screen', out);
@@ -1481,6 +1605,7 @@ function collectIssues(input: unknown, refs: TokenRef[] | null): ComponentIssue[
     issues.push(...shadowListVersionIssues(version, input.template));
     issues.push(...tokenVersionIssues(version, input.template));
     issues.push(...numericVersionIssues(version, input.template));
+    issues.push(...linesIssues(input.template));
     issues.push(...indexIssues(version, input.template));
     if (version === 1 || version === 2) {
       for (const node of nodesOfTypes(input.template, 'template', ['image'])) {

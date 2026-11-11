@@ -1,16 +1,13 @@
 import { hasSlotComponent } from './componentCatalog';
 import { issueParts, modelMessage, type ModelMessage } from './modelMessage';
 import type { ComponentFile, FieldValues } from './components/componentFormat';
-import {
-  type TextMeasurer,
-  instantiate,
-  measureComponent,
-} from './components/instantiate';
+import { type TextMeasurer, instantiate } from './components/instantiate';
 import { type Library, loadLibrary, resolvePath } from './components/library';
 import { screenFromSource } from './components/origin';
 import { parseComponentText, type ComponentIssue } from './components/parseComponent';
 import { type FrameNode, baseNode, translate } from './components/scene';
 import { renderOrder } from './components/screen';
+import { fitComponentSize, followedAxes, resolveSizing } from './components/sizing';
 import { resolveTokens } from './components/tokens';
 import type { Size } from './geometry';
 import { type LibraryFile, type LibraryReport, validateLibrary } from './library';
@@ -464,18 +461,26 @@ export interface Axes {
   readonly height: boolean;
 }
 
-/** Eixos em que o componente declara `sizing: 'hug'` (o tamanho acompanha o conteúdo). */
-export function hugAxes(component: ComponentFile): Axes {
-  return {
-    width: component.sizing?.width === 'hug',
-    height: component.sizing?.height === 'hug',
-  };
+/**
+ * Eixos em que o `sizing` do componente acompanha o conteúdo: `hug` (literal, ou o que a expressão
+ * avaliada com `values` manda) ou px dado por expressão. Sem `values`, vale só o literal.
+ */
+export function hugAxes(component: ComponentFile, values: FieldValues = {}): Axes {
+  const followed = followedAxes(resolveSizing(component, values));
+  return { width: followed.width, height: followed.height };
+}
+
+/** Como `hugAxes`, para a entrada do catálogo: os valores padrão do tipo sob os `values`. */
+export function entryHugAxes(entry: CatalogEntry, values: FieldValues): Axes {
+  if (entry.component === null) return { width: false, height: false };
+  return hugAxes(entry.component, { ...defaultValues(entry.type), ...values });
 }
 
 /**
- * Tamanho do desenho que respeita o `sizing`: nos eixos `auto` (padrão: os `hug` do
- * componente) o tamanho é o do conteúdo, medido com `values`; nos demais fica o `base`
- * (padrão: o `size`). Tudo limitado ao intervalo do playground. Sem componente: 1×1.
+ * Tamanho do desenho que respeita o `sizing`: nos eixos `auto` (padrão: os que o `sizing`
+ * avaliado com `values` manda `hug` ou px por expressão) o tamanho é o do conteúdo, medido com
+ * `values`, ou o px da expressão; nos demais fica o `base` (padrão: o `size`). Tudo limitado ao
+ * intervalo do playground. Sem componente: 1×1.
  */
 export function fittedSize(
   entry: CatalogEntry,
@@ -486,22 +491,15 @@ export function fittedSize(
   const component = entry.component;
   if (component === null) return { width: 1, height: 1 };
   const base = options.base ?? component.size;
-  const hug = hugAxes(component);
-  const autoW = options.auto?.width ?? hug.width;
-  const autoH = options.auto?.height ?? hug.height;
-  if (!autoW && !autoH) return clampPlaygroundSize(component, base);
+  const all = { ...defaultValues(entry.type), ...values };
   try {
-    const measured = measureComponent(
+    const fit = fitComponentSize(
       component,
-      { ...defaultValues(entry.type), ...values },
-      { width: autoW ? null : base.width, height: autoH ? null : base.height },
+      all,
       { measure },
+      { base, ...(options.auto === undefined ? {} : { auto: options.auto }) },
     );
-    const fit = (v: number): number => Math.ceil(v - 1e-6);
-    return clampPlaygroundSize(component, {
-      width: autoW ? fit(measured.width) : base.width,
-      height: autoH ? fit(measured.height) : base.height,
-    });
+    return clampPlaygroundSize(component, fit ?? base);
   } catch {
     return clampPlaygroundSize(component, base);
   }

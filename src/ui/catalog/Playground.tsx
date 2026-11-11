@@ -7,8 +7,8 @@ import {
   type JsonValue,
   clampPlaygroundSize,
   drawEntry,
+  entryHugAxes,
   fittedSize,
-  hugAxes,
   playgroundSizeRange,
   rawMessage,
   type ModelMessage,
@@ -43,10 +43,7 @@ export function Playground({ entry, renderer, fontsEpoch = 0 }: PlaygroundProps)
   const [values, setValues] = useState<Readonly<Record<string, unknown>>>(initial);
   // Eixos que o usuário fixou digitando; os `hug` fora daqui acompanham o conteúdo.
   const [manual, setManual] = useState<{ width?: number; height?: number }>({});
-  const hug = useMemo(
-    () => (component === null ? { width: false, height: false } : hugAxes(component)),
-    [component],
-  );
+  const hug = useMemo(() => entryHugAxes(entry, values as FieldValues), [entry, values]);
   const autoWidth = hug.width && manual.width === undefined;
   const autoHeight = hug.height && manual.height === undefined;
   const size = useMemo(

@@ -28,7 +28,14 @@ import type {
 import { templateMessage } from '../messages';
 import { textsOf } from '../messages/collector';
 import type { ModelMessage } from '../modelMessage';
-import { INDEX_FIELD, evaluate, referencedFields, toNumber } from './expressions';
+import {
+  INDEX_FIELD,
+  evaluate,
+  linesCitations,
+  linesNodeName,
+  referencedFields,
+  toNumber,
+} from './expressions';
 
 /** Teto de linhas de um `repeat` por `count`. */
 export const REPEAT_COUNT_LIMIT = 1000;
@@ -97,8 +104,28 @@ export function columnsOf(rows: readonly FieldRow[]): string[] {
   return [...columns];
 }
 
-/** Uma entrada do JSON no escopo da linha: troca a chave de campo que é coluna pelo campo extra. */
-function scopedEntry(
+/** Os nomes dos nós text do `template` que um `$lines` do mesmo `template` cita (o nó da mesma linha). */
+function linesNames(template: unknown): ReadonlySet<string> {
+  const cited = new Set([...linesCitations(template)].map(linesNodeName));
+  const names = new Set<string>();
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) return node.forEach(walk);
+    if (typeof node !== 'object' || node === null) return;
+    const record = node as Record<string, unknown>;
+    if (
+      record.type === 'text' &&
+      typeof record.name === 'string' &&
+      cited.has(record.name)
+    )
+      names.add(record.name);
+    Object.values(record).forEach(walk);
+  };
+  walk(template);
+  return names;
+}
+
+/** Troca a chave de campo que é coluna pelo campo extra da linha (`$field`, `$has`, `$switch`, `$eq`). */
+function scopedFieldEntry(
   key: string,
   item: unknown,
   columns: ReadonlySet<string>,
@@ -113,26 +140,58 @@ function scopedEntry(
     return rename(item);
   if (key === '$eq' && Array.isArray(item) && typeof item[0] === 'string')
     return [rename(item[0]), ...item.slice(1)];
-  return scoped(item, columns, scope);
+  return undefined;
+}
+
+/** Uma entrada do JSON no escopo da linha: troca a chave de campo que é coluna pelo campo extra. */
+function scopedEntry(
+  key: string,
+  item: unknown,
+  columns: ReadonlySet<string>,
+  scope: string,
+  lines: ReadonlySet<string>,
+): unknown {
+  const field = scopedFieldEntry(key, item, columns, scope);
+  if (field !== undefined) return field;
+  // `$lines` de um nó da mesma linha passa a citar a contagem dele, com o escopo da linha.
+  if (key === '$lines' && typeof item === 'string' && lines.has(linesNodeName(item)))
+    return `${scope}:${linesNodeName(item)}`;
+  return scoped(item, columns, scope, lines);
 }
 
 /** Copia o JSON trocando as chaves de campo que são colunas pelo campo extra da linha. */
-function scoped(value: unknown, columns: ReadonlySet<string>, scope: string): unknown {
-  if (Array.isArray(value)) return value.map((item) => scoped(item, columns, scope));
+function scoped(
+  value: unknown,
+  columns: ReadonlySet<string>,
+  scope: string,
+  lines: ReadonlySet<string>,
+): unknown {
+  if (Array.isArray(value))
+    return value.map((item) => scoped(item, columns, scope, lines));
   if (typeof value !== 'object' || value === null) return value;
   // Num `repeat` aninhado o `$index` do `template` é o do mais interno: este escopo não o toca.
-  const isRepeat = (value as { type?: unknown }).type === 'repeat';
+  const record = value as { type?: unknown; name?: unknown };
+  const isRepeat = record.type === 'repeat';
   const inner = (): ReadonlySet<string> => {
     const set = new Set(columns);
     set.delete(INDEX_FIELD);
     return set;
   };
-  return Object.fromEntries(
+  const copy = Object.fromEntries(
     Object.entries(value).map(([key, item]) => [
       key,
-      scopedEntry(key, item, isRepeat && key === 'template' ? inner() : columns, scope),
+      scopedEntry(
+        key,
+        item,
+        isRepeat && key === 'template' ? inner() : columns,
+        scope,
+        lines,
+      ),
     ]),
   );
+  const cited =
+    record.type === 'text' && typeof record.name === 'string' && lines.has(record.name);
+  return cited ? { ...copy, linesScope: scope } : copy;
 }
 
 export interface ExpandedComponent {
@@ -204,6 +263,7 @@ export function expandRepeats(
     const n = counter++;
     const { rows, columns } = rowsFor(node);
     columns.add(INDEX_FIELD);
+    const lines = linesNames(node.template);
     const column = (node.direction ?? 'column') === 'column';
     const children = rows.map((row, i): FrameTemplate => {
       const scope = `$r${n}_${i}`;
@@ -211,7 +271,7 @@ export function expandRepeats(
         extra[`${scope}:${name}`] = name === INDEX_FIELD ? i : (row[name] ?? null);
       // O `template` pode trazer um `repeat` (o motor o aceita, o validador não): expande a cópia.
       const copy = expand(
-        scoped(node.template, columns, scope) as TemplateNode,
+        scoped(node.template, columns, scope, lines) as TemplateNode,
       ) as FrameTemplate;
       return { ...copy, ...rowSize(copy, column, node.distribute === 'fill') };
     });

@@ -119,7 +119,35 @@ function engineCases() {
     ],
   };
   const expanded = expandRepeats(component(tableRepeat), {});
-  return [...results, expanded];
+  // `$lines` que não assenta entre as duas passagens (MC2): o espaçador estreita o texto.
+  const unstable = instantiate(
+    component(
+      {
+        layout: { type: 'row' },
+        children: [
+          {
+            type: 'frame',
+            name: 'spacer',
+            width: { $if: { $gt: [{ $lines: 'msg' }, 1] }, then: 150, else: 0 },
+            height: 1,
+          },
+          {
+            type: 'text',
+            name: 'msg',
+            text: 'aaaaaaaaaa bbbbbbbbbb cccccccccc dddddddddd eeeeeeeeee ffffffffff',
+            width: 'fill',
+            height: 'hug',
+            font: { size: 10, lineHeight: 12 },
+          },
+        ],
+      },
+      { formatVersion: 4 },
+    ),
+    {},
+    { x: 0, y: 0, width: 200, height: 100 },
+    { measure: approximateMeasurer },
+  );
+  return [...results, expanded, unstable];
 }
 
 // --- layoutScreen -----------------------------------------------------------------------------
@@ -410,6 +438,7 @@ describe('avisos do motor de desenho: messages ao lado de warnings', () => {
     ['texto medido com largura 0', 'engine.textZeroWidth'],
     ['valor inválido', 'engine.invalidValue'],
     ['repeat limitado', 'engine.repeatLimited'],
+    ['$lines instável', 'engine.linesUnstable'],
     ['nó inválido (origem e medida)', 'origins.draw.nodeInvalid'],
     ['tipo ausente', 'origins.draw.typeMissing'],
     ['tipo externo sem tipo de anotação', 'origins.draw.typeUnknown'],

@@ -9,6 +9,7 @@ import {
   NUMERIC_FNS,
   NUMERIC_OPS,
   isEmpty,
+  linesKey,
   referencedFields,
   truthy,
 } from '../../../src/model/components/expressions';
@@ -505,5 +506,25 @@ describe('$rows e $size (formato 4, EX2)', () => {
   it('referencedFields conta o campo de $rows, não o $index', () => {
     expect([...referencedFields({ a: { $rows: 'itens' } })]).toEqual(['itens']);
     expect([...referencedFields({ a: { $field: '$index' } })]).toEqual([]);
+  });
+});
+
+describe('$lines (MC2, decisão 8 da #898)', () => {
+  it('lê o número de linhas que o motor põe nos valores', () => {
+    expect(evaluate({ $lines: 'msg' }, { [linesKey('msg')]: 3 }, 0)).toBe(3);
+  });
+
+  it('sem valor cai no fallback', () => {
+    expect(evaluate({ $lines: 'msg' }, {}, 7)).toBe(7);
+  });
+
+  it('entra nas comparações e nas operações numéricas', () => {
+    const values = { [linesKey('msg')]: 2 };
+    expect(evaluateCondition({ $gt: [{ $lines: 'msg' }, 1] }, values)).toBe(true);
+    expect(evaluate({ $mul: [{ $lines: 'msg' }, 10] }, values, 0)).toBe(20);
+  });
+
+  it('não é um campo: referencedFields não o conta', () => {
+    expect([...referencedFields({ $gt: [{ $lines: 'msg' }, 1] })]).toEqual([]);
   });
 });

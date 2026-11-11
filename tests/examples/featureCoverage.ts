@@ -283,6 +283,7 @@ export const EXPR_OPS = [
   '$token',
   '$rows',
   '$size',
+  '$lines',
   '$provided',
 ] as const;
 export const CONDITION_OPS = ['$field', '$eq', '$has', '$not', '$and', '$or'] as const;
@@ -503,7 +504,7 @@ function exprFeatures(value: unknown, out: Set<string>, inCondition = false): vo
     exprFeatures(value.$concat, out);
     return;
   }
-  for (const op of ['$rows', '$size']) if (op in value) out.add(`expr.${op}`);
+  for (const op of ['$rows', '$size', '$lines']) if (op in value) out.add(`expr.${op}`);
   if ('$field' in value) {
     out.add('expr.$field');
     if ('default' in value) out.add('expr.$field.default');

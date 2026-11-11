@@ -116,6 +116,11 @@ export type Expr<T> =
   /** Largura ou altura da instância em px da imagem (v4; na prova de desenho e no `hug`, o `size` do componente). */
   | { readonly $size: 'width' | 'height' }
   /**
+   * Número de linhas medidas do nó `text` de nome dado (v4; no máximo `maxLines`, texto vazio = 0).
+   * O motor arruma em duas passagens quando o template usa `$lines` (decisão 8 da #898).
+   */
+  | { readonly $lines: string }
+  /**
    * Valor nomeado da especialização, no modo do desenho (v4; ver `tokens.ts`). Em posição de cor,
    * `alpha` (0 a 1, literal ou `$token` de número) multiplica o alfa da cor, e `over` (nome de
    * um token de cor ou cor literal) compõe o resultado sobre essa cor, que o deixa opaco.
@@ -370,6 +375,11 @@ export interface TextTemplate extends TemplateNodeBase {
    * linha de base ao fundo da caixa.
    */
   readonly baselinePadding?: BaselinePadding;
+  /**
+   * Escopo da linha de um `repeat` (`$r0_1`), posto pela expansão no nó cuja contagem de linhas um
+   * `$lines` da mesma linha cita; nunca vem do arquivo (o parser recusa a chave).
+   */
+  readonly linesScope?: string;
 }
 
 export interface BaselinePadding {
@@ -508,9 +518,13 @@ export type TemplateNode =
  */
 export type InstanceSizeSpec = number | 'fill' | 'hug';
 
+/**
+ * `sizing` por eixo: o valor literal ou, na v4, uma expressão que dá número ≥ 0, `"fill"` ou `"hug"`,
+ * avaliada com os valores da instância (`$size` e `$lines` não valem aqui).
+ */
 export interface ComponentSizing {
-  readonly width?: InstanceSizeSpec;
-  readonly height?: InstanceSizeSpec;
+  readonly width?: Expr<InstanceSizeSpec>;
+  readonly height?: Expr<InstanceSizeSpec>;
 }
 
 /** Pontos de ancoragem do desenho em pixels de tela (`screen.anchor`). */

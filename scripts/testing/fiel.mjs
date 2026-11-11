@@ -377,6 +377,53 @@ if (version >= 4) {
   );
 }
 
+// MC2 (R25.95 e R25.96): o `top-app-bar` vira uma peça de 140 × 100 com a altura pelas linhas. Uma
+// caixa vermelha (`#B71C1C`) `hug` na altura, com `minHeight` 48 ou 68 pelo `$lines` do texto `msg`,
+// e o texto de 1, 2 ou 3 linhas (`H` brancos, 20 de altura de linha, respiro de 14 em cima e embaixo)
+// pelo `style` (`small`, `center` e `medium`): a caixa mede 48, 68 e 88. Só na versão 4 (`$lines` não
+// existe antes dela; o R25.2 segue com as oito peças e 15 erros).
+if (version >= 4) {
+  write(
+    'top-app-bar',
+    'Top app bar',
+    { width: 140, height: 100 },
+    {
+      type: 'frame',
+      name: 'linhas',
+      width: 140,
+      height: 100,
+      layout: { type: 'column', align: 'start' },
+      fill: '#FFFFFF',
+      children: [
+        {
+          type: 'frame',
+          name: 'caixa',
+          width: 'fill',
+          height: 'hug',
+          minHeight: { $if: { $gt: [{ $lines: 'msg' }, 1] }, then: 68, else: 48 },
+          layout: { type: 'column', padding: [14, 0] },
+          fill: '#B71C1C',
+          children: [
+            {
+              type: 'text',
+              name: 'msg',
+              text: {
+                $switch: 'style',
+                cases: { small: 'H', center: 'H\nH', medium: 'H\nH\nH' },
+                default: 'H',
+              },
+              color: '#FFFFFF',
+              width: 'fill',
+              height: 'hug',
+              font: { size: 13, lineHeight: 20, family: 'sans-serif' },
+            },
+          ],
+        },
+      ],
+    },
+  );
+}
+
 // Os componentes mínimos acima não desenham o `interaction`: sem tirar o campo e os exemplos que o
 // usam, o validador avisa "campo não usado" (R25.1).
 const specFile = process.argv[2] + '/material3-compose.spec.json';

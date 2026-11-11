@@ -4,7 +4,10 @@ import { cpSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'n
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { approximateMeasurer, instantiate } from '../../src/model/components/instantiate';
 import { isFontPath } from '../../src/model/components/library';
+import { parseComponentText } from '../../src/model/components/parseComponent';
+import { walk } from '../../src/model/components/scene';
 import { validateLibrary } from '../../src/model/library';
 
 const REPO = join(__dirname, '../..');
@@ -31,5 +34,26 @@ describe('fiel.mjs (R25.1)', () => {
     const report = validateLibrary({ files });
     expect(report.errors).toEqual([]);
     expect(report.warnings).toEqual([]);
+  });
+
+  it('top-app-bar: a caixa vermelha mede 48, 68 e 88 com 1, 2 e 3 linhas (R25.95)', () => {
+    const dir = join(mkdtempSync(join(tmpdir(), 'fiel-')), 'm3-fiel');
+    cpSync(join(REPO, 'libraries/material3-compose'), dir, { recursive: true });
+    execFileSync('node', [join(REPO, 'scripts/testing/fiel.mjs'), dir, '4']);
+    const parsed = parseComponentText(
+      readFileSync(join(dir, 'components/top-app-bar.json'), 'utf8'),
+    );
+    if (!parsed.ok) throw new Error(parsed.errors.join('; '));
+    const heightOf = (style: string): number => {
+      const { root } = instantiate(
+        parsed.component,
+        { style },
+        { x: 0, y: 0, width: 140, height: 100 },
+        { measure: approximateMeasurer },
+      );
+      const box = [...walk(root)].find((n) => n.name === 'caixa');
+      return box?.height ?? -1;
+    };
+    expect(['small', 'center', 'medium'].map(heightOf)).toEqual([48, 68, 88]);
   });
 });
