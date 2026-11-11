@@ -93,6 +93,55 @@ describe('painel.py role / roles (decisão 7)', () => {
     expect(run('roles', dir)).toContain('coordenador 2: session_b');
   });
 
+  it('role com o id já registrado não muda nada: n, previous, at, link e o meta.json ficam iguais (#1628)', () => {
+    run('role', dir, 'coordenador', 'session_a');
+    run('role', dir, 'coordenador', 'session_b');
+    const antes = readFileSync(path.join(dir, 'meta.json'), 'utf8');
+    const out = execFileSync(
+      'python3',
+      [
+        SCRIPT,
+        '--now',
+        '2026-11-10T11:00:00Z',
+        'role',
+        dir,
+        'coordenador',
+        'session_b',
+        'link=https://x/outro',
+      ],
+      { encoding: 'utf8' },
+    );
+    expect(
+      (meta().roles as Record<string, Record<string, unknown>>).coordenador,
+    ).toMatchObject({ id: 'session_b', n: 2, previous: 'session_a' });
+    expect(readFileSync(path.join(dir, 'meta.json'), 'utf8')).toBe(antes);
+    expect(out).toContain('já é o registrado');
+    expect(out).toContain('alterados: nenhum');
+  });
+
+  it('role repetido dentro do apply não grava a linha e o resto do lote grava (#1628)', () => {
+    run('role', dir, 'coordenador', 'session_a');
+    run('role', dir, 'coordenador', 'session_b');
+    const antes = (meta().roles as Record<string, unknown>).coordenador;
+    const lote = path.join(dir, 'lote.txt');
+    writeFileSync(lote, 'role coordenador session_b\ncontext 40\n');
+    const r = runRaw('apply', dir, lote);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain('já é o registrado');
+    expect(r.stdout).toContain('alterados: meta.json');
+    expect(meta().roles).toEqual({ coordenador: antes });
+    expect(meta().context).toBe(40);
+  });
+
+  it('role com id diferente do registrado soma 1 e guarda o previous (#1628)', () => {
+    run('role', dir, 'coordenador', 'session_a');
+    run('role', dir, 'coordenador', 'session_b');
+    run('role', dir, 'coordenador', 'session_c');
+    expect(
+      (meta().roles as Record<string, Record<string, unknown>>).coordenador,
+    ).toMatchObject({ id: 'session_c', n: 3, previous: 'session_b' });
+  });
+
   it('show: context 35 não avisa; 36 avisa "acima de 35%"', () => {
     run('context', dir, '35');
     expect(run('show', dir)).not.toContain('troque de sessão');
@@ -110,6 +159,16 @@ describe('implementar-fila: troca aos 35% e uma sessão ativa por papel (decisõ
     expect(comeco).toContain('Fila — coordenador <n>');
     expect(comeco).toContain('role');
     expect(comeco).toContain('prefixo "Fila — coordenador"');
+  });
+
+  it('"Painel" descreve o previous e o registro repetido; o item 4 só pede o registro sem esta sessão (#1628)', () => {
+    const painel = section(skill, '## Painel');
+    expect(painel).toContain('previous');
+    expect(painel).toContain('já é o registrado');
+    const troca = section(skill, '## Troca de sessão');
+    const nova = troca.slice(troca.indexOf('**Na sessão nova**'));
+    const passo4 = nova.slice(nova.indexOf('\n4. '));
+    expect(passo4).toContain('só se o `roles` não traz esta sessão');
   });
 
   it('"Troca de sessão": 35%, título do sucessor, role, archive_session e conferência no get_session', () => {
