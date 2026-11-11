@@ -667,6 +667,19 @@ describe('arrangeMarking: gap e padding do slot em $token (#948)', () => {
   });
 });
 
+const BIG = {
+  format: 'mapping-component',
+  formatVersion: 4,
+  id: 'wide',
+  name: 'wide',
+  size: { width: 100, height: 40 },
+  template: {
+    type: 'frame',
+    layout: { type: 'none' },
+    children: [{ type: 'text', text: 'Grande', font: { size: 22, lineHeight: 28 } }],
+  },
+};
+
 describe('arrangeMarking: align "baseline" no slot (MC1, decisão 4)', () => {
   /** `row` com `align: "baseline"` no slot e `wide` trocado por um texto de 22/28. */
   function baselineCatalog(): ComponentCatalog {
@@ -678,19 +691,7 @@ describe('arrangeMarking: align "baseline" no slot (MC1, decisão 4)', () => {
     const slot = row.template.children[0];
     if (slot === undefined) throw new Error('sem slot');
     slot.layout.align = 'baseline';
-    const big = {
-      format: 'mapping-component',
-      formatVersion: 4,
-      id: 'wide',
-      name: 'wide',
-      size: { width: 100, height: 40 },
-      template: {
-        type: 'frame',
-        layout: { type: 'none' },
-        children: [{ type: 'text', text: 'Grande', font: { size: 22, lineHeight: 28 } }],
-      },
-    };
-    return testCatalog({ ...COMPONENTS, row, wide: big });
+    return testCatalog({ ...COMPONENTS, row, wide: BIG });
   }
 
   it('textos de 14 e 22 px ficam na mesma linha de base (a menor desce 7 px)', () => {
@@ -714,5 +715,23 @@ describe('arrangeMarking: align "baseline" no slot (MC1, decisão 4)', () => {
     const { project } = arrange(p, 'C');
     expect(rectOf(project, 'T1').y).toBe(100);
     expect(rectOf(project, 'T2').y).toBe(100);
+  });
+
+  it('um componente hug na altura mede o slot pela extensão da linha de base, não pelo filho mais alto', () => {
+    const hug = JSON.parse(JSON.stringify(COMPONENTS.rowhug)) as {
+      formatVersion: number;
+      template: { children: { layout: { align: string } }[] };
+    };
+    hug.formatVersion = 4;
+    const slot = hug.template.children[0];
+    if (slot === undefined) throw new Error('sem slot');
+    slot.layout.align = 'baseline';
+    const cat = testCatalog({ ...COMPONENTS, rowhug: hug, wide: BIG });
+    let p = add(componentProject(), 'C', 'rowhug', box(100, 100, 200, 60), null, {}, cat);
+    p = add(p, 'W', 'wide', box(100, 100, 100, 40), 'C', {}, cat);
+    p = add(p, 'T', 'text', box(200, 100, 100, 40), 'C', {}, cat);
+    const { project } = arrange(p, 'C', cat);
+    // 21,59 acima da linha de base + 25,17 abaixo (o texto de 14 desce 7): 46,76 → 47, não 40.
+    expect(rectOf(project, 'C').height).toBe(47);
   });
 });

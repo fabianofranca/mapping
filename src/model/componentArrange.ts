@@ -262,9 +262,20 @@ export function arrangeMarking(
     const sum = (axis: 'width' | 'height') => sizes.reduce((s, r) => s + r[axis], 0);
     const widest = (axis: 'width' | 'height') =>
       sizes.reduce((m, r) => Math.max(m, r[axis]), 0);
+    // Numa `row` com `align: "baseline"` a altura é do topo mais alto ao fundo mais baixo, não a do filho mais alto.
+    const crossHeight = (): number => {
+      if (layout.align !== 'baseline') return widest('height');
+      const lines = kids.map((kid, i) => baselineOf(kid) ?? (sizes[i] as Rect).height);
+      const above = Math.max(0, ...lines);
+      const below = Math.max(
+        0,
+        ...sizes.map((r, i) => r.height - (lines[i] ?? r.height)),
+      );
+      return above + below;
+    };
     const slotContent = {
       width: (row ? sum('width') + gaps : widest('width')) + pad.left + pad.right,
-      height: (row ? widest('height') : sum('height') + gaps) + pad.top + pad.bottom,
+      height: (row ? crossHeight() : sum('height') + gaps) + pad.top + pad.bottom,
     };
 
     let rect = rects.get(id) as Rect;
