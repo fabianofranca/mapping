@@ -21,6 +21,7 @@ describe('FM6 — reteste restrito, correção que reproduz o achado, subagentes
     expect(s).toContain('reproduz cada achado antes de mexer no código');
     expect(s).toContain('confere de novo depois');
     expect(s).toMatch(/"antes" e "depois"/);
+    expect(s).toContain('conferido depois');
     expect(s).toContain('não reproduzido não é dado como corrigido');
   });
 
@@ -49,7 +50,8 @@ describe('FM6 — reteste restrito, correção que reproduz o achado, subagentes
       '5. **Fechamento**',
     );
     expect(s).toContain('reprodução de cada achado');
-    expect(s).toContain('passos');
+    expect(s).toContain('**passos**, não roteiros');
+    expect(s).toContain('conferência depois');
     expect(s).not.toContain('os roteiros que falharam');
   });
 });
