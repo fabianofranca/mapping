@@ -158,21 +158,45 @@ describe('meta.unpublished, published e touch (FM1, decisão 3)', () => {
       /^não publicado desde 10:05: meta\.json log\.json$/m,
     );
     runAt('2026-11-09T10:41:00Z', 'published', dir);
+    runAt('2026-11-09T10:41:30Z', 'published', dir, '--done');
     expect(runAt('2026-11-09T10:42:00Z', 'show', dir)).toMatch(
       /^não publicado: nenhum$/m,
     );
+  });
+
+  it('published sem confirmar (sessão morreu antes do batch): o show ainda diz o que falta (defeito 1 da CL1)', () => {
+    runAt('2026-11-09T10:05:00Z', 'row', dir, '#10', 'title=X');
+    runAt('2026-11-09T10:41:00Z', 'published', dir);
+    expect(runAt('2026-11-09T10:50:00Z', 'show', dir)).toMatch(
+      /^não publicado desde 10:05: queue\.json meta\.json$/m,
+    );
+  });
+
+  it('published --done depois do batch zera; gravação entre o published e o --done não se perde', () => {
+    runAt('2026-11-09T10:05:00Z', 'row', dir, '#10', 'title=X');
+    runAt('2026-11-09T10:41:00Z', 'published', dir);
+    runAt('2026-11-09T10:42:00Z', 'log', dir, 'nova');
+    runAt('2026-11-09T10:43:00Z', 'published', dir, '--done');
+    expect(runAt('2026-11-09T10:44:00Z', 'show', dir)).toMatch(
+      /^não publicado desde 10:05: queue\.json meta\.json log\.json$/m,
+    );
+    runAt('2026-11-09T10:45:00Z', 'published', dir);
+    runAt('2026-11-09T10:46:00Z', 'published', dir, '--done');
+    expect(run('show', dir)).toMatch(/^não publicado: nenhum$/m);
   });
 
   it('o show de um painel novo, sem gravação, diz "nenhum"', () => {
     expect(run('show', dir)).toMatch(/^não publicado: nenhum$/m);
   });
 
-  it('published imprime at: igual ao relógio, grava publishedAt e não deixa nada marcado', () => {
+  it('published imprime at: igual ao relógio, grava publishedAt e só o --done limpa a marca', () => {
     runAt('2026-11-09T10:05:00Z', 'row', dir, '#10', 'title=X');
     const out = runAt('2026-11-09T10:41:07Z', 'published', dir);
     expect(out).toMatch(/^at: 2026-11-09T10:41:07Z$/m);
     expect(out).toMatch(/queue\.json/);
     expect(meta().publishedAt).toBe('2026-11-09T10:41:07Z');
+    expect(unpublished()?.files).toEqual(['queue.json', 'meta.json']);
+    runAt('2026-11-09T10:41:20Z', 'published', dir, '--done');
     expect(unpublished()?.files ?? []).toEqual([]);
   });
 
@@ -183,6 +207,7 @@ describe('meta.unpublished, published e touch (FM1, decisão 3)', () => {
 
   it('touch marca de novo os três arquivos', () => {
     runAt('2026-11-09T10:05:00Z', 'published', dir);
+    runAt('2026-11-09T10:06:00Z', 'published', dir, '--done');
     expect(unpublished()?.files ?? []).toEqual([]);
     runAt('2026-11-09T12:00:00Z', 'touch', dir);
     expect(unpublished()).toEqual({
@@ -244,6 +269,7 @@ describe('implementar-fila/SKILL.md: publicar a cada turno que gravou (FM1, deci
     expect(pub).toMatch(/`edit\.at`/);
     expect(pub).toMatch(/`at: <ISO UTC>`/);
     expect(pub).toMatch(/painel\.py touch/);
+    expect(pub).toMatch(/painel\.py published <pasta> --done/);
     expect(pub).toMatch(/uma publicação por turno, no fim/);
     expect(pub).not.toMatch(/Nunca há duas publicações no mesmo ciclo/);
   });

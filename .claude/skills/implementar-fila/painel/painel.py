@@ -19,8 +19,10 @@ sem `painel.py` e sem a pasta; linha vazia e `#` são ignoradas; `show`, `init`,
 entram): tudo ou nada, com uma linha `alterados:` e, no erro, código 2 citando o número da linha.
 Toda gravação soma os arquivos a `meta.unpublished` (`{since, files}`: o que foi gravado e ainda não foi
 publicado; o `show` o imprime). `published DIR` imprime `at: <ISO UTC>` (o valor de `updated.at` e `edit.at`
-da publicação), lista os arquivos a enviar, grava `meta.publishedAt` e limpa `unpublished`; `touch DIR` marca
-de novo os três arquivos (a publicação falhou).
+da publicação), lista os arquivos a enviar, grava `meta.publishedAt` e `meta.publishing` (o que está em voo), mas
+**mantém** `unpublished`: só `published DIR --done`, rodado depois do `batch` bem-sucedido, o limpa (e só se nada
+foi gravado desde o `published`; senão o que foi gravado fica). Sem a confirmação (sessão morta, contexto estourado),
+o `show` segue dizendo o que falta e a conferência republica. `touch DIR` marca de novo os três arquivos.
 Custo (decisões 5 e 26 da #1532): `session DIR '#n' <id> kind=<tipo> [label=<código>]` acrescenta `{id, issue, kind, label,
 created}` a `meta.sessions` (sem `kind`, só o `sessions` da linha, como antes); `cost DIR <id> usd= ctx= [model= effort=
 served=] [issue= kind=]` grava o custo da sessão (`kind` obrigatório com id novo); `costs [--desde <ISO>] DIR` lê só o `meta`
@@ -189,6 +191,7 @@ class Sessao:
 
 def mark_unpublished(meta, files):
     """Soma `files` (nomes sem .json) a meta.unpublished; o `since` é o da primeira gravação não publicada."""
+    meta.pop("publishing", None)  # gravar de novo invalida o que estava em voo
     pend = meta.get("unpublished") or {}
     have = set(pend.get("files", [])) | {n + ".json" for n in files}
     meta["unpublished"] = {
@@ -813,12 +816,20 @@ def cmd_published(a):
     m = load(d, "meta")
     if not m:
         raise Erro("meta.json está vazio")
+    if a.done:
+        if m[0].get("publishing"):
+            m[0].pop("unpublished", None)
+            m[0].pop("publishing", None)
+            save(d, "meta", m)
+        else:
+            print("nada em voo (gravou depois do published, ou não houve published): mantido como não publicado")
+        return
     at = now()
     files = list((m[0].get("unpublished") or {}).get("files", []))
     if "meta.json" not in files:
-        files.append("meta.json")  # o meta enviado já sai limpo, então vai sempre
-    m[0].pop("unpublished", None)
+        files.append("meta.json")  # o meta muda a cada published (publishedAt), então vai sempre
     m[0]["publishedAt"] = at
+    m[0]["publishing"] = {"at": at, "files": [n + ".json" for n in FILES if n + ".json" in files]}
     save(d, "meta", m)
     print(f"at: {at}")
     print("enviar: " + " ".join(n + ".json" for n in FILES if n + ".json" in files))
@@ -1218,7 +1229,8 @@ def build_parser():
     add("roles", cmd_roles, "imprime a sessão atual de cada papel (lê só o meta)")
     sp = add("apply", cmd_apply, "grava vários subcomandos de uma vez (um por linha; '-' lê do stdin)")
     sp.add_argument("file", metavar="arquivo", help="arquivo com os comandos, ou - para o stdin")
-    add("published", cmd_published, "imprime a hora da publicação (at:) e limpa o que falta publicar")
+    sp = add("published", cmd_published, "imprime a hora da publicação (at:) e os arquivos a enviar; --done, depois do batch, limpa o que falta publicar")
+    sp.add_argument("--done", action="store_true", help="o batch deu certo: limpa o que falta publicar")
     add("touch", cmd_touch, "a publicação falhou: marca de novo os 3 arquivos como não publicados")
     sp = sub.add_parser("slug", help="imprime o slug de um título `##` (âncora de seção)")
     sp.add_argument("title", metavar="título")
