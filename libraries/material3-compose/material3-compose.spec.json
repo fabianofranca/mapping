@@ -9141,23 +9141,6 @@
                 "style": "plain",
                 "text": "Adicionar aos favoritos"
               }
-            },
-            {
-              "name": "Rich com título",
-              "values": {
-                "style": "rich",
-                "title": "Modo avião",
-                "text": "Desliga o Wi-Fi, o Bluetooth e os dados móveis."
-              }
-            },
-            {
-              "name": "Rich com ação",
-              "values": {
-                "style": "rich",
-                "title": "Sincronização",
-                "text": "Suas fotos são copiadas para a nuvem quando há Wi-Fi.",
-                "action": "Saiba mais"
-              }
             }
           ]
         },

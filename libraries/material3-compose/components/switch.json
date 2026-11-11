@@ -176,11 +176,82 @@
             }
           },
           {
+            "type": "ellipse",
+            "name": "estado",
+            "width": 32,
+            "height": 32,
+            "fill": {
+              "$if": {
+                "$field": "checked"
+              },
+              "then": {
+                "$token": "primary"
+              },
+              "else": {
+                "$token": "on-surface"
+              }
+            },
+            "opacity": {
+              "$switch": "interaction",
+              "cases": {
+                "hovered": {
+                  "$token": "state-hover"
+                },
+                "focused": {
+                  "$token": "state-focus"
+                },
+                "pressed": {
+                  "$token": "state-pressed"
+                }
+              },
+              "default": 0
+            },
+            "visible": {
+              "$and": [
+                {
+                  "$not": {
+                    "$eq": ["enabled", "false"]
+                  }
+                },
+                {
+                  "$not": {
+                    "$eq": ["interaction", "none"]
+                  }
+                }
+              ]
+            },
+            "anchors": {
+              "left": {
+                "$if": {
+                  "$field": "checked"
+                },
+                "then": 20,
+                "else": 0
+              },
+              "top": 0
+            }
+          },
+          {
             "type": "frame",
             "name": "curso",
             "layout": {
               "type": "row",
-              "padding": [0, 4],
+              "padding": {
+                "$if": {
+                  "$and": [
+                    {
+                      "$not": {
+                        "$eq": ["enabled", "false"]
+                      }
+                    },
+                    {
+                      "$eq": ["interaction", "pressed"]
+                    }
+                  ]
+                },
+                "then": [0, 2],
+                "else": [0, 4]
+              },
               "align": "center",
               "justify": {
                 "$if": {
@@ -194,62 +265,42 @@
               {
                 "type": "frame",
                 "name": "área da alça",
-                "width": 24,
-                "height": 24,
+                "width": {
+                  "$if": {
+                    "$and": [
+                      {
+                        "$not": {
+                          "$eq": ["enabled", "false"]
+                        }
+                      },
+                      {
+                        "$eq": ["interaction", "pressed"]
+                      }
+                    ]
+                  },
+                  "then": 28,
+                  "else": 24
+                },
+                "height": {
+                  "$if": {
+                    "$and": [
+                      {
+                        "$not": {
+                          "$eq": ["enabled", "false"]
+                        }
+                      },
+                      {
+                        "$eq": ["interaction", "pressed"]
+                      }
+                    ]
+                  },
+                  "then": 28,
+                  "else": 24
+                },
                 "layout": {
                   "type": "none"
                 },
                 "children": [
-                  {
-                    "type": "ellipse",
-                    "name": "estado",
-                    "width": 40,
-                    "height": 40,
-                    "fill": {
-                      "$if": {
-                        "$field": "checked"
-                      },
-                      "then": {
-                        "$token": "primary"
-                      },
-                      "else": {
-                        "$token": "on-surface"
-                      }
-                    },
-                    "opacity": {
-                      "$switch": "interaction",
-                      "cases": {
-                        "hovered": {
-                          "$token": "state-hover"
-                        },
-                        "focused": {
-                          "$token": "state-focus"
-                        },
-                        "pressed": {
-                          "$token": "state-pressed"
-                        }
-                      },
-                      "default": 0
-                    },
-                    "visible": {
-                      "$and": [
-                        {
-                          "$not": {
-                            "$eq": ["enabled", "false"]
-                          }
-                        },
-                        {
-                          "$not": {
-                            "$eq": ["interaction", "none"]
-                          }
-                        }
-                      ]
-                    },
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    }
-                  },
                   {
                     "type": "ellipse",
                     "name": "alça",

@@ -78,7 +78,7 @@ Variante `suggestion-elevated`: `onClick` liga à lógica da tela e `label = { T
 - **Pressionado**: label=Aberto agora, style=filter, selected=true, interaction=pressed
 - **Arrastado**: label=ana@exemplo.com, style=input, trailingIcon=Close, interaction=dragged
 - **Com avatar**: label=Ana Souza, style=input, avatar=https://example.com/ana.png, trailingIcon=Close
-- **Rótulo longo**: label=Adicionar reunião ao calendário compartilhado, style=assist, leadingIcon=DateRange
+- **Rótulo longo**: label=Criar reunião de equipe, style=assist, leadingIcon=DateRange
 
 ## Fidelidade
 

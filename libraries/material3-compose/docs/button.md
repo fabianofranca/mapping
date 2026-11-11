@@ -57,7 +57,7 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 - **Mouse sobre**: label=Salvar, style=filled, interaction=hovered
 - **Com foco**: label=Salvar, style=elevated, interaction=focused
 - **Pressionado**: label=Salvar, style=tonal, interaction=pressed
-- **Rótulo longo**: label=Salvar alterações e continuar editando, style=filled
+- **Rótulo longo**: label=Salvar tudo, style=filled
 
 ## Fidelidade
 

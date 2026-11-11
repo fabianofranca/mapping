@@ -721,8 +721,10 @@ describe('EX6 slider — sem tabelas enumeradas', () => {
   it('o arquivo fica bem menor que os 93 kB de antes', () => {
     // O alvo era 20 kB; o piso desta construção é o formato do prettier (as contas ficam em
     // dezenas de linhas indentadas, e a largura dos trechos e as marcas dependem do valor
-    // encaixado, que não se guarda em variável): ~25 kB, um quarto do de antes.
-    expect(text('components/slider.json').length).toBeLessThan(28_000);
+    // encaixado, que não se guarda em variável): ~25 kB, um quarto do de antes. A L2 (#1078) tirou as
+    // alças dos quadros `antes do início` e `depois do fim` (que podem medir 0 e não comportam a alça) e as
+    // pôs na raiz, com a posição calculada uma vez cada (a do fim e a do início): teto de 34 kB (hoje 32.789).
+    expect(text('components/slider.json').length).toBeLessThan(34_000);
   });
 
   it('o preview e a descrição falam em número, não em décimos nem em 9 passos', () => {

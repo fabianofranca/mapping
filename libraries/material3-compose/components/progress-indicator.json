@@ -454,7 +454,31 @@
               {
                 "type": "rect",
                 "name": "faixa",
-                "visible": { "$not": { "$lte": [{ "$field": "progress" }, 0] } },
+                "visible": {
+                  "$and": [
+                    { "$not": { "$lte": [{ "$field": "progress" }, 0] } },
+                    {
+                      "$gt": [
+                        {
+                          "$if": { "$has": "progress" },
+                          "then": {
+                            "$mul": [
+                              { "$size": "width" },
+                              {
+                                "$sub": [
+                                  1,
+                                  { "$clamp": [{ "$field": "progress" }, 0, 1] }
+                                ]
+                              }
+                            ]
+                          },
+                          "else": { "$mul": [{ "$size": "width" }, 0.3] }
+                        },
+                        { "$if": { "$eq": ["strokeCap", "Butt"] }, "then": 4, "else": 6 }
+                      ]
+                    }
+                  ]
+                },
                 "fill": {
                   "$switch": "trackColor",
                   "cases": {
@@ -568,7 +592,22 @@
                 "width": 4,
                 "height": 4,
                 "fill": { "$token": "primary" },
-                "anchors": { "right": 0, "centerY": true }
+                "anchors": { "right": 0, "centerY": true },
+                "visible": {
+                  "$gte": [
+                    {
+                      "$if": { "$has": "progress" },
+                      "then": {
+                        "$mul": [
+                          { "$size": "width" },
+                          { "$sub": [1, { "$clamp": [{ "$field": "progress" }, 0, 1] }] }
+                        ]
+                      },
+                      "else": { "$mul": [{ "$size": "width" }, 0.3] }
+                    },
+                    4
+                  ]
+                }
               }
             ]
           }

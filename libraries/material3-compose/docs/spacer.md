@@ -45,7 +45,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 **Como o desenho segue o Compose**
 
 - O `Spacer` do Compose não desenha: o retângulo tracejado é a ajuda de edição do Mapping. Ele usa só tokens: traço `outline-variant`, raio `corner-extra-small` e as medidas em `label-small` (tamanho, altura de linha, peso e espaçamento) na cor `outline`, com a fonte `font-sans`, nos dois modos.
-- As medidas (`width`, `height`, `fixed`, `fill`, `wrap`, `weight`) vêm dos campos e do tamanho da marcação, como `Modifier.width/height/weight`.
+- As medidas (`width`, `height`, `fixed`, `fill`, `wrap`, `weight`) vêm dos campos e do tamanho da marcação, como `Modifier.width/height/weight`. O texto das medidas fica numa linha só, centrado, e termina em reticências quando a marcação é mais estreita que ele.
 
 **O que ainda difere do Compose**
 

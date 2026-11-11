@@ -506,7 +506,8 @@ describe('M5 grupo B — carousel', () => {
       withItems({ style: 'uncontained', itemWidth: 140, itemSpacing: 12 }),
     ).light;
     expect(itemsOf(d).map((n) => absOf(d, n).x)).toEqual([0, 152, 304]);
-    expect(itemsOf(d).map((n) => absOf(d, n).width)).toEqual([140, 140, 140]);
+    // L2 (#1078): o terceiro item cruza a borda direita (304 + 140 > 360) e ganha só a largura que sobra
+    expect(itemsOf(d).map((n) => absOf(d, n).width)).toEqual([140, 140, 360 - 304]);
   });
 
   it('centered-hero: item grande de 232 (360 - 2 x 56 de itens pequenos - 2 x 8) com o espaço do item pequeno antes do primeiro (56 + 8)', () => {

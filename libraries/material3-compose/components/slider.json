@@ -97,13 +97,12 @@
             },
             "height": "fill",
             "visible": { "$eq": ["type", "range"] },
-            "layout": { "type": "none" },
+            "layout": { "type": "row", "align": "center", "padding": [0, 8, 0, 0] },
             "children": [
               {
                 "type": "rect",
                 "name": "trilho inativo",
                 "height": 16,
-                "anchors": { "centerY": true, "left": 0, "right": 8 },
                 "cornerRadius": [
                   { "$token": "corner-track-outer" },
                   { "$token": "corner-track-inside" },
@@ -118,24 +117,8 @@
                     "over": "surface"
                   },
                   "else": { "$token": "secondary-container" }
-                }
-              },
-              {
-                "type": "rect",
-                "name": "alça",
-                "height": 44,
-                "width": 4,
-                "anchors": { "centerY": true, "right": -2 },
-                "cornerRadius": { "$token": "corner-full" },
-                "fill": {
-                  "$if": { "$eq": ["enabled", "false"] },
-                  "then": {
-                    "$token": "on-surface",
-                    "alpha": { "$token": "state-disabled-content" },
-                    "over": "surface"
-                  },
-                  "else": { "$token": "primary" }
-                }
+                },
+                "width": "fill"
               }
             ]
           },
@@ -144,13 +127,20 @@
             "name": "trecho ativo",
             "width": "fill",
             "height": "fill",
-            "layout": { "type": "none" },
+            "layout": {
+              "type": "row",
+              "align": "center",
+              "padding": {
+                "$if": { "$eq": ["type", "range"] },
+                "then": [0, 8],
+                "else": [0, 8, 0, 0]
+              }
+            },
             "children": [
               {
                 "type": "rect",
                 "name": "trilho ativo",
                 "height": 16,
-                "anchors": { "centerY": true, "left": 0, "right": 8 },
                 "cornerRadius": [
                   { "$token": "corner-track-outer" },
                   { "$token": "corner-track-inside" },
@@ -166,13 +156,13 @@
                     "over": "surface"
                   },
                   "else": { "$token": "primary" }
-                }
+                },
+                "width": "fill"
               },
               {
                 "type": "rect",
                 "name": "trilho ativo",
                 "height": 16,
-                "anchors": { "centerY": true, "left": 8, "right": 8 },
                 "cornerRadius": { "$token": "corner-track-inside" },
                 "visible": { "$eq": ["type", "range"] },
                 "fill": {
@@ -183,7 +173,8 @@
                     "over": "surface"
                   },
                   "else": { "$token": "primary" }
-                }
+                },
+                "width": "fill"
               }
             ]
           },
@@ -340,13 +331,12 @@
               ]
             },
             "height": "fill",
-            "layout": { "type": "none" },
+            "layout": { "type": "row", "align": "center", "padding": [0, 0, 0, 8] },
             "children": [
               {
                 "type": "rect",
                 "name": "trilho inativo",
                 "height": 16,
-                "anchors": { "centerY": true, "left": 8, "right": 0 },
                 "cornerRadius": [
                   { "$token": "corner-track-inside" },
                   { "$token": "corner-track-outer" },
@@ -361,59 +351,291 @@
                     "over": "surface"
                   },
                   "else": { "$token": "secondary-container" }
-                }
-              },
-              {
-                "type": "rect",
-                "name": "alça",
-                "height": 44,
-                "width": {
-                  "$if": {
-                    "$and": [
-                      { "$not": { "$eq": ["enabled", "false"] } },
-                      {
-                        "$or": [
-                          { "$eq": ["interaction", "focused"] },
-                          { "$eq": ["interaction", "pressed"] }
-                        ]
-                      }
-                    ]
-                  },
-                  "then": 2,
-                  "else": 4
                 },
-                "anchors": {
-                  "centerY": true,
-                  "left": {
-                    "$if": {
-                      "$and": [
-                        { "$not": { "$eq": ["enabled", "false"] } },
-                        {
-                          "$or": [
-                            { "$eq": ["interaction", "focused"] },
-                            { "$eq": ["interaction", "pressed"] }
-                          ]
-                        }
-                      ]
-                    },
-                    "then": -1,
-                    "else": -2
-                  }
-                },
-                "cornerRadius": { "$token": "corner-full" },
-                "fill": {
-                  "$if": { "$eq": ["enabled", "false"] },
-                  "then": {
-                    "$token": "on-surface",
-                    "alpha": { "$token": "state-disabled-content" },
-                    "over": "surface"
-                  },
-                  "else": { "$token": "primary" }
-                }
+                "width": "fill"
               }
             ]
           }
         ]
+      },
+      {
+        "type": "rect",
+        "name": "alça",
+        "height": 44,
+        "width": 4,
+        "anchors": {
+          "centerY": true,
+          "left": {
+            "$if": { "$eq": ["type", "range"] },
+            "then": {
+              "$add": [
+                {
+                  "$mul": [
+                    {
+                      "$div": [
+                        {
+                          "$round": {
+                            "$mul": [
+                              {
+                                "$clamp": [
+                                  { "$field": "valueStart", "default": 0.2 },
+                                  0,
+                                  1
+                                ]
+                              },
+                              {
+                                "$if": { "$gte": [{ "$field": "steps" }, 1] },
+                                "then": {
+                                  "$add": [{ "$floor": { "$field": "steps" } }, 1]
+                                },
+                                "else": 1000000000
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "$if": { "$gte": [{ "$field": "steps" }, 1] },
+                          "then": { "$add": [{ "$floor": { "$field": "steps" } }, 1] },
+                          "else": 1000000000
+                        }
+                      ]
+                    },
+                    {
+                      "$sub": [
+                        { "$sub": [{ "$size": "width" }, 4] },
+                        {
+                          "$mul": [
+                            16,
+                            {
+                              "$if": { "$gte": [{ "$field": "steps" }, 1] },
+                              "then": 1,
+                              "else": 0
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "$mul": [
+                    8,
+                    {
+                      "$if": { "$gte": [{ "$field": "steps" }, 1] },
+                      "then": 1,
+                      "else": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            "else": 0
+          }
+        },
+        "cornerRadius": { "$token": "corner-full" },
+        "fill": {
+          "$if": { "$eq": ["enabled", "false"] },
+          "then": {
+            "$token": "on-surface",
+            "alpha": { "$token": "state-disabled-content" },
+            "over": "surface"
+          },
+          "else": { "$token": "primary" }
+        },
+        "visible": { "$eq": ["type", "range"] }
+      },
+      {
+        "type": "rect",
+        "name": "alça",
+        "height": 44,
+        "width": {
+          "$if": {
+            "$and": [
+              { "$not": { "$eq": ["enabled", "false"] } },
+              {
+                "$or": [
+                  { "$eq": ["interaction", "focused"] },
+                  { "$eq": ["interaction", "pressed"] }
+                ]
+              }
+            ]
+          },
+          "then": 2,
+          "else": 4
+        },
+        "anchors": {
+          "centerY": true,
+          "left": {
+            "$add": [
+              {
+                "$if": {
+                  "$and": [
+                    { "$gte": [{ "$field": "steps" }, 1] },
+                    {
+                      "$or": [
+                        { "$eq": ["type", "range"] },
+                        {
+                          "$lt": [
+                            {
+                              "$abs": {
+                                "$sub": [
+                                  {
+                                    "$mul": [
+                                      {
+                                        "$round": {
+                                          "$mul": [
+                                            {
+                                              "$clamp": [
+                                                {
+                                                  "$if": { "$eq": ["type", "range"] },
+                                                  "then": {
+                                                    "$field": "valueEnd",
+                                                    "default": 0.8
+                                                  },
+                                                  "else": {
+                                                    "$field": "value",
+                                                    "default": 0.5
+                                                  }
+                                                },
+                                                0,
+                                                1
+                                              ]
+                                            },
+                                            {
+                                              "$add": [
+                                                { "$floor": { "$field": "steps" } },
+                                                1
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      2
+                                    ]
+                                  },
+                                  { "$add": [{ "$floor": { "$field": "steps" } }, 1] }
+                                ]
+                              }
+                            },
+                            { "$add": [{ "$floor": { "$field": "steps" } }, 1] }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "then": {
+                  "$add": [
+                    8,
+                    {
+                      "$mul": [
+                        {
+                          "$div": [
+                            {
+                              "$round": {
+                                "$mul": [
+                                  {
+                                    "$clamp": [
+                                      {
+                                        "$if": { "$eq": ["type", "range"] },
+                                        "then": { "$field": "valueEnd", "default": 0.8 },
+                                        "else": { "$field": "value", "default": 0.5 }
+                                      },
+                                      0,
+                                      1
+                                    ]
+                                  },
+                                  {
+                                    "$if": { "$gte": [{ "$field": "steps" }, 1] },
+                                    "then": {
+                                      "$add": [{ "$floor": { "$field": "steps" } }, 1]
+                                    },
+                                    "else": 1000000000
+                                  }
+                                ]
+                              }
+                            },
+                            {
+                              "$if": { "$gte": [{ "$field": "steps" }, 1] },
+                              "then": {
+                                "$add": [{ "$floor": { "$field": "steps" } }, 1]
+                              },
+                              "else": 1000000000
+                            }
+                          ]
+                        },
+                        { "$sub": [{ "$sub": [{ "$size": "width" }, 4] }, 16] }
+                      ]
+                    }
+                  ]
+                },
+                "else": {
+                  "$mul": [
+                    {
+                      "$div": [
+                        {
+                          "$round": {
+                            "$mul": [
+                              {
+                                "$clamp": [
+                                  {
+                                    "$if": { "$eq": ["type", "range"] },
+                                    "then": { "$field": "valueEnd", "default": 0.8 },
+                                    "else": { "$field": "value", "default": 0.5 }
+                                  },
+                                  0,
+                                  1
+                                ]
+                              },
+                              {
+                                "$if": { "$gte": [{ "$field": "steps" }, 1] },
+                                "then": {
+                                  "$add": [{ "$floor": { "$field": "steps" } }, 1]
+                                },
+                                "else": 1000000000
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "$if": { "$gte": [{ "$field": "steps" }, 1] },
+                          "then": { "$add": [{ "$floor": { "$field": "steps" } }, 1] },
+                          "else": 1000000000
+                        }
+                      ]
+                    },
+                    { "$sub": [{ "$size": "width" }, 4] }
+                  ]
+                }
+              },
+              {
+                "$if": {
+                  "$and": [
+                    { "$not": { "$eq": ["enabled", "false"] } },
+                    {
+                      "$or": [
+                        { "$eq": ["interaction", "focused"] },
+                        { "$eq": ["interaction", "pressed"] }
+                      ]
+                    }
+                  ]
+                },
+                "then": 1,
+                "else": 0
+              }
+            ]
+          }
+        },
+        "cornerRadius": { "$token": "corner-full" },
+        "fill": {
+          "$if": { "$eq": ["enabled", "false"] },
+          "then": {
+            "$token": "on-surface",
+            "alpha": { "$token": "state-disabled-content" },
+            "over": "surface"
+          },
+          "else": { "$token": "primary" }
+        }
       },
       {
         "type": "repeat",
