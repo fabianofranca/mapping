@@ -3,6 +3,7 @@ import { type Box, approximateMeasurer, instantiate } from './components/instant
 import { type Library, type TextFile, loadLibrary } from './components/library';
 import { type Origin, screenFromSource } from './components/origin';
 import type { IconSet } from './components/icons';
+import { fitComponentSize, resolveSizing } from './components/sizing';
 import { type ResolvedTokens, resolveTokens } from './components/tokens';
 import type { LibraryIssue } from './library';
 import { libraryIssue } from './libraryIssue';
@@ -128,9 +129,23 @@ const DRAW_CODES = {
   readonly [ModelMessageTemplateCode, ModelMessageTemplateCode]
 >;
 
+/** Os mesmos casos desenhados no tamanho ajustado ao conteúdo (decisão 10 da #898): "tamanho ajustado W×H". */
+const FITTED_DRAW_CODES = {
+  defaults: ['library.drawFitted.defaults', 'library.drawFitted.defaultsMode'],
+  preview: ['library.drawFitted.preview', 'library.drawFitted.previewMode'],
+  example: ['library.drawFitted.example', 'library.drawFitted.exampleMode'],
+} as const satisfies Record<
+  DrawKind,
+  readonly [ModelMessageTemplateCode, ModelMessageTemplateCode]
+>;
+
 /** O código da mensagem do caso, com ou sem modo (um código por variante, texto inteiro no catálogo). */
-function drawCode(kind: DrawKind, withMode: boolean): ModelMessageTemplateCode {
-  return DRAW_CODES[kind][withMode ? 1 : 0];
+function drawCode(
+  kind: DrawKind,
+  withMode: boolean,
+  fitted: boolean,
+): ModelMessageTemplateCode {
+  return (fitted ? FITTED_DRAW_CODES : DRAW_CODES)[kind][withMode ? 1 : 0];
 }
 
 /**
@@ -145,6 +160,118 @@ function drawingModes(spec: Spec): DrawingMode[] {
 
 type DrawingMode = { mode?: string; tokens?: ResolvedTokens };
 
+const sameBox = (a: Box, b: Box): boolean => a.width === b.width && a.height === b.height;
+
+/**
+ * O tamanho ajustado do caso em cada modo (o do ajuste, com os valores do caso e os tokens do modo);
+ * `undefined` se o componente não tem eixo que dependa do conteúdo ou se o ajuste dá o `size` em
+ * todos os modos (o caso no `size` já o prova).
+ */
+function fittedBoxes(
+  component: ComponentFile,
+  values: FieldValues,
+  modes: readonly DrawingMode[],
+): Box[] | undefined {
+  try {
+    const boxes = modes.map(({ tokens }): Box | undefined => {
+      const fit = fitComponentSize(component, values, {
+        measure: approximateMeasurer,
+        ...(tokens === undefined ? {} : { tokens }),
+      });
+      return fit === undefined ? undefined : { x: 0, y: 0, ...fit };
+    });
+    const found = boxes.filter((b): b is Box => b !== undefined);
+    const initial: Box = { x: 0, y: 0, ...component.size };
+    if (found.length === 0 || found.every((b) => sameBox(b, initial))) return undefined;
+    return found.length === boxes.length ? found : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Prova um caso em cada modo, num tamanho por modo; o aviso que vale em todos os modos sai uma vez. */
+function proveCase(
+  type: SpecAnnotationType,
+  component: ComponentFile,
+  drawCase: DrawCase,
+  modes: readonly DrawingMode[],
+  boxes: readonly Box[],
+  fitted: boolean,
+  out: LibraryIssue[],
+): void {
+  const keys = new Set(type.fields.map((f) => f.key));
+  const issue = (
+    mode: string | undefined,
+    box: Box,
+    detail: ModelMessage,
+    severity: 'warning' | 'error',
+  ) =>
+    libraryIssue(
+      severity,
+      drawCase.file,
+      drawCase.path,
+      drawCode(drawCase.kind, mode !== undefined, fitted),
+      {
+        typeId: type.id,
+        ...(drawCase.name === undefined ? {} : { name: drawCase.name }),
+        ...(mode === undefined ? {} : { mode }),
+        size: `${box.width}×${box.height}`,
+      },
+      detail,
+    );
+  // O aviso que vale em todos os modos sai uma vez, sem modo; o que depende do modo cita o modo.
+  const perMode = modes.map(({ mode, tokens }, i) => {
+    try {
+      const { messages } = instantiate(component, drawCase.values, boxes[i] as Box, {
+        measure: approximateMeasurer,
+        ...(tokens === undefined ? {} : { tokens }),
+      });
+      const sizing = fitted ? [] : resolveSizing(component, drawCase.values).messages;
+      return {
+        mode,
+        box: boxes[i] as Box,
+        texts: [...messages, ...sizing]
+          .filter((m, at, all) => at === all.findIndex((x) => x.text === m.text))
+          .filter((m) => {
+            const key = String(m.params.key ?? '');
+            return m.code !== NOT_INFORMED_CODE || key === '' || keys.has(key);
+          })
+          .map(approximate),
+        error: undefined as string | undefined,
+      };
+    } catch (error) {
+      return {
+        mode,
+        box: boxes[i] as Box,
+        texts: [] as ModelMessage[],
+        error: messageOf(error),
+      };
+    }
+  });
+  const first = boxes[0] as Box;
+  const common =
+    modes.length > 1 && boxes.every((b) => sameBox(b, first))
+      ? (perMode[0]?.texts ?? []).filter((t) =>
+          perMode.every(
+            (m) => m.error === undefined && m.texts.some((x) => x.text === t.text),
+          ),
+        )
+      : [];
+  for (const message of common) out.push(issue(undefined, first, message, 'warning'));
+  for (const { mode, box, texts, error } of perMode) {
+    if (error !== undefined) {
+      out.push(
+        issue(mode, box, templateMessage('library.drawFailed', { error }), 'error'),
+      );
+      continue;
+    }
+    for (const message of texts) {
+      if (!common.some((c) => c.text === message.text))
+        out.push(issue(mode, box, message, 'warning'));
+    }
+  }
+}
+
 function typeDrawing(
   type: SpecAnnotationType,
   component: ComponentFile,
@@ -154,67 +281,20 @@ function typeDrawing(
   modes: readonly DrawingMode[],
   out: LibraryIssue[],
 ): void {
-  const keys = new Set(type.fields.map((f) => f.key));
   const box: Box = { x: 0, y: 0, ...component.size };
   for (const drawCase of drawCases(type, component, componentPath, specPath, basePath)) {
-    const issue = (
-      mode: string | undefined,
-      detail: ModelMessage,
-      severity: 'warning' | 'error',
-    ) =>
-      libraryIssue(
-        severity,
-        drawCase.file,
-        drawCase.path,
-        drawCode(drawCase.kind, mode !== undefined),
-        {
-          typeId: type.id,
-          ...(drawCase.name === undefined ? {} : { name: drawCase.name }),
-          ...(mode === undefined ? {} : { mode }),
-          size: `${box.width}×${box.height}`,
-        },
-        detail,
-      );
-    // O aviso que vale em todos os modos sai uma vez, sem modo; o que depende do modo cita o modo.
-    const perMode = modes.map(({ mode, tokens }) => {
-      try {
-        const { messages } = instantiate(component, drawCase.values, box, {
-          measure: approximateMeasurer,
-          ...(tokens === undefined ? {} : { tokens }),
-        });
-        return {
-          mode,
-          texts: messages
-            .filter((m) => {
-              const key = String(m.params.key ?? '');
-              return m.code !== NOT_INFORMED_CODE || key === '' || keys.has(key);
-            })
-            .map(approximate),
-          error: undefined as string | undefined,
-        };
-      } catch (error) {
-        return { mode, texts: [] as ModelMessage[], error: messageOf(error) };
-      }
-    });
-    const common =
-      modes.length > 1
-        ? (perMode[0]?.texts ?? []).filter((t) =>
-            perMode.every(
-              (m) => m.error === undefined && m.texts.some((x) => x.text === t.text),
-            ),
-          )
-        : [];
-    for (const message of common) out.push(issue(undefined, message, 'warning'));
-    for (const { mode, texts, error } of perMode) {
-      if (error !== undefined) {
-        out.push(issue(mode, templateMessage('library.drawFailed', { error }), 'error'));
-        continue;
-      }
-      for (const message of texts) {
-        if (!common.some((c) => c.text === message.text))
-          out.push(issue(mode, message, 'warning'));
-      }
-    }
+    proveCase(
+      type,
+      component,
+      drawCase,
+      modes,
+      modes.map(() => box),
+      false,
+      out,
+    );
+    // Componente com eixo que depende do conteúdo: o mesmo caso no tamanho ajustado.
+    const fit = fittedBoxes(component, drawCase.values, modes);
+    if (fit !== undefined) proveCase(type, component, drawCase, modes, fit, true, out);
   }
 }
 

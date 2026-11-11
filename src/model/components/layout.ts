@@ -7,7 +7,8 @@
  * texto é medido pelo `TextMeasurer` injetado.
  *
  * Regras:
- * - Spec por eixo: `component.sizing?.[eixo] ?? component.size[eixo]` (px, `fill` ou `hug`);
+ * - Spec por eixo: o `sizing` do componente avaliado com os valores do nó (literal ou, na v4,
+ *   expressão), ou o `size` do eixo (`resolveSizing`): px, `fill` ou `hug`;
  *   todo tamanho final respeita `minSize`; o `hug` medido sobe para o inteiro seguinte
  *   (`Math.ceil`), para o texto não quebrar por arredondamento. O resto fica exato.
  * - Um componente com slot tem um `slot`; o layout do slot (row/column/none, gap, padding,
@@ -30,6 +31,7 @@ import {
   measureComponent,
 } from './instantiate';
 import { justifySpacing, mirrorMain } from './layoutValues';
+import { type ResolvedSizing, resolveSizing } from './sizing';
 import type { Library } from './library';
 import type { Instance, Screen } from './screen';
 import { absoluteBoxes, walk } from './scene';
@@ -115,6 +117,8 @@ interface Prepared {
   readonly slot?: SlotTemplate;
   readonly layout: ResolvedSlotLayout;
   readonly kids: readonly Prepared[];
+  /** O `sizing` avaliado com os valores do nó (px, `fill` ou `hug` por eixo). */
+  readonly sizing: ResolvedSizing;
 }
 
 /** Retângulo de um filho relativo à origem do conteúdo do slot, e se cada eixo veio do `hug`. */
@@ -250,17 +254,19 @@ export function layoutScreen(
     const kids = slot
       ? node.children.map(prepare).filter((k): k is Prepared => k !== undefined)
       : [];
+    const sizing = resolveSizing(component, node.values);
+    for (const m of sizing.messages) warn(m.code as ModelMessageTemplateCode, m.params);
     return {
       node,
       component,
       ...(slot ? { slot } : {}),
       layout: slot ? resolveSlotLayout(slot, node.values) : NONE_LAYOUT,
       kids,
+      sizing,
     };
   };
 
-  const specOf = (p: Prepared, axis: Axis) =>
-    p.component.sizing?.[axis] ?? p.component.size[axis];
+  const specOf = (p: Prepared, axis: Axis) => p.sizing[axis].spec;
   const withMin = (p: Prepared, axis: Axis, value: number) =>
     Math.max(value, p.component.minSize?.[axis] ?? 0);
   const padW = (p: Prepared) => p.layout.padding.left + p.layout.padding.right;

@@ -846,3 +846,133 @@ describe('parseComponent: operações numéricas e comparações (formato 4)', (
     );
   });
 });
+
+describe('$lines e sizing por expressão (MC2, decisões 8 e 9 da #898)', () => {
+  const V4 = 'só é permitido com formatVersion 4';
+  const text = (name: string, extra: Record<string, unknown> = {}) => ({
+    type: 'text',
+    name,
+    text: 'Olá',
+    ...extra,
+  });
+  const file = (
+    template: Record<string, unknown>,
+    extra: Record<string, unknown> = {},
+    version = 4,
+  ): unknown => ({
+    format: 'mapping-component',
+    formatVersion: version,
+    id: 'c',
+    name: 'C',
+    size: { width: 200, height: 100 },
+    template,
+    ...extra,
+  });
+  const MIN = { $if: { $gt: [{ $lines: 'msg' }, 1] }, then: 68, else: 48 };
+  const root = (children: unknown[], extra: Record<string, unknown> = {}) => ({
+    type: 'frame',
+    minHeight: MIN,
+    children,
+    ...extra,
+  });
+
+  it('aceita $lines citando um nó text único, onde vale número', () => {
+    expect(validateComponent(file(root([text('msg')])))).toEqual([]);
+  });
+
+  it('nó citado inexistente, ou que não é text', () => {
+    for (const nodes of [[text('outro')], [{ type: 'rect', name: 'msg' }]]) {
+      const errors = validateComponent(file(root(nodes)));
+      expect(errors).toHaveLength(1);
+      expect(errors[0]).toMatch(
+        /^template\.minHeight\..*\$lines: nó text "msg" não existe$/,
+      );
+    }
+  });
+
+  it('nó repetido', () => {
+    const errors = validateComponent(file(root([text('msg'), text('msg')])));
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatch(/\$lines: mais de um nó text "msg"$/);
+  });
+
+  it('o próprio nó: $lines no width do nó citado', () => {
+    const errors = validateComponent(
+      file({
+        type: 'frame',
+        children: [text('msg', { width: { $mul: [{ $lines: 'msg' }, 10] } })],
+      }),
+    );
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatch(/\$lines: o nó não pode depender das próprias linhas$/);
+  });
+
+  it('só na v4: a chave nova numa formatVersion 3 pede a 4', () => {
+    const errors = validateComponent(file(root([text('msg')]), {}, 3));
+    expect(errors.some((e) => e.endsWith(V4))).toBe(true);
+  });
+
+  it('o nome precisa ser texto não vazio', () => {
+    expect(
+      validateComponent(file(root([text('msg')], { minHeight: { $lines: '' } }))),
+    ).toEqual([
+      'template.minHeight.$lines: esperava nome de um nó text (texto não vazio)',
+    ]);
+  });
+
+  it('sizing aceita expressão que dá número, fill ou hug (v4)', () => {
+    const sizing = {
+      width: 'fill',
+      height: { $switch: 'style', cases: { small: 64, medium: 112, large: 152 } },
+    };
+    expect(validateComponent(file({ type: 'frame' }, { sizing }))).toEqual([]);
+    expect(
+      validateComponent(
+        file(
+          { type: 'frame' },
+          { sizing: { height: { $if: { $has: 'x' }, then: 'hug', else: 48 } } },
+        ),
+      ),
+    ).toEqual([]);
+  });
+
+  it('sizing por expressão numa formatVersion 3 pede a 4', () => {
+    expect(
+      validateComponent(
+        file({ type: 'frame' }, { sizing: { height: { $field: 'h', default: 10 } } }, 3),
+      ),
+    ).toEqual([`sizing.height: ${V4}`]);
+  });
+
+  it('$size dentro do sizing é erro', () => {
+    expect(
+      validateComponent(
+        file({ type: 'frame' }, { sizing: { height: { $size: 'width' } } }),
+      ),
+    ).toEqual(['sizing.height: $size não vale em sizing']);
+    expect(
+      validateComponent(
+        file(
+          { type: 'frame' },
+          { sizing: { width: { $add: [{ $size: 'height' }, 4] } } },
+        ),
+      ),
+    ).toEqual(['sizing.width: $size não vale em sizing']);
+  });
+
+  it('$lines dentro do sizing é erro', () => {
+    expect(
+      validateComponent(
+        file(root([text('msg')], { minHeight: 1 }), {
+          sizing: { height: { $lines: 'msg' } },
+        }),
+      ),
+    ).toEqual(['sizing.height: $lines não vale em sizing']);
+  });
+
+  it('o valor literal inválido continua erro', () => {
+    expect(
+      validateComponent(file({ type: 'frame' }, { sizing: { height: -1 } })),
+    ).toEqual(['sizing.height: esperava número maior ou igual a 0, "fill" ou "hug"']);
+  });
+});

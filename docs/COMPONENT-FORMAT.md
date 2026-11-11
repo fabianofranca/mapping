@@ -400,7 +400,8 @@ Há três perguntas diferentes: **quanto mede a instância** (a raiz), **quanto 
   - **px**: tamanho fixo;
   - **`"fill"`**: ocupa o espaço que o pai dá naquele eixo;
   - **`"hug"`**: o tamanho do conteúdo (o template medido e, num componente com slot, os filhos já arrumados);
-  - **eixo ausente** (ou `sizing` ausente): os px de `size` naquele eixo.
+  - **eixo ausente** (ou `sizing` ausente): os px de `size` naquele eixo;
+  - **expressão** (`formatVersion` 4): `$switch` pelo estilo, `$if` por um campo… avaliada com os valores da instância, que dá px (≥ 0), `"fill"` ou `"hug"`. Valor que não é nenhum deles (ou expressão sem valor) cai no `size` daquele eixo com o aviso `valor inválido em sizing.height: <valor>`. `$size` e `$lines` não valem no `sizing` (o `sizing` é avaliado antes de medir): são erro de validação (`sizing.height: $size não vale em sizing`).
 
 ```json
 "size": { "width": 360, "height": 200 },
@@ -409,6 +410,15 @@ Há três perguntas diferentes: **quanto mede a instância** (a raiz), **quanto 
 ```
 
 O cartão do Material 3 ocupa a largura da coluna em que está e tem a altura do que carrega. Um botão `{ "width": "hug", "height": 40 }` tem a largura do rótulo e 40 de altura.
+
+```json
+"sizing": {
+  "width": "fill",
+  "height": { "$switch": "style", "cases": { "small": 64, "medium": 112, "large": 152 } }
+}
+```
+
+A barra do topo do Material 3 mede 64, 112 ou 152 conforme o estilo: na tela sem geometria, no playground do catálogo e no **Arrumar** de um componente com slot, o eixo vale o que a expressão dá (o `sizing` em px literal continua valendo só na tela sem geometria). O mesmo `sizing` avaliado diz à prova de desenho qual é o **tamanho ajustado** do componente (veja "Avisos do motor").
 
 ### Um nó do template: `width` e `height`
 
@@ -548,6 +558,7 @@ Quase todo atributo aceita, no lugar de um literal, uma **expressão** sobre os 
 | `{ "$concat": ["R$ ", { "$field": "preco" }] }`                           | Só em texto: junta as partes (números viram texto).                                                                                                                                                                                 |
 | `{ "$add": […] }`, `{ "$mul": […] }`, `{ "$sin": … }`…                    | `formatVersion` 4. Contas de número (veja "Contas e comparações").                                                                                                                                                                  |
 | `{ "$rows": "items" }`, `{ "$size": "width" }`                            | `formatVersion` 4. O número de linhas de um campo `table` e a largura ou altura da instância (veja "Contas e comparações").                                                                                                         |
+| `{ "$lines": "msg" }`                                                     | `formatVersion` 4. O número de linhas **medidas** do nó `text` chamado `msg` (veja "Contas e comparações" e "Altura pelo conteúdo").                                                                                                |
 | `{ "$token": "primary" }`                                                 | `formatVersion` 4. O valor do token da especialização no modo do desenho (veja "Tokens de design (`$token`)"). Só onde se espera cor, número ou família de fonte.                                                                   |
 | `{ "$provided": "content-color", "default": { "$token": "on-surface" } }` | `formatVersion` 4. O valor que um ancestral oferece com o `provide` do slot dele (só em posição de cor); sem ancestral que o ofereça, vale o `default` (uma expressão), e sem `default`, o padrão do atributo (veja "Cor herdada"). |
 
@@ -597,6 +608,7 @@ Na `formatVersion` 4 as expressões **calculam**. Cada operando é uma expressã
 - **Número no texto.** No `$concat` e no `text`, um número não inteiro sai com até 6 casas, sem zeros à direita (`0.1 + 0.2` vira `0.3`, não `0.30000000000000004`); o inteiro sai como sempre.
 - **Comparações** são condições: `{ "$gt": [a, b] }`, `$gte`, `$lt` e `$lte`, cada uma com dois operandos de número. Valem em `$if`, `visible`, `$and`, `$or` e `$not`; operando sem valor dá **falso**. O `$eq` continua `[campo, valor]`.
 - **`$rows` e `$size`.** `{ "$rows": "<campo table>" }` é o **número de linhas** do campo (sem linhas, 0); o validador da biblioteca recusa campo que não é `table` do tipo (`$rows conta as linhas de "titulo", que é um campo string do tipo "tabela", não uma table`). `{ "$size": "width" }` ou `"height"` é a **largura ou a altura da instância**, em px da imagem (o retângulo da marcação): é o que deixa um carousel ou uma barra seguir a largura disponível, e `left: { "$mul": [{ "$size": "width" }, 0.5] }` segue a marcação ao ser redimensionada. Na prova de desenho e na medida do `hug` da instância (`measureComponent`), vale o `size` do componente. `$size` com outro valor é erro (`template.width.$size: esperava "width" ou "height"`).
+- **`$lines`.** `{ "$lines": "<nó text>" }` é o **número de linhas medidas** do nó `text` com esse `name` (no máximo `maxLines`; texto vazio, 0). Vale onde vale um número e nas comparações (`{ "$gt": [{ "$lines": "msg" }, 1] }`). O nome precisa ser de um nó `text` do template, único: `nó text "msg" não existe` e `mais de um nó text "msg"` são erros de validação, no caminho do `$lines`; dentro de um `repeat` vale o nó da mesma linha. `$lines` dentro do próprio nó citado (no `width` dele, por exemplo) é erro (`o nó não pode depender das próprias linhas`). Veja "Altura pelo conteúdo".
 - **Campos citados.** Os campos dentro de uma operação, de `$rows` ou de uma comparação contam para o redesenho como em qualquer outra expressão. `{ "$field": "$index" }` (o índice da linha de um `repeat`) não é campo do tipo.
 - **Calcule em vez de enumerar.** Não escreva um `$switch` de dezenas de casos sobre um número (nem um `$eq` por valor): use a conta. Numa `formatVersion` menor que 4, cada chave nova é erro `só é permitido com formatVersion 4`, no caminho dela (`template.width.$mul`).
 
@@ -689,16 +701,17 @@ O motor **avisa**, não recorta nem recusa: conteúdo maior que o slot ou que a 
 
 **Ao desenhar um componente** (`instantiate`):
 
-| Aviso                                             | Quando                                                                                                                                                                                                                                                                                                          |
-| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `campo não informado: <chave>`                    | O template cita um campo que não está nos valores recebidos (o campo existe no tipo e o valor não veio).                                                                                                                                                                                                        |
-| `fill dentro de hug vira 0`                       | Um filho `fill` no eixo principal de um quadro `hug` (dentro de um template o `fill` vale 0).                                                                                                                                                                                                                   |
-| `texto medido com largura 0: <nó>`                | Um texto com largura definida (`fill` ou `%`) foi medido com largura máxima 0 (o pai não tem largura para ele); sai quebrado letra a letra.                                                                                                                                                                     |
-| `valor inválido em <chave>: <valor>`              | Uma expressão de `layout.type`, `layout.align`, `layout.justify`, `width` ou `height` (`formatVersion` 4) resolveu fora do conjunto; vale o padrão. Também `shadow.blur` negativo (vale 0), `stroke.offset` negativo (vale 0) e `stroke.dash` que não é lista de números maiores ou iguais a 0 (sem tracejado). |
-| `texto maior que a caixa: <nó>`                   | Um texto com largura e altura definidas quebra em mais linhas do que a altura comporta (tolerância de 1 px) e não tem `maxLines` nem `ellipsis` que o corte (`formatVersion` 4 ou não).                                                                                                                         |
-| `conteúdo maior que a caixa: <quadro>`            | Os filhos (tamanhos fixos mais `gap`s) passam do conteúdo do quadro no eixo principal, ou um filho fixo passa do conteúdo no eixo cruzado (tolerância de 1 px quando entre os filhos há texto).                                                                                                                 |
-| `ícone esticado: escala diferente nos dois eixos` | A caixa de um `path` ou `icon` tem outra proporção que o `viewBox`.                                                                                                                                                                                                                                             |
-| `ícone desconhecido: <nome>`                      | O `name` de um nó `icon` não está no conjunto de ícones da especialização (ou ela não declara `icons`): o nó vira o reservado (`formatVersion` 4).                                                                                                                                                              |
+| Aviso                                             | Quando                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `campo não informado: <chave>`                    | O template cita um campo que não está nos valores recebidos (o campo existe no tipo e o valor não veio).                                                                                                                                                                                                                                                                           |
+| `fill dentro de hug vira 0`                       | Um filho `fill` no eixo principal de um quadro `hug` (dentro de um template o `fill` vale 0).                                                                                                                                                                                                                                                                                      |
+| `texto medido com largura 0: <nó>`                | Um texto com largura definida (`fill` ou `%`) foi medido com largura máxima 0 (o pai não tem largura para ele); sai quebrado letra a letra.                                                                                                                                                                                                                                        |
+| `valor inválido em <chave>: <valor>`              | Uma expressão de `layout.type`, `layout.align`, `layout.justify`, `width` ou `height` (`formatVersion` 4), ou o `sizing.width` / `sizing.height` (que cai no `size` do eixo) resolveu fora do conjunto; vale o padrão. Também `shadow.blur` negativo (vale 0), `stroke.offset` negativo (vale 0) e `stroke.dash` que não é lista de números maiores ou iguais a 0 (sem tracejado). |
+| `texto maior que a caixa: <nó>`                   | Um texto com largura e altura definidas quebra em mais linhas do que a altura comporta (tolerância de 1 px) e não tem `maxLines` nem `ellipsis` que o corte (`formatVersion` 4 ou não).                                                                                                                                                                                            |
+| `$lines instável: <nó>`                           | O número de linhas de um nó citado por `$lines` mudou da primeira para a segunda passagem (fica o da segunda).                                                                                                                                                                                                                                                                     |
+| `conteúdo maior que a caixa: <quadro>`            | Os filhos (tamanhos fixos mais `gap`s) passam do conteúdo do quadro no eixo principal, ou um filho fixo passa do conteúdo no eixo cruzado (tolerância de 1 px quando entre os filhos há texto).                                                                                                                                                                                    |
+| `ícone esticado: escala diferente nos dois eixos` | A caixa de um `path` ou `icon` tem outra proporção que o `viewBox`.                                                                                                                                                                                                                                                                                                                |
+| `ícone desconhecido: <nome>`                      | O `name` de um nó `icon` não está no conjunto de ícones da especialização (ou ela não declara `icons`): o nó vira o reservado (`formatVersion` 4).                                                                                                                                                                                                                                 |
 
 **Ao arrumar uma tela sem geometria** (`layoutScreen`; o texto leva o id da instância na frente):
 
@@ -713,7 +726,7 @@ O motor **avisa**, não recorta nem recusa: conteúdo maior que o slot ou que a 
 
 **Ao traduzir um JSON externo** (origem): tipo externo sem tipo de anotação (o nó e a subárvore ficam de fora), propriedade desconhecida (que não é caminho de um campo nem está em `ignore`), valor fora das `options` de um `enum`, objeto onde se esperava um valor simples, âncora inválida (usa `top-start`) e margem inválida. Os avisos levam o caminho do nó (`content.children[1].props.foo`). Ver [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Origens".
 
-Os avisos não se repetem. A mesma regra vale na prova de desenho do validador da biblioteca (nível 3), onde cada aviso do motor vira um aviso do pacote. A prova roda cada caso **em cada modo** de `tokens` da especialização, com os tokens do modo resolvidos (o tamanho e a família do texto vêm do token); o aviso cita o modo (`tipo "card", o preview, modo dark, tamanho inicial 300×120: …`) o aviso igual em todos os modos sai uma vez, sem modo, e, sem `tokens`, a mensagem não traz modo.
+Os avisos não se repetem. A mesma regra vale na prova de desenho do validador da biblioteca (nível 3), onde cada aviso do motor vira um aviso do pacote. Um componente com eixo que depende do conteúdo (`sizing` `hug`, ou px por expressão) é provado também no **tamanho ajustado** (o do ajuste, com os valores do caso): o aviso cita `tamanho ajustado W×H` em vez de `tamanho inicial W×H`, e o caso no `size` continua. A prova roda cada caso **em cada modo** de `tokens` da especialização, com os tokens do modo resolvidos (o tamanho e a família do texto vêm do token); o aviso cita o modo (`tipo "card", o preview, modo dark, tamanho inicial 300×120: …`) o aviso igual em todos os modos sai uma vez, sem modo, e, sem `tokens`, a mensagem não traz modo.
 
 ## Texto de uma linha, reticências e `maxLines`
 
@@ -758,6 +771,38 @@ O texto se posiciona pela **linha de base**, como o `paddingFromBaseline` e o `a
   - No slot, a linha de base de uma marcação filha é a do desenho dela (o mesmo plano que a prova usa); a arrumação (**Arrumar**) segue a regra.
 - **Texto rico (`runs`):** a linha de base de cada linha é a da fonte base do nó. Trechos maiores podem passar dela (veja "Limites conhecidos").
 - Numa `formatVersion` de 1 a 3, as duas chaves falham com `só é permitido com formatVersion 4`.
+
+## Altura pelo conteúdo: `$lines` e `sizing` por expressão (`formatVersion` 4)
+
+A altura de um componente pode depender de **quantas linhas** o texto ocupa: o snackbar mede 48 com uma linha, 68 com duas e a altura das linhas com três ou mais.
+
+```json
+{
+  "formatVersion": 4,
+  "sizing": { "width": "fill", "height": "hug" },
+  "template": {
+    "type": "frame",
+    "height": "hug",
+    "minHeight": { "$if": { "$gt": [{ "$lines": "msg" }, 1] }, "then": 68, "else": 48 },
+    "layout": { "type": "column", "padding": [14, 16] },
+    "children": [
+      {
+        "type": "text",
+        "name": "msg",
+        "text": { "$field": "msg" },
+        "width": "fill",
+        "height": "hug"
+      }
+    ]
+  }
+}
+```
+
+- **Duas passagens.** O número de linhas só se sabe depois de arrumar. Com `$lines` no template, o motor arruma uma vez com `$lines` = 1, lê o número de linhas **medidas** de cada nó citado (na largura final dele) e arruma de novo com esses números. Se a segunda passagem medir outro número num nó citado, fica o da segunda e o motor avisa `$lines instável: <nó>` (sem terceira passagem). Sem `$lines` no template a passagem é uma só: nenhum desenho de hoje muda.
+- **O que `$lines` conta.** As linhas medidas, não as que cabem na caixa (o corte pela altura é só do desenho). Com `font.maxLines`, no máximo `maxLines`; texto vazio, 0. Nó que não é desenhado (`visible` falso) vale 0 na segunda passagem.
+- **Limites da raiz.** `minWidth`, `maxWidth`, `minHeight` e `maxHeight` da raiz aceitam expressão (e portanto `$lines`) e valem no eixo medido: é o 48/68 do snackbar e os limites do `search-bar` e do `text-field`. Passam a valer também no ajuste do retângulo (o ajuste da marcação ao conteúdo usa a mesma função de medida: `fitComponentSize`, em `src/model/components/sizing.ts`).
+- **`sizing` por expressão.** Veja "A instância": o eixo vale o px, o `fill` ou o `hug` que a expressão dá, avaliada com os valores da instância.
+- **Só na `formatVersion` 4.** `$lines` e a expressão em `sizing` numa `formatVersion` de 1 a 3 falham com `só é permitido com formatVersion 4`, no caminho da chave.
 
 ## Texto rico: trechos e caixa em linha
 
@@ -863,6 +908,7 @@ Quem lê um aviso terminado em **`(aproximado)`** (a prova de desenho do validad
 - A medida do texto no Node é aproximada (ver acima).
 - **Sombra interna não existe.** `shadow` é sempre externa; para um efeito de fundo afundado, desenhe um nó a mais.
 - **`stroke.sides` com cor ou largura por lado.** Os lados pedidos compartilham cor, largura, `align` e `dash`; para valores diferentes por lado, use dois nós (cada um com os seus `sides`).
+- **`$lines` em duas passagens, sem terceira.** Um template em que o número de linhas muda a largura do próprio texto (ou de um irmão que o espreme) pode não assentar: fica o número da segunda passagem e o motor avisa `$lines instável: <nó>`. O `sizing` é avaliado antes de medir, então não aceita `$lines` nem `$size`.
 - **O `middle` centra a caixa de linha, não a maiúscula.** A caixa de linha tem o ascent e o descent da fonte, que variam de uma fonte para outra; o rótulo de uma linha pode ficar alguns décimos de px acima ou abaixo do centro da letra. Para o rótulo de uma linha (botão, chip, aba, campo), use `cap-middle`; para parágrafo, ou para bater com o DOM linha a linha, o `middle`.
 - **`cap-middle` com trechos maiores que o do nó.** O `capHeight` é o da fonte base do nó; um trecho com `size` maior pode ficar fora do centro.
 - **Texto rico alinha pela linha de base só na fonte base do nó.** O `baselinePadding` e o `align: "baseline"` usam a linha de base da fonte base; os pedaços de uma linha (texto de tamanhos diferentes e chips) ficam centrados verticalmente na linha. Com trechos de `size` bem diferentes, as letras podem não encostar na mesma linha de base; para um destaque grande, prefira um chip ou um nó à parte.

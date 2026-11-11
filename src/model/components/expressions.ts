@@ -72,6 +72,32 @@ export function sizeKey(axis: 'width' | 'height'): string {
   return `$size:${axis}`;
 }
 
+/** O campo de valores onde o motor entrega o número de linhas medidas do nó text `name` (`$lines`). */
+export function linesKey(name: string): string {
+  return `$lines:${name}`;
+}
+
+const LINES_SCOPE = /^\$r\d+_\d+:/;
+
+/** O nome do nó text de uma chave de `$lines` (sem o escopo da linha de um `repeat`, `$r0_1:`). */
+export function linesNodeName(key: string): string {
+  return key.replace(LINES_SCOPE, '');
+}
+
+/** Os nomes que as expressões `$lines` da árvore citam (em qualquer profundidade). */
+export function linesCitations(tree: unknown, out: Set<string> = new Set()): Set<string> {
+  if (Array.isArray(tree)) {
+    for (const item of tree) linesCitations(item, out);
+    return out;
+  }
+  if (typeof tree !== 'object' || tree === null) return out;
+  for (const [key, value] of Object.entries(tree)) {
+    if (key === '$lines' && typeof value === 'string') out.add(value);
+    else linesCitations(value, out);
+  }
+  return out;
+}
+
 /** Valores oferecidos pelos slots dos ancestrais (cor herdada, v4), pelo nome, já resolvidos. */
 export type ProvidedValues = Readonly<Record<string, string | number>>;
 
@@ -88,12 +114,13 @@ function rowCount(value: FieldValue): number {
   return Array.isArray(value) ? value.length : 0;
 }
 
-/** `$rows` e `$size`: o número que a expressão produz, ou nenhum. */
+/** `$rows`, `$lines` e `$size`: o número que a expressão produz, ou nenhum. */
 function evaluateCount(
   expr: Record<string, unknown>,
   values: FieldValues,
 ): number | undefined {
   if ('$rows' in expr) return rowCount(values[expr.$rows as string]);
+  if ('$lines' in expr) return toNumber(values[linesKey(expr.$lines as string)]);
   return toNumber(values[sizeKey(expr.$size === 'height' ? 'height' : 'width')]);
 }
 
@@ -180,7 +207,16 @@ export function evaluateCondition(condition: Condition, values: FieldValues): bo
 }
 
 /** Chaves que marcam um objeto como expressão (as operações numéricas à parte, em `NUMERIC_OPS`). */
-const EXPR_KEYS = ['$field', '$if', '$switch', '$concat', '$rows', '$size', '$provided'];
+const EXPR_KEYS = [
+  '$field',
+  '$if',
+  '$switch',
+  '$concat',
+  '$rows',
+  '$size',
+  '$lines',
+  '$provided',
+];
 
 function isExprObject(value: unknown): value is Record<string, unknown> {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
@@ -224,7 +260,7 @@ export function evaluate<T>(expr: Expr<T>, values: FieldValues, fallback: T): T 
     if (!isEmpty(value)) return value as unknown as T;
     return e.default === undefined ? fallback : evaluate(e.default, values, fallback);
   }
-  if ('$rows' in expr || '$size' in expr) {
+  if ('$rows' in expr || '$size' in expr || '$lines' in expr) {
     const n = evaluateCount(expr as Record<string, unknown>, values);
     return (n === undefined ? fallback : n) as T;
   }

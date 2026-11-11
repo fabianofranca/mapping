@@ -2003,30 +2003,15 @@
       }
     },
     "sizing": {
+      "description": "Dimensionamento sem retângulo. Cada eixo: px (>= 0), \"fill\", \"hug\" ou, na formatVersion 4, uma expressão que dá um deles, avaliada com os valores da instância ($size e $lines não valem aqui; % e $token o parseComponent recusa).",
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "width": {
-          "anyOf": [
-            {
-              "type": "number",
-              "minimum": 0
-            },
-            {
-              "enum": ["fill", "hug"]
-            }
-          ]
+          "$ref": "#/$defs/expr_size"
         },
         "height": {
-          "anyOf": [
-            {
-              "type": "number",
-              "minimum": 0
-            },
-            {
-              "enum": ["fill", "hug"]
-            }
-          ]
+          "$ref": "#/$defs/expr_size"
         }
       }
     },
@@ -3854,7 +3839,7 @@
       "$ref": "#/$defs/expr_number"
     },
     "numericOps": {
-      "description": "Operações numéricas (formatVersion 4): $add, $sub, $mul, $div, $mod, $round, $floor, $ceil, $abs, $min, $max, $clamp, $sin e $cos (em graus). Operando sem valor (vazio, texto não numérico, divisão por zero) faz a operação não produzir valor. $rows (número de linhas de um campo table; sem linhas, 0) e $size (\"width\" ou \"height\" da instância em px da imagem; na prova de desenho e no hug, o size do componente) também produzem número.",
+      "description": "Operações numéricas (formatVersion 4): $add, $sub, $mul, $div, $mod, $round, $floor, $ceil, $abs, $min, $max, $clamp, $sin e $cos (em graus). Operando sem valor (vazio, texto não numérico, divisão por zero) faz a operação não produzir valor. $rows (número de linhas de um campo table; sem linhas, 0), $size (\"width\" ou \"height\" da instância em px da imagem; na prova de desenho e no hug, o size do componente) e $lines (o número de linhas medidas de um nó text) também produzem número.",
       "anyOf": [
         {
           "type": "object",
@@ -4049,6 +4034,18 @@
           "properties": {
             "$size": {
               "enum": ["width", "height"]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$lines"],
+          "properties": {
+            "$lines": {
+              "description": "Nome de um nó text único do template: o número de linhas medidas dele (no máximo maxLines; texto vazio, 0). O motor arruma em duas passagens (formatVersion 4).",
+              "type": "string",
+              "minLength": 1
             }
           }
         }

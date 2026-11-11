@@ -735,3 +735,41 @@ describe('arrangeMarking: align "baseline" no slot (MC1, decisão 4)', () => {
     expect(rectOf(project, 'C').height).toBe(47);
   });
 });
+
+describe('arrangeMarking: sizing por expressão no componente com slot (MC2, decisão 9)', () => {
+  /** `row` com a altura pelo `spacing`: 8 → 64, 16 → 112, 24 → 152, 32 → hug. */
+  function sizedCatalog(): ComponentCatalog {
+    const row = JSON.parse(JSON.stringify(COMPONENTS.row)) as Record<string, unknown>;
+    row.formatVersion = 4;
+    row.sizing = {
+      height: {
+        $switch: 'spacing',
+        cases: { '8': 64, '16': 112, '24': 152, '32': 'hug' },
+      },
+    };
+    return testCatalog({ ...COMPONENTS, row });
+  }
+
+  function arranged(spacing: number): Rect {
+    const cat = sizedCatalog();
+    let p = add(componentProject(), 'C', 'row', box(100, 100, 300, 100), null, {}, cat);
+    p = setFieldValue(p, 'A_C', 'spacing', spacing);
+    p = add(p, 'T1', 'text', box(120, 120, 100, 40), 'C', {}, cat);
+    return rectOf(arrange(p, 'C', cat).project, 'C');
+  }
+
+  it('o px que a expressão dá vira a altura do container', () => {
+    expect(arranged(8).height).toBe(64);
+    expect(arranged(16).height).toBe(112);
+    expect(arranged(24).height).toBe(152);
+    expect(arranged(8)).toMatchObject({ x: 100, y: 100, width: 300 });
+  });
+
+  it('hug vindo da expressão mede o conteúdo (o filho de 40 de altura)', () => {
+    expect(arranged(32).height).toBe(40);
+  });
+
+  it('valor inválido deixa a altura como está e o arrumar segue', () => {
+    expect(arranged(99).height).toBe(100);
+  });
+});

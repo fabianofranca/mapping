@@ -802,3 +802,80 @@ describe('layoutScreen: fill com minSize e âncora (#CR-13, #CR-14)', () => {
     // O mesmo no eixo horizontal (row com largura 300).
   });
 });
+
+// --- sizing por expressão (MC2, decisão 9 da #898) --------------------------------------------
+
+describe('layoutScreen: sizing por expressão', () => {
+  /** O `top-app-bar`: a altura pelo `style` (64, 112, 152); o `size` 80 vale se a expressão falhar. */
+  const bar: ComponentFile = {
+    ...component('bar', {}, { size: { width: 100, height: 80 } }),
+    formatVersion: 4,
+    sizing: {
+      width: 'fill',
+      height: {
+        $switch: 'style',
+        cases: { small: 64, medium: 112, large: 152 },
+        default: { $field: 'h' },
+      },
+    },
+  } as unknown as ComponentFile;
+  const barLib = build([...COMPONENTS, bar], {
+    ...SPEC,
+    layers: [
+      {
+        ...SPEC.layers[0]!,
+        annotationTypes: [
+          ...SPEC.layers[0]!.annotationTypes,
+          {
+            id: 'bar',
+            name: 'bar',
+            component: 'components/bar.json',
+            fields: [{ key: 'style', label: 'Estilo', type: 'string', default: 'small' }],
+          },
+        ],
+      },
+    ],
+  });
+  const stack = (...styles: (string | [string, string | number])[]) =>
+    run(
+      [
+        root(
+          node(
+            'c',
+            'col',
+            {},
+            styles.map((style, i) =>
+              node(
+                `b${i}`,
+                'bar',
+                typeof style === 'string' ? { style } : { style: style[0], h: style[1] },
+              ),
+            ),
+          ),
+        ),
+      ],
+      300,
+      600,
+      barLib,
+    );
+
+  it('a biblioteca de teste carrega sem problemas', () => {
+    expect(barLib.problems).toEqual([]);
+  });
+
+  it('64, 112 e 152 pelo valor do campo', () => {
+    const result = stack('small', 'medium', 'large');
+    expect(result.warnings).toEqual([]);
+    expect(boxOf(result, 'b0').height).toBe(64);
+    expect(boxOf(result, 'b1')).toMatchObject({ y: 64, height: 112 });
+    expect(boxOf(result, 'b2')).toMatchObject({ y: 176, height: 152 });
+  });
+
+  it('valor inválido cai no size daquele eixo e avisa', () => {
+    const result = stack(['nope', -4], ['outro', 'banana']);
+    expect(boxOf(result, 'b0').height).toBe(80);
+    expect(boxOf(result, 'b1').height).toBe(80);
+    expect(result.warnings).toContain('valor inválido em sizing.height: -4');
+    expect(result.warnings).toContain('valor inválido em sizing.height: banana');
+  });
+});

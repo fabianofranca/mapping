@@ -6,6 +6,12 @@ import {
   type ResolvedSlotLayout,
 } from './components/arrange';
 import type { ComponentFile, FieldValues } from './components/componentFormat';
+import {
+  expressionPx,
+  resolveSizing,
+  type ResolvedAxis,
+  type ResolvedSizing,
+} from './components/sizing';
 import type { ResolvedTokens } from './components/tokens';
 import {
   instantiate,
@@ -102,6 +108,58 @@ function sameRect(a: Rect, b: Rect): boolean {
 /** Inteiro para cima, sem que o ruído do ponto flutuante some um pixel. */
 function ceilFit(value: number): number {
   return Math.ceil(value - 1e-6);
+}
+
+/** O que o `sizing` faz num eixo: medir o conteúdo (`hug`), dar um px por expressão, ou nada. */
+interface AxisPlan {
+  readonly hug: boolean;
+  readonly px: number | undefined;
+}
+
+function axisPlan(axis: ResolvedAxis, stretched: boolean): AxisPlan {
+  return {
+    hug: axis.spec === 'hug' && !stretched,
+    px: stretched ? undefined : expressionPx(axis),
+  };
+}
+
+/** O valor final de um eixo: o medido (inteiro para cima), o px da expressão ou o atual, nunca abaixo do mínimo. */
+function axisValue(
+  plan: AxisPlan,
+  current: number,
+  measured: number,
+  min: number | undefined,
+): number {
+  const raw = plan.hug ? ceilFit(measured) : (plan.px ?? current);
+  return plan.hug || plan.px !== undefined
+    ? Math.max(raw, min ?? 0, MIN_STORED_MARKING_SIZE)
+    : raw;
+}
+
+/** O que o `sizing` avaliado pede a um componente: o retângulo novo, ou `undefined` se nada muda. */
+function applySizing(
+  rect: Rect,
+  sizing: ResolvedSizing,
+  stretched: { readonly width: boolean; readonly height: boolean },
+  min: { readonly width: number; readonly height: number } | undefined,
+  measure: (hug: { width: boolean; height: boolean }) => {
+    width: number;
+    height: number;
+  },
+): { rect: Rect; hugW: boolean; hugH: boolean } | undefined {
+  const w = axisPlan(sizing.width, stretched.width);
+  const h = axisPlan(sizing.height, stretched.height);
+  if (!w.hug && !h.hug && w.px === undefined && h.px === undefined) return undefined;
+  const measured = w.hug || h.hug ? measure({ width: w.hug, height: h.hug }) : rect;
+  return {
+    rect: {
+      ...rect,
+      width: axisValue(w, rect.width, measured.width, min?.width),
+      height: axisValue(h, rect.height, measured.height, min?.height),
+    },
+    hugW: w.hug,
+    hugH: h.hug,
+  };
 }
 
 /** `inner` preso dentro de `outer`. `push` empurra (e encolhe só se for maior); `shrink` mantém x e y e corta o excesso. */
@@ -210,30 +268,32 @@ export function arrangeMarking(
     for (const kid of kids) {
       if (containerAt(kid.id) !== null) continue;
       const mc = markingComponent(p, catalog, kid.id);
-      const sizing = mc?.component.sizing;
-      if (mc === null || sizing === undefined) continue;
-      const hugW = sizing.width === 'hug' && !stretchedByParent(kid.id, 'width');
-      const hugH = sizing.height === 'hug' && !stretchedByParent(kid.id, 'height');
-      if (!hugW && !hugH) continue;
-      const rect = rects.get(kid.id) as Rect;
+      if (mc === null || mc.component.sizing === undefined) continue;
       const values = drawingValues(p, mc.annotation, mc.type).values;
+      const sizing = resolveSizing(mc.component, values);
+      sizing.messages.forEach(warn);
+      const rect = rects.get(kid.id) as Rect;
       const drawn = componentForDrawing(p, mc.component, kid.containerId);
-      const measured = measureComponent(
-        drawn.component,
-        values,
-        { width: hugW ? null : rect.width, height: hugH ? null : rect.height },
-        { measure, ...tokensOption(drawn.tokens) },
+      const fitted = applySizing(
+        rect,
+        sizing,
+        {
+          width: stretchedByParent(kid.id, 'width'),
+          height: stretchedByParent(kid.id, 'height'),
+        },
+        mc.component.minSize,
+        (hug) =>
+          measureComponent(
+            drawn.component,
+            values,
+            {
+              width: hug.width ? null : rect.width,
+              height: hug.height ? null : rect.height,
+            },
+            { measure, ...tokensOption(drawn.tokens) },
+          ),
       );
-      const min = mc.component.minSize;
-      rects.set(kid.id, {
-        ...rect,
-        width: hugW
-          ? Math.max(ceilFit(measured.width), min?.width ?? 0, MIN_STORED_MARKING_SIZE)
-          : rect.width,
-        height: hugH
-          ? Math.max(ceilFit(measured.height), min?.height ?? 0, MIN_STORED_MARKING_SIZE)
-          : rect.height,
-      });
+      if (fitted !== undefined) rects.set(kid.id, fitted.rect);
     }
   };
 
@@ -279,23 +339,28 @@ export function arrangeMarking(
     };
 
     let rect = rects.get(id) as Rect;
-    const hugW = component.sizing?.width === 'hug' && !stretchedByParent(id, 'width');
-    const hugH = component.sizing?.height === 'hug' && !stretchedByParent(id, 'height');
-    if (hugW || hugH) {
-      const measured = measureComponent(
-        component,
-        values,
-        { width: hugW ? null : rect.width, height: hugH ? null : rect.height },
-        { measure, slotContent, ...tokensOption(info.tokens) },
-      );
-      const min = component.minSize;
-      const width = hugW
-        ? Math.max(ceilFit(measured.width), min?.width ?? 0, MIN_STORED_MARKING_SIZE)
-        : rect.width;
-      const height = hugH
-        ? Math.max(ceilFit(measured.height), min?.height ?? 0, MIN_STORED_MARKING_SIZE)
-        : rect.height;
-      rect = { ...rect, width, height };
+    const sizing = resolveSizing(component, values);
+    sizing.messages.forEach(warn);
+    const fitted = applySizing(
+      rect,
+      sizing,
+      { width: stretchedByParent(id, 'width'), height: stretchedByParent(id, 'height') },
+      component.minSize,
+      (hug) =>
+        measureComponent(
+          component,
+          values,
+          {
+            width: hug.width ? null : rect.width,
+            height: hug.height ? null : rect.height,
+          },
+          { measure, slotContent, ...tokensOption(info.tokens) },
+        ),
+    );
+    const hugW = fitted?.hugW ?? false;
+    const hugH = fitted?.hugH ?? false;
+    if (fitted !== undefined) {
+      rect = fitted.rect;
       rects.set(id, rect);
     }
 
