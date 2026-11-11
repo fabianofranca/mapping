@@ -1075,6 +1075,7 @@ describe('cloud.mjs run, --prazo e help (etapa #1148, TR1)', () => {
       'run',
       'find',
       'passo',
+      'secao',
       'help',
     ]) {
       expect(r.stdout, cmd).toMatch(new RegExp(`cloud\\.mjs ${cmd}\\b`));
@@ -1826,5 +1827,69 @@ describe('cloud.mjs passo (#1232, GL1)', () => {
     const r = passo(['R0'], { APOIO: path.join(apoio, 'nada') });
     expect(r.status).toBe(2);
     expect(r.stderr).toContain('round-guide.mjs');
+  });
+});
+
+// Etapa #1533 (TE1, decisão 2): `cloud.mjs secao` imprime uma seção do guia da rodada, sem abrir o Chrome.
+describe('cloud.mjs secao (#1533, TE1)', () => {
+  let apoio: string;
+
+  beforeAll(() => {
+    apoio = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-secao-'));
+    const guide = spawnSync('node', ['scripts/testing/round-guide.mjs', 'R0'], {
+      encoding: 'utf8',
+    });
+    writeFileSync(path.join(apoio, 'guia.md'), guide.stdout);
+  });
+
+  afterAll(() => rmSync(apoio, { recursive: true, force: true }));
+
+  function secao(
+    args: string[],
+    env: Record<string, string | undefined> = { APOIO: apoio },
+  ) {
+    const r = spawnSync('node', ['scripts/testing/cloud.mjs', 'secao', ...args], {
+      env: { ...process.env, ...env },
+      encoding: 'utf8',
+    });
+    return { status: r.status, stdout: r.stdout, stderr: r.stderr };
+  }
+
+  it('secao 7 imprime a seção 7 e só ela', () => {
+    const r = secao(['7']);
+    expect(r.status).toBe(0);
+    expect(r.stdout.startsWith('## 7. Como relatar um problema')).toBe(true);
+    expect(r.stdout).not.toContain('## 8. Roteiros');
+  });
+
+  it('secao xyz sai com 2 e lista as chaves', () => {
+    const r = secao(['xyz']);
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe('');
+    expect(r.stderr).toContain('xyz');
+    for (const key of ['1', '5', 'A.seletores', 'B', 'consulta.grupos']) {
+      expect(r.stderr, key).toContain(key);
+    }
+  });
+
+  it('sem chave lista as chaves com o tamanho e o "quando ler"', () => {
+    const r = secao([]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/^5\b.*\d+.*\S/m);
+    expect(r.stdout).toContain('consulta.historico');
+  });
+
+  it('as chaves consulta.* leem o docs/TESTING-NUVEM-CONSULTA.md do clone', () => {
+    const r = secao(['consulta.passada']);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain('Passada visual');
+  });
+
+  it('--guia aponta outro arquivo; guia que não existe sai com 2', () => {
+    const r = secao(['1', `--guia=${path.join(apoio, 'guia.md')}`], { APOIO: undefined });
+    expect(r.status).toBe(0);
+    const bad = secao(['1'], { APOIO: path.join(apoio, 'nada') });
+    expect(bad.status).toBe(2);
+    expect(bad.stderr).toContain('round-guide.mjs');
   });
 });

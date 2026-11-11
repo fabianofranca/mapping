@@ -31,7 +31,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
-import { guideExcerpt } from './round-guide.mjs';
+import { guideExcerpt, guideSection, listSecoes } from './round-guide.mjs';
 
 const execFileAsync = promisify(execFile);
 
@@ -1824,6 +1824,10 @@ const CLI_HELP = [
     'passo <item…> [--guia=<arquivo>]',
     'imprime do guia da rodada (<APOIO>/guia.md) o roteiro (R12), um passo (R12.4) ou uma faixa (R12.1-R12.8), sem abrir o Chrome; passa de 25 mil caracteres, corta e diz como continuar',
   ],
+  [
+    'secao [<chave…>] [--guia=<arquivo>]',
+    'imprime uma seção sob demanda do guia da rodada (1, 2, 3, 5, 6, 7, A.seletores, B) ou do docs/TESTING-NUVEM-CONSULTA.md (consulta.grupos, consulta.passada, consulta.historico), sem abrir o Chrome; sem chave, lista as chaves com o tamanho e o quando ler; corta em 25 mil caracteres',
+  ],
   ['help', 'esta lista'],
 ];
 
@@ -1886,7 +1890,59 @@ function runPasso(args) {
   }
 }
 
-/** Roda a CLI (`mark`, `state`, `tempos`, `ponto`, `run`, `passo` e `help`); lê a pasta de apoio de `APOIO` (ou, sem ela, da rodada mais recente). */
+/** O `docs/TESTING-NUVEM-CONSULTA.md` do clone (ao lado do `scripts/`), ou `undefined` se não existir. */
+function readConsulta() {
+  const file = path.join(
+    path.dirname(fileURLToPath(import.meta.url)),
+    '..',
+    '..',
+    'docs',
+    'TESTING-NUVEM-CONSULTA.md',
+  );
+  try {
+    return fs.readFileSync(file, 'utf8');
+  } catch {
+    return undefined;
+  }
+}
+
+/** `secao [<chave…>] [--guia=<arquivo>]`: imprime seções sob demanda do guia da rodada (etapa #1533, TE1). */
+function runSecao(args) {
+  const guiaArg = args.find((a) => a.startsWith('--guia='));
+  const chaves = args.filter((a) => !a.startsWith('--guia='));
+  if (guiaArg && guiaArg.length === 7) {
+    console.error('Uso: node cloud.mjs secao [<chave…>] [--guia=<arquivo>]');
+    process.exitCode = 2;
+    return;
+  }
+  let file = guiaArg?.slice(7);
+  if (!file) {
+    const apoioDir = resolveApoio();
+    if (!apoioDir) {
+      process.exitCode = 2;
+      return;
+    }
+    file = path.join(apoioDir, 'guia.md');
+  }
+  try {
+    const guide = fs.readFileSync(file, 'utf8');
+    const consulta = readConsulta();
+    console.log(
+      chaves.length === 0
+        ? listSecoes(guide, consulta)
+        : guideSection(guide, chaves, consulta),
+    );
+  } catch (error) {
+    console.error(
+      error.code === 'ENOENT'
+        ? `Não achei o guia da rodada: ${file}. Gere-o com round-guide.mjs --out.`
+        : error.message,
+    );
+    process.exitCode = 2;
+  }
+}
+
+/** Roda a CLI (`mark`, `state`, `tempos`, `ponto`, `run`, `passo`, `secao` e `help`); lê a pasta de apoio de `APOIO` (ou, sem ela, da rodada mais recente). */
 async function runCli(argv) {
   const [command, ...rest] = argv;
   if (command === 'mark') {
@@ -1980,6 +2036,10 @@ async function runCli(argv) {
     runPasso(rest);
     return;
   }
+  if (command === 'secao') {
+    runSecao(rest);
+    return;
+  }
   if (command === 'run') {
     const prazoArg = rest.find((a) => a.startsWith('--prazo='));
     const prazo = prazoArg ? Number(prazoArg.slice(8)) : undefined;
@@ -2012,7 +2072,7 @@ async function runCli(argv) {
     return;
   }
   console.error(
-    `Comando desconhecido: ${command}. Comandos: mark, state, tempos, ponto, run, find, passo, help.`,
+    `Comando desconhecido: ${command}. Comandos: mark, state, tempos, ponto, run, find, passo, secao, help.`,
   );
   process.exitCode = 2;
 }
