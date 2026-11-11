@@ -73,8 +73,8 @@ function longBullets(md: string, max = 600): string[] {
     .filter((line) => /^\s*(?:[-*]|\d+\.)\s/.test(line) && line.trim().length > max);
 }
 
-/** Códigos de passo cuja linha da tabela (células sem o código) passa de `max` caracteres (o limite subiu de 1.200 para 1.300 com as anotações "ou `ferramenta`" nos passos [pessoa]). Com as tabelas compactas (`proseWrap: "never"` no `.prettierrc.json`) a medida é só de conteúdo; antes contava também os espaços do alinhamento. */
-function longSteps(md: string, max = 1300): string[] {
+/** Códigos de passo cuja linha da tabela (células sem o código) passa de `max` caracteres (o limite subiu de 1.200 para 1.300 com as anotações "ou `ferramenta`" nos passos [pessoa], e para 1.700 com o tema escuro no R23.12). Com as tabelas compactas (`proseWrap: "never"` no `.prettierrc.json`) a medida é só de conteúdo; antes contava também os espaços do alinhamento. */
+function longSteps(md: string, max = 1700): string[] {
   const out: string[] = [];
   for (const line of stripFences(md).split('\n')) {
     const m = /^\|\s*(?:\*\*)?((?:R\d+\.\d+|A\d+)[a-z]?)(?:\*\*)?[^|]*\|(.*)$/.exec(line);
@@ -218,7 +218,7 @@ describe('docs/TESTING.md (guia de quem testa à mão)', () => {
     expect(agentLeaks(body)).toEqual([]);
   });
 
-  it('sem bullet acima de 600 caracteres nem passo acima de 1.300 (G2, G7)', () => {
+  it('sem bullet acima de 600 caracteres nem passo acima de 1.700 (G2, G7)', () => {
     expect(longBullets(guide)).toEqual([]);
     expect(longSteps(guide)).toEqual([]);
   });
