@@ -26,9 +26,19 @@ import {
 import { LAYOUT_JUSTIFIES } from './layoutValues';
 import { TOKEN_NAME_PATTERN, isLiteralColor, type TokenKind } from './tokens';
 import { isRecord } from '../isRecord';
+import type { ModelMessageTemplateCode } from '../messages';
+import { componentCodeForText } from '../messages/textLookup';
 
-/** Um problema do arquivo: caminho JSON (vazio = arquivo inteiro) e mensagem. */
-export type ComponentIssue = { path: string; message: string };
+/**
+ * Um problema do arquivo: caminho JSON (vazio = arquivo inteiro) e mensagem (pt-BR). `code` e
+ * `params` são os do catálogo (`src/model/messages/`): a interface traduz por eles.
+ */
+export type ComponentIssue = {
+  path: string;
+  message: string;
+  code?: ModelMessageTemplateCode;
+  params?: Readonly<Record<string, string | number>>;
+};
 
 export type ComponentParseResult =
   | {
@@ -149,8 +159,17 @@ function join(path: string, key: string): string {
   return path === '' ? key : `${path}.${key}`;
 }
 
+/** O problema com o código e os parâmetros que o catálogo acha pelo texto. */
+function issueOf(path: string, message: string): ComponentIssue {
+  const hit = componentCodeForText(message);
+  if (hit === undefined) return { path, message };
+  return hit.params === undefined
+    ? { path, message, code: hit.code }
+    : { path, message, code: hit.code, params: hit.params };
+}
+
 function addIssue(list: ComponentIssue[], path: string, message: string): void {
-  list.push({ path, message });
+  list.push(issueOf(path, message));
 }
 
 function add(out: Ctx, path: string, message: string): void {
@@ -1224,10 +1243,9 @@ function indexIssues(version: unknown, template: unknown): ComponentIssue[] {
 function iconVersionIssues(version: unknown, template: unknown): ComponentIssue[] {
   if (typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY)
     return [];
-  return nodesOfTypes(template, 'template', ['icon']).map((node) => ({
-    path: node.path,
-    message: V4_ONLY_MESSAGE,
-  }));
+  return nodesOfTypes(template, 'template', ['icon']).map((node) =>
+    issueOf(node.path, V4_ONLY_MESSAGE),
+  );
 }
 
 /**
@@ -1501,10 +1519,10 @@ function familyWarning(holder: unknown, path: string): ComponentIssue[] {
   const family = isRecord(holder) ? holder.family : undefined;
   if (typeof family !== 'string' || isValidFontFamily(family)) return [];
   return [
-    {
-      path: join(path, 'family'),
-      message: `família de fonte inválida para o CSS (${JSON.stringify(family)}): o texto cai em sans-serif`,
-    },
+    issueOf(
+      join(path, 'family'),
+      `família de fonte inválida para o CSS (${JSON.stringify(family)}): o texto cai em sans-serif`,
+    ),
   ];
 }
 
@@ -1536,7 +1554,14 @@ export function parseComponentText(text: string): ComponentParseResult {
     json = JSON.parse(text);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    const issues = [{ path: '', message: `JSON inválido: ${message}` }];
+    const issues: ComponentIssue[] = [
+      {
+        path: '',
+        message: `JSON inválido: ${message}`,
+        code: 'library.invalidJson',
+        params: { detail: message },
+      },
+    ];
     return { ok: false, issues, errors: issues.map(formatIssue) };
   }
   return parseComponent(json);

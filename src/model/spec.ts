@@ -10,7 +10,17 @@ import {
 } from './components/origin';
 import { TOKEN_NAME_PATTERN, type SpecTokens } from './components/tokens';
 import { isPackagePath, packagePathProblem } from './packagePaths';
+import { originCodeForText } from './messages/textLookup';
 import { childSets } from './specChildren';
+import type { ModelMessageTemplateCode } from './messages';
+import {
+  addSpecIssue,
+  forwardIssue,
+  issueCoding,
+  specMsg,
+  type MessageParams,
+  type SpecMsg,
+} from './specIssueCode';
 
 export { isPackagePath };
 
@@ -628,14 +638,14 @@ const MAX_SUGGESTIONS = 200;
 /** `suggestions` (v8): lista não vazia, até 200 textos únicos, não vazios e sem espaço nas pontas. */
 function checkSuggestions(
   suggestions: readonly string[],
-  add: (sub: string, message: string) => void,
+  add: (sub: string, message: string | SpecMsg) => void,
 ): void {
   if (suggestions.length === 0) {
     add('suggestions', 'não pode ser vazio; tire a chave ou liste ao menos uma sugestão');
     return;
   }
   if (suggestions.length > MAX_SUGGESTIONS) {
-    add('suggestions', `no máximo ${MAX_SUGGESTIONS} sugestões`);
+    add('suggestions', specMsg('spec.suggestionsMax', { max: MAX_SUGGESTIONS }));
   }
   if (suggestions.some((x) => x === ''))
     add('suggestions', 'sugestões não podem ser vazias');
@@ -655,17 +665,14 @@ function checkField(
   column: boolean,
   siblings: ReadonlyMap<string, string>,
 ): void {
-  const add = (sub: string, message: string) =>
-    ctx.addIssue({ code: 'custom', path: [...path, sub], message });
-  const add2 = (sub: (string | number)[], message: string) =>
-    ctx.addIssue({ code: 'custom', path: [...path, ...sub], message });
+  const add = (sub: string, message: string | SpecMsg) =>
+    addSpecIssue(ctx, [...path, sub], message);
+  const add2 = (sub: (string | number)[], message: string | SpecMsg) =>
+    addSpecIssue(ctx, [...path, ...sub], message);
 
   const { type } = field;
   if (column && (type === 'table' || type === REMOVED_FIELD_TYPE)) {
-    add(
-      'type',
-      `"${type}" não é permitido dentro de table; use "string", "number", "date", "enum" ou "ref"`,
-    );
+    add('type', specMsg('spec.columnTypeNotAllowed', { type }));
     return;
   }
   // Tipo removido: o campo é ignorado inteiro (com um aviso de quem importa), sem conferir nada.
@@ -696,13 +703,18 @@ function checkField(
       add('linkedRef', 'só é permitido em campo ou coluna string');
     } else {
       const target = siblings.get(field.linkedRef);
-      const where = column ? 'uma coluna da tabela' : 'um campo do tipo';
+      const key = field.linkedRef;
       if (target === undefined) {
-        add('linkedRef', `"${field.linkedRef}" não é ${where}`);
+        add(
+          'linkedRef',
+          specMsg(column ? 'spec.linkedRefNotColumn' : 'spec.notTypeField', { key }),
+        );
       } else if (target !== 'ref') {
         add(
           'linkedRef',
-          `"${field.linkedRef}" deve ser ${column ? 'uma coluna' : 'um campo'} ref`,
+          specMsg(column ? 'spec.linkedRefNotRefColumn' : 'spec.linkedRefNotRefField', {
+            key,
+          }),
         );
       }
     }
@@ -736,7 +748,7 @@ function checkField(
     }
     for (const [from, to] of Object.entries(source.values)) {
       if (!(field.options ?? []).includes(to)) {
-        add2(['sources', i, 'values', from], `"${to}" não está nas options`);
+        add2(['sources', i, 'values', from], specMsg('spec.notInOptions', { value: to }));
       }
     }
   });
@@ -747,16 +759,21 @@ function checkField(
   }
 }
 
+/** Os problemas do zod levam o `input`, de onde sai o `received` do texto padrão (não sai do modelo). */
+const REPORT_INPUT = { reportInput: true } as const;
+
 /** Valida e normaliza os campos de um tipo (inclusive colunas de table). */
 type ColumnParse = ReturnType<typeof fieldShape.safeParse>;
 let columnParses = new WeakMap<object, ColumnParse>();
 
 /** Lê uma coluna de `table` pela forma dos campos; a mesma coluna é lida uma vez só. */
 function parseColumn(raw: unknown): ColumnParse {
-  if (typeof raw !== 'object' || raw === null) return fieldShape.safeParse(raw);
+  if (typeof raw !== 'object' || raw === null) {
+    return fieldShape.safeParse(raw, REPORT_INPUT);
+  }
   let hit = columnParses.get(raw);
   if (hit === undefined) {
-    hit = fieldShape.safeParse(raw);
+    hit = fieldShape.safeParse(raw, REPORT_INPUT);
     columnParses.set(raw, hit);
   }
   return hit;
@@ -772,11 +789,7 @@ function checkFields(
   fields.forEach((field, i) => {
     const p = [...path, i];
     if (seen.has(field.key)) {
-      ctx.addIssue({
-        code: 'custom',
-        path: [...p, 'key'],
-        message: `chave "${field.key}" repetida`,
-      });
+      addSpecIssue(ctx, [...p, 'key'], specMsg('spec.keyRepeated', { key: field.key }));
     }
     seen.add(field.key);
     checkField(field, ctx, p, false, siblings);
@@ -803,22 +816,12 @@ function checkFields(
       const cp = [...p, 'columns', j];
       const parsed = parseColumn(raw);
       if (!parsed.success) {
-        for (const issue of parsed.error.issues) {
-          ctx.addIssue({
-            code: 'custom',
-            path: [...cp, ...issue.path],
-            message: issue.message,
-          });
-        }
+        for (const issue of parsed.error.issues) forwardIssue(ctx, issue, cp, false);
         return;
       }
       const col = parsed.data;
       if (colSeen.has(col.key)) {
-        ctx.addIssue({
-          code: 'custom',
-          path: [...cp, 'key'],
-          message: `chave "${col.key}" repetida`,
-        });
+        addSpecIssue(ctx, [...cp, 'key'], specMsg('spec.keyRepeated', { key: col.key }));
       }
       colSeen.add(col.key);
       colTypes.set(col.key, col.type);
@@ -835,11 +838,11 @@ function checkFields(
       }
     }
     if (field.rowLabel !== undefined && colTypes.get(field.rowLabel) !== 'string') {
-      ctx.addIssue({
-        code: 'custom',
-        path: [...p, 'rowLabel'],
-        message: `"${field.rowLabel}" deve ser uma coluna string da tabela`,
-      });
+      addSpecIssue(
+        ctx,
+        [...p, 'rowLabel'],
+        specMsg('spec.rowLabelNotStringColumn', { key: field.rowLabel }),
+      );
     }
   });
 }
@@ -901,24 +904,28 @@ function checkCodeMaps(
   entry: Pick<z.infer<typeof codeCaseShape>, 'params' | 'values'>,
   fields: RawFieldMap,
   base: (string | number)[],
-  add: (path: (string | number)[], message: string) => void,
+  add: (path: (string | number)[], message: string | SpecMsg) => void,
 ): void {
   for (const k of Object.keys(entry.params ?? {})) {
-    if (!fields.has(k)) add([...base, 'params', k], `"${k}" não é um campo do tipo`);
+    if (!fields.has(k))
+      add([...base, 'params', k], specMsg('spec.notTypeField', { key: k }));
   }
   for (const [k, translation] of Object.entries(entry.values ?? {})) {
     const field = fields.get(k);
     if (!field) {
-      add([...base, 'values', k], `"${k}" não é um campo do tipo`);
+      add([...base, 'values', k], specMsg('spec.notTypeField', { key: k }));
       continue;
     }
     if (field.type !== 'enum') {
-      add([...base, 'values', k], `"${k}" deve ser um campo enum do tipo`);
+      add([...base, 'values', k], specMsg('spec.codeFieldNotEnum', { key: k }));
       continue;
     }
     for (const option of Object.keys(translation)) {
       if (!(field.options ?? []).includes(option)) {
-        add([...base, 'values', k, option], `"${option}" não está nas options de "${k}"`);
+        add(
+          [...base, 'values', k, option],
+          specMsg('spec.notInOptionsOf', { value: option, field: k }),
+        );
       }
     }
   }
@@ -929,15 +936,15 @@ function checkCodeVariants(
   variants: z.infer<typeof codeVariantsShape>,
   fields: RawFieldMap,
   base: (string | number)[],
-  add: (path: (string | number)[], message: string) => void,
+  add: (path: (string | number)[], message: string | SpecMsg) => void,
 ): void {
   const vp = [...base, 'variants'];
   const field = fields.get(variants.field);
   let options: readonly string[] | undefined;
   if (!field) {
-    add([...vp, 'field'], `"${variants.field}" não é um campo do tipo`);
+    add([...vp, 'field'], specMsg('spec.notTypeField', { key: variants.field }));
   } else if (field.type !== 'enum') {
-    add([...vp, 'field'], `"${variants.field}" deve ser um campo enum do tipo`);
+    add([...vp, 'field'], specMsg('spec.codeFieldNotEnum', { key: variants.field }));
   } else {
     options = field.options ?? [];
   }
@@ -946,7 +953,7 @@ function checkCodeVariants(
   for (const [value, kase] of entries) {
     const cp = [...vp, 'cases', value];
     if (options !== undefined && !options.includes(value)) {
-      add(cp, `"${value}" não está nas options de "${variants.field}"`);
+      add(cp, specMsg('spec.notInOptionsOf', { value, field: variants.field }));
     }
     if (Object.keys(kase).length === 0) {
       add(cp, 'caso vazio: declare symbol, path, params, values ou notes');
@@ -962,8 +969,8 @@ function checkCode(
   ctx: z.RefinementCtx,
 ): void {
   const fields = new Map(type.fields.map((f) => [f.key, f]));
-  const add = (path: (string | number)[], message: string) =>
-    ctx.addIssue({ code: 'custom', path, message });
+  const add = (path: (string | number)[], message: string | SpecMsg) =>
+    addSpecIssue(ctx, path, message);
 
   for (const [platform, entry] of Object.entries(type.code ?? {})) {
     const base = ['code', platform];
@@ -1006,10 +1013,12 @@ function checkExamples(
   const names = new Set<string>();
   (type.examples ?? []).forEach((example, i) => {
     const p = ['examples', i];
-    const add = (sub: (string | number)[], message: string) =>
-      ctx.addIssue({ code: 'custom', path: [...p, ...sub], message });
+    const add = (sub: (string | number)[], message: string | SpecMsg) =>
+      addSpecIssue(ctx, [...p, ...sub], message);
 
-    if (names.has(example.name)) add(['name'], `nome "${example.name}" repetido`);
+    if (names.has(example.name)) {
+      add(['name'], specMsg('spec.exampleNameRepeated', { name: example.name }));
+    }
     names.add(example.name);
 
     const external = example.system !== undefined || example.file !== undefined;
@@ -1025,16 +1034,13 @@ function checkExamples(
     for (const [k, value] of Object.entries(example.values ?? {})) {
       const field = fields.get(k);
       if (!field) {
-        add(['values', k], `"${k}" não é um campo do tipo`);
+        add(['values', k], specMsg('spec.notTypeField', { key: k }));
       } else if (value === null) {
         continue;
       } else if (field.type === 'table') {
         if (Array.isArray(value))
           checkExampleRows(field, value, [...p, 'values', k], ctx);
-        else
-          addCoded(ctx, [...p, 'values', k], 'example-table-needs-rows', {
-            message: 'campo "table" aceita só a lista de linhas',
-          });
+        else add(['values', k], specMsg('spec.exampleTableNeedsRows'));
       } else if (field.type === 'ref') {
         add(['values', k], 'campo "ref" não aceita valor em exemplo');
       } else {
@@ -1043,16 +1049,6 @@ function checkExamples(
       }
     }
   });
-}
-
-/** Problema com `code` e `params`, que o `parseSpec` copia para o `SpecIssue`. */
-function addCoded(
-  ctx: z.RefinementCtx,
-  path: (string | number)[],
-  code: SpecIssueCode,
-  { message, params }: { message: string; params?: Record<string, string> },
-): void {
-  ctx.addIssue({ code: 'custom', path, message, params: { code, ...params } });
 }
 
 /** As linhas do exemplo de um campo `table`: objetos coluna → valor, cada célula do tipo da coluna. */
@@ -1070,25 +1066,22 @@ function checkExampleRows(
   rows.forEach((row, i) => {
     const rowPath = [...path, i];
     if (typeof row !== 'object' || row === null || Array.isArray(row)) {
-      addCoded(ctx, rowPath, 'example-row-not-object', {
-        message: 'deve ser um objeto (coluna → valor)',
-      });
+      addSpecIssue(ctx, rowPath, specMsg('spec.exampleRowNotObject'));
       return;
     }
     for (const [key, cell] of Object.entries(row)) {
       const cellPath = [...rowPath, key];
       const column = columns.get(key);
       if (column === undefined) {
-        addCoded(ctx, cellPath, 'example-not-column', {
-          message: `"${key}" não é coluna de "${field.key}"`,
-          params: { key, field: field.key },
-        });
+        addSpecIssue(
+          ctx,
+          cellPath,
+          specMsg('spec.exampleNotColumn', { key, field: field.key }),
+        );
       } else if (cell === null) {
         continue;
       } else if (column.type === 'ref') {
-        addCoded(ctx, cellPath, 'example-ref-cell', {
-          message: 'coluna "ref" não aceita valor em exemplo',
-        });
+        addSpecIssue(ctx, cellPath, specMsg('spec.exampleRefCell'));
       } else {
         const problem = valueProblem(column.type, column.options, cell);
         if (problem !== undefined)
@@ -1106,7 +1099,7 @@ function checkAppliesTo(
   const { appliesTo } = type;
   if (appliesTo === undefined) return;
   const add = (path: (string | number)[], message: string) =>
-    ctx.addIssue({ code: 'custom', path, message });
+    addSpecIssue(ctx, path, message);
   if (appliesTo.length === 0) {
     add(['appliesTo'], 'não pode ser vazio; use "marking", "arrow" ou os dois');
     return;
@@ -1146,24 +1139,13 @@ const childClauseShape = z
   })
   .strict();
 
-/** Propriedade a mais (`.strict()` do zod) em português, no molde dos outros erros da spec. */
-function unknownKeysMessage(issue: { readonly keys: readonly string[] }): string {
-  return `propriedade desconhecida: ${issue.keys.map((k) => `"${k}"`).join(', ')}`;
-}
-
 /** Reemite no `ctx` os problemas de um objeto lido por outro schema, no mesmo caminho relativo. */
 function forwardIssues(
   result: { success: boolean; error?: { issues: readonly z.core.$ZodIssue[] } },
   ctx: z.RefinementCtx,
 ): void {
-  for (const issue of result.error?.issues ?? []) {
-    ctx.addIssue({
-      code: 'custom',
-      path: [...issue.path],
-      message:
-        issue.code === 'unrecognized_keys' ? unknownKeysMessage(issue) : issue.message,
-    });
-  }
+  // A propriedade a mais sai em português, no molde dos outros erros da especialização.
+  for (const issue of result.error?.issues ?? []) forwardIssue(ctx, issue, [], true);
 }
 
 /** Um item de `allowedChildren`: o id de um tipo ou uma cláusula `{ layer, groups? }`. */
@@ -1176,7 +1158,7 @@ function checkAllowedChild(value: unknown, ctx: z.RefinementCtx): void {
     ctx.addIssue({ code: 'custom', message: ALLOWED_CHILD_SHAPE_MESSAGE });
     return;
   }
-  const parsed = childClauseShape.safeParse(value);
+  const parsed = childClauseShape.safeParse(value, REPORT_INPUT);
   forwardIssues(parsed, ctx);
   if (parsed.success && parsed.data.groups?.length === 0) {
     ctx.addIssue({ code: 'custom', path: ['groups'], message: GROUPS_EMPTY });
@@ -1216,9 +1198,9 @@ const docPackageShape = packagePath('.md');
 /** `doc`: um caminho `.md` do pacote ou, na v11, `{ repo, path }` de um repositório de `docRepos`. */
 const docShape = z.custom<string | SpecDocRef>().superRefine((value: unknown, ctx) => {
   if (typeof value === 'string') {
-    forwardIssues(docPackageShape.safeParse(value), ctx);
+    forwardIssues(docPackageShape.safeParse(value, REPORT_INPUT), ctx);
   } else if (isRecord(value)) {
-    forwardIssues(docRefShape.safeParse(value), ctx);
+    forwardIssues(docRefShape.safeParse(value, REPORT_INPUT), ctx);
   } else {
     ctx.addIssue({ code: 'custom', message: DOC_SHAPE_MESSAGE });
   }
@@ -1241,8 +1223,8 @@ function checkChildRoles(
   },
   ctx: z.RefinementCtx,
 ): void {
-  const add = (path: (string | number)[], message: string) =>
-    ctx.addIssue({ code: 'custom', path, message });
+  const add = (path: (string | number)[], message: string | SpecMsg) =>
+    addSpecIssue(ctx, path, message);
   const { childRoles } = type;
   if (childRoles === undefined) {
     if (type.childRolesLabel !== undefined) {
@@ -1258,7 +1240,9 @@ function checkChildRoles(
   }
   const seen = new Set<string>();
   childRoles.forEach((role, i) => {
-    if (seen.has(role.id)) add(['childRoles', i, 'id'], `id "${role.id}" repetido`);
+    if (seen.has(role.id)) {
+      add(['childRoles', i, 'id'], specMsg('spec.idRepeated', { id: role.id }));
+    }
     seen.add(role.id);
   });
 }
@@ -1276,11 +1260,7 @@ function checkTypeGroups(
   const seen = new Set<string>();
   groups.forEach((group, i) => {
     if (seen.has(group)) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['groups', i],
-        message: `grupo "${group}" repetido`,
-      });
+      addSpecIssue(ctx, ['groups', i], specMsg('spec.groupRepeated', { group }));
     }
     seen.add(group);
   });
@@ -1336,11 +1316,11 @@ const annotationTypeShape = z
     if (type.labelField != null) {
       const f = type.fields.find((x) => x.key === type.labelField);
       if (!f || f.type !== 'string') {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['labelField'],
-          message: `"${type.labelField}" deve ser um campo string do tipo`,
-        });
+        addSpecIssue(
+          ctx,
+          ['labelField'],
+          specMsg('spec.labelFieldNotString', { key: type.labelField }),
+        );
       }
     }
   });
@@ -1633,15 +1613,27 @@ function checkNoLibraryKeys(
   });
 }
 
+/** O erro do `parsePath` (texto fixo do leitor de caminhos) na mensagem com código da variante. */
+function pathErrorMsg(path: string, error: string): SpecMsg {
+  const index = /^índice inválido: \[(.*)\]$/.exec(error)?.[1];
+  if (index !== undefined) return specMsg('spec.fieldPathBadIndex', { path, index });
+  const char = /^caractere inesperado: (.*)$/.exec(error)?.[1];
+  if (char !== undefined) return specMsg('spec.fieldPathBadChar', { path, char });
+  return specMsg(
+    error === 'faltou "]"'
+      ? 'spec.fieldPathMissingBracket'
+      : 'spec.fieldPathEmptySegment',
+    { path },
+  );
+}
+
 /**
  * `path` de uma origem de campo (`a.b[0].c`): sintaxe válida e sem `[*]`. `undefined` se vale.
  */
-function fieldPathProblem(path: string): string | undefined {
+function fieldPathProblem(path: string): SpecMsg | undefined {
   const parsed = parsePath(path);
-  if (!parsed.ok) return `caminho inválido "${path}" (${parsed.error})`;
-  if (parsed.segments.includes(null)) {
-    return `caminho inválido "${path}" ("[*]" só vale em roots[].path de uma origem)`;
-  }
+  if (!parsed.ok) return pathErrorMsg(path, parsed.error);
+  if (parsed.segments.includes(null)) return specMsg('spec.fieldPathWildcard', { path });
   return undefined;
 }
 
@@ -1659,8 +1651,8 @@ function checkFieldSources(
 ): void {
   (sources ?? []).forEach((source, i) => {
     const at = [...path, 'sources', i];
-    const add = (key: string, message: string) =>
-      ctx.addIssue({ code: 'custom', path: [...at, key], message });
+    const add = (key: string, message: string | SpecMsg) =>
+      addSpecIssue(ctx, [...at, key], message);
     const isExecutable = version >= 4 && executable.has(source.system);
     if (source.path !== undefined) {
       if (version < 4) add('path', 'só é permitido com formatVersion 4');
@@ -1708,11 +1700,11 @@ function checkTypeSources(
     const seen = new Set<string>();
     (source.ignore ?? []).forEach((prop, pi) => {
       if (seen.has(prop)) {
-        ctx.addIssue({
-          code: 'custom',
-          path: [...at, 'ignore', pi],
-          message: `"${prop}" repetido`,
-        });
+        addSpecIssue(
+          ctx,
+          [...at, 'ignore', pi],
+          specMsg('spec.ignoreRepeated', { prop }),
+        );
       }
       seen.add(prop);
     });
@@ -1762,19 +1754,14 @@ function checkExampleSystems(
     layer.annotationTypes.forEach((type, ti) => {
       (type.examples ?? []).forEach((example, ei) => {
         if (example.system === undefined || executable.has(example.system)) return;
-        ctx.addIssue({
-          code: 'custom',
-          path: ['layers', li, 'annotationTypes', ti, 'examples', ei, 'system'],
-          message: `sistema "${example.system}" não declarado em origins`,
-        });
+        addSpecIssue(
+          ctx,
+          ['layers', li, 'annotationTypes', ti, 'examples', ei, 'system'],
+          specMsg('spec.exampleSystemUndeclared', { system: example.system }),
+        );
       });
     });
   });
-}
-
-/** Texto do peso para a mensagem de fonte repetida. */
-function weightLabel(weight: number | string | undefined): string {
-  return weight === undefined ? 'sem peso' : `peso ${weight}`;
 }
 
 /** Par `family` + `weight` + `style` repetido em `fonts`. */
@@ -1787,11 +1774,14 @@ function checkFonts(
     const style = font.style ?? 'normal';
     const id = JSON.stringify([font.family, font.weight ?? null, style]);
     if (seen.has(id)) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['fonts', i],
-        message: `fonte "${font.family}" (${weightLabel(font.weight)}, ${style}) repetida`,
-      });
+      const params = { family: font.family, style };
+      addSpecIssue(
+        ctx,
+        ['fonts', i],
+        font.weight === undefined
+          ? specMsg('spec.fontRepeatedNoWeight', params)
+          : specMsg('spec.fontRepeated', { ...params, weight: font.weight }),
+      );
     }
     seen.add(id);
   });
@@ -1810,23 +1800,17 @@ function columnOf(table: RawField, key: string): RawField | undefined {
 type FieldRef =
   | { kind: 'field' }
   | { kind: 'column'; table: string; column: string }
-  | { kind: 'invalid'; message: string };
+  | { kind: 'invalid'; message: SpecMsg };
 
 function parseFieldRef(ref: string): FieldRef {
   const parts = ref.split('.');
   if (parts.length === 1) return { kind: 'field' };
   if (parts.length > 2) {
-    return {
-      kind: 'invalid',
-      message: `"${ref}" tem mais de um ponto; use "campo" ou "tabela.coluna"`,
-    };
+    return { kind: 'invalid', message: specMsg('spec.fieldRefManyDots', { ref }) };
   }
   const [table = '', column = ''] = parts;
   if (table === '' || column === '') {
-    return {
-      kind: 'invalid',
-      message: `"${ref}" tem uma parte vazia; use "campo" ou "tabela.coluna"`,
-    };
+    return { kind: 'invalid', message: specMsg('spec.fieldRefEmptyPart', { ref }) };
   }
   return { kind: 'column', table, column };
 }
@@ -1844,7 +1828,7 @@ interface RoleStepEnv {
   readonly roles: ReadonlyMap<string, ReadonlySet<string>>;
   readonly hasType: (id: string) => boolean;
   /** Erro no caminho `migrations[i].steps[j].<key>`. */
-  readonly add: (key: string, message: string) => void;
+  readonly add: (key: string, message: string | SpecMsg) => void;
 }
 
 /** O papel existe no tipo (lado novo). */
@@ -1855,7 +1839,7 @@ function roleHere(
   where: string,
   env: RoleStepEnv,
 ): void {
-  if (!roles.has(role)) env.add(where, `"${role}" não é um papel do tipo "${typeId}"`);
+  if (!roles.has(role)) env.add(where, specMsg('spec.roleNotOfType', { role, typeId }));
 }
 
 /** O papel não existe mais no tipo (lado antigo). */
@@ -1867,7 +1851,7 @@ function roleGone(
   env: RoleStepEnv,
 ): void {
   if (roles?.has(role)) {
-    env.add(where, `papel "${role}" ainda existe no tipo "${typeId}" nesta versão`);
+    env.add(where, specMsg('spec.roleStillExists', { role, typeId }));
   }
 }
 
@@ -1882,7 +1866,7 @@ function checkRoleStep(step: RoleStep, env: RoleStepEnv): void {
     return;
   }
   if (!env.hasType(step.type)) {
-    env.add('type', `tipo "${step.type}" não existe nesta versão`);
+    env.add('type', specMsg('spec.typeNotInVersion', { typeId: step.type }));
     return;
   }
   const roles = env.roles.get(step.type);
@@ -1891,7 +1875,7 @@ function checkRoleStep(step: RoleStep, env: RoleStepEnv): void {
     return;
   }
   if (roles === undefined) {
-    env.add('type', `o tipo "${step.type}" não tem papéis (childRoles) nesta versão`);
+    env.add('type', specMsg('spec.typeNoRoles', { typeId: step.type }));
     return;
   }
   if (step.op === 'set-role') {
@@ -1922,7 +1906,7 @@ function rolesByType(
   return roles;
 }
 
-type StepAdd = (key: string | PathKeys, message: string) => void;
+type StepAdd = (key: string | PathKeys, message: string | SpecMsg) => void;
 type FieldsByKey = ReadonlyMap<string, RawField>;
 
 /** O tipo existe nesta versão (o passo trata de um campo dele). */
@@ -1932,7 +1916,7 @@ function typeHere(
   stepAdd: StepAdd,
 ): FieldsByKey | undefined {
   const fields = types.get(id);
-  if (!fields) stepAdd('type', `tipo "${id}" não existe nesta versão`);
+  if (!fields) stepAdd('type', specMsg('spec.typeNotInVersion', { typeId: id }));
   return fields;
 }
 
@@ -1951,24 +1935,21 @@ function fieldHere(
   }
   if (ref.kind === 'field') {
     const field = fields.get(key);
-    if (!field) stepAdd(where, `"${key}" não é um campo do tipo "${typeId}"`);
+    if (!field) stepAdd(where, specMsg('spec.notFieldOfType', { key, typeId }));
     return field;
   }
   const table = fields.get(ref.table);
   if (!table) {
-    stepAdd(where, `"${ref.table}" não é um campo do tipo "${typeId}"`);
+    stepAdd(where, specMsg('spec.notFieldOfType', { key: ref.table, typeId }));
     return undefined;
   }
   if (table.type !== 'table') {
-    stepAdd(where, `"${ref.table}" não é uma tabela do tipo "${typeId}"`);
+    stepAdd(where, specMsg('spec.notTableOfType', { key: ref.table, typeId }));
     return undefined;
   }
   const column = columnOf(table, ref.column);
   if (!column) {
-    stepAdd(
-      where,
-      `"${key}" não é uma coluna da tabela "${ref.table}" do tipo "${typeId}"`,
-    );
+    stepAdd(where, specMsg('spec.notColumnOfTable', { key, table: ref.table, typeId }));
   }
   return column;
 }
@@ -1986,18 +1967,22 @@ function fieldGone(
     stepAdd(where, ref.message);
   } else if (ref.kind === 'field') {
     if (fields.has(key)) {
-      stepAdd(where, `campo "${key}" ainda existe no tipo "${typeId}" nesta versão`);
+      stepAdd(where, specMsg('spec.fieldStillExists', { key, typeId }));
     }
   } else {
     // Tabela que não existe mais: a coluna foi junto, e é isso que o passo declara.
     const table = fields.get(ref.table);
     if (!table) return;
     if (table.type !== 'table') {
-      stepAdd(where, `"${ref.table}" não é uma tabela do tipo "${typeId}"`);
+      stepAdd(where, specMsg('spec.notTableOfType', { key: ref.table, typeId }));
     } else if (columnOf(table, ref.column)) {
       stepAdd(
         where,
-        `coluna "${ref.column}" ainda existe na tabela "${ref.table}" do tipo "${typeId}" nesta versão`,
+        specMsg('spec.columnStillExists', {
+          column: ref.column,
+          table: ref.table,
+          typeId,
+        }),
       );
     }
   }
@@ -2009,7 +1994,7 @@ function typeGone(
   where: string,
   stepAdd: StepAdd,
 ): void {
-  if (types.has(id)) stepAdd(where, `tipo "${id}" ainda existe nesta versão`);
+  if (types.has(id)) stepAdd(where, specMsg('spec.typeStillExists', { typeId: id }));
 }
 
 /**
@@ -2050,18 +2035,18 @@ function checkMigrations(
   const fromSeen = new Set<number>();
   migrations.forEach((migration, mi) => {
     const mp: PathKeys = ['migrations', mi];
-    const add = (sub: PathKeys, message: string) =>
-      ctx.addIssue({ code: 'custom', path: [...mp, ...sub], message });
+    const add = (sub: PathKeys, message: string | SpecMsg) =>
+      addSpecIssue(ctx, [...mp, ...sub], message);
 
     if (fromSeen.has(migration.from)) {
-      add(['from'], `já existe uma migração a partir da versão ${migration.from}`);
+      add(['from'], specMsg('spec.migrationFromRepeated', { from: migration.from }));
     }
     fromSeen.add(migration.from);
     if (migration.to <= migration.from) {
-      add(['to'], `deve ser maior que "from" (${migration.from})`);
+      add(['to'], specMsg('spec.migrationToGreater', { from: migration.from }));
     }
     if (migration.to > spec.version) {
-      add(['to'], `não pode passar de "version" (${spec.version})`);
+      add(['to'], specMsg('spec.migrationToMax', { version: spec.version }));
     }
 
     migration.steps.forEach((step, si) => {
@@ -2071,7 +2056,7 @@ function checkMigrations(
       switch (step.op) {
         case 'rename-type':
           if (!types.has(step.to))
-            stepAdd('to', `tipo "${step.to}" não existe nesta versão`);
+            stepAdd('to', specMsg('spec.typeNotInVersion', { typeId: step.to }));
           typeGone(types, step.from, 'from', stepAdd);
           break;
         case 'remove-type':
@@ -2097,15 +2082,18 @@ function checkMigrations(
           if (field.type !== 'enum') {
             stepAdd(
               'field',
-              step.field.includes('.')
-                ? `"${step.field}" deve ser uma coluna enum da tabela`
-                : `"${step.field}" deve ser um campo enum do tipo`,
+              specMsg(
+                step.field.includes('.')
+                  ? 'spec.migrationColumnNotEnum'
+                  : 'spec.codeFieldNotEnum',
+                { key: step.field },
+              ),
             );
             break;
           }
           for (const [from, to] of Object.entries(step.values)) {
             if (!(field.options ?? []).includes(to)) {
-              stepAdd(['values', from], `"${to}" não está nas options`);
+              stepAdd(['values', from], specMsg('spec.notInOptions', { value: to }));
             }
           }
           break;
@@ -2174,10 +2162,13 @@ function addOriginIssues(
   }
   for (const problem of originsOf(raw).problems) {
     const cut = problem.indexOf(': ');
+    const message = cut < 0 ? problem : problem.slice(cut + 2);
+    const hit = originCodeForText(message);
     ctx.addIssue({
       code: 'custom',
       path: cut < 0 ? [] : parseSpecPath(problem.slice(0, cut)),
-      message: cut < 0 ? problem : problem.slice(cut + 2),
+      message,
+      ...(hit === undefined ? {} : { params: { messageCode: hit.code, ...hit.params } }),
     });
   }
 }
@@ -2232,12 +2223,12 @@ interface V11Layer {
   readonly annotationTypes: readonly V11Type[];
 }
 
-type IssueAdder = (path: (string | number)[], message: string) => void;
+type IssueAdder = (path: (string | number)[], message: string | SpecMsg) => void;
 
 const issueAdder =
   (ctx: z.RefinementCtx): IssueAdder =>
   (path, message) =>
-    ctx.addIssue({ code: 'custom', path, message });
+    addSpecIssue(ctx, path, message);
 
 /** Caminho de cada tipo: `['layers', li, 'annotationTypes', ti]`. */
 function eachV11Type(
@@ -2301,21 +2292,20 @@ function checkChildClause(
 ): void {
   const target = layers.get(clause.layer);
   if (target === undefined) {
-    add([...path, 'layer'], `camada "${clause.layer}" não existe na especialização`);
+    add([...path, 'layer'], specMsg('spec.layerNotFound', { layer: clause.layer }));
     return;
   }
   if (target.index === li && !sameLayerAllowed) {
-    add(
-      [...path, 'layer'],
-      `camada "${clause.layer}" é a do próprio tipo; filhos devem estar em outra camada`,
-    );
+    add([...path, 'layer'], specMsg('spec.layerIsOwn', { layer: clause.layer }));
     return;
   }
-  (clause.groups ?? []).forEach((group, gi) => {
-    if (target.groups.has(group)) return;
+  // `groups` que não é lista já foi recusado pela forma da cláusula.
+  const groups: readonly unknown[] = Array.isArray(clause.groups) ? clause.groups : [];
+  groups.forEach((group, gi) => {
+    if (typeof group !== 'string' || target.groups.has(group)) return;
     add(
       [...path, 'groups', gi],
-      `grupo "${group}" não existe na camada "${clause.layer}"`,
+      specMsg('spec.groupNotInLayer', { group, layer: clause.layer }),
     );
   });
 }
@@ -2331,12 +2321,9 @@ function checkChildId(
 ): void {
   const childLayer = typeLayer.get(childId);
   if (childLayer === undefined) {
-    add(path, `tipo "${childId}" não existe na especialização`);
+    add(path, specMsg('spec.typeNotFound', { typeId: childId }));
   } else if (childLayer === li && !sameLayerAllowed) {
-    add(
-      path,
-      `tipo "${childId}" está na mesma camada; filhos devem estar em outra camada`,
-    );
+    add(path, specMsg('spec.typeSameLayer', { typeId: childId }));
   }
 }
 
@@ -2417,7 +2404,10 @@ function checkAcceptsAnnotations(
   eachV11Type(spec.layers, (type, _layer, path, li) => {
     eachAccepts(type, path, (items, itemsPath) => {
       if (!current) {
-        add(itemsPath, `só é permitido com formatVersion ${ACCEPTS_ANNOTATIONS_VERSION}`);
+        add(
+          itemsPath,
+          specMsg('spec.onlyFormat', { version: ACCEPTS_ANNOTATIONS_VERSION }),
+        );
         return;
       }
       items.forEach((item, ii) => {
@@ -2440,7 +2430,10 @@ function checkLayerGroups(layers: readonly V11Layer[], ctx: z.RefinementCtx): vo
     const declared = new Set<string>();
     (layer.groups ?? []).forEach((group, gi) => {
       if (declared.has(group.id)) {
-        add(['layers', li, 'groups', gi, 'id'], `id "${group.id}" repetido`);
+        add(
+          ['layers', li, 'groups', gi, 'id'],
+          specMsg('spec.idRepeated', { id: group.id }),
+        );
       }
       declared.add(group.id);
     });
@@ -2449,7 +2442,7 @@ function checkLayerGroups(layers: readonly V11Layer[], ctx: z.RefinementCtx): vo
         if (declared.has(group)) return;
         add(
           ['layers', li, 'annotationTypes', ti, 'groups', gi],
-          `grupo "${group}" não existe na camada "${layer.id}"`,
+          specMsg('spec.groupNotInLayer', { group, layer: layer.id }),
         );
       });
     });
@@ -2467,13 +2460,15 @@ function checkDocRepos(
   const add = issueAdder(ctx);
   const declared = new Set<string>();
   (spec.docRepos ?? []).forEach((repo, ri) => {
-    if (declared.has(repo.id)) add(['docRepos', ri, 'id'], `id "${repo.id}" repetido`);
+    if (declared.has(repo.id)) {
+      add(['docRepos', ri, 'id'], specMsg('spec.idRepeated', { id: repo.id }));
+    }
     declared.add(repo.id);
   });
   eachV11Type(spec.layers, (type, _layer, path) => {
     const { doc } = type;
     if (!isRecord(doc) || typeof doc.repo !== 'string' || declared.has(doc.repo)) return;
-    add([...path, 'doc', 'repo'], `repositório "${doc.repo}" não declarado em docRepos`);
+    add([...path, 'doc', 'repo'], specMsg('spec.docRepoUndeclared', { repo: doc.repo }));
   });
 }
 
@@ -2493,12 +2488,9 @@ function checkRequiresOwner(
       const list = owners.get(type.id);
       const path = ['layers', li, 'annotationTypes', ti, 'requiresOwner'];
       if (list === undefined) {
-        add(path, `"${type.id}" exige dono, mas nenhum tipo o lista em allowedChildren`);
+        add(path, specMsg('spec.ownerNoneLists', { typeId: type.id }));
       } else if (list.every((id) => id === type.id)) {
-        add(
-          path,
-          `"${type.id}" exige dono, mas nenhum outro tipo o aceita como filho (só ele mesmo o lista em allowedChildren)`,
-        );
+        add(path, specMsg('spec.ownerOnlySelf', { typeId: type.id }));
       }
     });
   });
@@ -2523,7 +2515,7 @@ function tokenModes(
       add(['tokens', 'modes', i], 'modo inválido; use [a-z0-9][a-z0-9-]*');
       ok = false;
     } else if (seen.has(mode)) {
-      add(['tokens', 'modes', i], `modo "${mode}" repetido`);
+      add(['tokens', 'modes', i], specMsg('spec.tokenModeRepeated', { mode }));
       ok = false;
     }
     if (typeof mode === 'string') seen.add(mode);
@@ -2550,8 +2542,12 @@ function checkTokenValue(
   const given = Object.keys(value);
   const missing = modes.filter((m) => !given.includes(m));
   const extra = given.filter((m) => !modes.includes(m));
-  if (missing.length > 0) add(path, `falta o modo ${missing.join(', ')}`);
-  if (extra.length > 0) add(path, `modo não declarado em modes: ${extra.join(', ')}`);
+  if (missing.length > 0) {
+    add(path, specMsg('spec.tokenModeMissing', { modes: missing.join(', ') }));
+  }
+  if (extra.length > 0) {
+    add(path, specMsg('spec.tokenModeExtra', { modes: extra.join(', ') }));
+  }
   const literals = given.map((m) => value[m]);
   if (!literals.every(isTokenLiteral)) {
     add(path, 'cada modo deve ter texto ou número');
@@ -2564,7 +2560,7 @@ function checkTokenValue(
 function checkTokenKeys(tokens: Record<string, unknown>, add: IssueAdder): void {
   for (const key of Object.keys(tokens)) {
     if (key !== 'modes' && key !== 'values') {
-      add(['tokens', key], `chave desconhecida: ${key}`);
+      add(['tokens', key], specMsg('spec.tokenKeyUnknown', { key }));
     }
   }
 }
@@ -2577,7 +2573,7 @@ function checkTokens(
   if (spec.tokens === undefined) return;
   const add = issueAdder(ctx);
   if (spec.formatVersion < 15) {
-    add(['tokens'], 'só é permitido com formatVersion 15');
+    add(['tokens'], specMsg('spec.onlyFormat15'));
     return;
   }
   if (!isRecord(spec.tokens))
@@ -2656,11 +2652,11 @@ export const specSchema = z
     const platformIds = new Set<string>();
     (spec.platforms ?? []).forEach((platform, pi) => {
       if (platformIds.has(platform.id)) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['platforms', pi, 'id'],
-          message: `id "${platform.id}" repetido`,
-        });
+        addSpecIssue(
+          ctx,
+          ['platforms', pi, 'id'],
+          specMsg('spec.idRepeated', { id: platform.id }),
+        );
       }
       platformIds.add(platform.id);
     });
@@ -2757,11 +2753,11 @@ export const specSchema = z
     const containerIds = new Set<string>();
     (spec.containers ?? []).forEach((container, ci) => {
       if (containerIds.has(container.id)) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['containers', ci, 'id'],
-          message: `id "${container.id}" repetido`,
-        });
+        addSpecIssue(
+          ctx,
+          ['containers', ci, 'id'],
+          specMsg('spec.idRepeated', { id: container.id }),
+        );
       }
       containerIds.add(container.id);
     });
@@ -2799,20 +2795,20 @@ export const specSchema = z
 
     spec.layers.forEach((layer, li) => {
       if (layerIds.has(layer.id)) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['layers', li, 'id'],
-          message: `id "${layer.id}" repetido`,
-        });
+        addSpecIssue(
+          ctx,
+          ['layers', li, 'id'],
+          specMsg('spec.idRepeated', { id: layer.id }),
+        );
       }
       layerIds.add(layer.id);
       layer.annotationTypes.forEach((type, ti) => {
         if (typeLayer.has(type.id)) {
-          ctx.addIssue({
-            code: 'custom',
-            path: ['layers', li, 'annotationTypes', ti, 'id'],
-            message: `id "${type.id}" repetido na especialização`,
-          });
+          addSpecIssue(
+            ctx,
+            ['layers', li, 'annotationTypes', ti, 'id'],
+            specMsg('spec.typeIdRepeated', { id: type.id }),
+          );
         } else {
           typeLayer.set(type.id, li);
         }
@@ -2839,11 +2835,11 @@ export const specSchema = z
           } else {
             for (const id of Object.keys(type.code)) {
               if (platformIds.has(id)) continue;
-              ctx.addIssue({
-                code: 'custom',
-                path: [...tp, 'code', id],
-                message: `plataforma "${id}" não declarada em platforms`,
-              });
+              addSpecIssue(
+                ctx,
+                [...tp, 'code', id],
+                specMsg('spec.platformUndeclared', { id }),
+              );
             }
           }
         }
@@ -2856,20 +2852,15 @@ export const specSchema = z
   });
 
 /**
- * Códigos estáveis dos problemas que a interface mostra traduzidos (o `message` em português
- * continua para os testes e o MCP, que não expõe o código).
+ * Problema da especialização: o `message` em português (o que o MCP e os testes leem) e, quando
+ * há, o `code` e os `params` do catálogo de mensagens do modelo (`src/model/messages/spec.ts`),
+ * que a interface traduz.
  */
-export type SpecIssueCode =
-  | 'example-not-column'
-  | 'example-row-not-object'
-  | 'example-ref-cell'
-  | 'example-table-needs-rows';
-
 export type SpecIssue = {
   path: string;
   message: string;
-  code?: SpecIssueCode;
-  params?: Readonly<Record<string, string>>;
+  code?: ModelMessageTemplateCode;
+  params?: MessageParams;
 };
 
 /** `layers[1].annotationTypes[0].fields[2].type` a partir de um caminho do zod. */
@@ -2999,21 +2990,19 @@ export function removedFieldKeys(data: unknown): Map<string, Set<string>> {
   return result;
 }
 
-/** O problema do zod como `SpecIssue`: o `code` e os `params` de `addCoded` viram campos. */
+/** O problema do zod como `SpecIssue`, com o código e os parâmetros do catálogo (sem o `input`). */
 function toSpecIssue(issue: z.core.$ZodIssue): SpecIssue {
   const base = { path: formatSpecPath(issue.path), message: issue.message };
-  const params: unknown = 'params' in issue ? issue.params : undefined;
-  if (!isRecord(params) || typeof params.code !== 'string') return base;
-  const { code, ...rest } = params;
-  const out: SpecIssue = { ...base, code: code as SpecIssueCode };
-  return Object.keys(rest).length > 0
-    ? { ...out, params: rest as Record<string, string> }
-    : out;
+  const coding = issueCoding(issue);
+  if (coding === undefined) return base;
+  return coding.params === undefined
+    ? { ...base, code: coding.code }
+    : { ...base, code: coding.code, params: coding.params };
 }
 
 /** Valida um JSON já lido; erros no formato `caminho: mensagem`. */
 export function parseSpec(data: unknown): SpecParseResult {
-  const result = specSchema.safeParse(data);
+  const result = specSchema.safeParse(data, REPORT_INPUT);
   if (result.success) return { ok: true, ...dropRemovedFields(result.data) };
   const issues = result.error.issues.map(toSpecIssue);
   return {
@@ -3032,7 +3021,14 @@ export function parseSpecText(text: string): SpecParseResult {
     const message = e instanceof Error ? e.message : String(e);
     return {
       ok: false,
-      issues: [{ path: '', message: `JSON inválido: ${message}` }],
+      issues: [
+        {
+          path: '',
+          message: `JSON inválido: ${message}`,
+          code: 'library.invalidJson',
+          params: { detail: message },
+        },
+      ],
       errors: [`JSON inválido: ${message}`],
     };
   }

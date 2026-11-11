@@ -252,6 +252,7 @@ describe('icons na especialização', () => {
       expect(result.issues).toContainEqual({
         path: 'icons',
         message: 'só é permitido com formatVersion 15',
+        code: 'spec.onlyFormat15',
       });
   });
 

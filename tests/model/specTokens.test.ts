@@ -18,7 +18,7 @@ function spec(tokens: unknown, formatVersion = 15): Json {
 
 const issuesOf = (raw: Json) => {
   const r = parseSpec(raw);
-  return r.ok ? [] : r.issues;
+  return r.ok ? [] : r.issues.map(({ path, message }) => ({ path, message }));
 };
 
 const GOOD = {

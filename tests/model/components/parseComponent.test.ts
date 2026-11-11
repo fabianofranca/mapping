@@ -594,6 +594,7 @@ describe('validateComponent e parseComponent', () => {
     expect(result.issues[0]).toEqual({
       path: 'format',
       message: 'esperava "mapping-component"',
+      code: 'component.formatInvalid',
     });
     expect(result.errors).toEqual(validateComponent(input));
   });
@@ -640,6 +641,8 @@ describe('aviso de font.family', () => {
       {
         path: 'template.children[0].font.family',
         message: expect.stringContaining('"Segoe UI, Roboto'),
+        code: 'component.fontFamilyInvalid',
+        params: { family: expect.stringContaining('"Segoe UI, Roboto') },
       },
     ]);
   });

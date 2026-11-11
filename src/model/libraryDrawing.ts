@@ -5,6 +5,15 @@ import { type Origin, screenFromSource } from './components/origin';
 import type { IconSet } from './components/icons';
 import { type ResolvedTokens, resolveTokens } from './components/tokens';
 import type { LibraryIssue } from './library';
+import { libraryIssue } from './libraryIssue';
+import { modelMessage, rawMessage, type ModelMessage } from './modelMessage';
+import {
+  MODEL_MESSAGE_TEMPLATES,
+  fillTemplate,
+  isModelMessageTemplateCode,
+  templateMessage,
+  type ModelMessageTemplateCode,
+} from './messages';
 import type { Spec, SpecAnnotationType } from './spec';
 
 // Nível 3 do validador da biblioteca: a prova de desenho. Instancia cada componente com os
@@ -46,8 +55,15 @@ export interface DrawingContext {
 const messageOf = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
-/** `"campo não informado: x"` do motor para um campo que o tipo nem declara: o nível 2 já deu o erro. */
-const NOT_INFORMED = /^campo não informado: (.+)$/;
+/** "campo não informado" do motor para um campo que o tipo nem declara: o nível 2 já deu o erro. */
+const NOT_INFORMED_CODE: ModelMessageTemplateCode = 'engine.fieldMissing';
+
+/** O aviso do motor com o sufixo de medida aproximada (o aviso vai em `detail`, que a interface traduz). */
+const approximate = (message: ModelMessage): ModelMessage => {
+  const params = { reason: message.text };
+  const text = fillTemplate(MODEL_MESSAGE_TEMPLATES['engine.approximate'], params);
+  return modelMessage('engine.approximate', params, text, message);
+};
 
 export function defaultValues(
   type: SpecAnnotationType,
@@ -60,8 +76,13 @@ export function defaultValues(
   return values;
 }
 
+/** O caso provado: um código de prova por caso e por haver modo ou não (ver `drawCode`). */
+type DrawKind = 'defaults' | 'preview' | 'example';
+
 interface DrawCase {
-  readonly label: string;
+  readonly kind: DrawKind;
+  /** Nome do exemplo (só no caso `example`). */
+  readonly name?: string;
   readonly values: FieldValues;
   readonly file: string;
   readonly path: string;
@@ -77,9 +98,9 @@ function drawCases(
   const defaults = defaultValues(type);
   const cases: DrawCase[] = [
     component.preview === undefined
-      ? { label: 'os valores padrão', values: defaults, file: componentPath, path: '' }
+      ? { kind: 'defaults', values: defaults, file: componentPath, path: '' }
       : {
-          label: 'o preview',
+          kind: 'preview',
           values: { ...defaults, ...component.preview },
           file: componentPath,
           path: 'preview',
@@ -88,13 +109,28 @@ function drawCases(
   (type.examples ?? []).forEach((example, index) => {
     if (example.values === undefined) return;
     cases.push({
-      label: `o exemplo "${example.name}"`,
+      kind: 'example',
+      name: example.name,
       values: { ...defaults, ...example.values },
       file: specPath,
       path: `${basePath}.examples[${index}]`,
     });
   });
   return cases;
+}
+
+const DRAW_CODES = {
+  defaults: ['library.draw.defaults', 'library.draw.defaultsMode'],
+  preview: ['library.draw.preview', 'library.draw.previewMode'],
+  example: ['library.draw.example', 'library.draw.exampleMode'],
+} as const satisfies Record<
+  DrawKind,
+  readonly [ModelMessageTemplateCode, ModelMessageTemplateCode]
+>;
+
+/** O código da mensagem do caso, com ou sem modo (um código por variante, texto inteiro no catálogo). */
+function drawCode(kind: DrawKind, withMode: boolean): ModelMessageTemplateCode {
+  return DRAW_CODES[kind][withMode ? 1 : 0];
 }
 
 /**
@@ -121,53 +157,62 @@ function typeDrawing(
   const keys = new Set(type.fields.map((f) => f.key));
   const box: Box = { x: 0, y: 0, ...component.size };
   for (const drawCase of drawCases(type, component, componentPath, specPath, basePath)) {
-    const where = (mode: string | undefined): string =>
-      `tipo "${type.id}", ${drawCase.label}${mode === undefined ? '' : `, modo ${mode}`}, tamanho inicial ${box.width}×${box.height}`;
     const issue = (
       mode: string | undefined,
-      text: string,
+      detail: ModelMessage,
       severity: 'warning' | 'error',
-    ) => ({
-      file: drawCase.file,
-      path: drawCase.path,
-      message: `${where(mode)}: ${text}`,
-      severity,
-    });
+    ) =>
+      libraryIssue(
+        severity,
+        drawCase.file,
+        drawCase.path,
+        drawCode(drawCase.kind, mode !== undefined),
+        {
+          typeId: type.id,
+          ...(drawCase.name === undefined ? {} : { name: drawCase.name }),
+          ...(mode === undefined ? {} : { mode }),
+          size: `${box.width}×${box.height}`,
+        },
+        detail,
+      );
     // O aviso que vale em todos os modos sai uma vez, sem modo; o que depende do modo cita o modo.
     const perMode = modes.map(({ mode, tokens }) => {
       try {
-        const { warnings } = instantiate(component, drawCase.values, box, {
+        const { messages } = instantiate(component, drawCase.values, box, {
           measure: approximateMeasurer,
           ...(tokens === undefined ? {} : { tokens }),
         });
         return {
           mode,
-          texts: warnings
-            .filter((w) => {
-              const missing = NOT_INFORMED.exec(w);
-              return missing === null || keys.has(missing[1] ?? '');
+          texts: messages
+            .filter((m) => {
+              const key = String(m.params.key ?? '');
+              return m.code !== NOT_INFORMED_CODE || key === '' || keys.has(key);
             })
-            .map((w) => `${w}${APPROXIMATE_SUFFIX}`),
+            .map(approximate),
           error: undefined as string | undefined,
         };
       } catch (error) {
-        return { mode, texts: [] as string[], error: messageOf(error) };
+        return { mode, texts: [] as ModelMessage[], error: messageOf(error) };
       }
     });
     const common =
       modes.length > 1
         ? (perMode[0]?.texts ?? []).filter((t) =>
-            perMode.every((m) => m.error === undefined && m.texts.includes(t)),
+            perMode.every(
+              (m) => m.error === undefined && m.texts.some((x) => x.text === t.text),
+            ),
           )
         : [];
-    for (const text of common) out.push(issue(undefined, text, 'warning'));
+    for (const message of common) out.push(issue(undefined, message, 'warning'));
     for (const { mode, texts, error } of perMode) {
       if (error !== undefined) {
-        out.push(issue(mode, `falha ao desenhar: ${error}`, 'error'));
+        out.push(issue(mode, templateMessage('library.drawFailed', { error }), 'error'));
         continue;
       }
-      for (const text of texts) {
-        if (!common.includes(text)) out.push(issue(mode, text, 'warning'));
+      for (const message of texts) {
+        if (!common.some((c) => c.text === message.text))
+          out.push(issue(mode, message, 'warning'));
       }
     }
   }
@@ -202,6 +247,30 @@ export function nodeProbeLibrary(lib: Library, origin: Origin): Library {
 export const withoutNodePrefix = (message: string): string =>
   message.replace(/^node\.?/, '');
 
+/** O erro da tradução como `detail`: com código, ou o texto cru (uma exceção do motor). */
+function errorDetail(
+  result: { readonly error?: string; readonly errorMessage?: ModelMessage },
+  strip: (text: string) => string = (text) => text,
+): ModelMessage {
+  return result.errorMessage ?? rawMessage(strip(result.error ?? ''));
+}
+
+/**
+ * O aviso da origem sem o `node.` que o quadro sintético põe na frente do caminho: o `path` do
+ * parâmetro perde o prefixo e o texto é montado de novo (igual a `withoutNodePrefix(text)`).
+ */
+export function withoutNodePrefixMessage(message: ModelMessage): ModelMessage {
+  const path = message.params.path;
+  if (typeof path === 'string' && isModelMessageTemplateCode(message.code))
+    return templateMessage(message.code, {
+      ...message.params,
+      path: withoutNodePrefix(path),
+    });
+  // Sem `path` (ou sem tradução): o texto perde o prefixo, como antes, e deixa de ter código.
+  const text = withoutNodePrefix(message.text);
+  return text === message.text ? message : rawMessage(text);
+}
+
 export function drawingIssues(ctx: DrawingContext): LibraryIssue[] {
   const { spec, specPath } = ctx;
   const out: LibraryIssue[] = [];
@@ -216,12 +285,11 @@ export function drawingIssues(ctx: DrawingContext): LibraryIssue[] {
     const { library: lib, reason } = library();
     if (lib === undefined && !warnedLibrary) {
       warnedLibrary = true;
-      out.push({
-        file: specPath,
-        path,
-        message: `não foi possível montar a biblioteca para provar os exemplos de sistema externo: ${reason ?? 'motivo desconhecido'}`,
-        severity: 'warning',
-      });
+      out.push(
+        reason === undefined
+          ? libraryIssue('warning', specPath, path, 'library.buildFailedUnknown')
+          : libraryIssue('warning', specPath, path, 'library.buildFailed', { reason }),
+      );
     }
     return lib;
   };
@@ -253,32 +321,24 @@ export function drawingIssues(ctx: DrawingContext): LibraryIssue[] {
           { node: json },
           { system: origin.system, measure: approximateMeasurer },
         );
-        const where = `exemplo "${example.name}" do sistema "${origin.system}"`;
+        const params = { name: example.name, system: origin.system };
+        const systemIssue = (severity: 'error' | 'warning', detail: ModelMessage) =>
+          libraryIssue(severity, specPath, at, 'library.systemExample', params, detail);
         if (result.error !== undefined) {
-          out.push({
-            file: specPath,
-            path: at,
-            message: `${where}: ${withoutNodePrefix(result.error)}`,
-            severity: 'error',
-          });
+          out.push(systemIssue('error', errorDetail(result, withoutNodePrefix)));
           return;
         }
-        for (const warning of result.warnings) {
-          out.push({
-            file: specPath,
-            path: at,
-            message: `${where}: ${withoutNodePrefix(warning)}`,
-            severity: 'warning',
-          });
-        }
+        for (const message of result.messages)
+          out.push(systemIssue('warning', withoutNodePrefixMessage(message)));
         const root = result.screen?.instances.find((i) => i.parentId === undefined);
         if (root !== undefined && root.typeId !== type.id) {
-          out.push({
-            file: specPath,
-            path: at,
-            message: `${where}: o nó corresponde ao tipo "${root.typeId}", não a "${type.id}"`,
-            severity: 'warning',
-          });
+          out.push(
+            libraryIssue('warning', specPath, at, 'library.systemExampleType', {
+              ...params,
+              found: root.typeId,
+              typeId: type.id,
+            }),
+          );
         }
       });
     });
@@ -295,24 +355,14 @@ export function drawingIssues(ctx: DrawingContext): LibraryIssue[] {
         system: origin.system,
         measure: approximateMeasurer,
       });
-      const where = `tela de exemplo "${example.name}" do sistema "${origin.system}"`;
+      const params = { name: example.name, system: origin.system };
+      const screenIssue = (severity: 'error' | 'warning', detail: ModelMessage) =>
+        libraryIssue(severity, specPath, at, 'library.originScreen', params, detail);
       if (result.error !== undefined) {
-        out.push({
-          file: specPath,
-          path: at,
-          message: `${where}: ${result.error}`,
-          severity: 'error',
-        });
+        out.push(screenIssue('error', errorDetail(result)));
         return;
       }
-      for (const warning of result.warnings) {
-        out.push({
-          file: specPath,
-          path: at,
-          message: `${where}: ${warning}`,
-          severity: 'warning',
-        });
-      }
+      for (const message of result.messages) out.push(screenIssue('warning', message));
     });
   });
   return out;

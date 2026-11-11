@@ -25,6 +25,7 @@ import { DetailsIdentity } from './DetailsIdentity';
 import { Section } from './DetailsSection';
 import { arrangeMarking, canArrangeMarking } from './arrange';
 import { useEditor } from './EditorContext';
+import { keepFocusAfterAction } from './focus';
 import { imageLabel, markingErrorMessage, markingLabel } from './labels';
 import { MarkingPicker } from './MarkingPicker';
 import { PerspectivesSection, usePrincipalOnly } from './PerspectivesSection';
@@ -261,18 +262,20 @@ export function MarkingPanel({
                 size="sm"
                 label={t('marking.orderBack')}
                 disabled={readOnly || order.index <= 0}
-                onClick={() =>
-                  report(actions.reorderMarking(marking.id, order.index - 1))
-                }
+                onClick={() => {
+                  keepFocusAfterAction();
+                  report(actions.reorderMarking(marking.id, order.index - 1));
+                }}
               />
               <IconButton
                 icon="arrowUp"
                 size="sm"
                 label={t('marking.orderFront')}
                 disabled={readOnly || order.index >= order.count - 1}
-                onClick={() =>
-                  report(actions.reorderMarking(marking.id, order.index + 1))
-                }
+                onClick={() => {
+                  keepFocusAfterAction();
+                  report(actions.reorderMarking(marking.id, order.index + 1));
+                }}
               />
             </div>
           </Property>

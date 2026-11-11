@@ -22,6 +22,7 @@ import {
 import { LocalFileChecker } from './codeFiles';
 import { externalDocWarnings, projectDocChecker } from './docFiles';
 import { ToolError } from './errors';
+import { plainWarnings } from './specValidation';
 import { Refs } from './items';
 import {
   MAX_ISSUES,
@@ -478,7 +479,7 @@ export async function planLibraryUpdate(
       ...(warnings.more > 0 ? { moreWarnings: warnings.more } : {}),
     };
   } else {
-    validation = { valid, errors: [], warnings: specWarnings(spec) };
+    validation = { valid, errors: [], warnings: plainWarnings(specWarnings(spec)) };
   }
 
   const identity = {

@@ -43,7 +43,7 @@ const columnPath = 'layers[0].annotationTypes[0].fields[0].columns[1]';
 
 function issuesOf(input: unknown): { path: string; message: string }[] {
   const result = parseSpec(input);
-  return result.ok ? [] : result.issues;
+  return result.ok ? [] : result.issues.map(({ path, message }) => ({ path, message }));
 }
 
 function parsed(input: unknown): Spec {

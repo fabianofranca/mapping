@@ -58,7 +58,7 @@ export function v11Json(edit?: (spec: Json) => void, formatVersion = 11): Json {
 
 export function issuesOf(input: unknown): { path: string; message: string }[] {
   const result = parseSpec(input);
-  return result.ok ? [] : result.issues;
+  return result.ok ? [] : result.issues.map(({ path, message }) => ({ path, message }));
 }
 
 /** O JSON já validado, como `Spec`. */

@@ -1010,3 +1010,68 @@ describe('SpecsDialog: atualizar biblioteca v4', () => {
     expect(harness.project().specializations[0]?.version).toBe(1);
   }, 60_000);
 });
+
+// MB3 (#1358): a especialização solta recusada e a atualização recusada por migração faltando
+// saem na língua da app (decisão 5); em en-US sem palavra do português fora dos parâmetros.
+const PORTUGUESE = /[ãõçáéíóúâêô]/i;
+
+describe('mensagens do modelo na língua da app (MB3)', () => {
+  const looseSpec = JSON.stringify({
+    format: 'mapping-spec',
+    formatVersion: 15,
+    id: 's',
+    name: 'S',
+    version: 1,
+    platforms: [{ id: 'a', name: 'A', repo: { url: 'x' } }],
+    layers: [],
+  });
+
+  it('en-US: a especialização solta recusada mostra o caminho e o problema em inglês', async () => {
+    locale.value = 'en-US';
+    const { choose } = setup();
+    choose(looseSpec);
+    const dialog = await dialogTitled('Invalid specialization file');
+    expect(dialog.textContent).toContain(
+      'platforms[0].repo.url: must start with http:// or https://, without spaces',
+    );
+    expect(dialog.textContent).not.toMatch(PORTUGUESE);
+  });
+
+  it('pt-BR: a especialização solta recusada segue com o texto do modelo', async () => {
+    const { choose } = setup();
+    choose(looseSpec);
+    const dialog = await dialogTitled('Arquivo de especialização inválido');
+    expect(dialog.textContent).toContain(
+      'platforms[0].repo.url: deve começar com http:// ou https://, sem espaços',
+    );
+  });
+
+  it('en-US: a atualização recusada lista as quebras sem migração em inglês', () => {
+    locale.value = 'en-US';
+    const base = libProject(libSpec(1), [
+      { id: 'B1', type: 'button', values: { label: 'OK' } },
+    ]);
+    const { container } = renderImpact(base, renameLabel(libNext([])));
+    const items = [
+      ...(container.querySelectorAll('div.notice.notice-error li') ?? []),
+    ].map((li) => li.textContent ?? '');
+    expect(items.length).toBeGreaterThan(0);
+    expect(items).toContain(
+      'the field "label" of the type "button" was removed; declare a "remove-field" or "rename-field" step in migrations',
+    );
+    for (const item of items) expect(item).not.toMatch(PORTUGUESE);
+  });
+
+  it('pt-BR: a atualização recusada segue com o texto do modelo', () => {
+    const base = libProject(libSpec(1), [
+      { id: 'B1', type: 'button', values: { label: 'OK' } },
+    ]);
+    const { container } = renderImpact(base, renameLabel(libNext([])));
+    const items = [...container.querySelectorAll('div.notice.notice-error li')].map(
+      (li) => li.textContent ?? '',
+    );
+    expect(items).toContain(
+      'o campo "label" do tipo "button" foi removido; declare um passo "remove-field" ou "rename-field" em migrations',
+    );
+  });
+});
