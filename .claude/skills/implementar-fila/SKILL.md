@@ -331,7 +331,7 @@ painel.py rule <pasta> end R<k> [motivo="…"]         # a regra deixa de valer
 painel.py merged <pasta> '#N'                        # dependência fora da fila já na main (sem repetir)
 painel.py context <pasta> <pct>                      # contexto do coordenador, de 0 a 100
 painel.py slug "<título do ##>"                      # imprime o slug da âncora de seção (sem pasta)
-painel.py published <pasta>                          # imprime `at:` (a hora real) e os arquivos a enviar; limpa o que falta publicar
+painel.py published <pasta> [--done]                 # imprime `at:` (a hora real) e os arquivos a enviar; `--done`, depois do batch, limpa o que falta publicar
 painel.py touch <pasta>                              # a publicação falhou: marca de novo os 3 arquivos
 painel.py show <pasta>          # resumo: em andamento, `vagas:`, `começar agora:`, `contexto:`, `custo:`, `pedidos do supervisor:`, `regras em vigor:`, `fichas a refazer:`, filhas, atrasadas, esperando o coordenador, `CI esperando o coordenador:`, reserva, `não publicado`, últimas do log
 painel.py show <pasta> '#n'     # uma linha inteira, com a ficha
@@ -347,7 +347,7 @@ A linha `CI esperando o coordenador: #n PR #p (k min); …` (ou `nenhuma`) lista
 
 O script diz quais arquivos mudou, e o `show` diz quais ainda faltam publicar (`não publicado desde <HH:MM>: <arquivos>` ou `não publicado: nenhum`, de `meta.unpublished`).
 
-**Vários comandos de um ciclo vão num `apply` só**, com heredoc: cada linha é um subcomando na sintaxe da linha de comando, sem `painel.py` e sem a pasta; linha vazia e linha com `#` são ignoradas. Tudo ou nada: com erro em qualquer linha, nada é gravado e o script sai com código 2, citando o número da linha. `show`, `init`, `published` e `apply` não entram no lote.
+**Vários comandos de um ciclo vão num `apply` só**, com heredoc: cada linha é um subcomando na sintaxe da linha de comando, sem `painel.py` e sem a pasta; linha vazia e linha com `#` são ignoradas. Tudo ou nada: com erro em qualquer linha, nada é gravado e o script sai com código 2, citando o número da linha. `show`, `init`, `published` (com ou sem `--done`) e `apply` não entram no lote.
 
 ```bash
 python3 .claude/skills/implementar-fila/painel/painel.py apply <pasta> - <<'EOF'
@@ -360,14 +360,14 @@ EOF
 
 **Publicar uma atualização:**
 
-1. Rode `painel.py published <pasta>` numa chamada do `Bash`, **logo antes de enviar**. Ele imprime `at: <ISO UTC>` (a hora real do relógio, nunca estimada) e `enviar:` com os arquivos não publicados (o `meta.json` vai sempre), grava `meta.publishedAt` e limpa o que falta publicar, de modo que o `meta.json` enviado já sai limpo.
+1. Rode `painel.py published <pasta>` numa chamada do `Bash`, **logo antes de enviar**. Ele imprime `at: <ISO UTC>` (a hora real do relógio, nunca estimada) e `enviar:` com os arquivos não publicados (o `meta.json` vai sempre), e grava `meta.publishedAt`. **Não limpa** o que falta publicar: o `show` segue dizendo `não publicado desde <HH:MM>: <arquivos>` até o passo 4, então uma sessão que morra no meio do envio deixa a próxima (ou a conferência de hora em hora) republicar.
 2. Para cada arquivo de `enviar:`, chame `Artifact` com `url` = o painel, `asset: true` e `file_path` (um JSON por chamada). O resultado traz o `url` (`/_blob/<id>`).
 3. Faça um `ArtifactData` `batch` com um `update` em cada `datasets/<id>`:
    - `source: {kind: "file", url, name: "<id>.json", format: "json"}`;
    - `updated: {at, by: "Claude"}`, com o `at` do `published` em `updated.at`;
    - `edit: {via: "claude", at}`, com o mesmo `at` em `edit.at`;
    - `if_version`: a versão que o resultado anterior devolveu (na primeira vez, faça um `list` de `datasets`). Se a versão mudou no meio, leia de novo e refaça.
-4. Se o envio ou o `batch` falhar e não for refeito no mesmo turno, rode `painel.py touch <pasta>`: os três arquivos voltam a constar como não publicados, e a próxima publicação os envia.
+4. Com o `batch` bem-sucedido, rode `painel.py published <pasta> --done`: só aí o que falta publicar zera (se algo foi gravado entre o `published` e o `--done`, a marca fica). Se o envio ou o `batch` falhar e não for refeito no mesmo turno, rode `painel.py touch <pasta>`: os três arquivos voltam a constar como não publicados, e a próxima publicação os envia.
 5. Diga em `current`, numa frase, o que está acontecendo agora (grave-o no `apply` do ciclo, antes do `published`).
 
 Grave no `painel.py` **a cada avanço** (fase aberta e mesclada, PR, testador, correção, fechamento, merge, nova `ready`), cada um com a sua linha no `log` e o `current` atualizado, e **publique o que ficou não publicado**: uma publicação por turno, no fim, só os arquivos que mudaram, mesmo com o subagente do ciclo ainda rodando ("Economia de contexto", item 7). A conferência de hora em hora publica quando o `show` mostra arquivo não publicado, e sem ele não publica. Se um blob voltar 404, envie de novo e repõe o dataset.

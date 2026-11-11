@@ -22,6 +22,32 @@ async function reading(page: Page) {
   };
 }
 
+/** Espera dois quadros de animação: o canvas desenha no máximo uma vez por quadro. */
+async function frames(page: Page) {
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
+}
+
+/** Lê a vista só depois que duas leituras seguidas (separadas por quadros) coincidem. */
+async function settled(page: Page) {
+  let last = '';
+  await expect
+    .poll(async () => {
+      await frames(page);
+      const r = await reading(page);
+      const key = JSON.stringify(r);
+      const same = key === last;
+      last = key;
+      return same;
+    })
+    .toBe(true);
+  return reading(page);
+}
+
 test('abrir e fechar a Árvore e os Detalhes mantém a escala e o centro', async ({
   page,
 }) => {
@@ -45,7 +71,8 @@ test('abrir e fechar a Árvore e os Detalhes mantém a escala e o centro', async
   await page.keyboard.press('Control+=');
   await expect(host).toHaveAttribute('data-viewport', /.+/);
 
-  const start = await reading(page);
+  // Os dois zooms só valem depois de desenhados: lê a vista quando ela para de mudar.
+  const start = await settled(page);
   expect(start.scale).toBeGreaterThan(0);
 
   const steps: Array<() => Promise<void>> = [
@@ -72,15 +99,7 @@ test('abrir e fechar a Árvore e os Detalhes mantém a escala e o centro', async
   for (const step of steps) {
     await step();
     // Espera o canvas assentar no tamanho novo antes de ler.
-    await expect
-      .poll(async () => {
-        const a = await reading(page);
-        await page.waitForTimeout(100);
-        const b = await reading(page);
-        return a.width === b.width && a.cx === b.cx && a.cy === b.cy;
-      })
-      .toBe(true);
-    const now = await reading(page);
+    const now = await settled(page);
     widths.add(now.width);
     expect(now.scale).toBeCloseTo(start.scale, 6);
     expect(Math.abs(now.cx - start.cx)).toBeLessThan(1);
