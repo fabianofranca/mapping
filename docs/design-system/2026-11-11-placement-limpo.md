@@ -1,4 +1,4 @@
-# Placement limpo — [Não lançado] (épico `epic/placement-limpo`)
+# Placement limpo — 2026-11-11 (épico `epic/placement-limpo`)
 
 ## Pendências
 
@@ -6,7 +6,7 @@ Nenhuma. Impacto no DS: nenhum. O épico só muda o arredondamento do `placement
 
 ## Sincronização
 
-Nada a gravar no artefato **Mapping**.
+Sem impacto no artefato **Mapping**: nenhum componente, token nem ícone do design system muda, então não há nada a gravar.
 
 ## Ficou sem gravar
 
