@@ -113,7 +113,15 @@ A passagem mora na **database** do artefato "Supervisão da fila" (sempre o mesm
 
 ## Vigiar uma condição
 
-Regra: sem conferências periódicas na sessão Opus. Das 14 conferências de 2026-11-10, só 3 acharam algo, e cada uma custou a releitura do contexto. A supervisão age quando o dono pergunta. Para vigiar uma condição, crie uma tarefa agendada que abre sessão nova a cada disparo (`create_trigger` com `create_new_session_on_fire`), troque o modelo para Sonnet ou Haiku com `update_trigger` logo depois de criar (decisão do dono de 2026-11-10, que vale como o pedido explícito que a ferramenta exige), e escreva o prompt para só notificar quando houver algo. O `send_later` nesta sessão só vale quando o dono pede.
+Regra: sem conferências periódicas na sessão Opus. Das 14 conferências de 2026-11-10, só 3 acharam algo, e cada uma custou a releitura do contexto. A supervisão age quando o dono pergunta. O jeito padrão de acompanhar a fila é o **observador da fila** (tarefa agendada "Observador da fila", `trig_01WCuidEK7f4DFiyDB69XNG6`, decisão do dono de 2026-11-11):
+
+- **O que lê:** uma sessão Sonnet nova a cada 6 h lê o painel (o `meta`, baixado para arquivo como em "Leitura das fontes", e o `painel.py roles` e `requests`) e as medidas e chaves que o prompt agendado lista (o `get_trigger` mostra o prompt vigente; ele é a fonte, e esta lista não o repete).
+- **Onde comenta:** na #1644, só quando há achado; sem nada, não notifica nem comenta.
+- **Quando abre `roadmap`:** quando o mesmo achado se repete (por exemplo, pedidos "registrar … supervisor" acima do limite de 4 em 24 h). A issue leva `roadmap`, o `impact:` e o rótulo `observador-da-fila`, que também marca a #1644 e fica até a issue fechar (`docs/PROCESS.md`, "Rótulos").
+- **Parada:** só o dono (ou a supervisão, a pedido dele) o desliga, com `update_trigger` `enabled: false`; ele não se desliga sozinho.
+- **Prompt:** o prompt agendado muda **só** por `update_trigger` (nunca por delete e create, que perde o histórico de disparos), e a mudança é conferida depois com `get_trigger` (prompt, modelo e `enabled`).
+
+Para vigiar outra condição, crie uma tarefa agendada que abre sessão nova a cada disparo (`create_trigger` com `create_new_session_on_fire`), troque o modelo para Sonnet ou Haiku com `update_trigger` logo depois de criar (decisão do dono de 2026-11-10, que vale como o pedido explícito que a ferramenta exige), e escreva o prompt para só notificar quando houver algo. O `send_later` nesta sessão só vale quando o dono pede.
 
 ## Subagentes
 
