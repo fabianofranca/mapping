@@ -1,4 +1,4 @@
-# Testador com subagente por lote — [Não lançado] (épico `epic/testador-subagente`)
+# Testador com subagente por lote — 2026-11-11 (épico `epic/testador-subagente`)
 
 ## Pendências
 
@@ -6,7 +6,7 @@ Nenhuma. Impacto no DS: nenhum. O épico só mexe no prompt do testador, no `rou
 
 ## Sincronização
 
-Nada a gravar no artefato **Mapping**: o épico não muda componente, token nem ícone da app.
+Sem impacto no artefato **Mapping**: o épico não muda componente, token nem ícone da app, então não há nada a gravar.
 
 ## Ficou sem gravar
 

@@ -1,4 +1,4 @@
-# Testador com subagente por lote — [Não lançado] (épico `epic/testador-subagente`, PR #1664, MCP sem mudança, schema v18)
+# Testador com subagente por lote — 2026-11-11 (épico `epic/testador-subagente`, PR #1664, MCP sem mudança, schema v18)
 
 ## Alterado
 
