@@ -1,4 +1,4 @@
-# Foco do teclado depois dos menus da Árvore — [Não lançado] (épico `epic/foco-menus-arvore`)
+# Foco do teclado depois dos menus da Árvore — 2026-11-11 (épico `epic/foco-menus-arvore`)
 
 ## Pendências
 
