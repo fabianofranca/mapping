@@ -579,6 +579,11 @@ def cmd_role(a):
     roles = m.setdefault("roles", {})
     prev = roles.get(a.role) or {}
     n = prev.get("n")
+    if prev.get("id") == a.session:  # o id já registrado: nada muda (#1628), nem `n`, `previous`, `at` ou `link`
+        print(f"{a.role} {n if isinstance(n, int) else '?'}: {a.session} já é o registrado; nada mudou")
+        if BATCH is None:  # dentro do `apply` quem imprime `alterados:` é o fim do lote
+            print("alterados: nenhum")
+        return
     roles[a.role] = {
         "id": a.session,
         "n": (n if isinstance(n, int) else 0) + 1,
@@ -1260,7 +1265,7 @@ def build_parser():
     sp.add_argument("issue")
     sp = add("context", cmd_context, "registra o contexto do coordenador (0 a 100)")
     sp.add_argument("pct")
-    sp = add("role", cmd_role, "registra a sessão atual de um papel (coordenador|supervisor) [link=<url>]; n soma 1")
+    sp = add("role", cmd_role, "registra a sessão atual de um papel (coordenador|supervisor) [link=<url>]; n soma 1; o id já registrado não muda nada")
     sp.add_argument("role")
     sp.add_argument("session")
     sp.add_argument("pairs", nargs="*")
