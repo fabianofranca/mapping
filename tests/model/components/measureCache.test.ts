@@ -13,6 +13,7 @@ import {
   type TextMeasurer,
 } from '../../../src/model/components/instantiate';
 import { cachedMeasurer } from '../../../src/model/components/measureCache';
+import { memoizedTextMeasurer } from '../../../src/store/textMeasure';
 
 const FONT: MeasureFont = {
   family: 'Inter',
@@ -152,5 +153,55 @@ describe('textMemo do motor', () => {
     );
     const byKey = callsByKey(tpl);
     expect(Math.max(...byKey.values())).toBe(1);
+  });
+});
+
+describe('memoizedTextMeasurer (a app)', () => {
+  it('é um por medidor e por época das fontes', () => {
+    const base: TextMeasurer = (text, font, maxWidth) =>
+      approximateMeasurer(text, font, maxWidth);
+    const first = memoizedTextMeasurer(base, 0);
+    expect(memoizedTextMeasurer(base, 0)).toBe(first);
+    expect(memoizedTextMeasurer(base, 1)).not.toBe(first);
+    expect(memoizedTextMeasurer((t, f, w) => base(t, f, w), 0)).not.toBe(first);
+  });
+
+  it('a época nova não derruba a atual: só a mais antiga sai', () => {
+    const base: TextMeasurer = (text, font, maxWidth) =>
+      approximateMeasurer(text, font, maxWidth);
+    const byEpoch = [0, 1, 2, 3].map((epoch) => memoizedTextMeasurer(base, epoch));
+    memoizedTextMeasurer(base, 4);
+    expect(memoizedTextMeasurer(base, 3)).toBe(byEpoch[3]);
+    expect(memoizedTextMeasurer(base, 2)).toBe(byEpoch[2]);
+  });
+});
+
+describe('textMemo e a largura', () => {
+  it('o mesmo texto medido em dois limites tem duas medidas, e a cena usa a do limite final', () => {
+    const sentence = 'uma frase com várias palavras para quebrar em linhas';
+    const tpl = frame([text(sentence, { maxWidth: 60 })], { width: 'fill' });
+    const seen = new Map<string, number>();
+    const measure: TextMeasurer = (value, font, maxWidth) => {
+      const key = String(maxWidth ?? 'livre');
+      seen.set(key, (seen.get(key) ?? 0) + 1);
+      return approximateMeasurer(value, font, maxWidth);
+    };
+    const { root } = instantiate(
+      component(tpl),
+      {},
+      { x: 0, y: 0, width: 100, height: 120 },
+      { measure },
+    );
+    // Mais de um limite (o natural e o da caixa) e nenhum medido duas vezes.
+    expect(seen.size).toBeGreaterThan(1);
+    expect(Math.max(...seen.values())).toBe(1);
+    const node = root.children[0];
+    if (node?.type !== 'text') throw new Error('sem texto');
+    const font = { ...FONT, size: 14, lineHeight: 16.8 };
+    expect(node.height).toBeCloseTo(
+      approximateMeasurer(sentence, font, node.width).height,
+      5,
+    );
+    expect(node.height).toBeGreaterThan(font.lineHeight);
   });
 });

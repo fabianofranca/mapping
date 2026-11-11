@@ -30,7 +30,11 @@ export function memoizedTextMeasurer(
   }
   let cached = epochs.get(fontsEpoch);
   if (cached === undefined) {
-    if (epochs.size >= EPOCHS_KEPT) epochs.clear();
+    // Sai só a época mais antiga (a primeira inserida): a atual e as recentes mantêm o medidor.
+    if (epochs.size >= EPOCHS_KEPT) {
+      const oldest = epochs.keys().next();
+      if (!oldest.done) epochs.delete(oldest.value);
+    }
     cached = cachedMeasurer(measure, { limit: MEASURE_CACHE_LIMIT });
     epochs.set(fontsEpoch, cached);
   }
