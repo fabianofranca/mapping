@@ -154,7 +154,8 @@ describe('o catálogo do lote acompanha apply/update/remove_specialization', () 
       BUTTON,
     ]);
     expect(result.errors).toEqual([]);
-    expect(buttonOf(result).marking.rect).toMatchObject({ width: 120, height: 40 });
+    // O botão tem `sizing.width` `hug`: nasce no tamanho medido do `preview` (MC3), 83 × 40.
+    expect(buttonOf(result).marking.rect).toMatchObject({ width: 83, height: 40 });
   });
 
   it('depois de update_specialization, um rect menor que o minSize é recusado com o mínimo', async () => {

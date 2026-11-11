@@ -174,7 +174,8 @@ describe('create_marking com annotation', () => {
     const button = p.markings.find((m) => m.id === buttonId)!;
     expect(rowMarking.rect).toMatchObject({ width: 380, height: 48 });
     expect(button.parentId).toBe(rowId);
-    expect(button.rect).toMatchObject({ width: 120, height: 40 });
+    // Largura `hug`: a instância nova nasce no tamanho medido do rótulo do `preview` (MC3), não no `size` (120).
+    expect(button.rect).toMatchObject({ width: 87, height: 40 });
     expect(p.annotations.find((a) => a.id === noteId)).toMatchObject({
       markingId: rowId,
       type: { specId: 'material3', typeId: 'm3-row' },
@@ -479,9 +480,9 @@ describe('create_marking com inside (filha no slot)', () => {
       column.rect.y + 96,
     ]);
     expect(buttons.map((b) => [b.rect.width, b.rect.height])).toEqual([
-      [120, 40],
-      [120, 40],
-      [120, 40],
+      [83, 40],
+      [83, 40],
+      [83, 40],
     ]);
     expect(result.deprecations).toEqual([]);
     // O plan_changes e o propose_changes usam o mesmo lote preparado (`prepareBatch`).
