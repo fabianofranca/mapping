@@ -104,4 +104,13 @@ describe('tabela de texto e referência cabe nos Detalhes de 900 px', () => {
     const rest = 4.4; // bordas e respiro, pela medida de 234 px antes: 234 - 76 - 72 - 81,6
     expect(fixed + rest + input + ref).toBeLessThanOrEqual(220);
   });
+
+  // CL2 (achado A2, R24.15): o piso do campo de texto (0,5 do token) cabe em 220 px, mas o texto que
+  // passa dele saía cortado sem aviso ("primeii" no lugar de "primeiro"). Como no nome da Árvore
+  // (5.1), o que não cabe termina em reticências; a dica (`title`) do campo traz o valor inteiro.
+  it('o texto que passa do piso do campo termina em reticências, não cortado sem aviso', () => {
+    expect(rule('.data-grid .grid-cell-value .input')).toMatch(
+      /text-overflow:\s*ellipsis/,
+    );
+  });
 });

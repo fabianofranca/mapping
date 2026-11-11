@@ -645,6 +645,7 @@ button.layer-group-label:hover {
  */
 .data-grid .grid-cell-value .input {
   min-width: calc(var(--size-grid-col-min) * 0.5);
+  text-overflow: ellipsis;
 }
 
 .data-grid .grid-cell-value .select {
