@@ -375,6 +375,26 @@ describe('aplicar só as aceitas', () => {
     ).toEqual(base);
   });
 
+  it('o placement aceito de um container sai sem cauda de ponto flutuante', () => {
+    const base = sampleProject();
+    const p0 = propose(base, moveContainer(base, 'I2', 5000, 5000));
+    const placement = changeOf(p0, 'image', 'I2', 'placement');
+    const tailed: Proposal = {
+      ...p0,
+      changes: p0.changes.map((c) =>
+        c.id === placement.id
+          ? {
+              ...c,
+              to: { x: 5000.123456789123, y: 5000, scale: 1 } as unknown as Change['to'],
+            }
+          : c,
+      ),
+    };
+    const p = decided(tailed, base, { level: 'change', id: placement.id }, 'accepted');
+    const out = apply(base, p).project.containers.find((c) => c.id === 'I2')!;
+    expect(out.placement.x).toBe(5000.123457);
+  });
+
   it('conjunto inválido fica bloqueado e aponta as mudanças envolvidas', () => {
     const base = sampleProject();
     const i1 = base.containers.find((c) => c.id === 'I1')!;

@@ -375,3 +375,19 @@ describe('encostar em bordas fracionárias não cria sobreposição nem muda per
     expect(image(resized, 'K').parentId).toBe('W');
   });
 });
+
+describe('setContainerPlacement: no-op com cauda antiga', () => {
+  it('container salvo com cauda de ponto flutuante: placement equivalente devolve o mesmo projeto', () => {
+    const base = sampleProject();
+    const tailed: Project = {
+      ...base,
+      containers: base.containers.map((c) =>
+        c.id === 'I1'
+          ? { ...c, placement: { ...c.placement, x: -739.6551724137931 } }
+          : c,
+      ),
+    };
+    const at = tailed.containers.find((c) => c.id === 'I1')!.placement;
+    expect(setContainerPlacement(tailed, 'I1', { ...at })).toBe(tailed);
+  });
+});

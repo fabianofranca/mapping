@@ -591,7 +591,8 @@ export function setContainerPlacement(
   if (overlap) failOverlap(overlap);
   // Placement igual ao de agora: nada mudou (arrasto sem efeito); devolve o mesmo projeto para
   // o gesto não gravar uma entrada de desfazer vazia.
-  const current = findById(p.containers, containerId).placement;
+  // Compara com o atual já limpo: um arquivo antigo com cauda não vira escrita num arrasto sem efeito.
+  const current = snapPlacement(findById(p.containers, containerId).placement);
   if (current.x === copy.x && current.y === copy.y && current.scale === copy.scale) {
     return p;
   }

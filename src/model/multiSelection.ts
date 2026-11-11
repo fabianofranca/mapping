@@ -137,9 +137,9 @@ export function canMoveItems(p: Project, items: readonly ItemRef[]): boolean {
  * e vale também para os containers: o retângulo da marcação é inteiro e o do container não,
  * então cada um com o seu deslocamento deixaria um container colado na borda da marcação
  * poucas frações para fora dela e o assentar o tiraria do pertencimento. Sem marcação do canvas
- * o container anda pelo `dx`, `dy` exatos (arrasto suave com zoom); só o ruído de ponto
- * flutuante perto de um inteiro some do `placement` (`snapNearInteger`), para ir e voltar não
- * deixar `-2.27e-13` no `mapping.json`.
+ * o container anda pelo `dx`, `dy` exatos (arrasto suave com zoom); o `placement` passa por
+ * `snapPlacement` (perto de um inteiro vira o inteiro; senão x e y ficam com 6 casas e a escala
+ * com 12 algarismos), para ir e voltar não deixar cauda de ponto flutuante no `mapping.json`.
  *
  * Tudo ou nada: com qualquer item de `movingItems` travado falha com `locked`; um container
  * movido que passe a sobrepor um container que NÃO se move falha com `image-overlap` (os
