@@ -82,6 +82,10 @@ const EXCEPTIONS = {
   button: { rename: {}, drop: ['conteúdo', 'rótulo'] },
   'extended-fab': { rename: {}, drop: ['conteúdo', 'texto'] },
   chip: { rename: {}, drop: ['conteúdo', 'rótulo'] },
+  // MC6 (#1034): o texto do item do menu passou a ficar entre os ícones pelas âncoras `left` e `right` do quadro do item
+  // (`none`), no lugar do quadro `texto (caixa)` com o `padding`: sai o quadro e o texto fica no mesmo lugar (a caixa
+  // do menu é a mesma, a 200 de largura). A largura do menu pelo item mais largo confere `material3Mc6.test.ts`.
+  'dropdown-menu': { rename: {}, drop: ['texto (caixa)'] },
 } as Record<string, { rename: Record<string, string>; drop: string[] }>;
 
 /** Número sob a alça: a `alça` ganha a cópia dos números (`números sob a alça`) no lugar do `valor selecionado`. */

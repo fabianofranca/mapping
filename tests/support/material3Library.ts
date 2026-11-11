@@ -222,6 +222,10 @@ const MF5_EXAMPLES: Record<string, string[]> = {
   'secure-text-field': ['Preenchido com apoio'],
   divider: ['Recuo por ponta'],
   'progress-indicator': ['Trilho colorido e ponta reta'],
+  // MC6 (#1034): a quebra do flow-row, os botões do alert-dialog em duas linhas e a largura do menu pelo item mais largo
+  'flow-row': ['Três por linha'],
+  'alert-dialog': ['Botões em duas linhas'],
+  'dropdown-menu': ['Itens de larguras diferentes'],
 };
 /** Os campos de valor do slider (EX6): eram `enum` em décimos na v1 e passaram a `number`. */
 const SLIDER_NUMBERS: Record<string, number> = {
