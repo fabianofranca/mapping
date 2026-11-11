@@ -21,6 +21,11 @@ Toda gravação soma os arquivos a `meta.unpublished` (`{since, files}`: o que f
 publicado; o `show` o imprime). `published DIR` imprime `at: <ISO UTC>` (o valor de `updated.at` e `edit.at`
 da publicação), lista os arquivos a enviar, grava `meta.publishedAt` e limpa `unpublished`; `touch DIR` marca
 de novo os três arquivos (a publicação falhou).
+Custo (decisões 5 e 26 da #1532): `session DIR '#n' <id> kind=<tipo> [label=<código>]` acrescenta `{id, issue, kind, label,
+created}` a `meta.sessions` (sem `kind`, só o `sessions` da linha, como antes); `cost DIR <id> usd= ctx= [model= effort=
+served=] [issue= kind=]` grava o custo da sessão (`kind` obrigatório com id novo); `costs [--desde <ISO>] DIR` lê só o `meta`
+e imprime o total, uma linha por tipo (sessões, US$, mediana) e uma por etapa (com `--desde`, só as com `created` a partir
+da data); o `show` traz a linha `custo:`.
 Só biblioteca padrão. Uso: painel.py [--now ISO] <subcomando> DIR ...
 (o subcomando vem ANTES da pasta: `painel.py row <pasta> '#n' status=...`).
 """
@@ -31,6 +36,7 @@ import json
 import os
 import re
 import shlex
+import statistics
 import sys
 import unicodedata
 
@@ -38,6 +44,7 @@ STATUS = ["aguardando", "em andamento", "concluída", "falhou", "esperando dono"
 KINDS = ["etapa", "bug", "patch"]
 STAGES = ["", "Fases", "Testador", "Correção", "Fechamento", "Mesclada"]
 FILES = ["queue", "meta", "log"]
+SESSION_KINDS = ["fase", "correção", "testador", "reteste", "fechamento", "coordenador", "supervisor"]
 CONTEXT_LIMIT = 60
 DEFAULT_PARALELO = 2
 INT_FIELDS = ["order", "phasesTotal", "phasesDone"]
@@ -356,15 +363,138 @@ def cmd_reserve(a):
 
 def cmd_session(a):
     s = open_session(a.dir)
-    row = find_row(s.get("queue"), norm_issue(a.issue))
+    issue = norm_issue(a.issue)
+    row = find_row(s.get("queue"), issue)
     if row is None:
         raise Erro(f"{a.issue} não está na fila")
+    pairs = parse_pairs(a.pairs)
+    for k in pairs:
+        if k not in ("kind", "label"):
+            raise Erro(f"campo desconhecido '{k}'; válidos: kind, label")
+    if "label" in pairs and "kind" not in pairs:
+        raise Erro("label= só com kind=")
+    if "kind" in pairs:
+        validate_choice("kind", pairs["kind"], SESSION_KINDS)
     ids = row.get("sessions", "").split()
     if a.session not in ids:
         ids.append(a.session)
     row["sessions"] = " ".join(ids)
     s.touch("queue")
+    if "kind" in pairs:
+        entry = session_entry(s.get("meta")[0], a.session)
+        entry.setdefault("created", now())
+        entry.update({"issue": issue, "kind": pairs["kind"]})
+        if "label" in pairs or "label" not in entry:
+            entry["label"] = pairs.get("label", "")
+        s.touch("meta")
     s.commit()
+
+
+def session_entry(meta, sid):
+    """A entrada de `meta.sessions` com esse id; cria (só com o id) se não houver."""
+    lst = meta.setdefault("sessions", [])
+    for e in lst:
+        if e.get("id") == sid:
+            return e
+    e = {"id": sid}
+    lst.append(e)
+    return e
+
+
+def to_number(k, v, conv):
+    try:
+        x = conv(v)
+    except (ValueError, OverflowError):
+        raise Erro(f"{k} precisa ser numérico, veio '{v}'")
+    if x != x or x in (float("inf"), float("-inf")) or x < 0:
+        raise Erro(f"{k} precisa ser numérico, veio '{v}'")
+    return x
+
+
+def cmd_cost(a):
+    s = open_session(a.dir)
+    pairs = parse_pairs(a.pairs)
+    for k in pairs:
+        if k not in ("usd", "ctx", "model", "effort", "served", "issue", "kind"):
+            raise Erro(f"campo desconhecido '{k}'; válidos: usd, ctx, model, effort, served, issue, kind")
+    for k in ("usd", "ctx"):
+        if k not in pairs:
+            raise Erro(f"falta {k}=")
+    usd = to_number("usd", pairs["usd"], float)
+    ctx = to_number("ctx", pairs["ctx"], lambda v: int(float(v)))
+    if "kind" in pairs:
+        validate_choice("kind", pairs["kind"], SESSION_KINDS)
+    if "issue" in pairs:
+        norm_issue(pairs["issue"])
+    m = s.get("meta")[0]
+    known = any(e.get("id") == a.session for e in m.get("sessions", []))
+    if not known and "kind" not in pairs:
+        raise Erro(f"{a.session} é uma sessão nova: falta kind=<tipo>")
+    entry = session_entry(m, a.session)
+    for k in ("issue", "kind"):
+        if k in pairs:
+            entry[k] = pairs[k]
+    cost = dict(entry.get("cost") or {})  # o que já estava gravado (model, effort, served) fica
+    cost.update({"usd": usd, "ctx": ctx, "at": now()})
+    for k in ("model", "effort", "served"):
+        if pairs.get(k):
+            cost[k] = pairs[k]
+    entry["cost"] = cost
+    s.touch("meta")
+    s.commit()
+
+
+def costed(meta, since=None):
+    """Entradas de `meta.sessions` com custo; com `since`, só as com `created` a partir dele."""
+    out = []
+    for e in meta.get("sessions", []):
+        if not e.get("cost"):
+            continue
+        if since and not (e.get("created") and e["created"] >= since):
+            continue
+        out.append(e)
+    return out
+
+
+def usd_of(e):
+    """US$ da entrada; 0 se o `cost` veio sem `usd` (o meta pode ser editado ou publicado pela metade)."""
+    v = e["cost"].get("usd")
+    return v if isinstance(v, (int, float)) else 0
+
+
+def money(x):
+    return f"US$ {x:.2f}"
+
+
+def cost_summary(meta):
+    """`custo: …` do `show`: total e número de sessões com custo, ou `—`."""
+    es = costed(meta)
+    if not es:
+        return "—"
+    return f"{money(sum(usd_of(e) for e in es))} em {len(es)} sessões"
+
+
+def cmd_costs(a):
+    since = check_iso(a.desde) if a.desde else None
+    m = load(a.dir, "meta")
+    es = costed(m[0] if m else {}, since)
+    if not es:
+        print("custo total: —")
+        return
+    print(f"custo total: {money(sum(usd_of(e) for e in es))} em {len(es)} sessões")
+    by_kind, by_issue = {}, {}
+    for e in es:
+        by_kind.setdefault(e.get("kind") or "—", []).append(usd_of(e))
+        by_issue.setdefault(e.get("issue") or "—", []).append(usd_of(e))
+    print("por tipo:")
+    for k in SESSION_KINDS + sorted(set(by_kind) - set(SESSION_KINDS)):
+        if k in by_kind:
+            v = by_kind[k]
+            print(f"  {k}: {len(v)} sessões, {money(sum(v))}, mediana {money(statistics.median(v))}")
+    print("por etapa:")
+    for k in sorted(by_issue, key=lambda i: (not i.startswith("#"), int(i[1:]) if i[1:].isdigit() else 0, i)):
+        v = by_issue[k]
+        print(f"  {k}: {len(v)} sessões, {money(sum(v))}")
 
 
 def cmd_merged(a):
@@ -419,7 +549,7 @@ def cmd_published(a):
     print("alterados: meta.json")
 
 
-BATCH_REJECTED = ("show", "apply", "init", "published", "slug")
+BATCH_REJECTED = ("show", "apply", "init", "published", "slug", "costs")
 
 
 def batch_lines(src):
@@ -721,6 +851,7 @@ def cmd_show(a):
         print(f"não publicado desde {(pend.get('since') or '')[11:16] or '—'}: " + " ".join(pend["files"]))
     else:
         print("não publicado: nenhum")
+    print(f"custo: {cost_summary(meta)}")
     ctx = meta.get("context")
     if ctx is None:
         print("contexto: —")
@@ -781,9 +912,13 @@ def build_parser():
     sp.add_argument("text")
     sp = add("reserve", cmd_reserve, "guarda o id da conferência de reserva da sessão")
     sp.add_argument("trigger")
-    sp = add("session", cmd_session, "registra uma sessão criada para a etapa (sem repetir)")
+    sp = add("session", cmd_session, "registra uma sessão criada para a etapa (sem repetir; kind= [label=] também a põe em meta.sessions)")
     sp.add_argument("issue")
     sp.add_argument("session")
+    sp.add_argument("pairs", nargs="*")
+    sp = add("cost", cmd_cost, "grava o custo de uma sessão (usd= ctx= [model= effort= served= issue= kind=])")
+    sp.add_argument("session")
+    sp.add_argument("pairs", nargs="+")
     sp = add("merged", cmd_merged, "registra uma etapa mesclada na main (sem repetir)")
     sp.add_argument("issue")
     sp = add("context", cmd_context, "registra o contexto do coordenador (0 a 100)")
@@ -795,6 +930,10 @@ def build_parser():
     sp = sub.add_parser("slug", help="imprime o slug de um título `##` (âncora de seção)")
     sp.add_argument("title", metavar="título")
     sp.set_defaults(fn=cmd_slug)
+    sp = sub.add_parser("costs", help="total, por tipo e por etapa (lê só o meta; --desde <ISO> filtra por created)")
+    sp.add_argument("--desde", help="só as sessões com created a partir desta data (ISO UTC)")
+    sp.add_argument("dir", help="pasta dos arquivos JSON")
+    sp.set_defaults(fn=cmd_costs)
     sp = add("show", cmd_show, "resumo legível; com '#n', a linha inteira (com a ficha)")
     sp.add_argument("issue", nargs="?")
     return p

@@ -120,6 +120,7 @@ Siga o `docs/FLOW.md` ("Orquestrador — passo a passo" e as mensagens), com o q
    - ▸ `status: em andamento`, `stage: Fases`, `started: now`.
 2. **Fases**, na ordem, cada uma numa sessão filha (`create_session`):
    - `model`: Sonnet, ou o da tabela com `modelo=tabela`;
+   - `effort`: o da coluna Coordenador da linha da fase (o `fases=` da ficha; não o dos subagentes), com ou sem `modelo=tabela`; o esforço sai da tabela de qualquer forma;
    - `source_url` `https://github.com/fabianofranca/mapping`, `source_revision` `epic/<nome>`;
    - título "<código> — <título> (#<sub-issue>)";
    - nunca `permission_mode: plan`.
@@ -138,7 +139,9 @@ Siga o `docs/FLOW.md` ("Orquestrador — passo a passo" e as mensagens), com o q
    - quando a coluna Esforço da linha da fase na tabela é `high`, `xhigh` ou `max`, o item condicional da revisão `/code-review` de "Para a sessão da fase" do `docs/FLOW.md`, com o nível da tabela e `<base>` = `git merge-base origin/epic/<nome> HEAD`. Vale também sem `modelo=tabela`, porque o esforço sai da tabela de qualquer forma. A fase de correção não tem linha na tabela e segue sem o item;
    - só na última fase, e só se o épico muda o MCP: "ponha o rótulo `mcp-rc` no PR". Sem mudança no MCP não há rótulo; com ele, sairia uma rc espúria.
 
-   Guarde a filha: `row '#n' child=<id> childAt=now` e registre a sessão: `painel.py session <pasta> '#n' <id>`. ▸ fase aberta.
+   Guarde a filha: `row '#n' child=<id> childAt=now` e registre a sessão: `painel.py session <pasta> '#n' <id> kind=fase label=<código>`. ▸ fase aberta.
+
+   **Esforço conferido** (vale para fase, correção, testador e reteste): o subagente do ciclo lê o `effort_level` da sessão criada com `get_session` (no mesmo ciclo em que o aviso chega, ou no seguinte). Se diferir do pedido, vai uma linha no `log` ("<id>: effort pedido <x>, veio <y>") e a fila segue: não há recusa por esforço na criação. **Recusa:** com o `create_session` recusado por causa do `effort` (onde ele é pré-aprovado), crie a sessão sem ele e grave o caso no `log`.
 
    **Filha que espera o coordenador** (vale para fase, correção e testador): quando, em vez do aviso final, a filha manda uma pergunta de decisão (item 8 da "Para a sessão da fase"), "CI travado" ou "chama o dono" do teto (os dois do item 6), grave `row '#n' wait="<motivo curto>"`: ela não é atrasada e o `show` a lista em "esperando o coordenador". Ao responder à filha (`send_message`), grave `row '#n' wait= childAt=now` (a contagem recomeça). Trocar ou limpar `child` (`child=` vazio) também limpa o `wait`.
 
@@ -147,14 +150,14 @@ Siga o `docs/FLOW.md` ("Orquestrador — passo a passo" e as mensagens), com o q
    Quando a fase avisar (o aviso vem com o PR já mesclado, item 7 da "Para a sessão da fase"): ▸ fase `ok`, o PR no passo e `child=` (vazio), e guarde os "Defeitos pendentes" no `log`. Se a fase avisou sem ter mesclado (desvio da regra do item 6), o subagente do ciclo confere o CI pela **Leitura do CI** e o coordenador mescla o PR no mesmo turno; se o CI ainda roda, vale o parágrafo "PR que espera o coordenador" (acima). Com o PR mesclado no épico e a sub-issue fechada, **arquive a filha** (`archive_session`; item "Arquivar as sessões" abaixo).
 
 3. **Testador.**
-   - `list_environments`: use o "Mapping - testes".
+   - `list_environments`: use o "Mapping - testes". O `effort` do `create_session` é o da coluna Testador da tabela (o mesmo no reteste).
    - A mensagem é a do `docs/FLOW.md`, com os roteiros e a passada visual da seção **Testador**. A rodada completa vai em 5 blocos; a dirigida com mais de 40 passos sem o R0 vai em grupos (`node scripts/testing/round-guide.mjs --grupos <roteiros>` no clone do épico, uma sessão por grupo, até 5; `docs/FLOW.md`, "Rodada dirigida em grupos").
-   - Guarde as filhas: `row '#n' child="<id1> <id2> …" childAt=now` e registre cada uma com `painel.py session`. ▸ `stage: Testador`.
-   - Quando um testador avisar: tire o id dele de `child`. Com o relato postado e lido o total, **arquive a filha**. Com todos os avisos: ▸ log com o total de ✅/❌, os links dos relatos e o tempo. Não leia os relatos: o aviso traz o total e o link, e quem lê os achados é o subagente da correção.
+   - Guarde as filhas: `row '#n' child="<id1> <id2> …" childAt=now` e registre cada uma com `painel.py session <pasta> '#n' <id> kind=testador label=<grupo ou bloco>` (`kind=reteste` no reteste). ▸ `stage: Testador`.
+   - Quando um testador avisar: tire o id dele de `child`. Com o relato postado e lido o total, **arquive a filha**, gravando o custo dela (`painel.py cost`, item "Custo" de "Arquivar as sessões"). Com todos os avisos: ▸ log com o total de ✅/❌, os links dos relatos e o tempo. Não leia os relatos: o aviso traz o total e o link, e quem lê os achados é o subagente da correção.
 4. **Correção** (regra 2), enquanto houver ❌, observação que é defeito ou defeito pendente:
    - peça a um subagente (`model: "sonnet"`) que crie a sub-issue `step` de correção: o briefing traz a etapa (pai), o código próprio (por exemplo `CL3`, `CL4`…), os links dos relatos, os defeitos pendentes com a origem e o aceite do `docs/FLOW.md` ("Fase de correção"); ele lê os relatos, lista os ❌ e as observações que são defeito, cria a sub-issue com `issue_write` e `parent_issue_number` e devolve **só** "#<número>: <N> achados (<códigos>)";
-   - crie a sessão filha com a mensagem da fase e, depois dela, o reteste dirigido (`docs/FLOW.md`), **numa sessão só** com os achados de todos os grupos ou blocos e os passos que as correções afetam; correção mesclada antes de o reteste começar entra nele ("Reteste junto");
-   - registre cada sessão criada (`painel.py session`) e arquive a da correção, como a da fase, ao ser mesclada;
+   - a correção leva `effort` `medium` (não tem linha na tabela): crie a sessão filha com a mensagem da fase e, depois dela, o reteste dirigido (`docs/FLOW.md`), **numa sessão só** com os achados de todos os grupos ou blocos e os passos que as correções afetam; correção mesclada antes de o reteste começar entra nele ("Reteste junto");
+   - registre cada sessão criada (`painel.py session <pasta> '#n' <id> kind=correção label=<código>`, ou `kind=reteste`) e arquive a da correção, como a da fase, ao ser mesclada;
    - ▸ `stage: Correção` e uma fase nova em `phases`.
 
    O que pede decisão do dono segue a regra 1.
@@ -178,10 +181,10 @@ Siga o `docs/FLOW.md` ("Orquestrador — passo a passo" e as mensagens), com o q
    - no mesmo ciclo do push, **um** subagente (item 11 de "Economia de contexto") cria as issues do que ficou para depois e posta o comentário de fechamento na issue (e o da versão trocada, se houver), e devolve uma linha com os números das issues e o id do comentário. Isso corre **durante o CI** do épico; o merge não espera o retorno dele, e se ele falhar o coordenador o refaz no ciclo seguinte;
    - cada item que ficou para depois vira uma `roadmap` (com o impacto), ou um `bug` se pedir decisão. **Toda issue que a fila cria** (esses `bug` e `roadmap`, o `bug` de decisão do dono e o `bug` `ready` da correção dependente) leva no corpo a linha `Origem: etapa #<n>`; o painel só aponta para a busca dessa linha no GitHub, sem tabela de issues;
    - **rede de segurança (decisão 11 da #1324; gatilhos no script):** depois do `git fetch origin main`, rode `node scripts/ci/riskTriggers.mjs --base origin/main` e grave a saída no `log`. Com uma linha `gatilho:` ou mais, rode a `/code-review high` no diff inteiro do épico (base `main`) antes do merge, por subagente (item 11 de "Economia de contexto"), mesmo que as fases tenham sido medium; os defeitos confirmados são corrigidos no próprio épico, com teste primeiro, e os gates rodam de novo. Com `nenhum gatilho`, não rode. A lista de gatilhos fica só no script e em "Esforço do detalhamento" do skill `detalhar-backlog`;
-   - ▸ `stage: Fechamento`. A sessão do fechamento, se houver, é registrada e arquivada como a da fase.
+   - ▸ `stage: Fechamento`. A sessão do fechamento, se houver, é registrada (`kind=fechamento`) e arquivada como a da fase.
 6. **Merge** (seção "Merge"). Depois do merge:
    - confira o "MCP release" por um subagente (`model: "haiku"`), com o briefing "Confira, só lendo, a execução do workflow MCP release do commit `<sha do merge>` em fabianofranca/mapping (`actions_list` com `perPage: 1`) e, se a versão `<v>` é nova, a release `mcp-v<v>` (não é pre-release; tem `mapping-mcp.js`, `setup.sh`, `SKILL.md`, `AGENTS.mapping.md` e `watch-comments.mjs`, cada um com o `.sha256`; as rc da versão sumiram); sem versão nova, que o job `release` foi pulado. Devolva uma linha: ok, ainda rodando, ou falhou com o motivo e o link." Esse subagente é o do ciclo do merge (item 11 de "Economia de contexto") e faz a **primeira conferência no mesmo ciclo do merge**: lê os jobs `decide` e `release`. Com o job `release` pulado (sem versão nova, 8–15 s), a Release está conferida e acabou ali. Com `release` rodando (versão nova, 265–391 s, mediana ~330 s), a próxima conferência é um `send_later` de **5 min depois do merge** e as seguintes, **a cada 1 min**. Ignore a execução `skipped` e, com `cancelled`, vale a mais nova do commit da cabeça. Passou de 3 min (pulado) ou de 9 min (versão nova) sem terminar, o workflow está travado: leia a execução, rode de novo uma vez se morreu antes de testar e chame o dono se falhar de novo. A conferência pendente não segura o merge do próximo épico (seção "Merge");
-   - **arquive o que sobrou** da etapa: cada id ainda aberto em `sessions` da linha dela (`archive_session`), numa só passagem do subagente do ciclo; log "#<n> sessões arquivadas";
+   - **arquive o que sobrou** da etapa: cada id ainda aberto em `sessions` da linha dela (`archive_session`), numa só passagem do subagente do ciclo, que antes lê o custo de cada uma (item "Custo" de "Arquivar as sessões"), e o coordenador grava `painel.py cost` no mesmo `apply`; log "#<n> sessões arquivadas";
    - o resultado da conferência da Release do MCP é acrescentado ao comentário de fechamento (editado pelo id) pelo subagente do ciclo do merge; sem o id do comentário de fechamento (o subagente do fechamento ainda não devolveu, ou falhou), o resultado vai num comentário novo na issue, nunca em outro comentário;
    - **painel publicado:** depois do merge do épico, quem fecha a etapa troca o `files/index.html` do painel pela página nova desta pasta e apaga o `datasets/issues` (`ArtifactData` com `if_version`), se ainda existir. A página não quebra se o dataset `issues` existir num painel antigo;
    - ▸ `status: concluída`, `stage: Mesclada`, `ended: now`.
@@ -195,7 +198,8 @@ Siga o `docs/FLOW.md` ("Orquestrador — passo a passo" e as mensagens), com o q
 
 - **Quando:** logo depois de processar o aviso final de uma filha, sem esperar a etapa inteira, no mesmo ciclo e, de preferência, no subagente do ciclo. Fase, correção e fechamento: PR mesclado no épico com a sub-issue fechada. Testador, grupo ou bloco: relato postado e total lido. Grave no `log` "<código> arquivada".
 - **O que não se arquiva:** uma filha que avisou que parou, falhou ou pediu decisão; as filhas de uma etapa `falhou` ou `esperando dono`; uma filha que ainda está rodando. O dono pode precisar delas; elas são arquivadas quando a etapa é entregue.
-- **Registro:** cada sessão criada para a etapa vai para o campo `sessions` da linha dela (`painel.py session <pasta> '#n' <id>`, sem repetir). Depois do merge do épico, arquive o que ainda estiver aberto ali.
+- **Registro:** cada sessão criada para a etapa vai para o campo `sessions` da linha dela e para `meta.sessions` (`painel.py session <pasta> '#n' <id> kind=<tipo>`, sem repetir). Depois do merge do épico, arquive o que ainda estiver aberto ali.
+- **Custo:** o custo de cada filha sai do mesmo subagente que a arquiva: antes de arquivar, ele lê o `get_session` dela e devolve, na mesma linha, `usd` (`external_metadata.usage.cost_usd`), `ctx` (`context_usage.used_tokens`), `model` e `effort` (`session_context.model` e `effort_level`) e `served` (`last_served_model`, só quando difere do `model`). O coordenador grava `painel.py cost <pasta> <id> usd=… ctx=… model=… effort=…` no mesmo `apply` do log "<código> arquivada". Sessão arquivada sem o custo gravado perde o dado: sem `get_session`, não arquive.
 - O coordenador não arquiva a si mesmo.
 
 **Conferências de reserva:**
@@ -292,17 +296,21 @@ painel.py apply <pasta> <arquivo|->                  # vários comandos de uma v
 painel.py log <pasta> "texto"
 painel.py current <pasta> "texto"
 painel.py reserve <pasta> <trig_id>                  # a conferência de reserva da sessão
-painel.py session <pasta> '#n' <id>                  # sessão criada para a etapa (sem repetir)
+painel.py session <pasta> '#n' <id> kind=<tipo> [label=<código>]   # sessão criada para a etapa (sem repetir); kind: fase, correção, testador, reteste, fechamento, coordenador, supervisor
+painel.py cost <pasta> <id> usd=<x> ctx=<tokens> model=<m> effort=<e> [served=<modelo>] [issue='#n' kind=<tipo>]   # o custo da sessão (do get_session); kind obrigatório com id novo
+painel.py costs [--desde <ISO>] <pasta>              # total, por tipo (sessões, US$, mediana) e por etapa; lê só o meta
 painel.py merged <pasta> '#N'                        # dependência fora da fila já na main (sem repetir)
 painel.py context <pasta> <pct>                      # contexto do coordenador, de 0 a 100
 painel.py slug "<título do ##>"                      # imprime o slug da âncora de seção (sem pasta)
 painel.py published <pasta>                          # imprime `at:` (a hora real) e os arquivos a enviar; limpa o que falta publicar
 painel.py touch <pasta>                              # a publicação falhou: marca de novo os 3 arquivos
-painel.py show <pasta>          # resumo: em andamento, `vagas:`, `começar agora:`, `contexto:`, `fichas a refazer:`, filhas, atrasadas, esperando o coordenador, `CI esperando o coordenador:`, reserva, `não publicado`, últimas do log
+painel.py show <pasta>          # resumo: em andamento, `vagas:`, `começar agora:`, `contexto:`, `custo:`, `fichas a refazer:`, filhas, atrasadas, esperando o coordenador, `CI esperando o coordenador:`, reserva, `não publicado`, últimas do log
 painel.py show <pasta> '#n'     # uma linha inteira, com a ficha
 ```
 
 O `show` traz, depois de `atual:`, `vagas: Vagas k/N · #n <motivo> …` (por que cada `ready` que não começou espera: `hold`, `ficha incompleta (<campos>)`, `dep #N`, `exclusiva (espera a fila esvaziar)`, `exclusiva #N em andamento`, `arquivo <x> com #N`, `schema com #N`, `começa` ou `vagas cheias`), `começar agora: #a #b` (ou `nenhuma`) e `contexto: <pct>% (<quando>)`, com o aviso "acima de 60%: troque de sessão agora" acima de 60. A nota está no `meta`, que toda gravação já marca como alterado: a publicação não muda, e a página mostra "Vagas k/N" no subtítulo e o card "Por que há vaga livre".
+
+A linha `custo: US$ <total> em <k> sessões` (ou `custo: —`) vem do `meta.sessions`, e a página mostra o card "Custo da fila", por tipo e por etapa (ou "—" sem ele). **Comparação com a linha de base da #1532:** `painel.py costs --desde <hora da troca a quente> <pasta>`, que conta só as sessões criadas depois da troca (com `created`); as filhas criadas pela skill antiga, só com `cost`, ficam fora.
 
 A linha `CI esperando o coordenador: #n PR #p (k min); …` (ou `nenhuma`) lista os PRs com `ciWait`, com os minutos desde o `ciWaitAt`, e a página mostra o campo na coluna "Passo atual", como `<passo> · CI: PR #p`.
 
@@ -366,6 +374,7 @@ Grave no `painel.py` **a cada avanço** (fase aberta e mesclada, PR, testador, c
 **Na sessão antiga:**
 
 1. Confira o limite de linhagem (acima). Publique o painel atualizado.
+   Grave o seu próprio custo **antes de criar o sucessor**: `get_session` sem `session_id` e `painel.py cost <pasta> <id desta sessão> usd=… ctx=… model=… effort=… kind=coordenador`.
    Tudo o que a sessão nova precisa saber vai no painel: a ficha de cada etapa (`plan`), as filhas que devem aviso (`child`), o passo de cada etapa e, no `log`, os defeitos pendentes e as restrições fixas do dono.
 2. Crie a sessão nova com `create_session`:
    - o mesmo `model`;
@@ -394,7 +403,7 @@ Quando nenhuma etapa está em andamento nem aguardando (fora os `bug` da própri
 
 Sem pendência dela:
 
-1. Responda no chat com uma tabela, com uma linha por etapa: a issue com link, o resultado (concluída, falhou ou esperando dono), o PR do épico, a duração, o número de fases e de correções, e a versão do MCP. Depois liste as issues criadas (a busca `Origem: etapa` do GitHub as reúne), com link, e o que espera o dono.
+1. Grave o custo desta sessão (`painel.py cost <pasta> <id> usd=… ctx=… model=… effort=… kind=coordenador`) e rode `painel.py costs <pasta>`. Responda no chat com uma tabela, com uma linha por etapa: a issue com link, o resultado (concluída, falhou ou esperando dono), o PR do épico, a duração, o número de fases e de correções, a versão do MCP e a coluna US$ (o custo da etapa, do `costs`); depois da tabela, o total da fila. Depois liste as issues criadas (a busca `Origem: etapa` do GitHub as reúne), com link, e o que espera o dono.
 2. Atualize o painel (`current` "Fila concluída") e apague a conferência de reserva (`delete_trigger` com o `reserve`).
 3. Mande `PushNotification` com o total, por exemplo "Fila concluída: 8 mescladas, 1 esperando você".
-4. Arquive o que sobrou nas `sessions` das etapas entregues (`archive_session`), mas não as de etapa `falhou` ou `esperando dono`. O coordenador não arquiva a si mesmo: o dono arquiva o chat quando quiser.
+4. Arquive o que sobrou nas `sessions` das etapas entregues (`archive_session`, gravando antes o `painel.py cost` de cada uma, como em "Arquivar as sessões"), mas não as de etapa `falhou` ou `esperando dono`. O coordenador não arquiva a si mesmo: o dono arquiva o chat quando quiser.

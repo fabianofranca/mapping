@@ -9,7 +9,7 @@ Esta sessão é o **coordenador**. Ela não detalha nada sozinha: cria os subage
 
 Rode este chat no modo **Auto**: um subagente que pede permissão fica parado, porque ninguém está olhando (`docs/PROCESS.md`, "Limitações"). O coordenador pode rodar em Sonnet; o julgamento fica com os subagentes, que rodam em Opus.
 
-A ferramenta `Agent` aceita `model` e `effort` (uma sessão filha só aceitaria o modelo). **Esta skill é o pedido explícito de esforço:** todo subagente nasce com `subagent_type: general-purpose`, `model: opus`, `run_in_background: true` e `effort` explícito, `medium` no agrupamento e `high` ou `medium` por unidade, pelos critérios de "Esforço do detalhamento". Cada subagente faz a unidade inteira (lê, rascunha, confere, pergunta pelo coordenador e grava as issues), então todo o julgamento fica no esforço pedido. Nenhum prompt manual para o dono abrir sessão.
+A ferramenta `Agent` aceita `model` e `effort`. **Esta skill é o pedido explícito de esforço:** todo subagente nasce com `subagent_type: general-purpose`, `model: opus`, `run_in_background: true` e `effort` explícito, `medium` no agrupamento e `high` ou `medium` por unidade, pelos critérios de "Esforço do detalhamento". Cada subagente faz a unidade inteira (lê, rascunha, confere, pergunta pelo coordenador e grava as issues), então todo o julgamento fica no esforço pedido. Nenhum prompt manual para o dono abrir sessão.
 
 ## Argumentos
 
