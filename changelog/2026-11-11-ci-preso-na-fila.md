@@ -1,4 +1,4 @@
-# CI preso na fila: fechar e reabrir o PR com o "sim" do dono — [Não lançado] (épico `epic/ci-preso-na-fila`, PR #0, MCP sem mudança, schema v18)
+# CI preso na fila: fechar e reabrir o PR com o "sim" do dono — 2026-11-11 (épico `epic/ci-preso-na-fila`, PR #1674, MCP sem mudança, schema v18)
 
 ## Corrigido
 

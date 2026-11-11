@@ -1,4 +1,4 @@
-# CI preso na fila: fechar e reabrir o PR com o "sim" do dono — [Não lançado] (épico `epic/ci-preso-na-fila`)
+# CI preso na fila: fechar e reabrir o PR com o "sim" do dono — 2026-11-11 (épico `epic/ci-preso-na-fila`)
 
 ## Pendências
 
