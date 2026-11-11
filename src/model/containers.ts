@@ -589,6 +589,12 @@ export function setContainerPlacement(
   const copy = snapPlacement(placement);
   const overlap = overlappingContainer(p, containerId, copy);
   if (overlap) failOverlap(overlap);
+  // Placement igual ao de agora: nada mudou (arrasto sem efeito); devolve o mesmo projeto para
+  // o gesto não gravar uma entrada de desfazer vazia.
+  const current = findById(p.containers, containerId).placement;
+  if (current.x === copy.x && current.y === copy.y && current.scale === copy.scale) {
+    return p;
+  }
   return settleFrom(
     p,
     {
