@@ -1021,6 +1021,36 @@ describe('$lines: o número de linhas medidas de um nó text', () => {
     expect(stable.warnings).not.toContain('$lines instável: msg');
   });
 
+  it('measureComponent também avisa "$lines instável" (é o caminho do hug e do ajuste)', () => {
+    const c = {
+      ...component({
+        type: 'frame',
+        width: 'fill',
+        height: 'hug',
+        layout: { type: 'row' },
+        children: [
+          {
+            type: 'frame',
+            name: 'spacer',
+            width: { $if: { $gt: [{ $lines: 'msg' }, 1] }, then: 150, else: 0 },
+            height: 1,
+          },
+          msg(),
+        ],
+      } as unknown as FrameTemplate),
+      formatVersion: 4 as const,
+    };
+    const measure = (value: string) =>
+      measureComponent(
+        c,
+        { msg: value },
+        { width: 200, height: null },
+        { measure: approximateMeasurer },
+      ).warnings;
+    expect(measure(THREE)).toContain('$lines instável: msg');
+    expect(measure(ONE)).not.toContain('$lines instável: msg');
+  });
+
   it('sem $lines no template a passagem é uma só (o medidor é chamado as mesmas vezes)', () => {
     let calls = 0;
     const counting: typeof approximateMeasurer = (text, font, maxWidth) => {

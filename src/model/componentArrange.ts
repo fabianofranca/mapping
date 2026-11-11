@@ -136,21 +136,41 @@ function axisValue(
     : raw;
 }
 
+/**
+ * Os eixos que o `measureComponent` recebe: o `hug` é medido (`null`); o outro vale o px que a
+ * expressão dá, ou o que já tem. `undefined` quando nenhum eixo é `hug` (nada a medir).
+ */
+function fixedSizes(
+  rect: Rect,
+  w: AxisPlan,
+  h: AxisPlan,
+): { width: number | null; height: number | null } | undefined {
+  if (!w.hug && !h.hug) return undefined;
+  return {
+    width: w.hug ? null : (w.px ?? rect.width),
+    height: h.hug ? null : (h.px ?? rect.height),
+  };
+}
+
+/** O eixo muda no ajuste: mede o conteúdo ou vale um px de expressão. */
+const acts = (plan: AxisPlan): boolean => plan.hug || plan.px !== undefined;
+
 /** O que o `sizing` avaliado pede a um componente: o retângulo novo, ou `undefined` se nada muda. */
 function applySizing(
   rect: Rect,
   sizing: ResolvedSizing,
   stretched: { readonly width: boolean; readonly height: boolean },
   min: { readonly width: number; readonly height: number } | undefined,
-  measure: (hug: { width: boolean; height: boolean }) => {
+  measure: (fixed: { width: number | null; height: number | null }) => {
     width: number;
     height: number;
   },
 ): { rect: Rect; hugW: boolean; hugH: boolean } | undefined {
   const w = axisPlan(sizing.width, stretched.width);
   const h = axisPlan(sizing.height, stretched.height);
-  if (!w.hug && !h.hug && w.px === undefined && h.px === undefined) return undefined;
-  const measured = w.hug || h.hug ? measure({ width: w.hug, height: h.hug }) : rect;
+  if (!acts(w) && !acts(h)) return undefined;
+  const fixed = fixedSizes(rect, w, h);
+  const measured = fixed === undefined ? rect : measure(fixed);
   return {
     rect: {
       ...rect,
@@ -282,16 +302,11 @@ export function arrangeMarking(
           height: stretchedByParent(kid.id, 'height'),
         },
         mc.component.minSize,
-        (hug) =>
-          measureComponent(
-            drawn.component,
-            values,
-            {
-              width: hug.width ? null : rect.width,
-              height: hug.height ? null : rect.height,
-            },
-            { measure, ...tokensOption(drawn.tokens) },
-          ),
+        (fixed) =>
+          measureComponent(drawn.component, values, fixed, {
+            measure,
+            ...tokensOption(drawn.tokens),
+          }),
       );
       if (fitted !== undefined) rects.set(kid.id, fitted.rect);
     }
@@ -346,16 +361,12 @@ export function arrangeMarking(
       sizing,
       { width: stretchedByParent(id, 'width'), height: stretchedByParent(id, 'height') },
       component.minSize,
-      (hug) =>
-        measureComponent(
-          component,
-          values,
-          {
-            width: hug.width ? null : rect.width,
-            height: hug.height ? null : rect.height,
-          },
-          { measure, slotContent, ...tokensOption(info.tokens) },
-        ),
+      (fixed) =>
+        measureComponent(component, values, fixed, {
+          measure,
+          slotContent,
+          ...tokensOption(info.tokens),
+        }),
     );
     const hugW = fitted?.hugW ?? false;
     const hugH = fitted?.hugH ?? false;

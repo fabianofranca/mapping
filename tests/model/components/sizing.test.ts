@@ -163,4 +163,16 @@ describe('fitComponentSize', () => {
     expect(fit(c, { h: 'banana' })).toBeUndefined();
     expect(fit(c, { h: 30 })).toMatchObject({ width: 200, height: 30 });
   });
+
+  it('o minSize e o piso de 1 px valem nos eixos medidos ou dados por expressão (como no Arrumar)', () => {
+    const c = {
+      ...component({ height: { $field: 'h' } }),
+      minSize: { width: 20, height: 48 },
+    } as ComponentFile;
+    expect(fit(c, { h: 32 })?.height).toBe(48);
+    expect(fit(c, { h: 120 })?.height).toBe(120);
+    const hug = { ...component({ height: 'hug' }), minSize: { width: 20, height: 48 } };
+    expect(fit(hug as ComponentFile, { msg: 'Ok' })?.height).toBe(48);
+    expect(fit(component({ height: { $field: 'h' } }), { h: 0 })?.height).toBe(1);
+  });
 });

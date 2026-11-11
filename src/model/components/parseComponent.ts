@@ -1214,40 +1214,77 @@ function isV4OnlyOp(key: string): boolean {
   );
 }
 
+/** O nome de um nó `text` do template; `undefined` se o nó não é `text` ou não tem nome. */
+function textNodeName(node: Rec): string | undefined {
+  return node.type === 'text' && typeof node.name === 'string' ? node.name : undefined;
+}
+
+/** Onde se está no template ao varrer o `$lines`: o nó `text` que contém o trecho e os `repeat` (pelo caminho) em volta. */
+interface LinesContext {
+  readonly owner: string | undefined;
+  readonly chain: readonly string[];
+}
+
+interface LinesScan {
+  /** Os nós `text` por nome: quantos são e dentro de quais `repeat`. */
+  readonly texts: Map<string, { count: number; chain: readonly string[] }>;
+  readonly citations: { name: string; at: string; context: LinesContext }[];
+}
+
+/** O contexto do filho `key` de `node` (um `repeat` abre uma linha no `template` dele). */
+function linesChild(node: Rec, at: string, key: string, ctx: LinesContext): LinesContext {
+  const owner = textNodeName(node) ?? ctx.owner;
+  const chain =
+    node.type === 'repeat' && key === 'template' ? [...ctx.chain, at] : ctx.chain;
+  return { owner, chain };
+}
+
+/** Registra um nó `text` (quantos há com o nome e dentro de quais `repeat`). */
+function recordText(node: Rec, ctx: LinesContext, scan: LinesScan): void {
+  const name = textNodeName(node);
+  if (name === undefined) return;
+  const known = scan.texts.get(name);
+  scan.texts.set(name, {
+    count: (known?.count ?? 0) + 1,
+    chain: known?.chain ?? ctx.chain,
+  });
+}
+
+function scanLines(tree: unknown, at: string, ctx: LinesContext, scan: LinesScan): void {
+  if (Array.isArray(tree)) {
+    tree.forEach((n, i) => scanLines(n, `${at}[${i}]`, ctx, scan));
+    return;
+  }
+  if (!isRecord(tree)) return;
+  recordText(tree, ctx, scan);
+  for (const [key, value] of Object.entries(tree)) {
+    const here = join(at, key);
+    const child = linesChild(tree, at, key, ctx);
+    if (key === '$lines' && typeof value === 'string' && value !== '')
+      scan.citations.push({ name: value, at: here, context: child });
+    scanLines(value, here, child, scan);
+  }
+}
+
 /**
  * `$lines` (v4): o nome precisa ser de um nó `text` do template, único (`nó text "x" não existe`,
- * `mais de um nó text "x"`), e o próprio nó não pode depender das próprias linhas.
+ * `mais de um nó text "x"`), e o próprio nó não pode depender das próprias linhas. Um nó dentro de
+ * `repeat` só se cita de dentro do mesmo `repeat` (vale o nó da mesma linha): de fora, a expansão não
+ * saberia qual linha (`nó text "x" está dentro de um repeat`).
  */
 function linesIssues(template: unknown): ComponentIssue[] {
   const out: ComponentIssue[] = [];
-  const counts = new Map<string, number>();
-  const count = (node: unknown): void => {
-    if (Array.isArray(node)) return node.forEach(count);
-    if (!isRecord(node)) return;
-    if (node.type === 'text' && typeof node.name === 'string')
-      counts.set(node.name, (counts.get(node.name) ?? 0) + 1);
-    Object.values(node).forEach(count);
-  };
-  count(template);
-  const check = (name: string, owner: string | undefined, at: string): void => {
-    const found = counts.get(name) ?? 0;
-    if (found === 0) addIssue(out, at, `nó text "${name}" não existe`);
-    else if (found > 1) addIssue(out, at, `mais de um nó text "${name}"`);
-    else if (owner === name)
+  const scan: LinesScan = { texts: new Map(), citations: [] };
+  scanLines(template, 'template', { owner: undefined, chain: [] }, scan);
+  for (const { name, at, context } of scan.citations) {
+    const found = scan.texts.get(name);
+    if (found === undefined) addIssue(out, at, `nó text "${name}" não existe`);
+    else if (found.count > 1) addIssue(out, at, `mais de um nó text "${name}"`);
+    else if (context.owner === name)
       addIssue(out, at, 'o nó não pode depender das próprias linhas');
-  };
-  const walk = (node: unknown, at: string, owner: string | undefined): void => {
-    if (Array.isArray(node)) return node.forEach((n, i) => walk(n, `${at}[${i}]`, owner));
-    if (!isRecord(node)) return;
-    const own = node.type === 'text' && typeof node.name === 'string' ? node.name : owner;
-    for (const [key, value] of Object.entries(node)) {
-      const here = join(at, key);
-      if (key === '$lines' && typeof value === 'string' && value !== '')
-        check(value, own, here);
-      walk(value, here, own);
-    }
-  };
-  walk(template, 'template', undefined);
+    else if (!found.chain.every((repeat, i) => context.chain[i] === repeat))
+      addIssue(out, at, `nó text "${name}" está dentro de um repeat`);
+  }
   return out;
 }
 

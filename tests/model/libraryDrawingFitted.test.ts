@@ -132,10 +132,10 @@ describe('prova de desenho no tamanho ajustado (MC2, decisão 10)', () => {
     ).toEqual([]);
   });
 
-  it('sizing com valor inválido avisa no caso do size e cai no size', () => {
+  it('sizing com valor inválido avisa no caso do size (sem `aproximado`: não depende da medida) e cai no size', () => {
     const out = warnings(component({ sizing: { height: { $field: 'msg' } } }));
     expect(out).toContain(
-      `tipo "t", os valores padrão, tamanho inicial 200×50: valor inválido em sizing.height: ${LONG} (aproximado)`,
+      `tipo "t", os valores padrão, tamanho inicial 200×50: valor inválido em sizing.height: ${LONG}`,
     );
     expect(out.some((w) => w.includes('tamanho ajustado'))).toBe(false);
   });

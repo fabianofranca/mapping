@@ -106,6 +106,7 @@ export const componentEnUS: {
   'model.component.expectedNodeName': 'expected the name of a text node (non-empty text)',
   'model.component.linesNodeMissing': 'text node "{name}" does not exist',
   'model.component.linesNodeRepeated': 'more than one text node "{name}"',
+  'model.component.linesInsideRepeat': 'text node "{name}" is inside a repeat',
   'model.component.linesSelf': 'the node cannot depend on its own lines',
   'model.component.sizingNoSize': '$size is not valid in sizing',
   'model.component.sizingNoLines': '$lines is not valid in sizing',

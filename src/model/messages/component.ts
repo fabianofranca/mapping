@@ -99,6 +99,7 @@ export const componentMessages = {
   'component.expectedNodeName': 'esperava nome de um nó text (texto não vazio)',
   'component.linesNodeMissing': 'nó text "{name}" não existe',
   'component.linesNodeRepeated': 'mais de um nó text "{name}"',
+  'component.linesInsideRepeat': 'nó text "{name}" está dentro de um repeat',
   'component.linesSelf': 'o nó não pode depender das próprias linhas',
   'component.sizingNoSize': '$size não vale em sizing',
   'component.sizingNoLines': '$lines não vale em sizing',

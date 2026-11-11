@@ -896,6 +896,43 @@ describe('$lines e sizing por expressão (MC2, decisões 8 e 9 da #898)', () => 
     expect(errors[0]).toMatch(/\$lines: mais de um nó text "msg"$/);
   });
 
+  it('um nó dentro de repeat só se cita de dentro da mesma linha', () => {
+    const rowOf = (cell: Record<string, unknown>) => ({
+      type: 'repeat',
+      field: 'rows',
+      template: { type: 'frame', children: [cell] },
+    });
+    const outside = validateComponent(
+      file({
+        type: 'frame',
+        minHeight: { $lines: 'cell' },
+        children: [rowOf(text('cell'))],
+      }),
+    );
+    expect(outside).toHaveLength(1);
+    expect(outside[0]).toMatch(/\$lines: nó text "cell" está dentro de um repeat/);
+    // De dentro da mesma linha, e de dentro do repeat para um nó de fora, vale.
+    expect(
+      validateComponent(
+        file({
+          type: 'frame',
+          children: [
+            text('head'),
+            {
+              type: 'repeat',
+              field: 'rows',
+              template: {
+                type: 'frame',
+                minHeight: { $mul: [{ $lines: 'cell' }, { $lines: 'head' }] },
+                children: [text('cell')],
+              },
+            },
+          ],
+        }),
+      ),
+    ).toEqual([]);
+  });
+
   it('o próprio nó: $lines no width do nó citado', () => {
     const errors = validateComponent(
       file({

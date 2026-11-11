@@ -226,17 +226,20 @@ function proveCase(
         measure: approximateMeasurer,
         ...(tokens === undefined ? {} : { tokens }),
       });
+      // O aviso do `sizing` não depende da medida do texto: sai sem o sufixo `(aproximado)`.
       const sizing = fitted ? [] : resolveSizing(component, drawCase.values).messages;
       return {
         mode,
         box: boxes[i] as Box,
-        texts: [...messages, ...sizing]
-          .filter((m, at, all) => at === all.findIndex((x) => x.text === m.text))
-          .filter((m) => {
-            const key = String(m.params.key ?? '');
-            return m.code !== NOT_INFORMED_CODE || key === '' || keys.has(key);
-          })
-          .map(approximate),
+        texts: [
+          ...messages
+            .filter((m) => {
+              const key = String(m.params.key ?? '');
+              return m.code !== NOT_INFORMED_CODE || key === '' || keys.has(key);
+            })
+            .map(approximate),
+          ...sizing,
+        ],
         error: undefined as string | undefined,
       };
     } catch (error) {

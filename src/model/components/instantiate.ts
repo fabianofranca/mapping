@@ -1944,8 +1944,8 @@ type Engine = ReturnType<typeof createEngine>;
 
 /**
  * Roda `run` no motor e, se o template usa `$lines`, em duas passagens (decisão 8 da #898): a
- * primeira com 1 linha em cada `$lines` (e `collect` para montar os nós e ler as linhas medidas), a
- * segunda com esses números. Se a segunda medir outro número num nó citado, fica o da segunda e o
+ * primeira com 1 linha em cada `$lines`, a segunda com as linhas medidas na primeira. `run` monta os
+ * nós de um texto citado (é neles que as linhas são medidas, na largura final). Se a segunda medir outro número num nó citado, fica o da segunda e o
  * motor avisa `$lines instável: <nó>` (sem terceira passagem). Sem `$lines`, uma passagem só.
  */
 function withLinesPasses<R>(
@@ -1953,16 +1953,16 @@ function withLinesPasses<R>(
   values: FieldValues,
   options: InstantiateOptions,
   size: { readonly width: number; readonly height: number },
-  run: (engine: Engine, collect: boolean) => R,
+  run: (engine: Engine) => R,
 ): { engine: Engine; result: R } {
   const first = createEngine(component, values, options, size);
-  if (first.citedLines.size === 0) return { engine: first, result: run(first, false) };
-  run(first, true);
+  if (first.citedLines.size === 0) return { engine: first, result: run(first) };
+  run(first);
   const seed = new Map(
     [...first.citedLines].map((key) => [key, first.lineCounts.get(key) ?? 0]),
   );
   const second = createEngine(component, values, options, size, seed);
-  const result = run(second, false);
+  const result = run(second);
   for (const [key, count] of second.lineCounts)
     if (count !== (seed.get(key) ?? 0)) second.warnLinesUnstable(key);
   return { engine: second, result };
@@ -2028,18 +2028,12 @@ export function measureComponent(
       width === first.w ? first : engine.planFrame(template, width, size.height, limits);
     return { width, height: size.height ?? engine.clampSize(template, 'h', planned.h) };
   };
-  // Com `$lines`, a primeira passagem também monta os nós (é o que mede as linhas de cada texto).
-  const { engine, result } = withLinesPasses(
-    component,
-    values,
-    options,
-    start,
-    (e, collect) => {
-      const measured = plan(e);
-      if (collect) e.buildRoot({ x: 0, y: 0, ...measured });
-      return measured;
-    },
-  );
+  // Com `$lines`, as duas passagens também montam os nós (é neles que se medem as linhas de cada texto).
+  const { engine, result } = withLinesPasses(component, values, options, start, (e) => {
+    const measured = plan(e);
+    if (e.citedLines.size > 0) e.buildRoot({ x: 0, y: 0, ...measured });
+    return measured;
+  });
   const { width, height } = result;
   const messages = engine.messages();
   return { width, height, warnings: textsOf(messages), messages };
