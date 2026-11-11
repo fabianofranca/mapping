@@ -37,7 +37,9 @@ describe('célula de referência quebrada', () => {
     const text = rule('.ref-control.is-broken .ref-control-text');
     expect(text).toMatch(/white-space:\s*normal/);
     expect(text).toMatch(/text-overflow:\s*clip/);
-    expect(text).toMatch(/overflow-wrap:\s*anywhere/);
+    // TE1: quebra entre palavras ("referência" inteira); `anywhere` a partia ao meio.
+    expect(text).toMatch(/overflow-wrap:\s*break-word/);
+    expect(text).not.toMatch(/overflow-wrap:\s*anywhere/);
   });
 });
 
@@ -58,6 +60,11 @@ describe('célula ref da tabela', () => {
     expect(rule('.ref-cell .ref-control .ref-control-text')).toMatch(
       /white-space:\s*normal/,
     );
+    const cellText = rule('.ref-cell .ref-control .ref-control-text');
+    expect(cellText).toMatch(/overflow-wrap:\s*break-word/);
+    expect(cellText).not.toMatch(/overflow-wrap:\s*anywhere/);
+    // O `min-width: 0` tira a palavra do mínimo da coluna: a célula quebrada volta ao mínimo do conteúdo.
+    expect(rule('.ref-cell .ref-control.is-broken')).toMatch(/min-width:\s*min-content/);
     const cell = rule('.data-grid .grid-cell-value .ref-cell');
     expect(cell).toMatch(/flex-wrap:\s*wrap/);
     expect(cell).toMatch(/min-width:\s*0/);

@@ -423,6 +423,35 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
     expect(controller.openLocalProject).toHaveBeenCalledWith('p9');
   });
 
+  // TE1 (#1151): mesmo nome, mesma origem e mesmo minuto, segundos diferentes: a descrição traz
+  // a hora com segundos; a célula visível segue só até o minuto.
+  it('duas linhas Local de mesmo nome e minuto têm descrições diferentes (segundos)', () => {
+    const twin = (id: string, usedAt: string) => ({
+      kind: 'local' as const,
+      id,
+      name: 'Rascunho',
+      usedAt,
+      unexported: false,
+    });
+    recentProjects.value = [
+      twin('t1', '2026-10-01T10:00:05.000Z'),
+      twin('t2', '2026-10-01T10:00:40.000Z'),
+    ];
+    render(<Home />);
+    const rows = within(screen.getByRole('table')).getAllByRole('row').slice(1);
+    const description = (row: HTMLElement) =>
+      (within(row).getAllByRole('button')[0]?.getAttribute('aria-describedby') ?? '')
+        .split(' ')
+        .map((id) => document.getElementById(id)?.textContent ?? '')
+        .join(' ');
+    const [a, b] = rows as [HTMLElement, HTMLElement];
+    expect(description(a)).not.toBe(description(b));
+    const visible = (row: HTMLElement) =>
+      row.querySelectorAll('td')[1]?.firstChild?.textContent;
+    expect(visible(a)).toBe(visible(b));
+    expect(visible(a)).not.toMatch(/\d:\d\d:\d\d/);
+  });
+
   // Etapa 8 (8.4), R7: duas pastas com o mesmo nome (do projeto e da pasta) mostram o nome
   // da pasta nas duas linhas; a lista decide (`showFolderName`), a tabela só obedece. Com os
   // dois nomes iguais, as linhas continuam iguais (`['loja', 'loja']` nas duas): é o limite
