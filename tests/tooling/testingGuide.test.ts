@@ -677,8 +677,9 @@ describe('docs/TESTING-NUVEM.md (prompt do testador da nuvem)', () => {
   it('cita o ambiente "Mapping - testes", o script de configuração e o relato como comentário', () => {
     expect(cloud).toContain('Mapping - testes');
     expect(cloud).toContain(
-      'apt-get update -q && apt-get install -y -q xdotool at-spi2-core python3-pyatspi openbox imagemagick',
+      'for i in 1 2 3 4 5; do apt-get update -q && apt-get install -y -q xdotool at-spi2-core python3-pyatspi openbox imagemagick && break; sleep $((i * 15)); done; true',
     );
+    expect(cloud).toMatch(/código `14`/);
     expect(cloud).toContain('LANGUAGE=pt_BR:pt');
     expect(cloud).toContain(
       'Claude Code na nuvem (Xvfb, Playwright por CDP, xdotool, AT-SPI)',
@@ -1337,5 +1338,59 @@ describe('docs/TESTING-NUVEM.md enxuto e TESTING-NUVEM-CONSULTA.md (#1533, TE1)'
   it('os títulos que o FLOW e o PROCESS linkam continuam no TESTING-NUVEM.md', () => {
     expect(cloud).toMatch(/^## Rodada completa em blocos$/m);
     expect(cloud).toMatch(/^## Rodada dirigida em grupos$/m);
+  });
+});
+
+// Etapa #1533 (TE3, decisão 14 (1) e (2)): rótulos da tela no R25 e o R1.21a sem o item (8).
+describe('TE3 — R1.21a e R25.28/30/32 (#1489)', () => {
+  const guide = readFileSync('docs/TESTING.md', 'utf8');
+  const row = (code: string): string =>
+    guide.split('\n').find((l) => l.startsWith(`| ${code} |`)) ?? '';
+
+  it('R1.21a perde o item (8): fica a frase do R15.3 e do R15.11', () => {
+    const r = row('R1.21a');
+    expect(r).not.toContain('(8)');
+    expect(r).toContain(
+      'A faixa de consentimento é conferida no R15.3 e no R15.11, que já conferem o foco.',
+    );
+  });
+
+  it('R25.28, R25.30 e R25.32 dizem Claro, Escuro e Seguir o projeto, com o valor gravado entre parênteses', () => {
+    const r30 = row('R25.30');
+    expect(r30).toContain('escolha **Claro** (grava `light`)');
+    expect(r30).toContain('**Seguir o projeto**');
+    expect(r30).toContain('depois **Claro** e **Escuro**');
+    expect(r30).not.toMatch(/depois `light` e `dark`/);
+    const r32 = row('R25.32');
+    expect(r32).toContain('**Claro** (`light`');
+    expect(r32).toContain('**Escuro** (`dark`)');
+    expect(r32).not.toMatch(/de volta para `light`/);
+    expect(row('R25.28')).toContain(
+      '**Claro** e **Escuro** (os valores gravados são `light` e `dark`',
+    );
+  });
+});
+
+describe('TE3 — reteste restrito, 300 mil e Árvore de marcações (#1533, decisões 11, 13 e 14)', () => {
+  const cloud = readFileSync('docs/TESTING-NUVEM.md', 'utf8');
+  const consulta = readFileSync('docs/TESTING-NUVEM-CONSULTA.md', 'utf8');
+
+  it('o modo 1 e o "R0 no reteste" falam das faixas e da Reprodução', () => {
+    expect(cloud).toContain('**reteste restrito**');
+    expect(cloud).toContain('round-guide.mjs R12.10d-R12.10f');
+    expect(cloud).toMatch(/rode primeiro a \*\*Reprodução\*\* de cada achado/);
+    expect(cloud).toMatch(/R0 no reteste[^\n]*\n?[^\n]*a faixa e a Reprodução/);
+    expect(consulta).toMatch(/Retestes juntos[^\n]*faixas[^\n]*Reprodução/);
+  });
+
+  it('a regra dos 300 mil de contexto está em "Rodada completa em blocos"', () => {
+    const blocos = cloud.slice(cloud.indexOf('## Rodada completa em blocos'));
+    expect(blocos).toContain('**300 mil** de contexto final');
+    expect(blocos).toContain('roundBlocks.test.ts');
+  });
+
+  it('o "Como agir" cita o botão "Árvore de marcações" e o openWindow', () => {
+    expect(cloud).toContain('**Árvore de marcações**, não "Árvore"');
+    expect(cloud).toContain('só com `openWindow(page, id)`');
   });
 });

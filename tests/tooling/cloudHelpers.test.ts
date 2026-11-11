@@ -4,6 +4,7 @@
 // (decisão 4) e a parte pura de `cloud.mjs` (`mark`) tem teste unitário.
 import { spawnSync } from 'node:child_process';
 import {
+  chmodSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -11,6 +12,7 @@ import {
   readdirSync,
   rmSync,
   statSync,
+  symlinkSync,
   utimesSync,
   writeFileSync,
 } from 'node:fs';
@@ -2391,5 +2393,176 @@ describe('servidor persistente do run, check e runs.log (etapa #1533, TE2)', () 
     expect(stop).toBeGreaterThan(-1);
     expect(up.indexOf('Browser.close')).toBeGreaterThan(stop);
     expect(up).toContain('"$S/cloud.sock"');
+  });
+});
+
+// Etapa #1533 (TE3, decisão 12): pré-conferência dos pacotes com retry e código 14.
+describe('cloud-up.sh --check-packages (etapa #1533, TE3)', () => {
+  const BASIC = [
+    'bash',
+    'sh',
+    'cat',
+    'dirname',
+    'mkdir',
+    'sleep',
+    'seq',
+    'grep',
+    'tr',
+    'id',
+    'printf',
+    'echo',
+    'rm',
+    'touch',
+    'head',
+    'tail',
+    'wc',
+    'sed',
+    'env',
+    'date',
+    'node',
+  ];
+  let dir = '';
+
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'cloud-up-'));
+    mkdirSync(path.join(dir, 'bin'));
+    for (const name of BASIC) {
+      const found = spawnSync('bash', ['-c', `command -v ${name}`], { encoding: 'utf8' });
+      const target = found.stdout.trim();
+      if (target) symlinkSync(target, path.join(dir, 'bin', name));
+    }
+  });
+  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+
+  /** Um comando falso: `body` é o corpo do script. */
+  function fake(name: string, body = 'exit 0'): void {
+    const file = path.join(dir, 'bin', name);
+    writeFileSync(file, `#!/bin/bash\n${body}\n`);
+    chmodSync(file, 0o755);
+  }
+
+  /** Tudo instalado, menos o que `missing` lista. */
+  function setup(missing: string[], { chrome = true } = {}): void {
+    for (const name of ['xdotool', 'openbox', 'import', 'python3']) {
+      if (!missing.includes(name)) fake(name);
+    }
+    fake('sudo', 'if [ "$1" = -n ]; then shift; fi; exec "$@"');
+    writeFileSync(path.join(dir, 'launcher'), '');
+    if (chrome) writeFileSync(path.join(dir, 'chromium'), '');
+  }
+
+  /** `apt-get` falso: falha `fails` vezes e na seguinte instala (cria `xdotool`). */
+  function fakeApt(fails: number): void {
+    const counter = path.join(dir, 'apt-count');
+    fake(
+      'apt-get',
+      `n=$(cat "${counter}" 2>/dev/null || echo 0); n=$((n+1)); echo $n >"${counter}"
+echo "apt-get $*" >>"${dir}/apt-log"
+if [ "$n" -le ${fails} ]; then exit 100; fi
+[ "$1" = install ] && printf '#!/bin/bash\\nexit 0\\n' >"${dir}/bin/xdotool" && chmod +x "${dir}/bin/xdotool"
+exit 0`,
+    );
+  }
+
+  function checkPackages(): { status: number | null; stdout: string; stderr: string } {
+    const r = spawnSync(
+      'bash',
+      [CLOUD_UP, path.join(dir, 'rodada'), '--check-packages'],
+      {
+        env: {
+          PATH: path.join(dir, 'bin'),
+          HOME: dir,
+          CLOUD_UP_RETRY_SLEEP: '0',
+          CLOUD_UP_ATSPI_LAUNCHER: path.join(dir, 'launcher'),
+          CLOUD_UP_CHROME: path.join(dir, 'chromium'),
+        },
+        encoding: 'utf8',
+      },
+    );
+    return { status: r.status, stdout: r.stdout, stderr: r.stderr };
+  }
+
+  it('tudo instalado: sai 0 sem chamar o apt-get', () => {
+    setup([]);
+    fakeApt(0);
+    const r = checkPackages();
+    expect(r.status).toBe(0);
+    expect(existsSync(path.join(dir, 'apt-log'))).toBe(false);
+  });
+
+  it('falta o xdotool: o apt-get falha duas vezes, instala na terceira e sai 0', () => {
+    setup(['xdotool']);
+    fakeApt(2);
+    const r = checkPackages();
+    expect(r.stderr).toBe(r.stderr);
+    expect(r.status).toBe(0);
+    const log = readFileSync(path.join(dir, 'apt-log'), 'utf8');
+    expect(log.match(/apt-get update/g)).toHaveLength(3);
+    expect(log).toContain(
+      'install -y -q xdotool at-spi2-core python3-pyatspi openbox imagemagick',
+    );
+  });
+
+  it('o apt-get falha sempre: sai 14 com a lista do que falta', () => {
+    setup(['xdotool', 'openbox']);
+    fakeApt(99);
+    const r = checkPackages();
+    expect(r.status).toBe(14);
+    expect(r.stderr).toMatch(/xdotool/);
+    expect(r.stderr).toMatch(/openbox/);
+    expect(r.stderr).not.toMatch(/imagemagick|chromium/);
+    const log = readFileSync(path.join(dir, 'apt-log'), 'utf8');
+    expect(log.match(/apt-get update/g)).toHaveLength(5);
+  });
+
+  it('sem o Chrome: sai 14 direto, sem chamar o apt-get', () => {
+    setup([], { chrome: false });
+    fakeApt(0);
+    const r = checkPackages();
+    expect(r.status).toBe(14);
+    expect(r.stderr).toContain('chromium');
+    expect(existsSync(path.join(dir, 'apt-log'))).toBe(false);
+  });
+});
+
+describe('cloud.mjs passo: item fora do guia da rodada (etapa #1533, TE3, decisão 14 (4))', () => {
+  let dir = '';
+  let guide = '';
+  beforeAll(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'passo-fora-'));
+    guide = path.join(dir, 'guia.md');
+    spawnSync('node', ['scripts/testing/round-guide.mjs', 'R0', 'R22', '--out', guide]);
+  });
+  afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+  const passo = (...itens: string[]) =>
+    spawnSync(
+      'node',
+      ['scripts/testing/cloud.mjs', 'passo', ...itens, `--guia=${guide}`],
+      {
+        encoding: 'utf8',
+      },
+    );
+
+  it('R12.4 sem o R12 no guia imprime o passo do docs/TESTING.md, com a primeira linha dizendo', () => {
+    const r = passo('R12.4');
+    expect(r.status).toBe(0);
+    const lines = r.stdout.split('\n');
+    expect(lines[0]).toBe('fora do guia da rodada (lido do docs/TESTING.md)');
+    expect(r.stdout).toMatch(/^\| R12\.4 \|/m);
+  });
+
+  it('um item do guia e outro de fora saem juntos, cada um com a sua marca', () => {
+    const r = passo('R22.4', 'R12.4');
+    expect(r.status).toBe(0);
+    expect(r.stdout.match(/fora do guia da rodada/g)).toHaveLength(1);
+    expect(r.stdout.indexOf('R22.4')).toBeLessThan(r.stdout.indexOf('fora do guia'));
+  });
+
+  it('item que o guia inteiro também não tem sai com código 2', () => {
+    const r = passo('R99.1');
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/R99\.1 não está/);
+    expect(passo('R12.999').status).toBe(2);
   });
 });

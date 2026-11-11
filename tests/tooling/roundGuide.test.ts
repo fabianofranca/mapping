@@ -815,3 +815,43 @@ describe('round-guide.mjs: base obrigatória e secao (#1533, TE1)', () => {
     }
   });
 });
+
+// Etapa #1533 (TE3, decisão 14 (4)): o `passo R25` traz o preparo inteiro, sem cortar cerca de código.
+describe('passo R25: o preparo inteiro (etapa #1533, TE3)', () => {
+  async function passoR25(roteiros: string[]): Promise<string> {
+    const mod: {
+      buildRoundGuide: (md: string, r: string[], o?: { commit?: string }) => string;
+      guideExcerpt: (guide: string, itens: string[]) => string;
+    } = await import('../../scripts/testing/round-guide.mjs');
+    return mod.guideExcerpt(mod.buildRoundGuide(GUIDE, roteiros, { commit: 'abc1234' }), [
+      'R25',
+    ]);
+  }
+
+  for (const [nome, roteiros] of [
+    ['guia all', ['all']],
+    ['guia do bloco 2 (R0, R15, R25)', ['R0', 'R15', 'R25']],
+  ] as const) {
+    it(`${nome}: tokens.mjs e as funções tinta, sonda e medir, da cerca de abertura à de fechamento`, async () => {
+      const out = await passoR25([...roteiros]);
+      const lines = out.split('\n');
+      const fences = lines.flatMap((l, i) => (l.startsWith('```') ? [i] : []));
+      expect(fences.length % 2).toBe(0);
+      const block = (marker: string): string => {
+        const at = lines.findIndex((l) => l.includes(marker));
+        expect(at, marker).toBeGreaterThan(-1);
+        const open = [...fences].reverse().find((f) => f < at) as number;
+        const close = fences.find((f) => f > at) as number;
+        expect(lines[open]).toMatch(/^```\w*$/);
+        expect(lines[close]).toBe('```');
+        return lines.slice(open, close + 1).join('\n');
+      };
+      expect(block('// tokens.mjs: node tokens.mjs')).toContain('fs.writeFileSync');
+      const tools = block('tinta() {');
+      for (const fn of ['sonda()', 'medir()', 'unid()', 'caixa()']) {
+        expect(tools).toContain(fn);
+      }
+      expect(out).not.toContain('… corte em 25.000 caracteres');
+    });
+  }
+});

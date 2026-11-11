@@ -572,16 +572,24 @@ function cutExcerpt(entries, items) {
  * `R<n>.<m>` ou `R<n>.<a>-R<n>.<b>` (as linhas dos passos, com o cabeçalho da tabela). Os itens saem
  * na ordem pedida, separados por `---`; erro de item lança `Error` sem imprimir trecho.
  */
-export function guideExcerpt(guideText, itens) {
-  const sections = new Map();
-  for (const section of splitSections(guideText)) {
-    const id = section.level === 3 ? ROTEIRO.exec(section.title)?.[1] : undefined;
-    if (id) sections.set(id, { section, rows: stepRows(section.lines) });
-  }
+export function guideExcerpt(guideText, itens, fallbackText) {
+  const rotulos = (text) => {
+    const map = new Map();
+    for (const section of splitSections(text)) {
+      const id = section.level === 3 ? ROTEIRO.exec(section.title)?.[1] : undefined;
+      if (id) map.set(id, { section, rows: stepRows(section.lines) });
+    }
+    return map;
+  };
+  const sections = rotulos(guideText);
+  // Item que o guia da rodada não tem: lido do docs/TESTING.md (`fallbackText`), com a marca (TE3).
+  const fallback = fallbackText === undefined ? undefined : rotulos(fallbackText);
   const items = itens.map(parseExcerptItem);
   const entries = [];
   items.forEach((item, n) => {
-    const found = sections.get(item.id);
+    let found = sections.get(item.id);
+    const fora = !found && fallback?.has(item.id);
+    if (fora) found = fallback.get(item.id);
     if (!found) {
       throw new Error(
         `${item.from ?? item.id} não está no guia da rodada; o guia tem ${[...sections.keys()].join(', ')}. Para outro roteiro, gere o guia de novo com round-guide.mjs ou procure o trecho com Grep no docs/TESTING.md.`,
@@ -591,10 +599,14 @@ export function guideExcerpt(guideText, itens) {
       ? stepRange(found.section, found.rows, item, item.id)
       : wholeRoteiro(found.section, found.rows);
     if (n > 0) entries.push({ text: '---', item: n });
+    if (fora) entries.push({ text: FORA_DO_GUIA, item: n });
     for (const entry of part) entries.push({ ...entry, item: n });
   });
   return cutExcerpt(entries, items);
 }
+
+/** Primeira linha do trecho de um item que veio do `docs/TESTING.md` e não do guia da rodada. */
+export const FORA_DO_GUIA = 'fora do guia da rodada (lido do docs/TESTING.md)';
 
 // --- Seções sob demanda (etapa #1533, TE1, decisão 2) ---
 

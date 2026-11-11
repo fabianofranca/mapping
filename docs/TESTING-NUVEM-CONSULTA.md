@@ -27,7 +27,7 @@ Os outros roteiros usam pastas próprias e podem ir a qualquer grupo. O `tests/t
 
 "Grupo" não colide com o "Parte i de n" dos comentários acima de 65 mil caracteres: um relato longo vira "Rodada dirigida — grupo k de n · Parte i de n".
 
-**Retestes juntos.** O reteste de uma etapa é **uma sessão só**, com os achados de **todos** os grupos (ou blocos) e os passos que as correções dos defeitos pendentes afetam; só se divide em grupos se passar do limite acima. Uma correção mesclada enquanto o reteste ainda não começou entra no mesmo reteste (mensagem em [`docs/FLOW.md`](FLOW.md)).
+**Retestes juntos.** O reteste de uma etapa é **uma sessão só**, com os achados de **todos** os grupos (ou blocos) e os passos que as correções dos defeitos pendentes afetam; só se divide em grupos se passar do limite acima, e cada grupo parte das **faixas** dos passos dos achados (o guia do grupo sai por elas, não pelos roteiros inteiros) e roda primeiro a **Reprodução** de cada achado, como no reteste restrito de "O que executar". Uma correção mesclada enquanto o reteste ainda não começou entra no mesmo reteste (mensagem em [`docs/FLOW.md`](FLOW.md)).
 
 ## Passada visual
 
