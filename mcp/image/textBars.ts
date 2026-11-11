@@ -58,6 +58,8 @@ function ellipsisMaxLines(node: TextNode): number | undefined {
     node.height,
     konvaLineHeight(lineHeightOf(style), style.fontSize),
   );
+  // Altura de linha sem sentido (0): nada cabe por conta, vale o `maxLines` do estilo.
+  if (!Number.isFinite(fit)) return style.maxLines;
   return style.maxLines === undefined ? fit : Math.min(style.maxLines, fit);
 }
 
@@ -230,6 +232,18 @@ export function paragraphEnds(
   return ends;
 }
 
+/** A fonte do nó para o medidor (a mesma na quebra e na largura de cada linha). */
+export function measureFontOf(style: TextNode['style']): Parameters<TextMeasurer>[1] {
+  return {
+    family: style.fontFamily,
+    size: style.fontSize,
+    weight: style.fontWeight,
+    italic: style.italic,
+    lineHeight: lineHeightOf(style),
+    letterSpacing: style.letterSpacing ?? 0,
+  };
+}
+
 /**
  * As linhas que o texto simples desenha, já cortadas pela altura da caixa (decisão 31 da #898: só as
  * que o Konva guarda), e quais delas fecham um parágrafo (só com `justify`).
@@ -241,15 +255,7 @@ export function plainLines(
 ): { lines: string[]; ends: boolean[] } {
   const { style } = node;
   const lineHeight = lineHeightOf(style);
-  const font = {
-    family: style.fontFamily,
-    size: style.fontSize,
-    weight: style.fontWeight,
-    italic: style.italic,
-    lineHeight,
-    letterSpacing: style.letterSpacing ?? 0,
-  };
-  const custom = customLines(node, measure, font);
+  const custom = customLines(node, measure, measureFontOf(style));
   const all = custom ?? breakLines(node, widthOf);
   const count = visibleLineCount(
     all.length,
@@ -282,19 +288,13 @@ export function textBars(node: TextNode, measure: TextMeasurer): TextBar[] {
   if (node.runLayout && node.runs) return richBars(node, node.runLayout, node.runs);
   const { style } = node;
   const lineHeight = lineHeightOf(style);
-  const widthOf = (text: string) =>
-    measure(text, {
-      family: style.fontFamily,
-      size: style.fontSize,
-      weight: style.fontWeight,
-      italic: style.italic,
-      lineHeight,
-      letterSpacing: style.letterSpacing ?? 0,
-    }).width;
+  const font = measureFontOf(style);
+  const widthOf = (text: string) => measure(text, font).width;
   const { lines, ends } = plainLines(node, measure, widthOf);
   const top = blockTop(node, lines.length, lineHeight);
   const barHeight = lineHeight * BAR_RATIO;
-  const block = Math.max(0, ...lines.map(widthOf));
+  const widths = lines.map(widthOf);
+  const block = widths.reduce((max, w) => Math.max(max, w), 0);
   const bars: TextBar[] = [];
   lines.forEach((line, i) => {
     if (line === '') return;
@@ -304,7 +304,7 @@ export function textBars(node: TextNode, measure: TextMeasurer): TextBar[] {
       ends[i] === false &&
       node.width > 0 &&
       line.includes(' ');
-    const lineWidth = widthOf(line);
+    const lineWidth = widths[i] ?? 0;
     const width = justified ? node.width : Math.min(lineWidth, node.width || Infinity);
     bars.push({
       x: justified ? 0 : lineLeft(node, lineWidth, block),

@@ -266,6 +266,19 @@ describe('só as linhas que cabem na altura (MC0, decisão 31)', () => {
     expect(lines.lines).toHaveLength(2);
   });
 
+  it('com ellipsis e altura de linha 0, o medidor não recebe um maxLines infinito', () => {
+    const node = tall('top', { ellipsis: true, lineHeight: 0 }) as TextNode;
+    const seen: unknown[] = [];
+    const spy: typeof approximateMeasurer = (text, font, width) => {
+      seen.push((font as { maxLines?: number }).maxLines);
+      return approximateMeasurer(text, font, width);
+    };
+    plainLines(node, spy, (text) => text.length * 5.5);
+    expect(seen.length).toBeGreaterThan(0);
+    for (const maxLines of seen)
+      expect(maxLines === undefined || Number.isFinite(maxLines)).toBe(true);
+  });
+
   it('sem altura (0), todas as linhas', () => {
     const node = { ...(tall('top') as TextNode), height: 0 };
     const lines = plainLines(node, approximateMeasurer, (text) => text.length * 5.5);

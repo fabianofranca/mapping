@@ -335,15 +335,9 @@ const spec = JSON.parse(fs.readFileSync(specFile, 'utf8'));
 for (const layer of spec.layers)
   for (const type of layer.annotationTypes)
     if (
-      [
-        'badge',
-        'card',
-        'checkbox',
-        'chip',
-        'list-item',
-        'navigation-bar',
-        'text-field',
-      ].includes(type.id)
+      ['card', 'checkbox', 'chip', 'list-item', 'navigation-bar', 'text-field'].includes(
+        type.id,
+      )
     ) {
       type.fields = type.fields.filter((f) => f.key !== 'interaction');
       type.examples = (type.examples ?? []).filter(

@@ -138,7 +138,8 @@ function plainInk(node: TextNode, measure: TextMeasurer, book: FontBook): TextIn
     lineHeight,
     node.style.verticalAlign === 'cap-middle' ? capMetricsOf(book, spec) : undefined,
   );
-  const block = Math.max(0, ...lines.map(widthOf));
+  const widths = lines.map(widthOf);
+  const block = widths.reduce((max, w) => Math.max(max, w), 0);
   const polygons: Polygon[] = [];
   lines.forEach((line, i) => {
     if (line === '') return;
@@ -161,7 +162,7 @@ function plainInk(node: TextNode, measure: TextMeasurer, book: FontBook): TextIn
         book,
         line,
         spec,
-        lineLeft(node, widthOf(line), block),
+        lineLeft(node, widths[i] ?? 0, block),
         top + i * lineHeight,
         lineHeight,
         style.decoration,

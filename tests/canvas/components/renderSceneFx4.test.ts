@@ -215,6 +215,39 @@ describe('texto cortado de vários parágrafos (MC0, decisão 30)', () => {
   );
 });
 
+describe('visibleLineCount contra o textArr do Konva em alturas limítrofes (MC0, decisão 31)', () => {
+  // lineHeight 14,3 / fontSize 11: a soma acumulada em ponto flutuante não é n × lineHeight.
+  const node = (height: number): TextNode => ({
+    ...baseNode({ id: 't', name: 't', width: 100, height }),
+    type: 'text',
+    text: 'a\nb\nc\nd\ne\nf',
+    fills: [{ type: 'solid', color: '#000000' }],
+    style: {
+      fontFamily: 'Roboto',
+      fontSize: 11,
+      fontWeight: 400,
+      italic: false,
+      lineHeight: 14.3,
+      align: 'left',
+      verticalAlign: 'top',
+    },
+  });
+  const lh = konvaLineHeight(14.3, 11);
+
+  it.each([1, 2, 3, 4, 5])(
+    'a caixa de %i linhas (e um pouco menos ou mais) tem as linhas do visibleLineCount',
+    (k) => {
+      for (const height of [k * lh - 0.01, k * lh, k * lh + 0.01, (k + 0.5) * lh]) {
+        const group = renderScene(frameOf([node(height)])).byId.get('t') as Konva.Group;
+        const shape = group.find('Text')[0] as Konva.Text;
+        expect(shape.textArr.length, `altura ${height}`).toBe(
+          visibleLineCount(6, height, lh),
+        );
+      }
+    },
+  );
+});
+
 describe('só as linhas que cabem na altura (MC0, decisão 31)', () => {
   const lines = (height: number): TextNode => ({
     ...baseNode({ id: 't', name: 't', width: 100, height }),
