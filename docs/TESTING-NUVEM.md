@@ -143,7 +143,7 @@ São 5 blocos por decisão do dono (2026-11-09). A passada visual fica no bloco 
 
 Um bloco longo vira "Rodada completa — bloco k de 5 · Parte i de n" (comentários acima de 65 mil caracteres). O "modo completo" sem bloco continua valendo: uma sessão roda tudo.
 
-**Contexto até 300 mil.** Nenhuma sessão do testador passa de **300 mil** de contexto final (o `get_session` devolve). Um bloco acima disso é defeito: quem coordena move roteiros entre os 5 blocos, na tabela e no `roundBlocks.test.ts`, respeitando as cadeias; se nenhuma divisão em 5 couber, chama o dono (6 blocos mudaria a decisão de 2026-11-09).
+**Contexto até 300 mil.** Em toda sessão do testador, o contexto final da sessão principal (`get_session`) fica abaixo de **300 mil**; quem o garante é ela, com os subagentes por lote. O excesso é registrado por quem coordena (`log` da fila e `roadmap` "Teto de contexto do testador"), sem segurar a etapa, sem refazer a rodada e sem chamar o dono.
 
 ## Rodada dirigida em grupos
 

@@ -1385,8 +1385,10 @@ describe('TE3 — reteste restrito, 300 mil e Árvore de marcações (#1533, dec
 
   it('a regra dos 300 mil de contexto está em "Rodada completa em blocos"', () => {
     const blocos = cloud.slice(cloud.indexOf('## Rodada completa em blocos'));
-    expect(blocos).toContain('**300 mil** de contexto final');
-    expect(blocos).toContain('roundBlocks.test.ts');
+    expect(blocos).toMatch(/\*\*300 mil\*\*/);
+    // TC2 (#1639, decisão 8): o excesso se registra, sem mover roteiros nem chamar o dono.
+    expect(blocos).not.toContain('move roteiros entre os 5 blocos');
+    expect(blocos).not.toMatch(/Contexto até 300 mil[^\n]*chama o dono/);
   });
 
   it('o "Como agir" cita o botão "Árvore de marcações" e o openWindow', () => {

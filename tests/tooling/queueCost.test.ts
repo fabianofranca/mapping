@@ -7,7 +7,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { section } from '../support/textSlice';
+import { between, section } from '../support/textSlice';
 
 const SCRIPT = '.claude/skills/implementar-fila/painel/painel.py';
 const BASE = '.claude/skills/implementar-fila';
@@ -477,5 +477,157 @@ describe('painel.py cost e upgrade (achados da revisão do fechamento)', () => {
       input: 'upgrade\nlog "x"\n',
     });
     expect(r.stdout.match(/alterados:/g)).toHaveLength(1);
+  });
+});
+
+describe('painel.py: o teto de 300 mil do testador (TC2, decisão 9 da #1639)', () => {
+  const at = '2026-11-11T12:00:00Z';
+
+  function custo(id: string, kind: string, ctx: number, issue = '#20', label = '') {
+    runAt(
+      at,
+      'session',
+      dir,
+      issue,
+      id,
+      `kind=${kind}`,
+      ...(label ? [`label=${label}`] : []),
+    );
+    return runAt(at, 'cost', dir, id, 'usd=3', `ctx=${ctx}`);
+  }
+
+  it.each(['testador', 'reteste'])(
+    'cost de %s com ctx=300001 grava, sai com 0 e avisa o excesso',
+    (kind) => {
+      runAt(at, 'session', dir, '#20', 'sess_t', `kind=${kind}`, 'label=grupo1-R25');
+      const r = tryRun('--now', at, 'cost', dir, 'sess_t', 'usd=3', 'ctx=300001');
+      expect(r.code).toBe(0);
+      expect(r.out).toMatch(/^acima do teto do testador \(300 mil\): sess_t 300001$/m);
+      expect((sessions()[0]!.cost as Entry).ctx).toBe(300001);
+    },
+  );
+
+  it('cost de sessão nova com kind=testador na própria chamada também avisa', () => {
+    const out = runAt(at, 'cost', dir, 'sess_n', 'usd=1', 'ctx=400000', 'kind=testador');
+    expect(out).toMatch(/acima do teto do testador \(300 mil\): sess_n 400000/);
+  });
+
+  it('com ctx=300000, ou com kind=fase acima do teto, não avisa', () => {
+    expect(custo('sess_a', 'testador', 300000)).not.toMatch(/acima do teto/);
+    expect(custo('sess_b', 'fase', 450000)).not.toMatch(/acima do teto/);
+    expect(custo('sess_c', 'coordenador', 450000)).not.toMatch(/acima do teto/);
+  });
+
+  it('o aviso sai dentro de um apply, sem impedir a gravação', () => {
+    const r = spawnSync('python3', [SCRIPT, 'apply', dir, '-'], {
+      encoding: 'utf8',
+      input: 'cost sess_e usd=1 ctx=350000 kind=testador\n',
+    });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/acima do teto do testador \(300 mil\): sess_e 350000/);
+    expect((sessions()[0]!.cost as Entry).ctx).toBe(350000);
+  });
+
+  it('o show lista testador acima do teto: etapa, rótulo e ctx em mil', () => {
+    custo('sess_a', 'testador', 339000, '#20', 'grupo2-R3-R13');
+    custo('sess_b', 'reteste', 523000, '#10', 'reteste1');
+    custo('sess_c', 'testador', 271000, '#10', 'grupo3-R17');
+    custo('sess_d', 'fase', 600000, '#10', 'TC2');
+    const linha = run('show', dir).match(/^testador acima do teto: (.*)$/m);
+    expect(linha).not.toBeNull();
+    expect(linha![1]).toContain('#20 grupo2-R3-R13 339k');
+    expect(linha![1]).toContain('#10 reteste1 523k');
+    expect(linha![1]).not.toContain('grupo3-R17');
+    expect(linha![1]).not.toContain('TC2');
+  });
+
+  it('o show não lista etapa concluída nem a que está em meta.merged', () => {
+    custo('sess_a', 'testador', 339000, '#20', 'grupo2');
+    custo('sess_b', 'testador', 523000, '#10', 'grupo1');
+    expect(run('show', dir)).toMatch(/^testador acima do teto: .*#20 grupo2 339k/m);
+    runAt(at, 'row', dir, '#20', 'status=concluída');
+    const depois = run('show', dir);
+    expect(depois).not.toMatch(/#20 grupo2/);
+    expect(depois).toMatch(/#10 grupo1 523k/);
+    runAt(at, 'merged', dir, '#10');
+    expect(run('show', dir)).toMatch(/^testador acima do teto: nenhum$/m);
+  });
+
+  it('o show diz nenhum sem excesso e com o custo sem rótulo usa o id', () => {
+    expect(run('show', dir)).toMatch(/^testador acima do teto: nenhum$/m);
+    custo('sess_a', 'testador', 300000);
+    expect(run('show', dir)).toMatch(/^testador acima do teto: nenhum$/m);
+    custo('sess_semrotulo', 'testador', 310000);
+    expect(run('show', dir)).toMatch(
+      /^testador acima do teto: #20 sess_semrotulo 310k$/m,
+    );
+  });
+
+  it('o show não grava nada e a página index.html não muda', () => {
+    custo('sess_a', 'testador', 339000, '#20', 'grupo2');
+    const antes = JSON.stringify(json('meta'));
+    run('show', dir);
+    expect(JSON.stringify(json('meta'))).toBe(antes);
+    const pagina = readFileSync(`${BASE}/painel/index.html`, 'utf8');
+    expect(pagina).not.toMatch(/acima do teto/);
+  });
+});
+
+describe('docs e skill: o teto do testador conferido pela fila (TC2, decisões 8 a 10)', () => {
+  const skill = readFileSync(`${BASE}/SKILL.md`, 'utf8');
+  const nuvem = readFileSync('docs/TESTING-NUVEM.md', 'utf8');
+  const flow = readFileSync('docs/FLOW.md', 'utf8');
+
+  it('o item Testador e o "Arquivar as sessões" gravam o excesso no log, no mesmo apply do custo', () => {
+    const porEtapa = section(skill, '## 3. Por etapa');
+    const testador = porEtapa.slice(
+      porEtapa.indexOf('3. **Testador.**'),
+      porEtapa.indexOf('4. **Correção**'),
+    );
+    expect(testador).toMatch(/contexto <ctx>k acima do teto do testador/);
+    expect(testador).toMatch(/mesmo `apply`/);
+    const arquivar = skill.slice(skill.indexOf('**Arquivar as sessões**'));
+    const custoItem = arquivar.slice(0, arquivar.indexOf('**Conferências de reserva:**'));
+    expect(custoItem).toMatch(/<label>: contexto <ctx>k acima do teto do testador/);
+    expect(custoItem).toMatch(/acima do teto do testador \(300 mil\)/);
+  });
+
+  it('o fechamento comenta cada excesso na roadmap fixa "Teto de contexto do testador"', () => {
+    const porEtapa = section(skill, '## 3. Por etapa');
+    const fechamento = porEtapa.slice(
+      porEtapa.indexOf('5. **Fechamento**'),
+      porEtapa.indexOf('6. **Merge**'),
+    );
+    expect(fechamento).toMatch(/"Teto de contexto do testador"/);
+    expect(fechamento).toMatch(/no primeiro excesso/);
+    expect(fechamento).toMatch(/Impacto: medium — menos custo recorrente do testador/);
+    expect(fechamento).toMatch(/fica aberta/);
+  });
+
+  it('o "Painel" documenta a linha nova do show e a saída do cost', () => {
+    const painel = section(skill, '## Painel');
+    expect(painel).toMatch(/`testador acima do teto:`/);
+    expect(painel).toMatch(/acima do teto do testador \(300 mil\): <id> <ctx>/);
+  });
+
+  it('o "Contexto até 300 mil" não manda mais mover roteiros nem chamar o dono', () => {
+    const i = nuvem.indexOf('**Contexto até 300 mil.**');
+    const trecho = nuvem.slice(i, nuvem.indexOf('\n\n', i));
+    expect(trecho).not.toMatch(/move roteiros entre os 5 blocos/);
+    expect(trecho).not.toMatch(/chama o dono/);
+    expect(trecho).toMatch(/toda sessão do testador/);
+    expect(trecho).toMatch(/sessão principal/);
+    expect(trecho).toMatch(/subagentes? por lote/);
+    expect(trecho).toMatch(/sem segurar a etapa/);
+    expect(trecho).toMatch(/Teto de contexto do testador/);
+  });
+
+  it('o modelo do resumo ganha a coluna Contexto e a linha Contexto:', () => {
+    const resumo = between(flow, '## Resumo da rodada em blocos', '## Notificação final');
+    expect(resumo).toMatch(
+      /\| Bloco \| ✅ +\| ❌ +\| não executado \| Tempo +\| Contexto +\|/,
+    );
+    expect(resumo).toMatch(/\*\*Contexto:\*\* acima do teto \(300 mil\): .* ou nenhum/);
+    expect(resumo).toMatch(/grupos/);
   });
 });
