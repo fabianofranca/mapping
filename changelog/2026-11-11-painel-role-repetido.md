@@ -1,4 +1,4 @@
-# Registro repetido no painel da fila — [Não lançado] (épico `epic/painel-role-repetido`, PR #0, MCP 0.34.3 sem mudança, schema v18)
+# Registro repetido no painel da fila — 2026-11-11 (épico `epic/painel-role-repetido`, PR #1635, MCP 0.34.3 sem mudança, schema v18)
 
 ## Corrigido
 
