@@ -21,10 +21,9 @@ export interface MessageSet {
  * deduplicando como o `Set<string>` de `warnings` que ele substituiu.
  */
 const keyOf = (code: string, params: Params): string => {
-  const pairs = Object.keys(params)
-    .sort()
-    .map((name) => `${name}\u0001${params[name]}`);
-  return [code, ...pairs].join('\u0000');
+  const names = Object.keys(params);
+  if (names.length > 1) names.sort();
+  return [code, ...names.map((name) => `${name}\u0001${params[name]}`)].join('\u0000');
 };
 
 export function createMessageSet(initial: readonly ModelMessage[] = []): MessageSet {
