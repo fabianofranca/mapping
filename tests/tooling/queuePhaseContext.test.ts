@@ -166,4 +166,16 @@ describe('CX1 — skill implementar-fila, "3. Por etapa"', () => {
     expect(arquivar).toContain('passou a vez por contexto');
     expect(arquivar).toMatch(/se arquiva/);
   });
+
+  it('a sucessora traz o branch com refspec que vale em clone de um branch só', () => {
+    expect(teto).toContain('`git fetch origin <branch>:<branch>`');
+  });
+
+  it('o pedido de troca vale no item 7 e no Canal; a contagem usa o meta.sessions', () => {
+    const item7 = between(phase, '7. Ao terminar, avise', '8. ');
+    expect(item7).toContain('pedido de troca por contexto');
+    expect(item7).toContain('o pedido de troca por contexto do item 3 também');
+    expect(troca).toContain('`meta.sessions`');
+    expect(troca).toContain('já tem uma entrada `label=<código>` mais nova');
+  });
 });
