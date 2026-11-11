@@ -56,6 +56,9 @@ describe('AF1 — autorização do dono no chat da fase (#1602)', () => {
     expect(aviso).toBeGreaterThan(push);
     expect(pergunta).toBeGreaterThan(aviso);
     expect(autorizacao).toContain('send_message');
+    // A mensagem da fase não tem passo de "conferência do modelo": o link não pode depender dele.
+    expect(autorizacao).toContain('`get_session` sem `session_id`');
+    expect(autorizacao).not.toContain('conferência do modelo');
   });
 
   it('opção recomendada, resposta ao coordenador e recusa de "o dono aprovou" repassado', () => {
