@@ -290,6 +290,43 @@ describe('portas de escrita: a cauda de ponto flutuante some (6 casas, escala co
   });
 });
 
+describe('placeRootIn: o lugar livre mais próximo (ocupado) também sai sem cauda', () => {
+  it('a raiz container que cai em cima de outra vai ao livre mais próximo, com 6 casas', () => {
+    let p = multiProject();
+    p = createMarking(p, {
+      id: 'd1',
+      containerId: 'D',
+      rect: { x: 10, y: 10, width: 50, height: 50 },
+    });
+    p = createArrow(p, { id: 'r1', from: 'd1', to: 'e1' });
+    p = addBackgroundContainer(p, {
+      id: 'Q',
+      width: 100,
+      height: 100,
+      background: '#FFFFFF',
+    });
+    const source = perspectiveView(
+      p,
+      persp('S', [
+        ['D', 7000, 0],
+        ['E', 9000, 0],
+      ]),
+    );
+    // Q fica onde E cairia (9000.1234567891, 0.9876543219): o livre mais próximo é fracionário
+    const target = perspectiveView(
+      p,
+      persp('T', [
+        ['D', 7000.1234567891, 0.9876543219],
+        ['Q', 9000.1234567891, 0.3333333333],
+      ]),
+    );
+    const placed = placeRootIn(target, source, 'E');
+    expect(placed.kind).toBe('occupied');
+    clean6(placed.x);
+    clean6(placed.y);
+  });
+});
+
 describe('encostar em bordas fracionárias não cria sobreposição nem muda pertencimento', () => {
   it('dois containers encostados por slideToTouch: depois de gravar não se sobrepõem', () => {
     const p = rawPlacement(multiProject(), 'D', {

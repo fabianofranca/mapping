@@ -152,8 +152,8 @@ function placeNear(
     return { x: free.x, y: free.y, kind: 'occupied', referenceId };
   }
   const free = nearestFreeSpot(seek.obstacles, seek.width, seek.height, desired);
-  const whole = seek.whole ? { x: Math.round(free.x), y: Math.round(free.y) } : free;
-  return { ...whole, kind: 'occupied', referenceId };
+  const clean = (v: number) => (seek.whole ? Math.round(v) : snapCoordinate(v));
+  return { x: clean(free.x), y: clean(free.y), kind: 'occupied', referenceId };
 }
 
 /** Pegadas das raízes do destino que passam por `keep`. */

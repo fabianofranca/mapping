@@ -148,6 +148,11 @@ Em `get_marking`, `get_annotation`, `find_by_code`, `get_component` (campo `code
 - **`near`** em `create_marking` (referência, id ou apelido de um container ou de uma marcação): só para um tipo de anotação flutuante (sem `container`); a marcação nasce num lugar livre da margem do alvo (à direita, empilhada de cima para baixo com vão de 24 unidades do canvas, sem sobrepor containers nem outras flutuantes; se não couber, esquerda, embaixo, em cima). O `rect`, se vier, dá só o tamanho (x e y são ignorados). Em tipo ou marcação não flutuante, `near` é ignorado com aviso `ignored-argument`.
 - `changes` de `plan_changes`/`propose_changes` ganha `arrows` (criadas, alteradas, excluídas) e `created` traz `kind: "arrow"`.
 
+### Mudança da 0.35.1 — posições de container sem cauda de ponto flutuante
+
+- **`add_container` e `update_container`** gravam (e o texto devolvido mostra) `x` e `y` com no máximo 6 casas decimais e a escala com no máximo 12 algarismos significativos (`-739.655172` em vez de `-739.6551724137931`); perto de um inteiro continua valendo o inteiro. O arredondamento é do modelo e vale também para a app (mover, redimensionar, trocar a imagem, o reparo e as posições das perspectivas). Arquivos antigos não são reescritos: a cauda só some quando o container é editado.
+- Versão patch, compatível; nenhuma tool nem argumento novo; `formatVersion` e schema sem mudança. A versão do épico é a `0.35.1` (a definitiva é escolhida no fechamento).
+
 ### Mudança da 0.35.0 — `fit_marking` e a instância no tamanho medido (MC3, Medida pelo conteúdo)
 
 - **Op `fit_marking`** de `plan_changes` e `propose_changes` (`marking`: referência, id ou apelido): ajusta a marcação de um componente ao conteúdo, o mesmo **Arrumar** da app numa marcação sem slot. Cada eixo cujo `sizing` é `hug` (ou expressão que dá `hug` ou px) vira o tamanho medido com os valores da anotação **no estado do lote naquele ponto** (inteiro para cima, entre o `minSize` e os limites da raiz do componente, nunca abaixo do mínimo de uma marcação); o canto de cima à esquerda fica, o eixo `fill`, o ausente e o esticado pelo `stretch` do pai não mudam e o resultado nunca passa da imagem. O pertencimento sai da geometria depois (o `membership` da resposta diz quem mudou de pai). O resumo do passo traz o retângulo antes e depois (`120×40 px em (20, 20) → 120×96 px em (20, 20)`) ou "nada muda".
@@ -578,7 +583,7 @@ A tabela abaixo cobre o que costuma aparecer na instalação e no uso; a lista c
 
 ## Publicar uma versão (mantenedores)
 
-A versão do servidor é **uma por épico**: `SERVER_VERSION` em `mcp/version.ts` (hoje `0.35.0`) é o único `x.y.z` do código, e os canais abaixo só acrescentam um sufixo ao build (`MCP_BUILD_SUFFIX`, que o `mcp/build.mjs` valida). O workflow `.github/workflows/mcp-prerelease.yml` cuida dos dois primeiros; o `mcp-release.yml`, do terceiro.
+A versão do servidor é **uma por épico**: `SERVER_VERSION` em `mcp/version.ts` (hoje `0.35.1`) é o único `x.y.z` do código, e os canais abaixo só acrescentam um sufixo ao build (`MCP_BUILD_SUFFIX`, que o `mcp/build.mjs` valida). O workflow `.github/workflows/mcp-prerelease.yml` cuida dos dois primeiros; o `mcp-release.yml`, do terceiro.
 
 **Arquivos de cada release.** O snapshot, a rc e a estável publicam os mesmos arquivos, montados por `scripts/release/workspaceAssets.mjs` (um só script, uma passada por job que compila; ele sai com erro se o `examples/workspace/AGENTS.md` não tiver exatamente um bloco gerenciado, com os marcadores `mapping:begin` e `mapping:end` na ordem). Cada um tem um `.sha256` no formato do `sha256sum` (conferido também por `shasum -a 256 -c`):
 
