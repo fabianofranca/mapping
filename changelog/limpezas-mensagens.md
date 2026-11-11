@@ -1,4 +1,4 @@
-# Limpezas do épico de mensagens do modelo — [Não lançado] (épico `epic/limpezas-mensagens`, PR #0, MCP 0.34.2, schema v18)
+# Limpezas do épico de mensagens do modelo — [Não lançado] (épico `epic/limpezas-mensagens`, PR #1579, MCP 0.34.2, schema v18)
 
 ## Alterado
 
