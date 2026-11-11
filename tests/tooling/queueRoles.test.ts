@@ -128,7 +128,7 @@ describe('painel.py role / roles (decisão 7)', () => {
     const r = runRaw('apply', dir, lote);
     expect(r.status).toBe(0);
     expect(r.stdout).toContain('já é o registrado');
-    expect(r.stdout).toContain('alterados:');
+    expect(r.stdout).toContain('alterados: meta.json');
     expect(meta().roles).toEqual({ coordenador: antes });
     expect(meta().context).toBe(40);
   });
@@ -167,7 +167,7 @@ describe('implementar-fila: troca aos 35% e uma sessão ativa por papel (decisõ
     expect(painel).toContain('já é o registrado');
     const troca = section(skill, '## Troca de sessão');
     const nova = troca.slice(troca.indexOf('**Na sessão nova**'));
-    const passo4 = nova.slice(nova.indexOf('4. '));
+    const passo4 = nova.slice(nova.indexOf('\n4. '));
     expect(passo4).toContain('só se o `roles` não traz esta sessão');
   });
 

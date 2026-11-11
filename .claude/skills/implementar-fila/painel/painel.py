@@ -565,6 +565,11 @@ def cmd_context(a):
     s.commit(quiet=True)  # o contexto sozinho não faz a conferência de hora em hora publicar
 
 
+def print_no_change():
+    if BATCH is None:  # dentro do `apply` quem imprime `alterados:` é o fim do lote
+        print("alterados: nenhum")
+
+
 def cmd_role(a):
     if a.role not in ROLES:
         raise Erro(f"papel inválido '{a.role}'; válidos: {', '.join(ROLES)}")
@@ -581,8 +586,7 @@ def cmd_role(a):
     n = prev.get("n")
     if prev.get("id") == a.session:  # o id já registrado: nada muda (#1628), nem `n`, `previous`, `at` ou `link`
         print(f"{a.role} {n if isinstance(n, int) else '?'}: {a.session} já é o registrado; nada mudou")
-        if BATCH is None:  # dentro do `apply` quem imprime `alterados:` é o fim do lote
-            print("alterados: nenhum")
+        print_no_change()
         return
     roles[a.role] = {
         "id": a.session,
@@ -753,8 +757,7 @@ def cmd_upgrade(a):
     s = open_session(a.dir)
     changed = [r["issue"] for r in s.get("queue") if convert_hold(r)]
     if not changed:
-        if BATCH is None:  # dentro do `apply` quem imprime `alterados:` é o fim do lote
-            print("alterados: nenhum")
+        print_no_change()
         return
     s.get("log").append({"at": now(), "text": "upgrade: " + ", ".join(
         f"{i} '{HOLD_EMPTY_QUEUE}' → exclusive=sim" for i in changed)})
