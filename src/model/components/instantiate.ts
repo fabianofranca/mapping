@@ -1510,6 +1510,17 @@ function createEngine(
       : { w: crossSize, h: mainSize, placements };
   };
 
+  /** Guarda o plano do quadro na chave do cache e o devolve. */
+  const remember = (frame: FrameTemplate, key: string, plan: Plan): Plan => {
+    let perFrame = planCache.get(frame);
+    if (!perFrame) {
+      perFrame = new Map();
+      planCache.set(frame, perFrame);
+    }
+    perFrame.set(key, plan);
+    return plan;
+  };
+
   /**
    * Plano de um quadro: `null` num eixo = `hug` (o quadro abraça os filhos). `limits` é o
    * limite disponível por eixo hug, para os filhos `fill`/`%` contribuírem na medição.
@@ -1527,16 +1538,8 @@ function createEngine(
 
     const layout = layoutOf(frame);
     const kids = visibleKids(frame);
-    if (layout.wrap !== 'none') {
-      const wrapped = planWrapped(frame, layout, kids, w, h, bounds);
-      let perWrapped = planCache.get(frame);
-      if (!perWrapped) {
-        perWrapped = new Map();
-        planCache.set(frame, perWrapped);
-      }
-      perWrapped.set(key, wrapped);
-      return wrapped;
-    }
+    if (layout.wrap !== 'none')
+      return remember(frame, key, planWrapped(frame, layout, kids, w, h, bounds));
     const padW = layout.pad.left + layout.pad.right;
     const padH = layout.pad.top + layout.pad.bottom;
     const baselined = layout.kind === 'row' && layout.align === 'baseline';
@@ -1583,13 +1586,7 @@ function createEngine(
         h: vertical.sizes[i] ?? 0,
       })),
     };
-    let perFrame = planCache.get(frame);
-    if (!perFrame) {
-      perFrame = new Map();
-      planCache.set(frame, perFrame);
-    }
-    perFrame.set(key, plan);
-    return plan;
+    return remember(frame, key, plan);
   };
 
   // --- estilo ---------------------------------------------------------------------------

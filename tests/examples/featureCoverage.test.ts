@@ -86,6 +86,13 @@ const MISSING_TODAY: string[] = [
   // Linha de base (etapa #898, MC1): a Material 3 só adota `baselinePadding` na MC5; até lá, coberto por
   // tests/model/components/baselineLayout.test.ts, tests/e2e/textMetrics.spec.ts e pelo roteiro R25.
   'component:node.text.baselinePadding',
+  // Quebra de fileira (etapa #898, MC4): o `repeat` com `wrap` não é adotado por nenhuma biblioteca
+  // distribuída (a Material 3 usa o `layout.wrap` no flow-row na MC6); coberto por
+  // tests/model/components/wrapLayout.test.ts e pelo roteiro R25.
+  'component:node.repeat.wrap',
+  'component:node.repeat.lineGap',
+  'component:node.repeat.maxPerLine',
+  'component:node.repeat.maxLines',
   // `$lines` (etapa #898, MC2): a Material 3 só adota `$lines` na MC5; até lá, coberto por
   // tests/model/components/instantiate.test.ts, tests/model/libraryDrawingFitted.test.ts e pelo roteiro R25.
   'component:expr.$lines',
@@ -308,13 +315,10 @@ describe('a lista de recursos do componente não esqueceu nada do código', () =
     );
     if (!block) throw new Error('mapa `extra` não encontrado em parseComponent.ts');
     const fromCode: Record<string, string[]> = {};
-    for (const line of (block[1] ?? '').split('\n')) {
-      const m = /^\s*(\w+):\s*\[([^\]]*)\]/.exec(line);
-      if (m)
-        fromCode[m[1] ?? ''] = [...(m[2] ?? '').matchAll(/'([^']+)'/g)].map(
-          (x) => x[1] ?? '',
-        );
-    }
+    for (const m of (block[1] ?? '').matchAll(/(\w+):\s*\[([^\]]*)\]/g))
+      fromCode[m[1] ?? ''] = [...(m[2] ?? '').matchAll(/'([^']+)'/g)].map(
+        (x) => x[1] ?? '',
+      );
     for (const type of NODE_TYPES) {
       expect([...EXTRA_KEYS[type]].sort(), `chaves de ${type}`).toEqual(
         (fromCode[type] ?? []).sort(),
