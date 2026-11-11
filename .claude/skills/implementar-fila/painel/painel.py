@@ -26,6 +26,9 @@ created}` a `meta.sessions` (sem `kind`, só o `sessions` da linha, como antes);
 served=] [issue= kind=]` grava o custo da sessão (`kind` obrigatório com id novo); `costs [--desde <ISO>] DIR` lê só o `meta`
 e imprime o total, uma linha por tipo (sessões, US$, mediana) e uma por etapa (com `--desde`, só as com `created` a partir
 da data); o `show` traz a linha `custo:`.
+Sessão atual de cada papel (decisão 7 da #1532): `role DIR <coordenador|supervisor> <id> [link=<url>]` grava
+`meta.roles.<papel> = {id, n, at, link, previous}` (`previous` = o id registrado antes) com `n` = o anterior + 1 (ou 1); `roles DIR` lê só o `meta` e imprime
+`coordenador <n>: <id>` e `supervisor <n>: <id> (<link>)`, ou `—`. A sessão que não é a registrada não age.
 Só biblioteca padrão. Uso: painel.py [--now ISO] <subcomando> DIR ...
 (o subcomando vem ANTES da pasta: `painel.py row <pasta> '#n' status=...`).
 """
@@ -45,7 +48,8 @@ KINDS = ["etapa", "bug", "patch"]
 STAGES = ["", "Fases", "Testador", "Correção", "Fechamento", "Mesclada"]
 FILES = ["queue", "meta", "log"]
 SESSION_KINDS = ["fase", "correção", "testador", "reteste", "fechamento", "coordenador", "supervisor"]
-CONTEXT_LIMIT = 60
+CONTEXT_LIMIT = 35
+ROLES = ["coordenador", "supervisor"]
 DEFAULT_PARALELO = 2
 INT_FIELDS = ["order", "phasesTotal", "phasesDone"]
 QUEUE_EMPTY = {
@@ -523,6 +527,42 @@ def cmd_context(a):
     s.commit(quiet=True)  # o contexto sozinho não faz a conferência de hora em hora publicar
 
 
+def cmd_role(a):
+    if a.role not in ROLES:
+        raise Erro(f"papel inválido '{a.role}'; válidos: {', '.join(ROLES)}")
+    if not a.session.strip():
+        raise Erro("o id da sessão não pode ser vazio")
+    pairs = parse_pairs(a.pairs)
+    for k in pairs:
+        if k != "link":
+            raise Erro(f"campo desconhecido '{k}'; válido: link")
+    s = open_session(a.dir)
+    m = s.get("meta")[0]
+    roles = m.setdefault("roles", {})
+    prev = roles.get(a.role) or {}
+    n = prev.get("n")
+    roles[a.role] = {
+        "id": a.session,
+        "n": (n if isinstance(n, int) else 0) + 1,
+        "at": now(),
+        "link": pairs.get("link", ""),
+        "previous": prev.get("id", ""),
+    }
+    s.touch("meta")
+    s.commit()
+
+
+def cmd_roles(a):
+    roles = (load(a.dir, "meta") or [{}])[0].get("roles") or {}
+    for name in ROLES:
+        r = roles.get(name)
+        if not r:
+            print(f"{name} —")
+            continue
+        link = f" ({r['link']})" if r.get("link") else ""
+        print(f"{name} {r.get('n', 0)}: {r.get('id', '')}{link}")
+
+
 def cmd_touch(a):
     """A publicação falhou: marca de novo os três arquivos como não publicados."""
     s = open_session(a.dir)
@@ -549,7 +589,7 @@ def cmd_published(a):
     print("alterados: meta.json")
 
 
-BATCH_REJECTED = ("show", "apply", "init", "published", "slug", "costs")
+BATCH_REJECTED = ("show", "apply", "init", "published", "slug", "costs", "roles")
 
 
 def batch_lines(src):
@@ -923,6 +963,11 @@ def build_parser():
     sp.add_argument("issue")
     sp = add("context", cmd_context, "registra o contexto do coordenador (0 a 100)")
     sp.add_argument("pct")
+    sp = add("role", cmd_role, "registra a sessão atual de um papel (coordenador|supervisor) [link=<url>]; n soma 1")
+    sp.add_argument("role")
+    sp.add_argument("session")
+    sp.add_argument("pairs", nargs="*")
+    add("roles", cmd_roles, "imprime a sessão atual de cada papel (lê só o meta)")
     sp = add("apply", cmd_apply, "grava vários subcomandos de uma vez (um por linha; '-' lê do stdin)")
     sp.add_argument("file", metavar="arquivo", help="arquivo com os comandos, ou - para o stdin")
     add("published", cmd_published, "imprime a hora da publicação (at:) e limpa o que falta publicar")

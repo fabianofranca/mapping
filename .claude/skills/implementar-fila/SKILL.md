@@ -80,8 +80,8 @@ Grave cada linha com `row '#n' plan="<a linha>"` (e `title`, `phases` com as fas
 
 ## 1. Começo
 
-1. `get_session` sem `session_id`: guarde o **id** desta sessão (o "Coordenador" das mensagens) e o `session_context.model`. Se não for Sonnet, avise uma vez que a coordenação custa mais e siga. `set_session_title`: "Fila — coordenador".
-2. Outro coordenador rodando? `list_sessions` (`mine: true`, `limit: 10`; pule com `retomar`). Uma sessão "Fila — coordenador" que esteja trabalhando e não seja esta nem a `anterior` é outra fila: pare e diga ao dono.
+1. `get_session` sem `session_id`: guarde o **id** desta sessão (o "Coordenador" das mensagens) e o `session_context.model`. Se não for Sonnet, avise uma vez que a coordenação custa mais e siga. `set_session_title`: "Fila — coordenador <n>" (<n> = 1 numa fila nova; com `retomar`, o `n` do `roles` mais 1, "Troca de sessão"). Sem `retomar`, registre-se depois de criar o painel: `painel.py role <pasta> coordenador <id>`.
+2. Outro coordenador rodando? `list_sessions` (`mine: true`, `limit: 10`; pule com `retomar`). Uma sessão com o prefixo "Fila — coordenador" que esteja trabalhando e não seja esta nem a `anterior` é outra fila: pare e diga ao dono.
 3. Carregue com o `ToolSearch` o que vai usar:
    - `AskUserQuestion`, `PushNotification` e `ArtifactData`;
    - as `mcp__github__*`: `list_issues`, `issue_write` (só para trocar rótulos e criar issues sem pai), `add_issue_comment`, `create_pull_request`, `update_pull_request` e `merge_pull_request`. Leituras de issue, PR, Actions e Release ficam com os subagentes ("Economia de contexto");
@@ -200,13 +200,14 @@ Siga o `docs/FLOW.md` ("Orquestrador — passo a passo" e as mensagens), com o q
 - **O que não se arquiva:** uma filha que avisou que parou, falhou ou pediu decisão; as filhas de uma etapa `falhou` ou `esperando dono`; uma filha que ainda está rodando. O dono pode precisar delas; elas são arquivadas quando a etapa é entregue.
 - **Registro:** cada sessão criada para a etapa vai para o campo `sessions` da linha dela e para `meta.sessions` (`painel.py session <pasta> '#n' <id> kind=<tipo>`, sem repetir). Depois do merge do épico, arquive o que ainda estiver aberto ali.
 - **Custo:** o custo de cada filha sai do mesmo subagente que a arquiva: antes de arquivar, ele lê o `get_session` dela e devolve, na mesma linha, `usd` (`external_metadata.usage.cost_usd`), `ctx` (`context_usage.used_tokens`), `model` e `effort` (`session_context.model` e `effort_level`) e `served` (`last_served_model`, só quando difere do `model`). O coordenador grava `painel.py cost <pasta> <id> usd=… ctx=… model=… effort=…` no mesmo `apply` do log "<código> arquivada". Sessão arquivada sem o custo gravado perde o dado: sem `get_session`, não arquive.
+- **Só se arquivam ids registrados no painel:** os `sessions` das etapas, os de `meta.sessions` e a `anterior` do mesmo papel (o `previous` do `roles`). Id que o painel não conhece não se arquiva.
 - O coordenador não arquiva a si mesmo.
 
 **Conferências de reserva:**
 
 - **Uma por sessão do coordenador**, não uma por filha: `create_trigger` sem `persistent_session_id` (dispara nesta sessão), `cron_expression: "0 * * * *"` (de hora em hora), `initiation: own_followup`, com o id guardado por `painel.py reserve`. Ela vale para todas as filhas e é apagada só na troca de sessão e no fim. Nada de `send_later` por filha, salvo o `send_later` por PR que espera o coordenador (parágrafo "PR que espera o coordenador", passo 2 de "Por etapa"); nada de `delete_trigger` a cada aviso, nunca `list_triggers`. O coordenador não usa `subscribe_pr_activity`: os eventos de check run acordariam a sessão longa a cada job e encheriam o contexto, e o PR de fase é da fase.
 - A mensagem guardada se sustenta sozinha: "Conferência da fila: rode `painel.py show` e confira as atrasadas; painel <url>; siga o skill implementar-fila".
-- Na conferência, o **primeiro passo** é o contexto: `get_session` sem `session_id` e `painel.py context <pasta> <pct>` com o `external_metadata.context_usage`. Se o `show` avisar "acima de 60%", faça a troca de sessão ("Troca de sessão") neste mesmo ciclo, mesmo com etapas e fases em andamento, e não siga com o resto; sem espaço na linhagem ("Limite de linhagem"), não há sucessor, e o ciclo segue com o resto.
+- Na conferência, o **primeiro passo** é o contexto: `get_session` sem `session_id` e `painel.py context <pasta> <pct>` com o `external_metadata.context_usage`. Se o `show` avisar "acima de 35%", faça a troca de sessão ("Troca de sessão") neste mesmo ciclo, mesmo com etapas e fases em andamento, e não siga com o resto; sem espaço na linhagem ("Limite de linhagem"), não há sucessor, e o ciclo segue com o resto.
 - Depois, confira se o skill mudou na `main` ("Troca de sessão"); se mudou, dê o `git pull` e aplique a regra de "Troca de sessão" › "Skill novo na `main`" (grande: troca de sessão; pequena: releitura do `SKILL.md` inteiro com `Read`, sem `offset` nem `limit`, com a prova no `log`). Depois, `show` lista as **atrasadas** (filha sem aviso há mais de 30 min) e o `começar agora:`: cada etapa listada começa neste ciclo (passo 1 de "Por etapa"). Se o `vagas:` mostra `dep #N` de uma dependência fora da fila, o subagente do ciclo confere se ela entrou na `main`, e o coordenador grava `painel.py merged` (e o `começar agora` vale na hora). Cada PR do `CI esperando o coordenador:` do `show` também se confere (um subagente, uma linha por PR, pela **Leitura do CI**): mescle o PR de fase verde e siga para o "Merge" com o PR de épico verde; vermelho vai para a correção ou o épico, e o `ciWait` é limpo. O `fichas a refazer:` do `show` também é ação: um subagente refaz a ficha de cada linha listada ("Ficha da etapa", lendo o código quando a issue não diz), e o `row '#n' plan=…` entra no mesmo ciclo. Ficha refeita que ainda traz `?` (a issue e o código não dizem) não se refaz de novo: o coordenador pergunta ao dono (`PushNotification` e `AskUserQuestion`) e grava o `hold`, para o ciclo não repetir. Sem atrasadas, sem `começar agora`, sem `fichas a refazer`, sem esses PRs e sem o alerta de contexto (e sem conferência de Release pendente), não faça mais nada nesse ciclo, e a conferência só publica o painel quando o `show` mostra arquivo não publicado (a gravação do `context` sozinha não marca nada como não publicado e não publica; ela vai no próximo ciclo que publicar).
 - Para cada atrasada, leia `get_session` (`status_bucket`) e, só se não estiver trabalhando, `list_events` com `kinds: ["assistant", "result"]` e `limit: 10`:
   - trabalhando: `row '#n' childAt=now` (volta a contar);
@@ -308,7 +309,7 @@ painel.py show <pasta>          # resumo: em andamento, `vagas:`, `começar agor
 painel.py show <pasta> '#n'     # uma linha inteira, com a ficha
 ```
 
-O `show` traz, depois de `atual:`, `vagas: Vagas k/N · #n <motivo> …` (por que cada `ready` que não começou espera: `hold`, `ficha incompleta (<campos>)`, `dep #N`, `exclusiva (espera a fila esvaziar)`, `exclusiva #N em andamento`, `arquivo <x> com #N`, `schema com #N`, `começa` ou `vagas cheias`), `começar agora: #a #b` (ou `nenhuma`) e `contexto: <pct>% (<quando>)`, com o aviso "acima de 60%: troque de sessão agora" acima de 60. A nota está no `meta`, que toda gravação já marca como alterado: a publicação não muda, e a página mostra "Vagas k/N" no subtítulo e o card "Por que há vaga livre".
+O `show` traz, depois de `atual:`, `vagas: Vagas k/N · #n <motivo> …` (por que cada `ready` que não começou espera: `hold`, `ficha incompleta (<campos>)`, `dep #N`, `exclusiva (espera a fila esvaziar)`, `exclusiva #N em andamento`, `arquivo <x> com #N`, `schema com #N`, `começa` ou `vagas cheias`), `começar agora: #a #b` (ou `nenhuma`) e `contexto: <pct>% (<quando>)`, com o aviso "acima de 35%: troque de sessão agora" acima de 35. `painel.py role <pasta> <coordenador|supervisor> <id> [link=<url>]` registra a sessão atual de cada papel (`meta.roles.<papel> = {id, n, at, link}`, `n` = o anterior + 1) e `painel.py roles <pasta>` as imprime. A nota está no `meta`, que toda gravação já marca como alterado: a publicação não muda, e a página mostra "Vagas k/N" no subtítulo e o card "Por que há vaga livre".
 
 A linha `custo: US$ <total> em <k> sessões` (ou `custo: —`) vem do `meta.sessions`, e a página mostra o card "Custo da fila", por tipo e por etapa (ou "—" sem ele). **Comparação com a linha de base da #1532:** `painel.py costs --desde <hora da troca a quente> <pasta>`, que conta só as sessões criadas depois da troca (com `created`); as filhas criadas pela skill antiga, só com `cost`, ficam fora.
 
@@ -361,7 +362,7 @@ Grave no `painel.py` **a cada avanço** (fase aberta e mesclada, PR, testador, c
 
 ## Troca de sessão
 
-**Troca de sessão por contexto ou por skill grande.** Leia `external_metadata.context_usage` no `get_session` desta sessão entre etapas e no primeiro passo de cada conferência de reserva, e grave-o com `painel.py context <pasta> <pct>`. **Acima de 60%**, passe a coordenação adiante na hora, sem esperar o fim de uma etapa nem de uma fase: é o motivo de sempre para criar um sucessor (o outro é o skill novo grande, abaixo).
+**Troca de sessão por contexto ou por skill grande.** Leia `external_metadata.context_usage` no `get_session` desta sessão entre etapas e no primeiro passo de cada conferência de reserva, e grave-o com `painel.py context <pasta> <pct>`. **Acima de 35%**, passe a coordenação adiante na hora, sem esperar o fim de uma etapa nem de uma fase: é o motivo de sempre para criar um sucessor (o outro é o skill novo grande, abaixo).
 
 **Skill novo na `main`.** Entre etapas e em cada conferência de reserva, rode `git fetch -q origin main && git diff --quiet HEAD origin/main -- .claude/skills/implementar-fila/SKILL.md`. Saída diferente de zero quer dizer que o `SKILL.md` mudou: faça `git pull -q --ff-only origin main` e meça a mudança com `git diff --numstat <HEAD de antes> HEAD -- .claude/skills/implementar-fila/SKILL.md`.
 
@@ -379,19 +380,20 @@ Grave no `painel.py` **a cada avanço** (fase aberta e mesclada, PR, testador, c
 2. Crie a sessão nova com `create_session`:
    - o mesmo `model`;
    - `source_url` do repositório, `source_revision` `main`;
-   - título "Fila — coordenador";
+   - título "Fila — coordenador <n>", com <n> = o `n` do `roles` (`painel.py roles <pasta>`) mais 1;
    - mensagem: **só** `/implementar-fila retomar anterior=<id desta sessão> painel=<url>`, seguida dos mesmos argumentos desta sessão e de `sem-confirmar`. Copie `mesclar=auto` só se o dono o escreveu na chamada desta sessão. Sem notas de passagem: o que não está no painel, grave no `log` antes.
+   - Logo que o `create_session` devolver o id, registre o sucessor: `painel.py role <pasta> coordenador <id novo> link=https://claude.ai/code/<id novo>` (o `previous` guarda o id desta sessão), e publique o painel. A partir daí esta sessão não é a registrada e não age.
 3. Mande a cada filha que ainda deve aviso (os `child` do painel) `send_message`: "O coordenador mudou: mande seus avisos para `<id novo>`".
 4. Apague a sua conferência (`delete_trigger` com o `reserve` do painel).
-5. Mande `PushNotification` "Fila passou para uma sessão nova" (contexto acima de 60%).
-6. Termine. Se depois chegar o aviso de uma filha, encaminhe-o sem mudar nada à sessão nova (`send_message`) e termine de novo.
+5. Mande `PushNotification` "Fila passou para uma sessão nova" (contexto acima de 35%).
+6. Termine. Depois da troca, esta sessão **não age**: ela não é mais a registrada no painel. Se chegar o aviso de uma filha ou a mensagem do dono, encaminhe o aviso sem mudar nada à sessão atual (`send_message`) e, à mensagem do dono, responda só com o link da atual, e termine de novo. Se a atual não for a sucessora que você criou, leia o link no `roles` do `meta` publicado. A mesma regra vale para o supervisor: a sessão que não é a registrada como supervisor encaminha o pedido à atual e não age.
 
 **Na sessão nova** (`retomar`):
 
 1. Leia o painel: `ArtifactData` `list` de `datasets` e `Artifact` `read` com `path` = o id de cada `/_blob/<id>`, com `out_dir` na pasta do scratchpad. Não imprima os arquivos: rode `painel.py show`.
 2. Não releia as issues nem as filhas: a ficha (`plan`), as filhas (`child`) e o passo estão no painel, e a sessão antiga já avisou as filhas do seu id. Sem `list_sessions`, sem `list_events` e sem `get_session` das filhas; a conferência de reserva cuida das que atrasarem.
 3. Rode `painel.py start <pasta> --paralelo N` com o N da chamada (repetir não mexe no início da execução), grave o contexto desta sessão com `painel.py context <pasta> <pct>` (o da antiga ficou no painel) e crie a sua conferência de reserva (`painel.py reserve`).
-4. Depois de avisar as filhas (ou de confirmar que a antiga avisou), a sessão nova **arquiva a `anterior`** (`archive_session`) e grave no `log` "coordenador anterior arquivado". Continue de onde parou.
+4. Confira no `painel.py roles <pasta>` que o `coordenador` registrado é esta sessão (a antiga o registrou; se não, registre-se: `painel.py role <pasta> coordenador <id desta sessão> link=https://claude.ai/code/<id desta sessão>`). Depois de avisar as filhas (ou de confirmar que a antiga avisou), a sessão nova **arquiva a `anterior`** (`archive_session`) e confere o estado arquivado no `get_session` dela. Sem ele, faça uma nova tentativa do `archive_session`; sem ele de novo, grave no `log` "coordenador anterior não arquivou: <id>" e mande `PushNotification` ao dono. Com o arquivamento conferido, grave no `log` "coordenador anterior arquivado". Continue de onde parou.
 
 ## Fim
 
