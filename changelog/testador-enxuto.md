@@ -1,4 +1,4 @@
-# Testador enxuto — 2026-11-11 (épico `epic/testador-enxuto`, PR #0, MCP sem mudança, schema v18)
+# Testador enxuto — 2026-11-11 (épico `epic/testador-enxuto`, PR #1578, MCP sem mudança, schema v18)
 
 ## Mudou para quem conduz o fluxo
 
