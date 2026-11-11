@@ -205,6 +205,16 @@ describe('portas de escrita: a cauda de ponto flutuante some (6 casas, escala co
     placementIsClean(image(next, 'B2').placement);
   });
 
+  it('addContainer do primeiro container (sem outro à vista) grava a escala com 12 algarismos', () => {
+    const first = addBackgroundContainer(emptyProject(), {
+      id: 'F1',
+      width: 390,
+      height: 844,
+      background: '#FFFFFF',
+    });
+    expect(image(first, 'F1').placement).toEqual({ x: 0, y: 0, scale: 1.18483412322 });
+  });
+
   it('replaceContainer (a escala da troca de imagem)', () => {
     const p = sampleProject();
     const replaced = replaceContainer(p, 'I2', {
