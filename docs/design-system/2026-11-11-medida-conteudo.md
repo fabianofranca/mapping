@@ -1,4 +1,4 @@
-# Medida pelo conteúdo no formato 4 — [Não lançado] (épico `epic/medida-conteudo`)
+# Medida pelo conteúdo no formato 4 — 2026-11-11 (épico `epic/medida-conteudo`)
 
 ## Pendências
 

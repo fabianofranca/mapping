@@ -2,7 +2,7 @@
 // Fase TS1 (etapa #421, decisão 7): `round-guide.mjs` gera o guia da rodada a partir do
 // docs/TESTING.md, sem os roteiros não pedidos, os sob demanda, a seção 9 e o registro do Uso real.
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -832,7 +832,7 @@ describe('passo R25: o preparo inteiro (etapa #1533, TE3)', () => {
     ['guia all', ['all']],
     ['guia do bloco 2 (R0, R15, R25)', ['R0', 'R15', 'R25']],
   ] as const) {
-    it(`${nome}: tokens.mjs e as funções tinta, sonda e medir, da cerca de abertura à de fechamento`, async () => {
+    it(`${nome}: o tokens.mjs vem do repositório e as funções tinta, sonda e medir, da cerca de abertura à de fechamento`, async () => {
       const out = await passoR25([...roteiros]);
       const lines = out.split('\n');
       const fences = lines.flatMap((l, i) => (l.startsWith('```') ? [i] : []));
@@ -846,7 +846,10 @@ describe('passo R25: o preparo inteiro (etapa #1533, TE3)', () => {
         expect(lines[close]).toBe('```');
         return lines.slice(open, close + 1).join('\n');
       };
-      expect(block('// tokens.mjs: node tokens.mjs')).toContain('fs.writeFileSync');
+      // O preparo da biblioteca com tokens é o `scripts/testing/tokens.mjs` do repositório (MC1),
+      // não um bloco do guia: o guia o cita e o arquivo existe no commit que o testador compila.
+      expect(out).toContain('O `scripts/testing/tokens.mjs` do repositório');
+      expect(existsSync('scripts/testing/tokens.mjs')).toBe(true);
       const tools = block('tinta() {');
       for (const fn of ['sonda()', 'medir()', 'unid()', 'caixa()']) {
         expect(tools).toContain(fn);
