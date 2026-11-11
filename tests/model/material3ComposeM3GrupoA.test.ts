@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import { absoluteBoxes, walk } from '../../src/model/components/scene';
 import type { PathNode, SceneNode, TextNode } from '../../src/model/components/scene';
+import { compositeOver, expectComposite } from '../support/material3Composite';
 import { drawIn, files, findText, solid, spec } from '../support/material3Library';
 
 const catalog = buildCatalog(files);
@@ -259,27 +260,33 @@ describe('M3 grupo A — switch', () => {
     const on = both('switch', { checked: 'true', thumbIcon: 'true', enabled: 'false' });
     const off = both('switch', { checked: 'false', thumbIcon: 'true', enabled: 'false' });
     for (const mode of ['light', 'dark'] as const) {
-      // ligado: trilho on-surface a 0,12 sobre surface; alça surface (opacidade 1); ícone on-surface a 0,38
-      expect(fillOf(on[mode], 'trilho')).toBe(tok('surface', mode));
-      expect(fillOf(on[mode], 'trilho desabilitado')).toBe(tok('on-surface', mode));
-      expect(named(on[mode], 'trilho desabilitado')?.opacity).toBe(0.12);
+      const over = (top: string, alpha: number) =>
+        compositeOver(tok(top, mode), alpha, tok('surface', mode));
+      const container = tokens['state-disabled-container'] as number;
+      const content = tokens['state-disabled-content'] as number;
+      // ligado: trilho on-surface a 0,12 sobre surface (cor opaca, sem camada de opacidade); alça surface; ícone on-surface a 0,38
+      expectComposite(fillOf(on[mode], 'trilho'), over('on-surface', container));
+      expect(named(on[mode], 'trilho')?.opacity).toBe(1);
+      expect(named(on[mode], 'trilho desabilitado')).toBeUndefined();
       expect(named(on[mode], 'contorno')).toBeUndefined();
       expect(fillOf(on[mode], 'alça')).toBe(tok('surface', mode));
+      expect(named(on[mode], 'alça')?.opacity).toBe(1);
       expect(named(on[mode], 'alça desabilitada')).toBeUndefined();
       expect(iconOf(on[mode], 'check').color).toBe(tok('on-surface', mode));
       expect(iconOf(on[mode], 'check').node?.opacity).toBe(0.38);
-      // desligado: trilho surface-container-highest a 0,12; contorno on-surface a 0,12; alça on-surface a 0,38
-      expect(fillOf(off[mode], 'trilho')).toBe(tok('surface', mode));
-      expect(fillOf(off[mode], 'trilho desabilitado')).toBe(
-        tok('surface-container-highest', mode),
+      // desligado: trilho surface-container-highest a 0,12, contorno on-surface a 0,12 e alça on-surface a 0,38, todos sobre surface
+      expectComposite(
+        fillOf(off[mode], 'trilho'),
+        over('surface-container-highest', container),
       );
-      expect(named(off[mode], 'trilho desabilitado')?.opacity).toBe(0.12);
-      expect(strokeOf(off[mode], 'contorno')).toBe(tok('surface', mode));
-      expect(strokeOf(off[mode], 'contorno desabilitado')).toBe(tok('on-surface', mode));
-      expect(named(off[mode], 'contorno desabilitado')?.opacity).toBe(0.12);
-      expect(fillOf(off[mode], 'alça')).toBe(tok('surface', mode));
-      expect(fillOf(off[mode], 'alça desabilitada')).toBe(tok('on-surface', mode));
-      expect(named(off[mode], 'alça desabilitada')?.opacity).toBe(0.38);
+      expect(named(off[mode], 'trilho')?.opacity).toBe(1);
+      expect(named(off[mode], 'trilho desabilitado')).toBeUndefined();
+      expectComposite(strokeOf(off[mode], 'contorno'), over('on-surface', container));
+      expect(named(off[mode], 'contorno')?.opacity).toBe(1);
+      expect(named(off[mode], 'contorno desabilitado')).toBeUndefined();
+      expectComposite(fillOf(off[mode], 'alça'), over('on-surface', content));
+      expect(named(off[mode], 'alça')?.opacity).toBe(1);
+      expect(named(off[mode], 'alça desabilitada')).toBeUndefined();
       // ícone desligado: base surface opaca + surface-container-highest a 0,38 por cima
       const closes = [...walk(off[mode].root)].filter((n) => n.name === 'close');
       expect(closes).toHaveLength(2);

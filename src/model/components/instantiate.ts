@@ -58,6 +58,7 @@ import type {
   LayoutJustify,
   ImageTemplate,
   PathTemplate,
+  ShadowSpec,
   SizeSpec,
   StrokeSide,
   StrokeSpec,
@@ -73,9 +74,11 @@ import {
   evaluate,
   evaluateBoolean,
   evaluateText,
+  providedKey,
   referencedFields,
   sizeKey,
   toNumber,
+  type ProvidedValues,
 } from './expressions';
 import {
   LAYOUT_ALIGNS,
@@ -87,10 +90,12 @@ import {
   mirrorMain,
   parseSizeSpec,
 } from './layoutValues';
+import { providingSlot } from './provided';
 import { createMessageSet, textsOf, type Params } from '../messages/collector';
 import type { ModelMessageTemplateCode } from '../messages';
 import type { ModelMessage } from '../modelMessage';
 import { expandRepeats } from './repeat';
+import { applyGaps } from './strokeGaps';
 import { WRAP_SLACK } from './textWrap';
 import {
   applyTokens,
@@ -176,10 +181,20 @@ export interface InstantiateOptions {
    * (`resolvedIcons`, posto pelo catálogo); sem nenhum, todo ícone é desconhecido.
    */
   readonly icons?: IconSet;
+  /**
+   * Cor herdada (v4): o que os slots dos ancestrais oferecem, já resolvido, pelo nome; o `$provided`
+   * do template o lê (com `default` quando falta). Ausente = nenhum ancestral oferece nada.
+   */
+  readonly provided?: ProvidedValues;
 }
 
 export interface Instantiated {
   readonly root: FrameNode;
+  /**
+   * O que o `slot` do componente oferece às filhas (`provide`), resolvido com os campos, os tokens
+   * e o modo desta instância; o valor que não produz nada não entra. Ausente = não oferece.
+   */
+  readonly provides?: ProvidedValues;
   readonly warnings: readonly string[];
   /** Os mesmos avisos com código e parâmetros (a interface os traduz): `warnings` = textos destes. */
   readonly messages: readonly ModelMessage[];
@@ -416,6 +431,16 @@ interface ResolvedAnchors {
 // Instanciação
 // ---------------------------------------------------------------------------------------
 
+/** Os valores herdados como campos reservados do motor (`$provided:<nome>`), onde o `$provided` os lê. */
+function providedFields(
+  provided: ProvidedValues | undefined,
+): Record<string, string | number> {
+  const out: Record<string, string | number> = {};
+  for (const [name, value] of Object.entries(provided ?? {}))
+    out[providedKey(name)] = value;
+  return out;
+}
+
 /**
  * Monta o "motor" de um componente com seus valores: avaliação, tamanhos e planos dos quadros.
  * `instantiate` e `measureComponent` compartilham este fechamento (e o cache dos planos).
@@ -439,6 +464,7 @@ function createEngine(
     messages: expansionMessages,
   } = expandRepeats(source, {
     ...sourceValues,
+    ...providedFields(options.provided),
     [sizeKey('width')]: instanceSize.width,
     [sizeKey('height')]: instanceSize.height,
   });
@@ -602,14 +628,17 @@ function createEngine(
     return { scene, runs };
   };
 
+  /** O `align` do layout do texto rico (sem `justify`). */
+  const richAlign = (align: string): 'left' | 'center' | 'right' =>
+    align === 'center' || align === 'right' ? align : 'left';
+
   /** O que é do nó (e não dos trechos) no layout do texto rico. */
   const richBase = (node: TextTemplate, font: MeasureFont): RichBase => ({
     size: font.size,
     lineHeight: font.lineHeight,
-    align: oneOf<'left' | 'center' | 'right'>(
-      node.font?.align,
-      ['left', 'center', 'right'],
-      'left',
+    // O texto rico (com `runs`) ainda não justifica: `justify` cai em `left`.
+    align: richAlign(
+      oneOf(node.font?.align, ['left', 'center', 'right', 'justify'], 'left'),
     ),
     ...(font.wrap === 'none' ? { wrap: 'none' as const } : {}),
     ...(font.ellipsis === true ? { ellipsis: true } : {}),
@@ -1208,13 +1237,13 @@ function createEngine(
     return sides.length > 0 ? sides : undefined;
   };
 
-  const effectsOf = (node: TemplateNode, scale: number): Shadow[] => {
-    const shadow = node.shadow;
-    if (!shadow) return [];
+  /** Uma sombra da lista (ou a única): cor `none` não dá sombra; `spread` só entra quando não é 0. */
+  const shadowOf = (shadow: ShadowSpec, scale: number): Shadow[] => {
     const color = str(shadow.color, 'none');
     if (isNone(color)) return [];
     const blur = num(shadow.blur as Expr<number> | undefined, 0);
     if (blur < 0) invalidValue('shadow.blur', blur);
+    const spread = num(shadow.spread as Expr<number> | undefined, 0) / scale;
     return [
       {
         color,
@@ -1223,9 +1252,61 @@ function createEngine(
           y: num(shadow.y as Expr<number> | undefined, 0) / scale,
         },
         blur: Math.max(0, blur) / scale,
+        ...(spread !== 0 ? { spread } : {}),
       },
     ];
   };
+
+  /** As sombras do nó, na ordem da lista (a primeira fica por cima). */
+  const effectsOf = (node: TemplateNode, scale: number): Shadow[] => {
+    const shadow = node.shadow;
+    if (!shadow) return [];
+    const list: readonly ShadowSpec[] = Array.isArray(shadow)
+      ? (shadow as readonly ShadowSpec[])
+      : [shadow as ShadowSpec];
+    return list.flatMap((spec) => shadowOf(spec, scale));
+  };
+
+  // --- vão no contorno (`stroke.gap`) --------------------------------------------------------
+
+  /** Os nós que abrem vão e os nós montados por nó do template: o vão se resolve no fim. */
+  const gapNeeds: { id: string; name: string; padding: number }[] = [];
+  const builtIds = new Map<TemplateNode, string>();
+
+  const registerGap = (
+    node: TemplateNode,
+    id: string,
+    stroke: Stroke | undefined,
+  ): void => {
+    const gap =
+      node.type === 'frame' || node.type === 'rect' ? node.stroke?.gap : undefined;
+    if (gap && stroke)
+      gapNeeds.push({ id, name: gap.node, padding: num(gap.padding, 0) });
+  };
+
+  /** O primeiro nó do template com esse nome (a ordem do template, em profundidade). */
+  const firstNamed = (node: TemplateNode, name: string): TemplateNode | undefined => {
+    if (nodeName(node) === name) return node;
+    if (node.type !== 'frame') return undefined;
+    for (const child of node.children ?? []) {
+      const found = firstNamed(child, name);
+      if (found) return found;
+    }
+    return undefined;
+  };
+
+  const withGaps = (root: FrameNode): FrameNode =>
+    applyGaps(
+      root,
+      gapNeeds.map((need) => {
+        const target = firstNamed(component.template, need.name);
+        return {
+          id: need.id,
+          target: target && builtIds.get(target),
+          padding: need.padding,
+        };
+      }),
+    );
 
   const radiusOf = (node: TemplateNode): CornerRadius => {
     const value = ev<unknown>(node.cornerRadius as Expr<unknown> | undefined, 0);
@@ -1274,6 +1355,8 @@ function createEngine(
   ): FrameNode => {
     const plan = planFrame(frame, w, h);
     const stroke = strokeOf(frame.stroke, 'inside', 1);
+    builtIds.set(frame, `${prefix}/${path}`);
+    registerGap(frame, `${prefix}/${path}`, stroke);
     const children = plan.placements.map((p) =>
       buildNode(p.kid.node, `${path}.${p.kid.index}`, p.x, p.y, p.w, p.h),
     );
@@ -1448,6 +1531,19 @@ function createEngine(
     return { text, extra: { runs: rich.scene, runLayout } };
   };
 
+  /** O `align` da cena. O texto rico (`runs`) não justifica: a cena diz `left`, que é o que se arrumou. */
+  const styleAlign = (
+    node: TextTemplate,
+    align: FontSpec['align'],
+  ): TextStyle['align'] => {
+    const allowed: readonly TextStyle['align'][] =
+      original.formatVersion >= 4
+        ? ['left', 'center', 'right', 'justify']
+        : ['left', 'center', 'right'];
+    const value = oneOf(align, allowed, 'left');
+    return value === 'justify' && node.runs !== undefined ? 'left' : value;
+  };
+
   const buildText = (
     node: TextTemplate,
     id: string,
@@ -1470,7 +1566,8 @@ function createEngine(
       italic: font.italic,
       lineHeight: font.lineHeight,
       letterSpacing: font.letterSpacing,
-      align: oneOf(font0.align, ['left', 'center', 'right'], 'left'),
+      // `justify` só existe na formatVersion 4; antes, vindo de expressão, é valor fora do conjunto.
+      align: styleAlign(node, font0.align),
       verticalAlign: oneOf(
         font0.verticalAlign,
         // `cap-middle` só existe na formatVersion 4; antes, vindo de expressão, é valor fora do conjunto.
@@ -1537,6 +1634,7 @@ function createEngine(
     h: number,
   ): SceneNode => {
     const id = `${prefix}/${path}`;
+    builtIds.set(node, id);
     switch (node.type) {
       case 'frame':
         return buildFrame(node, path, x, y, w, h, false);
@@ -1557,6 +1655,7 @@ function createEngine(
       }
       case 'rect': {
         const stroke = strokeOf(node.stroke, 'inside', 1);
+        registerGap(node, id, stroke);
         return {
           ...common(node, id, x, y, w, h),
           ...(stroke ? { stroke } : {}),
@@ -1580,12 +1679,28 @@ function createEngine(
     }
   };
 
+  /** O que o slot oferece às filhas: cada `provide` avaliado com os valores desta instância. */
+  const provides = (): ProvidedValues | undefined => {
+    const offered = providingSlot(component)?.provide;
+    if (offered === undefined) return undefined;
+    const out: Record<string, string | number> = {};
+    for (const [name, expr] of Object.entries(offered)) {
+      const value = ev<unknown>(expr as Expr<unknown>, undefined);
+      if (typeof value === 'number' && Number.isFinite(value)) out[name] = value;
+      else if (typeof value === 'string' && value.trim() !== '') out[name] = value;
+    }
+    return Object.keys(out).length === 0 ? undefined : out;
+  };
+
   const buildRoot = (box: Box): FrameNode =>
-    buildFrame(component.template, 'root', box.x, box.y, box.width, box.height, true);
+    withGaps(
+      buildFrame(component.template, 'root', box.x, box.y, box.width, box.height, true),
+    );
 
   return {
     messages: messageSet.list,
     shortfalls,
+    provides,
     planFrame,
     buildRoot,
     template: component.template,
@@ -1602,9 +1717,11 @@ export function instantiate(
 ): Instantiated {
   const engine = createEngine(component, values, options, box);
   const root = engine.buildRoot(box);
+  const provides = engine.provides();
   const messages = engine.messages();
   return {
     root,
+    ...(provides === undefined ? {} : { provides }),
     warnings: textsOf(messages),
     messages,
     shortfalls: Object.fromEntries(engine.shortfalls),

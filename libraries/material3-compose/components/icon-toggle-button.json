@@ -418,7 +418,10 @@
                   "$token": "primary"
                 },
                 "else": {
-                  "$token": "on-surface"
+                  "$provided": "content-color",
+                  "default": {
+                    "$token": "on-surface"
+                  }
                 }
               },
               "filled": {
@@ -451,12 +454,18 @@
                   "$token": "inverse-on-surface"
                 },
                 "else": {
-                  "$token": "on-surface"
+                  "$provided": "content-color",
+                  "default": {
+                    "$token": "on-surface"
+                  }
                 }
               }
             },
             "default": {
-              "$token": "on-surface"
+              "$provided": "content-color",
+              "default": {
+                "$token": "on-surface"
+              }
             }
           }
         },

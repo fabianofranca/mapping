@@ -12,6 +12,7 @@ import {
   partialSides,
   sideSegments,
 } from '../../model/components/strokeSides';
+import { gapOutlines } from '../../model/components/strokeGaps';
 import { CUT_REACH, WRAP_SLACK, cutsText } from '../../model/components/textWrap';
 import { canvasFontFamily } from '../../model/components/fontFamily';
 import Konva from 'konva/lib/Core';
@@ -20,6 +21,7 @@ import { Image as KonvaImage } from 'konva/lib/shapes/Image';
 import { Line as KonvaLine } from 'konva/lib/shapes/Line';
 import { Path as KonvaPath } from 'konva/lib/shapes/Path';
 import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
+import { Shape as KonvaShape } from 'konva/lib/Shape';
 import { Text as KonvaText, type TextConfig } from 'konva/lib/shapes/Text';
 import {
   type CornerRadius,
@@ -35,6 +37,7 @@ import {
   hasChildren,
   nodeMatrix,
 } from '../../model/components/scene';
+import type { ImageFit } from '../../model/components/componentFormat';
 import type { RunLayout, RunPiece } from '../../model/components/richText';
 import { textBoxLimits } from './textLimits';
 import { capMetricsOf, capMiddleShift, konvaBaseline } from './capMiddle';
@@ -84,6 +87,10 @@ export interface RenderResult {
 
 export const SCENE_ID_ATTR = 'sceneId';
 
+/** Forma que só leva uma sombra (a posição da sombra na lista fica em `shadowIndex`). */
+const SHADOW_CASTER_ATTR = 'shadowCaster';
+const SHADOW_INDEX_ATTR = 'shadowIndex';
+
 /** Forma que só existe para receber o ponteiro: não pinta nem recebe sombra. */
 const HIT_ONLY_ATTR = 'hitOnly';
 
@@ -114,7 +121,7 @@ class Renderer {
     if (!this.warned.has(key)) this.warned.set(key, params ? { code, params } : { code });
   }
 
-  render(node: SceneNode, pendingShadow?: Shadow): Konva.Group {
+  render(node: SceneNode, pendingShadows: readonly Shadow[] = []): Konva.Group {
     const container = new Konva.Group({
       ...decompose(nodeMatrix(node)),
       opacity: node.opacity,
@@ -126,8 +133,7 @@ class Renderer {
 
     // A sombra vai na primeira forma que a aceitar. Um grupo com efeito
     // (ex.: `filter` num grupo que envolve a forma) repassa a sombra à primeira forma descendente.
-    const shadows = [...(pendingShadow ? [pendingShadow] : []), ...node.effects];
-    const shadow = this.pickShadow(shadows);
+    const shadows = this.outerShadows([...pendingShadows, ...node.effects]);
 
     if (node.type === 'frame' && node.clip) {
       const { width, height, cornerRadius, clipBox } = node;
@@ -153,27 +159,39 @@ class Renderer {
 
     const shapes = this.shapesOf(node);
     // A área clicável invisível de um quadro transparente não pinta: não é dona da sombra.
-    const shadowOwner = shadow
-      ? shapes.find((s) => !s.getAttr(HIT_ONLY_ATTR))
-      : undefined;
+    const shadowOwner =
+      shadows.length > 0 ? shapes.find((s) => !s.getAttr(HIT_ONLY_ATTR)) : undefined;
+    // Várias sombras (ou `spread`) num retângulo ou elipse: uma forma só de sombra por sombra, por
+    // baixo das formas do nó, a última da lista primeiro (a primeira fica por cima).
+    const casters = shadowOwner !== undefined && castsShadows(node, shadows);
+    if (casters) {
+      for (const shadow of [...shadows].reverse()) {
+        const caster = shadowCaster(node, shadow);
+        caster.setAttr(SCENE_ID_ATTR, node.id);
+        caster.setAttr(SHADOW_CASTER_ATTR, true);
+        caster.setAttr(SHADOW_INDEX_ATTR, shadows.indexOf(shadow));
+        container.add(caster);
+      }
+    }
     for (const shape of shapes) {
       shape.setAttr(SCENE_ID_ATTR, node.id);
       container.add(shape);
     }
 
     if (hasChildren(node)) {
-      let forward = shadow && !shadowOwner ? shadow : undefined;
+      let forward = shadows.length > 0 && !shadowOwner ? shadows : [];
       for (const child of node.children) {
         container.add(this.render(child, forward));
-        // Só o primeiro filho herda a sombra do grupo.
-        forward = undefined;
+        // Só o primeiro filho herda as sombras do grupo.
+        forward = [];
       }
-      if (shadow && !shadowOwner && node.children.length === 0) {
+      if (shadows.length > 0 && !shadowOwner && node.children.length === 0) {
         this.warn('empty-group-shadow');
       }
     }
 
-    if (shadow && shadowOwner) applyShadow(shadowOwner, shadow);
+    const [first] = shadows;
+    if (first && shadowOwner && !casters) applyShadow(shadowOwner, first);
     return container;
   }
 
@@ -182,15 +200,10 @@ class Renderer {
     return shape;
   }
 
-  private pickShadow(shadows: readonly Shadow[]): Shadow | undefined {
-    const outer = shadows.filter((s) => !s.inner);
-    if (shadows.some((s) => s.inner)) {
-      this.warn('inner-shadow');
-    }
-    if (outer.length > 1) {
-      this.warn('extra-shadows');
-    }
-    return outer[0];
+  /** As sombras externas, na ordem; a interna não existe no canvas 2D: ignorada, com aviso. */
+  private outerShadows(shadows: readonly Shadow[]): Shadow[] {
+    if (shadows.some((s) => s.inner)) this.warn('inner-shadow');
+    return shadows.filter((s) => !s.inner);
   }
 
   /** As formas do próprio nó (sem os filhos). */
@@ -212,7 +225,14 @@ class Renderer {
         if (node.stroke) {
           if (partialSides(node.stroke))
             shapes.push(...this.sideStrokes(node.stroke, box));
-          else shapes.push(this.rectStroke(node.stroke, box, node.cornerRadius));
+          else {
+            const gapped = this.gapStrokes(node.stroke, box, node.cornerRadius);
+            shapes.push(
+              ...(gapped.length > 0
+                ? gapped
+                : [this.rectStroke(node.stroke, box, node.cornerRadius)]),
+            );
+          }
         }
         if (node.fills.length === 0 && !node.stroke && node.type === 'frame') {
           // Quadro transparente: uma área clicável invisível, para o hover achar o quadro.
@@ -523,6 +543,15 @@ class Renderer {
     });
   }
 
+  /** `stroke.gap`: o contorno com o raio de cada canto, em linhas abertas que pulam os vãos. */
+  private gapStrokes(stroke: Stroke, box: Box, radius: CornerRadius): Konva.Shape[] {
+    return gapOutlines(stroke, box.width, box.height, radius).map((points) => {
+      const line = new KonvaLine({ points: points.flatMap((p) => [p.x, p.y]) });
+      this.applyStroke(line, stroke, 'line', true);
+      return line;
+    });
+  }
+
   private rectStroke(stroke: Stroke, box: Box, radius: CornerRadius): Konva.Shape {
     // `offset`: o contorno afastado da forma (o anel cresce de cada lado, com o raio + offset).
     const offset = stroke.offset ?? 0;
@@ -712,7 +741,7 @@ function sourceSize(view: RemoteImageView): { width: number; height: number } | 
  * cobrir a caixa, `contain` encaixa a fonte inteira no centro, `fill` estica.
  */
 export function imageFit(
-  fit: 'cover' | 'contain' | 'fill',
+  fit: ImageFit,
   box: Box,
   source: { width: number; height: number },
 ): {
@@ -723,6 +752,7 @@ export function imageFit(
   crop?: { x: number; y: number; width: number; height: number };
 } {
   if (fit === 'fill') return { x: 0, y: 0, width: box.width, height: box.height };
+  if (fit !== 'cover' && fit !== 'contain') return placedFit(fit, box, source);
   if (fit === 'contain') {
     const scale = Math.min(box.width / source.width, box.height / source.height);
     const width = source.width * scale;
@@ -737,6 +767,51 @@ export function imageFit(
     y: 0,
     width: box.width,
     height: box.height,
+    crop: {
+      x: (source.width - cropWidth) / 2,
+      y: (source.height - cropHeight) / 2,
+      width: cropWidth,
+      height: cropHeight,
+    },
+  };
+}
+
+const EPSILON = 1e-9;
+
+/**
+ * `fill-width`, `fill-height`, `scale-down` e `none` (formato 4): a imagem na escala do `fit`,
+ * centrada na caixa e recortada onde passa dela (o `ContentScale` `FillWidth`, `FillHeight`,
+ * `Inside` e `None`). `scale-down` nunca amplia; `none` e `scale-down` usam o tamanho natural.
+ */
+function placedFit(
+  fit: Exclude<ImageFit, 'cover' | 'contain' | 'fill'>,
+  box: Box,
+  source: { width: number; height: number },
+): ReturnType<typeof imageFit> {
+  if (box.width <= 0 || box.height <= 0 || source.width <= 0 || source.height <= 0)
+    return { x: 0, y: 0, width: Math.max(0, box.width), height: Math.max(0, box.height) };
+  const scale =
+    fit === 'fill-width'
+      ? box.width / source.width
+      : fit === 'fill-height'
+        ? box.height / source.height
+        : fit === 'none'
+          ? 1
+          : Math.min(1, box.width / source.width, box.height / source.height);
+  const width = Math.min(source.width * scale, box.width);
+  const height = Math.min(source.height * scale, box.height);
+  const placed = {
+    x: (box.width - width) / 2,
+    y: (box.height - height) / 2,
+    width,
+    height,
+  };
+  const cropWidth = width / scale;
+  const cropHeight = height / scale;
+  if (cropWidth >= source.width - EPSILON && cropHeight >= source.height - EPSILON)
+    return placed;
+  return {
+    ...placed,
     crop: {
       x: (source.width - cropWidth) / 2,
       y: (source.height - cropHeight) / 2,
@@ -764,9 +839,18 @@ function placeholder(
   return [shape, cross];
 }
 
-/** Sombra totalmente transparente ou sem desfoque nem deslocamento: não custa desenhar. */
+/**
+ * Sombra totalmente transparente ou sem desfoque, deslocamento nem `spread` que cresça a forma:
+ * não custa desenhar.
+ */
 export function isInvisibleShadow(shadow: Shadow): boolean {
-  if (shadow.blur <= 0 && shadow.offset.x === 0 && shadow.offset.y === 0) return true;
+  if (
+    shadow.blur <= 0 &&
+    shadow.offset.x === 0 &&
+    shadow.offset.y === 0 &&
+    (shadow.spread ?? 0) <= 0
+  )
+    return true;
   const color = shadow.color.trim().toLowerCase();
   if (color === 'transparent' || color === 'none') return true;
   const rgba = /^rgba?\(([^)]*)\)$/.exec(color);
@@ -806,6 +890,72 @@ function maxLinesBox(
         ? free
         : 0;
   return { height, offsetY };
+}
+
+/** A sombra desta lista pede formas à parte (várias sombras ou `spread`) e o nó as aceita? */
+function castsShadows(node: SceneNode, shadows: readonly Shadow[]): boolean {
+  const boxed = node.type === 'frame' || node.type === 'rect' || node.type === 'ellipse';
+  return boxed && (shadows.length > 1 || shadows.some((s) => (s.spread ?? 0) !== 0));
+}
+
+/** O raio de um canto da sombra: o do nó mais o `spread`, sem passar de 0 (canto reto continua reto). */
+function spreadRadius(radius: CornerRadius, spread: number): CornerRadius {
+  const grow = (r: number): number => (r > 0 ? Math.max(0, r + spread) : 0);
+  return typeof radius === 'number'
+    ? grow(radius)
+    : [grow(radius[0]), grow(radius[1]), grow(radius[2]), grow(radius[3])];
+}
+
+/**
+ * A forma que só leva uma sombra: desenha a silhueta do nó (crescida de `spread`) bem longe da
+ * tela e traz a sombra de volta pelo deslocamento da sombra, que o canvas 2D aplica em pixels de
+ * tela (não gira nem escala com a matriz). Assim a forma nunca aparece e a cor do nó não muda,
+ * com preenchimento translúcido ou não.
+ */
+function shadowCaster(node: SceneNode, shadow: Shadow): Konva.Shape {
+  return new KonvaShape({
+    width: node.width,
+    height: node.height,
+    listening: false,
+    sceneFunc: (ctx) => castShadow(ctx._context, node, shadow),
+  });
+}
+
+function castShadow(
+  native: CanvasRenderingContext2D,
+  node: SceneNode,
+  shadow: Shadow,
+): void {
+  if (isInvisibleShadow(shadow)) return;
+  const spread = shadow.spread ?? 0;
+  const width = node.width + 2 * spread;
+  const height = node.height + 2 * spread;
+  if (width <= 0 || height <= 0) return;
+  const m = native.getTransform();
+  const sx = Math.hypot(m.a, m.b) || 1;
+  const sy = Math.hypot(m.c, m.d) || 1;
+  // Quanto a forma sai para o lado: mais que a tela, a forma e o desfoque juntos.
+  const reach =
+    native.canvas.width +
+    native.canvas.height +
+    Math.hypot(width * sx, height * sy) +
+    2 * shadow.blur * Math.max(sx, sy) +
+    1000;
+  const away = reach / sx;
+  native.save();
+  native.shadowColor = shadow.color;
+  native.shadowBlur = shadow.blur * Math.min(sx, sy);
+  native.shadowOffsetX = shadow.offset.x * sx + away * m.a;
+  native.shadowOffsetY = shadow.offset.y * sy + away * m.b;
+  native.translate(-away - spread, -spread);
+  if (node.type === 'ellipse') {
+    native.beginPath();
+    native.ellipse(width / 2, height / 2, width / 2, height / 2, 0, 0, Math.PI * 2);
+  } else if (node.type === 'frame' || node.type === 'rect')
+    roundedRectPath(native, width, height, spreadRadius(node.cornerRadius, spread));
+  native.fillStyle = '#000000';
+  native.fill();
+  native.restore();
 }
 
 function applyShadow(shape: Konva.Shape, shadow: Shadow): void {
@@ -884,9 +1034,15 @@ export function decompose(m: Matrix): {
   return new Konva.Transform([...m]).decompose();
 }
 
+/** O que `roundedRectPath` usa do contexto: serve ao do Konva e ao nativo do canvas 2D. */
+type PathContext = Pick<
+  CanvasRenderingContext2D,
+  'beginPath' | 'moveTo' | 'lineTo' | 'arcTo' | 'closePath'
+>;
+
 /** Caminho de retângulo arredondado no contexto (para o clip dos quadros). */
 function roundedRectPath(
-  ctx: Konva.Context,
+  ctx: PathContext,
   width: number,
   height: number,
   radius: CornerRadius,

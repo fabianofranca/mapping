@@ -104,7 +104,7 @@ describe('add_container: com arquivo e com fundo', () => {
     expect(result.valid).toBe(true);
     expect(result.warnings).toBeUndefined();
     expect(result.summary[0]).toMatch(
-      /^0\. Adicionar o container com a imagem images\/foto\.webp \(300×200 px, /,
+      /^0\. Adicionar o container "Foto" com a imagem images\/foto\.webp \(300×200 px, /,
     );
     expect(result.summary[1]).toBe(
       '1. Adicionar o container "Cartão" (320×200 px, fundo #FFFFFF)',

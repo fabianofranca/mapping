@@ -58,11 +58,11 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 
 - Cada estilo lê `<escala>-size`, `<escala>-line-height`, `<escala>-weight` e `<escala>-tracking` (por exemplo `body-large-size`); sem `style`, vale `bodyLarge`.
 - A família não é escrita no componente: o texto herda a `font-sans` da especialização (Roboto), como o `TypefaceTokens.Plain` do Compose herda a fonte do tema.
-- A cor é o papel escolhido em `color`; sem `color`, `on-surface` (o `LocalContentColor` padrão). Cada papel tem a cor do modo `light` e a do `dark`.
+- A cor é o papel escolhido em `color`; sem `color`, a cor do conteúdo herdada (`on-surface` quando nada a oferece). Cada papel tem a cor do modo `light` e a do `dark`.
 - `maxLines` corta o texto na última linha permitida, sem reticências, porque o padrão do `Text` é `TextOverflow.Clip` (`font.maxLines`, sem `ellipsis`).
 
 **O que ainda difere do Compose**
 
-- `textAlign = Justify` desenha como `Start`: o formato 4 só alinha à esquerda, ao centro e à direita.
-- Dentro de um `Surface` de outra cor o Compose troca o `LocalContentColor` (por exemplo para `on-primary`); o desenho do `text` não herda a cor do pai, então é preciso escolher `color`.
+- `textAlign = Justify` desenha justificado (`font.align: "justify"`): as linhas se esticam até as duas bordas da caixa e a última linha de cada parágrafo fica à esquerda, como o `TextAlign.Justify` (`Text.kt`, linha 133: `textAlign` passa ao estilo).
+- Sem `color`, o texto lê a cor do conteúdo herdada (`LocalContentColor`, `Text.kt`, linha 123: `color.takeOrElse { style.color.takeOrElse { LocalContentColor.current } }`): dentro de um `surface` ou `scaffold` ele sai na cor que o pai oferece (por exemplo `on-primary` sobre `primary`), e sem pai, em `on-surface`. Um `color` escolhido vale mais que a herança.
 - As variantes `*Emphasized` da escala (Material 3 Expressive) ficam fora da etapa.

@@ -77,6 +77,21 @@ export const componentMessages = {
   'component.countOrField': 'use count ou field, não os dois',
   'component.repeatTemplateFrame': 'o template de uma linha deve ser do tipo "frame"',
   'component.notAllowedInRepeat': '{type} não é permitido dentro de um repeat',
+  // Formato 4: over, provide, stroke.gap e lista de sombras
+  'component.overOnlyColor': 'over só vale em $token de cor',
+  'component.expectedTokenOrColor': 'esperava nome de token ou cor',
+  'component.expectedTokenNameOrColor':
+    'esperava nome de token ([a-z0-9][a-z0-9-]*) ou cor',
+  'component.emptyName': 'nome vazio',
+  'component.providedOnlyColor': '$provided só vale onde se espera cor',
+  'component.expectedProvidedName': 'esperava nome da cor oferecida (texto não vazio)',
+  'component.gapNotWithSides': 'gap não vale com sides',
+  'component.expectedShadowCount': 'esperava de 1 a {max} sombras',
+  'component.gapNodeNotFound': 'nó não encontrado: {name}',
+  'component.gapNotInRepeat': 'stroke.gap não pode ser usado dentro de um repeat',
+  'component.gapNotSelf': 'stroke.gap.node não pode citar o próprio nó: {name}',
+  'component.gapNotInsideRepeat':
+    'stroke.gap.node não pode citar um nó dentro de um repeat: {name}',
   // Versão do formato
   'component.v4Only': 'só é permitido com formatVersion 4',
   'component.indexOnlyInRepeat': '$index só vale dentro de um repeat',

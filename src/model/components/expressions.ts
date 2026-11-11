@@ -72,6 +72,14 @@ export function sizeKey(axis: 'width' | 'height'): string {
   return `$size:${axis}`;
 }
 
+/** Valores oferecidos pelos slots dos ancestrais (cor herdada, v4), pelo nome, já resolvidos. */
+export type ProvidedValues = Readonly<Record<string, string | number>>;
+
+/** O campo de valores onde o motor entrega o valor herdado `name` (`$provided`). */
+export function providedKey(name: string): string {
+  return `$provided:${name}`;
+}
+
 /** O nome de campo do índice da linha de um `repeat` (`{ "$field": "$index" }`). */
 export const INDEX_FIELD = '$index';
 
@@ -171,19 +179,12 @@ export function evaluateCondition(condition: Condition, values: FieldValues): bo
   return false;
 }
 
+/** Chaves que marcam um objeto como expressão (as operações numéricas à parte, em `NUMERIC_OPS`). */
+const EXPR_KEYS = ['$field', '$if', '$switch', '$concat', '$rows', '$size', '$provided'];
+
 function isExprObject(value: unknown): value is Record<string, unknown> {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    !Array.isArray(value) &&
-    ('$field' in value ||
-      '$if' in value ||
-      '$switch' in value ||
-      '$concat' in value ||
-      '$rows' in value ||
-      '$size' in value ||
-      Object.keys(value).some(isNumericOp))
-  );
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  return EXPR_KEYS.some((key) => key in value) || Object.keys(value).some(isNumericOp);
 }
 
 /**
@@ -215,6 +216,12 @@ export function evaluate<T>(expr: Expr<T>, values: FieldValues, fallback: T): T 
     const chosen =
       !isEmpty(key) && Object.hasOwn(e.cases, name) ? e.cases[name] : undefined;
     if (chosen !== undefined) return evaluate(chosen, values, fallback);
+    return e.default === undefined ? fallback : evaluate(e.default, values, fallback);
+  }
+  if ('$provided' in expr) {
+    const e = expr as { $provided: string; default?: Expr<T> };
+    const value = values[providedKey(e.$provided)];
+    if (!isEmpty(value)) return value as unknown as T;
     return e.default === undefined ? fallback : evaluate(e.default, values, fallback);
   }
   if ('$rows' in expr || '$size' in expr) {

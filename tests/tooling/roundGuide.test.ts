@@ -48,6 +48,20 @@ describe('round-guide.mjs (TS1, decisão 7)', () => {
     expect(first).toContain('docs/TESTING.md');
   });
 
+  it('o quadro do "Comece aqui" leva só as linhas dos roteiros pedidos e a da seção 6', async () => {
+    const out = await build(['R0', 'R2']);
+    expect(out).toContain('| 1 | R0 — Preparação e fumaça |');
+    expect(out).toContain('| 3 | R2 — Projeto neste dispositivo e zip |');
+    expect(out).toContain('| 4 | Seção 6 — repositório de teste e MCP |');
+    expect(out).not.toContain('| 2 | R1 — Roteiro principal |');
+    expect(out).not.toContain('| 27 | R25 — Componentes fiéis |');
+    expect(out).not.toMatch(/^\| sob demanda \|/m);
+    // O quadro inteiro continua no guia completo.
+    expect(GUIDE).toContain('| 27 | R25 — Componentes fiéis |');
+    const rows = (await build(['R25'])).match(/^\| (?:\d+|sob demanda) \|/gm);
+    expect(rows).toHaveLength(2);
+  });
+
   it('fica abaixo de 35% do guia para R0, R2, R4 e R11', async () => {
     const out = await build(['R0', 'R2', 'R4', 'R11']);
     expect(Buffer.byteLength(out)).toBeLessThan(Buffer.byteLength(GUIDE) * 0.35);
@@ -258,6 +272,21 @@ describe('round-guide.mjs: faixa de passos (RB1, decisão 1c)', () => {
     expect(two).not.toContain('| R2.2 |');
     const whole = await buildFrom(FIXTURE, ['R2', 'R2.1-R2.1']);
     expect(whole).toContain('| R2.3 |');
+  });
+
+  // CL1 / T9: um passo avulso (`R2.1`) vale como a faixa de um passo só.
+  it('um passo avulso (R2.1, R0.1) vale como faixa de um passo', async () => {
+    const out = await buildFrom(FIXTURE, ['R2.1', 'R2.3']);
+    expect(out).toContain('| R2.1 |');
+    expect(out).toContain('| R2.3 |');
+    expect(out).not.toContain('| R2.2 |');
+    expect(out).toMatch(/^### R2 /m);
+  });
+
+  it('passo avulso com letra (R6.8a) mantém a letra minúscula', async () => {
+    const out = await build(['R6.8a']);
+    expect(out).toContain('| R6.8a |');
+    expect(out).not.toContain('| R6.8b |');
   });
 
   it('faixa com passo inexistente falha', async () => {
@@ -571,7 +600,7 @@ describe('round-guide.mjs: base, índice e trechos (#1232, GL1)', () => {
         (n, l) => n + Number(/^Passos \((\d+)\)/.exec(l)?.[1]),
         0,
       );
-      expect(sum).toBe(52);
+      expect(sum).toBe(53);
       expect(out).not.toMatch(/^\| R12\.\d/m);
     });
 

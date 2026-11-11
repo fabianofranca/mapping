@@ -507,6 +507,8 @@ describe('scripts/testing/ listado no repositório', () => {
         'cloud.mjs',
         'fiel.mjs',
         'fx.mjs',
+        'herdada.mjs',
+        'justificado.mjs',
         'large-project.mjs',
         'mcp-stdio-client.mjs',
         'mock-github-release.mjs',
@@ -514,6 +516,7 @@ describe('scripts/testing/ listado no repositório', () => {
         'rot.mjs',
         'round-guide.d.mts',
         'round-guide.mjs',
+        'sombras.mjs',
       ].sort(),
     );
   });

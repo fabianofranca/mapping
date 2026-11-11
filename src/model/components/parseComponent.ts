@@ -10,6 +10,7 @@ import {
   COMPONENT_FORMAT,
   COMPONENT_FORMAT_VERSIONS,
   COMPONENT_FORMAT_VERSION_FIDELITY,
+  IMAGE_FITS_V4,
   SCREEN_ANCHORS,
   STROKE_SIDES,
   type ComponentFile,
@@ -23,7 +24,7 @@ import {
   referencedFields,
 } from './expressions';
 import { LAYOUT_JUSTIFIES } from './layoutValues';
-import { TOKEN_NAME_PATTERN, type TokenKind } from './tokens';
+import { TOKEN_NAME_PATTERN, isLiteralColor, type TokenKind } from './tokens';
 import { isRecord } from '../isRecord';
 import type { ModelMessageTemplateCode } from '../messages';
 import { componentCodeForText } from '../messages/textLookup';
@@ -96,6 +97,7 @@ const EXPR_OPS: readonly string[] = [
   '$token',
   '$rows',
   '$size',
+  '$provided',
   ...NUMERIC_OP_NAMES,
 ];
 const CONDITION_OPS: readonly string[] = [
@@ -118,6 +120,9 @@ const DIRECT_CONDITION_OPS: readonly string[] = [
 ];
 const ID_PATTERN = /^[a-z0-9][a-z0-9_-]*$/;
 const PERCENT_PATTERN = /^\d+(\.\d+)?%$/;
+
+/** Máximo de sombras por nó (`shadow` como lista, v4). */
+const MAX_SHADOWS = 4;
 
 /** Chaves de estilo que o `repeat` não tem: o desenho é do `template` de cada linha. */
 const REPEAT_REJECTED_KEYS = ['fill', 'stroke', 'shadow', 'cornerRadius'];
@@ -355,7 +360,7 @@ function checkNumericExpr(
   out: Ctx,
 ): void {
   checkKeys(value, [op], path, out);
-  if (check.tokenKind !== 'number' && check !== checkTextOrNumber)
+  if (check.tokenKind !== 'number' && !acceptsAnyValue(check))
     return add(out, path, `${op} só vale onde se espera número`);
   checkOperands(value[op], join(path, op), NUMERIC_OPS[op] as never, out);
 }
@@ -369,7 +374,7 @@ function checkCountExpr(
   out: Ctx,
 ): void {
   checkKeys(value, [op], path, out);
-  if (check.tokenKind !== 'number' && check !== checkTextOrNumber)
+  if (check.tokenKind !== 'number' && !acceptsAnyValue(check))
     return add(out, path, `${op} só vale onde se espera número`);
   const at = join(path, op);
   if (op === '$rows') return checkFieldKey(value.$rows, at, out);
@@ -383,7 +388,7 @@ function checkFieldKey(value: unknown, path: string, out: Ctx): void {
 }
 
 function checkTokenExpr(value: Rec, path: string, check: Check, out: Ctx): void {
-  checkKeys(value, ['$token', 'alpha'], path, out);
+  checkKeys(value, ['$token', 'alpha', 'over'], path, out);
   const at = join(path, '$token');
   const kind = check.tokenKind;
   if (kind === undefined)
@@ -393,6 +398,28 @@ function checkTokenExpr(value: Rec, path: string, check: Check, out: Ctx): void 
     add(out, at, 'esperava nome de token ([a-z0-9][a-z0-9-]*)');
   else if (kind !== undefined) out.refs?.push({ path, name, kind });
   if ('alpha' in value) checkTokenAlpha(value.alpha, path, kind, out);
+  if ('over' in value) checkTokenOver(value.over, path, kind, out);
+}
+
+/**
+ * `over` de um `$token` (v4): só em posição de cor; o nome de um token de cor (coletado como
+ * referência de cor, para a biblioteca recusar o nome desconhecido) ou uma cor literal.
+ */
+function checkTokenOver(
+  over: unknown,
+  path: string,
+  kind: TokenKind | undefined,
+  out: Ctx,
+): void {
+  if (kind === undefined) return;
+  if (kind !== 'color')
+    return add(out, join(path, '$token'), 'over só vale em $token de cor');
+  const at = join(path, 'over');
+  if (typeof over !== 'string') return add(out, at, 'esperava nome de token ou cor');
+  if (isLiteralColor(over)) return;
+  if (!TOKEN_NAME_PATTERN.test(over))
+    return add(out, at, 'esperava nome de token ([a-z0-9][a-z0-9-]*) ou cor');
+  out.refs?.push({ path: at, name: over, kind: 'color' });
 }
 
 /** `alpha` de um `$token`: só em posição de cor; número de 0 a 1, literal ou `$token` de número. */
@@ -406,6 +433,26 @@ function checkTokenAlpha(
   if (kind !== 'color')
     return add(out, join(path, '$token'), 'alpha só vale em $token de cor');
   checkLiteralOrToken(alpha, join(path, 'alpha'), checkUnit, out);
+}
+
+/** Uma posição que aceita texto ou número (o texto de um nó, o valor de um `provide`): operações numéricas valem nela. */
+function acceptsAnyValue(check: Check): boolean {
+  return check === checkTextOrNumber || check === checkProvided;
+}
+
+/** O valor de um `provide`: texto ou número, ou uma expressão (`$token` de cor entre elas). */
+const checkProvided: Check = Object.assign(
+  (v: unknown, p: string, out: Ctx) => checkTextOrNumber(v, p, out),
+  { tokenKind: 'color' as TokenKind },
+);
+
+/** `provide` do slot (v4): nome → valor, o nome não vazio. */
+function checkProvide(value: unknown, path: string, out: Ctx): void {
+  if (!isRecord(value)) return add(out, path, 'esperava objeto');
+  for (const [name, expr] of Object.entries(value)) {
+    if (name.trim() === '') add(out, path, 'nome vazio');
+    else checkExpr(expr, join(path, name), checkProvided, out);
+  }
 }
 
 /** Confere uma expressão: operador (`$field`, `$if`…) ou o literal conferido por `check`. */
@@ -453,6 +500,15 @@ function checkExpr(value: unknown, path: string, check: Check, out: Ctx): void {
     }
     case '$token':
       return checkTokenExpr(value, path, check, out);
+    case '$provided':
+      // Só desenho: o que muda a geometria (tamanho, espaço, texto) não herda.
+      if (check.tokenKind !== 'color')
+        return add(out, path, '$provided só vale onde se espera cor');
+      checkKeys(value, ['$provided', 'default'], path, out);
+      if (typeof value.$provided !== 'string' || value.$provided.trim() === '')
+        add(out, at, 'esperava nome da cor oferecida (texto não vazio)');
+      if ('default' in value) checkExpr(value.default, join(path, 'default'), check, out);
+      return;
     case '$concat':
       checkKeys(value, ['$concat'], path, out);
       if (!Array.isArray(value.$concat)) return add(out, at, 'esperava lista de partes');
@@ -576,7 +632,7 @@ function checkStroke(value: unknown, path: string, out: Ctx, nodeType?: string):
   if (!isRecord(value)) return add(out, path, 'esperava objeto');
   checkKeys(
     value,
-    ['color', 'width', 'align', 'dash', 'cap', 'join', 'sides', 'scale', 'offset'],
+    ['color', 'width', 'align', 'dash', 'cap', 'join', 'sides', 'scale', 'offset', 'gap'],
     path,
     out,
   );
@@ -588,17 +644,48 @@ function checkStroke(value: unknown, path: string, out: Ctx, nodeType?: string):
     oneOf(['inside', 'center', 'outside'])(value.align, join(path, 'align'), out);
   if ('dash' in value) checkExpr(value.dash, join(path, 'dash'), checkDash, out);
   checkStrokeV4(value, path, nodeType, out);
+  if ('gap' in value) checkGap(value, join(path, 'gap'), nodeType, out);
 }
 
-function checkShadow(value: unknown, path: string, out: Ctx): void {
+/** `stroke.gap`: `{ node, padding? }`, só em `frame` e `rect` e nunca junto com `sides`. */
+function checkGap(
+  stroke: Rec,
+  path: string,
+  nodeType: string | undefined,
+  out: Ctx,
+): void {
+  const value = stroke.gap;
+  if (nodeType !== undefined && nodeType !== 'frame' && nodeType !== 'rect')
+    return add(out, path, `só vale em frame e rect (este é ${nodeType})`);
   if (!isRecord(value)) return add(out, path, 'esperava objeto');
-  checkKeys(value, ['color', 'x', 'y', 'blur'], path, out);
+  checkKeys(value, ['node', 'padding'], path, out);
+  if ('sides' in stroke) add(out, path, 'gap não vale com sides');
+  if (!('node' in value)) add(out, join(path, 'node'), 'campo obrigatório');
+  else checkString(value.node, join(path, 'node'), out);
+  if ('padding' in value)
+    checkExpr(value.padding, join(path, 'padding'), checkNumber, out);
+}
+
+/** Uma sombra (objeto): `color`, `x`, `y`, `blur` e `spread`. */
+function checkShadowItem(value: unknown, path: string, out: Ctx): void {
+  if (!isRecord(value)) return add(out, path, 'esperava objeto');
+  checkKeys(value, ['color', 'x', 'y', 'blur', 'spread'], path, out);
   if (!('color' in value)) add(out, join(path, 'color'), 'campo obrigatório');
   else checkExpr(value.color, join(path, 'color'), checkColor, out);
   if ('x' in value) checkLiteralOrToken(value.x, join(path, 'x'), checkNumber, out);
   if ('y' in value) checkLiteralOrToken(value.y, join(path, 'y'), checkNumber, out);
   if ('blur' in value)
     checkLiteralOrToken(value.blur, join(path, 'blur'), checkNonNegative, out);
+  if ('spread' in value)
+    checkLiteralOrToken(value.spread, join(path, 'spread'), checkNumber, out);
+}
+
+/** `shadow`: uma sombra ou, na v4, uma lista de 1 a 4 (a versão é conferida à parte). */
+function checkShadow(value: unknown, path: string, out: Ctx): void {
+  if (!Array.isArray(value)) return checkShadowItem(value, path, out);
+  if (value.length < 1 || value.length > MAX_SHADOWS)
+    return add(out, path, `esperava de 1 a ${MAX_SHADOWS} sombras`);
+  value.forEach((item: unknown, i) => checkShadowItem(item, `${path}[${i}]`, out));
 }
 
 /** `font.maxLines`: inteiro maior ou igual a 1. */
@@ -616,7 +703,7 @@ function checkFont(value: unknown, path: string, out: Ctx): void {
     italic: checkBoolean,
     lineHeight: checkNumber,
     letterSpacing: checkNumber,
-    align: oneOf(['left', 'center', 'right']),
+    align: oneOf(['left', 'center', 'right', 'justify']),
     verticalAlign: oneOf(['top', 'middle', 'bottom', 'cap-middle']),
     decoration: oneOf(['none', 'underline', 'line-through']),
     wrap: oneOf(['word', 'none']),
@@ -770,7 +857,7 @@ function checkNode(value: unknown, path: string, out: Ctx): void {
     ellipse: [],
     text: ['text', 'runs', 'font', 'color'],
     path: ['d', 'viewBox', 'fillRule'],
-    slot: ['label', 'layout'],
+    slot: ['label', 'layout', 'provide'],
     repeat: ['field', 'count', 'direction', 'gap', 'distribute', 'template'],
     image: ['src', 'fit'],
     icon: ['name', 'color', 'strokeWidth'],
@@ -834,6 +921,7 @@ function checkNode(value: unknown, path: string, out: Ctx): void {
     case 'slot':
       if ('label' in value) checkExpr(value.label, join(path, 'label'), checkString, out);
       if ('layout' in value) checkLayout(value.layout, join(path, 'layout'), out);
+      if ('provide' in value) checkProvide(value.provide, join(path, 'provide'), out);
       return;
     case 'repeat':
       checkRepeat(value, path, out);
@@ -880,7 +968,11 @@ function checkImage(value: Rec, path: string, out: Ctx): void {
     }
   }
   if ('fit' in value)
-    oneOf(['cover', 'contain', 'fill'])(value.fit, join(path, 'fit'), out);
+    oneOf(['cover', 'contain', 'fill', ...IMAGE_FITS_V4])(
+      value.fit,
+      join(path, 'fit'),
+      out,
+    );
 }
 
 const checkRepeatCount = tokenCheck('number', (v, p, out) => {
@@ -947,6 +1039,8 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
   ['stroke', 'sides'],
   ['stroke', 'scale'],
   ['stroke', 'offset'],
+  ['stroke', 'gap'],
+  ['shadow', 'spread'],
   ['layout', 'reverse'],
   ['minWidth'],
   ['maxWidth'],
@@ -959,6 +1053,7 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
   ['font', 'maxLines'],
   ['runs'],
   ['rotation'],
+  ['provide'],
 ];
 
 /** Chaves que valem em qualquer versão como literal, mas só com expressão na formatVersion 4. */
@@ -980,9 +1075,91 @@ const V4_EXPR_KEYS: readonly (readonly string[])[] = [
 /** Valores literais que só existem na formatVersion 4: a cadeia da chave e o valor. */
 const V4_LITERAL_VALUES: readonly (readonly [readonly string[], string])[] = [
   [['font', 'verticalAlign'], 'cap-middle'],
+  [['font', 'align'], 'justify'],
+  ...IMAGE_FITS_V4.map((fit): readonly [readonly string[], string] => [['fit'], fit]),
   [['layout', 'justify'], 'space-around'],
   [['layout', 'justify'], 'space-evenly'],
 ];
+
+/** `shadow` como lista (v4) numa versão anterior à 4: `só é permitido com formatVersion 4`, no caminho de `shadow`. */
+function shadowListVersionIssues(version: unknown, template: unknown): ComponentIssue[] {
+  const out: ComponentIssue[] = [];
+  if (typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY)
+    return out;
+  const walk = (node: unknown, at: string): void => {
+    if (!isRecord(node)) return;
+    if (Array.isArray(node.shadow)) addIssue(out, join(at, 'shadow'), V4_ONLY_MESSAGE);
+    if (Array.isArray(node.children))
+      node.children.forEach((c: unknown, i) => walk(c, `${join(at, 'children')}[${i}]`));
+    if (node.type === 'repeat') walk(node.template, join(at, 'template'));
+  };
+  walk(template, 'template');
+  return out;
+}
+
+/** O nome que o desenho dá ao nó (`name`, ou o tipo; num ícone, o nome do ícone literal). */
+function templateNodeName(node: Rec): string | undefined {
+  const type = typeof node.type === 'string' ? node.type : undefined;
+  if (type === 'icon') return typeof node.name === 'string' ? node.name : 'icon';
+  if (typeof node.name === 'string') return node.name;
+  return type;
+}
+
+/**
+ * Os nomes dos nós do template (pelos `children`; com `viaRepeat`, também pelo `template` dos
+ * `repeat`).
+ */
+function templateNames(
+  node: unknown,
+  viaRepeat = true,
+  names: Set<string> = new Set(),
+): Set<string> {
+  if (!isRecord(node)) return names;
+  const own = templateNodeName(node);
+  if (own !== undefined) names.add(own);
+  if (Array.isArray(node.children))
+    node.children.forEach((c) => templateNames(c, viaRepeat, names));
+  if (viaRepeat && node.type === 'repeat') templateNames(node.template, viaRepeat, names);
+  return names;
+}
+
+/** Por que o `stroke.gap.node` de `node` não abre vão (o vão só se abre num nó fora de `repeat` e que não é o próprio). */
+function gapNodeProblem(
+  node: Rec,
+  target: string,
+  inRepeat: boolean,
+  known: { all: Set<string>; direct: Set<string> },
+): string | undefined {
+  if (!known.all.has(target)) return `nó não encontrado: ${target}`;
+  if (inRepeat) return 'stroke.gap não pode ser usado dentro de um repeat';
+  if (templateNodeName(node) === target)
+    return `stroke.gap.node não pode citar o próprio nó: ${target}`;
+  if (!known.direct.has(target))
+    return `stroke.gap.node não pode citar um nó dentro de um repeat: ${target}`;
+  return undefined;
+}
+
+/**
+ * `stroke.gap.node` precisa citar o nome de outro nó do template, fora de `repeat` (`nó não
+ * encontrado: <nome>`); dentro de um `repeat` ou citando o próprio nó o vão não abriria.
+ */
+function checkGapNodes(template: unknown, out: Ctx): void {
+  const known = { all: templateNames(template), direct: templateNames(template, false) };
+  const walk = (node: unknown, at: string, inRepeat: boolean): void => {
+    if (!isRecord(node)) return;
+    const gap = isRecord(node.stroke) ? node.stroke.gap : undefined;
+    if (isRecord(gap) && typeof gap.node === 'string') {
+      const problem = gapNodeProblem(node, gap.node, inRepeat, known);
+      if (problem !== undefined) add(out, join(at, 'stroke.gap.node'), problem);
+    }
+    if (Array.isArray(node.children))
+      node.children.forEach((c: unknown, i) =>
+        walk(c, `${join(at, 'children')}[${i}]`, inRepeat),
+      );
+    if (node.type === 'repeat') walk(node.template, join(at, 'template'), true);
+  };
+  walk(template, 'template', false);
+}
 
 /** `$token` em qualquer ponto do template, numa versão anterior à 4: `só é permitido com formatVersion 4`. */
 function tokenVersionIssues(version: unknown, template: unknown): ComponentIssue[] {
@@ -1005,6 +1182,7 @@ function isV4OnlyOp(key: string): boolean {
     isNumericOp(key) ||
     key === '$rows' ||
     key === '$size' ||
+    key === '$provided' ||
     (COMPARISON_OPS as readonly string[]).includes(key)
   );
 }
@@ -1266,6 +1444,7 @@ function collectIssues(input: unknown, refs: TokenRef[] | null): ComponentIssue[
     )
       add(out, 'template.rotation', 'não vale na raiz');
     checkNode(input.template, 'template', out);
+    checkGapNodes(input.template, out);
     if (version === 1) {
       for (const node of nodesOfTypes(input.template, 'template', ['repeat'])) {
         add(out, node.path, 'o nó repeat só existe na formatVersion 2');
@@ -1281,6 +1460,7 @@ function collectIssues(input: unknown, refs: TokenRef[] | null): ComponentIssue[
         V4_LITERAL_VALUES,
       ),
     );
+    issues.push(...shadowListVersionIssues(version, input.template));
     issues.push(...tokenVersionIssues(version, input.template));
     issues.push(...numericVersionIssues(version, input.template));
     issues.push(...indexIssues(version, input.template));

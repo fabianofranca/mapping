@@ -345,7 +345,10 @@
               }
             },
             "default": {
-              "$token": "on-surface"
+              "$provided": "content-color",
+              "default": {
+                "$token": "on-surface"
+              }
             }
           }
         },

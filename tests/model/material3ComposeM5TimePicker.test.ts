@@ -231,6 +231,23 @@ describe('M5 — time-picker: seletor AM/PM', () => {
   });
 });
 
+/**
+ * O número que a alça cobre: a cópia em on-primary (`números sob a alça`, dentro da `alça`, que recorta) cujo
+ * centro cai no centro da alça (a ±1 px). Sem número na posição (minuto fora da grade de 5), nenhuma.
+ */
+const underHandle = (d: Drawing): TextNode | undefined => {
+  const handle = box(d, 'alça');
+  const boxes = absoluteBoxes(d.root);
+  return [...walk(handle.node)].find((n): n is TextNode => {
+    if (n.type !== 'text' || n.name !== 'número sob a alça') return false;
+    const b = boxes.get(n.id)!;
+    return (
+      Math.abs(b.x + b.width / 2 - (handle.x + handle.width / 2)) <= 1 &&
+      Math.abs(b.y + b.height / 2 - (handle.y + handle.height / 2)) <= 1
+    );
+  });
+};
+
 /** Os números do mostrador, na ordem em que o `repeat` os desenha (o anel externo e, em 24 horas, o interno). */
 const clockNumbers = (d: Drawing) =>
   [...walk(d.root)]
@@ -279,9 +296,10 @@ describe('M5 — time-picker: mostrador (relógio)', () => {
       const [cx, cy] = handleCenter(60, 69);
       near(handle.x - face.x + 24, cx);
       near(handle.y - face.y + 24, cy);
-      expect(textOf(d, 'alça')).toBe('14');
-      expect(colorOf(d, 'alça')).toBe(tok('on-primary', mode));
-      expect(fontOf(textIn(d, 'alça'))).toEqual(scale('body-large'));
+      // o número escolhido é a cópia dos números em on-primary que aparece dentro da alça
+      expect(underHandle(d)?.text).toBe('14');
+      expect(solid(underHandle(d)?.fills ?? [])).toBe(tok('on-primary', mode));
+      expect(fontOf(underHandle(d))).toEqual(scale('body-large'));
       const track = named(d, 'trilho') as PathNode;
       const end = /L\s*([-\d.]+)[ ,]([-\d.]+)/.exec(track.d)!;
       near(Number(end[1]), cx);
@@ -296,14 +314,14 @@ describe('M5 — time-picker: mostrador (relógio)', () => {
     const [cx, cy] = handleCenter(270, 101);
     near(handle.x - face.x + 24, cx);
     near(handle.y - face.y + 24, cy);
-    expect(textOf(d, 'alça')).toBe('45');
+    expect(underHandle(d)?.text).toBe('45');
     for (const minute of [7, 59]) {
       const off = draw({ ...PICKER_12_MINUTE, minute }, 'light');
       const [ox, oy] = handleCenter(minute * 6, 101);
       const h = box(off, 'alça');
       near(h.x - box(off, 'relógio').x + 24, ox);
       near(h.y - box(off, 'relógio').y + 24, oy);
-      expect(textOf(off, 'alça') ?? '').toBe('');
+      expect(underHandle(off)).toBeUndefined();
     }
   });
 
@@ -313,13 +331,13 @@ describe('M5 — time-picker: mostrador (relógio)', () => {
     const h = box(twelve, 'alça');
     near(h.x - box(twelve, 'relógio').x + 24, cx);
     near(h.y - box(twelve, 'relógio').y + 24, cy);
-    expect(textOf(twelve, 'alça')).toBe('2');
+    expect(underHandle(twelve)?.text).toBe('2');
     const day = draw({ ...PICKER_24, hour: 3 }, 'light');
     const [dx, dy] = handleCenter(90, 101);
     const g = box(day, 'alça');
     near(g.x - box(day, 'relógio').x + 24, dx);
     near(g.y - box(day, 'relógio').y + 24, dy);
-    expect(textOf(day, 'alça')).toBe('3');
+    expect(underHandle(day)?.text).toBe('3');
   });
 
   it('números em body-large, on-surface, 12 no anel externo (raio 101) e 12 no interno (raio 69, só 24 horas)', () => {

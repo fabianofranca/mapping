@@ -70,8 +70,12 @@
               "bottom": 0
             },
             "cornerRadius": [
-              { "$token": "corner-extra-small" },
-              { "$token": "corner-extra-small" },
+              {
+                "$token": "corner-extra-small"
+              },
+              {
+                "$token": "corner-extra-small"
+              },
               0,
               0
             ],
@@ -261,117 +265,11 @@
                 "then": 2,
                 "else": 1
               },
-              "align": "inside"
-            },
-            "opacity": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": {
-                "$token": "state-disabled-container"
-              },
-              "else": 1
-            },
-            "visible": {
-              "$and": [
-                {
-                  "$eq": ["style", "outlined"]
-                },
-                {
-                  "$not": {
-                    "$or": [
-                      {
-                        "$has": "value"
-                      },
-                      {
-                        "$has": "placeholder"
-                      }
-                    ]
-                  }
-                }
-              ]
-            }
-          },
-          {
-            "type": "rect",
-            "name": "contorno (lados)",
-            "anchors": {
-              "left": 0,
-              "right": 0,
-              "top": 8,
-              "bottom": 0
-            },
-            "fill": "none",
-            "stroke": {
-              "color": {
-                "$if": {
-                  "$eq": ["enabled", "false"]
-                },
-                "then": {
-                  "$token": "on-surface"
-                },
-                "else": {
-                  "$if": {
-                    "$eq": ["interaction", "focused"]
-                  },
-                  "then": {
-                    "$if": {
-                      "$eq": ["isError", "true"]
-                    },
-                    "then": {
-                      "$token": "error"
-                    },
-                    "else": {
-                      "$token": "primary"
-                    }
-                  },
-                  "else": {
-                    "$if": {
-                      "$eq": ["interaction", "hovered"]
-                    },
-                    "then": {
-                      "$if": {
-                        "$eq": ["isError", "true"]
-                      },
-                      "then": {
-                        "$token": "on-error-container"
-                      },
-                      "else": {
-                        "$token": "on-surface"
-                      }
-                    },
-                    "else": {
-                      "$if": {
-                        "$eq": ["isError", "true"]
-                      },
-                      "then": {
-                        "$token": "error"
-                      },
-                      "else": {
-                        "$token": "outline"
-                      }
-                    }
-                  }
-                }
-              },
-              "width": {
-                "$if": {
-                  "$and": [
-                    {
-                      "$eq": ["interaction", "focused"]
-                    },
-                    {
-                      "$not": {
-                        "$eq": ["enabled", "false"]
-                      }
-                    }
-                  ]
-                },
-                "then": 2,
-                "else": 1
-              },
               "align": "inside",
-              "sides": ["left", "bottom", "right"]
+              "gap": {
+                "node": "rótulo minimizado",
+                "padding": 4
+              }
             },
             "opacity": {
               "$if": {
@@ -383,21 +281,7 @@
               "else": 1
             },
             "visible": {
-              "$and": [
-                {
-                  "$eq": ["style", "outlined"]
-                },
-                {
-                  "$or": [
-                    {
-                      "$has": "value"
-                    },
-                    {
-                      "$has": "placeholder"
-                    }
-                  ]
-                }
-              ]
+              "$eq": ["style", "outlined"]
             }
           },
           {
@@ -880,7 +764,9 @@
                                 }
                               },
                               "verticalAlign": {
-                                "$if": { "$eq": ["singleLine", "true"] },
+                                "$if": {
+                                  "$eq": ["singleLine", "true"]
+                                },
                                 "then": "cap-middle",
                                 "else": "top"
                               }
@@ -1220,90 +1106,10 @@
             "children": [
               {
                 "type": "rect",
-                "name": "trecho inicial",
+                "name": "recuo",
                 "width": 12,
                 "height": 8,
-                "fill": "none",
-                "stroke": {
-                  "color": {
-                    "$if": {
-                      "$eq": ["enabled", "false"]
-                    },
-                    "then": {
-                      "$token": "on-surface"
-                    },
-                    "else": {
-                      "$if": {
-                        "$eq": ["interaction", "focused"]
-                      },
-                      "then": {
-                        "$if": {
-                          "$eq": ["isError", "true"]
-                        },
-                        "then": {
-                          "$token": "error"
-                        },
-                        "else": {
-                          "$token": "primary"
-                        }
-                      },
-                      "else": {
-                        "$if": {
-                          "$eq": ["interaction", "hovered"]
-                        },
-                        "then": {
-                          "$if": {
-                            "$eq": ["isError", "true"]
-                          },
-                          "then": {
-                            "$token": "on-error-container"
-                          },
-                          "else": {
-                            "$token": "on-surface"
-                          }
-                        },
-                        "else": {
-                          "$if": {
-                            "$eq": ["isError", "true"]
-                          },
-                          "then": {
-                            "$token": "error"
-                          },
-                          "else": {
-                            "$token": "outline"
-                          }
-                        }
-                      }
-                    }
-                  },
-                  "width": {
-                    "$if": {
-                      "$and": [
-                        {
-                          "$eq": ["interaction", "focused"]
-                        },
-                        {
-                          "$not": {
-                            "$eq": ["enabled", "false"]
-                          }
-                        }
-                      ]
-                    },
-                    "then": 2,
-                    "else": 1
-                  },
-                  "align": "inside",
-                  "sides": ["top"]
-                },
-                "opacity": {
-                  "$if": {
-                    "$eq": ["enabled", "false"]
-                  },
-                  "then": {
-                    "$token": "state-disabled-container"
-                  },
-                  "else": 1
-                }
+                "fill": "none"
               },
               {
                 "type": "frame",
@@ -1317,7 +1123,7 @@
                 "children": [
                   {
                     "type": "text",
-                    "name": "rótulo",
+                    "name": "rótulo minimizado",
                     "text": {
                       "$field": "label"
                     },
@@ -1406,93 +1212,6 @@
                     }
                   }
                 ]
-              },
-              {
-                "type": "rect",
-                "name": "trecho final",
-                "width": "fill",
-                "height": 8,
-                "fill": "none",
-                "stroke": {
-                  "color": {
-                    "$if": {
-                      "$eq": ["enabled", "false"]
-                    },
-                    "then": {
-                      "$token": "on-surface"
-                    },
-                    "else": {
-                      "$if": {
-                        "$eq": ["interaction", "focused"]
-                      },
-                      "then": {
-                        "$if": {
-                          "$eq": ["isError", "true"]
-                        },
-                        "then": {
-                          "$token": "error"
-                        },
-                        "else": {
-                          "$token": "primary"
-                        }
-                      },
-                      "else": {
-                        "$if": {
-                          "$eq": ["interaction", "hovered"]
-                        },
-                        "then": {
-                          "$if": {
-                            "$eq": ["isError", "true"]
-                          },
-                          "then": {
-                            "$token": "on-error-container"
-                          },
-                          "else": {
-                            "$token": "on-surface"
-                          }
-                        },
-                        "else": {
-                          "$if": {
-                            "$eq": ["isError", "true"]
-                          },
-                          "then": {
-                            "$token": "error"
-                          },
-                          "else": {
-                            "$token": "outline"
-                          }
-                        }
-                      }
-                    }
-                  },
-                  "width": {
-                    "$if": {
-                      "$and": [
-                        {
-                          "$eq": ["interaction", "focused"]
-                        },
-                        {
-                          "$not": {
-                            "$eq": ["enabled", "false"]
-                          }
-                        }
-                      ]
-                    },
-                    "then": 2,
-                    "else": 1
-                  },
-                  "align": "inside",
-                  "sides": ["top"]
-                },
-                "opacity": {
-                  "$if": {
-                    "$eq": ["enabled", "false"]
-                  },
-                  "then": {
-                    "$token": "state-disabled-container"
-                  },
-                  "else": 1
-                }
               }
             ]
           }

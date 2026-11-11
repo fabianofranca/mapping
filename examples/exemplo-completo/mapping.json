@@ -22,7 +22,7 @@
     },
     {
       "id": "material3-compose",
-      "version": 6,
+      "version": 7,
       "file": "specs/material3-compose/material3-compose.spec.json"
     },
     {

@@ -112,13 +112,12 @@
                 ],
                 "fill": {
                   "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "on-surface" },
+                  "then": {
+                    "$token": "on-surface",
+                    "alpha": { "$token": "state-disabled-container" },
+                    "over": "surface"
+                  },
                   "else": { "$token": "secondary-container" }
-                },
-                "opacity": {
-                  "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "state-disabled-container" },
-                  "else": 1
                 }
               },
               {
@@ -130,13 +129,12 @@
                 "cornerRadius": { "$token": "corner-full" },
                 "fill": {
                   "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "on-surface" },
+                  "then": {
+                    "$token": "on-surface",
+                    "alpha": { "$token": "state-disabled-content" },
+                    "over": "surface"
+                  },
                   "else": { "$token": "primary" }
-                },
-                "opacity": {
-                  "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "state-disabled-content" },
-                  "else": 1
                 }
               }
             ]
@@ -162,13 +160,12 @@
                 "visible": { "$not": { "$eq": ["type", "range"] } },
                 "fill": {
                   "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "on-surface" },
+                  "then": {
+                    "$token": "on-surface",
+                    "alpha": { "$token": "state-disabled-content" },
+                    "over": "surface"
+                  },
                   "else": { "$token": "primary" }
-                },
-                "opacity": {
-                  "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "state-disabled-content" },
-                  "else": 1
                 }
               },
               {
@@ -180,13 +177,12 @@
                 "visible": { "$eq": ["type", "range"] },
                 "fill": {
                   "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "on-surface" },
+                  "then": {
+                    "$token": "on-surface",
+                    "alpha": { "$token": "state-disabled-content" },
+                    "over": "surface"
+                  },
                   "else": { "$token": "primary" }
-                },
-                "opacity": {
-                  "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "state-disabled-content" },
-                  "else": 1
                 }
               }
             ]
@@ -359,13 +355,12 @@
                 ],
                 "fill": {
                   "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "on-surface" },
+                  "then": {
+                    "$token": "on-surface",
+                    "alpha": { "$token": "state-disabled-container" },
+                    "over": "surface"
+                  },
                   "else": { "$token": "secondary-container" }
-                },
-                "opacity": {
-                  "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "state-disabled-container" },
-                  "else": 1
                 }
               },
               {
@@ -408,13 +403,12 @@
                 "cornerRadius": { "$token": "corner-full" },
                 "fill": {
                   "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "on-surface" },
+                  "then": {
+                    "$token": "on-surface",
+                    "alpha": { "$token": "state-disabled-content" },
+                    "over": "surface"
+                  },
                   "else": { "$token": "primary" }
-                },
-                "opacity": {
-                  "$if": { "$eq": ["enabled", "false"] },
-                  "then": { "$token": "state-disabled-content" },
-                  "else": 1
                 }
               }
             ]
@@ -457,13 +451,12 @@
               "height": 4,
               "fill": {
                 "$if": { "$eq": ["enabled", "false"] },
-                "then": { "$token": "on-surface" },
+                "then": {
+                  "$token": "on-surface",
+                  "alpha": { "$token": "state-disabled-container" },
+                  "over": "surface"
+                },
                 "else": { "$token": "secondary-container" }
-              },
-              "opacity": {
-                "$if": { "$eq": ["enabled", "false"] },
-                "then": { "$token": "state-disabled-container" },
-                "else": 1
               },
               "visible": {
                 "$and": [
@@ -544,13 +537,12 @@
               "height": 4,
               "fill": {
                 "$if": { "$eq": ["enabled", "false"] },
-                "then": { "$token": "on-surface" },
+                "then": {
+                  "$token": "on-surface",
+                  "alpha": { "$token": "state-disabled-content" },
+                  "over": "surface"
+                },
                 "else": { "$token": "primary" }
-              },
-              "opacity": {
-                "$if": { "$eq": ["enabled", "false"] },
-                "then": { "$token": "state-disabled-content" },
-                "else": 1
               },
               "visible": {
                 "$and": [

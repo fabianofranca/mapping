@@ -159,7 +159,10 @@
             }
           },
           "default": {
-            "$token": "on-surface"
+            "$provided": "content-color",
+            "default": {
+              "$token": "on-surface"
+            }
           }
         },
         "font": {
@@ -381,7 +384,7 @@
               "Start": "left",
               "Center": "center",
               "End": "right",
-              "Justify": "left"
+              "Justify": "justify"
             },
             "default": "left"
           },
