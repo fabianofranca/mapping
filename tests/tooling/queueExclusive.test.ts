@@ -167,6 +167,16 @@ describe('painel.py — etapa exclusiva (FM2, decisão 12)', () => {
     expect(motivos().slice(0, 2)).toEqual(['#2 começa', '#1 exclusiva #2 em andamento']);
   });
 
+  it('a exclusiva que espera não segura as candidatas comuns de depois dela (a drenagem é o "Drenar")', () => {
+    etapa('#1', ficha('nenhuma', 'a.ts'), 'status=em andamento', 'started=now');
+    etapa('#2', ficha('nenhuma', 'b.ts'), 'exclusive=sim');
+    etapa('#3', ficha('nenhuma', 'c.ts'));
+    expect(motivos().slice(0, 2)).toEqual([
+      '#2 exclusiva (espera a fila esvaziar)',
+      '#3 começa',
+    ]);
+  });
+
   it('com a exclusiva começada, nenhuma outra começa', () => {
     etapa(
       '#1',
