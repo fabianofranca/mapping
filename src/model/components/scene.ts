@@ -185,6 +185,12 @@ export interface TextStyle {
   readonly ellipsis?: true;
   /** Máximo de linhas desenhadas. */
   readonly maxLines?: number;
+  /**
+   * `baselinePadding.top` resolvido (px): a primeira linha de base fica a esta distância do topo
+   * do nó, com o texto posto pela fonte de quem desenha (`verticalAlign` é `top`). Ausente = o
+   * `verticalAlign` do estilo decide.
+   */
+  readonly baselineTop?: number;
 }
 
 interface NodeBase {

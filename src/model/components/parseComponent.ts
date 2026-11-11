@@ -750,7 +750,7 @@ function checkLayoutFlow(value: Rec, path: string, out: Ctx): void {
     checkExpr(
       value.align,
       join(path, 'align'),
-      oneOf(['start', 'center', 'end', 'stretch']),
+      oneOf(['start', 'center', 'end', 'stretch', 'baseline']),
       out,
     );
   if ('justify' in value)
@@ -761,6 +761,8 @@ function checkLayoutFlow(value: Rec, path: string, out: Ctx): void {
 function checkLayout(value: unknown, path: string, out: Ctx): void {
   if (!isRecord(value)) return add(out, path, 'esperava objeto');
   if (value.type === 'none') return checkKeys(value, ['type'], path, out);
+  if (value.type === 'column' && value.align === 'baseline')
+    add(out, join(path, 'align'), 'baseline só vale em row');
   const at = join(path, 'type');
   if (isExprObject(value.type)) checkExpr(value.type, at, checkLayoutType, out);
   else if (value.type !== 'row' && value.type !== 'column')
@@ -837,6 +839,20 @@ function checkTextNode(value: Rec, path: string, out: Ctx): void {
   if (hasRuns) checkRuns(value.runs, join(path, 'runs'), out);
   if ('font' in value) checkFont(value.font, join(path, 'font'), out);
   if ('color' in value) checkExpr(value.color, join(path, 'color'), checkColor, out);
+  if ('baselinePadding' in value)
+    checkBaselinePadding(value, join(path, 'baselinePadding'), out);
+}
+
+/** `baselinePadding`: `top` e `bottom` em px ≥ 0; o `top` não combina com `font.verticalAlign` literal. */
+function checkBaselinePadding(node: Rec, path: string, out: Ctx): void {
+  const value = node.baselinePadding;
+  if (!isRecord(value)) return add(out, path, 'esperava objeto');
+  checkKeys(value, ['top', 'bottom'], path, out);
+  for (const key of ['top', 'bottom'])
+    if (key in value) checkExpr(value[key], join(path, key), checkNonNegative, out);
+  const align = isRecord(node.font) ? node.font.verticalAlign : undefined;
+  if ('top' in value && typeof align === 'string')
+    add(out, join(path, 'top'), 'não combina com verticalAlign');
 }
 
 function checkNode(value: unknown, path: string, out: Ctx): void {
@@ -855,7 +871,7 @@ function checkNode(value: unknown, path: string, out: Ctx): void {
     frame: ['clip', 'layout', 'children'],
     rect: [],
     ellipse: [],
-    text: ['text', 'runs', 'font', 'color'],
+    text: ['text', 'runs', 'font', 'color', 'baselinePadding'],
     path: ['d', 'viewBox', 'fillRule'],
     slot: ['label', 'layout', 'provide'],
     repeat: ['field', 'count', 'direction', 'gap', 'distribute', 'template'],
@@ -1051,6 +1067,7 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
   ['font', 'wrap'],
   ['font', 'ellipsis'],
   ['font', 'maxLines'],
+  ['baselinePadding'],
   ['runs'],
   ['rotation'],
   ['provide'],
@@ -1079,6 +1096,7 @@ const V4_LITERAL_VALUES: readonly (readonly [readonly string[], string])[] = [
   ...IMAGE_FITS_V4.map((fit): readonly [readonly string[], string] => [['fit'], fit]),
   [['layout', 'justify'], 'space-around'],
   [['layout', 'justify'], 'space-evenly'],
+  [['layout', 'align'], 'baseline'],
 ];
 
 /** `shadow` como lista (v4) numa versão anterior à 4: `só é permitido com formatVersion 4`, no caminho de `shadow`. */

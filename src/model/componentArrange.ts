@@ -237,6 +237,19 @@ export function arrangeMarking(
     }
   };
 
+  /** A primeira linha de base do desenho de uma filha (`align: "baseline"` do slot). */
+  const baselineOf = (kid: Marking): number | undefined => {
+    const mc = markingComponent(p, catalog, kid.id);
+    if (mc === null) return undefined;
+    const values = drawingValues(p, mc.annotation, mc.type).values;
+    const drawn = componentForDrawing(p, mc.component, kid.containerId);
+    return instantiate(drawn.component, values, rects.get(kid.id) as Rect, {
+      measure,
+      idPrefix: kid.id,
+      ...tokensOption(drawn.tokens),
+    }).firstBaseline;
+  };
+
   const arrangeOne = (id: string) => {
     const info = containerAt(id);
     if (info === null) return;
@@ -295,10 +308,12 @@ export function arrangeMarking(
         ),
       );
     }
+    const baselines =
+      layout.align === 'baseline' ? kids.map((kid) => baselineOf(kid)) : [];
     const targets = layoutChildren(
       box,
       layout,
-      sizes.map((box) => ({ box })),
+      sizes.map((box, i) => ({ box, baseline: baselines[i] })),
     );
     kids.forEach((kid, i) => {
       const target = targets[i] as Rect;

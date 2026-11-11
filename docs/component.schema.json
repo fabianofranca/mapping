@@ -191,7 +191,7 @@
       ]
     },
     "lit_layoutAlign": {
-      "enum": ["start", "center", "end", "stretch"]
+      "enum": ["start", "center", "end", "stretch", "baseline"]
     },
     "lit_justify": {
       "enum": ["start", "center", "end", "space-between", "space-around", "space-evenly"]
@@ -2564,6 +2564,19 @@
         },
         "color": {
           "$ref": "#/$defs/expr_color"
+        },
+        "baselinePadding": {
+          "description": "formatVersion 4. Distâncias pela linha de base, como o paddingFromBaseline do Compose: top, do topo da caixa do nó à primeira linha de base; bottom, da última linha de base ao fundo da caixa (px ≥ 0). O top não combina com font.verticalAlign literal.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "top": {
+              "$ref": "#/$defs/expr_nonNegative"
+            },
+            "bottom": {
+              "$ref": "#/$defs/expr_nonNegative"
+            }
+          }
         }
       }
     },

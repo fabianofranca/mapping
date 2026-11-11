@@ -1,4 +1,5 @@
 import { parse, type Font } from 'opentype.js';
+import { fontExtents } from './glyphs';
 import monoBold from 'font:mono-bold';
 import mono from 'font:mono';
 import sansBold from 'font:sans-bold';
@@ -153,8 +154,15 @@ const measurers = new WeakMap<FontBook, TextMeasurer>();
 export function measurerFor(book: FontBook): TextMeasurer {
   let measure = measurers.get(book);
   if (measure === undefined) {
+    // As linhas de base saem do `fontExtents` da fonte que desenha (a mesma do `lineInk`).
     measure = (text, font, maxWidth) =>
-      measureLines(text, font, maxWidth, (value) => textWidth(book, value, font));
+      measureLines(
+        text,
+        font,
+        maxWidth,
+        (value) => textWidth(book, value, font),
+        fontExtents(book.fontFor(font.family, font.weight, font.italic), font.size),
+      );
     measurers.set(book, measure);
   }
   return measure;

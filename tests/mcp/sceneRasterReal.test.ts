@@ -482,3 +482,43 @@ describe('rotation (EX3)', () => {
     expect(inside).toBeGreaterThan(20);
   });
 });
+
+describe('baselinePadding.top no raster (MC1, decisão 7)', () => {
+  /** O pé do `H` (a linha de base), em px do nó a partir do topo dele, lido da tinta do PNG. */
+  function footOfH(zoom: number, baselineTop: number, fontSize = 13): number {
+    const raster = canvas(Math.ceil(100 * zoom), Math.ceil(100 * zoom));
+    const node = label('H', 400, {
+      width: 60,
+      height: 60,
+      transform: [1, 0, 0, 1, 10, 5],
+      style: {
+        fontFamily: 'sans-serif',
+        fontSize,
+        fontWeight: 400,
+        italic: false,
+        lineHeight: fontSize * 1.2,
+        align: 'left',
+        verticalAlign: 'top',
+        baselineTop,
+      },
+    });
+    paint(raster, frame([node], 100, 100), zoom);
+    let last = -1;
+    for (let y = 0; y < raster.height; y++)
+      for (let x = 0; x < raster.width; x++) if (dark(raster, x, y)) last = y;
+    // `last` é a última linha de pixels escura: o pé fica no fim dela.
+    return (last + 1) / zoom - 5;
+  }
+
+  it.each([1, 4.2])(
+    'o pé do "H" fica a ≤ 0,5 px de 30 do topo do nó a zoom %s',
+    (zoom) => {
+      expect(Math.abs(footOfH(zoom, 30) - 30)).toBeLessThanOrEqual(0.5);
+    },
+  );
+
+  it('vale em qualquer corpo de fonte', () => {
+    expect(Math.abs(footOfH(4.2, 30, 20) - 30)).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(footOfH(1, 40, 11) - 40)).toBeLessThanOrEqual(0.5);
+  });
+});

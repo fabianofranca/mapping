@@ -55,6 +55,7 @@ import type {
   LayoutSpec,
   GradientSpec,
   IconTemplate,
+  LayoutAlign,
   LayoutJustify,
   ImageTemplate,
   PathTemplate,
@@ -96,6 +97,7 @@ import type { ModelMessageTemplateCode } from '../messages';
 import type { ModelMessage } from '../modelMessage';
 import { expandRepeats } from './repeat';
 import { applyGaps } from './strokeGaps';
+import { approximateExtents, lineBaseline, type CapMetrics } from './baseline';
 import { WRAP_SLACK } from './textWrap';
 import {
   applyTokens,
@@ -137,6 +139,14 @@ export interface TextMetrics {
   readonly height: number;
   /** As linhas como serão desenhadas (já com o `…`), quando o medidor sabe dizê-las. */
   readonly lines?: readonly string[];
+  /**
+   * Linha de base da primeira e da última linha, em px a partir do topo da caixa do texto (com o
+   * texto no topo), e o número de linhas medidas. O medidor sem fonte pode não informar: o motor
+   * usa então a conta do aproximado (decisão 2 da #898).
+   */
+  readonly firstBaseline?: number;
+  readonly lastBaseline?: number;
+  readonly lineCount?: number;
 }
 
 /** A fonte entregue ao medidor: tamanhos já em px; `wrap`/`ellipsis`/`maxLines` só na v4. */
@@ -190,6 +200,12 @@ export interface InstantiateOptions {
 
 export interface Instantiated {
   readonly root: FrameNode;
+  /**
+   * A primeira linha de base do componente (px a partir do topo da caixa), a do primeiro texto
+   * com uma (`baselinePadding.top` incluído); ausente = o componente não tem texto. É o que o
+   * `align: "baseline"` do slot do pai lê.
+   */
+  readonly firstBaseline?: number;
   /**
    * O que o `slot` do componente oferece às filhas (`provide`), resolvido com os campos, os tokens
    * e o modo desta instância; o valor que não produz nada não entra. Ausente = não oferece.
@@ -282,6 +298,7 @@ export function measureLines(
   font: MeasureFont,
   maxWidth: number | undefined,
   widthOf: (value: string) => number,
+  extents: Pick<CapMetrics, 'ascent' | 'descent'> = approximateExtents(font.size),
 ): TextMetrics {
   const breaks = maxWidth !== undefined && font.wrap !== 'none';
   const raw = text
@@ -291,7 +308,26 @@ export function measureLines(
     );
   const lines = clipLines(raw, font, widthOf, maxWidth);
   const widest = lines.reduce((max, line) => Math.max(max, widthOf(line)), 0);
-  return { width: widest, height: Math.max(1, lines.length) * font.lineHeight, lines };
+  const count = Math.max(1, lines.length);
+  return {
+    width: widest,
+    height: count * font.lineHeight,
+    lines,
+    ...lineBaselines(font.lineHeight, count, extents),
+  };
+}
+
+/** `firstBaseline`, `lastBaseline` e `lineCount` de `count` linhas de altura `lineHeight`. */
+export function lineBaselines(
+  lineHeight: number,
+  count: number,
+  extents: Pick<CapMetrics, 'ascent' | 'descent'>,
+): Pick<TextMetrics, 'firstBaseline' | 'lastBaseline' | 'lineCount'> {
+  return {
+    firstBaseline: lineBaseline(0, lineHeight, extents),
+    lastBaseline: lineBaseline((count - 1) * lineHeight, lineHeight, extents),
+    lineCount: count,
+  };
 }
 
 /**
@@ -345,7 +381,7 @@ interface FrameLayout {
   readonly main: Axis | null;
   readonly gap: number;
   readonly pad: Padding;
-  readonly align: 'start' | 'center' | 'end' | 'stretch';
+  readonly align: LayoutAlign;
   readonly justify: LayoutJustify;
   /** Filhos em ordem inversa e `start` no fim (`layout.reverse`). */
   readonly reverse: boolean;
@@ -399,6 +435,12 @@ const NONE_LAYOUT: FrameLayout = {
   justify: 'start',
   reverse: false,
 };
+
+/** Quanto descer cada filho para as linhas de base ficarem na do mais alto (`align: "baseline"`). */
+function baselineShifts(lines: readonly number[]): number[] {
+  const above = Math.max(0, ...lines);
+  return lines.map((line) => above - line);
+}
 
 function isNone(color: string): boolean {
   const c = color.trim().toLowerCase();
@@ -658,6 +700,121 @@ function createEngine(
     return measureRichText(rich.runs, richBase(node, font), options.measure, maxWidth);
   };
 
+  // --- linha de base (decisões 2 a 5 da #898) ------------------------------------------------
+
+  interface TextBaselines {
+    readonly height: number;
+    readonly first: number;
+    readonly last: number;
+  }
+
+  /** `baselinePadding` do nó (px ≥ 0 por lado); ausente = nenhum dos dois. */
+  const baselinePaddingOf = (
+    node: TextTemplate,
+  ): { top?: number; bottom?: number } | undefined => {
+    const spec = node.baselinePadding;
+    if (spec === undefined) return undefined;
+    return { top: limitValue(spec.top), bottom: limitValue(spec.bottom) };
+  };
+
+  /** As linhas de base do texto de uma linha só ou do texto rico (a da fonte base em cada linha). */
+  const richBaselines = (node: TextTemplate, maxWidth?: number): TextBaselines => {
+    const font = textFont(node);
+    const rich = richRuns(node, font);
+    const layout = layoutRuns(rich.runs, richBase(node, font), options.measure, maxWidth);
+    const probe = options.measure('H', font);
+    const extent =
+      (probe.firstBaseline ??
+        lineBaseline(0, font.lineHeight, approximateExtents(font.size))) -
+      font.lineHeight / 2;
+    const baseline = (line: { y: number; height: number }): number =>
+      line.y + line.height / 2 + extent;
+    const first = layout.lines[0];
+    const last = layout.lines[layout.lines.length - 1];
+    return {
+      height: layout.height,
+      first: first ? baseline(first) : extent + font.lineHeight / 2,
+      last: last ? baseline(last) : extent + font.lineHeight / 2,
+    };
+  };
+
+  /** Altura e linhas de base (primeira e última) do texto do nó, no topo da caixa. */
+  const baselinesOf = (node: TextTemplate, maxWidth?: number): TextBaselines => {
+    if (node.runs !== undefined) return richBaselines(node, maxWidth);
+    const font = textFont(node);
+    const m = options.measure(plainText(node), font, maxWidth);
+    const count = m.lineCount ?? Math.max(1, m.lines?.length ?? 1);
+    const first =
+      m.firstBaseline ?? lineBaseline(0, font.lineHeight, approximateExtents(font.size));
+    return {
+      height: m.height,
+      first,
+      last: m.lastBaseline ?? first + (count - 1) * font.lineHeight,
+    };
+  };
+
+  /**
+   * A altura do texto no `hug` com `baselinePadding`: `max(top, primeira) + (última − primeira) +
+   * max(bottom, altura − última)`; sem o lado, vale a distância da própria fonte.
+   */
+  const paddedTextHeight = (
+    node: TextTemplate,
+    height: number,
+    wrap?: number,
+  ): number => {
+    const padding = baselinePaddingOf(node);
+    if (padding === undefined) return height;
+    const b = baselinesOf(node, wrap);
+    const top = Math.max(padding.top ?? 0, b.first);
+    const bottom = Math.max(padding.bottom ?? 0, b.height - b.last);
+    return top + (b.last - b.first) + bottom;
+  };
+
+  /** Onde fica a primeira linha de base do texto numa caixa de altura `h` (largura `w`). */
+  const textBaselineIn = (node: TextTemplate, w: number, h: number): number => {
+    const b = baselinesOf(node, w);
+    const top = baselinePaddingOf(node)?.top;
+    if (top !== undefined) return Math.max(top, b.first);
+    const align = verticalAlignOf(node);
+    if (align === 'top') return b.first;
+    const free = h - b.height;
+    return (align === 'bottom' ? free : free / 2) + b.first;
+  };
+
+  /** A primeira linha de base de um nó na caixa `w` × `h`; `undefined` = sem linha de base. */
+  const kidBaseline = (node: TemplateNode, w: number, h: number): number | undefined => {
+    if (node.type === 'text') return textBaselineIn(node, w, h);
+    if (node.type !== 'frame') return undefined;
+    for (const placed of planFrame(node, w, h).placements) {
+      const inner = kidBaseline(placed.kid.node, placed.w, placed.h);
+      if (inner !== undefined) return placed.y + inner;
+    }
+    return undefined;
+  };
+
+  /** A linha de base de cada filho (o fundo da caixa quando ele não tem uma). */
+  const kidBaselines = (
+    kids: readonly Kid[],
+    widths: readonly number[],
+    heights: readonly number[],
+  ): number[] =>
+    kids.map((kid, i) => {
+      const h = heights[i] ?? 0;
+      return kidBaseline(kid.node, widths[i] ?? 0, h) ?? h;
+    });
+
+  /** A altura de uma `row` alinhada pela linha de base: do topo mais alto ao fundo mais baixo. */
+  const baselineExtent = (
+    kids: readonly Kid[],
+    widths: readonly number[],
+    heights: readonly number[],
+  ): number => {
+    const lines = kidBaselines(kids, widths, heights);
+    const above = Math.max(0, ...lines);
+    const below = Math.max(0, ...heights.map((h, i) => h - (lines[i] ?? h)));
+    return above + below;
+  };
+
   // --- valores conferidos (tamanho e layout) ----------------------------------------------
 
   const invalidValue = (label: string, value: unknown) =>
@@ -743,6 +900,12 @@ function createEngine(
     return normalizePadding(Array.isArray(value) ? value.map(side) : side(value));
   };
 
+  /** `baseline` só vale em `row` e na formatVersion 4; fora disso, vindo de expressão, é valor inválido. */
+  const alignsFor = (kind: 'row' | 'column'): readonly LayoutAlign[] =>
+    kind === 'row' && original.formatVersion >= 4
+      ? LAYOUT_ALIGNS
+      : LAYOUT_ALIGNS.filter((value) => value !== 'baseline');
+
   const layoutOf = (frame: FrameTemplate): FrameLayout => {
     const spec = frame.layout;
     const kind = checked(spec?.type, LAYOUT_TYPES, 'none', 'layout.type');
@@ -752,7 +915,7 @@ function createEngine(
       main: kind === 'row' ? 'w' : 'h',
       gap: Math.max(0, num(spec.gap, 0)),
       pad: paddingOf(spec.padding),
-      align: checked(spec.align, LAYOUT_ALIGNS, 'start', 'layout.align'),
+      align: checked(spec.align, alignsFor(kind), 'start', 'layout.align'),
       justify: checked(spec.justify, LAYOUT_JUSTIFIES, 'start', 'layout.justify'),
       reverse: bool(spec.reverse, false),
     };
@@ -775,7 +938,7 @@ function createEngine(
     const hug = specOf(node, 'w') === 'hug';
     const wrap =
       hug && !(otherSize !== undefined && isCutByMax(node)) ? undefined : otherSize;
-    return measureText(node, wrap).height;
+    return paddedTextHeight(node, measureText(node, wrap).height, wrap);
   };
 
   const frameHug = (
@@ -1083,6 +1246,7 @@ function createEngine(
     const kids = visibleKids(frame);
     const padW = layout.pad.left + layout.pad.right;
     const padH = layout.pad.top + layout.pad.bottom;
+    const baselined = layout.kind === 'row' && layout.align === 'baseline';
 
     const solve = (
       axis: Axis,
@@ -1098,7 +1262,10 @@ function createEngine(
           bound: limit === null ? null : Math.max(0, limit - pad),
         };
         const preliminary = resolveAxis(frame, layout, kids, axis, space, others);
-        total = hugTotal(layout, kids, axis, preliminary, pad);
+        total =
+          baselined && axis === 'h'
+            ? baselineExtent(kids, others ?? [], preliminary) + pad
+            : hugTotal(layout, kids, axis, preliminary, pad);
       }
       const space: AxisSpace = { content: Math.max(0, total - pad), bound: null };
       return { total, sizes: resolveAxis(frame, layout, kids, axis, space, others) };
@@ -1108,6 +1275,10 @@ function createEngine(
     const vertical = solve('h', h, horizontal.sizes);
     const xs = positionAxis(layout, kids, 'w', horizontal.sizes, horizontal.total);
     const ys = positionAxis(layout, kids, 'h', vertical.sizes, vertical.total);
+    if (baselined)
+      baselineShifts(kidBaselines(kids, horizontal.sizes, vertical.sizes)).forEach(
+        (offset, i) => (ys[i] = layout.pad.top + offset),
+      );
     const plan: Plan = {
       w: horizontal.total,
       h: vertical.total,
@@ -1545,6 +1716,22 @@ function createEngine(
     return value === 'justify' && node.runs !== undefined ? 'left' : value;
   };
 
+  const verticalAlignOf = (node: TextTemplate): TextStyle['verticalAlign'] =>
+    oneOf(
+      node.font?.verticalAlign,
+      // `cap-middle` só existe na formatVersion 4; antes, vindo de expressão, é valor fora do conjunto.
+      original.formatVersion >= 4
+        ? ['top', 'middle', 'bottom', 'cap-middle']
+        : ['top', 'middle', 'bottom'],
+      'top',
+    );
+
+  /** `baselinePadding.top` do nó na caixa de largura `w`: nunca menor que a linha de base da fonte. */
+  const baselineTopOf = (node: TextTemplate, w: number): number | undefined => {
+    const top = baselinePaddingOf(node)?.top;
+    return top === undefined ? undefined : Math.max(top, baselinesOf(node, w).first);
+  };
+
   const buildText = (
     node: TextTemplate,
     id: string,
@@ -1555,6 +1742,7 @@ function createEngine(
   ): SceneNode => {
     const font = textFont(node);
     const font0: FontSpec = node.font ?? {};
+    const baselineTop = baselineTopOf(node, w);
     const decoration = oneOf(
       font0.decoration,
       ['none', 'underline', 'line-through'],
@@ -1569,14 +1757,9 @@ function createEngine(
       letterSpacing: font.letterSpacing,
       // `justify` só existe na formatVersion 4; antes, vindo de expressão, é valor fora do conjunto.
       align: styleAlign(node, font0.align),
-      verticalAlign: oneOf(
-        font0.verticalAlign,
-        // `cap-middle` só existe na formatVersion 4; antes, vindo de expressão, é valor fora do conjunto.
-        original.formatVersion >= 4
-          ? ['top', 'middle', 'bottom', 'cap-middle']
-          : ['top', 'middle', 'bottom'],
-        'top',
-      ),
+      // Com `baselinePadding.top` o `verticalAlign` deixa de valer (a primeira linha de base manda).
+      verticalAlign: baselineTop === undefined ? verticalAlignOf(node) : 'top',
+      ...(baselineTop === undefined ? {} : { baselineTop }),
       ...(decoration === 'none' ? {} : { decoration }),
       ...(font.wrap === 'none' ? { wrap: 'none' as const } : {}),
       ...(font.ellipsis === true ? { ellipsis: true } : {}),
@@ -1704,6 +1887,9 @@ function createEngine(
     provides,
     planFrame,
     buildRoot,
+    /** A primeira linha de base do componente na caixa `box` (o que o `align: "baseline"` do pai lê). */
+    rootBaseline: (box: Box): number | undefined =>
+      kidBaseline(component.template, box.width, box.height),
     template: component.template,
     limitOf,
     clampSize,
@@ -1720,8 +1906,10 @@ export function instantiate(
   const root = engine.buildRoot(box);
   const provides = engine.provides();
   const messages = engine.messages();
+  const firstBaseline = engine.rootBaseline(box);
   return {
     root,
+    ...(firstBaseline === undefined ? {} : { firstBaseline }),
     ...(provides === undefined ? {} : { provides }),
     warnings: textsOf(messages),
     messages,

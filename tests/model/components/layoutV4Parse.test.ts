@@ -196,7 +196,7 @@ describe('expressão em layout.type, align e justify', () => {
         frameWith({ type: 'row', align: { $field: 'a', default: 'middle' } }),
       ),
     ).toEqual([
-      'template.layout.align.default: esperava um de: start, center, end, stretch',
+      'template.layout.align.default: esperava um de: start, center, end, stretch, baseline',
     ]);
     expect(
       validateComponent(

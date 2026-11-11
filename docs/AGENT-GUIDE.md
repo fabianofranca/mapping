@@ -199,6 +199,10 @@ Para um destaque dentro de uma frase (palavra em negrito, cor diferente, um rót
 - A quebra é pela palavra, como um texto só; o chip que não cabe no resto da linha vai inteiro para a de baixo. **Não troque o rótulo por espaços nem desenhe o chip por cima com outro nó:** ele não acompanharia o texto.
 - Erros: `text` e `runs` juntos (`text e runs juntos: use um ou outro`), `runs` vazio (`esperava lista não vazia de trechos`) e, numa `formatVersion` do componente menor que 4, `runs: só é permitido com formatVersion 4`. `render_marking` e `get_marking_image` desenham o texto rico com letras de verdade, o chip com fundo e raio.
 
+#### Linha de base (componente `formatVersion` 4)
+
+Para um texto que precisa de uma **distância pela linha de base** (a mensagem de um snackbar a 30 px do topo, o título de uma barra), use `baselinePadding` no nó `text`: `{ "top"?, "bottom"? }` em px (aceita expressão), como o `paddingFromBaseline` do Compose. `top` é do topo da caixa do nó à primeira linha de base; `bottom`, da última linha de base ao fundo. A distância nunca fica menor que a da própria fonte, e o `font.verticalAlign` literal junto de `top` é erro (`baselinePadding.top: não combina com verticalAlign`). Para vários textos de tamanhos diferentes na mesma fileira (um rótulo de 14 e um número de 22 px), use `layout.align: "baseline"` num quadro `row`: os filhos se alinham pela primeira linha de base; numa `column` é erro (`layout.align: baseline só vale em row`). O PNG do `render_marking` e do `render_container` e a app desenham a linha de base no mesmo lugar (≤ 0,5 px).
+
 ### Evoluindo uma biblioteca já aplicada
 
 Subir a `version` de uma biblioteca mexe nos projetos que a aplicaram: as anotações já existem, com `values` pelas `key` dos campos. As regras:

@@ -5,8 +5,13 @@
  */
 import { Text as KonvaText } from 'konva/lib/shapes/Text';
 import { canvasFontFamily } from '../../model/components/fontFamily';
-import type { MeasureFont, TextMeasurer } from '../../model/components/instantiate';
+import {
+  lineBaselines,
+  type MeasureFont,
+  type TextMeasurer,
+} from '../../model/components/instantiate';
 import { WRAP_SLACK } from '../../model/components/textWrap';
+import { capMetricsOf } from './capMiddle';
 import { textBoxLimits } from './textLimits';
 
 function fontStyle(font: MeasureFont): string {
@@ -48,6 +53,12 @@ export const konvaMeasurer: TextMeasurer = (text, font, maxWidth) => {
     width: maxWidth === undefined ? natural : Math.min(natural, maxWidth),
     height,
     lines,
+    // A linha de base é a do desenho: o `ascent`/`descent` do canvas do Konva (decisão 2).
+    ...lineBaselines(
+      font.lineHeight,
+      Math.max(1, lines.length),
+      capMetricsOf(probe, font.size),
+    ),
   };
   probe.destroy();
   return metrics;

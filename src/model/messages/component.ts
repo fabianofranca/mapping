@@ -92,6 +92,9 @@ export const componentMessages = {
   'component.gapNotSelf': 'stroke.gap.node não pode citar o próprio nó: {name}',
   'component.gapNotInsideRepeat':
     'stroke.gap.node não pode citar um nó dentro de um repeat: {name}',
+  // Linha de base
+  'component.baselineOnlyRow': 'baseline só vale em row',
+  'component.baselineNotWithVerticalAlign': 'não combina com verticalAlign',
   // Versão do formato
   'component.v4Only': 'só é permitido com formatVersion 4',
   'component.indexOnlyInRepeat': '$index só vale dentro de um repeat',

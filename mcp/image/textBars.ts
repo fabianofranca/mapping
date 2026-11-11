@@ -107,6 +107,11 @@ export function richShift(
   layout: RunLayout,
   metrics: CapMetrics = capMetricsFallback(node.style.fontSize),
 ): number {
+  const first0 = layout.lines[0];
+  if (node.style.baselineTop !== undefined)
+    return first0
+      ? node.style.baselineTop - lineBaseline(first0.y, first0.height, metrics)
+      : 0;
   if (node.height <= 0) return 0;
   if (node.style.verticalAlign === 'cap-middle') {
     const first = layout.lines[0];
@@ -178,7 +183,9 @@ export function blockTop(
   metrics: CapMetrics = capMetricsFallback(node.style.fontSize),
 ): number {
   const total = count * lineHeight;
-  const { verticalAlign } = node.style;
+  const { verticalAlign, baselineTop } = node.style;
+  if (baselineTop !== undefined)
+    return baselineTop - lineBaseline(0, lineHeight, metrics);
   if (verticalAlign === 'cap-middle')
     return capMiddleShift({
       boxHeight: node.height,

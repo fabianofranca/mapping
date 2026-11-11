@@ -11,7 +11,16 @@ vi.mock('konva/lib/shapes/Text', () => ({
     width = () => 400;
     getTextWidth = () => 10;
     height = () => 10;
-    textArr: { text: string }[] = [];
+    textArr: { text: string }[] = [{ text: 'OK' }];
+    // Para a linha de base (`capMetricsOf`): ascent 12, descent 4 e `H` de 10 em qualquer corpo.
+    fontSize = () => 14;
+    measureSize = () => ({
+      width: 0,
+      fontBoundingBoxAscent: 12 * 32,
+      fontBoundingBoxDescent: 4 * 32,
+      actualBoundingBoxAscent: 10 * 32,
+      actualBoundingBoxDescent: 0,
+    });
     destroy = () => undefined;
   },
 }));
@@ -53,4 +62,23 @@ describe('konvaMeasurer', () => {
       expect(configs[0]?.fontFamily).toBe(canvasFontFamily(family));
     },
   );
+});
+
+describe('konvaMeasurer: linha de base (MC1, decisão 2)', () => {
+  const font = {
+    family: 'Roboto',
+    size: 14,
+    weight: 400,
+    italic: false,
+    lineHeight: 20,
+    letterSpacing: 0,
+  };
+
+  it('devolve firstBaseline, lastBaseline e lineCount pela lineBaseline do canvas', () => {
+    const m = konvaMeasurer('OK', font, 400);
+    // centro da linha (10) + (ascent 12 − descent 4) / 2
+    expect(m.firstBaseline).toBe(14);
+    expect(m.lastBaseline).toBe(14);
+    expect(m.lineCount).toBe(1);
+  });
 });

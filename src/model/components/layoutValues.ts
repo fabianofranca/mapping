@@ -10,6 +10,7 @@ export const LAYOUT_ALIGNS: readonly LayoutAlign[] = [
   'center',
   'end',
   'stretch',
+  'baseline',
 ];
 export const LAYOUT_JUSTIFIES: readonly LayoutJustify[] = [
   'start',

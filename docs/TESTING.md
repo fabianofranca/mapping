@@ -437,7 +437,7 @@ Também conta como achado: lentidão perceptível (mais de um segundo para respo
 <!-- roteiros: R25 -->
 
 - O R25.87 ao R25.90 (MF5) usam a `RAIZ/m3-just` (a `m3-tokens` com o `card` trocado pelo `scripts/testing/justificado.mjs`, no R25.87), o projeto `fiel-just` (criado pela app no R25.88), o ImageMagick e o cliente MCP por stdio (R25.87 e R25.89; sem ele, "não executado (sem MCP)"); em sequência.
-- O R25.91 e o R25.92 (MC0) usam a pasta `fiel` (R25.3), o container `Cortes` (R25.91), o ImageMagick e o cliente MCP por stdio (R25.92; sem ele, "não executado (sem MCP)"); em sequência.
+- O R25.91 ao R25.94 (MC0 e MC1) usam a pasta `fiel` (R25.3), os containers `Cortes` (R25.91) e `Base` (R25.93), o ImageMagick e o cliente MCP por stdio (R25.92 e R25.94; sem ele, "não executado (sem MCP)"); em sequência.
 
 <!-- /roteiros -->
 <!-- roteiros: R25 -->
@@ -447,7 +447,7 @@ Também conta como achado: lentidão perceptível (mais de um segundo para respo
 <!-- /roteiros -->
 <!-- roteiros: R25 -->
 
-- O R25.22 ao R25.27 (CF5) usam a pasta própria `fiel-tk` e as bibliotecas `m3-tokens`, `m3-tokens-erro` e `m3-tokens-v14` que a shell monta com o `tokens.mjs` do preparo. Sem o MCP, marque o R25.22 e o R25.23 "não executado (sem MCP)" e monte a `m3-tokens` pela shell (o `node tokens.mjs RAIZ/m3-tokens`) para seguir do R25.24.
+- O R25.22 ao R25.27 (CF5) usam a pasta própria `fiel-tk` e as bibliotecas `m3-tokens`, `m3-tokens-erro` e `m3-tokens-v14` que a shell monta com o `scripts/testing/tokens.mjs` do repositório. Sem o MCP, marque o R25.22 e o R25.23 "não executado (sem MCP)" e monte a `m3-tokens` pela shell (o `node REPO/scripts/testing/tokens.mjs RAIZ/m3-tokens`) para seguir do R25.24.
 
 <!-- /roteiros -->
 <!-- roteiros: R11 -->
@@ -2061,9 +2061,9 @@ idb() { node "$W23/idb.mjs"; }
 
 ### R25 — Componentes fiéis
 
-**O que cobre:** a etapa Componentes fiéis (CF1 a CF11, `formatVersion` 4 do **componente** e 15 da **especialização**, schema v18, MCP do épico): o traço (`stroke.cap`, `join`, `sides`, o recorte da raiz com o traço `outside` e a sombra), o layout (CF2), o texto (`wrap`, `ellipsis`, `maxLines`, o aviso `texto maior que a caixa`) (CF3), `runs` e o chip (CF4), os tokens (CF5), o **Modo do desenho** (CF6), os ícones (CF7), a imagem no MCP (CF9), a prova de desenho e o `operationsFile` (CF10) e a op `import_measured` (CF11). Os passos conferem, pelo `validate_library`, a biblioteca de teste e a regra de versão, e, por recorte PNG do canvas e pelo PNG do MCP, o desenho. **Regra a conferir no fim:** o `mapping.json` não guarda nada do desenho. EX3: `$size`, `$mul` e o `rotation` de um nó (R25.75 a R25.78). MF2: o `shadow` em **lista** de 1 a 4 sombras (a primeira por cima), o `shadow.spread` e o `stroke.gap` (`{ node, padding }`) (R25.79 a R25.82). MF3: a cor herdada, o `provide` no `slot` do pai e o `$provided` na filha, com `default` e o ancestral mais próximo (R25.83 a R25.86). MF5: o texto justificado (`font.align` `justify`) e a cor composta (`over`) (R25.87 a R25.90). MC0: o texto cortado e o texto mais alto que a caixa iguais na app e no PNG do MCP (R25.91 e R25.92).
+**O que cobre:** a etapa Componentes fiéis (CF1 a CF11, `formatVersion` 4 do **componente** e 15 da **especialização**, schema v18, MCP do épico): o traço (`stroke.cap`, `join`, `sides`, o recorte da raiz com o traço `outside` e a sombra), o layout (CF2), o texto (`wrap`, `ellipsis`, `maxLines`, o aviso `texto maior que a caixa`) (CF3), `runs` e o chip (CF4), os tokens (CF5), o **Modo do desenho** (CF6), os ícones (CF7), a imagem no MCP (CF9), a prova de desenho e o `operationsFile` (CF10) e a op `import_measured` (CF11). Os passos conferem, pelo `validate_library`, a biblioteca de teste e a regra de versão, e, por recorte PNG do canvas e pelo PNG do MCP, o desenho. **Regra a conferir no fim:** o `mapping.json` não guarda nada do desenho. EX3: `$size`, `$mul` e o `rotation` de um nó (R25.75 a R25.78). MF2: o `shadow` em **lista** de 1 a 4 sombras (a primeira por cima), o `shadow.spread` e o `stroke.gap` (`{ node, padding }`) (R25.79 a R25.82). MF3: a cor herdada, o `provide` no `slot` do pai e o `$provided` na filha, com `default` e o ancestral mais próximo (R25.83 a R25.86). MF5: o texto justificado (`font.align` `justify`) e a cor composta (`over`) (R25.87 a R25.90). MC0: o texto cortado e o texto mais alto que a caixa iguais na app e no PNG do MCP (R25.91 e R25.92). MC1: a linha de base (`baselinePadding` e `align: baseline`) igual na app e no PNG do MCP (R25.93 e R25.94).
 
-**Preparo.** Seção 6 pronta (o repositório de teste e o `mapping-mcp.js`); os pedidos ao MCP são feitos pelo cliente stdio (apêndice A: `WS=<workspace> node scripts/testing/mcp-stdio-client.mjs calls.json`, com os argumentos de cada tool tirados de `[{"list":true}]`). `RAIZ` é a raiz de projetos do servidor (`design/mapeamentos` na seção 6) e `REPO` é o clone do repositório do Mapping, onde está `libraries/material3-compose/`. A biblioteca de teste `m3-fiel` é uma cópia do pacote do Material 3 (Compose) em que a shell troca nove componentes (o `divider`, o `text-field`, o `card`, o `list-item`, o `navigation-bar`, o `checkbox`, o `text`, o `chip` e, da MC0, o `badge`) por versões mínimas da `formatVersion` 4; o `scripts/testing/fiel.mjs` do repositório as escreve (`node REPO/scripts/testing/fiel.mjs <pasta da biblioteca> [formatVersion]`; o segundo argumento é a `formatVersion`, `4` ou `3`; não se grava script no lugar dele):
+**Preparo.** Seção 6 pronta (o repositório de teste e o `mapping-mcp.js`); os pedidos ao MCP são feitos pelo cliente stdio (apêndice A: `WS=<workspace> node scripts/testing/mcp-stdio-client.mjs calls.json`, com os argumentos de cada tool tirados de `[{"list":true}]`). `RAIZ` é a raiz de projetos do servidor (`design/mapeamentos` na seção 6) e `REPO` é o clone do repositório do Mapping, onde está `libraries/material3-compose/`. A biblioteca de teste `m3-fiel` é uma cópia do pacote do Material 3 (Compose) em que a shell troca dez componentes (o `divider`, o `text-field`, o `card`, o `list-item`, o `navigation-bar`, o `checkbox`, o `text`, o `chip` e, da MC0 e da MC1, o `badge` e o `snackbar`) por versões mínimas da `formatVersion` 4; o `scripts/testing/fiel.mjs` do repositório as escreve (`node REPO/scripts/testing/fiel.mjs <pasta da biblioteca> [formatVersion]`; o segundo argumento é a `formatVersion`, `4` ou `3`; não se grava script no lugar dele):
 
 O Divider (140 × 140, fundo branco) traz três barras horizontais de traço vermelho `#B3261E` (largura 12, a linha vai de x 12 a x 88 e o centro de cada barra fica em y 10, 40 e 70), com `cap` `butt`, `round` e `square`; e, embaixo, três cantos em L (largura 16, o vértice em x 14, y 14 do quadro de 40 × 40, em x 5, 50 e 95 e y 90 do Divider), com `join` `miter`, `round` e `bevel`. O Text field (240 × 56) é um retângulo `#E6E0E9` com um traço roxo `#6750A4` de 3, por dentro, só embaixo (`sides` `["bottom"]`). O Card (200 × 100) é branco com um anel verde `#1B5E20` de 8 **por fora** (`align` `outside`) na raiz do componente. As peças de layout (CF2), num fundo branco: o **List item** (240 × 120) tem uma régua marrom `#6D4C41` de 200 × 6 e, abaixo, um cartão azul-claro `#4FC3F7` **`hug` nos dois eixos** (`padding` 8) com um texto `fill` ("Quando o cartão abraça o texto longo", fonte 14, altura de linha 20): o texto cabe em **duas linhas**, e o cartão tem 56 de altura e 150 a 202 de largura. O **Navigation bar** (240 × 180) tem um `repeat` do campo `items` com `distribute` `"fill"` e `gap` 10 numa coluna de `padding` 10: cada linha tem a cor da coluna `label` (`A` rosa `#D81B60`, `B` amarela `#F9A825`, `C` verde-azulada `#00897B`), e as linhas dividem a altura (160) por igual, 46,67 cada; o campo `items` nasce **vazia** na app (o `preview` não preenche tabela), e o R25.8 acrescenta as três linhas. O **Checkbox** (240 × 60) tem uma linha com `gap` 10 e `padding` 10 e dois retângulos `fill` lado a lado, o da esquerda roxo `#8E24AA` com `maxWidth` 60 e o da direita laranja `#FB8C00`: o roxo congela em 60 de largura e o laranja ocupa **todo o resto**, 150 (sem o `maxWidth` seriam 105 cada), os dois com 40 de altura. O **Text** (110 × 142, fundo branco, `padding` 5, `gap` 4), da CF3: uma régua laranja `#E65100` de 100 × 4, uma **linha** azul `#0D47A1` ("Oi supercalifragilisticoexpialidocioso demais", fonte 14, altura de linha 20, caixa de 100 × 20, `wrap` `"none"` e `ellipsis`: uma linha só, que termina em `…` na borda da caixa), um **parágrafo** roxo `#4A148C` ("Um dois tres quatro cinco seis sete oito nove dez", caixa de 100 × 60, `ellipsis` e `maxLines` pelo campo `maxLines` do tipo, com 2 como padrão) e um texto **solto** preto ("Texto solto", sem `maxLines` nem `ellipsis`, `height` `fill`, que ocupa o que sobra da altura: 36). O **Chip** (260 × 116, fundo branco, `padding` 10, `gap` 8), do texto rico da CF4, usa o campo `label` do tipo (o `preview` dá `novo`). Uma régua oliva `#827717` de 240 × 4; uma **linha** (v de 22 a 48; fonte 14, altura de linha 20, cor do nó `#455A64`) com quatro trechos: `Mmmm ` na cor do nó, `Mmmm` em **negrito** (`weight` 700) e verde `#2E7D32`, um espaço e o **chip** (o texto do campo `label`, branco, fundo ciano `#00ACC1`, `radius` 8, `padding` `[3, 6]`): a caixa tem 26 de altura e a largura é a do texto mais 12; e uma **quebra** (v de 56 a 102; caixa de 100 de largura, cor do nó vinho `#880E4F`) com `WWWWWW` (de 66 a 84 de largura, conforme a fonte) e um segundo chip, lima `#C0CA33`, com o texto ` novo` (**com espaço inicial**) em preto: ele não cabe no resto da linha de cima (sobram menos de 34, e o chip tem ao menos 44), então vai **inteiro** para a segunda linha (v de 76 a 102), na borda esquerda da caixa (u 10), e **mantém o espaço inicial dentro do respiro**. Os **auxiliares de medida** (ImageMagick, na shell; recortes PNG de `deviceScaleFactor` 1): `tinta <png> <cor>` imprime a caixa da tinta da cor como `LxA+X+Y` (em pixels de tela; é a união das manchas da cor com mais de 300 pixels, para um ponto ou o antialiasing não esticar a caixa; para texto fino, rode com `AREA=4 tinta …`; `FUZZ=<n>` troca o limiar de 6% da cor, e o texto cortado na borda do R25.73 usa `FUZZ=55 AREA=1`, que inclui os cinzas do antialiasing), e `sonda <png> <X0> <Y0> <s> <u> <v>` imprime a cor (hexadecimal; compare os 6 primeiros dígitos) do pixel que fica em (X0 + u·s, Y0 + v·s), onde `u` e `v` são **unidades do componente** e `s` é pixels de tela por unidade:
 
@@ -2080,108 +2080,7 @@ caixa() { read CL CA CX CY < <(tinta "$1" "$2" | tr 'x+' '  '); echo "canto u=$(
 
 Para cada recorte, o agente tira por Playwright/CDP, a 1280×720 e `deviceScaleFactor` 1, `page.screenshot({ path, clip })` com o `clip` igual à caixa do `.canvas-host` (`boundingBox()`), com o foco no canvas (`page.locator('main[data-canvas-area]').focus()`) e **Esc** (nenhuma marcação selecionada) e com o mouse fora do canvas. Com o foco num botão dos Detalhes, o Esc fecha a janela em vez de limpar a seleção. O recorte é sempre também olhado a olho; a medida só confirma.
 
-**Biblioteca com tokens (CF5).** O `tokens.mjs` abaixo transforma uma cópia do pacote do Material 3 na `m3-tokens`: garante a especialização na `formatVersion` 15 e **mescla** nos `tokens` do pacote (`modes` `["light", "dark"]`) quatro valores: `primary` e `on-primary` por modo (os mesmos do pacote) e `radius-md` e `space-4` simples e troca o `card` por um componente de `formatVersion` 4 que lê esses tokens com `{ "$token": … }` (fundo, raio, respiro e uma amostra `on-primary`) e traz quatro linhas de texto de 10 letras: `iiiiiiiiii` e `WWWWWWWWWW` **sem `family`** (a fonte padrão: o token `font-sans`) e as mesmas duas com `family` `{ "$token": "font-mono" }`, mais uma régua amarela `#FFEB3B` de 100 de largura para o `medir`. Com o segundo argumento `erro`, o `card` sai com dois nós defeituosos (um `fill` com token inexistente e um `cornerRadius` com token de cor). Com o primeiro modo (`light`) o desenho usa `primary` `#6750A4` e `on-primary` `#FFFFFF`:
-
-```js
-// tokens.mjs: node tokens.mjs <pasta da biblioteca> [ok|erro]
-import fs from 'node:fs';
-const dir = process.argv[2];
-const erro = process.argv[3] === 'erro';
-const specFile = dir + '/material3-compose.spec.json';
-const spec = JSON.parse(fs.readFileSync(specFile, 'utf8'));
-spec.formatVersion = 15;
-// O card.json mínimo mais abaixo não desenha o `interaction`: sem tirar o campo do tipo, o validador avisa.
-for (const layer of spec.layers)
-  for (const type of layer.annotationTypes)
-    if (type.id === 'card') {
-      type.fields = type.fields.filter((f) => f.key !== 'interaction');
-      type.examples = type.examples.filter((e) => e.values?.interaction === undefined);
-    }
-// O pacote já traz `tokens` (~170 chaves) e `icons`: os quatro valores abaixo são MESCLADOS nos
-// existentes (trocar `spec.tokens` inteiro apaga os que os outros componentes usam).
-const base = spec.tokens ?? { modes: ['light', 'dark'], values: {} };
-spec.tokens = {
-  modes: base.modes,
-  values: {
-    ...base.values,
-    primary: { light: '#6750A4', dark: '#D0BCFF' },
-    'on-primary': { light: '#FFFFFF', dark: '#381E72' },
-    'radius-md': 12,
-    'space-4': 16,
-  },
-};
-fs.writeFileSync(specFile, JSON.stringify(spec, null, 2));
-const line = (name, text, color, family) => ({
-  type: 'text',
-  name,
-  text,
-  color,
-  font: { size: 14, lineHeight: 20, ...(family ? { family } : {}) },
-});
-const mono = { $token: 'font-mono' };
-const template = erro
-  ? {
-      type: 'frame',
-      name: 'cartao',
-      width: 240,
-      height: 176,
-      layout: { type: 'column', gap: 8 },
-      children: [
-        {
-          type: 'rect',
-          name: 'sem-token',
-          width: 50,
-          height: 20,
-          fill: { $token: 'inexistente' },
-        },
-        {
-          type: 'rect',
-          name: 'tipo-errado',
-          width: 50,
-          height: 20,
-          cornerRadius: { $token: 'primary' },
-        },
-      ],
-    }
-  : {
-      type: 'frame',
-      name: 'cartao',
-      width: 240,
-      height: 176,
-      fill: { $token: 'primary' },
-      cornerRadius: { $token: 'radius-md' },
-      layout: { type: 'column', gap: 8, padding: { $token: 'space-4' } },
-      children: [
-        { type: 'rect', name: 'régua', width: 100, height: 4, fill: '#FFEB3B' },
-        line('i-sans', 'iiiiiiiiii', '#00E5FF'),
-        line('w-sans', 'WWWWWWWWWW', '#76FF03'),
-        line('i-mono', 'iiiiiiiiii', '#FF4081', mono),
-        line('w-mono', 'WWWWWWWWWW', '#FFAB40', mono),
-        {
-          type: 'rect',
-          name: 'amostra',
-          width: 20,
-          height: 20,
-          fill: { $token: 'on-primary' },
-        },
-      ],
-    };
-fs.writeFileSync(
-  dir + '/components/card.json',
-  JSON.stringify(
-    {
-      format: 'mapping-component',
-      formatVersion: 4,
-      id: 'card',
-      name: 'Card',
-      size: { width: 240, height: 176 },
-      template,
-    },
-    null,
-    2,
-  ),
-);
-```
+**Biblioteca com tokens (CF5).** O `scripts/testing/tokens.mjs` do repositório transforma uma cópia do pacote do Material 3 na `m3-tokens`: garante a especialização na `formatVersion` 15 e **mescla** nos `tokens` do pacote (`modes` `["light", "dark"]`) quatro valores: `primary` e `on-primary` por modo (os mesmos do pacote) e `radius-md` e `space-4` simples e troca o `card` por um componente de `formatVersion` 4 que lê esses tokens com `{ "$token": … }` (fundo, raio, respiro e uma amostra `on-primary`) e traz quatro linhas de texto de 10 letras: `iiiiiiiiii` e `WWWWWWWWWW` **sem `family`** (a fonte padrão: o token `font-sans`) e as mesmas duas com `family` `{ "$token": "font-mono" }`, mais uma régua amarela `#FFEB3B` de 100 de largura para o `medir`. Com o segundo argumento `erro`, o `card` sai com dois nós defeituosos (um `fill` com token inexistente e um `cornerRadius` com token de cor). Com o primeiro modo (`light`) o desenho usa `primary` `#6750A4` e `on-primary` `#FFFFFF`.
 
 | Passo | Ação | Esperado |
 | --- | --- | --- |
@@ -2206,8 +2105,8 @@ fs.writeFileSync(
 | R25.19 | **O chip que não cabe vai inteiro para a linha de baixo, com o espaço inicial (CF4).** No mesmo recorte, rode `unid i.png '#880E4F'` (a palavra de cima, `WWWWWW`), `unid i.png '#C0CA33'` e `caixa i.png '#C0CA33'` (o chip de baixo, de texto ` novo` com espaço inicial) e as sondas a partir do canto dele. | **Recorte:** a palavra de cima tem **L entre 60 e 90** (a caixa tem 100). O chip de baixo (`#C0CA33`) **não fica ao lado dela**: o canto dele está em **u entre 8,5 e 11,5** (10: a borda esquerda da caixa e da régua) e **v entre 74,5 e 77,5** (76: a linha de cima, de 56 a 76; se ele coubesse ao lado, estaria em v ≈ 56). Tem **A = 26** e **L entre 42 e 62**, e **L menos o L do chip de cima (`novo`, sem espaço) fica entre 2 e 7**: o espaço inicial é mantido dentro do chip (descartado, a diferença seria 0). **Sondas** (`C0CA33` é o fundo): (3, 13), (8, 13) e (L − 3, 13) `C0CA33` (o respiro e o espaço, antes da primeira letra); (1, 1) `FFFFFF`. A olho: embaixo a caixa lima com `novo` em preto, com mais folga à esquerda do `n` que à direita do `o`. **Disco:** o `mapping.json` não muda. |
 | R25.20 | **O texto de um trecho vem de um campo (CF4).** Com o Chip selecionado, nos Detalhes, em **Rótulo** digite `novidade` (Enter). Tire o recorte `k.png` (mesmo zoom) e rode `medir k.png '#827717' 240 10 10`, `unid k.png '#00ACC1'`, `caixa k.png '#00ACC1'` e `unid k.png '#C0CA33'`. Depois volte o **Rótulo** para `novo` (Enter) e espere **Salvo**. | **Recorte:** o chip de cima fica mais largo: **L com `novidade` dividido pelo L com `novo` do R25.18, entre 1,4 e 2,0** (o respiro, 12, não muda), continua com **A = 26** e na mesma linha (canto em **v entre 20,5 e 23,5**), porque `Mmmm Mmmm novidade` cabe nos 240; o chip de baixo **não muda** (L e A iguais aos do R25.19, diferença até 1,5), porque o texto dele é literal. **Disco:** a anotação do Chip guarda `label` `novidade` e depois `novo` em `values`; nenhum desenho. |
 | R25.21 | **Nada do texto rico no disco (CF4).** Com o **Salvo** à vista, leia o `data-components` do `.canvas-host` e, pela shell, o `mapping.json` da pasta `fiel`: `grep -c -e '"runs"' -e 00ACC1 -e C0CA33 -e 827717 -e 880E4F -e 455A64 -e 2E7D32 mapping.json`. | **Tela:** `data-components` `8`; o Chip continua desenhado. **Disco:** `grep -c` imprime `0` (o `mapping.json` não guarda trecho, peso, cor nem raio do texto rico; o `label` `novo` é dado, não desenho); 8 marcações; `schemaVersion` 18. |
-| R25.22 | **Montar e validar a biblioteca com tokens (CF5).** Pela shell, `cp -r REPO/libraries/material3-compose RAIZ/m3-tokens`, grave o `tokens.mjs` acima e rode `node tokens.mjs RAIZ/m3-tokens`. Pelo cliente stdio, `validate_library` com `path` `m3-tokens`. | **Resposta:** `valid` `true`; `errors` e `warnings` vazios; `summary` com 50 tipos e 50 componentes. **Disco:** `RAIZ/m3-tokens/material3-compose.spec.json` com `"formatVersion": 15` e `tokens` (`modes` `["light","dark"]`, `primary` com `light` `#6750A4` e `dark` `#D0BCFF`, `radius-md` `12`); `RAIZ/m3-tokens/components/card.json` em `"formatVersion": 4` com `{"$token": "primary"}` no `fill` da raiz do template; os outros 49 componentes seguem como estavam. |
-| R25.23 | **A validação recusa token inexistente, de tipo errado e `tokens` numa versão antiga (CF5).** Pela shell, `cp -r REPO/libraries/material3-compose RAIZ/m3-tokens-erro` e `node tokens.mjs RAIZ/m3-tokens-erro erro`; `cp -r RAIZ/m3-tokens RAIZ/m3-tokens-v14` e, nela, `node -e "const f='RAIZ/m3-tokens-v14/material3-compose.spec.json',fs=require('fs'),s=JSON.parse(fs.readFileSync(f));s.formatVersion=14;fs.writeFileSync(f,JSON.stringify(s,null,2))"` (a especialização volta à versão 14 e continua com `tokens` e `icons`, que o pacote já declara). Pelo cliente stdio, `validate_library` com `path` `m3-tokens-erro` e depois com `path` `m3-tokens-v14`. | **Resposta da `m3-tokens-erro`:** `valid` `false`, com **dois** erros, os dois em `components/card.json`: `template.children[0].fill` com a mensagem `o token "inexistente" não existe nos tokens da especialização` e `template.children[1].cornerRadius` com `o token "primary" é cor, mas aqui se espera número`; `warnings` vazio. **Resposta da `m3-tokens-v14`:** `valid` `false`, com **dois** erros, os dois em `material3-compose.spec.json`, nos caminhos `tokens` e `icons`, com a mensagem `só é permitido com formatVersion 15` (o pacote declara os dois). **Disco:** nada muda. |
+| R25.22 | **Montar e validar a biblioteca com tokens (CF5).** Pela shell, `cp -r REPO/libraries/material3-compose RAIZ/m3-tokens`, rode `node REPO/scripts/testing/tokens.mjs RAIZ/m3-tokens`. Pelo cliente stdio, `validate_library` com `path` `m3-tokens`. | **Resposta:** `valid` `true`; `errors` e `warnings` vazios; `summary` com 50 tipos e 50 componentes. **Disco:** `RAIZ/m3-tokens/material3-compose.spec.json` com `"formatVersion": 15` e `tokens` (`modes` `["light","dark"]`, `primary` com `light` `#6750A4` e `dark` `#D0BCFF`, `radius-md` `12`); `RAIZ/m3-tokens/components/card.json` em `"formatVersion": 4` com `{"$token": "primary"}` no `fill` da raiz do template; os outros 49 componentes seguem como estavam. |
+| R25.23 | **A validação recusa token inexistente, de tipo errado e `tokens` numa versão antiga (CF5).** Pela shell, `cp -r REPO/libraries/material3-compose RAIZ/m3-tokens-erro` e `node REPO/scripts/testing/tokens.mjs RAIZ/m3-tokens-erro erro`; `cp -r RAIZ/m3-tokens RAIZ/m3-tokens-v14` e, nela, `node -e "const f='RAIZ/m3-tokens-v14/material3-compose.spec.json',fs=require('fs'),s=JSON.parse(fs.readFileSync(f));s.formatVersion=14;fs.writeFileSync(f,JSON.stringify(s,null,2))"` (a especialização volta à versão 14 e continua com `tokens` e `icons`, que o pacote já declara). Pelo cliente stdio, `validate_library` com `path` `m3-tokens-erro` e depois com `path` `m3-tokens-v14`. | **Resposta da `m3-tokens-erro`:** `valid` `false`, com **dois** erros, os dois em `components/card.json`: `template.children[0].fill` com a mensagem `o token "inexistente" não existe nos tokens da especialização` e `template.children[1].cornerRadius` com `o token "primary" é cor, mas aqui se espera número`; `warnings` vazio. **Resposta da `m3-tokens-v14`:** `valid` `false`, com **dois** erros, os dois em `material3-compose.spec.json`, nos caminhos `tokens` e `icons`, com a mensagem `só é permitido com formatVersion 15` (o pacote declara os dois). **Disco:** nada muda. |
 | R25.24 | **Projeto, biblioteca com tokens e o Card na app (CF5).** Como no R25.3: crie a pasta `fiel-tk` e **Abrir pasta** **[pessoa]** (ou `select_folder`); **Especializações** › **Aplicar pasta…** com `RAIZ/m3-tokens` **[pessoa]** (ou `select_folder`); **Aplicar**; feche a janela. **Novo container** › **Personalizado**, nome `Telas`, **Largura** `300`, **Altura** `240`, **Cor de fundo** `#DDEEFF`. Na **Paleta** (`Ctrl+Shift+9`), **Adicionar na tela Telas** o **Card** (**Posição** X `30`, Y `30`; confira 240 × 176). Espere **Salvo** e abra o **Diagnóstico** (`Ctrl+Shift+6`; a seção **Componentes** só existe com algo a mostrar). | **Tela:** a janela do pacote sem erro nem aviso (50 tipos; a `formatVersion` 15 é aceita); o container azul-claro com o Card: um cartão **roxo** de cantos arredondados, com uma régua amarela, quatro linhas de texto coloridas e um quadrado branco embaixo. O **Diagnóstico** sem erro nem aviso de componente (a pendência do **Título** vazio não é defeito). Em **Especializações**, a biblioteca lista os **Modos** (`light, dark`) e os tokens. **Disco:** `schemaVersion` 18; `specs/material3-compose/material3-compose.spec.json` com `"formatVersion": 15` e `tokens`; `specs/material3-compose/components/card.json` com `$token`; 1 marcação, do tipo `material3-compose/card`. |
 | R25.25 | **O token de cor, de raio e de espaçamento no recorte PNG (CF5).** Enquadre o Card (**Árvore** e `Shift+2`, ver o Preparo) com zoom até a régua amarela passar de 300 px de tela de largura (o Card inteiro dentro do canvas) e tire o recorte `t1.png`. Pela shell, `medir t1.png '#FFEB3B' 100 16 16` e `sonda t1.png $X0 $Y0 $s <u> <v>` nos pontos da coluna Esperado. | **Recorte:** `H/W` ≈ 4/100 = 0,04 (de 0,03 a 0,05). A olho: um cartão **roxo médio** (não o lilás claro `#D0BCFF` do modo escuro) de cantos arredondados, a régua amarela com folga igual em cima e à esquerda. **Sondas** (unidades do Card, origem no canto de cima à esquerda do cartão): `primary` do modo `light` (o primeiro): (200, 100) `6750A4`; **raio** `radius-md` 12: (239, 1) `DDEEFF` (o canto de cima à direita, arredondado, deixa ver o fundo do container; o de cima à esquerda fica sob o pino da camada) e (14, 14) `6750A4`; **espaçamento** `space-4` 16: (15, 18) `6750A4` e (17, 18) `FFEB3B` (a régua começa em 16 e o cartão tem 16 de respiro à esquerda), (50, 15) `6750A4` e (50, 18) `FFEB3B` (o mesmo em cima); `on-primary` do modo `light`: a amostra, em x de 16 a 36 e y de 140 a 160, (26, 150) `FFFFFF`. Nenhuma sonda dá `D0BCFF` nem `381E72` (o modo escuro). **Disco:** o `mapping.json` não muda. |
 | R25.26 | **A fonte padrão é a `font-sans` da especialização e o `font-mono` é monoespaçado (CF5).** Com o `t1.png` e o `medir` do passo anterior, rode `unid t1.png` com `'#00E5FF'` (`iiiiiiiiii` sem `family`; nele, `AREA=20`), `'#76FF03'` (`WWWWWWWWWW` sem `family`), `'#FF4081'` (`i` em `font-mono`; nele, `AREA=20`) e `'#FFAB40'` (`W` em `font-mono`; ignore o pino ⚠ do Card). Pelo Playwright/CDP, na aba da app, `page.evaluate` mede `WWWWWWWWWW` a 14 px num `canvas` (`ctx.font = '14px ' + pilha`, `ctx.measureText(...).width`) com a pilha `Roboto, sans-serif` (o `font-sans` do pacote, que a app carrega) e depois com a `--font-mono` (`getComputedStyle(document.body).getPropertyValue`). | **Recorte:** o texto **sem `family`** usa o `font-sans` **da especialização** (a Roboto do pacote), não o do app: o `L` do `W` sem `family` difere em no máximo 3 da medida com `Roboto, sans-serif` (≈ 124,2 a 14 px; o `--font-sans` do app daria ≈ 141,0), e o do `i` é **menos da metade** do `W` (fonte proporcional). Em `font-mono` a fonte é monoespaçada: o `L` do `W` difere em no máximo 3 da medida com `--font-mono` e o do `i` fica entre **0,85 e 1,05** vezes o do `W`. **Disco:** o `mapping.json` não muda. |
@@ -2277,6 +2176,8 @@ fs.writeFileSync(
 | R25.90 | **O mesmo na app, com o parágrafo justificado (MF5).** Selecione o Card pela **Árvore**, `Shift+2` (`s` ≈ 1,76 a 1280 × 720, com **Árvore** e **Detalhes** abertos), leia o `data-selection-box` e recorte `ja.png` por Playwright por CDP (depois do `Esc`). Pela shell: `medirsel "<data-selection-box>" 300`, `sonda ja.png $X0 $Y0 $s <u> <v>` nos pontos do R25.89 e `AREA=1 unid ja.png '#D32F2F'`. | **Sondas:** as do R25.89 (`B3A7D1` e `342852`, ±2). **Unidades:** a tinta vermelha com `L` ≈ 119 (±2: as duas primeiras linhas esticadas até os 120 da caixa; sem o `justify` seriam 107) e `A` ≈ 40 (±2); a última linha, de uma palavra, fica à esquerda. **Disco:** nada muda. |
 | R25.91 | **Texto cortado e `cap-middle` mais alto que a caixa, na app (MC0).** No projeto `fiel` (R25.3): **Novo container** › **Personalizado**, nome `Cortes`, `140` × `50`, `#FFFFFF`; **Adicionar na tela Cortes** o **Badge** (X `0`, Y `0`; confira 140 × 50). Espere **Salvo**. Enquadre o container (**Árvore** e `Shift+2`), zoom (`Ctrl+=`) até o Badge passar de 560 px, selecione-o pela **Árvore**, leia o `data-selection-box` e recorte `cb.png`. Pela shell: `medirsel "<data-selection-box>" 140` (`s`, `X0`, `Y0`); recorte, como no R25.74 (`-crop` em `int(unidades*s)`), `c2.png` (60 × 14 unidades a partir de (0, 25)) e `c3.png` (40 × 50 a partir de (90, 0)); `AREA=4 tinta c2.png '#0D47A1'` (a linha curta: **X / s**) e `AREA=4 tinta c3.png '#B71C1C'` (**A / s** e **Y / s**). | **Tela:** o texto vermelho tem **duas** linhas de `H` (a terceira não aparece). **Recorte:** **X / s entre 30,5 e 33,5** (o `H` se centra no bloco de `HHHHHHH`, mais largo que a caixa; centrado na caixa seria ≈ 26); vermelho com **A / s entre 18,5 e 21,5** (duas linhas; três dariam ≈ 34) e **Y / s entre 12,5 e 15,5**. **Disco:** 1 marcação `material3-compose/badge`. |
 | R25.92 | **O mesmo no PNG do MCP, igual à app (MC0).** Pelo cliente stdio, `render_container` do `Cortes` do `fiel`, `zoom` `1` (`cm.png`, 140 × 50). Pela shell: `convert cm.png -crop 60x14+0+25 +repage m2.png` e `AREA=4 tinta m2.png '#0D47A1'`; o mesmo com `40x50+90+0` e `'#B71C1C'`. | **Recorte:** **X entre 30,5 e 33,5**; vermelho com **A entre 18,5 e 21,5** e **Y entre 12,5 e 15,5**. **Contra a app:** o X, o A e o Y a **≤ 1 unidade** dos do R25.91. **Disco:** o `mapping.json` não muda. |
+| R25.93 | **Linha de base na app (MC1).** No projeto `fiel` (R25.3): **Novo container** › **Personalizado**, nome `Base`, `140` × `80`, `#FFFFFF`; **Adicionar na tela Base** o **Snackbar** (X `0`, Y `0`; confira 140 × 80). Espere **Salvo**. Enquadre o container (**Árvore** e `Shift+2`), zoom (`Ctrl+=`) até o Snackbar passar de 560 px, selecione-o pela **Árvore**, leia o `data-selection-box` e recorte `bl.png`. Pela shell: `medirsel "<data-selection-box>" 140` (`s`, `X0`, `Y0`); recorte, como no R25.74 (`-crop` em `int(unidades*s)`), `b1.png` (40 × 60 unidades a partir de (10, 0)) e `b2.png` (60 × 40 a partir de (70, 10)); `AREA=4 tinta b1.png '#B71C1C'` (o `H` com `baselinePadding.top` 30), `AREA=4 tinta b2.png '#0D47A1'` e `AREA=4 tinta b2.png '#1B5E20'` (a `row` com `align` `baseline`); o pé de cada `H` é **(Y + A) / s**. | **Tela:** um `H` vermelho à esquerda e, à direita, um `H` azul menor e outro verde maior, lado a lado. **Recorte:** o pé do vermelho com **(Y + A) / s entre 29,5 e 30,5** (30 do topo do nó, em qualquer fonte); os pés do azul e do verde a **≤ 1 unidade** um do outro (sem `align: baseline` o azul ficaria ≈ 7 unidades mais alto). **Disco:** 1 marcação `material3-compose/snackbar`. |
+| R25.94 | **O mesmo no PNG do MCP, `zoom` 1 e 4,2 (MC1).** Pelo cliente stdio, `render_container` da `Base` do `fiel` com `zoom` `1` (`bm.png`, 140 × 80) e com `zoom` `4.2` (`bm4.png`). Pela shell: nos dois, os recortes e as medidas do R25.93 (`-crop` em `int(unidades*zoom)`; dividir por `zoom`). | **Recorte:** o pé do vermelho com **(Y + A) / zoom entre 29,5 e 30,5** nos dois zooms; os pés do azul e do verde a **≤ 1 unidade** um do outro. **Contra a app:** os três pés a **≤ 1 unidade** dos do R25.93. **Disco:** o `mapping.json` não muda. |
 
 ### Roteiros sob demanda (manuais)
 

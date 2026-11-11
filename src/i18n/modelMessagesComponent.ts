@@ -101,6 +101,8 @@ export const componentEnUS: {
   'model.component.countOrField': 'use count or field, not both',
   'model.component.repeatTemplateFrame': 'the template of a row must be of type "frame"',
   'model.component.notAllowedInRepeat': '{type} is not allowed inside a repeat',
+  'model.component.baselineOnlyRow': 'baseline is only valid in row',
+  'model.component.baselineNotWithVerticalAlign': 'does not combine with verticalAlign',
   'model.component.v4Only': 'only allowed with formatVersion 4',
   'model.component.indexOnlyInRepeat': '$index is only valid inside a repeat',
   'model.component.repeatOnlyV2': 'the repeat node only exists in formatVersion 2',

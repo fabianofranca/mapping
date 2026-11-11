@@ -55,6 +55,10 @@ function capMetricsOf(book: FontBook, spec: FontSpec): CapMetrics {
   return { ...fontExtents(face, spec.size), capHeight: capHeightOf(face, spec.size) };
 }
 
+/** O `cap-middle` e o `baselinePadding.top` leem as medidas da fonte que desenha. */
+const needsMetrics = (node: TextNode): boolean =>
+  node.style.verticalAlign === 'cap-middle' || node.style.baselineTop !== undefined;
+
 /** Contornos de uma linha de texto cujo topo está em `top` e altura `lineHeight`, mais a decoração. */
 function lineInk(
   book: FontBook,
@@ -136,7 +140,7 @@ function plainInk(node: TextNode, measure: TextMeasurer, book: FontBook): TextIn
     node,
     lines.length,
     lineHeight,
-    node.style.verticalAlign === 'cap-middle' ? capMetricsOf(book, spec) : undefined,
+    needsMetrics(node) ? capMetricsOf(book, spec) : undefined,
   );
   const widths = lines.map(widthOf);
   const block = widths.reduce((max, w) => Math.max(max, w), 0);
@@ -223,7 +227,7 @@ function richInk(node: TextNode, layout: RunLayout, book: FontBook): TextInk {
   const shift = richShift(
     node,
     layout,
-    node.style.verticalAlign === 'cap-middle' ? capMetricsOf(book, base) : undefined,
+    needsMetrics(node) ? capMetricsOf(book, base) : undefined,
   );
   const out: TextInk = { glyphs: [], boxes: [] };
   for (const line of layout.lines) {

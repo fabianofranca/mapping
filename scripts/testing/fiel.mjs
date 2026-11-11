@@ -328,6 +328,55 @@ if (version >= 4) {
   );
 }
 
+// MC1 (R25.93 a R25.95): o `snackbar` vira uma peça de 140 × 80 com a linha de base. À esquerda, um
+// `H` vermelho (`#B71C1C`, em 10, 0, numa caixa de 40 × 60) com `baselinePadding.top` 30: o pé da
+// letra fica a 30 do topo do nó. À direita, uma `row` `hug` (em 70, 10) com `align` `baseline` e dois
+// `H`, um azul (`#0D47A1`, 14/20) e um verde (`#1B5E20`, 22/28): os dois pés ficam na mesma linha.
+// Só na versão 4 (as chaves não existem antes dela; o R25.2 segue com as oito peças e 15 erros).
+if (version >= 4) {
+  const letter = (name, color, size, lineHeight, extra = {}) => ({
+    type: 'text',
+    name,
+    text: 'H',
+    color,
+    font: { size, lineHeight, family: 'sans-serif' },
+    ...extra,
+  });
+  write(
+    'snackbar',
+    'Snackbar',
+    { width: 140, height: 80 },
+    {
+      type: 'frame',
+      name: 'base',
+      width: 140,
+      height: 80,
+      layout: { type: 'none' },
+      fill: '#FFFFFF',
+      children: [
+        letter('top30', '#B71C1C', 13, 15.6, {
+          anchors: { left: 10, top: 0 },
+          width: 40,
+          height: 60,
+          baselinePadding: { top: 30 },
+        }),
+        {
+          type: 'frame',
+          name: 'fileira',
+          anchors: { left: 70, top: 10 },
+          width: 'hug',
+          height: 'hug',
+          layout: { type: 'row', gap: 4, align: 'baseline' },
+          children: [
+            letter('pequeno', '#0D47A1', 14, 20),
+            letter('grande', '#1B5E20', 22, 28),
+          ],
+        },
+      ],
+    },
+  );
+}
+
 // Os componentes mínimos acima não desenham o `interaction`: sem tirar o campo e os exemplos que o
 // usam, o validador avisa "campo não usado" (R25.1).
 const specFile = process.argv[2] + '/material3-compose.spec.json';

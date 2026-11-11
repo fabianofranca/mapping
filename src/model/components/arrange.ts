@@ -10,6 +10,7 @@ import type {
   ComponentFile,
   Expr,
   FieldValues,
+  LayoutAlign,
   LayoutJustify,
   SlotTemplate,
   TemplateNode,
@@ -39,7 +40,7 @@ export interface ResolvedSlotLayout {
   readonly type: 'none' | 'row' | 'column';
   readonly gap: number;
   readonly padding: Padding;
-  readonly align: 'start' | 'center' | 'end' | 'stretch';
+  readonly align: LayoutAlign;
   readonly justify: LayoutJustify;
   /** Filhos em ordem inversa e `start` no fim (`layout.reverse`). */
   readonly reverse: boolean;
@@ -119,11 +120,14 @@ export function resolveSlotLayout(
   const padding = Array.isArray(rawPadding)
     ? normalizePadding(rawPadding.map((v) => toNumber(v, 0)))
     : normalizePadding(toNumber(rawPadding, 0));
+  // `baseline` só vale numa `row`: numa `column` cai em `start`, como no motor.
+  const aligns =
+    type === 'row' ? LAYOUT_ALIGNS : LAYOUT_ALIGNS.filter((a) => a !== 'baseline');
   return {
     type,
     gap,
     padding,
-    align: choice(layout.align, LAYOUT_ALIGNS, 'start', values),
+    align: choice(layout.align, aligns, 'start', values),
     justify: choice(layout.justify, LAYOUT_JUSTIFIES, 'start', values),
     reverse:
       layout.reverse !== undefined && evaluateBoolean(layout.reverse, values, false),
@@ -176,11 +180,15 @@ function crossAxis(
   }
 }
 
-/** Retângulos novos (arredondados) dos filhos, na ordem de `children`. */
+/**
+ * Retângulos novos (arredondados) dos filhos, na ordem de `children`. Com `align: "baseline"` cada
+ * filho traz a `baseline` dele (a primeira linha de base, a partir do topo da caixa; sem ela vale o
+ * fundo da caixa) e a fileira se alinha pela mais baixa.
+ */
 export function layoutChildren(
   slot: Box,
   layout: ResolvedSlotLayout,
-  children: readonly { readonly box: Box }[],
+  children: readonly { readonly box: Box; readonly baseline?: number }[],
 ): Box[] {
   const row = layout.type === 'row';
   const { padding } = layout;
@@ -197,11 +205,16 @@ export function layoutChildren(
   const free = Math.max(0, mainContent - total);
   const { offset, extra } = justifySpacing(layout.justify, free, n);
 
+  const lines = children.map((c) => c.baseline ?? c.box.height);
+  const above = layout.align === 'baseline' ? Math.max(0, ...lines) : 0;
   let cursor = mainStart + offset;
   return children.map((child, i) => {
     const main = mains[i] ?? 0;
     const crossSize = row ? child.box.height : child.box.width;
-    const cross = crossAxis(layout, crossStart, crossContent, crossSize);
+    const cross =
+      layout.align === 'baseline'
+        ? { pos: crossStart + above - (lines[i] ?? crossSize), size: crossSize }
+        : crossAxis(layout, crossStart, crossContent, crossSize);
     const forward = cursor;
     cursor += main + layout.gap + extra;
     const mainPos = layout.reverse
@@ -228,12 +241,27 @@ function sameBox(a: Box, b: Box): boolean {
   );
 }
 
+/** A primeira linha de base do desenho de uma instância (`undefined` = sem texto ou sem componente). */
+function instanceBaseline(
+  types: ReadonlyMap<string, TypeDef>,
+  child: Instance,
+  measure: TextMeasurer,
+): number | undefined {
+  const raw = types.get(child.typeId)?.component;
+  if (!raw) return undefined;
+  return instantiate(tokenizedComponent(raw), child.values, child.box, {
+    measure,
+    idPrefix: child.id,
+  }).firstBaseline;
+}
+
 /** Os alvos das filhas de uma instância com slot row/column, ou `null` quando não há o que arrumar. */
 function childTargets(
   instance: Instance,
   raw: ComponentFile | undefined,
   children: readonly Instance[],
   measure: TextMeasurer,
+  types: ReadonlyMap<string, TypeDef>,
 ): Box[] | null {
   if (!raw || children.length === 0) return null;
   const component = tokenizedComponent(raw);
@@ -242,7 +270,16 @@ function childTargets(
   const layout = resolveSlotLayout(slot, instance.values);
   if (layout.type === 'none') return null;
   const box = slotBox(component, instance, measure);
-  return box ? layoutChildren(box, layout, children) : null;
+  if (!box) return null;
+  const baselines =
+    layout.align === 'baseline'
+      ? children.map((child) => instanceBaseline(types, child, measure))
+      : [];
+  return layoutChildren(
+    box,
+    layout,
+    children.map((child, i) => ({ box: child.box, baseline: baselines[i] })),
+  );
 }
 
 /** Recalcula e grava os retângulos dos filhos de todos os componentes com slot com layout row/column. Puro; devolve o MESMO objeto quando nada muda. */
@@ -264,6 +301,7 @@ export function arrange(screen: Screen, library: Library, measure: TextMeasurer)
       types.get(instance.typeId)?.component,
       children,
       measure,
+      types,
     );
     if (!targets) continue;
     children.forEach((child, i) => {
