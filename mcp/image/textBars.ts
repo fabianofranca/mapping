@@ -216,7 +216,7 @@ function customEnds(node: TextNode, lines: readonly string[]): boolean[] {
  * esquerda, como o Konva). As linhas do medidor (`wrap: none`, `…`, `maxLines`) fecham o texto
  * inteiro: com `wrap: none` cada linha é um parágrafo; nos outros casos só a última fecha.
  */
-function paragraphEnds(
+export function paragraphEnds(
   node: TextNode,
   lines: readonly string[],
   custom: readonly string[] | undefined,

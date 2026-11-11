@@ -274,6 +274,15 @@ describe('round-guide.mjs: faixa de passos (RB1, decisão 1c)', () => {
     expect(whole).toContain('| R2.3 |');
   });
 
+  // CL1 / T9: um passo avulso (`R2.1`) vale como a faixa de um passo só.
+  it('um passo avulso (R2.1, R0.1) vale como faixa de um passo', async () => {
+    const out = await buildFrom(FIXTURE, ['R2.1', 'R2.3']);
+    expect(out).toContain('| R2.1 |');
+    expect(out).toContain('| R2.3 |');
+    expect(out).not.toContain('| R2.2 |');
+    expect(out).toMatch(/^### R2 /m);
+  });
+
   it('faixa com passo inexistente falha', async () => {
     await expect(buildFrom(FIXTURE, ['R2.1-R2.9'])).rejects.toThrow(/R2\.9/);
   });
@@ -585,7 +594,7 @@ describe('round-guide.mjs: base, índice e trechos (#1232, GL1)', () => {
         (n, l) => n + Number(/^Passos \((\d+)\)/.exec(l)?.[1]),
         0,
       );
-      expect(sum).toBe(52);
+      expect(sum).toBe(53);
       expect(out).not.toMatch(/^\| R12\.\d/m);
     });
 

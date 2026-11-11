@@ -156,6 +156,47 @@ describe('stroke.gap (decisão 7)', () => {
     ]);
   });
 
+  // CL1 / D2: o vão só abre num nó fora de `repeat` e que não é o próprio; o resto é erro.
+  it('citar o próprio nó é erro de validação', () => {
+    const own = labelled({ gap: { node: 'self' } }) as {
+      template: { children: Record<string, unknown>[] };
+    };
+    own.template.children[0]!.name = 'self';
+    expect(validateComponent(own)).toEqual([
+      'template.children[0].stroke.gap.node: stroke.gap.node não pode citar o próprio nó: self',
+    ]);
+  });
+
+  it('citar um nó dentro de repeat é erro de validação', () => {
+    const doc = labelled({ gap: { node: 'label' } }) as {
+      template: { children: unknown[] };
+    };
+    doc.template.children[1] = {
+      type: 'repeat',
+      count: 2,
+      template: {
+        type: 'frame',
+        children: [
+          { type: 'text', name: 'label', text: 'x', width: 'hug', height: 'hug' },
+        ],
+      },
+    };
+    expect(validateComponent(doc)).toEqual([
+      'template.children[0].stroke.gap.node: stroke.gap.node não pode citar um nó dentro de um repeat: label',
+    ]);
+  });
+
+  it('o vão dentro de um repeat é erro de validação', () => {
+    const doc = labelled({ gap: { node: 'label' } }) as {
+      template: { children: unknown[] };
+    };
+    const [frame, text] = doc.template.children;
+    doc.template.children = [{ type: 'repeat', count: 2, template: frame }, text];
+    expect(validateComponent(doc)).toEqual([
+      'template.children[0].template.stroke.gap.node: stroke.gap não pode ser usado dentro de um repeat',
+    ]);
+  });
+
   it('gap junto com sides é erro', () => {
     expect(
       validateComponent(labelled({ gap: { node: 'label' }, sides: ['top', 'left'] })),

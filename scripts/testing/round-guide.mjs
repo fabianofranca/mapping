@@ -70,6 +70,7 @@ export function listRoteiros(markdown) {
 const MARK_OPEN = /^<!-- roteiros: ([^>]*?) -->$/;
 const MARK_CLOSE = '<!-- /roteiros -->';
 const STEP_ROW = /^\|\s*(?:\*\*)?(R\d+\.\d+[a-z]?)(?:\*\*)?[^|]*\|/;
+const STEP_ITEM = /^(R\d+)\.(\d+[a-z]?)$/i;
 const RANGE = /^(R\d+)\.(\d+[a-z]?)-(R\d+)\.(\d+[a-z]?)$/i;
 
 /** Tira as marcas de trecho: o trecho fica se um dos roteiros citados é pedido. */
@@ -143,6 +144,12 @@ function parseRequest(roteiros, existing) {
       }
       const list = ranges.get(id) ?? [];
       list.push({ from: range[2], to: range[4] });
+      ranges.set(id, list);
+    } else if (STEP_ITEM.test(raw)) {
+      // Passo avulso (`R0.1`): a faixa de um passo só.
+      const [id, step] = raw.toUpperCase().split('.');
+      const list = ranges.get(id) ?? [];
+      list.push({ from: step, to: step });
       ranges.set(id, list);
     } else {
       whole.add(raw.toUpperCase());
@@ -301,7 +308,6 @@ export function buildGuideIndex(guideText) {
 /** Limite de caracteres do que o `cloud.mjs passo` imprime (abaixo dos 30 mil do Bash). */
 export const EXCERPT_LIMIT = 25000;
 const CUT_RESERVE = 200;
-const STEP_ITEM = /^(R\d+)\.(\d+[a-z]?)$/i;
 const STEP_HEADER = /^\|\s*Passo\b/;
 
 /** Interpreta um item do `passo`: `R12`, `R12.4` ou `R12.4-R12.9`. */
