@@ -63,6 +63,7 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 - **Em erro**: label=Senha, value=123, supportingText=Mínimo de 8 caracteres, style=outlined, isError=true, trailingIcon=Lock
 - **Mouse sobre**: label=Nome, value=Maria Silva, style=filled, interaction=hovered
 - **Com foco**: label=E-mail, value=nome@exemplo.com, style=outlined, interaction=focused
+- **Preenchido com apoio**: label=Nome, supportingText=Como aparece no seu perfil, style=filled
 
 ## Fidelidade
 
@@ -80,7 +81,9 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 
 **Como o desenho segue o Compose**
 
-- Campo de 56 de altura (`minHeight` do contêiner) e piso de 280 de largura (o `minSize`). O outlined soma os 8 de cima do `padding(top = minimizedLabelHalfHeight())`, por isso o contêiner dele tem no mínimo 64 e o contorno 56.
+- Campo de 56 de altura (`minHeight` do contêiner) e piso de 280 de largura (o `minSize` e o `minWidth` da raiz). O outlined soma os 8 de cima do `padding(top = minimizedLabelHalfHeight())`, por isso o contêiner dele tem no mínimo 64 e o contorno 56.
+- **Altura pelo estilo e pelo texto de apoio:** `sizing.height` é uma expressão (`$switch` pelo `style`, `$if` com `$has` do `supportingText`), sem os pixels vazios de antes: filled 56 sem apoio e 76 com (56 + 4 + 16); outlined 64 sem apoio (8 + 56) e 84 com (8 + 56 + 4 + 16). Os 4 de cima do apoio são o `SupportingTopPadding` (`TextFieldDefaults.kt` linhas 466 a 470) e os 16, o `MinSupportingTextLineHeight` (`TextField.kt` linhas 797 a 801); os 8 do outlined, o `padding(top = minimizedLabelHalfHeight())` (`OutlinedTextField.kt` linhas 244 a 252). O `size` continua 280 por 84 (o do outlined com apoio, o maior); o Arrumar e o `fit_marking` levam a altura ao valor da expressão e mantêm a largura.
+- **Limite de largura da raiz:** `minWidth` 280 (`defaultMinSize(minWidth = MinWidth, minHeight = MinHeight)`, `TextField.kt` linhas 305 a 308 e `OutlinedTextField.kt` linhas 257 a 260; `TextFieldDefaults.kt` linhas 81 e 900). Vale quando a largura é medida (`measureComponent`, o ajuste com a largura livre): nunca sai abaixo de 280.
 - Filled: fundo `surface-container-highest` com raio superior `corner-extra-small` e indicador de 1, só na borda de baixo, por `stroke.sides: ["bottom"]` (nenhum retângulo de 1 de altura). Cor do indicador `on-surface-variant`, `error` em erro.
 - Outlined: contorno de 1 com raio `corner-extra-small`, cor `outline` e `error` em erro; o contêiner é transparente.
 - Rótulo: `body-large` (16/24, `body-large-tracking` 0,5) quando o campo está vazio e `body-small` (12/16, 0,4) quando há valor ou dica. No filled ele fica sobre o valor (8 de cima); no outlined, minimizado, vai para o vão do contorno, em x = 16 e centrado na linha de cima. Cor `on-surface-variant`, `error` em erro.
@@ -112,6 +115,6 @@ O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o des
 - O contêiner desabilitado do filled segue o código (`TextFieldDefaults.colors` usa `ContainerColor` também desabilitado), não o token `DisabledContainerOpacity` de 0,04 sobre `on-surface`.
 - O vão do contorno do outlined é o `stroke.gap` do nó `contorno`; a largura dele é a da caixa do rótulo minimizado medida na arrumação, não a do `labelSize` animado do Compose. Sem valor nem dica o rótulo fica dentro do campo e o contorno não abre vão.
 - O raio superior do filled é a lista de 4 raios com `$token` por item (`corner-extra-small` em cima, 0 embaixo), sem retângulo mais alto recortado.
-- Os mínimos de `TextFieldDefaults` (280 por 56) valem no contêiner e no `minSize`; a raiz sempre tem o tamanho da marcação, então `minWidth` na raiz não agiria. O tamanho inicial de 84 comporta o outlined com apoio (8 + 56 + 4 + 16); o desenho sempre tem a altura do `size`, então o filled com apoio (76) fica com 8 vazios embaixo e o filled sem apoio (56) com 28.
+- A largura do campo é `fill` no `sizing` (como o `fillMaxWidth()` das telas do Material): numa marcação com retângulo a raiz ocupa a caixa e o `minWidth` de 280 da raiz não muda nada, como o `minSize`; o Arrumar não mexe na largura. A altura vem do `sizing`, mas só conta uma linha de apoio (16): um apoio que quebra em duas linhas passa da caixa ajustada (o Compose cresce o campo com as linhas).
 - `singleLine` mostra o começo do texto (o `BasicTextField` rola até o cursor); `maxLines` corta o texto, sem rolagem vertical.
 - Sem prefixo, sufixo, contador, `labelPosition` acima, área de toque de 48 dos ícones e demais parâmetros de `TextField`.

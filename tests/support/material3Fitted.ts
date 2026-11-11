@@ -10,12 +10,13 @@ import { files } from './material3Library';
 export const catalog = buildCatalog(files);
 
 export type Mode = 'light' | 'dark';
-export type Values = Record<string, string | number | null>;
+export type Values = Readonly<Record<string, unknown>>;
 
 /** O tipo no catálogo (falha se não existir). */
 export function entryOf(id: string): NonNullable<ReturnType<typeof findEntry>> {
   const entry = findEntry(catalog, id);
-  if (entry === undefined || entry.component === null) throw new Error(`tipo ${id} ausente`);
+  if (entry === undefined || entry.component === null)
+    throw new Error(`tipo ${id} ausente`);
   return entry;
 }
 
@@ -35,7 +36,10 @@ function optionsOf(mode: Mode) {
  */
 export function fittedSize(id: string, values: Values, mode: Mode = 'light') {
   const entry = entryOf(id);
-  const all = { ...defaultValues(entry.type), ...values };
+  const all = { ...defaultValues(entry.type), ...values } as Record<
+    string,
+    string | number | null
+  >;
   const fit = fitComponentSize(entry.component!, all, optionsOf(mode));
   const size = entry.component!.size;
   return {
@@ -54,7 +58,10 @@ export function drawFitted(
   override: { width?: number; height?: number } = {},
 ) {
   const entry = entryOf(id);
-  const all = { ...defaultValues(entry.type), ...values };
+  const all = { ...defaultValues(entry.type), ...values } as Record<
+    string,
+    string | number | null
+  >;
   const size = fittedSize(id, values, mode);
   const box = {
     x: 0,

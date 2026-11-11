@@ -201,7 +201,11 @@ const MF5_EXAMPLES: Record<string, string[]> = {
   // MC5 (#1033): o item de três linhas pelo apoio de duas linhas (`$lines` do apoio)
   'list-item': ['Apoio de duas linhas'],
   'date-picker': ['Dia de hoje'],
-  chip: ['Com avatar'],
+  chip: ['Com avatar', 'Rótulo longo'],
+  // MC5 (#1033, grupo C): o rótulo longo do extended-fab e o campo com apoio (a altura pelo `sizing`)
+  'extended-fab': ['Rótulo longo'],
+  'text-field': ['Preenchido com apoio'],
+  'secure-text-field': ['Preenchido com apoio'],
   divider: ['Recuo por ponta'],
   'progress-indicator': ['Trilho colorido e ponta reta'],
 };

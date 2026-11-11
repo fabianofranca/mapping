@@ -75,6 +75,13 @@ const EXCEPTIONS = {
     rename: {},
     drop: ['rich', 'título', 'corpo', 'texto', 'ação', 'botão da ação', 'rótulo da ação'],
   },
+  // MC5 (#1033, grupo C): o rótulo e o quadro `conteúdo` do button, do extended-fab e do chip passaram a abraçar a
+  // altura das linhas (`hug`, como o `Row` com `defaultMinSize` do Compose) em vez de ocupar a caixa inteira: a caixa
+  // deles encolhe e o chip abraça a largura. O centro do rótulo de uma linha segue o mesmo (confere
+  // `material3Mc5GrupoC.test.ts`); o resto da cena (contêiner, ícones, sombras) fica igual.
+  button: { rename: {}, drop: ['conteúdo', 'rótulo'] },
+  'extended-fab': { rename: {}, drop: ['conteúdo', 'texto'] },
+  chip: { rename: {}, drop: ['conteúdo', 'rótulo'] },
 } as Record<string, { rename: Record<string, string>; drop: string[] }>;
 
 /** Número sob a alça: a `alça` ganha a cópia dos números (`números sob a alça`) no lugar do `valor selecionado`. */

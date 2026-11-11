@@ -42,6 +42,7 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 - **Mouse sobre**: text=Criar, icon=Add, interaction=hovered
 - **Com foco**: text=Editar, icon=Edit, containerColor=secondaryContainer, interaction=focused
 - **Pressionado**: text=Editar, icon=Edit, expanded=false, containerColor=tertiaryContainer, interaction=pressed
+- **Rótulo longo**: text=Criar nota fiscal, icon=Add
 
 ## Fidelidade
 
@@ -55,12 +56,13 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 
 **Como o desenho segue o Compose**
 
-- 56 de altura (a caixa da marcação), `corner-large`, fundo pelo papel de `containerColor` (padrão `primary-container`) e sombra do nível 3.
+- Altura mínima de 56, `corner-large`, fundo pelo papel de `containerColor` (padrão `primary-container`) e sombra do nível 3.
+- **Altura pelas linhas do texto:** `sizing.height` é `hug` e a raiz leva o mínimo de 56 (`minHeight`; o `Box` do `FloatingActionButton` tem `defaultMinSize` de `FabBaselineTokens.ContainerWidth` por `ContainerHeight`, 56 por 56, `FloatingActionButton.kt` linhas 122, 123 e 161). O quadro `conteúdo` e o nó `texto` abraçam a altura e não há padding vertical (a `Row` só tem padding dos lados, linhas 333 e 334 e 402 a 417), então uma e duas linhas (20 e 40) ficam nos 56 do mínimo e três linhas medem 60. O texto quebra no que sobra da largura da marcação: o `maxWidth` do nó `texto` é a largura da instância (`$size.width`) menos os paddings (36 com ícone, 40 sem) e, com ícone, o ícone de 24 e os 12 de espaço (72 no total).
 - Expandido com ícone: padding 16 antes do ícone e 20 depois do texto, 12 entre o ícone de 24 e o texto, largura mínima de 80; só texto: padding de 20 dos dois lados. Recolhido (`expanded` falso, com ícone): sem padding e largura mínima de 56, só o ícone.
 - O texto lê `label-large-size`, `label-large-line-height`, `label-large-weight` e `label-large-tracking`, sem `family`; o texto e o ícone usam a cor de conteúdo do `contentColorFor` (`primary-container` -> `on-primary-container`…).
 - O ícone é o nó `icon`, com o `$switch` do nome do Compose para o nome do conjunto, cobrindo as sugestões do campo.
 - Estrutura do desenho: a raiz tem fundo, forma e sombra e guarda os nós de estado e o quadro `conteúdo` (a linha com o ícone e o texto, centralizada), para a camada de estado cobrir o botão inteiro sem entrar na linha; a posição do ícone e do texto é a de antes.
-- Rótulo de uma linha centrado pela maiúscula (`cap-middle`): o nó `texto` (e o quadro `conteúdo`, que passa a ocupar a altura da caixa) usa `font.verticalAlign: "cap-middle"` e ocupa a altura da caixa (`height: "fill"`), sem mudar a posição horizontal. O `Text` do Compose centra pela caixa de linha da fonte (ascent e descent); o desenho centra a altura da maiúscula na caixa, e com o Roboto as duas coincidem a menos de 1 px.
+- Rótulo de uma linha centrado pela maiúscula (`cap-middle`): o nó `texto` usa `font.verticalAlign: "cap-middle"` e abraça a altura da linha (20), com o quadro `conteúdo` centrado na altura do botão, sem mudar a posição horizontal. O `Text` do Compose centra pela caixa de linha da fonte (ascent e descent); o desenho centra a altura da maiúscula na caixa, e com o Roboto as duas coincidem a menos de 1 px.
 
 **Estado de interação (campo `interaction`)**
 
@@ -74,5 +76,5 @@ O campo escolhe a aparência parada de um estado, como o `expanded` escolhe o re
 
 - As duas sombras vêm dos tokens `elevation-3-point-*` e `elevation-3-ambient-*` (a do nó `sombra elevada`, de `elevation-4-*`), por `$token`. Valores da elevação do Material 3 para a web: `elevation/internal/_elevation.scss` do `material-components/material-web` (versão 2.5.0, commit `37aa14b843dcaeb3a46f898679fa6fcd109b1905`), fonte de fora do Compose, que no Android entrega a elevação à plataforma e não traz os números: sombra de ponto em preto a 30% e sombra ambiente em preto a 15%, com `y`, `blur` e `spread` por nível (tokens `elevation-<n>-point-*` e `elevation-<n>-ambient-*`).
 - A animação de expandir e recolher (`AnimatedVisibility`) não existe: o desenho mostra os dois estados fixos. A elevação tonal também fica de fora, como no `fab`.
-- O conteúdo expandido fica centralizado na caixa da marcação; o Compose o centraliza do mesmo jeito no `Box` do botão, mas a largura de uma instância sem retângulo não é medida por este componente (o `sizing` `hug` só vale para telas arrumadas pelo `layoutScreen`, que mede o slot, e aqui não há slot).
+- O conteúdo expandido fica centralizado na caixa da marcação, como o `Box` do botão. Sem retângulo (instância nova, tela arrumada pelo `layoutScreen`), a largura é a do conteúdo (`sizing.width` `hug`) e a largura de partida do texto é o `size` de 142: um texto mais largo quebra em vez de alargar o botão, onde o Compose, sem limite do pai, não quebra. O exemplo "Rótulo longo" no `size` (142 × 56) mostra as três linhas passando da caixa; o Arrumar a leva a 60.
 - Sem ripple animado e sem transição entre estados (o desenho é um quadro parado). O Compose não define anel de foco para este tipo no commit fixado (nenhum `*Tokens.kt` dele traz `FocusIndicatorColor`): nenhum é desenhado. A elevação `lowered` do Compose não é um campo do tipo (veja acima).

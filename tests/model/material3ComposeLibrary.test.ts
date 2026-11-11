@@ -271,11 +271,11 @@ describe('biblioteca Material 3 (Compose)', () => {
     expect(report.warnings.map((w) => `${w.file}:${w.path}: ${w.message}`)).toEqual([]);
   });
 
-  it('é a formatVersion 15, versão 7, com tokens nos modos light e dark e a plataforma compose no androidx fixado no commit', () => {
+  it('é a formatVersion 15, versão 8, com tokens nos modos light e dark e a plataforma compose no androidx fixado no commit', () => {
     expect(spec).toMatchObject({
       formatVersion: 15,
       id: 'material3-compose',
-      version: 7,
+      version: 8,
       icons: 'icons/material-icons.json',
     });
     expect(spec.tokens?.modes).toEqual(['light', 'dark']);
@@ -657,11 +657,11 @@ describe('atualização da biblioteca Material 3 (Compose) com o slider numéric
           );
     expect(missingMigrations(previous, spec)).toEqual([]);
     expect(spec.migrations?.map((m) => [m.from, m.to])).toEqual([
-      [1, 7],
-      [2, 7],
-      [3, 7],
-      [4, 7],
-      [5, 7],
+      [1, 8],
+      [2, 8],
+      [3, 8],
+      [4, 8],
+      [5, 8],
     ]);
     const report = validateLibrary({ files, specPath: SPEC_FILE, previous });
     expect(report.errors).toEqual([]);
@@ -688,9 +688,10 @@ describe('MC5 (#1033): todo exemplo desenha sem aviso no size e no tamanho ajust
         const atSize = drawIn(catalog, entry, values, mode);
         expect(atSize.warnings, `${id} / ${name} no size`).toEqual([]);
         const fitted = drawFitted(id, values, mode);
-        expect(fitted.drawing.warnings, `${id} / ${name} em ${fitted.box.width}×${fitted.box.height}`).toEqual(
-          [],
-        );
+        expect(
+          fitted.drawing.warnings,
+          `${id} / ${name} em ${fitted.box.width}×${fitted.box.height}`,
+        ).toEqual([]);
       }
     },
   );

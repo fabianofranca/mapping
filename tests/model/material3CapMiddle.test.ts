@@ -17,9 +17,10 @@ interface Group {
 
 /** Componente → os rótulos de uma linha que centram pela maiúscula (decisão 23). */
 const LABELS: Record<string, Group[]> = {
-  button: [{ names: ['rótulo'], fill: true }],
-  'extended-fab': [{ names: ['texto'], fill: true }],
-  chip: [{ names: ['rótulo'], fill: true }],
+  // MC5 (#1033, grupo C): button, extended-fab e chip crescem com o rótulo (altura hug), então o rótulo já não ocupa a altura da caixa
+  button: [{ names: ['rótulo'] }],
+  'extended-fab': [{ names: ['texto'] }],
+  chip: [{ names: ['rótulo'] }],
   tabs: [{ names: ['rótulo'], fill: true }],
   'segmented-button': [{ names: ['rótulo'], fill: true }],
   'navigation-bar': [{ names: ['rótulo'] }],

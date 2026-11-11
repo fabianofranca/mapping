@@ -85,6 +85,8 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 
 **Como o desenho segue o Compose**
 
+- **Limites de largura da raiz:** `minWidth` 360 e `maxWidth` 720, e o estilo `docked` fixa os dois em 360. Vêm do `sizeIn(minWidth = SearchBarMinWidth, maxWidth = SearchBarMaxWidth, minHeight = InputFieldHeight)` do campo (`SearchBar.kt` linhas 1356 a 1360, 1542 a 1546 e 1677 a 1681), de `SearchBarMinWidth` 360 e `SearchBarMaxWidth` 720 (linhas 2712 e 2713) e do `DockedSearchBar`, que usa `width(SearchBarMinWidth)` (linha 665). Valem quando a largura é medida (`measureComponent`, o ajuste com a largura livre): a barra nunca sai abaixo de 360.
+- **`sizing.width`:** o estilo `docked` tem 360 de largura (uma expressão por `style`), então a instância nova e a tela arrumada pelo `layoutScreen` o desenham com a largura do Compose; a `bar` segue `fill`, como a barra do Compose, que ocupa a largura do pai (`fillMaxWidth` do campo, linha 1971, dentro do `sizeIn`).
 - Contêiner de 56 de altura (`minHeight` da linha do campo) na forma `corner-full`, cor `surface-container-high`, sem sombra (`ShadowElevation` é o nível 0) e sem contorno.
 - Ícone inicial `on-surface` e ícone final `on-surface-variant`, de 24 pelo nó `icon`, a 16 das bordas; o texto começa a 52 (área de 48 do ícone mais 4 de `SearchBarIconOffsetX`), com 12 entre o ícone e o texto.
 - Consulta em `body-large` (16/24, 0,5), `on-surface`, numa linha só (`font.wrap: "none"`, `maxLines: 1`), recortada na largura, sem reticências; dica em `body-large`, `on-surface-variant`.
@@ -104,7 +106,7 @@ O campo escolhe a aparência parada de um estado; não entra no `code` nem nas `
 
 - O `interaction` é um quadro parado: sem cursor e sem animação de expandir. Em `focused` o campo ganha, além da camada de estado, o anel de foco (`FocusIndicatorColor`, `secondary`, `SearchBarTokens.kt` linha 30): o anel de 3 em `secondary`, afastado 2 da forma (`stroke.offset`), por fora da caixa (a largura e o afastamento são os da decisão da etapa; o `*Tokens.kt` só traz a cor), em volta da linha de 56. Na barra expandida do estilo `docked` a camada leva o raio do componente, não só os cantos de cima.
 - A `bar` expandida do Compose ocupa a tela e soma os `WindowInsets` ao respiro de cima; aqui o tamanho é o da marcação e o respiro é só o 8 fixo.
-- Os limites de largura (360 a 720; `docked` fixa em 360) valem pelo `minSize`: a raiz sempre tem o tamanho da marcação, então `minWidth` e `maxWidth` na raiz não agiriam, e o teto de 720 e os 360 fixos do docked não são impostos.
+- Numa marcação com retângulo a raiz ocupa a caixa, então o `minWidth` e o `maxWidth` da raiz não mudam o desenho, e o Arrumar da app mantém a largura da marcação (o teto de 720 da `bar` e os 360 do `docked` não são impostos a ela; só a instância sem retângulo recebe os 360 do `docked`). O `maxWidth` de 720 também não age na `bar`, cuja largura é `fill` (nenhum caminho do motor aplica o limite da raiz a um eixo `fill`).
 - O tamanho inicial de 56 não comporta a barra expandida: o divisor fica logo abaixo da caixa (docked) e a marcação tem de crescer para os resultados.
 - A dica quebra por palavra (o `Text` do placeholder não limita linhas); o Compose também a deixa crescer o campo.
 - Sem o desabilitado (`enabled`), o `onSearch` e o avatar do `SearchBar`: não são campos do tipo.
