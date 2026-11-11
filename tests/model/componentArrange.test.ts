@@ -8,7 +8,10 @@ import {
   arrangeMarking,
   modelMessage,
   canArrange,
+  canFit,
   createMarking,
+  fitMarking,
+  arrangesByFit,
   loadSpecComponents,
   parseSpecText,
   setContainerDrawingMode,
@@ -21,11 +24,13 @@ import {
   type Rect,
 } from '../../src/model';
 import {
+  COMPONENTS,
   SPEC_ID,
   componentProject,
   testCatalog,
   tokenSlotCatalog,
 } from './componentFixtures';
+import { FIT_SPEC_ID, LONG_LABEL, fitCatalog, fitProject } from './fitFixtures';
 import { emptyProject, expectValid, marking } from './fixtures';
 
 const catalog = testCatalog();
@@ -663,5 +668,373 @@ describe('arrangeMarking: gap e padding do slot em $token (#948)', () => {
     const { project } = arrange(p, 'C', tokenCatalog);
     // 10 + 40 + 4 + 40 + 10 de altura; 10 + 100 + 10 de largura.
     expect(rectOf(project, 'C')).toEqual(box(100, 100, 120, 104));
+  });
+});
+
+const BIG = {
+  format: 'mapping-component',
+  formatVersion: 4,
+  id: 'wide',
+  name: 'wide',
+  size: { width: 100, height: 40 },
+  template: {
+    type: 'frame',
+    layout: { type: 'none' },
+    children: [{ type: 'text', text: 'Grande', font: { size: 22, lineHeight: 28 } }],
+  },
+};
+
+describe('arrangeMarking: align "baseline" no slot (MC1, decisão 4)', () => {
+  /** `row` com `align: "baseline"` no slot e `wide` trocado por um texto de 22/28. */
+  function baselineCatalog(): ComponentCatalog {
+    const row = JSON.parse(JSON.stringify(COMPONENTS.row)) as {
+      formatVersion: number;
+      template: { children: { layout: { align: string } }[] };
+    };
+    row.formatVersion = 4;
+    const slot = row.template.children[0];
+    if (slot === undefined) throw new Error('sem slot');
+    slot.layout.align = 'baseline';
+    return testCatalog({ ...COMPONENTS, row, wide: BIG });
+  }
+
+  it('textos de 14 e 22 px ficam na mesma linha de base (a menor desce 7 px)', () => {
+    const cat = baselineCatalog();
+    let p = add(componentProject(), 'C', 'row', box(100, 100, 300, 100), null, {}, cat);
+    p = add(p, 'W', 'wide', box(120, 150, 100, 40), 'C', {}, cat);
+    p = add(p, 'T', 'text', box(240, 150, 100, 40), 'C', {}, cat);
+    const { project } = arrange(p, 'C', cat);
+    // linha de base do aproximado: 14/20 → 14,83; 22/28 → 21,59; diferença 6,76 → 7
+    expect(rectOf(project, 'W').y).toBe(100);
+    expect(rectOf(project, 'T').y).toBe(107);
+    expect(rectOf(project, 'W').x).toBe(100);
+    expect(rectOf(project, 'T').x).toBe(208);
+    expectValid(project);
+  });
+
+  it('sem baseline, as filhas ficam no topo (o comportamento de hoje)', () => {
+    let p = add(componentProject(), 'C', 'row', box(100, 100, 300, 100));
+    p = add(p, 'T1', 'text', box(120, 150, 100, 40), 'C');
+    p = add(p, 'T2', 'text', box(240, 150, 100, 40), 'C');
+    const { project } = arrange(p, 'C');
+    expect(rectOf(project, 'T1').y).toBe(100);
+    expect(rectOf(project, 'T2').y).toBe(100);
+  });
+
+  it('um componente hug na altura mede o slot pela extensão da linha de base, não pelo filho mais alto', () => {
+    const hug = JSON.parse(JSON.stringify(COMPONENTS.rowhug)) as {
+      formatVersion: number;
+      template: { children: { layout: { align: string } }[] };
+    };
+    hug.formatVersion = 4;
+    const slot = hug.template.children[0];
+    if (slot === undefined) throw new Error('sem slot');
+    slot.layout.align = 'baseline';
+    const cat = testCatalog({ ...COMPONENTS, rowhug: hug, wide: BIG });
+    let p = add(componentProject(), 'C', 'rowhug', box(100, 100, 200, 60), null, {}, cat);
+    p = add(p, 'W', 'wide', box(100, 100, 100, 40), 'C', {}, cat);
+    p = add(p, 'T', 'text', box(200, 100, 100, 40), 'C', {}, cat);
+    const { project } = arrange(p, 'C', cat);
+    // 21,59 acima da linha de base + 25,17 abaixo (o texto de 14 desce 7): 46,76 → 47, não 40.
+    expect(rectOf(project, 'C').height).toBe(47);
+  });
+});
+
+describe('arrangeMarking: sizing por expressão no componente com slot (MC2, decisão 9)', () => {
+  /** `row` com a altura pelo `spacing`: 8 → 64, 16 → 112, 24 → 152, 32 → hug. */
+  function sizedCatalog(): ComponentCatalog {
+    const row = JSON.parse(JSON.stringify(COMPONENTS.row)) as Record<string, unknown>;
+    row.formatVersion = 4;
+    row.sizing = {
+      height: {
+        $switch: 'spacing',
+        cases: { '8': 64, '16': 112, '24': 152, '32': 'hug' },
+      },
+    };
+    return testCatalog({ ...COMPONENTS, row });
+  }
+
+  function arranged(spacing: number): Rect {
+    const cat = sizedCatalog();
+    let p = add(componentProject(), 'C', 'row', box(100, 100, 300, 100), null, {}, cat);
+    p = setFieldValue(p, 'A_C', 'spacing', spacing);
+    p = add(p, 'T1', 'text', box(120, 120, 100, 40), 'C', {}, cat);
+    return rectOf(arrange(p, 'C', cat).project, 'C');
+  }
+
+  it('o px que a expressão dá vira a altura do container', () => {
+    expect(arranged(8).height).toBe(64);
+    expect(arranged(16).height).toBe(112);
+    expect(arranged(24).height).toBe(152);
+    expect(arranged(8)).toMatchObject({ x: 100, y: 100, width: 300 });
+  });
+
+  it('hug vindo da expressão mede o conteúdo (o filho de 40 de altura)', () => {
+    expect(arranged(32).height).toBe(40);
+  });
+
+  it('valor inválido deixa a altura como está e o arrumar segue', () => {
+    expect(arranged(99).height).toBe(100);
+  });
+});
+
+describe('arrangeMarking: eixo hug junto de eixo em px por expressão (/code-review high da MC2)', () => {
+  it('o hug é medido na largura que a expressão dá, não na do retângulo antigo', () => {
+    const text = JSON.parse(JSON.stringify(COMPONENTS.text)) as Record<string, unknown>;
+    text.formatVersion = 4;
+    const label = (text.template as { children: Record<string, unknown>[] }).children[0];
+    if (label === undefined) throw new Error('sem texto');
+    label.width = 'fill';
+    // Largura 200 pela expressão (o campo `kind` vale `a`) e altura do conteúdo.
+    text.sizing = { width: { $switch: 'kind', cases: { a: 200 } }, height: 'hug' };
+    const cat = testCatalog({ ...COMPONENTS, text });
+    let p = add(componentProject(), 'C', 'row', box(100, 100, 400, 100), null, {}, cat);
+    p = add(p, 'T1', 'text', box(120, 120, 100, 40), 'C', {}, cat);
+    p = setFieldValue(p, 'A_T1', 'label', 'aaaaaaaaaa bbbbbbbbbb');
+    p = setFieldValue(p, 'A_T1', 'kind', 'a');
+    const out = rectOf(arrange(p, 'C', cat).project, 'T1');
+    // 21 caracteres cabem em uma linha a 200 de largura (≈ 162 px): a altura é o piso do minSize (24);
+    // medida a 100 de largura (o retângulo antigo) seriam duas linhas (40).
+    expect(out.width).toBe(200);
+    expect(out.height).toBe(24);
+  });
+});
+
+describe('fitMarking (MC3, decisão 14 da #898)', () => {
+  const fcat = fitCatalog();
+  const addFit = (
+    p: Project,
+    id: string,
+    typeId: string,
+    rect: Rect,
+    parentId: string | null = null,
+    extra: Partial<NewComponentArgs> = {},
+  ): Project => add(p, id, typeId, rect, parentId, extra, fcat, FIT_SPEC_ID);
+  const fit = (p: Project, id: string) => fitMarking(p, fcat, id, approximateMeasurer);
+  /** Um botão `typeId` em (100, 100), com o rótulo dado, no tamanho de criação (120 × 40). */
+  const withLabel = (typeId: string, label: string, rect = box(100, 100, 120, 40)) =>
+    setFieldValue(addFit(fitProject(), 'B', typeId, rect), 'A_B', 'label', label);
+
+  it('botão com rótulo longo cresce na altura; a posição e a largura ficam', () => {
+    const p = withLabel('fit-button', LONG_LABEL);
+    const fitted = fit(p, 'B');
+    const rect = rectOf(fitted, 'B');
+    expect(rect).toMatchObject({ x: 100, y: 100, width: 120 });
+    // Quatro linhas de 20 mais o padding de 8 em cima e embaixo, inteiro para cima.
+    expect(rect.height).toBeGreaterThanOrEqual(76);
+    expect((rect.height - 16) % 20).toBe(0);
+    expectValid(fitted);
+  });
+
+  it('rótulo que cabe (abaixo do minSize): nada muda, o mesmo Project', () => {
+    const p = withLabel('fit-button', 'Ok');
+    expect(fit(p, 'B')).toBe(p);
+    // Depois de ajustado, ajustar de novo também não muda nada.
+    const grown = withLabel('fit-button', LONG_LABEL);
+    const once = fit(grown, 'B');
+    expect(fit(once, 'B')).toBe(once);
+  });
+
+  it('o rótulo que encolhe leva a altura de volta (nunca abaixo do minSize)', () => {
+    const grown = fit(withLabel('fit-button', LONG_LABEL), 'B');
+    const shortened = setFieldValue(grown, 'A_B', 'label', 'Ok');
+    expect(rectOf(fit(shortened, 'B'), 'B')).toMatchObject({ width: 120, height: 40 });
+  });
+
+  it('os dois eixos hug: a largura também é medida', () => {
+    const p = withLabel('fit-hug', 'Ok');
+    const rect = rectOf(fit(p, 'B'), 'B');
+    expect(rect).toMatchObject({ x: 100, y: 100 });
+    // "Ok" não passa do padding (16): o mínimo do componente (48 × 40) vale.
+    expect(rect).toMatchObject({ width: 48, height: 40 });
+  });
+
+  it('CL2 (R13.13): hug nos dois eixos perto da borda mede a altura para a largura que sobra', () => {
+    // A imagem tem 1000 de largura: de x = 900 sobram 100 px, e o rótulo longo quebra em linhas.
+    const p = withLabel('fit-hug', LONG_LABEL, box(900, 100, 100, 40));
+    const rect = rectOf(fit(p, 'B'), 'B');
+    expect(rect).toMatchObject({ x: 900, y: 100, width: 100 });
+    expect(rect.height).toBeGreaterThan(40);
+    // Sem limite (x = 100), a largura fica livre: uma linha, altura do minSize.
+    const free = rectOf(
+      fit(withLabel('fit-hug', 'Ok', box(100, 100, 100, 40)), 'B'),
+      'B',
+    );
+    expect(free).toMatchObject({ x: 100, y: 100, width: 48, height: 40 });
+    // O Arrumar da mesma marcação (arrangesByFit) dá o mesmo caminho.
+    expect(arrangesByFit(p, fcat, 'B')).toBe(true);
+  });
+
+  it('eixo fill, ausente ou esticado pelo stretch do pai não muda', () => {
+    let p = addFit(fitProject(), 'R', 'fit-row-stretch', box(100, 100, 400, 100));
+    p = addFit(p, 'B', 'fit-hug', box(100, 100, 120, 100), 'R');
+    p = setFieldValue(p, 'A_B', 'label', LONG_LABEL);
+    const rect = rectOf(fit(p, 'B'), 'B');
+    // A altura é do `stretch` da linha (100) e não cresce com o rótulo; a largura (hug) muda.
+    expect(rect.height).toBe(100);
+    expect(rect.width).not.toBe(120);
+    // Na linha que não estica, a altura também acompanha.
+    let q = addFit(fitProject(), 'R', 'fit-row-start', box(100, 100, 400, 100));
+    q = addFit(q, 'B', 'fit-button', box(100, 100, 120, 40), 'R');
+    q = setFieldValue(q, 'A_B', 'label', LONG_LABEL);
+    expect(rectOf(fit(q, 'B'), 'B').height).toBeGreaterThan(40);
+  });
+
+  it('o maxHeight da raiz limita o ajuste', () => {
+    const p = withLabel('fit-capped', LONG_LABEL);
+    expect(rectOf(fit(p, 'B'), 'B').height).toBe(60);
+  });
+
+  it('o sizing por expressão vale o px, nunca abaixo do minSize', () => {
+    const tall = setFieldValue(withLabel('fit-px', 'Ok'), 'A_B', 'tall', 'sim');
+    expect(rectOf(fit(tall, 'B'), 'B').height).toBe(80);
+    // Sem o campo a expressão dá 30, abaixo do mínimo (40): a marcação já está nele.
+    const short = withLabel('fit-px', 'Ok');
+    expect(fit(short, 'B')).toBe(short);
+  });
+
+  it('não passa da imagem: o excesso é cortado', () => {
+    const p = withLabel('fit-button', LONG_LABEL, box(100, 740, 120, 40));
+    expect(rectOf(fit(p, 'B'), 'B')).toMatchObject({ y: 740, height: 60 });
+  });
+
+  it('geometria travada falha com locked (e nada muda se já está no tamanho)', () => {
+    const p = setMarkingLocked(withLabel('fit-button', LONG_LABEL), 'B', true);
+    expect(() => fit(p, 'B')).toThrow('locked');
+    const same = setMarkingLocked(withLabel('fit-button', 'Ok'), 'B', true);
+    expect(fit(same, 'B')).toBe(same);
+  });
+
+  it('componente sem eixo ajustável, marcação sem componente e container com filhas: not-fittable', () => {
+    const plain = addFit(fitProject(), 'B', 'fit-plain', box(100, 100, 120, 40));
+    expect(() => fit(plain, 'B')).toThrow('not-fittable');
+    const filled = addFit(fitProject(), 'B', 'fit-fill', box(100, 100, 120, 40));
+    expect(() => fit(filled, 'B')).toThrow('not-fittable');
+    const bare = createMarking(fitProject(), {
+      id: 'P',
+      containerId: 'I1',
+      rect: box(10, 10, 50, 50),
+    });
+    expect(() => fit(bare, 'P')).toThrow('not-fittable');
+    let row = addFit(fitProject(), 'R', 'fit-row-start', box(100, 100, 400, 100));
+    row = addFit(row, 'B', 'fit-button', box(100, 100, 120, 40), 'R');
+    expect(() => fit(row, 'R')).toThrow('not-fittable');
+    expect(() => fit(plain, 'nada')).toThrow('not-found');
+  });
+
+  it('componente com filhas no slot, mesmo com layout none, não se ajusta (achado do /code-review)', () => {
+    let p = addFit(fitProject(), 'R', 'fit-row-none', box(100, 100, 400, 100));
+    p = addFit(p, 'B', 'fit-button', box(110, 110, 120, 40), 'R');
+    expect(canFit(p, fcat, 'R')).toBe(false);
+    expect(() => fit(p, 'R')).toThrow('not-fittable');
+  });
+
+  it('canFit: só o componente sem slot com eixo ajustável', () => {
+    const p = addFit(fitProject(), 'B', 'fit-button', box(100, 100, 120, 40));
+    expect(canFit(p, fcat, 'B')).toBe(true);
+    const plain = addFit(fitProject(), 'B', 'fit-plain', box(100, 100, 120, 40));
+    expect(canFit(plain, fcat, 'B')).toBe(false);
+    expect(canFit(p, fcat, 'nada')).toBe(false);
+    let row = addFit(fitProject(), 'R', 'fit-row-start', box(100, 100, 400, 100));
+    row = addFit(row, 'B', 'fit-button', box(100, 100, 120, 40), 'R');
+    expect(canFit(row, fcat, 'R')).toBe(false);
+  });
+
+  it('assenta ao fim: a marcação que passou a caber dentro vira filha', () => {
+    let p = withLabel('fit-button', LONG_LABEL);
+    p = createMarking(p, { id: 'S', containerId: 'I1', rect: box(110, 145, 20, 10) });
+    expect(marking(p, 'S').parentId).toBeNull();
+    expect(marking(fit(p, 'B'), 'S').parentId).toBe('B');
+  });
+
+  it('as prévias de gesto não assentam (settle: false)', () => {
+    let p = withLabel('fit-button', LONG_LABEL);
+    p = createMarking(p, { id: 'S', containerId: 'I1', rect: box(110, 145, 20, 10) });
+    const result = fitMarking(p, fcat, 'B', approximateMeasurer, { settle: false });
+    expect(marking(result, 'S').parentId).toBeNull();
+  });
+});
+
+describe('arrangeMarking: wrap no slot (MC4, decisão 12)', () => {
+  /** O container `row` (ou `rowhug`) com o slot em `wrap`, mais as chaves dadas, na formatVersion 4. */
+  function wrapCatalog(
+    layout: Record<string, unknown>,
+    id: 'row' | 'rowhug' = 'row',
+  ): ComponentCatalog {
+    const base = JSON.parse(JSON.stringify(COMPONENTS[id])) as {
+      formatVersion: number;
+      template: { children: { layout: Record<string, unknown> }[] };
+    };
+    base.formatVersion = 4;
+    const slot = base.template.children[0];
+    if (slot === undefined) throw new Error('sem slot');
+    slot.layout = { ...slot.layout, wrap: 'wrap', lineGap: 12, ...layout };
+    return testCatalog({ ...COMPONENTS, [id]: base });
+  }
+
+  /** Cinco filhas `text` de 100 × 40 empilhadas (sem se tocar) no container 320 × 300. */
+  function crowd(cat: ComponentCatalog, id: 'row' | 'rowhug' = 'row'): Project {
+    let p = add(componentProject(), 'C', id, box(100, 100, 320, 300), null, {}, cat);
+    for (let i = 1; i <= 5; i++)
+      p = add(p, `T${i}`, 'text', box(100, 100 + (i - 1) * 45, 100, 40), 'C', {}, cat);
+    return p;
+  }
+
+  it('Arrumar põe as filhas em linhas: 3 + 2, com o gap e o lineGap', () => {
+    const cat = wrapCatalog({});
+    const { project, warnings } = arrange(crowd(cat), 'C', cat);
+    expect([1, 2, 3].map((i) => rectOf(project, `T${i}`))).toEqual([
+      box(100, 100, 100, 40),
+      box(208, 100, 100, 40),
+      box(316, 100, 100, 40),
+    ]);
+    expect([4, 5].map((i) => rectOf(project, `T${i}`))).toEqual([
+      box(100, 152, 100, 40),
+      box(208, 152, 100, 40),
+    ]);
+    expect(warnings).toEqual([]);
+    expectValid(project);
+  });
+
+  it('wrap-reverse: a linha nova fica acima', () => {
+    const cat = wrapCatalog({ wrap: 'wrap-reverse' });
+    const { project } = arrange(crowd(cat), 'C', cat);
+    expect(rectOf(project, 'T1').y).toBe(152);
+    expect(rectOf(project, 'T4').y).toBe(100);
+  });
+
+  it('justify space-between e reverse valem em cada linha', () => {
+    const between = wrapCatalog({ justify: 'space-between' });
+    const a = arrange(crowd(between), 'C', between).project;
+    expect([1, 2, 3].map((i) => rectOf(a, `T${i}`).x)).toEqual([100, 210, 320]);
+    expect([4, 5].map((i) => rectOf(a, `T${i}`).x)).toEqual([100, 320]);
+    const reversed = wrapCatalog({ reverse: true });
+    const b = arrange(crowd(reversed), 'C', reversed).project;
+    expect([1, 2, 3].map((i) => rectOf(b, `T${i}`).x)).toEqual([320, 212, 104]);
+    expect([4, 5].map((i) => rectOf(b, `T${i}`).x)).toEqual([320, 212]);
+  });
+
+  it('maxPerLine 2 e maxLines 2: a quinta filha, além da última linha, fica onde estava', () => {
+    const cat = wrapCatalog({ maxPerLine: 2, maxLines: 2 });
+    const { project } = arrange(crowd(cat), 'C', cat);
+    expect([1, 2, 3, 4].map((i) => rectOf(project, `T${i}`).y)).toEqual([
+      100, 100, 152, 152,
+    ]);
+    expect(rectOf(project, 'T5')).toEqual(box(100, 280, 100, 40));
+  });
+
+  it('um componente hug na altura cresce com as linhas (a soma das linhas com o lineGap)', () => {
+    const cat = wrapCatalog({}, 'rowhug');
+    const { project } = arrange(crowd(cat, 'rowhug'), 'C', cat);
+    expect(rectOf(project, 'C').height).toBe(40 + 12 + 40);
+    expect(rectOf(project, 'T5').y).toBe(152);
+  });
+
+  it('as linhas que não cabem na altura do container avisam "conteúdo maior que o container"', () => {
+    const cat = wrapCatalog({ lineGap: 300 });
+    const { warnings } = arrange(crowd(cat), 'C', cat);
+    expect(warnings.map((w) => w.text)).toContain(
+      'Tipo row: conteúdo maior que o container',
+    );
   });
 });

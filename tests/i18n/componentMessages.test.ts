@@ -155,6 +155,38 @@ const COMPONENT_CASES: readonly ((c: Raw) => void)[] = [
       ],
     };
   },
+  // `$lines` e `sizing` por expressão (MC2).
+  (c) => {
+    c.sizing = {
+      width: { $size: 'width' },
+      height: { $add: [{ $lines: 'msg' }, 1] },
+    };
+    c.template = {
+      type: 'frame',
+      minHeight: { $lines: 'ausente' },
+      children: [
+        { type: 'text', name: 'dup', text: 'a' },
+        { type: 'text', name: 'dup', text: 'b', width: { $lines: 'dup' } },
+        { type: 'text', name: 'x', text: 'c', height: { $lines: '' } },
+        { type: 'text', name: 'msg', text: 'd', width: { $lines: 'msg' } },
+      ],
+    };
+  },
+  // Quebra de fileira (MC4): `lineGap`, `maxPerLine` e `maxLines` sem `wrap`.
+  (c) => {
+    c.template = {
+      type: 'frame',
+      layout: { type: 'row', lineGap: 4, maxPerLine: 2, maxLines: 1 },
+      children: [
+        {
+          type: 'repeat',
+          count: 2,
+          lineGap: 1,
+          template: { type: 'frame', children: [] },
+        },
+      ],
+    };
+  },
 ];
 
 describe('mensagens do componente', () => {

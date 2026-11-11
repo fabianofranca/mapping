@@ -10,7 +10,7 @@
   },
   "sizing": {
     "width": "hug",
-    "height": 32
+    "height": "hug"
   },
   "preview": {
     "label": "Aberto agora",
@@ -855,9 +855,7 @@
         "clip": false,
         "anchors": {
           "left": 0,
-          "right": 0,
-          "top": 0,
-          "bottom": 0
+          "centerY": true
         },
         "layout": {
           "type": "row",
@@ -1730,7 +1728,349 @@
               },
               "else": 1
             },
-            "height": "fill"
+            "height": "hug",
+            "width": "hug",
+            "maxWidth": {
+              "$sub": [
+                {
+                  "$size": "width"
+                },
+                {
+                  "$add": [
+                    {
+                      "$if": {
+                        "$eq": ["style", "input"]
+                      },
+                      "then": {
+                        "$if": {
+                          "$and": [
+                            {
+                              "$or": [
+                                {
+                                  "$has": "leadingIcon"
+                                },
+                                {
+                                  "$and": [
+                                    {
+                                      "$and": [
+                                        {
+                                          "$eq": ["selected", "true"]
+                                        },
+                                        {
+                                          "$or": [
+                                            {
+                                              "$or": [
+                                                {
+                                                  "$eq": ["style", "filter"]
+                                                },
+                                                {
+                                                  "$eq": ["style", "filter-elevated"]
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "$eq": ["style", "input"]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "$or": [
+                                        {
+                                          "$eq": ["style", "filter"]
+                                        },
+                                        {
+                                          "$eq": ["style", "filter-elevated"]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "$not": {
+                                "$and": [
+                                  {
+                                    "$eq": ["style", "input"]
+                                  },
+                                  {
+                                    "$has": "avatar"
+                                  }
+                                ]
+                              }
+                            }
+                          ]
+                        },
+                        "then": {
+                          "$if": {
+                            "$and": [
+                              {
+                                "$has": "trailingIcon"
+                              },
+                              {
+                                "$not": {
+                                  "$or": [
+                                    {
+                                      "$eq": ["style", "suggestion"]
+                                    },
+                                    {
+                                      "$eq": ["style", "suggestion-elevated"]
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "then": 16,
+                          "else": 20
+                        },
+                        "else": {
+                          "$if": {
+                            "$and": [
+                              {
+                                "$has": "trailingIcon"
+                              },
+                              {
+                                "$not": {
+                                  "$or": [
+                                    {
+                                      "$eq": ["style", "suggestion"]
+                                    },
+                                    {
+                                      "$eq": ["style", "suggestion-elevated"]
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "then": 20,
+                          "else": 24
+                        }
+                      },
+                      "else": {
+                        "$if": {
+                          "$or": [
+                            {
+                              "$has": "leadingIcon"
+                            },
+                            {
+                              "$and": [
+                                {
+                                  "$and": [
+                                    {
+                                      "$eq": ["selected", "true"]
+                                    },
+                                    {
+                                      "$or": [
+                                        {
+                                          "$or": [
+                                            {
+                                              "$eq": ["style", "filter"]
+                                            },
+                                            {
+                                              "$eq": ["style", "filter-elevated"]
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "$eq": ["style", "input"]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "$or": [
+                                    {
+                                      "$eq": ["style", "filter"]
+                                    },
+                                    {
+                                      "$eq": ["style", "filter-elevated"]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        "then": {
+                          "$if": {
+                            "$and": [
+                              {
+                                "$has": "trailingIcon"
+                              },
+                              {
+                                "$not": {
+                                  "$or": [
+                                    {
+                                      "$eq": ["style", "suggestion"]
+                                    },
+                                    {
+                                      "$eq": ["style", "suggestion-elevated"]
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "then": 16,
+                          "else": 24
+                        },
+                        "else": {
+                          "$if": {
+                            "$and": [
+                              {
+                                "$has": "trailingIcon"
+                              },
+                              {
+                                "$not": {
+                                  "$or": [
+                                    {
+                                      "$eq": ["style", "suggestion"]
+                                    },
+                                    {
+                                      "$eq": ["style", "suggestion-elevated"]
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "then": 24,
+                          "else": 32
+                        }
+                      }
+                    },
+                    {
+                      "$if": {
+                        "$and": [
+                          {
+                            "$and": [
+                              {
+                                "$and": [
+                                  {
+                                    "$eq": ["selected", "true"]
+                                  },
+                                  {
+                                    "$or": [
+                                      {
+                                        "$or": [
+                                          {
+                                            "$eq": ["style", "filter"]
+                                          },
+                                          {
+                                            "$eq": ["style", "filter-elevated"]
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "$eq": ["style", "input"]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              },
+                              {
+                                "$or": [
+                                  {
+                                    "$eq": ["style", "filter"]
+                                  },
+                                  {
+                                    "$eq": ["style", "filter-elevated"]
+                                  }
+                                ]
+                              },
+                              {
+                                "$not": {
+                                  "$has": "leadingIcon"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "$not": {
+                              "$and": [
+                                {
+                                  "$eq": ["style", "input"]
+                                },
+                                {
+                                  "$has": "avatar"
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "then": 26,
+                      "else": 0
+                    },
+                    {
+                      "$if": {
+                        "$and": [
+                          {
+                            "$has": "leadingIcon"
+                          },
+                          {
+                            "$not": {
+                              "$and": [
+                                {
+                                  "$eq": ["style", "input"]
+                                },
+                                {
+                                  "$has": "avatar"
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "then": 26,
+                      "else": 0
+                    },
+                    {
+                      "$if": {
+                        "$and": [
+                          {
+                            "$eq": ["style", "input"]
+                          },
+                          {
+                            "$has": "avatar"
+                          }
+                        ]
+                      },
+                      "then": 32,
+                      "else": 0
+                    },
+                    {
+                      "$if": {
+                        "$and": [
+                          {
+                            "$has": "trailingIcon"
+                          },
+                          {
+                            "$not": {
+                              "$or": [
+                                {
+                                  "$eq": ["style", "suggestion"]
+                                },
+                                {
+                                  "$eq": ["style", "suggestion-elevated"]
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "then": 26,
+                      "else": 0
+                    }
+                  ]
+                }
+              ]
+            }
           },
           {
             "type": "icon",
@@ -1992,8 +2332,11 @@
               ]
             }
           }
-        ]
+        ],
+        "width": "hug",
+        "height": "hug"
       }
-    ]
+    ],
+    "minHeight": 32
   }
 }

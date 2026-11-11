@@ -1,11 +1,20 @@
 import {
   findSlot,
+  contentExtent,
   layoutChildren,
   resolveSlotLayout,
   slotBoxOfScene,
   type ResolvedSlotLayout,
 } from './components/arrange';
 import type { ComponentFile, FieldValues } from './components/componentFormat';
+import {
+  expressionPx,
+  fitComponentSize,
+  followedAxes,
+  resolveSizing,
+  type ResolvedAxis,
+  type ResolvedSizing,
+} from './components/sizing';
 import type { ResolvedTokens } from './components/tokens';
 import {
   instantiate,
@@ -26,6 +35,7 @@ import {
 import { settleFrom, type SettleOptions } from './hierarchySettle';
 import { markingLockStates } from './locks';
 import { modelMessage, type ModelMessage } from './modelMessage';
+import { findById } from './project';
 import { projectIndex } from './projectIndex';
 import type { Marking, Project, Rect } from './types';
 
@@ -95,6 +105,12 @@ export function canArrange(
   return containerOf(p, catalog, markingId) !== null;
 }
 
+/** O `align: stretch` do slot do pai estica o filho neste eixo (o cruzado do layout dele). */
+function stretchedBy(parent: Container | null, axis: 'width' | 'height'): boolean {
+  if (parent === null || parent.layout.align !== 'stretch') return false;
+  return axis === (parent.layout.type === 'row' ? 'height' : 'width');
+}
+
 function sameRect(a: Rect, b: Rect): boolean {
   return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 }
@@ -102,6 +118,78 @@ function sameRect(a: Rect, b: Rect): boolean {
 /** Inteiro para cima, sem que o ruído do ponto flutuante some um pixel. */
 function ceilFit(value: number): number {
   return Math.ceil(value - 1e-6);
+}
+
+/** O que o `sizing` faz num eixo: medir o conteúdo (`hug`), dar um px por expressão, ou nada. */
+interface AxisPlan {
+  readonly hug: boolean;
+  readonly px: number | undefined;
+}
+
+function axisPlan(axis: ResolvedAxis, stretched: boolean): AxisPlan {
+  return {
+    hug: axis.spec === 'hug' && !stretched,
+    px: stretched ? undefined : expressionPx(axis),
+  };
+}
+
+/** O valor final de um eixo: o medido (inteiro para cima), o px da expressão ou o atual, nunca abaixo do mínimo. */
+function axisValue(
+  plan: AxisPlan,
+  current: number,
+  measured: number,
+  min: number | undefined,
+): number {
+  const raw = plan.hug ? ceilFit(measured) : (plan.px ?? current);
+  return plan.hug || plan.px !== undefined
+    ? Math.max(raw, min ?? 0, MIN_STORED_MARKING_SIZE)
+    : raw;
+}
+
+/**
+ * Os eixos que o `measureComponent` recebe: o `hug` é medido (`null`); o outro vale o px que a
+ * expressão dá, ou o que já tem. `undefined` quando nenhum eixo é `hug` (nada a medir).
+ */
+function fixedSizes(
+  rect: Rect,
+  w: AxisPlan,
+  h: AxisPlan,
+): { width: number | null; height: number | null } | undefined {
+  if (!w.hug && !h.hug) return undefined;
+  return {
+    width: w.hug ? null : (w.px ?? rect.width),
+    height: h.hug ? null : (h.px ?? rect.height),
+  };
+}
+
+/** O eixo muda no ajuste: mede o conteúdo ou vale um px de expressão. */
+const acts = (plan: AxisPlan): boolean => plan.hug || plan.px !== undefined;
+
+/** O que o `sizing` avaliado pede a um componente: o retângulo novo, ou `undefined` se nada muda. */
+function applySizing(
+  rect: Rect,
+  sizing: ResolvedSizing,
+  stretched: { readonly width: boolean; readonly height: boolean },
+  min: { readonly width: number; readonly height: number } | undefined,
+  measure: (fixed: { width: number | null; height: number | null }) => {
+    width: number;
+    height: number;
+  },
+): { rect: Rect; hugW: boolean; hugH: boolean } | undefined {
+  const w = axisPlan(sizing.width, stretched.width);
+  const h = axisPlan(sizing.height, stretched.height);
+  if (!acts(w) && !acts(h)) return undefined;
+  const fixed = fixedSizes(rect, w, h);
+  const measured = fixed === undefined ? rect : measure(fixed);
+  return {
+    rect: {
+      ...rect,
+      width: axisValue(w, rect.width, measured.width, min?.width),
+      height: axisValue(h, rect.height, measured.height, min?.height),
+    },
+    hugW: w.hug,
+    hugH: h.hug,
+  };
 }
 
 /** `inner` preso dentro de `outer`. `push` empurra (e encolhe só se for maior); `shrink` mantém x e y e corta o excesso. */
@@ -190,9 +278,7 @@ export function arrangeMarking(
   /** O pai estica este componente com slot no eixo (o `stretch` do pai vale mais que o `hug`). */
   const stretchedByParent = (id: string, axis: 'width' | 'height'): boolean => {
     const parentId = (index.markings.get(id) as Marking).parentId;
-    const parent = parentId === null ? null : containerAt(parentId);
-    if (parent === null || parent.layout.align !== 'stretch') return false;
-    return axis === (parent.layout.type === 'row' ? 'height' : 'width');
+    return stretchedBy(parentId === null ? null : containerAt(parentId), axis);
   };
 
   // Por texto, para não repetir o mesmo aviso entre as voltas.
@@ -210,31 +296,41 @@ export function arrangeMarking(
     for (const kid of kids) {
       if (containerAt(kid.id) !== null) continue;
       const mc = markingComponent(p, catalog, kid.id);
-      const sizing = mc?.component.sizing;
-      if (mc === null || sizing === undefined) continue;
-      const hugW = sizing.width === 'hug' && !stretchedByParent(kid.id, 'width');
-      const hugH = sizing.height === 'hug' && !stretchedByParent(kid.id, 'height');
-      if (!hugW && !hugH) continue;
-      const rect = rects.get(kid.id) as Rect;
+      if (mc === null || mc.component.sizing === undefined) continue;
       const values = drawingValues(p, mc.annotation, mc.type).values;
+      const sizing = resolveSizing(mc.component, values);
+      sizing.messages.forEach(warn);
+      const rect = rects.get(kid.id) as Rect;
       const drawn = componentForDrawing(p, mc.component, kid.containerId);
-      const measured = measureComponent(
-        drawn.component,
-        values,
-        { width: hugW ? null : rect.width, height: hugH ? null : rect.height },
-        { measure, ...tokensOption(drawn.tokens) },
+      const fitted = applySizing(
+        rect,
+        sizing,
+        {
+          width: stretchedByParent(kid.id, 'width'),
+          height: stretchedByParent(kid.id, 'height'),
+        },
+        mc.component.minSize,
+        (fixed) =>
+          measureComponent(drawn.component, values, fixed, {
+            measure,
+            ...tokensOption(drawn.tokens),
+          }),
       );
-      const min = mc.component.minSize;
-      rects.set(kid.id, {
-        ...rect,
-        width: hugW
-          ? Math.max(ceilFit(measured.width), min?.width ?? 0, MIN_STORED_MARKING_SIZE)
-          : rect.width,
-        height: hugH
-          ? Math.max(ceilFit(measured.height), min?.height ?? 0, MIN_STORED_MARKING_SIZE)
-          : rect.height,
-      });
+      if (fitted !== undefined) rects.set(kid.id, fitted.rect);
     }
+  };
+
+  /** A primeira linha de base do desenho de uma filha (`align: "baseline"` do slot). */
+  const baselineOf = (kid: Marking): number | undefined => {
+    const mc = markingComponent(p, catalog, kid.id);
+    if (mc === null) return undefined;
+    const values = drawingValues(p, mc.annotation, mc.type).values;
+    const drawn = componentForDrawing(p, mc.component, kid.containerId);
+    return instantiate(drawn.component, values, rects.get(kid.id) as Rect, {
+      measure,
+      idPrefix: kid.id,
+      ...tokensOption(drawn.tokens),
+    }).firstBaseline;
   };
 
   const arrangeOne = (id: string) => {
@@ -243,35 +339,54 @@ export function arrangeMarking(
     const { component, values, layout, kids } = info;
     remeasureHugKids(kids);
     const sizes = kids.map((k) => rects.get(k.id) as Rect);
-    const row = layout.type === 'row';
     const pad = layout.padding;
-    const gaps = layout.gap * (kids.length - 1);
-    const sum = (axis: 'width' | 'height') => sizes.reduce((s, r) => s + r[axis], 0);
-    const widest = (axis: 'width' | 'height') =>
-      sizes.reduce((m, r) => Math.max(m, r[axis]), 0);
-    const slotContent = {
-      width: (row ? sum('width') + gaps : widest('width')) + pad.left + pad.right,
-      height: (row ? widest('height') : sum('height') + gaps) + pad.top + pad.bottom,
-    };
+    const baselines =
+      layout.align === 'baseline' ? kids.map((kid) => baselineOf(kid)) : [];
+    const children = sizes.map((box, i) => ({ box, baseline: baselines[i] }));
+    const padded = (extent: { width: number; height: number }) => ({
+      width: extent.width + pad.left + pad.right,
+      height: extent.height + pad.top + pad.bottom,
+    });
+    // O que os filhos pedem ao slot (o `hug` do componente): uma linha só, ou, com `wrap`, as linhas
+    // pelo espaço do eixo principal que o slot tem (o desenho com o pedido de uma linha só dá o espaço).
+    let slotContent = padded(contentExtent(layout, children, null));
+    if (layout.wrap !== 'none') {
+      const probe = slotBoxOfScene(
+        instantiate(component, values, rects.get(id) as Rect, {
+          measure,
+          idPrefix: id,
+          slotContent,
+          ...tokensOption(info.tokens),
+        }).root,
+      );
+      if (probe !== undefined) {
+        const available =
+          layout.type === 'row'
+            ? probe.width - pad.left - pad.right
+            : probe.height - pad.top - pad.bottom;
+        slotContent = padded(contentExtent(layout, children, Math.max(0, available)));
+      }
+    }
 
     let rect = rects.get(id) as Rect;
-    const hugW = component.sizing?.width === 'hug' && !stretchedByParent(id, 'width');
-    const hugH = component.sizing?.height === 'hug' && !stretchedByParent(id, 'height');
-    if (hugW || hugH) {
-      const measured = measureComponent(
-        component,
-        values,
-        { width: hugW ? null : rect.width, height: hugH ? null : rect.height },
-        { measure, slotContent, ...tokensOption(info.tokens) },
-      );
-      const min = component.minSize;
-      const width = hugW
-        ? Math.max(ceilFit(measured.width), min?.width ?? 0, MIN_STORED_MARKING_SIZE)
-        : rect.width;
-      const height = hugH
-        ? Math.max(ceilFit(measured.height), min?.height ?? 0, MIN_STORED_MARKING_SIZE)
-        : rect.height;
-      rect = { ...rect, width, height };
+    const sizing = resolveSizing(component, values);
+    sizing.messages.forEach(warn);
+    const fitted = applySizing(
+      rect,
+      sizing,
+      { width: stretchedByParent(id, 'width'), height: stretchedByParent(id, 'height') },
+      component.minSize,
+      (fixed) =>
+        measureComponent(component, values, fixed, {
+          measure,
+          slotContent,
+          ...tokensOption(info.tokens),
+        }),
+    );
+    const hugW = fitted?.hugW ?? false;
+    const hugH = fitted?.hugH ?? false;
+    if (fitted !== undefined) {
+      rect = fitted.rect;
       rects.set(id, rect);
     }
 
@@ -295,11 +410,7 @@ export function arrangeMarking(
         ),
       );
     }
-    const targets = layoutChildren(
-      box,
-      layout,
-      sizes.map((box) => ({ box })),
-    );
+    const targets = layoutChildren(box, layout, children);
     kids.forEach((kid, i) => {
       const target = targets[i] as Rect;
       const before = rects.get(kid.id) as Rect;
@@ -372,4 +483,149 @@ export function arrangeMarking(
     ),
     warnings: [...warnings.values()],
   };
+}
+
+/** O que o ajuste ao conteúdo precisa de uma marcação de componente sem filhas no slot. */
+interface FitTarget {
+  readonly marking: Marking;
+  readonly component: ComponentFile;
+  readonly tokens: ResolvedTokens | undefined;
+  readonly values: FieldValues;
+  readonly parent: Container | null;
+}
+
+/**
+ * A marcação é de um componente cujo `sizing` avaliado depende do conteúdo (`hug` ou px por expressão)
+ * num dos eixos e que não é um componente com slot com filhas (esse se arruma: `arrangeMarking`
+ * já ajusta o `hug` dele). `null` quando não é.
+ */
+function fitTargetOf(
+  p: Project,
+  catalog: ComponentCatalog,
+  marking: Marking,
+): FitTarget | null {
+  if (containerOf(p, catalog, marking.id) !== null) return null;
+  const mc = markingComponent(p, catalog, marking.id);
+  if (mc === null) return null;
+  // Filhas num slot sem layout `row`/`column` também não se ajustam: medir sem elas encolheria o
+  // componente e o assentar tiraria as filhas dele.
+  const hasKids = (projectIndex(p).children.get(marking.id)?.length ?? 0) > 0;
+  if (hasKids && findSlot(mc.component) !== undefined) return null;
+  const values = drawingValues(p, mc.annotation, mc.type).values;
+  const followed = followedAxes(resolveSizing(mc.component, values));
+  if (!followed.width && !followed.height) return null;
+  const drawn = componentForDrawing(p, mc.component, marking.containerId);
+  return {
+    marking,
+    component: drawn.component,
+    tokens: drawn.tokens,
+    values,
+    parent: marking.parentId === null ? null : containerOf(p, catalog, marking.parentId),
+  };
+}
+
+/**
+ * Dá para ajustar ao conteúdo: a marcação é de um componente sem filhas no slot cujo `sizing`
+ * (hug ou expressão) depende do conteúdo num eixo. Não mede nada (a pergunta do menu e do botão).
+ */
+export function canFit(
+  p: Project,
+  catalog: ComponentCatalog,
+  markingId: string,
+): boolean {
+  const marking = projectIndex(p).markings.get(markingId);
+  return marking !== undefined && fitTargetOf(p, catalog, marking) !== null;
+}
+
+/**
+ * O Arrumar de uma marcação ajusta ao conteúdo (`fitMarking`) e não arruma filhas: ela é de um
+ * componente que não se arruma (sem slot `row`/`column` com filhas). Uma marcação sem componente fica
+ * com `arrangeMarking` (e o `not-arrangeable` dele).
+ */
+export function arrangesByFit(
+  p: Project,
+  catalog: ComponentCatalog,
+  markingId: string,
+): boolean {
+  return (
+    containerOf(p, catalog, markingId) === null &&
+    markingComponent(p, catalog, markingId) !== null
+  );
+}
+
+function optionalMaxWidth(value: number | undefined): { maxWidth?: number } {
+  return value === undefined || value < MIN_STORED_MARKING_SIZE
+    ? {}
+    : { maxWidth: value };
+}
+
+/** A largura que sobra da posição `x` até a borda da imagem do container; no canvas não há limite. */
+function widthToImageEdge(p: Project, marking: Marking): number | undefined {
+  if (marking.containerId === null) return undefined;
+  const container = projectIndex(p).containers.get(marking.containerId);
+  return container === undefined
+    ? undefined
+    : right(imagePixelRect(container)) - marking.rect.x;
+}
+
+/** O retângulo preso à imagem do container (o ajuste não passa dela); no canvas não há limite. */
+function withinImage(p: Project, marking: Marking, rect: Rect): Rect {
+  if (marking.containerId === null) return rect;
+  const container = projectIndex(p).containers.get(marking.containerId);
+  if (container === undefined) return rect;
+  const image = imagePixelRect(container);
+  return {
+    ...rect,
+    width: Math.min(rect.width, right(image) - rect.x),
+    height: Math.min(rect.height, bottom(image) - rect.y),
+  };
+}
+
+/**
+ * Ajusta a marcação de um componente ao conteúdo (decisão 14 da #898): cada eixo cujo `sizing` é `hug`
+ * (ou expressão que dá `hug` ou px) vira o tamanho medido com os valores da anotação, inteiro para
+ * cima, entre o `minSize` e os limites da raiz do componente e nunca abaixo de
+ * `MIN_STORED_MARKING_SIZE`. A posição (canto de cima à esquerda) fica; o eixo `fill`, o ausente e o
+ * que o `align: stretch` do pai estica não mudam; o resultado nunca passa da imagem. Só por ação da
+ * pessoa ou do agente: nunca na carga nem ao editar um valor. Assenta ao fim (a marcação pode
+ * passar a conter outras), numa entrada de desfazer. Devolve o mesmo `Project` quando nada muda;
+ * falha com `not-found`, `not-fittable` (nenhum eixo depende do conteúdo, a marcação não é de um
+ * componente ou é um componente com filhas no slot, que se arruma) e `locked` (a geometria é
+ * travada e mudaria).
+ */
+export function fitMarking(
+  p: Project,
+  catalog: ComponentCatalog,
+  markingId: string,
+  measure: TextMeasurer,
+  options?: SettleOptions,
+): Project {
+  const marking = findById(p.markings, markingId);
+  const target = fitTargetOf(p, catalog, marking) ?? fail('not-fittable', markingId);
+  const auto: { width?: boolean; height?: boolean } = {};
+  if (stretchedBy(target.parent, 'width')) auto.width = false;
+  if (stretchedBy(target.parent, 'height')) auto.height = false;
+  const fitted = fitComponentSize(
+    target.component,
+    target.values,
+    { measure, ...tokensOption(target.tokens) },
+    {
+      base: marking.rect,
+      auto,
+      ...optionalMaxWidth(widthToImageEdge(p, marking)),
+    },
+  );
+  if (fitted === undefined) return p;
+  const rect = withinImage(p, marking, {
+    ...marking.rect,
+    width: fitted.width,
+    height: fitted.height,
+  });
+  if (sameRect(rect, marking.rect)) return p;
+  if (markingLockStates(p).has(markingId)) fail('locked');
+  return settleFrom(
+    p,
+    { ...p, markings: p.markings.map((m) => (m.id === markingId ? { ...m, rect } : m)) },
+    options,
+  );
 }

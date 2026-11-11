@@ -378,4 +378,22 @@ describe('component.schema.json — rotation (EX3)', () => {
     template.children = [{ ...turned, rotation: 'girado' }];
     expect(checkSchema(schema, component)).not.toEqual([]);
   });
+
+  it('aceita $lines e o sizing por expressão (MC2), e recusa $lines sem nome', () => {
+    const c = clone();
+    c.formatVersion = 4;
+    c.sizing = {
+      width: 'fill',
+      height: { $switch: 'style', cases: { small: 64, large: 152, tall: 'hug' } },
+    };
+    (c.template as Record<string, unknown>).minHeight = {
+      $if: { $gt: [{ $lines: 'msg' }, 1] },
+      then: 68,
+      else: 48,
+    };
+    expect(checkSchema(schema, c)).toEqual([]);
+    expect(parseComponent(c).ok).toBe(false); // o nó `msg` não existe neste componente
+    (c.template as Record<string, unknown>).minHeight = { $lines: '' };
+    expect(checkSchema(schema, c).length).toBeGreaterThan(0);
+  });
 });

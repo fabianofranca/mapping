@@ -247,17 +247,21 @@ describe('M4 grupo C — tabs', () => {
     }
   });
 
-  it('ícone acima do texto (Tab): ícone de 24 e rótulo centrados na aba de 72, o texto a 12 do fundo e 5 abaixo do ícone', () => {
+  it('ícone acima do texto (Tab): ícone de 24 e rótulo centrados na aba de 72, a linha de base do texto a 17 do fundo e o ícone 20 acima dela', () => {
     const d = draw('tabs', { items: THREE, style: 'primary', iconPosition: 'top' });
     const tab = boxesOf(d, 'aba')[0]!;
     const [icon] = iconsOf(d);
     const iconBox = boxOf(d, icon!.node);
     const label = textBox(d, 'Início');
-    // placeTextAndIcon (Tab.kt:380-417): textY = altura - baseline(15) - (14 + indicador 3); ícone 20 acima da baseline
+    // placeTextAndIcon (Tab.kt:380-417): linha de base = altura - (14 + indicador 3); ícone 20 acima da baseline
     expect([iconBox.width, iconBox.height]).toEqual([24, 24]);
     expect(iconBox.y).toBe(11);
-    expect(label.y + label.height).toBe(72 - 12);
-    near(label.y - (iconBox.y + 24), 5);
+    // MC5 (#1033): o rótulo é posicionado pela linha de base (`baselinePadding` top 20, bottom 9 e 8 de padding de
+    // uma linha): a linha de base a 17 do fundo e o ícone a 20 acima dela; a caixa do texto começa no fundo do ícone
+    expect(label.node.style.baselineTop).toBe(20);
+    near(72 - (label.y + 20), 17);
+    near(label.y, iconBox.y + 24);
+    expect(label.y + label.height).toBe(72 - 8);
     near(iconBox.x + 12, tab.x + tab.width / 2);
     near(label.x + label.width / 2, tab.x + tab.width / 2);
   });

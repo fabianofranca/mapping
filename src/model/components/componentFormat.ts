@@ -116,6 +116,11 @@ export type Expr<T> =
   /** Largura ou altura da instância em px da imagem (v4; na prova de desenho e no `hug`, o `size` do componente). */
   | { readonly $size: 'width' | 'height' }
   /**
+   * Número de linhas medidas do nó `text` de nome dado (v4; no máximo `maxLines`, texto vazio = 0).
+   * O motor arruma em duas passagens quando o template usa `$lines` (decisão 8 da #898).
+   */
+  | { readonly $lines: string }
+  /**
    * Valor nomeado da especialização, no modo do desenho (v4; ver `tokens.ts`). Em posição de cor,
    * `alpha` (0 a 1, literal ou `$token` de número) multiplica o alfa da cor, e `over` (nome de
    * um token de cor ou cor literal) compõe o resultado sobre essa cor, que o deixa opaco.
@@ -248,9 +253,11 @@ export interface Anchors {
 
 /** Tipo de layout de um quadro ou slot. */
 export type LayoutType = 'none' | 'row' | 'column';
-export type LayoutAlign = 'start' | 'center' | 'end' | 'stretch';
+export type LayoutAlign = 'start' | 'center' | 'end' | 'stretch' | 'baseline';
 export type LayoutJustify =
   'start' | 'center' | 'end' | 'space-between' | 'space-around' | 'space-evenly';
+/** Quebra de fileira (v4): `none` (padrão), `wrap` ou `wrap-reverse`, como o `flex-wrap` do CSS. */
+export type LayoutWrap = 'none' | 'wrap' | 'wrap-reverse';
 
 /**
  * Layout dos filhos. Na `formatVersion` 4, `type`, `align` e `justify` aceitam expressão (o valor
@@ -264,7 +271,10 @@ export interface LayoutSpec {
   readonly padding?: Expr<
     number | readonly [number, number] | readonly [number, number, number, number]
   >;
-  /** No eixo cruzado. */
+  /**
+   * No eixo cruzado. `baseline` (v4, só em `row`): os filhos se alinham pela primeira linha de
+   * base, como o `alignByBaseline` do Compose e o `align-items: baseline` do CSS.
+   */
   readonly align?: Expr<LayoutAlign>;
   /** No eixo principal (`space-around` e `space-evenly` só na v4). */
   readonly justify?: Expr<LayoutJustify>;
@@ -273,6 +283,19 @@ export interface LayoutSpec {
    * `row-reverse`/`column-reverse` do CSS (v4; booleano ou expressão; padrão `false`).
    */
   readonly reverse?: BoolExpr;
+  /**
+   * Quebra de fileira (v4; só em `row`/`column`): com `wrap` ou `wrap-reverse`, o filho que não
+   * cabe no que resta do eixo principal vai para a linha seguinte, como o `flex-wrap` do CSS (o
+   * `FlowRow`/`FlowColumn` do Compose). `wrap-reverse` empilha as linhas no sentido contrário do
+   * eixo cruzado. Padrão `none`.
+   */
+  readonly wrap?: Expr<LayoutWrap>;
+  /** Espaço entre as linhas, em px (v4; só com `wrap`; padrão 0). O `gap` fica entre os filhos da linha. */
+  readonly lineGap?: Expr<number>;
+  /** Filhos por linha, no máximo (v4; só com `wrap`; inteiro ≥ 1; o `maxItemsInEachRow` do Compose). */
+  readonly maxPerLine?: Expr<number>;
+  /** Linhas, no máximo (v4; só com `wrap`; inteiro ≥ 1): os filhos além da última não são desenhados. */
+  readonly maxLines?: Expr<number>;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -361,6 +384,22 @@ export interface TextTemplate extends TemplateNodeBase {
   readonly font?: FontSpec;
   /** Cor do texto (`fill` do nó). Padrão: `#000000`. */
   readonly color?: Expr<Color>;
+  /**
+   * Distâncias pela linha de base (v4), como o `Modifier.paddingFromBaseline(top, bottom)` do
+   * Compose (px ≥ 0): `top` do topo da caixa do nó à primeira linha de base; `bottom`, da última
+   * linha de base ao fundo da caixa.
+   */
+  readonly baselinePadding?: BaselinePadding;
+  /**
+   * Escopo da linha de um `repeat` (`$r0_1`), posto pela expansão no nó cuja contagem de linhas um
+   * `$lines` da mesma linha cita; nunca vem do arquivo (o parser recusa a chave).
+   */
+  readonly linesScope?: string;
+}
+
+export interface BaselinePadding {
+  readonly top?: Expr<number>;
+  readonly bottom?: Expr<number>;
 }
 
 export interface PathTemplate extends TemplateNodeBase {
@@ -425,6 +464,15 @@ export interface RepeatTemplate extends TemplateNodeBase {
    * `hug` no eixo das linhas.
    */
   readonly distribute?: 'none' | 'fill';
+  /**
+   * `formatVersion` 4: quebra do `repeat` em linha (`direction: "row"`; em `column`, as colunas), com
+   * o mesmo sentido de `layout.wrap`, `lineGap`, `maxPerLine` e `maxLines` de um quadro (o `repeat`
+   * não tem `layout`).
+   */
+  readonly wrap?: Expr<LayoutWrap>;
+  readonly lineGap?: Expr<number>;
+  readonly maxPerLine?: Expr<number>;
+  readonly maxLines?: Expr<number>;
   /** O desenho de uma linha. */
   readonly template: FrameTemplate;
 }
@@ -494,9 +542,13 @@ export type TemplateNode =
  */
 export type InstanceSizeSpec = number | 'fill' | 'hug';
 
+/**
+ * `sizing` por eixo: o valor literal ou, na v4, uma expressão que dá número ≥ 0, `"fill"` ou `"hug"`,
+ * avaliada com os valores da instância (`$size` e `$lines` não valem aqui).
+ */
 export interface ComponentSizing {
-  readonly width?: InstanceSizeSpec;
-  readonly height?: InstanceSizeSpec;
+  readonly width?: Expr<InstanceSizeSpec>;
+  readonly height?: Expr<InstanceSizeSpec>;
 }
 
 /** Pontos de ancoragem do desenho em pixels de tela (`screen.anchor`). */

@@ -125,10 +125,10 @@ A rodada completa (R0 a R25) roda em **5 sessões ao mesmo tempo**, uma por bloc
 | Bloco | Roteiros, na ordem do guia                                                     | Passos |
 | ----- | ------------------------------------------------------------------------------ | ------ |
 | 1     | R0, R1, R2, seção 6, R3, R6.3 a R6.7, R6.12 a R6.14, R7, R5, R8 e R14          | 129    |
-| 2     | R0, seção 6, R15 e R25                                                         | 108    |
+| 2     | R0, seção 6, R15 e R25                                                         | 116    |
 | 3     | R0, seção 6, R12, R18 e R19                                                    | 113    |
-| 4     | R0, seção 6, R4, R6.8a a R6.11, R9, R10, R13, R16, R22, R24 e a passada visual | 135    |
-| 5     | R0, seção 6, R11, R17, R20, R21 e R23                                          | 111    |
+| 4     | R0, seção 6, R4, R6.8a a R6.11, R9, R10, R13, R16, R22, R24 e a passada visual | 136    |
+| 5     | R0, seção 6, R11, R17, R20, R21 e R23                                          | 115    |
 
 Por quê: o limite (`MAX_BLOCK_GUIDE_CHARS`, 200.500, no `tests/tooling/roundBlocks.test.ts`) mede o que o testador lê, o guia gerado de cada bloco **sem as seções sob demanda** (a base obrigatória mais os roteiros), porque o bloco 3 da #747 (242 mil) acabou o orçamento de contexto. Hoje: 151.000, 151.319, 149.833, 150.961 e 148.458 (folga de uns 49 mil); a base de cada bloco, sem os roteiros, tem até 45.000. São 5 blocos por decisão do dono (2026-11-09). A passada visual fica no bloco 4 (decisão 6 da etapa #841). Tamanhos de antes, dependências por bloco e linhas de base: `cloud.mjs secao consulta.historico`.
 

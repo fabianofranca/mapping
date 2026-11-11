@@ -129,7 +129,11 @@ export interface Stroke {
   readonly join?: 'miter' | 'round' | 'bevel';
   /** `false`: a largura é em pixels de tela, em qualquer zoom; ausente = escala com o zoom. */
   readonly scale?: boolean;
-  /** Só estes lados da caixa têm traço (`frame` e `rect`); ausente = os quatro, em contorno. */
+  /**
+   * Só estes lados da caixa têm traço (`frame` e `rect`), na ordem de `STROKE_SIDES`; ausente = os
+   * quatro, em contorno. A cena nunca traz os quatro lados aqui: o `instantiate` os normaliza para
+   * ausente, e quem desenha lê `sides` direto.
+   */
   readonly sides?: readonly ('top' | 'right' | 'bottom' | 'left')[];
   /**
    * Vãos do contorno (`frame` e `rect`, sem `sides`), já calculados pela arrumação: no lado `side`,
@@ -181,6 +185,12 @@ export interface TextStyle {
   readonly ellipsis?: true;
   /** Máximo de linhas desenhadas. */
   readonly maxLines?: number;
+  /**
+   * `baselinePadding.top` resolvido (px): a primeira linha de base fica a esta distância do topo
+   * do nó, com o texto posto pela fonte de quem desenha (`verticalAlign` é `top`). Ausente = o
+   * `verticalAlign` do estilo decide.
+   */
+  readonly baselineTop?: number;
 }
 
 interface NodeBase {

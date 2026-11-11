@@ -324,23 +324,24 @@
         "type": "frame",
         "name": "botões",
         "width": "fill",
-        "height": 48,
+        "height": "hug",
         "layout": {
           "type": "row",
+          "wrap": "wrap-reverse",
           "gap": 8,
+          "lineGap": 12,
           "justify": "end",
           "align": "center"
         },
         "children": [
           {
             "type": "frame",
-            "name": "dispensar",
+            "name": "área de toque (dispensar)",
             "width": "hug",
-            "height": 40,
-            "minWidth": 58,
+            "height": "hug",
+            "minHeight": 48,
             "layout": {
               "type": "row",
-              "padding": [0, 12],
               "align": "center",
               "justify": "center"
             },
@@ -349,42 +350,68 @@
             },
             "children": [
               {
-                "type": "text",
-                "name": "rótulo",
-                "text": {
-                  "$field": "dismissButton"
+                "type": "frame",
+                "name": "dispensar",
+                "width": "hug",
+                "height": "hug",
+                "minWidth": 58,
+                "layout": {
+                  "type": "row",
+                  "padding": [8, 12],
+                  "align": "center",
+                  "justify": "center"
                 },
-                "font": {
-                  "size": {
-                    "$token": "label-large-size"
-                  },
-                  "weight": {
-                    "$token": "label-large-weight"
-                  },
-                  "lineHeight": {
-                    "$token": "label-large-line-height"
-                  },
-                  "letterSpacing": {
-                    "$token": "label-large-tracking"
-                  },
-                  "verticalAlign": "cap-middle"
-                },
-                "color": {
-                  "$token": "primary"
-                },
-                "height": "fill"
+                "children": [
+                  {
+                    "type": "frame",
+                    "name": "conteúdo do rótulo",
+                    "width": "hug",
+                    "height": "hug",
+                    "layout": {
+                      "type": "column"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "rótulo",
+                        "text": {
+                          "$field": "dismissButton"
+                        },
+                        "font": {
+                          "size": {
+                            "$token": "label-large-size"
+                          },
+                          "weight": {
+                            "$token": "label-large-weight"
+                          },
+                          "lineHeight": {
+                            "$token": "label-large-line-height"
+                          },
+                          "letterSpacing": {
+                            "$token": "label-large-tracking"
+                          },
+                          "verticalAlign": "cap-middle"
+                        },
+                        "color": {
+                          "$token": "primary"
+                        },
+                        "width": "fill"
+                      }
+                    ]
+                  }
+                ],
+                "minHeight": 40
               }
             ]
           },
           {
             "type": "frame",
-            "name": "confirmar",
+            "name": "área de toque (confirmar)",
             "width": "hug",
-            "height": 40,
-            "minWidth": 58,
+            "height": "hug",
+            "minHeight": 48,
             "layout": {
               "type": "row",
-              "padding": [0, 12],
               "align": "center",
               "justify": "center"
             },
@@ -393,34 +420,62 @@
             },
             "children": [
               {
-                "type": "text",
-                "name": "rótulo",
-                "text": {
-                  "$field": "confirmButton"
+                "type": "frame",
+                "name": "confirmar",
+                "width": "hug",
+                "height": "hug",
+                "minWidth": 58,
+                "layout": {
+                  "type": "row",
+                  "padding": [8, 12],
+                  "align": "center",
+                  "justify": "center"
                 },
-                "font": {
-                  "size": {
-                    "$token": "label-large-size"
-                  },
-                  "weight": {
-                    "$token": "label-large-weight"
-                  },
-                  "lineHeight": {
-                    "$token": "label-large-line-height"
-                  },
-                  "letterSpacing": {
-                    "$token": "label-large-tracking"
-                  },
-                  "verticalAlign": "cap-middle"
-                },
-                "color": {
-                  "$token": "primary"
-                },
-                "height": "fill"
+                "children": [
+                  {
+                    "type": "frame",
+                    "name": "conteúdo do rótulo",
+                    "width": "hug",
+                    "height": "hug",
+                    "layout": {
+                      "type": "column"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "rótulo",
+                        "text": {
+                          "$field": "confirmButton"
+                        },
+                        "font": {
+                          "size": {
+                            "$token": "label-large-size"
+                          },
+                          "weight": {
+                            "$token": "label-large-weight"
+                          },
+                          "lineHeight": {
+                            "$token": "label-large-line-height"
+                          },
+                          "letterSpacing": {
+                            "$token": "label-large-tracking"
+                          },
+                          "verticalAlign": "cap-middle"
+                        },
+                        "color": {
+                          "$token": "primary"
+                        },
+                        "width": "fill"
+                      }
+                    ]
+                  }
+                ],
+                "minHeight": 40
               }
             ]
           }
-        ]
+        ],
+        "minHeight": 48
       }
     ]
   }

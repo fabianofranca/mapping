@@ -283,6 +283,7 @@ export const EXPR_OPS = [
   '$token',
   '$rows',
   '$size',
+  '$lines',
   '$provided',
 ] as const;
 export const CONDITION_OPS = ['$field', '$eq', '$has', '$not', '$and', '$or'] as const;
@@ -322,10 +323,21 @@ export const EXTRA_KEYS: Record<(typeof NODE_TYPES)[number], readonly string[]> 
   frame: ['clip', 'layout', 'children'],
   rect: [],
   ellipse: [],
-  text: ['text', 'runs', 'font', 'color'],
+  text: ['text', 'runs', 'font', 'color', 'baselinePadding'],
   path: ['d', 'viewBox', 'fillRule'],
   slot: ['label', 'layout', 'provide'],
-  repeat: ['field', 'count', 'direction', 'gap', 'distribute', 'template'],
+  repeat: [
+    'field',
+    'count',
+    'direction',
+    'gap',
+    'distribute',
+    'wrap',
+    'lineGap',
+    'maxPerLine',
+    'maxLines',
+    'template',
+  ],
   image: ['src', 'fit'],
   icon: ['name', 'color', 'strokeWidth'],
 };
@@ -503,7 +515,7 @@ function exprFeatures(value: unknown, out: Set<string>, inCondition = false): vo
     exprFeatures(value.$concat, out);
     return;
   }
-  for (const op of ['$rows', '$size']) if (op in value) out.add(`expr.${op}`);
+  for (const op of ['$rows', '$size', '$lines']) if (op in value) out.add(`expr.${op}`);
   if ('$field' in value) {
     out.add('expr.$field');
     if ('default' in value) out.add('expr.$field.default');

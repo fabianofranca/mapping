@@ -7,13 +7,14 @@
  * shape e todo contêiner levam o atributo `sceneId`, para o visualizador achar o nó da cena
  * a partir do alvo de um evento do Konva.
  */
-import {
-  growRadius,
-  partialSides,
-  sideSegments,
-} from '../../model/components/strokeSides';
+import { growRadius, sideSegments } from '../../model/components/strokeSides';
 import { gapOutlines } from '../../model/components/strokeGaps';
-import { CUT_REACH, WRAP_SLACK, cutsText } from '../../model/components/textWrap';
+import {
+  CUT_REACH,
+  WRAP_SLACK,
+  cutLineLeft,
+  cutsText,
+} from '../../model/components/textWrap';
 import { canvasFontFamily } from '../../model/components/fontFamily';
 import Konva from 'konva/lib/Core';
 import { Ellipse as KonvaEllipse } from 'konva/lib/shapes/Ellipse';
@@ -40,7 +41,8 @@ import {
 import type { ImageFit } from '../../model/components/componentFormat';
 import type { RunLayout, RunPiece } from '../../model/components/richText';
 import { textBoxLimits } from './textLimits';
-import { capMetricsOf, capMiddleShift, konvaBaseline } from './capMiddle';
+import { capMiddleShift, lineBaseline } from '../../model/components/baseline';
+import { capMetricsOf } from './capMiddle';
 import { cachedEmbeddedImage, loadEmbeddedImage } from './imageLoader';
 import { DEFAULT_PALETTE, type RenderPalette } from './palette';
 import type { RenderWarning, RenderWarningCode } from './renderWarnings';
@@ -223,8 +225,7 @@ class Renderer {
           shapes.push(...this.fillShape(shape, paint, box));
         }
         if (node.stroke) {
-          if (partialSides(node.stroke))
-            shapes.push(...this.sideStrokes(node.stroke, box));
+          if (node.stroke.sides) shapes.push(...this.sideStrokes(node.stroke, box));
           else {
             const gapped = this.gapStrokes(node.stroke, box, node.cornerRadius);
             shapes.push(
@@ -329,11 +330,14 @@ class Renderer {
         }
         if (style.verticalAlign === 'cap-middle')
           attrs.y = capMiddleY(attrs, node, style);
+        if (style.baselineTop !== undefined)
+          attrs.y = baselineY(attrs, style.baselineTop);
         // Texto do SVG sem largura: o x é a âncora (`text-anchor`), então o texto centrado
         // ou à direita cresce para a esquerda a partir dela.
         const anchor = (shape: KonvaText): KonvaText => {
           if (cut) {
-            shape.x(cutLeft(style.align, node.width, shape.width()));
+            // O bloco (a linha mais larga) se alinha na caixa; o Konva alinha as linhas dentro dele.
+            shape.x(cutLineLeft(style.align, node.width, shape.width(), shape.width()));
             return shape;
           }
           if (node.width > 0 || style.align === 'left' || style.align === 'justify')
@@ -387,10 +391,7 @@ class Renderer {
     const shapes: Konva.Shape[] = [];
     const layout = node.runLayout;
     if (!layout) return shapes;
-    const shift =
-      node.style.verticalAlign === 'cap-middle'
-        ? capMiddleRunsShift(node, layout)
-        : verticalShift(node, layout.height);
+    const shift = richShift(node, layout);
     for (const line of layout.lines) {
       for (const piece of line.pieces) {
         const run = runs[piece.run];
@@ -636,13 +637,52 @@ function capMiddleY(attrs: TextConfig, node: TextNode, style: TextStyle): number
   const lines = Math.max(1, probe.textArr.length);
   probe.destroy();
   const lineHeight = (attrs.lineHeight ?? 1.2) * style.fontSize;
-  const first = konvaBaseline(0, lineHeight, metrics);
+  const first = lineBaseline(0, lineHeight, metrics);
   return capMiddleShift({
     boxHeight: node.height,
     capHeight: metrics.capHeight,
     firstBaseline: first,
     lastBaseline: first + (lines - 1) * lineHeight,
   });
+}
+
+/**
+ * `baselinePadding.top`: o `y` do nó para a primeira linha de base ficar a `top` do topo dele. A
+ * linha de base é a da fonte do nó, pelas mesmas medidas do `cap-middle` e do `konvaMeasurer`.
+ */
+function baselineY(attrs: TextConfig, top: number): number {
+  const probe = new KonvaText(attrs);
+  const fontSize = attrs.fontSize ?? 12;
+  const metrics = capMetricsOf(probe, fontSize);
+  probe.destroy();
+  const lineHeight = (attrs.lineHeight ?? 1.2) * fontSize;
+  return top - lineBaseline(0, lineHeight, metrics);
+}
+
+/** Deslocamento vertical do texto rico: `baselinePadding.top`, `cap-middle` ou o `verticalAlign`. */
+function richShift(node: TextNode, layout: RunLayout): number {
+  const top = node.style.baselineTop;
+  if (top !== undefined) {
+    const first = layout.lines[0];
+    return first ? top - baseOfLine(node, first) : 0;
+  }
+  return node.style.verticalAlign === 'cap-middle'
+    ? capMiddleRunsShift(node, layout)
+    : verticalShift(node, layout.height);
+}
+
+/** A linha de base de uma linha do `runLayout`, com a fonte base do nó. */
+function baseOfLine(node: TextNode, line: { y: number; height: number }): number {
+  const { style } = node;
+  const sample = new KonvaText({
+    text: 'M',
+    fontFamily: canvasFontFamily(style.fontFamily),
+    fontSize: style.fontSize,
+    fontStyle: fontStyle(style.fontWeight, style.italic),
+  });
+  const metrics = capMetricsOf(sample, style.fontSize);
+  sample.destroy();
+  return lineBaseline(line.y, line.height, metrics);
 }
 
 /**
@@ -664,7 +704,7 @@ function capMiddleRunsShift(node: TextNode, layout: RunLayout): number {
   const metrics = capMetricsOf(sample, style.fontSize);
   sample.destroy();
   const baseline = (line: { y: number; height: number }): number =>
-    konvaBaseline(line.y, line.height, metrics);
+    lineBaseline(line.y, line.height, metrics);
   return capMiddleShift({
     boxHeight: node.height,
     capHeight: metrics.capHeight,
@@ -966,13 +1006,6 @@ function applyShadow(shape: Konva.Shape, shadow: Shadow): void {
   shape.shadowOffset(shadow.offset);
   shape.shadowOpacity(1);
   shape.shadowEnabled(true);
-}
-
-/** Onde começa a linha de largura `text` numa caixa `box` (uma linha que passa da caixa começa na borda). */
-function cutLeft(align: TextStyle['align'], box: number, text: number): number {
-  if (text >= box) return 0;
-  if (align === 'center') return (box - text) / 2;
-  return align === 'right' ? box - text : 0;
 }
 
 /** A largura do Text leva a folga da quebra; o `x` volta o que o `align` desloca por causa dela. */

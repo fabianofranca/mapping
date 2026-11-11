@@ -1,5 +1,6 @@
-import { useRef } from 'preact/hooks';
+import { useEffect, useRef } from 'preact/hooks';
 import { t } from '../../i18n';
+import { needsExitReminder } from '../../model';
 import { Button } from '../controls';
 import { Dialog } from '../Dialog';
 import { reviewExitTarget } from '../toolWindowLayout';
@@ -23,6 +24,16 @@ export function ExitReviewDialog({ onClose }: { readonly onClose: () => void }) 
     onClose();
     review.close();
   };
+  // O clique em "Sair" decidiu pelo estado de antes de uma aplicação em andamento terminar:
+  // se, já aberto, o lembrete deixou de valer (nada aguarda mais), sai sem perguntar.
+  const reminder = needsExitReminder(
+    review.derived.proposal.value?.status,
+    counts.acceptedPending,
+  );
+  useEffect(() => {
+    if (!reminder) exit();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reminder]);
   return (
     <Dialog
       title={t('review.exitDialog.title')}

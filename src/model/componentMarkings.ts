@@ -1,5 +1,7 @@
 import { findSlot, resolveSlotLayout, slotBoxOfScene } from './components/arrange';
-import type { ComponentFile } from './components/componentFormat';
+import { WRAP_EPS, breakLines } from './components/wrapLines';
+import type { ComponentFile, FieldValues } from './components/componentFormat';
+import { fitComponentSize } from './components/sizing';
 import { instantiate, type TextMeasurer } from './components/instantiate';
 import {
   hasSlotComponent,
@@ -146,6 +148,11 @@ interface SlotBox {
   readonly gap: number;
   readonly flow: 'row' | 'column' | 'none';
   readonly reverse: boolean;
+  /** Quebra de fileira do slot (`layout.wrap`, v4) e os limites dela. */
+  readonly wrap: 'none' | 'wrap' | 'wrap-reverse';
+  readonly lineGap: number;
+  readonly maxPerLine: number | undefined;
+  readonly maxLines: number | undefined;
   readonly hasSlot: boolean;
 }
 
@@ -164,6 +171,10 @@ function slotArea(
     gap: 0,
     flow: 'none' as const,
     reverse: false,
+    wrap: 'none' as const,
+    lineGap: 0,
+    maxPerLine: undefined,
+    maxLines: undefined,
     hasSlot: false,
   };
   const mc = markingComponent(p, catalog, containerId);
@@ -191,6 +202,10 @@ function slotArea(
     gap: layout.gap,
     flow: layout.type,
     reverse: layout.reverse,
+    wrap: layout.wrap,
+    lineGap: layout.lineGap,
+    maxPerLine: layout.maxPerLine,
+    maxLines: layout.maxLines,
     hasSlot: true,
   };
 }
@@ -228,7 +243,7 @@ export function hasComponentSlot(
 
 type PlacementArgs = Pick<
   NewComponentArgs,
-  'containerId' | 'parentId' | 'specId' | 'typeId' | 'center'
+  'containerId' | 'parentId' | 'specId' | 'typeId' | 'center' | 'values'
 > & {
   /** Substitui o `size` do componente (MCP: o `rect` de `inside`), com as mesmas regras. */
   readonly size?: { readonly width: number; readonly height: number };
@@ -237,6 +252,8 @@ type PlacementArgs = Pick<
 /** O que a colocação de uma instância nova precisa: o tipo, o pai alvo, o slot dele e a área. */
 interface PlacementSpace {
   readonly component: ComponentFile;
+  readonly type: SpecAnnotationType;
+  readonly layerId: string;
   readonly floating: boolean;
   readonly image: ProjectContainer | null;
   readonly parent: Marking | null;
@@ -251,7 +268,7 @@ function placementSpace(
   args: PlacementArgs,
   measure: TextMeasurer,
 ): PlacementSpace {
-  const { component, type } = resolveType(p, catalog, args.specId, args.typeId);
+  const { component, type, layerId } = resolveType(p, catalog, args.specId, args.typeId);
   const image =
     args.containerId === null ? null : findById(p.containers, args.containerId);
   const parent = args.parentId === null ? null : findById(p.markings, args.parentId);
@@ -260,7 +277,95 @@ function placementSpace(
   const slot = parent === null ? null : slotArea(p, catalog, parent.id, measure);
   // Sem imagem (canvas) e sem slot, não há limite.
   const area: Rect | null = slot?.area ?? (image === null ? null : imagePixelRect(image));
-  return { component, floating: type.floating === true, image, parent, slot, area };
+  return {
+    component,
+    type,
+    layerId,
+    floating: type.floating === true,
+    image,
+    parent,
+    slot,
+    area,
+  };
+}
+
+/** Id da marcação e da anotação provisórias com que se leem os valores iniciais (nunca gravadas). */
+const SCRATCH_MARKING = '__initial-size__';
+const SCRATCH_ANNOTATION = '__initial-size-annotation__';
+
+/**
+ * Os valores com que a instância nova nasce, na forma do motor: os `default` dos campos, o `preview`
+ * do componente e os `values` dados por cima (a mesma ordem de `addComponentMarking`). Lê-se de uma
+ * anotação provisória num projeto descartável; o valor que o campo recusa fica de fora (a criação,
+ * depois, falha com o erro dele). `undefined` se a camada do tipo não está no projeto.
+ */
+function initialValues(
+  p: Project,
+  space: PlacementSpace,
+  args: PlacementArgs,
+): FieldValues | undefined {
+  const layer = projectLayerFor(p, args.specId, space.layerId);
+  if (layer === null) return undefined;
+  const scratch: Marking = {
+    id: SCRATCH_MARKING,
+    containerId: args.containerId,
+    parentId: null,
+    name: null,
+    rect: { x: 0, y: 0, width: MIN_STORED_MARKING_SIZE, height: MIN_STORED_MARKING_SIZE },
+    needsReview: false,
+    locked: false,
+    floating: false,
+    source: null,
+  };
+  let next: Project = { ...p, markings: [...p.markings, scratch] };
+  next = addTypedAnnotation(next, {
+    id: SCRATCH_ANNOTATION,
+    markingId: SCRATCH_MARKING,
+    layerId: layer.id,
+    type: { specId: args.specId, typeId: args.typeId },
+  });
+  next = applyPreview(next, SCRATCH_ANNOTATION, space.type, space.component, args.values);
+  for (const [key, value] of Object.entries(args.values ?? {})) {
+    try {
+      next = setFieldValue(next, SCRATCH_ANNOTATION, key, value);
+    } catch (error) {
+      if (!(error instanceof ModelError)) throw error;
+    }
+  }
+  const annotation = findById(next.annotations, SCRATCH_ANNOTATION);
+  return drawingValues(next, annotation, space.type).values;
+}
+
+/**
+ * O tamanho que a instância nova quer (decisão 16 da #898): o `size` do componente e, nos eixos em que o
+ * `sizing` depende do conteúdo (`hug` ou expressão), o tamanho medido com os valores iniciais
+ * (`preview` mais os dados). Quem dá o tamanho (`args.size`) manda, sem medir; componente sem `sizing`
+ * não mede (o caso comum não paga o projeto provisório), nem o componente com slot.
+ */
+function wantedSize(
+  p: Project,
+  space: PlacementSpace,
+  args: PlacementArgs,
+  measure: TextMeasurer,
+): Size {
+  if (args.size !== undefined) return args.size;
+  const { component } = space;
+  // Componente com slot: o conteúdo são as filhas, que ainda não existem (nasce no `size`; o
+  // Arrumar o ajusta depois de elas entrarem).
+  if (component.sizing === undefined || hasSlotComponent(component))
+    return component.size;
+  const values = initialValues(p, space, args);
+  if (values === undefined) return component.size;
+  const drawn = componentForDrawing(p, component, args.containerId);
+  const fitted = fitComponentSize(
+    drawn.component,
+    values,
+    { measure, ...(drawn.tokens === undefined ? {} : { tokens: drawn.tokens }) },
+    { base: component.size },
+  );
+  return fitted === undefined
+    ? component.size
+    : { width: fitted.width, height: fitted.height };
 }
 
 /**
@@ -291,11 +396,14 @@ function fitSize(space: PlacementSpace, wanted: Size): Size {
 export function componentSize(
   p: Project,
   catalog: ComponentCatalog,
-  args: Pick<PlacementArgs, 'containerId' | 'parentId' | 'specId' | 'typeId' | 'size'>,
+  args: Pick<
+    PlacementArgs,
+    'containerId' | 'parentId' | 'specId' | 'typeId' | 'size' | 'values'
+  >,
   measure: TextMeasurer,
 ): Size {
   const space = placementSpace(p, catalog, args, measure);
-  return fitSize(space, args.size ?? space.component.size);
+  return fitSize(space, wantedSize(p, space, args, measure));
 }
 
 /** R0 fora de um slot: o tamanho centrado em `center` (padrão, o centro da imagem), preso à imagem. */
@@ -320,8 +428,117 @@ function centeredRect(
   };
 }
 
+/** Os eixos do slot com `wrap`: principal (largura numa `row`) e cruzado, e onde acaba o conteúdo. */
+interface WrapAxes {
+  readonly row: boolean;
+  readonly start: number;
+  readonly end: number;
+  readonly main: (r: Rect) => number;
+  readonly mainStart: (r: Rect) => number;
+  readonly mainEnd: (r: Rect) => number;
+  readonly crossStart: (r: Rect) => number;
+  readonly crossEnd: (r: Rect) => number;
+}
+
+function wrapAxes(slot: SlotBox): WrapAxes {
+  const row = slot.flow === 'row';
+  const { area, padding } = slot;
+  return {
+    row,
+    start: row ? area.x + padding.left : area.y + padding.top,
+    end: row ? right(area) - padding.right : bottom(area) - padding.bottom,
+    main: (r) => (row ? r.width : r.height),
+    mainStart: (r) => (row ? r.x : r.y),
+    mainEnd: (r) => (row ? right(r) : bottom(r)),
+    crossStart: (r) => (row ? r.y : r.x),
+    crossEnd: (r) => (row ? bottom(r) : right(r)),
+  };
+}
+
+/** A filha nova cabe depois da última na linha dela (espaço do eixo principal e `maxPerLine`)? */
+function fitsLastLine(
+  lastLine: readonly Marking[],
+  slot: SlotBox,
+  axes: WrapAxes,
+  mainSize: number,
+): boolean {
+  if (slot.maxPerLine !== undefined && lastLine.length >= slot.maxPerLine) return false;
+  const used =
+    lastLine.reduce((sum, k) => sum + axes.main(k.rect), 0) +
+    slot.gap * (lastLine.length - 1);
+  return used + slot.gap + mainSize <= axes.end - axes.start + WRAP_EPS;
+}
+
+/** Onde começa, no eixo principal, a filha que segue a última na mesma linha. */
+function sameLineMain(
+  slot: SlotBox,
+  axes: WrapAxes,
+  last: Rect,
+  mainSize: number,
+): number {
+  return slot.reverse
+    ? axes.mainStart(last) - slot.gap - mainSize
+    : axes.mainEnd(last) + slot.gap;
+}
+
+/** Cabe mais uma linha sem passar de `maxLines`? */
+function canOpenLine(slot: SlotBox, lines: number): boolean {
+  return slot.maxLines === undefined || lines < slot.maxLines;
+}
+
+/**
+ * R0 num slot com `wrap` e ao menos uma filha: na linha da última filha, depois dela, se cabe (e o
+ * `maxPerLine` deixa); senão no começo da linha seguinte, abaixo da última (ou à direita, numa
+ * `column`), com o `lineGap`. As linhas das filhas saem do mesmo `breakLines` da arrumação. Em
+ * `wrap-reverse` a linha nova também vai depois da última: o Arrumar põe as linhas na ordem certa.
+ */
+function wrapSlotPoint(
+  kids: readonly Marking[],
+  slot: SlotBox,
+  size: Size,
+): { x: number; y: number } | undefined {
+  const axes = wrapAxes(slot);
+  const { lines } = breakLines(
+    kids.map((k) => axes.main(k.rect)),
+    axes.end - axes.start,
+    { gap: slot.gap, maxPerLine: slot.maxPerLine },
+  );
+  const lastLine = (lines.at(-1) ?? []).map((i) => kids[i] as Marking);
+  const lastKid = lastLine.at(-1);
+  if (lastKid === undefined) return undefined;
+  const mainSize = axes.row ? size.width : size.height;
+  const fits = fitsLastLine(lastLine, slot, axes, mainSize);
+  // Uma linha nova além de `maxLines` não seria arrumada: segue o fluxo de uma linha só.
+  if (!fits && !canOpenLine(slot, lines.length)) return undefined;
+  const main = fits
+    ? sameLineMain(slot, axes, lastKid.rect, mainSize)
+    : slot.reverse
+      ? axes.end - mainSize
+      : axes.start;
+  const cross = fits
+    ? Math.min(...lastLine.map((k) => axes.crossStart(k.rect)))
+    : Math.max(...lastLine.map((k) => axes.crossEnd(k.rect))) + slot.lineGap;
+  return axes.row ? { x: main, y: cross } : { x: cross, y: main };
+}
+
+/** O R0 de um slot com `wrap` (ver `wrapSlotPoint`); `undefined` sem `wrap`, sem layout ou sem filhas. */
+function wrappedSlotRect(
+  p: Project,
+  parent: Marking,
+  slot: SlotBox,
+  size: Size,
+): Rect | undefined {
+  if (slot.flow === 'none' || slot.wrap === 'none') return undefined;
+  const point = wrapSlotPoint(childrenOf(p, parent.id), slot, size);
+  return point === undefined
+    ? undefined
+    : { x: Math.round(point.x), y: Math.round(point.y), ...size };
+}
+
 /** R0 num componente com slot: depois da última filha no eixo do layout, ou no início do conteúdo (antes do `clamp`). */
 function slotRect(p: Project, parent: Marking, slot: SlotBox, size: Size): Rect {
+  const wrapped = wrappedSlotRect(p, parent, slot, size);
+  if (wrapped !== undefined) return wrapped;
   const slotBox = slot.area;
   let x = slotBox.x + slot.padding.left;
   let y = slotBox.y + slot.padding.top;
@@ -374,7 +591,7 @@ export function componentPlacement(
   measure: TextMeasurer,
 ): Rect {
   const space = placementSpace(p, catalog, args, measure);
-  const size = fitSize(space, args.size ?? space.component.size);
+  const size = fitSize(space, wantedSize(p, space, args, measure));
   const { parent, slot } = space;
   if (parent === null || slot === null) {
     const r0 = centeredRect(space, size, args.center);
@@ -471,7 +688,13 @@ export function addComponentMarking(
     componentSize(
       p,
       catalog,
-      { containerId: null, parentId: null, specId: args.specId, typeId: args.typeId },
+      {
+        containerId: null,
+        parentId: null,
+        specId: args.specId,
+        typeId: args.typeId,
+        ...(args.values ? { values: args.values } : {}),
+      },
       measure,
     );
   if (floating && (args.containerId !== null || args.parentId !== null)) {
@@ -490,6 +713,7 @@ export function addComponentMarking(
         specId: args.specId,
         typeId: args.typeId,
         ...(args.center ? { center: args.center } : {}),
+        ...(args.values ? { values: args.values } : {}),
       },
       measure,
     );

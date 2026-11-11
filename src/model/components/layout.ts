@@ -7,7 +7,8 @@
  * texto é medido pelo `TextMeasurer` injetado.
  *
  * Regras:
- * - Spec por eixo: `component.sizing?.[eixo] ?? component.size[eixo]` (px, `fill` ou `hug`);
+ * - Spec por eixo: o `sizing` do componente avaliado com os valores do nó (literal ou, na v4,
+ *   expressão), ou o `size` do eixo (`resolveSizing`): px, `fill` ou `hug`;
  *   todo tamanho final respeita `minSize`; o `hug` medido sobe para o inteiro seguinte
  *   (`Math.ceil`), para o texto não quebrar por arredondamento. O resto fica exato.
  * - Um componente com slot tem um `slot`; o layout do slot (row/column/none, gap, padding,
@@ -30,9 +31,11 @@ import {
   measureComponent,
 } from './instantiate';
 import { justifySpacing, mirrorMain } from './layoutValues';
+import { type ResolvedSizing, resolveSizing } from './sizing';
 import type { Library } from './library';
 import type { Instance, Screen } from './screen';
 import { absoluteBoxes, walk } from './scene';
+import { breakLines, stackLines } from './wrapLines';
 
 /** Nó da árvore sem geometria. */
 export interface LayoutNode {
@@ -115,6 +118,8 @@ interface Prepared {
   readonly slot?: SlotTemplate;
   readonly layout: ResolvedSlotLayout;
   readonly kids: readonly Prepared[];
+  /** O `sizing` avaliado com os valores do nó (px, `fill` ou `hug` por eixo). */
+  readonly sizing: ResolvedSizing;
 }
 
 /** Retângulo de um filho relativo à origem do conteúdo do slot, e se cada eixo veio do `hug`. */
@@ -142,6 +147,8 @@ const NONE_LAYOUT: ResolvedSlotLayout = {
   align: 'start',
   justify: 'start',
   reverse: false,
+  wrap: 'none',
+  lineGap: 0,
 };
 
 /** A tela é uma coluna: sem padding, sem gap, filhos no início. */
@@ -250,17 +257,19 @@ export function layoutScreen(
     const kids = slot
       ? node.children.map(prepare).filter((k): k is Prepared => k !== undefined)
       : [];
+    const sizing = resolveSizing(component, node.values);
+    for (const m of sizing.messages) warn(m.code as ModelMessageTemplateCode, m.params);
     return {
       node,
       component,
       ...(slot ? { slot } : {}),
       layout: slot ? resolveSlotLayout(slot, node.values) : NONE_LAYOUT,
       kids,
+      sizing,
     };
   };
 
-  const specOf = (p: Prepared, axis: Axis) =>
-    p.component.sizing?.[axis] ?? p.component.size[axis];
+  const specOf = (p: Prepared, axis: Axis) => p.sizing[axis].spec;
   const withMin = (p: Prepared, axis: Axis, value: number) =>
     Math.max(value, p.component.minSize?.[axis] ?? 0);
   const padW = (p: Prepared) => p.layout.padding.left + p.layout.padding.right;
@@ -300,6 +309,32 @@ export function layoutScreen(
 
   // --- medidas intrínsecas (hug), memoizadas ------------------------------------------------
 
+  /**
+   * A largura dos filhos (sem o padding): a soma na `row`, a maior na `column`. Com `wrap`, as
+   * linhas vêm só do `maxPerLine` (o limite do eixo principal não se conhece ao medir): na `row`
+   * é a linha mais larga; na `column`, as colunas lado a lado, com o `lineGap`.
+   */
+  const wrappedOrPlainWidth = (
+    layout: ResolvedSlotLayout,
+    widths: readonly number[],
+  ): number => {
+    if (layout.type !== 'row' && layout.wrap === 'none') return maxOf(widths);
+    if (layout.wrap === 'none')
+      return sum(widths) + layout.gap * Math.max(0, widths.length - 1);
+    const { lines } = breakLines(widths, null, {
+      gap: layout.gap,
+      maxPerLine: layout.maxPerLine,
+      maxLines: layout.maxLines,
+    });
+    const of = (line: readonly number[]) => line.map((i) => widths[i] ?? 0);
+    if (layout.type === 'row')
+      return maxOf(lines.map((line) => sum(of(line)) + layout.gap * (line.length - 1)));
+    return (
+      sum(lines.map((line) => maxOf(of(line)))) +
+      layout.lineGap * Math.max(0, lines.length - 1)
+    );
+  };
+
   /** Largura que os filhos arrumados pedem ao slot, mais o padding dele. */
   const slotContentWidth = (p: Prepared): number =>
     cached(p, 'scw', () => {
@@ -309,11 +344,7 @@ export function layoutScreen(
           ? withMin(kid, 'width', spec)
           : intrinsicWidth(kid);
       });
-      const inner =
-        p.layout.type === 'row'
-          ? sum(widths) + p.layout.gap * Math.max(0, widths.length - 1)
-          : maxOf(widths);
-      return inner + padW(p);
+      return wrappedOrPlainWidth(p.layout, widths) + padW(p);
     });
 
   /** Largura `hug`: o template medido (com `slotContent` nos componentes com slot). */
@@ -382,6 +413,68 @@ export function layoutScreen(
     return { w: withMin(kid, 'width', w), hug: w === intrinsic };
   };
 
+  /** Altura natural de um filho (a do `sizing` em px, ou o `hug` na largura natural dele). */
+  const naturalHeight = (kid: Prepared): number => {
+    const spec = specOf(kid, 'height');
+    if (typeof spec === 'number') return withMin(kid, 'height', spec);
+    const { w, hug } = widthOf(kid, null, false);
+    return intrinsicHeight(kid, w, hug);
+  };
+
+  /**
+   * Arruma os filhos de um slot com `wrap`: reparte-os em linhas pelo tamanho natural no eixo
+   * principal (as colunas, numa `column`), arruma cada linha como um slot sem `wrap` e empilha as
+   * linhas no eixo cruzado, separadas por `lineGap`. Os filhos além de `maxLines` linhas não têm
+   * retângulo (`rects` traz só os que ficam, na ordem) e, em `emit`, o motor avisa.
+   */
+  function arrangeWrapped(
+    kids: readonly Prepared[],
+    layout: ResolvedSlotLayout,
+    cw: number | null,
+    ch: number | null,
+    emit: boolean,
+    owner: string,
+  ): Arranged {
+    const row = layout.type === 'row';
+    const bases = kids.map((kid) =>
+      row ? widthOf(kid, null, false).w : naturalHeight(kid),
+    );
+    const broken = breakLines(bases, row ? cw : ch, {
+      gap: layout.gap,
+      maxPerLine: layout.maxPerLine,
+      maxLines: layout.maxLines,
+    });
+    if (emit && broken.dropped > 0)
+      warn('engine.childrenOutsideMaxLines', { count: broken.dropped, name: owner });
+    const flat: ResolvedSlotLayout = { ...layout, wrap: 'none' };
+    const lines = broken.lines.map((indices) =>
+      arrangeKids(
+        indices.map((i) => kids[i] as Prepared),
+        flat,
+        row ? cw : null,
+        row ? null : ch,
+        emit,
+        owner,
+      ),
+    );
+    const stacked = stackLines(
+      lines.map((line) => (row ? line.usedH : line.usedW)),
+      layout.lineGap,
+      layout.wrap === 'wrap-reverse',
+    );
+    const rects = lines.flatMap((line, k) =>
+      line.rects.map((r) =>
+        row
+          ? { ...r, y: r.y + (stacked.tops[k] ?? 0) }
+          : { ...r, x: r.x + (stacked.tops[k] ?? 0) },
+      ),
+    );
+    const usedMain = maxOf(lines.map((line) => (row ? line.usedW : line.usedH)));
+    return row
+      ? { rects, usedW: usedMain, usedH: stacked.total }
+      : { rects, usedW: stacked.total, usedH: usedMain };
+  }
+
   /** Arruma os filhos num conteúdo `cw` × `ch` (nulo = o pai é `hug` nesse eixo). */
   function arrangeKids(
     kids: readonly Prepared[],
@@ -389,7 +482,10 @@ export function layoutScreen(
     cw: number | null,
     ch: number | null,
     emit: boolean,
+    owner = '',
   ): Arranged {
+    if (layout.wrap !== 'none' && layout.type !== 'none')
+      return arrangeWrapped(kids, layout, cw, ch, emit, owner);
     const n = kids.length;
     const gaps = layout.gap * Math.max(0, n - 1);
     const stretch = layout.align === 'stretch';
@@ -570,7 +666,7 @@ export function layoutScreen(
     const slot =
       slotBoxOf(p, box, { width: probe.width, height: pre.usedH + padH(p) }) ?? probe;
     const ch = hugH && layout.type !== 'row' ? null : Math.max(0, slot.height - padH(p));
-    const arranged = arrangeKids(p.kids, layout, cw, ch, true);
+    const arranged = arrangeKids(p.kids, layout, cw, ch, true, node.id);
     const originX = slot.x + layout.padding.left;
     const originY = slot.y + layout.padding.top;
     p.kids.forEach((kid, i) => {

@@ -92,6 +92,18 @@ export const componentMessages = {
   'component.gapNotSelf': 'stroke.gap.node não pode citar o próprio nó: {name}',
   'component.gapNotInsideRepeat':
     'stroke.gap.node não pode citar um nó dentro de um repeat: {name}',
+  // Linha de base
+  'component.baselineOnlyRow': 'baseline só vale em row',
+  'component.baselineNotWithVerticalAlign': 'não combina com verticalAlign',
+  // $lines e sizing por expressão
+  'component.expectedNodeName': 'esperava nome de um nó text (texto não vazio)',
+  'component.linesNodeMissing': 'nó text "{name}" não existe',
+  'component.linesNodeRepeated': 'mais de um nó text "{name}"',
+  'component.linesInsideRepeat': 'nó text "{name}" está dentro de um repeat',
+  'component.linesSelf': 'o nó não pode depender das próprias linhas',
+  'component.sizingNoSize': '$size não vale em sizing',
+  'component.sizingNoLines': '$lines não vale em sizing',
+  'component.onlyWithWrap': 'só vale com wrap',
   // Versão do formato
   'component.v4Only': 'só é permitido com formatVersion 4',
   'component.indexOnlyInRepeat': '$index só vale dentro de um repeat',

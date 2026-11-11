@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mapping.local/component.schema.json",
   "title": "Mapping — componente (mapping-component, formatVersion 1, 2, 3 e 4)",
-  "description": "Valida só a estrutura do arquivo de componente. A fonte da verdade é o código (src/model/components/parseComponent.ts), que também confere o que o schema não vê: campos citados pelas expressões que existem no tipo da especialização, minSize não maior que size, raiz do template obrigatoriamente do tipo frame, o slot único e a prova de desenho. Veja COMPONENT-FORMAT.md. O nó repeat (a tabela desenhada) vale a partir da formatVersion 2: numa formatVersion 1 é erro do parseComponent; o repeat não pode ter repeat nem slot dentro, e o schema não confere que o campo citado é uma table do tipo. O nó image (imagem remota) só existe na formatVersion 3: numa 1 ou 2 é erro do parseComponent; o schema confere que o src é um literal https:// ou exatamente {\"$field\"}, mas não que o campo ligado é do tipo string nem a forma completa da URL (sem usuário e senha, até 2048 caracteres). A formatVersion 4 acrescenta rotation (qualquer nó menos a raiz, o que o schema não confere: é do parseComponent; graus, sentido horário, em volta do centro da caixa, só desenho), stroke.cap, stroke.join e stroke.sides, minWidth, maxWidth, minHeight e maxHeight (qualquer nó), repeat.distribute e expressão em width, height, layout.type, layout.align e layout.justify (numa versão menor é erro do parseComponent; o literal nessas cinco chaves vale em todas as versões). O schema não confere que minWidth não é maior que maxWidth. A formatVersion 4 também acrescenta stroke.offset (frame, rect e ellipse), stroke.dash por expressão, $token em shadow.x, shadow.y e shadow.blur e em cada item de cornerRadius e de stroke.dash, layout.justify space-around e space-evenly, layout.reverse e alpha no $token de cor (o schema não confere a versão nem o tipo da posição: isso é do parseComponent). A formatVersion 4 também acrescenta stroke.gap (frame e rect, sem sides; o nó citado precisa existir no template, o que o schema não confere), shadow como lista de 1 a 4 sombras e shadow.spread (o schema não confere a versão: isso é do parseComponent). A formatVersion 4 também acrescenta font.align justify, over no $token de cor (a cor composta sobre outra, opaca) e os fit fill-width, fill-height, scale-down e none da imagem (o schema não confere a versão nem a posição: isso é do parseComponent). A formatVersion 4 também aceita { \"$token\": \"nome\" } onde se espera cor, número ou família de fonte (o schema deixa a expressão nas chaves de tipo compatível, mas não confere a posição nem que o token existe nos tokens da especialização: isso é do parseComponent e do validate_library). A formatVersion 4 também acrescenta provide no slot (nome → expressão de texto ou número, resolvida no pai; o schema não confere o nome vazio) e { \"$provided\": \"nome\", \"default\": … } nas expressões (a cor herdada do ancestral mais próximo que oferece o nome; só vale em posição de cor, o que o schema não confere; o schema não confere a versão nem o src da image, que continua só literal ou $field: isso é do parseComponent).",
+  "description": "Valida só a estrutura do arquivo de componente. A fonte da verdade é o código (src/model/components/parseComponent.ts), que também confere o que o schema não vê: campos citados pelas expressões que existem no tipo da especialização, minSize não maior que size, raiz do template obrigatoriamente do tipo frame, o slot único e a prova de desenho. Veja COMPONENT-FORMAT.md. O nó repeat (a tabela desenhada) vale a partir da formatVersion 2: numa formatVersion 1 é erro do parseComponent; o repeat não pode ter repeat nem slot dentro, e o schema não confere que o campo citado é uma table do tipo. O nó image (imagem remota) só existe na formatVersion 3: numa 1 ou 2 é erro do parseComponent; o schema confere que o src é um literal https:// ou exatamente {\"$field\"}, mas não que o campo ligado é do tipo string nem a forma completa da URL (sem usuário e senha, até 2048 caracteres). A formatVersion 4 acrescenta rotation (qualquer nó menos a raiz, o que o schema não confere: é do parseComponent; graus, sentido horário, em volta do centro da caixa, só desenho), stroke.cap, stroke.join e stroke.sides, minWidth, maxWidth, minHeight e maxHeight (qualquer nó), repeat.distribute e expressão em width, height, layout.type, layout.align e layout.justify (numa versão menor é erro do parseComponent; o literal nessas cinco chaves vale em todas as versões). O schema não confere que minWidth não é maior que maxWidth. A formatVersion 4 também acrescenta stroke.offset (frame, rect e ellipse), stroke.dash por expressão, $token em shadow.x, shadow.y e shadow.blur e em cada item de cornerRadius e de stroke.dash, layout.justify space-around e space-evenly, layout.reverse e alpha no $token de cor (o schema não confere a versão nem o tipo da posição: isso é do parseComponent). A formatVersion 4 também acrescenta stroke.gap (frame e rect, sem sides; o nó citado precisa existir no template, o que o schema não confere), shadow como lista de 1 a 4 sombras e shadow.spread (o schema não confere a versão: isso é do parseComponent). A formatVersion 4 também acrescenta font.align justify, over no $token de cor (a cor composta sobre outra, opaca) e os fit fill-width, fill-height, scale-down e none da imagem (o schema não confere a versão nem a posição: isso é do parseComponent). A formatVersion 4 também aceita { \"$token\": \"nome\" } onde se espera cor, número ou família de fonte (o schema deixa a expressão nas chaves de tipo compatível, mas não confere a posição nem que o token existe nos tokens da especialização: isso é do parseComponent e do validate_library). A formatVersion 4 também acrescenta layout.wrap, layout.lineGap, layout.maxPerLine e layout.maxLines (quadro e slot) e wrap, lineGap, maxPerLine e maxLines no repeat (a quebra de fileira; o schema não confere a versão nem que lineGap, maxPerLine e maxLines só valem com wrap: isso é do parseComponent). A formatVersion 4 também acrescenta provide no slot (nome → expressão de texto ou número, resolvida no pai; o schema não confere o nome vazio) e { \"$provided\": \"nome\", \"default\": … } nas expressões (a cor herdada do ancestral mais próximo que oferece o nome; só vale em posição de cor, o que o schema não confere; o schema não confere a versão nem o src da image, que continua só literal ou $field: isso é do parseComponent).",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "formatVersion", "id", "name", "size", "template"],
@@ -191,10 +191,13 @@
       ]
     },
     "lit_layoutAlign": {
-      "enum": ["start", "center", "end", "stretch"]
+      "enum": ["start", "center", "end", "stretch", "baseline"]
     },
     "lit_justify": {
       "enum": ["start", "center", "end", "space-between", "space-around", "space-evenly"]
+    },
+    "lit_layoutWrap": {
+      "enum": ["none", "wrap", "wrap-reverse"]
     },
     "lit_fontAlign": {
       "enum": ["left", "center", "right", "justify"]
@@ -1445,6 +1448,90 @@
         }
       ]
     },
+    "expr_layoutWrap": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_layoutWrap"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_layoutWrap"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_layoutWrap"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_layoutWrap"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_layoutWrap"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_layoutWrap"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$provided"],
+          "properties": {
+            "$provided": {
+              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "type": "string",
+              "minLength": 1
+            },
+            "default": {
+              "$ref": "#/$defs/expr_layoutWrap"
+            }
+          }
+        }
+      ]
+    },
     "expr_justify": {
       "description": "Literal ou expressão ($field, $if, $switch, $concat).",
       "anyOf": [
@@ -2003,30 +2090,15 @@
       }
     },
     "sizing": {
+      "description": "Dimensionamento sem retângulo. Cada eixo: px (>= 0), \"fill\", \"hug\" ou, na formatVersion 4, uma expressão que dá um deles, avaliada com os valores da instância ($size e $lines não valem aqui; % e $token o parseComponent recusa).",
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "width": {
-          "anyOf": [
-            {
-              "type": "number",
-              "minimum": 0
-            },
-            {
-              "enum": ["fill", "hug"]
-            }
-          ]
+          "$ref": "#/$defs/expr_size"
         },
         "height": {
-          "anyOf": [
-            {
-              "type": "number",
-              "minimum": 0
-            },
-            {
-              "enum": ["fill", "hug"]
-            }
-          ]
+          "$ref": "#/$defs/expr_size"
         }
       }
     },
@@ -2270,7 +2342,7 @@
       }
     },
     "layout": {
-      "description": "Distribuição dos filhos: none (âncoras), row ou column. Na formatVersion 4, type, align e justify aceitam expressão, justify também space-around e space-evenly, e reverse inverte a ordem dos filhos no eixo principal (o start passa a ser o fim); com type literal \"none\" só type vale.",
+      "description": "Distribuição dos filhos: none (âncoras), row ou column. Na formatVersion 4, type, align e justify aceitam expressão, justify também space-around e space-evenly, reverse inverte a ordem dos filhos no eixo principal (o start passa a ser o fim) e wrap (none, wrap ou wrap-reverse), lineGap, maxPerLine e maxLines quebram a fileira em linhas (lineGap, maxPerLine e maxLines só valem com wrap, o que o schema não confere: é do parseComponent); com type literal \"none\" só type vale.",
       "anyOf": [
         {
           "type": "object",
@@ -2304,6 +2376,18 @@
             },
             "reverse": {
               "$ref": "#/$defs/expr_boolean"
+            },
+            "wrap": {
+              "$ref": "#/$defs/expr_layoutWrap"
+            },
+            "lineGap": {
+              "$ref": "#/$defs/expr_nonNegative"
+            },
+            "maxPerLine": {
+              "$ref": "#/$defs/expr_positiveInteger"
+            },
+            "maxLines": {
+              "$ref": "#/$defs/expr_positiveInteger"
             }
           }
         }
@@ -2564,6 +2648,19 @@
         },
         "color": {
           "$ref": "#/$defs/expr_color"
+        },
+        "baselinePadding": {
+          "description": "formatVersion 4. Distâncias pela linha de base, como o paddingFromBaseline do Compose: top, do topo da caixa do nó à primeira linha de base; bottom, da última linha de base ao fundo da caixa (px ≥ 0). O top não combina com font.verticalAlign literal.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "top": {
+              "$ref": "#/$defs/expr_nonNegative"
+            },
+            "bottom": {
+              "$ref": "#/$defs/expr_nonNegative"
+            }
+          }
         }
       }
     },
@@ -2934,6 +3031,18 @@
         },
         "gap": {
           "$ref": "#/$defs/expr_nonNegative"
+        },
+        "wrap": {
+          "$ref": "#/$defs/expr_layoutWrap"
+        },
+        "lineGap": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxPerLine": {
+          "$ref": "#/$defs/expr_positiveInteger"
+        },
+        "maxLines": {
+          "$ref": "#/$defs/expr_positiveInteger"
         },
         "distribute": {
           "enum": ["none", "fill"],
@@ -3841,7 +3950,7 @@
       "$ref": "#/$defs/expr_number"
     },
     "numericOps": {
-      "description": "Operações numéricas (formatVersion 4): $add, $sub, $mul, $div, $mod, $round, $floor, $ceil, $abs, $min, $max, $clamp, $sin e $cos (em graus). Operando sem valor (vazio, texto não numérico, divisão por zero) faz a operação não produzir valor. $rows (número de linhas de um campo table; sem linhas, 0) e $size (\"width\" ou \"height\" da instância em px da imagem; na prova de desenho e no hug, o size do componente) também produzem número.",
+      "description": "Operações numéricas (formatVersion 4): $add, $sub, $mul, $div, $mod, $round, $floor, $ceil, $abs, $min, $max, $clamp, $sin e $cos (em graus). Operando sem valor (vazio, texto não numérico, divisão por zero) faz a operação não produzir valor. $rows (número de linhas de um campo table; sem linhas, 0), $size (\"width\" ou \"height\" da instância em px da imagem; na prova de desenho e no hug, o size do componente) e $lines (o número de linhas medidas de um nó text) também produzem número.",
       "anyOf": [
         {
           "type": "object",
@@ -4036,6 +4145,18 @@
           "properties": {
             "$size": {
               "enum": ["width", "height"]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$lines"],
+          "properties": {
+            "$lines": {
+              "description": "Nome de um nó text único do template: o número de linhas medidas dele (no máximo maxLines; texto vazio, 0). O motor arruma em duas passagens (formatVersion 4).",
+              "type": "string",
+              "minLength": 1
             }
           }
         }

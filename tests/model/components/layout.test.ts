@@ -802,3 +802,219 @@ describe('layoutScreen: fill com minSize e âncora (#CR-13, #CR-14)', () => {
     // O mesmo no eixo horizontal (row com largura 300).
   });
 });
+
+// --- sizing por expressão (MC2, decisão 9 da #898) --------------------------------------------
+
+describe('layoutScreen: sizing por expressão', () => {
+  /** O `top-app-bar`: a altura pelo `style` (64, 112, 152); o `size` 80 vale se a expressão falhar. */
+  const bar: ComponentFile = {
+    ...component('bar', {}, { size: { width: 100, height: 80 } }),
+    formatVersion: 4,
+    sizing: {
+      width: 'fill',
+      height: {
+        $switch: 'style',
+        cases: { small: 64, medium: 112, large: 152 },
+        default: { $field: 'h' },
+      },
+    },
+  } as unknown as ComponentFile;
+  const barLib = build([...COMPONENTS, bar], {
+    ...SPEC,
+    layers: [
+      {
+        ...SPEC.layers[0]!,
+        annotationTypes: [
+          ...SPEC.layers[0]!.annotationTypes,
+          {
+            id: 'bar',
+            name: 'bar',
+            component: 'components/bar.json',
+            fields: [{ key: 'style', label: 'Estilo', type: 'string', default: 'small' }],
+          },
+        ],
+      },
+    ],
+  });
+  const stack = (...styles: (string | [string, string | number])[]) =>
+    run(
+      [
+        root(
+          node(
+            'c',
+            'col',
+            {},
+            styles.map((style, i) =>
+              node(
+                `b${i}`,
+                'bar',
+                typeof style === 'string' ? { style } : { style: style[0], h: style[1] },
+              ),
+            ),
+          ),
+        ),
+      ],
+      300,
+      600,
+      barLib,
+    );
+
+  it('a biblioteca de teste carrega sem problemas', () => {
+    expect(barLib.problems).toEqual([]);
+  });
+
+  it('64, 112 e 152 pelo valor do campo', () => {
+    const result = stack('small', 'medium', 'large');
+    expect(result.warnings).toEqual([]);
+    expect(boxOf(result, 'b0').height).toBe(64);
+    expect(boxOf(result, 'b1')).toMatchObject({ y: 64, height: 112 });
+    expect(boxOf(result, 'b2')).toMatchObject({ y: 176, height: 152 });
+  });
+
+  it('valor inválido cai no size daquele eixo e avisa', () => {
+    const result = stack(['nope', -4], ['outro', 'banana']);
+    expect(boxOf(result, 'b0').height).toBe(80);
+    expect(boxOf(result, 'b1').height).toBe(80);
+    expect(result.warnings).toContain('valor inválido em sizing.height: -4');
+    expect(result.warnings).toContain('valor inválido em sizing.height: banana');
+  });
+});
+
+// --- MC4: quebra de fileira (wrap) na arrumação da tela (decisões 11 e 12 da #898) ---------------
+
+describe('layoutScreen: wrap', () => {
+  function flowContainer(id: string, layout: Record<string, unknown>, sizing: Sizing) {
+    return {
+      ...component(
+        id,
+        {
+          children: [
+            {
+              type: 'slot',
+              anchors: { left: 0, right: 0, top: 0, bottom: 0 },
+              layout,
+            },
+          ],
+        },
+        { sizing },
+      ),
+      formatVersion: 4,
+    } as ComponentFile;
+  }
+
+  const FLOW = { type: 'row', gap: 8, wrap: 'wrap', lineGap: 12 };
+  const WRAP_COMPONENTS: ComponentFile[] = [
+    block('b100', { width: 100, height: 20 }),
+    block('tall80', { width: 60, height: 80 }),
+    flowContainer('flow', FLOW, { width: 'fill', height: 'hug' }),
+    flowContainer('flow-hug', FLOW, { width: 'hug', height: 'hug' }),
+    flowContainer(
+      'flow-max1',
+      { ...FLOW, maxLines: 1 },
+      { width: 'fill', height: 'hug' },
+    ),
+    flowContainer(
+      'flow-reverse',
+      { ...FLOW, type: 'row', wrap: 'wrap-reverse' },
+      { width: 'fill', height: 'hug' },
+    ),
+    flowContainer(
+      'flow-col',
+      { type: 'column', gap: 4, wrap: 'wrap', lineGap: 10 },
+      { width: 'fill', height: 100 },
+    ),
+    flowContainer(
+      'flow-per-line',
+      { type: 'row', gap: 4, wrap: 'wrap', maxPerLine: 2 },
+      { width: 'hug', height: 'hug' },
+    ),
+  ];
+  const wrapSpec = {
+    ...SPEC,
+    id: 'wrap-layout',
+    layers: [
+      {
+        id: 'ui',
+        name: 'UI',
+        color: '#1E88E5',
+        annotationTypes: WRAP_COMPONENTS.map((c) => ({
+          id: c.id,
+          name: c.id,
+          component: `components/${c.id}.json`,
+          fields: [],
+        })),
+      },
+    ],
+  };
+  const wrapLibrary = build(WRAP_COMPONENTS, wrapSpec);
+  const kids = (count: number) =>
+    Array.from({ length: count }, (_, i) => node(`k${i}`, 'b100'));
+  const flowRun = (typeId: string, count: number, width = 320) =>
+    run([root(node('c', typeId, {}, kids(count)))], width, 600, wrapLibrary);
+
+  it('a biblioteca com wrap carrega', () => {
+    expect(wrapLibrary.problems).toEqual([]);
+  });
+
+  it('5 filhos de 100 numa row de 320, gap 8, lineGap 12: 3 + 2, e o contêiner mede as duas linhas', () => {
+    const result = flowRun('flow', 5);
+    const x = (i: number) => boxOf(result, `k${i}`).x;
+    const y = (i: number) => boxOf(result, `k${i}`).y;
+    expect([0, 1, 2].map(x)).toEqual([0, 108, 216]);
+    expect([3, 4].map(x)).toEqual([0, 108]);
+    expect([0, 1, 2].map(y)).toEqual([0, 0, 0]);
+    expect([3, 4].map(y)).toEqual([32, 32]);
+    expect(boxOf(result, 'c').height).toBe(52);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('wrap-reverse: a linha nova fica acima', () => {
+    const result = flowRun('flow-reverse', 5);
+    expect([0, 3].map((i) => boxOf(result, `k${i}`).y)).toEqual([32, 0]);
+  });
+
+  it('hug na largura mede uma linha só (max-content)', () => {
+    // Numa tela larga o bastante (o `hug` nunca passa da largura disponível, como o `fit-content`).
+    const result = flowRun('flow-hug', 5, 600);
+    expect(boxOf(result, 'c')).toMatchObject({ width: 532, height: 20 });
+    expect(boxOf(result, 'k4').y).toBe(0);
+  });
+
+  it('hug com maxPerLine: a largura é a da linha mais cheia e a altura soma as linhas', () => {
+    const result = flowRun('flow-per-line', 5);
+    expect(boxOf(result, 'c')).toMatchObject({
+      width: 204,
+      height: 60,
+    });
+  });
+
+  it('maxLines 1: os filhos além da primeira linha somem e o motor avisa', () => {
+    const result = flowRun('flow-max1', 5);
+    expect(ids(result)).toEqual(['c', 'k0', 'k1', 'k2']);
+    expect(result.warnings).toContain('2 filhos fora de maxLines: c');
+    expect(result.messages.map((m) => m.code)).toContain(
+      'engine.childrenOutsideMaxLines',
+    );
+  });
+
+  it('column com wrap: as colunas se enfileiram da esquerda para a direita', () => {
+    const result = run(
+      [
+        root(
+          node(
+            'c',
+            'flow-col',
+            {},
+            Array.from({ length: 5 }, (_, i) => node(`k${i}`, 'tall80')),
+          ),
+        ),
+      ],
+      320,
+      600,
+      wrapLibrary,
+    );
+    // A altura é 100: cada coluna leva um filho de 80 (o segundo não cabe: 80 + 4 + 80 > 100).
+    expect([0, 1, 2].map((i) => boxOf(result, `k${i}`).x)).toEqual([0, 70, 140]);
+    expect([0, 1, 2].map((i) => boxOf(result, `k${i}`).y)).toEqual([0, 0, 0]);
+  });
+});

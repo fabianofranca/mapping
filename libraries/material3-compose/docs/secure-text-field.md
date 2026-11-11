@@ -60,6 +60,7 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 - **Em erro**: label=Senha, hasText=true, supportingText=Senha incorreta, style=outlined, isError=true
 - **Mouse sobre**: label=Senha, hasText=true, style=outlined, interaction=hovered
 - **Com foco**: label=Senha, hasText=true, style=filled, interaction=focused
+- **Preenchido com apoio**: label=Senha, supportingText=Mínimo de 8 caracteres, style=filled
 
 ## Fidelidade
 
@@ -75,6 +76,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 **Como o desenho segue o Compose**
 
 - Tudo o que o `text-field` desenha: campo de 56, filled com fundo `surface-container-highest`, raio superior `corner-extra-small` e indicador de 1 só embaixo por `stroke.sides: ["bottom"]`; outlined com contorno de 1, raio `corner-extra-small`, 8 de cima do rótulo e vão de verdade no contorno (`stroke.gap` sobre o rótulo minimizado, cantos redondos); rótulo `body-large` ou `body-small` minimizado; apoio `body-small`; ícones de 24 pelo nó `icon`; cores de erro e desabilitado (0,38 e 0,12) iguais.
+- **Altura e largura:** as do `text-field` (`sizing.height` por expressão, `minWidth` 280 na raiz): filled 56 sem apoio e 76 com (56 + 4 + 16), outlined 64 sem apoio (8 + 56) e 84 com (8 + 56 + 4 + 16); o `size` continua 280 por 84. O `SecureTextField` tem o mesmo `defaultMinSize(TextFieldDefaults.MinWidth, MinHeight)` (`SecureTextField.kt` linhas 173 a 176) e o mesmo apoio (`TextFieldDefaults.kt` linhas 466 a 470, `TextField.kt` linhas 797 a 801); o `OutlinedSecureTextField` soma os 8 de cima do rótulo (`OutlinedTextField.kt` linhas 244 a 260).
 - Texto digitado: com `hasText`, oito `•` em `body-large` e `on-surface`, numa linha só, sem quebra nem reticências (o campo seguro é sempre `SingleLine`) e recortado na largura. Sem `hasText`, aparece a dica (rótulo minimizado) ou só o rótulo expandido.
 - Rótulo (o grande e o minimizado), dica e os oito `•` do valor centram pela altura da maiúscula (`font.verticalAlign: "cap-middle"`). O `Text` do Compose centra pela caixa de linha da fonte; com Roboto as duas coincidem a menos de 1 px.
 
@@ -92,6 +94,6 @@ O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o des
 
 **O que ainda difere do Compose**
 
-- As mesmas diferenças do `text-field`: o `interaction` é um quadro parado (sem foco real, cursor, `pressed` e animação do rótulo; sem anel de foco (o Compose não define `FocusIndicatorColor` para ele no commit fixado); dica mostrada com o rótulo minimizado; raio superior do filled pela lista de 4 raios com `$token` por item; contêiner desabilitado do filled como no código (`ContainerColor`), não o 0,04 do token; o tamanho inicial é 84, que comporta o outlined com apoio; o filled com apoio fica com 8 vazios embaixo e o filled sem apoio com 28.
+- As mesmas diferenças do `text-field`: o `interaction` é um quadro parado (sem foco real, cursor, `pressed` e animação do rótulo; sem anel de foco (o Compose não define `FocusIndicatorColor` para ele no commit fixado); dica mostrada com o rótulo minimizado; raio superior do filled pela lista de 4 raios com `$token` por item; contêiner desabilitado do filled como no código (`ContainerColor`), não o 0,04 do token; o `size` é 84 (o do outlined com apoio) e a altura vem do `sizing`, que só conta uma linha de apoio (um apoio de duas linhas passa da caixa ajustada); a largura é `fill` no `sizing`, então o `minWidth` de 280 da raiz só age quando a largura é medida.
 - Os oito `•` são fixos: o Compose desenha um por caractere digitado e, com `RevealLastTyped`, mostra o último por um instante.
 - Sem o ícone de mostrar ou esconder a senha: ele é o `trailingIcon` que a tela escolhe.

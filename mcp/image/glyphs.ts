@@ -1,5 +1,6 @@
 import type { Font, PathCommand } from 'opentype.js';
 import type { Point } from '../../src/model/components/scene';
+import { CAP_HEIGHT_RATIO } from '../../src/model/components/baseline';
 
 // Contornos de glifos (opentype.js) como polígonos, para o rasterizador preencher.
 
@@ -113,9 +114,6 @@ export function textPolygons(
   return style.italic ? slant(polygons, baseline) : polygons;
 }
 
-/** Sem `sCapHeight` nem glifo `H`, a maiúscula vale esta fração do corpo (a mesma da app). */
-const CAP_HEIGHT_FALLBACK = 0.7;
-
 /**
  * Altura da maiúscula no tamanho dado (px, positivo), para o `cap-middle`. É o único lugar que a lê:
  * `OS/2.sCapHeight`; sem ele, o topo da caixa do glifo `H`; sem `H`, 0,7 do corpo.
@@ -126,7 +124,7 @@ export function capHeightOf(face: Font, size: number): number {
   if (typeof declared === 'number' && declared > 0) return declared * k;
   const glyph = face.charToGlyph('H');
   const top = glyph.index > 0 ? glyph.getBoundingBox().y2 : 0;
-  return top > 0 ? top * k : CAP_HEIGHT_FALLBACK * size;
+  return top > 0 ? top * k : CAP_HEIGHT_RATIO * size;
 }
 
 /** Ascendente e descendente da fonte no tamanho dado (px, ambos positivos). */

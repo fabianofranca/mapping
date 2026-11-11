@@ -442,4 +442,83 @@ describe('rotation (EX3)', () => {
     expect(ink.y0).toBeGreaterThanOrEqual(34);
     expect(ink.y0 + ink.height).toBeLessThanOrEqual(66);
   });
+
+  it('o texto cortado de um nó girado 30° não pinta fora da caixa girada (MC0, decisão 32)', () => {
+    const raster = canvas(100, 100);
+    const text = label('XXXXXXXXXXXXXXXX', 900, {
+      width: 30,
+      height: 20,
+      transform: [1, 0, 0, 1, 35, 40],
+      rotation: 30,
+      style: {
+        fontFamily: 'sans-serif',
+        fontSize: 14,
+        fontWeight: 900,
+        italic: false,
+        lineHeight: 20,
+        align: 'left',
+        verticalAlign: 'middle',
+        wrap: 'none',
+      },
+    });
+    paint(raster, frame([text], 100, 100));
+    // Cada pixel escuro, desfeito o giro em volta do centro (50, 50), cai na caixa 30 × 20 (com 1 px
+    // de folga para a borda do recorte).
+    const cos = Math.cos((-30 * Math.PI) / 180);
+    const sin = Math.sin((-30 * Math.PI) / 180);
+    let inside = 0;
+    for (let y = 0; y < raster.height; y++) {
+      for (let x = 0; x < raster.width; x++) {
+        if (!dark(raster, x, y)) continue;
+        const dx = x + 0.5 - 50;
+        const dy = y + 0.5 - 50;
+        const lx = dx * cos - dy * sin;
+        const ly = dx * sin + dy * cos;
+        expect(Math.abs(lx)).toBeLessThanOrEqual(15 + 1);
+        expect(Math.abs(ly)).toBeLessThanOrEqual(10 + 1);
+        inside += 1;
+      }
+    }
+    expect(inside).toBeGreaterThan(20);
+  });
+});
+
+describe('baselinePadding.top no raster (MC1, decisão 7)', () => {
+  /** O pé do `H` (a linha de base), em px do nó a partir do topo dele, lido da tinta do PNG. */
+  function footOfH(zoom: number, baselineTop: number, fontSize = 13): number {
+    const raster = canvas(Math.ceil(100 * zoom), Math.ceil(100 * zoom));
+    const node = label('H', 400, {
+      width: 60,
+      height: 60,
+      transform: [1, 0, 0, 1, 10, 5],
+      style: {
+        fontFamily: 'sans-serif',
+        fontSize,
+        fontWeight: 400,
+        italic: false,
+        lineHeight: fontSize * 1.2,
+        align: 'left',
+        verticalAlign: 'top',
+        baselineTop,
+      },
+    });
+    paint(raster, frame([node], 100, 100), zoom);
+    let last = -1;
+    for (let y = 0; y < raster.height; y++)
+      for (let x = 0; x < raster.width; x++) if (dark(raster, x, y)) last = y;
+    // `last` é a última linha de pixels escura: o pé fica no fim dela.
+    return (last + 1) / zoom - 5;
+  }
+
+  it.each([1, 4.2])(
+    'o pé do "H" fica a ≤ 0,5 px de 30 do topo do nó a zoom %s',
+    (zoom) => {
+      expect(Math.abs(footOfH(zoom, 30) - 30)).toBeLessThanOrEqual(0.5);
+    },
+  );
+
+  it('vale em qualquer corpo de fonte', () => {
+    expect(Math.abs(footOfH(4.2, 30, 20) - 30)).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(footOfH(1, 40, 11) - 40)).toBeLessThanOrEqual(0.5);
+  });
 });

@@ -83,6 +83,13 @@ const MISSING_TODAY: string[] = [
   // Texto rico do componente v4 (etapa #747, CF4): as bibliotecas distribuídas não migram; coberto
   // por tests/model/components/richText.test.ts, tests/e2e/ e pelo roteiro R25.
   'component:node.text.runs',
+  // Quebra de fileira (etapa #898, MC4): o `repeat` com `wrap` não é adotado por nenhuma biblioteca
+  // distribuída (a Material 3 usa o `layout.wrap` no flow-row na MC6); coberto por
+  // tests/model/components/wrapLayout.test.ts e pelo roteiro R25.
+  'component:node.repeat.wrap',
+  'component:node.repeat.lineGap',
+  'component:node.repeat.maxPerLine',
+  'component:node.repeat.maxLines',
   'component:run.text',
   'component:run.weight',
   'component:run.italic',
@@ -302,13 +309,10 @@ describe('a lista de recursos do componente não esqueceu nada do código', () =
     );
     if (!block) throw new Error('mapa `extra` não encontrado em parseComponent.ts');
     const fromCode: Record<string, string[]> = {};
-    for (const line of (block[1] ?? '').split('\n')) {
-      const m = /^\s*(\w+):\s*\[([^\]]*)\]/.exec(line);
-      if (m)
-        fromCode[m[1] ?? ''] = [...(m[2] ?? '').matchAll(/'([^']+)'/g)].map(
-          (x) => x[1] ?? '',
-        );
-    }
+    for (const m of (block[1] ?? '').matchAll(/(\w+):\s*\[([^\]]*)\]/g))
+      fromCode[m[1] ?? ''] = [...(m[2] ?? '').matchAll(/'([^']+)'/g)].map(
+        (x) => x[1] ?? '',
+      );
     for (const type of NODE_TYPES) {
       expect([...EXTRA_KEYS[type]].sort(), `chaves de ${type}`).toEqual(
         (fromCode[type] ?? []).sort(),

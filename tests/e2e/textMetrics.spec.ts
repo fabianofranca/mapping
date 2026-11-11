@@ -35,6 +35,33 @@ window.drawRich = (runs, width, height) => {
     .map((shape) => ({ kind: shape.className, text: shape.className === 'Text' ? shape.text() : '', x: shape.x(), y: shape.y(), width: shape.width(), height: shape.height() }));
   return { layout: text.runLayout, shapes };
 };
+// O texto 'H' com baselinePadding.top = 30 desenhado pelo renderScene: o pé da tinta, em px do nó.
+window.baselineFoot = (zoom) => {
+  const W = 120, H = 60;
+  const host = document.body.appendChild(document.createElement('div'));
+  const stage = new Stage({ container: host, width: W * zoom, height: H * zoom, scaleX: zoom, scaleY: zoom });
+  const layer = new Layer();
+  stage.add(layer);
+  const component = {
+    format: 'mapping-component', formatVersion: 4, id: 'b', name: 'B', size: { width: W, height: H },
+    template: { type: 'frame', layout: { type: 'none' }, children: [{
+      type: 'text', name: 't', anchors: { left: 0, top: 0 }, width: W, height: H, text: 'H',
+      font: { size: 13, lineHeight: 1.2, family: 'sans-serif' }, color: '#000000',
+      baselinePadding: { top: 30 },
+    }] },
+  };
+  const { root } = instantiate(component, {}, { x: 0, y: 0, width: W, height: H }, { measure: konvaMeasurer });
+  layer.add(renderScene({ root, warnings: [] }).root);
+  layer.draw();
+  const canvas = layer.getCanvas()._canvas;
+  const { data } = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
+  let bottom = -1;
+  for (let y = 0; y < canvas.height; y++) {
+    for (let x = 0; x < canvas.width; x++) if (data[(y * canvas.width + x) * 4 + 3] > 128) { bottom = y; break; }
+  }
+  stage.destroy();
+  return (bottom + 1) / zoom;
+};
 window.inkCenter = (zoom, align = 'middle') => {
   const W = 120, H = 28;
   const host = document.body.appendChild(document.createElement('div'));
@@ -191,6 +218,41 @@ test.describe('texto no Chromium', () => {
       );
     expect(Math.abs(await at(1))).toBeLessThanOrEqual(0.5);
     expect(Math.abs(await at(4.2))).toBeLessThanOrEqual(0.5);
+  });
+
+  test('MC1: a firstBaseline do konvaMeasurer fica a ≤ 0,5 px da linha de base do DOM (sans-serif 13 px, lineHeight 1,2)', async ({
+    page,
+  }) => {
+    await load(page);
+    const measured = await measure(page, 1.2 * 13, 'Hxg');
+    const dom = await page.evaluate(() => {
+      const div = document.body.appendChild(document.createElement('div'));
+      div.style.cssText =
+        'font:13px sans-serif;line-height:1.2;position:absolute;top:0;left:0;width:300px';
+      div.textContent = 'Hxg';
+      // Uma caixa inline-block vazia assenta o fundo dela na linha de base.
+      const probe = div.appendChild(document.createElement('span'));
+      probe.style.cssText = 'display:inline-block;width:0;height:0';
+      return probe.getBoundingClientRect().bottom - div.getBoundingClientRect().top;
+    });
+    const first = (measured as { firstBaseline?: number }).firstBaseline;
+    expect(first).toBeDefined();
+    expect(Math.abs((first ?? 0) - dom)).toBeLessThanOrEqual(0.5);
+    expect((measured as { lineCount?: number }).lineCount).toBe(1);
+  });
+
+  test('MC1: baselinePadding.top 30 põe o pé do "H" a ≤ 0,5 px de 30 do topo, a 100% e a 420%', async ({
+    page,
+  }) => {
+    await load(page);
+    const at = (zoom: number) =>
+      page.evaluate(
+        (z) =>
+          (window as never as { baselineFoot: (z: number) => number }).baselineFoot(z),
+        zoom,
+      );
+    expect(Math.abs((await at(1)) - 30)).toBeLessThanOrEqual(0.5);
+    expect(Math.abs((await at(4.2)) - 30)).toBeLessThanOrEqual(0.5);
   });
 
   test('#941: com maxWidth a largura é a natural do texto, não o limite', async ({

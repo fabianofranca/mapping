@@ -223,10 +223,14 @@ export interface Showcase {
   readonly proposal: Proposal;
   /**
    * Id da mudança de criação da marcação, por caso (`marking:create`); no "invalid", o da
-   * criação da anotação adulterada (`annotation:create`), que é a que a revisão aponta.
+   * criação da anotação adulterada (`annotation:create`), que é a que a revisão aponta; no
+   * `acceptedAnnotation`, a da anotação do "accepted" (decidida, para o Aceito não ficar parcial).
    */
   readonly createIds: Readonly<
-    Record<Exclude<keyof typeof SHOWCASE_NAMES, 'existing'>, string>
+    Record<
+      Exclude<keyof typeof SHOWCASE_NAMES, 'existing'> | 'acceptedAnnotation',
+      string
+    >
   >;
   readonly files: Map<string, string | Buffer>;
 }
@@ -234,7 +238,7 @@ export interface Showcase {
 /**
  * O projeto "Telas" (uma tela em branco 360 × 800 e o componente existente "Existente") e a
  * proposta aberta "Componentes novos": um Button novo pendente, um aceito, um rejeitado, um
- * aceito e inválido (um `chip` pequeno que não cabe, com a anotação criada numa camada que não existe), um sem o rótulo obrigatório, um de um tipo
+ * aceito e inválido (um `text-field` pequeno que não cabe, com a anotação criada numa camada que não existe), um sem o rótulo obrigatório, um de um tipo
  * do pacote da proposta (`m3novo`) e o "Existente" com o rótulo alterado. As decisões já estão
  * gravadas em `proposal.json`.
  */
@@ -287,19 +291,14 @@ export function showcase(): Showcase {
     ['N1', SHOWCASE_NAMES.pending, 'material3-compose', 140, { label: 'Pendente' }],
     ['N2', SHOWCASE_NAMES.accepted, 'material3-compose', 220, { label: 'Aceito' }],
     ['N3', SHOWCASE_NAMES.rejected, 'material3-compose', 300, { label: 'Rejeitado' }],
-    [
-      'N4',
-      SHOWCASE_NAMES.invalid,
-      'material3-compose',
-      380,
-      { label: 'Inválido', style: 'filter', selected: 'true', enabled: 'true' },
-    ],
+    ['N4', SHOWCASE_NAMES.invalid, 'material3-compose', 380, { label: 'Inválido' }],
     ['N5', SHOWCASE_NAMES.noLabel, 'material3-compose', 460, { label: '' }],
     ['N6', SHOWCASE_NAMES.package, 'm3novo', 540, { label: 'Do pacote' }],
   ];
   for (const [id, name, specId, y, values] of creations) {
-    // O Inválido é um `chip` (o `button` nunca dá "não cabe"); o retângulo é encolhido abaixo.
-    const typeId = id === 'N4' ? 'chip' : 'button';
+    // O Inválido é um `text-field` (o `button` e o `chip`, de raiz sem layout e conteúdo que abraça o texto, não dão
+    // "não cabe" até a #1078 avisar também no pai `none`); o retângulo é encolhido abaixo.
+    const typeId = id === 'N4' ? 'text-field' : 'button';
     after = renameMarking(button(after, id, specId, y, values, 180, typeId), id, name);
   }
   const built = buildProposal(base, after, {
@@ -308,7 +307,7 @@ export function showcase(): Showcase {
     createdAt: NOW,
   });
 
-  // O "Inválido": um `chip` (Rótulo `Inválido`) de 40×32 no canto superior esquerdo, menor que o
+  // O "Inválido": um `text-field` (Rótulo `Inválido`) de 40×32 no canto superior esquerdo, menor que o
   // conteúdo (`component-overflow`: o componente não cabe); a anotação criada fica numa camada que
   // não existe (`missing-layer`), o que a revisão marca como inválido. Incompletas lista os dois
   // motivos (R13.9).
@@ -346,6 +345,7 @@ export function showcase(): Showcase {
   let proposal = tampered;
   for (const [change, state] of [
     [createOf('N2'), 'accepted'],
+    [annotationOf('N2'), 'accepted'],
     [createOf('N3'), 'rejected'],
     [createOf('N4'), 'accepted'],
     [annotationOf('N4'), 'accepted'],
@@ -375,6 +375,7 @@ export function showcase(): Showcase {
     createIds: {
       pending: createOf('N1').id,
       accepted: createOf('N2').id,
+      acceptedAnnotation: annotationOf('N2').id,
       rejected: createOf('N3').id,
       invalid: annotationOf('N4').id,
       noLabel: createOf('N5').id,

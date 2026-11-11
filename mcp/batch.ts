@@ -29,6 +29,7 @@ import {
   componentMinSize,
   componentPlacement,
   componentSize,
+  fitMarking,
   placementFitsSlot,
   hasComponentSlot,
   componentTypes,
@@ -288,6 +289,21 @@ const DEPRECATED_OPS: Partial<Record<Operation['op'], string>> = {
   delete_image:
     'delete_image é antiga: use delete_container (o argumento `image` virou `container`)',
 };
+
+/**
+ * Os valores simples (texto, número, vazio) de `annotation.values` para medir o tamanho da instância
+ * nova (decisão 16 da #898): tabela e referência não entram (ficam no `default`).
+ */
+function initialValuesArg(values: Record<string, JsonValue> | undefined): {
+  values?: Record<string, JsonValue>;
+} {
+  if (values === undefined) return {};
+  const simple = Object.entries(values).filter(
+    ([, value]) =>
+      value === null || typeof value === 'string' || typeof value === 'number',
+  );
+  return simple.length === 0 ? {} : { values: Object.fromEntries(simple) };
+}
 
 /** Minúsculas e sem acentos, para achar camadas e tipos pelo nome. */
 function fold(text: string): string {
@@ -1376,6 +1392,8 @@ class Batch {
           description: `Mover a marcação "${label}" para a posição ${op.index} entre as ${before.count} irmãs (0 = por baixo)`,
         };
       }
+      case 'fit_marking':
+        return this.fitMarkingOp(op, p);
       case 'update_marking': {
         const id = this.item(op.marking, 'm');
         this.requireNotArrow(id, 'update_arrow');
@@ -1760,6 +1778,32 @@ class Batch {
     };
   }
 
+  /**
+   * `fit_marking`: o `fitMarking` do modelo (o mesmo Arrumar da app numa marcação sem slot), com os
+   * valores da anotação no estado do lote. O resumo diz o retângulo antes e depois.
+   */
+  private fitMarkingOp(op: Extract<Operation, { op: 'fit_marking' }>, p: Project): Step {
+    const id = this.item(op.marking, 'm');
+    const label = this.markingLabel(p, id);
+    const before = projectIndex(p).markings.get(id)?.rect;
+    if (before === undefined) throw new ModelError('not-found', id);
+    const project = fitMarking(p, this.catalog, id, this.measurer, {
+      minSizeOf: (markingId) => componentMinSize(p, this.catalog, markingId),
+    });
+    const rectText = (r: Rect): string => `${r.width}×${r.height} px em (${r.x}, ${r.y})`;
+    if (project === p) {
+      return {
+        project,
+        description: `A marcação "${label}" já está no tamanho do conteúdo (${rectText(before)}): nada muda`,
+      };
+    }
+    const after = projectIndex(project).markings.get(id)!.rect;
+    return {
+      project,
+      description: `Ajustar a marcação "${label}" ao conteúdo: ${rectText(before)} → ${rectText(after)}`,
+    };
+  }
+
   /** `delete_container` e a antiga `delete_image`. */
   private deleteContainerOp(id: string, p: Project): Step {
     const impact = containerDeletionImpact(p, id);
@@ -2050,7 +2094,12 @@ class Batch {
           componentSize(
             p,
             catalog,
-            { containerId: null, parentId: null, ...typeRef! },
+            {
+              containerId: null,
+              parentId: null,
+              ...typeRef!,
+              ...initialValuesArg(op.annotation?.values),
+            },
             this.measurer,
           );
         nearRect = placeFloatingNear(p, target, size);
@@ -2079,7 +2128,12 @@ class Batch {
         componentPlacement(
           p,
           catalog,
-          { containerId, parentId: null, ...typeRef },
+          {
+            containerId,
+            parentId: null,
+            ...typeRef,
+            ...initialValuesArg(annotation.values),
+          },
           this.measurer,
         );
       if (annotation.layer !== undefined) {
@@ -2244,6 +2298,7 @@ class Batch {
         ...(rect === undefined
           ? {}
           : { size: { width: rect.width, height: rect.height } }),
+        ...initialValuesArg(op.annotation?.values),
       },
       this.measurer,
     );

@@ -94,6 +94,7 @@ describe('zip de exemplo com componentes novos na proposta', () => {
     const stateOf = (id: string) => proposal.decisions[id]?.state ?? null;
     expect(stateOf(ids.pending)).toBeNull();
     expect(stateOf(ids.accepted)).toBe('accepted');
+    expect(stateOf(ids.acceptedAnnotation)).toBe('accepted');
     expect(stateOf(ids.rejected)).toBe('rejected');
     expect(stateOf(ids.invalid)).toBe('accepted');
     expect(stateOf(ids.noLabel)).toBeNull();

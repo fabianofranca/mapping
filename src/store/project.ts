@@ -672,12 +672,19 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       );
       return result.ok ? { ok: true, value: markingId } : result;
     },
-    /** Arruma as filhas do container pelo layout do slot; devolve os avisos. Sem mudança, não há entrada. */
+    /**
+     * Arruma as filhas do container pelo layout do slot (devolve os avisos) ou, na marcação de um
+     * componente sem filhas no slot, ajusta-a ao conteúdo (`fitMarking`, sem avisos). Sem mudança,
+     * não há entrada de desfazer.
+     */
     arrange: (markingId: string): ActionResult<readonly model.ModelMessage[]> => {
       let warnings: readonly model.ModelMessage[] = [];
       const result = guarded(() =>
         store.apply((p) => {
           view.requirePrincipal(viewFor(p));
+          if (model.arrangesByFit(p, catalog(), markingId)) {
+            return model.fitMarking(p, catalog(), markingId, measure(), settleOptions(p));
+          }
           const arranged = model.arrangeMarking(
             p,
             catalog(),

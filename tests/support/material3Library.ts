@@ -60,20 +60,34 @@ export const solid = (paints: readonly Paint[]): string | undefined => {
   return first?.type === 'solid' ? first.color : undefined;
 };
 
+/** As opções com que os testes instanciam um componente da biblioteca (medidor aproximado, tokens do modo, ícones). */
+export function instantiateOptions(
+  catalog: ReturnType<typeof buildCatalog>,
+  mode: 'light' | 'dark',
+): Parameters<typeof instantiate>[3] {
+  const library = catalog.library;
+  if (library === null) throw new Error('sem biblioteca');
+  return {
+    measure: approximateMeasurer,
+    tokens: resolveTokens(library.tokens, {}, mode),
+    ...(library.icons === undefined ? {} : { icons: library.icons }),
+  };
+}
+
 export function drawIn(
   catalog: ReturnType<typeof buildCatalog>,
   entry: NonNullable<ReturnType<typeof findEntry>>,
   values: Parameters<typeof instantiate>[1],
   mode: 'light' | 'dark',
 ) {
-  const library = catalog.library;
-  if (library === null || entry.component === null) throw new Error('sem biblioteca');
+  if (entry.component === null) throw new Error('sem biblioteca');
   const box = { x: 0, y: 0, ...entry.component.size };
-  return instantiate(entry.component, { ...defaultValues(entry.type), ...values }, box, {
-    measure: approximateMeasurer,
-    tokens: resolveTokens(library.tokens, {}, mode),
-    ...(library.icons === undefined ? {} : { icons: library.icons }),
-  });
+  return instantiate(
+    entry.component,
+    { ...defaultValues(entry.type), ...values },
+    box,
+    instantiateOptions(catalog, mode),
+  );
 }
 
 /** Componentes já migrados para o formato 4 (M1: 4; M2: +19; M3: +9; M4: +9; M5: +9 = 50). Cresce a cada fase. */
@@ -198,10 +212,20 @@ const MF5_FIELDS: Record<string, string[]> = {
   'progress-indicator': ['trackColor', 'strokeCap'],
 };
 const MF5_EXAMPLES: Record<string, string[]> = {
+  // MC5 (#1033): o item de três linhas pelo apoio de duas linhas (`$lines` do apoio)
+  'list-item': ['Apoio de duas linhas'],
   'date-picker': ['Dia de hoje'],
-  chip: ['Com avatar'],
+  chip: ['Com avatar', 'Rótulo longo'],
+  // MC5 (#1033, grupo C): o rótulo longo do extended-fab e o campo com apoio (a altura pelo `sizing`)
+  'extended-fab': ['Rótulo longo'],
+  'text-field': ['Preenchido com apoio'],
+  'secure-text-field': ['Preenchido com apoio'],
   divider: ['Recuo por ponta'],
   'progress-indicator': ['Trilho colorido e ponta reta'],
+  // MC6 (#1034): a quebra do flow-row, os botões do alert-dialog em duas linhas e a largura do menu pelo item mais largo
+  'flow-row': ['Três por linha'],
+  'alert-dialog': ['Botões em duas linhas'],
+  'dropdown-menu': ['Itens de larguras diferentes'],
 };
 /** Os campos de valor do slider (EX6): eram `enum` em décimos na v1 e passaram a `number`. */
 const SLIDER_NUMBERS: Record<string, number> = {

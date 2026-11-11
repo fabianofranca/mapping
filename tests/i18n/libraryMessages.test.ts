@@ -95,11 +95,61 @@ function tokenPackage(children: Raw[]): Files {
   ];
 }
 
+/** Um componente `hug` na altura com `maxHeight`: o texto não cabe nem no tamanho ajustado (MC2). */
+function fittedPackage(): Files {
+  const component = {
+    format: 'mapping-component',
+    formatVersion: 4,
+    id: 'ft',
+    name: 'Ft',
+    size: { width: 200, height: 50 },
+    sizing: { height: 'hug' },
+    template: {
+      type: 'frame',
+      width: 'fill',
+      maxHeight: 40,
+      layout: { type: 'column' },
+      children: [
+        {
+          type: 'text',
+          name: 'msg',
+          text: 'a\nb\nc',
+          width: 'fill',
+          height: 'hug',
+          font: { size: 10, lineHeight: 30 },
+        },
+      ],
+    },
+  };
+  const spec = {
+    format: 'mapping-spec',
+    formatVersion: 15,
+    id: 'ft',
+    name: 'Ft',
+    version: 1,
+    layers: [
+      {
+        id: 'l',
+        name: 'L',
+        color: '#112233',
+        annotationTypes: [
+          { id: 't', name: 'T', component: 'components/ft.json', fields: [] },
+        ],
+      },
+    ],
+  };
+  return [
+    { path: 'ft.spec.json', text: JSON.stringify(spec) },
+    { path: 'components/ft.json', text: JSON.stringify(component) },
+  ];
+}
+
 function allIssues(): LibraryIssue[] {
   const noisy = noisyPackage();
   return [
     ...validateLibrary({ files: noisy.files, specPath: SPEC, previous: noisy.previous })
       .issues,
+    ...validateLibrary({ files: fittedPackage(), specPath: 'ft.spec.json' }).issues,
     ...validateLibrary({
       files: tokenPackage([
         { type: 'rect', fill: { $token: 'inexistente' } },
@@ -121,6 +171,7 @@ const EXPECTED_CODES = [
   'library.fontMissing',
   'library.versionNotGrown',
   'library.draw.preview',
+  'library.drawFitted.defaults',
   'library.iconMissing',
 ];
 

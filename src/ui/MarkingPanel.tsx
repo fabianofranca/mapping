@@ -23,7 +23,7 @@ import { CopyButtons } from './CopyActions';
 import { useDetailsExtension } from './DetailsExtension';
 import { DetailsIdentity } from './DetailsIdentity';
 import { Section } from './DetailsSection';
-import { arrangeMarking, canArrangeMarking } from './arrange';
+import { arrangeHintKey, arrangeMarking, canArrangeMarking } from './arrange';
 import { useEditor } from './EditorContext';
 import { keepFocusAfterAction } from './focus';
 import { imageLabel, markingErrorMessage, markingLabel } from './labels';
@@ -343,7 +343,11 @@ export function MarkingPanel({
             icon="arrange"
             label={t('arrange.action')}
             text={t('arrange.action')}
-            tooltip={t(arrangeBlocked ? 'perspective.principalOnly' : 'arrange.hint')}
+            tooltip={t(
+              arrangeBlocked
+                ? 'perspective.principalOnly'
+                : arrangeHintKey(editor, marking.id),
+            )}
             shortcut={SHORTCUT_LABELS.arrange}
             disabled={readOnly || arrangeBlocked}
             onClick={() => arrangeMarking(editor, marking.id)}

@@ -166,6 +166,58 @@ describe('catálogo do Material 3', () => {
       ).toEqual({ width: 150, height: 40 });
     });
 
+    describe('sizing por expressão (MC2, decisão 9 da #898)', () => {
+      /** A altura pelo `style` (64, 112, 152); o `size` 100 é o que vale se a expressão falhar. */
+      function bar() {
+        const entry = button();
+        const component = {
+          ...entry.component!,
+          formatVersion: 4 as const,
+          size: { width: 200, height: 100 },
+          sizing: {
+            width: 'fill' as const,
+            height: {
+              $switch: 'style',
+              cases: { small: 64, medium: 112, large: 152, tall: 'hug' as const },
+            },
+          },
+        };
+        return { ...entry, component };
+      }
+
+      it('64, 112 e 152 no playground (fittedSize)', () => {
+        const entry = bar();
+        const heightOf = (style: string) =>
+          fittedSize(entry, { ...entry.previewValues, style }, approximateMeasurer)
+            .height;
+        expect(heightOf('small')).toBe(64);
+        expect(heightOf('medium')).toBe(112);
+        expect(heightOf('large')).toBe(152);
+      });
+
+      it('valor inválido ou ausente fica no size daquele eixo', () => {
+        const entry = bar();
+        for (const style of ['nope', 'outro', undefined])
+          expect(
+            fittedSize(entry, { ...entry.previewValues, style }, approximateMeasurer)
+              .height,
+          ).toBe(100);
+      });
+
+      it('hugAxes lê o sizing avaliado com os valores (hug ou px da expressão)', () => {
+        const { component } = bar();
+        expect(hugAxes(component, { style: 'tall' })).toEqual({
+          width: false,
+          height: true,
+        });
+        // O px que a expressão dá também acompanha o sizing (o playground o aplica).
+        expect(hugAxes(component, { style: 'small' }).height).toBe(true);
+        // Valor inválido cai no size: nada a acompanhar.
+        expect(hugAxes(component, { style: 'nope' }).height).toBe(false);
+        expect(hugAxes(component).height).toBe(false);
+      });
+    });
+
     it('sem componente devolve 1x1', () => {
       const entry = { ...button(), component: null };
       expect(fittedSize(entry, {}, approximateMeasurer)).toEqual({ width: 1, height: 1 });

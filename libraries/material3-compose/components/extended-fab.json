@@ -14,7 +14,7 @@
   },
   "sizing": {
     "width": "hug",
-    "height": 56
+    "height": "hug"
   },
   "preview": {
     "text": "Criar",
@@ -445,7 +445,7 @@
           "centerY": true
         },
         "width": "hug",
-        "height": "fill",
+        "height": "hug",
         "layout": {
           "type": "row",
           "gap": 12,
@@ -775,10 +775,26 @@
                 ]
               }
             },
-            "height": "fill"
+            "height": "hug",
+            "width": "hug",
+            "maxWidth": {
+              "$sub": [
+                {
+                  "$size": "width"
+                },
+                {
+                  "$if": {
+                    "$has": "icon"
+                  },
+                  "then": 72,
+                  "else": 40
+                }
+              ]
+            }
           }
         ]
       }
-    ]
+    ],
+    "minHeight": 56
   }
 }

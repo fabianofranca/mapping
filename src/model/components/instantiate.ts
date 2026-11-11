@@ -55,7 +55,9 @@ import type {
   LayoutSpec,
   GradientSpec,
   IconTemplate,
+  LayoutAlign,
   LayoutJustify,
+  LayoutWrap,
   ImageTemplate,
   PathTemplate,
   ShadowSpec,
@@ -74,6 +76,9 @@ import {
   evaluate,
   evaluateBoolean,
   evaluateText,
+  linesCitations,
+  linesKey,
+  linesNodeName,
   providedKey,
   referencedFields,
   sizeKey,
@@ -84,6 +89,7 @@ import {
   LAYOUT_ALIGNS,
   LAYOUT_JUSTIFIES,
   LAYOUT_TYPES,
+  LAYOUT_WRAPS,
   allowedValue,
   describeValue,
   justifySpacing,
@@ -96,6 +102,7 @@ import type { ModelMessageTemplateCode } from '../messages';
 import type { ModelMessage } from '../modelMessage';
 import { expandRepeats } from './repeat';
 import { applyGaps } from './strokeGaps';
+import { approximateExtents, lineBaseline, type CapMetrics } from './baseline';
 import { WRAP_SLACK } from './textWrap';
 import {
   applyTokens,
@@ -103,6 +110,7 @@ import {
   resolveTokens,
   type ResolvedTokens,
 } from './tokens';
+import { breakLines, stackLines } from './wrapLines';
 import {
   layoutRuns,
   measureRichText,
@@ -137,6 +145,14 @@ export interface TextMetrics {
   readonly height: number;
   /** As linhas como serão desenhadas (já com o `…`), quando o medidor sabe dizê-las. */
   readonly lines?: readonly string[];
+  /**
+   * Linha de base da primeira e da última linha, em px a partir do topo da caixa do texto (com o
+   * texto no topo), e o número de linhas medidas. O medidor sem fonte pode não informar: o motor
+   * usa então a conta do aproximado (decisão 2 da #898).
+   */
+  readonly firstBaseline?: number;
+  readonly lastBaseline?: number;
+  readonly lineCount?: number;
 }
 
 /** A fonte entregue ao medidor: tamanhos já em px; `wrap`/`ellipsis`/`maxLines` só na v4. */
@@ -190,6 +206,12 @@ export interface InstantiateOptions {
 
 export interface Instantiated {
   readonly root: FrameNode;
+  /**
+   * A primeira linha de base do componente (px a partir do topo da caixa), a do primeiro texto
+   * com uma (`baselinePadding.top` incluído); ausente = o componente não tem texto. É o que o
+   * `align: "baseline"` do slot do pai lê.
+   */
+  readonly firstBaseline?: number;
   /**
    * O que o `slot` do componente oferece às filhas (`provide`), resolvido com os campos, os tokens
    * e o modo desta instância; o valor que não produz nada não entra. Ausente = não oferece.
@@ -282,6 +304,7 @@ export function measureLines(
   font: MeasureFont,
   maxWidth: number | undefined,
   widthOf: (value: string) => number,
+  extents: Pick<CapMetrics, 'ascent' | 'descent'> = approximateExtents(font.size),
 ): TextMetrics {
   const breaks = maxWidth !== undefined && font.wrap !== 'none';
   const raw = text
@@ -291,7 +314,26 @@ export function measureLines(
     );
   const lines = clipLines(raw, font, widthOf, maxWidth);
   const widest = lines.reduce((max, line) => Math.max(max, widthOf(line)), 0);
-  return { width: widest, height: Math.max(1, lines.length) * font.lineHeight, lines };
+  const count = Math.max(1, lines.length);
+  return {
+    width: widest,
+    height: count * font.lineHeight,
+    lines,
+    ...lineBaselines(font.lineHeight, count, extents),
+  };
+}
+
+/** `firstBaseline`, `lastBaseline` e `lineCount` de `count` linhas de altura `lineHeight`. */
+export function lineBaselines(
+  lineHeight: number,
+  count: number,
+  extents: Pick<CapMetrics, 'ascent' | 'descent'>,
+): Pick<TextMetrics, 'firstBaseline' | 'lastBaseline' | 'lineCount'> {
+  return {
+    firstBaseline: lineBaseline(0, lineHeight, extents),
+    lastBaseline: lineBaseline((count - 1) * lineHeight, lineHeight, extents),
+    lineCount: count,
+  };
 }
 
 /**
@@ -345,10 +387,15 @@ interface FrameLayout {
   readonly main: Axis | null;
   readonly gap: number;
   readonly pad: Padding;
-  readonly align: 'start' | 'center' | 'end' | 'stretch';
+  readonly align: LayoutAlign;
   readonly justify: LayoutJustify;
   /** Filhos em ordem inversa e `start` no fim (`layout.reverse`). */
   readonly reverse: boolean;
+  /** Quebra de fileira (`layout.wrap`); `none` fora do `row`/`column` e na formatVersion < 4. */
+  readonly wrap: LayoutWrap;
+  readonly lineGap: number;
+  readonly maxPerLine?: number | undefined;
+  readonly maxLines?: number | undefined;
 }
 
 interface Placement {
@@ -398,7 +445,15 @@ const NONE_LAYOUT: FrameLayout = {
   align: 'start',
   justify: 'start',
   reverse: false,
+  wrap: 'none',
+  lineGap: 0,
 };
+
+/** Quanto descer cada filho para as linhas de base ficarem na do mais alto (`align: "baseline"`). */
+function baselineShifts(lines: readonly number[]): number[] {
+  const above = Math.max(0, ...lines);
+  return lines.map((line) => above - line);
+}
 
 function isNone(color: string): boolean {
   const c = color.trim().toLowerCase();
@@ -444,12 +499,27 @@ function providedFields(
 /**
  * Monta o "motor" de um componente com seus valores: avaliação, tamanhos e planos dos quadros.
  * `instantiate` e `measureComponent` compartilham este fechamento (e o cache dos planos).
+ * `linesSeed`: o número de linhas que cada `$lines` do template vale nesta passagem (a primeira usa
+ * 1, a segunda o medido na primeira; ver `withLinesPasses`).
  */
+type OpenAxes = { readonly width: boolean; readonly height: boolean };
+
+/** Os valores com que se avaliam `min`/`max`: o `$size` de um eixo aberto (`hug`) vale infinito. */
+function valuesForLimits(values: FieldValues, open: OpenAxes | undefined): FieldValues {
+  if (open === undefined) return values;
+  const next: Record<string, FieldValues[string]> = { ...values };
+  if (open.width) next[sizeKey('width')] = Infinity;
+  if (open.height) next[sizeKey('height')] = Infinity;
+  return next;
+}
+
 function createEngine(
   original: ComponentFile,
   sourceValues: FieldValues,
   options: InstantiateOptions,
   instanceSize: { readonly width: number; readonly height: number },
+  linesSeed?: ReadonlyMap<string, number>,
+  openAxes?: OpenAxes,
 ) {
   // Os `$token` viram o valor do modo antes de tudo (vale também dentro do `repeat`).
   const tokens =
@@ -460,7 +530,7 @@ function createEngine(
   // para o `count` de um `repeat` também poder segui-lo.
   const {
     component,
-    values,
+    values: expandedValues,
     messages: expansionMessages,
   } = expandRepeats(source, {
     ...sourceValues,
@@ -468,6 +538,19 @@ function createEngine(
     [sizeKey('width')]: instanceSize.width,
     [sizeKey('height')]: instanceSize.height,
   });
+  // `$lines`: o número de linhas de cada nó citado entra nos valores (1 na primeira passagem).
+  const citedLines = linesCitations(component.template);
+  const values: FieldValues =
+    citedLines.size === 0
+      ? expandedValues
+      : {
+          ...expandedValues,
+          ...Object.fromEntries(
+            [...citedLines].map((key) => [linesKey(key), linesSeed?.get(key) ?? 1]),
+          ),
+        };
+  /** As linhas medidas de cada nó citado por `$lines`, no tamanho final dele (a base da passagem seguinte). */
+  const lineCounts = new Map<string, number>();
   const messageSet = createMessageSet(expansionMessages);
   const warn = (code: ModelMessageTemplateCode, params?: Params) =>
     messageSet.add(code, params);
@@ -658,6 +741,121 @@ function createEngine(
     return measureRichText(rich.runs, richBase(node, font), options.measure, maxWidth);
   };
 
+  // --- linha de base (decisões 2 a 5 da #898) ------------------------------------------------
+
+  interface TextBaselines {
+    readonly height: number;
+    readonly first: number;
+    readonly last: number;
+  }
+
+  /** `baselinePadding` do nó (px ≥ 0 por lado); ausente = nenhum dos dois. */
+  const baselinePaddingOf = (
+    node: TextTemplate,
+  ): { top?: number; bottom?: number } | undefined => {
+    const spec = node.baselinePadding;
+    if (spec === undefined) return undefined;
+    return { top: limitValue(spec.top), bottom: limitValue(spec.bottom) };
+  };
+
+  /** As linhas de base do texto de uma linha só ou do texto rico (a da fonte base em cada linha). */
+  const richBaselines = (node: TextTemplate, maxWidth?: number): TextBaselines => {
+    const font = textFont(node);
+    const rich = richRuns(node, font);
+    const layout = layoutRuns(rich.runs, richBase(node, font), options.measure, maxWidth);
+    const probe = options.measure('H', font);
+    const extent =
+      (probe.firstBaseline ??
+        lineBaseline(0, font.lineHeight, approximateExtents(font.size))) -
+      font.lineHeight / 2;
+    const baseline = (line: { y: number; height: number }): number =>
+      line.y + line.height / 2 + extent;
+    const first = layout.lines[0];
+    const last = layout.lines[layout.lines.length - 1];
+    return {
+      height: layout.height,
+      first: first ? baseline(first) : extent + font.lineHeight / 2,
+      last: last ? baseline(last) : extent + font.lineHeight / 2,
+    };
+  };
+
+  /** Altura e linhas de base (primeira e última) do texto do nó, no topo da caixa. */
+  const baselinesOf = (node: TextTemplate, maxWidth?: number): TextBaselines => {
+    if (node.runs !== undefined) return richBaselines(node, maxWidth);
+    const font = textFont(node);
+    const m = options.measure(plainText(node), font, maxWidth);
+    const count = m.lineCount ?? Math.max(1, m.lines?.length ?? 1);
+    const first =
+      m.firstBaseline ?? lineBaseline(0, font.lineHeight, approximateExtents(font.size));
+    return {
+      height: m.height,
+      first,
+      last: m.lastBaseline ?? first + (count - 1) * font.lineHeight,
+    };
+  };
+
+  /**
+   * A altura do texto no `hug` com `baselinePadding`: `max(top, primeira) + (última − primeira) +
+   * max(bottom, altura − última)`; sem o lado, vale a distância da própria fonte.
+   */
+  const paddedTextHeight = (
+    node: TextTemplate,
+    height: number,
+    wrap?: number,
+  ): number => {
+    const padding = baselinePaddingOf(node);
+    if (padding === undefined) return height;
+    const b = baselinesOf(node, wrap);
+    const top = Math.max(padding.top ?? 0, b.first);
+    const bottom = Math.max(padding.bottom ?? 0, b.height - b.last);
+    return top + (b.last - b.first) + bottom;
+  };
+
+  /** Onde fica a primeira linha de base do texto numa caixa de altura `h` (largura `w`). */
+  const textBaselineIn = (node: TextTemplate, w: number, h: number): number => {
+    const b = baselinesOf(node, w);
+    const top = baselinePaddingOf(node)?.top;
+    if (top !== undefined) return Math.max(top, b.first);
+    const align = verticalAlignOf(node);
+    if (align === 'top') return b.first;
+    const free = h - b.height;
+    return (align === 'bottom' ? free : free / 2) + b.first;
+  };
+
+  /** A primeira linha de base de um nó na caixa `w` × `h`; `undefined` = sem linha de base. */
+  const kidBaseline = (node: TemplateNode, w: number, h: number): number | undefined => {
+    if (node.type === 'text') return textBaselineIn(node, w, h);
+    if (node.type !== 'frame') return undefined;
+    for (const placed of planFrame(node, w, h).placements) {
+      const inner = kidBaseline(placed.kid.node, placed.w, placed.h);
+      if (inner !== undefined) return placed.y + inner;
+    }
+    return undefined;
+  };
+
+  /** A linha de base de cada filho (o fundo da caixa quando ele não tem uma). */
+  const kidBaselines = (
+    kids: readonly Kid[],
+    widths: readonly number[],
+    heights: readonly number[],
+  ): number[] =>
+    kids.map((kid, i) => {
+      const h = heights[i] ?? 0;
+      return kidBaseline(kid.node, widths[i] ?? 0, h) ?? h;
+    });
+
+  /** A altura de uma `row` alinhada pela linha de base: do topo mais alto ao fundo mais baixo. */
+  const baselineExtent = (
+    kids: readonly Kid[],
+    widths: readonly number[],
+    heights: readonly number[],
+  ): number => {
+    const lines = kidBaselines(kids, widths, heights);
+    const above = Math.max(0, ...lines);
+    const below = Math.max(0, ...heights.map((h, i) => h - (lines[i] ?? h)));
+    return above + below;
+  };
+
   // --- valores conferidos (tamanho e layout) ----------------------------------------------
 
   const invalidValue = (label: string, value: unknown) =>
@@ -702,10 +900,16 @@ function createEngine(
     return (perNode[axis] ??= resolveSpec(node, axis));
   };
 
-  /** Limite em px; não finito ou negativo = ausente. */
+  /**
+   * Limite em px; não finito ou negativo = ausente. Na medida de um eixo `hug`, o `$size` dele
+   * vale infinito aqui: o tamanho do tipo não limita o que se mede (um `maxWidth` de rótulo por
+   * `$size` − folga ficaria em 2 linhas).
+   */
+  const limitValues = valuesForLimits(values, openAxes);
   const limitValue = (expr: Expr<number> | undefined): number | undefined => {
     if (expr === undefined) return undefined;
-    const n = num(expr, Number.NaN);
+    const raw = evaluate<unknown>(expr as Expr<unknown>, limitValues, Number.NaN);
+    const n = typeof raw === 'number' ? raw : parseFloat(String(raw));
     return Number.isFinite(n) && n >= 0 ? n : undefined;
   };
 
@@ -743,6 +947,38 @@ function createEngine(
     return normalizePadding(Array.isArray(value) ? value.map(side) : side(value));
   };
 
+  /** `baseline` só vale em `row` e na formatVersion 4; fora disso, vindo de expressão, é valor inválido. */
+  const alignsFor = (kind: 'row' | 'column'): readonly LayoutAlign[] =>
+    kind === 'row' && original.formatVersion >= 4
+      ? LAYOUT_ALIGNS
+      : LAYOUT_ALIGNS.filter((value) => value !== 'baseline');
+
+  /** `maxPerLine`/`maxLines`: inteiro ≥ 1; outro valor cai em "sem limite" com o aviso de valor inválido. */
+  const countOf = (expr: Expr<number> | undefined, label: string): number | undefined => {
+    const value = ev<unknown>(expr as Expr<unknown> | undefined, undefined);
+    if (value === undefined || value === null) return undefined;
+    const n = typeof value === 'number' ? value : parseFloat(String(value));
+    if (Number.isInteger(n) && n >= 1) return n;
+    invalidValue(label, value);
+    return undefined;
+  };
+
+  /** A quebra de fileira de um quadro `row`/`column` (v4); sem `wrap` (ou `none`) as outras três chaves não valem. */
+  const wrapOf = (
+    spec: LayoutSpec,
+  ): Pick<FrameLayout, 'wrap' | 'lineGap' | 'maxPerLine' | 'maxLines'> => {
+    const none = { wrap: 'none', lineGap: 0 } as const;
+    if (original.formatVersion < 4) return none;
+    const wrap = checked(spec.wrap, LAYOUT_WRAPS, 'none', 'layout.wrap');
+    if (wrap === 'none') return none;
+    return {
+      wrap,
+      lineGap: Math.max(0, num(spec.lineGap, 0)),
+      maxPerLine: countOf(spec.maxPerLine, 'layout.maxPerLine'),
+      maxLines: countOf(spec.maxLines, 'layout.maxLines'),
+    };
+  };
+
   const layoutOf = (frame: FrameTemplate): FrameLayout => {
     const spec = frame.layout;
     const kind = checked(spec?.type, LAYOUT_TYPES, 'none', 'layout.type');
@@ -752,9 +988,10 @@ function createEngine(
       main: kind === 'row' ? 'w' : 'h',
       gap: Math.max(0, num(spec.gap, 0)),
       pad: paddingOf(spec.padding),
-      align: checked(spec.align, LAYOUT_ALIGNS, 'start', 'layout.align'),
+      align: checked(spec.align, alignsFor(kind), 'start', 'layout.align'),
       justify: checked(spec.justify, LAYOUT_JUSTIFIES, 'start', 'layout.justify'),
       reverse: bool(spec.reverse, false),
+      ...wrapOf(spec),
     };
   };
 
@@ -775,7 +1012,7 @@ function createEngine(
     const hug = specOf(node, 'w') === 'hug';
     const wrap =
       hug && !(otherSize !== undefined && isCutByMax(node)) ? undefined : otherSize;
-    return measureText(node, wrap).height;
+    return paddedTextHeight(node, measureText(node, wrap).height, wrap);
   };
 
   const frameHug = (
@@ -1064,6 +1301,244 @@ function createEngine(
     });
   };
 
+  // --- quebra de fileira (`layout.wrap`) ----------------------------------------------------
+
+  /** Os filhos de um quadro com `wrap`, o eixo principal, o cruzado e o espaço nos dois. */
+  interface WrapSpace {
+    readonly frame: FrameTemplate;
+    readonly layout: FrameLayout;
+    readonly kids: readonly Kid[];
+    readonly main: Axis;
+    readonly cross: Axis;
+    /** A área de conteúdo do eixo principal (nulo = `hug`: uma linha só). */
+    readonly mainContent: number | null;
+    /** O limite do eixo cruzado quando o quadro é medido (nulo = desconhecido). */
+    readonly crossBound: number | null;
+    /** O tamanho conhecido do quadro por eixo (nulo = `hug`). */
+    readonly known: { readonly w: number | null; readonly h: number | null };
+  }
+
+  const maxOf = (values: readonly number[]): number =>
+    values.reduce((m, v) => Math.max(m, v), 0);
+
+  const padAxis = (layout: FrameLayout, axis: Axis): number =>
+    axis === 'w'
+      ? layout.pad.left + layout.pad.right
+      : layout.pad.top + layout.pad.bottom;
+
+  /** Tamanho dos filhos no eixo principal antes de dividir os `fill` (`'fill'` fica), na ordem dos `kids`. */
+  const wrapMainSizes = (space: WrapSpace): (number | 'fill')[] => {
+    const { frame, layout, kids, main, cross } = space;
+    const crossSizes =
+      main === 'h'
+        ? resolveAxis(
+            frame,
+            layout,
+            kids,
+            cross,
+            {
+              content:
+                space.known[cross] === null
+                  ? null
+                  : Math.max(0, (space.known[cross] ?? 0) - padAxis(layout, cross)),
+              bound: space.crossBound,
+            },
+            null,
+          )
+        : null;
+    return kids.map((kid, i) => {
+      const size = kidSize(
+        kid,
+        main,
+        { content: space.mainContent, bound: null },
+        crossSizes?.[i],
+        layout,
+      );
+      return size === 'fill' ? size : clampTo(limitOf(kid.node, main), size);
+    });
+  };
+
+  /** A base de cada filho para decidir as linhas: o `fill` vale o que abraçaria. */
+  const wrapBases = (space: WrapSpace, sizes: readonly (number | 'fill')[]): number[] =>
+    sizes.map((size, i) => {
+      if (size !== 'fill') return size;
+      const kid = space.kids[i] as Kid;
+      const natural = hugSize(kid.node, space.main, undefined, space.mainContent);
+      return clampTo(limitOf(kid.node, space.main), Math.max(0, natural));
+    });
+
+  /** Uma linha já resolvida: filhos, tamanhos e posições nos dois eixos (relativos ao quadro). */
+  interface WrappedLine {
+    readonly kids: readonly Kid[];
+    readonly main: readonly number[];
+    readonly mainPos: readonly number[];
+    readonly cross: readonly number[];
+    /** A extensão da linha no eixo cruzado. */
+    readonly extent: number;
+    /** O deslocamento de cada filho dentro da linha, no eixo cruzado. */
+    readonly offsets: readonly number[];
+  }
+
+  /** O deslocamento de um filho dentro da linha, no eixo cruzado (`center`/`end`; `start` e `stretch` 0). */
+  const crossOffset = (align: LayoutAlign, size: number, extent: number): number => {
+    if (align === 'center') return (extent - size) / 2;
+    if (align === 'end') return extent - size;
+    return 0;
+  };
+
+  /** A linha com os tamanhos do eixo cruzado e os deslocamentos dentro dela. */
+  const crossOfLine = (
+    space: WrapSpace,
+    lineKids: readonly Kid[],
+    mainSizes: readonly number[],
+  ): Pick<WrappedLine, 'cross' | 'extent' | 'offsets'> => {
+    const { frame, layout, cross } = space;
+    const natural = resolveAxis(
+      frame,
+      layout,
+      lineKids,
+      cross,
+      { content: null, bound: space.crossBound },
+      mainSizes,
+    );
+    const baselined = layout.kind === 'row' && layout.align === 'baseline';
+    const lines = baselined ? kidBaselines(lineKids, mainSizes, natural) : [];
+    const extent = baselined
+      ? baselineExtent(lineKids, mainSizes, natural)
+      : maxOf(natural);
+    const sizes = resolveAxis(
+      frame,
+      layout,
+      lineKids,
+      cross,
+      { content: extent, bound: null },
+      mainSizes,
+    );
+    const shifts = baselined ? baselineShifts(lines) : [];
+    return {
+      cross: sizes,
+      extent,
+      offsets: sizes.map((size, i) =>
+        baselined ? (shifts[i] ?? 0) : crossOffset(layout.align, size, extent),
+      ),
+    };
+  };
+
+  /** As linhas do quadro com `wrap`: quebra, divide os `fill` de cada uma, mede o eixo cruzado e posiciona. */
+  const wrapLines = (
+    space: WrapSpace,
+    mainTotal: (used: number) => number,
+  ): { lines: WrappedLine[]; total: number } => {
+    const { frame, layout, kids } = space;
+    const sizes = wrapMainSizes(space);
+    const bases = wrapBases(space, sizes);
+    const broken = breakLines(bases, space.mainContent, {
+      gap: layout.gap,
+      maxPerLine: layout.maxPerLine,
+      maxLines: layout.maxLines,
+    });
+    if (broken.dropped > 0)
+      warn('engine.childrenOutsideMaxLines', {
+        count: broken.dropped,
+        name: nodeName(frame),
+      });
+    const tolerance = kids.some((kid) => kid.node.type === 'text') ? TEXT_TOLERANCE : EPS;
+    const resolved = broken.lines.map((indices) => {
+      const lineSizes = indices.map((i) =>
+        sizes[i] === 'fill' && space.mainContent === null
+          ? (bases[i] ?? 0)
+          : (sizes[i] ?? 0),
+      );
+      return resolveMain(
+        frame,
+        layout,
+        lineSizes,
+        indices.map((i) => limitOf((kids[i] as Kid).node, space.main)),
+        space.mainContent,
+        tolerance,
+      );
+    });
+    const usedOf = (line: readonly number[]) =>
+      line.reduce((sum, v) => sum + v, 0) + layout.gap * Math.max(0, line.length - 1);
+    const total = mainTotal(maxOf(resolved.map(usedOf)));
+    const lines = broken.lines.map((indices, k): WrappedLine => {
+      const lineKids = indices.map((i) => kids[i] as Kid);
+      const main = resolved[k] ?? [];
+      return {
+        kids: lineKids,
+        main,
+        mainPos: positionAxis(layout, lineKids, space.main, main, total),
+        ...crossOfLine(space, lineKids, main),
+      };
+    });
+    return { lines, total };
+  };
+
+  /** O plano de um quadro `row`/`column` com `wrap` (ver `layout.wrap` no `docs/COMPONENT-FORMAT.md`). */
+  const planWrapped = (
+    frame: FrameTemplate,
+    layout: FrameLayout,
+    kids: readonly Kid[],
+    w: number | null,
+    h: number | null,
+    bounds: Limits,
+  ): Plan => {
+    const row = layout.kind === 'row';
+    const main: Axis = row ? 'w' : 'h';
+    const cross: Axis = row ? 'h' : 'w';
+    const known = { w, h };
+    const mainKnown = known[main];
+    const crossBound = bounds[cross];
+    const space: WrapSpace = {
+      frame,
+      layout,
+      kids,
+      main,
+      cross,
+      mainContent:
+        mainKnown === null ? null : Math.max(0, mainKnown - padAxis(layout, main)),
+      crossBound:
+        crossBound === null ? null : Math.max(0, crossBound - padAxis(layout, cross)),
+      known,
+    };
+    const { lines, total: mainSize } = wrapLines(
+      space,
+      (used) => mainKnown ?? used + padAxis(layout, main),
+    );
+    const stacked = stackLines(
+      lines.map((line) => line.extent),
+      layout.lineGap,
+      layout.wrap === 'wrap-reverse',
+    );
+    const crossStart = row ? layout.pad.top : layout.pad.left;
+    const crossSize = known[cross] ?? stacked.total + padAxis(layout, cross);
+    const placements = lines.flatMap((line, k) =>
+      line.kids.map((kid, i): Placement => {
+        const m = line.main[i] ?? 0;
+        const c = line.cross[i] ?? 0;
+        const mainPos = line.mainPos[i] ?? 0;
+        const crossPos = crossStart + (stacked.tops[k] ?? 0) + (line.offsets[i] ?? 0);
+        return row
+          ? { kid, x: mainPos, y: crossPos, w: m, h: c }
+          : { kid, x: crossPos, y: mainPos, w: c, h: m };
+      }),
+    );
+    return row
+      ? { w: mainSize, h: crossSize, placements }
+      : { w: crossSize, h: mainSize, placements };
+  };
+
+  /** Guarda o plano do quadro na chave do cache e o devolve. */
+  const remember = (frame: FrameTemplate, key: string, plan: Plan): Plan => {
+    let perFrame = planCache.get(frame);
+    if (!perFrame) {
+      perFrame = new Map();
+      planCache.set(frame, perFrame);
+    }
+    perFrame.set(key, plan);
+    return plan;
+  };
+
   /**
    * Plano de um quadro: `null` num eixo = `hug` (o quadro abraça os filhos). `limits` é o
    * limite disponível por eixo hug, para os filhos `fill`/`%` contribuírem na medição.
@@ -1081,8 +1556,11 @@ function createEngine(
 
     const layout = layoutOf(frame);
     const kids = visibleKids(frame);
+    if (layout.wrap !== 'none')
+      return remember(frame, key, planWrapped(frame, layout, kids, w, h, bounds));
     const padW = layout.pad.left + layout.pad.right;
     const padH = layout.pad.top + layout.pad.bottom;
+    const baselined = layout.kind === 'row' && layout.align === 'baseline';
 
     const solve = (
       axis: Axis,
@@ -1098,7 +1576,10 @@ function createEngine(
           bound: limit === null ? null : Math.max(0, limit - pad),
         };
         const preliminary = resolveAxis(frame, layout, kids, axis, space, others);
-        total = hugTotal(layout, kids, axis, preliminary, pad);
+        total =
+          baselined && axis === 'h'
+            ? baselineExtent(kids, others ?? [], preliminary) + pad
+            : hugTotal(layout, kids, axis, preliminary, pad);
       }
       const space: AxisSpace = { content: Math.max(0, total - pad), bound: null };
       return { total, sizes: resolveAxis(frame, layout, kids, axis, space, others) };
@@ -1108,6 +1589,10 @@ function createEngine(
     const vertical = solve('h', h, horizontal.sizes);
     const xs = positionAxis(layout, kids, 'w', horizontal.sizes, horizontal.total);
     const ys = positionAxis(layout, kids, 'h', vertical.sizes, vertical.total);
+    if (baselined)
+      baselineShifts(kidBaselines(kids, horizontal.sizes, vertical.sizes)).forEach(
+        (offset, i) => (ys[i] = layout.pad.top + offset),
+      );
     const plan: Plan = {
       w: horizontal.total,
       h: vertical.total,
@@ -1119,13 +1604,7 @@ function createEngine(
         h: vertical.sizes[i] ?? 0,
       })),
     };
-    let perFrame = planCache.get(frame);
-    if (!perFrame) {
-      perFrame = new Map();
-      planCache.set(frame, perFrame);
-    }
-    perFrame.set(key, plan);
-    return plan;
+    return remember(frame, key, plan);
   };
 
   // --- estilo ---------------------------------------------------------------------------
@@ -1234,7 +1713,8 @@ function createEngine(
     const value = ev<unknown>(expr as Expr<unknown>, undefined);
     if (!Array.isArray(value)) return undefined;
     const sides = STROKE_SIDES.filter((side) => value.includes(side));
-    return sides.length > 0 ? sides : undefined;
+    // Os quatro lados são o contorno inteiro, com o raio dos cantos: a cena não traz `sides`.
+    return sides.length > 0 && sides.length < STROKE_SIDES.length ? sides : undefined;
   };
 
   /** Uma sombra da lista (ou a única): cor `none` não dá sombra; `spread` só entra quando não é 0. */
@@ -1494,6 +1974,19 @@ function createEngine(
     return { ...base, type: 'group', children };
   };
 
+  /** A chave do `$lines` que cita este nó: o nome, com o escopo da linha quando está num `repeat`. */
+  const linesKeyOf = (node: TextTemplate): string =>
+    node.name === undefined
+      ? ''
+      : node.linesScope === undefined
+        ? node.name
+        : `${node.linesScope}:${node.name}`;
+  const recordLines = (node: TextTemplate, count: number): void => {
+    lineCounts.set(linesKeyOf(node), count);
+  };
+  const measuredLines = (m: TextMetrics): number =>
+    m.lineCount ?? Math.max(1, m.lines?.length ?? 1);
+
   /** Vale conferir se o texto passa da altura? Não, se `maxLines`/`ellipsis` o cortam de propósito. */
   const checksOverflow = (font: MeasureFont, w: number): boolean =>
     font.maxLines === undefined && font.ellipsis !== true && w > EPS;
@@ -1519,15 +2012,22 @@ function createEngine(
     w: number,
     h: number,
   ): { text: string; extra: { runs?: SceneTextRun[]; runLayout?: RunLayout } } => {
+    const cited = citedLines.has(linesKeyOf(node));
     if (node.runs === undefined) {
       const text = plainText(node);
       warnTextTooTall(node, () => options.measure(text, font, w).height, font, w, h);
+      if (cited)
+        recordLines(
+          node,
+          text === '' ? 0 : measuredLines(options.measure(text, font, w)),
+        );
       return { text, extra: {} };
     }
     const rich = richRuns(node, font);
     const runLayout = layoutRuns(rich.runs, richBase(node, font), options.measure, w);
     warnTextTooTall(node, runLayout.height, font, w, h);
     const text = rich.scene.map((run) => run.text).join('');
+    if (cited) recordLines(node, text === '' ? 0 : runLayout.lines.length);
     return { text, extra: { runs: rich.scene, runLayout } };
   };
 
@@ -1544,6 +2044,22 @@ function createEngine(
     return value === 'justify' && node.runs !== undefined ? 'left' : value;
   };
 
+  const verticalAlignOf = (node: TextTemplate): TextStyle['verticalAlign'] =>
+    oneOf(
+      node.font?.verticalAlign,
+      // `cap-middle` só existe na formatVersion 4; antes, vindo de expressão, é valor fora do conjunto.
+      original.formatVersion >= 4
+        ? ['top', 'middle', 'bottom', 'cap-middle']
+        : ['top', 'middle', 'bottom'],
+      'top',
+    );
+
+  /** `baselinePadding.top` do nó na caixa de largura `w`: nunca menor que a linha de base da fonte. */
+  const baselineTopOf = (node: TextTemplate, w: number): number | undefined => {
+    const top = baselinePaddingOf(node)?.top;
+    return top === undefined ? undefined : Math.max(top, baselinesOf(node, w).first);
+  };
+
   const buildText = (
     node: TextTemplate,
     id: string,
@@ -1554,6 +2070,7 @@ function createEngine(
   ): SceneNode => {
     const font = textFont(node);
     const font0: FontSpec = node.font ?? {};
+    const baselineTop = baselineTopOf(node, w);
     const decoration = oneOf(
       font0.decoration,
       ['none', 'underline', 'line-through'],
@@ -1568,14 +2085,9 @@ function createEngine(
       letterSpacing: font.letterSpacing,
       // `justify` só existe na formatVersion 4; antes, vindo de expressão, é valor fora do conjunto.
       align: styleAlign(node, font0.align),
-      verticalAlign: oneOf(
-        font0.verticalAlign,
-        // `cap-middle` só existe na formatVersion 4; antes, vindo de expressão, é valor fora do conjunto.
-        original.formatVersion >= 4
-          ? ['top', 'middle', 'bottom', 'cap-middle']
-          : ['top', 'middle', 'bottom'],
-        'top',
-      ),
+      // Com `baselinePadding.top` o `verticalAlign` deixa de valer (a primeira linha de base manda).
+      verticalAlign: baselineTop === undefined ? verticalAlignOf(node) : 'top',
+      ...(baselineTop === undefined ? {} : { baselineTop }),
       ...(decoration === 'none' ? {} : { decoration }),
       ...(font.wrap === 'none' ? { wrap: 'none' as const } : {}),
       ...(font.ellipsis === true ? { ellipsis: true } : {}),
@@ -1703,10 +2215,47 @@ function createEngine(
     provides,
     planFrame,
     buildRoot,
+    /** A primeira linha de base do componente na caixa `box` (o que o `align: "baseline"` do pai lê). */
+    rootBaseline: (box: Box): number | undefined =>
+      kidBaseline(component.template, box.width, box.height),
     template: component.template,
     limitOf,
     clampSize,
+    citedLines,
+    lineCounts,
+    /** O número de linhas de um nó mudou entre as duas passagens: fica o da segunda (decisão 8). */
+    warnLinesUnstable: (key: string) =>
+      warn('engine.linesUnstable', { name: linesNodeName(key) }),
   };
+}
+
+type Engine = ReturnType<typeof createEngine>;
+
+/**
+ * Roda `run` no motor e, se o template usa `$lines`, em duas passagens (decisão 8 da #898): a
+ * primeira com 1 linha em cada `$lines`, a segunda com as linhas medidas na primeira. `run` monta os
+ * nós de um texto citado (é neles que as linhas são medidas, na largura final). Se a segunda medir outro número num nó citado, fica o da segunda e o
+ * motor avisa `$lines instável: <nó>` (sem terceira passagem). Sem `$lines`, uma passagem só.
+ */
+function withLinesPasses<R>(
+  component: ComponentFile,
+  values: FieldValues,
+  options: InstantiateOptions,
+  size: { readonly width: number; readonly height: number },
+  run: (engine: Engine) => R,
+  openAxes?: OpenAxes,
+): { engine: Engine; result: R } {
+  const first = createEngine(component, values, options, size, undefined, openAxes);
+  if (first.citedLines.size === 0) return { engine: first, result: run(first) };
+  run(first);
+  const seed = new Map(
+    [...first.citedLines].map((key) => [key, first.lineCounts.get(key) ?? 0]),
+  );
+  const second = createEngine(component, values, options, size, seed, openAxes);
+  const result = run(second);
+  for (const [key, count] of second.lineCounts)
+    if (count !== (seed.get(key) ?? 0)) second.warnLinesUnstable(key);
+  return { engine: second, result };
 }
 
 export function instantiate(
@@ -1715,12 +2264,15 @@ export function instantiate(
   box: Box,
   options: InstantiateOptions,
 ): Instantiated {
-  const engine = createEngine(component, values, options, box);
-  const root = engine.buildRoot(box);
+  const { engine, result: root } = withLinesPasses(component, values, options, box, (e) =>
+    e.buildRoot(box),
+  );
   const provides = engine.provides();
   const messages = engine.messages();
+  const firstBaseline = engine.rootBaseline(box);
   return {
     root,
+    ...(firstBaseline === undefined ? {} : { firstBaseline }),
     ...(provides === undefined ? {} : { provides }),
     warnings: textsOf(messages),
     messages,
@@ -1744,26 +2296,44 @@ export function measureComponent(
   warnings: readonly string[];
   messages: readonly ModelMessage[];
 } {
-  const engine = createEngine(component, values, options, {
+  const start = {
     width: size.width ?? component.size.width,
     height: size.height ?? component.size.height,
-  });
-  const { template } = engine;
-  // Num eixo hug o `max` da raiz é o limite disponível; depois do plano, o min/max da raiz
-  // se aplica (a largura primeiro: a altura é medida já na largura limitada).
-  const finiteMax = (axis: Axis) => {
-    const { max } = engine.limitOf(template, axis);
-    return Number.isFinite(max) ? max : null;
   };
-  const limits: Limits = {
-    w: size.width === null ? finiteMax('w') : null,
-    h: size.height === null ? finiteMax('h') : null,
+  // Eixo hug: o `$size` dele não limita os `min`/`max` por expressão (infinito = ausente).
+  const open = { width: size.width === null, height: size.height === null };
+  const plan = (engine: Engine): { width: number; height: number } => {
+    const { template } = engine;
+    // Num eixo hug o `max` da raiz é o limite disponível; depois do plano, o min/max da raiz
+    // se aplica (a largura primeiro: a altura é medida já na largura limitada).
+    const finiteMax = (axis: Axis) => {
+      const { max } = engine.limitOf(template, axis);
+      return Number.isFinite(max) ? max : null;
+    };
+    const limits: Limits = {
+      w: size.width === null ? finiteMax('w') : null,
+      h: size.height === null ? finiteMax('h') : null,
+    };
+    const first = engine.planFrame(template, size.width, size.height, limits);
+    const width = size.width ?? engine.clampSize(template, 'w', first.w);
+    const planned =
+      width === first.w ? first : engine.planFrame(template, width, size.height, limits);
+    return { width, height: size.height ?? engine.clampSize(template, 'h', planned.h) };
   };
-  const first = engine.planFrame(template, size.width, size.height, limits);
-  const width = size.width ?? engine.clampSize(template, 'w', first.w);
-  const plan =
-    width === first.w ? first : engine.planFrame(template, width, size.height, limits);
-  const height = size.height ?? engine.clampSize(template, 'h', plan.h);
+  // Com `$lines`, as duas passagens também montam os nós (é neles que se medem as linhas de cada texto).
+  const { engine, result } = withLinesPasses(
+    component,
+    values,
+    options,
+    start,
+    (e) => {
+      const measured = plan(e);
+      if (e.citedLines.size > 0) e.buildRoot({ x: 0, y: 0, ...measured });
+      return measured;
+    },
+    open,
+  );
+  const { width, height } = result;
   const messages = engine.messages();
   return { width, height, warnings: textsOf(messages), messages };
 }

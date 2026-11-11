@@ -162,10 +162,10 @@ function decodeSegment(segment: string): string | null {
   }
 }
 
-const CODE = /^[0-9a-zA-Z-]+$/;
+const CODE = /^[0-9a-zA-Z_-]+$/;
 const FULL_REF =
-  /^mapping:\/\/((?:[A-Za-z0-9\-._~]|%[0-9A-Fa-f]{2})+)\/([mia])\/([0-9a-zA-Z-]+)$/;
-const SHORT_REF = /^([mia])\/([0-9a-zA-Z-]+)$/;
+  /^mapping:\/\/((?:[A-Za-z0-9\-._~]|%[0-9A-Fa-f]{2})+)\/([mia])\/([0-9a-zA-Z_-]+)$/;
+const SHORT_REF = /^([mia])\/([0-9a-zA-Z_-]+)$/;
 
 /**
  * Interpreta o que o usuário ou o agente colou. Aceita:

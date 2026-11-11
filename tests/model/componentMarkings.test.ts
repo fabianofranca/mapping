@@ -4,6 +4,7 @@ import {
   addComponentMarking,
   addContainer,
   componentPlacement,
+  componentSize,
   moveContainer,
   componentTypes,
   placementFitsSlot,
@@ -23,7 +24,9 @@ import {
   reversedContainer,
   testCatalog,
   tokenSlotCatalog,
+  wrappedContainer,
 } from './componentFixtures';
+import { FIT_SPEC_ID, LONG_LABEL, fitCatalog, fitProject } from './fitFixtures';
 import { expectValid, marking } from './fixtures';
 import { NOTES_SPEC_ID, notesCatalog, notesProject } from './notesFixtures';
 
@@ -832,5 +835,171 @@ describe('placementFitsSlot', () => {
       rect: { x: 100, y: 100, width: 300, height: 100 },
     });
     expect(fits(p, { x: 100, y: 100, width: 10, height: 10 })).toBe(false);
+  });
+});
+
+describe('a instância nova nasce no tamanho medido (MC3, decisão 16 da #898)', () => {
+  const fcat = fitCatalog();
+  const args = (
+    typeId: string,
+    extra: Partial<NewComponentArgs> = {},
+  ): NewComponentArgs => ({
+    markingId: 'B',
+    annotationId: 'A_B',
+    containerId: 'I1',
+    parentId: null,
+    specId: FIT_SPEC_ID,
+    typeId,
+    ...extra,
+  });
+  const create = (typeId: string, extra: Partial<NewComponentArgs> = {}) =>
+    addComponentMarking(fitProject(), fcat, args(typeId, extra), approximateMeasurer);
+
+  it('sem rect, o eixo hug vale a altura do rótulo dado; a largura e o centro ficam', () => {
+    const rect = marking(
+      create('fit-button', { values: { label: LONG_LABEL } }),
+      'B',
+    ).rect;
+    expect(rect.width).toBe(120);
+    expect(rect.height).toBeGreaterThanOrEqual(76);
+    expect((rect.height - 16) % 20).toBe(0);
+    // Centrado na imagem de 1000 × 800 com o tamanho medido.
+    expect(rect.x).toBe(500 - 60);
+    expect(rect.y).toBe(Math.round(400 - rect.height / 2));
+  });
+
+  it('o rótulo que cabe dá o tamanho de sempre (o minSize vale)', () => {
+    const rect = marking(create('fit-button', { values: { label: 'Ok' } }), 'B').rect;
+    expect(rect).toMatchObject({ width: 120, height: 40 });
+  });
+
+  it('sem values mede o default do campo; componente sem eixo ajustável não muda', () => {
+    expect(marking(create('fit-button'), 'B').rect).toMatchObject({
+      width: 120,
+      height: 40,
+    });
+    expect(marking(create('fit-plain'), 'B').rect).toMatchObject({
+      width: 120,
+      height: 40,
+    });
+  });
+
+  it('o rect dado manda, sem medir', () => {
+    const given = { x: 10, y: 20, width: 120, height: 40 };
+    const p = create('fit-button', { values: { label: LONG_LABEL }, rect: given });
+    expect(marking(p, 'B').rect).toEqual(given);
+  });
+
+  it('o sizing por expressão também: o campo que liga o px vale na criação', () => {
+    const rect = marking(create('fit-px', { values: { tall: 'sim' } }), 'B').rect;
+    expect(rect.height).toBe(80);
+  });
+
+  it('componentPlacement e componentSize medem com os values dados', () => {
+    const base = {
+      containerId: 'I1',
+      parentId: null,
+      specId: FIT_SPEC_ID,
+      typeId: 'fit-button',
+    };
+    const values = { label: LONG_LABEL };
+    const size = componentSize(
+      fitProject(),
+      fcat,
+      { ...base, values },
+      approximateMeasurer,
+    );
+    expect(size.height).toBeGreaterThanOrEqual(76);
+    const rect = componentPlacement(
+      fitProject(),
+      fcat,
+      { ...base, values },
+      approximateMeasurer,
+    );
+    expect({ width: rect.width, height: rect.height }).toEqual(size);
+    // Sem values, o tamanho do componente (o rótulo é o default, curto).
+    expect(componentSize(fitProject(), fcat, base, approximateMeasurer)).toEqual({
+      width: 120,
+      height: 40,
+    });
+  });
+
+  it('com values de um valor que o campo recusa, mede sem ele (a criação falha como antes)', () => {
+    const base = {
+      containerId: 'I1',
+      parentId: null,
+      specId: FIT_SPEC_ID,
+      typeId: 'fit-button',
+    };
+    const size = componentSize(
+      fitProject(),
+      fcat,
+      { ...base, values: { label: 5 as never, inexistente: 'x' } },
+      approximateMeasurer,
+    );
+    expect(size).toEqual({ width: 120, height: 40 });
+  });
+});
+
+describe('componentPlacement: filha nova num slot com wrap (MC4, decisão 12)', () => {
+  const wrapped = (wrap: Record<string, unknown>) =>
+    testCatalog({
+      ...COMPONENTS,
+      row: wrappedContainer('row', 'row', { width: 320, height: 100 }, wrap),
+    });
+
+  it('entra depois da última na mesma linha enquanto cabe e na linha seguinte quando não cabe', () => {
+    const cat = wrapped({ wrap: 'wrap', lineGap: 12 });
+    let p = add(
+      componentProject(),
+      'C',
+      'row',
+      { rect: { x: 100, y: 100, width: 320, height: 100 } },
+      cat,
+    );
+    for (const id of ['T1', 'T2', 'T3', 'T4'])
+      p = add(p, id, 'text', { parentId: 'C' }, cat);
+    expect(rectOf(p, 'T1')).toEqual({ x: 100, y: 100, width: 100, height: 40 });
+    expect(rectOf(p, 'T2')).toEqual({ x: 208, y: 100, width: 100, height: 40 });
+    expect(rectOf(p, 'T3')).toEqual({ x: 316, y: 100, width: 100, height: 40 });
+    // 316 + 100 + 8 + 100 > 420: a quarta vai para o começo da linha seguinte.
+    expect(rectOf(p, 'T4')).toEqual({ x: 100, y: 152, width: 100, height: 40 });
+    expectValid(p);
+  });
+
+  it('maxPerLine quebra a linha antes de o espaço acabar', () => {
+    const cat = wrapped({ wrap: 'wrap', maxPerLine: 2 });
+    let p = add(
+      componentProject(),
+      'C',
+      'row',
+      { rect: { x: 100, y: 100, width: 320, height: 100 } },
+      cat,
+    );
+    for (const id of ['T1', 'T2', 'T3']) p = add(p, id, 'text', { parentId: 'C' }, cat);
+    expect(rectOf(p, 'T3')).toEqual({ x: 100, y: 140, width: 100, height: 40 });
+  });
+
+  it('maxLines: a filha que abriria uma linha além do limite não abre a linha seguinte', () => {
+    const cat = wrapped({ wrap: 'wrap', maxLines: 1 });
+    let p = add(
+      componentProject(),
+      'C',
+      'row',
+      { rect: { x: 100, y: 100, width: 320, height: 100 } },
+      cat,
+    );
+    for (const id of ['T1', 'T2', 'T3', 'T4'])
+      p = add(p, id, 'text', { parentId: 'C' }, cat);
+    // Sem a linha nova (y 140), a filha cai no fluxo de uma linha só e o lugar livre a leva adiante.
+    expect(rectOf(p, 'T4').y).not.toBe(140);
+  });
+
+  it('sem wrap, a filha segue à direita da última (o comportamento de hoje)', () => {
+    let p = add(componentProject(), 'C', 'row', {
+      rect: { x: 100, y: 100, width: 320, height: 100 },
+    });
+    for (const id of ['T1', 'T2']) p = add(p, id, 'text', { parentId: 'C' });
+    expect(rectOf(p, 'T2').x).toBe(208);
   });
 });

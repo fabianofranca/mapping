@@ -11,19 +11,9 @@ import { typeOf } from '../support/material3Library';
 
 const REPO = join(__dirname, '../..');
 const PACKAGE = join(REPO, 'libraries/material3-compose');
-const guide = readFileSync(join(REPO, 'docs/TESTING.md'), 'utf8');
-
-function scriptAfter(marker: string): string {
-  const at = guide.indexOf(marker);
-  expect(at, `marcador ${marker}`).toBeGreaterThan(-1);
-  const start = guide.lastIndexOf('```js', at);
-  const end = guide.indexOf('```', at);
-  return guide.slice(start + 5, end);
-}
 
 const work = mkdtempSync(join(tmpdir(), 'r25-'));
-const tokensMjs = join(work, 'tokens.mjs');
-writeFileSync(tokensMjs, scriptAfter('// tokens.mjs:'));
+const tokensMjs = join(REPO, 'scripts/testing/tokens.mjs');
 
 function copyPackage(name: string): string {
   const dir = join(work, name);

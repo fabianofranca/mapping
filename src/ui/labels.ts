@@ -84,6 +84,7 @@ const MARKING_ERRORS: Partial<Record<StoreErrorCode, TranslationKey>> = {
   'invalid-parent': 'marking.error.invalid-parent',
   'invalid-space': 'marking.error.invalid-space',
   'not-arrangeable': 'marking.error.not-arrangeable',
+  'not-fittable': 'marking.error.not-fittable',
   locked: 'marking.error.locked',
   reviewing: 'review.readOnly',
 };

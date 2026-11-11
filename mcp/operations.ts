@@ -512,6 +512,12 @@ export const operationSchema = z.discriminatedUnion('op', [
       ),
   }),
   z.object({
+    op: z.literal('fit_marking'),
+    marking: item('Marcação').describe(
+      'A marcação de um componente cujo `sizing` depende do conteúdo (`hug` ou expressão num eixo; veja `get_component`) e que não tem marcações no slot. Cada eixo assim vira o tamanho medido com os valores da anotação nesse ponto do lote (inteiro para cima, entre o `minSize` e os limites da raiz; o eixo `fill`, o ausente e o esticado pelo `stretch` do pai não mudam; nunca passa da imagem); o canto de cima à esquerda fica. Chame-a depois de mudar um valor que altera o conteúdo (texto, campo que liga ou desliga uma parte), no mesmo lote ou na mesma proposta: editar o valor sozinho não muda o retângulo. O resumo diz o retângulo antes e depois (ou que nada mudou). Falha com `not-fittable` (nenhum eixo depende do conteúdo) e `locked` (geometria trancada que mudaria).',
+    ),
+  }),
+  z.object({
     op: z.literal('update_marking'),
     marking: item('Marcação'),
     name: name.optional(),

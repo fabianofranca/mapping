@@ -9,6 +9,8 @@ import { modelMessage, rawMessage, siblingPosition } from '../../src/model';
 import { locale } from '../../src/store/settings';
 import { CanvasContextMenu } from '../../src/ui/CanvasContextMenu';
 import { EditorContext } from '../../src/ui/EditorContext';
+import { arrangeHintKey } from '../../src/ui/arrange';
+import { markingErrorMessage } from '../../src/ui/labels';
 import { MarkingPanel } from '../../src/ui/MarkingPanel';
 import { libraryHarness, type LibraryHarness } from './libraryHarness';
 import { renderLive } from './harness';
@@ -25,9 +27,13 @@ interface Scene {
   readonly column: string;
   readonly first: string;
   readonly second: string;
+  /** Uma folha de tamanho fixo (sem eixo que dependa do conteúdo), fora da coluna. */
+  readonly leaf: string;
 }
 
-/** Uma coluna (container) com dois botões dentro, na I1. */
+const LONG_LABEL = 'Um rótulo muito mais longo que o botão de antes';
+
+/** Uma coluna (container) com dois botões dentro e um FAB (folha de tamanho fixo) fora, na I1. */
 async function scene(options: { readOnly?: boolean } = {}): Promise<Scene> {
   const harness = await libraryHarness();
   const add = (typeId: string, parentId: string | null) => {
@@ -43,8 +49,21 @@ async function scene(options: { readOnly?: boolean } = {}): Promise<Scene> {
   const column = add('m3-column', null);
   const first = add('m3-button', column);
   const second = add('m3-button', column);
+  const leaf = add('m3-fab', null);
   if (options.readOnly) harness.store.load(harness.project(), { readOnly: true });
-  return { harness, column, first, second };
+  return { harness, column, first, second, leaf };
+}
+
+const rectOf = (harness: LibraryHarness, id: string) =>
+  harness.project().markings.find((m) => m.id === id)!.rect;
+
+/** Põe um rótulo longo no botão (o `hug` da largura passa a pedir outro tamanho). */
+function lengthen(harness: LibraryHarness, markingId: string): void {
+  const annotation = harness
+    .project()
+    .annotations.find((a) => a.markingId === markingId)!;
+  const result = harness.actions.setFieldValue(annotation.id, 'label', LONG_LABEL);
+  if (!result.ok) throw new Error(result.error);
 }
 
 function renderPanel(harness: LibraryHarness, markingId: string) {
@@ -124,12 +143,52 @@ describe('Arrumar', () => {
     expect(harness.ui.toast.value).toBe(t('arrange.nothing'));
   });
 
-  it('uma folha não tem o botão', async () => {
-    const { harness, first } = await scene();
-    renderPanel(harness, first);
+  it('uma folha sem eixo ajustável não tem o botão', async () => {
+    const { harness, leaf } = await scene();
+    renderPanel(harness, leaf);
     expect(
       screen.queryByRole('button', { name: new RegExp(t('arrange.action')) }),
     ).toBeNull();
+  });
+
+  it('a marcação sem slot com eixo ajustável (botão de largura hug) tem o botão e ajusta numa entrada só (MC3)', async () => {
+    const { harness, first } = await scene();
+    lengthen(harness, first);
+    const grown = rectOf(harness, first);
+    const user = renderPanel(harness, first);
+    await user.click(
+      screen.getByRole('button', { name: new RegExp(t('arrange.action')) }),
+    );
+    expect(harness.ui.toast.value).toBe(t('arrange.done'));
+    const fitted = rectOf(harness, first);
+    expect(fitted.width).toBeGreaterThan(grown.width);
+    expect(fitted).toMatchObject({ x: grown.x, y: grown.y, height: grown.height });
+    // Ctrl+Z desfaz o ajuste inteiro, numa entrada só.
+    harness.store.undo();
+    expect(rectOf(harness, first)).toEqual(grown);
+    // Ajustado de novo: "nada a arrumar".
+    harness.store.redo();
+    await user.click(
+      screen.getByRole('button', { name: new RegExp(t('arrange.action')) }),
+    );
+    expect(harness.ui.toast.value).toBe(t('arrange.nothing'));
+  });
+
+  it('a dica do botão diz o que ele faz: arruma as de dentro ou ajusta ao conteúdo', async () => {
+    const { harness, column, first } = await scene();
+    expect(arrangeHintKey(harness.context, column)).toBe('arrange.hint');
+    expect(arrangeHintKey(harness.context, first)).toBe('arrange.hintFit');
+    expect(t('arrange.hintFit')).not.toBe('arrange.hintFit');
+  });
+
+  it('a marcação sem eixo ajustável recusa com not-fittable e a mensagem da chave nova', async () => {
+    const { harness, leaf } = await scene();
+    expect(harness.actions.arrange(leaf)).toEqual({ ok: false, error: 'not-fittable' });
+    expect(t('marking.error.not-fittable')).not.toBe('marking.error.not-fittable');
+    expect(markingErrorMessage('not-fittable')).toBe(t('marking.error.not-fittable'));
+    locale.value = 'en-US';
+    expect(markingErrorMessage('not-fittable')).toBe(t('marking.error.not-fittable'));
+    expect(t('marking.error.not-fittable')).toMatch(/content|fit/i);
   });
 
   it('somente leitura: desabilitado', async () => {
@@ -198,18 +257,35 @@ describe('Arrumar', () => {
     expect(harness.ui.toast.value).toBe(t('arrange.done'));
   });
 
-  it('o menu do canvas de uma folha não oferece Arrumar', async () => {
-    const { harness, first } = await scene();
+  it('o menu do canvas de uma folha sem eixo ajustável não oferece Arrumar', async () => {
+    const { harness, leaf } = await scene();
     render(
       <EditorContext.Provider value={harness.context}>
         <CanvasContextMenu />
       </EditorContext.Provider>,
     );
-    harness.ui.canvasMenu.value = { x: 10, y: 10, target: { kind: 'm', id: first } };
+    harness.ui.canvasMenu.value = { x: 10, y: 10, target: { kind: 'm', id: leaf } };
     const menu = await screen.findByRole('menu');
     expect(
       within(menu).queryByRole('menuitem', { name: t('arrange.action') }),
     ).toBeNull();
+  });
+
+  it('o menu do canvas oferece Arrumar na marcação sem slot com eixo ajustável (MC3)', async () => {
+    const { harness, first } = await scene();
+    lengthen(harness, first);
+    const grown = rectOf(harness, first);
+    render(
+      <EditorContext.Provider value={harness.context}>
+        <CanvasContextMenu />
+      </EditorContext.Provider>,
+    );
+    const user = userEvent.setup();
+    harness.ui.canvasMenu.value = { x: 10, y: 10, target: { kind: 'm', id: first } };
+    const menu = await screen.findByRole('menu');
+    await user.click(within(menu).getByRole('menuitem', { name: t('arrange.action') }));
+    expect(harness.ui.toast.value).toBe(t('arrange.done'));
+    expect(rectOf(harness, first).width).toBeGreaterThan(grown.width);
   });
 });
 
@@ -250,9 +326,24 @@ describe('Arrumar: atalho Alt+Shift+A', () => {
     );
   });
 
-  it('numa folha ou em somente leitura não faz nada', async () => {
+  it('ajusta a marcação sem slot com eixo ajustável ao conteúdo (MC3)', async () => {
     const { harness, first } = await scene();
+    lengthen(harness, first);
+    const grown = rectOf(harness, first);
     harness.ui.selection.value = { kind: 'marking', id: first };
+    render(
+      <EditorContext.Provider value={harness.context}>
+        <Probe />
+      </EditorContext.Provider>,
+    );
+    press();
+    expect(harness.ui.toast.value).toBe(t('arrange.done'));
+    expect(rectOf(harness, first).width).toBeGreaterThan(grown.width);
+  });
+
+  it('numa folha sem eixo ajustável ou em somente leitura não faz nada', async () => {
+    const { harness, leaf } = await scene();
+    harness.ui.selection.value = { kind: 'marking', id: leaf };
     render(
       <EditorContext.Provider value={harness.context}>
         <Probe />

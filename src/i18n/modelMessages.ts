@@ -141,6 +141,18 @@ const libraryEnUS: {
     'type "{typeId}", the example "{name}", initial size {size}: {reason}',
   'model.library.draw.exampleMode':
     'type "{typeId}", the example "{name}", mode {mode}, initial size {size}: {reason}',
+  'model.library.drawFitted.defaults':
+    'type "{typeId}", the default values, fitted size {size}: {reason}',
+  'model.library.drawFitted.defaultsMode':
+    'type "{typeId}", the default values, mode {mode}, fitted size {size}: {reason}',
+  'model.library.drawFitted.preview':
+    'type "{typeId}", the preview, fitted size {size}: {reason}',
+  'model.library.drawFitted.previewMode':
+    'type "{typeId}", the preview, mode {mode}, fitted size {size}: {reason}',
+  'model.library.drawFitted.example':
+    'type "{typeId}", the example "{name}", fitted size {size}: {reason}',
+  'model.library.drawFitted.exampleMode':
+    'type "{typeId}", the example "{name}", mode {mode}, fitted size {size}: {reason}',
   'model.library.drawFailed': 'failed to draw: {error}',
   'model.library.buildFailed':
     'could not build the library to prove the external system examples: {reason}',

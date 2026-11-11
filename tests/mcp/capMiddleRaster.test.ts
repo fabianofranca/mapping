@@ -169,6 +169,25 @@ describe('cap-middle no raster com a fonte embutida (decisão 8)', () => {
   });
 });
 
+describe('cap-middle com o texto mais alto que a caixa (MC0, decisão 31)', () => {
+  // Largura que só cabe uma palavra por linha; a caixa tem 40 px: cabem 2 das 3 linhas de 20.
+  const boxed = (text: string): TextNode => ({
+    ...textNode(text, 'cap-middle', 36),
+    height: 40,
+  });
+  const boxCenter = BOX_TOP + 40 / 2;
+
+  for (const scale of [1, 4.2]) {
+    it(`3 linhas numa caixa de 2 desenham 2, centradas como na app (zoom ${scale})`, () => {
+      const three = inkCenter(boxed('HHHH HHHH HHHH'), scale);
+      const two = inkCenter(boxed('HHHH HHHH'), scale);
+      // O mesmo capMiddleShift com 2 linhas: a terceira não conta nem pinta.
+      expect(Math.abs(three - two)).toBeLessThanOrEqual(0.01);
+      expect(Math.abs(three - boxCenter)).toBeLessThanOrEqual(0.5);
+    });
+  }
+});
+
 describe('capHeightOf (decisão 4)', () => {
   const face = book.fontFor('sans-serif', 400, false);
 

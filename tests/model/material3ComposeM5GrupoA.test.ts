@@ -494,24 +494,29 @@ describe('M5 grupo A — snackbar', () => {
   it('mensagem longa quebra e a altura cresce de 20 em 20 a partir de 68 (duas linhas)', () => {
     const long = 'Mensagem que precisa quebrar em duas linhas';
     const d = snack({ message: long, actionLabel: 'Desfazer' });
-    expect(textIn(d, 'mensagem')!.style.maxLines).toBeUndefined();
+    // MC5 (#1033): com duas linhas aparece o quadro `mensagem em várias linhas`, com a linha de base a 30
+    // e 11 até o fundo da caixa do texto (30 + 20 + 11 = 61), e o texto não é mais o `mensagem` de uma linha
+    expect(textIn(d, 'mensagem em várias linhas')!.style.maxLines).toBeUndefined();
+    expect(textIn(d, 'mensagem')).toBeUndefined();
     expect(d.root.height).toBe(68);
-    const message = absOf(d, textIn(d, 'mensagem')!);
-    expect(message.height).toBe(40);
+    const message = absOf(d, textIn(d, 'mensagem em várias linhas')!);
+    expect(message.height).toBe(30 + 20 + 11);
     // a ação continua centrada na altura
     const action = box(d, 'ação');
     expect(action.y + action.height / 2).toBe(34);
   });
 
-  it('ação em nova linha: mensagem a 15 do topo, ações à direita (8) e altura 15 + 20 + 7 + 48 + 2', () => {
+  it('ação em nova linha: linha de base a 30 e 12 até o fim (30 + 12), ações à direita (8) e altura 30 + 12 + 48 + 2', () => {
     for (const mode of MODES) {
       const d = snack({ ...ACTION, actionOnNewLine: 'true' }, mode);
-      expect(d.root.height).toBe(15 + 20 + 7 + 48 + 2);
-      const message = absOf(d, textIn(d, 'mensagem')!);
-      expect([message.x, message.y]).toEqual([16, 15]);
-      expect(solid(textIn(d, 'mensagem')!.fills)).toBe(tok('inverse-on-surface', mode));
+      expect(d.root.height).toBe(30 + 12 + 48 + 2);
+      // MC5 (#1033): a caixa do texto leva o `baselinePadding` (30 e 12), não mais o padding estimado 15 e 7
+      const text = textIn(d, 'mensagem com ação em nova linha')!;
+      const message = absOf(d, text);
+      expect([message.x, message.y, text.style.baselineTop]).toEqual([16, 0, 30]);
+      expect(solid(text.fills)).toBe(tok('inverse-on-surface', mode));
       const action = box(d, 'ação');
-      expect(action.y).toBe(15 + 20 + 7);
+      expect(action.y).toBe(30 + 12);
       expect(action.x + action.width).toBe(WIDTH - 8);
       expect(solid(textIn(d, 'ação')!.fills)).toBe(tok('inverse-primary', mode));
       // com o fechar, as duas áreas ficam na linha de baixo e a margem de 8 some

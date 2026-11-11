@@ -866,3 +866,217 @@ describe('reticências por ponto de código (#CR-12)', () => {
 /** Surrogate sem par (alto sem baixo, ou baixo sem alto). */
 const LONE_SURROGATE =
   /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+
+// ---------------------------------------------------------------------------------------
+// `$lines` em duas passagens (MC2, decisão 8 da #898)
+// ---------------------------------------------------------------------------------------
+
+describe('$lines: o número de linhas medidas de um nó text', () => {
+  /** 10 px de fonte = 5,5 px por caractere; a caixa de 200 leva 36 caracteres por linha. */
+  const ONE = 'Ok';
+  const TWO = 'aaaaaaaaaa bbbbbbbbbb cccccccccc dddddddddd';
+  const THREE = `${TWO} eeeeeeeeee ffffffffff gggggggggg hhhhhhhhhh`;
+  const FIVE = `${THREE} ${THREE}`;
+
+  const msg = (extra: Record<string, unknown> = {}) => ({
+    type: 'text',
+    name: 'msg',
+    text: { $field: 'msg' },
+    width: 'fill',
+    height: 'hug',
+    font: { size: 10, lineHeight: 30, ...(extra.font as object | undefined) },
+  });
+
+  /** A raiz com `minHeight` 48/68 pelas linhas do `msg` e altura `hug` (o snackbar). */
+  function snackbar(minHeight: unknown, text: Record<string, unknown> = msg()) {
+    return {
+      ...component({
+        type: 'frame',
+        width: 'fill',
+        height: 'hug',
+        minHeight,
+        layout: { type: 'column' },
+        children: [text],
+      } as unknown as FrameTemplate),
+      formatVersion: 4 as const,
+    };
+  }
+
+  const STEP = {
+    $if: { $gt: [{ $lines: 'msg' }, 1] },
+    then: 68,
+    else: 48,
+  };
+
+  const heightOf = (c: ComponentFile, msgValue: string) =>
+    measureComponent(
+      c,
+      { msg: msgValue },
+      { width: 200, height: null },
+      { measure: approximateMeasurer },
+    ).height;
+
+  it('1, 2 e 3 linhas: 48, 68 e a altura das linhas (3 × 30 = 90)', () => {
+    const c = snackbar(STEP);
+    expect(heightOf(c, ONE)).toBe(48);
+    expect(heightOf(c, TWO)).toBe(68);
+    expect(heightOf(c, THREE)).toBe(90);
+  });
+
+  it('instantiate mede igual: a raiz sai com a altura do plano', () => {
+    const c = snackbar(STEP);
+    const box = { x: 0, y: 0, width: 200, height: heightOf(c, TWO) };
+    const { root } = instantiate(c, { msg: TWO }, box, { measure: approximateMeasurer });
+    expect(root.height).toBe(68);
+  });
+
+  it('com maxLines o número é o das linhas que ficam (no máximo maxLines)', () => {
+    const c = snackbar(
+      { $mul: [{ $lines: 'msg' }, 100] },
+      msg({ font: { maxLines: 2 } }),
+    );
+    expect(heightOf(c, FIVE)).toBe(200);
+  });
+
+  it('texto vazio vale 0 linhas', () => {
+    const c = snackbar({ $add: [{ $lines: 'msg' }, 100] });
+    expect(heightOf(c, '')).toBe(100);
+    expect(heightOf(c, ONE)).toBe(101);
+  });
+
+  it('dentro de um repeat vale o nó da mesma linha', () => {
+    const c = {
+      ...component({
+        type: 'frame',
+        width: 'fill',
+        height: 'hug',
+        layout: { type: 'column' },
+        children: [
+          {
+            type: 'repeat',
+            field: 'rows',
+            template: {
+              type: 'frame',
+              width: 'fill',
+              minHeight: { $mul: [{ $lines: 'cell' }, 100] },
+              layout: { type: 'column' },
+              children: [
+                {
+                  type: 'text',
+                  name: 'cell',
+                  text: { $field: 'text' },
+                  width: 'fill',
+                  font: { size: 10, lineHeight: 5 },
+                },
+              ],
+            },
+          },
+        ],
+      } as FrameTemplate),
+      formatVersion: 4 as const,
+    };
+    const { height } = measureComponent(
+      c,
+      { rows: [{ text: ONE }, { text: TWO }, { text: THREE }] },
+      { width: 200, height: null },
+      { measure: approximateMeasurer },
+    );
+    // 1 + 2 + 3 linhas, 100 px por linha.
+    expect(height).toBe(600);
+  });
+
+  it('o número que muda entre as passagens fica o da segunda e avisa "$lines instável"', () => {
+    // O espaçador estreita o `msg` quando o `msg` tem mais de uma linha: nunca se assenta.
+    const c = {
+      ...component({
+        type: 'frame',
+        width: 'fill',
+        height: 'hug',
+        layout: { type: 'row' },
+        children: [
+          {
+            type: 'frame',
+            name: 'spacer',
+            width: { $if: { $gt: [{ $lines: 'msg' }, 1] }, then: 150, else: 0 },
+            height: 1,
+          },
+          msg(),
+        ],
+      } as FrameTemplate),
+      formatVersion: 4 as const,
+    };
+    const result = instantiate(
+      c,
+      { msg: THREE },
+      { x: 0, y: 0, width: 200, height: 100 },
+      { measure: approximateMeasurer },
+    );
+    expect(result.warnings).toContain('$lines instável: msg');
+    const stable = instantiate(
+      c,
+      { msg: ONE },
+      { x: 0, y: 0, width: 200, height: 100 },
+      { measure: approximateMeasurer },
+    );
+    expect(stable.warnings).not.toContain('$lines instável: msg');
+  });
+
+  it('measureComponent também avisa "$lines instável" (é o caminho do hug e do ajuste)', () => {
+    const c = {
+      ...component({
+        type: 'frame',
+        width: 'fill',
+        height: 'hug',
+        layout: { type: 'row' },
+        children: [
+          {
+            type: 'frame',
+            name: 'spacer',
+            width: { $if: { $gt: [{ $lines: 'msg' }, 1] }, then: 150, else: 0 },
+            height: 1,
+          },
+          msg(),
+        ],
+      } as unknown as FrameTemplate),
+      formatVersion: 4 as const,
+    };
+    const measure = (value: string) =>
+      measureComponent(
+        c,
+        { msg: value },
+        { width: 200, height: null },
+        { measure: approximateMeasurer },
+      ).warnings;
+    expect(measure(THREE)).toContain('$lines instável: msg');
+    expect(measure(ONE)).not.toContain('$lines instável: msg');
+  });
+
+  it('sem $lines no template a passagem é uma só (o medidor é chamado as mesmas vezes)', () => {
+    let calls = 0;
+    const counting: typeof approximateMeasurer = (text, font, maxWidth) => {
+      calls += 1;
+      return approximateMeasurer(text, font, maxWidth);
+    };
+    const plain = snackbar(48);
+    instantiate(
+      plain,
+      { msg: TWO },
+      { x: 0, y: 0, width: 200, height: 48 },
+      {
+        measure: counting,
+      },
+    );
+    const single = calls;
+    calls = 0;
+    instantiate(
+      snackbar(STEP),
+      { msg: TWO },
+      { x: 0, y: 0, width: 200, height: 68 },
+      {
+        measure: counting,
+      },
+    );
+    expect(calls).toBeGreaterThan(single);
+    expect(single).toBe(3);
+  });
+});

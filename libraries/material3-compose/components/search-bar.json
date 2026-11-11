@@ -13,7 +13,13 @@
     "height": 56
   },
   "sizing": {
-    "width": "fill",
+    "width": {
+      "$switch": "style",
+      "cases": {
+        "docked": 360
+      },
+      "default": "fill"
+    },
     "height": 56
   },
   "preview": {
@@ -709,6 +715,14 @@
           ]
         }
       }
-    ]
+    ],
+    "minWidth": 360,
+    "maxWidth": {
+      "$if": {
+        "$eq": ["style", "docked"]
+      },
+      "then": 360,
+      "else": 720
+    }
   }
 }
