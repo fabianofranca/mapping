@@ -37,7 +37,7 @@ Depois do merge, o orquestrador confere a Release do MCP: acha a execução do "
 As regras estão no `docs/PROCESS.md` ("Fluxo automatizado"); o skill `implementar-fila` faz o mesmo para uma fila de etapas. O **orquestrador** (o chat de implementação):
 
 - lê a issue da etapa (que precisa estar `ready`), troca `ready` por `in-progress`, cria o `epic/<nome>` da `main` atualizada e abre o PR do épico para a `main` assim que houver diferença;
-- para cada fase, na ordem, cria uma sessão filha (`create_session` com o `model` da tabela, `source_url` do repositório e `source_revision` no épico; nunca `permission_mode: plan`) com a mensagem da fase, que termina com "Coordenador: `<id do orquestrador>`"; agenda uma conferência de reserva (`send_later`, 30 a 60 min) e só passa à fase seguinte depois do aviso da anterior;
+- para cada fase, na ordem, cria uma sessão filha (`create_session` com o `model` e o `effort` da tabela, `source_url` do repositório e `source_revision` no épico; nunca `permission_mode: plan`) com a mensagem da fase, que termina com "Coordenador: `<id do orquestrador>`"; agenda uma conferência de reserva (`send_later`, 30 a 60 min) e só passa à fase seguinte depois do aviso da anterior;
 - depois da última fase, acha o ambiente "Mapping - testes" (`list_environments`) e cria a sessão do testador com os roteiros e a passada visual listados na sub-issue da última fase (lista de mais de 40 passos sem o R0: roda `node scripts/testing/round-guide.mjs --grupos <roteiros>` e cria uma sessão por grupo, até 5, como em "Rodada dirigida em grupos");
 - **com ❌** no relato **ou com defeito pendente**, abre **uma** fase de correção ("Fase de correção") e retesta só os roteiros que falharam e os passos que as correções afetam, **numa sessão só** com os achados de todos os grupos ou blocos ("Reteste junto"; a correção mesclada antes de o reteste começar entra nele; sem passo de roteiro afetado, o teste automatizado da correção basta). Chama o dono se falhar de novo, se o achado for de perda de dados, integridade do `mapping.json` ou segurança, ou se a correção pedir decisão de produto;
 - **sem ❌ e sem defeito pendente**, faz o fechamento: renomeia o arquivo do épico em `changelog/` com a data (`git mv`, e a data no título), grava as pendências do DS no artefato (`docs/DESIGN-SYSTEM.md` › "Ao gravar") e renomeia o registro do épico em `docs/design-system/` com a data, escreve a descrição final do PR do épico com "Closes #<etapa>", comenta o fechamento na issue da etapa e abre uma issue `roadmap` (com o rótulo de impacto) ou `bug` para cada item que ficou para depois;
@@ -82,7 +82,7 @@ O CI roda só nos PRs (`pull_request`), uma vez por commit: branch sem PR não t
 
 ## Para a sessão da fase
 
-O orquestrador cria a sessão com `create_session`: `model` da tabela, `source_url` do repositório, `source_revision` = `epic/<nome>`, nunca `permission_mode: plan`. Mensagem:
+O orquestrador cria a sessão com `create_session`: `model` e `effort` da tabela, `source_url` do repositório, `source_revision` = `epic/<nome>`, nunca `permission_mode: plan`. Mensagem:
 
 ```text
 Você é o agente da fase <código> — <título> da etapa #<etapa> do repositório `fabianofranca/mapping`, no fluxo automatizado (docs/PROCESS.md, "Fluxo automatizado"). Ninguém está olhando esta sessão: não pergunte nada ao dono.

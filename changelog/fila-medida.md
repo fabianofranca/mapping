@@ -3,6 +3,7 @@
 ## Adicionado
 
 - Registro de abertura do épico da etapa #1532 (fila medida e mais barata). As fases FM1 a FM8 acrescentam aqui o que entregarem.
+- Custo e esforço das sessões da fila no painel (`painel.py` e skills `implementar-fila` e `detalhar-backlog`): `session … kind=<tipo> [label=]` e `cost` guardam em `meta.sessions` o custo, o contexto, o modelo e o esforço de cada sessão (do `get_session`), `costs [--desde <ISO>]` imprime o total, os totais por tipo (com mediana) e por etapa, o `show` ganha a linha `custo:` e a página, o card "Custo da fila". As filhas nascem com o `effort` da tabela (fase e testador) ou `medium` (correção), conferido pelo `effort_level`; o `docs/FLOW.md`, o `docs/PROCESS.md` e o `detalhar-backlog` deixam de dizer que o `create_session` só aceita o modelo.
 
 ## Alterado
 
