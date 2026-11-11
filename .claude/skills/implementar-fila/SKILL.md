@@ -11,7 +11,7 @@ Rode este chat em **Sonnet**, no modo **Auto**. Uma sessão filha que pede permi
 
 ## Argumentos
 
-`/implementar-fila [#n ...] [paralelo=N] [mesclar=auto] [modelo=tabela] [sem-confirmar] [painel=<url>|novo] [retomar anterior=<id>]`
+`/implementar-fila [#n ...] [paralelo=N] [mesclar=auto] [modelo=tabela] [sem-confirmar] [painel=<url>|novo] [importar=<url do painel antigo>] [retomar anterior=<id>]`
 
 - `#n ...`: a fila só com essas issues. Sem a lista, todas as `ready`.
 - `paralelo=N`: quantas etapas rodam ao mesmo tempo. O padrão é **2**, com as condições de "Paralelo" abaixo. Com `paralelo=1`, é uma por vez.
@@ -21,6 +21,7 @@ Rode este chat em **Sonnet**, no modo **Auto**. Uma sessão filha que pede permi
 - `modelo=tabela`: usa o modelo de cada linha da tabela da issue. Sem ele, todas as fases e testadores rodam em Sonnet, como o dono pediu no Madrugadão.
 - `sem-confirmar`: começa sem mostrar a ordem ao dono.
 - `painel=<url>`: o painel a usar. Não é preciso passar: sem ele, o coordenador acha o painel de antes ou cria um (seção "Painel" › "Achar ou criar"). `painel=novo` força um painel novo.
+- `importar=<url do painel antigo>`: opcional. Cria um painel novo, como `painel=novo`, e traz do antigo a ordem, os `hold`, as fichas e as linhas que esperam ou estão em andamento (seção "Painel" › "Importar"). O caminho padrão é a troca a quente no mesmo painel ("Troca de sessão" › "Na sessão nova"), sem este argumento.
 - `retomar anterior=<id>`: esta sessão continua a fila de outro coordenador (seção "Troca de sessão").
 
 ## Regras desta fila
@@ -93,7 +94,7 @@ Grave cada linha com `row '#n' plan="<a linha>"` (e `title`, `phases` com as fas
 
 1. `list_issues` (`state: OPEN`, `labels: [ready]`, `fields: [number, title, labels]`, `perPage: 50`). Tire as que têm `step`. Com a lista `#n ...`, use a interseção e diga o que ficou de fora e por quê.
 2. As `in-progress` abertas não entram: estão com outro orquestrador. Mostre-as à parte, como "em andamento noutro chat".
-3. Peça a ficha das candidatas a **um** subagente ("Ficha da etapa"), nunca com `issue_read` no coordenador. A ficha traz o `**Depende de:**`, a severidade ou o impacto, as fases com a sub-issue e o esforço de cada uma, o "Toca em:" de todas as fases, se muda o MCP ou o schema, e a seção **Testador** da última fase. Grave-a no painel (`plan`) antes de seguir.
+3. Peça a ficha das candidatas a **um** subagente ("Ficha da etapa"), nunca com `issue_read` no coordenador. A ficha traz o `**Depende de:**`, a severidade ou o impacto, as fases com a sub-issue e o esforço de cada uma, o "Toca em:" de todas as fases, se muda o MCP ou o schema, e a seção **Testador** da última fase. Grave-a no painel (`plan`) antes de seguir. Com `importar=`, peça a ficha de **todas as linhas importadas**, não só das candidatas novas: o `import` traz a ficha antiga, e ela é refeita pela regra de agora (`?` incluído).
 4. **Ordem:**
    1. Dependências primeiro: uma etapa só começa quando cada "Depende de" já foi mesclado na `main`. Uma dependência fora da fila e ainda aberta deixa a etapa `aguardando`, com o motivo no passo.
    2. Depois, as mudanças do próprio fluxo de entrega (`.github/`, `CLAUDE.md`, `docs/PROCESS.md`, `docs/FLOW.md`, `.claude/`), que valem para as etapas seguintes.
@@ -379,6 +380,14 @@ Grave no `painel.py` **a cada avanço** (fase aberta e mesclada, PR, testador, c
    - Senão, reaproveite: comece os arquivos com `init --force` (a fila nova substitui a anterior; os blobs antigos continuam no artifact) e, se o `files/index.html` dele for diferente da página desta pasta, troque-o por ela (`ArtifactData` `update` com `if_version`).
 3. Não achou, ou precisa de um novo: crie como abaixo.
 
+**Importar** (`importar=<url do painel antigo>`, opcional; a troca a quente não precisa dele):
+
+1. Crie um painel novo, como em **Criar**, e rode `painel.py init <pasta>` numa **pasta nova e vazia** do scratchpad (nunca com `--force` sobre a pasta de uma fila em andamento).
+2. Baixe os três blobs do painel antigo para uma pasta do scratchpad (`<antiga>`): `ArtifactData` `list` de `datasets` e `Artifact` `read` com `path` = o id de cada `/_blob/<id>`. Não imprima os arquivos.
+3. Rode `painel.py import <pasta> <antiga>`. Com a fila da pasta nova não vazia ele sai com código 2 e não grava. O `import` traz as linhas `aguardando`, `em andamento`, `esperando dono` e `falhou` (na ordem, renumeradas), com a ficha, as fases, o passo, o PR, o `started` e o `hold`; das `em andamento`, também `child`, `childAt`, `wait`, `ciWait`, `ciWaitAt` e `sessions`; as `concluída` vão para `meta.merged`; as regras em vigor vêm com a origem. Não vêm custos, pedidos, `roles`, contexto, reserva, `paralelo`, o log nem o `ended`. O `pausada pelo dono` é apagado (era a drenagem da transição) e o `ordem do dono (só com a fila vazia)` vira `exclusive=sim`.
+4. Quem importa com etapa em andamento é o coordenador que as tem. Se as filhas ainda não sabem dele, mande a cada `child` importado `send_message`: "O coordenador mudou: mande seus avisos para `<id desta sessão>`".
+5. No passo 3 de "Fila", peça a ficha de todas as linhas importadas, publique o painel novo e diga o link ao dono.
+
 **Criar:**
 
 1. `Artifact` `quickstart` com `intent: "other"`, que indica o tipo Dashboard. Publique com o `type_url` dele, `title: "Fila de desenvolvimento"` e `auto_open: "after_first_write"`.
@@ -421,8 +430,8 @@ Grave no `painel.py` **a cada avanço** (fase aberta e mesclada, PR, testador, c
 
 1. Leia o painel: `ArtifactData` `list` de `datasets` e `Artifact` `read` com `path` = o id de cada `/_blob/<id>`, com `out_dir` na pasta do scratchpad. Não imprima os arquivos: rode `painel.py show`, que traz os `pedidos do supervisor:` e as `regras em vigor:` (com o texto inteiro), que a sessão nova segue.
 2. Não releia as issues nem as filhas: a ficha (`plan`), as filhas (`child`) e o passo estão no painel, e a sessão antiga já avisou as filhas do seu id. Sem `list_sessions`, sem `list_events` e sem `get_session` das filhas; a conferência de reserva cuida das que atrasarem.
-3. Rode `painel.py start <pasta> --paralelo N` com o N da chamada (repetir não mexe no início da execução), grave o contexto desta sessão com `painel.py context <pasta> <pct>` (o da antiga ficou no painel) e crie a sua conferência de reserva (`painel.py reserve`).
-4. Confira no `painel.py roles <pasta>` que o `coordenador` registrado é esta sessão (a antiga o registrou; se não, registre-se: `painel.py role <pasta> coordenador <id desta sessão> link=https://claude.ai/code/<id desta sessão>`). Depois de avisar as filhas (ou de confirmar que a antiga avisou), a sessão nova **arquiva a `anterior`** (`archive_session`) e confere o estado arquivado no `get_session` dela. Sem ele, faça uma nova tentativa do `archive_session`; sem ele de novo, grave no `log` "coordenador anterior não arquivou: <id>" e mande `PushNotification` ao dono. Com o arquivamento conferido, grave no `log` "coordenador anterior arquivado". Continue de onde parou.
+3. Rode `painel.py upgrade <pasta>` a cada retomada (troca a quente: idempotente; o hold `ordem do dono (só com a fila vazia)` vira `exclusive=sim` e o `log` diz o que mudou) e, se o `files/index.html` do painel for diferente da página desta pasta (`painel/index.html`), troque-o por ela (`ArtifactData` `update` com `if_version`): a página é compatível com o painel sem os campos novos, que ela mostra como "—". Depois rode `painel.py start <pasta> --paralelo N` com o N da chamada (repetir não mexe no início da execução), grave o contexto desta sessão com `painel.py context <pasta> <pct>` (o da antiga ficou no painel) e crie a sua conferência de reserva (`painel.py reserve`).
+4. Confira no `painel.py roles <pasta>` que o `coordenador` registrado é esta sessão (a antiga o registrou; numa troca a quente a antiga é anterior à skill nova e não registrou, então o painel não tem `roles` e o primeiro `role` grava `n` = 1; se não, registre-se: `painel.py role <pasta> coordenador <id desta sessão> link=https://claude.ai/code/<id desta sessão>`). Depois de avisar as filhas (ou de confirmar que a antiga avisou; numa troca a quente ela não avisou: mande a cada `child` `send_message` "O coordenador mudou: mande seus avisos para `<id desta sessão>`"), a sessão nova **arquiva a `anterior`** (`archive_session`) e confere o estado arquivado no `get_session` dela. Sem ele, faça uma nova tentativa do `archive_session`; sem ele de novo, grave no `log` "coordenador anterior não arquivou: <id>" e mande `PushNotification` ao dono. Com o arquivamento conferido, grave no `log` "coordenador anterior arquivado". Continue de onde parou.
 
 ## Fim
 
