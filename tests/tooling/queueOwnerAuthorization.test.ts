@@ -212,6 +212,34 @@ describe('AF2 — painel.py: esperando o dono no chat da fase (#1602, decisão 7
     expect(out).toMatch(/esperando o coordenador: nenhuma/);
   });
 
+  it('o import leva child, wait e sessions da fase que espera o dono (achado da revisão)', () => {
+    esperaODono();
+    run(
+      '2026-11-11T10:01:00Z',
+      'session',
+      dir,
+      '#10',
+      'session_a',
+      'kind=fase',
+      'label=AF2',
+    );
+    const nova = mkdtempSync(path.join(tmpdir(), 'painel-dono-nova-'));
+    try {
+      run('2026-11-11T10:02:00Z', 'init', nova);
+      run('2026-11-11T10:02:00Z', 'import', nova, dir);
+      const out = run('2026-11-11T10:05:00Z', 'show', nova);
+      expect(out).toContain(
+        'esperando o dono no chat da fase: #10 (dono no chat da fase: teto)',
+      );
+      const linha = run('2026-11-11T10:05:00Z', 'show', nova, '#10');
+      expect(linha).toContain('child: session_a');
+      expect(linha).toContain('session_a');
+      expect(linha).toMatch(/sessions:[^\n]*session_a/);
+    } finally {
+      rmSync(nova, { recursive: true, force: true });
+    }
+  });
+
   it('a docstring do topo cita a linha nova', () => {
     const fonte = readFileSync(SCRIPT, 'utf8');
     expect(between(fonte, '"""', '"""\nimport')).toContain(

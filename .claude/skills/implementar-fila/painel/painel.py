@@ -43,7 +43,7 @@ Troca a quente e migração (decisões 17 e 25 da #1532): `upgrade DIR` troca, i
 `ordem do dono (só com a fila vazia)` por `exclusive=sim` (sem hold) e grava no `log` o que mudou (nada, se nada mudou).
 `import DIR-NOVA DIR-ANTIGA` (pasta nova recém-criada com `init`, fila vazia; senão código 2) traz do painel antigo as linhas
 `aguardando`, `em andamento`, `esperando dono` e `falhou`, na ordem e renumeradas, com a ficha, as fases, o passo, o PR, o
-`started` e o `hold` (as `em andamento` levam também `child`, `childAt`, `wait`, `ciWait`, `ciWaitAt` e `sessions`); as
+`started` e o `hold` (as `em andamento` e as `esperando dono` com `child` e `wait` levam também `child`, `childAt`, `wait`, `ciWait`, `ciWaitAt` e `sessions`); as
 `concluída` vão para `meta.merged` (com o antigo, sem repetir) e as regras em vigor de `meta.rules` vêm com a origem. Não vem
 o `ended`, nem do `meta` o `sessions`, `requests`, `current`, `paralelo`, `reserve`, `context`, `roles` e `unpublished`, nem o
 log. Os holds usam a conversão do `upgrade`; o `pausada pelo dono` (a drenagem da transição) é apagado. Uma linha no `log`
@@ -755,7 +755,10 @@ def cmd_upgrade(a):
 def imported_row(old, order):
     """A linha nova, só com o que o `import` traz (o resto fica no vazio padrão)."""
     row = dict(QUEUE_EMPTY)
-    for k in IMPORT_FIELDS + (IMPORT_RUNNING_FIELDS if old.get("status") == "em andamento" else []):
+    # `esperando dono` com child e wait é a fase que espera o dono no chat dela (#1602); o merge pedido não leva nada disso
+    running = old.get("status") == "em andamento" or (
+        old.get("status") == "esperando dono" and old.get("child") and old.get("wait"))
+    for k in IMPORT_FIELDS + (IMPORT_RUNNING_FIELDS if running else []):
         if k in old:
             row[k] = old[k]
     row["order"] = order
