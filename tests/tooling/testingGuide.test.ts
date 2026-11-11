@@ -321,7 +321,9 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
     expect(prompt).toMatch(/lista de roteiros/);
     expect(prompt).toMatch(/fases de uma etapa/);
     expect(prompt).toContain('Relato na sub-issue #');
-    expect(prompt).toContain('Sair da revisão?');
+    expect(`${prompt}\n${read('docs/TESTING-NUVEM-CONSULTA.md')}`).toContain(
+      'Sair da revisão?',
+    );
     expect(prompt).not.toMatch(/mcp-v0\.\d/);
   });
 
@@ -331,7 +333,9 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
       expect(text).toContain('scripts/testing/mcp-stdio-client.mjs');
     }
     expect(prompt).toContain('não executado (precisa do dono)');
-    expect(prompt).toContain('pendente de decisão');
+    expect(`${prompt}\n${read('docs/TESTING-NUVEM-CONSULTA.md')}`).toContain(
+      'pendente de decisão',
+    );
     expect(read('docs/PROCESS.md')).toContain('pendente de decisão');
   });
 
@@ -883,9 +887,12 @@ describe('TR3 — preparos que não sobrescrevem e mensagens alinhadas', () => {
     for (const m of messages) {
       expect(m).toContain('Tag da release: <mcp-v…-rc.n, ou "sem R21">');
     }
-    const r21 = cloud.slice(
-      cloud.indexOf('**R21 e a tag da release.**'),
-      cloud.indexOf('**Rodada dirigida.**'),
+    // A regra moveu-se para o `consulta.regras` (TE1); o prompt aponta para ela e diz o essencial.
+    expect(cloud).toContain('cloud.mjs secao consulta.regras');
+    const consulta = read('docs/TESTING-NUVEM-CONSULTA.md');
+    const r21 = consulta.slice(
+      consulta.indexOf('**R21 e a tag da release.**'),
+      consulta.indexOf('## Histórico dos blocos'),
     );
     expect(r21).toContain('sem R21');
     expect(r21).toMatch(/sem R21[^\n]*(não execute|pule|fora)/i);
@@ -917,16 +924,21 @@ describe('TS2 — prompt com o guia da rodada, primeiro plano, state() e relato 
   it('GL2 — lê a base do guia no começo e os roteiros sob demanda, pelo cloud.mjs passo (#1232, decisão 10)', () => {
     const item3 = first10.slice(first10.indexOf('\n3. '), first10.indexOf('\n4. '));
     expect(first10).toContain('apoio/guia-base.md');
-    expect(first10).toContain('apoio/guia-indice.tsv');
+    expect(first10).toContain('guia-indice.tsv');
     expect(first10).toContain('cloud.mjs passo');
     expect(first10).not.toMatch(/Leia o `apoio\/guia\.md` inteiro/);
     expect(cloud.slice(0, cloud.indexOf('## Papel e limites'))).toMatch(
-      /guia-base da rodada[^\n]*roteiros, sob demanda/,
+      /guia-base da rodada[^\n]*roteiros e as seções sob demanda/,
     );
-    expect(item3).toMatch(/guia-base\.md` inteiro, em pedaços abaixo de 25 mil tokens/);
+    expect(item3).toMatch(
+      /guia-base\.md` inteiro\*\*, em pedaços abaixo de 25 mil tokens/,
+    );
+    expect(item3).toMatch(
+      /cloud\.mjs secao <chave…>` \*\*na hora que a linha dela indica/,
+    );
     expect(item3).toMatch(/cloud\.mjs passo <Rn>` antes de começá-lo/);
     expect(item3).toMatch(/lotes de até 8 \(`cloud\.mjs passo <Rn\.a>-<Rn\.b>`\)/);
-    expect(item3).toMatch(/`guia\.md`[^\n]*Grep[^\n]*nunca com `Read` inteiro/);
+    expect(item3).toMatch(/`guia\.md` serve só para `Grep`/);
     expect(item3).toMatch(/`guia\.md`, `guia-base\.md` e `guia-indice\.tsv`/);
     expect(first10).toMatch(/item 3 gera o \*\*guia da rodada\*\* e a base/);
   });
@@ -939,18 +951,23 @@ describe('TS2 — prompt com o guia da rodada, primeiro plano, state() e relato 
   });
 
   it('GL2 — os itens 1 dos modos de bloco e de grupo citam o guia-base e o passo, e o relato registra o que o passo não deu', () => {
+    const withConsulta = `${cloud}\n${read('docs/TESTING-NUVEM-CONSULTA.md')}`;
     for (const heading of [
       '**Modo "completo, bloco k de 5".**',
       '**Modo "dirigido, grupo k de n".**',
     ]) {
-      const from = cloud.indexOf(heading);
-      const item1 = cloud.slice(cloud.indexOf('1. ', from), cloud.indexOf('\n2. ', from));
+      const from = withConsulta.indexOf(heading);
+      const item1 = withConsulta.slice(
+        withConsulta.indexOf('1. ', from),
+        withConsulta.indexOf('\n2. ', from),
+      );
       expect(item1).toMatch(
-        /leia o `guia-base\.md` e peça os roteiros pelo `passo` \(item 3\)/,
+        /leia o `guia-base\.md` inteiro e peça os roteiros pelo `passo` e as seções sob demanda pelo `secao` \(item 3\)/,
       );
     }
     const relato = cloud.slice(cloud.indexOf('## Relato'));
     expect(relato).toMatch(/`passo` não deu o que o passo precisava/);
+    expect(relato).toMatch(/quantas chamadas ao `passo` e quantas ao `secao`/);
   });
 
   it('o cloud-up.sh roda em primeiro plano, com timeout de 600000 ms e sem run_in_background', () => {
@@ -1186,14 +1203,28 @@ describe('TR4 — rodada dirigida em grupos e reteste junto', () => {
   const skill = read('.claude/skills/implementar-fila/SKILL.md');
 
   it('o prompt tem o limite (40 passos sem o R0, até 5 sessões) e o modo "grupo k de n"', () => {
-    const section = cloud.slice(cloud.indexOf('## Rodada dirigida em grupos'));
+    // O resumo fica no prompt; o corpo moveu-se para o `consulta.grupos` (TE1).
+    const consulta = read('docs/TESTING-NUVEM-CONSULTA.md');
+    const summary = cloud.slice(
+      cloud.indexOf('## Rodada dirigida em grupos'),
+      cloud.indexOf('## Conferir e registrar'),
+    );
+    expect(summary).toMatch(/passa de \*\*40 passos\*\*/);
+    expect(summary).toMatch(/no máximo \*\*5 sessões/);
+    expect(summary).toContain('cloud.mjs secao consulta.grupos');
+    const section = consulta.slice(
+      consulta.indexOf('## Rodada dirigida em grupos'),
+      consulta.indexOf('## Passada visual'),
+    );
     expect(section).toMatch(/passa de \*\*40 passos\*\*/);
     expect(section).toMatch(/no máximo \*\*5 sessões/);
     expect(section).toContain('round-guide.mjs --grupos');
-    expect(cloud).toContain('execute no modo dirigido, grupo k de n');
-    expect(cloud).toContain('Modo: dirigido, grupo k de n (<roteiros>)');
-    expect(cloud).toContain('Rodada dirigida — grupo k de n');
-    expect(cloud).toMatch(/aviso ao coordenador[^\n]*grupo/i);
+    expect(section).toContain('execute no modo dirigido, grupo k de n');
+    expect(`${cloud}\n${consulta}`).toContain(
+      'Modo: dirigido, grupo k de n (<roteiros>)',
+    );
+    expect(section).toContain('Rodada dirigida — grupo k de n');
+    expect(section).toMatch(/aviso ao coordenador[^\n]*grupo/i);
     expect(section).toMatch(/grupo 1[^\n]*R0 inteiro/);
     expect(section).toMatch(/R0\.1/);
   });
@@ -1256,5 +1287,32 @@ describe('CL1 — roteiro do R9.24 a R9.28 (etapa #701)', () => {
   it('o R9.24 não espera membership (só lista quem mudou de pai)', () => {
     expect(row('R9.24')).not.toBe('');
     expect(row('R9.24')).not.toContain('membership');
+  });
+});
+
+// Etapa #1533 (TE1, decisão 4): o prompt do testador é lido inteiro; o que só alguns leem fica no CONSULTA.
+describe('docs/TESTING-NUVEM.md enxuto e TESTING-NUVEM-CONSULTA.md (#1533, TE1)', () => {
+  const cloud = read('docs/TESTING-NUVEM.md');
+  const consulta = read('docs/TESTING-NUVEM-CONSULTA.md');
+
+  it('o TESTING-NUVEM.md tem até 32.000 caracteres', () => {
+    expect(cloud.length).toBeLessThanOrEqual(32_000);
+  });
+
+  it('o CONSULTA traz as três chaves e o TESTING-NUVEM.md aponta para o secao de cada uma', () => {
+    for (const [key, title] of [
+      ['consulta.grupos', '## Rodada dirigida em grupos'],
+      ['consulta.passada', '## Passada visual'],
+      ['consulta.regras', '## Regras de exceção'],
+      ['consulta.historico', '## Histórico dos blocos'],
+    ] as const) {
+      expect(consulta, key).toContain(title);
+      expect(cloud, key).toContain(`cloud.mjs secao ${key}`);
+    }
+  });
+
+  it('os títulos que o FLOW e o PROCESS linkam continuam no TESTING-NUVEM.md', () => {
+    expect(cloud).toMatch(/^## Rodada completa em blocos$/m);
+    expect(cloud).toMatch(/^## Rodada dirigida em grupos$/m);
   });
 });
