@@ -1,6 +1,7 @@
 name: CI
 
-# Cópia descartável de teste (teste/ci-abandono): sem o job `epic`; `check` falha na tentativa 1.
+# Cópia descartável de teste (teste/ci-abandono): sem o job `epic`; `check` falha na tentativa 1;
+# vitest omitido (os testes de tests/tooling leem este arquivo e falhariam, o que seria falha legítima).
 on:
   pull_request:
     types: [opened, synchronize, reopened]
@@ -50,19 +51,7 @@ jobs:
       matrix:
         shard: [1, 2, 3, 4]
     steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ inputs.ref }}
-      - uses: ./.github/actions/setup-deps
-      - run: npx vitest run --coverage --shard=${{ matrix.shard }}/4 --reporter=blob
-        env:
-          COVERAGE_REPORT: off
-      - uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          name: vitest-blob${{ inputs.label && format('-{0}', inputs.label) || '' }}-${{ matrix.shard }}
-          path: .vitest/blob
-          if-no-files-found: ignore
+      - run: echo "teste - vitest omitido no shard ${{ matrix.shard }}"
 
   coverage:
     needs: test
@@ -70,22 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ inputs.ref }}
-      - uses: ./.github/actions/setup-deps
-      - uses: actions/download-artifact@v7
-        with:
-          pattern: vitest-blob${{ inputs.label && format('-{0}', inputs.label) || '' }}-*
-          path: .vitest/blob
-          merge-multiple: true
-      - run: npx vitest run --merge-reports --coverage
-      - uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          name: coverage${{ inputs.label && format('-{0}', inputs.label) || '' }}
-          path: coverage
-          if-no-files-found: ignore
+      - run: echo "teste - cobertura omitida"
 
   build:
     runs-on: ubuntu-latest
@@ -97,11 +71,7 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
       - uses: ./.github/actions/setup-deps
-      - run: npm run test:perf
-      - run: npm run test:scale
       - run: npm run build
-      - run: npm run build:mcp
-      - run: npm run build:viewer --if-present
       - name: Tamanho do dist/index.html
         run: |
           size=$(stat -c %s dist/index.html)
@@ -136,38 +106,4 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 7
     steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ inputs.ref }}
-      - uses: ./.github/actions/setup-deps
-      - name: Versão do Playwright
-        id: playwright
-        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache@v5
-        id: browser
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
-      - if: steps.browser.outputs.cache-hit != 'true'
-        run: npx playwright install chromium
-      - name: Chromium abre?
-        id: chromium
-        run: |
-          exe=$(node -p "require('@playwright/test').chromium.executablePath()")
-          if [ -x "$exe" ] && ! ldd "$exe" | grep -q 'not found' && "$exe" --headless --no-sandbox --version; then
-            echo "ok=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "ok=false" >> "$GITHUB_OUTPUT"
-          fi
-      - if: steps.chromium.outputs.ok != 'true'
-        run: npx playwright install-deps chromium
-      - run: npm run build
-      - run: npm run test:e2e
-      - uses: actions/upload-artifact@v7
-        if: failure()
-        with:
-          name: playwright-report${{ inputs.label && format('-{0}', inputs.label) || '' }}
-          path: |
-            playwright-report
-            test-results
-          if-no-files-found: ignore
+      - run: echo "teste - e2e omitido"
