@@ -798,7 +798,7 @@ export function registerTools(
     {
       description:
         'Prévia de um lote de alterações: valida contra as regras do Mapping e devolve se é válido, os erros por operação, um resumo legível, as contagens, as pendências novas (`issues`), os avisos novos da especialização (`notices.new`: os avisos de tipo, campo ou coluna que as anotações criadas ou alteradas passam a ter; aviso não bloqueia nada), as referências dos itens que serão criados e quantas mudanças o usuário teria de revisar. NÃO grava nada (nem proposta). ' +
-        'As operações são aplicadas em ordem; um item criado pode ser citado nas seguintes pelo apelido de `as` (ex: "$porta"). Itens trancados não podem ser movidos, redimensionados nem excluídos. Para enviar a alteração ao usuário, use propose_changes (o agente nunca grava o projeto direto).',
+        'As operações são aplicadas em ordem; um item criado pode ser citado nas seguintes pelo apelido de `as` (ex: "$porta"). Itens trancados não podem ser movidos, redimensionados nem excluídos. O retângulo não acompanha sozinho o conteúdo: depois de mudar um valor que o altera (texto, campo que liga ou desliga uma parte) num componente cujo `sizing` é `hug` ou por expressão, inclua `fit_marking` na mesma marcação. Para enviar a alteração ao usuário, use propose_changes (o agente nunca grava o projeto direto).',
       inputSchema: {
         project: projectArg,
         ...batchOperationsArgs,

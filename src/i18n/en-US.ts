@@ -140,6 +140,8 @@ export const enUS: Dictionary = {
   'marking.error.rect-outside-parent': 'The marking must stay inside its parent marking.',
   'marking.error.invalid-parent': 'That marking cannot be the parent.',
   'marking.error.invalid-space': 'Only a canvas marking can be floating.',
+  'marking.error.not-fittable':
+    'Only a component whose size depends on its content (hug) and that has no markings inside can be fitted to its content.',
   'marking.error.not-arrangeable':
     'Only a row or column container that has markings inside can be arranged.',
   'marking.error.generic': 'Could not change the marking.',
@@ -1179,6 +1181,7 @@ export const enUS: Dictionary = {
   'marking.orderFront': 'Move forward',
   'arrange.action': 'Arrange',
   'arrange.hint': "Arranges the inner markings by the container's layout.",
+  'arrange.hintFit': "Fits the marking's size to the component's content.",
   'arrange.done': 'Arranged',
   'arrange.doneWarnings': 'Arranged with {count} warning(s): {first}',
   'arrange.nothing': 'Nothing to arrange',

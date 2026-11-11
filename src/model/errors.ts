@@ -62,6 +62,7 @@ export type ModelErrorCode =
   | 'invalid-source'
   // Componentes (etapa Biblioteca)
   | 'not-arrangeable'
+  | 'not-fittable'
   // Perspectivas (v16): o nome é vazio ou repetido; o id não é de uma raiz
   | 'perspective-name-empty'
   | 'perspective-name-taken'
