@@ -773,10 +773,10 @@ def cmd_import(a):
         if row["hold"] == HOLD_PAUSED:
             row["hold"] = ""
             holds.append(f"{row['issue']} apagado")
-        elif convert_hold(row):
-            pass
-        elif row["hold"]:
-            holds.append(f"{row['issue']} mantido")
+        else:
+            convert_hold(row)
+            if row["hold"]:
+                holds.append(f"{row['issue']} mantido")
         if row["exclusive"] == "sim":
             exclusive.append(row["issue"])
     new.get("queue").extend(rows)
