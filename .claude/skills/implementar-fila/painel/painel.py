@@ -33,6 +33,9 @@ created}` a `meta.sessions` (sem `kind`, só o `sessions` da linha, como antes);
 served=] [issue= kind=]` grava o custo da sessão (`kind` obrigatório com id novo); `costs [--desde <ISO>] DIR` lê só o `meta`
 e imprime o total, uma linha por tipo (sessões, US$, mediana) e uma por etapa (com `--desde`, só as com `created` a partir
 da data); o `show` traz a linha `custo:`.
+Teto do testador (decisão 9 da #1639): `cost` de sessão `testador` ou `reteste` com `ctx` acima de TESTER_CONTEXT_LIMIT
+grava como sempre, sai com 0 e imprime `acima do teto do testador (300 mil): <id> <ctx>`; o `show` traz `testador acima do
+teto: <etapa> <rótulo> <ctx em mil>k; …` (ou `nenhum`), só das etapas não `concluída` e fora de `meta.merged`.
 Sessão atual de cada papel (decisão 7 da #1532): `role DIR <coordenador|supervisor> <id> [link=<url>]` grava
 `meta.roles.<papel> = {id, n, at, link, previous}` (`previous` = o id registrado antes) com `n` = o anterior + 1 (ou 1); `roles DIR` lê só o `meta` e imprime
 `coordenador <n>: <id>` e `supervisor <n>: <id> (<link>)`, ou `—`. A sessão que não é a registrada não age.
@@ -58,6 +61,7 @@ import argparse
 import datetime
 import fnmatch
 import json
+import math
 import os
 import re
 import shlex
@@ -71,6 +75,8 @@ STAGES = ["", "Fases", "Testador", "Correção", "Fechamento", "Mesclada"]
 FILES = ["queue", "meta", "log"]
 SESSION_KINDS = ["fase", "correção", "testador", "reteste", "fechamento", "coordenador", "supervisor"]
 CONTEXT_LIMIT = 35
+TESTER_CONTEXT_LIMIT = 300000  # teto de contexto final do testador (decisões 8 e 9 da #1639): só se registra, não segura
+TESTER_KINDS = ["testador", "reteste"]
 ROLES = ["coordenador", "supervisor"]
 HOLD_EMPTY_QUEUE = "ordem do dono (só com a fila vazia)"  # vira exclusive=sim (decisões 12, 17 e 25)
 HOLD_PAUSED = "pausada pelo dono"  # a drenagem da transição: o `import` o apaga, o `upgrade` o deixa
@@ -483,6 +489,23 @@ def cmd_cost(a):
     entry["cost"] = cost
     s.touch("meta")
     s.commit()
+    if over_tester_limit(entry):
+        print(f"acima do teto do testador ({TESTER_CONTEXT_LIMIT // 1000} mil): {a.session} {ctx}")
+
+
+def over_tester_limit(e):
+    """Sessão de testador ou de reteste com o contexto final acima do teto."""
+    ctx = (e.get("cost") or {}).get("ctx")
+    return (e.get("kind") in TESTER_KINDS and isinstance(ctx, (int, float))
+            and ctx > TESTER_CONTEXT_LIMIT)
+
+
+def tester_over_limit_text(q, meta):
+    """`testador acima do teto:` do `show`: `<etapa> <rótulo> <ctx em mil>k` das etapas ainda não entregues."""
+    done = set(meta.get("merged") or []) | {r["issue"] for r in q if r["status"] == "concluída"}
+    return "; ".join(
+        f"{e.get('issue') or '—'} {e.get('label') or e['id']} {math.ceil(e['cost']['ctx'] / 1000)}k"
+        for e in meta.get("sessions", []) if over_tester_limit(e) and e.get("issue") not in done) or "nenhum"
 
 
 def costed(meta, since=None):
@@ -1191,6 +1214,7 @@ def cmd_show(a):
     else:
         print("não publicado: nenhum")
     print(f"custo: {cost_summary(meta)}")
+    print(f"testador acima do teto: {tester_over_limit_text(q, meta)}")
     print(f"pedidos do supervisor: {requests_summary(meta)}")
     print_rules(meta)
     ctx = meta.get("context")

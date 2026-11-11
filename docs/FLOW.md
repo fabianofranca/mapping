@@ -179,24 +179,25 @@ Esse chat é o coordenador: cria os cinco blocos como acima (relato na issue `#<
 
 ## Resumo da rodada em blocos
 
-Um comentário curto na mesma sub-issue (ou issue), depois dos cinco avisos. Na rodada dirigida em grupos, o mesmo template vale com "Grupo" no lugar de "Bloco", as linhas dos n grupos e o título "Rodada dirigida em grupos — resumo". O coordenador não reescreve os relatos: só soma e aponta para eles.
+Um comentário curto na mesma sub-issue (ou issue), depois dos cinco avisos. Na rodada dirigida em grupos, o mesmo template vale com "Grupo" no lugar de "Bloco", as linhas dos n grupos e o título "Rodada dirigida em grupos — resumo". A coluna **Contexto** traz o `ctx` em mil do `cost` gravado ao arquivar a sessão do bloco (ou do grupo) e vale também para os grupos; a linha **Contexto:** lista o que passou de 300 mil ([`docs/TESTING-NUVEM.md`](TESTING-NUVEM.md), "Contexto até 300 mil"), sem segurar a etapa. O coordenador não reescreve os relatos: só soma e aponta para eles.
 
 ```markdown
 ## Rodada completa em blocos — resumo
 
 Branch `<branch>`, commit `<hash>`.
 
-| Bloco | ✅  | ❌  | não executado | Tempo             |
-| ----- | --- | --- | ------------- | ----------------- |
-| 1     | N   | N   | N             | <min>             |
-| 2     | N   | N   | N             | <min>             |
-| 3     | N   | N   | N             | <min>             |
-| 4     | N   | N   | N             | <min>             |
-| 5     | N   | N   | N             | <min>             |
-| Total | N   | N   | N             | <soma dos blocos> |
+| Bloco | ✅  | ❌  | não executado | Tempo             | Contexto |
+| ----- | --- | --- | ------------- | ----------------- | -------- |
+| 1     | N   | N   | N             | <min>             | <ctx>k   |
+| 2     | N   | N   | N             | <min>             | <ctx>k   |
+| 3     | N   | N   | N             | <min>             | <ctx>k   |
+| 4     | N   | N   | N             | <min>             | <ctx>k   |
+| 5     | N   | N   | N             | <min>             | <ctx>k   |
+| Total | N   | N   | N             | <soma dos blocos> | —        |
 
 - **Achados por severidade:** bloqueia N, alta N, média N, baixa N.
   - <k.n> — <título> — <severidade> — <link do comentário>
+- **Contexto:** acima do teto (300 mil): <bloco ou grupo, ctx> ou nenhum.
 - **Tempo:** soma dos blocos <min>; tempo de parede <min> (da criação do primeiro bloco ao último aviso). Os tempos de cada bloco são os do relato ("Tempo por roteiro"); sem o dado, "tempo não medido".
 - **Relatos:** bloco 1 <link>, bloco 2 <link>, bloco 3 <link>, bloco 4 <link>, bloco 5 <link>.
 
