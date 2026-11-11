@@ -381,7 +381,7 @@ Também conta como achado: lentidão perceptível (mais de um segundo para respo
 <!-- /roteiros -->
 <!-- roteiros: R25 -->
 
-- R25 usa a pasta própria `fiel` (projeto em pasta, criado pela app no R25.3, dentro de `RAIZ`, como as demais pastas `fiel-*` do roteiro) e as bibliotecas `m3-fiel` e `m3-fiel-v3` que a shell monta no R25.1 e no R25.2 a partir de `libraries/material3-compose/` (o `scripts/testing/fiel.mjs` do repositório), a shell com o ImageMagick, o cliente MCP por stdio (só no R25.1, no R25.2, no R25.22 e no R25.23) e a app; os passos seguem em sequência e não dependem de nenhum outro roteiro. Sem o MCP, marque o R25.1 e o R25.2 "não executado (sem MCP)" e monte a `m3-fiel` pela shell (o `node REPO/scripts/testing/fiel.mjs RAIZ/m3-fiel 4`) para seguir do R25.3.
+- R25 usa a pasta própria `fiel` (projeto em pasta, criado pela app no R25.3, em `RAIZ`) e as bibliotecas `m3-fiel` e `m3-fiel-v3` que a shell monta no R25.1 e no R25.2 a partir de `libraries/material3-compose/` (o `fiel.mjs` do repositório), a shell com o ImageMagick, o cliente MCP por stdio (R25.1, R25.2, R25.22 e R25.23) e a app; os passos seguem em sequência, sem depender de outro roteiro. Sem o MCP, marque o R25.1 e o R25.2 "não executado (sem MCP)" e monte a `m3-fiel` pela shell (o `node REPO/scripts/testing/fiel.mjs RAIZ/m3-fiel 4`) para seguir do R25.3.
 
 <!-- /roteiros -->
 <!-- roteiros: R25 -->
