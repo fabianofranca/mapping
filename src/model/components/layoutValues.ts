@@ -2,7 +2,13 @@
  * Motor dos componentes: conferência dos valores de layout que chegam por expressão
  * (`formatVersion` 4). Funções puras: o valor já avaliado entra, o valor válido (ou nenhum) sai.
  */
-import type { LayoutAlign, LayoutJustify, LayoutType, SizeSpec } from './componentFormat';
+import type {
+  LayoutAlign,
+  LayoutJustify,
+  LayoutType,
+  LayoutWrap,
+  SizeSpec,
+} from './componentFormat';
 
 export const LAYOUT_TYPES: readonly LayoutType[] = ['none', 'row', 'column'];
 export const LAYOUT_ALIGNS: readonly LayoutAlign[] = [
@@ -20,6 +26,7 @@ export const LAYOUT_JUSTIFIES: readonly LayoutJustify[] = [
   'space-around',
   'space-evenly',
 ];
+export const LAYOUT_WRAPS: readonly LayoutWrap[] = ['none', 'wrap', 'wrap-reverse'];
 
 /**
  * Onde começa o primeiro filho (`offset`) e o vão a mais entre filhos (`extra`) no eixo principal,

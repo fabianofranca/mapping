@@ -172,6 +172,21 @@ const COMPONENT_CASES: readonly ((c: Raw) => void)[] = [
       ],
     };
   },
+  // Quebra de fileira (MC4): `lineGap`, `maxPerLine` e `maxLines` sem `wrap`.
+  (c) => {
+    c.template = {
+      type: 'frame',
+      layout: { type: 'row', lineGap: 4, maxPerLine: 2, maxLines: 1 },
+      children: [
+        {
+          type: 'repeat',
+          count: 2,
+          lineGap: 1,
+          template: { type: 'frame', children: [] },
+        },
+      ],
+    };
+  },
 ];
 
 describe('mensagens do componente', () => {

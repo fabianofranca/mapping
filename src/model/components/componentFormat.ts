@@ -256,6 +256,8 @@ export type LayoutType = 'none' | 'row' | 'column';
 export type LayoutAlign = 'start' | 'center' | 'end' | 'stretch' | 'baseline';
 export type LayoutJustify =
   'start' | 'center' | 'end' | 'space-between' | 'space-around' | 'space-evenly';
+/** Quebra de fileira (v4): `none` (padrão), `wrap` ou `wrap-reverse`, como o `flex-wrap` do CSS. */
+export type LayoutWrap = 'none' | 'wrap' | 'wrap-reverse';
 
 /**
  * Layout dos filhos. Na `formatVersion` 4, `type`, `align` e `justify` aceitam expressão (o valor
@@ -281,6 +283,19 @@ export interface LayoutSpec {
    * `row-reverse`/`column-reverse` do CSS (v4; booleano ou expressão; padrão `false`).
    */
   readonly reverse?: BoolExpr;
+  /**
+   * Quebra de fileira (v4; só em `row`/`column`): com `wrap` ou `wrap-reverse`, o filho que não
+   * cabe no que resta do eixo principal vai para a linha seguinte, como o `flex-wrap` do CSS (o
+   * `FlowRow`/`FlowColumn` do Compose). `wrap-reverse` empilha as linhas no sentido contrário do
+   * eixo cruzado. Padrão `none`.
+   */
+  readonly wrap?: Expr<LayoutWrap>;
+  /** Espaço entre as linhas, em px (v4; só com `wrap`; padrão 0). O `gap` fica entre os filhos da linha. */
+  readonly lineGap?: Expr<number>;
+  /** Filhos por linha, no máximo (v4; só com `wrap`; inteiro ≥ 1; o `maxItemsInEachRow` do Compose). */
+  readonly maxPerLine?: Expr<number>;
+  /** Linhas, no máximo (v4; só com `wrap`; inteiro ≥ 1): os filhos além da última não são desenhados. */
+  readonly maxLines?: Expr<number>;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -449,6 +464,15 @@ export interface RepeatTemplate extends TemplateNodeBase {
    * `hug` no eixo das linhas.
    */
   readonly distribute?: 'none' | 'fill';
+  /**
+   * `formatVersion` 4: quebra do `repeat` em linha (`direction: "row"`; em `column`, as colunas), com
+   * o mesmo sentido de `layout.wrap`, `lineGap`, `maxPerLine` e `maxLines` de um quadro (o `repeat`
+   * não tem `layout`).
+   */
+  readonly wrap?: Expr<LayoutWrap>;
+  readonly lineGap?: Expr<number>;
+  readonly maxPerLine?: Expr<number>;
+  readonly maxLines?: Expr<number>;
   /** O desenho de uma linha. */
   readonly template: FrameTemplate;
 }

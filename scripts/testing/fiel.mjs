@@ -466,6 +466,51 @@ if (version >= 4) {
   );
 }
 
+// MC4 (R25.98 e R25.99): o `flow-row` vira uma peça de 140 × 80 com a quebra de fileira. Uma `row` `hug`
+// (em 10, 10, com 120 de largura) com `wrap`, `gap` 4 e `lineGap` 6 e cinco caixas de 36 × 20 de cores
+// diferentes (`#B71C1C`, `#0D47A1`, `#1B5E20`, `#E65100` e `#4A148C`): três na primeira linha (x 10,
+// 50 e 90; y 10) e duas na segunda (x 10 e 50; y 36). Só na versão 4 (`wrap` não existe antes dela; o
+// R25.2 segue com as oito peças e 15 erros).
+if (version >= 4) {
+  const box = (name, color) => ({
+    type: 'rect',
+    name,
+    width: 36,
+    height: 20,
+    fill: color,
+  });
+  write(
+    'flow-row',
+    'FlowRow',
+    { width: 140, height: 80 },
+    {
+      type: 'frame',
+      name: 'quebra',
+      width: 140,
+      height: 80,
+      layout: { type: 'none' },
+      fill: '#FFFFFF',
+      children: [
+        {
+          type: 'frame',
+          name: 'fileira',
+          anchors: { left: 10, top: 10 },
+          width: 120,
+          height: 'hug',
+          layout: { type: 'row', gap: 4, wrap: 'wrap', lineGap: 6 },
+          children: [
+            box('k1', '#B71C1C'),
+            box('k2', '#0D47A1'),
+            box('k3', '#1B5E20'),
+            box('k4', '#E65100'),
+            box('k5', '#4A148C'),
+          ],
+        },
+      ],
+    },
+  );
+}
+
 // Os componentes mínimos acima não desenham o `interaction`: sem tirar o campo e os exemplos que o
 // usam, o validador avisa "campo não usado" (R25.1).
 const specFile = process.argv[2] + '/material3-compose.spec.json';

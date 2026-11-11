@@ -223,6 +223,8 @@ describe('findSlot / hasSlot / resolveSlotLayout', () => {
       align: 'start',
       justify: 'center',
       reverse: false,
+      wrap: 'none',
+      lineGap: 0,
     });
     // Sem valores: `default` da expressão no gap; padding sem padrão vale 0.
     expect(resolveSlotLayout(slot, {})).toMatchObject({
@@ -604,5 +606,173 @@ describe('arrange: gap e padding do slot em $token (#948)', () => {
     const result = arrange(screen, tokenLibrary('dark'), measure);
     expect(boxOf(result, 'a').x).toBe(CONTAINER_BOX.x + 20);
     expect(boxOf(result, 'b').x).toBe(CONTAINER_BOX.x + 20 + 40 + 12);
+  });
+});
+
+// --- MC4: quebra de fileira (wrap) no slot (decisão 12 da #898) -------------------------------
+
+describe('arrange: wrap no slot (MC4)', () => {
+  function wrapLibrary(slotLayout: Record<string, unknown>) {
+    const flowComponent = {
+      format: 'mapping-component',
+      formatVersion: 4,
+      id: 'flow',
+      name: 'flow',
+      size: { width: 320, height: 200 },
+      template: {
+        type: 'frame',
+        layout: { type: 'none' },
+        children: [{ type: 'slot', width: 'fill', height: 'fill', layout: slotLayout }],
+      },
+    };
+    const leafComponent = COMPONENTS.find((c) => c.id === 'leaf');
+    const spec = {
+      format: 'mapping-spec',
+      formatVersion: 4,
+      id: 'wrap-test',
+      name: 'Wrap',
+      layers: [
+        {
+          id: 'ui',
+          name: 'UI',
+          color: '#1E88E5',
+          annotationTypes: [
+            { id: 'flow', name: 'flow', component: 'components/flow.json', fields: [] },
+            { id: 'leaf', name: 'leaf', component: 'components/leaf.json', fields: [] },
+          ],
+        },
+      ],
+    };
+    return loadLibrary([
+      { path: 'spec.json', text: JSON.stringify(spec) },
+      { path: 'components/flow.json', text: JSON.stringify(flowComponent) },
+      { path: 'components/leaf.json', text: JSON.stringify(leafComponent) },
+    ]);
+  }
+
+  const FLOW_BOX: Box = { x: 100, y: 50, width: 320, height: 200 };
+
+  function flowScreen(count: number, height = 20): Screen {
+    return screenOf(
+      host('c', 'flow', FLOW_BOX, {}),
+      ...Array.from({ length: count }, (_, i) => leaf(`k${i}`, 100, 'c', height)),
+    );
+  }
+
+  const place = (slotLayout: Record<string, unknown>, count = 5, height = 20) => {
+    const lib = wrapLibrary(slotLayout);
+    const result = arrange(flowScreen(count, height), lib, measure);
+    return (i: number) => {
+      const b = boxOf(result, `k${i}`);
+      return { x: b.x - FLOW_BOX.x, y: b.y - FLOW_BOX.y };
+    };
+  };
+
+  it('a biblioteca com wrap carrega e resolveSlotLayout traz as chaves novas', () => {
+    const lib = wrapLibrary({
+      type: 'row',
+      wrap: 'wrap-reverse',
+      lineGap: 12,
+      maxPerLine: 3,
+      maxLines: 2,
+    });
+    expect(lib.problems).toEqual([]);
+    const slot = findSlot(lib.types.find((t) => t.id === 'flow')?.component as never);
+    expect(resolveSlotLayout(slot as never, {})).toMatchObject({
+      wrap: 'wrap-reverse',
+      lineGap: 12,
+      maxPerLine: 3,
+      maxLines: 2,
+    });
+    const plain = wrapLibrary({ type: 'row' });
+    const plainSlot = findSlot(
+      plain.types.find((t) => t.id === 'flow')?.component as never,
+    );
+    expect(resolveSlotLayout(plainSlot as never, {})).toMatchObject({
+      wrap: 'none',
+      lineGap: 0,
+    });
+  });
+
+  it('5 filhas de 100 numa row de 320, gap 8, lineGap 12: 3 + 2 (o FlowRow do Compose)', () => {
+    const at = place({ type: 'row', gap: 8, wrap: 'wrap', lineGap: 12 });
+    expect([0, 1, 2].map((i) => at(i).x)).toEqual([0, 108, 216]);
+    expect([0, 1, 2].map((i) => at(i).y)).toEqual([0, 0, 0]);
+    expect([3, 4].map((i) => at(i).x)).toEqual([0, 108]);
+    expect([3, 4].map((i) => at(i).y)).toEqual([32, 32]);
+  });
+
+  it('column com wrap: as colunas se enfileiram da esquerda para a direita', () => {
+    const at = place({ type: 'column', gap: 4, wrap: 'wrap', lineGap: 10 }, 5, 80);
+    // 2 × 80 + 4 = 164 ≤ 200; o terceiro não cabe.
+    expect([0, 1].map((i) => at(i).y)).toEqual([0, 84]);
+    expect([0, 2, 4].map((i) => at(i).x)).toEqual([0, 110, 220]);
+  });
+
+  it('wrap-reverse põe a linha nova acima', () => {
+    const at = place({ type: 'row', gap: 8, wrap: 'wrap-reverse', lineGap: 12 });
+    expect([0, 1, 2].map((i) => at(i).y)).toEqual([32, 32, 32]);
+    expect([3, 4].map((i) => at(i).y)).toEqual([0, 0]);
+  });
+
+  it('justify e reverse valem em cada linha', () => {
+    const between = place({
+      type: 'row',
+      gap: 8,
+      wrap: 'wrap',
+      justify: 'space-between',
+    });
+    expect([0, 1, 2].map((i) => between(i).x)).toEqual([0, 110, 220]);
+    expect([3, 4].map((i) => between(i).x)).toEqual([0, 220]);
+    const reversed = place({ type: 'row', gap: 8, wrap: 'wrap', reverse: true });
+    expect([0, 1, 2].map((i) => reversed(i).x)).toEqual([220, 112, 4]);
+    expect([3, 4].map((i) => reversed(i).x)).toEqual([220, 112]);
+  });
+
+  it('maxPerLine 2 quebra a cada duas', () => {
+    const at = place({ type: 'row', gap: 4, wrap: 'wrap', maxPerLine: 2 });
+    expect([0, 1, 2, 3, 4].map((i) => at(i).y)).toEqual([0, 0, 20, 20, 40]);
+  });
+
+  it('maxLines 1: as filhas além da última linha ficam onde estavam', () => {
+    const at = place({ type: 'row', gap: 8, wrap: 'wrap', maxLines: 1 });
+    expect([0, 1, 2].map((i) => at(i).x)).toEqual([0, 108, 216]);
+    // as outras duas não foram movidas (estavam em 0, 0 da tela).
+    expect(at(3)).toEqual({ x: -FLOW_BOX.x, y: -FLOW_BOX.y });
+    expect(at(4)).toEqual({ x: -FLOW_BOX.x, y: -FLOW_BOX.y });
+  });
+
+  it('uma filha maior que a linha inteira fica sozinha numa linha', () => {
+    const lib = wrapLibrary({ type: 'row', gap: 8, wrap: 'wrap', lineGap: 4 });
+    const screen = screenOf(
+      host('c', 'flow', FLOW_BOX, {}),
+      leaf('a', 100, 'c'),
+      leaf('big', 400, 'c'),
+      leaf('b', 100, 'c'),
+    );
+    const result = arrange(screen, lib, measure);
+    expect(boxOf(result, 'a').y - FLOW_BOX.y).toBe(0);
+    expect(boxOf(result, 'big').y - FLOW_BOX.y).toBe(24);
+    expect(boxOf(result, 'b').y - FLOW_BOX.y).toBe(48);
+  });
+
+  it('align center vale dentro de cada linha', () => {
+    const lib = wrapLibrary({
+      type: 'row',
+      gap: 8,
+      wrap: 'wrap',
+      lineGap: 6,
+      align: 'center',
+    });
+    const screen = screenOf(
+      host('c', 'flow', FLOW_BOX, {}),
+      leaf('a', 100, 'c', 40),
+      leaf('b', 100, 'c', 20),
+      leaf('c2', 100, 'c', 20),
+      leaf('d', 100, 'c', 10),
+    );
+    const result = arrange(screen, lib, measure);
+    const y = (id: string) => boxOf(result, id).y - FLOW_BOX.y;
+    expect([y('a'), y('b'), y('c2'), y('d')]).toEqual([0, 10, 10, 46]);
   });
 });

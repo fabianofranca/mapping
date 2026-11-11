@@ -1,4 +1,5 @@
 import { findSlot, resolveSlotLayout, slotBoxOfScene } from './components/arrange';
+import { breakLines } from './components/wrapLines';
 import type { ComponentFile, FieldValues } from './components/componentFormat';
 import { fitComponentSize } from './components/sizing';
 import { instantiate, type TextMeasurer } from './components/instantiate';
@@ -142,6 +143,10 @@ interface SlotBox {
   readonly gap: number;
   readonly flow: 'row' | 'column' | 'none';
   readonly reverse: boolean;
+  /** Quebra de fileira do slot (`layout.wrap`, v4) e os limites dela. */
+  readonly wrap: 'none' | 'wrap' | 'wrap-reverse';
+  readonly lineGap: number;
+  readonly maxPerLine: number | undefined;
   readonly hasSlot: boolean;
 }
 
@@ -160,6 +165,9 @@ function slotArea(
     gap: 0,
     flow: 'none' as const,
     reverse: false,
+    wrap: 'none' as const,
+    lineGap: 0,
+    maxPerLine: undefined,
     hasSlot: false,
   };
   const mc = markingComponent(p, catalog, containerId);
@@ -187,6 +195,9 @@ function slotArea(
     gap: layout.gap,
     flow: layout.type,
     reverse: layout.reverse,
+    wrap: layout.wrap,
+    lineGap: layout.lineGap,
+    maxPerLine: layout.maxPerLine,
     hasSlot: true,
   };
 }
@@ -409,8 +420,100 @@ function centeredRect(
   };
 }
 
+/** Os eixos do slot com `wrap`: principal (largura numa `row`) e cruzado, e onde acaba o conteúdo. */
+interface WrapAxes {
+  readonly row: boolean;
+  readonly start: number;
+  readonly end: number;
+  readonly main: (r: Rect) => number;
+  readonly mainStart: (r: Rect) => number;
+  readonly mainEnd: (r: Rect) => number;
+  readonly crossStart: (r: Rect) => number;
+  readonly crossEnd: (r: Rect) => number;
+}
+
+function wrapAxes(slot: SlotBox): WrapAxes {
+  const row = slot.flow === 'row';
+  const { area, padding } = slot;
+  return {
+    row,
+    start: row ? area.x + padding.left : area.y + padding.top,
+    end: row ? right(area) - padding.right : bottom(area) - padding.bottom,
+    main: (r) => (row ? r.width : r.height),
+    mainStart: (r) => (row ? r.x : r.y),
+    mainEnd: (r) => (row ? right(r) : bottom(r)),
+    crossStart: (r) => (row ? r.y : r.x),
+    crossEnd: (r) => (row ? bottom(r) : right(r)),
+  };
+}
+
+/** A filha nova cabe depois da última na linha dela (espaço do eixo principal e `maxPerLine`)? */
+function fitsLastLine(
+  lastLine: readonly Marking[],
+  slot: SlotBox,
+  axes: WrapAxes,
+  mainSize: number,
+): boolean {
+  if (slot.maxPerLine !== undefined && lastLine.length >= slot.maxPerLine) return false;
+  const used =
+    lastLine.reduce((sum, k) => sum + axes.main(k.rect), 0) +
+    slot.gap * (lastLine.length - 1);
+  return used + slot.gap + mainSize <= axes.end - axes.start + 1e-6;
+}
+
+/**
+ * R0 num slot com `wrap` e ao menos uma filha: na linha da última filha, depois dela, se cabe (e o
+ * `maxPerLine` deixa); senão no começo da linha seguinte, abaixo da última (ou à direita, numa
+ * `column`), com o `lineGap`. As linhas das filhas saem do mesmo `breakLines` da arrumação. Em
+ * `wrap-reverse` a linha nova também vai depois da última: o Arrumar põe as linhas na ordem certa.
+ */
+function wrapSlotPoint(
+  kids: readonly Marking[],
+  slot: SlotBox,
+  size: Size,
+): { x: number; y: number } | undefined {
+  const axes = wrapAxes(slot);
+  const { lines } = breakLines(
+    kids.map((k) => axes.main(k.rect)),
+    axes.end - axes.start,
+    { gap: slot.gap, maxPerLine: slot.maxPerLine },
+  );
+  const lastLine = (lines.at(-1) ?? []).map((i) => kids[i] as Marking);
+  const lastKid = lastLine.at(-1);
+  if (lastKid === undefined) return undefined;
+  const mainSize = axes.row ? size.width : size.height;
+  const fits = fitsLastLine(lastLine, slot, axes, mainSize);
+  const main = fits
+    ? slot.reverse
+      ? axes.mainStart(lastKid.rect) - slot.gap - mainSize
+      : axes.mainEnd(lastKid.rect) + slot.gap
+    : slot.reverse
+      ? axes.end - mainSize
+      : axes.start;
+  const cross = fits
+    ? Math.min(...lastLine.map((k) => axes.crossStart(k.rect)))
+    : Math.max(...lastLine.map((k) => axes.crossEnd(k.rect))) + slot.lineGap;
+  return axes.row ? { x: main, y: cross } : { x: cross, y: main };
+}
+
+/** O R0 de um slot com `wrap` (ver `wrapSlotPoint`); `undefined` sem `wrap`, sem layout ou sem filhas. */
+function wrappedSlotRect(
+  p: Project,
+  parent: Marking,
+  slot: SlotBox,
+  size: Size,
+): Rect | undefined {
+  if (slot.flow === 'none' || slot.wrap === 'none') return undefined;
+  const point = wrapSlotPoint(childrenOf(p, parent.id), slot, size);
+  return point === undefined
+    ? undefined
+    : { x: Math.round(point.x), y: Math.round(point.y), ...size };
+}
+
 /** R0 num componente com slot: depois da última filha no eixo do layout, ou no início do conteúdo (antes do `clamp`). */
 function slotRect(p: Project, parent: Marking, slot: SlotBox, size: Size): Rect {
+  const wrapped = wrappedSlotRect(p, parent, slot, size);
+  if (wrapped !== undefined) return wrapped;
   const slotBox = slot.area;
   let x = slotBox.x + slot.padding.left;
   let y = slotBox.y + slot.padding.top;

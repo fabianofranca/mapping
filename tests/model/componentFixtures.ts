@@ -313,3 +313,22 @@ export function tokenSlotCatalog(): ComponentCatalog {
   }
   return new Map([[SPEC_ID, { ...loaded, byType }]]);
 }
+
+/**
+ * Container (`row` ou `column`) cujo slot quebra em linhas (`layout.wrap`, formato 4), para trocar
+ * um tipo de `COMPONENTS` no catálogo. As chaves de `wrap` entram no `layout` do slot.
+ */
+export function wrappedContainer(
+  id: string,
+  flow: 'row' | 'column',
+  size: Json,
+  wrap: Json = { wrap: 'wrap' },
+): Json {
+  const base = container(id, size, { flow }) as {
+    template: { children: { layout: Json }[] };
+  };
+  const slot = base.template.children[0];
+  if (slot === undefined) throw new Error('sem slot');
+  slot.layout = { ...slot.layout, ...wrap };
+  return { ...base, formatVersion: 4 };
+}

@@ -22,6 +22,7 @@ import type {
   FieldValue,
   FieldValues,
   FrameTemplate,
+  LayoutSpec,
   RepeatTemplate,
   TemplateNode,
 } from './componentFormat';
@@ -55,6 +56,14 @@ const INHERITED_KEYS = [
 function inheritedKeys(node: RepeatTemplate): Partial<FrameTemplate> {
   const out: Record<string, unknown> = {};
   for (const key of INHERITED_KEYS) if (node[key] !== undefined) out[key] = node[key];
+  return out;
+}
+
+/** A quebra de fileira (v4) do `repeat`, que o quadro gerado leva no `layout` (só as chaves presentes). */
+function wrapKeys(node: RepeatTemplate): Partial<LayoutSpec> {
+  const out: Record<string, unknown> = {};
+  for (const key of ['wrap', 'lineGap', 'maxPerLine', 'maxLines'] as const)
+    if (node[key] !== undefined) out[key] = node[key];
   return out;
 }
 
@@ -280,7 +289,11 @@ export function expandRepeats(
       name: node.name ?? 'repeat',
       ...inheritedKeys(node),
       ...wrapperSize(node, column),
-      layout: { type: node.direction ?? 'column', gap: node.gap ?? 0 },
+      layout: {
+        type: node.direction ?? 'column',
+        gap: node.gap ?? 0,
+        ...wrapKeys(node),
+      },
       children,
     };
   };
