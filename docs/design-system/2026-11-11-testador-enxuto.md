@@ -1,4 +1,4 @@
-# Testador enxuto — [Não lançado] (épico `epic/testador-enxuto`)
+# Testador enxuto — 2026-11-11 (épico `epic/testador-enxuto`)
 
 ## Pendências
 
