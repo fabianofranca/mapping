@@ -3,6 +3,16 @@ import Konva from 'konva';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { installFakeCanvas } from '../harness';
 import { renderScene } from '../../../src/canvas/components/renderScene';
+import type { StrokeSide } from '../../../src/model/components/componentFormat';
+import {
+  approximateMeasurer,
+  instantiate,
+} from '../../../src/model/components/instantiate';
+import {
+  cutLineLeft,
+  konvaLineHeight,
+  visibleLineCount,
+} from '../../../src/model/components/textWrap';
 import {
   type FrameNode,
   type Scene,
@@ -80,17 +90,42 @@ describe('stroke.offset', () => {
 });
 
 describe('stroke.sides com os quatro lados', () => {
-  it('desenha o contorno com raio, igual ao sides ausente', () => {
-    const all = shapesOf(
-      frameOf([], {
-        cornerRadius: 8,
-        stroke: stroke({ sides: ['top', 'right', 'bottom', 'left'] }),
-      }),
+  // A cena nunca traz os quatro lados (o `instantiate` os normaliza, MC0): o caminho é o do modelo.
+  const sceneWith = (sides?: StrokeSide[]): Scene =>
+    instantiate(
+      {
+        format: 'mapping-component',
+        formatVersion: 4,
+        id: 't',
+        name: 'T',
+        size: { width: 100, height: 40 },
+        template: {
+          type: 'frame',
+          children: [
+            {
+              type: 'rect',
+              width: 100,
+              height: 40,
+              cornerRadius: 8,
+              stroke: { color: '#112233', width: 2, ...(sides ? { sides } : {}) },
+            },
+          ],
+        },
+      },
+      {},
+      { x: 0, y: 0, width: 100, height: 40 },
+      { measure: approximateMeasurer },
     );
-    const none = shapesOf(frameOf([], { cornerRadius: 8, stroke: stroke() }));
-    expect(all.map((s) => s.className)).toEqual(['Rect']);
-    expect((all[0] as Konva.Rect).cornerRadius()).toEqual(8);
-    expect(all[0]?.attrs).toEqual(none[0]?.attrs);
+
+  it('desenha o contorno com raio, igual ao sides ausente', () => {
+    const all = shapesOf(sceneWith(['top', 'right', 'bottom', 'left']));
+    const none = shapesOf(sceneWith());
+    expect(all.map((s) => s.className)).toEqual(none.map((s) => s.className));
+    const ring = all.at(-1) as Konva.Rect;
+    expect(ring.className).toBe('Rect');
+    expect(ring.cornerRadius()).toEqual((none.at(-1) as Konva.Rect).cornerRadius());
+    expect(ring.cornerRadius()).toBeGreaterThan(0);
+    expect(all.map((s) => s.attrs)).toEqual(none.map((s) => s.attrs));
   });
 });
 
@@ -139,4 +174,75 @@ describe('wrap "none" sem ellipsis', () => {
     expect((group.find('Text')[0] as Konva.Text).attrs.width).toBe(30.5);
     expect(group.clipFunc()).toBeUndefined();
   });
+});
+
+describe('texto cortado de vários parágrafos (MC0, decisão 30)', () => {
+  // O canvas falso mede 6 px por caractere: a 1ª linha tem 108 px, a 2ª 30; a caixa, 50.
+  const two = (align: 'center' | 'right'): TextNode => ({
+    ...baseNode({ id: 't', name: 't', width: 50, height: 40 }),
+    type: 'text',
+    text: 'Texto bem comprido\ncurto',
+    fills: [{ type: 'solid', color: '#000000' }],
+    style: {
+      fontFamily: 'Roboto',
+      fontSize: 10,
+      fontWeight: 400,
+      italic: false,
+      lineHeight: 20,
+      align,
+      verticalAlign: 'top',
+      wrap: 'none',
+    },
+  });
+
+  it.each(['center', 'right'] as const)(
+    'align %s: o começo de cada linha é o do cutLineLeft',
+    (align) => {
+      const group = renderScene(frameOf([two(align)])).byId.get('t') as Konva.Group;
+      const shape = group.find('Text')[0] as Konva.Text;
+      const block = shape.width();
+      expect(shape.textArr.map((line) => line.width)).toEqual([108, 30]);
+      for (const line of shape.textArr) {
+        // O Konva alinha cada linha dentro do bloco (a largura do Text) e o Text começa em x.
+        const inBlock =
+          align === 'center' ? (block - line.width) / 2 : block - line.width;
+        expect(shape.x() + inBlock).toBeCloseTo(
+          cutLineLeft(align, 50, block, line.width),
+          6,
+        );
+      }
+    },
+  );
+});
+
+describe('só as linhas que cabem na altura (MC0, decisão 31)', () => {
+  const lines = (height: number): TextNode => ({
+    ...baseNode({ id: 't', name: 't', width: 100, height }),
+    type: 'text',
+    text: 'a\nb\nc\nd',
+    fills: [{ type: 'solid', color: '#000000' }],
+    style: {
+      fontFamily: 'Roboto',
+      fontSize: 10,
+      fontWeight: 400,
+      italic: false,
+      lineHeight: 20,
+      align: 'left',
+      verticalAlign: 'top',
+    },
+  });
+
+  it.each([
+    [20, 1],
+    [40, 2],
+    [50, 2],
+  ])(
+    'a caixa de %i px tem %i linhas no textArr, como o visibleLineCount',
+    (height, count) => {
+      const group = renderScene(frameOf([lines(height)])).byId.get('t') as Konva.Group;
+      const shape = group.find('Text')[0] as Konva.Text;
+      expect(shape.textArr).toHaveLength(count);
+      expect(visibleLineCount(4, height, konvaLineHeight(20, 10))).toBe(count);
+    },
+  );
 });

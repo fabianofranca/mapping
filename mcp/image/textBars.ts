@@ -1,7 +1,19 @@
+import {
+  capMetricsFallback,
+  capMiddleShift,
+  lineBaseline,
+  type CapMetrics,
+} from '../../src/model/components/baseline';
 import type { TextMeasurer } from '../../src/model/components/instantiate';
 import type { RunLayout, RunPiece } from '../../src/model/components/richText';
 import type { SceneTextRun, TextNode } from '../../src/model/components/scene';
-import { WRAP_SLACK } from '../../src/model/components/textWrap';
+import {
+  WRAP_SLACK,
+  cutLineLeft,
+  cutsText,
+  konvaLineHeight,
+  visibleLineCount,
+} from '../../src/model/components/textWrap';
 import type { PixelRect } from './raster';
 
 // Barras do texto de uma cena no servidor (o desenho simplificado, sem fonte): uma por linha medida.
@@ -34,6 +46,22 @@ export function breakLines(node: TextNode, widthOf: (text: string) => number): s
 }
 
 /**
+ * O `maxLines` que o medidor recebe: o do estilo e, com `ellipsis` numa caixa com altura, o menor
+ * deste com as linhas que cabem (decisão 31 da #898): o corte pela altura vale como um `maxLines`
+ * igual a elas, e a última linha desenhada termina em `…`, como o Konva faz.
+ */
+function ellipsisMaxLines(node: TextNode): number | undefined {
+  const { style } = node;
+  if (!style.ellipsis || !(node.height > 0)) return style.maxLines;
+  const fit = visibleLineCount(
+    Number.POSITIVE_INFINITY,
+    node.height,
+    konvaLineHeight(lineHeightOf(style), style.fontSize),
+  );
+  return style.maxLines === undefined ? fit : Math.min(style.maxLines, fit);
+}
+
+/**
  * Com `wrap`, `ellipsis` ou `maxLines`, as linhas vêm do medidor (que já corta e põe o `…`);
  * `undefined` = quebra de sempre.
  */
@@ -49,13 +77,14 @@ export function customLines(
     style.maxLines === undefined
   )
     return undefined;
+  const maxLines = ellipsisMaxLines(node);
   const lines = measure(
     node.text,
     {
       ...font,
       ...(style.wrap ? { wrap: style.wrap } : {}),
       ...(style.ellipsis ? { ellipsis: true } : {}),
-      ...(style.maxLines !== undefined ? { maxLines: style.maxLines } : {}),
+      ...(maxLines !== undefined ? { maxLines } : {}),
     },
     node.width > 0 ? node.width : undefined,
   ).lines;
@@ -65,41 +94,6 @@ export function customLines(
 /** Uma barra do texto; `color` só no texto rico, onde cada barra tem a sua. */
 export interface TextBar extends PixelRect {
   readonly color?: string;
-}
-
-/** Medidas verticais da fonte do nó, para o `cap-middle` (px no tamanho do nó). */
-export interface CapMetrics {
-  readonly ascent: number;
-  readonly descent: number;
-  readonly capHeight: number;
-}
-
-/** Sem fonte (as barras), as proporções usuais: ascendente 0,8, descendente 0,2, maiúscula 0,7 do corpo. */
-export const capMetricsFallback = (size: number): CapMetrics => ({
-  ascent: 0.8 * size,
-  descent: 0.2 * size,
-  capHeight: 0.7 * size,
-});
-
-/**
- * `cap-middle` (decisão 3 da #896): quanto descer o texto, posto no topo, para o bloco do topo da
- * maiúscula da primeira linha à linha de base da última ficar no centro da caixa. A linha de base
- * de uma linha de altura `height` que começa em `top` é `top + height / 2 + (ascent − descent) / 2`
- * (a mesma da app e do desenho dos glifos).
- */
-export function capMiddleShift(input: {
-  readonly boxHeight: number;
-  readonly metrics: CapMetrics;
-  /** Topo e altura da primeira e da última linha, com o texto no topo. */
-  readonly first: { readonly y: number; readonly height: number };
-  readonly last: { readonly y: number; readonly height: number };
-}): number {
-  const { boxHeight, metrics, first, last } = input;
-  if (boxHeight <= 0) return 0;
-  const baseline = (line: { y: number; height: number }) =>
-    line.y + line.height / 2 + (metrics.ascent - metrics.descent) / 2;
-  const block = baseline(last) - baseline(first) + metrics.capHeight;
-  return (boxHeight - block) / 2 + metrics.capHeight - baseline(first);
 }
 
 /**
@@ -116,7 +110,12 @@ export function richShift(
     const first = layout.lines[0];
     const last = layout.lines[layout.lines.length - 1];
     return first && last
-      ? capMiddleShift({ boxHeight: node.height, metrics, first, last })
+      ? capMiddleShift({
+          boxHeight: node.height,
+          capHeight: metrics.capHeight,
+          firstBaseline: lineBaseline(first.y, first.height, metrics),
+          lastBaseline: lineBaseline(last.y, last.height, metrics),
+        })
       : 0;
   }
   const free = node.height - layout.height;
@@ -181,9 +180,9 @@ export function blockTop(
   if (verticalAlign === 'cap-middle')
     return capMiddleShift({
       boxHeight: node.height,
-      metrics,
-      first: { y: 0, height: lineHeight },
-      last: { y: (count - 1) * lineHeight, height: lineHeight },
+      capHeight: metrics.capHeight,
+      firstBaseline: lineBaseline(0, lineHeight, metrics),
+      lastBaseline: lineBaseline((count - 1) * lineHeight, lineHeight, metrics),
     });
   if (verticalAlign === 'middle') return (node.height - total) / 2;
   return verticalAlign === 'bottom' ? node.height - total : 0;
@@ -231,16 +230,15 @@ export function paragraphEnds(
   return ends;
 }
 
-/** Posição horizontal de uma linha de largura `width` no nó, pelo `align`. */
-export function lineLeft(node: TextNode, width: number): number {
-  const { align } = node.style;
-  if (align === 'center') return (node.width - width) / 2;
-  return align === 'right' ? node.width - width : 0;
-}
-
-/** Barras do texto no espaço local do nó: uma por linha medida (uma por pedaço, no texto rico). */
-export function textBars(node: TextNode, measure: TextMeasurer): TextBar[] {
-  if (node.runLayout && node.runs) return richBars(node, node.runLayout, node.runs);
+/**
+ * As linhas que o texto simples desenha, já cortadas pela altura da caixa (decisão 31 da #898: só as
+ * que o Konva guarda), e quais delas fecham um parágrafo (só com `justify`).
+ */
+export function plainLines(
+  node: TextNode,
+  measure: TextMeasurer,
+  widthOf: (text: string) => number,
+): { lines: string[]; ends: boolean[] } {
   const { style } = node;
   const lineHeight = lineHeightOf(style);
   const font = {
@@ -251,13 +249,52 @@ export function textBars(node: TextNode, measure: TextMeasurer): TextBar[] {
     lineHeight,
     letterSpacing: style.letterSpacing ?? 0,
   };
-  const widthOf = (text: string) => measure(text, font).width;
   const custom = customLines(node, measure, font);
-  const lines = custom ?? breakLines(node, widthOf);
-  const ends =
-    style.align === 'justify' ? paragraphEnds(node, lines, custom, widthOf) : [];
+  const all = custom ?? breakLines(node, widthOf);
+  const count = visibleLineCount(
+    all.length,
+    node.height,
+    konvaLineHeight(lineHeight, style.fontSize),
+  );
+  const lines = all.slice(0, count);
+  if (style.align !== 'justify') return { lines, ends: [] };
+  const ends = paragraphEnds(node, all, custom, widthOf).slice(0, count);
+  // Como o Konva: a última linha guardada fecha o parágrafo, mesmo cortada no meio dele.
+  if (count < all.length && count > 0) ends[count - 1] = true;
+  return { lines, ends };
+}
+
+/**
+ * Posição horizontal de uma linha de largura `width` no nó, pelo `align`. No texto cortado
+ * (`cutsText`), `width` é a da linha inteira e `blockWidth`, a da mais larga: as linhas se alinham
+ * pelo bloco (`cutLineLeft`, decisão 30).
+ */
+export function lineLeft(node: TextNode, width: number, blockWidth = width): number {
+  const { align } = node.style;
+  if (cutsText(node)) return cutLineLeft(align, node.width, blockWidth, width);
+  const clamped = Math.min(width, node.width || Infinity);
+  if (align === 'center') return (node.width - clamped) / 2;
+  return align === 'right' ? node.width - clamped : 0;
+}
+
+/** Barras do texto no espaço local do nó: uma por linha medida (uma por pedaço, no texto rico). */
+export function textBars(node: TextNode, measure: TextMeasurer): TextBar[] {
+  if (node.runLayout && node.runs) return richBars(node, node.runLayout, node.runs);
+  const { style } = node;
+  const lineHeight = lineHeightOf(style);
+  const widthOf = (text: string) =>
+    measure(text, {
+      family: style.fontFamily,
+      size: style.fontSize,
+      weight: style.fontWeight,
+      italic: style.italic,
+      lineHeight,
+      letterSpacing: style.letterSpacing ?? 0,
+    }).width;
+  const { lines, ends } = plainLines(node, measure, widthOf);
   const top = blockTop(node, lines.length, lineHeight);
   const barHeight = lineHeight * BAR_RATIO;
+  const block = Math.max(0, ...lines.map(widthOf));
   const bars: TextBar[] = [];
   lines.forEach((line, i) => {
     if (line === '') return;
@@ -267,11 +304,10 @@ export function textBars(node: TextNode, measure: TextMeasurer): TextBar[] {
       ends[i] === false &&
       node.width > 0 &&
       line.includes(' ');
-    const width = justified
-      ? node.width
-      : Math.min(widthOf(line), node.width || Infinity);
+    const lineWidth = widthOf(line);
+    const width = justified ? node.width : Math.min(lineWidth, node.width || Infinity);
     bars.push({
-      x: lineLeft(node, width),
+      x: justified ? 0 : lineLeft(node, lineWidth, block),
       y: top + i * lineHeight + (lineHeight - barHeight) / 2,
       width,
       height: barHeight,

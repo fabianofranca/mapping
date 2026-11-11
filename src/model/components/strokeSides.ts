@@ -9,18 +9,6 @@ export interface SideSegment {
 }
 
 /**
- * Os `sides` que de fato recortam o traço: `undefined` quando `sides` falta ou pede os quatro
- * lados, que é o contorno inteiro com o raio dos cantos (decisão 21 da #896). Lados parciais
- * continuam como linhas retas.
- */
-export function partialSides(stroke: Stroke): Stroke['sides'] {
-  const { sides } = stroke;
-  if (!sides) return undefined;
-  // Os lados são sem repetição (validado): quatro lados são os quatro.
-  return sides.length === 4 ? undefined : sides;
-}
-
-/**
  * O raio de um canto afastado `by` px (`stroke.offset`, como o `outline-offset` do CSS): o canto
  * reto continua reto; o arredondado cresce `by`.
  */
@@ -36,14 +24,14 @@ export function growRadius(radius: CornerRadius, by: number): CornerRadius {
  * Os segmentos do traço de `stroke.sides` numa caixa `width` × `height`: um por lado pedido, reto
  * de ponta a ponta (sem arco no canto, mesmo com `cornerRadius`), com a linha deslocada pelo
  * `align` (por dentro, a metade da largura para dentro; por fora, para fora) e afastada para fora
- * pelo `offset`. Sem `sides` (ou com os quatro lados), devolve lista vazia: o traço é o contorno.
+ * pelo `offset`. Sem `sides`, devolve lista vazia: o traço é o contorno.
  */
 export function sideSegments(
   stroke: Stroke,
   width: number,
   height: number,
 ): SideSegment[] {
-  const sides = partialSides(stroke);
+  const { sides } = stroke;
   if (!sides) return [];
   const half = stroke.width / 2;
   const aligned =

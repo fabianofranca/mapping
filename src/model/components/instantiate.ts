@@ -1234,7 +1234,8 @@ function createEngine(
     const value = ev<unknown>(expr as Expr<unknown>, undefined);
     if (!Array.isArray(value)) return undefined;
     const sides = STROKE_SIDES.filter((side) => value.includes(side));
-    return sides.length > 0 ? sides : undefined;
+    // Os quatro lados são o contorno inteiro, com o raio dos cantos: a cena não traz `sides`.
+    return sides.length > 0 && sides.length < STROKE_SIDES.length ? sides : undefined;
   };
 
   /** Uma sombra da lista (ou a única): cor `none` não dá sombra; `spread` só entra quando não é 0. */

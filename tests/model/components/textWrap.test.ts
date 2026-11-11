@@ -15,6 +15,11 @@ import {
 import { validateComponent } from '../../../src/model/components/parseComponent';
 import { baseNode, type TextNode } from '../../../src/model/components/scene';
 import { textBars } from '../../../mcp/image/textBars';
+import {
+  cutLineLeft,
+  konvaLineHeight,
+  visibleLineCount,
+} from '../../../src/model/components/textWrap';
 
 const V4 = 'só é permitido com formatVersion 4';
 const LONG = 'Texto longo demais para a caixa';
@@ -304,5 +309,79 @@ describe('component.schema.json: wrap, ellipsis e maxLines', () => {
     expect(
       checkSchema(schema, component(textNode({ wrap: 'char' }))).length,
     ).toBeGreaterThan(0);
+  });
+});
+
+describe('cutLineLeft (MC0, decisão 30): onde começa a linha do texto cortado', () => {
+  // Caixa de 100; o bloco é a linha mais larga.
+  it.each([
+    ['left', 0, 0],
+    ['justify', 0, 0],
+    ['center', 20, 20],
+    ['right', 40, 40],
+  ] as const)('%s: a linha mais larga (60) começa em %i', (align, _x, expected) => {
+    expect(cutLineLeft(align, 100, 60, 60)).toBe(expected);
+  });
+
+  it.each([
+    ['left', 0],
+    ['justify', 0],
+    ['center', 20 + 10],
+    ['right', 40 + 20],
+  ] as const)(
+    '%s: a linha curta (40) dentro do bloco de 60 começa em %i',
+    (align, expected) => {
+      expect(cutLineLeft(align, 100, 60, 40)).toBe(expected);
+    },
+  );
+
+  it.each(['left', 'justify', 'center', 'right'] as const)(
+    '%s: o bloco mais largo que a caixa começa na borda esquerda',
+    (align) => {
+      expect(cutLineLeft(align, 100, 160, 160)).toBe(0);
+    },
+  );
+
+  it('o bloco mais largo que a caixa alinha a linha curta dentro do bloco, não da caixa', () => {
+    expect(cutLineLeft('center', 100, 160, 100)).toBe(30);
+    expect(cutLineLeft('right', 100, 160, 100)).toBe(60);
+    expect(cutLineLeft('left', 100, 160, 100)).toBe(0);
+  });
+
+  it('o bloco do tamanho da caixa começa em 0', () => {
+    expect(cutLineLeft('right', 100, 100, 100)).toBe(0);
+    expect(cutLineLeft('center', 100, 100, 100)).toBe(0);
+  });
+});
+
+describe('visibleLineCount (MC0, decisão 31): as linhas que o Konva guarda', () => {
+  it('a primeira linha sempre fica, mesmo numa caixa menor que a linha', () => {
+    expect(visibleLineCount(3, 5, 12)).toBe(1);
+  });
+
+  it('caixa de 1 linha: 1; de 2: 2; de 2,5: 2; de 3: 3', () => {
+    expect(visibleLineCount(5, 12, 12)).toBe(1);
+    expect(visibleLineCount(5, 24, 12)).toBe(2);
+    expect(visibleLineCount(5, 30, 12)).toBe(2);
+    expect(visibleLineCount(5, 36, 12)).toBe(3);
+  });
+
+  it('bloco menor que a caixa: todas as linhas', () => {
+    expect(visibleLineCount(2, 100, 12)).toBe(2);
+    expect(visibleLineCount(0, 100, 12)).toBe(0);
+  });
+
+  it('sem altura (0), todas as linhas', () => {
+    expect(visibleLineCount(4, 0, 12)).toBe(4);
+  });
+
+  it('sem total (Infinity) devolve quantas linhas cabem', () => {
+    expect(visibleLineCount(Number.POSITIVE_INFINITY, 30, 12)).toBe(2);
+  });
+
+  it('a mesma aritmética do Konva: lineHeight / fontSize × fontSize, somado linha a linha', () => {
+    // 14,3 / 11 × 11 não é exatamente 14,3; a soma de 3 linhas na caixa de 3 × 14,3 decide.
+    const lh = konvaLineHeight(14.3, 11);
+    expect(visibleLineCount(9, lh * 3, lh)).toBe(3);
   });
 });

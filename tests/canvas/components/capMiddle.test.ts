@@ -3,7 +3,7 @@
 import Konva from 'konva';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { installFakeCanvas } from '../harness';
-import { capMiddleShift } from '../../../src/canvas/components/capMiddle';
+import { capMiddleShift } from '../../../src/model/components/baseline';
 import { renderScene } from '../../../src/canvas/components/renderScene';
 import type { ComponentFile } from '../../../src/model/components/componentFormat';
 import {

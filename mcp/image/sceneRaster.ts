@@ -2,11 +2,7 @@ import type { TextMeasurer } from '../../src/model/components/instantiate';
 import type { ScreenAnchor } from '../../src/model/components/componentFormat';
 import { CUT_REACH, cutsText } from '../../src/model/components/textWrap';
 import { gapOutlines } from '../../src/model/components/strokeGaps';
-import {
-  growRadius,
-  partialSides,
-  sideSegments,
-} from '../../src/model/components/strokeSides';
+import { growRadius, sideSegments } from '../../src/model/components/strokeSides';
 import {
   multiply,
   nodeMatrix,
@@ -1087,8 +1083,8 @@ class Painter {
   /** `stroke.sides` num `frame`/`rect`: os lados pedidos como linhas retas (sem os cantos). */
   private sideLines(node: SceneNode): Subpath[] | null {
     if ((node.type !== 'frame' && node.type !== 'rect') || !node.stroke) return null;
-    // Os quatro lados são o contorno inteiro, com o raio dos cantos (decisão 21).
-    if (!partialSides(node.stroke)) return null;
+    // Sem `stroke.sides` (ou com os quatro, que a cena não traz) o traço é o contorno inteiro.
+    if (!node.stroke.sides) return null;
     return sideSegments(node.stroke, node.width, node.height).map((seg) => ({
       points: [
         { x: seg.x1, y: seg.y1 },
