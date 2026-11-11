@@ -122,7 +122,8 @@ describe('EX4 date-picker — o calendário de month e year', () => {
     for (const year of [1900, 1999, 2000, 2023, 2024, 2025, 2100]) {
       for (let month = 1; month <= 12; month++) expectMonth(year, month);
     }
-  });
+    // 84 meses com a grade conferida dia a dia: 3 s aqui, mais de 5 s no CI com cobertura.
+  }, 30_000);
 
   it('sem month ou sem year fica a grade de hoje: 31 dias a partir da quarta', () => {
     for (const values of [{}, { month: 2 }, { year: 2028 }] as Values[]) {
