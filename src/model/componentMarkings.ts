@@ -17,7 +17,9 @@ import {
   rectsOverlap,
   right,
   bottom,
+  type Size,
 } from './geometry';
+import { freeRectIn, isFreeInLevel, placementLevel } from './freePlacement';
 import { childrenOf } from './hierarchy';
 import { createMarking, placeFloatingNear, type FloatingNearTarget } from './markings';
 import { findById } from './project';
@@ -25,7 +27,7 @@ import { projectIndex } from './projectIndex';
 import type { SpecAnnotationType } from './spec';
 import { findSpecType, projectLayerFor } from './specLookup';
 import { addTypedAnnotation, setFieldValue } from './typed';
-import type { Project, Rect, TypedValues } from './types';
+import type { Marking, Project, ProjectContainer, Rect, TypedValues } from './types';
 
 // Criar uma instância de componente (etapa Biblioteca, B3): uma marcação com uma anotação
 // tipada, no tamanho inicial do componente. Operação pura: o store faz dela **uma** entrada
@@ -133,20 +135,22 @@ function resolveType(
   return { component, type: resolved.type, layerId: resolved.layer.id };
 }
 
+interface SlotBox {
+  readonly area: Rect;
+  readonly padding: { left: number; top: number; right: number; bottom: number };
+  readonly gap: number;
+  readonly flow: 'row' | 'column' | 'none';
+  readonly reverse: boolean;
+  readonly hasSlot: boolean;
+}
+
 /** Caixa do slot em pixels inteiros, dentro do componente com slot; o retângulo dele se não houver slot. */
 function slotArea(
   p: Project,
   catalog: ComponentCatalog,
   containerId: string,
   measure: TextMeasurer,
-): {
-  area: Rect;
-  padding: { left: number; top: number; right: number; bottom: number };
-  gap: number;
-  flow: 'row' | 'column' | 'none';
-  reverse: boolean;
-  hasSlot: boolean;
-} {
+): SlotBox {
   const container = findById(p.markings, containerId);
   const none = { left: 0, top: 0, right: 0, bottom: 0 };
   const whole = {
@@ -217,42 +221,52 @@ export function hasComponentSlot(
   return slotArea(p, catalog, targetId, measure).hasSlot;
 }
 
-/**
- * Retângulo de uma instância nova. Tamanho = `size` do componente, preso à área disponível
- * (a imagem ou a caixa do slot do componente com slot) e nunca abaixo do `minSize`; se nem o mínimo
- * cabe, `rect-out-of-image` (nível da imagem) ou `rect-outside-parent` (componente com slot). Sem
- * componente com slot: centrada em `center` (padrão, o centro da imagem) e presa dentro da imagem.
- * No canvas (`containerId` nulo, sem componente com slot alvo): o `size` do componente em unidades do
- * canvas, centrado em `center` (padrão `{ x: 0, y: 0 }`), sem limite. Com
- * componente com slot: dentro da caixa do slot, logo depois da última filha no eixo do layout (linha:
- * à direita; coluna: abaixo; com o `gap` e o `padding` do slot; com `layout.reverse`, a primeira no fim do
- * slot e as seguintes antes da última), ou no início do conteúdo do
- * slot se o layout é `none` ou não há filhas; se passar do slot, presa dentro do componente com slot.
- */
-export function componentPlacement(
+type PlacementArgs = Pick<
+  NewComponentArgs,
+  'containerId' | 'parentId' | 'specId' | 'typeId' | 'center'
+> & {
+  /** Substitui o `size` do componente (MCP: o `rect` de `inside`), com as mesmas regras. */
+  readonly size?: { readonly width: number; readonly height: number };
+};
+
+/** O que a colocação de uma instância nova precisa: o tipo, o pai alvo, o slot dele e a área. */
+interface PlacementSpace {
+  readonly component: ComponentFile;
+  readonly floating: boolean;
+  readonly image: ProjectContainer | null;
+  readonly parent: Marking | null;
+  readonly slot: SlotBox | null;
+  /** A imagem ou a caixa do slot; `null` no canvas sem slot (sem limite). */
+  readonly area: Rect | null;
+}
+
+function placementSpace(
   p: Project,
   catalog: ComponentCatalog,
-  args: Pick<
-    NewComponentArgs,
-    'containerId' | 'parentId' | 'specId' | 'typeId' | 'center'
-  > & {
-    /** Substitui o `size` do componente (MCP: o `rect` de `inside`), com as mesmas regras. */
-    readonly size?: { readonly width: number; readonly height: number };
-  },
+  args: PlacementArgs,
   measure: TextMeasurer,
-): Rect {
-  const { component } = resolveType(p, catalog, args.specId, args.typeId);
+): PlacementSpace {
+  const { component, type } = resolveType(p, catalog, args.specId, args.typeId);
   const image =
     args.containerId === null ? null : findById(p.containers, args.containerId);
   const parent = args.parentId === null ? null : findById(p.markings, args.parentId);
   if (parent !== null && parent.containerId !== args.containerId)
     fail('invalid-parent', parent.id);
-
   const slot = parent === null ? null : slotArea(p, catalog, parent.id, measure);
   // Sem imagem (canvas) e sem slot, não há limite.
   const area: Rect | null = slot?.area ?? (image === null ? null : imagePixelRect(image));
+  return { component, floating: type.floating === true, image, parent, slot, area };
+}
 
-  const min = component.minSize;
+/**
+ * Tamanho de uma instância nova: o `size` do componente (ou `args.size`) preso à área disponível
+ * (a imagem ou a caixa do slot do componente com slot) e nunca abaixo do `minSize`; se nem o
+ * mínimo cabe, `rect-out-of-image` (nível da imagem) ou `rect-outside-parent` (componente com
+ * slot). No canvas sem slot não há limite. É só o tamanho, sem a busca de lugar: serve a quem não
+ * precisa da posição (o tamanho inicial e o `near` do MCP).
+ */
+function fitSize(space: PlacementSpace, wanted: Size): Size {
+  const min = space.component.minSize;
   const fit = (size: number, minimum: number, available: number): number => {
     const value = Math.max(
       Math.min(Math.round(size), available),
@@ -260,28 +274,49 @@ export function componentPlacement(
       MIN_STORED_MARKING_SIZE,
     );
     if (value > available)
-      fail(parent === null ? 'rect-out-of-image' : 'rect-outside-parent');
+      fail(space.parent === null ? 'rect-out-of-image' : 'rect-outside-parent');
     return value;
   };
-  const wanted = args.size ?? component.size;
-  const width = fit(wanted.width, min?.width ?? 0, area?.width ?? Infinity);
-  const height = fit(wanted.height, min?.height ?? 0, area?.height ?? Infinity);
+  return {
+    width: fit(wanted.width, min?.width ?? 0, space.area?.width ?? Infinity),
+    height: fit(wanted.height, min?.height ?? 0, space.area?.height ?? Infinity),
+  };
+}
 
-  if (parent === null || slot === null) {
-    const center =
-      args.center ??
-      (image === null ? { x: 0, y: 0 } : { x: image.width / 2, y: image.height / 2 });
-    const x = Math.round(center.x - width / 2);
-    const y = Math.round(center.y - height / 2);
-    if (area === null) return { x, y, width, height };
-    return {
-      x: clamp(x, area.x, right(area) - width),
-      y: clamp(y, area.y, bottom(area) - height),
-      width,
-      height,
-    };
-  }
+export function componentSize(
+  p: Project,
+  catalog: ComponentCatalog,
+  args: Pick<PlacementArgs, 'containerId' | 'parentId' | 'specId' | 'typeId' | 'size'>,
+  measure: TextMeasurer,
+): Size {
+  const space = placementSpace(p, catalog, args, measure);
+  return fitSize(space, args.size ?? space.component.size);
+}
 
+/** R0 fora de um slot: o tamanho centrado em `center` (padrão, o centro da imagem), preso à imagem. */
+function centeredRect(
+  space: PlacementSpace,
+  size: Size,
+  center?: { readonly x: number; readonly y: number },
+): Rect {
+  const at =
+    center ??
+    (space.image === null
+      ? { x: 0, y: 0 }
+      : { x: space.image.width / 2, y: space.image.height / 2 });
+  const x = Math.round(at.x - size.width / 2);
+  const y = Math.round(at.y - size.height / 2);
+  const { area } = space;
+  if (area === null) return { x, y, ...size };
+  return {
+    x: clamp(x, area.x, right(area) - size.width),
+    y: clamp(y, area.y, bottom(area) - size.height),
+    ...size,
+  };
+}
+
+/** R0 num componente com slot: depois da última filha no eixo do layout, ou no início do conteúdo (antes do `clamp`). */
+function slotRect(p: Project, parent: Marking, slot: SlotBox, size: Size): Rect {
   const slotBox = slot.area;
   let x = slotBox.x + slot.padding.left;
   let y = slotBox.y + slot.padding.top;
@@ -294,19 +329,77 @@ export function componentPlacement(
       : right(slotBox) - slot.padding.right;
     const near =
       last === undefined ? edge : (column ? last.rect.y : last.rect.x) - slot.gap;
-    if (column) y = near - height;
-    else x = near - width;
+    if (column) y = near - size.height;
+    else x = near - size.width;
   } else if (last !== undefined && slot.flow === 'row') x = right(last.rect) + slot.gap;
   else if (last !== undefined && slot.flow === 'column') y = bottom(last.rect) + slot.gap;
-  const placed: Rect = { x: Math.round(x), y: Math.round(y), width, height };
+  return { x: Math.round(x), y: Math.round(y), ...size };
+}
+
+/** Sem lugar livre no slot: a posição de antes (a do slot se cabe; senão presa dentro do componente). */
+function clampToParent(parent: Marking, slotBox: Rect, placed: Rect): Rect {
   if (containsRect(slotBox, placed)) return placed;
   const outer = parent.rect;
   return {
-    x: clamp(placed.x, outer.x, right(outer) - width),
-    y: clamp(placed.y, outer.y, bottom(outer) - height),
-    width,
-    height,
+    x: clamp(placed.x, outer.x, right(outer) - placed.width),
+    y: clamp(placed.y, outer.y, bottom(outer) - placed.height),
+    width: placed.width,
+    height: placed.height,
   };
+}
+
+/**
+ * Retângulo de uma instância nova, em lugar livre (etapa #1087). O R0 é a posição de antes:
+ * sem componente com slot, o tamanho do componente centrado em `center` (padrão, o centro da
+ * imagem) e preso à imagem; no canvas (`containerId` nulo), centrado em `center` (padrão
+ * `{ x: 0, y: 0 }`), sem limite; num componente com slot, dentro da caixa do slot, logo depois da
+ * última filha no eixo do layout (linha: à direita; coluna: abaixo; com o `gap` e o `padding` do
+ * slot; com `layout.reverse`, a primeira no fim do slot e as seguintes antes da última), ou no
+ * início do conteúdo se o layout é `none` ou não há filhas (antes do `clamp`).
+ *
+ * Se o R0 já é livre, é ele. Senão vai para o lugar livre mais perto dele (`placementLevel`:
+ * dentro da menor marcação que o contém e é diferente dele, ou na imagem, sem cobrir nem
+ * coincidir com outras marcações), com o vão `PLACEMENT_GAP`. Sem lugar na área, fica no R0 (preso
+ * ao componente com slot), sem erro. O tipo flutuante (fora da árvore) devolve o R0 sem buscar.
+ */
+export function componentPlacement(
+  p: Project,
+  catalog: ComponentCatalog,
+  args: PlacementArgs,
+  measure: TextMeasurer,
+): Rect {
+  const space = placementSpace(p, catalog, args, measure);
+  const size = fitSize(space, args.size ?? space.component.size);
+  const { parent, slot } = space;
+  if (parent === null || slot === null) {
+    const r0 = centeredRect(space, size, args.center);
+    if (space.floating) return r0;
+    return freeRectIn(placementLevel(p, args.containerId, r0), r0) ?? r0;
+  }
+  const placed = slotRect(p, parent, slot, size);
+  const level = placementLevel(p, args.containerId, placed, { parent, area: slot.area });
+  const free = freeRectIn(level, placed);
+  return free ?? clampToParent(parent, slot.area, placed);
+}
+
+/**
+ * O retângulo `rect` é livre onde `componentPlacement` o poria: cabe na área do nível (a imagem,
+ * a marcação que o contém ou a caixa do slot de `parentId`) e não se sobrepõe a nenhuma marcação
+ * não flutuante (nem, no canvas, a nenhum container) que cruza a área, fora o pai e os ancestrais.
+ * Dá ao teste, e a quem quiser avisar depois, se a peça escolhida ficou livre (decisão 5).
+ */
+export function placementIsFree(
+  p: Project,
+  catalog: ComponentCatalog,
+  args: Pick<PlacementArgs, 'containerId' | 'parentId' | 'specId' | 'typeId'> & {
+    readonly rect: Rect;
+  },
+  measure: TextMeasurer,
+): boolean {
+  const { slot, parent } = placementSpace(p, catalog, args, measure);
+  const target =
+    parent === null || slot === null ? undefined : { parent, area: slot.area };
+  return isFreeInLevel(placementLevel(p, args.containerId, args.rect, target), args.rect);
 }
 
 /** O `preview` do campo se ele é um valor simples; `undefined` para `table`, `ref`, ausente ou composto. */
@@ -367,8 +460,8 @@ export function addComponentMarking(
     projectLayerFor(p, args.specId, layerId) ?? fail('type-not-in-layer', args.typeId);
   // Tipo flutuante (decisão 10): nasce marcação flutuante no canvas, fora do pertencimento.
   const floating = type.floating === true;
-  const defaultSize = (): Rect =>
-    componentPlacement(
+  const defaultSize = (): Size =>
+    componentSize(
       p,
       catalog,
       { containerId: null, parentId: null, specId: args.specId, typeId: args.typeId },
