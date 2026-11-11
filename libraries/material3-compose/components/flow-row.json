@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "flow-row",
   "name": "FlowRow",
-  "description": "Linha que quebra para a linha de baixo quando falta espaço: as filhas se enfileiram, com spacing e padding.",
+  "description": "Linha que quebra para a linha de baixo quando falta espaço: as filhas se enfileiram, com spacing, verticalSpacing, máximo por linha, máximo de linhas e padding.",
   "size": {
     "width": 360,
     "height": 96
@@ -185,9 +185,20 @@
         },
         "layout": {
           "type": "row",
+          "wrap": "wrap",
           "gap": {
             "$field": "spacing",
             "default": 0
+          },
+          "lineGap": {
+            "$field": "verticalSpacing",
+            "default": 0
+          },
+          "maxPerLine": {
+            "$field": "maxItemsInEachRow"
+          },
+          "maxLines": {
+            "$field": "maxLines"
           },
           "padding": {
             "$field": "padding",

@@ -1813,6 +1813,15 @@
                 "itemVerticalAlignment": "CenterVertically",
                 "width": "fill"
               }
+            },
+            {
+              "name": "Três por linha",
+              "values": {
+                "spacing": 8,
+                "verticalSpacing": 12,
+                "maxItemsInEachRow": 3,
+                "width": "fill"
+              }
             }
           ]
         },
@@ -10275,6 +10284,16 @@
                 "confirmButton": "Sair",
                 "dismissButton": "Cancelar"
               }
+            },
+            {
+              "name": "Botões em duas linhas",
+              "values": {
+                "style": "standard",
+                "title": "Descartar rascunho?",
+                "text": "O rascunho será apagado.",
+                "confirmButton": "Descartar o rascunho agora",
+                "dismissButton": "Cancelar"
+              }
             }
           ]
         },
@@ -10844,6 +10863,36 @@
                   {
                     "text": "Editar",
                     "leadingIcon": "Edit",
+                    "trailingIcon": "",
+                    "enabled": "true",
+                    "selected": "false"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "Itens de larguras diferentes",
+              "values": {
+                "style": "menu",
+                "expanded": "true",
+                "items": [
+                  {
+                    "text": "Editar",
+                    "leadingIcon": "Edit",
+                    "trailingIcon": "",
+                    "enabled": "true",
+                    "selected": "false"
+                  },
+                  {
+                    "text": "Compartilhar com a equipe",
+                    "leadingIcon": "Share",
+                    "trailingIcon": "",
+                    "enabled": "true",
+                    "selected": "false"
+                  },
+                  {
+                    "text": "Excluir",
+                    "leadingIcon": "Delete",
                     "trailingIcon": "",
                     "enabled": "true",
                     "selected": "false"

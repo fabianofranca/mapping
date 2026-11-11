@@ -45,6 +45,7 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 
 - **Grupo de chips**: spacing=8, verticalSpacing=8, width=fill
 - **Duas linhas no máximo**: spacing=12, maxLines=2, itemVerticalAlignment=CenterVertically, width=fill
+- **Três por linha**: spacing=8, verticalSpacing=12, maxItemsInEachRow=3, width=fill
 
 ## Fidelidade
 
@@ -59,9 +60,10 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 
 - `horizontalArrangement` vira o `justify` do slot (`Start` `start`, `Center` `center`, `End` `end`, `SpaceBetween` `space-between`) e `itemVerticalAlignment` vira o `align` (`Top` `start`, `CenterVertically` `center`, `Bottom` `end`), por `$switch` (formato 4: expressão em `layout.justify` e `layout.align`).
 - `spacing` é o `gap` e `padding` é o `padding` do slot.
+- O slot quebra em linhas (`layout.wrap: "wrap"`, o `FlowRow`): `verticalSpacing` é o `lineGap` (o `verticalArrangement = spacedBy`), `maxItemsInEachRow` é o `maxPerLine` e `maxLines` é o `maxLines`. Uma filha que não cabe no que resta da linha vai para a seguinte; `horizontalArrangement` e `itemVerticalAlignment` valem em cada linha. O **Arrumar** põe as marcações filhas assim, e o componente é `hug` na altura: ele cresce com as linhas (a soma das alturas com o `verticalSpacing`).
 - Nenhuma cor, fonte ou raio é desenhado.
 
 **O que ainda difere do Compose**
 
 - `SpaceAround` e `SpaceEvenly` viram `space-around` e `space-evenly` do `justify`.
-- O slot é uma `row` sem quebra de linha: `maxItemsInEachRow`, `maxLines` e `verticalSpacing` (e a `verticalArrangement` entre as linhas) não têm efeito no desenho.
+- A `verticalArrangement` entre as linhas não tem efeito além do `verticalSpacing`: as linhas ficam juntas no início do eixo vertical (o formato não tem `alignContent`). As filhas além de `maxLines` linhas ficam onde estão no Arrumar e não são desenhadas no desenho do template; a quebra parte do tamanho natural de cada filha.
