@@ -1077,6 +1077,7 @@ describe('$lines: o número de linhas medidas de um nó text', () => {
       },
     );
     expect(calls).toBeGreaterThan(single);
-    expect(single).toBe(3);
+    // Uma passagem mede o texto uma vez só (o `textMemo` do motor, #1078); antes eram 3 chamadas.
+    expect(single).toBe(1);
   });
 });

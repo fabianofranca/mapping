@@ -33,6 +33,7 @@ export * from './arrows';
 export * from './multiSelection';
 // Motor dos componentes: só o que quem desenha ou mede precisa pelo índice do modelo.
 export { approximateMeasurer, type TextMeasurer } from './components/instantiate';
+export { cachedMeasurer, MEASURE_CACHE_LIMIT } from './components/measureCache';
 export type { ComponentFile, FieldValues } from './components/componentFormat';
 export { fitComponentSize, resolveSizing } from './components/sizing';
 export type { FrameNode } from './components/scene';

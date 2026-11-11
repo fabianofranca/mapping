@@ -47,6 +47,7 @@ import { buildLargeTypedProject } from '../model/largeTypedProject';
 import { material3Spec } from '../storage/packageFixture';
 import { componentSources, installFakeCanvas } from './harness';
 import { openWholeProject, wholeProject } from './wholeProjectScenario';
+import { expectBelow } from '../support/perfReport';
 
 // Orçamento de uma renderização do canvas (docs/ARCHITECTURE.md, "Desempenho") com o projeto grande já
 // indexado: Konva de verdade em jsdom, com um contexto 2D falso (nada é pintado;
@@ -161,9 +162,9 @@ describe('renderização do canvas com o projeto grande', () => {
       const median = (xs: number[]) =>
         [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? Number.NaN;
       // A métrica no `expect`: a falha diz qual estourou.
-      expect(median(samples.map((r) => r.pan)), 'pan').toBeLessThan(RENDER_BUDGET_MS);
-      expect(median(samples.map((r) => r.zoom)), 'zoom').toBeLessThan(RENDER_BUDGET_MS);
-      expect(median(samples.map((r) => r.edit)), 'edição').toBeLessThan(RENDER_BUDGET_MS);
+      expectBelow(median(samples.map((r) => r.pan)), RENDER_BUDGET_MS, 'pan');
+      expectBelow(median(samples.map((r) => r.zoom)), RENDER_BUDGET_MS, 'zoom');
+      expectBelow(median(samples.map((r) => r.edit)), RENDER_BUDGET_MS, 'edição');
       controller.destroy();
     },
   );
@@ -196,11 +197,9 @@ describe('renderização do canvas com o projeto grande', () => {
       const samples = Array.from({ length: 15 }, (_, i) => round(i));
       const median = (xs: number[]) =>
         [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? Number.NaN;
-      expect(median(samples.map((r) => r.choice)), 'escolha').toBeLessThan(
-        RENDER_BUDGET_MS,
-      );
-      expect(median(samples.map((r) => r.pan)), 'pan').toBeLessThan(RENDER_BUDGET_MS);
-      expect(median(samples.map((r) => r.zoom)), 'zoom').toBeLessThan(RENDER_BUDGET_MS);
+      expectBelow(median(samples.map((r) => r.choice)), RENDER_BUDGET_MS, 'escolha');
+      expectBelow(median(samples.map((r) => r.pan)), RENDER_BUDGET_MS, 'pan');
+      expectBelow(median(samples.map((r) => r.zoom)), RENDER_BUDGET_MS, 'zoom');
       controller.destroy();
     },
   );
@@ -296,9 +295,9 @@ describe('desenho de componentes (Material 3)', () => {
         perComponent.push((performance.now() - start) / runs);
       }
       const mean = perComponent.reduce((sum, ms) => sum + ms, 0) / perComponent.length;
-      expect(mean).toBeLessThan(INSTANCE_BUDGET_MS);
+      expectBelow(mean, INSTANCE_BUDGET_MS, 'média dos 15');
       // Nenhum componente sozinho passa de quatro vezes o orçamento (o maior mede ~0,9 ms).
-      expect(Math.max(...perComponent)).toBeLessThan(INSTANCE_BUDGET_MS * 4);
+      expectBelow(Math.max(...perComponent), INSTANCE_BUDGET_MS * 4, 'pior componente');
     },
   );
 
@@ -318,7 +317,7 @@ describe('desenho de componentes (Material 3)', () => {
       for (let i = 0; i < 5; i++) once(); // Aquecimento.
       const times = Array.from({ length: 15 }, once);
       const median = [...times].sort((a, b) => a - b)[7] ?? Number.NaN;
-      expect(median).toBeLessThan(RENDER_BUDGET_MS);
+      expectBelow(median, RENDER_BUDGET_MS);
     },
   );
 
@@ -351,7 +350,7 @@ describe('desenho de componentes (Material 3)', () => {
         drawings = next;
       }
       const median = [...times.slice(5)].sort((a, b) => a - b)[7] ?? Number.NaN;
-      expect(median).toBeLessThan(RENDER_BUDGET_MS / 4);
+      expectBelow(median, RENDER_BUDGET_MS / 4);
       layer.destroy();
     },
   );
@@ -412,8 +411,8 @@ describe('refazer marcações com imagem remota', () => {
       };
       const one = median(() => layer.refreshImages(new Set(['https://img.test/3.png'])));
       const all = median(() => layer.refreshImages(null));
-      expect(one).toBeLessThan(RENDER_BUDGET_MS / 4);
-      expect(all).toBeLessThan(RENDER_BUDGET_MS * 1.5);
+      expectBelow(one, RENDER_BUDGET_MS / 4, 'uma marcação');
+      expectBelow(all, RENDER_BUDGET_MS * 1.5, 'todas');
       layer.destroy();
     },
   );
@@ -564,7 +563,7 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
         return performance.now() - start;
       };
       for (let i = 0; i < 4; i++) whole(); // Aquecimento.
-      expect(medianOf(15, whole)).toBeLessThan(FULL_FRAME_BUDGET_MS);
+      expectBelow(medianOf(15, whole), FULL_FRAME_BUDGET_MS);
       controller.destroy();
     },
   );
@@ -584,7 +583,7 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
         return elapsed;
       };
       for (let i = 0; i < 4; i++) edit();
-      expect(medianOf(15, edit)).toBeLessThan(RENDER_BUDGET_MS);
+      expectBelow(medianOf(15, edit), RENDER_BUDGET_MS);
       expect(container.dataset.components).toBe('21');
       controller.destroy();
     },
@@ -602,7 +601,7 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
         return performance.now() - start;
       };
       for (let i = 0; i < 3; i++) zoom();
-      expect(medianOf(15, zoom)).toBeLessThan(RENDER_BUDGET_MS);
+      expectBelow(medianOf(15, zoom), RENDER_BUDGET_MS);
       controller.destroy();
     },
   );
@@ -736,7 +735,7 @@ describe('visão Proposto com 60 componentes novos', () => {
         return performance.now() - start;
       };
       for (let i = 0; i < 3; i++) toggle(); // Aquecimento.
-      expect(medianOf(11, toggle)).toBeLessThan(FULL_FRAME_BUDGET_MS);
+      expectBelow(medianOf(11, toggle), FULL_FRAME_BUDGET_MS);
       controller.destroy();
     },
   );
@@ -762,7 +761,7 @@ describe('visão Proposto com 60 componentes novos', () => {
         return performance.now() - start;
       };
       for (let i = 0; i < 3; i++) frame();
-      expect(medianOf(15, frame)).toBeLessThan(RENDER_BUDGET_MS);
+      expectBelow(medianOf(15, frame), RENDER_BUDGET_MS);
       expect(render).not.toHaveBeenCalled();
       for (const [id, scene] of before) expect(shown().get(id)).toBe(scene);
       render.mockRestore();
@@ -805,7 +804,7 @@ describe('quadro de arrasto com o projeto inteiro à vista (2.000 marcações)',
       s.actions.cancelGesture();
       s.flush();
       const median = [...times].sort((a, b) => a - b)[7] ?? Number.NaN;
-      expect(median).toBeLessThan(RENDER_BUDGET_MS);
+      expectBelow(median, RENDER_BUDGET_MS);
       s.destroy();
     },
   );
@@ -825,7 +824,7 @@ describe('primeiro quadro em Enquadrar tudo (2.000 marcações)', () => {
         s.destroy();
       }
       const median = [...times].sort((a, b) => a - b)[2] ?? Number.NaN;
-      expect(median).toBeLessThan(111.5);
+      expectBelow(median, 111.5);
     },
   );
 });
@@ -856,8 +855,8 @@ describe('pan e zoom com 2.000 marcações e 1.000 setas nomeadas', () => {
         };
         for (let i = 0; i < 3; i++) round();
         const samples = Array.from({ length: 15 }, round);
-        expect(median(samples.map((r) => r.pan)), `pan (${open})`).toBeLessThan(33);
-        expect(median(samples.map((r) => r.zoom)), `zoom (${open})`).toBeLessThan(33);
+        expectBelow(median(samples.map((r) => r.pan)), 33, `pan (${open})`);
+        expectBelow(median(samples.map((r) => r.zoom)), 33, `zoom (${open})`);
         s.destroy();
       }
     },
@@ -880,7 +879,7 @@ describe('quadro de edição com o projeto inteiro à vista (2.000 marcações)'
       for (let i = 0; i < 3; i++) edit(); // Aquecimento.
       const times = Array.from({ length: 15 }, edit);
       const median = [...times].sort((a, b) => a - b)[7] ?? Number.NaN;
-      expect(median).toBeLessThan(EDIT_FRAME_CEILING_MS);
+      expectBelow(median, EDIT_FRAME_CEILING_MS);
       s.destroy();
     },
   );
@@ -902,8 +901,8 @@ describe('quadro de edição com o projeto inteiro à vista (2.000 marcações)'
       const samples = Array.from({ length: 15 }, round);
       const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[7] ?? Number.NaN;
       // Meta da decisão 9: 33 ms.
-      expect(median(samples.map((r) => r.pan)), 'pan').toBeLessThan(33);
-      expect(median(samples.map((r) => r.zoom)), 'zoom').toBeLessThan(33);
+      expectBelow(median(samples.map((r) => r.pan)), 33, 'pan');
+      expectBelow(median(samples.map((r) => r.zoom)), 33, 'zoom');
       s.destroy();
     },
   );
