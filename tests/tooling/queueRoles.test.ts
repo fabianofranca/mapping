@@ -1,0 +1,136 @@
+// @vitest-environment node
+// Etapa #1532, fase FM4 (decisões 7 e 8): o painel registra a sessão atual de cada papel (coordenador e
+// supervisor), a troca de coordenador é aos 35% e só se arquivam ids registrados.
+import { execFileSync, spawnSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { between, section } from '../support/textSlice';
+
+const SCRIPT = '.claude/skills/implementar-fila/painel/painel.py';
+const NOW = '2026-11-10T10:00:00Z';
+let dir = '';
+
+function run(...args: string[]): string {
+  return execFileSync('python3', [SCRIPT, '--now', NOW, ...args], { encoding: 'utf8' });
+}
+function runRaw(...args: string[]) {
+  return spawnSync('python3', [SCRIPT, '--now', NOW, ...args], { encoding: 'utf8' });
+}
+function meta(): Record<string, unknown> {
+  return (
+    JSON.parse(readFileSync(path.join(dir, 'meta.json'), 'utf8')) as Array<
+      Record<string, unknown>
+    >
+  )[0]!;
+}
+
+beforeEach(() => {
+  dir = mkdtempSync(path.join(tmpdir(), 'painel-roles-'));
+  run('init', dir);
+});
+afterEach(() => rmSync(dir, { recursive: true, force: true }));
+
+describe('painel.py role / roles (decisão 7)', () => {
+  it('role grava id, n, at e link; o seguinte do mesmo papel soma 1', () => {
+    run('role', dir, 'coordenador', 'session_a');
+    expect((meta().roles as Record<string, unknown>).coordenador).toEqual({
+      id: 'session_a',
+      n: 1,
+      at: NOW,
+      link: '',
+    });
+    run('role', dir, 'coordenador', 'session_b', 'link=https://x/y');
+    expect(
+      (meta().roles as Record<string, Record<string, unknown>>).coordenador,
+    ).toMatchObject({
+      id: 'session_b',
+      n: 2,
+      link: 'https://x/y',
+    });
+  });
+
+  it('os papéis têm contagem própria e o papel inválido sai com código 2', () => {
+    run('role', dir, 'supervisor', 'session_s');
+    expect((meta().roles as Record<string, Record<string, unknown>>).supervisor?.n).toBe(
+      1,
+    );
+    const bad = runRaw('role', dir, 'testador', 'session_x');
+    expect(bad.status).toBe(2);
+  });
+
+  it('roles imprime coordenador e supervisor, ou —', () => {
+    expect(run('roles', dir)).toBe('coordenador —\nsupervisor —\n');
+    run('role', dir, 'coordenador', 'session_a');
+    run('role', dir, 'coordenador', 'session_b');
+    run('role', dir, 'supervisor', 'session_s', 'link=https://x/s');
+    expect(run('roles', dir)).toBe(
+      'coordenador 2: session_b\nsupervisor 1: session_s (https://x/s)\n',
+    );
+  });
+
+  it('dois role coordenador seguidos dão "coordenador 2" no roles', () => {
+    run('role', dir, 'coordenador', 'session_a');
+    run('role', dir, 'coordenador', 'session_b');
+    expect(run('roles', dir)).toContain('coordenador 2: session_b');
+  });
+
+  it('show: context 35 não avisa; 36 avisa "acima de 35%"', () => {
+    run('context', dir, '35');
+    expect(run('show', dir)).not.toContain('troque de sessão');
+    run('context', dir, '36');
+    expect(run('show', dir)).toContain('acima de 35%: troque de sessão agora');
+  });
+});
+
+describe('implementar-fila: troca aos 35% e uma sessão ativa por papel (decisões 7 e 8)', () => {
+  const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
+  const flow = readFileSync('docs/FLOW.md', 'utf8');
+
+  it('"1. Começo" dá o título "Fila — coordenador <n>" e registra o papel', () => {
+    const comeco = section(skill, '## 1. Começo');
+    expect(comeco).toContain('Fila — coordenador <n>');
+    expect(comeco).toContain('role');
+    expect(comeco).toContain('prefixo "Fila — coordenador"');
+  });
+
+  it('"Troca de sessão": 35%, título do sucessor, role, archive_session e conferência no get_session', () => {
+    const troca = section(skill, '## Troca de sessão');
+    expect(troca).toContain('Acima de 35%');
+    expect(troca).not.toContain('60%');
+    expect(troca).toContain('Fila — coordenador <n>');
+    const nova = troca.slice(troca.indexOf('**Na sessão nova**'));
+    expect(nova).toContain('role');
+    expect(nova).toContain('archive_session');
+    expect(nova).toMatch(/get_session[^\n]*arquiv/);
+    expect(nova).toMatch(/nova tentativa/);
+    expect(nova).toContain('PushNotification');
+    const antiga = between(troca, '**Na sessão antiga:**', '**Na sessão nova**');
+    expect(antiga).toMatch(/não age/);
+  });
+
+  it('"Arquivar as sessões": só ids registrados no painel; a sessão que não é a registrada não age', () => {
+    const bloco = skill.slice(skill.indexOf('**Arquivar as sessões**'));
+    expect(bloco).toMatch(/só se arquivam ids registrados no painel/i);
+    expect(bloco).toContain('meta.sessions');
+    expect(bloco).toContain('`anterior`');
+    expect(skill).toMatch(/não é a registrada/);
+    expect(skill).toMatch(
+      /send_message[^\n]*sessão atual|sessão atual[^\n]*send_message/,
+    );
+  });
+
+  it('"Conferências de reserva" usa 35%', () => {
+    const conf = skill.slice(skill.indexOf('**Conferências de reserva:**'));
+    expect(conf.slice(0, conf.indexOf('## '))).toContain('acima de 35%');
+  });
+
+  it('"Para o dono, nos três chats" diz 35% e o arquivamento', () => {
+    const dono = section(flow, '## Para o dono, nos três chats');
+    expect(dono).toMatch(/conferência de hora em hora[^\n]*contexto[^\n]*35%/);
+    expect(dono).toMatch(/acima de 35%/);
+    expect(dono).not.toContain('60%');
+    expect(dono).toMatch(/anterior[^\n]*arquivad/);
+  });
+});

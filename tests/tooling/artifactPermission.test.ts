@@ -11,4 +11,13 @@ describe('.claude/settings.json', () => {
     };
     expect(settings.permissions?.allow).toContain('Artifact');
   });
+
+  it('permissions.allow libera o archive_session (o sucessor arquiva o coordenador anterior; FM4)', () => {
+    const settings = JSON.parse(readFileSync('.claude/settings.json', 'utf8')) as {
+      permissions?: { allow?: string[] };
+    };
+    expect(settings.permissions?.allow).toContain(
+      'mcp__claude-code-remote__archive_session',
+    );
+  });
 });

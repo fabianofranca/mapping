@@ -1,6 +1,6 @@
 // @vitest-environment node
 // Fases VG1 e VG2 (etapa #1440). VG1: o painel calcula a nota "Vagas k/N" com o motivo de cada `ready` que não
-// começou, diz quais começam agora e guarda o contexto do coordenador (alerta acima de 60%).
+// começou, diz quais começam agora e guarda o contexto do coordenador (alerta acima de 35%).
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -254,15 +254,15 @@ describe('painel.py — vagas (VG1, #1440)', () => {
     }
   });
 
-  it('show: contexto — sem registro, 60% sem alerta, 61% com o alerta de troca', () => {
+  it('show: contexto — sem registro, 35% sem alerta, 36% com o alerta de troca', () => {
     expect(run('show', dir)).toContain('contexto: —');
-    run('context', dir, '60');
+    run('context', dir, '35');
     const ok = run('show', dir);
-    expect(ok).toContain(`contexto: 60% (${NOW})`);
+    expect(ok).toContain(`contexto: 35% (${NOW})`);
     expect(ok).not.toContain('troque de sessão');
-    run('context', dir, '61');
+    run('context', dir, '36');
     expect(run('show', dir)).toContain(
-      `contexto: 61% (${NOW}) — acima de 60%: troque de sessão agora ("Troca de sessão")`,
+      `contexto: 36% (${NOW}) — acima de 35%: troque de sessão agora ("Troca de sessão")`,
     );
   });
 
@@ -349,9 +349,9 @@ describe('implementar-fila e detalhar-backlog: vagas, contexto e roteiros (VG2, 
     expect(mudancas).toContain('ordem do dono (');
   });
 
-  it('"Troca de sessão" mantém Acima de 60%, troca na hora e perde o aviso de filha (decisões 3.1 e 3.2)', () => {
+  it('"Troca de sessão" mantém Acima de 35%, troca na hora e perde o aviso de filha (decisões 3.1 e 3.2)', () => {
     const troca = section(fila, '## Troca de sessão');
-    expect(troca).toContain('Acima de 60%');
+    expect(troca).toContain('Acima de 35%');
     expect(troca).toContain('na hora');
     expect(troca).not.toContain('a cada aviso de filha');
   });
