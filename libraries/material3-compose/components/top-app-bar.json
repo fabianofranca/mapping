@@ -10,7 +10,16 @@
   },
   "sizing": {
     "width": "fill",
-    "height": 152
+    "height": {
+      "$switch": "style",
+      "cases": {
+        "small": 64,
+        "center": 64,
+        "medium": 112,
+        "large": 152
+      },
+      "default": 64
+    }
   },
   "preview": {
     "title": "Início",
@@ -842,10 +851,13 @@
         "anchors": {
           "left": 16,
           "right": 8,
-          "bottom": 16
+          "bottom": 0
         },
         "visible": {
           "$eq": ["style", "medium"]
+        },
+        "baselinePadding": {
+          "bottom": 24
         }
       },
       {
@@ -879,10 +891,13 @@
         "anchors": {
           "left": 16,
           "right": 8,
-          "bottom": 20
+          "bottom": 0
         },
         "visible": {
           "$eq": ["style", "large"]
+        },
+        "baselinePadding": {
+          "bottom": 28
         }
       }
     ]

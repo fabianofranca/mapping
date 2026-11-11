@@ -12,6 +12,7 @@
 
 - Teto do `dist/index.html` subiu 16 KiB, de 2.048.000 para 2.064.384, por decisão do dono (2026-11-11), com exceção ao limite de 64 KiB de subidas desde a revisão do orçamento.
 - Teto do `dist/index.html` subiu 16 KiB, de 2.064.384 para 2.080.768, pela regra do orçamento.
+- Biblioteca Material 3 (Compose) (versão 8, atualização aditiva): o snackbar, as abas, o tooltip, as barras de título medium e large e o list-item posicionam o texto pela linha de base do Compose em qualquer fonte, no lugar das estimativas para o Roboto 14/20. O snackbar mede 48, 68 e 81 com uma, duas e três linhas; o list-item com apoio de duas linhas mede 88 com o conteúdo preso ao topo; a top-app-bar mede 64, 112 ou 152 pelo `style` no ajuste; o botão, o chip, o extended-fab e os botões do alert-dialog de rótulo longo quebram o rótulo e crescem na altura pelas linhas; o text-field e o secure-text-field medem a altura pelo apoio (o filled sem apoio deixa de ter 28 vazios embaixo) e a search-bar, o text-field e o secure-text-field ganham `minWidth`/`maxWidth` na raiz, que valem na largura medida.
 
 ## Corrigido
 

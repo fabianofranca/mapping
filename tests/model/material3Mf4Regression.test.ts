@@ -63,6 +63,25 @@ const EXCEPTIONS = {
   },
   // Número sob a alça: o `valor selecionado` sai e a cópia dos números entra dentro da `alça`.
   'time-picker': { rename: {}, drop: ['valor selecionado'] },
+  // MC5 (#1033): o rótulo sob o ícone passou da estimativa do Roboto 14/20 (texto a 12 do fundo) à linha de base do
+  // Compose (`baselinePadding`): o nó vira `rótulo empilhado` e a caixa dele inclui as distâncias da linha de base
+  // (29 de altura em vez de 20). Quem confere a posição é `material3Mc5GrupoB.test.ts`; o resto da cena fica igual.
+  tabs: { rename: {}, drop: ['rótulo', 'rótulo empilhado', 'rótulo empilhado rolável'] },
+  // MC5 (#1033): o tooltip rico passou da estimativa do Roboto 14/20 (13, 9, 4 e 16 de padding) às distâncias da
+  // linha de base do Compose (`baselinePadding`): as caixas do título, do texto e da ação mudam de lugar e a altura
+  // do cartão com título passa de 73 para 78 (`TooltipTest.kt` linha 260: o texto fica 24 abaixo do FIM da caixa do
+  // título, e não da base). Quem confere as posições é `material3Mc5GrupoA.test.ts`; o `plain` fica igual.
+  tooltip: {
+    rename: {},
+    drop: ['rich', 'título', 'corpo', 'texto', 'ação', 'botão da ação', 'rótulo da ação'],
+  },
+  // MC5 (#1033, grupo C): o rótulo e o quadro `conteúdo` do button, do extended-fab e do chip passaram a abraçar a
+  // altura das linhas (`hug`, como o `Row` com `defaultMinSize` do Compose) em vez de ocupar a caixa inteira: a caixa
+  // deles encolhe e o chip abraça a largura. O centro do rótulo de uma linha segue o mesmo (confere
+  // `material3Mc5GrupoC.test.ts`); o resto da cena (contêiner, ícones, sombras) fica igual.
+  button: { rename: {}, drop: ['conteúdo', 'rótulo'] },
+  'extended-fab': { rename: {}, drop: ['conteúdo', 'texto'] },
+  chip: { rename: {}, drop: ['conteúdo', 'rótulo'] },
 } as Record<string, { rename: Record<string, string>; drop: string[] }>;
 
 /** Número sob a alça: a `alça` ganha a cópia dos números (`números sob a alça`) no lugar do `valor selecionado`. */

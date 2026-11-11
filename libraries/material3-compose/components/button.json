@@ -14,7 +14,7 @@
   },
   "sizing": {
     "width": "hug",
-    "height": 40
+    "height": "hug"
   },
   "preview": {
     "label": "Salvar",
@@ -349,7 +349,7 @@
           "centerY": true
         },
         "width": "hug",
-        "height": "fill",
+        "height": "hug",
         "layout": {
           "type": "row",
           "gap": 8,
@@ -674,7 +674,34 @@
               },
               "else": 1
             },
-            "height": "fill"
+            "height": "hug",
+            "width": "hug",
+            "maxWidth": {
+              "$sub": [
+                {
+                  "$size": "width"
+                },
+                {
+                  "$if": {
+                    "$has": "icon"
+                  },
+                  "then": {
+                    "$if": {
+                      "$eq": ["style", "text"]
+                    },
+                    "then": 54,
+                    "else": 66
+                  },
+                  "else": {
+                    "$if": {
+                      "$eq": ["style", "text"]
+                    },
+                    "then": 24,
+                    "else": 48
+                  }
+                }
+              ]
+            }
           }
         ]
       }

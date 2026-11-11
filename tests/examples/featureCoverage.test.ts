@@ -83,9 +83,6 @@ const MISSING_TODAY: string[] = [
   // Texto rico do componente v4 (etapa #747, CF4): as bibliotecas distribuídas não migram; coberto
   // por tests/model/components/richText.test.ts, tests/e2e/ e pelo roteiro R25.
   'component:node.text.runs',
-  // Linha de base (etapa #898, MC1): a Material 3 só adota `baselinePadding` na MC5; até lá, coberto por
-  // tests/model/components/baselineLayout.test.ts, tests/e2e/textMetrics.spec.ts e pelo roteiro R25.
-  'component:node.text.baselinePadding',
   // Quebra de fileira (etapa #898, MC4): o `repeat` com `wrap` não é adotado por nenhuma biblioteca
   // distribuída (a Material 3 usa o `layout.wrap` no flow-row na MC6); coberto por
   // tests/model/components/wrapLayout.test.ts e pelo roteiro R25.
@@ -93,9 +90,6 @@ const MISSING_TODAY: string[] = [
   'component:node.repeat.lineGap',
   'component:node.repeat.maxPerLine',
   'component:node.repeat.maxLines',
-  // `$lines` (etapa #898, MC2): a Material 3 só adota `$lines` na MC5; até lá, coberto por
-  // tests/model/components/instantiate.test.ts, tests/model/libraryDrawingFitted.test.ts e pelo roteiro R25.
-  'component:expr.$lines',
   'component:run.text',
   'component:run.weight',
   'component:run.italic',

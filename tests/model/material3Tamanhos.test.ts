@@ -9,6 +9,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import { multiply, IDENTITY } from '../../src/model/components/scene';
+import { resolveSizing } from '../../src/model/components/sizing';
 import type { Matrix, SceneNode } from '../../src/model/components/scene';
 import { COMPOSE_SIZES, drawIn, files, text } from '../support/material3Library';
 
@@ -24,9 +25,12 @@ function bottomOf(node: SceneNode, parent: Matrix = IDENTITY, isRoot = true): nu
   return bottom;
 }
 
-/** Altura do `sizing` de cada tipo (o `size` vem de `COMPOSE_SIZES`, a fonte única dos testes da biblioteca). */
-const SIZING_HEIGHT: Record<string, number | 'hug'> = {
-  'top-app-bar': 152,
+/**
+ * Altura do `sizing` de cada tipo (o `size` vem de `COMPOSE_SIZES`, a fonte única dos testes da biblioteca).
+ * `por style`: expressão pelo `style` (MC5, decisão 20: top-app-bar 64, 112 e 152), conferida em px abaixo.
+ */
+const SIZING_HEIGHT: Record<string, number | 'hug' | 'por style'> = {
+  'top-app-bar': 'por style',
   'date-picker': 'hug',
   'time-picker': 'hug',
   'alert-dialog': 'hug',
@@ -41,7 +45,17 @@ describe.each(Object.keys(SIZING_HEIGHT))('%s: tamanho do Compose', (id) => {
 
   it('o size e o sizing são os do Compose', () => {
     expect(entry.component!.size).toEqual(size);
-    expect(entry.component!.sizing?.height).toBe(SIZING_HEIGHT[id]);
+    const expected = SIZING_HEIGHT[id];
+    if (expected === 'por style') {
+      // MC5: o px sai da expressão avaliada por `style` (AppBar{Small,Medium,Large}Tokens `ContainerHeight`)
+      const heights = Object.fromEntries(
+        ['small', 'center', 'medium', 'large'].map((style) => [
+          style,
+          resolveSizing(entry.component!, { style }).height.spec,
+        ]),
+      );
+      expect(heights).toEqual({ small: 64, center: 64, medium: 112, large: 152 });
+    } else expect(entry.component!.sizing?.height).toBe(expected);
   });
 
   it.each(['light', 'dark'] as const)(

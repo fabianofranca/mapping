@@ -14,7 +14,25 @@
   },
   "sizing": {
     "width": "fill",
-    "height": 84
+    "height": {
+      "$switch": "style",
+      "cases": {
+        "outlined": {
+          "$if": {
+            "$has": "supportingText"
+          },
+          "then": 84,
+          "else": 64
+        }
+      },
+      "default": {
+        "$if": {
+          "$has": "supportingText"
+        },
+        "then": 76,
+        "else": 56
+      }
+    }
   },
   "preview": {
     "label": "Senha",
@@ -1253,6 +1271,7 @@
           }
         ]
       }
-    ]
+    ],
+    "minWidth": 280
   }
 }

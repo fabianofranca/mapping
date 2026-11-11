@@ -218,7 +218,7 @@
                                 "$eq": ["iconPosition", "leading"]
                               },
                               "then": 8,
-                              "else": 5
+                              "else": 0
                             },
                             "padding": {
                               "$if": {
@@ -236,7 +236,18 @@
                                   }
                                 ]
                               },
-                              "then": [0, 0, 12, 0],
+                              "then": {
+                                "$if": {
+                                  "$gt": [
+                                    {
+                                      "$lines": "rótulo empilhado"
+                                    },
+                                    1
+                                  ]
+                                },
+                                "then": 0,
+                                "else": [0, 0, 8, 0]
+                              },
                               "else": 0
                             },
                             "align": "center",
@@ -515,26 +526,99 @@
                                 }
                               },
                               "visible": {
-                                "$has": "label"
-                              },
-                              "height": {
-                                "$if": {
-                                  "$and": [
-                                    {
-                                      "$has": "icon"
-                                    },
-                                    {
-                                      "$has": "label"
-                                    },
-                                    {
-                                      "$not": {
-                                        "$eq": ["iconPosition", "leading"]
-                                      }
+                                "$and": [
+                                  {
+                                    "$has": "label"
+                                  },
+                                  {
+                                    "$not": {
+                                      "$and": [
+                                        {
+                                          "$has": "icon"
+                                        },
+                                        {
+                                          "$has": "label"
+                                        },
+                                        {
+                                          "$not": {
+                                            "$eq": ["iconPosition", "leading"]
+                                          }
+                                        }
+                                      ]
                                     }
-                                  ]
+                                  }
+                                ]
+                              },
+                              "height": "fill"
+                            },
+                            {
+                              "type": "text",
+                              "name": "rótulo empilhado",
+                              "text": {
+                                "$field": "label"
+                              },
+                              "font": {
+                                "size": {
+                                  "$token": "title-small-size"
                                 },
-                                "then": "hug",
-                                "else": "fill"
+                                "weight": {
+                                  "$token": "title-small-weight"
+                                },
+                                "lineHeight": {
+                                  "$token": "title-small-line-height"
+                                },
+                                "letterSpacing": {
+                                  "$token": "title-small-tracking"
+                                },
+                                "align": "center",
+                                "maxLines": 2
+                              },
+                              "color": {
+                                "$if": {
+                                  "$field": "selected"
+                                },
+                                "then": {
+                                  "$if": {
+                                    "$or": [
+                                      {
+                                        "$eq": ["style", "secondary"]
+                                      },
+                                      {
+                                        "$eq": ["style", "secondary-scrollable"]
+                                      }
+                                    ]
+                                  },
+                                  "then": {
+                                    "$token": "on-surface"
+                                  },
+                                  "else": {
+                                    "$token": "primary"
+                                  }
+                                },
+                                "else": {
+                                  "$token": "on-surface-variant"
+                                }
+                              },
+                              "visible": {
+                                "$and": [
+                                  {
+                                    "$has": "icon"
+                                  },
+                                  {
+                                    "$has": "label"
+                                  },
+                                  {
+                                    "$not": {
+                                      "$eq": ["iconPosition", "leading"]
+                                    }
+                                  }
+                                ]
+                              },
+                              "height": "hug",
+                              "width": "fill",
+                              "baselinePadding": {
+                                "top": 20,
+                                "bottom": 9
                               }
                             }
                           ]
@@ -772,7 +856,7 @@
                                 "$eq": ["iconPosition", "leading"]
                               },
                               "then": 8,
-                              "else": 5
+                              "else": 0
                             },
                             "padding": {
                               "$if": {
@@ -790,7 +874,18 @@
                                   }
                                 ]
                               },
-                              "then": [0, 0, 12, 0],
+                              "then": {
+                                "$if": {
+                                  "$gt": [
+                                    {
+                                      "$lines": "rótulo empilhado rolável"
+                                    },
+                                    1
+                                  ]
+                                },
+                                "then": 0,
+                                "else": [0, 0, 8, 0]
+                              },
                               "else": 0
                             },
                             "align": "center",
@@ -1069,26 +1164,98 @@
                                 }
                               },
                               "visible": {
-                                "$has": "label"
-                              },
-                              "height": {
-                                "$if": {
-                                  "$and": [
-                                    {
-                                      "$has": "icon"
-                                    },
-                                    {
-                                      "$has": "label"
-                                    },
-                                    {
-                                      "$not": {
-                                        "$eq": ["iconPosition", "leading"]
-                                      }
+                                "$and": [
+                                  {
+                                    "$has": "label"
+                                  },
+                                  {
+                                    "$not": {
+                                      "$and": [
+                                        {
+                                          "$has": "icon"
+                                        },
+                                        {
+                                          "$has": "label"
+                                        },
+                                        {
+                                          "$not": {
+                                            "$eq": ["iconPosition", "leading"]
+                                          }
+                                        }
+                                      ]
                                     }
-                                  ]
+                                  }
+                                ]
+                              },
+                              "height": "fill"
+                            },
+                            {
+                              "type": "text",
+                              "name": "rótulo empilhado rolável",
+                              "text": {
+                                "$field": "label"
+                              },
+                              "font": {
+                                "size": {
+                                  "$token": "title-small-size"
                                 },
-                                "then": "hug",
-                                "else": "fill"
+                                "weight": {
+                                  "$token": "title-small-weight"
+                                },
+                                "lineHeight": {
+                                  "$token": "title-small-line-height"
+                                },
+                                "letterSpacing": {
+                                  "$token": "title-small-tracking"
+                                },
+                                "align": "center",
+                                "maxLines": 2
+                              },
+                              "color": {
+                                "$if": {
+                                  "$field": "selected"
+                                },
+                                "then": {
+                                  "$if": {
+                                    "$or": [
+                                      {
+                                        "$eq": ["style", "secondary"]
+                                      },
+                                      {
+                                        "$eq": ["style", "secondary-scrollable"]
+                                      }
+                                    ]
+                                  },
+                                  "then": {
+                                    "$token": "on-surface"
+                                  },
+                                  "else": {
+                                    "$token": "primary"
+                                  }
+                                },
+                                "else": {
+                                  "$token": "on-surface-variant"
+                                }
+                              },
+                              "visible": {
+                                "$and": [
+                                  {
+                                    "$has": "icon"
+                                  },
+                                  {
+                                    "$has": "label"
+                                  },
+                                  {
+                                    "$not": {
+                                      "$eq": ["iconPosition", "leading"]
+                                    }
+                                  }
+                                ]
+                              },
+                              "height": "hug",
+                              "baselinePadding": {
+                                "top": 20,
+                                "bottom": 9
                               }
                             }
                           ]

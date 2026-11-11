@@ -213,8 +213,22 @@ describe('M4 grupo A — top-app-bar', () => {
 
   it('medium e large: título em headline-small (24/32) e headline-medium (28/36), a 16 da borda e com a base a 24 e 28 da base da barra', () => {
     const cases = [
-      { style: 'medium', scale: 'headline-small', height: 112, bottom: 16 },
-      { style: 'large', scale: 'headline-medium', height: 152, bottom: 20 },
+      {
+        style: 'medium',
+        scale: 'headline-small',
+        height: 112,
+        bottom: 24,
+        size: 24,
+        line: 32,
+      },
+      {
+        style: 'large',
+        scale: 'headline-medium',
+        height: 152,
+        bottom: 28,
+        size: 28,
+        line: 36,
+      },
     ];
     for (const c of cases) {
       for (const mode of MODES) {
@@ -230,9 +244,11 @@ describe('M4 grupo A — top-app-bar', () => {
         expect(solid(big.fills)).toBe(tok('on-surface', mode));
         const abs = absOf(d, big);
         expect(abs.x).toBe(16);
-        // o Compose põe a linha de base a 24 (medium) ou 28 (large) do fundo: a caixa do texto
-        // (linha cheia, Alignment.Center) fica a esses valores menos a parte abaixo da base
-        expect(c.height - (abs.y + abs.height)).toBe(c.bottom);
+        // o Compose põe a linha de base a 24 (medium) ou 28 (large) do fundo (AppBar.kt 3213 a 3231): o nó leva
+        // `baselinePadding.bottom` e desce até o fundo da barra (MC5, antes: caixa a 16 e 20 do fundo, o Roboto 14/20)
+        expect(c.height - (abs.y + abs.height)).toBe(0);
+        const firstBaseline = c.line / 2 + ((0.93 - 0.24) * c.size) / 2;
+        expect(c.height - (abs.y + firstBaseline)).toBeCloseTo(c.bottom, 6);
         // a linha de cima (navegação) continua com 64
         expect(box(d, 'barra').height).toBe(64);
         expect(textIn(d, 'título')).toBeUndefined();

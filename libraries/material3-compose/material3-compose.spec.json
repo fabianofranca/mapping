@@ -3,7 +3,7 @@
   "formatVersion": 15,
   "id": "material3-compose",
   "name": "Material 3 (Compose)",
-  "version": 7,
+  "version": 8,
   "description": "Material Design 3 (baseline, tema claro e escuro) para Jetpack Compose, com o composable de cada tipo no `code`. Os símbolos e os parâmetros vêm do código do androidx na versão compose.material3 1.4.0 (commit 5113b82a4ed6416d6344efa50e41db8cb65928ff). Padrões: os espaços (lambdas) de cada composable ficam no `notes`; o tamanho vem de width, height e weight; os ícones são sugestões de Icons.Filled; a imagem remota usa o carregador de imagens do app; o Scaffold coloca cada filha no espaço certo pelo tipo dela.",
   "platforms": [
     {
@@ -4236,6 +4236,13 @@
                 "containerColor": "tertiaryContainer",
                 "interaction": "pressed"
               }
+            },
+            {
+              "name": "Rótulo longo",
+              "values": {
+                "text": "Criar nota fiscal",
+                "icon": "Add"
+              }
             }
           ]
         },
@@ -4753,6 +4760,14 @@
                 "value": "nome@exemplo.com",
                 "style": "outlined",
                 "interaction": "focused"
+              }
+            },
+            {
+              "name": "Preenchido com apoio",
+              "values": {
+                "label": "Nome",
+                "supportingText": "Como aparece no seu perfil",
+                "style": "filled"
               }
             }
           ]
@@ -5500,6 +5515,14 @@
                 "avatar": "https://example.com/ana.png",
                 "trailingIcon": "Close"
               }
+            },
+            {
+              "name": "Rótulo longo",
+              "values": {
+                "label": "Adicionar reunião ao calendário compartilhado",
+                "style": "assist",
+                "leadingIcon": "DateRange"
+              }
             }
           ]
         },
@@ -6086,6 +6109,15 @@
                 "headlineContent": "Reunião de planejamento",
                 "supportingContent": "Sala 3, com a equipe de produto.",
                 "trailingIcon": "KeyboardArrowRight"
+              }
+            },
+            {
+              "name": "Apoio de duas linhas",
+              "values": {
+                "headlineContent": "Reunião de planejamento",
+                "supportingContent": "Sala 3, com a equipe de produto, para combinar o planejamento do semestre.",
+                "leadingIcon": "DateRange",
+                "trailingContent": "12:30"
               }
             },
             {
@@ -9789,6 +9821,14 @@
                 "hasText": "true",
                 "style": "filled",
                 "interaction": "focused"
+              }
+            },
+            {
+              "name": "Preenchido com apoio",
+              "values": {
+                "label": "Senha",
+                "supportingText": "Mínimo de 8 caracteres",
+                "style": "filled"
               }
             }
           ]
@@ -13931,7 +13971,7 @@
   "migrations": [
     {
       "from": 1,
-      "to": 7,
+      "to": 8,
       "steps": [
         {
           "op": "fill-field",
@@ -13955,7 +13995,7 @@
     },
     {
       "from": 2,
-      "to": 7,
+      "to": 8,
       "steps": [
         {
           "op": "fill-field",
@@ -13979,7 +14019,7 @@
     },
     {
       "from": 3,
-      "to": 7,
+      "to": 8,
       "steps": [
         {
           "op": "fill-field",
@@ -14003,7 +14043,7 @@
     },
     {
       "from": 4,
-      "to": 7,
+      "to": 8,
       "steps": [
         {
           "op": "fill-field",
@@ -14027,7 +14067,7 @@
     },
     {
       "from": 5,
-      "to": 7,
+      "to": 8,
       "steps": [
         {
           "op": "fill-field",
