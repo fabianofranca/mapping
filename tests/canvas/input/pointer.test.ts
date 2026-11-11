@@ -211,6 +211,34 @@ describe('PointerInput', () => {
     s.cleanup();
   });
 
+  it('mouse: arrastar o container só na vertical não regrava o x (zoom fracionário, bit a bit)', () => {
+    const base = canvasProject();
+    const x0 = 3300.0000513292603;
+    const project: Project = {
+      ...base,
+      containers: base.containers.map((c) =>
+        c.id === 'I1' ? { ...c, placement: { ...c.placement, x: x0 } } : c,
+      ),
+    };
+    const s = setup(false, project);
+    s.viewport.viewport.value = { x: 0, y: 78.9, scale: 0.557 };
+    s.ui.selection.value = { kind: 'image', id: 'I1' };
+    // Ponto de tela dentro do I1 (canvas ~ 3300..4300 x 0..800), sem tocar marcação.
+    // 1900 em tela vira 3411.131… no canvas: `(x0 + c) - c` ≠ `x0` (a fórmula antiga regravava).
+    const sx = 1900;
+    const sy = 700 * 0.557 + 78.9;
+    s.fire('pointerdown', sx, sy);
+    s.fire('pointermove', sx, sy + 40);
+    expect(s.state.preview.value?.placement.x).toBe(x0);
+    s.fire('pointermove', sx, sy + 90);
+    expect(s.state.preview.value?.placement.x).toBe(x0);
+    s.fire('pointerup', sx, sy + 90);
+    // Gravado: o mesmo x de sempre (a gravação só corta a cauda, como em qualquer escrita).
+    expect(s.containerOf('I1')?.placement.x).toBe(Number(x0.toFixed(6)));
+    expect(s.containerOf('I1')?.placement.y).not.toBe(0);
+    s.cleanup();
+  });
+
   it('toque: arrastar sobre a marcação selecionada faz pan, sem movê-la', () => {
     const s = setup();
     s.ui.selection.value = { kind: 'marking', id: 'M1' };

@@ -378,8 +378,8 @@ export class PointerInput {
         const c = viewport.toCanvas(p);
         const { startPlacement: s, startCanvas } = g;
         this.previewPlacement(g.containerId, {
-          x: s.x + c.x - startCanvas.x,
-          y: s.y + c.y - startCanvas.y,
+          x: s.x + (c.x - startCanvas.x),
+          y: s.y + (c.y - startCanvas.y),
           scale: s.scale,
         });
         return;
