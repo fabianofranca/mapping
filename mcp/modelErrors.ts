@@ -69,6 +69,8 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
   'invalid-source': 'source inválido: informe system e id não vazios (url é opcional)',
   'not-arrangeable':
     'a marcação não é um container com layout em linha ou coluna e filhas para arrumar',
+  'not-fittable':
+    'a marcação não tem eixo que dependa do conteúdo (o sizing do componente precisa ser hug ou uma expressão), ou é um componente com filhas no slot',
   'perspective-name-empty': 'o nome da perspectiva está vazio',
   'perspective-name-taken':
     'já existe uma perspectiva com esse nome (sem diferença de maiúsculas)',
@@ -82,6 +84,8 @@ export const MODEL_ERROR_HINTS: Readonly<Partial<Record<ModelErrorCode, string>>
     'escolha um tipo cujo `appliesTo` inclua este item (marcação ou seta) ou use uma anotação livre numa camada sem especialização',
   'rect-too-small':
     'aumente `width` e `height` do `rect` até pelo menos o mínimo (cada lado, em pixels do container; no canvas, em unidades do canvas)',
+  'not-fittable':
+    'só uma marcação de componente com `sizing` `hug` ou por expressão (veja `get_component`) e sem marcações no slot se ajusta ao conteúdo; as demais não precisam de `fit_marking`',
   'image-overlap':
     'mude `x`, `y` ou `scale` do container (ou o tamanho dele) para não cobrir o outro, ou mova o outro container antes',
 };

@@ -424,6 +424,48 @@ if (version >= 4) {
   );
 }
 
+// MC3 (R25.97 e R25.98): o `button` vira uma peça de 120 × 40 com a altura pelo rótulo. Uma caixa
+// vermelha (`#B71C1C`) `hug` na altura (`sizing.height` `hug`, `minSize` 48 × 40), com o rótulo em
+// `H` brancos (20 de altura de linha, respiro de 10 em cima e embaixo): 1 linha mede 40, 2 linhas 60,
+// 3 linhas 80. O exemplo "Rótulo longo" do tipo sai (a peça só cabe o texto longo no tamanho ajustado). Só na versão 4
+// (o `sizing` com `hug` na altura só vale no formato 4; o R25.2 segue com as oito peças e 15 erros).
+if (version >= 4) {
+  write(
+    'button',
+    'Button',
+    { width: 120, height: 40 },
+    {
+      type: 'frame',
+      name: 'botao',
+      width: 'fill',
+      height: 'hug',
+      layout: { type: 'column', padding: [10, 8] },
+      fill: '#B71C1C',
+      children: [
+        {
+          type: 'text',
+          name: 'rotulo',
+          text: { $field: 'label', default: '' },
+          color: '#FFFFFF',
+          width: 'fill',
+          height: 'hug',
+          font: { size: 13, lineHeight: 20, family: 'sans-serif' },
+        },
+      ],
+    },
+    {
+      minSize: { width: 48, height: 40 },
+      sizing: { height: 'hug' },
+      preview: {
+        label: 'H H H',
+        style: 'filled',
+        enabled: 'true',
+        icon: '',
+      },
+    },
+  );
+}
+
 // Os componentes mínimos acima não desenham o `interaction`: sem tirar o campo e os exemplos que o
 // usam, o validador avisa "campo não usado" (R25.1).
 const specFile = process.argv[2] + '/material3-compose.spec.json';
@@ -431,13 +473,28 @@ const spec = JSON.parse(fs.readFileSync(specFile, 'utf8'));
 for (const layer of spec.layers)
   for (const type of layer.annotationTypes)
     if (
-      ['card', 'checkbox', 'chip', 'list-item', 'navigation-bar', 'text-field'].includes(
-        type.id,
-      )
+      [
+        'button',
+        'card',
+        'checkbox',
+        'chip',
+        'list-item',
+        'navigation-bar',
+        'text-field',
+      ].includes(type.id)
     ) {
       type.fields = type.fields.filter((f) => f.key !== 'interaction');
       type.examples = (type.examples ?? []).filter(
         (e) => e.values?.interaction === undefined,
       );
+    }
+// O exemplo de rótulo longo do `button` só cabe no tamanho ajustado, e a prova no `size` avisa (MC3).
+for (const layer of spec.layers)
+  for (const type of layer.annotationTypes)
+    if (version >= 4 && type.id === 'button') {
+      const before = (type.examples ?? []).length;
+      type.examples = (type.examples ?? []).filter((e) => e.name !== 'Rótulo longo');
+      if (type.examples.length === before)
+        throw new Error('exemplo "Rótulo longo" do button não achado');
     }
 fs.writeFileSync(specFile, JSON.stringify(spec, null, 2));

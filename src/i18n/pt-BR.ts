@@ -139,6 +139,8 @@ export const ptBR = {
   'marking.error.rect-outside-parent': 'A marcação precisa ficar dentro da marcação pai.',
   'marking.error.invalid-parent': 'Essa marcação não pode ser a pai.',
   'marking.error.invalid-space': 'Só uma marcação do canvas pode ser flutuante.',
+  'marking.error.not-fittable':
+    'Só é possível ajustar ao conteúdo um componente cujo tamanho depende do conteúdo (hug) e que não tem marcações dentro.',
   'marking.error.not-arrangeable':
     'Só é possível arrumar um container em linha ou coluna que tenha marcações dentro.',
   'marking.error.generic': 'Não foi possível alterar a marcação.',
@@ -1185,6 +1187,7 @@ export const ptBR = {
   'marking.orderFront': 'Mover para a frente',
   'arrange.action': 'Arrumar',
   'arrange.hint': 'Arruma as marcações de dentro pelo layout do container.',
+  'arrange.hintFit': 'Ajusta o tamanho da marcação ao conteúdo do componente.',
   'arrange.done': 'Arrumado',
   'arrange.doneWarnings': 'Arrumado com {count} aviso(s): {first}',
   'arrange.nothing': 'Nada a arrumar',

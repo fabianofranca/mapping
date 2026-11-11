@@ -8,6 +8,8 @@ import {
 import type { ComponentFile, FieldValues } from './components/componentFormat';
 import {
   expressionPx,
+  fitComponentSize,
+  followedAxes,
   resolveSizing,
   type ResolvedAxis,
   type ResolvedSizing,
@@ -32,6 +34,7 @@ import {
 import { settleFrom, type SettleOptions } from './hierarchySettle';
 import { markingLockStates } from './locks';
 import { modelMessage, type ModelMessage } from './modelMessage';
+import { findById } from './project';
 import { projectIndex } from './projectIndex';
 import type { Marking, Project, Rect } from './types';
 
@@ -99,6 +102,12 @@ export function canArrange(
   markingId: string,
 ): boolean {
   return containerOf(p, catalog, markingId) !== null;
+}
+
+/** O `align: stretch` do slot do pai estica o filho neste eixo (o cruzado do layout dele). */
+function stretchedBy(parent: Container | null, axis: 'width' | 'height'): boolean {
+  if (parent === null || parent.layout.align !== 'stretch') return false;
+  return axis === (parent.layout.type === 'row' ? 'height' : 'width');
 }
 
 function sameRect(a: Rect, b: Rect): boolean {
@@ -268,9 +277,7 @@ export function arrangeMarking(
   /** O pai estica este componente com slot no eixo (o `stretch` do pai vale mais que o `hug`). */
   const stretchedByParent = (id: string, axis: 'width' | 'height'): boolean => {
     const parentId = (index.markings.get(id) as Marking).parentId;
-    const parent = parentId === null ? null : containerAt(parentId);
-    if (parent === null || parent.layout.align !== 'stretch') return false;
-    return axis === (parent.layout.type === 'row' ? 'height' : 'width');
+    return stretchedBy(parentId === null ? null : containerAt(parentId), axis);
   };
 
   // Por texto, para não repetir o mesmo aviso entre as voltas.
@@ -474,4 +481,130 @@ export function arrangeMarking(
     ),
     warnings: [...warnings.values()],
   };
+}
+
+/** O que o ajuste ao conteúdo precisa de uma marcação de componente sem filhas no slot. */
+interface FitTarget {
+  readonly marking: Marking;
+  readonly component: ComponentFile;
+  readonly tokens: ResolvedTokens | undefined;
+  readonly values: FieldValues;
+  readonly parent: Container | null;
+}
+
+/**
+ * A marcação é de um componente cujo `sizing` avaliado depende do conteúdo (`hug` ou px por expressão)
+ * num dos eixos e que não é um componente com slot com filhas (esse se arruma: `arrangeMarking`
+ * já ajusta o `hug` dele). `null` quando não é.
+ */
+function fitTargetOf(
+  p: Project,
+  catalog: ComponentCatalog,
+  marking: Marking,
+): FitTarget | null {
+  if (containerOf(p, catalog, marking.id) !== null) return null;
+  const mc = markingComponent(p, catalog, marking.id);
+  if (mc === null) return null;
+  // Filhas num slot sem layout `row`/`column` também não se ajustam: medir sem elas encolheria o
+  // componente e o assentar tiraria as filhas dele.
+  const hasKids = (projectIndex(p).children.get(marking.id)?.length ?? 0) > 0;
+  if (hasKids && findSlot(mc.component) !== undefined) return null;
+  const values = drawingValues(p, mc.annotation, mc.type).values;
+  const followed = followedAxes(resolveSizing(mc.component, values));
+  if (!followed.width && !followed.height) return null;
+  const drawn = componentForDrawing(p, mc.component, marking.containerId);
+  return {
+    marking,
+    component: drawn.component,
+    tokens: drawn.tokens,
+    values,
+    parent: marking.parentId === null ? null : containerOf(p, catalog, marking.parentId),
+  };
+}
+
+/**
+ * Dá para ajustar ao conteúdo: a marcação é de um componente sem filhas no slot cujo `sizing`
+ * (hug ou expressão) depende do conteúdo num eixo. Não mede nada (a pergunta do menu e do botão).
+ */
+export function canFit(
+  p: Project,
+  catalog: ComponentCatalog,
+  markingId: string,
+): boolean {
+  const marking = projectIndex(p).markings.get(markingId);
+  return marking !== undefined && fitTargetOf(p, catalog, marking) !== null;
+}
+
+/**
+ * O Arrumar de uma marcação ajusta ao conteúdo (`fitMarking`) e não arruma filhas: ela é de um
+ * componente que não se arruma (sem slot `row`/`column` com filhas). Uma marcação sem componente fica
+ * com `arrangeMarking` (e o `not-arrangeable` dele).
+ */
+export function arrangesByFit(
+  p: Project,
+  catalog: ComponentCatalog,
+  markingId: string,
+): boolean {
+  return (
+    containerOf(p, catalog, markingId) === null &&
+    markingComponent(p, catalog, markingId) !== null
+  );
+}
+
+/** O retângulo preso à imagem do container (o ajuste não passa dela); no canvas não há limite. */
+function withinImage(p: Project, marking: Marking, rect: Rect): Rect {
+  if (marking.containerId === null) return rect;
+  const container = projectIndex(p).containers.get(marking.containerId);
+  if (container === undefined) return rect;
+  const image = imagePixelRect(container);
+  return {
+    ...rect,
+    width: Math.min(rect.width, right(image) - rect.x),
+    height: Math.min(rect.height, bottom(image) - rect.y),
+  };
+}
+
+/**
+ * Ajusta a marcação de um componente ao conteúdo (decisão 14 da #898): cada eixo cujo `sizing` é `hug`
+ * (ou expressão que dá `hug` ou px) vira o tamanho medido com os valores da anotação, inteiro para
+ * cima, entre o `minSize` e os limites da raiz do componente e nunca abaixo de
+ * `MIN_STORED_MARKING_SIZE`. A posição (canto de cima à esquerda) fica; o eixo `fill`, o ausente e o
+ * que o `align: stretch` do pai estica não mudam; o resultado nunca passa da imagem. Só por ação da
+ * pessoa ou do agente: nunca na carga nem ao editar um valor. Assenta ao fim (a marcação pode
+ * passar a conter outras), numa entrada de desfazer. Devolve o mesmo `Project` quando nada muda;
+ * falha com `not-found`, `not-fittable` (nenhum eixo depende do conteúdo, a marcação não é de um
+ * componente ou é um componente com filhas no slot, que se arruma) e `locked` (a geometria é
+ * travada e mudaria).
+ */
+export function fitMarking(
+  p: Project,
+  catalog: ComponentCatalog,
+  markingId: string,
+  measure: TextMeasurer,
+  options?: SettleOptions,
+): Project {
+  const marking = findById(p.markings, markingId);
+  const target = fitTargetOf(p, catalog, marking) ?? fail('not-fittable', markingId);
+  const auto: { width?: boolean; height?: boolean } = {};
+  if (stretchedBy(target.parent, 'width')) auto.width = false;
+  if (stretchedBy(target.parent, 'height')) auto.height = false;
+  const fitted = fitComponentSize(
+    target.component,
+    target.values,
+    { measure, ...tokensOption(target.tokens) },
+    { base: marking.rect, auto },
+  );
+  if (fitted === undefined) return p;
+  const rect = withinImage(p, marking, {
+    ...marking.rect,
+    width: fitted.width,
+    height: fitted.height,
+  });
+  if (sameRect(rect, marking.rect)) return p;
+  if (markingLockStates(p).has(markingId)) fail('locked');
+  return settleFrom(
+    p,
+    { ...p, markings: p.markings.map((m) => (m.id === markingId ? { ...m, rect } : m)) },
+    options,
+  );
 }

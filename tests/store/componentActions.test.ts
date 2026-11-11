@@ -4,6 +4,7 @@ import {
   approximateMeasurer,
   createMarking,
   setContainerPlacement,
+  setFieldValue,
   type NewComponentArgs,
   type Project,
   type Rect,
@@ -11,6 +12,7 @@ import {
 import { createProjectStore, type ProjectStore } from '../../src/store/history';
 import { createProjectActions, clampToMinSize } from '../../src/store/project';
 import { SPEC_ID, componentProject, testCatalog } from '../model/componentFixtures';
+import { FIT_SPEC_ID, LONG_LABEL, fitCatalog, fitProject } from '../model/fitFixtures';
 import { marking } from '../model/fixtures';
 
 const catalog = testCatalog();
@@ -376,12 +378,76 @@ describe('arrange', () => {
   it('recusa o que não é container com filhas, e a geometria trancada', () => {
     const { store, actions } = rowWithKids();
     const before = current(store);
-    expect(actions.arrange('T1')).toEqual({ ok: false, error: 'not-arrangeable' });
+    // Um componente sem slot nem eixo ajustável: `not-fittable`; uma marcação sem componente: `not-arrangeable`.
+    expect(actions.arrange('T1')).toEqual({ ok: false, error: 'not-fittable' });
     actions.setMarkingLocked('T1', true);
     const locked = current(store);
     expect(actions.arrange('C')).toEqual({ ok: false, error: 'locked' });
     expect(current(store)).toBe(locked);
     expect(before).not.toBe(locked);
+  });
+});
+
+describe('arrange numa marcação sem slot: ajustar ao conteúdo (MC3)', () => {
+  const fcat = fitCatalog();
+  function fitSetup(typeId = 'fit-button', label = LONG_LABEL) {
+    let p = addComponentMarking(
+      fitProject(),
+      fcat,
+      {
+        markingId: 'B',
+        annotationId: 'A_B',
+        containerId: 'I1',
+        parentId: null,
+        specId: FIT_SPEC_ID,
+        typeId,
+        rect: box(100, 100, 120, 40),
+      },
+      approximateMeasurer,
+    );
+    p = setFieldValue(p, 'A_B', 'label', label);
+    p = createMarking(p, { id: 'P', containerId: 'I1', rect: box(400, 400, 50, 50) });
+    const store = createProjectStore({ now: () => '2026-10-01T00:00:00.000Z' });
+    let n = 0;
+    const actions = createProjectActions(store, {
+      newId: () => `N${++n}`,
+      components: () => fcat,
+      measure: () => approximateMeasurer,
+    });
+    store.load(p);
+    return { store, actions };
+  }
+
+  it('o Arrumar ajusta a altura ao rótulo numa entrada de desfazer, sem avisos', () => {
+    const { store, actions } = fitSetup();
+    const before = current(store);
+    expect(actions.arrange('B')).toEqual({ ok: true, value: [] });
+    const rect = marking(current(store), 'B').rect;
+    expect(rect).toMatchObject({ x: 100, y: 100, width: 120 });
+    expect(rect.height).toBeGreaterThan(40);
+    expect(undoDepth(store)).toBe(1);
+    store.undo();
+    expect(current(store).markings).toEqual(before.markings);
+  });
+
+  it('já ajustado: nenhuma entrada nova', () => {
+    const { store, actions } = fitSetup();
+    actions.arrange('B');
+    const fitted = current(store);
+    expect(actions.arrange('B').ok).toBe(true);
+    expect(current(store)).toBe(fitted);
+    expect(undoDepth(store)).toBe(1);
+  });
+
+  it('geometria travada e componente sem eixo ajustável recusam; marcação sem componente é not-arrangeable', () => {
+    const { store, actions } = fitSetup();
+    expect(actions.arrange('P')).toEqual({ ok: false, error: 'not-arrangeable' });
+    actions.setMarkingLocked('B', true);
+    const locked = current(store);
+    expect(actions.arrange('B')).toEqual({ ok: false, error: 'locked' });
+    expect(current(store)).toBe(locked);
+    const plain = fitSetup('fit-plain');
+    expect(plain.actions.arrange('B')).toEqual({ ok: false, error: 'not-fittable' });
   });
 });
 

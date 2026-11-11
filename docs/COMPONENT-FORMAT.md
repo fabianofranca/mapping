@@ -396,7 +396,7 @@ Há três perguntas diferentes: **quanto mede a instância** (a raiz), **quanto 
 
 - `size` é o tamanho **inicial** da instância, em px, e vale quando a instância **tem retângulo** (uma marcação no editor, um `*.screen.json`): o retângulo da marcação manda e o template se adapta a ele.
 - `minSize` é o piso. Nenhum tamanho calculado fica abaixo dele (nem o `fill` dividido, nem o `hug`).
-- `sizing` só vale quando a instância chega **sem retângulo**, isto é, numa tela vinda de um JSON externo (origem, ver [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Origens") ou arrumada por `layoutScreen`. Cada eixo é:
+- `sizing` vale quando a instância chega **sem retângulo**, isto é, numa tela vinda de um JSON externo (origem, ver [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Origens") ou arrumada por `layoutScreen`, e **por ação** numa marcação (veja "Ajustar ao conteúdo", abaixo): o retângulo de uma marcação nunca muda sozinho ao editar um valor. Cada eixo é:
   - **px**: tamanho fixo;
   - **`"fill"`**: ocupa o espaço que o pai dá naquele eixo;
   - **`"hug"`**: o tamanho do conteúdo (o template medido e, num componente com slot, os filhos já arrumados);
@@ -419,6 +419,13 @@ O cartão do Material 3 ocupa a largura da coluna em que está e tem a altura do
 ```
 
 A barra do topo do Material 3 mede 64, 112 ou 152 conforme o estilo: na tela sem geometria, no playground do catálogo e no **Arrumar** de um componente com slot, o eixo vale o que a expressão dá (o `sizing` em px literal continua valendo só na tela sem geometria). O mesmo `sizing` avaliado diz à prova de desenho qual é o **tamanho ajustado** do componente (veja "Avisos do motor").
+
+**Ajustar ao conteúdo.** O `sizing` avaliado também é o que o ajuste da marcação segue, e ele só roda por **ação** (nunca na carga, ao aplicar uma proposta nem ao editar um valor):
+
+- a instância **nova** nasce no tamanho medido (sem `rect`, na app e no `create_marking` do MCP), com o `preview` e os valores dados; quem dá o `rect` (o agente que lê a imagem, o arrastar) continua mandando, e um componente com slot nasce no `size`;
+- o **Arrumar** da app (menu de contexto, botão dos Detalhes, `Alt+Shift+A`) numa marcação de componente **sem slot** com eixo ajustável, e a op **`fit_marking`** do MCP (no lote, na prévia e numa proposta), levam cada eixo ao tamanho medido: `"hug"` (ou a expressão que dá `hug`) mede o conteúdo no outro eixo atual, inteiro para cima; a expressão que dá px vale o px; os dois entre o `minSize` e os `minWidth`/`maxWidth`/`minHeight`/`maxHeight` da raiz (o redimensionar à mão não é limitado por eles), nunca abaixo do mínimo de uma marcação, e nunca além da imagem. O canto de cima à esquerda fica; `fill`, o eixo ausente (os px de `size` não voltam) e o eixo que o `align: "stretch"` do pai estica não mudam. A geometria trancada falha (`locked`) e um componente sem eixo ajustável também (`not-fittable`). Um componente **com** slot e filhas continua no Arrumar de sempre, que já ajusta o `hug` dele depois de arrumar as filhas. O desfazer é uma entrada só.
+
+Por isso declare `sizing` `hug` (ou expressão) no eixo que deve **acompanhar o conteúdo** (a altura de um botão de rótulo longo, a largura de um chip) e nenhum nos eixos de tamanho fixo.
 
 ### Um nó do template: `width` e `height`
 

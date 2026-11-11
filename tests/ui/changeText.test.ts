@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { t } from '../../src/i18n';
-import { createArrow, type Change, type JsonValue, type Proposal } from '../../src/model';
+import {
+  changeType,
+  createArrow,
+  type Change,
+  type JsonValue,
+  type Proposal,
+} from '../../src/model';
 import {
   changeTitle,
   droppedChangeSummary,
@@ -115,5 +121,28 @@ describe('droppedChangeSummary: resumo da mudança retirada', () => {
     const summary = droppedChangeSummary(names, button);
     expect(summary).toContain('Button');
     expect(summary).not.toContain(t('annotation.unnamed'));
+  });
+});
+
+describe('changeTitle: o ajuste ao conteúdo (MC3, decisão 18 da #898)', () => {
+  it('a mudança de retângulo que o fit_marking gera é a Posição de sempre, do tipo movida', () => {
+    const rect: Change = {
+      id: 'C1',
+      kind: 'update',
+      entity: 'marking',
+      entityId: 'M1',
+      imageId: 'I1',
+      markingId: 'M1',
+      field: 'rect',
+      from: { x: 20, y: 20, width: 120, height: 40 },
+      to: { x: 20, y: 20, width: 120, height: 96 },
+    };
+    const names = {
+      current: sampleProject(),
+      preview: null,
+      proposal: proposalOf([rect]),
+    };
+    expect(changeType(rect)).toBe('moved');
+    expect(changeTitle(names, rect)).toBe(t('review.field.rect'));
   });
 });

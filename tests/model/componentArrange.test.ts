@@ -8,7 +8,9 @@ import {
   arrangeMarking,
   modelMessage,
   canArrange,
+  canFit,
   createMarking,
+  fitMarking,
   loadSpecComponents,
   parseSpecText,
   setContainerDrawingMode,
@@ -27,6 +29,7 @@ import {
   testCatalog,
   tokenSlotCatalog,
 } from './componentFixtures';
+import { FIT_SPEC_ID, LONG_LABEL, fitCatalog, fitProject } from './fitFixtures';
 import { emptyProject, expectValid, marking } from './fixtures';
 
 const catalog = testCatalog();
@@ -793,5 +796,144 @@ describe('arrangeMarking: eixo hug junto de eixo em px por expressão (/code-rev
     // medida a 100 de largura (o retângulo antigo) seriam duas linhas (40).
     expect(out.width).toBe(200);
     expect(out.height).toBe(24);
+  });
+});
+
+describe('fitMarking (MC3, decisão 14 da #898)', () => {
+  const fcat = fitCatalog();
+  const addFit = (
+    p: Project,
+    id: string,
+    typeId: string,
+    rect: Rect,
+    parentId: string | null = null,
+    extra: Partial<NewComponentArgs> = {},
+  ): Project => add(p, id, typeId, rect, parentId, extra, fcat, FIT_SPEC_ID);
+  const fit = (p: Project, id: string) => fitMarking(p, fcat, id, approximateMeasurer);
+  /** Um botão `typeId` em (100, 100), com o rótulo dado, no tamanho de criação (120 × 40). */
+  const withLabel = (typeId: string, label: string, rect = box(100, 100, 120, 40)) =>
+    setFieldValue(addFit(fitProject(), 'B', typeId, rect), 'A_B', 'label', label);
+
+  it('botão com rótulo longo cresce na altura; a posição e a largura ficam', () => {
+    const p = withLabel('fit-button', LONG_LABEL);
+    const fitted = fit(p, 'B');
+    const rect = rectOf(fitted, 'B');
+    expect(rect).toMatchObject({ x: 100, y: 100, width: 120 });
+    // Quatro linhas de 20 mais o padding de 8 em cima e embaixo, inteiro para cima.
+    expect(rect.height).toBeGreaterThanOrEqual(76);
+    expect((rect.height - 16) % 20).toBe(0);
+    expectValid(fitted);
+  });
+
+  it('rótulo que cabe (abaixo do minSize): nada muda, o mesmo Project', () => {
+    const p = withLabel('fit-button', 'Ok');
+    expect(fit(p, 'B')).toBe(p);
+    // Depois de ajustado, ajustar de novo também não muda nada.
+    const grown = withLabel('fit-button', LONG_LABEL);
+    const once = fit(grown, 'B');
+    expect(fit(once, 'B')).toBe(once);
+  });
+
+  it('o rótulo que encolhe leva a altura de volta (nunca abaixo do minSize)', () => {
+    const grown = fit(withLabel('fit-button', LONG_LABEL), 'B');
+    const shortened = setFieldValue(grown, 'A_B', 'label', 'Ok');
+    expect(rectOf(fit(shortened, 'B'), 'B')).toMatchObject({ width: 120, height: 40 });
+  });
+
+  it('os dois eixos hug: a largura também é medida', () => {
+    const p = withLabel('fit-hug', 'Ok');
+    const rect = rectOf(fit(p, 'B'), 'B');
+    expect(rect).toMatchObject({ x: 100, y: 100 });
+    // "Ok" não passa do padding (16): o mínimo do componente (48 × 40) vale.
+    expect(rect).toMatchObject({ width: 48, height: 40 });
+  });
+
+  it('eixo fill, ausente ou esticado pelo stretch do pai não muda', () => {
+    let p = addFit(fitProject(), 'R', 'fit-row-stretch', box(100, 100, 400, 100));
+    p = addFit(p, 'B', 'fit-hug', box(100, 100, 120, 100), 'R');
+    p = setFieldValue(p, 'A_B', 'label', LONG_LABEL);
+    const rect = rectOf(fit(p, 'B'), 'B');
+    // A altura é do `stretch` da linha (100) e não cresce com o rótulo; a largura (hug) muda.
+    expect(rect.height).toBe(100);
+    expect(rect.width).not.toBe(120);
+    // Na linha que não estica, a altura também acompanha.
+    let q = addFit(fitProject(), 'R', 'fit-row-start', box(100, 100, 400, 100));
+    q = addFit(q, 'B', 'fit-button', box(100, 100, 120, 40), 'R');
+    q = setFieldValue(q, 'A_B', 'label', LONG_LABEL);
+    expect(rectOf(fit(q, 'B'), 'B').height).toBeGreaterThan(40);
+  });
+
+  it('o maxHeight da raiz limita o ajuste', () => {
+    const p = withLabel('fit-capped', LONG_LABEL);
+    expect(rectOf(fit(p, 'B'), 'B').height).toBe(60);
+  });
+
+  it('o sizing por expressão vale o px, nunca abaixo do minSize', () => {
+    const tall = setFieldValue(withLabel('fit-px', 'Ok'), 'A_B', 'tall', 'sim');
+    expect(rectOf(fit(tall, 'B'), 'B').height).toBe(80);
+    // Sem o campo a expressão dá 30, abaixo do mínimo (40): a marcação já está nele.
+    const short = withLabel('fit-px', 'Ok');
+    expect(fit(short, 'B')).toBe(short);
+  });
+
+  it('não passa da imagem: o excesso é cortado', () => {
+    const p = withLabel('fit-button', LONG_LABEL, box(100, 740, 120, 40));
+    expect(rectOf(fit(p, 'B'), 'B')).toMatchObject({ y: 740, height: 60 });
+  });
+
+  it('geometria travada falha com locked (e nada muda se já está no tamanho)', () => {
+    const p = setMarkingLocked(withLabel('fit-button', LONG_LABEL), 'B', true);
+    expect(() => fit(p, 'B')).toThrow('locked');
+    const same = setMarkingLocked(withLabel('fit-button', 'Ok'), 'B', true);
+    expect(fit(same, 'B')).toBe(same);
+  });
+
+  it('componente sem eixo ajustável, marcação sem componente e container com filhas: not-fittable', () => {
+    const plain = addFit(fitProject(), 'B', 'fit-plain', box(100, 100, 120, 40));
+    expect(() => fit(plain, 'B')).toThrow('not-fittable');
+    const filled = addFit(fitProject(), 'B', 'fit-fill', box(100, 100, 120, 40));
+    expect(() => fit(filled, 'B')).toThrow('not-fittable');
+    const bare = createMarking(fitProject(), {
+      id: 'P',
+      containerId: 'I1',
+      rect: box(10, 10, 50, 50),
+    });
+    expect(() => fit(bare, 'P')).toThrow('not-fittable');
+    let row = addFit(fitProject(), 'R', 'fit-row-start', box(100, 100, 400, 100));
+    row = addFit(row, 'B', 'fit-button', box(100, 100, 120, 40), 'R');
+    expect(() => fit(row, 'R')).toThrow('not-fittable');
+    expect(() => fit(plain, 'nada')).toThrow('not-found');
+  });
+
+  it('componente com filhas no slot, mesmo com layout none, não se ajusta (achado do /code-review)', () => {
+    let p = addFit(fitProject(), 'R', 'fit-row-none', box(100, 100, 400, 100));
+    p = addFit(p, 'B', 'fit-button', box(110, 110, 120, 40), 'R');
+    expect(canFit(p, fcat, 'R')).toBe(false);
+    expect(() => fit(p, 'R')).toThrow('not-fittable');
+  });
+
+  it('canFit: só o componente sem slot com eixo ajustável', () => {
+    const p = addFit(fitProject(), 'B', 'fit-button', box(100, 100, 120, 40));
+    expect(canFit(p, fcat, 'B')).toBe(true);
+    const plain = addFit(fitProject(), 'B', 'fit-plain', box(100, 100, 120, 40));
+    expect(canFit(plain, fcat, 'B')).toBe(false);
+    expect(canFit(p, fcat, 'nada')).toBe(false);
+    let row = addFit(fitProject(), 'R', 'fit-row-start', box(100, 100, 400, 100));
+    row = addFit(row, 'B', 'fit-button', box(100, 100, 120, 40), 'R');
+    expect(canFit(row, fcat, 'R')).toBe(false);
+  });
+
+  it('assenta ao fim: a marcação que passou a caber dentro vira filha', () => {
+    let p = withLabel('fit-button', LONG_LABEL);
+    p = createMarking(p, { id: 'S', containerId: 'I1', rect: box(110, 145, 20, 10) });
+    expect(marking(p, 'S').parentId).toBeNull();
+    expect(marking(fit(p, 'B'), 'S').parentId).toBe('B');
+  });
+
+  it('as prévias de gesto não assentam (settle: false)', () => {
+    let p = withLabel('fit-button', LONG_LABEL);
+    p = createMarking(p, { id: 'S', containerId: 'I1', rect: box(110, 145, 20, 10) });
+    const result = fitMarking(p, fcat, 'B', approximateMeasurer, { settle: false });
+    expect(marking(result, 'S').parentId).toBeNull();
   });
 });

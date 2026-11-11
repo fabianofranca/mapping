@@ -142,9 +142,10 @@ describe('create_marking sem rect: lugar livre', () => {
     expect(a.parentId).toBeNull();
     expect(b.parentId).toBeNull();
     expect(result.invariantIssues).toEqual([]);
-    // O primeiro nasce no centro do container (390 × 844) e o tamanho do componente se mantém.
-    expect(a.rect).toEqual({ x: 135, y: 402, width: 120, height: 40 });
-    expect(b.rect.width).toBe(120);
+    // O primeiro nasce no centro do container (390 × 844), no tamanho medido do rótulo (`sizing.width`
+    // `hug`, MC3): 83 de largura, não os 120 do `size`.
+    expect(a.rect).toEqual({ x: 154, y: 402, width: 83, height: 40 });
+    expect(b.rect.width).toBe(83);
     expect(b.rect.height).toBe(40);
   });
 
