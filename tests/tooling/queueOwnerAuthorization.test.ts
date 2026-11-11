@@ -54,9 +54,9 @@ describe('AF1 — autorização do dono no chat da fase (#1602)', () => {
   it('a ordem: link do chat, PushNotification, aviso "Esperando o dono:" e só então o AskUserQuestion', () => {
     const autorizacao = autorizacaoDoDono();
     const link = autorizacao.indexOf('https://claude.ai/code/<id desta sessão>');
-    const push = autorizacao.indexOf('`PushNotification`');
+    const push = autorizacao.indexOf('(2) `PushNotification`');
     const aviso = autorizacao.indexOf('Esperando o dono:');
-    const pergunta = autorizacao.indexOf('`AskUserQuestion`');
+    const pergunta = autorizacao.indexOf('(4) `AskUserQuestion`');
     expect(link).toBeGreaterThanOrEqual(0);
     expect(push).toBeGreaterThan(link);
     expect(aviso).toBeGreaterThan(push);
@@ -161,7 +161,7 @@ describe('AF2 — painel.py: esperando o dono no chat da fase (#1602, decisão 7
     esperaODono();
     const out = run('2026-11-11T10:05:00Z', 'show', dir);
     const dono = out.indexOf('esperando o dono no chat da fase:');
-    const coordenador = out.indexOf('esperando o coordenador:');
+    const coordenador = out.indexOf('esperando o dono há mais de 1 h:');
     expect(dono).toBeGreaterThanOrEqual(0);
     expect(coordenador).toBeGreaterThan(dono);
     expect(out.slice(dono, coordenador).trim().split('\n')).toHaveLength(1);
@@ -308,7 +308,7 @@ describe('AF2 — skill implementar-fila: o coordenador não repassa autorizaç�
     expect(caso).toContain('"pedido de permissão"');
     expect(caso).toMatch(/regra 1/);
     expect(caso).toContain('PushNotification');
-    expect(caso).toMatch(/linha com `wait` não se relê/);
+    expect(caso).not.toMatch(/linha com `wait` não se relê/);
   });
 
   it('"Conferências de reserva": o pedido de permissão ainda recria a sessão', () => {
@@ -329,12 +329,15 @@ describe('AF2 — skill implementar-fila: o coordenador não repassa autorizaç�
 
   it('"Drenar" e "Fim" contam a etapa esperando dono com filha como etapa que ainda trabalha', () => {
     const drenar = between(skill, '- **Drenar**', '- **Issue que deixou de ser');
-    expect(drenar).toContain('esperando dono');
-    expect(drenar).toContain('`child`');
     const fim = section(skill, '## Fim');
     const primeira = fim.split('\n').find((l) => l.startsWith('Quando nenhuma etapa'))!;
-    expect(primeira).toContain('esperando dono');
-    expect(primeira).toContain('`child`');
+    // Achado 3 (CL1): a mesma definição do `show` ("esperando o dono no chat da fase"), com `child` e o `wait`.
+    for (const texto of [drenar, primeira]) {
+      expect(texto).toContain('esperando dono');
+      expect(texto).toContain('`child`');
+      expect(texto).toContain('dono no chat da fase:');
+      expect(texto).toContain('`wait`');
+    }
   });
 
   it('"Painel": o show cita "esperando o dono no chat da fase"', () => {
@@ -345,5 +348,147 @@ describe('AF2 — skill implementar-fila: o coordenador não repassa autorizaç�
     expect(comandos).toContain('esperando o dono no chat da fase');
     const paragrafo = between(painel, 'O `show` traz, depois de `atual:`', '\n\n');
     expect(paragrafo).toContain('esperando o dono no chat da fase:');
+  });
+});
+
+describe('CL1 — correção da revisão do épico (#1627)', () => {
+  let dir = '';
+  const run = (now: string, ...args: string[]): string =>
+    execFileSync('python3', [SCRIPT, '--now', now, ...args], { encoding: 'utf8' });
+  const fase = (issue: string, ...pairs: string[]): void => {
+    run('2026-11-11T10:00:00Z', 'row', dir, issue, ...pairs);
+  };
+
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'painel-cl1-'));
+    run('2026-11-11T10:00:00Z', 'init', dir);
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  const esperaODono = (issue = '#10'): void =>
+    fase(
+      issue,
+      'status=esperando dono',
+      'child=session_a',
+      'childAt=now',
+      'wait=dono no chat da fase: teto',
+    );
+
+  it('achado 1: a fase esperando o dono é reconferida depois de 60 min e o prazo de 240 min aparece', () => {
+    esperaODono();
+    expect(run('2026-11-11T10:30:00Z', 'show', dir)).toContain(
+      'esperando o dono há mais de 1 h: nenhuma',
+    );
+    expect(run('2026-11-11T11:10:00Z', 'show', dir)).toContain(
+      'esperando o dono há mais de 1 h: #10 session_a (70 min)',
+    );
+    expect(run('2026-11-11T14:10:00Z', 'show', dir)).toContain(
+      'esperando o dono há mais de 1 h: #10 session_a (250 min, prazo vencido)',
+    );
+  });
+
+  it('achado 1: a linha volta ao normal quando a espera acaba', () => {
+    esperaODono();
+    fase('#10', 'status=em andamento', 'wait=', 'childAt=now');
+    expect(run('2026-11-11T11:10:00Z', 'show', dir)).toContain(
+      'esperando o dono há mais de 1 h: nenhuma',
+    );
+  });
+
+  it('achado 2: pergunta ao coordenador de fase cujo épico já está "esperando dono" fica em "esperando o coordenador"', () => {
+    fase(
+      '#20',
+      'status=esperando dono',
+      'child=session_c',
+      'childAt=now',
+      'wait=pergunta de decisão',
+    );
+    const out = run('2026-11-11T10:05:00Z', 'show', dir);
+    expect(out).toMatch(/esperando o coordenador: #20 \(pergunta de decisão\)/);
+    expect(out).toContain('esperando o dono no chat da fase: nenhuma');
+    expect(out).toContain('esperando o dono há mais de 1 h: nenhuma');
+  });
+
+  it('achado 3: merge pedido ("esperando dono" com child antigo e sem wait) não é fase esperando o dono', () => {
+    fase('#21', 'status=esperando dono', 'child=session_d', 'childAt=now');
+    const out = run('2026-11-11T10:05:00Z', 'show', dir);
+    expect(out).toContain('esperando o dono no chat da fase: nenhuma');
+    expect(out).toMatch(/esperando o coordenador: nenhuma/);
+  });
+
+  it('achado 4: um só helper `is_owner_wait` nos três usos, sem o predicado repetido', () => {
+    const fonte = readFileSync(SCRIPT, 'utf8');
+    expect(fonte).toContain('def is_owner_wait(');
+    expect(fonte.match(/is_owner_wait\(/g)!.length).toBeGreaterThanOrEqual(4);
+    expect(fonte).not.toMatch(/get\("wait"\)[^\n]*== "esperando dono"/);
+    expect(fonte).not.toMatch(/== "esperando dono" and old\.get\("child"\)/);
+  });
+
+  it('achado 5: o resumo do import conta a fase esperando o dono como em andamento', () => {
+    esperaODono();
+    fase('#11', 'status=aguardando');
+    const nova = mkdtempSync(path.join(tmpdir(), 'painel-cl1-nova-'));
+    try {
+      run('2026-11-11T10:02:00Z', 'init', nova);
+      run('2026-11-11T10:02:00Z', 'import', nova, dir);
+      const out = run('2026-11-11T10:05:00Z', 'show', nova);
+      expect(out).toMatch(/\(1 em andamento\)/);
+      expect(out).not.toMatch(/\(0 em andamento\)/);
+    } finally {
+      rmSync(nova, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('CL1 — texto da conferência, do prompt da fase e do fallback de entrega (#1627, achados 1, 6 e 7)', () => {
+  const skillReserva = between(skill, '**Conferências de reserva:**', '**CI vermelho');
+  const autorizacao = autorizacaoDoDono();
+
+  it('achado 1: a conferência horária reconfere a fase esperando o dono pelo get_session e define o que fazer', () => {
+    const caso = between(skillReserva, 'esperando o dono há mais de 1 h', '\n  - ');
+    expect(caso).toContain('`get_session`');
+    expect(caso).toContain('`blocked`');
+    expect(caso).toContain('crie a sessão de novo');
+    expect(caso).toContain('status="em andamento" wait= childAt=now');
+    expect(caso).toContain('240 min');
+    expect(caso).toContain('priority: "now"');
+    expect(caso).toContain('Defeitos pendentes');
+  });
+
+  it('achado 6: o prompt da fase não diz mais que ninguém olha a sessão e a fase carrega as ferramentas', () => {
+    const primeira = between(flow, 'Você é o agente da fase', '\n');
+    expect(primeira).not.toContain('Ninguém está olhando');
+    expect(primeira).toContain('no chat desta sessão');
+    expect(autorizacao).toContain('`ToolSearch`');
+    expect(autorizacao).toMatch(/sem `PushNotification`|`PushNotification` não existir/);
+  });
+
+  it('achado 6: prazo de 240 min sem resposta e fallback registrado em "Defeitos pendentes"', () => {
+    expect(autorizacao).toContain('240 min');
+    expect(autorizacao).toContain('Defeitos pendentes');
+    expect(autorizacao).toContain('`priority: "now"`');
+  });
+
+  it('achado 6: o caso (c) é uma lista objetiva', () => {
+    expect(autorizacao).toContain('eslint-suppressions.json');
+    expect(autorizacao).toContain('`eslint-disable` de `complexity`');
+    expect(autorizacao).toContain('push forçado');
+    expect(autorizacao).toMatch(/o que não está nesta lista não é \(c\)/i);
+    expect(autorizacao).not.toContain(
+      'além do que uma regra escrita já deixa a fase fazer sozinha',
+    );
+  });
+
+  it('achado 7: o Canal declara a conferência horária e dá o fallback "Aviso não entregue:" na sub-issue', () => {
+    const canal = tail(item7, '   - **Canal:**');
+    expect(canal).toContain('Aviso não entregue:');
+    expect(canal).toContain('comentário na sub-issue');
+    expect(canal).toContain('conferência de hora em hora');
+    expect(canal).not.toContain('não procura outro canal');
+    const lista = between(skillReserva, 'Aviso não entregue:', '\n');
+    expect(lista).toContain('sub-issue');
   });
 });
