@@ -3,7 +3,7 @@ import { type Box, approximateMeasurer, instantiate } from './components/instant
 import { type Library, type TextFile, loadLibrary } from './components/library';
 import { type Origin, screenFromSource } from './components/origin';
 import type { IconSet } from './components/icons';
-import { fitComponentSize, resolveSizing } from './components/sizing';
+import { expressionPx, fitComponentSize, resolveSizing } from './components/sizing';
 import { type ResolvedTokens, resolveTokens } from './components/tokens';
 import type { LibraryIssue } from './library';
 import { libraryIssue } from './libraryIssue';
@@ -163,27 +163,45 @@ type DrawingMode = { mode?: string; tokens?: ResolvedTokens };
 const sameBox = (a: Box, b: Box): boolean => a.width === b.width && a.height === b.height;
 
 /**
- * O tamanho ajustado do caso em cada modo (o do ajuste, com os valores do caso e os tokens do modo);
- * `undefined` se o componente não tem eixo que dependa do conteúdo ou se o ajuste dá o `size` em
- * todos os modos (o caso no `size` já o prova).
+ * O tamanho ajustado cabe o conteúdo por construção (mede o conteúdo, e o `min*` só o aumenta): só vale
+ * prová-lo quando algo o segura, o `maxWidth`/`maxHeight` da raiz num eixo medido ou o px que uma
+ * expressão dá ao eixo. Sem isso o caso no `size` já é o que importa, e o custo da prova não dobra.
  */
-function fittedBoxes(
+function fitCanOverflow(component: ComponentFile, values: FieldValues): boolean {
+  const sizing = resolveSizing(component, values);
+  const root = component.template;
+  const capped = {
+    width: root.maxWidth !== undefined,
+    height: root.maxHeight !== undefined,
+  };
+  return (['width', 'height'] as const).some((axis) => {
+    const resolved = sizing[axis];
+    return (
+      expressionPx(resolved) !== undefined || (resolved.spec === 'hug' && capped[axis])
+    );
+  });
+}
+
+/**
+ * O tamanho ajustado do caso (o do ajuste, com os valores do caso e os tokens do modo dado);
+ * `undefined` se o componente não tem eixo que dependa do conteúdo ou se o ajuste dá o `size` (o caso
+ * no `size` já o prova).
+ */
+function fittedBox(
   component: ComponentFile,
   values: FieldValues,
-  modes: readonly DrawingMode[],
-): Box[] | undefined {
+  first: DrawingMode | undefined,
+): Box | undefined {
   try {
-    const boxes = modes.map(({ tokens }): Box | undefined => {
-      const fit = fitComponentSize(component, values, {
-        measure: approximateMeasurer,
-        ...(tokens === undefined ? {} : { tokens }),
-      });
-      return fit === undefined ? undefined : { x: 0, y: 0, ...fit };
+    if (!fitCanOverflow(component, values)) return undefined;
+    const tokens = first?.tokens;
+    const fit = fitComponentSize(component, values, {
+      measure: approximateMeasurer,
+      ...(tokens === undefined ? {} : { tokens }),
     });
-    const found = boxes.filter((b): b is Box => b !== undefined);
-    const initial: Box = { x: 0, y: 0, ...component.size };
-    if (found.length === 0 || found.every((b) => sameBox(b, initial))) return undefined;
-    return found.length === boxes.length ? found : undefined;
+    if (fit === undefined) return undefined;
+    const box: Box = { x: 0, y: 0, width: fit.width, height: fit.height };
+    return sameBox(box, { x: 0, y: 0, ...component.size }) ? undefined : box;
   } catch {
     return undefined;
   }
@@ -296,8 +314,17 @@ function typeDrawing(
       out,
     );
     // Componente com eixo que depende do conteúdo: o mesmo caso no tamanho ajustado.
-    const fit = fittedBoxes(component, drawCase.values, modes);
-    if (fit !== undefined) proveCase(type, component, drawCase, modes, fit, true, out);
+    const fit = fittedBox(component, drawCase.values, modes[0]);
+    if (fit !== undefined)
+      proveCase(
+        type,
+        component,
+        drawCase,
+        modes,
+        modes.map(() => fit),
+        true,
+        out,
+      );
   }
 }
 
