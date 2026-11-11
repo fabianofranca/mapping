@@ -184,18 +184,22 @@ describe('M5 grupo B — tooltip', () => {
     }
   });
 
-  it('rich com título: primeira linha de base a 28 do topo (HeightToSubheadFirstLine), texto 24 abaixo da base do título e 16 de fundo', () => {
+  it('rich com título: primeira linha de base a 28 do topo (HeightToSubheadFirstLine), base do texto 24 abaixo do fim da caixa do título (29 da base do título) e 16 de fundo', () => {
     for (const mode of MODES) {
       const d = drawBox('tooltip', rich({ title: 'Modo avião' }), 240, 200, mode);
       const title = textIn(d, 'título')!;
       expect(fontOf(title)).toEqual(scale('title-small'));
       expect(solid(title.fills)).toBe(tok('on-surface-variant', mode));
-      // 28 menos a linha de base do Roboto 14/20 (15)
-      expect([absOf(d, title).x, absOf(d, title).y]).toEqual([16, 13]);
-      // base do título (13 + 15) + 24 (HeightFromSubheadToTextFirstLine) - 15
-      expect(absOf(d, textIn(d, 'texto')!).y).toBe(37);
-      // 13 + 20 + 4 + 20 + 16 (TextBottomPadding)
-      expect(box(d, 'rich').height).toBe(73);
+      // MC5 (#1033): a caixa do título começa no topo e a primeira linha de base fica a 28 (baselinePadding)
+      expect([absOf(d, title).x, absOf(d, title).y, title.style.baselineTop]).toEqual([
+        16, 0, 28,
+      ]);
+      // o Compose põe a base do texto 24 abaixo do FIM da caixa do título (TooltipTest.kt linha 260,
+      // `subheadBound.bottom + 24`), e não 24 abaixo da base do título: 33 + 24 = 57
+      const body = textIn(d, 'texto')!;
+      expect(absOf(d, body).y + body.style.baselineTop!).toBeCloseTo(33 + 24, 6);
+      // 13 + 20 + 9 + 20 + 16 (TextBottomPadding): 78, e não os 73 de antes
+      expect(box(d, 'rich').height).toBe(78);
     }
   });
 
@@ -209,20 +213,22 @@ describe('M5 grupo B — tooltip', () => {
         mode,
       );
       const button = box(d, 'botão da ação');
-      expect([button.x, button.y, button.height]).toEqual([16, 73, 40]);
+      expect([button.x, button.y, button.height]).toEqual([16, 78, 40]);
       const label = textIn(d, 'botão da ação')!;
       expect(fontOf(label)).toEqual(scale('label-large'));
       expect(solid(label.fills)).toBe(tok('primary', mode));
       expect(absOf(d, label).x).toBe(16 + 12);
       expect(button.width).toBe(12 + absOf(d, label).width + 12);
-      // 73 + 40 + ActionLabelBottomPadding (8)
-      expect(box(d, 'rich').height).toBe(121);
+      // 78 + 40 + ActionLabelBottomPadding (8)
+      expect(box(d, 'rich').height).toBe(126);
     }
   });
 
   it('rich com ação e sem título: texto com a base a 24 do topo (9) e a ação 16 abaixo', () => {
     const d = drawBox('tooltip', rich({ action: 'Saiba mais' }), 240, 200);
-    expect(absOf(d, textIn(d, 'texto')!).y).toBe(9);
+    // MC5 (#1033): a caixa do texto leva baselinePadding 24 e 21 (16 mais os 5 da linha de base ao fim)
+    const body = textIn(d, 'texto')!;
+    expect([absOf(d, body).y, body.style.baselineTop]).toEqual([0, 24]);
     expect(box(d, 'botão da ação').y).toBe(9 + 20 + 16);
     expect(box(d, 'rich').height).toBe(9 + 20 + 16 + 40 + 8);
   });

@@ -142,22 +142,17 @@
           "type": "column",
           "padding": {
             "$if": {
-              "$has": "title"
+              "$or": [
+                {
+                  "$has": "title"
+                },
+                {
+                  "$has": "action"
+                }
+              ]
             },
-            "then": {
-              "$if": {
-                "$has": "action"
-              },
-              "then": [13, 16, 8, 16],
-              "else": [13, 16, 16, 16]
-            },
-            "else": {
-              "$if": {
-                "$has": "action"
-              },
-              "then": [9, 16, 8, 16],
-              "else": [4, 16]
-            }
+            "then": [0, 16],
+            "else": [4, 16]
           }
         },
         "children": [
@@ -187,6 +182,10 @@
             "width": "fill",
             "visible": {
               "$has": "title"
+            },
+            "baselinePadding": {
+              "top": 28,
+              "bottom": 6
             }
           },
           {
@@ -195,14 +194,7 @@
             "width": "fill",
             "height": "hug",
             "layout": {
-              "type": "column",
-              "padding": {
-                "$if": {
-                  "$has": "title"
-                },
-                "then": [4, 0, 0, 0],
-                "else": 0
-              }
+              "type": "column"
             },
             "children": [
               {
@@ -229,7 +221,36 @@
                 "color": {
                   "$token": "on-surface-variant"
                 },
-                "width": "fill"
+                "width": "fill",
+                "baselinePadding": {
+                  "top": {
+                    "$if": {
+                      "$has": "title"
+                    },
+                    "then": 23,
+                    "else": {
+                      "$if": {
+                        "$has": "action"
+                      },
+                      "then": 24,
+                      "else": 0
+                    }
+                  },
+                  "bottom": {
+                    "$if": {
+                      "$or": [
+                        {
+                          "$has": "title"
+                        },
+                        {
+                          "$has": "action"
+                        }
+                      ]
+                    },
+                    "then": 21,
+                    "else": 0
+                  }
+                }
               }
             ]
           },
@@ -240,7 +261,7 @@
             "height": "hug",
             "layout": {
               "type": "column",
-              "padding": [16, 0, 0, 0]
+              "padding": [0, 0, 8, 0]
             },
             "visible": {
               "$has": "action"

@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "snackbar",
   "name": "Snackbar",
-  "description": "Aviso rápido e temporário em inverse surface: mensagem, ação opcional (texto em inverse primary) e botão de fechar. Uma linha mede 48 e duas, 68; com a ação em nova linha a ação desce para uma fileira de 48.",
+  "description": "Aviso rápido e temporário em inverse surface: mensagem, ação opcional (texto em inverse primary) e botão de fechar. A altura vem das linhas da mensagem: uma linha mede 48, duas 68 e três 81 (o texto com a primeira linha de base a 30 do topo); com a ação em nova linha a ação desce para uma fileira de 48.",
   "size": {
     "width": 344,
     "height": 48
@@ -67,7 +67,18 @@
         "name": "linha",
         "width": "fill",
         "height": "hug",
-        "minHeight": 48,
+        "minHeight": {
+          "$if": {
+            "$gt": [
+              {
+                "$lines": "mensagem"
+              },
+              1
+            ]
+          },
+          "then": 68,
+          "else": 48
+        },
         "visible": {
           "$not": {
             "$and": [
@@ -134,7 +145,73 @@
                   "$token": "inverse-on-surface"
                 }
               }
-            ]
+            ],
+            "visible": {
+              "$not": {
+                "$gt": [
+                  {
+                    "$lines": "mensagem"
+                  },
+                  1
+                ]
+              }
+            }
+          },
+          {
+            "type": "frame",
+            "name": "mensagem em várias linhas",
+            "width": "fill",
+            "height": "fill",
+            "layout": {
+              "type": "column",
+              "padding": {
+                "$if": {
+                  "$eq": ["dismissAction", "true"]
+                },
+                "then": [0, 0, 0, 0],
+                "else": [0, 8, 0, 0]
+              }
+            },
+            "children": [
+              {
+                "type": "text",
+                "name": "mensagem em várias linhas",
+                "text": {
+                  "$field": "message",
+                  "default": "Mensagem"
+                },
+                "width": "fill",
+                "font": {
+                  "size": {
+                    "$token": "body-medium-size"
+                  },
+                  "weight": {
+                    "$token": "body-medium-weight"
+                  },
+                  "lineHeight": {
+                    "$token": "body-medium-line-height"
+                  },
+                  "letterSpacing": {
+                    "$token": "body-medium-tracking"
+                  }
+                },
+                "color": {
+                  "$token": "inverse-on-surface"
+                },
+                "baselinePadding": {
+                  "top": 30,
+                  "bottom": 11
+                }
+              }
+            ],
+            "visible": {
+              "$gt": [
+                {
+                  "$lines": "mensagem"
+                },
+                1
+              ]
+            }
           },
           {
             "type": "frame",
@@ -229,17 +306,17 @@
         "children": [
           {
             "type": "frame",
-            "name": "mensagem",
+            "name": "mensagem com ação em nova linha",
             "width": "fill",
             "height": "hug",
             "layout": {
               "type": "column",
-              "padding": [15, 8, 7, 0]
+              "padding": [0, 8, 0, 0]
             },
             "children": [
               {
                 "type": "text",
-                "name": "mensagem",
+                "name": "mensagem com ação em nova linha",
                 "text": {
                   "$field": "message",
                   "default": "Mensagem"
@@ -261,6 +338,10 @@
                 },
                 "color": {
                   "$token": "inverse-on-surface"
+                },
+                "baselinePadding": {
+                  "top": 30,
+                  "bottom": 12
                 }
               }
             ]

@@ -28,7 +28,8 @@ const LABELS: Record<string, Group[]> = {
   'navigation-drawer': [{ names: ['título', 'rótulo', 'selo'] }],
   badge: [{ names: ['número'] }],
   snackbar: [{ names: ['rótulo da ação'], fill: true }],
-  'alert-dialog': [{ names: ['rótulo'], fill: true }],
+  // MC5 (#1033): o botão de texto cresce com o rótulo (altura hug), então o rótulo já não ocupa a altura da caixa
+  'alert-dialog': [{ names: ['rótulo'] }],
   tooltip: [
     { names: ['rótulo da ação'], fill: true },
     { names: ['texto'], some: true },

@@ -198,6 +198,8 @@ const MF5_FIELDS: Record<string, string[]> = {
   'progress-indicator': ['trackColor', 'strokeCap'],
 };
 const MF5_EXAMPLES: Record<string, string[]> = {
+  // MC5 (#1033): o item de três linhas pelo apoio de duas linhas (`$lines` do apoio)
+  'list-item': ['Apoio de duas linhas'],
   'date-picker': ['Dia de hoje'],
   chip: ['Com avatar'],
   divider: ['Recuo por ponta'],

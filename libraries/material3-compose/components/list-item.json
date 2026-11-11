@@ -35,12 +35,24 @@
         "height": "hug",
         "minHeight": {
           "$if": {
-            "$and": [
+            "$or": [
               {
-                "$has": "overlineContent"
+                "$and": [
+                  {
+                    "$has": "overlineContent"
+                  },
+                  {
+                    "$has": "supportingContent"
+                  }
+                ]
               },
               {
-                "$has": "supportingContent"
+                "$gt": [
+                  {
+                    "$lines": "apoio"
+                  },
+                  1
+                ]
               }
             ]
           },
@@ -65,12 +77,24 @@
           "gap": 16,
           "padding": {
             "$if": {
-              "$and": [
+              "$or": [
                 {
-                  "$has": "overlineContent"
+                  "$and": [
+                    {
+                      "$has": "overlineContent"
+                    },
+                    {
+                      "$has": "supportingContent"
+                    }
+                  ]
                 },
                 {
-                  "$has": "supportingContent"
+                  "$gt": [
+                    {
+                      "$lines": "apoio"
+                    },
+                    1
+                  ]
                 }
               ]
             },
@@ -79,12 +103,24 @@
           },
           "align": {
             "$if": {
-              "$and": [
+              "$or": [
                 {
-                  "$has": "overlineContent"
+                  "$and": [
+                    {
+                      "$has": "overlineContent"
+                    },
+                    {
+                      "$has": "supportingContent"
+                    }
+                  ]
                 },
                 {
-                  "$has": "supportingContent"
+                  "$gt": [
+                    {
+                      "$lines": "apoio"
+                    },
+                    1
+                  ]
                 }
               ]
             },

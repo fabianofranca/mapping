@@ -6089,6 +6089,15 @@
               }
             },
             {
+              "name": "Apoio de duas linhas",
+              "values": {
+                "headlineContent": "Reunião de planejamento",
+                "supportingContent": "Sala 3, com a equipe de produto, para combinar o planejamento do semestre.",
+                "leadingIcon": "DateRange",
+                "trailingContent": "12:30"
+              }
+            },
+            {
               "name": "Mouse sobre",
               "values": {
                 "headlineContent": "Ana Souza",
