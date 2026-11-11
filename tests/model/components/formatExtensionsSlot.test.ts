@@ -51,6 +51,8 @@ function layout(over: Partial<ResolvedSlotLayout>): ResolvedSlotLayout {
     align: 'start',
     justify: 'start',
     reverse: false,
+    wrap: 'none',
+    lineGap: 0,
     ...over,
   };
 }

@@ -1,5 +1,6 @@
 import {
   findSlot,
+  contentExtent,
   layoutChildren,
   resolveSlotLayout,
   slotBoxOfScene,
@@ -338,27 +339,34 @@ export function arrangeMarking(
     const { component, values, layout, kids } = info;
     remeasureHugKids(kids);
     const sizes = kids.map((k) => rects.get(k.id) as Rect);
-    const row = layout.type === 'row';
     const pad = layout.padding;
-    const gaps = layout.gap * (kids.length - 1);
-    const sum = (axis: 'width' | 'height') => sizes.reduce((s, r) => s + r[axis], 0);
-    const widest = (axis: 'width' | 'height') =>
-      sizes.reduce((m, r) => Math.max(m, r[axis]), 0);
-    // Numa `row` com `align: "baseline"` a altura é do topo mais alto ao fundo mais baixo, não a do filho mais alto.
-    const crossHeight = (): number => {
-      if (layout.align !== 'baseline') return widest('height');
-      const lines = kids.map((kid, i) => baselineOf(kid) ?? (sizes[i] as Rect).height);
-      const above = Math.max(0, ...lines);
-      const below = Math.max(
-        0,
-        ...sizes.map((r, i) => r.height - (lines[i] ?? r.height)),
+    const baselines =
+      layout.align === 'baseline' ? kids.map((kid) => baselineOf(kid)) : [];
+    const children = sizes.map((box, i) => ({ box, baseline: baselines[i] }));
+    const padded = (extent: { width: number; height: number }) => ({
+      width: extent.width + pad.left + pad.right,
+      height: extent.height + pad.top + pad.bottom,
+    });
+    // O que os filhos pedem ao slot (o `hug` do componente): uma linha só, ou, com `wrap`, as linhas
+    // pelo espaço do eixo principal que o slot tem (o desenho com o pedido de uma linha só dá o espaço).
+    let slotContent = padded(contentExtent(layout, children, null));
+    if (layout.wrap !== 'none') {
+      const probe = slotBoxOfScene(
+        instantiate(component, values, rects.get(id) as Rect, {
+          measure,
+          idPrefix: id,
+          slotContent,
+          ...tokensOption(info.tokens),
+        }).root,
       );
-      return above + below;
-    };
-    const slotContent = {
-      width: (row ? sum('width') + gaps : widest('width')) + pad.left + pad.right,
-      height: (row ? crossHeight() : sum('height') + gaps) + pad.top + pad.bottom,
-    };
+      if (probe !== undefined) {
+        const available =
+          layout.type === 'row'
+            ? probe.width - pad.left - pad.right
+            : probe.height - pad.top - pad.bottom;
+        slotContent = padded(contentExtent(layout, children, Math.max(0, available)));
+      }
+    }
 
     let rect = rects.get(id) as Rect;
     const sizing = resolveSizing(component, values);
@@ -402,13 +410,7 @@ export function arrangeMarking(
         ),
       );
     }
-    const baselines =
-      layout.align === 'baseline' ? kids.map((kid) => baselineOf(kid)) : [];
-    const targets = layoutChildren(
-      box,
-      layout,
-      sizes.map((box, i) => ({ box, baseline: baselines[i] })),
-    );
+    const targets = layoutChildren(box, layout, children);
     kids.forEach((kid, i) => {
       const target = targets[i] as Rect;
       const before = rects.get(kid.id) as Rect;

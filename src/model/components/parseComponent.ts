@@ -23,7 +23,7 @@ import {
   isNumericOp,
   referencedFields,
 } from './expressions';
-import { LAYOUT_JUSTIFIES } from './layoutValues';
+import { LAYOUT_JUSTIFIES, LAYOUT_WRAPS } from './layoutValues';
 import { TOKEN_NAME_PATTERN, isLiteralColor, type TokenKind } from './tokens';
 import { isRecord } from '../isRecord';
 import type { ModelMessageTemplateCode } from '../messages';
@@ -748,9 +748,35 @@ const checkLayoutType: Check = (v, p, out) => {
     add(out, p, 'esperava "none", "row" ou "column"');
 };
 
+/** As quatro chaves da quebra de fileira (v4), no `layout` de um quadro ou slot e no próprio `repeat`. */
+const WRAP_KEYS = ['wrap', 'lineGap', 'maxPerLine', 'maxLines'];
+
+/** `wrap` (`none`, `wrap` ou `wrap-reverse`), `lineGap`, `maxPerLine` e `maxLines`; as três últimas só valem com `wrap`. */
+function checkWrapKeys(value: Rec, path: string, out: Ctx): void {
+  if ('wrap' in value)
+    checkExpr(value.wrap, join(path, 'wrap'), oneOf(LAYOUT_WRAPS), out);
+  const wrapped = 'wrap' in value && value.wrap !== 'none';
+  const checks: Record<string, Check> = {
+    lineGap: checkNonNegative,
+    maxPerLine: checkPositiveInteger,
+    maxLines: checkPositiveInteger,
+  };
+  for (const [key, check] of Object.entries(checks)) {
+    if (!(key in value)) continue;
+    checkExpr(value[key], join(path, key), check, out);
+    if (!wrapped) add(out, join(path, key), 'só vale com wrap');
+  }
+}
+
 /** As chaves de um layout `row`/`column` (ou de `type` por expressão), na v4 também por expressão. */
 function checkLayoutFlow(value: Rec, path: string, out: Ctx): void {
-  checkKeys(value, ['type', 'gap', 'padding', 'align', 'justify', 'reverse'], path, out);
+  checkKeys(
+    value,
+    ['type', 'gap', 'padding', 'align', 'justify', 'reverse', ...WRAP_KEYS],
+    path,
+    out,
+  );
+  checkWrapKeys(value, path, out);
   if ('gap' in value) checkExpr(value.gap, join(path, 'gap'), checkNonNegative, out);
   if ('padding' in value)
     checkExpr(value.padding, join(path, 'padding'), checkPadding, out);
@@ -882,7 +908,18 @@ function checkNode(value: unknown, path: string, out: Ctx): void {
     text: ['text', 'runs', 'font', 'color', 'baselinePadding'],
     path: ['d', 'viewBox', 'fillRule'],
     slot: ['label', 'layout', 'provide'],
-    repeat: ['field', 'count', 'direction', 'gap', 'distribute', 'template'],
+    repeat: [
+      'field',
+      'count',
+      'direction',
+      'gap',
+      'distribute',
+      'wrap',
+      'lineGap',
+      'maxPerLine',
+      'maxLines',
+      'template',
+    ],
     image: ['src', 'fit'],
     icon: ['name', 'color', 'strokeWidth'],
   };
@@ -1022,6 +1059,7 @@ function checkRepeat(value: Rec, path: string, out: Ctx): void {
   if ('gap' in value) checkExpr(value.gap, join(path, 'gap'), checkNonNegative, out);
   if ('distribute' in value)
     oneOf(['none', 'fill'])(value.distribute, join(path, 'distribute'), out);
+  checkWrapKeys(value, path, out);
   const at = join(path, 'template');
   if (!('template' in value)) return add(out, at, 'campo obrigatório');
   const template = value.template;
@@ -1076,6 +1114,8 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
   ['font', 'ellipsis'],
   ['font', 'maxLines'],
   ['baselinePadding'],
+  ...WRAP_KEYS.map((key): readonly string[] => ['layout', key]),
+  ...WRAP_KEYS.map((key): readonly string[] => [key]),
   ['runs'],
   ['rotation'],
   ['provide'],

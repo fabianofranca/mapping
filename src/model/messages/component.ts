@@ -103,6 +103,7 @@ export const componentMessages = {
   'component.linesSelf': 'o nó não pode depender das próprias linhas',
   'component.sizingNoSize': '$size não vale em sizing',
   'component.sizingNoLines': '$lines não vale em sizing',
+  'component.onlyWithWrap': 'só vale com wrap',
   // Versão do formato
   'component.v4Only': 'só é permitido com formatVersion 4',
   'component.indexOnlyInRepeat': '$index só vale dentro de um repeat',

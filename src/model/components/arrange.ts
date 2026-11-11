@@ -12,6 +12,8 @@ import type {
   FieldValues,
   LayoutAlign,
   LayoutJustify,
+  LayoutSpec,
+  LayoutWrap,
   SlotTemplate,
   TemplateNode,
 } from './componentFormat';
@@ -20,6 +22,7 @@ import {
   LAYOUT_ALIGNS,
   LAYOUT_JUSTIFIES,
   LAYOUT_TYPES,
+  LAYOUT_WRAPS,
   allowedValue,
   justifySpacing,
   mirrorMain,
@@ -35,6 +38,7 @@ import type { Library, TypeDef } from './library';
 import { type Instance, type Screen, childrenOf, renderOrder, updateBox } from './screen';
 import { type FrameNode, absoluteBoxes, walk } from './scene';
 import { applyTokens, resolveTokens } from './tokens';
+import { breakLines, stackLines } from './wrapLines';
 
 export interface ResolvedSlotLayout {
   readonly type: 'none' | 'row' | 'column';
@@ -44,6 +48,11 @@ export interface ResolvedSlotLayout {
   readonly justify: LayoutJustify;
   /** Filhos em ordem inversa e `start` no fim (`layout.reverse`). */
   readonly reverse: boolean;
+  /** Quebra de fileira (`layout.wrap`): as linhas, o espaço entre elas e os limites (v4). */
+  readonly wrap: LayoutWrap;
+  readonly lineGap: number;
+  readonly maxPerLine?: number | undefined;
+  readonly maxLines?: number | undefined;
 }
 
 const NO_LAYOUT: ResolvedSlotLayout = {
@@ -53,6 +62,8 @@ const NO_LAYOUT: ResolvedSlotLayout = {
   align: 'start',
   justify: 'start',
   reverse: false,
+  wrap: 'none',
+  lineGap: 0,
 };
 
 /** Primeiro nó `slot` do template (busca em profundidade pelos `children` dos frames), ou nenhum. */
@@ -101,6 +112,34 @@ function choice<T extends string>(
   );
 }
 
+/** `maxPerLine`/`maxLines`: inteiro ≥ 1, ou nenhum limite. */
+function limitCount(
+  expr: Expr<number> | undefined,
+  values: FieldValues,
+): number | undefined {
+  if (expr === undefined) return undefined;
+  const n = toNumber(evaluate<unknown>(expr as Expr<unknown>, values, undefined), NaN);
+  return Number.isInteger(n) && n >= 1 ? n : undefined;
+}
+
+/** A quebra de fileira do layout do slot (sem `wrap`, ou `none`, as outras três chaves não valem). */
+function resolveWrap(
+  layout: LayoutSpec,
+  values: FieldValues,
+): Pick<ResolvedSlotLayout, 'wrap' | 'lineGap' | 'maxPerLine' | 'maxLines'> {
+  const wrap = choice(layout.wrap, LAYOUT_WRAPS, 'none', values);
+  if (wrap === 'none') return { wrap, lineGap: 0 };
+  return {
+    wrap,
+    lineGap: Math.max(
+      0,
+      toNumber(evaluate<unknown>(layout.lineGap as Expr<unknown>, values, 0), 0),
+    ),
+    maxPerLine: limitCount(layout.maxPerLine, values),
+    maxLines: limitCount(layout.maxLines, values),
+  };
+}
+
 /** Avalia o layout do slot com os valores da instância (`gap`/`padding` podem ser expressões). Sem layout → type 'none'. */
 export function resolveSlotLayout(
   slot: SlotTemplate,
@@ -131,6 +170,7 @@ export function resolveSlotLayout(
     justify: choice(layout.justify, LAYOUT_JUSTIFIES, 'start', values),
     reverse:
       layout.reverse !== undefined && evaluateBoolean(layout.reverse, values, false),
+    ...resolveWrap(layout, values),
   };
 }
 
@@ -180,49 +220,184 @@ function crossAxis(
   }
 }
 
-/**
- * Retângulos novos (arredondados) dos filhos, na ordem de `children`. Com `align: "baseline"` cada
- * filho traz a `baseline` dele (a primeira linha de base, a partir do topo da caixa; sem ela vale o
- * fundo da caixa) e a fileira se alinha pela mais baixa.
- */
-export function layoutChildren(
-  slot: Box,
-  layout: ResolvedSlotLayout,
-  children: readonly { readonly box: Box; readonly baseline?: number }[],
-): Box[] {
+/** Os eixos do slot: onde começa e quanto mede a área de conteúdo, no eixo principal e no cruzado. */
+interface SlotGeometry {
+  readonly row: boolean;
+  readonly mainStart: number;
+  readonly mainContent: number;
+  readonly crossStart: number;
+  readonly crossContent: number;
+}
+
+function slotGeometry(slot: Box, layout: ResolvedSlotLayout): SlotGeometry {
   const row = layout.type === 'row';
   const { padding } = layout;
   const contentW = slot.width - padding.left - padding.right;
   const contentH = slot.height - padding.top - padding.bottom;
-  const mainContent = row ? contentW : contentH;
-  const mainStart = row ? slot.x + padding.left : slot.y + padding.top;
-  const crossContent = row ? contentH : contentW;
-  const crossStart = row ? slot.y + padding.top : slot.x + padding.left;
+  return {
+    row,
+    mainStart: row ? slot.x + padding.left : slot.y + padding.top,
+    mainContent: row ? contentW : contentH,
+    crossStart: row ? slot.y + padding.top : slot.x + padding.left,
+    crossContent: row ? contentH : contentW,
+  };
+}
 
-  const n = children.length;
+interface LayoutChild {
+  readonly box: Box;
+  readonly baseline?: number | undefined;
+}
+
+/** A extensão de uma linha no eixo cruzado: a maior (ou, com `baseline`, do topo mais alto ao fundo mais baixo). */
+function lineExtent(
+  layout: ResolvedSlotLayout,
+  row: boolean,
+  line: readonly LayoutChild[],
+): number {
+  const crosses = line.map((c) => (row ? c.box.height : c.box.width));
+  if (layout.align !== 'baseline') return Math.max(0, ...crosses);
+  const lines = line.map((c, i) => c.baseline ?? crosses[i] ?? 0);
+  const above = Math.max(0, ...lines);
+  return above + Math.max(0, ...crosses.map((size, i) => size - (lines[i] ?? size)));
+}
+
+/** Posição e tamanho no eixo cruzado de um filho de uma linha de extensão `extent` que começa em `start`. */
+function crossInLine(
+  layout: ResolvedSlotLayout,
+  start: number,
+  extent: number,
+  size: number,
+  baseline: { above: number; own: number } | undefined,
+): { pos: number; size: number } {
+  if (baseline) return { pos: start + baseline.above - baseline.own, size };
+  return crossAxis(layout, start, extent, size);
+}
+
+/**
+ * Retângulos novos (arredondados) dos filhos, na ordem de `children`. Com `align: "baseline"` cada
+ * filho traz a `baseline` dele (a primeira linha de base, a partir do topo da caixa; sem ela vale o
+ * fundo da caixa) e a fileira se alinha pela mais baixa. Com `wrap`, os filhos se repartem em
+ * linhas (o que não cabe no que resta do eixo principal vai para a seguinte, `maxPerLine` e
+ * `maxLines` valem) e `justify`, `reverse`, `align` e `baseline` valem em cada linha; as linhas se
+ * empilham no início do eixo cruzado, separadas por `lineGap` (`wrap-reverse`: a ordem inversa).
+ * Os filhos além de `maxLines` linhas não se movem (a arrumação devolve a caixa que já tinham).
+ */
+export function layoutChildren(
+  slot: Box,
+  layout: ResolvedSlotLayout,
+  children: readonly LayoutChild[],
+): Box[] {
+  const geometry = slotGeometry(slot, layout);
+  const { row } = geometry;
+  const wrapped = layout.wrap !== 'none';
   const mains = children.map((c) => (row ? c.box.width : c.box.height));
-  const total = mains.reduce((sum, s) => sum + s, 0) + layout.gap * (n - 1);
-  const free = Math.max(0, mainContent - total);
-  const { offset, extra } = justifySpacing(layout.justify, free, n);
+  const broken = wrapped
+    ? breakLines(mains, geometry.mainContent, {
+        gap: layout.gap,
+        maxPerLine: layout.maxPerLine,
+        maxLines: layout.maxLines,
+      })
+    : { lines: [children.map((_, i) => i)], dropped: 0 };
+  const members = broken.lines.map((line) => line.map((i) => children[i] as LayoutChild));
+  // Sem `wrap` há uma linha só, com a extensão do conteúdo todo (`center` e `end` valem nele).
+  const extents = wrapped
+    ? members.map((line) => lineExtent(layout, row, line))
+    : [geometry.crossContent];
+  const stacked = stackLines(extents, layout.lineGap, layout.wrap === 'wrap-reverse');
+  const out: Box[] = children.map((c) => c.box);
+  broken.lines.forEach((line, k) => {
+    const place = placeLine(layout, geometry, line, children, {
+      extent: extents[k] ?? 0,
+      top: geometry.crossStart + (stacked.tops[k] ?? 0),
+    });
+    line.forEach((index, i) => (out[index] = place[i] as Box));
+  });
+  return out;
+}
 
-  const lines = children.map((c) => c.baseline ?? c.box.height);
-  const above = layout.align === 'baseline' ? Math.max(0, ...lines) : 0;
-  let cursor = mainStart + offset;
-  return children.map((child, i) => {
-    const main = mains[i] ?? 0;
-    const crossSize = row ? child.box.height : child.box.width;
-    const cross =
-      layout.align === 'baseline'
-        ? { pos: crossStart + above - (lines[i] ?? crossSize), size: crossSize }
-        : crossAxis(layout, crossStart, crossContent, crossSize);
+/**
+ * A extensão que os filhos ocupam no slot, sem o padding (o que o `hug` do componente com slot
+ * mede): a soma com os `gap` no eixo principal e a maior extensão no cruzado (com `baseline`, do
+ * topo mais alto ao fundo mais baixo). Com `wrap`, as linhas se repartem como em `layoutChildren`
+ * (`available`: o espaço do eixo principal; nulo = só o `maxPerLine` quebra): o eixo principal
+ * mede a linha mais cheia e o cruzado soma as linhas com os `lineGap`.
+ */
+export function contentExtent(
+  layout: ResolvedSlotLayout,
+  children: readonly LayoutChild[],
+  available: number | null,
+): { width: number; height: number } {
+  const row = layout.type === 'row';
+  const mains = children.map((c) => (row ? c.box.width : c.box.height));
+  const lines =
+    layout.wrap === 'none'
+      ? [children.map((_, i) => i)]
+      : breakLines(mains, available, {
+          gap: layout.gap,
+          maxPerLine: layout.maxPerLine,
+          maxLines: layout.maxLines,
+        }).lines;
+  const used = lines.map((line) =>
+    Math.max(
+      0,
+      line.reduce((sum, i) => sum + (mains[i] ?? 0), 0) + layout.gap * (line.length - 1),
+    ),
+  );
+  const crosses = lines.map((line) =>
+    lineExtent(
+      layout,
+      row,
+      line.map((i) => children[i] as LayoutChild),
+    ),
+  );
+  const main = Math.max(0, ...used);
+  const cross = stackLines(crosses, layout.lineGap, false).total;
+  return row ? { width: main, height: cross } : { width: cross, height: main };
+}
+
+/** Posições no eixo principal de uma linha: `justify` sobre a folga da linha e `reverse` espelhando-a. */
+function lineMainPositions(
+  layout: ResolvedSlotLayout,
+  geometry: SlotGeometry,
+  mains: readonly number[],
+): number[] {
+  const total = mains.reduce((sum, s) => sum + s, 0) + layout.gap * (mains.length - 1);
+  const free = Math.max(0, geometry.mainContent - total);
+  const { offset, extra } = justifySpacing(layout.justify, free, mains.length);
+  let cursor = geometry.mainStart + offset;
+  return mains.map((main) => {
     const forward = cursor;
     cursor += main + layout.gap + extra;
-    const mainPos = layout.reverse
-      ? mirrorMain(forward, main, mainStart, mainContent)
+    return layout.reverse
+      ? mirrorMain(forward, main, geometry.mainStart, geometry.mainContent)
       : forward;
+  });
+}
+
+/** Os retângulos (arredondados) de uma linha de filhos, dados o começo e a extensão dela no eixo cruzado. */
+function placeLine(
+  layout: ResolvedSlotLayout,
+  geometry: SlotGeometry,
+  indices: readonly number[],
+  children: readonly LayoutChild[],
+  cross: { extent: number; top: number },
+): Box[] {
+  const { row } = geometry;
+  const line = indices.map((i) => children[i] as LayoutChild);
+  const mains = line.map((c) => (row ? c.box.width : c.box.height));
+  const positions = lineMainPositions(layout, geometry, mains);
+  const lines = line.map((c) => c.baseline ?? (row ? c.box.height : c.box.width));
+  const above = Math.max(0, ...lines);
+  return line.map((child, i) => {
+    const main = mains[i] ?? 0;
+    const size = row ? child.box.height : child.box.width;
+    const baseline =
+      layout.align === 'baseline' ? { above, own: lines[i] ?? size } : undefined;
+    const placed = crossInLine(layout, cross.top, cross.extent, size, baseline);
+    const mainPos = positions[i] ?? 0;
     const raw: Box = row
-      ? { x: mainPos, y: cross.pos, width: main, height: cross.size }
-      : { x: cross.pos, y: mainPos, width: cross.size, height: main };
+      ? { x: mainPos, y: placed.pos, width: main, height: placed.size }
+      : { x: placed.pos, y: mainPos, width: placed.size, height: main };
     return {
       x: Math.round(raw.x),
       y: Math.round(raw.y),

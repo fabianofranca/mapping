@@ -22,6 +22,7 @@ import type {
   FieldValue,
   FieldValues,
   FrameTemplate,
+  LayoutSpec,
   RepeatTemplate,
   TemplateNode,
 } from './componentFormat';
@@ -58,12 +59,22 @@ function inheritedKeys(node: RepeatTemplate): Partial<FrameTemplate> {
   return out;
 }
 
+/** A quebra de fileira (v4) do `repeat`, que o quadro gerado leva no `layout` (só as chaves presentes). */
+function wrapKeys(node: RepeatTemplate): Partial<LayoutSpec> {
+  const out: Record<string, unknown> = {};
+  for (const key of ['wrap', 'lineGap', 'maxPerLine', 'maxLines'] as const)
+    if (node[key] !== undefined) out[key] = node[key];
+  return out;
+}
+
 /** Tamanhos do quadro gerado: `width`/`height` do `repeat`, ou o padrão do eixo (ver o topo). */
 function wrapperSize(
   node: RepeatTemplate,
   column: boolean,
 ): Pick<FrameTemplate, 'width' | 'height'> {
-  const rowsAxis = node.distribute === 'fill' ? 'fill' : 'hug';
+  // Com `wrap` o eixo das linhas precisa de um limite para quebrar: ocupa o do pai, como com `distribute`.
+  const wraps = node.wrap !== undefined && node.wrap !== 'none';
+  const rowsAxis = node.distribute === 'fill' || wraps ? 'fill' : 'hug';
   return {
     width: node.width ?? (column ? 'fill' : rowsAxis),
     height: node.height ?? (column ? rowsAxis : 'fill'),
@@ -280,7 +291,11 @@ export function expandRepeats(
       name: node.name ?? 'repeat',
       ...inheritedKeys(node),
       ...wrapperSize(node, column),
-      layout: { type: node.direction ?? 'column', gap: node.gap ?? 0 },
+      layout: {
+        type: node.direction ?? 'column',
+        gap: node.gap ?? 0,
+        ...wrapKeys(node),
+      },
       children,
     };
   };

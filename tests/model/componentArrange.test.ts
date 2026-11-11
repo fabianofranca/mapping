@@ -937,3 +937,87 @@ describe('fitMarking (MC3, decisão 14 da #898)', () => {
     expect(marking(result, 'S').parentId).toBeNull();
   });
 });
+
+describe('arrangeMarking: wrap no slot (MC4, decisão 12)', () => {
+  /** O container `row` (ou `rowhug`) com o slot em `wrap`, mais as chaves dadas, na formatVersion 4. */
+  function wrapCatalog(
+    layout: Record<string, unknown>,
+    id: 'row' | 'rowhug' = 'row',
+  ): ComponentCatalog {
+    const base = JSON.parse(JSON.stringify(COMPONENTS[id])) as {
+      formatVersion: number;
+      template: { children: { layout: Record<string, unknown> }[] };
+    };
+    base.formatVersion = 4;
+    const slot = base.template.children[0];
+    if (slot === undefined) throw new Error('sem slot');
+    slot.layout = { ...slot.layout, wrap: 'wrap', lineGap: 12, ...layout };
+    return testCatalog({ ...COMPONENTS, [id]: base });
+  }
+
+  /** Cinco filhas `text` de 100 × 40 empilhadas (sem se tocar) no container 320 × 300. */
+  function crowd(cat: ComponentCatalog, id: 'row' | 'rowhug' = 'row'): Project {
+    let p = add(componentProject(), 'C', id, box(100, 100, 320, 300), null, {}, cat);
+    for (let i = 1; i <= 5; i++)
+      p = add(p, `T${i}`, 'text', box(100, 100 + (i - 1) * 45, 100, 40), 'C', {}, cat);
+    return p;
+  }
+
+  it('Arrumar põe as filhas em linhas: 3 + 2, com o gap e o lineGap', () => {
+    const cat = wrapCatalog({});
+    const { project, warnings } = arrange(crowd(cat), 'C', cat);
+    expect([1, 2, 3].map((i) => rectOf(project, `T${i}`))).toEqual([
+      box(100, 100, 100, 40),
+      box(208, 100, 100, 40),
+      box(316, 100, 100, 40),
+    ]);
+    expect([4, 5].map((i) => rectOf(project, `T${i}`))).toEqual([
+      box(100, 152, 100, 40),
+      box(208, 152, 100, 40),
+    ]);
+    expect(warnings).toEqual([]);
+    expectValid(project);
+  });
+
+  it('wrap-reverse: a linha nova fica acima', () => {
+    const cat = wrapCatalog({ wrap: 'wrap-reverse' });
+    const { project } = arrange(crowd(cat), 'C', cat);
+    expect(rectOf(project, 'T1').y).toBe(152);
+    expect(rectOf(project, 'T4').y).toBe(100);
+  });
+
+  it('justify space-between e reverse valem em cada linha', () => {
+    const between = wrapCatalog({ justify: 'space-between' });
+    const a = arrange(crowd(between), 'C', between).project;
+    expect([1, 2, 3].map((i) => rectOf(a, `T${i}`).x)).toEqual([100, 210, 320]);
+    expect([4, 5].map((i) => rectOf(a, `T${i}`).x)).toEqual([100, 320]);
+    const reversed = wrapCatalog({ reverse: true });
+    const b = arrange(crowd(reversed), 'C', reversed).project;
+    expect([1, 2, 3].map((i) => rectOf(b, `T${i}`).x)).toEqual([320, 212, 104]);
+    expect([4, 5].map((i) => rectOf(b, `T${i}`).x)).toEqual([320, 212]);
+  });
+
+  it('maxPerLine 2 e maxLines 2: a quinta filha, além da última linha, fica onde estava', () => {
+    const cat = wrapCatalog({ maxPerLine: 2, maxLines: 2 });
+    const { project } = arrange(crowd(cat), 'C', cat);
+    expect([1, 2, 3, 4].map((i) => rectOf(project, `T${i}`).y)).toEqual([
+      100, 100, 152, 152,
+    ]);
+    expect(rectOf(project, 'T5')).toEqual(box(100, 280, 100, 40));
+  });
+
+  it('um componente hug na altura cresce com as linhas (a soma das linhas com o lineGap)', () => {
+    const cat = wrapCatalog({}, 'rowhug');
+    const { project } = arrange(crowd(cat, 'rowhug'), 'C', cat);
+    expect(rectOf(project, 'C').height).toBe(40 + 12 + 40);
+    expect(rectOf(project, 'T5').y).toBe(152);
+  });
+
+  it('as linhas que não cabem na altura do container avisam "conteúdo maior que o container"', () => {
+    const cat = wrapCatalog({ lineGap: 300 });
+    const { warnings } = arrange(crowd(cat), 'C', cat);
+    expect(warnings.map((w) => w.text)).toContain(
+      'Tipo row: conteúdo maior que o container',
+    );
+  });
+});

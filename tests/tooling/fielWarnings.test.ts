@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { approximateMeasurer, instantiate } from '../../src/model/components/instantiate';
 import { isFontPath } from '../../src/model/components/library';
 import { parseComponentText } from '../../src/model/components/parseComponent';
-import { walk } from '../../src/model/components/scene';
+import { absoluteBoxes, walk } from '../../src/model/components/scene';
 import { validateLibrary } from '../../src/model/library';
 
 const REPO = join(__dirname, '../..');
@@ -55,5 +55,33 @@ describe('fiel.mjs (R25.1)', () => {
       return box?.height ?? -1;
     };
     expect(['small', 'center', 'medium'].map(heightOf)).toEqual([48, 68, 88]);
+  });
+  it('flow-row: as cinco caixas quebram em 3 + 2, em x 10, 50, 90 e y 10 / 36 (R25.98)', () => {
+    const dir = join(mkdtempSync(join(tmpdir(), 'fiel-')), 'm3-fiel');
+    cpSync(join(REPO, 'libraries/material3-compose'), dir, { recursive: true });
+    execFileSync('node', [join(REPO, 'scripts/testing/fiel.mjs'), dir, '4']);
+    const parsed = parseComponentText(
+      readFileSync(join(dir, 'components/flow-row.json'), 'utf8'),
+    );
+    if (!parsed.ok) throw new Error(parsed.errors.join('; '));
+    const { root } = instantiate(
+      parsed.component,
+      {},
+      { x: 0, y: 0, width: 140, height: 80 },
+      { measure: approximateMeasurer },
+    );
+    const boxes = absoluteBoxes(root);
+    const at = (name: string) => {
+      const node = [...walk(root)].find((n) => n.name === name);
+      const box = node === undefined ? undefined : boxes.get(node.id);
+      return [box?.x, box?.y];
+    };
+    expect(['k1', 'k2', 'k3', 'k4', 'k5'].map(at)).toEqual([
+      [10, 10],
+      [50, 10],
+      [90, 10],
+      [10, 36],
+      [50, 36],
+    ]);
   });
 });

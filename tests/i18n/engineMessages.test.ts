@@ -147,7 +147,25 @@ function engineCases() {
     { x: 0, y: 0, width: 200, height: 100 },
     { measure: approximateMeasurer },
   );
-  return [...results, expanded, unstable];
+  // `maxLines` que corta filhos de uma fileira com `wrap` (MC4).
+  const outside = instantiate(
+    component(
+      {
+        name: 'fileira',
+        layout: { type: 'row', wrap: 'wrap', maxLines: 1, gap: 4 },
+        children: Array.from({ length: 4 }, () => ({
+          type: 'rect',
+          width: 100,
+          height: 10,
+        })),
+      },
+      { formatVersion: 4 },
+    ),
+    {},
+    { x: 0, y: 0, width: 220, height: 100 },
+    { measure: approximateMeasurer },
+  );
+  return [...results, expanded, unstable, outside];
 }
 
 // --- layoutScreen -----------------------------------------------------------------------------
@@ -439,6 +457,7 @@ describe('avisos do motor de desenho: messages ao lado de warnings', () => {
     ['valor inválido', 'engine.invalidValue'],
     ['repeat limitado', 'engine.repeatLimited'],
     ['$lines instável', 'engine.linesUnstable'],
+    ['filhos fora de maxLines', 'engine.childrenOutsideMaxLines'],
     ['nó inválido (origem e medida)', 'origins.draw.nodeInvalid'],
     ['tipo ausente', 'origins.draw.typeMissing'],
     ['tipo externo sem tipo de anotação', 'origins.draw.typeUnknown'],

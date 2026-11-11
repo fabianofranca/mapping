@@ -57,6 +57,7 @@ import type {
   IconTemplate,
   LayoutAlign,
   LayoutJustify,
+  LayoutWrap,
   ImageTemplate,
   PathTemplate,
   ShadowSpec,
@@ -88,6 +89,7 @@ import {
   LAYOUT_ALIGNS,
   LAYOUT_JUSTIFIES,
   LAYOUT_TYPES,
+  LAYOUT_WRAPS,
   allowedValue,
   describeValue,
   justifySpacing,
@@ -108,6 +110,7 @@ import {
   resolveTokens,
   type ResolvedTokens,
 } from './tokens';
+import { breakLines, stackLines } from './wrapLines';
 import {
   layoutRuns,
   measureRichText,
@@ -388,6 +391,11 @@ interface FrameLayout {
   readonly justify: LayoutJustify;
   /** Filhos em ordem inversa e `start` no fim (`layout.reverse`). */
   readonly reverse: boolean;
+  /** Quebra de fileira (`layout.wrap`); `none` fora do `row`/`column` e na formatVersion < 4. */
+  readonly wrap: LayoutWrap;
+  readonly lineGap: number;
+  readonly maxPerLine?: number | undefined;
+  readonly maxLines?: number | undefined;
 }
 
 interface Placement {
@@ -437,6 +445,8 @@ const NONE_LAYOUT: FrameLayout = {
   align: 'start',
   justify: 'start',
   reverse: false,
+  wrap: 'none',
+  lineGap: 0,
 };
 
 /** Quanto descer cada filho para as linhas de base ficarem na do mais alto (`align: "baseline"`). */
@@ -925,6 +935,32 @@ function createEngine(
       ? LAYOUT_ALIGNS
       : LAYOUT_ALIGNS.filter((value) => value !== 'baseline');
 
+  /** `maxPerLine`/`maxLines`: inteiro ≥ 1; outro valor cai em "sem limite" com o aviso de valor inválido. */
+  const countOf = (expr: Expr<number> | undefined, label: string): number | undefined => {
+    const value = ev<unknown>(expr as Expr<unknown> | undefined, undefined);
+    if (value === undefined || value === null) return undefined;
+    const n = typeof value === 'number' ? value : parseFloat(String(value));
+    if (Number.isInteger(n) && n >= 1) return n;
+    invalidValue(label, value);
+    return undefined;
+  };
+
+  /** A quebra de fileira de um quadro `row`/`column` (v4); sem `wrap` (ou `none`) as outras três chaves não valem. */
+  const wrapOf = (
+    spec: LayoutSpec,
+  ): Pick<FrameLayout, 'wrap' | 'lineGap' | 'maxPerLine' | 'maxLines'> => {
+    const none = { wrap: 'none', lineGap: 0 } as const;
+    if (original.formatVersion < 4) return none;
+    const wrap = checked(spec.wrap, LAYOUT_WRAPS, 'none', 'layout.wrap');
+    if (wrap === 'none') return none;
+    return {
+      wrap,
+      lineGap: Math.max(0, num(spec.lineGap, 0)),
+      maxPerLine: countOf(spec.maxPerLine, 'layout.maxPerLine'),
+      maxLines: countOf(spec.maxLines, 'layout.maxLines'),
+    };
+  };
+
   const layoutOf = (frame: FrameTemplate): FrameLayout => {
     const spec = frame.layout;
     const kind = checked(spec?.type, LAYOUT_TYPES, 'none', 'layout.type');
@@ -937,6 +973,7 @@ function createEngine(
       align: checked(spec.align, alignsFor(kind), 'start', 'layout.align'),
       justify: checked(spec.justify, LAYOUT_JUSTIFIES, 'start', 'layout.justify'),
       reverse: bool(spec.reverse, false),
+      ...wrapOf(spec),
     };
   };
 
@@ -1246,6 +1283,244 @@ function createEngine(
     });
   };
 
+  // --- quebra de fileira (`layout.wrap`) ----------------------------------------------------
+
+  /** Os filhos de um quadro com `wrap`, o eixo principal, o cruzado e o espaço nos dois. */
+  interface WrapSpace {
+    readonly frame: FrameTemplate;
+    readonly layout: FrameLayout;
+    readonly kids: readonly Kid[];
+    readonly main: Axis;
+    readonly cross: Axis;
+    /** A área de conteúdo do eixo principal (nulo = `hug`: uma linha só). */
+    readonly mainContent: number | null;
+    /** O limite do eixo cruzado quando o quadro é medido (nulo = desconhecido). */
+    readonly crossBound: number | null;
+    /** O tamanho conhecido do quadro por eixo (nulo = `hug`). */
+    readonly known: { readonly w: number | null; readonly h: number | null };
+  }
+
+  const maxOf = (values: readonly number[]): number =>
+    values.reduce((m, v) => Math.max(m, v), 0);
+
+  const padAxis = (layout: FrameLayout, axis: Axis): number =>
+    axis === 'w'
+      ? layout.pad.left + layout.pad.right
+      : layout.pad.top + layout.pad.bottom;
+
+  /** Tamanho dos filhos no eixo principal antes de dividir os `fill` (`'fill'` fica), na ordem dos `kids`. */
+  const wrapMainSizes = (space: WrapSpace): (number | 'fill')[] => {
+    const { frame, layout, kids, main, cross } = space;
+    const crossSizes =
+      main === 'h'
+        ? resolveAxis(
+            frame,
+            layout,
+            kids,
+            cross,
+            {
+              content:
+                space.known[cross] === null
+                  ? null
+                  : Math.max(0, (space.known[cross] ?? 0) - padAxis(layout, cross)),
+              bound: space.crossBound,
+            },
+            null,
+          )
+        : null;
+    return kids.map((kid, i) => {
+      const size = kidSize(
+        kid,
+        main,
+        { content: space.mainContent, bound: null },
+        crossSizes?.[i],
+        layout,
+      );
+      return size === 'fill' ? size : clampTo(limitOf(kid.node, main), size);
+    });
+  };
+
+  /** A base de cada filho para decidir as linhas: o `fill` vale o que abraçaria. */
+  const wrapBases = (space: WrapSpace, sizes: readonly (number | 'fill')[]): number[] =>
+    sizes.map((size, i) => {
+      if (size !== 'fill') return size;
+      const kid = space.kids[i] as Kid;
+      const natural = hugSize(kid.node, space.main, undefined, space.mainContent);
+      return clampTo(limitOf(kid.node, space.main), Math.max(0, natural));
+    });
+
+  /** Uma linha já resolvida: filhos, tamanhos e posições nos dois eixos (relativos ao quadro). */
+  interface WrappedLine {
+    readonly kids: readonly Kid[];
+    readonly main: readonly number[];
+    readonly mainPos: readonly number[];
+    readonly cross: readonly number[];
+    /** A extensão da linha no eixo cruzado. */
+    readonly extent: number;
+    /** O deslocamento de cada filho dentro da linha, no eixo cruzado. */
+    readonly offsets: readonly number[];
+  }
+
+  /** O deslocamento de um filho dentro da linha, no eixo cruzado (`center`/`end`; `start` e `stretch` 0). */
+  const crossOffset = (align: LayoutAlign, size: number, extent: number): number => {
+    if (align === 'center') return (extent - size) / 2;
+    if (align === 'end') return extent - size;
+    return 0;
+  };
+
+  /** A linha com os tamanhos do eixo cruzado e os deslocamentos dentro dela. */
+  const crossOfLine = (
+    space: WrapSpace,
+    lineKids: readonly Kid[],
+    mainSizes: readonly number[],
+  ): Pick<WrappedLine, 'cross' | 'extent' | 'offsets'> => {
+    const { frame, layout, cross } = space;
+    const natural = resolveAxis(
+      frame,
+      layout,
+      lineKids,
+      cross,
+      { content: null, bound: space.crossBound },
+      mainSizes,
+    );
+    const baselined = layout.kind === 'row' && layout.align === 'baseline';
+    const lines = baselined ? kidBaselines(lineKids, mainSizes, natural) : [];
+    const extent = baselined
+      ? baselineExtent(lineKids, mainSizes, natural)
+      : maxOf(natural);
+    const sizes = resolveAxis(
+      frame,
+      layout,
+      lineKids,
+      cross,
+      { content: extent, bound: null },
+      mainSizes,
+    );
+    const shifts = baselined ? baselineShifts(lines) : [];
+    return {
+      cross: sizes,
+      extent,
+      offsets: sizes.map((size, i) =>
+        baselined ? (shifts[i] ?? 0) : crossOffset(layout.align, size, extent),
+      ),
+    };
+  };
+
+  /** As linhas do quadro com `wrap`: quebra, divide os `fill` de cada uma, mede o eixo cruzado e posiciona. */
+  const wrapLines = (
+    space: WrapSpace,
+    mainTotal: (used: number) => number,
+  ): { lines: WrappedLine[]; total: number } => {
+    const { frame, layout, kids } = space;
+    const sizes = wrapMainSizes(space);
+    const bases = wrapBases(space, sizes);
+    const broken = breakLines(bases, space.mainContent, {
+      gap: layout.gap,
+      maxPerLine: layout.maxPerLine,
+      maxLines: layout.maxLines,
+    });
+    if (broken.dropped > 0)
+      warn('engine.childrenOutsideMaxLines', {
+        count: broken.dropped,
+        name: nodeName(frame),
+      });
+    const tolerance = kids.some((kid) => kid.node.type === 'text') ? TEXT_TOLERANCE : EPS;
+    const resolved = broken.lines.map((indices) => {
+      const lineSizes = indices.map((i) =>
+        sizes[i] === 'fill' && space.mainContent === null
+          ? (bases[i] ?? 0)
+          : (sizes[i] ?? 0),
+      );
+      return resolveMain(
+        frame,
+        layout,
+        lineSizes,
+        indices.map((i) => limitOf((kids[i] as Kid).node, space.main)),
+        space.mainContent,
+        tolerance,
+      );
+    });
+    const usedOf = (line: readonly number[]) =>
+      line.reduce((sum, v) => sum + v, 0) + layout.gap * Math.max(0, line.length - 1);
+    const total = mainTotal(maxOf(resolved.map(usedOf)));
+    const lines = broken.lines.map((indices, k): WrappedLine => {
+      const lineKids = indices.map((i) => kids[i] as Kid);
+      const main = resolved[k] ?? [];
+      return {
+        kids: lineKids,
+        main,
+        mainPos: positionAxis(layout, lineKids, space.main, main, total),
+        ...crossOfLine(space, lineKids, main),
+      };
+    });
+    return { lines, total };
+  };
+
+  /** O plano de um quadro `row`/`column` com `wrap` (ver `layout.wrap` no `docs/COMPONENT-FORMAT.md`). */
+  const planWrapped = (
+    frame: FrameTemplate,
+    layout: FrameLayout,
+    kids: readonly Kid[],
+    w: number | null,
+    h: number | null,
+    bounds: Limits,
+  ): Plan => {
+    const row = layout.kind === 'row';
+    const main: Axis = row ? 'w' : 'h';
+    const cross: Axis = row ? 'h' : 'w';
+    const known = { w, h };
+    const mainKnown = known[main];
+    const crossBound = bounds[cross];
+    const space: WrapSpace = {
+      frame,
+      layout,
+      kids,
+      main,
+      cross,
+      mainContent:
+        mainKnown === null ? null : Math.max(0, mainKnown - padAxis(layout, main)),
+      crossBound:
+        crossBound === null ? null : Math.max(0, crossBound - padAxis(layout, cross)),
+      known,
+    };
+    const { lines, total: mainSize } = wrapLines(
+      space,
+      (used) => mainKnown ?? used + padAxis(layout, main),
+    );
+    const stacked = stackLines(
+      lines.map((line) => line.extent),
+      layout.lineGap,
+      layout.wrap === 'wrap-reverse',
+    );
+    const crossStart = row ? layout.pad.top : layout.pad.left;
+    const crossSize = known[cross] ?? stacked.total + padAxis(layout, cross);
+    const placements = lines.flatMap((line, k) =>
+      line.kids.map((kid, i): Placement => {
+        const m = line.main[i] ?? 0;
+        const c = line.cross[i] ?? 0;
+        const mainPos = line.mainPos[i] ?? 0;
+        const crossPos = crossStart + (stacked.tops[k] ?? 0) + (line.offsets[i] ?? 0);
+        return row
+          ? { kid, x: mainPos, y: crossPos, w: m, h: c }
+          : { kid, x: crossPos, y: mainPos, w: c, h: m };
+      }),
+    );
+    return row
+      ? { w: mainSize, h: crossSize, placements }
+      : { w: crossSize, h: mainSize, placements };
+  };
+
+  /** Guarda o plano do quadro na chave do cache e o devolve. */
+  const remember = (frame: FrameTemplate, key: string, plan: Plan): Plan => {
+    let perFrame = planCache.get(frame);
+    if (!perFrame) {
+      perFrame = new Map();
+      planCache.set(frame, perFrame);
+    }
+    perFrame.set(key, plan);
+    return plan;
+  };
+
   /**
    * Plano de um quadro: `null` num eixo = `hug` (o quadro abraça os filhos). `limits` é o
    * limite disponível por eixo hug, para os filhos `fill`/`%` contribuírem na medição.
@@ -1263,6 +1538,8 @@ function createEngine(
 
     const layout = layoutOf(frame);
     const kids = visibleKids(frame);
+    if (layout.wrap !== 'none')
+      return remember(frame, key, planWrapped(frame, layout, kids, w, h, bounds));
     const padW = layout.pad.left + layout.pad.right;
     const padH = layout.pad.top + layout.pad.bottom;
     const baselined = layout.kind === 'row' && layout.align === 'baseline';
@@ -1309,13 +1586,7 @@ function createEngine(
         h: vertical.sizes[i] ?? 0,
       })),
     };
-    let perFrame = planCache.get(frame);
-    if (!perFrame) {
-      perFrame = new Map();
-      planCache.set(frame, perFrame);
-    }
-    perFrame.set(key, plan);
-    return plan;
+    return remember(frame, key, plan);
   };
 
   // --- estilo ---------------------------------------------------------------------------

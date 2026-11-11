@@ -17,6 +17,7 @@ export const engineMessages = {
   'engine.childrenIgnored': '{path}: filhos ignorados (componente sem slot)',
   'engine.fillInHugUsing': '{path}: fill dentro de hug: usando hug',
   'engine.slotInvisible': '{path}: slot invisível: filhos ignorados',
+  'engine.childrenOutsideMaxLines': '{count} filhos fora de maxLines: {name}',
   'engine.linesUnstable': '$lines instável: {name}',
   'engine.screenTooTall': 'tela: conteúdo maior que a altura da tela',
   // Prova de desenho da biblioteca: o aviso do motor com o sufixo de medida aproximada.

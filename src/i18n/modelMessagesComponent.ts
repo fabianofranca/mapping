@@ -110,6 +110,7 @@ export const componentEnUS: {
   'model.component.linesSelf': 'the node cannot depend on its own lines',
   'model.component.sizingNoSize': '$size is not valid in sizing',
   'model.component.sizingNoLines': '$lines is not valid in sizing',
+  'model.component.onlyWithWrap': 'only valid with wrap',
   'model.component.v4Only': 'only allowed with formatVersion 4',
   'model.component.indexOnlyInRepeat': '$index is only valid inside a repeat',
   'model.component.repeatOnlyV2': 'the repeat node only exists in formatVersion 2',
