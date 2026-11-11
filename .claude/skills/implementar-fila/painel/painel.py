@@ -6,6 +6,12 @@ Cada comando imprime, no fim, `alterados: <arquivos gravados>`.
 A nota "Vagas k/N" (meta.vagas) é recalculada em toda gravação, a partir das fichas (`plan`),
 de `meta.paralelo` (`start --paralelo N`) e de `meta.merged` (`merged`); `context` guarda o contexto
 do coordenador (alerta acima de CONTEXT_LIMIT). `show` imprime `vagas:`, `começar agora:`, `contexto:`.
+Ficha incompleta (decisão 11 da #1532): `dep`, `toca` ou `fases` em `?` (ou `dep` e `toca` sem o campo) dá o motivo
+`ficha incompleta (<campos>)` e entra em `fichas a refazer:` do `show`; a etapa começada com `toca=?` segue conflitando
+com toda candidata (`arquivo ? com #N`). `exclusive=sim` na linha (`exclusive=` limpa) faz a etapa começar só com a fila
+sem etapa começada e não mesclada, e segura todas as outras enquanto roda (`exclusiva (espera a fila esvaziar)`,
+`exclusiva #N em andamento`). O `docs/FLOW.md`, o `docs/PROCESS.md` e os `.claude/skills/*/SKILL.md` se comparam por seção
+(`docs/FLOW.md#<slug>`, como o `docs/TESTING.md` por roteiro); `slug "<título>"` imprime o slug de um `##`.
 `ciWait` (o PR cujo CI espera o coordenador, ex. `PR #7`) e `ciWaitAt` (desde quando; `ciWait=` limpa os
 dois) entram na linha `CI esperando o coordenador:` do `show`; trocar ou limpar `child` não mexe neles.
 `apply DIR <arquivo|->` grava vários subcomandos de uma vez (um por linha, na sintaxe da linha de comando
@@ -26,6 +32,7 @@ import os
 import re
 import shlex
 import sys
+import unicodedata
 
 STATUS = ["aguardando", "em andamento", "concluída", "falhou", "esperando dono"]
 KINDS = ["etapa", "bug", "patch"]
@@ -51,6 +58,8 @@ QUEUE_EMPTY = {
     # Motivo do dono para segurar uma etapa que não começou ("esperando dono (…)",
     # "ordem do dono (…)", "pausada pelo dono"); vazio: não está segura.
     "hold": "",
+    # "sim": etapa exclusiva (começa só com a fila sem etapa começada e não mesclada; nenhuma outra começa com ela); vazio: não.
+    "exclusive": "",
 }
 TIME_FIELDS = ["started", "ended", "childAt", "ciWaitAt"]
 LATE_MINUTES = 30
@@ -239,6 +248,8 @@ def cmd_row(a):
         validate_choice("status", pairs["status"], STATUS)
     if "kind" in pairs:
         validate_choice("kind", pairs["kind"], KINDS)
+    if "exclusive" in pairs:
+        validate_choice("exclusive", pairs["exclusive"], ["", "sim"])
     if "stage" in pairs:
         validate_choice("stage", pairs["stage"], STAGES)
     if pairs.get("child") == "":
@@ -408,7 +419,7 @@ def cmd_published(a):
     print("alterados: meta.json")
 
 
-BATCH_REJECTED = ("show", "apply", "init", "published")
+BATCH_REJECTED = ("show", "apply", "init", "published", "slug")
 
 
 def batch_lines(src):
@@ -464,7 +475,9 @@ def cmd_apply(a):
 
 IGNORED_PREFIXES = ("changelog/", "docs/design-system/")
 IGNORED_EXACT = ("mcp/version.ts", "docs/TESTING-NUVEM.md#blocos")
-ROUTE_FILE = "docs/TESTING.md"  # só ele é comparado por âncora (roteiro)
+ROUTE_FILE = "docs/TESTING.md"  # comparado por âncora (roteiro)
+SECTION_FILES = ("docs/FLOW.md", "docs/PROCESS.md")  # e os SKILL.md: comparados por âncora (seção `##`)
+SECTION_GLOB = ".claude/skills/*/SKILL.md"
 STARTED_STATUS = ("em andamento", "esperando dono", "falhou")
 
 
@@ -519,7 +532,7 @@ def same_target(a, b):
     pb, _, anc_b = b.partition("#")
     if pa != pb:
         return covers(pa, pb) or covers(pb, pa)
-    if pa != ROUTE_FILE:
+    if pa != ROUTE_FILE and pa not in SECTION_FILES and not fnmatch.fnmatchcase(pa, SECTION_GLOB):
         return True
     return not anc_a or not anc_b or anc_a == anc_b
 
@@ -528,7 +541,7 @@ def first_conflict(mine, other):
     for x in mine:
         for y in other:
             if same_target(x, y):
-                return x
+                return "?" if y == "?" else x
     return None
 
 
@@ -549,9 +562,47 @@ def dep_state(plan):
     return deps or None
 
 
+def incomplete_fields(plan):
+    """Campos da ficha que faltam: `dep` e `toca` em `?` ou ausentes; `fases` só em `?` ou vazio."""
+    out = []
+    if dep_state(plan) is None:
+        out.append("dep")
+    if toca_list(plan) == ["?"]:
+        out.append("toca")
+    fases = plan_field(plan, "fases")
+    if fases is not None and fases.strip() in ("", "?"):
+        out.append("fases")
+    return out
+
+
+def redo_rows(q):
+    """Linhas não concluídas com a ficha incompleta (a ficha se refaz no ciclo)."""
+    return [r for r in q if r["status"] != "concluída" and incomplete_fields(r.get("plan", ""))]
+
+
 def changes_schema(plan):
     v = plan_field(plan, "schema")
     return v is None or v.strip() != "não"
+
+
+def plan_block(plan, merged, done):
+    """Motivo de a ficha segurar a etapa: ficha incompleta ou dependência fora da `main`; "" se não segura."""
+    miss = incomplete_fields(plan)
+    if miss:
+        return "ficha incompleta (" + ", ".join(miss) + ")"
+    miss = [d for d, st in dep_state(plan) or []
+            if not (st == "main" or d in merged or d in done)]
+    return "dep " + ", ".join(miss) if miss else ""
+
+
+def exclusive_block(r, taking):
+    """Decisão 12: a exclusiva só começa com ninguém começado; com uma exclusiva rodando, ninguém começa."""
+    for o in taking:
+        if o.get("exclusive") == "sim":
+            return f"exclusiva {o['issue']} em andamento"
+    if r.get("exclusive") == "sim" and taking:
+        return "exclusiva (espera a fila esvaziar)"
+    return ""
 
 
 def slots_plan(q, meta):
@@ -572,14 +623,9 @@ def slots_plan(q, meta):
         plan = r.get("plan", "")
         why = r.get("hold") or ""
         if not why:
-            deps = dep_state(plan)
-            if deps is None:
-                why = "ficha sem dep"
-            else:
-                miss = [d for d, st in deps
-                        if not (st == "main" or d in merged or d in done)]
-                if miss:
-                    why = "dep " + ", ".join(miss)
+            why = plan_block(plan, merged, done)
+        if not why:
+            why = exclusive_block(r, taking)
         mine = toca_list(plan)
         if not why:
             for o in taking:
@@ -639,6 +685,17 @@ def show_row(r):
             print(f"  {k}: {v}")
 
 
+def slugify(title):
+    """Slug de um `##`: minúsculas, sem acento (NFKD, sem as marcas), `-` por sequência fora de [a-z0-9], sem `-` nas pontas."""
+    text = unicodedata.normalize("NFKD", title)
+    text = "".join(c for c in text if not unicodedata.combining(c)).lower()
+    return re.sub(r"[^a-z0-9]+", "-", text).strip("-")
+
+
+def cmd_slug(a):
+    print(slugify(a.title))
+
+
 def cmd_show(a):
     q, m, lg = (load(a.dir, n) for n in FILES)
     if a.issue:
@@ -657,6 +714,8 @@ def cmd_show(a):
     print("começar agora: " + (" ".join(agora) or "nenhuma"))
     print(f"início: {meta.get('runStart') or '—'}  atualizado: {meta.get('updatedAt', '—')}")
     print(f"reserva: {meta.get('reserve') or '—'}")
+    redo = redo_rows(q)
+    print("fichas a refazer: " + (" ".join(r["issue"] for r in redo) or "nenhuma"))
     pend = meta.get("unpublished") or {}
     if pend.get("files"):
         print(f"não publicado desde {(pend.get('since') or '')[11:16] or '—'}: " + " ".join(pend["files"]))
@@ -733,6 +792,9 @@ def build_parser():
     sp.add_argument("file", metavar="arquivo", help="arquivo com os comandos, ou - para o stdin")
     add("published", cmd_published, "imprime a hora da publicação (at:) e limpa o que falta publicar")
     add("touch", cmd_touch, "a publicação falhou: marca de novo os 3 arquivos como não publicados")
+    sp = sub.add_parser("slug", help="imprime o slug de um título `##` (âncora de seção)")
+    sp.add_argument("title", metavar="título")
+    sp.set_defaults(fn=cmd_slug)
     sp = add("show", cmd_show, "resumo legível; com '#n', a linha inteira (com a ficha)")
     sp.add_argument("issue", nargs="?")
     return p

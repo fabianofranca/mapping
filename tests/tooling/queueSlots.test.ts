@@ -106,7 +106,7 @@ describe('painel.py — vagas (VG1, #1440)', () => {
     etapa('#8', ficha('#11:aberta,#12', 'h.ts'));
     run('start', dir, '--paralelo', '9');
     expect(vagas()).toBe(
-      'Vagas 0/9 · #1 começa · #2 dep #11 · #3 dep #12 · #4 começa · #5 começa · #6 começa · #7 ficha sem dep · #8 dep #11, #12 · nenhuma ready elegível',
+      'Vagas 0/9 · #1 começa · #2 dep #11 · #3 dep #12 · #4 começa · #5 começa · #6 começa · #7 ficha incompleta (dep) · #8 dep #11, #12 · nenhuma ready elegível',
     );
   });
 
@@ -200,7 +200,7 @@ describe('painel.py — vagas (VG1, #1440)', () => {
       expect(motivo('`./src/a.ts`, `src/b.ts`', ' src/a.ts ')).toBe(
         '#2 arquivo src/a.ts com #1',
       );
-      expect(motivo('src/a.ts', '?')).toBe('#2 arquivo ? com #1');
+      expect(motivo('src/a.ts', '?')).toBe('#2 ficha incompleta (toca)');
       expect(motivo('src/i18n/pt-BR.ts', 'src/i18n/pt-BR.ts')).toBe(
         '#2 arquivo src/i18n/pt-BR.ts com #1',
       );
