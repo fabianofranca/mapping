@@ -23,6 +23,7 @@ import {
   typeOf,
   types,
 } from '../support/material3Library';
+import { drawFitted } from '../support/material3Fitted';
 
 const COMMIT = '5113b82a4ed6416d6344efa50e41db8cb65928ff';
 
@@ -665,4 +666,32 @@ describe('atualização da biblioteca Material 3 (Compose) com o slider numéric
     const report = validateLibrary({ files, specPath: SPEC_FILE, previous });
     expect(report.errors).toEqual([]);
   });
+});
+
+describe('MC5 (#1033): todo exemplo desenha sem aviso no size e no tamanho ajustado', () => {
+  const catalog = buildCatalog(files);
+  const cases = ALL_TYPES.flatMap((id) => {
+    const entry = findEntry(catalog, id)!;
+    return entry.examples.map((example) => ({
+      id,
+      name: example.name,
+      values: example.values ?? {},
+    }));
+  });
+
+  it.each(['light', 'dark'] as const)(
+    'cada exemplo, no size e no tamanho ajustado, sem aviso (%s)',
+    (mode) => {
+      expect(cases.length).toBeGreaterThan(100);
+      for (const { id, name, values } of cases) {
+        const entry = findEntry(catalog, id)!;
+        const atSize = drawIn(catalog, entry, values, mode);
+        expect(atSize.warnings, `${id} / ${name} no size`).toEqual([]);
+        const fitted = drawFitted(id, values, mode);
+        expect(fitted.drawing.warnings, `${id} / ${name} em ${fitted.box.width}×${fitted.box.height}`).toEqual(
+          [],
+        );
+      }
+    },
+  );
 });
