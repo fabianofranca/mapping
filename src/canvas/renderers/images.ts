@@ -14,7 +14,7 @@ import {
 import type { DisplayImage } from '../../store/displayImages';
 import type { Frame, ViewFrame } from '../frame';
 import type { CanvasTokens } from '../theme';
-import { fontStyle, sameInputs } from './metrics';
+import { HALO_WIDTH, fontStyle, sameInputs } from './metrics';
 
 /** Rótulo da imagem (px de tela): distância da borda e largura mínima (a fonte é `t-cv-image`). */
 const IMAGE_TITLE_GAP = 4;
@@ -368,5 +368,10 @@ function updateTitle(
     fontFamily: tokens.fontFamily,
     fontStyle: fontStyle(weight),
     fill: image.name === null ? tokens.textMuted : tokens.text,
+    // Contorno da cor da superfície (como o halo dos nomes das marcações): o título se lê sobre
+    // a imagem de outra raiz nos dois temas. Espessura em px de tela.
+    stroke: tokens.surface,
+    strokeWidth: (2 * HALO_WIDTH) / zoom,
+    fillAfterStrokeEnabled: true,
   });
 }

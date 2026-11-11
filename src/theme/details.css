@@ -675,8 +675,15 @@ button.layer-group-label:hover {
   display: none;
 }
 
+/* TE1: o `min-width: 0` do controle tira a palavra do mínimo da coluna e `break-word` sozinho ainda
+   parte "referência" a 900 px; a célula quebrada pede o mínimo do conteúdo (a maior palavra). */
+.ref-cell .ref-control.is-broken {
+  min-width: min-content;
+}
+
+/* `break-word` (não `anywhere`): a referência quebrada quebra entre palavras, sem partir "referência". */
 .ref-cell .ref-control .ref-control-text {
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   text-overflow: clip;
   white-space: normal;
 }
@@ -1005,7 +1012,7 @@ button.layer-group-label:hover {
 
 /* Referência quebrada: o aviso inteiro importa mais que a linha única; quebra em vez de cortar. */
 .ref-control.is-broken .ref-control-text {
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   text-overflow: clip;
   white-space: normal;
 }

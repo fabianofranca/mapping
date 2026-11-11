@@ -5,8 +5,12 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-/** Etapa #841 (decisão 6): o guia gerado de cada bloco tem até 200 mil caracteres. */
-const MAX_BLOCK_GUIDE_CHARS = 200_000;
+/**
+ * Etapa #841 (decisão 6): o guia gerado de cada bloco tem até 200 mil caracteres. A TE1 (#1557)
+ * subiu o teto em 500 (para 200.500): os acréscimos do R23.12 e do R23.13 (tema escuro) levaram o
+ * bloco 5 a 200.2 mil, e os cinco blocos já estavam colados no teto.
+ */
+const MAX_BLOCK_GUIDE_CHARS = 200_500;
 
 const GUIDE = readFileSync('docs/TESTING.md', 'utf8');
 const NUVEM = readFileSync('docs/TESTING-NUVEM.md', 'utf8');
