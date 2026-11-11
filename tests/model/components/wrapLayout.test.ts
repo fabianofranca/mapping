@@ -313,6 +313,26 @@ describe('wrap: repeat', () => {
     expect(limited.warnings).toContain('2 filhos fora de maxLines: rep');
   });
 
+  it('um repeat em linha com wrap e sem largura ocupa a largura do pai (senão não teria onde quebrar)', () => {
+    const result = build(
+      frame({ type: 'column' }, [
+        {
+          type: 'repeat',
+          name: 'rep',
+          count: 5,
+          direction: 'row',
+          gap: 8,
+          wrap: 'wrap',
+          lineGap: 12,
+          template: { type: 'frame', name: 'cell', width: 100, height: 20, children: [] },
+        },
+      ]),
+    );
+    const boxes = absoluteBoxes(result.root);
+    const cells = [...walk(result.root)].filter((n) => n.name === 'cell');
+    expect(cells.map((c) => boxes.get(c.id)?.y)).toEqual([0, 0, 0, 32, 32]);
+  });
+
   it('o repeat sem wrap continua numa linha só', () => {
     const result = build(repeatFile({}));
     const boxes = absoluteBoxes(result.root);
@@ -421,6 +441,26 @@ describe('wrap: validação', () => {
       ]),
     );
     expect(checkSchema(schema, doc)).toEqual([]);
+    // Expressão em `wrap` (`$if`, `$switch`) vale os valores de `wrap`, não os do `justify`.
+    const byField = (wrap: Json) => file(frame({ wrap }, kids(1)));
+    expect(
+      checkSchema(
+        schema,
+        byField({ $if: { $field: 'x' }, then: 'wrap', else: 'wrap-reverse' }),
+      ),
+    ).toEqual([]);
+    expect(
+      checkSchema(
+        schema,
+        byField({ $switch: 'm', cases: { a: 'wrap' }, default: 'none' }),
+      ),
+    ).toEqual([]);
+    expect(
+      checkSchema(
+        schema,
+        byField({ $if: { $field: 'x' }, then: 'space-between', else: 'none' }),
+      ).length,
+    ).toBeGreaterThan(0);
     const bad = file(frame({ wrap: 'zig' }, []));
     expect(checkSchema(schema, bad).length).toBeGreaterThan(0);
   });

@@ -72,7 +72,9 @@ function wrapperSize(
   node: RepeatTemplate,
   column: boolean,
 ): Pick<FrameTemplate, 'width' | 'height'> {
-  const rowsAxis = node.distribute === 'fill' ? 'fill' : 'hug';
+  // Com `wrap` o eixo das linhas precisa de um limite para quebrar: ocupa o do pai, como com `distribute`.
+  const wraps = node.wrap !== undefined && node.wrap !== 'none';
+  const rowsAxis = node.distribute === 'fill' || wraps ? 'fill' : 'hug';
   return {
     width: node.width ?? (column ? 'fill' : rowsAxis),
     height: node.height ?? (column ? rowsAxis : 'fill'),

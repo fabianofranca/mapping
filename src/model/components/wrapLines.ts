@@ -4,7 +4,8 @@
  * decidem com elas quais filhos ficam em cada linha e onde cada linha fica no eixo cruzado.
  */
 
-const EPS = 0.001;
+/** Tolerância (px) de "cabe na linha": a mesma da arrumação e da posição da filha nova. */
+export const WRAP_EPS = 0.001;
 
 export interface LineBreakOptions {
   /** Espaço entre filhos da mesma linha. */
@@ -32,7 +33,7 @@ function fitsLine(
 ): boolean {
   if (count === 0) return true;
   if (options.maxPerLine !== undefined && count >= options.maxPerLine) return false;
-  return available === null || used + options.gap + size <= available + EPS;
+  return available === null || used + options.gap + size <= available + WRAP_EPS;
 }
 
 /**

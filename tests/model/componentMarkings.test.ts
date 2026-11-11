@@ -980,6 +980,21 @@ describe('componentPlacement: filha nova num slot com wrap (MC4, decisão 12)', 
     expect(rectOf(p, 'T3')).toEqual({ x: 100, y: 140, width: 100, height: 40 });
   });
 
+  it('maxLines: a filha que abriria uma linha além do limite não abre a linha seguinte', () => {
+    const cat = wrapped({ wrap: 'wrap', maxLines: 1 });
+    let p = add(
+      componentProject(),
+      'C',
+      'row',
+      { rect: { x: 100, y: 100, width: 320, height: 100 } },
+      cat,
+    );
+    for (const id of ['T1', 'T2', 'T3', 'T4'])
+      p = add(p, id, 'text', { parentId: 'C' }, cat);
+    // Sem a linha nova (y 140), a filha cai no fluxo de uma linha só e o lugar livre a leva adiante.
+    expect(rectOf(p, 'T4').y).not.toBe(140);
+  });
+
   it('sem wrap, a filha segue à direita da última (o comportamento de hoje)', () => {
     let p = add(componentProject(), 'C', 'row', {
       rect: { x: 100, y: 100, width: 320, height: 100 },

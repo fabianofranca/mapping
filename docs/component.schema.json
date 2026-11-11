@@ -1476,10 +1476,10 @@
               "$ref": "#/$defs/condition"
             },
             "then": {
-              "$ref": "#/$defs/expr_justify"
+              "$ref": "#/$defs/expr_layoutWrap"
             },
             "else": {
-              "$ref": "#/$defs/expr_justify"
+              "$ref": "#/$defs/expr_layoutWrap"
             }
           }
         },
@@ -1494,11 +1494,11 @@
             "cases": {
               "type": "object",
               "additionalProperties": {
-                "$ref": "#/$defs/expr_justify"
+                "$ref": "#/$defs/expr_layoutWrap"
               }
             },
             "default": {
-              "$ref": "#/$defs/expr_justify"
+              "$ref": "#/$defs/expr_layoutWrap"
             }
           }
         },
@@ -1526,7 +1526,7 @@
               "minLength": 1
             },
             "default": {
-              "$ref": "#/$defs/expr_justify"
+              "$ref": "#/$defs/expr_layoutWrap"
             }
           }
         }

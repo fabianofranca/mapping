@@ -1,5 +1,5 @@
 import { findSlot, resolveSlotLayout, slotBoxOfScene } from './components/arrange';
-import { breakLines } from './components/wrapLines';
+import { WRAP_EPS, breakLines } from './components/wrapLines';
 import type { ComponentFile, FieldValues } from './components/componentFormat';
 import { fitComponentSize } from './components/sizing';
 import { instantiate, type TextMeasurer } from './components/instantiate';
@@ -147,6 +147,7 @@ interface SlotBox {
   readonly wrap: 'none' | 'wrap' | 'wrap-reverse';
   readonly lineGap: number;
   readonly maxPerLine: number | undefined;
+  readonly maxLines: number | undefined;
   readonly hasSlot: boolean;
 }
 
@@ -168,6 +169,7 @@ function slotArea(
     wrap: 'none' as const,
     lineGap: 0,
     maxPerLine: undefined,
+    maxLines: undefined,
     hasSlot: false,
   };
   const mc = markingComponent(p, catalog, containerId);
@@ -198,6 +200,7 @@ function slotArea(
     wrap: layout.wrap,
     lineGap: layout.lineGap,
     maxPerLine: layout.maxPerLine,
+    maxLines: layout.maxLines,
     hasSlot: true,
   };
 }
@@ -458,7 +461,24 @@ function fitsLastLine(
   const used =
     lastLine.reduce((sum, k) => sum + axes.main(k.rect), 0) +
     slot.gap * (lastLine.length - 1);
-  return used + slot.gap + mainSize <= axes.end - axes.start + 1e-6;
+  return used + slot.gap + mainSize <= axes.end - axes.start + WRAP_EPS;
+}
+
+/** Onde começa, no eixo principal, a filha que segue a última na mesma linha. */
+function sameLineMain(
+  slot: SlotBox,
+  axes: WrapAxes,
+  last: Rect,
+  mainSize: number,
+): number {
+  return slot.reverse
+    ? axes.mainStart(last) - slot.gap - mainSize
+    : axes.mainEnd(last) + slot.gap;
+}
+
+/** Cabe mais uma linha sem passar de `maxLines`? */
+function canOpenLine(slot: SlotBox, lines: number): boolean {
+  return slot.maxLines === undefined || lines < slot.maxLines;
 }
 
 /**
@@ -483,10 +503,10 @@ function wrapSlotPoint(
   if (lastKid === undefined) return undefined;
   const mainSize = axes.row ? size.width : size.height;
   const fits = fitsLastLine(lastLine, slot, axes, mainSize);
+  // Uma linha nova além de `maxLines` não seria arrumada: segue o fluxo de uma linha só.
+  if (!fits && !canOpenLine(slot, lines.length)) return undefined;
   const main = fits
-    ? slot.reverse
-      ? axes.mainStart(lastKid.rect) - slot.gap - mainSize
-      : axes.mainEnd(lastKid.rect) + slot.gap
+    ? sameLineMain(slot, axes, lastKid.rect, mainSize)
     : slot.reverse
       ? axes.end - mainSize
       : axes.start;
