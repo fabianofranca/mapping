@@ -265,6 +265,18 @@
   </div>
   <script>
     (function () {
+      // O tipo Dashboard entrega a lista aninhada de uma linha como texto JSON: aceita a lista ou o
+      // texto dela; qualquer outro caso (ausente, objeto, texto inválido ou que não é lista) dá null.
+      const asList = (v) => {
+        if (Array.isArray(v)) return v;
+        if (typeof v !== 'string') return null;
+        try {
+          const parsed = JSON.parse(v);
+          return Array.isArray(parsed) ? parsed : null;
+        } catch (e) {
+          return null;
+        }
+      };
       dash.calc('summary', {
         inputs: ['queue'],
         title: 'Resumo da fila',
@@ -288,7 +300,7 @@
         title: 'Custo da fila',
         description: 'Custo das sessões da fila, por tipo de sessão e por etapa.',
         fn: (meta) => {
-          const es = ((meta[0] || {}).sessions || []).filter((e) => e && e.cost);
+          const es = (asList((meta[0] || {}).sessions) || []).filter((e) => e && e.cost);
           const med = (v) => {
             const o = v.slice().sort((a, b) => a - b);
             const h = o.length >> 1;
@@ -427,9 +439,8 @@
       dash.onData(() => {
         const m = q('meta')[0] || {};
         // vagasItens vem pronto do painel.py; o split só atende painel antigo (sem o campo).
-        const vagas = Array.isArray(m.vagasItens)
-          ? m.vagasItens
-          : (m.vagas || '').split(' · ').filter(Boolean);
+        const vagas =
+          asList(m.vagasItens) || (m.vagas || '').split(' · ').filter(Boolean);
         document.getElementById('mp-cur').textContent =
           (m.current || '—') +
           (vagas[0] ? ' · ' + vagas[0] : '') +
@@ -496,7 +507,7 @@
           (Date.now() - t(r.at)) / 60000 > LATE_MIN;
         fillList(
           'mp-pedidos',
-          (Array.isArray(m.requests) ? m.requests : [])
+          (asList(m.requests) || [])
             .slice(-20)
             .reverse()
             .map(
@@ -514,7 +525,7 @@
         );
         fillList(
           'mp-regras',
-          (Array.isArray(m.rules) ? m.rules : [])
+          (asList(m.rules) || [])
             .filter((r) => r && !r.endedAt)
             .map(
               (r) =>
