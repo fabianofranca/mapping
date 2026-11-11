@@ -128,14 +128,13 @@ function touchingViewDelta(
   const whole = roots.some((root) => model.isMarkingRoot(p, root));
   const shown = model.perspectiveView(p, perspective).containers;
   const footprint = (c: ProjectContainer) => model.imageCanvasRect(c, c.placement);
-  const round = whole ? Math.round : (v: number) => v;
-  const limited = model.slideToTouch(
+  return model.touchDelta(
     shown.filter((c) => moved.has(c.id)).map(footprint),
     shown.filter((c) => !moved.has(c.id)).map(footprint),
-    round(dx),
-    round(dy),
+    dx,
+    dy,
+    whole,
   );
-  return whole ? { dx: Math.trunc(limited.dx), dy: Math.trunc(limited.dy) } : limited;
 }
 
 /** Anda as raízes na perspectiva (`moveRootsInPerspective`) e confere a sobreposição na vista. */
@@ -237,8 +236,8 @@ export function placementInView(
       ? own.placement
       : {
           ...own.placement,
-          x: model.snapNearInteger(placement.x - (shown.x - own.placement.x)),
-          y: model.snapNearInteger(placement.y - (shown.y - own.placement.y)),
+          x: model.snapCoordinate(placement.x - (shown.x - own.placement.x)),
+          y: model.snapCoordinate(placement.y - (shown.y - own.placement.y)),
         };
     next = model.setContainerPlacement(
       p,

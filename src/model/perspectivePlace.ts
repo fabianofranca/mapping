@@ -6,7 +6,7 @@ import {
   imageCanvasRect,
   rectsOverlap,
   right,
-  snapNearInteger,
+  snapCoordinate,
 } from './geometry';
 import { markingCanvasRectOf, settleHierarchy } from './hierarchySettle';
 import { floatingSpotNear } from './markings';
@@ -200,7 +200,7 @@ function placeInArrivalArea(
   rootId: string,
   from: string | undefined,
 ): RootPlacement {
-  const snap = seek.whole ? Math.ceil : (v: number) => snapNearInteger(v);
+  const snap = seek.whole ? Math.ceil : snapCoordinate;
   const column = arrivalColumn(target, rootId, from);
   let rect: Rect = {
     x: snap(column.x),
@@ -275,8 +275,8 @@ function desiredNear(
   const there = rootPosition(source, ref.rootId);
   const here = rootPosition(target, ref.rootId);
   if (!own || !there || !here) return null;
-  const x = snapNearInteger(here.x + own.x - there.x);
-  const y = snapNearInteger(here.y + own.y - there.y);
+  const x = snapCoordinate(here.x + own.x - there.x);
+  const y = snapCoordinate(here.y + own.y - there.y);
   return whole ? { x: Math.round(x), y: Math.round(y) } : { x, y };
 }
 
@@ -299,7 +299,7 @@ export function placeCreatedRoot(
   };
   const obstacles = obstaclesOf(perspectiveView(p, others), new Set());
   const whole = isMarkingRoot(p, rootId);
-  const clean = (v: number) => snapNearInteger(whole ? Math.round(v) : v);
+  const clean = (v: number) => snapCoordinate(whole ? Math.round(v) : v);
   const wanted = { x: clean(own.x), y: clean(own.y) };
   const spot = { ...wanted, width: size.width, height: size.height };
   if (!overlapsAny(spot, obstacles)) return wanted;
