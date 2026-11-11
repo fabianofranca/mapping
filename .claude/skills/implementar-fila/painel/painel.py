@@ -35,6 +35,15 @@ em `meta.requests` (`{id, tipo, pedido, estado, evidencia, at, history}`; o pedi
 com `atrasado` para `enviado` ou `aprovado` há mais de 90 min; o `show` traz `pedidos do supervisor:`.
 Regras em vigor (decisão 10): `rule DIR add "<texto>" origem=<dono|SUP-n> [saida="…"]` dá `R<k>` em `meta.rules` e
 `rule DIR end R<k> [motivo="…"]` a retira; o `show` imprime `regras em vigor:` com o texto inteiro de cada uma.
+Troca a quente e migração (decisões 17 e 25 da #1532): `upgrade DIR` troca, idempotente, o hold exatamente
+`ordem do dono (só com a fila vazia)` por `exclusive=sim` (sem hold) e grava no `log` o que mudou (nada, se nada mudou).
+`import DIR-NOVA DIR-ANTIGA` (pasta nova recém-criada com `init`, fila vazia; senão código 2) traz do painel antigo as linhas
+`aguardando`, `em andamento`, `esperando dono` e `falhou`, na ordem e renumeradas, com a ficha, as fases, o passo, o PR, o
+`started` e o `hold` (as `em andamento` levam também `child`, `childAt`, `wait`, `ciWait`, `ciWaitAt` e `sessions`); as
+`concluída` vão para `meta.merged` (com o antigo, sem repetir) e as regras em vigor de `meta.rules` vêm com a origem. Não vem
+o `ended`, nem do `meta` o `sessions`, `requests`, `current`, `paralelo`, `reserve`, `context`, `roles` e `unpublished`, nem o
+log. Os holds usam a conversão do `upgrade`; o `pausada pelo dono` (a drenagem da transição) é apagado. Uma linha no `log`
+registra o que veio. O `import` não entra no `apply`.
 Só biblioteca padrão. Uso: painel.py [--now ISO] <subcomando> DIR ...
 (o subcomando vem ANTES da pasta: `painel.py row <pasta> '#n' status=...`).
 """
@@ -56,6 +65,12 @@ FILES = ["queue", "meta", "log"]
 SESSION_KINDS = ["fase", "correção", "testador", "reteste", "fechamento", "coordenador", "supervisor"]
 CONTEXT_LIMIT = 35
 ROLES = ["coordenador", "supervisor"]
+HOLD_EMPTY_QUEUE = "ordem do dono (só com a fila vazia)"  # vira exclusive=sim (decisões 12, 17 e 25)
+HOLD_PAUSED = "pausada pelo dono"  # a drenagem da transição: o `import` o apaga, o `upgrade` o deixa
+IMPORT_STATUS = ["aguardando", "em andamento", "esperando dono", "falhou"]
+IMPORT_FIELDS = ["issue", "title", "kind", "plan", "phases", "phasesTotal", "phasesDone", "stage", "step", "pr",
+                 "started", "hold"]
+IMPORT_RUNNING_FIELDS = ["child", "childAt", "wait", "ciWait", "ciWaitAt", "sessions"]
 DEFAULT_PARALELO = 2
 INT_FIELDS = ["order", "phasesTotal", "phasesDone"]
 QUEUE_EMPTY = {
@@ -708,6 +723,82 @@ def print_rules(meta):
         print(f"  {r.get('id', '?')} ({r.get('origem', '?')}): {r.get('texto', '')}{exit_}")
 
 
+def convert_hold(row):
+    """O hold da fila vazia vira `exclusive=sim` (sem hold). True se mudou a linha."""
+    if row.get("hold") != HOLD_EMPTY_QUEUE:
+        return False
+    row["hold"] = ""
+    row["exclusive"] = "sim"
+    return True
+
+
+def cmd_upgrade(a):
+    s = open_session(a.dir)
+    changed = [r["issue"] for r in s.get("queue") if convert_hold(r)]
+    if not changed:
+        print("alterados: nenhum")
+        return
+    s.get("log").append({"at": now(), "text": "upgrade: " + ", ".join(
+        f"{i} '{HOLD_EMPTY_QUEUE}' → exclusive=sim" for i in changed)})
+    s.touch("queue")
+    s.touch("log")
+    s.commit()
+
+
+def imported_row(old, order):
+    """A linha nova, só com o que o `import` traz (o resto fica no vazio padrão)."""
+    row = dict(QUEUE_EMPTY)
+    for k in IMPORT_FIELDS + (IMPORT_RUNNING_FIELDS if old.get("status") == "em andamento" else []):
+        if k in old:
+            row[k] = old[k]
+    row["order"] = order
+    row["status"] = old["status"]
+    row["exclusive"] = old.get("exclusive", "")
+    return row
+
+
+def cmd_import(a):
+    new = open_session(a.dir)
+    if new.get("queue"):
+        raise Erro(f"{a.dir} já tem fila ({len(new.get('queue'))} linhas): o import precisa de uma pasta nova (`init`)")
+    old_q, old_m = load(a.old, "queue"), (load(a.old, "meta") or [{}])[0]
+    load(a.old, "log")
+    ordered = sorted(old_q, key=lambda r: r.get("order", 0))
+    rows = []
+    for r in ordered:
+        if r.get("status") in IMPORT_STATUS:
+            rows.append(imported_row(r, len(rows) + 1))
+    exclusive, holds = [], []
+    for row in rows:
+        if row["hold"] == HOLD_PAUSED:
+            row["hold"] = ""
+            holds.append(f"{row['issue']} apagado")
+        elif convert_hold(row):
+            pass
+        elif row["hold"]:
+            holds.append(f"{row['issue']} mantido")
+        if row["exclusive"] == "sim":
+            exclusive.append(row["issue"])
+    new.get("queue").extend(rows)
+    meta = new.get("meta")[0]
+    merged = list(old_m.get("merged") or [])
+    for r in ordered:
+        if r.get("status") == "concluída" and r["issue"] not in merged:
+            merged.append(r["issue"])
+    if merged:
+        meta["merged"] = merged
+    rules = [r for r in old_m.get("rules") or [] if not r.get("endedAt")]
+    if rules:
+        meta["rules"] = rules
+    running = sum(1 for r in rows if r["status"] == "em andamento")
+    new.get("log").append({"at": now(), "text": (
+        f"importado de {a.old}: {len(rows)} linhas ({running} em andamento); "
+        f"exclusivas {' '.join(exclusive) or 'nenhuma'}; holds {', '.join(holds) or 'nenhum'}; merged {len(merged)}")})
+    for n in FILES:
+        new.touch(n)
+    new.commit()
+
+
 def cmd_touch(a):
     """A publicação falhou: marca de novo os três arquivos como não publicados."""
     s = open_session(a.dir)
@@ -734,7 +825,7 @@ def cmd_published(a):
     print("alterados: meta.json")
 
 
-BATCH_REJECTED = ("show", "apply", "init", "published", "slug", "costs", "roles", "requests")
+BATCH_REJECTED = ("show", "apply", "init", "published", "slug", "costs", "roles", "requests", "import")
 
 
 def batch_lines(src):
@@ -1121,6 +1212,9 @@ def build_parser():
     sp = add("rule", cmd_rule, "regras em vigor: add \"<texto>\" origem=<dono|SUP-n> [saida=] | end R<k> [motivo=]")
     sp.add_argument("action")
     sp.add_argument("args", nargs="*")
+    add("upgrade", cmd_upgrade, "troca a quente: o hold da fila vazia vira exclusive=sim (idempotente; registra no log)")
+    sp = add("import", cmd_import, "traz de um painel antigo a ordem, os holds, as fichas e as em andamento (pasta nova, vazia)")
+    sp.add_argument("old", metavar="pasta-antiga", help="pasta do painel antigo (só leitura)")
     add("roles", cmd_roles, "imprime a sessão atual de cada papel (lê só o meta)")
     sp = add("apply", cmd_apply, "grava vários subcomandos de uma vez (um por linha; '-' lê do stdin)")
     sp.add_argument("file", metavar="arquivo", help="arquivo com os comandos, ou - para o stdin")
