@@ -502,7 +502,16 @@ function providedFields(
  * `linesSeed`: o número de linhas que cada `$lines` do template vale nesta passagem (a primeira usa
  * 1, a segunda o medido na primeira; ver `withLinesPasses`).
  */
-const NO_OPEN_AXES = { width: false, height: false } as const;
+type OpenAxes = { readonly width: boolean; readonly height: boolean };
+
+/** Os valores com que se avaliam `min`/`max`: o `$size` de um eixo aberto (`hug`) vale infinito. */
+function valuesForLimits(values: FieldValues, open: OpenAxes | undefined): FieldValues {
+  if (open === undefined) return values;
+  const next: Record<string, FieldValues[string]> = { ...values };
+  if (open.width) next[sizeKey('width')] = Infinity;
+  if (open.height) next[sizeKey('height')] = Infinity;
+  return next;
+}
 
 function createEngine(
   original: ComponentFile,
@@ -510,7 +519,7 @@ function createEngine(
   options: InstantiateOptions,
   instanceSize: { readonly width: number; readonly height: number },
   linesSeed?: ReadonlyMap<string, number>,
-  openAxes: { readonly width: boolean; readonly height: boolean } = NO_OPEN_AXES,
+  openAxes?: OpenAxes,
 ) {
   // Os `$token` viram o valor do modo antes de tudo (vale também dentro do `repeat`).
   const tokens =
@@ -896,14 +905,7 @@ function createEngine(
    * vale infinito aqui: o tamanho do tipo não limita o que se mede (um `maxWidth` de rótulo por
    * `$size` − folga ficaria em 2 linhas).
    */
-  const limitValues: FieldValues =
-    openAxes.width || openAxes.height
-      ? {
-          ...values,
-          ...(openAxes.width ? { [sizeKey('width')]: Infinity } : {}),
-          ...(openAxes.height ? { [sizeKey('height')]: Infinity } : {}),
-        }
-      : values;
+  const limitValues = valuesForLimits(values, openAxes);
   const limitValue = (expr: Expr<number> | undefined): number | undefined => {
     if (expr === undefined) return undefined;
     const raw = evaluate<unknown>(expr as Expr<unknown>, limitValues, Number.NaN);
@@ -2241,7 +2243,7 @@ function withLinesPasses<R>(
   options: InstantiateOptions,
   size: { readonly width: number; readonly height: number },
   run: (engine: Engine) => R,
-  openAxes?: { readonly width: boolean; readonly height: boolean },
+  openAxes?: OpenAxes,
 ): { engine: Engine; result: R } {
   const first = createEngine(component, values, options, size, undefined, openAxes);
   if (first.citedLines.size === 0) return { engine: first, result: run(first) };
