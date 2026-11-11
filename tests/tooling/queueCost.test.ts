@@ -563,6 +563,11 @@ describe('painel.py: o teto de 300 mil do testador (TC2, decisão 9 da #1639)', 
     );
   });
 
+  it('o show arredonda o contexto para cima: acima do teto nunca aparece como 300k', () => {
+    custo('sess_a', 'testador', 300001, '#20', 'grupo2');
+    expect(run('show', dir)).toMatch(/^testador acima do teto: #20 grupo2 301k$/m);
+  });
+
   it('o show não grava nada e a página index.html não muda', () => {
     custo('sess_a', 'testador', 339000, '#20', 'grupo2');
     const antes = JSON.stringify(json('meta'));
@@ -590,6 +595,8 @@ describe('docs e skill: o teto do testador conferido pela fila (TC2, decisões 8
     const custoItem = arquivar.slice(0, arquivar.indexOf('**Conferências de reserva:**'));
     expect(custoItem).toMatch(/<label>: contexto <ctx>k acima do teto do testador/);
     expect(custoItem).toMatch(/acima do teto do testador \(300 mil\)/);
+    expect(custoItem).toMatch(/arredondado para cima/);
+    expect(custoItem).toMatch(/sem rótulo, o id/);
   });
 
   it('o fechamento comenta cada excesso na roadmap fixa "Teto de contexto do testador"', () => {
@@ -602,6 +609,7 @@ describe('docs e skill: o teto do testador conferido pela fila (TC2, decisões 8
     expect(fechamento).toMatch(/no primeiro excesso/);
     expect(fechamento).toMatch(/Impacto: medium — menos custo recorrente do testador/);
     expect(fechamento).toMatch(/fica aberta/);
+    expect(fechamento).toMatch(/antes de comentar ou criar, procure/);
   });
 
   it('o "Painel" documenta a linha nova do show e a saída do cost', () => {

@@ -61,6 +61,7 @@ import argparse
 import datetime
 import fnmatch
 import json
+import math
 import os
 import re
 import shlex
@@ -489,7 +490,7 @@ def cmd_cost(a):
     s.touch("meta")
     s.commit()
     if over_tester_limit(entry):
-        print(f"acima do teto do testador (300 mil): {a.session} {ctx}")
+        print(f"acima do teto do testador ({TESTER_CONTEXT_LIMIT // 1000} mil): {a.session} {ctx}")
 
 
 def over_tester_limit(e):
@@ -503,7 +504,7 @@ def tester_over_limit_text(q, meta):
     """`testador acima do teto:` do `show`: `<etapa> <rótulo> <ctx em mil>k` das etapas ainda não entregues."""
     done = set(meta.get("merged") or []) | {r["issue"] for r in q if r["status"] == "concluída"}
     return "; ".join(
-        f"{e.get('issue') or '—'} {e.get('label') or e['id']} {round(e['cost']['ctx'] / 1000)}k"
+        f"{e.get('issue') or '—'} {e.get('label') or e['id']} {math.ceil(e['cost']['ctx'] / 1000)}k"
         for e in meta.get("sessions", []) if over_tester_limit(e) and e.get("issue") not in done) or "nenhum"
 
 
