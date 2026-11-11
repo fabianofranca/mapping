@@ -103,6 +103,7 @@ import type { ModelMessage } from '../modelMessage';
 import { expandRepeats } from './repeat';
 import { applyGaps } from './strokeGaps';
 import { approximateExtents, lineBaseline, type CapMetrics } from './baseline';
+import { withMeasureMemo } from './measureCache';
 import { WRAP_SLACK } from './textWrap';
 import {
   applyTokens,
@@ -516,11 +517,17 @@ function valuesForLimits(values: FieldValues, open: OpenAxes | undefined): Field
 function createEngine(
   original: ComponentFile,
   sourceValues: FieldValues,
-  options: InstantiateOptions,
+  callerOptions: InstantiateOptions,
   instanceSize: { readonly width: number; readonly height: number },
   linesSeed?: ReadonlyMap<string, number>,
   openAxes?: OpenAxes,
 ) {
+  // O medidor lembra cada (texto, fonte, limite) enquanto o motor dura (decisão 19 da #1078); o da
+  // app e o do MCP já memoizam, e então fica o mesmo. Cada passagem do `$lines` é um motor.
+  const options: InstantiateOptions = {
+    ...callerOptions,
+    measure: withMeasureMemo(callerOptions.measure),
+  };
   // Os `$token` viram o valor do modo antes de tudo (vale também dentro do `repeat`).
   const tokens =
     options.tokens ?? original.resolvedTokens ?? resolveTokens(undefined, {});
@@ -732,13 +739,41 @@ function createEngine(
   const plainText = (node: TextTemplate): string =>
     node.text === undefined ? '' : evaluateText(node.text, values, '');
 
+  /**
+   * `textMemo` (decisão 19 da #1078): a medida de cada nó `text` por limite (`maxWidth`). O texto, a
+   * fonte e os valores não mudam dentro do motor, então `isCutByMax`, `textHeight`,
+   * `fillContribution`, as linhas de base e `textContent` leem a mesma medida em vez de repeti-la.
+   */
+  const textMemo = new Map<TextTemplate, Map<string, TextMetrics>>();
+  const remembered = (
+    node: TextTemplate,
+    maxWidth: number | undefined,
+    measure: () => TextMetrics,
+  ): TextMetrics => {
+    let byWidth = textMemo.get(node);
+    if (byWidth === undefined) {
+      byWidth = new Map();
+      textMemo.set(node, byWidth);
+    }
+    const key = maxWidth === undefined ? '' : String(maxWidth);
+    let metrics = byWidth.get(key);
+    if (metrics === undefined) {
+      metrics = measure();
+      byWidth.set(key, metrics);
+    }
+    return metrics;
+  };
+
   const measureText = (node: TextTemplate, maxWidth?: number): TextMetrics => {
     if (maxWidth !== undefined && maxWidth <= EPS)
       warn('engine.textZeroWidth', { name: nodeName(node) });
-    const font = textFont(node);
-    if (node.runs === undefined) return options.measure(plainText(node), font, maxWidth);
-    const rich = richRuns(node, font);
-    return measureRichText(rich.runs, richBase(node, font), options.measure, maxWidth);
+    return remembered(node, maxWidth, () => {
+      const font = textFont(node);
+      if (node.runs === undefined)
+        return options.measure(plainText(node), font, maxWidth);
+      const rich = richRuns(node, font);
+      return measureRichText(rich.runs, richBase(node, font), options.measure, maxWidth);
+    });
   };
 
   // --- linha de base (decisões 2 a 5 da #898) ------------------------------------------------
@@ -783,7 +818,9 @@ function createEngine(
   const baselinesOf = (node: TextTemplate, maxWidth?: number): TextBaselines => {
     if (node.runs !== undefined) return richBaselines(node, maxWidth);
     const font = textFont(node);
-    const m = options.measure(plainText(node), font, maxWidth);
+    const m = remembered(node, maxWidth, () =>
+      options.measure(plainText(node), font, maxWidth),
+    );
     const count = m.lineCount ?? Math.max(1, m.lines?.length ?? 1);
     const first =
       m.firstBaseline ?? lineBaseline(0, font.lineHeight, approximateExtents(font.size));
@@ -2015,12 +2052,9 @@ function createEngine(
     const cited = citedLines.has(linesKeyOf(node));
     if (node.runs === undefined) {
       const text = plainText(node);
-      warnTextTooTall(node, () => options.measure(text, font, w).height, font, w, h);
-      if (cited)
-        recordLines(
-          node,
-          text === '' ? 0 : measuredLines(options.measure(text, font, w)),
-        );
+      const measured = () => remembered(node, w, () => options.measure(text, font, w));
+      warnTextTooTall(node, () => measured().height, font, w, h);
+      if (cited) recordLines(node, text === '' ? 0 : measuredLines(measured()));
       return { text, extra: {} };
     }
     const rich = richRuns(node, font);

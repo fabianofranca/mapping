@@ -10,6 +10,10 @@ import {
   type TextMeasurer,
 } from '../../src/model/components/instantiate';
 import type { LoadedFont } from '../../src/model/components/library';
+import {
+  cachedMeasurer,
+  MEASURE_CACHE_LIMIT,
+} from '../../src/model/components/measureCache';
 
 // Medidor do servidor (decisão 31): mede com o opentype.js e uma fonte livre embutida (Mapping
 // Sans/Mono, subconjunto das Liberation, OFL; ver mcp/fonts/LICENSE.txt). As `fonts` da biblioteca
@@ -155,14 +159,19 @@ export function measurerFor(book: FontBook): TextMeasurer {
   let measure = measurers.get(book);
   if (measure === undefined) {
     // As linhas de base saem do `fontExtents` da fonte que desenha (a mesma do `lineInk`).
-    measure = (text, font, maxWidth) =>
-      measureLines(
-        text,
-        font,
-        maxWidth,
-        (value) => textWidth(book, value, font),
-        fontExtents(book.fontFor(font.family, font.weight, font.italic), font.size),
-      );
+    // O medidor memoiza por (texto, fonte, limite): as fontes de um `FontBook` não mudam, então
+    // a medida vale enquanto o leitor existir (decisão 19 da #1078).
+    measure = cachedMeasurer(
+      (text, font, maxWidth) =>
+        measureLines(
+          text,
+          font,
+          maxWidth,
+          (value) => textWidth(book, value, font),
+          fontExtents(book.fontFor(font.family, font.weight, font.italic), font.size),
+        ),
+      { limit: MEASURE_CACHE_LIMIT },
+    );
     measurers.set(book, measure);
   }
   return measure;

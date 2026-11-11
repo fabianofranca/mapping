@@ -477,6 +477,28 @@ Vale para toda imagem que entra pela app (arquivo, câmera, colar, arrastar e tr
   `tests/canvas/renderPerformance.test.ts`, `tests/store/reviewPerf.test.ts`) rodam em projetos próprios do Vitest (`perf-model`
   e `perf-app`, em `vite.config.ts`), com `sequence.groupOrder` maior que o dos demais e um arquivo por vez: começam depois do
   resto da suíte, sem disputar CPU com ela.
+- **Cache de medida de texto** (decisão 19 da etapa de layout Flexbox e CSS Grid, #1078), em dois níveis. **No motor**
+  (`createEngine`, `model/components/instantiate.ts`): o `textMemo` guarda a medida de cada nó `text` por limite (`maxWidth`), e
+  `isCutByMax`, `textHeight`, `fillContribution`, as linhas de base e o `textContent` leem a mesma medida em vez de repeti-la
+  (o texto, a fonte e os valores não mudam dentro de um motor); por baixo, o `withMeasureMemo` (`model/components/measureCache.ts`)
+  lembra cada (texto, fonte, limite exato) enquanto o motor dura, então o mesmo texto em nós diferentes também chega uma vez só
+  ao medidor (cada passagem do `$lines` é um motor, e remede). **Fora do motor**, `cachedMeasurer(measure, { limit })` (puro, sem
+  DOM) devolve um `TextMeasurer` que memoiza por texto, campos do `MeasureFont` e `maxWidth` arredondado a 1/64 px num LRU de
+  4.096 entradas (`MEASURE_CACHE_LIMIT`); o mesmo `TextMetrics` volta para a mesma chave, e o motor não o altera. A app o entrega
+  por `memoizedTextMeasurer(textMeasurer.value, fontsEpoch)` (`store/textMeasure.ts`, lido em `store/derived.ts`): um medidor por
+  medidor e por época das fontes, então trocar o medidor (o canvas põe o do Konva) ou terminar de carregar uma fonte
+  (`fontsEpoch`) devolve outro, o cache de desenhos (que compara o medidor por identidade) redesenha tudo e nenhuma medida velha
+  sobrevive. O MCP o entrega no `measurerFor(book)` (`mcp/image/textMeasurer.ts`): as fontes de um `FontBook` não mudam, então o
+  cache vale enquanto o leitor existir. O medidor que já memoiza não é embrulhado de novo pelo motor. Nada muda no desenho. Nos 15
+  componentes do fixture `tests/fixtures/material3` as chamadas ao medidor por instância caíram de 69 para 26 (uma por
+  combinação distinta de texto, fonte e limite), e as da tela de 21 instâncias, de 107 para 40
+  (`tests/model/components/measureCache.test.ts`).
+- **Linha de base do épico de layout** (#1078): os testes de orçamento imprimem a medida de cada caso com `console.info`
+  (`[perf] <teste>: <ms> (limite <ms>)`, pela `expectBelow` de `tests/support/perfReport.ts`; o limite não muda), e
+  `npm run test:perf --reporter=verbose` mostra as linhas. A L1 registrou a mediana de 3 execuções de cada orçamento, antes do
+  motor novo, num comentário da #1078 ("Linha de base de desempenho (L1)"); a última fase repete e compara na mesma tabela, e um
+  caso que piorou mais de 25% sem explicação é defeito. Nenhum orçamento chegou perto do limite na linha de base (o mais
+  próximo é o quadro inteiro da tela de componentes no `CanvasController`: ~6,6 de 24 ms).
 - **Testes de crescimento** (`npm run test:scale` e os casos de crescimento do `npm run test:perf`): medem a mesma operação com n = 1.250 e 4n = 5.000 marcações do fixture
   `buildScaleProject` (`tests/model/scaleProject.ts`) e exigem a razão entre as medianas abaixo de **6×**. O teto é calibrado pela medição estável: código linear mede 4,4 a 5,1× nestes tamanhos, por efeito de memória (5.000 marcações saem do cache, 1.250 não; `projectIndex` sozinho dá ~5×), e o quadrático 13 a 17×; 6× separa os dois por mais de 2,5×. Passar do teto é defeito a corrigir,
   não teto a subir; caso com centro em 5× ou mais ganha um comentário no próprio caso com a origem do excedente. A medição intercala n e 4n: depois de um aquecimento igual nos dois tamanhos, cada rodada coleta o lixo uma vez e executa uma vez em n e uma em 4n, em ordem alternada por rodada, cada execução numa versão nova do projeto e com o `prepare` dela imediatamente antes, fora do tempo (21 rodadas por padrão; lote de repetições foi descartado porque sobe o centro). Rodam por `vitest.scale.config.ts` (projetos `scale-model`, `scale-app` e `scale-mcp`, arquivos `tests/scale/**/*.scale.ts`, um por vez),

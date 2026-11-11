@@ -73,7 +73,7 @@ import type { ProjectStore } from './history';
 import * as imagePermissions from './imagePermissions';
 import { NO_PERSPECTIVE, projectInPerspective } from './perspectiveShown';
 import { markingDisplay, showComponentsOnPhotos } from './settings';
-import { textMeasurer } from './textMeasure';
+import { memoizedTextMeasurer, textMeasurer } from './textMeasure';
 import {
   NO_THREAD_SOURCES,
   createThreadDerived,
@@ -372,7 +372,7 @@ export function createEditorDerived(
     return drawingCache(
       p,
       catalog,
-      textMeasurer.value,
+      memoizedTextMeasurer(textMeasurer.value, components.fontsEpoch.value),
       components.fontsEpoch.value,
       t('annotation.untitled'),
     );
