@@ -1,4 +1,4 @@
-# Layout alinhado a Flexbox e CSS Grid — [Não lançado] (épico `epic/layout-flex-grid`, PR a abrir pelo coordenador, MCP 0.36.0, schema v18)
+# Layout alinhado a Flexbox e CSS Grid — [Não lançado] (épico `epic/layout-flex-grid`, PR #1673, MCP 0.36.0, schema v18)
 
 ## Alterado
 
