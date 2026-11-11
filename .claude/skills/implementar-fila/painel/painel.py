@@ -39,10 +39,17 @@ teto: <etapa> <rótulo> <ctx em mil>k; …` (ou `nenhum`), só das etapas não `
 Sessão atual de cada papel (decisão 7 da #1532): `role DIR <coordenador|supervisor> <id> [link=<url>]` grava
 `meta.roles.<papel> = {id, n, at, link, previous}` (`previous` = o id registrado antes) com `n` = o anterior + 1 (ou 1); `roles DIR` lê só o `meta` e imprime
 `coordenador <n>: <id>` e `supervisor <n>: <id> (<link>)`, ou `—`. A sessão que não é a registrada não age.
+`roles --sessao <id> DIR` (decisões 3 e 4 da #1643) acrescenta a linha `esta sessão: …`, a primeira que casa: `registrada` (o
+`roles.supervisor.id`), `coordenador (não supervisiona)` (o `roles.coordenador.id` ou `.previous`, ou `kind: coordenador` em
+`meta.sessions`), `antiga (atual: <id>)` (o `roles.supervisor.previous`, ou `kind: supervisor` em `meta.sessions`),
+`sucessora (antecessor: <id>)` (outro id, com supervisor registrado) ou `nova (nenhum supervisor registrado)`; id vazio dá código 2.
 Pedidos do supervisor (decisão 9 da #1532): `sup DIR SUP-<n> [tipo=A|B] [pedido="…"] estado=<estado> [evidencia="…"]` grava
 em `meta.requests` (`{id, tipo, pedido, estado, evidencia, at, history}`; o pedido novo precisa de `tipo` e `pedido`;
 `aplicado` e `recusado` exigem `evidencia`; `atrasado` não se grava); `requests DIR` lê só o `meta` e imprime a tabela,
 com `atrasado` para `enviado` ou `aprovado` há mais de 90 min; o `show` traz `pedidos do supervisor:`.
+`requests --desde <ISO> DIR` (decisão 5 da #1643) mostra, no mesmo formato, só os pedidos com `at` a partir da hora pedida e todos os
+abertos (`enviado`, `perguntado ao dono`, `aprovado`); com pedidos de fora, a última linha é `<k> pedidos fechados antes de <ISO> fora
+da lista`; sem nada a mostrar, `nenhum desde <ISO>` (e `nenhum` se o painel não tem pedido). `--desde` que não é ISO UTC dá código 2.
 Regras em vigor (decisão 10): `rule DIR add "<texto>" origem=<dono|SUP-n> [saida="…"]` dá `R<k>` em `meta.rules` e
 `rule DIR end R<k> [motivo="…"]` a retira; o `show` imprime `regras em vigor:` com o texto inteiro de cada uma.
 Troca a quente e migração (decisões 17 e 25 da #1532): `upgrade DIR` troca, idempotente, o hold exatamente
@@ -622,8 +629,28 @@ def cmd_role(a):
     s.commit()
 
 
+def session_verdict(meta, sid):
+    """O papel desta sessão para o `roles --sessao` (decisões 3 e 4 da #1643); a primeira que casa vale."""
+    roles = meta.get("roles") or {}
+    sup = roles.get("supervisor") or {}
+    coord = roles.get("coordenador") or {}
+    kinds = {e.get("kind") for e in meta.get("sessions") or [] if e.get("id") == sid}
+    if sup.get("id") == sid:
+        return "registrada"
+    if sid in (coord.get("id"), coord.get("previous")) or "coordenador" in kinds:
+        return "coordenador (não supervisiona)"
+    if not sup.get("id"):
+        return "nova (nenhum supervisor registrado)"
+    if sid == sup.get("previous") or "supervisor" in kinds:
+        return f"antiga (atual: {sup['id']})"
+    return f"sucessora (antecessor: {sup['id']})"
+
+
 def cmd_roles(a):
-    roles = (load(a.dir, "meta") or [{}])[0].get("roles") or {}
+    if a.sessao is not None and not a.sessao.strip():
+        raise Erro("o id da sessão não pode ser vazio")
+    meta = (load(a.dir, "meta") or [{}])[0]
+    roles = meta.get("roles") or {}
     for name in ROLES:
         r = roles.get(name)
         if not r:
@@ -631,6 +658,8 @@ def cmd_roles(a):
             continue
         link = f" ({r['link']})" if r.get("link") else ""
         print(f"{name} {r.get('n', 0)}: {r.get('id', '')}{link}")
+    if a.sessao is not None:
+        print(f"esta sessão: {session_verdict(meta, a.sessao)}")
 
 
 def check_request_id(v):
@@ -697,16 +726,29 @@ def requests_summary(meta):
     return f"{len(opened)} abertos (atrasados: {', '.join(late) or 'nenhum'})"
 
 
+def request_line(r):
+    late = " (atrasado)" if request_late(r) else ""
+    return (f"{r.get('id', '?')} | tipo {r.get('tipo', '?')} | {r.get('estado', '?')}{late} "
+            f"| {r.get('at', '—')} | {r.get('pedido', '')}")
+
+
 def cmd_requests(a):
+    since = check_iso(a.desde) if a.desde is not None else None
     meta = (load(a.dir, "meta") or [{}])[0]
     reqs = meta.get("requests") or []
     if not reqs:
         print("nenhum")
         return
-    for r in reqs:
-        late = " (atrasado)" if request_late(r) else ""
-        print(f"{r.get('id', '?')} | tipo {r.get('tipo', '?')} | {r.get('estado', '?')}{late} "
-              f"| {r.get('at', '—')} | {r.get('pedido', '')}")
+    # `--desde` (decisão 5 da #1643): os com `at` a partir da hora pedida e todos os abertos; ISO UTC ordena como texto
+    shown = [r for r in reqs if since is None or r.get("estado") in REQUEST_OPEN_STATES
+             or (r.get("at") or "") >= since]
+    if not shown:
+        print(f"nenhum desde {since}")
+        return
+    for r in shown:
+        print(request_line(r))
+    if len(shown) < len(reqs):
+        print(f"{len(reqs) - len(shown)} pedidos fechados antes de {since} fora da lista")
 
 
 def cmd_rule(a):
@@ -1299,14 +1341,16 @@ def build_parser():
     sp = add("sup", cmd_sup, "grava um pedido do supervisor (SUP-n tipo= pedido= estado= [evidencia=]) em meta.requests")
     sp.add_argument("request")
     sp.add_argument("pairs", nargs="+")
-    add("requests", cmd_requests, "imprime os pedidos do supervisor, com o atrasado (lê só o meta)")
+    sp = add("requests", cmd_requests, "imprime os pedidos do supervisor, com o atrasado (lê só o meta; --desde <ISO> mostra só os de depois dessa hora e os abertos)")
+    sp.add_argument("--desde", help="só os pedidos com at a partir desta hora (ISO UTC) e todos os abertos")
     sp = add("rule", cmd_rule, "regras em vigor: add \"<texto>\" origem=<dono|SUP-n> [saida=] | end R<k> [motivo=]")
     sp.add_argument("action")
     sp.add_argument("args", nargs="*")
     add("upgrade", cmd_upgrade, "troca a quente: o hold da fila vazia vira exclusive=sim (idempotente; registra no log)")
     sp = add("import", cmd_import, "traz de um painel antigo a ordem, os holds, as fichas e as em andamento (pasta nova, vazia)")
     sp.add_argument("old", metavar="pasta-antiga", help="pasta do painel antigo (só leitura)")
-    add("roles", cmd_roles, "imprime a sessão atual de cada papel (lê só o meta)")
+    sp = add("roles", cmd_roles, "imprime a sessão atual de cada papel (lê só o meta; --sessao <id> acrescenta a linha `esta sessão: …`)")
+    sp.add_argument("--sessao", help="o id desta sessão: acrescenta registrada, coordenador, antiga, sucessora ou nova")
     sp = add("apply", cmd_apply, "grava vários subcomandos de uma vez (um por linha; '-' lê do stdin)")
     sp.add_argument("file", metavar="arquivo", help="arquivo com os comandos, ou - para o stdin")
     sp = add("published", cmd_published, "imprime a hora da publicação (at:) e os arquivos a enviar; --done, depois do batch, limpa o que falta publicar")
