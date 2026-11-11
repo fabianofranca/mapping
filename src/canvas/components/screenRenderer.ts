@@ -17,7 +17,7 @@ import { Text as KonvaText } from 'konva/lib/shapes/Text';
 import { type RemoteImageResult, renderScene } from './renderScene';
 import { DEFAULT_PALETTE, type RenderPalette } from './palette';
 import type { RenderWarning } from './renderWarnings';
-import { slotBoxOfScene } from '../../model/components/arrange';
+import { clippedSlotBox } from '../../model/components/arrange';
 import type { Box } from '../../model/components/box';
 import type { FieldValues } from '../../model/components/componentFormat';
 import { type TextMeasurer, instantiate } from '../../model/components/instantiate';
@@ -34,7 +34,6 @@ import {
   type ProvidedValues,
 } from '../../model/components/provided';
 import { type Instance, type Screen, renderOrder } from '../../model/components/screen';
-import { type FrameNode, walk } from '../../model/components/scene';
 import { konvaMeasurer } from './konvaMeasurer';
 
 /** Área clicável da instância: transparente, mas que recebe o ponteiro. */
@@ -168,12 +167,7 @@ export class ScreenRenderer {
     const current = this.mounted.get(instance.id);
     const inherited = scopes.get(instance.parentId ?? '') ?? NO_PROVIDED;
     const provided = this.readProvided(instance, inherited);
-    if (
-      current &&
-      current.instance === instance &&
-      !force &&
-      sameProvided(current.provided, provided)
-    ) {
+    if (current && !force && isUpToDate(current, instance, provided)) {
       scopes.set(instance.id, extendProvided(inherited, current.offers));
       const clipped = this.clipByParent(current);
       return this.setZ(current.node, z) || clipped;
@@ -192,30 +186,10 @@ export class ScreenRenderer {
    * desenhada antes). Devolve true se o recorte mudou.
    */
   private clipByParent(entry: Mounted): boolean {
-    const parentId = entry.instance.parentId;
+    const { parentId } = entry.instance;
     const clip =
       parentId === undefined ? undefined : this.mounted.get(parentId)?.slotClip;
-    const { node } = entry;
-    const { box } = entry.instance;
-    const next =
-      clip === undefined
-        ? undefined
-        : {
-            x: clip.x - box.x,
-            y: clip.y - box.y,
-            width: clip.width,
-            height: clip.height,
-          };
-    const before = node.clipWidth()
-      ? [node.clipX(), node.clipY(), node.clipWidth(), node.clipHeight()]
-      : undefined;
-    const after = next && [next.x, next.y, next.width, next.height];
-    if (before?.join() === after?.join()) return false;
-    node.clipX(next?.x);
-    node.clipY(next?.y);
-    node.clipWidth(next?.width);
-    node.clipHeight(next?.height);
-    return true;
+    return applyClip(entry.node, localClip(clip, entry.instance.box));
   }
 
   /** Dos valores herdados, os que o componente da instância lê (nenhum se ele não lê nada). */
@@ -393,7 +367,7 @@ export class ScreenRenderer {
       ...(provided === NO_PROVIDED ? {} : { provided }),
     });
     entry.offers = result.provides;
-    entry.slotClip = clippedSlotBox(result.root, instance.box);
+    entry.slotClip = offsetBox(clippedSlotBox(result.root), instance.box);
     const rendered = renderScene(
       { root: result.root, warnings: [] },
       {
@@ -418,12 +392,42 @@ export class ScreenRenderer {
   }
 }
 
-/** A caixa do slot, na tela, quando ele tem `clip`; `origin` é a caixa da instância (a cena parte de 0,0). */
-function clippedSlotBox(root: FrameNode, origin: Box): Box | undefined {
-  for (const node of walk(root)) {
-    if (node.type !== 'unknown' || node.sourceType !== 'slot') continue;
-    const slot = node.clipChildren === true ? slotBoxOfScene(root) : undefined;
-    return slot && { ...slot, x: slot.x + origin.x, y: slot.y + origin.y };
-  }
-  return undefined;
+/** A caixa deslocada para a posição da instância (a cena parte de 0,0); nenhuma fica nenhuma. */
+function offsetBox(box: Box | undefined, origin: Box): Box | undefined {
+  return box && { ...box, x: box.x + origin.x, y: box.y + origin.y };
+}
+
+/** O recorte da mãe nas coordenadas locais do grupo da filha (cuja origem é `box`). */
+function localClip(clip: Box | undefined, box: Box): Box | undefined {
+  return (
+    clip && {
+      x: clip.x - box.x,
+      y: clip.y - box.y,
+      width: clip.width,
+      height: clip.height,
+    }
+  );
+}
+
+/** Aplica (ou tira) o recorte do grupo; devolve true se ele mudou. */
+function applyClip(node: Konva.Group, next: Box | undefined): boolean {
+  const before = node.clipWidth()
+    ? [node.clipX(), node.clipY(), node.clipWidth(), node.clipHeight()]
+    : undefined;
+  const after = next && [next.x, next.y, next.width, next.height];
+  if (before?.join() === after?.join()) return false;
+  node.clipX(next?.x);
+  node.clipY(next?.y);
+  node.clipWidth(next?.width);
+  node.clipHeight(next?.height);
+  return true;
+}
+
+/** O desenho montado já é o da instância e dos valores herdados (nada a redesenhar). */
+function isUpToDate(
+  entry: Mounted,
+  instance: Instance,
+  provided: ProvidedValues,
+): boolean {
+  return entry.instance === instance && sameProvided(entry.provided, provided);
 }

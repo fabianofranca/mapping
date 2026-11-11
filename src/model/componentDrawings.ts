@@ -1,4 +1,4 @@
-import { findSlot, slotBoxOfScene } from './components/arrange';
+import { clippedSlotBox, findSlot, slotBoxOfScene } from './components/arrange';
 import type {
   ComponentFile,
   FieldValues,
@@ -17,7 +17,7 @@ import {
   sameProvided,
   type ProvidedValues,
 } from './components/provided';
-import { walk, type FrameNode } from './components/scene';
+import type { FrameNode } from './components/scene';
 import {
   markingComponent,
   type ComponentCatalog,
@@ -136,15 +136,6 @@ function shallowEqual(a: FieldValues, b: FieldValues): boolean {
   const keysA = Object.keys(a);
   if (keysA.length !== Object.keys(b).length) return false;
   return keysA.every((key) => key in b && sameFieldValue(a[key], b[key]));
-}
-
-/** A caixa do slot (primeiro da cena) quando ele tem `clip`; senão nenhuma. */
-function clippedSlotBox(root: FrameNode): Rect | undefined {
-  for (const node of walk(root)) {
-    if (node.type !== 'unknown' || node.sourceType !== 'slot') continue;
-    return node.clipChildren === true ? slotBoxOfScene(root) : undefined;
-  }
-  return undefined;
 }
 
 /** O retângulo anterior quando é igual ao novo (o canvas compara o recorte por identidade). */

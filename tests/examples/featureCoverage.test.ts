@@ -87,6 +87,10 @@ const MISSING_TODAY: string[] = [
   // distribuída (a Material 3 usa o `layout.wrap` no flow-row na MC6); coberto por
   // tests/model/components/wrapLayout.test.ts e pelo roteiro R25.
   'component:node.repeat.wrap',
+  // Recorte do slot (etapa #1078, L2): nenhuma biblioteca distribuída o adota; coberto por
+  // tests/model/components/instantiate.test.ts, tests/canvas/components/componentLayerClip.test.ts,
+  // tests/mcp/sceneRasterClip.test.ts e pelo roteiro R25.
+  'component:node.slot.clip',
   'component:node.repeat.lineGap',
   'component:node.repeat.maxPerLine',
   'component:node.repeat.maxLines',

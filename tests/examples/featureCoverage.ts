@@ -325,7 +325,7 @@ export const EXTRA_KEYS: Record<(typeof NODE_TYPES)[number], readonly string[]> 
   ellipse: [],
   text: ['text', 'runs', 'font', 'color', 'baselinePadding'],
   path: ['d', 'viewBox', 'fillRule'],
-  slot: ['label', 'layout', 'provide'],
+  slot: ['label', 'layout', 'provide', 'clip'],
   repeat: [
     'field',
     'count',
