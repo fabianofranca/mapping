@@ -2446,7 +2446,7 @@ Para o agente testador: a sessão do Claude Code na nuvem (ambiente "Mapping - t
 
 - **O que é:** o passo usa um diálogo do sistema ou do navegador que a página não opera: o seletor de pasta ou de arquivo, a permissão da pasta ("Permitir que o site veja/edite os arquivos?"), o "Salvar como" da exportação, a confirmação de instalar o app e o "Sair da página?". Nos roteiros principais (R0 a R25), todo passo [pessoa] tem um substituto para o agente (receita da nuvem abaixo, shell ou cliente por stdio), e um teste do repositório impede passo "sem substituto" ali. A marca **[pessoa]** fica no guia para quem testa à mão.
 - **Nome da ação nos roteiros:** o "ou `select_folder`", "ou `open_file`", "ou `save_file`", "ou `accept_permission_prompt`" e "ou `cancel_dialog`" que acompanham a marca [pessoa] nomeiam a receita da nuvem que faz o papel da pessoa (tabela em "Diálogos nativos na nuvem (Xvfb)", mais abaixo).
-- **`data-arrows`, `data-components`, `data-viewport` e `data-selection-box` do `.canvas-host` atualizam um quadro depois da ação** (clique, atalho, gravação): leia depois de `await settle(page)` (auxiliar de `scripts/testing/cloud.mjs`: sem "Salvando…", dois quadros e 200 ms sem mutação do DOM; o `state()` já o chama antes de ler); a leitura imediata devolve o valor anterior. Não use `waitForTimeout`.
+- **`data-arrows`, `data-components`, `data-viewport`, `data-selection-box`, `data-selection`, `data-arrow-handles` e `data-container-boxes` do `.canvas-host` atualizam um quadro depois da ação** (clique, atalho, gravação): leia depois de `await settle(page)` (auxiliar de `scripts/testing/cloud.mjs`: sem "Salvando…", dois quadros e 200 ms sem mutação do DOM; o `state()` já o chama antes de ler); a leitura imediata devolve o valor anterior. Não use `waitForTimeout`.
 - **Atalhos de uma letra** (V, R, A…) só valem com **nenhum campo focado**: com o foco num campo de texto a letra é digitada. Clique no canvas ou no título de uma janela antes de usar o atalho.
 - **Nenhum passo dos roteiros principais é inteiro da pessoa.** O R0.5 (`index.html` por `file://`) e o R6.2 (fechar a aba no meio da gravação) não funcionaram sozinhos e foram para os roteiros sob demanda RF e RA, por decisão do dono. O R6.2 ganhou o e2e `tests/e2e/folder.spec.ts` no lugar.
 - **Se um passo novo não funcionar sozinho** (o endereço não abre; o diálogo nativo não aparece), marque "não executado (vai para os roteiros sob demanda)", registre o que falhou e proponha mover o passo. Se o teste for relevante (perda de dados, integridade do `mapping.json`, segurança), **avise o dono** no relato, pela regra das convenções da seção 8; não decida sozinho.
@@ -2512,6 +2512,11 @@ Para o agente testador: a sessão do Claude Code na nuvem (ambiente "Mapping - t
 - `data-viewport` = `"x y escala"`: a translação e a escala do canvas; `tela = host + ponto × escala + (x, y)`, com `host` o canto do `getBoundingClientRect()` do `.canvas-host`.
 - `data-selection-box` = `"esquerda topo largura altura"`: a caixa da **seleção primária** (marcação, container ou flutuante), **já com a posição do container somada**; sem seleção (ou com seta selecionada) o atributo some.
 - Uma marcação dentro de container está no espaço **dele** (pixels do container); para um ponto assim use `data-selection-box` (que já converte), ou some a colocação do container antes de aplicar a fórmula do `data-viewport`.
+- `data-selection` = `"<tipo> <id>"` da seleção primária (`image` é o container, `marking` ou `arrow`); some sem seleção. É o que o clique **pegou** quando há sobreposição: a linha `Seleção:` do `state()` traz o nome (`marcação "Lado" (<id>)`, `seta "A → B" (<id>)`, `container "Tela" (<id>)`, `nenhuma`; sem pasta ou com o item da proposta na revisão, só `marking <id>`). Para pegar a de baixo, selecione pela Árvore.
+- `data-arrow-handles` = `"<nome> <x> <y>"` separados por `;`, só com uma **seta** selecionada e desenhada (some com **Mostrar setas** desligado): `center` (o meio do traço, onde o clique pega a seta), `from`, `to`, `point<i>`, `mid<i>` e `segment<i>`. Use `arrowHandlesOf(page)`: devolve o objeto nome → ponto de tela (o canto do host já somado), ou `null` sem seta selecionada.
+- `data-container-boxes` = `"<id> <x> <y> <largura> <altura> <escala>"` por container, separados por `;`, em **unidades do canvas** e na colocação **desenhada** (também numa perspectiva aberta e na revisão, onde o `mapping.json` não diz a posição); o ponto `(px, py)` do container fica no canvas em `(x + px × escala, y + py × escala)`. O `ponto` já usa isso.
+- **Centro da vista:** `viewCenter(page)` devolve `{ x, y, canvas: { x, y } }`: o centro do `.canvas-host` em px de tela (o que o `page.mouse` aceita) e o mesmo ponto em unidades do canvas, `((largura/2 − vx)/escala, (altura/2 − vy)/escala)`.
+- **Área visível:** o ponto de partida tem de cair dentro do `boundingBox()` do host **e** no canvas (o minimapa, uma janela ou a barra por cima não contam). `onCanvas(page, { x, y })` devolve `{ ok, element }` (`element` diz o que está lá: `div.dock "Janelas"`). Abrir ou fechar uma janela de ferramenta (e o **Esc** que fecha a janela dos **Detalhes**) muda o tamanho do host: releia o `boundingBox()` e os `data-*` depois.
 
 ```js
 // page: Playwright por CDP; a marcação aparece na Árvore (Ctrl+Shift+1) como "Marcação sem nome" ou pelo nome dela
@@ -2543,9 +2548,21 @@ const [vx, vy, escala] = (await host.getAttribute('data-viewport'))
   .split(' ')
   .map(Number);
 const tela = (cx, cy) => ({ x: o.x + cx * escala + vx, y: o.y + cy * escala + vy });
+// seta selecionada: o meio do traço e as alças já em ponto de tela
+const alcasDaSeta = await arrowHandlesOf(page); // { center, from, to, point0, mid0, segment0 } ou null
+await page.mouse.click(alcasDaSeta.center.x, alcasDaSeta.center.y); // pega a seta
+await drag(
+  page,
+  alcasDaSeta.to,
+  { x: alcasDaSeta.to.x + 40, y: alcasDaSeta.to.y },
+  { select: false },
+);
+// o centro da vista e a conferência do ponto no canvas
+const meio = await viewCenter(page); // { x, y, canvas: { x, y } }
+const { ok, element } = await onCanvas(page, meio); // ok = dentro do .canvas-host
 ```
 
-**Auxiliar `ponto` (a mesma conta, pronta).** `node scripts/testing/cloud.mjs ponto <container> <x> <y> <pasta-do-projeto> [--perspectiva=<nome>] [--marcacao]` lê a colocação do container no `mapping.json`, o `data-viewport` e o canto do `.canvas-host` pela CDP e imprime `<x> <y>`, o ponto de tela (px CSS do viewport, o que o `page.mouse` e o clique aceitam; para o `xdotool` some a moldura do Chrome, ver as coordenadas na receita 4). `<container>` é o nome (sem diferença de caixa) ou o id e `<x> <y>` são pixels do container; com `--marcacao`, `<container>` é o nome ou o id de uma **marcação** e `<x> <y>` são deslocamentos a partir do canto de cima à esquerda dela (marcação do canvas: pixels do canvas); com `--perspectiva`, vale a posição que a perspectiva dá ao container. Releia depois de qualquer pan, zoom ou **Enquadrar**: o ponto muda com a vista. Exemplo: `ponto Cadastro 0 0 "$PROJ"` imprime o canto de cima à esquerda do container `Cadastro`; em outro zoom, o mesmo comando imprime outro ponto, e o clique nos dois seleciona a mesma coisa.
+**Auxiliar `ponto` (a mesma conta, pronta).** `node scripts/testing/cloud.mjs ponto <container> <x> <y> <pasta-do-projeto> [--perspectiva=<nome>] [--marcacao]` lê a colocação **desenhada** do container (`data-container-boxes`, igual à tela mesmo com outra perspectiva aberta ou na revisão; sem o atributo, o `mapping.json`), o `data-viewport` e o canto do `.canvas-host` pela CDP e imprime `<x> <y>`, o ponto de tela (px CSS do viewport, o que o `page.mouse` e o clique aceitam; para o `xdotool` some a moldura do Chrome, ver as coordenadas na receita 4). `<container>` é o nome (sem diferença de caixa) ou o id e `<x> <y>` são pixels do container; com `--marcacao`, `<container>` é o nome ou o id de uma **marcação** e `<x> <y>` são deslocamentos a partir do canto de cima à esquerda dela (marcação do canvas: pixels do canvas); com `--perspectiva`, ele só confere o nome: **vale a posição desenhada**. Releia depois de qualquer pan, zoom ou **Enquadrar**: o ponto muda com a vista. Avisos no stderr (a saída continua `<x> <y>`): "a perspectiva <nome> não é a desenhada; vale a posição desenhada" quando a perspectiva pedida tem outra posição que a desenhada, e "o ponto (x, y) não cai no canvas (<elemento>)", com a caixa do host, quando o ponto cai fora do canvas (o ponto é devolvido do mesmo jeito). Exemplo: `ponto Cadastro 0 0 "$PROJ"` imprime o canto de cima à esquerda do container `Cadastro`; em outro zoom, o mesmo comando imprime outro ponto, e o clique nos dois seleciona a mesma coisa.
 
 Selecionar pela Árvore pode enquadrar a marcação e mudar a vista: leia os atributos **depois** do clique e do quadro, e releia se der zoom ou pan. Conferido contra o `dist/index.html` com um projeto de uma imagem e uma marcação: o clique no `centro` selecionou a marcação (a caixa lida foi `144 256.2 288 249.6` com escala 2,56).
 
@@ -2626,6 +2643,7 @@ GTK_A11Y=atspi ACCESSIBILITY_ENABLED=1 nohup /opt/pw-browsers/chromium --no-sand
 - **Diálogos:** são `<dialog>` (`getByRole('dialog')`). A confirmação de exclusão tem `role="alertdialog"` (`getByRole('alertdialog')`, não `dialog`). A linha da Árvore é `button.tree-item`, sem `role=treeitem`.
 - **Página local sem o app (R25.59):** o headless-shell do Playwright não está na imagem; abra a `pagina.html` com o Chrome for Testing (`--headless=new --no-sandbox`, `executablePath` do `chromium` do `/opt/pw-browsers`) e rode o trecho do guia nele.
 - **Coordenadas:** as de `page.mouse` são do viewport, não da captura (`import -window root` inclui a moldura do Chrome, que desloca cerca de (4, 144)).
+- **Menu do traço da seta:** Reta, Curva e Canto são `menuitemradio` (`aria-checked` no atual): `getByRole('menuitemradio', { name: 'Curva' })`.
 - **Nomes repetidos ou diferentes da tela:** "Novo container" existe na barra e no canvas vazio (use `scope`). O campo **Rótulo** perde para "Rótulo da instância (opcional)", que casa antes (o `*` de obrigatório não entra no nome). Na Árvore, `Idade` é `⚠Idade`. **X**, **Y** e **Largura** ora são `textbox`, ora `spinbutton`. A busca do Catálogo é `searchbox`, não `textbox`. O botão é "Revisar: <proposta>": `getByRole('button', { name: 'Revisar', exact: true })` falha; use `/^Revisar/`.
 
 ```js
@@ -2752,7 +2770,9 @@ WS=<pasta de trabalho> MAPPING_MCP_ARGS='["<clone>/dist-mcp/mapping-mcp.js","--r
 
   Ids e atalhos: `tree` 1, `layers` 2, `details` 3, `list` 4, `incomplete` 5, `diagnostics` 6, `proposals` 7, `notices` 8, `catalog` 9, `comments` 0 (todos `Ctrl+Shift+<n>`).
 
-- **Arrastar e redimensionar a janela:** `drag(page, de, para, { select, steps })` (pontos de `ponto`) avisa se `de` cair no raio da alça da app (só os 4 cantos, 12 a 22 px, também fora da caixa): parta do centro da marcação. `paletteDrag(page, tipo, para, { capture })` arrasta da Paleta aberta e devolve `{ via }` (`nativo` ou `sintetico`). `setViewport(page, largura, altura)` põe a janela em `innerWidth × innerHeight` (soma a moldura): use-o nas passadas a 1280×720 e 900×720.
+- **Arrastar e redimensionar a janela:**
+  - `drag(page, de, para, { select, steps, allowOffCanvas })` (pontos de `ponto`) lança, antes de mexer o mouse, se `de` não cai no canvas (`allowOffCanvas: true` segue) e avisa quando o clique não selecionou nada. Também avisa se `de` cair no raio da alça (só os 4 cantos, 12 a 22 px): parta do centro da marcação.
+  - `paletteDrag(page, tipo, para, { capture })` arrasta da Paleta e devolve `{ via }` (`nativo` ou `sintetico`). `setViewport(page, largura, altura)` põe a janela em `innerWidth × innerHeight`: use-o a 1280×720 e 900×720.
 - **Localizador que falhou:** o `cloud.mjs run` lista até 10 candidatos (papel, nome, região) depois do erro; fora dele, `cloud.mjs find <texto>`.
 
 <!-- roteiros: R11 -->

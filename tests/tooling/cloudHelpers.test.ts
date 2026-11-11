@@ -78,6 +78,11 @@ const EXPECTED_EXPORTS = [
   'TOOL_WINDOW_IDS',
   'drag',
   'nearHandle',
+  'onCanvas',
+  'parseContainerBoxes',
+  'parseArrowHandles',
+  'viewCenter',
+  'arrowHandlesOf',
   'setViewport',
   'find',
   'formatCandidates',
@@ -1099,6 +1104,7 @@ describe('cloud.mjs run, --prazo e help (etapa #1148, TR1)', () => {
             'TesterState',
             'TempoItem',
             'HelpEntry',
+            'ContainerBox',
             'Candidate',
             'Tempos',
           ].includes(n),
@@ -1289,7 +1295,13 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
   });
 
   describe('drag e nearHandle', () => {
-    function fakeDragPage(selectionBox: string | null) {
+    function fakeDragPage(
+      selectionBox: string | null,
+      {
+        selection = 'marking m1',
+        onCanvas = { ok: true, element: 'canvas' },
+      }: { selection?: string | null; onCanvas?: { ok: boolean; element: string } } = {},
+    ) {
       const events: string[] = [];
       const page = {
         mouse: {
@@ -1299,10 +1311,17 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
           up: async () => events.push('up'),
         },
         locator: () => ({
-          getAttribute: async () => selectionBox,
+          getAttribute: async (name: string) =>
+            name === 'data-selection' ? selection : selectionBox,
           boundingBox: async () => ({ x: 100, y: 50, width: 800, height: 600 }),
         }),
-        evaluate: async () => null,
+        evaluate: async (_fn: unknown, arg?: Record<string, unknown>) => {
+          if (arg && 'x' in arg && 'y' in arg) {
+            events.push(`confere ${String(arg.x)},${String(arg.y)}`);
+            return onCanvas;
+          }
+          return null;
+        },
       };
       return { page, events };
     }
@@ -1311,23 +1330,77 @@ describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () =
       const mod = await load();
       const d = fakeDragPage(null);
       await mod.drag(d.page, { x: 300, y: 300 }, { x: 340, y: 380 }, { steps: 4 });
-      expect(d.events[0]).toBe('click 300,300');
-      expect(d.events[1]).toBe('move 300,300');
-      expect(d.events[2]).toBe('down');
-      expect(d.events.slice(3, 7)).toEqual([
+      expect(d.events[0]).toBe('confere 300,300');
+      expect(d.events[1]).toBe('click 300,300');
+      expect(d.events[2]).toBe('move 300,300');
+      expect(d.events[3]).toBe('down');
+      expect(d.events.slice(4, 8)).toEqual([
         'move 310,320',
         'move 320,340',
         'move 330,360',
         'move 340,380',
       ]);
-      expect(d.events[7]).toBe('up');
+      expect(d.events[8]).toBe('up');
     });
 
     it('select: false não clica antes', async () => {
       const mod = await load();
       const d = fakeDragPage(null);
       await mod.drag(d.page, { x: 1, y: 2 }, { x: 3, y: 4 }, { select: false, steps: 1 });
-      expect(d.events.slice(0, 2)).toEqual(['move 1,2', 'down']);
+      expect(d.events.slice(1, 3)).toEqual(['move 1,2', 'down']);
+    });
+
+    it('`de` fora do canvas lança antes de qualquer ação do mouse; allowOffCanvas segue', async () => {
+      const mod = await load();
+      const off = { ok: false, element: 'div.dock "Janelas"' };
+      const d = fakeDragPage(null, { onCanvas: off });
+      await expect(
+        mod.drag(d.page, { x: 300, y: 300 }, { x: 340, y: 380 }, { steps: 1 }),
+      ).rejects.toThrow(
+        'drag: o ponto de partida (300, 300) não cai no canvas (div.dock "Janelas")',
+      );
+      expect(d.events.some((e) => /^(click|move|down|up)/.test(e))).toBe(false);
+      const e = fakeDragPage(null, { onCanvas: off });
+      await mod.drag(
+        e.page,
+        { x: 300, y: 300 },
+        { x: 340, y: 380 },
+        { steps: 1, allowOffCanvas: true },
+      );
+      expect(e.events).toContain('up');
+    });
+
+    it('o clique de seleção sem data-selection avisa "não selecionou nada" e segue', async () => {
+      const mod = await load();
+      const warnings: string[] = [];
+      const d = fakeDragPage(null, { selection: null });
+      await mod.drag(
+        d.page,
+        { x: 300, y: 300 },
+        { x: 340, y: 380 },
+        { steps: 1, warn: (m: string) => warnings.push(m) },
+      );
+      expect(warnings.join('')).toContain('o clique em (300, 300) não selecionou nada');
+      expect(d.events).toContain('up');
+      const ok = fakeDragPage(null);
+      const quiet: string[] = [];
+      await mod.drag(
+        ok.page,
+        { x: 300, y: 300 },
+        { x: 340, y: 380 },
+        { steps: 1, warn: (m: string) => quiet.push(m) },
+      );
+      expect(quiet).toEqual([]);
+      // sem `select`, não há clique e nada a conferir
+      const free = fakeDragPage(null, { selection: null });
+      const none: string[] = [];
+      await mod.drag(
+        free.page,
+        { x: 1, y: 2 },
+        { x: 3, y: 4 },
+        { select: false, steps: 1, warn: (m: string) => none.push(m) },
+      );
+      expect(none).toEqual([]);
     });
 
     it('avisa quando `de` cai a até 8 px de uma alça da caixa da seleção', async () => {
@@ -1602,6 +1675,7 @@ describe('paletteDrag, caminho absoluto e pasta lembrada (etapa #1256, RT2)', ()
       },
       evaluate: async (_fn: Fn, arg: Record<string, unknown>) => {
         if (arg && 'timeoutMs' in arg) return null;
+        if (arg && 'x' in arg && !('para' in arg)) return { ok: true, element: 'canvas' };
         if (arg && 'para' in arg) {
           events.push('sintetico');
           if (syntheticReason) return { motivo: syntheticReason };
@@ -2589,5 +2663,461 @@ describe('cloud.mjs passo: item fora do guia da rodada (etapa #1533, TE3, decis�
     expect(r.status).toBe(2);
     expect(r.stderr).toMatch(/R99\.1 não está/);
     expect(passo('R12.999').status).toBe(2);
+  });
+});
+
+// Etapa #1076 (VC2): ponto pela posição desenhada, onCanvas, viewCenter, alças da seta e `Seleção:`.
+describe('vista do canvas para o testador (etapa #1076, VC2)', () => {
+  type Fn = (...args: unknown[]) => unknown;
+  type Mod = Record<
+    | 'parseContainerBoxes'
+    | 'containerScreenPoint'
+    | 'ponto'
+    | 'viewCenter'
+    | 'parseArrowHandles'
+    | 'arrowHandlesOf'
+    | 'onCanvas'
+    | 'paletteDrag'
+    | 'formatState'
+    | 'state',
+    Fn
+  >;
+  const load = async (): Promise<Mod> => {
+    process.env.DISPLAY ??= ':99';
+    return (await import('../../scripts/testing/cloud.mjs')) as unknown as Mod;
+  };
+
+  describe('parseContainerBoxes', () => {
+    it('devolve um Map de id para { x, y, width, height, scale }', async () => {
+      const mod = await load();
+      const map = mod.parseContainerBoxes('c1 10 20.5 300 200 2;c2 -5 0 100 50 1') as Map<
+        string,
+        unknown
+      >;
+      expect([...map.keys()]).toEqual(['c1', 'c2']);
+      expect(map.get('c1')).toEqual({
+        x: 10,
+        y: 20.5,
+        width: 300,
+        height: 200,
+        scale: 2,
+      });
+      expect(map.get('c2')).toEqual({ x: -5, y: 0, width: 100, height: 50, scale: 1 });
+      expect((mod.parseContainerBoxes(null) as Map<string, unknown>).size).toBe(0);
+    });
+
+    it('entrada inválida lança com o texto', async () => {
+      const mod = await load();
+      expect(() => mod.parseContainerBoxes('c1 10 20 300')).toThrow(
+        'data-container-boxes inválido: "c1 10 20 300"',
+      );
+      expect(() => mod.parseContainerBoxes('c1 10 20 300 200 x')).toThrow(
+        'data-container-boxes inválido: "c1 10 20 300 200 x"',
+      );
+    });
+  });
+
+  describe('containerScreenPoint com boxes', () => {
+    const mapping = {
+      containers: [
+        { id: 'c1', name: 'Cadastro', placement: { x: 100, y: 50, scale: 2 } },
+        { id: 'c2', name: 'Outro', placement: { x: 0, y: 0, scale: 1 } },
+      ],
+      markings: [{ id: 'm1', name: 'Botão', containerId: 'c1', rect: { x: 10, y: 20 } }],
+      perspectives: [{ name: 'Dev mobile', items: [{ root: 'c1', x: 400, y: 300 }] }],
+    };
+    const base = { mapping, viewport: '0 0 1', host: { x: 0, y: 0 } };
+
+    it('a posição de boxes vale sobre a do disco e sobre a da perspectiva', async () => {
+      const mod = await load();
+      // boxes: x=1000, y=900, escala 4 → canvas = (1000 + 5*4, 900 + 7*4)
+      const boxes = 'c1 1000 900 300 200 4';
+      expect(
+        mod.containerScreenPoint({ ...base, container: 'Cadastro', x: 5, y: 7, boxes }),
+      ).toEqual({ x: 1020, y: 928 });
+      expect(
+        mod.containerScreenPoint({
+          ...base,
+          container: 'Cadastro',
+          x: 5,
+          y: 7,
+          boxes,
+          perspective: 'Dev mobile',
+        }),
+      ).toEqual({ x: 1020, y: 928 });
+    });
+
+    it('a marcação usa a caixa do container dela', async () => {
+      const mod = await load();
+      // canvas = (1000 + (10+3)*4, 900 + (20+4)*4) = (1052, 996)
+      expect(
+        mod.containerScreenPoint({
+          ...base,
+          container: 'Botão',
+          x: 3,
+          y: 4,
+          marking: true,
+          boxes: 'c1 1000 900 300 200 4',
+        }),
+      ).toEqual({ x: 1052, y: 996 });
+    });
+
+    it('sem o container em boxes, vale a conta de hoje', async () => {
+      const mod = await load();
+      expect(
+        mod.containerScreenPoint({
+          ...base,
+          container: 'Cadastro',
+          x: 5,
+          y: 7,
+          boxes: 'c2 1000 900 300 200 4',
+        }),
+      ).toEqual({ x: 110, y: 64 });
+      expect(
+        mod.containerScreenPoint({
+          ...base,
+          container: 'Cadastro',
+          x: 5,
+          y: 7,
+          boxes: '',
+          perspective: 'Dev mobile',
+        }),
+      ).toEqual({ x: 410, y: 314 });
+    });
+
+    it('avisa (warn) quando a perspectiva pedida difere da desenhada', async () => {
+      const mod = await load();
+      const warnings: string[] = [];
+      mod.containerScreenPoint({
+        ...base,
+        container: 'Cadastro',
+        x: 0,
+        y: 0,
+        boxes: 'c1 1000 900 300 200 4',
+        perspective: 'Dev mobile',
+        warn: (m: string) => warnings.push(m),
+      });
+      expect(warnings).toEqual([
+        'a perspectiva Dev mobile não é a desenhada; vale a posição desenhada',
+      ]);
+      const same: string[] = [];
+      mod.containerScreenPoint({
+        ...base,
+        container: 'Cadastro',
+        x: 0,
+        y: 0,
+        boxes: 'c1 400 300 300 200 4',
+        perspective: 'Dev mobile',
+        warn: (m: string) => same.push(m),
+      });
+      expect(same).toEqual([]);
+    });
+  });
+
+  describe('ponto (página falsa)', () => {
+    const cleanup: string[] = [];
+    afterEach(() => {
+      for (const dir of cleanup.splice(0)) rmSync(dir, { recursive: true, force: true });
+    });
+    function fakePage(onCanvas: { ok: boolean; element: string }) {
+      const attrs: Record<string, string | null> = {
+        'data-viewport': '0 0 1',
+        'data-container-boxes': 'c1 1000 900 300 200 4',
+      };
+      return {
+        locator: () => ({
+          getAttribute: async (name: string) => attrs[name] ?? null,
+          boundingBox: async () => ({ x: 10, y: 20, width: 800, height: 600 }),
+        }),
+        evaluate: async (_fn: unknown, arg?: Record<string, unknown>) =>
+          arg && 'x' in arg && 'y' in arg ? onCanvas : null,
+      };
+    }
+    function project() {
+      const dir = mkdtempSync(path.join(tmpdir(), 'mapping-ponto-'));
+      cleanup.push(dir);
+      writeFileSync(
+        path.join(dir, 'mapping.json'),
+        JSON.stringify({
+          containers: [
+            { id: 'c1', name: 'Cadastro', placement: { x: 100, y: 50, scale: 2 } },
+          ],
+          markings: [],
+          perspectives: [{ name: 'Dev', items: [{ root: 'c1', x: 400, y: 300 }] }],
+        }),
+      );
+      return dir;
+    }
+
+    it('usa a posição desenhada e avisa quando a perspectiva é outra', async () => {
+      const mod = await load();
+      const warnings: string[] = [];
+      const at = await mod.ponto(
+        fakePage({ ok: true, element: 'canvas' }),
+        project(),
+        'Cadastro',
+        5,
+        7,
+        { perspective: 'Dev', warn: (m: string) => warnings.push(m) },
+      );
+      expect(at).toEqual({ x: 10 + 1020, y: 20 + 928 });
+      expect(warnings).toEqual([
+        'a perspectiva Dev não é a desenhada; vale a posição desenhada',
+      ]);
+    });
+
+    it('o ponto fora do canvas avisa, com a caixa do host, e devolve o ponto', async () => {
+      const mod = await load();
+      const warnings: string[] = [];
+      const at = await mod.ponto(
+        fakePage({ ok: false, element: 'div.dock "Janelas"' }),
+        project(),
+        'Cadastro',
+        5,
+        7,
+        { warn: (m: string) => warnings.push(m) },
+      );
+      expect(at).toEqual({ x: 1030, y: 948 });
+      expect(warnings.join('\n')).toContain(
+        'o ponto (1030, 948) não cai no canvas (div.dock "Janelas")',
+      );
+      expect(warnings.join('\n')).toContain('10, 20, 800 × 600');
+    });
+  });
+
+  describe('viewCenter', () => {
+    it('dá o ponto de tela do centro do host e o mesmo ponto no canvas', async () => {
+      const mod = await load();
+      const page = {
+        locator: () => ({
+          getAttribute: async () => '100 50 2',
+          boundingBox: async () => ({ x: 10, y: 20, width: 800, height: 600 }),
+        }),
+        evaluate: async () => null,
+      };
+      expect(await mod.viewCenter(page)).toEqual({
+        x: 410,
+        y: 320,
+        canvas: { x: 150, y: 125 },
+      });
+    });
+  });
+
+  describe('parseArrowHandles e arrowHandlesOf', () => {
+    it('soma o canto do host a cada alça', async () => {
+      const mod = await load();
+      expect(
+        mod.parseArrowHandles('center 50 60;from 10.5 20;to 90 100', { x: 100, y: 200 }),
+      ).toEqual({
+        center: { x: 150, y: 260 },
+        from: { x: 110.5, y: 220 },
+        to: { x: 190, y: 300 },
+      });
+      expect(() => mod.parseArrowHandles('center 50', { x: 0, y: 0 })).toThrow(
+        'data-arrow-handles inválido: "center 50"',
+      );
+    });
+
+    it('arrowHandlesOf sem o atributo devolve null; com ele, os pontos de tela', async () => {
+      const mod = await load();
+      const make = (text: string | null) => ({
+        locator: () => ({
+          getAttribute: async () => text,
+          boundingBox: async () => ({ x: 10, y: 20, width: 800, height: 600 }),
+        }),
+        evaluate: async () => null,
+      });
+      expect(await mod.arrowHandlesOf(make(null))).toBeNull();
+      expect(await mod.arrowHandlesOf(make('center 1 2;to 3 4'))).toEqual({
+        center: { x: 11, y: 22 },
+        to: { x: 13, y: 24 },
+      });
+    });
+  });
+
+  describe('onCanvas', () => {
+    it('devolve { ok, element } da conferência feita na página', async () => {
+      const mod = await load();
+      const seen: unknown[] = [];
+      const page = {
+        evaluate: async (_fn: unknown, arg: unknown) => {
+          seen.push(arg);
+          return { ok: false, element: 'div.dock' };
+        },
+      };
+      expect(await mod.onCanvas(page, { x: 5, y: 6 })).toEqual({
+        ok: false,
+        element: 'div.dock',
+      });
+      expect(seen).toEqual([{ x: 5, y: 6 }]);
+    });
+  });
+
+  describe('paletteDrag usa a mesma conferência do ponto no canvas', () => {
+    it('ponto fora do canvas lança antes do arrasto sintético', async () => {
+      const mod = await load();
+      const projeto = mkdtempSync(path.join(tmpdir(), 'mapping-palette-onc-'));
+      try {
+        writeFileSync(
+          path.join(projeto, 'mapping.json'),
+          JSON.stringify({ markings: [{ id: 'm1' }] }),
+        );
+        const fired: string[] = [];
+        const item = {
+          scrollIntoViewIfNeeded: async () => undefined,
+          boundingBox: async () => ({ x: 10, y: 100, width: 200, height: 40 }),
+        };
+        const page = {
+          mouse: {
+            move: async () => undefined,
+            down: async () => undefined,
+            up: async () => undefined,
+          },
+          locator: () => ({
+            filter: () => item,
+            getByText: () => ({}),
+            getAttribute: async () => '0',
+            screenshot: async () => undefined,
+          }),
+          evaluate: async (_fn: unknown, arg: Record<string, unknown>) => {
+            if (arg && 'timeoutMs' in arg) return null;
+            if (arg && 'para' in arg) {
+              fired.push('sintetico');
+              return { ok: true };
+            }
+            if (arg && 'x' in arg) return { ok: false, element: 'div.dock' };
+            return ['Biblioteca'];
+          },
+        };
+        await expect(
+          mod.paletteDrag(
+            page,
+            'Button',
+            { x: 500, y: 300 },
+            {
+              steps: 1,
+              projectDir: projeto,
+              waitMs: 20,
+            },
+          ),
+        ).rejects.toThrow('o ponto (500, 300) não cai no canvas (div.dock)');
+        expect(fired).toEqual([]);
+      } finally {
+        rmSync(projeto, { recursive: true, force: true });
+      }
+    });
+  });
+
+  describe('formatState: linha Seleção', () => {
+    const base = {
+      title: 'Mapping',
+      url: 'x',
+      dialogs: [],
+      notices: [],
+      saveStatus: null,
+      focus: null,
+      windows: [],
+    };
+    it('com o nome vindo do disco', async () => {
+      const mod = await load();
+      const text = (selection: unknown) =>
+        mod.formatState({ ...base, selection }) as string;
+      expect(text({ type: 'marking', id: 'm1', name: 'Lado' })).toContain(
+        'Seleção: marcação "Lado" (m1)',
+      );
+      expect(text({ type: 'arrow', id: 'a1', name: 'A → B' })).toContain(
+        'Seleção: seta "A → B" (a1)',
+      );
+      expect(text({ type: 'image', id: 'c1', name: 'Tela' })).toContain(
+        'Seleção: container "Tela" (c1)',
+      );
+      expect(text(null)).toContain('Seleção: nenhuma');
+    });
+    it('vem depois do Foco; sem disco, mostra o tipo e o id; sem o campo, não imprime', async () => {
+      const mod = await load();
+      const lines = (
+        mod.formatState({
+          ...base,
+          selection: { type: 'marking', id: 'm1' },
+        }) as string
+      ).split('\n');
+      const focus = lines.findIndex((l) => l.startsWith('Foco:'));
+      expect(lines[focus + 1]).toBe('Seleção: marking m1');
+      expect(mod.formatState(base) as string).not.toContain('Seleção:');
+    });
+  });
+
+  describe('state() lê a seleção', () => {
+    const run = async (selection: string | null, mapping: object | null) => {
+      const mod = await load();
+      const apoio = mkdtempSync(path.join(tmpdir(), 'mapping-sel-apoio-'));
+      const projeto = mkdtempSync(path.join(tmpdir(), 'mapping-sel-proj-'));
+      try {
+        if (mapping) {
+          writeFileSync(path.join(projeto, 'mapping.json'), JSON.stringify(mapping));
+        }
+        const page = {
+          evaluate: async (_fn: unknown, arg: unknown) =>
+            arg && typeof arg === 'object' && 'timeoutMs' in arg
+              ? null
+              : {
+                  title: 't',
+                  url: 'u',
+                  dialogs: [],
+                  notices: [],
+                  saveStatus: null,
+                  focus: null,
+                  selection,
+                },
+        };
+        const result = (await mod.state(
+          page,
+          apoio,
+          mapping ? { projectDir: projeto } : { projectDir: null },
+        )) as { selection: unknown };
+        return result.selection;
+      } finally {
+        rmSync(apoio, { recursive: true, force: true });
+        rmSync(projeto, { recursive: true, force: true });
+      }
+    };
+    const mapping = {
+      revision: 1,
+      containers: [{ id: 'c1', name: 'Tela' }],
+      markings: [
+        { id: 'm1', name: 'Lado' },
+        { id: 'm2', name: null },
+      ],
+      arrows: [{ id: 'a1', from: 'm1', to: 'm2' }],
+    };
+
+    it('resolve o nome pelo mapping.json lido', async () => {
+      expect(await run('marking m1', mapping)).toEqual({
+        type: 'marking',
+        id: 'm1',
+        name: 'Lado',
+      });
+      expect(await run('marking m2', mapping)).toEqual({
+        type: 'marking',
+        id: 'm2',
+        name: 'sem nome',
+      });
+      expect(await run('image c1', mapping)).toEqual({
+        type: 'image',
+        id: 'c1',
+        name: 'Tela',
+      });
+      expect(await run('arrow a1', mapping)).toEqual({
+        type: 'arrow',
+        id: 'a1',
+        name: 'Lado → sem nome',
+      });
+    });
+
+    it('sem pasta ou com o id fora do disco, fica só o tipo e o id; sem seleção, null', async () => {
+      expect(await run('marking m1', null)).toEqual({ type: 'marking', id: 'm1' });
+      expect(await run('marking zz', mapping)).toEqual({ type: 'marking', id: 'zz' });
+      expect(await run(null, mapping)).toBeNull();
+    });
   });
 });

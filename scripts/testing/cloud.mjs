@@ -862,6 +862,44 @@ export function diffJson(before, after, { limit = 20 } = {}) {
   return [...lines.slice(0, limit), `+${lines.length - limit} mudanças além do limite`];
 }
 
+const SELECTION_WORD = { marking: 'marcação', image: 'container', arrow: 'seta' };
+
+/** A linha `Seleção:` do `formatState` (etapa #1076, decisão 11). */
+function formatSelection(selection) {
+  if (!selection) return 'Seleção: nenhuma';
+  if (selection.name === undefined) return `Seleção: ${selection.type} ${selection.id}`;
+  const word = SELECTION_WORD[selection.type] ?? selection.type;
+  return `Seleção: ${word} "${selection.name}" (${selection.id})`;
+}
+
+/**
+ * A seleção do `state()` (etapa #1076, decisão 11): do `data-selection` (`"<tipo> <id>"`) e, com o
+ * `mapping.json` lido, o nome (`sem nome` se vazio; a seta é `"<origem> → <destino>"`). Sem
+ * `json`, ou com o id fora do disco (item da proposta na revisão), fica só o tipo e o id.
+ */
+function resolveSelection(text, json) {
+  if (text === undefined) return undefined;
+  if (!text) return null;
+  const [type, id] = text.split(' ');
+  const selection = { type, id };
+  if (!json) return selection;
+  const nameOf = (item) => (item.name ? item.name : 'sem nome');
+  if (type === 'arrow') {
+    const arrow = (json.arrows ?? []).find((a) => a.id === id);
+    if (!arrow) return selection;
+    const mark = (ref) => (json.markings ?? []).find((m) => m.id === ref);
+    const from = mark(arrow.from);
+    const to = mark(arrow.to);
+    return {
+      ...selection,
+      name: `${from ? nameOf(from) : 'sem nome'} → ${to ? nameOf(to) : 'sem nome'}`,
+    };
+  }
+  const list = type === 'image' ? json.containers : json.markings;
+  const item = (list ?? []).find((i) => i.id === id);
+  return item ? { ...selection, name: nameOf(item) } : selection;
+}
+
 /** Texto curto do estado (poucas linhas, sem JSON cru). */
 export function formatState(state) {
   const quoted = (items) =>
@@ -872,8 +910,9 @@ export function formatState(state) {
     `Avisos: ${quoted(state.notices)}`,
     `Gravação: ${state.saveStatus ?? 'sem indicador'}`,
     `Foco: ${state.focus ? `${state.focus.role} "${state.focus.name}"` : 'nenhum'}`,
-    `Janelas nativas: ${quoted(state.windows)}`,
   ];
+  if (state.selection !== undefined) lines.push(formatSelection(state.selection));
+  lines.push(`Janelas nativas: ${quoted(state.windows)}`);
   const project = state.project;
   if (project) {
     if (project.dir) lines.push(`Pasta: ${project.dir}`);
@@ -972,6 +1011,7 @@ function readAppDom() {
     notices,
     saveStatus,
     focus,
+    selection: document.querySelector('.canvas-host')?.dataset.selection ?? null,
   };
 }
 
@@ -1041,7 +1081,7 @@ export async function state(page, apoioDir, { projectDir } = {}) {
   } catch {
     windows = [];
   }
-  const result = { ...dom, windows };
+  const result = { ...dom, windows, selection: resolveSelection(dom.selection, null) };
   if (projectDir) {
     const absolute = path.resolve(projectDir);
     // Pasta explícita: lembrada mesmo se a leitura falha, e só regravada quando muda (#1430 e).
@@ -1067,9 +1107,57 @@ export async function state(page, apoioDir, { projectDir } = {}) {
       }
       fs.writeFileSync(snapshot, JSON.stringify(read.json));
       result.project = { revision: read.json.revision ?? null, changes, dir: absolute };
+      result.selection = resolveSelection(dom.selection, read.json);
     }
   }
   return result;
+}
+
+/**
+ * Lê o `data-container-boxes` do `.canvas-host` (etapa #1076, decisão 5): `"<id> <x> <y> <largura>
+ * <altura> <escala>"` por container colocado, separados por `;`, em unidades do canvas e na
+ * colocação desenhada. Devolve um `Map` de id para `{ x, y, width, height, scale }`; texto vazio ou
+ * nulo dá um `Map` vazio; entrada sem os 5 números depois do id lança com o texto.
+ */
+export function parseContainerBoxes(text) {
+  const boxes = new Map();
+  for (const entry of String(text ?? '').split(';')) {
+    const trimmed = entry.trim();
+    if (!trimmed) continue;
+    const [id, ...rest] = trimmed.split(/\s+/);
+    const numbers = rest.map(Number);
+    if (numbers.length !== 5 || !numbers.every(Number.isFinite)) {
+      throw new Error(`data-container-boxes inválido: "${trimmed}"`);
+    }
+    const [x, y, width, height, scale] = numbers;
+    boxes.set(id, { x, y, width, height, scale });
+  }
+  return boxes;
+}
+
+/**
+ * A colocação (x, y, escala) de `found` no canvas: a desenhada (`boxes`) vale sobre a do disco e
+ * sobre a da perspectiva; sem ela, a da perspectiva (se `found` é raiz dela) ou a do disco.
+ * `warn` recebe o aviso quando a perspectiva pedida tem outra posição que a desenhada.
+ */
+function placementOf(found, { boxes, perspective, mapping, warn }) {
+  let named;
+  if (perspective) {
+    named = (mapping.perspectives ?? []).find(
+      (q) => q.name.toLowerCase() === String(perspective).toLowerCase(),
+    );
+    if (!named) throw new Error(`perspectiva não encontrada: ${perspective}`);
+  }
+  const item = named?.items.find((i) => i.root === found.id);
+  const drawn = found.id ? boxes.get(found.id) : undefined;
+  if (drawn) {
+    if (item && (item.x !== drawn.x || item.y !== drawn.y)) {
+      warn?.(`a perspectiva ${named.name} não é a desenhada; vale a posição desenhada`);
+    }
+    return { x: drawn.x, y: drawn.y, scale: drawn.scale };
+  }
+  const { x, y, scale } = found.placement;
+  return item ? { x: item.x, y: item.y, scale } : { x, y, scale };
 }
 
 /**
@@ -1078,6 +1166,8 @@ export async function state(page, apoioDir, { projectDir } = {}) {
  * `viewport` é o `data-viewport` do `.canvas-host` (`"x y escala"`, px CSS relativos ao canto do
  * host); `host` é o canto do host na página (`boundingBox()`); `perspective`, opcional, é o nome
  * de uma perspectiva cujo item para o container (raiz) troca a posição `x`, `y` dele no canvas;
+ * `boxes` (opcional, etapa #1076) é o texto do `data-container-boxes`: a posição desenhada, que vale
+ * sobre a do disco e sobre a da perspectiva (com `warn`, avisa a perspectiva que difere dela);
  * `marking` (opcional): `container` é o nome ou id de uma marcação e (x, y) são deslocamentos a partir do
  * canto dela.
  * A fórmula é a da receita "Onde está uma marcação na tela": canvas = placement + ponto × escala
@@ -1092,6 +1182,8 @@ export function containerScreenPoint({
   host,
   perspective,
   marking,
+  boxes,
+  warn,
 }) {
   const wanted = String(container).trim().toLowerCase();
   const byName = (list) =>
@@ -1118,18 +1210,17 @@ export function containerScreenPoint({
     if (matches.length > 1) throw new Error(`mais de um container se chama ${container}`);
     found = matches[0];
   }
-  let { x: px, y: py, scale } = found.placement;
-  if (perspective) {
-    const named = (mapping.perspectives ?? []).find(
-      (q) => q.name.toLowerCase() === String(perspective).toLowerCase(),
-    );
-    if (!named) throw new Error(`perspectiva não encontrada: ${perspective}`);
-    const item = named.items.find((i) => i.root === found.id);
-    if (item) {
-      px = item.x;
-      py = item.y;
-    }
-  }
+  const drawn = boxes instanceof Map ? boxes : parseContainerBoxes(boxes);
+  const {
+    x: px,
+    y: py,
+    scale,
+  } = placementOf(found, {
+    boxes: drawn,
+    perspective,
+    mapping,
+    warn,
+  });
   const [vx, vy, vs] = String(viewport).trim().split(/\s+/).map(Number);
   if (![vx, vy, vs].every(Number.isFinite) || vs <= 0) {
     throw new Error(`data-viewport inválido: ${viewport}`);
@@ -1142,30 +1233,71 @@ export function containerScreenPoint({
   };
 }
 
-/** Lê o `data-viewport` e o canto do `.canvas-host` pela página (CDP) e converte (ver acima). */
+/** Espera dois quadros, para os `data-*` lidos depois serem os do quadro desenhado. */
+function nextFrames(page) {
+  return page.evaluate(
+    () =>
+      new Promise((ok) =>
+        globalThis.requestAnimationFrame(() => globalThis.requestAnimationFrame(ok)),
+      ),
+  );
+}
+
+/** Roda na página: o ponto cai no `.canvas-host`? Devolve `{ ok, element }` (ver `onCanvas`). */
+function onCanvasInPage({ x, y }) {
+  const target = document.elementFromPoint(x, y);
+  if (!target) return { ok: false, element: 'nada' };
+  const label = `${target.tagName.toLowerCase()}${target.classList.length ? `.${target.classList[0]}` : ''}`;
+  const named = target.closest('[aria-label],[aria-labelledby]');
+  let name = named?.getAttribute('aria-label') ?? '';
+  if (named && !name) {
+    name = (named.getAttribute('aria-labelledby') ?? '')
+      .split(/\s+/)
+      .map((id) => document.getElementById(id)?.textContent?.trim() ?? '')
+      .join(' ')
+      .trim();
+  }
+  return {
+    ok: !!target.closest('.canvas-host'),
+    element: name ? `${label} "${name}"` : label,
+  };
+}
+
+/**
+ * O ponto de tela cai no canvas (etapa #1076, decisão 7)? `ok` é verdadeiro quando o elemento no
+ * ponto (`elementFromPoint`) está dentro do `.canvas-host`; o minimapa, uma janela ou a barra por
+ * cima dão falso. `element` descreve o que está lá: a tag, a primeira classe e o nome acessível do
+ * ancestral mais próximo que tem um (`div.dock "Janelas"`). É a conferência única do `ponto`, do
+ * `drag` e do `paletteDrag`.
+ */
+export async function onCanvas(page, point) {
+  return page.evaluate(onCanvasInPage, { x: point.x, y: point.y });
+}
+
+/**
+ * Lê o `data-viewport`, o `data-container-boxes` e o canto do `.canvas-host` pela página (CDP) e
+ * converte (ver acima). A posição que vale é a desenhada; com `perspective` diferente dela, avisa
+ * (`warn`, padrão stderr) e usa a desenhada. Ponto que não cai no canvas (`onCanvas`) também avisa,
+ * e o ponto é devolvido do mesmo jeito.
+ */
 export async function ponto(
   page,
   projectDir,
   container,
   x,
   y,
-  { perspective, marking } = {},
+  { perspective, marking, warn = (m) => console.error(m) } = {},
 ) {
   const read = await readMapping(projectDir);
   if (read.error) throw new Error(read.error);
   const host = page.locator('.canvas-host');
-  // espera um quadro, para a vista lida ser a desenhada
-  await page.evaluate(
-    () =>
-      new Promise((ok) =>
-        globalThis.requestAnimationFrame(() => globalThis.requestAnimationFrame(ok)),
-      ),
-  );
+  await nextFrames(page);
   const viewport = await host.getAttribute('data-viewport');
+  const boxes = await host.getAttribute('data-container-boxes');
   const box = await host.boundingBox();
   if (!viewport || !box)
     throw new Error('o .canvas-host não tem data-viewport (a app abriu o projeto?)');
-  return containerScreenPoint({
+  const at = containerScreenPoint({
     mapping: read.json,
     container,
     x,
@@ -1174,7 +1306,80 @@ export async function ponto(
     host: { x: box.x, y: box.y },
     perspective,
     marking,
+    boxes: boxes ?? undefined,
+    warn,
   });
+  const on = await onCanvas(page, at);
+  if (!on.ok) {
+    warn(
+      `o ponto (${at.x}, ${at.y}) não cai no canvas (${on.element}); o .canvas-host ocupa ${box.x}, ${box.y}, ${box.width} × ${box.height}`,
+    );
+  }
+  return at;
+}
+
+/**
+ * O centro da vista (etapa #1076, decisão 9): `x` e `y` são o ponto de tela (px do viewport, o que
+ * o `page.mouse` aceita) do centro do `.canvas-host`; `canvas` é o mesmo ponto em unidades do
+ * canvas, `((largura / 2 − vx) / escala, (altura / 2 − vy) / escala)`, com o `data-viewport`.
+ */
+export async function viewCenter(page) {
+  const host = page.locator('.canvas-host');
+  await nextFrames(page);
+  const viewport = await host.getAttribute('data-viewport');
+  const box = await host.boundingBox();
+  if (!viewport || !box)
+    throw new Error('o .canvas-host não tem data-viewport (a app abriu o projeto?)');
+  const [vx, vy, vs] = viewport.trim().split(/\s+/).map(Number);
+  if (![vx, vy, vs].every(Number.isFinite) || vs <= 0) {
+    throw new Error(`data-viewport inválido: ${viewport}`);
+  }
+  const round = (n) => Math.round(n * 100) / 100;
+  return {
+    x: round(box.x + box.width / 2),
+    y: round(box.y + box.height / 2),
+    canvas: {
+      x: round((box.width / 2 - vx) / vs),
+      y: round((box.height / 2 - vy) / vs),
+    },
+  };
+}
+
+/**
+ * Lê o `data-arrow-handles` (etapa #1076, decisão 10; parte pura): entradas `"<nome> <x> <y>"`
+ * separadas por `;`, em px CSS relativos ao canto do host. Devolve o objeto do nome (`center`,
+ * `from`, `to`, `point0`, `mid0`, `segment0` …) para o ponto de tela (o canto `host` somado).
+ */
+export function parseArrowHandles(text, host) {
+  const handles = {};
+  for (const entry of String(text ?? '').split(';')) {
+    const trimmed = entry.trim();
+    if (!trimmed) continue;
+    const [name, x, y, ...extra] = trimmed.split(/\s+/);
+    if (extra.length > 0 || !Number.isFinite(Number(x)) || !Number.isFinite(Number(y))) {
+      throw new Error(`data-arrow-handles inválido: "${trimmed}"`);
+    }
+    handles[name] = {
+      x: Math.round((host.x + Number(x)) * 100) / 100,
+      y: Math.round((host.y + Number(y)) * 100) / 100,
+    };
+  }
+  return handles;
+}
+
+/**
+ * Os pontos de tela do meio (`center`) e das alças da seta selecionada (etapa #1076, decisão 10),
+ * ou `null` sem seta selecionada e desenhada. Releia depois de abrir ou fechar uma janela (o host
+ * muda de tamanho) e depois de pan e zoom.
+ */
+export async function arrowHandlesOf(page) {
+  const host = page.locator('.canvas-host');
+  await nextFrames(page);
+  const text = await host.getAttribute('data-arrow-handles');
+  if (!text) return null;
+  const box = await host.boundingBox();
+  if (!box) return null;
+  return parseArrowHandles(text, { x: box.x, y: box.y });
 }
 
 /** Prazo do `settle` que o `state()` faz antes de ler (abaixo dos 3 s do estado do `runStep`). */
@@ -1323,16 +1528,35 @@ export function nearHandle(box, point, { container = false } = {}) {
  * decisão 9): clica em `de` para selecionar (com `select`), espera `settle`, `mouse.down`, um
  * quadro, `mouse.move` em `steps` passos e `mouse.up`. Se `de` cair no raio de uma alça da
  * `data-selection-box` (o da app, `nearHandle`), avisa (`warn`) que o arrasto pode redimensionar, e segue.
+ * Etapa #1076 (decisão 8): `de` que não cai no canvas (`onCanvas`) lança antes de qualquer ação do
+ * mouse, salvo com `allowOffCanvas: true` (o `para` não se confere: o arrasto pode sair do canvas
+ * de propósito); o clique de seleção que deixa o `data-selection` vazio avisa que não selecionou nada.
  */
 export async function drag(
   page,
   de,
   para,
-  { select = true, steps = 10, warn = (m) => console.error(m) } = {},
+  {
+    select = true,
+    steps = 10,
+    warn = (m) => console.error(m),
+    allowOffCanvas = false,
+  } = {},
 ) {
+  if (!allowOffCanvas) {
+    const on = await onCanvas(page, de);
+    if (!on.ok) {
+      throw new Error(
+        `drag: o ponto de partida (${de.x}, ${de.y}) não cai no canvas (${on.element})`,
+      );
+    }
+  }
   if (select) {
     await page.mouse.click(de.x, de.y);
     await settle(page);
+    if (!(await page.locator('.canvas-host').getAttribute('data-selection'))) {
+      warn(`o clique em (${de.x}, ${de.y}) não selecionou nada`);
+    }
   }
   const host = page.locator('.canvas-host');
   const text = await host.getAttribute('data-selection-box');
@@ -1380,7 +1604,8 @@ function paletteGroupsOf({ tipo }) {
 /**
  * Dispara o arrasto da Paleta por eventos (roda na página): `dragstart`, `dragover`, `drop`,
  * `dragend`. Devolve `{ ok: true }` ou `{ motivo }`: "o item '<tipo>' sumiu da Paleta" ou "o ponto
- * (x, y) não cai no canvas (<elemento>)" (o alvo tem de estar dentro do `.canvas-host`).
+ * (x, y) não cai no canvas (<elemento>)" (sem elemento no ponto; a conferência de estar dentro do
+ * `.canvas-host` é a do `onCanvas`, feita pelo `paletteDrag` antes).
  */
 function syntheticPaletteDrag({ tipo, para, grupo }) {
   const groups = grupo
@@ -1393,12 +1618,8 @@ function syntheticPaletteDrag({ tipo, para, grupo }) {
     .find((li) => li.querySelector('.library-type-name')?.textContent?.trim() === tipo);
   if (!item) return { motivo: `o item '${tipo}' sumiu da Paleta` };
   const target = document.elementFromPoint(para.x, para.y);
-  if (!target || !target.closest('.canvas-host')) {
-    const label = target
-      ? `${target.tagName.toLowerCase()}${target.classList.length ? `.${[...target.classList].join('.')}` : ''}`
-      : 'nada';
-    return { motivo: `o ponto (${para.x}, ${para.y}) não cai no canvas (${label})` };
-  }
+  if (!target)
+    return { motivo: `o ponto (${para.x}, ${para.y}) não cai no canvas (nada)` };
   const data = new DataTransfer();
   const fire = (el, type) =>
     el.dispatchEvent(
@@ -1500,6 +1721,12 @@ export async function paletteDrag(
   await page.mouse.up();
   await settle(page);
   if (await markingsGrewTo(projectDir, before, waitMs)) return { via: 'nativo' };
+  const on = await onCanvas(page, para);
+  if (!on.ok) {
+    throw new Error(
+      `paletteDrag: o ponto (${para.x}, ${para.y}) não cai no canvas (${on.element})`,
+    );
+  }
   const synthetic = await page.evaluate(syntheticPaletteDrag, {
     tipo,
     para,
@@ -2226,6 +2453,11 @@ function exportsOf() {
     TOOL_WINDOW_IDS,
     drag,
     nearHandle,
+    onCanvas,
+    viewCenter,
+    arrowHandlesOf,
+    parseArrowHandles,
+    parseContainerBoxes,
     paletteDrag,
     setViewport,
     find,
@@ -2290,7 +2522,10 @@ export const HELP = {
     sig: 'diffJson(antes, depois, { limit? })',
     desc: 'linhas de diferença entre dois JSON',
   },
-  formatState: { sig: 'formatState(estado)', desc: 'texto do estado (tela e disco)' },
+  formatState: {
+    sig: 'formatState(estado)',
+    desc: 'texto do estado (tela, disco e a linha Seleção: o que o clique selecionou)',
+  },
   state: {
     sig: 'state(page, apoioDir, { projectDir? })',
     desc: 'estado da tela (título, diálogos, avisos, foco, janelas) e do disco; sem projectDir lê a última pasta usada (null: não lê disco)',
@@ -2344,8 +2579,8 @@ export const HELP = {
     desc: 'os ids das janelas de ferramenta aceitos por openWindow e closeWindow',
   },
   drag: {
-    sig: 'drag(page, de, para, { select? = true, steps? = 10, warn? })',
-    desc: 'arrasta entre dois pontos de tela ({x, y}); avisa se de cair no raio de uma alça (canto) da seleção',
+    sig: 'drag(page, de, para, { select? = true, steps? = 10, warn?, allowOffCanvas? })',
+    desc: 'arrasta entre dois pontos de tela ({x, y}); lança se de não cai no canvas (allowOffCanvas segue); avisa se de cair no raio de uma alça (canto) da seleção e se o clique não selecionou nada',
   },
   nearHandle: {
     sig: 'nearHandle(box, ponto)',
@@ -2397,8 +2632,28 @@ export const HELP = {
     desc: 'ponto de tela de um ponto em pixels do container (parte pura)',
   },
   ponto: {
-    sig: 'ponto(page, projectDir, container, x, y, { perspective?, marking? })',
-    desc: 'ponto de tela de um ponto do container, lendo o data-viewport',
+    sig: 'ponto(page, projectDir, container, x, y, { perspective?, marking?, warn? })',
+    desc: 'ponto de tela de um ponto do container pela posição desenhada (data-container-boxes); avisa a perspectiva que difere dela e o ponto que cai fora do canvas',
+  },
+  parseContainerBoxes: {
+    sig: 'parseContainerBoxes(texto)',
+    desc: 'Map de id para { x, y, width, height, scale } a partir do data-container-boxes (parte pura)',
+  },
+  onCanvas: {
+    sig: 'onCanvas(page, { x, y })',
+    desc: 'o ponto de tela cai no canvas? devolve { ok, element } (o que está no ponto)',
+  },
+  viewCenter: {
+    sig: 'viewCenter(page)',
+    desc: 'centro da vista: { x, y } de tela e canvas: { x, y } em unidades do canvas',
+  },
+  arrowHandlesOf: {
+    sig: 'arrowHandlesOf(page)',
+    desc: 'pontos de tela do meio (center) e das alças da seta selecionada, ou null',
+  },
+  parseArrowHandles: {
+    sig: 'parseArrowHandles(texto, host)',
+    desc: 'objeto nome → ponto de tela a partir do data-arrow-handles (parte pura)',
   },
   runStep: {
     sig: 'runStep(corpo, { apoioDir, projectDir?, prazoSeconds?, connectFn?, ctx?, io? })',
