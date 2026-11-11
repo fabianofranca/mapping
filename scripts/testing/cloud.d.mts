@@ -63,6 +63,8 @@ export interface TesterState {
   notices: string[];
   saveStatus: string | null;
   focus: { role: string; name: string } | null;
+  /** O que está selecionado (`data-selection`); `name` só com o `mapping.json` lido. */
+  selection?: { type: string; id: string; name?: string } | null;
   windows: string[];
   project?: {
     revision: number | null;
@@ -159,15 +161,42 @@ export function containerScreenPoint(args: {
   host: { x: number; y: number };
   perspective?: string;
   marking?: boolean;
+  /** O texto do `data-container-boxes` (ou o `Map` já lido): a posição desenhada. */
+  boxes?: string | Map<string, ContainerBox> | null;
+  warn?: (message: string) => void;
 }): { x: number; y: number };
+export interface ContainerBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  scale: number;
+}
+export function parseContainerBoxes(
+  text: string | null | undefined,
+): Map<string, ContainerBox>;
 export function ponto(
   page: unknown,
   projectDir: string,
   container: string,
   x: number,
   y: number,
-  options?: { perspective?: string; marking?: boolean },
+  options?: { perspective?: string; marking?: boolean; warn?: (message: string) => void },
 ): Promise<{ x: number; y: number }>;
+export function onCanvas(
+  page: unknown,
+  point: { x: number; y: number },
+): Promise<{ ok: boolean; element: string }>;
+export function viewCenter(
+  page: unknown,
+): Promise<{ x: number; y: number; canvas: { x: number; y: number } }>;
+export function parseArrowHandles(
+  text: string | null | undefined,
+  host: { x: number; y: number },
+): Record<string, { x: number; y: number }>;
+export function arrowHandlesOf(
+  page: unknown,
+): Promise<Record<string, { x: number; y: number }> | null>;
 
 export interface Candidate {
   role: string;
@@ -202,7 +231,12 @@ export function drag(
   page: unknown,
   de: { x: number; y: number },
   para: { x: number; y: number },
-  options?: { select?: boolean; steps?: number; warn?: (message: string) => void },
+  options?: {
+    select?: boolean;
+    steps?: number;
+    warn?: (message: string) => void;
+    allowOffCanvas?: boolean;
+  },
 ): Promise<void>;
 export function setViewport(
   page: unknown,
