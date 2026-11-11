@@ -238,6 +238,14 @@
       </div>
     </div>
     <div class="card">
+      <h2>Pedidos do supervisor</h2>
+      <ul id="mp-pedidos"></ul>
+    </div>
+    <div class="card">
+      <h2>Regras em vigor</h2>
+      <ul id="mp-regras"></ul>
+    </div>
+    <div class="card">
       <h2>Issues criadas pela fila</h2>
       <p class="sub">
         Os bugs e roadmaps que a fila abre levam a linha <code>Origem: etapa #n</code> no
@@ -472,6 +480,52 @@
           });
           ctb.appendChild(tr);
         }
+        // Pedidos do supervisor e regras em vigor (meta.requests e meta.rules); sem eles os cards mostram "—".
+        const fillList = (id, items) => {
+          const ul = document.getElementById(id);
+          ul.replaceChildren();
+          for (const text of items.length ? items : ['—']) {
+            const li = document.createElement('li');
+            li.textContent = text;
+            ul.appendChild(li);
+          }
+        };
+        const LATE_MIN = 90;
+        const isLate = (r) =>
+          (r.estado === 'enviado' || r.estado === 'aprovado') &&
+          (Date.now() - t(r.at)) / 60000 > LATE_MIN;
+        fillList(
+          'mp-pedidos',
+          (Array.isArray(m.requests) ? m.requests : [])
+            .slice(-20)
+            .reverse()
+            .map(
+              (r) =>
+                (r.id || '?') +
+                ' (tipo ' +
+                (r.tipo || '?') +
+                '): ' +
+                (r.pedido || '') +
+                ' — ' +
+                (r.estado || '?') +
+                (isLate(r) ? ' (atrasado)' : '') +
+                (r.evidencia ? ' · ' + r.evidencia : ''),
+            ),
+        );
+        fillList(
+          'mp-regras',
+          (Array.isArray(m.rules) ? m.rules : [])
+            .filter((r) => r && !r.endedAt)
+            .map(
+              (r) =>
+                (r.id || '?') +
+                ' (' +
+                (r.origem || '?') +
+                '): ' +
+                (r.texto || '') +
+                (r.saida ? ' [saída: ' + r.saida + ']' : ''),
+            ),
+        );
         const tb = document.querySelector('#mp-table tbody');
         tb.replaceChildren();
         // Grupos (#1318): em andamento, depois o que pede o dono, a fila e as concluídas.

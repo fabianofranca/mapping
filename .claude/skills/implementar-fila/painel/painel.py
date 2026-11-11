@@ -29,6 +29,12 @@ da data); o `show` traz a linha `custo:`.
 Sessão atual de cada papel (decisão 7 da #1532): `role DIR <coordenador|supervisor> <id> [link=<url>]` grava
 `meta.roles.<papel> = {id, n, at, link, previous}` (`previous` = o id registrado antes) com `n` = o anterior + 1 (ou 1); `roles DIR` lê só o `meta` e imprime
 `coordenador <n>: <id>` e `supervisor <n>: <id> (<link>)`, ou `—`. A sessão que não é a registrada não age.
+Pedidos do supervisor (decisão 9 da #1532): `sup DIR SUP-<n> [tipo=A|B] [pedido="…"] estado=<estado> [evidencia="…"]` grava
+em `meta.requests` (`{id, tipo, pedido, estado, evidencia, at, history}`; o pedido novo precisa de `tipo` e `pedido`;
+`aplicado` e `recusado` exigem `evidencia`; `atrasado` não se grava); `requests DIR` lê só o `meta` e imprime a tabela,
+com `atrasado` para `enviado` ou `aprovado` há mais de 90 min; o `show` traz `pedidos do supervisor:`.
+Regras em vigor (decisão 10): `rule DIR add "<texto>" origem=<dono|SUP-n> [saida="…"]` dá `R<k>` em `meta.rules` e
+`rule DIR end R<k> [motivo="…"]` a retira; o `show` imprime `regras em vigor:` com o texto inteiro de cada uma.
 Só biblioteca padrão. Uso: painel.py [--now ISO] <subcomando> DIR ...
 (o subcomando vem ANTES da pasta: `painel.py row <pasta> '#n' status=...`).
 """
@@ -74,6 +80,11 @@ QUEUE_EMPTY = {
 }
 TIME_FIELDS = ["started", "ended", "childAt", "ciWaitAt"]
 LATE_MINUTES = 30
+REQUEST_STATES = ["enviado", "aplicado", "recusado", "perguntado ao dono", "aprovado", "negado"]
+REQUEST_NEEDS_EVIDENCE = ("aplicado", "recusado")
+REQUEST_LATE_STATES = ("enviado", "aprovado")  # `atrasado` se calcula, não se grava
+REQUEST_OPEN_STATES = ("enviado", "perguntado ao dono", "aprovado")
+REQUEST_LATE_MINUTES = 90
 
 NOW_OVERRIDE = None
 BATCH = None  # a Sessao compartilhada de um `apply` em andamento (None fora dele)
@@ -563,6 +574,140 @@ def cmd_roles(a):
         print(f"{name} {r.get('n', 0)}: {r.get('id', '')}{link}")
 
 
+def check_request_id(v):
+    if not re.fullmatch(r"SUP-[1-9][0-9]*", v):
+        raise Erro(f"pedido '{v}' inválido (use SUP-<n>, como SUP-3)")
+    return v
+
+
+def cmd_sup(a):
+    pairs = parse_pairs(a.pairs)
+    for k in pairs:
+        if k not in ("tipo", "pedido", "estado", "evidencia"):
+            raise Erro(f"campo desconhecido '{k}'; válidos: tipo, pedido, estado, evidencia")
+    rid = check_request_id(a.request)
+    if "estado" not in pairs:
+        raise Erro("falta estado=")
+    estado = pairs["estado"]
+    validate_choice("estado", estado, REQUEST_STATES)
+    if estado in REQUEST_NEEDS_EVIDENCE and not pairs.get("evidencia", "").strip():
+        raise Erro(f"estado={estado} exige evidencia=")
+    if "tipo" in pairs:
+        validate_choice("tipo", pairs["tipo"], ["A", "B"])
+    s = open_session(a.dir)
+    m = s.get("meta")[0]
+    reqs = m.setdefault("requests", [])
+    req = next((r for r in reqs if r.get("id") == rid), None)
+    if req is None:
+        for k in ("tipo", "pedido"):
+            if not pairs.get(k, "").strip():
+                raise Erro(f"{rid} é um pedido novo: falta {k}=")
+        req = {"id": rid, "tipo": pairs["tipo"], "pedido": pairs["pedido"], "history": []}
+        reqs.append(req)
+    else:
+        for k in ("tipo", "pedido"):
+            if k in pairs and pairs[k] != req.get(k):
+                raise Erro(f"{rid} já existe com {k}={req.get(k)!r}: o {k} não muda")
+    if req.get("estado") != estado:  # repetir o estado não recomeça a contagem do atrasado
+        req["estado"] = estado
+        req["at"] = now()
+        req.pop("evidencia", None)  # a evidência é do estado, não do pedido
+        req.setdefault("history", []).append({"estado": estado, "at": req["at"]})
+    if pairs.get("evidencia"):
+        req["evidencia"] = pairs["evidencia"]
+    s.touch("meta")
+    s.commit()
+
+
+def request_late(r):
+    """`enviado` ou `aprovado` há mais de 90 min (`atrasado` se calcula, nunca se grava)."""
+    return (r.get("estado") in REQUEST_LATE_STATES and bool(r.get("at"))
+            and minutes_since(r["at"]) > REQUEST_LATE_MINUTES)
+
+
+def request_ids(meta, fn):
+    return [r.get("id", "?") for r in meta.get("requests") or [] if fn(r)]
+
+
+def requests_summary(meta):
+    """`pedidos do supervisor:` do `show`: abertos e atrasados, ou `nenhum`."""
+    opened = request_ids(meta, lambda r: r.get("estado") in REQUEST_OPEN_STATES)
+    if not opened:
+        return "nenhum"
+    late = request_ids(meta, request_late)
+    return f"{len(opened)} abertos (atrasados: {', '.join(late) or 'nenhum'})"
+
+
+def cmd_requests(a):
+    meta = (load(a.dir, "meta") or [{}])[0]
+    reqs = meta.get("requests") or []
+    if not reqs:
+        print("nenhum")
+        return
+    for r in reqs:
+        late = " (atrasado)" if request_late(r) else ""
+        print(f"{r.get('id', '?')} | tipo {r.get('tipo', '?')} | {r.get('estado', '?')}{late} "
+              f"| {r.get('at', '—')} | {r.get('pedido', '')}")
+
+
+def cmd_rule(a):
+    s = open_session(a.dir)
+    m = s.get("meta")[0]
+    rules = m.setdefault("rules", [])
+    if a.action == "add":
+        if len(a.args) < 2 or not a.args[0].strip():
+            raise Erro("rule add \"<texto>\" origem=<dono|SUP-n> [saida=\"…\"]")
+        pairs = parse_pairs(a.args[1:])
+        for k in pairs:
+            if k not in ("origem", "saida"):
+                raise Erro(f"campo desconhecido '{k}'; válidos: origem, saida")
+        origem = pairs.get("origem", "")
+        if not origem:
+            raise Erro("falta origem=<dono|SUP-n>")
+        if origem != "dono":
+            check_request_id(origem)
+        n = max([int(r["id"][1:]) for r in rules if re.fullmatch(r"R[0-9]+", str(r.get("id", "")))],
+                default=0) + 1
+        rule = {"id": f"R{n}", "texto": a.args[0], "origem": origem, "at": now()}
+        if pairs.get("saida"):
+            rule["saida"] = pairs["saida"]
+        rules.append(rule)
+    elif a.action == "end":
+        if not a.args:
+            raise Erro("rule end R<k> [motivo=\"…\"]")
+        pairs = parse_pairs(a.args[1:])
+        for k in pairs:
+            if k != "motivo":
+                raise Erro(f"campo desconhecido '{k}'; válido: motivo")
+        rule = next((r for r in rules if r.get("id") == a.args[0]), None)
+        if rule is None:
+            raise Erro(f"{a.args[0]} não existe em meta.rules")
+        if rule.get("endedAt"):
+            raise Erro(f"{a.args[0]} já foi encerrada")
+        rule["endedAt"] = now()
+        if pairs.get("motivo"):
+            rule["motivo"] = pairs["motivo"]
+    else:
+        raise Erro(f"ação inválida '{a.action}'; válidas: add, end")
+    s.touch("meta")
+    s.commit()
+
+
+def active_rules(meta):
+    return [r for r in meta.get("rules") or [] if not r.get("endedAt")]
+
+
+def print_rules(meta):
+    rs = active_rules(meta)
+    if not rs:
+        print("regras em vigor: nenhuma")
+        return
+    print("regras em vigor:")
+    for r in rs:
+        exit_ = f" [saída: {r['saida']}]" if r.get("saida") else ""
+        print(f"  {r.get('id', '?')} ({r.get('origem', '?')}): {r.get('texto', '')}{exit_}")
+
+
 def cmd_touch(a):
     """A publicação falhou: marca de novo os três arquivos como não publicados."""
     s = open_session(a.dir)
@@ -589,7 +734,7 @@ def cmd_published(a):
     print("alterados: meta.json")
 
 
-BATCH_REJECTED = ("show", "apply", "init", "published", "slug", "costs", "roles")
+BATCH_REJECTED = ("show", "apply", "init", "published", "slug", "costs", "roles", "requests")
 
 
 def batch_lines(src):
@@ -892,6 +1037,8 @@ def cmd_show(a):
     else:
         print("não publicado: nenhum")
     print(f"custo: {cost_summary(meta)}")
+    print(f"pedidos do supervisor: {requests_summary(meta)}")
+    print_rules(meta)
     ctx = meta.get("context")
     if ctx is None:
         print("contexto: —")
@@ -967,6 +1114,13 @@ def build_parser():
     sp.add_argument("role")
     sp.add_argument("session")
     sp.add_argument("pairs", nargs="*")
+    sp = add("sup", cmd_sup, "grava um pedido do supervisor (SUP-n tipo= pedido= estado= [evidencia=]) em meta.requests")
+    sp.add_argument("request")
+    sp.add_argument("pairs", nargs="+")
+    add("requests", cmd_requests, "imprime os pedidos do supervisor, com o atrasado (lê só o meta)")
+    sp = add("rule", cmd_rule, "regras em vigor: add \"<texto>\" origem=<dono|SUP-n> [saida=] | end R<k> [motivo=]")
+    sp.add_argument("action")
+    sp.add_argument("args", nargs="*")
     add("roles", cmd_roles, "imprime a sessão atual de cada papel (lê só o meta)")
     sp = add("apply", cmd_apply, "grava vários subcomandos de uma vez (um por linha; '-' lê do stdin)")
     sp.add_argument("file", metavar="arquivo", help="arquivo com os comandos, ou - para o stdin")
