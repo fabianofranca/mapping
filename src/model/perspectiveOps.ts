@@ -1,5 +1,5 @@
 import { fail } from './errors';
-import { snapNearInteger } from './geometry';
+import { snapCoordinate } from './geometry';
 import { perspectiveNameKey } from './invariants';
 import {
   isMarkingRoot,
@@ -248,8 +248,8 @@ function movedItem(p: Project, item: PerspectiveItem, move: RootMove): Perspecti
   if (isMarkingRoot(p, item.root) && !whole) fail('rect-not-integer', item.root);
   return {
     root: item.root,
-    x: snapNearInteger(item.x + move.dx),
-    y: snapNearInteger(item.y + move.dy),
+    x: snapCoordinate(item.x + move.dx),
+    y: snapCoordinate(item.y + move.dy),
   };
 }
 

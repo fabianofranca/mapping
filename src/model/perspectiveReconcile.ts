@@ -1,4 +1,4 @@
-import { snapNearInteger } from './geometry';
+import { snapCoordinate } from './geometry';
 import { rootPosition } from './perspective';
 import { projectIndex } from './projectIndex';
 import type { SettleDelta } from './settleDelta';
@@ -46,8 +46,8 @@ function shiftedItem(
   if (!at || !base) return null;
   return {
     root: id,
-    x: snapNearInteger(item.x + at.x - base.x),
-    y: snapNearInteger(item.y + at.y - base.y),
+    x: snapCoordinate(item.x + at.x - base.x),
+    y: snapCoordinate(item.y + at.y - base.y),
   };
 }
 

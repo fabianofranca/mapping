@@ -86,7 +86,7 @@ function checkPlacement({ x, y, scale }: Placement): void {
 function placementAtRight(p: Project, scale: number, excludeId?: string): Placement {
   const others = p.containers.filter((i) => i.id !== excludeId);
   const rects = others.map((i) => imageCanvasRect(i, i.placement));
-  if (rects.length === 0) return { x: 0, y: 0, scale };
+  if (rects.length === 0) return snapPlacement({ x: 0, y: 0, scale });
   const rightmost = rects.reduce((a, b) => (right(b) > right(a) ? b : a));
   return snapPlacement({ x: right(rightmost) + IMAGE_GAP, y: rightmost.y, scale });
 }
@@ -589,6 +589,13 @@ export function setContainerPlacement(
   const copy = snapPlacement(placement);
   const overlap = overlappingContainer(p, containerId, copy);
   if (overlap) failOverlap(overlap);
+  // Placement igual ao de agora: nada mudou (arrasto sem efeito); devolve o mesmo projeto para
+  // o gesto não gravar uma entrada de desfazer vazia.
+  // Compara com o atual já limpo: um arquivo antigo com cauda não vira escrita num arrasto sem efeito.
+  const current = snapPlacement(findById(p.containers, containerId).placement);
+  if (current.x === copy.x && current.y === copy.y && current.scale === copy.scale) {
+    return p;
+  }
   return settleFrom(
     p,
     {

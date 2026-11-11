@@ -10,6 +10,7 @@ import {
   isBackgroundContainer,
   setBackgroundContainer,
   setImageLocked,
+  snapCoordinate,
   setMarkingLocked,
   containerDeletionImpact,
   containerLockStates,
@@ -744,7 +745,7 @@ describe('containers: beside', () => {
     const after = image(p, 'D').placement;
     expect(after.scale).toBe(ref.scale);
     expect(after.y).toBe(ref.y);
-    expect(after.x).toBe(ref.x + 390 * ref.scale + IMAGE_GAP);
+    expect(after.x).toBe(snapCoordinate(ref.x + 390 * ref.scale + IMAGE_GAP));
   });
 
   it('beside: lugar ocupado vai para o espaço livre mais próximo e mantém a scale', () => {
