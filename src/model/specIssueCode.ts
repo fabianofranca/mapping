@@ -4,12 +4,14 @@ import {
   MODEL_MESSAGE_TEMPLATES,
   type ModelMessageTemplateCode,
 } from './messages';
-import { specCodeForText, type SpecMessageCode } from './messages/specLookup';
+import { specCodeForText, type SpecMessageCode } from './messages/textLookup';
 
 // Códigos dos problemas da especialização (`parseSpec`): cada problema do zod sai com o código e
 // os parâmetros do catálogo `spec` (`src/model/messages/spec.ts`), por esta ordem: o
-// `params.messageCode` posto no `addIssue`; o texto exato (mensagem fixa) ou o padrão do modelo
-// (mensagem montada pelo zod); o texto padrão do zod (`spec.zod.<código do zod>`). Sem DOM.
+// `params.messageCode` posto no `addIssue`; o texto exato de uma mensagem pronta que o zod recebe
+// (`known`: `SpecMsg` com valores constantes); o texto exato de um modelo sem parâmetro; o padrão
+// dos `SPEC_PATTERN_CODES` (o texto que o zod monta com o valor recebido); o texto padrão do zod
+// (`spec.zod.<código do zod>`). Sem DOM.
 
 export type MessageParams = Readonly<Record<string, string | number>>;
 
@@ -104,16 +106,37 @@ function explicitCoding(issue: z.core.$ZodIssue): IssueCoding | undefined {
     : { code };
 }
 
-/** O código e os parâmetros do problema do zod; `undefined` fica como texto cru. */
-export function issueCoding(issue: z.core.$ZodIssue): IssueCoding | undefined {
-  const explicit = explicitCoding(issue);
-  if (explicit !== undefined) return explicit;
+/** A mensagem pronta (`known`) cujo texto é o do problema; os parâmetros são os dela. */
+function knownCoding(
+  issue: z.core.$ZodIssue,
+  known: readonly SpecMsg[],
+): IssueCoding | undefined {
+  const msg = known.find((k) => k.text === issue.message);
+  if (msg === undefined) return undefined;
+  return Object.keys(msg.params).length > 0
+    ? { code: msg.code, params: msg.params }
+    : { code: msg.code };
+}
+
+/** O código achado pelo texto: o exato dos modelos sem parâmetro, ou o padrão dos três enums. */
+function textCoding(issue: z.core.$ZodIssue): IssueCoding | undefined {
   const hit = specCodeForText(issue.message);
-  if (hit !== undefined) {
-    return hit.params === undefined
-      ? { code: hit.code }
-      : { code: hit.code, params: hit.params };
-  }
+  if (hit === undefined) return undefined;
+  return hit.params === undefined
+    ? { code: hit.code }
+    : { code: hit.code, params: hit.params };
+}
+
+/**
+ * O código e os parâmetros do problema do zod; `undefined` fica como texto cru. `known` são as
+ * mensagens prontas com valores constantes que o schema entrega ao zod (achadas pelo texto exato).
+ */
+export function issueCoding(
+  issue: z.core.$ZodIssue,
+  known: readonly SpecMsg[],
+): IssueCoding | undefined {
+  const found = explicitCoding(issue) ?? knownCoding(issue, known) ?? textCoding(issue);
+  if (found !== undefined) return found;
   if (!ZOD_CODES.has(issue.code) || !ZOD_DEFAULT.test(issue.message)) return undefined;
   const params = zodParams(issue);
   const code = `spec.zod.${issue.code}` as ModelMessageTemplateCode;
@@ -130,13 +153,14 @@ export function forwardIssue(
   issue: z.core.$ZodIssue,
   prefix: (string | number)[],
   localizeKeys: boolean,
+  known: readonly SpecMsg[],
 ): void {
   const path = [...prefix, ...issue.path] as (string | number)[];
   if (localizeKeys && issue.code === 'unrecognized_keys') {
     addSpecIssue(ctx, path, specMsg('spec.unknownKeys', { keys: quoted(issue.keys) }));
     return;
   }
-  const coding = issueCoding(issue);
+  const coding = issueCoding(issue, known);
   ctx.addIssue({
     code: 'custom',
     path,
