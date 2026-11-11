@@ -901,3 +901,34 @@ describe('store: vínculo assíncrono do histórico (desfazer espera a gravaçã
     expect(store.linkFailure.value?.error).toBe('write-failed');
   });
 });
+
+describe('store: arrasto sem efeito', () => {
+  it('arrasto de container que não muda nada não cria entrada de desfazer', () => {
+    const { store, actions } = setup();
+    const items = [{ kind: 'image' as const, id: 'I1' }];
+    store.beginGesture();
+    actions.previewItemsMove(items, 0, 0);
+    actions.finishItemsMove(items, 0, 0);
+    actions.commitGesture();
+    expect(store.canUndo.value).toBe(false);
+    expect(store.revision.value).toBe(0);
+  });
+
+  it('mover o container sem prévia válida (placement igual) não cria entrada', () => {
+    const { store, actions } = setup();
+    store.beginGesture();
+    actions.finishImagePlacement('I1');
+    actions.commitGesture();
+    expect(store.canUndo.value).toBe(false);
+    expect(store.revision.value).toBe(0);
+  });
+
+  it('mover a marcação sem efeito não cria entrada', () => {
+    const { store, actions } = setup();
+    store.beginGesture();
+    actions.finishMarkingMove('M1', 0, 0);
+    actions.commitGesture();
+    expect(store.canUndo.value).toBe(false);
+    expect(store.revision.value).toBe(0);
+  });
+});
