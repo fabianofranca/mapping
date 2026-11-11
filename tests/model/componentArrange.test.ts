@@ -21,6 +21,7 @@ import {
   type Rect,
 } from '../../src/model';
 import {
+  COMPONENTS,
   SPEC_ID,
   componentProject,
   testCatalog,
@@ -663,5 +664,74 @@ describe('arrangeMarking: gap e padding do slot em $token (#948)', () => {
     const { project } = arrange(p, 'C', tokenCatalog);
     // 10 + 40 + 4 + 40 + 10 de altura; 10 + 100 + 10 de largura.
     expect(rectOf(project, 'C')).toEqual(box(100, 100, 120, 104));
+  });
+});
+
+const BIG = {
+  format: 'mapping-component',
+  formatVersion: 4,
+  id: 'wide',
+  name: 'wide',
+  size: { width: 100, height: 40 },
+  template: {
+    type: 'frame',
+    layout: { type: 'none' },
+    children: [{ type: 'text', text: 'Grande', font: { size: 22, lineHeight: 28 } }],
+  },
+};
+
+describe('arrangeMarking: align "baseline" no slot (MC1, decisão 4)', () => {
+  /** `row` com `align: "baseline"` no slot e `wide` trocado por um texto de 22/28. */
+  function baselineCatalog(): ComponentCatalog {
+    const row = JSON.parse(JSON.stringify(COMPONENTS.row)) as {
+      formatVersion: number;
+      template: { children: { layout: { align: string } }[] };
+    };
+    row.formatVersion = 4;
+    const slot = row.template.children[0];
+    if (slot === undefined) throw new Error('sem slot');
+    slot.layout.align = 'baseline';
+    return testCatalog({ ...COMPONENTS, row, wide: BIG });
+  }
+
+  it('textos de 14 e 22 px ficam na mesma linha de base (a menor desce 7 px)', () => {
+    const cat = baselineCatalog();
+    let p = add(componentProject(), 'C', 'row', box(100, 100, 300, 100), null, {}, cat);
+    p = add(p, 'W', 'wide', box(120, 150, 100, 40), 'C', {}, cat);
+    p = add(p, 'T', 'text', box(240, 150, 100, 40), 'C', {}, cat);
+    const { project } = arrange(p, 'C', cat);
+    // linha de base do aproximado: 14/20 → 14,83; 22/28 → 21,59; diferença 6,76 → 7
+    expect(rectOf(project, 'W').y).toBe(100);
+    expect(rectOf(project, 'T').y).toBe(107);
+    expect(rectOf(project, 'W').x).toBe(100);
+    expect(rectOf(project, 'T').x).toBe(208);
+    expectValid(project);
+  });
+
+  it('sem baseline, as filhas ficam no topo (o comportamento de hoje)', () => {
+    let p = add(componentProject(), 'C', 'row', box(100, 100, 300, 100));
+    p = add(p, 'T1', 'text', box(120, 150, 100, 40), 'C');
+    p = add(p, 'T2', 'text', box(240, 150, 100, 40), 'C');
+    const { project } = arrange(p, 'C');
+    expect(rectOf(project, 'T1').y).toBe(100);
+    expect(rectOf(project, 'T2').y).toBe(100);
+  });
+
+  it('um componente hug na altura mede o slot pela extensão da linha de base, não pelo filho mais alto', () => {
+    const hug = JSON.parse(JSON.stringify(COMPONENTS.rowhug)) as {
+      formatVersion: number;
+      template: { children: { layout: { align: string } }[] };
+    };
+    hug.formatVersion = 4;
+    const slot = hug.template.children[0];
+    if (slot === undefined) throw new Error('sem slot');
+    slot.layout.align = 'baseline';
+    const cat = testCatalog({ ...COMPONENTS, rowhug: hug, wide: BIG });
+    let p = add(componentProject(), 'C', 'rowhug', box(100, 100, 200, 60), null, {}, cat);
+    p = add(p, 'W', 'wide', box(100, 100, 100, 40), 'C', {}, cat);
+    p = add(p, 'T', 'text', box(200, 100, 100, 40), 'C', {}, cat);
+    const { project } = arrange(p, 'C', cat);
+    // 21,59 acima da linha de base + 25,17 abaixo (o texto de 14 desce 7): 46,76 → 47, não 40.
+    expect(rectOf(project, 'C').height).toBe(47);
   });
 });

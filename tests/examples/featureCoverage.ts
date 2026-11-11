@@ -322,7 +322,7 @@ export const EXTRA_KEYS: Record<(typeof NODE_TYPES)[number], readonly string[]> 
   frame: ['clip', 'layout', 'children'],
   rect: [],
   ellipse: [],
-  text: ['text', 'runs', 'font', 'color'],
+  text: ['text', 'runs', 'font', 'color', 'baselinePadding'],
   path: ['d', 'viewBox', 'fillRule'],
   slot: ['label', 'layout', 'provide'],
   repeat: ['field', 'count', 'direction', 'gap', 'distribute', 'template'],

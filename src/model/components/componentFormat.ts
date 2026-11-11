@@ -248,7 +248,7 @@ export interface Anchors {
 
 /** Tipo de layout de um quadro ou slot. */
 export type LayoutType = 'none' | 'row' | 'column';
-export type LayoutAlign = 'start' | 'center' | 'end' | 'stretch';
+export type LayoutAlign = 'start' | 'center' | 'end' | 'stretch' | 'baseline';
 export type LayoutJustify =
   'start' | 'center' | 'end' | 'space-between' | 'space-around' | 'space-evenly';
 
@@ -264,7 +264,10 @@ export interface LayoutSpec {
   readonly padding?: Expr<
     number | readonly [number, number] | readonly [number, number, number, number]
   >;
-  /** No eixo cruzado. */
+  /**
+   * No eixo cruzado. `baseline` (v4, só em `row`): os filhos se alinham pela primeira linha de
+   * base, como o `alignByBaseline` do Compose e o `align-items: baseline` do CSS.
+   */
   readonly align?: Expr<LayoutAlign>;
   /** No eixo principal (`space-around` e `space-evenly` só na v4). */
   readonly justify?: Expr<LayoutJustify>;
@@ -361,6 +364,17 @@ export interface TextTemplate extends TemplateNodeBase {
   readonly font?: FontSpec;
   /** Cor do texto (`fill` do nó). Padrão: `#000000`. */
   readonly color?: Expr<Color>;
+  /**
+   * Distâncias pela linha de base (v4), como o `Modifier.paddingFromBaseline(top, bottom)` do
+   * Compose (px ≥ 0): `top` do topo da caixa do nó à primeira linha de base; `bottom`, da última
+   * linha de base ao fundo da caixa.
+   */
+  readonly baselinePadding?: BaselinePadding;
+}
+
+export interface BaselinePadding {
+  readonly top?: Expr<number>;
+  readonly bottom?: Expr<number>;
 }
 
 export interface PathTemplate extends TemplateNodeBase {

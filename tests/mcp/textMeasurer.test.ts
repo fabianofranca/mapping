@@ -77,3 +77,23 @@ describe('medidor com opentype.js', () => {
     );
   });
 });
+
+describe('medidor com opentype.js: linha de base (MC1, decisão 2)', () => {
+  const measure = createMeasurer();
+
+  it('a primeira linha de base é a do lineInk: centro da linha + (ascent − descent) / 2', () => {
+    const k = 14 / sans.unitsPerEm;
+    const ascent = sans.ascender * k;
+    const descent = -sans.descender * k;
+    const m = measure('Pagar', font);
+    expect(m.firstBaseline).toBeCloseTo(10 + (ascent - descent) / 2, 6);
+    expect(m.lastBaseline).toBeCloseTo(m.firstBaseline ?? 0, 6);
+    expect(m.lineCount).toBe(1);
+  });
+
+  it('com duas linhas a última está uma altura de linha abaixo da primeira', () => {
+    const m = measure('Pagar fatura', font, 60);
+    expect(m.lineCount).toBe(2);
+    expect((m.lastBaseline ?? 0) - (m.firstBaseline ?? 0)).toBeCloseTo(20, 6);
+  });
+});

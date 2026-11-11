@@ -330,6 +330,8 @@ class Renderer {
         }
         if (style.verticalAlign === 'cap-middle')
           attrs.y = capMiddleY(attrs, node, style);
+        if (style.baselineTop !== undefined)
+          attrs.y = baselineY(attrs, style.baselineTop);
         // Texto do SVG sem largura: o x é a âncora (`text-anchor`), então o texto centrado
         // ou à direita cresce para a esquerda a partir dela.
         const anchor = (shape: KonvaText): KonvaText => {
@@ -389,10 +391,7 @@ class Renderer {
     const shapes: Konva.Shape[] = [];
     const layout = node.runLayout;
     if (!layout) return shapes;
-    const shift =
-      node.style.verticalAlign === 'cap-middle'
-        ? capMiddleRunsShift(node, layout)
-        : verticalShift(node, layout.height);
+    const shift = richShift(node, layout);
     for (const line of layout.lines) {
       for (const piece of line.pieces) {
         const run = runs[piece.run];
@@ -645,6 +644,45 @@ function capMiddleY(attrs: TextConfig, node: TextNode, style: TextStyle): number
     firstBaseline: first,
     lastBaseline: first + (lines - 1) * lineHeight,
   });
+}
+
+/**
+ * `baselinePadding.top`: o `y` do nó para a primeira linha de base ficar a `top` do topo dele. A
+ * linha de base é a da fonte do nó, pelas mesmas medidas do `cap-middle` e do `konvaMeasurer`.
+ */
+function baselineY(attrs: TextConfig, top: number): number {
+  const probe = new KonvaText(attrs);
+  const fontSize = attrs.fontSize ?? 12;
+  const metrics = capMetricsOf(probe, fontSize);
+  probe.destroy();
+  const lineHeight = (attrs.lineHeight ?? 1.2) * fontSize;
+  return top - lineBaseline(0, lineHeight, metrics);
+}
+
+/** Deslocamento vertical do texto rico: `baselinePadding.top`, `cap-middle` ou o `verticalAlign`. */
+function richShift(node: TextNode, layout: RunLayout): number {
+  const top = node.style.baselineTop;
+  if (top !== undefined) {
+    const first = layout.lines[0];
+    return first ? top - baseOfLine(node, first) : 0;
+  }
+  return node.style.verticalAlign === 'cap-middle'
+    ? capMiddleRunsShift(node, layout)
+    : verticalShift(node, layout.height);
+}
+
+/** A linha de base de uma linha do `runLayout`, com a fonte base do nó. */
+function baseOfLine(node: TextNode, line: { y: number; height: number }): number {
+  const { style } = node;
+  const sample = new KonvaText({
+    text: 'M',
+    fontFamily: canvasFontFamily(style.fontFamily),
+    fontSize: style.fontSize,
+    fontStyle: fontStyle(style.fontWeight, style.italic),
+  });
+  const metrics = capMetricsOf(sample, style.fontSize);
+  sample.destroy();
+  return lineBaseline(line.y, line.height, metrics);
 }
 
 /**

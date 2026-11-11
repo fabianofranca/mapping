@@ -19,6 +19,22 @@ export const DESCENT_RATIO = 0.2;
 /** Sem a medida do `H`, a maiúscula vale esta fração do corpo. */
 export const CAP_HEIGHT_RATIO = 0.7;
 
+/**
+ * O medidor aproximado (Node e prova de desenho) não tem fonte: o ascendente vale esta fração do
+ * corpo (dá 15 na linha de base do Roboto 14/20, como o Compose).
+ */
+export const APPROX_ASCENT_RATIO = 0.93;
+/** O descendente do medidor aproximado, em fração do corpo. */
+export const APPROX_DESCENT_RATIO = 0.24;
+
+/** Ascendente e descendente do medidor aproximado para o corpo `size`. */
+export const approximateExtents = (
+  size: number,
+): Pick<CapMetrics, 'ascent' | 'descent'> => ({
+  ascent: APPROX_ASCENT_RATIO * size,
+  descent: APPROX_DESCENT_RATIO * size,
+});
+
 /** A reserva de quando não há medida de fonte: as proporções usuais do corpo `size`. */
 export const capMetricsFallback = (size: number): CapMetrics => ({
   ascent: ASCENT_RATIO * size,

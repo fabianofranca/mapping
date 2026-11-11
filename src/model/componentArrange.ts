@@ -237,6 +237,19 @@ export function arrangeMarking(
     }
   };
 
+  /** A primeira linha de base do desenho de uma filha (`align: "baseline"` do slot). */
+  const baselineOf = (kid: Marking): number | undefined => {
+    const mc = markingComponent(p, catalog, kid.id);
+    if (mc === null) return undefined;
+    const values = drawingValues(p, mc.annotation, mc.type).values;
+    const drawn = componentForDrawing(p, mc.component, kid.containerId);
+    return instantiate(drawn.component, values, rects.get(kid.id) as Rect, {
+      measure,
+      idPrefix: kid.id,
+      ...tokensOption(drawn.tokens),
+    }).firstBaseline;
+  };
+
   const arrangeOne = (id: string) => {
     const info = containerAt(id);
     if (info === null) return;
@@ -249,9 +262,20 @@ export function arrangeMarking(
     const sum = (axis: 'width' | 'height') => sizes.reduce((s, r) => s + r[axis], 0);
     const widest = (axis: 'width' | 'height') =>
       sizes.reduce((m, r) => Math.max(m, r[axis]), 0);
+    // Numa `row` com `align: "baseline"` a altura é do topo mais alto ao fundo mais baixo, não a do filho mais alto.
+    const crossHeight = (): number => {
+      if (layout.align !== 'baseline') return widest('height');
+      const lines = kids.map((kid, i) => baselineOf(kid) ?? (sizes[i] as Rect).height);
+      const above = Math.max(0, ...lines);
+      const below = Math.max(
+        0,
+        ...sizes.map((r, i) => r.height - (lines[i] ?? r.height)),
+      );
+      return above + below;
+    };
     const slotContent = {
       width: (row ? sum('width') + gaps : widest('width')) + pad.left + pad.right,
-      height: (row ? widest('height') : sum('height') + gaps) + pad.top + pad.bottom,
+      height: (row ? crossHeight() : sum('height') + gaps) + pad.top + pad.bottom,
     };
 
     let rect = rects.get(id) as Rect;
@@ -295,10 +319,12 @@ export function arrangeMarking(
         ),
       );
     }
+    const baselines =
+      layout.align === 'baseline' ? kids.map((kid) => baselineOf(kid)) : [];
     const targets = layoutChildren(
       box,
       layout,
-      sizes.map((box) => ({ box })),
+      sizes.map((box, i) => ({ box, baseline: baselines[i] })),
     );
     kids.forEach((kid, i) => {
       const target = targets[i] as Rect;

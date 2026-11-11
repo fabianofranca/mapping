@@ -517,6 +517,7 @@ describe('scripts/testing/ listado no repositório', () => {
         'round-guide.d.mts',
         'round-guide.mjs',
         'sombras.mjs',
+        'tokens.mjs',
       ].sort(),
     );
   });

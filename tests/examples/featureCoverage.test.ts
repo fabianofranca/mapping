@@ -83,6 +83,9 @@ const MISSING_TODAY: string[] = [
   // Texto rico do componente v4 (etapa #747, CF4): as bibliotecas distribuídas não migram; coberto
   // por tests/model/components/richText.test.ts, tests/e2e/ e pelo roteiro R25.
   'component:node.text.runs',
+  // Linha de base (etapa #898, MC1): a Material 3 só adota `baselinePadding` na MC5; até lá, coberto por
+  // tests/model/components/baselineLayout.test.ts, tests/e2e/textMetrics.spec.ts e pelo roteiro R25.
+  'component:node.text.baselinePadding',
   'component:run.text',
   'component:run.weight',
   'component:run.italic',
