@@ -12,9 +12,10 @@ const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
 
 const phase = section(flow, '## Para a sessão da fase');
 const item3 = between(phase, '3. Subagentes e esforço', '4. Todo briefing');
-const teto = item3.slice(item3.indexOf('   - **Teto de contexto da fase:**'));
-if (!teto.startsWith('   - **Teto'))
-  throw new Error('âncora não achada: sub-item Teto de contexto da fase');
+const ancora = item3.indexOf('   - **Teto de contexto da fase:**');
+if (ancora < 0)
+  throw new Error('âncora não achada: sub-item "Teto de contexto da fase" do item 3');
+const teto = item3.slice(ancora);
 const porEtapa = section(skill, '## 3. Por etapa');
 const troca = between(
   porEtapa,
@@ -71,14 +72,14 @@ describe('CX1 — "Para a sessão da fase" do docs/FLOW.md, sub-item do item 3',
     expect(teto).toContain(
       '`Troca de sessão da fase <código>: contexto <n> mil; passagem em <link do comentário>.`',
     );
-    expect(teto).toContain('Canal');
-    expect(teto).toContain('item 7');
+    expect(teto).toContain('pelo Canal do item 7');
     expect(teto).toContain('Termina o turno');
   });
 
   it('a sucessora lê a passagem no item 1 e continua no branch que já existe', () => {
     expect(teto).toContain('`Retomada por contexto (<k> de 3)`');
-    expect(teto).toContain('item 1');
+    expect(teto).toContain('no item 1 (');
+    expect(teto).toContain('`git switch <branch>`');
     expect(teto).toMatch(/continua no branch que já existe/);
     expect(teto).toMatch(/não o recria/);
   });
@@ -149,10 +150,11 @@ describe('CX1 — skill implementar-fila, "3. Por etapa"', () => {
   });
 
   it('no máximo 2 trocas: a sessão 3 de 3 não troca e o log registra o caso', () => {
-    expect(troca).toContain('2 trocas');
-    expect(troca).toContain('`3 de 3`');
+    expect(troca).toContain('No máximo 2 trocas por fase (3 sessões)');
+    expect(troca).toContain('a sessão `3 de 3` não troca');
     expect(troca).toContain('passou de 300 mil na terceira sessão');
-    expect(troca).toMatch(/log/);
+    expect(troca).toContain('<código>: passou de 300 mil na terceira sessão');
+    expect(troca).toContain('o log registra o caso');
   });
 
   it('"O que não se arquiva" tem a exceção da filha que passou a vez por contexto', () => {
