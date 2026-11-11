@@ -217,10 +217,14 @@ describe('implementar-fila: ajustes finos do coordenador (FC2)', () => {
     expect(skill).toMatch(/nunca por `grep`/);
   });
 
-  it('o painel é publicado uma vez por ciclo, a cada avanço (decisão 1)', () => {
-    expect(skill).toMatch(/Nunca há duas publicações no mesmo ciclo/);
+  it('o painel é publicado uma vez por turno que gravou, mesmo com o subagente rodando (decisão 3 da #1532)', () => {
+    expect(skill).toMatch(/uma vez por turno, no fim/);
+    expect(skill).toMatch(/mesmo com o subagente do ciclo ainda rodando/);
     expect(skill).toMatch(/só com os arquivos alterados/);
-    expect(skill).toMatch(/conferência de hora em hora sem atrasadas não publica/i);
+    expect(skill).toMatch(
+      /conferência de hora em hora sem atrasadas e sem arquivo não publicado não publica/i,
+    );
+    expect(skill).not.toMatch(/Nunca há duas publicações no mesmo ciclo/);
   });
 
   it('o chat fica quase mudo (decisão 3)', () => {

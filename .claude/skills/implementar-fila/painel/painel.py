@@ -8,6 +8,13 @@ de `meta.paralelo` (`start --paralelo N`) e de `meta.merged` (`merged`); `contex
 do coordenador (alerta acima de CONTEXT_LIMIT). `show` imprime `vagas:`, `começar agora:`, `contexto:`.
 `ciWait` (o PR cujo CI espera o coordenador, ex. `PR #7`) e `ciWaitAt` (desde quando; `ciWait=` limpa os
 dois) entram na linha `CI esperando o coordenador:` do `show`; trocar ou limpar `child` não mexe neles.
+`apply DIR <arquivo|->` grava vários subcomandos de uma vez (um por linha, na sintaxe da linha de comando
+sem `painel.py` e sem a pasta; linha vazia e `#` são ignoradas; `show`, `init`, `published` e `apply` não
+entram): tudo ou nada, com uma linha `alterados:` e, no erro, código 2 citando o número da linha.
+Toda gravação soma os arquivos a `meta.unpublished` (`{since, files}`: o que foi gravado e ainda não foi
+publicado; o `show` o imprime). `published DIR` imprime `at: <ISO UTC>` (o valor de `updated.at` e `edit.at`
+da publicação), lista os arquivos a enviar, grava `meta.publishedAt` e limpa `unpublished`; `touch DIR` marca
+de novo os três arquivos (a publicação falhou).
 Só biblioteca padrão. Uso: painel.py [--now ISO] <subcomando> DIR ...
 (o subcomando vem ANTES da pasta: `painel.py row <pasta> '#n' status=...`).
 """
@@ -17,6 +24,7 @@ import fnmatch
 import json
 import os
 import re
+import shlex
 import sys
 
 STATUS = ["aguardando", "em andamento", "concluída", "falhou", "esperando dono"]
@@ -48,6 +56,7 @@ TIME_FIELDS = ["started", "ended", "childAt", "ciWaitAt"]
 LATE_MINUTES = 30
 
 NOW_OVERRIDE = None
+BATCH = None  # a Sessao compartilhada de um `apply` em andamento (None fora dele)
 
 
 class Erro(Exception):
@@ -97,6 +106,8 @@ class Sessao:
         self.d = d
         self.data = {}
         self.dirty = []
+        self.deferred = False  # num `apply`, o commit de cada linha espera o fim do lote
+        self.loud = False  # algum comando que conta como "não publicado" (o `context` sozinho não conta)
 
     def get(self, name):
         if name not in self.data:
@@ -107,7 +118,13 @@ class Sessao:
         if name not in self.dirty:
             self.dirty.append(name)
 
-    def commit(self):
+    def commit(self, quiet=False):
+        self.loud = self.loud or not quiet
+        if self.deferred:
+            return
+        self.flush()
+
+    def flush(self):
         meta = self.get("meta")
         if not meta:
             raise Erro("meta.json está vazio")
@@ -117,9 +134,26 @@ class Sessao:
         meta[0]["vagasItens"] = items
         self.touch("meta")
         order = [n for n in FILES if n in self.dirty]
+        if self.loud:
+            mark_unpublished(meta[0], order)
         for n in order:
             save(self.d, n, self.data[n])
         print("alterados: " + " ".join(n + ".json" for n in order))
+
+
+def mark_unpublished(meta, files):
+    """Soma `files` (nomes sem .json) a meta.unpublished; o `since` é o da primeira gravação não publicada."""
+    pend = meta.get("unpublished") or {}
+    have = set(pend.get("files", [])) | {n + ".json" for n in files}
+    meta["unpublished"] = {
+        "since": pend.get("since") or now(),
+        "files": [n + ".json" for n in FILES if n + ".json" in have],
+    }
+
+
+def open_session(d):
+    """A sessão do `apply` em andamento, se houver; senão uma nova."""
+    return BATCH if BATCH is not None else Sessao(d)
 
 
 def parse_pairs(items):
@@ -179,7 +213,7 @@ def cmd_init(a):
 
 
 def cmd_start(a):
-    s = Sessao(a.dir)
+    s = open_session(a.dir)
     m = s.get("meta")[0]
     if not m.get("runStart"):
         m["runStart"] = now()
@@ -192,7 +226,7 @@ def cmd_start(a):
 
 
 def cmd_row(a):
-    s = Sessao(a.dir)
+    s = open_session(a.dir)
     q = s.get("queue")
     issue = norm_issue(a.issue)
     pairs = parse_pairs(a.pairs)
@@ -243,7 +277,7 @@ def cmd_row(a):
 
 
 def cmd_phase(a):
-    s = Sessao(a.dir)
+    s = open_session(a.dir)
     q = s.get("queue")
     issue = norm_issue(a.issue)
     row = find_row(q, issue)
@@ -267,7 +301,7 @@ def cmd_phase(a):
 
 
 def cmd_reorder(a):
-    s = Sessao(a.dir)
+    s = open_session(a.dir)
     q = s.get("queue")
     cited = [norm_issue(i) for i in a.issues]
     if len(set(cited)) != len(cited):
@@ -289,28 +323,28 @@ def cmd_reorder(a):
 
 
 def cmd_log(a):
-    s = Sessao(a.dir)
+    s = open_session(a.dir)
     s.get("log").append({"at": now(), "text": a.text})
     s.touch("log")
     s.commit()
 
 
 def cmd_current(a):
-    s = Sessao(a.dir)
+    s = open_session(a.dir)
     s.get("meta")[0]["current"] = a.text
     s.touch("meta")
     s.commit()
 
 
 def cmd_reserve(a):
-    s = Sessao(a.dir)
+    s = open_session(a.dir)
     s.get("meta")[0]["reserve"] = a.trigger
     s.touch("meta")
     s.commit()
 
 
 def cmd_session(a):
-    s = Sessao(a.dir)
+    s = open_session(a.dir)
     row = find_row(s.get("queue"), norm_issue(a.issue))
     if row is None:
         raise Erro(f"{a.issue} não está na fila")
@@ -323,7 +357,7 @@ def cmd_session(a):
 
 
 def cmd_merged(a):
-    s = Sessao(a.dir)
+    s = open_session(a.dir)
     n = norm_issue(a.issue)
     m = s.get("meta")[0]
     merged = m.setdefault("merged", [])
@@ -334,7 +368,7 @@ def cmd_merged(a):
 
 
 def cmd_context(a):
-    s = Sessao(a.dir)
+    s = open_session(a.dir)
     try:
         pct = int(a.pct)
     except ValueError:
@@ -345,7 +379,85 @@ def cmd_context(a):
     m["context"] = pct
     m["contextAt"] = now()
     s.touch("meta")
+    s.commit(quiet=True)  # o contexto sozinho não faz a conferência de hora em hora publicar
+
+
+def cmd_touch(a):
+    """A publicação falhou: marca de novo os três arquivos como não publicados."""
+    s = open_session(a.dir)
+    mark_unpublished(s.get("meta")[0], FILES)
+    s.touch("meta")
     s.commit()
+
+
+def cmd_published(a):
+    """Imprime a hora real da publicação e os arquivos a enviar; limpa o que falta publicar."""
+    d = a.dir
+    m = load(d, "meta")
+    if not m:
+        raise Erro("meta.json está vazio")
+    at = now()
+    files = list((m[0].get("unpublished") or {}).get("files", []))
+    if "meta.json" not in files:
+        files.append("meta.json")  # o meta enviado já sai limpo, então vai sempre
+    m[0].pop("unpublished", None)
+    m[0]["publishedAt"] = at
+    save(d, "meta", m)
+    print(f"at: {at}")
+    print("enviar: " + " ".join(n + ".json" for n in FILES if n + ".json" in files))
+    print("alterados: meta.json")
+
+
+BATCH_REJECTED = ("show", "apply", "init", "published")
+
+
+def batch_lines(src):
+    if src == "-":
+        text = sys.stdin.read()
+    else:
+        try:
+            with open(src, encoding="utf-8") as f:
+                text = f.read()
+        except OSError as e:
+            raise Erro(f"não consegui ler {src}: {e.strerror}")
+    return text.splitlines()
+
+
+def parse_batch_line(n, line, d):
+    """Os argumentos de uma linha do lote, com a pasta posta depois do subcomando."""
+    try:
+        words = shlex.split(line)
+    except ValueError as e:
+        raise Erro(f"linha {n}: {e}")
+    if words[0] in BATCH_REJECTED:
+        raise Erro(f"linha {n}: `{words[0]}` não entra no lote")
+    return [words[0], d] + words[1:]
+
+
+def cmd_apply(a):
+    global BATCH
+    parsed = []
+    for n, line in enumerate(batch_lines(a.file), 1):
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        parsed.append((n, parse_batch_line(n, line, a.dir)))
+    if not parsed:
+        raise Erro("o lote não tem nenhum comando")
+    BATCH = Sessao(a.dir)
+    BATCH.deferred = True
+    try:
+        for n, argv in parsed:
+            try:
+                sub = build_parser().parse_args(argv)
+                sub.fn(sub)
+            except Erro as e:
+                raise Erro(e if str(e).startswith(f"linha {n}:") else f"linha {n}: {e}")
+            except SystemExit:  # `-h` do argparse: não é um comando
+                raise Erro(f"linha {n}: ajuda (-h) não entra no lote")
+        BATCH.deferred = False
+        BATCH.flush()
+    finally:
+        BATCH = None
 
 
 # --- vagas (etapa #1440) ---
@@ -545,6 +657,11 @@ def cmd_show(a):
     print("começar agora: " + (" ".join(agora) or "nenhuma"))
     print(f"início: {meta.get('runStart') or '—'}  atualizado: {meta.get('updatedAt', '—')}")
     print(f"reserva: {meta.get('reserve') or '—'}")
+    pend = meta.get("unpublished") or {}
+    if pend.get("files"):
+        print(f"não publicado desde {(pend.get('since') or '')[11:16] or '—'}: " + " ".join(pend["files"]))
+    else:
+        print("não publicado: nenhum")
     ctx = meta.get("context")
     if ctx is None:
         print("contexto: —")
@@ -567,8 +684,17 @@ def cmd_show(a):
         print(f"  {e['at']}  {e['text']}")
 
 
+class Parser(argparse.ArgumentParser):
+    """Dentro de um `apply`, argumento inválido vira Erro (o lote cita a linha) em vez de sair."""
+
+    def error(self, message):
+        if BATCH is not None:
+            raise Erro(message)
+        super().error(message)
+
+
 def build_parser():
-    p = argparse.ArgumentParser(description=__doc__)
+    p = Parser(description=__doc__)
     p.add_argument("--now", help="substitui o relógio (ISO UTC, para testes)")
     sub = p.add_subparsers(dest="cmd", required=True)
 
@@ -603,6 +729,10 @@ def build_parser():
     sp.add_argument("issue")
     sp = add("context", cmd_context, "registra o contexto do coordenador (0 a 100)")
     sp.add_argument("pct")
+    sp = add("apply", cmd_apply, "grava vários subcomandos de uma vez (um por linha; '-' lê do stdin)")
+    sp.add_argument("file", metavar="arquivo", help="arquivo com os comandos, ou - para o stdin")
+    add("published", cmd_published, "imprime a hora da publicação (at:) e limpa o que falta publicar")
+    add("touch", cmd_touch, "a publicação falhou: marca de novo os 3 arquivos como não publicados")
     sp = add("show", cmd_show, "resumo legível; com '#n', a linha inteira (com a ficha)")
     sp.add_argument("issue", nargs="?")
     return p
