@@ -253,6 +253,11 @@
   margin: 0;
 }
 
+.catalog-kv-params dt::after {
+  content: '→';
+  margin-inline-start: var(--space-2);
+}
+
 .catalog-variants-caption {
   padding-block-end: var(--space-1);
   font: var(--t-text-small);

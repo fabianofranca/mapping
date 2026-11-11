@@ -7,6 +7,7 @@ import {
   type CapMetrics,
   breakLines,
   customLines,
+  paragraphEnds,
   lineHeightOf,
   lineLeft,
   richShift,
@@ -77,10 +78,53 @@ function lineInk(
   const baseline = top + (lineHeight - (ascent + descent)) / 2 + ascent;
   const polygons = textPolygons(face, text, x, baseline, spec);
   if (decoration === undefined) return polygons;
+  return [
+    ...polygons,
+    decorationBar(decoration, spec, x, baseline, textWidth(book, text, spec)),
+  ];
+}
+
+function decorationBar(
+  decoration: 'underline' | 'line-through',
+  spec: FontSpec,
+  x: number,
+  baseline: number,
+  width: number,
+): Polygon {
   const thickness = Math.max(1, spec.size / 14);
   const y =
     decoration === 'underline' ? baseline + spec.size * 0.12 : baseline - spec.size * 0.3;
-  return [...polygons, rectPolygon(x, y, textWidth(book, text, spec), thickness)];
+  return rectPolygon(x, y, width, thickness);
+}
+
+/**
+ * Linha justificada (como o Konva): o espaço que falta até a largura do nó se reparte igualmente
+ * entre os espaços da linha; as palavras ficam no tamanho delas.
+ */
+function justifiedInk(
+  book: FontBook,
+  line: string,
+  spec: FontSpec,
+  nodeWidth: number,
+  top: number,
+  lineHeight: number,
+  decoration: 'underline' | 'line-through' | undefined,
+): Polygon[] {
+  const words = line.split(' ');
+  const spaceWidth = textWidth(book, ' ', spec);
+  const extra = (nodeWidth - textWidth(book, line, spec)) / (words.length - 1);
+  const polygons: Polygon[] = [];
+  let x = 0;
+  for (const word of words) {
+    if (word !== '')
+      polygons.push(...lineInk(book, word, spec, x, top, lineHeight, undefined));
+    x += textWidth(book, word, spec) + spaceWidth + extra;
+  }
+  if (decoration === undefined) return polygons;
+  const face = book.fontFor(spec.family, spec.weight, spec.italic);
+  const { ascent, descent } = fontExtents(face, spec.size);
+  const baseline = top + (lineHeight - (ascent + descent)) / 2 + ascent;
+  return [...polygons, decorationBar(decoration, spec, 0, baseline, nodeWidth)];
 }
 
 function plainInk(node: TextNode, measure: TextMeasurer, book: FontBook): TextInk {
@@ -103,8 +147,31 @@ function plainInk(node: TextNode, measure: TextMeasurer, book: FontBook): TextIn
     node.style.verticalAlign === 'cap-middle' ? capMetricsOf(book, spec) : undefined,
   );
   const polygons: Polygon[] = [];
+  const ends =
+    style.align === 'justify'
+      ? paragraphEnds(
+          node,
+          lines,
+          customLines(node, measure, { ...spec, lineHeight }),
+          widthOf,
+        )
+      : [];
   lines.forEach((line, i) => {
     if (line === '') return;
+    if (ends[i] === false && node.width > 0 && line.includes(' ')) {
+      polygons.push(
+        ...justifiedInk(
+          book,
+          line,
+          spec,
+          node.width,
+          top + i * lineHeight,
+          lineHeight,
+          style.decoration,
+        ),
+      );
+      return;
+    }
     const width = Math.min(widthOf(line), node.width || Infinity);
     polygons.push(
       ...lineInk(

@@ -1086,29 +1086,60 @@ function templateNodeName(node: Rec): string | undefined {
   return type;
 }
 
-/** Os nomes dos nós do template (pelos `children` e pelo `template` dos `repeat`). */
-function templateNames(node: unknown, names: Set<string> = new Set()): Set<string> {
+/**
+ * Os nomes dos nós do template (pelos `children`; com `viaRepeat`, também pelo `template` dos
+ * `repeat`).
+ */
+function templateNames(
+  node: unknown,
+  viaRepeat = true,
+  names: Set<string> = new Set(),
+): Set<string> {
   if (!isRecord(node)) return names;
   const own = templateNodeName(node);
   if (own !== undefined) names.add(own);
-  if (Array.isArray(node.children)) node.children.forEach((c) => templateNames(c, names));
-  if (node.type === 'repeat') templateNames(node.template, names);
+  if (Array.isArray(node.children))
+    node.children.forEach((c) => templateNames(c, viaRepeat, names));
+  if (viaRepeat && node.type === 'repeat') templateNames(node.template, viaRepeat, names);
   return names;
 }
 
-/** `stroke.gap.node` precisa citar o nome de um nó do template: `nó não encontrado: <nome>`. */
+/** Por que o `stroke.gap.node` de `node` não abre vão (o vão só se abre num nó fora de `repeat` e que não é o próprio). */
+function gapNodeProblem(
+  node: Rec,
+  target: string,
+  inRepeat: boolean,
+  known: { all: Set<string>; direct: Set<string> },
+): string | undefined {
+  if (!known.all.has(target)) return `nó não encontrado: ${target}`;
+  if (inRepeat) return 'stroke.gap não pode ser usado dentro de um repeat';
+  if (templateNodeName(node) === target)
+    return `stroke.gap.node não pode citar o próprio nó: ${target}`;
+  if (!known.direct.has(target))
+    return `stroke.gap.node não pode citar um nó dentro de um repeat: ${target}`;
+  return undefined;
+}
+
+/**
+ * `stroke.gap.node` precisa citar o nome de outro nó do template, fora de `repeat` (`nó não
+ * encontrado: <nome>`); dentro de um `repeat` ou citando o próprio nó o vão não abriria.
+ */
 function checkGapNodes(template: unknown, out: Ctx): void {
-  const names = templateNames(template);
-  const walk = (node: unknown, at: string): void => {
+  const known = { all: templateNames(template), direct: templateNames(template, false) };
+  const walk = (node: unknown, at: string, inRepeat: boolean): void => {
     if (!isRecord(node)) return;
     const gap = isRecord(node.stroke) ? node.stroke.gap : undefined;
-    if (isRecord(gap) && typeof gap.node === 'string' && !names.has(gap.node))
-      add(out, join(at, 'stroke.gap.node'), `nó não encontrado: ${gap.node}`);
+    if (isRecord(gap) && typeof gap.node === 'string') {
+      const problem = gapNodeProblem(node, gap.node, inRepeat, known);
+      if (problem !== undefined) add(out, join(at, 'stroke.gap.node'), problem);
+    }
     if (Array.isArray(node.children))
-      node.children.forEach((c: unknown, i) => walk(c, `${join(at, 'children')}[${i}]`));
-    if (node.type === 'repeat') walk(node.template, join(at, 'template'));
+      node.children.forEach((c: unknown, i) =>
+        walk(c, `${join(at, 'children')}[${i}]`, inRepeat),
+      );
+    if (node.type === 'repeat') walk(node.template, join(at, 'template'), true);
   };
-  walk(template, 'template');
+  walk(template, 'template', false);
 }
 
 /** `$token` em qualquer ponto do template, numa versão anterior à 4: `só é permitido com formatVersion 4`. */

@@ -154,6 +154,9 @@ function oriented(poly: Polygon): Polygon {
   return signedArea(poly) < 0 ? [...poly].reverse() : poly;
 }
 
+const hasRadius = (radius: CornerRadius): boolean =>
+  typeof radius === 'number' ? radius > 0 : radius.some((r) => r > 0);
+
 function radii(cornerRadius: CornerRadius, width: number, height: number): number[] {
   const list =
     typeof cornerRadius === 'number'
@@ -918,10 +921,11 @@ class Painter {
               { x: box.x + box.width, y: box.y + box.height },
               { x: box.x, y: box.y + box.height },
             ]
-          : roundedRect(node.width, node.height, 0);
+          : roundedRect(node.width, node.height, node.cornerRadius);
         const corners = this.toRaster(rect, matrix);
         childClip = intersect(clip, bounds(corners));
-        if (!isAxisAligned(matrix)) {
+        // O recorte reto só serve a quadro reto e sem raio: com raio, recorta-se pela forma (como a app).
+        if (!isAxisAligned(matrix) || (!box && hasRadius(node.cornerRadius))) {
           this.paintTurned(node, matrix, alpha, childClip, corners);
           return;
         }
