@@ -1,5 +1,11 @@
 import { isFreeRect, nearestFreeSpotIn } from './containers';
-import { containsRect, imageCanvasRect, imagePixelRect, rectsOverlap } from './geometry';
+import {
+  containsRect,
+  imageCanvasRect,
+  imagePixelRect,
+  rectsOverlap,
+  sameRect,
+} from './geometry';
 import { enclosingAmong } from './hierarchySettle';
 import { projectIndex } from './projectIndex';
 import type { Marking, Project, Rect } from './types';
@@ -18,8 +24,15 @@ export interface PlacementLevel {
   readonly obstacles: readonly Rect[];
 }
 
-const sameRect = (a: Rect, b: Rect): boolean =>
-  a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+/** Ids das marcações não flutuantes de `containerId` que contêm `rect` e não são iguais a ele. */
+function containingIds(p: Project, containerId: string | null, rect: Rect): Set<string> {
+  const ids = new Set<string>();
+  for (const m of p.markings) {
+    if (m.floating || m.containerId !== containerId) continue;
+    if (containsRect(m.rect, rect) && !sameRect(m.rect, rect)) ids.add(m.id);
+  }
+  return ids;
+}
 
 /**
  * O pai da colocação: a menor marcação não flutuante de `containerId` que contém `rect` e **não é
@@ -27,17 +40,17 @@ const sameRect = (a: Rect, b: Rect): boolean =>
  * (a que o assentar escolhe, `enclosingAmong`).
  */
 function levelParent(p: Project, containerId: string | null, rect: Rect): Marking | null {
-  const candidates = new Set<string>();
-  for (const m of p.markings) {
-    if (m.floating || m.containerId !== containerId) continue;
-    if (containsRect(m.rect, rect) && !sameRect(m.rect, rect)) candidates.add(m.id);
-  }
-  if (candidates.size === 0) return null;
-  const id = enclosingAmong(p, containerId, candidates, null);
+  const candidates = containingIds(p, containerId, rect);
+  // Uma candidata só é o pai sem ordenar o espaço (o posto só desempata entre várias).
+  const [only] = candidates;
+  const id =
+    candidates.size === 1 && only !== undefined
+      ? only
+      : enclosingAmong(p, containerId, candidates, null);
   return id === null ? null : (projectIndex(p).markings.get(id) ?? null);
 }
 
-/** O marcação e os ancestrais dela (pela cadeia de `parentId`, com guarda contra ciclo). */
+/** A marcação e os ancestrais dela (pela cadeia de `parentId`, com guarda contra ciclo). */
 function lineage(p: Project, marking: Marking): Set<string> {
   const byId = projectIndex(p).markings;
   const ids = new Set<string>();

@@ -197,9 +197,12 @@ function spotAxis(
   for (const [low, high] of edges) {
     values.push(Math.ceil(high + gap), Math.floor(low - gap - size));
   }
+  // Sem repetidos (grades e peças repetidas dão a mesma borda várias vezes); a ordem de
+  // primeira aparição fica, e ela desempata a distância.
+  const unique = [...new Set(values)];
   return bounds === null
-    ? values
-    : values.filter((v) => v >= bounds[0] && v + size <= bounds[1]);
+    ? unique
+    : unique.filter((v) => v >= bounds[0] && v + size <= bounds[1]);
 }
 
 /**
