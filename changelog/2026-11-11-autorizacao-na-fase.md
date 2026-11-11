@@ -1,4 +1,4 @@
-# Autorização do dono no chat da fase — [Não lançado] (épico `epic/autorizacao-na-fase`, PR #0, MCP 0.34.3 sem mudança, schema v18)
+# Autorização do dono no chat da fase — 2026-11-11 (épico `epic/autorizacao-na-fase`, PR #1622, MCP 0.34.3 sem mudança, schema v18)
 
 ## Alterado
 
