@@ -61,6 +61,22 @@ export const componentEnUS: {
     'only valid in frame and rect (this is {nodeType})',
   'model.component.offsetOnlyShapes':
     'only valid in frame, rect and ellipse (this is {nodeType})',
+  'model.component.overOnlyColor': 'over is only valid in a color $token',
+  'model.component.expectedTokenOrColor': 'expected a token name or a color',
+  'model.component.expectedTokenNameOrColor':
+    'expected a token name ([a-z0-9][a-z0-9-]*) or a color',
+  'model.component.emptyName': 'empty name',
+  'model.component.providedOnlyColor':
+    '$provided is only valid where a color is expected',
+  'model.component.expectedProvidedName':
+    'expected the name of the provided color (non-empty text)',
+  'model.component.gapNotWithSides': 'gap is not valid with sides',
+  'model.component.expectedShadowCount': 'expected 1 to {max} shadows',
+  'model.component.gapNodeNotFound': 'node not found: {name}',
+  'model.component.gapNotInRepeat': 'stroke.gap cannot be used inside a repeat',
+  'model.component.gapNotSelf': 'stroke.gap.node cannot name the node itself: {name}',
+  'model.component.gapNotInsideRepeat':
+    'stroke.gap.node cannot name a node inside a repeat: {name}',
   'model.component.expectedInteger1': 'expected an integer greater than or equal to 1',
   'model.component.expectedPadding':
     'expected a number, a list of 2 or a list of 4 numbers (greater than or equal to 0)',

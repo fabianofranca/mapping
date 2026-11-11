@@ -283,6 +283,12 @@ describe('round-guide.mjs: faixa de passos (RB1, decisão 1c)', () => {
     expect(out).toMatch(/^### R2 /m);
   });
 
+  it('passo avulso com letra (R6.8a) mantém a letra minúscula', async () => {
+    const out = await build(['R6.8a']);
+    expect(out).toContain('| R6.8a |');
+    expect(out).not.toContain('| R6.8b |');
+  });
+
   it('faixa com passo inexistente falha', async () => {
     await expect(buildFrom(FIXTURE, ['R2.1-R2.9'])).rejects.toThrow(/R2\.9/);
   });

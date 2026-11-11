@@ -147,7 +147,8 @@ function parseRequest(roteiros, existing) {
       ranges.set(id, list);
     } else if (STEP_ITEM.test(raw)) {
       // Passo avulso (`R0.1`): a faixa de um passo só.
-      const [id, step] = raw.toUpperCase().split('.');
+      const [rawId, step] = raw.split('.');
+      const id = rawId.toUpperCase();
       const list = ranges.get(id) ?? [];
       list.push({ from: step, to: step });
       ranges.set(id, list);

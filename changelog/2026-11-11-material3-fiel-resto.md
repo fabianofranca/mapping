@@ -1,4 +1,4 @@
-# Material 3 fiel, resto — [Não lançado] (épico `epic/material3-fiel-resto`, PR #1513, MCP 0.34.0, schema v18)
+# Material 3 fiel, resto — 2026-11-11 (épico `epic/material3-fiel-resto`, PR #1513, MCP 0.34.0, schema v18)
 
 ## Adicionado
 
