@@ -11,6 +11,7 @@
 ## Alterado
 
 - Teto do `dist/index.html` subiu 16 KiB, de 2.048.000 para 2.064.384, por decisão do dono (2026-11-11), com exceção ao limite de 64 KiB de subidas desde a revisão do orçamento.
+- Teto do `dist/index.html` subiu 16 KiB, de 2.064.384 para 2.080.768, pela regra do orçamento.
 
 ## Corrigido
 
