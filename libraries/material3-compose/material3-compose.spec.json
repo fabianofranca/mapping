@@ -2191,13 +2191,13 @@
               "name": "Título de tela",
               "values": {
                 "text": "Configurações",
-                "style": "headlineMedium"
+                "style": "headlineSmall"
               }
             },
             {
               "name": "Parágrafo",
               "values": {
-                "text": "Texto de apoio com uma frase um pouco mais longa.",
+                "text": "Texto de apoio curto.",
                 "style": "bodyMedium",
                 "color": "onSurfaceVariant"
               }
@@ -2214,8 +2214,8 @@
             {
               "name": "Parágrafo justificado",
               "values": {
-                "text": "O Material 3 organiza a interface em camadas de cor, forma e elevação, para que cada componente mantenha a mesma aparência em qualquer tela do aplicativo.",
-                "style": "bodyMedium",
+                "text": "O Material 3 organiza a interface em camadas de cor e forma.",
+                "style": "bodySmall",
                 "textAlign": "Justify",
                 "width": "fill"
               }
@@ -3534,7 +3534,7 @@
             {
               "name": "Rótulo longo",
               "values": {
-                "label": "Salvar alterações e continuar editando",
+                "label": "Salvar tudo",
                 "style": "filled"
               }
             }
@@ -4249,7 +4249,7 @@
             {
               "name": "Rótulo longo",
               "values": {
-                "text": "Criar nota fiscal",
+                "text": "Nova nota fiscal",
                 "icon": "Add"
               }
             }
@@ -5528,7 +5528,7 @@
             {
               "name": "Rótulo longo",
               "values": {
-                "label": "Adicionar reunião ao calendário compartilhado",
+                "label": "Criar reunião de equipe",
                 "style": "assist",
                 "leadingIcon": "DateRange"
               }

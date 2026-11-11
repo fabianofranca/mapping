@@ -44,6 +44,7 @@
           "centerX": true,
           "centerY": true
         },
+        "maxWidth": { "$sub": [{ "$size": "width" }, 8] },
         "text": {
           "$concat": [
             {
@@ -86,7 +87,9 @@
           },
           "letterSpacing": {
             "$token": "label-small-tracking"
-          }
+          },
+          "wrap": "none",
+          "ellipsis": true
         }
       }
     ]

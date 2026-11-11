@@ -527,52 +527,78 @@
                   "width": 24,
                   "height": 24,
                   "anchors": {
-                    "left": {
+                    "right": {
                       "$sub": [
                         {
-                          "$add": [
-                            128,
+                          "$mul": [
+                            -1,
                             {
-                              "$mul": [
+                              "$sub": [
                                 {
-                                  "$if": { "$gte": [{ "$field": "$index" }, 12] },
-                                  "then": 69,
-                                  "else": 101
+                                  "$add": [
+                                    128,
+                                    {
+                                      "$mul": [
+                                        {
+                                          "$if": { "$gte": [{ "$field": "$index" }, 12] },
+                                          "then": 69,
+                                          "else": 101
+                                        },
+                                        {
+                                          "$sin": {
+                                            "$mul": [
+                                              { "$mod": [{ "$field": "$index" }, 12] },
+                                              30
+                                            ]
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  ]
                                 },
+                                12
+                              ]
+                            }
+                          ]
+                        },
+                        24
+                      ]
+                    },
+                    "bottom": {
+                      "$sub": [
+                        {
+                          "$mul": [
+                            -1,
+                            {
+                              "$sub": [
+                                128,
                                 {
-                                  "$sin": {
-                                    "$mul": [{ "$mod": [{ "$field": "$index" }, 12] }, 30]
-                                  }
+                                  "$add": [
+                                    12,
+                                    {
+                                      "$mul": [
+                                        {
+                                          "$if": { "$gte": [{ "$field": "$index" }, 12] },
+                                          "then": 69,
+                                          "else": 101
+                                        },
+                                        {
+                                          "$cos": {
+                                            "$mul": [
+                                              { "$mod": [{ "$field": "$index" }, 12] },
+                                              30
+                                            ]
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  ]
                                 }
                               ]
                             }
                           ]
                         },
-                        12
-                      ]
-                    },
-                    "top": {
-                      "$sub": [
-                        128,
-                        {
-                          "$add": [
-                            12,
-                            {
-                              "$mul": [
-                                {
-                                  "$if": { "$gte": [{ "$field": "$index" }, 12] },
-                                  "then": 69,
-                                  "else": 101
-                                },
-                                {
-                                  "$cos": {
-                                    "$mul": [{ "$mod": [{ "$field": "$index" }, 12] }, 30]
-                                  }
-                                }
-                              ]
-                            }
-                          ]
-                        }
+                        24
                       ]
                     }
                   }
@@ -685,7 +711,7 @@
                 "direction": "row",
                 "width": 0,
                 "height": 0,
-                "anchors": { "left": 0, "top": 0 },
+                "anchors": { "left": -24, "top": -24 },
                 "template": {
                   "type": "frame",
                   "name": "posição",
@@ -725,166 +751,256 @@
                       "width": 24,
                       "height": 24,
                       "anchors": {
-                        "left": {
-                          "$sub": [
+                        "right": {
+                          "$mul": [
+                            -1,
                             {
-                              "$sub": [
+                              "$add": [
                                 {
-                                  "$add": [
-                                    128,
+                                  "$max": [
                                     {
-                                      "$mul": [
+                                      "$sub": [
                                         {
-                                          "$if": { "$gte": [{ "$field": "$index" }, 12] },
-                                          "then": 69,
-                                          "else": 101
-                                        },
-                                        {
-                                          "$sin": {
-                                            "$mul": [
-                                              { "$mod": [{ "$field": "$index" }, 12] },
-                                              30
-                                            ]
-                                          }
-                                        }
-                                      ]
-                                    }
-                                  ]
-                                },
-                                12
-                              ]
-                            },
-                            {
-                              "$sub": [
-                                {
-                                  "$add": [
-                                    128,
-                                    {
-                                      "$mul": [
-                                        {
-                                          "$if": {
-                                            "$and": [
-                                              {
-                                                "$not": { "$eq": ["is24Hour", "false"] }
-                                              },
-                                              {
-                                                "$not": { "$eq": ["selection", "minute"] }
-                                              },
-                                              { "$gte": [{ "$field": "hour" }, 12] }
-                                            ]
-                                          },
-                                          "then": 69,
-                                          "else": 101
-                                        },
-                                        {
-                                          "$sin": {
-                                            "$if": { "$eq": ["selection", "minute"] },
-                                            "then": {
-                                              "$mul": [
-                                                { "$field": "minute", "default": 0 },
-                                                6
+                                          "$sub": [
+                                            {
+                                              "$add": [
+                                                128,
+                                                {
+                                                  "$mul": [
+                                                    {
+                                                      "$if": {
+                                                        "$gte": [
+                                                          { "$field": "$index" },
+                                                          12
+                                                        ]
+                                                      },
+                                                      "then": 69,
+                                                      "else": 101
+                                                    },
+                                                    {
+                                                      "$sin": {
+                                                        "$mul": [
+                                                          {
+                                                            "$mod": [
+                                                              { "$field": "$index" },
+                                                              12
+                                                            ]
+                                                          },
+                                                          30
+                                                        ]
+                                                      }
+                                                    }
+                                                  ]
+                                                }
                                               ]
                                             },
-                                            "else": {
-                                              "$mul": [
+                                            12
+                                          ]
+                                        },
+                                        {
+                                          "$sub": [
+                                            {
+                                              "$add": [
+                                                128,
                                                 {
-                                                  "$mod": [
-                                                    { "$field": "hour", "default": 0 },
-                                                    12
+                                                  "$mul": [
+                                                    {
+                                                      "$if": {
+                                                        "$and": [
+                                                          {
+                                                            "$not": {
+                                                              "$eq": ["is24Hour", "false"]
+                                                            }
+                                                          },
+                                                          {
+                                                            "$not": {
+                                                              "$eq": [
+                                                                "selection",
+                                                                "minute"
+                                                              ]
+                                                            }
+                                                          },
+                                                          {
+                                                            "$gte": [
+                                                              { "$field": "hour" },
+                                                              12
+                                                            ]
+                                                          }
+                                                        ]
+                                                      },
+                                                      "then": 69,
+                                                      "else": 101
+                                                    },
+                                                    {
+                                                      "$sin": {
+                                                        "$if": {
+                                                          "$eq": ["selection", "minute"]
+                                                        },
+                                                        "then": {
+                                                          "$mul": [
+                                                            {
+                                                              "$field": "minute",
+                                                              "default": 0
+                                                            },
+                                                            6
+                                                          ]
+                                                        },
+                                                        "else": {
+                                                          "$mul": [
+                                                            {
+                                                              "$mod": [
+                                                                {
+                                                                  "$field": "hour",
+                                                                  "default": 0
+                                                                },
+                                                                12
+                                                              ]
+                                                            },
+                                                            30
+                                                          ]
+                                                        }
+                                                      }
+                                                    }
                                                   ]
-                                                },
-                                                30
+                                                }
                                               ]
-                                            }
-                                          }
+                                            },
+                                            24
+                                          ]
                                         }
                                       ]
-                                    }
+                                    },
+                                    -24
                                   ]
                                 },
-                                24
+                                48
                               ]
                             }
                           ]
                         },
-                        "top": {
-                          "$sub": [
+                        "bottom": {
+                          "$mul": [
+                            -1,
                             {
-                              "$sub": [
-                                128,
+                              "$add": [
                                 {
-                                  "$add": [
-                                    12,
+                                  "$max": [
                                     {
-                                      "$mul": [
+                                      "$sub": [
                                         {
-                                          "$if": { "$gte": [{ "$field": "$index" }, 12] },
-                                          "then": 69,
-                                          "else": 101
-                                        },
-                                        {
-                                          "$cos": {
-                                            "$mul": [
-                                              { "$mod": [{ "$field": "$index" }, 12] },
-                                              30
-                                            ]
-                                          }
-                                        }
-                                      ]
-                                    }
-                                  ]
-                                }
-                              ]
-                            },
-                            {
-                              "$sub": [
-                                {
-                                  "$sub": [
-                                    128,
-                                    {
-                                      "$mul": [
-                                        {
-                                          "$if": {
-                                            "$and": [
-                                              {
-                                                "$not": { "$eq": ["is24Hour", "false"] }
-                                              },
-                                              {
-                                                "$not": { "$eq": ["selection", "minute"] }
-                                              },
-                                              { "$gte": [{ "$field": "hour" }, 12] }
-                                            ]
-                                          },
-                                          "then": 69,
-                                          "else": 101
-                                        },
-                                        {
-                                          "$cos": {
-                                            "$if": { "$eq": ["selection", "minute"] },
-                                            "then": {
-                                              "$mul": [
-                                                { "$field": "minute", "default": 0 },
-                                                6
-                                              ]
-                                            },
-                                            "else": {
-                                              "$mul": [
+                                          "$sub": [
+                                            128,
+                                            {
+                                              "$add": [
+                                                12,
                                                 {
-                                                  "$mod": [
-                                                    { "$field": "hour", "default": 0 },
-                                                    12
+                                                  "$mul": [
+                                                    {
+                                                      "$if": {
+                                                        "$gte": [
+                                                          { "$field": "$index" },
+                                                          12
+                                                        ]
+                                                      },
+                                                      "then": 69,
+                                                      "else": 101
+                                                    },
+                                                    {
+                                                      "$cos": {
+                                                        "$mul": [
+                                                          {
+                                                            "$mod": [
+                                                              { "$field": "$index" },
+                                                              12
+                                                            ]
+                                                          },
+                                                          30
+                                                        ]
+                                                      }
+                                                    }
                                                   ]
-                                                },
-                                                30
+                                                }
                                               ]
                                             }
-                                          }
+                                          ]
+                                        },
+                                        {
+                                          "$sub": [
+                                            {
+                                              "$sub": [
+                                                128,
+                                                {
+                                                  "$mul": [
+                                                    {
+                                                      "$if": {
+                                                        "$and": [
+                                                          {
+                                                            "$not": {
+                                                              "$eq": ["is24Hour", "false"]
+                                                            }
+                                                          },
+                                                          {
+                                                            "$not": {
+                                                              "$eq": [
+                                                                "selection",
+                                                                "minute"
+                                                              ]
+                                                            }
+                                                          },
+                                                          {
+                                                            "$gte": [
+                                                              { "$field": "hour" },
+                                                              12
+                                                            ]
+                                                          }
+                                                        ]
+                                                      },
+                                                      "then": 69,
+                                                      "else": 101
+                                                    },
+                                                    {
+                                                      "$cos": {
+                                                        "$if": {
+                                                          "$eq": ["selection", "minute"]
+                                                        },
+                                                        "then": {
+                                                          "$mul": [
+                                                            {
+                                                              "$field": "minute",
+                                                              "default": 0
+                                                            },
+                                                            6
+                                                          ]
+                                                        },
+                                                        "else": {
+                                                          "$mul": [
+                                                            {
+                                                              "$mod": [
+                                                                {
+                                                                  "$field": "hour",
+                                                                  "default": 0
+                                                                },
+                                                                12
+                                                              ]
+                                                            },
+                                                            30
+                                                          ]
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            },
+                                            24
+                                          ]
                                         }
                                       ]
-                                    }
+                                    },
+                                    -24
                                   ]
                                 },
-                                24
+                                48
                               ]
                             }
                           ]
