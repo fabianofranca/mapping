@@ -505,6 +505,10 @@ function fitTargetOf(
   if (containerOf(p, catalog, marking.id) !== null) return null;
   const mc = markingComponent(p, catalog, marking.id);
   if (mc === null) return null;
+  // Filhas num slot sem layout `row`/`column` também não se ajustam: medir sem elas encolheria o
+  // componente e o assentar tiraria as filhas dele.
+  const hasKids = (projectIndex(p).children.get(marking.id)?.length ?? 0) > 0;
+  if (hasKids && findSlot(mc.component) !== undefined) return null;
   const values = drawingValues(p, mc.annotation, mc.type).values;
   const followed = followedAxes(resolveSizing(mc.component, values));
   if (!followed.width && !followed.height) return null;

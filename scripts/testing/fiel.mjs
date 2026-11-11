@@ -491,6 +491,10 @@ for (const layer of spec.layers)
 // O exemplo de rótulo longo do `button` só cabe no tamanho ajustado, e a prova no `size` avisa (MC3).
 for (const layer of spec.layers)
   for (const type of layer.annotationTypes)
-    if (version >= 4 && type.id === 'button')
+    if (version >= 4 && type.id === 'button') {
+      const before = (type.examples ?? []).length;
       type.examples = (type.examples ?? []).filter((e) => e.name !== 'Rótulo longo');
+      if (type.examples.length === before)
+        throw new Error('exemplo "Rótulo longo" do button não achado');
+    }
 fs.writeFileSync(specFile, JSON.stringify(spec, null, 2));

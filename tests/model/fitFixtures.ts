@@ -52,13 +52,14 @@ function button(id: string, size: Json, sizing: Json | undefined, root: Json = {
   };
 }
 
-function row(id: string, align: string): Json {
+function row(id: string, align: string, layoutType = 'row', sizing?: Json): Json {
   return {
     format: 'mapping-component',
     formatVersion: 4,
     id,
     name: id,
     size: { width: 400, height: 100 },
+    ...(sizing === undefined ? {} : { sizing }),
     template: {
       type: 'frame',
       layout: { type: 'none' },
@@ -67,7 +68,10 @@ function row(id: string, align: string): Json {
         {
           type: 'slot',
           anchors: { left: 0, right: 0, top: 0, bottom: 0 },
-          layout: { type: 'row', gap: 8, padding: 0, align, justify: 'start' },
+          layout:
+            layoutType === 'none'
+              ? { type: 'none' }
+              : { type: layoutType, gap: 8, padding: 0, align, justify: 'start' },
         },
       ],
     },
@@ -105,6 +109,8 @@ export const FIT_COMPONENTS: Record<string, Json> = {
   // Linha que estica as filhas na altura, e linha que não estica.
   'fit-row-stretch': row('fit-row-stretch', 'stretch'),
   'fit-row-start': row('fit-row-start', 'start'),
+  // Slot sem layout e altura `hug`: com filhas não se arruma nem se ajusta.
+  'fit-row-none': row('fit-row-none', 'start', 'none', { height: 'hug' }),
 };
 
 const FIELDS = [

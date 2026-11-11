@@ -290,7 +290,6 @@ const DEPRECATED_OPS: Partial<Record<Operation['op'], string>> = {
     'delete_image é antiga: use delete_container (o argumento `image` virou `container`)',
 };
 
-/** Minúsculas e sem acentos, para achar camadas e tipos pelo nome. */
 /**
  * Os valores simples (texto, número, vazio) de `annotation.values` para medir o tamanho da instância
  * nova (decisão 16 da #898): tabela e referência não entram (ficam no `default`).
@@ -306,6 +305,7 @@ function initialValuesArg(values: Record<string, JsonValue> | undefined): {
   return simple.length === 0 ? {} : { values: Object.fromEntries(simple) };
 }
 
+/** Minúsculas e sem acentos, para achar camadas e tipos pelo nome. */
 function fold(text: string): string {
   return text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
 }

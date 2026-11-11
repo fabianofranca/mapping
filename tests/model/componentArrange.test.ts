@@ -905,6 +905,13 @@ describe('fitMarking (MC3, decisão 14 da #898)', () => {
     expect(() => fit(plain, 'nada')).toThrow('not-found');
   });
 
+  it('componente com filhas no slot, mesmo com layout none, não se ajusta (achado do /code-review)', () => {
+    let p = addFit(fitProject(), 'R', 'fit-row-none', box(100, 100, 400, 100));
+    p = addFit(p, 'B', 'fit-button', box(110, 110, 120, 40), 'R');
+    expect(canFit(p, fcat, 'R')).toBe(false);
+    expect(() => fit(p, 'R')).toThrow('not-fittable');
+  });
+
   it('canFit: só o componente sem slot com eixo ajustável', () => {
     const p = addFit(fitProject(), 'B', 'fit-button', box(100, 100, 120, 40));
     expect(canFit(p, fcat, 'B')).toBe(true);
