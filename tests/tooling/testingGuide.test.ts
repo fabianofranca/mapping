@@ -553,6 +553,37 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
     });
   });
 
+  // CL2 (etapa #899): o reteste achou dois erros de texto de roteiro, não da app.
+  describe('CL2 — correções de texto do reteste da etapa #899', () => {
+    const guide = read('docs/TESTING.md');
+    const row = (code: string): string => {
+      const line = guide.split('\n').find((l) => l.startsWith(`| ${code} |`));
+      expect(line, code).toBeDefined();
+      return line ?? '';
+    };
+
+    it('R17.30: o ponto do fundo cai dentro do arco do canto, não em (5, 5)', () => {
+      const line = row('R17.30');
+      // (5, 5) fica fora do raio 12·s do `surface` e dá o branco do container (FFFFFF).
+      expect(line).not.toMatch(/px su-app\.png 5 5/);
+      expect(line).not.toMatch(/\(5, 5\) `D0BCFF`/);
+      expect(line).toMatch(/px su-app\.png 30 30/);
+      expect(line).toContain('(30, 30)');
+    });
+
+    it('R25.26: o `unid` dos dois `i` (com e sem `family`) usa AREA=20', () => {
+      const line = row('R25.26');
+      // cada `i` fino é uma mancha pequena: com o AREA padrão (300) o `unid` volta vazio.
+      const aside = (color: string): string =>
+        new RegExp("'" + color + "'[`]?\\s*\\(([^)]*)\\)").exec(line)?.[1] ?? '';
+      expect(aside('#00E5FF')).toContain('AREA=20');
+      expect(aside('#FF4081')).toContain('AREA=20');
+      // o `W` é uma mancha grande: fica no AREA padrão.
+      expect(aside('#76FF03')).not.toContain('AREA');
+      expect(aside('#FFAB40')).not.toContain('AREA');
+    });
+  });
+
   // Etapa Avisos na especialização (AV4): o R18 roda sozinho, pelo cliente MCP por stdio, a shell e a app.
   describe('R18 — Avisos na especialização', () => {
     const guide = read('docs/TESTING.md');
