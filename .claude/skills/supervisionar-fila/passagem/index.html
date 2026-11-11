@@ -1,0 +1,300 @@
+<title>Supervisão da fila</title>
+<meta name="claude:viewport-fit-sides" content="cover" />
+<style>
+  /* Leitura da passagem: uma coluna estreita, quatro grupos de regras, só texto e uma linha de metadados por regra. */
+  :root {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --fg: #1d2330;
+    --muted: #5a6376;
+    --line: #dde1e8;
+    --accent: #2f5fb3;
+    --warn: #9a5b00;
+    --font-text: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --bg: #12151c;
+      --surface: #1a1f29;
+      --fg: #e6e9f0;
+      --muted: #9aa3b5;
+      --line: #2b3240;
+      --accent: #7fa6ec;
+      --warn: #e0a64a;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme='dark'] {
+    --bg: #12151c;
+    --surface: #1a1f29;
+    --fg: #e6e9f0;
+    --muted: #9aa3b5;
+    --line: #2b3240;
+    --accent: #7fa6ec;
+    --warn: #e0a64a;
+    color-scheme: dark;
+  }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-text);
+    font-size: 15px;
+    line-height: 1.5;
+    padding-block: 24px 48px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  main {
+    max-width: 720px;
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    min-width: 0;
+  }
+  h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 650;
+    text-wrap: balance;
+  }
+  .sub {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .status {
+    margin: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--muted);
+  }
+  .status.erro {
+    color: var(--warn);
+    border-color: var(--warn);
+  }
+  #grupos {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    min-width: 0;
+  }
+  section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+  }
+  h2 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 650;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  li {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .texto {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+  .meta {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+    overflow-wrap: anywhere;
+  }
+  .meta b {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    color: var(--accent);
+  }
+  .vazio {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+</style>
+
+<main>
+  <header>
+    <h1>Supervisão da fila</h1>
+    <p class="sub">Passagem da supervisão: regras em vigor, não estados. Só leitura.</p>
+  </header>
+  <p id="status" class="status" role="status">Carregando a passagem…</p>
+  <div id="grupos" hidden></div>
+</main>
+
+<script>
+  (function () {
+    var GRUPOS = [
+      {
+        tipo: 'decisao',
+        titulo: 'Decisões do dono',
+        vazio: 'Nenhuma decisão registrada.',
+      },
+      {
+        tipo: 'issue',
+        titulo: 'Issues abertas',
+        vazio: 'Nenhuma issue aberta registrada.',
+      },
+      {
+        tipo: 'agendamento',
+        titulo: 'Agendamentos',
+        vazio: 'Nenhum agendamento ligado à supervisão.',
+      },
+      { tipo: 'licao', titulo: 'Lições', vazio: 'Nenhuma lição registrada.' },
+    ];
+    var statusEl = document.getElementById('status');
+    var gruposEl = document.getElementById('grupos');
+    var respondeu = false;
+    var falhado = false;
+
+    function falhou() {
+      falhado = true;
+      statusEl.hidden = false;
+      statusEl.className = 'status erro';
+      statusEl.textContent =
+        'A passagem não carregou. Abra o link de novo ou peça à supervisão para ler a coleção passagem.';
+    }
+
+    function el(tag, className, text) {
+      var e = document.createElement(tag);
+      if (className) e.className = className;
+      if (text !== undefined) e.textContent = text;
+      return e;
+    }
+
+    function meta(d, id) {
+      var p = el('p', 'meta');
+      var partes = [];
+      partes.push(['id', id]);
+      if (d.origem) partes.push(['origem', String(d.origem)]);
+      if (d.desde) partes.push(['desde', String(d.desde)]);
+      if (d.tipo === 'agendamento') {
+        if (d.trigger) partes.push(['trigger', String(d.trigger)]);
+        if (d.parada) partes.push(['parada', String(d.parada)]);
+      }
+      partes.forEach(function (par, i) {
+        if (i > 0) p.appendChild(document.createTextNode(' · '));
+        p.appendChild(document.createTextNode(par[0] + ' '));
+        p.appendChild(el('b', '', par[1]));
+      });
+      return p;
+    }
+
+    function desenhar(snap) {
+      respondeu = true;
+      var porTipo = {};
+      snap.docs.forEach(function (doc) {
+        var d = doc.data() || {};
+        var tipo = String(d.tipo || '');
+        (porTipo[tipo] = porTipo[tipo] || []).push({ id: doc.id, d: d });
+      });
+      gruposEl.textContent = '';
+      gruposEl.hidden = false;
+      statusEl.hidden = snap.size > 0;
+      if (snap.size === 0) {
+        statusEl.className = 'status';
+        statusEl.textContent = 'A passagem está vazia: nenhuma regra gravada ainda.';
+      }
+      var conhecidos = GRUPOS.map(function (g) {
+        return g.tipo;
+      });
+      var outras = [];
+      Object.keys(porTipo).forEach(function (t) {
+        if (conhecidos.indexOf(t) < 0) outras = outras.concat(porTipo[t]);
+      });
+      var grupos = GRUPOS.slice();
+      if (outras.length > 0) {
+        porTipo.outras = outras;
+        grupos.push({ tipo: 'outras', titulo: 'Outras regras', vazio: '' });
+      }
+      grupos.forEach(function (g) {
+        var itens = (porTipo[g.tipo] || []).sort(function (a, b) {
+          return (
+            String(b.d.desde || '').localeCompare(String(a.d.desde || '')) ||
+            a.id.localeCompare(b.id)
+          );
+        });
+        var sec = el('section');
+        sec.appendChild(el('h2', '', g.titulo));
+        if (itens.length === 0) {
+          sec.appendChild(el('p', 'vazio', g.vazio));
+        } else {
+          var ul = el('ul');
+          itens.forEach(function (it) {
+            var li = el('li');
+            li.appendChild(el('p', 'texto', String(it.d.texto || '')));
+            li.appendChild(meta(it.d, it.id));
+            ul.appendChild(li);
+          });
+          sec.appendChild(ul);
+        }
+        gruposEl.appendChild(sec);
+      });
+    }
+
+    var prazo = setTimeout(function () {
+      if (!respondeu) falhou();
+    }, 10000);
+
+    function conectar(db) {
+      db.collection('passagem').onSnapshot(
+        function (snap) {
+          desenhar(snap);
+        },
+        function () {
+          falhou();
+        },
+      );
+    }
+
+    // O window.claude pode chegar depois da primeira execução: tenta de novo até o prazo de 10 s.
+    function tentar() {
+      if (respondeu || falhado) return;
+      if (!(window.claude && window.claude.use)) {
+        setTimeout(tentar, 250);
+        return;
+      }
+      window.claude.use('db').then(
+        function (db) {
+          if (db) conectar(db);
+          else {
+            clearTimeout(prazo);
+            falhou();
+          }
+        },
+        function () {
+          clearTimeout(prazo);
+          falhou();
+        },
+      );
+    }
+    tentar();
+  })();
+</script>
