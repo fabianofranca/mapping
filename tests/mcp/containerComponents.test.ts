@@ -519,10 +519,11 @@ describe('create_marking com inside (filha no slot)', () => {
   });
 
   it('slot cheio: aceita, presa ao componente, com o aviso de que não coube', async () => {
+    // O `$b1` ocupa a largura toda e deixa só 20 de altura: não sobra lugar livre para o `$b2` (40).
     const result = await run([
       SCREEN,
       COLUMN,
-      child('$b1', { rect: { x: 0, y: 0, width: 200, height: 180 } }),
+      child('$b1', { rect: { x: 0, y: 0, width: 380, height: 180 } }),
       child('$b2'),
     ]);
     expect(result.errors).toEqual([]);

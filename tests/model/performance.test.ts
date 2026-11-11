@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   addAnnotation,
   addPerspective,
+  approximateMeasurer,
+  componentPlacement,
+  placementIsFree,
   buildListing,
   buildPerspective,
   createMarking,
@@ -27,6 +30,7 @@ import {
   type Project,
 } from '../../src/model';
 import { expectLinearGrowth, GROWTH_OPTIONS } from '../support/growth';
+import { SPEC_ID, componentProject, testCatalog } from './componentFixtures';
 import { buildLargeProject } from './largeProject';
 import { buildLargeTypedProject } from './largeTypedProject';
 
@@ -401,4 +405,41 @@ describe('nearestFreeSpot', () => {
     ).toBe(false);
     expect(ms).toBeLessThan(200);
   });
+});
+
+describe('colocação em espaço livre (#1087)', () => {
+  budgetIt(
+    'peça nova com 100 irmãs que ocupam o R0 abaixo de 50 ms',
+    BUDGET_OPTIONS,
+    () => {
+      // Grade 10 × 10 de irmãs 30×30 com vão de 10 ao redor do centro da imagem (1000 × 800): o R0
+      // (450, 380, 100, 40) cai no meio dela, então a busca roda e o lugar livre fica fora da grade.
+      let p = componentProject();
+      for (let i = 0; i < 10; i++) {
+        for (let j = 0; j < 10; j++) {
+          p = createMarking(p, {
+            id: `S${i}_${j}`,
+            containerId: 'I1',
+            rect: { x: 300 + i * 40, y: 200 + j * 40, width: 30, height: 30 },
+          });
+        }
+      }
+      const catalog = testCatalog();
+      const args = {
+        containerId: 'I1',
+        parentId: null,
+        specId: SPEC_ID,
+        typeId: 'text',
+      } as const;
+      componentPlacement(p, catalog, args, approximateMeasurer);
+      const { value, ms } = time(() =>
+        componentPlacement(p, catalog, args, approximateMeasurer),
+      );
+      expect(value).not.toEqual({ x: 450, y: 380, width: 100, height: 40 });
+      expect(
+        placementIsFree(p, catalog, { ...args, rect: value }, approximateMeasurer),
+      ).toBe(true);
+      expect(ms).toBeLessThan(50);
+    },
+  );
 });

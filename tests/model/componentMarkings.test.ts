@@ -4,6 +4,7 @@ import {
   addComponentMarking,
   addContainer,
   componentPlacement,
+  moveContainer,
   componentTypes,
   placementFitsSlot,
   setContainerDrawingMode,
@@ -190,12 +191,25 @@ describe('componentPlacement: dentro de um container', () => {
     expectValid(p);
   });
 
-  it('passou do slot: presa dentro do retângulo do container', () => {
+  it('passou do slot: no lugar livre mais perto, dentro do container', () => {
     let p = withRow();
     p = add(p, 'T1', 'text', { parentId: 'C' });
     p = add(p, 'T2', 'text', { parentId: 'C' });
     p = add(p, 'T3', 'text', { parentId: 'C' });
-    // Próxima posição: 316 + 100 > 400; presa em x = 300.
+    // Próxima posição: 316 + 100 > 400. Antes ficava presa em x = 300, em cima da T2 (sobreposta);
+    // agora vai ao lugar livre mais perto, embaixo dela (148 = 100 + 40 + 8), ainda dentro do container.
+    expect(rectOf(p, 'T3')).toEqual({ x: 300, y: 148, width: 100, height: 40 });
+    expect(marking(p, 'T3').parentId).toBe('C');
+    expectValid(p);
+  });
+
+  it('passou do slot e o container está cheio: presa dentro dele, sem erro', () => {
+    let p = add(componentProject(), 'C', 'row', {
+      rect: { x: 100, y: 100, width: 300, height: 40 },
+    });
+    p = add(p, 'T1', 'text', { parentId: 'C' });
+    p = add(p, 'T2', 'text', { parentId: 'C' });
+    p = add(p, 'T3', 'text', { parentId: 'C' });
     expect(rectOf(p, 'T3')).toEqual({ x: 300, y: 100, width: 100, height: 40 });
     expectValid(p);
   });
@@ -295,14 +309,16 @@ describe('componentPlacement: dentro de um container', () => {
     expect(rectOf(dark, 'T2')).toEqual({ x: 70, y: 122, width: 100, height: 40 });
   });
 
-  it('layout none: sempre no início do slot', () => {
+  it('layout none: a primeira no início do slot; a segunda, ao lado, sem coincidir', () => {
     let p = add(componentProject(), 'C', 'box', {
       rect: { x: 50, y: 50, width: 300, height: 200 },
     });
     p = add(p, 'T1', 'text', { parentId: 'C' });
     p = add(p, 'T2', 'text', { parentId: 'C' });
     expect(rectOf(p, 'T1')).toEqual({ x: 50, y: 50, width: 100, height: 40 });
-    expect(rectOf(p, 'T2')).toEqual({ x: 50, y: 50, width: 100, height: 40 });
+    // O início do slot já está ocupado pela T1: o lugar livre mais perto é logo abaixo (50 + 40 + 8).
+    expect(rectOf(p, 'T2')).toEqual({ x: 50, y: 98, width: 100, height: 40 });
+    expect(marking(p, 'T2').parentId).toBe('C');
   });
 
   it('container menor que o tamanho inicial: encolhe, respeitando o mínimo', () => {
@@ -494,7 +510,18 @@ describe('no canvas (containerId nulo)', () => {
     );
 
   it('sem centro: o size do componente em unidades do canvas, centrado em (0, 0)', () => {
-    expect(place()).toEqual({ x: -50, y: -20, width: 100, height: 40 });
+    // O container I1 ocupa (0, 0) no canvas: o centro pedido está coberto, então a peça vai ao
+    // lugar livre mais perto, logo acima dele (-8 − 40 = -48).
+    expect(place()).toEqual({ x: -50, y: -48, width: 100, height: 40 });
+    const away = moveContainer(componentProject(), 'I1', 5000, 5000);
+    expect(
+      componentPlacement(
+        away,
+        catalog,
+        { containerId: null, parentId: null, specId: SPEC_ID, typeId: 'text' },
+        approximateMeasurer,
+      ),
+    ).toEqual({ x: -50, y: -20, width: 100, height: 40 });
   });
 
   it('centrada no ponto pedido, com coordenadas inteiras e sem limite nenhum', () => {
@@ -555,9 +582,10 @@ describe('no canvas (containerId nulo)', () => {
   });
 
   it('caiu inteira dentro de um container: o assentar a faz marcação dele, convertida', () => {
+    // Com `rect` explícito (sem `rect`, a colocação desvia do container, que é obstáculo no canvas).
     const p = add(componentProject(), 'M1', 'text', {
       containerId: null,
-      center: { x: 200, y: 300 },
+      rect: { x: 150, y: 280, width: 100, height: 40 },
     });
     // Container I1 em (0,0) na escala 1: o retângulo do canvas vira o mesmo em pixels dele.
     expect(marking(p, 'M1')).toMatchObject({
@@ -766,9 +794,9 @@ describe('placementFitsSlot', () => {
   });
 
   it('slot cheio: a filha presa ao componente não cabe na área do slot', () => {
-    // O slot de `inset` fica 20 px para dentro do componente: x de 120 a 380.
+    // O slot de `inset` fica 20 px para dentro do componente: x de 120 a 380, y de 120 a 160.
     let p = add(componentProject(), 'C', 'inset', {
-      rect: { x: 100, y: 100, width: 300, height: 200 },
+      rect: { x: 100, y: 100, width: 300, height: 80 },
     });
     p = add(p, 'T1', 'text', { parentId: 'C' });
     p = add(p, 'T2', 'text', { parentId: 'C' });
@@ -785,7 +813,7 @@ describe('placementFitsSlot', () => {
 
   it('slot cheio do tamanho do componente: presa dentro dele, mas em cima da última filha', () => {
     let p = add(componentProject(), 'C', 'row', {
-      rect: { x: 100, y: 100, width: 300, height: 100 },
+      rect: { x: 100, y: 100, width: 300, height: 40 },
     });
     p = add(p, 'T1', 'text', { parentId: 'C' });
     p = add(p, 'T2', 'text', { parentId: 'C' });
