@@ -230,6 +230,12 @@ describe('painel.py roles --sessao (etapa #1643, SV1, decisões 3 e 4)', () => {
     expect(sessao('session_s1')).toContain('esta sessão: coordenador (não supervisiona)');
   });
 
+  it('--sessao com espaços ou quebra de linha em volta vale o id sem eles (revisão)', () => {
+    registerBoth();
+    expect(sessao(' session_s2\n')).toBe(`${BASE_LINES}esta sessão: registrada\n`);
+    expect(sessao('session_s1 ')).toContain('antiga (atual: session_s2)');
+  });
+
   it('--sessao vazio (ou só espaços) sai com código 2 e a mensagem', () => {
     for (const vazio of ['', '  ']) {
       const r = runRaw('roles', '--sessao', vazio, dir);
@@ -282,6 +288,9 @@ describe('implementar-fila: "Achar ou criar", passo 1, acha o painel pelo fixado
     expect(passo1).toMatch(/painel\.py roles/);
     expect(passo1).toMatch(/—/);
     expect(passo1).toContain('painel=novo');
+    // ao menos um papel registrado (não os dois) e para no primeiro que serve (revisão)
+    expect(passo1).toMatch(/ao menos um papel/);
+    expect(passo1).toMatch(/pare no primeiro/);
   });
 });
 

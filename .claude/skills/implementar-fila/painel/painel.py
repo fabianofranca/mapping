@@ -659,7 +659,7 @@ def cmd_roles(a):
         link = f" ({r['link']})" if r.get("link") else ""
         print(f"{name} {r.get('n', 0)}: {r.get('id', '')}{link}")
     if a.sessao is not None:
-        print(f"esta sessão: {session_verdict(meta, a.sessao)}")
+        print(f"esta sessão: {session_verdict(meta, a.sessao.strip())}")
 
 
 def check_request_id(v):
