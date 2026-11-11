@@ -1,4 +1,4 @@
-# Medida pelo conteúdo no formato 4 — [Não lançado] (épico `epic/medida-conteudo`, PR #0, MCP 0.35.0, schema v18)
+# Medida pelo conteúdo no formato 4 — [Não lançado] (épico `epic/medida-conteudo`, PR #1580, MCP 0.35.0, schema v18)
 
 ## Corrigido
 
