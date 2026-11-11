@@ -120,13 +120,18 @@ export interface TempoItem {
   nome: string;
   /** Duração do primeiro `start` ao último `end`; `null` quando falta uma marca (tempo não medido). */
   segundos: number | null;
+  /** Com o `runs.log`: os `run` e os checks gravados entre o `start` e o `end` do roteiro. */
+  runs?: number;
+  checks?: number;
 }
 export interface Tempos {
   itens: TempoItem[];
   avisos: string[];
   totalSegundos: number;
+  totalRuns?: number;
+  totalChecks?: number;
 }
-export function temposFromLog(text: string): Tempos;
+export function temposFromLog(text: string, runsText?: string): Tempos;
 export function temposFromDir(apoioDir: string): Tempos;
 /** A `apoio/` da rodada mais recente em `~/mapping-testes`, ou `null` (usada quando `APOIO` não está exportado). */
 export function defaultApoioDir(home?: string): string | null;
@@ -185,7 +190,7 @@ export function paletteDrag(
   page: unknown,
   tipo: string,
   para: { x: number; y: number },
-  options?: { capture?: string; steps?: number },
+  options?: { capture?: string; steps?: number; grupo?: string; projectDir?: string },
 ): Promise<{ via: 'nativo' | 'sintetico' }>;
 export function drag(
   page: unknown,
@@ -214,6 +219,25 @@ export function runStep(
     apoioDir?: string;
     projectDir?: string;
     prazoSeconds?: number;
+    connectFn?: (apoioDir?: string) => Promise<{ browser: unknown; page: unknown }>;
+    ctx?: Record<string, unknown>;
+    io?: { log: (message: string) => void; error: (message: string) => void };
+  },
+): Promise<number>;
+export function startRunServer(options: {
+  apoioDir: string;
+  connectFn?: (apoioDir?: string) => Promise<{ browser: unknown; page: unknown }>;
+  onExit?: () => void;
+}): Promise<{ close: () => Promise<void> }>;
+export function runViaServer(
+  body: string,
+  options: {
+    apoioDir: string;
+    projectDir?: string;
+    prazoSeconds?: number;
+    novo?: boolean;
+    socketWaitMs?: number;
+    spawnServer?: (apoioDir: string) => unknown;
     connectFn?: (apoioDir?: string) => Promise<{ browser: unknown; page: unknown }>;
     io?: { log: (message: string) => void; error: (message: string) => void };
   },

@@ -24,13 +24,14 @@
 /* global document, location, CSS, MutationObserver, DataTransfer, DragEvent -- só dentro das funções que rodam na página */
 import { chromium } from 'playwright';
 import { createHash } from 'node:crypto';
-import { execFile, execFileSync, spawnSync } from 'node:child_process';
+import { execFile, execFileSync, spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { promisify } from 'node:util';
+import util, { promisify } from 'node:util';
 import { guideExcerpt, guideSection, listSecoes } from './round-guide.mjs';
 
 const execFileAsync = promisify(execFile);
@@ -686,11 +687,30 @@ export function mark(apoioDir, roteiro, fase) {
 }
 
 /**
+ * Lê o texto de um `runs.log` (`<hora ISO> run=<n> codigo=<c> checks=<k> falhas=<f>` por linha,
+ * gravado pelo `cloud.mjs run`) e devolve `{ t, checks, falhas }` por linha válida. Pura.
+ */
+function runsFromLog(text) {
+  const runs = [];
+  for (const linha of String(text ?? '').split('\n')) {
+    const m = linha.match(
+      /^(\S+)\s+run=(\d+)\s+codigo=(\d+)\s+checks=(\d+)\s+falhas=(\d+)/,
+    );
+    const t = m ? Date.parse(m[1]) : Number.NaN;
+    if (m && !Number.isNaN(t))
+      runs.push({ t, checks: Number(m[4]), falhas: Number(m[5]) });
+  }
+  return runs;
+}
+
+/**
  * Lê o texto de um `tempos.log` (`<nome> <start|end> <hora ISO>` por linha) e devolve, por nome,
  * a duração do primeiro `start` ao último `end`, o total e os avisos (etapa #482, decisão 8).
  * Marca repetida vira aviso; nome sem par (ou com o fim antes do início) fica com `segundos: null`.
+ * Com o texto do `runs.log` (etapa #1533, decisão 7), cada item traz também `runs` e `checks`: os
+ * `run` gravados entre o primeiro `start` e o último `end` do roteiro.
  */
-export function temposFromLog(text) {
+export function temposFromLog(text, runsText) {
   const nomes = new Map();
   const avisos = [];
   for (const linha of String(text ?? '').split('\n')) {
@@ -705,8 +725,10 @@ export function temposFromLog(text) {
     e[fase].push(t);
     nomes.set(nome, e);
   }
+  const runs = runsText === undefined ? null : runsFromLog(runsText);
   const itens = [];
   let totalSegundos = 0;
+  const totalRuns = { runs: 0, checks: 0 };
   for (const [nome, e] of nomes) {
     for (const fase of ['start', 'end']) {
       if (e[fase].length > 1) {
@@ -726,31 +748,51 @@ export function temposFromLog(text) {
       segundos = Math.round((fim - ini) / 1000);
       totalSegundos += segundos;
     }
-    itens.push({ nome, segundos });
+    const item = { nome, segundos };
+    if (runs) {
+      const dentro =
+        segundos === null ? [] : runs.filter((r) => r.t >= ini && r.t <= fim);
+      item.runs = dentro.length;
+      item.checks = dentro.reduce((soma, r) => soma + r.checks, 0);
+      totalRuns.runs += item.runs;
+      totalRuns.checks += item.checks;
+    }
+    itens.push(item);
   }
-  return { itens, avisos, totalSegundos };
+  const result = { itens, avisos, totalSegundos };
+  if (runs)
+    Object.assign(result, { totalRuns: totalRuns.runs, totalChecks: totalRuns.checks });
+  return result;
 }
 
-/** `<apoioDir>/tempos.log` lido por `temposFromLog`; sem o arquivo, não há nada medido. */
+/** `<apoioDir>/tempos.log` lido por `temposFromLog`, com o `runs.log` quando existe; sem o arquivo, não há nada medido. */
 export function temposFromDir(apoioDir) {
   const file = path.join(apoioDir, 'tempos.log');
   if (!fs.existsSync(file)) {
     return { itens: [], avisos: ['sem tempos.log: tempo não medido'], totalSegundos: 0 };
   }
-  return temposFromLog(fs.readFileSync(file, 'utf8'));
+  const runsFile = path.join(apoioDir, 'runs.log');
+  return temposFromLog(
+    fs.readFileSync(file, 'utf8'),
+    fs.existsSync(runsFile) ? fs.readFileSync(runsFile, 'utf8') : undefined,
+  );
 }
 
 const fmtDuracao = (s) => `${Math.floor(s / 60)}min${String(s % 60).padStart(2, '0')}s`;
 
 /** O texto que a CLI imprime e que o relato copia no "Tempo por roteiro". */
-export function formatTempos({ itens, avisos, totalSegundos }) {
+export function formatTempos({ itens, avisos, totalSegundos, totalRuns, totalChecks }) {
   const largura = Math.max(5, ...itens.map((i) => i.nome.length));
+  const contagem = (runs, checks) =>
+    runs === undefined ? '' : `  ${runs} run, ${checks} checks`;
   const linhas = itens.map(
     (i) =>
-      `${i.nome.padEnd(largura)}  ${i.segundos === null ? 'tempo não medido' : fmtDuracao(i.segundos)}`,
+      `${i.nome.padEnd(largura)}  ${i.segundos === null ? 'tempo não medido' : fmtDuracao(i.segundos)}${contagem(i.runs, i.checks)}`,
   );
   if (itens.length)
-    linhas.push(`${'total'.padEnd(largura)}  ${fmtDuracao(totalSegundos)}`);
+    linhas.push(
+      `${'total'.padEnd(largura)}  ${fmtDuracao(totalSegundos)}${contagem(totalRuns, totalChecks)}`,
+    );
   for (const a of avisos) linhas.push(`aviso: ${a}`);
   return linhas.join('\n');
 }
@@ -948,6 +990,17 @@ async function readMapping(projectDir) {
   return { error: 'JSON inválido' };
 }
 
+/** Grava `ultima-pasta.txt` só quando o conteúdo muda (a pasta lembrada não fica velha nem é regravada à toa). */
+function rememberFolder(file, absolute) {
+  try {
+    if (fs.readFileSync(file, 'utf8').trim() === absolute) return;
+  } catch {
+    // Sem o arquivo: grava.
+  }
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, absolute);
+}
+
 /**
  * Estado numa chamada, para agir e conferir sem idas extras ao modelo: aba, diálogos abertos,
  * avisos visíveis, gravação, foco, janelas nativas além do Chrome e, com `projectDir`, a
@@ -958,6 +1011,7 @@ export async function state(page, apoioDir, { projectDir } = {}) {
   loadEnv(apoioDir);
   const lastFolderFile = path.join(apoioDir, 'state', 'ultima-pasta.txt');
   // `undefined`: a pasta gravada, se houver; `null`: não lê disco (etapa #1256, decisão 9).
+  const explicitFolder = typeof projectDir === 'string' && projectDir !== '';
   if (projectDir === undefined && fs.existsSync(lastFolderFile)) {
     projectDir = fs.readFileSync(lastFolderFile, 'utf8').trim() || undefined;
   }
@@ -978,11 +1032,9 @@ export async function state(page, apoioDir, { projectDir } = {}) {
   const result = { ...dom, windows };
   if (projectDir) {
     const absolute = path.resolve(projectDir);
+    // Pasta explícita: lembrada mesmo se a leitura falha, e só regravada quando muda (#1430 e).
+    if (explicitFolder) rememberFolder(lastFolderFile, absolute);
     const read = await readMapping(projectDir);
-    if (!read.error) {
-      fs.mkdirSync(path.dirname(lastFolderFile), { recursive: true });
-      fs.writeFileSync(lastFolderFile, absolute);
-    }
     if (read.error) {
       result.project = {
         revision: null,
@@ -1302,15 +1354,42 @@ export async function drag(
   await page.mouse.up();
 }
 
-/** Dispara o arrasto da Paleta por eventos (roda na página): `dragstart`, `dragover`, `drop`, `dragend`. */
-function syntheticPaletteDrag({ tipo, para }) {
-  const item = [...document.querySelectorAll('li.library-type')].find(
-    (li) => li.querySelector('.library-type-name')?.textContent?.trim() === tipo,
-  );
-  if (!item) return;
+/** Roda na página: os grupos (`aria-label` das `section.library-group`) que têm um item com o nome exato do tipo. */
+function paletteGroupsOf({ tipo }) {
+  return [...document.querySelectorAll('section.library-group')]
+    .filter((group) =>
+      [...group.querySelectorAll('li.library-type .library-type-name')].some(
+        (name) => name.textContent?.trim() === tipo,
+      ),
+    )
+    .map((group) => group.getAttribute('aria-label') ?? '');
+}
+
+/**
+ * Dispara o arrasto da Paleta por eventos (roda na página): `dragstart`, `dragover`, `drop`,
+ * `dragend`. Devolve `{ ok: true }` ou `{ motivo }`: "o item '<tipo>' sumiu da Paleta" ou "o ponto
+ * (x, y) não cai no canvas (<elemento>)" (o alvo tem de estar dentro do `.canvas-host`).
+ */
+function syntheticPaletteDrag({ tipo, para, grupo }) {
+  const groups = grupo
+    ? [...document.querySelectorAll('section.library-group')].filter(
+        (g) => g.getAttribute('aria-label') === grupo,
+      )
+    : [document];
+  const item = groups
+    .flatMap((root) => [...root.querySelectorAll('li.library-type')])
+    .find((li) => li.querySelector('.library-type-name')?.textContent?.trim() === tipo);
+  if (!item) return { motivo: `o item '${tipo}' sumiu da Paleta` };
+  const target = document.elementFromPoint(para.x, para.y);
+  if (!target || !target.closest('.canvas-host')) {
+    const label = target
+      ? `${target.tagName.toLowerCase()}${target.classList.length ? `.${[...target.classList].join('.')}` : ''}`
+      : 'nada';
+    return { motivo: `o ponto (${para.x}, ${para.y}) não cai no canvas (${label})` };
+  }
   const data = new DataTransfer();
-  const fire = (target, type) =>
-    target.dispatchEvent(
+  const fire = (el, type) =>
+    el.dispatchEvent(
       new DragEvent(type, {
         bubbles: true,
         cancelable: true,
@@ -1320,32 +1399,65 @@ function syntheticPaletteDrag({ tipo, para }) {
       }),
     );
   fire(item, 'dragstart');
-  const target = document.elementFromPoint(para.x, para.y) ?? document.body;
   fire(target, 'dragover');
   fire(target, 'drop');
   fire(item, 'dragend');
+  return { ok: true };
+}
+
+/** Número de marcações do `mapping.json` da pasta (a medida do `paletteDrag`); lança se não lê. */
+async function countMarkings(projectDir) {
+  const read = await readMapping(projectDir);
+  if (read.error) {
+    throw new Error(`paletteDrag: não consegui ler o mapping.json (${read.error})`);
+  }
+  return Array.isArray(read.json.markings) ? read.json.markings.length : 0;
 }
 
 /**
- * Arrasta um tipo da Paleta aberta até um ponto de tela (etapa #1256, decisão 7). Acha o
- * `li.library-type` pelo nome do tipo, faz o arrasto nativo pelo mouse do Playwright (`move` no
- * item, `down`, `move` em `steps` passos até `para`, `up`) e confere que o `data-components` do
- * `.canvas-host` subiu. Sem subida, refaz por eventos (`dragstart` no item; `dragover`, `drop` e
- * `dragend` sob o ponto). Sem nenhuma, lança "o arrasto da Paleta não criou a instância".
- * Limite: o sucesso se mede pelo `data-components`, que só conta componentes desenhados; um tipo
- * sem desenho, numa camada oculta ou na vista Atual pode criar a instância sem subir o contador (aí o
- * erro vem mesmo com a instância criada: confira o disco).
+ * Arrasta um tipo da Paleta aberta até um ponto de tela (etapa #1256, decisão 7; #1533, decisões 9
+ * e 10). Acha o item pelo `.library-type-name` com o texto exato (dois grupos com o mesmo tipo:
+ * lança com a lista dos grupos; `{ grupo }`, o `aria-label` da `section.library-group`, escolhe),
+ * faz o arrasto nativo pelo mouse do Playwright (`move` no item, `down`, `move` em `steps` passos
+ * até `para`, `up`) e confere que o `mapping.json` da pasta do projeto ganhou uma marcação. Sem
+ * marcação nova, refaz por eventos (`dragstart` no item; `dragover`, `drop` e `dragend` sob o
+ * ponto, que tem de estar no `.canvas-host`); se o nativo criou, o sintético não roda. Sem nenhuma,
+ * lança "o arrasto da Paleta não criou a instância"; o sintético que não pôde rodar lança o motivo.
+ * `projectDir` é obrigatório (no corpo do `run`, vale a pasta do `run`): sem ela lança
+ * "paletteDrag precisa da pasta do projeto".
  * `capture` (caminho de PNG) grava o recorte do canvas antes de soltar, com o destino aceso.
  * Devolve `{ via: 'nativo' | 'sintetico' }`.
  */
-export async function paletteDrag(page, tipo, para, { capture, steps = 10 } = {}) {
+export async function paletteDrag(
+  page,
+  tipo,
+  para,
+  { capture, steps = 10, grupo, projectDir } = {},
+) {
+  if (!projectDir) throw new Error('paletteDrag precisa da pasta do projeto');
+  const groups = await page.evaluate(paletteGroupsOf, { tipo });
+  if (groups.length === 0) {
+    throw new Error(`paletteDrag: o tipo '${tipo}' não está na Paleta aberta`);
+  }
+  const list = groups.map((g) => `'${g}'`).join(', ');
+  if (grupo !== undefined && !groups.includes(grupo)) {
+    throw new Error(
+      `paletteDrag: o grupo '${grupo}' não tem o tipo '${tipo}'; grupos que têm: ${list}`,
+    );
+  }
+  if (grupo === undefined && groups.length > 1) {
+    throw new Error(
+      `paletteDrag: o tipo '${tipo}' está em mais de um grupo (${list}); passe { grupo }`,
+    );
+  }
+  const chosen = grupo ?? groups[0];
   const host = page.locator('.canvas-host');
-  const components = async () =>
-    Number((await host.getAttribute('data-components')) ?? 0);
-  const before = await components();
+  const before = await countMarkings(projectDir);
   const item = page
-    .locator('li.library-type')
-    .filter({ has: page.getByText(tipo, { exact: true }) });
+    .locator(
+      `section.library-group[aria-label=${JSON.stringify(chosen)}] li.library-type`,
+    )
+    .filter({ has: page.locator('.library-type-name').getByText(tipo, { exact: true }) });
   await item.scrollIntoViewIfNeeded();
   const box = await item.boundingBox();
   if (!box) throw new Error(`paletteDrag: o tipo '${tipo}' não está na Paleta aberta`);
@@ -1361,10 +1473,15 @@ export async function paletteDrag(page, tipo, para, { capture, steps = 10 } = {}
   if (capture) await host.screenshot({ path: capture });
   await page.mouse.up();
   await settle(page);
-  if ((await components()) > before) return { via: 'nativo' };
-  await page.evaluate(syntheticPaletteDrag, { tipo, para });
+  if ((await countMarkings(projectDir)) > before) return { via: 'nativo' };
+  const synthetic = await page.evaluate(syntheticPaletteDrag, {
+    tipo,
+    para,
+    grupo: chosen,
+  });
+  if (synthetic?.motivo) throw new Error(`paletteDrag: ${synthetic.motivo}`);
   await settle(page);
-  if ((await components()) > before) return { via: 'sintetico' };
+  if ((await countMarkings(projectDir)) > before) return { via: 'sintetico' };
   throw new Error('o arrasto da Paleta não criou a instância');
 }
 
@@ -1522,24 +1639,78 @@ export function defaultApoioDir(home = os.homedir()) {
 /** Prazo padrão (s) do `cloud.mjs run`: abaixo dos 120 s padrão do Bash (etapa #1148, decisão 2). */
 const RUN_DEADLINE_SECONDS = 90;
 
+/** O `console` do corpo: manda para o `io` (no servidor, a saída volta ao cliente em vez de ir ao log). */
+function bodyConsole(io) {
+  const text = (args) => util.format(...args);
+  return {
+    log: (...args) => io.log(text(args)),
+    info: (...args) => io.log(text(args)),
+    error: (...args) => io.error(text(args)),
+    warn: (...args) => io.error(text(args)),
+  };
+}
+
 /**
- * Executa o corpo de um script de passo (etapa #1148, decisão 1): conecta (`connectFn`, padrão
- * `connect`), roda `body` como corpo de uma função assíncrona com `page`, `browser`, `apoioDir`,
- * `projectDir` e todos os exports deste módulo em escopo, e imprime `formatState(...)` no fim.
- * Devolve o código de saída (0 sucesso, 1 erro, 124 prazo esgotado); quem chama faz o `process.exit`.
- * Em erro ou prazo imprime a mensagem (`io.error`) e o estado, se a conexão ainda responder.
+ * `check(rotulo, condicao, detalhe?)` do corpo do `run` (etapa #1533, decisão 7). `condicao` é um
+ * booleano, uma promessa ou uma função (síncrona ou assíncrona) que devolve verdadeiro ou lança.
+ * Não interrompe o corpo: o resultado fica em `results` e o `execStep` espera os pendentes.
  */
-export async function runStep(
+function makeCheck(results, pending) {
+  return (rotulo, condicao, detalhe) => {
+    const task = (async () => {
+      try {
+        const value = typeof condicao === 'function' ? await condicao() : await condicao;
+        if (value) {
+          results.push({ rotulo, ok: true, detalhe });
+        } else {
+          results.push({ rotulo, ok: false, mensagem: detalhe ?? 'condição falsa' });
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        results.push({
+          rotulo,
+          ok: false,
+          mensagem: detalhe ? `${message} (${detalhe})` : message,
+        });
+      }
+    })();
+    pending.push(task);
+    return task;
+  };
+}
+
+/** Uma linha por check: `✅ <rótulo>` ou `❌ <rótulo> — <mensagem>`. */
+function formatChecks(results) {
+  return results.map((r) =>
+    r.ok
+      ? `✅ ${r.rotulo}${typeof r.detalhe === 'string' ? ` — ${r.detalhe}` : ''}`
+      : `❌ ${r.rotulo} — ${r.mensagem}`,
+  );
+}
+
+/**
+ * O executor de um corpo (etapa #1148, decisão 1; #1533, decisões 6 e 7): roda `body` como corpo de
+ * uma função assíncrona com `page`, `browser`, `apoioDir`, `projectDir`, `ctx`, `check`, `console`
+ * (que vai para `io`) e todos os exports deste módulo em escopo; no fim imprime a linha de cada
+ * `check` e o `formatState(...)`. Devolve `{ code, checks }`: 0 sucesso, 1 erro no corpo ou check
+ * com falha, 124 prazo esgotado. `connection` (`{ browser, page }`) reaproveita uma conexão (o
+ * servidor); sem ela conecta com `connectFn`.
+ */
+async function execStep(
   body,
   {
     apoioDir,
     projectDir,
     prazoSeconds = RUN_DEADLINE_SECONDS,
     connectFn = connect,
+    connection,
+    ctx = {},
     io = { log: console.log, error: console.error },
   } = {},
 ) {
-  const { browser, page } = await connectFn(apoioDir);
+  const { browser, page } = connection ?? (await connectFn(apoioDir));
+  const checks = [];
+  const pending = [];
   const printState = async () => {
     try {
       const snapshot = await Promise.race([
@@ -1560,10 +1731,22 @@ export async function runStep(
   let code = 0;
   try {
     const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
-    const scope = { page, browser, apoioDir, projectDir, ...exportsOf() };
+    const scope = {
+      page,
+      browser,
+      apoioDir,
+      projectDir,
+      ...exportsOf(),
+      // No corpo, vale a pasta do `run` quando a chamada não passa `{ projectDir }`.
+      paletteDrag: (p, tipo, para, options = {}) =>
+        paletteDrag(p, tipo, para, { projectDir, ...options }),
+      ctx,
+      check: makeCheck(checks, pending),
+      console: bodyConsole(io),
+    };
     const fn = new AsyncFunction(...Object.keys(scope), body);
     const outcome = await Promise.race([
-      fn(...Object.values(scope)).then(() => 'ok'),
+      fn(...Object.values(scope)).then(() => Promise.all(pending).then(() => 'ok')),
       deadline,
     ]);
     if (outcome === 'prazo') {
@@ -1585,8 +1768,344 @@ export async function runStep(
   } finally {
     clearTimeout(timer);
   }
+  for (const line of formatChecks(checks)) io.log(line);
+  if (code === 0 && checks.some((c) => !c.ok)) code = 1;
   await printState();
-  return code;
+  return { code, checks };
+}
+
+/**
+ * Executa o corpo de um script de passo, sem servidor (conecta, roda, imprime o `check` e o
+ * `state()`), e devolve o código de saída (0 sucesso, 1 erro ou check com falha, 124 prazo
+ * esgotado); quem chama faz o `process.exit`. É o caminho de reserva do `cloud.mjs run` e o
+ * executor que o servidor usa; `ctx` começa vazio.
+ */
+export async function runStep(body, options = {}) {
+  return (await execStep(body, options)).code;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Servidor persistente do `run` (etapa #1533, decisões 6 a 8)
+// ---------------------------------------------------------------------------------------------
+
+const SOCKET_NAME = 'cloud.sock';
+const PID_NAME = 'cloud.pid';
+const SERVER_START_WAIT_MS = 15000;
+/** Folga do cliente sobre o prazo do `run`: o servidor responde 124 antes; passada a folga, ele travou. */
+const CLIENT_GRACE_MS = 5000;
+
+/** Próximo número de `run` (continua depois de um servidor novo): maior `<n>.js` de `apoio/runs/` + 1. */
+function nextRunNumber(apoioDir) {
+  let max = 0;
+  try {
+    for (const name of fs.readdirSync(path.join(apoioDir, 'runs'))) {
+      const n = Number(name.match(/^(\d+)\.js$/)?.[1]);
+      if (n > max) max = n;
+    }
+  } catch {
+    // Sem a pasta: é o primeiro.
+  }
+  return max + 1;
+}
+
+/**
+ * Grava um `run`: `apoio/runs/<n>.js` (o corpo), `<n>.out` (a saída) e uma linha em `apoio/runs.log`
+ * (`<hora> run=<n> codigo=<c> checks=<k> falhas=<f>`). É a Reprodução de um ❌ (decisão 8).
+ */
+function recordRun(apoioDir, { body, code, lines, checks }) {
+  try {
+    const n = nextRunNumber(apoioDir);
+    const dir = path.join(apoioDir, 'runs');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, `${n}.js`), body);
+    fs.writeFileSync(
+      path.join(dir, `${n}.out`),
+      `${lines.map((l) => l.text).join('\n')}\n[código ${code}]\n`,
+    );
+    const falhas = checks.filter((c) => !c.ok).length;
+    fs.appendFileSync(
+      path.join(apoioDir, 'runs.log'),
+      `${new Date().toISOString()} run=${n} codigo=${code} checks=${checks.length} falhas=${falhas}\n`,
+    );
+  } catch {
+    // O registro não derruba o passo.
+  }
+}
+
+/** Uma conexão ainda serve? (`connectFn` falso pode não ter `isConnected`/`isClosed`.) */
+function connectionAlive({ browser, page }) {
+  return browser.isConnected?.() !== false && page.isClosed?.() !== true;
+}
+
+/** Roda um corpo e devolve `{ code, lines, checks }`, com a saída capturada em ordem (`s`: 'out' ou 'err'). */
+async function captureStep(body, options) {
+  const lines = [];
+  const io = {
+    log: (text) => lines.push({ s: 'out', text }),
+    error: (text) => lines.push({ s: 'err', text }),
+  };
+  try {
+    const { code, checks } = await execStep(body, { ...options, io });
+    return { code, lines, checks };
+  } catch (error) {
+    lines.push({
+      s: 'err',
+      text: error instanceof Error ? error.message : String(error),
+    });
+    return { code: 1, lines, checks: [] };
+  }
+}
+
+/**
+ * Sobe o servidor do `run` (decisão 6): escuta o soquete Unix `apoio/cloud.sock`, mantém a conexão
+ * CDP e o `ctx` entre os `run` e atende um `run` por vez. Prazo esgotado (124): responde, para o
+ * servidor e chama `onExit` (o processo `serve` sai). Conexão caída: reconecta no `run` seguinte,
+ * com o aviso e o `ctx` vazio. Devolve `{ close }`.
+ */
+export async function startRunServer({
+  apoioDir,
+  connectFn = connect,
+  onExit = () => process.exit(0),
+}) {
+  const sock = path.join(apoioDir, SOCKET_NAME);
+  fs.mkdirSync(apoioDir, { recursive: true });
+  fs.rmSync(sock, { force: true });
+  let connection = null;
+  let ctx = {};
+  let queue = Promise.resolve();
+  let closed = false;
+  const sockets = new Set();
+
+  const close = async () => {
+    if (closed) return;
+    closed = true;
+    for (const socket of sockets) socket.destroy();
+    await new Promise((resolve) => server.close(resolve));
+    fs.rmSync(sock, { force: true });
+    fs.rmSync(path.join(apoioDir, PID_NAME), { force: true });
+    try {
+      await connection?.browser.close();
+    } catch {
+      // Já caída.
+    }
+  };
+
+  const handle = async (request) => {
+    const warnings = [];
+    if (connection && !connectionAlive(connection)) {
+      warnings.push('aviso: a conexão com o Chrome caiu; reconectei e o ctx está vazio');
+      connection = null;
+    }
+    if (!connection) {
+      try {
+        connection = await connectFn(apoioDir);
+      } catch (error) {
+        return {
+          code: 1,
+          lines: [
+            { s: 'err', text: error instanceof Error ? error.message : String(error) },
+          ],
+          checks: [],
+        };
+      }
+      ctx = {};
+    }
+    // Caminhos relativos do corpo valem a partir da pasta de onde o `run` foi chamado.
+    if (request.cwd) {
+      try {
+        process.chdir(request.cwd);
+      } catch {
+        // A pasta sumiu: fica onde está.
+      }
+    }
+    const result = await captureStep(request.body, {
+      apoioDir,
+      projectDir: request.projectDir,
+      prazoSeconds: request.prazoSeconds,
+      connection,
+      ctx,
+    });
+    result.lines.unshift(...warnings.map((text) => ({ s: 'err', text })));
+    recordRun(apoioDir, { body: request.body, ...result });
+    return result;
+  };
+
+  const server = net.createServer((socket) => {
+    sockets.add(socket);
+    socket.on('close', () => sockets.delete(socket));
+    socket.on('error', () => {});
+    let buffer = '';
+    socket.on('data', (chunk) => {
+      buffer += chunk.toString('utf8');
+      const end = buffer.indexOf('\n');
+      if (end < 0) return;
+      const line = buffer.slice(0, end);
+      buffer = buffer.slice(end + 1);
+      let request;
+      try {
+        request = JSON.parse(line);
+      } catch {
+        socket.end(`${JSON.stringify({ code: 2, lines: [], checks: [] })}\n`);
+        return;
+      }
+      if (request.cmd === 'quit') {
+        socket.end(`${JSON.stringify({ code: 0, lines: [] })}\n`, () => {
+          close().then(onExit);
+        });
+        return;
+      }
+      queue = queue.then(async () => {
+        if (closed) return;
+        const result = await handle(request);
+        const expired = result.code === 124;
+        socket.write(`${JSON.stringify(result)}\n`, () => {
+          if (expired) close().then(onExit);
+        });
+      });
+    });
+  });
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(sock, resolve);
+  });
+  fs.writeFileSync(path.join(apoioDir, PID_NAME), String(process.pid));
+  return { close };
+}
+
+/** Manda uma requisição ao soquete e devolve a resposta; `null` se ninguém atende. */
+function sendToServer(sock, request, timeoutMs) {
+  return new Promise((resolve) => {
+    const socket = net.createConnection(sock);
+    let buffer = '';
+    let settled = false;
+    const finish = (value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      socket.destroy();
+      resolve(value);
+    };
+    const timer = setTimeout(() => finish({ timeout: true }), timeoutMs);
+    socket.on('connect', () => socket.write(`${JSON.stringify(request)}\n`));
+    socket.on('data', (chunk) => {
+      buffer += chunk.toString('utf8');
+      const end = buffer.indexOf('\n');
+      if (end >= 0) {
+        try {
+          finish(JSON.parse(buffer.slice(0, end)));
+        } catch {
+          finish(null);
+        }
+      }
+    });
+    socket.on('error', () => finish(null));
+    socket.on('close', () => finish(null));
+  });
+}
+
+/** Para o servidor pelo `apoio/cloud.pid` (travado ou de outra rodada); silencioso se não existe. */
+function killServer(apoioDir) {
+  try {
+    const pid = Number(fs.readFileSync(path.join(apoioDir, PID_NAME), 'utf8'));
+    if (pid > 0) process.kill(pid, 'SIGTERM');
+  } catch {
+    // Sem servidor.
+  }
+  fs.rmSync(path.join(apoioDir, SOCKET_NAME), { force: true });
+  fs.rmSync(path.join(apoioDir, PID_NAME), { force: true });
+}
+
+/** Sobe `cloud.mjs serve` solto do terminal (`setsid`, stdin de /dev/null, log em `apoio/cloud-serve.log`). */
+function spawnServeProcess(apoioDir) {
+  const log = fs.openSync(path.join(apoioDir, 'cloud-serve.log'), 'a');
+  const child = spawn(process.execPath, [fileURLToPath(import.meta.url), 'serve'], {
+    detached: true,
+    stdio: ['ignore', log, log],
+    env: { ...process.env, APOIO: apoioDir },
+  });
+  child.unref();
+  fs.closeSync(log);
+}
+
+/**
+ * O `cloud.mjs run` (decisão 6): manda o corpo ao servidor persistente (sobe um se não houver) e
+ * imprime a resposta em `io`; devolve o código (0, 1 ou 124). `novo` reinicia o servidor. Se o
+ * servidor não sobe em `socketWaitMs`, cai no caminho de hoje (`runStep`) e avisa.
+ * `spawnServer` e `connectFn` são injetáveis para teste.
+ */
+export async function runViaServer(
+  body,
+  {
+    apoioDir,
+    projectDir,
+    prazoSeconds = RUN_DEADLINE_SECONDS,
+    novo = false,
+    socketWaitMs = SERVER_START_WAIT_MS,
+    spawnServer = spawnServeProcess,
+    connectFn = connect,
+    io = { log: console.log, error: console.error },
+  },
+) {
+  const sock = path.join(apoioDir, SOCKET_NAME);
+  const request = { body, projectDir, prazoSeconds, cwd: process.cwd() };
+  const timeoutMs = prazoSeconds * 1000 + CLIENT_GRACE_MS;
+  const print = (response) => {
+    for (const line of response.lines ?? [])
+      (line.s === 'err' ? io.error : io.log)(line.text);
+    return response.code;
+  };
+  fs.mkdirSync(apoioDir, { recursive: true });
+  if (novo && fs.existsSync(sock)) {
+    await sendToServer(sock, { cmd: 'quit' }, 3000);
+    for (let i = 0; i < 25 && fs.existsSync(sock); i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    killServer(apoioDir);
+  }
+  let response = fs.existsSync(sock)
+    ? await sendToServer(sock, request, timeoutMs)
+    : null;
+  if (response === null) {
+    // Soquete velho (servidor morto) ou nenhum servidor: sobe outro.
+    fs.rmSync(sock, { force: true });
+    try {
+      await spawnServer(apoioDir);
+    } catch {
+      // Cai na reserva abaixo.
+    }
+    const start = Date.now();
+    while (!fs.existsSync(sock) && Date.now() - start < socketWaitMs) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    response = fs.existsSync(sock) ? await sendToServer(sock, request, timeoutMs) : null;
+  }
+  if (response === null) {
+    io.error(
+      'aviso: o servidor do run não subiu; rodando no caminho direto (sem ctx entre os run)',
+    );
+    const result = await captureStep(body, {
+      apoioDir,
+      projectDir,
+      prazoSeconds,
+      connectFn,
+    });
+    recordRun(apoioDir, { body, ...result });
+    return print(result);
+  }
+  if (response.timeout) {
+    killServer(apoioDir);
+    io.error(`prazo de ${prazoSeconds} s esgotado no passo`);
+    return 124;
+  }
+  return print(response);
+}
+
+/** `cloud.mjs serve`: o processo que o primeiro `run` sobe; sai no prazo esgotado, no `--novo` ou no SIGTERM. */
+async function runServe(apoioDir) {
+  const { close } = await startRunServer({ apoioDir });
+  const stop = () => close().then(() => process.exit(0));
+  process.on('SIGTERM', stop);
+  process.on('SIGINT', stop);
 }
 
 /** Os exports de função e valor deste módulo (menos o próprio `runStep`), para o escopo do corpo. */
@@ -1744,8 +2263,8 @@ export const HELP = {
     desc: 'canto (nw, ne, sw, se) que a app pegaria no ponto (raio 12 a 22 px, xadrez), ou null',
   },
   paletteDrag: {
-    sig: 'paletteDrag(page, tipo, para, { capture?, steps? = 10 })',
-    desc: 'arrasta um tipo da Paleta aberta até um ponto de tela; capture = PNG antes de soltar; devolve { via: nativo | sintetico }',
+    sig: 'paletteDrag(page, tipo, para, { capture?, steps? = 10, grupo?, projectDir? })',
+    desc: 'arrasta um tipo da Paleta aberta até um ponto de tela e confere a marcação nova no mapping.json (projectDir; no run vale a pasta do run); grupo escolhe entre dois grupos com o mesmo tipo; capture = PNG antes de soltar; devolve { via: nativo | sintetico }',
   },
   setViewport: {
     sig: 'setViewport(page, largura, altura)',
@@ -1772,8 +2291,8 @@ export const HELP = {
     desc: 'marca início ou fim de um roteiro no tempos.log',
   },
   temposFromLog: {
-    sig: 'temposFromLog(texto)',
-    desc: 'durações por roteiro a partir do texto do tempos.log',
+    sig: 'temposFromLog(texto, textoDoRunsLog?)',
+    desc: 'durações por roteiro a partir do texto do tempos.log; com o runs.log, o total de run e de checks por roteiro',
   },
   temposFromDir: {
     sig: 'temposFromDir(apoioDir)',
@@ -1793,8 +2312,16 @@ export const HELP = {
     desc: 'ponto de tela de um ponto do container, lendo o data-viewport',
   },
   runStep: {
-    sig: 'runStep(corpo, { apoioDir, projectDir?, prazoSeconds?, connectFn?, io? })',
-    desc: 'executa o corpo de um script de passo (o que o comando run usa)',
+    sig: 'runStep(corpo, { apoioDir, projectDir?, prazoSeconds?, connectFn?, ctx?, io? })',
+    desc: 'executa o corpo de um script de passo sem servidor (o caminho de reserva do run); no corpo valem também ctx, check(rotulo, condicao, detalhe?) e console',
+  },
+  startRunServer: {
+    sig: 'startRunServer({ apoioDir, connectFn?, onExit? })',
+    desc: 'sobe o servidor persistente do run no soquete apoio/cloud.sock (o que o comando serve usa)',
+  },
+  runViaServer: {
+    sig: 'runViaServer(corpo, { apoioDir, projectDir?, prazoSeconds?, novo?, socketWaitMs?, spawnServer?, connectFn?, io? })',
+    desc: 'manda o corpo ao servidor persistente (sobe um se faltar) e devolve o código 0, 1 ou 124; sem servidor cai no runStep e avisa',
   },
   HELP: {
     sig: 'HELP',
@@ -1806,15 +2333,22 @@ export const HELP = {
 /** Comandos da CLI, para o `help`. */
 const CLI_HELP = [
   ['mark <roteiro> <start|end>', 'marca início ou fim de um roteiro no tempos.log'],
-  ['tempos [<apoio>]', 'duração por roteiro, do tempos.log'],
+  [
+    'tempos [<apoio>]',
+    'duração por roteiro, do tempos.log, com o total de run e de checks do runs.log',
+  ],
   ['state [<pasta-do-projeto>]', 'conecta, imprime o estado da tela e do disco e sai'],
   [
     'ponto <container> <x> <y> <pasta-do-projeto> [--perspectiva=<nome>] [--marcacao]',
     'ponto de tela de um ponto do container',
   ],
   [
-    'run [<pasta-do-projeto>] [--prazo=<s>]',
-    "executa o corpo do script lido da entrada padrão (heredoc <<'JS'), com page, browser, apoioDir, projectDir e os exports em escopo; imprime o estado; prazo 90 s",
+    'run [<pasta-do-projeto>] [--prazo=<s>] [--novo]',
+    "executa o corpo do script lido da entrada padrão (heredoc <<'JS') num servidor persistente (a conexão e o ctx ficam entre os run; apoio/cloud.sock), com page, browser, apoioDir, projectDir, ctx, check(rotulo, condicao, detalhe?) e os exports em escopo; imprime uma linha por check e o estado; sai 0, 1 (erro ou check com falha) ou 124 (prazo de 90 s; o servidor sai); --novo reinicia o servidor; cada run fica em apoio/runs/<n>.js e .out e em apoio/runs.log",
+  ],
+  [
+    'serve',
+    'o servidor persistente do run (apoio/cloud.sock, log em apoio/cloud-serve.log); o primeiro run o sobe sozinho, o cloud-up.sh --restart-chrome o para',
   ],
   [
     'find <texto>',
@@ -1942,7 +2476,7 @@ function runSecao(args) {
   }
 }
 
-/** Roda a CLI (`mark`, `state`, `tempos`, `ponto`, `run`, `passo`, `secao` e `help`); lê a pasta de apoio de `APOIO` (ou, sem ela, da rodada mais recente). */
+/** Roda a CLI (`mark`, `state`, `tempos`, `ponto`, `run`, `serve`, `passo`, `secao` e `help`); lê a pasta de apoio de `APOIO` (ou, sem ela, da rodada mais recente). */
 async function runCli(argv) {
   const [command, ...rest] = argv;
   if (command === 'mark') {
@@ -2040,13 +2574,23 @@ async function runCli(argv) {
     runSecao(rest);
     return;
   }
+  if (command === 'serve') {
+    const apoioDir = resolveApoio();
+    if (!apoioDir) {
+      process.exitCode = 2;
+      return;
+    }
+    await runServe(apoioDir);
+    return;
+  }
   if (command === 'run') {
     const prazoArg = rest.find((a) => a.startsWith('--prazo='));
     const prazo = prazoArg ? Number(prazoArg.slice(8)) : undefined;
+    const novo = rest.includes('--novo');
     const projectDir = rest.find((a) => !a.startsWith('--'));
     const apoioDir = resolveApoio();
     const usage =
-      "Uso: node cloud.mjs run [<pasta-do-projeto>] [--prazo=<s>] <<'JS' ... JS";
+      "Uso: node cloud.mjs run [<pasta-do-projeto>] [--prazo=<s>] [--novo] <<'JS' ... JS";
     if (!apoioDir || (prazoArg && !(prazo > 0))) {
       if (apoioDir) console.error(usage);
       process.exitCode = 2;
@@ -2058,7 +2602,12 @@ async function runCli(argv) {
       process.exitCode = 2;
       return;
     }
-    const code = await runStep(body, { apoioDir, projectDir, prazoSeconds: prazo });
+    const code = await runViaServer(body, {
+      apoioDir,
+      projectDir: projectDir ? path.resolve(projectDir) : undefined,
+      prazoSeconds: prazo,
+      novo,
+    });
     process.exit(code);
   }
   if (command === 'tempos') {
@@ -2072,7 +2621,7 @@ async function runCli(argv) {
     return;
   }
   console.error(
-    `Comando desconhecido: ${command}. Comandos: mark, state, tempos, ponto, run, find, passo, secao, help.`,
+    `Comando desconhecido: ${command}. Comandos: mark, state, tempos, ponto, run, serve, find, passo, secao, help.`,
   );
   process.exitCode = 2;
 }

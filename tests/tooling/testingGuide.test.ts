@@ -994,6 +994,29 @@ describe('TS2 — prompt com o guia da rodada, primeiro plano, state() e relato 
     expect(`${cloud}${guide}`).not.toMatch(/apoio\/env\b(?!\.sh)/);
   });
 
+  it('TE2 — o "Como agir", o "Conferir e registrar" e o "Relato" descrevem o servidor, o check, o ctx e a Reprodução (#1533, decisões 6 a 8)', () => {
+    expect(howTo).toContain('um `run` por lote de até 8 passos');
+    for (const text of [
+      'cloud.mjs serve',
+      '`ctx`',
+      '`check(rótulo, condição, detalhe?)`',
+      'run --novo',
+      'paletteDrag(page, tipo, para, { capture, grupo })',
+    ]) {
+      expect(howTo, text).toContain(text);
+    }
+    const conferir = cloud.slice(
+      cloud.indexOf('## Conferir e registrar'),
+      cloud.indexOf('## Relato'),
+    );
+    expect(conferir).toContain('**Reprodução**');
+    expect(conferir).toContain('apoio/runs/<n>.js');
+    expect(conferir).toContain('apoio/runs.log');
+    const relato = cloud.slice(cloud.indexOf('## Relato'));
+    expect(relato).toContain('**Reprodução**');
+    expect(relato).toMatch(/total de `run` e de checks/);
+  });
+
   it('o aviso ao coordenador usa o send_message do claude-code-remote, não o SendMessage', () => {
     expect(cloud).toMatch(/`send_message`[^\n]*claude-code-remote/);
     expect(cloud).toMatch(/n[ãa]o o `SendMessage`/);
