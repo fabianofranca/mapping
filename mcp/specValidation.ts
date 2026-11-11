@@ -6,13 +6,6 @@ import {
   type Spec,
   type SpecWarning,
 } from '../src/model';
-
-/** Os avisos como o MCP os devolve: `code`, `path` e `message` (sem o código de mensagem da interface). */
-export function plainWarnings(
-  warnings: readonly SpecWarning[],
-): { code: string; path: string; message: string }[] {
-  return warnings.map(({ code, path, message }) => ({ code, path, message }));
-}
 import { ToolError } from './errors';
 import { libraryCounts } from './library';
 import type { Roots } from './paths';
@@ -29,6 +22,13 @@ type Json = Record<string, unknown>;
 const MAX_SPEC_BYTES = 16 * 1024 * 1024;
 /** Erros devolvidos de uma vez; a importação da app também mostra só os primeiros. */
 const MAX_ERRORS = 100;
+
+/** Os avisos como o MCP os devolve: `code`, `path` e `message` (sem o código de mensagem da interface). */
+export function plainWarnings(
+  warnings: readonly SpecWarning[],
+): { code: string; path: string; message: string }[] {
+  return warnings.map(({ code, path, message }) => ({ code, path, message }));
+}
 
 export async function readSpecFile(roots: Roots, path: string): Promise<string> {
   const { real } = await roots.resolveExisting(path);

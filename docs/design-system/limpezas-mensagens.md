@@ -1,4 +1,4 @@
-# Limpezas do épico de mensagens do modelo — 2026-11-11 (épico `epic/limpezas-mensagens`)
+# Limpezas do épico de mensagens do modelo — [Não lançado] (épico `epic/limpezas-mensagens`)
 
 ## Pendências
 
