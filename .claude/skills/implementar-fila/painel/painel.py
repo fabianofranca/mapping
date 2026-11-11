@@ -383,7 +383,9 @@ def cmd_session(a):
     if "kind" in pairs:
         entry = session_entry(s.get("meta")[0], a.session)
         entry.setdefault("created", now())
-        entry.update({"issue": issue, "kind": pairs["kind"], "label": pairs.get("label", "")})
+        entry.update({"issue": issue, "kind": pairs["kind"]})
+        if "label" in pairs or "label" not in entry:
+            entry["label"] = pairs.get("label", "")
         s.touch("meta")
     s.commit()
 
@@ -402,7 +404,7 @@ def session_entry(meta, sid):
 def to_number(k, v, conv):
     try:
         x = conv(v)
-    except ValueError:
+    except (ValueError, OverflowError):
         raise Erro(f"{k} precisa ser numérico, veio '{v}'")
     if x != x or x in (float("inf"), float("-inf")) or x < 0:
         raise Erro(f"{k} precisa ser numérico, veio '{v}'")
@@ -432,7 +434,8 @@ def cmd_cost(a):
     for k in ("issue", "kind"):
         if k in pairs:
             entry[k] = pairs[k]
-    cost = {"usd": usd, "ctx": ctx, "at": now()}
+    cost = dict(entry.get("cost") or {})  # o que já estava gravado (model, effort, served) fica
+    cost.update({"usd": usd, "ctx": ctx, "at": now()})
     for k in ("model", "effort", "served"):
         if pairs.get(k):
             cost[k] = pairs[k]
@@ -453,6 +456,12 @@ def costed(meta, since=None):
     return out
 
 
+def usd_of(e):
+    """US$ da entrada; 0 se o `cost` veio sem `usd` (o meta pode ser editado ou publicado pela metade)."""
+    v = e["cost"].get("usd")
+    return v if isinstance(v, (int, float)) else 0
+
+
 def money(x):
     return f"US$ {x:.2f}"
 
@@ -462,7 +471,7 @@ def cost_summary(meta):
     es = costed(meta)
     if not es:
         return "—"
-    return f"{money(sum(e['cost']['usd'] for e in es))} em {len(es)} sessões"
+    return f"{money(sum(usd_of(e) for e in es))} em {len(es)} sessões"
 
 
 def cmd_costs(a):
@@ -472,11 +481,11 @@ def cmd_costs(a):
     if not es:
         print("custo total: —")
         return
-    print(f"custo total: {money(sum(e['cost']['usd'] for e in es))} em {len(es)} sessões")
+    print(f"custo total: {money(sum(usd_of(e) for e in es))} em {len(es)} sessões")
     by_kind, by_issue = {}, {}
     for e in es:
-        by_kind.setdefault(e.get("kind") or "—", []).append(e["cost"]["usd"])
-        by_issue.setdefault(e.get("issue") or "—", []).append(e["cost"]["usd"])
+        by_kind.setdefault(e.get("kind") or "—", []).append(usd_of(e))
+        by_issue.setdefault(e.get("issue") or "—", []).append(usd_of(e))
     print("por tipo:")
     for k in SESSION_KINDS + sorted(set(by_kind) - set(SESSION_KINDS)):
         if k in by_kind:

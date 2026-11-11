@@ -3,7 +3,7 @@
 // esforço de cada sessão da fila (`session kind=`, `cost`, `costs`, linha `custo:` do `show`, card
 // "Custo da fila"), e as filhas nascem com o esforço da tabela, conferido depois da criação.
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -197,6 +197,92 @@ describe('painel.py cost (FM3, decisão 5)', () => {
       input: 'costs\n',
     });
     expect(bad.status).toBe(2);
+  });
+});
+
+describe('achados da revisão (FM3)', () => {
+  it('ctx infinito ou enorme sai com código 2, sem traceback', () => {
+    for (const ctx of ['inf', 'nan', '1e999']) {
+      const r = tryRun('cost', dir, 'sess_i', 'usd=1', `ctx=${ctx}`, 'kind=fase');
+      expect(r.code).toBe(2);
+      expect(r.err).not.toMatch(/Traceback/);
+    }
+  });
+
+  it('um cost novo não apaga model, effort e served já gravados', () => {
+    runAt(
+      '2026-11-11T12:00:00Z',
+      'cost',
+      dir,
+      'sess_m',
+      'usd=1',
+      'ctx=10',
+      'model=claude-sonnet-5-5',
+      'effort=high',
+      'served=claude-opus-5-5',
+      'kind=coordenador',
+    );
+    runAt('2026-11-11T13:00:00Z', 'cost', dir, 'sess_m', 'usd=2', 'ctx=20');
+    expect(sessions()[0]!.cost).toEqual({
+      usd: 2,
+      ctx: 20,
+      model: 'claude-sonnet-5-5',
+      effort: 'high',
+      served: 'claude-opus-5-5',
+      at: '2026-11-11T13:00:00Z',
+    });
+  });
+
+  it('registrar de novo a sessão sem label não apaga o label', () => {
+    run('session', dir, '#10', 'sess_l', 'kind=testador', 'label=bloco2');
+    run('session', dir, '#10', 'sess_l', 'kind=testador');
+    expect(sessions()[0]!.label).toBe('bloco2');
+  });
+
+  it('entrada com cost sem usd não derruba o show nem o costs', () => {
+    run('session', dir, '#10', 'sess_p', 'kind=fase');
+    const file = path.join(dir, 'meta.json');
+    const m = json('meta');
+    (m[0]!.sessions as Entry[])[0]!.cost = { ctx: 1 };
+    writeFileSync(file, JSON.stringify(m));
+    expect(run('show', dir)).toMatch(/^custo: US\$ 0\.00 em 1 sessões$/m);
+    expect(run('costs', dir)).toMatch(/^custo total: US\$ 0\.00 em 1 sessões$/m);
+  });
+
+  it('o costs ordena as etapas pelo número e os tipos pela ordem do fluxo', () => {
+    for (const [issue, id] of [
+      ['#1000', 'a'],
+      ['#999', 'b'],
+    ] as const) {
+      runAt('2026-11-11T10:00:00Z', 'row', dir, issue, 'title=X');
+      runAt('2026-11-11T11:00:00Z', 'session', dir, issue, id, 'kind=testador');
+      runAt('2026-11-11T11:00:00Z', 'cost', dir, id, 'usd=1', 'ctx=1');
+    }
+    runAt('2026-11-11T11:00:00Z', 'session', dir, '#10', 'c', 'kind=fase');
+    runAt('2026-11-11T11:00:00Z', 'cost', dir, 'c', 'usd=1', 'ctx=1');
+    const out = run('costs', dir);
+    expect(out.indexOf('#10:')).toBeLessThan(out.indexOf('#999:'));
+    expect(out.indexOf('#999:')).toBeLessThan(out.indexOf('#1000:'));
+    expect(out.indexOf('  fase:')).toBeLessThan(out.indexOf('  testador:'));
+  });
+
+  it('a página ordena como o costs (tipos do fluxo, etapas pelo número)', () => {
+    const page = readFileSync(`${BASE}/painel/index.html`, 'utf8');
+    expect(page).toMatch(/KINDS\s*=\s*\[\s*'fase',\s*'correção',\s*'testador'/);
+    expect(page).toMatch(/localeCompare\([^)]*numeric/);
+  });
+
+  it('o SKILL manda gravar o custo em todo caminho que arquiva', () => {
+    const skill = readFileSync(`${BASE}/SKILL.md`, 'utf8');
+    const porEtapa = section(skill, '## 3. Por etapa');
+    const fim = section(skill, '## Fim');
+    expect(porEtapa.split('\n').find((l) => l.includes('arquive o que sobrou'))).toMatch(
+      /painel\.py cost/,
+    );
+    expect(fim.split('\n').find((l) => l.startsWith('4. '))).toMatch(/painel\.py cost/);
+    expect(
+      porEtapa.split('\n').find((l) => l.includes('Quando um testador avisar')),
+    ).toMatch(/painel\.py cost/);
   });
 });
 

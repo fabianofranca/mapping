@@ -286,6 +286,15 @@
             const h = o.length >> 1;
             return o.length % 2 ? o[h] : (o[h - 1] + o[h]) / 2;
           };
+          const KINDS = [
+            'fase',
+            'correção',
+            'testador',
+            'reteste',
+            'fechamento',
+            'coordenador',
+            'supervisor',
+          ];
           const group = (kind, key) => {
             const m = {};
             es.forEach((e) => {
@@ -293,7 +302,11 @@
               (m[k] = m[k] || []).push(+e.cost.usd || 0);
             });
             return Object.keys(m)
-              .sort()
+              .sort((a, b) =>
+                kind === 'tipo'
+                  ? (KINDS.indexOf(a) + 1 || 99) - (KINDS.indexOf(b) + 1 || 99)
+                  : a.localeCompare(b, 'pt-BR', { numeric: true }),
+              )
               .map((k) => ({
                 kind,
                 name: k,
