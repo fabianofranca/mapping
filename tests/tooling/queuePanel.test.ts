@@ -441,6 +441,13 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
     expect(item6).toMatch(/abaixo de 2 KiB/);
     expect(item6).toMatch(/enxugar/);
     expect(item6).toContain('node scripts/ci/distBudget.mjs raise');
+    // Etapa #1614 (decisão 5): o teto mora no `scripts/ci/dist-budget.json`; o `--ci` saiu do comando.
+    expect(item6).toContain('scripts/ci/dist-budget.json');
+    expect(item6).not.toContain('--ci .github/workflows/ci.yml');
+    expect(item6).not.toMatch(/INDEX_HTML_MAX_BYTES[^\n]*do `ci\.yml`/);
+    // Decisão 6: a transição de um branch que subiu o teto no `ci.yml` antes da etapa.
+    expect(item6).toMatch(/ficando com o `ci\.yml` da `main`/);
+    expect(item6).toMatch(/`history`/);
     expect(item6).toMatch(/chama o dono/);
     expect(item6).toMatch(/16 KiB/);
     expect(item6).toMatch(/até 14 KiB/);
@@ -520,6 +527,11 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
     expect(ciVermelho).toMatch(/worktree descartável/);
     expect(ciVermelho).toContain('npm ci && npm run build');
     expect(ciVermelho).toContain('node scripts/ci/distBudget.mjs raise');
+    expect(ciVermelho).toContain('scripts/ci/dist-budget.json');
+    expect(ciVermelho).not.toContain('--ci .github/workflows/ci.yml');
+    expect(ciVermelho).not.toMatch(/INDEX_HTML_MAX_BYTES[^\n]*do `ci\.yml`/);
+    expect(ciVermelho).toMatch(/ficando com o `ci\.yml` da `main`/);
+    expect(ciVermelho).toMatch(/`history`/);
     expect(ciVermelho).toContain('changelog/<nome>.md');
     expect(ciVermelho).toContain('Orçamento do dist/index.html');
     expect(ciVermelho).toContain('Teto na última revisão do dono');
