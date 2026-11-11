@@ -126,3 +126,64 @@ export function freeRectIn(level: PlacementLevel, rect: Rect): Rect | null {
   );
   return spot === null ? null : { ...spot, width: rect.width, height: rect.height };
 }
+
+function overlapArea(a: Rect, b: Rect): number {
+  const w = Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x);
+  const h = Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y);
+  return w > 0 && h > 0 ? w * h : 0;
+}
+
+/** Posições candidatas de `rect` na área, de meio em meio tamanho (mais a de `rect` preso à área). */
+function crowdedCandidates(area: Rect, rect: Rect): Rect[] {
+  const maxX = area.x + area.width - rect.width;
+  const maxY = area.y + area.height - rect.height;
+  const stepX = Math.max(1, Math.floor(rect.width / 2));
+  const stepY = Math.max(1, Math.floor(rect.height / 2));
+  const xs = new Set<number>([Math.min(Math.max(rect.x, area.x), maxX)]);
+  const ys = new Set<number>([Math.min(Math.max(rect.y, area.y), maxY)]);
+  for (let x = area.x; x <= maxX; x += stepX) xs.add(x);
+  for (let y = area.y; y <= maxY; y += stepY) ys.add(y);
+  const out: Rect[] = [];
+  for (const x of xs) for (const y of ys) out.push({ ...rect, x, y });
+  return out;
+}
+
+/** Todas as candidatas coincidem com alguma peça: desloca `rect` um pixel por vez na diagonal até nenhuma o conter. */
+function nudgedOut(obstacles: readonly Rect[], area: Rect, rect: Rect): Rect {
+  const maxX = area.x + area.width - rect.width;
+  const maxY = area.y + area.height - rect.height;
+  for (let k = 1; k <= 64; k += 1) {
+    const cand = {
+      ...rect,
+      x: Math.min(rect.x + k, maxX),
+      y: Math.min(rect.y + k, maxY),
+    };
+    if (!obstacles.some((o) => containsRect(o, cand))) return cand;
+  }
+  return rect;
+}
+
+function bestCrowded(level: PlacementLevel, area: Rect, rect: Rect): Rect | null {
+  let best: { rect: Rect; cost: number; dist: number } | null = null;
+  for (const cand of crowdedCandidates(area, rect)) {
+    if (level.obstacles.some((o) => containsRect(o, cand))) continue;
+    const cost = level.obstacles.reduce((sum, o) => sum + overlapArea(o, cand), 0);
+    const dist = Math.abs(cand.x - rect.x) + Math.abs(cand.y - rect.y);
+    const better =
+      best === null || cost < best.cost || (cost === best.cost && dist < best.dist);
+    if (better) best = { rect: cand, cost, dist };
+  }
+  return best?.rect ?? null;
+}
+
+/**
+ * Sem lugar livre na área (a peça vai ficar sobre outras): a posição que cobre menos as outras e,
+ * principalmente, que nenhuma delas contém nem iguala (senão o assentar a faria filha da irmã e
+ * não do nível). Empate: a mais perto de `rect`. Se nenhuma a contém, ou sem área, `rect`.
+ */
+export function crowdedRectIn(level: PlacementLevel, rect: Rect): Rect {
+  const { area } = level;
+  if (!level.obstacles.some((o) => containsRect(o, rect))) return rect;
+  if (area === null || rect.width > area.width || rect.height > area.height) return rect;
+  return bestCrowded(level, area, rect) ?? nudgedOut(level.obstacles, area, rect);
+}

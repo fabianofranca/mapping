@@ -12,6 +12,13 @@ import { describe, expect, it } from 'vitest';
  */
 const MAX_BLOCK_GUIDE_CHARS = 200_500;
 
+/**
+ * Etapa #1533 (TE1, decisões 3 e 5): o limite acima mede o que o testador lê, o guia do bloco sem as
+ * seções sob demanda (`mandatoryOnly`: a base obrigatória mais os roteiros), e a base de cada bloco
+ * (sem os roteiros, que saem pelo `passo`) tem até 45 mil caracteres.
+ */
+const MAX_BLOCK_BASE_CHARS = 45_000;
+
 const GUIDE = readFileSync('docs/TESTING.md', 'utf8');
 const NUVEM = readFileSync('docs/TESTING-NUVEM.md', 'utf8');
 
@@ -192,17 +199,25 @@ describe('divisão da rodada completa em 5 blocos (etapas #424 e #841)', () => {
       buildRoundGuide: (
         md: string,
         roteiros: string[],
-        o?: { commit?: string },
+        o?: { commit?: string; mandatoryOnly?: boolean },
       ) => string;
+      buildGuideBase: (md: string, roteiros: string[], o?: { commit?: string }) => string;
     } = await import('../../scripts/testing/round-guide.mjs');
     expect(blocks.length).toBe(5);
     for (const b of blocks) {
       // Como o item 1 do "Modo completo, bloco k de 5": o roteiro que a tabela divide entre blocos entra só
       // pela faixa de passos do bloco (`R6.3-R6.7`), sem o resto do roteiro.
-      const out = mod.buildRoundGuide(GUIDE, b.guideItems, { commit: 'abc1234' });
+      const out = mod.buildRoundGuide(GUIDE, b.guideItems, {
+        commit: 'abc1234',
+        mandatoryOnly: true,
+      });
       for (const r of b.roteiros)
         expect(out, `bloco ${b.n}`).toMatch(new RegExp(`^### ${r} `, 'm'));
       expect(out.length, `bloco ${b.n}`).toBeLessThanOrEqual(MAX_BLOCK_GUIDE_CHARS);
+      const base = mod.buildGuideBase(GUIDE, b.guideItems, { commit: 'abc1234' });
+      expect(base.length, `base do bloco ${b.n}`).toBeLessThanOrEqual(
+        MAX_BLOCK_BASE_CHARS,
+      );
     }
   });
 });

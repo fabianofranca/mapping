@@ -372,7 +372,7 @@ describe('round-guide.mjs --grupos (TR4, decisões 15 a 17)', () => {
 
   it('a tabela de cadeias do TESTING-NUVEM.md traz cada item das cadeias do script', async () => {
     const { CHAINS } = await loadGroups();
-    const nuvem = readFileSync('docs/TESTING-NUVEM.md', 'utf8');
+    const nuvem = readFileSync('docs/TESTING-NUVEM-CONSULTA.md', 'utf8');
     const start = nuvem.indexOf('## Rodada dirigida em grupos');
     expect(start).toBeGreaterThan(0);
     const section = nuvem.slice(start, nuvem.indexOf('\n## ', start + 5));
@@ -456,7 +456,7 @@ describe('round-guide.mjs: base, índice e trechos (#1232, GL1)', () => {
       const [note, sentence] = base.split('\n');
       expect(note).toBe(guide.split('\n')[0]);
       expect(sentence).toBe(
-        '> Os roteiros saem por `cloud.mjs passo`; o índice está em `guia-indice.tsv`.',
+        '> Os roteiros saem por `cloud.mjs passo`; o índice está em `guia-indice.tsv`. As seções sob demanda saem por `cloud.mjs secao <chave>` (sem chave, lista).',
       );
       const named = buildGuideBase(GUIDE, ['R0'], { commit: 'abc1234', name: 'rodada' });
       expect(named.split('\n')[1]).toContain('`rodada-indice.tsv`');
@@ -495,11 +495,15 @@ describe('round-guide.mjs: base, índice e trechos (#1232, GL1)', () => {
 
   describe('cobertura (decisão 9)', () => {
     async function missingLines(roteiros: string[]): Promise<string[]> {
-      const { buildGuideBase, guideExcerpt } = await load();
+      const { buildGuideBase, guideExcerpt, guideSection, SECOES_SOB_DEMANDA } =
+        await load();
       const guide = await guideOf(roteiros);
       const covered = new Set(
         buildGuideBase(GUIDE, roteiros, { commit: 'abc1234' }).split('\n'),
       );
+      for (const s of SECOES_SOB_DEMANDA.filter((e) => e.fonte === 'guia')) {
+        for (const line of guideSection(guide, [s.chave]).split('\n')) covered.add(line);
+      }
       for (const [id, codes] of stepsOf(guide)) {
         for (const line of guideExcerpt(guide, [id]).split('\n')) covered.add(line);
         for (let i = 0; i < codes.length; i += 8) {
@@ -514,11 +518,11 @@ describe('round-guide.mjs: base, índice e trechos (#1232, GL1)', () => {
       return guide.split('\n').filter((line) => line.trim() && !covered.has(line));
     }
 
-    it('R0 R12 R22: toda linha do guia está na base ou no passo de algum roteiro', async () => {
+    it('R0 R12 R22: toda linha do guia está na base, num secao ou no passo de algum roteiro', async () => {
       expect(await missingLines(['R0', 'R12', 'R22'])).toEqual([]);
     });
 
-    it('all: nada do guia da rodada fica sem caminho de leitura', async () => {
+    it('all: nada do guia da rodada fica sem caminho de leitura (base, secao ou passo)', async () => {
       expect(await missingLines(['all'])).toEqual([]);
     }, 60000);
   });
@@ -713,4 +717,141 @@ describe('round-guide.mjs: base, índice e trechos (#1232, GL1)', () => {
       rmSync(dir, { recursive: true, force: true });
     }
   });
+});
+
+// Etapa #1533 (TE1, decisões 1 e 2): a base só com o obrigatório e as seções sob demanda.
+describe('round-guide.mjs: base obrigatória e secao (#1533, TE1)', () => {
+  const CONSULTA = readFileSync('docs/TESTING-NUVEM-CONSULTA.md', 'utf8');
+  const GUIDE_KEYS = ['1', '2', '3', '5', '6', '7', 'A.seletores', 'B'];
+  const ALL_KEYS = [
+    ...GUIDE_KEYS,
+    'consulta.grupos',
+    'consulta.passada',
+    'consulta.regras',
+    'consulta.historico',
+  ];
+
+  async function load() {
+    return import('../../scripts/testing/round-guide.mjs');
+  }
+
+  it('SECOES_SOB_DEMANDA tem as chaves da decisão 1 e da 4 (mais a consulta.regras), cada uma com o "quando ler"', async () => {
+    const { SECOES_SOB_DEMANDA } = await load();
+    expect(SECOES_SOB_DEMANDA.map((s) => s.chave)).toEqual(ALL_KEYS);
+    for (const s of SECOES_SOB_DEMANDA) expect(s.quando, s.chave).toMatch(/\S/);
+  });
+
+  it('a base leva só o obrigatório e uma linha de comando por seção sob demanda', async () => {
+    const { buildGuideBase } = await load();
+    const base = buildGuideBase(GUIDE, ['R0', 'R22'], { commit: 'abc1234' });
+    for (const keep of [
+      '## Comece aqui',
+      '## 4. Como a app grava',
+      '**Convenções.**',
+      '### Relato de uma rodada de teste',
+      '## Apêndice A',
+    ])
+      expect(base, keep).toContain(keep);
+    expect(base).not.toContain('## 9. Teste manual avançado');
+    for (const key of GUIDE_KEYS) {
+      expect(base, key).toContain(`\`node scripts/testing/cloud.mjs secao ${key}\``);
+    }
+    // O conteúdo das seções 1, 2, 3, 5, 6, 7, do A.seletores e do B não está na base.
+    expect(base).not.toContain('| **Versão principal** |');
+    expect(base).not.toContain('**Tela inicial.**');
+    expect(base).not.toContain('**Mover, copiar e renomear pastas**');
+    expect(base).not.toContain('**Janelas:** cada janela de ferramenta');
+  });
+
+  it('guideSection imprime a seção pedida e várias na ordem, separadas por ---', async () => {
+    const { buildRoundGuide, guideSection } = await load();
+    const guide = buildRoundGuide(GUIDE, ['R0'], { commit: 'abc1234' });
+    const seven = guideSection(guide, ['7']);
+    expect(seven.startsWith('## 7. Como relatar um problema')).toBe(true);
+    expect(seven).not.toContain('## 8. Roteiros');
+    const two = guideSection(guide, ['B', '1']);
+    expect(two.indexOf('## Apêndice B')).toBeLessThan(
+      two.indexOf('## 1. Onde pegar a app'),
+    );
+    expect(two).toContain('\n---\n');
+    expect(guideSection(guide, ['A.seletores'])).toMatch(
+      /^### Seletores e nomes que enganam/,
+    );
+  });
+
+  it('as chaves consulta.* leem o TESTING-NUVEM-CONSULTA.md', async () => {
+    const { guideSection } = await load();
+    const out = guideSection('', ['consulta.grupos', 'consulta.historico'], CONSULTA);
+    expect(out).toContain('## Rodada dirigida em grupos');
+    expect(out).toContain('Linha de base');
+    expect(() => guideSection('', ['consulta.grupos'])).toThrow(/consulta/);
+  });
+
+  it('chave desconhecida lança com a lista das chaves', async () => {
+    const { guideSection } = await load();
+    expect(() => guideSection('', ['xyz'])).toThrow(
+      /xyz[\s\S]*A\.seletores[\s\S]*consulta\.grupos/,
+    );
+  });
+
+  it('passa de 25.000 caracteres: corta e diz como continuar', async () => {
+    const { guideSection } = await load();
+    const big = `## 1. Onde pegar a app\n\n${'linha comprida\n'.repeat(2000)}\n## 2. Requisitos\n\nx\n`;
+    const out = guideSection(big, ['1', '2']);
+    expect(out.length).toBeLessThanOrEqual(25_000);
+    expect(out).toContain('… corte em 25.000 caracteres');
+  });
+
+  it('a CLI --out grava uma base menor que o guia, e o guia.md leva tudo', () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'round-guide-'));
+    try {
+      const out = path.join(dir, 'guia.md');
+      execFileSync('node', [SCRIPT, 'R0', '--out', out], { stdio: 'pipe' });
+      const base = readFileSync(path.join(dir, 'guia-base.md'), 'utf8');
+      expect(base).toContain('cloud.mjs secao 5');
+      expect(readFileSync(out, 'utf8')).toContain('**Tela inicial.**');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+// Etapa #1533 (TE3, decisão 14 (4)): o `passo R25` traz o preparo inteiro, sem cortar cerca de código.
+describe('passo R25: o preparo inteiro (etapa #1533, TE3)', () => {
+  async function passoR25(roteiros: string[]): Promise<string> {
+    const mod: {
+      buildRoundGuide: (md: string, r: string[], o?: { commit?: string }) => string;
+      guideExcerpt: (guide: string, itens: string[]) => string;
+    } = await import('../../scripts/testing/round-guide.mjs');
+    return mod.guideExcerpt(mod.buildRoundGuide(GUIDE, roteiros, { commit: 'abc1234' }), [
+      'R25',
+    ]);
+  }
+
+  for (const [nome, roteiros] of [
+    ['guia all', ['all']],
+    ['guia do bloco 2 (R0, R15, R25)', ['R0', 'R15', 'R25']],
+  ] as const) {
+    it(`${nome}: tokens.mjs e as funções tinta, sonda e medir, da cerca de abertura à de fechamento`, async () => {
+      const out = await passoR25([...roteiros]);
+      const lines = out.split('\n');
+      const fences = lines.flatMap((l, i) => (l.startsWith('```') ? [i] : []));
+      expect(fences.length % 2).toBe(0);
+      const block = (marker: string): string => {
+        const at = lines.findIndex((l) => l.includes(marker));
+        expect(at, marker).toBeGreaterThan(-1);
+        const open = [...fences].reverse().find((f) => f < at) as number;
+        const close = fences.find((f) => f > at) as number;
+        expect(lines[open]).toMatch(/^```\w*$/);
+        expect(lines[close]).toBe('```');
+        return lines.slice(open, close + 1).join('\n');
+      };
+      expect(block('// tokens.mjs: node tokens.mjs')).toContain('fs.writeFileSync');
+      const tools = block('tinta() {');
+      for (const fn of ['sonda()', 'medir()', 'unid()', 'caixa()']) {
+        expect(tools).toContain(fn);
+      }
+      expect(out).not.toContain('… corte em 25.000 caracteres');
+    });
+  }
 });

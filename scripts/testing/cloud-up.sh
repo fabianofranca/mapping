@@ -4,18 +4,25 @@
 # build do MCP, tela virtual (Xvfb), D-Bus, AT-SPI e o Chrome for Testing com um perfil novo.
 #
 # Uso:
-#   scripts/testing/cloud-up.sh <pasta-da-rodada> [--restart-chrome]
+#   scripts/testing/cloud-up.sh <pasta-da-rodada> [--restart-chrome | --check-packages]
 #
 # Sem --restart-chrome: sobe tudo do zero e confere os itens 4 a 7 dos "Primeiros 10 minutos".
 # Com --restart-chrome: receita 3 do apêndice A (fecha o Chrome pelo CDP, nunca `pkill -f chrome`,
 # e sobe de novo sem duplicar abas).
 #
+# Com --check-packages: só a pré-conferência dos pacotes (abaixo), para o teste.
+#
+# Começa conferindo os pacotes do ambiente (xdotool, openbox, import, at-spi, pyatspi e o Chrome).
+# Faltando algum, instala com até 5 tentativas (`CLOUD_UP_RETRY_SLEEP`, padrão 15 s; o apt-get do
+# setup do ambiente às vezes recebe 503) e confere de novo; ainda faltando, sai com o código 14 e a
+# lista. O Chrome não se instala: a falta dele dá 14 direto.
+#
 # Decisão desta fase: cada conferência tem seu próprio código de saída (10 a 13), para o relato
-# distinguir qual falhou sem precisar reler o texto do erro.
+# distinguir qual falhou sem precisar reler o texto do erro (10 a 13; 14 = pacote faltando).
 set -euo pipefail
 
 if [ $# -lt 1 ]; then
-  echo "Uso: $0 <pasta-da-rodada> [--restart-chrome]" >&2
+  echo "Uso: $0 <pasta-da-rodada> [--restart-chrome | --check-packages]" >&2
   exit 1
 fi
 
@@ -25,8 +32,11 @@ mkdir -p "$1"
 RODADA="$(cd "$1" && pwd)"
 shift
 RESTART_CHROME=0
+CHECK_PACKAGES=0
 if [ "${1:-}" = "--restart-chrome" ]; then
   RESTART_CHROME=1
+elif [ "${1:-}" = "--check-packages" ]; then
+  CHECK_PACKAGES=1
 fi
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -40,6 +50,59 @@ CHROME_CMD=(
   --no-first-run --no-default-browser-check --hide-crash-restore-bubble
   --window-position=0,0 --window-size=1600,1200 http://localhost:8080/
 )
+
+# Caminhos conferidos na pré-conferência (as variáveis só existem para o teste).
+ATSPI_LAUNCHER="${CLOUD_UP_ATSPI_LAUNCHER:-/usr/libexec/at-spi-bus-launcher}"
+CHROME_BIN="${CLOUD_UP_CHROME:-/opt/pw-browsers/chromium}"
+ATSPI_PYTHON="${CLOUD_UP_PYTHON:-/usr/bin/python3.12}"
+PACKAGES=(xdotool at-spi2-core python3-pyatspi openbox imagemagick)
+
+# Imprime, um por linha, o que falta no ambiente (vazio = tudo no lugar).
+missing_packages() {
+  local c
+  for c in xdotool openbox import; do
+    command -v "$c" >/dev/null 2>&1 || echo "$c"
+  done
+  [ -e "$ATSPI_LAUNCHER" ] || echo "$ATSPI_LAUNCHER"
+  # O pyatspi do apt vale para o python do sistema (o que o cloud.mjs e o atspi-allow.py usam); o
+  # `python3` do PATH pode ser outra versão, onde ele não carrega: tenta o do sistema e, de reserva, o do PATH.
+  "$ATSPI_PYTHON" -c 'import pyatspi' >/dev/null 2>&1 \
+    || python3 -c 'import pyatspi' >/dev/null 2>&1 || echo "python3 pyatspi"
+  [ -e "$CHROME_BIN" ] || echo "$CHROME_BIN"
+}
+
+# Pré-conferência (etapa #1533, decisão 12): instala o que falta com retry; sai 14 se não couber.
+ensure_packages() {
+  local faltam
+  faltam=$(missing_packages)
+  [ -z "$faltam" ] && return 0
+  if [ ! -e "$CHROME_BIN" ]; then
+    echo "ERRO: pacotes faltando (o Chrome não se instala): $(printf '%s ' $faltam)" >&2
+    exit 14
+  fi
+  local apt=(apt-get)
+  if [ "$(id -u)" -ne 0 ]; then
+    apt=(sudo -n apt-get)
+  fi
+  local i
+  for i in 1 2 3 4 5; do
+    if "${apt[@]}" update -q && "${apt[@]}" install -y -q "${PACKAGES[@]}"; then
+      break
+    fi
+    [ "$i" -lt 5 ] && sleep $((i * ${CLOUD_UP_RETRY_SLEEP:-15}))
+  done
+  faltam=$(missing_packages)
+  if [ -n "$faltam" ]; then
+    echo "ERRO: pacotes faltando depois de 5 tentativas: $(printf '%s ' $faltam)" >&2
+    exit 14
+  fi
+}
+
+if [ "$CHECK_PACKAGES" -eq 1 ]; then
+  ensure_packages
+  echo "cloud-up.sh --check-packages: ok."
+  exit 0
+fi
 
 check_one_tab() {
   local linhas
@@ -73,6 +136,15 @@ start_display_and_chrome() {
 }
 
 if [ "$RESTART_CHROME" -eq 1 ]; then
+  # O servidor persistente do `cloud.mjs run` segura a conexão CDP: para antes de fechar o Chrome
+  # (o próximo `run` sobe outro, ligado ao Chrome novo).
+  if [ -f "$S/cloud.pid" ]; then
+    # Só mata se o pid ainda é de um `cloud.mjs` (o número pode ter sido reaproveitado).
+    if tr '\0' ' ' <"/proc/$(cat "$S/cloud.pid")/cmdline" 2>/dev/null | grep -q 'cloud.mjs'; then
+      kill "$(cat "$S/cloud.pid")" 2>/dev/null || true
+    fi
+  fi
+  rm -f "$S/cloud.sock" "$S/cloud.pid"
   # Receita 3 (nuvem): nunca `pkill -f chrome` (mata a própria shell também e conta como
   # "Crashed", restaurando abas). Fecha pelo CDP e espera o processo sumir de verdade.
   (cd "$REPO_DIR" && node --input-type=module -e "
@@ -104,6 +176,8 @@ if [ "$RESTART_CHROME" -eq 1 ]; then
 fi
 
 node "$REPO_DIR/scripts/testing/cloud.mjs" mark ambiente start
+
+ensure_packages
 
 cd "$REPO_DIR"
 BUILD_LOG="$S/build.log"
