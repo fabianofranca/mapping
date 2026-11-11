@@ -20,7 +20,7 @@ import type { SceneNode } from '../../src/model/components/scene';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import { emptyProject } from './fixtures';
 import { SPEC_FILE, files, spec, text } from '../support/material3Library';
-import { drawFitted, fittedSize } from '../support/material3Fitted';
+import { drawFitted, fittedSize, templateNodes } from '../support/material3Fitted';
 import type { Mode, Values } from '../support/material3Fitted';
 
 const MODES: Mode[] = ['light', 'dark'];
@@ -143,7 +143,7 @@ describe('MC6 flow-row — o Arrumar quebra as filhas em linhas (FlowLayout.kt)'
     expect(at(project, 'F').width).toBe(360);
   });
 
-  it('o passo R17.35: cinco fab de 56 numa flow-row de 200 × 100 dão 3 + 2 e a altura 124', () => {
+  it('o passo R17.34: cinco fab de 56 numa flow-row de 200 × 100 dão 3 + 2 e a altura 124', () => {
     // a mesma peça do roteiro: o fr de 200 × 100 com cinco fab desalinhados dentro dele
     let p = applySpecialization(emptyProject(), spec, {
       newId: (() => {
@@ -241,6 +241,14 @@ describe('MC6 alert-dialog — os botões quebram como o AlertDialogFlowRow (Ale
     const long = fittedSize('alert-dialog', LONG);
     expect(long.height - short.height).toBe(48 + 12 + 48 - 48);
     expect(long.messages.map((m) => m.text)).toEqual([]);
+  });
+
+  it('cada botão tem o quadro "área de toque" com nome próprio, de 48 no mínimo', () => {
+    for (const name of ['dispensar', 'confirmar']) {
+      const wrapper = templateNodes('alert-dialog', `área de toque (${name})`);
+      expect(wrapper, name).toHaveLength(1);
+      expect([wrapper[0]?.height, wrapper[0]?.minHeight]).toEqual(['hug', 48]);
+    }
   });
 
   it('com rótulos curtos os botões continuam na mesma linha, cancelar antes do confirmar', () => {

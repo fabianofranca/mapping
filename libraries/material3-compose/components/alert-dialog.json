@@ -336,7 +336,7 @@
         "children": [
           {
             "type": "frame",
-            "name": "área de toque",
+            "name": "área de toque (dispensar)",
             "width": "hug",
             "height": "hug",
             "minHeight": 48,
@@ -406,7 +406,7 @@
           },
           {
             "type": "frame",
-            "name": "área de toque",
+            "name": "área de toque (confirmar)",
             "width": "hug",
             "height": "hug",
             "minHeight": 48,
