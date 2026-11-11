@@ -609,3 +609,102 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
     expect(item).toContain('ci-rerun.yml');
   });
 });
+
+// Etapa #1669 (QF1): execução do CI presa em `queued` sem jobs; o texto da fase e da fila.
+describe('CI preso na fila (#1669)', () => {
+  const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
+  const flow = readFileSync('docs/FLOW.md', 'utf8');
+  const fase = section(flow, '## Para a sessão da fase');
+  const item6 = between(fase, '\n6. ', '\n7. ');
+  const item7 = between(fase, '\n7. ', '\n8. ');
+  const presoSub = () => between(item6, '   - **Execução presa na fila:**', '\n   - **');
+  const porEtapa = section(skill, '## 3. Por etapa');
+  // O parágrafo é a abertura e os sub-itens, até o fim da seção "3. Por etapa" (o prettier separa a
+  // abertura da lista por uma linha em branco).
+  const paragrafoCi = () => {
+    const marca = '**CI preso na fila (PR de fase ou de épico)';
+    const at = porEtapa.indexOf(marca);
+    if (at < 0) throw new Error(`âncora inicial não achada: ${marca}`);
+    return porEtapa.slice(at);
+  };
+
+  it('item 6 da fase: sub-item depois do Runner abandonado, com o script, a lista do commit e o aviso (decisões 1 a 3)', () => {
+    const preso = presoSub();
+    expect(item6.indexOf('**Runner abandonado:**')).toBeLessThan(
+      item6.indexOf('**Execução presa na fila:**'),
+    );
+    expect(preso).toContain('node scripts/ci/ciRerun.mjs queued');
+    expect(preso).toContain('actions/workflows/ci.yml/runs?head_sha=');
+    expect(preso).toContain('16 min');
+    expect(preso).toContain('CI preso na fila: <link da execução>');
+    expect(preso).toMatch(/não fecha, não reabre, não reexecuta e não faz commit vazio/);
+    expect(preso).toMatch(/uma vez por `run`/);
+    expect(preso).toMatch(/não pergunta nada ao dono/);
+  });
+
+  it('item 6 da fase: fechar e reabrir é do coordenador e a fase não trata closed/reopened como fim (decisões 5, 6 e 8)', () => {
+    const preso = presoSub();
+    expect(preso).toMatch(/recomece a Espera do CI/);
+    expect(preso).toContain('`closed`');
+    expect(preso).toContain('`reopened`');
+    expect(preso).toMatch(/não como fim do PR/);
+  });
+
+  it('o item 7 cita "CI preso na fila" entre as mensagens de espera', () => {
+    expect(item7).toContain('CI preso na fila');
+  });
+
+  it('"CI e preview" proíbe o commit vazio e só admite o fechar e reabrir na execução presa na fila (decisão 9)', () => {
+    const ci = between(flow, 'O CI roda só nos PRs', '\n\n');
+    expect(ci).toMatch(/nada de commit vazio/);
+    expect(ci).toMatch(/execução presa na fila/);
+    expect(ci).toMatch(/"sim" do dono/);
+    expect(ci).toContain('item 6');
+  });
+
+  it('skill: parágrafo CI preso na fila com a pergunta, as opções e os efeitos (decisões 3 a 7)', () => {
+    const paragrafo = paragrafoCi();
+    expect(paragrafo).toContain(
+      'Fecho e reabro o PR #<n> para criar uma execução nova do CI?',
+    );
+    expect(paragrafo).toContain('Fechar e reabrir (Recomendado)');
+    expect(paragrafo).toContain('Esperar');
+    expect(paragrafo).toContain('update_pull_request');
+    expect(paragrafo).toContain('reaberto=true');
+    expect(paragrafo).toContain('instabilidade do GitHub');
+    expect(paragrafo).toContain('esperando dono');
+    expect(paragrafo).toContain('PushNotification');
+    expect(paragrafo).toContain('node scripts/ci/ciRerun.mjs queued');
+    expect(paragrafo).toMatch(/16 min/);
+    expect(paragrafo).toMatch(/[Ss]ó vale a resposta do dono no chat da fila/);
+  });
+
+  it('skill: o parágrafo vem depois do CI vermelho no PR do épico e antes do item que o remete', () => {
+    expect(skill.indexOf('**CI vermelho no PR do épico**')).toBeLessThan(
+      skill.indexOf('**CI preso na fila (PR de fase ou de épico)'),
+    );
+  });
+
+  it('skill: "O coordenador não roda o CI de novo" continua e remete ao parágrafo novo', () => {
+    const item = between(skill, '- **O coordenador não roda o CI de novo.**', '\n- **');
+    expect(item).toContain('CI travado');
+    expect(item).toMatch(
+      /salvo a execução presa na fila \(parágrafo \*\*CI preso na fila\*\*\)/,
+    );
+    expect(item).toMatch(/runner abandonado/);
+  });
+
+  it('skill: "Filha que espera o coordenador", o PR que espera e a conferência de hora em hora citam o caso', () => {
+    const filha = between(skill, '**Filha que espera o coordenador**', '\n\n');
+    expect(filha).toContain('CI preso na fila');
+    const espera = between(skill, '**PR que espera o coordenador:**', '\n\n');
+    expect(espera).toContain('CI preso na fila');
+    const reserva = between(skill, '**Conferências de reserva:**', '**CI vermelho');
+    expect(reserva).toContain('CI preso na fila');
+  });
+
+  it('o skill ficou pequeno: o parágrafo novo e as remissões somam menos de 60 linhas (decisão 11)', () => {
+    const paragrafo = paragrafoCi();
+    expect(paragrafo.split('\n').length).toBeLessThan(60);
+  });
+});
