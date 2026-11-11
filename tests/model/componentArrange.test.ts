@@ -11,6 +11,7 @@ import {
   canFit,
   createMarking,
   fitMarking,
+  arrangesByFit,
   loadSpecComponents,
   parseSpecText,
   setContainerDrawingMode,
@@ -846,6 +847,22 @@ describe('fitMarking (MC3, decisão 14 da #898)', () => {
     expect(rect).toMatchObject({ x: 100, y: 100 });
     // "Ok" não passa do padding (16): o mínimo do componente (48 × 40) vale.
     expect(rect).toMatchObject({ width: 48, height: 40 });
+  });
+
+  it('CL2 (R13.13): hug nos dois eixos perto da borda mede a altura para a largura que sobra', () => {
+    // A imagem tem 1000 de largura: de x = 900 sobram 100 px, e o rótulo longo quebra em linhas.
+    const p = withLabel('fit-hug', LONG_LABEL, box(900, 100, 100, 40));
+    const rect = rectOf(fit(p, 'B'), 'B');
+    expect(rect).toMatchObject({ x: 900, y: 100, width: 100 });
+    expect(rect.height).toBeGreaterThan(40);
+    // Sem limite (x = 100), a largura fica livre: uma linha, altura do minSize.
+    const free = rectOf(
+      fit(withLabel('fit-hug', 'Ok', box(100, 100, 100, 40)), 'B'),
+      'B',
+    );
+    expect(free).toMatchObject({ x: 100, y: 100, width: 48, height: 40 });
+    // O Arrumar da mesma marcação (arrangesByFit) dá o mesmo caminho.
+    expect(arrangesByFit(p, fcat, 'B')).toBe(true);
   });
 
   it('eixo fill, ausente ou esticado pelo stretch do pai não muda', () => {

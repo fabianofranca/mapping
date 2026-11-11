@@ -72,6 +72,12 @@ export interface FitOptions {
   readonly base?: { readonly width: number; readonly height: number };
   /** Eixos que acompanham o `sizing` (padrão: os que o `sizing` avaliado manda `hug` ou px por expressão). */
   readonly auto?: Partial<Record<SizingAxis, boolean>>;
+  /**
+   * Limite da largura medida no eixo `hug` (o espaço até a borda da imagem ou do pai): se o conteúdo
+   * pede mais, a largura vale o limite e a altura é medida de novo para essa largura (o texto quebra).
+   * É só limite de medida: não muda o `size` do componente nem os limites da raiz.
+   */
+  readonly maxWidth?: number;
 }
 
 /** O px que o eixo dá por expressão (o literal em px não conta); `undefined` se não dá. */
@@ -123,7 +129,7 @@ export function fitComponentSize(
   const given = (name: SizingAxis): number =>
     kinds[name] === 'px' ? (expressionPx(resolved[name]) as number) : base[name];
   const hug = { width: kinds.width === 'hug', height: kinds.height === 'hug' };
-  const measured = measureHug(component, values, hug, given, options);
+  const measured = measureHug(component, values, hug, given, options, fit.maxWidth);
   const floor = (name: SizingAxis, value: number): number =>
     kinds[name] === 'keep'
       ? value
@@ -147,15 +153,25 @@ function measureHug(
   hug: Record<SizingAxis, boolean>,
   given: (name: SizingAxis) => number,
   options: InstantiateOptions,
+  maxWidth?: number,
 ): { width: number; height: number; messages: readonly ModelMessage[] } | undefined {
   if (!hug.width && !hug.height) return undefined;
-  return measureComponent(
+  const height = hug.height ? null : given('height');
+  const free = measureComponent(
     component,
     values,
-    {
-      width: hug.width ? null : given('width'),
-      height: hug.height ? null : given('height'),
-    },
+    { width: hug.width ? null : given('width'), height },
     options,
   );
+  if (!hug.width || maxWidth === undefined || ceilFit(free.width) <= maxWidth) {
+    return free;
+  }
+  // A largura pedida não cabe: mede a altura para a largura que sobra.
+  const limited = measureComponent(
+    component,
+    values,
+    { width: maxWidth, height },
+    options,
+  );
+  return { ...limited, messages: [...free.messages, ...limited.messages] };
 }
