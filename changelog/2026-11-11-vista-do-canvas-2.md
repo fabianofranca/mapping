@@ -1,4 +1,4 @@
-# Vista do canvas para o testador — [Não lançado] (épico `epic/vista-do-canvas-2`, PR #1612, MCP sem mudança, schema v18)
+# Vista do canvas para o testador — 2026-11-11 (épico `epic/vista-do-canvas-2`, PR #1612, MCP 0.34.3, schema v18)
 
 ## Adicionado
 

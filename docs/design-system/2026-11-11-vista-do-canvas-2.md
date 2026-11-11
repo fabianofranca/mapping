@@ -1,4 +1,4 @@
-# Vista do canvas para o testador — [Não lançado] (épico `epic/vista-do-canvas-2`)
+# Vista do canvas para o testador — 2026-11-11 (épico `epic/vista-do-canvas-2`)
 
 ## Pendências
 
