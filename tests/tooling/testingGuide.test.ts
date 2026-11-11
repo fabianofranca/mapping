@@ -499,9 +499,9 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
       expect(guide).toContain('`material3-compose.zip` (R17)');
     });
 
-    it('tem os passos R17.1 a R17.21, em ordem, e nenhum depende do dono', () => {
+    it('tem os passos R17.1 a R17.30, em ordem, e nenhum depende do dono', () => {
       const codes = [...stepActions(r17).keys()];
-      expect(codes).toEqual(Array.from({ length: 21 }, (_, i) => `R17.${i + 1}`));
+      expect(codes).toEqual(Array.from({ length: 30 }, (_, i) => `R17.${i + 1}`));
       expect(/sem substituto/i.test(r17)).toBe(false);
       expect(r17).not.toContain('[pessoa]');
     });
@@ -550,6 +550,37 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
 
     it('o prompt da nuvem lista os roteiros até o R25', () => {
       expect(prompt).toContain('R0 a R25');
+    });
+  });
+
+  // CL2 (etapa #899): o reteste achou dois erros de texto de roteiro, não da app.
+  describe('CL2 — correções de texto do reteste da etapa #899', () => {
+    const guide = read('docs/TESTING.md');
+    const row = (code: string): string => {
+      const line = guide.split('\n').find((l) => l.startsWith(`| ${code} |`));
+      expect(line, code).toBeDefined();
+      return line ?? '';
+    };
+
+    it('R17.30: o ponto do fundo cai dentro do arco do canto, não em (5, 5)', () => {
+      const line = row('R17.30');
+      // (5, 5) fica fora do raio 12·s do `surface` e dá o branco do container (FFFFFF).
+      expect(line).not.toMatch(/px su-app\.png 5 5/);
+      expect(line).not.toMatch(/\(5, 5\) `D0BCFF`/);
+      expect(line).toMatch(/px su-app\.png 30 30/);
+      expect(line).toContain('(30, 30)');
+    });
+
+    it('R25.26: o `unid` dos dois `i` (com e sem `family`) usa AREA=20', () => {
+      const line = row('R25.26');
+      // cada `i` fino é uma mancha pequena: com o AREA padrão (300) o `unid` volta vazio.
+      const aside = (color: string): string =>
+        new RegExp("'" + color + "'[`]?\\s*\\(([^)]*)\\)").exec(line)?.[1] ?? '';
+      expect(aside('#00E5FF')).toContain('AREA=20');
+      expect(aside('#FF4081')).toContain('AREA=20');
+      // o `W` é uma mancha grande: fica no AREA padrão.
+      expect(aside('#76FF03')).not.toContain('AREA');
+      expect(aside('#FFAB40')).not.toContain('AREA');
     });
   });
 
@@ -1223,6 +1254,7 @@ describe('CL1 — roteiro do R9.24 a R9.28 (etapa #701)', () => {
   });
 
   it('o R9.24 não espera membership (só lista quem mudou de pai)', () => {
+    expect(row('R9.24')).not.toBe('');
     expect(row('R9.24')).not.toContain('membership');
   });
 });

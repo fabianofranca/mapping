@@ -80,8 +80,6 @@ export const catalogPtBR = {
 
   'catalog.drawWarning.empty-group-shadow': 'Sombra num grupo vazio ignorada.',
   'catalog.drawWarning.inner-shadow': 'Sombra interna não existe no canvas 2D: ignorada.',
-  'catalog.drawWarning.extra-shadows':
-    'Só a primeira sombra externa de cada nó foi desenhada.',
   'catalog.drawWarning.unknown-node': 'Nó não desenhado ({type}): só a caixa.',
   'catalog.drawWarning.image-without-pixels':
     'Imagem sem pixels desenhada como reservado.',
@@ -172,8 +170,6 @@ export const catalogEnUS: Record<keyof typeof catalogPtBR, string> = {
 
   'catalog.drawWarning.empty-group-shadow': 'Shadow on an empty group ignored.',
   'catalog.drawWarning.inner-shadow': 'Inner shadows do not exist in canvas 2D: ignored.',
-  'catalog.drawWarning.extra-shadows':
-    'Only the first outer shadow of each node was drawn.',
   'catalog.drawWarning.unknown-node': 'Node not drawn ({type}): only its box is shown.',
   'catalog.drawWarning.image-without-pixels':
     'Image without pixels drawn as a placeholder.',

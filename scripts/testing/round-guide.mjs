@@ -19,7 +19,9 @@
 // todos os guias. A marca é um comentário HTML: não aparece no guia lido por gente.
 //
 // Tira do guia os roteiros não pedidos, os "Roteiros sob demanda (manuais)", a seção 9 e o
-// "Registro do marco Uso real"; mantém o resto na ordem do guia ("Comece aqui", seções 1 a 7, a
+// "Registro do marco Uso real"; no quadro do "Comece aqui" ficam só as linhas dos roteiros pedidos
+// (MF3, #1025: o quadro inteiro pesa uns 5 mil caracteres em todo guia de bloco); mantém o resto na
+// ordem do guia ("Comece aqui", seções 1 a 7, a
 // introdução da seção 8, o template do relato e os apêndices A e B). A granularidade é o roteiro
 // inteiro. Roteiro inexistente: erro com a lista dos que existem (código de saída 2).
 import { execFileSync } from 'node:child_process';
@@ -68,6 +70,7 @@ export function listRoteiros(markdown) {
 const MARK_OPEN = /^<!-- roteiros: ([^>]*?) -->$/;
 const MARK_CLOSE = '<!-- /roteiros -->';
 const STEP_ROW = /^\|\s*(?:\*\*)?(R\d+\.\d+[a-z]?)(?:\*\*)?[^|]*\|/;
+const STEP_ITEM = /^(R\d+)\.(\d+[a-z]?)$/i;
 const RANGE = /^(R\d+)\.(\d+[a-z]?)-(R\d+)\.(\d+[a-z]?)$/i;
 
 /** Tira as marcas de trecho: o trecho fica se um dos roteiros citados é pedido. */
@@ -142,6 +145,13 @@ function parseRequest(roteiros, existing) {
       const list = ranges.get(id) ?? [];
       list.push({ from: range[2], to: range[4] });
       ranges.set(id, list);
+    } else if (STEP_ITEM.test(raw)) {
+      // Passo avulso (`R0.1`): a faixa de um passo só.
+      const [rawId, step] = raw.split('.');
+      const id = rawId.toUpperCase();
+      const list = ranges.get(id) ?? [];
+      list.push({ from: step, to: step });
+      ranges.set(id, list);
     } else {
       whole.add(raw.toUpperCase());
     }
@@ -154,6 +164,20 @@ function parseRequest(roteiros, existing) {
   return { whole, ranges };
 }
 
+const OVERVIEW_ROW = /^\|\s*(?:\d+|sob demanda)\s*\|\s*(R\d+|R[A-Z])\b/;
+
+/**
+ * As linhas do quadro "Comece aqui" sem as linhas dos roteiros que o guia não leva (e dos sob
+ * demanda, que também saem): sobra a linha de cada roteiro pedido, a da seção 6 e o resto do texto.
+ * O quadro lista os 27 roteiros e pesa uns 5 mil caracteres em todo guia de bloco.
+ */
+function trimOverview(lines, wanted) {
+  return lines.filter((line) => {
+    const id = OVERVIEW_ROW.exec(line)?.[1];
+    return id === undefined || wanted.has(id);
+  });
+}
+
 /** O guia sem os roteiros não pedidos, os sob demanda, a seção 9 e o registro do Uso real. */
 export function buildRoundGuide(markdown, roteiros, { commit = 'desconhecido' } = {}) {
   const existing = listRoteiros(markdown);
@@ -164,6 +188,8 @@ export function buildRoundGuide(markdown, roteiros, { commit = 'desconhecido' } 
   for (const section of splitSections(markdown)) {
     if (section.level === 2) {
       dropParent = /^9\./.test(section.title);
+      if (/^Comece aqui/.test(section.title))
+        section.lines = trimOverview(section.lines, wanted);
     }
     const roteiro = section.level === 3 ? ROTEIRO.exec(section.title)?.[1] : undefined;
     const drop =
@@ -283,7 +309,6 @@ export function buildGuideIndex(guideText) {
 /** Limite de caracteres do que o `cloud.mjs passo` imprime (abaixo dos 30 mil do Bash). */
 export const EXCERPT_LIMIT = 25000;
 const CUT_RESERVE = 200;
-const STEP_ITEM = /^(R\d+)\.(\d+[a-z]?)$/i;
 const STEP_HEADER = /^\|\s*Passo\b/;
 
 /** Interpreta um item do `passo`: `R12`, `R12.4` ou `R12.4-R12.9`. */

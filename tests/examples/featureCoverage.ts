@@ -283,6 +283,7 @@ export const EXPR_OPS = [
   '$token',
   '$rows',
   '$size',
+  '$provided',
 ] as const;
 export const CONDITION_OPS = ['$field', '$eq', '$has', '$not', '$and', '$or'] as const;
 export const ROOT_KEYS = [
@@ -323,7 +324,7 @@ export const EXTRA_KEYS: Record<(typeof NODE_TYPES)[number], readonly string[]> 
   ellipse: [],
   text: ['text', 'runs', 'font', 'color'],
   path: ['d', 'viewBox', 'fillRule'],
-  slot: ['label', 'layout'],
+  slot: ['label', 'layout', 'provide'],
   repeat: ['field', 'count', 'direction', 'gap', 'distribute', 'template'],
   image: ['src', 'fit'],
   icon: ['name', 'color', 'strokeWidth'],
@@ -489,6 +490,11 @@ function exprFeatures(value: unknown, out: Set<string>, inCondition = false): vo
     out.add('expr.$switch');
     if ('default' in value) out.add('expr.$switch.default');
     exprFeatures(value.cases, out);
+    exprFeatures(value.default, out);
+    return;
+  }
+  if ('$provided' in value) {
+    out.add('expr.$provided');
     exprFeatures(value.default, out);
     return;
   }

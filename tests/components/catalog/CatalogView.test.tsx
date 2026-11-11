@@ -290,6 +290,18 @@ describe('código', () => {
     expect(within(section).getByText('onClick')).toBeTruthy();
   });
 
+  // CL1 / D5: as notas do código são Markdown inline, como o Documento: sem crases literais.
+  it('as notas renderizam o Markdown inline (code), sem crases soltas', () => {
+    const noted = [
+      { ...code[0]!, notes: '`handler` liga à tela e `content = { Text(<label>) }`.' },
+    ];
+    view({ initialTypeId: 'm3-button' }, patched(base, 'm3-button', { code: noted }));
+    const section = screen.getByRole('region', { name: t('catalog.page.code') });
+    expect(section.textContent).not.toContain('`');
+    expect(within(section).getByText('handler').tagName).toBe('CODE');
+    expect(within(section).getByText('content = { Text(<label>) }')).toBeTruthy();
+  });
+
   /** Projeto com a especialização `material3` declarando `android` com esse `repo`. */
   function projectWithRepo(repo: { url: string; urlTemplate?: string }): Project {
     const spec = {

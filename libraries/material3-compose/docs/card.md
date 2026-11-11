@@ -78,7 +78,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 **Como o desenho segue o Compose**
 
 - O raio é `corner-medium` (12) nos três estilos.
-- `filled` usa `surface-container-highest`, sem sombra e sem contorno; `elevated` usa `surface-container-low` com a sombra do nível 1 (`elevation-shadow`, deslocamento 1 e desfoque 2, os valores de `elevation-1-y` e `elevation-1-blur`); `outlined` usa `surface` com contorno de 1 em `outline-variant`, por dentro. Os valores mudam com o modo (claro e escuro).
+- `filled` usa `surface-container-highest`, sem sombra e sem contorno; `elevated` usa `surface-container-low` com as duas sombras do nível 1 (ponto: `y` 1, `blur` 2; ambiente: `y` 1, `blur` 3, `spread` 1; tokens `elevation-1-point-*` e `elevation-1-ambient-*`); `outlined` usa `surface` com contorno de 1 em `outline-variant`, por dentro. Os valores mudam com o modo (claro e escuro).
 - A cor do conteúdo é a `contentColorFor` do fundo, `on-surface`: o título a usa. O subtítulo e o texto de apoio usam `on-surface-variant`, como o `bodyMedium` de um cartão do Material.
 - O título é `title-medium` (16/24, peso 500) e o subtítulo e o apoio são `body-medium` (14/20, peso 400), com o espaçamento entre letras dos tokens. Sem `family`: a fonte é a `font-sans` do tema.
 - O `Surface` recorta o conteúdo na forma; a raiz do desenho também recorta, então a mídia do topo fica com os cantos arredondados do cartão.
@@ -94,8 +94,8 @@ O campo escolhe a aparência parada de um estado; não entra no `code` nem nas `
 
 **O que ainda difere do Compose**
 
-- A sombra lê os tokens de elevação (`$token` em `shadow.y` e `shadow.blur`): `elevation-1-y` e `elevation-1-blur` na raiz e `elevation-N-*` nos nós `sombra nível N`; trocar o token na especialização chega ao desenho.
-- A sombra é uma só, em preto a 30%; o Compose compõe duas sombras (ambiente e ponto) que o canvas 2D não reproduz.
+- As sombras leem os tokens de elevação (`$token` em `shadow`): `elevation-1-point-*` e `elevation-1-ambient-*` na raiz e `elevation-N-point-*` e `elevation-N-ambient-*` nos nós `sombra nível N`; trocar o token na especialização chega ao desenho.
+- As duas sombras (ponto e ambiente) vêm dos tokens `elevation-1-point-*` e `elevation-1-ambient-*` (`$token` em `shadow`, lista de duas sombras com `spread`); a tonal da elevação não é desenhada. Valores da elevação do Material 3 para a web: `elevation/internal/_elevation.scss` do `material-components/material-web` (versão 2.5.0, commit `37aa14b843dcaeb3a46f898679fa6fcd109b1905`), fonte de fora do Compose, que no Android entrega a elevação à plataforma e não traz os números: sombra de ponto em preto a 30% e sombra ambiente em preto a 15%, com `y`, `blur` e `spread` por nível (tokens `elevation-1-point-*` e `elevation-1-ambient-*`).
 - O espaçamento de 16 entre as bordas e o texto e o vão de 4 entre as linhas são do desenho: o `Card` do Compose não tem padding, quem escreve a `Column` decide. A mídia tem altura fixa de 140.
 - Sem desabilitado (o tipo não tem `enabled`) nem `onClick`. Os estados de interação são quadros parados: sem ripple animado e sem transição, e o anel de foco só vale no filled e no elevated (`FilledCardTokens.kt` e `ElevatedCardTokens.kt`, linha 32: `FocusIndicatorColor`; o `OutlinedCardTokens.kt` não o define): com `focused` desenha o anel de 3 em `secondary`, afastado 2 da forma (`stroke.offset`), por fora da caixa (a largura e o afastamento são os da decisão da etapa; o `*Tokens.kt` só traz a cor).
 - O `Card.kt` não lê todos os tokens de estado do cartão: o `outlinedCardElevation` (linhas 452 a 458) usa a elevação padrão (0) no mouse, no foco e pressionado, e o `outlinedCardBorder` (linhas 614 a 623) só distingue habilitado e desabilitado, sem a cor do foco. O desenho segue os `OutlinedCardTokens.kt`, como a etapa pede, então o outlined sobe ao nível 1 com o mouse e ganha o contorno `on-surface` no foco.

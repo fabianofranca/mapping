@@ -247,25 +247,26 @@ describe('M3 grupo B — text-field', () => {
 
   it('outlined com texto: o rótulo minimizado abre um vão no contorno (sem remendo de cor), sem 1 px de altura', () => {
     const d = draw('text-field', { label: 'Nome', value: 'Maria', style: 'outlined' });
-    expect(named(d.root, 'contorno')).toBeUndefined();
-    const lados = named(d.root, 'contorno (lados)');
-    expect(lados?.stroke?.sides).toEqual(
-      expect.arrayContaining(['left', 'bottom', 'right']),
-    );
-    expect(strokeColor(lados)).toBe('#79747E');
-    const inicio = named(d.root, 'trecho inicial');
-    const fim = named(d.root, 'trecho final');
-    expect(inicio?.stroke?.sides).toEqual(['top']);
-    expect(fim?.stroke?.sides).toEqual(['top']);
+    // um contorno só (rect de raio 4, corner-extra-small) com o vão (stroke.gap) sobre o rótulo; sem `sides` nem trechos
+    const contorno = named(d.root, 'contorno');
+    expect(contorno).toMatchObject({ type: 'rect', cornerRadius: 4 });
+    expect(contorno?.stroke?.sides).toBeUndefined();
+    expect(strokeColor(contorno)).toBe('#79747E');
+    expect(named(d.root, 'contorno (lados)')).toBeUndefined();
+    expect(named(d.root, 'trecho inicial')).toBeUndefined();
+    expect(named(d.root, 'trecho final')).toBeUndefined();
     const boxes = absoluteBoxes(d.root);
-    const label = texts(d, 'rótulo')!;
+    const label = texts(d, 'rótulo minimizado')!;
+    expect(label).toBeDefined();
     // o rótulo minimizado fica em x = 16 (TextFieldPadding), entre o vão de 4 de cada lado
     expect(boxes.get(label.id)!.x).toBe(16);
-    expect(boxes.get(inicio!.id)!.x + boxes.get(inicio!.id)!.width).toBe(12);
-    expect(boxes.get(fim!.id)!.x).toBeCloseTo(16 + boxes.get(label.id)!.width + 4, 5);
+    expect(contorno?.stroke?.gaps).toHaveLength(1);
+    const gap = contorno!.stroke!.gaps![0]!;
+    expect(gap.side).toBe('top');
+    expect(gap.from).toBe(12);
+    expect(gap.to).toBeCloseTo(16 + boxes.get(label.id)!.width + 4, 5);
     // a linha de cima do contorno está em y = 8, no centro do rótulo de 16
-    expect(boxes.get(inicio!.id)!.y).toBe(8);
-    expect(boxes.get(lados!.id)!.y).toBe(8);
+    expect(boxes.get(contorno!.id)!.y).toBe(8);
     expect(fontOf(label)).toEqual(BODY_SMALL);
     // o vão é um vão de verdade: nenhum quadro ou retângulo cobre o contorno com cor de fundo
     const patch = [...walk(d.root)].filter(
@@ -275,6 +276,7 @@ describe('M3 grupo B — text-field', () => {
     // sem texto, o rótulo fica dentro do campo (sem vão) em body-large
     const empty = draw('text-field', { label: 'Nome', style: 'outlined' });
     expect(named(empty.root, 'contorno')).toBeDefined();
+    expect(named(empty.root, 'contorno')?.stroke?.gaps ?? []).toEqual([]);
     expect(named(empty.root, 'contorno (lados)')).toBeUndefined();
     expect(fontOf(texts(empty, 'rótulo'))).toEqual(BODY_LARGE);
   });
@@ -393,13 +395,16 @@ describe('M3 grupo B — secure-text-field', () => {
       hasText: 'true',
       style: 'outlined',
     });
-    expect(named(d.root, 'contorno')).toBeUndefined();
-    expect([...(named(d.root, 'contorno (lados)')?.stroke?.sides ?? [])].sort()).toEqual([
-      'bottom',
-      'left',
-      'right',
-    ]);
-    expect(strokeColor(named(d.root, 'trecho inicial'))).toBe('#79747E');
+    // um contorno só, com o vão (stroke.gap) sobre o rótulo minimizado
+    const outline = named(d.root, 'contorno');
+    expect(outline?.stroke?.sides).toBeUndefined();
+    expect(outline?.stroke?.gaps).toHaveLength(1);
+    expect(outline?.stroke?.gaps?.[0]?.side).toBe('top');
+    expect(strokeColor(outline)).toBe('#79747E');
+    expect(named(d.root, 'contorno (lados)')).toBeUndefined();
+    expect(named(d.root, 'trecho inicial')).toBeUndefined();
+    expect(named(d.root, 'trecho final')).toBeUndefined();
+    expect(texts(d, 'rótulo minimizado')).toBeDefined();
     const empty = both(
       'secure-text-field',
       { label: 'Senha', style: 'outlined', supportingText: 'Ajuda' },

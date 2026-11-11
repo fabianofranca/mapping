@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "chip",
   "name": "Chip",
-  "description": "Chip de 32 e forma small, como os chips do Compose: assist, filter (selecionado com check), input (ícone final) e suggestion, cada um (menos input) com a versão elevated; desabilitado usa on-surface a 0,38 no conteúdo e 0,12 no contêiner.",
+  "description": "Chip de 32 e forma small, como os chips do Compose: assist, filter (selecionado com check), input (ícone final) e suggestion, cada um (menos input) com a versão elevated; desabilitado usa on-surface a 0,38 no conteúdo e 0,12 no contêiner. O input com `avatar` abre com a imagem circular de 24 no lugar do ícone inicial.",
   "size": {
     "width": 232,
     "height": 32
@@ -154,75 +154,152 @@
       "width": 1,
       "align": "inside"
     },
-    "shadow": {
-      "color": {
-        "$if": {
-          "$and": [
-            {
-              "$not": {
-                "$eq": ["enabled", "false"]
-              }
-            },
-            {
-              "$or": [
-                {
-                  "$and": [
-                    {
-                      "$or": [
-                        {
-                          "$eq": ["style", "assist-elevated"]
-                        },
-                        {
-                          "$eq": ["style", "filter-elevated"]
-                        },
-                        {
-                          "$eq": ["style", "suggestion-elevated"]
-                        }
-                      ]
-                    },
-                    {
-                      "$not": {
+    "shadow": [
+      {
+        "color": {
+          "$if": {
+            "$and": [
+              {
+                "$not": {
+                  "$eq": ["enabled", "false"]
+                }
+              },
+              {
+                "$or": [
+                  {
+                    "$and": [
+                      {
                         "$or": [
                           {
-                            "$eq": ["interaction", "hovered"]
+                            "$eq": ["style", "assist-elevated"]
                           },
                           {
-                            "$eq": ["interaction", "dragged"]
+                            "$eq": ["style", "filter-elevated"]
+                          },
+                          {
+                            "$eq": ["style", "suggestion-elevated"]
                           }
                         ]
+                      },
+                      {
+                        "$not": {
+                          "$or": [
+                            {
+                              "$eq": ["interaction", "hovered"]
+                            },
+                            {
+                              "$eq": ["interaction", "dragged"]
+                            }
+                          ]
+                        }
                       }
-                    }
-                  ]
-                },
-                {
-                  "$and": [
-                    {
-                      "$eq": ["style", "filter"]
-                    },
-                    {
-                      "$eq": ["selected", "true"]
-                    },
-                    {
-                      "$eq": ["interaction", "hovered"]
-                    }
-                  ]
+                    ]
+                  },
+                  {
+                    "$and": [
+                      {
+                        "$eq": ["style", "filter"]
+                      },
+                      {
+                        "$eq": ["selected", "true"]
+                      },
+                      {
+                        "$eq": ["interaction", "hovered"]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "then": {
+            "$token": "elevation-point-shadow"
+          },
+          "else": "none"
+        },
+        "y": {
+          "$token": "elevation-1-point-y"
+        },
+        "blur": {
+          "$token": "elevation-1-point-blur"
+        },
+        "spread": {
+          "$token": "elevation-1-point-spread"
+        }
+      },
+      {
+        "color": {
+          "$if": {
+            "$and": [
+              {
+                "$not": {
+                  "$eq": ["enabled", "false"]
                 }
-              ]
-            }
-          ]
+              },
+              {
+                "$or": [
+                  {
+                    "$and": [
+                      {
+                        "$or": [
+                          {
+                            "$eq": ["style", "assist-elevated"]
+                          },
+                          {
+                            "$eq": ["style", "filter-elevated"]
+                          },
+                          {
+                            "$eq": ["style", "suggestion-elevated"]
+                          }
+                        ]
+                      },
+                      {
+                        "$not": {
+                          "$or": [
+                            {
+                              "$eq": ["interaction", "hovered"]
+                            },
+                            {
+                              "$eq": ["interaction", "dragged"]
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "$and": [
+                      {
+                        "$eq": ["style", "filter"]
+                      },
+                      {
+                        "$eq": ["selected", "true"]
+                      },
+                      {
+                        "$eq": ["interaction", "hovered"]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "then": {
+            "$token": "elevation-ambient-shadow"
+          },
+          "else": "none"
         },
-        "then": {
-          "$token": "elevation-shadow"
+        "y": {
+          "$token": "elevation-1-ambient-y"
         },
-        "else": "none"
-      },
-      "y": {
-        "$token": "elevation-1-y"
-      },
-      "blur": {
-        "$token": "elevation-1-blur"
+        "blur": {
+          "$token": "elevation-1-ambient-blur"
+        },
+        "spread": {
+          "$token": "elevation-1-ambient-spread"
+        }
       }
-    },
+    ],
     "children": [
       {
         "type": "rect",
@@ -315,17 +392,36 @@
             }
           ]
         },
-        "shadow": {
-          "color": {
-            "$token": "elevation-shadow"
+        "shadow": [
+          {
+            "color": {
+              "$token": "elevation-point-shadow"
+            },
+            "y": {
+              "$token": "elevation-2-point-y"
+            },
+            "blur": {
+              "$token": "elevation-2-point-blur"
+            },
+            "spread": {
+              "$token": "elevation-2-point-spread"
+            }
           },
-          "y": {
-            "$token": "elevation-2-y"
-          },
-          "blur": {
-            "$token": "elevation-2-blur"
+          {
+            "color": {
+              "$token": "elevation-ambient-shadow"
+            },
+            "y": {
+              "$token": "elevation-2-ambient-y"
+            },
+            "blur": {
+              "$token": "elevation-2-ambient-blur"
+            },
+            "spread": {
+              "$token": "elevation-2-ambient-spread"
+            }
           }
-        }
+        ]
       },
       {
         "type": "rect",
@@ -405,17 +501,36 @@
             }
           ]
         },
-        "shadow": {
-          "color": {
-            "$token": "elevation-shadow"
+        "shadow": [
+          {
+            "color": {
+              "$token": "elevation-point-shadow"
+            },
+            "y": {
+              "$token": "elevation-4-point-y"
+            },
+            "blur": {
+              "$token": "elevation-4-point-blur"
+            },
+            "spread": {
+              "$token": "elevation-4-point-spread"
+            }
           },
-          "y": {
-            "$token": "elevation-4-y"
-          },
-          "blur": {
-            "$token": "elevation-4-blur"
+          {
+            "color": {
+              "$token": "elevation-ambient-shadow"
+            },
+            "y": {
+              "$token": "elevation-4-ambient-y"
+            },
+            "blur": {
+              "$token": "elevation-4-ambient-blur"
+            },
+            "spread": {
+              "$token": "elevation-4-ambient-spread"
+            }
           }
-        },
+        ],
         "stroke": {
           "color": {
             "$if": {
@@ -753,47 +868,63 @@
             },
             "then": {
               "$if": {
-                "$or": [
+                "$and": [
                   {
-                    "$has": "leadingIcon"
-                  },
-                  {
-                    "$and": [
+                    "$or": [
+                      {
+                        "$has": "leadingIcon"
+                      },
                       {
                         "$and": [
                           {
-                            "$eq": ["selected", "true"]
+                            "$and": [
+                              {
+                                "$eq": ["selected", "true"]
+                              },
+                              {
+                                "$or": [
+                                  {
+                                    "$or": [
+                                      {
+                                        "$eq": ["style", "filter"]
+                                      },
+                                      {
+                                        "$eq": ["style", "filter-elevated"]
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "$eq": ["style", "input"]
+                                  }
+                                ]
+                              }
+                            ]
                           },
                           {
                             "$or": [
                               {
-                                "$or": [
-                                  {
-                                    "$eq": ["style", "filter"]
-                                  },
-                                  {
-                                    "$eq": ["style", "filter-elevated"]
-                                  }
-                                ]
+                                "$eq": ["style", "filter"]
                               },
                               {
-                                "$eq": ["style", "input"]
+                                "$eq": ["style", "filter-elevated"]
                               }
                             ]
                           }
                         ]
-                      },
-                      {
-                        "$or": [
-                          {
-                            "$eq": ["style", "filter"]
-                          },
-                          {
-                            "$eq": ["style", "filter-elevated"]
-                          }
-                        ]
                       }
                     ]
+                  },
+                  {
+                    "$not": {
+                      "$and": [
+                        {
+                          "$eq": ["style", "input"]
+                        },
+                        {
+                          "$has": "avatar"
+                        }
+                      ]
+                    }
                   }
                 ]
               },
@@ -943,6 +1074,57 @@
         },
         "children": [
           {
+            "type": "frame",
+            "name": "avatar",
+            "width": 24,
+            "height": 24,
+            "clip": true,
+            "layout": {
+              "type": "none"
+            },
+            "cornerRadius": {
+              "$token": "corner-full"
+            },
+            "opacity": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": {
+                "$token": "state-disabled-content"
+              },
+              "else": 1
+            },
+            "visible": {
+              "$and": [
+                {
+                  "$eq": ["style", "input"]
+                },
+                {
+                  "$has": "avatar"
+                }
+              ]
+            },
+            "children": [
+              {
+                "type": "image",
+                "name": "imagem do avatar",
+                "src": {
+                  "$field": "avatar"
+                },
+                "fit": "cover",
+                "fill": {
+                  "$token": "surface-variant"
+                },
+                "anchors": {
+                  "left": 0,
+                  "right": 0,
+                  "top": 0,
+                  "bottom": 0
+                }
+              }
+            ]
+          },
+          {
             "type": "icon",
             "name": "done",
             "width": 18,
@@ -1074,40 +1256,56 @@
                 {
                   "$and": [
                     {
-                      "$eq": ["selected", "true"]
+                      "$and": [
+                        {
+                          "$eq": ["selected", "true"]
+                        },
+                        {
+                          "$or": [
+                            {
+                              "$or": [
+                                {
+                                  "$eq": ["style", "filter"]
+                                },
+                                {
+                                  "$eq": ["style", "filter-elevated"]
+                                }
+                              ]
+                            },
+                            {
+                              "$eq": ["style", "input"]
+                            }
+                          ]
+                        }
+                      ]
                     },
                     {
                       "$or": [
                         {
-                          "$or": [
-                            {
-                              "$eq": ["style", "filter"]
-                            },
-                            {
-                              "$eq": ["style", "filter-elevated"]
-                            }
-                          ]
+                          "$eq": ["style", "filter"]
                         },
                         {
-                          "$eq": ["style", "input"]
+                          "$eq": ["style", "filter-elevated"]
                         }
                       ]
-                    }
-                  ]
-                },
-                {
-                  "$or": [
-                    {
-                      "$eq": ["style", "filter"]
                     },
                     {
-                      "$eq": ["style", "filter-elevated"]
+                      "$not": {
+                        "$has": "leadingIcon"
+                      }
                     }
                   ]
                 },
                 {
                   "$not": {
-                    "$has": "leadingIcon"
+                    "$and": [
+                      {
+                        "$eq": ["style", "input"]
+                      },
+                      {
+                        "$has": "avatar"
+                      }
+                    ]
                   }
                 }
               ]
@@ -1412,7 +1610,23 @@
               "else": 1
             },
             "visible": {
-              "$has": "leadingIcon"
+              "$and": [
+                {
+                  "$has": "leadingIcon"
+                },
+                {
+                  "$not": {
+                    "$and": [
+                      {
+                        "$eq": ["style", "input"]
+                      },
+                      {
+                        "$has": "avatar"
+                      }
+                    ]
+                  }
+                }
+              ]
             }
           },
           {

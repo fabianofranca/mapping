@@ -190,6 +190,19 @@ export const LIMIT_EXAMPLES: Record<string, string> = {
 
 /** Campos e exemplos que a etapa de expressões (#897, EX4) acrescentou ao date-picker e ao time-picker. */
 const EX4_FIELDS: Record<string, string[]> = { 'date-picker': ['month', 'year'] };
+/** Campos e exemplos que a etapa #899 (MF5) acrescentou: o dia de hoje e as variantes como campo opcional. */
+const MF5_FIELDS: Record<string, string[]> = {
+  'date-picker': ['today'],
+  chip: ['avatar'],
+  divider: ['color', 'insetStart', 'insetEnd'],
+  'progress-indicator': ['trackColor', 'strokeCap'],
+};
+const MF5_EXAMPLES: Record<string, string[]> = {
+  'date-picker': ['Dia de hoje'],
+  chip: ['Com avatar'],
+  divider: ['Recuo por ponta'],
+  'progress-indicator': ['Trilho colorido e ponta reta'],
+};
 /** Os campos de valor do slider (EX6): eram `enum` em décimos na v1 e passaram a `number`. */
 const SLIDER_NUMBERS: Record<string, number> = {
   value: 0.5,
@@ -298,7 +311,10 @@ export function v1WithEstados(
     actual: {
       fields: now.fields
         .filter(
-          (f) => f.key !== 'interaction' && !EX4_FIELDS[id]?.includes(f.key as string),
+          (f) =>
+            f.key !== 'interaction' &&
+            !EX4_FIELDS[id]?.includes(f.key as string) &&
+            !MF5_FIELDS[id]?.includes(f.key as string),
         )
         .map((f) => withoutAddedColumns(id, f)),
       examples: (now.examples ?? [])
@@ -306,7 +322,8 @@ export function v1WithEstados(
           (e) =>
             !isState(e) &&
             e.name !== LIMIT_EXAMPLES[id] &&
-            !EX4_EXAMPLES[id]?.includes(e.name as string),
+            !EX4_EXAMPLES[id]?.includes(e.name as string) &&
+            !MF5_EXAMPLES[id]?.includes(e.name as string),
         )
         .map((e) => withoutTableValues(now.fields, e)),
     },
