@@ -1,4 +1,4 @@
-# Teto de contexto da fase — [Não lançado] (épico `epic/contexto-da-fase`, PR #0, MCP 0.35.0 sem mudança, schema v18)
+# Teto de contexto da fase — 2026-11-11 (épico `epic/contexto-da-fase`, PR #1655, MCP 0.35.0 sem mudança, schema v18)
 
 ## Adicionado
 

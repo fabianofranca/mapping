@@ -1,4 +1,4 @@
-# Teto de contexto da fase — [Não lançado] (épico `epic/contexto-da-fase`)
+# Teto de contexto da fase — 2026-11-11 (épico `epic/contexto-da-fase`)
 
 ## Pendências
 
