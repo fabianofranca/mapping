@@ -905,7 +905,12 @@ describe('round-guide.mjs --faixas (#1639, TC1, decisão 3)', () => {
         id,
       ).toBe(passos[id]);
     }
-    for (const l of lotes) expect(l.steps).toBeLessThanOrEqual(20);
+    // O limite é 20 passos de base: os passos com letra (R12.11a…) não se separam do anterior
+    // (docs/TESTING-NUVEM.md, "as cadeias não se separam"), então um lote que termina numa
+    // cadeia dessas pode passar de 20 (R12.1-R12.11d tem 21).
+    for (const l of lotes) {
+      if (l.steps > 20) expect(l.token, l.token).toMatch(/-R\d+\.\d+[a-z]$/);
+    }
   });
 
   it('roteiro de até 20 passos é um lote com o token do roteiro; acima, faixas R<n>.<a>-R<n>.<b>', async () => {
