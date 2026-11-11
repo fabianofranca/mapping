@@ -1,4 +1,4 @@
-# Peça nova em espaço livre — [Não lançado] (épico `epic/espaco-livre`, PR #1565, MCP 0.33.2, schema v18)
+# Peça nova em espaço livre — 2026-11-11 (épico `epic/espaco-livre`, PR #1565, MCP 0.33.2, schema v18)
 
 ## Corrigido
 

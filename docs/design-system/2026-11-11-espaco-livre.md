@@ -1,4 +1,4 @@
-# Peça nova em espaço livre — [Não lançado] (épico `epic/espaco-livre`)
+# Peça nova em espaço livre — 2026-11-11 (épico `epic/espaco-livre`)
 
 ## Pendências
 
