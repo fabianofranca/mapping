@@ -1,4 +1,4 @@
-# Testador enxuto — 2026-11-11 (épico `epic/testador-enxuto`, PR #1578, MCP sem mudança, schema v18)
+# Testador enxuto — 2026-11-11 (épico `epic/testador-enxuto`, PR #1578, MCP 0.34.3, schema v18)
 
 ## Alterado
 
@@ -20,4 +20,5 @@
 - `cloud.mjs passo` com um item que o guia da rodada não tem (por exemplo `R12.4` num guia sem o R12) lê o item do `docs/TESTING.md` do clone e o imprime, com a primeira linha "fora do guia da rodada (lido do docs/TESTING.md)"; o código 2 fica para o item que o guia inteiro também não tem. Um teste confere que o `passo R25` (guias `all` e do bloco 2) traz o `tokens.mjs` e o bloco de `tinta`, `sonda` e `medir` inteiros (#1489).
 - R1.21a: perde o item (8), que dependia do R15 fora de uma rodada dirigida pelo R1; fica a frase de que a faixa de consentimento é conferida no R15.3 e no R15.11 (#1489).
 - R25.28, R25.30 e R25.32 dizem os rótulos da tela, **Claro**, **Escuro** e **Seguir o projeto**, com o valor gravado (`light`/`dark`) entre parênteses; o "Como agir" do `docs/TESTING-NUVEM.md` diz que o botão da janela se chama "Árvore de marcações" e manda abrir janelas só com `openWindow(page, id)` (#1489).
-- CL1 (correção dos achados dos testadores): peça da Paleta solta num componente com o slot cheio deixa de nascer sobre a irmã e de virar filha dela (3.1); `cloud-up.sh` confere o `pyatspi` no `/usr/bin/python3.12` (4.1); `r85-prep.sh` gera o `mat-sem-badge` na versão 8 (1.1); a tabela de texto e referência dos Detalhes cabe a 900 px (4.3) e o nome na Árvore estreita guarda um piso, cortado com reticências (5.1); R4.2a, R10.7, R12.19, R17.10, R18.4 e R25.3 do `docs/TESTING.md` corrigidos (2.1, 3.2, 3.3, 4.2, 4.4, 5.2).
+- CL1 (correção dos achados dos testadores): peça da Paleta solta num componente com o slot cheio deixa de nascer sobre a irmã e de virar filha dela (3.1, também na colocação do MCP em slot cheio, `crowdedRectIn`; MCP 0.34.3, patch); `cloud-up.sh` confere o `pyatspi` no `/usr/bin/python3.12` (4.1); `r85-prep.sh` gera o `mat-sem-badge` na versão 8 (1.1); a tabela de texto e referência dos Detalhes cabe a 900 px (4.3) e o nome na Árvore estreita guarda um piso, cortado com reticências (5.1); R4.2a, R10.7, R12.19, R17.10, R18.4 e R25.3 do `docs/TESTING.md` corrigidos (2.1, 3.2, 3.3, 4.2, 4.4, 5.2).
+- CL2 (reteste da CL1): a Simples volta a não ter nenhuma linha de aviso no R18.4, e o campo de texto da tabela de Detalhes termina em reticências (R24.15), com a largura mínima da célula reduzida.
