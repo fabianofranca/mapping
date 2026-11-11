@@ -221,6 +221,31 @@
       </div>
     </div>
     <div class="card">
+      <h2>Custo da fila</h2>
+      <p class="sub" id="mp-custo-total">—</p>
+      <div class="scroll">
+        <table id="mp-custo">
+          <thead>
+            <tr>
+              <th>Grupo</th>
+              <th>Sessões</th>
+              <th>US$</th>
+              <th>Mediana US$</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Pedidos do supervisor</h2>
+      <ul id="mp-pedidos"></ul>
+    </div>
+    <div class="card">
+      <h2>Regras em vigor</h2>
+      <ul id="mp-regras"></ul>
+    </div>
+    <div class="card">
       <h2>Issues criadas pela fila</h2>
       <p class="sub">
         Os bugs e roadmaps que a fila abre levam a linha <code>Origem: etapa #n</code> no
@@ -255,6 +280,59 @@
               waiting: q.filter((r) => r.status === 'esperando dono').length,
             },
           ];
+        },
+      });
+      // Custo da fila: meta.sessions (com `cost`), por tipo e por etapa; sem ele o card mostra "—".
+      dash.calc('custo', {
+        inputs: ['meta'],
+        title: 'Custo da fila',
+        description: 'Custo das sessões da fila, por tipo de sessão e por etapa.',
+        fn: (meta) => {
+          const es = ((meta[0] || {}).sessions || []).filter((e) => e && e.cost);
+          const med = (v) => {
+            const o = v.slice().sort((a, b) => a - b);
+            const h = o.length >> 1;
+            return o.length % 2 ? o[h] : (o[h - 1] + o[h]) / 2;
+          };
+          const KINDS = [
+            'fase',
+            'correção',
+            'testador',
+            'reteste',
+            'fechamento',
+            'coordenador',
+            'supervisor',
+          ];
+          const group = (kind, key) => {
+            const m = {};
+            es.forEach((e) => {
+              const k = e[key] || '—';
+              (m[k] = m[k] || []).push(+e.cost.usd || 0);
+            });
+            return Object.keys(m)
+              .sort((a, b) =>
+                kind === 'tipo'
+                  ? (KINDS.indexOf(a) + 1 || 99) - (KINDS.indexOf(b) + 1 || 99)
+                  : a.localeCompare(b, 'pt-BR', { numeric: true }),
+              )
+              .map((k) => ({
+                kind,
+                name: k,
+                count: m[k].length,
+                usd: m[k].reduce((a, b) => a + b, 0),
+                median: med(m[k]),
+              }));
+          };
+          return [
+            {
+              kind: 'total',
+              name: 'Total',
+              count: es.length,
+              usd: es.reduce((a, e) => a + (+e.cost.usd || 0), 0),
+            },
+          ]
+            .concat(group('tipo', 'kind'))
+            .concat(group('etapa', 'issue'));
         },
       });
       const pad = (n) => String(n).padStart(2, '0');
@@ -378,6 +456,76 @@
                 ? String(sm.data[0][el.dataset.field])
                 : '—';
           });
+        const usd = (x) => (x == null ? '—' : x.toFixed(2));
+        const cu = dash.data('custo');
+        const crows = cu.status === 'ok' ? cu.data : [];
+        const ctb = document.querySelector('#mp-custo tbody');
+        ctb.replaceChildren();
+        const total = crows.find((r) => r.kind === 'total');
+        document.getElementById('mp-custo-total').textContent =
+          total && total.count
+            ? 'US$ ' + usd(total.usd) + ' em ' + total.count + ' sessões'
+            : '—';
+        for (const r of crows.filter((x) => x.kind !== 'total')) {
+          const tr = document.createElement('tr');
+          [
+            (r.kind === 'tipo' ? 'Tipo: ' : 'Etapa: ') + r.name,
+            String(r.count),
+            usd(r.usd),
+            usd(r.median),
+          ].forEach((v) => {
+            const td = document.createElement('td');
+            td.textContent = v;
+            tr.appendChild(td);
+          });
+          ctb.appendChild(tr);
+        }
+        // Pedidos do supervisor e regras em vigor (meta.requests e meta.rules); sem eles os cards mostram "—".
+        const fillList = (id, items) => {
+          const ul = document.getElementById(id);
+          ul.replaceChildren();
+          for (const text of items.length ? items : ['—']) {
+            const li = document.createElement('li');
+            li.textContent = text;
+            ul.appendChild(li);
+          }
+        };
+        const LATE_MIN = 90;
+        const isLate = (r) =>
+          (r.estado === 'enviado' || r.estado === 'aprovado') &&
+          (Date.now() - t(r.at)) / 60000 > LATE_MIN;
+        fillList(
+          'mp-pedidos',
+          (Array.isArray(m.requests) ? m.requests : [])
+            .slice(-20)
+            .reverse()
+            .map(
+              (r) =>
+                (r.id || '?') +
+                ' (tipo ' +
+                (r.tipo || '?') +
+                '): ' +
+                (r.pedido || '') +
+                ' — ' +
+                (r.estado || '?') +
+                (isLate(r) ? ' (atrasado)' : '') +
+                (r.evidencia ? ' · ' + r.evidencia : ''),
+            ),
+        );
+        fillList(
+          'mp-regras',
+          (Array.isArray(m.rules) ? m.rules : [])
+            .filter((r) => r && !r.endedAt)
+            .map(
+              (r) =>
+                (r.id || '?') +
+                ' (' +
+                (r.origem || '?') +
+                '): ' +
+                (r.texto || '') +
+                (r.saida ? ' [saída: ' + r.saida + ']' : ''),
+            ),
+        );
         const tb = document.querySelector('#mp-table tbody');
         tb.replaceChildren();
         // Grupos (#1318): em andamento, depois o que pede o dono, a fila e as concluídas.
