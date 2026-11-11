@@ -502,12 +502,15 @@ function providedFields(
  * `linesSeed`: o número de linhas que cada `$lines` do template vale nesta passagem (a primeira usa
  * 1, a segunda o medido na primeira; ver `withLinesPasses`).
  */
+const NO_OPEN_AXES = { width: false, height: false } as const;
+
 function createEngine(
   original: ComponentFile,
   sourceValues: FieldValues,
   options: InstantiateOptions,
   instanceSize: { readonly width: number; readonly height: number },
   linesSeed?: ReadonlyMap<string, number>,
+  openAxes: { readonly width: boolean; readonly height: boolean } = NO_OPEN_AXES,
 ) {
   // Os `$token` viram o valor do modo antes de tudo (vale também dentro do `repeat`).
   const tokens =
@@ -888,10 +891,23 @@ function createEngine(
     return (perNode[axis] ??= resolveSpec(node, axis));
   };
 
-  /** Limite em px; não finito ou negativo = ausente. */
+  /**
+   * Limite em px; não finito ou negativo = ausente. Na medida de um eixo `hug`, o `$size` dele
+   * vale infinito aqui: o tamanho do tipo não limita o que se mede (um `maxWidth` de rótulo por
+   * `$size` − folga ficaria em 2 linhas).
+   */
+  const limitValues: FieldValues =
+    openAxes.width || openAxes.height
+      ? {
+          ...values,
+          ...(openAxes.width ? { [sizeKey('width')]: Infinity } : {}),
+          ...(openAxes.height ? { [sizeKey('height')]: Infinity } : {}),
+        }
+      : values;
   const limitValue = (expr: Expr<number> | undefined): number | undefined => {
     if (expr === undefined) return undefined;
-    const n = num(expr, Number.NaN);
+    const raw = evaluate<unknown>(expr as Expr<unknown>, limitValues, Number.NaN);
+    const n = typeof raw === 'number' ? raw : parseFloat(String(raw));
     return Number.isFinite(n) && n >= 0 ? n : undefined;
   };
 
@@ -2225,14 +2241,15 @@ function withLinesPasses<R>(
   options: InstantiateOptions,
   size: { readonly width: number; readonly height: number },
   run: (engine: Engine) => R,
+  openAxes?: { readonly width: boolean; readonly height: boolean },
 ): { engine: Engine; result: R } {
-  const first = createEngine(component, values, options, size);
+  const first = createEngine(component, values, options, size, undefined, openAxes);
   if (first.citedLines.size === 0) return { engine: first, result: run(first) };
   run(first);
   const seed = new Map(
     [...first.citedLines].map((key) => [key, first.lineCounts.get(key) ?? 0]),
   );
-  const second = createEngine(component, values, options, size, seed);
+  const second = createEngine(component, values, options, size, seed, openAxes);
   const result = run(second);
   for (const [key, count] of second.lineCounts)
     if (count !== (seed.get(key) ?? 0)) second.warnLinesUnstable(key);
@@ -2281,6 +2298,8 @@ export function measureComponent(
     width: size.width ?? component.size.width,
     height: size.height ?? component.size.height,
   };
+  // Eixo hug: o `$size` dele não limita os `min`/`max` por expressão (infinito = ausente).
+  const open = { width: size.width === null, height: size.height === null };
   const plan = (engine: Engine): { width: number; height: number } => {
     const { template } = engine;
     // Num eixo hug o `max` da raiz é o limite disponível; depois do plano, o min/max da raiz
@@ -2300,11 +2319,18 @@ export function measureComponent(
     return { width, height: size.height ?? engine.clampSize(template, 'h', planned.h) };
   };
   // Com `$lines`, as duas passagens também montam os nós (é neles que se medem as linhas de cada texto).
-  const { engine, result } = withLinesPasses(component, values, options, start, (e) => {
-    const measured = plan(e);
-    if (e.citedLines.size > 0) e.buildRoot({ x: 0, y: 0, ...measured });
-    return measured;
-  });
+  const { engine, result } = withLinesPasses(
+    component,
+    values,
+    options,
+    start,
+    (e) => {
+      const measured = plan(e);
+      if (e.citedLines.size > 0) e.buildRoot({ x: 0, y: 0, ...measured });
+      return measured;
+    },
+    open,
+  );
   const { width, height } = result;
   const messages = engine.messages();
   return { width, height, warnings: textsOf(messages), messages };
