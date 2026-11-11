@@ -1,4 +1,4 @@
-# Painel da fila lê os campos-lista do meta — [Não lançado] (épico `epic/painel-meta-texto`, PR #0, MCP 0.34.3 sem mudança, schema v18)
+# Painel da fila lê os campos-lista do meta — 2026-11-11 (épico `epic/painel-meta-texto`, PR #1624, MCP 0.34.3 sem mudança, schema v18)
 
 ## Corrigido
 

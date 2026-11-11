@@ -1,4 +1,4 @@
-# Painel da fila lê os campos-lista do meta — [Não lançado] (épico `epic/painel-meta-texto`)
+# Painel da fila lê os campos-lista do meta — 2026-11-11 (épico `epic/painel-meta-texto`)
 
 ## Pendências
 
