@@ -43,6 +43,26 @@ export function planGroups(
 ): GroupPlan;
 export function formatGroupPlan(plan: GroupPlan, options?: { limit?: number }): string;
 
+export const FAIXA_LIMIT: number;
+export interface Faixa {
+  token: string;
+  steps: number;
+}
+/** Os lotes dos subagentes do testador (sem o R0), na ordem do guia: roteiro de até `limit` passos inteiro, acima disso faixas consecutivas; passo dependente (R22.6a) fica com o anterior. */
+export function planFaixas(
+  markdown: string,
+  roteiros: string[],
+  options?: { limit?: number },
+): Faixa[];
+/** O texto do `--faixas`: uma linha `lote k de n: <token> (<m> passos)` por lote. */
+export function formatFaixas(lotes: Faixa[]): string;
+/** O Preparo de roteiros inteiros (antes do primeiro passo), com o corte de 25 mil; item que não é roteiro inteiro lança `Error`. */
+export function guidePreparo(
+  guideText: string,
+  itens: string[],
+  fallbackText?: string,
+): string;
+
 export interface SecaoSobDemanda {
   chave: string;
   titulo: string;
