@@ -1,4 +1,4 @@
-# Teto do dist/index.html fora do ci.yml — [Não lançado]
+# Teto do dist/index.html fora do ci.yml — 2026-11-11 (épico `epic/teto-fora-do-ci`, PR #1648, MCP sem mudança, schema v18)
 
 ## Alterado
 

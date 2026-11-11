@@ -115,15 +115,7 @@ export function applyRaise(data, d, { epic, date }) {
   return { ...data, indexHtmlMaxBytes: d.next, history: [...data.history, sentence] };
 }
 
-const VALUE_FLAGS = [
-  'budget',
-  'ci',
-  'size',
-  'main-size',
-  'review-ceiling',
-  'epic',
-  'date',
-];
+const VALUE_FLAGS = ['budget', 'size', 'main-size', 'review-ceiling', 'epic', 'date'];
 
 function parseArgs(argv) {
   const out = { _: [] };

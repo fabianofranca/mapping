@@ -840,7 +840,7 @@ describe('passo "Tamanho do dist/index.html": de onde vem o teto (etapa #1614)',
       const summary = path.join(dir, 'summary.md');
       writeFileSync(summary, '');
       writeFileSync(path.join(dir, 'step.sh'), body);
-      const r = spawnSync('bash', ['-e', 'step.sh'], {
+      const r = spawnSync('bash', ['-e', '-o', 'pipefail', 'step.sh'], {
         cwd: dir,
         encoding: 'utf8',
         env: { ...process.env, GITHUB_STEP_SUMMARY: summary },
