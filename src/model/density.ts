@@ -2,7 +2,7 @@ import { fail } from './errors';
 import { updateById } from './project';
 import { projectIndex } from './projectIndex';
 import type { Spec, SpecContainer } from './spec';
-import type { Project, Rect } from './types';
+import type { Project, ProjectContainer, Rect } from './types';
 
 // Densidade do container (schema v19): quantos pixels da imagem vale uma unidade do componente
 // (dp, pt, px lógico a 1x). Os números do componente são unidades; as marcações seguem em pixels
@@ -28,8 +28,15 @@ export function effectiveDensity(
   return projectIndex(p as Project).containers.get(containerId)?.density ?? 1;
 }
 
+/** O container sem a chave `density` (volta a valer 1). */
+export function withoutDensity(container: ProjectContainer): ProjectContainer {
+  const { density, ...rest } = container;
+  void density;
+  return rest;
+}
+
 /**
- * Define a densidade do container; `null` volta a 1 (remove a chave). Fora de 0,5 a 8 falha com
+ * Define a densidade do container; `null` e 1 voltam a 1 (remove a chave). Fora de 0,5 a 8 falha com
  * `container-density`. Não mexe nos pixels: só o desenho dos componentes, o `minSize` e o ajuste
  * passam a multiplicar.
  */
@@ -43,17 +50,13 @@ export function setContainerDensity(
   if (density !== null && !isValidDensity(density)) {
     return fail('container-density', String(density), { density });
   }
-  if ((container.density ?? null) === density) return p;
+  const next = density === 1 ? null : density;
+  if ((container.density ?? null) === next) return p;
   return {
     ...p,
-    containers: updateById(p.containers, containerId, (c) => {
-      if (density === null) {
-        return Object.fromEntries(
-          Object.entries(c).filter(([key]) => key !== 'density'),
-        ) as unknown as typeof c;
-      }
-      return { ...c, density };
-    }),
+    containers: updateById(p.containers, containerId, (c) =>
+      next === null ? withoutDensity(c) : { ...c, density: next },
+    ),
   };
 }
 
@@ -104,8 +107,8 @@ export function rectToUnits(rect: Rect, density: number): Rect {
 const UNIT_EPS = 1e-6;
 
 /**
- * Um retângulo em unidades → em pixels inteiros da imagem (× densidade): a posição arredonda, o
- * tamanho sobe (o conteúdo não pode ser cortado). `original` é o retângulo em pixels de onde
+ * Um retângulo em unidades → em pixels inteiros da imagem (× densidade): as quatro bordas
+ * arredondam e o tamanho sai da diferença (mínimo 1). `original` é o retângulo em pixels de onde
  * `unit` saiu: se `unit` ainda é o mesmo (sem diferença além do resto de ponto flutuante), volta
  * o `original` exato.
  */
@@ -118,16 +121,25 @@ export function rectFromUnits(unit: Rect, original: Rect, density: number): Rect
     Math.abs(unit.width - back.width) < UNIT_EPS &&
     Math.abs(unit.height - back.height) < UNIT_EPS;
   if (same) return original;
+  // As bordas arredondam (esquerda/superior e direita/inferior) e o tamanho sai da diferença: um
+  // filho dentro do slot em unidades nunca passa da borda do slot em pixels.
+  const left = Math.round(unit.x * density);
+  const top = Math.round(unit.y * density);
+  const right = Math.round((unit.x + unit.width) * density);
+  const bottom = Math.round((unit.y + unit.height) * density);
   return {
-    x: Math.round(unit.x * density),
-    y: Math.round(unit.y * density),
-    width: Math.max(1, unitsToPixels(unit.width, density)),
-    height: Math.max(1, unitsToPixels(unit.height, density)),
+    x: left,
+    y: top,
+    width: Math.max(1, right - left),
+    height: Math.max(1, bottom - top),
   };
 }
 
 /** Os fatores que a app sugere (a lista pronta do campo traz também 1). */
 export const SUGGESTED_DENSITIES = [1.5, 2, 3, 4] as const;
+
+/** Os fatores comparados: o 1x entra para a sugestão não empurrar 3x a quem já bate em 1x. */
+const COMPARED_DENSITIES = [1, ...SUGGESTED_DENSITIES] as const;
 
 /** Quantos pixels a largura do container pode diferir de `fator × largura do tamanho pronto`. */
 const SUGGEST_TOLERANCE = 2;
@@ -143,7 +155,7 @@ export interface DensitySuggestion {
 function closestFactor(width: number, presetWidth: number): number | undefined {
   let best: number | undefined;
   let bestGap = SUGGEST_TOLERANCE + 1;
-  for (const factor of SUGGESTED_DENSITIES) {
+  for (const factor of COMPARED_DENSITIES) {
     const gap = Math.abs(width - factor * presetWidth);
     if (gap <= SUGGEST_TOLERANCE && gap < bestGap) {
       best = factor;
@@ -177,7 +189,8 @@ export function suggestDensity(
       }
     }
   }
-  return best;
+  // O melhor ser o 1x quer dizer que o container já está no tamanho pronto: nada a sugerir.
+  return best?.density === 1 ? null : best;
 }
 
 /**
