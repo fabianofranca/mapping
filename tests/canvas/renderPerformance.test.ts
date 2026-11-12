@@ -59,7 +59,7 @@ import { buildLargeTypedProject } from '../model/largeTypedProject';
 import { material3Spec } from '../storage/packageFixture';
 import { componentSources, installFakeCanvas } from './harness';
 import { openWholeProject, wholeProject } from './wholeProjectScenario';
-import { expectBelow } from '../support/perfReport';
+import { expectBelow, measureBudget } from '../support/perfReport';
 
 // Orçamento de uma renderização do canvas (docs/ARCHITECTURE.md, "Desempenho") com o projeto grande já
 // indexado: Konva de verdade em jsdom, com um contexto 2D falso (nada é pintado;
@@ -69,6 +69,8 @@ const RENDER_BUDGET_MS = 16;
 const budgetIt = it.skipIf(process.env.PERF_BUDGETS === 'off');
 /** Uma repetição separa ruído do runner de regressão (ver tests/model/performance.test.ts). */
 const BUDGET_OPTIONS = { retry: 1 };
+/** As 3 levas de 41 amostras do `measureBudget` (gc a cada amostra) passam dos 5 s do padrão sob a carga do `npm test`. */
+const LEVAS_OPTIONS = { ...BUDGET_OPTIONS, timeout: 60_000 };
 
 describe('renderização do canvas com o projeto grande', () => {
   const frames: FrameRequestCallback[] = [];
@@ -585,17 +587,12 @@ describe('grade com texto', () => {
 
   budgetIt(
     `uma grade de 4 × 6 textos de 2 linhas (instanciar e desenhar) cabe em ${GRID_BUDGET_MS} ms`,
-    BUDGET_OPTIONS,
+    LEVAS_OPTIONS,
     () => {
-      const once = (): number => {
-        const start = performance.now();
+      const run = (): void => {
         renderScene({ root: drawn().root, warnings: [] });
-        return performance.now() - start;
       };
-      for (let i = 0; i < 3; i++) once(); // Aquecimento.
-      const times = Array.from({ length: 15 }, once);
-      const median = [...times].sort((a, b) => a - b)[7] ?? Number.NaN;
-      expectBelow(median, GRID_BUDGET_MS);
+      expectBelow(measureBudget(run).median, GRID_BUDGET_MS);
     },
   );
 });
@@ -680,17 +677,12 @@ describe('intrínseco aninhado em 3 níveis', () => {
 
   budgetIt(
     `row max-content › 4 column min-content › 3 row × 2 textos (instanciar e desenhar) cabe em ${NESTED_BUDGET_MS} ms`,
-    BUDGET_OPTIONS,
+    LEVAS_OPTIONS,
     () => {
-      const once = (): number => {
-        const start = performance.now();
+      const run = (): void => {
         renderScene({ root: drawn().root, warnings: [] });
-        return performance.now() - start;
       };
-      for (let i = 0; i < 3; i++) once(); // Aquecimento.
-      const times = Array.from({ length: 15 }, once);
-      const median = [...times].sort((a, b) => a - b)[7] ?? Number.NaN;
-      expectBelow(median, NESTED_BUDGET_MS);
+      expectBelow(measureBudget(run).median, NESTED_BUDGET_MS);
     },
   );
 });
