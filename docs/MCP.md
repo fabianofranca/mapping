@@ -27,6 +27,8 @@ Só projetos **em pasta** ficam ao alcance do MCP; projetos guardados no navegad
 
 Teste fora do cliente: `node tools/mapping-mcp.js --version` e `--help`.
 
+**Extrator de assinatura (opcional).** Para importar os parâmetros de um componente Kotlin/Compose (veja "Extrator de assinatura" abaixo), baixe também `mapping-signature.mjs` e o `mapping-signature.mjs.sha256` da mesma Release, confira (`sha256sum -c mapping-signature.mjs.sha256`) e copie para `tools/`. O `setup.sh` do workspace já o instala em `tools/mapping-signature.mjs`; sem workspace, esse é o plano B manual, igual ao do `mapping-mcp.js`. É um módulo ES (`.mjs`): roda com `node` em qualquer repositório, sem `package.json` ao lado e sem `npm install`.
+
 > **Pasta central de mapeamentos.** Para guardar vários projetos numa pasta só, pronta para qualquer cliente MCP (Claude Code, Cursor, Gemini CLI, Copilot, Codex), copie [`examples/workspace/`](../examples/workspace/): o `setup.sh` baixa da release o servidor, a skill `spec-author` e o bloco de regras do `AGENTS.md`, confere o `sha256` de todos antes de trocar qualquer arquivo e se atualiza sozinho (`--no-self-update` desliga); o `AGENTS.md` explica a pasta ao agente. A linha para atualizar um workspace antigo (rode uma vez) está no `README.md` da pasta e abaixo, em "Publicar uma versão".
 
 ## Raízes
@@ -171,6 +173,22 @@ Em `get_marking`, `get_annotation`, `find_by_code`, `get_component` (campo `code
 - **A ficha anterior** é a que o `code` (do caso, com `variant`) ou a `sources` do tipo cita em `signature`, lida do pacote; sem ela, é a primeira importação.
 - **Erros** (`detail` e `hint`): `signature-invalid` (a ficha não passa no `parseSignature`; `issues` traz o caminho dentro da ficha), `type-not-found`, `platform-not-declared`, `signature-mismatch` (o símbolo e o arquivo da ficha, ou o sistema, diferem dos do `code` ou da `source`) e `variant-not-found` (o `code` não declara o caso, ou `variant` foi passado com `system`).
 - **O servidor nunca lê código.** Um `signatureFile` que não é `.json` é recusado antes de qualquer acesso ao disco, e o que não é uma ficha é `signature-invalid`. Extraia a ficha com o `mapping-signature.mjs` ou escreva-a à mão (`source.extractor: "agent"`).
+
+#### Extrator de assinatura
+
+O `mapping-signature.mjs` (código em `signature/`) lê um arquivo Kotlin e escreve a ficha de um componente `@Composable`. Ele roda **no clone da biblioteca, pelo agente**; o servidor continua sem ler código e só lê a ficha JSON que o agente grava na biblioteca.
+
+```bash
+node tools/mapping-signature.mjs kotlin --file <arquivo.kt> --symbol <nome> --path <relativo ao repo> --ref <commit> \
+  [--also <arquivo.kt>]... [--overload <n>] --out signatures/<tipo>.<plataforma>.json
+node tools/mapping-signature.mjs --help
+```
+
+- `--symbol` é o nome da função `@Composable` (simples ou com o `package`); `--path` é o caminho do arquivo relativo à raiz do repositório e `--ref` o commit fixado em `platforms[].repo` (vão em `source.path` e `source.ref`). `--also` aponta outros arquivos `.kt` onde estão `enum class` e fábricas `XDefaults.f()` que o arquivo principal usa.
+- **Sobrecarga ambígua:** com mais de uma candidata, o comando sai com erro (código 1), lista as candidatas com o índice e pede `--overload <n>`.
+- Saída determinística (mesma entrada, mesmos bytes), sem dependência e sem rede; só escreve em `--out`, e só depois de validar a ficha. Códigos de saída: 0 ok, 1 erro de extração, 2 erro de uso.
+- Por ora só o leitor `kotlin`; Swift e Figma ainda não têm extrator e a ficha continua à mão (`source.extractor: "agent"`).
+
 - **Os avisos do importador** (`pending` por parâmetro `value` sem campo, `removed`, `diverges`) aparecem em `types["spec/tipo"].notices` do `get_code_hints`, ao lado dos curados, com o `ref` da ficha; o `unmapped` do mesmo `code` é o rastro do que a tela ainda não modela. O `pending` gerado e o `unmapped` dizem a mesma coisa de dois modos: o aviso fica na especialização, o `unmapped` sai da ficha.
 - Somente leitura, versão minor (0.39.0).
 
@@ -655,15 +673,16 @@ A versão do servidor é **uma por épico**: `SERVER_VERSION` em `mcp/version.ts
 
 **Arquivos de cada release.** O snapshot, a rc e a estável publicam os mesmos arquivos, montados por `scripts/release/workspaceAssets.mjs` (um só script, uma passada por job que compila; ele sai com erro se o `examples/workspace/AGENTS.md` não tiver exatamente um bloco gerenciado, com os marcadores `mapping:begin` e `mapping:end` na ordem). Cada um tem um `.sha256` no formato do `sha256sum` (conferido também por `shasum -a 256 -c`):
 
-| Arquivo              | Para que serve                                                                                                         |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `mapping-mcp.js`     | O servidor MCP.                                                                                                        |
-| `setup.sh`           | Cópia de `examples/workspace/setup.sh`: instala ou atualiza o workspace na versão da release.                          |
-| `SKILL.md`           | A skill `spec-author` do mesmo commit da release (cópia de `.claude/skills/spec-author/SKILL.md`).                     |
-| `AGENTS.mapping.md`  | O bloco gerenciado do `examples/workspace/AGENTS.md`, entre `mapping:begin` e `mapping:end` (marcadores inclusive).    |
-| `watch-comments.mjs` | Cópia de `examples/workspace/watch-comments.mjs`, o watcher de conversas: o `setup.sh` o instala na raiz do workspace. |
+| Arquivo                 | Para que serve                                                                                                         |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `mapping-mcp.js`        | O servidor MCP.                                                                                                        |
+| `setup.sh`              | Cópia de `examples/workspace/setup.sh`: instala ou atualiza o workspace na versão da release.                          |
+| `SKILL.md`              | A skill `spec-author` do mesmo commit da release (cópia de `.claude/skills/spec-author/SKILL.md`).                     |
+| `AGENTS.mapping.md`     | O bloco gerenciado do `examples/workspace/AGENTS.md`, entre `mapping:begin` e `mapping:end` (marcadores inclusive).    |
+| `watch-comments.mjs`    | Cópia de `examples/workspace/watch-comments.mjs`, o watcher de conversas: o `setup.sh` o instala na raiz do workspace. |
+| `mapping-signature.mjs` | O extrator de assinatura Kotlin (`signature/`, ESM): o `setup.sh` o instala em `tools/mapping-signature.mjs`.          |
 
-Releases anteriores a esta não têm os quatro últimos (o `watch-comments.mjs` só vem a partir da primeira estável com o watcher; com uma tag mais antiga, o `setup.sh` avisa e segue). Os workspaces que ainda têm o `setup.sh` antigo se atualizam uma vez, com a linha da transição (depois da primeira estável com os arquivos novos; antes disso, troque `latest/download` por `download/<tag da rc>` e passe a tag ao `./setup.sh`), que também vai nas notas de cada release:
+Releases anteriores a esta não têm os quatro últimos (o `watch-comments.mjs` só vem a partir da primeira estável com o watcher, e o `mapping-signature.mjs` a partir da primeira com o extrator; com uma tag mais antiga, o `setup.sh` avisa e segue). Os workspaces que ainda têm o `setup.sh` antigo se atualizam uma vez, com a linha da transição (depois da primeira estável com os arquivos novos; antes disso, troque `latest/download` por `download/<tag da rc>` e passe a tag ao `./setup.sh`), que também vai nas notas de cada release:
 
 O `setup.sh` baixa esses arquivos pelo download direto da release e, se o GitHub responder 5xx ou 429 ou não responder, tenta de novo e usa a API de assets (`api.github.com/repos/…/releases/assets/<id>`, sem token), conferindo o `sha256` do mesmo jeito; o erro final traz o código HTTP (etapa #877).
 
@@ -680,6 +699,6 @@ curl -fsSL https://github.com/fabianofranca/mapping/releases/latest/download/set
 
   **Trava no PR do épico.** O passo "Versão do MCP" do job `epic` (`ci.yml`) falha o PR de `epic/*` para a `main` que muda o que vai na release (as entradas de `scripts/release/releaseInputs.mjs`: `mcp/`, `src/model/`, a documentação embutida, a biblioteca `libraries/notas/` e as fontes dos arquivos do workspace) e mantém uma versão que já tem estável: suba `SERVER_VERSION` em `mcp/version.ts` (e os docs que a citam). Versão nova passa, desde que seja maior que a última estável; sem entrada mudada, passa com o aviso de que o merge não publica. O `package-lock.json` fica fora (um merge do Dependabot nunca publica).
 
-  **Conferir a Release depois do merge.** Quem mescla o épico (no fluxo automatizado, o orquestrador) acha a execução do "MCP release" do commit do merge e espera por ela. Com versão nova, confere que a Release `mcp-v<versão>` existe, não é pre-release, tem `mapping-mcp.js`, `setup.sh`, `SKILL.md`, `AGENTS.mapping.md` e `watch-comments.mjs`, cada um com o `.sha256`, e que as rc da versão sumiram; sem versão nova, que o `release` foi pulado.
+  **Conferir a Release depois do merge.** Quem mescla o épico (no fluxo automatizado, o orquestrador) acha a execução do "MCP release" do commit do merge e espera por ela. Com versão nova, confere que a Release `mcp-v<versão>` existe, não é pre-release, tem `mapping-mcp.js`, `setup.sh`, `SKILL.md`, `AGENTS.mapping.md`, `watch-comments.mjs` e `mapping-signature.mjs`, cada um com o `.sha256`, e que as rc da versão sumiram; sem versão nova, que o `release` foi pulado.
 
   **Plano B (manual).** Se o workflow falhou ou a Release ficou sem os arquivos, corrija a causa e crie a tag à mão na `main` (`git tag mcp-v0.39.0 && git push origin mcp-v0.39.0`, ou Releases › Draft a new release com a tag nova), o que dispara o mesmo workflow (a Release criada antes pela tela recebe os arquivos). Para uma tag que já existe, rode Actions › **MCP release** › Run workflow, com a tag (ex.: `mcp-v0.39.0`): o workflow usa o código da tag e só anexa os arquivos, sem apagar nem recriar a Release.
