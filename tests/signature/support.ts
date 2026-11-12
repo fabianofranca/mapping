@@ -71,6 +71,8 @@ export function extractJson(
 
 export interface SigParam {
   name: string;
+  label?: string;
+  id?: string;
   role: string;
   type: string;
   default?: string;
@@ -79,7 +81,7 @@ export interface SigParam {
   factory?: { call: string; params: SigParam[] };
 }
 export interface Sig {
-  source: Record<string, unknown>;
+  source: Record<string, unknown> & { init?: number };
   params: SigParam[];
   doc?: Record<string, string>;
 }

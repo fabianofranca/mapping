@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { parseSignature, type Signature } from '../src/model/signatures';
-import { parseArgs, USAGE, type RunArgs } from './args';
+import { parseArgs, USAGE, type CodeArgs, type DesignArgs, type RunArgs } from './args';
 import { CliError, usageError } from './errors';
 import { READERS } from './readers';
 
@@ -25,7 +25,7 @@ const nodeIo: CliIo = {
 const ABSOLUTE = /^(?:\/|[A-Za-z]:[\\/])/;
 
 /** O `source.path`: o `--path` como veio, ou o `--file` relativo (com `/` e sem `./` na frente). */
-function sourcePath(args: RunArgs): string {
+function sourcePath(args: CodeArgs): string {
   if (args.path !== undefined) return args.path;
   if (ABSOLUTE.test(args.file)) {
     throw usageError('--file absoluto: informe --path, relativo à raiz do repositório');
@@ -57,6 +57,26 @@ function serialize(signature: Signature): string {
   return text;
 }
 
+/** Lê os arquivos e roda o leitor: o de código recebe o arquivo e os `--also`; o de design, o JSON. */
+function read(args: RunArgs, io: CliIo): Signature {
+  const def = READERS[args.reader]!;
+  if (def.kind === 'design') {
+    const { file, node } = args as DesignArgs;
+    return def.read({ file: { name: file, text: readText(io, file) }, node });
+  }
+  const code = args as CodeArgs;
+  const path = sourcePath(code);
+  return def.read({
+    file: { name: code.file, text: readText(io, code.file) },
+    also: code.also.map((name) => ({ name, text: readText(io, name) })),
+    symbol: code.symbol,
+    path,
+    ...(code.ref === undefined ? {} : { ref: code.ref }),
+    ...(code.overload === undefined ? {} : { overload: code.overload }),
+    ...(code.init === undefined ? {} : { init: code.init }),
+  });
+}
+
 function execute(argv: readonly string[], io: CliIo): number {
   const parsed = parseArgs(argv);
   if (parsed.help) {
@@ -64,16 +84,7 @@ function execute(argv: readonly string[], io: CliIo): number {
     return 0;
   }
   const { args } = parsed;
-  const path = sourcePath(args);
-  const request = {
-    file: { name: args.file, text: readText(io, args.file) },
-    also: args.also.map((name) => ({ name, text: readText(io, name) })),
-    symbol: args.symbol,
-    path,
-    ...(args.ref === undefined ? {} : { ref: args.ref }),
-    ...(args.overload === undefined ? {} : { overload: args.overload }),
-  };
-  const text = serialize(READERS[args.reader]!(request));
+  const text = serialize(read(args, io));
   if (args.out === undefined) {
     io.stdout(text);
     return 0;

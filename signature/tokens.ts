@@ -103,3 +103,14 @@ export function errorAtToken(stream: TokenStream, index: number, message: string
   const token = stream.tokens[index] ?? stream.tokens[stream.tokens.length - 1];
   return syntaxError(stream.src, token?.start ?? 0, message);
 }
+
+/** O índice do `{` do corpo da declaração que começa em `from`, pulando o que vem antes (construtor, supertipos, genéricos). */
+export function findBodyOpen(stream: TokenStream, from: number): number | undefined {
+  let j = from;
+  while (j < stream.tokens.length) {
+    if (isPunct(stream, j, '{')) return j;
+    if (isPunct(stream, j, ';') || isPunct(stream, j, '}')) return undefined;
+    j = isOpener(stream.tokens[j]) ? stream.match[j]! + 1 : j + 1;
+  }
+  return undefined;
+}

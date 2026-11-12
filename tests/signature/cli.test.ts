@@ -60,15 +60,11 @@ describe('--help e erros de uso (exit 2)', () => {
   });
 
   it('leitor desconhecido: "leitor desconhecido: <x>; disponíveis: kotlin"', () => {
-    const result = spawnBundle(BUNDLE_CJS, [
-      'swift',
-      '--file',
-      'a.swift',
-      '--symbol',
-      'X',
-    ]);
+    const result = spawnBundle(BUNDLE_CJS, ['rust', '--file', 'a.rs', '--symbol', 'X']);
     expect(result.code).toBe(2);
-    expect(result.stderr).toContain('leitor desconhecido: swift; disponíveis: kotlin');
+    expect(result.stderr).toContain(
+      'leitor desconhecido: rust; disponíveis: kotlin, swift, figma',
+    );
   });
 
   it.each([

@@ -1,17 +1,6 @@
-import { isOpener, isPunct, isWord, topLevel, type TokenStream } from '../tokens';
+import { findBodyOpen, isPunct, isWord, topLevel, type TokenStream } from '../tokens';
 
 // `enum class Nome { A, B(1), C { … }; … }`: as constantes, na ordem da declaração.
-
-/** O índice do `{` do corpo da declaração que começa em `from`, pulando o construtor e os supertipos. */
-export function findBodyOpen(stream: TokenStream, from: number): number | undefined {
-  let j = from;
-  while (j < stream.tokens.length) {
-    if (isPunct(stream, j, '{')) return j;
-    if (isPunct(stream, j, ';') || isPunct(stream, j, '}')) return undefined;
-    j = isOpener(stream.tokens[j]) ? stream.match[j]! + 1 : j + 1;
-  }
-  return undefined;
-}
 
 /** Pula as anotações de uma constante (`@Deprecated("x") A`): o índice do primeiro token que não é anotação. */
 function skipEntryAnnotations(stream: TokenStream, from: number): number {
