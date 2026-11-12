@@ -2,7 +2,14 @@
 // n-ésima resposta de `plan_signature_import` na saída do cliente stdio, e confere se reimportar
 // não muda nada. O teste monta a saída no formato do `mcp-stdio-client.mjs`.
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -60,6 +67,27 @@ describe('assinatura.mjs (R26)', () => {
     expect(readFileSync(path.join(pacote, 'signatures/b.json'), 'utf8')).toBe(
       '{"format":"mapping-signature"}',
     );
+  });
+
+  it('gravar: um signaturePath que sai do pacote é recusado e nada é escrito fora', () => {
+    const saida = path.join(dir, 'saida.txt');
+    writeFileSync(
+      saida,
+      output([
+        {
+          name: 'plan_signature_import',
+          result: { spec: SPEC, signaturePath: '../fora/a.json' },
+        },
+      ]),
+    );
+    const ficha = path.join(dir, 'ficha.json');
+    writeFileSync(ficha, '{}');
+    const pacote = path.join(dir, 'lib');
+    mkdirSync(pacote);
+    const r = run('gravar', saida, pacote, ficha, 'lib.spec.json');
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain('fora do pacote');
+    expect(existsSync(path.join(dir, 'fora'))).toBe(false);
   });
 
   it('igual: diz igual e sai com 0; diferente sai com 1', () => {

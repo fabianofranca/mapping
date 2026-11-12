@@ -56,6 +56,8 @@ interface LinkRecord {
 class Importer {
   private readonly existing = new Map<string, string>();
   private readonly linked = new Set<string>();
+  /** Os alvos que vêm só do `params` da base: a ficha do caso não os julga. */
+  private readonly inherited = new Set<string>();
   private readonly links: ImportLink[] = [];
   private readonly created: SpecField[] = [];
   private readonly pending: Unit[] = [];
@@ -113,9 +115,12 @@ class Importer {
 
   private collectCode(): void {
     const code = this.prepared.code as SpecCode;
-    const params = { ...code.params, ...this.prepared.caseEntry?.params };
+    const own = this.prepared.caseEntry?.params;
+    const params = { ...code.params, ...own };
     for (const [key, target] of Object.entries(params)) {
       if (!this.existing.has(target)) this.existing.set(target, key);
+      if (this.prepared.caseEntry !== undefined && own?.[key] === undefined)
+        this.inherited.add(target);
     }
   }
 
@@ -161,8 +166,15 @@ class Importer {
     else if (resolution.kind === 'field') this.bindField(unit, resolution.plan);
   }
 
+  /** O campo que o `params` já liga à unidade: pelo nome de chamada ou, sem dono, pelo nome interno. */
+  private linkedKey(unit: Unit): string | undefined {
+    const byCall = this.existing.get(unit.target);
+    if (byCall !== undefined || unit.owner !== undefined || this.design) return byCall;
+    return this.existing.get(unit.param.name);
+  }
+
   private findLinked(unit: Unit): { field: SpecField; via: ImportLinkVia } | undefined {
-    const byParams = this.fieldOf(this.existing.get(unit.target));
+    const byParams = this.fieldOf(this.linkedKey(unit));
     if (byParams !== undefined) return { field: byParams, via: 'params' };
     const normal = normalizeName(unit.name);
     const byName = this.type.fields.find(
@@ -211,12 +223,17 @@ class Importer {
     return field as unknown as SpecField;
   }
 
+  /** O nome da source: o do parâmetro; o argumento de uma fábrica leva o dono (`dono.membro`). */
+  private sourceName(unit: Unit): string {
+    return unit.owner === undefined ? unit.param.name : unit.target;
+  }
+
   /** Escreve a ligação: `code.params` (ou a `sources` do campo, no design). */
   private writeLink(unit: Unit, field: SpecField): void {
     if (this.design) {
       field.sources = [
         ...(field.sources ?? []),
-        { system: this.prefix, name: unit.param.name },
+        { system: this.prefix, name: this.sourceName(unit) },
       ];
       return;
     }
@@ -251,10 +268,21 @@ class Importer {
     const base = this.prepared.code as SpecCode;
     if (unit.owner !== undefined && unit.call !== undefined)
       this.setCall(scope, base, unit);
-    if (plan.format !== undefined && base.formats?.[field.key] === undefined) {
-      scope.formats = { ...scope.formats, [field.key]: plan.format };
-    }
+    this.writeFormat(scope, base, field, plan);
     if (isNew) this.writeValues(scope, field, plan);
+  }
+
+  /** O `format` do campo, sem sobrescrever o que a base ou o escopo (o caso) já têm. */
+  private writeFormat(
+    scope: Scope,
+    base: SpecCode,
+    field: SpecField,
+    plan: FieldPlan,
+  ): void {
+    if (plan.format === undefined) return;
+    if (base.formats?.[field.key] !== undefined) return;
+    if (scope.formats?.[field.key] !== undefined) return;
+    scope.formats = { ...scope.formats, [field.key]: plan.format };
   }
 
   private writeValues(scope: Scope, field: SpecField, plan: FieldPlan): void {
@@ -323,7 +351,7 @@ class Importer {
   }
 
   private matchOption(
-    field: SpecField,
+    field: Extract<SpecField, { type: 'enum' }>,
     text: string,
     own: readonly string[],
     matched: Set<string>,
@@ -334,7 +362,7 @@ class Importer {
       if (option !== text) this.mapOption(field, option, text);
     } else if (this.design) {
       this.note(field, `a opção \`${text}\` da fonte não existe no campo`);
-    } else if (field.type === 'enum') {
+    } else {
       field.options.push(text);
     }
   }
@@ -369,7 +397,7 @@ class Importer {
       present.add(flat.param.name);
     }
     return [...this.existing]
-      .filter(([target]) => !present.has(target))
+      .filter(([target]) => !present.has(target) && !this.inherited.has(target))
       .map(([target, field]) => ({ target, field }));
   }
 

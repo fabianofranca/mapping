@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
@@ -137,6 +137,30 @@ describe('o servidor não abre arquivos de código (dinâmico)', () => {
       // Recusado pela extensão, antes de qualquer chamada ao disco.
       expect(fsCalls).toEqual([]);
     }
+  });
+
+  it('plan_signature_import recusa um signatureFile .json que é link simbólico para código, sem lê-lo', async () => {
+    const link = join(ws.root, 'ficha-link.json');
+    const real = join(ws.root, 'Real.kt');
+    writeFileSync(real, 'fun Button() {}');
+    symlinkSync(real, link);
+    fsCalls.length = 0;
+    const result = await client.callTool({
+      name: 'plan_signature_import',
+      arguments: {
+        path: 'cadastro',
+        type: 'button',
+        platform: 'android',
+        signatureFile: 'ficha-link.json',
+      },
+    });
+    const text = (result.content as { text: string }[])[0]!.text;
+    expect(result.isError).toBe(true);
+    expect(JSON.parse(text).error.code).toBe('signature-invalid');
+    expect(JSON.parse(text).error.message).toContain('.json');
+    expect(
+      fsCalls.filter((c) => c.fn.startsWith('readFile') && c.target.endsWith('.kt')),
+    ).toEqual([]);
   });
 
   it('o arquivo que escapa do diretório de trabalho nem é tocado', async () => {

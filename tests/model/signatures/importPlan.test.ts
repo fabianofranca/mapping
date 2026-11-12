@@ -614,3 +614,134 @@ describe('erros', () => {
     });
   });
 });
+
+describe('revisão da S2: ligação, formats, variantes e design', () => {
+  const swift = (params: Json[]) =>
+    composeSignature(params, (s) => {
+      s.source = {
+        kind: 'code',
+        platform: 'swiftui',
+        language: 'swift',
+        symbol: 'DS.Button',
+        path: 'Button.swift',
+        extractor: 'mapping-signature/swift@1',
+      };
+    });
+
+  it('o params que cita o nome interno do parâmetro Swift liga ao campo existente', () => {
+    const spec = librarySpec((s) => {
+      const button = buttonOf(s);
+      button.fields = [{ key: 'title', type: 'string' }];
+      button.code = {
+        swiftui: {
+          symbol: 'DS.Button',
+          path: 'Button.swift',
+          params: { title: 'title' },
+        },
+      };
+    });
+    const plan = run(spec, {
+      target: { platform: 'swiftui' },
+      signature: swift([text('title', { label: 'with' })]),
+    });
+    expect(plan.links).toEqual([{ param: 'with', field: 'title', via: 'params' }]);
+    expect(keys(plan)).toEqual(['title']);
+  });
+
+  it('variante: o params da base que a ficha do caso não tem não vira removed', () => {
+    const spec = librarySpec((s) => {
+      const button = buttonOf(s);
+      button.fields = [
+        { key: 'style', type: 'enum', options: ['filled', 'outlined'] },
+        { key: 'titulo', type: 'string' },
+      ];
+      button.code = {
+        compose: {
+          symbol: 'androidx.compose.material3.Button',
+          path: BUTTON_PATH,
+          params: { style: 'style', titulo: 'text' },
+          variants: {
+            field: 'style',
+            cases: {
+              outlined: {
+                symbol: 'androidx.compose.material3.OutlinedButton',
+                path: 'compose/OutlinedButton.kt',
+              },
+            },
+          },
+        },
+      };
+    });
+    const outlined = composeSignature([text('border')], (s) => {
+      s.source.symbol = 'androidx.compose.material3.OutlinedButton';
+      s.source.path = 'compose/OutlinedButton.kt';
+    });
+    const plan = run(spec, { variant: 'outlined', signature: outlined });
+    expect(plan.changes).toEqual([]);
+    expect(plan.suggestedMigrations).toEqual([]);
+    expect(noticesOf(field(plan, 'titulo')?.notices)).toEqual([]);
+  });
+
+  it('o formats do caso curado à mão não é sobrescrito', () => {
+    const spec = librarySpec((s) => {
+      const button = buttonOf(s);
+      button.fields = [{ key: 'radius', type: 'number' }];
+      button.code = {
+        compose: {
+          symbol: 'androidx.compose.material3.Button',
+          path: BUTTON_PATH,
+          variants: {
+            field: 'radius',
+            cases: {},
+          },
+        },
+      };
+      button.fields = [
+        { key: 'style', type: 'enum', options: ['filled', 'outlined'] },
+        { key: 'radius', type: 'number' },
+      ];
+      button.code.compose.variants.field = 'style';
+      button.code.compose.variants.cases = {
+        outlined: {
+          symbol: 'androidx.compose.material3.OutlinedButton',
+          path: 'compose/OutlinedButton.kt',
+          formats: { radius: '{value}.pt' },
+        },
+      };
+    });
+    const outlined = composeSignature([dimension('radius')], (s) => {
+      s.source.symbol = 'androidx.compose.material3.OutlinedButton';
+      s.source.path = 'compose/OutlinedButton.kt';
+    });
+    const plan = run(spec, { variant: 'outlined', signature: outlined });
+    expect(plan.code?.variants?.cases.outlined?.formats).toEqual({
+      radius: '{value}.pt',
+    });
+  });
+
+  it('design: a ficha com parâmetro composto reimportada não duplica o campo nem a source', () => {
+    const signature = composeSignature(
+      [factory('colors', 'Colors', [colorParam('containerColor')])],
+      (s) => {
+        s.source = {
+          kind: 'design',
+          system: 'figma',
+          id: '1:2',
+          name: 'Button',
+          extractor: 'mapping-signature/figma@1',
+        };
+      },
+    );
+    const lib = librarySpec((s) => {
+      s.fieldModels.figma = { Color: { like: 'surface.color' } };
+    });
+    const first = run(lib, { target: { system: 'figma' }, signature });
+    const second = run(first.spec, {
+      target: { system: 'figma' },
+      signature,
+      previous: signature,
+    });
+    expect(keys(second)).toEqual(keys(first));
+    expect(JSON.stringify(second.spec)).toBe(JSON.stringify(first.spec));
+  });
+});

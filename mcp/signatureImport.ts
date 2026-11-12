@@ -101,17 +101,28 @@ function recordedPath(spec: Spec, args: PlanSignatureImportArgs): string | undef
   return codeSignature(type?.code?.[args.platform as string], args.variant);
 }
 
-/** A ficha gravada no pacote (a anterior), se existe e é válida. */
+/** A ficha gravada no pacote (a anterior), ou o motivo de não ter podido usá-la. */
+interface Previous {
+  readonly signature?: Signature;
+  readonly problem?: string;
+}
+
+/** A ficha gravada no pacote (a anterior), se existe e é válida; senão, o motivo em `problem`. */
 async function readPrevious(
   pkg: PackageSource,
   args: PlanSignatureImportArgs,
-): Promise<Signature | undefined> {
+): Promise<Previous> {
   const ref = recordedPath(pkg.spec, args);
-  if (ref === undefined) return undefined;
-  const text = await pkg.read(pkg.resolve(ref));
-  if (text === null) return undefined;
+  if (ref === undefined) return {};
+  const path = pkg.resolve(ref);
+  const text = await pkg.read(path);
+  if (text === null)
+    return { problem: `a ficha gravada \`${path}\` está ausente do pacote` };
   const parsed = parseSignatureText(text);
-  return parsed.ok ? parsed.signature : undefined;
+  if (parsed.ok) return { signature: parsed.signature };
+  return {
+    problem: `a ficha gravada \`${path}\` é inválida (${parsed.issues[0]?.message ?? 'sem detalhe'})`,
+  };
 }
 
 /** Funde o tipo importado no JSON cru do arquivo (mantém a ordem das chaves do arquivo). */
@@ -136,7 +147,7 @@ export async function planSignatureImportTool(
   const alvo = target(args);
   const signature = await readSignature(roots, args);
   const pkg = await packageByPath(roots, args.path);
-  const previous = await readPrevious(pkg, args);
+  const { signature: previous, problem } = await readPrevious(pkg, args);
   const result = planSignatureImport(pkg.spec, {
     type: args.type,
     target: alvo,
@@ -164,6 +175,7 @@ export async function planSignatureImportTool(
     ...(args.variant === undefined ? {} : { variant: args.variant }),
     signaturePath: plan.signaturePath,
     previous: previous !== undefined,
+    ...(problem === undefined ? {} : { previousProblem: problem }),
     fields: plan.fields,
     links: plan.links,
     ...(plan.code === undefined ? {} : { code: plan.code }),

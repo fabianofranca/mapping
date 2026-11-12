@@ -300,3 +300,63 @@ describe('plan_signature_import: erros', () => {
     expect(both.data.error.code).toBe('invalid-arguments');
   });
 });
+
+describe('plan_signature_import: ficha gravada que não pôde ser usada', () => {
+  /** Uma cópia da biblioteca em que o `code` do button cita a ficha `ref`. */
+  function libraryCiting(name: string, ref: string): void {
+    const dir = join(base, name);
+    cpSync(join(FIXTURES, 'library'), dir, { recursive: true });
+    const file = join(dir, 'lib.spec.json');
+    const raw = JSON.parse(readFileSync(file, 'utf8'));
+    const button = raw.layers[0].annotationTypes.find(
+      (t: { id: string }) => t.id === 'button',
+    );
+    button.code = {
+      compose: {
+        symbol: 'androidx.compose.material3.Button',
+        path: 'compose/material3/Button.kt',
+        signature: ref,
+      },
+    };
+    writeFileSync(file, JSON.stringify(raw, null, 2));
+  }
+  const args = (path: string) => ({
+    path,
+    type: 'button',
+    platform: 'compose',
+    signature: fixture('button.compose.json'),
+  });
+
+  it('a ficha citada que não está no pacote vira previousProblem', async () => {
+    libraryCiting('lib-ausente', 'signatures/gone.json');
+    const r = await call('plan_signature_import', args('lib-ausente'));
+    expect(r.isError, JSON.stringify(r.data)).toBe(false);
+    expect(r.data.previous).toBe(false);
+    expect(r.data.previousProblem).toContain('signatures/gone.json');
+    expect(r.data.previousProblem).toContain('ausente');
+  });
+
+  it('a ficha citada inválida vira previousProblem', async () => {
+    libraryCiting('lib-invalida', 'signatures/bad.json');
+    mkdirSync(join(base, 'lib-invalida', 'signatures'));
+    writeFileSync(join(base, 'lib-invalida', 'signatures', 'bad.json'), '{"x":1}');
+    const r = await call('plan_signature_import', args('lib-invalida'));
+    expect(r.data.previous).toBe(false);
+    expect(r.data.previousProblem).toContain('signatures/bad.json');
+    expect(r.data.previousProblem).toContain('inválida');
+  });
+
+  it('sem ficha citada ou com ficha boa, a chave não existe', async () => {
+    const none = await call('plan_signature_import', args('lib'));
+    expect(none.data).not.toHaveProperty('previousProblem');
+    libraryCiting('lib-boa', 'signatures/ok.json');
+    mkdirSync(join(base, 'lib-boa', 'signatures'));
+    writeFileSync(
+      join(base, 'lib-boa', 'signatures', 'ok.json'),
+      JSON.stringify(fixture('button.compose.json')),
+    );
+    const ok = await call('plan_signature_import', args('lib-boa'));
+    expect(ok.data.previous).toBe(true);
+    expect(ok.data).not.toHaveProperty('previousProblem');
+  });
+});

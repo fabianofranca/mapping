@@ -50,11 +50,17 @@ try {
   if (cmd === 'gravar' && args.length >= 4) {
     const [saida, pacote, ficha, specFile, n] = args;
     const plan = nthPlan(saida, Number(n ?? 1));
+    const alvo = path.resolve(pacote, plan.signaturePath);
+    const dentro = path.relative(path.resolve(pacote), alvo);
+    if (dentro === '' || dentro.startsWith('..') || path.isAbsolute(dentro)) {
+      fail(
+        `o signaturePath "${plan.signaturePath}" sai fora do pacote: nada foi gravado`,
+      );
+    }
     fs.writeFileSync(
       path.join(pacote, specFile),
       JSON.stringify(plan.spec, null, 2) + '\n',
     );
-    const alvo = path.join(pacote, plan.signaturePath);
     fs.mkdirSync(path.dirname(alvo), { recursive: true });
     fs.copyFileSync(ficha, alvo);
     console.log(`gravado: ${specFile} e ${plan.signaturePath}`);
