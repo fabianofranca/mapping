@@ -1,4 +1,4 @@
-# Grade hug sob pai max-content/min-content provada por teste — [Não lançado] (épico `epic/grade-hug-intrinseco`)
+# Grade hug sob pai max-content/min-content provada por teste — 2026-11-12 (épico `epic/grade-hug-intrinseco`)
 
 ## Pendências
 
