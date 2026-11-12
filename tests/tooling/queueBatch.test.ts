@@ -2,7 +2,7 @@
 // Fase FM1 (etapa #1532): o painel em lote (`apply`), o que falta publicar (`meta.unpublished`,
 // `published`, `touch`) e a regra de publicar a cada turno que gravou, escrita no skill.
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -183,6 +183,38 @@ describe('meta.unpublished, published e touch (FM1, decisão 3)', () => {
     runAt('2026-11-09T10:45:00Z', 'published', dir);
     runAt('2026-11-09T10:46:00Z', 'published', dir, '--done');
     expect(run('show', dir)).toMatch(/^não publicado: nenhum$/m);
+  });
+
+  it('a cópia publicada (baixada na retomada) diz "não publicado" até o published --done; sem publishing, fica não publicada (PP1, decisão 4 da #1595)', () => {
+    runAt('2026-11-09T10:05:00Z', 'row', dir, '#10', 'title=X');
+    runAt('2026-11-09T10:41:00Z', 'published', dir); // o envio que deu certo; o --done só vale no painel local
+    const copia = mkdtempSync(path.join(tmpdir(), 'painel-copia-'));
+    try {
+      for (const n of ['queue', 'meta', 'log']) {
+        copyFileSync(path.join(dir, `${n}.json`), path.join(copia, `${n}.json`));
+      }
+      expect(runAt('2026-11-09T10:50:00Z', 'show', copia)).toMatch(
+        /^não publicado desde 10:05: queue\.json meta\.json$/m,
+      );
+      runAt('2026-11-09T10:51:00Z', 'published', copia, '--done');
+      expect(runAt('2026-11-09T10:52:00Z', 'show', copia)).toMatch(
+        /^não publicado: nenhum$/m,
+      );
+
+      // painel antigo: a cópia não traz `publishing`
+      const antigo = JSON.parse(
+        readFileSync(path.join(dir, 'meta.json'), 'utf8'),
+      ) as Array<Record<string, unknown>>;
+      delete antigo[0]!.publishing;
+      writeFileSync(path.join(copia, 'meta.json'), JSON.stringify(antigo));
+      const out = runAt('2026-11-09T10:53:00Z', 'published', copia, '--done');
+      expect(out).toMatch(/^nada em voo/m);
+      expect(runAt('2026-11-09T10:54:00Z', 'show', copia)).toMatch(
+        /^não publicado desde 10:05:/m,
+      );
+    } finally {
+      rmSync(copia, { recursive: true, force: true });
+    }
   });
 
   it('o show de um painel novo, sem gravação, diz "nenhum"', () => {
