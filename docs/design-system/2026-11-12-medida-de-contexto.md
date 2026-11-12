@@ -1,4 +1,4 @@
-# Medida de contexto pelo transcript — [Não lançado] (épico `epic/medida-de-contexto`)
+# Medida de contexto pelo transcript — 2026-11-12 (épico `epic/medida-de-contexto`)
 
 ## Pendências
 
