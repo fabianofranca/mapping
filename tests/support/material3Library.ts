@@ -453,7 +453,7 @@ export const IMPORTED_FIELDS: Record<string, string[]> = {
     'tonalElevation',
     'shadowElevation',
   ],
-  'secure-text-field': ['shape', 'horizontal', 'vertical'],
+  'secure-text-field': ['shape', 'horizontal', 'vertical', 'prefix', 'suffix'],
   'segmented-button': ['space'],
   'short-navigation-bar': ['containerColor', 'contentColor'],
   slider: [
@@ -503,7 +503,7 @@ export const IMPORTED_FIELDS: Record<string, string[]> = {
     'minTabWidth',
   ],
   text: ['fontSize', 'letterSpacing', 'lineHeight', 'softWrap', 'minLines'],
-  'text-field': ['readOnly', 'minLines', 'shape'],
+  'text-field': ['readOnly', 'minLines', 'shape', 'prefix', 'suffix'],
   'time-picker': [
     'clockDialColor',
     'clockDialSelectedContentColor',
@@ -685,4 +685,110 @@ export function v1WithEstados(
             ),
     },
   };
+}
+
+/**
+ * PROVISÓRIO (decisão do coordenador, #1079 S5; decisão do dono pendente no bug #1774; curadoria na #1134).
+ * Avisos `parâmetro fora da ficha` que a importação deixa: o `params` da base (ou o herdado) cita um parâmetro que a
+ * ficha do caso (`variants`) não tem, ou que o `removed` deixou na ficha. Cada item é `<tipo>[.<caso>] <campo>=<parâmetro>`.
+ * Qualquer outro aviso, ou erro, continua falhando; um aviso conhecido que sumir também (a lista só encolhe).
+ */
+export const KNOWN_PARAM_WARNINGS: readonly string[] = [
+  'top-app-bar.center subtitle=subtitle',
+  'top-app-bar.medium subtitle=subtitle',
+  'top-app-bar.large subtitle=subtitle',
+  'chip.filter leadingIconContentColor=colors.leadingIconContentColor',
+  'chip.filter trailingIconContentColor=colors.trailingIconContentColor',
+  'chip.filter disabledLeadingIconContentColor=colors.disabledLeadingIconContentColor',
+  'chip.filter disabledTrailingIconContentColor=colors.disabledTrailingIconContentColor',
+  'chip.filter-elevated leadingIconContentColor=colors.leadingIconContentColor',
+  'chip.filter-elevated trailingIconContentColor=colors.trailingIconContentColor',
+  'chip.filter-elevated disabledLeadingIconContentColor=colors.disabledLeadingIconContentColor',
+  'chip.filter-elevated disabledTrailingIconContentColor=colors.disabledTrailingIconContentColor',
+  'chip.input leadingIconContentColor=colors.leadingIconContentColor',
+  'chip.input trailingIconContentColor=colors.trailingIconContentColor',
+  'chip.input disabledLeadingIconContentColor=colors.disabledLeadingIconContentColor',
+  'chip.input disabledTrailingIconContentColor=colors.disabledTrailingIconContentColor',
+  'chip.suggestion leadingIconContentColor=colors.leadingIconContentColor',
+  'chip.suggestion trailingIconContentColor=colors.trailingIconContentColor',
+  'chip.suggestion disabledLeadingIconContentColor=colors.disabledLeadingIconContentColor',
+  'chip.suggestion disabledTrailingIconContentColor=colors.disabledTrailingIconContentColor',
+  'chip.suggestion-elevated leadingIconContentColor=colors.leadingIconContentColor',
+  'chip.suggestion-elevated trailingIconContentColor=colors.trailingIconContentColor',
+  'chip.suggestion-elevated disabledLeadingIconContentColor=colors.disabledLeadingIconContentColor',
+  'chip.suggestion-elevated disabledTrailingIconContentColor=colors.disabledTrailingIconContentColor',
+  'card.elevated borderWidth=border.width',
+  'card.elevated color=border.color',
+  'bottom-sheet.standard sheetGesturesEnabled=sheetGesturesEnabled',
+  'bottom-sheet.standard shape=shape',
+  'bottom-sheet.standard tonalElevation=tonalElevation',
+  'bottom-sheet.standard scrimColor=scrimColor',
+  'segmented-button enabled=enabled',
+  'segmented-button.multi enabled=enabled',
+  'time-picker hour=initialHour',
+  'time-picker minute=initialMinute',
+  'time-picker is24Hour=is24Hour',
+  'time-picker.input hour=initialHour',
+  'time-picker.input minute=initialMinute',
+  'time-picker.input is24Hour=is24Hour',
+  'tooltip.rich contentColor=contentColor',
+  'tooltip.rich containerColor=containerColor',
+  'progress-indicator.linear strokeWidth=strokeWidth',
+  'alert-dialog.basic confirmButton=confirmButton',
+  'alert-dialog.basic shape=shape',
+  'alert-dialog.basic containerColor=containerColor',
+  'alert-dialog.basic iconContentColor=iconContentColor',
+  'alert-dialog.basic titleContentColor=titleContentColor',
+  'alert-dialog.basic textContentColor=textContentColor',
+  'alert-dialog.basic tonalElevation=tonalElevation',
+  'alert-dialog.basic dismissButton=dismissButton',
+  'alert-dialog.basic title=title',
+  'alert-dialog.basic text=text',
+  'dropdown-menu.exposed shape=shape',
+  'dropdown-menu.exposed containerColor=containerColor',
+  'dropdown-menu.exposed tonalElevation=tonalElevation',
+  'dropdown-menu.exposed shadowElevation=shadowElevation',
+  'dropdown-menu.exposed width=border.width',
+  'dropdown-menu.exposed color=border.color',
+  'navigation-rail.wide containerColor=containerColor',
+  'navigation-rail.wide contentColor=contentColor',
+  'navigation-rail.wide initialValue=initialValue',
+  'navigation-rail.modal-wide containerColor=containerColor',
+  'navigation-rail.modal-wide contentColor=contentColor',
+  'navigation-rail.modal-wide initialValue=initialValue',
+  'navigation-drawer.dismissible scrimColor=scrimColor',
+  'navigation-drawer.permanent gesturesEnabled=gesturesEnabled',
+  'navigation-drawer.permanent scrimColor=scrimColor',
+  'carousel.uncontained preferredItemWidth=preferredItemWidth',
+  'carousel.uncontained minSmallItemWidth=minSmallItemWidth',
+  'carousel.uncontained maxSmallItemWidth=maxSmallItemWidth',
+  'carousel.centered-hero preferredItemWidth=preferredItemWidth',
+  'swipe-to-dismiss direction=initialValue',
+];
+
+/** Compara os avisos da validação da biblioteca com o conjunto conhecido: só `parâmetro fora da ficha`, e exatamente esses. */
+export function unknownWarnings(warnings: readonly { path: string; message: string }[]): {
+  unexpected: string[];
+  missing: string[];
+} {
+  const seen = new Set<string>();
+  const unexpected: string[] = [];
+  const re =
+    /^layers\[(\d+)\]\.annotationTypes\[(\d+)\]\.code\.compose\.(?:variants\.cases\.([^.]+)\.)?params\.(.+)$/;
+  for (const w of warnings) {
+    const m = re.exec(w.path);
+    const param = /^parâmetro fora da ficha: "(.+)"$/.exec(w.message)?.[1];
+    const id =
+      m === null
+        ? undefined
+        : spec.layers[Number(m[1])]?.annotationTypes[Number(m[2])]?.id;
+    if (m === null || param === undefined || id === undefined) {
+      unexpected.push(`${w.path}: ${w.message}`);
+      continue;
+    }
+    const key = `${id}${m[3] === undefined ? '' : `.${m[3]}`} ${m[4]}=${param}`;
+    seen.add(key);
+    if (!KNOWN_PARAM_WARNINGS.includes(key)) unexpected.push(key);
+  }
+  return { unexpected, missing: KNOWN_PARAM_WARNINGS.filter((k) => !seen.has(k)) };
 }

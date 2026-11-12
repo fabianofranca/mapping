@@ -71,6 +71,10 @@
             "color": "Color"
           }
         }
+      },
+      "@Composable (() -> Unit)?": {
+        "type": "string",
+        "format": "{ Text(\"{value}\") }"
       }
     }
   },
@@ -6959,6 +6963,18 @@
               "type": "enum",
               "options": ["none", "extraSmall", "small", "medium", "large", "extraLarge"],
               "description": "Forma do contêiner do campo de texto."
+            },
+            {
+              "key": "prefix",
+              "label": "Prefixo",
+              "type": "string",
+              "description": "Texto opcional exibido antes do texto digitado no campo (por exemplo, um símbolo de moeda)."
+            },
+            {
+              "key": "suffix",
+              "label": "Sufixo",
+              "type": "string",
+              "description": "Texto opcional exibido depois do texto digitado no campo (por exemplo, uma unidade)."
             }
           ],
           "code": {
@@ -6973,7 +6989,12 @@
                 "maxLines": "maxLines",
                 "readOnly": "readOnly",
                 "minLines": "minLines",
-                "shape": "shape"
+                "shape": "shape",
+                "label": "label",
+                "placeholder": "placeholder",
+                "prefix": "prefix",
+                "suffix": "suffix",
+                "supportingText": "supportingText"
               },
               "notes": "`value` e `onValueChange` ligam a um estado da tela. `label`, `placeholder` e `supportingText` preenchidos viram `{ Text(<campo>) }`; `leadingIcon` e `trailingIcon` viram `{ Icon(Icons.Filled.<nome>, contentDescription = null) }`. `maxLines` só entra quando preenchido; filled e outlined não exigem opt-in. Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow).",
               "variants": {
@@ -6982,12 +7003,17 @@
                   "outlined": {
                     "symbol": "androidx.compose.material3.OutlinedTextField",
                     "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/OutlinedTextField.kt",
-                    "ignore": ["modifier", "interactionSource"],
+                    "ignore": [
+                      "modifier",
+                      "interactionSource",
+                      "leadingIcon",
+                      "trailingIcon"
+                    ],
                     "signature": "signatures/text-field.outlined.compose.json"
                   }
                 }
               },
-              "ignore": ["modifier", "interactionSource"],
+              "ignore": ["modifier", "interactionSource", "leadingIcon", "trailingIcon"],
               "signature": "signatures/text-field.compose.json",
               "values": {
                 "shape": {
@@ -6998,6 +7024,13 @@
                   "large": "MaterialTheme.shapes.large",
                   "extraLarge": "MaterialTheme.shapes.extraLarge"
                 }
+              },
+              "formats": {
+                "label": "{ Text(\"{value}\") }",
+                "placeholder": "{ Text(\"{value}\") }",
+                "prefix": "{ Text(\"{value}\") }",
+                "suffix": "{ Text(\"{value}\") }",
+                "supportingText": "{ Text(\"{value}\") }"
               }
             }
           },
@@ -10613,7 +10646,12 @@
                 "cases": {
                   "assist-elevated": {
                     "symbol": "androidx.compose.material3.ElevatedAssistChip",
-                    "ignore": ["modifier", "interactionSource"],
+                    "ignore": [
+                      "modifier",
+                      "interactionSource",
+                      "leadingIcon",
+                      "trailingIcon"
+                    ],
                     "signature": "signatures/chip.assist-elevated.compose.json",
                     "calls": {
                       "colors": "androidx.compose.material3.AssistChipDefaults.elevatedAssistChipColors",
@@ -10634,7 +10672,12 @@
                       "selectedTrailingIconColor": "colors.selectedTrailingIconColor"
                     },
                     "notes": "`selected` e `onClick` ligam ao estado do filtro e `label = { Text(<label>) }`. Com `selected = true` é costume `leadingIcon = { Icon(Icons.Filled.Done, contentDescription = null, Modifier.size(FilterChipDefaults.IconSize)) }`; `trailingIcon` preenchido vira um `Icon` do mesmo tamanho.",
-                    "ignore": ["modifier", "interactionSource"],
+                    "ignore": [
+                      "modifier",
+                      "interactionSource",
+                      "leadingIcon",
+                      "trailingIcon"
+                    ],
                     "signature": "signatures/chip.filter.compose.json",
                     "calls": {
                       "colors": "androidx.compose.material3.FilterChipDefaults.filterChipColors",
@@ -10961,7 +11004,12 @@
                       "selectedTrailingIconColor": "colors.selectedTrailingIconColor"
                     },
                     "notes": "`selected` e `onClick` ligam ao estado do filtro e `label = { Text(<label>) }`. Com `selected = true` é costume `leadingIcon = { Icon(Icons.Filled.Done, contentDescription = null, Modifier.size(FilterChipDefaults.IconSize)) }`; `trailingIcon` preenchido vira um `Icon` do mesmo tamanho.",
-                    "ignore": ["modifier", "interactionSource"],
+                    "ignore": [
+                      "modifier",
+                      "interactionSource",
+                      "leadingIcon",
+                      "trailingIcon"
+                    ],
                     "signature": "signatures/chip.filter-elevated.compose.json",
                     "calls": {
                       "colors": "androidx.compose.material3.FilterChipDefaults.elevatedFilterChipColors",
@@ -10983,7 +11031,13 @@
                       "selectedTrailingIconColor": "colors.selectedTrailingIconColor"
                     },
                     "notes": "`selected` e `onClick` ligam ao estado do valor e `label = { Text(<label>) }`. `trailingIcon` costuma ser `Icons.Filled.Close` para remover o valor; o campo `avatar`, preenchido, vira `avatar = { AsyncImage(model = <avatar>, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.size(InputChipDefaults.AvatarSize)) }` (o carregador de imagens do app, fora do androidx): o InputChip recorta o avatar no círculo (`InputChipTokens.AvatarShape`) e, com ele, não mostra o `leadingIcon`.",
-                    "ignore": ["modifier", "interactionSource"],
+                    "ignore": [
+                      "modifier",
+                      "interactionSource",
+                      "leadingIcon",
+                      "avatar",
+                      "trailingIcon"
+                    ],
                     "signature": "signatures/chip.input.compose.json",
                     "calls": {
                       "colors": "androidx.compose.material3.InputChipDefaults.inputChipColors",
@@ -11071,7 +11125,7 @@
                   "suggestion": {
                     "symbol": "androidx.compose.material3.SuggestionChip",
                     "notes": "`onClick` liga à lógica da tela e `label = { Text(<label>) }`. O SuggestionChip tem um só ícone, chamado `icon`: `icon = { Icon(Icons.Filled.<leadingIcon>, contentDescription = null, Modifier.size(SuggestionChipDefaults.IconSize)) }`.",
-                    "ignore": ["modifier", "interactionSource"],
+                    "ignore": ["modifier", "interactionSource", "icon"],
                     "signature": "signatures/chip.suggestion.compose.json",
                     "calls": {
                       "colors": "androidx.compose.material3.SuggestionChipDefaults.suggestionChipColors",
@@ -11163,7 +11217,7 @@
                   "suggestion-elevated": {
                     "symbol": "androidx.compose.material3.ElevatedSuggestionChip",
                     "notes": "`onClick` liga à lógica da tela e `label = { Text(<label>) }`. O ElevatedSuggestionChip tem um só ícone, chamado `icon`: `icon = { Icon(Icons.Filled.<leadingIcon>, contentDescription = null, Modifier.size(SuggestionChipDefaults.IconSize)) }`.",
-                    "ignore": ["modifier", "interactionSource"],
+                    "ignore": ["modifier", "interactionSource", "icon"],
                     "signature": "signatures/chip.suggestion-elevated.compose.json",
                     "calls": {
                       "colors": "androidx.compose.material3.SuggestionChipDefaults.elevatedSuggestionChipColors",
@@ -11176,7 +11230,7 @@
                   }
                 }
               },
-              "ignore": ["modifier", "interactionSource"],
+              "ignore": ["modifier", "interactionSource", "leadingIcon", "trailingIcon"],
               "signature": "signatures/chip.compose.json",
               "formats": {
                 "label": "{ Text(\"{value}\") }",
@@ -13103,7 +13157,7 @@
               "symbol": "androidx.compose.material3.ListItem",
               "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ListItem.kt",
               "notes": "`headlineContent = { Text(<headlineContent>) }`; `overlineContent`, `supportingContent` e `trailingContent` preenchidos viram `{ Text(<campo>) }` (o item tem de uma a três linhas conforme o preenchimento). `leadingIcon` e `trailingIcon` viram `leadingContent`/`trailingContent` com `Icon(Icons.Filled.<nome>, contentDescription = null)`; `leadingImage` é um avatar de `Modifier.size(40.dp).clip(CircleShape)` que, remoto, usa o carregador de imagens do app (por exemplo Coil `AsyncImage`).",
-              "ignore": ["modifier"],
+              "ignore": ["modifier", "leadingContent"],
               "signature": "signatures/list-item.compose.json",
               "params": {
                 "headlineContent": "headlineContent",
@@ -13117,12 +13171,18 @@
                 "disabledLeadingIconColor": "colors.disabledLeadingIconColor",
                 "disabledTrailingIconColor": "colors.disabledTrailingIconColor",
                 "tonalElevation": "tonalElevation",
-                "shadowElevation": "shadowElevation"
+                "shadowElevation": "shadowElevation",
+                "overlineContent": "overlineContent",
+                "supportingContent": "supportingContent",
+                "trailingContent": "trailingContent"
               },
               "formats": {
                 "headlineContent": "{ Text(\"{value}\") }",
                 "tonalElevation": "{value}.dp",
-                "shadowElevation": "{value}.dp"
+                "shadowElevation": "{value}.dp",
+                "overlineContent": "{ Text(\"{value}\") }",
+                "supportingContent": "{ Text(\"{value}\") }",
+                "trailingContent": "{ Text(\"{value}\") }"
               },
               "calls": {
                 "colors": "androidx.compose.material3.ListItemDefaults.colors"
@@ -14597,7 +14657,7 @@
                     "symbol": "androidx.compose.material3.BottomSheetScaffold",
                     "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/BottomSheetScaffold.kt",
                     "notes": "Exige @OptIn(ExperimentalMaterial3Api::class). O conteúdo da folha vai em `sheetContent = { … }` (uma Column com o `title` e os `items`, como no modal) e `sheetPeekHeight = <sheetPeekHeight>.dp`; o conteúdo da tela atrás da folha vai em `content = { innerPadding -> … }`. Com `dragHandle` em `false`, passe `sheetDragHandle = null`; `scaffoldState = rememberBottomSheetScaffoldState()` liga à lógica da tela.",
-                    "ignore": ["modifier"],
+                    "ignore": ["modifier", "sheetDragHandle", "topBar"],
                     "signature": "signatures/bottom-sheet.standard.compose.json",
                     "params": {
                       "sheetPeekHeight": "sheetPeekHeight",
@@ -14702,7 +14762,7 @@
                   }
                 }
               },
-              "ignore": ["modifier"],
+              "ignore": ["modifier", "dragHandle"],
               "signature": "signatures/bottom-sheet.compose.json",
               "params": {
                 "sheetMaxWidth": "sheetMaxWidth",
@@ -22535,7 +22595,7 @@
                 "dismissActionContentColor": "dismissActionContentColor"
               },
               "notes": "Estável, sem opt-in. O snackbar costuma ser mostrado pelo `SnackbarHost` (arquivo `SnackbarHost.kt`) no slot `snackbarHost` do Scaffold: `snackbarHost = { SnackbarHost(snackbarHostState) }`, com `val snackbarHostState = remember { SnackbarHostState() }`, e aparece com `scope.launch { snackbarHostState.showSnackbar(message = <message>, actionLabel = <actionLabel>, withDismissAction = <dismissAction>) }`; nesse caso a `Snackbar` é a padrão do host e não se chama à mão. Para um visual próprio, use `Snackbar(action = { TextButton(onClick = …) { Text(<actionLabel>) } }, dismissAction = { IconButton(onClick = …) { Icon(Icons.Filled.Close, contentDescription = …) } }, actionOnNewLine = <actionOnNewLine>) { Text(<message>) }`: `action` só entra com `actionLabel` preenchido e `dismissAction` só com `dismissAction = true`.",
-              "ignore": ["modifier", "content"],
+              "ignore": ["modifier", "content", "action", "dismissAction"],
               "signature": "signatures/snackbar.compose.json",
               "values": {
                 "shape": {
@@ -24104,6 +24164,18 @@
               "label": "Vertical (dp)",
               "type": "number",
               "description": "Medida vertical, em dp."
+            },
+            {
+              "key": "prefix",
+              "label": "Prefixo",
+              "type": "string",
+              "description": "Texto opcional exibido antes do texto digitado no campo (por exemplo, um símbolo de moeda)."
+            },
+            {
+              "key": "suffix",
+              "label": "Sufixo",
+              "type": "string",
+              "description": "Texto opcional exibido depois do texto digitado no campo (por exemplo, uma unidade)."
             }
           ],
           "code": {
@@ -24115,7 +24187,11 @@
                 "isError": "isError",
                 "shape": "shape",
                 "horizontal": "contentPadding.horizontal",
-                "vertical": "contentPadding.vertical"
+                "vertical": "contentPadding.vertical",
+                "placeholder": "placeholder",
+                "prefix": "prefix",
+                "suffix": "suffix",
+                "supportingText": "supportingText"
               },
               "notes": "Estável, sem opt-in. Em vez de `value`/`onValueChange`, o campo recebe `state = rememberTextFieldState()` (`androidx.compose.foundation.text.input.TextFieldState`), que guarda o texto; `hasText` só afeta o desenho e não é parâmetro. `label`, `placeholder` e `supportingText` preenchidos viram `{ Text(<campo>) }`; `leadingIcon` e `trailingIcon` viram `{ Icon(Icons.Filled.<nome>, contentDescription = null) }` (para mostrar e esconder a senha, ligue o ícone a um `textObfuscationMode` que alterne `TextObfuscationMode.Visible` e `TextObfuscationMode.RevealLastTyped`). Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow).",
               "variants": {
@@ -24123,12 +24199,17 @@
                 "cases": {
                   "outlined": {
                     "symbol": "androidx.compose.material3.OutlinedSecureTextField",
-                    "ignore": ["modifier", "interactionSource"],
+                    "ignore": [
+                      "modifier",
+                      "interactionSource",
+                      "leadingIcon",
+                      "trailingIcon"
+                    ],
                     "signature": "signatures/secure-text-field.outlined.compose.json"
                   }
                 }
               },
-              "ignore": ["modifier", "interactionSource"],
+              "ignore": ["modifier", "interactionSource", "leadingIcon", "trailingIcon"],
               "signature": "signatures/secure-text-field.compose.json",
               "values": {
                 "shape": {
@@ -24145,7 +24226,11 @@
               },
               "formats": {
                 "horizontal": "{value}.dp",
-                "vertical": "{value}.dp"
+                "vertical": "{value}.dp",
+                "placeholder": "{ Text(\"{value}\") }",
+                "prefix": "{ Text(\"{value}\") }",
+                "suffix": "{ Text(\"{value}\") }",
+                "supportingText": "{ Text(\"{value}\") }"
               }
             }
           },
@@ -24895,7 +24980,7 @@
                   }
                 }
               },
-              "ignore": ["modifier"],
+              "ignore": ["modifier", "icon"],
               "signature": "signatures/alert-dialog.compose.json",
               "params": {
                 "confirmButton": "confirmButton",
@@ -24904,11 +24989,17 @@
                 "iconContentColor": "iconContentColor",
                 "titleContentColor": "titleContentColor",
                 "textContentColor": "textContentColor",
-                "tonalElevation": "tonalElevation"
+                "tonalElevation": "tonalElevation",
+                "dismissButton": "dismissButton",
+                "title": "title",
+                "text": "text"
               },
               "formats": {
                 "confirmButton": "{ Text(\"{value}\") }",
-                "tonalElevation": "{value}.dp"
+                "tonalElevation": "{value}.dp",
+                "dismissButton": "{ Text(\"{value}\") }",
+                "title": "{ Text(\"{value}\") }",
+                "text": "{ Text(\"{value}\") }"
               },
               "values": {
                 "shape": {
@@ -26880,7 +26971,7 @@
                       }
                     },
                     "notes": "Estável, sem opt-in. `WideNavigationRail(state = rememberWideNavigationRailState(initialValue = <initialValue>)) { … }` (`initialValue` é parâmetro de `rememberWideNavigationRailState`; o composable lê o mesmo `state`). Um `WideNavigationRailItem` por linha de `items`: `selected = <selected>`, `onClick = { /* lógica da tela */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }`, `label = { Text(<label>) }` e `railExpanded = state.targetValue == WideNavigationRailValue.Expanded` (obrigatório e igual em todos os itens; o `iconPosition` do item acompanha: ao lado do rótulo expandida, acima dele recolhida). O `label` é anulável. `alwaysShowLabel` não existe aqui. O slot `header = { … }` não é um campo. A rail recolhida tem 96 dp de largura e a expandida de 220 a 360 dp, vindas do composable. Fora do Scaffold: ela vai numa `Row` antes do conteúdo, dentro de `content = { innerPadding -> … }`. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`.",
-                    "ignore": ["modifier", "content"],
+                    "ignore": ["modifier", "content", "header"],
                     "signature": "signatures/navigation-rail.wide.compose.json",
                     "calls": {
                       "colors": "androidx.compose.material3.WideNavigationRailDefaults.colors"
@@ -27000,7 +27091,7 @@
                       }
                     },
                     "notes": "Estável, sem opt-in. `ModalWideNavigationRail(state = rememberWideNavigationRailState(initialValue = <initialValue>)) { … }`: recolhida, fica no lugar como a wide; expandida, abre numa janela modal sobre a tela, com scrim; quem expande e recolhe é o `state` (`expand()`, `collapse()` e `toggle()`, numa coroutine), e `hideOnCollapse = true` faz a rail sair da tela ao recolher. Um `WideNavigationRailItem` por linha de `items`: `selected = <selected>`, `onClick = { /* lógica da tela */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }`, `label = { Text(<label>) }` e `railExpanded = state.targetValue == WideNavigationRailValue.Expanded` (obrigatório e igual em todos os itens; o `iconPosition` do item acompanha: ao lado do rótulo expandida, acima dele recolhida). O `label` é anulável. O slot `header = { … }` não é um campo. Fica ao lado do conteúdo, numa `Row` antes dele, dentro de `content = { innerPadding -> … }` do Scaffold; o `Scaffold` não tem slot para ela. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`.",
-                    "ignore": ["modifier", "content"],
+                    "ignore": ["modifier", "content", "header"],
                     "signature": "signatures/navigation-rail.modal-wide.compose.json",
                     "calls": {
                       "colors": "androidx.compose.material3.WideNavigationRailDefaults.colors"
@@ -29985,7 +30076,7 @@
               "symbol": "androidx.compose.material3.BottomAppBar",
               "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/AppBar.kt",
               "notes": "Overload estável `BottomAppBar(actions = { … }, floatingActionButton = { … })`, sem `scrollBehavior` (o overload com `scrollBehavior` exige `@OptIn(ExperimentalMaterial3Api::class)` e não é usado aqui). Cada `actionIcon1` a `actionIcon4` preenchido vira um `IconButton(onClick = …) { Icon(Icons.Filled.<actionIconN>, contentDescription = …) }` dentro de `actions = { … }` (escopo de `RowScope`, da esquerda para a direita). Com `floatingActionButton` preenchido, `floatingActionButton = { FloatingActionButton(onClick = …, containerColor = BottomAppBarDefaults.bottomAppBarFabColor, elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()) { Icon(Icons.Filled.<floatingActionButton>, contentDescription = …) } }`; vazio = omita o parâmetro. Dentro de um Scaffold, a barra vai em `bottomBar`. A altura (80, mais a barra de navegação do sistema) é do componente: largura e posição vêm do `Modifier`. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`.",
-              "ignore": ["modifier"],
+              "ignore": ["modifier", "floatingActionButton"],
               "signature": "signatures/bottom-app-bar.compose.json",
               "params": {
                 "containerColor": "containerColor",

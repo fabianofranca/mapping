@@ -14,7 +14,15 @@ import type { FrameNode, SceneNode } from '../../src/model/components/scene';
 import { validateLibrary } from '../../src/model/library';
 import type { Spec } from '../../src/model/spec';
 import { missingMigrations } from '../../src/model/specVersions';
-import { SPEC_FILE, drawIn, files, spec, text, types } from '../support/material3Library';
+import {
+  SPEC_FILE,
+  drawIn,
+  files,
+  spec,
+  text,
+  types,
+  unknownWarnings,
+} from '../support/material3Library';
 
 type Json = unknown;
 type Mode = 'light' | 'dark';
@@ -110,10 +118,10 @@ describe('paliativos da Material 3 trocados pelas chaves novas (decisão 24)', (
     expect(badge).not.toMatch(/"height":\s*16/);
   });
 
-  it('valida sem erro e sem aviso nos três níveis, em todos os modos', () => {
+  it('valida sem erro e só com os avisos conhecidos nos três níveis, em todos os modos', () => {
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
-    expect(report.warnings).toEqual([]);
+    expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
   });
 });
 

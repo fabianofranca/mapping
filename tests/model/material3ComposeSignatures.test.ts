@@ -9,14 +9,25 @@ import { planSignatureImport } from '../../src/model/signatures/importPlan';
 import { validateLibrary } from '../../src/model/library';
 import type { Spec, SpecAnnotationType, SpecField } from '../../src/model/spec';
 import type { SceneNode } from '../../src/model/components/scene';
-import { SPEC_FILE, drawIn, files, solid, spec, text, typeOf, types } from '../support/material3Library';
+import {
+  SPEC_FILE,
+  drawIn,
+  files,
+  solid,
+  spec,
+  text,
+  typeOf,
+  types,
+} from '../support/material3Library';
 
 const COMMIT = '5113b82a4ed6416d6344efa50e41db8cb65928ff';
 
 /** Todo caminho de ficha que a especialização cita: o do tipo e o de cada caso de `variants`. */
 const cited = types.flatMap((type) => {
   const code = type.code?.compose;
-  const base = [{ id: type.id, variant: undefined as string | undefined, path: code?.signature }];
+  const base = [
+    { id: type.id, variant: undefined as string | undefined, path: code?.signature },
+  ];
   const cases = Object.entries(code?.variants?.cases ?? {}).map(([variant, kase]) => ({
     id: type.id,
     variant: variant as string | undefined,
@@ -32,7 +43,8 @@ const FICHAS = files.filter((f) => f.path.startsWith('signatures/'));
 
 function readSignature(path: string) {
   const parsed = parseSignatureText(text(path));
-  if (!parsed.ok) throw new Error(`${path}: ${parsed.issues[0]?.message ?? 'ficha inválida'}`);
+  if (!parsed.ok)
+    throw new Error(`${path}: ${parsed.issues[0]?.message ?? 'ficha inválida'}`);
   return parsed.signature;
 }
 
@@ -100,8 +112,9 @@ describe('Material 3 (Compose): as fichas de assinatura (decisão 14 da #1079)',
   });
 
   it('o fieldModels.compose traz os modelos da prova (decisão 14)', () => {
-    const models = (spec as Spec & { fieldModels?: Record<string, Record<string, unknown>> })
-      .fieldModels?.compose;
+    const models = (
+      spec as Spec & { fieldModels?: Record<string, Record<string, unknown>> }
+    ).fieldModels?.compose;
     expect(models).toMatchObject({
       Color: { like: 'surface.color' },
       Shape: { like: 'surface.shape' },
@@ -131,7 +144,9 @@ describe('Material 3 (Compose): as fichas de assinatura (decisão 14 da #1079)',
     for (const [id, keys] of Object.entries(wanted)) {
       const type = typeOf(id);
       for (const key of keys) {
-        const key2 = type.fields.find((f) => f.key === key || f.key.startsWith(`${key}`))?.key;
+        const key2 = type.fields.find(
+          (f) => f.key === key || f.key.startsWith(`${key}`),
+        )?.key;
         expect(key2, `${id}.${key}`).toBeDefined();
       }
     }
@@ -139,13 +154,17 @@ describe('Material 3 (Compose): as fichas de assinatura (decisão 14 da #1079)',
 
   it('o button expande o shape, o contentPadding e as cores nos argumentos do código', () => {
     const code = typeOf('button').code?.compose;
-    expect(code?.calls).toMatchObject({ colors: 'androidx.compose.material3.ButtonDefaults.buttonColors' });
+    expect(code?.calls).toMatchObject({
+      colors: 'androidx.compose.material3.ButtonDefaults.buttonColors',
+    });
     expect(code?.variants?.cases.outlined?.calls).toMatchObject({
       colors: 'androidx.compose.material3.ButtonDefaults.outlinedButtonColors',
     });
     expect(code?.params).toMatchObject({ shape: 'shape' });
     expect(code?.params?.containerColor).toBe('colors.containerColor');
-    expect(code?.formats?.contentPaddingHorizontal ?? code?.formats?.horizontal).toBeDefined();
+    expect(
+      code?.formats?.contentPaddingHorizontal ?? code?.formats?.horizontal,
+    ).toBeDefined();
   });
 
   it('os parâmetros sem campo deixam rastro: avisos pending com o ref da ficha', () => {
@@ -190,7 +209,11 @@ describe('Material 3 (Compose): o desenho segue os campos importados (decisão 1
     const light = draw('button', { label: 'Ok', containerColor: 'tertiary' }, 'light');
     const dark = draw('button', { label: 'Ok', containerColor: 'tertiary' }, 'dark');
     expect(solid(light.root.fills)).not.toBe(solid(dark.root.fills));
-    const off = draw('button', { label: 'Ok', containerColor: 'tertiary', enabled: 'false' }, 'light');
+    const off = draw(
+      'button',
+      { label: 'Ok', containerColor: 'tertiary', enabled: 'false' },
+      'light',
+    );
     expect(solid(off.root.fills)).not.toBe(solid(light.root.fills));
   });
 
@@ -226,16 +249,28 @@ describe('Material 3 (Compose): o desenho segue os campos importados (decisão 1
     const sub = draw('top-app-bar', { title: 'Título', subtitle: 'Sub' }, 'light');
     expect(allText(sub.root)).toContain('Sub');
     expect(allText(base.root)).not.toContain('Sub');
-    const colored = draw('top-app-bar', { title: 'Título', containerColor: 'primary' }, 'light');
+    const colored = draw(
+      'top-app-bar',
+      { title: 'Título', containerColor: 'primary' },
+      'light',
+    );
     expect(solid(colored.root.fills)).toBe('#6750A4');
   });
 
   it('radio-button e switch: as cores mudam o desenho', () => {
     const radio = draw('radio-button', { selected: 'true' }, 'light');
-    const radioColored = draw('radio-button', { selected: 'true', selectedColor: 'error' }, 'light');
+    const radioColored = draw(
+      'radio-button',
+      { selected: 'true', selectedColor: 'error' },
+      'light',
+    );
     expect(allSolids(radioColored.root)).not.toEqual(allSolids(radio.root));
     const sw = draw('switch', { checked: 'true' }, 'light');
-    const swColored = draw('switch', { checked: 'true', checkedTrackColor: 'tertiary' }, 'light');
+    const swColored = draw(
+      'switch',
+      { checked: 'true', checkedTrackColor: 'tertiary' },
+      'light',
+    );
     expect(allSolids(swColored.root)).not.toEqual(allSolids(sw.root));
   });
 });

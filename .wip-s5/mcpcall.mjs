@@ -4,6 +4,7 @@ import fs from 'node:fs';
 const [root, callsFile, outFile] = process.argv.slice(2);
 const calls = JSON.parse(fs.readFileSync(callsFile, 'utf8'));
 const child = spawn('node', ['/home/user/mapping/dist-mcp/mapping-mcp.js', '--root', root], { stdio: ['pipe', 'pipe', 'inherit'] });
+child.stdout.setEncoding('utf8');
 let buf = '';
 const pending = new Map();
 child.stdout.on('data', (d) => {
