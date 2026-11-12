@@ -10,7 +10,20 @@
   },
   "sizing": {
     "width": "fill",
-    "height": "hug"
+    "height": {
+      "$if": {
+        "$or": [
+          {
+            "$eq": ["height", "fill"]
+          },
+          {
+            "$eq": ["height", "fixed"]
+          }
+        ]
+      },
+      "then": "fill",
+      "else": "hug"
+    }
   },
   "preview": {
     "contentAlignment": "TopStart",
@@ -153,11 +166,7 @@
         "height": "fill",
         "label": {
           "$concat": [
-            "Box · ",
-            {
-              "$field": "contentAlignment",
-              "default": "TopStart"
-            },
+            "Box",
             " · ",
             {
               "$field": "width",
@@ -185,7 +194,37 @@
           ]
         },
         "layout": {
-          "type": "none"
+          "type": "none",
+          "align": {
+            "$switch": "contentAlignment",
+            "cases": {
+              "TopStart": "start",
+              "TopCenter": "start",
+              "TopEnd": "start",
+              "CenterStart": "center",
+              "Center": "center",
+              "CenterEnd": "center",
+              "BottomStart": "end",
+              "BottomCenter": "end",
+              "BottomEnd": "end"
+            },
+            "default": "start"
+          },
+          "justify": {
+            "$switch": "contentAlignment",
+            "cases": {
+              "TopStart": "start",
+              "TopCenter": "center",
+              "TopEnd": "end",
+              "CenterStart": "start",
+              "Center": "center",
+              "CenterEnd": "end",
+              "BottomStart": "start",
+              "BottomCenter": "center",
+              "BottomEnd": "end"
+            },
+            "default": "start"
+          }
         }
       }
     ]

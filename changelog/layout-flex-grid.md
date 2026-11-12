@@ -9,12 +9,19 @@
 - **Pesos.** Um filho `fill` de `row` ou `column` aceita `weight` (o `Modifier.weight` do Compose, o `flex-grow` do CSS): a folga é repartida na proporção dos pesos, e o filho que bate no `maxWidth` ou no `minWidth` congela e a diferença vai para os outros.
 - **A grade também arruma marcações.** Um slot em grade é arrumado pelo Arrumar e, numa tela sem geometria, pelo `layoutScreen`: cada marcação filha ocupa uma célula, e a filha nova entra na próxima célula livre. O `weight` das marcações filhas de um slot não existe.
 - **`min-content` e `max-content`.** A largura (e a altura) de um nó do componente e o `sizing` da instância aceitam `"min-content"` (a palavra mais larga do texto, o maior pedaço inquebrável da fileira, da coluna ou da grade) e `"max-content"` (o conteúdo sem quebra: a `row` com `wrap` fica numa linha só), como no CSS e no `IntrinsicSize` do Compose. Diferente do `hug`, não se limitam ao espaço do pai (se passar, o aviso `conteúdo maior que a caixa` sai como sempre); na altura, os dois valem o `hug`. A tela sem geometria, o Arrumar e o `fit_marking` do MCP seguem o `sizing` com esses valores. Só na `formatVersion` 4 do componente; antes dela, o erro é `só é permitido com formatVersion 4`, e o nó `image` não os aceita.
+- **O Arrumar alinha as filhas de um slot `none`.** O slot `layout: { "type": "none" }` com `align` e `justify` põe cada filha sozinha na caixa do slot (`start`, `center`, `end` e `stretch`) quando a pessoa pede o **Arrumar**, e a tela sem geometria faz o mesmo nos eixos de tamanho conhecido, como o `Box(contentAlignment)` do Compose; sem eles, nada muda.
+- **Colunas fixas ou adaptativas por um campo.** Numa grade com `type` por expressão ou em `repeat`/slot, `columns` e `minColumnWidth` (ou `rows` e `minRowHeight`) podem aparecer juntas quando todas são expressão, e vale a primeira que tem valor: é como um tipo escolhe entre `GridCells.Fixed` e `GridCells.Adaptive` por um campo.
 - O `docs/COMPONENT-FORMAT.md` ganha o mapa de conceitos (sobreposição, fileira e coluna, ordem invertida, quebra, corte) com as chaves equivalentes de CSS, Compose, SwiftUI e Flutter.
 
 ## Alterado
 
 - Teto do `dist/index.html` subiu 16 KiB, de 2.080.768 para 2.097.152, pela regra do orçamento (a grade, os pesos e as mensagens novas da L3).
 - O desenho dos componentes ficou mais rápido ao medir texto repetido: o mesmo texto, com a mesma fonte e o mesmo limite de largura, é medido uma vez só, na app e no servidor MCP (nos 15 componentes do exemplo Material 3, as medidas por instância caíram de 69 para 26). Nenhum desenho muda.
+- **Material 3 (Compose) v9 usa o layout novo.** A atualização da biblioteca é aditiva (sem migração; nenhum campo mudou):
+  - `box` alinha as filhas pelo `contentAlignment` no Arrumar (`Center`, `BottomEnd`…); com `height` `fill` ou `fixed` a altura da marcação fica (é onde o alinhamento vertical aparece);
+  - `lazy-vertical-grid` desenha as filhas numa grade de verdade: `columns` (`GridCells.Fixed`) ou `minColumnWidth` (`GridCells.Adaptive`), `horizontalSpacing` entre as colunas e `verticalSpacing` entre as linhas; o `contentPadding` passou do quadro para o slot, dentro da caixa cortada;
+  - `segmented-button` tem segmentos de largura igual pelo mais largo (o `IntrinsicSize.Min` do Compose): no tamanho ajustado a largura é `n` vezes o segmento mais largo (antes valia o `size` de 328);
+  - `lazy-column`, `lazy-row`, `lazy-vertical-grid`, `row` e `column` cortam a filha que passa da caixa do componente (`clipToBounds`), na app e no PNG do MCP. As imagens de referência dessas cinco e do `box` e do `segmented-button` mudaram de propósito.
 
 ## Corrigido
 

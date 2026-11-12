@@ -84,7 +84,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 
 **Como o desenho segue o Compose**
 
-- Linha de 40 de altura e forma `corner-full`; os segmentos são o `repeat` de `options` com `distribute: fill`, de largura igual, cada um com o mínimo de 58.
+- Linha de 40 de altura e forma `corner-full`; os segmentos são o `repeat` de `options` numa **grade de colunas iguais** (`repeat.layout` `grid` com `columns: { "$rows": "options" }`, formato 4), cada um com o mínimo de 58. No tamanho ajustado ao conteúdo (`fit_marking`, o Arrumar e a instância nova), a largura é `n` vezes o segmento mais largo, o `IntrinsicSize.Min` com `weight(1f)` do Compose (`SegmentedButton.kt` linhas 233 a 238 e 328 a 340): com os rótulos "A" e "Configurações avançadas" os dois segmentos medem o mesmo, o do mais largo.
 - Selecionado: fundo `secondary-container`, rótulo e check `on-secondary-container`. Desmarcado: sem fundo, rótulo e ícone `on-surface`. O check é o nó `icon` de 18 e substitui o ícone da coluna; o rótulo usa os tokens de `label-large` (14, 20, 500 e 0,1).
 - O ícone (18) e o rótulo ficam separados por 8 e o conjunto é centrado no segmento, com o espaço de `TextButtonContentPadding` (12 dos lados, 8 em cima e embaixo). Sem ícone e desmarcado, só o rótulo, centrado.
 - Contorno de 1 em `outline`, dentro da caixa e com a forma full; o `clip` da raiz arredonda as pontas do fundo do selecionado. Entre os segmentos há um divisor de 1 em `outline` (a borda dupla do Compose, sobreposta em 1).
@@ -103,7 +103,7 @@ O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o des
 **O que ainda difere do Compose**
 
 - Os segmentos se encostam e o divisor é o lado esquerdo de cada um (o do primeiro fica fora da caixa), em vez de se sobrepor em 1: a largura de cada segmento é `(largura + 1) / n`, e não `(largura + n - 1) / n`, então a fronteira cai a menos de 1 do Compose.
-- A linha ocupa a largura da marcação (`fill`); o Compose usa `width(IntrinsicSize.Min)` e mede os segmentos pelo conteúdo. O formato não tem "todos os `fill` com a largura do maior": o limite continua e está fora da etapa da medida pelo conteúdo (#898).
+- A largura da linha ajusta ao conteúdo (`hug`), como o `width(IntrinsicSize.Min)` do Compose; com a marcação mais larga que isso, a grade reparte a largura da marcação por igual entre os segmentos (a linha com `Modifier.fillMaxWidth()`). A medida é a do desenho (texto, ícone e o padding de 12 dos lados), não a `minIntrinsicWidth` do `SegmentedButton`.
 - O rótulo não corta nem quebra de propósito; um rótulo maior que o segmento avisa `texto maior que a caixa`. O Compose só limita pelo `Row`.
 - Os estados de interação são quadros parados: sem ripple animado, sem transição e sem o movimento da troca do check e do deslocamento do rótulo (`SegmentedButtonContentMeasurePolicy` anima o `offsetX`). O Compose não define anel de foco para este tipo no commit fixado (nenhum `*Tokens.kt` dele traz `FocusIndicatorColor`): nenhum é desenhado. O estado vale só para o segmento selecionado (ver "Qual segmento").
 - O `selection` não muda o desenho (single e multi usam o mesmo check); só muda o símbolo do código.

@@ -52,14 +52,19 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 
 **Arquivos usados**
 
-- `compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/lazy/grid/LazyGridDsl.kt` (linhas 67 a 77: `LazyVerticalGrid(columns, contentPadding = PaddingValues(0.dp), reverseLayout = false, verticalArrangement, horizontalArrangement = Arrangement.Start)`).
+- `compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/lazy/grid/LazyGridDsl.kt` (linhas 67 a 77: `LazyVerticalGrid(columns, contentPadding = PaddingValues(0.dp), reverseLayout = false, verticalArrangement, horizontalArrangement = Arrangement.Start)`; linhas 325 a 335: `GridCells.Fixed(count)`, `n` colunas iguais; linhas 354 a 366: `GridCells.Adaptive(minSize)`, `maxOf((availableSize + spacing) / (minSize + spacing), 1)` colunas).
+- `compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/ScrollingContainer.kt` (linha 56: o `clipScrollableContainer` que o `LazyGrid.kt`, linhas 125 a 150, aplica pelo `scrollingContainer`).
 
 **Como o desenho segue o Compose**
 
-- `contentPadding` é o `padding` do quadro, como o `PaddingValues` do Compose; o slot ocupa o que sobra (`fill`).
-- Nenhuma cor, fonte ou raio é desenhado; o rótulo do slot resume `columns` ou `minColumnWidth` e os espaçamentos.
+- O slot é uma **grade** (`layout.type: "grid"`, formato 4): `columns` dá `n` colunas iguais (o `GridCells.Fixed`) e, com `minColumnWidth` preenchido, a grade passa a adaptativa, `max(1, floor((conteúdo + gap) / (minColumnWidth + gap)))` colunas (o `GridCells.Adaptive`, mesma conta do `LazyGridDsl.kt`, linha 363). Os dois campos viram duas chaves de trilha por expressão e vale a que tem valor; `minColumnWidth` vence `columns`, como o `code` do tipo.
+- `horizontalSpacing` é o `gap` entre as colunas e `verticalSpacing` o `lineGap` entre as linhas; `contentPadding` é o `padding` do slot, dentro da caixa cortada, como o `PaddingValues` do Compose. O **Arrumar** põe cada filha numa célula, da esquerda para a direita e de cima para baixo (a filha menor que a célula fica no início dela).
+- O slot tem `clip: true` (formato 4): a filha que passa da caixa do componente é cortada na borda, como o `clipScrollableContainer` do Compose.
+- Nenhuma cor, fonte ou raio é desenhado; o rótulo do slot mostra só o tamanho e o `weight` (a grade em si é desenhada pelo layout).
 
 **O que ainda difere do Compose**
 
-- O formato não tem grade com colunas de largura igual para filhas de uma marcação (`GridCells.Fixed` e `GridCells.Adaptive`): o slot guarda as filhas sem `row` nem `column`, e `verticalSpacing` e `horizontalSpacing` só entram no rótulo.
-- Rolagem e `state` não existem num desenho estático.
+- As colunas têm tamanho igual (`1fr`): o formato não tem `GridCells.FixedSize` nem células de larguras diferentes, e a filha não ocupa mais de uma coluna (`span` de marcação filha não existe; o `GridItemSpan` do Compose fica de fora).
+- `reverseLayout` e a grade horizontal (`LazyHorizontalGrid`) não são campos deste tipo.
+- A filha é a de tamanho próprio dentro da célula (início da célula); o Compose entrega a ela a largura da célula como restrição máxima. Redimensione a filha para ocupar a coluna.
+- Rolagem e `state` não existem num desenho estático: o que passa da caixa é cortado e não há como rolar até lá. O `weight` das filhas fica fora (o Arrumar não lê campos das filhas).

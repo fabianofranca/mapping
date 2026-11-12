@@ -355,3 +355,35 @@ describe('layoutScreen com slot grid', () => {
     expect(at('c')).toMatchObject({ x: 30, y: 0 });
   });
 });
+
+describe('layoutScreen com slot none alinhado (L5)', () => {
+  const small = () => [node('a', 'small')];
+
+  it('sem align e justify o filho fica no canto (como sempre)', () => {
+    const { at } = run({ type: 'none' }, small());
+    expect(at('a')).toEqual({ x: 0, y: 0, width: 30, height: 10 });
+  });
+
+  it('justify põe o filho no meio, no fim ou o estica na largura do conteúdo', () => {
+    expect(run({ type: 'none', justify: 'center' }, small()).at('a')).toMatchObject({
+      x: 145,
+      width: 30,
+    });
+    expect(run({ type: 'none', justify: 'end' }, small()).at('a')).toMatchObject({
+      x: 290,
+    });
+    expect(run({ type: 'none', justify: 'stretch' }, small()).at('a')).toMatchObject({
+      x: 0,
+      width: 320,
+    });
+  });
+
+  it('as filhas se sobrepõem, cada uma alinhada sozinha', () => {
+    const { at } = run({ type: 'none', justify: 'end' }, [
+      node('a', 'small'),
+      node('b', 'fixed'),
+    ]);
+    expect(at('a').x).toBe(290);
+    expect(at('b').x).toBe(220);
+  });
+});

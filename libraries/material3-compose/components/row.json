@@ -267,7 +267,8 @@
             },
             "default": "start"
           }
-        }
+        },
+        "clip": true
       }
     ]
   }
