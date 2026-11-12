@@ -27,3 +27,8 @@
 ## Corrigido
 
 - A prova de desenho e a validação da biblioteca (#1093) agora avisam `conteúdo maior que a caixa: <quadro>` também quando o pai do filho que passa é `layout: none`, como já faziam em `row` e `column`. O aviso aparece na pendência "o componente não cabe" da app, no `component-overflow` do `plan_changes` e do `propose_changes` e nos avisos da `validate_library`.
+- Na app, uma palavra mais larga que a caixa do texto fica inteira na linha (como no modelo e no PNG do MCP) em vez de partir letra por letra; o aviso falso "componente que não cabe" dos botões estreitos de uma palavra some.
+- A prova de desenho enxerga os componentes aplicados no mesmo lote do `plan_changes`.
+- O `segmented-button` ajustado com limite de largura (`fit_marking`) não encolhe abaixo do rótulo mais largo.
+- O `card` recorta a mídia com os cantos arredondados do próprio card, e as faixas coladas de um `row` não mostram mais um fio claro entre elas na app.
+- Grade `hug` com contagem de trilhas errada em quadros `fill` e grade vazia `hug` medida de forma diferente pela arrumação do slot.
