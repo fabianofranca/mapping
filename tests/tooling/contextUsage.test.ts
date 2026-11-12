@@ -17,6 +17,7 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 // @ts-expect-error módulo .mjs sem declaração de tipos
 import { lastContext } from '../../scripts/ci/contextUsage.mjs';
+import { scriptMeasureProblems } from '../support/contextMeasure';
 import { between, section } from '../support/textSlice';
 
 interface Usage {
@@ -233,6 +234,61 @@ describe('CM1 — contextUsage.mjs: a CLI (decisões 1 e 3)', () => {
     expect(semArquivo.values.motivo).toBeTruthy();
   });
 
+  // Achado CL1.2: `mil` (para cima) e `acima` (valor exato) têm de contar a mesma história.
+  it('CL1.2: 300001 dá mil=301 e acima=true; 299500 dá mil=300 e acima=false', () => {
+    const a = transcript('a', [main(300_001)]);
+    const b = transcript('b', [main(299_500)]);
+    const ra = cli([], { CLAUDE_CONFIG_DIR: a.config, CLAUDE_CODE_SESSION_ID: 'a' });
+    const rb = cli([], { CLAUDE_CONFIG_DIR: b.config, CLAUDE_CODE_SESSION_ID: 'b' });
+    expect(ra.values).toMatchObject({ mil: '301', acima: 'true' });
+    expect(rb.values).toMatchObject({ mil: '300', acima: 'false' });
+  });
+
+  it('CL1.2: com teto em múltiplo de mil, acima=true exatamente quando o mil mostrado passa do teto em mil', () => {
+    for (const teto of [100_000, 250_000, 300_000]) {
+      for (const n of [teto - 1000, teto - 1, teto, teto + 1, teto + 999, teto + 1000]) {
+        const t = transcript('t', [main(n)]);
+        const r = cli(['--teto', String(teto)], {
+          CLAUDE_CONFIG_DIR: t.config,
+          CLAUDE_CODE_SESSION_ID: 't',
+        });
+        expect(r.values.acima, `teto ${teto}, contexto ${n}`).toBe(
+          String(Number(r.values.mil) > teto / 1000),
+        );
+      }
+    }
+  });
+
+  it('CL1.3: flag repetida dá código 2 e diz qual', () => {
+    const r = cli(['--teto', '1', '--teto', '2'], {});
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/--teto.*(repetid|duas vezes)/);
+  });
+
+  it('CL1.3: valor que começa com -- dá código 2 e diz que a flag pede um valor', () => {
+    const r = cli(['--arquivo', '--x.jsonl'], {});
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/--arquivo pede um valor/);
+    const r2 = cli(['--max', '--teto', '5'], {});
+    expect(r2.status).toBe(2);
+    expect(r2.stderr).toMatch(/--max pede um valor/);
+    const r3 = cli(['--arquivo'], {});
+    expect(r3.status).toBe(2);
+    expect(r3.stderr).toMatch(/--arquivo pede um valor/);
+  });
+
+  it('CL1.3: token solto dá código 2 e é chamado de solto, em qualquer posição', () => {
+    for (const args of [
+      ['solto', '--teto', '5'],
+      ['--teto', '5', 'solto'],
+      ['--teto', '5', '7'],
+    ]) {
+      const r = cli(args, {});
+      expect(r.status, args.join(' ')).toBe(2);
+      expect(r.stderr, args.join(' ')).toMatch(/Argumento solto/);
+    }
+  });
+
   it('erro de uso dá código 2, com a mensagem no stderr', () => {
     const r1 = cli(['--teto'], {});
     expect(r1.status).toBe(2);
@@ -345,6 +401,60 @@ describe('CM1 — textos do fluxo que usam a medida (decisões 5 a 10)', () => {
       '<rótulo>: medida de contexto divergente (aviso <n> mil, get_session <ctx> mil)',
     );
     expect(custo).toContain('A etapa não para');
+  });
+
+  const custoTexto = between(
+    porEtapa,
+    '- **Custo:**',
+    '- **Só se arquivam ids registrados',
+  );
+
+  it('CL1.1: o "ainda trabalhando" tem limite de 2 repetições e diz o que fazer no mesmo ciclo da send_message', () => {
+    expect(custoTexto).toMatch(/no máximo 2 vezes/);
+    expect(custoTexto).toContain('terceira leitura');
+    expect(custoTexto).toContain('custo lido com a sessão ainda trabalhando');
+    expect(custoTexto).toMatch(/send_message[^.]*mesmo ciclo[^.]*ciclo seguinte/);
+  });
+
+  it('CL1.7: a sentinela só vale com o turno terminado e a divergência é registro, nunca trava', () => {
+    const sentinela = custoTexto.slice(custoTexto.indexOf('**Sentinela:**'));
+    expect(sentinela).toMatch(/só vale com o turno (dela |da filha )?terminado/);
+    expect(sentinela).toContain('registro');
+    expect(sentinela).toMatch(/nunca (trava|para)/);
+    expect(sentinela).toContain('não é prova de que a medida está errada');
+  });
+
+  it('CL1.6: o TESTING-NUVEM guarda o motivo do pkill e o exemplo do corte de 25.000 (não são do épico)', () => {
+    expect(nuvem).toContain(
+      '`pkill -f chrome` (mata a própria shell e faz o Chrome restaurar abas)',
+    );
+    expect(nuvem).toContain('(por exemplo, o corte de 25.000 ou um trecho que faltou)');
+    expect(nuvem.length).toBeLessThanOrEqual(32_000);
+  });
+
+  it('CL1.5: a medida endurecida pega o texto que volta à medida antiga (mutação)', () => {
+    const phase = section(flow, '## Para a sessão da fase');
+    const item3 = between(phase, '3. Subagentes e esforço', '4. Todo briefing');
+    const teto = item3.slice(item3.indexOf('   - **Teto de contexto da fase:**'));
+    const sup = between(
+      section(supervisao, '## Troca de sessão'),
+      '**Tamanho e base.**',
+      '**Troca no retorno',
+    );
+    expect(scriptMeasureProblems(teto)).toEqual([]);
+    expect(scriptMeasureProblems(sup)).toEqual([]);
+    for (const original of [teto, sup]) {
+      const antigaComoInstrucao = original
+        .replaceAll('`node scripts/ci/contextUsage.mjs`', 'o `get_session`')
+        .replace(/Não é o `external/, 'É o `external')
+        .replace(/, não o `external/, ', e o `external');
+      // A asserção antiga (só citar o `used_tokens`) continua passando no texto mutado…
+      expect(antigaComoInstrucao).toContain(
+        '`external_metadata.context_usage.used_tokens`',
+      );
+      // …e a nova não.
+      expect(scriptMeasureProblems(antigaComoInstrucao).length).toBeGreaterThan(0);
+    }
   });
 
   it('implementar-fila: a mudança é pequena (a regra de skill grande é de 60 linhas)', () => {

@@ -5,6 +5,7 @@
 // arquiva a anterior, e a terceira sessão não troca.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { scriptMeasureProblems } from '../support/contextMeasure';
 import { between, section } from '../support/textSlice';
 
 const flow = readFileSync('docs/FLOW.md', 'utf8');
@@ -36,11 +37,20 @@ describe('CX1 — "Para a sessão da fase" do docs/FLOW.md, sub-item do item 3',
   it('o teto é 300 mil, medido pelo scripts/ci/contextUsage.mjs (não pelo used_tokens do get_session)', () => {
     expect(teto).toContain('300 mil');
     expect(teto).toContain('300.000');
-    expect(teto).toContain('`node scripts/ci/contextUsage.mjs`');
     expect(teto).toContain('`acima=true`');
     expect(teto).toContain('`get_session` sem `session_id`');
-    expect(teto).toContain('`external_metadata.context_usage.used_tokens`');
+    // Achado CL1.5: o script como instrução e o `used_tokens` só como proibição.
+    expect(scriptMeasureProblems(teto)).toEqual([]);
     expect(teto).toMatch(/só muda no fim de um turno/);
+  });
+
+  it('CL1.4: script ausente na transição (git show falha ou arquivo vazio) vale como "sem medida"', () => {
+    const transicao = between(teto, '**Transição:**', '**Sem medida**');
+    expect(transicao).toContain('git show origin/main:scripts/ci/contextUsage.mjs');
+    expect(transicao).toContain('script ausente');
+    expect(transicao).toContain('sem medida');
+    expect(transicao).toContain('`contexto=`');
+    expect(transicao).toMatch(/código fora de 0 e 1|código diferente de 0 e 1/);
   });
 
   it('a conferência é antes de tarefa nova de subagente e antes dos gates do item 5', () => {
