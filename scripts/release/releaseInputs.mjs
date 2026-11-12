@@ -15,6 +15,7 @@ export const RELEASE_INPUTS = [
   'docs/COMMENT-FORMAT.md',
   'docs/COMPONENT-FORMAT.md',
   'docs/FORMAT.md',
+  'docs/SIGNATURE-FORMAT.md',
   'docs/SPEC-FORMAT.md',
   // Biblioteca de notas embutida.
   'libraries/notas/',

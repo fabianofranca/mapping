@@ -22,6 +22,7 @@ import {
   type ExternalDoc,
 } from './docFiles';
 import { packageCodeView } from './codeViews';
+import { packageSignatureReader } from './signatureFiles';
 import { Refs } from './items';
 import { findProject, loadProject, type LoadedProject } from './projects';
 import type { Roots } from './paths';
@@ -374,6 +375,7 @@ export async function getComponent(
             project === null
               ? null
               : { refs: new Refs(project), files: new LocalFileChecker(roots.workDir) },
+            packageSignatureReader(source),
           ),
         }),
     sources: type.sources ?? [],

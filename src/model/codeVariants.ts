@@ -22,8 +22,10 @@ function chosenValue(
 /**
  * O `code` de uma plataforma para uma anotação: a base com o caso de `variants` do valor da
  * anotação no campo escolhido (ou o `default` do campo) aplicado. `symbol`, `path` e `notes`
- * do caso substituem os da base; `params` e `values` se somam a eles, chave por chave. Sem
- * `variants` devolve o próprio `code`; nunca devolve `variants`.
+ * do caso substituem os da base, e na `formatVersion` 16 também `signature` e `ignore`; `params`,
+ * `values`, `calls` e `formats` se somam a eles, chave por chave (o `calls` do caso troca o da base
+ * para o mesmo parâmetro: `ButtonDefaults.outlinedButtonColors`). Sem `variants` devolve o próprio
+ * `code`; nunca devolve `variants`.
  */
 export function resolveCode(
   code: SpecCode,
@@ -38,13 +40,37 @@ export function resolveCode(
       ? variants.cases[value]
       : undefined;
   if (kase === undefined) return base;
-  const { symbol, path, notes, params, values: caseValues } = kase;
+  return applyCase(base, kase);
+}
+
+/** `symbol`, `path`, `notes`, `signature` e `ignore` do caso substituem; o resto se soma, chave por chave. */
+function applyCase(
+  base: SpecCode,
+  kase: NonNullable<SpecCode['variants']>['cases'][string],
+): SpecCode {
+  const { symbol, path, notes, signature, ignore } = kase;
   return {
     ...base,
     ...(symbol === undefined ? {} : { symbol }),
     ...(path === undefined ? {} : { path }),
     ...(notes === undefined ? {} : { notes }),
-    ...(params === undefined ? {} : { params: { ...base.params, ...params } }),
-    ...(caseValues === undefined ? {} : { values: { ...base.values, ...caseValues } }),
+    ...(signature === undefined ? {} : { signature }),
+    ...(ignore === undefined ? {} : { ignore }),
+    ...merged(base, kase, 'params'),
+    ...merged(base, kase, 'calls'),
+    ...merged(base, kase, 'formats'),
+    ...(kase.values === undefined ? {} : { values: { ...base.values, ...kase.values } }),
   };
+}
+
+/** `{ key: { ...base[key], ...kase[key] } }` quando o caso traz a chave; senão nada. */
+function merged<K extends 'params' | 'calls' | 'formats'>(
+  base: SpecCode,
+  kase: { readonly [P in K]?: Record<string, string> | undefined },
+  key: K,
+): { [P in K]?: Record<string, string> } {
+  const own = kase[key];
+  return own === undefined
+    ? {}
+    : ({ [key]: { ...base[key], ...own } } as { [P in K]?: Record<string, string> });
 }

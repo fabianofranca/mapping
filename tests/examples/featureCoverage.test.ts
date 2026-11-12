@@ -68,6 +68,18 @@ const PENDING_AFTER_REMOVAL: string[] = [];
  * (decisão 'Fora' da #486); o recurso é coberto por tests/model/specV10.test.ts e pelo roteiro R18.
  */
 const MISSING_TODAY: string[] = [
+  // `fieldModels`, `signature`, `ignore`, `calls` e `formats` (formatVersion 16, etapa #1079, S1): a Material 3 o ganha na S5 (decisão 14);
+  // coberto por tests/model/specV16.test.ts e tests/model/librarySignature.test.ts.
+  'spec:fieldModels',
+  'spec:layers[].annotationTypes[].code{}.calls',
+  'spec:layers[].annotationTypes[].code{}.formats',
+  'spec:layers[].annotationTypes[].code{}.ignore',
+  'spec:layers[].annotationTypes[].code{}.signature',
+  'spec:layers[].annotationTypes[].code{}.variants.cases{}.calls',
+  'spec:layers[].annotationTypes[].code{}.variants.cases{}.formats',
+  'spec:layers[].annotationTypes[].code{}.variants.cases{}.ignore',
+  'spec:layers[].annotationTypes[].code{}.variants.cases{}.signature',
+  'spec:layers[].annotationTypes[].sources[].signature',
   // Layout do componente v4 (etapa #747, CF2): as bibliotecas distribuídas não migram para o
   // formato 4 nesta etapa (decisão 'Fora' da #747); coberto por
   // tests/model/components/layoutFidelity.test.ts, layoutV4Parse.test.ts e pelo roteiro R25.

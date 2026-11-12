@@ -1,0 +1,240 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/fabianofranca/mapping/blob/main/docs/signature.schema.json",
+  "title": "mapping-signature (formatVersion 1)",
+  "description": "A ficha de assinatura de um componente: os parâmetros de uma função @Composable, o init de uma view SwiftUI ou as propriedades de um componente do Figma, numa forma neutra. O texto de SIGNATURE-FORMAT.md é a referência; a unicidade dos nomes de parâmetro é conferida pelo validador da app.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "formatVersion", "source", "params"],
+  "properties": {
+    "format": {
+      "const": "mapping-signature"
+    },
+    "formatVersion": {
+      "const": 1
+    },
+    "source": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "platform", "language", "symbol", "path", "extractor"],
+          "properties": {
+            "kind": {
+              "const": "code"
+            },
+            "platform": {
+              "type": "string",
+              "minLength": 1
+            },
+            "language": {
+              "type": "string",
+              "minLength": 1
+            },
+            "symbol": {
+              "type": "string",
+              "minLength": 1
+            },
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Arquivo que define o símbolo, relativo à raiz do repositório."
+            },
+            "ref": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Commit, tag ou branch lido."
+            },
+            "extractor": {
+              "$ref": "#/$defs/extractor"
+            },
+            "overload": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "init": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "system", "id", "name", "extractor"],
+          "properties": {
+            "kind": {
+              "const": "design"
+            },
+            "system": {
+              "type": "string",
+              "minLength": 1
+            },
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "extractor": {
+              "$ref": "#/$defs/extractor"
+            }
+          }
+        }
+      ]
+    },
+    "params": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/param"
+      },
+      "description": "Na ordem da fonte."
+    },
+    "doc": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Nome do parâmetro → documentação (KDoc @param, /// do Swift, description do Figma)."
+    }
+  },
+  "$defs": {
+    "extractor": {
+      "type": "string",
+      "pattern": "^(agent|mapping-signature/[a-z0-9-]+@[0-9]+)$",
+      "description": "mapping-signature/<leitor>@<versão> ou agent."
+    },
+    "value": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "text",
+            "boolean",
+            "number",
+            "integer",
+            "dimension",
+            "enum",
+            "color",
+            "opaque"
+          ],
+          "description": "dimension é em unidades do componente (1 dp, 1 pt ou 1 px CSS a 1x)."
+        },
+        "default": {
+          "type": ["string", "number", "boolean"],
+          "description": "Só quando o padrão é um literal representável."
+        },
+        "options": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Só em enum: as constantes, no texto da fonte."
+        }
+      },
+      "description": "options é obrigatório em enum e proibido nos outros kinds (conferido pelo validador da app)."
+    },
+    "param": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "role", "type"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Rótulo externo do Swift; _ é posicional."
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Id do parâmetro na fonte (o sufixo #<id> do nome no Figma)."
+        },
+        "role": {
+          "enum": ["value", "slot", "callback", "modifier", "state", "other"]
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1,
+          "description": "O texto do tipo na fonte, normalizado só nos espaços."
+        },
+        "default": {
+          "type": "string",
+          "description": "O texto do padrão na fonte."
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "value": {
+          "$ref": "#/$defs/value"
+        },
+        "factory": {
+          "$ref": "#/$defs/factory"
+        }
+      }
+    },
+    "factory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["call", "params"],
+      "description": "A fábrica do padrão, num nível só: os parâmetros dela não têm factory.",
+      "properties": {
+        "call": {
+          "type": "string",
+          "minLength": 1
+        },
+        "params": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "role", "type"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Rótulo externo do Swift; _ é posicional."
+              },
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Id do parâmetro na fonte (o sufixo #<id> do nome no Figma)."
+              },
+              "role": {
+                "enum": ["value", "slot", "callback", "modifier", "state", "other"]
+              },
+              "type": {
+                "type": "string",
+                "minLength": 1,
+                "description": "O texto do tipo na fonte, normalizado só nos espaços."
+              },
+              "default": {
+                "type": "string",
+                "description": "O texto do padrão na fonte."
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "value": {
+                "$ref": "#/$defs/value"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
