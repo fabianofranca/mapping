@@ -11,6 +11,9 @@
  * Tamanho no eixo das linhas (`height` em `column`, `width` em `row`):
  * - sem `distribute` (ou `"none"`): o quadro gerado é `hug` nesse eixo e cada linha também, salvo
  *   o que o `repeat` e o `template` dizem; um `fill` no `template` vale 0 (aviso do motor);
+ * - `layout` (formatVersion 4) no lugar de `direction` + `gap`: o quadro gerado leva esse `layout`
+ *   (`row`, `column` ou `grid`) como está. `row`/`column` seguem a regra de `direction`; a grade abraça
+ *   nos dois eixos (o `width`/`height` do `repeat` manda se existir) e cada célula é `fill` na célula;
  * - `distribute: "fill"` (formatVersion 4): o quadro gerado é `fill` nesse eixo (ocupa o do pai) e
  *   cada linha é `fill`, de modo que as linhas dividem o eixo igualmente menos os `gap`s. Valor
  *   explícito (px, `hug`, `%`, ou o próprio `fill`) no `repeat`/`template` vale como escrito.
@@ -67,13 +70,24 @@ function wrapKeys(node: RepeatTemplate): Partial<LayoutSpec> {
   return out;
 }
 
+/** O layout das linhas do `repeat`: o de `layout` (v4, literal; por expressão vale `column`) ou o de `direction`. */
+function layoutKind(node: RepeatTemplate): 'row' | 'column' | 'grid' {
+  const type = node.layout === undefined ? node.direction : node.layout.type;
+  return type === 'row' || type === 'grid' ? type : 'column';
+}
+
 /** Tamanhos do quadro gerado: `width`/`height` do `repeat`, ou o padrão do eixo (ver o topo). */
 function wrapperSize(
   node: RepeatTemplate,
-  column: boolean,
+  kind: 'row' | 'column' | 'grid',
 ): Pick<FrameTemplate, 'width' | 'height'> {
+  // A grade abraça nos dois eixos (o `width`/`height` do próprio `repeat` manda se existir).
+  if (kind === 'grid')
+    return { width: node.width ?? 'hug', height: node.height ?? 'hug' };
+  const column = kind === 'column';
   // Com `wrap` o eixo das linhas precisa de um limite para quebrar: ocupa o do pai, como com `distribute`.
-  const wraps = node.wrap !== undefined && node.wrap !== 'none';
+  const wrapSource = node.layout ?? node;
+  const wraps = wrapSource.wrap !== undefined && wrapSource.wrap !== 'none';
   const rowsAxis = node.distribute === 'fill' || wraps ? 'fill' : 'hug';
   return {
     width: node.width ?? (column ? 'fill' : rowsAxis),
@@ -81,12 +95,17 @@ function wrapperSize(
   };
 }
 
-/** Tamanho de uma linha no eixo das linhas: o do `template`, ou `hug` (`fill` com `distribute`). */
+/**
+ * Tamanho de uma linha no eixo das linhas: o do `template`, ou `hug` (`fill` com `distribute`).
+ * Na grade a célula é `fill` na célula (o padrão do quadro): nada a acrescentar.
+ */
 function rowSize(
   copy: FrameTemplate,
-  column: boolean,
+  kind: 'row' | 'column' | 'grid',
   distribute: boolean,
 ): Pick<FrameTemplate, 'width' | 'height'> {
+  if (kind === 'grid') return {};
+  const column = kind === 'column';
   const fallback = distribute ? 'fill' : 'hug';
   return column ? { height: copy.height ?? fallback } : { width: copy.width ?? fallback };
 }
@@ -275,7 +294,7 @@ export function expandRepeats(
     const { rows, columns } = rowsFor(node);
     columns.add(INDEX_FIELD);
     const lines = linesNames(node.template);
-    const column = (node.direction ?? 'column') === 'column';
+    const kind = layoutKind(node);
     const children = rows.map((row, i): FrameTemplate => {
       const scope = `$r${n}_${i}`;
       for (const name of columns)
@@ -284,14 +303,14 @@ export function expandRepeats(
       const copy = expand(
         scoped(node.template, columns, scope, lines) as TemplateNode,
       ) as FrameTemplate;
-      return { ...copy, ...rowSize(copy, column, node.distribute === 'fill') };
+      return { ...copy, ...rowSize(copy, kind, node.distribute === 'fill') };
     });
     return {
       type: 'frame',
       name: node.name ?? 'repeat',
       ...inheritedKeys(node),
-      ...wrapperSize(node, column),
-      layout: {
+      ...wrapperSize(node, kind),
+      layout: node.layout ?? {
         type: node.direction ?? 'column',
         gap: node.gap ?? 0,
         ...wrapKeys(node),

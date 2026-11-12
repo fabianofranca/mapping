@@ -219,6 +219,30 @@ function crossPosition(
   return 0;
 }
 
+const ZERO_POS = { t: 0, f: 0 };
+const EMPTY_KID = { t: 0, f: 0, fFill: false, hugT: false, hugF: false };
+
+/** A ordem de colocação dos filhos: a do template, ou a inversa (`layout.reverse`). */
+function gridOrder(count: number, reverse: boolean): number[] {
+  const order = Array.from({ length: count }, (_, i) => i);
+  return reverse ? order.reverse() : order;
+}
+
+/** As células de uma grade com `fs` (a extensão de cada filho na linha de fluxo) e a extensão de cada linha. */
+function lineExtents(
+  fs: readonly number[],
+  count: number,
+): { cells: ReturnType<typeof placeCells>['cells']; extents: number[] } {
+  const { cells, lines } = placeCells(
+    fs.map(() => 1),
+    count,
+  );
+  const extents = Array.from({ length: lines }, () => 0);
+  for (const cell of cells)
+    extents[cell.line] = Math.max(extents[cell.line] ?? 0, fs[cell.index] ?? 0);
+  return { cells, extents };
+}
+
 const isVerticalGrid = (layout: ResolvedSlotLayout) =>
   layout.grid?.orientation !== 'horizontal';
 
@@ -511,33 +535,91 @@ export function layoutScreen(
   const gridNaturalTrack = (kid: Prepared, vertical: boolean): number =>
     vertical ? widthOf(kid, null, false).w : naturalHeight(kid);
 
-  /** O tamanho de um filho de grade: `t` no eixo das trilhas (na célula `size`), `f` natural no das linhas. */
-  const gridKidSize = (
+  /** Um filho de grade medido: `t` no eixo das trilhas, `f` (natural) no das linhas, e se cada um veio do `hug`. */
+  interface GridKid {
+    readonly t: number;
+    readonly f: number;
+    /** `f` enche a linha de fluxo (`fill`, ou `align: stretch` num `hug`). */
+    readonly fFill: boolean;
+    readonly hugT: boolean;
+    readonly hugF: boolean;
+  }
+
+  /** Grade vertical: a largura é a da célula (`size`); a altura é a natural, na largura final. */
+  const verticalGridKid = (
     kid: Prepared,
+    layout: ResolvedSlotLayout,
+    size: number,
+  ): GridKid => {
+    const spec = specOf(kid, 'height');
+    const w = widthOf(
+      kid,
+      size,
+      layout.justify === 'stretch' && specOf(kid, 'width') === 'hug',
+    );
+    const h =
+      typeof spec === 'number'
+        ? withMin(kid, 'height', spec)
+        : intrinsicHeight(kid, w.w, w.hug);
+    const fFill = spec === 'fill' || (layout.align === 'stretch' && spec === 'hug');
+    return { t: w.w, f: h, fFill, hugT: w.hug, hugF: typeof spec !== 'number' };
+  };
+
+  /** Grade horizontal: a largura é a natural (a linha de fluxo); a altura é a da célula (`size`). */
+  const horizontalGridKid = (
+    kid: Prepared,
+    layout: ResolvedSlotLayout,
+    size: number,
+  ): GridKid => {
+    const w = widthOf(kid, null, false);
+    const wSpec = specOf(kid, 'width');
+    const tSpec = specOf(kid, 'height');
+    const fill = tSpec === 'fill' || (layout.justify === 'stretch' && tSpec === 'hug');
+    const natural =
+      typeof tSpec === 'number'
+        ? withMin(kid, 'height', tSpec)
+        : intrinsicHeight(kid, w.w, w.hug);
+    return {
+      t: fill ? withMin(kid, 'height', size) : natural,
+      f: w.w,
+      fFill: wSpec === 'fill' || (layout.align === 'stretch' && wSpec === 'hug'),
+      hugT: tSpec === 'hug' && !fill,
+      hugF: w.hug,
+    };
+  };
+
+  /** O retângulo de um filho já colocado na célula (relativo à origem do conteúdo). */
+  const gridKidRect = (
+    vertical: boolean,
+    pos: { t: number; f: number },
+    size: { t: number; f: number },
+    info: GridKid,
+  ): KidRect => {
+    const hugF = !info.fFill && info.hugF;
+    return vertical
+      ? { x: pos.t, y: pos.f, w: size.t, h: size.f, hugW: info.hugT, hugH: hugF }
+      : { x: pos.f, y: pos.t, w: size.f, h: size.t, hugW: hugF, hugH: info.hugT };
+  };
+
+  /** O retângulo do filho da célula `cell`: `justify` na trilha, `align` na linha de fluxo. */
+  const placeGridCell = (
     layout: ResolvedSlotLayout,
     vertical: boolean,
     size: number,
-  ): { t: number; f: number; fFill: boolean; hugT: boolean; hugF: boolean } => {
-    const stretchT = layout.justify === 'stretch';
-    const fSpec = specOf(kid, vertical ? 'height' : 'width');
-    const fFill = fSpec === 'fill' || (layout.align === 'stretch' && fSpec === 'hug');
-    if (vertical) {
-      const w = widthOf(kid, size, stretchT && specOf(kid, 'width') === 'hug');
-      const h =
-        typeof fSpec === 'number'
-          ? withMin(kid, 'height', fSpec)
-          : intrinsicHeight(kid, w.w, w.hug);
-      return { t: w.w, f: h, fFill, hugT: w.hug, hugF: typeof fSpec !== 'number' };
-    }
-    const w = widthOf(kid, null, false);
-    const tSpec = specOf(kid, 'height');
-    const fill = tSpec === 'fill' || (stretchT && tSpec === 'hug');
-    const h = fill
-      ? withMin(kid, 'height', size)
-      : typeof tSpec === 'number'
-        ? withMin(kid, 'height', tSpec)
-        : intrinsicHeight(kid, w.w, w.hug);
-    return { t: h, f: w.w, fFill, hugT: tSpec === 'hug' && !fill, hugF: w.hug };
+    cell: { track: number },
+    line: { top: number; extent: number },
+    info: GridKid,
+  ): KidRect => {
+    const f = info.fFill ? Math.max(line.extent, info.f) : info.f;
+    const alignF = layout.align === 'stretch' ? 'start' : layout.align;
+    const t = layout.justify === 'stretch' && info.hugT ? size : info.t;
+    const pos = {
+      t:
+        trackOffset(cell.track, size, layout.gap) +
+        alignInCell(layout.justify, size, info.t).pos,
+      f: line.top + alignInCell(alignF, line.extent, f).pos,
+    };
+    return gridKidRect(vertical, pos, { t, f }, info);
   };
 
   /** Arruma os filhos de um slot em grade num conteúdo `cw` × `ch` (nulo = o pai é `hug` nesse eixo). */
@@ -550,59 +632,32 @@ export function layoutScreen(
     const vertical = isVerticalGrid(layout);
     const content = vertical ? cw : ch;
     const count = trackCount(layout.grid ?? {}, content, layout.gap);
-    const order = kids.map((_, i) => i);
-    if (layout.reverse) order.reverse();
+    const order = gridOrder(kids.length, layout.reverse);
     const size =
       content === null
         ? maxOf(kids.map((kid) => gridNaturalTrack(kid, vertical)))
         : trackSize(content, count, layout.gap);
-    const sized = order.map((i) =>
-      gridKidSize(kids[i] as Prepared, layout, vertical, size),
-    );
-    const { cells, lines } = placeCells(
-      sized.map(() => 1),
+    const measure = vertical ? verticalGridKid : horizontalGridKid;
+    const sized = order.map((i) => measure(kids[i] as Prepared, layout, size));
+    const { cells, extents } = lineExtents(
+      sized.map((info) => info.f),
       count,
     );
-    const extents = Array.from({ length: lines }, () => 0);
-    for (const cell of cells)
-      extents[cell.line] = Math.max(extents[cell.line] ?? 0, sized[cell.index]?.f ?? 0);
     const stacked = stackLines(extents, layout.lineGap, false);
-    const rects: KidRect[] = kids.map(() => ({
-      x: 0,
-      y: 0,
-      w: 0,
-      h: 0,
-      hugW: false,
-      hugH: false,
-    }));
+    const rects: KidRect[] = kids.map(() =>
+      gridKidRect(true, ZERO_POS, ZERO_POS, EMPTY_KID),
+    );
     for (const cell of cells) {
-      const info = sized[cell.index] as (typeof sized)[number];
-      const extent = extents[cell.line] ?? 0;
-      const f = info.fFill ? Math.max(extent, info.f) : info.f;
-      const tPos =
-        trackOffset(cell.track, size, layout.gap) +
-        alignInCell(layout.justify, size, info.t).pos;
-      const fPos =
-        (stacked.tops[cell.line] ?? 0) +
-        alignInCell(layout.align === 'stretch' ? 'start' : layout.align, extent, f).pos;
-      const tSize = layout.justify === 'stretch' && info.hugT ? size : info.t;
-      rects[order[cell.index] as number] = vertical
-        ? {
-            x: tPos,
-            y: fPos,
-            w: tSize,
-            h: f,
-            hugW: info.hugT,
-            hugH: !info.fFill && info.hugF,
-          }
-        : {
-            x: fPos,
-            y: tPos,
-            w: f,
-            h: tSize,
-            hugW: !info.fFill && info.hugF,
-            hugH: info.hugT,
-          };
+      const line = { top: stacked.tops[cell.line] ?? 0, extent: extents[cell.line] ?? 0 };
+      const info = sized[cell.index] as GridKid;
+      rects[order[cell.index] as number] = placeGridCell(
+        layout,
+        vertical,
+        size,
+        cell,
+        line,
+        info,
+      );
     }
     const tracks = count * size + layout.gap * (count - 1);
     return vertical
@@ -619,7 +674,20 @@ export function layoutScreen(
     emit: boolean,
     owner = '',
   ): Arranged {
-    if (layout.type === 'grid') return arrangeGrid(kids, layout, cw, ch);
+    return layout.type === 'grid'
+      ? arrangeGrid(kids, layout, cw, ch)
+      : arrangeLinear(kids, layout, cw, ch, emit, owner);
+  }
+
+  /** `arrangeKids` de `row`, `column`, `none` e dos que quebram em linhas (`wrap`). */
+  function arrangeLinear(
+    kids: readonly Prepared[],
+    layout: ResolvedSlotLayout,
+    cw: number | null,
+    ch: number | null,
+    emit: boolean,
+    owner: string,
+  ): Arranged {
     if (layout.wrap !== 'none' && layout.type !== 'none')
       return arrangeWrapped(kids, layout, cw, ch, emit, owner);
     const n = kids.length;
