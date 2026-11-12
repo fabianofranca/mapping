@@ -10,7 +10,7 @@ import type {
   SizeSpec,
 } from './componentFormat';
 
-export const LAYOUT_TYPES: readonly LayoutType[] = ['none', 'row', 'column'];
+export const LAYOUT_TYPES: readonly LayoutType[] = ['none', 'row', 'column', 'grid'];
 export const LAYOUT_ALIGNS: readonly LayoutAlign[] = [
   'start',
   'center',
