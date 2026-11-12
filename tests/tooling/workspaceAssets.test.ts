@@ -217,7 +217,9 @@ describe('os workflows de release publicam os arquivos do workspace', () => {
       expect(job).toContain(
         'cp dist-mcp/mapping-signature.mjs dist-mcp/mapping-signature.mjs.sha256 release-assets/',
       );
-      expect(job).toContain('sha256sum mapping-signature.mjs > mapping-signature.mjs.sha256');
+      expect(job).toContain(
+        'sha256sum mapping-signature.mjs > mapping-signature.mjs.sha256',
+      );
       expect(job).toContain('node mapping-signature.mjs --help');
     }
   });

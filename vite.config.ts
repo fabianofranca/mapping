@@ -149,6 +149,18 @@ export default defineConfig({
         },
       },
       {
+        // Extrator de assinaturas (etapa #1079, S3): Node puro, como o servidor MCP.
+        test: {
+          name: 'signature',
+          environment: 'node',
+          env: testEnv,
+          include: ['tests/signature/**/*.test.ts'],
+          // Gera dist-mcp/mapping-signature.{js,mjs} uma vez: os testes da CLI rodam esses arquivos.
+          globalSetup: ['tests/signature/globalSetup.ts'],
+          testTimeout: 30_000,
+        },
+      },
+      {
         test: {
           name: 'app',
           environment: 'jsdom',
@@ -160,6 +172,7 @@ export default defineConfig({
           exclude: [
             'tests/model/**',
             'tests/mcp/**',
+            'tests/signature/**',
             'tests/build/**',
             'tests/viewer/react*.test.tsx',
             ...perfAppFiles,
