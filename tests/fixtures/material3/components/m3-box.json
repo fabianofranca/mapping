@@ -1,6 +1,6 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "m3-box",
   "name": "Box",
   "description": "Container livre do Compose: os filhos ficam onde o retângulo deles diz.",
@@ -59,7 +59,9 @@
           "bottom": 0
         },
         "layout": {
-          "type": "none"
+          "type": "none",
+          "align": "center",
+          "justify": "center"
         }
       }
     ]

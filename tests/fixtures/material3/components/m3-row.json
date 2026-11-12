@@ -1,6 +1,6 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "m3-row",
   "name": "Row",
   "description": "Container horizontal do Compose: os filhos se enfileiram pela ordem, com spacing e padding.",

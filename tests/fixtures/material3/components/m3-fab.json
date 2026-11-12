@@ -1,6 +1,6 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "m3-fab",
   "name": "FAB",
   "description": "Floating action button: 56 dp, forma large (16), primary container; extended com rótulo.",

@@ -1,6 +1,6 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "m3-card",
   "name": "Card",
   "description": "Card elevated, filled ou outlined; forma medium (12); headline, subhead, texto de apoio e espaço para ações.",

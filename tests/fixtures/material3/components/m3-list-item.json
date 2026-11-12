@@ -1,6 +1,6 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "m3-list-item",
   "name": "List item",
   "description": "Item de lista de uma ou duas linhas: avatar ou ícone à esquerda, headline, texto de apoio e ícone à direita.",
@@ -43,7 +43,7 @@
         "width": 40,
         "height": 40,
         "layout": {
-          "type": "row",
+          "type": "none",
           "align": "center",
           "justify": "center"
         },
@@ -149,7 +149,8 @@
             },
             "width": "fill"
           }
-        ]
+        ],
+        "weight": 1
       },
       {
         "type": "path",
