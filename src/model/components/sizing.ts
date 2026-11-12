@@ -2,7 +2,8 @@
  * Motor dos componentes (MC2, decisões 9 e 10 da #898): o `sizing` avaliado e o tamanho ajustado ao
  * conteúdo. O `sizing` de um eixo é literal (px, `"fill"` ou `"hug"`) ou, na v4, uma expressão
  * avaliada com os valores da instância (`$switch` pelo estilo, `$if` pelo campo…); valor que não dá
- * px ≥ 0, `fill` nem `hug` cai no `size` daquele eixo com o aviso `valor inválido em sizing.<eixo>`.
+ * px ≥ 0, `fill`, `hug`, `min-content` nem `max-content` cai no `size` daquele eixo com o aviso
+ * `valor inválido em sizing.<eixo>`.
  * Funções puras, sem DOM.
  */
 import { templateMessage } from '../messages';
@@ -12,11 +13,17 @@ import type {
   Expr,
   FieldValues,
   InstanceSizeSpec,
+  IntrinsicSize,
 } from './componentFormat';
 import { MIN_STORED_MARKING_SIZE } from '../geometry';
 import { evaluate } from './expressions';
 import { type InstantiateOptions, measureComponent } from './instantiate';
-import { describeValue, parseSizeSpec } from './layoutValues';
+import {
+  describeValue,
+  intrinsicModeOf,
+  isIntrinsicSize,
+  parseSizeSpec,
+} from './layoutValues';
 
 export type SizingAxis = 'width' | 'height';
 
@@ -38,7 +45,8 @@ export interface ResolvedSizing {
 function plainSpec(value: unknown): InstanceSizeSpec | undefined {
   const spec = parseSizeSpec(value);
   // O `sizing` não tem porcentagem (`"50%"`): é valor inválido.
-  return typeof spec === 'string' && spec !== 'fill' && spec !== 'hug' ? undefined : spec;
+  const known = spec === 'fill' || spec === 'hug' || isIntrinsicSize(spec);
+  return typeof spec === 'string' && !known ? undefined : spec;
 }
 
 /** O `sizing` do componente, avaliado com `values`; o eixo sem `sizing` vale o `size`. */
@@ -87,10 +95,13 @@ export function expressionPx(axis: ResolvedAxis): number | undefined {
     : undefined;
 }
 
-/** Os eixos que o `sizing` avaliado faz acompanhar o conteúdo (`hug`) ou a expressão (px). */
+/**
+ * Os eixos que o `sizing` avaliado faz acompanhar o conteúdo (`hug`, `min-content` ou `max-content`)
+ * ou a expressão (px).
+ */
 export function followedAxes(resolved: ResolvedSizing): Record<SizingAxis, boolean> {
   const follows = (a: ResolvedAxis): boolean =>
-    a.spec === 'hug' || expressionPx(a) !== undefined;
+    a.spec === 'hug' || isIntrinsicSize(a.spec) || expressionPx(a) !== undefined;
   return { width: follows(resolved.width), height: follows(resolved.height) };
 }
 
@@ -129,7 +140,18 @@ export function fitComponentSize(
   const given = (name: SizingAxis): number =>
     kinds[name] === 'px' ? (expressionPx(resolved[name]) as number) : base[name];
   const hug = { width: kinds.width === 'hug', height: kinds.height === 'hug' };
-  const measured = measureHug(component, values, hug, given, options, fit.maxWidth);
+  const modes = {
+    width: intrinsicOf(resolved.width),
+    height: intrinsicOf(resolved.height),
+  };
+  const measured = measureHug(
+    component,
+    values,
+    { hug, modes },
+    given,
+    options,
+    fit.maxWidth,
+  );
   const floor = (name: SizingAxis, value: number): number =>
     kinds[name] === 'keep'
       ? value
@@ -146,24 +168,43 @@ function axisSize(hug: boolean, given: number, measured: number | undefined): nu
   return hug && measured !== undefined ? ceilFit(measured) : given;
 }
 
-/** Mede o componente nos eixos `hug` (o eixo que não é `hug` vale o `given`); sem eixo `hug`, não mede. */
+/** A medida intrínseca que o `sizing` pede no eixo (`min-content`/`max-content`); nenhuma = `hug`. */
+function intrinsicOf(axis: ResolvedAxis): IntrinsicSize | null {
+  return intrinsicModeOf(axis.spec);
+}
+
+/** Os eixos medidos (`hug`) e, entre eles, os que pedem a medida intrínseca em vez do `hug`. */
+interface MeasuredAxes {
+  readonly hug: Record<SizingAxis, boolean>;
+  readonly modes: Record<SizingAxis, IntrinsicSize | null>;
+}
+
+/**
+ * Mede o componente nos eixos `hug` (o eixo que não é `hug` vale o `given`); sem eixo `hug`, não mede.
+ * `min-content`/`max-content` medem a raiz sem espaço limite: o `maxWidth` da medida só vale no `hug`.
+ */
 function measureHug(
   component: ComponentFile,
   values: FieldValues,
-  hug: Record<SizingAxis, boolean>,
+  { hug, modes }: MeasuredAxes,
   given: (name: SizingAxis) => number,
   options: InstantiateOptions,
   maxWidth?: number,
 ): { width: number; height: number; messages: readonly ModelMessage[] } | undefined {
   if (!hug.width && !hug.height) return undefined;
-  const height = hug.height ? null : given('height');
+  const height = hug.height ? modes.height : given('height');
   const free = measureComponent(
     component,
     values,
-    { width: hug.width ? null : given('width'), height },
+    { width: hug.width ? modes.width : given('width'), height },
     options,
   );
-  if (!hug.width || maxWidth === undefined || ceilFit(free.width) <= maxWidth) {
+  if (
+    !hug.width ||
+    modes.width !== null ||
+    maxWidth === undefined ||
+    ceilFit(free.width) <= maxWidth
+  ) {
     return free;
   }
   // A largura pedida não cabe: mede a altura para a largura que sobra.

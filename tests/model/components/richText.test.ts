@@ -22,6 +22,7 @@ import {
 import {
   layoutRuns,
   measureRichText,
+  minContentRuns,
   type RichBase,
   type RichRun,
 } from '../../../src/model/components/richText';
@@ -663,3 +664,41 @@ describe('component.schema.json: runs', () => {
 /** Surrogate sem par (alto sem baixo, ou baixo sem alto). */
 const LONE_SURROGATE =
   /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+
+describe('minContentRuns (L4, decisão 17 da #1078)', () => {
+  const font: MeasureFont = {
+    family: 'sans',
+    size: 10,
+    weight: 400,
+    italic: false,
+    lineHeight: 12,
+    letterSpacing: 0,
+  };
+  const base: RichBase = { size: 10, lineHeight: 12 };
+  const run = (text: string, extra: Partial<RichRun> = {}): RichRun => ({
+    text,
+    font,
+    ...extra,
+  });
+
+  it('é a palavra mais larga, e a palavra que atravessa trechos é uma só', () => {
+    const runs = [run('Pa'), run('gar'), run(' ab')];
+    expect(minContentRuns(runs, base, approximateMeasurer)).toBeCloseTo(5 * 5.5, 9);
+  });
+
+  it('o chip é atômico: vale a caixa inteira, texto com espaço e respiro', () => {
+    const runs = [run('ab '), run('cd ef', { chip: { padding: [2, 4] } })];
+    expect(minContentRuns(runs, base, approximateMeasurer)).toBeCloseTo(5 * 5.5 + 8, 9);
+  });
+
+  it('wrap none: a linha mais larga', () => {
+    const runs = [run('aa bb'), run('\ncc')];
+    expect(
+      minContentRuns(runs, { ...base, wrap: 'none' }, approximateMeasurer),
+    ).toBeCloseTo(5 * 5.5, 9);
+  });
+
+  it('sem trechos vale 0', () => {
+    expect(minContentRuns([], base, approximateMeasurer)).toBe(0);
+  });
+});

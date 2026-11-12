@@ -6,7 +6,12 @@ import {
   slotBoxOfScene,
   type ResolvedSlotLayout,
 } from './components/arrange';
-import type { ComponentFile, FieldValues } from './components/componentFormat';
+import type {
+  ComponentFile,
+  FieldValues,
+  IntrinsicSize,
+} from './components/componentFormat';
+import { intrinsicModeOf } from './components/layoutValues';
 import {
   expressionPx,
   fitComponentSize,
@@ -139,15 +144,21 @@ function ceilFit(value: number): number {
   return Math.ceil(value - 1e-6);
 }
 
-/** O que o `sizing` faz num eixo: medir o conteúdo (`hug`), dar um px por expressão, ou nada. */
+/**
+ * O que o `sizing` faz num eixo: medir o conteúdo (`hug`, `min-content` ou `max-content`; `mode` diz
+ * qual medida intrínseca, nenhuma = o `hug`), dar um px por expressão, ou nada.
+ */
 interface AxisPlan {
   readonly hug: boolean;
+  readonly mode: IntrinsicSize | null;
   readonly px: number | undefined;
 }
 
 function axisPlan(axis: ResolvedAxis, stretched: boolean): AxisPlan {
+  const intrinsic = intrinsicModeOf(axis.spec);
   return {
-    hug: axis.spec === 'hug' && !stretched,
+    hug: (axis.spec === 'hug' || intrinsic !== null) && !stretched,
+    mode: intrinsic,
     px: stretched ? undefined : expressionPx(axis),
   };
 }
@@ -166,18 +177,21 @@ function axisValue(
 }
 
 /**
- * Os eixos que o `measureComponent` recebe: o `hug` é medido (`null`); o outro vale o px que a
- * expressão dá, ou o que já tem. `undefined` quando nenhum eixo é `hug` (nada a medir).
+ * Os eixos que o `measureComponent` recebe: o `hug` é medido (`null`), o `min-content`/`max-content`
+ * pela medida intrínseca; o outro vale o px que a expressão dá, ou o que já tem. `undefined` quando
+ * nenhum eixo é medido (nada a medir).
  */
 function fixedSizes(
   rect: Rect,
   w: AxisPlan,
   h: AxisPlan,
-): { width: number | null; height: number | null } | undefined {
+):
+  | { width: number | IntrinsicSize | null; height: number | IntrinsicSize | null }
+  | undefined {
   if (!w.hug && !h.hug) return undefined;
   return {
-    width: w.hug ? null : (w.px ?? rect.width),
-    height: h.hug ? null : (h.px ?? rect.height),
+    width: w.hug ? w.mode : (w.px ?? rect.width),
+    height: h.hug ? h.mode : (h.px ?? rect.height),
   };
 }
 
@@ -190,7 +204,10 @@ function applySizing(
   sizing: ResolvedSizing,
   stretched: { readonly width: boolean; readonly height: boolean },
   min: { readonly width: number; readonly height: number } | undefined,
-  measure: (fixed: { width: number | null; height: number | null }) => {
+  measure: (fixed: {
+    width: number | IntrinsicSize | null;
+    height: number | IntrinsicSize | null;
+  }) => {
     width: number;
     height: number;
   },
@@ -206,7 +223,7 @@ function applySizing(
       width: axisValue(w, rect.width, measured.width, min?.width),
       height: axisValue(h, rect.height, measured.height, min?.height),
     },
-    hugW: w.hug,
+    hugW: w.hug && w.mode === null,
     hugH: h.hug,
   };
 }

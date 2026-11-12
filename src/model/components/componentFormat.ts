@@ -230,11 +230,17 @@ export interface FontSpec {
 // ---------------------------------------------------------------------------------------
 
 /**
- * Tamanho de um nó em um eixo: px fixos, `"fill"` (ocupa o que sobra no pai; em `row`/`column`
- * divide com os outros `fill`), `"hug"` (do conteúdo: texto medido, ou filhos) ou uma fração
- * do pai (`"50%"`).
+ * A medida intrínseca (v4, decisão 17 da #1078): `"min-content"` é o maior pedaço inquebrável
+ * (texto: a palavra mais larga) e `"max-content"` o tamanho sem quebrar (texto: a linha mais larga).
  */
-export type SizeSpec = number | 'fill' | 'hug' | `${number}%`;
+export type IntrinsicSize = 'min-content' | 'max-content';
+
+/**
+ * Tamanho de um nó em um eixo: px fixos, `"fill"` (ocupa o que sobra no pai; em `row`/`column`
+ * divide com os outros `fill`), `"hug"` (do conteúdo: texto medido, ou filhos), uma fração
+ * do pai (`"50%"`) ou, na v4, `"min-content"`/`"max-content"` (`IntrinsicSize`).
+ */
+export type SizeSpec = number | 'fill' | 'hug' | IntrinsicSize | `${number}%`;
 
 /**
  * Âncoras no pai com `layout: none`: distância da borda, como as constraints do Figma. Na
@@ -580,10 +586,11 @@ export type TemplateNode =
 /**
  * Como a instância se dimensiona quando chega **sem retângulo** (tela a partir de um JSON
  * externo, arrumada por `layoutScreen` em `layout.ts`): px fixos, `"fill"` (ocupa o espaço que
- * o pai dá nesse eixo) ou `"hug"` (do conteúdo: o template medido, ou os filhos do slot). Eixo
- * ausente = px de `size`. Não vale para instâncias com retângulo (editor, `*.screen.json`).
+ * o pai dá nesse eixo), `"hug"` (do conteúdo: o template medido, ou os filhos do slot) ou, na v4,
+ * `"min-content"`/`"max-content"` (a medida intrínseca). Eixo ausente = px de `size`. Não vale para
+ * instâncias com retângulo (editor, `*.screen.json`).
  */
-export type InstanceSizeSpec = number | 'fill' | 'hug';
+export type InstanceSizeSpec = number | 'fill' | 'hug' | IntrinsicSize;
 
 /**
  * `sizing` por eixo: o valor literal ou, na v4, uma expressão que dá número ≥ 0, `"fill"` ou `"hug"`,

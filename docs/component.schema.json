@@ -2146,14 +2146,14 @@
       ]
     },
     "size": {
-      "description": "Tamanho de nó: px, \"fill\", \"hug\" ou \"NN%\".",
+      "description": "Tamanho de nó: px, \"fill\", \"hug\", \"min-content\", \"max-content\" (formatVersion 4) ou \"NN%\".",
       "anyOf": [
         {
           "type": "number",
           "minimum": 0
         },
         {
-          "enum": ["fill", "hug"]
+          "enum": ["fill", "hug", "min-content", "max-content"]
         },
         {
           "type": "string",
@@ -2177,7 +2177,7 @@
       }
     },
     "sizing": {
-      "description": "Dimensionamento sem retângulo. Cada eixo: px (>= 0), \"fill\", \"hug\" ou, na formatVersion 4, uma expressão que dá um deles, avaliada com os valores da instância ($size e $lines não valem aqui; % e $token o parseComponent recusa).",
+      "description": "Dimensionamento sem retângulo. Cada eixo: px (>= 0), \"fill\", \"hug\", \"min-content\", \"max-content\" (formatVersion 4) ou, na formatVersion 4, uma expressão que dá um deles, avaliada com os valores da instância ($size e $lines não valem aqui; % e $token o parseComponent recusa).",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -3774,7 +3774,7 @@
       ]
     },
     "expr_size": {
-      "description": "Tamanho de nó: literal (px, \"fill\", \"hug\" ou \"NN%\") ou expressão ($field, $if, $switch, $concat, $token). A expressão vale a partir da formatVersion 4 (numa 1, 2 ou 3 o parseComponent recusa com 'só é permitido com formatVersion 4').",
+      "description": "Tamanho de nó: literal (px, \"fill\", \"hug\", \"min-content\", \"max-content\" ou \"NN%\") ou expressão ($field, $if, $switch, $concat, $token). A expressão vale a partir da formatVersion 4 (numa 1, 2 ou 3 o parseComponent recusa com 'só é permitido com formatVersion 4').",
       "anyOf": [
         {
           "$ref": "#/$defs/size"

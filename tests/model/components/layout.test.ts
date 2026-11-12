@@ -1018,3 +1018,126 @@ describe('layoutScreen: wrap', () => {
     expect([0, 1, 2].map((i) => boxOf(result, `k${i}`).y)).toEqual([0, 0, 0]);
   });
 });
+
+// --- min-content e max-content no sizing (L4, decisão 17 da #1078) ---------------------------------
+
+describe('layoutScreen: sizing min-content e max-content', () => {
+  /** Um rótulo (formatVersion 4) de duas palavras: 10 + 1 + 5 caracteres (88 px; a mais larga, 55 px). */
+  function sentence(id: string, sizing: Sizing) {
+    return component(
+      id,
+      {
+        children: [
+          {
+            type: 'text',
+            text: { $field: 'text' },
+            width: 'fill',
+            font: { size: 10, lineHeight: 12 },
+            anchors: { left: 0, right: 0, top: 0 },
+          },
+        ],
+      },
+      { formatVersion: 4, sizing },
+    );
+  }
+
+  const intrinsic: ComponentFile[] = [
+    container('col', 'column'),
+    sentence('s-hug', { width: 'hug', height: 'hug' }),
+    sentence('s-max', { width: 'max-content', height: 'hug' }),
+    sentence('s-min', { width: 'min-content', height: 'hug' }),
+    component(
+      'wrap-min',
+      {
+        children: [
+          {
+            type: 'slot',
+            anchors: { left: 0, right: 0, top: 0, bottom: 0 },
+            layout: { type: 'row', wrap: 'wrap', gap: 0 },
+          },
+        ],
+      },
+      { formatVersion: 4, sizing: { width: 'min-content', height: 'hug' } },
+    ),
+  ];
+  const lib = build(intrinsic, {
+    ...SPEC,
+    id: 'layout-intrinsic',
+    layers: [
+      {
+        id: 'ui',
+        name: 'UI',
+        color: '#1E88E5',
+        annotationTypes: intrinsic.map((c) => ({
+          id: c.id,
+          name: c.id,
+          component: `components/${c.id}.json`,
+          fields: [],
+        })),
+      },
+    ],
+  });
+  const TEXT = `${TEN} BBBBB`;
+  const widthOf = (typeId: string, screenWidth: number) =>
+    boxOf(
+      run(
+        [root(node('c', 'col', {}, [node('b', typeId, { text: TEXT })]))],
+        screenWidth,
+        600,
+        lib,
+      ),
+      'b',
+    ).width;
+
+  it('a biblioteca de teste carrega sem problemas', () => {
+    expect(lib.problems).toEqual([]);
+  });
+
+  it('max-content não quebra, mesmo numa tela mais estreita que o texto; o hug se limita a ela', () => {
+    expect(widthOf('s-max', 40)).toBeCloseTo(16 * 5.5, 9);
+    expect(widthOf('s-hug', 40)).toBe(40);
+  });
+
+  it('min-content é a palavra mais larga', () => {
+    expect(widthOf('s-min', 300)).toBeCloseTo(10 * 5.5, 9);
+  });
+
+  it('a altura acompanha a largura: min-content quebra em duas linhas', () => {
+    const result = run(
+      [root(node('c', 'col', {}, [node('b', 's-min', { text: TEXT })]))],
+      300,
+      600,
+      lib,
+    );
+    expect(boxOf(result, 'b').height).toBe(24);
+  });
+
+  it('um slot com wrap em min-content vale o maior filho, não a soma', () => {
+    const result = run(
+      [
+        root(
+          node('c', 'col', {}, [
+            node('w', 'wrap-min', {}, [
+              node('k1', 's-hug', { text: TEXT }),
+              node('k2', 's-hug', { text: TEXT }),
+            ]),
+          ]),
+        ),
+      ],
+      300,
+      600,
+      lib,
+    );
+    expect(boxOf(result, 'w').width).toBeCloseTo(10 * 5.5, 9);
+  });
+
+  it('uma raiz ancorada também mede o sizing intrínseco', () => {
+    const result = run(
+      [root(node('b', 's-max', { text: TEXT }), { anchor: 'top-start' })],
+      40,
+      600,
+      lib,
+    );
+    expect(boxOf(result, 'b').width).toBeCloseTo(16 * 5.5, 9);
+  });
+});
