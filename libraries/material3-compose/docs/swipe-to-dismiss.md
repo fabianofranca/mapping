@@ -66,7 +66,7 @@ O desenho mostra o estado do deslize: em repouso (`Settled`) só o item; em `Sta
 
 ## Fidelidade
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). A unidade é a de sempre: 1 dp = 1 px do componente. Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte, raio ou opacidade de cor fica literal no componente e nenhum nó de texto declara `family` (todos herdam `font-sans`). O `SwipeToDismissBox` só define o gesto e o recuo (`positionalThreshold` de 56): o fundo revelado e o item são do app, e o desenho os ilustra com os tokens do Material (o item é um `ListItem`, o fundo usa os papéis `container` do Material).
+Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte, raio ou opacidade de cor fica literal no componente e nenhum nó de texto declara `family` (todos herdam `font-sans`). O `SwipeToDismissBox` só define o gesto e o recuo (`positionalThreshold` de 56): o fundo revelado e o item são do app, e o desenho os ilustra com os tokens do Material (o item é um `ListItem`, o fundo usa os papéis `container` do Material).
 
 **Arquivos usados**
 

@@ -12,3 +12,5 @@
 ## Alterado
 
 - Teto do `dist/index.html` subiu 16 KiB, de 2.097.152 para 2.113.536, pela regra do orçamento.
+- Material 3 (Compose) na versão 10 (#1085, D3): a Fidelidade dos 50 documentos diz "1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem" (antes, "1 dp = 1 px do componente"). Aditiva, sem passo novo em `migrations` (os trechos `from → to` existentes passam a terminar na 10). Pacote `examples/material3-compose.zip`, exemplo completo e guia regenerados.
+- Roteiros: o `docs/TESTING.md` fala do schema v19 e, no R3.14 a R3.17, a cadeia do Material 3 passa a `mat-v11` a `mat-v14` (a biblioteca está na versão 10); o R17 ganha o R17.39 (o `button` de 174 × 120 num container 3x igual ao de 58 × 40 a `zoom` 3) e o R17.40 (`component-overflow` com `density` 3 e `container-density` com 12).
