@@ -60,7 +60,7 @@ export const componentMessages = {
     'esperava número, lista de 2 ou lista de 4 números (maiores ou iguais a 0)',
   'component.expectedGap':
     'esperava número ou lista [vertical, horizontal] de números (maiores ou iguais a 0)',
-  'component.expectedLayoutFlow': 'esperava "none", "row" ou "column"',
+  'component.expectedLayoutFlow': 'esperava "none", "row", "column" ou "grid"',
   'component.expectedViewBox': 'esperava [largura, altura] com números positivos',
   // Texto e nós
   'component.expectedRunObject': 'esperava objeto (trecho)',
@@ -104,6 +104,19 @@ export const componentMessages = {
   'component.sizingNoSize': '$size não vale em sizing',
   'component.sizingNoLines': '$lines não vale em sizing',
   'component.onlyWithWrap': 'só vale com wrap',
+  // Grade, pesos e repeat.layout (etapa #1078, L3)
+  'component.gridTracksExactlyOne':
+    'layout: informe exatamente uma entre columns, minColumnWidth, rows e minRowHeight',
+  'component.expectedGreaterThanZero': 'esperava número maior que 0',
+  'component.trackOnlyGrid': 'só vale em layout grid',
+  'component.notInGrid': 'não vale em layout grid',
+  'component.spanOnlyInGrid': 'span: só vale em filho de layout grid',
+  'component.weightOnlyFill':
+    'weight: só vale em filho fill no eixo principal de row ou column',
+  'component.repeatLayoutConflict': 'repeat.layout: não combina com direction nem gap',
+  'component.distributeNotGrid': 'distribute: não vale com layout grid',
+  'component.repeatLayoutUseKey': 'repeat.layout: a chave vai dentro de layout ({key})',
+  'component.repeatLayoutNotNone': 'repeat.layout: use row, column ou grid',
   // Versão do formato
   'component.v4Only': 'só é permitido com formatVersion 4',
   'component.indexOnlyInRepeat': '$index só vale dentro de um repeat',

@@ -2429,7 +2429,7 @@
       }
     },
     "layout": {
-      "description": "Distribuição dos filhos: none (âncoras), row ou column. Na formatVersion 4, type, align e justify aceitam expressão, justify também space-around e space-evenly, reverse inverte a ordem dos filhos no eixo principal (o start passa a ser o fim) e wrap (none, wrap ou wrap-reverse), lineGap, maxPerLine e maxLines quebram a fileira em linhas (lineGap, maxPerLine e maxLines só valem com wrap, o que o schema não confere: é do parseComponent); com type literal \"none\" só type, align e justify valem (formatVersion 4; align é o eixo vertical e justify o horizontal, com start, center, end ou stretch; o schema não confere a versão: isso é do parseComponent).",
+      "description": "Distribuição dos filhos: none (âncoras), row, column ou grid. Na formatVersion 4, type, align e justify aceitam expressão, justify também space-around e space-evenly, reverse inverte a ordem dos filhos no eixo principal (o start passa a ser o fim) e wrap (none, wrap ou wrap-reverse), lineGap, maxPerLine e maxLines quebram a fileira em linhas (lineGap, maxPerLine e maxLines só valem com wrap, o que o schema não confere: é do parseComponent); com type literal \"grid\" (formatVersion 4; o schema não confere a versão nem que exatamente uma das quatro trilhas columns, minColumnWidth, rows e minRowHeight está presente, nem que as chaves de trilha só valem em grid: isso é do parseComponent) valem gap, lineGap, padding, align e justify (start, center, end ou stretch, na célula), reverse e uma trilha: columns e rows (inteiro maior ou igual a 1) ou minColumnWidth e minRowHeight (número maior que 0); wrap, maxPerLine e maxLines não valem na grade; com type literal \"none\" só type, align e justify valem (formatVersion 4; align é o eixo vertical e justify o horizontal, com start, center, end ou stretch; o schema não confere a versão: isso é do parseComponent).",
       "anyOf": [
         {
           "type": "object",
@@ -2444,6 +2444,46 @@
             },
             "justify": {
               "$ref": "#/$defs/expr_noneAlign"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type"],
+          "properties": {
+            "type": {
+              "const": "grid"
+            },
+            "gap": {
+              "$ref": "#/$defs/expr_nonNegative"
+            },
+            "lineGap": {
+              "$ref": "#/$defs/expr_nonNegative"
+            },
+            "padding": {
+              "$ref": "#/$defs/expr_padding"
+            },
+            "align": {
+              "$ref": "#/$defs/expr_noneAlign"
+            },
+            "justify": {
+              "$ref": "#/$defs/expr_noneAlign"
+            },
+            "reverse": {
+              "$ref": "#/$defs/expr_boolean"
+            },
+            "columns": {
+              "$ref": "#/$defs/expr_positiveInteger"
+            },
+            "minColumnWidth": {
+              "$ref": "#/$defs/expr_positiveNumber"
+            },
+            "rows": {
+              "$ref": "#/$defs/expr_positiveInteger"
+            },
+            "minRowHeight": {
+              "$ref": "#/$defs/expr_positiveNumber"
             }
           }
         },
@@ -2481,6 +2521,18 @@
             },
             "maxLines": {
               "$ref": "#/$defs/expr_positiveInteger"
+            },
+            "columns": {
+              "$ref": "#/$defs/expr_positiveInteger"
+            },
+            "minColumnWidth": {
+              "$ref": "#/$defs/expr_positiveNumber"
+            },
+            "rows": {
+              "$ref": "#/$defs/expr_positiveInteger"
+            },
+            "minRowHeight": {
+              "$ref": "#/$defs/expr_positiveNumber"
             }
           }
         }
@@ -2523,6 +2575,14 @@
         },
         "maxHeight": {
           "$ref": "#/$defs/expr_nonNegative"
+        },
+        "span": {
+          "description": "formatVersion 4: quantas trilhas o filho ocupa numa grade (inteiro maior ou igual a 1, padrão 1); o literal só vale em filho de layout grid, o que o schema não confere: é do parseComponent.",
+          "$ref": "#/$defs/expr_positiveInteger"
+        },
+        "weight": {
+          "description": "formatVersion 4: peso do filho fill no eixo principal de row ou column (número maior que 0, padrão 1); o que sobra é repartido na proporção dos pesos. O literal só vale em filho fill no eixo principal, o que o schema não confere: é do parseComponent.",
+          "$ref": "#/$defs/expr_positiveNumber"
         },
         "anchors": {
           "$ref": "#/$defs/anchors"
@@ -2592,6 +2652,14 @@
         "maxHeight": {
           "$ref": "#/$defs/expr_nonNegative"
         },
+        "span": {
+          "description": "formatVersion 4: quantas trilhas o filho ocupa numa grade (inteiro maior ou igual a 1, padrão 1); o literal só vale em filho de layout grid, o que o schema não confere: é do parseComponent.",
+          "$ref": "#/$defs/expr_positiveInteger"
+        },
+        "weight": {
+          "description": "formatVersion 4: peso do filho fill no eixo principal de row ou column (número maior que 0, padrão 1); o que sobra é repartido na proporção dos pesos. O literal só vale em filho fill no eixo principal, o que o schema não confere: é do parseComponent.",
+          "$ref": "#/$defs/expr_positiveNumber"
+        },
         "anchors": {
           "$ref": "#/$defs/anchors"
         },
@@ -2646,6 +2714,14 @@
         },
         "maxHeight": {
           "$ref": "#/$defs/expr_nonNegative"
+        },
+        "span": {
+          "description": "formatVersion 4: quantas trilhas o filho ocupa numa grade (inteiro maior ou igual a 1, padrão 1); o literal só vale em filho de layout grid, o que o schema não confere: é do parseComponent.",
+          "$ref": "#/$defs/expr_positiveInteger"
+        },
+        "weight": {
+          "description": "formatVersion 4: peso do filho fill no eixo principal de row ou column (número maior que 0, padrão 1); o que sobra é repartido na proporção dos pesos. O literal só vale em filho fill no eixo principal, o que o schema não confere: é do parseComponent.",
+          "$ref": "#/$defs/expr_positiveNumber"
         },
         "anchors": {
           "$ref": "#/$defs/anchors"
@@ -2710,6 +2786,14 @@
         },
         "maxHeight": {
           "$ref": "#/$defs/expr_nonNegative"
+        },
+        "span": {
+          "description": "formatVersion 4: quantas trilhas o filho ocupa numa grade (inteiro maior ou igual a 1, padrão 1); o literal só vale em filho de layout grid, o que o schema não confere: é do parseComponent.",
+          "$ref": "#/$defs/expr_positiveInteger"
+        },
+        "weight": {
+          "description": "formatVersion 4: peso do filho fill no eixo principal de row ou column (número maior que 0, padrão 1); o que sobra é repartido na proporção dos pesos. O literal só vale em filho fill no eixo principal, o que o schema não confere: é do parseComponent.",
+          "$ref": "#/$defs/expr_positiveNumber"
         },
         "anchors": {
           "$ref": "#/$defs/anchors"
@@ -2796,6 +2880,14 @@
         "maxHeight": {
           "$ref": "#/$defs/expr_nonNegative"
         },
+        "span": {
+          "description": "formatVersion 4: quantas trilhas o filho ocupa numa grade (inteiro maior ou igual a 1, padrão 1); o literal só vale em filho de layout grid, o que o schema não confere: é do parseComponent.",
+          "$ref": "#/$defs/expr_positiveInteger"
+        },
+        "weight": {
+          "description": "formatVersion 4: peso do filho fill no eixo principal de row ou column (número maior que 0, padrão 1); o que sobra é repartido na proporção dos pesos. O literal só vale em filho fill no eixo principal, o que o schema não confere: é do parseComponent.",
+          "$ref": "#/$defs/expr_positiveNumber"
+        },
         "anchors": {
           "$ref": "#/$defs/anchors"
         },
@@ -2865,6 +2957,14 @@
         },
         "maxHeight": {
           "$ref": "#/$defs/expr_nonNegative"
+        },
+        "span": {
+          "description": "formatVersion 4: quantas trilhas o filho ocupa numa grade (inteiro maior ou igual a 1, padrão 1); o literal só vale em filho de layout grid, o que o schema não confere: é do parseComponent.",
+          "$ref": "#/$defs/expr_positiveInteger"
+        },
+        "weight": {
+          "description": "formatVersion 4: peso do filho fill no eixo principal de row ou column (número maior que 0, padrão 1); o que sobra é repartido na proporção dos pesos. O literal só vale em filho fill no eixo principal, o que o schema não confere: é do parseComponent.",
+          "$ref": "#/$defs/expr_positiveNumber"
         },
         "anchors": {
           "$ref": "#/$defs/anchors"
@@ -2971,6 +3071,14 @@
         "maxHeight": {
           "$ref": "#/$defs/expr_nonNegative"
         },
+        "span": {
+          "description": "formatVersion 4: quantas trilhas o filho ocupa numa grade (inteiro maior ou igual a 1, padrão 1); o literal só vale em filho de layout grid, o que o schema não confere: é do parseComponent.",
+          "$ref": "#/$defs/expr_positiveInteger"
+        },
+        "weight": {
+          "description": "formatVersion 4: peso do filho fill no eixo principal de row ou column (número maior que 0, padrão 1); o que sobra é repartido na proporção dos pesos. O literal só vale em filho fill no eixo principal, o que o schema não confere: é do parseComponent.",
+          "$ref": "#/$defs/expr_positiveNumber"
+        },
         "anchors": {
           "$ref": "#/$defs/anchors"
         },
@@ -3032,6 +3140,14 @@
         },
         "maxHeight": {
           "$ref": "#/$defs/expr_nonNegative"
+        },
+        "span": {
+          "description": "formatVersion 4: quantas trilhas o filho ocupa numa grade (inteiro maior ou igual a 1, padrão 1); o literal só vale em filho de layout grid, o que o schema não confere: é do parseComponent.",
+          "$ref": "#/$defs/expr_positiveInteger"
+        },
+        "weight": {
+          "description": "formatVersion 4: peso do filho fill no eixo principal de row ou column (número maior que 0, padrão 1); o que sobra é repartido na proporção dos pesos. O literal só vale em filho fill no eixo principal, o que o schema não confere: é do parseComponent.",
+          "$ref": "#/$defs/expr_positiveNumber"
         },
         "anchors": {
           "$ref": "#/$defs/anchors"
@@ -3118,6 +3234,14 @@
         "maxHeight": {
           "$ref": "#/$defs/expr_nonNegative"
         },
+        "span": {
+          "description": "formatVersion 4: quantas trilhas o filho ocupa numa grade (inteiro maior ou igual a 1, padrão 1); o literal só vale em filho de layout grid, o que o schema não confere: é do parseComponent.",
+          "$ref": "#/$defs/expr_positiveInteger"
+        },
+        "weight": {
+          "description": "formatVersion 4: peso do filho fill no eixo principal de row ou column (número maior que 0, padrão 1); o que sobra é repartido na proporção dos pesos. O literal só vale em filho fill no eixo principal, o que o schema não confere: é do parseComponent.",
+          "$ref": "#/$defs/expr_positiveNumber"
+        },
         "anchors": {
           "$ref": "#/$defs/anchors"
         },
@@ -3129,6 +3253,10 @@
         },
         "gap": {
           "$ref": "#/$defs/expr_nonNegative"
+        },
+        "layout": {
+          "description": "formatVersion 4: o layout completo do quadro gerado (row, column ou grid) no lugar de direction e gap; não combina com direction nem gap, e distribute fill não vale com grid (o schema não confere: é do parseComponent).",
+          "$ref": "#/$defs/layout"
         },
         "wrap": {
           "$ref": "#/$defs/expr_layoutWrap"
@@ -3472,7 +3600,7 @@
       ]
     },
     "lit_layoutType": {
-      "enum": ["none", "row", "column"]
+      "enum": ["none", "row", "column", "grid"]
     },
     "lit_layoutFlow": {
       "enum": ["row", "column"]
@@ -3846,6 +3974,10 @@
       "type": "integer",
       "minimum": 1
     },
+    "lit_positiveNumber": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
     "expr_wrap": {
       "description": "Literal ou expressão ($field, $if, $switch, $concat).",
       "anyOf": [
@@ -4022,6 +4154,103 @@
             },
             "default": {
               "$ref": "#/$defs/expr_positiveInteger"
+            }
+          }
+        }
+      ]
+    },
+    "expr_positiveNumber": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_positiveNumber"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_positiveNumber"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_positiveNumber"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_positiveNumber"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_positiveNumber"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_positiveNumber"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
+            }
+          }
+        },
+        {
+          "$ref": "#/$defs/numericOps"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$provided"],
+          "properties": {
+            "$provided": {
+              "description": "Nome de uma cor ou valor oferecido por um ancestral (formatVersion 4): vale o do ancestral mais próximo que oferece o nome; sem ancestral, vale o default.",
+              "type": "string",
+              "minLength": 1
+            },
+            "default": {
+              "$ref": "#/$defs/expr_positiveNumber"
             }
           }
         }

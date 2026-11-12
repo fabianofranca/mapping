@@ -252,7 +252,7 @@ export interface Anchors {
 }
 
 /** Tipo de layout de um quadro ou slot. */
-export type LayoutType = 'none' | 'row' | 'column';
+export type LayoutType = 'none' | 'row' | 'column' | 'grid';
 export type LayoutAlign = 'start' | 'center' | 'end' | 'stretch' | 'baseline';
 export type LayoutJustify =
   | 'start'
@@ -305,6 +305,17 @@ export interface LayoutSpec {
   readonly maxPerLine?: Expr<number>;
   /** Linhas, no máximo (v4; só com `wrap`; inteiro ≥ 1): os filhos além da última não são desenhados. */
   readonly maxLines?: Expr<number>;
+  /**
+   * Grade (`type: "grid"`, v4; exatamente uma das quatro trilhas, números ou expressão): `columns`
+   * (inteiro ≥ 1) é o `GridCells.Fixed` do Compose e o `repeat(n, 1fr)` do CSS; `minColumnWidth`
+   * (> 0) o `GridCells.Adaptive` e o `repeat(auto-fit, minmax(x, 1fr))`; `rows` e `minRowHeight` os
+   * mesmos na grade horizontal (que preenche colunas, o `LazyHorizontalGrid`). O `gap` fica entre
+   * as trilhas e o `lineGap` entre as linhas de fluxo.
+   */
+  readonly columns?: Expr<number>;
+  readonly minColumnWidth?: Expr<number>;
+  readonly rows?: Expr<number>;
+  readonly minRowHeight?: Expr<number>;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -334,6 +345,17 @@ interface TemplateNodeBase {
   readonly maxWidth?: Expr<number>;
   readonly minHeight?: Expr<number>;
   readonly maxHeight?: Expr<number>;
+  /**
+   * Trilhas que o nó ocupa num pai `layout: grid` (v4; inteiro ≥ 1, expressão; limitado ao número
+   * de trilhas; padrão 1), como o `GridItemSpan` do Compose e o `grid-column: span n` do CSS.
+   */
+  readonly span?: Expr<number>;
+  /**
+   * Peso do nó `fill` no eixo principal de um pai `row`/`column` (v4; número > 0, expressão; padrão
+   * 1): o que sobra é repartido na proporção dos pesos, como o `Modifier.weight` do Compose e o
+   * `flex-grow` do CSS.
+   */
+  readonly weight?: Expr<number>;
   /** Só com pai `layout: none`. */
   readonly anchors?: Anchors;
   readonly fill?: Expr<FillSpec>;
@@ -479,6 +501,12 @@ export interface RepeatTemplate extends TemplateNodeBase {
    * `hug` no eixo das linhas.
    */
   readonly distribute?: 'none' | 'fill';
+  /**
+   * `formatVersion` 4: o layout das linhas (`row`, `column` ou `grid`, completo) no lugar de
+   * `direction` + `gap`; os dois juntos não valem. Sem ele, nada muda. `distribute: "fill"` não
+   * combina com `grid`.
+   */
+  readonly layout?: LayoutSpec;
   /**
    * `formatVersion` 4: quebra do `repeat` em linha (`direction: "row"`; em `column`, as colunas), com
    * o mesmo sentido de `layout.wrap`, `lineGap`, `maxPerLine` e `maxLines` de um quadro (o `repeat`

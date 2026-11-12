@@ -82,7 +82,7 @@ export const componentEnUS: {
     'expected a number, a list of 2 or a list of 4 numbers (greater than or equal to 0)',
   'model.component.expectedGap':
     'expected a number or a list [vertical, horizontal] of numbers (greater than or equal to 0)',
-  'model.component.expectedLayoutFlow': 'expected "none", "row" or "column"',
+  'model.component.expectedLayoutFlow': 'expected "none", "row", "column" or "grid"',
   'model.component.expectedViewBox': 'expected [width, height] with positive numbers',
   'model.component.expectedRunObject': 'expected an object (run)',
   'model.component.expectedRuns': 'expected a non-empty list of runs',
@@ -111,6 +111,20 @@ export const componentEnUS: {
   'model.component.sizingNoSize': '$size is not valid in sizing',
   'model.component.sizingNoLines': '$lines is not valid in sizing',
   'model.component.onlyWithWrap': 'only valid with wrap',
+  'model.component.gridTracksExactlyOne':
+    'layout: give exactly one of columns, minColumnWidth, rows and minRowHeight',
+  'model.component.expectedGreaterThanZero': 'expected a number greater than 0',
+  'model.component.trackOnlyGrid': 'only valid in a grid layout',
+  'model.component.notInGrid': 'not valid in a grid layout',
+  'model.component.spanOnlyInGrid': 'span: only valid on a child of a grid layout',
+  'model.component.weightOnlyFill':
+    'weight: only valid on a fill child on the main axis of a row or column',
+  'model.component.repeatLayoutConflict':
+    'repeat.layout: does not combine with direction or gap',
+  'model.component.distributeNotGrid': 'distribute: not valid with a grid layout',
+  'model.component.repeatLayoutUseKey':
+    'repeat.layout: the key goes inside layout ({key})',
+  'model.component.repeatLayoutNotNone': 'repeat.layout: use row, column or grid',
   'model.component.v4Only': 'only allowed with formatVersion 4',
   'model.component.indexOnlyInRepeat': '$index is only valid inside a repeat',
   'model.component.repeatOnlyV2': 'the repeat node only exists in formatVersion 2',

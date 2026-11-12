@@ -317,6 +317,8 @@ export const BASE_KEYS = [
   'maxWidth',
   'minHeight',
   'maxHeight',
+  'span',
+  'weight',
 ] as const;
 /** Chaves de cada tipo de nó, além das comuns. */
 export const EXTRA_KEYS: Record<(typeof NODE_TYPES)[number], readonly string[]> = {
@@ -332,6 +334,7 @@ export const EXTRA_KEYS: Record<(typeof NODE_TYPES)[number], readonly string[]> 
     'direction',
     'gap',
     'distribute',
+    'layout',
     'wrap',
     'lineGap',
     'maxPerLine',
@@ -354,6 +357,8 @@ export const REPEAT_BASE_KEYS = [
   'maxWidth',
   'minHeight',
   'maxHeight',
+  'span',
+  'weight',
 ];
 
 const ANCHOR_KEYS = ['left', 'right', 'top', 'bottom', 'centerX', 'centerY'] as const;

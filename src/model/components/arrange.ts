@@ -23,6 +23,8 @@ import {
   LAYOUT_JUSTIFIES,
   LAYOUT_TYPES,
   LAYOUT_WRAPS,
+  NONE_ALIGNS,
+  NONE_JUSTIFIES,
   allowedValue,
   justifySpacing,
   mirrorMain,
@@ -38,10 +40,30 @@ import type { Library, TypeDef } from './library';
 import { type Instance, type Screen, childrenOf, renderOrder, updateBox } from './screen';
 import { type FrameNode, absoluteBoxes, walk } from './scene';
 import { applyTokens, resolveTokens } from './tokens';
+import {
+  alignInCell,
+  placeCells,
+  trackCount,
+  trackOffset,
+  trackSize,
+} from './gridLayout';
 import { breakLines, stackLines } from './wrapLines';
 
+/**
+ * As trilhas da grade (`layout.type: "grid"`): `count` (`columns`/`rows`) ou `min`
+ * (`minColumnWidth`/`minRowHeight`); `vertical` preenche linhas (as trilhas são colunas),
+ * `horizontal` preenche colunas (as trilhas são linhas).
+ */
+export interface ResolvedGrid {
+  readonly count?: number | undefined;
+  readonly min?: number | undefined;
+  readonly orientation: 'vertical' | 'horizontal';
+}
+
 export interface ResolvedSlotLayout {
-  readonly type: 'none' | 'row' | 'column';
+  readonly type: 'none' | 'row' | 'column' | 'grid';
+  /** Só `grid`: as trilhas. */
+  readonly grid?: ResolvedGrid | undefined;
   readonly gap: number;
   readonly padding: Padding;
   readonly align: LayoutAlign;
@@ -140,6 +162,34 @@ function resolveWrap(
   };
 }
 
+/** O número de trilhas de uma chave `columns`/`rows` (inteiro ≥ 1) ou o mínimo de `min…` (> 0). */
+function gridKey(
+  expr: Expr<number> | undefined,
+  values: FieldValues,
+  integer: boolean,
+): number | null | undefined {
+  if (expr === undefined) return undefined;
+  const n = toNumber(evaluate<unknown>(expr as Expr<unknown>, values, undefined), NaN);
+  if (integer) return Number.isInteger(n) && n >= 1 ? n : null;
+  return n > 0 && Number.isFinite(n) ? n : null;
+}
+
+/** As trilhas da grade; a chave inválida (ou nenhuma) cai em uma trilha da orientação dela. */
+function resolveGrid(layout: LayoutSpec, values: FieldValues): ResolvedGrid {
+  const keys = [
+    { expr: layout.columns, integer: true, vertical: true, min: false },
+    { expr: layout.minColumnWidth, integer: false, vertical: true, min: true },
+    { expr: layout.rows, integer: true, vertical: false, min: false },
+    { expr: layout.minRowHeight, integer: false, vertical: false, min: true },
+  ];
+  const key = keys.find((k) => k.expr !== undefined);
+  const orientation = key?.vertical === false ? 'horizontal' : 'vertical';
+  if (key === undefined) return { count: 1, orientation };
+  const value = gridKey(key.expr, values, key.integer);
+  if (value === null || value === undefined) return { count: 1, orientation };
+  return key.min ? { min: value, orientation } : { count: value, orientation };
+}
+
 /** Avalia o layout do slot com os valores da instância (`gap`/`padding` podem ser expressões). Sem layout → type 'none'. */
 export function resolveSlotLayout(
   slot: SlotTemplate,
@@ -159,6 +209,24 @@ export function resolveSlotLayout(
   const padding = Array.isArray(rawPadding)
     ? normalizePadding(rawPadding.map((v) => toNumber(v, 0)))
     : normalizePadding(toNumber(rawPadding, 0));
+  const reverse =
+    layout.reverse !== undefined && evaluateBoolean(layout.reverse, values, false);
+  if (type === 'grid') {
+    return {
+      type,
+      grid: resolveGrid(layout, values),
+      gap,
+      padding,
+      align: choice(layout.align, NONE_ALIGNS, 'start', values),
+      justify: choice(layout.justify, NONE_JUSTIFIES, 'start', values),
+      reverse,
+      wrap: 'none',
+      lineGap: Math.max(
+        0,
+        toNumber(evaluate<unknown>(layout.lineGap as Expr<unknown>, values, 0), 0),
+      ),
+    };
+  }
   // `baseline` só vale numa `row`: numa `column` cai em `start`, como no motor.
   const aligns =
     type === 'row' ? LAYOUT_ALIGNS : LAYOUT_ALIGNS.filter((a) => a !== 'baseline');
@@ -168,8 +236,7 @@ export function resolveSlotLayout(
     padding,
     align: choice(layout.align, aligns, 'start', values),
     justify: choice(layout.justify, LAYOUT_JUSTIFIES, 'start', values),
-    reverse:
-      layout.reverse !== undefined && evaluateBoolean(layout.reverse, values, false),
+    reverse,
     ...resolveWrap(layout, values),
   };
 }
@@ -296,6 +363,7 @@ export function layoutChildren(
   layout: ResolvedSlotLayout,
   children: readonly LayoutChild[],
 ): Box[] {
+  if (layout.type === 'grid') return layoutGrid(slot, layout, children);
   const geometry = slotGeometry(slot, layout);
   const { row } = geometry;
   const wrapped = layout.wrap !== 'none';
@@ -336,6 +404,7 @@ export function contentExtent(
   children: readonly LayoutChild[],
   available: number | null,
 ): { width: number; height: number } {
+  if (layout.type === 'grid') return gridExtent(layout, children, available);
   const row = layout.type === 'row';
   const mains = children.map((c) => (row ? c.box.width : c.box.height));
   const lines =
@@ -362,6 +431,119 @@ export function contentExtent(
   const main = Math.max(0, ...used);
   const cross = stackLines(crosses, layout.lineGap, false).total;
   return row ? { width: main, height: cross } : { width: cross, height: main };
+}
+
+// ---------------------------------------------------------------------------------------
+// Grade (`layout.type: "grid"`): cada filha ocupa uma célula
+// ---------------------------------------------------------------------------------------
+
+/** A colocação das filhas nas células: a ordem (`reverse` inverte) e a extensão de cada linha de fluxo. */
+interface GridPlan {
+  readonly vertical: boolean;
+  readonly count: number;
+  /** Índices das filhas na ordem de colocação. */
+  readonly order: readonly number[];
+  readonly cells: ReturnType<typeof placeCells>['cells'];
+  /** Extensão de cada linha de fluxo (a maior filha dela), no eixo das linhas. */
+  readonly extents: readonly number[];
+}
+
+const gridVertical = (layout: ResolvedSlotLayout) =>
+  layout.grid?.orientation !== 'horizontal';
+
+/** A extensão da filha no eixo das trilhas (`t`) ou no das linhas de fluxo. */
+function gridSize(child: LayoutChild, vertical: boolean, onTracks: boolean): number {
+  return vertical === onTracks ? child.box.width : child.box.height;
+}
+
+function planGrid(
+  layout: ResolvedSlotLayout,
+  children: readonly LayoutChild[],
+  trackContent: number | null,
+): GridPlan {
+  const vertical = gridVertical(layout);
+  const indices = children.map((_, i) => i);
+  const order = layout.reverse ? indices.reverse() : indices;
+  const count = trackCount(layout.grid ?? {}, trackContent, layout.gap);
+  const { cells, lines } = placeCells(
+    order.map(() => 1),
+    count,
+  );
+  const extents = Array.from({ length: lines }, () => 0);
+  for (const cell of cells) {
+    const child = children[order[cell.index] as number] as LayoutChild;
+    extents[cell.line] = Math.max(
+      extents[cell.line] ?? 0,
+      gridSize(child, vertical, false),
+    );
+  }
+  return { vertical, count, order, cells, extents };
+}
+
+function roundedBox(raw: Box): Box {
+  return {
+    x: Math.round(raw.x),
+    y: Math.round(raw.y),
+    width: Math.max(1, Math.round(raw.width)),
+    height: Math.max(1, Math.round(raw.height)),
+  };
+}
+
+/** Os retângulos (arredondados) das filhas nas células da grade: `justify` nas trilhas, `align` nas linhas. */
+function layoutGrid(
+  slot: Box,
+  layout: ResolvedSlotLayout,
+  children: readonly LayoutChild[],
+): Box[] {
+  const vertical = gridVertical(layout);
+  const { padding } = layout;
+  const tStart = vertical ? slot.x + padding.left : slot.y + padding.top;
+  const tContent = vertical
+    ? slot.width - padding.left - padding.right
+    : slot.height - padding.top - padding.bottom;
+  const fStart = vertical ? slot.y + padding.top : slot.x + padding.left;
+  const plan = planGrid(layout, children, tContent);
+  const size = trackSize(tContent, plan.count, layout.gap);
+  const stacked = stackLines(plan.extents, layout.lineGap, false);
+  const out: Box[] = children.map((c) => c.box);
+  for (const cell of plan.cells) {
+    const index = plan.order[cell.index] as number;
+    const child = children[index] as LayoutChild;
+    const t = alignInCell(layout.justify, size, gridSize(child, vertical, true));
+    const f = alignInCell(
+      layout.align,
+      plan.extents[cell.line] ?? 0,
+      gridSize(child, vertical, false),
+    );
+    const tPos = tStart + trackOffset(cell.track, size, layout.gap) + t.pos;
+    const fPos = fStart + (stacked.tops[cell.line] ?? 0) + f.pos;
+    out[index] = roundedBox(
+      vertical
+        ? { x: tPos, y: fPos, width: t.size, height: f.size }
+        : { x: fPos, y: tPos, width: f.size, height: t.size },
+    );
+  }
+  return out;
+}
+
+/**
+ * O que as filhas pedem ao slot em grade (sem o padding): no eixo das trilhas, `n` vezes a maior
+ * filha mais os `gap`; no das linhas, a soma das extensões das linhas com os `lineGap`.
+ * `available`: o espaço do eixo das trilhas (nulo = uma trilha, com `minColumnWidth`).
+ */
+function gridExtent(
+  layout: ResolvedSlotLayout,
+  children: readonly LayoutChild[],
+  available: number | null,
+): { width: number; height: number } {
+  if (children.length === 0) return { width: 0, height: 0 };
+  const plan = planGrid(layout, children, available);
+  const widest = Math.max(0, ...children.map((c) => gridSize(c, plan.vertical, true)));
+  const tracks = plan.count * widest + layout.gap * (plan.count - 1);
+  const flow = stackLines(plan.extents, layout.lineGap, false).total;
+  return plan.vertical
+    ? { width: tracks, height: flow }
+    : { width: flow, height: tracks };
 }
 
 /** Posições no eixo principal de uma linha: `justify` sobre a folga da linha e `reverse` espelhando-a. */
@@ -407,12 +589,7 @@ function placeLine(
     const raw: Box = row
       ? { x: mainPos, y: placed.pos, width: main, height: placed.size }
       : { x: placed.pos, y: mainPos, width: placed.size, height: main };
-    return {
-      x: Math.round(raw.x),
-      y: Math.round(raw.y),
-      width: Math.max(1, Math.round(raw.width)),
-      height: Math.max(1, Math.round(raw.height)),
-    };
+    return roundedBox(raw);
   });
 }
 
