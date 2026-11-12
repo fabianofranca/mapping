@@ -227,6 +227,25 @@ describe('painel.py — as fases do plano entram como todo (PF1)', () => {
   );
 
   it(
+    '(g2) um item de phases sem ":" (fila editada à mão) vira open, não um estado vazio',
+    () => {
+      filaAntiga([
+        {
+          issue: '#12',
+          status: 'em andamento',
+          plan: 'dep=nenhuma | fases=D1:#1:high,D2:#2:high',
+          phases: 'D1|D2:ok',
+        },
+      ]);
+      run('row', dir, '#12', 'plan=dep=nenhuma | fases=D1:#1:high,D2:#2:high');
+      expect(linha(dir, '#12').phases).toBe('D1:open|D2:ok');
+      expect(linha(dir, '#12').phasesTotal).toBe(2);
+      expect(linha(dir, '#12').phasesDone).toBe(1);
+    },
+    TEMPO,
+  );
+
+  it(
     '(h) phase … D3=todo sai com código 2 e a mensagem lista ok e open',
     () => {
       run('row', dir, '#10', `plan=${FICHA3}`);

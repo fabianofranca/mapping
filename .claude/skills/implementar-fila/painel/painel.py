@@ -295,7 +295,7 @@ def fill_phases(row):
     for item in (row.get("phases") or "").split("|"):
         code, _, st = item.partition(":")
         if item and code not in state:
-            state[code] = st  # um código repetido vale pela primeira ocorrência
+            state[code] = st or "open"  # repetido vale pela primeira; sem ":" (à mão) vira open, como a página
     parts = [(c, state.get(c, "todo")) for c in codes]
     parts += [(c, st) for c, st in state.items() if c not in codes and st != "todo"]
     phases = "|".join(c + ":" + st for c, st in parts)
