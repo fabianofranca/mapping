@@ -20,6 +20,8 @@ const PATH_TRIGGERS = [
   { id: 'docs/PROCESS.md', path: 'docs/PROCESS.md' },
   { id: '.github/workflows/', path: '.github/workflows/' },
   { id: 'scripts/release/', path: 'scripts/release/' },
+  // O `scripts/ci/dist-budget.json` fica de fora: a subida pelo `raise --write` não aciona a revisão (#1614, decisão 7).
+  { id: 'scripts/ci/distBudget.mjs', path: 'scripts/ci/distBudget.mjs' },
   { id: 'mcp/version.ts', path: 'mcp/version.ts' },
   { id: 'src/store/session.ts', path: 'src/store/session.ts' },
   { id: 'pwa/csp.ts', path: 'pwa/csp.ts' },
