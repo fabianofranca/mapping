@@ -154,6 +154,18 @@ describe('validação: mais de uma trilha só quando todas são expressão', () 
       ),
     ).toEqual([]);
   });
+  it('várias trilhas só da mesma orientação: columns com rows é erro', () => {
+    const message =
+      'template.layout: layout: informe exatamente uma entre columns, minColumnWidth, rows e minRowHeight';
+    expect(
+      validateComponent(gridComponent({ type: 'grid', columns: E('a'), rows: E('b') })),
+    ).toEqual([message]);
+    expect(
+      validateComponent(
+        gridComponent({ type: 'grid', rows: E('a'), minRowHeight: E('b') }),
+      ),
+    ).toEqual([]);
+  });
   it('uma trilha literal com outra: continua erro', () => {
     const message =
       'template.layout: layout: informe exatamente uma entre columns, minColumnWidth, rows e minRowHeight';

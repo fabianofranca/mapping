@@ -864,14 +864,17 @@ function checkTrackKeys(value: Rec, path: string, out: Ctx): void {
 }
 
 /**
- * Exatamente uma chave de trilha; ou várias, quando todas são expressão (um campo escolhe qual
- * tem valor: `columns` para o `Fixed`, `minColumnWidth` para o `Adaptive`).
+ * Exatamente uma chave de trilha; ou várias, quando todas são expressão e da mesma orientação
+ * (`columns` com `minColumnWidth`, ou `rows` com `minRowHeight`): um campo escolhe qual tem valor,
+ * `columns` para o `Fixed` e `minColumnWidth` para o `Adaptive`.
  */
 function trackKeysAreValid(value: Rec): boolean {
   const keys = GRID_TRACK_KEYS.filter((key) => key in value);
-  return (
-    keys.length === 1 || (keys.length > 1 && keys.every((k) => isExprObject(value[k])))
-  );
+  if (keys.length === 1) return true;
+  const sameOrientation =
+    keys.every((key) => key === 'columns' || key === 'minColumnWidth') ||
+    keys.every((key) => key === 'rows' || key === 'minRowHeight');
+  return keys.length > 1 && sameOrientation && keys.every((k) => isExprObject(value[k]));
 }
 
 /** Um layout `grid` literal: uma trilha, `gap`, `lineGap`, `padding`, `reverse` e `align`/`justify` na célula. */

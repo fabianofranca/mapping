@@ -47,6 +47,7 @@ import {
   trackOffset,
   trackSize,
 } from './gridLayout';
+import { isTrackAbsent } from './gridPlan';
 import { breakLines, stackLines } from './wrapLines';
 
 /**
@@ -163,21 +164,10 @@ function resolveWrap(
 }
 
 /** O número de trilhas de uma chave `columns`/`rows` (inteiro ≥ 1) ou o mínimo de `min…` (> 0). */
-function gridKey(
-  expr: Expr<number> | undefined,
-  values: FieldValues,
-  integer: boolean,
-): number | null | undefined {
-  if (expr === undefined) return undefined;
-  const n = toNumber(evaluate<unknown>(expr as Expr<unknown>, values, undefined), NaN);
+function trackNumber(value: unknown, integer: boolean): number | null {
+  const n = toNumber(value, NaN);
   if (integer) return Number.isInteger(n) && n >= 1 ? n : null;
   return n > 0 && Number.isFinite(n) ? n : null;
-}
-
-/** A expressão não dá valor (campo vazio, `$if` sem `else`): a chave de trilha não foi informada. */
-function isAbsent(expr: Expr<number> | undefined, values: FieldValues): boolean {
-  const value = evaluate<unknown>(expr as Expr<unknown>, values, undefined);
-  return value === undefined || value === null || String(value).trim() === '';
 }
 
 /** As trilhas da grade; a chave inválida (ou nenhuma) cai em uma trilha da orientação dela. */
@@ -188,13 +178,18 @@ function resolveGrid(layout: LayoutSpec, values: FieldValues): ResolvedGrid {
     { expr: layout.rows, integer: true, vertical: false, min: false },
     { expr: layout.minRowHeight, integer: false, vertical: false, min: true },
   ];
-  const present = keys.filter((k) => k.expr !== undefined);
   // A primeira chave que tem valor decide (`columns` e `minColumnWidth` por expressão escolhem o
   // `Fixed` ou o `Adaptive` por um campo); sem valor em nenhuma, vale a primeira presente.
-  const key = present.find((k) => !isAbsent(k.expr, values)) ?? present[0];
+  const present = keys
+    .filter((k) => k.expr !== undefined)
+    .map((k) => ({
+      ...k,
+      value: evaluate<unknown>(k.expr as Expr<unknown>, values, undefined),
+    }));
+  const key = present.find((k) => !isTrackAbsent(k.value)) ?? present[0];
   const orientation = key?.vertical === false ? 'horizontal' : 'vertical';
   if (key === undefined) return { count: 1, orientation };
-  const value = gridKey(key.expr, values, key.integer);
+  const value = trackNumber(key.value, key.integer);
   if (value === null || value === undefined) return { count: 1, orientation };
   return key.min ? { min: value, orientation } : { count: value, orientation };
 }

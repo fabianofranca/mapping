@@ -21,6 +21,11 @@ export const TRACK_KEYS = [
   { key: 'minRowHeight', field: 'min', vertical: false },
 ] as const;
 
+/** A expressão da chave de trilha não deu valor (campo vazio, `$if` sem `else`): a chave não foi informada. */
+export function isTrackAbsent(value: unknown): boolean {
+  return value === undefined || value === null || String(value).trim() === '';
+}
+
 /** O número que um valor de expressão representa (número ou texto numérico); `NaN` se nenhum. */
 export function numericValue(value: unknown): number {
   if (typeof value === 'number') return value;

@@ -160,6 +160,20 @@ interface Arranged {
   readonly usedH: number;
 }
 
+/** O filho de um slot `none` posto pelo `align` (vertical) e `justify` (horizontal) na área conhecida do conteúdo. */
+function alignOverlaid<R extends { x: number; y: number; w: number; h: number }>(
+  rect: R,
+  layout: ResolvedSlotLayout,
+  cw: number | null,
+  ch: number | null,
+): R {
+  const x =
+    cw === null ? { pos: 0, size: rect.w } : alignInCell(layout.justify, cw, rect.w);
+  const y =
+    ch === null ? { pos: 0, size: rect.h } : alignInCell(layout.align, ch, rect.h);
+  return { ...rect, x: x.pos, y: y.pos, w: x.size, h: y.size };
+}
+
 const NONE_LAYOUT: ResolvedSlotLayout = {
   type: 'none',
   gap: 0,
@@ -839,8 +853,8 @@ export function layoutScreen(
       };
     }
 
-    // Box (`none`): cada filho no canto do conteúdo.
-    const rects = kids.map((kid) => {
+    // Box (`none`): cada filho no canto do conteúdo, ou alinhado pelo `align`/`justify` do slot.
+    const corner = kids.map((kid) => {
       const wi = widthOf(kid, cw, false);
       const spec = specOf(kid, 'height');
       if (typeof spec === 'number')
@@ -864,6 +878,7 @@ export function layoutScreen(
       const h = intrinsicHeight(kid, wi.w, wi.hug);
       return { x: 0, y: 0, w: wi.w, h, hugW: wi.hug, hugH: true };
     });
+    const rects = corner.map((r) => alignOverlaid(r, layout, cw, ch));
     return {
       rects,
       usedW: maxOf(rects.map((r) => r.w)),

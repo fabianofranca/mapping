@@ -128,6 +128,7 @@ import {
   TRACK_KEYS,
   lineExtents,
   maxCellOf,
+  isTrackAbsent,
   numericValue,
   validTrack,
   type GridTracks,
@@ -1058,13 +1059,7 @@ function createEngine(
   };
 
   /** Uma trilha da grade: o valor inválido cai em uma trilha (`columns: 1`, `rows: 1`) com o aviso. */
-  const trackOf = (
-    spec: LayoutSpec,
-    entry: (typeof TRACK_KEYS)[number],
-  ): GridTracks | undefined => {
-    const expr = spec[entry.key];
-    if (expr === undefined) return undefined;
-    const value = ev<unknown>(expr as Expr<unknown>, undefined);
+  const trackOf = (entry: (typeof TRACK_KEYS)[number], value: unknown): GridTracks => {
     const valid = validTrack(entry.field, value);
     if (valid !== undefined)
       return entry.field === 'count'
@@ -1080,13 +1075,14 @@ function createEngine(
    * presente (inválida: uma trilha, com o aviso); nenhuma chave = uma coluna.
    */
   const gridTracksOf = (spec: LayoutSpec): GridTracks => {
-    const present = TRACK_KEYS.filter((entry) => spec[entry.key] !== undefined);
-    const informed = present.find((entry) => {
-      const value = ev<unknown>(spec[entry.key] as Expr<unknown>, undefined);
-      return !(value === undefined || value === null || String(value).trim() === '');
-    });
-    const entry = informed ?? present[0];
-    return (entry && trackOf(spec, entry)) ?? { count: 1, vertical: true };
+    const present = TRACK_KEYS.filter((entry) => spec[entry.key] !== undefined).map(
+      (entry) => ({
+        entry,
+        value: ev<unknown>(spec[entry.key] as Expr<unknown>, undefined),
+      }),
+    );
+    const chosen = present.find((p) => !isTrackAbsent(p.value)) ?? present[0];
+    return chosen ? trackOf(chosen.entry, chosen.value) : { count: 1, vertical: true };
   };
 
   /** O layout `grid`: `justify` é o eixo das trilhas e `align` o das linhas (só os quatro valores). */
