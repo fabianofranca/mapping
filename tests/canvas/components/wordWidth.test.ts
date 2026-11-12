@@ -2,6 +2,11 @@
 // medidor e o desenho alargam o `Text` do Konva até ela, e o Konva só quebra entre palavras.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// 6 px por letra: o canvas só de medida do `wordSafeWidth` (o jsdom não tem 2D).
+vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(
+  () => ({ font: '', measureText: (t: string) => ({ width: t.length * 6 }) }) as never,
+);
+
 const configs: Array<{ text?: string; width?: number; wrap?: string }> = [];
 vi.mock('konva/lib/shapes/Text', () => ({
   Text: class {

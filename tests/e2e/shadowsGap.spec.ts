@@ -185,13 +185,14 @@ for (const zoom of [1, 4.2]) {
         },
       },
       {
-        type: 'text',
+        // Um retângulo, não um texto: o raster do teste não tem os bytes das fontes e desenha uma
+        // barra no lugar da letra, então a paridade compararia letra do Konva com barra do raster.
+        // O que o teste mede é o vão do contorno ao redor do rótulo.
+        type: 'rect',
         name: 'label',
-        text: 'Nome',
-        width: 'hug',
-        height: 'hug',
+        width: 26,
+        height: 12,
         anchors: { left: 20, top: 12 },
-        font: { size: 10 },
         fill: '#000000',
       },
     ]);
