@@ -231,6 +231,18 @@ const VARIANT_SYMBOLS: Record<
   },
 };
 
+/** As fichas de assinatura que o `code.compose` e os casos de `variants` citam (S5 da #1079). */
+function signatureFiles(): string[] {
+  const paths: string[] = [];
+  for (const type of types) {
+    const code = type.code?.compose;
+    if (code?.signature !== undefined) paths.push(code.signature);
+    for (const kase of Object.values(code?.variants?.cases ?? {}))
+      if (kase.signature !== undefined) paths.push(kase.signature);
+  }
+  return paths;
+}
+
 describe('biblioteca Material 3 (Compose)', () => {
   it('tem a especialização, as fontes, um componente e um documento por tipo', () => {
     expect(files.map((f) => f.path)).toEqual(
@@ -245,6 +257,7 @@ describe('biblioteca Material 3 (Compose)', () => {
         'icons/material-icons.json',
         ...ALL_TYPES.map((id) => `components/${id}.json`),
         ...ALL_TYPES.map((id) => `docs/${id}.md`),
+        ...signatureFiles(),
       ].sort(),
     );
   });
@@ -283,11 +296,11 @@ describe('biblioteca Material 3 (Compose)', () => {
     expect(report.warnings.map((w) => `${w.file}:${w.path}: ${w.message}`)).toEqual([]);
   });
 
-  it('é a formatVersion 15, versão 11, com tokens nos modos light e dark e a plataforma compose no androidx fixado no commit', () => {
+  it('é a formatVersion 16, versão 12, com tokens nos modos light e dark e a plataforma compose no androidx fixado no commit', () => {
     expect(spec).toMatchObject({
-      formatVersion: 15,
+      formatVersion: 16,
       id: 'material3-compose',
-      version: 11,
+      version: 12,
       icons: 'icons/material-icons.json',
     });
     expect(spec.tokens?.modes).toEqual(['light', 'dark']);
@@ -669,11 +682,11 @@ describe('atualização da biblioteca Material 3 (Compose) com o slider numéric
           );
     expect(missingMigrations(previous, spec)).toEqual([]);
     expect(spec.migrations?.map((m) => [m.from, m.to])).toEqual([
-      [1, 11],
-      [2, 11],
-      [3, 11],
-      [4, 11],
-      [5, 11],
+      [1, 12],
+      [2, 12],
+      [3, 12],
+      [4, 12],
+      [5, 12],
     ]);
     const report = validateLibrary({ files, specPath: SPEC_FILE, previous });
     expect(report.errors).toEqual([]);

@@ -477,6 +477,21 @@ describe('sincronização (decisão 12)', () => {
     expect(plan.versionBump).toBe(false);
   });
 
+  it('parâmetro já sinalizado como removed: reimportar a mesma ficha não o reporta de novo (idempotência)', () => {
+    const next = composeSignature(
+      previous.params.filter((p) => p.name !== 'legacy').map((p) => ({ ...p })) as Json[],
+    );
+    const first = run(imported().spec, { signature: next, previous });
+    expect(first.changes).toEqual([{ kind: 'removed', param: 'legacy' }]);
+    const again = run(first.spec, { signature: next, previous: next });
+    expect(again.changes).toEqual([]);
+    expect(again.suggestedMigrations).toEqual([]);
+    expect(noticesOf(field(again, 'legacy')?.notices)).toEqual([
+      `removed|${REF}|compose: o parâmetro \`legacy\` saiu da assinatura; o campo fica`,
+    ]);
+    expect(again.spec).toEqual(first.spec);
+  });
+
   it('padrão mudado atualiza o default; só por default o contrato não muda', () => {
     const next = composeSignature(
       previous.params.map((p) =>
@@ -491,6 +506,26 @@ describe('sincronização (decisão 12)', () => {
       { kind: 'changed', param: 'radius', aspect: 'default', from: '4.dp', to: '8.dp' },
     ]);
     expect(plan.versionBump).toBe(false);
+  });
+
+  it('a primeira importação não grava default em campo existente que não tinha (curadoria "vazio = X")', () => {
+    const spec = librarySpec((s) => {
+      const button = buttonOf(s);
+      button.fields = [{ key: 'radius', type: 'number' }];
+      button.code = {
+        compose: {
+          symbol: 'androidx.compose.material3.Button',
+          path: BUTTON_PATH,
+          params: { radius: 'radius' },
+        },
+      };
+    });
+    const plan = run(spec, {
+      signature: composeSignature([
+        dimension('radius', { default: '4.dp', value: { kind: 'dimension', default: 4 } }),
+      ]),
+    });
+    expect(field(plan, 'radius')).not.toHaveProperty('default');
   });
 
   it('opção nova entra no campo; opção que sumiu vira diverges', () => {
@@ -626,6 +661,30 @@ describe('variantes (decisão 9)', () => {
     expect(new Set(pending.map((n) => n.message)).size).toBe(2);
     expect(pending[0]?.message).toMatch(/^compose: o parâmetro/);
     expect(pending[1]?.message).toMatch(/^compose: caso `outlined`: o parâmetro/);
+  });
+
+  it('reimportar a ficha base depois da do caso não reordena os avisos (os da ficha ficam onde estavam)', () => {
+    const inset: SignatureParam = {
+      name: 'windowInsets',
+      role: 'value',
+      type: 'WindowInsets',
+      value: { kind: 'opaque' },
+    };
+    const withInset = (sig: Signature): Signature => ({
+      ...sig,
+      params: [...sig.params, inset],
+    });
+    const baseSig = withInset(base);
+    const first = run(spec(), { signature: baseSig });
+    const second = run(first.spec, {
+      variant: 'outlined',
+      signature: withInset(outlined),
+    });
+    const order = (notices: SpecNotice[] | undefined): string[] =>
+      (notices ?? []).map((n) => n.ref ?? '');
+    const again = run(second.spec, { signature: baseSig, previous: baseSig });
+    expect(order(again.type.notices)).toEqual(order(second.type.notices));
+    expect(again.spec).toEqual(second.spec);
   });
 
   it('o símbolo da ficha do caso precisa ser o do caso', () => {

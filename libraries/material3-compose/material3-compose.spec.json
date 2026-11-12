@@ -528,7 +528,7 @@
             },
             {
               "key": "contentColor",
-              "label": "Content color",
+              "label": "Cor do conteúdo",
               "type": "enum",
               "options": [
                 "primary",
@@ -568,7 +568,7 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the preferred color for content inside this scaffold. Defaults to either the matching content color for [containerColor], or to the current [LocalContentColor] if [containerColor] is not a color from the theme."
+              "description": "Cor preferida para o conteúdo dentro do scaffold. Vazio = o padrão do Material 3."
             }
           ],
           "code": {
@@ -772,8 +772,7 @@
               "key": "tonalElevation",
               "label": "Elevação tonal (dp)",
               "type": "number",
-              "description": "Elevação tonal em dp (tonalElevation). Vazio = 0.",
-              "default": 0
+              "description": "Elevação tonal em dp (tonalElevation). Vazio = 0."
             },
             {
               "key": "width",
@@ -799,7 +798,7 @@
             },
             {
               "key": "contentColor",
-              "label": "Content color",
+              "label": "Cor do conteúdo",
               "type": "enum",
               "options": [
                 "primary",
@@ -839,23 +838,24 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "The preferred content color provided by this Surface to its children. Defaults to either the matching content color for [color], or if [color] is not a color from the theme, this will keep the same value set above this Surface."
+              "description": "Cor preferida do conteúdo que a superfície fornece aos filhos. Vazio = o padrão do Material 3."
             },
             {
               "key": "shadowElevation",
-              "label": "Shadow elevation",
+              "label": "Elevação da sombra (dp)",
               "type": "number",
               "default": 0,
-              "description": "The size of the shadow below the surface. To prevent shadow creep, only apply shadow elevation when absolutely necessary, such as when the surface requires visual separation from a patterned background. Note that It will not affect z index of the Surface. If you want to change the drawing order you can use `Modifier.zIndex`."
+              "description": "Tamanho da sombra sob a superfície, em dp. Não altera o z-index; para mudar a ordem de desenho use `Modifier.zIndex`."
             },
             {
               "key": "borderWidth",
-              "label": "Width",
-              "type": "number"
+              "label": "Largura da borda (dp)",
+              "type": "number",
+              "description": "Largura da borda da superfície, em dp."
             },
             {
               "key": "borderColor",
-              "label": "Color",
+              "label": "Cor da borda",
               "type": "enum",
               "options": [
                 "primary",
@@ -895,7 +895,7 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "The background color. Use [Color.Transparent] to have no color."
+              "description": "Cor da borda da superfície."
             }
           ],
           "code": {
@@ -1177,11 +1177,11 @@
             },
             {
               "key": "propagateMinConstraints",
-              "label": "Propagate min constraints",
+              "label": "Propagar restrições mínimas",
               "type": "enum",
               "options": ["true", "false"],
               "default": "false",
-              "description": "Whether the incoming min constraints should be passed to content."
+              "description": "Define se as restrições mínimas recebidas são repassadas ao conteúdo."
             }
           ],
           "code": {
@@ -1610,7 +1610,7 @@
               "type": "enum",
               "default": "wrap",
               "options": ["wrap", "fill", "fixed"],
-              "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcaç��o (dp)."
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
             },
             {
               "key": "weight",
@@ -1801,21 +1801,23 @@
             },
             {
               "key": "horizontal",
-              "label": "Horizontal",
-              "type": "number"
+              "label": "Horizontal (dp)",
+              "type": "number",
+              "description": "Valor horizontal, em dp."
             },
             {
               "key": "vertical",
-              "label": "Vertical",
-              "type": "number"
+              "label": "Vertical (dp)",
+              "type": "number",
+              "description": "Valor vertical, em dp."
             },
             {
               "key": "userScrollEnabled",
-              "label": "User scroll enabled",
+              "label": "Rolagem do usuário",
               "type": "enum",
               "options": ["true", "false"],
               "default": "true",
-              "description": "whether the scrolling via the user gestures or accessibility actions is allowed. You can still scroll programmatically using the state even when it is disabled"
+              "description": "Define se a rolagem por gestos do usuário ou ações de acessibilidade é permitida. Ainda é possível rolar por código pelo estado, mesmo desabilitada."
             }
           ],
           "code": {
@@ -1972,21 +1974,23 @@
             },
             {
               "key": "horizontal",
-              "label": "Horizontal",
-              "type": "number"
+              "label": "Horizontal (dp)",
+              "type": "number",
+              "description": "Valor horizontal, em dp."
             },
             {
               "key": "vertical",
-              "label": "Vertical",
-              "type": "number"
+              "label": "Vertical (dp)",
+              "type": "number",
+              "description": "Valor vertical, em dp."
             },
             {
               "key": "userScrollEnabled",
-              "label": "User scroll enabled",
+              "label": "Rolagem do usuário",
               "type": "enum",
               "options": ["true", "false"],
               "default": "true",
-              "description": "whether the scrolling via the user gestures or accessibility actions is allowed. You can still scroll programmatically using the state even when it is disabled."
+              "description": "Define se a rolagem por gestos do usuário ou ações de acessibilidade é permitida. Ainda é possível rolar por código pelo estado, mesmo desabilitada."
             }
           ],
           "code": {
@@ -2133,29 +2137,31 @@
             },
             {
               "key": "horizontal",
-              "label": "Horizontal",
-              "type": "number"
+              "label": "Horizontal (dp)",
+              "type": "number",
+              "description": "Valor horizontal, em dp."
             },
             {
               "key": "vertical",
-              "label": "Vertical",
-              "type": "number"
+              "label": "Vertical (dp)",
+              "type": "number",
+              "description": "Valor vertical, em dp."
             },
             {
               "key": "reverseLayout",
-              "label": "Reverse layout",
+              "label": "Inverter layout",
               "type": "enum",
               "options": ["true", "false"],
               "default": "false",
-              "description": "reverse the direction of scrolling and layout. When `true`, items will be laid out in the reverse order and [LazyGridState.firstVisibleItemIndex] == 0 means that grid is scrolled to the bottom. Note that [reverseLayout] does not change the behavior of [verticalArrangement], e.g. with [Arrangement.Top] (top) 123### (bottom) becomes (top) 321### (bottom)."
+              "description": "Inverte a direção da rolagem e do layout: os itens são dispostos na ordem inversa. Não muda o comportamento de `verticalArrangement`."
             },
             {
               "key": "userScrollEnabled",
-              "label": "User scroll enabled",
+              "label": "Rolagem do usuário",
               "type": "enum",
               "options": ["true", "false"],
               "default": "true",
-              "description": "whether the scrolling via the user gestures or accessibility actions is allowed. You can still scroll programmatically using the state even when it is disabled."
+              "description": "Define se a rolagem por gestos do usuário ou ações de acessibilidade é permitida. Ainda é possível rolar por código pelo estado, mesmo desabilitada."
             }
           ],
           "code": {
@@ -2486,8 +2492,7 @@
               "key": "pageSpacing",
               "label": "Espaço entre páginas (dp)",
               "type": "number",
-              "description": "Espaço entre as páginas em dp (pageSpacing). Vazio = 0.",
-              "default": 0
+              "description": "Espaço entre as páginas em dp (pageSpacing). Vazio = 0."
             },
             {
               "key": "verticalAlignment",
@@ -2537,19 +2542,21 @@
             },
             {
               "key": "horizontal",
-              "label": "Horizontal",
-              "type": "number"
+              "label": "Horizontal (dp)",
+              "type": "number",
+              "description": "Valor horizontal, em dp."
             },
             {
               "key": "vertical",
-              "label": "Vertical",
-              "type": "number"
+              "label": "Vertical (dp)",
+              "type": "number",
+              "description": "Valor vertical, em dp."
             },
             {
               "key": "beyondViewportPageCount",
-              "label": "Beyond viewport page count",
+              "label": "Páginas fora da tela",
               "type": "number",
-              "description": "Pages to compose and layout before and after the list of visible pages. Note: Be aware that using a large value for [beyondViewportPageCount] will cause a lot of pages to be composed, measured and placed which will defeat the purpose of using lazy loading. This should be used as an optimization to pre-load a couple of pages before and after the visible ones. This does not include the pages automatically composed and laid out by the pre-fetcher in the direction of the scroll during scroll events."
+              "description": "Quantidade de páginas compostas e dispostas antes e depois das visíveis. Valores grandes anulam o benefício do carregamento preguiçoso; serve como pré-carga."
             }
           ],
           "code": {
@@ -2779,36 +2786,36 @@
             },
             {
               "key": "fontSize",
-              "label": "Font size",
+              "label": "Tamanho da fonte (sp)",
               "type": "number",
-              "description": "the size of glyphs to use when painting the text. See [TextStyle.fontSize]."
+              "description": "Tamanho dos glifos ao pintar o texto, em sp."
             },
             {
               "key": "letterSpacing",
-              "label": "Letter spacing",
+              "label": "Espaço entre letras (sp)",
               "type": "number",
-              "description": "the amount of space to add between each letter. See [TextStyle.letterSpacing]."
+              "description": "Espaço adicionado entre cada letra, em sp."
             },
             {
               "key": "lineHeight",
-              "label": "Line height",
+              "label": "Altura da linha (sp)",
               "type": "number",
-              "description": "line height for the [Paragraph] in [TextUnit] unit, e.g. SP or EM. See [TextStyle.lineHeight]."
+              "description": "Altura da linha do parágrafo, em sp ou em."
             },
             {
               "key": "softWrap",
-              "label": "Soft wrap",
+              "label": "Quebra suave",
               "type": "enum",
               "options": ["true", "false"],
               "default": "true",
-              "description": "whether the text should break at soft line breaks. If false, the glyphs in the text will be positioned as if there was unlimited horizontal space. If [softWrap] is false, [overflow] and TextAlign may have unexpected effects."
+              "description": "Define se o texto quebra nas quebras suaves de linha. Se desligado, o texto é posicionado como se houvesse largura horizontal ilimitada."
             },
             {
               "key": "minLines",
-              "label": "Min lines",
+              "label": "Mínimo de linhas",
               "type": "number",
               "default": 1,
-              "description": "The minimum height in terms of minimum number of visible lines. It is required that 1 <= [minLines] <= [maxLines]."
+              "description": "Altura mínima em número de linhas visíveis; deve valer 1 <= `minLines` <= `maxLines`."
             }
           ],
           "code": {
@@ -3363,9 +3370,9 @@
             },
             {
               "key": "alpha",
-              "label": "Alpha",
+              "label": "Opacidade",
               "type": "number",
-              "description": "Optional opacity to be applied to the [ImageVector] when it is rendered onscreen"
+              "description": "Opacidade opcional aplicada ao `ImageVector` ao desenhá-lo na tela."
             }
           ],
           "code": {
@@ -3984,7 +3991,7 @@
             },
             {
               "key": "subtitle",
-              "label": "Subtitle",
+              "label": "Subtítulo",
               "type": "string",
               "notices": [
                 {
@@ -3992,16 +3999,18 @@
                   "message": "compose: obrigatório no código (`subtitle`), mas o campo é opcional",
                   "ref": "signatures/top-app-bar.compose.json"
                 }
-              ]
+              ],
+              "description": "Texto do subtítulo da barra superior."
             },
             {
               "key": "expandedHeight",
-              "label": "Expanded height",
-              "type": "number"
+              "label": "Altura expandida (dp)",
+              "type": "number",
+              "description": "Altura da barra quando expandida, em dp."
             },
             {
               "key": "containerColor",
-              "label": "Container color",
+              "label": "Cor do contêiner",
               "type": "enum",
               "options": [
                 "primary",
@@ -4041,11 +4050,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the container color"
+              "description": "Cor do contêiner da barra superior."
             },
             {
               "key": "scrolledContainerColor",
-              "label": "Scrolled container color",
+              "label": "Cor do contêiner rolado",
               "type": "enum",
               "options": [
                 "primary",
@@ -4085,11 +4094,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the container color when content is scrolled behind it"
+              "description": "Cor do contêiner quando o conteúdo rola por trás da barra."
             },
             {
               "key": "navigationIconContentColor",
-              "label": "Navigation icon content color",
+              "label": "Cor do ícone de navegação",
               "type": "enum",
               "options": [
                 "primary",
@@ -4129,11 +4138,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the content color used for the navigation icon"
+              "description": "Cor do conteúdo usada no ícone de navegação."
             },
             {
               "key": "titleContentColor",
-              "label": "Title content color",
+              "label": "Cor do título",
               "type": "enum",
               "options": [
                 "primary",
@@ -4173,11 +4182,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the content color used for the title"
+              "description": "Cor do conteúdo usada no título."
             },
             {
               "key": "actionIconContentColor",
-              "label": "Action icon content color",
+              "label": "Cor dos ícones de ação",
               "type": "enum",
               "options": [
                 "primary",
@@ -4217,11 +4226,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the content color used for actions"
+              "description": "Cor do conteúdo usada nas ações."
             },
             {
               "key": "subtitleContentColor",
-              "label": "Subtitle content color",
+              "label": "Cor do subtítulo",
               "type": "enum",
               "options": [
                 "primary",
@@ -4261,13 +4270,13 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the content color used for the subtitle"
+              "description": "Cor do conteúdo usada no subtítulo."
             },
             {
               "key": "collapsedHeight",
-              "label": "Collapsed height",
+              "label": "Altura recolhida (dp)",
               "type": "number",
-              "description": "this app bar height when collapsed by a provided [scrollBehavior]. This value must be specified and finite, otherwise it will be ignored and replaced with [TopAppBarDefaults.MediumAppBarCollapsedHeight]."
+              "description": "Altura da barra quando recolhida pelo `scrollBehavior`, em dp. Se não for um valor finito, é ignorada e vale o padrão do Material 3."
             }
           ],
           "code": {
@@ -4280,12 +4289,12 @@
                 "cases": {
                   "center": {
                     "symbol": "androidx.compose.material3.CenterAlignedTopAppBar",
-                    "ignore": ["modifier"],
+                    "ignore": ["modifier", "navigationIcon"],
                     "signature": "signatures/top-app-bar.center.compose.json"
                   },
                   "medium": {
                     "symbol": "androidx.compose.material3.MediumTopAppBar",
-                    "ignore": ["modifier"],
+                    "ignore": ["modifier", "navigationIcon"],
                     "signature": "signatures/top-app-bar.medium.compose.json",
                     "params": {
                       "collapsedHeight": "collapsedHeight"
@@ -4296,7 +4305,7 @@
                   },
                   "large": {
                     "symbol": "androidx.compose.material3.LargeTopAppBar",
-                    "ignore": ["modifier"],
+                    "ignore": ["modifier", "navigationIcon"],
                     "signature": "signatures/top-app-bar.large.compose.json",
                     "params": {
                       "collapsedHeight": "collapsedHeight"
@@ -4307,12 +4316,11 @@
                   }
                 }
               },
-              "ignore": ["modifier"],
+              "ignore": ["modifier", "navigationIcon"],
               "signature": "signatures/top-app-bar.compose.json",
               "params": {
                 "title": "title",
                 "subtitle": "subtitle",
-                "navigationIcon": "navigationIcon",
                 "expandedHeight": "expandedHeight",
                 "containerColor": "colors.containerColor",
                 "scrolledContainerColor": "colors.scrolledContainerColor",
@@ -4324,7 +4332,6 @@
               "formats": {
                 "title": "{ Text(\"{value}\") }",
                 "subtitle": "{ Text(\"{value}\") }",
-                "navigationIcon": "{ Text(\"{value}\") }",
                 "expandedHeight": "{value}.dp"
               },
               "calls": {
@@ -4853,14 +4860,14 @@
             },
             {
               "key": "shape",
-              "label": "Shape",
+              "label": "Forma",
               "type": "enum",
               "options": ["none", "extraSmall", "small", "medium", "large", "extraLarge"],
-              "description": "defines the shape of this button's container, border (when [border] is not null), and shadow (when using [elevation])"
+              "description": "Forma do contêiner do botão, da borda (quando há `border`) e da sombra (quando há elevação)."
             },
             {
               "key": "containerColor",
-              "label": "Container color",
+              "label": "Cor do contêiner",
               "type": "enum",
               "options": [
                 "primary",
@@ -4900,11 +4907,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the container color of this [Button] when enabled."
+              "description": "Cor do contêiner do botão quando habilitado."
             },
             {
               "key": "contentColor",
-              "label": "Content color",
+              "label": "Cor do conteúdo",
               "type": "enum",
               "options": [
                 "primary",
@@ -4944,11 +4951,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the content color of this [Button] when enabled."
+              "description": "Cor do conteúdo do botão quando habilitado."
             },
             {
               "key": "disabledContainerColor",
-              "label": "Disabled container color",
+              "label": "Desabilitado: cor do contêiner",
               "type": "enum",
               "options": [
                 "primary",
@@ -4988,11 +4995,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the container color of this [Button] when not enabled."
+              "description": "Cor do contêiner do botão quando desabilitado."
             },
             {
               "key": "disabledContentColor",
-              "label": "Disabled content color",
+              "label": "Desabilitado: cor do conteúdo",
               "type": "enum",
               "options": [
                 "primary",
@@ -5032,47 +5039,48 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the content color of this [Button] when not enabled."
+              "description": "Cor do conteúdo do botão quando desabilitado."
             },
             {
               "key": "defaultElevation",
-              "label": "Default elevation",
+              "label": "Elevação padrão (dp)",
               "type": "number",
-              "description": "the elevation used when the [Button] is enabled, and has no other [Interaction]s."
+              "description": "Elevação do botão habilitado e sem outras interações, em dp."
             },
             {
               "key": "pressedElevation",
-              "label": "Pressed elevation",
+              "label": "Elevação pressionado (dp)",
               "type": "number",
-              "description": "the elevation used when this [Button] is enabled and pressed."
+              "description": "Elevação do botão habilitado e pressionado, em dp."
             },
             {
               "key": "focusedElevation",
-              "label": "Focused elevation",
+              "label": "Elevação com foco (dp)",
               "type": "number",
-              "description": "the elevation used when the [Button] is enabled and focused."
+              "description": "Elevação do botão habilitado e com foco, em dp."
             },
             {
               "key": "hoveredElevation",
-              "label": "Hovered elevation",
+              "label": "Elevação com cursor (dp)",
               "type": "number",
-              "description": "the elevation used when the [Button] is enabled and hovered."
+              "description": "Elevação do botão habilitado com o cursor sobre ele, em dp."
             },
             {
               "key": "disabledElevation",
-              "label": "Disabled elevation",
+              "label": "Desabilitado: elevação (dp)",
               "type": "number",
-              "description": "the elevation used when the [Button] is not enabled.",
+              "description": "Elevação do botão desabilitado, em dp.",
               "default": 0
             },
             {
               "key": "borderWidth",
-              "label": "Width",
-              "type": "number"
+              "label": "Largura da borda (dp)",
+              "type": "number",
+              "description": "Largura da borda do botão, em dp."
             },
             {
               "key": "color",
-              "label": "Color",
+              "label": "Cor da borda",
               "type": "enum",
               "options": [
                 "primary",
@@ -5111,17 +5119,20 @@
                 "surfaceContainer",
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
-              ]
+              ],
+              "description": "Cor da borda do botão."
             },
             {
               "key": "horizontal",
-              "label": "Horizontal",
-              "type": "number"
+              "label": "Horizontal (dp)",
+              "type": "number",
+              "description": "Valor horizontal, em dp."
             },
             {
               "key": "vertical",
-              "label": "Vertical",
-              "type": "number"
+              "label": "Vertical (dp)",
+              "type": "number",
+              "description": "Valor vertical, em dp."
             }
           ],
           "code": {
@@ -5724,14 +5735,14 @@
             },
             {
               "key": "shape",
-              "label": "Shape",
+              "label": "Forma",
               "type": "enum",
               "options": ["none", "extraSmall", "small", "medium", "large", "extraLarge"],
-              "description": "defines the shape of this FAB's container and shadow (when using [elevation])"
+              "description": "Forma do contêiner do FAB e da sombra (quando há elevação)."
             },
             {
               "key": "contentColor",
-              "label": "Content color",
+              "label": "Cor do conteúdo",
               "type": "enum",
               "options": [
                 "primary",
@@ -5771,31 +5782,31 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the preferred color for content inside this FAB. Defaults to either the matching content color for [containerColor], or to the current [LocalContentColor] if [containerColor] is not a color from the theme."
+              "description": "Cor preferida para o conteúdo dentro do FAB. Vazio = o padrão do Material 3."
             },
             {
               "key": "defaultElevation",
-              "label": "Default elevation",
+              "label": "Elevação padrão (dp)",
               "type": "number",
-              "description": "the elevation used when the [FloatingActionButton] has no other [Interaction]s."
+              "description": "Elevação do `FloatingActionButton` sem outras interações, em dp."
             },
             {
               "key": "pressedElevation",
-              "label": "Pressed elevation",
+              "label": "Elevação pressionado (dp)",
               "type": "number",
-              "description": "the elevation used when the [FloatingActionButton] is pressed."
+              "description": "Elevação do `FloatingActionButton` pressionado, em dp."
             },
             {
               "key": "focusedElevation",
-              "label": "Focused elevation",
+              "label": "Elevação com foco (dp)",
               "type": "number",
-              "description": "the elevation used when the [FloatingActionButton] is focused."
+              "description": "Elevação do `FloatingActionButton` com foco, em dp."
             },
             {
               "key": "hoveredElevation",
-              "label": "Hovered elevation",
+              "label": "Elevação com cursor (dp)",
               "type": "number",
-              "description": "the elevation used when the [FloatingActionButton] is hovered."
+              "description": "Elevação do `FloatingActionButton` com o cursor sobre ele, em dp."
             }
           ],
           "code": {
@@ -6162,14 +6173,7 @@
                 "Bolt",
                 "EditCalendar"
               ],
-              "description": "Ícone antes do texto. Vazio = só texto.",
-              "notices": [
-                {
-                  "kind": "diverges",
-                  "message": "compose: obrigatório no código (`icon`), mas o campo é opcional",
-                  "ref": "signatures/extended-fab.compose.json"
-                }
-              ]
+              "description": "Ícone antes do texto. Vazio = só texto."
             },
             {
               "key": "expanded",
@@ -6234,14 +6238,14 @@
             },
             {
               "key": "shape",
-              "label": "Shape",
+              "label": "Forma",
               "type": "enum",
               "options": ["none", "extraSmall", "small", "medium", "large", "extraLarge"],
-              "description": "defines the shape of this FAB's container and shadow (when using [elevation])"
+              "description": "Forma do contêiner do FAB e da sombra (quando há elevação)."
             },
             {
               "key": "contentColor",
-              "label": "Content color",
+              "label": "Cor do conteúdo",
               "type": "enum",
               "options": [
                 "primary",
@@ -6281,31 +6285,31 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the preferred color for content inside this FAB. Defaults to either the matching content color for [containerColor], or to the current [LocalContentColor] if [containerColor] is not a color from the theme."
+              "description": "Cor preferida para o conteúdo dentro do FAB. Vazio = o padrão do Material 3."
             },
             {
               "key": "defaultElevation",
-              "label": "Default elevation",
+              "label": "Elevação padrão (dp)",
               "type": "number",
-              "description": "the elevation used when the [FloatingActionButton] has no other [Interaction]s."
+              "description": "Elevação do `FloatingActionButton` sem outras interações, em dp."
             },
             {
               "key": "pressedElevation",
-              "label": "Pressed elevation",
+              "label": "Elevação pressionado (dp)",
               "type": "number",
-              "description": "the elevation used when the [FloatingActionButton] is pressed."
+              "description": "Elevação do `FloatingActionButton` pressionado, em dp."
             },
             {
               "key": "focusedElevation",
-              "label": "Focused elevation",
+              "label": "Elevação com foco (dp)",
               "type": "number",
-              "description": "the elevation used when the [FloatingActionButton] is focused."
+              "description": "Elevação do `FloatingActionButton` com foco, em dp."
             },
             {
               "key": "hoveredElevation",
-              "label": "Hovered elevation",
+              "label": "Elevação com cursor (dp)",
               "type": "number",
-              "description": "the elevation used when the [FloatingActionButton] is hovered."
+              "description": "Elevação do `FloatingActionButton` com o cursor sobre ele, em dp."
             }
           ],
           "code": {
@@ -6316,7 +6320,6 @@
                 "expanded": "expanded",
                 "containerColor": "containerColor",
                 "text": "text",
-                "icon": "icon",
                 "shape": "shape",
                 "contentColor": "contentColor",
                 "defaultElevation": "elevation.defaultElevation",
@@ -6411,11 +6414,10 @@
                 }
               },
               "notes": "Use a sobrecarga `ExtendedFloatingActionButton(text = { Text(<text>) }, icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }, onClick = …, expanded = <expanded>)`; sem `icon`, use a de `content = { Text(<text>) }`. Dentro de um Scaffold, vai em `floatingActionButton`. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`.",
-              "ignore": ["modifier", "interactionSource"],
+              "ignore": ["modifier", "interactionSource", "icon"],
               "signature": "signatures/extended-fab.compose.json",
               "formats": {
                 "text": "{ Text(\"{value}\") }",
-                "icon": "{ Text(\"{value}\") }",
                 "defaultElevation": "{value}.dp",
                 "pressedElevation": "{value}.dp",
                 "focusedElevation": "{value}.dp",
@@ -6938,25 +6940,25 @@
             },
             {
               "key": "readOnly",
-              "label": "Read only",
+              "label": "Somente leitura",
               "type": "enum",
               "options": ["true", "false"],
               "default": "false",
-              "description": "controls the editable state of the text field. When `true`, the text field cannot be modified. However, a user can focus it and copy text from it. Read-only text fields are usually used to display pre-filled forms that a user cannot edit."
+              "description": "Controla se o campo é editável. Com `true`, o texto não pode ser alterado, mas o usuário ainda pode focar e copiar."
             },
             {
               "key": "minLines",
-              "label": "Min lines",
+              "label": "Mínimo de linhas",
               "type": "number",
               "default": 1,
-              "description": "the minimum height in terms of minimum number of visible lines. It is required that 1 <= [minLines] <= [maxLines]. This parameter is ignored when [singleLine] is true."
+              "description": "Altura mínima em número de linhas visíveis; deve valer 1 <= `minLines` <= `maxLines`. Ignorado com `singleLine` ligado."
             },
             {
               "key": "shape",
-              "label": "Shape",
+              "label": "Forma",
               "type": "enum",
               "options": ["none", "extraSmall", "small", "medium", "large", "extraLarge"],
-              "description": "defines the shape of this text field's container"
+              "description": "Forma do contêiner do campo de texto."
             }
           ],
           "code": {
@@ -7163,7 +7165,7 @@
             },
             {
               "key": "checkedThumbColor",
-              "label": "Checked thumb color",
+              "label": "Cor do polegar (marcado)",
               "type": "enum",
               "options": [
                 "primary",
@@ -7203,11 +7205,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the thumb when enabled and checked"
+              "description": "Cor usada para o polegar quando habilitado e marcado."
             },
             {
               "key": "checkedTrackColor",
-              "label": "Checked track color",
+              "label": "Cor da trilha (marcado)",
               "type": "enum",
               "options": [
                 "primary",
@@ -7247,11 +7249,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the track when enabled and checked"
+              "description": "Cor usada para a trilha quando habilitado e marcado."
             },
             {
               "key": "checkedBorderColor",
-              "label": "Checked border color",
+              "label": "Cor da borda (marcado)",
               "type": "enum",
               "options": [
                 "primary",
@@ -7291,11 +7293,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the border when enabled and checked"
+              "description": "Cor usada para a borda quando habilitado e marcado."
             },
             {
               "key": "checkedIconColor",
-              "label": "Checked icon color",
+              "label": "Cor do ícone (marcado)",
               "type": "enum",
               "options": [
                 "primary",
@@ -7335,11 +7337,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the icon when enabled and checked"
+              "description": "Cor usada para o ícone quando habilitado e marcado."
             },
             {
               "key": "uncheckedThumbColor",
-              "label": "Unchecked thumb color",
+              "label": "Cor do polegar (desmarcado)",
               "type": "enum",
               "options": [
                 "primary",
@@ -7379,11 +7381,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the thumb when enabled and unchecked"
+              "description": "Cor usada para o polegar quando habilitado e desmarcado."
             },
             {
               "key": "uncheckedTrackColor",
-              "label": "Unchecked track color",
+              "label": "Cor da trilha (desmarcado)",
               "type": "enum",
               "options": [
                 "primary",
@@ -7423,11 +7425,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the track when enabled and unchecked"
+              "description": "Cor usada para a trilha quando habilitado e desmarcado."
             },
             {
               "key": "uncheckedBorderColor",
-              "label": "Unchecked border color",
+              "label": "Cor da borda (desmarcado)",
               "type": "enum",
               "options": [
                 "primary",
@@ -7467,11 +7469,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the border when enabled and unchecked"
+              "description": "Cor usada para a borda quando habilitado e desmarcado."
             },
             {
               "key": "uncheckedIconColor",
-              "label": "Unchecked icon color",
+              "label": "Cor do ícone (desmarcado)",
               "type": "enum",
               "options": [
                 "primary",
@@ -7511,11 +7513,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the icon when enabled and unchecked"
+              "description": "Cor usada para o ícone quando habilitado e desmarcado."
             },
             {
               "key": "disabledCheckedThumbColor",
-              "label": "Disabled checked thumb color",
+              "label": "Desabilitado: cor do polegar (marcado)",
               "type": "enum",
               "options": [
                 "primary",
@@ -7555,11 +7557,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the thumb when disabled and checked"
+              "description": "Cor usada para o polegar quando desabilitado e marcado."
             },
             {
               "key": "disabledCheckedTrackColor",
-              "label": "Disabled checked track color",
+              "label": "Desabilitado: cor do trilho marcado",
               "type": "enum",
               "options": [
                 "primary",
@@ -7599,11 +7601,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the track when disabled and checked"
+              "description": "Cor usada na trilha do interruptor quando ele está desabilitado e marcado."
             },
             {
               "key": "disabledCheckedBorderColor",
-              "label": "Disabled checked border color",
+              "label": "Desabilitado: cor da borda marcado",
               "type": "enum",
               "options": [
                 "primary",
@@ -7643,11 +7645,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the border when disabled and checked"
+              "description": "Cor usada na borda do interruptor quando ele está desabilitado e marcado."
             },
             {
               "key": "disabledCheckedIconColor",
-              "label": "Disabled checked icon color",
+              "label": "Desabilitado: cor do ícone marcado",
               "type": "enum",
               "options": [
                 "primary",
@@ -7687,11 +7689,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the icon when disabled and checked"
+              "description": "Cor usada no ícone do interruptor quando ele está desabilitado e marcado."
             },
             {
               "key": "disabledUncheckedThumbColor",
-              "label": "Disabled unchecked thumb color",
+              "label": "Desabilitado: cor do botão desmarcado",
               "type": "enum",
               "options": [
                 "primary",
@@ -7731,11 +7733,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the thumb when disabled and unchecked"
+              "description": "Cor usada no botão deslizante (thumb) quando o interruptor está desabilitado e desmarcado."
             },
             {
               "key": "disabledUncheckedTrackColor",
-              "label": "Disabled unchecked track color",
+              "label": "Desabilitado: cor do trilho desmarcado",
               "type": "enum",
               "options": [
                 "primary",
@@ -7775,11 +7777,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the track when disabled and unchecked"
+              "description": "Cor usada na trilha do interruptor quando ele está desabilitado e desmarcado."
             },
             {
               "key": "disabledUncheckedBorderColor",
-              "label": "Disabled unchecked border color",
+              "label": "Desabilitado: cor da borda desmarcado",
               "type": "enum",
               "options": [
                 "primary",
@@ -7819,11 +7821,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the border when disabled and unchecked"
+              "description": "Cor usada na borda do interruptor quando ele está desabilitado e desmarcado."
             },
             {
               "key": "disabledUncheckedIconColor",
-              "label": "Disabled unchecked icon color",
+              "label": "Desabilitado: cor do ícone desmarcado",
               "type": "enum",
               "options": [
                 "primary",
@@ -7863,7 +7865,7 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the icon when disabled and unchecked"
+              "description": "Cor usada no ícone do interruptor quando ele está desabilitado e desmarcado."
             }
           ],
           "code": {
@@ -8598,7 +8600,7 @@
             },
             {
               "key": "checkedColor",
-              "label": "Checked color",
+              "label": "Cor marcada",
               "type": "enum",
               "options": [
                 "primary",
@@ -8638,11 +8640,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color that will be used for the border and box when checked"
+              "description": "Cor usada na borda e na caixa quando a caixa de seleção está marcada."
             },
             {
               "key": "uncheckedColor",
-              "label": "Unchecked color",
+              "label": "Cor desmarcada",
               "type": "enum",
               "options": [
                 "primary",
@@ -8682,11 +8684,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "color that will be used for the border when unchecked. By default, the inner box is transparent when unchecked."
+              "description": "Cor usada na borda quando a caixa está desmarcada. Por padrão, o interior da caixa fica transparente."
             },
             {
               "key": "checkmarkColor",
-              "label": "Checkmark color",
+              "label": "Cor do visto",
               "type": "enum",
               "options": [
                 "primary",
@@ -8726,11 +8728,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "color that will be used for the checkmark when checked"
+              "description": "Cor usada no sinal de visto quando a caixa está marcada."
             },
             {
               "key": "disabledCheckedColor",
-              "label": "Disabled checked color",
+              "label": "Desabilitado: cor marcada",
               "type": "enum",
               "options": [
                 "primary",
@@ -8770,11 +8772,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "color that will be used for the box and border when disabled and checked"
+              "description": "Cor usada na caixa e na borda quando está desabilitada e marcada."
             },
             {
               "key": "disabledUncheckedColor",
-              "label": "Disabled unchecked color",
+              "label": "Desabilitado: cor desmarcada",
               "type": "enum",
               "options": [
                 "primary",
@@ -8814,11 +8816,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "color that will be used for the border when disabled and unchecked. By default, the inner box is transparent when unchecked."
+              "description": "Cor usada na borda quando está desabilitada e desmarcada. Por padrão, o interior da caixa fica transparente."
             },
             {
               "key": "disabledIndeterminateColor",
-              "label": "Disabled indeterminate color",
+              "label": "Desabilitado: cor indeterminada",
               "type": "enum",
               "options": [
                 "primary",
@@ -8858,7 +8860,7 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "color that will be used for the box and border in a [TriStateCheckbox] when disabled AND in an [ToggleableState.Indeterminate] state"
+              "description": "Cor usada na caixa e na borda de um `TriStateCheckbox` desabilitado no estado indeterminado."
             }
           ],
           "code": {
@@ -9608,14 +9610,14 @@
             },
             {
               "key": "shape",
-              "label": "Shape",
+              "label": "Forma",
               "type": "enum",
               "options": ["none", "extraSmall", "small", "medium", "large", "extraLarge"],
-              "description": "defines the shape of this chip's container, border (when [border] is not null), and shadow (when using [elevation])"
+              "description": "Define a forma do contêiner do chip, da borda (quando existe) e da sombra (quando há elevação)."
             },
             {
               "key": "containerColor",
-              "label": "Container color",
+              "label": "Cor do contêiner",
               "type": "enum",
               "options": [
                 "primary",
@@ -9655,11 +9657,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the container color of this chip when enabled"
+              "description": "Cor do contêiner do chip quando habilitado."
             },
             {
               "key": "labelColor",
-              "label": "Label color",
+              "label": "Cor do rótulo",
               "type": "enum",
               "options": [
                 "primary",
@@ -9699,11 +9701,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the label color of this chip when enabled"
+              "description": "Cor do rótulo do chip quando habilitado."
             },
             {
               "key": "leadingIconContentColor",
-              "label": "Leading icon content color",
+              "label": "Cor do ícone inicial",
               "type": "enum",
               "options": [
                 "primary",
@@ -9743,11 +9745,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color of this chip's start icon when enabled"
+              "description": "Cor do ícone do início do chip quando habilitado."
             },
             {
               "key": "trailingIconContentColor",
-              "label": "Trailing icon content color",
+              "label": "Cor do ícone final",
               "type": "enum",
               "options": [
                 "primary",
@@ -9787,11 +9789,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color of this chip's end icon when enabled"
+              "description": "Cor do ícone do fim do chip quando habilitado."
             },
             {
               "key": "disabledContainerColor",
-              "label": "Disabled container color",
+              "label": "Cor do contêiner desabilitado",
               "type": "enum",
               "options": [
                 "primary",
@@ -9831,11 +9833,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the container color of this chip when not enabled"
+              "description": "Cor do contêiner do chip quando desabilitado."
             },
             {
               "key": "disabledLabelColor",
-              "label": "Disabled label color",
+              "label": "Cor do rótulo desabilitado",
               "type": "enum",
               "options": [
                 "primary",
@@ -9875,11 +9877,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the label color of this chip when not enabled"
+              "description": "Cor do rótulo do chip quando desabilitado."
             },
             {
               "key": "disabledLeadingIconContentColor",
-              "label": "Disabled leading icon content color",
+              "label": "Cor do ícone inicial desabilitado",
               "type": "enum",
               "options": [
                 "primary",
@@ -9919,11 +9921,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color of this chip's start icon when not enabled"
+              "description": "Cor do ícone do início do chip quando desabilitado."
             },
             {
               "key": "disabledTrailingIconContentColor",
-              "label": "Disabled trailing icon content color",
+              "label": "Cor do ícone final desabilitado",
               "type": "enum",
               "options": [
                 "primary",
@@ -9963,52 +9965,53 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color of this chip's end icon when not enabled"
+              "description": "Cor do ícone do fim do chip quando desabilitado."
             },
             {
               "key": "elevation",
-              "label": "Elevation",
+              "label": "Elevação (dp)",
               "type": "number",
-              "description": "[ChipElevation] used to resolve the elevation for this chip in different states. This controls the size of the shadow below the chip. Additionally, when the container color is [ColorScheme.surface], this controls the amount of primary color applied as an overlay. See [AssistChipDefaults.assistChipElevation]."
+              "description": "Elevação do chip nos diferentes estados (`ChipElevation`), em dp. Controla o tamanho da sombra e, com contêiner `surface`, a sobreposição da cor primária."
             },
             {
               "key": "pressedElevation",
-              "label": "Pressed elevation",
+              "label": "Elevação pressionado (dp)",
               "type": "number",
-              "description": "the elevation used when the chip is pressed."
+              "description": "Elevação do chip quando pressionado, em dp."
             },
             {
               "key": "focusedElevation",
-              "label": "Focused elevation",
+              "label": "Elevação com foco (dp)",
               "type": "number",
-              "description": "the elevation used when the chip is focused"
+              "description": "Elevação do chip quando está com foco, em dp."
             },
             {
               "key": "hoveredElevation",
-              "label": "Hovered elevation",
+              "label": "Elevação com cursor (dp)",
               "type": "number",
-              "description": "the elevation used when the chip is hovered"
+              "description": "Elevação do chip quando o cursor está sobre ele, em dp."
             },
             {
               "key": "draggedElevation",
-              "label": "Dragged elevation",
+              "label": "Elevação arrastado (dp)",
               "type": "number",
-              "description": "the elevation used when the chip is dragged"
+              "description": "Elevação do chip quando é arrastado, em dp."
             },
             {
               "key": "disabledElevation",
-              "label": "Disabled elevation",
+              "label": "Elevação desabilitado (dp)",
               "type": "number",
-              "description": "the elevation used when the chip is not enabled"
+              "description": "Elevação do chip quando está desabilitado, em dp."
             },
             {
               "key": "width",
-              "label": "Width",
-              "type": "number"
+              "label": "Largura da borda (dp)",
+              "type": "number",
+              "description": "Largura da borda do chip, em dp."
             },
             {
               "key": "color",
-              "label": "Color",
+              "label": "Cor da borda",
               "type": "enum",
               "options": [
                 "primary",
@@ -10047,11 +10050,12 @@
                 "surfaceContainer",
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
-              ]
+              ],
+              "description": "Cor da borda do chip."
             },
             {
               "key": "iconColor",
-              "label": "Icon color",
+              "label": "Cor do ícone",
               "type": "enum",
               "options": [
                 "primary",
@@ -10091,11 +10095,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color of this chip's start and end icons when enabled"
+              "description": "Cor dos ícones inicial e final do chip quando habilitado."
             },
             {
               "key": "disabledLeadingIconColor",
-              "label": "Disabled leading icon color",
+              "label": "Cor do ícone inicial desabilitado",
               "type": "enum",
               "options": [
                 "primary",
@@ -10135,11 +10139,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color of this chip's start icon when not enabled"
+              "description": "Cor do ícone do início do chip quando desabilitado."
             },
             {
               "key": "disabledTrailingIconColor",
-              "label": "Disabled trailing icon color",
+              "label": "Cor do ícone final desabilitado",
               "type": "enum",
               "options": [
                 "primary",
@@ -10179,11 +10183,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color of this chip's end icon when not enabled"
+              "description": "Cor do ícone do fim do chip quando desabilitado."
             },
             {
               "key": "selectedContainerColor",
-              "label": "Selected container color",
+              "label": "Cor do contêiner selecionado",
               "type": "enum",
               "options": [
                 "primary",
@@ -10223,11 +10227,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the container color of this chip when selected"
+              "description": "Cor do contêiner do chip quando selecionado."
             },
             {
               "key": "disabledSelectedContainerColor",
-              "label": "Disabled selected container color",
+              "label": "Cor do contêiner selecionado desabilitado",
               "type": "enum",
               "options": [
                 "primary",
@@ -10267,11 +10271,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the container color of this chip when not enabled and selected"
+              "description": "Cor do contêiner do chip quando desabilitado e selecionado."
             },
             {
               "key": "selectedLabelColor",
-              "label": "Selected label color",
+              "label": "Cor do rótulo selecionado",
               "type": "enum",
               "options": [
                 "primary",
@@ -10311,11 +10315,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the label color of this chip when selected"
+              "description": "Cor do rótulo do chip quando selecionado."
             },
             {
               "key": "selectedLeadingIconColor",
-              "label": "Selected leading icon color",
+              "label": "Cor do ícone inicial selecionado",
               "type": "enum",
               "options": [
                 "primary",
@@ -10355,11 +10359,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color of this chip's start icon when selected"
+              "description": "Cor do ícone do início do chip quando selecionado."
             },
             {
               "key": "selectedTrailingIconColor",
-              "label": "Selected trailing icon color",
+              "label": "Cor do ícone final selecionado",
               "type": "enum",
               "options": [
                 "primary",
@@ -10399,11 +10403,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color of this chip's end icon when selected"
+              "description": "Cor do ícone do fim do chip quando selecionado."
             },
             {
               "key": "leadingIconColor",
-              "label": "Leading icon color",
+              "label": "Cor do ícone inicial",
               "type": "enum",
               "options": [
                 "primary",
@@ -10443,11 +10447,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color of this chip's start icon when enabled"
+              "description": "Cor do ícone do início do chip quando habilitado."
             },
             {
               "key": "trailingIconColor",
-              "label": "Trailing icon color",
+              "label": "Cor do ícone final",
               "type": "enum",
               "options": [
                 "primary",
@@ -10487,11 +10491,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color of this chip's start end icon when enabled"
+              "description": "Cor do ícone do fim do chip quando habilitado."
             },
             {
               "key": "iconContentColor",
-              "label": "Icon content color",
+              "label": "Cor do ícone",
               "type": "enum",
               "options": [
                 "primary",
@@ -10531,11 +10535,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color of this chip's icon when enabled"
+              "description": "Cor do ícone do chip quando habilitado."
             },
             {
               "key": "disabledIconContentColor",
-              "label": "Disabled icon content color",
+              "label": "Cor do ícone desabilitado",
               "type": "enum",
               "options": [
                 "primary",
@@ -10575,7 +10579,7 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color of this chip's icon when not enabled"
+              "description": "Cor do ícone do chip quando desabilitado."
             }
           ],
           "code": {
@@ -11695,14 +11699,14 @@
             },
             {
               "key": "shape",
-              "label": "Shape",
+              "label": "Forma",
               "type": "enum",
               "options": ["none", "extraSmall", "small", "medium", "large", "extraLarge"],
-              "description": "defines the shape of this card's container, border (when [border] is not null), and shadow (when using [elevation])"
+              "description": "Define a forma do contêiner do card, da borda (quando existe) e da sombra (quando há elevação)."
             },
             {
               "key": "containerColor",
-              "label": "Container color",
+              "label": "Cor do contêiner",
               "type": "enum",
               "options": [
                 "primary",
@@ -11742,11 +11746,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the container color of this [Card] when enabled."
+              "description": "Cor do contêiner do `Card` quando habilitado."
             },
             {
               "key": "contentColor",
-              "label": "Content color",
+              "label": "Cor do conteúdo",
               "type": "enum",
               "options": [
                 "primary",
@@ -11786,11 +11790,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the content color of this [Card] when enabled."
+              "description": "Cor do conteúdo do `Card` quando habilitado."
             },
             {
               "key": "disabledContainerColor",
-              "label": "Disabled container color",
+              "label": "Cor do contêiner desabilitado",
               "type": "enum",
               "options": [
                 "primary",
@@ -11830,11 +11834,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the container color of this [Card] when not enabled."
+              "description": "Cor do contêiner do `Card` quando desabilitado."
             },
             {
               "key": "disabledContentColor",
-              "label": "Disabled content color",
+              "label": "Cor do conteúdo desabilitado",
               "type": "enum",
               "options": [
                 "primary",
@@ -11874,52 +11878,53 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the content color of this [Card] when not enabled."
+              "description": "Cor do conteúdo do `Card` quando desabilitado."
             },
             {
               "key": "defaultElevation",
-              "label": "Default elevation",
+              "label": "Elevação padrão (dp)",
               "type": "number",
-              "description": "the elevation used when the [Card] is has no other [Interaction]s."
+              "description": "Elevação do `Card` quando não há outra interação, em dp."
             },
             {
               "key": "pressedElevation",
-              "label": "Pressed elevation",
+              "label": "Elevação pressionado (dp)",
               "type": "number",
-              "description": "the elevation used when the [Card] is pressed."
+              "description": "Elevação do `Card` quando pressionado, em dp."
             },
             {
               "key": "focusedElevation",
-              "label": "Focused elevation",
+              "label": "Elevação com foco (dp)",
               "type": "number",
-              "description": "the elevation used when the [Card] is focused."
+              "description": "Elevação do `Card` quando está com foco, em dp."
             },
             {
               "key": "hoveredElevation",
-              "label": "Hovered elevation",
+              "label": "Elevação com cursor (dp)",
               "type": "number",
-              "description": "the elevation used when the [Card] is hovered."
+              "description": "Elevação do `Card` quando o cursor está sobre ele, em dp."
             },
             {
               "key": "draggedElevation",
-              "label": "Dragged elevation",
+              "label": "Elevação arrastado (dp)",
               "type": "number",
-              "description": "the elevation used when the [Card] is dragged."
+              "description": "Elevação do `Card` quando é arrastado, em dp."
             },
             {
               "key": "disabledElevation",
-              "label": "Disabled elevation",
+              "label": "Elevação desabilitado (dp)",
               "type": "number",
-              "description": "the elevation used when the [Card] is disabled."
+              "description": "Elevação do `Card` quando está desabilitado, em dp."
             },
             {
               "key": "borderWidth",
-              "label": "Width",
-              "type": "number"
+              "label": "Largura da borda (dp)",
+              "type": "number",
+              "description": "Largura da borda do card, em dp."
             },
             {
               "key": "color",
-              "label": "Color",
+              "label": "Cor da borda",
               "type": "enum",
               "options": [
                 "primary",
@@ -11958,7 +11963,8 @@
                 "surfaceContainer",
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
-              ]
+              ],
+              "description": "Cor da borda do card."
             }
           ],
           "code": {
@@ -12685,7 +12691,7 @@
             },
             {
               "key": "containerColor",
-              "label": "Container color",
+              "label": "Cor do contêiner",
               "type": "enum",
               "options": [
                 "primary",
@@ -12725,11 +12731,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the container color of this list item when enabled."
+              "description": "Cor do contêiner do item de lista quando habilitado."
             },
             {
               "key": "headlineColor",
-              "label": "Headline color",
+              "label": "Cor do título",
               "type": "enum",
               "options": [
                 "primary",
@@ -12769,11 +12775,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the headline text content color of this list item when enabled."
+              "description": "Cor do texto do título do item de lista quando habilitado."
             },
             {
               "key": "leadingIconColor",
-              "label": "Leading icon color",
+              "label": "Cor do ícone inicial",
               "type": "enum",
               "options": [
                 "primary",
@@ -12813,11 +12819,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color of this list item's leading content when enabled."
+              "description": "Cor do conteúdo inicial do item de lista quando habilitado."
             },
             {
               "key": "overlineColor",
-              "label": "Overline color",
+              "label": "Cor do texto superior",
               "type": "enum",
               "options": [
                 "primary",
@@ -12857,11 +12863,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the overline text color of this list item"
+              "description": "Cor do texto superior (overline) do item de lista."
             },
             {
               "key": "supportingColor",
-              "label": "Supporting color",
+              "label": "Cor do texto de apoio",
               "type": "enum",
               "options": [
                 "primary",
@@ -12901,11 +12907,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the supporting text color of this list item"
+              "description": "Cor do texto de apoio do item de lista."
             },
             {
               "key": "trailingIconColor",
-              "label": "Trailing icon color",
+              "label": "Cor do ícone final",
               "type": "enum",
               "options": [
                 "primary",
@@ -12945,11 +12951,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color of this list item's trailing content when enabled."
+              "description": "Cor do conteúdo final do item de lista quando habilitado."
             },
             {
               "key": "disabledHeadlineColor",
-              "label": "Disabled headline color",
+              "label": "Cor do título desabilitado",
               "type": "enum",
               "options": [
                 "primary",
@@ -12989,11 +12995,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the content color of this list item when not enabled."
+              "description": "Cor do conteúdo do item de lista quando desabilitado."
             },
             {
               "key": "disabledLeadingIconColor",
-              "label": "Disabled leading icon color",
+              "label": "Cor do ícone inicial desabilitado",
               "type": "enum",
               "options": [
                 "primary",
@@ -13033,11 +13039,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color of this list item's leading content when not enabled."
+              "description": "Cor do conteúdo inicial do item de lista quando desabilitado."
             },
             {
               "key": "disabledTrailingIconColor",
-              "label": "Disabled trailing icon color",
+              "label": "Cor do ícone final desabilitado",
               "type": "enum",
               "options": [
                 "primary",
@@ -13077,19 +13083,19 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color of this list item's trailing content when not enabled."
+              "description": "Cor do conteúdo final do item de lista quando desabilitado."
             },
             {
               "key": "tonalElevation",
-              "label": "Tonal elevation",
+              "label": "Elevação tonal (dp)",
               "type": "number",
-              "description": "the tonal elevation of this list item"
+              "description": "Elevação tonal do item de lista, em dp."
             },
             {
               "key": "shadowElevation",
-              "label": "Shadow elevation",
+              "label": "Elevação da sombra (dp)",
               "type": "number",
-              "description": "the shadow elevation of this list item"
+              "description": "Elevação da sombra do item de lista, em dp."
             }
           ],
           "code": {
@@ -13762,7 +13768,7 @@
             },
             {
               "key": "containerColor",
-              "label": "Container color",
+              "label": "Cor do contêiner",
               "type": "enum",
               "options": [
                 "primary",
@@ -13802,11 +13808,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the background of this navigation bar. Use [Color.Transparent] to have no color."
+              "description": "Cor do fundo da barra de navegação. Use `Color.Transparent` para ficar sem cor."
             },
             {
               "key": "contentColor",
-              "label": "Content color",
+              "label": "Cor do conteúdo",
               "type": "enum",
               "options": [
                 "primary",
@@ -13846,13 +13852,13 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the preferred color for content inside this navigation bar. Defaults to either the matching content color for [containerColor], or to the current [LocalContentColor] if [containerColor] is not a color from the theme."
+              "description": "Cor preferida para o conteúdo da barra. Vazio = o padrão do Material 3 (a cor de conteúdo de `containerColor`, ou `LocalContentColor`)."
             },
             {
               "key": "tonalElevation",
-              "label": "Tonal elevation",
+              "label": "Elevação tonal (dp)",
               "type": "number",
-              "description": "when [containerColor] is [ColorScheme.surface], a translucent primary color overlay is applied on top of the container. A higher tonal elevation value will result in a darker color in light theme and lighter color in dark theme. See also: [Surface]."
+              "description": "Em dp. Quando `containerColor` é `ColorScheme.surface`, aplica uma sobreposição translúcida da cor primária: quanto maior, mais escura no tema claro e mais clara no escuro."
             }
           ],
           "code": {
@@ -14304,28 +14310,28 @@
             },
             {
               "key": "sheetMaxWidth",
-              "label": "Sheet max width",
+              "label": "Largura máxima (dp)",
               "type": "number",
-              "description": "[Dp] that defines what the maximum width the sheet will take. Pass in [Dp.Unspecified] for a sheet that spans the entire screen width."
+              "description": "Largura máxima que a folha ocupa, em dp. Com `Dp.Unspecified`, a folha ocupa toda a largura da tela."
             },
             {
               "key": "sheetGesturesEnabled",
-              "label": "Sheet gestures enabled",
+              "label": "Gestos habilitados",
               "type": "enum",
               "options": ["true", "false"],
               "default": "true",
-              "description": "Whether the bottom sheet can be interacted with by gestures."
+              "description": "Define se é possível interagir com a folha inferior por gestos."
             },
             {
               "key": "shape",
-              "label": "Shape",
+              "label": "Forma",
               "type": "enum",
               "options": ["none", "extraSmall", "small", "medium", "large", "extraLarge"],
-              "description": "The shape of the bottom sheet."
+              "description": "Forma da folha inferior."
             },
             {
               "key": "containerColor",
-              "label": "Container color",
+              "label": "Cor do contêiner",
               "type": "enum",
               "options": [
                 "primary",
@@ -14365,11 +14371,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "The color used for the background of this bottom sheet"
+              "description": "Cor usada no fundo da bottom sheet."
             },
             {
               "key": "contentColor",
-              "label": "Content color",
+              "label": "Cor do conteúdo",
               "type": "enum",
               "options": [
                 "primary",
@@ -14409,18 +14415,18 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "The preferred color for content inside this bottom sheet. Defaults to either the matching content color for [containerColor], or to the current [LocalContentColor] if [containerColor] is not a color from the theme."
+              "description": "Cor preferida para o conteúdo dentro da bottom sheet. Vazio = o padrão do Material 3 (a cor de conteúdo correspondente a `containerColor`)."
             },
             {
               "key": "tonalElevation",
-              "label": "Tonal elevation",
+              "label": "Elevação tonal (dp)",
               "type": "number",
               "default": 0,
-              "description": "when [containerColor] is [ColorScheme.surface], a translucent primary color overlay is applied on top of the container. A higher tonal elevation value will result in a darker color in light theme and lighter color in dark theme. See also: [Surface]."
+              "description": "Quando `containerColor` é a cor `surface`, aplica uma sobreposição translúcida da cor primária sobre o contêiner. Quanto maior a elevação (em dp), mais escura a cor no tema claro e mais clara no tema escuro."
             },
             {
               "key": "scrimColor",
-              "label": "Scrim color",
+              "label": "Cor do scrim",
               "type": "enum",
               "options": [
                 "primary",
@@ -14460,18 +14466,18 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "Color of the scrim that obscures content when the bottom sheet is open."
+              "description": "Cor do scrim que cobre o conteúdo quando a bottom sheet está aberta."
             },
             {
               "key": "sheetShape",
-              "label": "Sheet shape",
+              "label": "Forma da folha",
               "type": "enum",
               "options": ["none", "extraSmall", "small", "medium", "large", "extraLarge"],
-              "description": "the shape of the bottom sheet"
+              "description": "Forma da bottom sheet."
             },
             {
               "key": "sheetContainerColor",
-              "label": "Sheet container color",
+              "label": "Cor do contêiner da folha",
               "type": "enum",
               "options": [
                 "primary",
@@ -14511,11 +14517,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the background color of the bottom sheet"
+              "description": "Cor de fundo da bottom sheet."
             },
             {
               "key": "sheetContentColor",
-              "label": "Sheet content color",
+              "label": "Cor do conteúdo da folha",
               "type": "enum",
               "options": [
                 "primary",
@@ -14555,28 +14561,28 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the preferred content color provided by the bottom sheet to its children. Defaults to the matching content color for [sheetContainerColor], or if that is not a color from the theme, this will keep the same content color set above the bottom sheet."
+              "description": "Cor de conteúdo que a bottom sheet fornece aos seus filhos. Vazio = o padrão do Material 3 (a cor de conteúdo correspondente a `sheetContainerColor`)."
             },
             {
               "key": "sheetTonalElevation",
-              "label": "Sheet tonal elevation",
+              "label": "Elevação tonal da folha (dp)",
               "type": "number",
               "default": 0,
-              "description": "when [sheetContainerColor] is [ColorScheme.surface], a translucent primary color overlay is applied on top of the container. A higher tonal elevation value will result in a darker color in light theme and lighter color in dark theme. See also: [Surface]."
+              "description": "Quando `sheetContainerColor` é a cor `surface`, aplica uma sobreposição translúcida da cor primária sobre o contêiner. Quanto maior a elevação (em dp), mais escura a cor no tema claro e mais clara no tema escuro."
             },
             {
               "key": "sheetShadowElevation",
-              "label": "Sheet shadow elevation",
+              "label": "Elevação da sombra (dp)",
               "type": "number",
-              "description": "the shadow elevation of the bottom sheet"
+              "description": "Elevação da sombra da bottom sheet, em dp."
             },
             {
               "key": "sheetSwipeEnabled",
-              "label": "Sheet swipe enabled",
+              "label": "Deslizar habilitado",
               "type": "enum",
               "options": ["true", "false"],
               "default": "true",
-              "description": "whether the sheet swiping is enabled and should react to the user's input"
+              "description": "Define se o gesto de deslizar a folha está habilitado e reage à interação do usuário."
             }
           ],
           "code": {
@@ -15105,19 +15111,20 @@
             },
             {
               "key": "shape",
-              "label": "Shape",
+              "label": "Forma",
               "type": "enum",
               "options": ["none", "extraSmall", "small", "medium", "large", "extraLarge"],
-              "description": "the [Shape] of this icon button."
+              "description": "Forma do botão de ícone."
             },
             {
               "key": "width",
-              "label": "Width",
-              "type": "number"
+              "label": "Largura (dp)",
+              "type": "number",
+              "description": "Largura do botão de ícone, em dp. Vazio = o padrão do Material 3."
             },
             {
               "key": "color",
-              "label": "Color",
+              "label": "Cor",
               "type": "enum",
               "options": [
                 "primary",
@@ -15156,7 +15163,8 @@
                 "surfaceContainer",
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
-              ]
+              ],
+              "description": "Cor do botão de ícone. Vazio = o padrão do Material 3."
             }
           ],
           "code": {
@@ -15573,19 +15581,20 @@
             },
             {
               "key": "shape",
-              "label": "Shape",
+              "label": "Forma",
               "type": "enum",
               "options": ["none", "extraSmall", "small", "medium", "large", "extraLarge"],
-              "description": "the [Shape] of this icon button."
+              "description": "Forma do botão de ícone."
             },
             {
               "key": "width",
-              "label": "Width",
-              "type": "number"
+              "label": "Largura (dp)",
+              "type": "number",
+              "description": "Largura do botão de ícone, em dp. Vazio = o padrão do Material 3."
             },
             {
               "key": "color",
-              "label": "Color",
+              "label": "Cor",
               "type": "enum",
               "options": [
                 "primary",
@@ -15624,7 +15633,8 @@
                 "surfaceContainer",
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
-              ]
+              ],
+              "description": "Cor do botão de ícone. Vazio = o padrão do Material 3."
             }
           ],
           "code": {
@@ -16039,9 +16049,9 @@
             },
             {
               "key": "space",
-              "label": "Space",
+              "label": "Sobreposição entre botões (dp)",
               "type": "number",
-              "description": "the dimension of the overlap between buttons. Should be equal to the stroke width used on the items."
+              "description": "Medida da sobreposição entre os botões, em dp. Deve ser igual à largura da borda usada nos itens."
             }
           ],
           "code": {
@@ -16052,7 +16062,7 @@
                 "enabled": "enabled",
                 "space": "space"
               },
-              "notes": "Um `SegmentedButton` por linha de `options`, dentro de `SingleChoiceSegmentedButtonRow { … }`: `selected`, `onClick`, `shape = SegmentedButtonDefaults.itemShape(index = <posição da linha>, count = <número de linhas>)` (obrigatório), `enabled = <enabled>` (parâmetro do segmento, não da linha), `icon = { SegmentedButtonDefaults.Icon(active = <selected>) }` (o check) e `label = { Text(<label>) }`. Com a coluna `icon` preenchida, passe `inactiveContent = { Icon(Icons.Filled.<icon>, contentDescription = null, Modifier.size(SegmentedButtonDefaults.IconSize)) }` ao `SegmentedButtonDefaults.Icon`. O `SegmentedButton` �� função de extensão do escopo da linha: importe `androidx.compose.material3.SegmentedButton`. Nenhum tipo exige opt-in. A 1.4.0 não traz os ícones: o app adiciona `androidx.compose.material:material-icons-core` (ou `-extended`) ou usa um Material Symbol com `painterResource`.",
+              "notes": "Um `SegmentedButton` por linha de `options`, dentro de `SingleChoiceSegmentedButtonRow { … }`: `selected`, `onClick`, `shape = SegmentedButtonDefaults.itemShape(index = <posição da linha>, count = <número de linhas>)` (obrigatório), `enabled = <enabled>` (parâmetro do segmento, não da linha), `icon = { SegmentedButtonDefaults.Icon(active = <selected>) }` (o check) e `label = { Text(<label>) }`. Com a coluna `icon` preenchida, passe `inactiveContent = { Icon(Icons.Filled.<icon>, contentDescription = null, Modifier.size(SegmentedButtonDefaults.IconSize)) }` ao `SegmentedButtonDefaults.Icon`. O `SegmentedButton` é função de extensão do escopo da linha: importe `androidx.compose.material3.SegmentedButton`. Nenhum tipo exige opt-in. A 1.4.0 não traz os ícones: o app adiciona `androidx.compose.material:material-icons-core` (ou `-extended`) ou usa um Material Symbol com `painterResource`.",
               "variants": {
                 "field": "selection",
                 "cases": {
@@ -16263,7 +16273,7 @@
             },
             {
               "key": "selectedColor",
-              "label": "Selected color",
+              "label": "Cor selecionado",
               "type": "enum",
               "options": [
                 "primary",
@@ -16303,11 +16313,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color to use for the RadioButton when selected and enabled."
+              "description": "Cor do RadioButton quando está selecionado e habilitado."
             },
             {
               "key": "unselectedColor",
-              "label": "Unselected color",
+              "label": "Cor não selecionado",
               "type": "enum",
               "options": [
                 "primary",
@@ -16347,11 +16357,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color to use for the RadioButton when unselected and enabled."
+              "description": "Cor do RadioButton quando não está selecionado e está habilitado."
             },
             {
               "key": "disabledSelectedColor",
-              "label": "Disabled selected color",
+              "label": "Desabilitado: selecionado",
               "type": "enum",
               "options": [
                 "primary",
@@ -16391,11 +16401,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color to use for the RadioButton when disabled and selected."
+              "description": "Cor do RadioButton quando está desabilitado e selecionado."
             },
             {
               "key": "disabledUnselectedColor",
-              "label": "Disabled unselected color",
+              "label": "Desabilitado: não selecionado",
               "type": "enum",
               "options": [
                 "primary",
@@ -16435,7 +16445,7 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color to use for the RadioButton when disabled and not selected."
+              "description": "Cor do RadioButton quando está desabilitado e não selecionado."
             }
           ],
           "code": {
@@ -16742,7 +16752,7 @@
             },
             {
               "key": "thumbColor",
-              "label": "Thumb color",
+              "label": "Cor do marcador",
               "type": "enum",
               "options": [
                 "primary",
@@ -16782,11 +16792,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "thumb color when enabled"
+              "description": "Cor do marcador (thumb) quando habilitado."
             },
             {
               "key": "activeTrackColor",
-              "label": "Active track color",
+              "label": "Cor da trilha ativa",
               "type": "enum",
               "options": [
                 "primary",
@@ -16826,11 +16836,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "color of the track in the part that is \"active\", meaning that the thumb is ahead of it"
+              "description": "Cor da parte \"ativa\" da trilha, ou seja, a que o marcador já percorreu."
             },
             {
               "key": "activeTickColor",
-              "label": "Active tick color",
+              "label": "Cor dos passos ativos",
               "type": "enum",
               "options": [
                 "primary",
@@ -16870,11 +16880,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "colors to be used to draw tick marks on the active track, if `steps` is specified"
+              "description": "Cor dos passos desenhados na trilha ativa, quando `steps` é definido."
             },
             {
               "key": "inactiveTrackColor",
-              "label": "Inactive track color",
+              "label": "Cor da trilha inativa",
               "type": "enum",
               "options": [
                 "primary",
@@ -16914,11 +16924,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "color of the track in the part that is \"inactive\", meaning that the thumb is before it"
+              "description": "Cor da parte \"inativa\" da trilha, ou seja, a que fica depois do marcador."
             },
             {
               "key": "inactiveTickColor",
-              "label": "Inactive tick color",
+              "label": "Cor dos passos inativos",
               "type": "enum",
               "options": [
                 "primary",
@@ -16958,11 +16968,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "colors to be used to draw tick marks on the inactive track, if `steps` are specified on the Slider is specified"
+              "description": "Cor dos passos desenhados na trilha inativa, quando `steps` é definido no Slider."
             },
             {
               "key": "disabledThumbColor",
-              "label": "Disabled thumb color",
+              "label": "Desabilitado: marcador",
               "type": "enum",
               "options": [
                 "primary",
@@ -17002,11 +17012,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "thumb colors when disabled"
+              "description": "Cor do marcador (thumb) quando o Slider está desabilitado."
             },
             {
               "key": "disabledActiveTrackColor",
-              "label": "Disabled active track color",
+              "label": "Desabilitado: trilha ativa",
               "type": "enum",
               "options": [
                 "primary",
@@ -17046,11 +17056,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "color of the track in the \"active\" part when the Slider is disabled"
+              "description": "Cor da parte \"ativa\" da trilha quando o Slider está desabilitado."
             },
             {
               "key": "disabledActiveTickColor",
-              "label": "Disabled active tick color",
+              "label": "Desabilitado: passos ativos",
               "type": "enum",
               "options": [
                 "primary",
@@ -17090,11 +17100,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "colors to be used to draw tick marks on the active track when Slider is disabled and when `steps` are specified on it"
+              "description": "Cor dos passos desenhados na trilha ativa quando o Slider está desabilitado e `steps` é definido."
             },
             {
               "key": "disabledInactiveTrackColor",
-              "label": "Disabled inactive track color",
+              "label": "Desabilitado: trilha inativa",
               "type": "enum",
               "options": [
                 "primary",
@@ -17134,11 +17144,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "color of the track in the \"inactive\" part when the Slider is disabled"
+              "description": "Cor da parte \"inativa\" da trilha quando o Slider está desabilitado."
             },
             {
               "key": "disabledInactiveTickColor",
-              "label": "Disabled inactive tick color",
+              "label": "Desabilitado: passos inativos",
               "type": "enum",
               "options": [
                 "primary",
@@ -17178,7 +17188,7 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "colors to be used to draw tick marks on the inactive part of the track when Slider is disabled and when `steps` are specified on it"
+              "description": "Cor dos passos desenhados na parte inativa da trilha quando o Slider está desabilitado e `steps` é definido."
             }
           ],
           "code": {
@@ -18112,14 +18122,14 @@
             },
             {
               "key": "shape",
-              "label": "Shape",
+              "label": "Forma",
               "type": "enum",
               "options": ["none", "extraSmall", "small", "medium", "large", "extraLarge"],
-              "description": "the shape of this search bar when it is not [expanded]. When [expanded], the shape will always be [SearchBarDefaults.fullScreenShape]."
+              "description": "Forma da barra de busca quando não está expandida. Quando expandida, a forma é sempre `SearchBarDefaults.fullScreenShape`."
             },
             {
               "key": "containerColor",
-              "label": "Container color",
+              "label": "Cor do contêiner",
               "type": "enum",
               "options": [
                 "primary",
@@ -18159,11 +18169,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the container color of the search bar"
+              "description": "Cor do contêiner da barra de busca."
             },
             {
               "key": "dividerColor",
-              "label": "Divider color",
+              "label": "Cor do divisor",
               "type": "enum",
               "options": [
                 "primary",
@@ -18203,19 +18213,19 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color of the divider between the input field and the search results"
+              "description": "Cor do divisor entre o campo de entrada e os resultados da busca."
             },
             {
               "key": "tonalElevation",
-              "label": "Tonal elevation",
+              "label": "Elevação tonal (dp)",
               "type": "number",
-              "description": "when [SearchBarColors.containerColor] is [ColorScheme.surface], a translucent primary color overlay is applied on top of the container. A higher tonal elevation value will result in a darker color in light theme and lighter color in dark theme. See also: [Surface]."
+              "description": "Quando `SearchBarColors.containerColor` é a cor `surface`, aplica uma sobreposição translúcida da cor primária sobre o contêiner. Quanto maior a elevação (em dp), mais escura a cor no tema claro e mais clara no tema escuro."
             },
             {
               "key": "shadowElevation",
-              "label": "Shadow elevation",
+              "label": "Elevação da sombra (dp)",
               "type": "number",
-              "description": "the elevation for the shadow below this search bar"
+              "description": "Elevação da sombra abaixo da barra de busca, em dp."
             }
           ],
           "code": {
@@ -18501,7 +18511,7 @@
             },
             {
               "key": "containerColor",
-              "label": "Container color",
+              "label": "Cor do contêiner",
               "type": "enum",
               "options": [
                 "primary",
@@ -18541,11 +18551,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the date picker's background"
+              "description": "Cor usada no fundo do seletor de data."
             },
             {
               "key": "titleContentColor",
-              "label": "Title content color",
+              "label": "Cor do título",
               "type": "enum",
               "options": [
                 "primary",
@@ -18585,11 +18595,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the date picker's title"
+              "description": "Cor usada no título do seletor de data."
             },
             {
               "key": "headlineContentColor",
-              "label": "Headline content color",
+              "label": "Cor do cabeçalho",
               "type": "enum",
               "options": [
                 "primary",
@@ -18629,11 +18639,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the date picker's headline"
+              "description": "Cor usada no cabeçalho (headline) do seletor de data."
             },
             {
               "key": "weekdayContentColor",
-              "label": "Weekday content color",
+              "label": "Cor dos dias da semana",
               "type": "enum",
               "options": [
                 "primary",
@@ -18673,11 +18683,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the weekday letters"
+              "description": "Cor usada nas letras dos dias da semana."
             },
             {
               "key": "subheadContentColor",
-              "label": "Subhead content color",
+              "label": "Cor do subtítulo",
               "type": "enum",
               "options": [
                 "primary",
@@ -18717,11 +18727,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the month and year subhead labels that appear when months are displayed at a `DateRangePicker`."
+              "description": "Cor usada nos subtítulos de mês e ano exibidos quando os meses aparecem num `DateRangePicker`."
             },
             {
               "key": "navigationContentColor",
-              "label": "Navigation content color",
+              "label": "Cor da navegação",
               "type": "enum",
               "options": [
                 "primary",
@@ -18761,11 +18771,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the content color used for the year selection menu button and the months arrow navigation when displayed at a `DatePicker`."
+              "description": "Cor de conteúdo do botão de seleção de ano e das setas de navegação entre meses, exibidos num `DatePicker`."
             },
             {
               "key": "yearContentColor",
-              "label": "Year content color",
+              "label": "Cor do ano",
               "type": "enum",
               "options": [
                 "primary",
@@ -18805,11 +18815,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for a year item content"
+              "description": "Cor usada no conteúdo de um item de ano."
             },
             {
               "key": "disabledYearContentColor",
-              "label": "Disabled year content color",
+              "label": "Ano desabilitado",
               "type": "enum",
               "options": [
                 "primary",
@@ -18849,11 +18859,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for a disabled year item content"
+              "description": "Cor usada no conteúdo de um item de ano desabilitado."
             },
             {
               "key": "currentYearContentColor",
-              "label": "Current year content color",
+              "label": "Cor do ano atual",
               "type": "enum",
               "options": [
                 "primary",
@@ -18893,11 +18903,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the current year content when selecting a year"
+              "description": "Cor usada no conteúdo do ano atual ao selecionar um ano."
             },
             {
               "key": "selectedYearContentColor",
-              "label": "Selected year content color",
+              "label": "Cor do ano selecionado",
               "type": "enum",
               "options": [
                 "primary",
@@ -18937,11 +18947,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for a selected year item content"
+              "description": "Cor usada no conteúdo de um item de ano selecionado."
             },
             {
               "key": "disabledSelectedYearContentColor",
-              "label": "Disabled selected year content color",
+              "label": "Ano selecionado desabilitado",
               "type": "enum",
               "options": [
                 "primary",
@@ -18981,11 +18991,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for a disabled selected year item content"
+              "description": "Cor usada no conteúdo de um item de ano selecionado e desabilitado."
             },
             {
               "key": "selectedYearContainerColor",
-              "label": "Selected year container color",
+              "label": "Contêiner do ano selecionado",
               "type": "enum",
               "options": [
                 "primary",
@@ -19025,11 +19035,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for a selected year item container"
+              "description": "Cor usada no contêiner de um item de ano selecionado."
             },
             {
               "key": "disabledSelectedYearContainerColor",
-              "label": "Disabled selected year container color",
+              "label": "Contêiner do ano selecionado desabilitado",
               "type": "enum",
               "options": [
                 "primary",
@@ -19069,11 +19079,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for a disabled selected year item container"
+              "description": "Cor usada no contêiner de um item de ano selecionado e desabilitado."
             },
             {
               "key": "dayContentColor",
-              "label": "Day content color",
+              "label": "Cor do dia",
               "type": "enum",
               "options": [
                 "primary",
@@ -19113,11 +19123,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for days content"
+              "description": "Cor usada no conteúdo dos dias."
             },
             {
               "key": "disabledDayContentColor",
-              "label": "Disabled day content color",
+              "label": "Dia desabilitado",
               "type": "enum",
               "options": [
                 "primary",
@@ -19157,11 +19167,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for disabled days content"
+              "description": "Cor usada no conteúdo dos dias desabilitados."
             },
             {
               "key": "selectedDayContentColor",
-              "label": "Selected day content color",
+              "label": "Cor do dia selecionado",
               "type": "enum",
               "options": [
                 "primary",
@@ -19201,11 +19211,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for selected days content"
+              "description": "Cor usada no conteúdo dos dias selecionados."
             },
             {
               "key": "disabledSelectedDayContentColor",
-              "label": "Disabled selected day content color",
+              "label": "Dia selecionado desabilitado",
               "type": "enum",
               "options": [
                 "primary",
@@ -19245,11 +19255,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for disabled selected days content"
+              "description": "Cor usada no conteúdo dos dias selecionados e desabilitados."
             },
             {
               "key": "selectedDayContainerColor",
-              "label": "Selected day container color",
+              "label": "Contêiner do dia selecionado",
               "type": "enum",
               "options": [
                 "primary",
@@ -19289,11 +19299,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for a selected day container"
+              "description": "Cor usada no contêiner de um dia selecionado."
             },
             {
               "key": "disabledSelectedDayContainerColor",
-              "label": "Disabled selected day container color",
+              "label": "Contêiner do dia selecionado desabilitado",
               "type": "enum",
               "options": [
                 "primary",
@@ -19333,11 +19343,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for a disabled selected day container"
+              "description": "Cor usada no contêiner de um dia selecionado e desabilitado."
             },
             {
               "key": "todayContentColor",
-              "label": "Today content color",
+              "label": "Cor do dia de hoje",
               "type": "enum",
               "options": [
                 "primary",
@@ -19377,11 +19387,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the day that marks the current date"
+              "description": "Cor usada no dia que marca a data atual."
             },
             {
               "key": "todayDateBorderColor",
-              "label": "Today date border color",
+              "label": "Borda do dia de hoje",
               "type": "enum",
               "options": [
                 "primary",
@@ -19421,11 +19431,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the border of the day that marks the current date"
+              "description": "Cor usada na borda do dia que marca a data atual."
             },
             {
               "key": "dayInSelectionRangeContentColor",
-              "label": "Day in selection range content color",
+              "label": "Conteúdo do dia no intervalo",
               "type": "enum",
               "options": [
                 "primary",
@@ -19465,11 +19475,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the content color used for days that are within a date range selection"
+              "description": "Cor de conteúdo usada nos dias dentro de um intervalo de datas selecionado."
             },
             {
               "key": "dayInSelectionRangeContainerColor",
-              "label": "Day in selection range container color",
+              "label": "Contêiner do dia no intervalo",
               "type": "enum",
               "options": [
                 "primary",
@@ -19509,11 +19519,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the container color used for days that are within a date range selection"
+              "description": "Cor do contêiner usada nos dias dentro de um intervalo de datas selecionado."
             },
             {
               "key": "dividerColor",
-              "label": "Divider color",
+              "label": "Cor do divisor",
               "type": "enum",
               "options": [
                 "primary",
@@ -19553,7 +19563,7 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the dividers used at the date pickers"
+              "description": "Cor usada nos divisores dos seletores de data."
             }
           ],
           "code": {
@@ -20754,7 +20764,7 @@
             },
             {
               "key": "clockDialColor",
-              "label": "Clock dial color",
+              "label": "Cor do mostrador",
               "type": "enum",
               "options": [
                 "primary",
@@ -20794,11 +20804,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "The color of the clock dial."
+              "description": "Cor do mostrador do relógio."
             },
             {
               "key": "clockDialSelectedContentColor",
-              "label": "Clock dial selected content color",
+              "label": "Números selecionados",
               "type": "enum",
               "options": [
                 "primary",
@@ -20838,11 +20848,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color of the numbers of the clock dial when they are selected or overlapping with the selector"
+              "description": "Cor dos números do mostrador quando estão selecionados ou sobrepostos pelo seletor."
             },
             {
               "key": "clockDialUnselectedContentColor",
-              "label": "Clock dial unselected content color",
+              "label": "Números não selecionados",
               "type": "enum",
               "options": [
                 "primary",
@@ -20882,11 +20892,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color of the numbers of the clock dial when they are unselected"
+              "description": "Cor dos números do mostrador quando não estão selecionados."
             },
             {
               "key": "selectorColor",
-              "label": "Selector color",
+              "label": "Cor do seletor",
               "type": "enum",
               "options": [
                 "primary",
@@ -20926,11 +20936,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "The color of the clock dial selector."
+              "description": "Cor do seletor do mostrador do relógio."
             },
             {
               "key": "containerColor",
-              "label": "Container color",
+              "label": "Cor do contêiner",
               "type": "enum",
               "options": [
                 "primary",
@@ -20970,11 +20980,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "The container color of the time picker."
+              "description": "Cor do contêiner do seletor de hora."
             },
             {
               "key": "periodSelectorBorderColor",
-              "label": "Period selector border color",
+              "label": "Borda do AM/PM",
               "type": "enum",
               "options": [
                 "primary",
@@ -21014,11 +21024,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the border of the AM/PM toggle."
+              "description": "Cor usada na borda do alternador AM/PM."
             },
             {
               "key": "periodSelectorSelectedContainerColor",
-              "label": "Period selector selected container color",
+              "label": "Contêiner AM/PM selecionado",
               "type": "enum",
               "options": [
                 "primary",
@@ -21058,11 +21068,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the selected container of the AM/PM toggle"
+              "description": "Cor usada no contêiner selecionado do alternador AM/PM."
             },
             {
               "key": "periodSelectorUnselectedContainerColor",
-              "label": "Period selector unselected container color",
+              "label": "Contêiner AM/PM não selecionado",
               "type": "enum",
               "options": [
                 "primary",
@@ -21102,11 +21112,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the unselected container of the AM/PM toggle"
+              "description": "Cor usada no contêiner não selecionado do alternador AM/PM."
             },
             {
               "key": "periodSelectorSelectedContentColor",
-              "label": "Period selector selected content color",
+              "label": "Conteúdo AM/PM selecionado",
               "type": "enum",
               "options": [
                 "primary",
@@ -21146,11 +21156,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "color used for the selected content of the AM/PM toggle"
+              "description": "Cor usada no conteúdo selecionado do alternador AM/PM."
             },
             {
               "key": "periodSelectorUnselectedContentColor",
-              "label": "Period selector unselected content color",
+              "label": "Conteúdo AM/PM não selecionado",
               "type": "enum",
               "options": [
                 "primary",
@@ -21190,11 +21200,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "color used for the unselected content of the AM/PM toggle"
+              "description": "Cor usada no conteúdo não selecionado do alternador AM/PM."
             },
             {
               "key": "timeSelectorSelectedContainerColor",
-              "label": "Time selector selected container color",
+              "label": "Contêiner hora/minuto selecionado",
               "type": "enum",
               "options": [
                 "primary",
@@ -21234,11 +21244,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "color used for the selected container of the display buttons to switch between hour and minutes"
+              "description": "Cor usada no contêiner selecionado dos botões que alternam entre hora e minutos."
             },
             {
               "key": "timeSelectorUnselectedContainerColor",
-              "label": "Time selector unselected container color",
+              "label": "Contêiner hora/minuto não selecionado",
               "type": "enum",
               "options": [
                 "primary",
@@ -21278,11 +21288,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "color used for the unselected container of the display buttons to switch between hour and minutes"
+              "description": "Cor usada no contêiner não selecionado dos botões que alternam entre hora e minutos."
             },
             {
               "key": "timeSelectorSelectedContentColor",
-              "label": "Time selector selected content color",
+              "label": "Cor do seletor selecionado",
               "type": "enum",
               "options": [
                 "primary",
@@ -21322,11 +21332,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "color used for the selected content of the display buttons to switch between hour and minutes"
+              "description": "Cor do conteúdo selecionado dos botões que alternam entre hora e minutos."
             },
             {
               "key": "timeSelectorUnselectedContentColor",
-              "label": "Time selector unselected content color",
+              "label": "Cor do seletor não selecionado",
               "type": "enum",
               "options": [
                 "primary",
@@ -21366,7 +21376,7 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "color used for the unselected content of the display buttons to switch between hour and minutes"
+              "description": "Cor do conteúdo não selecionado dos botões que alternam entre hora e minutos."
             }
           ],
           "code": {
@@ -22079,7 +22089,7 @@
             },
             {
               "key": "containerColor",
-              "label": "Container color",
+              "label": "Cor do contêiner",
               "type": "enum",
               "options": [
                 "primary",
@@ -22119,11 +22129,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the background of this badge"
+              "description": "Cor usada no fundo do selo."
             },
             {
               "key": "contentColor",
-              "label": "Content color",
+              "label": "Cor do conteúdo",
               "type": "enum",
               "options": [
                 "primary",
@@ -22163,7 +22173,7 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the preferred color for content inside this badge. Defaults to either the matching content color for [containerColor], or to the current [LocalContentColor] if [containerColor] is not a color from the theme."
+              "description": "Cor preferida para o conteúdo dentro do selo. Vazio = o padrão do Material 3 (a cor de conteúdo correspondente a `containerColor`)."
             }
           ],
           "code": {
@@ -22330,14 +22340,14 @@
             },
             {
               "key": "shape",
-              "label": "Shape",
+              "label": "Forma",
               "type": "enum",
               "options": ["none", "extraSmall", "small", "medium", "large", "extraLarge"],
-              "description": "defines the shape of this snackbar's container"
+              "description": "Define a forma do contêiner do snackbar."
             },
             {
               "key": "containerColor",
-              "label": "Container color",
+              "label": "Cor do contêiner",
               "type": "enum",
               "options": [
                 "primary",
@@ -22377,11 +22387,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the background of this snackbar. Use [Color.Transparent] to have no color."
+              "description": "Cor usada no fundo do snackbar. Use `Color.Transparent` para não ter cor."
             },
             {
               "key": "contentColor",
-              "label": "Content color",
+              "label": "Cor do conteúdo",
               "type": "enum",
               "options": [
                 "primary",
@@ -22421,11 +22431,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the preferred color for content inside this snackbar"
+              "description": "Cor preferida para o conteúdo dentro do snackbar."
             },
             {
               "key": "actionContentColor",
-              "label": "Action content color",
+              "label": "Cor da ação",
               "type": "enum",
               "options": [
                 "primary",
@@ -22465,11 +22475,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the preferred content color for the optional [action] inside this snackbar"
+              "description": "Cor preferida do conteúdo da ação opcional (`action`) do snackbar."
             },
             {
               "key": "dismissActionContentColor",
-              "label": "Dismiss action content color",
+              "label": "Cor da ação de dispensar",
               "type": "enum",
               "options": [
                 "primary",
@@ -22509,7 +22519,7 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the preferred content color for the optional [dismissAction] inside this snackbar"
+              "description": "Cor preferida do conteúdo da ação opcional de dispensar (`dismissAction`) do snackbar."
             }
           ],
           "code": {
@@ -22752,20 +22762,20 @@
             },
             {
               "key": "maxWidth",
-              "label": "Max width",
+              "label": "Largura máxima (dp)",
               "type": "number",
-              "description": "the maximum width for the plain tooltip"
+              "description": "Largura máxima do tooltip simples, em dp."
             },
             {
               "key": "shape",
-              "label": "Shape",
+              "label": "Forma",
               "type": "enum",
               "options": ["none", "extraSmall", "small", "medium", "large", "extraLarge"],
-              "description": "the [Shape] that should be applied to the tooltip container."
+              "description": "Forma (`Shape`) aplicada ao contêiner do tooltip."
             },
             {
               "key": "contentColor",
-              "label": "Content color",
+              "label": "Cor do conteúdo",
               "type": "enum",
               "options": [
                 "primary",
@@ -22805,11 +22815,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "[Color] that will be applied to the tooltip's content."
+              "description": "Cor aplicada ao conteúdo do tooltip."
             },
             {
               "key": "containerColor",
-              "label": "Container color",
+              "label": "Cor do contêiner",
               "type": "enum",
               "options": [
                 "primary",
@@ -22849,25 +22859,25 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "[Color] that will be applied to the tooltip's container."
+              "description": "Cor aplicada ao contêiner do tooltip."
             },
             {
               "key": "tonalElevation",
-              "label": "Tonal elevation",
+              "label": "Elevação tonal (dp)",
               "type": "number",
               "default": 0,
-              "description": "the tonal elevation of the tooltip."
+              "description": "Elevação tonal do tooltip, em dp."
             },
             {
               "key": "shadowElevation",
-              "label": "Shadow elevation",
+              "label": "Elevação da sombra (dp)",
               "type": "number",
               "default": 0,
-              "description": "the shadow elevation of the tooltip."
+              "description": "Elevação da sombra do tooltip, em dp."
             },
             {
               "key": "colorsContainerColor",
-              "label": "Container color",
+              "label": "Cor do contêiner",
               "type": "enum",
               "options": [
                 "primary",
@@ -22906,11 +22916,12 @@
                 "surfaceContainer",
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
-              ]
+              ],
+              "description": "Cor do contêiner do tooltip, definida no conjunto de cores."
             },
             {
               "key": "colorsContentColor",
-              "label": "Content color",
+              "label": "Cor do conteúdo",
               "type": "enum",
               "options": [
                 "primary",
@@ -22949,11 +22960,12 @@
                 "surfaceContainer",
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
-              ]
+              ],
+              "description": "Cor do conteúdo do tooltip, definida no conjunto de cores."
             },
             {
               "key": "titleContentColor",
-              "label": "Title content color",
+              "label": "Cor do título",
               "type": "enum",
               "options": [
                 "primary",
@@ -22992,11 +23004,12 @@
                 "surfaceContainer",
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
-              ]
+              ],
+              "description": "Cor do conteúdo do título do tooltip."
             },
             {
               "key": "actionContentColor",
-              "label": "Action content color",
+              "label": "Cor da ação",
               "type": "enum",
               "options": [
                 "primary",
@@ -23035,7 +23048,8 @@
                 "surfaceContainer",
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
-              ]
+              ],
+              "description": "Cor do conteúdo da ação do tooltip."
             }
           ],
           "code": {
@@ -23425,7 +23439,7 @@
             },
             {
               "key": "color",
-              "label": "Color",
+              "label": "Cor",
               "type": "enum",
               "options": [
                 "primary",
@@ -23465,19 +23479,19 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "color of this progress indicator"
+              "description": "Cor do indicador de progresso."
             },
             {
               "key": "strokeWidth",
-              "label": "Stroke width",
+              "label": "Largura do traço (dp)",
               "type": "number",
-              "description": "stroke width of this progress indicator"
+              "description": "Largura do traço do indicador de progresso, em dp."
             },
             {
               "key": "gapSize",
-              "label": "Gap size",
+              "label": "Tamanho do espaço (dp)",
               "type": "number",
-              "description": "size of the gap between the progress indicator and the track"
+              "description": "Tamanho do espaço entre o indicador de progresso e a trilha, em dp."
             }
           ],
           "code": {
@@ -24074,20 +24088,22 @@
             },
             {
               "key": "shape",
-              "label": "Shape",
+              "label": "Forma",
               "type": "enum",
               "options": ["none", "extraSmall", "small", "medium", "large", "extraLarge"],
-              "description": "defines the shape of this text field's container."
+              "description": "Define a forma do contêiner do campo de texto."
             },
             {
               "key": "horizontal",
-              "label": "Horizontal",
-              "type": "number"
+              "label": "Horizontal (dp)",
+              "type": "number",
+              "description": "Medida horizontal, em dp."
             },
             {
               "key": "vertical",
-              "label": "Vertical",
-              "type": "number"
+              "label": "Vertical (dp)",
+              "type": "number",
+              "description": "Medida vertical, em dp."
             }
           ],
           "code": {
@@ -24675,14 +24691,14 @@
             },
             {
               "key": "shape",
-              "label": "Shape",
+              "label": "Forma",
               "type": "enum",
               "options": ["none", "extraSmall", "small", "medium", "large", "extraLarge"],
-              "description": "defines the shape of this dialog's container"
+              "description": "Define a forma do contêiner do diálogo."
             },
             {
               "key": "containerColor",
-              "label": "Container color",
+              "label": "Cor do contêiner",
               "type": "enum",
               "options": [
                 "primary",
@@ -24722,11 +24738,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the background of this dialog. Use [Color.Transparent] to have no color."
+              "description": "Cor usada no fundo do diálogo. Use `Color.Transparent` para não ter cor."
             },
             {
               "key": "iconContentColor",
-              "label": "Icon content color",
+              "label": "Cor do ícone",
               "type": "enum",
               "options": [
                 "primary",
@@ -24766,11 +24782,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the content color used for the icon."
+              "description": "Cor do conteúdo usada no ícone."
             },
             {
               "key": "titleContentColor",
-              "label": "Title content color",
+              "label": "Cor do título",
               "type": "enum",
               "options": [
                 "primary",
@@ -24810,11 +24826,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the content color used for the title."
+              "description": "Cor do conteúdo usada no título."
             },
             {
               "key": "textContentColor",
-              "label": "Text content color",
+              "label": "Cor do texto",
               "type": "enum",
               "options": [
                 "primary",
@@ -24854,13 +24870,13 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the content color used for the text."
+              "description": "Cor do conteúdo usada no texto."
             },
             {
               "key": "tonalElevation",
-              "label": "Tonal elevation",
+              "label": "Elevação tonal (dp)",
               "type": "number",
-              "description": "when [containerColor] is [ColorScheme.surface], a translucent primary color overlay is applied on top of the container. A higher tonal elevation value will result in a darker color in light theme and lighter color in dark theme. See also: [Surface]."
+              "description": "Elevação tonal do diálogo, em dp. Quando `containerColor` é `ColorScheme.surface`, aplica-se uma sobreposição translúcida da cor primária: quanto maior o valor, mais escuro no tema claro e mais claro no tema escuro."
             }
           ],
           "code": {
@@ -25546,14 +25562,14 @@
             },
             {
               "key": "shape",
-              "label": "Shape",
+              "label": "Forma",
               "type": "enum",
               "options": ["none", "extraSmall", "small", "medium", "large", "extraLarge"],
-              "description": "the shape of the menu"
+              "description": "Forma do menu."
             },
             {
               "key": "containerColor",
-              "label": "Container color",
+              "label": "Cor do contêiner",
               "type": "enum",
               "options": [
                 "primary",
@@ -25593,28 +25609,29 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the container color of the menu"
+              "description": "Cor do contêiner do menu."
             },
             {
               "key": "tonalElevation",
-              "label": "Tonal elevation",
+              "label": "Elevação tonal (dp)",
               "type": "number",
-              "description": "when [containerColor] is [ColorScheme.surface], a translucent primary color overlay is applied on top of the container. A higher tonal elevation value will result in a darker color in light theme and lighter color in dark theme. See also: [Surface]."
+              "description": "Elevação tonal do menu, em dp. Quando `containerColor` é `ColorScheme.surface`, aplica-se uma sobreposição translúcida da cor primária: quanto maior o valor, mais escuro no tema claro e mais claro no tema escuro."
             },
             {
               "key": "shadowElevation",
-              "label": "Shadow elevation",
+              "label": "Elevação da sombra (dp)",
               "type": "number",
-              "description": "the elevation for the shadow below the menu"
+              "description": "Elevação da sombra abaixo do menu, em dp."
             },
             {
               "key": "width",
-              "label": "Width",
-              "type": "number"
+              "label": "Largura (dp)",
+              "type": "number",
+              "description": "Largura do menu, em dp."
             },
             {
               "key": "color",
-              "label": "Color",
+              "label": "Cor",
               "type": "enum",
               "options": [
                 "primary",
@@ -25653,7 +25670,8 @@
                 "surfaceContainer",
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
-              ]
+              ],
+              "description": "Cor do menu."
             }
           ],
           "code": {
@@ -26206,7 +26224,7 @@
             },
             {
               "key": "containerColor",
-              "label": "Container color",
+              "label": "Cor do contêiner",
               "type": "enum",
               "options": [
                 "primary",
@@ -26246,11 +26264,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the background of this navigation rail. Use [Color.Transparent] to have no color."
+              "description": "Cor usada no fundo do trilho de navegação. Use `Color.Transparent` para não ter cor."
             },
             {
               "key": "contentColor",
-              "label": "Content color",
+              "label": "Cor do conteúdo",
               "type": "enum",
               "options": [
                 "primary",
@@ -26290,18 +26308,18 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the preferred color for content inside this navigation rail. Defaults to either the matching content color for [containerColor], or to the current [LocalContentColor] if [containerColor] is not a color from the theme."
+              "description": "Cor preferida para o conteúdo dentro do trilho de navegação. Vazio = o padrão do Material 3 (a cor de conteúdo correspondente a `containerColor`)."
             },
             {
               "key": "shape",
-              "label": "Shape",
+              "label": "Forma",
               "type": "enum",
               "options": ["none", "extraSmall", "small", "medium", "large", "extraLarge"],
-              "description": "defines the shape of this wide navigation rail's container."
+              "description": "Define a forma do contêiner do trilho de navegação largo."
             },
             {
               "key": "colorsContainerColor",
-              "label": "Container color",
+              "label": "Cor do contêiner",
               "type": "enum",
               "options": [
                 "primary",
@@ -26341,11 +26359,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the background of a non-modal wide navigation rail."
+              "description": "Cor usada no fundo de um trilho de navegação largo não modal."
             },
             {
               "key": "colorsContentColor",
-              "label": "Content color",
+              "label": "Cor do conteúdo",
               "type": "enum",
               "options": [
                 "primary",
@@ -26385,11 +26403,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the preferred color for content inside a wide navigation rail. Defaults to either the matching content color for [containerColor], or to the current [LocalContentColor] if [containerColor] is not a color from the theme"
+              "description": "Cor preferida para o conteúdo dentro de um trilho de navegação largo. Vazio = o padrão do Material 3 (a cor de conteúdo correspondente a `containerColor`)."
             },
             {
               "key": "modalContainerColor",
-              "label": "Modal container color",
+              "label": "Cor do contêiner modal",
               "type": "enum",
               "options": [
                 "primary",
@@ -26429,11 +26447,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the background of a modal wide navigation rail."
+              "description": "Cor usada no fundo de um trilho de navegação largo modal."
             },
             {
               "key": "modalScrimColor",
-              "label": "Modal scrim color",
+              "label": "Cor do scrim modal",
               "type": "enum",
               "options": [
                 "primary",
@@ -26473,11 +26491,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the scrim overlay for background content of a modal wide navigation rail"
+              "description": "Cor da sobreposição (scrim) sobre o conteúdo de fundo de um trilho de navegação largo modal."
             },
             {
               "key": "modalContentColor",
-              "label": "Modal content color",
+              "label": "Cor do conteúdo modal",
               "type": "enum",
               "options": [
                 "primary",
@@ -26517,33 +26535,33 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the preferred color for content inside a modal wide navigation rail. Defaults to either the matching content color for [modalContainerColor], or to the current [LocalContentColor] if [modalContainerColor] is not a color from the theme"
+              "description": "Cor preferida para o conteúdo dentro de um trilho de navegação largo modal. Vazio = o padrão do Material 3 (a cor de conteúdo correspondente a `modalContainerColor`)."
             },
             {
               "key": "hideOnCollapse",
-              "label": "Hide on collapse",
+              "label": "Ocultar ao recolher",
               "type": "enum",
               "options": ["true", "false"],
               "default": "false",
-              "description": "whether this wide navigation rail should slide offscreen when it collapses and be hidden, or stay on screen as a collapsed wide navigation rail (default)"
+              "description": "Define se o trilho largo desliza para fora da tela e fica oculto ao recolher, ou permanece na tela como trilho largo recolhido (padrão)."
             },
             {
               "key": "collapsedShape",
-              "label": "Collapsed shape",
+              "label": "Forma recolhida",
               "type": "enum",
               "options": ["none", "extraSmall", "small", "medium", "large", "extraLarge"],
-              "description": "the shape of this wide navigation rail's container when it's collapsed"
+              "description": "Forma do contêiner do trilho de navegação largo quando está recolhido."
             },
             {
               "key": "expandedShape",
-              "label": "Expanded shape",
+              "label": "Forma expandida",
               "type": "enum",
               "options": ["none", "extraSmall", "small", "medium", "large", "extraLarge"],
-              "description": "the shape of this wide navigation rail's container when it's expanded"
+              "description": "Forma do contêiner do trilho de navegação largo quando está expandido."
             },
             {
               "key": "colorsContainerColor2",
-              "label": "Container color",
+              "label": "Cor do contêiner",
               "type": "enum",
               "options": [
                 "primary",
@@ -26583,11 +26601,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the background of a non-modal wide navigation rail."
+              "description": "Cor usada no fundo de um trilho de navegação largo não modal."
             },
             {
               "key": "colorsContentColor2",
-              "label": "Content color",
+              "label": "Cor do conteúdo",
               "type": "enum",
               "options": [
                 "primary",
@@ -26627,14 +26645,14 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the preferred color for content inside a wide navigation rail. Defaults to either the matching content color for [containerColor], or to the current [LocalContentColor] if [containerColor] is not a color from the theme"
+              "description": "Cor preferida para o conteúdo dentro de um trilho de navegação largo. Vazio = o padrão do Material 3 (a cor de conteúdo correspondente a `containerColor`)."
             },
             {
               "key": "expandedHeaderTopPadding",
-              "label": "Expanded header top padding",
+              "label": "Espaço superior do cabeçalho (dp)",
               "type": "number",
               "default": 0,
-              "description": "the padding to be applied to the top of the rail. It's usually needed in order to align the content of the rail between the collapsed and expanded animation"
+              "description": "Espaçamento aplicado ao topo do trilho, em dp. Costuma ser necessário para alinhar o conteúdo entre a animação de recolher e a de expandir."
             }
           ],
           "code": {
@@ -27490,7 +27508,7 @@
             },
             {
               "key": "containerColor",
-              "label": "Container color",
+              "label": "Cor do contêiner",
               "type": "enum",
               "options": [
                 "primary",
@@ -27530,11 +27548,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the background of this navigation bar. Use [Color.Transparent] to have no color"
+              "description": "Cor usada no fundo da barra de navegação. Use `Color.Transparent` para não ter cor."
             },
             {
               "key": "contentColor",
-              "label": "Content color",
+              "label": "Cor do conteúdo",
               "type": "enum",
               "options": [
                 "primary",
@@ -27574,7 +27592,7 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color for content inside this navigation bar."
+              "description": "Cor do conteúdo dentro da barra de navegação."
             }
           ],
           "code": {
@@ -27709,7 +27727,7 @@
                 "iconPosition": "Start",
                 "items": [
                   {
-                    "label": "In��cio",
+                    "label": "Início",
                     "icon": "Home",
                     "selected": "true"
                   },
@@ -28073,15 +28091,15 @@
             },
             {
               "key": "gesturesEnabled",
-              "label": "Gestures enabled",
+              "label": "Gestos habilitados",
               "type": "enum",
               "options": ["true", "false"],
               "default": "true",
-              "description": "whether or not the drawer can be interacted by gestures"
+              "description": "Define se a gaveta pode ser operada por gestos."
             },
             {
               "key": "scrimColor",
-              "label": "Scrim color",
+              "label": "Cor do scrim",
               "type": "enum",
               "options": [
                 "primary",
@@ -28121,7 +28139,7 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "color of the scrim that obscures content when the drawer is open"
+              "description": "Cor da sobreposição (scrim) que cobre o conteúdo quando a gaveta está aberta."
             }
           ],
           "code": {
@@ -28583,9 +28601,9 @@
             },
             {
               "key": "selectedTabIndex",
-              "label": "Selected tab index",
+              "label": "Índice da aba selecionada",
               "type": "number",
-              "description": "the index of the currently selected tab",
+              "description": "Índice da aba atualmente selecionada.",
               "notices": [
                 {
                   "kind": "diverges",
@@ -28611,7 +28629,7 @@
             },
             {
               "key": "containerColor",
-              "label": "Container color",
+              "label": "Cor do contêiner",
               "type": "enum",
               "options": [
                 "primary",
@@ -28651,11 +28669,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the background of this tab row. Use [Color.Transparent] to have no color."
+              "description": "Cor usada no fundo da linha de abas. Use `Color.Transparent` para não ter cor."
             },
             {
               "key": "contentColor",
-              "label": "Content color",
+              "label": "Cor do conteúdo",
               "type": "enum",
               "options": [
                 "primary",
@@ -28695,19 +28713,19 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the preferred color for content inside this tab row. Defaults to either the matching content color for [containerColor], or to the current [LocalContentColor] if [containerColor] is not a color from the theme."
+              "description": "Cor preferida para o conteúdo dentro da linha de abas. Vazio = o padrão do Material 3 (a cor de conteúdo correspondente a `containerColor`)."
             },
             {
               "key": "edgePadding",
-              "label": "Edge padding",
+              "label": "Espaço da borda (dp)",
               "type": "number",
-              "description": "the padding between the starting and ending edge of the scrollable tab row, and the tabs inside the row. This padding helps inform the user that this tab row can be scrolled, unlike a [TabRow]."
+              "description": "Espaço, em dp, entre as bordas inicial e final da linha de abas rolável e as abas dentro dela. Indica ao usuário que a linha pode ser rolada, diferente de `TabRow`."
             },
             {
               "key": "minTabWidth",
-              "label": "Min tab width",
+              "label": "Largura mínima da aba (dp)",
               "type": "number",
-              "description": "the minimum width for a [Tab] in this tab row regardless of content size."
+              "description": "Largura mínima de uma `Tab` nesta linha de abas, em dp, independentemente do tamanho do conteúdo."
             }
           ],
           "code": {
@@ -29857,7 +29875,7 @@
             },
             {
               "key": "containerColor",
-              "label": "Container color",
+              "label": "Cor do contêiner",
               "type": "enum",
               "options": [
                 "primary",
@@ -29897,11 +29915,11 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the color used for the background of this BottomAppBar. Use [Color.Transparent] to have no color."
+              "description": "Cor usada no fundo da `BottomAppBar`. Use `Color.Transparent` para não ter cor."
             },
             {
               "key": "contentColor",
-              "label": "Content color",
+              "label": "Cor do conteúdo",
               "type": "enum",
               "options": [
                 "primary",
@@ -29941,23 +29959,25 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "the preferred color for content inside this BottomAppBar. Defaults to either the matching content color for [containerColor], or to the current [LocalContentColor] if [containerColor] is not a color from the theme."
+              "description": "Cor preferida para o conteúdo dentro da `BottomAppBar`. Vazio = o padrão do Material 3 (a cor de conteúdo correspondente a `containerColor`)."
             },
             {
               "key": "tonalElevation",
-              "label": "Tonal elevation",
+              "label": "Elevação tonal (dp)",
               "type": "number",
-              "description": "when [containerColor] is [ColorScheme.surface], a translucent primary color overlay is applied on top of the container. A higher tonal elevation value will result in a darker color in light theme and lighter color in dark theme. See also: [Surface]."
+              "description": "Elevação tonal da barra, em dp. Quando `containerColor` é `ColorScheme.surface`, aplica-se uma sobreposição translúcida da cor primária: quanto maior o valor, mais escuro no tema claro e mais claro no tema escuro."
             },
             {
               "key": "horizontal",
-              "label": "Horizontal",
-              "type": "number"
+              "label": "Horizontal (dp)",
+              "type": "number",
+              "description": "Medida horizontal, em dp."
             },
             {
               "key": "vertical",
-              "label": "Vertical",
-              "type": "number"
+              "label": "Vertical (dp)",
+              "type": "number",
+              "description": "Medida vertical, em dp."
             }
           ],
           "code": {
@@ -30073,7 +30093,7 @@
               }
             },
             {
-              "name": "Quatro a��ões",
+              "name": "Quatro ações",
               "values": {
                 "actionIcon1": "Home",
                 "actionIcon2": "Search",
@@ -30169,8 +30189,7 @@
               "key": "itemSpacing",
               "label": "Espaço entre itens (dp)",
               "type": "number",
-              "description": "Espaço entre os itens em dp (itemSpacing). Vazio = 0 no código; o desenho usa 8. No centered-hero o recuo e a largura dos itens dependem dele.",
-              "default": 0
+              "description": "Espaço entre os itens em dp (itemSpacing). Vazio = 0 no código; o desenho usa 8. No centered-hero o recuo e a largura dos itens dependem dele."
             },
             {
               "key": "width",
@@ -30196,39 +30215,41 @@
             },
             {
               "key": "userScrollEnabled",
-              "label": "User scroll enabled",
+              "label": "Rolagem do usuário",
               "type": "enum",
               "options": ["true", "false"],
               "default": "true",
-              "description": "whether the scrolling via the user gestures or accessibility actions is allowed."
+              "description": "Define se a rolagem por gestos do usuário ou por ações de acessibilidade é permitida."
             },
             {
               "key": "minSmallItemWidth",
-              "label": "Min small item width",
+              "label": "Largura mínima do item pequeno (dp)",
               "type": "number",
-              "description": "The minimum allowable width of small items in dp. Depending on the [preferredItemWidth] and the width of the carousel, the small item width will be chosen from a range of [minSmallItemWidth] and [maxSmallItemWidth]"
+              "description": "Largura mínima permitida dos itens pequenos, em dp. A largura do item pequeno é escolhida entre `minSmallItemWidth` e `maxSmallItemWidth`, conforme `preferredItemWidth` e a largura do carrossel."
             },
             {
               "key": "maxSmallItemWidth",
-              "label": "Max small item width",
+              "label": "Largura máxima do item pequeno (dp)",
               "type": "number",
-              "description": "The maximum allowable width of small items in dp. Depending on the [preferredItemWidth] and the width of the carousel, the small item width will be chosen from a range of [minSmallItemWidth] and [maxSmallItemWidth]"
+              "description": "Largura máxima permitida dos itens pequenos, em dp. A largura do item pequeno é escolhida entre `minSmallItemWidth` e `maxSmallItemWidth`, conforme `preferredItemWidth` e a largura do carrossel."
             },
             {
               "key": "horizontal",
-              "label": "Horizontal",
-              "type": "number"
+              "label": "Horizontal (dp)",
+              "type": "number",
+              "description": "Medida horizontal, em dp."
             },
             {
               "key": "vertical",
-              "label": "Vertical",
-              "type": "number"
+              "label": "Vertical (dp)",
+              "type": "number",
+              "description": "Medida vertical, em dp."
             },
             {
               "key": "maxItemWidth",
-              "label": "Max item width",
+              "label": "Largura máxima do item (dp)",
               "type": "number",
-              "description": "The max width a large item is allowed to be in dp. The default value of [Dp.Unspecified] allows one large item to grow to fill the entire viewport minus space for two surrounding small items. Values other than unspecified will add additional large items as space allows."
+              "description": "Largura máxima de um item grande, em dp. Com `Dp.Unspecified` (padrão), um item grande cresce até preencher a área visível menos o espaço de dois itens pequenos; outros valores adicionam itens grandes conforme houver espaço."
             }
           ],
           "code": {
@@ -30753,11 +30774,11 @@
             },
             {
               "key": "gesturesEnabled",
-              "label": "Gestures enabled",
+              "label": "Gestos habilitados",
               "type": "enum",
               "options": ["true", "false"],
               "default": "true",
-              "description": "Whether swipe-to-dismiss can be interacted by gestures."
+              "description": "Define se o deslizar para dispensar pode ser operado por gestos."
             }
           ],
           "code": {

@@ -277,8 +277,8 @@ describe('reverseLayout liga o layout.reverse: a ordem se inverte e o bloco fica
 });
 
 describe('atualização da biblioteca (version 4 → 5)', () => {
-  it('sobe a version uma vez por etapa: 5 na FX5, 6 na EX4 da #897, 7 na MF4 da #899 , 8 na MC5 da #898, 10 na D3 da #1085 (a 9 foi a L5) e 11 na VL2 da #1504', () => {
-    expect(spec.version).toBe(11);
+  it('sobe a version uma vez por etapa: 5 na FX5, 6 na EX4 da #897, 7 na MF4 da #899 , 8 na MC5 da #898, 10 na D3 da #1085 (a 9 foi a L5) 11 na VL2 da #1504 e 12 na S5 da #1120', () => {
+    expect(spec.version).toBe(12);
   });
 
   it('é aditiva: troca o desenho sem mudar campo, sem passos de migração', () => {

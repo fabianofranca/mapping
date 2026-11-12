@@ -265,7 +265,15 @@ class Importer {
     this.syncOptions(unit, field, plan, isNew);
   }
 
+  /**
+   * O padrão de um campo existente só muda quando o da ficha mudou (decisão 12): a primeira importação
+   * não grava `default` onde o campo não tinha (a curadoria "vazio = X" fica).
+   */
   private updateDefault(unit: Unit, field: SpecField, plan: FieldPlan): void {
+    const changed = this.diff().changed.some(
+      (c) => c.kind === 'changed' && c.aspect === 'default' && c.param === unit.target,
+    );
+    if (!changed) return;
     const value = defaultFor(unit.param, plan);
     if (value === undefined || field.type !== plan.type) return;
     if (field.type === 'enum' && !field.options.includes(String(value))) return;
@@ -417,11 +425,25 @@ class Importer {
       .map(([target, field]) => ({ target, field }));
   }
 
+  /** Os campos que esta ficha já sinalizou como `removed`: reimportar não os reporta de novo. */
+  private reportedRemoved(): ReadonlySet<string> {
+    return new Set(
+      this.type.fields
+        .filter((f) => f.notices?.some((n) => n.kind === 'removed' && n.ref === this.path))
+        .map((f) => f.key),
+    );
+  }
+
+  private diffMemo: SignatureDiff | undefined;
+
   private diff(): SignatureDiff {
+    if (this.diffMemo !== undefined) return this.diffMemo;
     const previous = this.options.previous;
-    return previous === undefined
-      ? { renamed: [], removed: [], added: [], changed: [] }
-      : diffSignatures(previous, this.signature);
+    this.diffMemo =
+      previous === undefined
+        ? { renamed: [], removed: [], added: [], changed: [] }
+        : diffSignatures(previous, this.signature);
+    return this.diffMemo;
   }
 
   private keyOfTarget(target: string): string | undefined {
@@ -444,19 +466,21 @@ class Importer {
     diff: SignatureDiff,
   ): ImportNotice[] {
     const ours: ImportNotice[] = [];
-    const keep = (list: SpecNotice[] | undefined): SpecNotice[] | undefined => {
-      const kept = list?.filter((n) => n.ref !== this.path);
-      return kept === undefined || kept.length === 0 ? undefined : kept;
-    };
-    const set = (
-      target: { notices?: SpecNotice[] },
-      list: SpecNotice[] | undefined,
-    ): void => {
-      if (list === undefined) delete target.notices;
-      else target.notices = list;
-    };
-    set(this.type, keep(this.type.notices));
-    for (const field of this.type.fields) set(field, keep(field.notices));
+    const holders: { notices?: SpecNotice[] }[] = [this.type, ...this.type.fields];
+    // Posição dos avisos antigos desta ficha: os novos ocupam o lugar deles (reimportar a base
+    // depois de um caso não reordena a lista); sem avisos antigos, vão para o fim.
+    const slot = new Map<{ notices?: SpecNotice[] }, number>();
+    for (const holder of holders) {
+      const list = holder.notices;
+      if (list === undefined) continue;
+      const first = list.findIndex((n) => n.ref === this.path);
+      if (first >= 0)
+        slot.set(holder, list.slice(0, first).filter((n) => n.ref !== this.path).length);
+      const kept = list.filter((n) => n.ref !== this.path);
+      if (kept.length === 0) delete holder.notices;
+      else holder.notices = kept;
+    }
+    const fresh = new Map<{ notices?: SpecNotice[] }, SpecNotice[]>();
     const add = (
       at: ImportNotice['at'],
       kind: SpecNotice['kind'],
@@ -465,7 +489,7 @@ class Importer {
       const notice: SpecNotice = { kind, message: this.message(text), ref: this.path };
       const holder = at === 'type' ? this.type : this.fieldOf(at.field);
       if (holder === undefined) return;
-      holder.notices = [...(holder.notices ?? []), notice];
+      fresh.set(holder, [...(fresh.get(holder) ?? []), notice]);
       ours.push({ at, kind, message: notice.message, ref: this.path });
     };
     for (const unit of this.pending) {
@@ -480,6 +504,11 @@ class Importer {
         add({ field: field.key }, 'diverges', text);
     }
     this.writeOutside(outside, diff, add);
+    for (const [holder, list] of fresh) {
+      const kept = holder.notices ?? [];
+      const at = Math.min(slot.get(holder) ?? kept.length, kept.length);
+      holder.notices = [...kept.slice(0, at), ...list, ...kept.slice(at)];
+    }
     return ours;
   }
 
@@ -541,6 +570,8 @@ class Importer {
     this.collectExisting();
     for (const unit of unitsOf(this.signature, this.models)) this.apply(unit);
     const outside = this.outside();
+    const reported = this.reportedRemoved();
+    const news = outside.filter((o) => !reported.has(o.field));
     const diff = this.diff();
     const notices = this.writeNotices(outside, diff);
     const code = this.prepared.code;
@@ -560,8 +591,8 @@ class Importer {
       ...(this.prepared.source === undefined ? {} : { sources: this.type.sources ?? [] }),
       notices,
       unmapped,
-      changes: this.changesOf(outside, diff),
-      suggestedMigrations: this.migrations(outside, diff),
+      changes: this.changesOf(news, diff),
+      suggestedMigrations: this.migrations(news, diff),
       versionBump: diffSpecs(this.original, this.spec).length > 0,
     };
   }

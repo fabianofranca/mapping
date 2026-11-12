@@ -135,6 +135,35 @@ describe('paramsOutsideSignature', () => {
   });
 });
 
+describe('paramsOutsideSignature com o expand do fieldModels (S5)', () => {
+  const withBorder = (): Signature =>
+    signature((s) => {
+      (s.params as Json[]).push({
+        name: 'border',
+        role: 'value',
+        type: 'BorderStroke?',
+        factory: {
+          call: 'androidx.compose.material3.ButtonDefaults.outlinedButtonBorder',
+          params: [{ name: 'enabled', role: 'value', type: 'Boolean' }],
+        },
+      });
+    });
+  const models = {
+    'BorderStroke?': { expand: { call: 'BorderStroke', params: { width: 'Dp' } } },
+  };
+
+  it('o membro do expand do modelo do tipo do parâmetro dono vale, mesmo que a fábrica da ficha seja outra', () => {
+    const params = { w: 'border.width', e: 'border.enabled', x: 'border.nope' };
+    expect(paramsOutsideSignature(withBorder(), { params })).toEqual([
+      { field: 'w', name: 'border.width' },
+      { field: 'x', name: 'border.nope' },
+    ]);
+    expect(paramsOutsideSignature(withBorder(), { params }, models)).toEqual([
+      { field: 'x', name: 'border.nope' },
+    ]);
+  });
+});
+
 describe('rótulo externo do Swift (corrigido na S2)', () => {
   const swift = (): Signature =>
     signature((s) => {
