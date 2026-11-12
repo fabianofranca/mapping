@@ -82,7 +82,7 @@ export const componentEnUS: {
     'expected a number, a list of 2 or a list of 4 numbers (greater than or equal to 0)',
   'model.component.expectedGap':
     'expected a number or a list [vertical, horizontal] of numbers (greater than or equal to 0)',
-  'model.component.expectedLayoutFlow': 'expected "none", "row" or "column"',
+  'model.component.expectedLayoutFlow': 'expected "none", "row", "column" or "grid"',
   'model.component.expectedViewBox': 'expected [width, height] with positive numbers',
   'model.component.expectedRunObject': 'expected an object (run)',
   'model.component.expectedRuns': 'expected a non-empty list of runs',

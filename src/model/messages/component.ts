@@ -60,7 +60,7 @@ export const componentMessages = {
     'esperava número, lista de 2 ou lista de 4 números (maiores ou iguais a 0)',
   'component.expectedGap':
     'esperava número ou lista [vertical, horizontal] de números (maiores ou iguais a 0)',
-  'component.expectedLayoutFlow': 'esperava "none", "row" ou "column"',
+  'component.expectedLayoutFlow': 'esperava "none", "row", "column" ou "grid"',
   'component.expectedViewBox': 'esperava [largura, altura] com números positivos',
   // Texto e nós
   'component.expectedRunObject': 'esperava objeto (trecho)',

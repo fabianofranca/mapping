@@ -113,6 +113,23 @@ import {
   resolveTokens,
   type ResolvedTokens,
 } from './tokens';
+import {
+  alignInCell,
+  placeCells,
+  spanExtent,
+  trackCount,
+  trackOffset,
+  trackSize,
+  type GridCell,
+} from './gridLayout';
+import {
+  TRACK_KEYS,
+  lineExtents,
+  maxCellOf,
+  numericValue,
+  validTrack,
+  type GridTracks,
+} from './gridPlan';
 import { breakLines, stackLines } from './wrapLines';
 import {
   layoutRuns,
@@ -385,8 +402,8 @@ interface Kid {
 }
 
 interface FrameLayout {
-  readonly kind: 'none' | 'row' | 'column';
-  /** Eixo principal (`null` em `none`). */
+  readonly kind: 'none' | 'row' | 'column' | 'grid';
+  /** Eixo principal (`null` em `none` e `grid`). */
   readonly main: Axis | null;
   readonly gap: number;
   readonly pad: Padding;
@@ -399,6 +416,8 @@ interface FrameLayout {
   readonly lineGap: number;
   readonly maxPerLine?: number | undefined;
   readonly maxLines?: number | undefined;
+  /** As trilhas da grade (`kind: 'grid'`); `lineGap` é o espaço entre as linhas de fluxo. */
+  readonly grid?: GridTracks | undefined;
 }
 
 interface Placement {
@@ -1029,10 +1048,51 @@ function createEngine(
     };
   };
 
+  /** Uma trilha da grade: o valor inválido cai em uma trilha (`columns: 1`, `rows: 1`) com o aviso. */
+  const trackOf = (
+    spec: LayoutSpec,
+    entry: (typeof TRACK_KEYS)[number],
+  ): GridTracks | undefined => {
+    const expr = spec[entry.key];
+    if (expr === undefined) return undefined;
+    const value = ev<unknown>(expr as Expr<unknown>, undefined);
+    const valid = validTrack(entry.field, value);
+    if (valid !== undefined)
+      return entry.field === 'count'
+        ? { count: valid, vertical: entry.vertical }
+        : { min: valid, vertical: entry.vertical };
+    invalidValue(`layout.${entry.key}`, value);
+    return { count: 1, vertical: entry.vertical };
+  };
+
+  /** As trilhas da grade: a primeira das quatro chaves presentes; nenhuma = uma coluna. */
+  const gridTracksOf = (spec: LayoutSpec): GridTracks => {
+    for (const entry of TRACK_KEYS) {
+      const track = trackOf(spec, entry);
+      if (track !== undefined) return track;
+    }
+    return { count: 1, vertical: true };
+  };
+
+  /** O layout `grid`: `justify` é o eixo das trilhas e `align` o das linhas (só os quatro valores). */
+  const gridLayoutOf = (spec: LayoutSpec): FrameLayout => ({
+    kind: 'grid',
+    main: null,
+    gap: Math.max(0, num(spec.gap, 0)),
+    pad: paddingOf(spec.padding),
+    align: checked(spec.align, NONE_ALIGNS, 'start', 'layout.align'),
+    justify: checked(spec.justify, NONE_JUSTIFIES, 'start', 'layout.justify'),
+    reverse: bool(spec.reverse, false),
+    wrap: 'none',
+    lineGap: Math.max(0, num(spec.lineGap, 0)),
+    grid: gridTracksOf(spec),
+  });
+
   const layoutOf = (frame: FrameTemplate): FrameLayout => {
     const spec = frame.layout;
     const kind = checked(spec?.type, LAYOUT_TYPES, 'none', 'layout.type');
     if (!spec || kind === 'none') return noneLayoutOf(spec);
+    if (kind === 'grid') return gridLayoutOf(spec);
     return {
       kind,
       main: kind === 'row' ? 'w' : 'h',
@@ -1147,12 +1207,18 @@ function createEngine(
     return takesContent ? Math.max(0, inner) : undefined;
   };
 
+  /** O eixo das trilhas da grade: a largura na grade vertical, a altura na horizontal. */
+  const trackAxisOf = (layout: FrameLayout): Axis =>
+    layout.grid?.vertical === false ? 'h' : 'w';
+
   /** O filho `hug` estica no eixo? Em `row`/`column`, no cruzado; no `none`, sem âncora naquele eixo. */
   const stretchesKid = (
     layout: FrameLayout,
     axis: Axis,
     anchors: ResolvedAnchors | undefined,
   ): boolean => {
+    if (layout.kind === 'grid')
+      return (axis === trackAxisOf(layout) ? layout.justify : layout.align) === 'stretch';
     if (layout.kind !== 'none') return layout.main !== axis && layout.align === 'stretch';
     const free = anchors === undefined || !hasAnchor(anchors);
     return free && (axis === 'h' ? layout.align : layout.justify) === 'stretch';
@@ -1215,37 +1281,67 @@ function createEngine(
   };
 
   /**
-   * Reparte `free` entre os `fill` (um `SizeLimit` cada) como o flexbox: calcula a violação
-   * total dos limites; sem violação, está pronto; com violação positiva congela quem bateu no
-   * `min`, com negativa quem bateu no `max`, e repete com o resto.
+   * O peso de um filho `fill` (`weight`, v4): número finito > 0; ausente vale 1 e o inválido
+   * (vindo de expressão) é ignorado com o aviso `valor inválido em weight: <valor>`.
    */
-  const distributeFill = (limits: readonly SizeLimit[], free: number): number[] => {
+  const weightMemo = new Map<TemplateNode, number>();
+  const weightOf = (node: TemplateNode): number => {
+    const known = weightMemo.get(node);
+    if (known !== undefined) return known;
+    const value = ev<unknown>(node.weight as Expr<unknown> | undefined, undefined);
+    const n = numericValue(value);
+    const weight = Number.isFinite(n) && n > 0 ? n : 1;
+    if (value !== undefined && value !== null && weight !== n)
+      invalidValue('weight', value);
+    weightMemo.set(node, weight);
+    return weight;
+  };
+
+  /** Os pesos dos filhos que são `fill` (o resto vale 1, sem avaliar o `weight`). */
+  const weightsFor = (
+    kids: readonly Kid[],
+    sizes: readonly (number | 'fill')[],
+  ): number[] =>
+    sizes.map((size, i) => (size === 'fill' && kids[i] ? weightOf(kids[i].node) : 1));
+
+  /**
+   * Reparte `free` entre os `fill` (um `SizeLimit` e um peso cada, padrão 1) como o flexbox: cada um
+   * recebe a parte do seu peso, calcula a violação total dos limites; sem violação, está pronto;
+   * com violação positiva congela quem bateu no `min`, com negativa quem bateu no `max`, e repete
+   * com o resto (a diferença é redistribuída na proporção dos pesos).
+   */
+  const distributeFill = (
+    limits: readonly SizeLimit[],
+    free: number,
+    weights: readonly number[] = [],
+  ): number[] => {
     const sizes = limits.map(() => 0);
     let active = limits.map((_, i) => i);
     let space = free;
     while (active.length > 0) {
-      const share = space / active.length;
-      const clamped = active.map((i) => clampTo(limits[i] ?? NO_SIZE_LIMIT, share));
-      const violation = clamped.reduce((sum, c) => sum + c - share, 0);
-      const frozen = active.filter((_, k) =>
-        violation > 0 ? (clamped[k] ?? share) > share : (clamped[k] ?? share) < share,
+      const total = active.reduce((sum, i) => sum + (weights[i] ?? 1), 0);
+      const rows = active.map((i) => {
+        const share = (space * (weights[i] ?? 1)) / total;
+        return { i, share, size: clampTo(limits[i] ?? NO_SIZE_LIMIT, share) };
+      });
+      const violation = rows.reduce((sum, r) => sum + r.size - r.share, 0);
+      const frozen = rows.filter((r) =>
+        violation > 0 ? r.size > r.share : r.size < r.share,
       );
       if (Math.abs(violation) < FLEX_EPS || frozen.length === 0) {
-        active.forEach((i, k) => (sizes[i] = clamped[k] ?? share));
+        rows.forEach((r) => (sizes[r.i] = r.size));
         break;
       }
-      active.forEach((i, k) => {
-        if (frozen.includes(i)) {
-          sizes[i] = clamped[k] ?? share;
-          space -= clamped[k] ?? share;
-        }
-      });
-      active = active.filter((i) => !frozen.includes(i));
+      for (const r of frozen) {
+        sizes[r.i] = r.size;
+        space -= r.size;
+      }
+      active = active.filter((i) => !frozen.some((r) => r.i === i));
     }
     return sizes;
   };
 
-  /** Tamanhos no eixo principal: os fixos já vêm prontos e os `fill` dividem o que sobra. */
+  /** Tamanhos no eixo principal: os fixos já vêm prontos e os `fill` dividem o que sobra (pelos pesos). */
   const resolveMain = (
     frame: FrameTemplate,
     layout: FrameLayout,
@@ -1253,6 +1349,7 @@ function createEngine(
     limits: readonly SizeLimit[],
     content: number | null,
     tolerance: number,
+    weights: readonly number[] = [],
   ): number[] => {
     const fills = sizes.filter((s) => s === 'fill').length;
     const fixed = sizes.reduce<number>((sum, s) => sum + (s === 'fill' ? 0 : s), 0);
@@ -1268,6 +1365,7 @@ function createEngine(
     const shares = distributeFill(
       limits.filter((_, i) => sizes[i] === 'fill'),
       free,
+      weights.filter((_, i) => sizes[i] === 'fill'),
     );
     let next = 0;
     return sizes.map((s) => (s === 'fill' ? (shares[next++] ?? 0) : s));
@@ -1304,7 +1402,15 @@ function createEngine(
     });
     const tolerance = kids.some((kid) => kid.node.type === 'text') ? TEXT_TOLERANCE : EPS;
     if (layout.main === axis)
-      return resolveMain(frame, layout, sizes, limits, space.content, tolerance);
+      return resolveMain(
+        frame,
+        layout,
+        sizes,
+        limits,
+        space.content,
+        tolerance,
+        weightsFor(kids, sizes),
+      );
     const numbers = sizes.map((s) => (s === 'fill' ? 0 : s));
     if (space.content !== null) {
       const content = space.content;
@@ -1543,6 +1649,10 @@ function createEngine(
         indices.map((i) => limitOf((kids[i] as Kid).node, space.main)),
         space.mainContent,
         tolerance,
+        weightsFor(
+          indices.map((i) => kids[i] as Kid),
+          indices.map((i) => sizes[i] ?? 0),
+        ),
       );
     });
     const usedOf = (line: readonly number[]) =>
@@ -1615,6 +1725,212 @@ function createEngine(
       : { w: crossSize, h: mainSize, placements };
   };
 
+  // --- grade (`layout.type: "grid"`) -------------------------------------------------------
+
+  /** A grade já colocada: os filhos na ordem de colocação (`reverse` aplicado) e suas células. */
+  interface GridSpace {
+    readonly frame: FrameTemplate;
+    readonly layout: FrameLayout;
+    readonly kids: readonly Kid[];
+    /** O eixo das trilhas (`w` na grade vertical). */
+    readonly t: Axis;
+    readonly known: { readonly w: number | null; readonly h: number | null };
+    readonly bounds: Limits;
+    readonly count: number;
+    readonly cells: readonly GridCell[];
+    readonly lines: number;
+  }
+
+  /** Um eixo da grade resolvido: o tamanho do quadro, o de cada filho e onde ele fica (relativo ao quadro). */
+  interface GridAxis {
+    readonly total: number;
+    readonly sizes: readonly number[];
+    readonly offsets: readonly number[];
+  }
+
+  /**
+   * Quantas trilhas a medição `hug` de uma grade adaptativa (`minColumnWidth`/`minRowHeight`) deu, por
+   * tamanho resultante: a passagem final, que já recebe esse tamanho, repete o número em vez de
+   * recalculá-lo do tamanho encolhido (que daria menos trilhas).
+   */
+  const huggedCounts = new Map<FrameTemplate, Map<number, number>>();
+
+  /** A área de conteúdo do eixo quando o quadro tem tamanho conhecido (nulo = `hug`). */
+  const gridContent = (space: GridSpace, axis: Axis): number | null => {
+    const known = space.known[axis];
+    return known === null ? null : Math.max(0, known - padAxis(space.layout, axis));
+  };
+
+  /** O limite disponível do eixo na medição (nulo = desconhecido). */
+  const gridBound = (space: GridSpace, axis: Axis): number | null => {
+    const bound = space.bounds[axis];
+    return bound === null ? null : Math.max(0, bound - padAxis(space.layout, axis));
+  };
+
+  /**
+   * O alinhamento do eixo dentro da célula: `justify` no eixo das trilhas, `align` no das linhas.
+   * O `stretch` já está no tamanho do filho (o `hug` esticado vale a célula; o px fica como está).
+   */
+  const gridAlign = (space: GridSpace, axis: Axis): LayoutAlign | LayoutJustify => {
+    const value = axis === space.t ? space.layout.justify : space.layout.align;
+    return value === 'stretch' ? 'start' : value;
+  };
+
+  /** O `span` de um filho: inteiro ≥ 1; outro valor (de expressão) vale 1 com o aviso. */
+  const spanOf = (node: TemplateNode): number => {
+    const value = ev<unknown>(node.span as Expr<unknown> | undefined, undefined);
+    if (value === undefined || value === null) return 1;
+    const n = numericValue(value);
+    if (Number.isInteger(n) && n >= 1) return n;
+    invalidValue('span', value);
+    return 1;
+  };
+
+  /** O tamanho do filho `i` no eixo: `content` é a extensão da célula/linha (nulo = medindo o natural). */
+  const gridKidSize = (
+    space: GridSpace,
+    i: number,
+    axis: Axis,
+    content: number | null,
+    others: readonly number[] | null,
+  ): number => {
+    const kid = space.kids[i] as Kid;
+    const bound = content === null ? gridBound(space, axis) : null;
+    const size = kidSize(kid, axis, { content, bound }, others?.[i], space.layout);
+    return clampSize(kid.node, axis, size === 'fill' ? 0 : size);
+  };
+
+  const gridTolerance = (space: GridSpace): number =>
+    space.kids.some((kid) => kid.node.type === 'text') ? TEXT_TOLERANCE : EPS;
+
+  /** O eixo das trilhas: trilhas iguais, células de `span` trilhas, o filho alinhado dentro da célula. */
+  const solveTracks = (
+    space: GridSpace,
+    axis: Axis,
+    others: readonly number[] | null,
+  ): GridAxis => {
+    const { layout, kids, cells, count } = space;
+    const known = gridContent(space, axis);
+    const track =
+      known === null
+        ? maxCellOf(
+            cells,
+            kids.map((_, i) => gridKidSize(space, i, axis, null, others)),
+            layout.gap,
+          )
+        : trackSize(known, count, layout.gap);
+    const total =
+      space.known[axis] ??
+      count * track + layout.gap * (count - 1) + padAxis(layout, axis);
+    if (known === null && layout.grid?.min !== undefined)
+      huggedCounts.set(
+        space.frame,
+        (huggedCounts.get(space.frame) ?? new Map()).set(total, count),
+      );
+    const extents = cells.map((cell) => spanExtent(track, cell.span, layout.gap));
+    const sizes = kids.map((_, i) =>
+      gridKidSize(space, i, axis, extents[i] ?? 0, others),
+    );
+    const excess = maxOf(sizes.map((size, i) => size - (extents[i] ?? 0)));
+    if (known !== null && excess > gridTolerance(space))
+      warnShort('engine.contentTooBig', nodeName(space.frame), excess);
+    const start = axis === 'w' ? layout.pad.left : layout.pad.top;
+    const align = gridAlign(space, axis);
+    return {
+      total,
+      sizes,
+      offsets: sizes.map(
+        (size, i) =>
+          start +
+          trackOffset(cells[i]?.track ?? 0, track, layout.gap) +
+          alignInCell(align, extents[i] ?? 0, size).pos,
+      ),
+    };
+  };
+
+  /** O eixo das linhas de fluxo: cada uma com a extensão do maior filho, empilhadas com o `lineGap`. */
+  const solveLines = (
+    space: GridSpace,
+    axis: Axis,
+    others: readonly number[] | null,
+  ): GridAxis => {
+    const { layout, kids, cells } = space;
+    const natural = kids.map((_, i) => gridKidSize(space, i, axis, null, others));
+    const extents = lineExtents(cells, space.lines, natural);
+    const stacked = stackLines(extents, layout.lineGap, false);
+    const content = gridContent(space, axis);
+    if (content !== null && stacked.total > content + gridTolerance(space))
+      warnShort('engine.contentTooBig', nodeName(space.frame), stacked.total - content);
+    const extentOf = (i: number): number => extents[cells[i]?.line ?? 0] ?? 0;
+    const sizes = kids.map((_, i) => gridKidSize(space, i, axis, extentOf(i), others));
+    const start = axis === 'w' ? layout.pad.left : layout.pad.top;
+    const align = gridAlign(space, axis);
+    return {
+      total: space.known[axis] ?? stacked.total + padAxis(layout, axis),
+      sizes,
+      offsets: sizes.map(
+        (size, i) =>
+          start +
+          (stacked.tops[cells[i]?.line ?? 0] ?? 0) +
+          alignInCell(align, extentOf(i), size).pos,
+      ),
+    };
+  };
+
+  /** O plano de um quadro `grid` (ver `layout.type: "grid"` no `docs/COMPONENT-FORMAT.md`). */
+  const planGrid = (
+    frame: FrameTemplate,
+    layout: FrameLayout,
+    kids: readonly Kid[],
+    w: number | null,
+    h: number | null,
+    bounds: Limits,
+  ): Plan => {
+    const ordered = layout.reverse ? [...kids].reverse() : kids;
+    const t = trackAxisOf(layout);
+    const draft: GridSpace = {
+      frame,
+      layout,
+      kids: ordered,
+      t,
+      known: { w, h },
+      bounds,
+      count: 1,
+      cells: [],
+      lines: 0,
+    };
+    const tracks = layout.grid ?? { vertical: true };
+    const count =
+      huggedCounts.get(frame)?.get(draft.known[t] ?? Number.NaN) ??
+      trackCount(tracks, gridContent(draft, t) ?? gridBound(draft, t), layout.gap);
+    const placed = placeCells(
+      ordered.map((kid) => spanOf(kid.node)),
+      count,
+    );
+    const space: GridSpace = { ...draft, count, ...placed };
+    const solve = (axis: Axis, others: readonly number[] | null): GridAxis =>
+      axis === t ? solveTracks(space, axis, others) : solveLines(space, axis, others);
+    const horizontal = solve('w', null);
+    const vertical = solve('h', horizontal.sizes);
+    const byKid = new Map(
+      ordered.map((kid, i): [Kid, Placement] => [
+        kid,
+        {
+          kid,
+          x: horizontal.offsets[i] ?? 0,
+          y: vertical.offsets[i] ?? 0,
+          w: horizontal.sizes[i] ?? 0,
+          h: vertical.sizes[i] ?? 0,
+        },
+      ]),
+    );
+    return {
+      w: horizontal.total,
+      h: vertical.total,
+      placements: kids.map((kid) => byKid.get(kid) as Placement),
+    };
+  };
+
   /** Guarda o plano do quadro na chave do cache e o devolve. */
   const remember = (frame: FrameTemplate, key: string, plan: Plan): Plan => {
     let perFrame = planCache.get(frame);
@@ -1643,6 +1959,8 @@ function createEngine(
 
     const layout = layoutOf(frame);
     const kids = visibleKids(frame);
+    if (layout.kind === 'grid')
+      return remember(frame, key, planGrid(frame, layout, kids, w, h, bounds));
     if (layout.wrap !== 'none')
       return remember(frame, key, planWrapped(frame, layout, kids, w, h, bounds));
     const padW = layout.pad.left + layout.pad.right;

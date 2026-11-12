@@ -150,7 +150,7 @@ describe('slot com layout no formato', () => {
   });
 
   it('recusa layout inválido no slot e layout em nós que não são frame nem slot', () => {
-    expect(validateComponent(component({ layout: { type: 'grid' } }))[0]).toMatch(
+    expect(validateComponent(component({ layout: { type: 'diagonal' } }))[0]).toMatch(
       /children\[0\]\.layout\.type: esperava/,
     );
     const rect = component({});

@@ -1079,3 +1079,162 @@ describe('achados da revisão da EX2', () => {
     expect(texts(drawn(c).root).map((t) => t.text)).toEqual(['x']);
   });
 });
+
+describe('repeat.layout (L3, decisão 14 da #1078)', () => {
+  const OPTIONS = [{ rotulo: 'A' }, { rotulo: 'Mediano' }, { rotulo: 'Sim' }];
+  const BOX400: Box = { x: 0, y: 0, width: 400, height: 100 };
+
+  /** Um componente da formatVersion 4 com o `repeat` numa fileira (sem passar pelo validador). */
+  function v4(repeat: Raw): ComponentFile {
+    return {
+      format: 'mapping-component',
+      formatVersion: 4,
+      id: 'seg',
+      name: 'Seg',
+      size: { width: 400, height: 100 },
+      template: {
+        type: 'frame',
+        name: 'raiz',
+        layout: { type: 'row' },
+        children: [{ type: 'repeat', name: 'seg', ...repeat }],
+      },
+    } as unknown as ComponentFile;
+  }
+
+  /** Posição e tamanho dos quadros `cel`, na ordem. */
+  function cells(c: ComponentFile, values: FieldValues, box: Box = BOX400) {
+    const { root } = draw(c, values, box);
+    const out: { x: number; y: number; width: number; height: number }[] = [];
+    const visit = (node: SceneNode, ox: number, oy: number): void => {
+      const x = ox + node.transform[4];
+      const y = oy + node.transform[5];
+      if (node.name === 'cel') out.push({ x, y, width: node.width, height: node.height });
+      if (node.type === 'frame') for (const child of node.children) visit(child, x, y);
+    };
+    visit(root, 0, 0);
+    return out;
+  }
+
+  const labelCell: Raw = {
+    type: 'frame',
+    name: 'cel',
+    layout: { type: 'row', padding: 10 },
+    children: [text('rotulo', { font: { size: 14, lineHeight: 16 } })],
+  };
+
+  it('grid com columns { $rows } e width hug: segmentos iguais pelo rótulo mais largo', () => {
+    const c = v4({
+      field: 'opcoes',
+      width: 'hug',
+      layout: { type: 'grid', columns: { $rows: 'opcoes' } },
+      template: labelCell,
+    });
+    const placed = cells(c, { opcoes: OPTIONS });
+    // "Mediano": 7 × 7,7 = 53,9 + 20 de padding.
+    const wide = 7 * 7.7 + 20;
+    expect(placed).toHaveLength(3);
+    for (const [i, cell] of placed.entries()) {
+      expect(cell.width).toBeCloseTo(wide, 9);
+      expect(cell.x).toBeCloseTo(i * wide, 9);
+      expect(cell.y).toBe(0);
+    }
+    const { warnings } = draw(c, { opcoes: OPTIONS }, BOX400);
+    expect(warnings).toEqual([]);
+  });
+
+  it('a célula do template é fill na célula; o repeat grid abraça a altura', () => {
+    const c = v4({
+      field: 'opcoes',
+      width: 'hug',
+      layout: { type: 'grid', columns: 2, gap: 4, lineGap: 6 },
+      template: labelCell,
+    });
+    const placed = cells(c, { opcoes: OPTIONS });
+    // 2 colunas × 2 linhas (a última com 1); a linha tem a altura do conteúdo (16 + 20).
+    expect(placed.map((p) => p.height)).toEqual([36, 36, 36]);
+    expect(placed[2]).toMatchObject({ x: 0, y: 36 + 6 });
+    expect(placed[1]!.x).toBeCloseTo(placed[0]!.width + 4, 9);
+  });
+
+  it('o width do próprio repeat manda: as trilhas dividem a largura', () => {
+    const c = v4({
+      field: 'opcoes',
+      width: 300,
+      layout: { type: 'grid', columns: 3 },
+      template: labelCell,
+    });
+    expect(cells(c, { opcoes: OPTIONS }).map((p) => p.width)).toEqual([100, 100, 100]);
+  });
+
+  it('layout row com gap equivale ao direction row + gap', () => {
+    const base = { field: 'opcoes', height: 'hug' };
+    const tpl = { ...labelCell, width: 'hug' };
+    const withLayout = cells(
+      v4({ ...base, layout: { type: 'row', gap: 5 }, template: tpl }),
+      { opcoes: OPTIONS },
+    );
+    const withDirection = cells(
+      v4({ ...base, direction: 'row', gap: 5, template: tpl }),
+      { opcoes: OPTIONS },
+    );
+    expect(withLayout).toEqual(withDirection);
+    expect(withLayout[1]!.x).toBeCloseTo(withLayout[0]!.width + 5, 9);
+  });
+
+  it('layout row com align end alinha as células no fundo', () => {
+    const tpl = {
+      type: 'frame',
+      name: 'cel',
+      width: 20,
+      height: { $field: 'h' },
+      layout: { type: 'row' },
+      children: [],
+    };
+    const c = v4({
+      field: 'opcoes',
+      height: 'hug',
+      layout: { type: 'row', align: 'end' },
+      template: tpl,
+    });
+    const placed = cells(c, { opcoes: [{ h: 10 }, { h: 30 }] });
+    expect(placed.map((p) => p.y)).toEqual([20, 0]);
+    const start = cells(
+      v4({
+        field: 'opcoes',
+        height: 'hug',
+        layout: { type: 'row' },
+        template: tpl,
+      }),
+      { opcoes: [{ h: 10 }, { h: 30 }] },
+    );
+    expect(start.map((p) => p.y)).toEqual([0, 0]);
+  });
+
+  it('layout column com gap equivale ao direction column + gap', () => {
+    const tpl = { ...labelCell, height: 'hug' };
+    const a = cells(
+      v4({ field: 'opcoes', layout: { type: 'column', gap: 3 }, template: tpl }),
+      { opcoes: OPTIONS },
+    );
+    const b = cells(v4({ field: 'opcoes', direction: 'column', gap: 3, template: tpl }), {
+      opcoes: OPTIONS,
+    });
+    expect(a).toEqual(b);
+  });
+
+  it('expandRepeats leva o layout ao quadro gerado, sem direction nem gap soltos', () => {
+    const layout = { type: 'grid', columns: 2, gap: 4 };
+    const c = v4({ field: 'opcoes', layout, template: labelCell });
+    const expanded = expandRepeats(c, { opcoes: OPTIONS });
+    const wrapper = (expanded.component.template as FrameTemplate).children?.[0];
+    expect((wrapper as FrameTemplate).layout).toEqual(layout);
+    expect((wrapper as FrameTemplate).children).toHaveLength(3);
+  });
+
+  it('sem layout, o quadro gerado é o de sempre (direction + gap)', () => {
+    const c = v4({ field: 'opcoes', direction: 'row', gap: 5, template: labelCell });
+    const expanded = expandRepeats(c, { opcoes: OPTIONS });
+    const wrapper = (expanded.component.template as FrameTemplate).children?.[0];
+    expect((wrapper as FrameTemplate).layout).toEqual({ type: 'row', gap: 5 });
+  });
+});

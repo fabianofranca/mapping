@@ -105,10 +105,29 @@ export function canArrange(
   return containerOf(p, catalog, markingId) !== null;
 }
 
+/** O espaço do slot decide as linhas (`wrap`) ou as trilhas (`minColumnWidth`/`minRowHeight`)? */
+function needsAvailable(layout: ResolvedSlotLayout): boolean {
+  if (layout.type === 'grid') return layout.grid?.min !== undefined;
+  return layout.wrap !== 'none';
+}
+
+/** O eixo principal do slot (o que `available` mede) é o horizontal: `row`, ou grade vertical. */
+function alongTracks(layout: ResolvedSlotLayout): boolean {
+  if (layout.type === 'grid') return layout.grid?.orientation !== 'horizontal';
+  return layout.type === 'row';
+}
+
 /** O `align: stretch` do slot do pai estica o filho neste eixo (o cruzado do layout dele). */
 function stretchedBy(parent: Container | null, axis: 'width' | 'height'): boolean {
-  if (parent === null || parent.layout.align !== 'stretch') return false;
-  return axis === (parent.layout.type === 'row' ? 'height' : 'width');
+  if (parent === null) return false;
+  const { layout } = parent;
+  // Grade: `justify` estica no eixo das trilhas e `align` no das linhas (na célula).
+  if (layout.type === 'grid') {
+    const onTracks = alongTracks(layout) === (axis === 'width');
+    return (onTracks ? layout.justify : layout.align) === 'stretch';
+  }
+  if (layout.align !== 'stretch') return false;
+  return axis === (layout.type === 'row' ? 'height' : 'width');
 }
 
 function sameRect(a: Rect, b: Rect): boolean {
@@ -350,7 +369,7 @@ export function arrangeMarking(
     // O que os filhos pedem ao slot (o `hug` do componente): uma linha só, ou, com `wrap`, as linhas
     // pelo espaço do eixo principal que o slot tem (o desenho com o pedido de uma linha só dá o espaço).
     let slotContent = padded(contentExtent(layout, children, null));
-    if (layout.wrap !== 'none') {
+    if (needsAvailable(layout)) {
       const probe = slotBoxOfScene(
         instantiate(component, values, rects.get(id) as Rect, {
           measure,
@@ -360,10 +379,9 @@ export function arrangeMarking(
         }).root,
       );
       if (probe !== undefined) {
-        const available =
-          layout.type === 'row'
-            ? probe.width - pad.left - pad.right
-            : probe.height - pad.top - pad.bottom;
+        const available = alongTracks(layout)
+          ? probe.width - pad.left - pad.right
+          : probe.height - pad.top - pad.bottom;
         slotContent = padded(contentExtent(layout, children, Math.max(0, available)));
       }
     }

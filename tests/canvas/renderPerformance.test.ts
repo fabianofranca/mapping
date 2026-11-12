@@ -8,7 +8,12 @@ import {
   type LayerDrawing,
 } from '../../src/canvas/components/componentLayer';
 import { renderScene } from '../../src/canvas/components/renderScene';
-import { type FrameNode, baseNode } from '../../src/model/components/scene';
+import {
+  type FrameNode,
+  absoluteBoxes,
+  baseNode,
+  walk,
+} from '../../src/model/components/scene';
 import { createCanvasViewState } from '../../src/canvas/viewState';
 import { approximateMeasurer, instantiate } from '../../src/model/components/instantiate';
 import {
@@ -352,6 +357,83 @@ describe('desenho de componentes (Material 3)', () => {
       const median = [...times.slice(5)].sort((a, b) => a - b)[7] ?? Number.NaN;
       expectBelow(median, RENDER_BUDGET_MS / 4);
       layer.destroy();
+    },
+  );
+});
+
+// Grade com texto (decisão 23 da #1078, L3): 4 colunas e 6 linhas de 24 textos de 2 linhas, `fill` na
+// célula e `hug` na altura, instanciada e desenhada no Konva, no orçamento do pior componente.
+describe('grade com texto', () => {
+  const GRID_BUDGET_MS = 4;
+  const BOX = { x: 0, y: 0, width: 400, height: 300 };
+  const cells = Array.from({ length: 24 }, (_, i) => ({
+    type: 'text',
+    name: 'cell',
+    text: `aaaaa bbbbb c${String(i).padStart(2, '0')}cc`,
+    width: 'fill',
+  }));
+  const component = {
+    format: 'mapping-component',
+    formatVersion: 4,
+    id: 'grade',
+    name: 'Grade',
+    size: { width: 400, height: 300 },
+    template: {
+      type: 'frame',
+      name: 'raiz',
+      layout: { type: 'column' },
+      children: [
+        {
+          type: 'frame',
+          name: 'grade',
+          width: 'fill',
+          height: 'hug',
+          layout: { type: 'grid', columns: 4, gap: 8, lineGap: 8 },
+          children: cells,
+        },
+      ],
+    },
+  } as never;
+
+  beforeAll(() => installFakeCanvas());
+  afterAll(() => vi.restoreAllMocks());
+
+  function drawn() {
+    return instantiate(component, {}, BOX, { measure: approximateMeasurer });
+  }
+
+  it('a geometria da grade: 4 colunas iguais, 6 linhas e a altura hug é a soma delas', () => {
+    const { root, warnings } = drawn();
+    const boxes = absoluteBoxes(root);
+    const nodes = [...walk(root)];
+    const grid = nodes.find((n) => n.name === 'grade');
+    const texts = nodes.filter((n) => n.name === 'cell');
+    expect(texts).toHaveLength(24);
+    // (400 − 3 × 8) / 4 = 94 por coluna; cada linha tem 2 linhas de texto de 16,8.
+    const xs = [...new Set(texts.map((n) => boxes.get(n.id)?.x))];
+    const ys = [...new Set(texts.map((n) => boxes.get(n.id)?.y))];
+    expect(xs).toEqual([0, 102, 204, 306]);
+    expect(ys).toHaveLength(6);
+    expect(texts.every((n) => Math.abs(n.width - 94) < 1e-6)).toBe(true);
+    expect(texts.every((n) => Math.abs(n.height - 33.6) < 1e-6)).toBe(true);
+    expect(grid?.width).toBeCloseTo(400, 6);
+    expect(grid?.height).toBeCloseTo(6 * 33.6 + 5 * 8, 6);
+    expect(warnings).toEqual([]);
+  });
+
+  budgetIt(
+    `uma grade de 4 × 6 textos de 2 linhas (instanciar e desenhar) cabe em ${GRID_BUDGET_MS} ms`,
+    BUDGET_OPTIONS,
+    () => {
+      const once = (): number => {
+        const start = performance.now();
+        renderScene({ root: drawn().root, warnings: [] });
+        return performance.now() - start;
+      };
+      for (let i = 0; i < 3; i++) once(); // Aquecimento.
+      const times = Array.from({ length: 15 }, once);
+      const median = [...times].sort((a, b) => a - b)[7] ?? Number.NaN;
+      expectBelow(median, GRID_BUDGET_MS);
     },
   );
 });

@@ -190,7 +190,9 @@ describe('expressão em layout.type, align e justify', () => {
   it('confere os literais dos ramos', () => {
     expect(
       validateComponent(frameWith({ type: { $field: 'd', default: 'diagonal' } })),
-    ).toEqual(['template.layout.type.default: esperava "none", "row" ou "column"']);
+    ).toEqual([
+      'template.layout.type.default: esperava "none", "row", "column" ou "grid"',
+    ]);
     expect(
       validateComponent(
         frameWith({ type: 'row', align: { $field: 'a', default: 'middle' } }),
@@ -208,8 +210,8 @@ describe('expressão em layout.type, align e justify', () => {
   });
 
   it('literal inválido em type mantém a mensagem de sempre', () => {
-    expect(validateComponent(frameWith({ type: 'grid' }))).toEqual([
-      'template.layout.type: esperava "none", "row" ou "column"',
+    expect(validateComponent(frameWith({ type: 'diagonal' }))).toEqual([
+      'template.layout.type: esperava "none", "row", "column" ou "grid"',
     ]);
   });
 

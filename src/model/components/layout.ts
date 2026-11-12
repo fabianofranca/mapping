@@ -30,6 +30,13 @@ import {
   instantiate,
   measureComponent,
 } from './instantiate';
+import {
+  alignInCell,
+  placeCells,
+  trackCount,
+  trackOffset,
+  trackSize,
+} from './gridLayout';
 import { justifySpacing, mirrorMain } from './layoutValues';
 import { type ResolvedSizing, resolveSizing } from './sizing';
 import type { Library } from './library';
@@ -212,6 +219,28 @@ function crossPosition(
   return 0;
 }
 
+const isVerticalGrid = (layout: ResolvedSlotLayout) =>
+  layout.grid?.orientation !== 'horizontal';
+
+/**
+ * A largura que os filhos pedem a um slot em grade (sem o padding), com os `widths` de cada um e
+ * sem limite conhecido (`minColumnWidth` mede uma trilha): na grade vertical, `n` vezes a maior;
+ * na horizontal, as colunas (linhas de fluxo) lado a lado com o `lineGap`.
+ */
+function gridContentWidth(layout: ResolvedSlotLayout, widths: readonly number[]): number {
+  if (widths.length === 0) return 0;
+  const count = trackCount(layout.grid ?? {}, null, layout.gap);
+  if (isVerticalGrid(layout)) return count * maxOf(widths) + layout.gap * (count - 1);
+  const { cells, lines } = placeCells(
+    widths.map(() => 1),
+    count,
+  );
+  const extents = Array.from({ length: lines }, () => 0);
+  for (const cell of cells)
+    extents[cell.line] = Math.max(extents[cell.line] ?? 0, widths[cell.index] ?? 0);
+  return sum(extents) + layout.lineGap * Math.max(0, lines - 1);
+}
+
 /** Posição de uma raiz ancorada num eixo: `margin` na borda tocada, ou centralizada. */
 function anchorOffset(
   anchor: LayoutAnchor,
@@ -318,6 +347,7 @@ export function layoutScreen(
     layout: ResolvedSlotLayout,
     widths: readonly number[],
   ): number => {
+    if (layout.type === 'grid') return gridContentWidth(layout, widths);
     if (layout.type !== 'row' && layout.wrap === 'none') return maxOf(widths);
     if (layout.wrap === 'none')
       return sum(widths) + layout.gap * Math.max(0, widths.length - 1);
@@ -475,6 +505,111 @@ export function layoutScreen(
       : { rects, usedW: stacked.total, usedH: usedMain };
   }
 
+  // --- grade (`layout.type: "grid"`) ------------------------------------------------------
+
+  /** O tamanho natural de um filho no eixo das trilhas (o que a trilha `hug` abraça). */
+  const gridNaturalTrack = (kid: Prepared, vertical: boolean): number =>
+    vertical ? widthOf(kid, null, false).w : naturalHeight(kid);
+
+  /** O tamanho de um filho de grade: `t` no eixo das trilhas (na célula `size`), `f` natural no das linhas. */
+  const gridKidSize = (
+    kid: Prepared,
+    layout: ResolvedSlotLayout,
+    vertical: boolean,
+    size: number,
+  ): { t: number; f: number; fFill: boolean; hugT: boolean; hugF: boolean } => {
+    const stretchT = layout.justify === 'stretch';
+    const fSpec = specOf(kid, vertical ? 'height' : 'width');
+    const fFill = fSpec === 'fill' || (layout.align === 'stretch' && fSpec === 'hug');
+    if (vertical) {
+      const w = widthOf(kid, size, stretchT && specOf(kid, 'width') === 'hug');
+      const h =
+        typeof fSpec === 'number'
+          ? withMin(kid, 'height', fSpec)
+          : intrinsicHeight(kid, w.w, w.hug);
+      return { t: w.w, f: h, fFill, hugT: w.hug, hugF: typeof fSpec !== 'number' };
+    }
+    const w = widthOf(kid, null, false);
+    const tSpec = specOf(kid, 'height');
+    const fill = tSpec === 'fill' || (stretchT && tSpec === 'hug');
+    const h = fill
+      ? withMin(kid, 'height', size)
+      : typeof tSpec === 'number'
+        ? withMin(kid, 'height', tSpec)
+        : intrinsicHeight(kid, w.w, w.hug);
+    return { t: h, f: w.w, fFill, hugT: tSpec === 'hug' && !fill, hugF: w.hug };
+  };
+
+  /** Arruma os filhos de um slot em grade num conteúdo `cw` × `ch` (nulo = o pai é `hug` nesse eixo). */
+  function arrangeGrid(
+    kids: readonly Prepared[],
+    layout: ResolvedSlotLayout,
+    cw: number | null,
+    ch: number | null,
+  ): Arranged {
+    const vertical = isVerticalGrid(layout);
+    const content = vertical ? cw : ch;
+    const count = trackCount(layout.grid ?? {}, content, layout.gap);
+    const order = kids.map((_, i) => i);
+    if (layout.reverse) order.reverse();
+    const size =
+      content === null
+        ? maxOf(kids.map((kid) => gridNaturalTrack(kid, vertical)))
+        : trackSize(content, count, layout.gap);
+    const sized = order.map((i) =>
+      gridKidSize(kids[i] as Prepared, layout, vertical, size),
+    );
+    const { cells, lines } = placeCells(
+      sized.map(() => 1),
+      count,
+    );
+    const extents = Array.from({ length: lines }, () => 0);
+    for (const cell of cells)
+      extents[cell.line] = Math.max(extents[cell.line] ?? 0, sized[cell.index]?.f ?? 0);
+    const stacked = stackLines(extents, layout.lineGap, false);
+    const rects: KidRect[] = kids.map(() => ({
+      x: 0,
+      y: 0,
+      w: 0,
+      h: 0,
+      hugW: false,
+      hugH: false,
+    }));
+    for (const cell of cells) {
+      const info = sized[cell.index] as (typeof sized)[number];
+      const extent = extents[cell.line] ?? 0;
+      const f = info.fFill ? Math.max(extent, info.f) : info.f;
+      const tPos =
+        trackOffset(cell.track, size, layout.gap) +
+        alignInCell(layout.justify, size, info.t).pos;
+      const fPos =
+        (stacked.tops[cell.line] ?? 0) +
+        alignInCell(layout.align === 'stretch' ? 'start' : layout.align, extent, f).pos;
+      const tSize = layout.justify === 'stretch' && info.hugT ? size : info.t;
+      rects[order[cell.index] as number] = vertical
+        ? {
+            x: tPos,
+            y: fPos,
+            w: tSize,
+            h: f,
+            hugW: info.hugT,
+            hugH: !info.fFill && info.hugF,
+          }
+        : {
+            x: fPos,
+            y: tPos,
+            w: f,
+            h: tSize,
+            hugW: !info.fFill && info.hugF,
+            hugH: info.hugT,
+          };
+    }
+    const tracks = count * size + layout.gap * (count - 1);
+    return vertical
+      ? { rects, usedW: tracks, usedH: stacked.total }
+      : { rects, usedW: stacked.total, usedH: tracks };
+  }
+
   /** Arruma os filhos num conteúdo `cw` × `ch` (nulo = o pai é `hug` nesse eixo). */
   function arrangeKids(
     kids: readonly Prepared[],
@@ -484,6 +619,7 @@ export function layoutScreen(
     emit: boolean,
     owner = '',
   ): Arranged {
+    if (layout.type === 'grid') return arrangeGrid(kids, layout, cw, ch);
     if (layout.wrap !== 'none' && layout.type !== 'none')
       return arrangeWrapped(kids, layout, cw, ch, emit, owner);
     const n = kids.length;
