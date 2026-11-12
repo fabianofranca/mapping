@@ -38,7 +38,11 @@ concurrency:
 # shard, coverage 31 s, build 186 s, check 4 s, e2e 179 s + 1 min do `playwright install` sem
 # cache). Job que passa do tempo para com a anotação de tempo máximo excedido e o `check` (ou o
 # `e2e`) fica vermelho: o check obrigatório termina em vez de ficar pendente. Timeout não é
-# reexecutado (`ci-rerun.yml`): é defeito real. Revise estes valores com medidas novas.
+# reexecutado (`ci-rerun.yml`): é defeito real. O mecanismo: o job que estoura termina
+# `cancelled`, a execução do CI termina `cancelled` (não `failure`) e o `ci-rerun.yml` é pulado
+# pelo `if:` dele (demonstrado na etapa #1532, run 42962097957; registro em
+# https://github.com/fabianofranca/mapping/issues/1532#issuecomment-6787509092). Revise estes
+# valores com medidas novas.
 jobs:
   # A `main` só recebe PR de um branch `epic/*` (docs/PROCESS.md, "Fluxo de trabalho"): o ruleset
   # "main protegida" exige este check, que falha para qualquer outra origem. Exceção: os PRs
@@ -251,17 +255,13 @@ jobs:
       # `node scripts/ci/distBudget.mjs raise --write`, sem editar este arquivo.
       - name: Tamanho do dist/index.html
         run: |
-          # Ref anterior à etapa #1614 (o deploy.yml roda o ci.yml da `main` contra o commit do
-          # preview): sem o JSON, o teto é a linha `INDEX_HTML_MAX_BYTES: <n>` do ci.yml do checkout.
           INDEX_HTML_MAX_BYTES=
           if [ -f scripts/ci/dist-budget.json ]; then
             INDEX_HTML_MAX_BYTES=$(node scripts/ci/distBudget.mjs ceiling) || INDEX_HTML_MAX_BYTES=
-          elif [ -f .github/workflows/ci.yml ]; then
-            INDEX_HTML_MAX_BYTES=$(sed -n 's/^ *INDEX_HTML_MAX_BYTES: \([0-9][0-9]*\)$/\1/p' .github/workflows/ci.yml | head -n 1)
           fi
           case "$INDEX_HTML_MAX_BYTES" in
             '' | *[!0-9]* | 0)
-              echo "::error file=dist/index.html::Teto do orçamento não encontrado: sem scripts/ci/dist-budget.json válido nem a linha INDEX_HTML_MAX_BYTES do ci.yml."
+              echo "::error file=dist/index.html::Teto do orçamento não encontrado: sem scripts/ci/dist-budget.json válido (ref anterior à etapa #1614: traga a main)."
               exit 1
               ;;
           esac

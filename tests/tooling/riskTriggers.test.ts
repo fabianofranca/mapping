@@ -116,6 +116,7 @@ describe('riskTriggers.mjs (RS1)', () => {
     ['docs/PROCESS.md', 'docs/PROCESS.md'],
     ['.github/workflows/ci.yml', '.github/workflows/'],
     ['scripts/release/a.mjs', 'scripts/release/'],
+    ['scripts/ci/distBudget.mjs', 'scripts/ci/distBudget.mjs'],
     ['mcp/version.ts', 'mcp/version.ts'],
     ['src/store/session.ts', 'src/store/session.ts'],
     ['pwa/csp.ts', 'pwa/csp.ts'],
@@ -125,6 +126,14 @@ describe('riskTriggers.mjs (RS1)', () => {
     git('commit', '-qm', 'gatilho');
     git('tag', '-f', 'base');
     expect(changed(file, 'a', 'b')).toBe(`gatilho: ${id}: ${file}`);
+  });
+
+  it('o scripts/ci/dist-budget.json, que a subida grava, não é gatilho (etapa #1594, decisão 3)', () => {
+    write('scripts/ci/dist-budget.json', '{"indexHtmlMaxBytes": 1}\n');
+    git('add', '-A');
+    git('commit', '-qm', 'json');
+    git('tag', '-f', 'base');
+    expect(changed('scripts/ci/dist-budget.json', '1', '2')).toBe('nenhum gatilho');
   });
 
   it('arquivo de gatilho renomeado para fora do caminho ainda conta', () => {
