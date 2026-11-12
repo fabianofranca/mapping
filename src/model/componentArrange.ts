@@ -11,7 +11,7 @@ import type {
   FieldValues,
   IntrinsicSize,
 } from './components/componentFormat';
-import { isIntrinsicSize } from './components/layoutValues';
+import { intrinsicModeOf } from './components/layoutValues';
 import {
   expressionPx,
   fitComponentSize,
@@ -155,7 +155,7 @@ interface AxisPlan {
 }
 
 function axisPlan(axis: ResolvedAxis, stretched: boolean): AxisPlan {
-  const intrinsic = isIntrinsicSize(axis.spec) ? axis.spec : null;
+  const intrinsic = intrinsicModeOf(axis.spec);
   return {
     hug: (axis.spec === 'hug' || intrinsic !== null) && !stretched,
     mode: intrinsic,

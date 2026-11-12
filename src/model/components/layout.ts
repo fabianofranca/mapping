@@ -42,7 +42,12 @@ import {
   trackOffset,
   trackSize,
 } from './gridLayout';
-import { isIntrinsicSize, justifySpacing, mirrorMain } from './layoutValues';
+import {
+  intrinsicModeOf,
+  isIntrinsicSize,
+  justifySpacing,
+  mirrorMain,
+} from './layoutValues';
 import { type ResolvedSizing, resolveSizing } from './sizing';
 import type { Library } from './library';
 import type { Instance, Screen } from './screen';
@@ -378,8 +383,12 @@ export function layoutScreen(
   const wrappedOrPlainWidth = (
     layout: ResolvedSlotLayout,
     widths: readonly number[],
+    mode: Mode = 'hug',
   ): number => {
     if (layout.type === 'grid') return gridContentWidth(layout, widths);
+    // `min-content` com `wrap`: o maior filho (a quebra põe um por linha).
+    if (mode === 'min-content' && layout.type !== 'none' && layout.wrap !== 'none')
+      return maxOf(widths);
     if (layout.type !== 'row' && layout.wrap === 'none') return maxOf(widths);
     if (layout.wrap === 'none')
       return sum(widths) + layout.gap * Math.max(0, widths.length - 1);
@@ -402,7 +411,11 @@ export function layoutScreen(
    * (`fill` e o resto medem como `hug`).
    */
   const widthModeOf = (spec: ReturnType<typeof specOf>): Mode =>
-    isIntrinsicSize(spec) ? spec : 'hug';
+    intrinsicModeOf(spec) ?? 'hug';
+
+  /** O modo de um filho `hug` ou `fill`: o do pai se é `min-content`; senão o `hug`. */
+  const inheritedMode = (own: Mode, parent: Mode): Mode =>
+    own === 'hug' && parent === 'min-content' ? parent : own;
 
   /**
    * Largura que os filhos arrumados pedem ao slot, mais o padding dele. No `min-content` do pai, o
@@ -414,9 +427,9 @@ export function layoutScreen(
         const spec = specOf(kid, 'width');
         if (typeof spec === 'number') return withMin(kid, 'width', spec);
         const own = widthModeOf(spec);
-        return intrinsicWidth(kid, own === 'hug' && mode === 'min-content' ? mode : own);
+        return intrinsicWidth(kid, inheritedMode(own, mode));
       });
-      return wrappedOrPlainWidth(p.layout, widths) + padW(p);
+      return wrappedOrPlainWidth(p.layout, widths, mode) + padW(p);
     });
 
   /** Largura `hug` (ou `min-content`/`max-content`): o template medido (com `slotContent` nos componentes com slot). */

@@ -1279,16 +1279,9 @@ function createEngine(
     const styled = textFont(node);
     if (styled.wrap === 'none') return measureText(node).width;
     // A fonte sem o corte da caixa (`maxLines`, `ellipsis`): cada palavra se mede inteira.
-    const font: MeasureFont = {
-      family: styled.family,
-      size: styled.size,
-      weight: styled.weight,
-      italic: styled.italic,
-      lineHeight: styled.lineHeight,
-      letterSpacing: styled.letterSpacing,
-    };
+    const font: MeasureFont = { ...styled, maxLines: undefined, ellipsis: undefined };
     return plainText(node)
-      .split(/\s+/)
+      .split(/[ \t\n]+/)
       .reduce(
         (widest, word) =>
           word === '' ? widest : Math.max(widest, options.measure(word, font).width),

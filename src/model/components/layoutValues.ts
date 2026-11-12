@@ -87,6 +87,11 @@ export function isIntrinsicSize(value: unknown): value is IntrinsicSize {
   return value === 'min-content' || value === 'max-content';
 }
 
+/** A medida intrínseca que um tamanho pede (`min-content`/`max-content`); outro tamanho = nenhuma. */
+export function intrinsicModeOf(spec: unknown): IntrinsicSize | null {
+  return isIntrinsicSize(spec) ? spec : null;
+}
+
 /**
  * Confere um tamanho: número finito ≥ 0, texto numérico puro (`"120"` → 120), `"fill"`,
  * `"hug"`, `"min-content"`, `"max-content"` ou `"N%"`. Qualquer outra coisa não é um tamanho

@@ -18,7 +18,12 @@ import type {
 import { MIN_STORED_MARKING_SIZE } from '../geometry';
 import { evaluate } from './expressions';
 import { type InstantiateOptions, measureComponent } from './instantiate';
-import { describeValue, isIntrinsicSize, parseSizeSpec } from './layoutValues';
+import {
+  describeValue,
+  intrinsicModeOf,
+  isIntrinsicSize,
+  parseSizeSpec,
+} from './layoutValues';
 
 export type SizingAxis = 'width' | 'height';
 
@@ -165,7 +170,7 @@ function axisSize(hug: boolean, given: number, measured: number | undefined): nu
 
 /** A medida intrínseca que o `sizing` pede no eixo (`min-content`/`max-content`); nenhuma = `hug`. */
 function intrinsicOf(axis: ResolvedAxis): IntrinsicSize | null {
-  return isIntrinsicSize(axis.spec) ? axis.spec : null;
+  return intrinsicModeOf(axis.spec);
 }
 
 /** Os eixos medidos (`hug`) e, entre eles, os que pedem a medida intrínseca em vez do `hug`. */

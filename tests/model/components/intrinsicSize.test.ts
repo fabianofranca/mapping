@@ -103,6 +103,11 @@ describe('texto: min-content e max-content', () => {
     expect(min.width).toBeCloseTo(4 * CHAR, 9);
   });
 
+  it('o espaço sem quebra (NBSP) não separa palavras no min-content', () => {
+    const { at } = build(host(text('t', '10\u00a0kg aa', { width: 'min-content' })));
+    expect(at('t').width).toBeCloseTo(5 * CHAR, 9);
+  });
+
   it('o texto rico: a palavra que atravessa trechos é uma só e o chip é atômico', () => {
     const runs = [
       { text: 'Pa' },

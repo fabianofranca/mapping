@@ -1046,6 +1046,19 @@ describe('layoutScreen: sizing min-content e max-content', () => {
     sentence('s-hug', { width: 'hug', height: 'hug' }),
     sentence('s-max', { width: 'max-content', height: 'hug' }),
     sentence('s-min', { width: 'min-content', height: 'hug' }),
+    component(
+      'wrap-min',
+      {
+        children: [
+          {
+            type: 'slot',
+            anchors: { left: 0, right: 0, top: 0, bottom: 0 },
+            layout: { type: 'row', wrap: 'wrap', gap: 0 },
+          },
+        ],
+      },
+      { formatVersion: 4, sizing: { width: 'min-content', height: 'hug' } },
+    ),
   ];
   const lib = build(intrinsic, {
     ...SPEC,
@@ -1097,6 +1110,25 @@ describe('layoutScreen: sizing min-content e max-content', () => {
       lib,
     );
     expect(boxOf(result, 'b').height).toBe(24);
+  });
+
+  it('um slot com wrap em min-content vale o maior filho, não a soma', () => {
+    const result = run(
+      [
+        root(
+          node('c', 'col', {}, [
+            node('w', 'wrap-min', {}, [
+              node('k1', 's-hug', { text: TEXT }),
+              node('k2', 's-hug', { text: TEXT }),
+            ]),
+          ]),
+        ),
+      ],
+      300,
+      600,
+      lib,
+    );
+    expect(boxOf(result, 'w').width).toBeCloseTo(10 * 5.5, 9);
   });
 
   it('uma raiz ancorada também mede o sizing intrínseco', () => {
