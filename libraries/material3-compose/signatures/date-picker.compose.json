@@ -1,0 +1,335 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.DatePicker",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/DatePicker.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "state",
+      "role": "state",
+      "type": "DatePickerState",
+      "required": true
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "dateFormatter",
+      "role": "value",
+      "type": "DatePickerFormatter",
+      "default": "remember { DatePickerDefaults.dateFormatter() }",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "colors",
+      "role": "value",
+      "type": "DatePickerColors",
+      "default": "DatePickerDefaults.colors()",
+      "factory": {
+        "call": "androidx.compose.material3.DatePickerDefaults.colors",
+        "params": [
+          {
+            "name": "containerColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "titleContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "headlineContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "weekdayContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "subheadContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "navigationContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "yearContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledYearContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "currentYearContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "selectedYearContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledSelectedYearContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "selectedYearContainerColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledSelectedYearContainerColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "dayContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledDayContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "selectedDayContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledSelectedDayContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "selectedDayContainerColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledSelectedDayContainerColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "todayContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "todayDateBorderColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "dayInSelectionRangeContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "dayInSelectionRangeContainerColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "dividerColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "dateTextFieldColors",
+            "role": "value",
+            "type": "TextFieldColors?",
+            "default": "null",
+            "value": {
+              "kind": "opaque"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "title",
+      "role": "slot",
+      "type": "(@Composable () -> Unit)?",
+      "default": "{ DatePickerDefaults.DatePickerTitle(displayMode = state.displayMode, modifier = Modifier.padding(DatePickerTitlePadding), contentColor = colors.titleContentColor,) }"
+    },
+    {
+      "name": "headline",
+      "role": "slot",
+      "type": "(@Composable () -> Unit)?",
+      "default": "{ DatePickerDefaults.DatePickerHeadline(selectedDateMillis = state.selectedDateMillis, displayMode = state.displayMode, dateFormatter = dateFormatter, modifier = Modifier.padding(DatePickerHeadlinePadding), contentColor = colors.headlineContentColor,) }"
+    },
+    {
+      "name": "showModeToggle",
+      "role": "value",
+      "type": "Boolean",
+      "default": "true",
+      "value": {
+        "kind": "boolean",
+        "default": true
+      }
+    },
+    {
+      "name": "focusRequester",
+      "role": "state",
+      "type": "FocusRequester?",
+      "default": "remember { FocusRequester() }"
+    }
+  ],
+  "doc": {
+    "state": "state of the date picker. See [rememberDatePickerState].",
+    "modifier": "the [Modifier] to be applied to this date picker",
+    "dateFormatter": "a [DatePickerFormatter] that provides formatting skeletons for dates display",
+    "colors": "[DatePickerColors] that will be used to resolve the colors used for this date picker in different states. See [DatePickerDefaults.colors].",
+    "colors.containerColor": "the color used for the date picker's background",
+    "colors.titleContentColor": "the color used for the date picker's title",
+    "colors.headlineContentColor": "the color used for the date picker's headline",
+    "colors.weekdayContentColor": "the color used for the weekday letters",
+    "colors.subheadContentColor": "the color used for the month and year subhead labels that appear when months are displayed at a `DateRangePicker`.",
+    "colors.navigationContentColor": "the content color used for the year selection menu button and the months arrow navigation when displayed at a `DatePicker`.",
+    "colors.yearContentColor": "the color used for a year item content",
+    "colors.disabledYearContentColor": "the color used for a disabled year item content",
+    "colors.currentYearContentColor": "the color used for the current year content when selecting a year",
+    "colors.selectedYearContentColor": "the color used for a selected year item content",
+    "colors.disabledSelectedYearContentColor": "the color used for a disabled selected year item content",
+    "colors.selectedYearContainerColor": "the color used for a selected year item container",
+    "colors.disabledSelectedYearContainerColor": "the color used for a disabled selected year item container",
+    "colors.dayContentColor": "the color used for days content",
+    "colors.disabledDayContentColor": "the color used for disabled days content",
+    "colors.selectedDayContentColor": "the color used for selected days content",
+    "colors.disabledSelectedDayContentColor": "the color used for disabled selected days content",
+    "colors.selectedDayContainerColor": "the color used for a selected day container",
+    "colors.disabledSelectedDayContainerColor": "the color used for a disabled selected day container",
+    "colors.todayContentColor": "the color used for the day that marks the current date",
+    "colors.todayDateBorderColor": "the color used for the border of the day that marks the current date",
+    "colors.dayInSelectionRangeContentColor": "the content color used for days that are within a date range selection",
+    "colors.dayInSelectionRangeContainerColor": "the container color used for days that are within a date range selection",
+    "colors.dividerColor": "the color used for the dividers used at the date pickers",
+    "colors.dateTextFieldColors": "the [TextFieldColors] defaults for the date text field when in [DisplayMode.Input]. See [OutlinedTextFieldDefaults.colors].",
+    "title": "the title to be displayed in the date picker",
+    "headline": "the headline to be displayed in the date picker",
+    "showModeToggle": "indicates if this DatePicker should show a mode toggle action that transforms it into a date input",
+    "focusRequester": "a focus requester that will be used to focus the text field when the date picker is in an input mode. Pass `null` to not focus the text field if that's the desired behavior."
+  }
+}

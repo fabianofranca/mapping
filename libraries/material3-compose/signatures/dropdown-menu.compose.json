@@ -1,0 +1,125 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.DropdownMenu",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Menu.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "expanded",
+      "role": "value",
+      "type": "Boolean",
+      "required": true,
+      "value": {
+        "kind": "boolean"
+      }
+    },
+    {
+      "name": "onDismissRequest",
+      "role": "callback",
+      "type": "() -> Unit",
+      "required": true
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "offset",
+      "role": "value",
+      "type": "DpOffset",
+      "default": "DpOffset(0.dp, 0.dp)",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "scrollState",
+      "role": "state",
+      "type": "ScrollState",
+      "default": "rememberScrollState()"
+    },
+    {
+      "name": "properties",
+      "role": "value",
+      "type": "PopupProperties",
+      "default": "DefaultMenuProperties",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "shape",
+      "role": "value",
+      "type": "Shape",
+      "default": "MenuDefaults.shape",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "containerColor",
+      "role": "value",
+      "type": "Color",
+      "default": "MenuDefaults.containerColor",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "tonalElevation",
+      "role": "value",
+      "type": "Dp",
+      "default": "MenuDefaults.TonalElevation",
+      "value": {
+        "kind": "dimension"
+      }
+    },
+    {
+      "name": "shadowElevation",
+      "role": "value",
+      "type": "Dp",
+      "default": "MenuDefaults.ShadowElevation",
+      "value": {
+        "kind": "dimension"
+      }
+    },
+    {
+      "name": "border",
+      "role": "value",
+      "type": "BorderStroke?",
+      "default": "null",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "content",
+      "role": "slot",
+      "type": "@Composable ColumnScope.() -> Unit",
+      "required": true
+    }
+  ],
+  "doc": {
+    "expanded": "whether the menu is expanded or not",
+    "onDismissRequest": "called when the user requests to dismiss the menu, such as by tapping outside the menu's bounds",
+    "modifier": "[Modifier] to be applied to the menu's content",
+    "offset": "[DpOffset] from the original position of the menu. The offset respects the [LayoutDirection], so the offset's x position will be added in LTR and subtracted in RTL.",
+    "scrollState": "a [ScrollState] to used by the menu's content for items vertical scrolling",
+    "properties": "[PopupProperties] for further customization of this popup's behavior",
+    "shape": "the shape of the menu",
+    "containerColor": "the container color of the menu",
+    "tonalElevation": "when [containerColor] is [ColorScheme.surface], a translucent primary color overlay is applied on top of the container. A higher tonal elevation value will result in a darker color in light theme and lighter color in dark theme. See also: [Surface].",
+    "shadowElevation": "the elevation for the shadow below the menu",
+    "border": "the border to draw around the container of the menu. Pass `null` for no border.",
+    "content": "the content of this dropdown menu, typically a [DropdownMenuItem]"
+  }
+}

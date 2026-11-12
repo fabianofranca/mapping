@@ -1,0 +1,51 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.Badge",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Badge.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "containerColor",
+      "role": "value",
+      "type": "Color",
+      "default": "BadgeDefaults.containerColor",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "contentColor",
+      "role": "value",
+      "type": "Color",
+      "default": "contentColorFor(containerColor)",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "content",
+      "role": "slot",
+      "type": "@Composable (RowScope.() -> Unit)?",
+      "default": "null"
+    }
+  ],
+  "doc": {
+    "modifier": "the [Modifier] to be applied to this badge",
+    "containerColor": "the color used for the background of this badge",
+    "contentColor": "the preferred color for content inside this badge. Defaults to either the matching content color for [containerColor], or to the current [LocalContentColor] if [containerColor] is not a color from the theme.",
+    "content": "optional content to be rendered inside this badge"
+  }
+}

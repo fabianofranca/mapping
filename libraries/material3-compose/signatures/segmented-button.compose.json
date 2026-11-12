@@ -1,0 +1,41 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.SingleChoiceSegmentedButtonRow",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SegmentedButton.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "space",
+      "role": "value",
+      "type": "Dp",
+      "default": "SegmentedButtonDefaults.BorderWidth",
+      "value": {
+        "kind": "dimension"
+      }
+    },
+    {
+      "name": "content",
+      "role": "slot",
+      "type": "@Composable SingleChoiceSegmentedButtonRowScope.() -> Unit",
+      "required": true
+    }
+  ],
+  "doc": {
+    "modifier": "the [Modifier] to be applied to this row",
+    "space": "the dimension of the overlap between buttons. Should be equal to the stroke width used on the items.",
+    "content": "the content of this Segmented Button Row, typically a sequence of [SegmentedButton]s"
+  }
+}

@@ -1,0 +1,223 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.OutlinedTextField",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/OutlinedTextField.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1",
+    "overload": 1
+  },
+  "params": [
+    {
+      "name": "value",
+      "role": "value",
+      "type": "String",
+      "required": true,
+      "value": {
+        "kind": "text"
+      }
+    },
+    {
+      "name": "onValueChange",
+      "role": "callback",
+      "type": "(String) -> Unit",
+      "required": true
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "enabled",
+      "role": "value",
+      "type": "Boolean",
+      "default": "true",
+      "value": {
+        "kind": "boolean",
+        "default": true
+      }
+    },
+    {
+      "name": "readOnly",
+      "role": "value",
+      "type": "Boolean",
+      "default": "false",
+      "value": {
+        "kind": "boolean",
+        "default": false
+      }
+    },
+    {
+      "name": "textStyle",
+      "role": "value",
+      "type": "TextStyle",
+      "default": "LocalTextStyle.current",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "label",
+      "role": "slot",
+      "type": "@Composable (() -> Unit)?",
+      "default": "null"
+    },
+    {
+      "name": "placeholder",
+      "role": "slot",
+      "type": "@Composable (() -> Unit)?",
+      "default": "null"
+    },
+    {
+      "name": "leadingIcon",
+      "role": "slot",
+      "type": "@Composable (() -> Unit)?",
+      "default": "null"
+    },
+    {
+      "name": "trailingIcon",
+      "role": "slot",
+      "type": "@Composable (() -> Unit)?",
+      "default": "null"
+    },
+    {
+      "name": "prefix",
+      "role": "slot",
+      "type": "@Composable (() -> Unit)?",
+      "default": "null"
+    },
+    {
+      "name": "suffix",
+      "role": "slot",
+      "type": "@Composable (() -> Unit)?",
+      "default": "null"
+    },
+    {
+      "name": "supportingText",
+      "role": "slot",
+      "type": "@Composable (() -> Unit)?",
+      "default": "null"
+    },
+    {
+      "name": "isError",
+      "role": "value",
+      "type": "Boolean",
+      "default": "false",
+      "value": {
+        "kind": "boolean",
+        "default": false
+      }
+    },
+    {
+      "name": "visualTransformation",
+      "role": "value",
+      "type": "VisualTransformation",
+      "default": "VisualTransformation.None",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "keyboardOptions",
+      "role": "value",
+      "type": "KeyboardOptions",
+      "default": "KeyboardOptions.Default",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "keyboardActions",
+      "role": "value",
+      "type": "KeyboardActions",
+      "default": "KeyboardActions.Default",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "singleLine",
+      "role": "value",
+      "type": "Boolean",
+      "default": "false",
+      "value": {
+        "kind": "boolean",
+        "default": false
+      }
+    },
+    {
+      "name": "maxLines",
+      "role": "value",
+      "type": "Int",
+      "default": "if (singleLine) 1 else Int.MAX_VALUE",
+      "value": {
+        "kind": "integer"
+      }
+    },
+    {
+      "name": "minLines",
+      "role": "value",
+      "type": "Int",
+      "default": "1",
+      "value": {
+        "kind": "integer",
+        "default": 1
+      }
+    },
+    {
+      "name": "interactionSource",
+      "role": "state",
+      "type": "MutableInteractionSource?",
+      "default": "null"
+    },
+    {
+      "name": "shape",
+      "role": "value",
+      "type": "Shape",
+      "default": "OutlinedTextFieldDefaults.shape",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "colors",
+      "role": "value",
+      "type": "TextFieldColors",
+      "default": "OutlinedTextFieldDefaults.colors()",
+      "value": {
+        "kind": "opaque"
+      }
+    }
+  ],
+  "doc": {
+    "value": "the input text to be shown in the text field",
+    "onValueChange": "the callback that is triggered when the input service updates the text. An updated text comes as a parameter of the callback",
+    "modifier": "the [Modifier] to be applied to this text field",
+    "enabled": "controls the enabled state of this text field. When `false`, this component will not respond to user input, and it will appear visually disabled and disabled to accessibility services.",
+    "readOnly": "controls the editable state of the text field. When `true`, the text field cannot be modified. However, a user can focus it and copy text from it. Read-only text fields are usually used to display pre-filled forms that a user cannot edit.",
+    "textStyle": "the style to be applied to the input text. Defaults to [LocalTextStyle].",
+    "label": "the optional label to be displayed with this text field. The default text style uses [Typography.bodySmall] when minimized and [Typography.bodyLarge] when expanded.",
+    "placeholder": "the optional placeholder to be displayed when the text field is in focus and the input text is empty. The default text style for internal [Text] is [Typography.bodyLarge]",
+    "leadingIcon": "the optional leading icon to be displayed at the beginning of the text field container",
+    "trailingIcon": "the optional trailing icon to be displayed at the end of the text field container",
+    "prefix": "the optional prefix to be displayed before the input text in the text field",
+    "suffix": "the optional suffix to be displayed after the input text in the text field",
+    "supportingText": "the optional supporting text to be displayed below the text field",
+    "isError": "indicates if the text field's current value is in error. If set to true, the label, bottom indicator and trailing icon by default will be displayed in error color",
+    "visualTransformation": "transforms the visual representation of the input [value] For example, you can use [PasswordVisualTransformation][androidx.compose.ui.text.input.PasswordVisualTransformation] to create a password text field. By default, no visual transformation is applied.",
+    "keyboardOptions": "software keyboard options that contains configuration such as [KeyboardType] and [ImeAction]",
+    "keyboardActions": "when the input service emits an IME action, the corresponding callback is called. Note that this IME action may be different from what you specified in [KeyboardOptions.imeAction]",
+    "singleLine": "when `true`, this text field becomes a single horizontally scrolling text field instead of wrapping onto multiple lines. The keyboard will be informed to not show the return key as the [ImeAction]. Note that [maxLines] parameter will be ignored as the maxLines attribute will be automatically set to 1.",
+    "maxLines": "the maximum height in terms of maximum number of visible lines. It is required that 1 <= [minLines] <= [maxLines]. This parameter is ignored when [singleLine] is true.",
+    "minLines": "the minimum height in terms of minimum number of visible lines. It is required that 1 <= [minLines] <= [maxLines]. This parameter is ignored when [singleLine] is true.",
+    "interactionSource": "an optional hoisted [MutableInteractionSource] for observing and emitting [Interaction]s for this text field. You can use this to change the text field's appearance or preview the text field in different states. Note that if `null` is provided, interactions will still happen internally.",
+    "shape": "defines the shape of this text field's border",
+    "colors": "[TextFieldColors] that will be used to resolve the colors used for this text field in different states. See [OutlinedTextFieldDefaults.colors]."
+  }
+}

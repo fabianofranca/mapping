@@ -1,0 +1,136 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.AlertDialog",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/AlertDialog.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "onDismissRequest",
+      "role": "callback",
+      "type": "() -> Unit",
+      "required": true
+    },
+    {
+      "name": "confirmButton",
+      "role": "slot",
+      "type": "@Composable () -> Unit",
+      "required": true
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "dismissButton",
+      "role": "slot",
+      "type": "@Composable (() -> Unit)?",
+      "default": "null"
+    },
+    {
+      "name": "icon",
+      "role": "slot",
+      "type": "@Composable (() -> Unit)?",
+      "default": "null"
+    },
+    {
+      "name": "title",
+      "role": "slot",
+      "type": "@Composable (() -> Unit)?",
+      "default": "null"
+    },
+    {
+      "name": "text",
+      "role": "slot",
+      "type": "@Composable (() -> Unit)?",
+      "default": "null"
+    },
+    {
+      "name": "shape",
+      "role": "value",
+      "type": "Shape",
+      "default": "AlertDialogDefaults.shape",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "containerColor",
+      "role": "value",
+      "type": "Color",
+      "default": "AlertDialogDefaults.containerColor",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "iconContentColor",
+      "role": "value",
+      "type": "Color",
+      "default": "AlertDialogDefaults.iconContentColor",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "titleContentColor",
+      "role": "value",
+      "type": "Color",
+      "default": "AlertDialogDefaults.titleContentColor",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "textContentColor",
+      "role": "value",
+      "type": "Color",
+      "default": "AlertDialogDefaults.textContentColor",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "tonalElevation",
+      "role": "value",
+      "type": "Dp",
+      "default": "AlertDialogDefaults.TonalElevation",
+      "value": {
+        "kind": "dimension"
+      }
+    },
+    {
+      "name": "properties",
+      "role": "value",
+      "type": "DialogProperties",
+      "default": "DialogProperties()",
+      "value": {
+        "kind": "opaque"
+      }
+    }
+  ],
+  "doc": {
+    "onDismissRequest": "called when the user tries to dismiss the Dialog by clicking outside or pressing the back button. This is not called when the dismiss button is clicked.",
+    "confirmButton": "button which is meant to confirm a proposed action, thus resolving what triggered the dialog. The dialog does not set up any events for this button so they need to be set up by the caller.",
+    "modifier": "the [Modifier] to be applied to this dialog",
+    "dismissButton": "button which is meant to dismiss the dialog. The dialog does not set up any events for this button so they need to be set up by the caller.",
+    "icon": "optional icon that will appear above the [title] or above the [text], in case a title was not provided.",
+    "title": "title which should specify the purpose of the dialog. The title is not mandatory, because there may be sufficient information inside the [text].",
+    "text": "text which presents the details regarding the dialog's purpose.",
+    "shape": "defines the shape of this dialog's container",
+    "containerColor": "the color used for the background of this dialog. Use [Color.Transparent] to have no color.",
+    "iconContentColor": "the content color used for the icon.",
+    "titleContentColor": "the content color used for the title.",
+    "textContentColor": "the content color used for the text.",
+    "tonalElevation": "when [containerColor] is [ColorScheme.surface], a translucent primary color overlay is applied on top of the container. A higher tonal elevation value will result in a darker color in light theme and lighter color in dark theme. See also: [Surface].",
+    "properties": "typically platform specific properties to further configure the dialog."
+  }
+}

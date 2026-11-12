@@ -1,0 +1,226 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.foundation.pager.HorizontalPager",
+    "path": "compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/pager/Pager.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "state",
+      "role": "state",
+      "type": "PagerState",
+      "required": true
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "contentPadding",
+      "role": "value",
+      "type": "PaddingValues",
+      "default": "PaddingValues(0.dp)",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "pageSize",
+      "role": "value",
+      "type": "PageSize",
+      "default": "PageSize.Fill",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "beyondViewportPageCount",
+      "role": "value",
+      "type": "Int",
+      "default": "PagerDefaults.BeyondViewportPageCount",
+      "value": {
+        "kind": "integer"
+      }
+    },
+    {
+      "name": "pageSpacing",
+      "role": "value",
+      "type": "Dp",
+      "default": "0.dp",
+      "value": {
+        "kind": "dimension",
+        "default": 0
+      }
+    },
+    {
+      "name": "verticalAlignment",
+      "role": "value",
+      "type": "Alignment.Vertical",
+      "default": "Alignment.CenterVertically",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "flingBehavior",
+      "role": "value",
+      "type": "TargetedFlingBehavior",
+      "default": "PagerDefaults.flingBehavior(state = state)",
+      "factory": {
+        "call": "androidx.compose.foundation.pager.PagerDefaults.flingBehavior",
+        "params": [
+          {
+            "name": "state",
+            "role": "state",
+            "type": "PagerState",
+            "required": true
+          },
+          {
+            "name": "pagerSnapDistance",
+            "role": "value",
+            "type": "PagerSnapDistance",
+            "default": "PagerSnapDistance.atMost(1)",
+            "value": {
+              "kind": "opaque"
+            }
+          },
+          {
+            "name": "decayAnimationSpec",
+            "role": "value",
+            "type": "DecayAnimationSpec<Float>",
+            "default": "rememberSplineBasedDecay()",
+            "value": {
+              "kind": "opaque"
+            }
+          },
+          {
+            "name": "snapAnimationSpec",
+            "role": "value",
+            "type": "AnimationSpec<Float>",
+            "default": "spring(stiffness = Spring.StiffnessMediumLow, visibilityThreshold = Int.VisibilityThreshold.toFloat(),)",
+            "value": {
+              "kind": "opaque"
+            }
+          },
+          {
+            "name": "snapPositionalThreshold",
+            "role": "value",
+            "type": "@FloatRange(from = 0.0, to = 1.0) Float",
+            "default": "0.5f",
+            "value": {
+              "kind": "opaque"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "userScrollEnabled",
+      "role": "value",
+      "type": "Boolean",
+      "default": "true",
+      "value": {
+        "kind": "boolean",
+        "default": true
+      }
+    },
+    {
+      "name": "reverseLayout",
+      "role": "value",
+      "type": "Boolean",
+      "default": "false",
+      "value": {
+        "kind": "boolean",
+        "default": false
+      }
+    },
+    {
+      "name": "key",
+      "role": "callback",
+      "type": "((index: Int) -> Any)?",
+      "default": "null"
+    },
+    {
+      "name": "pageNestedScrollConnection",
+      "role": "value",
+      "type": "NestedScrollConnection",
+      "default": "PagerDefaults.pageNestedScrollConnection(state, Orientation.Horizontal)",
+      "factory": {
+        "call": "androidx.compose.foundation.pager.PagerDefaults.pageNestedScrollConnection",
+        "params": [
+          {
+            "name": "state",
+            "role": "state",
+            "type": "PagerState",
+            "required": true
+          },
+          {
+            "name": "orientation",
+            "role": "value",
+            "type": "Orientation",
+            "required": true,
+            "value": {
+              "kind": "opaque"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "snapPosition",
+      "role": "value",
+      "type": "SnapPosition",
+      "default": "SnapPosition.Start",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "overscrollEffect",
+      "role": "value",
+      "type": "OverscrollEffect?",
+      "default": "rememberOverscrollEffect()",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "pageContent",
+      "role": "slot",
+      "type": "@Composable PagerScope.(page: Int) -> Unit",
+      "required": true
+    }
+  ],
+  "doc": {
+    "state": "The state to control this pager",
+    "modifier": "A modifier instance to be applied to this Pager outer layout",
+    "contentPadding": "a padding around the whole content. This will add padding for the content after it has been clipped, which is not possible via [modifier] param. You can use it to add a padding before the first page or after the last one. Use [pageSpacing] to add spacing between the pages.",
+    "pageSize": "Use this to change how the pages will look like inside this pager.",
+    "beyondViewportPageCount": "Pages to compose and layout before and after the list of visible pages. Note: Be aware that using a large value for [beyondViewportPageCount] will cause a lot of pages to be composed, measured and placed which will defeat the purpose of using lazy loading. This should be used as an optimization to pre-load a couple of pages before and after the visible ones. This does not include the pages automatically composed and laid out by the pre-fetcher in the direction of the scroll during scroll events.",
+    "pageSpacing": "The amount of space to be used to separate the pages in this Pager",
+    "verticalAlignment": "How pages are aligned vertically in this Pager.",
+    "flingBehavior": "The [TargetedFlingBehavior] to be used for post scroll gestures.",
+    "flingBehavior.state": "The [PagerState] that controls the which to which this FlingBehavior will be applied to.",
+    "flingBehavior.pagerSnapDistance": "A way to control the snapping destination for this [Pager]. The default behavior will result in any fling going to the next page in the direction of the fling (if the fling has enough velocity, otherwise the Pager will bounce back). Use [PagerSnapDistance.atMost] to define a maximum number of pages this [Pager] is allowed to fling after scrolling is finished and fling has started.",
+    "flingBehavior.decayAnimationSpec": "The animation spec used to approach the target offset. When the fling velocity is large enough. Large enough means large enough to naturally decay. For single page snapping this usually never happens since there won't be enough space to run a decay animation.",
+    "flingBehavior.snapAnimationSpec": "The animation spec used to finally snap to the position. This animation will be often used in 2 cases: 1) There was enough space to an approach animation, the Pager will use [snapAnimationSpec] in the last step of the animation to settle the page into position. 2) There was not enough space to run the approach animation.",
+    "flingBehavior.snapPositionalThreshold": "If the fling has a low velocity (e.g. slow scroll), this fling behavior will use this snap threshold in order to determine if the pager should snap back or move forward. Use a number between 0 and 1 as a fraction of the page size that needs to be scrolled before the Pager considers it should move to the next page. For instance, if snapPositionalThreshold = 0.35, it means if this pager is scrolled with a slow velocity and the Pager scrolls more than 35% of the page size, then will jump to the next page, if not it scrolls back. Note that any fling that has high enough velocity will *always* move to the next page in the direction of the fling.",
+    "userScrollEnabled": "whether the scrolling via the user gestures or accessibility actions is allowed. You can still scroll programmatically using [PagerState.scroll] even when it is disabled.",
+    "reverseLayout": "reverse the direction of scrolling and layout.",
+    "key": "a stable and unique key representing the item. When you specify the key the scroll position will be maintained based on the key, which means if you add/remove items before the current visible item the item with the given key will be kept as the first visible one. If null is passed the position in the list will represent the key.",
+    "pageNestedScrollConnection": "A [NestedScrollConnection] that dictates how this [Pager] behaves with nested lists. The default behavior will see [Pager] to consume all nested deltas.",
+    "pageNestedScrollConnection.state": "state of the pager",
+    "pageNestedScrollConnection.orientation": "The orientation of the pager. This will be used to determine which direction the nested scroll connection will operate and react on.",
+    "snapPosition": "The calculation of how this Pager will perform snapping of pages. Use this to provide different settling to different positions in the layout. This is used by [Pager] as a way to calculate [PagerState.currentPage], currentPage is the page closest to the snap position in the layout (e.g. if the snap position is the start of the layout, then currentPage will be the page closest to that).",
+    "overscrollEffect": "the [OverscrollEffect] that will be used to render overscroll for this Pager. Note that the [OverscrollEffect.node] will be applied internally as well - you do not need to use Modifier.overscroll separately.",
+    "pageContent": "This Pager's page Composable."
+  }
+}

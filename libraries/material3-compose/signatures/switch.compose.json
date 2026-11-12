@@ -1,0 +1,238 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.Switch",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Switch.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "checked",
+      "role": "value",
+      "type": "Boolean",
+      "required": true,
+      "value": {
+        "kind": "boolean"
+      }
+    },
+    {
+      "name": "onCheckedChange",
+      "role": "callback",
+      "type": "((Boolean) -> Unit)?",
+      "required": true
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "thumbContent",
+      "role": "slot",
+      "type": "(@Composable () -> Unit)?",
+      "default": "null"
+    },
+    {
+      "name": "enabled",
+      "role": "value",
+      "type": "Boolean",
+      "default": "true",
+      "value": {
+        "kind": "boolean",
+        "default": true
+      }
+    },
+    {
+      "name": "colors",
+      "role": "value",
+      "type": "SwitchColors",
+      "default": "SwitchDefaults.colors()",
+      "factory": {
+        "call": "androidx.compose.material3.SwitchDefaults.colors",
+        "params": [
+          {
+            "name": "checkedThumbColor",
+            "role": "value",
+            "type": "Color",
+            "default": "SwitchTokens.SelectedHandleColor.value",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "checkedTrackColor",
+            "role": "value",
+            "type": "Color",
+            "default": "SwitchTokens.SelectedTrackColor.value",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "checkedBorderColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Transparent",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "checkedIconColor",
+            "role": "value",
+            "type": "Color",
+            "default": "SwitchTokens.SelectedIconColor.value",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "uncheckedThumbColor",
+            "role": "value",
+            "type": "Color",
+            "default": "SwitchTokens.UnselectedHandleColor.value",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "uncheckedTrackColor",
+            "role": "value",
+            "type": "Color",
+            "default": "SwitchTokens.UnselectedTrackColor.value",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "uncheckedBorderColor",
+            "role": "value",
+            "type": "Color",
+            "default": "SwitchTokens.UnselectedFocusTrackOutlineColor.value",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "uncheckedIconColor",
+            "role": "value",
+            "type": "Color",
+            "default": "SwitchTokens.UnselectedIconColor.value",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledCheckedThumbColor",
+            "role": "value",
+            "type": "Color",
+            "default": "SwitchTokens.DisabledSelectedHandleColor.value.copy(alpha = SwitchTokens.DisabledSelectedHandleOpacity).compositeOver(MaterialTheme.colorScheme.surface)",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledCheckedTrackColor",
+            "role": "value",
+            "type": "Color",
+            "default": "SwitchTokens.DisabledSelectedTrackColor.value.copy(alpha = SwitchTokens.DisabledTrackOpacity).compositeOver(MaterialTheme.colorScheme.surface)",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledCheckedBorderColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Transparent",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledCheckedIconColor",
+            "role": "value",
+            "type": "Color",
+            "default": "SwitchTokens.DisabledSelectedIconColor.value.copy(alpha = SwitchTokens.DisabledSelectedIconOpacity).compositeOver(MaterialTheme.colorScheme.surface)",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledUncheckedThumbColor",
+            "role": "value",
+            "type": "Color",
+            "default": "SwitchTokens.DisabledUnselectedHandleColor.value.copy(alpha = SwitchTokens.DisabledUnselectedHandleOpacity).compositeOver(MaterialTheme.colorScheme.surface)",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledUncheckedTrackColor",
+            "role": "value",
+            "type": "Color",
+            "default": "SwitchTokens.DisabledUnselectedTrackColor.value.copy(alpha = SwitchTokens.DisabledTrackOpacity).compositeOver(MaterialTheme.colorScheme.surface)",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledUncheckedBorderColor",
+            "role": "value",
+            "type": "Color",
+            "default": "SwitchTokens.DisabledUnselectedTrackOutlineColor.value.copy(alpha = SwitchTokens.DisabledTrackOpacity).compositeOver(MaterialTheme.colorScheme.surface)",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledUncheckedIconColor",
+            "role": "value",
+            "type": "Color",
+            "default": "SwitchTokens.DisabledUnselectedIconColor.value.copy(alpha = SwitchTokens.DisabledUnselectedIconOpacity).compositeOver(MaterialTheme.colorScheme.surface)",
+            "value": {
+              "kind": "color"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "interactionSource",
+      "role": "state",
+      "type": "MutableInteractionSource?",
+      "default": "null"
+    }
+  ],
+  "doc": {
+    "checked": "whether or not this switch is checked",
+    "onCheckedChange": "called when this switch is clicked. If `null`, then this switch will not be interactable, unless something else handles its input events and updates its state.",
+    "modifier": "the [Modifier] to be applied to this switch",
+    "thumbContent": "content that will be drawn inside the thumb, expected to measure [SwitchDefaults.IconSize]",
+    "enabled": "controls the enabled state of this switch. When `false`, this component will not respond to user input, and it will appear visually disabled and disabled to accessibility services.",
+    "colors": "[SwitchColors] that will be used to resolve the colors used for this switch in different states. See [SwitchDefaults.colors].",
+    "colors.checkedThumbColor": "the color used for the thumb when enabled and checked",
+    "colors.checkedTrackColor": "the color used for the track when enabled and checked",
+    "colors.checkedBorderColor": "the color used for the border when enabled and checked",
+    "colors.checkedIconColor": "the color used for the icon when enabled and checked",
+    "colors.uncheckedThumbColor": "the color used for the thumb when enabled and unchecked",
+    "colors.uncheckedTrackColor": "the color used for the track when enabled and unchecked",
+    "colors.uncheckedBorderColor": "the color used for the border when enabled and unchecked",
+    "colors.uncheckedIconColor": "the color used for the icon when enabled and unchecked",
+    "colors.disabledCheckedThumbColor": "the color used for the thumb when disabled and checked",
+    "colors.disabledCheckedTrackColor": "the color used for the track when disabled and checked",
+    "colors.disabledCheckedBorderColor": "the color used for the border when disabled and checked",
+    "colors.disabledCheckedIconColor": "the color used for the icon when disabled and checked",
+    "colors.disabledUncheckedThumbColor": "the color used for the thumb when disabled and unchecked",
+    "colors.disabledUncheckedTrackColor": "the color used for the track when disabled and unchecked",
+    "colors.disabledUncheckedBorderColor": "the color used for the border when disabled and unchecked",
+    "colors.disabledUncheckedIconColor": "the color used for the icon when disabled and unchecked",
+    "interactionSource": "an optional hoisted [MutableInteractionSource] for observing and emitting [Interaction]s for this switch. You can use this to change the switch's appearance or preview the switch in different states. Note that if `null` is provided, interactions will still happen internally."
+  }
+}

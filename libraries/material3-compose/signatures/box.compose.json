@@ -1,0 +1,53 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.foundation.layout.Box",
+    "path": "compose/foundation/foundation-layout/src/commonMain/kotlin/androidx/compose/foundation/layout/Box.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1",
+    "overload": 0
+  },
+  "params": [
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "contentAlignment",
+      "role": "value",
+      "type": "Alignment",
+      "default": "Alignment.TopStart",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "propagateMinConstraints",
+      "role": "value",
+      "type": "Boolean",
+      "default": "false",
+      "value": {
+        "kind": "boolean",
+        "default": false
+      }
+    },
+    {
+      "name": "content",
+      "role": "slot",
+      "type": "@Composable BoxScope.() -> Unit",
+      "required": true
+    }
+  ],
+  "doc": {
+    "modifier": "The modifier to be applied to the layout.",
+    "contentAlignment": "The default alignment inside the Box.",
+    "propagateMinConstraints": "Whether the incoming min constraints should be passed to content.",
+    "content": "The content of the [Box]."
+  }
+}

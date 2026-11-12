@@ -67,6 +67,8 @@ class Importer {
   private readonly before: ReadonlyMap<string, FlatLike>;
   private readonly newType: boolean;
   private readonly models: Models;
+  /** Os nomes que o `ignore` do `code` (ou do caso) deixa de fora de propósito (decisão 6). */
+  private readonly configured: ReadonlySet<string>;
 
   constructor(
     private readonly original: Spec,
@@ -76,6 +78,9 @@ class Importer {
     private readonly prepared: Prepared,
   ) {
     this.models = spec.fieldModels?.[prepared.id] ?? {};
+    this.configured = new Set(
+      (prepared.scope as Scope | undefined)?.ignore ?? prepared.code?.ignore ?? [],
+    );
     this.before = flatLikeOf(options.previous);
     this.newType = type.fields.length === 0 && options.previous === undefined;
   }
@@ -156,6 +161,7 @@ class Importer {
   // --- uma unidade ---
 
   private apply(unit: Unit): void {
+    if (this.configured.has(unit.owner ?? unit.param.name)) return;
     const context: ResolveContext = {
       models: this.models,
       like: (ref) => this.likePlan(ref),
@@ -173,18 +179,28 @@ class Importer {
     return this.existing.get(unit.param.name);
   }
 
-  private findLinked(unit: Unit): { field: SpecField; via: ImportLinkVia } | undefined {
+  /**
+   * Pelo nome só vale um campo do mesmo tipo quando o argumento é de uma fábrica ou de um composto
+   * (o `width` do `border` não é o `width` de tamanho): sem o mesmo tipo, nasce um campo novo.
+   */
+  private findLinked(
+    unit: Unit,
+    plan: FieldPlan,
+  ): { field: SpecField; via: ImportLinkVia } | undefined {
     const byParams = this.fieldOf(this.linkedKey(unit));
     if (byParams !== undefined) return { field: byParams, via: 'params' };
     const normal = normalizeName(unit.name);
     const byName = this.type.fields.find(
-      (f) => !this.linked.has(f.key) && normalizeName(f.key) === normal,
+      (f) =>
+        !this.linked.has(f.key) &&
+        normalizeName(f.key) === normal &&
+        (unit.owner === undefined || f.type === plan.type),
     );
     return byName === undefined ? undefined : { field: byName, via: 'name' };
   }
 
   private bindField(unit: Unit, plan: FieldPlan): void {
-    let found = this.findLinked(unit);
+    let found = this.findLinked(unit, plan);
     const isNew = found === undefined;
     if (found === undefined) {
       const field = this.makeField(unit, plan);
@@ -412,8 +428,15 @@ class Importer {
     return this.links.find((l) => l.param === target)?.field ?? this.existing.get(target);
   }
 
+  /**
+   * `<plataforma>: <texto>`; na ficha de um caso de `variants`, `<plataforma>: caso \`<caso>\`: <texto>`
+   * (o mesmo parâmetro sem campo na base e no caso daria dois avisos iguais, o erro `aviso repetido`).
+   */
   private message(text: string): string {
-    return `${this.prefix}: ${text}`;
+    const variant = this.options.variant;
+    return variant === undefined
+      ? `${this.prefix}: ${text}`
+      : `${this.prefix}: caso \`${variant}\`: ${text}`;
   }
 
   private writeNotices(

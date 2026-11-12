@@ -1,0 +1,51 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.foundation.layout.Row",
+    "path": "compose/foundation/foundation-layout/src/commonMain/kotlin/androidx/compose/foundation/layout/Row.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "horizontalArrangement",
+      "role": "value",
+      "type": "Arrangement.Horizontal",
+      "default": "Arrangement.Start",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "verticalAlignment",
+      "role": "value",
+      "type": "Alignment.Vertical",
+      "default": "Alignment.Top",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "content",
+      "role": "slot",
+      "type": "@Composable RowScope.() -> Unit",
+      "required": true
+    }
+  ],
+  "doc": {
+    "modifier": "The modifier to be applied to the Row.",
+    "horizontalArrangement": "The horizontal arrangement of the layout's children.",
+    "verticalAlignment": "The vertical alignment of the layout's children.",
+    "content": "The content of the Row"
+  }
+}

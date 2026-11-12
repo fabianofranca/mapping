@@ -1,0 +1,76 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.FilledTonalIconButton",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/IconButton.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "onClick",
+      "role": "callback",
+      "type": "() -> Unit",
+      "required": true
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "enabled",
+      "role": "value",
+      "type": "Boolean",
+      "default": "true",
+      "value": {
+        "kind": "boolean",
+        "default": true
+      }
+    },
+    {
+      "name": "shape",
+      "role": "value",
+      "type": "Shape",
+      "default": "IconButtonDefaults.filledShape",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "colors",
+      "role": "value",
+      "type": "IconButtonColors",
+      "default": "IconButtonDefaults.filledTonalIconButtonColors()",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "interactionSource",
+      "role": "state",
+      "type": "MutableInteractionSource?",
+      "default": "null"
+    },
+    {
+      "name": "content",
+      "role": "slot",
+      "type": "@Composable () -> Unit",
+      "required": true
+    }
+  ],
+  "doc": {
+    "onClick": "called when this icon button is clicked",
+    "modifier": "the [Modifier] to be applied to this icon button",
+    "enabled": "controls the enabled state of this icon button. When `false`, this component will not respond to user input, and it will appear visually disabled and disabled to accessibility services.",
+    "shape": "defines the shape of this icon button's container",
+    "colors": "[IconButtonColors] that will be used to resolve the colors used for this icon button in different states. See [IconButtonDefaults.filledIconButtonColors].",
+    "interactionSource": "an optional hoisted [MutableInteractionSource] for observing and emitting [Interaction]s for this icon button. You can use this to change the icon button's appearance or preview the icon button in different states. Note that if `null` is provided, interactions will still happen internally.",
+    "content": "the content of this icon button, typically an [Icon]"
+  }
+}

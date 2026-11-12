@@ -1,0 +1,168 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.BottomSheetScaffold",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/BottomSheetScaffold.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "sheetContent",
+      "role": "slot",
+      "type": "@Composable ColumnScope.() -> Unit",
+      "required": true
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "scaffoldState",
+      "role": "state",
+      "type": "BottomSheetScaffoldState",
+      "default": "rememberBottomSheetScaffoldState()"
+    },
+    {
+      "name": "sheetPeekHeight",
+      "role": "value",
+      "type": "Dp",
+      "default": "BottomSheetDefaults.SheetPeekHeight",
+      "value": {
+        "kind": "dimension"
+      }
+    },
+    {
+      "name": "sheetMaxWidth",
+      "role": "value",
+      "type": "Dp",
+      "default": "BottomSheetDefaults.SheetMaxWidth",
+      "value": {
+        "kind": "dimension"
+      }
+    },
+    {
+      "name": "sheetShape",
+      "role": "value",
+      "type": "Shape",
+      "default": "BottomSheetDefaults.ExpandedShape",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "sheetContainerColor",
+      "role": "value",
+      "type": "Color",
+      "default": "BottomSheetDefaults.ContainerColor",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "sheetContentColor",
+      "role": "value",
+      "type": "Color",
+      "default": "contentColorFor(sheetContainerColor)",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "sheetTonalElevation",
+      "role": "value",
+      "type": "Dp",
+      "default": "0.dp",
+      "value": {
+        "kind": "dimension",
+        "default": 0
+      }
+    },
+    {
+      "name": "sheetShadowElevation",
+      "role": "value",
+      "type": "Dp",
+      "default": "BottomSheetDefaults.Elevation",
+      "value": {
+        "kind": "dimension"
+      }
+    },
+    {
+      "name": "sheetDragHandle",
+      "role": "slot",
+      "type": "@Composable (() -> Unit)?",
+      "default": "{ BottomSheetDefaults.DragHandle() }"
+    },
+    {
+      "name": "sheetSwipeEnabled",
+      "role": "value",
+      "type": "Boolean",
+      "default": "true",
+      "value": {
+        "kind": "boolean",
+        "default": true
+      }
+    },
+    {
+      "name": "topBar",
+      "role": "slot",
+      "type": "@Composable (() -> Unit)?",
+      "default": "null"
+    },
+    {
+      "name": "snackbarHost",
+      "role": "slot",
+      "type": "@Composable (SnackbarHostState) -> Unit",
+      "default": "{ SnackbarHost(it) }"
+    },
+    {
+      "name": "containerColor",
+      "role": "value",
+      "type": "Color",
+      "default": "MaterialTheme.colorScheme.surface",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "contentColor",
+      "role": "value",
+      "type": "Color",
+      "default": "contentColorFor(containerColor)",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "content",
+      "role": "slot",
+      "type": "@Composable (PaddingValues) -> Unit",
+      "required": true
+    }
+  ],
+  "doc": {
+    "sheetContent": "the content of the bottom sheet",
+    "modifier": "the [Modifier] to be applied to the root of the scaffold",
+    "scaffoldState": "the state of the bottom sheet scaffold",
+    "sheetPeekHeight": "the height of the bottom sheet when it is collapsed",
+    "sheetMaxWidth": "[Dp] that defines what the maximum width the sheet will take. Pass in [Dp.Unspecified] for a sheet that spans the entire screen width.",
+    "sheetShape": "the shape of the bottom sheet",
+    "sheetContainerColor": "the background color of the bottom sheet",
+    "sheetContentColor": "the preferred content color provided by the bottom sheet to its children. Defaults to the matching content color for [sheetContainerColor], or if that is not a color from the theme, this will keep the same content color set above the bottom sheet.",
+    "sheetTonalElevation": "when [sheetContainerColor] is [ColorScheme.surface], a translucent primary color overlay is applied on top of the container. A higher tonal elevation value will result in a darker color in light theme and lighter color in dark theme. See also: [Surface].",
+    "sheetShadowElevation": "the shadow elevation of the bottom sheet",
+    "sheetDragHandle": "optional visual marker to pull the scaffold's bottom sheet",
+    "sheetSwipeEnabled": "whether the sheet swiping is enabled and should react to the user's input",
+    "topBar": "top app bar of the screen, typically a [TopAppBar]",
+    "snackbarHost": "component to host [Snackbar]s that are pushed to be shown via [SnackbarHostState.showSnackbar], typically a [SnackbarHost]",
+    "containerColor": "the color used for the background of this scaffold. Use [Color.Transparent] to have no color.",
+    "contentColor": "the preferred color for content inside this scaffold. Defaults to either the matching content color for [containerColor], or to the current [LocalContentColor] if [containerColor] is not a color from the theme.",
+    "content": "content of the screen. The lambda receives a [PaddingValues] that should be applied to the content root via [Modifier.padding] and [Modifier.consumeWindowInsets] to properly offset top and bottom bars. If using [Modifier.verticalScroll], apply this modifier to the child of the scroll, and not on the scroll itself."
+  }
+}

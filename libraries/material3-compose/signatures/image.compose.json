@@ -1,0 +1,85 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.foundation.Image",
+    "path": "compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/Image.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1",
+    "overload": 2
+  },
+  "params": [
+    {
+      "name": "imageVector",
+      "role": "value",
+      "type": "ImageVector",
+      "required": true,
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "contentDescription",
+      "role": "value",
+      "type": "String?",
+      "required": true,
+      "value": {
+        "kind": "text"
+      }
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "alignment",
+      "role": "value",
+      "type": "Alignment",
+      "default": "Alignment.Center",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "contentScale",
+      "role": "value",
+      "type": "ContentScale",
+      "default": "ContentScale.Fit",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "alpha",
+      "role": "value",
+      "type": "Float",
+      "default": "DefaultAlpha",
+      "value": {
+        "kind": "number"
+      }
+    },
+    {
+      "name": "colorFilter",
+      "role": "value",
+      "type": "ColorFilter?",
+      "default": "null",
+      "value": {
+        "kind": "opaque"
+      }
+    }
+  ],
+  "doc": {
+    "imageVector": "The [ImageVector] to draw",
+    "contentDescription": "text used by accessibility services to describe what this image represents. This should always be provided unless this image is used for decorative purposes, and does not represent a meaningful action that a user can take. This text should be localized, such as by using [androidx.compose.ui.res.stringResource] or similar",
+    "modifier": "Modifier used to adjust the layout algorithm or draw decoration content (ex. background)",
+    "alignment": "Optional alignment parameter used to place the [ImageVector] in the given bounds defined by the width and height",
+    "contentScale": "Optional scale parameter used to determine the aspect ratio scaling to be used if the bounds are a different size from the intrinsic size of the [ImageVector]",
+    "alpha": "Optional opacity to be applied to the [ImageVector] when it is rendered onscreen",
+    "colorFilter": "Optional ColorFilter to apply for the [ImageVector] when it is rendered onscreen"
+  }
+}

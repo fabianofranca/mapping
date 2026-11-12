@@ -1,0 +1,81 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.foundation.layout.FlowRow",
+    "path": "compose/foundation/foundation-layout/src/commonMain/kotlin/androidx/compose/foundation/layout/FlowLayout.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "horizontalArrangement",
+      "role": "value",
+      "type": "Arrangement.Horizontal",
+      "default": "Arrangement.Start",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "verticalArrangement",
+      "role": "value",
+      "type": "Arrangement.Vertical",
+      "default": "Arrangement.Top",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "itemVerticalAlignment",
+      "role": "value",
+      "type": "Alignment.Vertical",
+      "default": "Alignment.Top",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "maxItemsInEachRow",
+      "role": "value",
+      "type": "Int",
+      "default": "Int.MAX_VALUE",
+      "value": {
+        "kind": "integer"
+      }
+    },
+    {
+      "name": "maxLines",
+      "role": "value",
+      "type": "Int",
+      "default": "Int.MAX_VALUE",
+      "value": {
+        "kind": "integer"
+      }
+    },
+    {
+      "name": "content",
+      "role": "slot",
+      "type": "@Composable FlowRowScope.() -> Unit",
+      "required": true
+    }
+  ],
+  "doc": {
+    "modifier": "The modifier to be applied to the Row.",
+    "horizontalArrangement": "The horizontal arrangement of the layout's children.",
+    "verticalArrangement": "The vertical arrangement of the layout's virtual rows.",
+    "itemVerticalAlignment": "The cross axis/vertical alignment of an item in the column.",
+    "maxItemsInEachRow": "The maximum number of items per row",
+    "maxLines": "The max number of rows",
+    "content": "The content as a [RowScope]"
+  }
+}

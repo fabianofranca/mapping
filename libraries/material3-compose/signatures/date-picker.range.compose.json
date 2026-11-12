@@ -1,0 +1,83 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.DateRangePicker",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/DateRangePicker.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "state",
+      "role": "state",
+      "type": "DateRangePickerState",
+      "required": true
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "dateFormatter",
+      "role": "value",
+      "type": "DatePickerFormatter",
+      "default": "remember { DatePickerDefaults.dateFormatter() }",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "colors",
+      "role": "value",
+      "type": "DatePickerColors",
+      "default": "DatePickerDefaults.colors()",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "title",
+      "role": "slot",
+      "type": "(@Composable () -> Unit)?",
+      "default": "{ DateRangePickerDefaults.DateRangePickerTitle(displayMode = state.displayMode, modifier = Modifier.padding(DateRangePickerTitlePadding), contentColor = colors.titleContentColor,) }"
+    },
+    {
+      "name": "headline",
+      "role": "slot",
+      "type": "(@Composable () -> Unit)?",
+      "default": "{ DateRangePickerDefaults.DateRangePickerHeadline(selectedStartDateMillis = state.selectedStartDateMillis, selectedEndDateMillis = state.selectedEndDateMillis, displayMode = state.displayMode, dateFormatter, modifier = Modifier.padding(DateRangePickerHeadlinePadding), contentColor = colors.headlineContentColor,) }"
+    },
+    {
+      "name": "showModeToggle",
+      "role": "value",
+      "type": "Boolean",
+      "default": "true",
+      "value": {
+        "kind": "boolean",
+        "default": true
+      }
+    },
+    {
+      "name": "focusRequester",
+      "role": "state",
+      "type": "FocusRequester?",
+      "default": "remember { FocusRequester() }"
+    }
+  ],
+  "doc": {
+    "state": "state of the date range picker. See [rememberDateRangePickerState].",
+    "modifier": "the [Modifier] to be applied to this date range picker",
+    "dateFormatter": "a [DatePickerFormatter] that provides formatting skeletons for dates display",
+    "colors": "[DatePickerColors] that will be used to resolve the colors used for this date range picker in different states. See [DatePickerDefaults.colors].",
+    "title": "the title to be displayed in the date range picker",
+    "headline": "the headline to be displayed in the date range picker",
+    "showModeToggle": "indicates if this DateRangePicker should show a mode toggle action that transforms it into a date range input",
+    "focusRequester": "a focus requester that will be used to focus the text field when the date picker is in an input mode. Pass `null` to not focus the text field if that's the desired behavior."
+  }
+}

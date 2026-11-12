@@ -1,0 +1,4 @@
+Pipeline da S5 (REMOVER antes do PR). Scripts de scratchpad copiados na passagem por contexto.
+Os scripts usam S=<pasta dos scripts>: ajuste o caminho no topo (S=os.path.dirname(__file__)) e rode com a cópia deste diretório num scratchpad.
+Ordem: fetch.py (baixa os 51 .kt do androidx no commit 5113b82a em S/src) -> extract.py (node dist-mcp/mapping-signature.mjs kotlin --file ... --symbol ... --path ... --ref 5113b82a... --out S/out/<id>.json, com flags.json = --overload n por tipo) -> prep.py <pacote> (fieldModels de models.json, formatVersion 16 e o ignore de cada code/caso) -> importall.py <pacote> (copia as fichas para signatures/ e chama plan_signature_import por tipo e caso via mcpcall.mjs, regravando o spec).
+As fichas e o spec já estão importados neste commit: só repita se mudar os modelos ou o ignore (npm run build:mcp antes, para o dist-mcp refletir as correções do importador).

@@ -1,0 +1,89 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.BottomAppBar",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/AppBar.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1",
+    "overload": 0
+  },
+  "params": [
+    {
+      "name": "actions",
+      "role": "slot",
+      "type": "@Composable RowScope.() -> Unit",
+      "required": true
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "floatingActionButton",
+      "role": "slot",
+      "type": "@Composable (() -> Unit)?",
+      "default": "null"
+    },
+    {
+      "name": "containerColor",
+      "role": "value",
+      "type": "Color",
+      "default": "BottomAppBarDefaults.containerColor",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "contentColor",
+      "role": "value",
+      "type": "Color",
+      "default": "contentColorFor(containerColor)",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "tonalElevation",
+      "role": "value",
+      "type": "Dp",
+      "default": "BottomAppBarDefaults.ContainerElevation",
+      "value": {
+        "kind": "dimension"
+      }
+    },
+    {
+      "name": "contentPadding",
+      "role": "value",
+      "type": "PaddingValues",
+      "default": "BottomAppBarDefaults.ContentPadding",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "windowInsets",
+      "role": "value",
+      "type": "WindowInsets",
+      "default": "BottomAppBarDefaults.windowInsets",
+      "value": {
+        "kind": "opaque"
+      }
+    }
+  ],
+  "doc": {
+    "actions": "the icon content of this BottomAppBar. The default layout here is a [Row], so content inside will be placed horizontally.",
+    "modifier": "the [Modifier] to be applied to this BottomAppBar",
+    "floatingActionButton": "optional floating action button at the end of this BottomAppBar",
+    "containerColor": "the color used for the background of this BottomAppBar. Use [Color.Transparent] to have no color.",
+    "contentColor": "the preferred color for content inside this BottomAppBar. Defaults to either the matching content color for [containerColor], or to the current [LocalContentColor] if [containerColor] is not a color from the theme.",
+    "tonalElevation": "when [containerColor] is [ColorScheme.surface], a translucent primary color overlay is applied on top of the container. A higher tonal elevation value will result in a darker color in light theme and lighter color in dark theme. See also: [Surface].",
+    "contentPadding": "the padding applied to the content of this BottomAppBar",
+    "windowInsets": "a window insets that app bar will respect."
+  }
+}

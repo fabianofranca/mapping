@@ -1,0 +1,154 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.MediumTopAppBar",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/AppBar.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "title",
+      "role": "slot",
+      "type": "@Composable () -> Unit",
+      "required": true
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "navigationIcon",
+      "role": "slot",
+      "type": "@Composable () -> Unit",
+      "default": "{}"
+    },
+    {
+      "name": "actions",
+      "role": "slot",
+      "type": "@Composable RowScope.() -> Unit",
+      "default": "{}"
+    },
+    {
+      "name": "collapsedHeight",
+      "role": "value",
+      "type": "Dp",
+      "default": "TopAppBarDefaults.MediumAppBarCollapsedHeight",
+      "value": {
+        "kind": "dimension"
+      }
+    },
+    {
+      "name": "expandedHeight",
+      "role": "value",
+      "type": "Dp",
+      "default": "TopAppBarDefaults.MediumAppBarExpandedHeight",
+      "value": {
+        "kind": "dimension"
+      }
+    },
+    {
+      "name": "windowInsets",
+      "role": "value",
+      "type": "WindowInsets",
+      "default": "TopAppBarDefaults.windowInsets",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "colors",
+      "role": "value",
+      "type": "TopAppBarColors",
+      "default": "TopAppBarDefaults.topAppBarColors()",
+      "factory": {
+        "call": "androidx.compose.material3.TopAppBarDefaults.topAppBarColors",
+        "params": [
+          {
+            "name": "containerColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "scrolledContainerColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "navigationIconContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "titleContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "actionIconContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "subtitleContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "scrollBehavior",
+      "role": "state",
+      "type": "TopAppBarScrollBehavior?",
+      "default": "null"
+    }
+  ],
+  "doc": {
+    "title": "the title to be displayed in the top app bar. This title will be used in the app bar's expanded and collapsed states, although in its collapsed state it will be composed with a smaller sized [TextStyle]",
+    "modifier": "the [Modifier] to be applied to this top app bar",
+    "navigationIcon": "the navigation icon displayed at the start of the top app bar. This should typically be an [IconButton] or [IconToggleButton].",
+    "actions": "the actions displayed at the end of the top app bar. This should typically be [IconButton]s. The default layout here is a [Row], so icons inside will be placed horizontally.",
+    "collapsedHeight": "this app bar height when collapsed by a provided [scrollBehavior]. This value must be specified and finite, otherwise it will be ignored and replaced with [TopAppBarDefaults.MediumAppBarCollapsedHeight].",
+    "expandedHeight": "this app bar's maximum height. When a specified [scrollBehavior] causes the app bar to collapse or expand, this value will represent the maximum height that the app-bar will be allowed to expand. The expanded height is expected to be greater or equal to the [collapsedHeight], and the function will throw an [IllegalArgumentException] otherwise. Also, this value must be specified and finite, otherwise it will be ignored and replaced with [TopAppBarDefaults.MediumAppBarExpandedHeight].",
+    "windowInsets": "a window insets that app bar will respect.",
+    "colors": "[TopAppBarColors] that will be used to resolve the colors used for this top app bar in different states. See [TopAppBarDefaults.topAppBarColors].",
+    "colors.containerColor": "the container color",
+    "colors.scrolledContainerColor": "the container color when content is scrolled behind it",
+    "colors.navigationIconContentColor": "the content color used for the navigation icon",
+    "colors.titleContentColor": "the content color used for the title",
+    "colors.actionIconContentColor": "the content color used for actions",
+    "colors.subtitleContentColor": "the content color used for the subtitle",
+    "scrollBehavior": "a [TopAppBarScrollBehavior] which holds various offset values that will be applied by this top app bar to set up its height and colors. A scroll behavior is designed to work in conjunction with a scrolled content to change the top app bar appearance as the content scrolls. See [TopAppBarScrollBehavior.nestedScrollConnection]."
+  }
+}

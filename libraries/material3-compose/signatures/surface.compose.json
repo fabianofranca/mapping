@@ -1,0 +1,94 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.Surface",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Surface.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1",
+    "overload": 0
+  },
+  "params": [
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "shape",
+      "role": "value",
+      "type": "Shape",
+      "default": "RectangleShape",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "color",
+      "role": "value",
+      "type": "Color",
+      "default": "MaterialTheme.colorScheme.surface",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "contentColor",
+      "role": "value",
+      "type": "Color",
+      "default": "contentColorFor(color)",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "tonalElevation",
+      "role": "value",
+      "type": "Dp",
+      "default": "0.dp",
+      "value": {
+        "kind": "dimension",
+        "default": 0
+      }
+    },
+    {
+      "name": "shadowElevation",
+      "role": "value",
+      "type": "Dp",
+      "default": "0.dp",
+      "value": {
+        "kind": "dimension",
+        "default": 0
+      }
+    },
+    {
+      "name": "border",
+      "role": "value",
+      "type": "BorderStroke?",
+      "default": "null",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "content",
+      "role": "slot",
+      "type": "@Composable () -> Unit",
+      "required": true
+    }
+  ],
+  "doc": {
+    "modifier": "Modifier to be applied to the layout corresponding to the surface",
+    "shape": "Defines the surface's shape as well its shadow.",
+    "color": "The background color. Use [Color.Transparent] to have no color.",
+    "contentColor": "The preferred content color provided by this Surface to its children. Defaults to either the matching content color for [color], or if [color] is not a color from the theme, this will keep the same value set above this Surface.",
+    "tonalElevation": "When [color] is [ColorScheme.surface], a higher the elevation will result in a darker color in light theme and lighter color in dark theme.",
+    "shadowElevation": "The size of the shadow below the surface. To prevent shadow creep, only apply shadow elevation when absolutely necessary, such as when the surface requires visual separation from a patterned background. Note that It will not affect z index of the Surface. If you want to change the drawing order you can use `Modifier.zIndex`.",
+    "border": "Optional border to draw on top of the surface",
+    "content": "The content to be displayed on this Surface"
+  }
+}

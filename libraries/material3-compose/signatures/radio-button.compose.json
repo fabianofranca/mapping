@@ -1,0 +1,111 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.RadioButton",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/RadioButton.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "selected",
+      "role": "value",
+      "type": "Boolean",
+      "required": true,
+      "value": {
+        "kind": "boolean"
+      }
+    },
+    {
+      "name": "onClick",
+      "role": "callback",
+      "type": "(() -> Unit)?",
+      "required": true
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "enabled",
+      "role": "value",
+      "type": "Boolean",
+      "default": "true",
+      "value": {
+        "kind": "boolean",
+        "default": true
+      }
+    },
+    {
+      "name": "colors",
+      "role": "value",
+      "type": "RadioButtonColors",
+      "default": "RadioButtonDefaults.colors()",
+      "factory": {
+        "call": "androidx.compose.material3.RadioButtonDefaults.colors",
+        "params": [
+          {
+            "name": "selectedColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "unselectedColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledSelectedColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledUnselectedColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "interactionSource",
+      "role": "state",
+      "type": "MutableInteractionSource?",
+      "default": "null"
+    }
+  ],
+  "doc": {
+    "selected": "whether this radio button is selected or not",
+    "onClick": "called when this radio button is clicked. If `null`, then this radio button will not be interactable, unless something else handles its input events and updates its state.",
+    "modifier": "the [Modifier] to be applied to this radio button",
+    "enabled": "controls the enabled state of this radio button. When `false`, this component will not respond to user input, and it will appear visually disabled and disabled to accessibility services.",
+    "colors": "[RadioButtonColors] that will be used to resolve the color used for this radio button in different states. See [RadioButtonDefaults.colors].",
+    "colors.selectedColor": "the color to use for the RadioButton when selected and enabled.",
+    "colors.unselectedColor": "the color to use for the RadioButton when unselected and enabled.",
+    "colors.disabledSelectedColor": "the color to use for the RadioButton when disabled and selected.",
+    "colors.disabledUnselectedColor": "the color to use for the RadioButton when disabled and not selected.",
+    "interactionSource": "an optional hoisted [MutableInteractionSource] for observing and emitting [Interaction]s for this radio button. You can use this to change the radio button's appearance or preview the radio button in different states. Note that if `null` is provided, interactions will still happen internally."
+  }
+}
