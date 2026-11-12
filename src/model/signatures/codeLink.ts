@@ -97,19 +97,26 @@ export function paramsOutsideSignature(
   const positions = positionalParams(signature).length;
   const outside: OutsideParam[] = [];
   for (const [field, value] of Object.entries(code.params ?? {})) {
-    const target = paramTarget(value);
-    let found: boolean;
-    if (target.kind === 'name') found = byName.has(target.name);
-    else if (target.kind === 'position') found = target.position < positions;
-    else {
-      const owner = byName.get(target.call);
-      found =
-        owner !== undefined &&
-        (owner.factory === undefined ||
-          owner.factory.params.some((param) => param.name === target.name) ||
-          expandsTo(models?.[owner.type], target.name));
-    }
-    if (!found) outside.push({ field, name: value });
+    if (!targetExists(paramTarget(value), byName, positions, models))
+      outside.push({ field, name: value });
   }
   return outside;
+}
+
+/** O alvo de um `params` existe na ficha: um nome, um posicional ou o argumento de uma fábrica. */
+function targetExists(
+  target: ReturnType<typeof paramTarget>,
+  byName: ReadonlyMap<string, SignatureParam>,
+  positions: number,
+  models: ExpandModels | undefined,
+): boolean {
+  if (target.kind === 'name') return byName.has(target.name);
+  if (target.kind === 'position') return target.position < positions;
+  const owner = byName.get(target.call);
+  return (
+    owner !== undefined &&
+    (owner.factory === undefined ||
+      owner.factory.params.some((param) => param.name === target.name) ||
+      expandsTo(models?.[owner.type], target.name))
+  );
 }

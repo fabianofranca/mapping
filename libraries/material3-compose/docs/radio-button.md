@@ -77,4 +77,3 @@ O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o des
 - A camada de 24 do desenho é menor que a de 40 do Compose, que passaria 8 para cada lado da área de 24 e, na borda esquerda, 8 além da caixa da instância. No Compose a camada sai do `selectable` da `Row` e do `minimumInteractiveComponentSize`.
 - Com `onClick` preenchido o Compose aumenta a área para 48 (`minimumInteractiveComponentSize`); o desenho fica com os 24 da chamada com `onClick = null`.
 - O rótulo a 0,38 quando desabilitado é convenção do desenho: o `Text` do Compose herda a cor do conteúdo e não diminui sozinho.
-- `RadioButtonColors` próprio não é campo do tipo.

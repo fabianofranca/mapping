@@ -91,5 +91,5 @@ O campo escolhe a aparência parada de um estado; não entra no `code` nem nas `
 
 - O indicador do Compose 1.4.0 mede 56 × 32 (`NavigationBarVerticalItemTokens.ActiveIndicatorWidth`), e não os 64 × 32 da primeira versão deste componente nem os do desenho M3 anterior: o desenho segue o `.kt`.
 - O `interaction` é um quadro parado: sem o ripple animado, sem a animação de expansão do indicador (o desenho é o estado final) e sem anel de foco (o Compose não define `FocusIndicatorColor` para ele no commit fixado); sem `enabled` (não é campo do tipo).
-- `windowInsets`, `tonalElevation`, `containerColor` e `NavigationBarItemColors` próprios não são campos do tipo; o ícone é só o nome do conjunto Material Icons da biblioteca.
+- `containerColor`, `contentColor` e `tonalElevation` são campos e código, mas o desenho não os usa; `windowInsets` e `NavigationBarItemColors` próprios não são campos do tipo; o ícone é só o nome do conjunto Material Icons da biblioteca.
 - O rótulo do Compose quebra em mais de uma linha quando passa da largura do destino; aqui ele é `hug` e a prova de desenho avisa o que não cabe.

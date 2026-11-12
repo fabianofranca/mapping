@@ -65,6 +65,6 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 **O que ainda difere do Compose**
 
 - As colunas têm tamanho igual (`1fr`): o formato não tem `GridCells.FixedSize` nem células de larguras diferentes, e a filha não ocupa mais de uma coluna (`span` de marcação filha não existe; o `GridItemSpan` do Compose fica de fora).
-- `reverseLayout` e a grade horizontal (`LazyHorizontalGrid`) não são campos deste tipo.
+- `reverseLayout` é campo e código, mas o desenho não o usa; a grade horizontal (`LazyHorizontalGrid`) não é campo deste tipo.
 - A filha é a de tamanho próprio dentro da célula (início da célula); o Compose entrega a ela a largura da célula como restrição máxima. Redimensione a filha para ocupar a coluna.
 - Rolagem e `state` não existem num desenho estático: o que passa da caixa é cortado e não há como rolar até lá. O `weight` das filhas fica fora (o Arrumar não lê campos das filhas).

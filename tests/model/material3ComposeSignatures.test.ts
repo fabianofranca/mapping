@@ -199,15 +199,6 @@ function allText(node: SceneNode, acc: string[] = []): string[] {
   if ('children' in node) for (const c of node.children) allText(c, acc);
   return acc;
 }
-function allSolids(node: SceneNode, acc: string[] = []): string[] {
-  if ('fills' in node) {
-    const color = solid(node.fills as never);
-    if (color !== undefined) acc.push(color);
-  }
-  if ('children' in node) for (const c of node.children) allSolids(c, acc);
-  return acc;
-}
-
 function named(node: SceneNode, name: string): SceneNode | undefined {
   if (node.name === name) return node;
   if ('children' in node) {

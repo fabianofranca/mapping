@@ -429,7 +429,9 @@ class Importer {
   private reportedRemoved(): ReadonlySet<string> {
     return new Set(
       this.type.fields
-        .filter((f) => f.notices?.some((n) => n.kind === 'removed' && n.ref === this.path))
+        .filter((f) =>
+          f.notices?.some((n) => n.kind === 'removed' && n.ref === this.path),
+        )
         .map((f) => f.key),
     );
   }
@@ -466,20 +468,7 @@ class Importer {
     diff: SignatureDiff,
   ): ImportNotice[] {
     const ours: ImportNotice[] = [];
-    const holders: { notices?: SpecNotice[] }[] = [this.type, ...this.type.fields];
-    // Posição dos avisos antigos desta ficha: os novos ocupam o lugar deles (reimportar a base
-    // depois de um caso não reordena a lista); sem avisos antigos, vão para o fim.
-    const slot = new Map<{ notices?: SpecNotice[] }, number>();
-    for (const holder of holders) {
-      const list = holder.notices;
-      if (list === undefined) continue;
-      const first = list.findIndex((n) => n.ref === this.path);
-      if (first >= 0)
-        slot.set(holder, list.slice(0, first).filter((n) => n.ref !== this.path).length);
-      const kept = list.filter((n) => n.ref !== this.path);
-      if (kept.length === 0) delete holder.notices;
-      else holder.notices = kept;
-    }
+    const slot = this.detachOwnNotices();
     const fresh = new Map<{ notices?: SpecNotice[] }, SpecNotice[]>();
     const add = (
       at: ImportNotice['at'],
@@ -510,6 +499,27 @@ class Importer {
       holder.notices = [...kept.slice(0, at), ...list, ...kept.slice(at)];
     }
     return ours;
+  }
+
+  /**
+   * Tira os avisos antigos desta ficha (pelo `ref`) do tipo e dos campos e devolve a posição em
+   * que estavam: os novos ocupam o lugar deles (reimportar a base depois de um caso não reordena
+   * a lista); sem avisos antigos, vão para o fim.
+   */
+  private detachOwnNotices(): Map<{ notices?: SpecNotice[] }, number> {
+    const slot = new Map<{ notices?: SpecNotice[] }, number>();
+    const holders: { notices?: SpecNotice[] }[] = [this.type, ...this.type.fields];
+    for (const holder of holders) {
+      const list = holder.notices;
+      if (list === undefined) continue;
+      const first = list.findIndex((n) => n.ref === this.path);
+      if (first >= 0)
+        slot.set(holder, list.slice(0, first).filter((n) => n.ref !== this.path).length);
+      const kept = list.filter((n) => n.ref !== this.path);
+      if (kept.length === 0) delete holder.notices;
+      else holder.notices = kept;
+    }
+    return slot;
   }
 
   private writeOutside(

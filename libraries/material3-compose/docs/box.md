@@ -66,4 +66,4 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - O alinhamento só age quando a pessoa pede o **Arrumar**: ao marcar uma filha nova, ela fica onde foi marcada, e mover uma filha à mão a tira do alinhamento até o próximo Arrumar. O Compose alinha a cada medição.
 - O `Modifier.align(...)` por filha (`BoxScope.align`, `Box.kt` linha 249) não existe: o `contentAlignment` vale para todas as filhas; para uma filha fora da regra, deixe o `TopStart` e posicione-a à mão.
 - O `weight` só aparece no rótulo: o Arrumar não lê campos das filhas (o `weight` do formato é de nós do template).
-- `propagateMinConstraints` e as restrições mínimas do pai não são campos do tipo.
+- `propagateMinConstraints` é campo e código, mas o desenho não o usa; as restrições mínimas do pai não são campos do tipo.
