@@ -1,4 +1,4 @@
-# Aviso "O componente não cabe" com a palavra larga — [Não lançado] (épico `epic/aviso-nao-cabe-pai-none`, PR #1746, MCP 0.38.1 provisório, schema v19)
+# Aviso "O componente não cabe" com a palavra larga — 2026-11-12 (épico `epic/aviso-nao-cabe-pai-none`, PR #1746, MCP 0.38.1 provisório, schema v19)
 
 ## Corrigido
 
