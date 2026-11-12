@@ -90,6 +90,10 @@ const EXCEPTIONS = {
   // 40 a 32 (a altura do trilho, no quadro `chave`) e, no pressionado, a área da alça cresce de 24 a 28 para caber a alça de 28;
   // o resto da cena (trilho, curso, alça, ícones) fica igual.
   switch: { rename: {}, drop: ['estado', 'área da alça'] },
+  // Card: o quadro `recorte` (cantos de cima da mídia pelo raio do Card, mesmo com a sombra alargando o recorte
+  // reto da raiz) envolve o `corpo`, na mesma caixa dele; o resto da cena fica igual (confere
+  // `material3CardMediaCorners.test.ts`).
+  card: { rename: {}, drop: ['recorte'] },
 } as Record<string, { rename: Record<string, string>; drop: string[] }>;
 
 /**

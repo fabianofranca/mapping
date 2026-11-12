@@ -22,6 +22,7 @@ import { Image as KonvaImage } from 'konva/lib/shapes/Image';
 import { Line as KonvaLine } from 'konva/lib/shapes/Line';
 import { Path as KonvaPath } from 'konva/lib/shapes/Path';
 import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
+import { PixelRect } from './pixelRect';
 import { Shape as KonvaShape } from 'konva/lib/Shape';
 import { Text as KonvaText, type TextConfig } from 'konva/lib/shapes/Text';
 import {
@@ -217,12 +218,17 @@ class Renderer {
       case 'frame':
       case 'rect': {
         for (const paint of node.fills) {
-          const shape = new KonvaRect({
+          const config = {
             width: node.width,
             height: node.height,
             cornerRadius: konvaRadius(node.cornerRadius),
             listening: true,
-          });
+          };
+          // Cor sólida sem canto arredondado: bordas em pixels inteiros (sem fio na emenda).
+          const shape =
+            paint.type === 'solid' && isSquare(node.cornerRadius)
+              ? new PixelRect(config)
+              : new KonvaRect(config);
           shapes.push(...this.fillShape(shape, paint, box));
         }
         if (node.stroke) {
@@ -1039,6 +1045,10 @@ function shrinkRadius(radius: CornerRadius, by: number): CornerRadius {
     Math.max(0, radius[2] - by),
     Math.max(0, radius[3] - by),
   ];
+}
+
+function isSquare(radius: CornerRadius): boolean {
+  return typeof radius === 'number' ? radius === 0 : radius.every((r) => r === 0);
 }
 
 function konvaRadius(radius: CornerRadius): number | number[] {
