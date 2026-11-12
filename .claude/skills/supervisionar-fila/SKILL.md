@@ -66,10 +66,10 @@ O coordenador aplica os pedidos do **tipo A** sem perguntar ao dono; a lista é 
 
 Cada mensagem depois de mais de 1 h regrava o contexto inteiro, e a supervisão passa horas parada; em conversa seguida, o contexto grande sai a preço de leitura de cache. Por isso a troca que economiza é a do dono ao voltar, e a automática fica só para a conversa seguida.
 
-**Tamanho e base.** A medida é o `external_metadata.context_usage.used_tokens` do `get_session` sem `session_id`. A **base** é essa medida no fim do primeiro turno desta sessão; sem ela (contexto compactado, ou sessão anterior a esta skill), vale 120 mil, a base medida em 2026-11-11.
+**Tamanho e base.** A medida é o `contexto` de `node scripts/ci/contextUsage.mjs` (transcript local da própria sessão), não o `external_metadata.context_usage.used_tokens` do `get_session` sem `session_id`: ele só muda no fim do turno e vale 0 no primeiro. A **base** é essa medida no fim do primeiro turno desta sessão (o `used_tokens` dava 0 ali); sem ela (contexto compactado, ou sessão anterior a esta skill), vale 120 mil, a base medida em 2026-11-11.
 
 - **A partir de 2× a base**, no fim de cada turno, a resposta ao dono termina com a linha fixa: "Contexto: <n> mil, mais de 2× a base (<b> mil). Depois de mais de 1 h sem conversa, mande `/supervisionar-fila` numa sessão nova."
-- No fim de um turno **acima de ~50%** (`used_tokens` acima da metade de `max_tokens`, ~500k), a própria supervisão cria a sucessora ("Na sessão antiga"). É a regra só da conversa seguida; a compactação automática começa em ~784k.
+- No fim de um turno **acima de ~50%** (o `pct` do script com `--max <max_tokens>`, o `max_tokens` vindo do `get_session`, ~500k), a própria supervisão cria a sucessora ("Na sessão antiga"). É a regra só da conversa seguida; a compactação automática começa em ~784k.
 
 **Troca no retorno (a normal).** Ao voltar depois de mais de 1 h, o dono abre uma sessão nova em `claude-opus-5-5` com `effort: high` e manda `/supervisionar-fila`, em vez de escrever na antiga. A sessão que o dono abre começa no nível 0 da linhagem: esta troca não gasta vaga. A sessão nova cai em "Na sessão nova".
 

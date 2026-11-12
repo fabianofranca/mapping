@@ -6,7 +6,8 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'no
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { section } from '../support/textSlice';
+import { scriptMeasureProblems } from '../support/contextMeasure';
+import { between, section } from '../support/textSlice';
 
 const DIR = '.claude/skills/supervisionar-fila';
 const SKILL = readFileSync(`${DIR}/SKILL.md`, 'utf8');
@@ -134,7 +135,10 @@ describe('skill supervisionar-fila (decisão 19)', () => {
     for (const state of ['registrada', 'sucessora', 'antiga', 'coordenador', 'nova']) {
       expect(s).toContain(`\`${state}`);
     }
-    expect(s).toContain('external_metadata.context_usage.used_tokens');
+    // Achado CL1.5: o script como instrução e o `used_tokens` só como proibição.
+    expect(
+      scriptMeasureProblems(between(s, '**Tamanho e base.**', '**Troca no retorno')),
+    ).toEqual([]);
     expect(s).toContain('no fim do primeiro turno');
     expect(s).toContain('120 mil');
     expect(s).toContain('2× a base');
