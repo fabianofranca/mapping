@@ -921,6 +921,25 @@ button.tree-toggle:hover {
   flex: 1;
 }
 
+/* Densidade do container: a lista e, em "Personalizada", o campo de número ao lado. */
+.density-control {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.density-control > * {
+  flex: 1;
+  min-width: 0;
+}
+
+/* A sugestão de densidade e o botão Aplicar, sob o campo. */
+.density-suggestion {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
 .container-form {
   display: flex;
   flex-direction: column;

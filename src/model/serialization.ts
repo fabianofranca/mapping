@@ -73,6 +73,7 @@ export function serialize(p: Project): string {
       source: i.source && { system: i.source.system, id: i.source.id, url: i.source.url },
       background: i.background,
       ...(i.drawingMode == null ? {} : { drawingMode: i.drawingMode }),
+      ...(i.density == null ? {} : { density: i.density }),
     })),
     markings: p.markings.map((m) => ({
       id: m.id,

@@ -86,7 +86,7 @@ Tudo muda com a largura da marcação: a mesma anotação mostra mais itens gran
 
 ## Fidelidade
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). A unidade é a de sempre: 1 dp = 1 px do componente. Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte, raio ou opacidade de cor fica literal no componente e nenhum nó de texto declara `family` (todos herdam `font-sans`). O raio dos itens é a forma `corner-extra-large`, o `MaterialTheme.shapes.extraLarge` que o exemplo do `code` passa a `maskClip`. O `Carousel.kt` não define cor, forma nem tipografia: o item (imagem e rótulo) é do app, e o desenho usa os tokens do Material para ilustrá-lo.
+Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte, raio ou opacidade de cor fica literal no componente e nenhum nó de texto declara `family` (todos herdam `font-sans`). O raio dos itens é a forma `corner-extra-large`, o `MaterialTheme.shapes.extraLarge` que o exemplo do `code` passa a `maskClip`. O `Carousel.kt` não define cor, forma nem tipografia: o item (imagem e rótulo) é do app, e o desenho usa os tokens do Material para ilustrá-lo.
 
 **Arquivos usados**
 

@@ -199,7 +199,7 @@ describe('abrir projeto existente', () => {
     }
     const saved = deserialize((await root.read('mapping.json')) ?? '');
     if (!saved.ok) throw new Error('mapping inválido');
-    expect(saved.project.schemaVersion).toBe(18);
+    expect(saved.project.schemaVersion).toBe(19);
     expect(saved.project.project.name).toBe('Renomeado');
     expect(saved.project.specializations).toEqual([
       expect.objectContaining({ id: 'notas', file: SPEC_FILE }),

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 18,
+  "schemaVersion": 19,
   "revision": 1,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
@@ -22,7 +22,7 @@
     },
     {
       "id": "material3-compose",
-      "version": 9,
+      "version": 10,
       "file": "specs/material3-compose/material3-compose.spec.json"
     },
     {

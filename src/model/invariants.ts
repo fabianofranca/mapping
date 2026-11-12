@@ -7,6 +7,7 @@ import {
   isIntegerRect,
   rectsOverlap,
 } from './geometry';
+import { isValidDensity } from './density';
 import { tableRows } from './refs';
 import type { Entry, Perspective, Project, Rect } from './types';
 
@@ -14,6 +15,7 @@ export type InvariantCode =
   | 'duplicate-id'
   | 'duplicate-file'
   | 'container-content'
+  | 'container-density'
   | 'images-overlap'
   | 'missing-image'
   | 'missing-parent'
@@ -307,6 +309,9 @@ export function validateProject(p: Project): InvariantIssue[] {
     }
     if ((image.file === null) !== (image.background !== null)) {
       imageIssue('container-content', image);
+    }
+    if (image.density != null && !isValidDensity(image.density)) {
+      imageIssue('container-density', image);
     }
     for (const j of overlaps[i] ?? [])
       imageIssue('images-overlap', image, p.containers[j]?.id ?? '');

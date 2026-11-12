@@ -26,6 +26,7 @@ import {
   SHORT_CODE_LENGTH,
   normalizeId,
   componentFileMinSize,
+  effectiveDensity,
   componentMinSize,
   componentPlacement,
   componentSize,
@@ -80,6 +81,7 @@ import {
   setEntries,
   setFieldValue,
   setImageLocked,
+  setContainerDensity,
   setContainerDrawingMode,
   setContainerMarkingColor,
   setProjectDrawingMode,
@@ -1574,12 +1576,23 @@ class Batch {
         ? await this.addContainerFromFile(op, p)
         : this.addContainerWithBackground(op, p);
     const id = step.created?.find((c) => c.kind === 'i')?.id;
-    if (op.drawingMode == null || id === undefined) return step;
-    return {
-      ...step,
-      project: setContainerDrawingMode(step.project, id, op.drawingMode),
-      description: `${step.description}, modo do desenho ${quoted(op.drawingMode)}`,
-    };
+    if (id === undefined) return step;
+    let result = step;
+    if (op.drawingMode != null) {
+      result = {
+        ...result,
+        project: setContainerDrawingMode(result.project, id, op.drawingMode),
+        description: `${result.description}, modo do desenho ${quoted(op.drawingMode)}`,
+      };
+    }
+    if (op.density != null) {
+      result = {
+        ...result,
+        project: setContainerDensity(result.project, id, op.density),
+        description: `${result.description}, densidade ${op.density}x`,
+      };
+    }
+    return result;
   }
 
   /** `beside` do `add_container`: o id do container de referência; com `center` é `invalid-arguments`. */
@@ -1743,6 +1756,10 @@ class Batch {
           ? 'modo do desenho do projeto'
           : `modo do desenho ${quoted(op.drawingMode)}`,
       );
+    }
+    if (op.density !== undefined) {
+      project = setContainerDensity(project, id, op.density);
+      changes.push(op.density === null ? 'densidade 1x' : `densidade ${op.density}x`);
     }
     if (op.locked === true) {
       project = setImageLocked(project, id, true);
@@ -2084,7 +2101,10 @@ class Batch {
       );
     }
     // Com componente o mínimo é o `minSize` dele ou 1×1; sem componente, o de qualquer marcação (8).
-    const minSize = component === null ? null : componentFileMinSize(component.component);
+    const minSize =
+      component === null
+        ? null
+        : componentFileMinSize(component.component, effectiveDensity(p, containerId));
     // `near` (ME4): só um tipo flutuante; o lugar sai de `placeFloatingNear` e o `rect`, se vier,
     // dá só o tamanho. Nos outros casos o argumento é ignorado, com aviso.
     const notes: string[] = [];

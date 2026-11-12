@@ -257,7 +257,7 @@ describe('atualização da versão anterior da biblioteca para a nova', () => {
           type.fields = type.fields.filter((f) => f.key !== 'interaction');
       }
     // 7 depois da MF4 da #899 (a 6 foi a EX4 da #897)
-    expect(spec.version).toBe(9);
+    expect(spec.version).toBe(10);
     expect(missingMigrations(previous, spec)).toEqual([]);
     // só a EX6 (#897) tem migração: o slider passou de enum a number (`fill-field`), e os campos
     // que estes testes comparam não mudam

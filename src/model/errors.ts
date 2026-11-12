@@ -14,6 +14,7 @@ export type ModelErrorCode =
   | 'duplicate-file'
   | 'container-without-file'
   | 'container-has-file'
+  | 'container-density'
   | 'aspect-change-not-confirmed'
   | 'image-too-small'
   | 'rect-not-integer'

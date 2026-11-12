@@ -50,11 +50,11 @@ describe('schema v15', () => {
     );
   });
 
-  it('o atual abre sem migrar; o v19 abre só para leitura ("versão mais nova")', () => {
+  it('o atual abre sem migrar; o v20 abre só para leitura ("versão mais nova")', () => {
     const p = add(add(sameLayerProject(), 'R1', 'request'), 'N1', 'navigate', 'R1');
     const text = serialize(p);
     expect(load(text, specFiles(p)).migratedFrom).toBeNull();
-    const newer = JSON.stringify({ ...JSON.parse(text), schemaVersion: 19 });
+    const newer = JSON.stringify({ ...JSON.parse(text), schemaVersion: 20 });
     const loaded = load(newer, specFiles(p));
     expect(loaded.readOnly).toBe(true);
     expect(loaded.project.annotations.map((a) => a.id)).toEqual(['R1', 'N1']);

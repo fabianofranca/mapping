@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks';
+import { useId, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import { MAX_CONTAINER_SIZE } from '../model';
 import { Dialog } from './Dialog';
@@ -12,6 +12,7 @@ import {
   selectionSize,
 } from './containerForm';
 import { Button, Select, TextField } from './controls';
+import { DensityControl } from './DensityControl';
 import { containerErrorMessage } from './labels';
 
 /**
@@ -32,6 +33,9 @@ export function ContainerDialog({ onClose }: { readonly onClose: () => void }) {
   const [background, setBackground] = useState(
     first?.background ?? DEFAULT_CONTAINER_BACKGROUND,
   );
+  // `null`: o número digitado em "Personalizada" não vale.
+  const [density, setDensity] = useState<number | null>(1);
+  const densityId = useId();
   const [error, setError] = useState<string | null>(null);
   const [invalid, setInvalid] = useState<'name' | 'size' | 'color' | null>(null);
 
@@ -52,9 +56,11 @@ export function ContainerDialog({ onClose }: { readonly onClose: () => void }) {
       );
       return;
     }
+    if (density === null) return;
     const center = canvas.current?.viewportCenter();
     const result = actions.addBackgroundContainer({
       ...form.value,
+      ...(density !== 1 ? { density } : {}),
       ...(center ? { center } : {}),
     });
     if (!result.ok) {
@@ -157,6 +163,24 @@ export function ContainerDialog({ onClose }: { readonly onClose: () => void }) {
           onInput={(e) => setBackground(e.currentTarget.value)}
         />
         <span class="muted">{t('container.backgroundHint')}</span>
+        <div class="field">
+          <label for={densityId}>{t('density.label')}</label>
+          <DensityControl
+            id={densityId}
+            mode="live"
+            value={density ?? 1}
+            invalid={density === null}
+            onChange={setDensity}
+            onInvalid={() => setDensity(null)}
+          />
+          {density === null ? (
+            <p class="field-error" role="alert">
+              {t('density.error')}
+            </p>
+          ) : (
+            <span class="muted">{t('density.hint')}</span>
+          )}
+        </div>
         {error && (
           <p class="field-error" role="alert">
             {error}

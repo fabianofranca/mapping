@@ -370,6 +370,55 @@ describe('plan_changes: aviso no pai none (#1093)', () => {
   });
 });
 
+describe('plan_changes: prova de desenho × densidade (#1085)', () => {
+  const SCREEN3 = { ...SCREEN, width: 1200, height: 800, density: 3 };
+
+  it('update_container density 3 com um botão de 200×40 devolve component-overflow com missing em pixels', async () => {
+    const project = await seed(seeded, [
+      { ...SCREEN3, density: undefined, as: '$s' } as Operation,
+      create({ x: 10, y: 10, width: 200, height: 40 }, 'lib/btn', {
+        as: '$b',
+        container: '$s',
+        name: 'botao',
+      }) as Operation,
+    ]);
+    const container = project.containers.find((c) => c.file === null)!;
+    const flat = await plan(seeded, [
+      { op: 'update_container', container: container.id },
+    ]);
+    expect(overflows(flat)).toEqual([]);
+    const dense = await plan(seeded, [
+      { op: 'update_container', container: container.id, density: 3 },
+    ]);
+    expect(dense.data.errors).toBeUndefined();
+    const items = overflows(dense);
+    const text = items.find((i) => i.node === 'rotulo');
+    expect(text).toMatchObject({ code: 'component-overflow', kind: 'text' });
+    expect(text!.missing as number).toBeGreaterThan(0);
+  });
+
+  it('a falta é em pixels: o mesmo botão em 180×60 a 3x falta 3× o de 60×20 a 1x', async () => {
+    const one = overflows(
+      await plan(aprox, [SCREEN, create({ x: 10, y: 10, width: 60, height: 20 })]),
+    );
+    const three = overflows(
+      await plan(aprox, [SCREEN3, create({ x: 30, y: 30, width: 180, height: 60 })]),
+    );
+    expect(one).toHaveLength(1);
+    expect(three).toHaveLength(1);
+    expect(three[0]!.missing as number).toBeCloseTo((one[0]!.missing as number) * 3, 0);
+  });
+
+  it('a 3x o botão de 600×120 (200×40 unidades) cabe e não gera nada', async () => {
+    const reply = await plan(aprox, [
+      SCREEN3,
+      create({ x: 30, y: 30, width: 600, height: 120 }),
+    ]);
+    expect(reply.data.valid).toBe(true);
+    expect(overflows(reply)).toEqual([]);
+  });
+});
+
 describe('plan_changes e propose_changes: operationsFile', () => {
   const operations = [SCREEN, create({ x: 10, y: 10, width: 60, height: 20 })];
 

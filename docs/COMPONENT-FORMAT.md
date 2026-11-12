@@ -416,6 +416,28 @@ A raiz do template (e um quadro interno com `clip: true`) recorta os filhos na c
 
 O **conteúdo** (formas e texto) continua recortado no retângulo da instância. Na cena, o recorte ampliado é `FrameNode.clipBox`, um retângulo local presente só quando maior que a caixa. O anel de um traço `outside` na raiz, que antes sumia, agora aparece.
 
+## Unidades e densidade
+
+Todo número do arquivo do componente é em **unidades do componente**: `size`, `minSize`, `width`/`height` dos nós,
+`gap`, `padding`, `font.size`, âncoras, raios, traços, sombras e deslocamentos. Uma unidade é 1 dp no Android, 1 pt
+no iOS e 1 px CSS a 1x; **escreva o componente em unidades lógicas, nunca em pixels de uma captura** (não multiplique
+por 2 ou 3).
+
+Quem diz quantos pixels da imagem vale uma unidade é o **container**: `containers[].density` (de 0,5 a 8; padrão 1;
+ver [`FORMAT.md`](FORMAT.md), "Campos da v19"). Numa captura 3x de um celular de 360 dp, a densidade é 3: um `button`
+de `size` 58 × 40 e `minSize` 58 × 40 ocupa 174 × 120 px, e o rótulo de 14 unidades sai com 42 px. O `rect` da
+marcação continua em pixels da imagem (`rect` = unidades × `density`).
+
+- **O que escala:** tudo o que é desenhado no espaço do componente. O motor instancia o componente na caixa **em
+  unidades** (`rect` ÷ densidade) e a raiz da cena leva `translate(rect.x, rect.y) · scale(density)`; o texto é medido
+  em unidades (a medida não depende da densidade) e desenhado escalado.
+- **O que não escala:** o que já é em pixels de tela. O componente com `screen` mede o `size` em pixels de tela e
+  `stroke.scale: false` mantém a largura em pixels de saída; os dois ignoram a densidade, como ignoram o zoom.
+- **Tamanhos da marcação:** o `minSize` vale `minSize` × densidade (para cima) como tamanho mínimo da marcação; a
+  instância nova nasce em `size` × densidade; o Arrumar e o ajuste ao conteúdo medem em unidades e gravam em pixels.
+- **Avisos:** o `missing` do `component-overflow` é em **pixels da imagem** (a falta em unidades × densidade), porque
+  é o `rect` que se ajusta. A prova da biblioteca (`validate_library`) é em unidades e não muda.
+
 ## Dimensionamento
 
 Há três perguntas diferentes: **quanto mede a instância** (a raiz), **quanto mede cada nó dentro do template** e **como as filhas de um componente com slot se arrumam**.

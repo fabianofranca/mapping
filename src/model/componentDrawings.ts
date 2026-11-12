@@ -18,7 +18,6 @@ import {
   sameProvided,
   type ProvidedValues,
 } from './components/provided';
-import type { FrameNode } from './components/scene';
 import {
   markingComponent,
   type ComponentCatalog,
@@ -27,9 +26,11 @@ import {
 import { drawingValues } from './componentValues';
 import type { ModelMessage } from './modelMessage';
 import { DEFAULT_LABEL_TEXTS } from './refs';
+import { effectiveDensity, unitSpaceOf, type UnitSpace } from './density';
 import { effectiveDrawingMode } from './drawingMode';
 import { topDown } from './hierarchy';
 import { projectIndex } from './projectIndex';
+import { multiply, type FrameNode, type Matrix } from './components/scene';
 import type { Project, Rect } from './types';
 
 // Desenhos dos componentes (etapa Biblioteca, B3): a cena instanciada de cada marcação que
@@ -44,15 +45,19 @@ export interface ComponentDrawing {
   readonly annotationId: string;
   /** Camada (do projeto) da anotação que desenha: o modo visualização tira o desenho por ela. */
   readonly layerId: string;
-  /** Cena instanciada na caixa = retângulo da marcação (pixels da imagem ou unidades do canvas). */
+  /**
+   * Cena instanciada na caixa da marcação **em unidades do componente**; a matriz da raiz leva
+   * `translate(rect.x, rect.y) · scale(density)`, então o que se desenha sai em pixels da imagem
+   * (ou unidades do canvas, onde a densidade é 1).
+   */
   readonly root: FrameNode;
   /** Avisos do motor (sem código, em texto) e das referências dos valores (com código). */
   readonly warnings: readonly ModelMessage[];
   /** Não cabe: aviso "conteúdo maior que a caixa" do motor ou filha fora da caixa do slot. */
   readonly overflow: boolean;
   /**
-   * Quanto falta (px) em cada "não cabe", pela mensagem do aviso do motor; a filha fora do slot
-   * entra como `SLOT_OVERFLOW`. Vazio quando cabe ou quando o desenho é em pixels de tela.
+   * Quanto falta (px da imagem) em cada "não cabe", pela mensagem do aviso do motor (em unidades
+   * × a densidade); a filha fora do slot entra como `SLOT_OVERFLOW`. Vazio quando cabe ou quando o desenho é em pixels de tela.
    */
   readonly shortfalls: Readonly<Record<string, number>>;
   /**
@@ -96,6 +101,8 @@ interface Entry {
   readonly epoch: number;
   /** Modo do desenho efetivo da marcação (`undefined` = o primeiro modo). */
   readonly mode: string | undefined;
+  /** Densidade do container da marcação (1 no canvas). */
+  readonly density: number;
   /** Retângulos das filhas diretas (só containers). */
   readonly childRects: readonly Rect[];
   /** Cor herdada: só os valores oferecidos pelos ancestrais que o componente lê (`$provided`). */
@@ -169,13 +176,23 @@ function placement(
   return clip === undefined ? {} : { clip };
 }
 
+/** A matriz da raiz da cena em unidades: `translate(rect.x, rect.y) · scale(density)`. */
+function rootMatrix(rect: Rect, density: number): Matrix {
+  return [density, 0, 0, density, rect.x, rect.y];
+}
+
 /** Chave de `shortfalls` para a filha que passa da caixa do slot. */
 export const SLOT_OVERFLOW = 'conteúdo maior que a caixa: slot';
 
 /** O quanto a pior filha passa da caixa do slot (com a tolerância do arredondamento); 0 = cabe. */
-function slotExcess(root: FrameNode, childRects: readonly Rect[]): number {
-  const box = slotBoxOfScene(root);
-  if (box === undefined) return 0;
+function slotExcess(
+  root: FrameNode,
+  childRects: readonly Rect[],
+  toPixels: (box: Rect) => Rect,
+): number {
+  const unitBox = slotBoxOfScene(root);
+  if (unitBox === undefined) return 0;
+  const box = toPixels(unitBox);
   let worst = 0;
   for (const r of childRects) {
     const excess = Math.max(
@@ -195,10 +212,11 @@ function overflowsOf(
   shortfalls: Readonly<Record<string, number>>,
   root: FrameNode,
   childRects: readonly Rect[],
+  space: UnitSpace,
 ): Record<string, number> {
   const found: Record<string, number> = {};
-  for (const w of overflowWarnings) found[w] = shortfalls[w] ?? 0;
-  const excess = childRects.length > 0 ? slotExcess(root, childRects) : 0;
+  for (const w of overflowWarnings) found[w] = (shortfalls[w] ?? 0) * space.density;
+  const excess = childRects.length > 0 ? slotExcess(root, childRects, space.toPixels) : 0;
   if (excess > 0) found[SLOT_OVERFLOW] = excess;
   return found;
 }
@@ -218,6 +236,38 @@ function instantiateOptions(
   };
 }
 
+/** Os "não cabe" de uma cena instanciada, em pixels da imagem. */
+function overflowsOfScene(
+  instantiated: ReturnType<typeof instantiate>,
+  childRects: readonly Rect[],
+  space: UnitSpace,
+): Record<string, number> {
+  return overflowsOf(
+    instantiated.overflowWarnings ?? [],
+    instantiated.shortfalls ?? {},
+    instantiated.root,
+    childRects,
+    space,
+  );
+}
+
+/** O recorte que a caixa do slot impõe às filhas, em pixels da imagem (sem recorte com `screen`). */
+function slotClipOf(
+  screen: ComponentFile['screen'],
+  root: FrameNode,
+  space: UnitSpace,
+): Rect | undefined {
+  const unitClip = screen === undefined ? clippedSlotBox(root) : undefined;
+  return unitClip === undefined ? undefined : space.toPixels(unitClip);
+}
+
+/** A cena com a escala da densidade na raiz; com densidade 1 a própria cena (já em pixels). */
+function withRootMatrix(root: FrameNode, rect: Rect, density: number): FrameNode {
+  return density === 1
+    ? root
+    : { ...root, transform: multiply(rootMatrix(rect, density), root.transform) };
+}
+
 function draw(
   mc: MarkingComponent,
   markingId: string,
@@ -230,6 +280,7 @@ function draw(
   mode: string | undefined,
   provided: ProvidedValues,
   clip: Rect | undefined,
+  density: number,
 ): {
   drawing: ComponentDrawing;
   offers: ProvidedValues | undefined;
@@ -238,19 +289,22 @@ function draw(
   const tokens =
     mode === undefined ? undefined : mc.component.resolvedTokensByMode?.[mode];
   const screen = mc.component.screen;
-  // Em pixels de tela o desenho mede o `size` do componente, na origem (o canvas o ancora).
-  const box: Rect = screen === undefined ? rect : { x: 0, y: 0, ...mc.component.size };
-  const { root, messages, shortfalls, overflowWarnings, provides } = instantiate(
+  // Em pixels de tela o desenho mede o `size` do componente, na origem (o canvas o ancora) e não
+  // escala com a densidade, como não escala com o zoom.
+  const space = unitSpaceOf(rect, screen === undefined ? density : 1);
+  const box: Rect =
+    screen === undefined ? space.box : { x: 0, y: 0, ...mc.component.size };
+  const instantiated = instantiate(
     mc.component,
     values,
     box,
     instantiateOptions(markingId, measure, tokens, provided),
   );
+  const { messages, provides } = instantiated;
   // Com `screen` o desenho pode passar do retângulo da marcação: não há pendência "não cabe".
   const found =
-    screen === undefined
-      ? overflowsOf(overflowWarnings ?? [], shortfalls ?? {}, root, childRects)
-      : {};
+    screen === undefined ? overflowsOfScene(instantiated, childRects, space) : {};
+  const root = withRootMatrix(instantiated.root, rect, space.density);
   const drawing: ComponentDrawing = {
     markingId,
     containerId,
@@ -263,7 +317,7 @@ function draw(
     ...placement(screen, rect, clip),
   };
   // Com `screen` a cena está na origem (pixels de tela): a caixa do slot não está no espaço das filhas.
-  const slotClip = screen === undefined ? clippedSlotBox(root) : undefined;
+  const slotClip = slotClipOf(screen, instantiated.root, space);
   return { drawing, offers: provides, slotClip };
 }
 
@@ -336,6 +390,7 @@ export function createDrawingCache(): DrawingCache {
           ? []
           : (children.get(marking.id) ?? []).map((c) => c.rect);
       const mode = effectiveDrawingMode(p, marking.containerId);
+      const density = effectiveDensity(p, marking.containerId);
       const before = entries.get(marking.id);
       if (
         before !== undefined &&
@@ -347,6 +402,7 @@ export function createDrawingCache(): DrawingCache {
         before.measure === measure &&
         before.epoch === epoch &&
         before.mode === mode &&
+        before.density === density &&
         shallowEqual(before.values, values) &&
         before.valueWarnings.length === valueWarnings.length &&
         before.valueWarnings.every((w, i) => w.text === valueWarnings[i]?.text) &&
@@ -383,6 +439,7 @@ export function createDrawingCache(): DrawingCache {
         mode,
         provided,
         clip,
+        density,
       );
       const stableClip = stableRect(before?.slotClip, slotClip);
       const childClip = stableRect(before?.childClip, intersectClips(stableClip, clip));
@@ -399,6 +456,7 @@ export function createDrawingCache(): DrawingCache {
         measure,
         epoch,
         mode,
+        density,
         childRects,
         provided,
         offers,

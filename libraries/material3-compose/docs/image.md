@@ -51,7 +51,7 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 
 ## Fidelidade
 
-Referência: Compose `foundation` do commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (a biblioteca fixa o Compose `material3` 1.4.0 nesse commit). O `image` é do Foundation (`Image` e, para URL, o `AsyncImage` do carregador de imagens do app): o Material 3 não tem tokens de imagem, e este desenho não tem valores de tokens do `material3` a seguir.
+Referência: Compose `foundation` do commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (a biblioteca fixa o Compose `material3` 1.4.0 nesse commit). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). O `image` é do Foundation (`Image` e, para URL, o `AsyncImage` do carregador de imagens do app): o Material 3 não tem tokens de imagem, e este desenho não tem valores de tokens do `material3` a seguir.
 
 **Arquivos usados**
 

@@ -238,6 +238,9 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     /** Modo do desenho que o container fixa; `null` volta a seguir o do projeto. */
     setContainerDrawingMode: (containerId: string, mode: string | null) =>
       store.apply((p) => model.setContainerDrawingMode(p, containerId, mode)),
+    /** Densidade do container (v19); `null` volta a 1. Uma entrada de desfazer. */
+    setContainerDensity: (containerId: string, density: number | null) =>
+      store.apply((p) => model.setContainerDensity(p, containerId, density)),
     renameContainer: (containerId: string, name: string | null) =>
       store.apply((p) => model.renameContainer(p, containerId, name)),
 
@@ -304,10 +307,17 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       readonly height: number;
       readonly background: string;
       readonly center?: Point;
-    }) =>
-      create(
-        (id) => (p) => model.addBackgroundContainer(p, { ...args, id }, settleOptions(p)),
-      ),
+      /** Densidade (v19); ausente ou 1 não grava a chave. Na mesma entrada de desfazer. */
+      readonly density?: number;
+    }) => {
+      const { density, ...rest } = args;
+      return create((id) => (p) => {
+        const next = model.addBackgroundContainer(p, { ...rest, id }, settleOptions(p));
+        return density === undefined || density === 1
+          ? next
+          : model.setContainerDensity(next, id, density);
+      });
+    },
     setBackgroundContainer: (
       containerId: string,
       patch: model.BackgroundContainerChanges,

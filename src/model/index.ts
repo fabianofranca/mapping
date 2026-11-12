@@ -25,6 +25,7 @@ export {
 export * from './layers';
 export * from './containers';
 export * from './freePlacement';
+export * from './density';
 export * from './drawingMode';
 export * from './imageOptimization';
 export * from './exif';

@@ -1,5 +1,6 @@
 import {
   createDrawingCache,
+  effectiveDensity,
   effectiveDrawingMode,
   projectIndex,
   SLOT_OVERFLOW,
@@ -56,6 +57,8 @@ function touchedMarkings(before: Project, after: Project): Set<string> {
       differs(previous, marking) ||
       effectiveDrawingMode(before, marking.containerId) !==
         effectiveDrawingMode(after, marking.containerId) ||
+      effectiveDensity(before, marking.containerId) !==
+        effectiveDensity(after, marking.containerId) ||
       annotationsChanged(old.annotations, next.annotationsByMarking, marking.id);
     if (changed) touched.add(marking.id);
   }

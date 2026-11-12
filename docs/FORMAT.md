@@ -1,4 +1,4 @@
-# Formato do `mapping.json` (schema v18)
+# Formato do `mapping.json` (schema v19)
 
 O projeto é uma pasta (ou um zip com o mesmo conteúdo) com `mapping.json`, `images/` (os arquivos de imagem dos containers) e,
 se houver especializações aplicadas, `specs/` (e, se houver propostas de alteração, `proposals/`). Todas as coordenadas das marcações são
@@ -123,7 +123,7 @@ no projeto; `null` no container sem arquivo, v10: ver abaixo); `width` e `height
 `parentId` (v13: `null` ou a marcação do canvas que envolve o container, calculado pela app; ver abaixo);
 `markingColor` (`null` ou cor); `locked` (booleano, v5: ver abaixo); `source` (`null` ou origem, v8:
 ver abaixo); `background` (`null` ou cor `#RRGGBB`, v10: a cor de fundo do container sem arquivo);
-`drawingMode` (v18, opcional: o modo do desenho que o container fixa; ver "Campos da v18").
+`drawingMode` (v18, opcional: o modo do desenho que o container fixa; ver "Campos da v18"); `density` (v19, opcional: pixels da imagem por unidade do componente; ver "Campos da v19").
 
 **`markings[]`**: `id`; `containerId` (v12; antes `imageId`; `null` na marcação do canvas, v13); `parentId` (marcação-pai ou `null`,
 calculado pela app desde a v13); `name` (`string` ou `null`);
@@ -1046,6 +1046,32 @@ Um app anterior recusa o arquivo v18 como "versão mais nova", em vez de ignorar
 Só `schemaVersion` muda para 18; nenhum dado é alterado (nenhum modo é criado). Como em toda migração, o original
 vai para `backups/` antes da primeira gravação e a faixa da migração aparece no topo.
 
+## Campos da v19 (densidade)
+
+A v19 acrescenta a **densidade do container**: quantos pixels da imagem vale uma **unidade do componente** (1 dp no
+Android, 1 pt no iOS, 1 px CSS a 1x). Os números do componente (`size`, `minSize`, tamanhos, `gap`, `padding`,
+`font.size`…; ver [`COMPONENT-FORMAT.md`](COMPONENT-FORMAT.md), "Unidades e densidade") são unidades; as
+marcações, as setas e os containers continuam em pixels da imagem e unidades do canvas. Numa captura 3x (1080 px
+para 360 dp) a densidade é 3.
+
+- **`containers[].density`** (número, opcional): de **0,5 a 8**; ausente ou `null` vale **1**. Fica depois de
+  `background` e `drawingMode`. O arquivo só guarda o campo quando tem valor e **`null` não é gravado**.
+- **Invariante `container-density`:** `density` presente precisa ser finito e de 0,5 a 8; fora disso a leitura
+  acusa a violação (o MCP recusa o valor com o mesmo código).
+- **O que a densidade muda:** o desenho do componente (a raiz da cena leva `translate · scale(density)`), o
+  `minSize` da marcação (`minSize` × densidade, para cima), o tamanho inicial da instância (`size` × densidade), o
+  Arrumar e o ajuste ao conteúdo (medem em unidades e gravam em pixels) e a prova de desenho. Nenhum pixel das
+  marcações muda ao trocar a densidade; a especialização e o componente não mudam.
+- **Proposta:** o campo `density` do container vai na `formatVersion` 7 da proposta (ver
+  [`PROPOSAL-FORMAT.md`](PROPOSAL-FORMAT.md)).
+
+Um app anterior recusa o arquivo v19 como "versão mais nova", em vez de descartar a densidade ao gravar.
+
+### Migração v18 → v19
+
+Só `schemaVersion` muda para 19; nenhum dado é alterado (nenhuma densidade é criada). Como em toda migração, o
+original vai para `backups/` antes da primeira gravação e a faixa da migração aparece no topo.
+
 ## Migração
 
 Arquivos v1 são migrados ao abrir: toda imagem recebe `name: null` e toda anotação recebe
@@ -1056,7 +1082,7 @@ imagem e em cada marcação. Arquivos v5 recebem `revision: 0`. Arquivos v6 rece
 Arquivos v7 recebem `source: null` em cada imagem e em cada marcação. Arquivos v8 perdem os valores dos
 campos `codeRef`, pelo tipo declarado na cópia da especialização (ver "Campos da v9"). Arquivos v9
 recebem `background: null` em cada imagem (ver "Campos da v10"). Arquivos v10 perdem o `urlTemplate` de
-cada entrada de `platformRepos`, e a entrada que só o tinha sai (ver "Campos da v11"). Arquivos v11 trocam `images` por `containers` e `imageId` por `containerId` (ver "Campos da v12"). Arquivos v12 perdem `inherit` de cada anotação e ganham `floating: false` em cada marcação, `parentId: null` em cada container e `arrows: []` na raiz (ver "Campos da v13"). Arquivos v13 ganham `parentRole: null` em cada anotação e `docRepos: {}` na raiz (ver "Campos da v14"). Arquivos v14 só sobem o número (ver "Campos da v15"). Arquivos v15 ganham `project.id` (um UUID novo), `perspectives: []` e `arrivals: []` (ver "Campos da v16"). Arquivos v16 só sobem o número (ver "Campos da v17"). Arquivos v17 só sobem o número (ver "Campos da v18"). Ao salvar, o
+cada entrada de `platformRepos`, e a entrada que só o tinha sai (ver "Campos da v11"). Arquivos v11 trocam `images` por `containers` e `imageId` por `containerId` (ver "Campos da v12"). Arquivos v12 perdem `inherit` de cada anotação e ganham `floating: false` em cada marcação, `parentId: null` em cada container e `arrows: []` na raiz (ver "Campos da v13"). Arquivos v13 ganham `parentRole: null` em cada anotação e `docRepos: {}` na raiz (ver "Campos da v14"). Arquivos v14 só sobem o número (ver "Campos da v15"). Arquivos v15 ganham `project.id` (um UUID novo), `perspectives: []` e `arrivals: []` (ver "Campos da v16"). Arquivos v16 só sobem o número (ver "Campos da v17"). Arquivos v17 só sobem o número (ver "Campos da v18"). Arquivos v18 só sobem o número (ver "Campos da v19"). Ao salvar, o
 arquivo passa a ser v18 (e, no modo pasta, o original vai antes para `backups/`, como em qualquer
 migração).
 Arquivos de versão mais nova abrem somente para leitura.

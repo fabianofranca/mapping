@@ -56,6 +56,8 @@ export function imageValue(i: ProjectContainer): JsonValue {
     source: i.source,
     // Só quando fixa (formatVersion 6): sem ele o valor é o de antes do modo do desenho.
     ...(i.drawingMode == null ? {} : { drawingMode: i.drawingMode }),
+    // Só quando declarada (formatVersion 7).
+    ...(i.density == null ? {} : { density: i.density }),
   });
 }
 
@@ -141,6 +143,7 @@ export const COMPARED_FIELDS = {
     'locked',
     'source',
     'drawingMode',
+    'density',
   ],
   marking: ['name', 'space', 'rect', 'floating', 'locked', 'source'],
   // A seta só se cria e se remove: nenhum campo dela é comparado (ver `ARROW_FIELDS`).
@@ -184,6 +187,8 @@ export function imageField(i: ProjectContainer, field: string): JsonValue | unde
       return toJson(i.source);
     case 'drawingMode':
       return i.drawingMode ?? null;
+    case 'density':
+      return i.density ?? null;
     default:
       return undefined;
   }

@@ -29,7 +29,7 @@ function open(raw: Raw): Project {
 
 describe('schema v18', () => {
   it('a versão atual é 18 e o registro tem a migração v17 → v18', () => {
-    expect(SCHEMA_VERSION).toBe(18);
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(18);
     expect(migrations.get(17)).toBe(migrateFrom17To18);
   });
 
@@ -42,10 +42,10 @@ describe('schema v18', () => {
     const result = deserialize(JSON.stringify(v17Raw()), migrations);
     if (!result.ok) throw new Error(JSON.stringify(result.error));
     expect(result.migratedFrom).toBe(17);
-    expect(result.project.schemaVersion).toBe(18);
+    expect(result.project.schemaVersion).toBe(SCHEMA_VERSION);
     expect(result.project.drawingMode).toBeUndefined();
     const saved = JSON.parse(serialize(result.project)) as Raw;
-    expect(saved.schemaVersion).toBe(18);
+    expect(saved.schemaVersion).toBe(SCHEMA_VERSION);
     expect('drawingMode' in saved).toBe(false);
     expect((saved.containers as Raw[]).every((c) => !('drawingMode' in c))).toBe(true);
   });
