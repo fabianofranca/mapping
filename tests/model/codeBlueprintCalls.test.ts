@@ -15,6 +15,8 @@ import {
   type Project,
   type SpecCode,
 } from '../../src/model';
+import { blueprintParams } from '../../src/model/codeArgs';
+import type { SpecField } from '../../src/model/spec';
 import { emptyProject } from './fixtures';
 import { idGen, layerOf } from './specFixtures';
 
@@ -249,5 +251,19 @@ describe('resolveCode com as chaves novas', () => {
     expect(resolved.calls).toEqual(base.calls);
     expect(resolved.signature).toBe('signatures/b.json');
     expect(resolved.variants).toBeUndefined();
+  });
+});
+
+describe('codeBlueprint: chave herdada do Object não é uma fábrica', () => {
+  it('"constructor.x" sem fábrica com esse nome é um parâmetro de nome comum', () => {
+    const fields = [{ key: 'x', type: 'string' }] as unknown as SpecField[];
+    const code = {
+      symbol: 'S',
+      calls: { colors: 'S.colors' },
+      params: { x: 'constructor.y' },
+    } as SpecCode;
+    expect(blueprintParams(fields, code, 16, () => 'v')).toEqual([
+      { key: 'x', name: 'constructor.y', value: 'v' },
+    ]);
   });
 });

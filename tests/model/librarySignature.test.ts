@@ -186,3 +186,56 @@ describe('a ficha no pacote da biblioteca', () => {
     ).toEqual([]);
   });
 });
+
+describe('o caso de variants e a ficha (achados da revisão)', () => {
+  const OUT = 'signatures/button.outlined.compose.json';
+  const CASE_AT = 'layers[0].annotationTypes[0].code.compose.variants.cases.outlined';
+  const withCase = (kase: Json) =>
+    spec((code, s) => {
+      s.layers[0].annotationTypes[0].fields[1] = {
+        key: 'color',
+        type: 'enum',
+        options: ['filled', 'outlined'],
+      };
+      code.variants = { field: 'color', cases: { outlined: kase } };
+    });
+  const found = (list: LibraryFile[]) => issues(list);
+
+  it('o caso sem ficha própria confere os params dele contra a ficha da base', () => {
+    const list = files(withCase({ params: { label: 'bogus' } }));
+    expect(found(list)).toEqual([
+      {
+        file: SPEC,
+        path: `${CASE_AT}.params.label`,
+        severity: 'warning',
+        message: 'parâmetro fora da ficha: "bogus"',
+      },
+    ]);
+  });
+
+  it('o caso com ficha própria confere também os params herdados da base', () => {
+    const outlined = buttonSignature((s) => {
+      s.params = s.params.filter((p: Json) => p.name !== 'enabled');
+    });
+    const list = [
+      ...files(withCase({ signature: OUT })),
+      { path: OUT, text: JSON.stringify(outlined) },
+    ];
+    expect(found(list)).toEqual([
+      {
+        file: SPEC,
+        path: `${CASE_AT}.params.label`,
+        severity: 'warning',
+        message: 'parâmetro fora da ficha: "enabled"',
+      },
+    ]);
+  });
+
+  it('a ficha que falta é erro em cada lugar que a cita, não só no primeiro', () => {
+    const list = files(withCase({ signature: SIG }), null);
+    expect(found(list).map((i) => [i.severity, i.path])).toEqual([
+      ['error', 'layers[0].annotationTypes[0].code.compose.signature'],
+      ['error', `${CASE_AT}.signature`],
+    ]);
+  });
+});

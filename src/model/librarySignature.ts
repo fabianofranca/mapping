@@ -52,23 +52,54 @@ class Checker {
     });
   }
 
-  /** A ficha citada em `at`: existe e é válida; `null` com o problema já anotado. */
-  open(ref: string, at: string): Signature | null {
+  /**
+   * A ficha citada em `at`: existe e é válida; `null` com o problema já anotado. O que a ficha
+   * tem por dentro sai uma vez só; a ficha que falta (ou não pôde ser lida) sai em cada lugar que
+   * a cita. `cited: false` só relê a ficha (a da base, vista do caso), sem contar de novo.
+   */
+  open(ref: string, at: string, cited = true): Signature | null {
     const { specPath, resolve, byPath } = this.reader;
     const file = resolve(ref);
-    this.referenced.push(file);
-    if (this.read.has(file)) return this.read.get(file) ?? null;
+    if (cited) this.referenced.push(file);
     const entry = byPath.get(file);
-    let signature: Signature | null = null;
-    if (entry === undefined) {
-      this.add('error', specPath, at, `arquivo não encontrado: ${file}`, file);
-    } else if (entry.text !== undefined) {
-      const parsed = parseSignatureText(entry.text);
-      if (parsed.ok) signature = parsed.signature;
-      else for (const i of parsed.issues) this.add('error', file, i.path, i.message);
+    if (entry?.text === undefined) {
+      if (cited) {
+        const missing = entry === undefined;
+        const message = missing
+          ? `arquivo não encontrado: ${file}`
+          : `arquivo não pôde ser lido: ${file}`;
+        this.add('error', specPath, at, message, missing ? file : undefined);
+      }
+      return null;
     }
+    return this.parse(file, entry.text);
+  }
+
+  /** Lê a ficha; o que ela tem de errado por dentro sai uma vez só. */
+  private parse(file: string, text: string): Signature | null {
+    if (this.read.has(file)) return this.read.get(file) ?? null;
+    const parsed = parseSignatureText(text);
+    let signature: Signature | null = null;
+    if (parsed.ok) signature = parsed.signature;
+    else for (const i of parsed.issues) this.add('error', file, i.path, i.message);
     this.read.set(file, signature);
     return signature;
+  }
+
+  /** Os `params` que a ficha não tem viram aviso. */
+  params(
+    signature: Signature,
+    at: string,
+    params: Readonly<Record<string, string>> | undefined,
+  ): void {
+    for (const outside of paramsOutsideSignature(signature, { params })) {
+      this.add(
+        'warning',
+        this.reader.specPath,
+        `${at}.params.${outside.field}`,
+        `parâmetro fora da ficha: "${outside.name}"`,
+      );
+    }
   }
 
   /** A ficha do `code` é a do mesmo símbolo e arquivo, e os `params` estão nela. */
@@ -106,27 +137,31 @@ class Checker {
         `o arquivo da ficha ("${source.path}") difere do path do code ("${path}")`,
       );
     }
-    for (const outside of paramsOutsideSignature(signature, { params })) {
-      this.add(
-        'warning',
-        specPath,
-        `${at}.params.${outside.field}`,
-        `parâmetro fora da ficha: "${outside.name}"`,
-      );
-    }
+    this.params(signature, at, params);
   }
 }
 
+/**
+ * O caso de `variants`: com ficha própria, ela vale para o símbolo e o arquivo do caso e para os
+ * `params` da base somados aos do caso (é o que `resolveCode` entrega); sem ela, vale a da base, e
+ * só os `params` do caso são conferidos (os da base já foram, no `code`).
+ */
 function checkCase(
   checker: Checker,
   entry: SpecCode,
   kase: SpecCodeCase,
   at: string,
 ): void {
-  if (kase.signature === undefined) return;
+  if (kase.signature === undefined) {
+    if (entry.signature === undefined || kase.params === undefined) return;
+    const inherited = checker.open(entry.signature, `${at}.signature`, false);
+    if (inherited !== null) checker.params(inherited, at, kase.params);
+    return;
+  }
   const signature = checker.open(kase.signature, `${at}.signature`);
   if (signature === null) return;
   checker.code(signature, at, kase.symbol ?? entry.symbol, kase.path ?? entry.path, {
+    ...entry.params,
     ...kase.params,
   });
 }

@@ -77,6 +77,7 @@ export async function findByCodeResult(
     }
     searched.push(location.name);
     const refs = new Refs(loaded);
+    const signatures = projectSignatureReader(roots, refs);
     const p = loaded.project;
     const index = projectIndex(p);
     for (const hit of findByCode(p, {
@@ -97,11 +98,7 @@ export async function findByCodeResult(
           typeId: hit.typeId,
           name: resolved?.type.name ?? hit.typeId,
         },
-        code: await typeCodeView(
-          { refs, files, signatures: projectSignatureReader(roots, refs) },
-          hit.specId,
-          code,
-        ),
+        code: await typeCodeView({ refs, files, signatures }, hit.specId, code),
         annotationCount: hit.annotations.length,
         annotations: shown.map((found) => {
           const annotation = index.annotations.get(found.annotationId);

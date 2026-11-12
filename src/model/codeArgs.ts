@@ -54,12 +54,18 @@ class ArgBuilder {
     const target = this.interprets ? paramTarget(raw) : null;
     if (target?.kind === 'position') {
       this.out.push({ key, name: raw, position: target.position, value: shown });
-    } else if (target?.kind === 'path' && this.code.calls?.[target.call] !== undefined) {
+    } else if (target?.kind === 'path' && this.callSymbol(target.call) !== undefined) {
       if (shown !== null)
         this.addToCall(target.call, { key, name: target.name, value: shown });
     } else {
       this.out.push({ key, name: raw, value: shown });
     }
+  }
+
+  /** O símbolo da fábrica `call` (só chave própria de `calls`; `constructor` não é fábrica). */
+  private callSymbol(call: string): string | undefined {
+    const calls = this.code.calls;
+    return calls !== undefined && Object.hasOwn(calls, call) ? calls[call] : undefined;
   }
 
   /** O argumento da fábrica `call` nasce com o primeiro campo preenchido dela. */
@@ -71,7 +77,7 @@ class ArgBuilder {
       this.out.push({
         key: call,
         name: call,
-        call: this.code.calls?.[call] ?? call,
+        call: this.callSymbol(call) ?? call,
         value: null,
         args,
       });
