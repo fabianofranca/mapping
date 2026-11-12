@@ -1,4 +1,4 @@
-# Densidade da captura — [Não lançado] (épico `epic/densidade-captura`, PR #1693, MCP 0.37.0, schema v19)
+# Densidade da captura — 2026-11-12 (épico `epic/densidade-captura`, PR #1693, MCP 0.37.0, schema v19)
 
 ## Adicionado
 

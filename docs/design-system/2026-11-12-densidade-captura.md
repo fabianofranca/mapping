@@ -1,4 +1,4 @@
-# Densidade da captura — [Não lançado] (épico `epic/densidade-captura`)
+# Densidade da captura — 2026-11-12 (épico `epic/densidade-captura`)
 
 ## Pendências
 
