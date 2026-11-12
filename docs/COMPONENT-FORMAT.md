@@ -294,7 +294,7 @@ Como o `repeat` se dimensiona (é um quadro por baixo): `hug` no **eixo das linh
 }
 ```
 
-- **`layout` junto de `direction` ou `gap` é erro** (`repeat.layout: não combina com direction nem gap`). `wrap`, `lineGap`, `maxPerLine` e `maxLines` soltos no `repeat` continuam como antes (sem `layout`); com `layout`, valem os de dentro dele.
+- **`layout` junto de `direction` ou `gap` é erro** (`repeat.layout: não combina com direction nem gap`). `wrap`, `lineGap`, `maxPerLine` e `maxLines` soltos no `repeat` continuam como antes (sem `layout`); com `layout`, eles são erro (`repeat.layout: a chave vai dentro de layout (wrap)`): valem os de dentro do `layout`. `repeat.layout` com `type: "none"` também é erro (`repeat.layout: use row, column ou grid`). `span` e `weight` no próprio `repeat` valem para o quadro que ele gera.
 - **`distribute: "fill"` com `layout.type` literal `grid` é erro** (`distribute: não vale com layout grid`); com `row`/`column` no `layout` vale como com o `direction` equivalente.
 - Numa `formatVersion` menor que 4, `layout` no `repeat` é erro (`só é permitido com formatVersion 4`, no caminho da chave).
 

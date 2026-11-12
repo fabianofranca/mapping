@@ -53,6 +53,8 @@ const INHERITED_KEYS = [
   'maxWidth',
   'minHeight',
   'maxHeight',
+  'span',
+  'weight',
 ] as const;
 
 /** O que o quadro gerado herda do `repeat` (só as chaves presentes). */

@@ -352,6 +352,21 @@ describe('repeat.layout', () => {
     ]);
   });
 
+  it('as chaves de quebra soltas do repeat não combinam com repeat.layout (code-review)', () => {
+    expect(
+      issues(repeat({ layout: { type: 'column' }, wrap: 'wrap', lineGap: 2 })),
+    ).toEqual([
+      'template.children[0].wrap: repeat.layout: a chave vai dentro de layout (wrap)',
+      'template.children[0].lineGap: repeat.layout: a chave vai dentro de layout (lineGap)',
+    ]);
+  });
+
+  it('repeat.layout com type none não vale (code-review)', () => {
+    expect(issues(repeat({ layout: { type: 'none' } }))).toEqual([
+      'template.children[0].layout.type: repeat.layout: use row, column ou grid',
+    ]);
+  });
+
   it('distribute fill não vale com layout grid', () => {
     expect(
       issues(repeat({ layout: { type: 'grid', columns: 2 }, distribute: 'fill' })),

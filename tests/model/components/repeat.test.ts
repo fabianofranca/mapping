@@ -1080,6 +1080,31 @@ describe('achados da revisão da EX2', () => {
   });
 });
 
+describe('repeat: span e weight vão ao quadro gerado (code-review da L3)', () => {
+  it('o quadro gerado herda span e weight do repeat', () => {
+    const c = {
+      format: 'mapping-component',
+      formatVersion: 4,
+      id: 'sw',
+      name: 'Sw',
+      size: { width: 100, height: 100 },
+      template: {
+        type: 'frame',
+        children: [
+          { type: 'repeat', count: 2, span: 2, weight: 3, template: { type: 'frame' } },
+        ],
+      },
+    } as unknown as ComponentFile;
+    const out = expandRepeats(c, {});
+    const frame = out.component.template.children![0] as FrameTemplate & {
+      span?: number;
+      weight?: number;
+    };
+    expect(frame.span).toBe(2);
+    expect(frame.weight).toBe(3);
+  });
+});
+
 describe('repeat.layout (L3, decisão 14 da #1078)', () => {
   const OPTIONS = [{ rotulo: 'A' }, { rotulo: 'Mediano' }, { rotulo: 'Sim' }];
   const BOX400: Box = { x: 0, y: 0, width: 400, height: 100 };

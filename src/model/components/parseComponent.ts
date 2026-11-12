@@ -1216,6 +1216,11 @@ function checkRepeatLayout(value: Rec, path: string, out: Ctx): void {
     add(out, path, 'repeat.layout: não combina com direction nem gap');
   if (value.distribute === 'fill' && layoutParent(value.layout) === 'grid')
     add(out, join(path, 'distribute'), 'distribute: não vale com layout grid');
+  for (const key of WRAP_KEYS)
+    if (key in value)
+      add(out, join(path, key), `repeat.layout: a chave vai dentro de layout (${key})`);
+  if (isRecord(value.layout) && value.layout.type === 'none')
+    add(out, join(path, 'layout.type'), 'repeat.layout: use row, column ou grid');
 }
 
 /** `repeat`: o campo `table`, a direção, o espaço e o `template` (um quadro, sem `repeat` nem `slot`). */
