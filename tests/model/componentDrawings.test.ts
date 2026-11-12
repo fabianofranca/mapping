@@ -427,6 +427,82 @@ describe('createDrawingCache: clip do slot (L2)', () => {
     expect(sibling.get('T2')?.clip).toBe(before.get('T1')?.clip);
   });
 
+  /** C (inset com clip) com D (box) meio fora do slot dele e o texto T dentro de D. */
+  function nested(cat: ComponentCatalog): Project {
+    let p = componentProject();
+    const put = (id: string, typeId: string, extra: Partial<NewComponentArgs> = {}) => {
+      p = addComponentMarking(
+        p,
+        cat,
+        {
+          markingId: id,
+          annotationId: `A_${id}`,
+          containerId: 'I1',
+          parentId: null,
+          specId: SPEC_ID,
+          typeId,
+          ...extra,
+        },
+        approximateMeasurer,
+      );
+    };
+    put('C', 'inset', { rect: { x: 100, y: 100, width: 300, height: 200 } });
+    put('D', 'box', { parentId: 'C', rect: { x: 300, y: 150, width: 90, height: 80 } });
+    put('T', 'text', { parentId: 'D', center: { x: 345, y: 190 } });
+    return p;
+  }
+
+  it('o clip do slot alcança as netas: a filha sem clip passa o recorte adiante', () => {
+    const cat = clippedCatalog();
+    const p = nested(cat);
+    expect(p.markings.find((m) => m.id === 'T')?.parentId).toBe('D');
+    const drawings = createDrawingCache()(p, cat, approximateMeasurer, 0);
+    const slot = { x: 120, y: 120, width: 260, height: 160 };
+    expect(drawings.get('D')?.clip).toEqual(slot);
+    expect(drawings.get('T')?.clip).toEqual(slot);
+  });
+
+  it('slot com clip dentro de outro: a neta leva a interseção dos dois', () => {
+    const withClip = (component: unknown) => {
+      const c = component as { template: { children: object[] } };
+      return {
+        ...c,
+        formatVersion: 4,
+        template: {
+          ...c.template,
+          children: [{ ...c.template.children[0], clip: true }],
+        },
+      };
+    };
+    const cat = testCatalog({
+      ...COMPONENTS,
+      inset: withClip(COMPONENTS.inset),
+      box: withClip(COMPONENTS.box),
+    } as never);
+    const drawings = createDrawingCache()(nested(cat), cat, approximateMeasurer, 0);
+    // Slot de C: 120..380 × 120..280; slot de D (a caixa toda): 300..390 × 150..230.
+    expect(drawings.get('T')?.clip).toEqual({ x: 300, y: 150, width: 80, height: 80 });
+  });
+
+  it('mãe com screen (cena na origem, em pixels de tela): a filha não leva o clip perto de 0,0', () => {
+    const base = COMPONENTS.inset as unknown as {
+      template: { children: Record<string, unknown>[] };
+    };
+    const inset = {
+      ...base,
+      formatVersion: 4,
+      screen: { anchor: 'top-left' },
+      template: {
+        ...base.template,
+        children: [{ ...(base.template.children[0] as object), clip: true }],
+      },
+    };
+    const cat = testCatalog({ ...COMPONENTS, inset } as never);
+    const drawings = createDrawingCache()(inScreen(cat), cat, approximateMeasurer, 0);
+    expect(drawings.get('C')?.screen).toBeDefined();
+    expect(drawings.get('T1')?.clip).toBeUndefined();
+  });
+
   it('o clip muda a filha mesmo que ela, em si, não tenha mudado', () => {
     const cat = clippedCatalog();
     const cache = createDrawingCache();

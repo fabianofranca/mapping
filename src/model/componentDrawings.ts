@@ -1,4 +1,5 @@
 import { clippedSlotBox, findSlot, slotBoxOfScene } from './components/arrange';
+import { intersectClips } from './components/box';
 import type {
   ComponentFile,
   FieldValues,
@@ -103,8 +104,10 @@ interface Entry {
   readonly offers: ProvidedValues | undefined;
   /** O recorte que esta marcação impõe às filhas (caixa do slot com `clip`), se houver. */
   readonly slotClip: Rect | undefined;
-  /** O recorte que ela recebe da mãe (o `slotClip` da mãe, mesmo objeto). */
+  /** O recorte que ela recebe da mãe (o `childClip` da mãe, mesmo objeto). */
   readonly clip: Rect | undefined;
+  /** O recorte que as filhas recebem: o `slotClip` dentro do `clip` recebido (interseção). */
+  readonly childClip: Rect | undefined;
   readonly drawing: ComponentDrawing;
 }
 
@@ -259,7 +262,9 @@ function draw(
     shortfalls: found,
     ...placement(screen, rect, clip),
   };
-  return { drawing, offers: provides, slotClip: clippedSlotBox(root) };
+  // Com `screen` a cena está na origem (pixels de tela): a caixa do slot não está no espaço das filhas.
+  const slotClip = screen === undefined ? clippedSlotBox(root) : undefined;
+  return { drawing, offers: provides, slotClip };
 }
 
 /**
@@ -303,7 +308,8 @@ export function createDrawingCache(): DrawingCache {
     // Cor herdada: o que as filhas de cada marcação herdam (o do pai, com o que ele oferece por
     // cima), de cima para baixo; o mais próximo vale e quem não oferece é atravessado.
     const scopes = new Map<string, ProvidedValues>();
-    // Recorte das filhas de cada marcação (a caixa do slot com `clip`).
+    // Recorte das filhas de cada marcação: a caixa do slot com `clip` dentro do recorte que a
+    // própria marcação recebe (o recorte desce às netas).
     const clips = new Map<string, Rect | undefined>();
     const scopeOf = (parentId: string | null): ProvidedValues =>
       parentId === null ? NO_PROVIDED : (scopes.get(parentId) ?? NO_PROVIDED);
@@ -350,11 +356,19 @@ export function createDrawingCache(): DrawingCache {
         const kept =
           before.clip === clip
             ? before
-            : { ...before, clip, drawing: withClip(before.drawing, clip) };
+            : {
+                ...before,
+                clip,
+                childClip: stableRect(
+                  before.childClip,
+                  intersectClips(before.slotClip, clip),
+                ),
+                drawing: withClip(before.drawing, clip),
+              };
         next.set(marking.id, kept);
         drawings.set(marking.id, kept.drawing);
         scopes.set(marking.id, extendProvided(inherited, before.offers));
-        clips.set(marking.id, before.slotClip);
+        clips.set(marking.id, kept.childClip);
         continue;
       }
       const { drawing, offers, slotClip } = draw(
@@ -371,7 +385,8 @@ export function createDrawingCache(): DrawingCache {
         clip,
       );
       const stableClip = stableRect(before?.slotClip, slotClip);
-      clips.set(marking.id, stableClip);
+      const childClip = stableRect(before?.childClip, intersectClips(stableClip, clip));
+      clips.set(marking.id, childClip);
       scopes.set(marking.id, extendProvided(inherited, offers));
       next.set(marking.id, {
         markingId: marking.id,
@@ -389,6 +404,7 @@ export function createDrawingCache(): DrawingCache {
         offers,
         slotClip: stableClip,
         clip,
+        childClip,
         drawing,
       });
       drawings.set(marking.id, drawing);

@@ -18,7 +18,7 @@ import { type RemoteImageResult, renderScene } from './renderScene';
 import { DEFAULT_PALETTE, type RenderPalette } from './palette';
 import type { RenderWarning } from './renderWarnings';
 import { clippedSlotBox } from '../../model/components/arrange';
-import type { Box } from '../../model/components/box';
+import { type Box, intersectClips } from '../../model/components/box';
 import type { FieldValues } from '../../model/components/componentFormat';
 import { type TextMeasurer, instantiate } from '../../model/components/instantiate';
 import {
@@ -96,6 +96,8 @@ interface Mounted {
   offers: ProvidedValues | undefined;
   /** Caixa do slot (na tela) quando ele tem `clip`: as filhas só aparecem dentro dela. */
   slotClip: Box | undefined;
+  /** O recorte (na tela) que as filhas recebem: o `slotClip` dentro do recorte da própria instância. */
+  childClip: Box | undefined;
 }
 
 export class ScreenRenderer {
@@ -182,13 +184,15 @@ export class ScreenRenderer {
   }
 
   /**
-   * Recorta a instância pela caixa do slot da mãe, quando o slot tem `clip` (a mãe é sempre
-   * desenhada antes). Devolve true se o recorte mudou.
+   * Recorta a instância pelo recorte que a mãe passa às filhas (a caixa do slot com `clip`,
+   * dentro do recorte que a mãe recebeu; a mãe é sempre desenhada antes) e guarda o que esta
+   * passa às dela. Devolve true se o recorte mudou.
    */
   private clipByParent(entry: Mounted): boolean {
     const { parentId } = entry.instance;
     const clip =
-      parentId === undefined ? undefined : this.mounted.get(parentId)?.slotClip;
+      parentId === undefined ? undefined : this.mounted.get(parentId)?.childClip;
+    entry.childClip = intersectClips(entry.slotClip, clip);
     return applyClip(entry.node, localClip(clip, entry.instance.box));
   }
 
@@ -210,6 +214,7 @@ export class ScreenRenderer {
       provided: NO_PROVIDED,
       offers: undefined,
       slotClip: undefined,
+      childClip: undefined,
     };
     this.group.add(node);
     this.mounted.set(instance.id, entry);
@@ -411,9 +416,11 @@ function localClip(clip: Box | undefined, box: Box): Box | undefined {
 
 /** Aplica (ou tira) o recorte do grupo; devolve true se ele mudou. */
 function applyClip(node: Konva.Group, next: Box | undefined): boolean {
-  const before = node.clipWidth()
-    ? [node.clipX(), node.clipY(), node.clipWidth(), node.clipHeight()]
-    : undefined;
+  // Largura 0 (slot que colapsou) também é recorte: o Konva recorta com qualquer número (tudo).
+  const before =
+    typeof node.clipWidth() === 'number'
+      ? [node.clipX(), node.clipY(), node.clipWidth(), node.clipHeight()]
+      : undefined;
   const after = next && [next.x, next.y, next.width, next.height];
   if (before?.join() === after?.join()) return false;
   node.clipX(next?.x);

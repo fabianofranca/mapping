@@ -156,3 +156,74 @@ describe('ScreenRenderer: clip do slot', () => {
     expect(clipOf('D')).toBeNull();
   });
 });
+
+/** P (cut) com Q (`qType`) meio fora do slot de P e o ponto D dentro de Q. */
+function nestedScreen(qType: string): Screen {
+  return {
+    id: 's',
+    name: 's',
+    width: 800,
+    height: 400,
+    background: '#fff',
+    instances: [
+      {
+        id: 'P',
+        typeId: 'cut',
+        box: { x: 100, y: 50, width: 300, height: 100 },
+        values: {},
+      },
+      // Slot de Q na tela: x 320..480, y 90..130 (passa do slot de P, que vai até 380).
+      {
+        id: 'Q',
+        typeId: qType,
+        box: { x: 300, y: 80, width: 200, height: 60 },
+        values: {},
+        parentId: 'P',
+      },
+      {
+        id: 'D',
+        typeId: 'dot',
+        box: { x: 440, y: 95, width: 20, height: 20 },
+        values: {},
+        parentId: 'Q',
+      },
+    ],
+  };
+}
+
+describe('ScreenRenderer: clip do slot nas netas (code review #1078)', () => {
+  it('a filha sem clip passa adiante o recorte da mãe: a neta é recortada pelo slot da avó', () => {
+    const { renderer, clipOf } = setup();
+    renderer.update(library, nestedScreen('open'));
+    // Slot de P: 120..380 × 60..140; D está em 440,95.
+    expect(clipOf('D')).toEqual([-320, -35, 260, 80]);
+  });
+
+  it('slot com clip dentro de outro: a neta leva a interseção dos dois', () => {
+    const { renderer, clipOf } = setup();
+    renderer.update(library, nestedScreen('cut'));
+    // 320..380 × 90..130, no espaço de D (440,95).
+    expect(clipOf('D')).toEqual([-120, -5, 60, 40]);
+  });
+});
+
+describe('ScreenRenderer: slot com clip que colapsa (code review #1078)', () => {
+  function collapsed(): Screen {
+    const s = screenOf('cut');
+    const [parent, child] = s.instances;
+    // Slot com âncoras de 20 nos lados numa caixa de 40 de largura: largura 0.
+    return {
+      ...s,
+      instances: [{ ...parent!, box: { x: 100, y: 50, width: 40, height: 100 } }, child!],
+    };
+  }
+
+  it('o recorte de largura 0 fica aplicado e o sync seguinte não reporta mudança', () => {
+    const { renderer } = setup();
+    const s = collapsed();
+    expect(renderer.update(library, s)).toBe(true);
+    const node = renderer.nodeOf('D')!;
+    expect(node.clipWidth()).toBe(0);
+    expect(renderer.update(library, s)).toBe(false);
+  });
+});

@@ -260,8 +260,11 @@ export interface Instantiated {
 // Medidor aproximado
 // ---------------------------------------------------------------------------------------
 
-/** Quebra um parágrafo por palavras (uma palavra maior que a largura fica sozinha na linha). */
-function wrapWords(
+/**
+ * Quebra um parágrafo por palavras (uma palavra maior que a largura fica sozinha na linha). O
+ * desenho da app a usa para o Konva quebrar onde o modelo quebra (`wordSafeText`).
+ */
+export function wrapWords(
   paragraph: string,
   widthOf: (text: string) => number,
   maxWidth: number,

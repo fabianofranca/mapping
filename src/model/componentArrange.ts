@@ -132,6 +132,9 @@ function stretchedBy(parent: Container | null, axis: 'width' | 'height'): boolea
     const onTracks = alongTracks(layout) === (axis === 'width');
     return (onTracks ? layout.justify : layout.align) === 'stretch';
   }
+  // `none` alinhado (v4), como no `layoutOverlaid`: `justify` na largura e `align` na altura.
+  if (layout.type === 'none')
+    return (axis === 'width' ? layout.justify : layout.align) === 'stretch';
   if (layout.align !== 'stretch') return false;
   return axis === (layout.type === 'row' ? 'height' : 'width');
 }

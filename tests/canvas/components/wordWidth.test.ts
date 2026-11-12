@@ -64,6 +64,11 @@ describe('wordSafeWidth', () => {
     expect(wordSafeWidth('Salvar', face, 100)).toBe(100);
     expect(wordSafeWidth('', face, 40)).toBe(40);
   });
+
+  it('o espaço inseparável (NBSP) não divide a palavra, como no Konva e no modelo', () => {
+    // "R$ 100.000,00" com NBSP: 13 letras de 6 px, uma palavra só.
+    expect(wordSafeWidth('R$\u00a0100.000,00', face, 30)).toBe(78);
+  });
 });
 
 describe('konvaMeasurer: palavra mais larga que a caixa', () => {
@@ -75,6 +80,13 @@ describe('konvaMeasurer: palavra mais larga que a caixa', () => {
   it('com a palavra cabendo, a largura é a da caixa mais a folga', () => {
     konvaMeasurer('Salvar', { ...font }, 100);
     expect(configs.at(-1)?.width).toBe(100.5);
+  });
+
+  it('alargado pela palavra longa, o texto já vai quebrado onde o modelo quebra', () => {
+    // 6 px por letra numa caixa de 60: o modelo dá a palavra longa, "ab cd ef" e "gh".
+    konvaMeasurer('Supercalifragilistico ab cd ef gh', { ...font }, 60);
+    expect(configs.at(-1)?.text).toBe('Supercalifragilistico\nab cd ef\ngh');
+    expect(configs.at(-1)?.width).toBe(126.5);
   });
 
   it('com reticências, o corte é da caixa: a largura não se alarga', () => {
