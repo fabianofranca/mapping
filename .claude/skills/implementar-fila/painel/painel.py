@@ -204,7 +204,10 @@ class Sessao:
         if not meta:
             raise Erro("meta.json está vazio")
         meta[0]["updatedAt"] = now()
-        if [fill_phases(r) for r in self.get("queue")].count(True):
+        filled = False
+        for row in self.get("queue"):
+            filled = fill_phases(row) or filled
+        if filled:
             # A ficha completou fases: a mudança entra na publicação, mesmo num `context`, que sozinho é quieto.
             self.touch("queue")
             self.loud = True
