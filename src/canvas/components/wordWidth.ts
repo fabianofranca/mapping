@@ -25,6 +25,8 @@ export function wordSafeWidth(text: string, font: WordFont, width: number): numb
   // Uma palavra de `n` letras não passa de `n × (corpo + espaçamento)`: a que cabe nisso na caixa
   // nem é medida (o caso comum), e só as que podem passar dela vão ao Konva.
   const advance = Number(font.fontSize ?? 0) + Number(font.letterSpacing ?? 0);
+  // O texto inteiro cabe nisso: nenhuma palavra passa da caixa (o caso comum, sem dividir nem ordenar).
+  if (text.length * advance <= width) return width;
   const words = [
     ...new Set(
       // Só espaço, tab e quebra dividem: o NBSP é parte da palavra (no Konva e no modelo).
