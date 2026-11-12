@@ -207,11 +207,18 @@ function measureHug(
   ) {
     return free;
   }
-  // A largura pedida não cabe: mede a altura para a largura que sobra.
+  // A largura pedida não cabe: mede a altura para a largura que sobra, mas nunca abaixo do maior
+  // pedaço inquebrável (o rótulo `wrap: none` de um segmento não passa da trilha por falta de espaço).
+  const unbreakable = measureComponent(
+    component,
+    values,
+    { width: 'min-content', height },
+    options,
+  ).width;
   const limited = measureComponent(
     component,
     values,
-    { width: maxWidth, height },
+    { width: Math.max(maxWidth, ceilFit(unbreakable)), height },
     options,
   );
   return { ...limited, messages: [...free.messages, ...limited.messages] };

@@ -48,6 +48,7 @@ import {
   justifySpacing,
   mirrorMain,
 } from './layoutValues';
+import { lineExtents } from './gridPlan';
 import { type ResolvedSizing, resolveSizing } from './sizing';
 import type { Library } from './library';
 import type { Instance, Screen } from './screen';
@@ -256,7 +257,7 @@ function gridOrder(count: number, reverse: boolean): number[] {
 }
 
 /** As células de uma grade com `fs` (a extensão de cada filho na linha de fluxo) e a extensão de cada linha. */
-function lineExtents(
+function flowCells(
   fs: readonly number[],
   count: number,
 ): { cells: ReturnType<typeof placeCells>['cells']; extents: number[] } {
@@ -264,10 +265,7 @@ function lineExtents(
     fs.map(() => 1),
     count,
   );
-  const extents = Array.from({ length: lines }, () => 0);
-  for (const cell of cells)
-    extents[cell.line] = Math.max(extents[cell.line] ?? 0, fs[cell.index] ?? 0);
-  return { cells, extents };
+  return { cells, extents: lineExtents(cells, lines, fs) };
 }
 
 const isVerticalGrid = (layout: ResolvedSlotLayout) =>
@@ -279,17 +277,10 @@ const isVerticalGrid = (layout: ResolvedSlotLayout) =>
  * na horizontal, as colunas (linhas de fluxo) lado a lado com o `lineGap`.
  */
 function gridContentWidth(layout: ResolvedSlotLayout, widths: readonly number[]): number {
-  if (widths.length === 0) return 0;
   const count = trackCount(layout.grid ?? {}, null, layout.gap);
   if (isVerticalGrid(layout)) return count * maxOf(widths) + layout.gap * (count - 1);
-  const { cells, lines } = placeCells(
-    widths.map(() => 1),
-    count,
-  );
-  const extents = Array.from({ length: lines }, () => 0);
-  for (const cell of cells)
-    extents[cell.line] = Math.max(extents[cell.line] ?? 0, widths[cell.index] ?? 0);
-  return sum(extents) + layout.lineGap * Math.max(0, lines - 1);
+  const { extents } = flowCells(widths, count);
+  return sum(extents) + layout.lineGap * Math.max(0, extents.length - 1);
 }
 
 /** Posição de uma raiz ancorada num eixo: `margin` na borda tocada, ou centralizada. */
@@ -686,7 +677,7 @@ export function layoutScreen(
         : trackSize(content, count, layout.gap);
     const measure = vertical ? verticalGridKid : horizontalGridKid;
     const sized = order.map((i) => measure(kids[i] as Prepared, layout, size));
-    const { cells, extents } = lineExtents(
+    const { cells, extents } = flowCells(
       sized.map((info) => info.f),
       count,
     );

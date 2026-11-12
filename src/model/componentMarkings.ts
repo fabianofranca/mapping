@@ -5,6 +5,7 @@ import {
   type ResolvedGrid,
 } from './components/arrange';
 import { placeCells, trackCount, trackOffset, trackSize } from './components/gridLayout';
+import { lineExtents } from './components/gridPlan';
 import { WRAP_EPS, breakLines, stackLines } from './components/wrapLines';
 import type { ComponentFile, FieldValues } from './components/componentFormat';
 import { fitComponentSize } from './components/sizing';
@@ -586,11 +587,11 @@ function gridSlotRect(kids: readonly Marking[], slot: SlotBox, size: Size): Rect
     kids.map(() => 1),
     count,
   );
-  const extents = Array.from({ length: lines }, () => 0);
-  for (const cell of cells) {
-    const kid = kids[cell.index] as Marking;
-    extents[cell.line] = Math.max(extents[cell.line] ?? 0, flowExtent(axes, kid.rect));
-  }
+  const extents = lineExtents(
+    cells,
+    lines,
+    kids.map((kid) => flowExtent(axes, kid.rect)),
+  );
   const tops = stackLines([...extents, 0], slot.lineGap, false).tops;
   const at = (line: number, trackIndex: number): Rect => {
     const t = axes.tStart + trackOffset(trackIndex, track, slot.gap);

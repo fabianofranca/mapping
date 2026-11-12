@@ -1911,6 +1911,20 @@ function createEngine(
    */
   const huggedCounts = new Map<FrameTemplate, Map<number, number>>();
 
+  /**
+   * A contagem lembrada da medida `hug` para o tamanho `known`, só para o quadro cujo eixo das trilhas
+   * é `hug`: num quadro `fill`, `%` ou px o tamanho vem do pai e a contagem sai dele (um total igual
+   * ao de outra medida, com outro limite, não empresta a contagem dela).
+   */
+  const hugMemoOf = (
+    frame: FrameTemplate,
+    axis: Axis,
+    known: number | null,
+  ): number | undefined =>
+    known !== null && specOf(frame, axis) === 'hug'
+      ? huggedCounts.get(frame)?.get(known)
+      : undefined;
+
   /** A área de conteúdo do eixo quando o quadro tem tamanho conhecido (nulo = `hug`). */
   const gridContent = (space: GridSpace, axis: Axis): number | null => {
     const known = space.known[axis];
@@ -2057,7 +2071,7 @@ function createEngine(
     };
     const tracks = layout.grid ?? { vertical: true };
     const count =
-      huggedCounts.get(frame)?.get(draft.known[t] ?? Number.NaN) ??
+      hugMemoOf(frame, t, draft.known[t]) ??
       trackCount(tracks, gridContent(draft, t) ?? gridBound(draft, t), layout.gap);
     const placed = placeCells(
       ordered.map((kid) => spanOf(kid.node)),
