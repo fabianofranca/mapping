@@ -77,7 +77,7 @@ O `docs/FLOW.md`, o `docs/PROCESS.md` e os `.claude/skills/*/SKILL.md` se citam 
 Converta as citações antigas no `toca=`: o `docs/TESTING.md` citado com roteiros em prosa ("R18: …", "o R9.12, o R12.3") vira um por roteiro (`docs/TESTING.md#R9,docs/TESTING.md#R12`; passo ou faixa conta como o roteiro inteiro, e os sob demanda são `#RP`, `#RF`, `#RA` e `#RB`); sem roteiro, ou com uma seção que não é roteiro, fica `docs/TESTING.md`. O `docs/TESTING-NUVEM.md` citado só pela contagem ("contagem", "a tabela", "Passos") vira `docs/TESTING-NUVEM.md#blocos`; citado por outra coisa, fica sem âncora.
 ```
 
-Grave cada linha com `row '#n' plan="<a linha>"` (e `title`, `phases` com as fases em `open`). Sem o estado em `dep=`, a ficha antiga conta como dependência aberta.
+Grave cada linha com `row '#n' plan="<a linha>"` (e `title`). As fases do `fases=` entram sozinhas em `phases`, como `todo`, pela ficha ("Painel", "Fases da linha"). Sem o estado em `dep=`, a ficha antiga conta como dependência aberta.
 
 ## 1. Começo
 
@@ -101,7 +101,7 @@ Grave cada linha com `row '#n' plan="<a linha>"` (e `title`, `phases` com as fas
    3. Depois, `severity: high`/`impact: high`, depois `medium`, depois `low`.
    4. No empate, as que mexem nos mesmos arquivos ficam juntas e em sequência (menos merge da `main` no épico).
    5. Por fim, o menor número vem antes.
-5. Painel: crie ou abra (seção "Painel") e grave a fila, com `status: aguardando` e as fases `open`.
+5. Painel: crie ou abra (seção "Painel") e grave a fila, com `status: aguardando`; as fases vêm da ficha (`todo`).
 6. Sem `sem-confirmar`:
    - mostre no chat uma tabela com a ordem, a issue, o título, as fases, o "Depende de", o porquê da posição e o que roda em paralelo;
    - mande `PushNotification` "Fila pronta: N etapas";
@@ -336,7 +336,7 @@ painel.py row <pasta> '#n' plan="<ficha>"            # a ficha da etapa
 painel.py row <pasta> '#n' child="<id> <id>" childAt=now   # filhas que devem aviso; child= limpa; trocar a filha também limpa o wait
 painel.py row <pasta> '#n' wait="<motivo>"           # a filha espera o coordenador; wait= childAt=now ao responder
 painel.py row <pasta> '#n' ciWait="PR #<n>" ciWaitAt=now   # o CI do PR espera o coordenador; ciWait= limpa os dois; child não mexe
-painel.py phase <pasta> '#n' CL3=ok
+painel.py phase <pasta> '#n' CL3=open|ok             # estado da fase: open ao criar a sessão, ok ao mesclar; o todo vem da ficha (`fases=`) e não se grava
 painel.py reorder <pasta> '#a' '#b' …
 painel.py apply <pasta> <arquivo|->                  # vários comandos de uma vez (abaixo)
 painel.py log <pasta> "texto"
@@ -367,6 +367,8 @@ A linha `custo: US$ <total> em <k> sessões` (ou `custo: —`) vem do `meta.sess
 A linha `pedidos do supervisor: <k> abertos (atrasados: SUP-…)` (ou `nenhum`) conta os pedidos `enviado`, `perguntado ao dono` e `aprovado`, e a `regras em vigor:` imprime, uma por linha, o texto **inteiro** de cada regra (`R<k> (<origem>): <texto> [saída: …]`, nunca resumido). A página mostra os cards "Pedidos do supervisor" (os 20 mais recentes, com o estado) e "Regras em vigor" (ou "—" sem dados).
 
 A linha `CI esperando o coordenador: #n PR #p (k min); …` (ou `nenhuma`) lista os PRs com `ciWait`, com os minutos desde o `ciWaitAt`, e a página mostra o campo na coluna "Passo atual", como `<passo> · CI: PR #p`.
+
+**Fases da linha.** Cada código de `phases` tem um de três estados: `todo` (por fazer, ainda sem sessão), `open` (aberta, com a sessão criada) e `ok` (mesclada no épico). O `todo` só vem da ficha: toda gravação completa as linhas pelo `fases=`, com as fases dela primeiro, na ordem dela, e depois as `open` e `ok` que ela não traz (as `CLn`); a linha `concluída` não muda, e o total (`phasesTotal`) conta o plano inteiro. O coordenador grava só dois estados: no ▸ fase aberta, `phase '#n' <código>=open`, ao criar a sessão da fase ou da correção; no ▸ fase `ok`, `<código>=ok`, ao mesclar. Com `fases=?` na ficha, as fases ficam como estão até a ficha ser refeita. A página mostra "feitas / total" e um chip por fase: concluída, "agora" (a primeira aberta da linha em andamento) e por fazer (borda tracejada), cada um com o estado no `title`; na tabela, a issue (`#n`) e o PR são links para o GitHub; o link do PR só aparece com o `pr=` escrito só com o número (`pr=1234`).
 
 O script diz quais arquivos mudou, e o `show` diz quais ainda faltam publicar (`não publicado desde <HH:MM>: <arquivos>` ou `não publicado: nenhum`, de `meta.unpublished`).
 

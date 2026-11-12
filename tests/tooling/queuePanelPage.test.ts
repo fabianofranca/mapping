@@ -16,12 +16,12 @@ interface Panel {
 }
 
 /** Monta a página no `document` e roda o `<script>` dela com um `dash` falso. */
-function loadPanel(meta: Row): Panel {
+function loadPanel(meta: Row, queue: Row[] = []): Panel {
   const parsed = new DOMParser().parseFromString(readFileSync(PAGE, 'utf8'), 'text/html');
   const script = parsed.querySelector('script')?.textContent ?? '';
   document.body.replaceChildren(...Array.from(parsed.body.childNodes));
 
-  const datasets: Record<string, Row[]> = { queue: [], meta: [meta], log: [] };
+  const datasets: Record<string, Row[]> = { queue, meta: [meta], log: [] };
   const calcs = new Map<string, CalcSpec>();
   let onData: () => void = () => undefined;
   const data = (id: string): DataResult => {
@@ -144,4 +144,122 @@ describe('página do painel da fila: campos-lista do meta', () => {
       expect(items('#mp-vagas')).toEqual(['Vaga 1: livre', 'Vaga 2: ocupada']);
     },
   );
+});
+
+/** Uma linha da fila com os campos que a tabela lê. */
+function fila(over: Row): Row {
+  return {
+    order: 1,
+    issue: '#1085',
+    title: 'Etapa',
+    kind: 'etapa',
+    status: 'em andamento',
+    step: '',
+    pr: '',
+    phases: '',
+    phasesTotal: 0,
+    phasesDone: 0,
+    ...over,
+  };
+}
+
+/** As células `td` da primeira linha da tabela "Passo a passo". */
+const cells = () =>
+  Array.from(document.querySelectorAll('#mp-table tbody tr:first-child td'));
+
+const chips = (td: Element | undefined) =>
+  Array.from(td?.querySelectorAll('.chip') ?? []).map((c) => ({
+    text: c.textContent,
+    classes: Array.from(c.classList).filter((k) => k !== 'chip'),
+    title: c.getAttribute('title'),
+  }));
+
+describe('página do painel da fila: célula "Fases" (PF1, decisão 8)', () => {
+  it('em andamento D1:ok|D2:open|D3:todo: "1 / 3", com ok, now e todo e os title', () => {
+    const panel = loadPanel({}, [
+      fila({ phases: 'D1:ok|D2:open|D3:todo', phasesTotal: 3, phasesDone: 1 }),
+    ]);
+    panel.render();
+    const td = cells()[4];
+    expect(td?.firstElementChild?.firstElementChild?.textContent).toBe('1 / 3');
+    expect(chips(td)).toEqual([
+      { text: 'D1', classes: ['ok'], title: 'D1: concluída' },
+      { text: 'D2', classes: ['now'], title: 'D2: aberta' },
+      { text: 'D3', classes: ['todo'], title: 'D3: por fazer' },
+    ]);
+  });
+
+  it('aguardando D1:todo|D2:todo: "0 / 2", sem now', () => {
+    const panel = loadPanel({}, [
+      fila({
+        status: 'aguardando',
+        phases: 'D1:todo|D2:todo',
+        phasesTotal: 2,
+        phasesDone: 0,
+      }),
+    ]);
+    panel.render();
+    const td = cells()[4];
+    expect(td?.firstElementChild?.firstElementChild?.textContent).toBe('0 / 2');
+    expect(td?.querySelector('.now')).toBeNull();
+    expect(chips(td).map((c) => c.classes)).toEqual([['todo'], ['todo']]);
+  });
+
+  it('a linha antiga em andamento A1:ok|A2:open|A3:open: só a A2 com now', () => {
+    const panel = loadPanel({}, [
+      fila({ phases: 'A1:ok|A2:open|A3:open', phasesTotal: 3, phasesDone: 1 }),
+    ]);
+    panel.render();
+    const td = cells()[4];
+    expect(chips(td).map((c) => c.classes)).toEqual([['ok'], ['now'], []]);
+  });
+});
+
+describe('página do painel da fila: links da issue e do PR (PF1, decisão 14)', () => {
+  const BASE = 'https://github.com/fabianofranca/mapping';
+
+  it('a célula da issue vira link exato para a issue, com o mesmo texto', () => {
+    loadPanel({}, [fila({ issue: '#1085', pr: '1234' })]).render();
+    const a = cells()[1]?.querySelector('a');
+    expect(a?.getAttribute('href')).toBe(`${BASE}/issues/1085`);
+    expect(cells()[1]?.textContent).toBe('#1085');
+  });
+
+  it('a célula do PR vira link exato para o PR, com o mesmo texto', () => {
+    loadPanel({}, [fila({ issue: '#1085', pr: '1234' })]).render();
+    const a = cells()[8]?.querySelector('a');
+    expect(a?.getAttribute('href')).toBe(`${BASE}/pull/1234`);
+    expect(cells()[8]?.textContent).toBe('1234');
+  });
+
+  it('o PR numérico em número (não texto) também vira link', () => {
+    loadPanel({}, [fila({ pr: 77 })]).render();
+    expect(cells()[8]?.querySelector('a')?.getAttribute('href')).toBe(`${BASE}/pull/77`);
+    expect(cells()[8]?.textContent).toBe('77');
+  });
+
+  it('o PR vazio fica sem a e sem texto; o valor que não casa fica como texto, sem a', () => {
+    loadPanel({}, [fila({ pr: '' })]).render();
+    expect(cells()[8]?.querySelector('a')).toBeNull();
+    expect(cells()[8]?.textContent).toBe('');
+
+    loadPanel({}, [fila({ issue: 'abc', pr: 'x' })]).render();
+    expect(cells()[1]?.querySelector('a')).toBeNull();
+    expect(cells()[1]?.textContent).toBe('abc');
+    expect(cells()[8]?.querySelector('a')).toBeNull();
+    expect(cells()[8]?.textContent).toBe('x');
+
+    loadPanel({}, [fila({ pr: 'PR #7' })]).render();
+    expect(cells()[8]?.querySelector('a')).toBeNull();
+    expect(cells()[8]?.textContent).toBe('PR #7');
+  });
+
+  it('os dois a levam target="_blank" e rel="noopener"', () => {
+    loadPanel({}, [fila({ issue: '#1085', pr: '1234' })]).render();
+    for (const i of [1, 8]) {
+      const a = cells()[i]?.querySelector('a');
+      expect(a?.getAttribute('target')).toBe('_blank');
+      expect(a?.getAttribute('rel')).toBe('noopener');
+    }
+  });
 });

@@ -1,0 +1,6 @@
+# Painel da fila com todas as fases do plano — [Não lançado] (épico `epic/painel-fases-do-plano`, PR #0, MCP 0.36.0 sem mudança, schema v18)
+
+## Alterado
+
+- O painel "Fila de desenvolvimento" mostra as fases do plano desde que a ficha da etapa é gravada, e não só as que já abriram. As fases do `fases=` entram em `phases` no estado novo `todo` (por fazer), ao lado de `open` (aberta) e `ok` (mesclada); o contador passa a contar o plano inteiro (a etapa com D1 mesclada, D2 rodando e D3 por abrir mostra "1 / 3"). Toda gravação do `painel.py` completa as linhas pela ficha, as já gravadas incluídas, e a mudança conta como não publicada; a linha `concluída` e a ficha com `fases=?` não mudam, e o `phase` continua aceitando só `ok` e `open`. A página desenha a fase por fazer com borda tracejada e põe o estado no `title` de cada fase. O skill `implementar-fila` deixa de mandar gravar as fases em `open` ao montar a fila e ganha o parágrafo "Fases da linha".
+- Na tabela "Passo a passo" da página, o número da issue e o do PR viram links para o GitHub, abertos numa aba nova (`target="_blank"`, `rel="noopener"`); o texto da célula não muda, e valor vazio ou não numérico fica como texto, sem link. O painel já publicado recebe a página nova quando quem fecha a próxima etapa troca o `files/index.html`.

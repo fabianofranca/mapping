@@ -61,6 +61,12 @@ Troca a quente e migração (decisões 17 e 25 da #1532): `upgrade DIR` troca, i
 o `ended`, nem do `meta` o `sessions`, `requests`, `current`, `paralelo`, `reserve`, `context`, `roles` e `unpublished`, nem o
 log. Os holds usam a conversão do `upgrade`; o `pausada pelo dono` (a drenagem da transição) é apagado. Uma linha no `log`
 registra o que veio. O `import` não entra no `apply`.
+Fases do plano (etapa #1705): `phases` guarda `<código>:<estado>` separados por `|`, com os estados `todo` (por fazer: só vem
+da ficha), `open` (aberta, com a sessão criada) e `ok` (mesclada no épico). Toda gravação (`Sessao.flush`) completa as linhas
+pela ficha (`fases=`): as fases dela vêm primeiro, na ordem dela, com o estado que já tinham (ou `todo`), e depois os itens
+`open` e `ok` que a ficha não traz (as `CLn`); o `todo` de uma ficha antiga sai. A linha `concluída` e a ficha ausente, vazia
+ou `?` não mudam. Se alguma linha mudou, o `queue.json` entra em `alterados:` e em `meta.unpublished`, até num `context`.
+`phase` aceita só `ok` e `open`: o `todo` não se grava à mão.
 Só biblioteca padrão. Uso: painel.py [--now ISO] <subcomando> DIR ...
 (o subcomando vem ANTES da pasta: `painel.py row <pasta> '#n' status=...`).
 """
@@ -198,6 +204,13 @@ class Sessao:
         if not meta:
             raise Erro("meta.json está vazio")
         meta[0]["updatedAt"] = now()
+        filled = False
+        for row in self.get("queue"):
+            filled = fill_phases(row) or filled
+        if filled:
+            # A ficha completou fases: a mudança entra na publicação, mesmo num `context`, que sozinho é quieto.
+            self.touch("queue")
+            self.loud = True
         text, _, items = slots_plan(self.get("queue"), meta[0])
         meta[0]["vagas"] = text
         meta[0]["vagasItens"] = items
@@ -253,6 +266,44 @@ def to_int(k, v):
 def count_phases(phases):
     parts = [p for p in phases.split("|") if p]
     return len(parts), sum(1 for p in parts if p.endswith(":ok"))
+
+
+PHASE_CODE = re.compile(r"[A-Za-z][A-Za-z0-9-]*")
+
+
+def plan_phase_codes(plan):
+    """Códigos do `fases=` da ficha, na ordem e sem repetir; None se faltar, estiver vazio, for `?` ou sem código válido."""
+    raw = plan_field(plan, "fases")
+    if raw is None or raw.strip() in ("", "?"):
+        return None
+    codes = []
+    for item in raw.split(","):
+        code = item.split(":", 1)[0].strip()
+        if PHASE_CODE.fullmatch(code) and code not in codes:
+            codes.append(code)
+    return codes or None
+
+
+def fill_phases(row):
+    """Completa `phases` pela ficha (as fases dela primeiro, `todo` onde faltam) e devolve se a linha mudou."""
+    if row.get("status") == "concluída":
+        return False
+    codes = plan_phase_codes(row.get("plan") or "")
+    if codes is None:
+        return False
+    state = {}
+    for item in (row.get("phases") or "").split("|"):
+        code, _, st = item.partition(":")
+        if item and code not in state:
+            state[code] = st  # um código repetido vale pela primeira ocorrência
+    parts = [(c, state.get(c, "todo")) for c in codes]
+    parts += [(c, st) for c, st in state.items() if c not in codes and st != "todo"]
+    phases = "|".join(c + ":" + st for c, st in parts)
+    total, done = count_phases(phases)
+    if (phases, total, done) == (row.get("phases"), row.get("phasesTotal"), row.get("phasesDone")):
+        return False
+    row["phases"], row["phasesTotal"], row["phasesDone"] = phases, total, done
+    return True
 
 
 def validate_choice(k, v, allowed):
@@ -1312,7 +1363,7 @@ def build_parser():
     sp = add("row", cmd_row, "insere ou atualiza uma linha da fila")
     sp.add_argument("issue")
     sp.add_argument("pairs", nargs="*")
-    sp = add("phase", cmd_phase, "muda o estado de fases de uma linha")
+    sp = add("phase", cmd_phase, "muda o estado de fases de uma linha (<código>=ok|open; o `todo` vem da ficha, em toda gravação)")
     sp.add_argument("issue")
     sp.add_argument("pairs", nargs="+")
     sp = add("reorder", cmd_reorder, "renumera as linhas aguardando")
