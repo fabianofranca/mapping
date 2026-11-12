@@ -1,4 +1,4 @@
-# Medida de contexto pelo transcript — 2026-11-12 (épico `epic/medida-de-contexto`, PR #0, MCP 0.36.0 sem mudança, schema v18)
+# Medida de contexto pelo transcript — 2026-11-12 (épico `epic/medida-de-contexto`, PR #1709, MCP 0.36.0 sem mudança, schema v18)
 
 ## Corrigido
 
