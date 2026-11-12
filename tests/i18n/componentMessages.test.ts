@@ -440,13 +440,21 @@ describe('catálogos component, iconsFile e origins', () => {
   });
 
   it('nenhum modelo do catálogo é órfão: o texto dele existe no parser', () => {
+    // Os erros das variáveis (`let`/`$var`) nascem em `variables.ts`, que o `parseComponent` chama.
     const sources: readonly [Readonly<Record<string, string>>, string][] = [
-      [componentMessages, 'src/model/components/parseComponent.ts'],
+      [
+        componentMessages,
+        'src/model/components/parseComponent.ts src/model/components/variables.ts',
+      ],
       [iconsFileMessages, 'src/model/components/icons.ts'],
       [originMessages, 'src/model/components/origin.ts'],
     ];
     for (const [catalog, file] of sources) {
-      const source = readFileSync(file, 'utf8').replace(/'\s*\+\s*'/g, '');
+      const source = file
+        .split(' ')
+        .map((f) => readFileSync(f, 'utf8'))
+        .join('\n')
+        .replace(/'\s*\+\s*'/g, '');
       for (const [code, template] of Object.entries(catalog)) {
         // O parser monta este com a constante `COMPONENT_FORMAT`; o caso 0 acima o produz.
         if (code === 'component.formatInvalid') continue;
