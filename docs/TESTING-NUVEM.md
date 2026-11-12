@@ -106,7 +106,7 @@ Regras desta sessão:
 2. **lista de roteiros ou de passos** do guia (ex.: "R0 e R2", "R0, R4.1 a R4.5, R6.8a a R6.11"): exatamente esses;
 3. **fases de uma etapa** (a issue da etapa e as sub-issues `step` no GitHub, lidas pelo MCP do GitHub): os passos do guia citados no "Aceite" e nos itens de cada fase, mais os que testam o que ela mudou.
 
-Nos três casos, **não peça confirmação**: monte a lista e ponha-a no começo do relato. Siga a ordem do guia; passo que depende de outro (ex.: R6.10 de R6.8a a R6.9) leva os anteriores, marcados com o mesmo achado de origem.
+Nos três casos, **não peça confirmação**: monte a lista e ponha-a no começo do relato. Siga a ordem do guia; passo que depende de outro (ex.: R6.10 de R6.8a a R6.9) leva os anteriores necessários, marcados com o mesmo achado de origem.
 
 **R0 no reteste (modo 1, achados de um relato anterior).** Execute só o **R0.1** (build id do commit) e, do resto do R0, só os passos de que a faixa e a Reprodução dos achados dependem; não repita o R0 inteiro. Nos modos 2 e 3 (lista de roteiros/passos e fases de uma etapa) e na rodada completa, o **R0 inteiro** continua sendo o primeiro a rodar. **Em grupo ("grupo k de n"):** o grupo 1 roda o **R0 inteiro**; os grupos 2 em diante rodam só o **R0.1** e os passos do R0 de que os roteiros do grupo dependem, pela mesma regra do reteste (ver "Rodada dirigida em grupos").
 
@@ -143,7 +143,7 @@ São 5 blocos por decisão do dono (2026-11-09). A passada visual fica no bloco 
 
 Um bloco longo vira "Rodada completa — bloco k de 5 · Parte i de n" (comentários acima de 65 mil caracteres). O "modo completo" sem bloco continua valendo: uma sessão roda tudo.
 
-**Contexto até 300 mil.** Em toda sessão do testador, o contexto final da sessão principal (`get_session`) fica abaixo de **300 mil**; quem o garante é ela, com os subagentes por lote. Ela mede com `node scripts/ci/contextUsage.mjs` (o `mil`) antes de entregar cada lote a um subagente e antes do aviso, e registra em "O que atrapalhou" `Contexto por lote: <lote> <mil>k; …; antes do aviso <mil>k` (`sem medida (<motivo>)` no código 1). O excesso é registrado por quem coordena (`log` da fila e `roadmap` "Teto de contexto do testador"), sem segurar a etapa, sem refazer a rodada e sem chamar o dono.
+**Contexto até 300 mil.** Em toda sessão do testador, o contexto final da sessão principal (`get_session`) fica abaixo de **300 mil**; quem o garante é ela, com os subagentes por lote. Ela mede com `node scripts/ci/contextUsage.mjs` (o `mil`) antes de entregar cada lote a um subagente e antes do aviso, e registra em "O que atrapalhou" `Contexto por lote: <lote> <mil>k; …; antes do aviso <mil>k` (ou `sem medida (<motivo>)`). O excesso é registrado por quem coordena (`log` da fila e `roadmap` "Teto de contexto do testador"), sem segurar a etapa, sem refazer a rodada e sem chamar o dono.
 
 ## Rodada dirigida em grupos
 
@@ -160,7 +160,7 @@ O corpo (cadeias, modo grupo e retestes juntos): `node scripts/testing/cloud.mjs
 
 ## Relato
 
-**Escreva o relato a cada roteiro concluído, não só no fim.** Ao terminar o R0, crie o `relato.md` na pasta de trabalho com o cabeçalho e os passos do R0; a cada roteiro seguinte, acrescente os passos e os achados dele (template da seção 10 do guia). Se a rodada parar no meio, o motivo vai no **Resumo**.
+**Escreva o relato a cada roteiro concluído, não só no fim.** Ao terminar o R0, crie o `relato.md` na pasta de trabalho com o cabeçalho e os passos do R0; a cada roteiro seguinte, acrescente os passos e os achados dele e grave o arquivo (template da seção 10 do guia). Se a rodada parar no meio, o motivo vai no **Resumo**.
 
 O `relato.md` abre com `Modo: dirigido, grupo k de n (<roteiros>)` no modo de grupo e com `Modo: completo, bloco k de 5 (<roteiros>)` no de bloco; os achados são `k.1`, `k.2`…. O `relato.md` leva o cabeçalho inteiro (inclusive o **Tempo por roteiro**), em **Ferramenta**: "Claude Code na nuvem (Xvfb, Playwright por CDP, xdotool, AT-SPI)" e o MCP por stdio; o **Resumo** (obrigatório), os passos, os achados com a severidade da escala do guia, as **Observações (sem severidade)** e "O que atrapalhou", inclusive o que atrapalhou **você** como testador. Cada ❌ leva o bloco **Reprodução** ("Conferir e registrar"), que a correção repete.
 

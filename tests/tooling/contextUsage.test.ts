@@ -171,6 +171,18 @@ describe('CM1 — contextUsage.mjs: a CLI (decisões 1 e 3)', () => {
     });
   });
 
+  it('o mesmo id em duas pastas de projects/: vale o transcript mais recente', () => {
+    const { config, file } = transcript('dup', [main(10_000)]);
+    const outra = join(config, 'projects', 'q');
+    mkdirSync(outra, { recursive: true });
+    const novo = join(outra, 'dup.jsonl');
+    writeFileSync(novo, main(20_000) + '\n');
+    utimesSync(file, new Date('2026-01-01T00:00:00Z'), new Date('2026-01-01T00:00:00Z'));
+    utimesSync(novo, new Date('2026-01-02T00:00:00Z'), new Date('2026-01-02T00:00:00Z'));
+    const r = cli([], { CLAUDE_CONFIG_DIR: config, CLAUDE_CODE_SESSION_ID: 'dup' });
+    expect(r.values).toMatchObject({ contexto: '20000', fonte: 'sessao', arquivo: novo });
+  });
+
   it('--arquivo lê esse arquivo, com fonte=arquivo', () => {
     const { file } = transcript('qualquer', [main(33_333)]);
     const r = cli(['--arquivo', file], {});

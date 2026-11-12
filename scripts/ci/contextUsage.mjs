@@ -92,8 +92,12 @@ export function locate({ config, sessionId, arquivo }) {
   const all = transcripts(config);
   if (sessionId) {
     const wanted = `${sessionId}.jsonl`;
-    const path = all.find((p) => p.endsWith(`/${wanted}`) || p.endsWith(`\\${wanted}`));
-    if (path) return { path, fonte: 'sessao' };
+    const matches = all.filter(
+      (p) => p.endsWith(`/${wanted}`) || p.endsWith(`\\${wanted}`),
+    );
+    // O mesmo id pode existir em mais de uma pasta (sessão retomada de outro cwd): vale o mais novo.
+    matches.sort((a, b) => mtime(b) - mtime(a));
+    if (matches.length > 0) return { path: matches[0], fonte: 'sessao' };
     return { motivo: `transcript ${wanted} não achado em ${join(config, 'projects')}` };
   }
   if (all.length === 0)
