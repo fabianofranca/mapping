@@ -137,6 +137,8 @@ describe('dicionários', () => {
       'typed.requiredMark',
       // "{value}x": só parâmetro e o símbolo da escala (3x), iguais nos dois idiomas (densidade).
       'density.value',
+      // A seta entre o parâmetro e o valor do código é um símbolo, igual nos dois idiomas.
+      'catalog.page.codeParamsArrow',
       // O nome do produto é "Mapping" nos dois idiomas.
       'app.title',
       'editor.appName',

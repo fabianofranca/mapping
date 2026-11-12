@@ -63,6 +63,12 @@ const spec = (withFonts: boolean) => ({
           fields: [],
         },
         {
+          id: 'botao',
+          name: 'Botão',
+          component: 'components/botao.json',
+          fields: [{ key: 'label', type: 'string', default: 'Salvar' }],
+        },
+        {
           id: 'face',
           name: 'Rótulo',
           component: 'components/face.json',
@@ -117,6 +123,27 @@ const chipComponent = {
   },
 };
 
+/** A #1631: o rótulo de um botão com padding 24 nas laterais (58 de largura deixam 10 para a palavra). */
+const botaoComponent = {
+  format: 'mapping-component',
+  formatVersion: 4,
+  id: 'botao',
+  name: 'botao',
+  size: { width: 96, height: 40 },
+  template: {
+    type: 'frame',
+    name: 'botao',
+    layout: { type: 'row', padding: [0, 24] },
+    children: [
+      {
+        ...textNode(),
+        name: 'rótulo',
+        text: { $field: 'label', default: 'Salvar' },
+      },
+    ],
+  },
+};
+
 interface Workspace {
   base: string;
   client: Client;
@@ -132,6 +159,7 @@ async function workspace(withFonts: boolean): Promise<Workspace> {
   writeFileSync(join(lib, 'lib.spec.json'), JSON.stringify(spec(withFonts)));
   writeFileSync(join(lib, 'components', 'btn.json'), JSON.stringify(component('btn')));
   writeFileSync(join(lib, 'components', 'chip.json'), JSON.stringify(chipComponent));
+  writeFileSync(join(lib, 'components', 'botao.json'), JSON.stringify(botaoComponent));
   writeFileSync(
     join(lib, 'components', 'face.json'),
     JSON.stringify(component('face', { $token: 'face' })),
@@ -366,6 +394,26 @@ describe('plan_changes: aviso no pai none (#1093)', () => {
       SCREEN,
       create({ x: 10, y: 10, width: 87, height: 40 }, 'lib/chip'),
     ]);
+    expect(overflows(fits)).toEqual([]);
+  });
+});
+
+describe('plan_changes: palavra mais larga que a caixa (#1631)', () => {
+  const botao = (width: number) =>
+    create({ x: 10, y: 10, width, height: 40 }, 'lib/botao');
+
+  it('botão "Salvar" em 58×40 devolve component-overflow de texto no rótulo; em 96×40 nada', async () => {
+    const small = await plan(aprox, [SCREEN, botao(58)]);
+    expect(small.data.errors).toBeUndefined();
+    const items = overflows(small);
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({
+      code: 'component-overflow',
+      kind: 'text',
+      node: 'rótulo',
+    });
+    expect(items[0]!.missing).toBeGreaterThan(0);
+    const fits = await plan(aprox, [SCREEN, botao(96)]);
     expect(overflows(fits)).toEqual([]);
   });
 });

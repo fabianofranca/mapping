@@ -9,6 +9,7 @@ import type {
 const KEYS: Record<RenderWarningCode, TranslationKey> = {
   'empty-group-shadow': 'catalog.drawWarning.empty-group-shadow',
   'inner-shadow': 'catalog.drawWarning.inner-shadow',
+  'extra-shadows': 'catalog.drawWarning.extra-shadows',
   'unknown-node': 'catalog.drawWarning.unknown-node',
   'image-without-pixels': 'catalog.drawWarning.image-without-pixels',
   'image-decode-failed': 'catalog.drawWarning.image-decode-failed',

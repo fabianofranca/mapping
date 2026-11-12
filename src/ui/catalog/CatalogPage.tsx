@@ -225,6 +225,9 @@ function CodeSection({
                   <div key={key}>
                     <dt>
                       <code>{key}</code>
+                      <span class="catalog-kv-arrow" aria-hidden="true">
+                        {t('catalog.page.codeParamsArrow')}
+                      </span>
                     </dt>
                     <dd>
                       <code>{value}</code>

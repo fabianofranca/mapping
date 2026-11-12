@@ -4,8 +4,19 @@ name: 'CI: reexecução de runner abandonado'
 # lista de jobs da execução; ex.: runs 42672468793 e 42672325637), roda de novo os jobs
 # falhos/ausentes, uma vez, sem sessão nem dono no meio (etapa #1325). A regra "morreu por
 # runner abandonado" está em `scripts/ci/ciRerun.mjs` (testada em `tests/tooling/ciRerun.test.ts`):
-# falha legítima (teste, lint, build, timeout) não é reexecutada, porque a fase precisa
-# corrigir o código de qualquer forma.
+# falha legítima (teste, lint, build) não é reexecutada, porque a fase precisa corrigir o código
+# de qualquer forma. O timeout tem dois casos:
+#   - No timeout sozinho, o job termina `cancelled` e a execução do CI também (não `failure`):
+#     este workflow nem roda, pulado pelo `if:` do job `rerun`.
+#   - Numa execução `failure` por outro motivo, o job `cancelled` conta como falha legítima no
+#     `decide`, como confere o teste "job cancelado conta como falha legítima" de
+#     `tests/tooling/ciRerun.test.ts`.
+#
+# A demonstração real foi feita na etapa #1532, com os PRs #1586 e #1587 (registro em
+# https://github.com/fabianofranca/mapping/issues/1532#issuecomment-6787509092). Para simular o
+# abandono num branch descartável, além de tirar o job `epic`, é preciso fazer o `check` falhar
+# só na tentativa 1 e trocar o vitest dos `test`, do `coverage` e do `e2e` por `echo`, porque os
+# testes de `tests/tooling` leem o `ci.yml` do branch.
 #
 # Só a tentativa 1 (`run_attempt == 1`): uma reexecução por commit, nunca em laço. A tentativa 2
 # nunca dispara outra; se houver uma segunda reexecução, ela é da fase. Fork e Dependabot ficam
