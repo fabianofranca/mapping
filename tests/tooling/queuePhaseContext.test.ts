@@ -33,11 +33,14 @@ describe('CX1 — "Para a sessão da fase" do docs/FLOW.md, sub-item do item 3',
     expect(phase).toContain('\n9. Defeito achado no caminho');
   });
 
-  it('o teto é 300 mil, lidos do get_session sem session_id (context_usage.used_tokens)', () => {
+  it('o teto é 300 mil, medido pelo scripts/ci/contextUsage.mjs (não pelo used_tokens do get_session)', () => {
     expect(teto).toContain('300 mil');
     expect(teto).toContain('300.000');
+    expect(teto).toContain('`node scripts/ci/contextUsage.mjs`');
+    expect(teto).toContain('`acima=true`');
     expect(teto).toContain('`get_session` sem `session_id`');
     expect(teto).toContain('`external_metadata.context_usage.used_tokens`');
+    expect(teto).toMatch(/só muda no fim de um turno/);
   });
 
   it('a conferência é antes de tarefa nova de subagente e antes dos gates do item 5', () => {
