@@ -1,4 +1,4 @@
-# Orçamentos de layout estáveis — 2026-11-12 (épico `epic/orcamentos-layout-estaveis`, PR #0, MCP 0.37.0 sem mudança, schema v19)
+# Orçamentos de layout estáveis — 2026-11-12 (épico `epic/orcamentos-layout-estaveis`, PR #1720, MCP 0.37.0 sem mudança, schema v19)
 
 ## Alterado
 
