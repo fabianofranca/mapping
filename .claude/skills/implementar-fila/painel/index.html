@@ -177,6 +177,9 @@
       gap: 4px 12px;
       margin: 8px 0;
     }
+    #mp .legenda[hidden] {
+      display: none;
+    }
     #mp .legenda li {
       display: inline-flex;
       align-items: center;
@@ -647,14 +650,12 @@
         if (text != null) e.textContent = text;
         return e;
       };
-      let grafo = { nos: [], setas: [], sel: null };
+      let grafo = { nos: [], setas: [], sel: null, onda: new Map() };
       const arrowsOf = (issue) =>
         grafo.setas.filter((a) => a.de === issue || a.para === issue);
-      const ondaOf = (issue) => {
-        const n = grafo.nos.find((x) => x.issue === issue);
-        return n ? +n.onda : NaN;
-      };
-      const isNear = (a) => ondaOf(a.para) - ondaOf(a.de) === 1;
+      // A mesma onda vale para a faixa e para as setas: ausente ou não numérica é a 0 ("Agora").
+      const ondaDe = (n) => Number(n.onda) || 0;
+      const isNear = (a) => grafo.onda.get(a.para) - grafo.onda.get(a.de) === 1;
       const progress = (n) => {
         const total = +n.total || 0;
         if (!total) return '';
@@ -747,8 +748,9 @@
         defs.appendChild(mk);
         svg.appendChild(defs);
         const base = host.getBoundingClientRect();
+        const cards = Array.from(host.querySelectorAll('button[data-issue]'));
         const box = (issue) => {
-          const c = host.querySelector('button[data-issue="' + issue + '"]');
+          const c = cards.find((b) => b.dataset.issue === issue);
           if (!c) return null;
           const r = c.getBoundingClientRect();
           return { x: r.left - base.left, y: r.top - base.top, w: r.width, h: r.height };
@@ -822,8 +824,12 @@
           nos,
           setas: setas.filter((a) => issues.has(a.de) && issues.has(a.para)),
           sel: issues.has(grafo.sel) ? grafo.sel : null,
+          onda: new Map(nos.map((n) => [n.issue, ondaDe(n)])),
         };
         const host = document.getElementById('mp-grafo');
+        const focused = host.contains(document.activeElement)
+          ? document.activeElement.dataset.issue
+          : null;
         const ordem = document.getElementById('mp-grafo-ordem');
         const leg = document.getElementById('mp-grafo-legenda');
         host.replaceChildren();
@@ -849,21 +855,24 @@
           leg.appendChild(li);
         }
         leg.hidden = false;
-        const ondas = Array.from(new Set(nos.map((n) => +n.onda || 0))).sort(
-          (a, b) => a - b,
-        );
+        const ondas = Array.from(new Set(nos.map(ondaDe))).sort((a, b) => a - b);
         for (const w of ondas) {
           const f = el('div', 'faixa');
           f.dataset.onda = String(w);
           f.appendChild(el('div', 'faixa-rot', w === 0 ? 'Agora' : 'Onda ' + w));
           const row = el('div', 'faixa-nos');
           nos
-            .filter((n) => (+n.onda || 0) === w)
+            .filter((n) => ondaDe(n) === w)
             .forEach((n) => row.appendChild(buildCard(n)));
           f.appendChild(row);
           host.appendChild(f);
         }
         markSelection();
+        // Os cards são refeitos a cada leitura: devolve o foco do teclado ao que o tinha.
+        const back = Array.from(host.querySelectorAll('button')).find(
+          (b) => b.dataset.issue === focused,
+        );
+        if (back) back.focus();
       }
       // As posições vêm do layout: redesenha só as setas quando a janela ou o grafo mudam de tamanho.
       window.addEventListener('resize', drawArrows);

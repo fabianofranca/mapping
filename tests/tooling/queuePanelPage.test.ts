@@ -13,6 +13,8 @@ type DataResult = { status: 'ok'; data: Row[] } | { status: 'failed'; message: s
 interface Panel {
   data: (id: string) => DataResult;
   render: () => void;
+  /** Troca o `meta` na mesma página (a seleção do grafo vive nela); o `render` o relê. */
+  setMeta: (meta: Row) => void;
 }
 
 /** Monta a página no `document` e roda o `<script>` dela com um `dash` falso. */
@@ -44,7 +46,13 @@ function loadPanel(meta: Row, queue: Row[] = []): Panel {
     },
   };
   new Function('dash', 'setInterval', script)(dash, () => 0);
-  return { data, render: () => onData() };
+  return {
+    data,
+    render: () => onData(),
+    setMeta: (m) => {
+      datasets.meta = [m];
+    },
+  };
 }
 
 const text = (selector: string) => document.querySelector(selector)?.textContent;
@@ -488,6 +496,62 @@ describe.each(FORMAS)('página do painel da fila: grafo (GF2), %s', (_forma, wra
     card('#6')?.click();
     panel.render();
     expect(card('#6')?.getAttribute('aria-pressed')).toBe('true');
+
+    expect(document.querySelector<HTMLElement>('#mp-grafo-detalhe')?.hidden).toBe(false);
+    panel.setMeta({
+      grafoNos: wrap(NOS.filter((n) => n.issue !== '#6')),
+      grafoSetas: wrap(SETAS),
+    });
+    panel.render();
+    expect(card('#6')).toBeNull();
+    expect(document.querySelector<HTMLElement>('#mp-grafo-detalhe')?.hidden).toBe(true);
+    expect(setas().every((s) => s.para !== '#6')).toBe(true);
+  });
+
+  it('a nova leitura devolve o foco ao card que o tinha', () => {
+    const panel = montar();
+    card('#4')?.focus();
+    panel.render();
+    expect(document.activeElement).toBe(card('#4'));
+  });
+
+  it('id com aspas ou colchete não derruba a página e o resto do painel é preenchido', () => {
+    const estranho = '#9"]x';
+    const panel = loadPanel({
+      sessions: SESSIONS,
+      grafoNos: wrap([...NOS, no({ issue: estranho, onda: 4 })]),
+      grafoSetas: wrap([...SETAS, { de: '#6', para: estranho, tipo: 'dep' }]),
+    });
+    expect(() => panel.render()).not.toThrow();
+    expect(text('#mp-custo-total')).toBe('US$ 4.25 em 3 sessões');
+    expect(setas()).toContainEqual({
+      de: '#6',
+      para: estranho,
+      tipo: 'dep',
+      longa: false,
+    });
+  });
+
+  it('nó sem onda numérica cai em "Agora" e conta como onda 0 também para as setas', () => {
+    const nos = [
+      no({ issue: '#1', onda: 0, estado: 'rodando' }),
+      { ...no({ issue: '#2', onda: 1 }), onda: undefined } as unknown as No,
+      no({ issue: '#3', onda: 1 }),
+    ];
+    const panel = loadPanel({
+      grafoNos: wrap(nos),
+      grafoSetas: wrap([
+        { de: '#1', para: '#3', tipo: 'dep' },
+        { de: '#2', para: '#3', tipo: 'dep' },
+      ]),
+    });
+    panel.render();
+    expect(faixas()).toEqual([
+      { rotulo: 'Agora', issues: ['#1', '#2'] },
+      { rotulo: 'Onda 1', issues: ['#3'] },
+    ]);
+    expect(setas().map((s) => s.de)).toEqual(['#1', '#2']);
+    expect(card('#3')?.querySelector('.espera')).toBeNull();
   });
 });
 
