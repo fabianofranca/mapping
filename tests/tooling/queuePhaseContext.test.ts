@@ -4,8 +4,11 @@
 // passagem na sub-issue, o coordenador (ou o orquestrador de uma etapa só) cria a sucessora e
 // arquiva a anterior, e a quinta sessão não troca (PP2, etapa #1595: linha de retomada numa fonte
 // só, squash do WIP e até 5 sessões).
-import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { scriptMeasureProblems } from '../support/contextMeasure';
 import { between, section } from '../support/textSlice';
 
@@ -274,4 +277,209 @@ describe('CX1 — skill implementar-fila, "3. Por etapa"', () => {
     expect(troca).toContain('`meta.sessions`');
     expect(troca).toContain('já tem uma entrada `label=<código>` mais nova');
   });
+});
+
+// PP3 (etapa #1595, decisão 8): as cópias do texto da troca por contexto se comparam entre si
+// (números e começo do pedido), e os comandos do painel que o skill manda rodar rodam de verdade.
+const limitesTexto = (() => {
+  const passo = section(flow, '## Orquestrador — passo a passo');
+  return passo.slice(passo.indexOf('**Limites:**'));
+})();
+const lugares: Array<[string, string]> = [
+  ['item 3 (Teto de contexto da fase)', teto],
+  ['"Limites" do FLOW', limitesTexto],
+  ['skill (Fase que passa a vez por contexto)', troca],
+];
+
+interface Numeros {
+  trocas: number[];
+  sessoes: number[];
+  kDeN: number[];
+  ultima: number[];
+}
+
+/** Os números da troca num trecho: máximo de trocas, total de sessões, `<k> de N` e a `N de N` da última. */
+function numeros(texto: string): Numeros {
+  const todos = (re: RegExp, grupo = 1): number[] => [
+    ...new Set([...texto.matchAll(re)].map((m) => Number(m[grupo]))),
+  ];
+  return {
+    trocas: todos(/no m[aá]ximo (\d+) trocas por fase/gi),
+    sessoes: todos(/\((\d+) sessões\)/g),
+    kDeN: todos(/<k(?:-1)?>`? de (\d+)/g),
+    ultima: [
+      ...new Set(
+        [...texto.matchAll(/`(\d+) de (\d+)`/g)].flatMap((m) => [
+          Number(m[1]),
+          Number(m[2]),
+        ]),
+      ),
+    ],
+  };
+}
+
+describe('PP3 — cópias do texto da troca por contexto comparadas (decisão 8)', () => {
+  it('os números da troca (trocas, sessões, <k> de N) são os mesmos nos três lugares', () => {
+    const achados = lugares.map(([nome, texto]) => ({ nome, ...numeros(texto) }));
+    for (const a of achados) {
+      // Cada lugar diz o máximo de trocas uma vez e o `<k> de N` com um N só.
+      expect(a.trocas, `${a.nome}: máximo de trocas`).toHaveLength(1);
+      expect(a.kDeN, `${a.nome}: <k> de N`).toHaveLength(1);
+    }
+    const [ref, ...outros] = achados;
+    for (const o of outros) {
+      expect(o.trocas, `${o.nome} x ${ref!.nome}: trocas`).toEqual(ref!.trocas);
+      expect(o.kDeN, `${o.nome} x ${ref!.nome}: <k> de N`).toEqual(ref!.kDeN);
+    }
+    // O total de sessões, onde o texto o diz, é o mesmo N, e N = trocas + 1.
+    const [trocas] = ref!.trocas;
+    const [n] = ref!.kDeN;
+    expect(n).toBe(trocas! + 1);
+    for (const a of achados) {
+      for (const total of [...a.sessoes, ...a.ultima])
+        expect(total, `${a.nome}: total de sessões`).toBe(n);
+    }
+    expect(achados.some((a) => a.sessoes.length > 0)).toBe(true);
+    expect(achados.some((a) => a.ultima.length > 0)).toBe(true);
+  });
+
+  it('o pedido de troca tem o mesmo começo no item 3, no "Limites" e no skill', () => {
+    const comeco = (texto: string): string[] => [
+      ...new Set(
+        [
+          ...texto.matchAll(
+            /Troca de sessão da fase <código>: contexto <n> mil; passagem em/g,
+          ),
+        ].map((m) => m[0]),
+      ),
+    ];
+    const achados = lugares.map(([nome, texto]) => ({ nome, comeco: comeco(texto) }));
+    for (const a of achados) expect(a.comeco, a.nome).toHaveLength(1);
+    const [ref, ...outros] = achados;
+    for (const o of outros)
+      expect(o.comeco, `${o.nome} x ${ref!.nome}`).toEqual(ref!.comeco);
+  });
+
+  it('a linha de retomada tem uma fonte só: o trecho entre crases do item 3, uma vez em FLOW + skill', () => {
+    const fontes = [...(flow + skill).matchAll(/`(Retomada por contexto \([^`]*)`/g)];
+    expect(fontes).toHaveLength(1);
+    expect(ocorrencias(flow + skill, 'Retomada por contexto (')).toBe(1);
+    expect(teto).toContain(fontes[0]![0]);
+    expect(ocorrencias(skill, 'Retomada por contexto (')).toBe(0);
+    expect(ocorrencias(limitesTexto, 'Retomada por contexto (')).toBe(0);
+  });
+});
+
+describe('PP3 — comandos do painel do skill rodados num painel temporário (decisão 8)', () => {
+  const SCRIPT = '.claude/skills/implementar-fila/painel/painel.py';
+  const AGORA = '2026-11-12T10:00:00Z';
+  const ANTES = '2026-11-12T09:00:00Z';
+  const TEMPO_SUBPROCESSOS = 30_000;
+  const custo = between(porEtapa, '- **Custo:**', '**Sentinela:**');
+  let dir = '';
+
+  const painel = (agora: string, ...args: string[]) => {
+    const r = spawnSync('python3', [SCRIPT, '--now', agora, ...args], {
+      encoding: 'utf8',
+    });
+    expect(r.status, `${args.join(' ')}: ${r.stderr}`).toBe(0);
+    return r.stdout;
+  };
+  const lote = (agora: string, texto: string) => {
+    const r = spawnSync('python3', [SCRIPT, '--now', agora, 'apply', dir, '-'], {
+      encoding: 'utf8',
+      input: texto,
+    });
+    expect(r.status, r.stderr).toBe(0);
+  };
+  const json = (nome: string): Array<Record<string, unknown>> =>
+    JSON.parse(readFileSync(path.join(dir, `${nome}.json`), 'utf8')) as Array<
+      Record<string, unknown>
+    >;
+
+  /** O comando entre crases do skill que começa por `prefixo`, sem o `painel.py ` do começo. */
+  function comando(texto: string, prefixo: string): string {
+    const achou = [...texto.matchAll(/`([^`]+)`/g)]
+      .map((m) => m[1]!.replace(/^painel\.py /, ''))
+      .find((c) => c.startsWith(prefixo));
+    if (!achou) throw new Error(`comando não achado no skill: ${prefixo}`);
+    return achou;
+  }
+
+  /** Troca os marcadores do skill por valores e tira a `<pasta>` (o `apply` não a leva). */
+  function preenche(cmd: string, kind: string): string {
+    return cmd
+      .replace('<pasta> ', '')
+      .replace("'#n'", "'#10'")
+      .replace('<novo>', 'session_nova')
+      .replace('<id anterior>', 'session_velha')
+      .replace('<id>', 'session_velha')
+      .replace('<código>', 'PP3')
+      .replace('kind=fase', `kind=${kind}`)
+      .replace('usd=…', 'usd=1.5')
+      .replace('ctx=…', 'ctx=250000')
+      .replace('model=…', 'model=claude-sonnet-5-5')
+      .replace('effort=…', 'effort=medium');
+  }
+
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'painel-troca-'));
+    painel(ANTES, 'init', dir);
+    painel(ANTES, 'start', dir);
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it.each([
+    ['fase', 'fase'],
+    ['correção', 'correção'],
+  ])(
+    'a troca da filha (kind=%s) num apply só: child novo, sessions com os dois ids, meta.sessions com o mesmo label e o custo da anterior',
+    (_nome, kind) => {
+      painel(
+        ANTES,
+        'row',
+        dir,
+        '#10',
+        'title=Etapa dez',
+        'status=em andamento',
+        'child=session_velha',
+        'childAt=now',
+        'wait=pergunta',
+      );
+      painel(ANTES, 'session', dir, '#10', 'session_velha', `kind=${kind}`, 'label=PP3');
+      // A linha antes da troca: filha velha, com `wait`.
+      expect(json('queue')[0]).toMatchObject({
+        child: 'session_velha',
+        wait: 'pergunta',
+      });
+
+      const row = preenche(comando(troca, "row '#n' child="), kind);
+      const sessao = preenche(comando(troca, 'session <pasta> '), kind);
+      const cost = preenche(comando(custo, 'cost <pasta> <id>'), kind);
+      expect(sessao).toContain(`kind=${kind}`);
+      lote(AGORA, [row, sessao, cost].join('\n'));
+
+      const linha = json('queue')[0]!;
+      expect(linha.child).toBe('session_nova');
+      expect(linha.childAt).toBe(AGORA);
+      expect(linha.wait).toBe('');
+      expect(String(linha.sessions).split(' ').sort()).toEqual([
+        'session_nova',
+        'session_velha',
+      ]);
+
+      const sessoes = (json('meta')[0]!.sessions ?? []) as Array<Record<string, unknown>>;
+      const doCodigo = sessoes.filter((e) => e.label === 'PP3');
+      // A contagem das entradas com o label é o <k> da regra: a sucessora é a 2ª sessão.
+      expect(doCodigo.map((e) => e.id).sort()).toEqual(['session_nova', 'session_velha']);
+      expect(doCodigo.map((e) => e.kind)).toEqual([kind, kind]);
+      const velha = doCodigo.find((e) => e.id === 'session_velha')!;
+      expect(velha.cost).toMatchObject({ usd: 1.5, ctx: 250000 });
+      expect(doCodigo.find((e) => e.id === 'session_nova')!.cost).toBeUndefined();
+    },
+    TEMPO_SUBPROCESSOS,
+  );
 });
