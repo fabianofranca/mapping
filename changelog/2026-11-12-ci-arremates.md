@@ -1,4 +1,4 @@
-# Arremates do CI — [Não lançado] (épico `epic/ci-arremates`, PR #0, MCP sem mudança, schema v19)
+# Arremates do CI — 2026-11-12 (épico `epic/ci-arremates`, PR #1753, MCP sem mudança, schema v19)
 
 ## Alterado
 

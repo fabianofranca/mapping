@@ -1,4 +1,4 @@
-# Arremates do CI — [Não lançado] (épico `epic/ci-arremates`)
+# Arremates do CI — 2026-11-12 (épico `epic/ci-arremates`)
 
 ## Pendências
 
