@@ -510,15 +510,16 @@ describe('M5 grupo B — carousel', () => {
     expect(itemsOf(d).map((n) => absOf(d, n).width)).toEqual([140, 140, 360 - 304]);
   });
 
-  it('centered-hero: item grande de 232 (360 - 2 x 56 de itens pequenos - 2 x 8) com o espaço do item pequeno antes do primeiro (56 + 8)', () => {
+  it('centered-hero: item grande de 264 (360 - 2 x 40 de itens pequenos - 2 x 8) com o espaço do item pequeno antes do primeiro (40 + 8), como o Compose sem maxItemWidth', () => {
+    // #1504: o fit do Arrangement (Arrangement.kt, 198 a 206) encolhe os pequenos até o mínimo de 40
     const d = both(
       'carousel',
       withItems({ style: 'centered-hero', itemSpacing: 8 }),
     ).light;
     const boxes = itemsOf(d).map((n) => absOf(d, n));
-    expect(boxes[0]!.width).toBe(360 - 2 * 56 - 2 * 8);
-    expect(boxes[0]!.x).toBe(56 + 8);
-    expect(boxes[1]!.x).toBe(56 + 8 + 232 + 8);
+    expect(boxes[0]!.width).toBe(360 - 2 * 40 - 2 * 8);
+    expect(boxes[0]!.x).toBe(40 + 8);
+    expect(boxes[1]!.x).toBe(40 + 8 + 264 + 8);
   });
 
   it('rótulo sobre o item: label-large em cor fixa nos dois modos, sobre o véu em degradê de scrim com alpha 0 a 0,32 (ScrimTokens.ContainerOpacity)', () => {

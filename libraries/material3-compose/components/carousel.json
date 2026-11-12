@@ -39,80 +39,6 @@
     "type": "frame",
     "name": "carousel",
     "let": {
-      "heroRight": {
-        "$sub": [
-          {
-            "$size": "width"
-          },
-          {
-            "$add": [
-              {
-                "$if": {
-                  "$and": [
-                    {
-                      "$gte": [
-                        {
-                          "$rows": "items"
-                        },
-                        3
-                      ]
-                    },
-                    {
-                      "$gte": [
-                        {
-                          "$size": "width"
-                        },
-                        130
-                      ]
-                    }
-                  ]
-                },
-                "then": {
-                  "$add": [
-                    {
-                      "$clamp": [
-                        {
-                          "$div": [
-                            {
-                              "$size": "width"
-                            },
-                            3
-                          ]
-                        },
-                        40,
-                        56
-                      ]
-                    },
-                    {
-                      "$field": "itemSpacing",
-                      "default": 8
-                    }
-                  ]
-                },
-                "else": 0
-              },
-              {
-                "$mul": [
-                  {
-                    "$field": "$index"
-                  },
-                  {
-                    "$add": [
-                      {
-                        "$var": "heroWidth"
-                      },
-                      {
-                        "$field": "itemSpacing",
-                        "default": 8
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      },
       "smallWidth": {
         "$clamp": [
           {
@@ -197,85 +123,6 @@
             "default": 8
           }
         ]
-      },
-      "heroWidth": {
-        "$if": {
-          "$gte": [
-            {
-              "$size": "width"
-            },
-            {
-              "$add": [
-                {
-                  "$mul": [
-                    40,
-                    {
-                      "$if": {
-                        "$gte": [
-                          {
-                            "$rows": "items"
-                          },
-                          3
-                        ]
-                      },
-                      "then": 2,
-                      "else": 1
-                    }
-                  ]
-                },
-                50
-              ]
-            }
-          ]
-        },
-        "then": {
-          "$sub": [
-            {
-              "$size": "width"
-            },
-            {
-              "$mul": [
-                {
-                  "$if": {
-                    "$gte": [
-                      {
-                        "$rows": "items"
-                      },
-                      3
-                    ]
-                  },
-                  "then": 2,
-                  "else": 1
-                },
-                {
-                  "$add": [
-                    {
-                      "$field": "itemSpacing",
-                      "default": 8
-                    },
-                    {
-                      "$clamp": [
-                        {
-                          "$div": [
-                            {
-                              "$size": "width"
-                            },
-                            3
-                          ]
-                        },
-                        40,
-                        56
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        "else": {
-          "$size": "width"
-        }
       },
       "remainderLarge": {
         "$gte": [
@@ -601,6 +448,130 @@
             }
           }
         ]
+      },
+      "heroSmallCount": {
+        "$if": {
+          "$gte": [
+            {
+              "$rows": "items"
+            },
+            3
+          ]
+        },
+        "then": 2,
+        "else": 1
+      },
+      "heroStart": {
+        "$if": {
+          "$and": [
+            {
+              "$gte": [
+                {
+                  "$rows": "items"
+                },
+                3
+              ]
+            },
+            {
+              "$gte": [
+                {
+                  "$size": "width"
+                },
+                130
+              ]
+            }
+          ]
+        },
+        "then": {
+          "$add": [
+            40,
+            {
+              "$field": "itemSpacing",
+              "default": 8
+            }
+          ]
+        },
+        "else": 0
+      },
+      "heroWidth": {
+        "$if": {
+          "$gte": [
+            {
+              "$size": "width"
+            },
+            {
+              "$add": [
+                {
+                  "$mul": [
+                    40,
+                    {
+                      "$var": "heroSmallCount"
+                    }
+                  ]
+                },
+                50
+              ]
+            }
+          ]
+        },
+        "then": {
+          "$sub": [
+            {
+              "$size": "width"
+            },
+            {
+              "$mul": [
+                {
+                  "$var": "heroSmallCount"
+                },
+                {
+                  "$add": [
+                    {
+                      "$field": "itemSpacing",
+                      "default": 8
+                    },
+                    40
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "else": {
+          "$size": "width"
+        }
+      },
+      "heroRight": {
+        "$sub": [
+          {
+            "$size": "width"
+          },
+          {
+            "$add": [
+              {
+                "$var": "heroStart"
+              },
+              {
+                "$mul": [
+                  {
+                    "$field": "$index"
+                  },
+                  {
+                    "$add": [
+                      {
+                        "$var": "heroWidth"
+                      },
+                      {
+                        "$field": "itemSpacing",
+                        "default": 8
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       }
     },
     "layout": {
@@ -624,49 +595,7 @@
             "type": "frame",
             "name": "recuo",
             "width": {
-              "$if": {
-                "$and": [
-                  {
-                    "$gte": [
-                      {
-                        "$rows": "items"
-                      },
-                      3
-                    ]
-                  },
-                  {
-                    "$gte": [
-                      {
-                        "$size": "width"
-                      },
-                      130
-                    ]
-                  }
-                ]
-              },
-              "then": {
-                "$add": [
-                  {
-                    "$clamp": [
-                      {
-                        "$div": [
-                          {
-                            "$size": "width"
-                          },
-                          3
-                        ]
-                      },
-                      40,
-                      56
-                    ]
-                  },
-                  {
-                    "$field": "itemSpacing",
-                    "default": 8
-                  }
-                ]
-              },
-              "else": 0
+              "$var": "heroStart"
             },
             "layout": {
               "type": "none"
