@@ -1049,6 +1049,7 @@ ROUTE_FILE = "docs/TESTING.md"  # comparado por âncora (roteiro)
 SECTION_FILES = ("docs/FLOW.md", "docs/PROCESS.md")  # e os SKILL.md: comparados por âncora (seção `##`)
 SECTION_GLOB = ".claude/skills/*/SKILL.md"
 STARTED_STATUS = ("em andamento", "esperando dono", "falhou")
+STARTS_NOW = "começa"  # o motivo da candidata que o `slots_plan` faz começar agora (o grafo a põe na onda 0)
 
 
 def plan_field(plan, key):
@@ -1192,8 +1193,7 @@ def slots_plan(q, meta):
     merged = set(meta.get("merged", []))
     done = {r["issue"] for r in q if r["status"] == "concluída"}
     busy = sum(1 for r in q if r["status"] == "em andamento")
-    started = [r for r in q if r["status"] in STARTED_STATUS
-               or (r["status"] == "aguardando" and r.get("started"))]
+    started = [r for r in q if is_started(r)]
     cands = sorted((r for r in q if r["status"] == "aguardando" and not r.get("started")),
                    key=lambda r: r["order"])
     free = n - busy
@@ -1223,7 +1223,7 @@ def slots_plan(q, meta):
                     break
         if not why:
             if free > 0:
-                why = "começa"
+                why = STARTS_NOW
                 free -= 1
                 now_list.append(r["issue"])
                 taking.append(r)
@@ -1335,7 +1335,7 @@ def queue_graph(q, meta, reasons):
         why = reasons.get(r["issue"], ("", ""))[0]
         state[r["issue"]] = started_state(r) if is_started(r) else (candidate_state(r, why), why)
     wave = {r["issue"]: 0 for r in rows
-            if is_started(r) or reasons.get(r["issue"], ("", ""))[0] == "começa"}
+            if is_started(r) or reasons.get(r["issue"], ("", ""))[0] == STARTS_NOW}
     assign_waves(rows, wave, deps)
     ranked = sorted((r for r in rows if not is_started(r) and state[r["issue"]][0] not in ("segurada", "ficha")),
                     key=lambda r: (wave[r["issue"]], r["order"]))
