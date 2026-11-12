@@ -1,0 +1,616 @@
+// `planSignatureImport` (etapa #1079, S2; decisões 5, 7, 8, 9 e 12): a regra do que vira campo, a
+// ligação a campos existentes, a expansão pela fábrica, os avisos com o `ref` da ficha, a
+// idempotência e a sincronização. Puro: roda no projeto `model` (Node).
+import { describe, expect, it } from 'vitest';
+import {
+  planSignatureImport,
+  type PlanSignatureImportOptions,
+  type SignatureImportPlan,
+} from '../../../src/model/signatures';
+import type { Spec, SpecField, SpecNotice } from '../../../src/model/spec';
+import type { Json } from './fixtures';
+import {
+  BUTTON_PATH,
+  bool,
+  buttonOf,
+  callback,
+  colorParam,
+  composeSignature,
+  dimension,
+  enumParam,
+  factory,
+  librarySpec,
+  text,
+} from './importFixtures';
+
+const REF = 'signatures/button.compose.json';
+
+function run(
+  spec: Spec,
+  options: Partial<PlanSignatureImportOptions> &
+    Pick<PlanSignatureImportOptions, 'signature'>,
+): SignatureImportPlan {
+  const result = planSignatureImport(spec, {
+    type: 'button',
+    target: { platform: 'compose' },
+    ...options,
+  });
+  if (!result.ok) throw new Error(`${result.code}: ${result.detail}`);
+  return result.plan;
+}
+
+const field = (plan: SignatureImportPlan, key: string): SpecField | undefined =>
+  plan.type.fields.find((f) => f.key === key);
+const keys = (plan: SignatureImportPlan): string[] => plan.type.fields.map((f) => f.key);
+const noticesOf = (notices: SpecNotice[] | undefined): string[] =>
+  (notices ?? []).map((n) => `${n.kind}|${n.ref ?? ''}|${n.message}`);
+
+describe('regra por role e value.kind (decisão 5)', () => {
+  const params = [
+    callback('onClick'),
+    { name: 'modifier', role: 'modifier', type: 'Modifier', default: 'Modifier' },
+    { name: 'interactionSource', role: 'state', type: 'MutableInteractionSource?' },
+    {
+      name: 'content',
+      role: 'slot',
+      type: '@Composable RowScope.() -> Unit',
+      required: true,
+    },
+    { name: 'icon', role: 'slot', type: '@Composable () -> Unit' },
+    text('label', { default: '"OK"', value: { kind: 'text', default: 'OK' } }),
+    bool('enabled'),
+    dimension('elevation', {
+      default: '16.dp',
+      value: { kind: 'dimension', default: 16 },
+    }),
+    { name: 'weight', role: 'value', type: 'Float', value: { kind: 'number' } },
+    { name: 'lines', role: 'value', type: 'Int', value: { kind: 'integer' } },
+    enumParam('size', ['Small', 'Large'], {
+      default: 'Size.Small',
+      value: { kind: 'enum', options: ['Small', 'Large'], default: 'Small' },
+    }),
+    colorParam('tint', { type: 'Brush' }),
+    { name: 'shape', role: 'value', type: 'Shape', value: { kind: 'opaque' } },
+  ];
+
+  it('callback, modifier e state nunca viram campo; slot só com modelo', () => {
+    const plan = run(librarySpec(), { signature: composeSignature(params) });
+    expect(keys(plan)).not.toContain('onClick');
+    expect(keys(plan)).not.toContain('modifier');
+    expect(keys(plan)).not.toContain('interactionSource');
+    expect(keys(plan)).not.toContain('content');
+    expect(field(plan, 'icon')).toMatchObject({ type: 'string' });
+    expect(plan.code?.formats).toMatchObject({ icon: '{ Text({value}) }' });
+    expect(plan.unmapped.map((u) => u.name)).toEqual([
+      'onClick',
+      'modifier',
+      'interactionSource',
+      'content',
+      'tint',
+      'shape',
+    ]);
+  });
+
+  it('text, boolean, number, integer, dimension e enum', () => {
+    const plan = run(librarySpec(), { signature: composeSignature(params) });
+    expect(field(plan, 'label')).toMatchObject({ type: 'string', default: 'OK' });
+    expect(field(plan, 'enabled')).toMatchObject({
+      type: 'enum',
+      options: ['true', 'false'],
+      default: 'true',
+    });
+    expect(field(plan, 'elevation')).toMatchObject({ type: 'number', default: 16 });
+    expect(plan.code?.formats).toMatchObject({ elevation: '{value}.dp' });
+    expect(field(plan, 'weight')).toMatchObject({ type: 'number' });
+    expect(field(plan, 'lines')).toMatchObject({ type: 'number' });
+    expect(field(plan, 'size')).toMatchObject({
+      type: 'enum',
+      options: ['Small', 'Large'],
+      default: 'Small',
+    });
+    expect(plan.code?.params).toMatchObject({
+      label: 'label',
+      size: 'size',
+      lines: 'lines',
+    });
+  });
+
+  it('boolean usa as opções do modelo `boolean` da biblioteca', () => {
+    const spec = librarySpec((s) => {
+      s.fieldModels.compose.boolean = { type: 'enum', options: ['Sim', 'Não'] };
+    });
+    const plan = run(spec, { signature: composeSignature([bool('enabled')]) });
+    expect(field(plan, 'enabled')).toMatchObject({
+      type: 'enum',
+      options: ['Sim', 'Não'],
+      default: 'Sim',
+    });
+    expect(plan.code?.values).toEqual({ enabled: { Sim: 'true', Não: 'false' } });
+  });
+
+  it('color e opaque sem modelo ficam fora, com o aviso pending no tipo', () => {
+    const plan = run(librarySpec(), { signature: composeSignature(params) });
+    expect(keys(plan)).not.toContain('tint');
+    expect(keys(plan)).not.toContain('shape');
+    expect(noticesOf(plan.type.notices)).toEqual([
+      `pending|${REF}|compose: o parâmetro \`tint\` (Brush) ainda não é campo`,
+      `pending|${REF}|compose: o parâmetro \`shape\` (Shape) ainda não é campo`,
+    ]);
+  });
+
+  it('o modelo `ignore` deixa o parâmetro fora sem aviso', () => {
+    const plan = run(librarySpec(), {
+      signature: composeSignature([
+        { name: 'modifier', role: 'value', type: 'Modifier', value: { kind: 'opaque' } },
+      ]),
+    });
+    expect(plan.type.fields).toEqual([]);
+    expect(plan.type.notices).toBeUndefined();
+  });
+
+  it('label, description e chave: o rótulo vem do nome, a descrição da doc, a chave é normalizada', () => {
+    const plan = run(librarySpec(), {
+      signature: composeSignature([text('content padding'), text('contentText')], (s) => {
+        s.doc = { contentText: 'The text shown.' };
+      }),
+    });
+    expect(field(plan, 'contentPadding')).toMatchObject({ label: 'Content padding' });
+    expect(plan.code?.params).toMatchObject({ contentPadding: 'content padding' });
+    expect(field(plan, 'contentText')).toMatchObject({
+      label: 'Content text',
+      description: 'The text shown.',
+    });
+  });
+});
+
+describe('modelos de campo e expansão (decisão 5)', () => {
+  it('like copia options e code.values do campo da biblioteca', () => {
+    const plan = run(librarySpec(), {
+      signature: composeSignature([colorParam('containerColor')]),
+    });
+    expect(field(plan, 'containerColor')).toMatchObject({
+      type: 'enum',
+      options: ['primary', 'secondary'],
+    });
+    expect(plan.code?.values?.containerColor).toEqual({
+      primary: 'MaterialTheme.colorScheme.primary',
+      secondary: 'MaterialTheme.colorScheme.secondary',
+    });
+  });
+
+  it('a fábrica do padrão expande em um campo por parâmetro, com a chave que colide', () => {
+    const plan = run(librarySpec(), {
+      signature: composeSignature([
+        factory('colors', 'ButtonDefaults.buttonColors', [colorParam('containerColor')]),
+        factory('iconColors', 'ButtonDefaults.iconColors', [
+          colorParam('containerColor'),
+        ]),
+      ]),
+    });
+    expect(keys(plan)).toEqual(['containerColor', 'iconColorsContainerColor']);
+    expect(plan.code?.params).toEqual({
+      containerColor: 'colors.containerColor',
+      iconColorsContainerColor: 'iconColors.containerColor',
+    });
+    expect(plan.code?.calls).toEqual({
+      colors: 'ButtonDefaults.buttonColors',
+      iconColors: 'ButtonDefaults.iconColors',
+    });
+  });
+
+  it('o modelo expand (PaddingValues) vira um campo por parâmetro, com o molde', () => {
+    const plan = run(librarySpec(), {
+      signature: composeSignature([
+        {
+          name: 'contentPadding',
+          role: 'value',
+          type: 'PaddingValues',
+          value: { kind: 'opaque' },
+        },
+      ]),
+    });
+    expect(keys(plan)).toEqual(['horizontal', 'vertical']);
+    expect(plan.code?.params).toEqual({
+      horizontal: 'contentPadding.horizontal',
+      vertical: 'contentPadding.vertical',
+    });
+    expect(plan.code?.calls).toEqual({ contentPadding: 'PaddingValues' });
+    expect(plan.code?.formats).toEqual({
+      horizontal: '{value}.dp',
+      vertical: '{value}.dp',
+    });
+  });
+
+  it('o parâmetro sem rótulo do Swift vira posicional, com a chave do nome interno', () => {
+    const plan = run(librarySpec(), {
+      target: { platform: 'swiftui' },
+      signature: composeSignature(
+        [text('title', { label: '_' }), text('subtitle', { label: 'sub' })],
+        (s) => {
+          s.source = {
+            kind: 'code',
+            platform: 'swiftui',
+            language: 'swift',
+            symbol: 'DS.Button',
+            path: 'Button.swift',
+            extractor: 'mapping-signature/swift@1',
+          };
+        },
+      ),
+    });
+    expect(plan.code?.params).toEqual({ title: '#0', subtitle: 'sub' });
+  });
+});
+
+describe('default e obrigatório', () => {
+  it('default literal vira default; não literal fica sem default', () => {
+    const plan = run(librarySpec(), {
+      signature: composeSignature([
+        text('label', { value: { kind: 'text', default: 'OK' } }),
+        text('hint', { default: 'Defaults.hint', value: { kind: 'text' } }),
+      ]),
+    });
+    expect(field(plan, 'label')).toHaveProperty('default', 'OK');
+    expect(field(plan, 'hint')).not.toHaveProperty('default');
+  });
+
+  it('só o tipo novo (sem campos) ganha campo obrigatório; no tipo existente nasce opcional com diverges', () => {
+    const required = composeSignature([text('label', { required: true })]);
+    const novo = run(librarySpec(), { signature: required });
+    expect(field(novo, 'label')).toHaveProperty('required', true);
+    expect(novo.type.fields[0]?.notices).toBeUndefined();
+
+    const existing = librarySpec((s) => {
+      buttonOf(s).fields = [{ key: 'other', type: 'string' }];
+    });
+    const plan = run(existing, { signature: required });
+    expect(field(plan, 'label')).not.toHaveProperty('required');
+    expect(noticesOf(field(plan, 'label')?.notices)).toEqual([
+      `diverges|${REF}|compose: obrigatório no código (\`label\`), mas o campo é opcional`,
+    ]);
+  });
+});
+
+describe('ligação (decisão 7)', () => {
+  const spec = (): Spec =>
+    librarySpec((s) => {
+      const button = buttonOf(s);
+      button.fields = [
+        { key: 'titulo', type: 'string' },
+        { key: 'enabled', type: 'enum', options: ['true', 'false'] },
+      ];
+      button.code = {
+        compose: {
+          symbol: 'androidx.compose.material3.Button',
+          path: BUTTON_PATH,
+          params: { titulo: 'text' },
+        },
+      };
+    });
+
+  it('(a) o params que já cita o parâmetro, (b) o nome normalizado, (c) campo novo', () => {
+    const plan = run(spec(), {
+      signature: composeSignature([text('text'), bool('Enabled'), text('badge')]),
+    });
+    expect(plan.links).toEqual([
+      { param: 'text', field: 'titulo', via: 'params' },
+      { param: 'Enabled', field: 'enabled', via: 'name' },
+      { param: 'badge', field: 'badge', via: 'new' },
+    ]);
+    expect(plan.fields.map((f) => f.key)).toEqual(['badge']);
+    expect(plan.code?.params).toEqual({
+      titulo: 'text',
+      enabled: 'Enabled',
+      badge: 'badge',
+    });
+  });
+
+  it('Figma: Style casa com style e as opções casam pelo texto normalizado', () => {
+    const base = librarySpec((s) => {
+      buttonOf(s).fields = [
+        { key: 'style', type: 'enum', options: ['filled', 'outlined'] },
+      ];
+    });
+    const signature = composeSignature(
+      [enumParam('Style', ['Filled', 'Outlined', 'Tonal'])],
+      (s) => {
+        s.source = {
+          kind: 'design',
+          system: 'figma',
+          id: '1:2',
+          name: 'Button',
+          extractor: 'mapping-signature/figma@1',
+        };
+      },
+    );
+    const plan = run(base, { target: { system: 'figma' }, signature });
+    expect(plan.links).toEqual([{ param: 'Style', field: 'style', via: 'name' }]);
+    expect(plan.sources).toEqual([
+      {
+        system: 'figma',
+        id: '1:2',
+        name: 'Button',
+        signature: 'signatures/button.figma.json',
+      },
+    ]);
+    const style = field(plan, 'style');
+    expect(style).toMatchObject({
+      options: ['filled', 'outlined'],
+      sources: [
+        {
+          system: 'figma',
+          name: 'Style',
+          values: { Filled: 'filled', Outlined: 'outlined' },
+        },
+      ],
+    });
+    expect(noticesOf(style?.notices)).toEqual([
+      'diverges|signatures/button.figma.json|figma: a opção `Tonal` da fonte não existe no campo',
+    ]);
+  });
+});
+
+describe('idempotência e avisos do importador (decisão 8)', () => {
+  const signature = composeSignature([
+    callback('onClick'),
+    text('label', { required: true }),
+    enumParam('size', ['Small', 'Large']),
+    factory('colors', 'ButtonDefaults.buttonColors', [
+      colorParam('containerColor'),
+      colorParam('x', { type: 'Brush' }),
+    ]),
+    { name: 'shape', role: 'value', type: 'Shape', value: { kind: 'opaque' } },
+  ]);
+
+  it('importar a mesma ficha duas vezes dá a mesma especialização', () => {
+    const first = run(librarySpec(), { signature });
+    const second = run(first.spec, { signature, previous: signature });
+    expect(JSON.stringify(second.spec)).toBe(JSON.stringify(first.spec));
+    expect(second.fields).toEqual([]);
+    expect(second.changes).toEqual([]);
+    expect(second.versionBump).toBe(false);
+  });
+
+  it('regrava os avisos com o ref da ficha e não toca nos outros', () => {
+    const spec = librarySpec((s) => {
+      buttonOf(s).notices = [
+        { kind: 'deprecated', message: 'autoral', ref: 'issue-1' },
+        { kind: 'pending', message: 'compose: velho', ref: REF },
+      ];
+    });
+    const plan = run(spec, { signature });
+    const notices = noticesOf(plan.type.notices);
+    expect(notices[0]).toBe('deprecated|issue-1|autoral');
+    expect(notices.some((n) => n.includes('velho'))).toBe(false);
+    expect(notices.slice(1).every((n) => n.startsWith(`pending|${REF}|compose: `))).toBe(
+      true,
+    );
+    expect(
+      plan.notices.every((n) => n.ref === REF && n.message.startsWith('compose: ')),
+    ).toBe(true);
+    const again = run(plan.spec, { signature, previous: signature });
+    expect(noticesOf(again.type.notices)).toEqual(notices);
+  });
+});
+
+describe('sincronização (decisão 12)', () => {
+  const previous = composeSignature([
+    text('label'),
+    text('legacy'),
+    enumParam('size', ['Small', 'Large']),
+    dimension('radius', { default: '4.dp', value: { kind: 'dimension', default: 4 } }),
+  ]);
+  const imported = (): SignatureImportPlan => run(librarySpec(), { signature: previous });
+
+  it('parâmetro novo: campo opcional; versionBump', () => {
+    const next = composeSignature([
+      ...(previous.params.map((p) => ({ ...p })) as Json[]),
+      text('badge', { required: true }),
+    ]);
+    const plan = run(imported().spec, { signature: next, previous });
+    expect(plan.changes).toEqual([{ kind: 'added', param: 'badge' }]);
+    expect(plan.fields.map((f) => f.key)).toEqual(['badge']);
+    expect(plan.fields[0]).not.toHaveProperty('required');
+    expect(plan.versionBump).toBe(true);
+  });
+
+  it('parâmetro removido: o campo fica com removed; sugere remove-field; sem quebra', () => {
+    const next = composeSignature(
+      previous.params.filter((p) => p.name !== 'legacy').map((p) => ({ ...p })) as Json[],
+    );
+    const plan = run(imported().spec, { signature: next, previous });
+    expect(keys(plan)).toContain('legacy');
+    expect(noticesOf(field(plan, 'legacy')?.notices)).toEqual([
+      `removed|${REF}|compose: o parâmetro \`legacy\` saiu da assinatura; o campo fica`,
+    ]);
+    expect(plan.changes).toEqual([{ kind: 'removed', param: 'legacy' }]);
+    expect(plan.suggestedMigrations).toEqual([
+      { op: 'remove-field', type: 'button', field: 'legacy' },
+    ]);
+    expect(plan.versionBump).toBe(false);
+  });
+
+  it('padrão mudado atualiza o default; só por default o contrato não muda', () => {
+    const next = composeSignature(
+      previous.params.map((p) =>
+        p.name === 'radius'
+          ? { ...p, default: '8.dp', value: { kind: 'dimension', default: 8 } }
+          : { ...p },
+      ) as Json[],
+    );
+    const plan = run(imported().spec, { signature: next, previous });
+    expect(field(plan, 'radius')).toHaveProperty('default', 8);
+    expect(plan.changes).toEqual([
+      { kind: 'changed', param: 'radius', aspect: 'default', from: '4.dp', to: '8.dp' },
+    ]);
+    expect(plan.versionBump).toBe(false);
+  });
+
+  it('opção nova entra no campo; opção que sumiu vira diverges', () => {
+    const next = composeSignature(
+      previous.params.map((p) =>
+        p.name === 'size'
+          ? { ...p, value: { kind: 'enum', options: ['Small', 'Medium'] } }
+          : { ...p },
+      ) as Json[],
+    );
+    const plan = run(imported().spec, { signature: next, previous });
+    expect(field(plan, 'size')).toMatchObject({ options: ['Small', 'Large', 'Medium'] });
+    expect(noticesOf(field(plan, 'size')?.notices)).toEqual([
+      `diverges|${REF}|compose: a opção \`Large\` não existe mais na fonte`,
+    ]);
+    expect(plan.versionBump).toBe(true);
+  });
+
+  it('o kind do parâmetro mudou: diverges', () => {
+    const next = composeSignature(
+      previous.params.map((p) =>
+        p.name === 'label' ? { ...p, type: 'Int', value: { kind: 'integer' } } : { ...p },
+      ) as Json[],
+    );
+    const plan = run(imported().spec, { signature: next, previous });
+    expect(noticesOf(field(plan, 'label')?.notices)).toEqual([
+      `diverges|${REF}|compose: o tipo do parâmetro \`label\` mudou de text para integer`,
+    ]);
+  });
+
+  it('renome provável (mesmo tipo, mesma posição): diverges e sugere rename-field', () => {
+    const next = composeSignature(
+      previous.params.map((p) =>
+        p.name === 'legacy' ? { ...p, name: 'modern' } : { ...p },
+      ) as Json[],
+    );
+    const plan = run(imported().spec, { signature: next, previous });
+    expect(plan.changes).toEqual([{ kind: 'renamed', param: 'legacy', to: 'modern' }]);
+    expect(noticesOf(field(plan, 'legacy')?.notices)).toEqual([
+      `diverges|${REF}|compose: renome provável de \`legacy\` para \`modern\``,
+    ]);
+    expect(plan.suggestedMigrations).toEqual([
+      { op: 'rename-field', type: 'button', from: 'legacy', to: 'modern' },
+    ]);
+    expect(keys(plan)).toContain('modern');
+  });
+});
+
+describe('variantes (decisão 9)', () => {
+  const spec = (): Spec =>
+    librarySpec((s) => {
+      const button = buttonOf(s);
+      button.fields = [
+        {
+          key: 'style',
+          type: 'enum',
+          options: ['filled', 'outlined'],
+          default: 'filled',
+        },
+      ];
+      button.code = {
+        compose: {
+          symbol: 'androidx.compose.material3.Button',
+          path: BUTTON_PATH,
+          params: { style: 'style' },
+          variants: {
+            field: 'style',
+            cases: {
+              outlined: {
+                symbol: 'androidx.compose.material3.OutlinedButton',
+                path: 'compose/OutlinedButton.kt',
+              },
+            },
+          },
+        },
+      };
+    });
+  const base = composeSignature([
+    text('label'),
+    factory('colors', 'ButtonDefaults.buttonColors', [colorParam('containerColor')]),
+  ]);
+  const outlined = composeSignature(
+    [
+      text('label'),
+      text('border'),
+      factory('colors', 'ButtonDefaults.outlinedButtonColors', [
+        colorParam('containerColor'),
+      ]),
+      { name: 'content', role: 'slot', type: '@Composable RowScope.() -> Unit' },
+    ],
+    (s) => {
+      s.source.symbol = 'androidx.compose.material3.OutlinedButton';
+      s.source.path = 'compose/OutlinedButton.kt';
+    },
+  );
+
+  it('uma ficha por caso: campos em união, calls do caso e unmapped do caso', () => {
+    const first = run(spec(), { signature: base });
+    const plan = run(first.spec, { variant: 'outlined', signature: outlined });
+    expect(plan.signaturePath).toBe('signatures/button.outlined.compose.json');
+    expect(keys(plan)).toEqual(['style', 'label', 'containerColor', 'border']);
+    const kase = plan.code?.variants?.cases.outlined;
+    expect(kase?.signature).toBe('signatures/button.outlined.compose.json');
+    expect(kase?.calls).toEqual({ colors: 'ButtonDefaults.outlinedButtonColors' });
+    expect(kase?.params).toEqual({ border: 'border' });
+    expect(plan.code?.calls).toEqual({ colors: 'ButtonDefaults.buttonColors' });
+    expect(plan.code?.signature).toBe('signatures/button.compose.json');
+    expect(plan.unmapped.map((u) => u.name)).toEqual(['content']);
+  });
+
+  it('o símbolo da ficha do caso precisa ser o do caso', () => {
+    const wrong = composeSignature([text('label')]);
+    const result = planSignatureImport(spec(), {
+      type: 'button',
+      target: { platform: 'compose' },
+      variant: 'outlined',
+      signature: wrong,
+    });
+    expect(result).toMatchObject({ ok: false, code: 'signature-mismatch' });
+  });
+
+  it('caso que o code não declara', () => {
+    const result = planSignatureImport(spec(), {
+      type: 'button',
+      target: { platform: 'compose' },
+      variant: 'text',
+      signature: base,
+    });
+    expect(result).toMatchObject({ ok: false, code: 'variant-not-found' });
+  });
+});
+
+describe('erros', () => {
+  const signature = composeSignature([text('label')]);
+  const fail = (spec: Spec, options: Partial<PlanSignatureImportOptions>) =>
+    planSignatureImport(spec, {
+      type: 'button',
+      target: { platform: 'compose' },
+      signature,
+      ...options,
+    });
+
+  it('type-not-found, platform-not-declared e signature-mismatch', () => {
+    expect(fail(librarySpec(), { type: 'nada' })).toMatchObject({
+      ok: false,
+      code: 'type-not-found',
+    });
+    expect(fail(librarySpec(), { target: { platform: 'web' } })).toMatchObject({
+      ok: false,
+      code: 'platform-not-declared',
+    });
+    const other = librarySpec((s) => {
+      buttonOf(s).code = { compose: { symbol: 'other.Button', path: BUTTON_PATH } };
+    });
+    expect(fail(other, {})).toMatchObject({ ok: false, code: 'signature-mismatch' });
+    const otherPath = librarySpec((s) => {
+      buttonOf(s).code = {
+        compose: { symbol: 'androidx.compose.material3.Button', path: 'Other.kt' },
+      };
+    });
+    expect(fail(otherPath, {})).toMatchObject({ ok: false, code: 'signature-mismatch' });
+  });
+
+  it('ficha de design num alvo de código (e o inverso) é signature-mismatch', () => {
+    expect(fail(librarySpec(), { target: { system: 'figma' } })).toMatchObject({
+      ok: false,
+      code: 'signature-mismatch',
+    });
+  });
+});
