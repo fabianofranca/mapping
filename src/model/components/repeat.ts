@@ -76,6 +76,12 @@ function layoutKind(node: RepeatTemplate): 'row' | 'column' | 'grid' {
   return type === 'row' || type === 'grid' ? type : 'column';
 }
 
+/** O `repeat` quebra? Com `wrap` o eixo das linhas precisa de um limite para quebrar: ocupa o do pai, como com `distribute`. */
+function wraps(node: RepeatTemplate): boolean {
+  const { wrap } = node.layout ?? node;
+  return wrap !== undefined && wrap !== 'none';
+}
+
 /** Tamanhos do quadro gerado: `width`/`height` do `repeat`, ou o padrão do eixo (ver o topo). */
 function wrapperSize(
   node: RepeatTemplate,
@@ -85,10 +91,7 @@ function wrapperSize(
   if (kind === 'grid')
     return { width: node.width ?? 'hug', height: node.height ?? 'hug' };
   const column = kind === 'column';
-  // Com `wrap` o eixo das linhas precisa de um limite para quebrar: ocupa o do pai, como com `distribute`.
-  const wrapSource = node.layout ?? node;
-  const wraps = wrapSource.wrap !== undefined && wrapSource.wrap !== 'none';
-  const rowsAxis = node.distribute === 'fill' || wraps ? 'fill' : 'hug';
+  const rowsAxis = node.distribute === 'fill' || wraps(node) ? 'fill' : 'hug';
   return {
     width: node.width ?? (column ? 'fill' : rowsAxis),
     height: node.height ?? (column ? rowsAxis : 'fill'),
