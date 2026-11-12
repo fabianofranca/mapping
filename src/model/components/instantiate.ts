@@ -1947,8 +1947,10 @@ function createEngine(
    * tamanho resultante: a passagem final, que já recebe esse tamanho, repete o número em vez de
    * recalculá-lo do tamanho encolhido (que daria menos trilhas). Dois limites que dão o mesmo total
    * com contagens diferentes ficam com a mais recente: com um pai `hug` que mede a grade duas vezes
-   * isso dá o desenho certo, nas duas ordens (`tests/model/components/huggedCounts.test.ts`, #1692);
-   * só um pai `max-content`/`min-content`, cuja passagem final chega sem limite, ainda pode errar.
+   * isso dá o desenho certo, nas duas ordens. O pai `max-content`/`min-content` resolve a largura
+   * antes de medir a grade, então ela é medida com um limite só (a largura do pai) e o memo lê a
+   * entrada dessa medida; está provado nas duas ordens em `tests/model/components/huggedCounts.test.ts`
+   * (#1692, #1749).
    */
   const huggedCounts = new Map<FrameTemplate, Map<number, number>>();
 
