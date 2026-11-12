@@ -375,7 +375,9 @@
                       "$token": "label-large-tracking"
                     },
                     "verticalAlign": "cap-middle",
-                    "wrap": "none"
+                    "wrap": "none",
+                    "maxLines": 1,
+                    "ellipsis": true
                   },
                   "color": {
                     "$if": {

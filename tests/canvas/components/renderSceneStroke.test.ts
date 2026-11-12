@@ -106,3 +106,42 @@ describe('recorte ampliado da raiz', () => {
     expect(clipRect(root({ clip: true, cornerRadius: 8 }))).toEqual([]);
   });
 });
+
+describe('recorte ampliado de um quadro com raio (1.6 do reteste)', () => {
+  it('os filhos saem num grupo recortado pela forma, não pelo retângulo ampliado', () => {
+    const child: FrameNode = {
+      ...baseNode({ id: 'c', name: 'c', width: 100, height: 40 }),
+      type: 'frame',
+      clip: false,
+      cornerRadius: 0,
+      children: [],
+    };
+    const group = renderScene(
+      root({
+        clip: true,
+        clipBox: { x: -4, y: -4, width: 108, height: 48 },
+        cornerRadius: 8,
+        children: [child],
+      }),
+    ).root;
+    const rects: number[][] = [];
+    const arcs: number[] = [];
+    const ctx = {
+      beginPath() {},
+      closePath() {},
+      moveTo() {},
+      lineTo() {},
+      arcTo: () => arcs.push(1),
+      rect: (...a: number[]) => rects.push(a),
+    } as unknown as Konva.Context;
+    (group.clipFunc() as (c: Konva.Context) => void)(ctx);
+    expect(rects).toEqual([[-4, -4, 108, 48]]);
+    const holder = group.getChildren(
+      (n) => n.getClassName() === 'Group',
+    )[0] as Konva.Group;
+    rects.length = 0;
+    (holder.clipFunc() as (c: Konva.Context) => void)(ctx);
+    expect(rects).toEqual([]);
+    expect(arcs.length).toBeGreaterThan(0);
+  });
+});

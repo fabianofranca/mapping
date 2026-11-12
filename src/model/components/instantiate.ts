@@ -1542,6 +1542,36 @@ function createEngine(
       return Math.max(widest, a.center ? size : (a.start ?? 0) + size + (a.end ?? 0));
     }, -Infinity);
 
+  /**
+   * O texto `ellipsis` que cabe encolhendo (como o `min-width: 0` de um item flex com `text-overflow`):
+   * na linha de largura conhecida que passa da caixa, ele cede o excesso na proporção do tamanho e
+   * o `…` corta o resto dentro da caixa, em vez de a linha passar do segmento vizinho. Só o texto de
+   * `ellipsis` encolhe; sem ele (ou sem excesso) os tamanhos ficam como estão.
+   */
+  const shrinkEllipsis = (
+    kids: readonly Kid[],
+    sizes: readonly (number | 'fill')[],
+    layout: FrameLayout,
+    content: number,
+    tolerance: number,
+  ): (number | 'fill')[] => {
+    const shrinkable = kids.map(
+      (kid, i) =>
+        kid.node.type === 'text' &&
+        typeof sizes[i] === 'number' &&
+        textFont(kid.node as TextTemplate).ellipsis === true,
+    );
+    const total = sizes.reduce<number>((sum, s) => sum + (s === 'fill' ? 0 : s), 0);
+    const excess = total + layout.gap * Math.max(0, sizes.length - 1) - content;
+    const pool = sizes.reduce<number>(
+      (sum, s, i) => sum + (shrinkable[i] === true ? (s as number) : 0),
+      0,
+    );
+    if (excess <= tolerance || pool <= 0) return [...sizes];
+    const cut = Math.min(excess, pool) / pool;
+    return sizes.map((s, i) => (shrinkable[i] === true ? (s as number) * (1 - cut) : s));
+  };
+
   /** Tamanhos dos filhos num eixo; `space.content` nulo = o pai está sendo medido (hug). */
   const resolveAxis = (
     frame: FrameTemplate,
@@ -1557,16 +1587,21 @@ function createEngine(
       return size === 'fill' ? size : clampTo(limits[i] ?? NO_SIZE_LIMIT, size);
     });
     const tolerance = kids.some((kid) => kid.node.type === 'text') ? TEXT_TOLERANCE : EPS;
-    if (layout.main === axis)
+    if (layout.main === axis) {
+      const fitted =
+        axis === 'w' && space.content !== null
+          ? shrinkEllipsis(kids, sizes, layout, space.content, tolerance)
+          : sizes;
       return resolveMain(
         frame,
         layout,
-        sizes,
+        fitted,
         limits,
         space.content,
         tolerance,
-        weightsFor(kids, sizes),
+        weightsFor(kids, fitted),
       );
+    }
     const numbers = sizes.map((s) => (s === 'fill' ? 0 : s));
     if (space.content !== null) {
       const content = space.content;

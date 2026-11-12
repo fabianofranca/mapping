@@ -32,3 +32,5 @@
 - O `segmented-button` ajustado com limite de largura (`fit_marking`) não encolhe abaixo do rótulo mais largo.
 - O `card` recorta a mídia com os cantos arredondados do próprio card, e as faixas coladas de um `row` não mostram mais um fio claro entre elas na app.
 - Grade `hug` com contagem de trilhas errada em quadros `fill` e grade vazia `hug` medida de forma diferente pela arrumação do slot.
+- O `segmented-button` perto da borda do container (o `fit_marking` e o Arrumar só recebem a largura que sobra) não tem mais rótulo sobreposto ao vizinho: o rótulo encolhe dentro da trilha com `…` e a linha não acusa `conteúdo maior que a caixa`. Em geral, o texto com `ellipsis` numa `row` cede o excesso em vez de passar da caixa.
+- Quadro com sombra ou traço fora da caixa e canto arredondado (`box`, `surface`, `card` com elevação) recorta o conteúdo pela forma, na app e no PNG do MCP: o canto de um filho que encosta nele não sai mais reto.
