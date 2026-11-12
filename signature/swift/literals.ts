@@ -3,11 +3,10 @@ import type {
   SignatureValue,
   SignatureValueKind,
 } from '../../src/model/signatures';
+import type { EnumTable } from '../paramList';
 
 // O `kind` de um `value` Swift pelo nome do tipo e o `default` quando o padrão é um literal
 // representável (`true`, `3`, `0.5`, `"OK"`, `CGFloat(8)`, `.filled`).
-
-export type EnumTable = ReadonlyMap<string, readonly string[]>;
 
 const KIND_BY_TYPE: Readonly<Record<string, SignatureValueKind>> = {
   String: 'text',

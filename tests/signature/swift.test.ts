@@ -665,3 +665,54 @@ function parseSignatureOf(text: string) {
   if (!parsed.ok) throw new Error(JSON.stringify(parsed.issues));
   return parsed.signature;
 }
+
+describe('achados da revisão `/code-review high` (S4)', () => {
+  it('a `{` (e o `where`) em linha própria não separa o cabeçalho da struct do corpo', () => {
+    const allman = `import SwiftUI\n\nstruct Foo: View\n{\n    let title: String\n    var body: some View { EmptyView() }\n}\n`;
+    expect(swiftJson(allman, 'Foo').params.map((p) => p.name)).toEqual(['title']);
+    const where = `import SwiftUI\n\nstruct Foo<C>: View\n    where C: View\n{\n    let content: C\n    var body: some View { EmptyView() }\n}\n`;
+    expect(swiftJson(where, 'Foo').params[0]).toMatchObject({
+      name: 'content',
+      role: 'slot',
+    });
+  });
+
+  it('property wrappers sem argumento que o próprio Swift preenche ficam fora do memberwise', () => {
+    const sig = swiftJson(
+      withProps(
+        '    let title: String\n    @Namespace var ns\n    @GestureState var drag = false\n    @ScaledMetric var size = 12\n    @AccessibilityFocusState var a11y: Bool',
+      ),
+      'Foo',
+    );
+    expect(sig.params.map((p) => p.name)).toEqual(['title']);
+  });
+
+  it('um init `private` não conta como candidato: sobrando um chamável, ele é o escolhido', () => {
+    const source = `import SwiftUI\n\nstruct Foo: View {\n    let title: String\n    private let cache: Int\n    public init(title: String) { self.title = title; cache = 0 }\n    private init(title: String, cache: Int) { self.title = title; self.cache = cache }\n    var body: some View { EmptyView() }\n}\n`;
+    expect(swiftJson(source, 'Foo').params.map((p) => p.name)).toEqual(['title']);
+    // com --init, o índice continua contando todos (também o private)
+    expect(swiftJson(source, 'Foo', ['--init', '1']).params.map((p) => p.name)).toEqual([
+      'title',
+      'cache',
+    ]);
+  });
+
+  it('um padrão que quebra a linha com `?`, `:` ou `&&` na frente não é truncado', () => {
+    const sig = swiftJson(
+      withProps(
+        '    let flag: Bool\n    var tint: Color = flag\n        ? .red\n        : .blue\n    var ok: Bool = flag\n        && true',
+      ),
+      'Foo',
+    );
+    const params = byName(sig);
+    expect(params.tint?.default).toBe('flag ? .red : .blue');
+    expect(params.ok?.default).toBe('flag && true');
+  });
+
+  it('um genérico `View & Equatable` também é slot', () => {
+    const source = `import SwiftUI\n\nstruct Card<Content: View & Equatable, Other: View & Hashable>: View {\n    let content: Content\n    let other: Other\n    var body: some View { EmptyView() }\n}\n`;
+    const params = byName(swiftJson(source, 'Card'));
+    expect(params.content?.role).toBe('slot');
+    expect(params.other?.role).toBe('slot');
+  });
+});

@@ -19,6 +19,11 @@ const INTERNAL_WRAPPERS = new Set([
   'Environment',
   'EnvironmentObject',
   'FocusState',
+  // o Swift os preenche sozinho: também não são argumento do init memberwise
+  'Namespace',
+  'GestureState',
+  'ScaledMetric',
+  'AccessibilityFocusState',
 ]);
 /** Atributos que não são property wrappers (podem ter argumentos sem tirar a propriedade do memberwise). */
 const PLAIN_ATTRIBUTES = new Set(['available', 'MainActor', 'objc', 'preconcurrency']);
@@ -34,6 +39,8 @@ export interface InitDecl {
   readonly line: number;
   /** `@available(…, deprecated|unavailable|obsoleted)`. */
   readonly deprecated: boolean;
+  /** `private` ou `fileprivate`: não é chamável de fora, então não é candidato sozinho. */
+  readonly hidden: boolean;
   readonly doc?: string;
 }
 
@@ -81,6 +88,7 @@ function readInit(
     close: stream.match[open]!,
     line: positionOf(stream.src, stream.tokens[at]!.start).line,
     deprecated: isDeprecated(stream, prefix.attributes),
+    hidden: prefix.modifiers.some((m) => m === 'private' || m === 'fileprivate'),
     ...(doc === undefined ? {} : { doc }),
   };
 }

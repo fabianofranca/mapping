@@ -87,13 +87,20 @@ function firstOnLine(stream: TokenStream, index: number): boolean {
   return stream.src.text.slice(previous.end, stream.tokens[index]!.start).includes('\n');
 }
 
+/** Pontuação que abre um membro (atributo, diretiva, tupla, colchete): só ela não continua a linha anterior. */
+const OPENS_MEMBER = new Set(['@', '#', '(', '[']);
+
+/**
+ * A linha `index` continua a declaração anterior? Sim quando a anterior termina num operador ou
+ * vírgula, ou quando esta começa por pontuação que não abre membro (`.`, `?`, `:`, `&&`, `{` em
+ * linha própria…) ou pelo `where` do cabeçalho.
+ */
 function continuesBefore(stream: TokenStream, index: number): boolean {
   const previous = stream.tokens[index - 1]!;
   const next = stream.tokens[index]!;
-  return (
-    (previous.kind === 'punct' && CONTINUES.has(previous.text)) ||
-    (next.kind === 'punct' && next.text === '.')
-  );
+  if (previous.kind === 'punct' && CONTINUES.has(previous.text)) return true;
+  if (next.kind === 'punct') return !OPENS_MEMBER.has(next.text);
+  return next.kind === 'ident' && next.text === 'where';
 }
 
 /** Os intervalos de tokens de cada membro do trecho `[from, to)`. */

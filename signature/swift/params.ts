@@ -1,7 +1,13 @@
 import type { SignatureParam, SignatureRole } from '../../src/model/signatures';
-import { readAnnotations, splitParams, type Range } from '../paramList';
+import {
+  findEquals,
+  readAnnotations,
+  splitParams,
+  type EnumTable,
+  type Range,
+} from '../paramList';
 import { errorAtToken, isPunct, joinTokens, topLevel, type TokenStream } from '../tokens';
-import { caseName, valueFor, type EnumTable } from './literals';
+import { caseName, valueFor } from './literals';
 import {
   baseName,
   lastSegment,
@@ -67,12 +73,6 @@ export function buildParam(raw: RawParam, ctx: BuildContext): SignatureParam {
   return role === 'value'
     ? { ...param, value: valueFor(simpleName(parts.core), raw.default, ctx.enums) }
     : param;
-}
-
-/** O `=` do padrão (o primeiro no nível de cima), se houver. */
-function findEquals(stream: TokenStream, from: number, to: number): number | undefined {
-  for (const i of topLevel(stream, from, to)) if (isPunct(stream, i, '=')) return i;
-  return undefined;
 }
 
 function findColon(stream: TokenStream, from: number, to: number): number | undefined {

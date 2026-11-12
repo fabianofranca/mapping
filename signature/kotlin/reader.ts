@@ -8,6 +8,7 @@ import {
 import { CliError } from '../errors';
 import { tokenize } from '../lexer';
 import type { CodeRequest } from '../request';
+import type { EnumTable } from '../paramList';
 import { makeSource } from '../source';
 import { isPunct, type TokenStream } from '../tokens';
 import { parseParamDocs } from './doc';
@@ -20,7 +21,7 @@ import {
 } from './factories';
 import { findFunctions, type FunctionDecl } from './functions';
 import { chooseOverload } from './overloads';
-import { parseParams, type EnumTable } from './params';
+import { parseParams } from './params';
 
 // Leitor Kotlin (`mapping-signature/kotlin@1`): a ficha de uma função `@Composable` a partir do
 // texto do arquivo. Regras e limites em signature/README.md.

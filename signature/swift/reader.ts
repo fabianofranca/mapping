@@ -12,7 +12,7 @@ import { makeSource } from '../source';
 import type { TokenStream } from '../tokens';
 import { enumsOf, findTypeDecls, type TypeDecl } from './decls';
 import { parseParamDocs, summaryOf } from './doc';
-import type { EnumTable } from './literals';
+import type { EnumTable } from '../paramList';
 import {
   buildParam,
   callLabel,
@@ -66,12 +66,12 @@ function chooseStruct(stream: TokenStream, symbol: string): TypeDecl {
   );
 }
 
-/** A lista de uma linha por `init`: `  <índice>: linha <n> [deprecated] (_:badge:style:)`. */
+/** A lista de uma linha por `init`: `  <índice>: linha <n> [deprecated] [private] (_:badge:style:)`. */
 function listInits(stream: TokenStream, inits: readonly InitDecl[]): string {
   return inits
     .map((init, index) => {
       const labels = readInitParams(stream, init.open, init.close).map(callLabel);
-      const mark = init.deprecated ? ' [deprecated]' : '';
+      const mark = `${init.deprecated ? ' [deprecated]' : ''}${init.hidden ? ' [private]' : ''}`;
       return `  ${index}: linha ${init.line}${mark} (${labels.map((l) => `${l}:`).join('')})`;
     })
     .join('\n');
@@ -100,12 +100,13 @@ function chooseInit(
       `--init ${requested} fora da lista: ${decl.name} tem ${inits.length} inits em ${where} (índices de 0 a ${inits.length - 1}):\n${listInits(stream, inits)}`,
     );
   }
-  const alive = inits.filter((init) => !init.deprecated);
+  const alive = inits.filter((init) => !init.deprecated && !init.hidden);
   if (alive.length === 1) return { kind: 'init', init: alive[0]! };
+  const hidden = inits.some((init) => init.hidden);
   const reason =
     alive.length === 0
-      ? `${decl.name} só tem inits deprecated em ${where}`
-      : `${decl.name} tem ${alive.length} inits (fora os deprecated) em ${where}`;
+      ? `${decl.name} só tem inits deprecated${hidden ? ' ou private' : ''} em ${where}`
+      : `${decl.name} tem ${alive.length} inits (fora os deprecated${hidden ? ' e os private' : ''}) em ${where}`;
   throw new CliError(
     `init ambíguo: ${reason}; escolha um com --init <n>:\n${listInits(stream, inits)}`,
   );

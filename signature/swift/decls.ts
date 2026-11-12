@@ -58,7 +58,8 @@ function viewConstraint(stream: TokenStream, range: Range): string | undefined {
     if (!isPunct(stream, i, ':')) continue;
     const bound = joinTokens(stream, i + 1, range.to).replace(/\s+/g, '');
     const name = joinTokens(stream, range.from, i).trim();
-    const isView = bound === 'View' || bound === 'SwiftUI.View';
+    // `View & Equatable` também é view: basta uma das partes ser `View`
+    const isView = bound.split('&').some((b) => b === 'View' || b === 'SwiftUI.View');
     return isView && /^\w+$/.test(name) ? name : undefined;
   }
   return undefined;

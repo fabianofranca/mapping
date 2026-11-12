@@ -108,3 +108,16 @@ export function readAnnotations(
   }
   return { end: i, names };
 }
+
+/** Os valores de cada `enum` conhecido (do arquivo e dos `--also`): nome → opções, na ordem. */
+export type EnumTable = ReadonlyMap<string, readonly string[]>;
+
+/** O `=` do padrão (o primeiro no nível de cima), se houver. */
+export function findEquals(
+  stream: TokenStream,
+  from: number,
+  to: number,
+): number | undefined {
+  for (const i of topLevel(stream, from, to)) if (isPunct(stream, i, '=')) return i;
+  return undefined;
+}

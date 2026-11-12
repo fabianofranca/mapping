@@ -3,23 +3,22 @@ import type {
   SignatureRole,
   SignatureValue,
 } from '../../src/model/signatures';
-import { readAnnotations, splitParams, type Annotations, type Range } from '../paramList';
+import {
+  findEquals,
+  readAnnotations,
+  splitParams,
+  type Annotations,
+  type EnumTable,
+  type Range,
+} from '../paramList';
 import { errorAtToken, isPunct, joinTokens, topLevel, type TokenStream } from '../tokens';
 import { valueFor } from './literals';
 
 // A lista de parâmetros de uma função: separa por vírgulas no nível de cima (parênteses, chaves,
 // colchetes e `<>` de genéricos não separam) e lê cada `[anotações] [vararg] nome: Tipo [= padrão]`.
 
-export type EnumTable = ReadonlyMap<string, readonly string[]>;
-
 const PARAM_MODIFIERS = new Set(['vararg', 'noinline', 'crossinline', 'val', 'var']);
 const STATE_SUFFIX = /(?:InteractionSource|State|FocusRequester|ScrollBehavior)$/;
-
-/** O `=` do padrão (o primeiro no nível de cima), se houver. */
-function findEquals(stream: TokenStream, from: number, to: number): number | undefined {
-  for (const i of topLevel(stream, from, to)) if (isPunct(stream, i, '=')) return i;
-  return undefined;
-}
 
 /** O tipo sem o `?` final e sem os parênteses que o envolvem inteiro: `(@Composable () -> Unit)?`. */
 function coreRange(stream: TokenStream, range: Range): Range {

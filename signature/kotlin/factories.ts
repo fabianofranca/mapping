@@ -1,8 +1,8 @@
 import type { SignatureFactory } from '../../src/model/signatures';
-import { splitParams } from '../paramList';
+import { splitParams, type EnumTable } from '../paramList';
 import { findBodyOpen, topLevel, type TokenStream } from '../tokens';
 import { findFunctions, type FunctionDecl } from './functions';
-import { parseParams, type EnumTable } from './params';
+import { parseParams } from './params';
 
 // A fábrica de um padrão `Objeto.fabrica(...)`: a `fun fabrica(` de dentro de `object Objeto { … }`,
 // no mesmo arquivo e nos `--also` (nessa ordem). Entre as de mesmo nome, descartam-se as
