@@ -2,7 +2,8 @@
 // Fase CX1 (etapa #1638): teto de contexto da sessão da fase. Teste só de texto (leitura dos
 // arquivos do fluxo de entrega): a fase confere o próprio contexto a 300 mil, passa a vez por uma
 // passagem na sub-issue, o coordenador (ou o orquestrador de uma etapa só) cria a sucessora e
-// arquiva a anterior, e a terceira sessão não troca.
+// arquiva a anterior, e a quinta sessão não troca (PP2, etapa #1595: linha de retomada numa fonte
+// só, squash do WIP e até 5 sessões).
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { scriptMeasureProblems } from '../support/contextMeasure';
@@ -23,6 +24,12 @@ const troca = between(
   '**Fase que passa a vez por contexto**',
   '**PR que espera o coordenador:**',
 );
+const avisou = between(porEtapa, 'Quando a fase avisar (', '3. **Testador.**');
+const item6 = between(phase, '6. Acompanhe o PR', '7. Ao terminar, avise');
+const LINHA =
+  'Retomada por contexto (<k> de 5): a sessão anterior (<id>) passou a vez com <n> mil; a passagem está em <link>. Continue no branch <branch>, que já existe (não o recrie da origin/epic/<nome>), e não refaça o que a passagem dá como feito.';
+const ocorrencias = (texto: string, trecho: string): number =>
+  texto.split(trecho).length - 1;
 
 describe('CX1 — "Para a sessão da fase" do docs/FLOW.md, sub-item do item 3', () => {
   it('o sub-item fica debaixo do item 3, sem mudar a primeira linha nem a numeração', () => {
@@ -90,17 +97,32 @@ describe('CX1 — "Para a sessão da fase" do docs/FLOW.md, sub-item do item 3',
   });
 
   it('a sucessora lê a passagem no item 1 e continua no branch que já existe', () => {
-    expect(teto).toContain('`Retomada por contexto (<k> de 3)`');
+    expect(teto).toContain(`\`${LINHA}\``);
     expect(teto).toContain('no item 1 (');
     expect(teto).toContain('`git switch <branch>`');
     expect(teto).toMatch(/continua no branch que já existe/);
     expect(teto).toMatch(/não o recria/);
   });
 
-  it('no máximo 2 trocas: a terceira sessão não troca e avisa "passou de 300 mil na terceira sessão"', () => {
-    expect(teto).toContain('2 trocas');
-    expect(teto).toContain('3 sessões');
-    expect(teto).toContain('passou de 300 mil na terceira sessão');
+  it('PP2: a linha de retomada inteira aparece uma vez só no FLOW + skill, e é no sub-item do item 3', () => {
+    expect(ocorrencias(flow + skill, LINHA)).toBe(1);
+    expect(ocorrencias(teto, LINHA)).toBe(1);
+    // Nenhuma cópia parcial da linha nos outros lugares (o "de 3" antigo inclusive).
+    expect(ocorrencias(flow + skill, 'Retomada por contexto (<k> de')).toBe(1);
+  });
+
+  it('PP2: no máximo 4 trocas (5 sessões); a quinta não troca e avisa "passou de 300 mil na quinta sessão"', () => {
+    expect(teto).toContain('4 trocas');
+    expect(teto).toContain('5 sessões');
+    expect(teto).toContain('`5 de 5`');
+    expect(teto).toContain('passou de 300 mil na quinta sessão');
+    for (const velho of ['2 trocas', '3 sessões', 'terceira sessão', '3 de 3'])
+      expect(teto).not.toContain(velho);
+  });
+
+  it('PP2: o squash do item 6 tira o WIP do histórico do épico (passo 2 da passagem)', () => {
+    const passo2 = between(teto, '2. faz commit', '3. comenta');
+    expect(passo2).toContain('o squash do item 6 tira o WIP do histórico do épico');
   });
 
   it('vale também para a fase de correção e não cita send_later, ci-rerun.yml nem distBudget.mjs', () => {
@@ -111,6 +133,19 @@ describe('CX1 — "Para a sessão da fase" do docs/FLOW.md, sub-item do item 3',
   });
 });
 
+describe('PP2 — item 6 de "Para a sessão da fase": squash do PR com commit WIP', () => {
+  it('o PR de fase ou de correção com o commit WIP se mescla com merge_method squash; os outros com merge', () => {
+    expect(item6).toContain('`WIP <código>: passagem por contexto`');
+    expect(item6).toContain('`git log --format=%s origin/epic/<nome>..HEAD`');
+    expect(item6).toContain('`merge_pull_request` `merge_method: squash`');
+    expect(item6).toMatch(/Os outros PRs continuam com `merge`/);
+    expect(item6).toMatch(/o commit vermelho não entra no histórico do épico/);
+    expect(item6).toMatch(/de correção/);
+    // A frase do merge no épico continua.
+    expect(item6).toMatch(/mescle o próprio PR no épico/);
+  });
+});
+
 describe('CX1 — "Orquestrador — passo a passo" do docs/FLOW.md, parágrafo "Limites"', () => {
   const passo = section(flow, '## Orquestrador — passo a passo');
   const limites = passo.slice(passo.indexOf('**Limites:**'));
@@ -118,9 +153,27 @@ describe('CX1 — "Orquestrador — passo a passo" do docs/FLOW.md, parágrafo "
   it('o orquestrador responde ao pedido de troca criando a sucessora e arquivando a anterior', () => {
     expect(limites).toContain('Troca de sessão da fase <código>');
     expect(limites).toContain('sucessora');
-    expect(limites).toContain('Retomada por contexto (<k> de 3)');
     expect(limites).toContain('arquiva a anterior');
     expect(limites).toContain('Teto de contexto da fase');
+  });
+
+  it('PP2: cita a linha de retomada do sub-item, sem copiá-la', () => {
+    expect(limites).toContain(
+      'a linha de retomada do sub-item "Teto de contexto da fase" (item 3 da "Para a sessão da fase")',
+    );
+    expect(limites).not.toContain('Retomada por contexto (');
+    expect(limites).not.toContain(
+      'passou a vez com <n> mil; a passagem está em <link>. Continue',
+    );
+  });
+
+  it('PP2: no máximo 4 trocas, a quinta sessão não troca e o aviso ao dono vai na 4ª e na 5ª', () => {
+    expect(limites).toContain('no máximo 4 trocas por fase');
+    expect(limites).toContain('a quinta sessão não troca');
+    expect(limites).toMatch(/(4ª|quarta)[^.]*(5ª|quinta)[^.]*`PushNotification`/);
+    expect(limites).toContain('Fase <código> da #<n> na sessão <k> de 5 por contexto');
+    for (const velho of ['2 trocas', 'terceira sessão', '<k> de 3'])
+      expect(limites).not.toContain(velho);
   });
 });
 
@@ -139,13 +192,14 @@ describe('CX1 — skill implementar-fila, "3. Por etapa"', () => {
     expect(troca).toContain(' · retomada <k>');
   });
 
-  it('a mensagem leva a linha de retomada, com o branch que já existe', () => {
-    expect(troca).toContain(
-      'Retomada por contexto (<k> de 3): a sessão anterior (<id>) passou a vez com <n> mil; a passagem está em <link>.',
-    );
-    expect(troca).toContain('Continue no branch <branch>, que já existe');
-    expect(troca).toContain('não o recrie da origin/epic/<nome>');
-    expect(troca).toContain('não refaça o que a passagem dá como feito');
+  it('PP2: a mensagem é a curta do passo 2 com a linha de retomada do FLOW, lida pelo nome da seção, sem cópia', () => {
+    expect(troca).toContain('a curta do passo 2');
+    expect(troca).toContain('a linha de retomada do sub-item "Teto de contexto da fase"');
+    expect(troca).toContain('antes de "Coordenador"');
+    expect(troca).toContain('item 9 de "Economia de contexto"');
+    expect(troca).toContain('"Para a sessão da fase"');
+    expect(troca).not.toContain('Retomada por contexto (');
+    expect(troca).not.toContain('Continue no branch <branch>');
   });
 
   it('o painel recebe o child=, o session com o mesmo label e o log, num apply só', () => {
@@ -162,12 +216,32 @@ describe('CX1 — skill implementar-fila, "3. Por etapa"', () => {
     expect(troca).toContain('`archive_session`');
   });
 
-  it('no máximo 2 trocas: a sessão 3 de 3 não troca e o log registra o caso', () => {
-    expect(troca).toContain('No máximo 2 trocas por fase (3 sessões)');
-    expect(troca).toContain('a sessão `3 de 3` não troca');
-    expect(troca).toContain('passou de 300 mil na terceira sessão');
-    expect(troca).toContain('<código>: passou de 300 mil na terceira sessão');
+  it('PP2: no máximo 4 trocas: a sessão 5 de 5 não troca e o log registra o caso', () => {
+    expect(troca).toContain('No máximo 4 trocas por fase (5 sessões)');
+    expect(troca).toContain('a sessão `5 de 5` não troca');
+    expect(troca).toContain('passou de 300 mil na quinta sessão');
+    expect(troca).toContain('<código>: passou de 300 mil na quinta sessão');
     expect(troca).toContain('o log registra o caso');
+    expect(troca).toContain('A sessão da filha é a `<k-1>` de 5');
+    for (const velho of ['2 trocas', '3 sessões', 'terceira sessão', '3 de 3', '` de 3'])
+      expect(troca).not.toContain(velho);
+  });
+
+  it('PP2: a 4ª e a 5ª sessões mandam PushNotification ao dono e gravam o aviso no log, sem esperar resposta', () => {
+    expect(troca).toContain('`k` igual a 4 ou 5');
+    expect(troca).toContain('`PushNotification`');
+    expect(troca).toContain('Fase <código> da #<n> na sessão <k> de 5 por contexto');
+    expect(troca).toContain('<código>: sessão <k> de 5 (aviso ao dono)');
+    expect(troca).toContain('sem esperar resposta (regra 1 da fila)');
+  });
+
+  it('PP2: o PR de fase com commit WIP se mescla com squash, também quando é o coordenador que mescla', () => {
+    expect(avisou).toContain('avisou sem ter mesclado');
+    expect(avisou).toContain('`WIP <código>: passagem por contexto`');
+    expect(avisou).toContain('`git log --format=%s origin/epic/<nome>..HEAD`');
+    expect(avisou).toContain('`merge_method: squash`');
+    expect(avisou).toContain('item 6');
+    expect(avisou).toMatch(/Os outros PRs continuam com `merge`/);
   });
 
   it('"O que não se arquiva" tem a exceção da filha que passou a vez por contexto', () => {
