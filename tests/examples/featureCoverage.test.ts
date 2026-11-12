@@ -91,6 +91,12 @@ const MISSING_TODAY: string[] = [
   // tests/model/components/instantiate.test.ts, tests/canvas/components/componentLayerClip.test.ts,
   // tests/mcp/sceneRasterClip.test.ts e pelo roteiro R25.
   'component:node.slot.clip',
+  // Grade, pesos e `repeat.layout` (etapa #1078, L3): a Material 3 passa a adotá-los na L5; coberto
+  // por tests/model/components/gridInstantiate.test.ts, gridParse.test.ts, gridSlot.test.ts e pelo
+  // roteiro R25.
+  'component:node.span',
+  'component:node.weight',
+  'component:node.repeat.layout',
   'component:node.repeat.lineGap',
   'component:node.repeat.maxPerLine',
   'component:node.repeat.maxLines',
