@@ -42,22 +42,30 @@ export function collectGarbage(): void {
 export interface BudgetOptions {
   warmup?: number;
   samples?: number;
+  rounds?: number;
   now?: () => number;
   collect?: () => void;
 }
 
 export interface BudgetMeasure {
+  /** Menor mediana entre as levas: é a que vale para o teto. */
   median: number;
+  /** Quartis da leva que deu a menor mediana (só para o registro). */
   p25: number;
   p75: number;
+  /** A mediana de cada leva, na ordem em que rodaram (só para o registro). */
+  medians: number[];
 }
 
 /**
  * Mede `run` para um orçamento de tempo apertado (etapa #1698): `warmup` execuções sem medir
- * (10 por padrão) e, a cada uma das `samples` amostras (41; sempre ímpar), `collect()` fora do
- * tempo (gc por padrão) antes de ler o relógio. Instanciar e desenhar no Konva aloca muito, e a
- * cauda de tempo vinha de coletas e da disputa de CPU dentro das amostras. Para o teto vale a
- * `median`; os quartis servem só para o registro (o quantil baixo não ganhou da mediana).
+ * (10 por padrão) e `rounds` levas (3) de `samples` amostras (41; sempre ímpar). A cada amostra,
+ * `collect()` fora do tempo (gc por padrão) antes de ler o relógio. Instanciar e desenhar no Konva
+ * aloca muito, e a cauda de tempo vinha de coletas e da disputa de CPU dentro das amostras. Sob
+ * disputa, a fase ruim do runner cobria as 41 amostras seguidas e a mediana de uma leva só passava
+ * dos 4 ms (fase CL1); por isso vale a menor mediana entre as levas, que acompanha o custo do
+ * código e não a fase da máquina (uma regressão real sobe todas). Para o teto vale a `median`; os
+ * quartis e `medians` servem só para o registro.
  */
 export function measureBudget(
   run: () => void,
@@ -66,19 +74,26 @@ export function measureBudget(
   const {
     warmup = 10,
     samples = 41,
+    rounds = 3,
     now = () => performance.now(),
     collect = collectGarbage,
   } = options;
   for (let i = 0; i < warmup; i++) run();
-  const times: number[] = [];
-  for (let i = 0; i < samples; i++) {
-    collect();
-    const start = now();
-    run();
-    times.push(now() - start);
+  const batches: BudgetMeasure[] = [];
+  for (let r = 0; r < rounds; r++) {
+    const times: number[] = [];
+    for (let i = 0; i < samples; i++) {
+      collect();
+      const start = now();
+      run();
+      times.push(now() - start);
+    }
+    times.sort((a, b) => a - b);
+    const at = (q: number): number =>
+      times[Math.floor((times.length - 1) * q)] ?? Number.NaN;
+    batches.push({ median: at(0.5), p25: at(0.25), p75: at(0.75), medians: [] });
   }
-  times.sort((a, b) => a - b);
-  const at = (q: number): number =>
-    times[Math.floor((times.length - 1) * q)] ?? Number.NaN;
-  return { median: at(0.5), p25: at(0.25), p75: at(0.75) };
+  const medians = batches.map((b) => b.median);
+  const best = batches.reduce((a, b) => (b.median < a.median ? b : a));
+  return { median: best.median, p25: best.p25, p75: best.p75, medians };
 }

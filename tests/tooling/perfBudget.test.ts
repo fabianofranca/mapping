@@ -26,11 +26,11 @@ function harness(durations: number[], collectCost = 0) {
 }
 
 describe('measureBudget', () => {
-  it('roda warmup + samples vezes e usa os padrões 10 e 41', () => {
+  it('roda warmup + rounds × samples vezes e usa os padrões 10, 3 e 41', () => {
     const h = harness([1]);
     measureBudget(h.run, { now: h.now, collect: h.collect });
-    expect(h.events.filter((e) => e === 'run')).toHaveLength(10 + 41);
-    expect(h.events.filter((e) => e === 'collect')).toHaveLength(41);
+    expect(h.events.filter((e) => e === 'run')).toHaveLength(10 + 3 * 41);
+    expect(h.events.filter((e) => e === 'collect')).toHaveLength(3 * 41);
   });
 
   it('coleta uma vez por amostra, nunca no aquecimento nem dentro do tempo', () => {
@@ -38,6 +38,7 @@ describe('measureBudget', () => {
     const r = measureBudget(h.run, {
       warmup: 3,
       samples: 5,
+      rounds: 1,
       now: h.now,
       collect: h.collect,
     });
@@ -56,10 +57,57 @@ describe('measureBudget', () => {
     const r = measureBudget(h.run, {
       warmup: 0,
       samples: 9,
+      rounds: 1,
       now: h.now,
       collect: h.collect,
     });
-    expect(r).toEqual({ median: 5, p25: 3, p75: 7 });
+    expect(r).toEqual({ median: 5, p25: 3, p75: 7, medians: [5] });
+  });
+
+  // Etapa #1698, fase CL1: sob disputa de CPU a fase ruim cobria as 41 amostras seguidas e a
+  // mediana inteira passava dos 4 ms (11 a 20 ms nas rodadas sob carga do `test:perf` completo).
+  // A medida passa a ter `rounds` levas de `samples`; vale a menor mediana entre elas.
+  it('com várias levas vale a menor mediana: uma leva inteira em fase ruim não conta', () => {
+    // 3 levas de 3 amostras: a 1ª em disputa (10 ms), a 2ª limpa (2 ms), a 3ª média (6 ms).
+    const h = harness([10, 10, 10, 2, 2, 2, 6, 6, 6]);
+    const r = measureBudget(h.run, {
+      warmup: 0,
+      samples: 3,
+      rounds: 3,
+      now: h.now,
+      collect: h.collect,
+    });
+    expect(r.median).toBe(2);
+    expect(r.medians).toEqual([10, 2, 6]);
+  });
+
+  it('as levas seguem a ordem coleta → relógio → run e o aquecimento só vem antes da 1ª', () => {
+    const h = harness([1]);
+    measureBudget(h.run, {
+      warmup: 2,
+      samples: 2,
+      rounds: 2,
+      now: h.now,
+      collect: h.collect,
+    });
+    expect(h.events).toEqual([
+      'run',
+      'run',
+      ...Array.from({ length: 4 }, () => ['collect', 'run']).flat(),
+    ]);
+  });
+
+  it('os quartis acompanham a leva da menor mediana', () => {
+    // leva 1 (ordenada 5,5,5): mediana 5; leva 2 (ordenada 1,2,3): mediana 2, p25 = 1, p75 = 2.
+    const h = harness([5, 5, 5, 3, 1, 2]);
+    const r = measureBudget(h.run, {
+      warmup: 0,
+      samples: 3,
+      rounds: 2,
+      now: h.now,
+      collect: h.collect,
+    });
+    expect(r).toEqual({ median: 2, p25: 1, p75: 2, medians: [5, 2] });
   });
 
   it('o aquecimento não entra na medida', () => {
@@ -67,6 +115,7 @@ describe('measureBudget', () => {
     const r = measureBudget(h.run, {
       warmup: 2,
       samples: 3,
+      rounds: 1,
       now: h.now,
       collect: h.collect,
     });
