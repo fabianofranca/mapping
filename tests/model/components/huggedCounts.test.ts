@@ -87,3 +87,67 @@ describe('huggedCounts: a contagem lembrada não vaza para a grade de tamanho da
     expect(at('C').x).toBeGreaterThan(at('B').x);
   });
 });
+
+/**
+ * #1692: dois limites (300 e 150) dão o mesmo total (150) com contagens diferentes (3 e 1 trilhas).
+ * A passagem final lê a contagem pelo limite dela (150: uma trilha), nas duas ordens em que o pai
+ * mede a grade `hug`.
+ */
+function drawHugged(
+  order: 'natural-first' | 'narrow-first',
+  wrapperWidth: 'hug' | 'max-content' | 'min-content' = 'hug',
+) {
+  const grid: Json = {
+    type: 'frame',
+    name: 'g',
+    width: 'hug',
+    height: 'hug',
+    layout: { type: 'grid', minColumnWidth: 100 },
+    children: [rect('A', 150, 20, { span: 3 }), rect('B', 20, 20), rect('C', 20, 20)],
+  };
+  const wide = rect('wide', 150, 10);
+  const wrapper: Json = {
+    type: 'frame',
+    name: 'wrap',
+    width: wrapperWidth,
+    height: 'hug',
+    layout: { type: 'column' },
+    // Um pai `hug` mede os filhos na ordem em que vêm: a grade antes ou depois do filho fixo.
+    children: order === 'natural-first' ? [grid, wide] : [wide, grid],
+  };
+  const template: Json = {
+    type: 'frame',
+    name: 'host',
+    width: 'fill',
+    height: 'fill',
+    layout: { type: 'row' },
+    children: [wrapper],
+  };
+  const result = instantiate(
+    file(template),
+    {} as never,
+    { x: 0, y: 0, width: 300, height: 100 },
+    { measure: approximateMeasurer },
+  );
+  const boxes = absoluteBoxes(result.root);
+  return (name: string) =>
+    boxes.get([...walk(result.root)].find((n) => n.name === name)!.id)!;
+}
+
+describe('huggedCounts: o empate de total com contagens diferentes (#1692)', () => {
+  const parents = ['hug'] as const;
+  const cases = (['natural-first', 'narrow-first'] as const).flatMap((order) =>
+    parents.map((parent) => [order, parent] as const),
+  );
+  for (const [order, parent] of cases) {
+    it(`grade hug num pai ${parent} (${order}): a passagem final tem 1 trilha, como a grade fill`, () => {
+      const at = drawHugged(order, parent);
+      expect(at('g').width).toBe(150);
+      const fill = draw('fill');
+      expect(at('B').x).toBe(at('C').x);
+      expect(at('C').y).toBeGreaterThan(at('B').y);
+      expect(at('B').x - at('g').x).toBe(fill('B').x - fill('g').x);
+      expect(at('C').y - at('B').y).toBe(fill('C').y - fill('B').y);
+    });
+  }
+});

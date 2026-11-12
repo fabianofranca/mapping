@@ -260,8 +260,7 @@
   margin: 0;
 }
 
-.catalog-kv-params dt::after {
-  content: '→';
+.catalog-kv-arrow {
   margin-inline-start: var(--space-2);
 }
 

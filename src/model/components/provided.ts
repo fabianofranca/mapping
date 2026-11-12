@@ -45,15 +45,6 @@ export function providedReads(component: ComponentFile): readonly string[] {
 
 /** O primeiro `slot` do template com `provide` (o mesmo slot que `findSlot` acha), ou nenhum. */
 export function providingSlot(component: ComponentFile): SlotTemplate | undefined {
-  if (slotCache.has(component)) return slotCache.get(component);
-  const found = searchProvidingSlot(component);
-  slotCache.set(component, found);
-  return found;
-}
-
-const slotCache = new WeakMap<ComponentFile, SlotTemplate | undefined>();
-
-function searchProvidingSlot(component: ComponentFile): SlotTemplate | undefined {
   const search = (node: unknown): SlotTemplate | undefined => {
     if (typeof node !== 'object' || node === null) return undefined;
     const record = node as { type?: unknown; children?: unknown };

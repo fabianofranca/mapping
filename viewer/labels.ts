@@ -9,6 +9,8 @@ function drawWarning({ code, params }: RenderWarning): string {
       return 'sombra num grupo vazio foi ignorada';
     case 'inner-shadow':
       return 'sombra interna não existe no canvas 2D: ignorada';
+    case 'extra-shadows':
+      return 'só a primeira sombra vale neste nó: a lista e o spread foram ignorados';
     case 'unknown-node':
       return `nó não desenhado (${params?.type ?? ''}): só a caixa`;
     case 'image-without-pixels':

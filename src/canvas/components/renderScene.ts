@@ -7,7 +7,12 @@
  * shape e todo contêiner levam o atributo `sceneId`, para o visualizador achar o nó da cena
  * a partir do alvo de um evento do Konva.
  */
-import { growRadius, sideSegments } from '../../model/components/strokeSides';
+import {
+  growRadius,
+  sideSegments,
+  spreadRadius,
+  strokeAlignInset,
+} from '../../model/components/strokeSides';
 import { gapOutlines } from '../../model/components/strokeGaps';
 import {
   CUT_REACH,
@@ -91,10 +96,6 @@ export interface RenderResult {
 
 export const SCENE_ID_ATTR = 'sceneId';
 
-/** Forma que só leva uma sombra (a posição da sombra na lista fica em `shadowIndex`). */
-const SHADOW_CASTER_ATTR = 'shadowCaster';
-const SHADOW_INDEX_ATTR = 'shadowIndex';
-
 /** Forma que só existe para receber o ponteiro: não pinta nem recebe sombra. */
 const HIT_ONLY_ATTR = 'hitOnly';
 
@@ -172,8 +173,6 @@ class Renderer {
       for (const shadow of [...shadows].reverse()) {
         const caster = shadowCaster(node, shadow);
         caster.setAttr(SCENE_ID_ATTR, node.id);
-        caster.setAttr(SHADOW_CASTER_ATTR, true);
-        caster.setAttr(SHADOW_INDEX_ATTR, shadows.indexOf(shadow));
         container.add(caster);
       }
     }
@@ -210,7 +209,10 @@ class Renderer {
     }
 
     const [first] = shadows;
-    if (first && shadowOwner && !casters) applyShadow(shadowOwner, first);
+    if (first && shadowOwner && !casters) {
+      applyShadow(shadowOwner, first);
+      if (shadows.length > 1 || (first.spread ?? 0) !== 0) this.warn('extra-shadows');
+    }
     return container;
   }
 
@@ -282,7 +284,7 @@ class Renderer {
           shapes.push(...this.fillShape(new KonvaEllipse(geometry), paint, box));
         }
         if (node.stroke) {
-          const inset = strokeInset(node.stroke) - (node.stroke.offset ?? 0);
+          const inset = strokeAlignInset(node.stroke) - (node.stroke.offset ?? 0);
           const shape = new KonvaEllipse({
             ...geometry,
             radiusX: Math.max(0, geometry.radiusX - inset),
@@ -585,7 +587,7 @@ class Renderer {
   private rectStroke(stroke: Stroke, box: Box, radius: CornerRadius): Konva.Shape {
     // `offset`: o contorno afastado da forma (o anel cresce de cada lado, com o raio + offset).
     const offset = stroke.offset ?? 0;
-    const align = strokeInset(stroke);
+    const align = strokeAlignInset(stroke);
     const inset = align - offset;
     const shape = new KonvaRect({
       x: inset,
@@ -967,14 +969,6 @@ function castsShadows(node: SceneNode, shadows: readonly Shadow[]): boolean {
   return boxed && (shadows.length > 1 || shadows.some((s) => (s.spread ?? 0) !== 0));
 }
 
-/** O raio de um canto da sombra: o do nó mais o `spread`, sem passar de 0 (canto reto continua reto). */
-function spreadRadius(radius: CornerRadius, spread: number): CornerRadius {
-  const grow = (r: number): number => (r > 0 ? Math.max(0, r + spread) : 0);
-  return typeof radius === 'number'
-    ? grow(radius)
-    : [grow(radius[0]), grow(radius[1]), grow(radius[2]), grow(radius[3])];
-}
-
 /**
  * A forma que só leva uma sombra: desenha a silhueta do nó (crescida de `spread`) bem longe da
  * tela e traz a sombra de volta pelo deslocamento da sombra, que o canvas 2D aplica em pixels de
@@ -1041,18 +1035,6 @@ function applyShadow(shape: Konva.Shape, shadow: Shadow): void {
 function slackShift(align: TextStyle['align']): number {
   if (align === 'center') return -WRAP_SLACK / 2;
   return align === 'right' ? -WRAP_SLACK : 0;
-}
-
-/** Metade do traço que entra na caixa: por dentro, o traço inteiro fica dentro; por fora, nada. */
-function strokeInset(stroke: Stroke): number {
-  switch (stroke.align) {
-    case 'inside':
-      return stroke.width / 2;
-    case 'outside':
-      return -stroke.width / 2;
-    case 'center':
-      return 0;
-  }
 }
 
 function shrinkRadius(radius: CornerRadius, by: number): CornerRadius {

@@ -182,7 +182,8 @@ describe('textMemo e a largura', () => {
     const tpl = frame([text(sentence, { maxWidth: 60 })], { width: 'fill' });
     const seen = new Map<string, number>();
     const measure: TextMeasurer = (value, font, maxWidth) => {
-      const key = String(maxWidth ?? 'livre');
+      // A chave é (texto, limite): as palavras medidas sem limite (#1631) são outros textos.
+      const key = `${value}|${String(maxWidth ?? 'livre')}`;
       seen.set(key, (seen.get(key) ?? 0) + 1);
       return approximateMeasurer(value, font, maxWidth);
     };

@@ -2,7 +2,12 @@ import type { TextMeasurer } from '../../src/model/components/instantiate';
 import type { ScreenAnchor } from '../../src/model/components/componentFormat';
 import { CUT_REACH, cutsText } from '../../src/model/components/textWrap';
 import { gapOutlines } from '../../src/model/components/strokeGaps';
-import { growRadius, sideSegments } from '../../src/model/components/strokeSides';
+import {
+  growRadius,
+  sideSegments,
+  spreadRadius,
+  strokeAlignInset,
+} from '../../src/model/components/strokeSides';
 import {
   multiply,
   nodeMatrix,
@@ -797,12 +802,7 @@ function alignedShapes(node: SceneNode, shapes: Subpath[]): Subpath[] {
   if (node.type !== 'frame' && node.type !== 'rect' && node.type !== 'ellipse')
     return shapes;
   const offset = stroke.offset ?? 0;
-  const align =
-    stroke.align === 'inside'
-      ? stroke.width / 2
-      : stroke.align === 'outside'
-        ? -stroke.width / 2
-        : 0;
+  const align = strokeAlignInset(stroke);
   const d = align - offset;
   if (d === 0) return shapes;
   const width = Math.max(0.01, node.width - 2 * d);
@@ -822,14 +822,6 @@ function alignedShapes(node: SceneNode, shapes: Subpath[]): Subpath[] {
 function castingEffects(node: SceneNode): readonly Shadow[] {
   const boxed = node.type === 'frame' || node.type === 'rect' || node.type === 'ellipse';
   return boxed ? node.effects : node.effects.filter((e) => !e.inner).slice(0, 1);
-}
-
-/** O raio de um canto da sombra: o do nó mais o `spread`, sem passar de 0 (canto reto continua reto). */
-function spreadRadius(radius: CornerRadius, spread: number): CornerRadius {
-  const grow = (r: number): number => (r > 0 ? Math.max(0, r + spread) : 0);
-  return typeof radius === 'number'
-    ? grow(radius)
-    : [grow(radius[0]), grow(radius[1]), grow(radius[2]), grow(radius[3])];
 }
 
 /**
