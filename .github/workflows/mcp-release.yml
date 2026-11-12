@@ -127,17 +127,23 @@ jobs:
             echo "--version imprimiu '$got', esperado '${TAG#mcp-v}' (sem sufixo)." >&2
             exit 1
           fi
+          # O extrator de assinaturas (`.mjs`, sem dependências) também roda fora do repositório.
+          cp "$GITHUB_WORKSPACE/dist-mcp/mapping-signature.mjs" .
+          node mapping-signature.mjs --help > /dev/null
 
       - name: Checksum
         working-directory: dist-mcp
-        run: sha256sum mapping-mcp.js > mapping-mcp.js.sha256
+        run: |
+          sha256sum mapping-mcp.js > mapping-mcp.js.sha256
+          sha256sum mapping-signature.mjs > mapping-signature.mjs.sha256
 
-      # Os arquivos publicados ficam juntos em `release-assets/`: o servidor, o `.sha256` e os do
+      # Os arquivos publicados ficam juntos em `release-assets/`: o servidor, o extrator de assinaturas, os `.sha256` e os do
       # workspace (o script dos arquivos do workspace roda uma vez).
       - name: Arquivos da Release
         run: |
           mkdir release-assets
           cp dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 release-assets/
+          cp dist-mcp/mapping-signature.mjs dist-mcp/mapping-signature.mjs.sha256 release-assets/
           node scripts/release/workspaceAssets.mjs release-assets > /dev/null
 
       - name: Publicar na Release
@@ -155,7 +161,7 @@ jobs:
               "${assets[@]}" \
               --title "$TAG" \
               --target "$(git rev-parse HEAD)" \
-              --notes "Servidor MCP do Mapping. Copie \`mapping-mcp.js\` para \`tools/\` do seu repositório e registre-o no \`.mcp.json\`. Traz também o \`setup.sh\`, a skill \`SKILL.md\`, as regras \`AGENTS.mapping.md\` e o watcher \`watch-comments.mjs\` do workspace, cada um com o \`.sha256\`. Instruções em docs/MCP.md. Atualizar um workspace que ainda tem o \`setup.sh\` antigo, uma vez: \`curl -fsSL https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh\`."
+              --notes "Servidor MCP do Mapping. Copie \`mapping-mcp.js\` para \`tools/\` do seu repositório e registre-o no \`.mcp.json\`. Traz também o \`setup.sh\`, a skill \`SKILL.md\`, as regras \`AGENTS.mapping.md\` e o watcher \`watch-comments.mjs\` do workspace e o extrator de assinaturas \`mapping-signature.mjs\`, cada um com o \`.sha256\`. Instruções em docs/MCP.md. Atualizar um workspace que ainda tem o \`setup.sh\` antigo, uma vez: \`curl -fsSL https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh\`."
           fi
 
       - name: Apagar as release candidates desta versão

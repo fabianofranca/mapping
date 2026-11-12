@@ -42,6 +42,8 @@ const RELEASE_SKILL = '# skill da release\n';
 const RAW_SKILL = '# skill do raw (main)\n';
 const RELEASE_WATCHER = '// watcher da release\n';
 const OLD_WATCHER = '// watcher copiado à mão, antigo\n';
+const RELEASE_EXTRACTOR = '// extrator da release\n';
+const OLD_EXTRACTOR = '// extrator antigo\n';
 
 const dirs: string[] = [];
 afterEach(() => {
@@ -92,6 +94,11 @@ function setup(options: Options = {}): Env {
   writeFileSync(
     join(release, 'mapping-mcp.js.sha256'),
     `${sha(server)}  mapping-mcp.js\n`,
+  );
+  writeFileSync(join(release, 'mapping-signature.mjs'), RELEASE_EXTRACTOR);
+  writeFileSync(
+    join(release, 'mapping-signature.mjs.sha256'),
+    `${sha(RELEASE_EXTRACTOR)}  mapping-signature.mjs\n`,
   );
   for (const name of options.omit ?? []) {
     rmSync(join(release, name));
@@ -293,11 +300,13 @@ describe('sha256 divergente', () => {
     'SKILL.md',
     'AGENTS.mapping.md',
     'watch-comments.mjs',
+    'mapping-signature.mjs',
   ])('em %s: sai com erro e nada muda', (name) => {
     const env = setup();
     write(env, 'tools/mapping-mcp.js', 'servidor antigo\n');
     write(env, '.agents/skills/spec-author/SKILL.md', 'skill antiga\n');
     write(env, 'watch-comments.mjs', OLD_WATCHER);
+    write(env, 'tools/mapping-signature.mjs', OLD_EXTRACTOR);
     write(env, 'AGENTS.md', `# Mapeamentos\n\nmeu texto\n\n${BEGIN}\nvelho\n${END}\n`);
     const file = join(env.release, name);
     writeFileSync(file, `${readFileSync(file, 'utf8')}adulterado\n`);
@@ -308,6 +317,41 @@ describe('sha256 divergente', () => {
     expect(backups(env)).toEqual([]);
     expect(leftovers(env)).toEqual([]);
     expect(executions(env)).toBe(1);
+  });
+});
+
+describe('extrator de assinaturas (tools/mapping-signature.mjs)', () => {
+  it('instala o arquivo e o .sha256 em tools/ e imprime o resumo', () => {
+    const env = setup();
+    const result = run(env);
+    expect(result.status, result.all).toBe(0);
+    expect(read(env, 'tools/mapping-signature.mjs')).toBe(RELEASE_EXTRACTOR);
+    expect(read(env, 'tools/mapping-signature.mjs.sha256')).toContain(
+      sha(RELEASE_EXTRACTOR),
+    );
+    expect(result.out).toContain('Extrator: instalado');
+    expect(leftovers(env)).toEqual([]);
+  });
+
+  it('segunda execução: sem mudança; arquivo diferente: atualizado', () => {
+    const env = setup();
+    run(env);
+    expect(run(env).out).toContain('Extrator: sem mudança');
+    write(env, 'tools/mapping-signature.mjs', OLD_EXTRACTOR);
+    const result = run(env);
+    expect(result.out).toContain('Extrator: atualizado');
+    expect(read(env, 'tools/mapping-signature.mjs')).toBe(RELEASE_EXTRACTOR);
+  });
+
+  it('release sem o extrator: só o aviso, o arquivo local fica e o resto segue', () => {
+    const env = setup({ omit: ['mapping-signature.mjs'] });
+    write(env, 'tools/mapping-signature.mjs', OLD_EXTRACTOR);
+    const result = run(env);
+    expect(result.status, result.all).toBe(0);
+    expect(result.err).toContain('mapping-signature.mjs');
+    expect(read(env, 'tools/mapping-signature.mjs')).toBe(OLD_EXTRACTOR);
+    expect(result.out).toContain('Extrator: não atualizado (release sem o extrator)');
+    expect(read(env, 'tools/mapping-mcp.js')).toContain('0.0.0-test');
   });
 });
 

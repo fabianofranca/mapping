@@ -213,6 +213,14 @@ describe('os workflows de release publicam os arquivos do workspace', () => {
       expect(job).toContain(
         'cp dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 release-assets/',
       );
+      // O extrator (S3 da #1079) vai junto, com o hash, e é testado fora do repositório.
+      expect(job).toContain(
+        'cp dist-mcp/mapping-signature.mjs dist-mcp/mapping-signature.mjs.sha256 release-assets/',
+      );
+      expect(job).toContain(
+        'sha256sum mapping-signature.mjs > mapping-signature.mjs.sha256',
+      );
+      expect(job).toContain('node mapping-signature.mjs --help');
     }
   });
 

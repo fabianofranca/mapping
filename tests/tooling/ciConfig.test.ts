@@ -685,6 +685,7 @@ describe('mcp-prerelease.yml', () => {
         'AGENTS.mapping.md',
         'SKILL.md',
         'mapping-mcp.js',
+        'mapping-signature.mjs',
         'setup.sh',
         'watch-comments.mjs',
       ]) {
@@ -694,6 +695,16 @@ describe('mcp-prerelease.yml', () => {
         job.indexOf('gh release create'),
       );
     }
+  });
+
+  it('a lista de esperados segue a ordem alfabética (LC_ALL=C) e as notas citam o extrator', () => {
+    for (const name of ['snapshot-publish', 'rc-publish']) {
+      const job = jobOf(pre, name);
+      const expected = /expected="([^"]+)"/.exec(job)?.[1]?.split(' ') ?? [];
+      expect(expected, name).toContain('mapping-signature.mjs.sha256');
+      expect([...expected].sort(), name).toEqual(expected);
+    }
+    expect(pre.match(/mapping-signature\.mjs/g)?.length).toBeGreaterThan(8);
   });
 
   it('o número do PR entra em run: só por env:', () => {
