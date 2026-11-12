@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 18,
+  "revision": 13,
+  "app": "mapping",
+  "coordinateSystem": "image-pixels-exif-oriented",
+  "project": {
+    "id": "156728e4-b286-4e05-9b9e-e0f9c7e2c2fc",
+    "name": "fiel-seg",
+    "createdAt": "2026-11-12T06:35:42.127Z",
+    "updatedAt": "2026-11-12T06:39:34.188Z"
+  },
+  "specializations": [
+    {
+      "id": "notas",
+      "version": 3,
+      "file": "specs/notas/notas.spec.json"
+    },
+    {
+      "id": "material3-compose",
+      "version": 9,
+      "file": "specs/material3-compose/material3-compose.spec.json"
+    }
+  ],
+  "platformRepos": {},
+  "docRepos": {},
+  "drawingMode": "light",
+  "layers": [
+    {
+      "id": "f17e1941-3c3f-4b62-93db-affc0cfe8365",
+      "name": "Camada 1",
+      "color": "#D32F2F",
+      "spec": null
+    },
+    {
+      "id": "e8749b30-9b74-4378-862f-f49f3f496da9",
+      "name": "Notas",
+      "color": "#F5C400",
+      "spec": {
+        "specId": "notas",
+        "layerId": "notas"
+      }
+    },
+    {
+      "id": "74c6e6af-36d1-4488-98e9-909dec7e742a",
+      "name": "Layout",
+      "color": "#7D5260",
+      "spec": {
+        "specId": "material3-compose",
+        "layerId": "layout"
+      }
+    },
+    {
+      "id": "714aff70-6e28-4c5d-b699-a53ed2597968",
+      "name": "Conteúdo",
+      "color": "#625B71",
+      "spec": {
+        "specId": "material3-compose",
+        "layerId": "content"
+      }
+    },
+    {
+      "id": "3c691334-1159-48ed-992c-532eac456c9b",
+      "name": "Componentes",
+      "color": "#6750A4",
+      "spec": {
+        "specId": "material3-compose",
+        "layerId": "components"
+      }
+    }
+  ],
+  "containers": [
+    {
+      "id": "412e876f-c839-4517-a9ef-01a4b9728925",
+      "name": "Seg",
+      "file": null,
+      "width": 360,
+      "height": 100,
+      "placement": {
+        "x": 0,
+        "y": 361.111111,
+        "scale": 2.77777777778
+      },
+      "parentId": null,
+      "markingColor": null,
+      "locked": false,
+      "source": null,
+      "background": "#FFFFFF"
+    }
+  ],
+  "markings": [
+    {
+      "id": "9746337a-f38d-4b10-bd2a-ff8707140327",
+      "containerId": "412e876f-c839-4517-a9ef-01a4b9728925",
+      "parentId": null,
+      "name": null,
+      "rect": {
+        "x": 151,
+        "y": 30,
+        "width": 209,
+        "height": 40
+      },
+      "needsReview": false,
+      "locked": false,
+      "floating": false,
+      "source": null
+    }
+  ],
+  "arrows": [],
+  "perspectives": [],
+  "arrivals": [],
+  "annotations": [
+    {
+      "id": "57148555-538f-4067-b11b-74258ab25c18",
+      "markingId": "9746337a-f38d-4b10-bd2a-ff8707140327",
+      "layerId": "3c691334-1159-48ed-992c-532eac456c9b",
+      "name": null,
+      "parentAnnotationId": null,
+      "parentRole": null,
+      "type": {
+        "specId": "material3-compose",
+        "typeId": "segmented-button"
+      },
+      "values": {
+        "options": [
+          {
+            "_id": "b4d991c3-bc0d-4ac9-afd6-011e02903770",
+            "label": "A",
+            "icon": null,
+            "selected": "false"
+          },
+          {
+            "_id": "2d60bf1f-0356-4cc4-b2ac-80a883a32c60",
+            "label": "Semana inteira",
+            "icon": null,
+            "selected": "true"
+          },
+          {
+            "_id": "ff3c009a-a861-439a-a589-9bdba2576e28",
+            "label": "Mes",
+            "icon": null,
+            "selected": "false"
+          }
+        ],
+        "selection": "single",
+        "enabled": "true",
+        "interaction": "none"
+      },
+      "entries": []
+    }
+  ]
+}
