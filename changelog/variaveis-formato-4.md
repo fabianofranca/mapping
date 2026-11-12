@@ -11,3 +11,7 @@
 
 - O carousel `centered-hero` da `material3-compose` desenha como o Compose sem `maxItemWidth` (#1504): em 360 de largura com `itemSpacing` 8, o item grande tem 264 (antes 232), os pequenos 40 (antes 56) e o primeiro item começa em 48 (antes 64); a conta vale para toda largura e todo `itemSpacing` (grande = largura − 2 × (espaço + 40), recuo = 40 + espaço), com menos de 3 itens um só pequeno de 40 alinhado ao início, e o grande sozinho abaixo de 130 (90 com menos de 3 itens). A `version` da biblioteca sobe de 10 para 11, de forma aditiva (os dados ficam como estão; as migrações antigas passam a apontar para a 11).
 - O `carousel.json` da `material3-compose` usa variáveis (`let` e `$var`) no lugar das subexpressões repetidas: de 107 kB para 37 kB formatado, com o mesmo desenho (o componente lido é o mesmo).
+
+## Corrigido
+
+- O `slider` da `material3-compose` com muitos passos não perde mais marcas (#1504, #1506): quando o espaço entre os centros (`(largura − 20) / (steps + 1)`) cai abaixo de 1 px, ou `steps + 2` passaria de 1000, o `repeat` das marcas fica com 0 linhas (sem o aviso `repeat limitado a 1000 linhas: marcas`) e cada trecho (ativo e inativo; no range, os três) desenha uma faixa de 4 px, da primeira à última marca que seria visível nele, na cor e na opacidade das marcas (também desabilitado). Abaixo do limiar o desenho é o de antes. Na app e no PNG do MCP.

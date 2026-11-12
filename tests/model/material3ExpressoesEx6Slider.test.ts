@@ -479,6 +479,114 @@ describe('EX6 slider — as marcas de steps', () => {
 });
 
 // ---------------------------------------------------------------------------------------------
+// Muitos passos: a faixa no lugar das marcas (VL3 da etapa #1504, decisões 3, 17 e 18)
+// ---------------------------------------------------------------------------------------------
+
+/** A faixa de 4 que cada trecho desenha quando as marcas não cabem (os `rect` "faixa de passos"). */
+function stripsOf(d: Drawing, mode: Mode, enabled: boolean) {
+  return collect(d, (n) => n.type === 'rect' && n.name === 'faixa de passos')
+    .map(({ node }) => {
+      const b = boxOf(d, node);
+      return {
+        x: b.x,
+        width: b.width,
+        height: b.height,
+        kind: kindOf(d, node, mode, enabled),
+      };
+    })
+    .sort((a, b) => a.x - b.x);
+}
+
+/** As faixas que a conta pede: de uma marca a outra (4 de largura a mais), por trecho. */
+function expectedStrips(
+  values: { type?: string; value?: number; valueStart?: number; valueEnd?: number },
+  steps: number,
+  width: number,
+) {
+  const parts = steps + 1;
+  const sp = (width - 20) / parts;
+  const range = values.type === 'range';
+  const first = range ? Math.round(clamp01(values.valueStart ?? 0.2) * parts) : -1;
+  const last = Math.round(
+    clamp01((range ? values.valueEnd : values.value) ?? (range ? 0.8 : 0.5)) * parts,
+  );
+  const out: { x: number; width: number; kind: Kind }[] = [];
+  const add = (from: number, to: number, kind: Kind) => {
+    if (to >= from) out.push({ x: 8 + from * sp, width: (to - from) * sp + 4, kind });
+  };
+  if (range) add(0, first - 1, 'primary');
+  add(range ? first + 1 : 0, last - 1, 'secondary');
+  add(last + 1, parts, 'primary');
+  return out;
+}
+
+describe('EX6 slider — muitos passos: faixa no lugar das marcas (#1506)', () => {
+  const cases = [
+    { type: 'single', value: 0.5 },
+    { type: 'single', value: 0.37 },
+    { type: 'range', valueStart: 0.2, valueEnd: 0.8 },
+    { type: 'range', valueStart: 0.1, valueEnd: 0.9 },
+  ];
+
+  for (const enabled of ['true', 'false']) {
+    for (const mode of ['light', 'dark'] as const) {
+      it(`328 com steps 2000 (enabled ${enabled}, ${mode}): sem aviso, sem marcas e uma faixa de 4 por trecho`, () => {
+        for (const c of cases) {
+          const values = { ...c, steps: 2000, enabled } as Values;
+          const d = drawAt(values, 328, mode);
+          expect(d.warnings.join('|'), JSON.stringify(c)).not.toContain(
+            'repeat limitado',
+          );
+          expect(d.warnings.join('|')).not.toContain('marcas');
+          expect(marksOf(d, mode, enabled === 'true'), 'marcas').toEqual([]);
+          const got = stripsOf(d, mode, enabled === 'true');
+          const want = expectedStrips(c, 2000, 328);
+          expect(got.length, JSON.stringify(c)).toBe(want.length);
+          got.forEach((s, i) => {
+            expect(s.height).toBe(4);
+            expect(s.x, `x ${i}`).toBeCloseTo(want[i]!.x, 3);
+            expect(s.width, `largura ${i}`).toBeCloseTo(want[i]!.width, 3);
+            expect(s.kind, `tipo ${i}`).toBe(want[i]!.kind);
+          });
+        }
+      });
+    }
+  }
+
+  it('o limiar: o espaço entre centros logo acima de 1 desenha marcas, logo abaixo a faixa', () => {
+    // (328 - 20) / (steps + 1) = 1 em steps = 307: 306 dá 1,003 (marcas), 308 dá 0,997 (faixa)
+    for (const [steps, dense] of [
+      [306, false],
+      [307, false],
+      [308, true],
+    ] as const) {
+      const d = drawAt({ type: 'single', value: 0.5, steps } as Values, 328);
+      expect(marksOf(d).length > 0, `steps ${steps}`).toBe(!dense);
+      expect(stripsOf(d, 'light', true).length > 0, `steps ${steps}`).toBe(dense);
+    }
+  });
+
+  it('steps + 2 em 1000 desenha marcas e em 1001, a faixa, numa largura grande', () => {
+    // 998 + 2 = 1000 (marcas); 999 + 2 = 1001 (faixa); com 5000 de largura o espaço passa de 4
+    const at998 = drawAt({ type: 'single', value: 0.5, steps: 998 } as Values, 5000);
+    expect(marksOf(at998).length).toBeGreaterThan(0);
+    expect(stripsOf(at998, 'light', true)).toEqual([]);
+    expect(at998.warnings.join('|')).not.toContain('repeat limitado');
+    const at999 = drawAt({ type: 'single', value: 0.5, steps: 999 } as Values, 5000);
+    expect(marksOf(at999)).toEqual([]);
+    expect(stripsOf(at999, 'light', true).length).toBe(2);
+    expect(at999.warnings.join('|')).not.toContain('repeat limitado');
+  });
+
+  it('sem steps e abaixo do limiar não há faixa', () => {
+    for (const steps of [undefined, 0, 12, 40])
+      expect(
+        stripsOf(drawAt({ type: 'range', steps } as Values, 328), 'light', true),
+      ).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
 // Regressão: as cenas de antes (decisão 16, ≤ 0,5 px por nó)
 // ---------------------------------------------------------------------------------------------
 
@@ -723,8 +831,8 @@ describe('EX6 slider — sem tabelas enumeradas', () => {
     // dezenas de linhas indentadas, e a largura dos trechos e as marcas dependem do valor
     // encaixado, que não se guarda em variável): ~25 kB, um quarto do de antes. A L2 (#1078) tirou as
     // alças dos quadros `antes do início` e `depois do fim` (que podem medir 0 e não comportam a alça) e as
-    // pôs na raiz, com a posição calculada uma vez cada (a do fim e a do início): teto de 34 kB (hoje 32.789).
-    expect(text('components/slider.json').length).toBeLessThan(34_000);
+    // pôs na raiz, com a posição calculada uma vez cada (a do fim e a do início): teto de 34 kB (hoje 32.789). A VL3 (#1506) acrescentou o `let` e as três faixas de passos: teto de 40 kB (hoje ~38.000).
+    expect(text('components/slider.json').length).toBeLessThan(40_000);
   });
 
   it('o preview e a descrição falam em número, não em décimos nem em 9 passos', () => {
