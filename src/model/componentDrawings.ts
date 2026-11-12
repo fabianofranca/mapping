@@ -18,7 +18,6 @@ import {
   sameProvided,
   type ProvidedValues,
 } from './components/provided';
-import type { FrameNode } from './components/scene';
 import {
   markingComponent,
   type ComponentCatalog,
@@ -31,7 +30,7 @@ import { effectiveDensity, unitSpaceOf, type UnitSpace } from './density';
 import { effectiveDrawingMode } from './drawingMode';
 import { topDown } from './hierarchy';
 import { projectIndex } from './projectIndex';
-import type { Matrix } from './components/scene';
+import { multiply, type FrameNode, type Matrix } from './components/scene';
 import type { Project, Rect } from './types';
 
 // Desenhos dos componentes (etapa Biblioteca, B3): a cena instanciada de cada marcação que
@@ -264,7 +263,9 @@ function slotClipOf(
 
 /** A cena com a escala da densidade na raiz; com densidade 1 a própria cena (já em pixels). */
 function withRootMatrix(root: FrameNode, rect: Rect, density: number): FrameNode {
-  return density === 1 ? root : { ...root, transform: rootMatrix(rect, density) };
+  return density === 1
+    ? root
+    : { ...root, transform: multiply(rootMatrix(rect, density), root.transform) };
 }
 
 function draw(

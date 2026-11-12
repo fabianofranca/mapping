@@ -1347,6 +1347,8 @@ export function paintScene(
   const scale = Math.sqrt(view.scaleX * view.scaleY);
   const painter = new Painter(raster, measure, scale, view.fonts);
   const screenPainter = new Painter(raster, measure, 1, view.fonts);
+  // Um pintor por escala de raiz (a densidade do container), não um por desenho.
+  const scaled = new Map<number, Painter>();
   const clip = intersect(view.clip, {
     x: 0,
     y: 0,
@@ -1381,10 +1383,13 @@ export function paintScene(
     // são medidos em pixels de saída, não em unidades do componente.
     const [a, b, c, d] = root.transform;
     const rootScale = Math.sqrt(Math.abs(a * d - b * c));
-    const drawer =
-      rootScale === 1
-        ? painter
-        : new Painter(raster, measure, scale * rootScale, view.fonts);
+    let drawer = painter;
+    if (rootScale !== 1) {
+      drawer =
+        scaled.get(rootScale) ??
+        new Painter(raster, measure, scale * rootScale, view.fonts);
+      scaled.set(rootScale, drawer);
+    }
     drawer.paint(root, base, 1, slotClip(drawing.clip, base, clip));
   }
 }
