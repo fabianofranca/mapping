@@ -184,8 +184,23 @@ class Renderer {
 
     if (hasChildren(node)) {
       let forward = shadows.length > 0 && !shadowOwner ? shadows : [];
+      // Quadro com recorte ampliado (sombra, traço) e raio: o ampliado vale ao quadro; os filhos
+      // saem num grupo recortado pela forma (o raio), e o canto deles não sai reto.
+      let holder: Konva.Group = container;
+      if (
+        node.type === 'frame' &&
+        node.clip &&
+        node.clipBox &&
+        !isSquare(node.cornerRadius)
+      ) {
+        const { width, height, cornerRadius } = node;
+        holder = new Konva.Group({
+          clipFunc: (ctx) => roundedRectPath(ctx, width, height, cornerRadius),
+        });
+        container.add(holder);
+      }
       for (const child of node.children) {
-        container.add(this.render(child, forward));
+        holder.add(this.render(child, forward));
         // Só o primeiro filho herda as sombras do grupo.
         forward = [];
       }

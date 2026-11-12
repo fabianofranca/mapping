@@ -909,7 +909,8 @@ class Painter {
     if (node.type === 'frame' || node.type === 'group') {
       let childClip = clip;
       if (node.type === 'frame' && node.clip) {
-        const box = node.clipBox;
+        // Com raio, o recorte ampliado (sombra, traço) vale só ao quadro: os filhos saem pela forma.
+        const box = hasRadius(node.cornerRadius) ? undefined : node.clipBox;
         const rect = box
           ? [
               { x: box.x, y: box.y },
