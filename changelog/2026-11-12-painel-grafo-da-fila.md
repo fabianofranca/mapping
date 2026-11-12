@@ -1,4 +1,4 @@
-# Grafo de dependências no painel da fila — 2026-11-12 (épico `epic/painel-grafo-da-fila`, PR #0, MCP 0.38.2 sem mudança, schema v19)
+# Grafo de dependências no painel da fila — 2026-11-12 (épico `epic/painel-grafo-da-fila`, PR #1773, MCP 0.38.2 sem mudança, schema v19)
 
 ## Adicionado
 
