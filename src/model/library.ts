@@ -511,7 +511,9 @@ function readComponent(file: LibraryFile, pkg: Package, out: Collector): void {
   for (const warning of parsed.warnings)
     out.passWarning(file.path, warning.path, warning.message, codingOf(warning));
   pkg.components.set(file.path, parsed.component);
-  pkg.componentJson.set(file.path, json);
+  // O componente lido (com os `$var` trocados; é o próprio `json` quando não há variáveis): as
+  // conferências por citação de campo olham o desenho que o motor usa, não o `let` escrito.
+  pkg.componentJson.set(file.path, parsed.component);
   pkg.tokenRefs.set(file.path, parsed.tokenRefs);
 }
 

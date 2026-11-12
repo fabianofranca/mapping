@@ -32,6 +32,7 @@ import {
 } from './layoutValues';
 import { TOKEN_NAME_PATTERN, isLiteralColor, type TokenKind } from './tokens';
 import { isRecord } from '../isRecord';
+import { expandVariables, variableSyntaxPaths } from './variables';
 import type { ModelMessageTemplateCode } from '../messages';
 import { componentCodeForText } from '../messages/textLookup';
 
@@ -1792,8 +1793,73 @@ function checkScreen(value: unknown, path: string, out: Ctx): void {
   if ('anchor' in value) oneOf(SCREEN_ANCHORS)(value.anchor, join(path, 'anchor'), out);
 }
 
-/** Todos os problemas do arquivo, com caminho e mensagem separados; lista vazia = válido. */
-function collectIssues(input: unknown, refs: TokenRef[] | null): ComponentIssue[] {
+/** Os problemas do arquivo e o `template` sem `let` nem `$var` (o que o motor lê). */
+interface Analysis {
+  readonly issues: ComponentIssue[];
+  readonly value: unknown;
+}
+
+/** Os caminhos de uma lista de problemas e de referências trocam pelos do arquivo escrito. */
+function remapPaths(
+  issues: ComponentIssue[],
+  refs: TokenRef[] | null,
+  rewrite: (path: string) => string,
+): void {
+  for (const issue of issues) issue.path = rewrite(issue.path);
+  refs?.forEach((ref) => (ref.path = rewrite(ref.path)));
+}
+
+/**
+ * Expande as variáveis (`let`/`$var`, v4) e confere o arquivo. Os problemas da expansão (variável
+ * não definida, ciclo, nome, teto) impedem a conferência do `template`; os do resto do arquivo
+ * seguem. Os caminhos dos problemas são os do arquivo escrito, com `$var(<nome>)` no lugar do uso.
+ */
+function analyze(input: unknown, refs: TokenRef[] | null): Analysis {
+  if (!isRecord(input) || !('template' in input))
+    return { issues: collectIssues(input, refs, input), value: input };
+  const expansion = expandVariables(input.template);
+  const failed = expansion.issues.length > 0;
+  const checked = collectIssues(
+    input,
+    refs,
+    failed ? undefined : expansion.value,
+    !failed,
+  );
+  remapPaths(checked, refs, expansion.rewrite);
+  const issues = [...checked, ...versionIssuesOfVariables(input)];
+  for (const issue of expansion.issues)
+    addIssue(issues, expansion.rewrite(issue.path), issue.message);
+  const seen = new Set<string>();
+  const unique = issues.filter((i) => {
+    const key = `${i.path}\u0000${i.message}`;
+    return !seen.has(key) && seen.add(key) !== undefined;
+  });
+  const same = failed || expansion.value === input.template;
+  return {
+    issues: unique,
+    value: same ? input : { ...input, template: expansion.value },
+  };
+}
+
+/** `let` e `$var` numa `formatVersion` anterior à 4: `só é permitido com formatVersion 4`. */
+function versionIssuesOfVariables(input: Rec): ComponentIssue[] {
+  const version = input.formatVersion;
+  if (typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY)
+    return [];
+  return variableSyntaxPaths(input.template).map((at) => issueOf(at, V4_ONLY_MESSAGE));
+}
+
+/**
+ * Todos os problemas do arquivo, com caminho e mensagem separados; lista vazia = válido.
+ * `template` é o da raiz já sem `let` nem `$var`; com `inspectTemplate` falso o template não é
+ * conferido (a expansão falhou).
+ */
+function collectIssues(
+  input: unknown,
+  refs: TokenRef[] | null,
+  template: unknown,
+  inspectTemplate = true,
+): ComponentIssue[] {
   const issues: ComponentIssue[] = [];
   const out: Ctx = { issues, refs };
   if (!isRecord(input)) {
@@ -1858,46 +1924,46 @@ function collectIssues(input: unknown, refs: TokenRef[] | null): ComponentIssue[
 
   if (!('template' in input)) {
     add(out, 'template', 'campo obrigatório');
-  } else {
-    const type = isRecord(input.template) ? input.template.type : undefined;
+  } else if (inspectTemplate) {
+    const type = isRecord(template) ? template.type : undefined;
     if (type !== 'frame' && (NODE_TYPES as readonly unknown[]).includes(type))
       add(out, 'template.type', 'a raiz do template deve ser do tipo "frame"');
     if (
       typeof version === 'number' &&
       version >= COMPONENT_FORMAT_VERSION_FIDELITY &&
-      isRecord(input.template) &&
-      'rotation' in input.template
+      isRecord(template) &&
+      'rotation' in template
     )
       add(out, 'template.rotation', 'não vale na raiz');
-    checkNode(input.template, 'template', out);
-    checkGapNodes(input.template, out);
+    checkNode(template, 'template', out);
+    checkGapNodes(template, out);
     if (version === 1) {
-      for (const node of nodesOfTypes(input.template, 'template', ['repeat'])) {
+      for (const node of nodesOfTypes(template, 'template', ['repeat'])) {
         add(out, node.path, 'o nó repeat só existe na formatVersion 2');
       }
     }
     issues.push(
       ...v4OnlyKeyIssues(
         version,
-        input.template,
+        template,
         'template',
         V4_NODE_KEYS,
         V4_EXPR_KEYS,
         V4_LITERAL_VALUES,
       ),
     );
-    issues.push(...shadowListVersionIssues(version, input.template));
-    issues.push(...noneAlignVersionIssues(version, input.template));
-    issues.push(...tokenVersionIssues(version, input.template));
-    issues.push(...numericVersionIssues(version, input.template));
-    issues.push(...linesIssues(input.template));
-    issues.push(...indexIssues(version, input.template));
+    issues.push(...shadowListVersionIssues(version, template));
+    issues.push(...noneAlignVersionIssues(version, template));
+    issues.push(...tokenVersionIssues(version, template));
+    issues.push(...numericVersionIssues(version, template));
+    issues.push(...linesIssues(template));
+    issues.push(...indexIssues(version, template));
     if (version === 1 || version === 2) {
-      for (const node of nodesOfTypes(input.template, 'template', ['image'])) {
+      for (const node of nodesOfTypes(template, 'template', ['image'])) {
         add(out, node.path, 'o nó image só existe na formatVersion 3');
       }
     }
-    issues.push(...iconVersionIssues(version, input.template));
+    issues.push(...iconVersionIssues(version, template));
   }
   return issues;
 }
@@ -1920,20 +1986,15 @@ function formatIssue(issue: ComponentIssue): string {
 
 /** Todos os problemas do arquivo, cada um `"<caminho>: <mensagem>"`; lista vazia = válido. */
 export function validateComponent(input: unknown): string[] {
-  return collectIssues(input, null).map(formatIssue);
-}
-
-/** Os problemas do arquivo e os `$token` que ele cita (a coleta é local a esta chamada). */
-function collectWithRefs(input: unknown): { issues: ComponentIssue[]; refs: TokenRef[] } {
-  const refs: TokenRef[] = [];
-  return { issues: collectIssues(input, refs), refs };
+  return analyze(input, null).issues.map(formatIssue);
 }
 
 /** Valida um JSON já lido (não lança). */
 export function parseComponent(input: unknown): ComponentParseResult {
-  const { issues, refs } = collectWithRefs(input);
+  const refs: TokenRef[] = [];
+  const { issues, value } = analyze(input, refs);
   if (issues.length > 0) return { ok: false, issues, errors: issues.map(formatIssue) };
-  const component = input as ComponentFile;
+  const component = value as ComponentFile;
   return {
     ok: true,
     component,

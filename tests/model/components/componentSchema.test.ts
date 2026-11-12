@@ -396,4 +396,44 @@ describe('component.schema.json — rotation (EX3)', () => {
     (c.template as Record<string, unknown>).minHeight = { $lines: '' };
     expect(checkSchema(schema, c).length).toBeGreaterThan(0);
   });
+
+  it('aceita let no quadro e $var onde vale expressão ou condição (formatVersion 4)', () => {
+    const c = clone();
+    c.formatVersion = 4;
+    const template = c.template as Record<string, unknown>;
+    template.let = {
+      pad: 8,
+      show: { $has: 'label' },
+      ink: '#112233',
+      big: { $add: [1, 2] },
+    };
+    template.children = [
+      {
+        type: 'rect',
+        width: { $var: 'big' },
+        height: { $add: [{ $var: 'pad' }, 1] },
+        visible: { $var: 'show' },
+        fill: { $if: { $var: 'show' }, then: { $var: 'ink' }, else: '#ffffff' },
+      },
+      { type: 'frame', let: { pad: 2 }, children: [] },
+    ];
+    expect(checkSchema(schema, c)).toEqual([]);
+    expect(parseComponent(c).ok).toBe(true);
+  });
+
+  it('recusa nome de variável fora do padrão, $var com outra chave e let fora de quadro', () => {
+    const c = clone();
+    c.formatVersion = 4;
+    const template = c.template as Record<string, unknown>;
+    template.let = { Pad: 8 };
+    template.children = [];
+    expect(checkSchema(schema, c).join('\n')).toContain('nome fora do padrão');
+    template.let = { pad: 8 };
+    template.children = [{ type: 'rect', width: { $var: 'pad', default: 1 }, height: 4 }];
+    expect(checkSchema(schema, c)).not.toEqual([]);
+    template.children = [{ type: 'rect', width: { $var: 'Pad' }, height: 4 }];
+    expect(checkSchema(schema, c)).not.toEqual([]);
+    template.children = [{ type: 'rect', width: 4, height: 4, let: { a: 1 } }];
+    expect(checkSchema(schema, c)).not.toEqual([]);
+  });
 });

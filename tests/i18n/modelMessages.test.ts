@@ -3,6 +3,7 @@ import { enUS } from '../../src/i18n/en-US';
 import { ptBR } from '../../src/i18n/pt-BR';
 import { locale } from '../../src/store/settings';
 import { modelMessage, rawMessage, type ModelMessage } from '../../src/model';
+import { parseComponent } from '../../src/model/components/parseComponent';
 import { messageText } from '../../src/ui/modelMessage';
 
 // Mensagens do modelo traduzidas pela interface (#945, itens 1 e 41): o pt-BR de cada código
@@ -67,5 +68,66 @@ describe('mensagens do modelo', () => {
     ];
     locale.value = 'pt-BR';
     for (const m of samples) expect(messageText(m)).toBe(m.text);
+  });
+});
+
+// Variáveis do componente (etapa #1504): cada erro novo sai com código e params e tem en-US.
+describe('mensagens das variáveis do componente', () => {
+  const frame = (extra: Record<string, unknown>) => ({
+    format: 'mapping-component',
+    formatVersion: 4,
+    id: 'v',
+    name: 'V',
+    size: { width: 10, height: 10 },
+    template: { type: 'frame', ...extra },
+  });
+  const rect = (width: unknown) => ({ type: 'rect', width, height: 4 });
+  const lets = (vars: Record<string, unknown>, width: unknown) =>
+    frame({ let: vars, children: [rect(width)] });
+  const big: Record<string, unknown> = { v0: 1 };
+  for (let i = 1; i <= 20; i++)
+    big[`v${i}`] = { $add: [{ $var: `v${i - 1}` }, { $var: `v${i - 1}` }] };
+
+  const cases: [string, unknown, string, string][] = [
+    [
+      'component.variableUndefined',
+      lets({}, { $var: 'gap' }),
+      'variável não definida: gap',
+      'undefined variable: gap',
+    ],
+    [
+      'component.variableCycle',
+      lets({ a: { $var: 'b' }, b: { $var: 'a' } }, { $var: 'a' }),
+      'ciclo de variáveis: a → b → a',
+      'variable cycle: a → b → a',
+    ],
+    [
+      'component.expectedVariableName',
+      lets({ Gap: 1 }, 1),
+      'esperava nome de variável ([a-z][a-zA-Z0-9]*)',
+      'expected a variable name ([a-z][a-zA-Z0-9]*)',
+    ],
+    [
+      'component.variablesTooBig',
+      lets(big, { $var: 'v20' }),
+      'expansão das variáveis grande demais (mais de 100000 nós)',
+      'variable expansion too large (more than 100000 nodes)',
+    ],
+  ];
+
+  it.each(cases)('%s: código, params e en-US', (code, input, pt, en) => {
+    const result = parseComponent(input);
+    expect(result.ok).toBe(false);
+    const issue = !result.ok ? result.issues.find((i) => i.message === pt) : undefined;
+    expect(issue?.code).toBe(code);
+    const message = modelMessage(
+      issue?.code as string,
+      (issue?.params ?? {}) as Record<string, string>,
+      pt,
+    );
+    locale.value = 'pt-BR';
+    expect(messageText(message)).toBe(pt);
+    locale.value = 'en-US';
+    expect(messageText(message)).toBe(en);
   });
 });

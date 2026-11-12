@@ -1,0 +1,8 @@
+# Variáveis no formato 4, carousel como o Compose e slider em faixa — [Não lançado] (épico `epic/variaveis-formato-4`, PR #0, MCP 0.38.0, schema v19)
+
+## Adicionado
+
+- Variáveis no componente da `formatVersion` 4 (#1504, #1505): `"let": { "nome": <expressão> }` em qualquer `frame` (a raiz e o `template` de um `repeat` incluídos) e `{ "$var": "nome" }` onde vale uma expressão ou condição. Uma subexpressão longa que se repete é escrita uma vez e usada pelo nome; a leitura troca cada `$var` pelo conteúdo, e o desenho (app, PNG do MCP, visualizador e Catálogo) é o mesmo do componente escrito sem variáveis. O `let` de dentro esconde o de fora, a ordem dentro do mesmo `let` é livre, e `$index`, as colunas do `repeat` e `$size` dentro de uma variável são os do lugar do uso.
+- Os erros das variáveis dizem o nome e o caminho do uso, nas duas línguas: `variável não definida: <nome>`, `ciclo de variáveis: a → b → a`, `esperava nome de variável ([a-z][a-zA-Z0-9]*)`, `expansão das variáveis grande demais (mais de 100000 nós)` e, para o erro de tipo dentro de uma variável, o caminho com `$var(<nome>)` (`template.children[1].width.$var(gap).$add[0]: precisa ser número`). `let` e `$var` numa `formatVersion` menor que 4 dão `só é permitido com formatVersion 4`.
+- `docs/component.schema.json` aceita `let` no quadro e `$var` nas expressões e condições; a skill `spec-author` e o guia dos agentes ensinam a usá-las no lugar de repetir uma subexpressão longa.
+- O MCP 0.38.0 aceita `let` e `$var` no `validate_library`, no lote e no desenho; o `get_component` mostra o arquivo como está. Um MCP ou uma app anteriores à 0.38.0 recusam o componente com `chave desconhecida: let`: atualize o MCP antes de abrir uma biblioteca que as usa.
