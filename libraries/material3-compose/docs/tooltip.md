@@ -47,8 +47,6 @@ Variante `rich`: Exige @OptIn(ExperimentalMaterial3Api::class). Mesmo `TooltipBo
 ## Exemplos
 
 - **Plain**: style=plain, text=Adicionar aos favoritos
-- **Rich com título**: style=rich, title=Modo avião, text=Desliga o Wi-Fi, o Bluetooth e os dados móveis.
-- **Rich com ação**: style=rich, title=Sincronização, text=Suas fotos são copiadas para a nuvem quando há Wi-Fi., action=Saiba mais
 
 ## Fidelidade
 
@@ -77,4 +75,5 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - Sem a seta (`caretShape`) nem o posicionamento em relação à âncora (`TooltipBox`, `TooltipAnchorPosition`, `spacingBetweenTooltipAndAnchor` 4): o tooltip é desenhado sozinho no canto da marcação.
 - As duas sombras (ponto e ambiente) vêm dos tokens `elevation-2-point-*` e `elevation-2-ambient-*` (`$token` em `shadow`, lista de duas sombras com `spread`); a tonal da elevação não é desenhada. Valores da elevação do Material 3 para a web: `elevation/internal/_elevation.scss` do `material-components/material-web` (versão 2.5.0, commit `37aa14b843dcaeb3a46f898679fa6fcd109b1905`), fonte de fora do Compose, que no Android entrega a elevação à plataforma e não traz os números: sombra de ponto em preto a 30% e sombra ambiente em preto a 15%, com `y`, `blur` e `spread` por nível (tokens `elevation-2-point-*` e `elevation-2-ambient-*`). O plain não tem sombra (`shadowElevation` 0).
 - O `RichTooltip` com `maxWidth` maior que a largura da marcação é limitado pela marcação (`fill`); o rich sem retângulo (medido) fica em 320 no máximo.
+- O `size` inicial (240 × 24) é o do `plain`, e o `rich` mede de 28 (só texto) a mais de 100 (com título e ação): por isso o tipo não traz exemplo do `rich`, que passaria da caixa e faria a prova de desenho avisar `conteúdo maior que a caixa`. Numa marcação, escolha `style` rich e use o Arrumar (`sizing` `hug`) para a altura seguir o conteúdo.
 - Sem a animação de entrada e saída, os estados de foco e pressionado, nem o `contentDescription` do `TooltipBox`.

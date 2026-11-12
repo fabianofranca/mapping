@@ -96,17 +96,19 @@ describe('M2 grupo B — foundation no formato 4', () => {
     ).toBe('start');
   });
 
-  it('lazy-vertical-grid: formato 4 e contentPadding no quadro', () => {
+  it('lazy-vertical-grid: formato 4, grade e contentPadding no slot (L5)', () => {
     expect(version('lazy-vertical-grid')).toBe(4);
-    const root = drawIn(
-      catalog,
-      entry('lazy-vertical-grid'),
-      { contentPadding: 16 },
-      'light',
-    ).root;
-    expect(root.type).toBe('frame');
-    const slot = 'children' in root ? root.children[0]! : root;
-    expect([slot.transform[4], slot.transform[5]]).toEqual([16, 16]);
+    const layout = slotLayout('lazy-vertical-grid', {
+      contentPadding: 16,
+      horizontalSpacing: 8,
+      verticalSpacing: 12,
+    });
+    expect(layout).toMatchObject({
+      type: 'grid',
+      gap: 8,
+      lineGap: 12,
+      padding: { top: 16, right: 16, bottom: 16, left: 16 },
+    });
   });
 
   it('flow-row: horizontalArrangement e itemVerticalAlignment viram justify e align; spacing, gap', () => {

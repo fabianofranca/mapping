@@ -55,6 +55,35 @@ function findAll(node: SceneNode, name: string, out: SceneNode[] = []): SceneNod
   if ('children' in node) for (const child of node.children) findAll(child, name, out);
   return out;
 }
+/**
+ * A posição de `target` dentro de `root` (a soma dos deslocamentos dos quadros entre os dois, sem o de `root`); `undefined`
+ * se `target` não está sob `root`. Na L2 (#1078) a cópia dos números sob a alça fica sob quadros `posição` deslocados.
+ */
+function offsetIn(
+  root: SceneNode,
+  target: SceneNode,
+): { x: number; y: number } | undefined {
+  const visit = (
+    node: SceneNode,
+    x: number,
+    y: number,
+  ): { x: number; y: number } | undefined => {
+    const at = { x: x + node.transform[4], y: y + node.transform[5] };
+    if (node === target) return at;
+    if ('children' in node)
+      for (const child of node.children) {
+        const found = visit(child, at.x, at.y);
+        if (found !== undefined) return found;
+      }
+    return undefined;
+  };
+  if (!('children' in root)) return undefined;
+  for (const child of root.children) {
+    const found = visit(child, 0, 0);
+    if (found !== undefined) return found;
+  }
+  return undefined;
+}
 /** A cor de um preenchimento sólido; `#rrggbbff` (alfa total) vale `#rrggbb`. */
 const rgb = (color: string | undefined): string | undefined =>
   color !== undefined && /^#[0-9a-f]{8}$/i.test(color) && color.endsWith('ff')
@@ -68,7 +97,7 @@ const tokens = (mode: Mode) => resolveTokens(catalog.library!.tokens, {}, mode);
 
 describe('MF4: versão e atualização aditiva', () => {
   it('é a versão 7 e a atualização da 6 é aditiva (sem quebra nem migração faltando)', () => {
-    expect(spec.version).toBe(8);
+    expect(spec.version).toBe(9);
     // A versão 6, a da `main` no início do épico, sem os tokens de elevação de duas sombras.
     const previous = JSON.parse(JSON.stringify(spec)) as Spec;
     (previous as { version: number }).version = 6;
@@ -432,14 +461,9 @@ describe('MF4: número sob a alça do time-picker (decisão 21)', () => {
     const texts = copies.map((c) => c.text);
     expect(texts).toContain('35');
     expect(texts).toContain('40');
-    const box = (n: SceneNode) => {
-      // A posição na alça: a do quadro `posição` (0×0) mais a do texto.
-      return n.transform;
-    };
-    void box;
     const partly = (c: TextNode): boolean => {
-      const x = c.transform[4];
-      const y = c.transform[5];
+      // A posição na alça: a dos quadros `posição` mais a do texto.
+      const { x, y } = offsetIn(handle, c)!;
       const inside = (px: number, py: number) =>
         px >= 0 && px <= 48 && py >= 0 && py <= 48;
       const corners = [
@@ -468,10 +492,11 @@ describe('MF4: número sob a alça do time-picker (decisão 21)', () => {
     const ten = (findAll(handle, 'número sob a alça') as TextNode[]).find(
       (c) => c.text === '10',
     )!;
-    expect(ten.transform[4]).toBeGreaterThanOrEqual(0);
-    expect(ten.transform[4] + ten.width).toBeLessThanOrEqual(48);
-    expect(ten.transform[5]).toBeGreaterThanOrEqual(0);
-    expect(ten.transform[5] + ten.height).toBeLessThanOrEqual(48);
+    const at = offsetIn(handle, ten)!;
+    expect(at.x).toBeGreaterThanOrEqual(0);
+    expect(at.x + ten.width).toBeLessThanOrEqual(48);
+    expect(at.y).toBeGreaterThanOrEqual(0);
+    expect(at.y + ten.height).toBeLessThanOrEqual(48);
   });
 });
 

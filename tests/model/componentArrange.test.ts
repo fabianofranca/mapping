@@ -880,6 +880,30 @@ describe('fitMarking (MC3, decisão 14 da #898)', () => {
     expect(rectOf(fit(q, 'B'), 'B').height).toBeGreaterThan(40);
   });
 
+  it('slot none alinhado (v4): justify stretch estica a largura e align stretch a altura', () => {
+    // `justify: stretch` estica na horizontal: a largura (hug) da filha não muda.
+    let p = addFit(fitProject(), 'R', 'fit-none-justify', box(100, 100, 400, 100));
+    p = addFit(p, 'B', 'fit-hug', box(100, 100, 120, 40), 'R');
+    p = setFieldValue(p, 'A_B', 'label', LONG_LABEL);
+    expect(rectOf(fit(p, 'B'), 'B').width).toBe(120);
+    // `align: stretch` estica na vertical: a altura (hug) fica, mesmo com o rótulo longo.
+    let q = addFit(fitProject(), 'R', 'fit-none-align', box(100, 100, 400, 100));
+    q = addFit(q, 'B', 'fit-button', box(100, 100, 120, 40), 'R');
+    q = setFieldValue(q, 'A_B', 'label', LONG_LABEL);
+    expect(rectOf(fit(q, 'B'), 'B').height).toBe(40);
+  });
+
+  it('L4: sizing max-content ajusta para a largura sem quebra, min-content para a palavra mais larga', () => {
+    const max = rectOf(fit(withLabel('fit-max', LONG_LABEL), 'B'), 'B');
+    // 52 caracteres de 7,7 px mais o padding de 8 dos dois lados, inteiro para cima; uma linha só.
+    expect(max).toMatchObject({ x: 100, y: 100, width: 417, height: 40 });
+    const min = rectOf(fit(withLabel('fit-min', LONG_LABEL), 'B'), 'B');
+    // "bastante" (8 caracteres) é a palavra mais larga: 61,6 + 16, inteiro para cima.
+    expect(min.width).toBe(78);
+    expect(min.height).toBeGreaterThan(40);
+    expect(arrangesByFit(withLabel('fit-max', LONG_LABEL), fcat, 'B')).toBe(true);
+  });
+
   it('o maxHeight da raiz limita o ajuste', () => {
     const p = withLabel('fit-capped', LONG_LABEL);
     expect(rectOf(fit(p, 'B'), 'B').height).toBe(60);

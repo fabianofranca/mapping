@@ -22,6 +22,7 @@ import { Image as KonvaImage } from 'konva/lib/shapes/Image';
 import { Line as KonvaLine } from 'konva/lib/shapes/Line';
 import { Path as KonvaPath } from 'konva/lib/shapes/Path';
 import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
+import { PixelRect } from './pixelRect';
 import { Shape as KonvaShape } from 'konva/lib/Shape';
 import { Text as KonvaText, type TextConfig } from 'konva/lib/shapes/Text';
 import {
@@ -41,6 +42,7 @@ import {
 import type { ImageFit } from '../../model/components/componentFormat';
 import type { RunLayout, RunPiece } from '../../model/components/richText';
 import { textBoxLimits } from './textLimits';
+import { wordSafeText } from './wordWidth';
 import { capMiddleShift, lineBaseline } from '../../model/components/baseline';
 import { capMetricsOf } from './capMiddle';
 import { cachedEmbeddedImage, loadEmbeddedImage } from './imageLoader';
@@ -182,8 +184,23 @@ class Renderer {
 
     if (hasChildren(node)) {
       let forward = shadows.length > 0 && !shadowOwner ? shadows : [];
+      // Quadro com recorte ampliado (sombra, traço) e raio: o ampliado vale ao quadro; os filhos
+      // saem num grupo recortado pela forma (o raio), e o canto deles não sai reto.
+      let holder: Konva.Group = container;
+      if (
+        node.type === 'frame' &&
+        node.clip &&
+        node.clipBox &&
+        !isSquare(node.cornerRadius)
+      ) {
+        const { width, height, cornerRadius } = node;
+        holder = new Konva.Group({
+          clipFunc: (ctx) => roundedRectPath(ctx, width, height, cornerRadius),
+        });
+        container.add(holder);
+      }
       for (const child of node.children) {
-        container.add(this.render(child, forward));
+        holder.add(this.render(child, forward));
         // Só o primeiro filho herda as sombras do grupo.
         forward = [];
       }
@@ -216,12 +233,17 @@ class Renderer {
       case 'frame':
       case 'rect': {
         for (const paint of node.fills) {
-          const shape = new KonvaRect({
+          const config = {
             width: node.width,
             height: node.height,
             cornerRadius: konvaRadius(node.cornerRadius),
             listening: true,
-          });
+          };
+          // Cor sólida sem canto arredondado: bordas em pixels inteiros (sem fio na emenda).
+          const shape =
+            paint.type === 'solid' && isSquare(node.cornerRadius)
+              ? new PixelRect(config)
+              : new KonvaRect(config);
           shapes.push(...this.fillShape(shape, paint, box));
         }
         if (node.stroke) {
@@ -319,7 +341,14 @@ class Renderer {
         const cut = cutsText(node);
         if (node.width > 0 && !cut) {
           // A folga da quebra (0,5 px), a mesma do medidor; o `x` desfaz o deslocamento do `align`.
-          attrs.width = node.width + WRAP_SLACK;
+          // Uma palavra mais larga que a caixa fica inteira na linha e as outras quebram onde o
+          // modelo e o medidor quebram.
+          const breaks = style.wrap !== 'none' && style.ellipsis !== true;
+          const safe = breaks
+            ? wordSafeText(node.text, attrs, node.width)
+            : { text: node.text, width: node.width };
+          attrs.text = safe.text;
+          attrs.width = safe.width + WRAP_SLACK;
           attrs.x = slackShift(style.align);
         }
         if (node.height > 0) attrs.height = node.height;
@@ -1034,6 +1063,10 @@ function shrinkRadius(radius: CornerRadius, by: number): CornerRadius {
     Math.max(0, radius[2] - by),
     Math.max(0, radius[3] - by),
   ];
+}
+
+function isSquare(radius: CornerRadius): boolean {
+  return typeof radius === 'number' ? radius === 0 : radius.every((r) => r === 0);
 }
 
 function konvaRadius(radius: CornerRadius): number | number[] {

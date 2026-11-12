@@ -1,6 +1,6 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "m3-button",
   "name": "Button",
   "description": "Common button: filled, tonal, outlined, text ou elevated; 40 dp, forma full.",
@@ -13,7 +13,7 @@
     "height": 40
   },
   "sizing": {
-    "width": "hug",
+    "width": "max-content",
     "height": 40
   },
   "preview": {

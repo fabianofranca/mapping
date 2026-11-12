@@ -57,6 +57,12 @@ const spec = (withFonts: boolean) => ({
           fields: [{ key: 'label', type: 'string', default: 'Confirmar pagamento' }],
         },
         {
+          id: 'chip',
+          name: 'Chip',
+          component: 'components/chip.json',
+          fields: [],
+        },
+        {
           id: 'face',
           name: 'Rótulo',
           component: 'components/face.json',
@@ -86,6 +92,31 @@ const component = (id: string, family?: unknown) => ({
   template: { type: 'frame', layout: { type: 'row' }, children: [textNode(family)] },
 });
 
+/** A #1093: raiz `none` com um quadro `hug` de padding 24 nas laterais e uma barra de 39 (87×36). */
+const chipComponent = {
+  format: 'mapping-component',
+  formatVersion: 4,
+  id: 'chip',
+  name: 'chip',
+  size: { width: 87, height: 40 },
+  template: {
+    type: 'frame',
+    name: 'chip',
+    layout: { type: 'none' },
+    children: [
+      {
+        type: 'frame',
+        name: 'miolo',
+        width: 'hug',
+        height: 'hug',
+        anchors: { centerX: true, centerY: true },
+        layout: { type: 'row', padding: [0, 24] },
+        children: [{ type: 'rect', name: 'barra', width: 39, height: 36 }],
+      },
+    ],
+  },
+};
+
 interface Workspace {
   base: string;
   client: Client;
@@ -100,6 +131,7 @@ async function workspace(withFonts: boolean): Promise<Workspace> {
   mkdirSync(join(dir, 'images'), { recursive: true });
   writeFileSync(join(lib, 'lib.spec.json'), JSON.stringify(spec(withFonts)));
   writeFileSync(join(lib, 'components', 'btn.json'), JSON.stringify(component('btn')));
+  writeFileSync(join(lib, 'components', 'chip.json'), JSON.stringify(chipComponent));
   writeFileSync(
     join(lib, 'components', 'face.json'),
     JSON.stringify(component('face', { $token: 'face' })),
@@ -312,6 +344,29 @@ describe('plan_changes: prova de desenho por instância', () => {
       items.map((item) => ({ ...item, annotation: undefined }));
     expect(bare(overflows(proposed))).toEqual(bare(planned));
     expect(planned).toHaveLength(1);
+  });
+});
+
+describe('plan_changes: aviso no pai none (#1093)', () => {
+  it('chip de raiz none em 58×40 devolve component-overflow de conteúdo; em 87×40 nada', async () => {
+    const small = await plan(aprox, [
+      SCREEN,
+      create({ x: 10, y: 10, width: 58, height: 40 }, 'lib/chip'),
+    ]);
+    expect(small.data.errors).toBeUndefined();
+    const items = overflows(small);
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({
+      code: 'component-overflow',
+      kind: 'content',
+      node: 'chip',
+      missing: 29,
+    });
+    const fits = await plan(aprox, [
+      SCREEN,
+      create({ x: 10, y: 10, width: 87, height: 40 }, 'lib/chip'),
+    ]);
+    expect(overflows(fits)).toEqual([]);
   });
 });
 

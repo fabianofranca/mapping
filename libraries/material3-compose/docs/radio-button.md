@@ -67,14 +67,14 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 
 O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o desabilitado; não entra no `code` nem nas `variants`. As opções são `none` e os estados que o `RadioButtonTokens.kt` do commit define: `hovered`, `focused` e `pressed` (não há `Dragged*`, então não há `dragged`).
 
-- **Camada de estado:** o nó `estado` é um círculo de 40 (`StateLayerSize`, linha 33) centrado no anel, atrás dele, com a cor do papel do estado: `primary` selecionado (`SelectedHoverIconColor`, `SelectedFocusIconColor`, `SelectedPressedIconColor`, linhas 29, 30 e 32) e `on-surface` não selecionado (`UnselectedHoverIconColor`, `UnselectedFocusIconColor`, `UnselectedPressedIconColor`, linhas 34, 35 e 37). O `opacity` vem dos tokens `state-hover` (0,08), `state-focus` (0,10) e `state-pressed` (0,10).
+- **Camada de estado:** o nó `estado` é um círculo de 24 centrado no anel, atrás dele. O Compose usa 40 (`StateLayerSize`, linha 33), mas a área do anel mede 24 de largura: o círculo de 40 passaria dela e da caixa do componente, e o desenho não deixa nada vazar da caixa, então a camada fica contida (8 a menos de cada lado), com a cor do papel do estado: `primary` selecionado (`SelectedHoverIconColor`, `SelectedFocusIconColor`, `SelectedPressedIconColor`, linhas 29, 30 e 32) e `on-surface` não selecionado (`UnselectedHoverIconColor`, `UnselectedFocusIconColor`, `UnselectedPressedIconColor`, linhas 34, 35 e 37). O `opacity` vem dos tokens `state-hover` (0,08), `state-focus` (0,10) e `state-pressed` (0,10).
 - **Anel do não selecionado:** passa de `on-surface-variant` para `on-surface` com o mouse, o foco e o pressionado (as mesmas linhas); o selecionado continua `primary` no anel e no ponto.
 - **Desabilitado vence:** com `enabled` `false` o nó `estado` fica invisível e o anel não muda, então o desenho é o do desabilitado, qualquer que seja o `interaction`.
 
 **O que ainda difere do Compose**
 
 - Sem ripple animado, sem transição entre estados e sem a animação do ponto (`animateDpAsState`): o desenho é um quadro parado do estado final. O Compose não define anel de foco para este tipo no commit fixado (nenhum `*Tokens.kt` dele traz `FocusIndicatorColor`): nenhum é desenhado.
-- A camada de 40 é maior que a área de 24 do desenho e passa 8 para cada lado; a raiz recorta o que sai da caixa da instância, então a camada aparece cortada em 8 na borda esquerda. No Compose a camada sai do `selectable` da `Row` e do `minimumInteractiveComponentSize`.
+- A camada de 24 do desenho é menor que a de 40 do Compose, que passaria 8 para cada lado da área de 24 e, na borda esquerda, 8 além da caixa da instância. No Compose a camada sai do `selectable` da `Row` e do `minimumInteractiveComponentSize`.
 - Com `onClick` preenchido o Compose aumenta a área para 48 (`minimumInteractiveComponentSize`); o desenho fica com os 24 da chamada com `onClick = null`.
 - O rótulo a 0,38 quando desabilitado é convenção do desenho: o `Text` do Compose herda a cor do conteúdo e não diminui sozinho.
 - `RadioButtonColors` próprio não é campo do tipo.

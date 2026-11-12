@@ -23,6 +23,8 @@ import {
   LAYOUT_JUSTIFIES,
   LAYOUT_TYPES,
   LAYOUT_WRAPS,
+  NONE_ALIGNS,
+  NONE_JUSTIFIES,
   allowedValue,
   justifySpacing,
   mirrorMain,
@@ -38,10 +40,31 @@ import type { Library, TypeDef } from './library';
 import { type Instance, type Screen, childrenOf, renderOrder, updateBox } from './screen';
 import { type FrameNode, absoluteBoxes, walk } from './scene';
 import { applyTokens, resolveTokens } from './tokens';
+import {
+  alignInCell,
+  placeCells,
+  trackCount,
+  trackOffset,
+  trackSize,
+} from './gridLayout';
+import { TRACK_KEYS, isTrackAbsent, lineExtents, validTrack } from './gridPlan';
 import { breakLines, stackLines } from './wrapLines';
 
+/**
+ * As trilhas da grade (`layout.type: "grid"`): `count` (`columns`/`rows`) ou `min`
+ * (`minColumnWidth`/`minRowHeight`); `vertical` preenche linhas (as trilhas são colunas),
+ * `horizontal` preenche colunas (as trilhas são linhas).
+ */
+export interface ResolvedGrid {
+  readonly count?: number | undefined;
+  readonly min?: number | undefined;
+  readonly orientation: 'vertical' | 'horizontal';
+}
+
 export interface ResolvedSlotLayout {
-  readonly type: 'none' | 'row' | 'column';
+  readonly type: 'none' | 'row' | 'column' | 'grid';
+  /** Só `grid`: as trilhas. */
+  readonly grid?: ResolvedGrid | undefined;
   readonly gap: number;
   readonly padding: Padding;
   readonly align: LayoutAlign;
@@ -140,6 +163,44 @@ function resolveWrap(
   };
 }
 
+/** As trilhas da grade; a chave inválida (ou nenhuma) cai em uma trilha da orientação dela. */
+function resolveGrid(layout: LayoutSpec, values: FieldValues): ResolvedGrid {
+  // A primeira chave que tem valor decide (`columns` e `minColumnWidth` por expressão escolhem o
+  // `Fixed` ou o `Adaptive` por um campo); sem valor em nenhuma, vale a primeira presente.
+  const present = TRACK_KEYS.filter((entry) => layout[entry.key] !== undefined).map(
+    (entry) => ({
+      entry,
+      value: evaluate<unknown>(layout[entry.key] as Expr<unknown>, values, undefined),
+    }),
+  );
+  const chosen = present.find((p) => !isTrackAbsent(p.value)) ?? present[0];
+  const orientation = chosen?.entry.vertical === false ? 'horizontal' : 'vertical';
+  if (chosen === undefined) return { count: 1, orientation };
+  const value = validTrack(chosen.entry.field, chosen.value);
+  if (value === undefined) return { count: 1, orientation };
+  return chosen.entry.field === 'min'
+    ? { min: value, orientation }
+    : { count: value, orientation };
+}
+
+/**
+ * O slot `none` com `align` (vertical) e `justify` (horizontal): `start` (padrão), `center`, `end`
+ * e `stretch`, o `Box(contentAlignment)` do Compose. Sem eles é o `none` de sempre (cada filha
+ * fica no próprio retângulo).
+ */
+function resolveNoneLayout(layout: LayoutSpec, values: FieldValues): ResolvedSlotLayout {
+  const align = choice(layout.align, NONE_ALIGNS, 'start', values);
+  const justify = choice(layout.justify, NONE_JUSTIFIES, 'start', values);
+  return align === 'start' && justify === 'start'
+    ? NO_LAYOUT
+    : { ...NO_LAYOUT, align, justify };
+}
+
+/** O slot `none` sem alinhamento: o Arrumar deixa as filhas onde estão. */
+export function isPlainNone(layout: ResolvedSlotLayout): boolean {
+  return layout.type === 'none' && layout.align === 'start' && layout.justify === 'start';
+}
+
 /** Avalia o layout do slot com os valores da instância (`gap`/`padding` podem ser expressões). Sem layout → type 'none'. */
 export function resolveSlotLayout(
   slot: SlotTemplate,
@@ -148,7 +209,7 @@ export function resolveSlotLayout(
   const layout = slot.layout;
   if (!layout) return NO_LAYOUT;
   const type = choice(layout.type, LAYOUT_TYPES, 'none', values);
-  if (type === 'none') return NO_LAYOUT;
+  if (type === 'none') return resolveNoneLayout(layout, values);
   const gap = Math.max(
     0,
     toNumber(evaluate<unknown>(layout.gap as Expr<unknown>, values, 0), 0),
@@ -159,6 +220,24 @@ export function resolveSlotLayout(
   const padding = Array.isArray(rawPadding)
     ? normalizePadding(rawPadding.map((v) => toNumber(v, 0)))
     : normalizePadding(toNumber(rawPadding, 0));
+  const reverse =
+    layout.reverse !== undefined && evaluateBoolean(layout.reverse, values, false);
+  if (type === 'grid') {
+    return {
+      type,
+      grid: resolveGrid(layout, values),
+      gap,
+      padding,
+      align: choice(layout.align, NONE_ALIGNS, 'start', values),
+      justify: choice(layout.justify, NONE_JUSTIFIES, 'start', values),
+      reverse,
+      wrap: 'none',
+      lineGap: Math.max(
+        0,
+        toNumber(evaluate<unknown>(layout.lineGap as Expr<unknown>, values, 0), 0),
+      ),
+    };
+  }
   // `baseline` só vale numa `row`: numa `column` cai em `start`, como no motor.
   const aligns =
     type === 'row' ? LAYOUT_ALIGNS : LAYOUT_ALIGNS.filter((a) => a !== 'baseline');
@@ -168,8 +247,7 @@ export function resolveSlotLayout(
     padding,
     align: choice(layout.align, aligns, 'start', values),
     justify: choice(layout.justify, LAYOUT_JUSTIFIES, 'start', values),
-    reverse:
-      layout.reverse !== undefined && evaluateBoolean(layout.reverse, values, false),
+    reverse,
     ...resolveWrap(layout, values),
   };
 }
@@ -197,6 +275,15 @@ export function slotBoxOfScene(root: FrameNode): Box | undefined {
   for (const node of walk(root)) {
     if (node.type !== 'unknown' || node.sourceType !== 'slot') continue;
     return absoluteBoxes(root).get(node.id);
+  }
+  return undefined;
+}
+
+/** A caixa do slot (primeiro da cena) quando ele tem `clip`; senão nenhuma. */
+export function clippedSlotBox(root: FrameNode): Box | undefined {
+  for (const node of walk(root)) {
+    if (node.type !== 'unknown' || node.sourceType !== 'slot') continue;
+    return node.clipChildren === true ? slotBoxOfScene(root) : undefined;
   }
   return undefined;
 }
@@ -287,6 +374,8 @@ export function layoutChildren(
   layout: ResolvedSlotLayout,
   children: readonly LayoutChild[],
 ): Box[] {
+  if (layout.type === 'grid') return layoutGrid(slot, layout, children);
+  if (layout.type === 'none') return layoutOverlaid(slot, layout, children);
   const geometry = slotGeometry(slot, layout);
   const { row } = geometry;
   const wrapped = layout.wrap !== 'none';
@@ -315,6 +404,24 @@ export function layoutChildren(
   return out;
 }
 
+/** As filhas do slot `none` alinhado: cada uma, sozinha, na caixa do slot (`justify` na largura, `align` na altura). */
+function layoutOverlaid(
+  slot: Box,
+  layout: ResolvedSlotLayout,
+  children: readonly LayoutChild[],
+): Box[] {
+  return children.map((child) => {
+    const x = alignInCell(layout.justify, slot.width, child.box.width);
+    const y = alignInCell(layout.align, slot.height, child.box.height);
+    return roundedBox({
+      x: slot.x + x.pos,
+      y: slot.y + y.pos,
+      width: x.size,
+      height: y.size,
+    });
+  });
+}
+
 /**
  * A extensão que os filhos ocupam no slot, sem o padding (o que o `hug` do componente com slot
  * mede): a soma com os `gap` no eixo principal e a maior extensão no cruzado (com `baseline`, do
@@ -327,6 +434,12 @@ export function contentExtent(
   children: readonly LayoutChild[],
   available: number | null,
 ): { width: number; height: number } {
+  if (layout.type === 'grid') return gridExtent(layout, children, available);
+  if (layout.type === 'none')
+    return {
+      width: Math.max(0, ...children.map((c) => c.box.width)),
+      height: Math.max(0, ...children.map((c) => c.box.height)),
+    };
   const row = layout.type === 'row';
   const mains = children.map((c) => (row ? c.box.width : c.box.height));
   const lines =
@@ -353,6 +466,111 @@ export function contentExtent(
   const main = Math.max(0, ...used);
   const cross = stackLines(crosses, layout.lineGap, false).total;
   return row ? { width: main, height: cross } : { width: cross, height: main };
+}
+
+// ---------------------------------------------------------------------------------------
+// Grade (`layout.type: "grid"`): cada filha ocupa uma célula
+// ---------------------------------------------------------------------------------------
+
+/** A colocação das filhas nas células: a ordem (`reverse` inverte) e a extensão de cada linha de fluxo. */
+interface GridPlan {
+  readonly vertical: boolean;
+  readonly count: number;
+  /** Índices das filhas na ordem de colocação. */
+  readonly order: readonly number[];
+  readonly cells: ReturnType<typeof placeCells>['cells'];
+  /** Extensão de cada linha de fluxo (a maior filha dela), no eixo das linhas. */
+  readonly extents: readonly number[];
+}
+
+const gridVertical = (layout: ResolvedSlotLayout) =>
+  layout.grid?.orientation !== 'horizontal';
+
+/** A extensão da filha no eixo das trilhas (`t`) ou no das linhas de fluxo. */
+function gridSize(child: LayoutChild, vertical: boolean, onTracks: boolean): number {
+  return vertical === onTracks ? child.box.width : child.box.height;
+}
+
+function planGrid(
+  layout: ResolvedSlotLayout,
+  children: readonly LayoutChild[],
+  trackContent: number | null,
+): GridPlan {
+  const vertical = gridVertical(layout);
+  const indices = children.map((_, i) => i);
+  const order = layout.reverse ? indices.reverse() : indices;
+  const count = trackCount(layout.grid ?? {}, trackContent, layout.gap);
+  const { cells, lines } = placeCells(
+    order.map(() => 1),
+    count,
+  );
+  const sizes = order.map((i) => gridSize(children[i] as LayoutChild, vertical, false));
+  return { vertical, count, order, cells, extents: lineExtents(cells, lines, sizes) };
+}
+
+function roundedBox(raw: Box): Box {
+  return {
+    x: Math.round(raw.x),
+    y: Math.round(raw.y),
+    width: Math.max(1, Math.round(raw.width)),
+    height: Math.max(1, Math.round(raw.height)),
+  };
+}
+
+/** Os retângulos (arredondados) das filhas nas células da grade: `justify` nas trilhas, `align` nas linhas. */
+function layoutGrid(
+  slot: Box,
+  layout: ResolvedSlotLayout,
+  children: readonly LayoutChild[],
+): Box[] {
+  const vertical = gridVertical(layout);
+  const { padding } = layout;
+  const tStart = vertical ? slot.x + padding.left : slot.y + padding.top;
+  const tContent = vertical
+    ? slot.width - padding.left - padding.right
+    : slot.height - padding.top - padding.bottom;
+  const fStart = vertical ? slot.y + padding.top : slot.x + padding.left;
+  const plan = planGrid(layout, children, tContent);
+  const size = trackSize(tContent, plan.count, layout.gap);
+  const stacked = stackLines(plan.extents, layout.lineGap, false);
+  const out: Box[] = children.map((c) => c.box);
+  for (const cell of plan.cells) {
+    const index = plan.order[cell.index] as number;
+    const child = children[index] as LayoutChild;
+    const t = alignInCell(layout.justify, size, gridSize(child, vertical, true));
+    const f = alignInCell(
+      layout.align,
+      plan.extents[cell.line] ?? 0,
+      gridSize(child, vertical, false),
+    );
+    const tPos = tStart + trackOffset(cell.track, size, layout.gap) + t.pos;
+    const fPos = fStart + (stacked.tops[cell.line] ?? 0) + f.pos;
+    out[index] = roundedBox(
+      vertical
+        ? { x: tPos, y: fPos, width: t.size, height: f.size }
+        : { x: fPos, y: tPos, width: f.size, height: t.size },
+    );
+  }
+  return out;
+}
+
+/**
+ * O que as filhas pedem ao slot em grade (sem o padding): no eixo das trilhas, `n` vezes a maior
+ * filha mais os `gap`; no das linhas, a soma das extensões das linhas com os `lineGap`.
+ * `available`: o espaço do eixo das trilhas (nulo = uma trilha, com `minColumnWidth`).
+ */
+function gridExtent(
+  layout: ResolvedSlotLayout,
+  children: readonly LayoutChild[],
+  available: number | null,
+): { width: number; height: number } {
+  const plan = planGrid(layout, children, available);
+  const widest = Math.max(0, ...children.map((c) => gridSize(c, plan.vertical, true)));
+  const tracks = plan.count * widest + layout.gap * (plan.count - 1);
+  const flow = stackLines(plan.extents, layout.lineGap, false).total;
+  return plan.vertical
+    ? { width: tracks, height: flow }
+    : { width: flow, height: tracks };
 }
 
 /** Posições no eixo principal de uma linha: `justify` sobre a folga da linha e `reverse` espelhando-a. */
@@ -398,12 +616,7 @@ function placeLine(
     const raw: Box = row
       ? { x: mainPos, y: placed.pos, width: main, height: placed.size }
       : { x: placed.pos, y: mainPos, width: placed.size, height: main };
-    return {
-      x: Math.round(raw.x),
-      y: Math.round(raw.y),
-      width: Math.max(1, Math.round(raw.width)),
-      height: Math.max(1, Math.round(raw.height)),
-    };
+    return roundedBox(raw);
   });
 }
 
@@ -443,7 +656,7 @@ function childTargets(
   const slot = findSlot(component);
   if (!slot) return null;
   const layout = resolveSlotLayout(slot, instance.values);
-  if (layout.type === 'none') return null;
+  if (isPlainNone(layout)) return null;
   const box = slotBox(component, instance, measure);
   if (!box) return null;
   const baselines =

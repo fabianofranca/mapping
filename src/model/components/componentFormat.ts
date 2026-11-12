@@ -230,11 +230,17 @@ export interface FontSpec {
 // ---------------------------------------------------------------------------------------
 
 /**
- * Tamanho de um nó em um eixo: px fixos, `"fill"` (ocupa o que sobra no pai; em `row`/`column`
- * divide com os outros `fill`), `"hug"` (do conteúdo: texto medido, ou filhos) ou uma fração
- * do pai (`"50%"`).
+ * A medida intrínseca (v4, decisão 17 da #1078): `"min-content"` é o maior pedaço inquebrável
+ * (texto: a palavra mais larga) e `"max-content"` o tamanho sem quebrar (texto: a linha mais larga).
  */
-export type SizeSpec = number | 'fill' | 'hug' | `${number}%`;
+export type IntrinsicSize = 'min-content' | 'max-content';
+
+/**
+ * Tamanho de um nó em um eixo: px fixos, `"fill"` (ocupa o que sobra no pai; em `row`/`column`
+ * divide com os outros `fill`), `"hug"` (do conteúdo: texto medido, ou filhos), uma fração
+ * do pai (`"50%"`) ou, na v4, `"min-content"`/`"max-content"` (`IntrinsicSize`).
+ */
+export type SizeSpec = number | 'fill' | 'hug' | IntrinsicSize | `${number}%`;
 
 /**
  * Âncoras no pai com `layout: none`: distância da borda, como as constraints do Figma. Na
@@ -252,17 +258,26 @@ export interface Anchors {
 }
 
 /** Tipo de layout de um quadro ou slot. */
-export type LayoutType = 'none' | 'row' | 'column';
+export type LayoutType = 'none' | 'row' | 'column' | 'grid';
 export type LayoutAlign = 'start' | 'center' | 'end' | 'stretch' | 'baseline';
 export type LayoutJustify =
-  'start' | 'center' | 'end' | 'space-between' | 'space-around' | 'space-evenly';
+  | 'start'
+  | 'center'
+  | 'end'
+  | 'space-between'
+  | 'space-around'
+  | 'space-evenly'
+  | 'stretch';
 /** Quebra de fileira (v4): `none` (padrão), `wrap` ou `wrap-reverse`, como o `flex-wrap` do CSS. */
 export type LayoutWrap = 'none' | 'wrap' | 'wrap-reverse';
 
 /**
  * Layout dos filhos. Na `formatVersion` 4, `type`, `align` e `justify` aceitam expressão (o valor
  * resolvido é conferido no desenho: fora do conjunto, cai no padrão com o aviso
- * `valor inválido em layout.<chave>: <valor>`); com `type` literal `"none"`, só `type` vale.
+ * `valor inválido em layout.<chave>: <valor>`); com `type` literal `"none"` valem só `type`,
+ * `align` (eixo vertical) e `justify` (eixo horizontal), com `start` (padrão), `center`, `end` e
+ * `stretch` (v4): alinham os filhos sem âncora naquele eixo; a âncora do filho vence. O
+ * `justify: "stretch"` vale só no `none`; em `row`/`column` é inválido.
  */
 export interface LayoutSpec {
   readonly type: Expr<LayoutType>;
@@ -296,6 +311,17 @@ export interface LayoutSpec {
   readonly maxPerLine?: Expr<number>;
   /** Linhas, no máximo (v4; só com `wrap`; inteiro ≥ 1): os filhos além da última não são desenhados. */
   readonly maxLines?: Expr<number>;
+  /**
+   * Grade (`type: "grid"`, v4; exatamente uma das quatro trilhas, números ou expressão): `columns`
+   * (inteiro ≥ 1) é o `GridCells.Fixed` do Compose e o `repeat(n, 1fr)` do CSS; `minColumnWidth`
+   * (> 0) o `GridCells.Adaptive` e o `repeat(auto-fit, minmax(x, 1fr))`; `rows` e `minRowHeight` os
+   * mesmos na grade horizontal (que preenche colunas, o `LazyHorizontalGrid`). O `gap` fica entre
+   * as trilhas e o `lineGap` entre as linhas de fluxo.
+   */
+  readonly columns?: Expr<number>;
+  readonly minColumnWidth?: Expr<number>;
+  readonly rows?: Expr<number>;
+  readonly minRowHeight?: Expr<number>;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -325,6 +351,17 @@ interface TemplateNodeBase {
   readonly maxWidth?: Expr<number>;
   readonly minHeight?: Expr<number>;
   readonly maxHeight?: Expr<number>;
+  /**
+   * Trilhas que o nó ocupa num pai `layout: grid` (v4; inteiro ≥ 1, expressão; limitado ao número
+   * de trilhas; padrão 1), como o `GridItemSpan` do Compose e o `grid-column: span n` do CSS.
+   */
+  readonly span?: Expr<number>;
+  /**
+   * Peso do nó `fill` no eixo principal de um pai `row`/`column` (v4; número > 0, expressão; padrão
+   * 1): o que sobra é repartido na proporção dos pesos, como o `Modifier.weight` do Compose e o
+   * `flex-grow` do CSS.
+   */
+  readonly weight?: Expr<number>;
   /** Só com pai `layout: none`. */
   readonly anchors?: Anchors;
   readonly fill?: Expr<FillSpec>;
@@ -337,7 +374,8 @@ interface TemplateNodeBase {
 
 export interface FrameTemplate extends TemplateNodeBase {
   readonly type: 'frame';
-  readonly clip?: boolean;
+  /** Recorta os filhos pela caixa (padrão: só a raiz recorta). Expressão só na v4. */
+  readonly clip?: BoolExpr;
   readonly layout?: LayoutSpec;
   readonly children?: readonly TemplateNode[];
 }
@@ -425,6 +463,11 @@ export interface SlotTemplate extends TemplateNodeBase {
    */
   readonly layout?: LayoutSpec;
   /**
+   * Recorta as marcações filhas pela caixa do slot (v4; booleano ou expressão; padrão `false`):
+   * o desenho da filha só aparece dentro dela.
+   */
+  readonly clip?: BoolExpr;
+  /**
    * Cor herdada (v4): valores que o slot oferece às marcações filhas, pelo nome (livre, sem nome de
    * plataforma). Cada valor é resolvido no pai (campos, tokens e modo dele) e a filha o lê com
    * `{ "$provided": "<nome>", "default": … }`, como o `CompositionLocal` do Compose. Valor que não
@@ -464,6 +507,12 @@ export interface RepeatTemplate extends TemplateNodeBase {
    * `hug` no eixo das linhas.
    */
   readonly distribute?: 'none' | 'fill';
+  /**
+   * `formatVersion` 4: o layout das linhas (`row`, `column` ou `grid`, completo) no lugar de
+   * `direction` + `gap`; os dois juntos não valem. Sem ele, nada muda. `distribute: "fill"` não
+   * combina com `grid`.
+   */
+  readonly layout?: LayoutSpec;
   /**
    * `formatVersion` 4: quebra do `repeat` em linha (`direction: "row"`; em `column`, as colunas), com
    * o mesmo sentido de `layout.wrap`, `lineGap`, `maxPerLine` e `maxLines` de um quadro (o `repeat`
@@ -537,10 +586,11 @@ export type TemplateNode =
 /**
  * Como a instância se dimensiona quando chega **sem retângulo** (tela a partir de um JSON
  * externo, arrumada por `layoutScreen` em `layout.ts`): px fixos, `"fill"` (ocupa o espaço que
- * o pai dá nesse eixo) ou `"hug"` (do conteúdo: o template medido, ou os filhos do slot). Eixo
- * ausente = px de `size`. Não vale para instâncias com retângulo (editor, `*.screen.json`).
+ * o pai dá nesse eixo), `"hug"` (do conteúdo: o template medido, ou os filhos do slot) ou, na v4,
+ * `"min-content"`/`"max-content"` (a medida intrínseca). Eixo ausente = px de `size`. Não vale para
+ * instâncias com retângulo (editor, `*.screen.json`).
  */
-export type InstanceSizeSpec = number | 'fill' | 'hug';
+export type InstanceSizeSpec = number | 'fill' | 'hug' | IntrinsicSize;
 
 /**
  * `sizing` por eixo: o valor literal ou, na v4, uma expressão que dá número ≥ 0, `"fill"` ou `"hug"`,

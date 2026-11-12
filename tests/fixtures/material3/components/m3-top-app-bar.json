@@ -1,6 +1,6 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "m3-top-app-bar",
   "name": "Top app bar",
   "description": "Small top app bar: 64 dp, surface, ícone de navegação, título title-large e ação.",
@@ -42,7 +42,7 @@
           "$has": "navigation"
         },
         "layout": {
-          "type": "row",
+          "type": "none",
           "align": "center",
           "justify": "center"
         },
@@ -110,7 +110,8 @@
             "color": "#1D1B20",
             "width": "fill"
           }
-        ]
+        ],
+        "weight": 1
       },
       {
         "type": "frame",
@@ -121,7 +122,7 @@
           "$has": "action"
         },
         "layout": {
-          "type": "row",
+          "type": "none",
           "align": "center",
           "justify": "center"
         },

@@ -184,7 +184,7 @@ export async function prepareBatch(
     baseHash: sha256(baseText),
     result,
     operations,
-    refs: new Refs({ ...loaded, project: result.project }),
+    refs: new Refs({ ...loaded, project: result.project, catalog: result.catalog }),
     changes: () => (changes ??= computeChanges(result.before, result.project)),
     valid: result.errors.length === 0 && result.invariantIssues.length === 0,
   };

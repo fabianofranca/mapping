@@ -13,7 +13,7 @@
     "height": 40
   },
   "sizing": {
-    "width": "fill",
+    "width": "hug",
     "height": 40
   },
   "preview": {
@@ -51,8 +51,6 @@
         "type": "repeat",
         "name": "segmentos",
         "field": "options",
-        "direction": "row",
-        "distribute": "fill",
         "anchors": {
           "left": -1,
           "top": 0
@@ -63,7 +61,7 @@
           "type": "frame",
           "name": "segmento",
           "width": "fill",
-          "height": "fill",
+          "height": 40,
           "minWidth": 58,
           "fill": {
             "$if": {
@@ -376,7 +374,10 @@
                     "letterSpacing": {
                       "$token": "label-large-tracking"
                     },
-                    "verticalAlign": "cap-middle"
+                    "verticalAlign": "cap-middle",
+                    "wrap": "none",
+                    "maxLines": 1,
+                    "ellipsis": true
                   },
                   "color": {
                     "$if": {
@@ -436,6 +437,12 @@
               }
             }
           ]
+        },
+        "layout": {
+          "type": "grid",
+          "columns": {
+            "$rows": "options"
+          }
         }
       },
       {

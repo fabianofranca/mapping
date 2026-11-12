@@ -3,7 +3,7 @@
   "formatVersion": 15,
   "id": "material3-compose",
   "name": "Material 3 (Compose)",
-  "version": 8,
+  "version": 9,
   "description": "Material Design 3 (baseline, tema claro e escuro) para Jetpack Compose, com o composable de cada tipo no `code`. Os símbolos e os parâmetros vêm do código do androidx na versão compose.material3 1.4.0 (commit 5113b82a4ed6416d6344efa50e41db8cb65928ff). Padrões: os espaços (lambdas) de cada composable ficam no `notes`; o tamanho vem de width, height e weight; os ícones são sugestões de Icons.Filled; a imagem remota usa o carregador de imagens do app; o Scaffold coloca cada filha no espaço certo pelo tipo dela.",
   "platforms": [
     {
@@ -2191,13 +2191,13 @@
               "name": "Título de tela",
               "values": {
                 "text": "Configurações",
-                "style": "headlineMedium"
+                "style": "headlineSmall"
               }
             },
             {
               "name": "Parágrafo",
               "values": {
-                "text": "Texto de apoio com uma frase um pouco mais longa.",
+                "text": "Texto de apoio curto.",
                 "style": "bodyMedium",
                 "color": "onSurfaceVariant"
               }
@@ -2214,8 +2214,8 @@
             {
               "name": "Parágrafo justificado",
               "values": {
-                "text": "O Material 3 organiza a interface em camadas de cor, forma e elevação, para que cada componente mantenha a mesma aparência em qualquer tela do aplicativo.",
-                "style": "bodyMedium",
+                "text": "O Material 3 organiza a interface em camadas de cor e forma.",
+                "style": "bodySmall",
                 "textAlign": "Justify",
                 "width": "fill"
               }
@@ -3534,7 +3534,7 @@
             {
               "name": "Rótulo longo",
               "values": {
-                "label": "Salvar alterações e continuar editando",
+                "label": "Salvar tudo",
                 "style": "filled"
               }
             }
@@ -4249,7 +4249,7 @@
             {
               "name": "Rótulo longo",
               "values": {
-                "text": "Criar nota fiscal",
+                "text": "Nova nota fiscal",
                 "icon": "Add"
               }
             }
@@ -5528,7 +5528,7 @@
             {
               "name": "Rótulo longo",
               "values": {
-                "label": "Adicionar reunião ao calendário compartilhado",
+                "label": "Criar reunião de equipe",
                 "style": "assist",
                 "leadingIcon": "DateRange"
               }
@@ -9140,23 +9140,6 @@
               "values": {
                 "style": "plain",
                 "text": "Adicionar aos favoritos"
-              }
-            },
-            {
-              "name": "Rich com título",
-              "values": {
-                "style": "rich",
-                "title": "Modo avião",
-                "text": "Desliga o Wi-Fi, o Bluetooth e os dados móveis."
-              }
-            },
-            {
-              "name": "Rich com ação",
-              "values": {
-                "style": "rich",
-                "title": "Sincronização",
-                "text": "Suas fotos são copiadas para a nuvem quando há Wi-Fi.",
-                "action": "Saiba mais"
               }
             }
           ]
@@ -14020,7 +14003,7 @@
   "migrations": [
     {
       "from": 1,
-      "to": 8,
+      "to": 9,
       "steps": [
         {
           "op": "fill-field",
@@ -14044,7 +14027,7 @@
     },
     {
       "from": 2,
-      "to": 8,
+      "to": 9,
       "steps": [
         {
           "op": "fill-field",
@@ -14068,7 +14051,7 @@
     },
     {
       "from": 3,
-      "to": 8,
+      "to": 9,
       "steps": [
         {
           "op": "fill-field",
@@ -14092,7 +14075,7 @@
     },
     {
       "from": 4,
-      "to": 8,
+      "to": 9,
       "steps": [
         {
           "op": "fill-field",
@@ -14116,7 +14099,7 @@
     },
     {
       "from": 5,
-      "to": 8,
+      "to": 9,
       "steps": [
         {
           "op": "fill-field",

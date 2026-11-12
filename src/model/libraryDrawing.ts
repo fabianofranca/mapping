@@ -3,6 +3,7 @@ import { type Box, approximateMeasurer, instantiate } from './components/instant
 import { type Library, type TextFile, loadLibrary } from './components/library';
 import { type Origin, screenFromSource } from './components/origin';
 import type { IconSet } from './components/icons';
+import { isIntrinsicSize } from './components/layoutValues';
 import { expressionPx, fitComponentSize, resolveSizing } from './components/sizing';
 import { type ResolvedTokens, resolveTokens } from './components/tokens';
 import type { LibraryIssue } from './library';
@@ -176,9 +177,8 @@ function fitCanOverflow(component: ComponentFile, values: FieldValues): boolean 
   };
   return (['width', 'height'] as const).some((axis) => {
     const resolved = sizing[axis];
-    return (
-      expressionPx(resolved) !== undefined || (resolved.spec === 'hug' && capped[axis])
-    );
+    const measured = resolved.spec === 'hug' || isIntrinsicSize(resolved.spec);
+    return expressionPx(resolved) !== undefined || (measured && capped[axis]);
   });
 }
 

@@ -162,12 +162,18 @@ describe('EX6 progress-indicator — linear: o comprimento sai da fração, para
       expect([by, bh]).toEqual([iy, 4]);
       const [tx, , tw] = rectOf(d, named(d, 'trilho')[0]!);
       expect(near(tx!, p * WIDTH) && near(tw!, WIDTH - p * WIDTH)).toBe(true);
-      const [fx, , fw] = rectOf(d, named(d, 'faixa')[0]!);
-      expect(
-        near(fx!, p * WIDTH + 6) && near(fw!, Math.max(0, WIDTH - p * WIDTH - 6)),
-      ).toBe(true);
+      // L2 (#1078): a faixa só existe com mais pista que o gap de 6 (antes ela media 0 e não desenhava nada), e a
+      // parada de 4 só com pista para ela; nenhum nó passa do trilho (aviso `conteúdo maior que a caixa`).
+      const rest = WIDTH - p * WIDTH;
+      const faixa = named(d, 'faixa')[0];
+      if (rest > 6) {
+        const [fx, , fw] = rectOf(d, faixa!);
+        expect(near(fx!, p * WIDTH + 6) && near(fw!, rest - 6)).toBe(true);
+      } else expect(faixa).toBeUndefined();
       // a parada fica encostada no fim da pista
-      expect(rectOf(d, named(d, 'parada')[0]!)).toEqual([236, iy, 4, 4]);
+      const parada = named(d, 'parada')[0];
+      if (rest >= 4) expect(rectOf(d, parada!)).toEqual([236, iy, 4, 4]);
+      else expect(parada).toBeUndefined();
     },
   );
 
@@ -278,7 +284,18 @@ describe('EX6 regressão — o progress-indicator de antes das tabelas, a ≤ 0,
   it('todo nó de antes existe agora (tipo, nome, caixa, cor e pontos do arco)', () => {
     const failures: string[] = [];
     for (const scene of scenes) {
-      const missing = missingNodes(draw(scene.id, scene.values, scene.mode), scene.nodes);
+      // L2 (#1078): a faixa de largura 0 (nada a desenhar) e a parada sem pista de 4 não são mais desenhadas.
+      const rest =
+        WIDTH * (1 - Math.min(Math.max(Number(scene.values['progress']), 0), 1));
+      const linear = scene.values['shape'] === 'linear' && 'progress' in scene.values;
+      const missing = missingNodes(
+        draw(scene.id, scene.values, scene.mode),
+        scene.nodes,
+        {
+          skip: (o) =>
+            (o.n === 'faixa' && o.r[2] === 0) || (linear && o.n === 'parada' && rest < 4),
+        },
+      );
       if (missing.length > 0) failures.push(`${scene.key}: ${missing.join(' ; ')}`);
     }
     expect(failures).toEqual([]);

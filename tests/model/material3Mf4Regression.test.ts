@@ -86,7 +86,24 @@ const EXCEPTIONS = {
   // (`none`), no lugar do quadro `texto (caixa)` com o `padding`: sai o quadro e o texto fica no mesmo lugar (a caixa
   // do menu é a mesma, a 200 de largura). A largura do menu pelo item mais largo confere `material3Mc6.test.ts`.
   'dropdown-menu': { rename: {}, drop: ['texto (caixa)'] },
+  // L2 (#1078): nenhum nó passa da caixa do pai (aviso `conteúdo maior que a caixa`). A camada de estado do switch passou de
+  // 40 a 32 (a altura do trilho, no quadro `chave`) e, no pressionado, a área da alça cresce de 24 a 28 para caber a alça de 28;
+  // o resto da cena (trilho, curso, alça, ícones) fica igual.
+  switch: { rename: {}, drop: ['estado', 'área da alça'] },
+  // Card: o quadro `recorte` (cantos de cima da mídia pelo raio do Card, mesmo com a sombra alargando o recorte
+  // reto da raiz) envolve o `corpo`, na mesma caixa dele; o resto da cena fica igual (confere
+  // `material3CardMediaCorners.test.ts`).
+  card: { rename: {}, drop: ['recorte'] },
 } as Record<string, { rename: Record<string, string>; drop: string[] }>;
+
+/**
+ * L2 (#1078): exemplos cujos valores mudaram para caber na caixa do `size` (o texto, que passa da caixa de 32 de altura) ou que
+ * saíram porque o `size` não os comporta (o tooltip `rich`, que mede de 28 a mais de 100 de altura em 24).
+ */
+const L2_EXAMPLES: Record<string, string[]> = {
+  text: ['Título de tela', 'Parágrafo', 'Parágrafo justificado'],
+  tooltip: ['Rich com título', 'Rich com ação'],
+};
 
 /** Número sob a alça: a `alça` ganha a cópia dos números (`números sob a alça`) no lugar do `valor selecionado`. */
 const SKIP_CHILDREN = { 'time-picker': ['alça'] } as Record<string, string[]>;
@@ -174,7 +191,9 @@ describe('MF4: regressão da cena dos tipos tocados', () => {
     '%s: a cena dos exemplos fica igual a ≤ 0,5 px por nó, fora as exceções',
     (id) => {
       const now = sceneOf(catalog, id);
-      const keys = Object.keys(before).filter((k) => k.startsWith(`${id}|`));
+      const keys = Object.keys(before).filter(
+        (k) => k.startsWith(`${id}|`) && !L2_EXAMPLES[id]?.includes(k.split('|')[2]!),
+      );
       expect(keys.length).toBeGreaterThan(0);
       for (const key of keys) {
         expect(now[key], key).toBeDefined();

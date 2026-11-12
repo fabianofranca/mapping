@@ -16,6 +16,7 @@ import {
   type Project,
   type TextMeasurer,
 } from '../../src/model';
+import { validateLibrary } from '../../src/model/library';
 import { COMPONENTS, SPEC_ID, componentProject, testCatalog } from './componentFixtures';
 
 const catalog = testCatalog();
@@ -332,5 +333,267 @@ describe('overflow', () => {
     expect(
       createDrawingCache()(p, catalog, approximateMeasurer, 0).get('C')?.overflow,
     ).toBe(true);
+  });
+});
+
+describe('createDrawingCache: clip do slot (L2)', () => {
+  /** O container `inset` (slot a 20 px das bordas) com `clip: true` no slot (formato 4). */
+  function clippedCatalog(clip: unknown = true): ComponentCatalog {
+    const base = COMPONENTS.inset as unknown as {
+      template: { children: Record<string, unknown>[] };
+    };
+    const slot = { ...(base.template.children[0] as object), clip };
+    const inset = {
+      ...base,
+      formatVersion: 4,
+      template: { ...base.template, children: [slot] },
+    };
+    return testCatalog({ ...COMPONENTS, inset } as never);
+  }
+
+  function inScreen(cat: ComponentCatalog): Project {
+    let p = componentProject();
+    const put = (id: string, typeId: string, extra: Partial<NewComponentArgs> = {}) => {
+      p = addComponentMarking(
+        p,
+        cat,
+        {
+          markingId: id,
+          annotationId: `A_${id}`,
+          containerId: 'I1',
+          parentId: null,
+          specId: SPEC_ID,
+          typeId,
+          ...extra,
+        },
+        approximateMeasurer,
+      );
+    };
+    put('C', 'inset', { rect: { x: 100, y: 100, width: 300, height: 200 } });
+    put('T1', 'text', { parentId: 'C' });
+    put('T2', 'text', { parentId: 'C' });
+    return p;
+  }
+
+  it('a filha de um slot com clip leva a caixa do slot da mãe', () => {
+    const cat = clippedCatalog();
+    const drawings = createDrawingCache()(inScreen(cat), cat, approximateMeasurer, 0);
+    const slot = { x: 120, y: 120, width: 260, height: 160 };
+    expect(drawings.get('T1')?.clip).toEqual(slot);
+    expect(drawings.get('T2')?.clip).toEqual(slot);
+    expect(drawings.get('C')?.clip).toBeUndefined();
+  });
+
+  it('slot sem clip (ou com clip falso): a filha não leva clip e o desenho é o de hoje', () => {
+    const plain = createDrawingCache()(
+      inScreen(catalog),
+      catalog,
+      approximateMeasurer,
+      0,
+    );
+    expect('clip' in (plain.get('T1') as object)).toBe(false);
+    const off = clippedCatalog(false);
+    const drawings = createDrawingCache()(inScreen(off), off, approximateMeasurer, 0);
+    expect('clip' in (drawings.get('T1') as object)).toBe(false);
+  });
+
+  it('mover ou redimensionar a mãe atualiza o clip da filha', () => {
+    const cat = clippedCatalog();
+    const cache = createDrawingCache();
+    const p = inScreen(cat);
+    const before = cache(p, cat, approximateMeasurer, 0);
+    const moved = cache(moveMarking(p, 'C', 50, 0), cat, approximateMeasurer, 0);
+    expect(moved.get('T1')?.clip).toEqual({ x: 170, y: 120, width: 260, height: 160 });
+    expect(moved.get('T1')?.clip).not.toBe(before.get('T1')?.clip);
+    const r = p.markings.find((m) => m.id === 'C')!.rect;
+    const resized = cache(
+      setMarkingRect(p, 'C', { ...r, width: 400 }),
+      cat,
+      approximateMeasurer,
+      0,
+    );
+    expect(resized.get('T1')?.clip).toEqual({ x: 120, y: 120, width: 360, height: 160 });
+  });
+
+  it('sem mudança, o clip é o mesmo objeto; mexer numa irmã ou noutra marcação não o troca', () => {
+    const cat = clippedCatalog();
+    const cache = createDrawingCache();
+    const p = inScreen(cat);
+    const before = cache(p, cat, approximateMeasurer, 0);
+    expect(cache(p, cat, approximateMeasurer, 0)).toBe(before);
+    const sibling = cache(moveMarking(p, 'T2', 0, 5), cat, approximateMeasurer, 0);
+    expect(sibling.get('T1')).toBe(before.get('T1'));
+    expect(sibling.get('T1')?.clip).toBe(before.get('T1')?.clip);
+    expect(sibling.get('T2')?.clip).toBe(before.get('T1')?.clip);
+  });
+
+  /** C (inset com clip) com D (box) meio fora do slot dele e o texto T dentro de D. */
+  function nested(cat: ComponentCatalog): Project {
+    let p = componentProject();
+    const put = (id: string, typeId: string, extra: Partial<NewComponentArgs> = {}) => {
+      p = addComponentMarking(
+        p,
+        cat,
+        {
+          markingId: id,
+          annotationId: `A_${id}`,
+          containerId: 'I1',
+          parentId: null,
+          specId: SPEC_ID,
+          typeId,
+          ...extra,
+        },
+        approximateMeasurer,
+      );
+    };
+    put('C', 'inset', { rect: { x: 100, y: 100, width: 300, height: 200 } });
+    put('D', 'box', { parentId: 'C', rect: { x: 300, y: 150, width: 90, height: 80 } });
+    put('T', 'text', { parentId: 'D', center: { x: 345, y: 190 } });
+    return p;
+  }
+
+  it('o clip do slot alcança as netas: a filha sem clip passa o recorte adiante', () => {
+    const cat = clippedCatalog();
+    const p = nested(cat);
+    expect(p.markings.find((m) => m.id === 'T')?.parentId).toBe('D');
+    const drawings = createDrawingCache()(p, cat, approximateMeasurer, 0);
+    const slot = { x: 120, y: 120, width: 260, height: 160 };
+    expect(drawings.get('D')?.clip).toEqual(slot);
+    expect(drawings.get('T')?.clip).toEqual(slot);
+  });
+
+  it('slot com clip dentro de outro: a neta leva a interseção dos dois', () => {
+    const withClip = (component: unknown) => {
+      const c = component as { template: { children: object[] } };
+      return {
+        ...c,
+        formatVersion: 4,
+        template: {
+          ...c.template,
+          children: [{ ...c.template.children[0], clip: true }],
+        },
+      };
+    };
+    const cat = testCatalog({
+      ...COMPONENTS,
+      inset: withClip(COMPONENTS.inset),
+      box: withClip(COMPONENTS.box),
+    } as never);
+    const drawings = createDrawingCache()(nested(cat), cat, approximateMeasurer, 0);
+    // Slot de C: 120..380 × 120..280; slot de D (a caixa toda): 300..390 × 150..230.
+    expect(drawings.get('T')?.clip).toEqual({ x: 300, y: 150, width: 80, height: 80 });
+  });
+
+  it('mãe com screen (cena na origem, em pixels de tela): a filha não leva o clip perto de 0,0', () => {
+    const base = COMPONENTS.inset as unknown as {
+      template: { children: Record<string, unknown>[] };
+    };
+    const inset = {
+      ...base,
+      formatVersion: 4,
+      screen: { anchor: 'top-left' },
+      template: {
+        ...base.template,
+        children: [{ ...(base.template.children[0] as object), clip: true }],
+      },
+    };
+    const cat = testCatalog({ ...COMPONENTS, inset } as never);
+    const drawings = createDrawingCache()(inScreen(cat), cat, approximateMeasurer, 0);
+    expect(drawings.get('C')?.screen).toBeDefined();
+    expect(drawings.get('T1')?.clip).toBeUndefined();
+  });
+
+  it('o clip muda a filha mesmo que ela, em si, não tenha mudado', () => {
+    const cat = clippedCatalog();
+    const cache = createDrawingCache();
+    const p = inScreen(cat);
+    const before = cache(p, cat, approximateMeasurer, 0);
+    const r = p.markings.find((m) => m.id === 'C')!.rect;
+    const after = cache(
+      setMarkingRect(p, 'C', { ...r, height: 150 }),
+      cat,
+      approximateMeasurer,
+      0,
+    );
+    expect(after.get('T1')).not.toBe(before.get('T1'));
+    expect(after.get('T1')?.root).toEqual(before.get('T1')?.root);
+    expect(after.get('T1')?.clip?.height).toBe(110);
+  });
+});
+
+describe('aviso do none: a app e a prova de desenho dão o mesmo (#1093)', () => {
+  // Raiz `none` com um quadro `hug` de padding 24 nas laterais e uma barra de 39: 87 de conteúdo.
+  const chip = (id: string) => ({
+    format: 'mapping-component',
+    formatVersion: 4,
+    id,
+    name: 'Chip',
+    size: { width: 58, height: 40 },
+    template: {
+      type: 'frame',
+      name: 'chip',
+      layout: { type: 'none' },
+      children: [
+        {
+          type: 'frame',
+          name: 'miolo',
+          width: 'hug',
+          height: 'hug',
+          layout: { type: 'row', padding: [0, 24] },
+          children: [{ type: 'rect', name: 'barra', width: 39, height: 36 }],
+        },
+      ],
+    },
+  });
+  const TOO_BIG = 'conteúdo maior que a caixa: chip';
+
+  it('a mesma instância pela app (componentDrawings) e pela prova (libraryDrawing) avisa igual', () => {
+    const cat = testCatalog({ ...COMPONENTS, text: chip('text') } as never);
+    const marked = addComponentMarking(
+      componentProject(),
+      cat,
+      {
+        markingId: 'T1',
+        annotationId: 'A_T1',
+        containerId: 'I1',
+        parentId: null,
+        specId: SPEC_ID,
+        typeId: 'text',
+        rect: { x: 0, y: 0, width: 58, height: 40 },
+      },
+      approximateMeasurer,
+    );
+    const drawing = createDrawingCache()(marked, cat, approximateMeasurer, 0).get('T1')!;
+    expect(drawing.overflow).toBe(true);
+    expect(drawing.shortfalls).toEqual({ [TOO_BIG]: 29 });
+
+    const spec = {
+      format: 'mapping-spec',
+      formatVersion: 15,
+      id: 'm',
+      name: 'M',
+      version: 1,
+      layers: [
+        {
+          id: 'l',
+          name: 'L',
+          color: '#112233',
+          annotationTypes: [
+            { id: 't', name: 'T', component: 'components/chip.json', fields: [] },
+          ],
+        },
+      ],
+    };
+    const report = validateLibrary({
+      specPath: 'm.spec.json',
+      level: 3,
+      files: [
+        { path: 'm.spec.json', text: JSON.stringify(spec) },
+        { path: 'components/chip.json', text: JSON.stringify(chip('chip')) },
+      ],
+    });
+    expect(report.warnings.map((w) => w.message)).toEqual([
+      `tipo "t", os valores padrão, tamanho inicial 58×40: ${TOO_BIG} (aproximado)`,
+    ]);
   });
 });

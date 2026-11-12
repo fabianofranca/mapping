@@ -23,7 +23,13 @@ import {
   isNumericOp,
   referencedFields,
 } from './expressions';
-import { LAYOUT_JUSTIFIES, LAYOUT_WRAPS } from './layoutValues';
+import {
+  LAYOUT_JUSTIFIES,
+  LAYOUT_WRAPS,
+  NONE_ALIGNS,
+  NONE_JUSTIFIES,
+  isIntrinsicSize,
+} from './layoutValues';
 import { TOKEN_NAME_PATTERN, isLiteralColor, type TokenKind } from './tokens';
 import { isRecord } from '../isRecord';
 import type { ModelMessageTemplateCode } from '../messages';
@@ -145,6 +151,8 @@ const BASE_KEYS = [
   'stroke',
   'shadow',
   'cornerRadius',
+  'span',
+  'weight',
 ];
 
 /** Um objeto com algum operador `$…`: uma expressão, não um literal. */
@@ -537,17 +545,28 @@ function checkBoolExpr(value: unknown, path: string, out: Ctx): void {
   checkExpr(value, path, checkBoolean, out);
 }
 
+/** `min-content`/`max-content` valem como valor aqui; a versão (só a 4) quem confere é `V4_LITERAL_VALUES`. */
 const checkSize = tokenCheck('number', (value, path, out) => {
   if (isFiniteNumber(value) && value >= 0) return;
-  if (value === 'fill' || value === 'hug') return;
+  if (value === 'fill' || value === 'hug' || isIntrinsicSize(value)) return;
   if (typeof value === 'string' && PERCENT_PATTERN.test(value)) return;
-  add(out, path, 'esperava número maior ou igual a 0, "fill", "hug" ou "<número>%"');
+  add(
+    out,
+    path,
+    'esperava número maior ou igual a 0, "fill", "hug", "min-content", "max-content" ou "<número>%"',
+  );
 });
 
-/** Como `checkSize`, mas sem `hug`: o nó `image` não depende da imagem baixada. */
+/** Como `checkSize`, mas sem `hug` nem a medida intrínseca: o nó `image` não depende da imagem baixada. */
 const checkSizeNoHug = tokenCheck('number', (v, p, out) => {
   if (v === 'hug')
     add(out, p, 'o nó image não aceita hug: a arrumação não depende da imagem baixada');
+  else if (isIntrinsicSize(v))
+    add(
+      out,
+      p,
+      'o nó image não aceita min-content nem max-content: a arrumação não depende da imagem baixada',
+    );
   else checkSize(v, p, out);
 });
 
@@ -743,13 +762,29 @@ const checkPadding = tokenCheck('number', (value, path, out) => {
   );
 });
 
+const LAYOUT_TYPE_EXPECTED = 'esperava "none", "row", "column" ou "grid"';
+
 const checkLayoutType: Check = (v, p, out) => {
-  if (v !== 'none' && v !== 'row' && v !== 'column')
-    add(out, p, 'esperava "none", "row" ou "column"');
+  if (v !== 'none' && v !== 'row' && v !== 'column' && v !== 'grid')
+    add(out, p, LAYOUT_TYPE_EXPECTED);
 };
 
 /** As quatro chaves da quebra de fileira (v4), no `layout` de um quadro ou slot e no próprio `repeat`. */
 const WRAP_KEYS = ['wrap', 'lineGap', 'maxPerLine', 'maxLines'];
+
+/** As quatro trilhas da grade (v4): exatamente uma vale no layout `grid` literal. */
+const GRID_TRACK_KEYS = ['columns', 'minColumnWidth', 'rows', 'minRowHeight'];
+
+/** O que a quebra de fileira tem e a grade não (`lineGap` vale na grade, sem `wrap`). */
+const GRID_REJECTED_WRAP_KEYS = WRAP_KEYS.filter((key) => key !== 'lineGap');
+
+const GRID_TRACKS_MESSAGE =
+  'layout: informe exatamente uma entre columns, minColumnWidth, rows e minRowHeight';
+
+/** `minColumnWidth`/`minRowHeight`: número maior que 0. */
+const checkPositiveNumber = tokenCheck('number', (v, p, out) => {
+  if (!isFiniteNumber(v) || v <= 0) add(out, p, 'esperava número maior que 0');
+});
 
 /** `wrap` (`none`, `wrap` ou `wrap-reverse`), `lineGap`, `maxPerLine` e `maxLines`; as três últimas só valem com `wrap`. */
 function checkWrapKeys(value: Rec, path: string, out: Ctx): void {
@@ -772,11 +807,24 @@ function checkWrapKeys(value: Rec, path: string, out: Ctx): void {
 function checkLayoutFlow(value: Rec, path: string, out: Ctx): void {
   checkKeys(
     value,
-    ['type', 'gap', 'padding', 'align', 'justify', 'reverse', ...WRAP_KEYS],
+    [
+      'type',
+      'gap',
+      'padding',
+      'align',
+      'justify',
+      'reverse',
+      ...WRAP_KEYS,
+      ...GRID_TRACK_KEYS,
+    ],
     path,
     out,
   );
   checkWrapKeys(value, path, out);
+  if (isExprObject(value.type)) checkTrackKeys(value, path, out);
+  else
+    for (const key of GRID_TRACK_KEYS)
+      if (key in value) add(out, join(path, key), 'só vale em layout grid');
   if ('gap' in value) checkExpr(value.gap, join(path, 'gap'), checkNonNegative, out);
   if ('padding' in value)
     checkExpr(value.padding, join(path, 'padding'), checkPadding, out);
@@ -792,15 +840,86 @@ function checkLayoutFlow(value: Rec, path: string, out: Ctx): void {
   if ('reverse' in value) checkBoolExpr(value.reverse, join(path, 'reverse'), out);
 }
 
+/** Um layout `none`: só `type`, `align` e `justify` (start, center, end ou stretch; v4). */
+function checkNoneLayout(value: Rec, path: string, out: Ctx): void {
+  checkKeys(value, ['type', 'align', 'justify'], path, out);
+  if ('align' in value)
+    checkExpr(value.align, join(path, 'align'), oneOf(NONE_ALIGNS), out);
+  if ('justify' in value)
+    checkExpr(value.justify, join(path, 'justify'), oneOf(NONE_JUSTIFIES), out);
+}
+
+/** Os valores das chaves de trilha presentes: `columns`/`rows` inteiros, `min*` números maiores que 0. */
+function checkTrackKeys(value: Rec, path: string, out: Ctx): void {
+  for (const key of GRID_TRACK_KEYS) {
+    if (!(key in value)) continue;
+    const integer = key === 'columns' || key === 'rows';
+    checkExpr(
+      value[key],
+      join(path, key),
+      integer ? checkPositiveInteger : checkPositiveNumber,
+      out,
+    );
+  }
+}
+
+/**
+ * Exatamente uma chave de trilha; ou várias, quando todas são expressão e da mesma orientação
+ * (`columns` com `minColumnWidth`, ou `rows` com `minRowHeight`): um campo escolhe qual tem valor,
+ * `columns` para o `Fixed` e `minColumnWidth` para o `Adaptive`.
+ */
+function trackKeysAreValid(value: Rec): boolean {
+  const keys = GRID_TRACK_KEYS.filter((key) => key in value);
+  if (keys.length === 1) return true;
+  const sameOrientation =
+    keys.every((key) => key === 'columns' || key === 'minColumnWidth') ||
+    keys.every((key) => key === 'rows' || key === 'minRowHeight');
+  return keys.length > 1 && sameOrientation && keys.every((k) => isExprObject(value[k]));
+}
+
+/** Um layout `grid` literal: uma trilha, `gap`, `lineGap`, `padding`, `reverse` e `align`/`justify` na célula. */
+function checkGridLayout(value: Rec, path: string, out: Ctx): void {
+  checkKeys(
+    value,
+    [
+      'type',
+      'gap',
+      'padding',
+      'align',
+      'justify',
+      'reverse',
+      'lineGap',
+      ...GRID_TRACK_KEYS,
+      ...GRID_REJECTED_WRAP_KEYS,
+    ],
+    path,
+    out,
+  );
+  for (const key of GRID_REJECTED_WRAP_KEYS)
+    if (key in value) add(out, join(path, key), 'não vale em layout grid');
+  if (!trackKeysAreValid(value)) add(out, path, GRID_TRACKS_MESSAGE);
+  checkTrackKeys(value, path, out);
+  for (const key of ['gap', 'lineGap'])
+    if (key in value) checkExpr(value[key], join(path, key), checkNonNegative, out);
+  if ('padding' in value)
+    checkExpr(value.padding, join(path, 'padding'), checkPadding, out);
+  if ('align' in value)
+    checkExpr(value.align, join(path, 'align'), oneOf(NONE_ALIGNS), out);
+  if ('justify' in value)
+    checkExpr(value.justify, join(path, 'justify'), oneOf(NONE_JUSTIFIES), out);
+  if ('reverse' in value) checkBoolExpr(value.reverse, join(path, 'reverse'), out);
+}
+
 function checkLayout(value: unknown, path: string, out: Ctx): void {
   if (!isRecord(value)) return add(out, path, 'esperava objeto');
-  if (value.type === 'none') return checkKeys(value, ['type'], path, out);
+  if (value.type === 'none') return checkNoneLayout(value, path, out);
+  if (value.type === 'grid') return checkGridLayout(value, path, out);
   if (value.type === 'column' && value.align === 'baseline')
     add(out, join(path, 'align'), 'baseline só vale em row');
   const at = join(path, 'type');
   if (isExprObject(value.type)) checkExpr(value.type, at, checkLayoutType, out);
   else if (value.type !== 'row' && value.type !== 'column')
-    return add(out, at, 'esperava "none", "row" ou "column"');
+    return add(out, at, LAYOUT_TYPE_EXPECTED);
   checkLayoutFlow(value, path, out);
 }
 
@@ -889,7 +1008,68 @@ function checkBaselinePadding(node: Rec, path: string, out: Ctx): void {
     add(out, join(path, 'top'), 'não combina com verticalAlign');
 }
 
-function checkNode(value: unknown, path: string, out: Ctx): void {
+/** Que quadro contém o nó: decide onde `span` e `weight` valem. */
+type ParentKind = 'none' | 'row' | 'column' | 'grid' | 'unknown';
+
+/** O tipo do layout de um quadro como pai: ausente é `none`; expressão ou layout inválido, `unknown`. */
+function layoutParent(layout: unknown): ParentKind {
+  if (layout === undefined) return 'none';
+  const type = isRecord(layout) ? layout.type : undefined;
+  if (type === 'none' || type === 'row' || type === 'column' || type === 'grid')
+    return type;
+  return 'unknown';
+}
+
+/** O pai do `template` de um `repeat`: o `layout` dele ou, sem ele, a `direction` (padrão column). */
+function repeatParent(repeat: Rec): ParentKind {
+  if ('layout' in repeat) return layoutParent(repeat.layout);
+  return repeat.direction === 'row' ? 'row' : 'column';
+}
+
+/** Só o quadro e o slot (e o `repeat`, na v4) trazem `layout`. */
+function acceptsLayout(type: string): boolean {
+  return type === 'slot' || type === 'repeat';
+}
+
+const WEIGHT_MESSAGE = 'weight: só vale em filho fill no eixo principal de row ou column';
+
+/** O `weight` literal vale: pai `row`/`column` (ou incerto) e filho `fill` no eixo principal. */
+function weightApplies(value: Rec, type: string, parent: ParentKind): boolean {
+  if (parent === 'unknown') return true;
+  if (parent !== 'row' && parent !== 'column') return false;
+  const size = value[parent === 'row' ? 'width' : 'height'];
+  if (size === undefined) return type !== 'text';
+  return size === 'fill' || isExprObject(size);
+}
+
+/** `span` (inteiro >= 1) e `weight` (número > 0), literal ou expressão; o literal só vale onde faz efeito. */
+function checkSpanWeight(
+  value: Rec,
+  path: string,
+  type: string,
+  parent: ParentKind,
+  out: Ctx,
+): void {
+  if ('span' in value) {
+    const at = join(path, 'span');
+    checkExpr(value.span, at, checkPositiveInteger, out);
+    if (!isExprObject(value.span) && parent !== 'grid' && parent !== 'unknown')
+      add(out, at, 'span: só vale em filho de layout grid');
+  }
+  if ('weight' in value) {
+    const at = join(path, 'weight');
+    checkExpr(value.weight, at, checkPositiveNumber, out);
+    if (!isExprObject(value.weight) && !weightApplies(value, type, parent))
+      add(out, at, WEIGHT_MESSAGE);
+  }
+}
+
+function checkNode(
+  value: unknown,
+  path: string,
+  out: Ctx,
+  parent: ParentKind = 'none',
+): void {
   if (!isRecord(value)) return add(out, path, 'esperava objeto (nó)');
   const type = value.type;
   if (typeof type !== 'string' || !(NODE_TYPES as readonly string[]).includes(type)) {
@@ -907,10 +1087,11 @@ function checkNode(value: unknown, path: string, out: Ctx): void {
     ellipse: [],
     text: ['text', 'runs', 'font', 'color', 'baselinePadding'],
     path: ['d', 'viewBox', 'fillRule'],
-    slot: ['label', 'layout', 'provide'],
+    slot: ['label', 'layout', 'clip', 'provide'],
     repeat: [
       'field',
       'count',
+      'layout',
       'direction',
       'gap',
       'distribute',
@@ -925,12 +1106,12 @@ function checkNode(value: unknown, path: string, out: Ctx): void {
   };
   // children/layout em nó que não é quadro têm mensagem própria, em vez de "chave desconhecida"
   for (const key of ['children', 'layout']) {
-    if (type === 'slot' && key === 'layout') continue;
+    if (acceptsLayout(type) && key === 'layout') continue;
     if (type !== 'frame' && key in value)
       add(out, join(path, key), `só nós do tipo frame aceitam ${key} (este é ${type})`);
   }
   for (const key of Object.keys(value)) {
-    if (type === 'slot' && key === 'layout') continue;
+    if (acceptsLayout(type) && key === 'layout') continue;
     if (type !== 'frame' && (key === 'children' || key === 'layout')) continue;
     if (type === 'repeat' && REPEAT_REJECTED_KEYS.includes(key)) {
       add(out, join(path, key), `não vale em repeat; o desenho é do template (${key})`);
@@ -947,6 +1128,7 @@ function checkNode(value: unknown, path: string, out: Ctx): void {
   if ('rotation' in value)
     checkExpr(value.rotation, join(path, 'rotation'), checkNumber, out);
   checkNodeSizes(value, path, type, out);
+  checkSpanWeight(value, path, type, parent, out);
   if ('anchors' in value) checkAnchors(value.anchors, join(path, 'anchors'), out);
   if ('fill' in value) checkExpr(value.fill, join(path, 'fill'), checkFill, out);
   if ('stroke' in value) checkStroke(value.stroke, join(path, 'stroke'), out, type);
@@ -956,14 +1138,14 @@ function checkNode(value: unknown, path: string, out: Ctx): void {
 
   switch (type) {
     case 'frame': {
-      if ('clip' in value) checkBoolean(value.clip, join(path, 'clip'), out);
+      if ('clip' in value) checkBoolExpr(value.clip, join(path, 'clip'), out);
       if ('layout' in value) checkLayout(value.layout, join(path, 'layout'), out);
       if ('children' in value) {
         const children = join(path, 'children');
         if (!Array.isArray(value.children)) add(out, children, 'esperava lista de nós');
         else
           value.children.forEach((c: unknown, i) =>
-            checkNode(c, `${children}[${i}]`, out),
+            checkNode(c, `${children}[${i}]`, out, layoutParent(value.layout)),
           );
       }
       return;
@@ -982,6 +1164,7 @@ function checkNode(value: unknown, path: string, out: Ctx): void {
     case 'slot':
       if ('label' in value) checkExpr(value.label, join(path, 'label'), checkString, out);
       if ('layout' in value) checkLayout(value.layout, join(path, 'layout'), out);
+      if ('clip' in value) checkBoolExpr(value.clip, join(path, 'clip'), out);
       if ('provide' in value) checkProvide(value.provide, join(path, 'provide'), out);
       return;
     case 'repeat':
@@ -1051,6 +1234,20 @@ function checkRepeatSource(value: Rec, path: string, out: Ctx): void {
   if (hasCount) checkExpr(value.count, join(path, 'count'), checkRepeatCount, out);
 }
 
+/** `repeat.layout` (v4): um layout completo; não combina com `direction` nem `gap`, nem `distribute: "fill"` com grade. */
+function checkRepeatLayout(value: Rec, path: string, out: Ctx): void {
+  checkLayout(value.layout, join(path, 'layout'), out);
+  if ('direction' in value || 'gap' in value)
+    add(out, path, 'repeat.layout: não combina com direction nem gap');
+  if (value.distribute === 'fill' && layoutParent(value.layout) === 'grid')
+    add(out, join(path, 'distribute'), 'distribute: não vale com layout grid');
+  for (const key of WRAP_KEYS)
+    if (key in value)
+      add(out, join(path, key), `repeat.layout: a chave vai dentro de layout (${key})`);
+  if (isRecord(value.layout) && value.layout.type === 'none')
+    add(out, join(path, 'layout.type'), 'repeat.layout: use row, column ou grid');
+}
+
 /** `repeat`: o campo `table`, a direção, o espaço e o `template` (um quadro, sem `repeat` nem `slot`). */
 function checkRepeat(value: Rec, path: string, out: Ctx): void {
   checkRepeatSource(value, path, out);
@@ -1060,13 +1257,14 @@ function checkRepeat(value: Rec, path: string, out: Ctx): void {
   if ('distribute' in value)
     oneOf(['none', 'fill'])(value.distribute, join(path, 'distribute'), out);
   checkWrapKeys(value, path, out);
+  if ('layout' in value) checkRepeatLayout(value, path, out);
   const at = join(path, 'template');
   if (!('template' in value)) return add(out, at, 'campo obrigatório');
   const template = value.template;
   if (isRecord(template) && template.type !== 'frame') {
     add(out, join(at, 'type'), 'o template de uma linha deve ser do tipo "frame"');
   }
-  checkNode(template, at, out);
+  checkNode(template, at, out, repeatParent(value));
   for (const nested of forbiddenInRepeat(template, at)) {
     add(out, nested.path, `${nested.type} não é permitido dentro de um repeat`);
   }
@@ -1104,6 +1302,9 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
   ['stroke', 'gap'],
   ['shadow', 'spread'],
   ['layout', 'reverse'],
+  ...GRID_TRACK_KEYS.map((key): readonly string[] => ['layout', key]),
+  ['span'],
+  ['weight'],
   ['minWidth'],
   ['maxWidth'],
   ['minHeight'],
@@ -1123,6 +1324,7 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
 
 /** Chaves que valem em qualquer versão como literal, mas só com expressão na formatVersion 4. */
 const V4_EXPR_KEYS: readonly (readonly string[])[] = [
+  ['clip'],
   ['stroke', 'dash'],
   ['width'],
   ['height'],
@@ -1145,7 +1347,44 @@ const V4_LITERAL_VALUES: readonly (readonly [readonly string[], string])[] = [
   [['layout', 'justify'], 'space-around'],
   [['layout', 'justify'], 'space-evenly'],
   [['layout', 'align'], 'baseline'],
+  [['layout', 'type'], 'grid'],
+  [['width'], 'min-content'],
+  [['width'], 'max-content'],
+  [['height'], 'min-content'],
+  [['height'], 'max-content'],
 ];
+
+/**
+ * `align`/`justify` num layout `none` e `clip` literal num slot só existem na formatVersion 4
+ * (no `row`/`column`, `align` e `justify` valem em toda versão; o `clip` por expressão já sai de
+ * `V4_EXPR_KEYS`).
+ */
+function noneAlignVersionIssues(version: unknown, template: unknown): ComponentIssue[] {
+  const out: ComponentIssue[] = [];
+  if (typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY)
+    return out;
+  const walk = (node: unknown, at: string): void => {
+    if (!isRecord(node)) return;
+    noneAlignNodeIssues(node, at, out);
+    if (Array.isArray(node.children))
+      node.children.forEach((c: unknown, i) => walk(c, `${join(at, 'children')}[${i}]`));
+    if (node.type === 'repeat') walk(node.template, join(at, 'template'));
+  };
+  walk(template, 'template');
+  return out;
+}
+
+/** As chaves da v4 de um nó só: `align`/`justify` do layout `none` e o `clip` literal do slot. */
+function noneAlignNodeIssues(node: Rec, at: string, out: ComponentIssue[]): void {
+  const layout = node.layout;
+  if (isRecord(layout) && layout.type === 'none')
+    for (const key of ['align', 'justify'])
+      if (key in layout) addIssue(out, join(at, `layout.${key}`), V4_ONLY_MESSAGE);
+  if (node.type === 'slot' && 'clip' in node && !isExprObject(node.clip))
+    addIssue(out, join(at, 'clip'), V4_ONLY_MESSAGE);
+  if (node.type === 'repeat' && 'layout' in node)
+    addIssue(out, join(at, 'layout'), V4_ONLY_MESSAGE);
+}
 
 /** `shadow` como lista (v4) numa versão anterior à 4: `só é permitido com formatVersion 4`, no caminho de `shadow`. */
 function shadowListVersionIssues(version: unknown, template: unknown): ComponentIssue[] {
@@ -1494,11 +1733,15 @@ const ROOT_KEYS = [
   'template',
 ];
 
-/** Um eixo do `sizing` já avaliado: px (≥ 0), `"fill"` ou `"hug"`. */
+/** Um eixo do `sizing` já avaliado: px (≥ 0), `"fill"`, `"hug"`, `"min-content"` ou `"max-content"`. */
 const checkSizingAxis: Check = (value, path, out) => {
   if (isFiniteNumber(value) && value >= 0) return;
-  if (value === 'fill' || value === 'hug') return;
-  add(out, path, 'esperava número maior ou igual a 0, "fill" ou "hug"');
+  if (value === 'fill' || value === 'hug' || isIntrinsicSize(value)) return;
+  add(
+    out,
+    path,
+    'esperava número maior ou igual a 0, "fill", "hug", "min-content" ou "max-content"',
+  );
 };
 
 /** O `sizing` é avaliado antes de medir: `$size` e `$lines` não existem ainda. */
@@ -1533,7 +1776,8 @@ function checkSizing(value: unknown, path: string, v4: boolean, out: Ctx): void 
     if (!(key in value)) continue;
     const at = join(path, key);
     const axis = value[key];
-    if (isExprObject(axis) && !v4) add(out, at, V4_ONLY_MESSAGE);
+    if (!v4 && (isExprObject(axis) || isIntrinsicSize(axis)))
+      add(out, at, V4_ONLY_MESSAGE);
     else {
       checkExpr(axis, at, checkSizingAxis, out);
       if (isExprObject(axis)) sizingForbiddenOps(axis, at, out);
@@ -1643,6 +1887,7 @@ function collectIssues(input: unknown, refs: TokenRef[] | null): ComponentIssue[
       ),
     );
     issues.push(...shadowListVersionIssues(version, input.template));
+    issues.push(...noneAlignVersionIssues(version, input.template));
     issues.push(...tokenVersionIssues(version, input.template));
     issues.push(...numericVersionIssues(version, input.template));
     issues.push(...linesIssues(input.template));

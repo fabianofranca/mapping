@@ -391,3 +391,20 @@ export function measureRichText(
     lines: layout.lines.map((line) => line.pieces.map((piece) => piece.text).join('')),
   };
 }
+
+/**
+ * O `min-content` do texto rico: o maior pedaço inquebrável, a palavra mais larga (uma palavra que
+ * atravessa trechos é uma só) ou o chip inteiro, que é atômico. Com `wrap: none` o texto não quebra:
+ * vale a linha mais larga. Como `layoutRuns`, só chama o medidor sem `maxWidth`.
+ */
+export function minContentRuns(
+  runs: readonly RichRun[],
+  base: RichBase,
+  measure: TextMeasurer,
+): number {
+  if (base.wrap === 'none') return layoutRuns(runs, base, measure).width;
+  return toAtoms(createContext(runs, base, measure)).reduce(
+    (widest, atom) => (atom.kind === 'word' ? Math.max(widest, atom.width) : widest),
+    0,
+  );
+}

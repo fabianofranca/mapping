@@ -31,6 +31,9 @@ for (const layer of spec.layers)
         (e) => e.values?.interaction === undefined,
       );
     }
+    // O `text` mínimo (200 × 70, texto de 56 px) não comporta os exemplos do Material 3: sem eles a
+    // prova de desenho não avisa `conteúdo maior que a caixa`.
+    else if (type.id === 'text') delete type.examples;
 fs.writeFileSync(specFile, JSON.stringify(spec, null, 2));
 
 const component = (id, name, size, template) => ({

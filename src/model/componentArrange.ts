@@ -2,11 +2,17 @@ import {
   findSlot,
   contentExtent,
   layoutChildren,
+  isPlainNone,
   resolveSlotLayout,
   slotBoxOfScene,
   type ResolvedSlotLayout,
 } from './components/arrange';
-import type { ComponentFile, FieldValues } from './components/componentFormat';
+import type {
+  ComponentFile,
+  FieldValues,
+  IntrinsicSize,
+} from './components/componentFormat';
+import { intrinsicModeOf } from './components/layoutValues';
 import {
   expressionPx,
   fitComponentSize,
@@ -82,7 +88,7 @@ function containerOf(
   if (slot === undefined) return null;
   const values = drawingValues(p, mc.annotation, mc.type).values;
   const layout = resolveSlotLayout(slot, values);
-  if (layout.type === 'none') return null;
+  if (isPlainNone(layout)) return null;
   const kids = projectIndex(p).children.get(markingId) ?? [];
   if (kids.length === 0) return null;
   return {
@@ -105,10 +111,32 @@ export function canArrange(
   return containerOf(p, catalog, markingId) !== null;
 }
 
+/** O espaço do slot decide as linhas (`wrap`) ou as trilhas (`minColumnWidth`/`minRowHeight`)? */
+function needsAvailable(layout: ResolvedSlotLayout): boolean {
+  if (layout.type === 'grid') return layout.grid?.min !== undefined;
+  return layout.wrap !== 'none';
+}
+
+/** O eixo principal do slot (o que `available` mede) é o horizontal: `row`, ou grade vertical. */
+function alongTracks(layout: ResolvedSlotLayout): boolean {
+  if (layout.type === 'grid') return layout.grid?.orientation !== 'horizontal';
+  return layout.type === 'row';
+}
+
 /** O `align: stretch` do slot do pai estica o filho neste eixo (o cruzado do layout dele). */
 function stretchedBy(parent: Container | null, axis: 'width' | 'height'): boolean {
-  if (parent === null || parent.layout.align !== 'stretch') return false;
-  return axis === (parent.layout.type === 'row' ? 'height' : 'width');
+  if (parent === null) return false;
+  const { layout } = parent;
+  // Grade: `justify` estica no eixo das trilhas e `align` no das linhas (na célula).
+  if (layout.type === 'grid') {
+    const onTracks = alongTracks(layout) === (axis === 'width');
+    return (onTracks ? layout.justify : layout.align) === 'stretch';
+  }
+  // `none` alinhado (v4), como no `layoutOverlaid`: `justify` na largura e `align` na altura.
+  if (layout.type === 'none')
+    return (axis === 'width' ? layout.justify : layout.align) === 'stretch';
+  if (layout.align !== 'stretch') return false;
+  return axis === (layout.type === 'row' ? 'height' : 'width');
 }
 
 function sameRect(a: Rect, b: Rect): boolean {
@@ -120,15 +148,21 @@ function ceilFit(value: number): number {
   return Math.ceil(value - 1e-6);
 }
 
-/** O que o `sizing` faz num eixo: medir o conteúdo (`hug`), dar um px por expressão, ou nada. */
+/**
+ * O que o `sizing` faz num eixo: medir o conteúdo (`hug`, `min-content` ou `max-content`; `mode` diz
+ * qual medida intrínseca, nenhuma = o `hug`), dar um px por expressão, ou nada.
+ */
 interface AxisPlan {
   readonly hug: boolean;
+  readonly mode: IntrinsicSize | null;
   readonly px: number | undefined;
 }
 
 function axisPlan(axis: ResolvedAxis, stretched: boolean): AxisPlan {
+  const intrinsic = intrinsicModeOf(axis.spec);
   return {
-    hug: axis.spec === 'hug' && !stretched,
+    hug: (axis.spec === 'hug' || intrinsic !== null) && !stretched,
+    mode: intrinsic,
     px: stretched ? undefined : expressionPx(axis),
   };
 }
@@ -147,18 +181,21 @@ function axisValue(
 }
 
 /**
- * Os eixos que o `measureComponent` recebe: o `hug` é medido (`null`); o outro vale o px que a
- * expressão dá, ou o que já tem. `undefined` quando nenhum eixo é `hug` (nada a medir).
+ * Os eixos que o `measureComponent` recebe: o `hug` é medido (`null`), o `min-content`/`max-content`
+ * pela medida intrínseca; o outro vale o px que a expressão dá, ou o que já tem. `undefined` quando
+ * nenhum eixo é medido (nada a medir).
  */
 function fixedSizes(
   rect: Rect,
   w: AxisPlan,
   h: AxisPlan,
-): { width: number | null; height: number | null } | undefined {
+):
+  | { width: number | IntrinsicSize | null; height: number | IntrinsicSize | null }
+  | undefined {
   if (!w.hug && !h.hug) return undefined;
   return {
-    width: w.hug ? null : (w.px ?? rect.width),
-    height: h.hug ? null : (h.px ?? rect.height),
+    width: w.hug ? w.mode : (w.px ?? rect.width),
+    height: h.hug ? h.mode : (h.px ?? rect.height),
   };
 }
 
@@ -171,7 +208,10 @@ function applySizing(
   sizing: ResolvedSizing,
   stretched: { readonly width: boolean; readonly height: boolean },
   min: { readonly width: number; readonly height: number } | undefined,
-  measure: (fixed: { width: number | null; height: number | null }) => {
+  measure: (fixed: {
+    width: number | IntrinsicSize | null;
+    height: number | IntrinsicSize | null;
+  }) => {
     width: number;
     height: number;
   },
@@ -187,7 +227,7 @@ function applySizing(
       width: axisValue(w, rect.width, measured.width, min?.width),
       height: axisValue(h, rect.height, measured.height, min?.height),
     },
-    hugW: w.hug,
+    hugW: w.hug && w.mode === null,
     hugH: h.hug,
   };
 }
@@ -350,7 +390,7 @@ export function arrangeMarking(
     // O que os filhos pedem ao slot (o `hug` do componente): uma linha só, ou, com `wrap`, as linhas
     // pelo espaço do eixo principal que o slot tem (o desenho com o pedido de uma linha só dá o espaço).
     let slotContent = padded(contentExtent(layout, children, null));
-    if (layout.wrap !== 'none') {
+    if (needsAvailable(layout)) {
       const probe = slotBoxOfScene(
         instantiate(component, values, rects.get(id) as Rect, {
           measure,
@@ -360,10 +400,9 @@ export function arrangeMarking(
         }).root,
       );
       if (probe !== undefined) {
-        const available =
-          layout.type === 'row'
-            ? probe.width - pad.left - pad.right
-            : probe.height - pad.top - pad.bottom;
+        const available = alongTracks(layout)
+          ? probe.width - pad.left - pad.right
+          : probe.height - pad.top - pad.bottom;
         slotContent = padded(contentExtent(layout, children, Math.max(0, available)));
       }
     }

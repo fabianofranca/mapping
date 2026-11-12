@@ -19,6 +19,11 @@ export interface LayerDrawing {
    * `anchor` no `rect` da marcação (pixels do espaço), com tamanho fixo em qualquer zoom.
    */
   readonly screen?: { readonly anchor: ScreenAnchor; readonly rect: Rect };
+  /**
+   * Filha de um slot com `clip` (v4): a caixa do slot da mãe, no espaço de `root.transform`. O
+   * desenho só aparece dentro dela. O desenho em pixels de tela ignora o recorte.
+   */
+  readonly clip?: Rect;
 }
 
 /** Fração (da largura e da altura) do ponto de cada âncora. */
@@ -455,9 +460,25 @@ export class ComponentLayerRenderer {
       },
     );
     root.listening(false);
-    root.setAttr('markingId', drawing.markingId);
-    return { node: root, imageUrls, images: root.find('Image').length };
+    const node = drawing.clip && !drawing.screen ? clipped(root, drawing.clip) : root;
+    node.setAttr('markingId', drawing.markingId);
+    return { node, imageUrls, images: root.find('Image').length };
   }
+}
+
+/**
+ * Envolve a cena num grupo (sem transformação, no espaço do container) recortado pela caixa do
+ * slot: a matriz do `root` não entra na conta, o recorte vale no espaço onde `clip` foi medido.
+ */
+function clipped(root: Konva.Group, { x, y, width, height }: Rect): Konva.Group {
+  const wrapper = new Konva.Group({ listening: false, name: root.name() });
+  wrapper.clipFunc((ctx) => {
+    ctx.beginPath();
+    ctx.rect(x, y, width, height);
+    ctx.closePath();
+  });
+  wrapper.add(root);
+  return wrapper;
 }
 
 /** Os desenhos que aparecem, por espaço, na ordem de desenho (só os que têm posição). */
@@ -537,7 +558,12 @@ function onScreen(
       width,
       height,
     };
-  } else box = cachedSceneBox(root);
+  } else {
+    const visible = cachedVisibleBox(drawing);
+    // Filha toda fora da caixa do slot: não há nada para mostrar.
+    if (visible === null) return false;
+    box = visible;
+  }
   const margin = ON_SCREEN_MARGIN / zoom;
   const x = placement.x + box.x * placement.scale;
   const y = placement.y + box.y * placement.scale;
@@ -547,6 +573,30 @@ function onScreen(
     y + box.height * placement.scale + margin > area.y &&
     y - margin < area.y + area.height
   );
+}
+
+/** Caixa visível do desenho: a da cena, reduzida pelo `clip` da filha de um slot (se tiver). */
+const visibleBoxes = new WeakMap<LayerDrawing, Rect | null>();
+
+function cachedVisibleBox(drawing: LayerDrawing): Rect | null {
+  const scene = cachedSceneBox(drawing.root);
+  if (!drawing.clip) return scene;
+  let box = visibleBoxes.get(drawing);
+  if (box === undefined) {
+    box = intersectRects(scene, drawing.clip);
+    visibleBoxes.set(drawing, box);
+  }
+  return box;
+}
+
+/** Interseção de dois retângulos; `null` se não se tocam (encostar ainda conta). */
+function intersectRects(a: Rect, b: Rect): Rect | null {
+  const x = Math.max(a.x, b.x);
+  const y = Math.max(a.y, b.y);
+  const right = Math.min(a.x + a.width, b.x + b.width);
+  const bottom = Math.min(a.y + a.height, b.y + b.height);
+  if (right < x || bottom < y) return null;
+  return { x, y, width: right - x, height: bottom - y };
 }
 
 /** A caixa só depende da cena (dado do projeto): pan e zoom não a recalculam. */

@@ -23,14 +23,32 @@ import { createMessageSet, textsOf, type Params } from '../messages/collector';
 import type { ModelMessageTemplateCode } from '../messages';
 import type { ModelMessage } from '../modelMessage';
 import { findSlot, resolveSlotLayout, type ResolvedSlotLayout } from './arrange';
-import type { ComponentFile, FieldValues, SlotTemplate } from './componentFormat';
+import type {
+  ComponentFile,
+  FieldValues,
+  IntrinsicSize,
+  SlotTemplate,
+} from './componentFormat';
 import {
   type Box,
   type TextMeasurer,
   instantiate,
   measureComponent,
 } from './instantiate';
-import { justifySpacing, mirrorMain } from './layoutValues';
+import {
+  alignInCell,
+  placeCells,
+  trackCount,
+  trackOffset,
+  trackSize,
+} from './gridLayout';
+import {
+  intrinsicModeOf,
+  isIntrinsicSize,
+  justifySpacing,
+  mirrorMain,
+} from './layoutValues';
+import { lineExtents } from './gridPlan';
 import { type ResolvedSizing, resolveSizing } from './sizing';
 import type { Library } from './library';
 import type { Instance, Screen } from './screen';
@@ -111,6 +129,9 @@ const EPS = 0.001;
 
 type Axis = 'width' | 'height';
 
+/** Como se mede a largura de um componente sem geometria: o `hug` (limitado pelo pai) ou a medida intrínseca. */
+type Mode = 'hug' | IntrinsicSize;
+
 /** Nó resolvido: componente, slot (se componente com slot), layout do slot e filhos já preparados. */
 interface Prepared {
   readonly node: LayoutNode;
@@ -138,6 +159,20 @@ interface Arranged {
   /** Extensão ocupada pelos filhos (soma com gaps no eixo principal, maior no cruzado). */
   readonly usedW: number;
   readonly usedH: number;
+}
+
+/** O filho de um slot `none` posto pelo `align` (vertical) e `justify` (horizontal) na área conhecida do conteúdo. */
+function alignOverlaid<R extends { x: number; y: number; w: number; h: number }>(
+  rect: R,
+  layout: ResolvedSlotLayout,
+  cw: number | null,
+  ch: number | null,
+): R {
+  const x =
+    cw === null ? { pos: 0, size: rect.w } : alignInCell(layout.justify, cw, rect.w);
+  const y =
+    ch === null ? { pos: 0, size: rect.h } : alignInCell(layout.align, ch, rect.h);
+  return { ...rect, x: x.pos, y: y.pos, w: x.size, h: y.size };
 }
 
 const NONE_LAYOUT: ResolvedSlotLayout = {
@@ -210,6 +245,42 @@ function crossPosition(
   if (align === 'center') return (content - size) / 2;
   if (align === 'end') return content - size;
   return 0;
+}
+
+const ZERO_POS = { t: 0, f: 0 };
+const EMPTY_KID = { t: 0, f: 0, fFill: false, hugT: false, hugF: false };
+
+/** A ordem de colocação dos filhos: a do template, ou a inversa (`layout.reverse`). */
+function gridOrder(count: number, reverse: boolean): number[] {
+  const order = Array.from({ length: count }, (_, i) => i);
+  return reverse ? order.reverse() : order;
+}
+
+/** As células de uma grade com `fs` (a extensão de cada filho na linha de fluxo) e a extensão de cada linha. */
+function flowCells(
+  fs: readonly number[],
+  count: number,
+): { cells: ReturnType<typeof placeCells>['cells']; extents: number[] } {
+  const { cells, lines } = placeCells(
+    fs.map(() => 1),
+    count,
+  );
+  return { cells, extents: lineExtents(cells, lines, fs) };
+}
+
+const isVerticalGrid = (layout: ResolvedSlotLayout) =>
+  layout.grid?.orientation !== 'horizontal';
+
+/**
+ * A largura que os filhos pedem a um slot em grade (sem o padding), com os `widths` de cada um e
+ * sem limite conhecido (`minColumnWidth` mede uma trilha): na grade vertical, `n` vezes a maior;
+ * na horizontal, as colunas (linhas de fluxo) lado a lado com o `lineGap`.
+ */
+function gridContentWidth(layout: ResolvedSlotLayout, widths: readonly number[]): number {
+  const count = trackCount(layout.grid ?? {}, null, layout.gap);
+  if (isVerticalGrid(layout)) return count * maxOf(widths) + layout.gap * (count - 1);
+  const { extents } = flowCells(widths, count);
+  return sum(extents) + layout.lineGap * Math.max(0, extents.length - 1);
 }
 
 /** Posição de uma raiz ancorada num eixo: `margin` na borda tocada, ou centralizada. */
@@ -317,7 +388,12 @@ export function layoutScreen(
   const wrappedOrPlainWidth = (
     layout: ResolvedSlotLayout,
     widths: readonly number[],
+    mode: Mode = 'hug',
   ): number => {
+    if (layout.type === 'grid') return gridContentWidth(layout, widths);
+    // `min-content` com `wrap`: o maior filho (a quebra põe um por linha).
+    if (mode === 'min-content' && layout.type !== 'none' && layout.wrap !== 'none')
+      return maxOf(widths);
     if (layout.type !== 'row' && layout.wrap === 'none') return maxOf(widths);
     if (layout.wrap === 'none')
       return sum(widths) + layout.gap * Math.max(0, widths.length - 1);
@@ -335,28 +411,42 @@ export function layoutScreen(
     );
   };
 
-  /** Largura que os filhos arrumados pedem ao slot, mais o padding dele. */
-  const slotContentWidth = (p: Prepared): number =>
-    cached(p, 'scw', () => {
+  /**
+   * A medida de largura que um `sizing` pede: o `min-content`/`max-content` do eixo, senão o `hug`
+   * (`fill` e o resto medem como `hug`).
+   */
+  const widthModeOf = (spec: ReturnType<typeof specOf>): Mode =>
+    intrinsicModeOf(spec) ?? 'hug';
+
+  /** O modo de um filho `hug` ou `fill`: o do pai se é `min-content`; senão o `hug`. */
+  const inheritedMode = (own: Mode, parent: Mode): Mode =>
+    own === 'hug' && parent === 'min-content' ? parent : own;
+
+  /**
+   * Largura que os filhos arrumados pedem ao slot, mais o padding dele. No `min-content` do pai, o
+   * filho `hug` ou `fill` entra com o próprio `min-content`; o que pede a medida intrínseca a tem.
+   */
+  const slotContentWidth = (p: Prepared, mode: Mode = 'hug'): number =>
+    cached(p, `scw|${mode}`, () => {
       const widths = p.kids.map((kid) => {
         const spec = specOf(kid, 'width');
-        return typeof spec === 'number'
-          ? withMin(kid, 'width', spec)
-          : intrinsicWidth(kid);
+        if (typeof spec === 'number') return withMin(kid, 'width', spec);
+        const own = widthModeOf(spec);
+        return intrinsicWidth(kid, inheritedMode(own, mode));
       });
-      return wrappedOrPlainWidth(p.layout, widths) + padW(p);
+      return wrappedOrPlainWidth(p.layout, widths, mode) + padW(p);
     });
 
-  /** Largura `hug`: o template medido (com `slotContent` nos componentes com slot). */
-  function intrinsicWidth(p: Prepared): number {
-    return cached(p, 'iw', () => {
+  /** Largura `hug` (ou `min-content`/`max-content`): o template medido (com `slotContent` nos componentes com slot). */
+  function intrinsicWidth(p: Prepared, mode: Mode = 'hug'): number {
+    return cached(p, `iw|${mode}`, () => {
       const options = p.slot
-        ? { measure, slotContent: { width: slotContentWidth(p), height: 0 } }
+        ? { measure, slotContent: { width: slotContentWidth(p, mode), height: 0 } }
         : { measure };
       const { width } = measureComponent(
         p.component,
         p.node.values,
-        { width: null, height: null },
+        { width: mode === 'hug' ? null : mode, height: null },
         options,
       );
       return withMin(p, 'width', hugValue(width));
@@ -408,9 +498,11 @@ export function layoutScreen(
     if (typeof spec === 'number') return { w: withMin(kid, 'width', spec), hug: false };
     if ((spec === 'fill' || stretch) && cw !== null)
       return { w: withMin(kid, 'width', cw), hug: false };
-    const intrinsic = intrinsicWidth(kid);
-    const w = cw === null ? intrinsic : Math.min(intrinsic, cw);
-    return { w: withMin(kid, 'width', w), hug: w === intrinsic };
+    const mode = widthModeOf(spec);
+    const intrinsic = intrinsicWidth(kid, mode);
+    // `min-content`/`max-content` não se limitam ao espaço do pai (só o `hug` encolhe até ele).
+    const w = cw === null || mode !== 'hug' ? intrinsic : Math.min(intrinsic, cw);
+    return { w: withMin(kid, 'width', w), hug: mode === 'hug' && w === intrinsic };
   };
 
   /** Altura natural de um filho (a do `sizing` em px, ou o `hug` na largura natural dele). */
@@ -475,6 +567,142 @@ export function layoutScreen(
       : { rects, usedW: stacked.total, usedH: usedMain };
   }
 
+  // --- grade (`layout.type: "grid"`) ------------------------------------------------------
+
+  /** O tamanho natural de um filho no eixo das trilhas (o que a trilha `hug` abraça). */
+  const gridNaturalTrack = (kid: Prepared, vertical: boolean): number =>
+    vertical ? widthOf(kid, null, false).w : naturalHeight(kid);
+
+  /** Um filho de grade medido: `t` no eixo das trilhas, `f` (natural) no das linhas, e se cada um veio do `hug`. */
+  interface GridKid {
+    readonly t: number;
+    readonly f: number;
+    /** `f` enche a linha de fluxo (`fill`, ou `align: stretch` num `hug`). */
+    readonly fFill: boolean;
+    readonly hugT: boolean;
+    readonly hugF: boolean;
+  }
+
+  /** Grade vertical: a largura é a da célula (`size`); a altura é a natural, na largura final. */
+  const verticalGridKid = (
+    kid: Prepared,
+    layout: ResolvedSlotLayout,
+    size: number,
+  ): GridKid => {
+    const spec = specOf(kid, 'height');
+    const w = widthOf(
+      kid,
+      size,
+      layout.justify === 'stretch' && specOf(kid, 'width') === 'hug',
+    );
+    const h =
+      typeof spec === 'number'
+        ? withMin(kid, 'height', spec)
+        : intrinsicHeight(kid, w.w, w.hug);
+    const fFill = spec === 'fill' || (layout.align === 'stretch' && spec === 'hug');
+    return { t: w.w, f: h, fFill, hugT: w.hug, hugF: typeof spec !== 'number' };
+  };
+
+  /** Grade horizontal: a largura é a natural (a linha de fluxo); a altura é a da célula (`size`). */
+  const horizontalGridKid = (
+    kid: Prepared,
+    layout: ResolvedSlotLayout,
+    size: number,
+  ): GridKid => {
+    const w = widthOf(kid, null, false);
+    const wSpec = specOf(kid, 'width');
+    const tSpec = specOf(kid, 'height');
+    const fill = tSpec === 'fill' || (layout.justify === 'stretch' && tSpec === 'hug');
+    const natural =
+      typeof tSpec === 'number'
+        ? withMin(kid, 'height', tSpec)
+        : intrinsicHeight(kid, w.w, w.hug);
+    return {
+      t: fill ? withMin(kid, 'height', size) : natural,
+      f: w.w,
+      fFill: wSpec === 'fill' || (layout.align === 'stretch' && wSpec === 'hug'),
+      hugT: tSpec === 'hug' && !fill,
+      hugF: w.hug,
+    };
+  };
+
+  /** O retângulo de um filho já colocado na célula (relativo à origem do conteúdo). */
+  const gridKidRect = (
+    vertical: boolean,
+    pos: { t: number; f: number },
+    size: { t: number; f: number },
+    info: GridKid,
+  ): KidRect => {
+    const hugF = !info.fFill && info.hugF;
+    return vertical
+      ? { x: pos.t, y: pos.f, w: size.t, h: size.f, hugW: info.hugT, hugH: hugF }
+      : { x: pos.f, y: pos.t, w: size.f, h: size.t, hugW: hugF, hugH: info.hugT };
+  };
+
+  /** O retângulo do filho da célula `cell`: `justify` na trilha, `align` na linha de fluxo. */
+  const placeGridCell = (
+    layout: ResolvedSlotLayout,
+    vertical: boolean,
+    size: number,
+    cell: { track: number },
+    line: { top: number; extent: number },
+    info: GridKid,
+  ): KidRect => {
+    const f = info.fFill ? Math.max(line.extent, info.f) : info.f;
+    const alignF = layout.align === 'stretch' ? 'start' : layout.align;
+    const t = layout.justify === 'stretch' && info.hugT ? size : info.t;
+    const pos = {
+      t:
+        trackOffset(cell.track, size, layout.gap) +
+        alignInCell(layout.justify, size, info.t).pos,
+      f: line.top + alignInCell(alignF, line.extent, f).pos,
+    };
+    return gridKidRect(vertical, pos, { t, f }, info);
+  };
+
+  /** Arruma os filhos de um slot em grade num conteúdo `cw` × `ch` (nulo = o pai é `hug` nesse eixo). */
+  function arrangeGrid(
+    kids: readonly Prepared[],
+    layout: ResolvedSlotLayout,
+    cw: number | null,
+    ch: number | null,
+  ): Arranged {
+    const vertical = isVerticalGrid(layout);
+    const content = vertical ? cw : ch;
+    const count = trackCount(layout.grid ?? {}, content, layout.gap);
+    const order = gridOrder(kids.length, layout.reverse);
+    const size =
+      content === null
+        ? maxOf(kids.map((kid) => gridNaturalTrack(kid, vertical)))
+        : trackSize(content, count, layout.gap);
+    const measure = vertical ? verticalGridKid : horizontalGridKid;
+    const sized = order.map((i) => measure(kids[i] as Prepared, layout, size));
+    const { cells, extents } = flowCells(
+      sized.map((info) => info.f),
+      count,
+    );
+    const stacked = stackLines(extents, layout.lineGap, false);
+    const rects: KidRect[] = kids.map(() =>
+      gridKidRect(true, ZERO_POS, ZERO_POS, EMPTY_KID),
+    );
+    for (const cell of cells) {
+      const line = { top: stacked.tops[cell.line] ?? 0, extent: extents[cell.line] ?? 0 };
+      const info = sized[cell.index] as GridKid;
+      rects[order[cell.index] as number] = placeGridCell(
+        layout,
+        vertical,
+        size,
+        cell,
+        line,
+        info,
+      );
+    }
+    const tracks = count * size + layout.gap * (count - 1);
+    return vertical
+      ? { rects, usedW: tracks, usedH: stacked.total }
+      : { rects, usedW: stacked.total, usedH: tracks };
+  }
+
   /** Arruma os filhos num conteúdo `cw` × `ch` (nulo = o pai é `hug` nesse eixo). */
   function arrangeKids(
     kids: readonly Prepared[],
@@ -483,6 +711,20 @@ export function layoutScreen(
     ch: number | null,
     emit: boolean,
     owner = '',
+  ): Arranged {
+    return layout.type === 'grid'
+      ? arrangeGrid(kids, layout, cw, ch)
+      : arrangeLinear(kids, layout, cw, ch, emit, owner);
+  }
+
+  /** `arrangeKids` de `row`, `column`, `none` e dos que quebram em linhas (`wrap`). */
+  function arrangeLinear(
+    kids: readonly Prepared[],
+    layout: ResolvedSlotLayout,
+    cw: number | null,
+    ch: number | null,
+    emit: boolean,
+    owner: string,
   ): Arranged {
     if (layout.wrap !== 'none' && layout.type !== 'none')
       return arrangeWrapped(kids, layout, cw, ch, emit, owner);
@@ -498,7 +740,7 @@ export function layoutScreen(
         const spec = specOf(kid, 'height');
         if (typeof spec === 'number')
           return { h: withMin(kid, 'height', spec), hug: false };
-        if (spec === 'hug' || ch === null) {
+        if (spec === 'hug' || isIntrinsicSize(spec) || ch === null) {
           if (spec === 'fill' && emit)
             warn('engine.fillInHugUsing', { path: kid.node.id });
           const { w, hug } = widths[i] ?? { w: 0, hug: false };
@@ -602,8 +844,8 @@ export function layoutScreen(
       };
     }
 
-    // Box (`none`): cada filho no canto do conteúdo.
-    const rects = kids.map((kid) => {
+    // Box (`none`): cada filho no canto do conteúdo, ou alinhado pelo `align`/`justify` do slot.
+    const corner = kids.map((kid) => {
       const wi = widthOf(kid, cw, false);
       const spec = specOf(kid, 'height');
       if (typeof spec === 'number')
@@ -627,6 +869,7 @@ export function layoutScreen(
       const h = intrinsicHeight(kid, wi.w, wi.hug);
       return { x: 0, y: 0, w: wi.w, h, hugW: wi.hug, hugH: true };
     });
+    const rects = corner.map((r) => alignOverlaid(r, layout, cw, ch));
     return {
       rects,
       usedW: maxOf(rects.map((r) => r.w)),
@@ -723,7 +966,7 @@ export function layoutScreen(
         ? specW
         : specW === 'fill'
           ? input.width - 2 * margin
-          : intrinsicWidth(p),
+          : intrinsicWidth(p, widthModeOf(specW)),
     );
     const height = withMin(
       p,

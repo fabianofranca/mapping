@@ -40,8 +40,8 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 
 ## Exemplos
 
-- **Título de tela**: text=Configurações, style=headlineMedium
-- **Parágrafo**: text=Texto de apoio com uma frase um pouco mais longa., style=bodyMedium, color=onSurfaceVariant
+- **Título de tela**: text=Configurações, style=headlineSmall
+- **Parágrafo**: text=Texto de apoio curto., style=bodyMedium, color=onSurfaceVariant
 - **Rótulo centralizado**: text=Salvar, style=labelLarge, textAlign=Center, width=fill
 
 ## Fidelidade

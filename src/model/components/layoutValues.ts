@@ -3,6 +3,7 @@
  * (`formatVersion` 4). Funções puras: o valor já avaliado entra, o valor válido (ou nenhum) sai.
  */
 import type {
+  IntrinsicSize,
   LayoutAlign,
   LayoutJustify,
   LayoutType,
@@ -10,7 +11,7 @@ import type {
   SizeSpec,
 } from './componentFormat';
 
-export const LAYOUT_TYPES: readonly LayoutType[] = ['none', 'row', 'column'];
+export const LAYOUT_TYPES: readonly LayoutType[] = ['none', 'row', 'column', 'grid'];
 export const LAYOUT_ALIGNS: readonly LayoutAlign[] = [
   'start',
   'center',
@@ -25,6 +26,15 @@ export const LAYOUT_JUSTIFIES: readonly LayoutJustify[] = [
   'space-between',
   'space-around',
   'space-evenly',
+];
+/** `align` (eixo vertical) de um quadro `none`: sem `baseline`. */
+export const NONE_ALIGNS: readonly LayoutAlign[] = ['start', 'center', 'end', 'stretch'];
+/** `justify` (eixo horizontal) de um quadro `none` (v4): só os quatro, `stretch` incluído. */
+export const NONE_JUSTIFIES: readonly LayoutJustify[] = [
+  'start',
+  'center',
+  'end',
+  'stretch',
 ];
 export const LAYOUT_WRAPS: readonly LayoutWrap[] = ['none', 'wrap', 'wrap-reverse'];
 
@@ -72,15 +82,26 @@ export function mirrorMain(
 const PERCENT = /^\d+(\.\d+)?%$/;
 const PLAIN_NUMBER = /^\s*\d+(\.\d+)?\s*$/;
 
+/** `"min-content"` ou `"max-content"` (v4). */
+export function isIntrinsicSize(value: unknown): value is IntrinsicSize {
+  return value === 'min-content' || value === 'max-content';
+}
+
+/** A medida intrínseca que um tamanho pede (`min-content`/`max-content`); outro tamanho = nenhuma. */
+export function intrinsicModeOf(spec: unknown): IntrinsicSize | null {
+  return isIntrinsicSize(spec) ? spec : null;
+}
+
 /**
  * Confere um tamanho: número finito ≥ 0, texto numérico puro (`"120"` → 120), `"fill"`,
- * `"hug"` ou `"N%"`. Qualquer outra coisa não é um tamanho (`undefined`).
+ * `"hug"`, `"min-content"`, `"max-content"` ou `"N%"`. Qualquer outra coisa não é um tamanho
+ * (`undefined`). A versão do formato quem confere é o chamador.
  */
 export function parseSizeSpec(value: unknown): SizeSpec | undefined {
   if (typeof value === 'number')
     return Number.isFinite(value) && value >= 0 ? value : undefined;
   if (typeof value !== 'string') return undefined;
-  if (value === 'fill' || value === 'hug') return value;
+  if (value === 'fill' || value === 'hug' || isIntrinsicSize(value)) return value;
   if (PERCENT.test(value)) return value as `${number}%`;
   return PLAIN_NUMBER.test(value) ? Number(value) : undefined;
 }

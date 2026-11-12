@@ -7,6 +7,7 @@ import type { StrokeSide } from '../../../src/model/components/componentFormat';
 import {
   approximateMeasurer,
   instantiate,
+  measureLines,
 } from '../../../src/model/components/instantiate';
 import {
   cutLineLeft,
@@ -278,4 +279,39 @@ describe('só as linhas que cabem na altura (MC0, decisão 31)', () => {
       expect(visibleLineCount(4, height, konvaLineHeight(20, 10))).toBe(count);
     },
   );
+});
+
+describe('palavra mais larga que a caixa: as outras linhas quebram na caixa, como no modelo (code review #1078)', () => {
+  // O canvas falso mede 6 px por caractere: a palavra longa tem 126 px, a caixa 60.
+  const long: TextNode = {
+    ...baseNode({ id: 't', name: 't', width: 60, height: 60 }),
+    type: 'text',
+    text: 'Supercalifragilistico ab cd ef gh',
+    fills: [{ type: 'solid', color: '#000000' }],
+    style: {
+      fontFamily: 'Roboto',
+      fontSize: 10,
+      fontWeight: 400,
+      italic: false,
+      lineHeight: 20,
+      align: 'left',
+      verticalAlign: 'top',
+    },
+  };
+
+  it('o desenho dá as mesmas linhas que o measureLines do modelo', () => {
+    const group = renderScene(frameOf([long])).byId.get('t') as Konva.Group;
+    const shape = group.find('Text')[0] as Konva.Text;
+    const font = {
+      family: 'Roboto',
+      size: 10,
+      weight: 400,
+      italic: false,
+      lineHeight: 20,
+      letterSpacing: 0,
+    };
+    const model = measureLines(long.text, font, 60, (s) => s.length * 6).lines;
+    expect(model).toEqual(['Supercalifragilistico', 'ab cd ef', 'gh']);
+    expect(shape.textArr.map((line) => line.text)).toEqual(model);
+  });
 });

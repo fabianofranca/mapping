@@ -52,6 +52,20 @@ function button(id: string, size: Json, sizing: Json | undefined, root: Json = {
   };
 }
 
+/** Slot `none` com `align` (vertical) e `justify` (horizontal): cada filha sozinha na caixa do slot. */
+function overlaid(id: string, align: string, justify: string): Json {
+  const base = row(id, 'start', 'none');
+  const template = base.template as { children: Json[] };
+  const slot = template.children[0] as Json;
+  return {
+    ...base,
+    template: {
+      ...template,
+      children: [{ ...slot, layout: { type: 'none', align, justify } }],
+    },
+  };
+}
+
 function row(id: string, align: string, layoutType = 'row', sizing?: Json): Json {
   return {
     format: 'mapping-component',
@@ -94,6 +108,17 @@ export const FIT_COMPONENTS: Record<string, Json> = {
     { width: 120, height: 40 },
     { width: 'hug', height: 'hug' },
   ),
+  // L4: a largura sem quebra (`max-content`) e pela palavra mais larga (`min-content`).
+  'fit-max': button(
+    'fit-max',
+    { width: 120, height: 40 },
+    { width: 'max-content', height: 'hug' },
+  ),
+  'fit-min': button(
+    'fit-min',
+    { width: 120, height: 40 },
+    { width: 'min-content', height: 'hug' },
+  ),
   // A altura vem de um campo: 80 com `tall`, 30 sem ele (e nunca abaixo do mínimo).
   'fit-px': button(
     'fit-px',
@@ -111,6 +136,9 @@ export const FIT_COMPONENTS: Record<string, Json> = {
   'fit-row-start': row('fit-row-start', 'start'),
   // Slot sem layout e altura `hug`: com filhas não se arruma nem se ajusta.
   'fit-row-none': row('fit-row-none', 'start', 'none', { height: 'hug' }),
+  // Slot `none` alinhado (v4): `justify` estica na largura, `align` na altura.
+  'fit-none-justify': overlaid('fit-none-justify', 'start', 'stretch'),
+  'fit-none-align': overlaid('fit-none-align', 'stretch', 'start'),
 };
 
 const FIELDS = [

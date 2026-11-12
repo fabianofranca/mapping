@@ -8,9 +8,19 @@ import {
   type LayerDrawing,
 } from '../../src/canvas/components/componentLayer';
 import { renderScene } from '../../src/canvas/components/renderScene';
-import { type FrameNode, baseNode } from '../../src/model/components/scene';
+import * as instantiateModule from '../../src/model/components/instantiate';
+import {
+  type FrameNode,
+  absoluteBoxes,
+  baseNode,
+  walk,
+} from '../../src/model/components/scene';
 import { createCanvasViewState } from '../../src/canvas/viewState';
-import { approximateMeasurer, instantiate } from '../../src/model/components/instantiate';
+import {
+  approximateMeasurer,
+  instantiate,
+  type TextMeasurer,
+} from '../../src/model/components/instantiate';
 import {
   type Library,
   initialValues,
@@ -47,6 +57,7 @@ import { buildLargeTypedProject } from '../model/largeTypedProject';
 import { material3Spec } from '../storage/packageFixture';
 import { componentSources, installFakeCanvas } from './harness';
 import { openWholeProject, wholeProject } from './wholeProjectScenario';
+import { expectBelow } from '../support/perfReport';
 
 // Orçamento de uma renderização do canvas (docs/ARCHITECTURE.md, "Desempenho") com o projeto grande já
 // indexado: Konva de verdade em jsdom, com um contexto 2D falso (nada é pintado;
@@ -161,9 +172,9 @@ describe('renderização do canvas com o projeto grande', () => {
       const median = (xs: number[]) =>
         [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? Number.NaN;
       // A métrica no `expect`: a falha diz qual estourou.
-      expect(median(samples.map((r) => r.pan)), 'pan').toBeLessThan(RENDER_BUDGET_MS);
-      expect(median(samples.map((r) => r.zoom)), 'zoom').toBeLessThan(RENDER_BUDGET_MS);
-      expect(median(samples.map((r) => r.edit)), 'edição').toBeLessThan(RENDER_BUDGET_MS);
+      expectBelow(median(samples.map((r) => r.pan)), RENDER_BUDGET_MS, 'pan');
+      expectBelow(median(samples.map((r) => r.zoom)), RENDER_BUDGET_MS, 'zoom');
+      expectBelow(median(samples.map((r) => r.edit)), RENDER_BUDGET_MS, 'edição');
       controller.destroy();
     },
   );
@@ -196,11 +207,9 @@ describe('renderização do canvas com o projeto grande', () => {
       const samples = Array.from({ length: 15 }, (_, i) => round(i));
       const median = (xs: number[]) =>
         [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? Number.NaN;
-      expect(median(samples.map((r) => r.choice)), 'escolha').toBeLessThan(
-        RENDER_BUDGET_MS,
-      );
-      expect(median(samples.map((r) => r.pan)), 'pan').toBeLessThan(RENDER_BUDGET_MS);
-      expect(median(samples.map((r) => r.zoom)), 'zoom').toBeLessThan(RENDER_BUDGET_MS);
+      expectBelow(median(samples.map((r) => r.choice)), RENDER_BUDGET_MS, 'escolha');
+      expectBelow(median(samples.map((r) => r.pan)), RENDER_BUDGET_MS, 'pan');
+      expectBelow(median(samples.map((r) => r.zoom)), RENDER_BUDGET_MS, 'zoom');
       controller.destroy();
     },
   );
@@ -245,6 +254,70 @@ function loadMaterial3(): Library {
   return loadLibrary(files);
 }
 
+/** Contagem, por chave, do que o layout novo usa nos componentes do fixture (JSON cru, sem o parse). */
+interface LayoutKeys {
+  /** Quadros ou slots `none` com `align` ou `justify`: a sobreposição alinhada. */
+  alignedNone: number;
+  grid: number;
+  /** `weight` num nó do template (não o `weight` da fonte, que vive em `font`). */
+  weight: number;
+  /** `"max-content"` em `width`, `height` ou `sizing`. */
+  maxContent: number;
+  /** Componentes na `formatVersion` 4, a única em que as chaves novas valem. */
+  v4Files: number;
+}
+
+function layoutKeysOf(dir: string): LayoutKeys {
+  const keys: LayoutKeys = {
+    alignedNone: 0,
+    grid: 0,
+    weight: 0,
+    maxContent: 0,
+    v4Files: 0,
+  };
+  const node = (value: unknown): void => {
+    if (typeof value !== 'object' || value === null) return;
+    const n = value as Record<string, unknown>;
+    const layout = n.layout as Record<string, unknown> | undefined;
+    if (
+      layout?.type === 'none' &&
+      (layout.align !== undefined || layout.justify !== undefined)
+    )
+      keys.alignedNone++;
+    if (layout?.type === 'grid') keys.grid++;
+    if (n.weight !== undefined) keys.weight++;
+    if (n.width === 'max-content') keys.maxContent++;
+    if (n.height === 'max-content') keys.maxContent++;
+    for (const child of (n.children as unknown[] | undefined) ?? []) node(child);
+    const repeat = n.repeat as { template?: unknown } | undefined;
+    if (repeat?.template !== undefined) node(repeat.template);
+  };
+  for (const name of readdirSync(join(dir, 'components')).filter((f) =>
+    f.endsWith('.json'),
+  )) {
+    const file = JSON.parse(readFileSync(join(dir, 'components', name), 'utf8')) as {
+      formatVersion?: number;
+      sizing?: Record<string, unknown>;
+      template: unknown;
+    };
+    if (file.formatVersion === 4) keys.v4Files++;
+    if (file.sizing?.width === 'max-content') keys.maxContent++;
+    if (file.sizing?.height === 'max-content') keys.maxContent++;
+    node(file.template);
+  }
+  return keys;
+}
+
+/** Os orçamentos da tela inteira só valem no layout novo (decisão 23 da #1078): confere antes de medir. */
+function expectNewLayout(): void {
+  const keys = layoutKeysOf(MATERIAL3_DIR);
+  expect(keys.v4Files, 'componentes na formatVersion 4').toBe(15);
+  expect(keys.alignedNone, 'none alinhado').toBeGreaterThan(0);
+  expect(keys.grid, 'grid').toBeGreaterThan(0);
+  expect(keys.weight, 'weight').toBeGreaterThan(0);
+  expect(keys.maxContent, 'max-content').toBeGreaterThan(0);
+}
+
 describe('desenho de componentes (Material 3)', () => {
   const library = loadMaterial3();
   const typeOf = new Map(library.types.map((type) => [type.id, type]));
@@ -273,6 +346,96 @@ describe('desenho de componentes (Material 3)', () => {
     expect(M3_SCREEN.instances).toHaveLength(21);
   });
 
+  it('o fixture está no layout novo: none alinhado, grid, weight e max-content presentes', () => {
+    expectNewLayout();
+  });
+
+  /** Instancia um componente do fixture com os valores iniciais e a caixa `size`. */
+  function drawnFixture(id: string, values: Record<string, string | number> = {}) {
+    const type = typeOf.get(id);
+    const component = type?.component;
+    if (!type || !component) throw new Error(`fixture: sem componente ${id}`);
+    const { root, warnings } = instantiate(
+      component,
+      { ...initialValues(type), ...values },
+      { x: 0, y: 0, ...component.size },
+      { measure: approximateMeasurer },
+    );
+    return { nodes: [...walk(root)], boxes: absoluteBoxes(root), warnings };
+  }
+
+  it('o none alinhado do fixture centra o glifo e a grade da navigation bar divide em colunas iguais', () => {
+    const center = (box: { x: number; y: number; width: number; height: number }) => ({
+      x: box.x + box.width / 2,
+      y: box.y + box.height / 2,
+    });
+    // checkbox: o `check` de 14 fica no centro da caixa de 18 (`none` com align e justify `center`).
+    const checkbox = drawnFixture('m3-checkbox', { checked: 'sim' });
+    const caixa = checkbox.nodes.find((n) => n.name === 'caixa');
+    const check = checkbox.nodes.find((n) => n.name === 'check');
+    const caixaBox = caixa && checkbox.boxes.get(caixa.id);
+    const checkBox = check && checkbox.boxes.get(check.id);
+    if (!caixaBox || !checkBox) throw new Error('fixture: checkbox sem caixa ou check');
+    // O nó do `path` guarda a caixa do viewBox (24) e a escala vai na matriz: o canto superior esquerdo
+    // do glifo de 14 dentro da caixa de 18 fica em 2.
+    expect(checkBox.x).toBeCloseTo(caixaBox.x + (caixaBox.width - 14) / 2, 6);
+    expect(checkBox.y).toBeCloseTo(caixaBox.y + (caixaBox.height - 14) / 2, 6);
+
+    // navigation bar: 3 destinos de largura igual, (412 − 2 × 8) / 3 = 132, e o ícone centrado no indicador.
+    const bar = drawnFixture('m3-navigation-bar');
+    const destinos = bar.nodes.filter((n) => /^destino \d$/.test(n.name ?? ''));
+    expect(destinos).toHaveLength(3);
+    expect(destinos.map((n) => bar.boxes.get(n.id)?.x)).toEqual([8, 140, 272]);
+    expect(destinos.every((n) => Math.abs(n.width - 132) < 1e-6)).toBe(true);
+    const indicador = bar.nodes.find((n) => n.name === 'indicador');
+    const icone = indicador && [...walk(indicador)].find((n) => n.name === 'ícone');
+    const indicadorBox = indicador && bar.boxes.get(indicador.id);
+    const iconeBox = icone && bar.boxes.get(icone.id);
+    if (!indicadorBox || !iconeBox)
+      throw new Error('fixture: navigation bar sem indicador');
+    expect(center(iconeBox).x).toBeCloseTo(center(indicadorBox).x, 6);
+    expect(center(iconeBox).y).toBeCloseTo(center(indicadorBox).y, 6);
+    for (const id of ['m3-checkbox', 'm3-navigation-bar', 'm3-top-app-bar', 'm3-box']) {
+      expect(drawnFixture(id).warnings, id).toEqual([]);
+    }
+  });
+
+  it('cada (texto, fonte, limite) distinto é medido uma vez: 26 chamadas nos 15 componentes e 40 na tela', () => {
+    const counted = (): { measure: typeof approximateMeasurer; calls: string[] } => {
+      const calls: string[] = [];
+      const measure: typeof approximateMeasurer = (text, font, maxWidth) => {
+        calls.push(JSON.stringify([text, font, maxWidth]));
+        return approximateMeasurer(text, font, maxWidth);
+      };
+      return { measure, calls };
+    };
+    let total = 0;
+    for (const type of library.types) {
+      const component = type.component;
+      if (!component) continue;
+      const { measure, calls } = counted();
+      instantiate(
+        component,
+        initialValues(type),
+        { x: 0, y: 0, ...component.size },
+        { measure },
+      );
+      expect(calls.length, component.id).toBe(new Set(calls).size);
+      total += calls.length;
+    }
+    expect(total).toBe(26);
+    const screen = counted();
+    for (const instance of M3_SCREEN.instances) {
+      const component = typeOf.get(instance.typeId)?.component;
+      if (!component) throw new Error(`fixture: sem componente ${instance.typeId}`);
+      instantiate(component, instance.values, instance.box, {
+        measure: screen.measure,
+        idPrefix: instance.id,
+      });
+    }
+    expect(screen.calls).toHaveLength(40);
+  });
+
   budgetIt(
     `instanciar e desenhar uma instância leva ~${INSTANCE_BUDGET_MS} ms em média`,
     BUDGET_OPTIONS,
@@ -296,9 +459,9 @@ describe('desenho de componentes (Material 3)', () => {
         perComponent.push((performance.now() - start) / runs);
       }
       const mean = perComponent.reduce((sum, ms) => sum + ms, 0) / perComponent.length;
-      expect(mean).toBeLessThan(INSTANCE_BUDGET_MS);
+      expectBelow(mean, INSTANCE_BUDGET_MS, 'média dos 15');
       // Nenhum componente sozinho passa de quatro vezes o orçamento (o maior mede ~0,9 ms).
-      expect(Math.max(...perComponent)).toBeLessThan(INSTANCE_BUDGET_MS * 4);
+      expectBelow(Math.max(...perComponent), INSTANCE_BUDGET_MS * 4, 'pior componente');
     },
   );
 
@@ -306,6 +469,7 @@ describe('desenho de componentes (Material 3)', () => {
     `uma tela de 21 instâncias (instanciar e desenhar) cabe em ${RENDER_BUDGET_MS} ms`,
     BUDGET_OPTIONS,
     () => {
+      expectNewLayout();
       const placements = new Map([['screen', { x: 0, y: 0, scale: 1 }]]);
       const once = (): number => {
         const start = performance.now();
@@ -318,7 +482,7 @@ describe('desenho de componentes (Material 3)', () => {
       for (let i = 0; i < 5; i++) once(); // Aquecimento.
       const times = Array.from({ length: 15 }, once);
       const median = [...times].sort((a, b) => a - b)[7] ?? Number.NaN;
-      expect(median).toBeLessThan(RENDER_BUDGET_MS);
+      expectBelow(median, RENDER_BUDGET_MS);
     },
   );
 
@@ -351,8 +515,180 @@ describe('desenho de componentes (Material 3)', () => {
         drawings = next;
       }
       const median = [...times.slice(5)].sort((a, b) => a - b)[7] ?? Number.NaN;
-      expect(median).toBeLessThan(RENDER_BUDGET_MS / 4);
+      expectBelow(median, RENDER_BUDGET_MS / 4);
       layer.destroy();
+    },
+  );
+});
+
+// Grade com texto (decisão 23 da #1078, L3): 4 colunas e 6 linhas de 24 textos de 2 linhas, `fill` na
+// célula e `hug` na altura, instanciada e desenhada no Konva, no orçamento do pior componente.
+describe('grade com texto', () => {
+  const GRID_BUDGET_MS = 4;
+  const BOX = { x: 0, y: 0, width: 400, height: 300 };
+  const cells = Array.from({ length: 24 }, (_, i) => ({
+    type: 'text',
+    name: 'cell',
+    text: `aaaaa bbbbb c${String(i).padStart(2, '0')}cc`,
+    width: 'fill',
+  }));
+  const component = {
+    format: 'mapping-component',
+    formatVersion: 4,
+    id: 'grade',
+    name: 'Grade',
+    size: { width: 400, height: 300 },
+    template: {
+      type: 'frame',
+      name: 'raiz',
+      layout: { type: 'column' },
+      children: [
+        {
+          type: 'frame',
+          name: 'grade',
+          width: 'fill',
+          height: 'hug',
+          layout: { type: 'grid', columns: 4, gap: 8, lineGap: 8 },
+          children: cells,
+        },
+      ],
+    },
+  } as never;
+
+  beforeAll(() => installFakeCanvas());
+  afterAll(() => vi.restoreAllMocks());
+
+  function drawn() {
+    return instantiate(component, {}, BOX, { measure: approximateMeasurer });
+  }
+
+  it('a geometria da grade: 4 colunas iguais, 6 linhas e a altura hug é a soma delas', () => {
+    const { root, warnings } = drawn();
+    const boxes = absoluteBoxes(root);
+    const nodes = [...walk(root)];
+    const grid = nodes.find((n) => n.name === 'grade');
+    const texts = nodes.filter((n) => n.name === 'cell');
+    expect(texts).toHaveLength(24);
+    // (400 − 3 × 8) / 4 = 94 por coluna; cada linha tem 2 linhas de texto de 16,8.
+    const xs = [...new Set(texts.map((n) => boxes.get(n.id)?.x))];
+    const ys = [...new Set(texts.map((n) => boxes.get(n.id)?.y))];
+    expect(xs).toEqual([0, 102, 204, 306]);
+    expect(ys).toHaveLength(6);
+    expect(texts.every((n) => Math.abs(n.width - 94) < 1e-6)).toBe(true);
+    expect(texts.every((n) => Math.abs(n.height - 33.6) < 1e-6)).toBe(true);
+    expect(grid?.width).toBeCloseTo(400, 6);
+    expect(grid?.height).toBeCloseTo(6 * 33.6 + 5 * 8, 6);
+    expect(warnings).toEqual([]);
+  });
+
+  budgetIt(
+    `uma grade de 4 × 6 textos de 2 linhas (instanciar e desenhar) cabe em ${GRID_BUDGET_MS} ms`,
+    BUDGET_OPTIONS,
+    () => {
+      const once = (): number => {
+        const start = performance.now();
+        renderScene({ root: drawn().root, warnings: [] });
+        return performance.now() - start;
+      };
+      for (let i = 0; i < 3; i++) once(); // Aquecimento.
+      const times = Array.from({ length: 15 }, once);
+      const median = [...times].sort((a, b) => a - b)[7] ?? Number.NaN;
+      expectBelow(median, GRID_BUDGET_MS);
+    },
+  );
+});
+
+// Intrínseco aninhado em 3 níveis (decisão 23 da #1078, L4): `row` `max-content` › 4 `column`
+// `min-content` › 3 `row` com 2 textos cada, instanciado e desenhado no Konva em ≤ 4 ms e com no
+// máximo uma chamada ao medidor por (texto, limite) distinto.
+describe('intrínseco aninhado em 3 níveis', () => {
+  const NESTED_BUDGET_MS = 4;
+  const BOX = { x: 0, y: 0, width: 800, height: 300 };
+  const inner = (i: number, j: number) => ({
+    type: 'frame',
+    name: 'linha',
+    width: 'fill',
+    layout: { type: 'row', gap: 4 },
+    children: [
+      { type: 'text', name: 'a', text: `aaaa bbbbbbbb c${i}${j}` },
+      { type: 'text', name: 'b', text: `xx yy z${j}` },
+    ],
+  });
+  const column = (i: number) => ({
+    type: 'frame',
+    name: 'coluna',
+    width: 'min-content',
+    height: 'hug',
+    layout: { type: 'column', gap: 4 },
+    children: [inner(i, 0), inner(i, 1), inner(i, 2)],
+  });
+  const component = {
+    format: 'mapping-component',
+    formatVersion: 4,
+    id: 'intrinseco',
+    name: 'Intrínseco',
+    size: { width: 800, height: 300 },
+    template: {
+      type: 'frame',
+      name: 'raiz',
+      layout: { type: 'column' },
+      children: [
+        {
+          type: 'frame',
+          name: 'externa',
+          width: 'max-content',
+          height: 'hug',
+          layout: { type: 'row', gap: 8 },
+          children: [0, 1, 2, 3].map(column),
+        },
+      ],
+    },
+  } as never;
+
+  beforeAll(() => installFakeCanvas());
+  afterAll(() => vi.restoreAllMocks());
+
+  function drawn(measure: TextMeasurer = approximateMeasurer) {
+    return instantiate(component, {}, BOX, { measure });
+  }
+
+  it('a geometria: a coluna vale o min-content da linha e a linha externa soma as 4', () => {
+    const { root } = drawn();
+    const nodes = [...walk(root)];
+    const columns = nodes.filter((n) => n.name === 'coluna');
+    const outer = nodes.find((n) => n.name === 'externa');
+    expect(columns).toHaveLength(4);
+    // Palavras mais largas a 14 px (7,7 por caractere): "bbbbbbbb" (61,6) e "yy" (15,4) + gap 4.
+    const column = 61.6 + 4 + 15.4;
+    expect(columns.every((n) => Math.abs(n.width - column) < 1e-6)).toBe(true);
+    expect(outer?.width).toBeCloseTo(4 * column + 3 * 8, 6);
+  });
+
+  it('mede no máximo uma vez cada (texto, limite) distinto', () => {
+    const calls = new Map<string, number>();
+    const spy: TextMeasurer = (text, font, maxWidth) => {
+      const key = `${text}|${maxWidth ?? ''}`;
+      calls.set(key, (calls.get(key) ?? 0) + 1);
+      return approximateMeasurer(text, font, maxWidth);
+    };
+    drawn(spy);
+    expect(calls.size).toBeGreaterThan(0);
+    expect([...calls.values()].every((count) => count === 1)).toBe(true);
+  });
+
+  budgetIt(
+    `row max-content › 4 column min-content › 3 row × 2 textos (instanciar e desenhar) cabe em ${NESTED_BUDGET_MS} ms`,
+    BUDGET_OPTIONS,
+    () => {
+      const once = (): number => {
+        const start = performance.now();
+        renderScene({ root: drawn().root, warnings: [] });
+        return performance.now() - start;
+      };
+      for (let i = 0; i < 3; i++) once(); // Aquecimento.
+      const times = Array.from({ length: 15 }, once);
+      const median = [...times].sort((a, b) => a - b)[7] ?? Number.NaN;
+      expectBelow(median, NESTED_BUDGET_MS);
     },
   );
 });
@@ -412,8 +748,8 @@ describe('refazer marcações com imagem remota', () => {
       };
       const one = median(() => layer.refreshImages(new Set(['https://img.test/3.png'])));
       const all = median(() => layer.refreshImages(null));
-      expect(one).toBeLessThan(RENDER_BUDGET_MS / 4);
-      expect(all).toBeLessThan(RENDER_BUDGET_MS * 1.5);
+      expectBelow(one, RENDER_BUDGET_MS / 4, 'uma marcação');
+      expectBelow(all, RENDER_BUDGET_MS * 1.5, 'todas');
       layer.destroy();
     },
   );
@@ -556,6 +892,7 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
     `o quadro inteiro (21 desenhos reinstanciados e refeitos) cabe em ${FULL_FRAME_BUDGET_MS} ms`,
     BUDGET_OPTIONS,
     () => {
+      expectNewLayout();
       const { controller, sources } = setup();
       const whole = (): number => {
         const start = performance.now();
@@ -564,7 +901,7 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
         return performance.now() - start;
       };
       for (let i = 0; i < 4; i++) whole(); // Aquecimento.
-      expect(medianOf(15, whole)).toBeLessThan(FULL_FRAME_BUDGET_MS);
+      expectBelow(medianOf(15, whole), FULL_FRAME_BUDGET_MS);
       controller.destroy();
     },
   );
@@ -584,11 +921,40 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
         return elapsed;
       };
       for (let i = 0; i < 4; i++) edit();
-      expect(medianOf(15, edit)).toBeLessThan(RENDER_BUDGET_MS);
+      expectBelow(medianOf(15, edit), RENDER_BUDGET_MS);
       expect(container.dataset.components).toBe('21');
       controller.destroy();
     },
   );
+
+  it('20 quadros de pan e zoom da tela no layout novo fazem 0 instanciações (decisão 22)', () => {
+    expectNewLayout();
+    const { controller, derived, sources } = setup();
+    const before = new Map(derived.componentScenes.value);
+    expect(before.size).toBe(21);
+    const instantiated = vi.spyOn(instantiateModule, 'instantiate');
+    const render = vi.spyOn(ComponentLayerRenderer.prototype, 'render');
+    try {
+      for (let step = 0; step < 20; step++) {
+        controller.zoomBy(step % 2 === 0 ? 1.1 : 1 / 1.1);
+        controller.centerOnPoint({ x: 200 + step * 3, y: 400 });
+        flush();
+      }
+      expect(instantiated).not.toHaveBeenCalled();
+      expect(render).not.toHaveBeenCalled();
+      const after = derived.componentScenes.value;
+      for (const [id, drawing] of before) expect(after.get(id)).toBe(drawing);
+      // Controle: os dois espiões enxergam uma reinstanciação de verdade (as fontes mudaram).
+      sources.fontsEpoch.value++;
+      flush();
+      expect(instantiated).toHaveBeenCalled();
+      expect(render).toHaveBeenCalled();
+    } finally {
+      instantiated.mockRestore();
+      render.mockRestore();
+      controller.destroy();
+    }
+  });
 
   budgetIt(
     `o zoom da tela (sem refazer os desenhos) cabe em ${RENDER_BUDGET_MS} ms`,
@@ -602,7 +968,7 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
         return performance.now() - start;
       };
       for (let i = 0; i < 3; i++) zoom();
-      expect(medianOf(15, zoom)).toBeLessThan(RENDER_BUDGET_MS);
+      expectBelow(medianOf(15, zoom), RENDER_BUDGET_MS);
       controller.destroy();
     },
   );
@@ -736,7 +1102,7 @@ describe('visão Proposto com 60 componentes novos', () => {
         return performance.now() - start;
       };
       for (let i = 0; i < 3; i++) toggle(); // Aquecimento.
-      expect(medianOf(11, toggle)).toBeLessThan(FULL_FRAME_BUDGET_MS);
+      expectBelow(medianOf(11, toggle), FULL_FRAME_BUDGET_MS);
       controller.destroy();
     },
   );
@@ -762,7 +1128,7 @@ describe('visão Proposto com 60 componentes novos', () => {
         return performance.now() - start;
       };
       for (let i = 0; i < 3; i++) frame();
-      expect(medianOf(15, frame)).toBeLessThan(RENDER_BUDGET_MS);
+      expectBelow(medianOf(15, frame), RENDER_BUDGET_MS);
       expect(render).not.toHaveBeenCalled();
       for (const [id, scene] of before) expect(shown().get(id)).toBe(scene);
       render.mockRestore();
@@ -805,7 +1171,7 @@ describe('quadro de arrasto com o projeto inteiro à vista (2.000 marcações)',
       s.actions.cancelGesture();
       s.flush();
       const median = [...times].sort((a, b) => a - b)[7] ?? Number.NaN;
-      expect(median).toBeLessThan(RENDER_BUDGET_MS);
+      expectBelow(median, RENDER_BUDGET_MS);
       s.destroy();
     },
   );
@@ -825,7 +1191,7 @@ describe('primeiro quadro em Enquadrar tudo (2.000 marcações)', () => {
         s.destroy();
       }
       const median = [...times].sort((a, b) => a - b)[2] ?? Number.NaN;
-      expect(median).toBeLessThan(111.5);
+      expectBelow(median, 111.5);
     },
   );
 });
@@ -856,8 +1222,8 @@ describe('pan e zoom com 2.000 marcações e 1.000 setas nomeadas', () => {
         };
         for (let i = 0; i < 3; i++) round();
         const samples = Array.from({ length: 15 }, round);
-        expect(median(samples.map((r) => r.pan)), `pan (${open})`).toBeLessThan(33);
-        expect(median(samples.map((r) => r.zoom)), `zoom (${open})`).toBeLessThan(33);
+        expectBelow(median(samples.map((r) => r.pan)), 33, `pan (${open})`);
+        expectBelow(median(samples.map((r) => r.zoom)), 33, `zoom (${open})`);
         s.destroy();
       }
     },
@@ -880,7 +1246,7 @@ describe('quadro de edição com o projeto inteiro à vista (2.000 marcações)'
       for (let i = 0; i < 3; i++) edit(); // Aquecimento.
       const times = Array.from({ length: 15 }, edit);
       const median = [...times].sort((a, b) => a - b)[7] ?? Number.NaN;
-      expect(median).toBeLessThan(EDIT_FRAME_CEILING_MS);
+      expectBelow(median, EDIT_FRAME_CEILING_MS);
       s.destroy();
     },
   );
@@ -902,8 +1268,8 @@ describe('quadro de edição com o projeto inteiro à vista (2.000 marcações)'
       const samples = Array.from({ length: 15 }, round);
       const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[7] ?? Number.NaN;
       // Meta da decisão 9: 33 ms.
-      expect(median(samples.map((r) => r.pan)), 'pan').toBeLessThan(33);
-      expect(median(samples.map((r) => r.zoom)), 'zoom').toBeLessThan(33);
+      expectBelow(median(samples.map((r) => r.pan)), 33, 'pan');
+      expectBelow(median(samples.map((r) => r.zoom)), 33, 'zoom');
       s.destroy();
     },
   );

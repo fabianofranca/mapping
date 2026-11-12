@@ -62,9 +62,10 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - `horizontalArrangement` vira o `justify` do layout do slot (`Start` em `start`, `End` em `end`, `Center` em `center`, `SpaceBetween` em `space-between`) e `verticalAlignment` vira o `align` (`Top` em `start`, `CenterVertically` em `center`, `Bottom` em `end`); antes o slot ficava sempre em `start`.
 - `spacing` é o `gap` (`Arrangement.spacedBy`) e `padding` o recuo do slot, depois do fundo, como na ordem dos `Modifier`.
 - O fundo segue o papel do tema nos dois modos; `none` não desenha fundo.
+- O slot tem `clip: true` (formato 4): a filha que passa da caixa do componente é cortada na borda. O `Row` do Compose não corta (`Row.kt` linhas 94 a 106: só o `Layout` com a `measurePolicy`, sem `clipToBounds`); o que impede a filha de passar são as restrições de medida, que o formato não tem. O corte é a aproximação visual dessas restrições.
 
 **O que ainda difere do Compose**
 
 - `SpaceAround` e `SpaceEvenly` viram `space-around` e `space-evenly` do `justify`.
 - `scroll` só aparece no rótulo: a rolagem não é desenhada.
-- O Compose limita os filhos à largura da Row; o formato não corta nem rola o que passa dela.
+- O Compose limita os filhos à largura da Row pelas restrições de medida (uma filha de 300 dp numa Row de 200 dp mede 200); o formato corta o que passa da caixa, em vez de encolher a filha. Rolagem não existe. O `weight` das filhas fica fora: o Arrumar não lê campos das filhas.

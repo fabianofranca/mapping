@@ -13,6 +13,7 @@ import {
 import { WRAP_SLACK } from '../../model/components/textWrap';
 import { capMetricsOf } from './capMiddle';
 import { textBoxLimits } from './textLimits';
+import { wordSafeText } from './wordWidth';
 
 function fontStyle(font: MeasureFont): string {
   return `${font.italic ? 'italic ' : ''}${font.weight === 400 ? 'normal' : String(font.weight)}`;
@@ -24,17 +25,27 @@ function probeOf(
   font: MeasureFont,
   maxWidth: number | undefined,
 ): KonvaText {
-  return new KonvaText({
-    text,
+  const face = {
     fontFamily: canvasFontFamily(font.family),
     fontSize: font.size,
     fontStyle: fontStyle(font),
-    lineHeight: font.lineHeight / font.size,
     letterSpacing: font.letterSpacing,
-    wrap: font.wrap === 'none' ? 'none' : 'word',
+  };
+  const wraps = font.wrap !== 'none';
+  // A palavra mais larga que a caixa fica inteira na linha, como no modelo (o Konva a partiria
+  // letra por letra), e as outras linhas quebram onde o modelo quebra.
+  const safe =
+    maxWidth !== undefined && wraps && font.ellipsis !== true
+      ? wordSafeText(text, face, maxWidth)
+      : { text, width: maxWidth };
+  return new KonvaText({
+    ...face,
+    text: safe.text,
+    lineHeight: font.lineHeight / font.size,
+    wrap: wraps ? 'word' : 'none',
     ellipsis: font.ellipsis === true,
     // A folga de 0,5 px: a linha só quebra além dela (o desenho usa a mesma).
-    ...(maxWidth !== undefined ? { width: maxWidth + WRAP_SLACK } : {}),
+    ...(safe.width !== undefined ? { width: safe.width + WRAP_SLACK } : {}),
   });
 }
 

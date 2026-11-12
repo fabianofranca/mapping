@@ -224,6 +224,8 @@ export interface BatchResult {
   readonly rolesCleared: readonly RoleCleared[];
   /** Regras entre coleções violadas pelo resultado (não deveria acontecer). */
   readonly invariantIssues: readonly string[];
+  /** Catálogo de componentes depois do lote (com as especializações que ele aplicou, atualizou ou removeu). */
+  readonly catalog: ComponentCatalog;
 }
 
 /** Papel limpo pela troca de dono de `update_annotation`: vira o aviso `role-cleared`. */
@@ -570,6 +572,7 @@ class Batch {
       deprecations: this.deprecations,
       rolesCleared: this.rolesCleared,
       invariantIssues,
+      catalog: this.catalog,
     };
   }
 

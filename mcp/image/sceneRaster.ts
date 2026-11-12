@@ -909,7 +909,8 @@ class Painter {
     if (node.type === 'frame' || node.type === 'group') {
       let childClip = clip;
       if (node.type === 'frame' && node.clip) {
-        const box = node.clipBox;
+        // Com raio, o recorte ampliado (sombra, traço) vale só ao quadro: os filhos saem pela forma.
+        const box = hasRadius(node.cornerRadius) ? undefined : node.clipBox;
         const rect = box
           ? [
               { x: box.x, y: box.y },
@@ -1305,6 +1306,11 @@ export interface SceneDrawing {
     readonly anchor: ScreenAnchor;
     readonly rect: { x: number; y: number; width: number; height: number };
   };
+  /**
+   * Filha de um slot com `clip` (v4): a caixa do slot da mãe, nos pixels da imagem (o espaço de
+   * `root.transform`). Só aparece o que cai dentro dela; o desenho `screen` ignora o recorte.
+   */
+  readonly clip?: { x: number; y: number; width: number; height: number };
 }
 
 /** A matriz do desenho no raster: a da imagem, ou só a translação do âncora num desenho de tela. */
@@ -1367,6 +1373,26 @@ export function paintScene(
     ) {
       continue;
     }
-    (drawing.screen === undefined ? painter : screenPainter).paint(root, base, 1, clip);
+    if (drawing.screen !== undefined) {
+      screenPainter.paint(root, base, 1, clip);
+      continue;
+    }
+    painter.paint(root, base, 1, slotClip(drawing.clip, base, clip));
   }
+}
+
+/** A região de pintura da filha de um slot com `clip`: a da janela reduzida pela caixa do slot. */
+function slotClip(
+  slot: SceneDrawing['clip'],
+  base: Matrix,
+  region: PixelRect,
+): PixelRect {
+  if (slot === undefined) return region;
+  const corners = [
+    { x: slot.x, y: slot.y },
+    { x: slot.x + slot.width, y: slot.y },
+    { x: slot.x + slot.width, y: slot.y + slot.height },
+    { x: slot.x, y: slot.y + slot.height },
+  ].map((p) => apply(base, p));
+  return intersect(region, bounds(corners));
 }

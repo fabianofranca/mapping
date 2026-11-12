@@ -1,6 +1,6 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "m3-switch",
   "name": "Switch",
   "description": "Switch: trilho 52 × 32, alça 24 (ligado) ou 16 (desligado); rótulo opcional.",
@@ -46,7 +46,8 @@
         "visible": {
           "$has": "label"
         },
-        "width": "fill"
+        "width": "fill",
+        "weight": 1
       },
       {
         "type": "frame",
@@ -126,7 +127,7 @@
               "centerY": true
             },
             "layout": {
-              "type": "row",
+              "type": "none",
               "align": "center",
               "justify": "center"
             },

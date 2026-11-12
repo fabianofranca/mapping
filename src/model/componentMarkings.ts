@@ -1,5 +1,12 @@
-import { findSlot, resolveSlotLayout, slotBoxOfScene } from './components/arrange';
-import { WRAP_EPS, breakLines } from './components/wrapLines';
+import {
+  findSlot,
+  resolveSlotLayout,
+  slotBoxOfScene,
+  type ResolvedGrid,
+} from './components/arrange';
+import { placeCells, trackCount, trackOffset, trackSize } from './components/gridLayout';
+import { lineExtents } from './components/gridPlan';
+import { WRAP_EPS, breakLines, stackLines } from './components/wrapLines';
 import type { ComponentFile, FieldValues } from './components/componentFormat';
 import { fitComponentSize } from './components/sizing';
 import { instantiate, type TextMeasurer } from './components/instantiate';
@@ -146,7 +153,9 @@ interface SlotBox {
   readonly area: Rect;
   readonly padding: { left: number; top: number; right: number; bottom: number };
   readonly gap: number;
-  readonly flow: 'row' | 'column' | 'none';
+  readonly flow: 'row' | 'column' | 'grid' | 'none';
+  /** Só `grid`: as trilhas da grade. */
+  readonly grid?: ResolvedGrid | undefined;
   readonly reverse: boolean;
   /** Quebra de fileira do slot (`layout.wrap`, v4) e os limites dela. */
   readonly wrap: 'none' | 'wrap' | 'wrap-reverse';
@@ -201,6 +210,7 @@ function slotArea(
     padding: layout.padding,
     gap: layout.gap,
     flow: layout.type,
+    grid: layout.grid,
     reverse: layout.reverse,
     wrap: layout.wrap,
     lineGap: layout.lineGap,
@@ -227,7 +237,10 @@ export function placementFitsSlot(
   if (!slot.hasSlot || !containsRect(slot.area, rect)) return false;
   // Layout em linha ou coluna: presa ao componente, a filha pode ficar dentro da área do slot e ainda
   // assim em cima da última irmã (slot do tamanho do componente): também não coube.
-  const last = childrenOf(p, targetId).at(-1);
+  const kids = childrenOf(p, targetId);
+  // Em grade, a filha nova não pode cobrir nenhuma irmã (as células vizinhas ficam livres).
+  if (slot.flow === 'grid') return !kids.some((k) => rectsOverlap(k.rect, rect));
+  const last = kids.at(-1);
   return slot.flow === 'none' || last === undefined || !rectsOverlap(last.rect, rect);
 }
 
@@ -535,8 +548,69 @@ function wrappedSlotRect(
     : { x: Math.round(point.x), y: Math.round(point.y), ...size };
 }
 
+/** Os eixos da grade: onde começa e quanto mede a área de conteúdo nas trilhas, e onde começam as linhas. */
+interface GridAxes {
+  readonly vertical: boolean;
+  readonly tStart: number;
+  readonly tContent: number;
+  readonly fStart: number;
+}
+
+function gridAxes(slot: SlotBox): GridAxes {
+  const vertical = slot.grid?.orientation !== 'horizontal';
+  const { area, padding } = slot;
+  return {
+    vertical,
+    tStart: vertical ? area.x + padding.left : area.y + padding.top,
+    tContent: vertical
+      ? area.width - padding.left - padding.right
+      : area.height - padding.top - padding.bottom,
+    fStart: vertical ? area.y + padding.top : area.x + padding.left,
+  };
+}
+
+/** A extensão da filha na linha de fluxo (altura na grade vertical). */
+const flowExtent = (axes: GridAxes, r: Rect): number =>
+  axes.vertical ? r.height : r.width;
+
+/**
+ * R0 num slot em grade: a primeira célula, na ordem de colocação (a das filhas que já há, mais a
+ * primeira depois da última linha), cujo retângulo, com o tamanho da filha nova, não cobre nenhuma
+ * irmã. As linhas de fluxo têm a extensão da maior filha e se empilham com o `lineGap`, como no
+ * Arrumar. `layout.reverse` não conta aqui: o Arrumar reordena depois.
+ */
+function gridSlotRect(kids: readonly Marking[], slot: SlotBox, size: Size): Rect {
+  const axes = gridAxes(slot);
+  const count = trackCount(slot.grid ?? {}, axes.tContent, slot.gap);
+  const track = trackSize(axes.tContent, count, slot.gap);
+  const { cells, lines } = placeCells(
+    kids.map(() => 1),
+    count,
+  );
+  const extents = lineExtents(
+    cells,
+    lines,
+    kids.map((kid) => flowExtent(axes, kid.rect)),
+  );
+  const tops = stackLines([...extents, 0], slot.lineGap, false).tops;
+  const at = (line: number, trackIndex: number): Rect => {
+    const t = axes.tStart + trackOffset(trackIndex, track, slot.gap);
+    const f = axes.fStart + (tops[line] ?? 0);
+    const [x, y] = axes.vertical ? [t, f] : [f, t];
+    return { x: Math.round(x), y: Math.round(y), ...size };
+  };
+  for (let line = 0; line < lines; line++) {
+    for (let i = 0; i < count; i++) {
+      const rect = at(line, i);
+      if (!kids.some((k) => rectsOverlap(k.rect, rect))) return rect;
+    }
+  }
+  return at(lines, 0);
+}
+
 /** R0 num componente com slot: depois da última filha no eixo do layout, ou no início do conteúdo (antes do `clamp`). */
 function slotRect(p: Project, parent: Marking, slot: SlotBox, size: Size): Rect {
+  if (slot.flow === 'grid') return gridSlotRect(childrenOf(p, parent.id), slot, size);
   const wrapped = wrappedSlotRect(p, parent, slot, size);
   if (wrapped !== undefined) return wrapped;
   const slotBox = slot.area;

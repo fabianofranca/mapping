@@ -4,6 +4,7 @@ import type {
   ComponentFile,
   FieldValues,
   FrameTemplate,
+  TemplateNode,
 } from '../../../src/model/components/componentFormat';
 import {
   approximateMeasurer,
@@ -12,6 +13,9 @@ import {
   normalizePadding,
   type Box,
 } from '../../../src/model/components/instantiate';
+import { catalog, entryOf } from '../../support/material3Fitted';
+import { instantiateOptions } from '../../support/material3Library';
+import { defaultValues } from '../../../src/model/libraryDrawing';
 import {
   walk,
   type FrameNode,
@@ -1077,6 +1081,332 @@ describe('$lines: o número de linhas medidas de um nó text', () => {
       },
     );
     expect(calls).toBeGreaterThan(single);
-    expect(single).toBe(3);
+    // Uma passagem mede o texto uma vez só (o `textMemo` do motor, #1078); antes eram 3 chamadas.
+    expect(single).toBe(1);
+  });
+});
+
+// ---------------------------------------------------------------------------------------
+// L2 (etapa #1078): `none` alinhado, aviso no `none` (#1093) e `clip` por expressão / no slot.
+// ---------------------------------------------------------------------------------------
+
+function component4(template: FrameTemplate): ComponentFile {
+  return { ...component(template), formatVersion: 4 };
+}
+
+function run4(
+  template: FrameTemplate,
+  values: Values,
+  box: Box,
+): ReturnType<typeof instantiate> {
+  return instantiate(component4(template), values, box, { measure: approximateMeasurer });
+}
+
+type NoneAlign = 'start' | 'center' | 'end' | 'stretch';
+
+describe('instantiate: none alinhado (align vertical, justify horizontal)', () => {
+  const BOX_N: Box = { x: 0, y: 0, width: 200, height: 100 };
+  const labelNode = {
+    type: 'text' as const,
+    name: 'label',
+    text: 'Salvar',
+    font: { size: 14, weight: 600 },
+    color: '#000000',
+  };
+  const fixedNode = { type: 'rect' as const, name: 'fixo', width: 40, height: 20 };
+  const tpl = (
+    align?: NoneAlign,
+    justify?: NoneAlign,
+    kids: readonly TemplateNode[] = [labelNode, fixedNode],
+  ) =>
+    ({
+      type: 'frame',
+      layout: {
+        type: 'none',
+        ...(align === undefined ? {} : { align }),
+        ...(justify === undefined ? {} : { justify }),
+      },
+      children: kids,
+    }) as FrameTemplate;
+  const at = (v: NoneAlign, free: number): number =>
+    v === 'center' ? free / 2 : v === 'end' ? free : 0;
+  const points: NoneAlign[] = ['start', 'center', 'end'];
+
+  for (const align of points) {
+    for (const justify of points) {
+      it(`os nove pontos: align ${align} × justify ${justify}, filho hug e de tamanho fixo`, () => {
+        const { root } = run4(tpl(align, justify), {}, BOX_N);
+        const label = child(root, 0);
+        const fixed = child(root, 1);
+        expect([tx(label), ty(label)]).toEqual([
+          at(justify, 200 - labelWidth),
+          at(align, 100 - labelHeight),
+        ]);
+        expect([tx(fixed), ty(fixed)]).toEqual([at(justify, 160), at(align, 80)]);
+        expect([fixed.width, fixed.height]).toEqual([40, 20]);
+      });
+    }
+  }
+
+  it('stretch: o filho hug estica no eixo, o fill continua ocupando o conteúdo e o fixo fica no início', () => {
+    const { root } = run4(
+      tpl('stretch', 'stretch', [labelNode, fixedNode, { type: 'rect', name: 'tudo' }]),
+      {},
+      BOX_N,
+    );
+    const label = child(root, 0);
+    expect([tx(label), ty(label), label.width, label.height]).toEqual([0, 0, 200, 100]);
+    const fixed = child(root, 1);
+    expect([tx(fixed), ty(fixed), fixed.width, fixed.height]).toEqual([0, 0, 40, 20]);
+    const whole = child(root, 2);
+    expect([whole.width, whole.height]).toEqual([200, 100]);
+  });
+
+  it('stretch só num eixo: o outro segue o start', () => {
+    const { root } = run4(tpl('start', 'stretch'), {}, BOX_N);
+    const label = child(root, 0);
+    expect([ty(label), label.width]).toEqual([0, 200]);
+    expect(label.height).toBeCloseTo(labelHeight, 5);
+  });
+
+  it('a âncora do filho no eixo vence; no outro eixo vale o quadro', () => {
+    const anchored: FrameTemplate = tpl('center', 'end', [
+      { type: 'rect', name: 'a', width: 20, height: 10, anchors: { left: 5 } },
+      { type: 'rect', name: 'b', width: 20, height: 10, anchors: { bottom: 7 } },
+      { type: 'rect', name: 'c', anchors: { left: 8, right: 8 }, height: 10 },
+    ]);
+    const { root } = run4(anchored, {}, BOX_N);
+    const a = child(root, 0);
+    expect([tx(a), ty(a)]).toEqual([5, 45]);
+    const b = child(root, 1);
+    expect([tx(b), ty(b)]).toEqual([180, 100 - 7 - 10]);
+    const c = child(root, 2);
+    expect([tx(c), c.width, ty(c)]).toEqual([8, 184, 45]);
+  });
+
+  it('sem align/justify a cena é a de hoje (igual a start/start)', () => {
+    const plain = run4(tpl(), {}, BOX_N).root;
+    expect(run4(tpl('start', 'start'), {}, BOX_N).root).toEqual(plain);
+    const old = run({ ...tpl(), layout: { type: 'none' } }, {}, BOX_N).root;
+    expect(plain).toEqual(old);
+  });
+
+  it('o quadro hug com filhos alinhados abraça o maior filho', () => {
+    const { root } = run4(
+      { ...tpl('center', 'center'), width: 'hug', height: 'hug' } as FrameTemplate,
+      {},
+      BOX_N,
+    );
+    const fixed = child(root, 1);
+    expect(tx(fixed)).toBeCloseTo((root.width - 40) / 2, 5);
+  });
+});
+
+describe('instantiate: aviso de conteúdo maior que a caixa no none (#1093)', () => {
+  const chip = (rootLayout: 'row' | 'none'): FrameTemplate => ({
+    type: 'frame',
+    name: 'raiz',
+    layout: { type: rootLayout },
+    children: [
+      {
+        type: 'frame',
+        name: 'miolo',
+        width: 'hug',
+        height: 'hug',
+        layout: { type: 'row', padding: [0, 24] },
+        children: [{ type: 'rect', name: 'barra', width: 39, height: 36 }],
+      },
+    ],
+  });
+  const SMALL: Box = { x: 0, y: 0, width: 58, height: 40 };
+  const TOO_BIG = 'conteúdo maior que a caixa: raiz';
+
+  it('raiz row avisa (87 de conteúdo numa caixa de 58)', () => {
+    const result = run4(chip('row'), {}, SMALL);
+    expect(result.overflowWarnings).toEqual([TOO_BIG]);
+    expect(result.shortfalls?.[TOO_BIG]).toBe(29);
+  });
+
+  it('raiz none TAMBÉM avisa, com a mesma falta no eixo x', () => {
+    const result = run4(chip('none'), {}, SMALL);
+    expect(result.overflowWarnings).toEqual([TOO_BIG]);
+    expect(result.shortfalls?.[TOO_BIG]).toBe(29);
+  });
+
+  it('numa caixa que cabe, nada', () => {
+    expect(
+      run4(chip('none'), {}, { x: 0, y: 0, width: 87, height: 36 }).warnings,
+    ).toEqual([]);
+  });
+
+  it('filho centrado ou alinhado pelo quadro maior que a caixa avisa pelo tamanho', () => {
+    const wide = (props: Record<string, unknown>): FrameTemplate => ({
+      type: 'frame',
+      name: 'raiz',
+      layout: { type: 'none' },
+      children: [{ type: 'rect', width: 70, height: 10, ...props } as TemplateNode],
+    });
+    const centered = run4(wide({ anchors: { centerX: true } }), {}, SMALL);
+    expect(centered.shortfalls?.[TOO_BIG]).toBe(12);
+    const aligned = run4(
+      { ...wide({}), layout: { type: 'none', justify: 'center' } } as FrameTemplate,
+      {},
+      SMALL,
+    );
+    expect(aligned.shortfalls?.[TOO_BIG]).toBe(12);
+  });
+
+  it('a extensão soma as âncoras (inicial + tamanho + final)', () => {
+    const result = run4(
+      {
+        type: 'frame',
+        name: 'raiz',
+        layout: { type: 'none' },
+        children: [
+          { type: 'rect', width: 40, height: 10, anchors: { left: 10 } },
+          { type: 'rect', width: 40, height: 10, anchors: { right: 30 } },
+        ],
+      },
+      {},
+      SMALL,
+    );
+    expect(result.shortfalls?.[TOO_BIG]).toBe(12);
+  });
+
+  it('o filho com âncoras dos dois lados (esticado) não avisa', () => {
+    const result = run4(
+      {
+        type: 'frame',
+        name: 'raiz',
+        layout: { type: 'none' },
+        children: [{ type: 'rect', anchors: { left: 8, right: 8 }, height: 10 }],
+      },
+      {},
+      SMALL,
+    );
+    expect(result.overflowWarnings).toEqual([]);
+  });
+
+  it('o eixo vertical também avisa', () => {
+    const result = run4(
+      {
+        type: 'frame',
+        name: 'raiz',
+        layout: { type: 'none' },
+        children: [{ type: 'rect', width: 10, height: 50 }],
+      },
+      {},
+      SMALL,
+    );
+    expect(result.shortfalls?.[TOO_BIG]).toBe(10);
+  });
+
+  it('tolerância: 1 px de sobra por causa de texto não avisa; 2 px avisa', () => {
+    const textW = approximateMeasurer('Salvar', FONT).width;
+    const label: FrameTemplate = {
+      type: 'frame',
+      name: 'raiz',
+      layout: { type: 'none' },
+      children: [
+        {
+          type: 'text',
+          text: 'Salvar',
+          font: { size: 14, weight: 600 },
+          color: '#000000',
+        },
+      ],
+    };
+    expect(
+      run4(label, {}, { x: 0, y: 0, width: textW - 1, height: 40 }).overflowWarnings,
+    ).toEqual([]);
+    expect(
+      run4(label, {}, { x: 0, y: 0, width: textW - 2, height: 40 }).overflowWarnings,
+    ).toEqual([TOO_BIG]);
+  });
+});
+
+describe('instantiate: o button real da Material 3 no none (#1093)', () => {
+  const entry = entryOf('button');
+  const drawButton = (width: number, height: number) =>
+    instantiate(
+      entry.component as ComponentFile,
+      { ...defaultValues(entry.type), label: 'Salvar' },
+      { x: 0, y: 0, width, height },
+      instantiateOptions(catalog, 'light'),
+    );
+  const TOO_BIG = 'conteúdo maior que a caixa: button';
+
+  // Em 58×40 o motor NÃO avisa: o rótulo da biblioteca tem `maxWidth` = largura − 48, então o
+  // texto é cortado em 10 px e o quadro `conteúdo` fecha em 58 (ver o retorno da fase L2).
+  it('em 136×40 não avisa', () => {
+    expect(drawButton(136, 40).overflowWarnings ?? []).not.toContain(TOO_BIG);
+  });
+});
+
+describe('instantiate: clip por expressão no quadro e clip no slot', () => {
+  const clipFrame = (clip: FrameTemplate['clip']): FrameTemplate => ({
+    type: 'frame',
+    ...(clip === undefined ? {} : { clip }),
+    children: [
+      {
+        type: 'frame',
+        name: 'interno',
+        width: 50,
+        height: 50,
+        ...(clip === undefined ? {} : {}),
+      },
+    ],
+  });
+  const BOX_C: Box = { x: 0, y: 0, width: 100, height: 100 };
+
+  it('quadro com clip por $field recorta quando o campo é verdadeiro e não quando é falso', () => {
+    const tpl: FrameTemplate = {
+      type: 'frame',
+      children: [
+        {
+          type: 'frame',
+          name: 'interno',
+          clip: { $field: 'cortar', default: false },
+          width: 50,
+          height: 50,
+        },
+      ],
+    };
+    const on = child(run4(tpl, { cortar: 'sim' }, BOX_C).root, 0) as FrameNode;
+    const off = child(run4(tpl, { cortar: '' }, BOX_C).root, 0) as FrameNode;
+    expect(on.clip).toBe(true);
+    expect(off.clip).toBe(false);
+  });
+
+  it('o padrão continua: só a raiz recorta; clip literal vale', () => {
+    const root = run4(clipFrame(undefined), {}, BOX_C).root as FrameNode;
+    expect(root.clip).toBe(true);
+    expect((child(root, 0) as FrameNode).clip).toBe(false);
+    expect((run4(clipFrame(false), {}, BOX_C).root as FrameNode).clip).toBe(false);
+  });
+
+  const slotTpl = (clip?: unknown): FrameTemplate =>
+    ({
+      type: 'frame',
+      children: [
+        {
+          type: 'slot',
+          name: 'conteudo',
+          anchors: { left: 0, right: 0, top: 0, bottom: 0 },
+          ...(clip === undefined ? {} : { clip }),
+        },
+      ],
+    }) as FrameTemplate;
+
+  it('slot com clip: true marca clipChildren; sem clip ou false, não', () => {
+    const slotOf = (clip?: unknown, values: Values = {}) =>
+      child(run4(slotTpl(clip), values, BOX_C).root, 0) as SceneNode & {
+        clipChildren?: true;
+      };
+    expect(slotOf(true).clipChildren).toBe(true);
+    expect(slotOf({ $field: 'c' }, { c: 'sim' }).clipChildren).toBe(true);
+    expect(slotOf({ $field: 'c' }, { c: '' }).clipChildren).toBeUndefined();
+    expect(slotOf(false).clipChildren).toBeUndefined();
+    expect('clipChildren' in slotOf()).toBe(false);
   });
 });

@@ -128,14 +128,14 @@ describe('expressão em width e height', () => {
     expect(
       validateComponent(withChild(rect({ width: { $field: 'w', default: -3 } }))),
     ).toEqual([
-      'template.children[0].width.default: esperava número maior ou igual a 0, "fill", "hug" ou "<número>%"',
+      'template.children[0].width.default: esperava número maior ou igual a 0, "fill", "hug", "min-content", "max-content" ou "<número>%"',
     ]);
     expect(
       validateComponent(
         withChild(rect({ height: { $if: { $has: 'x' }, then: 'wide', else: 10 } })),
       ),
     ).toEqual([
-      'template.children[0].height.then: esperava número maior ou igual a 0, "fill", "hug" ou "<número>%"',
+      'template.children[0].height.then: esperava número maior ou igual a 0, "fill", "hug", "min-content", "max-content" ou "<número>%"',
     ]);
   });
 
@@ -190,7 +190,9 @@ describe('expressão em layout.type, align e justify', () => {
   it('confere os literais dos ramos', () => {
     expect(
       validateComponent(frameWith({ type: { $field: 'd', default: 'diagonal' } })),
-    ).toEqual(['template.layout.type.default: esperava "none", "row" ou "column"']);
+    ).toEqual([
+      'template.layout.type.default: esperava "none", "row", "column" ou "grid"',
+    ]);
     expect(
       validateComponent(
         frameWith({ type: 'row', align: { $field: 'a', default: 'middle' } }),
@@ -208,8 +210,8 @@ describe('expressão em layout.type, align e justify', () => {
   });
 
   it('literal inválido em type mantém a mensagem de sempre', () => {
-    expect(validateComponent(frameWith({ type: 'grid' }))).toEqual([
-      'template.layout.type: esperava "none", "row" ou "column"',
+    expect(validateComponent(frameWith({ type: 'diagonal' }))).toEqual([
+      'template.layout.type: esperava "none", "row", "column" ou "grid"',
     ]);
   });
 
