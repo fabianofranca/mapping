@@ -164,6 +164,101 @@ Um parâmetro cujo valor se monta por uma função (`colors: ButtonColors = Butt
 }
 ```
 
+## Exemplo: uma view SwiftUI (extrator `swift`)
+
+O `init` explícito de `ProfileCard` (`init(_ title: String, badge badgeCount: Int = 0, style: Style = .compact, onTap: (() -> Void)? = nil, @ViewBuilder content: () -> Content)`), como o `mapping-signature swift` o escreve. `name` é o nome **interno** da propriedade, `label` o rótulo externo (`_` é o posicional, o `#0` do `code.params`); o padrão `.compact` vira a opção `compact`; o `doc` vem do `- Parameters:` e do `///`.
+
+```json
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "swiftui",
+    "language": "swift",
+    "symbol": "DS.ProfileCard",
+    "path": "Sources/DS/ProfileCard.swift",
+    "ref": "fixture",
+    "extractor": "mapping-signature/swift@1"
+  },
+  "params": [
+    {
+      "name": "title",
+      "label": "_",
+      "role": "value",
+      "type": "String",
+      "required": true,
+      "value": { "kind": "text" }
+    },
+    {
+      "name": "badgeCount",
+      "label": "badge",
+      "role": "value",
+      "type": "Int",
+      "default": "0",
+      "value": { "kind": "integer", "default": 0 }
+    },
+    {
+      "name": "style",
+      "role": "value",
+      "type": "Style",
+      "default": ".compact",
+      "value": { "kind": "enum", "default": "compact", "options": ["compact", "regular"] }
+    },
+    { "name": "onTap", "role": "callback", "type": "(() -> Void)?", "default": "nil" },
+    {
+      "name": "content",
+      "role": "slot",
+      "type": "@ViewBuilder () -> Content",
+      "required": true
+    }
+  ],
+  "doc": { "title": "The name shown at the top of the card." }
+}
+```
+
+Importada, a ficha dá o campo `title` ligado ao argumento posicional (`code.params`: `"title": "#0"`) e `badgeCount` ligado ao rótulo `badge`; `onTap` e `content` ficam em `unmapped`.
+
+## Exemplo: um componente do Figma (extrator `figma`)
+
+As `componentPropertyDefinitions` de um `COMPONENT_SET`. O sufixo `#<id>` do nome sai de `name` e vai para `id`; `VARIANT` é `enum` com `options`, `BOOLEAN` é `boolean`, `TEXT` é `text` e `INSTANCE_SWAP` é `slot`. A ficha é de design (`kind: "design"`), por isso a importação a liga em `sources` do tipo e o `style` existente ganha o `values` do `VARIANT`.
+
+```json
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "design",
+    "system": "figma",
+    "id": "12:34",
+    "name": "Button",
+    "extractor": "mapping-signature/figma@1"
+  },
+  "params": [
+    {
+      "name": "Style",
+      "role": "value",
+      "type": "VARIANT",
+      "default": "Filled",
+      "value": {
+        "kind": "enum",
+        "default": "Filled",
+        "options": ["Filled", "Outlined", "Text"]
+      }
+    },
+    {
+      "name": "Disabled",
+      "id": "1:2",
+      "role": "value",
+      "type": "BOOLEAN",
+      "default": "false",
+      "value": { "kind": "boolean", "default": false }
+    },
+    { "name": "Icon", "id": "1:4", "role": "slot", "type": "INSTANCE_SWAP" }
+  ]
+}
+```
+
 ## Como a especialização a cita
 
 No `code.<plataforma>` do tipo (e em cada caso de `variants`), `signature` é o caminho da ficha no pacote; ao lado ficam `ignore`, `calls` e `formats`, e o `params` pode usar caminho e posicional. Nas `sources` do tipo (origem de design), `signature` é a ficha de design. O formato completo, a regra de soma das `variants` e os erros estão em [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Assinaturas e modelos de campo". O recurso `mapping-docs://SIGNATURE-FORMAT.md` do servidor MCP entrega este documento.

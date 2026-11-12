@@ -7,6 +7,8 @@ import {
 } from '../../src/model/signatures';
 import { CliError } from '../errors';
 import { tokenize } from '../lexer';
+import type { CodeRequest } from '../request';
+import type { EnumTable } from '../paramList';
 import { makeSource } from '../source';
 import { isPunct, type TokenStream } from '../tokens';
 import { parseParamDocs } from './doc';
@@ -19,23 +21,12 @@ import {
 } from './factories';
 import { findFunctions, type FunctionDecl } from './functions';
 import { chooseOverload } from './overloads';
-import { parseParams, type EnumTable } from './params';
+import { parseParams } from './params';
 
 // Leitor Kotlin (`mapping-signature/kotlin@1`): a ficha de uma função `@Composable` a partir do
 // texto do arquivo. Regras e limites em signature/README.md.
 
 export const KOTLIN_EXTRACTOR = 'mapping-signature/kotlin@1';
-
-/** O que a CLI entrega ao leitor: textos já lidos, e os valores dos argumentos. */
-export interface ReadRequest {
-  readonly file: { readonly name: string; readonly text: string };
-  readonly also: readonly { readonly name: string; readonly text: string }[];
-  readonly symbol: string;
-  /** `source.path`, já decidido pela CLI. */
-  readonly path: string;
-  readonly ref?: string;
-  readonly overload?: number;
-}
 
 /** O `package` do arquivo: `package a.b.c` (vazio se não houver). */
 function packageOf(stream: TokenStream): string {
@@ -140,7 +131,7 @@ function candidatesOf(stream: TokenStream, name: string): FunctionDecl[] {
   return findFunctions(stream).filter((fn) => fn.name === name && fn.composable);
 }
 
-export function extractKotlin(request: ReadRequest): Signature {
+export function extractKotlin(request: CodeRequest): Signature {
   const main = load(request.file);
   const files = [main, ...request.also.map(load)];
   const name = simpleName(request.symbol, main.pkg, request.file.name);
