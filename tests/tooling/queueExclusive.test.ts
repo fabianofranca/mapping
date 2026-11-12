@@ -194,6 +194,43 @@ describe('painel.py — etapa exclusiva (FM2, decisão 12)', () => {
     expect(run('show', dir)).toContain('começar agora: nenhuma');
   });
 
+  it(
+    'com a exclusiva começada e parada (falhou, esperando dono, aguardando), o motivo diz o estado e a fila segue segurada (PP1, decisões 2 e 3 da #1595)',
+    () => {
+      const casos: Array<[string[], string]> = [
+        [['status=falhou'], 'exclusiva #1 falhou'],
+        [['status=esperando dono'], 'exclusiva #1 esperando dono'],
+        [['status=aguardando', 'started=now'], 'exclusiva #1 aguardando'],
+      ];
+      for (const [extra, motivo] of casos) {
+        run('init', dir, '--force');
+        run('start', dir, '--paralelo', '9');
+        etapa('#1', ficha('nenhuma', 'a.ts'), 'exclusive=sim', 'started=now', ...extra);
+        etapa('#2', ficha('nenhuma', 'b.ts'));
+        etapa('#3', ficha('nenhuma', 'c.ts'), 'exclusive=sim');
+        expect(motivos().slice(0, 2)).toEqual([`#2 ${motivo}`, `#3 ${motivo}`]);
+        expect(run('show', dir)).toContain('começar agora: nenhuma');
+      }
+    },
+    TEMPO_SUBPROCESSOS,
+  );
+
+  it('a saída da exclusiva parada é do dono: exclusive= na linha dela libera a fila', () => {
+    etapa(
+      '#1',
+      ficha('nenhuma', 'a.ts'),
+      'exclusive=sim',
+      'status=falhou',
+      'started=now',
+    );
+    etapa('#2', ficha('nenhuma', 'b.ts'));
+    expect(motivos()[0]).toBe('#2 exclusiva #1 falhou');
+    run('row', dir, '#1', 'exclusive=');
+    run('log', dir, 'exclusiva #1 liberada pelo dono');
+    expect(motivos()[0]).toBe('#2 começa');
+    expect(run('show', dir)).toContain('começar agora: #2');
+  });
+
   it('duas exclusivas começam uma por vez, na ordem', () => {
     etapa('#1', ficha('nenhuma', 'a.ts'), 'exclusive=sim');
     etapa('#2', ficha('nenhuma', 'b.ts'), 'exclusive=sim');
