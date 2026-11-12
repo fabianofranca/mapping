@@ -12,6 +12,7 @@
 
 ## Alterado
 
+- Teto do `dist/index.html` subiu 16 KiB, de 2.080.768 para 2.097.152, pela regra do orçamento (a grade, os pesos e as mensagens novas da L3).
 - O desenho dos componentes ficou mais rápido ao medir texto repetido: o mesmo texto, com a mesma fonte e o mesmo limite de largura, é medido uma vez só, na app e no servidor MCP (nos 15 componentes do exemplo Material 3, as medidas por instância caíram de 69 para 26). Nenhum desenho muda.
 
 ## Corrigido
