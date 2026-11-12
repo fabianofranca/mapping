@@ -30,7 +30,12 @@ vi.mock('konva/lib/shapes/Text', () => ({
 import { konvaMeasurer } from '../../../src/canvas/components/konvaMeasurer';
 import { wordSafeWidth } from '../../../src/canvas/components/wordWidth';
 
-const face = { fontFamily: 'Roboto', fontSize: 14, fontStyle: 'normal', letterSpacing: 0 };
+const face = {
+  fontFamily: 'Roboto',
+  fontSize: 14,
+  fontStyle: 'normal',
+  letterSpacing: 0,
+};
 const font = {
   family: 'Roboto',
   size: 14,
