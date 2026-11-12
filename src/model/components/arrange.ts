@@ -47,7 +47,7 @@ import {
   trackOffset,
   trackSize,
 } from './gridLayout';
-import { isTrackAbsent } from './gridPlan';
+import { TRACK_KEYS, isTrackAbsent, lineExtents, validTrack } from './gridPlan';
 import { breakLines, stackLines } from './wrapLines';
 
 /**
@@ -163,35 +163,24 @@ function resolveWrap(
   };
 }
 
-/** O número de trilhas de uma chave `columns`/`rows` (inteiro ≥ 1) ou o mínimo de `min…` (> 0). */
-function trackNumber(value: unknown, integer: boolean): number | null {
-  const n = toNumber(value, NaN);
-  if (integer) return Number.isInteger(n) && n >= 1 ? n : null;
-  return n > 0 && Number.isFinite(n) ? n : null;
-}
-
 /** As trilhas da grade; a chave inválida (ou nenhuma) cai em uma trilha da orientação dela. */
 function resolveGrid(layout: LayoutSpec, values: FieldValues): ResolvedGrid {
-  const keys = [
-    { expr: layout.columns, integer: true, vertical: true, min: false },
-    { expr: layout.minColumnWidth, integer: false, vertical: true, min: true },
-    { expr: layout.rows, integer: true, vertical: false, min: false },
-    { expr: layout.minRowHeight, integer: false, vertical: false, min: true },
-  ];
   // A primeira chave que tem valor decide (`columns` e `minColumnWidth` por expressão escolhem o
   // `Fixed` ou o `Adaptive` por um campo); sem valor em nenhuma, vale a primeira presente.
-  const present = keys
-    .filter((k) => k.expr !== undefined)
-    .map((k) => ({
-      ...k,
-      value: evaluate<unknown>(k.expr as Expr<unknown>, values, undefined),
-    }));
-  const key = present.find((k) => !isTrackAbsent(k.value)) ?? present[0];
-  const orientation = key?.vertical === false ? 'horizontal' : 'vertical';
-  if (key === undefined) return { count: 1, orientation };
-  const value = trackNumber(key.value, key.integer);
-  if (value === null || value === undefined) return { count: 1, orientation };
-  return key.min ? { min: value, orientation } : { count: value, orientation };
+  const present = TRACK_KEYS.filter((entry) => layout[entry.key] !== undefined).map(
+    (entry) => ({
+      entry,
+      value: evaluate<unknown>(layout[entry.key] as Expr<unknown>, values, undefined),
+    }),
+  );
+  const chosen = present.find((p) => !isTrackAbsent(p.value)) ?? present[0];
+  const orientation = chosen?.entry.vertical === false ? 'horizontal' : 'vertical';
+  if (chosen === undefined) return { count: 1, orientation };
+  const value = validTrack(chosen.entry.field, chosen.value);
+  if (value === undefined) return { count: 1, orientation };
+  return chosen.entry.field === 'min'
+    ? { min: value, orientation }
+    : { count: value, orientation };
 }
 
 /**
@@ -515,15 +504,8 @@ function planGrid(
     order.map(() => 1),
     count,
   );
-  const extents = Array.from({ length: lines }, () => 0);
-  for (const cell of cells) {
-    const child = children[order[cell.index] as number] as LayoutChild;
-    extents[cell.line] = Math.max(
-      extents[cell.line] ?? 0,
-      gridSize(child, vertical, false),
-    );
-  }
-  return { vertical, count, order, cells, extents };
+  const sizes = order.map((i) => gridSize(children[i] as LayoutChild, vertical, false));
+  return { vertical, count, order, cells, extents: lineExtents(cells, lines, sizes) };
 }
 
 function roundedBox(raw: Box): Box {
@@ -582,7 +564,6 @@ function gridExtent(
   children: readonly LayoutChild[],
   available: number | null,
 ): { width: number; height: number } {
-  if (children.length === 0) return { width: 0, height: 0 };
   const plan = planGrid(layout, children, available);
   const widest = Math.max(0, ...children.map((c) => gridSize(c, plan.vertical, true)));
   const tracks = plan.count * widest + layout.gap * (plan.count - 1);
