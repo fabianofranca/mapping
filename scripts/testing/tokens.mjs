@@ -4,7 +4,7 @@ const dir = process.argv[2];
 const erro = process.argv[3] === 'erro';
 const specFile = dir + '/material3-compose.spec.json';
 const spec = JSON.parse(fs.readFileSync(specFile, 'utf8'));
-spec.formatVersion = 15;
+spec.formatVersion = Math.max(spec.formatVersion, 15);
 // O card.json mínimo mais abaixo não desenha o `interaction`: sem tirar o campo do tipo, o validador avisa.
 for (const layer of spec.layers)
   for (const type of layer.annotationTypes)
