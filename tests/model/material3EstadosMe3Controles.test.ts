@@ -184,7 +184,7 @@ describe('radio-button (RadioButtonTokens.kt)', () => {
     examples: { hovered: 'Mouse sobre', focused: 'Com foco', pressed: 'Pressionado' },
   });
 
-  it('a camada de estado é um círculo de 40 (StateLayerSize)', () => {
+  it('a camada de estado é um círculo de 24, a largura da área do anel: o StateLayerSize (40) passaria da caixa do componente (L2, #1078)', () => {
     for (const mode of MODES) {
       for (const selected of ['true', 'false']) {
         const layer = visibleNamed(
@@ -194,8 +194,8 @@ describe('radio-button (RadioButtonTokens.kt)', () => {
           'estado',
         );
         expect(layer).toHaveLength(1);
-        expect(layer[0]?.width).toBe(40);
-        expect(layer[0]?.height).toBe(40);
+        expect(layer[0]?.width).toBe(24);
+        expect(layer[0]?.height).toBe(24);
       }
       expect(
         visibleNamed('radio-button', { interaction: 'none' }, mode, 'estado'),
@@ -235,7 +235,7 @@ describe('switch (SwitchTokens.kt)', () => {
   const handle = (values: Values, mode: 'light' | 'dark') =>
     visibleNamed('switch', values, mode, 'alça')[0];
 
-  it('a camada de estado é um círculo de 40 em volta da alça', () => {
+  it('a camada de estado é um círculo de 32, a altura do trilho, em volta da alça: o StateLayerSize (40) passaria da caixa do componente (L2, #1078)', () => {
     for (const mode of MODES) {
       for (const checked of ['true', 'false']) {
         const layer = visibleNamed(
@@ -245,8 +245,8 @@ describe('switch (SwitchTokens.kt)', () => {
           'estado',
         );
         expect(layer).toHaveLength(1);
-        expect(layer[0]?.width).toBe(40);
-        expect(layer[0]?.height).toBe(40);
+        expect(layer[0]?.width).toBe(32);
+        expect(layer[0]?.height).toBe(32);
       }
       expect(visibleNamed('switch', { interaction: 'none' }, mode, 'estado')).toEqual([]);
     }

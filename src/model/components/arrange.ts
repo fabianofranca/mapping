@@ -201,6 +201,15 @@ export function slotBoxOfScene(root: FrameNode): Box | undefined {
   return undefined;
 }
 
+/** A caixa do slot (primeiro da cena) quando ele tem `clip`; senão nenhuma. */
+export function clippedSlotBox(root: FrameNode): Box | undefined {
+  for (const node of walk(root)) {
+    if (node.type !== 'unknown' || node.sourceType !== 'slot') continue;
+    return node.clipChildren === true ? slotBoxOfScene(root) : undefined;
+  }
+  return undefined;
+}
+
 /** Posição e tamanho no eixo cruzado. */
 function crossAxis(
   layout: ResolvedSlotLayout,

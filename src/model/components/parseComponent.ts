@@ -23,7 +23,12 @@ import {
   isNumericOp,
   referencedFields,
 } from './expressions';
-import { LAYOUT_JUSTIFIES, LAYOUT_WRAPS } from './layoutValues';
+import {
+  LAYOUT_JUSTIFIES,
+  LAYOUT_WRAPS,
+  NONE_ALIGNS,
+  NONE_JUSTIFIES,
+} from './layoutValues';
 import { TOKEN_NAME_PATTERN, isLiteralColor, type TokenKind } from './tokens';
 import { isRecord } from '../isRecord';
 import type { ModelMessageTemplateCode } from '../messages';
@@ -792,9 +797,18 @@ function checkLayoutFlow(value: Rec, path: string, out: Ctx): void {
   if ('reverse' in value) checkBoolExpr(value.reverse, join(path, 'reverse'), out);
 }
 
+/** Um layout `none`: só `type`, `align` e `justify` (start, center, end ou stretch; v4). */
+function checkNoneLayout(value: Rec, path: string, out: Ctx): void {
+  checkKeys(value, ['type', 'align', 'justify'], path, out);
+  if ('align' in value)
+    checkExpr(value.align, join(path, 'align'), oneOf(NONE_ALIGNS), out);
+  if ('justify' in value)
+    checkExpr(value.justify, join(path, 'justify'), oneOf(NONE_JUSTIFIES), out);
+}
+
 function checkLayout(value: unknown, path: string, out: Ctx): void {
   if (!isRecord(value)) return add(out, path, 'esperava objeto');
-  if (value.type === 'none') return checkKeys(value, ['type'], path, out);
+  if (value.type === 'none') return checkNoneLayout(value, path, out);
   if (value.type === 'column' && value.align === 'baseline')
     add(out, join(path, 'align'), 'baseline só vale em row');
   const at = join(path, 'type');
@@ -907,7 +921,7 @@ function checkNode(value: unknown, path: string, out: Ctx): void {
     ellipse: [],
     text: ['text', 'runs', 'font', 'color', 'baselinePadding'],
     path: ['d', 'viewBox', 'fillRule'],
-    slot: ['label', 'layout', 'provide'],
+    slot: ['label', 'layout', 'clip', 'provide'],
     repeat: [
       'field',
       'count',
@@ -956,7 +970,7 @@ function checkNode(value: unknown, path: string, out: Ctx): void {
 
   switch (type) {
     case 'frame': {
-      if ('clip' in value) checkBoolean(value.clip, join(path, 'clip'), out);
+      if ('clip' in value) checkBoolExpr(value.clip, join(path, 'clip'), out);
       if ('layout' in value) checkLayout(value.layout, join(path, 'layout'), out);
       if ('children' in value) {
         const children = join(path, 'children');
@@ -982,6 +996,7 @@ function checkNode(value: unknown, path: string, out: Ctx): void {
     case 'slot':
       if ('label' in value) checkExpr(value.label, join(path, 'label'), checkString, out);
       if ('layout' in value) checkLayout(value.layout, join(path, 'layout'), out);
+      if ('clip' in value) checkBoolExpr(value.clip, join(path, 'clip'), out);
       if ('provide' in value) checkProvide(value.provide, join(path, 'provide'), out);
       return;
     case 'repeat':
@@ -1123,6 +1138,7 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
 
 /** Chaves que valem em qualquer versão como literal, mas só com expressão na formatVersion 4. */
 const V4_EXPR_KEYS: readonly (readonly string[])[] = [
+  ['clip'],
   ['stroke', 'dash'],
   ['width'],
   ['height'],
@@ -1146,6 +1162,36 @@ const V4_LITERAL_VALUES: readonly (readonly [readonly string[], string])[] = [
   [['layout', 'justify'], 'space-evenly'],
   [['layout', 'align'], 'baseline'],
 ];
+
+/**
+ * `align`/`justify` num layout `none` e `clip` literal num slot só existem na formatVersion 4
+ * (no `row`/`column`, `align` e `justify` valem em toda versão; o `clip` por expressão já sai de
+ * `V4_EXPR_KEYS`).
+ */
+function noneAlignVersionIssues(version: unknown, template: unknown): ComponentIssue[] {
+  const out: ComponentIssue[] = [];
+  if (typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY)
+    return out;
+  const walk = (node: unknown, at: string): void => {
+    if (!isRecord(node)) return;
+    noneAlignNodeIssues(node, at, out);
+    if (Array.isArray(node.children))
+      node.children.forEach((c: unknown, i) => walk(c, `${join(at, 'children')}[${i}]`));
+    if (node.type === 'repeat') walk(node.template, join(at, 'template'));
+  };
+  walk(template, 'template');
+  return out;
+}
+
+/** As chaves da v4 de um nó só: `align`/`justify` do layout `none` e o `clip` literal do slot. */
+function noneAlignNodeIssues(node: Rec, at: string, out: ComponentIssue[]): void {
+  const layout = node.layout;
+  if (isRecord(layout) && layout.type === 'none')
+    for (const key of ['align', 'justify'])
+      if (key in layout) addIssue(out, join(at, `layout.${key}`), V4_ONLY_MESSAGE);
+  if (node.type === 'slot' && 'clip' in node && !isExprObject(node.clip))
+    addIssue(out, join(at, 'clip'), V4_ONLY_MESSAGE);
+}
 
 /** `shadow` como lista (v4) numa versão anterior à 4: `só é permitido com formatVersion 4`, no caminho de `shadow`. */
 function shadowListVersionIssues(version: unknown, template: unknown): ComponentIssue[] {
@@ -1643,6 +1689,7 @@ function collectIssues(input: unknown, refs: TokenRef[] | null): ComponentIssue[
       ),
     );
     issues.push(...shadowListVersionIssues(version, input.template));
+    issues.push(...noneAlignVersionIssues(version, input.template));
     issues.push(...tokenVersionIssues(version, input.template));
     issues.push(...numericVersionIssues(version, input.template));
     issues.push(...linesIssues(input.template));

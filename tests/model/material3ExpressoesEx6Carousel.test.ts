@@ -404,7 +404,9 @@ describe('EX6 carousel — uncontained', () => {
     expect(itemBoxes(d)).toEqual([
       [0, 0, 140, HEIGHT],
       [152, 0, 140, HEIGHT],
-      [304, 0, 140, HEIGHT],
+      // L2 (#1078): o item que cruza a borda direita ganha só a largura que sobra (360 − 304), em vez de
+      // passar da caixa e sair cortado (aviso `conteúdo maior que a caixa`)
+      [304, 0, 56, HEIGHT],
     ]);
     const wide = itemBoxes(
       drawAt(600, {
@@ -434,10 +436,11 @@ const heroSmall = (width: number) => clamp(width / 3, MIN_SMALL, MAX_SMALL);
 describe('EX6 carousel — centered-hero pela largura da marcação', () => {
   it('em 360, com espaço 8: grande 232, pequenos de 56 e o primeiro item depois do pequeno que falta (64), como antes', () => {
     const d = drawAt(360, heroValues(3));
+    // L2 (#1078): o segundo item ganha só a largura que sobra na caixa (56) e o terceiro, que ficava
+    // fora dela (x = 544), não é desenhado
     expectBoxes(itemBoxes(d), [
       [64, 0, 232, HEIGHT],
-      [304, 0, 232, HEIGHT],
-      [544, 0, 232, HEIGHT],
+      [304, 0, 56, HEIGHT],
     ]);
   });
 
@@ -482,11 +485,14 @@ describe('EX6 carousel — centered-hero pela largura da marcação', () => {
 // Regressão: as cenas de antes
 // ---------------------------------------------------------------------------------------------
 
+/** L2 (#1078): o que passava da caixa de 360 (a faixa de 4000, o item cortado e o que ficava fora) não é mais desenhado como era. */
+const PASSAVA_DA_CAIXA = { skip: (o: { r: number[] }) => o.r[0]! + o.r[2]! > 360.5 };
+
 describe('EX6 carousel — regressão contra as cenas de antes (≤ 0,5 px por nó)', () => {
-  it('uncontained em 360 (claro e escuro) bate nó a nó', () => {
+  it('uncontained em 360 (claro e escuro) bate nó a nó, fora o que passava da caixa', () => {
     for (const scene of oldScenes('carousel-ex1')) {
       const d = draw(scene.id, scene.values, scene.mode);
-      expect(missingNodes(d, scene.nodes), scene.key).toEqual([]);
+      expect(missingNodes(d, scene.nodes, PASSAVA_DA_CAIXA), scene.key).toEqual([]);
     }
   });
 
@@ -495,14 +501,14 @@ describe('EX6 carousel — regressão contra as cenas de antes (≤ 0,5 px por n
       const d = draw(scene.id, scene.values, scene.mode);
       // 0 raiz, 1 faixa; 3 a 6 = o primeiro item com a imagem, o véu e o rótulo (2 é o `itens`, que ficou do tamanho da marcação)
       const first = [scene.nodes[0]!, scene.nodes[1]!, ...scene.nodes.slice(3, 7)];
-      expect(missingNodes(d, first), scene.key).toEqual([]);
+      expect(missingNodes(d, first, PASSAVA_DA_CAIXA), scene.key).toEqual([]);
     }
   });
 
-  it('centered-hero em 360 (claro e escuro) bate nó a nó, sem rename nem skip', () => {
+  it('centered-hero em 360 (claro e escuro) bate nó a nó, sem rename, fora o que passava da caixa', () => {
     for (const scene of oldScenes('carousel-ex2')) {
       const d = draw(scene.id, scene.values, scene.mode);
-      expect(missingNodes(d, scene.nodes), scene.key).toEqual([]);
+      expect(missingNodes(d, scene.nodes, PASSAVA_DA_CAIXA), scene.key).toEqual([]);
     }
   });
 

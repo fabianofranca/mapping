@@ -255,14 +255,23 @@ export interface Anchors {
 export type LayoutType = 'none' | 'row' | 'column';
 export type LayoutAlign = 'start' | 'center' | 'end' | 'stretch' | 'baseline';
 export type LayoutJustify =
-  'start' | 'center' | 'end' | 'space-between' | 'space-around' | 'space-evenly';
+  | 'start'
+  | 'center'
+  | 'end'
+  | 'space-between'
+  | 'space-around'
+  | 'space-evenly'
+  | 'stretch';
 /** Quebra de fileira (v4): `none` (padrão), `wrap` ou `wrap-reverse`, como o `flex-wrap` do CSS. */
 export type LayoutWrap = 'none' | 'wrap' | 'wrap-reverse';
 
 /**
  * Layout dos filhos. Na `formatVersion` 4, `type`, `align` e `justify` aceitam expressão (o valor
  * resolvido é conferido no desenho: fora do conjunto, cai no padrão com o aviso
- * `valor inválido em layout.<chave>: <valor>`); com `type` literal `"none"`, só `type` vale.
+ * `valor inválido em layout.<chave>: <valor>`); com `type` literal `"none"` valem só `type`,
+ * `align` (eixo vertical) e `justify` (eixo horizontal), com `start` (padrão), `center`, `end` e
+ * `stretch` (v4): alinham os filhos sem âncora naquele eixo; a âncora do filho vence. O
+ * `justify: "stretch"` vale só no `none`; em `row`/`column` é inválido.
  */
 export interface LayoutSpec {
   readonly type: Expr<LayoutType>;
@@ -337,7 +346,8 @@ interface TemplateNodeBase {
 
 export interface FrameTemplate extends TemplateNodeBase {
   readonly type: 'frame';
-  readonly clip?: boolean;
+  /** Recorta os filhos pela caixa (padrão: só a raiz recorta). Expressão só na v4. */
+  readonly clip?: BoolExpr;
   readonly layout?: LayoutSpec;
   readonly children?: readonly TemplateNode[];
 }
@@ -424,6 +434,11 @@ export interface SlotTemplate extends TemplateNodeBase {
    * ausente) deixa cada filho no próprio retângulo. `gap` e `padding` podem vir de campos.
    */
   readonly layout?: LayoutSpec;
+  /**
+   * Recorta as marcações filhas pela caixa do slot (v4; booleano ou expressão; padrão `false`):
+   * o desenho da filha só aparece dentro dela.
+   */
+  readonly clip?: BoolExpr;
   /**
    * Cor herdada (v4): valores que o slot oferece às marcações filhas, pelo nome (livre, sem nome de
    * plataforma). Cada valor é resolvido no pai (campos, tokens e modo dele) e a filha o lê com

@@ -202,6 +202,14 @@ export const LIMIT_EXAMPLES: Record<string, string> = {
   'date-picker': 'Intervalo até o fim do mês',
 };
 
+/**
+ * Exemplos da v1 que a L2 (#1078) tirou: o `size` do tooltip (240 × 24) é o do `plain` e não comporta o `rich`, então o
+ * exemplo dele passaria da caixa (aviso `conteúdo maior que a caixa`).
+ */
+const L2_REMOVED_EXAMPLES: Record<string, string[]> = {
+  tooltip: ['Rich com título', 'Rich com ação'],
+};
+
 /** Campos e exemplos que a etapa de expressões (#897, EX4) acrescentou ao date-picker e ao time-picker. */
 const EX4_FIELDS: Record<string, string[]> = { 'date-picker': ['month', 'year'] };
 /** Campos e exemplos que a etapa #899 (MF5) acrescentou: o dia de hoje e as variantes como campo opcional. */
@@ -356,7 +364,9 @@ export function v1WithEstados(
       examples:
         id === 'slider'
           ? (before.examples ?? []).map((e) => ({ ...e, values: toNumbers(e.values) }))
-          : (before.examples ?? []),
+          : (before.examples ?? []).filter(
+              (e) => !L2_REMOVED_EXAMPLES[id]?.includes(e.name as string),
+            ),
     },
   };
 }

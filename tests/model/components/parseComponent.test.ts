@@ -1013,3 +1013,92 @@ describe('$lines e sizing por expressão (MC2, decisões 8 e 9 da #898)', () => 
     ).toEqual(['sizing.height: esperava número maior ou igual a 0, "fill" ou "hug"']);
   });
 });
+
+describe('parseComponent: none alinhado e clip (L2, formato 4)', () => {
+  const V4 = 'só é permitido com formatVersion 4';
+  const file = (template: Record<string, unknown>, version = 4): unknown => ({
+    format: 'mapping-component',
+    formatVersion: version,
+    id: 'c',
+    name: 'C',
+    size: { width: 200, height: 100 },
+    template,
+  });
+  const frame = (layout: Record<string, unknown>, version = 4): string[] =>
+    validateComponent(file({ type: 'frame', layout }, version));
+  const withSlot = (slot: Record<string, unknown>, version = 4): string[] =>
+    validateComponent(
+      file({ type: 'frame', children: [{ type: 'slot', ...slot }] }, version),
+    );
+
+  it('none aceita align e justify com start, center, end e stretch (literal ou expressão)', () => {
+    for (const value of ['start', 'center', 'end', 'stretch'])
+      expect(frame({ type: 'none', align: value, justify: value })).toEqual([]);
+    expect(
+      frame({
+        type: 'none',
+        align: { $field: 'a', default: 'center' },
+        justify: { $field: 'j' },
+      }),
+    ).toEqual([]);
+  });
+
+  it('none rejeita baseline e space-*', () => {
+    expect(frame({ type: 'none', align: 'baseline' })).toHaveLength(1);
+    expect(frame({ type: 'none', justify: 'space-between' })).toHaveLength(1);
+    expect(frame({ type: 'none', justify: 'space-around' })).toHaveLength(1);
+    expect(frame({ type: 'none', justify: 'space-evenly' })).toHaveLength(1);
+  });
+
+  it('none continua sem gap, padding, reverse e wrap', () => {
+    for (const key of ['gap', 'padding', 'reverse', 'wrap'])
+      expect(frame({ type: 'none', [key]: 1 })).toEqual([
+        `template.layout.${key}: chave desconhecida: ${key}`,
+      ]);
+  });
+
+  it('justify stretch em row e column continua erro', () => {
+    expect(frame({ type: 'row', justify: 'stretch' })).toHaveLength(1);
+    expect(frame({ type: 'column', justify: 'stretch' })).toHaveLength(1);
+  });
+
+  it('align e justify do none numa versão 1 a 3: só com formatVersion 4, no caminho da chave', () => {
+    for (const version of [1, 2, 3]) {
+      expect(frame({ type: 'none', align: 'center' }, version)).toEqual([
+        `template.layout.align: ${V4}`,
+      ]);
+      expect(frame({ type: 'none', justify: 'end' }, version)).toEqual([
+        `template.layout.justify: ${V4}`,
+      ]);
+    }
+    expect(frame({ type: 'row', align: 'center', justify: 'end' }, 1)).toEqual([]);
+  });
+
+  it('clip do quadro: literal em toda versão, expressão só na 4', () => {
+    expect(validateComponent(file({ type: 'frame', clip: true }, 1))).toEqual([]);
+    expect(validateComponent(file({ type: 'frame', clip: { $field: 'c' } }))).toEqual([]);
+    expect(validateComponent(file({ type: 'frame', clip: { $has: 'c' } }))).toEqual([]);
+    expect(validateComponent(file({ type: 'frame', clip: { $field: 'c' } }, 3))).toEqual([
+      `template.clip: ${V4}`,
+    ]);
+  });
+
+  it('clip do quadro com valor que não é booleano é erro', () => {
+    expect(validateComponent(file({ type: 'frame', clip: 'sim' }))).toHaveLength(1);
+    expect(validateComponent(file({ type: 'frame', clip: 3 }))).toHaveLength(1);
+  });
+
+  it('slot aceita clip booleano ou expressão na v4; em 1 a 3 é só da v4, no caminho do clip', () => {
+    expect(withSlot({ clip: true })).toEqual([]);
+    expect(withSlot({ clip: { $field: 'c' } })).toEqual([]);
+    expect(withSlot({ clip: 'sim' })).toHaveLength(1);
+    for (const version of [1, 2, 3]) {
+      expect(withSlot({ clip: true }, version)).toEqual([
+        `template.children[0].clip: ${V4}`,
+      ]);
+      expect(withSlot({ clip: { $field: 'c' } }, version)).toEqual([
+        `template.children[0].clip: ${V4}`,
+      ]);
+    }
+  });
+});

@@ -673,7 +673,19 @@
         "anchors": {
           "left": 0,
           "right": 0,
-          "top": 56
+          "top": {
+            "$min": [
+              56,
+              {
+                "$sub": [
+                  {
+                    "$size": "height"
+                  },
+                  1
+                ]
+              }
+            ]
+          }
         },
         "height": 1,
         "fill": {
@@ -698,7 +710,19 @@
         "anchors": {
           "left": 0,
           "right": 0,
-          "top": 72
+          "top": {
+            "$min": [
+              72,
+              {
+                "$sub": [
+                  {
+                    "$size": "height"
+                  },
+                  1
+                ]
+              }
+            ]
+          }
         },
         "height": 1,
         "fill": {

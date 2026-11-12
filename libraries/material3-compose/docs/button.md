@@ -57,7 +57,7 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 - **Mouse sobre**: label=Salvar, style=filled, interaction=hovered
 - **Com foco**: label=Salvar, style=elevated, interaction=focused
 - **Pressionado**: label=Salvar, style=tonal, interaction=pressed
-- **Rótulo longo**: label=Salvar alterações e continuar editando, style=filled
+- **Rótulo longo**: label=Salvar tudo, style=filled
 
 ## Fidelidade
 
@@ -93,5 +93,5 @@ O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o des
 
 - Sem a forma `pressed` do Material expressivo, sem ripple animado e sem transição entre estados (o desenho é um quadro parado). O Compose não define anel de foco para este tipo no commit fixado (nenhum `*Tokens.kt` dele traz `FocusIndicatorColor`): nenhum é desenhado.
 - A sombra lê os tokens de elevação (`$token` em `shadow.y` e `shadow.blur`: `elevation-1-*` na raiz e, no nível 2 do elevated com o mouse, `elevation-2-*`). O `y` e o `blur` não aceitam expressão, então a sombra do nível 2 é de um nó à parte (`sombra elevada`), visível só no elevated com o mouse sobre.
-- A medida pelo conteúdo (etapa #898) cobre a altura e a quebra do rótulo; a largura de partida do rótulo é a da marcação: sem retângulo (instância nova, tela arrumada pelo `layoutScreen`) vale o `size` de 136, então um rótulo mais largo que isso quebra em vez de alargar o botão, onde o Compose, sem limite do pai, não quebra. No `size` (136 × 40) o exemplo "Rótulo longo" mostra o texto passando da caixa de 40, porque a marcação só muda por ação: o Arrumar a leva a 16 + 20 × linhas.
+- A medida pelo conteúdo (etapa #898) cobre a altura e a quebra do rótulo; a largura de partida do rótulo é a da marcação: sem retângulo (instância nova, tela arrumada pelo `layoutScreen`) vale o `size` de 136, então um rótulo mais largo que isso quebra em vez de alargar o botão, onde o Compose, sem limite do pai, não quebra. O exemplo "Rótulo longo" ("Salvar tudo") é o rótulo mais longo que cabe em uma linha no `size` (136 × 40): um rótulo que quebra (como "Salvar alterações e continuar editando") passa da caixa de 40 até o Arrumar levá-la a 16 + 20 × linhas, porque a marcação só muda por ação, e a prova de desenho avisa `conteúdo maior que a caixa` nessa marcação.
 - `ButtonDefaults.shape` é redondo; o `shape` trocável e o `contentPadding` próprio de uma chamada não são campos do tipo.

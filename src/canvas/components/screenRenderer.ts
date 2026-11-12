@@ -17,6 +17,8 @@ import { Text as KonvaText } from 'konva/lib/shapes/Text';
 import { type RemoteImageResult, renderScene } from './renderScene';
 import { DEFAULT_PALETTE, type RenderPalette } from './palette';
 import type { RenderWarning } from './renderWarnings';
+import { clippedSlotBox } from '../../model/components/arrange';
+import type { Box } from '../../model/components/box';
 import type { FieldValues } from '../../model/components/componentFormat';
 import { type TextMeasurer, instantiate } from '../../model/components/instantiate';
 import {
@@ -92,6 +94,8 @@ interface Mounted {
   provided: ProvidedValues;
   /** O que o slot da instância oferece às filhas no último desenho (`provide`). */
   offers: ProvidedValues | undefined;
+  /** Caixa do slot (na tela) quando ele tem `clip`: as filhas só aparecem dentro dela. */
+  slotClip: Box | undefined;
 }
 
 export class ScreenRenderer {
@@ -163,21 +167,29 @@ export class ScreenRenderer {
     const current = this.mounted.get(instance.id);
     const inherited = scopes.get(instance.parentId ?? '') ?? NO_PROVIDED;
     const provided = this.readProvided(instance, inherited);
-    if (
-      current &&
-      current.instance === instance &&
-      !force &&
-      sameProvided(current.provided, provided)
-    ) {
+    if (current && !force && isUpToDate(current, instance, provided)) {
       scopes.set(instance.id, extendProvided(inherited, current.offers));
-      return this.setZ(current.node, z);
+      const clipped = this.clipByParent(current);
+      return this.setZ(current.node, z) || clipped;
     }
     const entry = current ?? this.mount(instance);
     this.renderInto(entry, instance, provided);
     if (!current) this.options.onInstanceCreated?.(instance.id, entry.node);
     scopes.set(instance.id, extendProvided(inherited, entry.offers));
+    this.clipByParent(entry);
     this.setZ(entry.node, z);
     return true;
+  }
+
+  /**
+   * Recorta a instância pela caixa do slot da mãe, quando o slot tem `clip` (a mãe é sempre
+   * desenhada antes). Devolve true se o recorte mudou.
+   */
+  private clipByParent(entry: Mounted): boolean {
+    const { parentId } = entry.instance;
+    const clip =
+      parentId === undefined ? undefined : this.mounted.get(parentId)?.slotClip;
+    return applyClip(entry.node, localClip(clip, entry.instance.box));
   }
 
   /** Dos valores herdados, os que o componente da instância lê (nenhum se ele não lê nada). */
@@ -197,6 +209,7 @@ export class ScreenRenderer {
       imageUrls: [],
       provided: NO_PROVIDED,
       offers: undefined,
+      slotClip: undefined,
     };
     this.group.add(node);
     this.mounted.set(instance.id, entry);
@@ -308,6 +321,7 @@ export class ScreenRenderer {
     entry.imageUrls = [];
     entry.provided = provided;
     entry.offers = undefined;
+    entry.slotClip = undefined;
     node.destroyChildren();
     node.position({ x: instance.box.x, y: instance.box.y });
     node.scale({ x: 1, y: 1 });
@@ -353,6 +367,7 @@ export class ScreenRenderer {
       ...(provided === NO_PROVIDED ? {} : { provided }),
     });
     entry.offers = result.provides;
+    entry.slotClip = offsetBox(clippedSlotBox(result.root), instance.box);
     const rendered = renderScene(
       { root: result.root, warnings: [] },
       {
@@ -375,4 +390,44 @@ export class ScreenRenderer {
     entry.label = instanceLabel(type, instance.values);
     node.setAttr('label', entry.label);
   }
+}
+
+/** A caixa deslocada para a posição da instância (a cena parte de 0,0); nenhuma fica nenhuma. */
+function offsetBox(box: Box | undefined, origin: Box): Box | undefined {
+  return box && { ...box, x: box.x + origin.x, y: box.y + origin.y };
+}
+
+/** O recorte da mãe nas coordenadas locais do grupo da filha (cuja origem é `box`). */
+function localClip(clip: Box | undefined, box: Box): Box | undefined {
+  return (
+    clip && {
+      x: clip.x - box.x,
+      y: clip.y - box.y,
+      width: clip.width,
+      height: clip.height,
+    }
+  );
+}
+
+/** Aplica (ou tira) o recorte do grupo; devolve true se ele mudou. */
+function applyClip(node: Konva.Group, next: Box | undefined): boolean {
+  const before = node.clipWidth()
+    ? [node.clipX(), node.clipY(), node.clipWidth(), node.clipHeight()]
+    : undefined;
+  const after = next && [next.x, next.y, next.width, next.height];
+  if (before?.join() === after?.join()) return false;
+  node.clipX(next?.x);
+  node.clipY(next?.y);
+  node.clipWidth(next?.width);
+  node.clipHeight(next?.height);
+  return true;
+}
+
+/** O desenho montado já é o da instância e dos valores herdados (nada a redesenhar). */
+function isUpToDate(
+  entry: Mounted,
+  instance: Instance,
+  provided: ProvidedValues,
+): boolean {
+  return entry.instance === instance && sameProvided(entry.provided, provided);
 }

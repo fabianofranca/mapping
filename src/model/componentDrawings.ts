@@ -1,4 +1,4 @@
-import { findSlot, slotBoxOfScene } from './components/arrange';
+import { clippedSlotBox, findSlot, slotBoxOfScene } from './components/arrange';
 import type {
   ComponentFile,
   FieldValues,
@@ -59,6 +59,11 @@ export interface ComponentDrawing {
    * canvas o ancora em `anchor` no `rect` (retângulo da marcação, nos pixels da imagem).
    */
   readonly screen?: { readonly anchor: ScreenAnchor; readonly rect: Rect };
+  /**
+   * Recorte da filha de um slot com `clip` (v4): a caixa do slot da mãe, no mesmo espaço do
+   * `root.transform` (pixels da imagem ou unidades do canvas). O desenho só aparece dentro dela.
+   */
+  readonly clip?: Rect;
 }
 
 /** Por id de marcação, inserido em ordem de desenho (pais antes das filhas; irmãs na ordem do array). */
@@ -96,6 +101,10 @@ interface Entry {
   readonly provided: ProvidedValues;
   /** O que o slot desta marcação oferece às filhas (`provide`), já resolvido. */
   readonly offers: ProvidedValues | undefined;
+  /** O recorte que esta marcação impõe às filhas (caixa do slot com `clip`), se houver. */
+  readonly slotClip: Rect | undefined;
+  /** O recorte que ela recebe da mãe (o `slotClip` da mãe, mesmo objeto). */
+  readonly clip: Rect | undefined;
   readonly drawing: ComponentDrawing;
 }
 
@@ -127,6 +136,34 @@ function shallowEqual(a: FieldValues, b: FieldValues): boolean {
   const keysA = Object.keys(a);
   if (keysA.length !== Object.keys(b).length) return false;
   return keysA.every((key) => key in b && sameFieldValue(a[key], b[key]));
+}
+
+/** O retângulo anterior quando é igual ao novo (o canvas compara o recorte por identidade). */
+function stableRect(before: Rect | undefined, next: Rect | undefined): Rect | undefined {
+  return before !== undefined && next !== undefined && sameRect(before, next)
+    ? before
+    : next;
+}
+
+/** O mesmo desenho com outro recorte da mãe (sem a chave quando não há). */
+function withClip(drawing: ComponentDrawing, clip: Rect | undefined): ComponentDrawing {
+  const copy: { -readonly [K in keyof ComponentDrawing]: ComponentDrawing[K] } = {
+    ...drawing,
+  };
+  delete copy.clip;
+  if (clip !== undefined) copy.clip = clip;
+  return copy;
+}
+
+/** O que situa o desenho: a âncora de tela (`screen`) ou, senão, o recorte da mãe (`clip`). */
+function placement(
+  screen: ComponentFile['screen'],
+  rect: Rect,
+  clip: Rect | undefined,
+): Pick<ComponentDrawing, 'screen' | 'clip'> {
+  if (screen !== undefined)
+    return { screen: { anchor: screen.anchor ?? 'center', rect } };
+  return clip === undefined ? {} : { clip };
 }
 
 /** Chave de `shortfalls` para a filha que passa da caixa do slot. */
@@ -189,7 +226,12 @@ function draw(
   measure: TextMeasurer,
   mode: string | undefined,
   provided: ProvidedValues,
-): { drawing: ComponentDrawing; offers: ProvidedValues | undefined } {
+  clip: Rect | undefined,
+): {
+  drawing: ComponentDrawing;
+  offers: ProvidedValues | undefined;
+  slotClip: Rect | undefined;
+} {
   const tokens =
     mode === undefined ? undefined : mc.component.resolvedTokensByMode?.[mode];
   const screen = mc.component.screen;
@@ -215,11 +257,9 @@ function draw(
     warnings: [...messages, ...valueWarnings],
     overflow: Object.keys(found).length > 0,
     shortfalls: found,
-    ...(screen === undefined
-      ? {}
-      : { screen: { anchor: screen.anchor ?? 'center', rect } }),
+    ...placement(screen, rect, clip),
   };
-  return { drawing, offers: provides };
+  return { drawing, offers: provides, slotClip: clippedSlotBox(root) };
 }
 
 /**
@@ -263,6 +303,8 @@ export function createDrawingCache(): DrawingCache {
     // Cor herdada: o que as filhas de cada marcação herdam (o do pai, com o que ele oferece por
     // cima), de cima para baixo; o mais próximo vale e quem não oferece é atravessado.
     const scopes = new Map<string, ProvidedValues>();
+    // Recorte das filhas de cada marcação (a caixa do slot com `clip`).
+    const clips = new Map<string, Rect | undefined>();
     const scopeOf = (parentId: string | null): ProvidedValues =>
       parentId === null ? NO_PROVIDED : (scopes.get(parentId) ?? NO_PROVIDED);
     for (const marking of topDown(p.markings)) {
@@ -273,6 +315,10 @@ export function createDrawingCache(): DrawingCache {
         continue;
       }
       const provided = pickProvided(inherited, mc.component);
+      const clip =
+        marking.parentId === null || mc.component.screen !== undefined
+          ? undefined
+          : clips.get(marking.parentId);
       const { values, warnings: valueWarnings } = drawingValues(
         p,
         mc.annotation,
@@ -301,12 +347,17 @@ export function createDrawingCache(): DrawingCache {
         sameRects(before.childRects, childRects) &&
         sameProvided(before.provided, provided)
       ) {
-        next.set(marking.id, before);
-        drawings.set(marking.id, before.drawing);
+        const kept =
+          before.clip === clip
+            ? before
+            : { ...before, clip, drawing: withClip(before.drawing, clip) };
+        next.set(marking.id, kept);
+        drawings.set(marking.id, kept.drawing);
         scopes.set(marking.id, extendProvided(inherited, before.offers));
+        clips.set(marking.id, before.slotClip);
         continue;
       }
-      const { drawing, offers } = draw(
+      const { drawing, offers, slotClip } = draw(
         mc,
         marking.id,
         marking.containerId,
@@ -317,7 +368,10 @@ export function createDrawingCache(): DrawingCache {
         measure,
         mode,
         provided,
+        clip,
       );
+      const stableClip = stableRect(before?.slotClip, slotClip);
+      clips.set(marking.id, stableClip);
       scopes.set(marking.id, extendProvided(inherited, offers));
       next.set(marking.id, {
         markingId: marking.id,
@@ -333,6 +387,8 @@ export function createDrawingCache(): DrawingCache {
         childRects,
         provided,
         offers,
+        slotClip: stableClip,
+        clip,
         drawing,
       });
       drawings.set(marking.id, drawing);
