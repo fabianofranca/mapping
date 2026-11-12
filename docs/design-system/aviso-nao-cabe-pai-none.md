@@ -2,7 +2,7 @@
 
 ## Pendências
 
-Nenhuma até aqui. A NC2 completa este registro com a pendência do exemplo do `ComponentDrawing/preview.html` (decisão 16 da #1631).
+- **`components/ComponentDrawing/preview.html`:** exemplo novo com sombras em lista, vão no contorno e texto justificado (o desenho que a app passou a fazer na etapa Material 3 fiel, #1571). A prévia é estática: o fechamento grava os três por HTML e CSS (`box-shadow` em lista, uma borda com um vão, `text-align: justify`), que ela consegue desenhar. Esta etapa só registra a pendência (decisão 16 da #1631).
 
 ## Sincronização
 

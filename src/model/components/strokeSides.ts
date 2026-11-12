@@ -21,6 +21,29 @@ export function growRadius(radius: CornerRadius, by: number): CornerRadius {
 }
 
 /**
+ * O quanto a linha do traço entra na caixa pelo `align`: por dentro, a metade da largura; por fora,
+ * a metade para fora (negativo); ao centro, 0.
+ */
+export function strokeAlignInset(stroke: Stroke): number {
+  switch (stroke.align) {
+    case 'inside':
+      return stroke.width / 2;
+    case 'outside':
+      return -stroke.width / 2;
+    default:
+      return 0;
+  }
+}
+
+/** O raio de um canto da sombra: o do nó mais o `spread`, sem passar de 0 (canto reto continua reto). */
+export function spreadRadius(radius: CornerRadius, spread: number): CornerRadius {
+  const grow = (r: number): number => (r > 0 ? Math.max(0, r + spread) : 0);
+  return typeof radius === 'number'
+    ? grow(radius)
+    : [grow(radius[0]), grow(radius[1]), grow(radius[2]), grow(radius[3])];
+}
+
+/**
  * Os segmentos do traço de `stroke.sides` numa caixa `width` × `height`: um por lado pedido, reto
  * de ponta a ponta (sem arco no canto, mesmo com `cornerRadius`), com a linha deslocada pelo
  * `align` (por dentro, a metade da largura para dentro; por fora, para fora) e afastada para fora
@@ -33,10 +56,7 @@ export function sideSegments(
 ): SideSegment[] {
   const { sides } = stroke;
   if (!sides) return [];
-  const half = stroke.width / 2;
-  const aligned =
-    stroke.align === 'inside' ? half : stroke.align === 'outside' ? -half : 0;
-  const inset = aligned - (stroke.offset ?? 0);
+  const inset = strokeAlignInset(stroke) - (stroke.offset ?? 0);
   return sides.map((side) => {
     switch (side) {
       case 'top':

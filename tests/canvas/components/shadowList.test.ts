@@ -33,8 +33,14 @@ const card = (effects: Shadow[], radius = 8): SceneNode => ({
   cornerRadius: radius,
 });
 
+/**
+ * As formas de sombra do grupo: as `Konva.Shape` que não escutam o ponteiro (as formas do nó
+ * escutam), na ordem de desenho, a última sombra da lista primeiro.
+ */
 const casters = (group: Konva.Group): Konva.Shape[] =>
-  group.getChildren().filter((c): c is Konva.Shape => c.attrs['shadowCaster'] === true);
+  group
+    .getChildren()
+    .filter((c): c is Konva.Shape => c instanceof Konva.Shape && !c.listening());
 
 describe('lista de sombras (decisão 3)', () => {
   it('duas sombras externas desenham as duas, sem o aviso de só a primeira', () => {
@@ -46,7 +52,12 @@ describe('lista de sombras (decisão 3)', () => {
     const list = casters(group);
     expect(list).toHaveLength(2);
     // A primeira da lista fica por cima: a última vem antes na ordem de desenho.
-    expect(list.map((c) => c.attrs['shadowIndex'])).toEqual([1, 0]);
+    const colors = list.map((c) => {
+      const { native } = recorder({ a: 1, b: 0, c: 0, d: 1 });
+      (c.sceneFunc() as (ctx: unknown, shape: unknown) => void)({ _context: native }, c);
+      return native.shadowColor;
+    });
+    expect(colors).toEqual(['#222222', '#111111']);
     // A forma do nó não leva sombra própria (a cor dela não muda) e vem depois das sombras.
     const fill = group.getChildren().at(-1) as Konva.Rect;
     expect(fill.fill()).toBe('#ffffff80');
@@ -107,7 +118,7 @@ function draw(
 ) {
   const { byId } = renderScene({ root: node, warnings: [] });
   // A forma da primeira sombra da lista (a que fica por cima).
-  const caster = casters(byId.get('c')!).find((c) => c.attrs['shadowIndex'] === 0);
+  const caster = casters(byId.get('c')!).at(-1);
   const { native, calls } = recorder(matrix);
   const fn = caster!.sceneFunc() as (ctx: unknown, shape: unknown) => void;
   fn({ _context: native }, caster);
