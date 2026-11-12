@@ -263,10 +263,18 @@ interface LayoutKeys {
   weight: number;
   /** `"max-content"` em `width`, `height` ou `sizing`. */
   maxContent: number;
+  /** Componentes na `formatVersion` 4, a única em que as chaves novas valem. */
+  v4Files: number;
 }
 
 function layoutKeysOf(dir: string): LayoutKeys {
-  const keys: LayoutKeys = { alignedNone: 0, grid: 0, weight: 0, maxContent: 0 };
+  const keys: LayoutKeys = {
+    alignedNone: 0,
+    grid: 0,
+    weight: 0,
+    maxContent: 0,
+    v4Files: 0,
+  };
   const node = (value: unknown): void => {
     if (typeof value !== 'object' || value === null) return;
     const n = value as Record<string, unknown>;
@@ -288,9 +296,11 @@ function layoutKeysOf(dir: string): LayoutKeys {
     f.endsWith('.json'),
   )) {
     const file = JSON.parse(readFileSync(join(dir, 'components', name), 'utf8')) as {
+      formatVersion?: number;
       sizing?: Record<string, unknown>;
       template: unknown;
     };
+    if (file.formatVersion === 4) keys.v4Files++;
     if (file.sizing?.width === 'max-content') keys.maxContent++;
     if (file.sizing?.height === 'max-content') keys.maxContent++;
     node(file.template);
@@ -301,6 +311,7 @@ function layoutKeysOf(dir: string): LayoutKeys {
 /** Os orçamentos da tela inteira só valem no layout novo (decisão 23 da #1078): confere antes de medir. */
 function expectNewLayout(): void {
   const keys = layoutKeysOf(MATERIAL3_DIR);
+  expect(keys.v4Files, 'componentes na formatVersion 4').toBe(15);
   expect(keys.alignedNone, 'none alinhado').toBeGreaterThan(0);
   expect(keys.grid, 'grid').toBeGreaterThan(0);
   expect(keys.weight, 'weight').toBeGreaterThan(0);
@@ -337,6 +348,92 @@ describe('desenho de componentes (Material 3)', () => {
 
   it('o fixture está no layout novo: none alinhado, grid, weight e max-content presentes', () => {
     expectNewLayout();
+  });
+
+  /** Instancia um componente do fixture com os valores iniciais e a caixa `size`. */
+  function drawnFixture(id: string, values: Record<string, string | number> = {}) {
+    const type = typeOf.get(id);
+    const component = type?.component;
+    if (!type || !component) throw new Error(`fixture: sem componente ${id}`);
+    const { root, warnings } = instantiate(
+      component,
+      { ...initialValues(type), ...values },
+      { x: 0, y: 0, ...component.size },
+      { measure: approximateMeasurer },
+    );
+    return { nodes: [...walk(root)], boxes: absoluteBoxes(root), warnings };
+  }
+
+  it('o none alinhado do fixture centra o glifo e a grade da navigation bar divide em colunas iguais', () => {
+    const center = (box: { x: number; y: number; width: number; height: number }) => ({
+      x: box.x + box.width / 2,
+      y: box.y + box.height / 2,
+    });
+    // checkbox: o `check` de 14 fica no centro da caixa de 18 (`none` com align e justify `center`).
+    const checkbox = drawnFixture('m3-checkbox', { checked: 'sim' });
+    const caixa = checkbox.nodes.find((n) => n.name === 'caixa');
+    const check = checkbox.nodes.find((n) => n.name === 'check');
+    const caixaBox = caixa && checkbox.boxes.get(caixa.id);
+    const checkBox = check && checkbox.boxes.get(check.id);
+    if (!caixaBox || !checkBox) throw new Error('fixture: checkbox sem caixa ou check');
+    // O nó do `path` guarda a caixa do viewBox (24) e a escala vai na matriz: o canto superior esquerdo
+    // do glifo de 14 dentro da caixa de 18 fica em 2.
+    expect(checkBox.x).toBeCloseTo(caixaBox.x + (caixaBox.width - 14) / 2, 6);
+    expect(checkBox.y).toBeCloseTo(caixaBox.y + (caixaBox.height - 14) / 2, 6);
+
+    // navigation bar: 3 destinos de largura igual, (412 − 2 × 8) / 3 = 132, e o ícone centrado no indicador.
+    const bar = drawnFixture('m3-navigation-bar');
+    const destinos = bar.nodes.filter((n) => /^destino \d$/.test(n.name ?? ''));
+    expect(destinos).toHaveLength(3);
+    expect(destinos.map((n) => bar.boxes.get(n.id)?.x)).toEqual([8, 140, 272]);
+    expect(destinos.every((n) => Math.abs(n.width - 132) < 1e-6)).toBe(true);
+    const indicador = bar.nodes.find((n) => n.name === 'indicador');
+    const icone = indicador && [...walk(indicador)].find((n) => n.name === 'ícone');
+    const indicadorBox = indicador && bar.boxes.get(indicador.id);
+    const iconeBox = icone && bar.boxes.get(icone.id);
+    if (!indicadorBox || !iconeBox)
+      throw new Error('fixture: navigation bar sem indicador');
+    expect(center(iconeBox).x).toBeCloseTo(center(indicadorBox).x, 6);
+    expect(center(iconeBox).y).toBeCloseTo(center(indicadorBox).y, 6);
+    for (const id of ['m3-checkbox', 'm3-navigation-bar', 'm3-top-app-bar', 'm3-box']) {
+      expect(drawnFixture(id).warnings, id).toEqual([]);
+    }
+  });
+
+  it('cada (texto, fonte, limite) distinto é medido uma vez: 26 chamadas nos 15 componentes e 40 na tela', () => {
+    const counted = (): { measure: typeof approximateMeasurer; calls: string[] } => {
+      const calls: string[] = [];
+      const measure: typeof approximateMeasurer = (text, font, maxWidth) => {
+        calls.push(JSON.stringify([text, font, maxWidth]));
+        return approximateMeasurer(text, font, maxWidth);
+      };
+      return { measure, calls };
+    };
+    let total = 0;
+    for (const type of library.types) {
+      const component = type.component;
+      if (!component) continue;
+      const { measure, calls } = counted();
+      instantiate(
+        component,
+        initialValues(type),
+        { x: 0, y: 0, ...component.size },
+        { measure },
+      );
+      expect(calls.length, component.id).toBe(new Set(calls).size);
+      total += calls.length;
+    }
+    expect(total).toBe(26);
+    const screen = counted();
+    for (const instance of M3_SCREEN.instances) {
+      const component = typeOf.get(instance.typeId)?.component;
+      if (!component) throw new Error(`fixture: sem componente ${instance.typeId}`);
+      instantiate(component, instance.values, instance.box, {
+        measure: screen.measure,
+        idPrefix: instance.id,
+      });
+    }
+    expect(screen.calls).toHaveLength(40);
   });
 
   budgetIt(
@@ -837,22 +934,26 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
     expect(before.size).toBe(21);
     const instantiated = vi.spyOn(instantiateModule, 'instantiate');
     const render = vi.spyOn(ComponentLayerRenderer.prototype, 'render');
-    for (let step = 0; step < 20; step++) {
-      controller.zoomBy(step % 2 === 0 ? 1.1 : 1 / 1.1);
-      controller.centerOnPoint({ x: 200 + step * 3, y: 400 });
+    try {
+      for (let step = 0; step < 20; step++) {
+        controller.zoomBy(step % 2 === 0 ? 1.1 : 1 / 1.1);
+        controller.centerOnPoint({ x: 200 + step * 3, y: 400 });
+        flush();
+      }
+      expect(instantiated).not.toHaveBeenCalled();
+      expect(render).not.toHaveBeenCalled();
+      const after = derived.componentScenes.value;
+      for (const [id, drawing] of before) expect(after.get(id)).toBe(drawing);
+      // Controle: os dois espiões enxergam uma reinstanciação de verdade (as fontes mudaram).
+      sources.fontsEpoch.value++;
       flush();
+      expect(instantiated).toHaveBeenCalled();
+      expect(render).toHaveBeenCalled();
+    } finally {
+      instantiated.mockRestore();
+      render.mockRestore();
+      controller.destroy();
     }
-    expect(instantiated).not.toHaveBeenCalled();
-    expect(render).not.toHaveBeenCalled();
-    const after = derived.componentScenes.value;
-    for (const [id, drawing] of before) expect(after.get(id)).toBe(drawing);
-    // Controle: o espião enxerga uma reinstanciação de verdade (as fontes mudaram).
-    sources.fontsEpoch.value++;
-    flush();
-    expect(instantiated).toHaveBeenCalled();
-    instantiated.mockRestore();
-    render.mockRestore();
-    controller.destroy();
   });
 
   budgetIt(
