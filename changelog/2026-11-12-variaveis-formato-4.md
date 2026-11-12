@@ -1,4 +1,4 @@
-# Variáveis no formato 4, carousel como o Compose e slider em faixa — [Não lançado] (épico `epic/variaveis-formato-4`, PR #0, MCP 0.38.0, schema v19)
+# Variáveis no formato 4, carousel como o Compose e slider em faixa — 2026-11-12 (épico `epic/variaveis-formato-4`, PR #1737, MCP 0.38.0, schema v19)
 
 ## Adicionado
 
