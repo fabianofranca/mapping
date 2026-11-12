@@ -25,6 +25,7 @@ import { findBySourceResult, findTypesBySourceResult } from './sourceTools';
 import { getComponent, listComponents } from './componentTools';
 import { listPackageFiles, validateLibraryTool } from './library';
 import { planLibraryUpdate } from './libraryUpdate';
+import { planSignatureImportTool } from './signatureImport';
 import { summary as specSummary, validateSpecialization } from './specValidation';
 import type { Roots } from './paths';
 import { discoverProjects, findProject, loadProject } from './projects';
@@ -1089,6 +1090,52 @@ export function registerTools(
       annotations: READ_ONLY,
     },
     (args) => respond(() => planLibraryUpdate(roots, args)),
+  );
+
+  server.registerTool(
+    'plan_signature_import',
+    {
+      description:
+        'Prévia, SEM gravar nada, de importar a assinatura de um componente (a ficha `mapping-signature`, formato em mapping-docs://SIGNATURE-FORMAT.md) como campos de um tipo da biblioteca: devolve os campos novos (`fields`, em JSON pronto), as ligações (`links`: cada parâmetro ligado ao campo que o cita em `params`, ao de nome igual ou a um campo novo), o `code` da plataforma (ou as `sources` do sistema), os avisos que a importação escreve (`notices`, todos com o `ref` da ficha e a `message` começando pela plataforma), o `unmapped` (os parâmetros da ficha sem campo), `changes` (o que entrou, saiu, mudou e o renome provável, em relação à ficha gravada no pacote), `suggestedMigrations` (remove-field, rename-field: só se a pessoa pedir, a importação nunca escreve `migrations`), `versionBump` (o contrato mudou: suba a `version`) e `spec`, a especialização inteira já importada, pronta para gravar. `path` é a pasta do pacote (ou o arquivo da especialização dentro dela), dentro das raízes; `type` é o id do tipo; `platform` (alvo de código: o id declarado em `platforms`) ou `system` (alvo de design, como figma); `variant` é o valor do campo das `variants` quando a ficha é a de um caso. A ficha vem inline em `signature` ou num `.json` dentro das raízes em `signatureFile` (outra extensão é recusada sem ser lida: o servidor nunca lê código; extraia a ficha com o `mapping-signature.mjs` ou escreva-a à mão com `source.extractor: "agent"`). Erros: `signature-invalid` (com o caminho do problema na ficha), `type-not-found`, `platform-not-declared`, `signature-mismatch` (o símbolo, o arquivo ou o sistema da ficha diferem do code ou da source) e `variant-not-found`. A ficha gravada no pacote (o `signature` do code) é a anterior da sincronização. Depois: grave o `spec` e a ficha no pacote e rode validate_library.',
+      inputSchema: {
+        path: z
+          .string()
+          .describe(
+            'Pasta do pacote da biblioteca ou arquivo da especialização dentro dela, relativo a uma raiz ou absoluto dentro delas.',
+          ),
+        type: z.string().describe('Id do tipo de anotação que recebe os campos.'),
+        platform: z
+          .string()
+          .optional()
+          .describe(
+            'Alvo de código: o id da plataforma (`platforms`). Use este OU `system`.',
+          ),
+        system: z
+          .string()
+          .optional()
+          .describe(
+            'Alvo de design: o sistema (ex: figma), nas `sources` do tipo. Use este OU `platform`.',
+          ),
+        variant: z
+          .string()
+          .optional()
+          .describe(
+            'Valor do campo de `variants` do code quando a ficha é a do caso (só com `platform`).',
+          ),
+        signature: z
+          .record(z.string(), z.unknown())
+          .optional()
+          .describe('A ficha `mapping-signature` inline. Use esta OU `signatureFile`.'),
+        signatureFile: z
+          .string()
+          .optional()
+          .describe(
+            'A ficha num arquivo `.json` dentro das raízes (outra extensão é recusada).',
+          ),
+      },
+      annotations: READ_ONLY,
+    },
+    (args) => respond(() => planSignatureImportTool(roots, args)),
   );
 
   const packageArgs = {

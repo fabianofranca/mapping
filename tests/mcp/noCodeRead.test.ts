@@ -118,6 +118,27 @@ describe('o servidor não abre arquivos de código (dinâmico)', () => {
     expect(writes).toEqual([]);
   });
 
+  it('plan_signature_import recusa um signatureFile que não é .json sem abri-lo (nem conferir)', async () => {
+    const kt = join(ws.repo, DS_BUTTON_KT);
+    for (const signatureFile of [kt, 'DSButton.kt', 'ficha.json.kt']) {
+      fsCalls.length = 0;
+      const result = await client.callTool({
+        name: 'plan_signature_import',
+        arguments: {
+          path: 'cadastro',
+          type: 'button',
+          platform: 'android',
+          signatureFile,
+        },
+      });
+      const text = (result.content as { text: string }[])[0]!.text;
+      expect(result.isError).toBe(true);
+      expect(JSON.parse(text).error.code).toBe('signature-invalid');
+      // Recusado pela extensão, antes de qualquer chamada ao disco.
+      expect(fsCalls).toEqual([]);
+    }
+  });
+
   it('o arquivo que escapa do diretório de trabalho nem é tocado', async () => {
     fsCalls.length = 0;
     await call('get_marking', { ref: `mapping://escapa/m/${codeOf(ws.ids.MC!)}` });

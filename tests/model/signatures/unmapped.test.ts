@@ -134,3 +134,44 @@ describe('paramsOutsideSignature', () => {
     ]);
   });
 });
+
+describe('rótulo externo do Swift (corrigido na S2)', () => {
+  const swift = (): Signature =>
+    signature((s) => {
+      s.params = [
+        {
+          name: 'text',
+          label: 'title',
+          role: 'value',
+          type: 'String',
+          value: { kind: 'text' },
+        },
+        {
+          name: 'icon',
+          label: '_',
+          role: 'value',
+          type: 'String',
+          value: { kind: 'text' },
+        },
+      ];
+    });
+
+  it('o params que cita o rótulo externo liga o parâmetro', () => {
+    expect(unmappedParams(swift(), { params: { titulo: 'title', icone: '#0' } })).toEqual(
+      [],
+    );
+    expect(paramsOutsideSignature(swift(), { params: { titulo: 'title' } })).toEqual([]);
+  });
+
+  it('o nome interno também vale (o que um agente escreve à mão)', () => {
+    expect(unmappedParams(swift(), { params: { titulo: 'text', icone: '#0' } })).toEqual(
+      [],
+    );
+    expect(paramsOutsideSignature(swift(), { params: { titulo: 'text' } })).toEqual([]);
+  });
+
+  it('o ignore aceita o rótulo ou o nome', () => {
+    const left = unmappedParams(swift(), { params: {}, ignore: ['title'] });
+    expect(left.map((u) => u.name)).toEqual(['icon']);
+  });
+});

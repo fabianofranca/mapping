@@ -1,6 +1,10 @@
 import { paramTarget } from '../codeParams';
 import type { Signature, SignatureParam, SignatureRole } from './types';
 
+/** O nome que se escreve na chamada: o rótulo externo do Swift, ou o nome. */
+export const callName = (param: SignatureParam): string =>
+  param.label !== undefined && param.label !== '_' ? param.label : param.name;
+
 // A ficha cruzada com o `code` de uma plataforma (etapa #1079): o que a ficha tem e o `code` não
 // liga a campo (`unmappedParams`, o `unmapped` do `get_code_hints`) e o que o `code` liga e a ficha
 // não tem (`paramsOutsideSignature`, o aviso "parâmetro fora da ficha"). Puro, sem navegador.
@@ -44,7 +48,13 @@ export function unmappedParams(signature: Signature, code: CodeLinks): UnmappedP
   }
   const ignored = new Set(code.ignore ?? []);
   return signature.params
-    .filter((param) => !mapped.has(param.name) && !ignored.has(param.name))
+    .filter(
+      (param) =>
+        !mapped.has(param.name) &&
+        !mapped.has(callName(param)) &&
+        !ignored.has(param.name) &&
+        !ignored.has(callName(param)),
+    )
     .map((param) => ({
       name: param.name,
       role: param.role,
@@ -69,7 +79,11 @@ export function paramsOutsideSignature(
   signature: Signature,
   code: Pick<CodeLinks, 'params'>,
 ): OutsideParam[] {
-  const byName = new Map(signature.params.map((param) => [param.name, param]));
+  const byName = new Map<string, SignatureParam>();
+  for (const param of signature.params) {
+    byName.set(param.name, param);
+    byName.set(callName(param), param);
+  }
   const positions = positionalParams(signature).length;
   const outside: OutsideParam[] = [];
   for (const [field, value] of Object.entries(code.params ?? {})) {

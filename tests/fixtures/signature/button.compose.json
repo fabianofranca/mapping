@@ -1,0 +1,73 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.Button",
+    "path": "compose/material3/Button.kt",
+    "ref": "fixture",
+    "extractor": "agent"
+  },
+  "params": [
+    { "name": "onClick", "role": "callback", "type": "() -> Unit", "required": true },
+    { "name": "modifier", "role": "modifier", "type": "Modifier", "default": "Modifier" },
+    {
+      "name": "enabled",
+      "role": "value",
+      "type": "Boolean",
+      "default": "true",
+      "value": { "kind": "boolean", "default": true }
+    },
+    {
+      "name": "shape",
+      "role": "value",
+      "type": "Shape",
+      "default": "ButtonDefaults.shape",
+      "value": { "kind": "opaque" }
+    },
+    {
+      "name": "colors",
+      "role": "value",
+      "type": "ButtonColors",
+      "default": "ButtonDefaults.buttonColors()",
+      "factory": {
+        "call": "androidx.compose.material3.ButtonDefaults.buttonColors",
+        "params": [
+          {
+            "name": "containerColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": { "kind": "color" }
+          },
+          {
+            "name": "contentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": { "kind": "color" }
+          }
+        ]
+      }
+    },
+    {
+      "name": "contentPadding",
+      "role": "value",
+      "type": "PaddingValues",
+      "default": "ButtonDefaults.ContentPadding",
+      "value": { "kind": "opaque" }
+    },
+    {
+      "name": "content",
+      "role": "slot",
+      "type": "@Composable RowScope.() -> Unit",
+      "required": true
+    }
+  ],
+  "doc": {
+    "enabled": "controls the enabled state of this button.",
+    "contentPadding": "the spacing values to apply internally between the container and the content."
+  }
+}

@@ -1,4 +1,5 @@
 import type { SpecField, SpecFieldModel } from '../spec';
+import { callName } from './codeLink';
 import { optionFor } from './importNames';
 import type { Signature, SignatureParam } from './types';
 
@@ -20,10 +21,6 @@ export interface Unit {
   readonly call?: string;
   readonly param: SignatureParam;
 }
-
-/** O nome que se escreve na chamada: o rótulo externo do Swift, ou o nome. */
-export const callName = (param: SignatureParam): string =>
-  param.label !== undefined && param.label !== '_' ? param.label : param.name;
 
 const isPositional = (param: SignatureParam): boolean => param.label === '_';
 
