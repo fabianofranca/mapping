@@ -1,4 +1,4 @@
-# Observador da fila na skill supervisionar-fila — [Não lançado] (épico `epic/observador-da-fila`)
+# Observador da fila na skill supervisionar-fila — 2026-11-12 (épico `epic/observador-da-fila`)
 
 ## Pendências
 
