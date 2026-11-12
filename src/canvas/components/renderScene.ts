@@ -41,6 +41,7 @@ import {
 import type { ImageFit } from '../../model/components/componentFormat';
 import type { RunLayout, RunPiece } from '../../model/components/richText';
 import { textBoxLimits } from './textLimits';
+import { wordSafeWidth } from './wordWidth';
 import { capMiddleShift, lineBaseline } from '../../model/components/baseline';
 import { capMetricsOf } from './capMiddle';
 import { cachedEmbeddedImage, loadEmbeddedImage } from './imageLoader';
@@ -319,7 +320,11 @@ class Renderer {
         const cut = cutsText(node);
         if (node.width > 0 && !cut) {
           // A folga da quebra (0,5 px), a mesma do medidor; o `x` desfaz o deslocamento do `align`.
-          attrs.width = node.width + WRAP_SLACK;
+          // Uma palavra mais larga que a caixa fica inteira na linha, como no modelo e no medidor.
+          const breaks = style.wrap !== 'none' && style.ellipsis !== true;
+          attrs.width =
+            (breaks ? wordSafeWidth(node.text, attrs, node.width) : node.width) +
+            WRAP_SLACK;
           attrs.x = slackShift(style.align);
         }
         if (node.height > 0) attrs.height = node.height;
