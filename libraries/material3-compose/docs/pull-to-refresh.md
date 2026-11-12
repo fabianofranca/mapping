@@ -52,7 +52,7 @@ O indicador é o padrão do Material 3: círculo de 40 em surface container high
 
 ## Fidelidade
 
-Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). A unidade é a de sempre: 1 dp = 1 px do componente. Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte, raio ou opacidade de cor fica literal no componente e nenhum nó de texto declara `family` (todos herdam `font-sans`). O indicador é o `Indicator` padrão do `PullToRefreshBox`; a seta, o spinner e o círculo não usam ícone do conjunto (são desenhos do próprio Compose).
+Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). 1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem (`docs/COMPONENT-FORMAT.md`, "Unidades e densidade"). Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte, raio ou opacidade de cor fica literal no componente e nenhum nó de texto declara `family` (todos herdam `font-sans`). O indicador é o `Indicator` padrão do `PullToRefreshBox`; a seta, o spinner e o círculo não usam ícone do conjunto (são desenhos do próprio Compose).
 
 **Arquivos usados**
 

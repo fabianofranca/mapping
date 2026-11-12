@@ -249,6 +249,18 @@ describe('biblioteca Material 3 (Compose)', () => {
     );
   });
 
+  it('todo documento fala a Fidelidade em unidades do componente (decisão 11 da #1085)', () => {
+    const docs = files.filter((f) => f.path.startsWith('docs/'));
+    expect(docs).toHaveLength(50);
+    for (const doc of docs) {
+      const body = text(doc.path);
+      expect(body, doc.path).toContain(
+        '1 dp = 1 unidade do componente; a densidade do container converte para pixels da imagem',
+      );
+      expect(body, doc.path).not.toContain('1 dp = 1 px do componente');
+    }
+  });
+
   it('tem 50 tipos nas camadas layout, content e components, na ordem', () => {
     expect(spec.layers.map((l) => l.id)).toEqual(Object.keys(LAYERS));
     for (const layer of spec.layers) {
@@ -271,11 +283,11 @@ describe('biblioteca Material 3 (Compose)', () => {
     expect(report.warnings.map((w) => `${w.file}:${w.path}: ${w.message}`)).toEqual([]);
   });
 
-  it('é a formatVersion 15, versão 9, com tokens nos modos light e dark e a plataforma compose no androidx fixado no commit', () => {
+  it('é a formatVersion 15, versão 10, com tokens nos modos light e dark e a plataforma compose no androidx fixado no commit', () => {
     expect(spec).toMatchObject({
       formatVersion: 15,
       id: 'material3-compose',
-      version: 9,
+      version: 10,
       icons: 'icons/material-icons.json',
     });
     expect(spec.tokens?.modes).toEqual(['light', 'dark']);
@@ -657,11 +669,11 @@ describe('atualização da biblioteca Material 3 (Compose) com o slider numéric
           );
     expect(missingMigrations(previous, spec)).toEqual([]);
     expect(spec.migrations?.map((m) => [m.from, m.to])).toEqual([
-      [1, 9],
-      [2, 9],
-      [3, 9],
-      [4, 9],
-      [5, 9],
+      [1, 10],
+      [2, 10],
+      [3, 10],
+      [4, 10],
+      [5, 10],
     ]);
     const report = validateLibrary({ files, specPath: SPEC_FILE, previous });
     expect(report.errors).toEqual([]);
