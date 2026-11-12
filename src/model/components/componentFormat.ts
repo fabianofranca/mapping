@@ -28,7 +28,8 @@ export const COMPONENT_FORMAT_VERSION_IMAGE = 3;
 /**
  * A versão 4 (etapa "componentes fiéis") reúne as chaves novas do arquivo: `stroke.cap`,
  * `stroke.join` e `stroke.sides` já aqui. Toda chave da v4 numa versão anterior é o erro
- * `só é permitido com formatVersion 4`, no caminho da chave.
+ * `só é permitido com formatVersion 4`, no caminho da chave. As variáveis (`let` no quadro e
+ * `{ "$var": … }` nas expressões e condições) também são chaves da 4, trocadas na leitura.
  */
 export const COMPONENT_FORMAT_VERSION_FIDELITY = 4;
 /** Versões aceitas. */
@@ -378,6 +379,13 @@ export interface FrameTemplate extends TemplateNodeBase {
   readonly clip?: BoolExpr;
   readonly layout?: LayoutSpec;
   readonly children?: readonly TemplateNode[];
+  /**
+   * Variáveis do quadro (v4, só no arquivo escrito): nome → expressão, usadas com
+   * `{ "$var": "nome" }` neste quadro e nos descendentes. O `parseComponent` troca os `$var` pelo
+   * conteúdo e devolve o quadro **sem** `let`: quem usa o componente lido (motor, raster,
+   * visualizador, Catálogo) nunca o vê (`variables.ts`).
+   */
+  readonly let?: Readonly<Record<string, unknown>>;
 }
 
 export interface RectTemplate extends TemplateNodeBase {

@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "slider",
   "name": "Slider",
-  "description": "Slider de 44: trilha de 16 em secondary container, trecho ativo em primary e alça de 4 × 44 com vão de 6 (SliderTokens). Os valores são números de 0 a 1; com steps a alça vai ao passo mais próximo e as marcas são exatamente as de steps, em qualquer quantidade. No intervalo há duas alças.",
+  "description": "Slider de 44: trilha de 16 em secondary container, trecho ativo em primary e alça de 4 × 44 com vão de 6 (SliderTokens). Os valores são números de 0 a 1; com steps a alça vai ao passo mais próximo e as marcas são exatamente as de steps; quando não cabem (menos de 1 de espaço entre centros, ou mais de 1000 marcas), cada trecho vira uma faixa de 4. No intervalo há duas alças.",
   "size": { "width": 328, "height": 48 },
   "sizing": { "width": "fill", "height": 48 },
   "preview": {
@@ -17,6 +17,48 @@
   "template": {
     "type": "frame",
     "name": "slider",
+    "let": {
+      "n": { "$max": [{ "$floor": { "$field": "steps", "default": 0 } }, 0] },
+      "parts": { "$add": [{ "$var": "n" }, 1] },
+      "sp": { "$div": [{ "$sub": [{ "$size": "width" }, 20] }, { "$var": "parts" }] },
+      "dense": {
+        "$and": [
+          { "$gte": [{ "$var": "n" }, 1] },
+          {
+            "$or": [
+              { "$lt": [{ "$var": "sp" }, 1] },
+              { "$gt": [{ "$add": [{ "$var": "n" }, 2] }, 1000] }
+            ]
+          }
+        ]
+      },
+      "first": {
+        "$round": {
+          "$mul": [
+            { "$clamp": [{ "$field": "valueStart", "default": 0.2 }, 0, 1] },
+            { "$var": "parts" }
+          ]
+        }
+      },
+      "last": {
+        "$round": {
+          "$mul": [
+            {
+              "$clamp": [
+                {
+                  "$if": { "$eq": ["type", "range"] },
+                  "then": { "$field": "valueEnd", "default": 0.8 },
+                  "else": { "$field": "value", "default": 0.5 }
+                },
+                0,
+                1
+              ]
+            },
+            { "$var": "parts" }
+          ]
+        }
+      }
+    },
     "layout": { "type": "none" },
     "children": [
       {
@@ -360,6 +402,153 @@
       },
       {
         "type": "rect",
+        "name": "faixa de passos",
+        "height": 4,
+        "cornerRadius": 2,
+        "fill": {
+          "$if": { "$eq": ["enabled", "false"] },
+          "then": {
+            "$token": "on-surface",
+            "alpha": { "$token": "state-disabled-content" },
+            "over": "surface"
+          },
+          "else": { "$token": "primary" }
+        },
+        "width": {
+          "$add": [
+            {
+              "$mul": [
+                { "$sub": [{ "$sub": [{ "$var": "first" }, 1] }, 0] },
+                { "$var": "sp" }
+              ]
+            },
+            4
+          ]
+        },
+        "anchors": {
+          "centerY": true,
+          "left": { "$add": [8, { "$mul": [0, { "$var": "sp" }] }] }
+        },
+        "visible": {
+          "$and": [
+            { "$var": "dense" },
+            {
+              "$and": [{ "$eq": ["type", "range"] }, { "$gte": [{ "$var": "first" }, 1] }]
+            }
+          ]
+        }
+      },
+      {
+        "type": "rect",
+        "name": "faixa de passos",
+        "height": 4,
+        "cornerRadius": 2,
+        "fill": {
+          "$if": { "$eq": ["enabled", "false"] },
+          "then": {
+            "$token": "on-surface",
+            "alpha": { "$token": "state-disabled-container" },
+            "over": "surface"
+          },
+          "else": { "$token": "secondary-container" }
+        },
+        "width": {
+          "$add": [
+            {
+              "$mul": [
+                {
+                  "$sub": [
+                    { "$sub": [{ "$var": "last" }, 1] },
+                    {
+                      "$if": { "$eq": ["type", "range"] },
+                      "then": { "$add": [{ "$var": "first" }, 1] },
+                      "else": 0
+                    }
+                  ]
+                },
+                { "$var": "sp" }
+              ]
+            },
+            4
+          ]
+        },
+        "anchors": {
+          "centerY": true,
+          "left": {
+            "$add": [
+              8,
+              {
+                "$mul": [
+                  {
+                    "$if": { "$eq": ["type", "range"] },
+                    "then": { "$add": [{ "$var": "first" }, 1] },
+                    "else": 0
+                  },
+                  { "$var": "sp" }
+                ]
+              }
+            ]
+          }
+        },
+        "visible": {
+          "$and": [
+            { "$var": "dense" },
+            {
+              "$gte": [
+                { "$sub": [{ "$var": "last" }, 1] },
+                {
+                  "$if": { "$eq": ["type", "range"] },
+                  "then": { "$add": [{ "$var": "first" }, 1] },
+                  "else": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "type": "rect",
+        "name": "faixa de passos",
+        "height": 4,
+        "cornerRadius": 2,
+        "fill": {
+          "$if": { "$eq": ["enabled", "false"] },
+          "then": {
+            "$token": "on-surface",
+            "alpha": { "$token": "state-disabled-content" },
+            "over": "surface"
+          },
+          "else": { "$token": "primary" }
+        },
+        "width": {
+          "$add": [
+            {
+              "$mul": [
+                { "$sub": [{ "$var": "parts" }, { "$add": [{ "$var": "last" }, 1] }] },
+                { "$var": "sp" }
+              ]
+            },
+            4
+          ]
+        },
+        "anchors": {
+          "centerY": true,
+          "left": {
+            "$add": [
+              8,
+              { "$mul": [{ "$add": [{ "$var": "last" }, 1] }, { "$var": "sp" }] }
+            ]
+          }
+        },
+        "visible": {
+          "$and": [
+            { "$var": "dense" },
+            { "$lt": [{ "$var": "last" }, { "$var": "parts" }] }
+          ]
+        }
+      },
+      {
+        "type": "rect",
         "name": "alça",
         "height": 44,
         "width": 4,
@@ -641,7 +830,14 @@
         "type": "repeat",
         "name": "marcas",
         "count": {
-          "$add": [{ "$max": [{ "$floor": { "$field": "steps", "default": 0 } }, 0] }, 2]
+          "$if": { "$var": "dense" },
+          "then": 0,
+          "else": {
+            "$add": [
+              { "$max": [{ "$floor": { "$field": "steps", "default": 0 } }, 0] },
+              2
+            ]
+          }
         },
         "direction": "row",
         "gap": {

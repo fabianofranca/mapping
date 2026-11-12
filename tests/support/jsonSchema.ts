@@ -2,7 +2,7 @@
  * Verificador mínimo de JSON Schema para os testes (sem dependência). Entende só o subconjunto
  * usado em `docs/*.schema.json`: type (inclusive lista), enum, const, required, properties,
  * additionalProperties, items, prefixItems, $ref/$defs, oneOf, anyOf, pattern, minimum, maximum,
- * exclusiveMinimum, minLength, minItems, maxItems. Palavra desconhecida falha (não é ignorada).
+ * exclusiveMinimum, minLength, minItems, maxItems, propertyNames (só `pattern`). Palavra desconhecida falha (não é ignorada).
  */
 type Rec = Record<string, unknown>;
 
@@ -30,6 +30,7 @@ const KNOWN = new Set([
   'minLength',
   'minItems',
   'maxItems',
+  'propertyNames',
 ]);
 
 function isRec(v: unknown): v is Rec {
@@ -116,8 +117,11 @@ function walk(root: Rec, schema: unknown, value: unknown, at: string): string[] 
     if (Array.isArray(schema.required))
       for (const key of schema.required)
         if (!(String(key) in value)) out.push(`${at}.${String(key)}: obrigatório`);
+    const names = isRec(schema.propertyNames) ? schema.propertyNames.pattern : undefined;
     for (const [key, item] of Object.entries(value)) {
       const path = `${at}.${key}`;
+      if (typeof names === 'string' && !new RegExp(names).test(key))
+        out.push(`${path}: nome fora do padrão ${names}`);
       if (key in props) out.push(...walk(root, props[key], item, path));
       else if (schema.additionalProperties === false)
         out.push(`${path}: chave desconhecida`);

@@ -430,47 +430,111 @@ const heroValues = (n: number, spacing = 8): Values => ({
   items: rows(n),
 });
 
-/** O hero: pequeno = 1/3 da largura preso entre 40 e 56; grande = o que sobra (Keylines.kt 215 a 289). */
-const heroSmall = (width: number) => clamp(width / 3, MIN_SMALL, MAX_SMALL);
+/**
+ * O hero do Compose sem `maxItemWidth` (Keylines.kt, `heroKeylineList`, linhas 215 a 289, e a mesma
+ * `findLowestCostArrangement` do multi-browse): o alvo do grande é a largura toda (linha 235), o do
+ * pequeno é um terço dela preso entre 40 e 56 (237), e o `fit` (Arrangement.kt, 198 a 206) encolhe os
+ * pequenos até o mínimo de 40 porque o grande não cabe no alvo. `start` é onde o primeiro item
+ * começa: depois do pequeno e do espaço, quando o arranjo é centrado (3 itens ou mais).
+ */
+function heroOracle(width: number, spacing: number, items: number) {
+  const center = items >= 3;
+  let smallCounts = center ? [2] : [1];
+  const targetLarge = width;
+  const targetSmall = clamp(targetLarge / 3, MIN_SMALL, MAX_SMALL);
+  if (width < MIN_SMALL * Math.max(...smallCounts) + MIN_SMALL * 1.25) smallCounts = [0];
+  const minLarge = Math.max(
+    1,
+    Math.floor((width - MIN_SMALL * Math.max(...smallCounts)) / targetLarge),
+  );
+  const maxLarge = Math.ceil(width / targetLarge);
+  const largeCounts = Array.from(
+    { length: maxLarge - minLarge + 1 },
+    (_, i) => maxLarge - i,
+  );
+  const a = findLowest(
+    width,
+    spacing,
+    targetSmall,
+    smallCounts,
+    0,
+    [0],
+    targetLarge,
+    largeCounts,
+  )!;
+  const start =
+    center && items >= count(a) ? (a.smallCount / 2) * (a.small + spacing) : 0;
+  return { large: a.large, small: a.small, smallCount: a.smallCount, start };
+}
+
+/** As caixas que o desenho deve ter, pelo oráculo: cada item corta na borda e some quando restam menos de 32 de caixa a partir do seu início. */
+function heroBoxes(width: number, spacing: number, items: number): number[][] {
+  const { large, start } = heroOracle(width, spacing, items);
+  const boxes: number[][] = [];
+  for (let i = 0; i < items; i++) {
+    const x = start + i * (large + spacing);
+    const w = Math.min(large, width - x);
+    if (width - x >= 32) boxes.push([x, 0, w, HEIGHT]);
+  }
+  return boxes;
+}
 
 describe('EX6 carousel — centered-hero pela largura da marcação', () => {
-  it('em 360, com espaço 8: grande 232, pequenos de 56 e o primeiro item depois do pequeno que falta (64), como antes', () => {
-    const d = drawAt(360, heroValues(3));
-    // L2 (#1078): o segundo item ganha só a largura que sobra na caixa (56) e o terceiro, que ficava
-    // fora dela (x = 544), não é desenhado
-    expectBoxes(itemBoxes(d), [
-      [64, 0, 232, HEIGHT],
-      [304, 0, 56, HEIGHT],
+  it('em 360, com espaço 8: grande 264, pequenos de 40 e o primeiro item depois do pequeno que falta (48), como o Compose', () => {
+    // Sem maxItemWidth o grande é a largura toda e o fit encolhe os pequenos até 40 (Arrangement.kt, 198 a 206):
+    // 360 − 2 × 40 − 2 × 8 = 264. O segundo item ganha só a largura que sobra na caixa (40) e o terceiro,
+    // que ficava fora dela (x = 592), não é desenhado.
+    expect(heroOracle(360, 8, 3)).toMatchObject({ large: 264, small: 40, start: 48 });
+    expectBoxes(itemBoxes(drawAt(360, heroValues(3))), [
+      [48, 0, 264, HEIGHT],
+      [320, 0, 40, HEIGHT],
     ]);
   });
 
-  it('o grande, o pequeno e o recuo seguem a largura e o itemSpacing (antes o 232 e o 64 só valiam para 360 e 8)', () => {
-    for (const [width, spacing] of [
-      [360, 16],
-      [480, 8],
-      [600, 12],
-      [900, 0],
-      [240, 8],
-      [150, 4],
-    ] as const) {
-      const small = heroSmall(width);
-      const large = width - 2 * small - 2 * spacing;
-      const boxes = itemBoxes(drawAt(width, heroValues(4, spacing)));
-      expect(boxes[0]![2], `${width}/${spacing} grande`).toBeCloseTo(large, 6);
-      expect(boxes[0]![0], `${width}/${spacing} recuo`).toBeCloseTo(small + spacing, 6);
-      // o pequeno de cada lado: o segundo item começa onde começa o pequeno da direita
-      expect(boxes[1]![0], `${width}/${spacing} 2º`).toBeCloseTo(width - small, 6);
+  it('o grande, o pequeno e o recuo seguem a conta do Compose para toda largura e todo itemSpacing', () => {
+    for (const width of [130, 140, 150, 200, 240, 360, 480, 600, 900]) {
+      for (const spacing of [0, 4, 8, 12, 16]) {
+        for (const items of [3, 4, 6]) {
+          const expected = heroBoxes(width, spacing, items);
+          const label = `${width}/${spacing}/${items}`;
+          const actual = itemBoxes(drawAt(width, heroValues(items, spacing)));
+          expect(actual, label).toHaveLength(expected.length);
+          expectBoxes(actual, expected);
+        }
+      }
     }
-    // 360 com espaço 16: pequeno 56, grande 360 − 112 − 32 = 216, recuo 72
-    expect(itemBoxes(drawAt(360, heroValues(3, 16)))[0]).toEqual([72, 0, 216, HEIGHT]);
+    // 360 com espaço 16: pequeno 40, grande 360 − 80 − 32 = 248, recuo 56
+    expect(itemBoxes(drawAt(360, heroValues(3, 16)))[0]).toEqual([56, 0, 248, HEIGHT]);
+    // 480 com espaço 8: grande 480 − 80 − 16 = 384; o pequeno da direita começa em 480 − 40
+    expect(itemBoxes(drawAt(480, heroValues(4)))[1]![0]).toBeCloseTo(480 - 40, 6);
   });
 
-  it('com 1 ou 2 itens o Compose alinha ao início (shouldCenter exige 3): um só pequeno, grande de largura − espaço − pequeno, sem recuo', () => {
+  it('com 1 ou 2 itens o Compose alinha ao início (shouldCenter exige 3): um só pequeno de 40, grande de largura − espaço − 40, sem recuo', () => {
     for (const n of [1, 2]) {
       const boxes = itemBoxes(drawAt(360, heroValues(n, 12)));
-      expect(boxes[0]).toEqual([0, 0, 360 - 12 - 56, HEIGHT]);
+      expect(boxes[0]).toEqual([0, 0, 360 - 12 - 40, HEIGHT]);
       expect(boxes).toHaveLength(n);
-      if (n === 2) expect(boxes[1]![0]).toBe(360 - 56);
+      if (n === 2) expect(boxes[1]).toEqual([360 - 40, 0, 40, HEIGHT]);
+    }
+    expectBoxes(itemBoxes(drawAt(360, heroValues(2, 8))), heroBoxes(360, 8, 2));
+  });
+
+  it('os limiares em que só cabe o grande vêm da mesma conta: 130 com 3 itens ou mais, 90 com menos de 3', () => {
+    // fullscreenThreshold = 40 × pequenos + 50 (Keylines.kt, 241 a 244)
+    for (const [width, items, only] of [
+      [129, 3, true],
+      [130, 3, false],
+      [89, 2, true],
+      [90, 2, false],
+      [120, 3, true],
+      [100, 2, false],
+    ] as const) {
+      const boxes = itemBoxes(drawAt(width, heroValues(items, 0)));
+      expect(
+        boxes.length === 1 && boxes[0]![2] === width && boxes[0]![0] === 0,
+        `${width}/${items}`,
+      ).toBe(only);
+      expectBoxes(boxes, heroBoxes(width, 0, items));
     }
   });
 
@@ -505,10 +569,23 @@ describe('EX6 carousel — regressão contra as cenas de antes (≤ 0,5 px por n
     }
   });
 
-  it('centered-hero em 360 (claro e escuro) bate nó a nó, sem rename, fora o que passava da caixa', () => {
+  it('centered-hero em 360 (claro e escuro): só o que não depende da largura dos itens bate com as cenas de antes (o hero passou a 264/40, como o Compose)', () => {
+    // #1504: as cenas de antes (tests/fixtures/material3-ex6-v1.json, que não mudam) têm o hero a 232/56/64.
+    // Sem maxItemWidth o Compose dá 264/40/48 (Keylines.kt 235 e Arrangement.kt 198 a 206), então os itens saem
+    // da igualdade: ficam a faixa, o recuo e o que não toca na largura e no x dos itens (a imagem, o véu e o
+    // rótulo seguem o item, então também saem).
     for (const scene of oldScenes('carousel-ex2')) {
       const d = draw(scene.id, scene.values, scene.mode);
-      expect(missingNodes(d, scene.nodes, PASSAVA_DA_CAIXA), scene.key).toEqual([]);
+      const rest = scene.nodes.filter(
+        (o) =>
+          !['recuo', 'item', 'imagem', 'véu', 'rótulo'].includes(o.n) && o.t !== 'text',
+      );
+      expect(
+        missingNodes(d, rest, {
+          skip: (o: { r: number[] }) => o.r[0]! + o.r[2]! > 360.5,
+        }),
+        scene.key,
+      ).toEqual([]);
     }
   });
 

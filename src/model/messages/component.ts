@@ -124,6 +124,11 @@ export const componentMessages = {
   'component.indexOnlyInRepeat': '$index só vale dentro de um repeat',
   'component.repeatOnlyV2': 'o nó repeat só existe na formatVersion 2',
   'component.imageOnlyV3': 'o nó image só existe na formatVersion 3',
+  // Variáveis (`let` e `$var`, etapa #1504)
+  'component.expectedVariableName': 'esperava nome de variável ([a-z][a-zA-Z0-9]*)',
+  'component.variableUndefined': 'variável não definida: {name}',
+  'component.variableCycle': 'ciclo de variáveis: {cycle}',
+  'component.variablesTooBig': 'expansão das variáveis grande demais (mais de {max} nós)',
   // Dimensões, tela e arquivo
   'component.expectedSizeObject': 'esperava objeto { width, height }',
   'component.expectedPositive': 'esperava número positivo',

@@ -179,6 +179,13 @@
 .catalog-table td:last-child {
   min-width: calc(var(--space-4) * 10);
   white-space: normal;
+  /* Só a última coluna (descrição, símbolo) parte um identificador longo: sem isso ela alarga
+     a tabela além do diálogo e o texto fica cortado na borda direita. */
+  overflow-wrap: anywhere;
+}
+
+.catalog-page .markdown td {
+  overflow-wrap: anywhere;
 }
 
 .catalog-table {
@@ -288,11 +295,12 @@
 .catalog-image-frame {
   display: flex;
   align-items: center;
-  justify-content: center;
   min-height: var(--size-toolbar);
   padding: var(--space-2);
   overflow: auto;
-  background: var(--color-canvas-bg);
+  /* Superfície, não o fundo do canvas: o trilho inativo do Slider (#E8DEF8) some sobre o
+     cinza do canvas claro (1,04:1) e aparece sobre a superfície. */
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
 }
@@ -302,6 +310,11 @@
   display: block;
   max-width: none;
   zoom: 0.5;
+  /* Margem automática no lugar de `justify-content: center` no quadro: centra o que cabe e,
+     quando a imagem é mais larga que o quadro, encosta na borda esquerda (alcançável pela
+     rolagem) em vez de cortá-la. */
+  margin-inline: auto;
+  flex: none;
 }
 
 .catalog-warnings {

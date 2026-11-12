@@ -1,0 +1,19 @@
+# Variáveis no formato 4, carousel como o Compose e slider em faixa — 2026-11-12 (épico `epic/variaveis-formato-4`, PR #1742, MCP 0.38.0, schema v19)
+
+## Adicionado
+
+- Variáveis no componente da `formatVersion` 4 (#1504, #1505): `"let": { "nome": <expressão> }` em qualquer `frame` (a raiz e o `template` de um `repeat` incluídos) e `{ "$var": "nome" }` onde vale uma expressão ou condição. Uma subexpressão longa que se repete é escrita uma vez e usada pelo nome; a leitura troca cada `$var` pelo conteúdo, e o desenho (app, PNG do MCP, visualizador e Catálogo) é o mesmo do componente escrito sem variáveis. O `let` de dentro esconde o de fora, a ordem dentro do mesmo `let` é livre, e `$index`, as colunas do `repeat` e `$size` dentro de uma variável são os do lugar do uso.
+- Os erros das variáveis dizem o nome e o caminho do uso, nas duas línguas: `variável não definida: <nome>`, `ciclo de variáveis: a → b → a`, `esperava nome de variável ([a-z][a-zA-Z0-9]*)`, `expansão das variáveis grande demais (mais de 100000 nós)` e, para o erro de tipo dentro de uma variável, o caminho com `$var(<nome>)` (`template.children[1].width.$var(gap).$add[0]: precisa ser número`). `let` e `$var` numa `formatVersion` menor que 4 dão `só é permitido com formatVersion 4`.
+- `docs/component.schema.json` aceita `let` no quadro e `$var` nas expressões e condições; a skill `spec-author` e o guia dos agentes ensinam a usá-las no lugar de repetir uma subexpressão longa.
+- O MCP 0.38.0 aceita `let` e `$var` no `validate_library`, no lote e no desenho; o `get_component` mostra o arquivo como está. Um MCP ou uma app anteriores à 0.38.0 recusam o componente com `chave desconhecida: let`: atualize o MCP antes de abrir uma biblioteca que as usa.
+
+## Alterado
+
+- O carousel `centered-hero` da `material3-compose` desenha como o Compose sem `maxItemWidth` (#1504): em 360 de largura com `itemSpacing` 8, o item grande tem 264 (antes 232), os pequenos 40 (antes 56) e o primeiro item começa em 48 (antes 64); a conta vale para toda largura e todo `itemSpacing` (grande = largura − 2 × (espaço + 40), recuo = 40 + espaço), com menos de 3 itens um só pequeno de 40 alinhado ao início, e o grande sozinho abaixo de 130 (90 com menos de 3 itens). A `version` da biblioteca sobe de 10 para 11, de forma aditiva (os dados ficam como estão; as migrações antigas passam a apontar para a 11).
+- O `carousel.json` da `material3-compose` usa variáveis (`let` e `$var`) no lugar das subexpressões repetidas: de 107 kB para 37 kB formatado, com o mesmo desenho (o componente lido é o mesmo).
+
+## Corrigido
+
+- O `slider` da `material3-compose` com muitos passos não perde mais marcas (#1504, #1506): quando o espaço entre os centros (`(largura − 20) / (steps + 1)`) cai abaixo de 1 px, ou `steps + 2` passaria de 1000, o `repeat` das marcas fica com 0 linhas (sem o aviso `repeat limitado a 1000 linhas: marcas`) e cada trecho (ativo e inativo; no range, os três) desenha uma faixa de 4 px, da primeira à última marca que seria visível nele, na cor e na opacidade das marcas (também desabilitado). Abaixo do limiar o desenho é o de antes. Na app e no PNG do MCP.
+- Catálogo (CL1, #1738): a tabela Campos e as do markdown cabem na largura do diálogo (a última coluna parte um identificador longo em vez de ser cortada na borda direita); o `<dialog>` não rola mais (só o corpo, com cabeçalho e rodapé fixos); a Galeria alcança a borda esquerda de exemplos mais largos que a célula (Tabs, Navigation bar); o quadro da Galeria e do Experimentar usa a superfície, e o trilho inativo do Slider no tema claro deixa de sumir (1,04:1 → 1,27:1).
+- O passo R17.41 do `docs/TESTING.md` espera `C2BFC4` (o reservado de imagem vazia que o `render_marking` já pinta sobre o `surface-container-highest` no claro), no lugar de `E6E0E9` (#1739); o PNG do MCP não muda.

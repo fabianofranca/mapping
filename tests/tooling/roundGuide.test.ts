@@ -887,7 +887,7 @@ describe('round-guide.mjs --faixas (#1639, TC1, decisão 3)', () => {
     expect((await loadFaixas()).FAIXA_LIMIT).toBe(20);
   });
 
-  it('o aceite: R25 em 6 lotes, R12 em 3, R17, R9 e R3 em 2, R13 inteiro; a soma é a dos passos do guia', async () => {
+  it('o aceite: R25 em 7 lotes, R12 em 3, R9 e R3 em 2, R17 em 3, R13 inteiro; a soma é a dos passos do guia', async () => {
     const { planFaixas } = await loadFaixas();
     const roteiros = ['R25', 'R12', 'R3', 'R13', 'R17', 'R9'];
     const lotes = planFaixas(GUIDE, roteiros);
@@ -897,7 +897,7 @@ describe('round-guide.mjs --faixas (#1639, TC1, decisão 3)', () => {
     const passos = Object.fromEntries(
       g.planGroups(GUIDE, roteiros).items.map((i) => [i.token, i.steps]),
     );
-    const esperado = { R25: 6, R12: 3, R17: 2, R9: 2, R3: 2, R13: 1 } as const;
+    const esperado = { R25: 7, R12: 3, R17: 3, R9: 2, R3: 2, R13: 1 } as const;
     for (const [id, n] of Object.entries(esperado)) {
       expect(by[id], id).toHaveLength(n);
       expect(
@@ -1018,10 +1018,10 @@ describe('round-guide.mjs --faixas (#1639, TC1, decisão 3)', () => {
     );
     expect(r.status).toBe(0);
     const lines = r.stdout.trimEnd().split('\n');
-    expect(lines).toHaveLength(16);
-    expect(lines[0]).toMatch(/^lote 1 de 16: R3\.1-R3\.\d+[a-z]? \(20 passos\)$/);
+    expect(lines).toHaveLength(18);
+    expect(lines[0]).toMatch(/^lote 1 de 18: R3\.1-R3\.\d+[a-z]? \(20 passos\)$/);
     expect(lines.at(-1)).toMatch(
-      /^lote 16 de 16: R25\.\d+[a-z]?-R25\.\d+[a-z]? \(\d+ passos\)$/,
+      /^lote 18 de 18: R25\.\d+[a-z]?-R25\.\d+[a-z]? \(\d+ passos\)$/,
     );
     const none = spawnSync('node', [SCRIPT, '--faixas'], { encoding: 'utf8' });
     expect(none.status).toBe(2);

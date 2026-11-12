@@ -606,7 +606,13 @@ describe('validateComponent e parseComponent', () => {
       component: input,
       warnings: [],
       tokenRefs: [],
+      rewrite: expect.any(Function),
     });
+    // Sem variáveis, o caminho do componente lido é o do arquivo.
+    const parsed = parseComponent(input);
+    expect(parsed.ok && parsed.rewrite('template.children[0]')).toBe(
+      'template.children[0]',
+    );
   });
 
   it('parseComponentText lê o texto JSON e trata JSON inválido como issue de caminho vazio', () => {

@@ -283,11 +283,11 @@ describe('biblioteca Material 3 (Compose)', () => {
     expect(report.warnings.map((w) => `${w.file}:${w.path}: ${w.message}`)).toEqual([]);
   });
 
-  it('é a formatVersion 15, versão 10, com tokens nos modos light e dark e a plataforma compose no androidx fixado no commit', () => {
+  it('é a formatVersion 15, versão 11, com tokens nos modos light e dark e a plataforma compose no androidx fixado no commit', () => {
     expect(spec).toMatchObject({
       formatVersion: 15,
       id: 'material3-compose',
-      version: 10,
+      version: 11,
       icons: 'icons/material-icons.json',
     });
     expect(spec.tokens?.modes).toEqual(['light', 'dark']);
@@ -669,11 +669,11 @@ describe('atualização da biblioteca Material 3 (Compose) com o slider numéric
           );
     expect(missingMigrations(previous, spec)).toEqual([]);
     expect(spec.migrations?.map((m) => [m.from, m.to])).toEqual([
-      [1, 10],
-      [2, 10],
-      [3, 10],
-      [4, 10],
-      [5, 10],
+      [1, 11],
+      [2, 11],
+      [3, 11],
+      [4, 11],
+      [5, 11],
     ]);
     const report = validateLibrary({ files, specPath: SPEC_FILE, previous });
     expect(report.errors).toEqual([]);

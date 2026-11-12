@@ -131,6 +131,11 @@ export const componentEnUS: {
   'model.component.indexOnlyInRepeat': '$index is only valid inside a repeat',
   'model.component.repeatOnlyV2': 'the repeat node only exists in formatVersion 2',
   'model.component.imageOnlyV3': 'the image node only exists in formatVersion 3',
+  'model.component.expectedVariableName': 'expected a variable name ([a-z][a-zA-Z0-9]*)',
+  'model.component.variableUndefined': 'undefined variable: {name}',
+  'model.component.variableCycle': 'variable cycle: {cycle}',
+  'model.component.variablesTooBig':
+    'variable expansion too large (more than {max} nodes)',
   'model.component.expectedSizeObject': 'expected an object { width, height }',
   'model.component.expectedPositive': 'expected a positive number',
   'model.component.expectedSizingObject': 'expected an object { width?, height? }',
