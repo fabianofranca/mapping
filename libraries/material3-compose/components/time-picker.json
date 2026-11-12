@@ -238,7 +238,8 @@
                     "else": { "$token": "display-large-tracking" }
                   },
                   "align": "center",
-                  "verticalAlign": "cap-middle"
+                  "verticalAlign": "cap-middle",
+                  "maxLines": 1
                 },
                 "color": { "$token": "on-surface" },
                 "width": "fill",
