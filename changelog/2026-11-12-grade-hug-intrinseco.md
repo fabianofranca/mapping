@@ -1,4 +1,4 @@
-# Grade hug sob pai max-content/min-content provada por teste — 2026-11-12 (épico `epic/grade-hug-intrinseco`, PR #0, MCP 0.38.2, schema v19)
+# Grade hug sob pai max-content/min-content provada por teste — 2026-11-12 (épico `epic/grade-hug-intrinseco`, PR #1768, MCP 0.38.2, schema v19)
 
 ## Alterado
 
