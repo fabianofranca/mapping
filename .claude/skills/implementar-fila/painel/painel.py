@@ -9,8 +9,11 @@ do coordenador (alerta acima de CONTEXT_LIMIT). `show` imprime `vagas:`, `começ
 Ficha incompleta (decisão 11 da #1532): `dep`, `toca` ou `fases` em `?` (ou `dep` e `toca` sem o campo) dá o motivo
 `ficha incompleta (<campos>)` e entra em `fichas a refazer:` do `show`; a etapa começada com `toca=?` segue conflitando
 com toda candidata (`arquivo ? com #N`). `exclusive=sim` na linha (`exclusive=` limpa) faz a etapa começar só com a fila
-sem etapa começada e não mesclada, e segura todas as outras enquanto roda (`exclusiva (espera a fila esvaziar)`,
-`exclusiva #N em andamento`). O `docs/FLOW.md`, o `docs/PROCESS.md` e os `.claude/skills/*/SKILL.md` se comparam por seção
+sem etapa começada e não mesclada (`exclusiva (espera a fila esvaziar)`). Começada e ainda não mesclada, ela segura todas
+as outras em qualquer estado (`em andamento`, `aguardando` com `started`, `esperando dono`, `falhou`), e o motivo diz o
+estado: `exclusiva #N <status>` (`em andamento` também para a que começa no mesmo cálculo). A saída é só do dono: com a ordem
+dele escrita no chat da fila, o coordenador grava `row '#N' exclusive=` e o `log` "exclusiva #N liberada pelo dono" (decisões
+2 e 3 da #1595). O `docs/FLOW.md`, o `docs/PROCESS.md` e os `.claude/skills/*/SKILL.md` se comparam por seção
 (`docs/FLOW.md#<slug>`, como o `docs/TESTING.md` por roteiro); `slug "<título>"` imprime o slug de um `##`.
 `ciWait` (o PR cujo CI espera o coordenador, ex. `PR #7`) e `ciWaitAt` (desde quando; `ciWait=` limpa os
 dois) entram na linha `CI esperando o coordenador:` do `show`; trocar ou limpar `child` não mexe neles.
@@ -27,7 +30,10 @@ publicado; o `show` o imprime). `published DIR` imprime `at: <ISO UTC>` (o valor
 da publicação), lista os arquivos a enviar, grava `meta.publishedAt` e `meta.publishing` (o que está em voo), mas
 **mantém** `unpublished`: só `published DIR --done`, rodado depois do `batch` bem-sucedido, o limpa (e só se nada
 foi gravado desde o `published`; senão o que foi gravado fica). Sem a confirmação (sessão morta, contexto estourado),
-o `show` segue dizendo o que falta e a conferência republica. `touch DIR` marca de novo os três arquivos.
+o `show` segue dizendo o que falta e a conferência republica. Na retomada, a cópia publicada traz o `publishing` do envio que
+deu certo: `published DIR --done` sobre ela, depois de baixar os três arquivos e antes do `show`, limpa o `unpublished` que ela
+traz (sem `publishing`, de painel antigo, imprime "nada em voo" e fica como não publicada; a próxima publicação resolve; decisão 4
+da #1595). `touch DIR` marca de novo os três arquivos.
 Custo (decisões 5 e 26 da #1532): `session DIR '#n' <id> kind=<tipo> [label=<código>]` acrescenta `{id, issue, kind, label,
 created}` a `meta.sessions` (sem `kind`, só o `sessions` da linha, como antes); `cost DIR <id> usd= ctx= [model= effort=
 served=] [issue= kind=]` grava o custo da sessão (`kind` obrigatório com id novo); `costs [--desde <ISO>] DIR` lê só o `meta`
@@ -1150,10 +1156,17 @@ def plan_block(plan, merged, done):
 
 
 def exclusive_block(r, taking):
-    """Decisão 12: a exclusiva só começa com ninguém começado; com uma exclusiva rodando, ninguém começa."""
+    """Decisão 12: a exclusiva só começa com ninguém começado; com uma exclusiva começada, ninguém começa.
+
+    Decisões 2 e 3 da #1595: a exclusiva segura a fila em qualquer estado, e o motivo diz o `status` da linha
+    (`falhou`, `esperando dono`, `aguardando` com `started`); `em andamento` e a que começa no mesmo cálculo dão
+    `em andamento`.
+    """
     for o in taking:
         if o.get("exclusive") == "sim":
-            return f"exclusiva {o['issue']} em andamento"
+            # `aguardando` sem `started` é a que começa no mesmo cálculo (entrou em `taking` agora)
+            state = "em andamento" if o["status"] == "aguardando" and not o.get("started") else o["status"]
+            return f"exclusiva {o['issue']} {state}"
     if r.get("exclusive") == "sim" and taking:
         return "exclusiva (espera a fila esvaziar)"
     return ""

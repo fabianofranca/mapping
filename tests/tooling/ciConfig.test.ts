@@ -825,8 +825,8 @@ describe('passo "Tamanho do dist/index.html"', () => {
   });
 });
 
-// Etapa #1614 (decisão 2): o `run:` do passo, extraído do ci.yml e rodado com `bash`, acha o teto no
-// JSON, no `ci.yml` antigo do checkout (ref anterior à etapa) ou dá erro.
+// Etapa #1614 (decisão 2) e etapa #1594 (decisão 5): o `run:` do passo, extraído do ci.yml e rodado
+// com `bash`, acha o teto só no JSON; sem ele (ref anterior à etapa #1614) ou com ele inválido, dá erro.
 describe('passo "Tamanho do dist/index.html": de onde vem o teto (etapa #1614)', () => {
   const build = jobOf(ci, 'build');
   const stepAt = build.indexOf('- name: Tamanho do dist/index.html');
@@ -893,7 +893,7 @@ describe('passo "Tamanho do dist/index.html": de onde vem o teto (etapa #1614)',
     );
   });
 
-  it('sem o JSON e com um ci.yml antigo (INDEX_HTML_MAX_BYTES: <n>): usa esse n', () => {
+  it('sem o JSON e com um ci.yml antigo: sai com 1 e o ::error que manda trazer a main', () => {
     const r = runStep((dir) => {
       mkdirSync(path.join(dir, '.github/workflows'), { recursive: true });
       writeFileSync(
@@ -901,8 +901,9 @@ describe('passo "Tamanho do dist/index.html": de onde vem o teto (etapa #1614)',
         'jobs:\n  build:\n    env:\n      # Orçamento.\n      INDEX_HTML_MAX_BYTES: 2500\n',
       );
     });
-    expect(r.status).toBe(0);
-    expect(r.summary).toContain(`${SIZE} bytes (0 KiB) de 2500 bytes`);
+    expect(r.status).toBe(1);
+    expect(r.out).toContain('ref anterior à etapa #1614: traga a main');
+    expect(r.summary).not.toContain('2500');
   });
 
   it('sem o JSON e sem o ci.yml antigo: sai com 1 e o ::error de teto não encontrado', () => {

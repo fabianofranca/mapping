@@ -1,4 +1,4 @@
-import { growRadius } from './strokeSides';
+import { growRadius, strokeAlignInset } from './strokeSides';
 import {
   absoluteBoxes,
   hasChildren,
@@ -70,8 +70,7 @@ function arc(cx: number, cy: number, r: number, from: number): Point[] {
 /** O retângulo que o traço percorre (o `align` e o `offset` movem a linha) e o raio de cada canto nele. */
 function contourOf(stroke: Stroke, width: number, height: number, radius: CornerRadius) {
   const offset = stroke.offset ?? 0;
-  const half = stroke.width / 2;
-  const align = stroke.align === 'inside' ? half : stroke.align === 'outside' ? -half : 0;
+  const align = strokeAlignInset(stroke);
   const d = align - offset;
   const w = Math.max(0.01, width - 2 * d);
   const h = Math.max(0.01, height - 2 * d);

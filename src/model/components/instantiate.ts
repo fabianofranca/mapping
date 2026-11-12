@@ -1945,7 +1945,12 @@ function createEngine(
   /**
    * Quantas trilhas a medição `hug` de uma grade adaptativa (`minColumnWidth`/`minRowHeight`) deu, por
    * tamanho resultante: a passagem final, que já recebe esse tamanho, repete o número em vez de
-   * recalculá-lo do tamanho encolhido (que daria menos trilhas).
+   * recalculá-lo do tamanho encolhido (que daria menos trilhas). Dois limites que dão o mesmo total
+   * com contagens diferentes ficam com a mais recente: com um pai `hug` que mede a grade duas vezes
+   * isso dá o desenho certo, nas duas ordens. O pai `max-content`/`min-content` resolve a largura
+   * antes de medir a grade, então ela é medida com um limite só (a largura do pai) e o memo lê a
+   * entrada dessa medida; está provado nas duas ordens em `tests/model/components/huggedCounts.test.ts`
+   * (#1692, #1749).
    */
   const huggedCounts = new Map<FrameTemplate, Map<number, number>>();
 
@@ -2618,6 +2623,44 @@ function createEngine(
       warnShort('engine.textTooBig', nodeName(node), measured - h);
   };
 
+  /**
+   * A palavra mais larga que a caixa (decisão 3 da #1631). O texto só quebra entre palavras, então a
+   * que não cabe fica sozinha numa linha; com `wrap: none` a linha é o parágrafo todo. Pulam-se só as
+   * linhas com espaço quebradas por palavra (já cabem) e as que o atalho do `wordSafeWidth` (letras ×
+   * corpo mais espaçamento) prova que cabem, o que só vale para letras estreitas (abaixo de U+2000:
+   * emoji e CJK podem passar de 1em). O resto se mede sem limite. Não usa
+   * `TextMetrics.width`, que o medidor da app prende no limite. Devolve a largura da maior, ou 0.
+   */
+  const widestWord = (lines: readonly string[], font: MeasureFont, w: number): number => {
+    const advance = font.size + font.letterSpacing;
+    const free: MeasureFont = { ...font };
+    delete free.maxLines;
+    delete free.ellipsis;
+    const spaced = font.wrap !== 'none';
+    const fitsByAdvance = (line: string): boolean =>
+      [...line].length * advance <= w &&
+      ![...line].some((ch) => (ch.codePointAt(0) ?? 0) >= 0x2000);
+    let widest = 0;
+    for (const line of lines) {
+      if ((spaced && line.includes(' ')) || fitsByAdvance(line)) continue;
+      widest = Math.max(widest, options.measure(line, free).width);
+    }
+    return widest;
+  };
+
+  /** Uma palavra (ou um chip) passa da largura do nó e nada corta o texto? */
+  const warnTextTooWide = (
+    node: TextTemplate,
+    widest: (() => number) | number,
+    font: MeasureFont,
+    w: number,
+  ): void => {
+    if (!checksOverflow(font, w)) return;
+    const measured = typeof widest === 'number' ? widest : widest();
+    if (measured > w + TEXT_TOLERANCE)
+      warnShort('engine.textTooBig', nodeName(node), measured - w);
+  };
+
   /** O texto da cena e, com `runs`, os trechos resolvidos e o layout deles na caixa. */
   const textContent = (
     node: TextTemplate,
@@ -2630,12 +2673,14 @@ function createEngine(
       const text = plainText(node);
       const measured = () => remembered(node, w, () => options.measure(text, font, w));
       warnTextTooTall(node, () => measured().height, font, w, h);
+      warnTextTooWide(node, () => widestWord(measured().lines ?? [], font, w), font, w);
       if (cited) recordLines(node, text === '' ? 0 : measuredLines(measured()));
       return { text, extra: {} };
     }
     const rich = richRuns(node, font);
     const runLayout = layoutRuns(rich.runs, richBase(node, font), options.measure, w);
     warnTextTooTall(node, runLayout.height, font, w, h);
+    warnTextTooWide(node, runLayout.width, font, w);
     const text = rich.scene.map((run) => run.text).join('');
     if (cited) recordLines(node, text === '' ? 0 : runLayout.lines.length);
     return { text, extra: { runs: rich.scene, runLayout } };
