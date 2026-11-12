@@ -7,4 +7,8 @@
 
 ## Sincronização
 
-A preencher no fechamento do épico.
+Gravado no artefato **Mapping** em 2026-11-12: versão 82 (a 81 levou os dois guias e a 82 o índice, com `lastChange`). Gravados: o guia do `ContainerDialog` (campo **Densidade** depois da cor de fundo, `Select` + número em "Personalizada", padrão 1x, aviso de 0,5 a 8 que bloqueia **Criar container**, sem sugestão nem Aplicar) e o do `MarkingPanel` (campo **Densidade** nos Detalhes do container, depois do Modo do desenho, com a sugestão em `muted` e o **Aplicar**). Sem token novo, então o contraste não muda: o texto novo só usa `muted` e `field-error`, já conferidos nos temas claro e escuro. Nenhum arquivo do DS foi apagado.
+
+## Ficou sem gravar
+
+- Prévias `components/ContainerDialog/preview.html` e `components/MarkingPanel/preview.html` sem o campo **Densidade** (continuam estáticas, renderizadas do app antes do épico). Motivo: o fechamento mexeu só nos guias (curado à mão, só o que a entrega mudou); as prévias são HTML renderizado do app e regravá-las exige abrir a app num navegador, o que esta sessão não fez.
