@@ -1,4 +1,4 @@
-# Orçamentos de layout estáveis — [Não lançado] (épico `epic/orcamentos-layout-estaveis`)
+# Orçamentos de layout estáveis — 2026-11-12 (épico `epic/orcamentos-layout-estaveis`)
 
 ## Pendências
 
@@ -7,3 +7,7 @@ Nenhuma. O épico só muda testes de desempenho e a documentação; nenhum compo
 ## Sincronização
 
 Sem impacto no DS: nada foi gravado no artefato.
+
+## Ficou sem gravar
+
+Nada: não havia pendência a gravar.
