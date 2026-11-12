@@ -1,4 +1,4 @@
-# Painel da fila com todas as fases do plano — 2026-11-12 (épico `epic/painel-fases-do-plano`, PR #0, MCP 0.36.0 sem mudança, schema v18)
+# Painel da fila com todas as fases do plano — 2026-11-12 (épico `epic/painel-fases-do-plano`, PR #1717, MCP 0.36.0 sem mudança, schema v18)
 
 ## Alterado
 
