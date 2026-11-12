@@ -59,7 +59,7 @@ import { buildLargeTypedProject } from '../model/largeTypedProject';
 import { material3Spec } from '../storage/packageFixture';
 import { componentSources, installFakeCanvas } from './harness';
 import { openWholeProject, wholeProject } from './wholeProjectScenario';
-import { expectBelow } from '../support/perfReport';
+import { expectBelow, measureBudget } from '../support/perfReport';
 
 // Orçamento de uma renderização do canvas (docs/ARCHITECTURE.md, "Desempenho") com o projeto grande já
 // indexado: Konva de verdade em jsdom, com um contexto 2D falso (nada é pintado;
@@ -587,15 +587,10 @@ describe('grade com texto', () => {
     `uma grade de 4 × 6 textos de 2 linhas (instanciar e desenhar) cabe em ${GRID_BUDGET_MS} ms`,
     BUDGET_OPTIONS,
     () => {
-      const once = (): number => {
-        const start = performance.now();
+      const run = (): void => {
         renderScene({ root: drawn().root, warnings: [] });
-        return performance.now() - start;
       };
-      for (let i = 0; i < 3; i++) once(); // Aquecimento.
-      const times = Array.from({ length: 15 }, once);
-      const median = [...times].sort((a, b) => a - b)[7] ?? Number.NaN;
-      expectBelow(median, GRID_BUDGET_MS);
+      expectBelow(measureBudget(run).median, GRID_BUDGET_MS);
     },
   );
 });
@@ -682,15 +677,10 @@ describe('intrínseco aninhado em 3 níveis', () => {
     `row max-content › 4 column min-content › 3 row × 2 textos (instanciar e desenhar) cabe em ${NESTED_BUDGET_MS} ms`,
     BUDGET_OPTIONS,
     () => {
-      const once = (): number => {
-        const start = performance.now();
+      const run = (): void => {
         renderScene({ root: drawn().root, warnings: [] });
-        return performance.now() - start;
       };
-      for (let i = 0; i < 3; i++) once(); // Aquecimento.
-      const times = Array.from({ length: 15 }, once);
-      const median = [...times].sort((a, b) => a - b)[7] ?? Number.NaN;
-      expectBelow(median, NESTED_BUDGET_MS);
+      expectBelow(measureBudget(run).median, NESTED_BUDGET_MS);
     },
   );
 });
