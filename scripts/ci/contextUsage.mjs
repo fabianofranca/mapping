@@ -106,14 +106,6 @@ export function locate({ config, sessionId, arquivo }) {
   return { path: all[0], fonte: 'recente' };
 }
 
-function option(argv, name) {
-  const i = argv.indexOf(name);
-  if (i < 0) return undefined;
-  const value = argv[i + 1];
-  if (value === undefined || value.startsWith('--')) throw new Error(USAGE);
-  return value;
-}
-
 function positive(raw, name) {
   if (raw === undefined) return undefined;
   const n = Number(raw);
@@ -122,15 +114,29 @@ function positive(raw, name) {
   return n;
 }
 
+const FLAGS = new Set(['--teto', '--max', '--arquivo']);
+
+// Lê da esquerda para a direita: cada flag leva um valor, uma vez só. Erro de uso lança com a
+// causa dita (token solto, flag desconhecida, repetida ou sem valor).
 function parseArgs(argv) {
-  const known = new Set(['--teto', '--max', '--arquivo']);
-  for (let i = 0; i < argv.length; i += 2)
-    if (!known.has(argv[i]))
-      throw new Error(`Argumento desconhecido: ${argv[i]}. ${USAGE}`);
+  const values = new Map();
+  for (let i = 0; i < argv.length; i++) {
+    const flag = argv[i];
+    if (!flag.startsWith('--')) throw new Error(`Argumento solto: ${flag}. ${USAGE}`);
+    if (!FLAGS.has(flag)) throw new Error(`Argumento desconhecido: ${flag}. ${USAGE}`);
+    if (values.has(flag)) throw new Error(`${flag} repetida: use uma vez só. ${USAGE}`);
+    const value = argv[i + 1];
+    if (value === undefined || value.startsWith('--'))
+      throw new Error(
+        `${flag} pede um valor, mas veio ${value === undefined ? 'nada' : `"${value}"`} (caminho que começa com "--": use "./"). ${USAGE}`,
+      );
+    values.set(flag, value);
+    i++;
+  }
   return {
-    teto: positive(option(argv, '--teto'), '--teto') ?? DEFAULT_CEILING,
-    max: positive(option(argv, '--max'), '--max'),
-    arquivo: option(argv, '--arquivo'),
+    teto: positive(values.get('--teto'), '--teto') ?? DEFAULT_CEILING,
+    max: positive(values.get('--max'), '--max'),
+    arquivo: values.get('--arquivo'),
   };
 }
 
