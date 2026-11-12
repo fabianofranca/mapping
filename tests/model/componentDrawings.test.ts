@@ -283,6 +283,51 @@ describe('overflow', () => {
     expect(drawing.overflow).toBe(true);
   });
 
+  it('palavra mais larga que a caixa do texto também marca overflow (#1631)', () => {
+    const word = testCatalog({
+      ...COMPONENTS,
+      text: {
+        format: 'mapping-component',
+        formatVersion: 1,
+        id: 'text',
+        name: 'text',
+        size: { width: 100, height: 40 },
+        template: {
+          type: 'frame',
+          layout: { type: 'none' },
+          children: [
+            {
+              type: 'text',
+              name: 'rotulo',
+              text: 'Confirmar',
+              width: 30,
+              height: 40,
+              font: { size: 10, lineHeight: 12 },
+            },
+          ],
+        },
+      },
+    });
+    const p = addComponentMarking(
+      componentProject(),
+      word,
+      {
+        markingId: 'T1',
+        annotationId: 'A_T1',
+        containerId: 'I1',
+        parentId: null,
+        specId: SPEC_ID,
+        typeId: 'text',
+      },
+      approximateMeasurer,
+    );
+    const drawing = createDrawingCache()(p, word, approximateMeasurer, 0).get('T1')!;
+    expect(drawing.warnings).toMatchObject([
+      { code: 'engine.textTooBig', params: { name: 'rotulo' } },
+    ]);
+    expect(drawing.overflow).toBe(true);
+  });
+
   it('folha que cabe não estoura; o aviso do motor marca overflow', () => {
     let p = add(componentProject(), 'T1', 'text');
     p = add(p, 'W', 'wide', { center: { x: 600, y: 600 } });
