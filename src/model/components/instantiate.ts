@@ -1074,13 +1074,19 @@ function createEngine(
     return { count: 1, vertical: entry.vertical };
   };
 
-  /** As trilhas da grade: a primeira das quatro chaves presentes; nenhuma = uma coluna. */
+  /**
+   * As trilhas da grade: a primeira das quatro chaves que tem valor (`columns` e `minColumnWidth`
+   * por expressão escolhem `Fixed` ou `Adaptive` por um campo); sem valor em nenhuma, a primeira
+   * presente (inválida: uma trilha, com o aviso); nenhuma chave = uma coluna.
+   */
   const gridTracksOf = (spec: LayoutSpec): GridTracks => {
-    for (const entry of TRACK_KEYS) {
-      const track = trackOf(spec, entry);
-      if (track !== undefined) return track;
-    }
-    return { count: 1, vertical: true };
+    const present = TRACK_KEYS.filter((entry) => spec[entry.key] !== undefined);
+    const informed = present.find((entry) => {
+      const value = ev<unknown>(spec[entry.key] as Expr<unknown>, undefined);
+      return !(value === undefined || value === null || String(value).trim() === '');
+    });
+    const entry = informed ?? present[0];
+    return (entry && trackOf(spec, entry)) ?? { count: 1, vertical: true };
   };
 
   /** O layout `grid`: `justify` é o eixo das trilhas e `align` o das linhas (só os quatro valores). */

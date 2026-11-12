@@ -58,8 +58,12 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - `background` e o fundo seguem o papel do tema nos dois modos; `none` não desenha fundo (o `Modifier.background` é opcional).
 - O `padding` recua a área do conteúdo (o fundo cobre o Box inteiro, como `Modifier.background(...).padding(...)`).
 - O padrão de `contentAlignment` é `TopStart`, o do `Box.kt`.
+- `contentAlignment` vira o `align` (vertical) e o `justify` (horizontal) do slot, que agora é um `layout: none` alinhado (formato 4): `Top*`, `Center*` e `Bottom*` dão `start`, `center` e `end` na altura, e `*Start`, `*Center` e `*End` dão o mesmo na largura, por `$switch` sobre o campo. O **Arrumar** põe cada filha sozinha na caixa do slot pelo alinhamento (as filhas continuam sobrepostas, como no `BoxMeasurePolicy`, `Box.kt` linhas 80 a 90 e 124 a 220, onde `Alignment.align` posiciona cada filha); com `TopStart` o Arrumar não mexe nas filhas, cada uma fica onde a pessoa a marcou.
+- `height` `fill` ou `fixed` mantém a altura da marcação no Arrumar, que é onde o alinhamento vertical aparece; com `wrap` (o padrão) o Box abraça as filhas e a altura é a da maior.
 
 **O que ainda difere do Compose**
 
-- `contentAlignment` só aparece no rótulo da área do conteúdo: o formato não alinha filhas sobrepostas (o layout de slot `row`/`column` empilha, o do Box sobrepõe), então cada filha fica onde a pessoa a marcou.
+- O alinhamento só age quando a pessoa pede o **Arrumar**: ao marcar uma filha nova, ela fica onde foi marcada, e mover uma filha à mão a tira do alinhamento até o próximo Arrumar. O Compose alinha a cada medição.
+- O `Modifier.align(...)` por filha (`BoxScope.align`, `Box.kt` linha 249) não existe: o `contentAlignment` vale para todas as filhas; para uma filha fora da regra, deixe o `TopStart` e posicione-a à mão.
+- O `weight` só aparece no rótulo: o Arrumar não lê campos das filhas (o `weight` do formato é de nós do template).
 - `propagateMinConstraints` e as restrições mínimas do pai não são campos do tipo.

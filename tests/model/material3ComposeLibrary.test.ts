@@ -271,11 +271,11 @@ describe('biblioteca Material 3 (Compose)', () => {
     expect(report.warnings.map((w) => `${w.file}:${w.path}: ${w.message}`)).toEqual([]);
   });
 
-  it('é a formatVersion 15, versão 8, com tokens nos modos light e dark e a plataforma compose no androidx fixado no commit', () => {
+  it('é a formatVersion 15, versão 9, com tokens nos modos light e dark e a plataforma compose no androidx fixado no commit', () => {
     expect(spec).toMatchObject({
       formatVersion: 15,
       id: 'material3-compose',
-      version: 8,
+      version: 9,
       icons: 'icons/material-icons.json',
     });
     expect(spec.tokens?.modes).toEqual(['light', 'dark']);

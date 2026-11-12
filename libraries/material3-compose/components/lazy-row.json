@@ -139,7 +139,9 @@
             },
             "default": "start"
           },
-          "reverse": { "$eq": ["reverseLayout", "true"] },
+          "reverse": {
+            "$eq": ["reverseLayout", "true"]
+          },
           "justify": {
             "$if": {
               "$eq": ["reverseLayout", "true"]
@@ -169,7 +171,8 @@
               "default": "start"
             }
           }
-        }
+        },
+        "clip": true
       }
     ]
   }

@@ -174,6 +174,12 @@ function gridKey(
   return n > 0 && Number.isFinite(n) ? n : null;
 }
 
+/** A expressão não dá valor (campo vazio, `$if` sem `else`): a chave de trilha não foi informada. */
+function isAbsent(expr: Expr<number> | undefined, values: FieldValues): boolean {
+  const value = evaluate<unknown>(expr as Expr<unknown>, values, undefined);
+  return value === undefined || value === null || String(value).trim() === '';
+}
+
 /** As trilhas da grade; a chave inválida (ou nenhuma) cai em uma trilha da orientação dela. */
 function resolveGrid(layout: LayoutSpec, values: FieldValues): ResolvedGrid {
   const keys = [
@@ -182,12 +188,33 @@ function resolveGrid(layout: LayoutSpec, values: FieldValues): ResolvedGrid {
     { expr: layout.rows, integer: true, vertical: false, min: false },
     { expr: layout.minRowHeight, integer: false, vertical: false, min: true },
   ];
-  const key = keys.find((k) => k.expr !== undefined);
+  const present = keys.filter((k) => k.expr !== undefined);
+  // A primeira chave que tem valor decide (`columns` e `minColumnWidth` por expressão escolhem o
+  // `Fixed` ou o `Adaptive` por um campo); sem valor em nenhuma, vale a primeira presente.
+  const key = present.find((k) => !isAbsent(k.expr, values)) ?? present[0];
   const orientation = key?.vertical === false ? 'horizontal' : 'vertical';
   if (key === undefined) return { count: 1, orientation };
   const value = gridKey(key.expr, values, key.integer);
   if (value === null || value === undefined) return { count: 1, orientation };
   return key.min ? { min: value, orientation } : { count: value, orientation };
+}
+
+/**
+ * O slot `none` com `align` (vertical) e `justify` (horizontal): `start` (padrão), `center`, `end`
+ * e `stretch`, o `Box(contentAlignment)` do Compose. Sem eles é o `none` de sempre (cada filha
+ * fica no próprio retângulo).
+ */
+function resolveNoneLayout(layout: LayoutSpec, values: FieldValues): ResolvedSlotLayout {
+  const align = choice(layout.align, NONE_ALIGNS, 'start', values);
+  const justify = choice(layout.justify, NONE_JUSTIFIES, 'start', values);
+  return align === 'start' && justify === 'start'
+    ? NO_LAYOUT
+    : { ...NO_LAYOUT, align, justify };
+}
+
+/** O slot `none` sem alinhamento: o Arrumar deixa as filhas onde estão. */
+export function isPlainNone(layout: ResolvedSlotLayout): boolean {
+  return layout.type === 'none' && layout.align === 'start' && layout.justify === 'start';
 }
 
 /** Avalia o layout do slot com os valores da instância (`gap`/`padding` podem ser expressões). Sem layout → type 'none'. */
@@ -198,7 +225,7 @@ export function resolveSlotLayout(
   const layout = slot.layout;
   if (!layout) return NO_LAYOUT;
   const type = choice(layout.type, LAYOUT_TYPES, 'none', values);
-  if (type === 'none') return NO_LAYOUT;
+  if (type === 'none') return resolveNoneLayout(layout, values);
   const gap = Math.max(
     0,
     toNumber(evaluate<unknown>(layout.gap as Expr<unknown>, values, 0), 0),
@@ -364,6 +391,7 @@ export function layoutChildren(
   children: readonly LayoutChild[],
 ): Box[] {
   if (layout.type === 'grid') return layoutGrid(slot, layout, children);
+  if (layout.type === 'none') return layoutOverlaid(slot, layout, children);
   const geometry = slotGeometry(slot, layout);
   const { row } = geometry;
   const wrapped = layout.wrap !== 'none';
@@ -392,6 +420,24 @@ export function layoutChildren(
   return out;
 }
 
+/** As filhas do slot `none` alinhado: cada uma, sozinha, na caixa do slot (`justify` na largura, `align` na altura). */
+function layoutOverlaid(
+  slot: Box,
+  layout: ResolvedSlotLayout,
+  children: readonly LayoutChild[],
+): Box[] {
+  return children.map((child) => {
+    const x = alignInCell(layout.justify, slot.width, child.box.width);
+    const y = alignInCell(layout.align, slot.height, child.box.height);
+    return roundedBox({
+      x: slot.x + x.pos,
+      y: slot.y + y.pos,
+      width: x.size,
+      height: y.size,
+    });
+  });
+}
+
 /**
  * A extensão que os filhos ocupam no slot, sem o padding (o que o `hug` do componente com slot
  * mede): a soma com os `gap` no eixo principal e a maior extensão no cruzado (com `baseline`, do
@@ -405,6 +451,11 @@ export function contentExtent(
   available: number | null,
 ): { width: number; height: number } {
   if (layout.type === 'grid') return gridExtent(layout, children, available);
+  if (layout.type === 'none')
+    return {
+      width: Math.max(0, ...children.map((c) => c.box.width)),
+      height: Math.max(0, ...children.map((c) => c.box.height)),
+    };
   const row = layout.type === 'row';
   const mains = children.map((c) => (row ? c.box.width : c.box.height));
   const lines =
@@ -629,7 +680,7 @@ function childTargets(
   const slot = findSlot(component);
   if (!slot) return null;
   const layout = resolveSlotLayout(slot, instance.values);
-  if (layout.type === 'none') return null;
+  if (isPlainNone(layout)) return null;
   const box = slotBox(component, instance, measure);
   if (!box) return null;
   const baselines =

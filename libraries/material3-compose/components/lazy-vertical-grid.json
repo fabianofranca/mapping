@@ -27,45 +27,15 @@
     "name": "lazy-vertical-grid",
     "clip": false,
     "layout": {
-      "type": "column",
-      "padding": {
-        "$field": "contentPadding",
-        "default": 0
-      }
+      "type": "none"
     },
     "children": [
       {
         "type": "slot",
         "name": "content",
-        "width": "fill",
-        "height": "fill",
         "label": {
           "$concat": [
-            "LazyVerticalGrid · ",
-            {
-              "$if": {
-                "$has": "minColumnWidth"
-              },
-              "then": {
-                "$concat": [
-                  "Adaptive(",
-                  {
-                    "$field": "minColumnWidth"
-                  },
-                  ")"
-                ]
-              },
-              "else": {
-                "$concat": [
-                  "Fixed(",
-                  {
-                    "$field": "columns",
-                    "default": 2
-                  },
-                  ")"
-                ]
-              }
-            },
+            "LazyVerticalGrid",
             " · ",
             {
               "$field": "width",
@@ -75,34 +45,6 @@
             {
               "$field": "height",
               "default": "wrap"
-            },
-            {
-              "$if": {
-                "$has": "verticalSpacing"
-              },
-              "then": {
-                "$concat": [
-                  " · v ",
-                  {
-                    "$field": "verticalSpacing"
-                  }
-                ]
-              },
-              "else": ""
-            },
-            {
-              "$if": {
-                "$has": "horizontalSpacing"
-              },
-              "then": {
-                "$concat": [
-                  " · h ",
-                  {
-                    "$field": "horizontalSpacing"
-                  }
-                ]
-              },
-              "else": ""
             },
             {
               "$if": {
@@ -121,8 +63,41 @@
           ]
         },
         "layout": {
-          "type": "none"
-        }
+          "type": "grid",
+          "columns": {
+            "$if": {
+              "$not": {
+                "$has": "minColumnWidth"
+              }
+            },
+            "then": {
+              "$field": "columns",
+              "default": 2
+            }
+          },
+          "minColumnWidth": {
+            "$field": "minColumnWidth"
+          },
+          "gap": {
+            "$field": "horizontalSpacing",
+            "default": 0
+          },
+          "lineGap": {
+            "$field": "verticalSpacing",
+            "default": 0
+          },
+          "padding": {
+            "$field": "contentPadding",
+            "default": 0
+          }
+        },
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "clip": true
       }
     ]
   }

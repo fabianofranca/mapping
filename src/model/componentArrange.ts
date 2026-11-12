@@ -2,6 +2,7 @@ import {
   findSlot,
   contentExtent,
   layoutChildren,
+  isPlainNone,
   resolveSlotLayout,
   slotBoxOfScene,
   type ResolvedSlotLayout,
@@ -87,7 +88,7 @@ function containerOf(
   if (slot === undefined) return null;
   const values = drawingValues(p, mc.annotation, mc.type).values;
   const layout = resolveSlotLayout(slot, values);
-  if (layout.type === 'none') return null;
+  if (isPlainNone(layout)) return null;
   const kids = projectIndex(p).children.get(markingId) ?? [];
   if (kids.length === 0) return null;
   return {

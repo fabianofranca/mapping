@@ -59,10 +59,11 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - `verticalArrangement` vira o `justify` do slot (`Top` `start`, `Center` `center`, `Bottom` `end`, `SpaceBetween` `space-between`) e `horizontalAlignment` vira o `align` (`Start` `start`, `CenterHorizontally` `center`, `End` `end`), por `$switch` (formato 4: expressão em `layout.justify` e `layout.align`).
 - `spacing` é o `gap` e `contentPadding` é o `padding` do slot, como `Arrangement.spacedBy` e `PaddingValues`.
 - `reverseLayout` liga o `layout.reverse` do slot; com a distribuição padrão (campo vazio) o bloco fica no fim do eixo, como o `Arrangement.Bottom` que o Compose usa nessa combinação. Com `Top` explícito o bloco fica no topo, na ordem invertida; com `Bottom` explícito, no fim.
+- O slot tem `clip: true` (formato 4): a filha que passa da caixa do componente é cortada na borda, como o `clipScrollableContainer` que o `scrollingContainer` aplica ao `LazyColumn` (`ScrollingContainer.kt` linha 56; `LazyList.kt` linhas 143 a 154). A caixa cortada é a do componente inteiro, com o `contentPadding` dentro dela, como no Compose.
 - Nenhuma cor, fonte ou raio é desenhado; o rótulo do slot mostra o resumo da configuração.
 
 **O que ainda difere do Compose**
 
 - `SpaceAround` e `SpaceEvenly` viram `space-around` e `space-evenly` do `justify`.
 - A ordem das filhas se inverte com `reverseLayout` (`layout.reverse`), como no Compose.
-- Rolagem, `state`, `flingBehavior` e a composição preguiçosa não existem num desenho estático.
+- Rolagem, `state`, `flingBehavior` e a composição preguiçosa não existem num desenho estático: o que passa da caixa é cortado e não há como rolar até lá.

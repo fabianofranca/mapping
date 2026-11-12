@@ -130,7 +130,7 @@ A rodada completa (R0 a R25) roda em **5 sessões ao mesmo tempo**, uma por bloc
 | 2     | R0, seção 6, R15 e R25                                                         | 138    |
 | 3     | R0, seção 6, R12, R18 e R19                                                    | 113    |
 | 4     | R0, seção 6, R4, R6.8a a R6.11, R9, R10, R13, R16, R22, R24 e a passada visual | 136    |
-| 5     | R0, seção 6, R11, R17, R20, R21 e R23                                          | 115    |
+| 5     | R0, seção 6, R11, R17, R20, R21 e R23                                          | 119    |
 
 São 5 blocos por decisão do dono (2026-11-09). A passada visual fica no bloco 4 (decisão 6 da etapa #841). O limite do guia gerado de cada bloco (`MAX_BLOCK_GUIDE_CHARS`, no `tests/tooling/roundBlocks.test.ts`), os tamanhos de antes, as dependências por bloco e as linhas de base: `cloud.mjs secao consulta.historico`.
 
