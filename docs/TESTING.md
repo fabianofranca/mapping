@@ -341,7 +341,7 @@ Também conta como achado: lentidão perceptível (mais de um segundo para respo
 <!-- /roteiros -->
 <!-- roteiros: R17 -->
 
-- R17 usa a pasta própria `tela-m3` (criada pelo MCP no R17.2), o `material3-compose.zip` (conferido e descompactado em `RAIZ/m3` no R17.1, aplicado na app no R17.3), o MCP por stdio e, nos passos R17.3, R17.5 e R17.9, a app; R17.1 a R17.9 seguem em sequência, sem depender de outro roteiro. O R17.22 ao R17.40 usam também o ImageMagick (MF5, MC6, L5 e densidade); a app, nos R17.22, R17.30, R17.31, R17.34, R17.35 a R17.39. Sem o MCP, marque todos "não executado (sem MCP)".
+- R17 usa a pasta própria `tela-m3` (criada pelo MCP no R17.2), o `material3-compose.zip` (conferido e descompactado em `RAIZ/m3` no R17.1, aplicado na app no R17.3), o MCP por stdio e, nos passos R17.3, R17.5 e R17.9, a app; R17.1 a R17.9 seguem em sequência, sem depender de outro roteiro. O R17.22 ao R17.42 usam também o ImageMagick (MF5, MC6, L5, densidade e hero); a app, nos R17.22, R17.30, R17.31, R17.34, R17.35 a R17.39 e R17.42. Sem o MCP, marque todos "não executado (sem MCP)".
 
 <!-- /roteiros -->
 <!-- roteiros: R18 -->
