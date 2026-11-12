@@ -8,6 +8,7 @@ import {
   type LayerDrawing,
 } from '../../src/canvas/components/componentLayer';
 import { renderScene } from '../../src/canvas/components/renderScene';
+import * as instantiateModule from '../../src/model/components/instantiate';
 import {
   type FrameNode,
   absoluteBoxes,
@@ -253,6 +254,59 @@ function loadMaterial3(): Library {
   return loadLibrary(files);
 }
 
+/** Contagem, por chave, do que o layout novo usa nos componentes do fixture (JSON cru, sem o parse). */
+interface LayoutKeys {
+  /** Quadros ou slots `none` com `align` ou `justify`: a sobreposição alinhada. */
+  alignedNone: number;
+  grid: number;
+  /** `weight` num nó do template (não o `weight` da fonte, que vive em `font`). */
+  weight: number;
+  /** `"max-content"` em `width`, `height` ou `sizing`. */
+  maxContent: number;
+}
+
+function layoutKeysOf(dir: string): LayoutKeys {
+  const keys: LayoutKeys = { alignedNone: 0, grid: 0, weight: 0, maxContent: 0 };
+  const node = (value: unknown): void => {
+    if (typeof value !== 'object' || value === null) return;
+    const n = value as Record<string, unknown>;
+    const layout = n.layout as Record<string, unknown> | undefined;
+    if (
+      layout?.type === 'none' &&
+      (layout.align !== undefined || layout.justify !== undefined)
+    )
+      keys.alignedNone++;
+    if (layout?.type === 'grid') keys.grid++;
+    if (n.weight !== undefined) keys.weight++;
+    if (n.width === 'max-content') keys.maxContent++;
+    if (n.height === 'max-content') keys.maxContent++;
+    for (const child of (n.children as unknown[] | undefined) ?? []) node(child);
+    const repeat = n.repeat as { template?: unknown } | undefined;
+    if (repeat?.template !== undefined) node(repeat.template);
+  };
+  for (const name of readdirSync(join(dir, 'components')).filter((f) =>
+    f.endsWith('.json'),
+  )) {
+    const file = JSON.parse(readFileSync(join(dir, 'components', name), 'utf8')) as {
+      sizing?: Record<string, unknown>;
+      template: unknown;
+    };
+    if (file.sizing?.width === 'max-content') keys.maxContent++;
+    if (file.sizing?.height === 'max-content') keys.maxContent++;
+    node(file.template);
+  }
+  return keys;
+}
+
+/** Os orçamentos da tela inteira só valem no layout novo (decisão 23 da #1078): confere antes de medir. */
+function expectNewLayout(): void {
+  const keys = layoutKeysOf(MATERIAL3_DIR);
+  expect(keys.alignedNone, 'none alinhado').toBeGreaterThan(0);
+  expect(keys.grid, 'grid').toBeGreaterThan(0);
+  expect(keys.weight, 'weight').toBeGreaterThan(0);
+  expect(keys.maxContent, 'max-content').toBeGreaterThan(0);
+}
+
 describe('desenho de componentes (Material 3)', () => {
   const library = loadMaterial3();
   const typeOf = new Map(library.types.map((type) => [type.id, type]));
@@ -279,6 +333,10 @@ describe('desenho de componentes (Material 3)', () => {
     expect(library.problems).toEqual([]);
     expect(library.types.filter((type) => type.component)).toHaveLength(15);
     expect(M3_SCREEN.instances).toHaveLength(21);
+  });
+
+  it('o fixture está no layout novo: none alinhado, grid, weight e max-content presentes', () => {
+    expectNewLayout();
   });
 
   budgetIt(
@@ -314,6 +372,7 @@ describe('desenho de componentes (Material 3)', () => {
     `uma tela de 21 instâncias (instanciar e desenhar) cabe em ${RENDER_BUDGET_MS} ms`,
     BUDGET_OPTIONS,
     () => {
+      expectNewLayout();
       const placements = new Map([['screen', { x: 0, y: 0, scale: 1 }]]);
       const once = (): number => {
         const start = performance.now();
@@ -736,6 +795,7 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
     `o quadro inteiro (21 desenhos reinstanciados e refeitos) cabe em ${FULL_FRAME_BUDGET_MS} ms`,
     BUDGET_OPTIONS,
     () => {
+      expectNewLayout();
       const { controller, sources } = setup();
       const whole = (): number => {
         const start = performance.now();
@@ -769,6 +829,31 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
       controller.destroy();
     },
   );
+
+  it('20 quadros de pan e zoom da tela no layout novo fazem 0 instanciações (decisão 22)', () => {
+    expectNewLayout();
+    const { controller, derived, sources } = setup();
+    const before = new Map(derived.componentScenes.value);
+    expect(before.size).toBe(21);
+    const instantiated = vi.spyOn(instantiateModule, 'instantiate');
+    const render = vi.spyOn(ComponentLayerRenderer.prototype, 'render');
+    for (let step = 0; step < 20; step++) {
+      controller.zoomBy(step % 2 === 0 ? 1.1 : 1 / 1.1);
+      controller.centerOnPoint({ x: 200 + step * 3, y: 400 });
+      flush();
+    }
+    expect(instantiated).not.toHaveBeenCalled();
+    expect(render).not.toHaveBeenCalled();
+    const after = derived.componentScenes.value;
+    for (const [id, drawing] of before) expect(after.get(id)).toBe(drawing);
+    // Controle: o espião enxerga uma reinstanciação de verdade (as fontes mudaram).
+    sources.fontsEpoch.value++;
+    flush();
+    expect(instantiated).toHaveBeenCalled();
+    instantiated.mockRestore();
+    render.mockRestore();
+    controller.destroy();
+  });
 
   budgetIt(
     `o zoom da tela (sem refazer os desenhos) cabe em ${RENDER_BUDGET_MS} ms`,

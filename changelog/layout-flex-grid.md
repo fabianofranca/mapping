@@ -17,6 +17,7 @@
 
 - Teto do `dist/index.html` subiu 16 KiB, de 2.080.768 para 2.097.152, pela regra do orçamento (a grade, os pesos e as mensagens novas da L3).
 - O desenho dos componentes ficou mais rápido ao medir texto repetido: o mesmo texto, com a mesma fonte e o mesmo limite de largura, é medido uma vez só, na app e no servidor MCP (nos 15 componentes do exemplo Material 3, as medidas por instância caíram de 69 para 26). Nenhum desenho muda.
+- O layout novo não custa desempenho: uma tela de exemplo inteira (21 componentes da Material 3, com sobreposição alinhada, grade, pesos e `max-content`) continua cabendo nos mesmos orçamentos de antes (16 ms para instanciar e desenhar, 24 ms para refazer o quadro inteiro), e mover ou dar zoom no canvas não reinstancia nenhum componente.
 - **Material 3 (Compose) v9 usa o layout novo.** A atualização da biblioteca é aditiva (sem migração; nenhum campo mudou):
   - `box` alinha as filhas pelo `contentAlignment` no Arrumar (`Center`, `BottomEnd`…); com `height` `fill` ou `fixed` a altura da marcação fica (é onde o alinhamento vertical aparece);
   - `lazy-vertical-grid` desenha as filhas numa grade de verdade: `columns` (`GridCells.Fixed`) ou `minColumnWidth` (`GridCells.Adaptive`), `horizontalSpacing` entre as colunas e `verticalSpacing` entre as linhas; o `contentPadding` passou do quadro para o slot, dentro da caixa cortada;

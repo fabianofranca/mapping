@@ -1,6 +1,6 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "m3-column",
   "name": "Column",
   "description": "Container vertical do Compose: os filhos se empilham pela ordem, com spacing e padding.",

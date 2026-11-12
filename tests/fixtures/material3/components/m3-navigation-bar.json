@@ -1,6 +1,6 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "m3-navigation-bar",
   "name": "Navigation bar",
   "description": "Navigation bar de 80 dp com três destinos; indicador ativo 64 × 32 em secondary container.",
@@ -29,7 +29,8 @@
     "type": "frame",
     "name": "navigation bar",
     "layout": {
-      "type": "row",
+      "type": "grid",
+      "columns": 3,
       "padding": [0, 8]
     },
     "fill": "#F3EDF7",
@@ -52,7 +53,7 @@
             "width": 64,
             "height": 32,
             "layout": {
-              "type": "row",
+              "type": "none",
               "align": "center",
               "justify": "center"
             },
@@ -141,7 +142,7 @@
             "width": 64,
             "height": 32,
             "layout": {
-              "type": "row",
+              "type": "none",
               "align": "center",
               "justify": "center"
             },
@@ -230,7 +231,7 @@
             "width": 64,
             "height": 32,
             "layout": {
-              "type": "row",
+              "type": "none",
               "align": "center",
               "justify": "center"
             },

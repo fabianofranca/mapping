@@ -499,6 +499,22 @@ Vale para toda imagem que entra pela app (arquivo, câmera, colar, arrastar e tr
   motor novo, num comentário da #1078 ("Linha de base de desempenho (L1)"); a última fase repete e compara na mesma tabela, e um
   caso que piorou mais de 25% sem explicação é defeito. Nenhum orçamento chegou perto do limite na linha de base (o mais
   próximo é o quadro inteiro da tela de componentes no `CanvasController`: ~6,6 de 24 ms).
+- **Orçamentos do layout Flexbox e CSS Grid** (decisão 23 da #1078; `tests/canvas/renderPerformance.test.ts`, no `npm run test:perf`,
+  com 3 aquecimentos, mediana de 15, `retry: 1` e o `approximateMeasurer`; nenhum orçamento de antes foi afrouxado). **Grade com
+  texto** (L3): um `grid` de 4 colunas e 6 linhas, com 24 textos de 2 linhas, instanciado e desenhado no Konva em ≤ 4 ms (o pior
+  componente de antes; mede ~1,2 ms). **Intrínseco aninhado em 3 níveis** (L4): `row` `max-content` › 4 `column` `min-content` › 3
+  `row` com 2 textos, em ≤ 4 ms (~1,5 ms) e com no máximo uma chamada ao medidor por (texto, limite) distinto. **A tela de exemplo
+  inteira no layout novo** (L6): o fixture `tests/fixtures/material3` está na `formatVersion` 4 e usa a sobreposição alinhada (`none`
+  com `align`/`justify`), a `grid`, o `weight` e o `max-content` onde o Compose usa `Box`, grade, `weight` e `IntrinsicSize`; as 21
+  instâncias da tela, instanciadas e desenhadas, cabem em 16 ms (~4,5 ms) e o quadro inteiro no `CanvasController` (21 desenhos
+  reinstanciados e refeitos), em 24 ms (~6,2 ms). O teste confere antes de medir que o fixture de fato usa as quatro chaves (contagem
+  por chave no JSON), para o orçamento não passar a medir o layout antigo. **Pan e zoom não instanciam nada** (decisão 22): com a
+  tela do fixture no layout novo, 20 quadros de pan e zoom fazem 0 instanciações (espião em `instantiate`, com um controle que o vê
+  chamado quando as fontes mudam), 0 chamadas ao desenho dos componentes e devolvem os mesmos desenhos (por identidade). A L6
+  repetiu a linha de base (3 execuções) e comparou na mesma tabela, num comentário da #1078 ("Antes × depois do desempenho (L6)"):
+  nenhum caso piorou mais de 25% por causa da etapa (três oscilaram acima disso em até 0,22 ms, e a medida intercalada no mesmo
+  processo mostrou o mesmo tempo com o motor de antes, o de agora e o fixture novo), e as chamadas ao medidor ficaram em 26 nos 15
+  componentes e 40 na tela.
 - **Testes de crescimento** (`npm run test:scale` e os casos de crescimento do `npm run test:perf`): medem a mesma operação com n = 1.250 e 4n = 5.000 marcações do fixture
   `buildScaleProject` (`tests/model/scaleProject.ts`) e exigem a razão entre as medianas abaixo de **6×**. O teto é calibrado pela medição estável: código linear mede 4,4 a 5,1× nestes tamanhos, por efeito de memória (5.000 marcações saem do cache, 1.250 não; `projectIndex` sozinho dá ~5×), e o quadrático 13 a 17×; 6× separa os dois por mais de 2,5×. Passar do teto é defeito a corrigir,
   não teto a subir; caso com centro em 5× ou mais ganha um comentário no próprio caso com a origem do excedente. A medição intercala n e 4n: depois de um aquecimento igual nos dois tamanhos, cada rodada coleta o lixo uma vez e executa uma vez em n e uma em 4n, em ordem alternada por rodada, cada execução numa versão nova do projeto e com o `prepare` dela imediatamente antes, fora do tempo (21 rodadas por padrão; lote de repetições foi descartado porque sobe o centro). Rodam por `vitest.scale.config.ts` (projetos `scale-model`, `scale-app` e `scale-mcp`, arquivos `tests/scale/**/*.scale.ts`, um por vez),

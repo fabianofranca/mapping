@@ -1,6 +1,6 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "m3-text-field",
   "name": "Text field",
   "description": "Outlined text field: caixa de 56 dp, forma extra-small (4), rótulo flutuante e texto de apoio.",
@@ -81,7 +81,7 @@
               "left": 12,
               "top": 0
             },
-            "width": "hug",
+            "width": "max-content",
             "height": "hug",
             "layout": {
               "type": "row",
@@ -165,7 +165,8 @@
                     "else": "#49454F"
                   }
                 },
-                "width": "fill"
+                "width": "fill",
+                "weight": 1
               },
               {
                 "type": "path",
