@@ -1,5 +1,5 @@
 import type { LibraryFile } from './library';
-import type { Spec } from './spec';
+import type { Spec, SpecAnnotationType } from './spec';
 
 // O pacote da biblioteca no projeto: a pasta da especialização copiada para
 // `specs/<id>/` (docs/SPEC-FORMAT.md, "Biblioteca: o pacote"). Funções puras sobre caminhos;
@@ -32,7 +32,8 @@ export function isPackageFile(file: string): boolean {
 /**
  * A especialização cita arquivos do pacote? Só então ela precisa da pasta inteira. Cita quando
  * é `formatVersion` 4 ou mais e tem algum tipo com `component`, `doc` em texto ou `examples`,
- * ou `fonts`, `origins` ou `icons` na raiz. `migrations` não conta (é só o contrato de versão), nem o
+ * ou `fonts`, `origins` ou `icons` na raiz, ou alguma ficha de assinatura (`signature` no `code`,
+ * num caso de `variants` ou nas `sources` do tipo; v16). `migrations` não conta (é só o contrato de versão), nem o
  * `doc` objeto (`{ repo, path }`, o documento vive em outro repositório). As v1 a v3 nunca
  * citam. Quem não cita vale como arquivo isolado (`specs/<id>.json`), como a v1 a v3.
  */
@@ -46,8 +47,20 @@ export function usesPackageFiles(spec: Spec): boolean {
       (type) =>
         type.component !== undefined ||
         typeof type.doc === 'string' ||
-        (type.examples !== undefined && type.examples.length > 0),
+        (type.examples !== undefined && type.examples.length > 0) ||
+        citesSignature(type),
     ),
+  );
+}
+
+/** O tipo cita uma ficha de assinatura (no `code`, num caso de `variants` ou nas `sources`)? */
+function citesSignature(type: SpecAnnotationType): boolean {
+  return (
+    Object.values(type.code ?? {}).some(
+      (entry) =>
+        entry.signature !== undefined ||
+        Object.values(entry.variants?.cases ?? {}).some((c) => c.signature !== undefined),
+    ) || (type.sources ?? []).some((source) => source.signature !== undefined)
   );
 }
 

@@ -27,8 +27,8 @@ const GOOD = {
 };
 
 describe('formatVersion 15: tokens', () => {
-  it('a versão atual é 15 e a 14 continua aceita', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(15);
+  it('a versão atual é 16 e a 14 continua aceita', () => {
+    expect(SPEC_FORMAT_VERSION).toBe(16);
     expect(SPEC_FORMAT_VERSIONS).toContain(14);
   });
 

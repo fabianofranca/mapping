@@ -4,6 +4,7 @@ import { ModelError, projectIndex } from '../src/model';
 import { planChanges } from './changes';
 import { LocalFileChecker } from './codeFiles';
 import { codeHintsView, type CodeContext } from './codeViews';
+import { projectSignatureReader } from './signatureFiles';
 import { createProjectFolder } from './createProject';
 import { ToolError } from './errors';
 import { DEFAULT_MAX_SIZE, MAX_MAX_SIZE, MIN_MAX_SIZE } from './image/compose';
@@ -190,7 +191,11 @@ const READ_ONLY = { readOnlyHint: true, openWorldHint: false } as const;
 
 /** Visões que resolvem o `path` do `code`: o `workDir` do cliente limita a conferência de arquivos locais. */
 function codeContext(roots: Roots, refs: Refs): CodeContext {
-  return { refs, files: new LocalFileChecker(roots.workDir) };
+  return {
+    refs,
+    files: new LocalFileChecker(roots.workDir),
+    signatures: projectSignatureReader(roots, refs),
+  };
 }
 
 export function registerTools(

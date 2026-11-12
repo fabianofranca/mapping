@@ -12,6 +12,7 @@ import { TOKEN_NAME_PATTERN, type SpecTokens } from './components/tokens';
 import { isPackagePath, packagePathError, type PackagePathError } from './packagePaths';
 import { originCodeForText, originSpecCodeForText } from './messages/textLookup';
 import { childSets } from './specChildren';
+import { checkSignatureKeys } from './specSignature';
 import type { ModelMessageTemplateCode } from './messages';
 import {
   addSpecIssue,
@@ -29,7 +30,7 @@ function onlyFormat(version: number): SpecMsg {
   return specMsg('spec.onlyFormat', { version: String(version) });
 }
 
-// Formato da especialização (`formatVersion` 1 a 15), ver docs/SPEC-FORMAT.md. A versão 2 acrescenta `platforms` e `code`; a
+// Formato da especialização (`formatVersion` 1 a 16), ver docs/SPEC-FORMAT.md. A versão 2 acrescenta `platforms` e `code`; a
 // versão 1 é a 2 sem plataformas e sem `code`; a versão 3 é a 2 mais `sources` (origens
 // externas nos tipos e nos campos, inclusive nas colunas de `table`); a versão 4 é a 3 mais a
 // biblioteca: o pacote (pasta da especialização) com `component`, `doc` e `examples` nos
@@ -55,7 +56,10 @@ function onlyFormat(version: number): SpecMsg {
 // a versão 14 é a 13 mais `accepts.annotations` (a anotação inteira como alvo de um campo ou coluna
 // `ref`); a versão 15 é a 14 mais tokens, ícones, `structural` e `origins[].kind` (`tree` ou
 // `measured`: a origem medida, só com `system`, `kind`, `name` e `booleans`; a árvore vem da op
-// `import_measured` do MCP).
+// `import_measured` do MCP); a versão 16 é a 15 mais a ficha de assinatura (etapa #1079): `fieldModels` na
+// raiz e, no `code` (e em cada caso de `variants`), `signature`, `ignore`, `calls` e `formats`, com
+// `params` por caminho (`colors.containerColor`) ou posicional (`#0`), mais `signature` nas `sources`
+// do tipo (ver `specSignature.ts`).
 // O zod daqui é a fonte da verdade; `docs/spec.schema.json` o espelha para quem
 // não usa TypeScript. Sem APIs de navegador: reutilizável pelo servidor MCP.
 //
@@ -68,10 +72,10 @@ export const SPEC_FORMAT = 'mapping-spec';
 /** Valor usado antes do renome do produto: a importação ainda o aceita. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 /** Versão atual do formato (a que a documentação e os exemplos novos usam). */
-export const SPEC_FORMAT_VERSION = 15;
+export const SPEC_FORMAT_VERSION = 16;
 /** Versões aceitas na importação. */
 export const SPEC_FORMAT_VERSIONS = [
-  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
 ] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
@@ -122,6 +126,14 @@ export interface SpecCodeCase {
   params?: Record<string, string>;
   values?: Record<string, Record<string, string>>;
   notes?: string;
+  /** Ficha de assinatura do caso (só `formatVersion` 16); substitui a da base. */
+  signature?: string;
+  /** Parâmetros fora de propósito (só `formatVersion` 16); substitui o da base. */
+  ignore?: string[];
+  /** Fábricas (só `formatVersion` 16): se soma, chave por chave, às da base. */
+  calls?: Record<string, string>;
+  /** Moldes com `{value}` (só `formatVersion` 16): se soma, chave por chave, aos da base. */
+  formats?: Record<string, string>;
 }
 
 /** Um campo `enum` do tipo escolhe, por valor, o caso aplicado sobre a base do `code`. */
@@ -141,11 +153,23 @@ export interface SpecCode {
    * linha). Vira link pelo `urlTemplate` e caminho local pelo `localPath` do repositório.
    */
   path?: string;
-  /** Chave do campo do tipo → nome do parâmetro no código. */
+  /**
+   * Chave do campo do tipo → nome do parâmetro no código. Na `formatVersion` 16 o valor também pode
+   * ser um caminho (`colors.containerColor`: o argumento `containerColor` da fábrica de
+   * `calls.colors`) ou posicional (`#0`: o primeiro argumento sem nome); ver `codeParams.ts`.
+   */
   params?: Record<string, string>;
   /** Chave de um campo `enum` → (valor no mapping → valor no código). */
   values?: Record<string, Record<string, string>>;
   notes?: string;
+  /** Caminho da ficha `mapping-signature` no pacote (só `formatVersion` 16). */
+  signature?: string;
+  /** Nomes de parâmetro que ficam fora de propósito, sem aviso (só `formatVersion` 16). */
+  ignore?: string[];
+  /** Nome do parâmetro → símbolo da fábrica do argumento aninhado (só `formatVersion` 16). */
+  calls?: Record<string, string>;
+  /** Chave do campo → molde do valor, com `{value}` (`{value}.dp`; só `formatVersion` 16). */
+  formats?: Record<string, string>;
   /** Variantes por valor de um campo `enum` (só `formatVersion` 9); ver `resolveCode`. */
   variants?: SpecCodeVariants;
 }
@@ -164,8 +188,13 @@ export interface SpecTypeSource {
   name?: string;
   /** Nome do slot do componente que recebe os filhos (v4, sistema executável). */
   slot?: string;
-  /** Props aceitas e não desenhadas (v4, sistema executável). */
+  /**
+   * Props aceitas e não desenhadas (v4, sistema executável); com `signature`, também as que a
+   * importação deixa fora de propósito, sem aviso.
+   */
   ignore?: string[];
+  /** Caminho da ficha `mapping-signature` do componente de design no pacote (só `formatVersion` 16). */
+  signature?: string;
 }
 
 /**
@@ -420,6 +449,18 @@ export interface SpecLayer {
   annotationTypes: SpecAnnotationType[];
 }
 
+/** Um modelo de campo (só `formatVersion` 16), numa destas quatro formas. */
+export type SpecFieldModel =
+  /** Copia `type`, `options`, `suggestions`, `code.values` e `sources[].values` de `<tipo>.<campo>`. */
+  | { like: string }
+  | { type: 'number' | 'string' | 'enum'; options?: string[]; format?: string }
+  /** Um campo por parâmetro da fábrica (`call` opcional; nome do parâmetro → tipo na fonte). */
+  | { expand: { call?: string; params: Record<string, string> } }
+  | { ignore: true };
+
+/** `<id da plataforma ou system>` → (`<tipo na fonte, texto exato>` | `boolean`) → modelo. */
+export type SpecFieldModels = Record<string, Record<string, SpecFieldModel>>;
+
 export interface Spec {
   format: typeof SPEC_FORMAT | typeof LEGACY_SPEC_FORMAT;
   formatVersion: SpecFormatVersion;
@@ -443,6 +484,11 @@ export interface Spec {
   tokens?: SpecTokens;
   /** Arquivo `.json` do pacote com o conjunto de ícones (`mapping-icons`; só `formatVersion` 15). */
   icons?: string;
+  /**
+   * Modelos de campo por plataforma ou sistema e por tipo na fonte (só `formatVersion` 16): como
+   * um tipo da fonte (`Color`, `Dp`, `boolean`) vira campo; ver `specSignature.ts`.
+   */
+  fieldModels?: SpecFieldModels;
 }
 
 const KEY_RE = /^[A-Za-z0-9_]+$/;
@@ -510,6 +556,8 @@ const typeSourceShape = z
     name: nonEmpty.optional(),
     slot: nonEmpty.optional(),
     ignore: z.array(nonEmpty).optional(),
+    // Só `formatVersion` 16 (`specSignature.ts`).
+    signature: packagePath('.json').optional(),
   })
   .strict()
   .refine((s) => s.id !== undefined || s.name !== undefined, 'precisa de "id" ou "name"');
@@ -860,6 +908,14 @@ function checkFields(
   });
 }
 
+/** As chaves da `formatVersion` 16 do `code` (e do caso de `variants`); a versão e o conteúdo, em `specSignature.ts`. */
+const signatureKeys = {
+  signature: packagePath('.json').optional(),
+  ignore: z.array(nonEmpty).optional(),
+  calls: z.record(z.string(), nonEmpty).optional(),
+  formats: z.record(z.string(), nonEmpty).optional(),
+};
+
 const codePathShape = z
   .string({ error: () => 'deve ser texto' })
   .min(1, 'não pode ser vazio')
@@ -878,6 +934,7 @@ const codeCaseShape = z
     params: z.record(z.string(), nonEmpty).optional(),
     values: z.record(z.string(), z.record(z.string(), nonEmpty)).optional(),
     notes: z.string().optional(),
+    ...signatureKeys,
   })
   .strict();
 
@@ -906,6 +963,7 @@ const codeEntryShape = z
     params: z.record(z.string(), nonEmpty).optional(),
     values: z.record(z.string(), z.record(z.string(), nonEmpty)).optional(),
     notes: z.string().optional(),
+    ...signatureKeys,
     variants: codeVariantsShape.optional(),
   })
   .strict();
@@ -2660,6 +2718,8 @@ export const specSchema = z
     tokens: z.unknown().optional(),
     // O caminho é conferido por `checkIcons` (a versão primeiro); o arquivo, pelo validador da biblioteca.
     icons: z.unknown().optional(),
+    // Validado por `checkSignatureKeys` (a versão, as formas e os cruzamentos), no superRefine.
+    fieldModels: z.unknown().optional(),
   })
   .strict()
   .superRefine((spec, ctx) => {
@@ -2847,6 +2907,7 @@ export const specSchema = z
     checkRequiresOwner(spec, ctx);
     checkTokens(spec, ctx);
     checkIcons(spec, ctx);
+    checkSignatureKeys(spec, ctx);
   });
 
 /**

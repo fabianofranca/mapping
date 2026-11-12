@@ -27,6 +27,7 @@ import { specWarnings } from './specWarnings';
 import { missingMigrations } from './specVersions';
 import { drawingIssues } from './libraryDrawing';
 import { libraryIssue } from './libraryIssue';
+import { checkSignatures } from './librarySignature';
 import type { ModelMessageTemplateCode } from './messages';
 import type { ModelMessage } from './modelMessage';
 
@@ -463,6 +464,7 @@ function level1(
     referenced.add(pkg.iconsPath);
     readIcons(pkg, out);
   }
+  signatureChecks(pkg, referenced, out);
 
   for (const file of files) {
     const lower = file.path.toLowerCase();
@@ -472,6 +474,21 @@ function level1(
     }
   }
   return pkg;
+}
+
+/** Nível 1 (formatVersion 16): as fichas citadas existem, são válidas e são as do mesmo código. */
+function signatureChecks(pkg: Package, referenced: Set<string>, out: Collector): void {
+  const { problems, referenced: cited } = checkSignatures(pkg.spec, pkg);
+  for (const file of cited) referenced.add(file);
+  for (const problem of problems) {
+    if (problem.missing !== undefined) {
+      out.fileNotFound(problem.file, problem.path, problem.missing);
+    } else if (problem.severity === 'error') {
+      out.passError(problem.file, problem.path, problem.message);
+    } else {
+      out.passWarning(problem.file, problem.path, problem.message);
+    }
+  }
 }
 
 /** Nível 1: o arquivo `icons` existe e é um `mapping-icons` válido. */

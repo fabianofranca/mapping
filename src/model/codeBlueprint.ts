@@ -4,6 +4,7 @@ import {
   platformRepoOf,
   type ProjectPlatform,
 } from './codeLocations';
+import { blueprintParams, type BlueprintParam } from './codeArgs';
 import { resolveCode } from './codeVariants';
 import { fail } from './errors';
 import { projectIndex } from './projectIndex';
@@ -21,19 +22,7 @@ import type { Annotation, JsonValue, Marking, Project, Rect, WholeRef } from './
 // plataforma (ou `symbol: null` quando falta o mapeamento),
 // com as vinculadas sob a dona. Função pura: a app e o MCP (`get_code_hints`) usam a mesma.
 
-/** Parâmetro do componente na plataforma (`code.<plataforma>.params`). */
-export interface BlueprintParam {
-  /** Campo do tipo. */
-  readonly key: string;
-  /** Nome do parâmetro no código. */
-  readonly name: string;
-  /**
-   * Valor pronto para o código: `enum` traduzido por `code.<plataforma>.values` (sem
-   * tradução, como está); `ref` pelo rótulo do alvo (ex: `User.name`; quebrada: `null`);
-   * `table` com as linhas (só as colunas, sem `_id`; vazia: `[]`); vazio: `null`.
-   */
-  readonly value: JsonValue;
-}
+export type { BlueprintParam };
 
 export interface BlueprintAnnotation {
   readonly annotationId: string;
@@ -235,18 +224,12 @@ export function codeBlueprint(
     const values = a.values ?? {};
     const code = codeFor(resolved, platformId, values);
     const fields = resolved.type.fields;
-    const params: BlueprintParam[] = [];
+    const params = blueprintParams(fields, code, resolved.spec.formatVersion, (field) =>
+      code === null ? null : paramValue(p, field, values[field.key], code),
+    );
     const mapped: Record<string, JsonValue> = {};
     for (const field of fields) {
-      const value = values[field.key];
-      if (code?.params && Object.hasOwn(code.params, field.key)) {
-        params.push({
-          key: field.key,
-          name: code.params[field.key] ?? field.key,
-          value: paramValue(p, field, value, code),
-        });
-      }
-      const v = mappingValue(p, field, value);
+      const v = mappingValue(p, field, values[field.key]);
       if (v !== null && !(Array.isArray(v) && v.length === 0)) mapped[field.key] = v;
     }
     const linked = (index.annotationsByOwner.get(a.id) ?? []).flatMap((child) => {

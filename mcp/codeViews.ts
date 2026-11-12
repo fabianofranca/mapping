@@ -19,10 +19,14 @@ import {
   type SpecAnnotationType,
   type SpecCode,
   type SpecRepo,
+  type BlueprintParam,
+  type Signature,
+  unmappedParams,
 } from '../src/model';
 import type { LocalFile, LocalFileChecker } from './codeFiles';
 import { ToolError } from './errors';
 import type { Refs } from './items';
+import type { SignatureReader } from './signatureFiles';
 
 // Visões em JSON do código de instanciação das especializações (etapa 3b.4; etapa 9; etapa
 // Código de instanciação): o `code` das plataformas de cada tipo (`symbol`, o que se chama, e
@@ -43,6 +47,8 @@ export const CODE_HINT =
 export interface CodeContext {
   readonly refs: Refs;
   readonly files: LocalFileChecker;
+  /** Lê a ficha de assinatura do pacote aplicado (para o `unmapped`); sem ele, o `code` não traz `unmapped`. */
+  readonly signatures?: SignatureReader;
 }
 
 /** Plataforma pedida em `platform`: precisa ser declarada por alguma especialização aplicada. */
@@ -99,10 +105,29 @@ async function resolveDefinition(
 }
 
 /** Forma única de uma entrada de `code`: `symbol`, `definition` (ou `null`) e o resto (`params`, `values`, `notes`). */
-function codeEntryJson(entry: SpecCode, definition: Json | null): Json {
+function codeEntryJson(
+  entry: SpecCode,
+  definition: Json | null,
+  signature: Signature | null = null,
+): Json {
   const { symbol, ...rest } = entry;
   delete (rest as { path?: string }).path;
-  return { symbol, definition, ...rest };
+  return {
+    symbol,
+    definition,
+    ...rest,
+    ...(signature === null ? {} : { unmapped: unmappedParams(signature, entry) }),
+  };
+}
+
+/** A ficha de assinatura da entrada de `code` (para o `unmapped`); `null` sem ficha ou sem como lê-la. */
+async function signatureOf(
+  ctx: CodeContext | null,
+  specId: string,
+  entry: SpecCode,
+): Promise<Signature | null> {
+  if (ctx?.signatures === undefined || entry.signature === undefined) return null;
+  return ctx.signatures(specId, entry.signature);
 }
 
 /**
@@ -147,7 +172,11 @@ export async function typeCodeView(
         const entry = resolveEntry ? resolveEntry(raw) : raw;
         return [
           id,
-          codeEntryJson(entry, await resolveDefinition(ctx, specId, id, entry.path)),
+          codeEntryJson(
+            entry,
+            await resolveDefinition(ctx, specId, id, entry.path),
+            await signatureOf(ctx, specId, entry),
+          ),
         ];
       }),
   );
@@ -162,6 +191,7 @@ export async function packageCodeView(
   spec: Spec,
   code: Readonly<Record<string, SpecCode>>,
   ctx: CodeContext | null,
+  readSignature?: (ref: string) => Promise<Signature | null>,
 ): Promise<Json> {
   const entries = await Promise.all(
     Object.entries(code).map(async ([id, entry]): Promise<[string, Json]> => {
@@ -182,7 +212,14 @@ export async function packageCodeView(
           problem: checked.problem,
         };
       }
-      return [id, codeEntryJson(entry, definitionJson(entry.path, repo, local))];
+      const signature =
+        readSignature === undefined || entry.signature === undefined
+          ? null
+          : await readSignature(entry.signature);
+      return [
+        id,
+        codeEntryJson(entry, definitionJson(entry.path, repo, local), signature),
+      ];
     }),
   );
   return Object.fromEntries(entries);
@@ -212,6 +249,25 @@ function hintTarget(
   };
 }
 
+/**
+ * Um argumento da chamada: `{ field, name, value }`; o posicional (`#n`, formatVersion 16) traz
+ * `position` no lugar de `name`; o de uma fábrica (`calls`) é `{ name, call, args }`, só com os
+ * campos preenchidos.
+ */
+function argJson(param: BlueprintParam): Json {
+  if (param.call !== undefined) {
+    return {
+      name: param.name,
+      call: param.call,
+      args: (param.args ?? []).map((arg) => argJson(arg)),
+    };
+  }
+  if (param.position !== undefined) {
+    return { field: param.key, position: param.position, value: param.value };
+  }
+  return { field: param.key, name: param.name, value: param.value };
+}
+
 function hintAnnotation(
   annotation: BlueprintAnnotation,
   refs: Refs,
@@ -231,13 +287,7 @@ function hintAnnotation(
     ...(parentRole ? { parentRole } : {}),
     ...(code === undefined ? {} : { code }),
     ...(annotation.params.length > 0
-      ? {
-          args: annotation.params.map((param) => ({
-            field: param.key,
-            name: param.name,
-            value: param.value,
-          })),
-        }
+      ? { args: annotation.params.map((param) => argJson(param)) }
       : {}),
     ...(Object.keys(annotation.values).length > 0 ? { values: annotation.values } : {}),
     ...(linked.length > 0 ? { linked } : {}),
@@ -336,6 +386,7 @@ export async function codeHintsView(
         ...codeEntryJson(
           entry,
           await resolveDefinition(ctx, a.specId, platformId, entry.path),
+          await signatureOf(ctx, a.specId, entry),
         ),
         ...noticesJson(type),
       };
@@ -347,6 +398,7 @@ export async function codeHintsView(
         codeEntryJson(
           resolved,
           await resolveDefinition(ctx, a.specId, platformId, resolved.path),
+          await signatureOf(ctx, a.specId, resolved),
         ),
       );
     }

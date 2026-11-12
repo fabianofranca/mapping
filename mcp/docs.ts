@@ -4,6 +4,7 @@ import agentGuide from '../docs/AGENT-GUIDE.md?raw';
 import commentFormat from '../docs/COMMENT-FORMAT.md?raw';
 import componentFormat from '../docs/COMPONENT-FORMAT.md?raw';
 import format from '../docs/FORMAT.md?raw';
+import signatureFormat from '../docs/SIGNATURE-FORMAT.md?raw';
 import specFormat from '../docs/SPEC-FORMAT.md?raw';
 
 /** Documentação servida como recursos MCP. O texto é embutido no arquivo único no build. */
@@ -35,8 +36,16 @@ export const DOC_RESOURCES: readonly DocResource[] = [
     name: 'spec-format',
     uri: 'mapping-docs://SPEC-FORMAT.md',
     title: 'Formato da especialização',
-    description: `Formato do arquivo de especialização (formatVersion 1 a ${SPEC_FORMAT_VERSION}): camadas, tipos de anotação, campos, referências, plataformas, origens e, na v4, o pacote da biblioteca (componentes, documentos, exemplos, fontes, origens executáveis e contrato de versão) e, na v8, sugestões nos campos de texto.`,
+    description: `Formato do arquivo de especialização (formatVersion 1 a ${SPEC_FORMAT_VERSION}): camadas, tipos de anotação, campos, referências, plataformas, origens e, na v4, o pacote da biblioteca (componentes, documentos, exemplos, fontes, origens executáveis e contrato de versão) e, na v8, sugestões nos campos de texto; na v16, as fichas de assinatura, fieldModels, calls e formats.`,
     text: specFormat,
+  },
+  {
+    name: 'signature-format',
+    uri: 'mapping-docs://SIGNATURE-FORMAT.md',
+    title: 'Formato da ficha de assinatura',
+    description:
+      'Formato da ficha de assinatura de um componente (mapping-signature, formatVersion 1): a origem, os parâmetros com papel, tipo, padrão e valor, as fábricas e a documentação; a especialização v16 a cita em code.signature.',
+    text: signatureFormat,
   },
   {
     name: 'component-format',

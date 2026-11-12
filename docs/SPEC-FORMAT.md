@@ -1,6 +1,6 @@
-# Formato da especialização (`formatVersion` 1 a 15)
+# Formato da especialização (`formatVersion` 1 a 16)
 
-O formato do arquivo que define camadas e tipos de anotação (e, na `formatVersion` 2, as plataformas de código e o código de instanciação dos tipos; na 3, as origens externas; na 4, a **biblioteca**: componentes, documentos, exemplos, fontes, origens executáveis e o contrato de versão; na 5, o repositório de cada plataforma; na 6, os tamanhos prontos de container; na 7, o tipo flutuante; na 8, as sugestões de texto; na 9, as variantes do código; na 10, os avisos; na 11, os filhos por camada e grupo, os papéis no vínculo e o documento em repositório externo; na 12, os passos de migração dos papéis; na 13, os filhos da própria camada; na 14, a anotação inteira como alvo de um `ref`; na 15, os tokens de design). A página "Ajuda → Especializações" da app é uma versão resumida deste documento (um teste garante que os títulos das seções e os blocos de código coincidem).
+O formato do arquivo que define camadas e tipos de anotação (e, na `formatVersion` 2, as plataformas de código e o código de instanciação dos tipos; na 3, as origens externas; na 4, a **biblioteca**: componentes, documentos, exemplos, fontes, origens executáveis e o contrato de versão; na 5, o repositório de cada plataforma; na 6, os tamanhos prontos de container; na 7, o tipo flutuante; na 8, as sugestões de texto; na 9, as variantes do código; na 10, os avisos; na 11, os filhos por camada e grupo, os papéis no vínculo e o documento em repositório externo; na 12, os passos de migração dos papéis; na 13, os filhos da própria camada; na 14, a anotação inteira como alvo de um `ref`; na 15, os tokens de design; na 16, as assinaturas e os modelos de campo). A página "Ajuda → Especializações" da app é uma versão resumida deste documento (um teste garante que os títulos das seções e os blocos de código coincidem).
 
 ## O que é uma especialização
 
@@ -14,7 +14,8 @@ Uma **especialização** é um arquivo JSON que define **camadas obrigatórias**
 - A `formatVersion` 13 é a 12 mais os **filhos da própria camada**: `allowedChildren` passa a aceitar a cláusula `{ layer }` com a camada do próprio dono e o id de um tipo da mesma camada, inclusive o do próprio tipo (ver "Filhos por camada e grupo"). Com isso um evento pode ser dono de outros eventos, cada filho no papel em que se liga (`childRoles`), e a anotação **tipada** pode ter dona da mesma camada no projeto (schema v15; a **livre** continua só com dona de outra camada, e o ciclo continua barrado). A 13 é aditiva: as versões 1 a 12 continuam aceitas sem mudança, e a camada ou o tipo da própria camada em `allowedChildren` numa versão anterior continua sendo o erro de sempre (`filhos devem estar em outra camada`). Só sobe para a 13 a especialização que declara um filho da própria camada.
 - A `formatVersion` 14 é a 13 mais a **anotação inteira como alvo**: o `accepts` de um campo ou coluna `ref` ganha `annotations`, uma lista de ids de tipo ou cláusulas `{ layer, groups? }` da **mesma especialização**, com a mesma sintaxe e o mesmo resolvedor do `allowedChildren` (ver "Referências e etiquetas"). A 14 é aditiva: as versões 1 a 13 continuam aceitas sem mudança, e `annotations` numa versão anterior é o erro `só é permitido com formatVersion 14`, no caminho `…accepts.annotations`. Só sobe para a 14 a especialização que declara `accepts.annotations`.
 - A `formatVersion` 15 é a 14 mais os **tokens de design**: a chave `tokens` na raiz declara valores nomeados (cores, raios, espaçamentos, famílias de fonte), simples ou por modo (`light`/`dark`), que os componentes de formato 4 leem com `{ "$token": "nome" }` (ver "Tokens de design"). A 15 também traz o **conjunto de ícones**: a chave `icons` na raiz aponta para um arquivo `.json` do pacote com os ícones, que o nó `icon` dos componentes de formato 4 lê (ver "Conjunto de ícones"). A 15 é aditiva: as versões 1 a 14 continuam aceitas sem mudança, e `tokens` ou `icons` numa versão anterior é o erro `só é permitido com formatVersion 15`, no caminho da chave. A 15 traz ainda `structural` no tipo de anotação: `structural: true` marca o tipo que **agrupa e não desenha** (um grupo, uma seção). Ele não tem `component` (`structural` junto com `component` é erro de validação, no caminho `structural`), a marcação dele não mostra o cabeçalho com o nome no canvas, o contorno aparece só com o mouse ou selecionada (como o de quem tem desenho) e ela não conta como "sem componente" em nenhuma pendência; `structural` numa versão anterior é o erro `só é permitido com formatVersion 15`, no caminho `…annotationTypes[n].structural`. A 15 traz também a **origem medida**: `origins[].kind` (`tree`, o padrão, ou `measured`; ver "Origens (sources)"); `kind` numa versão anterior é o erro `só é permitido com formatVersion 15`, no caminho `origins[n].kind`. Só sobe para a 15 a especialização que declara `tokens`, `icons`, `structural` ou `kind: "measured"`.
-- A `formatVersion` 2 é a 1 mais o código de instanciação (plataformas e `code`: como se cria uma instância de cada tipo). A importação aceita as versões 1 a 15; uma especialização v1 é uma v2 sem plataformas e sem `code` (ver "Plataformas e code").
+- A `formatVersion` 16 é a 15 mais as **assinaturas e os modelos de campo**: o `code` de cada plataforma (e cada caso de `variants`) passa a poder citar a **ficha de assinatura** do que se chama (`signature`, formato `mapping-signature`, ver `docs/SIGNATURE-FORMAT.md`), deixar parâmetros de fora de propósito (`ignore`), ligar parâmetros a fábricas (`calls`) e formatar o valor (`formats`); `params` passa a aceitar o caminho `colors.containerColor` e o posicional `#0`; as `sources` do tipo aceitam `signature`; e a raiz ganha `fieldModels` (ver "Assinaturas e modelos de campo"). A 16 é aditiva: as versões 1 a 15 continuam aceitas sem mudança, e cada chave nova numa versão anterior é o erro `só é permitido com formatVersion 16`, no caminho exato da chave. Antes da 16, os valores de `params` com `.` ou `#0` são texto opaco, como sempre foram. Só sobe para a 16 a especialização que declara `fieldModels`, `signature`, `ignore`, `calls` ou `formats`, ou um caminho ou posicional em `params`.
+- A `formatVersion` 2 é a 1 mais o código de instanciação (plataformas e `code`: como se cria uma instância de cada tipo). A importação aceita as versões 1 a 16; uma especialização v1 é uma v2 sem plataformas e sem `code` (ver "Plataformas e code").
 - A `formatVersion` 3 é a 2 mais `sources`: a que elementos de um sistema externo cada tipo corresponde e de que propriedade de origem vem cada campo (ver "Origens (sources)").
 - A `formatVersion` 4 é a 3 mais a **biblioteca**: o tipo aponta para um componente (`component`), um documento (`doc`) e exemplos (`examples`); a raiz ganha `fonts`, `origins` e `migrations`; as `sources` ganham `path`, `slot` e `ignore` (ver "Origens (sources)", "Biblioteca: o pacote", "Contrato de versão" e "Validação da biblioteca"). As versões 1, 2 e 3 continuam aceitas sem mudança: cada chave da v4 numa versão anterior é o erro `só é permitido com formatVersion 4`, no caminho exato.
 - A `formatVersion` 5 é a 4 mais `repo` nas plataformas: o repositório da biblioteca em cada plataforma (`url`, `urlTemplate`, `ref`), de onde vêm o link e a revisão do arquivo de cada `symbol` (ver "Plataformas e code"). As versões 1 a 4 continuam aceitas sem mudança: `repo` numa versão anterior é o erro `só é permitido com formatVersion 5`, no caminho exato.
@@ -78,7 +79,7 @@ Arquivos de apoio:
 }
 ```
 
-Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `15`), `id`, `name` e `version` (inteiro ≥ 1) são obrigatórios; `description`, `platforms` (a partir da versão 2, com `repo` na 5), `containers` (a partir da versão 6), `docRepos` (a partir da versão 11) e, a partir da versão 4, `fonts`, `origins` e `migrations` são opcionais, e `tokens` (a partir da versão 15) também. Cada camada tem `id` (único), `name`, `color` (`#RRGGBB`) e `annotationTypes`, e, a partir da versão 11, `groups` opcional (ver "Filhos por camada e grupo"). A importação ainda aceita arquivos antigos com `"mapeador-spec"`.
+Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `16`), `id`, `name` e `version` (inteiro ≥ 1) são obrigatórios; `description`, `platforms` (a partir da versão 2, com `repo` na 5), `containers` (a partir da versão 6), `docRepos` (a partir da versão 11) e, a partir da versão 4, `fonts`, `origins` e `migrations` são opcionais, e `tokens` (a partir da versão 15) e `fieldModels` (a partir da versão 16) também. Cada camada tem `id` (único), `name`, `color` (`#RRGGBB`) e `annotationTypes`, e, a partir da versão 11, `groups` opcional (ver "Filhos por camada e grupo"). A importação ainda aceita arquivos antigos com `"mapeador-spec"`.
 
 ### Tipo de anotação
 
@@ -595,6 +596,117 @@ Uma anotação com `style = outlined` é instanciada com `OutlinedButton` (o `pa
 
 **Regras de validação:** `variants` só a partir da `formatVersion` 9 (`só é permitido com formatVersion 9`, no caminho `…code.<plataforma>.variants`); `field` obrigatório, a `key` de um campo `enum` do tipo (`"x" não é um campo do tipo` ou `"x" deve ser um campo enum do tipo`, no caminho `…variants.field`); `cases` com ao menos um caso (`declare ao menos um caso`); cada chave de `cases` uma das `options` do campo (`"v" não está nas options de "field"`, no caminho `…variants.cases.<v>`); caso vazio é erro (`caso vazio: declare symbol, path, params, values ou notes`); `params` e `values` do caso seguem as regras dos da base (chaves de campos do tipo; `values` só de campo `enum` e só com opções dele); `path` do caso, a mesma regra do `path` da base; qualquer outra propriedade em `variants` ou no caso é recusada.
 
+## Assinaturas e modelos de campo
+
+A `formatVersion` 16 liga o `code` de um tipo à **assinatura** do que ele chama. A assinatura é uma **ficha** `mapping-signature` ([`SIGNATURE-FORMAT.md`](SIGNATURE-FORMAT.md)): um JSON no pacote da biblioteca com os parâmetros do componente (nome, papel, tipo na fonte, padrão), escrito pelo agente ou por um extrator e **derivado** do código. O servidor nunca lê o código, só esse JSON. Com a ficha, o Mapping sabe o que o tipo ainda não cobre (o `unmapped` abaixo) e confere se o `params` aponta para parâmetros que existem.
+
+As chaves a seguir valem **só na `formatVersion` 16**; em uma versão anterior cada uma é o erro `só é permitido com formatVersion 16`, no caminho exato (`…code.compose.signature`, `fieldModels`).
+
+| Chave         | Onde                                                              | Descrição                                                                                                                                                                                                                                                                                                                               |
+| ------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `signature`   | entrada de `code` e caso de `variants`; entrada de `sources`      | Caminho da ficha `.json` no pacote, relativo à especialização: `signatures/<tipo>.<plataforma>.json` (no caso, `signatures/<tipo>.<caso>.<plataforma>.json`). No `code`, é a ficha de código; em `sources`, a de design.                                                                                                                |
+| `ignore`      | entrada de `code` e caso de `variants`; `sources` com `signature` | Nomes de parâmetro da ficha que ficam de fora **de propósito** (`modifier`, `interactionSource`): não viram campo, não entram no `unmapped` e não geram aviso. Nome repetido é erro. Em `sources`, o `ignore` que já existia continua com o significado de sempre e, com `signature`, também vale para os parâmetros fora de propósito. |
+| `calls`       | entrada de `code` e caso de `variants`                            | Parâmetro que se preenche por uma **fábrica**: `{ "<parâmetro>": "<símbolo da fábrica>" }` (`{ "colors": "androidx.compose.material3.ButtonDefaults.buttonColors" }`). Os campos do tipo chegam a ela por caminho em `params`.                                                                                                          |
+| `formats`     | entrada de `code` e caso de `variants`                            | Como o valor de um campo é escrito: `{ "<chave do campo>": "<molde com {value}>" }`, como `{ "width": "{value}.dp" }` (o valor `16` sai `16.dp`). O molde precisa conter `{value}`; a chave é de um campo do tipo.                                                                                                                      |
+| `fieldModels` | raiz                                                              | O modelo de campo de cada tipo da fonte (abaixo): id da plataforma ou do sistema → tipo na fonte → modelo.                                                                                                                                                                                                                              |
+
+### Alvo em `params`
+
+Em uma especialização `formatVersion` 16, o valor de `code.<plataforma>.params` tem três formas:
+
+- **nome** (`text`): o parâmetro de mesmo nome, como sempre;
+- **caminho** (`colors.containerColor`): o argumento `containerColor` da fábrica de `calls.colors`. O primeiro segmento precisa estar em `calls` (senão, o erro `"colors" não está em calls`, no caminho do campo em `params`);
+- **posicional** (`#0`): o argumento sem nome na posição 0, o parâmetro de rótulo externo `_` do Swift (`Text("…")`).
+
+Antes da 16 o valor é um texto opaco (nome de parâmetro, de campo JSON…) e nada muda: `.` e `#0` não são interpretados.
+
+### `variants`: o que o caso troca e o que soma
+
+No caso de `variants`, `signature` e `ignore` **substituem** os da base (o caso aponta para a ficha do outro símbolo, como `OutlinedButton`). `params`, `values`, `calls` e `formats` se **somam**, chave por chave, e o `calls` do caso troca o da base para o mesmo parâmetro. O `unmapped` e o `code` que o MCP devolve já saem resolvidos pelo caso.
+
+### Exemplo
+
+```json
+{
+  "formatVersion": 16,
+  "platforms": [{ "id": "compose", "name": "Compose", "language": "kotlin" }],
+  "fieldModels": {
+    "compose": {
+      "Boolean": { "type": "enum", "options": ["true", "false"] },
+      "Dp": { "type": "number", "format": "{value}.dp" }
+    }
+  },
+  "layers": [
+    {
+      "id": "ui",
+      "name": "UI",
+      "color": "#1E88E5",
+      "annotationTypes": [
+        {
+          "id": "button",
+          "name": "Button",
+          "fields": [
+            { "key": "title", "type": "string" },
+            { "key": "containerColor", "type": "string" },
+            { "key": "width", "type": "number" }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.Button",
+              "path": "compose/material3/Button.kt",
+              "signature": "signatures/button.compose.json",
+              "ignore": ["modifier"],
+              "calls": {
+                "colors": "androidx.compose.material3.ButtonDefaults.buttonColors"
+              },
+              "formats": { "width": "{value}.dp" },
+              "params": {
+                "title": "#0",
+                "containerColor": "colors.containerColor",
+                "width": "width"
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+(O exemplo mostra só as chaves da 16; uma especialização completa tem `format`, `id`, `name` e `version`.)
+
+### Modelos de campo (`fieldModels`)
+
+`fieldModels` diz como um parâmetro de um **tipo na fonte** vira campo do tipo de anotação. A chave de fora é o `id` da plataforma (ou o `system` de uma origem), a de dentro é o texto exato do tipo na fonte (`Dp`, `Color`; para o booleano, `boolean`), e o valor é um modelo, com **uma** forma:
+
+| Forma                                        | O que diz                                                                                                                             |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `{ "like": "<tipo>.<campo>" }`               | Igual ao campo `<campo>` do tipo `<tipo>` da especialização. O campo precisa existir.                                                 |
+| `{ "type": "number\|string\|enum", ... }`    | Um campo novo do tipo dado, com `options` (obrigatório em `enum`, só nele) e `format` (molde com `{value}`) opcionais.                |
+| `{ "expand": { "call?", "params": { … } } }` | O tipo na fonte é composto: vira uma fábrica (`call`, opcional) com os `params` (nome → tipo na fonte), cada um com o próprio modelo. |
+| `{ "ignore": true }`                         | Esse tipo na fonte nunca vira campo.                                                                                                  |
+
+### Validação
+
+Erros de validação, sempre com o caminho:
+
+- `só é permitido com formatVersion 16`: qualquer chave da tabela acima, ou `signature` em `sources`, numa versão anterior;
+- `like` que não acha o campo: `"<tipo>.<campo>" não é um campo de um tipo da especialização`;
+- `format` (em `fieldModels`) ou molde (em `formats`) sem `{value}`; `formats` com chave que não é campo do tipo;
+- caminho em `params` cujo primeiro segmento não está em `calls`: `"<x>" não está em calls`;
+- forma duplicada ou ausente no modelo, `options` fora de `enum`, `ignore` repetido, `expand` sem `params`.
+
+No `validate_library` (que lê os arquivos do pacote), além disso:
+
+- a ficha citada que não existe (`arquivo não encontrado`) ou é inválida (os erros da ficha, com o caminho dentro dela);
+- `source.symbol` ou `source.path` da ficha diferentes do `symbol` ou do `path` do `code`;
+- **aviso** `parâmetro fora da ficha: "<nome>"`: o `params` mapeia um parâmetro (nome, argumento de fábrica ou posicional) que a ficha não tem; o parâmetro saiu do código ou o nome está errado.
+
+### O que sobra: `unmapped`
+
+Com `signature`, o `code` que o MCP entrega (`get_code_hints`, `get_marking`, `get_annotation`, `get_component`, `find_by_code`) traz `unmapped`: a lista, na ordem da ficha, dos parâmetros que **nenhum campo liga e o `ignore` não dispensa**, cada um com `name`, `role`, `type`, `required` e `default?`. Um parâmetro com algum campo da fábrica ligado por caminho conta como ligado. `callback`, `modifier`, `state` e `slot` também entram: é assim que o agente sabe, por exemplo, que `onClick` é obrigatório. Os `value` sem campo são o rastro do que a tela ainda não modela. O servidor só lê o JSON da ficha no pacote aplicado (`specs/<id>/signatures/…`); nunca o código. Detalhes em [`MCP.md`](MCP.md).
+
 ## Containers (tamanhos prontos)
 
 A `formatVersion` 6 deixa a especialização oferecer **tamanhos prontos de container**: o objeto de topo do canvas (uma tela de app, um painel, um cartão) criado sem arquivo, só com tamanho e cor de fundo. No diálogo **Novo container**, a lista **Tamanho predefinido** traz **Personalizado** e **Tamanho da seleção** (do núcleo; este é o retângulo da marcação selecionada e fica desabilitado sem seleção) e, abaixo, os `containers` de cada especialização aplicada, agrupados pelo nome dela. Tamanhos de dispositivo (celular, tablet, desktop) são de domínio: vêm da especialização, não do núcleo. A biblioteca Material 3 do repositório traz Celular 360 × 800, Celular grande 412 × 915, Tablet 800 × 1280 e Desktop 1440 × 900.
@@ -1057,7 +1169,7 @@ Na cor, `{ "$token": "scrim", "alpha": 0.32 }` multiplica o alfa da cor do token
 
 Uma v11 que remove um papel é recusada até subir para a `formatVersion` 12 com o passo que o cobre. **Dono renomeado:** quando o tipo foi renomeado (`rename-type`), os papéis **não** são comparados entre o tipo antigo e o novo; um papel que as anotações usam e que não existe no tipo novo vira `unknown-role` ao migrar, e o autor pode declarar `rename-role` com o `id` novo, **depois** do `rename-type`.
 
-**Fora do contrato**, de propósito: camadas, `labelField`, `allowedChildren` (inclusive a cláusula `{ layer, groups }` e, na 13, os filhos da própria camada), `requiresOwner`, `description`, `tags`, `code`, `platforms`, `containers`, `sources`, `suggestions`, `linkedRef`, `notices`, `accepts.annotations`, `groups` (da camada e do tipo), o `name` e a `description` de um papel, a ordem dos `childRoles`, `childRolesLabel` e `docRepos`, trocar o `doc` entre texto e objeto, e remover um `component`, um `doc`, um exemplo ou uma fonte. Nada disso gera diferença. Um renome é indistinguível de remover + acrescentar; quem renomeia **declara** isso num passo `rename-*`, e é isso que o diferencia de uma remoção.
+**Fora do contrato**, de propósito: `fieldModels`, `signature`, `ignore`, `calls`, `formats` e os caminhos e posicionais em `params` (`formatVersion` 16; o que a importação de uma assinatura acrescenta, um campo opcional ou uma opção de `enum`, é aditivo como qualquer outro), camadas, `labelField`, `allowedChildren` (inclusive a cláusula `{ layer, groups }` e, na 13, os filhos da própria camada), `requiresOwner`, `description`, `tags`, `code`, `platforms`, `containers`, `sources`, `suggestions`, `linkedRef`, `notices`, `accepts.annotations`, `groups` (da camada e do tipo), o `name` e a `description` de um papel, a ordem dos `childRoles`, `childRolesLabel` e `docRepos`, trocar o `doc` entre texto e objeto, e remover um `component`, um `doc`, um exemplo ou uma fonte. Nada disso gera diferença. Um renome é indistinguível de remover + acrescentar; quem renomeia **declara** isso num passo `rename-*`, e é isso que o diferencia de uma remoção.
 
 ### `migrations`
 
@@ -1370,7 +1482,7 @@ Os pacotes `libraries/material3-compose/` e `examples/libraries/sdui-backend/` p
 
 As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[2].type: "numero" inválido; use "string", "number", "date", "enum", "table" ou "ref"`.
 
-- `format`, `formatVersion` (1 a 15), `id`, `name` e `version` obrigatórios; `version` inteiro ≥ 1;
+- `format`, `formatVersion` (1 a 16), `id`, `name` e `version` obrigatórios; `version` inteiro ≥ 1;
 - ids de camada únicos; ids de tipo únicos na especialização inteira; `key` única no tipo e nas colunas; nenhuma `key` começando com `_`;
 - `allowedChildren` só referencia tipos existentes **em outra camada** (a partir da `formatVersion` 13, também na camada do próprio dono, inclusive o próprio tipo);
 - todo tipo com `requiresOwner: true` aparece no `allowedChildren` de algum **outro** tipo (na v11, no conjunto **resolvido** dos filhos de algum dono: por id, por camada inteira ou por grupo); o tipo que só ele mesmo lista não atende (`nenhum outro tipo o aceita como filho`);
@@ -1382,6 +1494,7 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
 - **v15, `structural`:** só a partir da `formatVersion` 15 (antes, `só é permitido com formatVersion 15`, no caminho `…annotationTypes[n].structural`); booleano; `true` com `component` no mesmo tipo é erro;
 - **v15, `origins[].kind`:** só a partir da `formatVersion` 15 (antes, `só é permitido com formatVersion 15`, no caminho `origins[n].kind`); `tree` (padrão) ou `measured`; a `measured` aceita só `system`, `kind`, `name` e `booleans` (`node`, `screen` e `examples` são erro, com o caminho).
 - **v15, `tokens`:** só a partir da `formatVersion` 15 (antes, `só é permitido com formatVersion 15`, no caminho `tokens`); `modes` lista não vazia de nomes distintos `[a-z0-9][a-z0-9-]*`; nome de token no mesmo padrão; cada valor é texto ou número, simples ou com todos os modos (e só eles) do mesmo tipo (ver "Tokens de design");
+- **v16:** `fieldModels`, `signature`, `ignore`, `calls` e `formats` (no `code`, no caso de `variants` e, para `signature`, em `sources`) só a partir da `formatVersion` 16 (antes, `só é permitido com formatVersion 16`, no caminho da chave); `like` aponta para `<tipo>.<campo>` existente; `format` e molde têm `{value}`; o primeiro segmento de um caminho em `params` está em `calls`; ver "Assinaturas e modelos de campo";
 - `platforms`: `id` no formato `[a-z0-9-]+` e único, `name` obrigatório, `language` e `repo` opcionais; `platforms` e `code` a partir da `formatVersion` 2;
 - **v5, `repo`:** só na `formatVersion` 5, dentro de uma entrada de `platforms` (numa versão anterior o erro é `só é permitido com formatVersion 5`, no caminho `platforms[0].repo`); `url` obrigatória, começando com `http://` ou `https://`, sem espaços; `urlTemplate` opcional, também `http(s)://` e com `{path}`; `ref` opcional, texto não vazio; qualquer outra propriedade em `repo` é recusada;
 - **v11, filhos por camada e grupo:** só a partir da `formatVersion` 11 (numa versão anterior o erro é `só é permitido com formatVersion 11`, no caminho `…annotationTypes[n].allowedChildren[k]` para a cláusula, `layers[n].groups` e `…annotationTypes[m].groups`); cada item de `allowedChildren` é um id de tipo ou uma cláusula `{ layer, groups? }` estrita (outra propriedade é erro, e `groups: []` também); erros: `layer` que não é uma camada da especialização, `layer` que é a camada do próprio dono (`filhos devem estar em outra camada`) e grupo inexistente na camada da cláusula; `requiresOwner` é conferido no conjunto resolvido; `layers[n].groups`: `id` não vazio e único na camada, `name` não vazio; `annotationTypes[m].groups`: lista não vazia, sem repetição, só de grupos da própria camada (grupo inexistente na camada é erro); **avisos:** 20 ids ou mais em texto no mesmo `allowedChildren` (`N tipos listados um a um; uma cláusula { layer, groups } cobre a camada ou os grupos`; com 19, não) e grupo declarado que nenhum tipo usa (ver "Filhos por camada e grupo");
