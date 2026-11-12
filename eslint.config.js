@@ -252,9 +252,12 @@ const mcpWriterImports = ['node:fs', 'node:fs/promises', 'fs', 'fs/promises'].ma
 
 // signature/ (extrator de assinaturas, etapa #1079 S3) roda só no Node e não faz rede: lê o
 // arquivo de código que lhe dão e só grava o `--out` (módulo `cli.ts`). Do app, só `src/model/`.
-const signatureNetworkGlobals = ['fetch', 'XMLHttpRequest', 'WebSocket', 'EventSource'].map(
-  (name) => ({ name, message: 'signature/ não faz requisições de rede.' }),
-);
+const signatureNetworkGlobals = [
+  'fetch',
+  'XMLHttpRequest',
+  'WebSocket',
+  'EventSource',
+].map((name) => ({ name, message: 'signature/ não faz requisições de rede.' }));
 const signatureImportPatterns = [
   {
     group: mcpOnlyFromModel.flatMap((dir) => [`**/src/${dir}`, `**/src/${dir}/**`]),
@@ -448,7 +451,11 @@ export default tseslint.config(
     files: ['signature/**/*.{ts,mjs}'],
     languageOptions: { globals: globals.node },
     rules: {
-      'no-restricted-globals': ['error', ...restrictedGlobals, ...signatureNetworkGlobals],
+      'no-restricted-globals': [
+        'error',
+        ...restrictedGlobals,
+        ...signatureNetworkGlobals,
+      ],
       'no-restricted-imports': [
         'error',
         { patterns: signatureImportPatterns, paths: signatureWriterImports },

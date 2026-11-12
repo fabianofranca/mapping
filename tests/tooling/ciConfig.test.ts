@@ -700,7 +700,7 @@ describe('mcp-prerelease.yml', () => {
   it('a lista de esperados segue a ordem alfabética (LC_ALL=C) e as notas citam o extrator', () => {
     for (const name of ['snapshot-publish', 'rc-publish']) {
       const job = jobOf(pre, name);
-      const expected = /expected="([^"]+)"/.exec(job)?.[1].split(' ') ?? [];
+      const expected = /expected="([^"]+)"/.exec(job)?.[1]?.split(' ') ?? [];
       expect(expected, name).toContain('mapping-signature.mjs.sha256');
       expect([...expected].sort(), name).toEqual(expected);
     }
