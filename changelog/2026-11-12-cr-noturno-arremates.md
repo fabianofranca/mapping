@@ -1,4 +1,4 @@
-# CR noturno: arremates do agendamento — [Não lançado] (épico `epic/cr-noturno-arremates`, PR #0, MCP 0.38.0 sem mudança, schema v19)
+# CR noturno: arremates do agendamento — 2026-11-12 (épico `epic/cr-noturno-arremates`, PR #0, MCP 0.38.1 sem mudança, schema v19)
 
 ## Alterado
 

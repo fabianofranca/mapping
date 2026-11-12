@@ -1,4 +1,4 @@
-# CR noturno: arremates do agendamento — [Não lançado] (épico `epic/cr-noturno-arremates`)
+# CR noturno: arremates do agendamento — 2026-11-12 (épico `epic/cr-noturno-arremates`)
 
 ## Pendências
 
