@@ -168,6 +168,198 @@
       display: grid;
       gap: var(--cds-gap-md);
     }
+    #mp .linha {
+      margin: 0 0 4px;
+    }
+    #mp .legenda {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 12px;
+      margin: 8px 0;
+    }
+    #mp .legenda[hidden] {
+      display: none;
+    }
+    #mp .legenda li {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0;
+      border: 0;
+      font-size: var(--cds-font-size-caption);
+    }
+    #mp .grafo {
+      position: relative;
+      margin-top: 8px;
+    }
+    #mp .faixa {
+      padding: 8px 0;
+      border-top: 1px solid var(--color-border-line);
+    }
+    #mp .faixa-rot {
+      font-size: var(--cds-font-size-caption);
+      color: var(--color-fg-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+    }
+    #mp .faixa-nos {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--cds-gap-md);
+    }
+    #mp .no {
+      flex: 1 1 11rem;
+      max-width: 16rem;
+      min-width: 0;
+      min-height: 44px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      box-sizing: border-box;
+      padding: 6px 8px;
+      font: inherit;
+      font-size: var(--cds-font-size-caption);
+      color: inherit;
+      text-align: left;
+      cursor: pointer;
+      background: var(--color-panel);
+      border: 2px solid var(--color-border-line);
+      border-radius: var(--cds-radius);
+    }
+    #mp .no > span {
+      display: block;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    #mp .no .topo {
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    #mp .no .num {
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    #mp .no .selo {
+      padding: 0 6px;
+      border-radius: 999px;
+      border: 1px solid var(--color-ok);
+      color: var(--color-ok);
+      font-weight: 600;
+    }
+    #mp .no .tit {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      overflow: hidden;
+      font-size: var(--cds-font-size-body);
+    }
+    #mp .no .prog,
+    #mp .no .mot,
+    #mp .no .espera {
+      color: var(--color-fg-muted);
+    }
+    #mp .no .est {
+      font-weight: 600;
+    }
+    #mp .no[aria-pressed='true'] {
+      outline: 2px solid var(--color-fg-muted);
+      outline-offset: 1px;
+    }
+    #mp .no.dim {
+      opacity: 0.45;
+    }
+    #mp .amostra {
+      display: inline-block;
+      width: 16px;
+      height: 12px;
+      box-sizing: border-box;
+      border: 2px solid var(--color-border-line);
+      border-radius: 3px;
+    }
+    #mp .e-rodando {
+      border-color: var(--color-warn);
+    }
+    #mp .e-rodando .est {
+      color: var(--color-warn);
+    }
+    #mp .e-dono {
+      border-color: var(--color-bad);
+    }
+    #mp .e-dono .est {
+      color: var(--color-bad);
+    }
+    #mp .e-livre {
+      border-color: var(--color-ok);
+    }
+    #mp .e-livre .est {
+      color: var(--color-ok);
+    }
+    #mp .e-arquivo {
+      border-style: dashed;
+    }
+    #mp .e-segurada,
+    #mp .e-ficha {
+      border-style: dotted;
+      color: var(--color-fg-muted);
+    }
+    #mp .e-exclusiva {
+      border-style: double;
+      border-width: 4px;
+    }
+    #mp .amostra.e-exclusiva {
+      border-width: 3px;
+    }
+    #mp .setas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      pointer-events: none;
+    }
+    #mp .setas path[data-de] {
+      fill: none;
+      stroke: var(--color-fg-muted);
+      stroke-width: 1.5;
+      marker-end: url(#mp-ponta);
+    }
+    #mp .setas path[data-tipo='arquivo'] {
+      stroke-dasharray: 5 4;
+    }
+    #mp .setas path.dim {
+      opacity: 0.25;
+    }
+    #mp .setas path[data-longa] {
+      stroke-width: 2;
+    }
+    #mp .setas marker path {
+      fill: var(--color-fg-muted);
+    }
+    #mp .detalhe {
+      margin-top: 12px;
+      padding: var(--cds-pad-lg);
+      border: 1px solid var(--color-border-line);
+      border-radius: var(--cds-radius);
+      display: grid;
+      gap: 4px;
+    }
+    #mp .detalhe[hidden] {
+      display: none;
+    }
+    #mp .detalhe button {
+      justify-self: start;
+      min-height: 44px;
+      padding: 0 16px;
+      font: inherit;
+      color: inherit;
+      cursor: pointer;
+      background: var(--color-panel);
+      border: 1px solid var(--color-border-line);
+      border-radius: var(--cds-radius);
+    }
   </style>
   <h1>Fila de desenvolvimento</h1>
   <p class="sub" id="mp-cur">—</p>
@@ -200,8 +392,12 @@
   </div>
   <div class="gap">
     <div class="card">
-      <h2>Por que há vaga livre</h2>
-      <ul id="mp-vagas"></ul>
+      <h2>Dependências e ordem de entrada</h2>
+      <p class="linha" id="mp-grafo-vagas">—</p>
+      <p class="linha" id="mp-grafo-ordem" hidden>—</p>
+      <ul class="legenda" id="mp-grafo-legenda" hidden></ul>
+      <div class="grafo" id="mp-grafo">—</div>
+      <div class="detalhe" id="mp-grafo-detalhe" hidden></div>
     </div>
     <div class="card">
       <h2>Passo a passo</h2>
@@ -433,6 +629,290 @@
         a.textContent = String(value);
         return a;
       }
+      // Grafo (etapa #1761): o painel.py calcula ondas, estados, ordem e setas (meta.grafoNos e
+      // meta.grafoSetas); a página só agrupa por onda, mantém a ordem recebida e vê se a seta é vizinha.
+      const SVG_NS = 'http://www.w3.org/2000/svg';
+      const ESTADOS = [
+        ['rodando', 'rodando'],
+        ['dono', 'esperando o dono'],
+        ['arquivo', 'esperando arquivo'],
+        ['dep', 'esperando dependência'],
+        ['exclusiva', 'exclusiva'],
+        ['segurada', 'segurada'],
+        ['livre', 'livre para entrar'],
+        ['ficha', 'ficha incompleta'],
+      ];
+      const ESTADO_ROTULO = Object.fromEntries(ESTADOS);
+      const NENHUMA_ELEGIVEL = 'nenhuma ready elegível';
+      const el = (tag, cls, text) => {
+        const e = document.createElement(tag);
+        if (cls) e.className = cls;
+        if (text != null) e.textContent = text;
+        return e;
+      };
+      let grafo = { nos: [], setas: [], sel: null, onda: new Map() };
+      const arrowsOf = (issue) =>
+        grafo.setas.filter((a) => a.de === issue || a.para === issue);
+      // A mesma onda vale para a faixa e para as setas: ausente ou não numérica é a 0 ("Agora").
+      const ondaDe = (n) => Number(n.onda) || 0;
+      const isNear = (a) => grafo.onda.get(a.para) - grafo.onda.get(a.de) === 1;
+      const progress = (n) => {
+        const total = +n.total || 0;
+        if (!total) return '';
+        const p = (+n.feitas || 0) + '/' + total;
+        return n.fase ? n.fase + ' · ' + p : p;
+      };
+      function buildCard(n) {
+        const b = el('button', 'no e-' + (ESTADO_ROTULO[n.estado] ? n.estado : 'x'));
+        b.type = 'button';
+        b.dataset.issue = n.issue;
+        b.setAttribute('aria-pressed', 'false');
+        const top = el('span', 'topo');
+        top.appendChild(el('span', 'num', String(n.issue)));
+        if (n.rank != null) top.appendChild(el('span', 'selo', n.rank + 'º'));
+        b.appendChild(top);
+        b.appendChild(el('span', 'tit', String(n.titulo || '')));
+        const prog = progress(n);
+        if (prog) b.appendChild(el('span', 'prog', prog));
+        if (n.motivo) b.appendChild(el('span', 'mot', String(n.motivo)));
+        b.appendChild(
+          el('span', 'est', ESTADO_ROTULO[n.estado] || String(n.estado || '')),
+        );
+        const longas = grafo.setas.filter((a) => a.para === n.issue && !isNear(a));
+        if (longas.length) {
+          b.appendChild(
+            el('span', 'espera', 'espera ' + longas.map((a) => a.de).join(', ')),
+          );
+        }
+        b.addEventListener('click', () => {
+          grafo.sel = grafo.sel === n.issue ? null : n.issue;
+          markSelection();
+        });
+        return b;
+      }
+      function buildDetail(n) {
+        const d = document.getElementById('mp-grafo-detalhe');
+        // O detalhe é refeito a cada leitura: devolve o foco ao link ou ao "Limpar" que o tinha.
+        const had = d.contains(document.activeElement) ? document.activeElement : null;
+        const focusedKey = had ? (had.tagName === 'A' ? 'a' : 'button') : null;
+        d.replaceChildren();
+        if (!n) {
+          d.hidden = true;
+          return;
+        }
+        const head = el('div', 'num');
+        const link = ghLink(n.issue, /^#(\d+)$/, 'issues');
+        head.appendChild(link || document.createTextNode(String(n.issue)));
+        d.appendChild(head);
+        d.appendChild(el('div', '', String(n.titulo || '')));
+        d.appendChild(el('div', '', ESTADO_ROTULO[n.estado] || String(n.estado || '')));
+        if (n.motivo) d.appendChild(el('div', '', String(n.motivo)));
+        const de = (tipo) =>
+          grafo.setas
+            .filter((a) => a.para === n.issue && a.tipo === tipo)
+            .map((a) => a.de);
+        if (de('dep').length)
+          d.appendChild(el('div', '', 'Depende de: ' + de('dep').join(', ')));
+        if (de('arquivo').length) {
+          d.appendChild(
+            el('div', '', 'Arquivo em comum com: ' + de('arquivo').join(', ')),
+          );
+        }
+        const clear = el('button', '', 'Limpar');
+        clear.type = 'button';
+        clear.addEventListener('click', () => {
+          grafo.sel = null;
+          markSelection();
+        });
+        d.appendChild(clear);
+        d.hidden = false;
+        if (focusedKey) {
+          const back = d.querySelector(focusedKey);
+          if (back) back.focus();
+        }
+      }
+      function drawArrows() {
+        const host = document.getElementById('mp-grafo');
+        const old = host.querySelector('svg');
+        if (old) old.remove();
+        if (!grafo.nos.length) return;
+        const svg = document.createElementNS(SVG_NS, 'svg');
+        svg.setAttribute('class', 'setas');
+        svg.setAttribute('id', 'mp-grafo-setas');
+        svg.setAttribute('aria-hidden', 'true');
+        const defs = document.createElementNS(SVG_NS, 'defs');
+        const mk = document.createElementNS(SVG_NS, 'marker');
+        mk.setAttribute('id', 'mp-ponta');
+        mk.setAttribute('viewBox', '0 0 10 10');
+        mk.setAttribute('refX', '9');
+        mk.setAttribute('refY', '5');
+        mk.setAttribute('markerWidth', '7');
+        mk.setAttribute('markerHeight', '7');
+        mk.setAttribute('orient', 'auto');
+        const tip = document.createElementNS(SVG_NS, 'path');
+        tip.setAttribute('d', 'M0 0 L10 5 L0 10 z');
+        mk.appendChild(tip);
+        defs.appendChild(mk);
+        svg.appendChild(defs);
+        const base = host.getBoundingClientRect();
+        const cards = Array.from(host.querySelectorAll('button[data-issue]'));
+        const box = (issue) => {
+          const c = cards.find((b) => b.dataset.issue === issue);
+          if (!c) return null;
+          const r = c.getBoundingClientRect();
+          return { x: r.left - base.left, y: r.top - base.top, w: r.width, h: r.height };
+        };
+        const sel = grafo.sel;
+        const shown = grafo.setas.filter(
+          (a) => isNear(a) || (sel && (a.de === sel || a.para === sel)),
+        );
+        for (const a of shown) {
+          const from = box(a.de);
+          const to = box(a.para);
+          if (!from || !to) continue;
+          let d;
+          if (grafo.onda.get(a.de) === grafo.onda.get(a.para)) {
+            // Mesma faixa: liga lado a lado, da borda do card de origem à do destino, no meio da altura.
+            const right = to.x >= from.x;
+            const x1 = right ? from.x + from.w : from.x;
+            const x2 = right ? to.x : to.x + to.w;
+            const y1 = from.y + from.h / 2;
+            const y2 = to.y + to.h / 2;
+            const xm = (x1 + x2) / 2;
+            d =
+              'M' +
+              x1 +
+              ' ' +
+              y1 +
+              ' C' +
+              xm +
+              ' ' +
+              y1 +
+              ' ' +
+              xm +
+              ' ' +
+              y2 +
+              ' ' +
+              x2 +
+              ' ' +
+              y2;
+          } else {
+            const down = to.y >= from.y;
+            const x1 = from.x + from.w / 2;
+            const y1 = down ? from.y + from.h : from.y;
+            const x2 = to.x + to.w / 2;
+            const y2 = down ? to.y : to.y + to.h;
+            const ym = (y1 + y2) / 2;
+            d =
+              'M' +
+              x1 +
+              ' ' +
+              y1 +
+              ' C' +
+              x1 +
+              ' ' +
+              ym +
+              ' ' +
+              x2 +
+              ' ' +
+              ym +
+              ' ' +
+              x2 +
+              ' ' +
+              y2;
+          }
+          const p = document.createElementNS(SVG_NS, 'path');
+          p.setAttribute('d', d);
+          p.setAttribute('data-de', a.de);
+          p.setAttribute('data-para', a.para);
+          p.setAttribute('data-tipo', a.tipo);
+          if (!isNear(a)) p.setAttribute('data-longa', '');
+          if (sel && a.de !== sel && a.para !== sel) p.setAttribute('class', 'dim');
+          svg.appendChild(p);
+        }
+        host.appendChild(svg);
+      }
+      function markSelection() {
+        const sel = grafo.sel;
+        const related = new Set([sel]);
+        arrowsOf(sel).forEach((a) => related.add(a.de).add(a.para));
+        document.querySelectorAll('#mp-grafo button[data-issue]').forEach((b) => {
+          const on = b.dataset.issue === sel;
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+          b.classList.toggle('dim', !!sel && !related.has(b.dataset.issue));
+        });
+        buildDetail(grafo.nos.find((n) => n.issue === sel));
+        drawArrows();
+      }
+      function renderGrafo(m, vagas) {
+        // "Vagas k/N" (o primeiro item) e, se for o último, "nenhuma ready elegível".
+        const last = vagas.length > 1 ? vagas[vagas.length - 1] : '';
+        document.getElementById('mp-grafo-vagas').textContent =
+          (vagas[0] || '—') + (last === NENHUMA_ELEGIVEL ? ' · ' + NENHUMA_ELEGIVEL : '');
+        const nos = (asList(m.grafoNos) || []).filter((n) => n && typeof n === 'object');
+        const setas = (asList(m.grafoSetas) || []).filter(
+          (a) => a && typeof a === 'object' && a.de && a.para,
+        );
+        const issues = new Set(nos.map((n) => n.issue));
+        grafo = {
+          nos,
+          setas: setas.filter((a) => issues.has(a.de) && issues.has(a.para)),
+          sel: issues.has(grafo.sel) ? grafo.sel : null,
+          onda: new Map(nos.map((n) => [n.issue, ondaDe(n)])),
+        };
+        const host = document.getElementById('mp-grafo');
+        const focused = host.contains(document.activeElement)
+          ? document.activeElement.dataset.issue
+          : null;
+        const ordem = document.getElementById('mp-grafo-ordem');
+        const leg = document.getElementById('mp-grafo-legenda');
+        host.replaceChildren();
+        leg.replaceChildren();
+        if (!nos.length) {
+          host.textContent = '—';
+          ordem.hidden = true;
+          leg.hidden = true;
+          buildDetail(null);
+          return;
+        }
+        const next = nos
+          .filter((n) => n.rank != null)
+          .sort((a, b) => a.rank - b.rank)
+          .slice(0, 5)
+          .map((n) => n.issue);
+        ordem.textContent = 'Ordem prevista: ' + (next.length ? next.join(', ') : '—');
+        ordem.hidden = false;
+        for (const [estado, rotulo] of ESTADOS) {
+          const li = el('li');
+          li.appendChild(el('i', 'amostra e-' + estado));
+          li.appendChild(document.createTextNode(rotulo));
+          leg.appendChild(li);
+        }
+        leg.hidden = false;
+        const ondas = Array.from(new Set(nos.map(ondaDe))).sort((a, b) => a - b);
+        for (const w of ondas) {
+          const f = el('div', 'faixa');
+          f.dataset.onda = String(w);
+          f.appendChild(el('div', 'faixa-rot', w === 0 ? 'Agora' : 'Onda ' + w));
+          const row = el('div', 'faixa-nos');
+          nos
+            .filter((n) => ondaDe(n) === w)
+            .forEach((n) => row.appendChild(buildCard(n)));
+          f.appendChild(row);
+          host.appendChild(f);
+        }
+        markSelection();
+        // Os cards são refeitos a cada leitura: devolve o foco do teclado ao que o tinha.
+        const back = Array.from(host.querySelectorAll('button')).find(
+          (b) => b.dataset.issue === focused,
+        );
+        if (back) back.focus();
+      }
+      // As posições vêm do layout: redesenha só as setas quando a janela ou o grafo mudam de tamanho.
+      window.addEventListener('resize', drawArrows);
+      if (typeof ResizeObserver === 'function') {
+        new ResizeObserver(drawArrows).observe(document.getElementById('mp-grafo'));
+      }
       function tick() {
         const m = q('meta')[0] || {};
         const now = Date.now();
@@ -467,13 +947,7 @@
           (m.updatedAt
             ? ' · atualizado ' + new Date(m.updatedAt).toLocaleTimeString('pt-BR')
             : '');
-        const vul = document.getElementById('mp-vagas');
-        vul.replaceChildren();
-        for (const part of vagas.length ? vagas : ['—']) {
-          const li = document.createElement('li');
-          li.textContent = part;
-          vul.appendChild(li);
-        }
+        renderGrafo(m, vagas);
         const sm = dash.data('summary');
         if (sm.status === 'ok' && sm.data[0]) {
           document.getElementById('mp-bar').style.width =

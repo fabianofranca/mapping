@@ -274,12 +274,14 @@ describe('painel.py — vagas (VG1, #1440)', () => {
     expect(lines[i + 2]).toBe('começar agora: nenhuma');
   });
 
-  it('a página mostra a nota no subtítulo e o card "Por que há vaga livre" a partir de meta.vagas', () => {
+  it('a página mostra a nota no subtítulo e o card "Dependências e ordem de entrada" a partir de meta.grafoNos', () => {
     const html = readFileSync(PAGE, 'utf8');
-    expect(html).toContain('Por que há vaga livre');
+    expect(html).toContain('Dependências e ordem de entrada');
+    expect(html).toContain('m.grafoNos');
     expect(html).toContain('m.vagas');
-    expect(html).toContain('id="mp-vagas"');
-    expect(html.indexOf('Por que há vaga livre')).toBeLessThan(
+    expect(html).not.toContain('Por que há vaga livre');
+    expect(html).not.toContain('id="mp-vagas"');
+    expect(html.indexOf('Dependências e ordem de entrada')).toBeLessThan(
       html.indexOf('Passo a passo'),
     );
   });

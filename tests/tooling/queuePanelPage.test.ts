@@ -13,6 +13,8 @@ type DataResult = { status: 'ok'; data: Row[] } | { status: 'failed'; message: s
 interface Panel {
   data: (id: string) => DataResult;
   render: () => void;
+  /** Troca o `meta` na mesma página (a seleção do grafo vive nela); o `render` o relê. */
+  setMeta: (meta: Row) => void;
 }
 
 /** Monta a página no `document` e roda o `<script>` dela com um `dash` falso. */
@@ -44,7 +46,13 @@ function loadPanel(meta: Row, queue: Row[] = []): Panel {
     },
   };
   new Function('dash', 'setInterval', script)(dash, () => 0);
-  return { data, render: () => onData() };
+  return {
+    data,
+    render: () => onData(),
+    setMeta: (m) => {
+      datasets.meta = [m];
+    },
+  };
 }
 
 const text = (selector: string) => document.querySelector(selector)?.textContent;
@@ -80,7 +88,7 @@ function expectFilledCards(panel: Panel): void {
     ['Etapa: #10', '2', '2.00', '1.00'],
     ['Etapa: #20', '1', '2.25', '2.25'],
   ]);
-  expect(items('#mp-vagas')).toEqual(VAGAS);
+  expect(document.querySelector('#mp-vagas')).toBeNull();
   expect(text('#mp-cur')).toContain(`· ${VAGAS[0]}`);
   expect(items('#mp-pedidos')).toEqual(['SUP-1 (tipo A): trocar a página — concluído']);
   expect(items('#mp-regras')).toEqual(['R1 (dono): não mesclar sem pedir']);
@@ -123,7 +131,8 @@ describe('página do painel da fila: campos-lista do meta', () => {
     expect(text('#mp-custo-total')).toBe('—');
     expect(items('#mp-pedidos')).toEqual(['—']);
     expect(items('#mp-regras')).toEqual(['—']);
-    expect(items('#mp-vagas')).toEqual(['Vaga 1: livre', 'Vaga 2: ocupada']);
+    expect(document.querySelector('#mp-vagas')).toBeNull();
+    expect(text('#mp-cur')).toContain('· Vaga 1: livre');
   });
 
   it.each(['[{', '{}', '3'])(
@@ -141,7 +150,8 @@ describe('página do painel da fila: campos-lista do meta', () => {
       expect(text('#mp-custo-total')).toBe('—');
       expect(items('#mp-pedidos')).toEqual(['—']);
       expect(items('#mp-regras')).toEqual(['—']);
-      expect(items('#mp-vagas')).toEqual(['Vaga 1: livre', 'Vaga 2: ocupada']);
+      expect(document.querySelector('#mp-vagas')).toBeNull();
+      expect(text('#mp-cur')).toContain('· Vaga 1: livre');
     },
   );
 });
@@ -261,5 +271,363 @@ describe('página do painel da fila: links da issue e do PR (PF1, decisão 14)',
       expect(a?.getAttribute('target')).toBe('_blank');
       expect(a?.getAttribute('rel')).toBe('noopener');
     }
+  });
+});
+
+// Fase GF2 (etapa #1761): o card "Dependências e ordem de entrada" desenha `meta.grafoNos` e
+// `meta.grafoSetas` (lista ou texto JSON); a página só agrupa por onda e decide se a seta é vizinha.
+type No = {
+  issue: string;
+  titulo: string;
+  onda: number;
+  rank: number | null;
+  estado: string;
+  motivo: string;
+  fase: string;
+  feitas: number;
+  total: number;
+};
+const no = (over: Partial<No> & Pick<No, 'issue' | 'onda'>): No => ({
+  titulo: `Etapa ${over.issue}`,
+  rank: null,
+  estado: 'dep',
+  motivo: '',
+  fase: '',
+  feitas: 0,
+  total: 0,
+  ...over,
+});
+const NOS: No[] = [
+  no({
+    issue: '#1',
+    onda: 0,
+    estado: 'rodando',
+    motivo: 'D2 implementando',
+    fase: 'D2',
+    feitas: 1,
+    total: 3,
+  }),
+  no({ issue: '#2', onda: 0, rank: 1, estado: 'livre', motivo: 'começa' }),
+  no({
+    issue: '#3',
+    onda: 1,
+    rank: 2,
+    estado: 'arquivo',
+    motivo: 'arquivo a.ts com #1',
+    total: 2,
+  }),
+  no({ issue: '#4', onda: 1, rank: 3, motivo: 'dep #1' }),
+  no({ issue: '#5', onda: 2, rank: 4, motivo: 'dep #4' }),
+  no({
+    issue: '#6',
+    onda: 3,
+    rank: 5,
+    estado: 'exclusiva',
+    titulo: 'Título bem comprido da etapa exclusiva que espera a #2 e a #5',
+    motivo: 'dep #2, #5',
+  }),
+  no({
+    issue: '#7',
+    onda: 3,
+    rank: 6,
+    estado: 'ficha',
+    motivo: 'ficha incompleta (toca)',
+  }),
+  no({ issue: '#8', onda: 3, estado: 'segurada', motivo: 'esperando dono (decisão)' }),
+];
+const SETAS = [
+  { de: '#1', para: '#3', tipo: 'arquivo' },
+  { de: '#1', para: '#4', tipo: 'dep' },
+  { de: '#4', para: '#5', tipo: 'dep' },
+  { de: '#2', para: '#6', tipo: 'dep' },
+  { de: '#5', para: '#6', tipo: 'dep' },
+];
+const GRAFO_VAGAS = ['Vagas 1/2', '#3 arquivo a.ts com #1', 'nenhuma ready elegível'];
+
+const card = (issue: string) =>
+  document.querySelector<HTMLButtonElement>(`#mp-grafo button[data-issue="${issue}"]`);
+const faixas = () =>
+  Array.from(document.querySelectorAll('#mp-grafo .faixa')).map((f) => ({
+    rotulo: f.querySelector('.faixa-rot')?.textContent,
+    issues: Array.from(f.querySelectorAll('button')).map((b) => b.dataset.issue),
+  }));
+const setas = () =>
+  Array.from(document.querySelectorAll('#mp-grafo-setas path[data-de]')).map((p) => ({
+    de: p.getAttribute('data-de'),
+    para: p.getAttribute('data-para'),
+    tipo: p.getAttribute('data-tipo'),
+    longa: p.hasAttribute('data-longa'),
+  }));
+
+const FORMAS: Array<[string, (v: unknown) => unknown]> = [
+  ['lista', (v) => v],
+  ['texto JSON', (v) => JSON.stringify(v)],
+];
+
+describe.each(FORMAS)('página do painel da fila: grafo (GF2), %s', (_forma, wrap) => {
+  const montar = (over: Row = {}) => {
+    const panel = loadPanel({
+      vagasItens: wrap(GRAFO_VAGAS),
+      grafoNos: wrap(NOS),
+      grafoSetas: wrap(SETAS),
+      ...over,
+    });
+    panel.render();
+    return panel;
+  };
+
+  it('uma faixa por onda, "Agora" e "Onda k", com os cards na ordem da lista', () => {
+    montar();
+    expect(faixas()).toEqual([
+      { rotulo: 'Agora', issues: ['#1', '#2'] },
+      { rotulo: 'Onda 1', issues: ['#3', '#4'] },
+      { rotulo: 'Onda 2', issues: ['#5'] },
+      { rotulo: 'Onda 3', issues: ['#6', '#7', '#8'] },
+    ]);
+    expect(document.querySelector('#mp-grafo-vagas')).not.toBeNull();
+  });
+
+  it('o card traz número, rótulo do estado, fase e progresso, motivo e o selo da ordem', () => {
+    montar();
+    const c1 = card('#1');
+    expect(c1?.querySelector('.num')?.textContent).toBe('#1');
+    expect(c1?.querySelector('.est')?.textContent).toBe('rodando');
+    expect(c1?.querySelector('.prog')?.textContent).toBe('D2 · 1/3');
+    expect(c1?.querySelector('.mot')?.textContent).toBe('D2 implementando');
+    expect(c1?.querySelector('.selo')).toBeNull();
+    expect(card('#2')?.querySelector('.selo')?.textContent).toBe('1º');
+    expect(card('#2')?.querySelector('.est')?.textContent).toBe('livre para entrar');
+    expect(card('#2')?.querySelector('.prog')).toBeNull();
+    expect(card('#3')?.querySelector('.prog')?.textContent).toBe('0/2');
+    expect(card('#3')?.querySelector('.est')?.textContent).toBe('esperando arquivo');
+    expect(card('#4')?.querySelector('.est')?.textContent).toBe('esperando dependência');
+    expect(card('#6')?.querySelector('.est')?.textContent).toBe('exclusiva');
+    expect(card('#7')?.querySelector('.est')?.textContent).toBe('ficha incompleta');
+    expect(card('#8')?.querySelector('.est')?.textContent).toBe('segurada');
+    expect(card('#1')?.getAttribute('type')).toBe('button');
+    expect(card('#1')?.getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('as linhas "Vagas k/N · nenhuma ready elegível" e "Ordem prevista" (cinco primeiros)', () => {
+    montar();
+    expect(text('#mp-grafo-vagas')).toBe('Vagas 1/2 · nenhuma ready elegível');
+    expect(text('#mp-grafo-ordem')).toBe('Ordem prevista: #2, #3, #4, #5, #6');
+    expect(text('#mp-cur')).toContain('· Vagas 1/2');
+    montar({ vagasItens: wrap(['Vagas 1/2', '#3 arquivo a.ts com #1']) });
+    expect(text('#mp-grafo-vagas')).toBe('Vagas 1/2');
+  });
+
+  it('a legenda traz os oito estados', () => {
+    montar();
+    expect(
+      Array.from(document.querySelectorAll('#mp-grafo-legenda li')).map(
+        (l) => l.textContent,
+      ),
+    ).toEqual([
+      'rodando',
+      'esperando o dono',
+      'esperando arquivo',
+      'esperando dependência',
+      'exclusiva',
+      'segurada',
+      'livre para entrar',
+      'ficha incompleta',
+    ]);
+  });
+
+  it('o svg só desenha as setas entre ondas vizinhas; a longa vira "espera #…" no card', () => {
+    montar();
+    expect(setas()).toEqual([
+      { de: '#1', para: '#3', tipo: 'arquivo', longa: false },
+      { de: '#1', para: '#4', tipo: 'dep', longa: false },
+      { de: '#4', para: '#5', tipo: 'dep', longa: false },
+      { de: '#5', para: '#6', tipo: 'dep', longa: false },
+    ]);
+    expect(card('#6')?.querySelector('.espera')?.textContent).toBe('espera #2');
+    expect(card('#5')?.querySelector('.espera')).toBeNull();
+  });
+
+  it('o toque no card o seleciona, desenha as setas dele (a longa inclusive) e mostra o detalhe', () => {
+    montar();
+    const detalhe = document.querySelector<HTMLElement>('#mp-grafo-detalhe');
+    expect(detalhe?.hidden).toBe(true);
+    card('#6')?.click();
+    expect(card('#6')?.getAttribute('aria-pressed')).toBe('true');
+    expect(card('#5')?.getAttribute('aria-pressed')).toBe('false');
+    expect(setas()).toContainEqual({ de: '#2', para: '#6', tipo: 'dep', longa: true });
+    expect(setas()).toContainEqual({ de: '#5', para: '#6', tipo: 'dep', longa: false });
+    expect(setas().filter((s) => s.longa)).toHaveLength(1);
+    expect(detalhe?.hidden).toBe(false);
+    expect(detalhe?.textContent).toContain(NOS[5]?.titulo);
+    expect(detalhe?.textContent).toContain('exclusiva');
+    expect(detalhe?.textContent).toContain('dep #2, #5');
+    expect(detalhe?.textContent).toContain('Depende de: #2, #5');
+    const a = detalhe?.querySelector('a');
+    expect(a?.getAttribute('href')).toBe(
+      'https://github.com/fabianofranca/mapping/issues/6',
+    );
+    expect(a?.getAttribute('target')).toBe('_blank');
+    expect(a?.getAttribute('rel')).toBe('noopener');
+  });
+
+  it('o segundo toque no mesmo card, ou o "Limpar", desfaz a seleção', () => {
+    montar();
+    card('#6')?.click();
+    card('#6')?.click();
+    expect(card('#6')?.getAttribute('aria-pressed')).toBe('false');
+    expect(setas().some((s) => s.longa)).toBe(false);
+    expect(document.querySelector<HTMLElement>('#mp-grafo-detalhe')?.hidden).toBe(true);
+
+    card('#6')?.click();
+    card('#1')?.click();
+    expect(card('#6')?.getAttribute('aria-pressed')).toBe('false');
+    expect(card('#1')?.getAttribute('aria-pressed')).toBe('true');
+    const limpar = Array.from(
+      document.querySelectorAll<HTMLButtonElement>('#mp-grafo-detalhe button'),
+    ).find((b) => b.textContent === 'Limpar');
+    expect(limpar?.getAttribute('type')).toBe('button');
+    limpar?.click();
+    expect(card('#1')?.getAttribute('aria-pressed')).toBe('false');
+    expect(document.querySelector<HTMLElement>('#mp-grafo-detalhe')?.hidden).toBe(true);
+  });
+
+  it('a seleção sobrevive a uma nova leitura dos dados e some se a etapa sai', () => {
+    const panel = montar();
+    card('#6')?.click();
+    panel.render();
+    expect(card('#6')?.getAttribute('aria-pressed')).toBe('true');
+
+    expect(document.querySelector<HTMLElement>('#mp-grafo-detalhe')?.hidden).toBe(false);
+    panel.setMeta({
+      grafoNos: wrap(NOS.filter((n) => n.issue !== '#6')),
+      grafoSetas: wrap(SETAS),
+    });
+    panel.render();
+    expect(card('#6')).toBeNull();
+    expect(document.querySelector<HTMLElement>('#mp-grafo-detalhe')?.hidden).toBe(true);
+    expect(setas().every((s) => s.para !== '#6')).toBe(true);
+  });
+
+  it('a nova leitura devolve o foco ao card que o tinha', () => {
+    const panel = montar();
+    card('#4')?.focus();
+    panel.render();
+    expect(document.activeElement).toBe(card('#4'));
+  });
+
+  it('seta entre cards da mesma onda liga na horizontal (lado a lado), sem sair da base nem entrar no topo', () => {
+    const mesma = [
+      no({ issue: '#1', onda: 1, estado: 'rodando' }),
+      no({ issue: '#2', onda: 1, estado: 'livre' }),
+    ];
+    const original = Element.prototype.getBoundingClientRect;
+    Element.prototype.getBoundingClientRect = function (this: Element) {
+      const issue = (this as HTMLElement).dataset?.issue;
+      const x = issue === '#2' ? 200 : issue === '#1' ? 0 : 0;
+      const alvo = issue
+        ? { x, y: 50, width: 100, height: 40 }
+        : { x: 0, y: 0, width: 400, height: 200 };
+      return new DOMRect(alvo.x, alvo.y, alvo.width, alvo.height);
+    };
+    try {
+      const panel = loadPanel({
+        grafoNos: wrap(mesma),
+        grafoSetas: wrap([{ de: '#1', para: '#2', tipo: 'arquivo' }]),
+      });
+      panel.render();
+      card('#1')?.click();
+      const d = document
+        .querySelector('#mp-grafo-setas path[data-de="#1"]')
+        ?.getAttribute('d');
+      // a seta parte da borda direita de #1 (x 100) e chega à borda esquerda de #2 (x 200), no meio da altura (y 70)
+      expect(d?.startsWith('M100 70 ')).toBe(true);
+      expect(d?.endsWith(' 200 70')).toBe(true);
+    } finally {
+      Element.prototype.getBoundingClientRect = original;
+    }
+  });
+
+  it('a nova leitura devolve o foco ao link da issue e ao botão "Limpar" do detalhe', () => {
+    const panel = montar();
+    card('#6')?.click();
+    const link = document.querySelector<HTMLElement>('#mp-grafo-detalhe a');
+    link?.focus();
+    expect(document.activeElement).toBe(link);
+    panel.render();
+    expect(document.activeElement).toBe(document.querySelector('#mp-grafo-detalhe a'));
+    const limpar = () =>
+      Array.from(
+        document.querySelectorAll<HTMLButtonElement>('#mp-grafo-detalhe button'),
+      ).find((b) => b.textContent === 'Limpar');
+    limpar()?.focus();
+    expect(document.activeElement).toBe(limpar());
+    panel.render();
+    expect(document.activeElement).toBe(limpar());
+    expect(limpar()?.isConnected).toBe(true);
+  });
+
+  it('id com aspas ou colchete não derruba a página e o resto do painel é preenchido', () => {
+    const estranho = '#9"]x';
+    const panel = loadPanel({
+      sessions: SESSIONS,
+      grafoNos: wrap([...NOS, no({ issue: estranho, onda: 4 })]),
+      grafoSetas: wrap([...SETAS, { de: '#6', para: estranho, tipo: 'dep' }]),
+    });
+    expect(() => panel.render()).not.toThrow();
+    expect(text('#mp-custo-total')).toBe('US$ 4.25 em 3 sessões');
+    expect(setas()).toContainEqual({
+      de: '#6',
+      para: estranho,
+      tipo: 'dep',
+      longa: false,
+    });
+  });
+
+  it('nó sem onda numérica cai em "Agora" e conta como onda 0 também para as setas', () => {
+    const nos = [
+      no({ issue: '#1', onda: 0, estado: 'rodando' }),
+      { ...no({ issue: '#2', onda: 1 }), onda: undefined } as unknown as No,
+      no({ issue: '#3', onda: 1 }),
+    ];
+    const panel = loadPanel({
+      grafoNos: wrap(nos),
+      grafoSetas: wrap([
+        { de: '#1', para: '#3', tipo: 'dep' },
+        { de: '#2', para: '#3', tipo: 'dep' },
+      ]),
+    });
+    panel.render();
+    expect(faixas()).toEqual([
+      { rotulo: 'Agora', issues: ['#1', '#2'] },
+      { rotulo: 'Onda 1', issues: ['#3'] },
+    ]);
+    expect(setas().map((s) => s.de)).toEqual(['#1', '#2']);
+    expect(card('#3')?.querySelector('.espera')).toBeNull();
+  });
+});
+
+describe('página do painel da fila: grafo sem dados (GF2)', () => {
+  it.each([[undefined], ['[{'], ['{}'], ['3'], ['[]']])(
+    'grafoNos %j: a linha de vagas e "—", sem erro',
+    (invalido) => {
+      const panel = loadPanel({
+        vagasItens: GRAFO_VAGAS,
+        grafoNos: invalido,
+        grafoSetas: invalido,
+      });
+      expect(() => panel.render()).not.toThrow();
+      expect(text('#mp-grafo-vagas')).toBe('Vagas 1/2 · nenhuma ready elegível');
+      expect(text('#mp-grafo')).toBe('—');
+      expect(document.querySelectorAll('#mp-grafo .faixa')).toHaveLength(0);
+      expect(document.querySelector('#mp-vagas')).toBeNull();
+    },
+  );
+
+  it('grafoSetas ausente ou inválido com nós válidos: desenha os nós sem setas', () => {
+    const panel = loadPanel({ grafoNos: NOS, grafoSetas: '[{' });
+    expect(() => panel.render()).not.toThrow();
+    expect(faixas()).toHaveLength(4);
+    expect(setas()).toEqual([]);
+    expect(card('#6')?.querySelector('.espera')).toBeNull();
   });
 });
