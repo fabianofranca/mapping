@@ -2623,8 +2623,10 @@ function createEngine(
 
   /**
    * A palavra mais larga que a caixa (decisão 3 da #1631). O texto só quebra entre palavras, então a
-   * que não cabe fica sozinha numa linha: olham-se só as linhas sem espaço nem tab que passam de `w`
-   * pelo atalho do `wordSafeWidth` (letras × corpo mais espaçamento) e se medem sem limite. Não usa
+   * que não cabe fica sozinha numa linha; com `wrap: none` a linha é o parágrafo todo. Pulam-se só as
+   * linhas com espaço quebradas por palavra (já cabem) e as que o atalho do `wordSafeWidth` (letras ×
+   * corpo mais espaçamento) prova que cabem, o que só vale para letras estreitas (abaixo de U+2000:
+   * emoji e CJK podem passar de 1em). O resto se mede sem limite. Não usa
    * `TextMetrics.width`, que o medidor da app prende no limite. Devolve a largura da maior, ou 0.
    */
   const widestWord = (lines: readonly string[], font: MeasureFont, w: number): number => {
@@ -2632,9 +2634,13 @@ function createEngine(
     const free: MeasureFont = { ...font };
     delete free.maxLines;
     delete free.ellipsis;
+    const spaced = font.wrap !== 'none';
+    const fitsByAdvance = (line: string): boolean =>
+      [...line].length * advance <= w &&
+      ![...line].some((ch) => (ch.codePointAt(0) ?? 0) >= 0x2000);
     let widest = 0;
     for (const line of lines) {
-      if (/[ \t]/.test(line) || [...line].length * advance <= w) continue;
+      if ((spaced && line.includes(' ')) || fitsByAdvance(line)) continue;
       widest = Math.max(widest, options.measure(line, free).width);
     }
     return widest;

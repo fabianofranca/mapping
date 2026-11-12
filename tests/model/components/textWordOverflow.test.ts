@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { COMPONENT_FORMAT } from '../../../src/model/components/componentFormat';
 import {
   approximateMeasurer,
+  measureLines,
   instantiate,
 } from '../../../src/model/components/instantiate';
 import { defaultValues } from '../../../src/model/libraryDrawing';
@@ -103,5 +104,41 @@ describe('o que não avisa e o texto rico', () => {
       runs: [{ text: 'a ' }, { text: 'chipmuitolargo', background: '#cccccc' }],
     });
     expect(tooBig(made.warnings)).toEqual(['texto maior que a caixa: rico']);
+  });
+});
+
+describe('rótulo com espaço sem quebra e palavra com glifo largo', () => {
+  const base = { type: 'text', name: 't', width: 80, height: 60 };
+
+  it('wrap none com espaço mais largo que a caixa avisa, como o mesmo texto em runs', () => {
+    const text = 'Confirmar compra';
+    const plain = run({ ...base, text, font: { size: 14, wrap: 'none' } });
+    expect(tooBig(plain.warnings)).toEqual(['texto maior que a caixa: t']);
+    const rich = run({ ...base, font: { size: 14, wrap: 'none' }, runs: [{ text }] });
+    expect(tooBig(rich.warnings)).toEqual(['texto maior que a caixa: t']);
+  });
+
+  it('wrap none com ellipsis não avisa e linha com espaço que cabe não avisa', () => {
+    const text = 'Confirmar compra';
+    const cut = run({ ...base, text, font: { size: 14, wrap: 'none', ellipsis: true } });
+    expect(tooBig(cut.warnings)).toEqual([]);
+    const fits = run({ ...base, width: 200, text, font: { size: 14, wrap: 'none' } });
+    expect(tooBig(fits.warnings)).toEqual([]);
+  });
+
+  it('palavra com tab mais larga que a caixa avisa (a quebra é só em espaço)', () => {
+    const made = run({ ...base, text: 'Confirmar\tcompra', font: { size: 14 } });
+    expect(tooBig(made.warnings)).toEqual(['texto maior que a caixa: t']);
+  });
+
+  it('emoji mais largo que 1em não some no atalho', () => {
+    const wide = (value: string): number => [...value].length * 14 * 1.5;
+    const made = instantiate(
+      file({ ...base, width: 60, text: '😀😀😀', font: { size: 14 } }),
+      {} as never,
+      { x: 0, y: 0, width: 60, height: 60 },
+      { measure: (text, font, max) => measureLines(text, font, max, wide) },
+    );
+    expect(tooBig(made.warnings)).toEqual(['texto maior que a caixa: t']);
   });
 });
