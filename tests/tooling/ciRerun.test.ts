@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 // @ts-expect-error módulo .mjs sem declaração de tipos
-import { decideRerun, expectedJobs } from '../../scripts/ci/ciRerun.mjs';
+import { decideQueued, decideRerun, expectedJobs } from '../../scripts/ci/ciRerun.mjs';
 
 interface Job {
   name: string;
@@ -213,5 +213,282 @@ describe('comando decide', () => {
     );
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('name:');
+  });
+});
+
+// Etapa #1669 (QF1): execução do CI presa em `queued` sem jobs, com as execuções reais de
+// 2026-11-11 (PR #1664) como fixtures.
+interface Run {
+  id: number;
+  head_sha: string;
+  status: string;
+  created_at: string;
+  html_url: string;
+}
+interface QueuedDecision {
+  preso: boolean;
+  run: string;
+  link: string;
+  minutos: number;
+  execucoes: number;
+  reaberto: boolean;
+  reason: string;
+}
+const decideQ = decideQueued as (input: {
+  runs: Run[];
+  jobsTotal: number;
+  head: string;
+  now: string;
+}) => QueuedDecision;
+
+const OLD = 'b1221ea';
+const HEAD = 'e871e5c';
+const run = (id: number, sha: string, createdAt: string, status = 'queued'): Run => ({
+  id,
+  head_sha: sha,
+  status,
+  created_at: createdAt,
+  html_url: `https://github.com/fabianofranca/mapping/actions/runs/${id}`,
+});
+const r2676 = run(43095704874, OLD, '2026-11-11T20:22:56Z');
+const r2677 = run(43097220825, HEAD, '2026-11-11T20:38:06Z');
+const r2678 = run(43103790776, HEAD, '2026-11-11T21:31:27Z');
+
+describe('decideQueued: execução presa na fila (#1669)', () => {
+  it('a 2677 sozinha no commit, às 20:57Z, está presa e ainda não foi reaberta', () => {
+    const d = decideQ({
+      runs: [r2677],
+      jobsTotal: 0,
+      head: HEAD,
+      now: '2026-11-11T20:57:00Z',
+    });
+    expect(d).toEqual({
+      preso: true,
+      run: '43097220825',
+      link: 'https://github.com/fabianofranca/mapping/actions/runs/43097220825',
+      minutos: 18,
+      execucoes: 1,
+      reaberto: false,
+      reason: 'na fila sem jobs há 18 min',
+    });
+  });
+
+  it('exatamente 15 min não é preso; 15 min e 1 s é', () => {
+    const at15 = decideQ({
+      runs: [r2677],
+      jobsTotal: 0,
+      head: HEAD,
+      now: '2026-11-11T20:53:06Z',
+    });
+    expect(at15.preso).toBe(false);
+    expect(at15.reason).toBe('há 15 min (limite 15)');
+    const over = decideQ({
+      runs: [r2677],
+      jobsTotal: 0,
+      head: HEAD,
+      now: '2026-11-11T20:53:07Z',
+    });
+    expect(over.preso).toBe(true);
+    expect(over.minutos).toBe(15);
+    expect(over.reason).toBe('na fila sem jobs há 15 min');
+  });
+
+  it('a mais recente com jobs não está presa', () => {
+    const d = decideQ({
+      runs: [r2677, r2678],
+      jobsTotal: 10,
+      head: HEAD,
+      now: '2026-11-11T21:40:00Z',
+    });
+    expect(d.preso).toBe(false);
+    expect(d.reason).toBe('10 jobs');
+    expect(d.run).toBe('43103790776');
+    expect(d.execucoes).toBe(2);
+    expect(d.reaberto).toBe(true);
+  });
+
+  it.each(['in_progress', 'waiting'])('a mais recente %s não está presa', (status) => {
+    const d = decideQ({
+      runs: [run(43097220825, HEAD, '2026-11-11T20:38:06Z', status)],
+      jobsTotal: 0,
+      head: HEAD,
+      now: '2026-11-11T21:40:00Z',
+    });
+    expect(d.preso).toBe(false);
+    expect(d.reason).toBe(`status ${status}`);
+  });
+
+  it('presa de um commit anterior não conta: sem execução do commit atual', () => {
+    const d = decideQ({
+      runs: [r2676],
+      jobsTotal: 0,
+      head: HEAD,
+      now: '2026-11-11T21:40:00Z',
+    });
+    expect(d).toEqual({
+      preso: false,
+      run: '',
+      link: '',
+      minutos: 0,
+      execucoes: 0,
+      reaberto: false,
+      reason: 'sem execução do CI no commit',
+    });
+  });
+
+  it('2677 e 2678 no mesmo commit com a 2678 presa: preso de novo, já reaberto', () => {
+    const d = decideQ({
+      runs: [r2677, r2678],
+      jobsTotal: 0,
+      head: HEAD,
+      now: '2026-11-11T21:50:00Z',
+    });
+    expect(d.preso).toBe(true);
+    expect(d.reaberto).toBe(true);
+    expect(d.execucoes).toBe(2);
+    expect(d.run).toBe('43103790776');
+    expect(d.minutos).toBe(18);
+  });
+
+  it('a mais recente sai do created_at, não da ordem da lista', () => {
+    const d = decideQ({
+      runs: [r2678, r2676, r2677],
+      jobsTotal: 0,
+      head: HEAD,
+      now: '2026-11-11T21:50:00Z',
+    });
+    expect(d.run).toBe('43103790776');
+    expect(d.execucoes).toBe(2);
+  });
+});
+
+describe('decideQueued: entrada inválida (#1669, revisão)', () => {
+  it('now inválido é erro, não preso=true com NaN', () => {
+    expect(() =>
+      decideQ({ runs: [r2677], jobsTotal: 0, head: HEAD, now: 'amanha' }),
+    ).toThrow(/now/);
+  });
+
+  it('created_at ilegível é erro', () => {
+    expect(() =>
+      decideQ({
+        runs: [run(1, HEAD, 'ontem')],
+        jobsTotal: 0,
+        head: HEAD,
+        now: '2026-11-11T21:50:00Z',
+      }),
+    ).toThrow(/created_at/);
+  });
+});
+
+describe('comando queued (#1669)', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ci-queued-'));
+  const write = (name: string, value: unknown): string => {
+    const file = join(dir, name);
+    writeFileSync(file, JSON.stringify(value));
+    return file;
+  };
+  const exec = (args: string[]) =>
+    spawnSync(process.execPath, ['scripts/ci/ciRerun.mjs', 'queued', ...args], {
+      encoding: 'utf8',
+    });
+
+  it('escreve as sete linhas no --output', () => {
+    const runs = write('runs.json', { total_count: 2, workflow_runs: [r2676, r2677] });
+    const jobs = write('jobs.json', { total_count: 0, jobs: [] });
+    const output = join(dir, 'out-file');
+    const result = exec([
+      '--runs',
+      runs,
+      '--jobs',
+      jobs,
+      '--head',
+      HEAD,
+      '--now',
+      '2026-11-11T20:57:00Z',
+      '--output',
+      output,
+    ]);
+    expect(result.status).toBe(0);
+    expect(readFileSync(output, 'utf8')).toBe(
+      'preso=true\n' +
+        'run=43097220825\n' +
+        'link=https://github.com/fabianofranca/mapping/actions/runs/43097220825\n' +
+        'minutos=18\n' +
+        'execucoes=1\n' +
+        'reaberto=false\n' +
+        'reason=na fila sem jobs há 18 min\n',
+    );
+  });
+
+  it('sem --output escreve as mesmas linhas no stdout', () => {
+    const runs = write('runs2.json', { workflow_runs: [r2677, r2678] });
+    const jobs = write('jobs2.json', {
+      total_count: 10,
+      jobs: [{ run_id: 43103790776, name: 'epic' }],
+    });
+    const result = exec(['--runs', runs, '--jobs', jobs, '--head', HEAD]);
+    expect(result.status).toBe(0);
+    expect(result.stdout.split('\n').filter(Boolean)).toHaveLength(7);
+    expect(result.stdout).toContain('preso=false\n');
+    expect(result.stdout).toContain('reaberto=true\n');
+    expect(result.stdout).toContain('reason=10 jobs\n');
+  });
+
+  it('sem execução do commit o --jobs não é lido', () => {
+    const runs = write('runs3.json', { workflow_runs: [r2676] });
+    const result = exec([
+      '--runs',
+      runs,
+      '--jobs',
+      join(dir, 'nao-existe.json'),
+      '--head',
+      HEAD,
+    ]);
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('preso=false\n');
+    expect(result.stdout).toContain('reason=sem execução do CI no commit\n');
+  });
+
+  it('job de outro run_id é erro', () => {
+    const runs = write('runs4.json', { workflow_runs: [r2677, r2678] });
+    const jobs = write('jobs4.json', {
+      total_count: 1,
+      jobs: [{ run_id: 43097220825, name: 'epic' }],
+    });
+    const result = exec(['--runs', runs, '--jobs', jobs, '--head', HEAD]);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('run_id');
+  });
+
+  it('--now ilegível sai com erro', () => {
+    const runs = write('runs6.json', { workflow_runs: [r2677] });
+    const jobs = write('jobs6.json', { total_count: 0, jobs: [] });
+    const result = exec([
+      '--runs',
+      runs,
+      '--jobs',
+      jobs,
+      '--head',
+      HEAD,
+      '--now',
+      'amanha',
+    ]);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('--now');
+  });
+
+  it('valor de opção que é outra flag conta como argumento faltando', () => {
+    const runs = write('runs7.json', { workflow_runs: [r2677] });
+    const jobs = write('jobs7.json', { total_count: 0, jobs: [] });
+    const result = exec(['--runs', runs, '--jobs', jobs, '--head', '--now', 'x']);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('Uso: node scripts/ci/ciRerun.mjs queued');
+  });
+
+  it('argumento faltando sai com erro e a mensagem de uso', () => {
+    const result = exec(['--runs', write('runs5.json', { workflow_runs: [] })]);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('Uso: node scripts/ci/ciRerun.mjs queued');
   });
 });
