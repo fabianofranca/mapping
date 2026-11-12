@@ -1,4 +1,4 @@
-# Painel da fila com todas as fases do plano — [Não lançado] (épico `epic/painel-fases-do-plano`)
+# Painel da fila com todas as fases do plano — 2026-11-12 (épico `epic/painel-fases-do-plano`)
 
 ## Pendências
 
