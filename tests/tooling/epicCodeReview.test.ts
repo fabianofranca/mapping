@@ -4,8 +4,8 @@
 // revisor no `docs/FLOW.md` é a cópia da guardada no agendamento. Fase CN2 (decisões 12 a 17): a lista
 // sai da história da `main` (clone aprofundado) e o passo 2 decide pelo commit. Fase CA1 (etapa #1600,
 // decisões 2 a 9): a issue da rodada sai de uma listagem REST antes do script, o revisor que falha tem
-// uma tentativa por épico e a `main` só aceita merge commit. Teste só de texto: o CI não lê o agendamento, então ele confere o lado
-// do repositório (marcadores, ausência dos `<…>` e o mesmo id).
+// uma tentativa por épico e a `main` só aceita merge commit. Teste só de texto: o CI não lê o
+// agendamento, então ele confere o lado do repositório (marcadores, ausência dos `<…>` e o mesmo id).
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { between, section } from '../support/textSlice';
