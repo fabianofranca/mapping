@@ -15,6 +15,7 @@ import {
   type FrameNode,
   type Scene,
   type SceneNode,
+  type Shadow,
   baseNode,
   translate,
 } from '../../../src/model/components/scene';
@@ -256,6 +257,57 @@ describe('renderScene', () => {
     expect(warnings).toContainEqual({ code: 'inner-shadow' });
     expect((byId.get('r')?.getChildren()[0] as Konva.Rect).shadowEnabled()).toBe(true);
     expect((byId.get('r')?.getChildren()[0] as Konva.Rect).shadowBlur()).toBe(0);
+  });
+
+  describe('aviso "só a primeira sombra" (extra-shadows)', () => {
+    const sh = (extra: Partial<Shadow> = {}): Shadow => ({
+      color: '#000',
+      offset: { x: 0, y: 2 },
+      blur: 4,
+      ...extra,
+    });
+    const textNode = (effects: Shadow[]): SceneNode => ({
+      ...baseNode({ id: 't', name: 't', width: 40, height: 12, effects }),
+      type: 'text',
+      text: 'Olá',
+      fills: [{ type: 'solid', color: '#111111' }],
+      style: {
+        fontFamily: 'Inter',
+        fontSize: 12,
+        fontWeight: 400,
+        italic: false,
+        align: 'left',
+        verticalAlign: 'top',
+      },
+    });
+    const rectNode = (effects: Shadow[]): SceneNode => ({
+      ...baseNode({ id: 'r', name: 'r', width: 5, height: 5, effects }),
+      type: 'rect',
+      cornerRadius: 0,
+      fills: [{ type: 'solid', color: '#f00' }],
+    });
+
+    it('texto com duas sombras externas avisa', () => {
+      const { warnings } = renderScene(scene(textNode([sh(), sh({ blur: 8 })])));
+      expect(warnings).toContainEqual({ code: 'extra-shadows' });
+    });
+
+    it('texto com spread avisa', () => {
+      const { warnings } = renderScene(scene(textNode([sh({ spread: 2 })])));
+      expect(warnings).toContainEqual({ code: 'extra-shadows' });
+    });
+
+    it('texto com uma sombra sem spread, ou só uma externa e uma interna, não avisa', () => {
+      expect(renderScene(scene(textNode([sh()]))).warnings).toEqual([]);
+      expect(renderScene(scene(textNode([sh(), sh({ inner: true })]))).warnings).toEqual([
+        { code: 'inner-shadow' },
+      ]);
+    });
+
+    it('rect com a lista e o spread desenha tudo e não avisa', () => {
+      const { warnings } = renderScene(scene(rectNode([sh(), sh({ spread: 2 })])));
+      expect(warnings).toEqual([]);
+    });
   });
 
   it('decompõe matrizes com rotação e escala; fontStyle combina peso e itálico', () => {

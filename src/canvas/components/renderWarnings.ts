@@ -8,6 +8,8 @@ export type RenderWarningCode =
   | 'empty-group-shadow'
   /** Sombra interna: não existe no canvas 2D. */
   | 'inner-shadow'
+  /** Texto, caminho ou imagem com lista de sombras ou `spread`: só a primeira vale. */
+  | 'extra-shadows'
   /** Nó que o desenho não conhece (`params.type`): só a caixa. */
   | 'unknown-node'
   /** Imagem sem pixels (sem `src` embutido nem `url`): reservado. */
@@ -32,6 +34,7 @@ export interface RenderWarning {
 export const RENDER_WARNING_CODES: readonly RenderWarningCode[] = [
   'empty-group-shadow',
   'inner-shadow',
+  'extra-shadows',
   'unknown-node',
   'image-without-pixels',
   'image-decode-failed',

@@ -290,6 +290,19 @@ describe('código', () => {
     expect(within(section).getByText('onClick')).toBeTruthy();
   });
 
+  it.each(['pt-BR', 'en-US'] as const)(
+    'a seta entre o parâmetro e o valor vem do t() e fica fora da leitura (%s)',
+    (lang) => {
+      locale.value = lang;
+      view({ initialTypeId: 'm3-button' }, patched(base, 'm3-button', { code }));
+      const section = screen.getByRole('region', { name: t('catalog.page.code') });
+      const term = within(section).getByText('onClick').closest('dt');
+      const arrow = term?.querySelector('span[aria-hidden="true"]');
+      expect(arrow?.textContent).toBe(t('catalog.page.codeParamsArrow'));
+      expect(arrow?.textContent).toBe('→');
+    },
+  );
+
   // CL1 / D5: as notas do código são Markdown inline, como o Documento: sem crases literais.
   it('as notas renderizam o Markdown inline (code), sem crases soltas', () => {
     const noted = [
