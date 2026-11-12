@@ -122,8 +122,10 @@ describe('Material 3 (Compose): as fichas de assinatura (decisão 14 da #1079)',
       TextUnit: { type: 'number', format: '{value}.sp' },
       PaddingValues: { expand: { params: { horizontal: 'Dp', vertical: 'Dp' } } },
       BorderStroke: { expand: { params: { width: 'Dp', color: 'Color' } } },
-      '@Composable () -> Unit': { type: 'string', format: '{ Text(<value>) }' },
-      '(@Composable () -> Unit)?': { type: 'string', format: '{ Text(<value>) }' },
+      'BorderStroke?': { expand: { params: { width: 'Dp', color: 'Color' } } },
+      '@Composable () -> Unit': { type: 'string', format: '{ Text("{value}") }' },
+      '(@Composable () -> Unit)?': { type: 'string', format: '{ Text("{value}") }' },
+      '@Composable (() -> Unit)?': { type: 'string', format: '{ Text("{value}") }' },
     });
     expect((models as Record<string, { options?: string[] }>).boolean?.options).toEqual([
       'true',
@@ -132,23 +134,30 @@ describe('Material 3 (Compose): as fichas de assinatura (decisão 14 da #1079)',
   });
 
   it('os parâmetros que a prova de aceite lista viraram campos, sem modelagem à mão', () => {
+    // O `PaddingValues` expande em `horizontal`/`vertical` e o `BorderStroke` em `borderWidth`/`borderColor`
+    // (ou `width`/`color`, quando não há colisão); o campo nasce com o nome do parâmetro.
     const wanted: Record<string, string[]> = {
-      button: ['shape', 'contentPadding', 'containerColor', 'contentColor'],
-      'radio-button': ['selectedColor', 'unselectedColor'],
+      button: [
+        'shape',
+        'horizontal',
+        'vertical',
+        'containerColor',
+        'contentColor',
+        'disabledContainerColor',
+        'disabledContentColor',
+        'borderWidth',
+      ],
+      'radio-button': ['selectedColor', 'unselectedColor', 'disabledSelectedColor'],
       switch: ['checkedThumbColor', 'checkedTrackColor', 'uncheckedThumbColor'],
       divider: ['color'],
-      surface: ['shadowElevation', 'border'],
+      surface: ['shadowElevation', 'borderWidth', 'borderColor'],
       'top-app-bar': ['subtitle', 'containerColor', 'titleContentColor'],
       'text-field': ['prefix', 'suffix'],
+      'secure-text-field': ['prefix', 'suffix'],
     };
     for (const [id, keys] of Object.entries(wanted)) {
       const type = typeOf(id);
-      for (const key of keys) {
-        const key2 = type.fields.find(
-          (f) => f.key === key || f.key.startsWith(`${key}`),
-        )?.key;
-        expect(key2, `${id}.${key}`).toBeDefined();
-      }
+      for (const key of keys) expect(fieldOf(type, key), `${id}.${key}`).toBeDefined();
     }
   });
 
@@ -160,11 +169,16 @@ describe('Material 3 (Compose): as fichas de assinatura (decisão 14 da #1079)',
     expect(code?.variants?.cases.outlined?.calls).toMatchObject({
       colors: 'androidx.compose.material3.ButtonDefaults.outlinedButtonColors',
     });
-    expect(code?.params).toMatchObject({ shape: 'shape' });
-    expect(code?.params?.containerColor).toBe('colors.containerColor');
-    expect(
-      code?.formats?.contentPaddingHorizontal ?? code?.formats?.horizontal,
-    ).toBeDefined();
+    expect(code?.params).toMatchObject({
+      shape: 'shape',
+      containerColor: 'colors.containerColor',
+      horizontal: 'contentPadding.horizontal',
+      vertical: 'contentPadding.vertical',
+    });
+    expect(code?.formats).toMatchObject({
+      horizontal: '{value}.dp',
+      vertical: '{value}.dp',
+    });
   });
 
   it('os parâmetros sem campo deixam rastro: avisos pending com o ref da ficha', () => {
@@ -194,67 +208,134 @@ function allSolids(node: SceneNode, acc: string[] = []): string[] {
   return acc;
 }
 
+function named(node: SceneNode, name: string): SceneNode | undefined {
+  if (node.name === name) return node;
+  if ('children' in node) {
+    for (const c of node.children) {
+      const found = named(c, name);
+      if (found !== undefined) return found;
+    }
+  }
+  return undefined;
+}
+const fillOf = (node: SceneNode, name: string): string | undefined => {
+  const found = named(node, name);
+  return found === undefined ? undefined : solid(found.fills);
+};
+const radiusOf = (node: SceneNode, name: string): unknown =>
+  (named(node, name) as { cornerRadius?: unknown } | undefined)?.cornerRadius;
+const widthOf = (node: SceneNode, name: string): number | undefined =>
+  named(node, name)?.width;
+const textColor = (node: SceneNode, name: string): string | undefined => {
+  const found = named(node, name);
+  return found?.type === 'text' ? solid(found.fills) : undefined;
+};
+
 describe('Material 3 (Compose): o desenho segue os campos importados (decisão 14)', () => {
   const catalog = buildCatalog(files);
   const draw = (id: string, values: Record<string, unknown>, mode: 'light' | 'dark') =>
     drawIn(catalog, findEntry(catalog, id)!, values as never, mode);
 
-  it('button: containerColor muda a cor do fundo, e o desabilitado vence', () => {
+  it('button: containerColor e contentColor mudam as cores, e o desabilitado vence', () => {
     for (const mode of ['light', 'dark'] as const) {
       const base = draw('button', { label: 'Ok' }, mode);
       const tertiary = draw('button', { label: 'Ok', containerColor: 'tertiary' }, mode);
-      expect(solid(tertiary.root.fills), mode).not.toBe(solid(base.root.fills));
+      expect(fillOf(tertiary.root, 'container'), mode).toBeDefined();
+      expect(fillOf(tertiary.root, 'container'), mode).not.toBe(
+        fillOf(base.root, 'container'),
+      );
+      const content = draw('button', { label: 'Ok', contentColor: 'error' }, mode);
+      expect(textColor(content.root, 'rótulo'), mode).not.toBe(
+        textColor(base.root, 'rótulo'),
+      );
       expect(tertiary.warnings).toEqual([]);
+      expect(content.warnings).toEqual([]);
     }
     const light = draw('button', { label: 'Ok', containerColor: 'tertiary' }, 'light');
     const dark = draw('button', { label: 'Ok', containerColor: 'tertiary' }, 'dark');
-    expect(solid(light.root.fills)).not.toBe(solid(dark.root.fills));
+    expect(fillOf(light.root, 'container')).not.toBe(fillOf(dark.root, 'container'));
     const off = draw(
       'button',
       { label: 'Ok', containerColor: 'tertiary', enabled: 'false' },
       'light',
     );
-    expect(solid(off.root.fills)).not.toBe(solid(light.root.fills));
+    expect(fillOf(off.root, 'container')).not.toBe(fillOf(light.root, 'container'));
+    const offOwn = draw(
+      'button',
+      {
+        label: 'Ok',
+        enabled: 'false',
+        disabledContainerColor: 'error',
+        disabledContentColor: 'primary',
+      },
+      'light',
+    );
+    const offBase = draw('button', { label: 'Ok', enabled: 'false' }, 'light');
+    expect(fillOf(offOwn.root, 'container')).not.toBe(fillOf(offBase.root, 'container'));
+    expect(textColor(offOwn.root, 'rótulo')).not.toBe(textColor(offBase.root, 'rótulo'));
   });
 
   it('button: shape pequeno muda o raio e contentPadding muda a caixa do conteúdo', () => {
     const base = draw('button', { label: 'Ok' }, 'light');
     const small = draw('button', { label: 'Ok', shape: 'small' }, 'light');
-    expect(JSON.stringify(small.root)).not.toBe(JSON.stringify(base.root));
-    expect((small.root as { cornerRadius?: unknown }).cornerRadius).not.toEqual(
-      (base.root as { cornerRadius?: unknown }).cornerRadius,
+    expect(radiusOf(small.root, 'container')).not.toEqual(
+      radiusOf(base.root, 'container'),
     );
-    const wide = draw('button', { label: 'Ok', contentPaddingHorizontal: 40 }, 'light');
-    const narrow = draw('button', { label: 'Ok', contentPaddingHorizontal: 4 }, 'light');
-    expect(JSON.stringify(wide.root)).not.toBe(JSON.stringify(narrow.root));
+    const wide = draw('button', { label: 'Ok', horizontal: 40 }, 'light');
+    const narrow = draw('button', { label: 'Ok', horizontal: 4 }, 'light');
+    expect(widthOf(wide.root, 'conteúdo')).toBeGreaterThan(
+      widthOf(narrow.root, 'conteúdo') ?? 0,
+    );
+    const tall = draw('button', { label: 'Ok', vertical: 20 }, 'light');
+    const flat = draw('button', { label: 'Ok', vertical: 2 }, 'light');
+    const h = (r: SceneNode) => named(r, 'conteúdo')?.height ?? 0;
+    expect(h(tall.root)).toBeGreaterThan(h(flat.root));
   });
 
   it('divider: color muda a cor da linha', () => {
     const base = draw('divider', {}, 'light');
     const primary = draw('divider', { color: 'primary' }, 'light');
-    expect(allSolids(primary.root)).not.toEqual(allSolids(base.root));
-    expect(allSolids(primary.root)).toContain('#6750A4');
+    expect(fillOf(primary.root, 'linha')).not.toBe(fillOf(base.root, 'linha'));
+    expect(fillOf(primary.root, 'linha')).toBe('#6750A4');
   });
 
-  it('surface: border e shadowElevation aparecem no desenho', () => {
+  it('surface: borderWidth, borderColor e shadowElevation aparecem no desenho', () => {
     const base = draw('surface', {}, 'light');
-    const border = draw('surface', { border: 2 }, 'light');
+    const border = draw('surface', { borderWidth: 2, borderColor: 'primary' }, 'light');
     const shadow = draw('surface', { shadowElevation: 6 }, 'light');
-    expect(JSON.stringify(border.root)).not.toBe(JSON.stringify(base.root));
-    expect(JSON.stringify(shadow.root)).not.toBe(JSON.stringify(base.root));
+    expect(base.root.stroke?.width ?? 0).toBe(0);
+    expect(border.root.stroke?.width).toBe(2);
+    expect(solid(border.root.stroke?.paints ?? [])).toBe('#6750A4');
+    // a sombra é desenhada pelo nó do nível que a elevação alcança (6 dp: nível 3)
+    expect(named(base.root, 'sombra nível 3')).toBeUndefined();
+    expect(named(shadow.root, 'sombra nível 3')?.effects.length).toBeGreaterThan(0);
+    expect(
+      named(draw('surface', { shadowElevation: 1 }, 'light').root, 'sombra nível 1'),
+    ).toBeDefined();
   });
 
   it('top-app-bar: subtitle desenha um texto a mais, e as cores mudam o fundo e o título', () => {
-    const base = draw('top-app-bar', { title: 'Título' }, 'light');
-    const sub = draw('top-app-bar', { title: 'Título', subtitle: 'Sub' }, 'light');
+    const base = draw('top-app-bar', { title: 'Título', style: 'small' }, 'light');
+    const sub = draw(
+      'top-app-bar',
+      { title: 'Título', style: 'small', subtitle: 'Sub' },
+      'light',
+    );
     expect(allText(sub.root)).toContain('Sub');
     expect(allText(base.root)).not.toContain('Sub');
     const colored = draw(
       'top-app-bar',
-      { title: 'Título', containerColor: 'primary' },
+      { title: 'Título', containerColor: 'primary', titleContentColor: 'onPrimary' },
       'light',
     );
     expect(solid(colored.root.fills)).toBe('#6750A4');
+    expect(textColor(colored.root, 'título')).not.toBe(textColor(base.root, 'título'));
+    for (const mode of ['light', 'dark'] as const) {
+      expect(
+        draw('top-app-bar', { title: 'T', subtitle: 'S' }, mode).warnings,
+        mode,
+      ).toEqual([]);
+    }
   });
 
   it('radio-button e switch: as cores mudam o desenho', () => {
@@ -264,13 +345,68 @@ describe('Material 3 (Compose): o desenho segue os campos importados (decisão 1
       { selected: 'true', selectedColor: 'error' },
       'light',
     );
-    expect(allSolids(radioColored.root)).not.toEqual(allSolids(radio.root));
+    expect(fillOf(radioColored.root, 'ponto')).not.toBe(fillOf(radio.root, 'ponto'));
+    const ring = (r: SceneNode): string | undefined => {
+      const paints = named(r, 'anel')?.stroke?.paints;
+      return paints === undefined ? undefined : solid(paints);
+    };
+    const radioOff = draw(
+      'radio-button',
+      { selected: 'false', unselectedColor: 'error' },
+      'light',
+    );
+    expect(ring(radioOff.root)).toBeDefined();
+    expect(ring(radioOff.root)).not.toBe(
+      ring(draw('radio-button', { selected: 'false' }, 'light').root),
+    );
     const sw = draw('switch', { checked: 'true' }, 'light');
     const swColored = draw(
       'switch',
-      { checked: 'true', checkedTrackColor: 'tertiary' },
+      { checked: 'true', checkedTrackColor: 'tertiary', checkedThumbColor: 'error' },
       'light',
     );
-    expect(allSolids(swColored.root)).not.toEqual(allSolids(sw.root));
+    expect(fillOf(swColored.root, 'trilho')).not.toBe(fillOf(sw.root, 'trilho'));
+    expect(fillOf(swColored.root, 'alça')).not.toBe(fillOf(sw.root, 'alça'));
+    const swOff = draw(
+      'switch',
+      { checked: 'false', uncheckedTrackColor: 'error' },
+      'light',
+    );
+    expect(fillOf(swOff.root, 'trilho')).not.toBe(
+      fillOf(draw('switch', { checked: 'false' }, 'light').root, 'trilho'),
+    );
+  });
+
+  it('text-field: prefix e suffix desenham os textos (e o secure-text-field também)', () => {
+    for (const id of ['text-field', 'secure-text-field']) {
+      // o `text-field` mostra o texto digitado (`value`); o `secure-text-field`, as bolinhas (`hasText`)
+      const typed = id === 'text-field' ? { value: 'abc' } : { hasText: 'true' };
+      const base = draw(id, typed, 'light');
+      const both = draw(id, { ...typed, prefix: 'R$', suffix: 'kg' }, 'light');
+      expect(allText(both.root), id).toEqual(expect.arrayContaining(['R$', 'kg']));
+      expect(allText(base.root), id).not.toContain('R$');
+      expect(both.warnings, id).toEqual([]);
+    }
+  });
+
+  it('todo exemplo dos tipos tocados desenha sem aviso em light e dark', () => {
+    for (const id of [
+      'button',
+      'surface',
+      'top-app-bar',
+      'radio-button',
+      'switch',
+      'divider',
+      'text-field',
+      'secure-text-field',
+    ]) {
+      const entry = findEntry(catalog, id)!;
+      for (const mode of ['light', 'dark'] as const) {
+        for (const ex of entry.type.examples ?? []) {
+          const drawing = drawIn(catalog, entry, ex.values as never, mode);
+          expect(drawing.warnings, `${id} ${mode} ${ex.name}`).toEqual([]);
+        }
+      }
+    }
   });
 });

@@ -748,6 +748,66 @@
                         "children": [
                           {
                             "type": "text",
+                            "name": "prefixo",
+                            "text": {
+                              "$field": "prefix"
+                            },
+                            "font": {
+                              "size": {
+                                "$token": "body-large-size"
+                              },
+                              "weight": {
+                                "$token": "body-large-weight"
+                              },
+                              "lineHeight": {
+                                "$token": "body-large-line-height"
+                              },
+                              "letterSpacing": {
+                                "$token": "body-large-tracking"
+                              },
+                              "wrap": {
+                                "$if": {
+                                  "$eq": ["singleLine", "true"]
+                                },
+                                "then": "none",
+                                "else": "word"
+                              },
+                              "maxLines": {
+                                "$if": {
+                                  "$eq": ["singleLine", "true"]
+                                },
+                                "then": 1,
+                                "else": {
+                                  "$field": "maxLines"
+                                }
+                              },
+                              "verticalAlign": {
+                                "$if": {
+                                  "$eq": ["singleLine", "true"]
+                                },
+                                "then": "cap-middle",
+                                "else": "top"
+                              }
+                            },
+                            "color": {
+                              "$token": "on-surface-variant"
+                            },
+                            "opacity": {
+                              "$if": {
+                                "$eq": ["enabled", "false"]
+                              },
+                              "then": {
+                                "$token": "state-disabled-content"
+                              },
+                              "else": 1
+                            },
+                            "width": "hug",
+                            "visible": {
+                              "$has": "prefix"
+                            }
+                          },
+                          {
+                            "type": "text",
                             "name": "valor",
                             "text": {
                               "$field": "value"
@@ -807,6 +867,66 @@
                               },
                               "then": "hug",
                               "else": "fill"
+                            }
+                          },
+                          {
+                            "type": "text",
+                            "name": "sufixo",
+                            "text": {
+                              "$field": "suffix"
+                            },
+                            "font": {
+                              "size": {
+                                "$token": "body-large-size"
+                              },
+                              "weight": {
+                                "$token": "body-large-weight"
+                              },
+                              "lineHeight": {
+                                "$token": "body-large-line-height"
+                              },
+                              "letterSpacing": {
+                                "$token": "body-large-tracking"
+                              },
+                              "wrap": {
+                                "$if": {
+                                  "$eq": ["singleLine", "true"]
+                                },
+                                "then": "none",
+                                "else": "word"
+                              },
+                              "maxLines": {
+                                "$if": {
+                                  "$eq": ["singleLine", "true"]
+                                },
+                                "then": 1,
+                                "else": {
+                                  "$field": "maxLines"
+                                }
+                              },
+                              "verticalAlign": {
+                                "$if": {
+                                  "$eq": ["singleLine", "true"]
+                                },
+                                "then": "cap-middle",
+                                "else": "top"
+                              }
+                            },
+                            "color": {
+                              "$token": "on-surface-variant"
+                            },
+                            "opacity": {
+                              "$if": {
+                                "$eq": ["enabled", "false"]
+                              },
+                              "then": {
+                                "$token": "state-disabled-content"
+                              },
+                              "else": 1
+                            },
+                            "width": "hug",
+                            "visible": {
+                              "$has": "suffix"
                             }
                           }
                         ]
