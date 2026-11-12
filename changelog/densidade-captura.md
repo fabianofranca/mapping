@@ -8,3 +8,7 @@
 - Schema v19 (a migração só sobe o número) e proposta `formatVersion` 7 (campo `density` do container).
 - Densidade na app (#1085, D2): o campo **Densidade** nos Detalhes do container (1x, 1,5x, 2x, 3x, 4x ou **Personalizada** de 0,5 a 8, que aceita 2,625) e no diálogo **Novo container** (padrão 1x). Com um tamanho pronto da especialização que explique a largura (1080 = 3 × 360), os Detalhes mostram "Sugestão: 3x (Celular 360 × 800)" e o botão **Aplicar**; a app nunca aplica sozinha, e o Aplicar é uma entrada só de desfazer.
 - A revisão de proposta mostra a mudança de densidade de um container como "Densidade: 1 → 3".
+
+## Alterado
+
+- Teto do `dist/index.html` subiu 16 KiB, de 2.097.152 para 2.113.536, pela regra do orçamento.
