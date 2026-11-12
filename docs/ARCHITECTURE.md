@@ -501,8 +501,11 @@ Vale para toda imagem que entra pela app (arquivo, câmera, colar, arrastar e tr
   próximo é o quadro inteiro da tela de componentes no `CanvasController`: ~6,6 de 24 ms).
 - **Orçamentos do layout Flexbox e CSS Grid** (decisão 23 da #1078; `tests/canvas/renderPerformance.test.ts`, no `npm run test:perf`,
   com `retry: 1` e o `approximateMeasurer`; nenhum orçamento de antes foi afrouxado). A grade e o aninhado (os de 4 ms) usam o
-  `measureBudget` de `tests/support/perfReport.ts` (etapa #1698): 10 aquecimentos, `gc` fora do tempo antes de cada amostra e
-  mediana de 41 (o `gc` vem de `collectGarbage`, sem `execArgv`, que o `perf-app` em `vmThreads` não aceita); a tela de exemplo e o
+  `measureBudget` de `tests/support/perfReport.ts` (etapas #1698 e CL1): 10 aquecimentos, `gc` fora do tempo antes de cada amostra
+  e 3 levas de 41 amostras, valendo a menor mediana entre as levas (sob disputa de CPU a fase ruim do runner cobria as 41
+  amostras seguidas de uma leva só; uma regressão real sobe as três; o `gc` vem de `collectGarbage`, sem `execArgv`, que o
+  `perf-app` em `vmThreads` não aceita). Medido no `test:perf` completo, em 2 CPUs com 2 processos `yes` (0 de 20 casos acima de
+  4 ms, máximo 3,3 ms; com a medida de uma leva eram 3 de 20, até 7,8 ms); a tela de exemplo e o
   quadro no `CanvasController` seguem com 3 aquecimentos e mediana de 15. **Grade com texto** (L3): um `grid` de 4 colunas e 6
   linhas, com 24 textos de 2 linhas, instanciado e desenhado no Konva em ≤ 4 ms (o pior componente de antes; mede ~2,2 ms).
   **Intrínseco aninhado em 3 níveis** (L4): `row` `max-content` › 4 `column` `min-content` › 3 `row` com 2 textos, em ≤ 4 ms (~2,4 ms)
