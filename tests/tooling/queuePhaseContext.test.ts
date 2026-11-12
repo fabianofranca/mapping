@@ -251,6 +251,10 @@ describe('CX1 — skill implementar-fila, "3. Por etapa"', () => {
       '`git log --format=%s origin/epic/<nome>..origin/<branch da fase>`',
     );
     expect(avisou).not.toContain('..HEAD`');
+    // O ref da origin pode faltar ou estar velho no clone do coordenador: busca antes do `git log`.
+    expect(avisou).toMatch(
+      /`git fetch origin <branch da fase>`[^]*?`git log --format=%s origin\/epic\/<nome>\.\.origin\/<branch da fase>`/,
+    );
     expect(avisou).toContain('`merge_method: squash`');
     expect(avisou).toContain('item 6');
     expect(avisou).toMatch(/Os outros PRs continuam com `merge`/);
