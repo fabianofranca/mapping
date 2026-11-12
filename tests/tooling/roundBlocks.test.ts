@@ -1,6 +1,6 @@
 // @vitest-environment node
 // Etapa #424 (PL1, decisão 2): a rodada completa roda em blocos paralelos (5, etapa #841, RB4). A tabela de blocos
-// do docs/TESTING-NUVEM.md é conferida contra os passos do docs/TESTING.md: um roteiro novo (R25)
+// do docs/TESTING-NUVEM.md é conferida contra os passos do docs/TESTING.md: um roteiro novo (R26)
 // ou um passo novo fora da tabela faz este teste falhar até ser posto num bloco.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
@@ -24,7 +24,7 @@ const NUVEM = readFileSync('docs/TESTING-NUVEM.md', 'utf8');
 
 const STEP_RE = /^\|\s*(?:\*\*)?(R\d+\.\d+[a-z]?)(?:\*\*)?[^|]*\|/;
 
-/** Os passos dos roteiros principais (R0 a R25), na ordem do guia, fora dos roteiros sob demanda. */
+/** Os passos dos roteiros principais (R0 a R26), na ordem do guia, fora dos roteiros sob demanda. */
 function guideSteps(): string[] {
   const lines = GUIDE.split('\n');
   const start = lines.findIndex((l) => /^## 8\. Roteiros/.test(l));
@@ -116,14 +116,14 @@ const blockOf = (step: string): number[] =>
   blocks.filter((b) => b.steps.includes(step)).map((b) => b.n);
 
 describe('divisão da rodada completa em 5 blocos (etapas #424 e #841)', () => {
-  it('o guia tem os passos de R0 a R25 e a tabela tem 5 blocos numerados de 1 a 5', () => {
+  it('o guia tem os passos de R0 a R26 e a tabela tem 5 blocos numerados de 1 a 5', () => {
     expect(steps.length).toBeGreaterThan(200);
     expect(steps.some((s) => s.startsWith('R17.'))).toBe(true);
-    expect(steps.some((s) => s.startsWith('R25.'))).toBe(true);
+    expect(steps.some((s) => s.startsWith('R26.'))).toBe(true);
     expect(blocks.map((b) => b.n)).toEqual([1, 2, 3, 4, 5]);
   });
 
-  it('todo passo de R0 a R25 está em exatamente um bloco, e o R0 em todos', () => {
+  it('todo passo de R0 a R26 está em exatamente um bloco, e o R0 em todos', () => {
     for (const s of steps) {
       const where = blockOf(s);
       if (roteiroOf(s) === 'R0') expect(where, s).toEqual([1, 2, 3, 4, 5]);

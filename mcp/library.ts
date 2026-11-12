@@ -215,6 +215,37 @@ export async function readPreviousSpec(roots: Roots, path: string): Promise<Spec
   return parsed.spec;
 }
 
+/**
+ * O texto de um arquivo `.json` dentro das raízes (a ficha de assinatura de `plan_signature_import`).
+ * Só lê JSON: outra extensão é recusada antes de abrir (o servidor não lê código; decisão 1 da #1079).
+ */
+export async function readJsonFile(roots: Roots, path: string): Promise<string> {
+  const refuse = (): never => {
+    throw new ToolError(
+      'signature-invalid',
+      `a ficha precisa ser um arquivo .json: ${path}`,
+      {
+        path,
+        hint: 'o servidor não lê código: extraia a ficha com tools/mapping-signature.mjs (ou escreva-a à mão) e passe o .json',
+      },
+    );
+  };
+  if (!isJsonPath(path)) refuse();
+  const { real } = await roots.resolveExisting(path);
+  // Um link simbólico `.json` para código: confere também o caminho real, antes de ler.
+  if (!isJsonPath(real)) refuse();
+  const info = await stat(real);
+  if (!info.isFile()) {
+    throw new ToolError('not-a-file', `não é um arquivo: ${path}`, { path });
+  }
+  if (info.size > MAX_TEXT_FILE_BYTES) {
+    throw new ToolError('file-too-large', `arquivo grande demais: ${path}`, { path });
+  }
+  return readFile(real, 'utf8');
+}
+
+const isJsonPath = (path: string): boolean => path.toLowerCase().endsWith('.json');
+
 /** Resumo da especialização (contagens do que ela declara). */
 export function libraryCounts(spec: Spec): Json {
   const types = spec.layers.flatMap((layer) => layer.annotationTypes);

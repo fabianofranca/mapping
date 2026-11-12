@@ -1,0 +1,46 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "swiftui",
+    "language": "swift",
+    "symbol": "DS.ProfileCard",
+    "path": "Sources/DS/ProfileCard.swift",
+    "ref": "fixture",
+    "extractor": "agent"
+  },
+  "params": [
+    {
+      "name": "title",
+      "label": "_",
+      "role": "value",
+      "type": "String",
+      "required": true,
+      "value": { "kind": "text" }
+    },
+    {
+      "name": "badgeCount",
+      "label": "badge",
+      "role": "value",
+      "type": "Int",
+      "default": "0",
+      "value": { "kind": "integer", "default": 0 }
+    },
+    {
+      "name": "style",
+      "role": "value",
+      "type": "ProfileCard.Style",
+      "default": ".compact",
+      "value": { "kind": "enum", "options": ["compact", "regular"], "default": "compact" }
+    },
+    { "name": "onTap", "role": "callback", "type": "() -> Void" },
+    {
+      "name": "content",
+      "role": "slot",
+      "type": "@ViewBuilder () -> Content",
+      "required": true
+    }
+  ],
+  "doc": { "title": "The name shown at the top of the card." }
+}

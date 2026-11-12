@@ -1,4 +1,4 @@
-# Importar os parâmetros de um componente pela assinatura — [Não lançado] (épico `epic/importar-assinatura`, PR #0, MCP 0.39.0, schema v19)
+# Importar os parâmetros de um componente pela assinatura — [Não lançado] (épico `epic/importar-assinatura`, PR #1755, MCP 0.39.0, schema v19)
 
 ## Adicionado
 
@@ -6,7 +6,14 @@
 - **Especialização `formatVersion` 16:** `fieldModels` na raiz (como um tipo da fonte vira campo) e, no `code` de cada plataforma e em cada caso de `variants`, `signature` (a ficha no pacote), `ignore`, `calls` (fábrica de um argumento aninhado) e `formats` (molde do valor, como `{value}.dp`); o valor de `params` também pode ser um caminho (`colors.containerColor`) ou posicional (`#0`); `signature` nas `sources` do tipo. As chaves novas ficam fora do contrato de versão. A `formatVersion` 15 continua aceita.
 - **`validate_library` e a app conferem a ficha citada:** ela existe, é uma `mapping-signature` válida e tem o mesmo símbolo e arquivo do `code`; parâmetro mapeado que a ficha não tem vira o aviso "parâmetro fora da ficha".
 - **`code` no MCP:** o `get_code_hints` monta os `args` aninhados de uma fábrica (`colors = ButtonDefaults.buttonColors(containerColor = …)`, só com os campos preenchidos), os valores formatados (`16.dp`) e os posicionais; o `code` das vistas (`get_code_hints`, `get_marking`, `get_annotation`, `get_component`, `find_by_code`) traz `unmapped`, a lista dos parâmetros da ficha que não viraram campo (nome, papel, tipo, se é obrigatório e o padrão). Sem as chaves novas, a saída é a de hoje.
+- **`plan_signature_import` (MCP):** a prévia, sem gravar, de importar a assinatura de um componente como campos de um tipo da biblioteca. Recebe a ficha (inline ou um `.json` dentro das raízes) e o pacote, e devolve os campos novos, as ligações, o `code` ou as `sources`, os avisos (com o `ref` da ficha e a mensagem começando pela plataforma), o `unmapped`, as diferenças com a ficha gravada, as migrações sugeridas (nunca escritas sozinhas), `versionBump` e a especialização já importada. Os erros são `signature-invalid`, `type-not-found`, `platform-not-declared`, `signature-mismatch` e `variant-not-found`; um `signatureFile` que não é `.json` é recusado sem ser lido.
+- **Importação pela assinatura:** o que vira campo segue o papel e o tipo do parâmetro (os modelos de `fieldModels` têm precedência), os parâmetros compostos expandem pela fábrica, a ligação a campos existentes é pelo `params`, pelo nome normalizado ou por campo novo, e importar a mesma ficha duas vezes não muda nada. A ficha mudada acrescenta só o que é aditivo: campo novo opcional, opção nova e padrão atualizado; o que saiu fica com o aviso `removed`, e o que divergiu, com `diverges`.
+- **Guia, skill e roteiro de teste:** o `docs/AGENT-GUIDE.md` ganha "Importar parâmetros da assinatura" (extrair, `plan_signature_import`, gravar, `validate_library`, sincronizar; nunca escrever `migrations` sem pedido), a skill `spec-author` ganha a seção "Importar a assinatura" (a ficha à mão para fontes sem extrator) e o roteiro **R26 — Importar a assinatura** (`docs/TESTING.md`, no bloco 4 da rodada completa) confere a tool com as fichas de `tests/fixtures/signature/`, com o ajudante `scripts/testing/assinatura.mjs`.
 
 ## Alterado
 
 - Teto do `dist/index.html` subiu 16 KiB, de 2.113.536 para 2.129.920 bytes, por decisão do dono (exceção ao limite de 64 KiB de subidas desde a revisão): a ficha, a `formatVersion` 16 e a Ajuda dela fecharam o `dist/index.html` em 2.126.076 bytes.
+
+## Corrigido
+
+- **Rótulo externo do Swift no `unmapped`:** o `unmappedParams` e a conferência "parâmetro fora da ficha" comparavam só o nome interno do parâmetro; o `params` que cita o rótulo externo (`badge`) agora liga o parâmetro, e o `ignore` aceita o rótulo ou o nome.

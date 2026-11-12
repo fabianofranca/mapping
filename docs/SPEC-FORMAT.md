@@ -707,6 +707,37 @@ No `validate_library` (que lê os arquivos do pacote), além disso:
 
 Com `signature`, o `code` que o MCP entrega (`get_code_hints`, `get_marking`, `get_annotation`, `get_component`, `find_by_code`) traz `unmapped`: a lista, na ordem da ficha, dos parâmetros que **nenhum campo liga e o `ignore` não dispensa**, cada um com `name`, `role`, `type`, `required` e `default?`. Um parâmetro com algum campo da fábrica ligado por caminho conta como ligado. `callback`, `modifier`, `state` e `slot` também entram: é assim que o agente sabe, por exemplo, que `onClick` é obrigatório. Os `value` sem campo são o rastro do que a tela ainda não modela. O servidor só lê o JSON da ficha no pacote aplicado (`specs/<id>/signatures/…`); nunca o código. Detalhes em [`MCP.md`](MCP.md).
 
+### O importador e os avisos que ele regrava
+
+A ficha vira campos, `code` (ou `sources`) e avisos pela tool `plan_signature_import` (`planSignatureImport`, puro, em `src/model/signatures/`; fluxo em [`AGENT-GUIDE.md`](AGENT-GUIDE.md), "Importar parâmetros da assinatura"). O importador não grava arquivo: devolve a especialização importada e quem grava é o agente, que valida com `validate_library`.
+
+**O que vira campo** (o `fieldModels` da biblioteca tem precedência sobre a regra):
+
+| Parâmetro da ficha                        | Resultado                                                                                                                                                                   |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `callback`, `modifier`, `state`           | nunca viram campo; ficam na ficha e no `unmapped`                                                                                                                           |
+| `slot`                                    | sem campo, salvo quando o `fieldModels` tem modelo para o tipo exato (`@Composable () -> Unit` como `string` com um `format`)                                               |
+| `value` `text`                            | `string`                                                                                                                                                                    |
+| `value` `boolean`                         | `enum` com as opções do modelo `boolean` (padrão `["true", "false"]`)                                                                                                       |
+| `value` `number`, `integer`, `dimension`  | `number` (a dimensão em unidades do componente)                                                                                                                             |
+| `value` `enum`                            | `enum` com as `options`; o texto da fonte que difere da opção vai para `code.values` (ou `sources[].values`)                                                                |
+| `value` `color`, `opaque`                 | só com modelo no `fieldModels`; sem ele, o parâmetro fica fora e o tipo ganha um `pending`                                                                                  |
+| parâmetro composto (padrão é uma fábrica) | um campo **opcional** por parâmetro da fábrica, cada um pela mesma regra; a chave é o nome do parâmetro da fábrica ou, se colidir, `<param><Nome>` (`colorsContainerColor`) |
+
+- **`default`:** o literal representável vira `default` do campo; o padrão não literal (`ButtonDefaults.shape`) fica sem `default`, e o argumento não é passado.
+- **Obrigatório:** só em **tipo novo** (o tipo ainda sem campos e sem ficha gravada). Em tipo que já tem campos, o campo novo nasce **opcional** (campo novo obrigatório é quebra) e o parâmetro obrigatório no código ganha `diverges` ("obrigatório no código").
+- **Chave do campo:** o nome do parâmetro, normalizado para `[A-Za-z0-9_]`; o nome original (e o rótulo externo do Swift) vai para o `code.params`.
+- **Ligação a campo existente**, nesta ordem: (a) o `code.params` (ou `sources[].name`) que já cita o parâmetro; (b) o campo cuja `key` normalizada (minúsculas, só letras e dígitos) é igual à do nome; (c) um campo novo. No Figma a ligação (b) é a regra normal (`Style` casa com `style`); as opções de um `VARIANT` casam com as `options` pelo texto normalizado e entram em `sources[].values`, e a que não casa ganha `diverges`. Alvo de design nunca acrescenta opção a campo existente (só avisa); alvo de código acrescenta a opção nova.
+- **Idempotente:** importar a mesma ficha duas vezes dá a mesma especialização.
+
+**Avisos que o importador escreve.** Todos levam `ref` igual ao caminho da ficha (`signatures/button.compose.json`) e a `message` começa pelo id da plataforma ou do sistema (`compose: …`, a regra do prefixo de "Avisos de fidelidade e origens do aviso"). A cada importação ele **regrava todos os avisos com esse `ref`** e não toca nos outros (os curados à mão, com o `ref` do doc do tipo, ficam):
+
+- `pending` no tipo, um por parâmetro `value` sem campo e fora do `ignore` ("compose: o parâmetro `windowInsets` (WindowInsets) ainda não é campo");
+- `removed` no campo cujo parâmetro sumiu da fonte (o campo fica);
+- `diverges` no campo: o `value.kind` do parâmetro mudou; uma opção do campo não existe mais na fonte; o código exige e o campo é opcional; renome provável (um parâmetro saiu e outro entrou com o mesmo tipo e na mesma posição: o `removed` do campo antigo dá lugar a `diverges` "renome provável de `a` para `b`").
+
+**Sincronizar.** Com a ficha anterior gravada no pacote, a importação compara as duas (`changes`: `added`, `removed`, `changed` e `renamed`) e o `spec` devolvido traz só o que é **aditivo**: campo novo opcional, opção nova de `enum`, `default` atualizado e as ligações. Nunca remove nem renomeia campo e nunca escreve `migrations`: `suggestedMigrations` (`remove-field`, `rename-field`) é a sugestão, e o agente só a escreve se a pessoa pedir. `versionBump` é `true` quando o contrato mudou (o `diffSpecs` entre a especialização de antes e a de depois não é vazio); um `default` atualizado ou uma mudança só de avisos não sobe a versão.
+
 ## Containers (tamanhos prontos)
 
 A `formatVersion` 6 deixa a especialização oferecer **tamanhos prontos de container**: o objeto de topo do canvas (uma tela de app, um painel, um cartão) criado sem arquivo, só com tamanho e cor de fundo. No diálogo **Novo container**, a lista **Tamanho predefinido** traz **Personalizado** e **Tamanho da seleção** (do núcleo; este é o retângulo da marcação selecionada e fica desabilitado sem seleção) e, abaixo, os `containers` de cada especialização aplicada, agrupados pelo nome dela. Tamanhos de dispositivo (celular, tablet, desktop) são de domínio: vêm da especialização, não do núcleo. A biblioteca Material 3 do repositório traz Celular 360 × 800, Celular grande 412 × 915, Tablet 800 × 1280 e Desktop 1440 × 900.

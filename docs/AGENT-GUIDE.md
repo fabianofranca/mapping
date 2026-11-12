@@ -225,6 +225,26 @@ O retângulo de uma marcação **nunca muda sozinho** quando você edita um valo
 - Numa proposta, o ajuste aparece na revisão como a mudança de **Posição** de sempre (X, Y, Largura e Altura), ao lado do valor que mudou; o usuário pode aceitar uma e rejeitar a outra, como qualquer par de mudanças.
 - **Nascimento.** `create_marking` com `annotation` de um componente ajustável **e sem `rect`** nasce já no tamanho medido com o `preview` e os `values` do passo (texto, número e vazio; tabela e referência ficam no `default`), no lugar livre de sempre: não precisa de `fit_marking` logo depois. Com `rect`, o `rect` manda. Um componente com slot nasce no `size` (as filhas ainda não existem).
 
+### Importar parâmetros da assinatura
+
+Os campos de um tipo não precisam ser modelados à mão, um a um: saem da **assinatura** do componente (os parâmetros de uma função `@Composable`, o `init` de uma view SwiftUI, as propriedades de um componente do Figma). A assinatura vai numa **ficha** `mapping-signature` ([`SIGNATURE-FORMAT.md`](SIGNATURE-FORMAT.md)), um JSON neutro derivado do código, e a tool `plan_signature_import` a transforma em campos, `code` (ou `sources`) e avisos, de forma determinística e **sem gravar nada**. O servidor nunca lê o código: lê só a ficha. A skill `spec-author` traz o método completo ("Importar a assinatura").
+
+O fluxo, uma vez por tipo e plataforma (ou sistema de design):
+
+1. **Extraia a ficha.** Com o extrator `mapping-signature.mjs` no clone da biblioteca, ou **à mão** quando a fonte não tem extrator (React, Storybook, Flutter): preencha o mesmo JSON, com `source.extractor: "agent"`. A ficha à mão descreve só o que você leu no código (nome, papel, tipo, padrão), nunca o que deveria ser.
+2. **`plan_signature_import({ path, type, platform, signature })`** (ou `signatureFile`, um `.json` dentro das raízes; `system` no lugar de `platform` para o Figma; `variant` quando a ficha é a de um caso de `variants`). Leia a resposta: `fields` (o que vira campo), `links` (a ligação a campos que já existem), `notices` (o que ficou de fora e o que divergiu), `unmapped` e `changes`.
+3. **Grave** o `spec` da resposta no arquivo da especialização do pacote e a ficha, **o mesmo JSON**, em `signaturePath` dentro dele (`signatures/<tipo>.<plataforma>.json`). Só `label`, `description` e `ignore` (os parâmetros que ficam de fora de propósito, como `modifier`) são seus: escreva-os à mão, no idioma da biblioteca.
+4. **`validate_library`** na pasta (com `previous` quando houver versão anterior). Ele confere a ficha citada (existe, é válida, mesmo símbolo e arquivo do `code`) e avisa o parâmetro mapeado que a ficha não tem.
+5. **Sincronize** quando o código mudar: extraia a ficha de novo e chame a tool com ela. Ela compara com a gravada e devolve em `changes` o que entrou, o que saiu e o que mudou. O `spec` devolvido traz **só o que é aditivo**: campo novo **opcional**, opção nova de `enum`, `default` atualizado. O parâmetro que saiu deixa o campo, com o aviso `removed`; o que divergiu (tipo, opção que sumiu, renome provável) ganha `diverges`. Suba a `version` quando `versionBump` for `true`.
+
+Regras:
+
+- **Nunca escreva `migrations` sem a pessoa pedir.** A importação não remove nem renomeia campo (seria quebra); `suggestedMigrations` (`remove-field`, `rename-field`) é só a sugestão, para você oferecer. Sem o pedido, o campo fica com o aviso.
+- **Não edite à mão** o que a importação gera (os campos, o `code`, os avisos com o `ref` da ficha): na próxima rodada ela regrava os avisos com esse `ref` e a mesma ficha dá a mesma especialização. Para mudar o resultado, mude o `ignore`, o `fieldModels` (como um tipo da fonte vira campo) ou a ficha.
+- **O que vira campo:** `value` segue o tipo (`text` em `string`, `boolean` em `enum`, `number`, `integer` e `dimension` em `number`, `enum` em `enum`); `callback`, `modifier` e `state` não viram campo, e `slot` só quando o `fieldModels` tem modelo para o tipo exato. `color` e `opaque` só com modelo; sem ele, o parâmetro fica fora e ganha um `pending`. O parâmetro composto (`colors = ButtonDefaults.buttonColors()`) vira um campo opcional por parâmetro da fábrica. Campo obrigatório no código só nasce obrigatório em **tipo novo**; em tipo existente nasce opcional e ganha `diverges` ("obrigatório no código").
+- **Avisos do importador:** a `message` começa pelo id da plataforma (`compose: …`) e o `ref` é o caminho da ficha. Veja "Avisos da especialização".
+- **Erros:** `signature-invalid` (o `issues` traz o caminho dentro da ficha), `type-not-found`, `platform-not-declared`, `signature-mismatch` (a ficha é de outro símbolo, arquivo ou sistema) e `variant-not-found`. Um `signatureFile` que não é `.json` é recusado sem ser lido.
+
 ### Evoluindo uma biblioteca já aplicada
 
 Subir a `version` de uma biblioteca mexe nos projetos que a aplicaram: as anotações já existem, com `values` pelas `key` dos campos. As regras:
@@ -912,6 +932,7 @@ Ao propor, cite os avisos que aparecem em `notices.new` na mensagem ao usuário:
 
 - **De onde vem cada aviso** (o `ref`): `ref` de **doc** (`docs/<tipo>.md`) é aviso curado à mão pelo autor da biblioteca; `ref` de **ficha** (um arquivo de entrada de ferramenta, como a ficha `signatures/…` do importador) é aviso gerado, que a ferramenta regrava a cada rodada. Se a ficha ainda não existe na biblioteca, só há o primeiro caso. O `pending` gerado e o curado têm o mesmo `kind`; o `ref` (em `Origem: <ref>` nos Detalhes da app) é o que os distingue.
 - **Prefixo de plataforma:** a `message` de um aviso ligado a uma plataforma começa com o id dela (`compose: …`). **Ignore** o aviso cujo prefixo é de outra plataforma que não a do código que você escreve. A regra vale para os avisos curados e também para os do importador. O `notices` não tem campo de plataforma e o núcleo não filtra por texto: o `get_code_hints(ref, "ios")` traz também os `compose: …`, e a filtragem é sua.
+- **`pending` do importador e `unmapped`:** um tipo importado pela assinatura traz, em `notices`, um `pending` por parâmetro `value` que ainda não é campo ("compose: o parâmetro `windowInsets` (WindowInsets) ainda não é campo"), com o `ref` da ficha, e o mesmo `code` traz o `unmapped` (os parâmetros da ficha sem campo, com `role`, `required` e `default`). Leia os dois juntos: o aviso diz **o que** a biblioteca ainda não modela, o `unmapped` diz **o que preencher ou deixar no padrão** na chamada. Eles não substituem um ao outro.
 - **Onde ler os avisos ao escrever código:** em `types["spec/tipo"].notices` do `get_code_hints` (do tipo e válido para toda anotação dele, mesmo com o campo vazio). Eles não dependem da marcação na tela.
 
 ### Papéis no vínculo e documento externo
