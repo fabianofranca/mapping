@@ -315,6 +315,13 @@ export const migrateFrom16To17: Migration = (data) => data;
  */
 export const migrateFrom17To18: Migration = (data) => data;
 
+/**
+ * v18 → v19 (densidade): só a versão muda. `containers[].density` é opcional e ausente vale 1; a
+ * versão nova existe para que uma app anterior abra o arquivo só para leitura, em vez de
+ * descartar a densidade ao gravar.
+ */
+export const migrateFrom18To19: Migration = (data) => data;
+
 /** Registro de migrações: a chave é a versão de origem. */
 export const migrations: ReadonlyMap<number, Migration> = new Map([
   [1, migrateFrom1To2],
@@ -334,6 +341,7 @@ export const migrations: ReadonlyMap<number, Migration> = new Map([
   [15, migrateFrom15To16],
   [16, migrateFrom16To17],
   [17, migrateFrom17To18],
+  [18, migrateFrom18To19],
 ]);
 
 export type MigrationResult =

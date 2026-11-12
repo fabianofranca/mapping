@@ -65,7 +65,7 @@ describe('sessão: projeto v13', () => {
       docRepos: unknown;
       annotations: { parentRole: unknown }[];
     };
-    expect(saved.schemaVersion).toBe(18);
+    expect(saved.schemaVersion).toBe(19);
     expect(saved.docRepos).toEqual({});
     expect(saved.annotations.every((a) => a.parentRole === null)).toBe(true);
     expect(session.backupSaved.value).toBe(13);

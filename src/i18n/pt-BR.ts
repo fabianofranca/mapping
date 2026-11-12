@@ -366,6 +366,7 @@ export const ptBR = {
   'invariant.duplicate-id': 'id repetido',
   'invariant.duplicate-file': 'arquivo repetido',
   'invariant.container-content': 'cor de fundo e arquivo juntos (ou nenhum dos dois)',
+  'invariant.container-density': 'densidade fora de 0,5 a 8',
   'invariant.images-overlap': 'sobrepõe outra imagem',
   'invariant.missing-image': 'imagem inexistente',
   'invariant.missing-parent': 'pai inexistente',

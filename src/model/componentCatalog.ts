@@ -4,6 +4,7 @@ import { parseIconsText, type IconSet } from './components/icons';
 import { resolvePathChecked } from './components/library';
 import { parseComponentText } from './components/parseComponent';
 import { resolveTokens, type HostFonts, type ResolvedTokens } from './components/tokens';
+import { effectiveDensity, unitsToPixels } from './density';
 import { MIN_STORED_MARKING_SIZE } from './geometry';
 import {
   issueParts,
@@ -292,8 +293,9 @@ export function hasSlotComponent(component: ComponentFile): boolean {
 }
 
 /**
- * Mínimo do componente que desenha a marcação: o `minSize` dele ou, sem `minSize`, 1×1 (a
- * marcação com componente aceita a partir de 1 px); `null` na marcação comum (vale o mínimo
+ * Mínimo do componente que desenha a marcação, em pixels da imagem: o `minSize` dele (em
+ * unidades) × a densidade do container, para cima, ou, sem `minSize`, 1×1 (a marcação com
+ * componente aceita a partir de 1 px); `null` na marcação comum (vale o mínimo
  * de 8 px dos gestos).
  */
 export function componentMinSize(
@@ -302,17 +304,25 @@ export function componentMinSize(
   markingId: string,
 ): { width: number; height: number } | null {
   const drawn = markingComponent(p, catalog, markingId);
-  return drawn === null ? null : componentFileMinSize(drawn.component);
+  if (drawn === null) return null;
+  const marking = projectIndex(p).markings.get(markingId);
+  return componentFileMinSize(
+    drawn.component,
+    effectiveDensity(p, marking?.containerId ?? null),
+  );
 }
 
 /** O tamanho mínimo de uma instância do componente: o `minSize` dele ou o menor armazenável. */
-export function componentFileMinSize(component: ComponentFile): {
+export function componentFileMinSize(
+  component: ComponentFile,
+  density = 1,
+): {
   width: number;
   height: number;
 } {
   const { minSize } = component;
   return {
-    width: minSize?.width ?? MIN_STORED_MARKING_SIZE,
-    height: minSize?.height ?? MIN_STORED_MARKING_SIZE,
+    width: minSize ? unitsToPixels(minSize.width, density) : MIN_STORED_MARKING_SIZE,
+    height: minSize ? unitsToPixels(minSize.height, density) : MIN_STORED_MARKING_SIZE,
   };
 }

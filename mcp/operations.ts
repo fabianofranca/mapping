@@ -121,6 +121,14 @@ const drawingModeField = z
     'Modo do desenho (`[a-z0-9][a-z0-9-]*`, ex: `dark`): escolhe os valores dos `tokens` das especializações. `null` volta a seguir o do projeto; ausente não muda.',
   );
 
+const densityField = z
+  .number()
+  .nullable()
+  .optional()
+  .describe(
+    'Densidade: quantos pixels da imagem vale uma unidade do componente (dp, pt, px a 1x), de 0,5 a 8; 3 para uma captura 1080 px de um celular de 360 dp (largura da imagem ÷ largura do tamanho pronto). `size` e `minSize` do componente são em unidades e o `rect` em pixels (`rect` = unidades × `density`). `null` volta a 1 (em `update_container`); ausente não muda.',
+  );
+
 /** Campos de `update_container` (e da antiga `update_image`). */
 const updateContainerFields = {
   name: name.optional(),
@@ -138,6 +146,7 @@ const updateContainerFields = {
     .describe('Cor da borda das marcações (#RRGGBB) ou `null` (cor do tema).'),
   locked: z.boolean().optional().describe('Trancar ou destrancar o container.'),
   drawingMode: drawingModeField,
+  density: densityField,
   markingsLocked: z
     .boolean()
     .optional()
@@ -286,6 +295,7 @@ export const operationSchema = z.discriminatedUnion('op', [
     as: alias,
     ...imageSource,
     drawingMode: drawingModeField,
+    density: densityField,
     name: z
       .string()
       .optional()

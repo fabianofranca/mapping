@@ -1,10 +1,9 @@
 import {
   ENTRIES_FIELD_PREFIX,
   PROPOSAL_FORMAT,
-  PROPOSAL_DRAWING_MODE_FORMAT_VERSION,
   PROPOSAL_FORMAT_VERSION,
   VALUES_FIELD_PREFIX,
-  usesDrawingMode,
+  proposalFormatVersionFor,
   type Change,
   type ChangeEntity,
   type Proposal,
@@ -468,9 +467,7 @@ export function buildProposal(
   const changes = computeChanges(base, after);
   return {
     format: PROPOSAL_FORMAT,
-    formatVersion: usesDrawingMode(changes)
-      ? PROPOSAL_DRAWING_MODE_FORMAT_VERSION
-      : PROPOSAL_FORMAT_VERSION,
+    formatVersion: proposalFormatVersionFor(changes, PROPOSAL_FORMAT_VERSION),
     id: args.id ?? crypto.randomUUID(),
     title: args.title.trim(),
     description: clean(args.description),

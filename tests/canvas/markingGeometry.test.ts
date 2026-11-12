@@ -11,7 +11,15 @@ import {
   rectFromPoints,
   resizeMarkingRect,
 } from '../../src/canvas/markingGeometry';
-import { IDENTITY_PLACEMENT, createMarking } from '../../src/model';
+import {
+  IDENTITY_PLACEMENT,
+  addComponentMarking,
+  approximateMeasurer,
+  componentMinSize,
+  createMarking,
+  setContainerDensity,
+} from '../../src/model';
+import { SPEC_ID, componentProject, testCatalog } from '../model/componentFixtures';
 import { marking, sampleProject } from '../model/fixtures';
 
 describe('geometria das marcações no canvas', () => {
@@ -201,6 +209,43 @@ describe('geometria das marcações no canvas', () => {
     expect(resizeMarkingRect(start, 'ne', to, limits, { width: 20, height: 10 })).toEqual(
       { x: 100, y: 190, width: 20, height: 10 },
     );
+  });
+
+  it('redimensionar preso ao mínimo do componente × densidade do container (#1085)', () => {
+    const catalog = testCatalog();
+    const withDensity = (density: number) =>
+      setContainerDensity(
+        addComponentMarking(
+          componentProject(),
+          catalog,
+          {
+            markingId: 'T',
+            annotationId: 'A',
+            containerId: 'I1',
+            parentId: null,
+            specId: SPEC_ID,
+            typeId: 'text',
+            rect: { x: 100, y: 100, width: 400, height: 200 },
+          },
+          approximateMeasurer,
+        ),
+        'I1',
+        density,
+      );
+    const limits = { outer: { x: 0, y: 0, width: 1000, height: 800 } };
+    const start = { x: 100, y: 100, width: 400, height: 200 };
+    const to = { x: 0, y: 900 };
+    const resized = (density: number) =>
+      resizeMarkingRect(
+        start,
+        'ne',
+        to,
+        limits,
+        componentMinSize(withDensity(density), catalog, 'T')!,
+      );
+    // O `text` tem minSize 60×24 (unidades): 1x fica em 60×24, 3x em 180×72.
+    expect(resized(1)).toMatchObject({ width: 60, height: 24 });
+    expect(resized(3)).toMatchObject({ width: 180, height: 72 });
   });
 
   it('redimensionar: só o container limita; as filhas e o pai não', () => {

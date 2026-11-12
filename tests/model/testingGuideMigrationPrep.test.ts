@@ -20,7 +20,7 @@ function v15Text(): string {
 
 /** Troca como o preparo manda: versão, `containers` → `images` e `containerId` → `imageId`. */
 function prepared(text: string, version: number, renameKeys: boolean): string {
-  let out = text.replace('"schemaVersion": 18', `"schemaVersion": ${version}`);
+  let out = text.replace('"schemaVersion": 19', `"schemaVersion": ${version}`);
   if (renameKeys) {
     out = out
       .replaceAll('"containers"', '"images"')
@@ -32,7 +32,7 @@ function prepared(text: string, version: number, renameKeys: boolean): string {
 describe('preparo do guia (R3.8 e R3.8b): o arquivo editado à mão abre', () => {
   it('o v16 gravado usa containers/containerId e a troca de versão sozinha é recusada', () => {
     const text = v15Text();
-    expect(text).toContain('"schemaVersion": 18');
+    expect(text).toContain('"schemaVersion": 19');
     expect(text).toContain('"containers"');
     expect(text).toContain('"containerId"');
     const result = deserialize(prepared(text, 8, false), migrations, new Map());
@@ -49,7 +49,7 @@ describe('preparo do guia (R3.8 e R3.8b): o arquivo editado à mão abre', () =>
       );
       if (!result.ok) throw new Error(JSON.stringify(result.error));
       expect(result.migratedFrom).toBe(version);
-      expect(result.project.schemaVersion).toBe(18);
+      expect(result.project.schemaVersion).toBe(19);
       expect(result.project.containers.length).toBeGreaterThan(0);
       expect(result.project.markings.length).toBeGreaterThan(0);
     },

@@ -1,6 +1,7 @@
 import { signal } from '@preact/signals';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  setContainerDensity,
   addComponentMarking,
   createMarking,
   approximateMeasurer,
@@ -412,6 +413,11 @@ describe('derivado: tamanho mínimo, paleta e avisos', () => {
     const before = sizes;
     actions.renameMarking('T1', 'Outro');
     expect(derived.componentMinSizes.value).toBe(before);
+  });
+
+  it('componentMinSizes multiplica o minSize pela densidade do container (o mínimo do redimensionar)', () => {
+    const { derived } = setup(setContainerDensity(screen(), 'I1', 3));
+    expect(derived.componentMinSizes.value.get('T1')).toEqual({ width: 180, height: 72 });
   });
 
   it('componentTypes lista os tipos com componente e mantém a lista', () => {

@@ -79,6 +79,8 @@ export const containerSchema = z.object({
   background: hexColor.nullable(),
   /** Modo do desenho que o container fixa (v18); ausente ou `null` = segue o projeto. */
   drawingMode: z.string().min(1).nullable().optional(),
+  /** Densidade do container (v19); a faixa de 0,5 a 8 é a invariante `container-density`. */
+  density: z.number().nullable().optional(),
 });
 
 export const markingSchema = z.object({
