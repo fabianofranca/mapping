@@ -54,6 +54,11 @@ export type ComponentParseResult =
       warnings: ComponentIssue[];
       /** Cada `$token` do arquivo, para a biblioteca conferir contra os `tokens` da especialização. */
       tokenRefs: TokenRef[];
+      /**
+       * Leva um caminho do componente lido (com os `$var` trocados) ao do arquivo escrito, com o
+       * `$var(<nome>)` do lugar do uso; a identidade quando o arquivo não tem variáveis.
+       */
+      rewrite: (path: string) => string;
     }
   | { ok: false; issues: ComponentIssue[]; errors: string[] };
 
@@ -1797,7 +1802,10 @@ function checkScreen(value: unknown, path: string, out: Ctx): void {
 interface Analysis {
   readonly issues: ComponentIssue[];
   readonly value: unknown;
+  readonly rewrite: (path: string) => string;
 }
+
+const IDENTITY = (path: string): string => path;
 
 /** Os caminhos de uma lista de problemas e de referências trocam pelos do arquivo escrito. */
 function remapPaths(
@@ -1816,7 +1824,7 @@ function remapPaths(
  */
 function analyze(input: unknown, refs: TokenRef[] | null): Analysis {
   if (!isRecord(input) || !('template' in input))
-    return { issues: collectIssues(input, refs, input), value: input };
+    return { issues: collectIssues(input, refs, input), value: input, rewrite: IDENTITY };
   const expansion = expandVariables(input.template);
   const failed = expansion.issues.length > 0;
   const checked = collectIssues(
@@ -1838,6 +1846,7 @@ function analyze(input: unknown, refs: TokenRef[] | null): Analysis {
   return {
     issues: unique,
     value: same ? input : { ...input, template: expansion.value },
+    rewrite: expansion.rewrite,
   };
 }
 
@@ -1992,15 +2001,12 @@ export function validateComponent(input: unknown): string[] {
 /** Valida um JSON já lido (não lança). */
 export function parseComponent(input: unknown): ComponentParseResult {
   const refs: TokenRef[] = [];
-  const { issues, value } = analyze(input, refs);
+  const { issues, value, rewrite } = analyze(input, refs);
   if (issues.length > 0) return { ok: false, issues, errors: issues.map(formatIssue) };
   const component = value as ComponentFile;
-  return {
-    ok: true,
-    component,
-    warnings: collectWarnings(component.template, 'template'),
-    tokenRefs: refs,
-  };
+  const warnings = collectWarnings(component.template, 'template');
+  for (const warning of warnings) warning.path = rewrite(warning.path);
+  return { ok: true, component, warnings, tokenRefs: refs, rewrite };
 }
 
 /** Aviso de um `family` literal (no `font` do nó ou num trecho) que o CSS não aceita. */

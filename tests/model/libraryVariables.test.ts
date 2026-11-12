@@ -94,8 +94,11 @@ describe('validateLibrary com variáveis', () => {
 
   it('a variável que cita o que não é coluna nem campo do tipo, usada no repeat, é erro', () => {
     const report = validate(component({ x: { $field: 'sumiu' } }, { $var: 'x' }));
-    expect(report.errors.map((e) => e.message)).toEqual([
-      'o desenho da linha usa "sumiu", que não é coluna da table "linhas" nem campo do tipo "tabela"',
+    expect(report.errors.map((e) => [e.path, e.message])).toEqual([
+      [
+        'template.children[0].template.children[0].text.$var(x).$field',
+        'o desenho da linha usa "sumiu", que não é coluna da table "linhas" nem campo do tipo "tabela"',
+      ],
     ]);
   });
 

@@ -20,8 +20,11 @@ type Rec = Record<string, unknown>;
 /** O nome de uma variável. */
 export const VARIABLE_NAME_PATTERN = /^[a-z][a-zA-Z0-9]*$/;
 
-/** O teto de nós do componente depois da expansão (só vale quando há `$var` trocado). */
+/** O teto de nós que a troca das variáveis cria (o resto do arquivo não conta). */
 export const MAX_EXPANDED_NODES = 100000;
+
+/** Quantas variáveis podem estar sendo expandidas uma dentro da outra (a pilha não estoura). */
+const MAX_CHAIN = 500;
 
 /** Um problema da expansão: caminho no componente expandido (`rewrite` o leva ao do arquivo). */
 export interface VariableIssue {
@@ -131,6 +134,10 @@ function substitute(use: Rec, path: string, scope: Scope | null, st: State): unk
     report(st, join(owner.path, name), `ciclo de variáveis: ${chain.join(' → ')}`);
     return use;
   }
+  if (st.active.length >= MAX_CHAIN) {
+    tooBig(st);
+    return use;
+  }
   st.marks.set(path, [...(st.marks.get(path) ?? []), name]);
   st.active.push({ scope: owner, name });
   st.depth++;
@@ -171,16 +178,21 @@ function expandEntries(
   return changed ? out : value;
 }
 
+/** Conta o nó criado pela troca (só dentro de uma variável) e para no teto de nós. */
 function count(st: State): void {
+  if (st.depth === 0) return;
   st.nodes++;
-  if (st.depth > 0 && st.nodes > MAX_EXPANDED_NODES && !st.over) {
-    st.over = true;
-    report(
-      st,
-      '',
-      `expansão das variáveis grande demais (mais de ${MAX_EXPANDED_NODES} nós)`,
-    );
-  }
+  if (st.nodes > MAX_EXPANDED_NODES) tooBig(st);
+}
+
+function tooBig(st: State): void {
+  if (st.over) return;
+  st.over = true;
+  report(
+    st,
+    '',
+    `expansão das variáveis grande demais (mais de ${MAX_EXPANDED_NODES} nós)`,
+  );
 }
 
 /** Um valor (expressão, condição, literal ou objeto de estilo) com os `$var` trocados. */

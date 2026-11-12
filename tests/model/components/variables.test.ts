@@ -462,6 +462,43 @@ describe('let e $var: erros', () => {
     ]);
   });
 
+  it('um componente grande com uma variável pequena não passa do teto (só conta o que a troca cria)', () => {
+    const many = Array.from({ length: 30000 }, () => rect({ fill: '#112233' }));
+    const raw = file(
+      frame({ let: { w: 3 }, children: [...many, rect({ width: { $var: 'w' } })] }),
+    );
+    expect(validateComponent(raw)).toEqual([]);
+  });
+
+  it('uma cadeia muito longa de variáveis é um erro de tamanho, sem estourar a pilha', () => {
+    const lets: Raw = {};
+    for (let i = 0; i < 20000; i++) lets[`a${i}`] = { $var: `a${i + 1}` };
+    lets.a20000 = 1;
+    const raw = file(frame({ let: lets, children: [rect({ width: { $var: 'a0' } })] }));
+    expect(validateComponent(raw)).toEqual([
+      `expansão das variáveis grande demais (mais de ${MAX_EXPANDED_NODES} nós)`,
+    ]);
+  });
+
+  it('o aviso de família de fonte de uma variável leva o $var(<nome>) no caminho', () => {
+    const raw = file(
+      frame({
+        let: { fam: '"Roboto' },
+        children: [
+          {
+            type: 'text',
+            text: 'x',
+            font: { size: 10, family: { $var: 'fam' } },
+          },
+        ],
+      }),
+    );
+    const result = parseComponent(raw);
+    expect(result.ok && result.warnings.map((w) => w.path)).toEqual([
+      'template.children[0].font.family.$var(fam)',
+    ]);
+  });
+
   it('os erros do resto do arquivo seguem quando a expansão falha', () => {
     const raw = {
       ...file(frame({ children: [rect({ width: { $var: 'x' } })] })),
