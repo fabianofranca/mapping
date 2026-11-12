@@ -461,6 +461,26 @@
         "then": 2,
         "else": 1
       },
+      "heroFits": {
+        "$gte": [
+          {
+            "$size": "width"
+          },
+          {
+            "$add": [
+              {
+                "$mul": [
+                  40,
+                  {
+                    "$var": "heroSmallCount"
+                  }
+                ]
+              },
+              50
+            ]
+          }
+        ]
+      },
       "heroStart": {
         "$if": {
           "$and": [
@@ -473,12 +493,7 @@
               ]
             },
             {
-              "$gte": [
-                {
-                  "$size": "width"
-                },
-                130
-              ]
+              "$var": "heroFits"
             }
           ]
         },
@@ -495,24 +510,7 @@
       },
       "heroWidth": {
         "$if": {
-          "$gte": [
-            {
-              "$size": "width"
-            },
-            {
-              "$add": [
-                {
-                  "$mul": [
-                    40,
-                    {
-                      "$var": "heroSmallCount"
-                    }
-                  ]
-                },
-                50
-              ]
-            }
-          ]
+          "$var": "heroFits"
         },
         "then": {
           "$sub": [

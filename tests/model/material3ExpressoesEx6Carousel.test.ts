@@ -467,14 +467,14 @@ function heroOracle(width: number, spacing: number, items: number) {
   return { large: a.large, small: a.small, smallCount: a.smallCount, start };
 }
 
-/** As caixas que o desenho deve ter, pelo oráculo: cada item corta na borda e some com menos de 32 de largura. */
+/** As caixas que o desenho deve ter, pelo oráculo: cada item corta na borda e some quando restam menos de 32 de caixa a partir do seu início. */
 function heroBoxes(width: number, spacing: number, items: number): number[][] {
   const { large, start } = heroOracle(width, spacing, items);
   const boxes: number[][] = [];
   for (let i = 0; i < items; i++) {
     const x = start + i * (large + spacing);
     const w = Math.min(large, width - x);
-    if (w >= 32) boxes.push([x, 0, w, HEIGHT]);
+    if (width - x >= 32) boxes.push([x, 0, w, HEIGHT]);
   }
   return boxes;
 }
@@ -492,7 +492,7 @@ describe('EX6 carousel — centered-hero pela largura da marcação', () => {
   });
 
   it('o grande, o pequeno e o recuo seguem a conta do Compose para toda largura e todo itemSpacing', () => {
-    for (const width of [150, 200, 240, 360, 480, 600, 900]) {
+    for (const width of [130, 140, 150, 200, 240, 360, 480, 600, 900]) {
       for (const spacing of [0, 4, 8, 12, 16]) {
         for (const items of [3, 4, 6]) {
           const expected = heroBoxes(width, spacing, items);
