@@ -198,6 +198,11 @@ describe('CX1 — skill implementar-fila, "3. Por etapa"', () => {
     expect(troca).toContain('antes de "Coordenador"');
     expect(troca).toContain('item 9 de "Economia de contexto"');
     expect(troca).toContain('"Para a sessão da fase"');
+    // Onde a linha começa e termina, e o que se preenche (achado da revisão: extração sem ambiguidade).
+    expect(troca).toContain(
+      'o trecho entre crases do sub-item que começa por `Retomada por contexto`',
+    );
+    expect(troca).toContain('com os campos `<…>` preenchidos');
     expect(troca).not.toContain('Retomada por contexto (');
     expect(troca).not.toContain('Continue no branch <branch>');
   });
@@ -238,7 +243,11 @@ describe('CX1 — skill implementar-fila, "3. Por etapa"', () => {
   it('PP2: o PR de fase com commit WIP se mescla com squash, também quando é o coordenador que mescla', () => {
     expect(avisou).toContain('avisou sem ter mesclado');
     expect(avisou).toContain('`WIP <código>: passagem por contexto`');
-    expect(avisou).toContain('`git log --format=%s origin/epic/<nome>..HEAD`');
+    // O clone do coordenador não está no branch da fase: o `HEAD` do item 6 vira o branch da origin.
+    expect(avisou).toContain(
+      '`git log --format=%s origin/epic/<nome>..origin/<branch da fase>`',
+    );
+    expect(avisou).not.toContain('..HEAD`');
     expect(avisou).toContain('`merge_method: squash`');
     expect(avisou).toContain('item 6');
     expect(avisou).toMatch(/Os outros PRs continuam com `merge`/);
