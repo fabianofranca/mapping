@@ -1,4 +1,4 @@
-# Grafo de dependências no painel da fila — [Não lançado] (épico `epic/painel-grafo-da-fila`)
+# Grafo de dependências no painel da fila — 2026-11-12 (épico `epic/painel-grafo-da-fila`)
 
 ## Pendências
 
