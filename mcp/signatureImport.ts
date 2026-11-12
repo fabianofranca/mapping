@@ -5,6 +5,7 @@ import {
   type ImportErrorCode,
   type Signature,
   type Spec,
+  type SpecCode,
 } from '../src/model';
 import { ToolError, type ToolErrorCode } from './errors';
 import { packageByPath, readJsonFile, type PackageSource } from './library';
@@ -78,19 +79,26 @@ function target(
     : { platform: args.platform };
 }
 
+/** O tipo `id` da especialização, em qualquer camada. */
+function findType(
+  spec: Spec,
+  id: string,
+): Spec['layers'][number]['annotationTypes'][number] | undefined {
+  return spec.layers.flatMap((layer) => layer.annotationTypes).find((t) => t.id === id);
+}
+
+/** A ficha citada pelo `code` do tipo na plataforma (a do caso, com `variant`). */
+function codeSignature(code: SpecCode | undefined, variant?: string): string | undefined {
+  if (variant === undefined) return code?.signature;
+  return code?.variants?.cases[variant]?.signature;
+}
+
 /** O caminho da ficha gravada no pacote para o alvo (o `signature` do `code`, do caso ou da source). */
 function recordedPath(spec: Spec, args: PlanSignatureImportArgs): string | undefined {
-  for (const layer of spec.layers) {
-    const type = layer.annotationTypes.find((t) => t.id === args.type);
-    if (type === undefined) continue;
-    if (args.system !== undefined)
-      return type.sources?.find((s) => s.system === args.system)?.signature;
-    const code = type.code?.[args.platform as string];
-    return args.variant === undefined
-      ? code?.signature
-      : code?.variants?.cases[args.variant]?.signature;
-  }
-  return undefined;
+  const type = findType(spec, args.type);
+  if (args.system !== undefined)
+    return type?.sources?.find((s) => s.system === args.system)?.signature;
+  return codeSignature(type?.code?.[args.platform as string], args.variant);
 }
 
 /** A ficha gravada no pacote (a anterior), se existe e é válida. */

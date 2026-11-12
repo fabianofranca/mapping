@@ -44,11 +44,13 @@ interface Plan {
   hint: string;
 }
 
-async function call(
-  name: string,
-  args: Record<string, unknown>,
-): Promise<{ isError: boolean; data: any }> {
-  // eslint-disable-line @typescript-eslint/no-explicit-any
+interface Reply {
+  isError: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any;
+}
+
+async function call(name: string, args: Record<string, unknown>): Promise<Reply> {
   const result = await client.callTool({ name, arguments: args });
   const text = (result.content as { text: string }[])[0]!.text;
   return { isError: result.isError === true, data: JSON.parse(text) };
