@@ -140,4 +140,13 @@ describe('derivado densitySuggestions', () => {
     expect(derived.densitySuggestions.value.get('C1')?.density).toBe(2);
     stop();
   });
+
+  it('a mesma tabela (identidade) volta enquanto as sugestões não mudam', () => {
+    const { derived, actions } = derivedOf(screen(1080, 2400));
+    const before = derived.densitySuggestions.value;
+    actions.setContainerMarkingColor('C1', '#112233');
+    expect(derived.densitySuggestions.value).toBe(before);
+    actions.setContainerMarkingColor('C1', '#445566');
+    expect(derived.densitySuggestions.value).toBe(before);
+  });
 });

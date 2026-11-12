@@ -1,6 +1,6 @@
 import type { Spec } from './spec';
 
-// Tipos do `mapping.json` (schema v18). Ver docs/FORMAT.md. Tudo é `readonly`: o modelo é imutável e as operações sempre
+// Tipos do `mapping.json` (schema v19). Ver docs/FORMAT.md. Tudo é `readonly`: o modelo é imutável e as operações sempre
 // devolvem um novo projeto.
 
 export const SCHEMA_VERSION = 19;

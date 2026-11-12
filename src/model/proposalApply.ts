@@ -1,4 +1,5 @@
 import { isSameAspect, scaleRect } from './containers';
+import { withoutDensity } from './density';
 import { snapPlacement } from './geometry';
 import { setProjectDrawingMode } from './drawingMode';
 import { clearArrowRoutes, settleHierarchy } from './hierarchySettle';
@@ -208,11 +209,7 @@ function withField(
       }
       if (field === 'density') {
         // `null` volta a 1: a chave sai (o arquivo só guarda a densidade declarada).
-        if (to === null) {
-          return Object.fromEntries(
-            Object.entries(i).filter(([key]) => key !== 'density'),
-          ) as unknown as ProjectContainer;
-        }
+        if (to === null || to === 1) return withoutDensity(i);
         return { ...i, density: to as number };
       }
       if (field === 'placement')

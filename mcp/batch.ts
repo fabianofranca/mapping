@@ -26,6 +26,7 @@ import {
   SHORT_CODE_LENGTH,
   normalizeId,
   componentFileMinSize,
+  effectiveDensity,
   componentMinSize,
   componentPlacement,
   componentSize,
@@ -2100,7 +2101,10 @@ class Batch {
       );
     }
     // Com componente o mínimo é o `minSize` dele ou 1×1; sem componente, o de qualquer marcação (8).
-    const minSize = component === null ? null : componentFileMinSize(component.component);
+    const minSize =
+      component === null
+        ? null
+        : componentFileMinSize(component.component, effectiveDensity(p, containerId));
     // `near` (ME4): só um tipo flutuante; o lugar sai de `placeFloatingNear` e o `rect`, se vier,
     // dá só o tamanho. Nos outros casos o argumento é ignorado, com aviso.
     const notes: string[] = [];

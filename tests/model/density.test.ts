@@ -6,6 +6,7 @@ import {
   effectiveDensity,
   migrateFrom18To19,
   migrations,
+  rectFromUnits,
   serialize,
   setContainerDensity,
   suggestDensity,
@@ -217,5 +218,47 @@ describe('suggestDensity', () => {
 
   it('a captura costuma recortar barras: a altura não impede a sugestão', () => {
     expect(suggestDensity({ width: 1080, height: 2100 }, [material])?.density).toBe(3);
+  });
+});
+
+// CL2 (#1715), achados 2, 3 e 4.
+describe('CL2: suggestDensity considera o 1x', () => {
+  it('1080×1920 com o tamanho pronto 1080×1920 (já em 1x) não sugere nada', () => {
+    const full = specOf('hd', [{ id: 'hd', name: 'HD', width: 1080, height: 1920 }]);
+    expect(suggestDensity({ width: 1080, height: 1920 }, [full])).toBeNull();
+  });
+
+  it('com 1x e 3x na tolerância, o que fica mais perto vale; o 1x não é sugerido', () => {
+    const both = specOf('both', [
+      { id: 'big', name: 'Grande', width: 1080, height: 1920 },
+      { id: 'small', name: 'Pequeno', width: 360, height: 640 },
+    ]);
+    // O tamanho pronto 1080×1920 explica o container (1x): nada a aplicar, mesmo que o 360 dê 3x.
+    expect(suggestDensity({ width: 1080, height: 1920 }, [both])).toBeNull();
+  });
+});
+
+describe('CL2: rectFromUnits arredonda pelas bordas', () => {
+  it('a borda direita/inferior do filho não passa a do slot (densidade 2,625)', () => {
+    const d = 2.625;
+    const slotUnit = { x: 0, y: 0, width: 9.728, height: 9.728 };
+    const childUnit = { x: 0.2, y: 0.2, width: 9.5276, height: 9.5276 };
+    const orig = { x: 0, y: 0, width: 1, height: 1 };
+    const slot = rectFromUnits(slotUnit, orig, d);
+    const child = rectFromUnits(childUnit, orig, d);
+    expect(child.x + child.width).toBeLessThanOrEqual(slot.x + slot.width);
+    expect(child.y + child.height).toBeLessThanOrEqual(slot.y + slot.height);
+    expect(child.width).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('CL2: density 1 é ausente', () => {
+  it('setContainerDensity(p, id, 1) não grava a chave e, sem densidade, devolve o mesmo projeto', () => {
+    const p = sampleProject();
+    const id = first(p).id;
+    expect(setContainerDensity(p, id, 1)).toBe(p);
+    const three = setContainerDensity(p, id, 3);
+    const back = setContainerDensity(three, id, 1);
+    expect('density' in first(back)).toBe(false);
   });
 });
