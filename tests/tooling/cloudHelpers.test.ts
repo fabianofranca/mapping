@@ -520,6 +520,7 @@ describe('scripts/testing/ listado no repositório', () => {
         'herdada.mjs',
         'justificado.mjs',
         'large-project.mjs',
+        'let.mjs',
         'mcp-stdio-client.mjs',
         'mock-github-release.mjs',
         'r85-prep.sh',

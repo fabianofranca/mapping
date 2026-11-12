@@ -379,6 +379,8 @@ interface Package {
   readonly components: Map<string, ComponentFile>;
   /** JSON do componente pelo caminho resolvido (para localizar as citações de campos). */
   readonly componentJson: Map<string, unknown>;
+  /** Por arquivo de componente: leva um caminho do componente lido ao do arquivo escrito (`$var(<nome>)`). */
+  readonly componentRewrite: Map<string, (path: string) => string>;
   /** Os `$token` de cada componente válido, pelo caminho resolvido. */
   readonly tokenRefs: Map<string, readonly TokenRef[]>;
   /** O conjunto de ícones (`icons`), quando o arquivo existe e é válido. */
@@ -420,6 +422,7 @@ function level1(
     byPath,
     components: new Map(),
     componentJson: new Map(),
+    componentRewrite: new Map(),
     tokenRefs: new Map(),
   };
   const referenced = new Set<string>([specPath]);
@@ -511,7 +514,10 @@ function readComponent(file: LibraryFile, pkg: Package, out: Collector): void {
   for (const warning of parsed.warnings)
     out.passWarning(file.path, warning.path, warning.message, codingOf(warning));
   pkg.components.set(file.path, parsed.component);
-  pkg.componentJson.set(file.path, json);
+  // O componente lido (com os `$var` trocados; é o próprio `json` quando não há variáveis): as
+  // conferências por citação de campo olham o desenho que o motor usa, não o `let` escrito.
+  pkg.componentJson.set(file.path, parsed.component);
+  pkg.componentRewrite.set(file.path, parsed.rewrite);
   pkg.tokenRefs.set(file.path, parsed.tokenRefs);
 }
 
@@ -606,6 +612,7 @@ function typeCoherence(
   const rawTemplate = isRecord(raw) ? raw.template : undefined;
   const where = fieldReferences(rawTemplate, 'template');
   const used2 = collectFieldKeys(component);
+  let from = out.issues.length;
   for (const key of used2) {
     if (keys.has(key)) continue;
     out.error(path, where.get(key) ?? 'template', 'library.fieldUndeclared', {
@@ -613,10 +620,14 @@ function typeCoherence(
       typeId: type.id,
     });
   }
+  remapIssues(pkg, path, out.issues, from);
+  // Os `tokenRefs` já vêm com o caminho do arquivo escrito (`parseComponent`).
   tokenChecks(pkg, path, out);
+  from = out.issues.length;
   const innerUsed = repeatChecks(type, path, rawTemplate, out);
   rowsChecks(type, path, rawTemplate, out);
   imageChecks(type, path, rawTemplate, out);
+  remapIssues(pkg, path, out.issues, from);
   for (const [key, value] of Object.entries(component.preview ?? {})) {
     const field = type.fields.find((f) => f.key === key);
     if (field === undefined) {
@@ -645,6 +656,25 @@ function typeCoherence(
       path,
     });
   });
+}
+
+/**
+ * Os caminhos que as conferências por citação (campo, `repeat`, `$rows`, imagem, ícone) dão no
+ * componente lido, com as variáveis trocadas, viram os do arquivo escrito (`$var(<nome>)` no lugar
+ * do uso). Vale só para os problemas de `file` posteriores a `from`.
+ */
+function remapIssues(
+  pkg: Package,
+  file: string,
+  issues: LibraryIssue[],
+  from: number,
+): void {
+  const rewrite = pkg.componentRewrite.get(file);
+  if (rewrite === undefined) return;
+  for (let i = from; i < issues.length; i++) {
+    const issue = issues[i] as LibraryIssue;
+    if (issue.file === file) issues[i] = { ...issue, path: rewrite(issue.path) };
+  }
 }
 
 /**
@@ -996,9 +1026,11 @@ function level2(
 
   for (const [path, json] of pkg.componentJson) {
     const template = isRecord(json) ? json.template : undefined;
+    const from = out.issues.length;
     out.issues.push(
       ...iconLiteralIssues(path, iconNodes(template), pkg.icons, pkg.iconsPath),
     );
+    remapIssues(pkg, path, out.issues, from);
   }
 
   (spec.fonts ?? []).forEach((font, index) => {
