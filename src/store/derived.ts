@@ -684,8 +684,21 @@ export function createEditorDerived(
   // A tabela anterior volta enquanto as sugestões são as mesmas: o painel dos Detalhes não
   // redesenha a cada edição que não mexe nos containers.
   let lastSuggestions = NO_DENSITY_SUGGESTIONS;
+  let suggestedFor: Pick<Project, 'containers' | 'specializations'> | null = null;
   const densitySuggestions = computed((): ReadonlyMap<string, DensitySuggestion> => {
     const p = project.value;
+    // Edição que não troca a lista de containers nem a de especializações (a maioria) não
+    // recalcula nada: o objeto do projeto muda, as duas listas continuam as mesmas.
+    if (
+      p &&
+      suggestedFor?.containers === p.containers &&
+      suggestedFor.specializations === p.specializations
+    ) {
+      return lastSuggestions;
+    }
+    suggestedFor = p
+      ? { containers: p.containers, specializations: p.specializations }
+      : null;
     const next = p ? suggestDensities(p) : NO_DENSITY_SUGGESTIONS;
     if (sameDensitySuggestions(next, lastSuggestions)) return lastSuggestions;
     lastSuggestions = next.size === 0 ? NO_DENSITY_SUGGESTIONS : next;

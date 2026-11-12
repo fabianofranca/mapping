@@ -209,6 +209,12 @@ describe('suggestDensity', () => {
     );
   });
 
+  it('com dois fatores na tolerância, vale o mais próximo (tamanho pronto minúsculo)', () => {
+    const tiny = specOf('t', [{ id: 'x', name: 'X', width: 2, height: 5 }]);
+    // 4 está a 1 px de 1,5 × 2 = 3 e a 0 px de 2 × 2 = 4: o fator é 2, não 1,5.
+    expect(suggestDensity({ width: 4, height: 10 }, [tiny])?.density).toBe(2);
+  });
+
   it('a captura costuma recortar barras: a altura não impede a sugestão', () => {
     expect(suggestDensity({ width: 1080, height: 2100 }, [material])?.density).toBe(3);
   });

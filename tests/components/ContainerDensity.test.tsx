@@ -167,10 +167,69 @@ describe('Detalhes do container: campo Densidade', () => {
     expect(custom().value).toBe('1,25');
   });
 
+  it('um valor com mais de 3 casas (o agente grava 2,6254) aparece inteiro no campo', () => {
+    setup(setContainerDensity(screenProject(), 'C1', 2.6254));
+    expect(custom().value).toBe('2,6254');
+  });
+
+  it('o aviso some ao voltar a digitar no campo', async () => {
+    const { harness, user } = setup(setContainerDensity(screenProject(), 'C1', 1.25));
+    await user.clear(custom());
+    await user.type(custom(), '0,2{Enter}');
+    expect(screen.getByRole('alert').textContent).toBe(t('density.error'));
+    await user.type(custom(), '3');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(density(harness)).toBe(1.25);
+  });
+
   it('somente leitura desabilita o campo e o Aplicar', () => {
     setup(screenProject(), true);
     expect(select().disabled).toBe(true);
     expect(apply()?.hasAttribute('disabled')).toBe(true);
+  });
+});
+
+describe('Detalhes: troca de container', () => {
+  it('o aviso e o campo Personalizada de um container não passam para o outro', async () => {
+    const two = addBackgroundContainer(screenProject(), {
+      id: 'C2',
+      width: 360,
+      height: 800,
+      background: '#FFFFFF',
+    });
+    const harness = createHarness(two);
+    const panel = (index: number) => {
+      const image = harness.project().containers[index];
+      return (
+        <EditorContext.Provider value={harness.context}>
+          {image && (
+            <SelectionPanel
+              image={image}
+              display={undefined}
+              readOnly={false}
+              busy={false}
+              onReplace={() => undefined}
+              onDelete={() => undefined}
+            />
+          )}
+        </EditorContext.Provider>
+      );
+    };
+    const view = render(panel(0));
+    const user = userEvent.setup();
+    const select = () =>
+      screen.getByLabelText<HTMLSelectElement>(t('density.label'), {
+        selector: 'select',
+      });
+    await user.selectOptions(select(), 'custom');
+    const field = screen.getByLabelText<HTMLInputElement>(t('density.customLabel'));
+    await user.clear(field);
+    await user.type(field, '0,2{Enter}');
+    expect(screen.getByRole('alert').textContent).toBe(t('density.error'));
+    view.rerender(panel(1));
+    expect(select().value).toBe('1');
+    expect(screen.queryByLabelText(t('density.customLabel'))).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });
 
@@ -233,6 +292,20 @@ describe('diálogo Novo container: campo Densidade', () => {
       'ds:tablet',
     );
     expect(select().value).toBe('2');
+  });
+
+  it('Personalizada inválida avisa na hora, sem esperar o Criar container', async () => {
+    const harness = createHarness(screenProject());
+    const user = renderDialog(harness);
+    await user.selectOptions(select(), 'custom');
+    const field = inDialog().getByLabelText(t('density.customLabel'));
+    await user.clear(field);
+    await user.type(field, '9');
+    expect(inDialog().getByRole('alert').textContent).toBe(t('density.error'));
+    expect(field.getAttribute('aria-invalid')).toBe('true');
+    await user.clear(field);
+    await user.type(field, '2');
+    expect(inDialog().queryByRole('alert')).toBeNull();
   });
 
   it('Personalizada inválida bloqueia a criação com o aviso', async () => {

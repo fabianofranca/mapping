@@ -28,6 +28,8 @@ interface DensityControlProps {
   readonly onChange: (density: number) => void;
   /** O número digitado em "Personalizada" não é de 0,5 a 8. */
   readonly onInvalid: () => void;
+  /** A pessoa voltou a digitar no campo "Personalizada" (o aviso anterior deixa de valer). */
+  readonly onEdit?: () => void;
 }
 
 /**
@@ -43,6 +45,7 @@ export function DensityControl({
   mode,
   onChange,
   onInvalid,
+  onEdit,
 }: DensityControlProps) {
   const [customOpen, setCustomOpen] = useState(false);
   const [draft, setDraft] = useState(formatDensity(value));
@@ -67,7 +70,7 @@ export function DensityControl({
     onChange(Number(text));
   };
   return (
-    <div class="density-control" ref={box}>
+    <div class="density-control" ref={box} onInput={onEdit}>
       <Select
         id={id}
         size={size}

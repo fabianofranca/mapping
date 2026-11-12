@@ -37,9 +37,7 @@ export function ContainerDialog({ onClose }: { readonly onClose: () => void }) {
   const [density, setDensity] = useState<number | null>(1);
   const densityId = useId();
   const [error, setError] = useState<string | null>(null);
-  const [invalid, setInvalid] = useState<'name' | 'size' | 'color' | 'density' | null>(
-    null,
-  );
+  const [invalid, setInvalid] = useState<'name' | 'size' | 'color' | null>(null);
 
   const submit = (e: Event) => {
     e.preventDefault();
@@ -58,11 +56,7 @@ export function ContainerDialog({ onClose }: { readonly onClose: () => void }) {
       );
       return;
     }
-    if (density === null) {
-      setInvalid('density');
-      setError(t('density.error'));
-      return;
-    }
+    if (density === null) return;
     const center = canvas.current?.viewportCenter();
     const result = actions.addBackgroundContainer({
       ...form.value,
@@ -175,17 +169,17 @@ export function ContainerDialog({ onClose }: { readonly onClose: () => void }) {
             id={densityId}
             mode="live"
             value={density ?? 1}
-            invalid={invalid === 'density'}
-            onChange={(value) => {
-              setDensity(value);
-              if (invalid === 'density') {
-                setInvalid(null);
-                setError(null);
-              }
-            }}
+            invalid={density === null}
+            onChange={setDensity}
             onInvalid={() => setDensity(null)}
           />
-          <span class="muted">{t('density.hint')}</span>
+          {density === null ? (
+            <p class="field-error" role="alert">
+              {t('density.error')}
+            </p>
+          ) : (
+            <span class="muted">{t('density.hint')}</span>
+          )}
         </div>
         {error && (
           <p class="field-error" role="alert">

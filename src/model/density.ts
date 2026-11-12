@@ -139,10 +139,24 @@ export interface DensitySuggestion {
   readonly preset: SpecContainer;
 }
 
+/** O fator da lista cuja largura (`fator × presetWidth`) mais se aproxima de `width`, dentro da tolerância. */
+function closestFactor(width: number, presetWidth: number): number | undefined {
+  let best: number | undefined;
+  let bestGap = SUGGEST_TOLERANCE + 1;
+  for (const factor of SUGGESTED_DENSITIES) {
+    const gap = Math.abs(width - factor * presetWidth);
+    if (gap <= SUGGEST_TOLERANCE && gap < bestGap) {
+      best = factor;
+      bestGap = gap;
+    }
+  }
+  return best;
+}
+
 /**
  * Sugestão de densidade para um container pelos tamanhos prontos (`containers[]`) das
  * especializações aplicadas: a largura do container ÷ a do tamanho pronto é 1,5, 2, 3 ou 4
- * (tolerância de 2 px no arredondamento). A altura só desempata (a captura costuma recortar barras):
+ * (tolerância de 2 px no arredondamento; com dois fatores na tolerância, vale o mais próximo). A altura só desempata (a captura costuma recortar barras):
  * entre os candidatos vale o de altura mais próxima de `fator × altura do tamanho pronto` e, em
  * empate, o primeiro na ordem das especializações. Só sugere; quem decide é a pessoa ou o agente.
  */
@@ -154,9 +168,7 @@ export function suggestDensity(
   let bestGap = Infinity;
   for (const { id, spec } of specs) {
     for (const preset of spec?.containers ?? []) {
-      const density = SUGGESTED_DENSITIES.find(
-        (d) => Math.abs(container.width - d * preset.width) <= SUGGEST_TOLERANCE,
-      );
+      const density = closestFactor(container.width, preset.width);
       if (density === undefined) continue;
       const gap = Math.abs(container.height - density * preset.height);
       if (gap < bestGap) {

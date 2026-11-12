@@ -182,6 +182,7 @@ export function SelectionPanel({
           )}
           <ContainerDrawingModeField image={image} disabled={disabled} />
           <ContainerDensityField
+            key={image.id}
             image={image}
             disabled={disabled}
             mark={ext?.mark(image.id, 'density')}

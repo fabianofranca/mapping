@@ -55,6 +55,7 @@ export function ContainerDensityField({
         invalid={error !== null}
         onChange={set}
         onInvalid={() => setError(t('density.error'))}
+        onEdit={() => setError(null)}
       />
       {suggestion !== null && suggestion.density !== current && (
         <div class="density-suggestion">
