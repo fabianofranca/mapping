@@ -23,6 +23,8 @@ export interface MappingJson {
     readonly width: number;
     readonly height: number;
     readonly locked: boolean;
+    /** Pixels da imagem por unidade do componente (v19); ausente vale 1. */
+    readonly density?: number;
     /** A marcação do canvas que contém o container (v13); `null` = nenhuma. */
     readonly parentId: string | null;
     readonly placement: {

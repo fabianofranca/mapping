@@ -1,6 +1,7 @@
 import { fail } from './errors';
 import { updateById } from './project';
 import { projectIndex } from './projectIndex';
+import type { Spec, SpecContainer } from './spec';
 import type { Project, Rect } from './types';
 
 // Densidade do container (schema v19): quantos pixels da imagem vale uma unidade do componente
@@ -123,4 +124,74 @@ export function rectFromUnits(unit: Rect, original: Rect, density: number): Rect
     width: Math.max(1, unitsToPixels(unit.width, density)),
     height: Math.max(1, unitsToPixels(unit.height, density)),
   };
+}
+
+/** Os fatores que a app sugere (a lista pronta do campo traz também 1). */
+export const SUGGESTED_DENSITIES = [1.5, 2, 3, 4] as const;
+
+/** Quantos pixels a largura do container pode diferir de `fator × largura do tamanho pronto`. */
+const SUGGEST_TOLERANCE = 2;
+
+/** O que a app sugere: o fator e o tamanho pronto (de uma especialização aplicada) que o explica. */
+export interface DensitySuggestion {
+  readonly density: number;
+  readonly specId: string;
+  readonly preset: SpecContainer;
+}
+
+/** O fator da lista cuja largura (`fator × presetWidth`) mais se aproxima de `width`, dentro da tolerância. */
+function closestFactor(width: number, presetWidth: number): number | undefined {
+  let best: number | undefined;
+  let bestGap = SUGGEST_TOLERANCE + 1;
+  for (const factor of SUGGESTED_DENSITIES) {
+    const gap = Math.abs(width - factor * presetWidth);
+    if (gap <= SUGGEST_TOLERANCE && gap < bestGap) {
+      best = factor;
+      bestGap = gap;
+    }
+  }
+  return best;
+}
+
+/**
+ * Sugestão de densidade para um container pelos tamanhos prontos (`containers[]`) das
+ * especializações aplicadas: a largura do container ÷ a do tamanho pronto é 1,5, 2, 3 ou 4
+ * (tolerância de 2 px no arredondamento; com dois fatores na tolerância, vale o mais próximo). A altura só desempata (a captura costuma recortar barras):
+ * entre os candidatos vale o de altura mais próxima de `fator × altura do tamanho pronto` e, em
+ * empate, o primeiro na ordem das especializações. Só sugere; quem decide é a pessoa ou o agente.
+ */
+export function suggestDensity(
+  container: { readonly width: number; readonly height: number },
+  specs: readonly { readonly id: string; readonly spec: Spec | null }[],
+): DensitySuggestion | null {
+  let best: DensitySuggestion | null = null;
+  let bestGap = Infinity;
+  for (const { id, spec } of specs) {
+    for (const preset of spec?.containers ?? []) {
+      const density = closestFactor(container.width, preset.width);
+      if (density === undefined) continue;
+      const gap = Math.abs(container.height - density * preset.height);
+      if (gap < bestGap) {
+        best = { density, specId: id, preset };
+        bestGap = gap;
+      }
+    }
+  }
+  return best;
+}
+
+/**
+ * A sugestão de cada container do projeto que tem uma (os demais não aparecem). Sem tamanho pronto
+ * em nenhuma especialização aplicada, nem percorre os containers.
+ */
+export function suggestDensities(
+  p: Pick<Project, 'containers' | 'specializations'>,
+): Map<string, DensitySuggestion> {
+  const found = new Map<string, DensitySuggestion>();
+  if (!p.specializations.some((s) => (s.spec?.containers?.length ?? 0) > 0)) return found;
+  for (const container of p.containers) {
+    const suggestion = suggestDensity(container, p.specializations);
+    if (suggestion !== null) found.set(container.id, suggestion);
+  }
+  return found;
 }

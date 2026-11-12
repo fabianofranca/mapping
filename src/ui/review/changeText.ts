@@ -19,6 +19,7 @@ import {
   type Proposal,
   type ReviewTarget,
 } from '../../model';
+import { formatDensity } from '../density';
 import { imageLabel, markingLabel } from '../labels';
 import { labelTexts } from '../typedText';
 import { joinParts } from './format';
@@ -563,6 +564,10 @@ export function valueParts(
   if (field === 'space') return spaceParts(names, value);
   if (field === 'placement')
     return placementParts(value, other) ?? [{ text: compact(value) }];
+  // Densidade (v19): ausente (`null`) vale 1, e o número segue o idioma (2,5 em pt-BR).
+  if (field === 'density') {
+    return [{ text: formatDensity(typeof value === 'number' ? value : 1) }];
+  }
   if (value === null) return [{ text: t('review.value.empty') }];
   if (field.startsWith(VALUES_FIELD_PREFIX)) {
     const typedParts = typedValueParts(names, value);

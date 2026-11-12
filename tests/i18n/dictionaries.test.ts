@@ -135,6 +135,8 @@ describe('dicionários', () => {
       'ref.keyEsc',
       'typed.rowNumber',
       'typed.requiredMark',
+      // "{value}x": só parâmetro e o símbolo da escala (3x), iguais nos dois idiomas (densidade).
+      'density.value',
       // O nome do produto é "Mapping" nos dois idiomas.
       'app.title',
       'editor.appName',
