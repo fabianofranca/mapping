@@ -20,6 +20,7 @@ import {
   SWITCH_PATH,
   canonical,
   fixtureText,
+  run,
   spawnBundle,
 } from './support';
 
@@ -98,6 +99,21 @@ describe('--help e erros de uso (exit 2)', () => {
     expect(result.code).toBe(2);
     expect(result.stdout).toBe('');
     expect(result.stderr.length).toBeGreaterThan(0);
+  });
+
+  it('--file absoluto sem --path é erro de uso (exit 2) antes de ler qualquer arquivo', () => {
+    const result = run(['kotlin', '--file', '/abs/A.kt', '--symbol', 'Foo']);
+    expect(result.code).toBe(2);
+    const withAlso = run([
+      'kotlin',
+      '--file',
+      '/abs/A.kt',
+      '--symbol',
+      'Foo',
+      '--also',
+      'missing.kt',
+    ]);
+    expect(withAlso.code).toBe(2);
   });
 
   it('arquivo inexistente é erro de extração (exit 1), não de uso', () => {

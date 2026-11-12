@@ -20,30 +20,66 @@ export interface FoundFactory {
   readonly doc: string | undefined;
 }
 
-const FACTORY_DEFAULT = /^([A-Z]\w*)\.([a-z]\w*)\(.*\)$/;
+const FACTORY_DEFAULT = /^([A-Z]\w*)\.([a-z]\w*)\(/;
 
-/** `Objeto.fabrica(...)`: o nome do objeto e o da função, se o padrão tem esse formato. */
+/** O fim do literal de texto ou de caractere que abre em `from` (aspas `"` ou `'`). */
+function skipQuoted(text: string, from: number): number {
+  const quote = text[from]!;
+  let i = from + 1;
+  while (i < text.length && text[i] !== quote) i += text[i] === '\\' ? 2 : 1;
+  return i;
+}
+
+/** O índice do `)` que fecha o `(` em `open` (ignora parênteses dentro de literais); -1 se não fecha. */
+function closingParen(text: string, open: number): number {
+  let depth = 0;
+  for (let i = open; i < text.length; i++) {
+    const char = text[i]!;
+    if (char === '"' || char === "'") i = skipQuoted(text, i);
+    else if (char === '(') depth++;
+    else if (char === ')' && --depth === 0) return i;
+  }
+  return -1;
+}
+
+/** `Objeto.fabrica(...)` inteiro: o nome do objeto e o da função, se o padrão é só essa chamada. */
 export function factoryCall(
   defaultText: string | undefined,
 ): [string, string] | undefined {
   const match = defaultText === undefined ? null : FACTORY_DEFAULT.exec(defaultText);
-  return match === null ? undefined : [match[1]!, match[2]!];
+  if (defaultText === undefined || match === null) return undefined;
+  const open = match[0].length - 1;
+  return closingParen(defaultText, open) === defaultText.length - 1
+    ? [match[1]!, match[2]!]
+    : undefined;
 }
 
 /** As funções que são membros diretos (nível de cima do corpo) de algum `object` com este nome. */
 function objectMembers(stream: TokenStream, objectName: string): FunctionDecl[] {
+  return membersByObject(stream).get(objectName) ?? [];
+}
+
+const MEMBERS = new WeakMap<TokenStream, Map<string, FunctionDecl[]>>();
+
+/** Os membros diretos de cada `object` do arquivo, por nome; calculado uma vez por arquivo. */
+function membersByObject(stream: TokenStream): Map<string, FunctionDecl[]> {
+  const cached = MEMBERS.get(stream);
+  if (cached !== undefined) return cached;
   const functions = findFunctions(stream);
-  const members: FunctionDecl[] = [];
+  const byName = new Map<string, FunctionDecl[]>();
   stream.tokens.forEach((token, i) => {
     const name = stream.tokens[i + 1];
-    if (token.kind !== 'ident' || token.text !== 'object' || name?.text !== objectName)
+    if (token.kind !== 'ident' || token.text !== 'object' || name?.kind !== 'ident')
       return;
     const open = findBodyOpen(stream, i + 2);
     if (open === undefined) return;
     const direct = new Set(topLevel(stream, open + 1, stream.match[open]!));
-    members.push(...functions.filter((f) => direct.has(f.funIndex)));
+    const list = byName.get(name.text) ?? [];
+    list.push(...functions.filter((f) => direct.has(f.funIndex)));
+    byName.set(name.text, list);
   });
-  return members;
+  MEMBERS.set(stream, byName);
+  return byName;
 }
 
 /** Entre as funções de mesmo nome: sem as `@Deprecated`, a de mais parâmetros (empate: a primeira). */

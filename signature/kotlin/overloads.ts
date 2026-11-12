@@ -26,12 +26,11 @@ export function chooseOverload(
   overload: number | undefined,
 ): FunctionDecl {
   const where = stream.src.name;
-  const list = listCandidates(stream, candidates);
   if (overload !== undefined) {
     const chosen = candidates[overload];
     if (chosen !== undefined) return chosen;
     throw new CliError(
-      `--overload ${overload} fora da lista: ${name} tem ${candidates.length} sobrecargas @Composable em ${where} (índices de 0 a ${candidates.length - 1}):\n${list}`,
+      `--overload ${overload} fora da lista: ${name} tem ${candidates.length} sobrecargas @Composable em ${where} (índices de 0 a ${candidates.length - 1}):\n${listCandidates(stream, candidates)}`,
     );
   }
   const alive = candidates.filter((fn) => !fn.deprecated);
@@ -41,6 +40,6 @@ export function chooseOverload(
       ? `${name} só tem sobrecargas @Deprecated em ${where}`
       : `${name} tem ${alive.length} sobrecargas @Composable (fora as @Deprecated) em ${where}`;
   throw new CliError(
-    `sobrecarga ambígua: ${reason}; escolha uma com --overload <n>:\n${list}`,
+    `sobrecarga ambígua: ${reason}; escolha uma com --overload <n>:\n${listCandidates(stream, candidates)}`,
   );
 }

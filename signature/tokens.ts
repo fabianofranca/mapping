@@ -22,18 +22,9 @@ export interface TokenStream {
 }
 
 const OPENERS = new Set(['(', '[', '{']);
-const CLOSERS = new Set([')', ']', '}']);
 
 export function isOpener(token: Token | undefined): boolean {
   return token !== undefined && token.kind === 'punct' && OPENERS.has(token.text);
-}
-
-export function isCloser(token: Token | undefined): boolean {
-  return token !== undefined && token.kind === 'punct' && CLOSERS.has(token.text);
-}
-
-export function tokenAt(stream: TokenStream, index: number): Token | undefined {
-  return stream.tokens[index];
 }
 
 /** O token `index` é um sinal de pontuação com este texto? */

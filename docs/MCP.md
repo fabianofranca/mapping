@@ -682,7 +682,7 @@ A versão do servidor é **uma por épico**: `SERVER_VERSION` em `mcp/version.ts
 | `watch-comments.mjs`    | Cópia de `examples/workspace/watch-comments.mjs`, o watcher de conversas: o `setup.sh` o instala na raiz do workspace. |
 | `mapping-signature.mjs` | O extrator de assinatura Kotlin (`signature/`, ESM): o `setup.sh` o instala em `tools/mapping-signature.mjs`.          |
 
-Releases anteriores a esta não têm os quatro últimos (o `watch-comments.mjs` só vem a partir da primeira estável com o watcher, e o `mapping-signature.mjs` a partir da primeira com o extrator; com uma tag mais antiga, o `setup.sh` avisa e segue). Os workspaces que ainda têm o `setup.sh` antigo se atualizam uma vez, com a linha da transição (depois da primeira estável com os arquivos novos; antes disso, troque `latest/download` por `download/<tag da rc>` e passe a tag ao `./setup.sh`), que também vai nas notas de cada release:
+Releases anteriores a esta não têm os cinco arquivos depois do servidor (o `watch-comments.mjs` só vem a partir da primeira estável com o watcher, e o `mapping-signature.mjs` a partir da primeira com o extrator; com uma tag mais antiga, o `setup.sh` avisa e segue). Os workspaces que ainda têm o `setup.sh` antigo se atualizam uma vez, com a linha da transição (depois da primeira estável com os arquivos novos; antes disso, troque `latest/download` por `download/<tag da rc>` e passe a tag ao `./setup.sh`), que também vai nas notas de cada release:
 
 O `setup.sh` baixa esses arquivos pelo download direto da release e, se o GitHub responder 5xx ou 429 ou não responder, tenta de novo e usa a API de assets (`api.github.com/repos/…/releases/assets/<id>`, sem token), conferindo o `sha256` do mesmo jeito; o erro final traz o código HTTP (etapa #877).
 

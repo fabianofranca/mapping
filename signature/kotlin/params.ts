@@ -73,6 +73,17 @@ function adjacent(stream: TokenStream, index: number): boolean {
   return stream.tokens[index - 1]?.end === stream.tokens[index]?.start;
 }
 
+/** O último segmento do nome (qualificado) que começa em `from`, e o índice depois dele. */
+function lastSegment(stream: TokenStream, from: number): { name: string; next: number } {
+  let name = stream.tokens[from]?.text ?? '';
+  let next = from + 1;
+  while (isPunct(stream, next, '.')) {
+    name = stream.tokens[next + 1]?.text ?? name;
+    next += 2;
+  }
+  return { name, next };
+}
+
 /** As anotações que começam em `from` (`@Nome`, `@a.b.Nome`, `@param:Nome`, com argumentos opcionais). */
 export function readAnnotations(
   stream: TokenStream,
@@ -84,9 +95,9 @@ export function readAnnotations(
   while (i < to && isPunct(stream, i, '@')) {
     i++;
     if (isPunct(stream, i + 1, ':')) i += 2;
-    names.push(stream.tokens[i]?.text ?? '');
-    i++;
-    while (isPunct(stream, i, '.')) i += 2;
+    const qualified = lastSegment(stream, i);
+    names.push(qualified.name);
+    i = qualified.next;
     if (isPunct(stream, i, '(') && adjacent(stream, i)) i = stream.match[i]! + 1;
   }
   return { end: i, names };
@@ -144,16 +155,33 @@ function isPlainName(stream: TokenStream, range: Range): boolean {
   return true;
 }
 
-function roleOf(stream: TokenStream, range: Range, vararg: boolean): SignatureRole {
+/** `@Composable` antes dos parênteses (`@Composable (() -> Unit)?`) ou dentro deles (`(@Composable () -> Unit)?`). */
+function isComposableFunction(stream: TokenStream, range: Range, core: Range): boolean {
+  const outer = readAnnotations(stream, range.from, range.to);
+  const inner = readAnnotations(stream, core.from, core.to);
+  return outer.names.includes('Composable') || inner.names.includes('Composable');
+}
+
+/** `state` pelo sufixo do nome, a menos que o tipo seja um `enum class` conhecido. */
+function isStateType(name: string, enums: EnumTable): boolean {
+  return STATE_SUFFIX.test(name) && !enums.has(name.slice(name.lastIndexOf('.') + 1));
+}
+
+function roleOf(
+  stream: TokenStream,
+  range: Range,
+  vararg: boolean,
+  enums: EnumTable,
+): SignatureRole {
   if (vararg) return 'other';
-  const core = coreRange(stream, range);
+  const lead = readAnnotations(stream, range.from, range.to);
+  const core = coreRange(stream, { from: lead.end, to: range.to });
   if (isFunctionType(stream, core)) {
-    const leading = readAnnotations(stream, core.from, core.to);
-    return leading.names.includes('Composable') ? 'slot' : 'callback';
+    return isComposableFunction(stream, range, core) ? 'slot' : 'callback';
   }
   const name = baseName(stream, core);
   if (name === 'Modifier' || name.endsWith('.Modifier')) return 'modifier';
-  return STATE_SUFFIX.test(name) ? 'state' : 'value';
+  return isStateType(name, enums) ? 'state' : 'value';
 }
 
 interface Declared {
@@ -236,7 +264,7 @@ function valueOf(
 
 function readParam(stream: TokenStream, range: Range, enums: EnumTable): SignatureParam {
   const d = declare(stream, range);
-  const role = roleOf(stream, d.type, d.vararg);
+  const role = roleOf(stream, d.type, d.vararg, enums);
   const defaultText =
     d.defaultRange && joinTokens(stream, d.defaultRange.from, d.defaultRange.to);
   const param: SignatureParam = {

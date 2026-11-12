@@ -117,8 +117,18 @@ function readHeader(
   return { name: name.text.replace(/^`|`$/g, ''), open };
 }
 
-/** Todas as funções do arquivo, em ordem de fonte. */
+const FUNCTIONS = new WeakMap<TokenStream, FunctionDecl[]>();
+
+/** Todas as funções do arquivo, em ordem de fonte (calculado uma vez por arquivo). */
 export function findFunctions(stream: TokenStream): FunctionDecl[] {
+  const cached = FUNCTIONS.get(stream);
+  if (cached !== undefined) return cached;
+  const found = scanFunctions(stream);
+  FUNCTIONS.set(stream, found);
+  return found;
+}
+
+function scanFunctions(stream: TokenStream): FunctionDecl[] {
   const found: FunctionDecl[] = [];
   stream.tokens.forEach((token, funIndex) => {
     if (token.kind !== 'ident' || token.text !== 'fun') return;

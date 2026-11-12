@@ -697,3 +697,68 @@ function run3(file: string, flags: readonly string[] = []): ReturnType<typeof ru
     [file]: composable('a: Int'),
   });
 }
+
+describe('revisão: anotação qualificada, fábrica inteira, tipo-função entre parênteses', () => {
+  it('anotação qualificada: @androidx.compose.runtime.Composable vira slot', () => {
+    const p = paramsOf('content: @androidx.compose.runtime.Composable () -> Unit');
+    expect(p.content?.role).toBe('slot');
+  });
+
+  it('@Composable (() -> Unit)? = null é slot', () => {
+    const p = paramsOf('content: @Composable (() -> Unit)? = null');
+    expect(p.content?.role).toBe('slot');
+  });
+
+  it('Objeto.fabrica(...).copy(...) não é fábrica (o default fica em texto)', () => {
+    const source = `package p
+object FDefaults {
+    fun colors(a: Int = 0, b: Int = 1): Colors = Colors()
+}
+@Composable
+fun Foo(colors: Colors = FDefaults.colors().copy(a = 1), plain: Colors = FDefaults.colors(a = 2)) {}
+`;
+    const sig = extractJson(source, 'Foo');
+    expect(sig.params[0]?.factory).toBeUndefined();
+    expect(sig.params[0]?.default).toBe('FDefaults.colors().copy(a = 1)');
+    expect(sig.params[1]?.factory?.call).toBe('p.FDefaults.colors');
+  });
+
+  it('sobrecarga irmã com lista malformada não quebra quando --overload escolhe a boa', () => {
+    const source = `package p
+@Composable
+fun Foo(a: Int) {}
+@Composable
+fun Foo(b Int) {}
+`;
+    const sig = extractJson(source, 'Foo', ['--overload', '0']);
+    expect(sig.params[0]?.name).toBe('a');
+  });
+
+  it('sobrecarga malformada ao lado de uma só não-deprecada não quebra', () => {
+    const source = `package p
+@Deprecated("x")
+@Composable
+fun Foo(b Int) {}
+@Composable
+fun Foo(a: Int) {}
+`;
+    const sig = extractJson(source, 'Foo');
+    expect(sig.params[0]?.name).toBe('a');
+  });
+
+  it('enum class cujo nome termina em State é enum, não state', () => {
+    const source = `package p
+enum class ToggleState { On, Off }
+@Composable
+fun Foo(s: ToggleState = ToggleState.On, t: OtherState) {}
+`;
+    const sig = extractJson(source, 'Foo');
+    expect(sig.params[0]?.role).toBe('value');
+    expect(sig.params[0]?.value).toEqual({
+      kind: 'enum',
+      default: 'On',
+      options: ['On', 'Off'],
+    });
+    expect(sig.params[1]?.role).toBe('state');
+  });
+});

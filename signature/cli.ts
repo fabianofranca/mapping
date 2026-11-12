@@ -64,11 +64,12 @@ function execute(argv: readonly string[], io: CliIo): number {
     return 0;
   }
   const { args } = parsed;
+  const path = sourcePath(args);
   const request = {
     file: { name: args.file, text: readText(io, args.file) },
     also: args.also.map((name) => ({ name, text: readText(io, name) })),
     symbol: args.symbol,
-    path: sourcePath(args),
+    path,
     ...(args.ref === undefined ? {} : { ref: args.ref }),
     ...(args.overload === undefined ? {} : { overload: args.overload }),
   };
