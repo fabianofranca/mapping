@@ -73,6 +73,15 @@ pela ficha (`fases=`): as fases dela vêm primeiro, na ordem dela, com o estado 
 `open` e `ok` que a ficha não traz (as `CLn`); o `todo` de uma ficha antiga sai. A linha `concluída` e a ficha ausente, vazia
 ou `?` não mudam. Se alguma linha mudou, o `queue.json` entra em `alterados:` e em `meta.unpublished`, até num `context`.
 `phase` aceita só `ok` e `open`: o `todo` não se grava à mão.
+Grafo da fila (etapa #1761): toda gravação grava, logo depois de `vagas` e `vagasItens`, `meta.grafoNos` e `meta.grafoSetas`
+(o `show` não muda). Nó: `{issue, titulo, onda, rank, estado, motivo, fase, feitas, total}` de cada linha não `concluída`, na
+ordem onda, `rank` (`null` por último) e `order`; `estado` é `rodando`, `dono`, `arquivo`, `dep`, `exclusiva`, `segurada`, `livre`
+ou `ficha`, lido do motivo que o `slots_plan` deu à candidata. Ondas, em rodadas: a 0 tem as começadas e as que começam agora; a
+cada rodada entram as que só dependem de nós já postos (as que esperam arquivo, vaga ou a exclusiva que roda ficam na 1), e a
+exclusiva entra sozinha, a primeira pela `order`, se só houver exclusiva elegível; num ciclo, o que sobra entra junto na última.
+`rank` (1, 2, 3…): as `aguardando` sem `started`, menos `segurada` e `ficha`, por onda e `order`; as outras ficam `null`. Seta
+`{de, para, tipo}` (`de` segura `para`): `dep` pelo `dep=` da ficha entre nós (sem `:main` nem `meta.merged`), só a redução
+transitiva, e `arquivo` de `#N` quando o motivo é `arquivo <x> com #N` ou `schema com #N`.
 Só biblioteca padrão. Uso: painel.py [--now ISO] <subcomando> DIR ...
 (o subcomando vem ANTES da pasta: `painel.py row <pasta> '#n' status=...`).
 """
@@ -217,9 +226,10 @@ class Sessao:
             # A ficha completou fases: a mudança entra na publicação, mesmo num `context`, que sozinho é quieto.
             self.touch("queue")
             self.loud = True
-        text, _, items = slots_plan(self.get("queue"), meta[0])
+        text, _, items, reasons = slots_plan(self.get("queue"), meta[0])
         meta[0]["vagas"] = text
         meta[0]["vagasItens"] = items
+        meta[0]["grafoNos"], meta[0]["grafoSetas"] = queue_graph(self.get("queue"), meta[0], reasons)
         self.touch("meta")
         order = [n for n in FILES if n in self.dirty]
         if self.loud:
@@ -1039,6 +1049,7 @@ ROUTE_FILE = "docs/TESTING.md"  # comparado por âncora (roteiro)
 SECTION_FILES = ("docs/FLOW.md", "docs/PROCESS.md")  # e os SKILL.md: comparados por âncora (seção `##`)
 SECTION_GLOB = ".claude/skills/*/SKILL.md"
 STARTED_STATUS = ("em andamento", "esperando dono", "falhou")
+STARTS_NOW = "começa"  # o motivo da candidata que o `slots_plan` faz começar agora (o grafo a põe na onda 0)
 
 
 def plan_field(plan, key):
@@ -1173,21 +1184,26 @@ def exclusive_block(r, taking):
 
 
 def slots_plan(q, meta):
-    """(texto de meta.vagas, [issues que começam agora], pedaços do texto); decisões 4 e 5 da #1440."""
+    """(texto de meta.vagas, [issues que começam agora], pedaços do texto, motivos); decisões 4 e 5 da #1440.
+
+    Os motivos (decisão 4 da #1761) são `{issue: (texto do motivo, #N que segura)}` por candidata; o `#N` só vem nos
+    motivos `arquivo <x> com #N` e `schema com #N`, senão é "".
+    """
     n = meta.get("paralelo") or DEFAULT_PARALELO
     merged = set(meta.get("merged", []))
     done = {r["issue"] for r in q if r["status"] == "concluída"}
     busy = sum(1 for r in q if r["status"] == "em andamento")
-    started = [r for r in q if r["status"] in STARTED_STATUS
-               or (r["status"] == "aguardando" and r.get("started"))]
+    started = [r for r in q if is_started(r)]
     cands = sorted((r for r in q if r["status"] == "aguardando" and not r.get("started")),
                    key=lambda r: r["order"])
     free = n - busy
     parts = [f"Vagas {busy}/{n}"]
     now_list = []
+    reasons = {}
     taking = list(started)
     for r in cands:
         plan = r.get("plan", "")
+        holder = ""
         why = r.get("hold") or ""
         if not why:
             why = plan_block(plan, merged, done)
@@ -1198,25 +1214,148 @@ def slots_plan(q, meta):
             for o in taking:
                 c = first_conflict(mine, toca_list(o.get("plan", "")))
                 if c:
-                    why = f"arquivo {c} com {o['issue']}"
+                    why, holder = f"arquivo {c} com {o['issue']}", o["issue"]
                     break
         if not why:
             for o in taking:
                 if changes_schema(plan) and changes_schema(o.get("plan", "")):
-                    why = f"schema com {o['issue']}"
+                    why, holder = f"schema com {o['issue']}", o["issue"]
                     break
         if not why:
             if free > 0:
-                why = "começa"
+                why = STARTS_NOW
                 free -= 1
                 now_list.append(r["issue"])
                 taking.append(r)
             else:
                 why = "vagas cheias"
         parts.append(f"{r['issue']} {why}")
+        reasons[r["issue"]] = (why, holder)
     if free > 0:
         parts.append("nenhuma ready elegível")
-    return " · ".join(parts), now_list, parts
+    return " · ".join(parts), now_list, parts, reasons
+
+
+# --- grafo da fila (etapa #1761) ---
+
+
+def is_started(r):
+    return r["status"] in STARTED_STATUS or (r["status"] == "aguardando" and bool(r.get("started")))
+
+
+def started_state(r):
+    """(estado, motivo) de uma linha começada (decisão 5 da #1761)."""
+    st = r["status"]
+    if st == "em andamento":
+        return "rodando", r.get("step") or "em andamento"
+    if st == "esperando dono":
+        return "dono", r.get("wait") or "esperando o dono"
+    if st == "falhou":
+        return "dono", "falhou"
+    return "dep", r.get("step") or "parada"
+
+
+def candidate_state(r, why):
+    """Estado de uma candidata pelo motivo que o `slots_plan` deu, na ordem da decisão 5 da #1761."""
+    if r.get("hold"):
+        return "segurada"
+    if why.startswith("ficha incompleta"):
+        return "ficha"
+    if r.get("exclusive") == "sim" or why.startswith("exclusiva"):
+        return "exclusiva"
+    if why.startswith("dep "):
+        return "dep"
+    if why.startswith(("arquivo ", "schema ")):
+        return "arquivo"
+    return "livre"
+
+
+def graph_deps(r, nodes, merged):
+    """Dependências do `dep=` da ficha que são nós do grafo, sem as `:main` nem as mescladas (antes da redução)."""
+    out = []
+    for d, st in dep_state(r.get("plan", "")) or []:
+        if d in nodes and d != r["issue"] and st != "main" and d not in merged and d not in out:
+            out.append(d)
+    return out
+
+
+def ancestors_of(issue, deps):
+    """Todas as dependências, diretas e indiretas, de `issue`; com ciclo, não entra em laço."""
+    seen = set()
+    todo = list(deps.get(issue, []))
+    while todo:
+        d = todo.pop()
+        if d not in seen:
+            seen.add(d)
+            todo.extend(deps.get(d, []))
+    return seen
+
+
+def reduce_deps(issue, deps, anc):
+    """Redução transitiva: sai a dependência `p` que é ancestral de outra dependência `q` (fora de ciclo com `p`)."""
+    mine = deps[issue]
+    return [p for p in mine
+            if not any(q != p and p in anc[q] and q not in anc[p] for q in mine)]
+
+
+def assign_waves(rows, wave, deps):
+    """Decisão 6 da #1761: simulação em rodadas; `wave` já traz a onda 0 e recebe as outras."""
+    w = 0
+    while len(wave) < len(rows):
+        w += 1
+        pending = [r for r in rows if r["issue"] not in wave]
+        ready = [r for r in pending if all(d in wave for d in deps[r["issue"]])]
+        plain = [r for r in ready if r.get("exclusive") != "sim"]
+        if plain:
+            chosen = plain
+        elif ready:
+            chosen = ready[:1]
+        else:
+            chosen = pending  # ciclo: o que sobrou entra junto e a simulação termina
+        for r in chosen:
+            wave[r["issue"]] = w
+
+
+def first_open_phase(r):
+    for item in (r.get("phases") or "").split("|"):
+        code, _, st = item.partition(":")
+        if item and st == "open":
+            return code
+    return ""
+
+
+def queue_graph(q, meta, reasons):
+    """(grafoNos, grafoSetas) da fila; decisões 3 a 8 da #1761. Lê o que o `slots_plan` já decidiu."""
+    rows = sorted((r for r in q if r["status"] != "concluída"), key=lambda r: r["order"])
+    nodes = {r["issue"]: r for r in rows}
+    merged = set(meta.get("merged", []))
+    deps = {k: graph_deps(r, nodes, merged) for k, r in nodes.items()}
+    state = {}
+    for r in rows:
+        why = reasons.get(r["issue"], ("", ""))[0]
+        state[r["issue"]] = started_state(r) if is_started(r) else (candidate_state(r, why), why)
+    wave = {r["issue"]: 0 for r in rows
+            if is_started(r) or reasons.get(r["issue"], ("", ""))[0] == STARTS_NOW}
+    assign_waves(rows, wave, deps)
+    ranked = sorted((r for r in rows if not is_started(r) and state[r["issue"]][0] not in ("segurada", "ficha")),
+                    key=lambda r: (wave[r["issue"]], r["order"]))
+    rank = {r["issue"]: i for i, r in enumerate(ranked, 1)}
+    listed = sorted(rows, key=lambda r: (wave[r["issue"]], rank.get(r["issue"], math.inf), r["order"]))
+    pos = {r["issue"]: i for i, r in enumerate(listed)}
+    anc = {k: ancestors_of(k, deps) for k in nodes}
+    edges = []
+    for k in nodes:
+        edges += [(d, k, "dep") for d in reduce_deps(k, deps, anc)]
+        holder = reasons.get(k, ("", ""))[1]
+        if holder and holder in nodes:
+            edges.append((holder, k, "arquivo"))
+    edges.sort(key=lambda e: (pos[e[1]], pos[e[0]]))
+    graph_nodes = [{
+        "issue": r["issue"], "titulo": r.get("title", ""), "onda": wave[r["issue"]],
+        "rank": rank.get(r["issue"]), "estado": state[r["issue"]][0], "motivo": state[r["issue"]][1],
+        "fase": first_open_phase(r), "feitas": r.get("phasesDone", 0), "total": r.get("phasesTotal", 0),
+    } for r in listed]
+    return graph_nodes, [{"de": d, "para": k, "tipo": t} for d, k, t in edges]
 
 
 def minutes_since(iso):
@@ -1307,7 +1446,7 @@ def cmd_show(a):
         print(f"  {st}: {sum(1 for r in q if r['status'] == st)}")
     meta = m[0] if m else {}
     print(f"atual: {meta.get('current') or '—'}")
-    vagas, agora, _ = slots_plan(q, meta)
+    vagas, agora, _, _ = slots_plan(q, meta)
     print(f"vagas: {vagas}")
     print("começar agora: " + (" ".join(agora) or "nenhuma"))
     print(f"início: {meta.get('runStart') or '—'}  atualizado: {meta.get('updatedAt', '—')}")
