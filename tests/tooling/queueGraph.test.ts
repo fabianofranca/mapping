@@ -2,7 +2,7 @@
 // Fase GF1 (etapa #1761): o painel calcula o grafo da fila (ondas, ordem prevista de entrada e setas) em toda
 // gravação e o grava no `meta` (`grafoNos` e `grafoSetas`); `vagas`, `vagasItens` e o `show` não mudam.
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -317,6 +317,27 @@ describe('painel.py — grafo da fila (GF1, #1761)', () => {
       expect(no('#4').estado).toBe('livre');
       expect(nos().some((n) => n.issue === '#1')).toBe(false);
       expect(setas().some((s) => s.de === '#1')).toBe(false);
+    },
+    TEMPO_SUBPROCESSOS,
+  );
+
+  it(
+    'k. fila com a mesma issue em duas linhas termina o flush (sem laço infinito) e dá um nó por issue',
+    () => {
+      etapa('#1', ficha('nenhuma', 'a.ts'));
+      etapa('#2', ficha('nenhuma', 'b.ts'));
+      const arquivo = path.join(dir, 'queue.json');
+      const fila = JSON.parse(readFileSync(arquivo, 'utf8')) as Array<
+        Record<string, unknown>
+      >;
+      writeFileSync(arquivo, JSON.stringify([...fila, { ...fila[0], order: 3 }]));
+      expect(() =>
+        execFileSync('python3', [SCRIPT, '--now', NOW, 'row', dir, '#2', 'title=Outra'], {
+          encoding: 'utf8',
+          timeout: 10_000,
+        }),
+      ).not.toThrow();
+      expect(new Set(nos().map((n) => n.issue))).toEqual(new Set(['#1', '#2']));
     },
     TEMPO_SUBPROCESSOS,
   );

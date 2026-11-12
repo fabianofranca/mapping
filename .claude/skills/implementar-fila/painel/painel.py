@@ -1301,9 +1301,12 @@ def reduce_deps(issue, deps, anc):
 def assign_waves(rows, wave, deps):
     """Decisão 6 da #1761: simulação em rodadas; `wave` já traz a onda 0 e recebe as outras."""
     w = 0
-    while len(wave) < len(rows):
+    total = len({r["issue"] for r in rows})  # issue repetida em duas linhas conta uma vez
+    while len(wave) < total:
         w += 1
         pending = [r for r in rows if r["issue"] not in wave]
+        if not pending:
+            break
         ready = [r for r in pending if all(d in wave for d in deps[r["issue"]])]
         plain = [r for r in ready if r.get("exclusive") != "sim"]
         if plain:

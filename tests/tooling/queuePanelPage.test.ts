@@ -515,6 +515,57 @@ describe.each(FORMAS)('página do painel da fila: grafo (GF2), %s', (_forma, wra
     expect(document.activeElement).toBe(card('#4'));
   });
 
+  it('seta entre cards da mesma onda liga na horizontal (lado a lado), sem sair da base nem entrar no topo', () => {
+    const mesma = [
+      no({ issue: '#1', onda: 1, estado: 'rodando' }),
+      no({ issue: '#2', onda: 1, estado: 'livre' }),
+    ];
+    const original = Element.prototype.getBoundingClientRect;
+    Element.prototype.getBoundingClientRect = function (this: Element) {
+      const issue = (this as HTMLElement).dataset?.issue;
+      const x = issue === '#2' ? 200 : issue === '#1' ? 0 : 0;
+      const alvo = issue
+        ? { x, y: 50, width: 100, height: 40 }
+        : { x: 0, y: 0, width: 400, height: 200 };
+      return new DOMRect(alvo.x, alvo.y, alvo.width, alvo.height);
+    };
+    try {
+      const panel = loadPanel({
+        grafoNos: wrap(mesma),
+        grafoSetas: wrap([{ de: '#1', para: '#2', tipo: 'arquivo' }]),
+      });
+      panel.render();
+      card('#1')?.click();
+      const d = document
+        .querySelector('#mp-grafo-setas path[data-de="#1"]')
+        ?.getAttribute('d');
+      // a seta parte da borda direita de #1 (x 100) e chega à borda esquerda de #2 (x 200), no meio da altura (y 70)
+      expect(d?.startsWith('M100 70 ')).toBe(true);
+      expect(d?.endsWith(' 200 70')).toBe(true);
+    } finally {
+      Element.prototype.getBoundingClientRect = original;
+    }
+  });
+
+  it('a nova leitura devolve o foco ao link da issue e ao botão "Limpar" do detalhe', () => {
+    const panel = montar();
+    card('#6')?.click();
+    const link = document.querySelector<HTMLElement>('#mp-grafo-detalhe a');
+    link?.focus();
+    expect(document.activeElement).toBe(link);
+    panel.render();
+    expect(document.activeElement).toBe(document.querySelector('#mp-grafo-detalhe a'));
+    const limpar = () =>
+      Array.from(
+        document.querySelectorAll<HTMLButtonElement>('#mp-grafo-detalhe button'),
+      ).find((b) => b.textContent === 'Limpar');
+    limpar()?.focus();
+    expect(document.activeElement).toBe(limpar());
+    panel.render();
+    expect(document.activeElement).toBe(limpar());
+    expect(limpar()?.isConnected).toBe(true);
+  });
+
   it('id com aspas ou colchete não derruba a página e o resto do painel é preenchido', () => {
     const estranho = '#9"]x';
     const panel = loadPanel({

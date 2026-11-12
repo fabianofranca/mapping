@@ -692,6 +692,9 @@
       }
       function buildDetail(n) {
         const d = document.getElementById('mp-grafo-detalhe');
+        // O detalhe é refeito a cada leitura: devolve o foco ao link ou ao "Limpar" que o tinha.
+        const had = d.contains(document.activeElement) ? document.activeElement : null;
+        const focusedKey = had ? (had.tagName === 'A' ? 'a' : 'button') : null;
         d.replaceChildren();
         if (!n) {
           d.hidden = true;
@@ -723,6 +726,10 @@
         });
         d.appendChild(clear);
         d.hidden = false;
+        if (focusedKey) {
+          const back = d.querySelector(focusedKey);
+          if (back) back.focus();
+        }
       }
       function drawArrows() {
         const host = document.getElementById('mp-grafo');
@@ -763,16 +770,41 @@
           const from = box(a.de);
           const to = box(a.para);
           if (!from || !to) continue;
-          const down = to.y >= from.y;
-          const x1 = from.x + from.w / 2;
-          const y1 = down ? from.y + from.h : from.y;
-          const x2 = to.x + to.w / 2;
-          const y2 = down ? to.y : to.y + to.h;
-          const ym = (y1 + y2) / 2;
-          const p = document.createElementNS(SVG_NS, 'path');
-          p.setAttribute(
-            'd',
-            'M' +
+          let d;
+          if (grafo.onda.get(a.de) === grafo.onda.get(a.para)) {
+            // Mesma faixa: liga lado a lado, da borda do card de origem à do destino, no meio da altura.
+            const right = to.x >= from.x;
+            const x1 = right ? from.x + from.w : from.x;
+            const x2 = right ? to.x : to.x + to.w;
+            const y1 = from.y + from.h / 2;
+            const y2 = to.y + to.h / 2;
+            const xm = (x1 + x2) / 2;
+            d =
+              'M' +
+              x1 +
+              ' ' +
+              y1 +
+              ' C' +
+              xm +
+              ' ' +
+              y1 +
+              ' ' +
+              xm +
+              ' ' +
+              y2 +
+              ' ' +
+              x2 +
+              ' ' +
+              y2;
+          } else {
+            const down = to.y >= from.y;
+            const x1 = from.x + from.w / 2;
+            const y1 = down ? from.y + from.h : from.y;
+            const x2 = to.x + to.w / 2;
+            const y2 = down ? to.y : to.y + to.h;
+            const ym = (y1 + y2) / 2;
+            d =
+              'M' +
               x1 +
               ' ' +
               y1 +
@@ -787,8 +819,10 @@
               ' ' +
               x2 +
               ' ' +
-              y2,
-          );
+              y2;
+          }
+          const p = document.createElementNS(SVG_NS, 'path');
+          p.setAttribute('d', d);
           p.setAttribute('data-de', a.de);
           p.setAttribute('data-para', a.para);
           p.setAttribute('data-tipo', a.tipo);
