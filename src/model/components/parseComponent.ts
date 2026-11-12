@@ -28,6 +28,7 @@ import {
   LAYOUT_WRAPS,
   NONE_ALIGNS,
   NONE_JUSTIFIES,
+  isIntrinsicSize,
 } from './layoutValues';
 import { TOKEN_NAME_PATTERN, isLiteralColor, type TokenKind } from './tokens';
 import { isRecord } from '../isRecord';
@@ -544,17 +545,28 @@ function checkBoolExpr(value: unknown, path: string, out: Ctx): void {
   checkExpr(value, path, checkBoolean, out);
 }
 
+/** `min-content`/`max-content` valem como valor aqui; a versão (só a 4) quem confere é `V4_LITERAL_VALUES`. */
 const checkSize = tokenCheck('number', (value, path, out) => {
   if (isFiniteNumber(value) && value >= 0) return;
-  if (value === 'fill' || value === 'hug') return;
+  if (value === 'fill' || value === 'hug' || isIntrinsicSize(value)) return;
   if (typeof value === 'string' && PERCENT_PATTERN.test(value)) return;
-  add(out, path, 'esperava número maior ou igual a 0, "fill", "hug" ou "<número>%"');
+  add(
+    out,
+    path,
+    'esperava número maior ou igual a 0, "fill", "hug", "min-content", "max-content" ou "<número>%"',
+  );
 });
 
-/** Como `checkSize`, mas sem `hug`: o nó `image` não depende da imagem baixada. */
+/** Como `checkSize`, mas sem `hug` nem a medida intrínseca: o nó `image` não depende da imagem baixada. */
 const checkSizeNoHug = tokenCheck('number', (v, p, out) => {
   if (v === 'hug')
     add(out, p, 'o nó image não aceita hug: a arrumação não depende da imagem baixada');
+  else if (isIntrinsicSize(v))
+    add(
+      out,
+      p,
+      'o nó image não aceita min-content nem max-content: a arrumação não depende da imagem baixada',
+    );
   else checkSize(v, p, out);
 });
 
@@ -1323,6 +1335,10 @@ const V4_LITERAL_VALUES: readonly (readonly [readonly string[], string])[] = [
   [['layout', 'justify'], 'space-evenly'],
   [['layout', 'align'], 'baseline'],
   [['layout', 'type'], 'grid'],
+  [['width'], 'min-content'],
+  [['width'], 'max-content'],
+  [['height'], 'min-content'],
+  [['height'], 'max-content'],
 ];
 
 /**
@@ -1704,11 +1720,15 @@ const ROOT_KEYS = [
   'template',
 ];
 
-/** Um eixo do `sizing` já avaliado: px (≥ 0), `"fill"` ou `"hug"`. */
+/** Um eixo do `sizing` já avaliado: px (≥ 0), `"fill"`, `"hug"`, `"min-content"` ou `"max-content"`. */
 const checkSizingAxis: Check = (value, path, out) => {
   if (isFiniteNumber(value) && value >= 0) return;
-  if (value === 'fill' || value === 'hug') return;
-  add(out, path, 'esperava número maior ou igual a 0, "fill" ou "hug"');
+  if (value === 'fill' || value === 'hug' || isIntrinsicSize(value)) return;
+  add(
+    out,
+    path,
+    'esperava número maior ou igual a 0, "fill", "hug", "min-content" ou "max-content"',
+  );
 };
 
 /** O `sizing` é avaliado antes de medir: `$size` e `$lines` não existem ainda. */
@@ -1743,7 +1763,8 @@ function checkSizing(value: unknown, path: string, v4: boolean, out: Ctx): void 
     if (!(key in value)) continue;
     const at = join(path, key);
     const axis = value[key];
-    if (isExprObject(axis) && !v4) add(out, at, V4_ONLY_MESSAGE);
+    if (!v4 && (isExprObject(axis) || isIntrinsicSize(axis)))
+      add(out, at, V4_ONLY_MESSAGE);
     else {
       checkExpr(axis, at, checkSizingAxis, out);
       if (isExprObject(axis)) sizingForbiddenOps(axis, at, out);

@@ -1010,7 +1010,9 @@ describe('$lines e sizing por expressão (MC2, decisões 8 e 9 da #898)', () => 
   it('o valor literal inválido continua erro', () => {
     expect(
       validateComponent(file({ type: 'frame' }, { sizing: { height: -1 } })),
-    ).toEqual(['sizing.height: esperava número maior ou igual a 0, "fill" ou "hug"']);
+    ).toEqual([
+      'sizing.height: esperava número maior ou igual a 0, "fill", "hug", "min-content" ou "max-content"',
+    ]);
   });
 });
 

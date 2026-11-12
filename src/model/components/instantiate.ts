@@ -59,6 +59,7 @@ import type {
   LayoutJustify,
   LayoutWrap,
   ImageTemplate,
+  IntrinsicSize,
   PathTemplate,
   ShadowSpec,
   SizeSpec,
@@ -94,6 +95,7 @@ import {
   LAYOUT_WRAPS,
   allowedValue,
   describeValue,
+  isIntrinsicSize,
   justifySpacing,
   mirrorMain,
   parseSizeSpec,
@@ -134,6 +136,7 @@ import { breakLines, stackLines } from './wrapLines';
 import {
   layoutRuns,
   measureRichText,
+  minContentRuns,
   type RichBase,
   type RichRun,
   type RunLayout,
@@ -938,13 +941,19 @@ function createEngine(
 
   const sizeMemo = new Map<TemplateNode, Partial<Record<Axis, SizeSpec>>>();
 
+  /** O tamanho; `min-content`/`max-content` só existem na formatVersion 4 (antes, vindo de expressão, são valor inválido). */
+  const parseVersionedSize = (value: unknown): SizeSpec | undefined => {
+    const parsed = parseSizeSpec(value);
+    return isIntrinsicSize(parsed) && original.formatVersion < 4 ? undefined : parsed;
+  };
+
   const resolveSpec = (node: TemplateNode, axis: Axis): SizeSpec => {
     const fallback: SizeSpec = node.type === 'text' ? 'hug' : 'fill';
     const expr = axis === 'w' ? node.width : node.height;
     const value =
       expr === undefined ? undefined : ev<unknown>(expr as Expr<unknown>, undefined);
     if (value === undefined || value === null) return fallback;
-    const spec = parseSizeSpec(value);
+    const spec = parseVersionedSize(value);
     if (spec === undefined) invalidValue(axis === 'w' ? 'width' : 'height', value);
     return spec ?? fallback;
   };
@@ -1119,7 +1128,8 @@ function createEngine(
   };
 
   const textHeight = (node: TextTemplate, otherSize: number | undefined): number => {
-    const hug = specOf(node, 'w') === 'hug';
+    const spec = specOf(node, 'w');
+    const hug = spec === 'hug' || spec === 'max-content';
     const wrap =
       hug && !(otherSize !== undefined && isCutByMax(node)) ? undefined : otherSize;
     return paddedTextHeight(node, measureText(node, wrap).height, wrap);
@@ -1203,6 +1213,7 @@ function createEngine(
     const inner = options.slotContent[axis === 'w' ? 'width' : 'height'];
     const takesContent =
       spec === 'hug' ||
+      isIntrinsicSize(spec) ||
       (content === null && (spec === 'fill' || isStretchAnchored(anchors)));
     return takesContent ? Math.max(0, inner) : undefined;
   };
@@ -1257,6 +1268,155 @@ function createEngine(
     return base === null || !Number.isFinite(percent) ? 0 : (base * percent) / 100;
   };
 
+  // --- medida intrínseca (`min-content` e `max-content`, decisões 17 e 18 da #1078) ------------
+
+  /**
+   * O `min-content` do texto sem `runs`: a palavra mais larga, medida sem `maxWidth` e sem o corte
+   * de `maxLines` e `ellipsis` (que só valem na caixa). Com `wrap: none` o texto não quebra: vale a
+   * linha mais larga. As palavras repetidas voltam do cache do medidor (`withMeasureMemo`).
+   */
+  const plainMinContent = (node: TextTemplate): number => {
+    const styled = textFont(node);
+    if (styled.wrap === 'none') return measureText(node).width;
+    // A fonte sem o corte da caixa (`maxLines`, `ellipsis`): cada palavra se mede inteira.
+    const font: MeasureFont = {
+      family: styled.family,
+      size: styled.size,
+      weight: styled.weight,
+      italic: styled.italic,
+      lineHeight: styled.lineHeight,
+      letterSpacing: styled.letterSpacing,
+    };
+    return plainText(node)
+      .split(/\s+/)
+      .reduce(
+        (widest, word) =>
+          word === '' ? widest : Math.max(widest, options.measure(word, font).width),
+        0,
+      );
+  };
+
+  /** A largura intrínseca do texto: `max-content` a linha mais larga sem quebra, `min-content` a palavra mais larga. */
+  const textIntrinsic = (node: TextTemplate, mode: IntrinsicSize): number => {
+    if (mode === 'max-content') return measureText(node).width;
+    if (node.runs === undefined) return plainMinContent(node);
+    const font = textFont(node);
+    return minContentRuns(
+      richRuns(node, font).runs,
+      richBase(node, font),
+      options.measure,
+    );
+  };
+
+  /**
+   * Quanto um filho de `layout` contribui à largura intrínseca do pai medido em `mode`: o px, o
+   * `min`/`max-content` próprio, o do pai (`fill`, `hug`) ou 0 (`%`), entre os limites do filho; no
+   * `none`, mais as âncoras (também o filho esticado por elas: como no `hug`, sem pai medido ele vale o natural).
+   */
+  const kidIntrinsic = (kid: Kid, layout: FrameLayout, mode: IntrinsicSize): number => {
+    const { node } = kid;
+    const spec = specOf(node, 'w');
+    const anchors = layout.kind === 'none' ? anchorsOf(node, 'w') : undefined;
+    const natural = (): number => {
+      if (typeof spec === 'number') return spec;
+      if (spec === 'fill' || spec === 'hug') return intrinsicWidth(node, mode);
+      return isIntrinsicSize(spec) ? intrinsicWidth(node, spec) : 0;
+    };
+    const size = clampSize(node, 'w', natural());
+    if (anchors === undefined || anchors.center) return size;
+    return (anchors.start ?? 0) + size + (anchors.end ?? 0);
+  };
+
+  /** A largura intrínseca de uma grade: `n` trilhas iguais da maior célula, ou as linhas de fluxo somadas (grade horizontal). */
+  const gridIntrinsic = (
+    layout: FrameLayout,
+    kids: readonly Kid[],
+    mode: IntrinsicSize,
+  ): number => {
+    const ordered = layout.reverse ? [...kids].reverse() : kids;
+    const parts = ordered.map((kid) => kidIntrinsic(kid, layout, mode));
+    const tracks = layout.grid ?? { vertical: true };
+    const spans = ordered.map((kid) => spanOf(kid.node));
+    if (trackAxisOf(layout) === 'h') {
+      // Grade horizontal: a largura soma as linhas de fluxo (cada uma tem o seu maior filho).
+      const placed = placeCells(spans, tracks.count ?? 1);
+      const extents = lineExtents(placed.cells, placed.lines, parts);
+      return stackLines(extents, layout.lineGap, false).total;
+    }
+    // Colunas fixas: `columns`. Adaptativas: uma só no `min-content`, todas numa linha no `max-content`.
+    const count =
+      tracks.count ??
+      (mode === 'min-content' ? 1 : spans.reduce((sum, span) => sum + span, 0));
+    const { cells } = placeCells(spans, count);
+    const track = Math.max(
+      maxCellOf(cells, parts, layout.gap),
+      mode === 'min-content' ? (tracks.min ?? 0) : 0,
+    );
+    return Math.max(1, count) * track + layout.gap * Math.max(0, count - 1);
+  };
+
+  /** A largura intrínseca de um quadro, padding incluído (ver "Dimensionamento" no `docs/COMPONENT-FORMAT.md`). */
+  const frameIntrinsic = (frame: FrameTemplate, mode: IntrinsicSize): number => {
+    const layout = layoutOf(frame);
+    const kids = visibleKids(frame);
+    const padding = padAxis(layout, 'w');
+    if (kids.length === 0) return padding;
+    if (layout.kind === 'grid') return gridIntrinsic(layout, kids, mode) + padding;
+    const parts = kids.map((kid) => kidIntrinsic(kid, layout, mode));
+    // Só a `row` soma; `row` com `wrap` soma no `max-content` (uma linha só) e toma o maior no `min-content`.
+    const sums =
+      layout.kind === 'row' && (layout.wrap === 'none' || mode === 'max-content');
+    const total = sums
+      ? parts.reduce((sum, part) => sum + part, 0) + layout.gap * (parts.length - 1)
+      : maxOf(parts);
+    return total + padding;
+  };
+
+  const intrinsicMemo = new Map<TemplateNode, Partial<Record<IntrinsicSize, number>>>();
+
+  const computeIntrinsicWidth = (node: TemplateNode, mode: IntrinsicSize): number => {
+    switch (node.type) {
+      case 'text':
+        return textIntrinsic(node, mode);
+      case 'frame':
+        return frameIntrinsic(node, mode);
+      case 'slot':
+        return Math.max(0, options.slotContent?.width ?? 0);
+      case 'path':
+        return node.viewBox[0];
+      case 'icon':
+        return iconBox(node)[0];
+      default:
+        return 0;
+    }
+  };
+
+  /**
+   * A largura de um nó medida em `mode`, sem limite de espaço (o `min`/`max` do próprio nó quem aplica
+   * é o pai). Lembrada por nó e modo (`intrinsicMemo`): a grade e a fileira aninhadas não remedem a
+   * subárvore a cada passagem.
+   */
+  const intrinsicWidth = (node: TemplateNode, mode: IntrinsicSize): number => {
+    let perNode = intrinsicMemo.get(node);
+    if (!perNode) {
+      perNode = {};
+      intrinsicMemo.set(node, perNode);
+    }
+    return (perNode[mode] ??= computeIntrinsicWidth(node, mode));
+  };
+
+  /** O tamanho de um filho `min-content`/`max-content`: a largura intrínseca; a altura é a do `hug` na largura já resolvida. */
+  const intrinsicKid = (
+    node: TemplateNode,
+    axis: Axis,
+    mode: IntrinsicSize,
+    otherSize: number | undefined,
+    space: AxisSpace,
+  ): number =>
+    axis === 'w'
+      ? intrinsicWidth(node, mode)
+      : Math.max(0, hugSize(node, axis, otherSize, space.content ?? space.bound));
+
   const kidSize = (
     kid: Kid,
     axis: Axis,
@@ -1272,6 +1432,7 @@ function createEngine(
       (typeof spec === 'number' ? spec : undefined) ??
       slotSize(node, spec, axis, space.content, anchors);
     if (early !== undefined) return early;
+    if (isIntrinsicSize(spec)) return intrinsicKid(node, axis, spec, otherSize, space);
     if (spec === 'hug') return hugKid(node, axis, space, otherSize, layout, anchors);
     if (spec === 'fill')
       return layout.main === axis
@@ -2617,6 +2778,7 @@ function createEngine(
     shortfalls,
     provides,
     planFrame,
+    intrinsicWidth,
     buildRoot,
     /** A primeira linha de base do componente na caixa `box` (o que o `align: "baseline"` do pai lê). */
     rootBaseline: (box: Box): number | undefined =>
@@ -2691,7 +2853,10 @@ export function instantiate(
 export function measureComponent(
   component: ComponentFile,
   values: FieldValues,
-  size: { readonly width: number | null; readonly height: number | null },
+  size: {
+    readonly width: number | IntrinsicSize | null;
+    readonly height: number | IntrinsicSize | null;
+  },
   options: InstantiateOptions,
 ): {
   width: number;
@@ -2699,12 +2864,18 @@ export function measureComponent(
   warnings: readonly string[];
   messages: readonly ModelMessage[];
 } {
+  // Só px é tamanho dado; `null` (hug) e `min-content`/`max-content` (decisão 17 da #1078) são medidos.
+  // A altura intrínseca vale o hug: a altura que o conteúdo pede na largura já resolvida.
+  const given = {
+    width: typeof size.width === 'number' ? size.width : null,
+    height: typeof size.height === 'number' ? size.height : null,
+  };
   const start = {
-    width: size.width ?? component.size.width,
-    height: size.height ?? component.size.height,
+    width: given.width ?? component.size.width,
+    height: given.height ?? component.size.height,
   };
   // Eixo hug: o `$size` dele não limita os `min`/`max` por expressão (infinito = ausente).
-  const open = { width: size.width === null, height: size.height === null };
+  const open = { width: given.width === null, height: given.height === null };
   const plan = (engine: Engine): { width: number; height: number } => {
     const { template } = engine;
     // Num eixo hug o `max` da raiz é o limite disponível; depois do plano, o min/max da raiz
@@ -2713,15 +2884,18 @@ export function measureComponent(
       const { max } = engine.limitOf(template, axis);
       return Number.isFinite(max) ? max : null;
     };
+    const fixedWidth = isIntrinsicSize(size.width)
+      ? engine.clampSize(template, 'w', engine.intrinsicWidth(template, size.width))
+      : given.width;
     const limits: Limits = {
-      w: size.width === null ? finiteMax('w') : null,
-      h: size.height === null ? finiteMax('h') : null,
+      w: fixedWidth === null ? finiteMax('w') : null,
+      h: given.height === null ? finiteMax('h') : null,
     };
-    const first = engine.planFrame(template, size.width, size.height, limits);
-    const width = size.width ?? engine.clampSize(template, 'w', first.w);
+    const first = engine.planFrame(template, fixedWidth, given.height, limits);
+    const width = fixedWidth ?? engine.clampSize(template, 'w', first.w);
     const planned =
-      width === first.w ? first : engine.planFrame(template, width, size.height, limits);
-    return { width, height: size.height ?? engine.clampSize(template, 'h', planned.h) };
+      width === first.w ? first : engine.planFrame(template, width, given.height, limits);
+    return { width, height: given.height ?? engine.clampSize(template, 'h', planned.h) };
   };
   // Com `$lines`, as duas passagens também montam os nós (é neles que se medem as linhas de cada texto).
   const { engine, result } = withLinesPasses(

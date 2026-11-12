@@ -128,14 +128,14 @@ describe('expressão em width e height', () => {
     expect(
       validateComponent(withChild(rect({ width: { $field: 'w', default: -3 } }))),
     ).toEqual([
-      'template.children[0].width.default: esperava número maior ou igual a 0, "fill", "hug" ou "<número>%"',
+      'template.children[0].width.default: esperava número maior ou igual a 0, "fill", "hug", "min-content", "max-content" ou "<número>%"',
     ]);
     expect(
       validateComponent(
         withChild(rect({ height: { $if: { $has: 'x' }, then: 'wide', else: 10 } })),
       ),
     ).toEqual([
-      'template.children[0].height.then: esperava número maior ou igual a 0, "fill", "hug" ou "<número>%"',
+      'template.children[0].height.then: esperava número maior ou igual a 0, "fill", "hug", "min-content", "max-content" ou "<número>%"',
     ]);
   });
 

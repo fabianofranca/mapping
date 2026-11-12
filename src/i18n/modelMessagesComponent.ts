@@ -49,9 +49,11 @@ export const componentEnUS: {
   'model.component.expectedCases': 'expected an object of cases',
   'model.component.expectedParts': 'expected a list of parts',
   'model.component.expectedSize':
-    'expected a number greater than or equal to 0, "fill", "hug" or "<number>%"',
+    'expected a number greater than or equal to 0, "fill", "hug", "min-content", "max-content" or "<number>%"',
   'model.component.imageNoHug':
     'the image node does not accept hug: the layout does not depend on the downloaded image',
+  'model.component.imageNoIntrinsic':
+    'the image node does not accept min-content or max-content: the layout does not depend on the downloaded image',
   'model.component.notGreaterThan': 'cannot be greater than {max}',
   'model.component.expectedSides': 'expected a list of sides',
   'model.component.expectedOneSide': 'expected at least one side',
@@ -133,7 +135,7 @@ export const componentEnUS: {
   'model.component.expectedPositive': 'expected a positive number',
   'model.component.expectedSizingObject': 'expected an object { width?, height? }',
   'model.component.expectedSizing':
-    'expected a number greater than or equal to 0, "fill" or "hug"',
+    'expected a number greater than or equal to 0, "fill", "hug", "min-content" or "max-content"',
   'model.component.formatInvalid': 'expected "mapping-component"',
   'model.component.formatVersionInvalid': 'expected {versions} or {last}',
   'model.component.idInvalid': 'expected text matching ^[a-z0-9][a-z0-9-_]*$',

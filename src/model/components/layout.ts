@@ -23,7 +23,12 @@ import { createMessageSet, textsOf, type Params } from '../messages/collector';
 import type { ModelMessageTemplateCode } from '../messages';
 import type { ModelMessage } from '../modelMessage';
 import { findSlot, resolveSlotLayout, type ResolvedSlotLayout } from './arrange';
-import type { ComponentFile, FieldValues, SlotTemplate } from './componentFormat';
+import type {
+  ComponentFile,
+  FieldValues,
+  IntrinsicSize,
+  SlotTemplate,
+} from './componentFormat';
 import {
   type Box,
   type TextMeasurer,
@@ -37,7 +42,7 @@ import {
   trackOffset,
   trackSize,
 } from './gridLayout';
-import { justifySpacing, mirrorMain } from './layoutValues';
+import { isIntrinsicSize, justifySpacing, mirrorMain } from './layoutValues';
 import { type ResolvedSizing, resolveSizing } from './sizing';
 import type { Library } from './library';
 import type { Instance, Screen } from './screen';
@@ -117,6 +122,9 @@ export interface LayoutResult {
 const EPS = 0.001;
 
 type Axis = 'width' | 'height';
+
+/** Como se mede a largura de um componente sem geometria: o `hug` (limitado pelo pai) ou a medida intrínseca. */
+type Mode = 'hug' | IntrinsicSize;
 
 /** Nó resolvido: componente, slot (se componente com slot), layout do slot e filhos já preparados. */
 interface Prepared {
@@ -389,28 +397,38 @@ export function layoutScreen(
     );
   };
 
-  /** Largura que os filhos arrumados pedem ao slot, mais o padding dele. */
-  const slotContentWidth = (p: Prepared): number =>
-    cached(p, 'scw', () => {
+  /**
+   * A medida de largura que um `sizing` pede: o `min-content`/`max-content` do eixo, senão o `hug`
+   * (`fill` e o resto medem como `hug`).
+   */
+  const widthModeOf = (spec: ReturnType<typeof specOf>): Mode =>
+    isIntrinsicSize(spec) ? spec : 'hug';
+
+  /**
+   * Largura que os filhos arrumados pedem ao slot, mais o padding dele. No `min-content` do pai, o
+   * filho `hug` ou `fill` entra com o próprio `min-content`; o que pede a medida intrínseca a tem.
+   */
+  const slotContentWidth = (p: Prepared, mode: Mode = 'hug'): number =>
+    cached(p, `scw|${mode}`, () => {
       const widths = p.kids.map((kid) => {
         const spec = specOf(kid, 'width');
-        return typeof spec === 'number'
-          ? withMin(kid, 'width', spec)
-          : intrinsicWidth(kid);
+        if (typeof spec === 'number') return withMin(kid, 'width', spec);
+        const own = widthModeOf(spec);
+        return intrinsicWidth(kid, own === 'hug' && mode === 'min-content' ? mode : own);
       });
       return wrappedOrPlainWidth(p.layout, widths) + padW(p);
     });
 
-  /** Largura `hug`: o template medido (com `slotContent` nos componentes com slot). */
-  function intrinsicWidth(p: Prepared): number {
-    return cached(p, 'iw', () => {
+  /** Largura `hug` (ou `min-content`/`max-content`): o template medido (com `slotContent` nos componentes com slot). */
+  function intrinsicWidth(p: Prepared, mode: Mode = 'hug'): number {
+    return cached(p, `iw|${mode}`, () => {
       const options = p.slot
-        ? { measure, slotContent: { width: slotContentWidth(p), height: 0 } }
+        ? { measure, slotContent: { width: slotContentWidth(p, mode), height: 0 } }
         : { measure };
       const { width } = measureComponent(
         p.component,
         p.node.values,
-        { width: null, height: null },
+        { width: mode === 'hug' ? null : mode, height: null },
         options,
       );
       return withMin(p, 'width', hugValue(width));
@@ -462,9 +480,11 @@ export function layoutScreen(
     if (typeof spec === 'number') return { w: withMin(kid, 'width', spec), hug: false };
     if ((spec === 'fill' || stretch) && cw !== null)
       return { w: withMin(kid, 'width', cw), hug: false };
-    const intrinsic = intrinsicWidth(kid);
-    const w = cw === null ? intrinsic : Math.min(intrinsic, cw);
-    return { w: withMin(kid, 'width', w), hug: w === intrinsic };
+    const mode = widthModeOf(spec);
+    const intrinsic = intrinsicWidth(kid, mode);
+    // `min-content`/`max-content` não se limitam ao espaço do pai (só o `hug` encolhe até ele).
+    const w = cw === null || mode !== 'hug' ? intrinsic : Math.min(intrinsic, cw);
+    return { w: withMin(kid, 'width', w), hug: mode === 'hug' && w === intrinsic };
   };
 
   /** Altura natural de um filho (a do `sizing` em px, ou o `hug` na largura natural dele). */
@@ -702,7 +722,7 @@ export function layoutScreen(
         const spec = specOf(kid, 'height');
         if (typeof spec === 'number')
           return { h: withMin(kid, 'height', spec), hug: false };
-        if (spec === 'hug' || ch === null) {
+        if (spec === 'hug' || isIntrinsicSize(spec) || ch === null) {
           if (spec === 'fill' && emit)
             warn('engine.fillInHugUsing', { path: kid.node.id });
           const { w, hug } = widths[i] ?? { w: 0, hug: false };
@@ -927,7 +947,7 @@ export function layoutScreen(
         ? specW
         : specW === 'fill'
           ? input.width - 2 * margin
-          : intrinsicWidth(p),
+          : intrinsicWidth(p, widthModeOf(specW)),
     );
     const height = withMin(
       p,

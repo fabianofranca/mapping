@@ -15,7 +15,11 @@ import {
   walk,
 } from '../../src/model/components/scene';
 import { createCanvasViewState } from '../../src/canvas/viewState';
-import { approximateMeasurer, instantiate } from '../../src/model/components/instantiate';
+import {
+  approximateMeasurer,
+  instantiate,
+  type TextMeasurer,
+} from '../../src/model/components/instantiate';
 import {
   type Library,
   initialValues,
@@ -434,6 +438,101 @@ describe('grade com texto', () => {
       const times = Array.from({ length: 15 }, once);
       const median = [...times].sort((a, b) => a - b)[7] ?? Number.NaN;
       expectBelow(median, GRID_BUDGET_MS);
+    },
+  );
+});
+
+// Intrínseco aninhado em 3 níveis (decisão 23 da #1078, L4): `row` `max-content` › 4 `column`
+// `min-content` › 3 `row` com 2 textos cada, instanciado e desenhado no Konva em ≤ 4 ms e com no
+// máximo uma chamada ao medidor por (texto, limite) distinto.
+describe('intrínseco aninhado em 3 níveis', () => {
+  const NESTED_BUDGET_MS = 4;
+  const BOX = { x: 0, y: 0, width: 800, height: 300 };
+  const inner = (i: number, j: number) => ({
+    type: 'frame',
+    name: 'linha',
+    width: 'fill',
+    layout: { type: 'row', gap: 4 },
+    children: [
+      { type: 'text', name: 'a', text: `aaaa bbbbbbbb c${i}${j}` },
+      { type: 'text', name: 'b', text: `xx yy z${j}` },
+    ],
+  });
+  const column = (i: number) => ({
+    type: 'frame',
+    name: 'coluna',
+    width: 'min-content',
+    height: 'hug',
+    layout: { type: 'column', gap: 4 },
+    children: [inner(i, 0), inner(i, 1), inner(i, 2)],
+  });
+  const component = {
+    format: 'mapping-component',
+    formatVersion: 4,
+    id: 'intrinseco',
+    name: 'Intrínseco',
+    size: { width: 800, height: 300 },
+    template: {
+      type: 'frame',
+      name: 'raiz',
+      layout: { type: 'column' },
+      children: [
+        {
+          type: 'frame',
+          name: 'externa',
+          width: 'max-content',
+          height: 'hug',
+          layout: { type: 'row', gap: 8 },
+          children: [0, 1, 2, 3].map(column),
+        },
+      ],
+    },
+  } as never;
+
+  beforeAll(() => installFakeCanvas());
+  afterAll(() => vi.restoreAllMocks());
+
+  function drawn(measure: TextMeasurer = approximateMeasurer) {
+    return instantiate(component, {}, BOX, { measure });
+  }
+
+  it('a geometria: a coluna vale o min-content da linha e a linha externa soma as 4', () => {
+    const { root } = drawn();
+    const nodes = [...walk(root)];
+    const columns = nodes.filter((n) => n.name === 'coluna');
+    const outer = nodes.find((n) => n.name === 'externa');
+    expect(columns).toHaveLength(4);
+    // Palavras mais largas a 14 px (7,7 por caractere): "bbbbbbbb" (61,6) e "yy" (15,4) + gap 4.
+    const column = 61.6 + 4 + 15.4;
+    expect(columns.every((n) => Math.abs(n.width - column) < 1e-6)).toBe(true);
+    expect(outer?.width).toBeCloseTo(4 * column + 3 * 8, 6);
+  });
+
+  it('mede no máximo uma vez cada (texto, limite) distinto', () => {
+    const calls = new Map<string, number>();
+    const spy: TextMeasurer = (text, font, maxWidth) => {
+      const key = `${text}|${maxWidth ?? ''}`;
+      calls.set(key, (calls.get(key) ?? 0) + 1);
+      return approximateMeasurer(text, font, maxWidth);
+    };
+    drawn(spy);
+    expect(calls.size).toBeGreaterThan(0);
+    expect([...calls.values()].every((count) => count === 1)).toBe(true);
+  });
+
+  budgetIt(
+    `row max-content › 4 column min-content › 3 row × 2 textos (instanciar e desenhar) cabe em ${NESTED_BUDGET_MS} ms`,
+    BUDGET_OPTIONS,
+    () => {
+      const once = (): number => {
+        const start = performance.now();
+        renderScene({ root: drawn().root, warnings: [] });
+        return performance.now() - start;
+      };
+      for (let i = 0; i < 3; i++) once(); // Aquecimento.
+      const times = Array.from({ length: 15 }, once);
+      const median = [...times].sort((a, b) => a - b)[7] ?? Number.NaN;
+      expectBelow(median, NESTED_BUDGET_MS);
     },
   );
 });

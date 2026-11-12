@@ -45,9 +45,11 @@ export const componentMessages = {
   'component.expectedParts': 'esperava lista de partes',
   // Tamanho, lados, traço, sombra, fonte, layout
   'component.expectedSize':
-    'esperava número maior ou igual a 0, "fill", "hug" ou "<número>%"',
+    'esperava número maior ou igual a 0, "fill", "hug", "min-content", "max-content" ou "<número>%"',
   'component.imageNoHug':
     'o nó image não aceita hug: a arrumação não depende da imagem baixada',
+  'component.imageNoIntrinsic':
+    'o nó image não aceita min-content nem max-content: a arrumação não depende da imagem baixada',
   'component.notGreaterThan': 'não pode ser maior que {max}',
   'component.expectedSides': 'esperava lista de lados',
   'component.expectedOneSide': 'esperava ao menos um lado',
@@ -126,7 +128,8 @@ export const componentMessages = {
   'component.expectedSizeObject': 'esperava objeto { width, height }',
   'component.expectedPositive': 'esperava número positivo',
   'component.expectedSizingObject': 'esperava objeto { width?, height? }',
-  'component.expectedSizing': 'esperava número maior ou igual a 0, "fill" ou "hug"',
+  'component.expectedSizing':
+    'esperava número maior ou igual a 0, "fill", "hug", "min-content" ou "max-content"',
   'component.formatInvalid': 'esperava "mapping-component"',
   'component.formatVersionInvalid': 'esperava {versions} ou {last}',
   'component.idInvalid': 'esperava texto no padrão ^[a-z0-9][a-z0-9-_]*$',
