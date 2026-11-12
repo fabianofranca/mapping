@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { measureFontOf, plainLines } from '../../mcp/image/textBars';
 import { textInk } from '../../mcp/image/textLayout';
 import { createFontBook, measurerFor } from '../../mcp/image/textMeasurer';
 import { baseNode, type TextNode } from '../../src/model/components/scene';
@@ -42,5 +43,28 @@ describe('textInk justificado', () => {
   it('a última linha do parágrafo fica à esquerda', () => {
     const short = node('justify', 'curto aqui', 200);
     expect(maxX(short)).toBeLessThan(150);
+  });
+});
+
+// Decisão 10 da #1631: o `customEnds` conta as palavras pelo espaço, como o `wrapWords` quebra; a
+// palavra mais larga que a caixa fica inteira numa linha, então nunca se parte em várias.
+describe('fins de parágrafo com maxLines e palavra mais larga que a caixa', () => {
+  it('só a última linha de cada parágrafo fecha, com a palavra larga inteira', () => {
+    const n: TextNode = {
+      ...node(
+        'justify',
+        'um dois\nsupercalifragilisticoexpialidoso tres quatro\ncinco',
+        60,
+      ),
+      height: 200,
+    };
+    const withMax: TextNode = { ...n, style: { ...n.style, maxLines: 8 } };
+    const widthOf = (text: string) => measure(text, measureFontOf(n.style)).width;
+    const { lines, ends } = plainLines(withMax, measure, widthOf);
+    // A palavra larga continua inteira, numa linha só dela.
+    expect(lines).toContain('supercalifragilisticoexpialidoso');
+    // Uma entrada por linha; fecha a última linha de cada `\n` e mais nenhuma.
+    const closing = lines.flatMap((line, i) => (ends[i] ? [line] : []));
+    expect(closing).toEqual(['um dois', 'quatro', 'cinco']);
   });
 });
