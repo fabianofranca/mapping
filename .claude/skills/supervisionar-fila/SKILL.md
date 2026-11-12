@@ -66,10 +66,10 @@ O coordenador aplica os pedidos do **tipo A** sem perguntar ao dono; a lista é 
 
 Cada mensagem depois de mais de 1 h regrava o contexto inteiro, e a supervisão passa horas parada; em conversa seguida, o contexto grande sai a preço de leitura de cache. Por isso a troca que economiza é a do dono ao voltar, e a automática fica só para a conversa seguida.
 
-**Tamanho e base.** A medida é o `external_metadata.context_usage.used_tokens` do `get_session` sem `session_id`. A **base** é essa medida no fim do primeiro turno desta sessão; sem ela (contexto compactado, ou sessão anterior a esta skill), vale 120 mil, a base medida em 2026-11-11.
+**Tamanho e base.** A medida é o `contexto` de `node scripts/ci/contextUsage.mjs` (transcript local da própria sessão), não o `external_metadata.context_usage.used_tokens` do `get_session` sem `session_id`: ele só muda no fim do turno e vale 0 no primeiro. A **base** é essa medida no fim do primeiro turno desta sessão (o `used_tokens` dava 0 ali); sem ela (contexto compactado, ou sessão anterior a esta skill), vale 120 mil, a base medida em 2026-11-11.
 
 - **A partir de 2× a base**, no fim de cada turno, a resposta ao dono termina com a linha fixa: "Contexto: <n> mil, mais de 2× a base (<b> mil). Depois de mais de 1 h sem conversa, mande `/supervisionar-fila` numa sessão nova."
-- No fim de um turno **acima de ~50%** (`used_tokens` acima da metade de `max_tokens`, ~500k), a própria supervisão cria a sucessora ("Na sessão antiga"). É a regra só da conversa seguida; a compactação automática começa em ~784k.
+- No fim de um turno **acima de ~50%** (o `pct` do script com `--max <max_tokens>`, o `max_tokens` vindo do `get_session`, ~500k), a própria supervisão cria a sucessora ("Na sessão antiga"). É a regra só da conversa seguida; a compactação automática começa em ~784k.
 
 **Troca no retorno (a normal).** Ao voltar depois de mais de 1 h, o dono abre uma sessão nova em `claude-opus-5-5` com `effort: high` e manda `/supervisionar-fila`, em vez de escrever na antiga. A sessão que o dono abre começa no nível 0 da linhagem: esta troca não gasta vaga. A sessão nova cai em "Na sessão nova".
 
@@ -113,15 +113,17 @@ A passagem mora na **database** do artefato "Supervisão da fila" (sempre o mesm
 
 ## Vigiar uma condição
 
-Regra: sem conferências periódicas na sessão Opus. Das 14 conferências de 2026-11-10, só 3 acharam algo, e cada uma custou a releitura do contexto. A supervisão age quando o dono pergunta. O jeito padrão de acompanhar a fila é o **observador da fila** (tarefa agendada "Observador da fila", `trig_01WCuidEK7f4DFiyDB69XNG6`, decisão do dono de 2026-11-11):
+Regra: sem conferências periódicas na sessão Opus. Das 14 conferências de 2026-11-10, só 3 acharam algo, e cada uma custou a releitura do contexto. A supervisão age quando o dono pergunta. O jeito padrão de acompanhar a fila é o **observador da fila**: a tarefa agendada "Mapping - Workflow Insights" (`trig_01YXXNz6596nCkk9vsyrvPgp`), criada pelo dono na tela de tarefas agendadas (`created_via: http_api`; decisão do dono de 2026-11-11, #1644):
 
-- **O que lê:** uma sessão Sonnet nova a cada 6 h lê o painel (o `meta`, baixado para arquivo como em "Leitura das fontes", e o `painel.py roles` e `requests`) e as medidas e chaves que o prompt agendado lista (o `get_trigger` mostra o prompt vigente; ele é a fonte, e esta lista não o repete).
+- **Quando roda:** uma vez por dia, às 12:00 de Brasília (`CRON_TZ=America/Sao_Paulo 0 12 * * *`), numa sessão nova a cada disparo; a janela de cada disparo são as últimas 24 h. O modelo é o que o dono escolheu na tela: leia o `model` do `get_trigger` (vazio é o padrão da tela) em vez de afirmar um.
+- **O que lê:** o painel (o `meta`, baixado para arquivo como em "Leitura das fontes", e o `painel.py roles` e `requests`) e as medidas e chaves que o prompt agendado lista (o `get_trigger` mostra o prompt vigente; ele é a fonte, e esta lista não o repete).
 - **Onde comenta:** na #1644, só quando há achado; sem nada, não notifica nem comenta.
 - **Quando abre `roadmap`:** quando o mesmo achado se repete (por exemplo, pedidos "registrar … supervisor" acima do limite de 4 em 24 h). A issue leva `roadmap`, o `impact:` e o rótulo `observador-da-fila`, que também marca a #1644 e fica até a issue fechar (`docs/PROCESS.md`, "Rótulos").
-- **Parada:** só o dono (ou a supervisão, a pedido dele) o desliga, com `update_trigger` `enabled: false`; ele não se desliga sozinho.
-- **Prompt:** o prompt agendado muda **só** por `update_trigger` (nunca por delete e create, que perde o histórico de disparos), e a mudança é conferida depois com `get_trigger` (prompt, modelo e `enabled`).
+- **Quem muda:** nome, horário, modelo, conectores, prompt e a parada (`enabled`) só o dono muda, pela tela (`https://claude.ai/code/routines/trig_01YXXNz6596nCkk9vsyrvPgp`). O agendamento nasceu lá (`created_via: http_api`) e o `update_trigger` recusa a edição dele ("created via http_api"), então a supervisão não tenta. Quando o dono pede uma mudança, a supervisão escreve no chat o texto novo (ou o campo e o valor), o dono aplica na tela, e a supervisão confere com `get_trigger`. Nunca delete e create: perde o histórico de disparos e tira do dono o agendamento dele.
+- **Parada:** ele não se desliga sozinho; só o dono o desliga, pela tela.
+- **Horários:** o `get_trigger` dá `next_run_at` e `last_run.fired_at` em UTC; ao dono, mostre em horário de Brasília.
 
-Para vigiar outra condição, crie uma tarefa agendada que abre sessão nova a cada disparo (`create_trigger` com `create_new_session_on_fire`), troque o modelo para Sonnet ou Haiku com `update_trigger` logo depois de criar (decisão do dono de 2026-11-10, que vale como o pedido explícito que a ferramenta exige), e escreva o prompt para só notificar quando houver algo. O `send_later` nesta sessão só vale quando o dono pede.
+Para vigiar outra condição, crie uma tarefa agendada que abre sessão nova a cada disparo (`create_trigger` com `create_new_session_on_fire`), troque o modelo para Sonnet ou Haiku com `update_trigger` logo depois de criar (decisão do dono de 2026-11-10, que vale como o pedido explícito que a ferramenta exige), e escreva o prompt para só notificar quando houver algo. As tarefas que a própria supervisão cria assim continuam editáveis por `update_trigger` (modelo, prompt, `enabled`), com a conferência por `get_trigger`; só o agendamento criado pela tela (`created_via: http_api`), como o observador, não é. O `send_later` nesta sessão só vale quando o dono pede.
 
 ## Subagentes
 

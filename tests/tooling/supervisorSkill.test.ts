@@ -6,7 +6,8 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'no
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { section } from '../support/textSlice';
+import { scriptMeasureProblems } from '../support/contextMeasure';
+import { between, section } from '../support/textSlice';
 
 const DIR = '.claude/skills/supervisionar-fila';
 const SKILL = readFileSync(`${DIR}/SKILL.md`, 'utf8');
@@ -134,7 +135,10 @@ describe('skill supervisionar-fila (decisão 19)', () => {
     for (const state of ['registrada', 'sucessora', 'antiga', 'coordenador', 'nova']) {
       expect(s).toContain(`\`${state}`);
     }
-    expect(s).toContain('external_metadata.context_usage.used_tokens');
+    // Achado CL1.5: o script como instrução e o `used_tokens` só como proibição.
+    expect(
+      scriptMeasureProblems(between(s, '**Tamanho e base.**', '**Troca no retorno')),
+    ).toEqual([]);
     expect(s).toContain('no fim do primeiro turno');
     expect(s).toContain('120 mil');
     expect(s).toContain('2× a base');
@@ -193,6 +197,31 @@ describe('skill supervisionar-fila (decisão 19)', () => {
   it('## Subagentes: o briefing pede o retorno em até 10 linhas (decisão 13)', () => {
     const s = section(SKILL, '## Subagentes');
     expect(s).toContain('até 10 linhas');
+  });
+
+  it('## Vigiar uma condição: descreve o observador real, mudado só pelo dono na tela (etapa #1694)', () => {
+    const s = section(SKILL, '## Vigiar uma condição');
+    for (const text of [
+      'Mapping - Workflow Insights',
+      'trig_01YXXNz6596nCkk9vsyrvPgp',
+      'CRON_TZ=America/Sao_Paulo 0 12 * * *',
+      '12:00 de Brasília',
+      'created_via: http_api',
+      'https://claude.ai/code/routines/trig_01YXXNz6596nCkk9vsyrvPgp',
+      'get_trigger',
+      '#1644',
+      'observador-da-fila',
+      'create_new_session_on_fire',
+    ]) {
+      expect(s, text).toContain(text);
+    }
+    // o horário antigo e as chaves do prompt agendado (a fonte do prompt é o get_trigger)
+    expect(s).not.toContain('a cada 6 h');
+    for (const key of ['testador-acima-teto', 'fase-acima-teto', 'supervisor-trocas']) {
+      expect(s, key).not.toContain(key);
+    }
+    // o agendamento que não existe mais não aparece em lugar nenhum da skill
+    expect(SKILL).not.toContain('trig_01WCuidEK7f4DFiyDB69XNG6');
   });
 
   it('a lista do tipo A é igual, item por item, à de "Pedidos do supervisor" do implementar-fila', () => {
