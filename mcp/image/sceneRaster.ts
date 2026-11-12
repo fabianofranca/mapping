@@ -1377,7 +1377,15 @@ export function paintScene(
       screenPainter.paint(root, base, 1, clip);
       continue;
     }
-    painter.paint(root, base, 1, slotClip(drawing.clip, base, clip));
+    // A densidade (escala da raiz da cena) entra na escala do pintor: a sombra e o traço mínimo
+    // são medidos em pixels de saída, não em unidades do componente.
+    const [a, b, c, d] = root.transform;
+    const rootScale = Math.sqrt(Math.abs(a * d - b * c));
+    const drawer =
+      rootScale === 1
+        ? painter
+        : new Painter(raster, measure, scale * rootScale, view.fonts);
+    drawer.paint(root, base, 1, slotClip(drawing.clip, base, clip));
   }
 }
 

@@ -38,6 +38,7 @@ import {
   imagePixelRect,
   right,
 } from './geometry';
+import { effectiveDensity, rectFromUnits, rectToUnits, unitsToPixels } from './density';
 import { settleFrom, type SettleOptions } from './hierarchySettle';
 import { markingLockStates } from './locks';
 import { modelMessage, type ModelMessage } from './modelMessage';
@@ -286,8 +287,17 @@ export function arrangeMarking(
     topDownIds.push(id);
     queue.push(...childrenOf(id).map((c) => c.id));
   }
+  // O arrumar corre em unidades do componente (a densidade do container da raiz: a subárvore é
+  // toda do mesmo espaço) e volta a pixels da imagem antes de prender na imagem e no pai.
+  const density = effectiveDensity(
+    p,
+    (index.markings.get(markingId) as Marking).containerId,
+  );
+  const originals = new Map<string, Rect>();
   for (const id of topDownIds) {
-    rects.set(id, (index.markings.get(id) as Marking).rect);
+    const { rect } = index.markings.get(id) as Marking;
+    originals.set(id, rect);
+    rects.set(id, rectToUnits(rect, density));
   }
   const postOrder: string[] = [];
   const visit = (id: string) => {
@@ -468,6 +478,13 @@ export function arrangeMarking(
     if (after.every((r, i) => sameRect(r, before[i] as Rect))) break;
   }
 
+  for (const id of topDownIds) {
+    rects.set(
+      id,
+      rectFromUnits(rects.get(id) as Rect, originals.get(id) as Rect, density),
+    );
+  }
+
   // Invariantes: inteiros e dentro do pai (ou do container). A raiz encolhe, as demais são
   // empurradas para dentro e só encolhem se forem maiores que o pai. Sem pai, o limite é o
   // container (marcação de container) ou nenhum (marcação do canvas).
@@ -644,21 +661,29 @@ export function fitMarking(
   const auto: { width?: boolean; height?: boolean } = {};
   if (stretchedBy(target.parent, 'width')) auto.width = false;
   if (stretchedBy(target.parent, 'height')) auto.height = false;
+  // Mede em unidades do componente e grava em pixels da imagem (× densidade, para cima).
+  const density = effectiveDensity(p, marking.containerId);
+  const base = rectToUnits(marking.rect, density);
+  const edge = widthToImageEdge(p, marking);
   const fitted = fitComponentSize(
     target.component,
     target.values,
     { measure, ...tokensOption(target.tokens) },
     {
-      base: marking.rect,
+      base,
       auto,
-      ...optionalMaxWidth(widthToImageEdge(p, marking)),
+      ...optionalMaxWidth(edge === undefined ? undefined : edge / density),
     },
   );
   if (fitted === undefined) return p;
+  const pixels = (axis: 'width' | 'height'): number =>
+    fitted[axis] === base[axis]
+      ? marking.rect[axis]
+      : Math.max(MIN_STORED_MARKING_SIZE, unitsToPixels(fitted[axis], density));
   const rect = withinImage(p, marking, {
     ...marking.rect,
-    width: fitted.width,
-    height: fitted.height,
+    width: pixels('width'),
+    height: pixels('height'),
   });
   if (sameRect(rect, marking.rect)) return p;
   if (markingLockStates(p).has(markingId)) fail('locked');

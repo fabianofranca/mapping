@@ -500,6 +500,8 @@ function containerSummary(refs: Refs, image: ProjectContainer): Json {
     // Modo do desenho que o container fixa (`null` = segue o projeto) e o que vale nele.
     drawingMode: image.drawingMode ?? null,
     effectiveDrawingMode: effectiveModeOf(refs.project, image.id),
+    // Pixels da imagem por unidade do componente (1 = o padrão, também quando ausente).
+    density: image.density ?? 1,
     // Marcação do canvas que contém o container (derivado da geometria), ou `null`.
     parent: image.parentId === null ? null : refs.ref('m', image.parentId),
   };

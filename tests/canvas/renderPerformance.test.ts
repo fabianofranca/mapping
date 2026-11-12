@@ -36,8 +36,10 @@ import {
   parseSpec,
   projectIndex,
   projectIssues,
+  setContainerDensity,
   type ComponentCatalog,
   type Project,
+  type Rect,
 } from '../../src/model';
 import { signal } from '@preact/signals';
 import { specFiles } from '../../src/model';
@@ -804,7 +806,8 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
     return new Map([['material3', loaded]]);
   }
 
-  function m3Project(catalog: ComponentCatalog): Project {
+  /** A tela no container com `density`: os retângulos e o container em pixels (× densidade). */
+  function m3Project(catalog: ComponentCatalog, density = 1): Project {
     let p = applySpecialization(emptyProject(), material3Spec(), {
       newId: (() => {
         let n = 0;
@@ -814,9 +817,16 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
     });
     p = addBackgroundContainer(p, {
       id: 'screen',
-      width: M3_SCREEN.width,
-      height: M3_SCREEN.height,
+      width: M3_SCREEN.width * density,
+      height: M3_SCREEN.height * density,
       background: M3_SCREEN.background,
+    });
+    p = setContainerDensity(p, 'screen', density);
+    const scaled = (box: Rect): Rect => ({
+      x: box.x * density,
+      y: box.y * density,
+      width: box.width * density,
+      height: box.height * density,
     });
     for (const instance of M3_SCREEN.instances) {
       p = addComponentMarking(
@@ -829,7 +839,7 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
           parentId: instance.parentId ?? null,
           specId: 'material3',
           typeId: instance.typeId,
-          rect: instance.box,
+          rect: scaled(instance.box),
           values: Object.fromEntries(
             Object.entries(instance.values).flatMap(([key, value]) =>
               typeof value === 'string' || typeof value === 'number'
@@ -844,9 +854,9 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
     return p;
   }
 
-  function setup() {
+  function setup(density = 1) {
     const catalog = m3Catalog();
-    const project = m3Project(catalog);
+    const project = m3Project(catalog, density);
     const store = createProjectStore({ now: () => '2026-10-02T12:00:00.000Z' });
     store.load(project, { readOnly: false });
     const sources = { catalog: signal(catalog), fontsEpoch: signal(0) };
@@ -952,6 +962,77 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
     } finally {
       instantiated.mockRestore();
       render.mockRestore();
+      controller.destroy();
+    }
+  });
+
+  // Variante com `density` 3 no container (#1085, decisão 12): a escala na raiz da cena não
+  // muda o custo, então os mesmos orçamentos valem.
+  it('com density 3 a tela também desenha as 21 instâncias, com a escala na raiz', () => {
+    const { controller, container, derived } = setup(3);
+    expect(derived.drawnMarkings.value.size).toBe(21);
+    expect(container.dataset.components).toBe('21');
+    for (const drawing of derived.componentScenes.value.values()) {
+      expect(drawing.root.transform[0]).toBe(3);
+      expect(drawing.root.transform[3]).toBe(3);
+    }
+    controller.destroy();
+  });
+
+  budgetIt(
+    `com density 3: editar um campo e redesenhar cabe em ${RENDER_BUDGET_MS} ms`,
+    BUDGET_OPTIONS,
+    () => {
+      const { controller, actions, container } = setup(3);
+      let n = 0;
+      const edit = (): number => {
+        const start = performance.now();
+        const result = actions.setFieldValue('A_m-search', 'label', `Busca ${n++}`);
+        flush();
+        const elapsed = performance.now() - start;
+        expect(result.ok).toBe(true);
+        return elapsed;
+      };
+      for (let i = 0; i < 4; i++) edit();
+      expectBelow(medianOf(15, edit), RENDER_BUDGET_MS);
+      expect(container.dataset.components).toBe('21');
+      controller.destroy();
+    },
+  );
+
+  budgetIt(
+    `com density 3: o zoom da tela cabe em ${RENDER_BUDGET_MS} ms`,
+    BUDGET_OPTIONS,
+    () => {
+      const { controller } = setup(3);
+      const zoom = (): number => {
+        const start = performance.now();
+        controller.zoomBy(1.1);
+        flush();
+        return performance.now() - start;
+      };
+      for (let i = 0; i < 3; i++) zoom();
+      expectBelow(medianOf(15, zoom), RENDER_BUDGET_MS);
+      controller.destroy();
+    },
+  );
+
+  it('com density 3: 20 quadros de pan e zoom fazem 0 instanciações', () => {
+    const { controller, derived } = setup(3);
+    const before = new Map(derived.componentScenes.value);
+    expect(before.size).toBe(21);
+    const instantiated = vi.spyOn(instantiateModule, 'instantiate');
+    try {
+      for (let step = 0; step < 20; step++) {
+        controller.zoomBy(step % 2 === 0 ? 1.1 : 1 / 1.1);
+        controller.centerOnPoint({ x: 200 + step * 3, y: 400 });
+        flush();
+      }
+      expect(instantiated).not.toHaveBeenCalled();
+      for (const [id, drawing] of before)
+        expect(derived.componentScenes.value.get(id)).toBe(drawing);
+    } finally {
+      instantiated.mockRestore();
       controller.destroy();
     }
   });

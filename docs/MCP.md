@@ -132,6 +132,13 @@ Em `get_marking`, `get_annotation`, `find_by_code`, `get_component` (campo `code
 - **Nota quando falta o componente:** se o tipo declara `component` e o lote não o acha (arquivo ausente, ilegível ou com problema), o passo do `create_marking` ganha o aviso `ignored-argument`: "o tipo `<spec/tipo>` declara componente, mas `<motivo>`: a anotação foi criada sem o preview e sem o tamanho mínimo".
 - **`create_annotation` com `type`** numa marcação existente segue com os `default` (o `preview` é texto de exemplo); a descrição do argumento diz isso.
 
+### Densidade do container (schema v19)
+
+- **Operações.** `add_container` e `update_container` aceitam `density` (número de 0,5 a 8: pixels da imagem por unidade do componente; `null` em `update_container` volta a 1; ausente não muda). Fora da faixa é o erro do modelo `container-density`, com `detail` ("recebido 12; de 0,5 a 8") e `hint` ("de 0,5 a 8; 3 para uma captura 1080 px de um celular de 360 dp…").
+- **Leitura.** `get_container`, `get_project` (a lista de containers) e `get_marking` (o `container` do item) devolvem `density` (1 quando não declarada).
+- **Desenho e prova.** `render_marking`, `render_container` e `get_marking_image` desenham com a escala da densidade, sem parâmetro novo (`zoom` continua o da imagem). O `minSize` do componente vale × `density` (`rect-too-small` e o redimensionar) e `component-overflow.missing` é em pixels da imagem; `plan_changes` com `update_container` `density` reprova as marcações do container.
+- **Propostas.** O campo `density` do container vai na `formatVersion` 7 da proposta (`docs/PROPOSAL-FORMAT.md`).
+
 ### Modo do desenho (schema v18)
 
 - **Operações.** Nova `update_project` com `drawingMode` (string grava, `null` remove, ausente não muda); `add_container` e `update_container` aceitam `drawingMode` (string fixa, `null` volta a seguir o projeto). Nome fora de `[a-z0-9][a-z0-9-]*` falha com `invalid-name`.

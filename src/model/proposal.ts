@@ -24,7 +24,8 @@ import type { JsonValue } from './types';
 export const PROPOSAL_FORMAT = 'mapping-proposal';
 export const PROPOSAL_FORMAT_VERSION = 4;
 /**
- * Versões lidas, de 1 a 6: a 6 acrescenta o modo do desenho (a entidade `project` e o campo
+ * Versões lidas, de 1 a 7: a 7 acrescenta a densidade do container (campo `density`, schema v19) e só
+ * é gravada quando a proposta a usa (inclui o que a 6 tem); a 6 acrescenta o modo do desenho (a entidade `project` e o campo
  * `drawingMode` do container) e só é gravada quando a proposta o usa; a 5 acrescenta `revisions`
  * (a revisão do agente); a 4 acrescenta `insertBefore` à criação de marcação (a posição dela no
  * array; uma app antiga recusa a 4 em vez de descartar o campo ao regravar as decisões). A 3 não
@@ -34,7 +35,7 @@ export const PROPOSAL_FORMAT_VERSION = 4;
  * acrescenta `add_container` às `operations`; a 1 continua válida. A criação grava a 4 (a 6, com
  * o modo do desenho).
  */
-export const PROPOSAL_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6] as const;
+export const PROPOSAL_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7] as const;
 
 /**
  * Versão da proposta que traz o modo do desenho (schema v18): a entidade `project` (campo
@@ -53,6 +54,52 @@ export function usesDrawingMode(changes: readonly Change[]): boolean {
       (c.entity === 'image' &&
         (c.field === 'drawingMode' || hasDrawingMode(c.to) || hasDrawingMode(c.from))),
   );
+}
+
+/**
+ * Versão da proposta que traz a densidade do container (schema v19): o campo `density` e o
+ * `density` no valor de um container criado. Uma versão anterior recusaria o campo, mas
+ * descartaria em silêncio o `density` do container criado; por isso a proposta que o usa grava a
+ * 7 (a criação e a revisão não sobem a versão de uma proposta que não o usa). A 7 aceita
+ * `revisions` (opcional) e tudo o que a 6 aceita.
+ */
+export const PROPOSAL_DENSITY_FORMAT_VERSION = 7;
+
+/** A proposta usa a densidade do container (e por isso só a `formatVersion` 7 a representa)? */
+export function usesDensity(changes: readonly Change[]): boolean {
+  return changes.some(
+    (c) =>
+      c.entity === 'image' &&
+      (c.field === 'density' || hasDensity(c.to) || hasDensity(c.from)),
+  );
+}
+
+function hasDensity(value: JsonValue): boolean {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    typeof (value as { readonly density?: JsonValue }).density === 'number'
+  );
+}
+
+/**
+ * A `formatVersion` que a criação ou a revisão grava: a 7 com densidade, a 6 com modo do desenho,
+ * senão `fallback` (4 na criação, 5 na revisão). `current` é a versão da proposta que se regrava:
+ * uma 6 ou 7 nunca desce.
+ */
+export function proposalFormatVersionFor(
+  changes: readonly Change[],
+  fallback: number,
+  current = 0,
+): (typeof PROPOSAL_FORMAT_VERSIONS)[number] {
+  if (current === PROPOSAL_DENSITY_FORMAT_VERSION || usesDensity(changes)) {
+    return PROPOSAL_DENSITY_FORMAT_VERSION;
+  }
+  if (current === PROPOSAL_DRAWING_MODE_FORMAT_VERSION || usesDrawingMode(changes)) {
+    return PROPOSAL_DRAWING_MODE_FORMAT_VERSION;
+  }
+  return fallback as (typeof PROPOSAL_FORMAT_VERSIONS)[number];
 }
 
 function hasDrawingMode(value: JsonValue): boolean {
@@ -128,6 +175,7 @@ export const IMAGE_FIELDS = [
   'locked',
   'source',
   'drawingMode',
+  'density',
 ] as const;
 /**
  * Campos alterados de uma marcação. `space` é a troca de espaço (`{ containerId, rect }`, o
@@ -437,6 +485,7 @@ const imageFieldSchemas: Record<(typeof IMAGE_FIELDS)[number], z.ZodType> = {
   locked: z.boolean(),
   source: sourceSchema.nullable(),
   drawingMode: drawingModeName.nullable(),
+  density: z.number().min(0.5).max(8).nullable(),
 };
 
 /**
@@ -694,8 +743,8 @@ function checkRevisions(
     if (p.formatVersion === 5) add(['revisions'], 'obrigatório na formatVersion 5');
     return;
   }
-  if (p.formatVersion !== 5 && p.formatVersion !== 6) {
-    add(['revisions'], 'só na formatVersion 5 ou 6');
+  if (p.formatVersion < 5) {
+    add(['revisions'], 'só na formatVersion 5 ou mais');
     return;
   }
   const added = new Set<string>();
@@ -727,8 +776,9 @@ export const proposalSchema = z
         z.literal(4),
         z.literal(5),
         z.literal(6),
+        z.literal(7),
       ],
-      { error: 'deve ser 1, 2, 3, 4, 5 ou 6' },
+      { error: 'deve ser 1, 2, 3, 4, 5, 6 ou 7' },
     ),
     id: proposalId,
     title: z.string().trim().min(1, 'não pode ser vazio'),

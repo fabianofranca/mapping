@@ -3,6 +3,7 @@ import {
   resolveSlotLayout,
   slotBoxOfScene,
   type ResolvedGrid,
+  type ResolvedSlotLayout,
 } from './components/arrange';
 import { placeCells, trackCount, trackOffset, trackSize } from './components/gridLayout';
 import { lineExtents } from './components/gridPlan';
@@ -11,11 +12,13 @@ import type { ComponentFile, FieldValues } from './components/componentFormat';
 import { fitComponentSize } from './components/sizing';
 import { instantiate, type TextMeasurer } from './components/instantiate';
 import {
+  componentFileMinSize,
   hasSlotComponent,
   markingComponent,
   type ComponentCatalog,
 } from './componentCatalog';
 import { drawingValues } from './componentValues';
+import { effectiveDensity, unitSpaceOf, unitsToPixels } from './density';
 import { componentForDrawing } from './drawingMode';
 import { fail, ModelError } from './errors';
 import {
@@ -165,6 +168,28 @@ interface SlotBox {
   readonly hasSlot: boolean;
 }
 
+/** O layout do slot (em unidades) com as medidas em pixels da imagem: padding, gap, lineGap e `grid.min`. */
+function scaledLayout(layout: ResolvedSlotLayout, density: number): ResolvedSlotLayout {
+  if (density === 1) return layout;
+  const px = (units: number): number => units * density;
+  const { padding, grid } = layout;
+  return {
+    ...layout,
+    padding: {
+      left: px(padding.left),
+      top: px(padding.top),
+      right: px(padding.right),
+      bottom: px(padding.bottom),
+    },
+    gap: px(layout.gap),
+    lineGap: px(layout.lineGap),
+    grid:
+      grid === undefined || grid.min === undefined
+        ? grid
+        : { ...grid, min: px(grid.min) },
+  };
+}
+
 /** Caixa do slot em pixels inteiros, dentro do componente com slot; o retângulo dele se não houver slot. */
 function slotArea(
   p: Project,
@@ -192,19 +217,22 @@ function slotArea(
   const slot = drawn === null ? undefined : findSlot(drawn.component);
   if (mc === null || drawn === null || slot === undefined) return whole;
   const values = drawingValues(p, mc.annotation, mc.type).values;
-  const { root } = instantiate(drawn.component, values, container.rect, {
+  const density = effectiveDensity(p, container.containerId);
+  const space = unitSpaceOf(container.rect, density);
+  const { root } = instantiate(drawn.component, values, space.box, {
     measure,
     idPrefix: container.id,
     ...(drawn.tokens === undefined ? {} : { tokens: drawn.tokens }),
   });
-  const box = slotBoxOfScene(root);
-  if (box === undefined) return whole;
+  const unitBox = slotBoxOfScene(root);
+  if (unitBox === undefined) return whole;
+  const box = space.toPixels(unitBox);
   const x = Math.max(Math.ceil(box.x), container.rect.x);
   const y = Math.max(Math.ceil(box.y), container.rect.y);
   const r = Math.min(Math.floor(box.x + box.width), right(container.rect));
   const b = Math.min(Math.floor(box.y + box.height), bottom(container.rect));
   if (r - x < 1 || b - y < 1) return whole;
-  const layout = resolveSlotLayout(slot, values);
+  const layout = scaledLayout(resolveSlotLayout(slot, values), density);
   return {
     area: { x, y, width: r - x, height: b - y },
     padding: layout.padding,
@@ -273,6 +301,8 @@ interface PlacementSpace {
   readonly slot: SlotBox | null;
   /** A imagem ou a caixa do slot; `null` no canvas sem slot (sem limite). */
   readonly area: Rect | null;
+  /** Densidade do container da instância (1 no canvas): o `size` e o `minSize` são unidades. */
+  readonly density: number;
 }
 
 function placementSpace(
@@ -299,6 +329,7 @@ function placementSpace(
     parent,
     slot,
     area,
+    density: effectiveDensity(p, args.containerId),
   };
 }
 
@@ -362,13 +393,17 @@ function wantedSize(
   measure: TextMeasurer,
 ): Size {
   if (args.size !== undefined) return args.size;
-  const { component } = space;
+  const { component, density } = space;
+  // O `size` do componente é em unidades; a instância nasce em pixels da imagem (× densidade).
+  const nominal: Size = {
+    width: unitsToPixels(component.size.width, density),
+    height: unitsToPixels(component.size.height, density),
+  };
   // Componente com slot: o conteúdo são as filhas, que ainda não existem (nasce no `size`; o
   // Arrumar o ajusta depois de elas entrarem).
-  if (component.sizing === undefined || hasSlotComponent(component))
-    return component.size;
+  if (component.sizing === undefined || hasSlotComponent(component)) return nominal;
   const values = initialValues(p, space, args);
-  if (values === undefined) return component.size;
+  if (values === undefined) return nominal;
   const drawn = componentForDrawing(p, component, args.containerId);
   const fitted = fitComponentSize(
     drawn.component,
@@ -377,8 +412,11 @@ function wantedSize(
     { base: component.size },
   );
   return fitted === undefined
-    ? component.size
-    : { width: fitted.width, height: fitted.height };
+    ? nominal
+    : {
+        width: unitsToPixels(fitted.width, density),
+        height: unitsToPixels(fitted.height, density),
+      };
 }
 
 /**
@@ -389,7 +427,11 @@ function wantedSize(
  * precisa da posição (o tamanho inicial e o `near` do MCP).
  */
 function fitSize(space: PlacementSpace, wanted: Size): Size {
-  const min = space.component.minSize;
+  const unitMin = space.component.minSize;
+  const min = unitMin && {
+    width: unitsToPixels(unitMin.width, space.density),
+    height: unitsToPixels(unitMin.height, space.density),
+  };
   const fit = (size: number, minimum: number, available: number): number => {
     const value = Math.max(
       Math.min(Math.round(size), available),
@@ -807,10 +849,7 @@ export function addComponentMarking(
       ...(floating ? { floating: true } : {}),
     },
     {
-      minSize: component.minSize ?? {
-        width: MIN_STORED_MARKING_SIZE,
-        height: MIN_STORED_MARKING_SIZE,
-      },
+      minSize: componentFileMinSize(component, effectiveDensity(p, args.containerId)),
     },
   );
   next = addTypedAnnotation(next, {

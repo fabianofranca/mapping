@@ -20,6 +20,7 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
     'o container não tem arquivo de imagem (só cor de fundo): não há arquivo para trocar nem para devolver',
   'container-has-file':
     'o container tem arquivo de imagem: só o container sem arquivo (fundo liso) tem cor de fundo e tamanho editáveis',
+  'container-density': 'a densidade do container precisa ser um número de 0,5 a 8',
   'aspect-change-not-confirmed':
     'a nova imagem do container tem outra proporção: informe confirmAspectChange: true (as marcações serão reescaladas e ficarão "a revisar")',
   'image-too-small': 'a nova imagem do container é pequena demais para as marcações',
@@ -86,6 +87,8 @@ export const MODEL_ERROR_HINTS: Readonly<Partial<Record<ModelErrorCode, string>>
     'aumente `width` e `height` do `rect` até pelo menos o mínimo (cada lado, em pixels do container; no canvas, em unidades do canvas)',
   'not-fittable':
     'só uma marcação de componente com `sizing` `hug` ou por expressão (veja `get_component`) e sem marcações no slot se ajusta ao conteúdo; as demais não precisam de `fit_marking`',
+  'container-density':
+    'de 0,5 a 8; 3 para uma captura 1080 px de um celular de 360 dp (pixels da imagem por unidade do componente); `null` volta a 1',
   'image-overlap':
     'mude `x`, `y` ou `scale` do container (ou o tamanho dele) para não cobrir o outro, ou mova o outro container antes',
 };
@@ -110,6 +113,26 @@ function messageDetail(error: ModelError): string | undefined {
   return at < 0 ? undefined : error.message.slice(at + 2);
 }
 
+/** O detalhe que o `data` de alguns erros do modelo dá (o resto usa o texto da mensagem). */
+function specificDetail(error: ModelError, refs?: Refs): string | undefined {
+  switch (error.code) {
+    case 'rect-too-small':
+      return rectTooSmallDetail(error.data) ?? undefined;
+    case 'container-density': {
+      const received = error.data?.density;
+      return `recebido ${typeof received === 'number' ? received : '?'}; de 0,5 a 8`;
+    }
+    case 'image-overlap': {
+      const id = error.data?.containerId;
+      return typeof id === 'string'
+        ? `sobrepõe o container ${refs ? refs.ref('i', id) : id}`
+        : undefined;
+    }
+    default:
+      return undefined;
+  }
+}
+
 /**
  * Detalhe e dica de um erro do modelo. O `data` vira texto aqui (o modelo só guarda fatos); o id
  * do outro container vira referência quando há `refs`. Sem `data`, o detalhe é o texto da mensagem.
@@ -119,15 +142,7 @@ export function describeModelError(
   refs?: Refs,
 ): { detail?: string; hint?: string } {
   const hint = MODEL_ERROR_HINTS[error.code];
-  let detail: string | undefined;
-  if (error.code === 'rect-too-small') {
-    detail = rectTooSmallDetail(error.data) ?? undefined;
-  } else if (error.code === 'image-overlap') {
-    const id = error.data?.containerId;
-    if (typeof id === 'string') {
-      detail = `sobrepõe o container ${refs ? refs.ref('i', id) : id}`;
-    }
-  }
+  let detail = specificDetail(error, refs);
   detail ??= messageDetail(error);
   return { ...(detail ? { detail } : {}), ...(hint ? { hint } : {}) };
 }

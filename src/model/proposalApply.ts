@@ -206,6 +206,15 @@ function withField(
           height: to.height as number,
         };
       }
+      if (field === 'density') {
+        // `null` volta a 1: a chave sai (o arquivo só guarda a densidade declarada).
+        if (to === null) {
+          return Object.fromEntries(
+            Object.entries(i).filter(([key]) => key !== 'density'),
+          ) as unknown as ProjectContainer;
+        }
+        return { ...i, density: to as number };
+      }
       if (field === 'placement')
         return { ...i, placement: snapPlacement(to as unknown as Placement) };
       if (field === 'source')

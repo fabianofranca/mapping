@@ -367,6 +367,7 @@ export const enUS: Dictionary = {
   'invariant.duplicate-id': 'duplicate id',
   'invariant.duplicate-file': 'duplicate file',
   'invariant.container-content': 'background color and file together (or neither)',
+  'invariant.container-density': 'density outside 0.5 to 8',
   'invariant.images-overlap': 'overlaps another image',
   'invariant.missing-image': 'image does not exist',
   'invariant.missing-parent': 'parent does not exist',

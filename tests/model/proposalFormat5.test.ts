@@ -73,7 +73,7 @@ describe('proposta formatVersion 5', () => {
   it('a 4 com revisions dá erro com o caminho', () => {
     const json = sample5();
     json.formatVersion = 4;
-    expect(errorsOf(json)).toContain('revisions: só na formatVersion 5 ou 6');
+    expect(errorsOf(json)).toContain('revisions: só na formatVersion 5 ou mais');
   });
 
   it('a 5 sem revisions dá erro', () => {

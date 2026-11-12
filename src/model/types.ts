@@ -3,7 +3,7 @@ import type { Spec } from './spec';
 // Tipos do `mapping.json` (schema v18). Ver docs/FORMAT.md. Tudo é `readonly`: o modelo é imutável e as operações sempre
 // devolvem um novo projeto.
 
-export const SCHEMA_VERSION = 18;
+export const SCHEMA_VERSION = 19;
 export const APP_ID = 'mapping';
 /** Valor gravado antes do renome do produto: ainda é aceito na leitura e vira `APP_ID`. */
 export const LEGACY_APP_ID = 'mapeador-imagens';
@@ -90,6 +90,11 @@ export interface ProjectContainer {
    * escolhe os valores dos `tokens` das especializações, não depende do tema da interface.
    */
   readonly drawingMode?: string | null;
+  /**
+   * Densidade (v19): quantos pixels da imagem vale uma unidade do componente (dp, pt, px lógico a
+   * 1x), de 0,5 a 8; ausente ou `null` = 1. As marcações continuam em pixels da imagem.
+   */
+  readonly density?: number | null;
 }
 
 export interface Marking {
