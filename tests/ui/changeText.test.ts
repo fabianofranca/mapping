@@ -1,13 +1,17 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { t } from '../../src/i18n';
+import { locale } from '../../src/store/settings';
 import {
+  addBackgroundContainer,
   changeType,
   createArrow,
+  setContainerDensity,
   type Change,
   type JsonValue,
   type Proposal,
 } from '../../src/model';
 import {
+  changeSummary,
   changeTitle,
   droppedChangeSummary,
   markingName,
@@ -144,5 +148,36 @@ describe('changeTitle: o ajuste ao conteúdo (MC3, decisão 18 da #898)', () => 
     };
     expect(changeType(rect)).toBe('moved');
     expect(changeTitle(names, rect)).toBe(t('review.field.rect'));
+  });
+});
+
+describe('changeTitle e changeSummary: a densidade do container (D2, decisão 7 da #1085)', () => {
+  beforeEach(() => {
+    locale.value = 'pt-BR';
+  });
+  const base = addBackgroundContainer(emptyProject(), {
+    id: 'c1',
+    width: 1080,
+    height: 2400,
+    background: '#FFFFFF',
+  });
+  const summaryOf = (before: typeof base, after: typeof base) => {
+    const proposal = propose(before, after);
+    const change = proposal.changes.find((c) => c.field === 'density');
+    if (!change) throw new Error('sem mudança de densidade');
+    const names = { current: before, preview: null, proposal };
+    return `${changeTitle(names, change)}: ${changeSummary(names, change)}`;
+  };
+
+  it('uma proposta com update_container density mostra "Densidade: 1 → 3"', () => {
+    expect(summaryOf(base, setContainerDensity(base, 'c1', 3))).toBe('Densidade: 1 → 3');
+  });
+
+  it('voltar a 1 (null) mostra "3 → 1", e valor fracionário usa o separador do idioma', () => {
+    const fixed = setContainerDensity(base, 'c1', 3);
+    expect(summaryOf(fixed, base)).toBe('Densidade: 3 → 1');
+    expect(summaryOf(base, setContainerDensity(base, 'c1', 2.5))).toBe(
+      'Densidade: 1 → 2,5',
+    );
   });
 });

@@ -21,6 +21,7 @@ import { ArrivalNotice } from './ArrivalNotice';
 import { PerspectivesSection, usePrincipalOnly } from './PerspectivesSection';
 import { Section } from './DetailsSection';
 import { Icon } from './icons';
+import { ContainerDensityField } from './ContainerDensityField';
 import { ContainerDrawingModeField } from './ContainerDrawingModeField';
 import { MarkingColorField } from './MarkingColorField';
 import { Property, PropertyGrid } from './PropertyGrid';
@@ -180,6 +181,12 @@ export function SelectionPanel({
             </Property>
           )}
           <ContainerDrawingModeField image={image} disabled={disabled} />
+          <ContainerDensityField
+            image={image}
+            disabled={disabled}
+            mark={ext?.mark(image.id, 'density')}
+            below={ext?.below(image.id, 'density')}
+          />
         </PropertyGrid>
         <MarkingColorField
           image={image}

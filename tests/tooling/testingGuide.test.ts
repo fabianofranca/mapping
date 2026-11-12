@@ -7,6 +7,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { parseArgs } from '../../mcp/args';
+import { ptBR } from '../../src/i18n/pt-BR';
 
 const read = (path: string): string =>
   existsSync(path) ? readFileSync(path, 'utf8') : '';
@@ -1311,6 +1312,35 @@ describe('CL1 — roteiro do R9.24 a R9.28 (etapa #701)', () => {
   it('o R9.24 não espera membership (só lista quem mudou de pai)', () => {
     expect(row('R9.24')).not.toBe('');
     expect(row('R9.24')).not.toContain('membership');
+  });
+});
+
+describe('D2 — roteiro da densidade (R9.29 a R9.31, etapa #1085)', () => {
+  const rows = read('docs/TESTING.md')
+    .split('\n')
+    .filter((l) => /^\| R9\.(29|30|31) /.test(l));
+  const row = (id: string): string => rows.find((l) => l.startsWith(`| ${id} `)) ?? '';
+
+  it('os três passos existem e não pedem o MCP (a nuvem faz sozinha)', () => {
+    for (const id of ['R9.29', 'R9.30', 'R9.31']) expect(row(id), id).not.toBe('');
+    expect(rows.join('\n')).not.toMatch(/stdio|plan_changes/);
+  });
+
+  it('os textos citados são os da interface (pt-BR)', () => {
+    expect(row('R9.29')).toContain('Sugestão: 3x (Celular 360 × 800)');
+    expect(ptBR['density.suggestion']).toBe('Sugestão: {value}x ({name})');
+    expect(row('R9.31')).toContain(ptBR['density.error']);
+    expect(row('R9.29')).toContain(ptBR['density.apply']);
+    expect(row('R9.31')).toContain(ptBR['density.custom']);
+  });
+
+  it('o botão do R9.30 mede 174 × 120 (o minSize 58 × 40 × 3) e nasce 264 × 120 (88 × 40 × 3)', () => {
+    const r = row('R9.30');
+    expect(r).toContain('`174`');
+    expect(r).toContain('`120`');
+    expect(r).toContain('`264`');
+    expect(58 * 3).toBe(174);
+    expect(88 * 3).toBe(264);
   });
 });
 

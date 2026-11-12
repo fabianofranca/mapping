@@ -26,6 +26,7 @@ import {
   previewProject,
   projectIndex,
   structuralMarkingIds,
+  suggestDensities,
   projectIssues,
   reviewKey,
   reviewProgress,
@@ -44,6 +45,7 @@ import {
   type ComponentCatalog,
   type ComponentDrawings,
   type ComponentType,
+  type DensitySuggestion,
   type IncompleteImage,
   type Layer,
   type LayerDot,
@@ -130,6 +132,13 @@ export interface EditorDerived {
   readonly noticedCount: ReadonlySignal<number>;
   /** Conversas ancoradas (etapa Comentários): linhas da janela, contagens e conversas por item. */
   readonly threads: ThreadDerived;
+  /**
+   * Sugestão de densidade de cada container pelos tamanhos prontos das especializações aplicadas
+   * (`suggestDensity`; só os containers com sugestão aparecem). Depende só dos containers e das
+   * especializações, nunca do viewport: pan e zoom não a recalculam, e a mesma tabela volta
+   * enquanto nada disso muda.
+   */
+  readonly densitySuggestions: ReadonlySignal<ReadonlyMap<string, DensitySuggestion>>;
   /** Componentes das especializações aplicadas ao projeto (vazio enquanto não carregam). */
   readonly catalog: ReadonlySignal<ComponentCatalog>;
   /**
@@ -271,6 +280,27 @@ const NO_MIN_SIZES: ReadonlyMap<
   { readonly width: number; readonly height: number }
 > = new Map();
 const NO_COMPONENT_TYPES: readonly ComponentType[] = [];
+const NO_DENSITY_SUGGESTIONS: ReadonlyMap<string, DensitySuggestion> = new Map();
+
+function sameDensitySuggestions(
+  a: ReadonlyMap<string, DensitySuggestion>,
+  b: ReadonlyMap<string, DensitySuggestion>,
+): boolean {
+  if (a.size !== b.size) return false;
+  for (const [id, suggestion] of a) {
+    const other = b.get(id);
+    if (
+      other === undefined ||
+      other.density !== suggestion.density ||
+      other.specId !== suggestion.specId ||
+      other.preset !== suggestion.preset
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 const NO_COMPONENT_WARNINGS: readonly {
   readonly markingId: string;
   readonly warnings: readonly ModelMessage[];
@@ -651,6 +681,17 @@ export function createEditorDerived(
     return lastDrawingLayers;
   });
 
+  // A tabela anterior volta enquanto as sugestões são as mesmas: o painel dos Detalhes não
+  // redesenha a cada edição que não mexe nos containers.
+  let lastSuggestions = NO_DENSITY_SUGGESTIONS;
+  const densitySuggestions = computed((): ReadonlyMap<string, DensitySuggestion> => {
+    const p = project.value;
+    const next = p ? suggestDensities(p) : NO_DENSITY_SUGGESTIONS;
+    if (sameDensitySuggestions(next, lastSuggestions)) return lastSuggestions;
+    lastSuggestions = next.size === 0 ? NO_DENSITY_SUGGESTIONS : next;
+    return lastSuggestions;
+  });
+
   let lastComponentWarnings = NO_COMPONENT_WARNINGS;
   const componentWarnings = computed(() => {
     const next: { markingId: string; warnings: readonly ModelMessage[] }[] = [];
@@ -688,6 +729,7 @@ export function createEditorDerived(
     noticeCounts: noticeCountsSignal,
     noticedCount: noticedCountSignal,
     threads: createThreadDerived(project, ui, threadSources),
+    densitySuggestions,
     catalog: components.catalog,
     componentScenes: scenes,
     floatingMarkings,

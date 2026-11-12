@@ -8,8 +8,10 @@ import {
   migrations,
   serialize,
   setContainerDensity,
+  suggestDensity,
   validateProject,
   type Project,
+  type Spec,
 } from '../../src/model';
 import { sampleProject } from './fixtures';
 
@@ -124,5 +126,90 @@ describe('invariante container-density', () => {
     for (const v of [0.4, 9, Number.NaN]) {
       expect(validateProject(bad(v)).map((x) => x.code)).toContain('container-density');
     }
+  });
+});
+
+// Sugestão de densidade (D2, decisão 6): a largura do container ÷ a do tamanho pronto é 1,5, 2, 3
+// ou 4 (tolerância de 2 px); a altura só desempata; só sugere, nunca aplica.
+const specOf = (
+  id: string,
+  containers: readonly { id: string; name: string; width: number; height: number }[],
+): { id: string; spec: Spec } => ({
+  id,
+  spec: {
+    format: 'mapping-spec',
+    formatVersion: 6,
+    id,
+    name: id,
+    version: 1,
+    containers: [...containers],
+    layers: [],
+  },
+});
+const PHONE = { id: 'phone', name: 'Celular', width: 360, height: 800 };
+const PHONE_LARGE = {
+  id: 'phone-large',
+  name: 'Celular grande',
+  width: 412,
+  height: 915,
+};
+const material = specOf('m3', [PHONE, PHONE_LARGE]);
+
+describe('suggestDensity', () => {
+  it('1080 com o tamanho pronto 360 dá 3 e devolve o tamanho pronto (nome e medidas)', () => {
+    const found = suggestDensity({ width: 1080, height: 2400 }, [material]);
+    expect(found).toMatchObject({
+      density: 3,
+      specId: 'm3',
+      preset: { id: 'phone', name: 'Celular', width: 360, height: 800 },
+    });
+  });
+
+  it('1082 (tolerância de 2 px no arredondamento) também dá 3; 1083 já não', () => {
+    expect(suggestDensity({ width: 1082, height: 2400 }, [material])?.density).toBe(3);
+    expect(suggestDensity({ width: 1078, height: 2400 }, [material])?.density).toBe(3);
+    expect(suggestDensity({ width: 1083, height: 2400 }, [material])).toBeNull();
+  });
+
+  it('720 com 360 e 412 dá 2 pelo 360; 540 dá 1,5 e 1440 dá 4', () => {
+    expect(suggestDensity({ width: 720, height: 1600 }, [material])).toMatchObject({
+      density: 2,
+      preset: { id: 'phone' },
+    });
+    expect(suggestDensity({ width: 540, height: 1200 }, [material])?.density).toBe(1.5);
+    expect(suggestDensity({ width: 1440, height: 3200 }, [material])?.density).toBe(4);
+  });
+
+  it('1000 sem múltiplo dá nada; a mesma largura do tamanho pronto (1x) também', () => {
+    expect(suggestDensity({ width: 1000, height: 2000 }, [material])).toBeNull();
+    expect(suggestDensity({ width: 360, height: 800 }, [material])).toBeNull();
+  });
+
+  it('sem especialização com containers (ou sem cópia legível) dá nada', () => {
+    expect(suggestDensity({ width: 1080, height: 2400 }, [])).toBeNull();
+    expect(
+      suggestDensity({ width: 1080, height: 2400 }, [{ id: 'a', spec: null }]),
+    ).toBeNull();
+    expect(
+      suggestDensity({ width: 1080, height: 2400 }, [specOf('vazia', [])]),
+    ).toBeNull();
+  });
+
+  it('a altura desempata entre tamanhos prontos da mesma largura; depois, a ordem', () => {
+    const a = specOf('a', [
+      { id: 'curto', name: 'Curto', width: 360, height: 640 },
+      { id: 'longo', name: 'Longo', width: 360, height: 800 },
+    ]);
+    // 2400 ÷ 3 = 800: o "Longo" tem a altura mais próxima, mesmo vindo depois.
+    expect(suggestDensity({ width: 1080, height: 2400 }, [a])?.preset.id).toBe('longo');
+    // Altura igual para os dois: o primeiro na ordem das especializações aplicadas.
+    const b = specOf('b', [{ id: 'outro', name: 'Outro', width: 360, height: 800 }]);
+    expect(suggestDensity({ width: 1080, height: 2400 }, [b, material])?.specId).toBe(
+      'b',
+    );
+  });
+
+  it('a captura costuma recortar barras: a altura não impede a sugestão', () => {
+    expect(suggestDensity({ width: 1080, height: 2100 }, [material])?.density).toBe(3);
   });
 });
