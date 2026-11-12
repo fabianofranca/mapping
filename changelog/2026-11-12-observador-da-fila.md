@@ -1,4 +1,4 @@
-# Observador da fila na skill supervisionar-fila — 2026-11-12 (épico `epic/observador-da-fila`, PR #0, MCP 0.36.0 sem mudança, schema v18)
+# Observador da fila na skill supervisionar-fila — 2026-11-12 (épico `epic/observador-da-fila`, PR #1702, MCP 0.36.0 sem mudança, schema v18)
 
 ## Corrigido
 
