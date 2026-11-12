@@ -1,4 +1,4 @@
-# Passagem de contexto e painel da fila — [Não lançado] (épico `epic/passagem-e-painel`, PR #1758, MCP 0.38.0 sem mudança, schema v19)
+# Passagem de contexto e painel da fila — 2026-11-12 (épico `epic/passagem-e-painel`, PR #1758, MCP 0.38.1 sem mudança, schema v19)
 
 ## Alterado
 

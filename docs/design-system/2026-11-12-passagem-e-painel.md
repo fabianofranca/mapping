@@ -1,4 +1,4 @@
-# Passagem de contexto e painel da fila — [Não lançado] (épico `epic/passagem-e-painel`)
+# Passagem de contexto e painel da fila — 2026-11-12 (épico `epic/passagem-e-painel`)
 
 ## Pendências
 
