@@ -32,20 +32,23 @@ import { sampleThread } from '../model/threadFixtures';
 import type { DirectoryHandleLike } from '../../src/storage/folder';
 import { MemoryDirectory } from './memoryFs';
 
-// Linha de base das chamadas à pasta (etapa "pasta rápida", decisões 2 a 5). O projeto fixo:
+// Orçamento das chamadas à pasta (etapa "pasta rápida", decisões 2 a 5). O projeto fixo:
 // 2 containers com imagem, 1 especialização com pacote de 12 arquivos, 6 propostas (2 abertas,
-// 3 aplicadas, 1 retirada) e 4 conversas abertas. Nesta fase o teste só REGISTRA os números
-// (um `console.info` por operação); os limites entram nas fases seguintes.
+// 3 aplicadas, 1 retirada) e 4 conversas abertas. A FA1 registrou a linha de base; a FA2 fixou os
+// limites abaixo (`toBeLessThanOrEqual`) no número que alcançou; a `sync` fica para a FA3.
 //
-// operação | chamadas | por tipo
-// open    |  178 | getDirectoryHandle=81 getFileHandle=41 getFile=35 values=24
-// save    |   16 | getDirectoryHandle=2 getFileHandle=6 getFile=5 createWritable=1 write=1 close=1
-// library |  263 | getDirectoryHandle=111 getFileHandle=42 getFile=29 values=42 createWritable=13 write=13 close=13
-// decide  |   22 | getDirectoryHandle=8 getFileHandle=6 getFile=5 createWritable=1 write=1 close=1
-// apply   |   23 | getDirectoryHandle=7 getFileHandle=6 getFile=4 createWritable=2 write=2 close=2
-// sync    |   64 | getDirectoryHandle=20 getFileHandle=20 getFile=14 values=10
+// operação | antes (FA1) | FA2 (limite) | por tipo depois da FA2
+// open     |  178 | 115 | getDirectoryHandle=16 getFileHandle=40 getFile=35 values=24
+// save     |   18 |  14 | getFileHandle=5 getFile=6 createWritable=1 write=1 close=1
+// library  |  265 | 113 | getFileHandle=28 getFile=18 values=28 createWritable=13 write=13 close=13
+// decide   |   28 |  16 | getFileHandle=7 getFile=6 createWritable=1 write=1 close=1
+// apply    |   25 |  16 | getFileHandle=4 getFile=4 values=2 createWritable=2 write=2 close=2
+// sync     |   70 |  45 | (sem limite até a FA3)
 //
-// (`npx vitest run tests/storage/folderCallBudget.test.ts --silent=false` imprime as linhas.)
+// (O "antes" é o código da FA1 sobre esta fixture, em que `images/` agora é uma pasta de
+// verdade; os `getFile` de `save` e `decide` incluem leituras preguiçosas da abertura que caem
+// na janela da medida.) `npx vitest run tests/storage/folderCallBudget.test.ts --silent=false`
+// imprime as linhas.
 
 const FIXED_NOW = '2026-10-09T14:00:00.000Z';
 const PACKAGE_DIR = 'specs/notas';
@@ -214,7 +217,7 @@ function measured(opened: Opened, op: FolderOp) {
 }
 
 /** Imprime a linha da operação: chamadas totais e por tipo (só os tipos usados). */
-function register(opened: Opened, op: FolderOp, since: Mark) {
+function register(opened: Opened, op: FolderOp, since: Mark, limit?: number) {
   const found = measured(opened, op);
   const byKind = Object.entries(opened.calls.byKind)
     .map(([kind, n]) => [kind, n - (since.kinds[kind] ?? 0)] as const)
@@ -224,6 +227,9 @@ function register(opened: Opened, op: FolderOp, since: Mark) {
   const line = `${op} | ${found?.calls ?? 0} | ${byKind}`;
   report.push(line);
   console.info(`[folderCallBudget] ${line}`);
+  if (limit !== undefined) {
+    expect(found?.calls ?? 0, `chamadas de ${op}`).toBeLessThanOrEqual(limit);
+  }
   // Decisão 6: cada pasta é resolvida no máximo uma vez por operação (handles guardados).
   const paths = opened.resolved.slice(since.resolved);
   // Exceção da própria decisão 6: uma pasta que NÃO existe sob um handle guardado repete a
@@ -252,7 +258,7 @@ describe('linha de base das chamadas à pasta (projeto fixo)', () => {
   it('open', async () => {
     const opened = await fresh();
     expect(opened.session.store.project.value?.containers).toHaveLength(2);
-    register(opened, 'open', { kinds: {}, resolved: 0 });
+    register(opened, 'open', { kinds: {}, resolved: 0 }, 115);
   });
 
   it('save: uma edição só do mapping.json', async () => {
@@ -261,7 +267,7 @@ describe('linha de base das chamadas à pasta (projeto fixo)', () => {
     const result = opened.session.actions.renameMarking('M3', 'Fechadura nova');
     expect(result.ok).toBe(true);
     await opened.session.flush();
-    register(opened, 'save', since);
+    register(opened, 'save', since, 14);
     // Decisão 5: uma edição só do `mapping.json` não resolve nenhuma pasta (a raiz basta).
     expect(opened.resolved.length - since.resolved).toBe(0);
     expect(
@@ -284,7 +290,7 @@ describe('linha de base das chamadas à pasta (projeto fixo)', () => {
     expect(result.ok).toBe(true);
     await opened.session.flush();
     expect(await opened.root.read(`${PACKAGE_DIR}/docs/extra-1.md`)).toContain('(v2)');
-    register(opened, 'library', since);
+    register(opened, 'library', since, 113);
   });
 
   it('decide e apply: uma mudança de uma proposta aberta', async () => {
@@ -299,12 +305,12 @@ describe('linha de base das chamadas à pasta (projeto fixo)', () => {
       'accepted',
     );
     expect(decided.ok).toBe(true);
-    register(opened, 'decide', since);
+    register(opened, 'decide', since, 16);
 
     since = markOf(opened);
     const result = await opened.session.proposalActions.applyAccepted('P1');
     expect(result.ok && result.applied).toBe(1);
-    register(opened, 'apply', since);
+    register(opened, 'apply', since, 16);
   });
 
   it('sync: nada mudou por fora', async () => {

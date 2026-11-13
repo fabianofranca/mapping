@@ -24,7 +24,9 @@ import {
 } from '../model';
 import type { FlushResult } from '../storage/autosave';
 import type { FolderOp } from '../storage/folderCalls';
+import { FOLDER_CONCURRENCY } from '../storage/folderConcurrency';
 import { imageMimeType, type ProjectStorage } from '../storage/types';
+import { mapLimit } from '../utils/mapLimit';
 import { reportError } from '../utils/report';
 import type { HistoryLink, LinkResult, ProjectStore } from './history';
 import { validatePackage } from './packageValidation';
@@ -247,19 +249,22 @@ async function readProposalPackage(
     path.startsWith(prefix),
   );
   if (paths.length === 0) return 'package-missing';
+  // Leituras em paralelo com limite; a conferência e o mapa seguem a ordem dos arquivos.
+  const read = await mapLimit(paths, FOLDER_CONCURRENCY, async (path) => {
+    const blob = await storage.readImage(path);
+    if (!blob) return null;
+    const rel = path.slice(prefix.length);
+    const data = isTextPackageFile(rel)
+      ? await blob.text()
+      : new Blob([await blob.arrayBuffer()], { type: blob.type });
+    return { rel, data, size: blob.size };
+  });
   const files = new Map<string, string | Blob>();
   let bytes = 0;
-  for (const path of paths) {
-    const blob = await storage.readImage(path);
-    if (!blob) return 'package-missing';
-    bytes += blob.size;
-    const rel = path.slice(prefix.length);
-    files.set(
-      rel,
-      isTextPackageFile(rel)
-        ? await blob.text()
-        : new Blob([await blob.arrayBuffer()], { type: blob.type }),
-    );
+  for (const item of read) {
+    if (!item) return 'package-missing';
+    bytes += item.size;
+    files.set(item.rel, item.data);
   }
   if (!packageWithinLimits(files.size, bytes) || pkg.spec === null) {
     return 'package-invalid';
@@ -268,6 +273,24 @@ async function readProposalPackage(
   const previous = base.specializations.find((s) => s.id === pkg.specId)?.spec;
   const report = validatePackage(files, previous ?? undefined);
   return report.ok ? files : 'package-invalid';
+}
+
+/**
+ * Lê as imagens de origem de uma proposta em paralelo com limite, na ordem de `moves`: `null`
+ * onde o arquivo não existe. Cópia em memória: ler de novo depois de apagar a origem, no
+ * desfazer, não pode falhar.
+ */
+async function readImageSources(
+  storage: ProjectStorage,
+  moves: readonly { readonly from: string; readonly to: string }[],
+): Promise<(Blob | null)[]> {
+  return mapLimit(moves, FOLDER_CONCURRENCY, async (move) => {
+    const source = await storage.readImage(move.from);
+    if (!source) return null;
+    return new Blob([await source.arrayBuffer()], {
+      type: source.type || imageMimeType(move.to),
+    });
+  });
 }
 
 export function createProposalActions(deps: ProposalActionsDeps): ProposalActions {
@@ -486,22 +509,21 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
           for (const image of base.containers) {
             if (image.file !== null) taken.add(fileNameKey(image.file));
           }
+          // As origens são lidas todas de uma vez (em paralelo com limite); as verificações e as
+          // gravações abaixo seguem em ordem, com os mesmos erros.
+          const sources = await readImageSources(storage, applying.files);
           for (const move of applying.files) {
             if (taken.has(fileNameKey(move.to))) {
               failedPath = move.to;
               await rollback();
               return 'image-exists';
             }
-            const source = await storage.readImage(move.from);
-            if (!source) {
+            const blob = sources[applying.files.indexOf(move)];
+            if (!blob) {
               failedPath = move.from;
               await rollback();
               return 'image-missing';
             }
-            // Cópia em memória: ler de novo depois de apagar a origem, no desfazer, não pode falhar.
-            const blob = new Blob([await source.arrayBuffer()], {
-              type: source.type || imageMimeType(move.to),
-            });
             await deps.putProjectImage(move.to, blob);
             moved.push({ from: move.from, to: move.to, blob });
             taken.add(fileNameKey(move.to));

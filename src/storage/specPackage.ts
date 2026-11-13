@@ -7,7 +7,9 @@ import {
   type Project,
 } from '../model';
 import { validateLibrary, type LibraryIssue } from '../model/library';
+import { mapLimit } from '../utils/mapLimit';
 import { reportError } from '../utils/report';
+import { FOLDER_CONCURRENCY } from './folderConcurrency';
 import type { ProjectStorage } from './types';
 
 /**
@@ -29,15 +31,24 @@ export async function readSpecPackage(
   dir: string,
 ): Promise<{ entries: PackageEntry[]; bytes: number } | null> {
   const paths = await storage.listSpecDir(dir);
+  if (!packageWithinLimits(paths.length, 0)) return null;
+  // Leitura em paralelo com limite; o resultado, o cálculo de bytes e o corte seguem a ordem
+  // da listagem (pode ler um pouco além do limite antes de cortar, o resultado é o mesmo).
+  const read = await mapLimit(paths, FOLDER_CONCURRENCY, async (path) => {
+    const blob = await storage.readSpecFile(path);
+    if (!blob) return null;
+    const entry: PackageEntry = isTextPackageFile(path)
+      ? { path, text: await blob.text() }
+      : { path };
+    return { entry, size: blob.size };
+  });
   const entries: PackageEntry[] = [];
   let bytes = 0;
-  if (!packageWithinLimits(paths.length, 0)) return null;
-  for (const path of paths) {
-    const blob = await storage.readSpecFile(path);
-    if (!blob) continue;
-    bytes += blob.size;
+  for (const item of read) {
+    if (!item) continue;
+    bytes += item.size;
     if (!packageWithinLimits(0, bytes)) return null;
-    entries.push(isTextPackageFile(path) ? { path, text: await blob.text() } : { path });
+    entries.push(item.entry);
   }
   return { entries, bytes };
 }
@@ -50,6 +61,46 @@ const TOO_BIG: AppLibraryIssue = {
   // A interface mostra o texto traduzido (`library.packageTooBig`), não esta mensagem.
   code: 'package-too-big',
 };
+
+/** O pacote em memória (caminho relativo → texto ou bytes) como o validador o recebe. */
+export function packageEntriesOf(
+  dir: string,
+  files: ReadonlyMap<string, string | Blob>,
+): { entries: PackageEntry[]; bytes: number } {
+  const encoder = new TextEncoder();
+  const entries: PackageEntry[] = [];
+  let bytes = 0;
+  for (const [rel, data] of files) {
+    const path = `${dir}/${rel}`;
+    if (typeof data === 'string') {
+      bytes += encoder.encode(data).length;
+      entries.push({ path, text: data });
+    } else {
+      bytes += data.size;
+      entries.push({ path });
+    }
+  }
+  return { entries, bytes };
+}
+
+/**
+ * Valida (níveis 1 e 2) UMA especialização a partir dos arquivos do pacote já em memória
+ * (`pkg`, com o arquivo da especialização incluso), ou devolve o problema de pacote grande
+ * demais. `pkg` nulo é o pacote que passou do limite ao ser lido.
+ */
+export function libraryIssuesOf(
+  spec: { readonly file: string },
+  dir: string,
+  pkg: { entries: PackageEntry[]; bytes: number } | null,
+): readonly AppLibraryIssue[] {
+  if (pkg === null || !packageWithinLimits(pkg.entries.length, pkg.bytes))
+    return [TOO_BIG];
+  return validateLibrary({
+    files: toLibraryFiles(dir, pkg.entries),
+    specPath: spec.file.slice(dir.length + 1),
+    level: 2,
+  }).issues;
+}
 
 /**
  * Valida (níveis 1 e 2, sem a prova de desenho, que é cara) a cópia do pacote de cada
@@ -68,14 +119,10 @@ export async function loadLibraryIssues(
       const dir = packageDirOf(s.file);
       if (dir === null) return null;
       try {
-        const pkg = await readSpecPackage(storage, dir);
-        if (pkg === null) return [s.id, [TOO_BIG]] as const;
-        const report = validateLibrary({
-          files: toLibraryFiles(dir, pkg.entries),
-          specPath: s.file.slice(dir.length + 1),
-          level: 2,
-        });
-        return [s.id, report.issues] as const;
+        return [
+          s.id,
+          libraryIssuesOf(s, dir, await readSpecPackage(storage, dir)),
+        ] as const;
       } catch (e) {
         reportError('open.libraryIssues', e);
         return null;

@@ -556,6 +556,18 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
     let readsHeld = 0;
     let reads = 0;
     let stats = 0;
+    const gatedRead = async <T>(read: () => Promise<T>): Promise<T> => {
+      reads++;
+      if (failReads) throw failReads;
+      const result = await read();
+      const gate = readGate;
+      readGate = null;
+      if (gate) {
+        readsHeld++;
+        await gate;
+      }
+      return result;
+    };
     const s = openSession({
       storage: {
         ...storage,
@@ -566,18 +578,10 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
           await storage.saveMapping(data);
           if (hold?.afterWrite) await hold.gate;
         },
-        loadMapping: async () => {
-          reads++;
-          if (failReads) throw failReads;
-          const read = await storage.loadMapping();
-          const gate = readGate;
-          readGate = null;
-          if (gate) {
-            readsHeld++;
-            await gate;
-          }
-          return read;
-        },
+        loadMapping: () => gatedRead(() => storage.loadMapping()),
+        // A sessão lê por aqui (texto e data numa leitura só): os mesmos ganchos valem.
+        loadMappingStamped: () =>
+          gatedRead(async () => (await storage.loadMappingStamped?.()) ?? null),
         statMapping: async () => {
           stats++;
           return storage.statMapping ? storage.statMapping() : null;
