@@ -13,6 +13,8 @@ import {
 import { parseIconsText, type IconsIssue } from '../../src/model/components/icons';
 import { loadSpecComponents, parseSpec, type SpecIssue } from '../../src/model';
 import { validateLibrary } from '../../src/model/library';
+import { originProblemText, parseOrigins } from '../../src/model/components/origin';
+import { LAYOUT_ANCHORS } from '../../src/model/components/layout';
 import { locale } from '../../src/store/settings';
 import { messageText } from '../../src/ui/modelMessage';
 import { issueText } from '../../src/ui/LibraryIssueList';
@@ -375,6 +377,173 @@ describe('mensagens da declaração das origens', () => {
   );
 });
 
+// Os textos de `parseOrigins(raw).problems` (`${path}: ${message}`) ficam fixados em literais: a
+// refatoração dos problemas como dado (#1589, RM1) não muda letra nenhuma, nem para a biblioteca dos
+// componentes, que os mostra neste formato.
+// Os mesmos casos de `ORIGIN_CASES`, mais uma origem repetida e uma âncora inválida válidas de resto.
+const ORIGIN_TEXT_CASES: readonly (readonly [unknown, readonly string[]])[] = [
+  [ORIGIN_CASES[0], ['origins: esperava uma lista']],
+  [
+    ORIGIN_CASES[1],
+    [
+      'origins[0]: esperava um objeto',
+      'origins[1].system: esperava texto não vazio',
+      'origins[1].node: esperava um objeto com type, props e children',
+      'origins[1].screen: obrigatório',
+      'origins[2].kind: esperava um de: tree, measured',
+    ],
+  ],
+  [
+    ORIGIN_CASES[2],
+    [
+      'origins[0].node: esperava um objeto com type, props e children',
+      'origins[0].screen: obrigatório',
+      'origins[1].node: esperava um objeto com type, props e children',
+      'origins[1].screen: obrigatório',
+    ],
+  ],
+  [
+    ORIGIN_CASES[3],
+    [
+      'origins[0].node.type: obrigatório (nome da chave, texto não vazio)',
+      'origins[0].node.props: obrigatório (nome da chave, texto não vazio)',
+      'origins[0].node.children: obrigatório (nome da chave, texto não vazio)',
+      'origins[0].screen.anchor: chave desconhecida: anchor',
+      'origins[0].screen.margin: chave desconhecida: margin',
+      'origins[0].screen.scrim: chave desconhecida: scrim',
+      'origins[0].screen.width.path: esperava um caminho (texto não vazio)',
+      'origins[0].screen.height.path: caminho inválido "a[" (faltou "]")',
+      'origins[0].screen.roots: esperava uma lista com pelo menos uma raiz',
+      'origins[0].booleans: esperava { "true": texto, "false": texto }',
+      'origins[0].examples[0]: esperava um objeto',
+      'origins[0].examples[1].name: esperava texto não vazio',
+      'origins[0].examples[1].file: esperava o caminho de um arquivo .json do pacote',
+      'origins[0].examples[2].file: extensão inválida: esperava .json',
+      'origins[0].examples[3].name: nome "x" repetido',
+    ],
+  ],
+  [ORIGIN_CASES[4], ['origins[0].screen: obrigatório']],
+  // A chave desconhecida com `": "` no nome e a âncora com `"; use "` (o defeito da RM1).
+  [
+    [{ system: 'a', 'x: y': 1 }],
+    [
+      'origins[0].x: y: chave desconhecida: x: y',
+      'origins[0].node: esperava um objeto com type, props e children',
+      'origins[0].screen: obrigatório',
+    ],
+  ],
+  [
+    [ORIGIN_VALID_WITH_ANCHOR('a; use b')],
+    [
+      'origins[0].screen.roots[0].anchor: âncora inválida: a; use b; use top-start, top, top-end, start, center, end, bottom-start, bottom, bottom-end',
+    ],
+  ],
+  [
+    [ORIGIN_VALID_WITH_ANCHOR('zz')],
+    [
+      'origins[0].screen.roots[0].anchor: âncora inválida: zz; use top-start, top, top-end, start, center, end, bottom-start, bottom, bottom-end',
+    ],
+  ],
+  [
+    [ORIGIN_VALID_WITH_ANCHOR('top'), ORIGIN_VALID_WITH_ANCHOR('top')],
+    ['origins[1].system: origem repetida: a'],
+  ],
+  [
+    [
+      {
+        ...ORIGIN_VALID_WITH_ANCHOR('top'),
+        screen: {
+          width: 1,
+          height: 1,
+          roots: [
+            { path: 'a[*]', margin: 2 },
+            { path: 'a[x]' },
+            { path: 'a..b' },
+            { path: 3 },
+          ],
+        },
+      },
+    ],
+    [
+      'origins[0].screen.roots[0].margin: margin só vale com anchor',
+      'origins[0].screen.roots[1].path: caminho inválido "a[x]" (índice inválido: [x])',
+      'origins[0].screen.roots[2].path: caminho inválido "a..b" (segmento vazio)',
+      'origins[0].screen.roots[3].path: esperava um caminho (texto não vazio)',
+    ],
+  ],
+  [
+    [
+      {
+        ...ORIGIN_VALID_WITH_ANCHOR('top'),
+        screen: { width: { path: 'a[*]' }, height: 1, roots: [{ path: 'a' }] },
+      },
+    ],
+    ['origins[0].screen.width.path: "[*]" só vale em roots[].path'],
+  ],
+  [
+    [
+      {
+        ...ORIGIN_VALID_WITH_ANCHOR('top'),
+        screen: { width: { path: 'a]b' }, height: 1, roots: [{ path: 'a' }] },
+        examples: [{ name: 'x', file: '../a.json' }],
+      },
+    ],
+    [
+      'origins[0].screen.width.path: caminho inválido "a]b" (caractere inesperado: ])',
+      'origins[0].examples[0].file: caminho inválido: use um caminho relativo à pasta da especialização, com "/", sem "." nem ".." e sem unidade (ex: components/button.json)',
+    ],
+  ],
+];
+
+function ORIGIN_VALID_WITH_ANCHOR(anchor: string): Raw {
+  return {
+    system: 'a',
+    node: { type: 't', props: 'p', children: 'c' },
+    screen: { width: 1, height: 1, roots: [{ path: 'a', anchor }] },
+  };
+}
+
+describe('textos dos problemas das origens (parseOrigins)', () => {
+  it.each(ORIGIN_TEXT_CASES.map((c, i) => [i, c[0], c[1]] as const))(
+    'caso %i: o texto de cada problema não muda',
+    (_i, origins, texts) => {
+      expect(parseOrigins(origins).problems.map(originProblemText)).toEqual(texts);
+    },
+  );
+});
+
+describe('origem com valor do usuário no nome da chave ou na âncora (defeito da RM1)', () => {
+  it('a chave desconhecida com ": " no nome sai no caminho certo, com o código no emissor', () => {
+    const parsed = parseSpec(specWith([{ system: 'a', 'x: y': 1 }]));
+    expect(parsed.ok).toBe(false);
+    if (parsed.ok) return;
+    const issue = (parsed.issues as readonly SpecIssue[]).find((i) =>
+      i.message.includes('chave desconhecida'),
+    );
+    expect(issue).toEqual({
+      path: 'origins[0].x: y',
+      message: 'chave desconhecida: x: y',
+      code: 'spec.tokenKeyUnknown',
+      params: { key: 'x: y' },
+    });
+    locale.value = 'en-US';
+    expect(messageText(asMessage(issue as Coded))).not.toMatch(PORTUGUESE);
+  });
+
+  it('a âncora com "; use " no valor mantém os parâmetros de origins.anchorInvalid', () => {
+    const parsed = parseSpec(specWith([ORIGIN_VALID_WITH_ANCHOR('a; use b')]));
+    expect(parsed.ok).toBe(false);
+    if (parsed.ok) return;
+    const issues = parsed.issues as readonly SpecIssue[];
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toMatchObject({
+      path: 'origins[0].screen.roots[0].anchor',
+      code: 'origins.anchorInvalid',
+      params: { anchor: 'a; use b', anchors: LAYOUT_ANCHORS.join(', ') },
+    });
+  });
+});
+
 // --- catálogo de componentes (o aviso do componente que não carregou) ----------------------
 
 describe('componente que não carregou', () => {
@@ -421,6 +590,12 @@ describe('componente que não carregou', () => {
 
 // --- o catálogo --------------------------------------------------------------------------
 
+const ORIGIN_CODED_PROBLEMS: ReadonlySet<string> = new Set([
+  'origins.anchorInvalid',
+  'origins.expectedKind',
+  'origins.systemRepeated',
+]);
+
 describe('catálogos component, iconsFile e origins', () => {
   const ALL = { ...componentMessages, ...iconsFileMessages, ...originMessages };
 
@@ -463,6 +638,9 @@ describe('catálogos component, iconsFile e origins', () => {
         // Os erros da tradução (`origins.error.*`, guarda da MB6) também.
         if (code.startsWith('origins.draw.') || code.startsWith('origins.error.'))
           continue;
+        // Os três problemas com valor do usuário saem do catálogo por `codedProblem` (#1589), sem o
+        // texto no `origin.ts`; os literais de "textos dos problemas das origens" os produzem.
+        if (ORIGIN_CODED_PROBLEMS.has(code)) continue;
         const parts = template
           .split(/\{\w+\}/)
           .map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));

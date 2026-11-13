@@ -11,7 +11,9 @@ import { findSlot } from './arrange';
 import {
   type FieldSource,
   type Origin,
+  type OriginProblem,
   type TypeSource,
+  originProblemText,
   parseFieldSources,
   parseOrigins,
   parsePath,
@@ -166,7 +168,9 @@ function readField(
   const options = Array.isArray(raw.options)
     ? raw.options.filter((o): o is string => typeof o === 'string')
     : undefined;
-  const sources = parseFieldSources(raw.sources, `${path}.sources`, problems);
+  const sourceProblems: OriginProblem[] = [];
+  const sources = parseFieldSources(raw.sources, `${path}.sources`, sourceProblems);
+  problems.push(...sourceProblems.map(originProblemText));
   sources.forEach((source, index) => {
     const at = `${path}.sources[${index}]`;
     if (source.values) {
@@ -303,7 +307,7 @@ export function loadLibrary(
   const [specPath, specJson] = first;
   const spec = specJson as Record<string, unknown>;
   const parsedOrigins = parseOrigins(spec.origins);
-  problems.push(...parsedOrigins.problems);
+  problems.push(...parsedOrigins.problems.map(originProblemText));
   const origins = parsedOrigins.origins;
   const systems = new Set(origins.map((o) => o.system));
   const types: TypeDef[] = [];
@@ -330,7 +334,13 @@ export function loadLibrary(
       const component = componentPath
         ? loadComponent(type.id, componentPath, specPath, parsed, problems, resolve)
         : undefined;
-      const sources = parseTypeSources(type.sources, `${type.id}.sources`, problems);
+      const sourceProblems: OriginProblem[] = [];
+      const sources = parseTypeSources(
+        type.sources,
+        `${type.id}.sources`,
+        sourceProblems,
+      );
+      problems.push(...sourceProblems.map(originProblemText));
       checkTypeSources(type.id, sources, component, problems);
       types.push({
         id: type.id,
