@@ -207,6 +207,7 @@
     }
     #mp .parada .rot {
       font-weight: 600;
+      white-space: nowrap;
     }
     #mp .parada .qtd {
       color: var(--color-fg-muted);
@@ -445,7 +446,13 @@
     }
     @media (max-width: 560px) {
       #mp .onda {
-        grid-template-columns: 46px minmax(0, 1fr);
+        grid-template-columns: 64px minmax(0, 1fr);
+      }
+      #mp .parada {
+        margin-left: 14px;
+      }
+      #mp .ponto {
+        left: -14px;
       }
       #mp .parada .qtd {
         display: none;

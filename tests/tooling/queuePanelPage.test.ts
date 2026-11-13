@@ -256,6 +256,11 @@ const SETAS = [
   { de: '#2', para: '#6', tipo: 'dep' },
   { de: '#5', para: '#6', tipo: 'dep' },
 ];
+/** As sessões com custo da #1 (US$ 2,00 no total); as outras etapas do trilho ficam sem custo. */
+const SESSIONS_TRILHO = [
+  { id: 'a1', kind: 'fase', issue: '#1', cost: { usd: 1.5 } },
+  { id: 'a2', kind: 'testador', issue: '#1', cost: { usd: 0.5 } },
+];
 const GRAFO_VAGAS = ['Vagas 1/2', '#3 arquivo a.ts com #1', 'nenhuma ready elegível'];
 /** As linhas do `queue` das etapas do trilho (a #4, a #5 e as outras ficam sem linha). */
 const QUEUE_TRILHO: Row[] = [
@@ -332,7 +337,7 @@ describe.each(FORMAS)(
     const montar = (over: Row = {}, queue: Row[] = QUEUE_TRILHO) => {
       const panel = loadPanel(
         {
-          sessions: wrap(SESSIONS),
+          sessions: wrap(SESSIONS_TRILHO),
           vagasItens: wrap(GRAFO_VAGAS),
           grafoNos: wrap(NOS),
           grafoSetas: wrap(SETAS),
