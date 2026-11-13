@@ -101,10 +101,14 @@ for (const width of [900, 1280]) {
           gap: badge.getBoundingClientRect().left - range.getBoundingClientRect().right,
         };
       });
-      return { rows, overflow: list.scrollWidth > list.clientWidth };
+      return {
+        rows,
+        overflow: list.scrollWidth > list.clientWidth,
+        sizes: `${list.scrollWidth} > ${list.clientWidth}`,
+      };
     });
     // Sem rolagem horizontal: nem a primeira aba nem a última ficam cortadas.
-    expect(metrics.overflow).toBe(false);
+    expect(metrics.overflow, metrics.sizes).toBe(false);
     const withText = metrics.rows.filter((r) => r.gap !== null);
     expect(withText.length).toBeGreaterThanOrEqual(5);
     for (const row of withText)
