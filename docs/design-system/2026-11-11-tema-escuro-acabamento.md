@@ -13,5 +13,5 @@ Gravado no artefato **Mapping** em 2026-11-11: versão 80 (`1794364519-6f16`). T
 
 ## Ficou sem gravar
 
-- **Previews de `Container`, `Home`, `RefCell` e `ReferenceField`:** os `preview.html` não foram regenerados para mostrar o título com contorno, a célula quebrada a 900 px e a linha de recentes. **Motivo:** o preview de cada um é uma rendição estática (Konva fora do jsdom, e HTML renderizado de 12 a 50 KB) que só se refaz abrindo a app e conferindo os dois temas num navegador; o fechamento não tem navegador e a decisão de 2026-11-02 manteve os previews como estão quando a mudança é só de comportamento.
-- **Preview do selo "Veio de…" (`Canvas.md`):** nenhum preview mostra o selo invertido. **Motivo:** o selo é desenhado só no Konva e não há componente do DS para ele (o guia `Canvas.md` o descreve); criar um preview novo está fora do escopo do fechamento.
+- Passou para o registro do épico `epic/sobras-do-testador`: previews de `Container`, `RefCell` e `ReferenceField` (título com o contorno de `--color-surface` e a referência quebrada entre palavras na célula a 900 px), a regenerar conferindo os temas claro e escuro num navegador. O preview de `Home` fica como está: a mudança é só para o leitor de tela (`aria-describedby`).
+- Passou para o registro do épico `epic/sobras-do-testador`: o selo "Veio de…" (`Canvas.md`) não ganha preview; fica descrito no guia, como o `CommentPin` (só guia, sem preview), porque é desenho do Konva e não há componente do DS para ele.

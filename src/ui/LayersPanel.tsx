@@ -185,7 +185,7 @@ function LayerRow({
         aria-label={t('layer.name')}
         value={layer.name}
         disabled={readOnly || lockedBySpec}
-        title={lockedBySpec ? t('layer.specLocked') : undefined}
+        title={lockedBySpec ? t('layer.specLocked') : layer.name}
         onCommit={(text) => actions.renameLayer(layer.id, text).ok}
       />
 
