@@ -9,7 +9,7 @@ import type {
 } from '../spec';
 import { diffSpecs } from '../specVersions';
 import { findTypeInSpec } from '../specLookup';
-import { unmappedParams } from './codeLink';
+import { callName, unmappedParams } from './codeLink';
 import {
   capitalize,
   keyOf,
@@ -161,7 +161,7 @@ class Importer {
   // --- uma unidade ---
 
   private apply(unit: Unit): void {
-    if (this.configured.has(unit.owner ?? unit.param.name)) return;
+    if (this.isConfiguredIgnore(unit)) return;
     const context: ResolveContext = {
       models: this.models,
       like: (ref) => this.likePlan(ref),
@@ -170,6 +170,14 @@ class Importer {
     if (resolution.kind === 'ignored') this.ignored.add(unit.owner ?? unit.param.name);
     else if (resolution.kind === 'pending') this.pending.push(unit);
     else if (resolution.kind === 'field') this.bindField(unit, resolution.plan);
+  }
+
+  /** O `ignore` do `code` (ou do caso) cita a unidade pelo nome interno, pelo de chamada ou pelo dono. */
+  private isConfiguredIgnore(unit: Unit): boolean {
+    return (
+      this.configured.has(unit.owner ?? unit.param.name) ||
+      this.configured.has(callName(unit.param))
+    );
   }
 
   /** O campo que o `params` já liga à unidade: pelo nome de chamada ou, sem dono, pelo nome interno. */
@@ -585,8 +593,7 @@ class Importer {
     const diff = this.diff();
     const notices = this.writeNotices(outside, diff);
     const code = this.prepared.code;
-    const scope = this.prepared.scope as Scope;
-    const ignore = [...(scope.ignore ?? code?.ignore ?? []), ...this.ignored];
+    const ignore = [...this.configured, ...this.ignored];
     const unmapped = unmappedParams(this.signature, {
       params: this.paramsView(),
       ignore,

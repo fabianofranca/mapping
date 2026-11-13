@@ -70,7 +70,9 @@ export type ExpandModels = Readonly<Record<string, SpecFieldModel>>;
 
 /** O membro é um dos parâmetros que o `expand` do modelo do tipo do parâmetro dono expande. */
 function expandsTo(model: SpecFieldModel | undefined, member: string): boolean {
-  return model !== undefined && 'expand' in model && member in model.expand.params;
+  return (
+    model !== undefined && 'expand' in model && Object.hasOwn(model.expand.params, member)
+  );
 }
 
 /** Um `params` do `code` que a ficha não tem: o campo e o valor escrito. */

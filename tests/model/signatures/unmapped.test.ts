@@ -162,6 +162,14 @@ describe('paramsOutsideSignature com o expand do fieldModels (S5)', () => {
       { field: 'x', name: 'border.nope' },
     ]);
   });
+
+  it('um membro herdado de Object.prototype não conta como membro do expand', () => {
+    const params = { a: 'border.constructor', b: 'border.toString' };
+    expect(paramsOutsideSignature(withBorder(), { params }, models)).toEqual([
+      { field: 'a', name: 'border.constructor' },
+      { field: 'b', name: 'border.toString' },
+    ]);
+  });
 });
 
 describe('rótulo externo do Swift (corrigido na S2)', () => {

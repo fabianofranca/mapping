@@ -172,6 +172,29 @@ describe('regra por role e value.kind (decisão 5)', () => {
     expect(plan.unmapped.map((u) => u.name)).toEqual([]);
   });
 
+  it('o `ignore` vale também pelo nome de chamada (o rótulo externo do Swift)', () => {
+    const plan = run(
+      librarySpec((s) => {
+        buttonOf(s).code = {
+          compose: {
+            symbol: 'androidx.compose.material3.Button',
+            path: BUTTON_PATH,
+            ignore: ['badge'],
+          },
+        };
+      }),
+      {
+        signature: composeSignature([
+          text('label'),
+          text('badgeCount', { label: 'badge' }),
+        ]),
+      },
+    );
+    expect(keys(plan)).toEqual(['label']);
+    expect(plan.type.notices).toBeUndefined();
+    expect(plan.unmapped.map((u) => u.name)).toEqual([]);
+  });
+
   it('o argumento de uma fábrica não se liga, só pelo nome, a um campo de outro tipo: vira campo novo com o dono no nome', () => {
     const plan = run(
       librarySpec((s) => {
