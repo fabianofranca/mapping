@@ -22,6 +22,7 @@ import {
 } from '../storage/autosave';
 import type { PreparedImage } from '../storage/imageImport';
 import type { LocalPerspectiveStore } from '../storage/localPerspectives';
+import { type FolderCalls, type FolderOp } from '../storage/folderCalls';
 import { loadProject, type LoadProjectResult } from '../storage/loadProject';
 import {
   loadLibraryIssues,
@@ -126,6 +127,12 @@ export interface SessionOptions {
   /** Problemas da biblioteca lidos ao abrir (ver `loadProject`); sem eles, nenhum. */
   readonly libraryIssues?: LibraryIssues;
   /**
+   * O contador de chamadas da pasta (`storage/folderCalls`), o mesmo que embrulha a raiz do
+   * `storage`: a sessão mede nele a gravação, a decisão, a aplicação e a conferência. Sem ele
+   * (projeto local, zip, testes), nada é medido.
+   */
+  readonly folderCalls?: FolderCalls | null;
+  /**
    * Arquivos de imagem trocados ou adicionados por fora (ao recarregar o projeto ou ao
    * conferir os arquivos): quem guarda os bitmaps os descarta para carregar de novo.
    */
@@ -213,6 +220,8 @@ export interface CollectedFiles extends ProjectFiles {
 /** Um projeto aberto: store com undo/redo ligado ao armazenamento. */
 export interface ProjectSession {
   readonly storage: ProjectStorage;
+  /** Chamadas e tempo da última operação de cada tipo na pasta; `null` fora de pasta. */
+  readonly folderCalls: FolderCalls | null;
   readonly store: ProjectStore;
   readonly actions: ProjectActions;
   /** Propostas de alteração do projeto (etapa 4): lista, problemas, avisos e conferência da pasta. */
@@ -469,6 +478,14 @@ export function openSession(options: SessionOptions): ProjectSession {
     },
   });
   let packagesTouched = false;
+  const folderCalls = options.folderCalls ?? null;
+  /** Mede `fn` no contador da pasta; sem contador, só a executa. */
+  const measure = <T>(
+    op: FolderOp | (() => FolderOp),
+    fn: () => Promise<T>,
+  ): Promise<T> => (folderCalls ? folderCalls.measure(op, fn) : fn());
+  /** A gravação em curso gravou um pacote de biblioteca (`library` em vez de `save`). */
+  let wrotePackage = false;
   // Pastas de pacote regravadas por cima de uma versão antiga: podem ter arquivos que só a
   // versão antiga tinha. Saem depois do `mapping.json` gravado (`sweepPackages`); a pasta fica
   // aqui até a varredura dar certo, e cada varredura recalcula o que sobra pela listagem.
@@ -665,6 +682,7 @@ export function openSession(options: SessionOptions): ProjectSession {
    * Diagnóstico (`session.cleanup`) e a próxima gravação tenta de novo.
    */
   const writeProject = async (p: Project) => {
+    wrotePackage = false;
     await assertWritable();
     let wrote = false;
     if (pendingBackup) {
@@ -710,6 +728,7 @@ export function openSession(options: SessionOptions): ProjectSession {
       for (const [rel, data] of files) await storage.writeSpecFile(`${dir}/${rel}`, data);
       writtenPackages.set(dir, { key, specRel: s.file.slice(dir.length + 1) });
       packagesTouched = true;
+      wrotePackage = true;
       wrote = true;
     }
     const specs = specFiles(p);
@@ -759,7 +778,10 @@ export function openSession(options: SessionOptions): ProjectSession {
     const p = store.committed.peek();
     if (!p || onDisk(p)) return;
     try {
-      await writeProject(p);
+      await measure(
+        () => (wrotePackage ? 'library' : 'save'),
+        () => writeProject(p),
+      );
     } catch (e) {
       if (e instanceof EmptyMappingError) reportError('session.emptyMapping', e);
       throw e;
@@ -896,6 +918,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     },
     stagePackage: cachePackage,
     flush: () => saver.flush(),
+    ...(folderCalls ? { measure } : {}),
   });
 
   /** O Quem vê não muda com o projeto travado, em revisão ou com um gesto em andamento. */
@@ -1116,29 +1139,30 @@ export function openSession(options: SessionOptions): ProjectSession {
       images: syncOptions.images === true,
       promise: Promise.resolve<SyncResult>('unchanged'),
     };
-    entry.promise = saver
-      .enqueue(() => {
+    // O ciclo inteiro (o arquivo do projeto e as varreduras de propostas e conversas) é uma
+    // medida só.
+    entry.promise = measure('sync', async () => {
+      const result = await saver.enqueue(() => {
         pendingSync = null;
         return syncProject(entry.images);
-      })
-      .then(async (result) => {
-        // As propostas não esperam o projeto: decisões e notas são gravadas na hora e
-        // refeitas sobre a versão do disco, então não há "alteração local pendente" a proteger.
-        // Fora da fila da sessão: a fila das propostas pode esperar por ela (`flush`), nunca o
-        // contrário.
-        // As conversas também: só `comments/`, pelo carimbo, lendo só o arquivo que mudou.
-        // As duas varreduras não compartilham arquivo, fila nem estado (`proposals/` e
-        // `comments/`, cada uma com a sua fila): rodam juntas.
-        await Promise.all([
-          !closed && storage.statProposal
-            ? proposals.scan().catch((e: unknown) => reportError('proposals.scan', e))
-            : undefined,
-          !closed && storage.statThread
-            ? threads.scan().catch((e: unknown) => reportError('threads.scan', e))
-            : undefined,
-        ]);
-        return result;
       });
+      // As propostas não esperam o projeto: decisões e notas são gravadas na hora e
+      // refeitas sobre a versão do disco, então não há "alteração local pendente" a proteger.
+      // Fora da fila da sessão: a fila das propostas pode esperar por ela (`flush`), nunca o
+      // contrário.
+      // As conversas também: só `comments/`, pelo carimbo, lendo só o arquivo que mudou.
+      // As duas varreduras não compartilham arquivo, fila nem estado (`proposals/` e
+      // `comments/`, cada uma com a sua fila): rodam juntas.
+      await Promise.all([
+        !closed && storage.statProposal
+          ? proposals.scan().catch((e: unknown) => reportError('proposals.scan', e))
+          : undefined,
+        !closed && storage.statThread
+          ? threads.scan().catch((e: unknown) => reportError('threads.scan', e))
+          : undefined,
+      ]);
+      return result;
+    });
     pendingSync = entry;
     return entry.promise;
   };
@@ -1194,6 +1218,7 @@ export function openSession(options: SessionOptions): ProjectSession {
 
   return {
     storage,
+    folderCalls,
     store,
     actions,
     proposals,
