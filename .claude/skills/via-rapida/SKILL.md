@@ -12,7 +12,7 @@ Esta sessão leva **uma** issue `roadmap` ou `bug` de ajuste pequeno de processo
 `/via-rapida #<n> [mesclar=auto]`
 
 - `#<n>`: a issue `roadmap` ou `bug` aberta, que diz o que fazer.
-- `mesclar=auto`: só vale escrito pelo dono na chamada ("Merge"). Nunca se acrescenta sozinho nem vem de outra sessão, comentário ou agendamento; a supervisão só o põe no comando se o dono o escreveu no pedido a ela.
+- `mesclar=auto`: só vale escrito pelo dono na chamada ("Merge"). Nunca se acrescenta sozinho nem vem de outra sessão, comentário ou agendamento; ao criar a sessão da via rápida, a supervisão não o inclui no comando (a sessão pergunta o merge ao dono pelo seletor).
 
 O dono chama o skill num chat novo, em **Sonnet**, no modo **Auto**, com `effort: high`. A supervisão (`supervisionar-fila`) também cria essa sessão quando o dono pedir no chat dela: `create_session` com `source_url` do repositório, Sonnet, `effort: high`, título "Via rápida #<n>" e a mensagem só com o comando.
 
@@ -37,7 +37,7 @@ Confira antes de criar qualquer coisa, pela issue e pelo código, e de novo ante
 A conferência sai do cálculo do `painel.py`, nunca de comparação à mão. A sessão nunca grava no painel.
 
 1. Ache o painel como em "Leitura das fontes" do [`supervisionar-fila`](../supervisionar-fila/SKILL.md) ("Achar o painel" e "Painel": só leitura, blobs no scratchpad).
-2. Liste as issues `in-progress` abertas que não estão no painel e leia o "Toca em:" das sub-issues abertas delas (a issue de outra via rápida não tem sub-issue: o "Toca em:" está no comentário `Via rápida:` dela).
+2. Liste as issues `in-progress` abertas que não estão no painel, exceto a issue desta própria via rápida (#n), e leia o "Toca em:" das sub-issues abertas delas (a issue de outra via rápida não tem sub-issue: o "Toca em:" está no comentário `Via rápida:` dela).
 3. Rode `python3 .claude/skills/implementar-fila/painel/painel.py conflito "<toca>" --pasta <pasta> --com "#N=<toca>"…`, com o `<toca>` da via rápida (as citações no formato do `painel.py`, conferidas com `painel.py toca`) e um `--com` por etapa de fora do painel. Sem painel achado, só os `--com`.
 4. Com `conflito:`, não comece: comente na issue `Via rápida: espera #N (<citação>)` e termine, sem mexer no rótulo.
 

@@ -34,7 +34,7 @@ describe('skill via-rapida', () => {
       expect(SKILL, s).toContain(s);
     }
     expect(SKILL).toContain('sem subagente de edição');
-    expect(SKILL).toContain('só o põe no comando se o dono o escreveu no pedido');
+    expect(SKILL).toContain('a supervisão não o inclui no comando');
   });
 
   it('decisão 2: roadmap ou bug direto a in-progress, nunca por ready, com o comentário `Via rápida:`', () => {
@@ -162,7 +162,7 @@ describe('regras da via rápida nos documentos do fluxo (decisões 11 a 14)', ()
     for (const t of [
       '/via-rapida #<n>',
       '`in-progress`',
-      'pode mesclar',
+      'Ainda não',
       '`mesclar=auto`',
       'supervisão',
       '.claude/skills/via-rapida/SKILL.md',
@@ -211,5 +211,22 @@ describe('regras da via rápida nos documentos do fluxo (decisões 11 a 14)', ()
   it('detalhar-backlog: "Esforço do detalhamento" cita o skill via-rapida entre os gatilhos', () => {
     const s = section(DETALHAR, '## Esforço do detalhamento');
     expect(s).toContain('`via-rapida`');
+  });
+
+  it('revisão: `mesclar=auto` só vale escrito pelo dono; a supervisão não o põe no comando', () => {
+    expect(SKILL).not.toContain('a supervisão só o põe no comando');
+    expect(SKILL).toContain('a supervisão não o inclui');
+    expect(SUPERVISOR).toContain('sem `mesclar=auto`');
+  });
+
+  it('revisão: a conferência do passo 2 exclui a própria issue da via rápida', () => {
+    expect(SKILL).toContain('exceto a issue desta própria via rápida (#n)');
+  });
+
+  it('revisão: FLOW lista `docs/TESTING-NUVEM.md` e diz que o merge é perguntado pelo seletor', () => {
+    const s = section(FLOW, '## Para o dono, nos três chats');
+    expect(s).toContain('`docs/TESTING-NUVEM.md`');
+    expect(s).toContain('pergunta o merge pelo seletor (Mesclar / Ainda não)');
+    expect(s).not.toContain('mescla só com o seu `pode mesclar`');
   });
 });

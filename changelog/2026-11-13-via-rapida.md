@@ -7,4 +7,5 @@
 
 ## Alterado
 
+- **Correções de texto da revisão (para quem conduz o fluxo, #1864, VR2):** `mesclar=auto` só vale escrito pelo dono na chamada do `via-rapida` (a supervisão não o inclui ao criar a sessão), a conferência do passo 2 exclui a própria issue da via rápida e o `docs/FLOW.md` lista o `docs/TESTING-NUVEM.md` e diz que o merge é perguntado pelo seletor.
 - **A regra "nada se implementa antes de `ready`" ganha a exceção "salvo a via rápida" (para quem conduz o fluxo, #1864, VR2):** no `CLAUDE.md` (resumo do fluxo), no `docs/PROCESS.md` ("Rótulos", "Fluxo de trabalho" e "Etapas"; dois trechos do "Evidência de bug" que só repetiam o `docs/FLOW.md` saíram para o arquivo caber no teto de 25.000 bytes), no `docs/FLOW.md` ("Para o dono, nos três chats") e nos skills `detalhar-backlog` ("Esforço do detalhamento": o `via-rapida` entra entre os gatilhos de risco) e `supervisionar-fila` ("Papel e limites": a supervisão pode criar a sessão da via rápida quando o dono decidir).
