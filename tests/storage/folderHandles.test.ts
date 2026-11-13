@@ -220,3 +220,34 @@ describe('loadMappingStamped e o carimbo depois de gravar', () => {
     expect((await storage.loadMappingStamped?.())?.text).toBe('{"a":2}');
   });
 });
+
+describe('listProposals', () => {
+  it('confere o proposal.json de várias pastas em paralelo limitado e mantém o resultado', async () => {
+    const { root, storage } = setup(5);
+    const ids = ['P8', 'P3', 'P1', 'P6', 'P2', 'P7', 'P4', 'P5'];
+    for (const id of ids) root.put(`proposals/${id}/proposal.json`, id);
+    root.put('proposals/SEM/outro.json', 'x');
+    let active = 0;
+    let peak = 0;
+    const original = MemoryDirectory.prototype.getFileHandle;
+    const spy = vi
+      .spyOn(MemoryDirectory.prototype, 'getFileHandle')
+      .mockImplementation(async function (this: MemoryDirectory, name, options) {
+        if (name !== 'proposal.json') return original.call(this, name, options);
+        active++;
+        peak = Math.max(peak, active);
+        try {
+          return await original.call(this, name, options);
+        } finally {
+          active--;
+        }
+      });
+    try {
+      expect(await storage.listProposals()).toEqual([...ids].sort());
+    } finally {
+      spy.mockRestore();
+    }
+    expect(peak).toBeGreaterThan(1);
+    expect(peak).toBeLessThanOrEqual(4);
+  });
+});

@@ -32,22 +32,29 @@ export async function readSpecPackage(
 ): Promise<{ entries: PackageEntry[]; bytes: number } | null> {
   const paths = await storage.listSpecDir(dir);
   if (!packageWithinLimits(paths.length, 0)) return null;
-  // Leitura em paralelo com limite; o resultado, o cálculo de bytes e o corte seguem a ordem
-  // da listagem (pode ler um pouco além do limite antes de cortar, o resultado é o mesmo).
+  // Leitura em paralelo com limite; o resultado segue a ordem da listagem. O tamanho vem do
+  // `Blob` antes de ler o texto: estourado o limite de bytes, ninguém mais abre nem converte
+  // arquivo (o pacote vira `null`).
+  let total = 0;
+  let overflow = false;
   const read = await mapLimit(paths, FOLDER_CONCURRENCY, async (path) => {
+    if (overflow) return null;
     const blob = await storage.readSpecFile(path);
     if (!blob) return null;
+    total += blob.size;
+    if (!packageWithinLimits(0, total)) overflow = true;
+    if (overflow) return null;
     const entry: PackageEntry = isTextPackageFile(path)
       ? { path, text: await blob.text() }
       : { path };
     return { entry, size: blob.size };
   });
+  if (overflow) return null;
   const entries: PackageEntry[] = [];
   let bytes = 0;
   for (const item of read) {
     if (!item) continue;
     bytes += item.size;
-    if (!packageWithinLimits(0, bytes)) return null;
     entries.push(item.entry);
   }
   return { entries, bytes };
@@ -113,22 +120,21 @@ export async function loadLibraryIssues(
   project: Pick<Project, 'specializations'>,
 ): Promise<LibraryIssues> {
   const result = new Map<string, readonly AppLibraryIssue[]>();
-  // Os pacotes são lidos em paralelo; o resultado segue a ordem das especializações.
-  const found = await Promise.all(
-    project.specializations.map(async (s) => {
-      const dir = packageDirOf(s.file);
-      if (dir === null) return null;
-      try {
-        return [
-          s.id,
-          libraryIssuesOf(s, dir, await readSpecPackage(storage, dir)),
-        ] as const;
-      } catch (e) {
-        reportError('open.libraryIssues', e);
-        return null;
-      }
-    }),
-  );
+  // As especializações vão em série e o paralelo fica dentro de cada pacote: o pico de leituras
+  // simultâneas à pasta é `FOLDER_CONCURRENCY`. O resultado segue a ordem das especializações.
+  const found = await mapLimit(project.specializations, 1, async (s) => {
+    const dir = packageDirOf(s.file);
+    if (dir === null) return null;
+    try {
+      return [
+        s.id,
+        libraryIssuesOf(s, dir, await readSpecPackage(storage, dir)),
+      ] as const;
+    } catch (e) {
+      reportError('open.libraryIssues', e);
+      return null;
+    }
+  });
   for (const entry of found) if (entry) result.set(entry[0], entry[1]);
   return result;
 }

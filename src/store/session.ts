@@ -714,12 +714,15 @@ export function openSession(options: SessionOptions): ProjectSession {
    */
   const refreshLibraryIssues = async (p: Project) => {
     const previous = libraryIssues.value;
+    // Instantâneo: o que ficar sujo durante o `await` abaixo fica para a próxima atualização.
+    const pending = [...libraryDirty];
+    const dirty = new Set(pending);
     const specs = specFiles(p);
     const known = new Map<string, readonly AppLibraryIssue[]>();
     const unknown: Project['specializations'][number][] = [];
     for (const s of p.specializations) {
       if (packageDirOf(s.file) === null) continue;
-      const issues = libraryDirty.has(s.id)
+      const issues = dirty.has(s.id)
         ? memoryLibraryIssues(s, specs.get(s.file))
         : previous.get(s.id);
       if (issues) known.set(s.id, issues);
@@ -731,7 +734,7 @@ export function openSession(options: SessionOptions): ProjectSession {
       const issues = known.get(s.id) ?? fromDisk.get(s.id);
       if (issues) next.set(s.id, issues);
     }
-    libraryDirty.clear();
+    for (const id of pending) libraryDirty.delete(id);
     libraryIssues.value = next;
   };
 
@@ -854,7 +857,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     // qualquer um aborta a gravação aqui.
     const jobs = [...(await planPackageWrites(p)), ...planSpecWrites(specs)];
     await mapLimit(jobs, FOLDER_CONCURRENCY, (job) => job());
-    if (jobs.length > 0) wrote = true;
+    if (jobs.length > 0 || wrotePackage) wrote = true;
     // As gravações acima levam tempo: confere de novo antes de sobrescrever o arquivo.
     if (wrote) await assertWritable();
     const revision = disk.revision + 1;

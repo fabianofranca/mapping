@@ -512,13 +512,13 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
           // As origens são lidas todas de uma vez (em paralelo com limite); as verificações e as
           // gravações abaixo seguem em ordem, com os mesmos erros.
           const sources = await readImageSources(storage, applying.files);
-          for (const move of applying.files) {
+          for (const [i, move] of applying.files.entries()) {
             if (taken.has(fileNameKey(move.to))) {
               failedPath = move.to;
               await rollback();
               return 'image-exists';
             }
-            const blob = sources[applying.files.indexOf(move)];
+            const blob = sources[i];
             if (!blob) {
               failedPath = move.from;
               await rollback();

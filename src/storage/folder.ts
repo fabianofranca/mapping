@@ -10,6 +10,8 @@ import {
   proposalFilePath,
   threadFilePath,
 } from '../model';
+import { mapLimit } from '../utils/mapLimit';
+import { FOLDER_CONCURRENCY } from './folderConcurrency';
 import {
   BACKUPS_DIR,
   IMAGES_DIR,
@@ -336,13 +338,19 @@ async function removeFile(cache: HandleCache, path: string): Promise<void> {
 /** Remove a pasta e tudo o que há nela. Não falha se ela (ou o pai) já não existe. */
 async function removeDirectory(cache: HandleCache, path: string): Promise<void> {
   const { dirs, name } = splitPath(path);
-  forgetTree(cache, [...dirs, name].join('/'));
-  await orNull(() =>
-    withDir(cache, dirs, false, async (parent) => {
-      await parent?.removeEntry(name, { recursive: true });
-      return null;
-    }),
-  );
+  const tree = [...dirs, name].join('/');
+  forgetTree(cache, tree);
+  try {
+    await orNull(() =>
+      withDir(cache, dirs, false, async (parent) => {
+        await parent?.removeEntry(name, { recursive: true });
+        return null;
+      }),
+    );
+  } finally {
+    // Uma operação concorrente pode ter reaberto e guardado a pasta durante a remoção.
+    forgetTree(cache, tree);
+  }
 }
 
 /** Caminhos de todos os arquivos sob `dir` (recursivo), relativos à raiz, em ordem alfabética. */
@@ -395,15 +403,15 @@ async function listDirNames(
   cache: HandleCache,
   dirName: string[],
   pick: (entry: FileHandleLike | DirectoryHandleLike) => Promise<string | null>,
+  /** Quantas conferências de `pick` rodam ao mesmo tempo. */
+  concurrency = 1,
 ): Promise<string[]> {
   const ids = await withDir(cache, dirName, false, async (dir) => {
     if (!dir) return null;
-    const names: string[] = [];
-    for await (const entry of dir.values()) {
-      const name = await pick(entry);
-      if (name !== null) names.push(name);
-    }
-    return names;
+    const entries: (FileHandleLike | DirectoryHandleLike)[] = [];
+    for await (const entry of dir.values()) entries.push(entry);
+    const names = await mapLimit(entries, concurrency, (entry) => pick(entry));
+    return names.filter((name): name is string => name !== null);
   });
   return ids ? ids.sort() : [];
 }
@@ -496,12 +504,17 @@ export function createFolderStorage(
       await removeDirectory(cache, dir);
     },
     listProposals: () =>
-      listDirNames(cache, [PROPOSALS_DIR], async (entry) => {
-        if (entry.kind !== 'directory' || !PROPOSAL_ID_RE.test(entry.name)) return null;
-        return (await orNull(() => entry.getFileHandle(PROPOSAL_FILE)))
-          ? entry.name
-          : null;
-      }),
+      listDirNames(
+        cache,
+        [PROPOSALS_DIR],
+        async (entry) => {
+          if (entry.kind !== 'directory' || !PROPOSAL_ID_RE.test(entry.name)) return null;
+          return (await orNull(() => entry.getFileHandle(PROPOSAL_FILE)))
+            ? entry.name
+            : null;
+        },
+        FOLDER_CONCURRENCY,
+      ),
     readProposal: (id) => readText(proposalFilePath(id)),
     writeProposal: (id, text) => write(proposalFilePath(id), text),
     removeProposal: (id) => removeProposalDir(cache, id),
