@@ -268,6 +268,21 @@ describe('docs/TESTING.md (guia de quem testa à mão)', () => {
     expect(actions.has('R6.2')).toBe(false);
     expect(guide.indexOf('#### RF — ')).toBeGreaterThan(onDemand);
     expect(guide.indexOf('#### RA — ')).toBeGreaterThan(onDemand);
+    expect(guide.indexOf('#### RB — ')).toBeGreaterThan(onDemand);
+    expect(guide.indexOf('#### RT — Pasta no tablet Android')).toBeGreaterThan(
+      guide.indexOf('#### RB — '),
+    );
+  });
+
+  it('o RT (pasta no tablet Android) é manual, tem os passos RT.1 a RT.5 e entra no Comece aqui', () => {
+    const rt = guide.slice(guide.indexOf('#### RT — '), guide.indexOf('## 9. '));
+    for (const step of ['RT.1', 'RT.2', 'RT.3', 'RT.4', 'RT.5']) {
+      expect(rt).toContain(`| ${step} |`);
+    }
+    expect(rt).toContain('não roda na nuvem');
+    expect(rt).toContain('folder:');
+    expect(guide).toMatch(/\| sob demanda \| RT — Pasta no tablet Android/);
+    expect(guide).toContain('hoje o RP, o RF, o RA, o RB e o RT');
   });
 
   it('todo passo que pede algo ao Claude Code tem [pessoa] na Ação (M4)', () => {
@@ -504,9 +519,9 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
       expect(guide).toContain('`material3-compose.zip` (R17)');
     });
 
-    it('tem os passos R17.1 a R17.46, em ordem, e nenhum depende do dono', () => {
+    it('tem os passos R17.1 a R17.47, em ordem, e nenhum depende do dono', () => {
       const codes = [...stepActions(r17).keys()];
-      expect(codes).toEqual(Array.from({ length: 46 }, (_, i) => `R17.${i + 1}`));
+      expect(codes).toEqual(Array.from({ length: 47 }, (_, i) => `R17.${i + 1}`));
       expect(/sem substituto/i.test(r17)).toBe(false);
       expect(r17).not.toContain('[pessoa]');
     });

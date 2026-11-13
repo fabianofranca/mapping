@@ -15,6 +15,7 @@ import {
 import { clearReportedErrors } from '../../src/utils/report';
 import { sampleProject } from '../model/fixtures';
 import { sampleThread } from '../model/threadFixtures';
+import type { DirectoryHandleLike, FileHandleLike } from '../../src/storage/folder';
 import { MemoryDirectory } from './memoryFs';
 
 afterEach(() => clearReportedErrors());
@@ -41,6 +42,27 @@ describe('caminhos de conversa', () => {
   });
 });
 
+/** O arquivo `<failing>.json` de `comments/` falha com um erro que não é "não existe". */
+function failingThreadFile(root: MemoryDirectory, failing: string): DirectoryHandleLike {
+  const wrapFile = (handle: FileHandleLike): FileHandleLike =>
+    handle.name === failing
+      ? { ...handle, getFile: () => Promise.reject(new Error('arquivo em uso')) }
+      : handle;
+  const wrapDir = (dir: DirectoryHandleLike): DirectoryHandleLike => ({
+    ...dir,
+    getDirectoryHandle: async (name, options) =>
+      wrapDir(await dir.getDirectoryHandle(name, options)),
+    getFileHandle: async (name, options) =>
+      wrapFile(await dir.getFileHandle(name, options)),
+    values: async function* () {
+      for await (const entry of dir.values()) {
+        yield entry.kind === 'directory' ? wrapDir(entry) : wrapFile(entry);
+      }
+    },
+  });
+  return wrapDir(root);
+}
+
 describe('pasta: comments/', () => {
   it('lista só os arquivos válidos de cada pasta, lê, grava, carimba e apaga', async () => {
     const root = new MemoryDirectory('p');
@@ -63,6 +85,24 @@ describe('pasta: comments/', () => {
     const stamp = await storage.statThread?.('A', false);
     expect(stamp).toMatch(/^1:\d+$/);
     expect(await storage.statThread?.('Z', false)).toBeNull();
+
+    // `stampThreads` (decisão 9, etapa #1777): a mesma conferência de `listThreads` + `statThread`,
+    // num passo só, em ordem alfabética.
+    expect([...((await storage.stampThreads?.(false)) ?? [])]).toEqual([
+      ['A', stamp],
+      ['B', await storage.statThread?.('B', false)],
+    ]);
+    expect([...((await storage.stampThreads?.(true)) ?? [])]).toEqual([
+      ['R', await storage.statThread?.('R', true)],
+    ]);
+
+    // Um arquivo ilegível (erro que não é "não existe") não derruba a varredura nem faz a
+    // conversa parecer apagada: ela volta presente, com o carimbo desconhecido.
+    const flaky = createFolderStorage(failingThreadFile(root, 'A.json'));
+    expect([...((await flaky.stampThreads?.(false)) ?? [])]).toEqual([
+      ['A', null],
+      ['B', await storage.statThread?.('B', false)],
+    ]);
 
     await storage.writeThread('A', false, 'novo');
     expect(await root.read(threadFilePath('A', false))).toBe('novo');
@@ -189,6 +229,7 @@ describe('projeto local (IndexedDB)', () => {
     expect(await storage.readThread('T1', false)).toBe('um');
     expect(await storage.readThread('T1', true)).toBeNull();
     expect(await storage.statThread).toBeUndefined();
+    expect(storage.stampThreads).toBeUndefined();
     await library.remove('a');
     await library.create('a', files());
     expect(await library.open('a').listThreads(false)).toEqual([]);

@@ -166,3 +166,51 @@ describe('texto copiado do Diagnóstico', () => {
     expect(text.endsWith('errors: 0')).toBe(true);
   });
 });
+
+describe('linha folder: do texto copiado', () => {
+  const base: DiagnosticsInfo = {
+    build: 'abc1234 · 2026-10-10',
+    channel: 'preview',
+    schema: 8,
+    storage: 'folder',
+    userAgent: 'Mozilla/5.0 Teste',
+    window: { width: 1280, height: 800 },
+    language: 'pt-BR',
+    theme: 'dark',
+    counts: { containers: 2, markings: 4, annotations: 3 },
+    pendingSave: false,
+  };
+
+  const lines = (info: DiagnosticsInfo) => formatDiagnosticsReport(info, []).split('\n');
+
+  it('traz as operações medidas, na ordem recebida, logo depois de storage:', () => {
+    const text = lines({
+      ...base,
+      folder: [
+        { op: 'open', calls: 412, ms: 8300 },
+        { op: 'save', calls: 23, ms: 900 },
+      ],
+    });
+    const at = text.indexOf('storage: folder');
+    expect(text[at + 1]).toBe('folder: open 412 calls 8300 ms; save 23 calls 900 ms');
+  });
+
+  it('arredonda os milissegundos', () => {
+    const text = lines({
+      ...base,
+      folder: [{ op: 'sync', calls: 9, ms: 1234.56 }],
+    });
+    expect(text).toContain('folder: sync 9 calls 1235 ms');
+  });
+
+  it('em pasta, sem medida ainda: folder: no measurements', () => {
+    expect(lines({ ...base, folder: [] })).toContain('folder: no measurements');
+  });
+
+  it('fora de pasta não há linha folder:', () => {
+    expect(lines(base).some((l) => l.startsWith('folder:'))).toBe(false);
+    expect(lines({ ...base, folder: null }).some((l) => l.startsWith('folder:'))).toBe(
+      false,
+    );
+  });
+});

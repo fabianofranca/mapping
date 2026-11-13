@@ -9,12 +9,15 @@ import {
   type Proposal,
 } from '../../src/model';
 import { clearReportedErrors, reportedErrors } from '../../src/utils/report';
+import { loadProposals } from '../../src/storage/loadProposals';
+import { createProposalStore } from '../../src/store/proposals';
 import { sampleProject } from '../model/fixtures';
 import { propose } from '../model/proposalFixtures';
 import {
   NEW_IMAGE_PATH,
   diskProposal,
   openHarness,
+  REVIEW_AT,
   type Harness,
   richScenario,
   writeOutside,
@@ -303,6 +306,111 @@ describe('ProposalStore: conferência da pasta', () => {
     expect(await session.sync()).toBe('unchanged');
     expect(session.proposals.list.value.map((p) => p.id)).toEqual(['P1']);
     expect(session.proposals.notices.value[0]).toMatchObject({ kind: 'added', id: 'P1' });
+  });
+});
+
+// Etapa #1777 (decisão 8): a conferência de ciclo não relê as propostas finais (`applied` e
+// `withdrawn`) já lidas com carimbo conhecido; a completa (foco, volta à página, "Verificar a
+// pasta agora") olha todas.
+describe('ProposalStore: conferência de ciclo e completa (etapa #1777)', () => {
+  const cycle = { full: false } as const;
+  const none = { added: [], changed: [], removed: [] };
+
+  async function withFinal(status: 'applied' | 'withdrawn' | 'superseded') {
+    const { proposal } = richScenario();
+    const final: Proposal = { ...proposal, status };
+    const harness = await openHarness({ proposals: [final] });
+    return { ...harness, final };
+  }
+
+  it.each(['applied', 'withdrawn'] as const)(
+    'uma %s reescrita por fora só é relida na conferência completa',
+    async (status) => {
+      const { session, root, final } = await withFinal(status);
+      expect(await session.proposals.scan(cycle)).toEqual(none);
+      writeOutside(root, {
+        ...final,
+        title: 'Reescrita por fora',
+        revision: final.revision + 1,
+      });
+      expect(await session.proposals.scan(cycle)).toEqual(none);
+      expect(session.proposals.get('P1')?.title).toBe(final.title);
+      expect(await session.proposals.scan({ full: true })).toEqual({
+        ...none,
+        changed: ['P1'],
+      });
+      expect(session.proposals.get('P1')?.title).toBe('Reescrita por fora');
+    },
+  );
+
+  it('sem opção, a conferência é a completa (como o "Verificar a pasta agora")', async () => {
+    const { session, root, final } = await withFinal('applied');
+    writeOutside(root, { ...final, title: 'Outra', revision: final.revision + 1 });
+    expect(await session.proposals.scan()).toEqual({ ...none, changed: ['P1'] });
+  });
+
+  it('uma pasta nova em proposals/ aparece no ciclo, ao lado das finais puladas', async () => {
+    const { session, root } = await withFinal('applied');
+    writeOutside(root, { ...richScenario('P2').proposal, title: 'Nova' });
+    expect(await session.proposals.scan(cycle)).toEqual({ ...none, added: ['P2'] });
+    expect(session.proposals.list.value.map((p) => p.id).sort()).toEqual(['P1', 'P2']);
+  });
+
+  it('a `superseded` (ainda com aceitas a aplicar) é conferida em todo ciclo', async () => {
+    const { session, root, final } = await withFinal('superseded');
+    writeOutside(root, { ...final, title: 'Mudou', revision: final.revision + 1 });
+    expect(await session.proposals.scan(cycle)).toEqual({ ...none, changed: ['P1'] });
+  });
+
+  it('a `open` é conferida em todo ciclo, e a que passa a final deixa de ser', async () => {
+    const { proposal } = richScenario();
+    const { session, root } = await openHarness({ proposals: [proposal] });
+    writeOutside(root, { ...proposal, title: 'Mudou', revision: proposal.revision + 1 });
+    expect(await session.proposals.scan(cycle)).toEqual({ ...none, changed: ['P1'] });
+    // Agora `applied` por fora: o ciclo ainda a vê mudar (era aberta); depois, não mais.
+    const applied: Proposal = {
+      ...proposal,
+      status: 'applied',
+      revision: proposal.revision + 2,
+    };
+    writeOutside(root, applied);
+    expect(await session.proposals.scan(cycle)).toEqual({ ...none, changed: ['P1'] });
+    writeOutside(root, {
+      ...applied,
+      title: 'Depois de aplicada',
+      revision: applied.revision + 1,
+    });
+    expect(await session.proposals.scan(cycle)).toEqual(none);
+  });
+
+  it('uma final pulada cuja pasta foi apagada por fora some já no ciclo', async () => {
+    const { session, root } = await withFinal('applied');
+    root.dirs.get('proposals')?.dirs.delete('P1');
+    expect(await session.proposals.scan(cycle)).toEqual({ ...none, removed: ['P1'] });
+  });
+
+  it('sem `stampProposals` (armazenamento que só lista e carimba), o resultado é o mesmo', async () => {
+    const { storage, final, root } = await withFinal('applied');
+    const bare = { ...storage, stampProposals: undefined };
+    const store = createProposalStore({
+      storage: bare,
+      initial: await loadProposals(bare),
+      now: () => REVIEW_AT,
+    });
+    expect(await store.scan(cycle)).toEqual(none);
+    writeOutside(root, { ...final, title: 'Por fora', revision: final.revision + 1 });
+    expect(await store.scan({ full: true })).toEqual({ ...none, changed: ['P1'] });
+    writeOutside(root, { ...richScenario('P2').proposal });
+    expect(await store.scan(cycle)).toEqual({ ...none, added: ['P2'] });
+  });
+
+  it('session.sync() só confere as finais na conferência completa (com `images`)', async () => {
+    const { session, root, final } = await withFinal('applied');
+    writeOutside(root, { ...final, title: 'Reescrita', revision: final.revision + 1 });
+    await session.sync();
+    expect(session.proposals.get('P1')?.title).toBe(final.title);
+    await session.sync({ images: true });
+    expect(session.proposals.get('P1')?.title).toBe('Reescrita');
   });
 });
 

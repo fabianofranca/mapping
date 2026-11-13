@@ -17,7 +17,7 @@ Em qualquer modo, a mensagem pode trazer a lista da **passada visual** ("passada
 - **Sub-issue do relato:** o relato vai como comentário na sub-issue da mensagem (ver "Relato"); sem ela, na issue da etapa; sem nenhuma das duas, só na conversa, com o porquê.
 - **Aviso ao coordenador:** a mensagem termina com "Coordenador: `session_…`". Com o relato postado, avise essa sessão com `send_message` do servidor `claude-code-remote`, não o `SendMessage` (ver "Relato"). Sem a linha, ninguém fica sabendo.
 
-A rodada é **sempre sem interação**: o dono não está, então não pergunte nada. O que faltar e impedir a rodada vai para o relato; passo que só a pessoa faria fica "não executado (precisa do dono)" e segue. Os roteiros sob demanda (**RP**, **RF**, **RA**, **RB**) são manuais, feitos pelo dono, e nunca rodam na nuvem nem aparecem no relato.
+A rodada é **sempre sem interação**: o dono não está, então não pergunte nada. O que faltar e impedir a rodada vai para o relato; passo que só a pessoa faria fica "não executado (precisa do dono)" e segue. Os roteiros sob demanda (**RP**, **RF**, **RA**, **RB**, **RT**) são manuais, feitos pelo dono, e nunca rodam na nuvem nem aparecem no relato.
 
 ## Papel e limites
 
@@ -94,7 +94,7 @@ Regras desta sessão:
 
 ## O que executar
 
-**Rodada completa (padrão).** Todos os roteiros, **R0 a R26** (sem o RP, o RF, o RA e o RB), na ordem do quadro "Comece aqui" do guia e com as dependências do começo da seção 8: R0, R1, R2, a seção 6 (repositório de teste e MCP), R3, R4, R6, R7, R5, R8 e R9 a R26. A seção 9 do guia não entra. Os roteiros principais vão a subagentes (ver "Como agir"). Com "bloco k de 5" na mensagem, você roda só o bloco k (ver "Rodada completa em blocos"); sem bloco, uma sessão roda tudo.
+**Rodada completa (padrão).** Todos os roteiros, **R0 a R26** (sem o RP, o RF, o RA, o RB e o RT), na ordem do quadro "Comece aqui" do guia e com as dependências do começo da seção 8: R0, R1, R2, a seção 6 (repositório de teste e MCP), R3, R4, R6, R7, R5, R8 e R9 a R26. A seção 9 do guia não entra. Os roteiros principais vão a subagentes (ver "Como agir"). Com "bloco k de 5" na mensagem, você roda só o bloco k (ver "Rodada completa em blocos"); sem bloco, uma sessão roda tudo.
 
 **R21 e a tag da release; passo que exige o dono.** Antes do R21, ou de um passo que só a pessoa faria: `node scripts/testing/cloud.mjs secao consulta.regras`. O R21 testa a release real e usa a tag da mensagem (`sem R21` o tira da rodada).
 
@@ -130,7 +130,7 @@ A rodada completa (R0 a R26) roda em **5 sessões ao mesmo tempo**, uma por bloc
 | 2     | R0, seção 6, R15 e R25                                                              | 143    |
 | 3     | R0, seção 6, R12, R18 e R19                                                         | 114    |
 | 4     | R0, seção 6, R4, R6.8a a R6.11, R9, R10, R13, R16, R22, R24, R26 e a passada visual | 157    |
-| 5     | R0, seção 6, R11, R17, R20, R21 e R23                                               | 127    |
+| 5     | R0, seção 6, R11, R17, R20, R21 e R23                                               | 128    |
 
 São 5 blocos por decisão do dono (2026-11-09). A passada visual fica no bloco 4 (decisão 6 da etapa #841). O limite do guia gerado de cada bloco (`MAX_BLOCK_GUIDE_CHARS`, no `tests/tooling/roundBlocks.test.ts`), os tamanhos de antes, as dependências por bloco e as linhas de base: `cloud.mjs secao consulta.historico`.
 

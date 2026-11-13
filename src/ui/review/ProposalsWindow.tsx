@@ -18,7 +18,7 @@ export interface ProposalsWindowProps {
 export function useScanProposals(): () => void {
   const { session, ui } = useEditor();
   return () => {
-    session.proposals.scan().then(
+    session.proposals.scan({ full: true }).then(
       (found) => {
         const changes = found.added.length + found.changed.length + found.removed.length;
         showToast(

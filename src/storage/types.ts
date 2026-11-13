@@ -41,6 +41,12 @@ export interface ProjectStorage {
   readonly copyId?: string;
   /** Texto do `mapping.json`, ou `null` se ele não existir. */
   loadMapping(): Promise<string | null>;
+  /**
+   * O texto do `mapping.json` e o `lastModified` (ms) do MESMO `File`, com um único `getFile`
+   * (a sessão deixa de ler o arquivo e carimbá-lo em duas chamadas). `null` se o arquivo não
+   * existe; `lastModified` 0 se o `File` não o tem. Só a pasta implementa, como `statMapping`.
+   */
+  loadMappingStamped?(): Promise<{ text: string; lastModified: number } | null>;
   saveMapping(text: string): Promise<void>;
   /**
    * `lastModified` do `mapping.json` (ms), ou `null` se ele não existir. Só os
@@ -120,6 +126,16 @@ export interface ProjectStorage {
    */
   statProposal?(id: string): Promise<string | null>;
   /**
+   * `statProposal` de todas as propostas num passo só (a varredura da conferência): percorre
+   * `proposals/` uma vez e, para cada pasta de id válido, carimba o `proposal.json` pelo handle
+   * da própria entrada. A pasta sem `proposal.json` fica de fora, como no `listProposals`; a
+   * proposta cujo arquivo não pôde ser lido (em uso, sem permissão) vem com `null`, para a
+   * varredura a reler em vez de a tomar por apagada. Os ids em `skip` não são conferidos e
+   * também voltam com `null` (a conferência de ciclo pula as propostas finais já lidas). Em
+   * ordem alfabética. Só a pasta implementa.
+   */
+  stampProposals?(skip?: ReadonlySet<string>): Promise<Map<string, string | null>>;
+  /**
    * Ids das conversas (`comments/<id>.json`; com `resolved`, `comments/resolved/<id>.json`),
    * em ordem alfabética. Só lista o nome dos arquivos (a conferência de ~3 s depende de ser
    * barato). `[]` se a pasta não existir; nomes fora do `THREAD_ID_RE` ficam de fora.
@@ -140,6 +156,14 @@ export interface ProjectStorage {
    * Só a pasta implementa, como `statProposal`: o projeto local não é observado.
    */
   statThread?(id: string, resolved: boolean): Promise<string | null>;
+  /**
+   * `listThreads` + `statThread` de todas as conversas de uma pasta num passo só (a varredura da
+   * conferência): percorre `comments/` (ou `comments/resolved/`) uma vez e carimba cada arquivo
+   * pelo handle da própria entrada. Id → carimbo, em ordem alfabética; o arquivo que não pôde
+   * ser lido (em uso, sem permissão) vem com `null`, presente mas sem carimbo, para a varredura
+   * o reler em vez de o tomar por apagado. Só a pasta implementa.
+   */
+  stampThreads?(resolved: boolean): Promise<Map<string, string | null>>;
   /**
    * Guarda uma cópia do `mapping.json` original (antes de migrar o schema).
    * `name` é o nome do arquivo (ver `backupFileName`), sem a pasta.

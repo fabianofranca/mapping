@@ -299,12 +299,17 @@ describe('conversas: varredura da pasta (a conferência de ~3 s)', () => {
     for (const id of ['A', 'B', 'C']) onDisk(root, sampleThread({ id }));
     onDisk(root, sampleThread({ id: 'R', resolved: { by: ME, at: T3 } }));
     const base = createFolderStorage(root);
-    const calls = { list: [] as boolean[], read: [] as string[] };
+    const calls = { list: [] as boolean[], stamp: [] as boolean[], read: [] as string[] };
     const storage: ProjectStorage = {
       ...base,
       listThreads: (resolved) => {
         calls.list.push(resolved);
         return base.listThreads(resolved);
+      },
+      // A varredura de hoje carimba `comments/` num passo só (decisão 9, etapa #1777).
+      stampThreads: (resolved) => {
+        calls.stamp.push(resolved);
+        return base.stampThreads!(resolved);
       },
       readThread: (id, resolved) => {
         calls.read.push(`${resolved ? 'r' : 'o'}:${id}`);
@@ -316,12 +321,29 @@ describe('conversas: varredura da pasta (a conferência de ~3 s)', () => {
     calls.read.length = 0;
 
     expect(await store.scan()).toEqual({ added: [], changed: [], removed: [] });
-    expect(calls.list).toEqual([false]);
+    expect(calls.stamp).toEqual([false]);
+    expect(calls.list).toEqual([]);
     expect(calls.read).toEqual([]);
 
     onDisk(root, appendMessage(sampleThread({ id: 'B' }), message('mx', T3, AGENT)));
     await store.scan();
     expect(calls.read).toEqual(['o:B']);
+  });
+
+  it('sem `stampThreads` (armazenamento que só lista e carimba), a varredura dá o mesmo resultado', async () => {
+    const root = new MemoryDirectory('p');
+    onDisk(root, sampleThread({ id: 'A' }));
+    const storage: ProjectStorage = {
+      ...createFolderStorage(root),
+      stampThreads: undefined,
+    };
+    const store = createThreadStore({ storage, initial: await loadThreads(storage) });
+    onDisk(root, sampleThread({ id: 'B' }));
+    expect(await store.scan()).toEqual({ added: ['B'], changed: [], removed: [] });
+    onDisk(root, appendMessage(sampleThread({ id: 'A' }), message('mx', T3, AGENT)));
+    expect(await store.scan()).toEqual({ added: [], changed: ['A'], removed: [] });
+    await root.dirs.get('comments')?.removeEntry('B.json');
+    expect(await store.scan()).toEqual({ added: [], changed: [], removed: ['B'] });
   });
 
   it('o scan sem mudança não republica a lista nem os problemas', async () => {
