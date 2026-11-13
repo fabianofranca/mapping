@@ -60,8 +60,9 @@ O resto roda em `effort: medium`. Na dúvida, recomende high (`docs/PROCESS.md`:
 1. `list_issues` (`state: OPEN`, `fields: [number, title, labels]`, sem `body`, porque o corpo de todas passa do limite) uma vez com `labels: [roadmap]` e uma com `labels: [bug]`.
 2. Fique só com as que **não** têm `ready`, `in-progress` nem `step`, e deixe de fora as issues cujo título começa por "Teto do dist/index.html acima dos limites" (o `bug` da subida do teto, etapa #1802: é um pedido de revisão do dono, não um defeito a planejar, e fica com a revisão dele no chat do supervisor; diga isso ao listar o que ficou de fora). Com a lista `#n ...`, use a interseção dela com as candidatas e diga quais números ficaram de fora e por quê.
 3. Ordem: `severity: high` e `impact: high` primeiro, depois `medium`, depois `low`; no empate, o menor número vem antes. A ordem do Project "Mapping - Backlog" é do dono, e as ferramentas não alcançam o Project.
-4. Issues do revisor de código (rótulo `code-review`, `docs/PROCESS.md` "Revisão de código"): a da rodada (`roadmap`, título "CR base …" ou "CR épico …") lista muitos achados, e cada defeito high ou medium dela já tem a sua issue `bug`, citada no corpo. O detalhamento da rodada cobre só os achados que **não** apontam para um `bug`. Passe isso ao subagente de agrupamento, para ela juntar cada `bug` com a rodada ou com outras candidatas da mesma área, ou separar a rodada por área, sem detalhar o mesmo achado duas vezes.
-5. Sem candidatas, diga isso e termine.
+4. Sem candidatas, diga isso e termine.
+
+**Issues do revisor de código** (rótulo `code-review`, `docs/PROCESS.md` "Revisão de código"): a da rodada (`roadmap`, título "CR base …" ou "CR épico …") lista muitos achados, e cada defeito high ou medium dela já tem a sua issue `bug`, citada no corpo. O detalhamento da rodada cobre só os achados que **não** apontam para um `bug`. Passe isso ao subagente de agrupamento, para ela juntar cada `bug` com a rodada ou com outras candidatas da mesma área, ou separar a rodada por área, sem detalhar o mesmo achado duas vezes.
 
 ## 2. Agrupamento (um subagente Opus)
 
