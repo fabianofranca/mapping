@@ -105,7 +105,7 @@ function buildFixture(): Fixture {
   const project: Project = { ...applied.project, revision: 3 };
   root.put('mapping.json', serialize(project));
   for (const file of ['lateral.jpg', 'frente.jpg']) {
-    root.files.set(`images/${file}`, new Blob([new Uint8Array([1, 2, 3])]));
+    root.put(`images/${file}`, '\u0001\u0002\u0003');
   }
   const diskFiles = bundledLibraryDiskFiles(project, {
     ...NOTES_LIBRARY,
@@ -161,6 +161,13 @@ interface Opened {
 interface Mark {
   readonly kinds: Record<string, number>;
   readonly resolved: number;
+}
+
+/** O caminho de pasta existe na árvore do dublê? */
+function existsIn(root: MemoryDirectory, path: string): boolean {
+  let dir: MemoryDirectory | undefined = root;
+  for (const name of path.split('/')) dir = dir?.dirs.get(name);
+  return dir !== undefined;
 }
 
 const markOf = (opened: Opened): Mark => ({
@@ -219,7 +226,14 @@ function register(opened: Opened, op: FolderOp, since: Mark) {
   console.info(`[folderCallBudget] ${line}`);
   // Decisão 6: cada pasta é resolvida no máximo uma vez por operação (handles guardados).
   const paths = opened.resolved.slice(since.resolved);
-  const repeated = paths.filter((path, i) => paths.indexOf(path) !== i);
+  // Exceção da própria decisão 6: uma pasta que NÃO existe sob um handle guardado repete a
+  // resolução uma vez a partir da raiz (o handle pode estar velho); o pai repete junto.
+  const missingUnder = (path: string) =>
+    !existsIn(opened.root, path) ||
+    paths.some((other) => other.startsWith(`${path}/`) && !existsIn(opened.root, other));
+  const repeated = paths.filter(
+    (path, i) => paths.indexOf(path) !== i && !missingUnder(path),
+  );
   expect(repeated, `pastas resolvidas mais de uma vez em ${op}`).toEqual([]);
 }
 
