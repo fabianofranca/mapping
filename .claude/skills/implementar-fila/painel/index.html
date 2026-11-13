@@ -320,6 +320,10 @@
       border-color: var(--color-warn);
       font-weight: 600;
     }
+    #mp .fase.now {
+      background: var(--color-warn);
+      color: var(--color-panel);
+    }
     #mp .fase.todo,
     #mp .w.arquivo {
       border-style: dashed;
@@ -519,16 +523,28 @@
       display: block;
       width: 100%;
     }
+    /* Sete tons neutros (um por tipo de sessão), sem reusar ok/warn/bad, que são estados. */
     #mp .cor-0 {
-      background: var(--color-ok);
+      background: var(--color-fg-muted);
     }
     #mp .cor-1 {
-      background: var(--color-warn);
+      background: color-mix(in srgb, var(--color-fg-muted) 80%, var(--color-panel));
     }
     #mp .cor-2 {
-      background: var(--color-bad);
+      background: color-mix(in srgb, var(--color-fg-muted) 62%, var(--color-panel));
     }
-    #mp .cor-3,
+    #mp .cor-3 {
+      background: color-mix(in srgb, var(--color-fg-muted) 46%, var(--color-panel));
+    }
+    #mp .cor-4 {
+      background: color-mix(in srgb, var(--color-fg-muted) 32%, var(--color-panel));
+    }
+    #mp .cor-5 {
+      background: color-mix(in srgb, var(--color-fg-muted) 20%, var(--color-panel));
+    }
+    #mp .cor-6 {
+      background: color-mix(in srgb, var(--color-fg-muted) 10%, var(--color-panel));
+    }
     #mp .cor-neutra {
       background: var(--color-fg-muted);
     }
@@ -1016,10 +1032,14 @@
         const fases = parsePhases(r);
         if (!fases.length) return null;
         const box = el('div', 'fases');
+        let agora = asText(r.status) === 'em andamento';
         for (const f of fases) {
-          const c = el('span', 'fase ' + f.st);
-          c.title = f.cod + ': ' + FASE_ESTADO[f.st];
-          c.append(el('span', 'cod', f.cod), el('span', 'sr', FASE_ESTADO[f.st]));
+          const now = agora && f.st === 'open';
+          if (now) agora = false;
+          const rotulo = FASE_ESTADO[f.st] + (now ? ' (agora)' : '');
+          const c = el('span', 'fase ' + f.st + (now ? ' now' : ''));
+          c.title = f.cod + ': ' + rotulo;
+          c.append(el('span', 'cod', f.cod), el('span', 'sr', rotulo));
           box.append(c);
         }
         return box;
@@ -1053,7 +1073,14 @@
       }
       function buildWhy(n) {
         const into = grafo.setas.filter((a) => a.para === n.issue);
-        if (grafo.onda.get(n.issue) >= 1 && into.length) return buildEspera(into);
+        if (grafo.onda.get(n.issue) >= 1 && into.length) {
+          const espera = buildEspera(into);
+          const motivo = asText(n.motivo);
+          if (!motivo || motivo.startsWith('dep ')) return espera;
+          const box = el('div', 'porque');
+          box.append(espera, el('div', 'mot', motivo));
+          return box;
+        }
         return n.motivo ? el('div', 'mot', asText(n.motivo)) : null;
       }
       function liveDur(r) {
@@ -1367,7 +1394,7 @@
           node.classList.add('cor-dash');
           node.style.setProperty('--cor', color);
         } else {
-          node.classList.add('cor-' + ((i < 0 ? KINDS.length : i) % 4));
+          node.classList.add(i < 0 ? 'cor-neutra' : 'cor-' + i);
         }
       }
       function showDica(txt) {

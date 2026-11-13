@@ -467,7 +467,12 @@ describe.each(FORMAS)(
       montar();
       expect(chips('#1')).toEqual([
         { cod: 'D1', sr: 'mesclada', classes: ['ok'], title: 'D1: mesclada' },
-        { cod: 'D2', sr: 'aberta', classes: ['open'], title: 'D2: aberta' },
+        {
+          cod: 'D2',
+          sr: 'aberta (agora)',
+          classes: ['open', 'now'],
+          title: 'D2: aberta (agora)',
+        },
         {
           cod: 'D3',
           sr: 'ainda não aberta',
@@ -512,6 +517,44 @@ describe.each(FORMAS)(
         'espera',
       );
       expect(card('#6')?.querySelector('.mot')).toBeNull();
+    });
+
+    it('só a primeira fase aberta da linha em andamento leva o destaque "agora"', () => {
+      montar({}, [
+        fila({ issue: '#1', phases: 'D1:ok|D2:open|D3:open|D4:todo' }),
+        fila({ issue: '#2', status: 'aguardando', phases: 'E1:open|E2:open' }),
+      ]);
+      expect(chips('#1').map((c) => c.classes)).toEqual([
+        ['ok'],
+        ['open', 'now'],
+        ['open'],
+        ['todo'],
+      ]);
+      expect(chips('#1')[1]?.title).toBe('D2: aberta (agora)');
+      expect(chips('#1')[1]?.sr).toBe('aberta (agora)');
+      expect(chips('#2').map((c) => c.classes)).toEqual([['open'], ['open']]);
+    });
+
+    it('com seta de entrada e motivo que não é "dep …", mostra o "espera" e também o motivo', () => {
+      montar(
+        {
+          grafoNos: wrap([
+            no({ issue: '#1', onda: 0 }),
+            no({ issue: '#2', onda: 1, motivo: 'dep #1' }),
+            no({ issue: '#3', onda: 1, motivo: 'segurada para a exclusiva #9' }),
+          ]),
+          grafoSetas: wrap([
+            { de: '#1', para: '#2', tipo: 'dep' },
+            { de: '#1', para: '#3', tipo: 'dep' },
+          ]),
+        },
+        [],
+      );
+      expect(esperas('#3').map((w) => w.n)).toEqual(['#1']);
+      expect(card('#3')?.querySelector('.mot')?.textContent).toBe(
+        'segurada para a exclusiva #9',
+      );
+      expect(card('#2')?.querySelector('.mot')).toBeNull();
     });
 
     it('sem seta (ou na onda 0) o porquê é o motivo do nó', () => {
@@ -1196,6 +1239,46 @@ describe('página do painel da fila: card "Custo da fila" (PA2)', () => {
       expect(cor('fase')?.className).toContain('cor-0');
       expect(cor('testador')?.className).toContain('cor-2');
       expect(cor('fase')?.style.getPropertyValue('--cor')).toBe('');
+    });
+
+    it('sem dash.colors, os 7 tipos de sessão têm classes distintas, sem reusar ok/warn/bad', () => {
+      montar({
+        sessions: [
+          'fase',
+          'correção',
+          'testador',
+          'reteste',
+          'fechamento',
+          'coordenador',
+          'supervisor',
+        ].map((k, n) => sess('k' + n, k, '#10', 1, { created: '2026-11-13T01:30:00Z' })),
+      });
+      const tipos = [
+        'fase',
+        'correção',
+        'testador',
+        'reteste',
+        'fechamento',
+        'coordenador',
+        'supervisor',
+      ];
+      const cls = tipos.map((t) => {
+        const c = cor(t);
+        return Array.from(c?.classList ?? []).find((k) => k.startsWith('cor-'));
+      });
+      expect(new Set(cls).size).toBe(7);
+      expect(cls.every(Boolean)).toBe(true);
+      const css = readFileSync(PAGE, 'utf8');
+      for (const k of cls) {
+        const bloco = new RegExp(`#mp \\.${k}\\s*\\{[^}]*\\}`).exec(css)?.[0] ?? '';
+        expect(bloco).not.toMatch(/--color-(ok|warn|bad)/);
+      }
+    });
+
+    it('a skill descreve o CI no card como "<etapa> · CI: PR #p", sem a coluna "Passo atual"', () => {
+      const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
+      expect(skill).not.toContain('coluna "Passo atual", como');
+      expect(skill).toContain('`<etapa> · CI: PR #p`');
     });
 
     it('dash.colors que não é lista de textos não derruba a página', () => {
