@@ -483,13 +483,11 @@ function signatureChecks(pkg: Package, referenced: Set<string>, out: Collector):
   for (const problem of problems) {
     if (problem.missing !== undefined) {
       out.fileNotFound(problem.file, problem.path, problem.missing);
-    } else if (problem.severity === 'error') {
-      out.passError(problem.file, problem.path, problem.message);
     } else {
-      out.passWarning(problem.file, problem.path, problem.message, {
-        messageCode: problem.code,
-        messageParams: problem.params,
-      });
+      const coding = { messageCode: problem.code, messageParams: problem.params };
+      if (problem.severity === 'error')
+        out.passError(problem.file, problem.path, problem.message, coding);
+      else out.passWarning(problem.file, problem.path, problem.message, coding);
     }
   }
 }

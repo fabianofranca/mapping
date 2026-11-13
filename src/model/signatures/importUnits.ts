@@ -1,13 +1,14 @@
 import type { SpecField, SpecFieldModel } from '../spec';
 import { callName } from './codeLink';
+import { expansionOf, isPositional, type Models } from './expansion';
 import { optionFor } from './importNames';
 import type { Signature, SignatureParam } from './types';
+
+export type { Models };
 
 // As unidades do importador (etapa #1079, decisões 5 e 7): o que a ficha tem que pode virar um
 // campo (um parâmetro, ou um parâmetro da fábrica ou do `expand` de um parâmetro composto) e a
 // regra que diz o que cada uma vira. Puro.
-
-export type Models = Readonly<Record<string, SpecFieldModel>>;
 
 /** Uma unidade de ligação: um parâmetro, ou um argumento da fábrica de um composto. */
 export interface Unit {
@@ -21,10 +22,6 @@ export interface Unit {
   readonly call?: string;
   readonly param: SignatureParam;
 }
-
-const isPositional = (param: SignatureParam): boolean => param.label === '_';
-
-const stripNullable = (type: string): string => type.replace(/\?$/, '');
 
 function expandUnits(
   param: SignatureParam,
@@ -42,31 +39,9 @@ function expandUnits(
 }
 
 function unitsOfParam(param: SignatureParam, target: string, models: Models): Unit[] {
-  const model = param.role === 'value' ? models[param.type] : undefined;
-  const owner = callName(param);
-  if (model !== undefined && 'expand' in model && !isPositional(param)) {
-    const members = Object.entries(model.expand.params).map(
-      ([name, type]): SignatureParam => ({
-        name,
-        role: 'value',
-        type,
-        value: { kind: 'opaque' },
-      }),
-    );
-    return expandUnits(
-      param,
-      owner,
-      model.expand.call ?? stripNullable(param.type),
-      members,
-    );
-  }
-  if (model === undefined && param.role === 'value' && param.factory !== undefined) {
-    if (!isPositional(param)) {
-      const members = param.factory.params.filter((p) => p.role === 'value');
-      return expandUnits(param, owner, param.factory.call, members);
-    }
-  }
-  return [{ target, name: param.name, param }];
+  const expansion = expansionOf(param, models);
+  if (expansion === null) return [{ target, name: param.name, param }];
+  return expandUnits(param, callName(param), expansion.call, expansion.members);
 }
 
 /** As unidades da ficha, na ordem da fonte. */

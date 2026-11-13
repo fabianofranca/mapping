@@ -64,3 +64,56 @@ for (const width of [900, 1280]) {
     }
   });
 }
+
+// CL1 (1.1): o contador não fica colado ao rótulo (vão de 4px, `--space-1`) e, no pior caso (contador
+// nas abas com rótulo, o do Avisos com 2 dígitos), as seis abas continuam inteiras em 900 e 1280 px.
+const MIN_GAP = 4;
+
+for (const width of [900, 1280]) {
+  test(`abas da janela inferior com espaço entre rótulo e contador em ${width} px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 860 });
+    await open(page);
+    await page.keyboard.press('Control+Shift+6');
+    const tablist = page
+      .getByRole('tablist')
+      .filter({ has: page.getByRole('tab', { name: 'Diagnóstico' }) });
+    await expect(tablist).toBeVisible();
+    const metrics = await tablist.evaluate((list) => {
+      const tabs = [...list.querySelectorAll<HTMLElement>('[role=tab]')];
+      // O pior caso: contador em todas as abas com rótulo (o do Avisos com 2 dígitos).
+      for (const tab of tabs) {
+        if (tab.querySelector('.tab-badge, .tab-alert')) continue;
+        // A aba só de ícone (Comentários) não tem rótulo: fica fora do pior caso.
+        if (!(tab.textContent ?? '').trim()) continue;
+        const badge = document.createElement('span');
+        badge.className = 'tab-badge';
+        badge.textContent = (tab.textContent ?? '').startsWith('Avisos') ? '12' : '9';
+        tab.append(badge);
+      }
+      const range = document.createRange();
+      const rows = tabs.map((tab) => {
+        const label = [...tab.childNodes].find((n) => n.nodeType === Node.TEXT_NODE);
+        const badge = tab.querySelector<HTMLElement>('.tab-badge, .tab-alert');
+        if (!label || !badge) return { name: tab.textContent ?? '', gap: null };
+        range.selectNodeContents(label);
+        return {
+          name: tab.textContent ?? '',
+          gap: badge.getBoundingClientRect().left - range.getBoundingClientRect().right,
+        };
+      });
+      return {
+        rows,
+        overflow: list.scrollWidth > list.clientWidth,
+        sizes: `${list.scrollWidth} > ${list.clientWidth}`,
+      };
+    });
+    // Sem rolagem horizontal: nem a primeira aba nem a última ficam cortadas.
+    expect(metrics.overflow, metrics.sizes).toBe(false);
+    const withText = metrics.rows.filter((r) => r.gap !== null);
+    expect(withText.length).toBeGreaterThanOrEqual(5);
+    for (const row of withText)
+      expect(row.gap, `rótulo e contador: ${row.name}`).toBeGreaterThanOrEqual(MIN_GAP);
+  });
+}

@@ -476,6 +476,7 @@ class Importer {
     diff: SignatureDiff,
   ): ImportNotice[] {
     const ours: ImportNotice[] = [];
+    const previousRemoved = this.removedNotices();
     const slot = this.detachOwnNotices();
     const fresh = new Map<{ notices?: SpecNotice[] }, SpecNotice[]>();
     const add = (
@@ -501,12 +502,65 @@ class Importer {
         add({ field: field.key }, 'diverges', text);
     }
     this.writeOutside(outside, diff, add);
+    this.keepRemoved(previousRemoved, outside, fresh, ours);
     for (const [holder, list] of fresh) {
       const kept = holder.notices ?? [];
       const at = Math.min(slot.get(holder) ?? kept.length, kept.length);
       holder.notices = [...kept.slice(0, at), ...list, ...kept.slice(at)];
     }
     return ours;
+  }
+
+  /** Os avisos `removed` que esta ficha já gravou, por campo (o campo fica sem `params`). */
+  private removedNotices(): Map<SpecField, SpecNotice[]> {
+    const found = new Map<SpecField, SpecNotice[]>();
+    for (const field of this.type.fields) {
+      const list = field.notices?.filter(
+        (n) => n.kind === 'removed' && n.ref === this.path,
+      );
+      if (list !== undefined && list.length > 0) found.set(field, list);
+    }
+    return found;
+  }
+
+  /**
+   * O campo `removed` não cita mais o parâmetro que saiu em `params` (o validador avisaria
+   * "parâmetro fora da ficha"), e por isso o próximo `outside()` não o acha: o aviso que a
+   * importação anterior gravou segue como está, até o parâmetro voltar a ser ligado ao campo.
+   */
+  private keepRemoved(
+    previous: ReadonlyMap<SpecField, SpecNotice[]>,
+    outside: readonly { field: string }[],
+    fresh: Map<{ notices?: SpecNotice[] }, SpecNotice[]>,
+    ours: ImportNotice[],
+  ): void {
+    const again = new Set(outside.map((o) => o.field));
+    for (const [field, notices] of previous) {
+      if (again.has(field.key) || this.linked.has(field.key)) continue;
+      fresh.set(field, [...(fresh.get(field) ?? []), ...notices]);
+      for (const n of notices)
+        ours.push({
+          at: { field: field.key },
+          kind: n.kind,
+          message: n.message,
+          ref: this.path,
+        });
+    }
+  }
+
+  /** Tira de `params` os campos cujo parâmetro saiu da ficha sem renome (ficam com o aviso `removed`). */
+  private dropRemovedParams(
+    outside: readonly { target: string; field: string }[],
+    diff: SignatureDiff,
+  ): void {
+    const scope = this.prepared.scope as Scope | undefined;
+    if (this.design || scope?.params === undefined) return;
+    const params = { ...scope.params };
+    for (const { target, field } of outside) {
+      if (!diff.renamed.some((r) => r.from === target)) delete params[field];
+    }
+    if (Object.keys(params).length === 0) delete scope.params;
+    else scope.params = params;
   }
 
   /**
@@ -592,6 +646,7 @@ class Importer {
     const news = outside.filter((o) => !reported.has(o.field));
     const diff = this.diff();
     const notices = this.writeNotices(outside, diff);
+    this.dropRemovedParams(outside, diff);
     const code = this.prepared.code;
     const ignore = [...this.configured, ...this.ignored];
     const unmapped = unmappedParams(this.signature, {

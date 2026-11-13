@@ -104,16 +104,19 @@ const RECTS = {
 
 type Expected = Partial<Record<keyof typeof RECTS, Rect>>;
 
-/** Espera a gravação assentar (a `revision` para de subir) e devolve o texto cru. */
+/** Espera a gravação assentar ("Salvo" e a `revision` parada) e devolve o texto cru. */
 async function settled(page: Page): Promise<string> {
   let last = -1;
   let stable = 0;
   await expect
     .poll(
       async () => {
+        // Só vale com a barra de status em "Salvo": sob carga a gravação da edição pode nem ter
+        // começado, e a `revision` parada seria a de antes dela.
+        const saved = await page.getByText('Salvo', { exact: true }).first().isVisible();
         const raw = await readRaw(page);
         const revision = parse(raw).revision;
-        stable = revision === last ? stable + 1 : 0;
+        stable = saved && revision === last ? stable + 1 : 0;
         last = revision;
         return stable;
       },

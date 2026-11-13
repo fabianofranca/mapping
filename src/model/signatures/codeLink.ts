@@ -1,6 +1,8 @@
 import { paramTarget } from '../codeParams';
-import type { SpecFieldModel } from '../spec';
+import { expansionOf, isPositional, type ExpandModels } from './expansion';
 import type { Signature, SignatureParam, SignatureRole } from './types';
+
+export type { ExpandModels };
 
 /** O nome que se escreve na chamada: o rótulo externo do Swift, ou o nome. */
 export const callName = (param: SignatureParam): string =>
@@ -27,7 +29,7 @@ export interface UnmappedParam {
 
 /** Os parâmetros sem rótulo externo (`_`, Swift), na ordem: o `#n` do `params` é o n-ésimo. */
 function positionalParams(signature: Signature): SignatureParam[] {
-  return signature.params.filter((param) => param.label === '_');
+  return signature.params.filter(isPositional);
 }
 
 /**
@@ -65,16 +67,6 @@ export function unmappedParams(signature: Signature, code: CodeLinks): UnmappedP
     }));
 }
 
-/** Os modelos do `fieldModels` da plataforma; o validador lê só o `expand`. */
-export type ExpandModels = Readonly<Record<string, SpecFieldModel>>;
-
-/** O membro é um dos parâmetros que o `expand` do modelo do tipo do parâmetro dono expande. */
-function expandsTo(model: SpecFieldModel | undefined, member: string): boolean {
-  return (
-    model !== undefined && 'expand' in model && Object.hasOwn(model.expand.params, member)
-  );
-}
-
 /** Um `params` do `code` que a ficha não tem: o campo e o valor escrito. */
 export interface OutsideParam {
   readonly field: string;
@@ -105,7 +97,11 @@ export function paramsOutsideSignature(
   return outside;
 }
 
-/** O alvo de um `params` existe na ficha: um nome, um posicional ou o argumento de uma fábrica. */
+/**
+ * O alvo de um `params` existe na ficha: um nome, um posicional ou o argumento de uma fábrica. O
+ * argumento de uma fábrica confere com o que o parâmetro dono expande (`expansionOf`, a mesma
+ * regra do importador); o dono que não expande nada e não descreve fábrica não é conferido.
+ */
 function targetExists(
   target: ReturnType<typeof paramTarget>,
   byName: ReadonlyMap<string, SignatureParam>,
@@ -115,10 +111,8 @@ function targetExists(
   if (target.kind === 'name') return byName.has(target.name);
   if (target.kind === 'position') return target.position < positions;
   const owner = byName.get(target.call);
-  return (
-    owner !== undefined &&
-    (owner.factory === undefined ||
-      owner.factory.params.some((param) => param.name === target.name) ||
-      expandsTo(models?.[owner.type], target.name))
-  );
+  if (owner === undefined) return false;
+  const expansion = expansionOf(owner, models ?? {});
+  if (expansion !== null) return expansion.members.some((m) => m.name === target.name);
+  return owner.factory === undefined;
 }

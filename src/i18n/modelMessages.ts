@@ -59,6 +59,18 @@ const libraryEnUS: {
   'model.library.emptyDoc': 'empty document',
   'model.library.fileNotFound': 'file not found: {path}',
   'model.library.paramOutsideSignature': 'parameter outside the signature: "{name}"',
+  'model.library.signatureNotRead': 'file could not be read: {path}',
+  'model.library.signatureInvalid': '{reason}',
+  'model.library.signatureNotCode':
+    'the signature of a code entry must be a code signature',
+  'model.library.signatureNotDesign':
+    'the signature must be a design signature of the system "{system}"',
+  'model.library.signaturePlatformMismatch':
+    'the signature is for the platform "{found}", but the code is for the platform "{expected}"',
+  'model.library.signatureSymbolMismatch':
+    'the signature symbol ("{found}") differs from the code symbol ("{expected}")',
+  'model.library.signaturePathMismatch':
+    'the signature file ("{found}") differs from the code path ("{expected}")',
   'model.library.notRead': 'the file content was not read (expected the text)',
   'model.library.invalidJson': 'invalid JSON: {detail}',
   'model.library.specFileNotFound': 'specialization file not found: {path}',

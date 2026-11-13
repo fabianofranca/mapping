@@ -581,6 +581,7 @@ export function createEditorDerived(
     const p = project.value;
     if (!p)
       return {
+        unit: 'annotations',
         total: 0,
         byKind: { removed: 0, deprecated: 0, diverges: 0, pending: 0 },
         present: [],

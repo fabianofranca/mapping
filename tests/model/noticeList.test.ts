@@ -106,6 +106,39 @@ describe('noticeCounts', () => {
     expect(noticeCounts(noticeProject(), { kind: 'removed' }).total).toBe(2);
   });
 
+  it('com "Só avisos em uso" desmarcado conta os avisos listados (grupos), não as anotações', () => {
+    // sem nenhuma anotação com aviso: a lista tem um grupo por aviso e os botões não podem dar 0
+    let p = noticeProject();
+    p = setFieldValue(p, 'AA', 'legacyStyle', '');
+    const groups = buildNoticeList(p, { inUseOnly: false });
+    const counts = noticeCounts(p, { inUseOnly: false });
+    expect(counts.unit).toBe('notices');
+    expect(counts.total).toBe(groups.length);
+    expect(counts.byKind).toEqual({ removed: 1, deprecated: 1, diverges: 1, pending: 1 });
+    for (const kind of ['removed', 'deprecated', 'diverges', 'pending'] as const)
+      expect(counts.byKind[kind]).toBe(
+        buildNoticeList(p, { inUseOnly: false, kind }).length,
+      );
+  });
+
+  it('um projeto só com avisos pending e sem anotações conta os grupos', () => {
+    const base = noticeProject();
+    const p = { ...base, annotations: [], arrows: [] };
+    const counts = noticeCounts(p, { inUseOnly: false });
+    expect(counts.total).toBe(buildNoticeList(p, { inUseOnly: false }).length);
+    expect(counts.total).toBeGreaterThan(0);
+    expect(counts.byKind.pending).toBe(1);
+    // marcado, segue contando anotações
+    expect(noticeCounts(p, { inUseOnly: true })).toMatchObject({
+      unit: 'annotations',
+      total: 0,
+    });
+  });
+
+  it('com o filtro marcado a unidade é anotação', () => {
+    expect(noticeCounts(noticeProject(), {}).unit).toBe('annotations');
+  });
+
   it('um projeto sem avisos tem total 0', () => {
     expect(noticeCounts({ ...noticeProject(), specializations: [] }, {}).total).toBe(0);
   });

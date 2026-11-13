@@ -843,6 +843,7 @@ export const enUS: Dictionary = {
   'notice.column': 'Column {column}: {message}',
   'notices.title': 'Notices',
   'notices.kindFilter': 'Filter by notice kind',
+  'notices.kindFilterNotices': 'Filter by notice kind (numbers count notices)',
   'notices.all': 'All',
   'notices.inUseOnly': 'Only notices in use',
   'notices.visibleOnly': 'Only visible layers',

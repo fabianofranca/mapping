@@ -5,7 +5,7 @@ import {
   type ExpandModels,
   type Signature,
 } from './signatures';
-import type { ModelMessageTemplateCode } from './messages';
+import { templateMessage, type ModelMessageTemplateCode } from './messages';
 
 // A ficha `mapping-signature` no pacote da biblioteca (formatVersion 16; etapa #1079): a que o
 // `code` (ou o caso de `variants`) e a `sources` do tipo citam existe, é uma ficha válida e é a
@@ -45,21 +45,32 @@ class Checker {
 
   constructor(private readonly reader: Reader) {}
 
+  /** Erro na especialização, com código do catálogo. */
+  fail(
+    path: string,
+    code: ModelMessageTemplateCode,
+    params: Record<string, string | number> = {},
+  ): void {
+    this.add('error', this.reader.specPath, path, code, params);
+  }
+
+  /** Todo problema de ficha sai com `code` do catálogo; o `message` é o texto pt-BR dele. */
   private add(
     severity: 'error' | 'warning',
     file: string,
     path: string,
-    message: string,
+    code: ModelMessageTemplateCode,
+    params: Record<string, string | number> = {},
     missing?: string,
-    coding?: { code: ModelMessageTemplateCode; params: Record<string, string | number> },
   ): void {
     this.problems.push({
       severity,
       file,
       path,
-      message,
+      message: templateMessage(code, params).text,
       ...(missing === undefined ? {} : { missing }),
-      ...(coding ?? {}),
+      code,
+      params,
     });
   }
 
@@ -75,11 +86,11 @@ class Checker {
     const entry = byPath.get(file);
     if (entry?.text === undefined) {
       if (cited) {
-        const missing = entry === undefined;
-        const message = missing
-          ? `arquivo não encontrado: ${file}`
-          : `arquivo não pôde ser lido: ${file}`;
-        this.add('error', specPath, at, message, missing ? file : undefined);
+        if (entry === undefined) {
+          this.add('error', specPath, at, 'library.fileNotFound', { path: file }, file);
+        } else {
+          this.add('error', specPath, at, 'library.signatureNotRead', { path: file });
+        }
       }
       return null;
     }
@@ -92,7 +103,12 @@ class Checker {
     const parsed = parseSignatureText(text);
     let signature: Signature | null = null;
     if (parsed.ok) signature = parsed.signature;
-    else for (const i of parsed.issues) this.add('error', file, i.path, i.message);
+    else {
+      for (const i of parsed.issues)
+        this.add('error', file, i.path, 'library.signatureInvalid', {
+          reason: i.message,
+        });
+    }
     this.read.set(file, signature);
     return signature;
   }
@@ -109,17 +125,17 @@ class Checker {
         'warning',
         this.reader.specPath,
         `${at}.params.${outside.field}`,
-        `parâmetro fora da ficha: "${outside.name}"`,
-        undefined,
-        { code: 'library.paramOutsideSignature', params: { name: outside.name } },
+        'library.paramOutsideSignature',
+        { name: outside.name },
       );
     }
   }
 
-  /** A ficha do `code` é a do mesmo símbolo e arquivo, e os `params` estão nela. */
+  /** A ficha do `code` é a da mesma plataforma, símbolo e arquivo, e os `params` estão nela. */
   code(
     signature: Signature,
     at: string,
+    platform: string,
     symbol: string,
     path: string | undefined,
     params: Readonly<Record<string, string>> | undefined,
@@ -127,30 +143,28 @@ class Checker {
   ): void {
     const { specPath } = this.reader;
     const source = signature.source;
+    const where = `${at}.signature`;
     if (source.kind !== 'code') {
-      this.add(
-        'error',
-        specPath,
-        `${at}.signature`,
-        'a ficha do code precisa ser de código',
-      );
+      this.add('error', specPath, where, 'library.signatureNotCode');
       return;
     }
+    if (source.platform !== platform) {
+      this.add('error', specPath, where, 'library.signaturePlatformMismatch', {
+        found: source.platform,
+        expected: platform,
+      });
+    }
     if (source.symbol !== symbol) {
-      this.add(
-        'error',
-        specPath,
-        `${at}.signature`,
-        `o símbolo da ficha ("${source.symbol}") difere do symbol do code ("${symbol}")`,
-      );
+      this.add('error', specPath, where, 'library.signatureSymbolMismatch', {
+        found: source.symbol,
+        expected: symbol,
+      });
     }
     if (path !== undefined && source.path !== path) {
-      this.add(
-        'error',
-        specPath,
-        `${at}.signature`,
-        `o arquivo da ficha ("${source.path}") difere do path do code ("${path}")`,
-      );
+      this.add('error', specPath, where, 'library.signaturePathMismatch', {
+        found: source.path,
+        expected: path,
+      });
     }
     this.params(signature, at, params, models);
   }
@@ -163,6 +177,7 @@ class Checker {
  */
 function checkCase(
   checker: Checker,
+  platform: string,
   entry: SpecCode,
   kase: SpecCodeCase,
   at: string,
@@ -179,6 +194,7 @@ function checkCase(
   checker.code(
     signature,
     at,
+    platform,
     kase.symbol ?? entry.symbol,
     kase.path ?? entry.path,
     { ...entry.params, ...kase.params },
@@ -198,11 +214,26 @@ export function checkSignatures(spec: Spec, reader: Reader): SignatureCheck {
         if (entry.signature !== undefined) {
           const signature = checker.open(entry.signature, `${at}.signature`);
           if (signature !== null) {
-            checker.code(signature, at, entry.symbol, entry.path, entry.params, models);
+            checker.code(
+              signature,
+              at,
+              platform,
+              entry.symbol,
+              entry.path,
+              entry.params,
+              models,
+            );
           }
         }
         for (const [value, kase] of Object.entries(entry.variants?.cases ?? {})) {
-          checkCase(checker, entry, kase, `${at}.variants.cases.${value}`, models);
+          checkCase(
+            checker,
+            platform,
+            entry,
+            kase,
+            `${at}.variants.cases.${value}`,
+            models,
+          );
         }
       }
       (type.sources ?? []).forEach((source, si) => {
@@ -214,11 +245,8 @@ export function checkSignatures(spec: Spec, reader: Reader): SignatureCheck {
           signature.source.kind !== 'design' ||
           signature.source.system !== source.system
         ) {
-          checker.problems.push({
-            severity: 'error',
-            file: reader.specPath,
-            path: `${at}.signature`,
-            message: `a ficha precisa ser de design do sistema "${source.system}"`,
+          checker.fail(`${at}.signature`, 'library.signatureNotDesign', {
+            system: source.system,
           });
         }
       });

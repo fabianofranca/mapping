@@ -158,7 +158,10 @@ describe('paramsOutsideSignature com o expand do fieldModels (S5)', () => {
       { field: 'w', name: 'border.width' },
       { field: 'x', name: 'border.nope' },
     ]);
+    // com o modelo, vale a expansão do modelo (a mesma do importador): `enabled` é argumento da
+    // fábrica da ficha, mas não do `expand`, então o importador não o tem como unidade (CL1, S5-c)
     expect(paramsOutsideSignature(withBorder(), { params }, models)).toEqual([
+      { field: 'e', name: 'border.enabled' },
       { field: 'x', name: 'border.nope' },
     ]);
   });
@@ -210,5 +213,68 @@ describe('rótulo externo do Swift (corrigido na S2)', () => {
   it('o ignore aceita o rótulo ou o nome', () => {
     const left = unmappedParams(swift(), { params: {}, ignore: ['title'] });
     expect(left.map((u) => u.name)).toEqual(['icon']);
+  });
+});
+
+describe('paramsOutsideSignature e o importador usam a mesma expansão (CL1, S5-c)', () => {
+  const models = {
+    ButtonColors: { expand: { params: { foo: 'Color' } } },
+    Spacing: { expand: { params: { gap: 'Dp' } } },
+  } as const;
+  const sig = (): Signature => {
+    const r = parseSignature({
+      format: 'mapping-signature',
+      formatVersion: 1,
+      source: {
+        kind: 'code',
+        platform: 'compose',
+        language: 'kotlin',
+        symbol: 'x.Button',
+        path: 'Button.kt',
+        extractor: 'agent',
+      },
+      params: [
+        {
+          name: 'colors',
+          role: 'value',
+          type: 'ButtonColors',
+          value: { kind: 'opaque' },
+          factory: {
+            call: 'ButtonDefaults.buttonColors',
+            params: [{ name: 'containerColor', role: 'value', type: 'Color' }],
+          },
+        },
+        // o modelo expand não vale para quem não é value
+        { name: 'spacing', role: 'other', type: 'Spacing' },
+        // nem para o posicional
+        { name: 'pos', label: '_', role: 'value', type: 'Spacing' },
+      ],
+    });
+    if (!r.ok) throw new Error(JSON.stringify(r.issues));
+    return r.signature;
+  };
+  const outside = (value: string): string[] =>
+    paramsOutsideSignature(sig(), { params: { f: value } }, models).map((o) => o.name);
+
+  it('o argumento da fábrica que o expand do modelo não expande está fora', () => {
+    // o importador expande `colors` pelo modelo (foo), não pela fábrica (containerColor)
+    expect(outside('colors.foo')).toEqual([]);
+    expect(outside('colors.containerColor')).toEqual(['colors.containerColor']);
+  });
+
+  it('o modelo expand de um parâmetro que não expande (role other ou posicional) não vale', () => {
+    expect(outside('spacing.gap')).toEqual([]); // sem fábrica descrita: não conferido
+    expect(
+      paramsOutsideSignature(sig(), { params: { f: 'pos.gap' } }, models).map(
+        (o) => o.name,
+      ),
+    ).toEqual([]);
+  });
+
+  it('todo alvo que o importador gera como unidade é aceito pelo validador', async () => {
+    const { unitsOf } = await import('../../../src/model/signatures/importUnits');
+    for (const unit of unitsOf(sig(), models)) {
+      expect(outside(unit.target), unit.target).toEqual([]);
+    }
   });
 });

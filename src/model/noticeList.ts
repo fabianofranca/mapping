@@ -186,45 +186,72 @@ export function buildNoticeList(p: Project, filters: NoticeFilters): NoticeGroup
 }
 
 export interface NoticeCounts {
-  /** Anotações com algum aviso (não depende do filtro de `kind`). */
+  /** O que os números contam: anotações com aviso, ou avisos listados (`inUseOnly` desmarcado). */
+  readonly unit: 'annotations' | 'notices';
+  /** Total de `unit` (não depende do filtro de `kind`). */
   readonly total: number;
-  /** Anotações com aviso de cada `kind`. */
+  /** O mesmo, de cada `kind`. */
   readonly byKind: Readonly<Record<SpecNoticeKind, number>>;
   /** Os `kind` que têm aviso na especialização (com anotação ou não, conforme `inUseOnly`). */
   readonly present: readonly SpecNoticeKind[];
 }
 
 /**
- * Contagens de anotações por `kind` e no total, com os mesmos filtros de `buildNoticeList`
- * (o `kind` não conta: os botões do `Segmented` mostram todos).
+ * Contagens por `kind` e no total, com os mesmos filtros de `buildNoticeList` (o `kind` não
+ * conta: os botões do `Segmented` mostram todos). Com `inUseOnly` marcado contam anotações
+ * com aviso; desmarcado a lista traz um grupo por aviso (mesmo sem anotação), e o botão conta
+ * esses grupos.
  */
 export function noticeCounts(p: Project, filters: NoticeFilters): NoticeCounts {
-  const { inUseOnly = true, onlyLayers } = filters;
-  const places = annotationPlaces(p);
-  const allowed = onlyLayers && new Set(onlyLayers.map((l) => l.id));
-  const all = new Set<string>();
-  const perKind = new Map<SpecNoticeKind, Set<string>>();
-  for (const usage of noticeUsage(p)) {
-    const found = placesOf(usage, places, allowed);
-    if (inUseOnly && found.length === 0) continue;
-    const set = perKind.get(usage.notice.kind) ?? new Set<string>();
-    for (const place of found) {
-      set.add(place.annotation.id);
-      all.add(place.annotation.id);
-    }
-    perKind.set(usage.notice.kind, set);
-  }
-  const count = (k: SpecNoticeKind) => perKind.get(k)?.size ?? 0;
+  const inUseOnly = filters.inUseOnly ?? true;
+  const tally = tallyNotices(p, filters);
+  const count = (k: SpecNoticeKind) =>
+    (inUseOnly ? tally.annotationsByKind.get(k)?.size : tally.groupsByKind.get(k)) ?? 0;
   return {
-    total: all.size,
+    unit: inUseOnly ? 'annotations' : 'notices',
+    total: inUseOnly ? tally.annotations.size : tally.groups,
     byKind: {
       removed: count('removed'),
       deprecated: count('deprecated'),
       diverges: count('diverges'),
       pending: count('pending'),
     },
-    present: NOTICE_KINDS.filter((k) => perKind.has(k)),
+    present: NOTICE_KINDS.filter((k) => tally.annotationsByKind.has(k)),
   };
+}
+
+interface Tally {
+  readonly annotations: Set<string>;
+  readonly annotationsByKind: Map<SpecNoticeKind, Set<string>>;
+  readonly groupsByKind: Map<SpecNoticeKind, number>;
+  groups: number;
+}
+
+/** As anotações e os grupos (avisos listados) que passam pelos filtros, no total e por `kind`. */
+function tallyNotices(p: Project, filters: NoticeFilters): Tally {
+  const { inUseOnly = true, onlyLayers } = filters;
+  const places = annotationPlaces(p);
+  const allowed = onlyLayers && new Set(onlyLayers.map((l) => l.id));
+  const tally: Tally = {
+    annotations: new Set(),
+    annotationsByKind: new Map(),
+    groupsByKind: new Map(),
+    groups: 0,
+  };
+  for (const usage of noticeUsage(p)) {
+    const found = placesOf(usage, places, allowed);
+    if (inUseOnly && found.length === 0) continue;
+    const kind = usage.notice.kind;
+    const set = tally.annotationsByKind.get(kind) ?? new Set<string>();
+    for (const place of found) {
+      set.add(place.annotation.id);
+      tally.annotations.add(place.annotation.id);
+    }
+    tally.annotationsByKind.set(kind, set);
+    tally.groupsByKind.set(kind, (tally.groupsByKind.get(kind) ?? 0) + 1);
+    tally.groups += 1;
+  }
+  return tally;
 }
 
 /** Quantas anotações do projeto têm algum aviso (aba da janela e barra de status). */

@@ -16,6 +16,17 @@ export const libraryMessages = {
   'library.specAmbiguous':
     'há {count} especializações no pacote ({files}): indique qual validar',
   'library.paramOutsideSignature': 'parâmetro fora da ficha: "{name}"',
+  // Fichas `mapping-signature` do pacote (`librarySignature.ts`)
+  'library.signatureNotRead': 'arquivo não pôde ser lido: {path}',
+  'library.signatureInvalid': '{reason}',
+  'library.signatureNotCode': 'a ficha do code precisa ser de código',
+  'library.signatureNotDesign': 'a ficha precisa ser de design do sistema "{system}"',
+  'library.signaturePlatformMismatch':
+    'a ficha é da plataforma "{found}", mas o code é da plataforma "{expected}"',
+  'library.signatureSymbolMismatch':
+    'o símbolo da ficha ("{found}") difere do symbol do code ("{expected}")',
+  'library.signaturePathMismatch':
+    'o arquivo da ficha ("{found}") difere do path do code ("{expected}")',
   // Componente e especialização
   'library.componentAlreadyUsed': 'o arquivo {path} já é o componente do tipo "{typeId}"',
   'library.noSlot': 'o componente {path} não tem slot',

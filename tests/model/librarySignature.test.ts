@@ -3,6 +3,7 @@
 // e avisa do parâmetro mapeado que a ficha não tem.
 import { describe, expect, it } from 'vitest';
 import { validateLibrary, type LibraryFile } from '../../src/model/library';
+import { isModelMessageTemplateCode } from '../../src/model/messages';
 import { buttonSignature } from './signatures/fixtures';
 
 type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -237,5 +238,92 @@ describe('o caso de variants e a ficha (achados da revisão)', () => {
       ['error', 'layers[0].annotationTypes[0].code.compose.signature'],
       ['error', `${CASE_AT}.signature`],
     ]);
+  });
+});
+
+describe('plataforma da ficha e código dos problemas (CL1: S5-b e S5-d)', () => {
+  const at = 'layers[0].annotationTypes[0].code.compose.signature';
+
+  it('S5-b: a ficha de código de outra plataforma é erro com o problema claro', () => {
+    const other = buttonSignature((s) => (s.source.platform = 'swiftui'));
+    const found = issues(files(spec(), other));
+    expect(found).toEqual([
+      {
+        file: SPEC,
+        path: at,
+        severity: 'error',
+        message:
+          'a ficha é da plataforma "swiftui", mas o code é da plataforma "compose"',
+      },
+    ]);
+  });
+
+  it('S5-d: todo problema de ficha tem code do catálogo (e o texto dele)', () => {
+    const problems = [
+      // não encontrada
+      validateLibrary({ files: files(spec(), null), level: 2 }),
+      // ficha inválida por dentro
+      validateLibrary({
+        files: files(
+          spec(),
+          buttonSignature((s) => (s.params[1].role = 'bogus')),
+        ),
+        level: 2,
+      }),
+      // símbolo, arquivo e plataforma
+      validateLibrary({
+        files: files(
+          spec(),
+          buttonSignature((s) => {
+            s.source.symbol = 'x.Other';
+            s.source.path = 'other/Button.kt';
+            s.source.platform = 'swiftui';
+          }),
+        ),
+        level: 2,
+      }),
+      // ficha de design no code
+      validateLibrary({
+        files: files(
+          spec(),
+          buttonSignature((s) => {
+            s.source = {
+              kind: 'design',
+              system: 'figma',
+              id: '1',
+              name: 'B',
+              extractor: 'agent',
+            };
+          }),
+        ),
+        level: 2,
+      }),
+      // ficha de código na sources do tipo
+      validateLibrary({
+        files: [
+          ...files(
+            spec((_c, sp) => {
+              sp.layers[0].annotationTypes[0].sources = [
+                { system: 'figma', name: 'Button', signature: SIG },
+              ];
+            }),
+          ),
+        ],
+        level: 2,
+      }),
+      // parâmetro fora da ficha
+      validateLibrary({
+        files: files(
+          spec((code) => {
+            code.params = { label: 'bogus' };
+          }),
+        ),
+        level: 2,
+      }),
+    ].flatMap((r) => r.issues);
+    expect(problems.length).toBeGreaterThanOrEqual(8);
+    for (const issue of problems) {
+      expect(isModelMessageTemplateCode(issue.code ?? ''), issue.message).toBe(true);
+    }
   });
 });

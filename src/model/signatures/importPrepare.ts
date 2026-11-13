@@ -104,11 +104,19 @@ function checkCodeTarget(
       'declare a plataforma em platforms (id, name, language) antes de importar',
     );
   }
-  if (options.signature.source.kind === 'code') return null;
+  const source = options.signature.source;
+  if (source.kind !== 'code') {
+    return failure(
+      'signature-mismatch',
+      'a ficha é de design, mas o alvo é uma plataforma de código',
+      'passe system em vez de platform, ou use uma ficha de código',
+    );
+  }
+  if (source.platform === platform) return null;
   return failure(
     'signature-mismatch',
-    'a ficha é de design, mas o alvo é uma plataforma de código',
-    'passe system em vez de platform, ou use uma ficha de código',
+    `a ficha é da plataforma "${source.platform}", mas o alvo é "${platform}"`,
+    'importe a ficha na plataforma dela, ou extraia a ficha da plataforma do alvo',
   );
 }
 
