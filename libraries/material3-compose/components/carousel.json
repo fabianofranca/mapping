@@ -1143,20 +1143,27 @@
                   },
                   "fill": {
                     "type": "linear",
-                    "angle": 90,
+                    "angle": 270,
                     "stops": [
                       {
                         "offset": 0,
                         "color": {
                           "$token": "scrim",
-                          "alpha": 0
+                          "alpha": 0.55
+                        }
+                      },
+                      {
+                        "offset": 0.75,
+                        "color": {
+                          "$token": "scrim",
+                          "alpha": 0.55
                         }
                       },
                       {
                         "offset": 1,
                         "color": {
                           "$token": "scrim",
-                          "alpha": 0.32
+                          "alpha": 0
                         }
                       }
                     ]
