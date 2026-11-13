@@ -227,7 +227,7 @@ function OffsetNumber({
 function OffsetFields({ form, disabled }: FieldsProps) {
   return (
     <Property label={t('anchor.offset')} hint={t('anchor.offsetHint')}>
-      <div class="props-pair">
+      <div class="props-pair props-pair-stack">
         <OffsetNumber
           form={form}
           disabled={disabled}

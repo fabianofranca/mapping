@@ -111,6 +111,13 @@ test('seção Âncora a 900 px: os dois campos do Deslocamento cabem inteiros', 
     });
     expect(m.scroll).toBeLessThanOrEqual(m.client);
   }
+  // A fonte do CI deixa o campo 2 px mais estreito que o do Chromium local: sem folga, o "-1234"
+  // corta. No painel estreito os dois campos ficam um sobre o outro, cada um com a coluna inteira.
+  const boxes = await Promise.all([main.boundingBox(), cross.boundingBox()]);
+  const [mainBox, crossBox] = boxes;
+  if (!mainBox || !crossBox) throw new Error('campos do Deslocamento sem caixa');
+  expect(crossBox.y).toBeGreaterThan(mainBox.y + mainBox.height - 1);
+  expect(Math.min(mainBox.width, crossBox.width)).toBeGreaterThan(80);
   await expect(main).toHaveValue('-1234');
   await expect(cross).toHaveValue('5678');
 });
