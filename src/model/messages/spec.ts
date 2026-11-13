@@ -116,8 +116,6 @@ export const specMessages = {
   // Tipos
   'spec.structuralNoComponent': 'um tipo estrutural não desenha: não pode ter component',
   'spec.labelFieldNotString': '"{key}" deve ser um campo string do tipo',
-  'spec.onlyFormat15': 'só é permitido com formatVersion 15',
-  'spec.onlyFormat10': 'só é permitido com formatVersion 10',
   // Repositórios, plataformas, containers, fontes e migrações (formas do arquivo)
   'spec.urlInvalid': 'deve começar com http:// ou https://, sem espaços',
   'spec.urlTemplateNeedsPath': 'deve conter {path}',

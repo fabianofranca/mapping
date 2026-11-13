@@ -93,10 +93,10 @@ function invalidComponent(typeId: string, issue: IssueLike | undefined): ModelMe
       `${typeId}: componente inválido`,
     );
   }
-  const { at, reason, detail } = issueParts(issue);
+  const { at, reason, reasonParam, detail } = issueParts(issue);
   return modelMessage(
     'components.invalid',
-    { typeId, at, reason },
+    { typeId, at, ...reasonParam },
     `${typeId}: ${at}${reason}`,
     detail,
   );
@@ -140,10 +140,15 @@ function loadIcons(
     );
     return undefined;
   }
-  const { at, reason, detail } = issueParts(issue);
+  const { at, reason, reasonParam, detail } = issueParts(issue);
   pushProblem(
     problems,
-    modelMessage('icons.invalid', { at, reason }, `icons: ${at}${reason}`, detail),
+    modelMessage(
+      'icons.invalid',
+      { at, ...reasonParam },
+      `icons: ${at}${reason}`,
+      detail,
+    ),
   );
   return undefined;
 }

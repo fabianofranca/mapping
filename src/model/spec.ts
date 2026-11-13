@@ -518,7 +518,7 @@ const fieldType = z.enum(
   {
     error: (issue) =>
       typeof issue.input === 'string'
-        ? `"${issue.input}" inválido; use "string", "number", "date", "enum", "table" ou "ref"`
+        ? specMsg('spec.fieldTypeInvalid', { value: issue.input }).text
         : 'obrigatório',
   },
 );
@@ -594,7 +594,7 @@ const noticeShape = z
         issue.input === undefined
           ? 'obrigatório'
           : typeof issue.input === 'string'
-            ? `"${issue.input}" inválido; use "removed", "deprecated", "diverges" ou "pending"`
+            ? specMsg('spec.noticeKindInvalid', { value: issue.input }).text
             : 'deve ser "removed", "deprecated", "diverges" ou "pending"',
     }),
     message: z
@@ -1353,7 +1353,7 @@ const annotationTypeShape = z
         z.enum(SPEC_APPLIES_TO as [SpecAppliesTo, ...SpecAppliesTo[]], {
           error: (issue) =>
             typeof issue.input === 'string'
-              ? `"${issue.input}" inválido; use "marking" ou "arrow"`
+              ? specMsg('spec.appliesToInvalid', { value: issue.input }).text
               : 'deve ser "marking" ou "arrow"',
         }),
       )
@@ -1400,7 +1400,7 @@ function checkNoStructural(
       addSpecIssue(
         ctx,
         ['layers', li, 'annotationTypes', ti, 'structural'],
-        specMsg('spec.onlyFormat15'),
+        onlyFormat(15),
       );
     });
   });
@@ -1412,7 +1412,7 @@ function checkNoNotices(
   ctx: z.RefinementCtx,
 ): void {
   const only10 = (path: (string | number)[]) =>
-    addSpecIssue(ctx, [...path, 'notices'], specMsg('spec.onlyFormat10'));
+    addSpecIssue(ctx, [...path, 'notices'], onlyFormat(10));
   layers.forEach((layer, li) => {
     layer.annotationTypes.forEach((type, ti) => {
       const typePath = ['layers', li, 'annotationTypes', ti];
@@ -2218,7 +2218,7 @@ function addOriginIssues(
   if (formatVersion < 15 && Array.isArray(raw)) {
     raw.forEach((item, index) => {
       if (isRecord(item) && item.kind !== undefined) {
-        addSpecIssue(ctx, ['origins', index, 'kind'], specMsg('spec.onlyFormat15'));
+        addSpecIssue(ctx, ['origins', index, 'kind'], onlyFormat(15));
       }
     });
   }
@@ -2464,10 +2464,7 @@ function checkAcceptsAnnotations(
   eachV11Type(spec.layers, (type, _layer, path, li) => {
     eachAccepts(type, path, (items, itemsPath) => {
       if (!current) {
-        add(
-          itemsPath,
-          specMsg('spec.onlyFormat', { version: ACCEPTS_ANNOTATIONS_VERSION }),
-        );
+        add(itemsPath, onlyFormat(ACCEPTS_ANNOTATIONS_VERSION));
         return;
       }
       items.forEach((item, ii) => {
@@ -2633,7 +2630,7 @@ function checkTokens(
   if (spec.tokens === undefined) return;
   const add = issueAdder(ctx);
   if (spec.formatVersion < 15) {
-    add(['tokens'], specMsg('spec.onlyFormat15'));
+    add(['tokens'], onlyFormat(15));
     return;
   }
   if (!isRecord(spec.tokens))
@@ -2658,7 +2655,7 @@ function checkIcons(
 ): void {
   if (spec.icons === undefined) return;
   const add = issueAdder(ctx);
-  if (spec.formatVersion < 15) return add(['icons'], specMsg('spec.onlyFormat15'));
+  if (spec.formatVersion < 15) return add(['icons'], onlyFormat(15));
   if (typeof spec.icons !== 'string') {
     return add(['icons'], 'deve ser o caminho de um arquivo .json do pacote');
   }

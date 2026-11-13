@@ -15,15 +15,19 @@ export interface MessageSet {
 }
 
 /**
- * A identidade de um aviso, sem montar o texto: o código e os pares nome e valor dos parâmetros,
- * ordenados pelo nome (a ordem em que entraram não conta; nomes diferentes não se fundem). O tipo
- * do valor fica de fora de propósito: `1` e `'1'` dão o mesmo texto, e o coletor continua
- * deduplicando como o `Set<string>` de `warnings` que ele substituiu.
+ * A identidade de um aviso, sem montar o texto: o código (sozinho, sem alocar, quando não há
+ * parâmetros) e os pares nome e valor dos parâmetros, ordenados pelo nome (a ordem em que
+ * entraram não conta; nomes diferentes não se fundem), concatenados num laço. O tipo do valor
+ * fica de fora de propósito: `1` e `'1'` dão o mesmo texto, e o coletor continua deduplicando
+ * como o `Set<string>` de `warnings` que ele substituiu.
  */
 const keyOf = (code: string, params: Params): string => {
   const names = Object.keys(params);
+  if (names.length === 0) return code;
   if (names.length > 1) names.sort();
-  return [code, ...names.map((name) => `${name}\u0001${params[name]}`)].join('\u0000');
+  let key = code;
+  for (const name of names) key += `\u0000${name}\u0001${params[name]}`;
+  return key;
 };
 
 export function createMessageSet(initial: readonly ModelMessage[] = []): MessageSet {
