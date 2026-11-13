@@ -125,6 +125,9 @@ const MISSING_TODAY: string[] = [
   // etapa; cobertos por tests/model/components/direction.test.ts, directionParse.test.ts,
   // layoutDirection.test.ts, tests/mcp/directionRaster.test.ts e pelo roteiro R27.
   'component:node.direction',
+  // As âncoras lógicas `start` e `end` (RTL) também não aparecem em biblioteca distribuída.
+  'component:anchors.start',
+  'component:anchors.end',
   'component:cond.$direction',
   'component:node.icon.mirror',
   'component:node.path.mirror',

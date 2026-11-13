@@ -171,7 +171,7 @@ export const iconsFileEnUS: {
   'model.iconsFile.expectedPathData': 'expected the path data (text)',
   'model.iconsFile.expectedPaths': 'expected a non-empty list of paths',
   'model.iconsFile.formatInvalid': 'must be "{format}"',
-  'model.iconsFile.formatVersionInvalid': 'must be {versions}',
+  'model.iconsFile.formatVersionInvalid': 'must be 1 or 2',
   'model.iconsFile.v2Only': 'only allowed with formatVersion 2',
   'model.iconsFile.expectedBoolean': 'expected true or false',
   'model.iconsFile.required': 'required field',

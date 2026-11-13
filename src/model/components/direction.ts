@@ -47,15 +47,24 @@ export function usesDirection(tree: unknown): boolean {
   return someEntry(tree, directionEntry);
 }
 
+/** `anchors` com âncora lógica: em `rtl` ela troca de lado e pode perder de uma física do mesmo lado. */
+const logicalAnchorEntry = (key: string, value: unknown): boolean =>
+  key === 'anchors' && isRecord(value) && ('start' in value || 'end' in value);
+
 /**
- * A árvore pede uma passada em `rtl`? Sim quando ela fala de direção (`usesDirection`) ou espelha
- * (`mirror: true`). Fora isso o `rtl` é o espelho exato do `ltr` — os mesmos tamanhos, porque a
- * medida do texto não olha a direção —, então nenhum resultado muda e a passada se dispensa.
+ * A árvore pede uma passada em `rtl`? Sim quando ela fala de direção (`usesDirection`), espelha
+ * (`mirror: true`) ou tem âncora lógica — os três casos que mudam o resultado, e não só o lado:
+ * a condição muda o que entra na cena, e a âncora lógica que perde de uma física muda o tamanho.
+ * Fora isso o `rtl` é o espelho exato do `ltr` (os mesmos tamanhos, porque a medida do texto e o
+ * `font.align` não mexem na largura), então nenhum aviso é novo e a passada se dispensa.
  */
 export function isDirectionSensitive(tree: unknown): boolean {
   return someEntry(
     tree,
-    (key, value) => directionEntry(key, value) || (key === 'mirror' && value === true),
+    (key, value) =>
+      directionEntry(key, value) ||
+      (key === 'mirror' && value === true) ||
+      logicalAnchorEntry(key, value),
   );
 }
 

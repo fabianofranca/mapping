@@ -253,15 +253,17 @@ export function resolveSlotLayout(
   };
 }
 
-/** Caixa absoluta (na tela) do slot de uma instância, instanciando o componente na caixa da instância; nenhuma se o slot estiver invisível. */
+/** Caixa absoluta (na tela) do slot de uma instância, instanciando o componente na caixa da instância (na `direction` da tela, `ltr` por padrão); nenhuma se o slot estiver invisível. */
 export function slotBox(
   component: ComponentFile,
   instance: Instance,
   measure: TextMeasurer,
+  direction: Direction = 'ltr',
 ): Box | undefined {
   const { root } = instantiate(component, instance.values, instance.box, {
     measure,
     idPrefix: instance.id,
+    ...(direction === 'rtl' ? { direction } : {}),
   });
   for (const node of walk(root)) {
     if (node.type !== 'unknown' || node.sourceType !== 'slot') continue;
@@ -684,7 +686,7 @@ function childTargets(
   if (!slot) return null;
   const layout = resolveSlotLayout(slot, instance.values);
   if (isPlainNone(layout)) return null;
-  const box = slotBox(component, instance, measure);
+  const box = slotBox(component, instance, measure, direction);
   if (!box) return null;
   const baselines =
     layout.align === 'baseline'

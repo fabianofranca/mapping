@@ -94,7 +94,7 @@ Regras desta sessão:
 
 ## O que executar
 
-**Rodada completa (padrão).** Todos os roteiros, **R0 a R27** (sem o RP, o RF, o RA, o RB e o RT), na ordem do quadro "Comece aqui" do guia e com as dependências do começo da seção 8: R0, R1, R2, a seção 6 (repositório de teste e MCP), R3, R4, R6, R7, R5, R8 e R9 a R26. A seção 9 do guia não entra. Os roteiros principais vão a subagentes (ver "Como agir"). Com "bloco k de 5" na mensagem, você roda só o bloco k (ver "Rodada completa em blocos"); sem bloco, uma sessão roda tudo.
+**Rodada completa (padrão).** Todos os roteiros, **R0 a R27** (sem o RP, o RF, o RA, o RB e o RT), na ordem do quadro "Comece aqui" do guia e com as dependências do começo da seção 8: R0, R1, R2, a seção 6 (repositório de teste e MCP), R3, R4, R6, R7, R5, R8 e R9 a R27. A seção 9 do guia não entra. Os roteiros principais vão a subagentes (ver "Como agir"). Com "bloco k de 5" na mensagem, você roda só o bloco k (ver "Rodada completa em blocos"); sem bloco, uma sessão roda tudo.
 
 **R21 e a tag da release; passo que exige o dono.** Antes do R21, ou de um passo que só a pessoa faria: `node scripts/testing/cloud.mjs secao consulta.regras`. O R21 testa a release real e usa a tag da mensagem (`sem R21` o tira da rodada).
 

@@ -371,7 +371,16 @@ export const REPEAT_BASE_KEYS = [
   'direction',
 ];
 
-const ANCHOR_KEYS = ['left', 'right', 'top', 'bottom', 'centerX', 'centerY'] as const;
+const ANCHOR_KEYS = [
+  'left',
+  'right',
+  'top',
+  'bottom',
+  'centerX',
+  'centerY',
+  'start',
+  'end',
+] as const;
 const LAYOUT_KEYS = ['gap', 'padding', 'align', 'justify'] as const;
 const STROKE_KEYS = ['color', 'width', 'align', 'dash', 'scale'] as const;
 const SHADOW_KEYS = ['color', 'x', 'y', 'blur'] as const;

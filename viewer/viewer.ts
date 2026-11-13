@@ -399,7 +399,11 @@ export function createViewer(
       fill: current.background,
       visible: screen !== undefined,
     });
-    const changed = renderer.update(withFonts(library), current, { force, zBase: 1 });
+    const changed = renderer.update(withFonts(library), current, {
+      force,
+      zBase: 1,
+      ...(direction !== undefined ? { direction } : {}),
+    });
     if (screen && fittedKey !== fitKeyOf(screen)) applyFit();
     syncOverlay();
     if (changed || force) emitWarnings();

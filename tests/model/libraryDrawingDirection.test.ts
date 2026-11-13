@@ -135,6 +135,29 @@ describe('a prova em rtl só roda no componente sensível à direção', () => {
     ).toBe(false);
   });
 
+  it('âncora lógica (`start`/`end`) pede a prova em rtl', () => {
+    expect(
+      isDirectionSensitive(frame([rect('a', 30, { anchors: { right: 20, start: 5 } })])),
+    ).toBe(true);
+    expect(
+      isDirectionSensitive(frame([rect('a', 30, { anchors: { left: 5, right: 20 } })])),
+    ).toBe(false);
+  });
+
+  it('o que estoura só em rtl por âncora lógica com física é relatado', () => {
+    // Em `ltr` o `start` (esquerda) com o `right` esticam a barra para 75 px, que cabe; em `rtl` o
+    // `start` vira a direita, perde do `right` físico e a largura declarada (300) volta a valer.
+    const report = validate({
+      type: 'frame',
+      name: 'raiz',
+      layout: { type: 'none' },
+      children: [rect('barra', 300, { anchors: { right: 20, start: 5 } })],
+    });
+    const texts = [...report.errors, ...report.warnings].map((i) => i.message);
+    expect(texts.length).toBeGreaterThan(0);
+    expect(texts.every((m) => m.includes('em rtl'))).toBe(true);
+  });
+
   it('o componente sensível continua sendo provado nos dois sentidos', () => {
     const report = validate(
       frame([rect('a', 30), rect('largo', 300, { visible: { $direction: 'rtl' } })]),

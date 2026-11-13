@@ -13,7 +13,7 @@ export const iconsFileMessages = {
   'iconsFile.expectedPathData': 'esperava os dados do caminho (texto)',
   'iconsFile.expectedPaths': 'esperava lista não vazia de caminhos',
   'iconsFile.formatInvalid': 'deve ser "{format}"',
-  'iconsFile.formatVersionInvalid': 'deve ser {versions}',
+  'iconsFile.formatVersionInvalid': 'deve ser 1 ou 2',
   'iconsFile.v2Only': 'só é permitido com formatVersion 2',
   'iconsFile.expectedBoolean': 'esperava true ou false',
   'iconsFile.required': 'campo obrigatório',

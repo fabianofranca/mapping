@@ -286,3 +286,29 @@ describe('ScreenRenderer', () => {
     expect(renderer.warnings().size).toBe(0);
   });
 });
+
+describe('ScreenRenderer: direção de leitura (R1, #1096)', () => {
+  /** Posição x, na tela, de cada texto desenhado dentro das instâncias. */
+  function textXs(direction?: 'rtl'): number[] {
+    const { group, renderer } = setup();
+    renderer.update(library, SAMPLE_SCREEN, direction ? { direction } : {});
+    return (group.find('Text') as Konva.Text[]).map((t) => t.getAbsolutePosition().x);
+  }
+
+  it('em rtl o interior do componente é espelhado, não só a caixa da instância', () => {
+    const ltr = textXs();
+    const rtl = textXs('rtl');
+    expect(ltr.length).toBeGreaterThan(0);
+    expect(rtl).not.toEqual(ltr);
+  });
+
+  it('o padrão (sem a opção) é ltr e mudar a direção redesenha as instâncias', () => {
+    const { group, renderer } = setup();
+    renderer.update(library, SAMPLE_SCREEN);
+    const before = (group.find('Text') as Konva.Text[]).map((t) => t.getAbsolutePosition().x);
+    expect(renderer.update(library, SAMPLE_SCREEN, { direction: 'ltr' })).toBe(false);
+    expect(renderer.update(library, SAMPLE_SCREEN, { direction: 'rtl' })).toBe(true);
+    const after = (group.find('Text') as Konva.Text[]).map((t) => t.getAbsolutePosition().x);
+    expect(after).not.toEqual(before);
+  });
+});

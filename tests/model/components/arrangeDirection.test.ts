@@ -223,4 +223,86 @@ describe('arrange com direção', () => {
       180, 150,
     ]);
   });
+
+  it('rtl: a caixa do slot também é a da direção (slot ao lado de um rect), não a de ltr', async () => {
+    const { arrange } = await import('../../../src/model/components/arrange');
+    const { approximateMeasurer } =
+      await import('../../../src/model/components/instantiate');
+    const { loadLibrary } = await import('../../../src/model/components/library');
+    const comp = (id: string, template: unknown) =>
+      JSON.stringify({
+        format: 'mapping-component',
+        formatVersion: 1,
+        id,
+        name: id,
+        size: { width: 200, height: 40 },
+        template,
+      });
+    const spec = {
+      format: 'mapping-spec',
+      formatVersion: 4,
+      id: 'm',
+      name: 'M',
+      version: 1,
+      layers: [
+        {
+          id: 'l',
+          name: 'L',
+          annotationTypes: [
+            { id: 'row', name: 'Row', component: 'components/row.json', fields: [] },
+            { id: 'leaf', name: 'Leaf', component: 'components/leaf.json', fields: [] },
+          ],
+        },
+      ],
+    };
+    const library = loadLibrary([
+      { path: 'spec.json', text: JSON.stringify(spec) },
+      {
+        path: 'components/row.json',
+        text: comp('row', {
+          type: 'frame',
+          name: 'row',
+          layout: { type: 'row' },
+          children: [
+            { type: 'rect', name: 'r', width: 40, height: 40 },
+            { type: 'slot', name: 's', width: 'fill', layout: { type: 'row' } },
+          ],
+        }),
+      },
+      {
+        path: 'components/leaf.json',
+        text: comp('leaf', { type: 'frame', name: 'leaf', layout: { type: 'none' } }),
+      },
+    ]);
+    const leaf = (id: string, width: number) => ({
+      id,
+      typeId: 'leaf',
+      values: {},
+      parentId: 'p',
+      box: { x: 0, y: 0, width, height: 10 },
+    });
+    const screen = {
+      id: 's',
+      name: 'S',
+      width: 400,
+      height: 100,
+      background: '#fff',
+      instances: [
+        {
+          id: 'p',
+          typeId: 'row',
+          values: {},
+          box: { x: 0, y: 0, width: 200, height: 40 },
+        },
+        leaf('a', 20),
+        leaf('b', 30),
+      ],
+    } as unknown as Screen;
+    const xsOf = (s: Screen) => s.instances.filter((i) => i.parentId).map((i) => i.box.x);
+    expect(library.problems).toEqual([]);
+    // rtl: o rect de 40 fica à direita (160..200); o slot ocupa 0..160 e as filhas espelham nele.
+    expect(xsOf(arrange(screen, library, approximateMeasurer, 'rtl'))).toEqual([
+      140, 110,
+    ]);
+  });
 });

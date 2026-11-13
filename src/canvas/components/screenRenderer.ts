@@ -19,7 +19,7 @@ import { DEFAULT_PALETTE, type RenderPalette } from './palette';
 import type { RenderWarning } from './renderWarnings';
 import { clippedSlotBox } from '../../model/components/arrange';
 import { type Box, intersectClips } from '../../model/components/box';
-import type { FieldValues } from '../../model/components/componentFormat';
+import type { Direction, FieldValues } from '../../model/components/componentFormat';
 import { type TextMeasurer, instantiate } from '../../model/components/instantiate';
 import {
   type Library,
@@ -82,6 +82,11 @@ export interface ScreenRendererUpdateOptions {
   readonly force?: boolean;
   /** Índice, no grupo, da primeira instância (o chamador pode ter outros filhos antes). Padrão 0. */
   readonly zBase?: number;
+  /**
+   * Direção de leitura do interior dos componentes (padrão `ltr`; o editor ainda não a muda).
+   * Trocá-la re-instancia tudo.
+   */
+  readonly direction?: Direction;
 }
 
 interface Mounted {
@@ -106,6 +111,7 @@ export class ScreenRenderer {
   private readonly mounted = new Map<string, Mounted>();
   private readonly warningsById = new Map<string, readonly string[]>();
   private order: string[] = [];
+  private direction: Direction = 'ltr';
   private library: Library | undefined;
   private typesById: ReadonlyMap<string, TypeDef> = new Map();
 
@@ -129,6 +135,11 @@ export class ScreenRenderer {
   ): boolean {
     const zBase = options.zBase ?? 0;
     let force = options.force === true;
+    const direction = options.direction ?? 'ltr';
+    if (direction !== this.direction) {
+      this.direction = direction;
+      force = true;
+    }
     if (library !== this.library) {
       this.library = library;
       this.typesById = new Map((library?.types ?? []).map((type) => [type.id, type]));
@@ -369,6 +380,7 @@ export class ScreenRenderer {
     const result = instantiate(type.component, instance.values as FieldValues, local, {
       measure: this.measure,
       idPrefix: instance.id,
+      ...(this.direction === 'rtl' ? { direction: 'rtl' as const } : {}),
       ...(provided === NO_PROVIDED ? {} : { provided }),
     });
     entry.offers = result.provides;
