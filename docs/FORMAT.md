@@ -1120,14 +1120,18 @@ liga uma marcação a outra do mesmo espaço (tooltip, badge, menu) e entra na m
   continua decidido só pela geometria (`settleHierarchy` não a lê), e o `rect` continua sendo a verdade. A
   marcação **não segue a âncora sozinha**: ela só encosta de novo por uma **ação** (**Encostar** na app,
   `snap_to_anchor` e `create_marking` sem `rect` no MCP).
-- **Mover leva junto; redimensionar não.** Mover a âncora (arrastar, as setas do teclado, `move_marking`, a
+- **Mover leva junto; redimensionar não.** Mover a âncora (arrastar, as setas do teclado, `update_marking` com `move` no MCP, a
   seleção de várias) move as marcações ancoradas nela, **mesmo trancadas**, e as descendentes delas, e as ancoradas
   dessas, em cadeia: o mesmo deslocamento, numa entrada de desfazer. Redimensionar a âncora não move nenhuma.
 - **Excluir a âncora** põe `anchor: null` nas ancoradas (elas ficam onde estão).
+- **Sair do espaço do alvo solta a âncora.** Quando a marcação ancorada deixa o espaço do alvo (mover para fora do
+  container, para outro container ou para o canvas), o modelo grava `anchor: null` nela em vez de recusar a operação
+  (`anchor-other-space` só vale ao **gravar** uma âncora entre espaços diferentes); o mesmo vale quando é o alvo que
+  sai do espaço das ancoradas. O `rect` não muda por isso.
 - **Índice.** `projectIndex(p)` ganha `anchoredBy` (alvo para as ancoradas, na ordem do array) e `anchorOf` (marcação
   para o id do alvo).
-- **Proposta:** a âncora na criação e na mudança de marcação vai na `formatVersion` da proposta que já vale
-  (a proposta não sobe de versão por ela); a revisão a mostra como o campo "Âncora" e o encostar como a Posição de sempre.
+- **Proposta:** a âncora na criação e na mudança de marcação sobe a proposta para a `formatVersion` 9 (ver
+  [`PROPOSAL-FORMAT.md`](PROPOSAL-FORMAT.md); o `snap_to_anchor` sozinho não sobe: é só a Posição); a revisão a mostra como o campo "Âncora" e o encostar como a Posição de sempre.
 
 Um app anterior recusa o arquivo v20 como "versão mais nova", em vez de descartar a direção ou a âncora ao gravar.
 

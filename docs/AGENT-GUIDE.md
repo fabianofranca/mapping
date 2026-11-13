@@ -247,12 +247,13 @@ Algumas peças só fazem sentido **junto de outra**: o tooltip fica acima do bot
 - **Mover a âncora leva as ancoradas** (e as descendentes delas, em cadeia), mesmo trancadas: `update_marking` com `move` na âncora basta, não mova o tooltip também. **Redimensionar a âncora não move ninguém**.
 - **Depois de mudar o tamanho da ancorada** (um texto mais longo no tooltip, seguido do `fit_marking`) ou **da âncora**, chame `snap_to_anchor` na ancorada: ela encosta de novo (`{ "op": "snap_to_anchor", "marking": "$dica" }`), na mesma proposta e depois do passo que mudou o tamanho. O resumo diz o retângulo antes e depois, ou que nada mudou. Numa proposta, a revisão mostra a âncora como o campo **Âncora** e o encostar como a **Posição** de sempre: a pessoa pode aceitar uma e rejeitar a outra.
 - **Pôr ou tirar a âncora** de uma marcação que já existe: `update_marking` com `anchor` (não move nada; chame `snap_to_anchor` se quer encostar) e `anchor: null` (volta a "sem âncora").
-- **Excluir a âncora** deixa as ancoradas onde estão, com `anchor: null` (o lote o faz sozinho). Âncora em container, em seta, em outro espaço ou nela mesma não existe.
-- **Ler:** `get_marking` devolve `anchor` (com `to` como referência) e `anchoredBy` (as marcações ancoradas nela).
+- **Excluir a âncora** deixa as ancoradas onde estão, com `anchor: null` (o lote o faz sozinho). **Tirar a ancorada do espaço do alvo** (`update_marking` com `container`, para outro container ou para o canvas) também a solta: `anchor: null`, sem erro; para ela voltar, ancore-a de novo depois de pô-la no mesmo espaço. Âncora em container, em seta, em outro espaço ou nela mesma não existe.
+- **Ler:** `get_marking` devolve sempre `anchor` (com `to` como referência; `null` sem âncora) e `anchoredBy` (as marcações ancoradas nela; `[]` sem nenhuma).
+- **Não há tool `snap_to_anchor`:** é uma **op do lote**, como `fit_marking` (vai no `plan_changes` e no `propose_changes`). **Mover a âncora** é `update_marking` com `move`; a op `move_marking` só reordena irmãs. **A proposta que grava `anchor`** (o campo ou o valor de uma marcação criada) sai na `formatVersion` 9; a que só usa `snap_to_anchor` não sobe a versão.
 
 | `code`               | Quando                                                                                                 |
 | -------------------- | ------------------------------------------------------------------------------------------------------ |
-| `anchor-missing`     | `anchor.to` não é uma marcação do projeto (ou do lote naquele ponto).                                  |
+| `anchor-missing`     | `anchor.to` não é uma marcação do projeto. No lote, referência ou id inexistente sai como `not-found`. |
 | `anchor-self`        | A marcação ancorada nela mesma.                                                                        |
 | `anchor-cycle`       | A âncora fecharia um ciclo (A em B e B em A, direto ou em cadeia).                                     |
 | `anchor-other-space` | A âncora está em outro container, ou uma das duas está no canvas e a outra num container.              |
