@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   EMPTY_CATALOG,
+  applySpecialization,
   addComponentMarking,
   addContainer,
   componentPlacement,
@@ -27,7 +28,8 @@ import {
   wrappedContainer,
 } from './componentFixtures';
 import { FIT_SPEC_ID, LONG_LABEL, fitCatalog, fitProject } from './fitFixtures';
-import { expectValid, marking } from './fixtures';
+import { expectValid, emptyProject, marking } from './fixtures';
+import { catalog as m3Catalog, spec as m3Spec } from '../support/material3Adoption';
 import { NOTES_SPEC_ID, notesCatalog, notesProject } from './notesFixtures';
 
 const catalog = testCatalog();
@@ -1001,5 +1003,81 @@ describe('componentPlacement: filha nova num slot com wrap (MC4, decisão 12)', 
     });
     for (const id of ['T1', 'T2']) p = add(p, id, 'text', { parentId: 'C' });
     expect(rectOf(p, 'T2').x).toBe(208);
+  });
+});
+
+describe('top-app-bar da Material 3 nasce com a altura do estilo (TB1, decisão 1 da #1335)', () => {
+  const m3 = (): Project => {
+    let n = 0;
+    const p = applySpecialization(emptyProject(), m3Spec, {
+      newId: () => `TB${++n}`,
+      packageSpecName: 'material3-compose.spec.json',
+    });
+    return addContainer(p, { id: 'I1', file: null, width: 360, height: 800 } as never);
+  };
+  const create = (values?: NewComponentArgs['values']): Project =>
+    addComponentMarking(
+      m3(),
+      m3Catalog,
+      {
+        markingId: 'B',
+        annotationId: 'A_B',
+        containerId: 'I1',
+        parentId: null,
+        specId: m3Spec.id,
+        typeId: 'top-app-bar',
+        ...(values ? { values } : {}),
+      },
+      approximateMeasurer,
+    );
+
+  it.each([
+    ['small', 64],
+    ['medium', 112],
+    ['large', 152],
+  ])(
+    'sem rect, o estilo %s nasce com altura %i e a largura presa aos 360 do container',
+    (style, height) => {
+      const rect = rectOf(create({ style }), 'B');
+      expect(rect.height).toBe(height);
+      expect(rect.width).toBe(360);
+    },
+  );
+
+  it('sem values, o estilo padrão (small) dá 64', () => {
+    expect(rectOf(create(), 'B').height).toBe(64);
+  });
+
+  it('componentSize e componentPlacement dão a mesma altura do estilo', () => {
+    const base = {
+      containerId: 'I1',
+      parentId: null,
+      specId: m3Spec.id,
+      typeId: 'top-app-bar',
+      values: { style: 'medium' },
+    };
+    const size = componentSize(m3(), m3Catalog, base, approximateMeasurer);
+    const rect = componentPlacement(m3(), m3Catalog, base, approximateMeasurer);
+    expect(size.height).toBe(112);
+    expect({ width: rect.width, height: rect.height }).toEqual(size);
+  });
+
+  it('com rect explícito, o rect manda', () => {
+    const given = { x: 0, y: 0, width: 360, height: 90 };
+    const p = addComponentMarking(
+      m3(),
+      m3Catalog,
+      {
+        markingId: 'B',
+        annotationId: 'A_B',
+        containerId: 'I1',
+        parentId: null,
+        specId: m3Spec.id,
+        typeId: 'top-app-bar',
+        rect: given,
+      },
+      approximateMeasurer,
+    );
+    expect(rectOf(p, 'B')).toEqual(given);
   });
 });
