@@ -312,6 +312,38 @@ describe('scripts/testing/: auxiliares da nuvem (TR1)', () => {
       expect(out).toMatch(/aviso.*R1/i);
     });
 
+    it('tempos: trechos alternados (start/end/start/end) somam os trechos, sem aviso, e contam os run de dentro (etapa #1712, decisão 6)', async () => {
+      const { temposFromLog, formatTempos } =
+        await import('../../scripts/testing/cloud.mjs');
+      const log = [
+        'ambiente start 2026-11-04T10:00:00.000Z',
+        'ambiente end 2026-11-04T10:02:00.000Z',
+        'ambiente start 2026-11-04T10:10:00.000Z',
+        'ambiente end 2026-11-04T10:11:00.000Z',
+        // dois start e dois end seguidos: vale a regra de antes, com o aviso.
+        'R1 start 2026-11-04T10:13:00.000Z',
+        'R1 start 2026-11-04T10:14:00.000Z',
+        'R1 end 2026-11-04T10:20:00.000Z',
+        'R1 end 2026-11-04T10:26:30.000Z',
+      ].join('\n');
+      const runs = [
+        '2026-11-04T10:01:00.000Z run=1 codigo=0 checks=2 falhas=0',
+        // entre os trechos: não conta.
+        '2026-11-04T10:05:00.000Z run=2 codigo=0 checks=7 falhas=0',
+        '2026-11-04T10:10:30.000Z run=3 codigo=0 checks=3 falhas=0',
+      ].join('\n');
+      const r = temposFromLog(log, runs);
+      const amb = r.itens.find((i) => i.nome === 'ambiente');
+      expect(amb?.segundos).toBe(120 + 60);
+      expect(amb?.runs).toBe(2);
+      expect(amb?.checks).toBe(5);
+      const avisos = r.avisos.join('\n');
+      expect(avisos).not.toMatch(/ambiente/);
+      expect(avisos).toMatch(/R1.*start.*2/);
+      expect(r.itens.find((i) => i.nome === 'R1')?.segundos).toBe(13 * 60 + 30);
+      expect(formatTempos(r)).toMatch(/ambiente\s+3min00s/);
+    });
+
     it('tempos: sem o arquivo, a CLI avisa "tempo não medido"', async () => {
       apoioDir = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-tempos-'));
       const { temposFromDir, formatTempos } =
