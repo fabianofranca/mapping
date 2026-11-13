@@ -20,7 +20,7 @@ interface Panel {
 }
 
 /** Monta a página no `document` e roda o `<script>` dela com um `dash` falso. */
-function loadPanel(meta: Row, queue: Row[] = []): Panel {
+function loadPanel(meta: Row, queue: Row[] = [], opts: { colors?: unknown } = {}): Panel {
   const parsed = new DOMParser().parseFromString(readFileSync(PAGE, 'utf8'), 'text/html');
   const script = parsed.querySelector('script')?.textContent ?? '';
   document.body.replaceChildren(...Array.from(parsed.body.childNodes));
@@ -47,6 +47,7 @@ function loadPanel(meta: Row, queue: Row[] = []): Panel {
     onData: (cb: () => void) => {
       onData = cb;
     },
+    ...('colors' in opts ? { colors: opts.colors } : {}),
   };
   new Function('dash', 'setInterval', script)(dash, (cb: () => void) => {
     tickCb = cb;
@@ -875,5 +876,343 @@ describe('página do painel da fila: card "Concluídas" (PA1)', () => {
     montar();
     expect(document.querySelector('#mp-table')).toBeNull();
     expect(document.querySelectorAll('#mp-andamento article')).toHaveLength(0);
+  });
+});
+
+// Fase PA2 (etapa #1840, decisões 10 a 13): o card "Custo da fila" ganha as somas (total, por etapa
+// concluída, por hora de fila), a coluna por dia de Brasília empilhada por tipo, as barras por tipo e
+// das 8 etapas mais caras, e a tabela de hoje recolhida num `<details>`.
+describe('página do painel da fila: card "Custo da fila" (PA2)', () => {
+  const KINDS = [
+    'fase',
+    'correção',
+    'testador',
+    'reteste',
+    'fechamento',
+    'coordenador',
+    'supervisor',
+  ];
+  const sess = (
+    id: string,
+    kind: string,
+    issue: string | null,
+    usd: number,
+    extra: Row = {},
+  ) => ({
+    id,
+    kind,
+    issue,
+    cost: { usd },
+    ...extra,
+  });
+  const SESS: Row[] = [
+    sess('s1', 'fase', '#10', 1.5, { created: '2026-11-13T01:30:00Z' }),
+    sess('s2', 'testador', '#10', 2.5, { created: '2026-11-13T15:00:00Z' }),
+    sess('s3', 'fase', '#20', 1, { cost: { usd: 1, at: '2026-11-13T12:00:00Z' } }),
+  ];
+  const done = (issue: string, ended: string) =>
+    fila({ issue, status: 'concluída', ended, started: '2026-11-13T10:00:00Z' });
+  const QUEUE: Row[] = [
+    done('#10', '2026-11-13T11:00:00Z'),
+    done('#20', '2026-11-13T12:00:00Z'),
+    fila({ issue: '#30', status: 'em andamento' }),
+  ];
+  const AGORA = '2026-11-13T14:00:00Z';
+  const montar = (meta: Row, queue: Row[] = QUEUE, opts: { colors?: unknown } = {}) => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(AGORA));
+    const panel = loadPanel(meta, queue, opts);
+    panel.render();
+    return panel;
+  };
+  const cardText = (selector: string) => text(selector);
+
+  describe('somas', () => {
+    it('total e sessões, por etapa concluída e por hora de fila (runStart até agora)', () => {
+      montar({ sessions: SESS, runStart: '2026-11-13T10:00:00Z' });
+      expect(cardText('#mp-custo-total')).toBe('US$ 5.00 em 3 sessões');
+      expect(cardText('#mp-custo-etapa')).toBe('US$ 2,50');
+      expect(cardText('#mp-custo-hora')).toBe('US$ 1,25');
+    });
+
+    it('o custoResumo é um calc com as entradas meta e queue', () => {
+      const panel = montar({ sessions: SESS, runStart: '2026-11-13T10:00:00Z' });
+      const r = panel.data('custoResumo');
+      expect(r.status).toBe('ok');
+      expect(r.status === 'ok' && r.data[0]).toMatchObject({
+        usd: 5,
+        sessoes: 3,
+        concluidas: 2,
+        porEtapa: 2.5,
+      });
+    });
+
+    it('sem concluídas, o custo por etapa é "—" e o por hora segue', () => {
+      montar({ sessions: SESS, runStart: '2026-11-13T10:00:00Z' }, [
+        fila({ issue: '#30', status: 'em andamento' }),
+      ]);
+      expect(cardText('#mp-custo-etapa')).toBe('—');
+      expect(cardText('#mp-custo-hora')).toBe('US$ 1,25');
+    });
+
+    it('sem runStart ou com menos de 1 min de fila, o custo por hora é "—"', () => {
+      montar({ sessions: SESS });
+      expect(cardText('#mp-custo-hora')).toBe('—');
+      expect(cardText('#mp-custo-etapa')).toBe('US$ 2,50');
+      montar({ sessions: SESS, runStart: '2026-11-13T13:59:30Z' });
+      expect(cardText('#mp-custo-hora')).toBe('—');
+    });
+
+    it('com todas concluídas, as horas vão do runStart ao último ended, como a "Duração total"', () => {
+      montar({ sessions: SESS, runStart: '2026-11-13T10:00:00Z' }, [
+        done('#10', '2026-11-13T11:00:00Z'),
+        done('#20', '2026-11-13T12:00:00Z'),
+      ]);
+      expect(cardText('#mp-custo-hora')).toBe('US$ 2,50');
+    });
+
+    it('o tick de 1 s atualiza o custo por hora', () => {
+      const panel = montar({ sessions: SESS, runStart: '2026-11-13T10:00:00Z' });
+      vi.setSystemTime(new Date('2026-11-13T15:00:00Z'));
+      panel.tick();
+      expect(cardText('#mp-custo-hora')).toBe('US$ 1,00');
+    });
+
+    it('sem meta.sessions, cada soma mostra "—", sem erro', () => {
+      const panel = montar({ runStart: '2026-11-13T10:00:00Z' });
+      expect(panel.data('custoResumo').status).toBe('ok');
+      expect(cardText('#mp-custo-total')).toBe('—');
+      expect(cardText('#mp-custo-etapa')).toBe('—');
+      expect(cardText('#mp-custo-hora')).toBe('—');
+    });
+  });
+
+  describe('por dia de Brasília, empilhado por tipo', () => {
+    const SESS_DIA: Row[] = [
+      sess('a', 'fase', '#10', 1.5, { created: '2026-11-13T01:30:00Z' }),
+      sess('b', 'testador', '#10', 2.5, { created: '2026-11-13T15:00:00Z' }),
+      sess('c', 'fase', '#20', 1, { cost: { usd: 1, at: '2026-11-13T12:00:00Z' } }),
+      sess('d', 'coordenador', null, 0.5, { cost: { usd: 0.5 } }),
+      { id: 'e', kind: 'fase', issue: '#30', created: '2026-11-13T12:00:00Z' },
+    ];
+    const cols = () =>
+      Array.from(document.querySelectorAll<HTMLElement>('#mp-custo-dias .col')).map(
+        (c) => ({
+          dia: c.dataset.dia,
+          rot: c.querySelector('.rot')?.textContent,
+          total: c.querySelector('.v')?.textContent,
+          tipos: Array.from(c.querySelectorAll<HTMLElement>('.pilha i')).map(
+            (i) => i.dataset.tipo,
+          ),
+        }),
+      );
+
+    it('o custoDia dá uma linha por dia (Brasília) e tipo; sem created usa o cost.at', () => {
+      const panel = montar({ sessions: SESS_DIA });
+      const r = panel.data('custoDia');
+      expect(r.status).toBe('ok');
+      const rows = (r.status === 'ok' ? r.data : []).filter((x) => x.dia != null);
+      expect(rows.map(({ dia, tipo, usd }) => ({ dia, tipo, usd }))).toEqual([
+        { dia: '2026-11-12', tipo: 'fase', usd: 1.5 },
+        { dia: '2026-11-13', tipo: 'fase', usd: 1 },
+        { dia: '2026-11-13', tipo: 'testador', usd: 2.5 },
+      ]);
+    });
+
+    it('uma coluna por dia, com o total impresso e a data embaixo; a sessão sem data fica de fora', () => {
+      montar({ sessions: SESS_DIA });
+      expect(cols()).toEqual([
+        { dia: '2026-11-12', rot: '12/11', total: 'US$ 1,50', tipos: ['fase'] },
+        {
+          dia: '2026-11-13',
+          rot: '13/11',
+          total: 'US$ 3,50',
+          tipos: ['fase', 'testador'],
+        },
+      ]);
+      expect(cardText('#mp-custo-semdata')).toBe('1 sessão sem data fora do gráfico');
+    });
+
+    it('a nota no plural, e escondida quando todas têm data', () => {
+      montar({
+        sessions: [
+          sess('d', 'coordenador', null, 0.5),
+          sess('e', 'supervisor', null, 0.5),
+          sess('f', 'fase', '#10', 1, { created: '2026-11-13T12:00:00Z' }),
+        ],
+      });
+      expect(cardText('#mp-custo-semdata')).toBe('2 sessões sem data fora do gráfico');
+      montar({ sessions: SESS });
+      expect(document.querySelector<HTMLElement>('#mp-custo-semdata')?.hidden).toBe(true);
+    });
+
+    it('a pilha segue a ordem KINDS e cada trecho leva o valor no title', () => {
+      montar({ sessions: SESS_DIA });
+      const col = document.querySelector('#mp-custo-dias .col[data-dia="2026-11-13"]');
+      const seg = Array.from(col?.querySelectorAll('.pilha i') ?? []);
+      expect(seg.map((i) => i.getAttribute('title'))).toEqual([
+        'fase: US$ 1,00',
+        'testador: US$ 2,50',
+      ]);
+    });
+
+    it('o contêiner leva data-source e a legenda lista só os tipos do gráfico', () => {
+      montar({ sessions: SESS_DIA });
+      expect(document.querySelector('#mp-custo-dias')?.getAttribute('data-source')).toBe(
+        'custoDia',
+      );
+      expect(items('#mp-custo-chaves')).toEqual(['fase', 'testador']);
+    });
+
+    it('tocar numa coluna mostra o valor na dica do card', () => {
+      montar({ sessions: SESS_DIA });
+      const btn = document.querySelector<HTMLElement>(
+        '#mp-custo-dias .col[data-dia="2026-11-13"]',
+      );
+      expect(btn?.tagName).toBe('BUTTON');
+      btn?.click();
+      expect(cardText('#mp-custo-dica')).toBe(
+        '13/11 · fase: US$ 1,00 · testador: US$ 2,50 · total US$ 3,50',
+      );
+    });
+
+    it('sem sessões o gráfico mostra "—" e sem sessões com data some a nota de coluna', () => {
+      montar({});
+      expect(cardText('#mp-custo-dias')).toBe('—');
+      expect(document.querySelector('#mp-custo-dias .col')).toBeNull();
+    });
+  });
+
+  describe('barras por tipo e etapas mais caras', () => {
+    const NOMES = (sel: string) =>
+      Array.from(document.querySelectorAll(`${sel} .hb`)).map((b) => ({
+        nome: b.querySelector('.n')?.textContent,
+        valor: b.querySelector('.v')?.textContent,
+      }));
+
+    it('uma barra por tipo, na ordem KINDS, com "US$ x · k sessões" impresso', () => {
+      montar({
+        sessions: [
+          sess('1', 'testador', '#10', 0.5),
+          sess('2', 'supervisor', null, 4),
+          sess('3', 'fase', '#10', 1.5),
+          sess('4', 'fase', '#20', 2.25),
+        ],
+      });
+      expect(NOMES('#mp-custo-tipo')).toEqual([
+        { nome: 'fase', valor: 'US$ 3,75 · 2 sessões' },
+        { nome: 'testador', valor: 'US$ 0,50 · 1 sessão' },
+        { nome: 'supervisor', valor: 'US$ 4,00 · 1 sessão' },
+      ]);
+      expect(KINDS.indexOf('fase')).toBeLessThan(KINDS.indexOf('testador'));
+      const w = (n: number) =>
+        document.querySelectorAll<HTMLElement>('#mp-custo-tipo .hb i')[n]?.style.width;
+      expect(w(2)).toBe('100%');
+      expect(w(1)).toBe('12.5%');
+      expect(document.querySelector('#mp-custo-tipo')?.getAttribute('data-source')).toBe(
+        'custo',
+      );
+    });
+
+    it('as 8 etapas mais caras, da maior para a menor, com o valor impresso e no title', () => {
+      const sessions = Array.from({ length: 10 }, (_, i) =>
+        sess(`s${i}`, 'fase', `#${100 + i}`, i + 1),
+      );
+      montar({ sessions });
+      const n = NOMES('#mp-custo-etapas');
+      expect(n).toHaveLength(8);
+      expect(n[0]).toEqual({ nome: '#109', valor: 'US$ 10,00' });
+      expect(n[7]).toEqual({ nome: '#102', valor: 'US$ 3,00' });
+      const first = document.querySelector('#mp-custo-etapas .hb');
+      expect(first?.getAttribute('title')).toBe('#109: US$ 10,00');
+      expect(
+        document.querySelector('#mp-custo-etapas')?.getAttribute('data-source'),
+      ).toBe('custo');
+    });
+
+    it('tocar numa barra mostra o valor na dica do card', () => {
+      montar({
+        sessions: [sess('1', 'fase', '#10', 1.5), sess('2', 'fase', '#10', 0.5)],
+      });
+      const barra = document.querySelector<HTMLElement>('#mp-custo-tipo .hb');
+      expect(barra?.tagName).toBe('BUTTON');
+      barra?.click();
+      expect(cardText('#mp-custo-dica')).toBe('fase: US$ 2,00 · 2 sessões');
+    });
+
+    it('sem meta.sessions as duas listas mostram "—"', () => {
+      montar({});
+      expect(cardText('#mp-custo-tipo')).toBe('—');
+      expect(cardText('#mp-custo-etapas')).toBe('—');
+    });
+  });
+
+  describe('tabela recolhida', () => {
+    it('a tabela de hoje fica dentro do details "Ver a tabela de todas as etapas e tipos", fechado', () => {
+      montar({ sessions: SESS });
+      const det = document.querySelector('#mp-custo')?.closest('details');
+      expect(det).not.toBeNull();
+      expect(det?.open).toBe(false);
+      expect(det?.querySelector('summary')?.textContent).toBe(
+        'Ver a tabela de todas as etapas e tipos',
+      );
+      expect(rows('#mp-custo')).toEqual([
+        ['Tipo: fase', '2', '2.50', '1.25'],
+        ['Tipo: testador', '1', '2.50', '2.50'],
+        ['Etapa: #10', '2', '4.00', '2.00'],
+        ['Etapa: #20', '1', '1.00', '1.00'],
+      ]);
+    });
+
+    it('a abertura do details sobrevive a uma nova leitura', () => {
+      const panel = montar({ sessions: SESS });
+      const det = document.querySelector('#mp-custo')?.closest('details');
+      if (det) det.open = true;
+      panel.render();
+      expect(document.querySelector('#mp-custo')?.closest('details')?.open).toBe(true);
+    });
+  });
+
+  describe('cores dos tipos', () => {
+    const cor = (tipo: string) =>
+      document.querySelector<HTMLElement>(`#mp-custo-tipo .hb i[data-tipo="${tipo}"]`);
+
+    it('com dash.colors, cada tipo leva a cor da sua posição em KINDS', () => {
+      montar({ sessions: SESS }, QUEUE, {
+        colors: ['#010101', '#020202', '#030303', '#040404'],
+      });
+      expect(cor('fase')?.style.getPropertyValue('--cor')).toBe('#010101');
+      expect(cor('testador')?.style.getPropertyValue('--cor')).toBe('#030303');
+      const seg = document.querySelector<HTMLElement>(
+        '#mp-custo-dias .pilha i[data-tipo="testador"]',
+      );
+      expect(seg?.style.getPropertyValue('--cor')).toBe('#030303');
+      const sw = document.querySelector<HTMLElement>('#mp-custo-chaves li .amostra');
+      expect(sw?.style.getPropertyValue('--cor')).toBe('#010101');
+    });
+
+    it('sem dash.colors, as cores de estado da página em rodízio (classes cor-0 a cor-3)', () => {
+      montar({ sessions: SESS });
+      expect(cor('fase')?.className).toContain('cor-0');
+      expect(cor('testador')?.className).toContain('cor-2');
+      expect(cor('fase')?.style.getPropertyValue('--cor')).toBe('');
+    });
+
+    it('dash.colors que não é lista de textos não derruba a página', () => {
+      for (const colors of [undefined, null, 3, {}, [], [1, 2]]) {
+        expect(() => montar({ sessions: SESS }, QUEUE, { colors })).not.toThrow();
+        expect(cor('fase')?.className).toContain('cor-0');
+      }
+    });
+  });
+
+  it('sem meta.sessions nenhuma parte do card quebra e o resto do painel continua', () => {
+    const panel = montar({ sessions: 'texto inválido' });
+    expect(() => panel.render()).not.toThrow();
+    expect(cardText('#mp-custo-total')).toBe('—');
+    expect(cardText('#mp-custo-dias')).toBe('—');
+    expect(cardText('#mp-custo-tipo')).toBe('—');
+    expect(cardText('#mp-custo-etapas')).toBe('—');
+    expect(document.querySelector('#mp-custo tbody')?.children).toHaveLength(0);
   });
 });

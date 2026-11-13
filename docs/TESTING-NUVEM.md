@@ -112,11 +112,11 @@ Nos três casos, **não peça confirmação**: monte a lista e ponha-a no começ
 
 **Passada visual.** A lista de janelas e diálogos depende do modo:
 
-- **Rodada dirigida** (modos 2 e 3: lista de roteiros/passos ou fases de uma etapa): a linha "passada visual: `<lista>`" da mensagem; "passada visual: nenhuma" pula a passada, e o relato diz "Passada visual: não pedida"; sem a linha, a lista padrão (abaixo).
+- **Rodada dirigida** (modos 2 e 3: lista de roteiros/passos ou fases de uma etapa): a linha "passada visual: `<lista>`" da mensagem; "passada visual: nenhuma" pula a passada, e o relato diz "Passada visual: não pedida"; sem a linha na mensagem, a lista padrão (abaixo).
 - **Reteste** (modo 1, achados de um relato anterior): só as janelas e os diálogos citados nos achados do relato, nunca a lista padrão nem a da mensagem.
-- **Rodada completa:** a lista padrão, ou a "passada visual: `<lista>`" da mensagem, se vier.
+- **Rodada completa:** a lista padrão; se a mensagem trouxer "passada visual: `<lista>`", use essa em vez da padrão.
 - **Rodada dirigida em grupos:** a linha "passada visual: `<lista>`" da mensagem vale para o grupo que a recebe; o coordenador a põe em um grupo só, e nos outros a mensagem diz "nenhuma" (o relato diz "Passada visual: não pedida").
-- **Rodada completa em blocos:** só o **bloco 4** faz a passada visual (lista padrão ou a da mensagem); nos outros, o relato diz "Passada visual: no bloco 4".
+- **Rodada completa em blocos:** só o **bloco 4** faz a passada visual (lista padrão, ou a da mensagem); nos blocos 1, 2, 3 e 5, o relato diz "Passada visual: no bloco 4".
 
 **Detalhe da passada visual** (lista padrão, foco, Perspectivas, Conteúdo fora da imagem): `node scripts/testing/cloud.mjs secao consulta.passada`.
 
@@ -160,17 +160,17 @@ O corpo (cadeias, modo grupo e retestes juntos): `node scripts/testing/cloud.mjs
 
 ## Relato
 
-**Escreva o relato a cada roteiro concluído, não só no fim.** Ao terminar o R0, crie o `relato.md` na pasta de trabalho com o cabeçalho e os passos do R0; a cada roteiro seguinte, acrescente os passos e os achados dele e grave o arquivo (template da seção 10 do guia). Se a rodada parar no meio, o motivo vai no **Resumo**.
+**Escreva o relato a cada roteiro concluído, não só no fim.** Ao terminar o R0, crie o `relato.md` na pasta de trabalho com o cabeçalho e os passos do R0; ao terminar cada roteiro seguinte, acrescente os passos e os achados dele e grave o arquivo (template da seção 10 do guia). Uma sessão interrompida não pode perder o observado; se a rodada parar no meio, o motivo vai no **Resumo**.
 
-O `relato.md` abre com `Modo: dirigido, grupo k de n (<roteiros>)` no modo de grupo e com `Modo: completo, bloco k de 5 (<roteiros>)` no de bloco; os achados são `k.1`, `k.2`…. O `relato.md` leva o cabeçalho inteiro (inclusive o **Tempo por roteiro**), em **Ferramenta**: "Claude Code na nuvem (Xvfb, Playwright por CDP, xdotool, AT-SPI)" e o MCP por stdio; o **Resumo** (obrigatório), os passos, os achados com a severidade da escala do guia, as **Observações (sem severidade)** e "O que atrapalhou", inclusive o que atrapalhou **você** como testador. Cada ❌ leva o bloco **Reprodução** ("Conferir e registrar"), que a correção repete.
+O `relato.md` abre com `Modo: dirigido, grupo k de n (<roteiros>)` no modo de grupo e com `Modo: completo, bloco k de 5 (<roteiros>)` no de bloco; os achados são `k.1`, `k.2`…. O `relato.md` leva o cabeçalho inteiro (inclusive o **Tempo por roteiro**, ver abaixo), em **Ferramenta**: "Claude Code na nuvem (Xvfb, Playwright por CDP, xdotool, AT-SPI)" e o MCP por stdio; o **Resumo** (obrigatório), os passos, os achados com a severidade da escala do guia, as **Observações (sem severidade)** e "O que atrapalhou", inclusive o que atrapalhou **você** como testador (passo ambíguo, esperado que não dá para observar, contorno que precisou usar). Cada ❌ leva o bloco **Reprodução** ("Conferir e registrar"), que a correção repete.
 
 **Leitura pelo `passo` e pelo `secao`.** Em "O que atrapalhou", registre se o `passo` não deu o que o passo precisava (por exemplo, o corte de 25.000 ou um trecho que faltou), **quantas chamadas ao `passo` e quantas ao `secao` fez** (some as dos subagentes, no fim de cada `relato-<lote>.md`, para o cabeçalho) e se precisou ler o `guia.md` por `Read`.
 
-**✅ agrupados.** Na tabela de passos, passos seguidos do mesmo roteiro que passaram **sem observação** viram uma **faixa** de uma linha (`R11.1 a R11.10 | | ✅ |`). ❌, "não executado" e passo com observação têm linha própria, e a faixa recomeça depois deles. Na dirigida por achados, a faixa só junta passos do mesmo achado de origem. O **Resumo** conta por passo: dez passos numa faixa são dez ✅ (regra completa no template da seção 10 do guia).
+**✅ agrupados.** Na tabela de passos, passos seguidos do mesmo roteiro que passaram **sem observação** viram uma **faixa** de uma linha (`R11.1 a R11.10 | | ✅ |`). ❌, "não executado" e passo com observação têm linha própria, e a faixa recomeça depois deles. Na dirigida por achados, a faixa só junta passos do mesmo achado de origem. O **Resumo** continua contando por passo: dez passos numa faixa são dez ✅. A regra completa está no template da seção 10 do guia.
 
-**Tempo real.** Marque o início e o fim de cada roteiro e da passada visual (`visual`) com `mark(apoioDir, '<roteiro>', 'start' | 'end')` (ou `cloud.mjs mark`); o `cloud-up.sh` já marca o `ambiente`; a seção 6 é `secao6`. O **Tempo por roteiro** sai de `apoio/tempos.log`: `node scripts/testing/cloud.mjs tempos <apoio>` (duração por nome, total de `run` e de checks): **copie a saída e os avisos** (nome sem par é "tempo não medido") para o cabeçalho; sem o arquivo, escreva "tempo não medido", **nunca estime**.
+**Tempo real.** Marque o início e o fim de cada roteiro e da passada visual (`visual`) com `mark(apoioDir, '<roteiro>', 'start' | 'end')` (também `cloud.mjs mark`); o `cloud-up.sh` já marca o `ambiente`, e a seção 6 é `secao6`. O **Tempo por roteiro** sai de `apoio/tempos.log`: `node scripts/testing/cloud.mjs tempos <apoio>` (duração por nome, total de `run` e de checks): **copie a saída e os avisos** (nome sem par é "tempo não medido") para o cabeçalho. Sem o arquivo, escreva "tempo não medido" — **nunca estime**.
 
-**Montagem sem ler.** Acrescente cada `apoio/relato-<lote>.md` ao `relato.md` pela shell (`cat >>`), sem abri-lo, a cada roteiro concluído; os totais e os achados (com o código final) vêm da linha de retorno do subagente. O `mark` é seu: antes do primeiro lote do roteiro e depois do último. Para os anexos dos ❌, leia só o trecho que a linha de retorno aponta.
+**Montagem sem ler.** Acrescente cada `apoio/relato-<lote>.md` ao `relato.md` pela shell (`cat >>`), sem abri-lo, a cada roteiro concluído; os totais e os achados (com o código final) vêm da linha de retorno do subagente. O `mark(apoioDir, '<roteiro>', 'start' | 'end')` é seu: antes do primeiro lote do roteiro e depois do último. Para os anexos dos ❌, leia só o achado, pelo trecho que a linha de retorno aponta.
 
 **Entrega, no fim da rodada:**
 
@@ -191,8 +191,8 @@ Você não cria branch, não faz commit nem abre PR, e não edita nada no reposi
 - `pkill -f chrome` (mata a própria shell e faz o Chrome restaurar abas); feche pelo CDP.
 - Salvar por cima de um arquivo existente (o GTK sobrescreve sem perguntar): confira com `test -e` antes.
 - Usar o **preview** ou o Deploy.
-- Editar o repositório, abrir PR, fazer commit ou push: o relato só vai como comentário de issue (salvo o commit e o push das capturas no branch `evidencias`).
+- Editar qualquer coisa no repositório, abrir PR, fazer commit ou push: o relato só vai como comentário de issue (a não ser o commit e o push das capturas no branch `evidencias`).
 - Usar pastas fora de `~/mapping-testes/`, além do clone.
 - Apagar projetos ou dados do site no navegador, ou limpar os dados do site; abrir janela anônima.
 - Dar como testado o que não observou: passo que não puder ser executado fica "não executado (motivo)".
-- Mandar arquivos para fora do ambiente, salvo o relato e as capturas dos ❌ (conversa, sub-issue e `evidencias`).
+- Mandar arquivos para fora do ambiente, a não ser o relato e as capturas dos ❌ (conversa, sub-issue e branch `evidencias`).

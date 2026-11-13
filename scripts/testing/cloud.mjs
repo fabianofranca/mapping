@@ -704,11 +704,31 @@ function runsFromLog(text) {
 }
 
 /**
+ * Os trechos `[start, end]` de um nome quando as marcas, em ordem de hora, alternam `start`, `end`,
+ * `start`, `end` (começam em `start`, terminam em `end`, cada end não antes do seu start); senão `null`.
+ */
+function trechosAlternados(marcas) {
+  const ordem = [...marcas].sort((a, b) => a.t - b.t);
+  if (ordem.length === 0 || ordem.length % 2 !== 0) return null;
+  const trechos = [];
+  for (let i = 0; i < ordem.length; i += 2) {
+    const [a, b] = [ordem[i], ordem[i + 1]];
+    if (a.fase !== 'start' || b.fase !== 'end') return null;
+    trechos.push([a.t, b.t]);
+  }
+  return trechos;
+}
+
+/**
  * Lê o texto de um `tempos.log` (`<nome> <start|end> <hora ISO>` por linha) e devolve, por nome,
  * a duração do primeiro `start` ao último `end`, o total e os avisos (etapa #482, decisão 8).
  * Marca repetida vira aviso; nome sem par (ou com o fim antes do início) fica com `segundos: null`.
  * Com o texto do `runs.log` (etapa #1533, decisão 7), cada item traz também `runs` e `checks`: os
  * `run` gravados entre o primeiro `start` e o último `end` do roteiro.
+ * Trechos (etapa #1712, decisão 6): se as marcas de um nome, em ordem de hora, alternam
+ * `start`, `end`, `start`, `end` (começam em `start` e terminam em `end`, como no `ambiente` quando o
+ * `cloud-up.sh` roda duas vezes), a duração é a soma dos trechos, `runs` e `checks` contam os `run`
+ * de dentro de qualquer trecho e não há aviso. Fora desse padrão vale a regra acima.
  */
 export function temposFromLog(text, runsText) {
   const nomes = new Map();
@@ -721,8 +741,9 @@ export function temposFromLog(text, runsText) {
       avisos.push(`${nome} ${fase}: hora inválida "${hora ?? ''}" (linha ignorada)`);
       continue;
     }
-    const e = nomes.get(nome) ?? { start: [], end: [] };
+    const e = nomes.get(nome) ?? { start: [], end: [], marcas: [] };
     e[fase].push(t);
+    e.marcas.push({ fase, t });
     nomes.set(nome, e);
   }
   const runs = runsText === undefined ? null : runsFromLog(runsText);
@@ -730,8 +751,9 @@ export function temposFromLog(text, runsText) {
   let totalSegundos = 0;
   const totalRuns = { runs: 0, checks: 0 };
   for (const [nome, e] of nomes) {
+    const trechos = trechosAlternados(e.marcas);
     for (const fase of ['start', 'end']) {
-      if (e[fase].length > 1) {
+      if (!trechos && e[fase].length > 1) {
         avisos.push(
           `${nome} ${fase}: marca repetida (${e[fase].length} vezes); valem o primeiro start e o último end`,
         );
@@ -740,7 +762,10 @@ export function temposFromLog(text, runsText) {
     const ini = e.start.length ? Math.min(...e.start) : null;
     const fim = e.end.length ? Math.max(...e.end) : null;
     let segundos = null;
-    if (ini === null || fim === null) {
+    if (trechos) {
+      segundos = Math.round(trechos.reduce((soma, [a, b]) => soma + (b - a), 0) / 1000);
+      totalSegundos += segundos;
+    } else if (ini === null || fim === null) {
       avisos.push(`${nome}: falta a marca de ${ini === null ? 'start' : 'end'}`);
     } else if (fim < ini) {
       avisos.push(`${nome}: o end vem antes do start`);
@@ -751,7 +776,11 @@ export function temposFromLog(text, runsText) {
     const item = { nome, segundos };
     if (runs) {
       const dentro =
-        segundos === null ? [] : runs.filter((r) => r.t >= ini && r.t <= fim);
+        segundos === null
+          ? []
+          : runs.filter((r) =>
+              (trechos ?? [[ini, fim]]).some(([a, b]) => r.t >= a && r.t <= b),
+            );
       item.runs = dentro.length;
       item.checks = dentro.reduce((soma, r) => soma + r.checks, 0);
       totalRuns.runs += item.runs;

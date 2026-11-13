@@ -12,7 +12,7 @@ import { createHarness, renderLive } from './harness';
 afterEach(cleanup);
 
 describe('texto cortado com dica', () => {
-  it('a linha da camada sem anotação tem o resumo inteiro no title', () => {
+  it('a camada sem anotação mostra a frase inteira numa nota, não num resumo cortado', () => {
     const harness = createHarness(sampleProject());
     renderLive(harness, (p) => {
       const m = p.markings.find((x) => x.id === 'M2');
@@ -29,9 +29,11 @@ describe('texto cortado com dica', () => {
         />
       );
     });
-    // M2 só tem anotação na L1: a L2 mostra o resumo de camada vazia.
-    const summary = screen.getByText(t('annotation.emptySection'));
-    expect(summary.getAttribute('title')).toBe(t('annotation.emptySection'));
+    // M2 só tem anotação na L1: a L2 mostra a nota de camada vazia (CL1, 1.4), abaixo do cabeçalho
+    // e fora do `.layer-group-summary`, que corta com reticências.
+    const note = screen.getByText(t('annotation.emptySection'));
+    expect(note.classList.contains('layer-group-empty')).toBe(true);
+    expect(note.closest('.layer-group-summary')).toBeNull();
   });
 
   it('cada nível do caminho tem o nome inteiro no title', () => {

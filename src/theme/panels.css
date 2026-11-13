@@ -812,6 +812,12 @@ button.tree-toggle:hover {
   margin-bottom: 0;
 }
 
+/* Janela estreita (Detalhes abertos, 180 px): as duas abas cabem sem rolagem lateral mesmo com
+   fonte larga (CL2, 1.1a); o rótulo continua inteiro. */
+.catalog-window .tab {
+  padding-inline: var(--space-1);
+}
+
 .library-empty {
   display: flex;
   flex-direction: column;
@@ -851,19 +857,25 @@ button.tree-toggle:hover {
 
 .library-type {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-2);
+  gap: var(--space-0-5) var(--space-2);
   min-height: var(--row-height);
 }
 
 .library-type-main {
-  /* O nome e o ícone de container ficam na mesma linha; o nome corta com reticências. */
+  /* O nome e o ícone de container ficam na mesma linha; o nome quebra em vez de cortar, e o
+     botão Adicionar desce para a linha de baixo quando não cabe ao lado dele (CL1, 1.1). */
   display: flex;
-  flex: 1 1 0;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-1);
-  min-width: 0;
+  gap: var(--space-0-5) var(--space-1);
+  /* A palavra mais longa do nome cabe inteira: sem espaço ao lado do botão, a linha quebra
+     (CL2, 1.1a) em vez de partir o nome no meio com a janela estreita (Detalhes abertos). */
+  min-width: min-content;
+  max-width: 100%;
 }
 
 .library-type-main > .icon,
@@ -872,25 +884,16 @@ button.tree-toggle:hover {
 }
 
 .library-type-name {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: min-content;
+  overflow-wrap: break-word;
 }
 
-/* O botão Adicionar cede espaço ao nome: fica com no máximo metade da linha; o rótulo corta com
-   reticências à direita (o botão é flex, então o corte fica no span interno). */
+/* O botão Adicionar nunca é cortado: o rótulo fica inteiro e, sem espaço ao lado do nome, a
+   linha quebra e o botão vai para baixo, à direita. */
 .library-type > button {
-  flex: 0 1 auto;
-  min-width: 0;
-  max-width: 50%;
-}
-
-.library-type-add-label {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  flex: none;
+  max-width: 100%;
+  margin-left: auto;
 }
 
 /* Ordem entre irmãs (Detalhes da marcação): "N de M" e os dois botões. */

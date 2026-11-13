@@ -38,6 +38,12 @@ describe('tabelas do Catálogo', () => {
     }
   });
 
+  it('células do documento e nomes da lista não partem a palavra (CL1, 1.3)', () => {
+    expect(rule('.catalog-page .markdown td')).not.toMatch(/anywhere|break-all/);
+    expect(rule('.catalog-entry-name')).not.toMatch(/anywhere|break-all/);
+    expect(rule('.catalog-entry')).toMatch(/flex-wrap:\s*wrap/);
+  });
+
   it('o aviso de destino é sticky no topo', () => {
     const body = rule('.catalog-notice');
     expect(body).toMatch(/position:\s*sticky/);
