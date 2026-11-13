@@ -44,7 +44,7 @@ O detalhamento de uma unidade roda em `effort: high` quando o plano depende de j
 
 Quanto às **fases** da tabela de modelos e esforço (decisão 11 da #1324): a fase que toca a infraestrutura do fluxo ou algo crítico recebe coordenador **high com `/code-review high`**, qualquer que seja o tamanho. Gatilhos de risco:
 
-- os skills `implementar-fila`, `detalhar-backlog` e `supervisionar-fila`, o `painel.py`, ou uma regra (não só o texto) do `docs/FLOW.md` ou do `docs/PROCESS.md`;
+- os skills `implementar-fila`, `detalhar-backlog`, `supervisionar-fila` e `via-rapida`, o `painel.py`, ou uma regra (não só o texto) do `docs/FLOW.md` ou do `docs/PROCESS.md`;
 - `.github/workflows/`, `scripts/release/`, `scripts/ci/distBudget.mjs` (as guardas do teto; o `scripts/ci/dist-budget.json`, que a subida grava, não conta) ou `mcp/version.ts`;
 - a versão do schema ou do formato (`formatVersion`);
 - a gravação do `mapping.json` (`src/store/session.ts`) ou a CSP (`pwa/csp.ts`).
