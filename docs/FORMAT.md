@@ -1,4 +1,4 @@
-# Formato do `mapping.json` (schema v19)
+# Formato do `mapping.json` (schema v20)
 
 O projeto é uma pasta (ou um zip com o mesmo conteúdo) com `mapping.json`, `images/` (os arquivos de imagem dos containers) e,
 se houver especializações aplicadas, `specs/` (e, se houver propostas de alteração, `proposals/`). Todas as coordenadas das marcações são
@@ -98,7 +98,7 @@ como `M1` nos exemplos também valem). Cores são `#RRGGBB`.
 
 | Campo              | Tipo    | Descrição                                                                    |
 | ------------------ | ------- | ---------------------------------------------------------------------------- |
-| `schemaVersion`    | `18`    | Versão do schema.                                                            |
+| `schemaVersion`    | `20`    | Versão do schema.                                                            |
 | `revision`         | inteiro | Contador de gravações (v6, ver abaixo).                                      |
 | `app`              | string  | Sempre `"mapping"` (a leitura aceita também `"mapeador-imagens"`).           |
 | `coordinateSystem` | string  | Sempre `"image-pixels-exif-oriented"`: pixels da imagem, EXIF aplicado.      |
@@ -107,6 +107,7 @@ como `M1` nos exemplos também valem). Cores são `#RRGGBB`.
 | `platformRepos`    | objeto  | Clone local de cada plataforma (v7; só `localPath` desde a v11, ver abaixo). |
 | `docRepos`         | objeto  | Clone local de cada repositório de documentos (v14, ver "Campos da v14").    |
 | `drawingMode`      | string  | Modo do desenho do projeto (v18, opcional, ver "Campos da v18").             |
+| `direction`        | string  | Direção de leitura do projeto (v20, opcional, ver "Campos da v20").          |
 | `layers`           | array   | Camadas, **globais** (valem para todos os containers), na ordem de exibição. |
 | `containers`       | array   | Containers do projeto (v12; antes `images`).                                 |
 | `markings`         | array   | Marcações retangulares (de um container ou do canvas, v13).                  |
@@ -123,7 +124,7 @@ no projeto; `null` no container sem arquivo, v10: ver abaixo); `width` e `height
 `parentId` (v13: `null` ou a marcação do canvas que envolve o container, calculado pela app; ver abaixo);
 `markingColor` (`null` ou cor); `locked` (booleano, v5: ver abaixo); `source` (`null` ou origem, v8:
 ver abaixo); `background` (`null` ou cor `#RRGGBB`, v10: a cor de fundo do container sem arquivo);
-`drawingMode` (v18, opcional: o modo do desenho que o container fixa; ver "Campos da v18"); `density` (v19, opcional: pixels da imagem por unidade do componente; ver "Campos da v19").
+`drawingMode` (v18, opcional: o modo do desenho que o container fixa; ver "Campos da v18"); `direction` (v20, opcional: a direção de leitura que o container fixa, `ltr` ou `rtl`; ver "Campos da v20"); `density` (v19, opcional: pixels da imagem por unidade do componente; ver "Campos da v19").
 
 **`markings[]`**: `id`; `containerId` (v12; antes `imageId`; `null` na marcação do canvas, v13); `parentId` (marcação-pai ou `null`,
 calculado pela app desde a v13); `name` (`string` ou `null`);
@@ -1072,6 +1073,34 @@ Um app anterior recusa o arquivo v19 como "versão mais nova", em vez de descart
 Só `schemaVersion` muda para 19; nenhum dado é alterado (nenhuma densidade é criada). Como em toda migração, o
 original vai para `backups/` antes da primeira gravação e a faixa da migração aparece no topo.
 
+## Campos da v20 (direção e âncora)
+
+A v20 acrescenta a **direção de leitura**: `ltr` (da esquerda para a direita) ou `rtl` (da direita para a
+esquerda). O motor dos componentes a recebe e espelha as fileiras (`row`), as grades, as posições `start` e `end` e
+os nós `mirror` (ver [`COMPONENT-FORMAT.md`](COMPONENT-FORMAT.md), "Direção de leitura"). A **âncora** entra na
+fase seguinte da mesma versão (v20): esta seção traz só a direção.
+
+- **`direction` na raiz** (`"ltr"` ou `"rtl"`, opcional): a direção do projeto. Ausente vale `ltr`. Fica depois de
+  `drawingMode`.
+- **`containers[].direction`** (`"ltr"` ou `"rtl"`, opcional): a direção que o container fixa. Ausente, o container
+  **segue o projeto**. A marcação do canvas (`containerId` nulo) e a flutuante seguem sempre o projeto. A direção
+  efetiva de uma marcação é a do seu container, se ele fixa uma; senão a do projeto; senão `ltr`. Fica depois de
+  `drawingMode` e antes de `density`.
+- **`null` no container** é lido como ausente e **não é gravado**; o campo só aparece no arquivo quando tem valor.
+  Qualquer valor fora de `ltr`/`rtl` é erro de schema (o arquivo não abre).
+- **O que a direção muda:** só o desenho e o Arrumar dos componentes (fileiras e grades espelham, a primeira filha
+  de uma linha encosta na direita, a posição de uma filha nova vem à esquerda da última). Nenhum pixel de
+  marcação muda ao trocar a direção; a especialização e o componente não mudam.
+- **Proposta:** o campo `direction` do container e da entidade `project` vai na `formatVersion` 8 da proposta (ver
+  [`PROPOSAL-FORMAT.md`](PROPOSAL-FORMAT.md)).
+
+Um app anterior recusa o arquivo v20 como "versão mais nova", em vez de descartar a direção ao gravar.
+
+### Migração v19 → v20
+
+Só `schemaVersion` muda para 20; nenhum dado é alterado (nenhuma direção é criada). Como em toda migração, o
+original vai para `backups/` antes da primeira gravação e a faixa da migração aparece no topo.
+
 ## Migração
 
 Arquivos v1 são migrados ao abrir: toda imagem recebe `name: null` e toda anotação recebe
@@ -1082,7 +1111,7 @@ imagem e em cada marcação. Arquivos v5 recebem `revision: 0`. Arquivos v6 rece
 Arquivos v7 recebem `source: null` em cada imagem e em cada marcação. Arquivos v8 perdem os valores dos
 campos `codeRef`, pelo tipo declarado na cópia da especialização (ver "Campos da v9"). Arquivos v9
 recebem `background: null` em cada imagem (ver "Campos da v10"). Arquivos v10 perdem o `urlTemplate` de
-cada entrada de `platformRepos`, e a entrada que só o tinha sai (ver "Campos da v11"). Arquivos v11 trocam `images` por `containers` e `imageId` por `containerId` (ver "Campos da v12"). Arquivos v12 perdem `inherit` de cada anotação e ganham `floating: false` em cada marcação, `parentId: null` em cada container e `arrows: []` na raiz (ver "Campos da v13"). Arquivos v13 ganham `parentRole: null` em cada anotação e `docRepos: {}` na raiz (ver "Campos da v14"). Arquivos v14 só sobem o número (ver "Campos da v15"). Arquivos v15 ganham `project.id` (um UUID novo), `perspectives: []` e `arrivals: []` (ver "Campos da v16"). Arquivos v16 só sobem o número (ver "Campos da v17"). Arquivos v17 só sobem o número (ver "Campos da v18"). Arquivos v18 só sobem o número (ver "Campos da v19"). Ao salvar, o
-arquivo passa a ser v18 (e, no modo pasta, o original vai antes para `backups/`, como em qualquer
+cada entrada de `platformRepos`, e a entrada que só o tinha sai (ver "Campos da v11"). Arquivos v11 trocam `images` por `containers` e `imageId` por `containerId` (ver "Campos da v12"). Arquivos v12 perdem `inherit` de cada anotação e ganham `floating: false` em cada marcação, `parentId: null` em cada container e `arrows: []` na raiz (ver "Campos da v13"). Arquivos v13 ganham `parentRole: null` em cada anotação e `docRepos: {}` na raiz (ver "Campos da v14"). Arquivos v14 só sobem o número (ver "Campos da v15"). Arquivos v15 ganham `project.id` (um UUID novo), `perspectives: []` e `arrivals: []` (ver "Campos da v16"). Arquivos v16 só sobem o número (ver "Campos da v17"). Arquivos v17 só sobem o número (ver "Campos da v18"). Arquivos v18 só sobem o número (ver "Campos da v19"). Arquivos v19 só sobem o número (ver "Campos da v20"). Ao salvar, o
+arquivo passa a ser v20 (e, no modo pasta, o original vai antes para `backups/`, como em qualquer
 migração).
 Arquivos de versão mais nova abrem somente para leitura.

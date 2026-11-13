@@ -182,9 +182,9 @@ describe('schema v16', () => {
     expect(deserialize(JSON.stringify(raw), migrations).ok).toBe(false);
   });
 
-  it('o v20 abre só para leitura ("versão mais nova")', () => {
+  it('o v21 abre só para leitura ("versão mais nova")', () => {
     const p = withPerspectives();
-    const newer = JSON.stringify({ ...JSON.parse(serialize(p)), schemaVersion: 20 });
+    const newer = JSON.stringify({ ...JSON.parse(serialize(p)), schemaVersion: 21 });
     const loaded = load(newer);
     expect(loaded.readOnly).toBe(true);
     expect(loaded.project.perspectives).toHaveLength(2);

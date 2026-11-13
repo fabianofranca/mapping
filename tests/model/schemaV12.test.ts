@@ -42,7 +42,7 @@ describe('migração v11 → v12 (containers)', () => {
     expect(SCHEMA_VERSION).toBe(20);
     expect(migrations.get(11)).toBe(migrateFrom11To12);
     expect([...migrations.keys()]).toEqual([
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
     ]);
   });
 
