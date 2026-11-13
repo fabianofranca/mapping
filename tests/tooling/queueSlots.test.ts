@@ -447,9 +447,10 @@ describe('painel.py — correções da revisão final (VG3, #1440)', () => {
     );
   });
 
-  it('achado 4: âncoras diferentes só separam o docs/TESTING.md; nos outros arquivos conflitam', () => {
-    expect(motivo('docs/ARCHITECTURE.md#X', 'docs/ARCHITECTURE.md#Y')).toBe(
-      '#2 arquivo docs/ARCHITECTURE.md#Y com #1',
+  it('achado 4: âncoras diferentes separam os .md de docs/ e da raiz; nos outros arquivos conflitam', () => {
+    expect(motivo('docs/ARCHITECTURE.md#X', 'docs/ARCHITECTURE.md#Y')).toBe('#2 começa');
+    expect(motivo('viewer/README.md#X', 'viewer/README.md#Y')).toBe(
+      '#2 arquivo viewer/README.md#Y com #1',
     );
     expect(motivo('docs/TESTING.md#R1', 'docs/TESTING.md#R2')).toBe('#2 começa');
   });
