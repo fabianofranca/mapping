@@ -1,4 +1,4 @@
-# Via rápida para ajuste pequeno de processo — [Não lançado] (épico `epic/via-rapida`, PR #0, MCP sem mudança, schema v19)
+# Via rápida para ajuste pequeno de processo — [Não lançado] (épico `epic/via-rapida`, PR #1870, MCP sem mudança, schema v19)
 
 ## Adicionado
 
