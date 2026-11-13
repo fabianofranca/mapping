@@ -80,29 +80,6 @@
       color: var(--color-fg-muted);
       font-weight: var(--cds-font-weight-medium);
     }
-    #mp .pill {
-      display: inline-block;
-      padding: 1px 8px;
-      border-radius: 999px;
-      font-size: var(--cds-font-size-caption);
-      border: 1px solid var(--color-border-line);
-      white-space: nowrap;
-    }
-    #mp .s-concluída {
-      color: var(--color-ok);
-    }
-    #mp .s-em-andamento {
-      color: var(--color-warn);
-    }
-    #mp .s-falhou {
-      color: var(--color-bad);
-    }
-    #mp .s-aguardando {
-      color: var(--color-fg-muted);
-    }
-    #mp .s-esperando-dono {
-      color: var(--color-bad);
-    }
     #mp ul {
       list-style: none;
       margin: 0;
@@ -118,51 +95,6 @@
       color: var(--color-fg-muted);
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
-    }
-    #mp .chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-    }
-    #mp .chip {
-      font-size: var(--cds-font-size-caption);
-      padding: 0 6px;
-      border-radius: 4px;
-      border: 1px solid var(--color-border-line);
-      color: var(--color-fg-muted);
-      white-space: nowrap;
-    }
-    #mp .chip.ok {
-      color: var(--color-ok);
-      border-color: var(--color-ok);
-    }
-    #mp .chip.todo {
-      color: var(--color-fg-muted);
-      border: 1px dashed var(--color-border-line);
-      font-weight: normal;
-    }
-    #mp .chip.now {
-      color: var(--color-warn);
-      border-color: var(--color-warn);
-      font-weight: 600;
-    }
-    #mp .flow {
-      display: flex;
-      gap: 2px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    #mp .flow span {
-      font-size: var(--cds-font-size-caption);
-      color: var(--color-fg-muted);
-      white-space: nowrap;
-    }
-    #mp .flow span.done {
-      color: var(--color-ok);
-    }
-    #mp .flow span.cur {
-      color: var(--color-warn);
-      font-weight: 600;
     }
     #mp .gap {
       display: grid;
@@ -188,88 +120,35 @@
       border: 0;
       font-size: var(--cds-font-size-caption);
     }
-    #mp .grafo {
-      position: relative;
-      margin-top: 8px;
-    }
-    #mp .faixa {
-      padding: 8px 0;
-      border-top: 1px solid var(--color-border-line);
-    }
-    #mp .faixa-rot {
+    #mp .tipo,
+    #mp .fluxo {
       font-size: var(--cds-font-size-caption);
+      padding: 0 6px;
+      border-radius: 4px;
+      border: 1px solid var(--color-border-line);
       color: var(--color-fg-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-bottom: 4px;
-    }
-    #mp .faixa-nos {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--cds-gap-md);
-    }
-    #mp .no {
-      flex: 1 1 11rem;
-      max-width: 16rem;
-      min-width: 0;
-      min-height: 44px;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      box-sizing: border-box;
-      padding: 6px 8px;
-      font: inherit;
-      font-size: var(--cds-font-size-caption);
-      color: inherit;
-      text-align: left;
-      cursor: pointer;
-      background: var(--color-panel);
-      border: 2px solid var(--color-border-line);
-      border-radius: var(--cds-radius);
-    }
-    #mp .no > span {
-      display: block;
-      min-width: 0;
       overflow-wrap: anywhere;
+      min-width: 0;
     }
-    #mp .no .topo {
-      display: flex;
-      justify-content: space-between;
-      gap: 6px;
-    }
-    #mp .no .num {
+    #mp .num {
       font-weight: 600;
       font-variant-numeric: tabular-nums;
     }
-    #mp .no .selo {
-      padding: 0 6px;
-      border-radius: 999px;
-      border: 1px solid var(--color-ok);
-      color: var(--color-ok);
-      font-weight: 600;
-    }
-    #mp .no .tit {
-      display: -webkit-box;
-      -webkit-box-orient: vertical;
-      -webkit-line-clamp: 2;
-      line-clamp: 2;
-      overflow: hidden;
-      font-size: var(--cds-font-size-body);
-    }
-    #mp .no .prog,
-    #mp .no .mot,
-    #mp .no .espera {
+    #mp .ajuda {
       color: var(--color-fg-muted);
+      margin: 8px 0 0;
+      overflow-wrap: anywhere;
     }
-    #mp .no .est {
-      font-weight: 600;
-    }
-    #mp .no[aria-pressed='true'] {
-      outline: 2px solid var(--color-fg-muted);
-      outline-offset: 1px;
-    }
-    #mp .no.dim {
-      opacity: 0.45;
+    #mp .sr {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      border: 0;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
     }
     #mp .amostra {
       display: inline-block;
@@ -278,6 +157,191 @@
       box-sizing: border-box;
       border: 2px solid var(--color-border-line);
       border-radius: 3px;
+    }
+    #mp .amostra.fase-ok {
+      border-color: var(--color-ok);
+    }
+    #mp .amostra.fase-open {
+      border-color: var(--color-warn);
+    }
+    #mp .amostra.fase-todo,
+    #mp .amostra.w-arquivo {
+      border-style: dashed;
+      border-color: var(--color-fg-muted);
+    }
+    #mp .amostra.w-dep {
+      border-color: var(--color-fg-muted);
+    }
+    #mp .trilho {
+      margin-top: 8px;
+    }
+    #mp .onda {
+      position: relative;
+      display: grid;
+      grid-template-columns: 74px minmax(0, 1fr);
+      gap: var(--cds-gap-md);
+      padding-bottom: var(--cds-gap-md);
+    }
+    #mp .onda::before {
+      content: '';
+      position: absolute;
+      left: 5px;
+      top: 0;
+      bottom: 0;
+      border-left: 2px solid var(--color-border-line);
+    }
+    #mp .parada {
+      position: sticky;
+      top: 0;
+      align-self: start;
+      margin-left: 18px;
+      padding: 2px 0;
+      min-width: 0;
+      background: var(--color-panel);
+      font-size: var(--cds-font-size-caption);
+      overflow-wrap: anywhere;
+    }
+    #mp .parada .rot,
+    #mp .parada .qtd {
+      display: block;
+    }
+    #mp .parada .rot {
+      font-weight: 600;
+    }
+    #mp .parada .qtd {
+      color: var(--color-fg-muted);
+    }
+    #mp .ponto {
+      position: absolute;
+      left: -18px;
+      top: 4px;
+      width: 12px;
+      height: 12px;
+      box-sizing: border-box;
+      border: 2px solid var(--color-fg-muted);
+      border-radius: 50%;
+      background: var(--color-panel);
+    }
+    #mp .parada.agora .ponto {
+      border-color: var(--color-ok);
+      background: var(--color-ok);
+    }
+    #mp .etapas {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+      gap: var(--cds-gap-md);
+      min-width: 0;
+    }
+    #mp .etapa {
+      display: grid;
+      align-content: start;
+      gap: 6px;
+      min-width: 0;
+      box-sizing: border-box;
+      padding: var(--cds-pad-lg);
+      font-size: var(--cds-font-size-caption);
+      background: var(--color-panel);
+      border: 1px solid var(--color-border-line);
+      border-radius: var(--cds-radius);
+      overflow-wrap: anywhere;
+    }
+    #mp .onda[data-onda='0'] .etapa {
+      border-width: 2px;
+    }
+    #mp .etapa .topo {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+    }
+    #mp .etapa .est {
+      margin-left: auto;
+      font-weight: 600;
+    }
+    #mp .etapa .selo {
+      padding: 0 6px;
+      border-radius: 999px;
+      border: 1px solid var(--color-ok);
+      color: var(--color-ok);
+      font-weight: 600;
+    }
+    #mp .etapa > button {
+      min-height: 44px;
+      width: 100%;
+      padding: 0;
+      font: inherit;
+      color: inherit;
+      text-align: left;
+      cursor: pointer;
+      background: none;
+      border: 0;
+    }
+    #mp .etapa > button[aria-pressed='true'] .tit {
+      text-decoration: underline;
+    }
+    #mp .etapa .tit {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      overflow: hidden;
+      font-size: var(--cds-font-size-body);
+    }
+    #mp .tags,
+    #mp .fases,
+    #mp .espera,
+    #mp .rodape {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px;
+    }
+    #mp .fase,
+    #mp .w {
+      position: relative;
+      display: inline-flex;
+      gap: 3px;
+      padding: 0 6px;
+      border-radius: 4px;
+      border: 1px solid var(--color-fg-muted);
+      color: var(--color-fg-muted);
+      font-variant-numeric: tabular-nums;
+    }
+    #mp .fase.ok {
+      color: var(--color-ok);
+      border-color: var(--color-ok);
+    }
+    #mp .fase.ok::before {
+      content: '\2713';
+    }
+    #mp .fase.open {
+      color: var(--color-warn);
+      border-color: var(--color-warn);
+      font-weight: 600;
+    }
+    #mp .fase.todo,
+    #mp .w.arquivo {
+      border-style: dashed;
+    }
+    #mp .barra {
+      height: 4px;
+      border-radius: 2px;
+      background: var(--color-border-line);
+      overflow: hidden;
+    }
+    #mp .barra i {
+      display: block;
+      height: 100%;
+      background: var(--color-ok);
+    }
+    #mp .etapa .mot,
+    #mp .etapa .espera,
+    #mp .rodape {
+      color: var(--color-fg-muted);
+    }
+    #mp .rodape {
+      justify-content: space-between;
+      font-variant-numeric: tabular-nums;
     }
     #mp .e-rodando {
       border-color: var(--color-warn);
@@ -305,60 +369,94 @@
       border-style: dotted;
       color: var(--color-fg-muted);
     }
-    #mp .e-exclusiva {
+    #mp .onda .etapa.e-exclusiva {
       border-style: double;
       border-width: 4px;
     }
     #mp .amostra.e-exclusiva {
+      border-style: double;
       border-width: 3px;
     }
-    #mp .setas {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      overflow: visible;
-      pointer-events: none;
+    #mp .amostra.e-arquivo {
+      border-style: dashed;
     }
-    #mp .setas path[data-de] {
-      fill: none;
-      stroke: var(--color-fg-muted);
-      stroke-width: 1.5;
-      marker-end: url(#mp-ponta);
+    #mp .amostra.e-segurada,
+    #mp .amostra.e-ficha {
+      border-style: dotted;
     }
-    #mp .setas path[data-tipo='arquivo'] {
-      stroke-dasharray: 5 4;
+    #mp .foco .etapa.dim {
+      opacity: 0.35;
     }
-    #mp .setas path.dim {
-      opacity: 0.25;
+    #mp .etapa.foco-sel {
+      outline: 3px solid var(--color-fg-muted);
+      outline-offset: 2px;
     }
-    #mp .setas path[data-longa] {
-      stroke-width: 2;
+    #mp .etapa.foco-espera {
+      outline: 2px dashed var(--color-warn);
+      outline-offset: 2px;
     }
-    #mp .setas marker path {
-      fill: var(--color-fg-muted);
+    #mp .etapa.foco-segura {
+      outline: 2px solid var(--color-ok);
+      outline-offset: 2px;
     }
-    #mp .detalhe {
-      margin-top: 12px;
-      padding: var(--cds-pad-lg);
-      border: 1px solid var(--color-border-line);
-      border-radius: var(--cds-radius);
+    #mp .dia {
+      margin-bottom: var(--cds-gap-md);
+    }
+    #mp .dia-rot {
+      font-size: var(--cds-font-size-caption);
+      color: var(--color-fg-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    #mp .cl {
       display: grid;
-      gap: 4px;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 4px var(--cds-gap-md);
+      padding: 6px 0;
+      border-bottom: 1px solid var(--color-border-line);
     }
-    #mp .detalhe[hidden] {
-      display: none;
+    #mp .cl .tit {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
-    #mp .detalhe button {
-      justify-self: start;
+    #mp .cl .resto {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 4px 12px;
+      min-width: 0;
+      font-variant-numeric: tabular-nums;
+    }
+    #mp .cl .hora,
+    #mp .cl .dur,
+    #mp .cl .custo {
+      color: var(--color-fg-muted);
+      white-space: nowrap;
+    }
+    #mp details summary {
+      display: flex;
+      align-items: center;
       min-height: 44px;
-      padding: 0 16px;
-      font: inherit;
-      color: inherit;
       cursor: pointer;
-      background: var(--color-panel);
-      border: 1px solid var(--color-border-line);
-      border-radius: var(--cds-radius);
+    }
+    @media (max-width: 560px) {
+      #mp .onda {
+        grid-template-columns: 46px minmax(0, 1fr);
+      }
+      #mp .parada .qtd {
+        display: none;
+      }
+      #mp .cl {
+        grid-template-columns: auto minmax(0, 1fr);
+      }
+      #mp .cl .resto {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+      }
     }
   </style>
   <h1>Fila de desenvolvimento</h1>
@@ -391,35 +489,18 @@
     </div>
   </div>
   <div class="gap">
-    <div class="card">
-      <h2>Dependências e ordem de entrada</h2>
+    <div class="card" id="mp-andamento">
+      <h2>Andamento</h2>
       <p class="linha" id="mp-grafo-vagas">—</p>
       <p class="linha" id="mp-grafo-ordem" hidden>—</p>
       <ul class="legenda" id="mp-grafo-legenda" hidden></ul>
-      <div class="grafo" id="mp-grafo">—</div>
-      <div class="detalhe" id="mp-grafo-detalhe" hidden></div>
+      <div class="trilho" id="mp-grafo">—</div>
+      <p class="ajuda" id="mp-grafo-ajuda" hidden></p>
     </div>
-    <div class="card">
-      <h2>Passo a passo</h2>
-      <div class="scroll">
-        <table data-source="queue" data-row-key="issue" id="mp-table">
-          <thead>
-            <tr>
-              <th data-field="order">Ordem</th>
-              <th data-field="issue">Issue</th>
-              <th data-field="title">Título</th>
-              <th data-field="kind">Tipo</th>
-              <th data-field="phases">Fases</th>
-              <th data-field="stage">Fluxo</th>
-              <th data-field="step">Passo atual</th>
-              <th data-field="status">Status</th>
-              <th data-field="pr">PR</th>
-              <th>Duração</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+    <div class="card" id="mp-concluidas">
+      <h2>Concluídas</h2>
+      <p class="sub" id="mp-concluidas-resumo">—</p>
+      <div id="mp-concluidas-lista">—</div>
     </div>
     <div class="card">
       <h2>Custo da fila</h2>
@@ -565,73 +646,21 @@
         const d = dash.data(id);
         return d.status === 'ok' ? d.data : [];
       };
-      const FLOW = ['Fases', 'Testador', 'Correção', 'Fechamento', 'Mesclada'];
-      function flowIndex(r) {
-        const s = String(r.stage || '');
-        if (r.status === 'concluída') return 4;
-        if (!s) return r.status === 'em andamento' ? 0 : -1;
-        const k = FLOW.findIndex((f) => s.indexOf(f) === 0);
-        return k;
-      }
-      function flowCell(r) {
-        const w = document.createElement('div');
-        w.className = 'flow';
-        const cur = flowIndex(r);
-        FLOW.forEach((f, i) => {
-          const sp = document.createElement('span');
-          sp.textContent = (i ? '› ' : '') + f;
-          if (cur > i || r.status === 'concluída') sp.className = 'done';
-          else if (cur === i) sp.className = 'cur';
-          w.appendChild(sp);
-        });
-        return w;
-      }
-      const PHASE_TITLE = { ok: 'concluída', todo: 'por fazer' };
-      function phaseCell(r) {
-        const w = document.createElement('div');
-        const n = +r.phasesTotal || 0;
-        const head = document.createElement('div');
-        head.textContent = n ? (+r.phasesDone || 0) + ' / ' + n : '—';
-        w.appendChild(head);
-        if (n) {
-          const c = document.createElement('div');
-          c.className = 'chips';
-          let firstOpen = true;
-          String(r.phases || '')
-            .split('|')
-            .forEach((p) => {
-              const [code, st] = p.split(':');
-              const sp = document.createElement('span');
-              sp.className = 'chip';
-              sp.textContent = code;
-              sp.title = code + ': ' + (PHASE_TITLE[st] || 'aberta');
-              if (st === 'ok') sp.classList.add('ok');
-              else if (st === 'todo') sp.classList.add('todo');
-              else if (firstOpen && r.status === 'em andamento') {
-                sp.classList.add('now');
-                firstOpen = false;
-              }
-              c.appendChild(sp);
-            });
-          w.appendChild(c);
-        }
-        return w;
-      }
       const REPO_URL = 'https://github.com/fabianofranca/mapping';
-      // Link para a issue ou o PR: o `n` do endereço vem só dos dígitos que o padrão captura.
-      function ghLink(value, pattern, kind) {
+      // Link para a issue ou o PR: o `n` do endereço vem só dos dígitos que o padrão captura; o texto é
+      // o valor ou, com `label`, o que ele devolve para os dígitos.
+      function ghLink(value, pattern, kind, label) {
         const m = pattern.exec(String(value == null ? '' : value).trim());
         if (!m) return null;
         const a = document.createElement('a');
         a.href = REPO_URL + '/' + kind + '/' + m[1];
         a.target = '_blank';
         a.rel = 'noopener';
-        a.textContent = String(value);
+        a.textContent = label ? label(m[1]) : String(value);
         return a;
       }
-      // Grafo (etapa #1761): o painel.py calcula ondas, estados, ordem e setas (meta.grafoNos e
-      // meta.grafoSetas); a página só agrupa por onda, mantém a ordem recebida e vê se a seta é vizinha.
-      const SVG_NS = 'http://www.w3.org/2000/svg';
+      // Andamento (etapa #1840): o painel.py calcula ondas, estados, ordem e setas (meta.grafoNos e
+      // meta.grafoSetas); a página agrupa por onda, junta a linha do queue pelo `issue` e destaca a cadeia.
       const ESTADOS = [
         ['rodando', 'rodando'],
         ['dono', 'esperando o dono'],
@@ -643,7 +672,21 @@
         ['ficha', 'ficha incompleta'],
       ];
       const ESTADO_ROTULO = Object.fromEntries(ESTADOS);
+      const FASE_ESTADO = { ok: 'mesclada', open: 'aberta', todo: 'ainda não aberta' };
+      const ESPERA_TIPO = { dep: 'dependência', arquivo: 'arquivo em comum' };
       const NENHUMA_ELEGIVEL = 'nenhuma ready elegível';
+      const AJUDA = 'Toque num card para ver o que ele espera e quem espera por ele.';
+      const TZ = 'America/Sao_Paulo';
+      const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+      const byId = (id) => document.getElementById(id);
+      const asText = (v) => (v == null ? '' : String(v));
+      const finite = (v) => {
+        const x = Number(v);
+        return Number.isFinite(x) ? x : 0;
+      };
+      const validTime = (s) => (typeof s === 'string' ? t(s) : NaN);
+      const brl = (x) =>
+        x.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       const el = (tag, cls, text) => {
         const e = document.createElement(tag);
         if (cls) e.className = cls;
@@ -651,267 +694,399 @@
         return e;
       };
       let grafo = { nos: [], setas: [], sel: null, onda: new Map() };
-      const arrowsOf = (issue) =>
-        grafo.setas.filter((a) => a.de === issue || a.para === issue);
-      // A mesma onda vale para a faixa e para as setas: ausente ou não numérica é a 0 ("Agora").
+      // A mesma onda vale para o trilho e para o "espera": ausente ou não numérica é a 0 ("Agora").
       const ondaDe = (n) => Number(n.onda) || 0;
-      const isNear = (a) => grafo.onda.get(a.para) - grafo.onda.get(a.de) === 1;
-      const progress = (n) => {
-        const total = +n.total || 0;
-        if (!total) return '';
-        const p = (+n.feitas || 0) + '/' + total;
-        return n.fase ? n.fase + ' · ' + p : p;
-      };
-      function buildCard(n) {
-        const b = el('button', 'no e-' + (ESTADO_ROTULO[n.estado] ? n.estado : 'x'));
+      const isObj = (x) => x !== null && typeof x === 'object';
+      const rotuloEstado = (e) => (has(ESTADO_ROTULO, e) ? ESTADO_ROTULO[e] : asText(e));
+      function rankOf(n) {
+        if (n.rank == null || n.rank === '') return null;
+        const x = Number(n.rank);
+        return Number.isFinite(x) ? x : null;
+      }
+      function numLink(issue) {
+        const a = ghLink(issue, /^#(\d+)$/, 'issues');
+        if (!a) return el('span', 'num', asText(issue));
+        a.className = 'num';
+        return a;
+      }
+      function prLink(value) {
+        const a = ghLink(value, /^(\d+)$/, 'pull', (n) => 'PR #' + n);
+        if (a) a.className = 'pr';
+        return a;
+      }
+      function fluxoText(r) {
+        const stage = asText(r.stage).trim();
+        const ci = asText(r.ciWait).trim();
+        if (!ci) return stage;
+        return stage ? stage + ' · CI: ' + ci : 'CI: ' + ci;
+      }
+      function buildTop(n) {
+        const top = el('div', 'topo');
+        top.append(numLink(n.issue));
+        const rank = rankOf(n);
+        if (rank != null) top.append(el('span', 'selo', rank + 'º'));
+        top.append(el('span', 'est', rotuloEstado(n.estado)));
+        return top;
+      }
+      function buildButton(n) {
+        const b = el('button');
         b.type = 'button';
-        b.dataset.issue = n.issue;
         b.setAttribute('aria-pressed', 'false');
-        const top = el('span', 'topo');
-        top.appendChild(el('span', 'num', String(n.issue)));
-        if (n.rank != null) top.appendChild(el('span', 'selo', n.rank + 'º'));
-        b.appendChild(top);
-        b.appendChild(el('span', 'tit', String(n.titulo || '')));
-        const prog = progress(n);
-        if (prog) b.appendChild(el('span', 'prog', prog));
-        if (n.motivo) b.appendChild(el('span', 'mot', String(n.motivo)));
-        b.appendChild(
-          el('span', 'est', ESTADO_ROTULO[n.estado] || String(n.estado || '')),
-        );
-        const longas = grafo.setas.filter((a) => a.para === n.issue && !isNear(a));
-        if (longas.length) {
-          b.appendChild(
-            el('span', 'espera', 'espera ' + longas.map((a) => a.de).join(', ')),
-          );
-        }
+        b.append(el('span', 'tit', asText(n.titulo)));
         b.addEventListener('click', () => {
           grafo.sel = grafo.sel === n.issue ? null : n.issue;
           markSelection();
         });
         return b;
       }
-      function buildDetail(n) {
-        const d = document.getElementById('mp-grafo-detalhe');
-        // O detalhe é refeito a cada leitura: devolve o foco ao link ou ao "Limpar" que o tinha.
-        const had = d.contains(document.activeElement) ? document.activeElement : null;
-        const focusedKey = had ? (had.tagName === 'A' ? 'a' : 'button') : null;
-        d.replaceChildren();
-        if (!n) {
-          d.hidden = true;
-          return;
+      function buildTags(r) {
+        const tags = el('div', 'tags');
+        if (r.kind) tags.append(el('span', 'tipo', asText(r.kind)));
+        const fluxo = fluxoText(r);
+        if (fluxo) tags.append(el('span', 'fluxo', fluxo));
+        const pr = prLink(r.pr);
+        if (pr) tags.append(pr);
+        return tags.children.length ? tags : null;
+      }
+      function parsePhases(r) {
+        if (typeof r.phases !== 'string') return [];
+        return r.phases
+          .split('|')
+          .map((p) => p.trim())
+          .filter(Boolean)
+          .map((p) => {
+            const i = p.indexOf(':');
+            const st = i < 0 ? '' : p.slice(i + 1).trim();
+            return {
+              cod: i < 0 ? p : p.slice(0, i),
+              st: has(FASE_ESTADO, st) ? st : 'todo',
+            };
+          });
+      }
+      function buildFases(r) {
+        const fases = parsePhases(r);
+        if (!fases.length) return null;
+        const box = el('div', 'fases');
+        for (const f of fases) {
+          const c = el('span', 'fase ' + f.st);
+          c.title = f.cod + ': ' + FASE_ESTADO[f.st];
+          c.append(el('span', 'cod', f.cod), el('span', 'sr', FASE_ESTADO[f.st]));
+          box.append(c);
         }
-        const head = el('div', 'num');
-        const link = ghLink(n.issue, /^#(\d+)$/, 'issues');
-        head.appendChild(link || document.createTextNode(String(n.issue)));
-        d.appendChild(head);
-        d.appendChild(el('div', '', String(n.titulo || '')));
-        d.appendChild(el('div', '', ESTADO_ROTULO[n.estado] || String(n.estado || '')));
-        if (n.motivo) d.appendChild(el('div', '', String(n.motivo)));
-        const de = (tipo) =>
-          grafo.setas
-            .filter((a) => a.para === n.issue && a.tipo === tipo)
-            .map((a) => a.de);
-        if (de('dep').length)
-          d.appendChild(el('div', '', 'Depende de: ' + de('dep').join(', ')));
-        if (de('arquivo').length) {
-          d.appendChild(
-            el('div', '', 'Arquivo em comum com: ' + de('arquivo').join(', ')),
+        return box;
+      }
+      // Fases feitas e total: da linha do queue; sem ela (ou sem fases nela), do nó. Sem total, null.
+      function progressOf(n, r) {
+        const rt = finite(r.phasesTotal);
+        const total = rt > 0 ? rt : finite(n.total);
+        if (!(total > 0)) return null;
+        const done = rt > 0 ? finite(r.phasesDone) : finite(n.feitas);
+        return { done: Math.min(Math.max(done, 0), total), total };
+      }
+      function buildBar(p) {
+        const bar = el('div', 'barra');
+        const fill = el('i');
+        fill.style.width = (100 * p.done) / p.total + '%';
+        bar.append(fill);
+        return bar;
+      }
+      function buildEspera(into) {
+        const box = el('div', 'espera');
+        box.append('espera');
+        for (const a of into) {
+          const tipo = has(ESPERA_TIPO, a.tipo) ? a.tipo : 'dep';
+          const w = el('span', 'w ' + tipo);
+          w.title = ESPERA_TIPO[tipo];
+          w.append(el('span', 'n', a.de), el('span', 'sr', ESPERA_TIPO[tipo]));
+          box.append(w);
+        }
+        return box;
+      }
+      function buildWhy(n) {
+        const into = grafo.setas.filter((a) => a.para === n.issue);
+        if (grafo.onda.get(n.issue) >= 1 && into.length) return buildEspera(into);
+        return n.motivo ? el('div', 'mot', asText(n.motivo)) : null;
+      }
+      function liveDur(r) {
+        const s = validTime(r.started);
+        if (!Number.isFinite(s)) return null;
+        const e = validTime(r.ended);
+        const d = el('span', 'dur', fmt((Number.isFinite(e) ? e : Date.now()) - s));
+        if (!Number.isFinite(e)) d.dataset.s = String(s);
+        return d;
+      }
+      function buildFoot(p, r, usd) {
+        const foot = el('div', 'rodape');
+        if (p) {
+          foot.append(el('span', 'fases-n', p.done + ' de ' + p.total + ' fases'));
+        }
+        const dur = liveDur(r);
+        if (dur) foot.append(dur);
+        if (usd > 0) foot.append(el('span', 'custo', 'US$ ' + brl(usd)));
+        return foot.children.length ? foot : null;
+      }
+      function buildEtapa(n, r, usd) {
+        const known = has(ESTADO_ROTULO, n.estado) ? n.estado : 'x';
+        const a = el('article', 'etapa e-' + known);
+        a.dataset.issue = n.issue;
+        const p = progressOf(n, r);
+        const parts = [buildTop(n), buildButton(n), buildTags(r), buildFases(r)];
+        a.append(
+          ...parts
+            .concat([p ? buildBar(p) : null, buildWhy(n), buildFoot(p, r, usd)])
+            .filter(Boolean),
+        );
+        return a;
+      }
+      function buildOnda(w, nos, ctx) {
+        const onda = el('div', 'onda');
+        onda.dataset.onda = String(w);
+        const parada = el('div', w === 0 ? 'parada agora' : 'parada');
+        const k = nos.length;
+        parada.append(
+          el('i', 'ponto'),
+          el('span', 'rot', w === 0 ? 'Agora' : 'Onda ' + w),
+          el('span', 'qtd', k === 1 ? '1 etapa' : k + ' etapas'),
+        );
+        const etapas = el('div', 'etapas');
+        for (const n of nos) {
+          etapas.append(
+            buildEtapa(n, ctx.rows.get(n.issue) || {}, ctx.usd.get(n.issue) || 0),
           );
         }
-        const clear = el('button', '', 'Limpar');
-        clear.type = 'button';
-        clear.addEventListener('click', () => {
-          grafo.sel = null;
-          markSelection();
-        });
-        d.appendChild(clear);
-        d.hidden = false;
-        if (focusedKey) {
-          const back = d.querySelector(focusedKey);
-          if (back) back.focus();
-        }
+        onda.append(parada, etapas);
+        return onda;
       }
-      function drawArrows() {
-        const host = document.getElementById('mp-grafo');
-        const old = host.querySelector('svg');
-        if (old) old.remove();
-        if (!grafo.nos.length) return;
-        const svg = document.createElementNS(SVG_NS, 'svg');
-        svg.setAttribute('class', 'setas');
-        svg.setAttribute('id', 'mp-grafo-setas');
-        svg.setAttribute('aria-hidden', 'true');
-        const defs = document.createElementNS(SVG_NS, 'defs');
-        const mk = document.createElementNS(SVG_NS, 'marker');
-        mk.setAttribute('id', 'mp-ponta');
-        mk.setAttribute('viewBox', '0 0 10 10');
-        mk.setAttribute('refX', '9');
-        mk.setAttribute('refY', '5');
-        mk.setAttribute('markerWidth', '7');
-        mk.setAttribute('markerHeight', '7');
-        mk.setAttribute('orient', 'auto');
-        const tip = document.createElementNS(SVG_NS, 'path');
-        tip.setAttribute('d', 'M0 0 L10 5 L0 10 z');
-        mk.appendChild(tip);
-        defs.appendChild(mk);
-        svg.appendChild(defs);
-        const base = host.getBoundingClientRect();
-        const cards = Array.from(host.querySelectorAll('button[data-issue]'));
-        const box = (issue) => {
-          const c = cards.find((b) => b.dataset.issue === issue);
-          if (!c) return null;
-          const r = c.getBoundingClientRect();
-          return { x: r.left - base.left, y: r.top - base.top, w: r.width, h: r.height };
-        };
-        const sel = grafo.sel;
-        const shown = grafo.setas.filter(
-          (a) => isNear(a) || (sel && (a.de === sel || a.para === sel)),
-        );
-        for (const a of shown) {
-          const from = box(a.de);
-          const to = box(a.para);
-          if (!from || !to) continue;
-          let d;
-          if (grafo.onda.get(a.de) === grafo.onda.get(a.para)) {
-            // Mesma faixa: liga lado a lado, da borda do card de origem à do destino, no meio da altura.
-            const right = to.x >= from.x;
-            const x1 = right ? from.x + from.w : from.x;
-            const x2 = right ? to.x : to.x + to.w;
-            const y1 = from.y + from.h / 2;
-            const y2 = to.y + to.h / 2;
-            const xm = (x1 + x2) / 2;
-            d =
-              'M' +
-              x1 +
-              ' ' +
-              y1 +
-              ' C' +
-              xm +
-              ' ' +
-              y1 +
-              ' ' +
-              xm +
-              ' ' +
-              y2 +
-              ' ' +
-              x2 +
-              ' ' +
-              y2;
-          } else {
-            const down = to.y >= from.y;
-            const x1 = from.x + from.w / 2;
-            const y1 = down ? from.y + from.h : from.y;
-            const x2 = to.x + to.w / 2;
-            const y2 = down ? to.y : to.y + to.h;
-            const ym = (y1 + y2) / 2;
-            d =
-              'M' +
-              x1 +
-              ' ' +
-              y1 +
-              ' C' +
-              x1 +
-              ' ' +
-              ym +
-              ' ' +
-              x2 +
-              ' ' +
-              ym +
-              ' ' +
-              x2 +
-              ' ' +
-              y2;
+      // Tudo que `start` alcança seguindo as setas de `to` para `from` (com guarda contra ciclo).
+      function reach(start, from, to) {
+        const seen = new Set([start]);
+        const stack = [start];
+        while (stack.length) {
+          const cur = stack.pop();
+          for (const a of grafo.setas) {
+            if (a[to] === cur && !seen.has(a[from])) {
+              seen.add(a[from]);
+              stack.push(a[from]);
+            }
           }
-          const p = document.createElementNS(SVG_NS, 'path');
-          p.setAttribute('d', d);
-          p.setAttribute('data-de', a.de);
-          p.setAttribute('data-para', a.para);
-          p.setAttribute('data-tipo', a.tipo);
-          if (!isNear(a)) p.setAttribute('data-longa', '');
-          if (sel && a.de !== sel && a.para !== sel) p.setAttribute('class', 'dim');
-          svg.appendChild(p);
         }
-        host.appendChild(svg);
+        seen.delete(start);
+        return seen;
+      }
+      function paintCard(a, sel, espera, segura) {
+        const i = a.dataset.issue;
+        const isSel = sel != null && i === sel;
+        const isEsp = espera.has(i);
+        const isSeg = segura.has(i);
+        a.classList.toggle('foco-sel', isSel);
+        a.classList.toggle('foco-espera', isEsp);
+        a.classList.toggle('foco-segura', isSeg);
+        a.classList.toggle('dim', sel != null && !isSel && !isEsp && !isSeg);
+        const b = a.querySelector('button');
+        if (b) b.setAttribute('aria-pressed', isSel ? 'true' : 'false');
+      }
+      function helpText(sel, espera, segura) {
+        if (sel == null) return AJUDA;
+        const list = (set) => {
+          const ids = grafo.nos.map((n) => n.issue).filter((i) => set.has(i));
+          return ids.length ? ids.join(', ') : 'nada';
+        };
+        return sel + ': espera ' + list(espera) + ' · segura ' + list(segura);
       }
       function markSelection() {
         const sel = grafo.sel;
-        const related = new Set([sel]);
-        arrowsOf(sel).forEach((a) => related.add(a.de).add(a.para));
-        document.querySelectorAll('#mp-grafo button[data-issue]').forEach((b) => {
-          const on = b.dataset.issue === sel;
-          b.setAttribute('aria-pressed', on ? 'true' : 'false');
-          b.classList.toggle('dim', !!sel && !related.has(b.dataset.issue));
-        });
-        buildDetail(grafo.nos.find((n) => n.issue === sel));
-        drawArrows();
-      }
-      function renderGrafo(m, vagas) {
-        // "Vagas k/N" (o primeiro item) e, se for o último, "nenhuma ready elegível".
-        const last = vagas.length > 1 ? vagas[vagas.length - 1] : '';
-        document.getElementById('mp-grafo-vagas').textContent =
-          (vagas[0] || '—') + (last === NENHUMA_ELEGIVEL ? ' · ' + NENHUMA_ELEGIVEL : '');
-        const nos = (asList(m.grafoNos) || []).filter((n) => n && typeof n === 'object');
-        const setas = (asList(m.grafoSetas) || []).filter(
-          (a) => a && typeof a === 'object' && a.de && a.para,
+        const host = byId('mp-grafo');
+        host.classList.toggle('foco', sel != null);
+        const espera = sel != null ? reach(sel, 'de', 'para') : new Set();
+        const segura = sel != null ? reach(sel, 'para', 'de') : new Set();
+        Array.from(host.querySelectorAll('article')).forEach((a) =>
+          paintCard(a, sel, espera, segura),
         );
+        byId('mp-grafo-ajuda').textContent = helpText(sel, espera, segura);
+      }
+      function parseGrafo(m) {
+        const nos = (asList(m.grafoNos) || [])
+          .filter(isObj)
+          .map((n) => Object.assign({}, n, { issue: asText(n.issue) }));
         const issues = new Set(nos.map((n) => n.issue));
-        grafo = {
+        const setas = (asList(m.grafoSetas) || [])
+          .filter((a) => isObj(a) && a.de && a.para)
+          .map((a) => Object.assign({}, a, { de: asText(a.de), para: asText(a.para) }))
+          .filter((a) => issues.has(a.de) && issues.has(a.para));
+        return {
           nos,
-          setas: setas.filter((a) => issues.has(a.de) && issues.has(a.para)),
+          setas,
           sel: issues.has(grafo.sel) ? grafo.sel : null,
           onda: new Map(nos.map((n) => [n.issue, ondaDe(n)])),
         };
-        const host = document.getElementById('mp-grafo');
-        const focused = host.contains(document.activeElement)
-          ? document.activeElement.dataset.issue
-          : null;
-        const ordem = document.getElementById('mp-grafo-ordem');
-        const leg = document.getElementById('mp-grafo-legenda');
-        host.replaceChildren();
-        leg.replaceChildren();
-        if (!nos.length) {
-          host.textContent = '—';
-          ordem.hidden = true;
-          leg.hidden = true;
-          buildDetail(null);
-          return;
-        }
+      }
+      function renderVagas(vagas) {
+        // "Vagas k/N" (o primeiro item) e, se for o último, "nenhuma ready elegível".
+        const last = vagas.length > 1 ? vagas[vagas.length - 1] : '';
+        byId('mp-grafo-vagas').textContent =
+          (vagas[0] || '—') + (last === NENHUMA_ELEGIVEL ? ' · ' + NENHUMA_ELEGIVEL : '');
+      }
+      function renderOrdem(nos) {
         const next = nos
-          .filter((n) => n.rank != null)
-          .sort((a, b) => a.rank - b.rank)
+          .filter((n) => rankOf(n) != null)
+          .sort((a, b) => rankOf(a) - rankOf(b))
           .slice(0, 5)
           .map((n) => n.issue);
+        const ordem = byId('mp-grafo-ordem');
         ordem.textContent = 'Ordem prevista: ' + (next.length ? next.join(', ') : '—');
         ordem.hidden = false;
-        for (const [estado, rotulo] of ESTADOS) {
+      }
+      function renderLegenda() {
+        const leg = byId('mp-grafo-legenda');
+        const itens = ESTADOS.map(([k, r]) => ['e-' + k, r])
+          .concat(Object.keys(FASE_ESTADO).map((k) => ['fase-' + k, FASE_ESTADO[k]]))
+          .concat(Object.keys(ESPERA_TIPO).map((k) => ['w-' + k, ESPERA_TIPO[k]]));
+        for (const [cls, rotulo] of itens) {
           const li = el('li');
-          li.appendChild(el('i', 'amostra e-' + estado));
-          li.appendChild(document.createTextNode(rotulo));
-          leg.appendChild(li);
+          li.append(el('i', 'amostra ' + cls), rotulo);
+          leg.append(li);
         }
         leg.hidden = false;
-        const ondas = Array.from(new Set(nos.map(ondaDe))).sort((a, b) => a - b);
+      }
+      function renderGrafo(m, vagas, ctx) {
+        renderVagas(vagas);
+        grafo = parseGrafo(m);
+        const host = byId('mp-grafo');
+        const prev = host.contains(document.activeElement)
+          ? document.activeElement.closest('article')
+          : null;
+        const focused = prev ? prev.dataset.issue : null;
+        const leg = byId('mp-grafo-legenda');
+        host.replaceChildren();
+        leg.replaceChildren();
+        const empty = !grafo.nos.length;
+        byId('mp-grafo-ordem').hidden = empty;
+        byId('mp-grafo-ajuda').hidden = empty;
+        leg.hidden = empty;
+        if (empty) {
+          host.textContent = '—';
+          return;
+        }
+        renderOrdem(grafo.nos);
+        renderLegenda();
+        const ondas = Array.from(new Set(grafo.nos.map(ondaDe))).sort((a, b) => a - b);
         for (const w of ondas) {
-          const f = el('div', 'faixa');
-          f.dataset.onda = String(w);
-          f.appendChild(el('div', 'faixa-rot', w === 0 ? 'Agora' : 'Onda ' + w));
-          const row = el('div', 'faixa-nos');
-          nos
-            .filter((n) => ondaDe(n) === w)
-            .forEach((n) => row.appendChild(buildCard(n)));
-          f.appendChild(row);
-          host.appendChild(f);
+          host.append(
+            buildOnda(
+              w,
+              grafo.nos.filter((n) => ondaDe(n) === w),
+              ctx,
+            ),
+          );
         }
         markSelection();
-        // Os cards são refeitos a cada leitura: devolve o foco do teclado ao que o tinha.
-        const back = Array.from(host.querySelectorAll('button')).find(
-          (b) => b.dataset.issue === focused,
+        // Os cards são refeitos a cada leitura: devolve o foco do teclado ao botão que o tinha.
+        const card = Array.from(host.querySelectorAll('article')).find(
+          (a) => a.dataset.issue === focused,
         );
+        const back = card ? card.querySelector('button') : null;
         if (back) back.focus();
       }
-      // As posições vêm do layout: redesenha só as setas quando a janela ou o grafo mudam de tamanho.
-      window.addEventListener('resize', drawArrows);
-      if (typeof ResizeObserver === 'function') {
-        new ResizeObserver(drawArrows).observe(document.getElementById('mp-grafo'));
+      // Concluídas (etapa #1840): as linhas `concluída` do queue, por dia do `ended` em Brasília.
+      const diaKey = (ms) => new Date(ms).toLocaleDateString('en-CA', { timeZone: TZ });
+      const diaRot = (ms) =>
+        new Date(ms).toLocaleDateString('pt-BR', {
+          weekday: 'short',
+          day: '2-digit',
+          month: '2-digit',
+          timeZone: TZ,
+        });
+      const horaDe = (ms) =>
+        new Date(ms).toLocaleTimeString('pt-BR', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hourCycle: 'h23',
+          timeZone: TZ,
+        });
+      function minutesText(ms) {
+        const min = Math.floor(ms / 60000);
+        return min < 60 ? min + ' min' : Math.floor(min / 60) + ' h ' + pad(min % 60);
+      }
+      function compareDone(a, b) {
+        const ea = validTime(a.ended);
+        const eb = validTime(b.ended);
+        const va = Number.isFinite(ea);
+        const vb = Number.isFinite(eb);
+        if (va && vb && ea !== eb) return eb - ea;
+        if (va !== vb) return va ? -1 : 1;
+        return finite(a.order) - finite(b.order);
+      }
+      function buildDone(r, usd) {
+        const row = el('div', 'cl');
+        const tit = el('span', 'tit', asText(r.title));
+        tit.title = asText(r.title);
+        const resto = el('div', 'resto');
+        if (r.kind) resto.append(el('span', 'tipo', asText(r.kind)));
+        const pr = prLink(r.pr);
+        if (pr) resto.append(pr);
+        const s = validTime(r.started);
+        const e = validTime(r.ended);
+        if (Number.isFinite(e)) resto.append(el('span', 'hora', horaDe(e)));
+        if (Number.isFinite(s) && Number.isFinite(e) && e >= s) {
+          resto.append(el('span', 'dur', minutesText(e - s)));
+        }
+        if (usd > 0) resto.append(el('span', 'custo', 'US$ ' + brl(usd)));
+        row.append(numLink(r.issue), tit, resto);
+        return row;
+      }
+      function groupByDay(done) {
+        const groups = new Map();
+        for (const r of done) {
+          const e = validTime(r.ended);
+          const key = Number.isFinite(e) ? diaKey(e) : '';
+          if (!groups.has(key)) {
+            groups.set(key, {
+              rot: Number.isFinite(e) ? diaRot(e) : 'sem data',
+              rows: [],
+            });
+          }
+          groups.get(key).rows.push(r);
+        }
+        return Array.from(groups.values());
+      }
+      function buildDay(g, usd) {
+        const dia = el('div', 'dia');
+        dia.append(el('div', 'dia-rot', g.rot + ' · ' + g.rows.length));
+        for (const r of g.rows) dia.append(buildDone(r, usd.get(asText(r.issue)) || 0));
+        return dia;
+      }
+      function resumoDone(done, usd) {
+        if (!done.length) return '—';
+        const sum = done.reduce((acc, r) => acc + (usd.get(asText(r.issue)) || 0), 0);
+        const base = done.length + (done.length === 1 ? ' etapa' : ' etapas');
+        return sum > 0 ? base + ' · US$ ' + brl(sum) : base;
+      }
+      function renderConcluidas(rows, usd) {
+        const done = rows.filter((r) => r.status === 'concluída').sort(compareDone);
+        byId('mp-concluidas-resumo').textContent = resumoDone(done, usd);
+        const list = byId('mp-concluidas-lista');
+        const old = list.querySelector('details');
+        const wasOpen = !!old && old.open;
+        list.replaceChildren();
+        if (!done.length) {
+          list.textContent = '—';
+          return;
+        }
+        const [first, ...rest] = groupByDay(done);
+        list.append(buildDay(first, usd));
+        if (!rest.length) return;
+        const det = el('details');
+        det.open = wasOpen;
+        det.append(el('summary', '', 'Ver os dias anteriores'));
+        for (const g of rest) det.append(buildDay(g, usd));
+        list.append(det);
+      }
+      function custoPorEtapa(crows) {
+        const usd = new Map();
+        for (const r of crows) {
+          if (r && r.kind === 'etapa') usd.set(asText(r.name), Number(r.usd) || 0);
+        }
+        return usd;
       }
       function tick() {
         const m = q('meta')[0] || {};
@@ -929,11 +1104,8 @@
           tot.textContent = fmt(now - t(m.waitingSince));
           lab.textContent = 'aguardando comando do dono (tempo de espera)';
         }
-        document.querySelectorAll('#mp-table tbody tr').forEach((tr) => {
-          const c = tr.lastElementChild,
-            s = +tr.dataset.s,
-            e = +tr.dataset.e;
-          if (s) c.textContent = fmt((e || now) - s);
+        document.querySelectorAll('#mp .dur[data-s]').forEach((d) => {
+          d.textContent = fmt(now - Number(d.dataset.s));
         });
       }
       dash.onData(() => {
@@ -947,7 +1119,15 @@
           (m.updatedAt
             ? ' · atualizado ' + new Date(m.updatedAt).toLocaleTimeString('pt-BR')
             : '');
-        renderGrafo(m, vagas);
+        const cu = dash.data('custo');
+        const crows = cu.status === 'ok' ? cu.data : [];
+        const rows = q('queue').filter(isObj);
+        const usdMap = custoPorEtapa(crows);
+        renderGrafo(m, vagas, {
+          rows: new Map(rows.map((r) => [asText(r.issue), r])),
+          usd: usdMap,
+        });
+        renderConcluidas(rows, usdMap);
         const sm = dash.data('summary');
         if (sm.status === 'ok' && sm.data[0]) {
           document.getElementById('mp-bar').style.width =
@@ -962,8 +1142,6 @@
                 : '—';
           });
         const usd = (x) => (x == null ? '—' : x.toFixed(2));
-        const cu = dash.data('custo');
-        const crows = cu.status === 'ok' ? cu.data : [];
         const ctb = document.querySelector('#mp-custo tbody');
         ctb.replaceChildren();
         const total = crows.find((r) => r.kind === 'total');
@@ -1031,67 +1209,6 @@
                 (r.saida ? ' [saída: ' + r.saida + ']' : ''),
             ),
         );
-        const tb = document.querySelector('#mp-table tbody');
-        tb.replaceChildren();
-        // Grupos (#1318): em andamento, depois o que pede o dono, a fila e as concluídas.
-        const GROUP = {
-          'em andamento': 0,
-          'esperando dono': 1,
-          falhou: 1,
-          aguardando: 2,
-          concluída: 3,
-        };
-        const group = (r) => (r.status in GROUP ? GROUP[r.status] : 2);
-        const rowsSorted = q('queue')
-          .slice()
-          .sort(
-            (a, b) =>
-              group(a) - group(b) ||
-              (group(a) === 3 ? (t(b.ended) || 0) - (t(a.ended) || 0) : 0) ||
-              (+a.order || 0) - (+b.order || 0),
-          );
-        for (const r of rowsSorted) {
-          const tr = document.createElement('tr');
-          tr.dataset.key = r.issue;
-          tr.dataset.s = t(r.started) || '';
-          tr.dataset.e = t(r.ended) || '';
-          const cells = [
-            r.order,
-            r.issue,
-            r.title,
-            r.kind,
-            'PH',
-            'FL',
-            r.ciWait ? (r.step ? r.step + ' · CI: ' : 'CI: ') + r.ciWait : r.step,
-            null,
-            r.pr,
-            '',
-          ];
-          cells.forEach((v, i) => {
-            const td = document.createElement('td');
-            if (v === 'PH') {
-              td.appendChild(phaseCell(r));
-            } else if (v === 'FL') {
-              td.appendChild(flowCell(r));
-            } else if (i === 7) {
-              const p = document.createElement('span');
-              p.className = 'pill s-' + String(r.status).replace(/ /g, '-');
-              p.textContent = r.status;
-              td.appendChild(p);
-            } else {
-              const link =
-                i === 1
-                  ? ghLink(v, /^#(\d+)$/, 'issues')
-                  : i === 8
-                    ? ghLink(v, /^(\d+)$/, 'pull')
-                    : null;
-              if (link) td.appendChild(link);
-              else td.textContent = v;
-            }
-            tr.appendChild(td);
-          });
-          tb.appendChild(tr);
-        }
         const ul = document.getElementById('mp-log');
         ul.replaceChildren();
         for (const e of q('log')
