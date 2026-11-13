@@ -223,6 +223,8 @@ export const OVERLAY_KEYS = [
   'dropTarget',
   'absorb',
   'hoverLock',
+  // A ligação da âncora aparece na ancorada sob o mouse (`overlay.ts`).
+  'hoverMarking',
   'tokens',
   'selection',
   'items',

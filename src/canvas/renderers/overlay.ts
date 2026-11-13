@@ -56,6 +56,7 @@ export type OverlayFrame = Pick<
   | 'dropTarget'
   | 'absorb'
   | 'hoverLock'
+  | 'hoverMarking'
   | 'tokens'
   | 'selection'
   | 'items'
@@ -67,6 +68,12 @@ export type OverlayFrame = Pick<
   | 'viewport'
   | 'size'
 >;
+
+/** Ligação da ancorada até a âncora (R4): o halo por baixo e o traço tracejado por cima. */
+interface AnchorLink {
+  readonly halo: KonvaLine;
+  readonly line: KonvaLine;
+}
 
 /** Realce de uma seta selecionada: o traço e a ponta, por cima do desenho dela. */
 interface ArrowHighlight {
@@ -108,6 +115,8 @@ export class OverlayRenderer {
   readonly hoverLockBadge = new LockBadge();
   /** Realces das setas selecionadas (um reaproveitado por seta). */
   private readonly arrowHighlights: ArrowHighlight[] = [];
+  /** Ligações das ancoradas selecionada e sob o mouse (um par reaproveitado por ligação). */
+  private readonly anchorLinks: AnchorLink[] = [];
   /** Alças da seta selecionada: pontas, pontos de passagem e meios dos trechos. */
   private readonly arrowHandleNodes: KonvaCircle[] = [];
   /** Alça de ligação da marcação selecionada: puxar dela cria uma seta. */
@@ -157,6 +166,11 @@ export class OverlayRenderer {
     return this.arrowHighlights;
   }
 
+  /** Os nós das ligações da âncora (reaproveitados; os que não servem ficam invisíveis). */
+  anchorLinkNodes(): readonly AnchorLink[] {
+    return this.anchorLinks;
+  }
+
   /** Os nós das alças da seta selecionada (reaproveitados; os que não servem ficam invisíveis). */
   arrowHandleCircles(): readonly KonvaCircle[] {
     return this.arrowHandleNodes;
@@ -191,6 +205,7 @@ export class OverlayRenderer {
     this.renderAbsorb(frame);
     this.renderSecondarySelection(frame, placements);
     this.renderSelection(frame, placements, headers);
+    this.renderAnchorLinks(frame, placements);
     this.renderArrowSelection(frame);
     this.renderArrowDraft(frame);
     this.renderHoverLock(frame, placements);
@@ -474,6 +489,51 @@ export class OverlayRenderer {
     }
   }
 
+  /**
+   * Ligação da âncora (R4, decisão 13): a marcação ancorada selecionada ou sob o mouse mostra uma
+   * linha tracejada fina do centro dela ao da âncora, na cor do controle e com o halo por baixo.
+   * Só lê as posições do quadro (a prévia do arrasto leva a ancorada junto): pan e zoom não
+   * recalculam nada além da transformação e da espessura.
+   */
+  private renderAnchorLinks(
+    frame: OverlayFrame,
+    placements: ReadonlyMap<string, Placement>,
+  ): void {
+    const ends = anchorLinkEnds(frame, placements);
+    const { tokens } = frame;
+    const zoom = frame.viewport.scale;
+    while (this.anchorLinks.length < ends.length) {
+      const halo = new KonvaLine({ visible: false, listening: false, lineCap: 'round' });
+      const line = new KonvaLine({ visible: false, listening: false, lineCap: 'round' });
+      this.layer.add(halo, line);
+      this.anchorLinks.push({ halo, line });
+    }
+    const dash = [6 / zoom, 4 / zoom];
+    this.anchorLinks.forEach((node, i) => {
+      const end = ends[i];
+      if (!end) {
+        node.halo.visible(false);
+        node.line.visible(false);
+        return;
+      }
+      const points = [end.from.x, end.from.y, end.to.x, end.to.y];
+      node.halo.setAttrs({
+        visible: true,
+        points,
+        stroke: tokens.halo,
+        strokeWidth: (SELECTION_STROKE + 2 * HALO_WIDTH) / zoom,
+        dash,
+      });
+      node.line.setAttrs({
+        visible: true,
+        points,
+        stroke: tokens.borderControl,
+        strokeWidth: SELECTION_STROKE / zoom,
+        dash,
+      });
+    });
+  }
+
   /** Alça de ligação (círculo no meio do lado direito, por fora): puxar dela cria uma seta. */
   private renderLinkHandle(frame: OverlayFrame, rect: Rect, show: boolean): void {
     if (!show) {
@@ -736,6 +796,50 @@ export class OverlayRenderer {
       scaleY: 1 / zoom,
     });
   }
+}
+
+/** As pontas de uma ligação da âncora, em coordenadas do canvas: o centro da ancorada e o da âncora. */
+interface AnchorLinkEnds {
+  readonly from: { readonly x: number; readonly y: number };
+  readonly to: { readonly x: number; readonly y: number };
+}
+
+/**
+ * As ligações a mostrar: a da marcação selecionada (a primária) e a da que está sob o mouse, só
+ * das que têm âncora, sem repetir quando são a mesma. O retângulo de cada ponta usa a colocação
+ * do quadro (a do container arrastado ou redimensionado), como o resto das sobreposições.
+ */
+function anchorLinkEnds(
+  frame: OverlayFrame,
+  placements: ReadonlyMap<string, Placement>,
+): AnchorLinkEnds[] {
+  const { project, selection, hoverMarking } = frame;
+  if (!project) return [];
+  const index = projectIndex(project);
+  const ids = new Set<string>();
+  if (selection?.kind === 'marking') ids.add(selection.id);
+  if (hoverMarking !== null) ids.add(hoverMarking);
+  const centerOf = (id: string) => {
+    const marking = index.markings.get(id);
+    const placement =
+      marking === undefined
+        ? undefined
+        : marking.containerId === null
+          ? placementOfSpace(placements, null)
+          : (placements.get(marking.containerId) ??
+            index.containers.get(marking.containerId)?.placement);
+    if (marking === undefined || placement === undefined) return null;
+    const rect = markingCanvasRect(placement, marking.rect);
+    return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+  };
+  const ends: AnchorLinkEnds[] = [];
+  for (const id of ids) {
+    const target = index.anchorOf.get(id);
+    const from = centerOf(id);
+    const to = target === undefined ? null : centerOf(target);
+    if (from !== null && to !== null) ends.push({ from, to });
+  }
+  return ends;
 }
 
 /** A marcação é a removida que a revisão mostra riscada (a chave da forma é `marking:<id>`). */

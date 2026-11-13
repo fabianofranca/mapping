@@ -174,6 +174,48 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       ? { minSizeOf: minSizeOf(p) }
       : { minSize, minSizeOf: minSizeOf(p) };
   };
+  /** Opções do encosto: o assentar de sempre e os padrões de `anchor` que o componente declara. */
+  const snapOptions = (p: Project): model.SnapToAnchorOptions => ({
+    ...settleOptions(p),
+    defaults: model.markingAnchorDefaults(p, catalog()),
+  });
+  /**
+   * O Arrumar de uma marcação: o arranjo das filhas ou o ajuste ao conteúdo e, com âncora, o
+   * encosto depois (o tamanho já é o novo). A marcação ancorada que não se arruma nem se ajusta
+   * só encosta; sem âncora, a regra de hoje (e os erros dela).
+   */
+  const arrangeAndSnap = (
+    p: Project,
+    markingId: string,
+  ): { project: Project; warnings: readonly model.ModelMessage[] } => {
+    const components = catalog();
+    const anchored = model.projectIndex(p).markings.get(markingId)?.anchor != null;
+    const skipsArrange =
+      anchored &&
+      !model.canArrange(p, components, markingId) &&
+      !model.canFit(p, components, markingId);
+    let next = p;
+    let warnings: readonly model.ModelMessage[] = [];
+    if (!skipsArrange && model.arrangesByFit(p, components, markingId)) {
+      next = model.fitMarking(p, components, markingId, measure(), settleOptions(p));
+    } else if (!skipsArrange) {
+      const arranged = model.arrangeMarking(
+        p,
+        components,
+        markingId,
+        measure(),
+        settleOptions(p),
+      );
+      next = arranged.project;
+      warnings = arranged.warnings;
+    }
+    if (!anchored) return { project: next, warnings };
+    const snapped = model.snapToAnchor(next, markingId, {
+      ...snapOptions(next),
+      before: p,
+    });
+    return { project: snapped.project, warnings: [...warnings, ...snapped.warnings] };
+  };
   /** O retângulo pedido preso ao tamanho mínimo do componente (o gesto não trava no meio). */
   const wantedRect = (p: Project, markingId: string, rect: Rect): Rect => {
     const min = model.componentMinSize(p, catalog(), markingId);
@@ -595,6 +637,29 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     /** Posição entre as irmãs (0 = por baixo). Não é geometria: a trava não impede. */
     reorderMarking: (markingId: string, index: number) =>
       store.apply((p) => model.reorderMarking(p, markingId, index)),
+    /**
+     * Grava (ou, com `null`, tira) a âncora da marcação (v20, decisão 9). Não move nada (o encosto
+     * é `snapToAnchor`) e não é geometria: a trava não impede. Uma entrada de desfazer.
+     */
+    setMarkingAnchor: (markingId: string, anchor: model.MarkingAnchor | null) =>
+      store.apply((p) => model.setMarkingAnchor(p, markingId, anchor)),
+    /**
+     * "Encostar na âncora": põe a marcação ancorada junto da âncora (lado, alinhamento e
+     * deslocamento efetivos, os padrões vindos do componente) e leva as filhas e as ancoradas nela.
+     * Devolve os avisos (passou do container). Sem mudança, não há entrada de desfazer.
+     */
+    snapToAnchor: (markingId: string): ActionResult<readonly model.ModelMessage[]> => {
+      let warnings: readonly model.ModelMessage[] = [];
+      const result = guarded(() =>
+        store.apply((p) => {
+          view.requirePrincipal(viewFor(p));
+          const snapped = model.snapToAnchor(p, markingId, snapOptions(p));
+          warnings = snapped.warnings;
+          return snapped.project;
+        }),
+      );
+      return result.ok ? { ok: true, value: warnings } : result;
+    },
 
     // Setas (ME4, decisão 14): cada action é uma entrada de desfazer. A rota e a ponta também
     // têm prévia de gesto (`preview…`, dentro de `beginGesture`/`commitGesture`): um gesto de
@@ -676,14 +741,30 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       readonly center?: Point;
       /** Só tipo flutuante: perto deste alvo (`placeFloatingNear`), no lugar de `center`. */
       readonly near?: model.FloatingNearTarget;
+      /**
+       * Nasce ancorada nesta marcação (do mesmo espaço) e já encostada, com os padrões de `anchor`
+       * que o componente declara na raiz (R4, decisão 13); vale no lugar de `center`.
+       */
+      readonly anchorTo?: string;
     }): ActionResult<string> => {
       const markingId = newId();
       const annotationId = newId();
+      const { anchorTo, ...rest } = args;
+      const defaults =
+        anchorTo === undefined
+          ? undefined
+          : model.typeAnchorDefaults(catalog(), args.specId, args.typeId);
       const result = applyCreating((p) =>
         model.addComponentMarking(
           p,
           catalog(),
-          { ...args, markingId, annotationId },
+          {
+            ...rest,
+            markingId,
+            annotationId,
+            ...(anchorTo === undefined ? {} : { anchor: { to: anchorTo } }),
+            ...(defaults === undefined ? {} : { anchorDefaults: defaults }),
+          },
           measure(),
         ),
       );
@@ -691,24 +772,16 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     },
     /**
      * Arruma as filhas do container pelo layout do slot (devolve os avisos) ou, na marcação de um
-     * componente sem filhas no slot, ajusta-a ao conteúdo (`fitMarking`, sem avisos). Sem mudança,
-     * não há entrada de desfazer.
+     * componente sem filhas no slot, ajusta-a ao conteúdo (`fitMarking`, sem avisos). Com âncora, a
+     * marcação também encosta (R4, decisão 12), na mesma entrada de desfazer. Sem mudança, não há
+     * entrada de desfazer.
      */
     arrange: (markingId: string): ActionResult<readonly model.ModelMessage[]> => {
       let warnings: readonly model.ModelMessage[] = [];
       const result = guarded(() =>
         store.apply((p) => {
           view.requirePrincipal(viewFor(p));
-          if (model.arrangesByFit(p, catalog(), markingId)) {
-            return model.fitMarking(p, catalog(), markingId, measure(), settleOptions(p));
-          }
-          const arranged = model.arrangeMarking(
-            p,
-            catalog(),
-            markingId,
-            measure(),
-            settleOptions(p),
-          );
+          const arranged = arrangeAndSnap(p, markingId);
           warnings = arranged.warnings;
           return arranged.project;
         }),

@@ -291,6 +291,11 @@ code.props-text {
     appearance: textfield;
   }
 
+  /* Rótulos longos (Deslocamento da âncora): cada campo ocupa a coluna inteira. */
+  .props-pair-stack {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .props-pair-item .input::-webkit-inner-spin-button,
   .props-pair-item .input::-webkit-outer-spin-button {
     display: none;
