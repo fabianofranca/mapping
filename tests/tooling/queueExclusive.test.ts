@@ -265,7 +265,7 @@ describe('painel.py — seções no Paralelo (FM2, decisão 14)', () => {
   };
 
   it(
-    'FLOW.md, PROCESS.md e SKILL.md se comparam por seção; CLAUDE.md e TESTING.md como antes',
+    'FLOW.md, PROCESS.md e SKILL.md se comparam por seção; TESTING.md como antes',
     () => {
       expect(motivo('docs/FLOW.md#a', 'docs/FLOW.md#b')).toBe('#2 começa');
       expect(motivo('docs/FLOW.md#a', 'docs/FLOW.md#a')).toBe(
@@ -293,7 +293,6 @@ describe('painel.py — seções no Paralelo (FM2, decisão 14)', () => {
       expect(motivo('docs/PROCESS.md', 'docs/PROCESS.md#a')).toBe(
         '#2 arquivo docs/PROCESS.md#a com #1',
       );
-      expect(motivo('CLAUDE.md#a', 'CLAUDE.md#b')).toBe('#2 arquivo CLAUDE.md#b com #1');
       expect(motivo('docs/TESTING.md#R12', 'docs/TESTING.md#R6')).toBe('#2 começa');
       expect(motivo('docs/TESTING.md#R12', 'docs/TESTING.md')).toBe(
         '#2 arquivo docs/TESTING.md com #1',
@@ -301,6 +300,134 @@ describe('painel.py — seções no Paralelo (FM2, decisão 14)', () => {
     },
     TEMPO_SUBPROCESSOS,
   );
+});
+
+describe('painel.py — todo .md de docs/ e da raiz por seção (TS1, decisões 1, 2, 4, 5 e 8)', () => {
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'exclusive-'));
+    run('init', dir);
+    run('start', dir, '--paralelo', '9');
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  const motivo = (a: string, b: string): string => {
+    run('init', dir, '--force');
+    run('start', dir, '--paralelo', '9');
+    etapa('#1', ficha('nenhuma', a), 'status=em andamento');
+    etapa('#2', ficha('nenhuma', b));
+    return motivos()[0] ?? '';
+  };
+
+  it('os .md de docs/ se comparam por seção; sem âncora ou a mesma âncora conflita', () => {
+    const arq = 'docs/ARCHITECTURE.md';
+    expect(motivo(`${arq}#desempenho`, `${arq}#sessao-e-gravacao`)).toBe('#2 começa');
+    expect(motivo(`${arq}#desempenho`, `${arq}#desempenho`)).toBe(
+      `#2 arquivo ${arq}#desempenho com #1`,
+    );
+    expect(motivo(arq, `${arq}#desempenho`)).toBe(`#2 arquivo ${arq}#desempenho com #1`);
+    expect(motivo(`${arq}#desempenho`, arq)).toBe(`#2 arquivo ${arq} com #1`);
+  });
+
+  it('os .md da raiz se comparam por seção, com ./ normalizado e .md novo da raiz', () => {
+    expect(
+      motivo('CLAUDE.md#regras-de-arquitetura', 'CLAUDE.md#fluxo-de-trabalho-resumo'),
+    ).toBe('#2 começa');
+    expect(motivo('CLAUDE.md#a', 'CLAUDE.md#a')).toBe('#2 arquivo CLAUDE.md#a com #1');
+    expect(motivo('CLAUDE.md', 'CLAUDE.md#projeto')).toBe(
+      '#2 arquivo CLAUDE.md#projeto com #1',
+    );
+    expect(motivo('CLAUDE.md#projeto', 'CLAUDE.md')).toBe('#2 arquivo CLAUDE.md com #1');
+    expect(motivo('README.md#como-testar', 'README.md#documentacao')).toBe('#2 começa');
+    expect(motivo('README.md', 'README.md#documentacao')).toBe(
+      '#2 arquivo README.md#documentacao com #1',
+    );
+    expect(motivo('./CLAUDE.md#a', 'CLAUDE.md#b')).toBe('#2 começa');
+    expect(motivo('AGENTS.md#a', 'AGENTS.md#b')).toBe('#2 começa');
+  });
+
+  it('docs/TESTING-NUVEM.md por seção; #blocos não conta; docs/design-system/ não conta', () => {
+    expect(motivo('docs/TESTING-NUVEM.md#relato', 'docs/TESTING-NUVEM.md#nunca')).toBe(
+      '#2 começa',
+    );
+    expect(motivo('docs/TESTING-NUVEM.md#blocos', 'docs/TESTING-NUVEM.md')).toBe(
+      '#2 começa',
+    );
+    expect(motivo('docs/design-system/x.md', 'docs/design-system/x.md')).toBe(
+      '#2 começa',
+    );
+  });
+
+  it('subpasta nova de docs/ também se compara por seção', () => {
+    expect(motivo('docs/guias/a.md#x', 'docs/guias/a.md#y')).toBe('#2 começa');
+    expect(motivo('docs/guias/a.md#x', 'docs/guias/a.md#x')).toBe(
+      '#2 arquivo docs/guias/a.md#x com #1',
+    );
+  });
+
+  it('pasta e glob continuam cobrindo tudo o que casam, com ou sem âncora', () => {
+    expect(motivo('docs/', 'docs/ARCHITECTURE.md#desempenho')).toBe(
+      '#2 arquivo docs/ARCHITECTURE.md#desempenho com #1',
+    );
+    expect(motivo('docs/*.md', 'docs/FLOW.md#a')).toBe(
+      '#2 arquivo docs/FLOW.md#a com #1',
+    );
+    expect(motivo('*.md', 'CLAUDE.md#a')).toBe('#2 arquivo CLAUDE.md#a com #1');
+  });
+
+  it('fora de docs/ e da raiz, ou não .md: arquivo inteiro (âncoras diferentes conflitam)', () => {
+    for (const f of [
+      'viewer/README.md',
+      'examples/README.md',
+      'mappings-workspace/AGENTS.md',
+      'libraries/kotlin/docs/x.md',
+      'docs/x.schema.json',
+    ]) {
+      expect(motivo(`${f}#a`, `${f}#b`)).toBe(`#2 arquivo ${f}#b com #1`);
+    }
+  });
+
+  it('o TESTING.md segue por roteiro', () => {
+    expect(motivo('docs/TESTING.md#R1', 'docs/TESTING.md#R2')).toBe('#2 começa');
+    expect(motivo('docs/TESTING.md', 'docs/TESTING.md#R2')).toBe(
+      '#2 arquivo docs/TESTING.md#R2 com #1',
+    );
+  });
+
+  it('os textos dos skills, do PROCESS e do FLOW dizem a regra nova', () => {
+    const skill = leitura(SKILL);
+    const paralelo = section(skill, '## Paralelo');
+    expect(paralelo).toContain('docs/ARCHITECTURE.md#desempenho');
+    expect(paralelo).toContain('CLAUDE.md#');
+    expect(paralelo).not.toContain(
+      'o `docs/ARCHITECTURE.md` contam como arquivo inteiro',
+    );
+    expect(paralelo).not.toContain('O `CLAUDE.md` e os outros arquivos contam inteiros');
+
+    const ficha = section(skill, '### Ficha da etapa');
+    expect(ficha).toContain('docs/*.md');
+    expect(ficha).toContain('CLAUDE.md#');
+    expect(ficha).not.toContain('O `CLAUDE.md` e os outros arquivos ficam inteiros');
+
+    const passos = between(
+      leitura(DETALHAR),
+      '3. Rascunhe o plano inteiro',
+      '5. Decisão de produto',
+    );
+    expect(passos).toContain('docs/ARCHITECTURE.md#');
+    expect(passos).toContain('CLAUDE.md#');
+    expect(passos).not.toContain('inclusive o `CLAUDE.md`, sem âncora');
+
+    const detalhar = between(leitura('docs/PROCESS.md'), '**Detalhar uma etapa:**', '\n');
+    expect(detalhar).toContain('docs/ARCHITECTURE.md#');
+    expect(detalhar).toContain('CLAUDE.md#');
+
+    const dono = section(leitura('docs/FLOW.md'), '## Para o dono, nos três chats');
+    expect(dono).toContain('docs/*.md');
+    expect(dono).toContain('CLAUDE.md');
+  });
 });
 
 describe('painel.py slug (FM2, decisão 14)', () => {

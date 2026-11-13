@@ -13,8 +13,9 @@ sem etapa começada e não mesclada (`exclusiva (espera a fila esvaziar)`). Come
 as outras em qualquer estado (`em andamento`, `aguardando` com `started`, `esperando dono`, `falhou`), e o motivo diz o
 estado: `exclusiva #N <status>` (`em andamento` também para a que começa no mesmo cálculo). A saída é só do dono: com a ordem
 dele escrita no chat da fila, o coordenador grava `row '#N' exclusive=` e o `log` "exclusiva #N liberada pelo dono" (decisões
-2 e 3 da #1595). O `docs/FLOW.md`, o `docs/PROCESS.md` e os `.claude/skills/*/SKILL.md` se comparam por seção
-(`docs/FLOW.md#<slug>`, como o `docs/TESTING.md` por roteiro); `slug "<título>"` imprime o slug de um `##`.
+2 e 3 da #1595). Todo `.md` sob `docs/`, os `.md` da raiz (`CLAUDE.md`, `README.md`) e os `.claude/skills/*/SKILL.md` se comparam
+por seção (`docs/ARCHITECTURE.md#desempenho`, `CLAUDE.md#regras-de-arquitetura`; o `docs/TESTING.md` por roteiro, `#R12`); os outros
+arquivos, inclusive os `.md` de outras pastas, contam inteiros; `slug "<título>"` imprime o slug de um `##`.
 `ciWait` (o PR cujo CI espera o coordenador, ex. `PR #7`) e `ciWaitAt` (desde quando; `ciWait=` limpa os
 dois) entram na linha `CI esperando o coordenador:` do `show`; trocar ou limpar `child` não mexe neles.
 Fase que espera o dono no chat dela (decisão 7 da #1602): a linha com `child` e `wait` começando por `dono no chat da fase:`
@@ -1045,9 +1046,7 @@ def cmd_apply(a):
 
 IGNORED_PREFIXES = ("changelog/", "docs/design-system/")
 IGNORED_EXACT = ("mcp/version.ts", "docs/TESTING-NUVEM.md#blocos")
-ROUTE_FILE = "docs/TESTING.md"  # comparado por âncora (roteiro)
-SECTION_FILES = ("docs/FLOW.md", "docs/PROCESS.md")  # e os SKILL.md: comparados por âncora (seção `##`)
-SECTION_GLOB = ".claude/skills/*/SKILL.md"
+SECTION_GLOB = ".claude/skills/*/SKILL.md"  # além de todo `.md` de docs/ e da raiz: comparados por âncora (seção `##`)
 STARTED_STATUS = ("em andamento", "esperando dono", "falhou")
 STARTS_NOW = "começa"  # o motivo da candidata que o `slots_plan` faz começar agora (o grafo a põe na onda 0)
 
@@ -1095,15 +1094,23 @@ def covers(a, b):
     return b.startswith(a + "/")
 
 
+def by_section(path):
+    """O arquivo se compara por âncora (seção `##`, ou roteiro no docs/TESTING.md)? Todo `.md` sob `docs/`,
+    todo `.md` da raiz (sem `/`) e os SKILL.md; os outros arquivos, inclusive `.md` de outras pastas, contam inteiros."""
+    if not path.endswith(".md"):
+        return False
+    return path.startswith("docs/") or "/" not in path or fnmatch.fnmatchcase(path, SECTION_GLOB)
+
+
 def same_target(a, b):
-    """Duas citações do `toca=` mexem no mesmo lugar? (roteiro do TESTING.md, pasta, arquivo)"""
+    """Duas citações do `toca=` mexem no mesmo lugar? (seção ou roteiro, pasta, arquivo)"""
     if a == "?" or b == "?":
         return True
     pa, _, anc_a = a.partition("#")
     pb, _, anc_b = b.partition("#")
     if pa != pb:
         return covers(pa, pb) or covers(pb, pa)
-    if pa != ROUTE_FILE and pa not in SECTION_FILES and not fnmatch.fnmatchcase(pa, SECTION_GLOB):
+    if not by_section(pa):
         return True
     return not anc_a or not anc_b or anc_a == anc_b
 
