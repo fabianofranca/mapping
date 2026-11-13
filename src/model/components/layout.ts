@@ -314,6 +314,11 @@ function anchorOffset(
   return (screenSize - size) / 2;
 }
 
+/** `{ direction: 'rtl' }` só em rtl: em ltr a chave não existe (padrão). */
+function rtlKey(direction: Direction): { direction?: 'rtl' } {
+  return direction === 'rtl' ? { direction } : {};
+}
+
 export function layoutScreen(
   input: LayoutScreen,
   library: Library,
@@ -325,7 +330,7 @@ export function layoutScreen(
   const types = new Map(library.types.map((t) => [t.id, t]));
   const direction: Direction = input.direction ?? 'ltr';
   /** As opções do motor comuns a toda instância desta tela (a direção, acima de tudo). */
-  const engine = { measure, ...(direction === 'rtl' ? { direction } : {}) } as const;
+  const engine = { measure, ...rtlKey(direction) } as const;
 
   // --- preparo: tipo, componente, slot e layout de cada nó ---------------------------------
 
@@ -1048,6 +1053,7 @@ export function layoutScreen(
       width: input.width,
       height: input.height,
       background: input.background,
+      ...rtlKey(direction),
       instances,
     },
     warnings: textsOf(messages),

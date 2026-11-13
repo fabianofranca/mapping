@@ -110,7 +110,7 @@ describe('schema v16', () => {
     const result = load(JSON.stringify(v15Raw(), null, 2));
     expect(result.migratedFrom).toBe(15);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(19);
+    expect(result.project.schemaVersion).toBe(20);
     expect(result.project.project.id).toMatch(UUID);
     expect(result.project.perspectives).toEqual([]);
     expect(result.project.arrivals).toEqual([]);
@@ -121,7 +121,7 @@ describe('schema v16', () => {
     };
     expect(serialize(sameId)).toBe(serialize(original));
     const saved = JSON.parse(serialize(result.project)) as Raw;
-    expect(saved.schemaVersion).toBe(19);
+    expect(saved.schemaVersion).toBe(20);
     expect(saved.project.id).toBe(result.project.project.id);
     expect(saved.perspectives).toEqual([]);
     expect(saved.arrivals).toEqual([]);

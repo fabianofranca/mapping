@@ -85,7 +85,7 @@ test('captura 3x: sugestão, Aplicar, desfazer numa entrada e gravação da dens
   await expect(custom).toHaveValue('2,625');
 
   const { mapping } = await exportMapping(page);
-  expect(mapping.schemaVersion).toBe(19);
+  expect(mapping.schemaVersion).toBe(20);
   expect(mapping.containers).toHaveLength(1);
   expect(mapping.containers[0]).toMatchObject({
     width: 1080,

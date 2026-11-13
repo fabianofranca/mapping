@@ -25,6 +25,7 @@
  *   texto (no meio de um trecho, se preciso; um chip sai inteiro) até a linha mais o `…` caber, e o
  *   `…` usa a fonte do último pedaço que sobrou.
  * - `align` vale por linha, contra a largura da caixa (quando houver).
+ * - `direction: 'rtl'` inverte a ordem dos pedaços dentro da linha (o primeiro na borda direita).
  *
  * Funções puras, sem DOM. As posições (`x`, `y`) são relativas ao canto da caixa do texto, antes do
  * `verticalAlign` (o desenho aplica o deslocamento vertical).
@@ -57,6 +58,12 @@ export interface RichBase {
   readonly maxLines?: number;
   /** Alinhamento de cada linha contra a largura da caixa (padrão `left`). */
   readonly align?: 'left' | 'center' | 'right';
+  /**
+   * `rtl` = o texto lê da direita para a esquerda: os pedaços de cada linha correm da direita para
+   * a esquerda (o primeiro, na borda direita do conteúdo). A ordem na lista, a largura e a quebra
+   * não mudam; a ordem dos glifos dentro de um pedaço é de quem desenha. Ausente = `ltr`.
+   */
+  readonly direction?: 'rtl';
 }
 
 /** Um pedaço de uma linha: texto de um só trecho (ou a caixa inteira de um chip). */
@@ -343,9 +350,12 @@ function buildLayout(
       (max, piece) => Math.max(max, piece.height),
       ctx.base.lineHeight,
     );
-    let x = alignOffset(ctx.base.align, boxWidth, width);
+    const start = alignOffset(ctx.base.align, boxWidth, width);
+    const rtl = ctx.base.direction === 'rtl';
+    let x = 0;
     const pieces = merged.map((piece): RunPiece => {
-      const placed = { ...piece, x };
+      // Em rtl o pedaço ocupa o mesmo trecho da linha, medido a partir da borda direita do conteúdo.
+      const placed = { ...piece, x: start + (rtl ? width - x - piece.width : x) };
       x += piece.width;
       return placed;
     });

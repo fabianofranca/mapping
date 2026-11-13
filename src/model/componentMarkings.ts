@@ -19,7 +19,7 @@ import {
 } from './componentCatalog';
 import { drawingValues } from './componentValues';
 import { effectiveDensity, unitSpaceOf, unitsToPixels } from './density';
-import { componentForDrawing } from './drawingMode';
+import { componentForDrawing, drawOptions } from './drawingMode';
 import { fail, ModelError } from './errors';
 import {
   MIN_STORED_MARKING_SIZE,
@@ -222,7 +222,7 @@ function slotArea(
   const { root } = instantiate(drawn.component, values, space.box, {
     measure,
     idPrefix: container.id,
-    ...(drawn.tokens === undefined ? {} : { tokens: drawn.tokens }),
+    ...drawOptions(drawn),
   });
   const unitBox = slotBoxOfScene(root);
   if (unitBox === undefined) return whole;
@@ -239,7 +239,8 @@ function slotArea(
     gap: layout.gap,
     flow: layout.type,
     grid: layout.grid,
-    reverse: layout.reverse,
+    // Numa linha em `rtl` a ordem corre da direita para a esquerda: o fluxo das filhas inverte.
+    reverse: layout.reverse !== (layout.type === 'row' && drawn.direction === 'rtl'),
     wrap: layout.wrap,
     lineGap: layout.lineGap,
     maxPerLine: layout.maxPerLine,
@@ -408,7 +409,7 @@ function wantedSize(
   const fitted = fitComponentSize(
     drawn.component,
     values,
-    { measure, ...(drawn.tokens === undefined ? {} : { tokens: drawn.tokens }) },
+    { measure, ...drawOptions(drawn) },
     { base: component.size },
   );
   return fitted === undefined

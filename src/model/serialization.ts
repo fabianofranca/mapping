@@ -54,6 +54,7 @@ export function serialize(p: Project): string {
       ]),
     ),
     ...(p.drawingMode === undefined ? {} : { drawingMode: p.drawingMode }),
+    ...(p.direction === undefined ? {} : { direction: p.direction }),
     layers: p.layers.map((l) => ({
       id: l.id,
       name: l.name,
@@ -73,6 +74,7 @@ export function serialize(p: Project): string {
       source: i.source && { system: i.source.system, id: i.source.id, url: i.source.url },
       background: i.background,
       ...(i.drawingMode == null ? {} : { drawingMode: i.drawingMode }),
+      ...(i.direction == null ? {} : { direction: i.direction }),
       ...(i.density == null ? {} : { density: i.density }),
     })),
     markings: p.markings.map((m) => ({

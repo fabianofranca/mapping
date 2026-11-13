@@ -1,9 +1,10 @@
 import type { ComponentFile } from './components/componentFormat';
 import { applyTokens, type ResolvedTokens } from './components/tokens';
+import { effectiveDirection } from './direction';
 import { fail } from './errors';
 import { updateById } from './project';
 import { projectIndex } from './projectIndex';
-import type { Project } from './types';
+import type { Project, ReadingDirection } from './types';
 
 // Modo do desenho (schema v18, etapa "componentes fiéis"): escolhe o modo dos `tokens` das
 // especializações (`light`, `dark`…). É do projeto; o container pode fixar o seu. Não depende do
@@ -88,13 +89,19 @@ export function undeclaredDrawingMode(p: Project, declared: readonly string[]): 
  * O componente como o desenho o usa: com cada `$token` trocado pela tabela do modo efetivo do
  * espaço (`resolvedTokensByMode[modo]`; sem modo ou sem a tabela, a de `resolvedTokens`). Arrumar,
  * posicionar e medir passam por aqui antes de ler o slot, para o `gap` e o `padding` em `$token`
- * valerem o mesmo que na tela. `tokens` vai na opção `tokens` do `instantiate`.
+ * valerem o mesmo que na tela. `tokens` vai na opção `tokens` do `instantiate`; `direction` é a
+ * direção de leitura efetiva do espaço (`effectiveDirection`), que vai na opção `direction` do
+ * motor (`drawOptions`).
  */
 export function componentForDrawing(
   p: Project,
   component: ComponentFile,
   containerId: string | null,
-): { readonly component: ComponentFile; readonly tokens: ResolvedTokens | undefined } {
+): {
+  readonly component: ComponentFile;
+  readonly tokens: ResolvedTokens | undefined;
+  readonly direction: ReadingDirection;
+} {
   const mode = effectiveDrawingMode(p, containerId);
   const tokens =
     (mode === undefined ? undefined : component.resolvedTokensByMode?.[mode]) ??
@@ -102,5 +109,20 @@ export function componentForDrawing(
   return {
     component: tokens === undefined ? component : applyTokens(component, tokens),
     tokens,
+    direction: effectiveDirection(p, containerId),
+  };
+}
+
+/**
+ * As opções do motor que vêm do espaço (`tokens` e `direction`): só leva a chave quando há o que
+ * passar (`tokens` definidos, direção `rtl`), então em `ltr` as opções são as de antes da direção.
+ */
+export function drawOptions(drawn: {
+  readonly tokens: ResolvedTokens | undefined;
+  readonly direction: ReadingDirection;
+}): { tokens?: ResolvedTokens; direction?: 'rtl' } {
+  return {
+    ...(drawn.tokens === undefined ? {} : { tokens: drawn.tokens }),
+    ...(drawn.direction === 'rtl' ? { direction: 'rtl' as const } : {}),
   };
 }

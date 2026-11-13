@@ -58,6 +58,8 @@ export function imageValue(i: ProjectContainer): JsonValue {
     ...(i.drawingMode == null ? {} : { drawingMode: i.drawingMode }),
     // Só quando declarada (formatVersion 7).
     ...(i.density == null ? {} : { density: i.density }),
+    // Só quando fixa (formatVersion 8).
+    ...(i.direction == null ? {} : { direction: i.direction }),
   });
 }
 
@@ -118,9 +120,15 @@ export function docRepoValue(r: DocRepo): JsonValue {
   return toJson({ localPath: r.localPath });
 }
 
-/** O que do projeto a proposta carrega (entidade `project`, formatVersion 6): o modo do desenho. */
-export function projectValue(p: Pick<Project, 'drawingMode'>): JsonValue {
-  return { drawingMode: p.drawingMode ?? null };
+/**
+ * O que do projeto a proposta carrega (entidade `project`, formatVersion 6): o modo do desenho e,
+ * só quando fixada (formatVersion 8), a direção de leitura.
+ */
+export function projectValue(p: Pick<Project, 'drawingMode' | 'direction'>): JsonValue {
+  return {
+    drawingMode: p.drawingMode ?? null,
+    ...(p.direction === undefined ? {} : { direction: p.direction }),
+  };
 }
 
 export function platformRepoValue(r: PlatformRepo): JsonValue {
@@ -144,6 +152,7 @@ export const COMPARED_FIELDS = {
     'source',
     'drawingMode',
     'density',
+    'direction',
   ],
   marking: ['name', 'space', 'rect', 'floating', 'locked', 'source'],
   // A seta só se cria e se remove: nenhum campo dela é comparado (ver `ARROW_FIELDS`).
@@ -189,6 +198,8 @@ export function imageField(i: ProjectContainer, field: string): JsonValue | unde
       return i.drawingMode ?? null;
     case 'density':
       return i.density ?? null;
+    case 'direction':
+      return i.direction ?? null;
     default:
       return undefined;
   }

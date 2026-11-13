@@ -804,6 +804,7 @@ function createEngine(
     lineHeight: font.lineHeight,
     // O texto rico (com `runs`) ainda não justifica: `justify` cai em `left`.
     align: richAlign(physicalAlign(node)),
+    ...(dirOf(node) === 'rtl' ? { direction: 'rtl' as const } : {}),
     ...(font.wrap === 'none' ? { wrap: 'none' as const } : {}),
     ...(font.ellipsis === true ? { ellipsis: true } : {}),
     ...(font.maxLines !== undefined ? { maxLines: font.maxLines } : {}),

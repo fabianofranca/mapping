@@ -35,8 +35,8 @@ function open(raw: Raw): Project {
 const first = (p: Project) => p.containers[0]!;
 
 describe('schema v19 (densidade)', () => {
-  it('a versão atual é 19 e o registro tem a migração v18 → v19', () => {
-    expect(SCHEMA_VERSION).toBe(19);
+  it('a versão atual é pelo menos 19 e o registro tem a migração v18 → v19', () => {
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(19);
     expect(migrations.get(18)).toBe(migrateFrom18To19);
   });
 
@@ -46,7 +46,7 @@ describe('schema v19 (densidade)', () => {
     const result = deserialize(JSON.stringify(v18Raw()), migrations);
     if (!result.ok) throw new Error(JSON.stringify(result.error));
     expect(result.migratedFrom).toBe(18);
-    expect(result.project.schemaVersion).toBe(19);
+    expect(result.project.schemaVersion).toBe(SCHEMA_VERSION);
     expect(first(result.project).density).toBeUndefined();
     const saved = JSON.parse(serialize(result.project)) as Raw;
     expect((saved.containers as Raw[]).every((c) => !('density' in c))).toBe(true);

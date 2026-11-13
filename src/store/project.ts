@@ -14,6 +14,7 @@ import type {
   Placement,
   PlatformRepoInput,
   Project,
+  ReadingDirection,
   Rect,
   Spec,
   SpecRemovalMode,
@@ -241,6 +242,12 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     /** Densidade do container (v19); `null` volta a 1. Uma entrada de desfazer. */
     setContainerDensity: (containerId: string, density: number | null) =>
       store.apply((p) => model.setContainerDensity(p, containerId, density)),
+    /** Direção de leitura do projeto (v20); `null` volta a `ltr`. Uma entrada de desfazer. */
+    setProjectDirection: (direction: ReadingDirection | null) =>
+      store.apply((p) => model.setProjectDirection(p, direction)),
+    /** Direção que o container fixa; `null` volta a seguir a do projeto. Uma entrada de desfazer. */
+    setContainerDirection: (containerId: string, direction: ReadingDirection | null) =>
+      store.apply((p) => model.setContainerDirection(p, containerId, direction)),
     renameContainer: (containerId: string, name: string | null) =>
       store.apply((p) => model.renameContainer(p, containerId, name)),
 
