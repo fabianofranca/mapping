@@ -1,0 +1,5 @@
+# Toca por seção em todo docs/*.md e nos .md da raiz — 2026-11-13 (épico `epic/toca-por-secao`, PR #1833, MCP 0.39.1 sem mudança, schema v19)
+
+## Alterado
+
+- **Toca por seção em todo `docs/*.md` e nos `.md` da raiz (para quem conduz o fluxo, #1804):** duas etapas que mexem em seções `##` diferentes de um mesmo documento de `docs/` (`docs/ARCHITECTURE.md#desempenho` e `docs/ARCHITECTURE.md#sessao-e-gravacao`), do `CLAUDE.md` ou do `README.md` (`CLAUDE.md#regras-de-arquitetura` e `CLAUDE.md#fluxo-de-trabalho-resumo`) passam a andar em paralelo na fila, como já andavam as do `docs/FLOW.md`, do `docs/PROCESS.md` e dos `SKILL.md`. Citação sem âncora continua conflitando com toda citação do arquivo, e pasta e glob continuam cobrindo. O `docs/TESTING.md` segue por roteiro; o `docs/TESTING-NUVEM.md#blocos` e o `docs/design-system/` seguem sem contar; os `.md` de outras pastas (`viewer/README.md`) e os arquivos de `docs/` que não são `.md` seguem inteiros. O `painel.py`, a "Ficha da etapa" e o "Paralelo" do `implementar-fila`, o detalhamento do `detalhar-backlog`, o `docs/PROCESS.md` e o `docs/FLOW.md` dizem a regra nova; as fichas já gravadas não se refazem.
