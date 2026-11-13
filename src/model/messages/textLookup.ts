@@ -91,6 +91,11 @@ export type SpecMessageCode = Exclude<keyof typeof specMessages, `spec.zod.${str
  * recebido (as funções `error` dos enums). Os outros saem com o código no emissor
  * (`specMsg` + `addSpecIssue`) ou, se o texto é constante, pelo texto exato (`known` de
  * `issueCoding`). Mensagem nova com parâmetro em `spec.ts` sai com o código no emissor.
+ *
+ * Contrato (imposto por `tests/i18n/specMessages.test.ts`, "contrato de SPEC_PATTERN_CODES"):
+ * o modelo pt-BR de cada código tem exatamente um `{…}`, e o texto do zod é montado por
+ * `specMsg(código, { value })`, então um valor que traz o texto fixo do modelo volta inteiro em
+ * `params.value`. Código novo nesta lista entra no mesmo teste.
  */
 export const SPEC_PATTERN_CODES: readonly SpecMessageCode[] = [
   'spec.fieldTypeInvalid',
