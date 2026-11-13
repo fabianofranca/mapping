@@ -1,18 +1,22 @@
-// Subida automática do teto do `dist/index.html` (etapa #1324, decisões 6, 8 e 9) e o teto num arquivo
-// de dados (etapa #1614, decisão 3). Só Node, sem dependências.
+// Subida automática do teto do `dist/index.html` (etapa #1324, decisões 6, 8 e 9), o teto num arquivo
+// de dados (etapa #1614, decisão 3) e a subida que nunca para a fila (etapa #1802, decisões 1 a 3).
+// Só Node, sem dependências.
 //   ceiling [--budget <arquivo>]
 //     Imprime o `indexHtmlMaxBytes` do arquivo. É o que o passo "Tamanho do dist/index.html" do
 //     `ci.yml` chama. Arquivo inválido sai com 2 e a mensagem no stderr.
 //   raise --size <bytes> --main-size <bytes> --review-ceiling <bytes> [--budget <arquivo>]
 //         [--write [--epic <nome>] [--date <AAAA-MM-DD>]]
-//     Confere as condições numéricas e imprime uma linha:
+//     Sobe o teto o bastante para o build passar e imprime:
 //       "sobe: <teto> → <teto novo> (excesso E, crescimento G, subidas desde a revisão S)"
-//       "chama o dono: <motivo>"
+//       "bug: <motivos separados por "; ">"  (2ª linha, só quando a subida passa de um limite)
 //       "nada a subir: ..." (o tamanho já cabe no teto)
-//     A subida é de 16 KiB e só vale com excesso de até 14 KiB (14.336 bytes): assim sobram sempre
-//     pelo menos 2 KiB de margem depois dela (etapa #1384, decisão 10). Excesso maior chama o dono.
-//     Com `--write` e a subida, troca o `indexHtmlMaxBytes` do arquivo e acrescenta a frase ao fim do
-//     `history`. Nunca escreve quando chama o dono.
+//     A subida é de `k` passos de 16 KiB, com `k` o menor inteiro ≥ 1 que deixa pelo menos 2 KiB de
+//     margem (k = ceil((excesso + 2 KiB) / 16 KiB)). Nunca para a fila esperando o dono: o excesso acima de
+//     14 KiB, o crescimento acima de 32 KiB sobre a `main` e as subidas desde a revisão do dono acima
+//     de 64 KiB só acrescentam a linha `bug:`, para o dono revisar depois.
+//     Com `--write` e a subida (com ou sem a linha `bug:`), troca o `indexHtmlMaxBytes` do arquivo e
+//     acrescenta a frase ao fim do `history` (com " Acima dos limites: …" quando há `bug:`).
+//     O código de saída é 0 em toda resposta; erro de uso sai com 2.
 // `--budget` tem como padrão `scripts/ci/dist-budget.json`, relativo à pasta corrente (a raiz do clone).
 // O `--ci <ci.yml>` saiu na etapa #1614 e é recusado.
 // As outras condições da decisão 6 (o tamanho é a única falha do PR) o chamador confere antes.
@@ -40,39 +44,50 @@ function grouped(n) {
   return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
-/** Decisão pura: `{ action: 'raise' | 'owner' | 'none', ... }`. */
+/** Os limites que, ultrapassados pela subida, pedem um `bug` (o `reason` vai na linha `bug:`, o `item` no `history`). */
+function overLimits({ excess, growth, since, steps }) {
+  const over = [];
+  if (excess > MAX_EXCESS) {
+    over.push({
+      reason: `o excesso de ${excess} bytes passa de 14 KiB (${MAX_EXCESS} bytes): a subida foi de ${(steps * RAISE_BYTES) / KIB} KiB, em passos de 16 KiB`,
+      item: 'excesso acima de 14 KiB',
+    });
+  }
+  if (growth > MAX_GROWTH) {
+    over.push({
+      reason: `o épico cresceu ${growth} bytes sobre a main, mais de 32 KiB (${MAX_GROWTH} bytes)`,
+      item: 'crescimento acima de 32 KiB sobre a `main`',
+    });
+  }
+  if (since > MAX_SINCE_REVIEW) {
+    over.push({
+      reason: `as subidas desde a última revisão do dono somam ${since} bytes contando com esta, mais de 64 KiB (${MAX_SINCE_REVIEW} bytes)`,
+      item: 'subidas desde a revisão do dono acima de 64 KiB',
+    });
+  }
+  return over;
+}
+
+/** Decisão pura: `{ action: 'raise' | 'none', ... }`. A subida nunca é recusada (etapa #1802, decisão 1). */
 export function decide({ ceiling, size, mainSize, reviewCeiling }) {
   const excess = size - ceiling;
   if (excess <= 0) {
     return { action: 'none', reason: `${size} bytes cabem no teto de ${ceiling} bytes` };
   }
   const growth = size - mainSize;
-  const next = ceiling + RAISE_BYTES;
+  const steps = Math.ceil((excess + MIN_MARGIN) / RAISE_BYTES);
+  const next = ceiling + steps * RAISE_BYTES;
   const since = next - reviewCeiling;
-  const reasons = [];
-  if (excess > MAX_EXCESS) {
-    reasons.push(
-      `o excesso de ${excess} bytes passa de 14 KiB (${MAX_EXCESS} bytes): com a subida de 16 KiB, a margem ficaria abaixo de 2 KiB`,
-    );
-  }
-  if (growth > MAX_GROWTH) {
-    reasons.push(
-      `o épico cresceu ${growth} bytes sobre a main, mais de 32 KiB (${MAX_GROWTH} bytes)`,
-    );
-  }
-  if (since > MAX_SINCE_REVIEW) {
-    reasons.push(
-      `as subidas desde a última revisão do dono passariam de 64 KiB (${since} bytes contando com esta; limite ${MAX_SINCE_REVIEW})`,
-    );
-  }
-  if (reasons.length > 0) return { action: 'owner', reason: reasons.join('; ') };
-  return { action: 'raise', ceiling, next, excess, growth, since };
+  const over = overLimits({ excess, growth, since, steps });
+  return { action: 'raise', ceiling, next, excess, growth, since, over };
 }
 
+/** A linha `sobe:` e, quando a subida passa de um limite, a linha `bug:` (separadas por `\n`). */
 export function describeDecision(d) {
   if (d.action === 'none') return `nada a subir: ${d.reason}`;
-  if (d.action === 'owner') return `chama o dono: ${d.reason}`;
-  return `sobe: ${d.ceiling} → ${d.next} (excesso ${d.excess}, crescimento ${d.growth}, subidas desde a revisão ${d.since})`;
+  const sobe = `sobe: ${d.ceiling} → ${d.next} (excesso ${d.excess}, crescimento ${d.growth}, subidas desde a revisão ${d.since})`;
+  if (d.over.length === 0) return sobe;
+  return `${sobe}\nbug: ${d.over.map((o) => o.reason).join('; ')}`;
 }
 
 /** KiB com vírgula decimal só quando o teto não é múltiplo de 1 KiB: `1904` ou `1.904,5`. */
@@ -106,12 +121,16 @@ export function loadBudget(file) {
   return data;
 }
 
-/** Devolve os dados com o teto novo e a frase da subida no fim do `history`. */
+/** Devolve os dados com o teto novo e a frase da subida no fim do `history` (com os itens acima dos limites, se houver). */
 export function applyRaise(data, d, { epic, date }) {
   if (data.indexHtmlMaxBytes !== d.ceiling) {
     throw new Error(`O arquivo tem teto ${data.indexHtmlMaxBytes}, não ${d.ceiling}.`);
   }
-  const sentence = `Subido para ${grouped(d.next)} (${kib(d.next)} KiB) pela regra do orçamento (${date}, épico \`${epic}\`): excesso de ${d.excess} bytes, crescimento de ${d.growth} bytes sobre a \`main\`.`;
+  const above =
+    d.over.length > 0
+      ? ` Acima dos limites: ${d.over.map((o) => o.item).join('; ')}.`
+      : '';
+  const sentence = `Subido para ${grouped(d.next)} (${kib(d.next)} KiB) pela regra do orçamento (${date}, épico \`${epic}\`): excesso de ${d.excess} bytes, crescimento de ${d.growth} bytes sobre a \`main\`.${above}`;
   return { ...data, indexHtmlMaxBytes: d.next, history: [...data.history, sentence] };
 }
 
@@ -154,7 +173,7 @@ function intArg(args, name) {
 }
 
 const USAGE =
-  'Uso: distBudget.mjs ceiling [--budget <arquivo>] | distBudget.mjs raise --size <bytes> --main-size <bytes> --review-ceiling <bytes> [--budget <arquivo>] [--write --epic <nome> [--date <AAAA-MM-DD>]]';
+  'Uso: distBudget.mjs ceiling [--budget <arquivo>] | distBudget.mjs raise --size <bytes> --main-size <bytes> --review-ceiling <bytes> [--budget <arquivo>] [--write --epic <nome> [--date <AAAA-MM-DD>]] (o raise sempre sobe; uma 2ª linha `bug:` diz quando a subida passou de um limite)';
 
 export function main(argv) {
   const args = parseArgs(argv);

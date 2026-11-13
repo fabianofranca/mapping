@@ -1,7 +1,8 @@
 // @vitest-environment node
-// Fase CR1 (etapa #1324, decisões 6, 8 e 9) e fase TF1 (etapa #1614, decisão 3): `scripts/ci/distBudget.mjs`
-// decide se o teto do `dist/index.html` sobe sozinho (16 KiB) ou se chama o dono, e com `--write`
-// troca o `indexHtmlMaxBytes` do `scripts/ci/dist-budget.json` e acrescenta a frase ao `history`.
+// Fase CR1 (etapa #1324, decisões 6, 8 e 9), fase TF1 (etapa #1614, decisão 3) e fase TB1 (etapa #1802,
+// decisões 1 a 3): `scripts/ci/distBudget.mjs` sempre sobe o teto do `dist/index.html` em passos de 16 KiB
+// (nunca "chama o dono") e, quando a subida passa de um limite, diz o motivo numa linha `bug:`; com
+// `--write` troca o `indexHtmlMaxBytes` do `scripts/ci/dist-budget.json` e acrescenta a frase ao `history`.
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -94,26 +95,110 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     );
   });
 
-  it('excesso 14.336 sobe (margem 2.048); 14.337 chama o dono, com 14 KiB no motivo (RS1, decisão 10)', () => {
-    const max = KIB16 - 2048;
-    expect(raise({ size: CEILING + max, main: CEILING })).toMatch(/^sobe:/);
-    expect(raise({ size: CEILING + max + 1, main: CEILING })).toMatch(
-      /^chama o dono: .*excesso.*14 KiB \(14336 bytes\).*2 KiB/,
+  it('excesso 14.336 sobe 16 KiB numa linha só, sem bug', () => {
+    const out = raise({ size: CEILING + 14336, main: CEILING });
+    expect(out.split('\n')).toEqual([
+      `sobe: ${CEILING} → ${CEILING + KIB16} (excesso 14336, crescimento 14336, subidas desde a revisão ${CEILING + KIB16 - REVIEW})`,
+    ]);
+    expect(out).not.toContain('bug:');
+  });
+
+  it('excesso 14.337 sobe 32 KiB e diz o bug, com 14 KiB e 32 KiB', () => {
+    const [sobe, bug, ...rest] = raise({ size: CEILING + 14337, main: CEILING }).split(
+      '\n',
+    );
+    expect(sobe).toMatch(new RegExp(`^sobe: ${CEILING} → ${CEILING + 2 * KIB16} \\(`));
+    expect(bug).toMatch(/^bug: /);
+    expect(bug).toContain('14 KiB (14336 bytes)');
+    expect(bug).toContain('32 KiB');
+    expect(bug).not.toContain('cresceu');
+    expect(bug).not.toContain('subidas desde');
+    expect(rest).toEqual([]);
+  });
+
+  it('excesso 30.720 sobe 32 KiB; 30.721 sobe 48 KiB', () => {
+    const next = (excess: number) =>
+      raise({ size: CEILING + excess, main: CEILING }).split('\n')[0];
+    expect(next(30720)).toMatch(
+      new RegExp(`^sobe: ${CEILING} → ${CEILING + 2 * KIB16} `),
+    );
+    expect(next(30721)).toMatch(
+      new RegExp(`^sobe: ${CEILING} → ${CEILING + 3 * KIB16} `),
+    );
+    expect(next(30721)).toContain(
+      `subidas desde a revisão ${CEILING + 3 * KIB16 - REVIEW})`,
     );
   });
 
-  it('crescimento exatamente 32.768 sobe; 32.769 chama o dono', () => {
+  it('o 48 KiB do excesso 30.721 aparece no motivo do bug', () => {
+    const bug = raise({ size: CEILING + 30721, main: CEILING }).split('\n')[1];
+    expect(bug).toContain('48 KiB');
+  });
+
+  it.each([1, 14336, 14337, 30720, 30721, 50000])(
+    'excesso %i: a margem depois da subida fica em [2.048, 2.048 + 16.384)',
+    (excess) => {
+      const first = raise({ size: CEILING + excess, main: CEILING }).split('\n')[0] ?? '';
+      const next = Number(/→ (\d+) /.exec(first)?.[1]);
+      const margin = next - (CEILING + excess);
+      expect(margin).toBeGreaterThanOrEqual(2048);
+      expect(margin).toBeLessThan(2048 + KIB16);
+    },
+  );
+
+  it('crescimento exatamente 32.768 sobe sem bug; 32.769 sobe 16 KiB com bug que cita 32 KiB', () => {
     const size = CEILING + 100;
-    expect(raise({ size, main: size - 32768 })).toMatch(/^sobe:/);
-    expect(raise({ size, main: size - 32769 })).toMatch(/^chama o dono: .*cresceu/);
+    expect(raise({ size, main: size - 32768 })).not.toContain('bug:');
+    const lines = raise({ size, main: size - 32769 }).split('\n');
+    expect(lines[0]).toMatch(new RegExp(`^sobe: ${CEILING} → ${CEILING + KIB16} `));
+    expect(lines[1]).toMatch(/^bug: .*cresceu 32769 bytes.*32 KiB \(32768 bytes\)/);
+    expect(lines).toHaveLength(2);
   });
 
-  it('subidas desde a revisão: até 65.536 contando com esta; 65.537 chama o dono', () => {
+  it('subidas desde a revisão: até 65.536 contando com esta sobe sem bug; 65.537 sobe com bug que cita 64 KiB', () => {
     const atLimit = CEILING + KIB16 - 65536;
-    expect(raise({ size: CEILING + 1, review: atLimit })).toMatch(/^sobe:/);
-    expect(raise({ size: CEILING + 1, review: atLimit - 1 })).toMatch(
-      /^chama o dono: .*64 KiB/,
+    expect(raise({ size: CEILING + 1, review: atLimit })).not.toContain('bug:');
+    const lines = raise({ size: CEILING + 1, review: atLimit - 1 }).split('\n');
+    expect(lines[0]).toMatch(new RegExp(`^sobe: ${CEILING} → ${CEILING + KIB16} `));
+    expect(lines[1]).toMatch(
+      /^bug: .*65537 bytes contando com esta.*64 KiB \(65536 bytes\)/,
     );
+    expect(lines).toHaveLength(2);
+  });
+
+  it('vários limites ao mesmo tempo: uma linha bug só, com os motivos separados por "; "', () => {
+    const size = CEILING + 20000;
+    const lines = raise({ size, main: size - 40000, review: CEILING - 100000 }).split(
+      '\n',
+    );
+    expect(lines).toHaveLength(2);
+    expect(lines[1]).toMatch(/^bug: /);
+    const reasons = (lines[1] ?? '').slice('bug: '.length).split('; ');
+    expect(reasons).toHaveLength(3);
+    expect(reasons[0]).toContain('excesso');
+    expect(reasons[1]).toContain('cresceu');
+    expect(reasons[2]).toContain('subidas desde');
+    // `since` usa o teto novo (2 passos), não só o primeiro: 2 × 16.384 + 100.000.
+    expect(reasons[0]).toContain('a subida foi de 32 KiB');
+    expect(reasons[2]).toContain(`somam ${2 * KIB16 + 100000} bytes contando com esta`);
+    expect(lines[0]).toContain(`subidas desde a revisão ${2 * KIB16 + 100000})`);
+  });
+
+  it('nunca chama o dono: saída 0 e nenhuma linha começa por "chama o dono", nem com --write', () => {
+    const cases = [
+      { size: CEILING + 14337, main: CEILING },
+      { size: CEILING + 50000, main: CEILING - 100000, review: CEILING - 200000 },
+      { size: CEILING + 1, main: CEILING - 32769 },
+      { size: CEILING + 1, review: CEILING + KIB16 - 65537 },
+    ];
+    for (const c of cases) {
+      for (const write of [false, true]) {
+        writeFileSync(budget, fixture());
+        const r = run(raiseArgs({ ...c, write }));
+        expect(r.status).toBe(0);
+        for (const line of r.out.split('\n')) expect(line).not.toMatch(/^chama o dono/);
+      }
+    }
   });
 
   it('dentro do teto não há o que subir', () => {
@@ -148,10 +233,34 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     expect(await format(written, { ...config, parser: 'json' })).toBe(written);
   });
 
-  it('com --write fora dos limites não altera o arquivo', () => {
-    const out = raise({ size: CEILING + KIB16 + 1, main: CEILING, write: true });
-    expect(out).toMatch(/^chama o dono/);
-    expect(readFileSync(budget, 'utf8')).toBe(fixture());
+  it('com --write acima de um limite grava o teto novo e a frase com "Acima dos limites"', async () => {
+    const size = CEILING + 20000;
+    const out = raise({
+      size,
+      main: size - 40000,
+      review: CEILING - 100000,
+      write: true,
+    });
+    expect(out.split('\n')).toHaveLength(2);
+    const written = readFileSync(budget, 'utf8');
+    const after = JSON.parse(written) as { indexHtmlMaxBytes: number; history: string[] };
+    expect(after.indexHtmlMaxBytes).toBe(CEILING + 2 * KIB16);
+    expect(after.history).toHaveLength(HISTORY.length + 1);
+    expect(after.history.slice(0, HISTORY.length)).toEqual(HISTORY);
+    expect(after.history.at(-1)).toBe(
+      'Subido para 1.966.080 (1.920 KiB) pela regra do orçamento (2026-11-10, épico `ci-resiliente`): excesso de 20000 bytes, crescimento de 40000 bytes sobre a `main`. Acima dos limites: excesso acima de 14 KiB; crescimento acima de 32 KiB sobre a `main`; subidas desde a revisão do dono acima de 64 KiB.',
+    );
+    const config =
+      (await resolveConfig(path.join(REPO, 'scripts/ci/dist-budget.json'))) ?? {};
+    expect(await format(written, { ...config, parser: 'json' })).toBe(written);
+  });
+
+  it('com --write acima de um só limite, a frase cita só esse item', () => {
+    raise({ size: CEILING + 100, main: CEILING + 100 - 32769, write: true });
+    const after = JSON.parse(readFileSync(budget, 'utf8')) as { history: string[] };
+    expect(after.history.at(-1)).toMatch(
+      / Acima dos limites: crescimento acima de 32 KiB sobre a `main`\.$/,
+    );
   });
 
   it('com --write e nada a subir não altera o arquivo', () => {
