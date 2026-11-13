@@ -1,6 +1,7 @@
 import {
   isBackgroundContainer,
   projectIndex,
+  type ReadingDirection,
   type Marking,
   type ProjectContainer,
 } from '../src/model';
@@ -25,6 +26,8 @@ export const MAX_ZOOM = 8;
 export interface RenderOptions {
   readonly zoom?: number;
   readonly drawingMode?: string;
+  /** Fixa a direção de leitura na imagem (como o `drawingMode`); ausente = a efetiva de cada container. */
+  readonly direction?: ReadingDirection;
   /** `image` (padrão): o arquivo do container (ou a cor de fundo, sem arquivo); `none`: transparente. */
   readonly background?: 'image' | 'none';
   /** Margem em volta da marcação, em pixels do container (só `render_marking`). */
@@ -155,6 +158,7 @@ async function renderRegion(
     {
       ...(markingIds === undefined ? {} : { markingIds }),
       ...(options.drawingMode === undefined ? {} : { drawingMode: options.drawingMode }),
+      ...(options.direction === undefined ? {} : { direction: options.direction }),
     },
   );
   const bytes = await encodeImage(raster, format);
@@ -167,6 +171,7 @@ async function renderRegion(
       zoom,
       background,
       drawingMode: options.drawingMode ?? null,
+      direction: options.direction ?? null,
       region: rectJson(region),
       drawings: drawn,
       ...(warning === undefined ? {} : { warning }),

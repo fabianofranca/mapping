@@ -2350,6 +2350,10 @@ const card={format:"mapping-component",formatVersion:4,id:"card",name:"Card",siz
   {type:"frame",name:"fixo",direction:"ltr",height:24,layout:{type:"none"},children:[
     r("f1",30,"#B3261E",{anchors:{start:0,top:0}}),ico(60),txt("rotulo2","LTR",{width:100,anchors:{left:120,top:0}})]}]}};
 fs.writeFileSync(L+"components/card.json",JSON.stringify(card));
+const sw=(name,fill)=>({type:"rect",name,width:40,height:30,fill});
+const linha={format:"mapping-component",formatVersion:4,id:"spacer",name:"Spacer",size:{width:100,height:30},
+ template:{type:"frame",name:"linha",layout:{type:"row",gap:0,justify:"start"},children:[sw("a","#B3261E"),sw("b","#1565C0")]}};
+fs.writeFileSync(L+"components/spacer.json",JSON.stringify(linha));
 '
 ```
 

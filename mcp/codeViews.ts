@@ -1,6 +1,7 @@
 import {
   codeBlueprint,
   codeLocalPath,
+  effectiveDirection,
   findPlatform,
   findSpecType,
   placedTypeNotices,
@@ -302,10 +303,13 @@ function hintNode(
 ): Json {
   const annotations = node.annotations.map((a) => hintAnnotation(a, refs, codes));
   const children = node.children.map((c) => hintNode(c, refs, codes));
+  const marking = projectIndex(refs.project).markings.get(node.markingId);
   return {
     ref: refs.ref('m', node.markingId),
     name: node.name,
     rect: node.rect,
+    // Direção de leitura efetiva do espaço da marcação (o container dela, senão a do projeto).
+    direction: effectiveDirection(refs.project, marking?.containerId ?? null),
     ...(annotations.length > 0 ? { annotations } : {}),
     ...(children.length > 0 ? { children } : {}),
   };
@@ -411,6 +415,11 @@ export async function codeHintsView(
       language: blueprint.platform.language,
     },
     repos: blueprint.repo === null ? {} : { [platformId]: blueprint.repo },
+    // A direção de leitura efetiva da marcação pedida: a plataforma a aplica no envoltório.
+    direction: effectiveDirection(
+      refs.project,
+      projectIndex(refs.project).markings.get(markingId)?.containerId ?? null,
+    ),
     types,
     ...(unmapped.length > 0
       ? {

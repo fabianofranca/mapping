@@ -268,7 +268,9 @@ const FIELD_KEYS: Readonly<Record<string, TranslationKey>> = {
   'image.source': 'review.field.source',
   'image.drawingMode': 'review.field.drawingMode',
   'image.density': 'review.field.density',
+  'image.direction': 'review.field.direction',
   'project.drawingMode': 'review.field.drawingMode',
+  'project.direction': 'review.field.direction',
   'annotation.name': 'review.field.annotationName',
   'annotation.parentAnnotationId': 'review.field.owner',
   'annotation.parentRole': 'review.field.role',
@@ -504,6 +506,23 @@ function compact(value: JsonValue): string {
   return json.length > 80 ? `${json.slice(0, 79)}…` : json;
 }
 
+/** Texto de uma direção de leitura; `null` (ausente) é "Segue o projeto" no container e `ltr` no projeto. */
+function directionText(entity: Change['entity'], value: JsonValue): string {
+  if (value === 'ltr' || value === 'rtl') return t(`review.value.direction.${value}`);
+  return t(entity === 'image' ? 'direction.followProject' : 'review.value.direction.ltr');
+}
+
+/** A entidade `project`: o modo do desenho e, quando fixada, "Direção: …". */
+function projectSummary(value: Record<string, JsonValue>): string {
+  const parts = [
+    text(value.drawingMode),
+    value.direction == null
+      ? null
+      : `${t('review.field.direction')}: ${directionText('project', value.direction)}`,
+  ].filter((part) => part !== null && part !== '');
+  return parts.length > 0 ? parts.join(' · ') : t('review.value.empty');
+}
+
 /** Resumo de uma entidade inteira (criação ou remoção). */
 function entitySummary(names: ReviewNames, c: Change, value: JsonValue): string {
   if (!isRecord(value)) return compact(value);
@@ -541,7 +560,7 @@ function entitySummary(names: ReviewNames, c: Change, value: JsonValue): string 
     case 'docRepo':
       return text(value.localPath) ?? c.entityId;
     case 'project':
-      return text(value.drawingMode) ?? t('review.value.empty');
+      return projectSummary(value);
   }
 }
 
@@ -568,6 +587,7 @@ export function valueParts(
   if (field === 'density') {
     return [{ text: formatDensity(typeof value === 'number' ? value : 1) }];
   }
+  if (field === 'direction') return [{ text: directionText(c.entity, value) }];
   if (value === null) return [{ text: t('review.value.empty') }];
   if (field.startsWith(VALUES_FIELD_PREFIX)) {
     const typedParts = typedValueParts(names, value);

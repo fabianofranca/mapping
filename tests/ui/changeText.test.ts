@@ -6,6 +6,9 @@ import {
   changeType,
   createArrow,
   setContainerDensity,
+  setContainerDirection,
+  setProjectDirection,
+  setProjectDrawingMode,
   type Change,
   type JsonValue,
   type Proposal,
@@ -178,6 +181,62 @@ describe('changeTitle e changeSummary: a densidade do container (D2, decisão 7 
     expect(summaryOf(fixed, base)).toBe('Densidade: 3 → 1');
     expect(summaryOf(base, setContainerDensity(base, 'c1', 2.5))).toBe(
       'Densidade: 1 → 2,5',
+    );
+  });
+});
+
+describe('changeTitle e changeSummary: a direção de leitura (R2 da etapa #1096)', () => {
+  beforeEach(() => {
+    locale.value = 'pt-BR';
+  });
+  const base = addBackgroundContainer(emptyProject(), {
+    id: 'c1',
+    width: 1080,
+    height: 2400,
+    background: '#FFFFFF',
+  });
+  const summaryOf = (before: typeof base, after: typeof base, entity: string) => {
+    const proposal = propose(before, after);
+    const change = proposal.changes.find(
+      (c) => c.entity === entity && (entity === 'project' || c.field === 'direction'),
+    );
+    if (!change) throw new Error('sem mudança de direção');
+    const names = { current: before, preview: null, proposal };
+    const summary = changeSummary(names, change);
+    return entity === 'project' ? summary : `${changeTitle(names, change)}: ${summary}`;
+  };
+
+  it('o container que fixa rtl mostra "Direção: Segue o projeto → direita para a esquerda"', () => {
+    expect(summaryOf(base, setContainerDirection(base, 'c1', 'rtl'), 'image')).toBe(
+      'Direção: Segue o projeto → direita para a esquerda',
+    );
+  });
+
+  it('voltar a seguir o projeto mostra o texto de "Segue o projeto"', () => {
+    const fixed = setContainerDirection(base, 'c1', 'rtl');
+    expect(summaryOf(fixed, base, 'image')).toBe(
+      'Direção: direita para a esquerda → Segue o projeto',
+    );
+  });
+
+  it('a direção do projeto aparece na mudança do projeto, com o campo "Direção"', () => {
+    const empty = t('review.value.empty');
+    expect(summaryOf(base, setProjectDirection(base, 'rtl'), 'project')).toBe(
+      `${empty} → Direção: direita para a esquerda`,
+    );
+  });
+
+  it('trocar só o modo num projeto rtl mantém a direção nos dois lados', () => {
+    const rtl = setProjectDirection(base, 'rtl');
+    expect(summaryOf(rtl, setProjectDrawingMode(rtl, 'dark'), 'project')).toBe(
+      'Direção: direita para a esquerda → dark · Direção: direita para a esquerda',
+    );
+  });
+
+  it('em en-US o campo e os valores também vêm de t()', () => {
+    locale.value = 'en-US';
+    expect(summaryOf(base, setContainerDirection(base, 'c1', 'rtl'), 'image')).toBe(
+      'Direction: Follows the project → right to left',
     );
   });
 });

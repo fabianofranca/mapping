@@ -1,5 +1,6 @@
 import {
   drawingModesOf,
+  effectiveDirection,
   effectiveDrawingMode,
   arrowsOf,
   markingComponent,
@@ -500,6 +501,9 @@ function containerSummary(refs: Refs, image: ProjectContainer): Json {
     // Modo do desenho que o container fixa (`null` = segue o projeto) e o que vale nele.
     drawingMode: image.drawingMode ?? null,
     effectiveDrawingMode: effectiveModeOf(refs.project, image.id),
+    // Direção de leitura que o container fixa (`null` = segue o projeto) e a que vale nele.
+    direction: image.direction ?? null,
+    effectiveDirection: effectiveDirection(refs.project, image.id),
     // Pixels da imagem por unidade do componente (1 = o padrão, também quando ausente).
     density: image.density ?? 1,
     // Marcação do canvas que contém o container (derivado da geometria), ou `null`.
@@ -632,6 +636,8 @@ export function projectDetail(refs: Refs): Json {
     createdAt: p.project.createdAt,
     // Modo do desenho do projeto (`null` = o primeiro modo de cada especialização).
     drawingMode: p.drawingMode ?? null,
+    // Direção de leitura do projeto: `ltr` quando nenhuma está gravada (é o que vale).
+    direction: p.direction ?? 'ltr',
     ...(loaded.migratedFrom !== null ? { migratedFrom: loaded.migratedFrom } : {}),
     containers: p.containers.map((image) => ({
       ...containerSummary(refs, image),

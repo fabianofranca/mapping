@@ -1221,6 +1221,20 @@ export const ptBR = {
   'diagnostics.drawingModeHint':
     'O modo continua gravado; sem uma especialização que o declare, o desenho usa o primeiro modo dela.',
   'diagnostics.modeUndeclared': 'modo {mode} não declarado',
+  'direction.title': 'Direção de leitura',
+  'direction.intro':
+    'Escolhe para que lado a leitura corre no desenho dos componentes: da esquerda para a direita (o padrão) ou da direita para a esquerda. Nenhuma marcação muda de lugar.',
+  'direction.label': 'Direção',
+  'direction.ltr': 'Da esquerda para a direita',
+  'direction.rtl': 'Da direita para a esquerda',
+  'direction.followProject': 'Segue o projeto',
+  'direction.containerHint':
+    'Fixa a direção de leitura dos componentes deste container; "Segue o projeto" usa a do projeto.',
+  'diagnostics.direction': 'Direção de leitura',
+  'diagnostics.directionHint':
+    'Os componentes são desenhados da direita para a esquerda no projeto ou nos containers listados.',
+  'diagnostics.directionProject': 'Projeto: {direction}',
+  'diagnostics.directionContainer': '{name}: {direction}',
   'diagnostics.components': 'Componentes',
   'diagnostics.componentsHint':
     'Fontes que não carregaram, componentes que não puderam ser lidos e avisos do desenho.',

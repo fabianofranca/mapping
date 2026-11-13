@@ -82,8 +82,10 @@ import {
   setFieldValue,
   setImageLocked,
   setContainerDensity,
+  setContainerDirection,
   setContainerDrawingMode,
   setContainerMarkingColor,
+  setProjectDirection,
   setProjectDrawingMode,
   setImageMarkingsLocked,
   setContainerPlacement,
@@ -1549,20 +1551,30 @@ class Batch {
    * componente) e vale o `minSize`; a anotação nasce como na paleta da app (`preview`), com os
    * `values` por cima. O servidor nunca arruma: os retângulos são os que o agente informou.
    */
-  /** `update_project`: hoje só o modo do desenho. */
+  /** `update_project`: o modo do desenho e a direção de leitura do projeto. */
   private updateProjectOp(
     op: Extract<Operation, { op: 'update_project' }>,
     p: Project,
   ): Step {
-    if (op.drawingMode === undefined) {
-      return { project: p, description: 'Alterar o projeto: nada' };
+    let project = p;
+    const changes: string[] = [];
+    if (op.drawingMode !== undefined) {
+      project = setProjectDrawingMode(project, op.drawingMode);
+      changes.push(
+        op.drawingMode === null
+          ? 'modo do desenho removido'
+          : `modo do desenho ${quoted(op.drawingMode)}`,
+      );
+    }
+    if (op.direction !== undefined) {
+      project = setProjectDirection(project, op.direction);
+      changes.push(
+        op.direction === null ? 'direção removida' : `direção ${quoted(op.direction)}`,
+      );
     }
     return {
-      project: setProjectDrawingMode(p, op.drawingMode),
-      description:
-        op.drawingMode === null
-          ? 'Alterar o projeto: modo do desenho removido'
-          : `Alterar o projeto: modo do desenho ${quoted(op.drawingMode)}`,
+      project,
+      description: `Alterar o projeto: ${changes.join(', ') || 'nada'}`,
     };
   }
 
@@ -1583,6 +1595,13 @@ class Batch {
         ...result,
         project: setContainerDrawingMode(result.project, id, op.drawingMode),
         description: `${result.description}, modo do desenho ${quoted(op.drawingMode)}`,
+      };
+    }
+    if (op.direction != null) {
+      result = {
+        ...result,
+        project: setContainerDirection(result.project, id, op.direction),
+        description: `${result.description}, direção ${quoted(op.direction)}`,
       };
     }
     if (op.density != null) {
@@ -1755,6 +1774,12 @@ class Batch {
         op.drawingMode === null
           ? 'modo do desenho do projeto'
           : `modo do desenho ${quoted(op.drawingMode)}`,
+      );
+    }
+    if (op.direction !== undefined) {
+      project = setContainerDirection(project, id, op.direction);
+      changes.push(
+        op.direction === null ? 'direção do projeto' : `direção ${quoted(op.direction)}`,
       );
     }
     if (op.density !== undefined) {
