@@ -113,6 +113,7 @@ describe('riskTriggers.mjs (RS1)', () => {
     ['.claude/skills/detalhar-backlog/SKILL.md', 'detalhar-backlog'],
     ['.claude/skills/supervisionar-fila/SKILL.md', 'supervisionar-fila'],
     ['.claude/skills/supervisionar-fila/custo.py', 'supervisionar-fila'],
+    ['.claude/skills/via-rapida/SKILL.md', 'via-rapida'],
     ['docs/PROCESS.md', 'docs/PROCESS.md'],
     ['.github/workflows/ci.yml', '.github/workflows/'],
     ['scripts/release/a.mjs', 'scripts/release/'],

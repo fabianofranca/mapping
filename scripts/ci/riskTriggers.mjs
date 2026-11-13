@@ -15,6 +15,7 @@ const PATH_TRIGGERS = [
   { id: 'implementar-fila', path: '.claude/skills/implementar-fila/' },
   { id: 'detalhar-backlog', path: '.claude/skills/detalhar-backlog/' },
   { id: 'supervisionar-fila', path: '.claude/skills/supervisionar-fila/' },
+  { id: 'via-rapida', path: '.claude/skills/via-rapida/' },
   // Qualquer mudança conta (decisão 2): o script não distingue regra de texto.
   { id: 'docs/FLOW.md', path: 'docs/FLOW.md' },
   { id: 'docs/PROCESS.md', path: 'docs/PROCESS.md' },
