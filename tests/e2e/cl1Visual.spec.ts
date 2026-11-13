@@ -67,28 +67,6 @@ test('1.1 Paleta: nome do tipo legível e botão Adicionar inteiro em todas as l
   ).toBe(true);
 });
 
-test('1.2 Janela inferior: abas com espaço entre elas e as seis cabem sem rolar', async ({
-  page,
-}) => {
-  await openWithLibrary(page);
-  await page.keyboard.press('Control+Shift+4');
-  const tablist = page
-    .getByRole('tablist')
-    .filter({ has: page.getByRole('tab', { name: 'Diagnóstico' }) });
-  await expect(tablist).toBeVisible();
-  const m = await tablist.evaluate((list) => {
-    const boxes = [...list.querySelectorAll<HTMLElement>('[role=tab]')].map((b) =>
-      b.getBoundingClientRect(),
-    );
-    const gaps = boxes.slice(1).map((b, i) => b.left - boxes[i]!.right);
-    return { gaps, overflow: list.scrollWidth > list.clientWidth };
-  });
-  // Entre duas abas há ao menos o vão `--space-0-5` (2px), e as seis cabem sem rolar.
-  expect(m.gaps).toHaveLength(5);
-  expect(Math.min(...m.gaps)).toBeGreaterThanOrEqual(2);
-  expect(m.overflow).toBe(false);
-});
-
 /** Palavras soltas (nó de texto sem espaço) que o navegador parte em mais de uma linha. */
 async function brokenWords(page: Page, selector: string): Promise<string[]> {
   return page.evaluate((sel) => {

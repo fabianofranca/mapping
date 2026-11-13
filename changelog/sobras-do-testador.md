@@ -11,6 +11,5 @@
 ## Corrigido
 
 - Paleta do Catálogo a 900×720: o nome de cada tipo aparece inteiro (quebra em linhas) e o botão **Adicionar no canvas** fica sem corte, descendo para a linha de baixo quando não cabe ao lado do nome.
-- Janela inferior: as abas Lista, Incompletas, Avisos, Diagnóstico e Propostas ganham um vão de 4 px entre elas e continuam cabendo nos 900 px.
 - Catálogo: as tabelas do documento do componente não partem mais palavras curtas no meio ("enu/m", "strin/g") e os nomes da lista, como `LazyVerticalGrid` e `HorizontalPager`, não partem na janela estreita; a moldura da tabela rola na horizontal.
 - Árvore e Detalhes a 900×720: título da janela, rótulos da Árvore e nome da camada cortados com reticências ganham dica com o texto inteiro, e "Nenhuma anotação nesta camada." vira uma nota abaixo do cabeçalho da camada, sem corte.

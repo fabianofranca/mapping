@@ -140,8 +140,7 @@ test.describe('faixa de abas da janela inferior (900 × 720)', () => {
 
   // Folga mínima (px) entre a última aba e a borda da faixa: cobre fontes mais largas de outras
   // máquinas e contagens de mais dígitos (o relato da CL2 e o CI medem 362 a 363 px de conteúdo para 356 antes do ajuste; aqui, com a fonte local, a folga é maior).
-  // CL1 (1.2): 4px (era 12) para dar 2px de vão entre as abas (5 vãos = 10px) na faixa de 360px.
-  const SLACK = 4;
+  const SLACK = 12;
 
   test('as seis abas cabem inteiras, sem rolar e com folga', async ({ page }) => {
     await openComments(page, 'Todas');

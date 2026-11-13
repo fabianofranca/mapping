@@ -430,12 +430,10 @@
 /* Largura menor que as abas: a faixa rola (herdado), mas nunca encolhe abaixo do conteúdo no layout. */
 .tool-window-bottom .tool-window-tabs .tabs {
   flex: 1 1 auto;
-  gap: var(--space-0-5);
+  gap: 0;
 }
 
-/* Abas mais justas: as seis cabem na largura mínima do canvas (`--size-canvas-min`); o respiro
-   entre elas vem só do vão de `.tabs` (2px, `--space-0-5`; 4px estoura a faixa de 360px com a fonte mais larga do CI; CL1, 1.2: era 0 e as palavras pareciam coladas). Recuo
-   lateral nas abas estoura o pior caso (contadores em todas) a 900px. */
+/* Abas mais justas: as seis cabem na largura mínima do canvas (`--size-canvas-min`). */
 .tool-window-bottom .tool-window-tabs .tab {
   padding: 0;
   /* Seis abas: a fonte pequena deixa folga para as fontes mais largas de outras máquinas. */
