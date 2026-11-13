@@ -66,7 +66,7 @@ for (const width of [900, 1280]) {
 }
 
 // CL1 (1.1): o contador não fica colado ao rótulo (vão de 4px, `--space-1`) e, no pior caso (contador
-// nas seis abas, o do Avisos com 2 dígitos), as seis abas continuam inteiras em 900 e 1280 px.
+// nas abas com rótulo, o do Avisos com 2 dígitos), as seis abas continuam inteiras em 900 e 1280 px.
 const MIN_GAP = 4;
 
 for (const width of [900, 1280]) {
@@ -82,9 +82,11 @@ for (const width of [900, 1280]) {
     await expect(tablist).toBeVisible();
     const metrics = await tablist.evaluate((list) => {
       const tabs = [...list.querySelectorAll<HTMLElement>('[role=tab]')];
-      // O pior caso: contador em todas as abas (o do Avisos com 2 dígitos).
+      // O pior caso: contador em todas as abas com rótulo (o do Avisos com 2 dígitos).
       for (const tab of tabs) {
         if (tab.querySelector('.tab-badge, .tab-alert')) continue;
+        // A aba só de ícone (Comentários) não tem rótulo: fica fora do pior caso.
+        if (!(tab.textContent ?? '').trim()) continue;
         const badge = document.createElement('span');
         badge.className = 'tab-badge';
         badge.textContent = (tab.textContent ?? '').startsWith('Avisos') ? '12' : '9';
