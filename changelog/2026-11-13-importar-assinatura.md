@@ -19,6 +19,7 @@
 ## Alterado
 
 - Teto do `dist/index.html` subiu 16 KiB, de 2.113.536 para 2.129.920 bytes, por decisão do dono (exceção ao limite de 64 KiB de subidas desde a revisão): a ficha, a `formatVersion` 16 e a Ajuda dela fecharam o `dist/index.html` em 2.126.076 bytes.
+- Teto do `dist/index.html` subiu 16 KiB, de 2.129.920 para 2.146.304 bytes, por decisão do dono (exceção ao limite de 64 KiB de subidas desde a revisão; CL2).
 
 - **Biblioteca Material 3 (Compose):** os testes e os roteiros R25.x deixam de exigir "0 avisos" e passam a aceitar só os 70 avisos `parâmetro fora da ficha` do conjunto conhecido (`KNOWN_PARAM_WARNINGS`, em `tests/support/material3Library.ts`); qualquer outro aviso, ou erro, falha. **Provisório, decisão do dono pendente no bug #1774; curadoria na #1134.**
 - **Abas da janela inferior:** o Avisos passa a mostrar o contador dos `pending` da Material 3 no exemplo, e a faixa de seis abas a 900 px estourava com a fonte do CI; as abas ficam sem recuo próprio e o contador com 1 px de cada lado.

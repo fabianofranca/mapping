@@ -1,5 +1,5 @@
 {
-  "indexHtmlMaxBytes": 2129920,
+  "indexHtmlMaxBytes": 2146304,
   "history": [
     "Orçamento do dist/index.html (autocontido; 1.376.757 bytes, ~1,38 MB em 2026-10-19, com o exemplo embutido: ~80 KB em base64).",
     "Subido para 1.703.936 (1,625 MiB) na etapa #559 (decisão do dono, 2026-11-05): o épico estava a 151 bytes do teto e a PD5 soma ~7,4 KB de código real.",
@@ -19,6 +19,7 @@
     "Subido para 2.080.768 (2.032 KiB) pela regra do orçamento (2026-11-11, épico `medida-conteudo`): excesso de 879 bytes, crescimento de 23843 bytes sobre a `main`.",
     "Subido para 2.097.152 (2.048 KiB) pela regra do orçamento (2026-11-12, épico `layout-flex-grid`): excesso de 5617 bytes, crescimento de 17875 bytes sobre a `main`.",
     "Subido para 2.113.536 (2.064 KiB) pela regra do orçamento (2026-11-12, épico `densidade-captura`): excesso de 3085 bytes, crescimento de 7506 bytes sobre a `main`.",
-    "Subido para 2.129.920 (2.080 KiB) na S1 da etapa #1079 (decisão do dono, 2026-11-12, com exceção ao limite de 64 KiB de subidas desde a revisão): o `dist/index.html` do épico `importar-assinatura` fechou em 2.126.076 bytes, excesso de 12.540 bytes sobre o teto da `main`."
+    "Subido para 2.129.920 (2.080 KiB) na S1 da etapa #1079 (decisão do dono, 2026-11-12, com exceção ao limite de 64 KiB de subidas desde a revisão): o `dist/index.html` do épico `importar-assinatura` fechou em 2.126.076 bytes, excesso de 12.540 bytes sobre o teto da `main`.",
+    "Subido para 2.146.304 (2.096 KiB) na CL2 da etapa #1079 (decisão do dono, 2026-11-13, com exceção ao limite de 64 KiB de subidas desde a revisão): o `dist/index.html` do épico `importar-assinatura` fechou em 2.131.216 bytes, excesso de 1.296 bytes; a `main` está em 2.105.573."
   ]
 }
