@@ -1,4 +1,4 @@
-# Mensagens do modelo: riscos de manutenção — [Não lançado] (épico `epic/riscos-mensagens`, MCP 0.39.1, schema v19)
+# Mensagens do modelo: riscos de manutenção — [Não lançado] (épico `epic/riscos-mensagens`, PR #0, MCP 0.39.1, schema v19)
 
 ## Alterado
 
