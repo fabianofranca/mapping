@@ -9,3 +9,4 @@
 
 - O rótulo do Carousel da Material 3 fica legível sobre o reservado da imagem (contraste de pelo menos 4,5:1, antes cerca de 1,6:1), na app, no Catálogo e no PNG do MCP (que agora mostra o véu, uma faixa sólida de 0,55).
 - Roteiro novo R17.47: confere o rótulo legível no PNG do `render_marking` (`575658`) e na app (`202022`), com o contraste calculado.
+- A tabela **Campos** do Catálogo (diálogo de 820 px) cabe sem rolar na horizontal: a coluna Rótulo quebra entre palavras e a Descrição deixa de ser cortada, com "enum" e nomes como `preferredItemWidth` inteiros.
