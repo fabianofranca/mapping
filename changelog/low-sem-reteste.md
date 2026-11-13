@@ -1,4 +1,4 @@
-# Achado só de severidade baixa vai ao fechamento sem reteste — [Não lançado] (épico `epic/low-sem-reteste`, PR #0, MCP 0.39.1, schema v19)
+# Achado só de severidade baixa vai ao fechamento sem reteste — [Não lançado] (épico `epic/low-sem-reteste`, PR #0, MCP 0.39.1 sem mudança, schema v19)
 
 ## Alterado
 

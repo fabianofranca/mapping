@@ -24,6 +24,10 @@ describe('LS1 — achado só de severidade baixa vai da correção ao fechamento
     expect(s).toContain('na dúvida, a maior');
     expect(s).toContain('`reteste: não`');
     expect(s).toContain('reteste dirigido só dos passos dele');
+    // o aviso da correção manda sobre a linha gravada antes (achado da /code-review)
+    expect(s).toContain('o aviso manda sobre a linha `reteste:`');
+    // bloqueia, alta e média são o high e o medium da regra
+    expect(s).toContain('bloqueia, alta ou média');
   });
 
   it('o reteste deixa de fora os achados de severidade baixa, em "Para o testador" e "Reteste junto"', () => {
