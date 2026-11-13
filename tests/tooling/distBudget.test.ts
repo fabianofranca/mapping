@@ -125,6 +125,9 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     expect(next(30721)).toMatch(
       new RegExp(`^sobe: ${CEILING} → ${CEILING + 3 * KIB16} `),
     );
+    expect(next(30721)).toContain(
+      `subidas desde a revisão ${CEILING + 3 * KIB16 - REVIEW})`,
+    );
   });
 
   it('o 48 KiB do excesso 30.721 aparece no motivo do bug', () => {
@@ -175,6 +178,10 @@ describe('distBudget.mjs raise (CR1, TF1)', () => {
     expect(reasons[0]).toContain('excesso');
     expect(reasons[1]).toContain('cresceu');
     expect(reasons[2]).toContain('subidas desde');
+    // `since` usa o teto novo (2 passos), não só o primeiro: 2 × 16.384 + 100.000.
+    expect(reasons[0]).toContain('a subida foi de 32 KiB');
+    expect(reasons[2]).toContain(`somam ${2 * KIB16 + 100000} bytes contando com esta`);
+    expect(lines[0]).toContain(`subidas desde a revisão ${2 * KIB16 + 100000})`);
   });
 
   it('nunca chama o dono: saída 0 e nenhuma linha começa por "chama o dono", nem com --write', () => {
