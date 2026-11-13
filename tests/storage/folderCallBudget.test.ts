@@ -29,6 +29,7 @@ import { openSession, type ProjectSession } from '../../src/store/session';
 import { NOW, sampleProject } from '../model/fixtures';
 import { changeOf, propose } from '../model/proposalFixtures';
 import { sampleThread } from '../model/threadFixtures';
+import type { DirectoryHandleLike } from '../../src/storage/folder';
 import { MemoryDirectory } from './memoryFs';
 
 // Linha de base das chamadas à pasta (etapa "pasta rápida", decisões 2 a 5). O projeto fixo:
@@ -120,20 +121,62 @@ function buildFixture(): Fixture {
   return { root, project, applied };
 }
 
+/**
+ * Embrulha a pasta registrando o caminho completo de cada `getDirectoryHandle` (`proposals/P1`),
+ * para o teste conferir que nenhuma pasta é resolvida duas vezes numa mesma operação.
+ */
+function trackingDirectory(
+  inner: DirectoryHandleLike,
+  resolved: string[],
+  prefix = '',
+): DirectoryHandleLike {
+  return {
+    kind: 'directory',
+    name: inner.name,
+    async getDirectoryHandle(name, options) {
+      const path = `${prefix}${name}`;
+      resolved.push(path);
+      return trackingDirectory(
+        await inner.getDirectoryHandle(name, options),
+        resolved,
+        `${path}/`,
+      );
+    },
+    getFileHandle: (name, options) => inner.getFileHandle(name, options),
+    removeEntry: (name, options) => inner.removeEntry(name, options),
+    values: () => inner.values(),
+  };
+}
+
 interface Opened {
   readonly session: ProjectSession;
   readonly calls: FolderCalls;
   readonly root: MemoryDirectory;
   readonly fixture: Fixture;
+  /** Caminho de cada `getDirectoryHandle` feito até agora, na ordem. */
+  readonly resolved: string[];
 }
+
+/** O ponto de partida de uma medida: as chamadas por tipo e as pastas resolvidas até ali. */
+interface Mark {
+  readonly kinds: Record<string, number>;
+  readonly resolved: number;
+}
+
+const markOf = (opened: Opened): Mark => ({
+  kinds: { ...opened.calls.byKind },
+  resolved: opened.resolved.length,
+});
 
 /** Abre como o controller (`openFromStorage`/`openLoaded`), medindo `open`. */
 async function openFixture(): Promise<Opened> {
   const fixture = buildFixture();
   const calls = createFolderCalls();
-  const storage = createFolderStorage(countingDirectory(fixture.root, calls), {
-    copyId: 'copia-fixa',
-  });
+  const resolved: string[] = [];
+  const storage = createFolderStorage(
+    countingDirectory(trackingDirectory(fixture.root, resolved), calls),
+    { copyId: 'copia-fixa' },
+  );
   const session = await calls.measure('open', async () => {
     const loaded = await loadProject(storage);
     if (!loaded.ok) throw new Error(loaded.error);
@@ -151,7 +194,7 @@ async function openFixture(): Promise<Opened> {
       autosaveDelay: 1,
     });
   });
-  return { session, calls, root: fixture.root, fixture };
+  return { session, calls, root: fixture.root, fixture, resolved };
 }
 
 const report: string[] = [];
@@ -164,16 +207,20 @@ function measured(opened: Opened, op: FolderOp) {
 }
 
 /** Imprime a linha da operação: chamadas totais e por tipo (só os tipos usados). */
-function register(opened: Opened, op: FolderOp, since: Record<string, number>) {
+function register(opened: Opened, op: FolderOp, since: Mark) {
   const found = measured(opened, op);
   const byKind = Object.entries(opened.calls.byKind)
-    .map(([kind, n]) => [kind, n - (since[kind] ?? 0)] as const)
+    .map(([kind, n]) => [kind, n - (since.kinds[kind] ?? 0)] as const)
     .filter(([, n]) => n > 0)
     .map(([kind, n]) => `${kind}=${n}`)
     .join(' ');
   const line = `${op} | ${found?.calls ?? 0} | ${byKind}`;
   report.push(line);
   console.info(`[folderCallBudget] ${line}`);
+  // Decisão 6: cada pasta é resolvida no máximo uma vez por operação (handles guardados).
+  const paths = opened.resolved.slice(since.resolved);
+  const repeated = paths.filter((path, i) => paths.indexOf(path) !== i);
+  expect(repeated, `pastas resolvidas mais de uma vez em ${op}`).toEqual([]);
 }
 
 describe('linha de base das chamadas à pasta (projeto fixo)', () => {
@@ -191,21 +238,26 @@ describe('linha de base das chamadas à pasta (projeto fixo)', () => {
   it('open', async () => {
     const opened = await fresh();
     expect(opened.session.store.project.value?.containers).toHaveLength(2);
-    register(opened, 'open', {});
+    register(opened, 'open', { kinds: {}, resolved: 0 });
   });
 
   it('save: uma edição só do mapping.json', async () => {
     const opened = await fresh();
-    const since = { ...opened.calls.byKind };
+    const since = markOf(opened);
     const result = opened.session.actions.renameMarking('M3', 'Fechadura nova');
     expect(result.ok).toBe(true);
     await opened.session.flush();
     register(opened, 'save', since);
+    // Decisão 5: uma edição só do `mapping.json` não resolve nenhuma pasta (a raiz basta).
+    expect(opened.resolved.length - since.resolved).toBe(0);
+    expect(
+      opened.calls.byKind.getDirectoryHandle - (since.kinds.getDirectoryHandle ?? 0),
+    ).toBe(0);
   });
 
   it('library: atualizar a especialização de pacote', async () => {
     const opened = await fresh();
-    const since = { ...opened.calls.byKind };
+    const since = markOf(opened);
     const spec = {
       ...opened.fixture.applied.spec,
       version: opened.fixture.applied.spec.version + 1,
@@ -226,7 +278,7 @@ describe('linha de base das chamadas à pasta (projeto fixo)', () => {
     const open = opened.session.proposals.list.value.find((e) => e.id === 'P1');
     expect(open?.status).toBe('open');
     const change = changeOf(open as Proposal, 'marking', 'M1', 'name');
-    let since = { ...opened.calls.byKind };
+    let since = markOf(opened);
     const decided = await opened.session.proposalActions.decide(
       'P1',
       { level: 'change', id: change.id },
@@ -235,7 +287,7 @@ describe('linha de base das chamadas à pasta (projeto fixo)', () => {
     expect(decided.ok).toBe(true);
     register(opened, 'decide', since);
 
-    since = { ...opened.calls.byKind };
+    since = markOf(opened);
     const result = await opened.session.proposalActions.applyAccepted('P1');
     expect(result.ok && result.applied).toBe(1);
     register(opened, 'apply', since);
@@ -243,7 +295,7 @@ describe('linha de base das chamadas à pasta (projeto fixo)', () => {
 
   it('sync: nada mudou por fora', async () => {
     const opened = await fresh();
-    const since = { ...opened.calls.byKind };
+    const since = markOf(opened);
     await opened.session.sync();
     register(opened, 'sync', since);
   });
