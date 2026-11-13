@@ -91,7 +91,8 @@ describe('guarda: todo problema e aviso do modelo tem código', () => {
     }
     expect(checked).toBeGreaterThan(500);
     expect(problems).toEqual([]);
-  }, 60_000);
+    // 120 s como os testes vizinhos: leva ~24 s (igual no épico sem a CL2) e estourou os 60 s no shard sobrecarregado do CI.
+  }, 120_000);
 
   it('o componente (parseComponent)', () => {
     for (const doc of [
