@@ -106,12 +106,13 @@ export interface ProjectContainer {
   readonly direction?: ReadingDirection | null;
 }
 
-/** Lado do alvo em que a marcação ancorada fica (v20); `start`/`end` seguem a direção de leitura. */
-export const ANCHOR_SIDES = ['top', 'bottom', 'start', 'end'] as const;
-export type AnchorSide = (typeof ANCHOR_SIDES)[number];
-/** Alinhamento ao longo do lado da âncora (v20). */
-export const ANCHOR_ALIGNS = ['start', 'center', 'end'] as const;
-export type AnchorAlign = (typeof ANCHOR_ALIGNS)[number];
+import {
+  ANCHOR_ALIGNS,
+  ANCHOR_SIDES,
+  type AnchorAlign,
+  type AnchorSide,
+} from './anchorSides';
+export { ANCHOR_ALIGNS, ANCHOR_SIDES, type AnchorAlign, type AnchorSide };
 
 /**
  * Âncora de uma marcação (v20): a marcação fica encostada em outra do mesmo espaço (`to`), do lado
