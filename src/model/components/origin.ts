@@ -13,7 +13,7 @@
  * Puro, sem DOM, e nunca lança: o que não deu certo vira `error` ou aviso.
  */
 import { mergeMessages, textsOf } from '../messages/collector';
-import { templateMessage } from '../messages';
+import { templateMessage, type ModelMessageTemplateCode } from '../messages';
 import type { ModelMessage } from '../modelMessage';
 import type { FieldValue, FieldValues } from './componentFormat';
 import type { TextMeasurer } from './instantiate';
@@ -27,7 +27,9 @@ import {
 } from './layout';
 import type { FieldDef, Library, TypeDef } from './library';
 import type { Screen } from './screen';
-import { packagePathProblem } from '../packagePaths';
+import { packagePathError } from '../packagePaths';
+import { packagePathMsg, pathErrorMsg } from '../specIssueCode';
+import { originCodeForText, originSpecCodeForText } from '../messages/textLookup';
 import { isRecord } from '../isRecord';
 
 // ---------------------------------------------------------------------------------------
@@ -295,15 +297,56 @@ function nonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim() !== '';
 }
 
+/**
+ * Um problema da declaração das origens como dado: o `path` é o caminho em texto
+ * (`origins[0].screen.roots[1].path`), o `message` o texto pt-BR sem o caminho e o `code` e os
+ * `params` o do catálogo de mensagens do modelo (a interface traduz). Quem monta o texto com um
+ * valor do usuário (chave, âncora, nome, caminho) o emite já com o código, por `codedProblem`, e
+ * não se acha o código lendo o texto de volta.
+ */
+export interface OriginProblem {
+  readonly path: string;
+  readonly message: string;
+  readonly code?: ModelMessageTemplateCode;
+  readonly params?: Readonly<Record<string, string | number>>;
+}
+
+/** O problema como texto (`caminho: mensagem`), o formato da biblioteca dos componentes. */
+export function originProblemText(problem: OriginProblem): string {
+  return `${problem.path}: ${problem.message}`;
+}
+
+/**
+ * Acrescenta um problema de texto constante; o código sai pelo texto exato (catálogo `origins`,
+ * depois `spec`), sem padrão: texto com valor do usuário vai por `codedProblem`.
+ */
+function problem(problems: OriginProblem[], path: string, message: string): void {
+  const hit = originCodeForText(message) ?? originSpecCodeForText(message);
+  problems.push(
+    hit === undefined ? { path, message } : { path, message, code: hit.code },
+  );
+}
+
+/** Acrescenta um problema do catálogo com parâmetros: o texto é o do modelo preenchido. */
+function codedProblem(
+  problems: OriginProblem[],
+  path: string,
+  code: ModelMessageTemplateCode,
+  params: Readonly<Record<string, string | number>>,
+): void {
+  problems.push({ path, message: templateMessage(code, params).text, code, params });
+}
+
 function checkKeys(
   raw: Record<string, unknown>,
   allowed: readonly string[],
   path: string,
-  problems: string[],
+  problems: OriginProblem[],
 ): void {
   for (const key of Object.keys(raw)) {
-    if (!allowed.includes(key))
-      problems.push(`${path}.${key}: chave desconhecida: ${key}`);
+    if (!allowed.includes(key)) {
+      codedProblem(problems, `${path}.${key}`, 'spec.tokenKeyUnknown', { key });
+    }
   }
 }
 
@@ -311,20 +354,21 @@ function checkKeys(
 function checkPath(
   value: unknown,
   path: string,
-  problems: string[],
+  problems: OriginProblem[],
   wildcard = false,
 ): boolean {
   if (!nonEmptyString(value)) {
-    problems.push(`${path}: esperava um caminho (texto não vazio)`);
+    problem(problems, path, 'esperava um caminho (texto não vazio)');
     return false;
   }
   const parsed = parsePath(value);
   if (!parsed.ok) {
-    problems.push(`${path}: caminho inválido "${value}" (${parsed.error})`);
+    const error = pathErrorMsg(value, parsed.error);
+    codedProblem(problems, path, error.code, error.params);
     return false;
   }
   if (!wildcard && parsed.segments.includes(null)) {
-    problems.push(`${path}: "[*]" só vale em roots[].path`);
+    problem(problems, path, '"[*]" só vale em roots[].path');
     return false;
   }
   return true;
@@ -333,16 +377,16 @@ function checkPath(
 function parseStringMap(
   raw: unknown,
   path: string,
-  problems: string[],
+  problems: OriginProblem[],
 ): Record<string, string> | undefined {
   if (!isRecord(raw)) {
-    problems.push(`${path}: esperava um objeto (origem → destino)`);
+    problem(problems, path, 'esperava um objeto (origem → destino)');
     return undefined;
   }
   const out: Record<string, string> = {};
   for (const [key, target] of Object.entries(raw)) {
     if (typeof target !== 'string') {
-      problems.push(`${path}.${key}: esperava texto`);
+      problem(problems, `${path}.${key}`, 'esperava texto');
     } else {
       out[key] = target;
     }
@@ -353,13 +397,13 @@ function parseStringMap(
 function parseValueSource(
   raw: unknown,
   path: string,
-  problems: string[],
+  problems: OriginProblem[],
 ): ValueSource | undefined {
   if (typeof raw === 'string' || (typeof raw === 'number' && Number.isFinite(raw))) {
     return raw;
   }
   if (!isRecord(raw)) {
-    problems.push(`${path}: esperava um literal ou { path }`);
+    problem(problems, path, 'esperava um literal ou { path }');
     return undefined;
   }
   const before = problems.length;
@@ -374,7 +418,7 @@ function parseValueSource(
     if (typeof raw.default === 'string' || typeof raw.default === 'number') {
       def = raw.default;
     } else {
-      problems.push(`${path}.default: esperava texto ou número`);
+      problem(problems, `${path}.default`, 'esperava texto ou número');
     }
   }
   if (problems.length > before) return undefined;
@@ -388,10 +432,10 @@ function parseValueSource(
 function parseRoot(
   raw: unknown,
   path: string,
-  problems: string[],
+  problems: OriginProblem[],
 ): RootSource | undefined {
   if (!isRecord(raw)) {
-    problems.push(`${path}: esperava um objeto`);
+    problem(problems, path, 'esperava um objeto');
     return undefined;
   }
   const before = problems.length;
@@ -407,9 +451,10 @@ function parseRoot(
           ? anchor.default
           : undefined;
     if (literal !== undefined && !LAYOUT_ANCHORS.includes(literal as LayoutAnchor)) {
-      problems.push(
-        `${path}.anchor: âncora inválida: ${literal}; use ${LAYOUT_ANCHORS.join(', ')}`,
-      );
+      codedProblem(problems, `${path}.anchor`, 'origins.anchorInvalid', {
+        anchor: literal,
+        anchors: LAYOUT_ANCHORS.join(', '),
+      });
     }
   }
   const margin =
@@ -417,10 +462,10 @@ function parseRoot(
       ? undefined
       : parseValueSource(raw.margin, `${path}.margin`, problems);
   if (margin !== undefined && anchor === undefined) {
-    problems.push(`${path}.margin: margin só vale com anchor`);
+    problem(problems, `${path}.margin`, 'margin só vale com anchor');
   }
   if (raw.scrim !== undefined && !nonEmptyString(raw.scrim)) {
-    problems.push(`${path}.scrim: esperava o id de um tipo (texto não vazio)`);
+    problem(problems, `${path}.scrim`, 'esperava o id de um tipo (texto não vazio)');
   }
   if (problems.length > before) return undefined;
   return {
@@ -434,10 +479,10 @@ function parseRoot(
 function parseScreen(
   raw: unknown,
   path: string,
-  problems: string[],
+  problems: OriginProblem[],
 ): ScreenSource | undefined {
   if (!isRecord(raw)) {
-    problems.push(`${path}: esperava um objeto`);
+    problem(problems, path, 'esperava um objeto');
     return undefined;
   }
   const before = problems.length;
@@ -456,7 +501,7 @@ function parseScreen(
   const background = optional('background');
   const required = (key: 'width' | 'height'): ValueSource | undefined => {
     if (raw[key] === undefined) {
-      problems.push(`${path}.${key}: obrigatório`);
+      problem(problems, `${path}.${key}`, 'obrigatório');
       return undefined;
     }
     return parseValueSource(raw[key], `${path}.${key}`, problems);
@@ -465,7 +510,7 @@ function parseScreen(
   const height = required('height');
   const roots: RootSource[] = [];
   if (!Array.isArray(raw.roots) || raw.roots.length === 0) {
-    problems.push(`${path}.roots: esperava uma lista com pelo menos uma raiz`);
+    problem(problems, `${path}.roots`, 'esperava uma lista com pelo menos uma raiz');
   } else {
     raw.roots.forEach((item, index) => {
       const root = parseRoot(item, `${path}.roots[${index}]`, problems);
@@ -488,18 +533,18 @@ function parseScreen(
 function parseBooleans(
   raw: unknown,
   path: string,
-  problems: string[],
+  problems: OriginProblem[],
 ): Origin['booleans'] {
   if (raw === undefined) return undefined;
   if (!isRecord(raw)) {
-    problems.push(`${path}: esperava { "true": texto, "false": texto }`);
+    problem(problems, path, 'esperava { "true": texto, "false": texto }');
     return undefined;
   }
   checkKeys(raw, ['true', 'false'], path, problems);
   const t = raw.true;
   const f = raw.false;
-  if (typeof t !== 'string') problems.push(`${path}.true: esperava texto`);
-  if (typeof f !== 'string') problems.push(`${path}.false: esperava texto`);
+  if (typeof t !== 'string') problem(problems, `${path}.true`, 'esperava texto');
+  if (typeof f !== 'string') problem(problems, `${path}.false`, 'esperava texto');
   return typeof t === 'string' && typeof f === 'string'
     ? { true: t, false: f }
     : undefined;
@@ -509,15 +554,15 @@ function parseBooleans(
 function parseMeasuredOrigin(
   raw: Record<string, unknown>,
   path: string,
-  problems: string[],
+  problems: OriginProblem[],
 ): Origin | undefined {
   const before = problems.length;
   checkKeys(raw, ['system', 'kind', 'name', 'booleans'], path, problems);
   if (!nonEmptyString(raw.system)) {
-    problems.push(`${path}.system: esperava texto não vazio`);
+    problem(problems, `${path}.system`, 'esperava texto não vazio');
   }
   if (raw.name !== undefined && typeof raw.name !== 'string') {
-    problems.push(`${path}.name: esperava texto`);
+    problem(problems, `${path}.name`, 'esperava texto');
   }
   const booleans = parseBooleans(raw.booleans, `${path}.booleans`, problems);
   if (problems.length > before) return undefined;
@@ -531,14 +576,20 @@ function parseMeasuredOrigin(
   };
 }
 
-function parseOrigin(raw: unknown, path: string, problems: string[]): Origin | undefined {
+function parseOrigin(
+  raw: unknown,
+  path: string,
+  problems: OriginProblem[],
+): Origin | undefined {
   if (!isRecord(raw)) {
-    problems.push(`${path}: esperava um objeto`);
+    problem(problems, path, 'esperava um objeto');
     return undefined;
   }
   const kind = raw.kind === undefined ? 'tree' : raw.kind;
   if (!ORIGIN_KINDS.includes(kind as OriginKind)) {
-    problems.push(`${path}.kind: esperava um de: ${ORIGIN_KINDS.join(', ')}`);
+    codedProblem(problems, `${path}.kind`, 'origins.expectedKind', {
+      kinds: ORIGIN_KINDS.join(', '),
+    });
     return undefined;
   }
   if (kind === 'measured') return parseMeasuredOrigin(raw, path, problems);
@@ -550,20 +601,24 @@ function parseOrigin(raw: unknown, path: string, problems: string[]): Origin | u
     problems,
   );
   if (!nonEmptyString(raw.system)) {
-    problems.push(`${path}.system: esperava texto não vazio`);
+    problem(problems, `${path}.system`, 'esperava texto não vazio');
   }
   if (raw.name !== undefined && typeof raw.name !== 'string') {
-    problems.push(`${path}.name: esperava texto`);
+    problem(problems, `${path}.name`, 'esperava texto');
   }
   let node: Origin['node'] | undefined;
   if (!isRecord(raw.node)) {
-    problems.push(`${path}.node: esperava um objeto com type, props e children`);
+    problem(problems, `${path}.node`, 'esperava um objeto com type, props e children');
   } else {
     const nodePath = `${path}.node`;
     checkKeys(raw.node, ['type', 'props', 'children'], nodePath, problems);
     const keyOk = (key: 'type' | 'props' | 'children'): boolean => {
       if (nonEmptyString((raw.node as Record<string, unknown>)[key])) return true;
-      problems.push(`${nodePath}.${key}: obrigatório (nome da chave, texto não vazio)`);
+      problem(
+        problems,
+        `${nodePath}.${key}`,
+        'obrigatório (nome da chave, texto não vazio)',
+      );
       return false;
     };
     const ok = [keyOk('type'), keyOk('props'), keyOk('children')].every(Boolean);
@@ -578,7 +633,7 @@ function parseOrigin(raw: unknown, path: string, problems: string[]): Origin | u
   }
   const screen =
     raw.screen === undefined
-      ? (problems.push(`${path}.screen: obrigatório`), undefined)
+      ? (problem(problems, `${path}.screen`, 'obrigatório'), undefined)
       : parseScreen(raw.screen, `${path}.screen`, problems);
   const booleans = parseBooleans(raw.booleans, `${path}.booleans`, problems);
   const examples =
@@ -601,10 +656,10 @@ function parseOrigin(raw: unknown, path: string, problems: string[]): Origin | u
 function parseOriginExamples(
   raw: unknown,
   path: string,
-  problems: string[],
+  problems: OriginProblem[],
 ): OriginExample[] | undefined {
   if (!Array.isArray(raw)) {
-    problems.push(`${path}: esperava uma lista`);
+    problem(problems, path, 'esperava uma lista');
     return undefined;
   }
   const out: OriginExample[] = [];
@@ -612,23 +667,28 @@ function parseOriginExamples(
   raw.forEach((item, index) => {
     const at = `${path}[${index}]`;
     if (!isRecord(item)) {
-      problems.push(`${at}: esperava um objeto`);
+      problem(problems, at, 'esperava um objeto');
       return;
     }
     const before = problems.length;
     checkKeys(item, ['name', 'file'], at, problems);
     if (!nonEmptyString(item.name)) {
-      problems.push(`${at}.name: esperava texto não vazio`);
+      problem(problems, `${at}.name`, 'esperava texto não vazio');
     } else if (seen.has(item.name)) {
-      problems.push(`${at}.name: nome "${item.name}" repetido`);
+      codedProblem(problems, `${at}.name`, 'spec.exampleNameRepeated', {
+        name: item.name,
+      });
     } else {
       seen.add(item.name);
     }
     if (typeof item.file !== 'string') {
-      problems.push(`${at}.file: esperava o caminho de um arquivo .json do pacote`);
+      problem(problems, `${at}.file`, 'esperava o caminho de um arquivo .json do pacote');
     } else {
-      const problem = packagePathProblem(item.file, '.json');
-      if (problem !== undefined) problems.push(`${at}.file: ${problem}`);
+      const error = packagePathError(item.file, '.json');
+      if (error !== undefined) {
+        const msg = packagePathMsg(error);
+        codedProblem(problems, `${at}.file`, msg.code, msg.params);
+      }
     }
     if (problems.length > before) return;
     out.push({ name: item.name as string, file: item.file as string });
@@ -644,18 +704,21 @@ function parseOriginExamples(
 export function parseOrigins(
   raw: unknown,
   path = 'origins',
-): { origins: Origin[]; problems: string[] } {
-  const problems: string[] = [];
+): { origins: Origin[]; problems: OriginProblem[] } {
+  const problems: OriginProblem[] = [];
   const origins: Origin[] = [];
   if (raw === undefined) return { origins, problems };
   if (!Array.isArray(raw)) {
-    return { origins, problems: [`${path}: esperava uma lista`] };
+    problem(problems, path, 'esperava uma lista');
+    return { origins, problems };
   }
   raw.forEach((item, index) => {
     const origin = parseOrigin(item, `${path}[${index}]`, problems);
     if (!origin) return;
     if (origins.some((o) => o.system === origin.system)) {
-      problems.push(`${path}[${index}].system: origem repetida: ${origin.system}`);
+      codedProblem(problems, `${path}[${index}].system`, 'origins.systemRepeated', {
+        system: origin.system,
+      });
       return;
     }
     origins.push(origin);
@@ -667,38 +730,38 @@ export function parseOrigins(
 export function parseTypeSources(
   raw: unknown,
   path: string,
-  problems: string[],
+  problems: OriginProblem[],
 ): TypeSource[] {
   if (raw === undefined) return [];
   if (!Array.isArray(raw)) {
-    problems.push(`${path}: esperava uma lista`);
+    problem(problems, path, 'esperava uma lista');
     return [];
   }
   const out: TypeSource[] = [];
   raw.forEach((item, index) => {
     const at = `${path}[${index}]`;
     if (!isRecord(item)) {
-      problems.push(`${at}: esperava um objeto`);
+      problem(problems, at, 'esperava um objeto');
       return;
     }
     const before = problems.length;
     checkKeys(item, ['system', 'id', 'name', 'slot', 'ignore'], at, problems);
     if (!nonEmptyString(item.system))
-      problems.push(`${at}.system: esperava texto não vazio`);
+      problem(problems, `${at}.system`, 'esperava texto não vazio');
     for (const key of ['id', 'name', 'slot'] as const) {
       if (item[key] !== undefined && !nonEmptyString(item[key])) {
-        problems.push(`${at}.${key}: esperava texto não vazio`);
+        problem(problems, `${at}.${key}`, 'esperava texto não vazio');
       }
     }
     if (item.id === undefined && item.name === undefined) {
-      problems.push(`${at}: precisa de id ou name`);
+      problem(problems, at, 'precisa de id ou name');
     }
     let ignore: string[] | undefined;
     if (item.ignore !== undefined) {
       if (Array.isArray(item.ignore) && item.ignore.every(nonEmptyString)) {
         ignore = item.ignore as string[];
       } else {
-        problems.push(`${at}.ignore: esperava uma lista de textos`);
+        problem(problems, `${at}.ignore`, 'esperava uma lista de textos');
       }
     }
     if (problems.length > before) return;
@@ -717,29 +780,29 @@ export function parseTypeSources(
 export function parseFieldSources(
   raw: unknown,
   path: string,
-  problems: string[],
+  problems: OriginProblem[],
 ): FieldSource[] {
   if (raw === undefined) return [];
   if (!Array.isArray(raw)) {
-    problems.push(`${path}: esperava uma lista`);
+    problem(problems, path, 'esperava uma lista');
     return [];
   }
   const out: FieldSource[] = [];
   raw.forEach((item, index) => {
     const at = `${path}[${index}]`;
     if (!isRecord(item)) {
-      problems.push(`${at}: esperava um objeto`);
+      problem(problems, at, 'esperava um objeto');
       return;
     }
     const before = problems.length;
     checkKeys(item, ['system', 'name', 'path', 'values'], at, problems);
     if (!nonEmptyString(item.system))
-      problems.push(`${at}.system: esperava texto não vazio`);
+      problem(problems, `${at}.system`, 'esperava texto não vazio');
     if (item.name !== undefined && !nonEmptyString(item.name))
-      problems.push(`${at}.name: esperava texto não vazio`);
+      problem(problems, `${at}.name`, 'esperava texto não vazio');
     if (item.path !== undefined) checkPath(item.path, `${at}.path`, problems);
     if (item.name === undefined && item.path === undefined)
-      problems.push(`${at}: precisa de name ou path`);
+      problem(problems, at, 'precisa de name ou path');
     const values =
       item.values === undefined
         ? undefined

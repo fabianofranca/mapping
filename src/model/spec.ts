@@ -9,8 +9,7 @@ import {
   type SpecOrigin,
 } from './components/origin';
 import { TOKEN_NAME_PATTERN, type SpecTokens } from './components/tokens';
-import { isPackagePath, packagePathError, type PackagePathError } from './packagePaths';
-import { originCodeForText, originSpecCodeForText } from './messages/textLookup';
+import { isPackagePath, packagePathError } from './packagePaths';
 import { childSets } from './specChildren';
 import { checkSignatureKeys } from './specSignature';
 import type { ModelMessageTemplateCode } from './messages';
@@ -18,6 +17,8 @@ import {
   addSpecIssue,
   forwardIssue,
   issueCoding,
+  packagePathMsg,
+  pathErrorMsg,
   specMsg,
   type MessageParams,
   type SpecMsg,
@@ -533,13 +534,6 @@ const dateString = z
   .string()
   .regex(DATE_RE, 'data inválida; use AAAA-MM-DD')
   .refine(isIsoDate, 'data inexistente');
-
-/** O erro de caminho do pacote como mensagem com código (o mesmo texto de `packagePathProblem`). */
-function packagePathMsg(error: PackagePathError): SpecMsg {
-  return error.kind === 'path'
-    ? specMsg('spec.packagePathInvalid')
-    : specMsg('spec.invalidExtension', { exts: error.exts.join(', ') });
-}
 
 /** Caminho de arquivo do pacote com a extensão (ou uma das extensões) dada. */
 function packagePath(ext: string | readonly string[]) {
@@ -1703,20 +1697,6 @@ function checkNoLibraryKeys(
   });
 }
 
-/** O erro do `parsePath` (texto fixo do leitor de caminhos) na mensagem com código da variante. */
-function pathErrorMsg(path: string, error: string): SpecMsg {
-  const index = /^índice inválido: \[(.*)\]$/.exec(error)?.[1];
-  if (index !== undefined) return specMsg('spec.fieldPathBadIndex', { path, index });
-  const char = /^caractere inesperado: (.*)$/.exec(error)?.[1];
-  if (char !== undefined) return specMsg('spec.fieldPathBadChar', { path, char });
-  return specMsg(
-    error === 'faltou "]"'
-      ? 'spec.fieldPathMissingBracket'
-      : 'spec.fieldPathEmptySegment',
-    { path },
-  );
-}
-
 /**
  * `path` de uma origem de campo (`a.b[0].c`): sintaxe válida e sem `[*]`. `undefined` se vale.
  */
@@ -2208,7 +2188,7 @@ function checkMigrations(
   });
 }
 
-/** Cada problema `"caminho: mensagem"` do `parseOrigins` vira uma issue no caminho exato. */
+/** Cada problema do `parseOrigins` (caminho, mensagem e código) vira uma issue no caminho exato. */
 type OriginsParse = ReturnType<typeof parseOrigins>;
 let originParses = new WeakMap<object, OriginsParse>();
 
@@ -2243,14 +2223,13 @@ function addOriginIssues(
     });
   }
   for (const problem of originsOf(raw).problems) {
-    const cut = problem.indexOf(': ');
-    const message = cut < 0 ? problem : problem.slice(cut + 2);
-    const hit = originCodeForText(message) ?? originSpecCodeForText(message);
     ctx.addIssue({
       code: 'custom',
-      path: cut < 0 ? [] : parseSpecPath(problem.slice(0, cut)),
-      message,
-      ...(hit === undefined ? {} : { params: { messageCode: hit.code, ...hit.params } }),
+      path: parseSpecPath(problem.path),
+      message: problem.message,
+      ...(problem.code === undefined
+        ? {}
+        : { params: { messageCode: problem.code, ...problem.params } }),
     });
   }
 }
