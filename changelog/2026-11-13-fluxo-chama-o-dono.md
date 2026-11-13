@@ -1,4 +1,4 @@
-# "Chamar o dono" no fluxo de entrega — [Não lançado] (épico `epic/fluxo-chama-o-dono`, PR #0, MCP sem mudança, schema v19)
+# "Chamar o dono" no fluxo de entrega — 2026-11-13 (épico `epic/fluxo-chama-o-dono`, PR #1871, MCP sem mudança, schema v19)
 
 ## Alterado
 

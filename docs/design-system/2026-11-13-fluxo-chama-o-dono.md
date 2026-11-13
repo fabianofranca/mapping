@@ -1,4 +1,4 @@
-# "Chamar o dono" no fluxo de entrega — [Não lançado] (épico `epic/fluxo-chama-o-dono`)
+# "Chamar o dono" no fluxo de entrega — 2026-11-13 (épico `epic/fluxo-chama-o-dono`)
 
 ## Pendências
 
