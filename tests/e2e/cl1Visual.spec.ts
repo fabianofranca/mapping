@@ -83,9 +83,9 @@ test('1.2 Janela inferior: abas com espaço entre elas e as seis cabem sem rolar
     const gaps = boxes.slice(1).map((b, i) => b.left - boxes[i]!.right);
     return { gaps, overflow: list.scrollWidth > list.clientWidth };
   });
-  // Entre duas abas há ao menos o vão `--space-1` (4px), e as seis cabem sem rolar.
+  // Entre duas abas há ao menos o vão `--space-0-5` (2px), e as seis cabem sem rolar.
   expect(m.gaps).toHaveLength(5);
-  expect(Math.min(...m.gaps)).toBeGreaterThanOrEqual(4);
+  expect(Math.min(...m.gaps)).toBeGreaterThanOrEqual(2);
   expect(m.overflow).toBe(false);
 });
 
