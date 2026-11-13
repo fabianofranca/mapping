@@ -34,6 +34,9 @@ import { defaultValues } from '../../src/model/libraryDrawing';
 
 const COMMIT = '5113b82a4ed6416d6344efa50e41db8cb65928ff';
 
+/** O catálogo se monta uma vez, na coleta: montá-lo dentro de cada teste os levava a ~4 s (limite de 5 s) com a cobertura ligada no CI. */
+const sharedCatalog = buildCatalog(files);
+
 const LAYERS: Record<string, string[]> = {
   layout: [
     ...['scaffold', 'surface', 'box', 'row', 'column', 'lazy-column', 'lazy-row'],
@@ -305,7 +308,7 @@ describe('biblioteca Material 3 (Compose)', () => {
     const known = unknownWarnings(report.warnings);
     expect(known.unexpected).toEqual([]);
     expect(known.missing).toEqual([]);
-  });
+  }, 30_000);
 
   it('é a formatVersion 16, versão 14, com tokens nos modos light e dark e a plataforma compose no androidx fixado no commit', () => {
     expect(spec).toMatchObject({
@@ -432,7 +435,7 @@ describe('biblioteca Material 3 (Compose)', () => {
   it.each(ALL_TYPES)(
     '%s desenha o preview e os exemplos sem aviso no tamanho inicial, nos modos light e dark',
     (id) => {
-      const catalog = buildCatalog(files);
+      const catalog = sharedCatalog;
       expect(catalog.report.errors).toEqual([]);
       const entry = findEntry(catalog, id);
       expect(entry?.component).not.toBeNull();
@@ -449,7 +452,7 @@ describe('biblioteca Material 3 (Compose)', () => {
   );
 
   it('imagem remota é campo string e o componente é formatVersion 3 ou 4', () => {
-    const catalog = buildCatalog(files);
+    const catalog = sharedCatalog;
     for (const [id, key] of [
       ['image', 'url'],
       ['card', 'media'],
@@ -461,7 +464,7 @@ describe('biblioteca Material 3 (Compose)', () => {
   });
 
   it('navigation-bar e bottom-sheet repetem as linhas da tabela (componente com repeat)', () => {
-    const catalog = buildCatalog(files);
+    const catalog = sharedCatalog;
     for (const id of [
       ...['navigation-bar', 'bottom-sheet', 'dropdown-menu', 'navigation-rail'],
       ...['short-navigation-bar', 'navigation-drawer', 'tabs', 'carousel'],
@@ -591,7 +594,7 @@ describe('conjunto de ícones da biblioteca Material 3 (Compose) v2', () => {
     expect(report.errors).toEqual([]);
     expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
     expect(report.summary.level).toBe(3);
-  });
+  }, 30_000);
 
   it('cobre toda sugestão (no nome do Compose) pelo $switch do nó icon, e o que os componentes desenham sozinhos', () => {
     const field = typeOf('icon').fields.find((f) => f.key === 'imageVector');
@@ -610,7 +613,7 @@ describe('conjunto de ícones da biblioteca Material 3 (Compose) v2', () => {
   });
 
   it('o nome de ícone fora da lista vira o reservado, com o aviso', () => {
-    const catalog = buildCatalog(files);
+    const catalog = sharedCatalog;
     const entry = findEntry(catalog, 'icon')!;
     const drawing = drawIn(catalog, entry, { imageVector: 'NaoExiste' }, 'light');
     expect(drawing.warnings.join('|')).toMatch(/ícone desconhecido/);
@@ -629,7 +632,7 @@ describe('componentes migrados na M1 (text, icon, divider, surface)', () => {
   });
 
   it('o text tira a family e usa os tokens de tipografia e de cor', () => {
-    const catalog = buildCatalog(files);
+    const catalog = sharedCatalog;
     const entry = findEntry(catalog, 'text')!;
     const light = drawIn(catalog, entry, { text: 'Olá', style: 'titleMedium' }, 'light');
     const dark = drawIn(catalog, entry, { text: 'Olá', style: 'titleMedium' }, 'dark');
@@ -644,7 +647,7 @@ describe('componentes migrados na M1 (text, icon, divider, surface)', () => {
   });
 
   it('o surface muda de cor entre light e dark e só põe a elevação tonal sobre a cor surface', () => {
-    const catalog = buildCatalog(files);
+    const catalog = sharedCatalog;
     const entry = findEntry(catalog, 'surface')!;
     const light = drawIn(
       catalog,
@@ -701,7 +704,7 @@ describe('atualização da biblioteca Material 3 (Compose) com o slider numéric
     ]);
     const report = validateLibrary({ files, specPath: SPEC_FILE, previous });
     expect(report.errors).toEqual([]);
-  });
+  }, 30_000);
 });
 
 describe('MC5 (#1033): todo exemplo desenha sem aviso no size e no tamanho ajustado', () => {
