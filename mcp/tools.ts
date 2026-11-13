@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { ModelError, projectIndex } from '../src/model';
+import { ModelError, projectIndex, READING_DIRECTIONS } from '../src/model';
 import { planChanges } from './changes';
 import { LocalFileChecker } from './codeFiles';
 import { codeHintsView, type CodeContext } from './codeViews';
@@ -715,7 +715,7 @@ export function registerTools(
       'Modo do desenho (um dos `modes` dos `tokens` das especializações aplicadas, como "light" ou "dark") em todo o desenho. Padrão: o modo efetivo de cada container (o que ele fixa, senão o do projeto, senão o primeiro modo).',
     );
   const directionArg = z
-    .enum(['ltr', 'rtl'])
+    .enum(READING_DIRECTIONS)
     .optional()
     .describe(
       'Direção de leitura (`ltr` ou `rtl`) em todo o desenho: em `rtl` as fileiras, as grades e as posições `start`/`end` espelham, como no app com o container em Da direita para a esquerda. Padrão: a direção efetiva de cada container (a que ele fixa, senão a do projeto, senão `ltr`). O resultado traz a `direction` usada (`null` = a de cada container).',

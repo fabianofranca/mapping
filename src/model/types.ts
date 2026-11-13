@@ -4,8 +4,10 @@ import type { Spec } from './spec';
 // devolvem um novo projeto.
 
 export const SCHEMA_VERSION = 20;
+/** As direções de leitura que o arquivo aceita (v20): fonte única do tipo e dos schemas (zod, MCP). */
+export const READING_DIRECTIONS = ['ltr', 'rtl'] as const;
 /** Direção de leitura (v20): da esquerda para a direita ou da direita para a esquerda. */
-export type ReadingDirection = 'ltr' | 'rtl';
+export type ReadingDirection = (typeof READING_DIRECTIONS)[number];
 export const APP_ID = 'mapping';
 /** Valor gravado antes do renome do produto: ainda é aceito na leitura e vira `APP_ID`. */
 export const LEGACY_APP_ID = 'mapeador-imagens';

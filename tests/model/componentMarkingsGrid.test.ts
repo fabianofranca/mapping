@@ -5,6 +5,7 @@ import {
   approximateMeasurer,
   arrangeMarking,
   setFieldValue,
+  setProjectDirection,
   type ComponentCatalog,
   type NewComponentArgs,
   type Project,
@@ -100,5 +101,40 @@ describe('componentPlacement em slot grid', () => {
     // trilha (linha): (200 - 8) / 2 = 96, passo 104; colunas de 100.
     expect(rectOf(p, 'T2')).toEqual({ x: 100, y: 204, width: 100, height: 40 });
     expect(rectOf(p, 'T3')).toEqual({ x: 200, y: 100, width: 100, height: 40 });
+  });
+});
+
+describe('componentPlacement em slot grid em rtl', () => {
+  const catalog = gridCatalog('row', { columns: 3 });
+  const ids = ['T1', 'T2', 'T3', 'T4'];
+  const fill = (direction: 'ltr' | 'rtl'): Project => {
+    let p = setProjectDirection(
+      container(catalog, { x: 100, y: 100, width: 340, height: 300 }),
+      direction,
+    );
+    for (const n of [1, 2, 3, 4]) p = kid(p, catalog, n);
+    return p;
+  };
+
+  it('a primeira filha cai na célula mais à direita, espelhada dentro da área do slot', () => {
+    const p = fill('rtl');
+    // trilhas ltr em x = 100, 216, 332 (filhas de 100): espelhadas, x' = 440 - x.
+    expect(rectOf(p, 'T1')).toEqual({ x: 340, y: 100, width: 100, height: 40 });
+    expect(rectOf(p, 'T2')).toEqual({ x: 224, y: 100, width: 100, height: 40 });
+    expect(rectOf(p, 'T3')).toEqual({ x: 108, y: 100, width: 100, height: 40 });
+    expect(rectOf(p, 'T4')).toEqual({ x: 340, y: 140, width: 100, height: 40 });
+    expectValid(p);
+  });
+
+  it('a colocação concorda com o Arrumar (arrumar não move ninguém)', () => {
+    const p = fill('rtl');
+    const arranged = arrangeMarking(p, catalog, 'C', approximateMeasurer).project;
+    for (const id of ids) expect(rectOf(arranged, id)).toEqual(rectOf(p, id));
+  });
+
+  it('em ltr nada muda', () => {
+    const p = fill('ltr');
+    expect(rectOf(p, 'T1')).toEqual({ x: 100, y: 100, width: 100, height: 40 });
+    expect(rectOf(p, 'T3')).toEqual({ x: 332, y: 100, width: 100, height: 40 });
   });
 });

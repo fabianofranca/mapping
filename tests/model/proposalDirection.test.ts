@@ -17,7 +17,7 @@ import {
   setContainerDirection,
   setProjectDirection,
   setProjectDrawingMode,
-  usesDirection,
+  proposalUsesDirection,
   type Project,
   type Proposal,
 } from '../../src/model';
@@ -56,7 +56,7 @@ describe('proposta com a direção de leitura', () => {
   it('sem direção a proposta continua na formatVersion 4', () => {
     const proposal = build(base);
     expect(proposal.formatVersion).toBe(PROPOSAL_FORMAT_VERSION);
-    expect(usesDirection(proposal.changes)).toBe(false);
+    expect(proposalUsesDirection(proposal.changes)).toBe(false);
     expect(PROPOSAL_FORMAT_VERSIONS).toContain(PROPOSAL_DIRECTION_FORMAT_VERSION);
     expect(PROPOSAL_DIRECTION_FORMAT_VERSION).toBe(8);
   });
@@ -96,7 +96,7 @@ describe('proposta com a direção de leitura', () => {
     expect(parseProposal(JSON.parse(serializeProposal(proposal))).ok).toBe(true);
     expect(accept(base, proposal).direction).toBe('rtl');
     const back = build(base, rtl);
-    expect(usesDirection(back.changes)).toBe(true);
+    expect(proposalUsesDirection(back.changes)).toBe(true);
     expect(accept(rtl, back).direction).toBeUndefined();
   });
 
@@ -140,7 +140,7 @@ describe('proposta com a direção de leitura', () => {
       'rtl',
     );
     const proposal = build(after);
-    expect(usesDirection(proposal.changes)).toBe(true);
+    expect(proposalUsesDirection(proposal.changes)).toBe(true);
     expect(proposal.formatVersion).toBe(PROPOSAL_DIRECTION_FORMAT_VERSION);
     expect(accept(base, proposal).containers.find((c) => c.id === 'c2')?.direction).toBe(
       'rtl',

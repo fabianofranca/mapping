@@ -69,6 +69,12 @@ const spec = (withFonts: boolean) => ({
           fields: [{ key: 'label', type: 'string', default: 'Salvar' }],
         },
         {
+          id: 'dir',
+          name: 'Direção',
+          component: 'components/dir.json',
+          fields: [],
+        },
+        {
           id: 'face',
           name: 'Rótulo',
           component: 'components/face.json',
@@ -144,6 +150,31 @@ const botaoComponent = {
   },
 };
 
+/** Estoura só em `rtl`: uma barra de 300 de largura, visível só nessa direção, num quadro de 120. */
+const dirComponent = {
+  format: 'mapping-component',
+  formatVersion: 4,
+  id: 'dir',
+  name: 'dir',
+  size: { width: 120, height: 40 },
+  template: {
+    type: 'frame',
+    name: 'dir',
+    layout: { type: 'row' },
+    children: [
+      { type: 'rect', name: 'curta', width: 30, height: 10, fill: '#000000' },
+      {
+        type: 'rect',
+        name: 'larga',
+        width: 300,
+        height: 10,
+        fill: '#000000',
+        visible: { $direction: 'rtl' },
+      },
+    ],
+  },
+};
+
 interface Workspace {
   base: string;
   client: Client;
@@ -160,6 +191,7 @@ async function workspace(withFonts: boolean): Promise<Workspace> {
   writeFileSync(join(lib, 'components', 'btn.json'), JSON.stringify(component('btn')));
   writeFileSync(join(lib, 'components', 'chip.json'), JSON.stringify(chipComponent));
   writeFileSync(join(lib, 'components', 'botao.json'), JSON.stringify(botaoComponent));
+  writeFileSync(join(lib, 'components', 'dir.json'), JSON.stringify(dirComponent));
   writeFileSync(
     join(lib, 'components', 'face.json'),
     JSON.stringify(component('face', { $token: 'face' })),
@@ -464,6 +496,37 @@ describe('plan_changes: prova de desenho × densidade (#1085)', () => {
     ]);
     expect(reply.data.valid).toBe(true);
     expect(overflows(reply)).toEqual([]);
+  });
+});
+
+describe('plan_changes: prova de desenho × direção', () => {
+  const seedDir = () =>
+    seed(seeded, [
+      { ...SCREEN, as: '$s' } as Operation,
+      create({ x: 10, y: 10, width: 120, height: 40 }, 'lib/dir', {
+        as: '$b',
+        container: '$s',
+        name: 'dir',
+      }) as Operation,
+    ]);
+
+  it('um lote só mudando a direção do container prova o componente que estoura só em rtl', async () => {
+    const project = await seedDir();
+    const container = project.containers.find((c) => c.file === null)!;
+    const same = await plan(seeded, [{ op: 'update_container', container: container.id }]);
+    expect(overflows(same)).toEqual([]);
+    const rtl = await plan(seeded, [
+      { op: 'update_container', container: container.id, direction: 'rtl' },
+    ]);
+    expect(rtl.data.errors).toBeUndefined();
+    expect(overflows(rtl).length).toBeGreaterThan(0);
+  });
+
+  it('um lote só mudando a direção do projeto prova o componente que estoura só em rtl', async () => {
+    await seedDir();
+    const rtl = await plan(seeded, [{ op: 'update_project', direction: 'rtl' }]);
+    expect(rtl.data.errors).toBeUndefined();
+    expect(overflows(rtl).length).toBeGreaterThan(0);
   });
 });
 

@@ -363,6 +363,8 @@ export function parseScreen(input: unknown): Screen {
     width: num(r.width, 'width'),
     height: num(r.height, 'height'),
     background: typeof r.background === 'string' ? r.background : '#FFFFFF',
+    // Só `rtl` vira chave (ausente = `ltr`); um valor inválido é ignorado, como `name` e `background`.
+    ...(r.direction === 'rtl' ? { direction: 'rtl' as const } : {}),
     instances,
   };
 }

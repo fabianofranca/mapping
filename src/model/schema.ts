@@ -5,6 +5,7 @@ import {
   APP_ID,
   LEGACY_APP_ID,
   COORDINATE_SYSTEM,
+  READING_DIRECTIONS,
   SCHEMA_VERSION,
   type JsonValue,
   type ProjectFile,
@@ -18,7 +19,7 @@ import {
 const id = z.string().min(1);
 const hexColor = z.string().regex(HEX_COLOR_RE);
 const finite = z.number().finite();
-const readingDirection = z.enum(['ltr', 'rtl']);
+const readingDirection = z.enum(READING_DIRECTIONS);
 
 /** Data ISO 8601 como gravada pela app: UTC com `Z`; com fuso, normalizada para UTC. */
 export function normalizeIsoDate(value: string): string {

@@ -15,7 +15,7 @@ import {
   sourceSchema,
 } from './schema';
 import { PLATFORM_ID_RE, formatSpecPath, specSchema, type SpecIssue } from './spec';
-import type { JsonValue } from './types';
+import { READING_DIRECTIONS, type JsonValue } from './types';
 
 // Formato da proposta de alteração (etapa 4): `proposals/<id>/proposal.json`,
 // `formatVersion` 4 na criação, 5 com `revisions`, 6 com o modo do desenho e 7 com a densidade do container (só quando a proposta os usa: `proposalFormatVersionFor`; a 1 a 3 continuam lidas). Ver docs/PROPOSAL-FORMAT.md. O zod daqui é a fonte da verdade; a
@@ -95,7 +95,7 @@ function hasDensity(value: JsonValue): boolean {
 export const PROPOSAL_DIRECTION_FORMAT_VERSION = 8;
 
 /** A proposta usa a direção de leitura (e por isso só a `formatVersion` 8 a representa)? */
-export function usesDirection(changes: readonly Change[]): boolean {
+export function proposalUsesDirection(changes: readonly Change[]): boolean {
   return changes.some(
     (c) =>
       (c.entity === 'image' && c.field === 'direction') ||
@@ -123,7 +123,7 @@ export function proposalFormatVersionFor(
   fallback: number,
   current = 0,
 ): (typeof PROPOSAL_FORMAT_VERSIONS)[number] {
-  if (current === PROPOSAL_DIRECTION_FORMAT_VERSION || usesDirection(changes)) {
+  if (current === PROPOSAL_DIRECTION_FORMAT_VERSION || proposalUsesDirection(changes)) {
     return PROPOSAL_DIRECTION_FORMAT_VERSION;
   }
   if (current === PROPOSAL_DENSITY_FORMAT_VERSION || usesDensity(changes)) {
@@ -494,7 +494,7 @@ const drawingModeName = z
   .string()
   .regex(/^[a-z0-9][a-z0-9-]*$/, 'use [a-z0-9][a-z0-9-]*');
 
-const readingDirection = z.enum(['ltr', 'rtl']);
+const readingDirection = z.enum(READING_DIRECTIONS);
 
 /**
  * A entidade `project` (formatVersion 6): o que do projeto é proposto, o modo do desenho e, na

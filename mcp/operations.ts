@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { READING_DIRECTIONS } from '../src/model';
 import { MAX_BASE64_TEXT } from './image/formats';
 
 // Operações de `plan_changes` (etapa 3a.5). Cada uma vira uma ou mais operações puras do
@@ -122,7 +123,7 @@ const drawingModeField = z
   );
 
 const directionField = z
-  .enum(['ltr', 'rtl'])
+  .enum(READING_DIRECTIONS)
   .nullable()
   .optional()
   .describe(

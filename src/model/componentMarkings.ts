@@ -44,7 +44,14 @@ import { projectIndex } from './projectIndex';
 import type { SpecAnnotationType } from './spec';
 import { findSpecType, projectLayerFor } from './specLookup';
 import { addTypedAnnotation, setFieldValue } from './typed';
-import type { Marking, Project, ProjectContainer, Rect, TypedValues } from './types';
+import type {
+  Marking,
+  Project,
+  ProjectContainer,
+  ReadingDirection,
+  Rect,
+  TypedValues,
+} from './types';
 
 // Criar uma instância de componente (etapa Biblioteca, B3): uma marcação com uma anotação
 // tipada, no tamanho inicial do componente. Operação pura: o store faz dela **uma** entrada
@@ -160,6 +167,8 @@ interface SlotBox {
   /** Só `grid`: as trilhas da grade. */
   readonly grid?: ResolvedGrid | undefined;
   readonly reverse: boolean;
+  /** Direção de leitura do espaço do slot: em `rtl` a grade se espelha (como no Arrumar). */
+  readonly direction: ReadingDirection;
   /** Quebra de fileira do slot (`layout.wrap`, v4) e os limites dela. */
   readonly wrap: 'none' | 'wrap' | 'wrap-reverse';
   readonly lineGap: number;
@@ -205,6 +214,7 @@ function slotArea(
     gap: 0,
     flow: 'none' as const,
     reverse: false,
+    direction: 'ltr' as const,
     wrap: 'none' as const,
     lineGap: 0,
     maxPerLine: undefined,
@@ -241,6 +251,7 @@ function slotArea(
     grid: layout.grid,
     // Numa linha em `rtl` a ordem corre da direita para a esquerda: o fluxo das filhas inverte.
     reverse: layout.reverse !== (layout.type === 'row' && drawn.direction === 'rtl'),
+    direction: drawn.direction,
     wrap: layout.wrap,
     lineGap: layout.lineGap,
     maxPerLine: layout.maxPerLine,
@@ -617,10 +628,22 @@ const flowExtent = (axes: GridAxes, r: Rect): number =>
   axes.vertical ? r.height : r.width;
 
 /**
+ * Em `rtl`, o retângulo espelhado dentro da área de conteúdo do slot (`x' = 2·esquerda + largura útil
+ * − x − w`), como o Arrumar espelha a grade (`mirrorInContent`); em `ltr`, o próprio retângulo.
+ */
+function mirroredInSlot(slot: SlotBox, rect: Rect): Rect {
+  if (slot.direction !== 'rtl') return rect;
+  const left = slot.area.x + slot.padding.left;
+  const content = slot.area.width - slot.padding.left - slot.padding.right;
+  return { ...rect, x: Math.round(2 * left + content - rect.x - rect.width) };
+}
+
+/**
  * R0 num slot em grade: a primeira célula, na ordem de colocação (a das filhas que já há, mais a
  * primeira depois da última linha), cujo retângulo, com o tamanho da filha nova, não cobre nenhuma
  * irmã. As linhas de fluxo têm a extensão da maior filha e se empilham com o `lineGap`, como no
- * Arrumar. `layout.reverse` não conta aqui: o Arrumar reordena depois.
+ * Arrumar. `layout.reverse` não conta aqui: o Arrumar reordena depois. Em `rtl` a célula é a espelhada
+ * (a primeira fica na ponta direita), tanto na busca quanto na checagem de sobreposição.
  */
 function gridSlotRect(kids: readonly Marking[], slot: SlotBox, size: Size): Rect {
   const axes = gridAxes(slot);
@@ -640,7 +663,7 @@ function gridSlotRect(kids: readonly Marking[], slot: SlotBox, size: Size): Rect
     const t = axes.tStart + trackOffset(trackIndex, track, slot.gap);
     const f = axes.fStart + (tops[line] ?? 0);
     const [x, y] = axes.vertical ? [t, f] : [f, t];
-    return { x: Math.round(x), y: Math.round(y), ...size };
+    return mirroredInSlot(slot, { x: Math.round(x), y: Math.round(y), ...size });
   };
   for (let line = 0; line < lines; line++) {
     for (let i = 0; i < count; i++) {

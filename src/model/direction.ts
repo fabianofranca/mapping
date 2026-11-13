@@ -8,9 +8,6 @@ import type { Project, ReadingDirection } from './types';
 // (`components/direction.ts`) recebe a efetiva e espelha fileiras, grades, `start`/`end` e `mirror`.
 // Funções puras, sem DOM.
 
-/** As direções de leitura que o arquivo aceita. */
-export const READING_DIRECTIONS: readonly ReadingDirection[] = ['ltr', 'rtl'];
-
 /** Troca a direção do projeto; `null` a remove (volta a `ltr`). */
 export function setProjectDirection(
   p: Project,
@@ -45,11 +42,11 @@ export function setContainerDirection(
  * `containerId` nulo (o canvas e as flutuantes) e um id desconhecido seguem o projeto.
  */
 export function effectiveDirection(
-  p: Pick<Project, 'containers' | 'direction'>,
+  p: Project,
   containerId: string | null,
 ): ReadingDirection {
   if (containerId !== null) {
-    const fixed = projectIndex(p as Project).containers.get(containerId)?.direction;
+    const fixed = projectIndex(p).containers.get(containerId)?.direction;
     if (fixed != null) return fixed;
   }
   return p.direction ?? 'ltr';
