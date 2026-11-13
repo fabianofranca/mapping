@@ -1,0 +1,5 @@
+# Exclusiva na frente drena a fila — [Não lançado] (épico `epic/exclusiva-na-frente`, PR #0, MCP 0.39.1 sem mudança, schema v19)
+
+## Alterado
+
+- **Exclusiva na frente da ordem drena a fila (para quem conduz o fluxo, #1813):** a etapa exclusiva (`exclusive=sim`) que é a primeira candidata pela ordem do painel (sem `hold`, com a ficha completa e as dependências mescladas, e que não começa no mesmo cálculo) passa a fazer a fila parar de começar etapas novas: cada candidata de depois dela dá `segurada para a exclusiva #N` (estado `exclusiva` no grafo, sem seta nova), as em andamento terminam e a exclusiva começa quando a última for mesclada. O `show` traz a linha `drenando para a exclusiva: #N` (ou `nenhuma`) logo depois de `começar agora:`. Comum na frente que espera arquivo, schema ou vaga é a primeira e não há drenagem; `hold`, ficha incompleta e dependência aberta não contam. O grafo põe a exclusiva da frente sozinha numa onda antes das que ela segura. A `ready` nova entra logo depois da exclusiva que drena, salvo ordem do dono ou `bug` `severity: high`. A regra da exclusiva já começada e o "Pausar" e o "Drenar" do dono seguem como eram.
