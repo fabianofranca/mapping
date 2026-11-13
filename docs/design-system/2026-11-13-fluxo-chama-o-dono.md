@@ -6,8 +6,8 @@ Pendências: nenhuma (sem UI do app; o épico só muda o texto do fluxo de entre
 
 ## Sincronização
 
-Nenhuma gravação no artefato Mapping do Claude Design: o épico não mudou componentes, tokens nem ícones da app. Impacto no DS: nenhum.
+Sem impacto no artefato Mapping do Claude Design: nada foi gravado, pois o épico não muda componente, token nem ícone da app.
 
 ## Ficou sem gravar
 
-Nenhuma gravação no artefato Mapping do Claude Design: o épico não mudou componentes, tokens nem ícones da app.
+Nada.
