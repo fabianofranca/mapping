@@ -1,4 +1,4 @@
-# Exclusiva na frente drena a fila — [Não lançado] (épico `epic/exclusiva-na-frente`, PR #0, MCP 0.39.1 sem mudança, schema v19)
+# Exclusiva na frente drena a fila — 2026-11-13 (épico `epic/exclusiva-na-frente`, PR #1839, MCP 0.39.1 sem mudança, schema v19)
 
 ## Alterado
 

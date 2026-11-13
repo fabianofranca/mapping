@@ -1,4 +1,4 @@
-# Exclusiva na frente drena a fila — [Não lançado] (épico `epic/exclusiva-na-frente`)
+# Exclusiva na frente drena a fila — 2026-11-13 (épico `epic/exclusiva-na-frente`)
 
 ## Pendências
 
@@ -6,7 +6,7 @@ Pendências: nenhuma. Sem impacto: o épico só mexe no fluxo de entrega (`paine
 
 ## Sincronização
 
-Sem impacto no artefato Mapping do Claude Design: nada foi gravado.
+Sem impacto no artefato Mapping do Claude Design: nada foi gravado, pois o épico não muda componente, token nem ícone da app.
 
 ## Ficou sem gravar
 
