@@ -381,12 +381,15 @@ export function createThreadStore(options: ThreadStoreOptions): ThreadStore {
     return bad && stamp === bad.stamp ? 'skipped' : null;
   };
 
-  /** Lê o arquivo de uma pasta se o carimbo mudou. Devolve o que a conferência precisa saber. */
+  /**
+   * Lê o arquivo de uma pasta se o carimbo mudou. Devolve o que a conferência precisa saber.
+   * `stamp`: o carimbo que a conferência já tem (de `stampThreads` ou de um `stampOf`).
+   */
   const checkFile = async (
     id: string,
     resolvedDir: boolean,
+    stamp: string | null,
   ): Promise<'same' | 'added' | 'changed' | 'skipped'> => {
-    const stamp = await stampOf(id, resolvedDir);
     const skip = stampSaysSkip(id, resolvedDir, stamp);
     if (skip !== null) return skip;
     const entry = known.get(id)?.[slot(resolvedDir)] ?? null;
@@ -408,10 +411,15 @@ export function createThreadStore(options: ThreadStoreOptions): ThreadStore {
   };
 
   /** Lê os arquivos de `comments/` que mudaram e diz quais ids são novos e quais mudaram. */
-  const scanOpenFiles = async (ids: readonly string[], scan: MutableScan) => {
+  const scanOpenFiles = async (
+    ids: readonly string[],
+    scan: MutableScan,
+    stamps?: ReadonlyMap<string, string | null>,
+  ) => {
     const before = new Set(known.keys());
     for (const id of ids) {
-      const result = await checkFile(id, false);
+      const stamp = stamps ? (stamps.get(id) ?? null) : await stampOf(id, false);
+      const result = await checkFile(id, false, stamp);
       if (result === 'changed' || (result === 'added' && before.has(id)))
         scan.changed.push(id);
       else if (result === 'added') scan.added.push(id);
@@ -423,7 +431,7 @@ export function createThreadStore(options: ThreadStoreOptions): ThreadStore {
     for (const [id, copies] of [...known]) {
       if (present.has(id) || copies.open === null) continue;
       clearCopy(id, false);
-      const moved = await checkFile(id, true);
+      const moved = await checkFile(id, true, await stampOf(id, true));
       if (!known.has(id)) scan.removed.push(id);
       else if (moved !== 'skipped') scan.changed.push(id);
     }
@@ -450,13 +458,35 @@ export function createThreadStore(options: ThreadStoreOptions): ThreadStore {
   const problemsKey = () =>
     JSON.stringify([...problemMap.values()].map((p) => [p.problem.id, p.problem.errors]));
 
+  /**
+   * Os ids de `comments/` e, quando o armazenamento tem `stampThreads`, o carimbo de cada um (num
+   * passo só); sem ele, só os ids (o carimbo sai de um `statThread` por arquivo).
+   */
+  const listOpen = async (): Promise<{
+    ids: string[];
+    stamps?: ReadonlyMap<string, string | null>;
+  } | null> => {
+    if (!storage.stampThreads) {
+      const ids = await listIds(false);
+      return ids === null ? null : { ids };
+    }
+    try {
+      const stamps = await storage.stampThreads(false);
+      return { ids: [...stamps.keys()], stamps };
+    } catch (e) {
+      reportError('threads.list', e);
+      return null;
+    }
+  };
+
   const scanNow = async (): Promise<ThreadScan> => {
     const scan: MutableScan = { added: [], changed: [], removed: [] };
-    const ids = await listIds(false);
-    if (ids === null) return scan;
+    const listed = await listOpen();
+    if (listed === null) return scan;
+    const { ids, stamps } = listed;
     const problemsBefore = problemsKey();
     const present = new Set(ids);
-    await scanOpenFiles(ids, scan);
+    await scanOpenFiles(ids, scan, stamps);
     await scanVanished(present, scan);
     dropProblems(false, present);
     if (scan.added.length > 0 || scan.changed.length > 0 || scan.removed.length > 0)
@@ -469,7 +499,7 @@ export function createThreadStore(options: ThreadStoreOptions): ThreadStore {
     const ids = await listIds(true);
     if (ids === null) return;
     const present = new Set(ids);
-    for (const id of ids) await checkFile(id, true);
+    for (const id of ids) await checkFile(id, true, await stampOf(id, true));
     for (const [id, copies] of [...known]) {
       if (copies.resolved !== null && !present.has(id)) clearCopy(id, true);
     }

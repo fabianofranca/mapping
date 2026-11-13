@@ -22,16 +22,22 @@ import {
 } from '../storage/autosave';
 import type { PreparedImage } from '../storage/imageImport';
 import type { LocalPerspectiveStore } from '../storage/localPerspectives';
+import { type FolderCalls, type FolderOp } from '../storage/folderCalls';
 import { loadProject, type LoadProjectResult } from '../storage/loadProject';
+import { FOLDER_CONCURRENCY } from '../storage/folderConcurrency';
 import {
+  libraryIssuesOf,
   loadLibraryIssues,
+  packageEntriesOf,
   readSpecPackage,
+  type AppLibraryIssue,
   type LibraryIssues,
 } from '../storage/specPackage';
 import type { LoadedProposals } from '../storage/loadProposals';
 import type { LoadedThreads } from '../storage/loadThreads';
 import { backupFileName, imageMimeType, type ProjectStorage } from '../storage/types';
 import type { ProjectFiles } from '../storage/zip';
+import { mapLimit } from '../utils/mapLimit';
 import { reportError } from '../utils/report';
 import { createComponentLibrary, type ComponentLibrary } from './componentLibrary';
 import { libraryInputFiles } from './packageValidation';
@@ -126,6 +132,12 @@ export interface SessionOptions {
   /** Problemas da biblioteca lidos ao abrir (ver `loadProject`); sem eles, nenhum. */
   readonly libraryIssues?: LibraryIssues;
   /**
+   * O contador de chamadas da pasta (`storage/folderCalls`), o mesmo que embrulha a raiz do
+   * `storage`: a sessão mede nele a gravação, a decisão, a aplicação e a conferência. Sem ele
+   * (projeto local, zip, testes), nada é medido.
+   */
+  readonly folderCalls?: FolderCalls | null;
+  /**
    * Arquivos de imagem trocados ou adicionados por fora (ao recarregar o projeto ou ao
    * conferir os arquivos): quem guarda os bitmaps os descarta para carregar de novo.
    */
@@ -213,6 +225,8 @@ export interface CollectedFiles extends ProjectFiles {
 /** Um projeto aberto: store com undo/redo ligado ao armazenamento. */
 export interface ProjectSession {
   readonly storage: ProjectStorage;
+  /** Chamadas e tempo da última operação de cada tipo na pasta; `null` fora de pasta. */
+  readonly folderCalls: FolderCalls | null;
   readonly store: ProjectStore;
   readonly actions: ProjectActions;
   /** Propostas de alteração do projeto (etapa 4): lista, problemas, avisos e conferência da pasta. */
@@ -270,6 +284,13 @@ export interface ProjectSession {
    * acumulado).
    */
   sync(options?: { readonly images?: boolean }): Promise<SyncResult>;
+  /**
+   * Há trabalho em curso que a conferência de ciclo não deve atrapalhar: uma gravação agendada ou
+   * em curso, um gesto em andamento, ou uma decisão, nota ou aplicação de proposta na fila ou sendo
+   * gravada. `useExternalChanges` adia o ciclo (não o foco) enquanto isso for verdade. Com a gravação
+   * em erro não conta (a conferência precisa abrir o diálogo de conflito).
+   */
+  busy(): boolean;
   /**
    * Decide o conflito: `reload` descarta as alterações locais ainda não gravadas e carrega o
    * arquivo; `keep` grava as minhas por cima, com a revisão nova. Nunca rejeita: uma falha de
@@ -360,6 +381,18 @@ interface WrittenPackage {
   readonly key: string;
   /** O arquivo da especialização, relativo à pasta (gravado pelo `specFiles`, não pelo pacote). */
   readonly specRel: string;
+}
+
+/** Uma gravação adiada de um arquivo, que registra o que gravou quando termina. */
+type Job = () => Promise<void>;
+
+/** Um pacote que a gravação vai escrever em `specs/<pasta>/`. */
+interface PlannedPackage {
+  readonly spec: { readonly id: string; readonly file: string };
+  readonly dir: string;
+  readonly key: string;
+  readonly have: WrittenPackage | undefined;
+  readonly files: ReadonlyMap<string, string | Blob>;
 }
 
 const packageKey = (s: { readonly id: string; readonly version: number }): string =>
@@ -469,6 +502,17 @@ export function openSession(options: SessionOptions): ProjectSession {
     },
   });
   let packagesTouched = false;
+  // Especializações cujo pacote foi gravado e ainda não foi validado de novo: a validação roda
+  // depois do `mapping.json` e, se a gravação falha antes, o pedido continua para a seguinte.
+  const libraryDirty = new Set<string>();
+  const folderCalls = options.folderCalls ?? null;
+  /** Mede `fn` no contador da pasta; sem contador, só a executa. */
+  const measure = <T>(
+    op: FolderOp | (() => FolderOp),
+    fn: () => Promise<T>,
+  ): Promise<T> => (folderCalls ? folderCalls.measure(op, fn) : fn());
+  /** A gravação em curso gravou um pacote de biblioteca (`library` em vez de `save`). */
+  let wrotePackage = false;
   // Pastas de pacote regravadas por cima de uma versão antiga: podem ter arquivos que só a
   // versão antiga tinha. Saem depois do `mapping.json` gravado (`sweepPackages`); a pasta fica
   // aqui até a varredura dar certo, e cada varredura recalcula o que sobra pela listagem.
@@ -511,19 +555,21 @@ export function openSession(options: SessionOptions): ProjectSession {
   const snapshotPackage = async (dir: string, written: WrittenPackage) => {
     if (packageCache.has(written.key)) return;
     const files = new Map<string, string | Blob>();
-    for (const path of await storage.listSpecDir(dir)) {
-      const rel = path.slice(dir.length + 1);
-      if (rel === written.specRel) continue;
+    const paths = (await storage.listSpecDir(dir)).filter(
+      (path) => path.slice(dir.length + 1) !== written.specRel,
+    );
+    // Leituras em paralelo com limite; o mapa segue a ordem da listagem.
+    const read = await mapLimit(paths, FOLDER_CONCURRENCY, async (path) => {
       const blob = await storage.readSpecFile(path);
-      if (!blob) continue;
+      if (!blob) return null;
+      const rel = path.slice(dir.length + 1);
       // Cópia em memória: numa pasta, o `File` lido deixa de ser legível quando é removido.
-      files.set(
-        rel,
-        isTextPackageFile(rel)
-          ? await blob.text()
-          : new Blob([await blob.arrayBuffer()], { type: blob.type }),
-      );
-    }
+      const data = isTextPackageFile(rel)
+        ? await blob.text()
+        : new Blob([await blob.arrayBuffer()], { type: blob.type });
+      return [rel, data] as const;
+    });
+    for (const item of read) if (item) files.set(item[0], item[1]);
     packageCache.set(written.key, files);
   };
   const forgetSpecsUnder = (dir: string) => {
@@ -606,8 +652,21 @@ export function openSession(options: SessionOptions): ProjectSession {
   };
   const statMapping = (): Promise<number | null> =>
     storage.statMapping ? storage.statMapping().catch(() => null) : Promise.resolve(null);
-  /** O único ponto em que a sessão lê o `mapping.json` depois de aberto (regra ESLint). */
-  const readMapping = () => storage.loadMapping();
+  /**
+   * O único ponto em que a sessão lê o `mapping.json` depois de aberto (regra ESLint). Na pasta,
+   * uma leitura só (`getFile`) traz o texto e a data; sem `loadMappingStamped`, a data é `null`.
+   */
+  const readMapping = async (): Promise<{
+    readonly text: string;
+    readonly lastModified: number | null;
+  } | null> => {
+    if (!storage.loadMappingStamped) {
+      const text = await storage.loadMapping();
+      return text === null ? null : { text, lastModified: null };
+    }
+    return storage.loadMappingStamped();
+  };
+  const readMappingText = async () => (await readMapping())?.text ?? null;
 
   /**
    * O disco difere do que a sessão leu ou gravou? Com o texto conhecido, qualquer diferença
@@ -622,12 +681,13 @@ export function openSession(options: SessionOptions): ProjectSession {
   // conhecido (lido aqui uma vez); se já mudou, a primeira conferência o trata como sempre.
   const initialStat = watchable
     ? (async () => {
-        const modified = await statMapping();
-        if (modified === null || disk.lastModified !== null) return;
-        const text = await readMapping().catch(() => null);
-        if (text !== null && !changedExternally(text) && disk.lastModified === null) {
-          disk = { ...disk, lastModified: modified };
-        }
+        if (disk.lastModified !== null) return;
+        // Uma leitura só: o texto e a data vêm juntos (sem a data, cai no `stat` de antes).
+        const read = await readMapping().catch(() => null);
+        if (read === null || changedExternally(read.text) || disk.lastModified !== null)
+          return;
+        const modified = read.lastModified ?? (await statMapping());
+        if (modified !== null) disk = { ...disk, lastModified: modified };
       })()
     : Promise.resolve();
 
@@ -641,7 +701,7 @@ export function openSession(options: SessionOptions): ProjectSession {
    */
   const assertWritable = async () => {
     for (let attempt = 1; ; attempt++) {
-      const text = await readMapping();
+      const text = await readMappingText();
       if (text === null || !changedExternally(text)) return;
       if (text.trim() === '' && disk.text === null) return;
       if (text.trim() !== '') {
@@ -652,6 +712,111 @@ export function openSession(options: SessionOptions): ProjectSession {
       await sleep(EMPTY_RETRY_DELAY_MS);
     }
   };
+
+  /**
+   * Atualiza os problemas da biblioteca depois de uma gravação: só as especializações cujo pacote
+   * foi gravado (`libraryDirty`) são validadas de novo, pelos arquivos em memória (uma sem cópia
+   * em memória, ou sem resultado anterior, é lida do disco, só ela); as outras ficam como
+   * estavam e as que o projeto deixou de ter saem. O resultado é o de `loadLibraryIssues`.
+   */
+  const refreshLibraryIssues = async (p: Project) => {
+    const previous = libraryIssues.value;
+    // Instantâneo: o que ficar sujo durante o `await` abaixo fica para a próxima atualização.
+    const pending = [...libraryDirty];
+    const dirty = new Set(pending);
+    const specs = specFiles(p);
+    const known = new Map<string, readonly AppLibraryIssue[]>();
+    const unknown: Project['specializations'][number][] = [];
+    for (const s of p.specializations) {
+      if (packageDirOf(s.file) === null) continue;
+      const issues = dirty.has(s.id)
+        ? memoryLibraryIssues(s, specs.get(s.file))
+        : previous.get(s.id);
+      if (issues) known.set(s.id, issues);
+      else unknown.push(s);
+    }
+    const fromDisk = await loadLibraryIssues(storage, { specializations: unknown });
+    const next = new Map<string, readonly AppLibraryIssue[]>();
+    for (const s of p.specializations) {
+      const issues = known.get(s.id) ?? fromDisk.get(s.id);
+      if (issues) next.set(s.id, issues);
+    }
+    for (const id of pending) libraryDirty.delete(id);
+    libraryIssues.value = next;
+  };
+
+  /** Valida a especialização pelo pacote em memória (mais o texto dela); `undefined` sem a cópia. */
+  const memoryLibraryIssues = (
+    s: { readonly id: string; readonly version: number; readonly file: string },
+    specText: string | undefined,
+  ): readonly AppLibraryIssue[] | undefined => {
+    const dir = packageDirOf(s.file);
+    const cached = packageCache.get(packageKey(s));
+    if (dir === null || !cached || specText === undefined) return undefined;
+    const files = new Map(cached).set(s.file.slice(dir.length + 1), specText);
+    return libraryIssuesOf(s, dir, packageEntriesOf(dir, files));
+  };
+
+  /**
+   * Os pacotes da biblioteca que o projeto traz e a pasta ainda não tem (a versão nova, ou a que
+   * voltou pelo desfazer): guarda a versão antiga em memória (em paralelo com limite) e devolve
+   * uma gravação por arquivo. Cada pacote só entra em `writtenPackages` quando o último arquivo
+   * dele gravou; a versão antiga só é guardada, nada é apagado agora.
+   */
+  const planPackageWrites = async (p: Project): Promise<Job[]> => {
+    const planned: PlannedPackage[] = [];
+    for (const s of p.specializations) {
+      const dir = packageDirOf(s.file);
+      if (dir === null || !s.spec) continue;
+      const key = packageKey(s);
+      const have = writtenPackages.get(dir);
+      if (have?.key === key) continue;
+      const files = packageCache.get(key);
+      if (!files) {
+        reportError('session.package', `pacote ${key} fora da memória: ${dir}`);
+        continue;
+      }
+      planned.push({ spec: s, dir, key, have, files });
+    }
+    await mapLimit(
+      planned.filter((pkg) => pkg.have),
+      FOLDER_CONCURRENCY,
+      (pkg) => snapshotPackage(pkg.dir, pkg.have as WrittenPackage),
+    );
+    const jobs: Job[] = [];
+    for (const pkg of planned) {
+      // O arquivo da especialização precisa ser regravado com a versão nova.
+      forgetSpecsUnder(pkg.dir);
+      staleDirs.add(pkg.dir);
+      let remaining = pkg.files.size;
+      const done = () => {
+        writtenPackages.set(pkg.dir, {
+          key: pkg.key,
+          specRel: pkg.spec.file.slice(pkg.dir.length + 1),
+        });
+        libraryDirty.add(pkg.spec.id);
+        packagesTouched = true;
+        wrotePackage = true;
+      };
+      if (remaining === 0) done();
+      for (const [rel, data] of pkg.files) {
+        jobs.push(async () => {
+          await storage.writeSpecFile(`${pkg.dir}/${rel}`, data);
+          if (--remaining === 0) done();
+        });
+      }
+    }
+    return jobs;
+  };
+
+  /** Uma gravação por cópia de `specs/` nova ou alterada; registra o texto depois de gravada. */
+  const planSpecWrites = (specs: ReadonlyMap<string, string>): Job[] =>
+    [...specs]
+      .filter(([file, text]) => writtenSpecs.get(file) !== text)
+      .map(([file, text]) => async () => {
+        await storage.writeSpec(file, text);
+        writtenSpecs.set(file, text);
+      });
 
   /**
    * Grava o projeto: restaura imagens que voltaram (undo) e grava as cópias de
@@ -665,6 +830,7 @@ export function openSession(options: SessionOptions): ProjectSession {
    * Diagnóstico (`session.cleanup`) e a próxima gravação tenta de novo.
    */
   const writeProject = async (p: Project) => {
+    wrotePackage = false;
     await assertWritable();
     let wrote = false;
     if (pendingBackup) {
@@ -692,33 +858,13 @@ export function openSession(options: SessionOptions): ProjectSession {
     // `specFiles` abaixo regrava. Os arquivos que só a versão antiga tinha ficam até o
     // `mapping.json` gravado (`sweepPackages`). Janela que sobra: durante a regravação a pasta
     // pode ter arquivos da versão nova enquanto o `mapping.json` ainda cita a antiga; nada some.
-    for (const s of p.specializations) {
-      const dir = packageDirOf(s.file);
-      if (dir === null || !s.spec) continue;
-      const key = packageKey(s);
-      const have = writtenPackages.get(dir);
-      if (have?.key === key) continue;
-      const files = packageCache.get(key);
-      if (!files) {
-        reportError('session.package', `pacote ${key} fora da memória: ${dir}`);
-        continue;
-      }
-      if (have) await snapshotPackage(dir, have);
-      // O arquivo da especialização precisa ser regravado com a versão nova.
-      forgetSpecsUnder(dir);
-      staleDirs.add(dir);
-      for (const [rel, data] of files) await storage.writeSpecFile(`${dir}/${rel}`, data);
-      writtenPackages.set(dir, { key, specRel: s.file.slice(dir.length + 1) });
-      packagesTouched = true;
-      wrote = true;
-    }
     const specs = specFiles(p);
-    for (const [file, text] of specs) {
-      if (writtenSpecs.get(file) === text) continue;
-      await storage.writeSpec(file, text);
-      writtenSpecs.set(file, text);
-      wrote = true;
-    }
+    // Todos os arquivos (do pacote e as cópias de `specs/`) gravam antes do `mapping.json`, em
+    // paralelo com limite; cada um só registra o que gravou depois de gravado, e a falha de
+    // qualquer um aborta a gravação aqui.
+    const jobs = [...(await planPackageWrites(p)), ...planSpecWrites(specs)];
+    await mapLimit(jobs, FOLDER_CONCURRENCY, (job) => job());
+    if (jobs.length > 0 || wrotePackage) wrote = true;
     // As gravações acima levam tempo: confere de novo antes de sobrescrever o arquivo.
     if (wrote) await assertWritable();
     const revision = disk.revision + 1;
@@ -733,7 +879,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     await cleanUp(referenced, specs).catch(reportCleanupFailure);
     if (packagesTouched) {
       packagesTouched = false;
-      libraryIssues.value = await loadLibraryIssues(storage, p);
+      await refreshLibraryIssues(p);
     }
   };
 
@@ -759,7 +905,10 @@ export function openSession(options: SessionOptions): ProjectSession {
     const p = store.committed.peek();
     if (!p || onDisk(p)) return;
     try {
-      await writeProject(p);
+      await measure(
+        () => (wrotePackage ? 'library' : 'save'),
+        () => writeProject(p),
+      );
     } catch (e) {
       if (e instanceof EmptyMappingError) reportError('session.emptyMapping', e);
       throw e;
@@ -896,6 +1045,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     },
     stagePackage: cachePackage,
     flush: () => saver.flush(),
+    ...(folderCalls ? { measure } : {}),
   });
 
   /** O Quem vê não muda com o projeto travado, em revisão ou com um gesto em andamento. */
@@ -1002,6 +1152,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     writtenSpecs.clear();
     for (const [file, text] of specFiles(project)) writtenSpecs.set(file, text);
     packageCache.clear();
+    libraryDirty.clear();
     staleDirs.clear();
     trackPackages(project);
     // Os arquivos do pacote podem ter mudado por fora sem mudar a versão: lê de novo.
@@ -1072,7 +1223,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     const modified = await statMapping();
     let result: SyncResult = 'unchanged';
     if (modified !== null && modified !== disk.lastModified) {
-      const text = await readMapping();
+      const text = await readMappingText();
       if (text !== null && changedExternally(text)) {
         const erroring = saver.status.peek() === 'error';
         if (text.trim() === '' && !erroring) {
@@ -1116,29 +1267,34 @@ export function openSession(options: SessionOptions): ProjectSession {
       images: syncOptions.images === true,
       promise: Promise.resolve<SyncResult>('unchanged'),
     };
-    entry.promise = saver
-      .enqueue(() => {
+    // O ciclo inteiro (o arquivo do projeto e as varreduras de propostas e conversas) é uma
+    // medida só.
+    entry.promise = measure('sync', async () => {
+      const result = await saver.enqueue(() => {
         pendingSync = null;
         return syncProject(entry.images);
-      })
-      .then(async (result) => {
-        // As propostas não esperam o projeto: decisões e notas são gravadas na hora e
-        // refeitas sobre a versão do disco, então não há "alteração local pendente" a proteger.
-        // Fora da fila da sessão: a fila das propostas pode esperar por ela (`flush`), nunca o
-        // contrário.
-        // As conversas também: só `comments/`, pelo carimbo, lendo só o arquivo que mudou.
-        // As duas varreduras não compartilham arquivo, fila nem estado (`proposals/` e
-        // `comments/`, cada uma com a sua fila): rodam juntas.
-        await Promise.all([
-          !closed && storage.statProposal
-            ? proposals.scan().catch((e: unknown) => reportError('proposals.scan', e))
-            : undefined,
-          !closed && storage.statThread
-            ? threads.scan().catch((e: unknown) => reportError('threads.scan', e))
-            : undefined,
-        ]);
-        return result;
       });
+      // As propostas não esperam o projeto: decisões e notas são gravadas na hora e
+      // refeitas sobre a versão do disco, então não há "alteração local pendente" a proteger.
+      // Fora da fila da sessão: a fila das propostas pode esperar por ela (`flush`), nunca o
+      // contrário.
+      // As conversas também: só `comments/`, pelo carimbo, lendo só o arquivo que mudou.
+      // As duas varreduras não compartilham arquivo, fila nem estado (`proposals/` e
+      // `comments/`, cada uma com a sua fila): rodam juntas.
+      // A conferência completa (foco, volta à página: `images`) olha também as propostas finais;
+      // a de ciclo as pula, já lidas (etapa #1777, decisão 8).
+      await Promise.all([
+        !closed && storage.statProposal
+          ? proposals
+              .scan({ full: entry.images })
+              .catch((e: unknown) => reportError('proposals.scan', e))
+          : undefined,
+        !closed && storage.statThread
+          ? threads.scan().catch((e: unknown) => reportError('threads.scan', e))
+          : undefined,
+      ]);
+      return result;
+    });
     pendingSync = entry;
     return entry.promise;
   };
@@ -1150,7 +1306,7 @@ export function openSession(options: SessionOptions): ProjectSession {
         if (!conflict.peek()) return;
         let text: string | null = null;
         try {
-          text = await readMapping();
+          text = await readMappingText();
         } catch (e) {
           // Ilegível (permissão revogada): segue como se o arquivo tivesse sumido; se a
           // gravação também falhar, o status diz.
@@ -1194,6 +1350,7 @@ export function openSession(options: SessionOptions): ProjectSession {
 
   return {
     storage,
+    folderCalls,
     store,
     actions,
     proposals,
@@ -1211,6 +1368,11 @@ export function openSession(options: SessionOptions): ProjectSession {
     reloads,
     watchable,
     sync,
+    busy: () =>
+      !closed &&
+      (saver.status.peek() === 'saving' ||
+        store.gestureActive.peek() ||
+        proposals.writing()),
     resolveConflict,
 
     async addImages(files, addOptions = {}) {

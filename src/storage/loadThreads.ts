@@ -5,7 +5,9 @@ import {
   type MergedThread,
   type Thread,
 } from '../model';
+import { mapLimit } from '../utils/mapLimit';
 import { reportError } from '../utils/report';
+import { FOLDER_CONCURRENCY } from './folderConcurrency';
 import type { ProjectStorage } from './types';
 
 // Leitura das conversas (`comments/<id>.json` e `comments/resolved/<id>.json`, etapa Comentários):
@@ -135,8 +137,11 @@ export async function loadThreads(
       reportError('threads.list', e);
       continue;
     }
-    for (const id of ids) {
-      const read = await readThread(storage, id, resolvedDir);
+    const reads = await mapLimit(ids, FOLDER_CONCURRENCY, (id) =>
+      readThread(storage, id, resolvedDir),
+    );
+    ids.forEach((id, i) => {
+      const read = reads[i] as ReadThreadResult;
       if (read.ok) {
         threads.push(read);
       } else if (!read.missing) {
@@ -144,7 +149,7 @@ export async function loadThreads(
         if (read.text !== null)
           problemTexts.set(threadFilePath(id, resolvedDir), read.text);
       }
-    }
+    });
   }
   return { threads, problems, problemTexts };
 }

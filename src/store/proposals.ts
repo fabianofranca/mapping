@@ -121,6 +121,17 @@ export interface ProposalScan {
   readonly removed: readonly string[];
 }
 
+export interface ProposalScanOptions {
+  /** `false`: conferência de ciclo (pula as finais já lidas). Padrão: `true`, a completa. */
+  readonly full?: boolean;
+}
+
+interface MutableScan {
+  readonly added: string[];
+  readonly changed: string[];
+  readonly removed: string[];
+}
+
 const NOTICE_LIMIT = 20;
 
 interface Known {
@@ -153,8 +164,18 @@ export interface ProposalStore {
    * o vínculo do histórico sem janela para um desfazer no meio).
    */
   remove(id: string, onRemoved?: () => void): Promise<RemoveProposalResult>;
-  /** Confere a pasta: propostas novas, alteradas e apagadas por fora. */
-  scan(): Promise<ProposalScan>;
+  /**
+   * Confere a pasta: propostas novas, alteradas e apagadas por fora. A conferência completa
+   * (padrão: o foco, a volta à página e o "Verificar a pasta agora") olha todas as propostas; a de
+   * ciclo (`full: false`) não relê as finais (`applied` e `withdrawn`) já lidas com carimbo
+   * conhecido, mas uma pasta nova em `proposals/` continua sendo vista em todo ciclo.
+   */
+  scan(options?: ProposalScanOptions): Promise<ProposalScan>;
+  /**
+   * Há uma decisão, nota, aplicação ou remoção de proposta esperando na fila ou sendo
+   * gravada. A conferência de ciclo espera por isso (`session.busy`).
+   */
+  writing(): boolean;
   /** Espera as gravações em andamento (ao fechar o projeto). */
   settled(): Promise<void>;
   clearNotices(): void;
@@ -252,6 +273,18 @@ export function createProposalStore(options: ProposalStoreOptions): ProposalStor
 
   // Fila única: gravações e conferências nunca rodam em paralelo.
   const enqueue = createSerialQueue();
+  // Gravações (decidir, anotar, aplicar, apagar) na fila ou em curso: a conferência de ciclo as espera.
+  let writes = 0;
+  const enqueueWrite = <T>(job: () => Promise<T>): Promise<T> => {
+    writes++;
+    const run = enqueue(job);
+    // Um ramo à parte: o `run` devolvido a quem chamou não ganha nenhum passo a mais.
+    const done = () => {
+      writes--;
+    };
+    run.then(done, done);
+    return run;
+  };
 
   const stampOf = (id: string): Promise<string | null> =>
     stampOr(storage.statProposal ? () => storage.statProposal!(id) : null);
@@ -371,52 +404,96 @@ export function createProposalStore(options: ProposalStoreOptions): ProposalStor
     return { ok: true, proposal: entry.proposal };
   };
 
-  const scanNow = async (): Promise<ProposalScan> => {
-    const added: string[] = [];
-    const changed: string[] = [];
-    const removed: string[] = [];
-    let ids: string[];
+  /**
+   * As propostas finais (`applied` e `withdrawn`) já lidas com carimbo conhecido: a conferência de
+   * ciclo não as relê (o MCP não reescreve uma proposta aplicada). `open` e `superseded` (que ainda
+   * tem aceitas a aplicar) ficam de fora.
+   */
+  const settledIds = (): Set<string> => {
+    const skip = new Set<string>();
+    for (const [id, entry] of known) {
+      const { status } = entry.proposal;
+      if (entry.stamp !== null && (status === 'applied' || status === 'withdrawn'))
+        skip.add(id);
+    }
+    return skip;
+  };
+
+  /**
+   * Quem está em `proposals/` (`present`) e o carimbo de cada proposta a conferir. As de `skip`
+   * contam como presentes, sem carimbo. Num passo só quando o armazenamento tem `stampProposals`;
+   * senão, a listagem e um `statProposal` por proposta. `null`: a pasta não pôde ser lida.
+   */
+  const proposalStamps = async (
+    skip: ReadonlySet<string>,
+  ): Promise<{ present: Set<string>; stamps: Map<string, string | null> } | null> => {
     try {
-      ids = await storage.listProposals();
+      const present = new Set<string>();
+      const stamps = new Map<string, string | null>();
+      if (storage.stampProposals) {
+        // Toda proposta do mapa está em `proposals/` (as pastas sem `proposal.json` ficam de
+        // fora); carimbo `null` é "a conferir" (pulada por ser final, ou ilegível agora).
+        for (const [id, stamp] of await storage.stampProposals(skip)) {
+          present.add(id);
+          if (!skip.has(id)) stamps.set(id, stamp);
+        }
+      } else {
+        for (const id of await storage.listProposals()) {
+          present.add(id);
+          if (!skip.has(id)) stamps.set(id, await stampOf(id));
+        }
+      }
+      return { present, stamps };
     } catch (e) {
       reportError('proposals.list', e);
-      return { added, changed, removed };
+      return null;
     }
-    const present = new Set(ids);
-    const problemsBefore = problemsKey();
-    for (const id of ids) {
-      const stamp = await stampOf(id);
-      const entry = known.get(id);
-      const bad = problemMap.get(id);
-      if (stamp !== null) {
-        if (entry && stamp === entry.stamp) continue;
-        if (!entry && bad && stamp === bad.stamp) continue;
+  };
+
+  /** O carimbo diz que nada mudou (ou que o problema já conhecido é o mesmo)? */
+  const stampSaysSame = (id: string, stamp: string | null): boolean => {
+    if (stamp === null) return false;
+    const entry = known.get(id);
+    if (entry) return stamp === entry.stamp;
+    const bad = problemMap.get(id);
+    return bad !== undefined && stamp === bad.stamp;
+  };
+
+  /** Adota o que a leitura de uma proposta de carimbo novo trouxe e conta no resultado. */
+  const takeRead = (
+    id: string,
+    stamp: string | null,
+    read: Awaited<ReturnType<typeof readProposal>>,
+    scan: MutableScan,
+  ) => {
+    const entry = known.get(id);
+    if (!read.ok) {
+      // Sumiu entre a lista e a leitura, ou está ilegível: uma proposta que já conhecemos
+      // fica como está (um editor ainda escrevendo); só as desconhecidas viram problema.
+      if (!read.missing && !entry) {
+        problemMap.set(id, {
+          problem: { id, errors: read.errors },
+          stamp,
+          text: read.text,
+        });
       }
-      const read = await readProposal(storage, id);
-      if (!read.ok) {
-        // Sumiu entre a lista e a leitura, ou está ilegível: uma proposta que já conhecemos
-        // fica como está (um editor ainda escrevendo); só as desconhecidas viram problema.
-        if (!read.missing && !entry) {
-          problemMap.set(id, {
-            problem: { id, errors: read.errors },
-            stamp,
-            text: read.text,
-          });
-        }
-        continue;
-      }
-      if (!entry) {
-        adopt(read);
-        added.push(id);
-        notify('added', id, read.proposal.title);
-      } else if (read.text !== entry.text) {
-        adopt(read);
-        changed.push(id);
-        notifyChanged(entry.proposal, read.proposal);
-      } else {
-        known.set(id, { ...entry, stamp: read.stamp });
-      }
+      return;
     }
+    if (!entry) {
+      adopt(read);
+      scan.added.push(id);
+      notify('added', id, read.proposal.title);
+    } else if (read.text !== entry.text) {
+      adopt(read);
+      scan.changed.push(id);
+      notifyChanged(entry.proposal, read.proposal);
+    } else {
+      known.set(id, { ...entry, stamp: read.stamp });
+    }
+  };
+
+  /** O que sumiu da pasta: as propostas conhecidas (aviso "apagada") e os problemas. */
+  const dropAbsent = (present: ReadonlySet<string>, removed: string[]) => {
     for (const [id, entry] of [...known]) {
       if (present.has(id)) continue;
       known.delete(id);
@@ -426,9 +503,21 @@ export function createProposalStore(options: ProposalStoreOptions): ProposalStor
     for (const id of [...problemMap.keys()]) {
       if (!present.has(id)) problemMap.delete(id);
     }
-    if (added.length > 0 || changed.length > 0 || removed.length > 0) publish();
-    else if (problemsKey() !== problemsBefore) publish();
-    return { added, changed, removed };
+  };
+
+  const scanNow = async (full: boolean): Promise<ProposalScan> => {
+    const scan: MutableScan = { added: [], changed: [], removed: [] };
+    const found = await proposalStamps(full ? new Set() : settledIds());
+    if (found === null) return scan;
+    const problemsBefore = problemsKey();
+    for (const [id, stamp] of found.stamps) {
+      if (stampSaysSame(id, stamp)) continue;
+      takeRead(id, stamp, await readProposal(storage, id), scan);
+    }
+    dropAbsent(found.present, scan.removed);
+    const changed = scan.added.length + scan.changed.length + scan.removed.length > 0;
+    if (changed || problemsKey() !== problemsBefore) publish();
+    return scan;
   };
 
   return {
@@ -436,9 +525,10 @@ export function createProposalStore(options: ProposalStoreOptions): ProposalStor
     problems,
     notices,
     get: (id) => known.get(id)?.proposal ?? null,
-    mutate: (id, mutation) => enqueue(() => runMutation(id, mutation)),
-    remove: (id, onRemoved) => enqueue(() => removeNow(id, onRemoved)),
-    scan: () => enqueue(scanNow),
+    mutate: (id, mutation) => enqueueWrite(() => runMutation(id, mutation)),
+    remove: (id, onRemoved) => enqueueWrite(() => removeNow(id, onRemoved)),
+    scan: (scanOptions) => enqueue(() => scanNow(scanOptions?.full !== false)),
+    writing: () => writes > 0,
     settled: () => enqueue(() => Promise.resolve()),
     clearNotices() {
       notices.value = [];

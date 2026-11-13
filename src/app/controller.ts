@@ -31,6 +31,11 @@ import {
   type DirectoryHandleLike,
   type ExistingImage,
 } from '../storage/folder';
+import {
+  countingDirectory,
+  createFolderCalls,
+  type FolderCalls,
+} from '../storage/folderCalls';
 import { createDisplayBitmap, prepareImage, readImageSize } from '../storage/imageImport';
 import { loadProject, type InconsistentLoad } from '../storage/loadProject';
 import { loadProposals } from '../storage/loadProposals';
@@ -148,17 +153,25 @@ interface Bound {
 interface OpenTarget {
   readonly storage: ProjectStorage;
   readonly localId: string | null;
+  /** O contador de chamadas da pasta, o que embrulha a raiz do `storage` (só em pasta). */
+  readonly folderCalls?: FolderCalls;
   readonly bind?: (project: Project) => Promise<Bound>;
 }
 
-async function openFromStorage(target: OpenTarget): Promise<AppResult> {
-  const loaded = await loadProject(target.storage);
-  if (loaded.ok) return openLoaded(target, loaded.project, loaded);
-  const { inconsistent } = loaded;
-  if (!inconsistent) return err(loaded.error);
-  return inconsistentResult(inconsistent.issues, inconsistent.repair, () =>
-    openRepaired(target, inconsistent),
-  );
+/** A abertura, medida no contador da pasta (`open`): do `loadProject` até a sessão pronta. */
+const measureOpen = <T>(target: OpenTarget, fn: () => Promise<T>): Promise<T> =>
+  target.folderCalls ? target.folderCalls.measure('open', fn) : fn();
+
+function openFromStorage(target: OpenTarget): Promise<AppResult> {
+  return measureOpen(target, async () => {
+    const loaded = await loadProject(target.storage);
+    if (loaded.ok) return openLoaded(target, loaded.project, loaded);
+    const { inconsistent } = loaded;
+    if (!inconsistent) return err(loaded.error);
+    return inconsistentResult(inconsistent.issues, inconsistent.repair, () =>
+      measureOpen(target, () => openRepaired(target, inconsistent)),
+    );
+  });
 }
 
 let localPerspectives: Promise<LocalPerspectiveStore | null> | null = null;
@@ -189,7 +202,7 @@ async function openLoaded(
     readonly libraryIssues?: LibraryIssues;
   },
 ): Promise<AppResult> {
-  const { localId } = target;
+  const { localId, folderCalls } = target;
   const notes = withDefaultNotes(loadedProject, loaded);
   const project = notes.project;
   reportDiscardedUrlTemplates(loaded.discardedUrlTemplates ?? []);
@@ -214,6 +227,7 @@ async function openLoaded(
     ...(loaded.libraryIssues === undefined
       ? {}
       : { libraryIssues: loaded.libraryIssues }),
+    folderCalls: folderCalls ?? null,
     localPerspectives: { store: localStore, initial: localInitial },
     proposals: await loadProposals(storage),
     threads: await loadThreads(storage),
@@ -454,21 +468,28 @@ export function openFolder(): Promise<AppResult<FolderInspection>> {
  * "Reparar e abrir"), é guardada nos recentes e a sessão recebe o storage com a cópia.
  * `replaceId`: a entrada dos recentes que passa a apontar para esta pasta ("Localizar").
  */
-const folderTarget = (handle: DirectoryHandleLike, replaceId?: string): OpenTarget => ({
-  storage: createFolderStorage(handle),
-  localId: null,
-  bind: async (project) => {
-    const { folderId, copyId } = await recents.rememberFolder(
-      handle,
-      project.project.name,
-      replaceId,
-    );
-    return {
-      storage: createFolderStorage(handle, { copyId }),
-      ...(folderId === null ? {} : { folderId }),
-    };
-  },
-});
+const folderTarget = (handle: DirectoryHandleLike, replaceId?: string): OpenTarget => {
+  // O contador embrulha a raiz uma vez: o storage de leitura, o da sessão e as medidas dela
+  // usam o mesmo.
+  const folderCalls = createFolderCalls();
+  const root = countingDirectory(handle, folderCalls);
+  return {
+    storage: createFolderStorage(root),
+    localId: null,
+    folderCalls,
+    bind: async (project) => {
+      const { folderId, copyId } = await recents.rememberFolder(
+        handle,
+        project.project.name,
+        replaceId,
+      );
+      return {
+        storage: createFolderStorage(root, { copyId }),
+        ...(folderId === null ? {} : { folderId }),
+      };
+    },
+  };
+};
 
 const openFolderHandle = (handle: DirectoryHandleLike, replaceId?: string) =>
   openFromStorage(folderTarget(handle, replaceId));
@@ -497,7 +518,9 @@ export function createFolderProject(
       return opened.ok ? ok({ skipped: [], existing: true as const }) : opened;
     };
     if (await hasMappingFile(handle)) return openExisting();
-    const storage = createFolderStorage(handle);
+    // O mesmo alvo (e contador) da sessão que abre no fim: a criação já conta nele.
+    const target = folderTarget(handle);
+    const { storage } = target;
     const imported = await importExistingImages(
       storage,
       newProject(name.trim() || handle.name),
@@ -518,11 +541,13 @@ export function createFolderProject(
     );
     // A pasta pode já ter propostas (ex: restauradas do git sem o mapping.json): a abertura
     // as lê, como em qualquer pasta.
-    await openLoaded(folderTarget(handle), imported.project, {
-      readOnly: false,
-      text: mappingText,
-      migratedFrom: null,
-    });
+    await measureOpen(target, () =>
+      openLoaded(target, imported.project, {
+        readOnly: false,
+        text: mappingText,
+        migratedFrom: null,
+      }),
+    );
     return ok({ skipped: imported.skipped });
   });
 }

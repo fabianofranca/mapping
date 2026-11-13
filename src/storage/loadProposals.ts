@@ -1,5 +1,7 @@
 import { parseProposalText, type Proposal } from '../model';
+import { mapLimit } from '../utils/mapLimit';
 import { reportError } from '../utils/report';
+import { FOLDER_CONCURRENCY } from './folderConcurrency';
 import type { ProjectStorage } from './types';
 
 // Leitura das propostas de alteração (`proposals/<id>/proposal.json`, etapa 4): ao abrir
@@ -94,14 +96,17 @@ export async function loadProposals(storage: ProjectStorage): Promise<LoadedProp
   const proposals: LoadedProposal[] = [];
   const problems: ProposalProblem[] = [];
   const problemTexts = new Map<string, string>();
-  for (const id of ids) {
-    const read = await readProposal(storage, id);
+  const reads = await mapLimit(ids, FOLDER_CONCURRENCY, (id) =>
+    readProposal(storage, id),
+  );
+  ids.forEach((id, i) => {
+    const read = reads[i] as ReadProposalResult;
     if (read.ok) {
       proposals.push({ proposal: read.proposal, text: read.text, stamp: read.stamp });
     } else if (!read.missing) {
       problems.push({ id, errors: read.errors });
       if (read.text !== null) problemTexts.set(id, read.text);
     }
-  }
+  });
   return { proposals, problems, problemTexts };
 }
