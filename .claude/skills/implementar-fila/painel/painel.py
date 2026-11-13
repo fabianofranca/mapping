@@ -106,12 +106,14 @@ Só biblioteca padrão. Uso: painel.py [--now ISO] <subcomando> DIR ...
 import argparse
 import datetime
 import fnmatch
+import functools
 import json
 import math
 import os
 import re
 import shlex
 import statistics
+import subprocess
 import sys
 import unicodedata
 
@@ -1106,22 +1108,37 @@ def toca_list(plan):
     return norm_toca(plan_field(plan, "toca"))
 
 
+@functools.lru_cache(maxsize=None)
 def repo_root():
-    """A raiz do repositório onde o `painel.py` está: quatro pastas acima da pasta dele."""
+    """A raiz do repositório: a pasta acima do `painel.py` que tem `.git` (arquivo ou pasta) ou, instalado
+    fora dele (`~/.claude/skills`), a que `git rev-parse --show-toplevel` dá no diretório atual. `None` se
+    nenhuma das duas acha: a conferência falha em vez de supor uma raiz (`toca_invalid`)."""
     d = os.path.dirname(os.path.abspath(__file__))
-    for _ in range(4):
-        d = os.path.dirname(d)
-    return d
+    while True:
+        if os.path.exists(os.path.join(d, ".git")):
+            return d
+        up = os.path.dirname(d)
+        if up == d:
+            break
+        d = up
+    try:
+        out = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    top = out.stdout.strip()
+    return top if out.returncode == 0 and top else None
 
 
 def is_folder(p):
     """Pasta: termina em `/` ou `/**`, ou existe como pasta na raiz do repositório."""
-    return p.endswith(("/", "/**")) or os.path.isdir(os.path.join(repo_root(), p))
+    return p.endswith(("/", "/**")) or os.path.isdir(os.path.join(repo_root() or "", p))
 
 
 def bad_pattern(p):
     """Padrão fora da decisão 1: `*` fora do último segmento, último segmento que começa por `*`,
     ou padrão em `docs/`, em `.claude/` ou num `.md` da raiz (lá se cita o arquivo e a seção)."""
+    if any(c in p for c in "?[]"):
+        return True  # só o `*` é padrão: `covers` e `glob_overlap` não entendem `?` nem `[...]`
     if "*" not in p:
         return False
     segs = p.split("/")
@@ -1130,24 +1147,46 @@ def bad_pattern(p):
     return p.startswith(("docs/", ".claude/")) or (len(segs) == 1 and p.endswith(".md"))
 
 
+@functools.lru_cache(maxsize=None)
+def doc_slugs(p):
+    """Slugs dos `##` do arquivo `p` (fora dos blocos de código) mais `inicio`; `None` se o arquivo não existe."""
+    path = os.path.join(repo_root() or "", p)
+    if not os.path.isfile(path):
+        return None
+    slugs, fence = {"inicio"}, False
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            if line.startswith("```"):
+                fence = not fence
+            elif not fence and line.startswith("## "):
+                slugs.add(slugify(line[3:]))
+    return slugs
+
+
 def bad_anchor(p, anc):
-    """Âncora fora da forma da decisão 2: no `docs/TESTING.md`, `R<n>`, `RP`, `RF`, `RA`, `RB`, um slug
-    ou `inicio`; nos outros documentos com seções, um slug (a saída do `painel.py slug`) ou `inicio`."""
-    if re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", anc):
+    """Âncora fora da decisão 2: no `docs/TESTING.md`, `R<n>`, `RP`, `RF`, `RA`, `RB` (em maiúscula) ou o slug de
+    um `##`; nos outros, o slug de um `##` do arquivo (a saída do `painel.py slug`) ou `inicio`. Documento que
+    ainda não existe aceita qualquer slug (a fase o cria)."""
+    if p == TESTING_DOC and re.fullmatch(r"R(\d+|P|F|A|B)", anc):
         return False
-    if p == TESTING_DOC:
-        return not re.fullmatch(r"R(\d+|P|F|A|B)", anc)
-    return True
+    if not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", anc) or re.fullmatch(r"r(\d+|p|f|a|b)", anc):
+        return True
+    slugs = doc_slugs(p)
+    return slugs is not None and anc not in slugs
 
 
+@functools.lru_cache(maxsize=None)
 def toca_invalid(x):
     """Motivo pelo qual a citação não vale (decisão 2 da #1812), na ordem em que se confere; "" se vale.
 
     A citação já vem normalizada e fora do filtro do que não conta. Pasta e documento existentes se leem na
-    raiz do repositório (`repo_root`), nunca no diretório atual. A âncora é só de forma: a seção pode ser nova.
+    raiz do repositório (`repo_root`), nunca no diretório atual. A âncora se confere contra os `##` do arquivo
+    existente (`doc_slugs`). O resultado é memoizado por citação: o arquivo não muda durante um comando.
     """
     if x == "?":
         return "a ficha não diz"  # `?` no meio de uma lista (o campo todo em `?` dá só `toca`)
+    if repo_root() is None:
+        return "raiz do repositório não achada"  # sem a raiz, pasta e documento não se conferem: falha segura
     p, _, anc = x.partition("#")
     if is_folder(p):
         return "pasta"
@@ -1190,6 +1229,27 @@ def by_section(path):
     return path.startswith("docs/") or "/" not in path or fnmatch.fnmatchcase(path, SECTION_GLOB)
 
 
+def glob_overlap(a, b):
+    """Dois padrões com `*` (que casa qualquer sequência, inclusive `/`) casam algum caminho em comum?"""
+    seen = {}
+
+    def go(i, j):
+        if (i, j) in seen:
+            return seen[i, j]
+        if i == len(a) and j == len(b):
+            r = True
+        elif i < len(a) and a[i] == "*":
+            r = go(i + 1, j) or (j < len(b) and go(i, j + 1))
+        elif j < len(b) and b[j] == "*":
+            r = go(i, j + 1) or (i < len(a) and go(i + 1, j))
+        else:
+            r = i < len(a) and j < len(b) and a[i] == b[j] and go(i + 1, j + 1)
+        seen[i, j] = r
+        return r
+
+    return go(0, 0)
+
+
 def same_target(a, b):
     """Duas citações do `toca=` mexem no mesmo lugar? (seção ou roteiro, pasta, arquivo)"""
     if a == "?" or b == "?":
@@ -1197,10 +1257,12 @@ def same_target(a, b):
     pa, _, anc_a = a.partition("#")
     pb, _, anc_b = b.partition("#")
     if pa != pb:
+        if "*" in pa and "*" in pb and not pa.endswith(("/", "/**")) and not pb.endswith(("/", "/**")):
+            return glob_overlap(pa, pb)
         return covers(pa, pb) or covers(pb, pa)
     if not by_section(pa):
         return True
-    return not anc_a or not anc_b or anc_a == anc_b
+    return not anc_a or not anc_b or anc_a.lower() == anc_b.lower()
 
 
 def first_conflict(mine, other):

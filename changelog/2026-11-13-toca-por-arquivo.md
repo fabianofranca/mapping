@@ -11,3 +11,4 @@
 ## Corrigido
 
 - O `painel.cpython-313.pyc` deixou de ser rastreado pelo git (estava obsoleto em relação ao `painel.py`) e `__pycache__/` entrou no `.gitignore`.
+- **A validação do `toca` ficou mais firme (para quem conduz o fluxo, #1812, fase CL1, PR do épico #1850):** dois padrões com `*` que casam o mesmo arquivo (`tests/a*x.ts` e `tests/ab*.ts`) passam a conflitar, e `?` e `[...]` deixam de ser aceitos (só o `*` é padrão); a âncora é conferida contra os `##` do arquivo existente (`docs/TESTING.md#r9` e `docs/FLOW.md#para-a-sesao-da-fase` dão `âncora`), sem diferença de caixa na comparação; o `painel.py` acha a raiz do repositório pelo `.git` (ou pelo `git rev-parse --show-toplevel`) e, sem raiz, dá `inválida: … — raiz do repositório não achada` em vez de aceitar pasta; a validação é memoizada por citação; a "Ficha da etapa" diz que a linha `exclusive=sim` não depende do `ok` do `toca`.

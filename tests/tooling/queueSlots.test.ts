@@ -185,8 +185,8 @@ describe('painel.py — vagas (VG1, #1440)', () => {
       expect(motivo('docs/design-system/a.md', 'docs/design-system/a.md')).toBe(
         '#2 começa',
       );
-      expect(motivo('docs/TESTING-NUVEM.md', 'docs/TESTING-NUVEM.md#r')).toBe(
-        '#2 arquivo docs/TESTING-NUVEM.md#r com #1',
+      expect(motivo('docs/TESTING-NUVEM.md', 'docs/TESTING-NUVEM.md#ambiente')).toBe(
+        '#2 arquivo docs/TESTING-NUVEM.md#ambiente com #1',
       );
       expect(motivo('tests/tooling/', 'tests/tooling/a.test.ts')).toBe(
         '#2 arquivo tests/tooling/a.test.ts com #1',
@@ -449,7 +449,10 @@ describe('painel.py — correções da revisão final (VG3, #1440)', () => {
 
   it('achado 4: âncoras diferentes separam os .md de docs/ e da raiz; nos outros arquivos conflitam', () => {
     expect(
-      motivo('docs/ARCHITECTURE.md#desempenho', 'docs/ARCHITECTURE.md#espacos'),
+      motivo(
+        'docs/ARCHITECTURE.md#desempenho',
+        'docs/ARCHITECTURE.md#espacos-pertencimento-e-gestos',
+      ),
     ).toBe('#2 começa');
     expect(motivo('viewer/README.md#X', 'viewer/README.md#Y')).toBe(
       '#2 arquivo viewer/README.md#Y com #1',
