@@ -198,6 +198,7 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
           <button
             type="button"
             class="tree-item tree-image"
+            title={imageLabel(image)}
             aria-current={current || undefined}
             onClick={(e) => pick(e, { kind: 'image', id: image.id })}
           >
@@ -275,6 +276,7 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
                 <button
                   type="button"
                   class="tree-item"
+                  title={markingLabel(project, m)}
                   aria-current={current || undefined}
                   onClick={(e) => pick(e, { kind: 'marking', id: m.id })}
                 >
@@ -338,6 +340,7 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
             <button
               type="button"
               class="tree-item tree-canvas"
+              title={canvasName}
               onClick={() => toggleTreeNode(ui, canvasKey)}
             >
               <span class="tree-label">{canvasName}</span>
