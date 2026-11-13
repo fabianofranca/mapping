@@ -863,9 +863,12 @@ button.tree-toggle:hover {
      botão Adicionar desce para a linha de baixo quando não cabe ao lado dele (CL1, 1.1). */
   display: flex;
   flex: 1 1 auto;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-1);
-  min-width: 0;
+  gap: var(--space-0-5) var(--space-1);
+  /* A palavra mais longa do nome cabe inteira: sem espaço ao lado do botão, a linha quebra
+     (CL2, 1.1a) em vez de partir o nome no meio com a janela estreita (Detalhes abertos). */
+  min-width: min-content;
   max-width: 100%;
 }
 
@@ -875,8 +878,8 @@ button.tree-toggle:hover {
 }
 
 .library-type-name {
-  min-width: 0;
-  overflow-wrap: anywhere;
+  min-width: min-content;
+  overflow-wrap: break-word;
 }
 
 /* O botão Adicionar nunca é cortado: o rótulo fica inteiro e, sem espaço ao lado do nome, a
