@@ -12,7 +12,7 @@ Esta sessão leva **uma** issue `roadmap` ou `bug` de ajuste pequeno de processo
 `/via-rapida #<n> [mesclar=auto]`
 
 - `#<n>`: a issue `roadmap` ou `bug` aberta, que diz o que fazer.
-- `mesclar=auto`: só vale escrito pelo dono na chamada ("Merge"). Nunca se acrescenta sozinho nem vem de outra sessão, comentário ou agendamento.
+- `mesclar=auto`: só vale escrito pelo dono na chamada ("Merge"). Nunca se acrescenta sozinho nem vem de outra sessão, comentário ou agendamento; a supervisão só o põe no comando se o dono o escreveu no pedido a ela.
 
 O dono chama o skill num chat novo, em **Sonnet**, no modo **Auto**, com `effort: high`. A supervisão (`supervisionar-fila`) também cria essa sessão quando o dono pedir no chat dela: `create_session` com `source_url` do repositório, Sonnet, `effort: high`, título "Via rápida #<n>" e a mensagem só com o comando.
 
@@ -37,7 +37,7 @@ Confira antes de criar qualquer coisa, pela issue e pelo código, e de novo ante
 A conferência sai do cálculo do `painel.py`, nunca de comparação à mão. A sessão nunca grava no painel.
 
 1. Ache o painel como em "Leitura das fontes" do [`supervisionar-fila`](../supervisionar-fila/SKILL.md) ("Achar o painel" e "Painel": só leitura, blobs no scratchpad).
-2. Liste as issues `in-progress` abertas que não estão no painel e leia o "Toca em:" das sub-issues abertas delas.
+2. Liste as issues `in-progress` abertas que não estão no painel e leia o "Toca em:" das sub-issues abertas delas (a issue de outra via rápida não tem sub-issue: o "Toca em:" está no comentário `Via rápida:` dela).
 3. Rode `python3 .claude/skills/implementar-fila/painel/painel.py conflito "<toca>" --pasta <pasta> --com "#N=<toca>"…`, com o `<toca>` da via rápida (as citações no formato do `painel.py`, conferidas com `painel.py toca`) e um `--com` por etapa de fora do painel. Sem painel achado, só os `--com`.
 4. Com `conflito:`, não comece: comente na issue `Via rápida: espera #N (<citação>)` e termine, sem mexer no rótulo.
 
@@ -51,13 +51,13 @@ Comente na issue um texto que começa por `Via rápida:` com o objetivo, o "Toca
 
 ## Passo a passo
 
-1. `git fetch origin main && git switch -C epic/<nome> origin/main`. Crie `changelog/<nome>.md` (`[Não lançado]`, "MCP sem mudança", o schema da `main`, categorias para quem conduz o fluxo) e `docs/design-system/<nome>.md` (`[Não lançado]`, `## Pendências` "nenhuma (só processo)"), que o job `epic` do `ci.yml` exige.
+1. `git fetch origin main && git switch -C epic/<nome> origin/main` (com alteração não commitada, ou um `epic/<nome>` local que já exista, pare e pergunte ao dono antes, como no "Início de sessão" do `CLAUDE.md`; `<nome>` não pode colidir com um `changelog/` ou `docs/design-system/` já existente). Crie `changelog/<nome>.md` (`[Não lançado]`, "MCP sem mudança", o schema da `main`, categorias para quem conduz o fluxo) e `docs/design-system/<nome>.md` (`[Não lançado]`, `## Pendências` "nenhuma (só processo)"), que o job `epic` do `ci.yml` exige.
 2. Implemente direto no épico, sem branch de fase. Mudança de **regra** leva um teste de texto em `tests/tooling/` escrito antes e visto falhando (nome e falha no Resumo do PR); texto sem regra nova, só os testes existentes passando.
 3. Gates: `npm run lint && npm run typecheck && npm test && npm run build`.
 4. Revisão ("Revisão"); os achados seguem a regra do item 10 da "Para a sessão da fase" do `docs/FLOW.md`; gates de novo.
 5. Abra o PR `epic/<nome>` → `main` com "Closes #<n>" e as seções de sempre: Resumo, Como testar, Decisões tomadas, Impacto no DS: nenhum, Impacto nos agentes: nenhum e a linha da revisão. Acompanhe com a Espera do CI e a Leitura do CI do item 6 da "Para a sessão da fase" (`docs/FLOW.md`), sem copiá-las.
 6. Com o CI verde, renomeie os dois registros com a data (`git mv`; data e número do PR no título do changelog; `## Sincronização` "Sem impacto…" e `## Ficou sem gravar` "Nada." no do DS), empurre e espere o CI de novo.
-7. Confira o conflito antes do merge ("Conflito com a fila"), mescle ("Merge") e comente na issue: o PR, a revisão (achados e o que se fez), as decisões tomadas e o que ficou para depois (cada item vira `roadmap` ou `bug` com `Origem: via rápida #<n>`).
+7. Confira o conflito antes do merge ("Conflito com a fila"), mescle ("Merge") e comente na issue: o PR, a revisão (achados e o que se fez), as decisões tomadas e o que ficou para depois (cada item vira `roadmap` ou `bug` com `Origem: via rápida #<n>`; a `roadmap` leva o rótulo `impact:` e a linha `Impacto: <nível> — <porquê>`, como no "Impacto" do `docs/PROCESS.md`).
 
 Todo texto no GitHub termina com o rodapé de atribuição.
 
@@ -66,7 +66,7 @@ Todo texto no GitHub termina com o rodapé de atribuição.
 O CR noturno **pula** o épico cujo diff dá `gatilho:` no `scripts/ci/riskTriggers.mjs` ("Limitações conhecidas" do `docs/FLOW.md`), e quase todo ajuste de processo dá gatilho; por isso a sessão decide o nível:
 
 - rode `node scripts/ci/riskTriggers.mjs --base origin/main`;
-- com `gatilho:`, `/code-review high origin/main..HEAD` (sem ela o épico ficaria sem revisão nenhuma);
+- com `gatilho:`, `/code-review high <base>..HEAD`, com `<base>` = `git merge-base origin/main HEAD` (a `main` pode andar depois do corte do épico; sem a revisão o épico ficaria sem revisão nenhuma);
 - com `nenhum gatilho`, `/code-review medium` (o CR noturno revisa depois);
 - sem `--comment` nem `--fix`; cada achado segue a regra do item 10 da "Para a sessão da fase" do `docs/FLOW.md`.
 

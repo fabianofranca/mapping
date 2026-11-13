@@ -34,6 +34,7 @@ describe('skill via-rapida', () => {
       expect(SKILL, s).toContain(s);
     }
     expect(SKILL).toContain('sem subagente de edição');
+    expect(SKILL).toContain('só o põe no comando se o dono o escreveu no pedido');
   });
 
   it('decisão 2: roadmap ou bug direto a in-progress, nunca por ready, com o comentário `Via rápida:`', () => {
@@ -98,6 +99,7 @@ describe('skill via-rapida', () => {
       'traga a `main` no épico antes do fechamento (merge, nunca rebase)',
       'nunca grava no painel',
       'Leitura das fontes',
+      'comentário `Via rápida:`',
     ]) {
       expect(s, t).toContain(t);
     }
@@ -116,6 +118,8 @@ describe('skill via-rapida', () => {
       'Leitura do CI',
       '`git mv`',
       'Origem: via rápida #<n>',
+      '`Impacto: <nível> — <porquê>`',
+      'pergunte ao dono',
     ]) {
       expect(s, t).toContain(t);
     }
@@ -140,7 +144,8 @@ describe('skill via-rapida', () => {
     for (const t of [
       'node scripts/ci/riskTriggers.mjs --base origin/main',
       '`gatilho:`',
-      '`/code-review high origin/main..HEAD`',
+      '`/code-review high <base>..HEAD`',
+      '`git merge-base origin/main HEAD`',
       '`nenhum gatilho`',
       '`/code-review medium`',
       'sem `--comment` nem `--fix`',
