@@ -1,4 +1,4 @@
-# Pasta rápida — [Não lançado] (épico `epic/pasta-rapida`, PR #0, MCP sem mudança, schema v19)
+# Pasta rápida — 2026-11-13 (épico `epic/pasta-rapida`, PR #1796, MCP sem mudança, schema v19)
 
 ## Adicionado
 
