@@ -35,20 +35,23 @@ import { MemoryDirectory } from './memoryFs';
 // Orçamento das chamadas à pasta (etapa "pasta rápida", decisões 2 a 5). O projeto fixo:
 // 2 containers com imagem, 1 especialização com pacote de 12 arquivos, 6 propostas (2 abertas,
 // 3 aplicadas, 1 retirada) e 4 conversas abertas. A FA1 registrou a linha de base; a FA2 fixou os
-// limites abaixo (`toBeLessThanOrEqual`) no número que alcançou; a `sync` fica para a FA3.
+// limites abaixo (`toBeLessThanOrEqual`) no número que alcançou; a FA3 fixou o da `sync`.
 //
-// operação | antes (FA1) | FA2 (limite) | por tipo depois da FA2
-// open     |  178 | 115 | getDirectoryHandle=16 getFileHandle=40 getFile=35 values=24
-// save     |   18 |  14 | getFileHandle=5 getFile=6 createWritable=1 write=1 close=1
-// library  |  265 | 113 | getFileHandle=28 getFile=18 values=28 createWritable=13 write=13 close=13
-// decide   |   28 |  16 | getFileHandle=7 getFile=6 createWritable=1 write=1 close=1
-// apply    |   25 |  16 | getFileHandle=4 getFile=4 values=2 createWritable=2 write=2 close=2
-// sync     |   70 |  45 | (sem limite até a FA3)
+// operação | antes (FA1) | FA2 (limite) | FA3 | por tipo depois da FA3
+// open     |  178 | 115 | 115 | getDirectoryHandle=16 getFileHandle=40 getFile=35 values=24
+// save     |   18 |  14 |  14 | getFileHandle=5 getFile=6 createWritable=1 write=1 close=1
+// library  |  265 | 113 | 113 | getFileHandle=28 getFile=18 values=28 createWritable=13 write=13 close=13
+// decide   |   28 |  16 |  16 | getFileHandle=7 getFile=6 createWritable=1 write=1 close=1
+// apply    |   25 |  16 |  16 | getFileHandle=4 getFile=4 values=2 createWritable=2 write=2 close=2
+// sync     |   70 |  45 |  19 | getFileHandle=2 getFile=7 values=10 (o ciclo em regime, sem mudança)
 //
 // (O "antes" é o código da FA1 sobre esta fixture, em que `images/` agora é uma pasta de
 // verdade; os `getFile` de `save` e `decide` incluem leituras preguiçosas da abertura que caem
-// na janela da medida.) `npx vitest run tests/storage/folderCallBudget.test.ts --silent=false`
-// imprime as linhas.
+// na janela da medida. A `sync` da FA1 e da FA2 era a primeira depois da abertura, com essas
+// leituras dentro; a da FA3 é a segunda, o ciclo em regime (37 no código da FA2, que ainda relia
+// as propostas finais e carimbava uma a uma). Com as leituras da abertura dentro, o ciclo da FA3
+// mede 27.)
+// `npx vitest run tests/storage/folderCallBudget.test.ts --silent=false` imprime as linhas.
 
 const FIXED_NOW = '2026-10-09T14:00:00.000Z';
 const PACKAGE_DIR = 'specs/notas';
@@ -313,10 +316,47 @@ describe('linha de base das chamadas à pasta (projeto fixo)', () => {
     register(opened, 'apply', since, 16);
   });
 
-  it('sync: nada mudou por fora', async () => {
+  // Decisão 5 (FA3): um ciclo da conferência sem mudança faz no máximo
+  // `3 + 2 × (propostas abertas) + (conversas abertas)` chamadas, mais as listagens de
+  // `proposals/` e `comments/` (uma chamada por entrada de `values()`). Os `3` são o carimbo do
+  // `mapping.json` e as folgas da raiz; cada proposta aberta custa o handle e o `getFile` do
+  // `proposal.json`, cada conversa o `getFile` do próprio arquivo; as propostas finais já lidas
+  // (aplicadas e retirada) ficam de fora do ciclo (decisão 8).
+  const entriesOf = (dir: MemoryDirectory | undefined) =>
+    (dir?.files.size ?? 0) + (dir?.dirs.size ?? 0);
+
+  it('sync: nada mudou por fora (ciclo)', async () => {
     const opened = await fresh();
+    // A primeira conferência absorve as leituras preguiçosas da abertura (carimbos das imagens e
+    // dos componentes); o orçamento é o do ciclo em regime.
+    await opened.session.sync();
     const since = markOf(opened);
     await opened.session.sync();
+    const openProposals = opened.session.proposals.list.value.filter(
+      (p) => p.status === 'open',
+    ).length;
+    const openThreads = opened.session.threads.list.value.filter(
+      (t) => t.resolved === null,
+    ).length;
+    expect([openProposals, openThreads]).toEqual([2, 4]);
+    const listings =
+      entriesOf(opened.root.dirs.get('proposals')) +
+      entriesOf(opened.root.dirs.get('comments'));
+    const limit = 3 + 2 * openProposals + openThreads + listings;
+    register(opened, 'sync', since, limit);
+    // Nenhuma pasta é resolvida de novo (os handles de `proposals/` e `comments/` estão guardados).
+    expect(opened.resolved.length - since.resolved).toBe(0);
+  });
+
+  it('sync completo (o foco): olha também as propostas finais e as imagens', async () => {
+    const opened = await fresh();
+    await opened.session.sync();
+    await opened.session.sync();
+    const cycle = measured(opened, 'sync')?.calls ?? 0;
+    const since = markOf(opened);
+    await opened.session.sync({ images: true });
+    const full = measured(opened, 'sync')?.calls ?? 0;
+    expect(full).toBeGreaterThan(cycle);
     register(opened, 'sync', since);
   });
 

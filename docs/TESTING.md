@@ -42,8 +42,9 @@ O Mapping é uma app web para marcar áreas retangulares em imagens, organizá-l
 | sob demanda | RF — `index.html` por `file://` (antes R0.5), nos **roteiros sob demanda (manuais)** | shell com acesso ao GitHub Pages e o Chrome do computador; só quando o dono pedir | 10 min |
 | sob demanda | RA — Fechar a aba no meio da gravação (antes R6.2), nos **roteiros sob demanda (manuais)** | a pasta `principal` e um `tela2.png`; só quando o dono pedir | 10 min |
 | sob demanda | RB — Esc no meio de um arraste logo depois de renomear (antes R6.1), nos **roteiros sob demanda (manuais)** | a pasta `principal`; só quando o dono pedir | 5 min |
+| sob demanda | RT — Pasta no tablet Android, nos **roteiros sob demanda (manuais)** | um tablet Android com o Chrome e uma pasta de projeto real; só quando o dono pedir | 15 min |
 
-Os tempos são aproximados (pelo número de passos); registre o tempo real no relato. Sem o MCP, faça da linha 4 só o passo 2 da seção 6 (o repositório de teste e as pastas, sem o `mapping-mcp.js`), rode o R3.1 a R3.5 e pule o R3.6, o R3.21 e o R5, marcando-os como "não executado (sem MCP)". Os roteiros principais (R0 a R26) são feitos para o agente da nuvem executar **sozinho**. Os **roteiros sob demanda (manuais)**, hoje o RP, o RF, o RA e o RB, não fazem parte da rodada completa nem da dirigida: rodam à parte, numa sessão sob demanda, só quando o dono pedir (fim da seção 8). As dependências entre os roteiros estão no começo da seção 8. A seção 9 (teste manual avançado) é um roteiro à parte, depois de uma rodada completa sem achados altos ou médios.
+Os tempos são aproximados (pelo número de passos); registre o tempo real no relato. Sem o MCP, faça da linha 4 só o passo 2 da seção 6 (o repositório de teste e as pastas, sem o `mapping-mcp.js`), rode o R3.1 a R3.5 e pule o R3.6, o R3.21 e o R5, marcando-os como "não executado (sem MCP)". Os roteiros principais (R0 a R26) são feitos para o agente da nuvem executar **sozinho**. Os **roteiros sob demanda (manuais)**, hoje o RP, o RF, o RA, o RB e o RT, não fazem parte da rodada completa nem da dirigida: rodam à parte, numa sessão sob demanda, só quando o dono pedir (fim da seção 8). As dependências entre os roteiros estão no começo da seção 8. A seção 9 (teste manual avançado) é um roteiro à parte, depois de uma rodada completa sem achados altos ou médios.
 
 O que este guia **não** testa: se um painel é fácil de achar ou se um texto é claro para quem não leu a documentação. Isso fica com pessoas, no uso real.
 
@@ -2359,6 +2360,20 @@ w("lazy-column","LazyColumn",{width:200,height:40},{type:"frame",fill:"#4FC3F7",
 | --- | --- | --- |
 | RB.1 | Objetivo: começar um arraste enquanto a app ainda grava o nome novo (a gravação sai ~250 ms depois do Enter). No `principal` (em pasta), no modo **Navegar**, selecione a marcação **Título**, renomeie-a para `Título R6` e aperte Enter; logo em seguida, comece a arrastá-la, apertando o botão do mouse no meio dela (longe dos cantos, onde ficam as alças); sem soltar, aperte **Esc**. Se não tiver certeza de que foi rápido o bastante, repita até 3 vezes (com outro nome a cada vez). | **Tela:** a marcação volta ao lugar; o nome novo fica. **Disco:** depois de **Salvo**, o último nome com o `rect` antigo (igual ao que a app mostra em Detalhes). |
 
+#### RT — Pasta no tablet Android
+
+**Por que roda à parte.** A pasta do Android é bem mais lenta que a do desktop, e só um tablet de verdade mostra se a app continua respondendo (etapa #1777, "pasta rápida"). O RT é **manual, do dono, e não roda na nuvem**: precisa do tablet, do Chrome dele e de uma pasta de projeto real. Roda só quando o dono pedir, com a versão principal ou um preview (`https:`; seção 1).
+
+**Critério de entrada.** Um tablet Android com o Chrome, janela de pelo menos 900×720 e toque simples, e uma pasta de projeto real (com imagens, marcações e, se possível, uma proposta aberta e uma especialização). O suporte oficial continua só desktop: aqui se confere o que acontece, sem garantia.
+
+| Passo | Ação | Esperado |
+| --- | --- | --- |
+| RT.1 | No Chrome do tablet, abra a app e **abra uma pasta de projeto real**. Espere **Salvo**. Abra o **Diagnóstico**, copie o texto e guarde a linha que começa com `folder:` (operação `open`). | **Tela:** o projeto abre, a app responde ao toque e a interface não trava durante a abertura. **Diagnóstico:** a linha `folder:` traz as chamadas à pasta e o tempo de `open`. |
+| RT.2 | Faça uma **edição pequena** (mova ou renomeie uma marcação), espere **Salvo** e copie o Diagnóstico de novo; guarde a linha `folder:` (operação `save`). | **Tela:** a edição aparece na hora e a gravação termina sem travar a interface. **Diagnóstico:** `save` com chamadas e tempo. |
+| RT.3 | Abra uma proposta com mudanças, **decida** uma delas e **aplique** a proposta; espere **Salvo** e copie o Diagnóstico; guarde a linha `folder:` (`decide`, `apply`). | **Tela:** a decisão e a aplicação respondem sem travar a interface. **Diagnóstico:** `decide` e `apply` com chamadas e tempo. |
+| RT.4 | **Atualize uma especialização** do projeto (a que usa uma biblioteca) e espere **Salvo**; copie o Diagnóstico e guarde a linha `folder:` (`library`). | **Tela:** a atualização termina e a interface responde durante ela. **Diagnóstico:** `library` com chamadas e tempo. |
+| RT.5 | Deixe a app **parada por 1 min**, com a janela visível, sem tocar em nada; copie o Diagnóstico de novo e guarde a linha `folder:` (`sync`). Cole as linhas `folder:` dos cinco passos na issue da etapa #1777, com o **modelo do tablet** e a versão do Android. | **Tela:** nada muda sozinho nem aparece aviso. **Diagnóstico:** `sync` mostra a duração do último ciclo; numa pasta lenta, o intervalo entre ciclos cresce até 30 s. |
+
 ## 9. Teste manual avançado
 
 Para quem mantém o projeto, depois de uma rodada completa sem achados altos ou médios. Não é roteiro de passo a passo: cada item sonda um risco que os roteiros R0 a R8 não alcançam (uso longo, volume, concorrência, ambiente). Relate no mesmo template (seção 10), com **Modo: avançado**; o que aparecer aqui vira a etapa seguinte. Os códigos A1 a A18 são desta seção; não confundir com o apêndice A.
@@ -2494,7 +2509,7 @@ Para o agente testador: a sessão do Claude Code na nuvem (ambiente "Mapping - t
 - **Atalhos de uma letra** (V, R, A…) só valem com **nenhum campo focado**: com o foco num campo de texto a letra é digitada. Clique no canvas ou no título de uma janela antes de usar o atalho.
 - **Nenhum passo dos roteiros principais é inteiro da pessoa.** O R0.5 (`index.html` por `file://`) e o R6.2 (fechar a aba no meio da gravação) não funcionaram sozinhos e foram para os roteiros sob demanda RF e RA, por decisão do dono. O R6.2 ganhou o e2e `tests/e2e/folder.spec.ts` no lugar.
 - **Se um passo novo não funcionar sozinho** (o endereço não abre; o diálogo nativo não aparece), marque "não executado (vai para os roteiros sob demanda)", registre o que falhou e proponha mover o passo. Se o teste for relevante (perda de dados, integridade do `mapping.json`, segurança), **avise o dono** no relato, pela regra das convenções da seção 8; não decida sozinho.
-- **Os roteiros sob demanda (RP, o app instalado; RF, o `index.html` por `file://`; RA, fechar a aba no meio da gravação; RB, o Esc no meio de um arraste) são manuais, do dono, e nunca rodam na nuvem:** não fazem parte de rodada nenhuma e nem aparecem no relato.
+- **Os roteiros sob demanda (RP, o app instalado; RF, o `index.html` por `file://`; RA, fechar a aba no meio da gravação; RB, o Esc no meio de um arraste; RT, a pasta no tablet Android) são manuais, do dono, e nunca rodam na nuvem:** não fazem parte de rodada nenhuma e nem aparecem no relato.
 - **Continuam com a pessoa:** a confirmação de instalar o app (RP) e o arrastar do gerenciador de arquivos, que nenhum roteiro principal pede. Se algo da pessoa aparecer fora de um roteiro sob demanda, marque "não executado (precisa do dono)" em vez de parar a rodada.
 
 <!-- roteiros: R9 -->

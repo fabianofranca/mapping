@@ -285,6 +285,13 @@ export interface ProjectSession {
    */
   sync(options?: { readonly images?: boolean }): Promise<SyncResult>;
   /**
+   * Há trabalho em curso que a conferência de ciclo não deve atrapalhar: uma gravação agendada ou
+   * em curso, um gesto em andamento, ou uma decisão, nota ou aplicação de proposta na fila ou sendo
+   * gravada. `useExternalChanges` adia o ciclo (não o foco) enquanto isso for verdade. Com a gravação
+   * em erro não conta (a conferência precisa abrir o diálogo de conflito).
+   */
+  busy(): boolean;
+  /**
    * Decide o conflito: `reload` descarta as alterações locais ainda não gravadas e carrega o
    * arquivo; `keep` grava as minhas por cima, com a revisão nova. Nunca rejeita: uma falha de
    * leitura vira `conflict.reloadFailed` (no `reload`) ou `saveStatus === 'error'` (no `keep`).
@@ -1274,9 +1281,13 @@ export function openSession(options: SessionOptions): ProjectSession {
       // As conversas também: só `comments/`, pelo carimbo, lendo só o arquivo que mudou.
       // As duas varreduras não compartilham arquivo, fila nem estado (`proposals/` e
       // `comments/`, cada uma com a sua fila): rodam juntas.
+      // A conferência completa (foco, volta à página: `images`) olha também as propostas finais;
+      // a de ciclo as pula, já lidas (etapa #1777, decisão 8).
       await Promise.all([
         !closed && storage.statProposal
-          ? proposals.scan().catch((e: unknown) => reportError('proposals.scan', e))
+          ? proposals
+              .scan({ full: entry.images })
+              .catch((e: unknown) => reportError('proposals.scan', e))
           : undefined,
         !closed && storage.statThread
           ? threads.scan().catch((e: unknown) => reportError('threads.scan', e))
@@ -1357,6 +1368,11 @@ export function openSession(options: SessionOptions): ProjectSession {
     reloads,
     watchable,
     sync,
+    busy: () =>
+      !closed &&
+      (saver.status.peek() === 'saving' ||
+        store.gestureActive.peek() ||
+        proposals.writing()),
     resolveConflict,
 
     async addImages(files, addOptions = {}) {
