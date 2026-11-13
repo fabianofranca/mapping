@@ -15,7 +15,7 @@ import {
   sourceSchema,
 } from './schema';
 import { PLATFORM_ID_RE, formatSpecPath, specSchema, type SpecIssue } from './spec';
-import type { JsonValue } from './types';
+import { READING_DIRECTIONS, type JsonValue } from './types';
 
 // Formato da proposta de alteração (etapa 4): `proposals/<id>/proposal.json`,
 // `formatVersion` 4 na criação, 5 com `revisions`, 6 com o modo do desenho e 7 com a densidade do container (só quando a proposta os usa: `proposalFormatVersionFor`; a 1 a 3 continuam lidas). Ver docs/PROPOSAL-FORMAT.md. O zod daqui é a fonte da verdade; a
@@ -24,7 +24,9 @@ import type { JsonValue } from './types';
 export const PROPOSAL_FORMAT = 'mapping-proposal';
 export const PROPOSAL_FORMAT_VERSION = 4;
 /**
- * Versões lidas, de 1 a 7: a 7 acrescenta a densidade do container (campo `density`, schema v19) e só
+ * Versões lidas, de 1 a 8: a 8 acrescenta a direção de leitura (campo `direction` do container e
+ * do projeto, schema v20) e só é gravada quando a proposta a usa (inclui o que a 7 e a 6 têm); a 7
+ * acrescenta a densidade do container (campo `density`, schema v19) e só
  * é gravada quando a proposta a usa (inclui o que a 6 tem); a 6 acrescenta o modo do desenho (a entidade `project` e o campo
  * `drawingMode` do container) e só é gravada quando a proposta o usa; a 5 acrescenta `revisions`
  * (a revisão do agente); a 4 acrescenta `insertBefore` à criação de marcação (a posição dela no
@@ -35,7 +37,7 @@ export const PROPOSAL_FORMAT_VERSION = 4;
  * acrescenta `add_container` às `operations`; a 1 continua válida. A criação grava a 4 (a 6, com
  * o modo do desenho).
  */
-export const PROPOSAL_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7] as const;
+export const PROPOSAL_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8] as const;
 
 /**
  * Versão da proposta que traz o modo do desenho (schema v18): a entidade `project` (campo
@@ -84,15 +86,46 @@ function hasDensity(value: JsonValue): boolean {
 }
 
 /**
- * A `formatVersion` que a criação ou a revisão grava: a 7 com densidade, a 6 com modo do desenho,
- * senão `fallback` (4 na criação, 5 na revisão). `current` é a versão da proposta que se regrava:
- * uma 6 ou 7 nunca desce.
+ * Versão da proposta que traz a direção de leitura (schema v20): o campo `direction` do container
+ * e da entidade `project` e o `direction` no valor de um container criado. Uma versão anterior
+ * descartaria em silêncio o `direction` do container criado e da entidade do projeto; por isso a
+ * proposta que o usa grava a 8 (a criação e a revisão não sobem a versão de uma proposta que não
+ * o usa). A 8 aceita `revisions` (opcional) e tudo o que a 7 aceita.
+ */
+export const PROPOSAL_DIRECTION_FORMAT_VERSION = 8;
+
+/** A proposta usa a direção de leitura (e por isso só a `formatVersion` 8 a representa)? */
+export function proposalUsesDirection(changes: readonly Change[]): boolean {
+  return changes.some(
+    (c) =>
+      (c.entity === 'image' && c.field === 'direction') ||
+      ((c.entity === 'image' || c.entity === 'project') &&
+        (hasDirection(c.to) || hasDirection(c.from))),
+  );
+}
+
+function hasDirection(value: JsonValue): boolean {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    typeof (value as { readonly direction?: JsonValue }).direction === 'string'
+  );
+}
+
+/**
+ * A `formatVersion` que a criação ou a revisão grava: a 8 com direção, a 7 com densidade, a 6 com
+ * modo do desenho, senão `fallback` (4 na criação, 5 na revisão). `current` é a versão da proposta
+ * que se regrava: uma 6, 7 ou 8 nunca desce.
  */
 export function proposalFormatVersionFor(
   changes: readonly Change[],
   fallback: number,
   current = 0,
 ): (typeof PROPOSAL_FORMAT_VERSIONS)[number] {
+  if (current === PROPOSAL_DIRECTION_FORMAT_VERSION || proposalUsesDirection(changes)) {
+    return PROPOSAL_DIRECTION_FORMAT_VERSION;
+  }
   if (current === PROPOSAL_DENSITY_FORMAT_VERSION || usesDensity(changes)) {
     return PROPOSAL_DENSITY_FORMAT_VERSION;
   }
@@ -176,6 +209,7 @@ export const IMAGE_FIELDS = [
   'source',
   'drawingMode',
   'density',
+  'direction',
 ] as const;
 /**
  * Campos alterados de uma marcação. `space` é a troca de espaço (`{ containerId, rect }`, o
@@ -460,8 +494,16 @@ const drawingModeName = z
   .string()
   .regex(/^[a-z0-9][a-z0-9-]*$/, 'use [a-z0-9][a-z0-9-]*');
 
-/** A entidade `project` (formatVersion 6): o que do projeto é proposto; hoje só o modo do desenho. */
-const projectValueSchema = z.object({ drawingMode: drawingModeName.nullable() });
+const readingDirection = z.enum(READING_DIRECTIONS);
+
+/**
+ * A entidade `project` (formatVersion 6): o que do projeto é proposto, o modo do desenho e, na
+ * formatVersion 8, a direção de leitura (ausente = sem direção fixada).
+ */
+const projectValueSchema = z.object({
+  drawingMode: drawingModeName.nullable(),
+  direction: readingDirection.nullable().optional(),
+});
 
 const entitySchemas: Record<ChangeEntity, z.ZodType> = {
   specialization: specializationValue,
@@ -486,6 +528,7 @@ const imageFieldSchemas: Record<(typeof IMAGE_FIELDS)[number], z.ZodType> = {
   source: sourceSchema.nullable(),
   drawingMode: drawingModeName.nullable(),
   density: z.number().min(0.5).max(8).nullable(),
+  direction: readingDirection.nullable(),
 };
 
 /**
@@ -777,8 +820,9 @@ export const proposalSchema = z
         z.literal(5),
         z.literal(6),
         z.literal(7),
+        z.literal(8),
       ],
-      { error: 'deve ser 1, 2, 3, 4, 5, 6 ou 7' },
+      { error: 'deve ser 1, 2, 3, 4, 5, 6, 7 ou 8' },
     ),
     id: proposalId,
     title: z.string().trim().min(1, 'não pode ser vazio'),

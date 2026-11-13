@@ -27,11 +27,12 @@ import { drawingValues } from './componentValues';
 import type { ModelMessage } from './modelMessage';
 import { DEFAULT_LABEL_TEXTS } from './refs';
 import { effectiveDensity, unitSpaceOf, type UnitSpace } from './density';
+import { effectiveDirection } from './direction';
 import { effectiveDrawingMode } from './drawingMode';
 import { topDown } from './hierarchy';
 import { projectIndex } from './projectIndex';
 import { multiply, type FrameNode, type Matrix } from './components/scene';
-import type { Project, Rect } from './types';
+import type { Project, ReadingDirection, Rect } from './types';
 
 // Desenhos dos componentes (etapa Biblioteca, B3): a cena instanciada de cada marcação que
 // tem componente, derivada do projeto (retângulo da marcação, tipo e valores da anotação,
@@ -103,6 +104,8 @@ interface Entry {
   readonly mode: string | undefined;
   /** Densidade do container da marcação (1 no canvas). */
   readonly density: number;
+  /** Direção de leitura efetiva da marcação (`ltr` por padrão): `rtl` espelha o desenho. */
+  readonly direction: ReadingDirection;
   /** Retângulos das filhas diretas (só containers). */
   readonly childRects: readonly Rect[];
   /** Cor herdada: só os valores oferecidos pelos ancestrais que o componente lê (`$provided`). */
@@ -221,18 +224,20 @@ function overflowsOf(
   return found;
 }
 
-/** As opções do `instantiate` de uma marcação: só leva `tokens` e `provided` quando há. */
+/** As opções do `instantiate` de uma marcação: só leva `tokens`, `provided` e `direction` quando há. */
 function instantiateOptions(
   markingId: string,
   measure: TextMeasurer,
   tokens: ResolvedTokens | undefined,
   provided: ProvidedValues,
+  direction: ReadingDirection,
 ): InstantiateOptions {
   return {
     measure,
     idPrefix: markingId,
     ...(tokens === undefined ? {} : { tokens }),
     ...(provided === NO_PROVIDED ? {} : { provided }),
+    ...(direction === 'rtl' ? { direction } : {}),
   };
 }
 
@@ -281,6 +286,7 @@ function draw(
   provided: ProvidedValues,
   clip: Rect | undefined,
   density: number,
+  direction: ReadingDirection,
 ): {
   drawing: ComponentDrawing;
   offers: ProvidedValues | undefined;
@@ -298,7 +304,7 @@ function draw(
     mc.component,
     values,
     box,
-    instantiateOptions(markingId, measure, tokens, provided),
+    instantiateOptions(markingId, measure, tokens, provided, direction),
   );
   const { messages, provides } = instantiated;
   // Com `screen` o desenho pode passar do retângulo da marcação: não há pendência "não cabe".
@@ -325,8 +331,8 @@ function draw(
  * Cache dos desenhos de um projeto. A cada chamada devolve, em ordem de desenho, um desenho
  * por marcação com componente. Uma marcação só é reinstanciada quando muda algo de que o
  * desenho dela depende: o retângulo, o componente (por identidade), os valores resolvidos
- * (comparação rasa), o medidor, a época das fontes e, nos containers, os retângulos das
- * filhas; senão volta o mesmo `ComponentDrawing`. Mesmas entradas devolvem o mesmo `Map`.
+ * (comparação rasa), o medidor, a época das fontes, o modo, a densidade e a direção efetivos e,
+ * nos containers, os retângulos das filhas; senão volta o mesmo `ComponentDrawing`. Mesmas entradas devolvem o mesmo `Map`.
  */
 export function createDrawingCache(): DrawingCache {
   let entries = new Map<string, Entry>();
@@ -391,6 +397,7 @@ export function createDrawingCache(): DrawingCache {
           : (children.get(marking.id) ?? []).map((c) => c.rect);
       const mode = effectiveDrawingMode(p, marking.containerId);
       const density = effectiveDensity(p, marking.containerId);
+      const direction = effectiveDirection(p, marking.containerId);
       const before = entries.get(marking.id);
       if (
         before !== undefined &&
@@ -403,6 +410,7 @@ export function createDrawingCache(): DrawingCache {
         before.epoch === epoch &&
         before.mode === mode &&
         before.density === density &&
+        before.direction === direction &&
         shallowEqual(before.values, values) &&
         before.valueWarnings.length === valueWarnings.length &&
         before.valueWarnings.every((w, i) => w.text === valueWarnings[i]?.text) &&
@@ -440,6 +448,7 @@ export function createDrawingCache(): DrawingCache {
         provided,
         clip,
         density,
+        direction,
       );
       const stableClip = stableRect(before?.slotClip, slotClip);
       const childClip = stableRect(before?.childClip, intersectClips(stableClip, clip));
@@ -457,6 +466,7 @@ export function createDrawingCache(): DrawingCache {
         epoch,
         mode,
         density,
+        direction,
         childRects,
         provided,
         offers,

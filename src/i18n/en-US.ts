@@ -1215,6 +1215,20 @@ export const enUS: Dictionary = {
   'diagnostics.drawingModeHint':
     'The mode stays saved; without a specialization that declares it, the drawing uses that specialization first mode.',
   'diagnostics.modeUndeclared': 'mode {mode} not declared',
+  'direction.title': 'Reading direction',
+  'direction.intro':
+    'Picks which way reading runs when the components are drawn: left to right (the default) or right to left. No marking moves.',
+  'direction.label': 'Direction',
+  'direction.ltr': 'Left to right',
+  'direction.rtl': 'Right to left',
+  'direction.followProject': 'Follows the project',
+  'direction.containerHint':
+    'Pins the reading direction of the components in this container; "Follows the project" uses the project direction.',
+  'diagnostics.direction': 'Reading direction',
+  'diagnostics.directionHint':
+    'The components are drawn right to left in the project or in the containers listed.',
+  'diagnostics.directionProject': 'Project: {direction}',
+  'diagnostics.directionContainer': '{name} — {direction}',
   'diagnostics.components': 'Components',
   'diagnostics.componentsHint':
     'Fonts that did not load, components that could not be read and drawing warnings.',

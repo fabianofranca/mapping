@@ -104,6 +104,19 @@ describe('origem: direction chega ao layoutScreen', () => {
     expect(x(rtl)).toBe(300);
   });
 
+  it('a Screen pronta leva a direção resolvida (a da origem ou a de options), só em rtl', () => {
+    const dir = (d: 'ltr' | 'rtl' | undefined, origin?: string) =>
+      screenFromSource(library(origin), DOC, {
+        measure: approximateMeasurer,
+        ...(d ? { direction: d } : {}),
+      }).screen;
+    expect(dir(undefined, 'rtl')?.direction).toBe('rtl');
+    expect(dir('rtl')?.direction).toBe('rtl');
+    expect(dir('ltr', 'rtl')).not.toHaveProperty('direction');
+    expect(dir(undefined, 'ltr')).not.toHaveProperty('direction');
+    expect(dir(undefined)).not.toHaveProperty('direction');
+  });
+
   it('options.direction vence a da origem (e vale em ltr explícito)', () => {
     const rtlOrigin = library('rtl');
     const forced = translateSource(rtlOrigin, DOC, { direction: 'ltr' }).layout;

@@ -16,6 +16,7 @@ import {
 } from '../utils/report';
 import { Button } from './controls';
 import { EditorContext, type EditorContextValue } from './EditorContext';
+import { DiagnosticsDirection } from './DiagnosticsDirection';
 import { declaredDrawingModes } from './drawingModes';
 import { LibraryIssueList } from './LibraryIssueList';
 import { markingLabel } from './labels';
@@ -327,6 +328,12 @@ export function DiagnosticsDrawingMode() {
   );
 }
 
+/** Direção de leitura do projeto real, para a seção somente leitura. */
+function DiagnosticsDirectionSection() {
+  const project = useContext(EditorContext)?.store.project.value;
+  return project ? <DiagnosticsDirection project={project} /> : null;
+}
+
 /** Falhas e bloqueios de imagem remota da sessão (URL encurtada e motivo). */
 export function DiagnosticsRemoteImages() {
   const issues = remoteImageIssues.value;
@@ -360,6 +367,7 @@ export function DiagnosticsView() {
       <DiagnosticsLibrary />
       <DiagnosticsComponents />
       <DiagnosticsDrawingMode />
+      <DiagnosticsDirectionSection />
       <DiagnosticsRemoteImages />
       <DiagnosticsTable />
     </div>

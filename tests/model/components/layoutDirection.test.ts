@@ -205,6 +205,13 @@ describe('layoutScreen em rtl: os slots espelham dentro do conteúdo', () => {
     expect(boxOf(run(roots, 'rtl'), 'f').x).toBe(W - 40);
   });
 
+  it('a Screen calculada carrega a direção rtl; em ltr (ou sem direction) não ganha a chave', () => {
+    const roots = [{ node: node('h', 'row', kids()) }];
+    expect(run(roots, 'rtl').screen.direction).toBe('rtl');
+    expect(run(roots, 'ltr').screen).not.toHaveProperty('direction');
+    expect(run(roots, undefined).screen).not.toHaveProperty('direction');
+  });
+
   it('sem direction a tela é a de ltr', () => {
     const roots = [{ node: node('h', 'row', kids()) }];
     expect(JSON.stringify(run(roots, undefined).screen)).toBe(

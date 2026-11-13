@@ -29,7 +29,7 @@ import {
 } from './components/instantiate';
 import { markingComponent, type ComponentCatalog } from './componentCatalog';
 import { drawingValues } from './componentValues';
-import { componentForDrawing } from './drawingMode';
+import { componentForDrawing, drawOptions } from './drawingMode';
 import { fail } from './errors';
 import {
   MIN_STORED_MARKING_SIZE,
@@ -44,7 +44,7 @@ import { markingLockStates } from './locks';
 import { modelMessage, type ModelMessage } from './modelMessage';
 import { findById } from './project';
 import { projectIndex } from './projectIndex';
-import type { Marking, Project, Rect } from './types';
+import type { Marking, Project, ReadingDirection, Rect } from './types';
 
 // Arrumar (etapa Biblioteca, B3): recalcula e grava os retângulos das filhas de um componente
 // com slot pelo `layout` do slot, e o tamanho do componente que abraça o conteúdo (`hug`). Só por ação
@@ -66,14 +66,12 @@ interface Container {
   readonly component: ComponentFile;
   /** Tabela de tokens do modo do desenho (a mesma que o `component` já traz aplicada). */
   readonly tokens: ResolvedTokens | undefined;
+  /** Direção de leitura efetiva do espaço da marcação (`rtl` espelha a linha e a grade). */
+  readonly direction: ReadingDirection;
   readonly values: FieldValues;
   readonly layout: ResolvedSlotLayout;
   readonly kids: readonly Marking[];
   readonly label: string;
-}
-
-function tokensOption(tokens: ResolvedTokens | undefined): { tokens?: ResolvedTokens } {
-  return tokens === undefined ? {} : { tokens };
 }
 
 function containerOf(
@@ -96,6 +94,7 @@ function containerOf(
     id: markingId,
     component: drawn.component,
     tokens: drawn.tokens,
+    direction: drawn.direction,
     values,
     layout,
     kids,
@@ -363,7 +362,7 @@ export function arrangeMarking(
         (fixed) =>
           measureComponent(drawn.component, values, fixed, {
             measure,
-            ...tokensOption(drawn.tokens),
+            ...drawOptions(drawn),
           }),
       );
       if (fitted !== undefined) rects.set(kid.id, fitted.rect);
@@ -379,7 +378,7 @@ export function arrangeMarking(
     return instantiate(drawn.component, values, rects.get(kid.id) as Rect, {
       measure,
       idPrefix: kid.id,
-      ...tokensOption(drawn.tokens),
+      ...drawOptions(drawn),
     }).firstBaseline;
   };
 
@@ -406,7 +405,7 @@ export function arrangeMarking(
           measure,
           idPrefix: id,
           slotContent,
-          ...tokensOption(info.tokens),
+          ...drawOptions(info),
         }).root,
       );
       if (probe !== undefined) {
@@ -429,7 +428,7 @@ export function arrangeMarking(
         measureComponent(component, values, fixed, {
           measure,
           slotContent,
-          ...tokensOption(info.tokens),
+          ...drawOptions(info),
         }),
     );
     const hugW = fitted?.hugW ?? false;
@@ -443,7 +442,7 @@ export function arrangeMarking(
       measure,
       idPrefix: id,
       slotContent,
-      ...tokensOption(info.tokens),
+      ...drawOptions(info),
     });
     const box = slotBoxOfScene(root);
     if (box === undefined) return;
@@ -459,7 +458,7 @@ export function arrangeMarking(
         ),
       );
     }
-    const targets = layoutChildren(box, layout, children);
+    const targets = layoutChildren(box, layout, children, info.direction);
     kids.forEach((kid, i) => {
       const target = targets[i] as Rect;
       const before = rects.get(kid.id) as Rect;
@@ -546,6 +545,7 @@ interface FitTarget {
   readonly marking: Marking;
   readonly component: ComponentFile;
   readonly tokens: ResolvedTokens | undefined;
+  readonly direction: ReadingDirection;
   readonly values: FieldValues;
   readonly parent: Container | null;
 }
@@ -575,6 +575,7 @@ function fitTargetOf(
     marking,
     component: drawn.component,
     tokens: drawn.tokens,
+    direction: drawn.direction,
     values,
     parent: marking.parentId === null ? null : containerOf(p, catalog, marking.parentId),
   };
@@ -668,7 +669,7 @@ export function fitMarking(
   const fitted = fitComponentSize(
     target.component,
     target.values,
-    { measure, ...tokensOption(target.tokens) },
+    { measure, ...drawOptions(target) },
     {
       base,
       auto,

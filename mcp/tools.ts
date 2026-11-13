@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { ModelError, projectIndex } from '../src/model';
+import { ModelError, projectIndex, READING_DIRECTIONS } from '../src/model';
 import { planChanges } from './changes';
 import { LocalFileChecker } from './codeFiles';
 import { codeHintsView, type CodeContext } from './codeViews';
@@ -298,7 +298,7 @@ export function registerTools(
     'get_project',
     {
       description:
-        'Resumo do projeto: containers (com `file`, `background` e `parent`), camadas, especializações (com a situação da cópia), plataformas de código (`platforms`, cada uma com os `repos` que as especializações declaram e o `localPath` do clone local; com `codeHint`: o `code` dos tipos é o código de instanciação, não o código gerado) o clone local por plataforma (`platformRepos`), os repositórios de documentos das especializações (`docRepos`: `id`, o `repos` que cada especialização declara e o `localPath` do clone do projeto, `null` sem clone), o modo do desenho do projeto (`drawingMode`, `null` sem modo; cada container traz o seu `drawingMode` fixado e o `effectiveDrawingMode`), contagens (`counts`: containers, marcações, `canvasMarkings`, `floatingMarkings`, `arrows`, anotações, camadas) e pendências (anotações incompletas).',
+        'Resumo do projeto: containers (com `file`, `background` e `parent`), camadas, especializações (com a situação da cópia), plataformas de código (`platforms`, cada uma com os `repos` que as especializações declaram e o `localPath` do clone local; com `codeHint`: o `code` dos tipos é o código de instanciação, não o código gerado) o clone local por plataforma (`platformRepos`), os repositórios de documentos das especializações (`docRepos`: `id`, o `repos` que cada especialização declara e o `localPath` do clone do projeto, `null` sem clone), o modo do desenho do projeto (`drawingMode`, `null` sem modo; cada container traz o seu `drawingMode` fixado e o `effectiveDrawingMode`), a direção de leitura do projeto (`direction`: `ltr` ou `rtl`, `ltr` quando nenhuma está gravada; cada container traz a sua `direction` fixada, `null` = segue o projeto, e a `effectiveDirection`), contagens (`counts`: containers, marcações, `canvasMarkings`, `floatingMarkings`, `arrows`, anotações, camadas) e pendências (anotações incompletas).',
       inputSchema: { project: projectArg },
       annotations: READ_ONLY,
     },
@@ -432,7 +432,7 @@ export function registerTools(
     'get_code_hints',
     {
       description:
-        'As chamadas a escrever numa plataforma a partir de uma marcação, com o código de instanciação de cada tipo. `types` traz, por `specId/typeId`, o `symbol` (o que se chama para criar uma instância), a `definition` (o arquivo que o define, para ler a assinatura: `path`, `url` e `ref` do `repo` da especialização, `localFile` e `exists` pelo clone local), `params`, `values` e `notes`. `repos` traz o repositório da plataforma (`url`, `ref`, `localPath`). A `tree` espelha a marcação e as descendentes e, em cada anotação tipada, traz `type` (a chave de `types`), `label`, `layer`, `args` (os argumentos da chamada, com os valores da instância já traduzidos), `values` (valores de referência resolvidos, ex: `User.name`) e os eventos vinculados sob a dona (`linked`), sem arquivo por anotação. ' +
+        'As chamadas a escrever numa plataforma a partir de uma marcação, com o código de instanciação de cada tipo. `types` traz, por `specId/typeId`, o `symbol` (o que se chama para criar uma instância), a `definition` (o arquivo que o define, para ler a assinatura: `path`, `url` e `ref` do `repo` da especialização, `localFile` e `exists` pelo clone local), `params`, `values` e `notes`. `repos` traz o repositório da plataforma (`url`, `ref`, `localPath`). `direction` (`ltr` ou `rtl`) é a direção de leitura efetiva do container da marcação (também em cada nó da `tree`): não há parâmetro no `code`; escreva o envoltório da plataforma (Compose: `CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl)`; web: `dir="rtl"`). A `tree` espelha a marcação e as descendentes e, em cada anotação tipada, traz `type` (a chave de `types`), `label`, `layer`, `args` (os argumentos da chamada, com os valores da instância já traduzidos), `values` (valores de referência resolvidos, ex: `User.name`) e os eventos vinculados sob a dona (`linked`), sem arquivo por anotação. ' +
         'Especialização 9: `types` traz o `code` cru da base (pode ter `variants`) e, nas anotações de tipo com `variants`, a `tree` traz `code` com o código resolvido da variante (`symbol`, `definition`, `params`, `values`, `notes`, sem `variants`; o `symbol` de um Button `outlined` é o do caso `outlined`): quando a anotação tem `code`, use-o no lugar do de `types`. ' +
         'Em cada tipo de `types`, `notices` (só quando há) traz os avisos de fidelidade da especialização, do tipo, dos campos e das colunas, por gravidade: `kind`, `message`, `since?`, `ref?` (a origem) e o lugar (`key?`, `column?`). Leia-os antes de escrever e conte ao usuário os `diverges`; ignore os cuja `message` começa com o id de outra plataforma (não há filtro por plataforma). ' +
         'Tipos em `unmappedTypes` não têm código de instanciação nesta plataforma e não trazem avisos (veja `get_specialization`).',
@@ -500,7 +500,7 @@ export function registerTools(
     'get_container',
     {
       description:
-        'Um container do projeto (a referência `mapping://<projeto>/i/<código>`: a letra `i` é o container): `file` (arquivo de imagem, ou `null`) e `background` (cor, quando não há arquivo), caminho absoluto do arquivo (se existir), dimensões, posição, trava, `drawingMode` (o modo do desenho que o container fixa, `null` = segue o projeto), `effectiveDrawingMode` (o que vale nele), `parent` (a marcação do canvas que contém o container, ou `null`) e as marcações de primeiro nível.',
+        'Um container do projeto (a referência `mapping://<projeto>/i/<código>`: a letra `i` é o container): `file` (arquivo de imagem, ou `null`) e `background` (cor, quando não há arquivo), caminho absoluto do arquivo (se existir), dimensões, posição, trava, `drawingMode` (o modo do desenho que o container fixa, `null` = segue o projeto), `effectiveDrawingMode` (o que vale nele), `direction` (a direção de leitura que o container fixa, `ltr` ou `rtl`; `null` = segue o projeto), `effectiveDirection` (a que vale nele), `parent` (a marcação do canvas que contém o container, ou `null`) e as marcações de primeiro nível.',
       inputSchema: { ref: refArg, project: optionalProjectArg },
       annotations: READ_ONLY,
     },
@@ -714,6 +714,12 @@ export function registerTools(
     .describe(
       'Modo do desenho (um dos `modes` dos `tokens` das especializações aplicadas, como "light" ou "dark") em todo o desenho. Padrão: o modo efetivo de cada container (o que ele fixa, senão o do projeto, senão o primeiro modo).',
     );
+  const directionArg = z
+    .enum(READING_DIRECTIONS)
+    .optional()
+    .describe(
+      'Direção de leitura (`ltr` ou `rtl`) em todo o desenho: em `rtl` as fileiras, as grades e as posições `start`/`end` espelham, como no app com o container em Da direita para a esquerda. Padrão: a direção efetiva de cada container (a que ele fixa, senão a do projeto, senão `ltr`). O resultado traz a `direction` usada (`null` = a de cada container).',
+    );
   const backgroundArg = z
     .enum(['image', 'none'])
     .optional()
@@ -727,13 +733,14 @@ export function registerTools(
     'render_marking',
     {
       description:
-        'Desenha, como imagem PNG, o componente de uma marcação de container e o de toda a subárvore dela (as filhas), com `zoom`, `drawingMode` e `background`. É como o agente confere o desenho de um componente sem abrir a app. ' +
+        'Desenha, como imagem PNG, o componente de uma marcação de container e o de toda a subárvore dela (as filhas), com `zoom`, `drawingMode`, `direction` e `background`. É como o agente confere o desenho de um componente sem abrir a app. ' +
         RENDER_NOTE,
       inputSchema: {
         ref: refArg,
         project: optionalProjectArg,
         zoom: zoomArg,
         drawingMode: drawingModeArg,
+        direction: directionArg,
         background: backgroundArg,
         padding: z
           .number()
@@ -757,13 +764,14 @@ export function registerTools(
     'render_container',
     {
       description:
-        'Desenha, como imagem PNG, os componentes de todas as marcações de um container (com ou sem arquivo), com `zoom`, `drawingMode` e `background`. Num container sem arquivo é o mesmo desenho que get_marking_image mostra. ' +
+        'Desenha, como imagem PNG, os componentes de todas as marcações de um container (com ou sem arquivo), com `zoom`, `drawingMode`, `direction` e `background`. Num container sem arquivo é o mesmo desenho que get_marking_image mostra. ' +
         RENDER_NOTE,
       inputSchema: {
         ref: refArg,
         project: optionalProjectArg,
         zoom: zoomArg,
         drawingMode: drawingModeArg,
+        direction: directionArg,
         background: backgroundArg,
         format: z.enum(['png', 'webp', 'jpeg']).optional().describe('Padrão png.'),
       },

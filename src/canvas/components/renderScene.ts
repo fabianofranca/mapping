@@ -787,6 +787,7 @@ function runTextShape(
     textDecoration: run.decoration ?? '',
     wrap: 'none',
     fill: runFill(run.color),
+    ...(node.style.direction === 'rtl' ? { direction: 'rtl' as const } : {}),
   });
 }
 

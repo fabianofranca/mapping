@@ -5,6 +5,7 @@ import {
   APP_ID,
   LEGACY_APP_ID,
   COORDINATE_SYSTEM,
+  READING_DIRECTIONS,
   SCHEMA_VERSION,
   type JsonValue,
   type ProjectFile,
@@ -18,6 +19,7 @@ import {
 const id = z.string().min(1);
 const hexColor = z.string().regex(HEX_COLOR_RE);
 const finite = z.number().finite();
+const readingDirection = z.enum(READING_DIRECTIONS);
 
 /** Data ISO 8601 como gravada pela app: UTC com `Z`; com fuso, normalizada para UTC. */
 export function normalizeIsoDate(value: string): string {
@@ -79,6 +81,8 @@ export const containerSchema = z.object({
   background: hexColor.nullable(),
   /** Modo do desenho que o container fixa (v18); ausente ou `null` = segue o projeto. */
   drawingMode: z.string().min(1).nullable().optional(),
+  /** Direção de leitura que o container fixa (v20); ausente ou `null` = segue o projeto. */
+  direction: readingDirection.nullable().optional(),
   /** Densidade do container (v19); a faixa de 0,5 a 8 é a invariante `container-density`. */
   density: z.number().nullable().optional(),
 });
@@ -223,6 +227,8 @@ export const projectSchema: z.ZodType<ProjectFile> = z.object({
   docRepos: docReposSchema,
   /** Modo do desenho do projeto (v18); ausente = o primeiro modo de cada especialização. */
   drawingMode: z.string().min(1).optional(),
+  /** Direção de leitura do projeto (v20); ausente = `ltr`. */
+  direction: readingDirection.optional(),
   layers: z.array(layerSchema),
   containers: z.array(containerSchema),
   markings: z.array(markingSchema),

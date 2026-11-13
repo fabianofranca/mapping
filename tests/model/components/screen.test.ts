@@ -52,6 +52,27 @@ describe('screen', () => {
     expect(back).toEqual(SAMPLE_SCREEN);
   });
 
+  it('a direção rtl sobrevive ao serializar e reler; em ltr a chave continua ausente', () => {
+    const rtl = { ...SAMPLE_SCREEN, direction: 'rtl' as const };
+    const back = parseScreen(JSON.parse(serializeScreen(rtl)));
+    expect(back.direction).toBe('rtl');
+    expect(back).toEqual(rtl);
+    expect('direction' in parseScreen(JSON.parse(serializeScreen(SAMPLE_SCREEN)))).toBe(
+      false,
+    );
+    const ltr = parseScreen({
+      ...JSON.parse(serializeScreen(SAMPLE_SCREEN)),
+      direction: 'ltr',
+    });
+    expect('direction' in ltr).toBe(false);
+    // valor inválido: ignorado, como `background` e `name` (a tela relida segue ltr)
+    const bad = parseScreen({
+      ...JSON.parse(serializeScreen(SAMPLE_SCREEN)),
+      direction: 'up',
+    });
+    expect('direction' in bad).toBe(false);
+  });
+
   it('recusa telas malformadas com mensagem em português', () => {
     expect(() => parseScreen(null)).toThrow(/Tela inválida/);
     expect(() => parseScreen({ format: 'x' })).toThrow(/format/);

@@ -94,7 +94,7 @@ export class ProposalLabels {
       case 'docRepo':
         return `repositório de documentos ${c.entityId}`;
       case 'project':
-        return 'modo do desenho do projeto';
+        return 'modo do desenho e direção do projeto';
     }
   }
 }

@@ -4,7 +4,7 @@
  * e os valores dos campos (como uma anotação). Funções puras e imutáveis.
  */
 import type { Box } from './box';
-import type { FieldRow, FieldValue, FieldValues } from './componentFormat';
+import type { Direction, FieldRow, FieldValue, FieldValues } from './componentFormat';
 
 export type { Box };
 
@@ -26,6 +26,11 @@ export interface Screen {
   readonly height: number;
   /** Cor de fundo da tela (CSS). */
   readonly background: string;
+  /**
+   * Direção de leitura da tela (R2, #1107). Só aparece em `rtl` (ausente = `ltr`): o `layoutScreen`
+   * já espelhou as caixas e o desenho usa a mesma direção ao instanciar o interior de cada componente.
+   */
+  readonly direction?: Direction;
   readonly instances: readonly Instance[];
 }
 
@@ -358,6 +363,8 @@ export function parseScreen(input: unknown): Screen {
     width: num(r.width, 'width'),
     height: num(r.height, 'height'),
     background: typeof r.background === 'string' ? r.background : '#FFFFFF',
+    // Só `rtl` vira chave (ausente = `ltr`); um valor inválido é ignorado, como `name` e `background`.
+    ...(r.direction === 'rtl' ? { direction: 'rtl' as const } : {}),
     instances,
   };
 }

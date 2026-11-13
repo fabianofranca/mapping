@@ -3,6 +3,7 @@ import {
   drawingModesOf,
   type ComponentCatalog,
   type Project,
+  type ReadingDirection,
 } from '../../src/model';
 import type { Raster } from './raster';
 import { paintScene, type SceneView } from './sceneRaster';
@@ -22,6 +23,8 @@ export interface PaintOptions {
   readonly markingIds?: ReadonlySet<string>;
   /** Fixa o modo do desenho em todo o container; ausente = o efetivo de cada um. */
   readonly drawingMode?: string;
+  /** Fixa a direção de leitura em todo o container; ausente = a efetiva de cada um. */
+  readonly direction?: ReadingDirection;
 }
 
 const caches = new WeakMap<FontBook, ReturnType<typeof createDrawingCache>>();
@@ -34,6 +37,15 @@ export function withDrawingMode(p: Project, mode: string): Project {
     containers: p.containers.map((c) =>
       c.drawingMode == null ? c : { ...c, drawingMode: mode },
     ),
+  };
+}
+
+/** O projeto com `direction` em todo lugar (a do projeto e a dos containers que fixam a sua). */
+export function withDirection(p: Project, direction: ReadingDirection): Project {
+  return {
+    ...p,
+    direction,
+    containers: p.containers.map((c) => (c.direction == null ? c : { ...c, direction })),
   };
 }
 
@@ -57,10 +69,12 @@ export function paintContainerDrawings(
     cache = createDrawingCache();
     caches.set(fonts, cache);
   }
-  const project =
+  const moded =
     options.drawingMode === undefined
       ? source.project
       : withDrawingMode(source.project, options.drawingMode);
+  const project =
+    options.direction === undefined ? moded : withDirection(moded, options.direction);
   const drawings = [...cache(project, source.catalog, measure, 0).values()].filter(
     (d) =>
       d.containerId === containerId &&

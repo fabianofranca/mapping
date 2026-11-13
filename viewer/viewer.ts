@@ -66,7 +66,8 @@ export interface ViewerInput {
    * Direção de leitura da tela calculada de `source` (`ltr`, o padrão, ou `rtl`): vai ao
    * `layoutScreen` (espelha as raízes, as âncoras lógicas e os slots) e ao motor dos componentes.
    * Ausente, vale a `screen.direction` da origem; uma `screen` pronta (sem `source`) já traz as
-   * caixas e não é recalculada.
+   * caixas e a direção (`Screen.direction`, só em `rtl`) e não é recalculada: o interior de cada
+   * componente segue a direção da tela, e esta opção, se dada, vence.
    */
   readonly direction: Direction | undefined;
 }

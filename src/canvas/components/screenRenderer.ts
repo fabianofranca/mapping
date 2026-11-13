@@ -83,8 +83,8 @@ export interface ScreenRendererUpdateOptions {
   /** Índice, no grupo, da primeira instância (o chamador pode ter outros filhos antes). Padrão 0. */
   readonly zBase?: number;
   /**
-   * Direção de leitura do interior dos componentes (padrão `ltr`; o editor ainda não a muda).
-   * Trocá-la re-instancia tudo.
+   * Direção de leitura do interior dos componentes. Ausente, vale a `screen.direction` (a tela
+   * `rtl` de `layoutScreen`), senão `ltr`; presente, vence a da tela. Trocá-la re-instancia tudo.
    */
   readonly direction?: Direction;
 }
@@ -103,6 +103,11 @@ interface Mounted {
   slotClip: Box | undefined;
   /** O recorte (na tela) que as filhas recebem: o `slotClip` dentro do recorte da própria instância. */
   childClip: Box | undefined;
+}
+
+/** A direção do interior: a opção vence a da tela; sem nenhuma, `ltr`. */
+function directionOf(screen: Screen, options: ScreenRendererUpdateOptions): Direction {
+  return options.direction ?? screen.direction ?? 'ltr';
 }
 
 export class ScreenRenderer {
@@ -135,7 +140,7 @@ export class ScreenRenderer {
   ): boolean {
     const zBase = options.zBase ?? 0;
     let force = options.force === true;
-    const direction = options.direction ?? 'ltr';
+    const direction = directionOf(screen, options);
     if (direction !== this.direction) {
       this.direction = direction;
       force = true;

@@ -222,3 +222,27 @@ describe('texto rico no Konva', () => {
     expect(texts[0]?.width()).toBe(100 + WRAP_SLACK);
   });
 });
+
+describe('texto rico no Konva: direção de leitura (R2, #1107)', () => {
+  const runs = [{ text: 'ab ' }, { text: 'cd', weight: 700 }];
+
+  it('em rtl cada pedaço leva direction rtl e o primeiro trecho fica à direita do segundo', () => {
+    const { root } = instantiate(
+      file({ runs, font: { size: 10, lineHeight: 12, align: 'start' } }),
+      {},
+      { x: 0, y: 0, width: 100, height: 60 },
+      { measure: approximateMeasurer, direction: 'rtl' },
+    );
+    const texts = renderScene({ root, warnings: [] }).root.find('Text') as Konva.Text[];
+    expect(texts.map((t) => t.text())).toEqual(['ab ', 'cd']);
+    for (const t of texts) expect(t.direction()).toBe('rtl');
+    expect(texts[0]!.x()).toBeGreaterThan(texts[1]!.x());
+  });
+
+  it('em ltr o pedaço não leva direction e a ordem é a de sempre', () => {
+    const { scene } = build({ runs });
+    const { texts } = drawn(scene);
+    for (const t of texts) expect(t.direction()).not.toBe('rtl');
+    expect(texts[0]!.x()).toBeLessThan(texts[1]!.x());
+  });
+});
