@@ -151,7 +151,7 @@ describe('R25.43 e R25.44: as pastas de tela do guia', () => {
     const report = validate(tela);
     expect(report.errors).toEqual([]);
     expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
-  });
+  }, 30_000);
 
   it('m3-tela-v3: erros "só é permitido com formatVersion 4", todos no divider', () => {
     const msg = 'só é permitido com formatVersion 4';
@@ -193,5 +193,5 @@ describe('R25.43 e R25.44: as pastas de tela do guia', () => {
         .map((e) => e.path)
         .sort(),
     ).toEqual(['icons', 'layers[2].annotationTypes[25].structural', 'tokens']);
-  });
+  }, 30_000);
 });

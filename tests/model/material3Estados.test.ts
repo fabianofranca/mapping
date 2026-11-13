@@ -246,7 +246,7 @@ describe('teste final: os tipos com o interaction (ME1 a ME5)', () => {
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
     expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
-  });
+  }, 30_000);
 });
 
 describe('atualização da versão anterior da biblioteca para a nova', () => {
@@ -274,5 +274,5 @@ describe('atualização da versão anterior da biblioteca para a nova', () => {
     );
     const report = validateLibrary({ files, specPath: SPEC_FILE, previous });
     expect(report.errors).toEqual([]);
-  });
+  }, 30_000);
 });

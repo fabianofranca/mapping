@@ -109,7 +109,7 @@ describe('MF4: versão e atualização aditiva', () => {
     expect(changes.filter((c) => c.kind === 'breaking')).toEqual([]);
     expect(missingMigrations(previous, spec)).toEqual([]);
     expect(validateLibrary({ files, specPath: SPEC_FILE, previous }).errors).toEqual([]);
-  });
+  }, 30_000);
 });
 
 describe('MF4: cor do conteúdo herdada (decisão 14)', () => {

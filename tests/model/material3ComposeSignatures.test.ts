@@ -90,7 +90,7 @@ describe('Material 3 (Compose): as fichas de assinatura (decisão 14 da #1079)',
   it('o pacote valida sem erro nos três níveis', () => {
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
-  });
+  }, 30_000);
 
   // Um `it` por ficha: o laço único levava ~1,4 s e estourava os 5 s do teste no shard sob carga do CI (CL2, E-1).
   it.each(

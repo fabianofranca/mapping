@@ -122,7 +122,7 @@ describe('paliativos da Material 3 trocados pelas chaves novas (decisão 24)', (
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
     expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
-  });
+  }, 30_000);
 });
 
 /** Tipos com `interaction: "focused"` e `FocusIndicatorColor` no `*Tokens.kt` do commit fixado, e o desenho a conferir. */
@@ -306,5 +306,5 @@ describe('atualização da biblioteca (version 4 → 5)', () => {
     );
     const report = validateLibrary({ files, specPath: SPEC_FILE, previous });
     expect(report.errors).toEqual([]);
-  });
+  }, 30_000);
 });

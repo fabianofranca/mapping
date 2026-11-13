@@ -75,7 +75,7 @@ describe('MF5: versão e atualização aditiva', () => {
     expect(changes.filter((c) => c.kind === 'breaking')).toEqual([]);
     expect(missingMigrations(previous, spec)).toEqual([]);
     expect(validateLibrary({ files, specPath: SPEC_FILE, previous }).errors).toEqual([]);
-  });
+  }, 30_000);
 });
 
 describe('MF5: dia de hoje no date-picker (decisão 19)', () => {

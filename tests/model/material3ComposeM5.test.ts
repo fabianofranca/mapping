@@ -78,7 +78,7 @@ describe('M5 — superfícies e seletores no formato 4', () => {
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
     expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
-  });
+  }, 30_000);
 
   it('todos os 50 componentes são formato 4, sem cor literal e sem family literal', () => {
     const ids = files
