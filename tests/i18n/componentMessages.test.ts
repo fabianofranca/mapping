@@ -493,6 +493,16 @@ const ORIGIN_TEXT_CASES: readonly (readonly [unknown, readonly string[]])[] = [
       'origins[0].examples[0].file: caminho inválido: use um caminho relativo à pasta da especialização, com "/", sem "." nem ".." e sem unidade (ex: components/button.json)',
     ],
   ],
+  // O índice inválido pode ser uma quebra de linha: o código segue o da variante (flag `s`).
+  [
+    [
+      {
+        ...ORIGIN_VALID_WITH_ANCHOR('top'),
+        screen: { width: 1, height: { path: 'a[\n]' }, roots: [{ path: 'a' }] },
+      },
+    ],
+    ['origins[0].screen.height.path: caminho inválido "a[\n]" (índice inválido: [\n])'],
+  ],
 ];
 
 function ORIGIN_VALID_WITH_ANCHOR(anchor: string): Raw {

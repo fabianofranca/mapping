@@ -45,9 +45,9 @@ export function packagePathMsg(error: PackagePathError): SpecMsg {
  * (`checkPath`); fica aqui porque `origin.ts` não pode importar `spec.ts` (ciclo).
  */
 export function pathErrorMsg(path: string, error: string): SpecMsg {
-  const index = /^índice inválido: \[(.*)\]$/.exec(error)?.[1];
+  const index = /^índice inválido: \[(.*)\]$/s.exec(error)?.[1];
   if (index !== undefined) return specMsg('spec.fieldPathBadIndex', { path, index });
-  const char = /^caractere inesperado: (.*)$/.exec(error)?.[1];
+  const char = /^caractere inesperado: (.*)$/s.exec(error)?.[1];
   if (char !== undefined) return specMsg('spec.fieldPathBadChar', { path, char });
   return specMsg(
     error === 'faltou "]"'
