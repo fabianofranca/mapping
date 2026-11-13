@@ -38,9 +38,14 @@ export interface ComponentTarget {
   readonly center?: { readonly x: number; readonly y: number };
   /** Tipo flutuante com container ou marcação selecionado: nasce perto dele (`placeFloatingNear`). */
   readonly near?: FloatingNearTarget;
+  /**
+   * Tipo com `anchor` na raiz e marcação selecionada: a instância nasce ancorada nela e encostada
+   * (R4, decisão 13), em vez de dentro dela ou centrada.
+   */
+  readonly anchorTo?: string;
   /** Como o rótulo do botão descreve o destino. */
   readonly destination:
-    | { readonly kind: 'slot' | 'container'; readonly name: string }
+    | { readonly kind: 'slot' | 'container' | 'anchor'; readonly name: string }
     | { readonly kind: 'canvas' };
 }
 
@@ -56,15 +61,31 @@ export interface ComponentTarget {
  * Um tipo flutuante (`floating`, decisão 10) vive só no canvas: o alvo é sempre o canvas, no
  * centro da vista; com um container ou uma marcação selecionado, leva também `near` (ME4) e
  * nasce perto dele.
+ *
+ * Um tipo que declara `anchor` na raiz (`anchored`) com uma marcação selecionada nasce ancorado
+ * nela (`anchorTo`), antes de a regra 1 e das demais valerem (R4, decisão 13).
  */
 export function componentTarget(
   editor: EditorContextValue,
-  options: { readonly floating?: boolean } = {},
+  options: { readonly floating?: boolean; readonly anchored?: boolean } = {},
 ): ComponentTarget | null {
   const { review, ui, derived, canvas, view } = editor;
   const project = review.derived.shownProject.value;
   if (!project) return null;
   const selected = resolveSelection(project, ui.selection.value);
+
+  if (
+    options.anchored === true &&
+    options.floating !== true &&
+    selected?.kind === 'marking'
+  ) {
+    return {
+      containerId: selected.marking.containerId,
+      parentId: null,
+      anchorTo: selected.marking.id,
+      destination: { kind: 'anchor', name: slotTargetName(project, selected.marking) },
+    };
+  }
 
   if (options.floating !== true && selected?.kind === 'marking') {
     const drawn = markingComponent(project, derived.catalog.value, selected.marking.id);
@@ -140,6 +161,9 @@ export function addLabel(target: ComponentTarget | null): string {
   }
   if (destination.kind === 'container') {
     return t('library.addToScreen', { name: destination.name });
+  }
+  if (destination.kind === 'anchor') {
+    return t('library.addAnchored', { name: destination.name });
   }
   return t('library.addToCanvas');
 }

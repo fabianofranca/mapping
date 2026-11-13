@@ -14,12 +14,24 @@ export interface AddComponent {
   readonly add: (specId: string, typeId: string) => boolean;
   /** Rótulo do botão com o destino: "Adicionar dentro de X", "Adicionar na tela X", "Adicionar no canvas". */
   readonly label: string;
-  /** O rótulo para um tipo: um tipo flutuante é sempre "Adicionar no canvas". */
-  readonly labelFor: (type: { readonly floating: boolean }) => string;
+  /**
+   * O rótulo para um tipo: um tipo flutuante é sempre "Adicionar no canvas" e um que declara
+   * `anchor` na raiz, com uma marcação selecionada, "Adicionar ancorado a X".
+   */
+  readonly labelFor: (type: AddableType) => string;
   /** Por que Adicionar está desabilitado; `undefined` se pode. */
   readonly disabledReason: string | undefined;
   readonly error: string | null;
 }
+
+/** O que o rótulo precisa saber do tipo: se é flutuante e se o componente declara `anchor` na raiz. */
+interface AddableType {
+  readonly floating: boolean;
+  readonly component?: { readonly anchor?: unknown };
+}
+
+const declaresAnchor = (type: AddableType): boolean =>
+  type.component?.anchor !== undefined;
 
 export function useAddComponent(): AddComponent {
   const editor = useEditor();
@@ -32,12 +44,21 @@ export function useAddComponent(): AddComponent {
     return target ? addLabel(target) : null;
   }).value;
   const hasTarget = label !== null;
+  // O rótulo dos tipos com `anchor`: só existe com uma marcação selecionada.
+  const anchoredLabel = useComputed(() => {
+    const target = componentTarget(editor, { anchored: true });
+    return target?.anchorTo === undefined ? null : addLabel(target);
+  }).value;
 
   const add = (specId: string, typeId: string): boolean => {
-    const floating = editor.derived.componentTypes
+    const type = editor.derived.componentTypes
       .peek()
-      .some((c) => c.specId === specId && c.typeId === typeId && c.floating);
-    const target = componentTarget(editor, { floating });
+      .find((c) => c.specId === specId && c.typeId === typeId);
+    const floating = type?.floating === true;
+    const target = componentTarget(editor, {
+      floating,
+      anchored: type !== undefined && declaresAnchor(type),
+    });
     if (!target) return false;
     const result = actions.addComponent({
       containerId: target.containerId,
@@ -46,6 +67,7 @@ export function useAddComponent(): AddComponent {
       typeId,
       ...(target.center ? { center: target.center } : {}),
       ...(target.near ? { near: target.near } : {}),
+      ...(target.anchorTo === undefined ? {} : { anchorTo: target.anchorTo }),
     });
     if (!result.ok) {
       setError(libraryErrorMessage(result.error));
@@ -64,7 +86,9 @@ export function useAddComponent(): AddComponent {
       ? undefined
       : t('library.noScreen');
   const generic = label ?? t('library.add');
-  const labelFor = (type: { readonly floating: boolean }) =>
-    type.floating ? t('library.addToCanvas') : generic;
+  const labelFor = (type: AddableType) => {
+    if (type.floating) return t('library.addToCanvas');
+    return declaresAnchor(type) && anchoredLabel !== null ? anchoredLabel : generic;
+  };
   return { add, label: generic, labelFor, disabledReason, error };
 }

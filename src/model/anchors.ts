@@ -39,6 +39,22 @@ export function checkAnchorTarget(
   return target;
 }
 
+/**
+ * `setMarkingAnchor` aceitaria ancorar `markingId` em `targetId`? O alvo existe, não é a própria
+ * marcação, está no mesmo espaço e não depende dela pela cadeia de âncoras. É o que a lista da
+ * seção Âncora oferece, sem tentar e capturar o erro.
+ */
+export function canAnchorTo(p: Project, markingId: string, targetId: string): boolean {
+  if (targetId === markingId) return false;
+  const { markings } = projectIndex(p);
+  const marking = markings.get(markingId);
+  const target = markings.get(targetId);
+  if (marking === undefined || target === undefined) return false;
+  return (
+    target.containerId === marking.containerId && !wouldCycle(p, markingId, targetId)
+  );
+}
+
 function sameOffset(a: MarkingAnchor['offset'], b: MarkingAnchor['offset']): boolean {
   return a?.main === b?.main && a?.cross === b?.cross;
 }

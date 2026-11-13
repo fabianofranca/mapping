@@ -144,6 +144,12 @@ export const enUS: Dictionary = {
     'Only a component whose size depends on its content (hug) and that has no markings inside can be fitted to its content.',
   'marking.error.not-arrangeable':
     'Only a row or column container that has markings inside can be arranged.',
+  'marking.error.anchor-missing': 'The anchor no longer exists.',
+  'marking.error.anchor-self': 'A marking cannot be its own anchor.',
+  'marking.error.anchor-cycle':
+    'That marking already depends on this one (anchor cycle).',
+  'marking.error.anchor-other-space': 'The anchor must be in the same container.',
+  'marking.error.not-anchored': 'This marking has no anchor.',
   'marking.error.generic': 'Could not change the marking.',
 
   'image.name': 'Name',
@@ -1201,6 +1207,40 @@ export const enUS: Dictionary = {
   'arrange.done': 'Arranged',
   'arrange.doneWarnings': 'Arranged with {count} warning(s): {first}',
   'arrange.nothing': 'Nothing to arrange',
+  'arrange.hintAnchor': 'Snaps the marking to its anchor.',
+  // Anchor between markings (stage "direction and anchor", R4)
+  'anchor.section': 'Anchor',
+  'anchor.target': 'Anchored to',
+  'anchor.targetHint':
+    'The marking sits against this one, in the same container. Moving the anchor moves the anchored markings; resizing it does not.',
+  'anchor.none': 'None',
+  'anchor.side': 'Side',
+  'anchor.sideTop': 'Above',
+  'anchor.sideBottom': 'Below',
+  'anchor.sideStart': 'Start',
+  'anchor.sideEnd': 'End',
+  'anchor.sideHint':
+    'Which side of the anchor the marking sits on. Start and End follow the reading direction.',
+  'anchor.align': 'Alignment',
+  'anchor.alignStart': 'Start',
+  'anchor.alignCenter': 'Center',
+  'anchor.alignEnd': 'End',
+  'anchor.alignHint': 'How the marking lines up along that side.',
+  'anchor.offset': 'Offset',
+  'anchor.offsetHint':
+    'In container pixels: the distance from the anchor edge (negative overlaps) and the shift along the side.',
+  'anchor.offsetMainShort': 'Dist.',
+  'anchor.offsetMain': 'Distance from edge',
+  'anchor.offsetCrossShort': 'Shift',
+  'anchor.offsetCross': 'Shift along the side',
+  'anchor.snap': 'Snap to anchor',
+  'anchor.snapHint':
+    'Moves the marking against the anchor, by side, alignment and offset.',
+  'anchor.error.number': 'Use a number.',
+  'anchor.snapped': 'Snapped',
+  'anchor.snapNothing': 'Already snapped',
+  'anchor.snappedWarnings': 'Snapped with {count} warning(s): {first}',
+  'library.addAnchored': 'Add anchored to {name}',
   'shortcuts.arrange': 'Arrange the selected container',
   'shortcuts.wrap': 'Wrap the selection in a new marking',
   'view.componentsOnPhotos': 'Show components over photos',
