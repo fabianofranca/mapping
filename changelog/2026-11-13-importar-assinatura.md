@@ -1,4 +1,4 @@
-# Importar os parâmetros de um componente pela assinatura — [Não lançado] (épico `epic/importar-assinatura`, PR #1755, MCP 0.39.0, schema v19)
+# Importar os parâmetros de um componente pela assinatura — 2026-11-13 (épico `epic/importar-assinatura`, PR #1755, MCP 0.39.0, schema v19)
 
 ## Adicionado
 
