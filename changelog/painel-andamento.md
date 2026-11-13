@@ -1,4 +1,4 @@
-# Andamento da fila no painel — [Não lançado] (épico `epic/painel-andamento`, PR #0, MCP 0.39.1 sem mudança, schema v19)
+# Andamento da fila no painel — [Não lançado] (épico `epic/painel-andamento`, PR #1863, MCP 0.39.1 sem mudança, schema v19)
 
 ## Alterado
 
