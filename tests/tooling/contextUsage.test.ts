@@ -429,7 +429,8 @@ describe('CM1 — textos do fluxo que usam a medida (decisões 5 a 10)', () => {
       '`pkill -f chrome` (mata a própria shell e faz o Chrome restaurar abas)',
     );
     expect(nuvem).toContain('(por exemplo, o corte de 25.000 ou um trecho que faltou)');
-    expect(nuvem.length).toBeLessThanOrEqual(32_000);
+    // Teto subiu de 32.000 para 32.500 na etapa #1712 (restauração da redação anterior ao PR #1709).
+    expect(nuvem.length).toBeLessThanOrEqual(32_500);
   });
 
   it('CL1.5: a medida endurecida pega o texto que volta à medida antiga (mutação)', () => {
