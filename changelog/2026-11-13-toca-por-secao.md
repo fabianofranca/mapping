@@ -1,4 +1,4 @@
-# Toca por seção em todo docs/*.md e nos .md da raiz — [Não lançado] (épico `epic/toca-por-secao`, PR #0, MCP 0.39.1 sem mudança, schema v19)
+# Toca por seção em todo docs/*.md e nos .md da raiz — 2026-11-13 (épico `epic/toca-por-secao`, PR #1833, MCP 0.39.1 sem mudança, schema v19)
 
 ## Alterado
 
