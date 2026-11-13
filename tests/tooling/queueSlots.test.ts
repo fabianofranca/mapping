@@ -119,15 +119,15 @@ describe('painel.py — vagas (VG1, #1440)', () => {
       'started=now',
     );
     etapa('#2', ficha('nenhuma', 'docs/TESTING.md#R25'));
-    etapa('#3', ficha('nenhuma', 'docs/TESTING.md'));
-    etapa('#4', ficha('#9:aberta', 'docs/TESTING.md'));
+    etapa('#3', ficha('nenhuma', 'docs/TESTING.md#R12'));
+    etapa('#4', ficha('#9:aberta', 'docs/TESTING.md#R12'));
     etapa('#5', ficha('nenhuma', 'x.ts', 'v19'), 'status=esperando dono');
     etapa('#6', ficha('nenhuma', 'y.ts', 'v19'));
     etapa('#7', ficha('nenhuma', 'docs/TESTING.md#R25'));
     etapa('#8', ficha('nenhuma', 'z.ts'));
     const out = vagas();
     expect(out).toBe(
-      'Vagas 1/3 · #2 começa · #3 arquivo docs/TESTING.md com #1 · #4 dep #9 · #6 schema com #5 · #7 arquivo docs/TESTING.md#R25 com #2 · #8 começa',
+      'Vagas 1/3 · #2 começa · #3 arquivo docs/TESTING.md#R12 com #1 · #4 dep #9 · #6 schema com #5 · #7 arquivo docs/TESTING.md#R25 com #2 · #8 começa',
     );
     const show = run('show', dir);
     expect(show).toContain(`vagas: ${out}`);
@@ -172,7 +172,7 @@ describe('painel.py — vagas (VG1, #1440)', () => {
         '#2 arquivo docs/TESTING.md#R12 com #1',
       );
       expect(motivo('docs/TESTING.md#R12', 'docs/TESTING.md')).toBe(
-        '#2 arquivo docs/TESTING.md com #1',
+        '#2 ficha incompleta (toca: docs/TESTING.md)',
       );
       expect(motivo('docs/TESTING.md', 'docs/TESTING.md#R12')).toBe(
         '#2 arquivo docs/TESTING.md#R12 com #1',
@@ -185,8 +185,8 @@ describe('painel.py — vagas (VG1, #1440)', () => {
       expect(motivo('docs/design-system/a.md', 'docs/design-system/a.md')).toBe(
         '#2 começa',
       );
-      expect(motivo('docs/TESTING-NUVEM.md', 'docs/TESTING-NUVEM.md')).toBe(
-        '#2 arquivo docs/TESTING-NUVEM.md com #1',
+      expect(motivo('docs/TESTING-NUVEM.md', 'docs/TESTING-NUVEM.md#ambiente')).toBe(
+        '#2 arquivo docs/TESTING-NUVEM.md#ambiente com #1',
       );
       expect(motivo('tests/tooling/', 'tests/tooling/a.test.ts')).toBe(
         '#2 arquivo tests/tooling/a.test.ts com #1',
@@ -195,7 +195,7 @@ describe('painel.py — vagas (VG1, #1440)', () => {
         '#2 arquivo tests/tooling/a.test.ts com #1',
       );
       expect(motivo('tests/tooling/a.test.ts', 'tests/tooling/**')).toBe(
-        '#2 arquivo tests/tooling/** com #1',
+        '#2 ficha incompleta (toca: tests/tooling/**)',
       );
       expect(motivo('`./src/a.ts`, `src/b.ts`', ' src/a.ts ')).toBe(
         '#2 arquivo src/a.ts com #1',
@@ -212,14 +212,14 @@ describe('painel.py — vagas (VG1, #1440)', () => {
     run('start', dir, '--paralelo', '5');
     etapa('#1219', ficha('nenhuma', 'docs/TESTING.md'), 'status=em andamento');
     etapa('#1390', ficha('#1384:aberta', 'a.ts'));
-    etapa('#1273', ficha('nenhuma', 'docs/TESTING.md'));
+    etapa('#1273', ficha('nenhuma', 'docs/TESTING.md#R9'));
     etapa('#1232', ficha('nenhuma', 'b.ts'));
     const esperado =
-      'Vagas 1/5 · #1390 dep #1384 · #1273 arquivo docs/TESTING.md com #1219 · #1232 começa · nenhuma ready elegível';
+      'Vagas 1/5 · #1390 dep #1384 · #1273 arquivo docs/TESTING.md#R9 com #1219 · #1232 começa · nenhuma ready elegível';
     expect(vagas()).toBe(esperado);
     run('merged', dir, '#1384');
     expect(vagas()).toBe(
-      'Vagas 1/5 · #1390 começa · #1273 arquivo docs/TESTING.md com #1219 · #1232 começa · nenhuma ready elegível',
+      'Vagas 1/5 · #1390 começa · #1273 arquivo docs/TESTING.md#R9 com #1219 · #1232 começa · nenhuma ready elegível',
     );
     run('row', dir, '#1219', 'status=concluída');
     run('log', dir, 'oi');
@@ -237,10 +237,10 @@ describe('painel.py — vagas (VG1, #1440)', () => {
     run('start', dir, '--paralelo', '3');
     etapa('#1', ficha('nenhuma', 'docs/TESTING.md#R12'), 'status=em andamento');
     etapa('#2', ficha('nenhuma', 'docs/TESTING.md#R25'));
-    etapa('#3', ficha('nenhuma', 'docs/TESTING.md'));
+    etapa('#3', ficha('nenhuma', 'docs/TESTING.md#R12'));
     etapa('#4', ficha('#5:aberta', 'src/x.ts'));
     expect(run('show', dir)).toContain(
-      'vagas: Vagas 1/3 · #2 começa · #3 arquivo docs/TESTING.md com #1 · #4 dep #5 · nenhuma ready elegível',
+      'vagas: Vagas 1/3 · #2 começa · #3 arquivo docs/TESTING.md#R12 com #1 · #4 dep #5 · nenhuma ready elegível',
     );
     expect(run('show', dir)).toContain('começar agora: #2');
   });
@@ -423,8 +423,8 @@ describe('painel.py — correções da revisão final (VG3, #1440)', () => {
       expect(motivo('src/i18n/*', 'src/i18n/pt-BR.ts')).toBe(
         '#2 arquivo src/i18n/pt-BR.ts com #1',
       );
-      expect(motivo('src/i18n/pt-BR.ts', 'src/i18n/*')).toBe(
-        '#2 arquivo src/i18n/* com #1',
+      expect(motivo('src/i18n/pt-BR.ts', 'src/i18n/pt*.ts')).toBe(
+        '#2 arquivo src/i18n/pt*.ts com #1',
       );
       expect(motivo('src/model/*.ts', 'src/model/a.ts')).toBe(
         '#2 arquivo src/model/a.ts com #1',
@@ -448,7 +448,12 @@ describe('painel.py — correções da revisão final (VG3, #1440)', () => {
   });
 
   it('achado 4: âncoras diferentes separam os .md de docs/ e da raiz; nos outros arquivos conflitam', () => {
-    expect(motivo('docs/ARCHITECTURE.md#X', 'docs/ARCHITECTURE.md#Y')).toBe('#2 começa');
+    expect(
+      motivo(
+        'docs/ARCHITECTURE.md#desempenho',
+        'docs/ARCHITECTURE.md#espacos-pertencimento-e-gestos',
+      ),
+    ).toBe('#2 começa');
     expect(motivo('viewer/README.md#X', 'viewer/README.md#Y')).toBe(
       '#2 arquivo viewer/README.md#Y com #1',
     );

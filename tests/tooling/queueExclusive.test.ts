@@ -363,35 +363,43 @@ describe('painel.py — seções no Paralelo (FM2, decisão 14)', () => {
   it(
     'FLOW.md, PROCESS.md e SKILL.md se comparam por seção; TESTING.md como antes',
     () => {
-      expect(motivo('docs/FLOW.md#a', 'docs/FLOW.md#b')).toBe('#2 começa');
-      expect(motivo('docs/FLOW.md#a', 'docs/FLOW.md#a')).toBe(
-        '#2 arquivo docs/FLOW.md#a com #1',
+      expect(
+        motivo('docs/FLOW.md#fase-de-correcao', 'docs/FLOW.md#para-o-testador'),
+      ).toBe('#2 começa');
+      expect(
+        motivo('docs/FLOW.md#fase-de-correcao', 'docs/FLOW.md#fase-de-correcao'),
+      ).toBe('#2 arquivo docs/FLOW.md#fase-de-correcao com #1');
+      expect(motivo('docs/FLOW.md', 'docs/FLOW.md#fase-de-correcao')).toBe(
+        '#2 arquivo docs/FLOW.md#fase-de-correcao com #1',
       );
-      expect(motivo('docs/FLOW.md', 'docs/FLOW.md#a')).toBe(
-        '#2 arquivo docs/FLOW.md#a com #1',
-      );
-      expect(motivo('docs/FLOW.md#a', 'docs/FLOW.md')).toBe(
-        '#2 arquivo docs/FLOW.md com #1',
+      expect(motivo('docs/FLOW.md#fase-de-correcao', 'docs/FLOW.md')).toBe(
+        '#2 ficha incompleta (toca: docs/FLOW.md)',
       );
       expect(motivo('docs/FLOW.md', 'docs/FLOW.md')).toBe(
-        '#2 arquivo docs/FLOW.md com #1',
+        '#2 ficha incompleta (toca: docs/FLOW.md)',
       );
       const skill = '.claude/skills/implementar-fila/SKILL.md';
-      expect(motivo(`${skill}#x`, `${skill}#y`)).toBe('#2 começa');
-      expect(motivo(`${skill}#x`, `${skill}#x`)).toBe(`#2 arquivo ${skill}#x com #1`);
-      expect(motivo(`${skill}#x`, skill)).toBe(`#2 arquivo ${skill} com #1`);
-      const outro = '.claude/skills/detalhar-backlog/SKILL.md';
-      expect(motivo(`${skill}#x`, `${outro}#x`)).toBe('#2 começa');
-      expect(motivo('docs/PROCESS.md#a', 'docs/PROCESS.md#b')).toBe('#2 começa');
-      expect(motivo('docs/PROCESS.md#a', 'docs/PROCESS.md#a')).toBe(
-        '#2 arquivo docs/PROCESS.md#a com #1',
+      expect(motivo(`${skill}#paralelo`, `${skill}#painel`)).toBe('#2 começa');
+      expect(motivo(`${skill}#paralelo`, `${skill}#paralelo`)).toBe(
+        `#2 arquivo ${skill}#paralelo com #1`,
       );
-      expect(motivo('docs/PROCESS.md', 'docs/PROCESS.md#a')).toBe(
-        '#2 arquivo docs/PROCESS.md#a com #1',
+      expect(motivo(`${skill}#paralelo`, skill)).toBe(
+        `#2 ficha incompleta (toca: ${skill})`,
+      );
+      const outro = '.claude/skills/detalhar-backlog/SKILL.md';
+      expect(motivo(`${skill}#paralelo`, `${outro}#argumentos`)).toBe('#2 começa');
+      expect(motivo('docs/PROCESS.md#etapas', 'docs/PROCESS.md#fluxo-de-trabalho')).toBe(
+        '#2 começa',
+      );
+      expect(motivo('docs/PROCESS.md#etapas', 'docs/PROCESS.md#etapas')).toBe(
+        '#2 arquivo docs/PROCESS.md#etapas com #1',
+      );
+      expect(motivo('docs/PROCESS.md', 'docs/PROCESS.md#etapas')).toBe(
+        '#2 arquivo docs/PROCESS.md#etapas com #1',
       );
       expect(motivo('docs/TESTING.md#R12', 'docs/TESTING.md#R6')).toBe('#2 começa');
       expect(motivo('docs/TESTING.md#R12', 'docs/TESTING.md')).toBe(
-        '#2 arquivo docs/TESTING.md com #1',
+        '#2 ficha incompleta (toca: docs/TESTING.md)',
       );
     },
     TEMPO_SUBPROCESSOS,
@@ -424,31 +432,35 @@ describe('painel.py — todo .md de docs/ e da raiz por seção (TS1, decisões 
       `#2 arquivo ${arq}#desempenho com #1`,
     );
     expect(motivo(arq, `${arq}#desempenho`)).toBe(`#2 arquivo ${arq}#desempenho com #1`);
-    expect(motivo(`${arq}#desempenho`, arq)).toBe(`#2 arquivo ${arq} com #1`);
+    expect(motivo(`${arq}#desempenho`, arq)).toBe(`#2 ficha incompleta (toca: ${arq})`);
   });
 
   it('os .md da raiz se comparam por seção, com ./ normalizado e .md novo da raiz', () => {
     expect(
       motivo('CLAUDE.md#regras-de-arquitetura', 'CLAUDE.md#fluxo-de-trabalho-resumo'),
     ).toBe('#2 começa');
-    expect(motivo('CLAUDE.md#a', 'CLAUDE.md#a')).toBe('#2 arquivo CLAUDE.md#a com #1');
+    expect(motivo('CLAUDE.md#stack', 'CLAUDE.md#stack')).toBe(
+      '#2 arquivo CLAUDE.md#stack com #1',
+    );
     expect(motivo('CLAUDE.md', 'CLAUDE.md#projeto')).toBe(
       '#2 arquivo CLAUDE.md#projeto com #1',
     );
-    expect(motivo('CLAUDE.md#projeto', 'CLAUDE.md')).toBe('#2 arquivo CLAUDE.md com #1');
+    expect(motivo('CLAUDE.md#projeto', 'CLAUDE.md')).toBe(
+      '#2 ficha incompleta (toca: CLAUDE.md)',
+    );
     expect(motivo('README.md#como-testar', 'README.md#documentacao')).toBe('#2 começa');
     expect(motivo('README.md', 'README.md#documentacao')).toBe(
       '#2 arquivo README.md#documentacao com #1',
     );
-    expect(motivo('./CLAUDE.md#a', 'CLAUDE.md#b')).toBe('#2 começa');
+    expect(motivo('./CLAUDE.md#stack', 'CLAUDE.md#codigo')).toBe('#2 começa');
     expect(motivo('AGENTS.md#a', 'AGENTS.md#b')).toBe('#2 começa');
   });
 
   it('docs/TESTING-NUVEM.md por seção; #blocos não conta; docs/design-system/ não conta', () => {
-    expect(motivo('docs/TESTING-NUVEM.md#relato', 'docs/TESTING-NUVEM.md#nunca')).toBe(
+    expect(motivo('docs/TESTING-NUVEM.md#relato', 'docs/TESTING-NUVEM.md#ambiente')).toBe(
       '#2 começa',
     );
-    expect(motivo('docs/TESTING-NUVEM.md#blocos', 'docs/TESTING-NUVEM.md')).toBe(
+    expect(motivo('docs/TESTING-NUVEM.md#blocos', 'docs/TESTING-NUVEM.md#relato')).toBe(
       '#2 começa',
     );
     expect(motivo('docs/design-system/x.md', 'docs/design-system/x.md')).toBe(
@@ -467,12 +479,13 @@ describe('painel.py — todo .md de docs/ e da raiz por seção (TS1, decisões 
     expect(motivo('docs/', 'docs/ARCHITECTURE.md#desempenho')).toBe(
       '#2 arquivo docs/ARCHITECTURE.md#desempenho com #1',
     );
-    expect(motivo('docs/*.md', 'docs/FLOW.md#a')).toBe(
-      '#2 arquivo docs/FLOW.md#a com #1',
+    expect(motivo('docs/*.md', 'docs/FLOW.md#fase-de-correcao')).toBe(
+      '#2 arquivo docs/FLOW.md#fase-de-correcao com #1',
     );
-    expect(motivo('*.md', 'CLAUDE.md#a')).toBe('#2 arquivo CLAUDE.md#a com #1');
-    expect(motivo('docs/*.md#a', 'docs/*.md#b')).toBe('#2 arquivo docs/*.md#b com #1');
-    expect(motivo('*.md#a', '*.md#b')).toBe('#2 arquivo *.md#b com #1');
+    expect(motivo('*.md', 'CLAUDE.md#stack')).toBe('#2 arquivo CLAUDE.md#stack com #1');
+    const glob = 'tests/storage/folder*.test.ts';
+    expect(motivo(`${glob}#a`, `${glob}#b`)).toBe(`#2 arquivo ${glob}#b com #1`);
+    expect(motivo('*.md#a', '*.md#b')).toBe('#2 ficha incompleta (toca: *.md#b)');
   });
 
   it('fora de docs/ e da raiz, ou não .md: arquivo inteiro (âncoras diferentes conflitam)', () => {
