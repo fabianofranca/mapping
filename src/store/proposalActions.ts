@@ -23,7 +23,10 @@ import {
   withDroppedNote,
 } from '../model';
 import type { FlushResult } from '../storage/autosave';
+import type { FolderOp } from '../storage/folderCalls';
+import { FOLDER_CONCURRENCY } from '../storage/folderConcurrency';
 import { imageMimeType, type ProjectStorage } from '../storage/types';
+import { mapLimit } from '../utils/mapLimit';
 import { reportError } from '../utils/report';
 import type { HistoryLink, LinkResult, ProjectStore } from './history';
 import { validatePackage } from './packageValidation';
@@ -194,6 +197,11 @@ export interface ProposalActionsDeps {
   ) => void;
   /** Grava agora o que o projeto tem pendente (o `mapping.json` antes da proposta) e diz se gravou. */
   readonly flush: () => Promise<FlushResult>;
+  /**
+   * Mede no contador de chamadas da pasta (`decide`: gravar uma decisão ou nota; `apply`:
+   * aplicar as aceitas, até o `mapping.json` gravado). Sem ele, só executa.
+   */
+  readonly measure?: <T>(op: FolderOp, fn: () => Promise<T>) => Promise<T>;
 }
 
 /** Alguma das mudanças que vão mudar de estado foi revisada pelo agente sem a pessoa ver? */
@@ -241,19 +249,22 @@ async function readProposalPackage(
     path.startsWith(prefix),
   );
   if (paths.length === 0) return 'package-missing';
+  // Leituras em paralelo com limite; a conferência e o mapa seguem a ordem dos arquivos.
+  const read = await mapLimit(paths, FOLDER_CONCURRENCY, async (path) => {
+    const blob = await storage.readImage(path);
+    if (!blob) return null;
+    const rel = path.slice(prefix.length);
+    const data = isTextPackageFile(rel)
+      ? await blob.text()
+      : new Blob([await blob.arrayBuffer()], { type: blob.type });
+    return { rel, data, size: blob.size };
+  });
   const files = new Map<string, string | Blob>();
   let bytes = 0;
-  for (const path of paths) {
-    const blob = await storage.readImage(path);
-    if (!blob) return 'package-missing';
-    bytes += blob.size;
-    const rel = path.slice(prefix.length);
-    files.set(
-      rel,
-      isTextPackageFile(rel)
-        ? await blob.text()
-        : new Blob([await blob.arrayBuffer()], { type: blob.type }),
-    );
+  for (const item of read) {
+    if (!item) return 'package-missing';
+    bytes += item.size;
+    files.set(item.rel, item.data);
   }
   if (!packageWithinLimits(files.size, bytes) || pkg.spec === null) {
     return 'package-invalid';
@@ -264,13 +275,32 @@ async function readProposalPackage(
   return report.ok ? files : 'package-invalid';
 }
 
+/**
+ * Lê as imagens de origem de uma proposta em paralelo com limite, na ordem de `moves`: `null`
+ * onde o arquivo não existe. Cópia em memória: ler de novo depois de apagar a origem, no
+ * desfazer, não pode falhar.
+ */
+async function readImageSources(
+  storage: ProjectStorage,
+  moves: readonly { readonly from: string; readonly to: string }[],
+): Promise<(Blob | null)[]> {
+  return mapLimit(moves, FOLDER_CONCURRENCY, async (move) => {
+    const source = await storage.readImage(move.from);
+    if (!source) return null;
+    return new Blob([await source.arrayBuffer()], {
+      type: source.type || imageMimeType(move.to),
+    });
+  });
+}
+
 export function createProposalActions(deps: ProposalActionsDeps): ProposalActions {
   const { store, proposals, storage, now } = deps;
+  const measure = <T>(op: FolderOp, fn: () => Promise<T>): Promise<T> =>
+    deps.measure ? deps.measure(op, fn) : fn();
 
   const decideMany: ProposalActions['decideMany'] = async (id, targets, state) => {
-    const result = await proposals.mutate<DecisionOutcome, DecisionError>(
-      id,
-      (p, seen) => {
+    const result = await measure('decide', () =>
+      proposals.mutate<DecisionOutcome, DecisionError>(id, (p, seen) => {
         const project = store.committed.peek();
         if (!project) return { ok: false, error: 'no-project' };
         if (p.status !== 'open') return { ok: false, error: 'not-open' };
@@ -309,7 +339,7 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
           proposal: changed.length + cascaded.length === 0 ? p : current,
           value: outcome,
         };
-      },
+      }),
     );
     if (!result.ok) return result;
     // Decidir é como editar: o "refazer" de uma aplicação desfeita deixaria de valer.
@@ -324,17 +354,17 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
     mutation: (p: Proposal) => Proposal | NoteError,
     noteIdOf: (before: Proposal, after: Proposal) => string | null,
   ): Promise<NoteResult> =>
-    proposals
-      .mutate<string | null, NoteError>(id, (p) => {
+    measure('decide', () =>
+      proposals.mutate<string | null, NoteError>(id, (p) => {
         const next = mutation(p);
         if (typeof next === 'string') return { ok: false, error: next };
         return { ok: true, proposal: next, value: noteIdOf(p, next) };
-      })
-      .then((result) =>
-        result.ok
-          ? { ok: true, proposal: result.proposal, noteId: result.value }
-          : { ok: false, error: result.error },
-      );
+      }),
+    ).then((result) =>
+      result.ok
+        ? { ok: true, proposal: result.proposal, noteId: result.value }
+        : { ok: false, error: result.error },
+    );
 
   /** O alvo existe na proposta (para a nota não apontar para o vazio). */
   const targetExists = (p: Proposal, target: ReviewTarget): boolean => {
@@ -370,206 +400,206 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
   const applyAcceptedChanges: ProposalActions['applyAccepted'] = async (id) => {
     let issues: readonly ProposalIssue[] | undefined;
     let failedPath: string | undefined;
-    const outcome = await proposals.mutate<
-      { applied: number; files: number },
-      ApplyError
-    >(id, (p) => {
-      const base = store.project.peek();
-      if (!base) return { ok: false, error: 'no-project' };
-      if (store.readOnly.peek()) return { ok: false, error: 'read-only' };
-      const applying = applyAccepted(base, p, now());
-      if (!applying.ok) {
-        issues = applying.issues;
-        return { ok: false, error: 'blocked' };
-      }
-      const moved: MovedImage[] = [];
-      const appliedIds = applying.applied.map((c) => c.id);
-      const appliedAt = Object.fromEntries(
-        appliedIds.map((changeId) => [changeId, applying.proposal.applied[changeId]]),
-      );
-      const statusBefore: ProposalStatus = p.status;
-      const statusAfter: ProposalStatus = applying.proposal.status;
-      // A gravação do `mapping.json` falhou e a entrada foi desfeita: o vínculo não faz nada.
-      let abandoned = false;
-      // O projeto depois do `store.apply` (para desfazer só se ainda é ele).
-      let applied: Project | null = null;
+    const outcome = await measure('apply', () =>
+      proposals.mutate<{ applied: number; files: number }, ApplyError>(id, (p) => {
+        const base = store.project.peek();
+        if (!base) return { ok: false, error: 'no-project' };
+        if (store.readOnly.peek()) return { ok: false, error: 'read-only' };
+        const applying = applyAccepted(base, p, now());
+        if (!applying.ok) {
+          issues = applying.issues;
+          return { ok: false, error: 'blocked' };
+        }
+        const moved: MovedImage[] = [];
+        const appliedIds = applying.applied.map((c) => c.id);
+        const appliedAt = Object.fromEntries(
+          appliedIds.map((changeId) => [changeId, applying.proposal.applied[changeId]]),
+        );
+        const statusBefore: ProposalStatus = p.status;
+        const statusAfter: ProposalStatus = applying.proposal.status;
+        // A gravação do `mapping.json` falhou e a entrada foi desfeita: o vínculo não faz nada.
+        let abandoned = false;
+        // O projeto depois do `store.apply` (para desfazer só se ainda é ele).
+        let applied: Project | null = null;
 
-      // Desfazer a entrada: a proposta volta a ter as mudanças como aceitas sem aplicar e
-      // as imagens voltam para `proposals/<id>/`. Refazer: o contrário.
-      const link: HistoryLink = {
-        tag: id,
-        undo: () => {
-          if (abandoned) return undefined;
-          return proposals
-            .mutate<void, never>(id, (current) => {
-              const rest = { ...current.applied };
-              for (const changeId of appliedIds) delete rest[changeId];
-              return {
-                ok: true,
-                value: undefined,
-                proposal: {
-                  ...current,
-                  applied: rest,
-                  status: current.status === statusAfter ? statusBefore : current.status,
-                },
-                before: async () => {
-                  for (const m of moved) await storage.writeImage(m.from, m.blob);
-                  return null;
-                },
-              };
-            })
-            .then((r): LinkResult => {
-              if (!r.ok) reportError('proposals.undoApply', new Error(r.error));
-              return r.ok ? { ok: true } : { ok: false, error: r.error };
-            });
-        },
-        redo: () => {
-          if (abandoned) return undefined;
-          return proposals
-            .mutate<void, never>(id, (current) => {
-              const again = { ...current.applied };
-              for (const changeId of appliedIds) {
-                const entry = appliedAt[changeId];
-                if (entry && current.decisions[changeId]?.state === 'accepted') {
-                  again[changeId] = entry;
+        // Desfazer a entrada: a proposta volta a ter as mudanças como aceitas sem aplicar e
+        // as imagens voltam para `proposals/<id>/`. Refazer: o contrário.
+        const link: HistoryLink = {
+          tag: id,
+          undo: () => {
+            if (abandoned) return undefined;
+            return proposals
+              .mutate<void, never>(id, (current) => {
+                const rest = { ...current.applied };
+                for (const changeId of appliedIds) delete rest[changeId];
+                return {
+                  ok: true,
+                  value: undefined,
+                  proposal: {
+                    ...current,
+                    applied: rest,
+                    status:
+                      current.status === statusAfter ? statusBefore : current.status,
+                  },
+                  before: async () => {
+                    for (const m of moved) await storage.writeImage(m.from, m.blob);
+                    return null;
+                  },
+                };
+              })
+              .then((r): LinkResult => {
+                if (!r.ok) reportError('proposals.undoApply', new Error(r.error));
+                return r.ok ? { ok: true } : { ok: false, error: r.error };
+              });
+          },
+          redo: () => {
+            if (abandoned) return undefined;
+            return proposals
+              .mutate<void, never>(id, (current) => {
+                const again = { ...current.applied };
+                for (const changeId of appliedIds) {
+                  const entry = appliedAt[changeId];
+                  if (entry && current.decisions[changeId]?.state === 'accepted') {
+                    again[changeId] = entry;
+                  }
                 }
-              }
-              return {
-                ok: true,
-                value: undefined,
-                proposal: {
-                  ...current,
-                  applied: again,
-                  status: current.status === statusBefore ? statusAfter : current.status,
-                },
-                after: async () => {
-                  for (const m of moved) await storage.removeImage(m.from);
-                },
-              };
-            })
-            .then((r): LinkResult => {
-              if (!r.ok) reportError('proposals.redoApply', new Error(r.error));
-              return r.ok ? { ok: true } : { ok: false, error: r.error };
-            });
-        },
-      };
+                return {
+                  ok: true,
+                  value: undefined,
+                  proposal: {
+                    ...current,
+                    applied: again,
+                    status:
+                      current.status === statusBefore ? statusAfter : current.status,
+                  },
+                  after: async () => {
+                    for (const m of moved) await storage.removeImage(m.from);
+                  },
+                };
+              })
+              .then((r): LinkResult => {
+                if (!r.ok) reportError('proposals.redoApply', new Error(r.error));
+                return r.ok ? { ok: true } : { ok: false, error: r.error };
+              });
+          },
+        };
 
-      const rollback = async () => {
-        for (const m of moved) {
-          await deps
-            .dropProjectImage(m.to)
-            .catch((e: unknown) => reportError('proposals.rollback', e));
-        }
-      };
-
-      const prepare = async (): Promise<ApplyError | null> => {
-        // 0. Os pacotes de biblioteca são lidos, validados e entregues à sessão, que os
-        // grava em `specs/<pasta>/` junto com o projeto (copiados: ficam na proposta).
-        for (const pkg of applying.packages) {
-          const read = await readProposalPackage(storage, pkg, base, id);
-          if (typeof read === 'string') {
-            failedPath = pkg.from;
-            return read;
-          }
-          deps.stagePackage({ id: pkg.specId, version: pkg.version }, read);
-        }
-        // 1. As imagens vão para o lugar definitivo (copiadas; a origem só sai no fim).
-        const taken = new Set<string>();
-        for (const file of await deps.takenImageFiles()) taken.add(fileNameKey(file));
-        for (const image of base.containers) {
-          if (image.file !== null) taken.add(fileNameKey(image.file));
-        }
-        for (const move of applying.files) {
-          if (taken.has(fileNameKey(move.to))) {
-            failedPath = move.to;
-            await rollback();
-            return 'image-exists';
-          }
-          const source = await storage.readImage(move.from);
-          if (!source) {
-            failedPath = move.from;
-            await rollback();
-            return 'image-missing';
-          }
-          // Cópia em memória: ler de novo depois de apagar a origem, no desfazer, não pode falhar.
-          const blob = new Blob([await source.arrayBuffer()], {
-            type: source.type || imageMimeType(move.to),
-          });
-          await deps.putProjectImage(move.to, blob);
-          moved.push({ from: move.from, to: move.to, blob });
-          taken.add(fileNameKey(move.to));
-        }
-        // 2. O projeto, numa entrada de desfazer. Se mudou enquanto copiávamos, desiste.
-        if (store.project.peek() !== base) {
-          await rollback();
-          return 'stale';
-        }
-        if (applying.applied.length > 0) {
-          const result = store.apply(() => applying.project, { link });
-          if (!result.ok) {
-            await rollback();
-            return result.error === 'read-only' ? 'read-only' : 'failed';
-          }
-          applied = store.project.peek();
-        }
-        // 3. O `mapping.json` primeiro: a proposta só diz "aplicada" se ele gravou. Senão,
-        // desfaz a entrada (sem "refazer"), devolve as cópias e não grava a proposta.
-        const saved = await deps.flush();
-        if (!saved.ok) {
-          abandoned = true;
-          const undone = applied !== null && store.project.peek() === applied;
-          if (undone) store.undo();
-          store.discardRedoOf(id);
-          // Projeto já trocado (o undo foi pulado): ele pode citar as cópias, que ficam.
-          if (undone) await rollback();
-          return 'save-failed';
-        }
-        return null;
-      };
-
-      const unchanged =
-        applying.applied.length === 0 && applying.proposal.status === p.status;
-      return {
-        ok: true,
-        proposal: unchanged ? p : applying.proposal,
-        value: { applied: applying.applied.length, files: applying.files.length },
-        before: async () => {
-          try {
-            return await prepare();
-          } catch (e) {
-            // Exceção de armazenamento (leitura do pacote ou da imagem, gravação da cópia):
-            // vira a falha de gravação tipada e as cópias já feitas saem.
-            reportError('proposals.apply', e);
-            await rollback();
-            return 'write-failed';
-          }
-        },
-        // 4. O `mapping.json` gravou, mas o `proposal.json` falhou (fase 8.2, P7): o projeto
-        // não pode ficar aplicado com a proposta sem `applied`. Desfaz a entrada (a sessão
-        // vê o confirmado diferente do disco e agenda a regravação), confirma a regravação
-        // com `flush` e só então tira as cópias de `images/`: o `mapping.json` em disco
-        // ainda as cita até a regravação, e ele nunca aponta para um arquivo apagado. Se a
-        // regravação falha, as cópias ficam para a limpeza da sessão quando ela passar.
-        compensate: async () => {
-          abandoned = true;
-          const undone = applied !== null && store.project.peek() === applied;
-          if (undone) store.undo();
-          store.discardRedoOf(id);
-          // O projeto já não é o aplicado (recarregado por fora na janela da gravação): não há
-          // o que regravar, e o disco pode citar as cópias. Elas ficam.
-          if (!undone) return;
-          const restored = await deps.flush();
-          if (restored.ok) await rollback();
-        },
-        after: async () => {
+        const rollback = async () => {
           for (const m of moved) {
-            await storage
-              .removeImage(m.from)
-              .catch((e: unknown) => reportError('proposals.removeSource', e));
+            await deps
+              .dropProjectImage(m.to)
+              .catch((e: unknown) => reportError('proposals.rollback', e));
           }
-        },
-      };
-    });
+        };
+
+        const prepare = async (): Promise<ApplyError | null> => {
+          // 0. Os pacotes de biblioteca são lidos, validados e entregues à sessão, que os
+          // grava em `specs/<pasta>/` junto com o projeto (copiados: ficam na proposta).
+          for (const pkg of applying.packages) {
+            const read = await readProposalPackage(storage, pkg, base, id);
+            if (typeof read === 'string') {
+              failedPath = pkg.from;
+              return read;
+            }
+            deps.stagePackage({ id: pkg.specId, version: pkg.version }, read);
+          }
+          // 1. As imagens vão para o lugar definitivo (copiadas; a origem só sai no fim).
+          const taken = new Set<string>();
+          for (const file of await deps.takenImageFiles()) taken.add(fileNameKey(file));
+          for (const image of base.containers) {
+            if (image.file !== null) taken.add(fileNameKey(image.file));
+          }
+          // As origens são lidas todas de uma vez (em paralelo com limite); as verificações e as
+          // gravações abaixo seguem em ordem, com os mesmos erros.
+          const sources = await readImageSources(storage, applying.files);
+          for (const [i, move] of applying.files.entries()) {
+            if (taken.has(fileNameKey(move.to))) {
+              failedPath = move.to;
+              await rollback();
+              return 'image-exists';
+            }
+            const blob = sources[i];
+            if (!blob) {
+              failedPath = move.from;
+              await rollback();
+              return 'image-missing';
+            }
+            await deps.putProjectImage(move.to, blob);
+            moved.push({ from: move.from, to: move.to, blob });
+            taken.add(fileNameKey(move.to));
+          }
+          // 2. O projeto, numa entrada de desfazer. Se mudou enquanto copiávamos, desiste.
+          if (store.project.peek() !== base) {
+            await rollback();
+            return 'stale';
+          }
+          if (applying.applied.length > 0) {
+            const result = store.apply(() => applying.project, { link });
+            if (!result.ok) {
+              await rollback();
+              return result.error === 'read-only' ? 'read-only' : 'failed';
+            }
+            applied = store.project.peek();
+          }
+          // 3. O `mapping.json` primeiro: a proposta só diz "aplicada" se ele gravou. Senão,
+          // desfaz a entrada (sem "refazer"), devolve as cópias e não grava a proposta.
+          const saved = await deps.flush();
+          if (!saved.ok) {
+            abandoned = true;
+            const undone = applied !== null && store.project.peek() === applied;
+            if (undone) store.undo();
+            store.discardRedoOf(id);
+            // Projeto já trocado (o undo foi pulado): ele pode citar as cópias, que ficam.
+            if (undone) await rollback();
+            return 'save-failed';
+          }
+          return null;
+        };
+
+        const unchanged =
+          applying.applied.length === 0 && applying.proposal.status === p.status;
+        return {
+          ok: true,
+          proposal: unchanged ? p : applying.proposal,
+          value: { applied: applying.applied.length, files: applying.files.length },
+          before: async () => {
+            try {
+              return await prepare();
+            } catch (e) {
+              // Exceção de armazenamento (leitura do pacote ou da imagem, gravação da cópia):
+              // vira a falha de gravação tipada e as cópias já feitas saem.
+              reportError('proposals.apply', e);
+              await rollback();
+              return 'write-failed';
+            }
+          },
+          // 4. O `mapping.json` gravou, mas o `proposal.json` falhou (fase 8.2, P7): o projeto
+          // não pode ficar aplicado com a proposta sem `applied`. Desfaz a entrada (a sessão
+          // vê o confirmado diferente do disco e agenda a regravação), confirma a regravação
+          // com `flush` e só então tira as cópias de `images/`: o `mapping.json` em disco
+          // ainda as cita até a regravação, e ele nunca aponta para um arquivo apagado. Se a
+          // regravação falha, as cópias ficam para a limpeza da sessão quando ela passar.
+          compensate: async () => {
+            abandoned = true;
+            const undone = applied !== null && store.project.peek() === applied;
+            if (undone) store.undo();
+            store.discardRedoOf(id);
+            // O projeto já não é o aplicado (recarregado por fora na janela da gravação): não há
+            // o que regravar, e o disco pode citar as cópias. Elas ficam.
+            if (!undone) return;
+            const restored = await deps.flush();
+            if (restored.ok) await rollback();
+          },
+          after: async () => {
+            for (const m of moved) {
+              await storage
+                .removeImage(m.from)
+                .catch((e: unknown) => reportError('proposals.removeSource', e));
+            }
+          },
+        };
+      }),
+    );
     if (!outcome.ok) {
       return {
         ok: false,

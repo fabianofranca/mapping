@@ -522,7 +522,7 @@ describe('M5 grupo B — carousel', () => {
     expect(boxes[1]!.x).toBe(40 + 8 + 264 + 8);
   });
 
-  it('rótulo sobre o item: label-large em cor fixa nos dois modos, sobre o véu em degradê de scrim com alpha 0 a 0,32 (ScrimTokens.ContainerOpacity)', () => {
+  it('rótulo sobre o item: label-large em cor fixa nos dois modos, sobre o véu em degradê de baixo para cima, de scrim com alpha 0,55 (sólido até 75%) a 0 no topo (escolha da biblioteca para o contraste de 4,5:1, ver material3CarouselRotulo.test.ts)', () => {
     const light = both('carousel', withItems({ style: 'multi-browse' })).light;
     const dark = both('carousel', withItems({ style: 'multi-browse' })).dark;
     for (const [mode, d] of [
@@ -539,12 +539,15 @@ describe('M5 grupo B — carousel', () => {
       const scrim = tok('scrim', mode).slice(0, 7);
       expect(paint?.type).toBe('linear');
       const stops = paint?.type === 'linear' ? paint.stops : [];
-      expect(stops.map((x) => x.offset)).toEqual([0, 1]);
+      // 270°: o offset 0 é o fundo do véu e o 1, o topo (de baixo para cima).
+      expect(stops.map((x) => x.offset)).toEqual([0, 0.75, 1]);
       expect(stops.map((x) => x.color.slice(0, 7).toLowerCase())).toEqual([
         scrim.toLowerCase(),
         scrim.toLowerCase(),
+        scrim.toLowerCase(),
       ]);
-      expect(stops.map((x) => alphaOf(x.color))).toEqual([0, 0.32]);
+      expect(stops.map((x) => alphaOf(x.color))).toEqual([0.55, 0.55, 0]);
+      expect(paint?.type === 'linear' && paint.start.y > paint.end.y).toBe(true);
       expect(veil.opacity).toBe(1);
     }
     expect(tok('secondary-fixed', 'light')).toBe(tok('secondary-fixed', 'dark'));

@@ -90,7 +90,7 @@ const templates = readdirSync(componentsDir)
 /** Literais que ficam como estão, com o motivo (decisão 8 da #869 só cobre o checkbox e o desabilitado). */
 const OPACITY_ALLOWED: Record<string, string> = {
   surface: 'tabela da elevação tonal do Surface.kt (um valor por nível)',
-  carousel: 'véu de 32% sobre a imagem (sem token de estado no Compose)',
+  carousel: 'véu de 55% sobre a imagem (sem token de estado no Compose)',
 };
 const RADIUS_ALLOWED: Record<string, string> = {
   'bottom-sheet': 'quatro raios por lista: a lista não aceita token por item',
@@ -258,8 +258,8 @@ describe('atualização da versão anterior da biblioteca para a nova', () => {
         if (type.id in INTERACTION_OPTIONS)
           type.fields = type.fields.filter((f) => f.key !== 'interaction');
       }
-    // 7 depois da MF4 da #899 (a 6 foi a EX4 da #897; 11 depois da VL2 da #1504; 12 depois da S5 da #1120)
-    expect(spec.version).toBe(12);
+    // 7 depois da MF4 da #899 (a 6 foi a EX4 da #897; 11 depois da VL2 da #1504; 12 depois da S5 da #1120; 13 depois da RC1 da #1743)
+    expect(spec.version).toBe(13);
     expect(missingMigrations(previous, spec)).toEqual([]);
     // só a EX6 (#897) tem migração: o slider passou de enum a number (`fill-field`), e os campos
     // que estes testes comparam não mudam

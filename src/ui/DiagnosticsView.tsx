@@ -42,6 +42,7 @@ function diagnosticsInfo(editor: EditorContextValue | null): DiagnosticsInfo {
     schema: SCHEMA_VERSION,
     remoteImageOrigins: allowedOrigins.peek().length,
     storage: editor?.open.kind ?? null,
+    folder: editor?.session.folderCalls?.snapshot() ?? null,
     userAgent: navigator.userAgent,
     window: { width: window.innerWidth, height: window.innerHeight },
     language: locale.peek(),

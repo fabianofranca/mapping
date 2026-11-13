@@ -49,9 +49,9 @@ function readSignature(path: string) {
 }
 
 describe('Material 3 (Compose): as fichas de assinatura (decisão 14 da #1079)', () => {
-  it('é a formatVersion 16 e a versão 12 (a version subiu uma vez, sobre a 11 da main)', () => {
+  it('é a formatVersion 16 e a versão 13 (a version subiu uma vez, sobre a 12 da main)', () => {
     expect(spec.formatVersion).toBe(16);
-    expect(spec.version).toBe(12);
+    expect(spec.version).toBe(13);
   });
 
   it('todo tipo, e todo caso de variants, cita a sua ficha em signatures/', () => {

@@ -466,7 +466,7 @@
   },
   "src/store/proposals.ts": {
     "complexity": {
-      "count": 3
+      "count": 2
     }
   },
   "src/store/proposedCatalog.ts": {

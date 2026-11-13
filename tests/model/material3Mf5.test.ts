@@ -51,7 +51,7 @@ const cx = (n: SceneNode) => n.transform[4] + n.width / 2;
 
 describe('MF5: versão e atualização aditiva', () => {
   it('continua na versão 7, os campos novos são opcionais e a atualização da 6 é aditiva', () => {
-    expect(spec.version).toBe(12);
+    expect(spec.version).toBe(13);
     const added: [string, string[]][] = [
       ['date-picker', ['today']],
       ['chip', ['avatar']],
