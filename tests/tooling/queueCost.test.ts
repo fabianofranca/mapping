@@ -361,6 +361,8 @@ describe('página: o card "Custo da fila" (FM3, decisão 5)', () => {
   it('lê meta.sessions num dash.calc e mostra "—" sem ele', () => {
     expect(page).toContain('Custo da fila');
     expect(page).toMatch(/dash\.calc\('custo'/);
+    expect(page).toMatch(/dash\.calc\('custoResumo'/);
+    expect(page).toMatch(/dash\.calc\('custoDia'/);
     expect(page).toMatch(/\.sessions/);
     expect(page).toMatch(/'—'/);
   });
@@ -370,6 +372,15 @@ describe('página: o card "Custo da fila" (FM3, decisão 5)', () => {
     expect(script).toMatch(/mp-custo/);
     expect(script).toMatch(/textContent/);
     expect(script).not.toMatch(/innerHTML|insertAdjacentHTML/);
+  });
+
+  it('os gráficos levam data-source e a tabela de hoje fica recolhida num details (PA2)', () => {
+    expect(page).toMatch(/id="mp-custo-dias"[^>]*data-source="custoDia"/);
+    expect(page).toMatch(/id="mp-custo-tipo"[^>]*data-source="custo"/);
+    expect(page).toMatch(/id="mp-custo-etapas"[^>]*data-source="custo"/);
+    expect(page).toMatch(
+      /<details[^>]*>\s*<summary>Ver a tabela de todas as etapas e tipos/,
+    );
   });
 });
 

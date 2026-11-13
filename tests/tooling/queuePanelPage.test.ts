@@ -2,7 +2,7 @@
 // `vagasItens`, `requests` e `rules`) como lista ou como texto JSON, que é como o tipo Dashboard
 // entrega à página a lista aninhada de uma linha. O teste carrega a página com um `dash` falso.
 import { readFileSync } from 'node:fs';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const PAGE = '.claude/skills/implementar-fila/painel/index.html';
 
@@ -13,12 +13,14 @@ type DataResult = { status: 'ok'; data: Row[] } | { status: 'failed'; message: s
 interface Panel {
   data: (id: string) => DataResult;
   render: () => void;
-  /** Troca o `meta` na mesma página (a seleção do grafo vive nela); o `render` o relê. */
+  /** Dispara o `tick` de 1 s que a página registra no `setInterval`. */
+  tick: () => void;
+  /** Troca o `meta` na mesma página (a seleção do trilho vive nela); o `render` o relê. */
   setMeta: (meta: Row) => void;
 }
 
 /** Monta a página no `document` e roda o `<script>` dela com um `dash` falso. */
-function loadPanel(meta: Row, queue: Row[] = []): Panel {
+function loadPanel(meta: Row, queue: Row[] = [], opts: { colors?: unknown } = {}): Panel {
   const parsed = new DOMParser().parseFromString(readFileSync(PAGE, 'utf8'), 'text/html');
   const script = parsed.querySelector('script')?.textContent ?? '';
   document.body.replaceChildren(...Array.from(parsed.body.childNodes));
@@ -26,6 +28,7 @@ function loadPanel(meta: Row, queue: Row[] = []): Panel {
   const datasets: Record<string, Row[]> = { queue, meta: [meta], log: [] };
   const calcs = new Map<string, CalcSpec>();
   let onData: () => void = () => undefined;
+  let tickCb: () => void = () => undefined;
   const data = (id: string): DataResult => {
     const calc = calcs.get(id);
     if (!calc) return { status: 'ok', data: datasets[id] ?? [] };
@@ -44,11 +47,16 @@ function loadPanel(meta: Row, queue: Row[] = []): Panel {
     onData: (cb: () => void) => {
       onData = cb;
     },
+    ...('colors' in opts ? { colors: opts.colors } : {}),
   };
-  new Function('dash', 'setInterval', script)(dash, () => 0);
+  new Function('dash', 'setInterval', script)(dash, (cb: () => void) => {
+    tickCb = cb;
+    return 0;
+  });
   return {
     data,
     render: () => onData(),
+    tick: () => tickCb(),
     setMeta: (m) => {
       datasets.meta = [m];
     },
@@ -98,6 +106,7 @@ beforeEach(() => {
   document.body.replaceChildren();
 });
 afterEach(() => {
+  vi.useRealTimers();
   document.body.replaceChildren();
 });
 
@@ -156,16 +165,25 @@ describe('página do painel da fila: campos-lista do meta', () => {
   );
 });
 
-/** Uma linha da fila com os campos que a tabela lê. */
+// Fase PA1 (etapa #1840): o card "Andamento" desenha o trilho por onda a partir de `meta.grafoNos` e
+// `meta.grafoSetas` (lista ou texto JSON), junta a linha do `queue` pelo `issue` e mostra as fases
+// em chips; o card "Concluídas" lista as `concluída` do `queue` por dia de Brasília.
+const BASE = 'https://github.com/fabianofranca/mapping';
+
+/** Uma linha da fila com os campos que o card lê. */
 function fila(over: Row): Row {
   return {
     order: 1,
-    issue: '#1085',
+    issue: '#1',
     title: 'Etapa',
     kind: 'etapa',
     status: 'em andamento',
+    stage: '',
     step: '',
     pr: '',
+    ciWait: '',
+    started: '',
+    ended: '',
     phases: '',
     phasesTotal: 0,
     phasesDone: 0,
@@ -173,109 +191,6 @@ function fila(over: Row): Row {
   };
 }
 
-/** As células `td` da primeira linha da tabela "Passo a passo". */
-const cells = () =>
-  Array.from(document.querySelectorAll('#mp-table tbody tr:first-child td'));
-
-const chips = (td: Element | undefined) =>
-  Array.from(td?.querySelectorAll('.chip') ?? []).map((c) => ({
-    text: c.textContent,
-    classes: Array.from(c.classList).filter((k) => k !== 'chip'),
-    title: c.getAttribute('title'),
-  }));
-
-describe('página do painel da fila: célula "Fases" (PF1, decisão 8)', () => {
-  it('em andamento D1:ok|D2:open|D3:todo: "1 / 3", com ok, now e todo e os title', () => {
-    const panel = loadPanel({}, [
-      fila({ phases: 'D1:ok|D2:open|D3:todo', phasesTotal: 3, phasesDone: 1 }),
-    ]);
-    panel.render();
-    const td = cells()[4];
-    expect(td?.firstElementChild?.firstElementChild?.textContent).toBe('1 / 3');
-    expect(chips(td)).toEqual([
-      { text: 'D1', classes: ['ok'], title: 'D1: concluída' },
-      { text: 'D2', classes: ['now'], title: 'D2: aberta' },
-      { text: 'D3', classes: ['todo'], title: 'D3: por fazer' },
-    ]);
-  });
-
-  it('aguardando D1:todo|D2:todo: "0 / 2", sem now', () => {
-    const panel = loadPanel({}, [
-      fila({
-        status: 'aguardando',
-        phases: 'D1:todo|D2:todo',
-        phasesTotal: 2,
-        phasesDone: 0,
-      }),
-    ]);
-    panel.render();
-    const td = cells()[4];
-    expect(td?.firstElementChild?.firstElementChild?.textContent).toBe('0 / 2');
-    expect(td?.querySelector('.now')).toBeNull();
-    expect(chips(td).map((c) => c.classes)).toEqual([['todo'], ['todo']]);
-  });
-
-  it('a linha antiga em andamento A1:ok|A2:open|A3:open: só a A2 com now', () => {
-    const panel = loadPanel({}, [
-      fila({ phases: 'A1:ok|A2:open|A3:open', phasesTotal: 3, phasesDone: 1 }),
-    ]);
-    panel.render();
-    const td = cells()[4];
-    expect(chips(td).map((c) => c.classes)).toEqual([['ok'], ['now'], []]);
-  });
-});
-
-describe('página do painel da fila: links da issue e do PR (PF1, decisão 14)', () => {
-  const BASE = 'https://github.com/fabianofranca/mapping';
-
-  it('a célula da issue vira link exato para a issue, com o mesmo texto', () => {
-    loadPanel({}, [fila({ issue: '#1085', pr: '1234' })]).render();
-    const a = cells()[1]?.querySelector('a');
-    expect(a?.getAttribute('href')).toBe(`${BASE}/issues/1085`);
-    expect(cells()[1]?.textContent).toBe('#1085');
-  });
-
-  it('a célula do PR vira link exato para o PR, com o mesmo texto', () => {
-    loadPanel({}, [fila({ issue: '#1085', pr: '1234' })]).render();
-    const a = cells()[8]?.querySelector('a');
-    expect(a?.getAttribute('href')).toBe(`${BASE}/pull/1234`);
-    expect(cells()[8]?.textContent).toBe('1234');
-  });
-
-  it('o PR numérico em número (não texto) também vira link', () => {
-    loadPanel({}, [fila({ pr: 77 })]).render();
-    expect(cells()[8]?.querySelector('a')?.getAttribute('href')).toBe(`${BASE}/pull/77`);
-    expect(cells()[8]?.textContent).toBe('77');
-  });
-
-  it('o PR vazio fica sem a e sem texto; o valor que não casa fica como texto, sem a', () => {
-    loadPanel({}, [fila({ pr: '' })]).render();
-    expect(cells()[8]?.querySelector('a')).toBeNull();
-    expect(cells()[8]?.textContent).toBe('');
-
-    loadPanel({}, [fila({ issue: 'abc', pr: 'x' })]).render();
-    expect(cells()[1]?.querySelector('a')).toBeNull();
-    expect(cells()[1]?.textContent).toBe('abc');
-    expect(cells()[8]?.querySelector('a')).toBeNull();
-    expect(cells()[8]?.textContent).toBe('x');
-
-    loadPanel({}, [fila({ pr: 'PR #7' })]).render();
-    expect(cells()[8]?.querySelector('a')).toBeNull();
-    expect(cells()[8]?.textContent).toBe('PR #7');
-  });
-
-  it('os dois a levam target="_blank" e rel="noopener"', () => {
-    loadPanel({}, [fila({ issue: '#1085', pr: '1234' })]).render();
-    for (const i of [1, 8]) {
-      const a = cells()[i]?.querySelector('a');
-      expect(a?.getAttribute('target')).toBe('_blank');
-      expect(a?.getAttribute('rel')).toBe('noopener');
-    }
-  });
-});
-
-// Fase GF2 (etapa #1761): o card "Dependências e ordem de entrada" desenha `meta.grafoNos` e
-// `meta.grafoSetas` (lista ou texto JSON); a página só agrupa por onda e decide se a seta é vizinha.
 type No = {
   issue: string;
   titulo: string;
@@ -342,271 +257,478 @@ const SETAS = [
   { de: '#2', para: '#6', tipo: 'dep' },
   { de: '#5', para: '#6', tipo: 'dep' },
 ];
+/** As sessões com custo da #1 (US$ 2,00 no total); as outras etapas do trilho ficam sem custo. */
+const SESSIONS_TRILHO = [
+  { id: 'a1', kind: 'fase', issue: '#1', cost: { usd: 1.5 } },
+  { id: 'a2', kind: 'testador', issue: '#1', cost: { usd: 0.5 } },
+];
 const GRAFO_VAGAS = ['Vagas 1/2', '#3 arquivo a.ts com #1', 'nenhuma ready elegível'];
+/** As linhas do `queue` das etapas do trilho (a #4, a #5 e as outras ficam sem linha). */
+const QUEUE_TRILHO: Row[] = [
+  fila({
+    issue: '#1',
+    kind: 'etapa',
+    stage: 'Fases',
+    pr: '77',
+    ciWait: 'PR #77',
+    started: '2026-11-13T10:00:00Z',
+    phases: 'D1:ok|D2:open|D3:todo',
+    phasesTotal: 3,
+    phasesDone: 1,
+  }),
+  fila({
+    issue: '#3',
+    kind: 'bug',
+    status: 'aguardando',
+    phases: 'E1:todo|E2:todo',
+    phasesTotal: 2,
+    phasesDone: 0,
+  }),
+];
 
 const card = (issue: string) =>
-  document.querySelector<HTMLButtonElement>(`#mp-grafo button[data-issue="${issue}"]`);
+  Array.from(document.querySelectorAll<HTMLElement>('#mp-grafo article')).find(
+    (a) => a.dataset.issue === issue,
+  ) ?? null;
+const botao = (issue: string) => card(issue)?.querySelector<HTMLButtonElement>('button');
 const faixas = () =>
-  Array.from(document.querySelectorAll('#mp-grafo .faixa')).map((f) => ({
-    rotulo: f.querySelector('.faixa-rot')?.textContent,
-    issues: Array.from(f.querySelectorAll('button')).map((b) => b.dataset.issue),
+  Array.from(document.querySelectorAll('#mp-grafo .onda')).map((f) => ({
+    rotulo: f.querySelector('.parada .rot')?.textContent,
+    qtd: f.querySelector('.parada .qtd')?.textContent,
+    issues: Array.from(f.querySelectorAll<HTMLElement>('article')).map(
+      (a) => a.dataset.issue,
+    ),
   }));
-const setas = () =>
-  Array.from(document.querySelectorAll('#mp-grafo-setas path[data-de]')).map((p) => ({
-    de: p.getAttribute('data-de'),
-    para: p.getAttribute('data-para'),
-    tipo: p.getAttribute('data-tipo'),
-    longa: p.hasAttribute('data-longa'),
+const tags = (issue: string, sel: string) =>
+  Array.from(card(issue)?.querySelectorAll(`.tags ${sel}`) ?? []).map(
+    (e) => e.textContent,
+  );
+const chips = (issue: string) =>
+  Array.from(card(issue)?.querySelectorAll('.fases .fase') ?? []).map((c) => ({
+    cod: c.querySelector('.cod')?.textContent,
+    sr: c.querySelector('.sr')?.textContent,
+    classes: Array.from(c.classList).filter((k) => k !== 'fase'),
+    title: c.getAttribute('title'),
   }));
+const esperas = (issue: string) =>
+  Array.from(card(issue)?.querySelectorAll('.espera .w') ?? []).map((w) => ({
+    n: w.querySelector('.n')?.textContent,
+    sr: w.querySelector('.sr')?.textContent,
+    classes: Array.from(w.classList).filter((k) => k !== 'w'),
+    title: w.getAttribute('title'),
+  }));
+const foco = () =>
+  Object.fromEntries(
+    ['foco-sel', 'foco-espera', 'foco-segura', 'dim'].map((k) => [
+      k,
+      Array.from(document.querySelectorAll<HTMLElement>('#mp-grafo article'))
+        .filter((a) => a.classList.contains(k))
+        .map((a) => a.dataset.issue),
+    ]),
+  );
 
 const FORMAS: Array<[string, (v: unknown) => unknown]> = [
   ['lista', (v) => v],
   ['texto JSON', (v) => JSON.stringify(v)],
 ];
 
-describe.each(FORMAS)('página do painel da fila: grafo (GF2), %s', (_forma, wrap) => {
-  const montar = (over: Row = {}) => {
-    const panel = loadPanel({
-      vagasItens: wrap(GRAFO_VAGAS),
-      grafoNos: wrap(NOS),
-      grafoSetas: wrap(SETAS),
-      ...over,
-    });
-    panel.render();
-    return panel;
-  };
-
-  it('uma faixa por onda, "Agora" e "Onda k", com os cards na ordem da lista', () => {
-    montar();
-    expect(faixas()).toEqual([
-      { rotulo: 'Agora', issues: ['#1', '#2'] },
-      { rotulo: 'Onda 1', issues: ['#3', '#4'] },
-      { rotulo: 'Onda 2', issues: ['#5'] },
-      { rotulo: 'Onda 3', issues: ['#6', '#7', '#8'] },
-    ]);
-    expect(document.querySelector('#mp-grafo-vagas')).not.toBeNull();
-  });
-
-  it('o card traz número, rótulo do estado, fase e progresso, motivo e o selo da ordem', () => {
-    montar();
-    const c1 = card('#1');
-    expect(c1?.querySelector('.num')?.textContent).toBe('#1');
-    expect(c1?.querySelector('.est')?.textContent).toBe('rodando');
-    expect(c1?.querySelector('.prog')?.textContent).toBe('D2 · 1/3');
-    expect(c1?.querySelector('.mot')?.textContent).toBe('D2 implementando');
-    expect(c1?.querySelector('.selo')).toBeNull();
-    expect(card('#2')?.querySelector('.selo')?.textContent).toBe('1º');
-    expect(card('#2')?.querySelector('.est')?.textContent).toBe('livre para entrar');
-    expect(card('#2')?.querySelector('.prog')).toBeNull();
-    expect(card('#3')?.querySelector('.prog')?.textContent).toBe('0/2');
-    expect(card('#3')?.querySelector('.est')?.textContent).toBe('esperando arquivo');
-    expect(card('#4')?.querySelector('.est')?.textContent).toBe('esperando dependência');
-    expect(card('#6')?.querySelector('.est')?.textContent).toBe('exclusiva');
-    expect(card('#7')?.querySelector('.est')?.textContent).toBe('ficha incompleta');
-    expect(card('#8')?.querySelector('.est')?.textContent).toBe('segurada');
-    expect(card('#1')?.getAttribute('type')).toBe('button');
-    expect(card('#1')?.getAttribute('aria-pressed')).toBe('false');
-  });
-
-  it('as linhas "Vagas k/N · nenhuma ready elegível" e "Ordem prevista" (cinco primeiros)', () => {
-    montar();
-    expect(text('#mp-grafo-vagas')).toBe('Vagas 1/2 · nenhuma ready elegível');
-    expect(text('#mp-grafo-ordem')).toBe('Ordem prevista: #2, #3, #4, #5, #6');
-    expect(text('#mp-cur')).toContain('· Vagas 1/2');
-    montar({ vagasItens: wrap(['Vagas 1/2', '#3 arquivo a.ts com #1']) });
-    expect(text('#mp-grafo-vagas')).toBe('Vagas 1/2');
-  });
-
-  it('a legenda traz os oito estados', () => {
-    montar();
-    expect(
-      Array.from(document.querySelectorAll('#mp-grafo-legenda li')).map(
-        (l) => l.textContent,
-      ),
-    ).toEqual([
-      'rodando',
-      'esperando o dono',
-      'esperando arquivo',
-      'esperando dependência',
-      'exclusiva',
-      'segurada',
-      'livre para entrar',
-      'ficha incompleta',
-    ]);
-  });
-
-  it('o svg só desenha as setas entre ondas vizinhas; a longa vira "espera #…" no card', () => {
-    montar();
-    expect(setas()).toEqual([
-      { de: '#1', para: '#3', tipo: 'arquivo', longa: false },
-      { de: '#1', para: '#4', tipo: 'dep', longa: false },
-      { de: '#4', para: '#5', tipo: 'dep', longa: false },
-      { de: '#5', para: '#6', tipo: 'dep', longa: false },
-    ]);
-    expect(card('#6')?.querySelector('.espera')?.textContent).toBe('espera #2');
-    expect(card('#5')?.querySelector('.espera')).toBeNull();
-  });
-
-  it('o toque no card o seleciona, desenha as setas dele (a longa inclusive) e mostra o detalhe', () => {
-    montar();
-    const detalhe = document.querySelector<HTMLElement>('#mp-grafo-detalhe');
-    expect(detalhe?.hidden).toBe(true);
-    card('#6')?.click();
-    expect(card('#6')?.getAttribute('aria-pressed')).toBe('true');
-    expect(card('#5')?.getAttribute('aria-pressed')).toBe('false');
-    expect(setas()).toContainEqual({ de: '#2', para: '#6', tipo: 'dep', longa: true });
-    expect(setas()).toContainEqual({ de: '#5', para: '#6', tipo: 'dep', longa: false });
-    expect(setas().filter((s) => s.longa)).toHaveLength(1);
-    expect(detalhe?.hidden).toBe(false);
-    expect(detalhe?.textContent).toContain(NOS[5]?.titulo);
-    expect(detalhe?.textContent).toContain('exclusiva');
-    expect(detalhe?.textContent).toContain('dep #2, #5');
-    expect(detalhe?.textContent).toContain('Depende de: #2, #5');
-    const a = detalhe?.querySelector('a');
-    expect(a?.getAttribute('href')).toBe(
-      'https://github.com/fabianofranca/mapping/issues/6',
-    );
-    expect(a?.getAttribute('target')).toBe('_blank');
-    expect(a?.getAttribute('rel')).toBe('noopener');
-  });
-
-  it('o segundo toque no mesmo card, ou o "Limpar", desfaz a seleção', () => {
-    montar();
-    card('#6')?.click();
-    card('#6')?.click();
-    expect(card('#6')?.getAttribute('aria-pressed')).toBe('false');
-    expect(setas().some((s) => s.longa)).toBe(false);
-    expect(document.querySelector<HTMLElement>('#mp-grafo-detalhe')?.hidden).toBe(true);
-
-    card('#6')?.click();
-    card('#1')?.click();
-    expect(card('#6')?.getAttribute('aria-pressed')).toBe('false');
-    expect(card('#1')?.getAttribute('aria-pressed')).toBe('true');
-    const limpar = Array.from(
-      document.querySelectorAll<HTMLButtonElement>('#mp-grafo-detalhe button'),
-    ).find((b) => b.textContent === 'Limpar');
-    expect(limpar?.getAttribute('type')).toBe('button');
-    limpar?.click();
-    expect(card('#1')?.getAttribute('aria-pressed')).toBe('false');
-    expect(document.querySelector<HTMLElement>('#mp-grafo-detalhe')?.hidden).toBe(true);
-  });
-
-  it('a seleção sobrevive a uma nova leitura dos dados e some se a etapa sai', () => {
-    const panel = montar();
-    card('#6')?.click();
-    panel.render();
-    expect(card('#6')?.getAttribute('aria-pressed')).toBe('true');
-
-    expect(document.querySelector<HTMLElement>('#mp-grafo-detalhe')?.hidden).toBe(false);
-    panel.setMeta({
-      grafoNos: wrap(NOS.filter((n) => n.issue !== '#6')),
-      grafoSetas: wrap(SETAS),
-    });
-    panel.render();
-    expect(card('#6')).toBeNull();
-    expect(document.querySelector<HTMLElement>('#mp-grafo-detalhe')?.hidden).toBe(true);
-    expect(setas().every((s) => s.para !== '#6')).toBe(true);
-  });
-
-  it('a nova leitura devolve o foco ao card que o tinha', () => {
-    const panel = montar();
-    card('#4')?.focus();
-    panel.render();
-    expect(document.activeElement).toBe(card('#4'));
-  });
-
-  it('seta entre cards da mesma onda liga na horizontal (lado a lado), sem sair da base nem entrar no topo', () => {
-    const mesma = [
-      no({ issue: '#1', onda: 1, estado: 'rodando' }),
-      no({ issue: '#2', onda: 1, estado: 'livre' }),
-    ];
-    const original = Element.prototype.getBoundingClientRect;
-    Element.prototype.getBoundingClientRect = function (this: Element) {
-      const issue = (this as HTMLElement).dataset?.issue;
-      const x = issue === '#2' ? 200 : issue === '#1' ? 0 : 0;
-      const alvo = issue
-        ? { x, y: 50, width: 100, height: 40 }
-        : { x: 0, y: 0, width: 400, height: 200 };
-      return new DOMRect(alvo.x, alvo.y, alvo.width, alvo.height);
+describe.each(FORMAS)(
+  'página do painel da fila: card "Andamento" (PA1), %s',
+  (_forma, wrap) => {
+    const montar = (over: Row = {}, queue: Row[] = QUEUE_TRILHO) => {
+      const panel = loadPanel(
+        {
+          sessions: wrap(SESSIONS_TRILHO),
+          vagasItens: wrap(GRAFO_VAGAS),
+          grafoNos: wrap(NOS),
+          grafoSetas: wrap(SETAS),
+          ...over,
+        },
+        queue,
+      );
+      panel.render();
+      return panel;
     };
-    try {
-      const panel = loadPanel({
-        grafoNos: wrap(mesma),
-        grafoSetas: wrap([{ de: '#1', para: '#2', tipo: 'arquivo' }]),
+
+    it('o card "Andamento" existe e a tabela "Passo a passo", o grafo antigo e o detalhe saíram', () => {
+      montar();
+      expect(document.querySelector('#mp-andamento h2')?.textContent).toBe('Andamento');
+      expect(document.querySelector('#mp-table')).toBeNull();
+      expect(document.querySelector('#mp-grafo-detalhe')).toBeNull();
+      expect(document.querySelector('#mp-grafo-setas')).toBeNull();
+      expect(document.querySelector('#mp svg')).toBeNull();
+      expect(document.body.textContent).not.toContain('Passo a passo');
+      expect(document.body.textContent).not.toContain('Dependências e ordem de entrada');
+    });
+
+    it('uma faixa por onda, "Agora" e "Onda k", com "k etapas" e os cards na ordem da lista', () => {
+      montar();
+      expect(faixas()).toEqual([
+        { rotulo: 'Agora', qtd: '2 etapas', issues: ['#1', '#2'] },
+        { rotulo: 'Onda 1', qtd: '2 etapas', issues: ['#3', '#4'] },
+        { rotulo: 'Onda 2', qtd: '1 etapa', issues: ['#5'] },
+        { rotulo: 'Onda 3', qtd: '3 etapas', issues: ['#6', '#7', '#8'] },
+      ]);
+      expect(document.querySelector('.onda[data-onda="0"] .parada')?.classList).toContain(
+        'agora',
+      );
+      expect(document.querySelectorAll('#mp-grafo .onda .parada.agora')).toHaveLength(1);
+    });
+
+    it('as linhas "Vagas k/N · nenhuma ready elegível", "Ordem prevista" e a legenda', () => {
+      montar();
+      expect(text('#mp-grafo-vagas')).toBe('Vagas 1/2 · nenhuma ready elegível');
+      expect(text('#mp-grafo-ordem')).toBe('Ordem prevista: #2, #3, #4, #5, #6');
+      expect(text('#mp-cur')).toContain('· Vagas 1/2');
+      montar({ vagasItens: wrap(['Vagas 1/2', '#3 arquivo a.ts com #1']) });
+      expect(text('#mp-grafo-vagas')).toBe('Vagas 1/2');
+      const leg = Array.from(document.querySelectorAll('#mp-grafo-legenda li')).map(
+        (l) => l.textContent,
+      );
+      for (const rotulo of [
+        'rodando',
+        'esperando o dono',
+        'esperando arquivo',
+        'esperando dependência',
+        'exclusiva',
+        'segurada',
+        'livre para entrar',
+        'ficha incompleta',
+        'mesclada',
+        'aberta',
+        'ainda não aberta',
+        'dependência',
+        'arquivo em comum',
+      ]) {
+        expect(leg.some((l) => l?.includes(rotulo))).toBe(true);
+      }
+    });
+
+    it('o card é um article com número (link), selo, estado, título no botão e a classe do estado', () => {
+      montar();
+      const c1 = card('#1');
+      expect(c1?.tagName).toBe('ARTICLE');
+      expect(c1?.className).toContain('e-rodando');
+      expect(c1?.querySelector('.est')?.textContent).toBe('rodando');
+      expect(c1?.querySelector('.selo')).toBeNull();
+      expect(card('#2')?.querySelector('.selo')?.textContent).toBe('1º');
+      expect(card('#2')?.querySelector('.est')?.textContent).toBe('livre para entrar');
+      expect(card('#3')?.querySelector('.est')?.textContent).toBe('esperando arquivo');
+      expect(card('#4')?.querySelector('.est')?.textContent).toBe(
+        'esperando dependência',
+      );
+      expect(card('#6')?.querySelector('.est')?.textContent).toBe('exclusiva');
+      expect(card('#7')?.querySelector('.est')?.textContent).toBe('ficha incompleta');
+      expect(card('#8')?.querySelector('.est')?.textContent).toBe('segurada');
+      const b = botao('#1');
+      expect(b?.getAttribute('type')).toBe('button');
+      expect(b?.getAttribute('aria-pressed')).toBe('false');
+      expect(b?.textContent).toContain('Etapa #1');
+      expect(b?.querySelector('a, button')).toBeNull();
+      expect(card('#6')?.querySelector('.tit')?.textContent).toBe(NOS[5]?.titulo);
+      const num = c1?.querySelector<HTMLAnchorElement>('a.num');
+      expect(num?.textContent).toBe('#1');
+      expect(num?.getAttribute('href')).toBe(`${BASE}/issues/1`);
+      expect(num?.getAttribute('target')).toBe('_blank');
+      expect(num?.getAttribute('rel')).toBe('noopener');
+      expect(b?.contains(num ?? null)).toBe(false);
+    });
+
+    it('etiquetas: tipo, fluxo, PR em link fora do botão e o CI que espera o coordenador', () => {
+      montar();
+      expect(tags('#1', '.tipo')).toEqual(['etapa']);
+      expect(tags('#1', '.fluxo')).toEqual(['Fases · CI: PR #77']);
+      const pr = card('#1')?.querySelector<HTMLAnchorElement>('a.pr');
+      expect(pr?.textContent).toBe('PR #77');
+      expect(pr?.getAttribute('href')).toBe(`${BASE}/pull/77`);
+      expect(pr?.getAttribute('target')).toBe('_blank');
+      expect(pr?.getAttribute('rel')).toBe('noopener');
+      expect(botao('#1')?.contains(pr ?? null)).toBe(false);
+      expect(tags('#3', '.tipo')).toEqual(['bug']);
+      expect(tags('#3', '.fluxo')).toEqual([]);
+      expect(card('#3')?.querySelector('a.pr')).toBeNull();
+    });
+
+    it('fluxo sem CI mostra só o fluxo; CI sem fluxo mostra "CI: …"; PR não numérico não vira link', () => {
+      montar({}, [
+        fila({ issue: '#1', stage: 'Testador', pr: 'PR #7' }),
+        fila({ issue: '#2', ciWait: 'PR #9' }),
+        fila({ issue: '#3', pr: 12 }),
+      ]);
+      expect(tags('#1', '.fluxo')).toEqual(['Testador']);
+      expect(card('#1')?.querySelector('a.pr')).toBeNull();
+      expect(tags('#2', '.fluxo')).toEqual(['CI: PR #9']);
+      expect(card('#3')?.querySelector('a.pr')?.getAttribute('href')).toBe(
+        `${BASE}/pull/12`,
+      );
+    });
+
+    it('um chip por fase, na ordem, com o estado em classe, title e texto para leitor de tela', () => {
+      montar();
+      expect(chips('#1')).toEqual([
+        { cod: 'D1', sr: 'mesclada', classes: ['ok'], title: 'D1: mesclada' },
+        {
+          cod: 'D2',
+          sr: 'aberta (agora)',
+          classes: ['open', 'now'],
+          title: 'D2: aberta (agora)',
+        },
+        {
+          cod: 'D3',
+          sr: 'ainda não aberta',
+          classes: ['todo'],
+          title: 'D3: ainda não aberta',
+        },
+      ]);
+      expect(chips('#3').map((c) => c.classes)).toEqual([['todo'], ['todo']]);
+    });
+
+    it('a barra e o "k de n fases": da linha do queue; sem ela, do nó; sem fases, nada', () => {
+      montar();
+      const larg = (i: string) =>
+        card(i)?.querySelector<HTMLElement>('.barra i')?.style.width ?? null;
+      expect(parseFloat(larg('#1') ?? '')).toBeCloseTo(33.33, 1);
+      expect(text('#mp-grafo article[data-issue="#1"] .fases-n')).toBe('1 de 3 fases');
+      expect(larg('#3')).toBe('0%');
+      expect(card('#3')?.querySelector('.fases-n')?.textContent).toBe('0 de 2 fases');
+      expect(card('#2')?.querySelector('.barra')).toBeNull();
+      expect(card('#2')?.querySelector('.fases-n')).toBeNull();
+
+      montar({ grafoNos: wrap([no({ issue: '#9', onda: 1, feitas: 1, total: 4 })]) }, []);
+      expect(larg('#9')).toBe('25%');
+      expect(card('#9')?.querySelector('.fases-n')?.textContent).toBe('1 de 4 fases');
+    });
+
+    it('"espera" com uma etiqueta por seta que chega: cheia na dependência, tracejada no arquivo', () => {
+      montar();
+      expect(esperas('#3')).toEqual([
+        {
+          n: '#1',
+          sr: 'arquivo em comum',
+          classes: ['arquivo'],
+          title: 'arquivo em comum',
+        },
+      ]);
+      expect(esperas('#4')).toEqual([
+        { n: '#1', sr: 'dependência', classes: ['dep'], title: 'dependência' },
+      ]);
+      expect(esperas('#6').map((w) => w.n)).toEqual(['#2', '#5']);
+      expect(card('#6')?.querySelector('.espera')?.firstChild?.textContent).toBe(
+        'espera',
+      );
+      expect(card('#6')?.querySelector('.mot')).toBeNull();
+    });
+
+    it('só a primeira fase aberta da linha em andamento leva o destaque "agora"', () => {
+      montar({}, [
+        fila({ issue: '#1', phases: 'D1:ok|D2:open|D3:open|D4:todo' }),
+        fila({ issue: '#2', status: 'aguardando', phases: 'E1:open|E2:open' }),
+      ]);
+      expect(chips('#1').map((c) => c.classes)).toEqual([
+        ['ok'],
+        ['open', 'now'],
+        ['open'],
+        ['todo'],
+      ]);
+      expect(chips('#1')[1]?.title).toBe('D2: aberta (agora)');
+      expect(chips('#1')[1]?.sr).toBe('aberta (agora)');
+      expect(chips('#2').map((c) => c.classes)).toEqual([['open'], ['open']]);
+    });
+
+    it('com seta de entrada e motivo que não é "dep …", mostra o "espera" e também o motivo', () => {
+      montar(
+        {
+          grafoNos: wrap([
+            no({ issue: '#1', onda: 0 }),
+            no({ issue: '#2', onda: 1, motivo: 'dep #1' }),
+            no({ issue: '#3', onda: 1, motivo: 'segurada para a exclusiva #9' }),
+          ]),
+          grafoSetas: wrap([
+            { de: '#1', para: '#2', tipo: 'dep' },
+            { de: '#1', para: '#3', tipo: 'dep' },
+          ]),
+        },
+        [],
+      );
+      expect(esperas('#3').map((w) => w.n)).toEqual(['#1']);
+      expect(card('#3')?.querySelector('.mot')?.textContent).toBe(
+        'segurada para a exclusiva #9',
+      );
+      expect(card('#2')?.querySelector('.mot')).toBeNull();
+    });
+
+    it('sem seta (ou na onda 0) o porquê é o motivo do nó', () => {
+      montar();
+      expect(card('#1')?.querySelector('.mot')?.textContent).toBe('D2 implementando');
+      expect(card('#1')?.querySelector('.espera')).toBeNull();
+      expect(card('#7')?.querySelector('.mot')?.textContent).toBe(
+        'ficha incompleta (toca)',
+      );
+      expect(card('#7')?.querySelector('.espera')).toBeNull();
+      expect(card('#8')?.querySelector('.mot')?.textContent).toBe(
+        'esperando dono (decisão)',
+      );
+    });
+
+    it('o rodapé: duração ao vivo nas começadas e o custo da etapa em US$ com vírgula', () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-11-13T11:05:07Z'));
+      const panel = montar();
+      expect(card('#1')?.querySelector('.dur')?.textContent).toBe('01:05:07');
+      expect(card('#1')?.querySelector('.custo')?.textContent).toBe('US$ 2,00');
+      expect(card('#3')?.querySelector('.dur')).toBeNull();
+      expect(card('#3')?.querySelector('.custo')).toBeNull();
+      expect(card('#2')?.querySelector('.custo')).toBeNull();
+      vi.setSystemTime(new Date('2026-11-13T11:05:09Z'));
+      panel.render();
+      expect(card('#1')?.querySelector('.dur')?.textContent).toBe('01:05:09');
+    });
+
+    it('o tick de 1 s atualiza a duração sem refazer o card', () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-11-13T10:00:30Z'));
+      const panel = montar();
+      const dur = card('#1')?.querySelector('.dur');
+      expect(dur?.textContent).toBe('00:00:30');
+      vi.setSystemTime(new Date('2026-11-13T10:00:45Z'));
+      panel.tick();
+      expect(card('#1')?.querySelector('.dur')).toBe(dur);
+      expect(dur?.textContent).toBe('00:00:45');
+    });
+
+    it('o toque no botão seleciona o card e destaca o que ele espera (subindo, a indireta inclusive) e o que o segura', () => {
+      montar();
+      expect(text('#mp-grafo-ajuda')).toBe(
+        'Toque num card para ver o que ele espera e quem espera por ele.',
+      );
+      botao('#5')?.click();
+      expect(botao('#5')?.getAttribute('aria-pressed')).toBe('true');
+      expect(botao('#4')?.getAttribute('aria-pressed')).toBe('false');
+      expect(document.querySelector('#mp-grafo')?.classList).toContain('foco');
+      expect(foco()).toEqual({
+        'foco-sel': ['#5'],
+        'foco-espera': ['#1', '#4'],
+        'foco-segura': ['#6'],
+        dim: ['#2', '#3', '#7', '#8'],
+      });
+      expect(text('#mp-grafo-ajuda')).toBe('#5: espera #1, #4 · segura #6');
+    });
+
+    it('a cadeia descendo da raiz e subindo da folha; "nada" quando não há', () => {
+      montar();
+      botao('#1')?.click();
+      expect(foco()['foco-segura']).toEqual(['#3', '#4', '#5', '#6']);
+      expect(foco()['foco-espera']).toEqual([]);
+      expect(text('#mp-grafo-ajuda')).toBe('#1: espera nada · segura #3, #4, #5, #6');
+      botao('#6')?.click();
+      expect(foco()['foco-espera']).toEqual(['#1', '#2', '#4', '#5']);
+      expect(text('#mp-grafo-ajuda')).toBe('#6: espera #1, #2, #4, #5 · segura nada');
+      botao('#7')?.click();
+      expect(text('#mp-grafo-ajuda')).toBe('#7: espera nada · segura nada');
+    });
+
+    it('o segundo toque desfaz, e tocar noutro card troca a seleção', () => {
+      montar();
+      botao('#6')?.click();
+      botao('#6')?.click();
+      expect(botao('#6')?.getAttribute('aria-pressed')).toBe('false');
+      expect(document.querySelector('#mp-grafo')?.classList).not.toContain('foco');
+      expect(foco()).toEqual({
+        'foco-sel': [],
+        'foco-espera': [],
+        'foco-segura': [],
+        dim: [],
+      });
+      expect(text('#mp-grafo-ajuda')).toContain('Toque num card');
+      botao('#6')?.click();
+      botao('#1')?.click();
+      expect(botao('#6')?.getAttribute('aria-pressed')).toBe('false');
+      expect(botao('#1')?.getAttribute('aria-pressed')).toBe('true');
+    });
+
+    it('os links da issue e do PR não selecionam o card', () => {
+      montar();
+      card('#1')?.querySelector<HTMLElement>('a.num')?.click();
+      card('#1')?.querySelector<HTMLElement>('a.pr')?.click();
+      expect(botao('#1')?.getAttribute('aria-pressed')).toBe('false');
+      expect(text('#mp-grafo-ajuda')).toContain('Toque num card');
+    });
+
+    it('a seleção sobrevive a uma nova leitura dos dados e some se a etapa sai', () => {
+      const panel = montar();
+      botao('#6')?.click();
+      panel.render();
+      expect(botao('#6')?.getAttribute('aria-pressed')).toBe('true');
+      expect(text('#mp-grafo-ajuda')).toContain('#6: espera');
+      panel.setMeta({
+        grafoNos: wrap(NOS.filter((n) => n.issue !== '#6')),
+        grafoSetas: wrap(SETAS),
       });
       panel.render();
-      card('#1')?.click();
-      const d = document
-        .querySelector('#mp-grafo-setas path[data-de="#1"]')
-        ?.getAttribute('d');
-      // a seta parte da borda direita de #1 (x 100) e chega à borda esquerda de #2 (x 200), no meio da altura (y 70)
-      expect(d?.startsWith('M100 70 ')).toBe(true);
-      expect(d?.endsWith(' 200 70')).toBe(true);
-    } finally {
-      Element.prototype.getBoundingClientRect = original;
-    }
-  });
-
-  it('a nova leitura devolve o foco ao link da issue e ao botão "Limpar" do detalhe', () => {
-    const panel = montar();
-    card('#6')?.click();
-    const link = document.querySelector<HTMLElement>('#mp-grafo-detalhe a');
-    link?.focus();
-    expect(document.activeElement).toBe(link);
-    panel.render();
-    expect(document.activeElement).toBe(document.querySelector('#mp-grafo-detalhe a'));
-    const limpar = () =>
-      Array.from(
-        document.querySelectorAll<HTMLButtonElement>('#mp-grafo-detalhe button'),
-      ).find((b) => b.textContent === 'Limpar');
-    limpar()?.focus();
-    expect(document.activeElement).toBe(limpar());
-    panel.render();
-    expect(document.activeElement).toBe(limpar());
-    expect(limpar()?.isConnected).toBe(true);
-  });
-
-  it('id com aspas ou colchete não derruba a página e o resto do painel é preenchido', () => {
-    const estranho = '#9"]x';
-    const panel = loadPanel({
-      sessions: SESSIONS,
-      grafoNos: wrap([...NOS, no({ issue: estranho, onda: 4 })]),
-      grafoSetas: wrap([...SETAS, { de: '#6', para: estranho, tipo: 'dep' }]),
+      expect(card('#6')).toBeNull();
+      expect(document.querySelector('#mp-grafo')?.classList).not.toContain('foco');
+      expect(text('#mp-grafo-ajuda')).toContain('Toque num card');
     });
-    expect(() => panel.render()).not.toThrow();
-    expect(text('#mp-custo-total')).toBe('US$ 4.25 em 3 sessões');
-    expect(setas()).toContainEqual({
-      de: '#6',
-      para: estranho,
-      tipo: 'dep',
-      longa: false,
-    });
-  });
 
-  it('nó sem onda numérica cai em "Agora" e conta como onda 0 também para as setas', () => {
-    const nos = [
-      no({ issue: '#1', onda: 0, estado: 'rodando' }),
-      { ...no({ issue: '#2', onda: 1 }), onda: undefined } as unknown as No,
-      no({ issue: '#3', onda: 1 }),
-    ];
-    const panel = loadPanel({
-      grafoNos: wrap(nos),
-      grafoSetas: wrap([
-        { de: '#1', para: '#3', tipo: 'dep' },
-        { de: '#2', para: '#3', tipo: 'dep' },
-      ]),
+    it('a nova leitura devolve o foco ao botão que o tinha', () => {
+      const panel = montar();
+      botao('#4')?.focus();
+      expect(document.activeElement).toBe(botao('#4'));
+      panel.render();
+      expect(document.activeElement).toBe(botao('#4'));
+      expect(botao('#4')?.isConnected).toBe(true);
     });
-    panel.render();
-    expect(faixas()).toEqual([
-      { rotulo: 'Agora', issues: ['#1', '#2'] },
-      { rotulo: 'Onda 1', issues: ['#3'] },
-    ]);
-    expect(setas().map((s) => s.de)).toEqual(['#1', '#2']);
-    expect(card('#3')?.querySelector('.espera')).toBeNull();
-  });
-});
 
-describe('página do painel da fila: grafo sem dados (GF2)', () => {
+    it('nó sem linha no queue: card sem etiquetas, chips e custo, sem erro', () => {
+      montar();
+      expect(card('#4')).not.toBeNull();
+      expect(card('#4')?.querySelector('.tags')?.children.length ?? 0).toBe(0);
+      expect(chips('#4')).toEqual([]);
+      expect(card('#4')?.querySelector('.custo')).toBeNull();
+      expect(card('#4')?.querySelector('.dur')).toBeNull();
+      expect(card('#4')?.querySelector('a.num')?.textContent).toBe('#4');
+    });
+
+    it('id com aspas ou colchete não derruba a página e o resto do painel é preenchido', () => {
+      const estranho = '#9"]x';
+      const panel = loadPanel({
+        sessions: wrap(SESSIONS),
+        grafoNos: wrap([...NOS, no({ issue: estranho, onda: 4 })]),
+        grafoSetas: wrap([...SETAS, { de: '#6', para: estranho, tipo: 'dep' }]),
+      });
+      expect(() => panel.render()).not.toThrow();
+      expect(text('#mp-custo-total')).toBe('US$ 4.25 em 3 sessões');
+      expect(card(estranho)).not.toBeNull();
+      expect(esperas(estranho).map((w) => w.n)).toEqual(['#6']);
+      botao(estranho)?.click();
+      expect(botao(estranho)?.getAttribute('aria-pressed')).toBe('true');
+    });
+
+    it('nó sem onda numérica cai em "Agora" e conta como onda 0 também para o "espera"', () => {
+      const nos = [
+        no({ issue: '#1', onda: 0, estado: 'rodando' }),
+        { ...no({ issue: '#2', onda: 1 }), onda: undefined } as unknown as No,
+        no({ issue: '#3', onda: 1 }),
+      ];
+      const panel = loadPanel({
+        grafoNos: wrap(nos),
+        grafoSetas: wrap([
+          { de: '#1', para: '#3', tipo: 'dep' },
+          { de: '#2', para: '#3', tipo: 'dep' },
+        ]),
+      });
+      panel.render();
+      expect(faixas().map((f) => [f.rotulo, f.issues])).toEqual([
+        ['Agora', ['#1', '#2']],
+        ['Onda 1', ['#3']],
+      ]);
+      expect(card('#2')?.querySelector('.espera')).toBeNull();
+      expect(esperas('#3').map((w) => w.n)).toEqual(['#1', '#2']);
+    });
+  },
+);
+
+describe('página do painel da fila: card "Andamento" sem dados (PA1)', () => {
   it.each([[undefined], ['[{'], ['{}'], ['3'], ['[]']])(
     'grafoNos %j: a linha de vagas e "—", sem erro',
     (invalido) => {
@@ -618,16 +740,562 @@ describe('página do painel da fila: grafo sem dados (GF2)', () => {
       expect(() => panel.render()).not.toThrow();
       expect(text('#mp-grafo-vagas')).toBe('Vagas 1/2 · nenhuma ready elegível');
       expect(text('#mp-grafo')).toBe('—');
-      expect(document.querySelectorAll('#mp-grafo .faixa')).toHaveLength(0);
+      expect(document.querySelectorAll('#mp-grafo .onda')).toHaveLength(0);
       expect(document.querySelector('#mp-vagas')).toBeNull();
+      expect(text('#mp-concluidas-lista')).toBe('—');
     },
   );
 
-  it('grafoSetas ausente ou inválido com nós válidos: desenha os nós sem setas', () => {
+  it('grafoSetas ausente ou inválido com nós válidos: desenha os nós sem "espera"', () => {
     const panel = loadPanel({ grafoNos: NOS, grafoSetas: '[{' });
     expect(() => panel.render()).not.toThrow();
     expect(faixas()).toHaveLength(4);
-    expect(setas()).toEqual([]);
     expect(card('#6')?.querySelector('.espera')).toBeNull();
+    expect(card('#6')?.querySelector('.mot')?.textContent).toBe('dep #2, #5');
+  });
+
+  it('campos fora do tipo no nó e na linha do queue não derrubam a página', () => {
+    const panel = loadPanel(
+      {
+        grafoNos: [
+          { issue: '#1', onda: 0, titulo: 5, estado: 'x', rank: 'a', total: 'b' },
+          null,
+          7,
+        ],
+        grafoSetas: [null, { de: '#1' }, { de: '#1', para: '#1', tipo: 'dep' }],
+      },
+      [fila({ issue: '#1', phases: 5, phasesTotal: 'x', started: 'lixo', pr: null })],
+    );
+    expect(() => panel.render()).not.toThrow();
+    expect(card('#1')).not.toBeNull();
+  });
+});
+
+describe('página do painel da fila: card "Concluídas" (PA1)', () => {
+  const dia = (ended: string, started = '') => ({ ended, started });
+  const CONCLUIDAS: Row[] = [
+    fila({
+      issue: '#10',
+      title: 'Primeira',
+      status: 'concluída',
+      kind: 'etapa',
+      pr: '100',
+      order: 1,
+      ...dia('2026-11-13T11:00:00Z', '2026-11-13T10:13:00Z'),
+    }),
+    fila({
+      issue: '#50',
+      title: 'Sem data',
+      status: 'concluída',
+      order: 9,
+    }),
+    fila({
+      issue: '#40',
+      title: 'Ontem',
+      status: 'concluída',
+      order: 4,
+      ...dia('2026-11-12T20:00:00Z'),
+    }),
+    fila({
+      issue: '#30',
+      title: 'Passou da meia-noite em UTC, mas ainda é sexta em Brasília '.repeat(3),
+      status: 'concluída',
+      kind: 'bug',
+      order: 3,
+      ...dia('2026-11-14T01:30:00Z', '2026-11-14T00:30:00Z'),
+    }),
+    fila({
+      issue: '#20',
+      title: 'Segunda',
+      status: 'concluída',
+      kind: 'bug',
+      pr: '#200',
+      order: 2,
+      ...dia('2026-11-13T15:30:00Z', '2026-11-13T13:25:00Z'),
+    }),
+    fila({ issue: '#60', title: 'Em andamento', status: 'em andamento' }),
+    fila({ issue: '#70', title: 'Aguardando', status: 'aguardando' }),
+  ];
+  const SESS = [
+    { id: 's1', kind: 'fase', issue: '#10', cost: { usd: 1.5 } },
+    { id: 's2', kind: 'testador', issue: '#10', cost: { usd: 0.5 } },
+    { id: 's3', kind: 'fase', issue: '#20', cost: { usd: 2.25 } },
+    { id: 's4', kind: 'fase', issue: '#60', cost: { usd: 9 } },
+  ];
+  const montar = (queue = CONCLUIDAS, meta: Row = { sessions: SESS }) => {
+    const panel = loadPanel(meta, queue);
+    panel.render();
+    return panel;
+  };
+  const dias = () =>
+    Array.from(document.querySelectorAll<HTMLElement>('#mp-concluidas .dia')).map(
+      (d) => ({
+        rotulo: d.querySelector('.dia-rot')?.textContent,
+        issues: Array.from(d.querySelectorAll('.cl a.num')).map((a) => a.textContent),
+        dentro: d.closest('details') !== null,
+      }),
+    );
+  const linha = (issue: string) =>
+    Array.from(document.querySelectorAll<HTMLElement>('#mp-concluidas .cl')).find(
+      (l) => l.querySelector('a.num')?.textContent === issue,
+    );
+
+  it('só as concluídas do queue, das mais recentes para as mais antigas pelo ended; sem ended no fim', () => {
+    montar();
+    expect(
+      Array.from(document.querySelectorAll('#mp-concluidas .cl a.num')).map(
+        (a) => a.textContent,
+      ),
+    ).toEqual(['#30', '#20', '#10', '#40', '#50']);
+  });
+
+  it('agrupa por dia de Brasília: 01:30Z cai no dia anterior; o mais recente aberto, os outros em details', () => {
+    montar();
+    expect(dias()).toEqual([
+      { rotulo: 'sex., 13/11 · 3', issues: ['#30', '#20', '#10'], dentro: false },
+      { rotulo: 'qui., 12/11 · 1', issues: ['#40'], dentro: true },
+      { rotulo: 'sem data · 1', issues: ['#50'], dentro: true },
+    ]);
+    const det = document.querySelectorAll('#mp-concluidas details');
+    expect(det).toHaveLength(1);
+    expect(det[0]?.querySelector('summary')?.textContent).toBe('Ver os dias anteriores');
+    expect((det[0] as HTMLDetailsElement).open).toBe(false);
+  });
+
+  it('um dia só: sem details', () => {
+    montar([CONCLUIDAS[0] as Row]);
+    expect(document.querySelector('#mp-concluidas details')).toBeNull();
+    expect(dias()).toHaveLength(1);
+  });
+
+  it('a linha: número e PR em link, título com reticências e inteiro no title, tipo, hora, duração e custo', () => {
+    montar();
+    const l10 = linha('#10');
+    expect(l10?.querySelector('a.num')?.getAttribute('href')).toBe(`${BASE}/issues/10`);
+    expect(l10?.querySelector('a.num')?.getAttribute('target')).toBe('_blank');
+    expect(l10?.querySelector('a.num')?.getAttribute('rel')).toBe('noopener');
+    expect(l10?.querySelector('.tit')?.textContent).toBe('Primeira');
+    expect(l10?.querySelector('.tipo')?.textContent).toBe('etapa');
+    expect(l10?.querySelector('a.pr')?.textContent).toBe('PR #100');
+    expect(l10?.querySelector('a.pr')?.getAttribute('href')).toBe(`${BASE}/pull/100`);
+    expect(l10?.querySelector('.hora')?.textContent).toBe('08:00');
+    expect(l10?.querySelector('.dur')?.textContent).toBe('47 min');
+    expect(l10?.querySelector('.custo')?.textContent).toBe('US$ 2,00');
+    const l20 = linha('#20');
+    expect(l20?.querySelector('.tipo')?.textContent).toBe('bug');
+    expect(l20?.querySelector('.hora')?.textContent).toBe('12:30');
+    expect(l20?.querySelector('.dur')?.textContent).toBe('2 h 05');
+    expect(l20?.querySelector('.custo')?.textContent).toBe('US$ 2,25');
+    expect(l20?.querySelector('a.pr')).toBeNull();
+    const l30 = linha('#30');
+    expect(l30?.querySelector('.hora')?.textContent).toBe('22:30');
+    expect(l30?.querySelector('.dur')?.textContent).toBe('1 h 00');
+    expect(l30?.querySelector('.tit')?.getAttribute('title')).toContain(
+      'Passou da meia-noite',
+    );
+    expect(linha('#40')?.querySelector('.dur')).toBeNull();
+    expect(linha('#40')?.querySelector('.custo')).toBeNull();
+    expect(linha('#50')?.querySelector('.hora')).toBeNull();
+  });
+
+  it('o cabeçalho traz "k etapas · US$ x" (a soma do custo delas, sem as em andamento)', () => {
+    montar();
+    expect(text('#mp-concluidas-resumo')).toBe('5 etapas · US$ 4,25');
+    montar([CONCLUIDAS[0] as Row], {});
+    expect(text('#mp-concluidas-resumo')).toBe('1 etapa');
+  });
+
+  it('as concluídas de meta.merged sem linha na fila não entram; sem nenhuma o card mostra "—"', () => {
+    montar([fila({ issue: '#60', status: 'em andamento' })], {
+      merged: '#99',
+      sessions: SESS,
+    });
+    expect(text('#mp-concluidas-lista')).toBe('—');
+    expect(text('#mp-concluidas-resumo')).toBe('—');
+    expect(document.querySelector('#mp-concluidas .cl')).toBeNull();
+  });
+
+  it('a lista não duplica a fila: a concluída não vira card do trilho e a página não tem tabela de passos', () => {
+    montar();
+    expect(document.querySelector('#mp-table')).toBeNull();
+    expect(document.querySelectorAll('#mp-andamento article')).toHaveLength(0);
+  });
+});
+
+// Fase PA2 (etapa #1840, decisões 10 a 13): o card "Custo da fila" ganha as somas (total, por etapa
+// concluída, por hora de fila), a coluna por dia de Brasília empilhada por tipo, as barras por tipo e
+// das 8 etapas mais caras, e a tabela de hoje recolhida num `<details>`.
+describe('página do painel da fila: card "Custo da fila" (PA2)', () => {
+  const KINDS = [
+    'fase',
+    'correção',
+    'testador',
+    'reteste',
+    'fechamento',
+    'coordenador',
+    'supervisor',
+  ];
+  const sess = (
+    id: string,
+    kind: string,
+    issue: string | null,
+    usd: number,
+    extra: Row = {},
+  ) => ({
+    id,
+    kind,
+    issue,
+    cost: { usd },
+    ...extra,
+  });
+  const SESS: Row[] = [
+    sess('s1', 'fase', '#10', 1.5, { created: '2026-11-13T01:30:00Z' }),
+    sess('s2', 'testador', '#10', 2.5, { created: '2026-11-13T15:00:00Z' }),
+    sess('s3', 'fase', '#20', 1, { cost: { usd: 1, at: '2026-11-13T12:00:00Z' } }),
+  ];
+  const done = (issue: string, ended: string) =>
+    fila({ issue, status: 'concluída', ended, started: '2026-11-13T10:00:00Z' });
+  const QUEUE: Row[] = [
+    done('#10', '2026-11-13T11:00:00Z'),
+    done('#20', '2026-11-13T12:00:00Z'),
+    fila({ issue: '#30', status: 'em andamento' }),
+  ];
+  const AGORA = '2026-11-13T14:00:00Z';
+  const montar = (meta: Row, queue: Row[] = QUEUE, opts: { colors?: unknown } = {}) => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(AGORA));
+    const panel = loadPanel(meta, queue, opts);
+    panel.render();
+    return panel;
+  };
+  const cardText = (selector: string) => text(selector);
+
+  describe('somas', () => {
+    it('total e sessões, por etapa concluída e por hora de fila (runStart até agora)', () => {
+      montar({ sessions: SESS, runStart: '2026-11-13T10:00:00Z' });
+      expect(cardText('#mp-custo-total')).toBe('US$ 5.00 em 3 sessões');
+      expect(cardText('#mp-custo-etapa')).toBe('US$ 2,50');
+      expect(cardText('#mp-custo-hora')).toBe('US$ 1,25');
+    });
+
+    it('o custoResumo é um calc com as entradas meta e queue', () => {
+      const panel = montar({ sessions: SESS, runStart: '2026-11-13T10:00:00Z' });
+      const r = panel.data('custoResumo');
+      expect(r.status).toBe('ok');
+      expect(r.status === 'ok' && r.data[0]).toMatchObject({
+        usd: 5,
+        sessoes: 3,
+        concluidas: 2,
+        porEtapa: 2.5,
+      });
+    });
+
+    it('sem concluídas, o custo por etapa é "—" e o por hora segue', () => {
+      montar({ sessions: SESS, runStart: '2026-11-13T10:00:00Z' }, [
+        fila({ issue: '#30', status: 'em andamento' }),
+      ]);
+      expect(cardText('#mp-custo-etapa')).toBe('—');
+      expect(cardText('#mp-custo-hora')).toBe('US$ 1,25');
+    });
+
+    it('sem runStart ou com menos de 1 min de fila, o custo por hora é "—"', () => {
+      montar({ sessions: SESS });
+      expect(cardText('#mp-custo-hora')).toBe('—');
+      expect(cardText('#mp-custo-etapa')).toBe('US$ 2,50');
+      montar({ sessions: SESS, runStart: '2026-11-13T13:59:30Z' });
+      expect(cardText('#mp-custo-hora')).toBe('—');
+    });
+
+    it('com todas concluídas, as horas vão do runStart ao último ended, como a "Duração total"', () => {
+      montar({ sessions: SESS, runStart: '2026-11-13T10:00:00Z' }, [
+        done('#10', '2026-11-13T11:00:00Z'),
+        done('#20', '2026-11-13T12:00:00Z'),
+      ]);
+      expect(cardText('#mp-custo-hora')).toBe('US$ 2,50');
+    });
+
+    it('o tick de 1 s atualiza o custo por hora', () => {
+      const panel = montar({ sessions: SESS, runStart: '2026-11-13T10:00:00Z' });
+      vi.setSystemTime(new Date('2026-11-13T15:00:00Z'));
+      panel.tick();
+      expect(cardText('#mp-custo-hora')).toBe('US$ 1,00');
+    });
+
+    it('sem meta.sessions, cada soma mostra "—", sem erro', () => {
+      const panel = montar({ runStart: '2026-11-13T10:00:00Z' });
+      expect(panel.data('custoResumo').status).toBe('ok');
+      expect(cardText('#mp-custo-total')).toBe('—');
+      expect(cardText('#mp-custo-etapa')).toBe('—');
+      expect(cardText('#mp-custo-hora')).toBe('—');
+    });
+  });
+
+  describe('por dia de Brasília, empilhado por tipo', () => {
+    const SESS_DIA: Row[] = [
+      sess('a', 'fase', '#10', 1.5, { created: '2026-11-13T01:30:00Z' }),
+      sess('b', 'testador', '#10', 2.5, { created: '2026-11-13T15:00:00Z' }),
+      sess('c', 'fase', '#20', 1, { cost: { usd: 1, at: '2026-11-13T12:00:00Z' } }),
+      sess('d', 'coordenador', null, 0.5, { cost: { usd: 0.5 } }),
+      { id: 'e', kind: 'fase', issue: '#30', created: '2026-11-13T12:00:00Z' },
+    ];
+    const cols = () =>
+      Array.from(document.querySelectorAll<HTMLElement>('#mp-custo-dias .col')).map(
+        (c) => ({
+          dia: c.dataset.dia,
+          rot: c.querySelector('.rot')?.textContent,
+          total: c.querySelector('.v')?.textContent,
+          tipos: Array.from(c.querySelectorAll<HTMLElement>('.pilha i')).map(
+            (i) => i.dataset.tipo,
+          ),
+        }),
+      );
+
+    it('o custoDia dá uma linha por dia (Brasília) e tipo; sem created usa o cost.at', () => {
+      const panel = montar({ sessions: SESS_DIA });
+      const r = panel.data('custoDia');
+      expect(r.status).toBe('ok');
+      const rows = (r.status === 'ok' ? r.data : []).filter((x) => x.dia != null);
+      expect(rows.map(({ dia, tipo, usd }) => ({ dia, tipo, usd }))).toEqual([
+        { dia: '2026-11-12', tipo: 'fase', usd: 1.5 },
+        { dia: '2026-11-13', tipo: 'fase', usd: 1 },
+        { dia: '2026-11-13', tipo: 'testador', usd: 2.5 },
+      ]);
+    });
+
+    it('uma coluna por dia, com o total impresso e a data embaixo; a sessão sem data fica de fora', () => {
+      montar({ sessions: SESS_DIA });
+      expect(cols()).toEqual([
+        { dia: '2026-11-12', rot: '12/11', total: 'US$ 1,50', tipos: ['fase'] },
+        {
+          dia: '2026-11-13',
+          rot: '13/11',
+          total: 'US$ 3,50',
+          tipos: ['fase', 'testador'],
+        },
+      ]);
+      expect(cardText('#mp-custo-semdata')).toBe('1 sessão sem data fora do gráfico');
+    });
+
+    it('a nota no plural, e escondida quando todas têm data', () => {
+      montar({
+        sessions: [
+          sess('d', 'coordenador', null, 0.5),
+          sess('e', 'supervisor', null, 0.5),
+          sess('f', 'fase', '#10', 1, { created: '2026-11-13T12:00:00Z' }),
+        ],
+      });
+      expect(cardText('#mp-custo-semdata')).toBe('2 sessões sem data fora do gráfico');
+      montar({ sessions: SESS });
+      expect(document.querySelector<HTMLElement>('#mp-custo-semdata')?.hidden).toBe(true);
+    });
+
+    it('a pilha segue a ordem KINDS e cada trecho leva o valor no title', () => {
+      montar({ sessions: SESS_DIA });
+      const col = document.querySelector('#mp-custo-dias .col[data-dia="2026-11-13"]');
+      const seg = Array.from(col?.querySelectorAll('.pilha i') ?? []);
+      expect(seg.map((i) => i.getAttribute('title'))).toEqual([
+        'fase: US$ 1,00',
+        'testador: US$ 2,50',
+      ]);
+    });
+
+    it('o contêiner leva data-source e a legenda lista só os tipos do gráfico', () => {
+      montar({ sessions: SESS_DIA });
+      expect(document.querySelector('#mp-custo-dias')?.getAttribute('data-source')).toBe(
+        'custoDia',
+      );
+      expect(items('#mp-custo-chaves')).toEqual(['fase', 'testador']);
+    });
+
+    it('tocar numa coluna mostra o valor na dica do card', () => {
+      montar({ sessions: SESS_DIA });
+      const btn = document.querySelector<HTMLElement>(
+        '#mp-custo-dias .col[data-dia="2026-11-13"]',
+      );
+      expect(btn?.tagName).toBe('BUTTON');
+      btn?.click();
+      expect(cardText('#mp-custo-dica')).toBe(
+        '13/11 · fase: US$ 1,00 · testador: US$ 2,50 · total US$ 3,50',
+      );
+    });
+
+    it('sem sessões o gráfico mostra "—" e sem sessões com data some a nota de coluna', () => {
+      montar({});
+      expect(cardText('#mp-custo-dias')).toBe('—');
+      expect(document.querySelector('#mp-custo-dias .col')).toBeNull();
+    });
+  });
+
+  describe('barras por tipo e etapas mais caras', () => {
+    const NOMES = (sel: string) =>
+      Array.from(document.querySelectorAll(`${sel} .hb`)).map((b) => ({
+        nome: b.querySelector('.n')?.textContent,
+        valor: b.querySelector('.v')?.textContent,
+      }));
+
+    it('uma barra por tipo, na ordem KINDS, com "US$ x · k sessões" impresso', () => {
+      montar({
+        sessions: [
+          sess('1', 'testador', '#10', 0.5),
+          sess('2', 'supervisor', null, 4),
+          sess('3', 'fase', '#10', 1.5),
+          sess('4', 'fase', '#20', 2.25),
+        ],
+      });
+      expect(NOMES('#mp-custo-tipo')).toEqual([
+        { nome: 'fase', valor: 'US$ 3,75 · 2 sessões' },
+        { nome: 'testador', valor: 'US$ 0,50 · 1 sessão' },
+        { nome: 'supervisor', valor: 'US$ 4,00 · 1 sessão' },
+      ]);
+      expect(KINDS.indexOf('fase')).toBeLessThan(KINDS.indexOf('testador'));
+      const w = (n: number) =>
+        document.querySelectorAll<HTMLElement>('#mp-custo-tipo .hb i')[n]?.style.width;
+      expect(w(2)).toBe('100%');
+      expect(w(1)).toBe('12.5%');
+      expect(document.querySelector('#mp-custo-tipo')?.getAttribute('data-source')).toBe(
+        'custo',
+      );
+    });
+
+    it('as 8 etapas mais caras, da maior para a menor, com o valor impresso e no title', () => {
+      const sessions = Array.from({ length: 10 }, (_, i) =>
+        sess(`s${i}`, 'fase', `#${100 + i}`, i + 1),
+      );
+      montar({ sessions });
+      const n = NOMES('#mp-custo-etapas');
+      expect(n).toHaveLength(8);
+      expect(n[0]).toEqual({ nome: '#109', valor: 'US$ 10,00' });
+      expect(n[7]).toEqual({ nome: '#102', valor: 'US$ 3,00' });
+      const first = document.querySelector('#mp-custo-etapas .hb');
+      expect(first?.getAttribute('title')).toBe('#109: US$ 10,00');
+      expect(
+        document.querySelector('#mp-custo-etapas')?.getAttribute('data-source'),
+      ).toBe('custo');
+    });
+
+    it('tocar numa barra mostra o valor na dica do card', () => {
+      montar({
+        sessions: [sess('1', 'fase', '#10', 1.5), sess('2', 'fase', '#10', 0.5)],
+      });
+      const barra = document.querySelector<HTMLElement>('#mp-custo-tipo .hb');
+      expect(barra?.tagName).toBe('BUTTON');
+      barra?.click();
+      expect(cardText('#mp-custo-dica')).toBe('fase: US$ 2,00 · 2 sessões');
+    });
+
+    it('sem meta.sessions as duas listas mostram "—"', () => {
+      montar({});
+      expect(cardText('#mp-custo-tipo')).toBe('—');
+      expect(cardText('#mp-custo-etapas')).toBe('—');
+    });
+  });
+
+  describe('tabela recolhida', () => {
+    it('a tabela de hoje fica dentro do details "Ver a tabela de todas as etapas e tipos", fechado', () => {
+      montar({ sessions: SESS });
+      const det = document.querySelector('#mp-custo')?.closest('details');
+      expect(det).not.toBeNull();
+      expect(det?.open).toBe(false);
+      expect(det?.querySelector('summary')?.textContent).toBe(
+        'Ver a tabela de todas as etapas e tipos',
+      );
+      expect(rows('#mp-custo')).toEqual([
+        ['Tipo: fase', '2', '2.50', '1.25'],
+        ['Tipo: testador', '1', '2.50', '2.50'],
+        ['Etapa: #10', '2', '4.00', '2.00'],
+        ['Etapa: #20', '1', '1.00', '1.00'],
+      ]);
+    });
+
+    it('a abertura do details sobrevive a uma nova leitura', () => {
+      const panel = montar({ sessions: SESS });
+      const det = document.querySelector('#mp-custo')?.closest('details');
+      if (det) det.open = true;
+      panel.render();
+      expect(document.querySelector('#mp-custo')?.closest('details')?.open).toBe(true);
+    });
+  });
+
+  describe('cores dos tipos', () => {
+    const cor = (tipo: string) =>
+      document.querySelector<HTMLElement>(`#mp-custo-tipo .hb i[data-tipo="${tipo}"]`);
+
+    it('com dash.colors, cada tipo leva a cor da sua posição em KINDS', () => {
+      montar({ sessions: SESS }, QUEUE, {
+        colors: ['#010101', '#020202', '#030303', '#040404'],
+      });
+      expect(cor('fase')?.style.getPropertyValue('--cor')).toBe('#010101');
+      expect(cor('testador')?.style.getPropertyValue('--cor')).toBe('#030303');
+      const seg = document.querySelector<HTMLElement>(
+        '#mp-custo-dias .pilha i[data-tipo="testador"]',
+      );
+      expect(seg?.style.getPropertyValue('--cor')).toBe('#030303');
+      const sw = document.querySelector<HTMLElement>('#mp-custo-chaves li .amostra');
+      expect(sw?.style.getPropertyValue('--cor')).toBe('#010101');
+    });
+
+    it('sem dash.colors, as cores de estado da página em rodízio (classes cor-0 a cor-3)', () => {
+      montar({ sessions: SESS });
+      expect(cor('fase')?.className).toContain('cor-0');
+      expect(cor('testador')?.className).toContain('cor-2');
+      expect(cor('fase')?.style.getPropertyValue('--cor')).toBe('');
+    });
+
+    it('sem dash.colors, os 7 tipos de sessão têm classes distintas, sem reusar ok/warn/bad', () => {
+      montar({
+        sessions: [
+          'fase',
+          'correção',
+          'testador',
+          'reteste',
+          'fechamento',
+          'coordenador',
+          'supervisor',
+        ].map((k, n) => sess('k' + n, k, '#10', 1, { created: '2026-11-13T01:30:00Z' })),
+      });
+      const tipos = [
+        'fase',
+        'correção',
+        'testador',
+        'reteste',
+        'fechamento',
+        'coordenador',
+        'supervisor',
+      ];
+      const cls = tipos.map((t) => {
+        const c = cor(t);
+        return Array.from(c?.classList ?? []).find((k) => k.startsWith('cor-'));
+      });
+      expect(new Set(cls).size).toBe(7);
+      expect(cls.every(Boolean)).toBe(true);
+      const css = readFileSync(PAGE, 'utf8');
+      for (const k of cls) {
+        const bloco = new RegExp(`#mp \\.${k}\\s*\\{[^}]*\\}`).exec(css)?.[0] ?? '';
+        expect(bloco).not.toMatch(/--color-(ok|warn|bad)/);
+      }
+    });
+
+    it('a skill descreve o CI no card como "<etapa> · CI: PR #p", sem a coluna "Passo atual"', () => {
+      const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
+      expect(skill).not.toContain('coluna "Passo atual", como');
+      expect(skill).toContain('`<etapa> · CI: PR #p`');
+    });
+
+    it('dash.colors que não é lista de textos não derruba a página', () => {
+      for (const colors of [undefined, null, 3, {}, [], [1, 2]]) {
+        expect(() => montar({ sessions: SESS }, QUEUE, { colors })).not.toThrow();
+        expect(cor('fase')?.className).toContain('cor-0');
+      }
+    });
+  });
+
+  it('sem meta.sessions nenhuma parte do card quebra e o resto do painel continua', () => {
+    const panel = montar({ sessions: 'texto inválido' });
+    expect(() => panel.render()).not.toThrow();
+    expect(cardText('#mp-custo-total')).toBe('—');
+    expect(cardText('#mp-custo-dias')).toBe('—');
+    expect(cardText('#mp-custo-tipo')).toBe('—');
+    expect(cardText('#mp-custo-etapas')).toBe('—');
+    expect(document.querySelector('#mp-custo tbody')?.children).toHaveLength(0);
   });
 });

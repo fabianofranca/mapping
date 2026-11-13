@@ -274,15 +274,19 @@ describe('painel.py — vagas (VG1, #1440)', () => {
     expect(lines[i + 2]).toBe('começar agora: nenhuma');
   });
 
-  it('a página mostra a nota no subtítulo e o card "Dependências e ordem de entrada" a partir de meta.grafoNos', () => {
+  it('a página mostra a nota no subtítulo e o card "Andamento" a partir de meta.grafoNos', () => {
     const html = readFileSync(PAGE, 'utf8');
-    expect(html).toContain('Dependências e ordem de entrada');
+    expect(html).toContain('id="mp-andamento"');
+    expect(html).toContain('<h2>Andamento</h2>');
     expect(html).toContain('m.grafoNos');
     expect(html).toContain('m.vagas');
     expect(html).not.toContain('Por que há vaga livre');
     expect(html).not.toContain('id="mp-vagas"');
-    expect(html.indexOf('Dependências e ordem de entrada')).toBeLessThan(
-      html.indexOf('Passo a passo'),
+    expect(html).not.toContain('Dependências e ordem de entrada');
+    expect(html).not.toContain('Passo a passo');
+    expect(html).not.toContain('id="mp-table"');
+    expect(html.indexOf('id="mp-andamento"')).toBeLessThan(
+      html.indexOf('id="mp-concluidas"'),
     );
   });
 });
