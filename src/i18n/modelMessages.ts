@@ -58,6 +58,7 @@ const libraryEnUS: {
   'model.library.notReferenced': 'file not referenced by the specialization',
   'model.library.emptyDoc': 'empty document',
   'model.library.fileNotFound': 'file not found: {path}',
+  'model.library.paramOutsideSignature': 'parameter outside the signature: "{name}"',
   'model.library.notRead': 'the file content was not read (expected the text)',
   'model.library.invalidJson': 'invalid JSON: {detail}',
   'model.library.specFileNotFound': 'specialization file not found: {path}',

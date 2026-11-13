@@ -49,7 +49,9 @@ const MSG_16 = 'só é permitido com formatVersion 16';
  * Com a especialização baixada para a 14, só há erros de versão: os da 15 (`tokens`, `icons`, `structural`) e, com o pacote
  * na 16, os da 16 (`fieldModels` e `signature`, `ignore`, `calls` e `formats` do `code.compose`, em cada tipo e caso).
  */
-function onlyVersionErrors(errors: { message: string; path: string }[]): boolean {
+function onlyVersionErrors(
+  errors: readonly { message: string; path: string }[],
+): boolean {
   return errors.every(
     (e) =>
       e.message === MSG_15 ||

@@ -5,6 +5,7 @@ import {
   type ExpandModels,
   type Signature,
 } from './signatures';
+import type { ModelMessageTemplateCode } from './messages';
 
 // A ficha `mapping-signature` no pacote da biblioteca (formatVersion 16; etapa #1079): a que o
 // `code` (ou o caso de `variants`) e a `sources` do tipo citam existe, é uma ficha válida e é a
@@ -19,6 +20,9 @@ export interface SignatureProblem {
   readonly message: string;
   /** Só o arquivo citado que não existe: o caminho, para a mensagem com código do catálogo. */
   readonly missing?: string;
+  /** Código do catálogo de mensagens e os dados da tradução, quando o problema tem. */
+  readonly code?: ModelMessageTemplateCode;
+  readonly params?: Readonly<Record<string, string | number>>;
 }
 
 export interface SignatureCheck {
@@ -47,6 +51,7 @@ class Checker {
     path: string,
     message: string,
     missing?: string,
+    coding?: { code: ModelMessageTemplateCode; params: Record<string, string | number> },
   ): void {
     this.problems.push({
       severity,
@@ -54,6 +59,7 @@ class Checker {
       path,
       message,
       ...(missing === undefined ? {} : { missing }),
+      ...(coding ?? {}),
     });
   }
 
@@ -104,6 +110,8 @@ class Checker {
         this.reader.specPath,
         `${at}.params.${outside.field}`,
         `parâmetro fora da ficha: "${outside.name}"`,
+        undefined,
+        { code: 'library.paramOutsideSignature', params: { name: outside.name } },
       );
     }
   }

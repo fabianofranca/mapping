@@ -15,6 +15,7 @@ export const libraryMessages = {
     'nenhuma especialização encontrada: o pacote precisa de um arquivo .json com "format": "mapping-spec"',
   'library.specAmbiguous':
     'há {count} especializações no pacote ({files}): indique qual validar',
+  'library.paramOutsideSignature': 'parâmetro fora da ficha: "{name}"',
   // Componente e especialização
   'library.componentAlreadyUsed': 'o arquivo {path} já é o componente do tipo "{typeId}"',
   'library.noSlot': 'o componente {path} não tem slot',

@@ -486,7 +486,10 @@ function signatureChecks(pkg: Package, referenced: Set<string>, out: Collector):
     } else if (problem.severity === 'error') {
       out.passError(problem.file, problem.path, problem.message);
     } else {
-      out.passWarning(problem.file, problem.path, problem.message);
+      out.passWarning(problem.file, problem.path, problem.message, {
+        messageCode: problem.code,
+        messageParams: problem.params,
+      });
     }
   }
 }

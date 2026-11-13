@@ -150,7 +150,11 @@ describe('regra por role e value.kind (decisão 5)', () => {
   });
 
   it('o `ignore` do code deixa o parâmetro fora de propósito: sem campo, sem aviso e fora do unmapped', () => {
-    const signature = composeSignature([text('label'), text('subtitle'), dimension('gap')]);
+    const signature = composeSignature([
+      text('label'),
+      text('subtitle'),
+      dimension('gap'),
+    ]);
     const plan = run(
       librarySpec((s) => {
         buttonOf(s).code = {
@@ -522,7 +526,10 @@ describe('sincronização (decisão 12)', () => {
     });
     const plan = run(spec, {
       signature: composeSignature([
-        dimension('radius', { default: '4.dp', value: { kind: 'dimension', default: 4 } }),
+        dimension('radius', {
+          default: '4.dp',
+          value: { kind: 'dimension', default: 4 },
+        }),
       ]),
     });
     expect(field(plan, 'radius')).not.toHaveProperty('default');
