@@ -812,6 +812,12 @@ button.tree-toggle:hover {
   margin-bottom: 0;
 }
 
+/* Janela estreita (Detalhes abertos, 180 px): as duas abas cabem sem rolagem lateral mesmo com
+   fonte larga (CL2, 1.1a); o rótulo continua inteiro. */
+.catalog-window .tab {
+  padding-inline: var(--space-1);
+}
+
 .library-empty {
   display: flex;
   flex-direction: column;
