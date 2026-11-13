@@ -16119,7 +16119,6 @@
               "symbol": "androidx.compose.material3.SingleChoiceSegmentedButtonRow",
               "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SegmentedButton.kt",
               "params": {
-                "enabled": "enabled",
                 "space": "space"
               },
               "notes": "Um `SegmentedButton` por linha de `options`, dentro de `SingleChoiceSegmentedButtonRow { … }`: `selected`, `onClick`, `shape = SegmentedButtonDefaults.itemShape(index = <posição da linha>, count = <número de linhas>)` (obrigatório), `enabled = <enabled>` (parâmetro do segmento, não da linha), `icon = { SegmentedButtonDefaults.Icon(active = <selected>) }` (o check) e `label = { Text(<label>) }`. Com a coluna `icon` preenchida, passe `inactiveContent = { Icon(Icons.Filled.<icon>, contentDescription = null, Modifier.size(SegmentedButtonDefaults.IconSize)) }` ao `SegmentedButtonDefaults.Icon`. O `SegmentedButton` é função de extensão do escopo da linha: importe `androidx.compose.material3.SegmentedButton`. Nenhum tipo exige opt-in. A 1.4.0 não traz os ícones: o app adiciona `androidx.compose.material:material-icons-core` (ou `-extended`) ou usa um Material Symbol com `painterResource`.",
@@ -21444,9 +21443,6 @@
               "symbol": "androidx.compose.material3.TimePicker",
               "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/TimePicker.kt",
               "params": {
-                "hour": "initialHour",
-                "minute": "initialMinute",
-                "is24Hour": "is24Hour",
                 "clockDialColor": "colors.clockDialColor",
                 "clockDialSelectedContentColor": "colors.clockDialSelectedContentColor",
                 "clockDialUnselectedContentColor": "colors.clockDialUnselectedContentColor",
@@ -26758,7 +26754,6 @@
                     "symbol": "androidx.compose.material3.WideNavigationRail",
                     "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/WideNavigationRail.kt",
                     "params": {
-                      "initialValue": "initialValue",
                       "shape": "shape",
                       "colorsContainerColor": "colors.containerColor",
                       "colorsContentColor": "colors.contentColor",
@@ -26981,7 +26976,6 @@
                     "symbol": "androidx.compose.material3.ModalWideNavigationRail",
                     "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/WideNavigationRail.kt",
                     "params": {
-                      "initialValue": "initialValue",
                       "hideOnCollapse": "hideOnCollapse",
                       "collapsedShape": "collapsedShape",
                       "expandedShape": "expandedShape",
@@ -30877,7 +30871,6 @@
               "symbol": "androidx.compose.material3.SwipeToDismissBox",
               "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SwipeToDismissBox.kt",
               "params": {
-                "direction": "initialValue",
                 "enableDismissFromStartToEnd": "enableDismissFromStartToEnd",
                 "enableDismissFromEndToStart": "enableDismissFromEndToStart",
                 "gesturesEnabled": "gesturesEnabled"

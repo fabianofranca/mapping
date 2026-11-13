@@ -139,6 +139,8 @@ describe('dicionários', () => {
       'density.value',
       // A seta entre o parâmetro e o valor do código é um símbolo, igual nos dois idiomas.
       'catalog.page.codeParamsArrow',
+      // O texto do problema da ficha vem do leitor da ficha e entra inteiro como parâmetro.
+      'model.library.signatureInvalid',
       // O nome do produto é "Mapping" nos dois idiomas.
       'app.title',
       'editor.appName',

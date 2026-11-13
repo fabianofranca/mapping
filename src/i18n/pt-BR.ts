@@ -848,6 +848,7 @@ export const ptBR = {
   'notice.column': 'Coluna {column}: {message}',
   'notices.title': 'Avisos',
   'notices.kindFilter': 'Filtrar por tipo de aviso',
+  'notices.kindFilterNotices': 'Filtrar por tipo de aviso (os números contam avisos)',
   'notices.all': 'Todos',
   'notices.inUseOnly': 'Só avisos em uso',
   'notices.visibleOnly': 'Só camadas visíveis',

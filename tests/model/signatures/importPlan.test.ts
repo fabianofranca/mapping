@@ -3,6 +3,7 @@
 // idempotência e a sincronização. Puro: roda no projeto `model` (Node).
 import { describe, expect, it } from 'vitest';
 import {
+  paramsOutsideSignature,
   planSignatureImport,
   type PlanSignatureImportOptions,
   type SignatureImportPlan,
@@ -906,5 +907,50 @@ describe('revisão da S2: ligação, formats, variantes e design', () => {
     });
     expect(keys(second)).toEqual(keys(first));
     expect(JSON.stringify(second.spec)).toBe(JSON.stringify(first.spec));
+  });
+});
+
+describe('correção CL1: plataforma da ficha e campo removed (S5-b, S5-a)', () => {
+  it('S5-b: a ficha de código de outra plataforma não é aceita no id da plataforma', () => {
+    const result = planSignatureImport(librarySpec(), {
+      type: 'button',
+      target: { platform: 'swiftui' },
+      signature: composeSignature([text('label')]),
+    });
+    expect(result).toMatchObject({ ok: false, code: 'signature-mismatch' });
+    expect(result.ok ? '' : result.detail).toContain('"compose"');
+    expect(result.ok ? '' : result.detail).toContain('"swiftui"');
+  });
+
+  const previous = composeSignature([text('label'), text('legacy')]);
+  const next = composeSignature([text('label')]);
+  const paramsOf = (spec: Spec): Record<string, string> | undefined =>
+    (buttonOf(spec as unknown as Json).code as Json).compose.params;
+
+  it('S5-a: o campo com removed não cita mais o parâmetro que saiu em params', () => {
+    const first = run(librarySpec(), { signature: previous });
+    expect(paramsOf(first.spec)).toMatchObject({ legacy: 'legacy' });
+    const plan = run(first.spec, { signature: next, previous });
+    expect(noticesOf(field(plan, 'legacy')?.notices)).toEqual([
+      `removed|${REF}|compose: o parâmetro \`legacy\` saiu da assinatura; o campo fica`,
+    ]);
+    expect(paramsOf(plan.spec)).toEqual({ label: 'label' });
+    // e o validador não acha parâmetro fora da ficha
+    expect(paramsOutsideSignature(next, { params: paramsOf(plan.spec) })).toEqual([]);
+  });
+
+  it('S5-a: reimportar depois mantém o aviso removed e o params sem o parâmetro', () => {
+    const first = run(run(librarySpec(), { signature: previous }).spec, {
+      signature: next,
+      previous,
+    });
+    const again = run(first.spec, { signature: next, previous: next });
+    expect(again.changes).toEqual([]);
+    expect(again.suggestedMigrations).toEqual([]);
+    expect(noticesOf(field(again, 'legacy')?.notices)).toEqual([
+      `removed|${REF}|compose: o parâmetro \`legacy\` saiu da assinatura; o campo fica`,
+    ]);
+    expect(paramsOf(again.spec)).toEqual({ label: 'label' });
+    expect(again.spec).toEqual(first.spec);
   });
 });

@@ -690,7 +690,7 @@ export function v1WithEstados(
 /**
  * PROVISÓRIO (decisão do coordenador, #1079 S5; decisão do dono pendente no bug #1774; curadoria na #1134).
  * Avisos `parâmetro fora da ficha` que a importação deixa: o `params` da base (ou o herdado) cita um parâmetro que a
- * ficha do caso (`variants`) não tem, ou que o `removed` deixou na ficha. Cada item é `<tipo>[.<caso>] <campo>=<parâmetro>`.
+ * ficha do caso (`variants`) não tem (o `removed` não deixa mais: o importador tira o parâmetro do `params`, CL1/S5-a). Cada item é `<tipo>[.<caso>] <campo>=<parâmetro>`.
  * Qualquer outro aviso, ou erro, continua falhando; um aviso conhecido que sumir também (a lista só encolhe).
  */
 export const KNOWN_PARAM_WARNINGS: readonly string[] = [
@@ -723,14 +723,6 @@ export const KNOWN_PARAM_WARNINGS: readonly string[] = [
   'bottom-sheet.standard shape=shape',
   'bottom-sheet.standard tonalElevation=tonalElevation',
   'bottom-sheet.standard scrimColor=scrimColor',
-  'segmented-button enabled=enabled',
-  'segmented-button.multi enabled=enabled',
-  'time-picker hour=initialHour',
-  'time-picker minute=initialMinute',
-  'time-picker is24Hour=is24Hour',
-  'time-picker.input hour=initialHour',
-  'time-picker.input minute=initialMinute',
-  'time-picker.input is24Hour=is24Hour',
   'tooltip.rich contentColor=contentColor',
   'tooltip.rich containerColor=containerColor',
   'progress-indicator.linear strokeWidth=strokeWidth',
@@ -752,10 +744,8 @@ export const KNOWN_PARAM_WARNINGS: readonly string[] = [
   'dropdown-menu.exposed color=border.color',
   'navigation-rail.wide containerColor=containerColor',
   'navigation-rail.wide contentColor=contentColor',
-  'navigation-rail.wide initialValue=initialValue',
   'navigation-rail.modal-wide containerColor=containerColor',
   'navigation-rail.modal-wide contentColor=contentColor',
-  'navigation-rail.modal-wide initialValue=initialValue',
   'navigation-drawer.dismissible scrimColor=scrimColor',
   'navigation-drawer.permanent gesturesEnabled=gesturesEnabled',
   'navigation-drawer.permanent scrimColor=scrimColor',
@@ -763,7 +753,6 @@ export const KNOWN_PARAM_WARNINGS: readonly string[] = [
   'carousel.uncontained minSmallItemWidth=minSmallItemWidth',
   'carousel.uncontained maxSmallItemWidth=maxSmallItemWidth',
   'carousel.centered-hero preferredItemWidth=preferredItemWidth',
-  'swipe-to-dismiss direction=initialValue',
 ];
 
 /** Compara os avisos da validação da biblioteca com o conjunto conhecido: só `parâmetro fora da ficha`, e exatamente esses. */
