@@ -825,6 +825,7 @@ Qualquer nó (menos o `repeat`) aceita `direction`, **literal** `"ltr"` ou `"rtl
 ```
 
 - O nó **em si** é posto pelo pai na direção do pai (ele é um filho como os outros); o que está **dentro** dele segue a direção que ele fixa.
+- Num nó `slot`, "dentro" é só a subárvore do próprio template: as marcações filhas que a tela põe no slot seguem a direção da tela, porque cada uma é instanciada por quem instancia a tela, com a direção dela.
 - No `repeat`, `direction` continua sendo o empilhamento das linhas (`"row"`/`"column"`, de toda versão): para fixar a direção de leitura das linhas, ponha o `direction` no quadro do `template` ou num quadro em volta do `repeat`.
 - Valor fora do conjunto: `esperava um de: ltr, rtl`. Numa `formatVersion` menor que 4: `direction: só é permitido com formatVersion 4`, no caminho do nó.
 
