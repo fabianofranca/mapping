@@ -4,7 +4,7 @@
 // o comando `painel.py toca "<citações>"` confere uma lista. Fase TA2 (decisões 10 e 12): os textos dos skills
 // e dos docs dizem a regra só nas seções do "Toca em:".
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -256,6 +256,117 @@ describe('painel.py toca "<citações>" (TA1, decisão 7)', () => {
       expect(r.stderr).toContain('`toca` não entra no lote');
     } finally {
       rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('painel.py toca — correções da revisão (CL1, #1812)', () => {
+  const conflita = (a: string, b: string): boolean => {
+    const d = mkdtempSync(path.join(tmpdir(), 'toca-cl1-'));
+    try {
+      run('init', d);
+      run('start', d, '--paralelo', '9');
+      run(
+        'row',
+        d,
+        '#1',
+        'title=A',
+        `plan=${ficha('nenhuma', a)}`,
+        'status=em andamento',
+      );
+      run('row', d, '#2', 'title=B', `plan=${ficha('nenhuma', b)}`);
+      const meta = JSON.parse(readFileSync(path.join(d, 'meta.json'), 'utf8')) as Array<
+        Record<string, unknown>
+      >;
+      return String(meta[0]?.vagas).includes('#2 arquivo');
+    } finally {
+      rmSync(d, { recursive: true, force: true });
+    }
+  };
+
+  it(
+    'achado 1: dois globs que casam o mesmo arquivo conflitam; `?` e `[...]` não são aceitos',
+    () => {
+      expect(conflita('tests/a*x.ts', 'tests/ab*.ts')).toBe(true);
+      expect(conflita('tests/a*.ts', 'tests/b*.ts')).toBe(false);
+      expect(conflita('tests/a*.ts', 'tests/abc.ts')).toBe(true);
+      for (const c of ['tests/a?.ts', 'tests/[ab].ts']) {
+        const r = runRaw('toca', c);
+        expect(r.status, c).toBe(1);
+        expect(r.stdout, c).toBe(`inválida: ${c} — padrão\n`);
+      }
+    },
+    TEMPO_SUBPROCESSOS,
+  );
+
+  it('achado 2: o slug minúsculo do roteiro (#r9) é rejeitado e a caixa não esconde conflito', () => {
+    const r = runRaw('toca', 'docs/TESTING.md#r9');
+    expect(r.status).toBe(1);
+    expect(r.stdout).toBe('inválida: docs/TESTING.md#r9 — âncora\n');
+  });
+
+  it('achado 3: a âncora é conferida contra os `##` do arquivo existente', () => {
+    const r = runRaw(
+      'toca',
+      'docs/FLOW.md#para-a-sesao-da-fase, docs/FLOW.md#para-a-sessao-da-fase, docs/FLOW.md#inicio, docs/novo-doc.md#qualquer',
+    );
+    expect(r.stdout).toBe('inválida: docs/FLOW.md#para-a-sesao-da-fase — âncora\n');
+    expect(r.status).toBe(1);
+  });
+
+  it('achado 4: o texto da Ficha da etapa cobre a linha exclusiva', () => {
+    const fila = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
+    const ficha = section(fila, '### Ficha da etapa');
+    expect(ficha).toContain('exclusive=sim');
+  });
+
+  it('achado 5: a validação do toca não repete o acesso ao sistema de arquivos', () => {
+    const py = `
+import importlib.util, os, sys
+spec = importlib.util.spec_from_file_location("painel", sys.argv[1])
+m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+n = {"c": 0}
+for name in ("isdir", "isfile", "exists"):
+    orig = getattr(os.path, name)
+    def wrap(p, _o=orig):
+        n["c"] += 1
+        return _o(p)
+    setattr(os.path, name, wrap)
+plan = "dep=nenhuma | nivel=impact: low | mcp=não | schema=não | toca=docs/FLOW.md#inicio, src/a.ts, tests/a*.ts"
+m.incomplete_fields(plan)
+uma = n["c"]
+for _ in range(20):
+    m.incomplete_fields(plan)
+print(uma, n["c"])
+`;
+    const r = spawnSync('python3', ['-c', py, SCRIPT], { encoding: 'utf8' });
+    expect(r.stderr).toBe('');
+    const [uma, depois] = r.stdout.trim().split(' ').map(Number);
+    expect(depois).toBe(uma); // 20 repetições não acessam o disco de novo
+  });
+
+  it('achado 6: fora da árvore esperada a raiz vem do git ou do .git, ou a conferência falha segura', () => {
+    const base = mkdtempSync(path.join(tmpdir(), 'toca-raiz-'));
+    try {
+      const copia = path.join(base, 'painel.py');
+      writeFileSync(copia, readFileSync(SCRIPT));
+      const repo = path.resolve('.');
+      const noRepo = spawnSync('python3', [copia, 'toca', 'src/model, CLAUDE.md'], {
+        cwd: repo,
+        encoding: 'utf8',
+      });
+      expect(noRepo.stdout.split('\n').filter(Boolean)).toEqual([
+        'inválida: src/model — pasta',
+        'inválida: CLAUDE.md — documento inteiro',
+      ]);
+      const fora = spawnSync('python3', [copia, 'toca', 'src/model'], {
+        cwd: base,
+        encoding: 'utf8',
+      });
+      expect(fora.status).toBe(1);
+      expect(fora.stdout).toBe('inválida: src/model — raiz do repositório não achada\n');
+    } finally {
+      rmSync(base, { recursive: true, force: true });
     }
   });
 });
