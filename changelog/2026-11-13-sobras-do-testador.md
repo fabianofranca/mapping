@@ -1,4 +1,4 @@
-# Sobras do testador — [Não lançado] (épico `epic/sobras-do-testador`, PR #1835, MCP sem mudança, schema v19)
+# Sobras do testador — 2026-11-13 (épico `epic/sobras-do-testador`, PR #1835, MCP sem mudança, schema v19)
 
 ## Alterado
 

@@ -1,4 +1,4 @@
-# Sobras do testador — [Não lançado] (épico `epic/sobras-do-testador`)
+# Sobras do testador — 2026-11-13 (épico `epic/sobras-do-testador`)
 
 ## Pendências
 
