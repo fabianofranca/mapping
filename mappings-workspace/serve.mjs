@@ -5,6 +5,12 @@
 // - In a Claude Code cloud session (CLAUDE_CODE_REMOTE=true) or when the server is missing, it runs
 //   setup.sh first, so the session always has the latest server and skills.
 //
+// It runs setup.sh with --no-self-update: in this repository the versioned copy is the source (kept
+// equal to examples/workspace/setup.sh by tests/tooling/mappingsWorkspaceSync.test.ts), so the
+// session's setup.sh is never replaced by the one from the release (not in an epic that changes
+// examples/workspace/setup.sh before the release is out, nor if the merge's release fails). The
+// server, skill, AGENTS.md block, watcher and extractor still come from the latest stable release.
+//
 // setup.sh output goes to stderr: stdout is the MCP protocol and must stay clean.
 // The server keeps the repository root as its working directory, so code checks (find_by_code,
 // get_code_hints) see the repository; only the roots point into this folder.
@@ -17,7 +23,7 @@ const here = dirname(fileURLToPath(import.meta.url))
 const server = join(here, 'tools', 'mapping-mcp.js')
 
 if (process.env.CLAUDE_CODE_REMOTE === 'true' || !existsSync(server)) {
-  const setup = spawnSync('bash', ['./setup.sh'], {
+  const setup = spawnSync('bash', ['./setup.sh', '--no-self-update'], {
     cwd: here,
     stdio: ['ignore', process.stderr.fd, process.stderr.fd],
   })

@@ -24,7 +24,7 @@
 #   MAPPING_RAW_BASE       troca https://raw.githubusercontent.com/fabianofranca/mapping/main
 #   MAPPING_SETUP_UPDATED  =1 impede um segundo ciclo de autoatualização (o script o define)
 #
-# Toca em: tools/mapping-mcp.js(.sha256), .agents/skills/spec-author, .claude/skills/spec-author,
+# Toca em: tools/mapping-mcp.js(.sha256), tools/mapping-signature.mjs(.sha256), .agents/skills/spec-author, .claude/skills/spec-author,
 # watch-comments.mjs (na raiz; sobrescrito pela versão da release, sem backup), o próprio setup.sh e o bloco entre os marcadores mapping:begin/end do AGENTS.md (com cópia
 # AGENTS.md.bak-AAAAMMDD-HHMMSS quando o arquivo muda). Nunca altera projetos/ e especializacoes/
 # (só cria as pastas), um CLAUDE.md existente (e não cria um), .mcp.json nem as configs dos
@@ -65,9 +65,11 @@ TMP=""
 SKILL_FROM=""
 AGENTS_SUMMARY=""
 WATCHER_SUMMARY=""
+EXTRACTOR_SUMMARY=""
 HAVE_SETUP=0
 HAVE_BLOCK=0
 HAVE_WATCHER=0
+HAVE_EXTRACTOR=0
 # Estado do download (ver `download` e `fetch_file`): código HTTP, stderr do curl e classe da falha.
 DL_CODE=""
 DL_ERR=""
@@ -236,6 +238,7 @@ download_all() {
   if fetch_optional setup.sh; then HAVE_SETUP=1; fi
   if fetch_optional AGENTS.mapping.md; then HAVE_BLOCK=1; fi
   if fetch_optional watch-comments.mjs; then HAVE_WATCHER=1; fi
+  if fetch_optional mapping-signature.mjs; then HAVE_EXTRACTOR=1; fi
   if fetch_optional SKILL.md; then
     SKILL_FROM="release ${TAG:-última}"
   else
@@ -251,6 +254,7 @@ verify_all() {
   [ "$HAVE_SETUP" = 0 ] || verify setup.sh
   [ "$HAVE_BLOCK" = 0 ] || verify AGENTS.mapping.md
   [ "$HAVE_WATCHER" = 0 ] || verify watch-comments.mjs
+  [ "$HAVE_EXTRACTOR" = 0 ] || verify mapping-signature.mjs
   [ "$SKILL_FROM" = "main (release antiga)" ] || verify SKILL.md
 }
 
@@ -311,6 +315,25 @@ install_watcher() {
     WATCHER_SUMMARY="atualizado"
   fi
   [ "$HAVE_WATCHER" = 0 ] || cp "$TMP/watch-comments.mjs" watch-comments.mjs
+}
+
+# --- extrator de assinaturas --------------------------------------------------------------------
+
+# Arquivo gerenciado em tools/, como o servidor: sobrescrito pela versão da release, sem backup.
+install_extractor() {
+  if [ "$HAVE_EXTRACTOR" = 0 ]; then
+    EXTRACTOR_SUMMARY="não atualizado (release sem o extrator)"
+    return 0
+  elif [ ! -f tools/mapping-signature.mjs ]; then
+    EXTRACTOR_SUMMARY="instalado"
+  elif cmp -s "$TMP/mapping-signature.mjs" tools/mapping-signature.mjs; then
+    EXTRACTOR_SUMMARY="sem mudança"
+  else
+    EXTRACTOR_SUMMARY="atualizado"
+  fi
+  mkdir -p tools
+  cp "$TMP/mapping-signature.mjs" tools/mapping-signature.mjs
+  cp "$TMP/mapping-signature.mjs.sha256" tools/mapping-signature.mjs.sha256
 }
 
 # --- bloco do AGENTS.md -------------------------------------------------------------------------
@@ -430,11 +453,13 @@ main() {
   install_server
   install_skill
   install_watcher
+  install_extractor
   update_agents
   echo "Servidor: $(node tools/mapping-mcp.js --version)"
   echo "Skill: $SKILL_FROM"
   echo "AGENTS.md: $AGENTS_SUMMARY"
   echo "Watcher: $WATCHER_SUMMARY"
+  echo "Extrator: $EXTRACTOR_SUMMARY"
   echo "Pronto. Abra esta pasta no agente e aprove o servidor 'mapping'; preencha 'Para que servem' no AGENTS.md."
 }
 
