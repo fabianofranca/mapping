@@ -206,7 +206,7 @@ jobs:
           ref: ${{ inputs.ref }}
       # Node, cache de node_modules e `npm ci` (ação local; refs anteriores à fase 5.6 caem no Node 22).
       - uses: ./.github/actions/setup-deps
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           pattern: vitest-blob${{ inputs.label && format('-{0}', inputs.label) || '' }}-*
           path: .vitest/blob
