@@ -23,3 +23,4 @@
 ## Alterado
 
 - Teto do `dist/index.html` subiu 16 KiB, de 2146304 para 2162688, pela regra do orçamento.
+- Teto do `dist/index.html` subiu 16 KiB, de 2162688 para 2179072, pela regra do orçamento (fase R4: a seção Âncora, a ligação no canvas e os textos somam 7935 bytes de excesso).
