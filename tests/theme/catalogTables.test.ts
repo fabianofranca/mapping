@@ -29,7 +29,10 @@ describe('tabelas do Catálogo', () => {
 
   it('cabeçalhos e colunas curtas não quebram; o contêiner rola na horizontal', () => {
     expect(rule('.catalog-table th')).toMatch(/white-space:\s*nowrap/);
-    expect(rule('.catalog-table td:nth-child(-n + 4)')).toMatch(/white-space:\s*nowrap/);
+    expect(rule('.catalog-table td:nth-child(3)')).toMatch(/white-space:\s*nowrap/);
+    expect(rule('.catalog-table td:nth-child(4)')).toMatch(/white-space:\s*nowrap/);
+    // CL1 (#1830): o rótulo quebra entre palavras; senão a tabela passa da largura do diálogo.
+    expect(rule('.catalog-table td:nth-child(2)')).toMatch(/white-space:\s*normal/);
     for (const selector of ['.catalog-table-wrap', '.catalog-page .markdown-table']) {
       expect(rule(selector), selector).toMatch(/overflow-x:\s*auto/);
     }

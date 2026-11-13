@@ -167,13 +167,13 @@ describe('painel.py — etapa exclusiva (FM2, decisão 12)', () => {
     expect(motivos().slice(0, 2)).toEqual(['#2 começa', '#1 exclusiva #2 em andamento']);
   });
 
-  it('a exclusiva que espera não segura as candidatas comuns de depois dela (a drenagem é o "Drenar")', () => {
+  it('a exclusiva na frente segura as candidatas de depois dela (#1813)', () => {
     etapa('#1', ficha('nenhuma', 'a.ts'), 'status=em andamento', 'started=now');
     etapa('#2', ficha('nenhuma', 'b.ts'), 'exclusive=sim');
     etapa('#3', ficha('nenhuma', 'c.ts'));
     expect(motivos().slice(0, 2)).toEqual([
       '#2 exclusiva (espera a fila esvaziar)',
-      '#3 começa',
+      '#3 segurada para a exclusiva #2',
     ]);
   });
 
@@ -242,6 +242,102 @@ describe('painel.py — etapa exclusiva (FM2, decisão 12)', () => {
     etapa('#1', ficha('nenhuma', 'a.ts'), 'status=em andamento', 'started=now');
     etapa('#2', ficha('nenhuma', 'b.ts'), 'exclusive=sim', 'hold=esperando dono (x)');
     expect(motivos()[0]).toBe('#2 esperando dono (x)');
+  });
+});
+
+describe('painel.py — exclusiva na frente drena a fila (#1813)', () => {
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'exclusive-'));
+    run('init', dir);
+    run('start', dir, '--paralelo', '9');
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('a drenagem e o começo: o show diz quem drena; com a fila vazia, a exclusiva começa', () => {
+    etapa('#1', ficha('nenhuma', 'a.ts'), 'status=em andamento', 'started=now');
+    etapa('#2', ficha('nenhuma', 'b.ts'), 'exclusive=sim');
+    etapa('#3', ficha('nenhuma', 'c.ts'));
+    expect(motivos().slice(0, 2)).toEqual([
+      '#2 exclusiva (espera a fila esvaziar)',
+      '#3 segurada para a exclusiva #2',
+    ]);
+    const show = run('show', dir);
+    expect(show).toContain('começar agora: nenhuma\ndrenando para a exclusiva: #2\n');
+    run('row', dir, '#1', 'status=concluída');
+    expect(motivos().slice(0, 2)).toEqual(['#2 começa', '#3 exclusiva #2 em andamento']);
+    expect(run('show', dir)).toContain(
+      'começar agora: #2\ndrenando para a exclusiva: nenhuma\n',
+    );
+  });
+
+  it('a comum da frente que espera arquivo conta: não há drenagem e as de depois seguem', () => {
+    etapa('#1', ficha('nenhuma', 'a.ts'), 'status=em andamento', 'started=now');
+    etapa('#2', ficha('nenhuma', 'a.ts'));
+    etapa('#3', ficha('nenhuma', 'c.ts'), 'exclusive=sim');
+    etapa('#4', ficha('nenhuma', 'd.ts'));
+    expect(motivos().slice(0, 3)).toEqual([
+      '#2 arquivo a.ts com #1',
+      '#3 exclusiva (espera a fila esvaziar)',
+      '#4 começa',
+    ]);
+    expect(run('show', dir)).toContain('drenando para a exclusiva: nenhuma');
+  });
+
+  it('hold, ficha incompleta e dep não contam; a comum que começa no mesmo cálculo não tira a exclusiva da frente', () => {
+    etapa('#1', ficha('nenhuma', 'a.ts'), 'status=em andamento', 'started=now');
+    etapa('#2', ficha('#1:aberta', 'b.ts'));
+    etapa('#3', ficha('nenhuma', 'c.ts'), 'hold=esperando dono (x)');
+    etapa('#4', ficha('?', 'd.ts'));
+    etapa('#5', ficha('nenhuma', 'e.ts'), 'exclusive=sim');
+    etapa('#6', ficha('nenhuma', 'f.ts'));
+    expect(motivos().slice(0, 5)).toEqual([
+      '#2 dep #1',
+      '#3 esperando dono (x)',
+      '#4 ficha incompleta (dep)',
+      '#5 exclusiva (espera a fila esvaziar)',
+      '#6 segurada para a exclusiva #5',
+    ]);
+    run('row', dir, '#1', 'status=concluída');
+    expect(motivos().slice(0, 5)).toEqual([
+      '#2 começa',
+      '#3 esperando dono (x)',
+      '#4 ficha incompleta (dep)',
+      '#5 exclusiva (espera a fila esvaziar)',
+      '#6 segurada para a exclusiva #5',
+    ]);
+    expect(run('show', dir)).toContain('drenando para a exclusiva: #5');
+  });
+
+  it('a exclusiva com dependência aberta não drena', () => {
+    etapa('#1', ficha('nenhuma', 'a.ts'), 'status=em andamento', 'started=now');
+    etapa('#2', ficha('#1:aberta', 'b.ts'), 'exclusive=sim');
+    etapa('#3', ficha('nenhuma', 'c.ts'));
+    expect(motivos().slice(0, 2)).toEqual(['#2 dep #1', '#3 começa']);
+    expect(run('show', dir)).toContain('drenando para a exclusiva: nenhuma');
+  });
+
+  it('com duas exclusivas, a primeira drena e a segunda fica segurada', () => {
+    etapa('#1', ficha('nenhuma', 'a.ts'), 'status=em andamento', 'started=now');
+    etapa('#2', ficha('nenhuma', 'b.ts'), 'exclusive=sim');
+    etapa('#3', ficha('nenhuma', 'c.ts'), 'exclusive=sim');
+    expect(motivos().slice(0, 2)).toEqual([
+      '#2 exclusiva (espera a fila esvaziar)',
+      '#3 segurada para a exclusiva #2',
+    ]);
+  });
+
+  it('os textos do skill dizem a drenagem', () => {
+    const skill = leitura(SKILL);
+    const mudancas = section(skill, '## Mudanças na fila durante a execução');
+    expect(mudancas).toContain('segurada para a exclusiva');
+    expect(mudancas).toContain('drenando para a exclusiva');
+    expect(mudancas).toContain('severity: high');
+    const painel = section(skill, '## Painel');
+    expect(painel).toContain('segurada para a exclusiva');
+    expect(painel).toContain('drenando para a exclusiva');
   });
 });
 

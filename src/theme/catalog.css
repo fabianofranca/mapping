@@ -170,11 +170,18 @@
   word-break: normal;
 }
 
-/* Cabeçalhos e colunas curtas (chave, tipo, obrigatório) numa linha só; só a descrição quebra. */
+/* Cabeçalhos e colunas curtas (chave, tipo, obrigatório) numa linha só: "enum" e
+   `preferredItemWidth` nunca partem. O rótulo (2ª coluna) é texto com espaços e quebra entre
+   palavras, para a tabela caber no diálogo sem cortar a descrição. */
 .catalog-table th,
-.catalog-table td:nth-child(-n + 4),
+.catalog-table td:nth-child(3),
+.catalog-table td:nth-child(4),
 .catalog-page .markdown th {
   white-space: nowrap;
+}
+
+.catalog-table td:nth-child(2) {
+  white-space: normal;
 }
 
 .catalog-table td:last-child {
