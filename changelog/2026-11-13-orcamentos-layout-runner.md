@@ -1,4 +1,4 @@
-# Orçamentos do layout medidos no runner — [Não lançado] (épico `epic/orcamentos-layout-runner`, PR #0, MCP sem mudança, schema v19)
+# Orçamentos do layout medidos no runner — 2026-11-13 (épico `epic/orcamentos-layout-runner`, PR #1811, MCP sem mudança, schema v19)
 
 ## Alterado
 
