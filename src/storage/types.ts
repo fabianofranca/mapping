@@ -41,6 +41,12 @@ export interface ProjectStorage {
   readonly copyId?: string;
   /** Texto do `mapping.json`, ou `null` se ele não existir. */
   loadMapping(): Promise<string | null>;
+  /**
+   * O texto do `mapping.json` e o `lastModified` (ms) do MESMO `File`, com um único `getFile`
+   * (a sessão deixa de ler o arquivo e carimbá-lo em duas chamadas). `null` se o arquivo não
+   * existe; `lastModified` 0 se o `File` não o tem. Só a pasta implementa, como `statMapping`.
+   */
+  loadMappingStamped?(): Promise<{ text: string; lastModified: number } | null>;
   saveMapping(text: string): Promise<void>;
   /**
    * `lastModified` do `mapping.json` (ms), ou `null` se ele não existir. Só os

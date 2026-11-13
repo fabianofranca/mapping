@@ -9,7 +9,9 @@ import {
   type Project,
   type RepairedLoad,
 } from '../model';
+import { mapLimit } from '../utils/mapLimit';
 import { reportError } from '../utils/report';
+import { FOLDER_CONCURRENCY } from './folderConcurrency';
 import { loadLibraryIssues, type LibraryIssues } from './specPackage';
 import type { ProjectStorage } from './types';
 
@@ -56,13 +58,17 @@ export async function loadProject(storage: ProjectStorage): Promise<LoadProjectR
   const text = await storage.loadMapping();
   if (text === null) return { ok: false, error: 'not-found' };
   const specs = new Map<string, string>();
-  for (const file of referencedSpecFiles(text)) {
-    const spec = await storage.readSpec(file).catch((e: unknown) => {
+  const files = referencedSpecFiles(text);
+  const copies = await mapLimit(files, FOLDER_CONCURRENCY, (file) =>
+    storage.readSpec(file).catch((e: unknown) => {
       reportError('open.readSpec', e);
       return null;
-    });
-    if (spec !== null) specs.set(file, spec);
-  }
+    }),
+  );
+  files.forEach((file, i) => {
+    const spec = copies[i];
+    if (spec !== null && spec !== undefined) specs.set(file, spec);
+  });
   const result = deserialize(text, migrations, specs);
   if (!result.ok) {
     const { error, repair } = result;

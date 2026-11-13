@@ -10,6 +10,8 @@ import {
   proposalFilePath,
   threadFilePath,
 } from '../model';
+import { mapLimit } from '../utils/mapLimit';
+import { FOLDER_CONCURRENCY } from './folderConcurrency';
 import {
   BACKUPS_DIR,
   IMAGES_DIR,
@@ -154,15 +156,92 @@ function splitPath(path: string): { dirs: string[]; name: string } {
   return { dirs: parts, name };
 }
 
-async function resolveDir(
-  root: DirectoryHandleLike,
+type FileBlob = Blob & { readonly lastModified?: number };
+
+/**
+ * Handles já abertos, para não percorrer o caminho desde a raiz a cada chamada (numa pasta
+ * lenta cada `getDirectoryHandle` custa caro). O mapa guarda a PROMESSA da pasta (chave: o
+ * caminho, `proposals/P1`), para duas chamadas simultâneas não abrirem a mesma pasta duas vezes.
+ * Só pastas abertas com sucesso ficam; um handle que o disco invalidou (pasta movida ou
+ * apagada por fora) é descartado e a operação repete uma vez a partir da raiz.
+ */
+interface HandleCache {
+  readonly root: DirectoryHandleLike;
+  readonly dirs: Map<string, Promise<DirectoryHandleLike>>;
+  /** Handle do `mapping.json`, guardado ao gravar ou ler (o carimbo dispensa o caminho). */
+  mapping: FileHandleLike | null;
+}
+
+function createHandleCache(root: DirectoryHandleLike): HandleCache {
+  return { root, dirs: new Map(), mapping: null };
+}
+
+/** Tira do mapa a pasta `path` e tudo o que há dentro dela. */
+function forgetTree(cache: HandleCache, path: string): void {
+  for (const key of [...cache.dirs.keys()]) {
+    if (key === path || key.startsWith(`${path}/`)) cache.dirs.delete(key);
+  }
+}
+
+/** Tira do mapa todas as pastas do caminho (e as de dentro da última): recomeça da raiz. */
+function forgetChain(cache: HandleCache, dirs: readonly string[]): void {
+  for (let i = 1; i < dirs.length; i++) cache.dirs.delete(dirs.slice(0, i).join('/'));
+  if (dirs.length > 0) forgetTree(cache, dirs.join('/'));
+}
+
+function openDir(
+  cache: HandleCache,
+  key: string,
+  parent: DirectoryHandleLike,
+  name: string,
+  create: boolean,
+): Promise<DirectoryHandleLike> {
+  const promise = parent.getDirectoryHandle(name, { create });
+  cache.dirs.set(key, promise);
+  promise.catch(() => {
+    // Promessa rejeitada não fica no mapa; quem a esperava recebe o erro.
+    if (cache.dirs.get(key) === promise) cache.dirs.delete(key);
+  });
+  return promise;
+}
+
+/** A pasta `key`: do mapa (`hit`) ou aberta agora a partir de `parent`. */
+async function fetchDir(
+  cache: HandleCache,
+  key: string,
+  parent: DirectoryHandleLike,
+  name: string,
+  create: boolean,
+): Promise<{ dir: DirectoryHandleLike; hit: boolean }> {
+  const pending = cache.dirs.get(key);
+  if (pending) {
+    try {
+      return { dir: await pending, hit: true };
+    } catch {
+      // A abertura em curso de outra chamada falhou (talvez sem `create`): tenta a nossa.
+    }
+  }
+  return { dir: await openDir(cache, key, parent, name, create), hit: false };
+}
+
+/**
+ * Resolve as pastas do caminho usando o mapa. `trace.stored` diz se o último handle obtido
+ * (ou, se a resolução falhar, o pai do passo que falhou) veio do mapa: só então um
+ * "não existe" pode ser handle velho. Pasta inexistente sem `create`: `null`, sem guardar nada.
+ */
+async function resolveCached(
+  cache: HandleCache,
   dirs: readonly string[],
   create: boolean,
+  trace: { stored: boolean },
 ): Promise<DirectoryHandleLike | null> {
-  let dir = root;
-  for (const name of dirs) {
+  let dir = cache.root;
+  for (let i = 0; i < dirs.length; i++) {
+    const key = dirs.slice(0, i + 1).join('/');
     try {
-      dir = await dir.getDirectoryHandle(name, { create });
+      const step = await fetchDir(cache, key, dir, dirs[i] as string, create);
+      dir = step.dir;
+      trace.stored = step.hit;
     } catch (e) {
       if (!create && isNotFound(e)) return null;
       throw e;
@@ -171,89 +250,170 @@ async function resolveDir(
   return dir;
 }
 
-async function readFile(
-  root: DirectoryHandleLike,
-  path: string,
-): Promise<(Blob & { readonly lastModified?: number }) | null> {
-  const { dirs, name } = splitPath(path);
-  const dir = await resolveDir(root, dirs, false);
-  if (!dir) return null;
+/**
+ * Roda `op` com a pasta do caminho. Se o handle guardado estava velho (a resolução ou `op`
+ * falham com "não existe" e o handle veio do mapa), esquece o caminho e repete UMA vez desde a
+ * raiz. Um "não existe" legítimo numa pasta recém-aberta não repete. `op` deixa o
+ * `NotFoundError` subir: quem trata o "arquivo não existe" é o chamador, depois daqui.
+ */
+async function withDir<T>(
+  cache: HandleCache,
+  dirs: readonly string[],
+  create: boolean,
+  op: (dir: DirectoryHandleLike | null) => Promise<T>,
+): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    const trace = { stored: false };
+    const mayRetry = (): boolean => attempt === 0 && trace.stored;
+    try {
+      const dir = await resolveCached(cache, dirs, create, trace);
+      if (dir === null && mayRetry()) {
+        forgetChain(cache, dirs);
+        continue;
+      }
+      return await op(dir);
+    } catch (e) {
+      if (!(mayRetry() && isNotFound(e))) throw e;
+      forgetChain(cache, dirs);
+    }
+  }
+}
+
+/** Roda `fn` e devolve `null` se o que ele procurava não existe. */
+async function orNull<T>(fn: () => Promise<T | null>): Promise<T | null> {
   try {
-    return await (await dir.getFileHandle(name)).getFile();
+    return await fn();
   } catch (e) {
     if (isNotFound(e)) return null;
     throw e;
   }
 }
 
-async function writeFile(
-  root: DirectoryHandleLike,
-  path: string,
-  data: Blob | string,
-): Promise<void> {
+async function readFile(cache: HandleCache, path: string): Promise<FileBlob | null> {
   const { dirs, name } = splitPath(path);
-  const dir = await resolveDir(root, dirs, true);
-  if (!dir) throw new Error(`cannot create ${path}`);
-  const writable = await (
-    await dir.getFileHandle(name, { create: true })
-  ).createWritable();
-  try {
-    await writable.write(data);
-    await writable.close();
-  } catch (e) {
-    // Descarta a escrita pela metade: o arquivo continua com o conteúdo anterior.
-    try {
-      await writable.abort(e);
-    } catch {
-      // O gravável já pode estar fechado ou com erro; o que importa é a falha original.
-    }
-    throw e;
-  }
+  return orNull(() =>
+    withDir(cache, dirs, false, async (dir) =>
+      dir ? (await dir.getFileHandle(name)).getFile() : null,
+    ),
+  );
 }
 
-async function removeFile(root: DirectoryHandleLike, path: string): Promise<void> {
+/** Grava `data` em `path` (criando as pastas) e devolve o handle do arquivo gravado. */
+async function writeFile(
+  cache: HandleCache,
+  path: string,
+  data: Blob | string,
+): Promise<FileHandleLike> {
   const { dirs, name } = splitPath(path);
-  const dir = await resolveDir(root, dirs, false);
-  if (!dir) return;
-  try {
-    await dir.removeEntry(name);
-  } catch (e) {
-    if (!isNotFound(e)) throw e;
-  }
+  return withDir(cache, dirs, true, async (dir) => {
+    if (!dir) throw new Error(`cannot create ${path}`);
+    const handle = await dir.getFileHandle(name, { create: true });
+    const writable = await handle.createWritable();
+    try {
+      await writable.write(data);
+      await writable.close();
+    } catch (e) {
+      // Descarta a escrita pela metade: o arquivo continua com o conteúdo anterior.
+      try {
+        await writable.abort(e);
+      } catch {
+        // O gravável já pode estar fechado ou com erro; o que importa é a falha original.
+      }
+      throw e;
+    }
+    return handle;
+  });
+}
+
+async function removeFile(cache: HandleCache, path: string): Promise<void> {
+  const { dirs, name } = splitPath(path);
+  await orNull(() =>
+    withDir(cache, dirs, false, async (dir) => {
+      await dir?.removeEntry(name);
+      return null;
+    }),
+  );
 }
 
 /** Remove a pasta e tudo o que há nela. Não falha se ela (ou o pai) já não existe. */
-async function removeDirectory(root: DirectoryHandleLike, path: string): Promise<void> {
+async function removeDirectory(cache: HandleCache, path: string): Promise<void> {
   const { dirs, name } = splitPath(path);
-  const parent = await resolveDir(root, dirs, false);
-  if (!parent) return;
+  const tree = [...dirs, name].join('/');
+  forgetTree(cache, tree);
   try {
-    await parent.removeEntry(name, { recursive: true });
-  } catch (e) {
-    if (!isNotFound(e)) throw e;
+    await orNull(() =>
+      withDir(cache, dirs, false, async (parent) => {
+        await parent?.removeEntry(name, { recursive: true });
+        return null;
+      }),
+    );
+  } finally {
+    // Uma operação concorrente pode ter reaberto e guardado a pasta durante a remoção.
+    forgetTree(cache, tree);
   }
 }
 
 /** Caminhos de todos os arquivos sob `dir` (recursivo), relativos à raiz, em ordem alfabética. */
-async function listFiles(root: DirectoryHandleLike, dir: string): Promise<string[]> {
+async function listFiles(cache: HandleCache, dir: string): Promise<string[]> {
   const { dirs, name } = splitPath(dir);
-  const start = await resolveDir(root, [...dirs, name], false);
-  if (!start) return [];
-  const found: string[] = [];
-  const walk = async (handle: DirectoryHandleLike, prefix: string): Promise<void> => {
-    for await (const entry of handle.values()) {
-      if (entry.kind === 'file') found.push(`${prefix}${entry.name}`);
-      else await walk(entry, `${prefix}${entry.name}/`);
-    }
-  };
-  await walk(start, `${[...dirs, name].join('/')}/`);
-  return found.sort();
+  const all = [...dirs, name];
+  const found = await withDir(cache, all, false, async (start) => {
+    if (!start) return null;
+    const files: string[] = [];
+    const walk = async (handle: DirectoryHandleLike, prefix: string): Promise<void> => {
+      for await (const entry of handle.values()) {
+        if (entry.kind === 'file') files.push(`${prefix}${entry.name}`);
+        else await walk(entry, `${prefix}${entry.name}/`);
+      }
+    };
+    await walk(start, `${all.join('/')}/`);
+    return files;
+  });
+  return found ? found.sort() : [];
 }
 
-async function removeProposalDir(root: DirectoryHandleLike, id: string): Promise<void> {
+async function removeProposalDir(cache: HandleCache, id: string): Promise<void> {
   // Um id fora do padrão apontaria para outra pasta (ou para `proposals/` inteira).
   if (!PROPOSAL_ID_RE.test(id)) throw new Error(`invalid proposal id: ${id}`);
-  await removeDirectory(root, proposalDir(id));
+  await removeDirectory(cache, proposalDir(id));
+}
+
+/** Lê o `mapping.json` pelo handle guardado (sem resolver o caminho); sem ele, pela raiz. */
+async function readMapping(cache: HandleCache): Promise<FileBlob | null> {
+  const stored = cache.mapping;
+  if (stored) {
+    try {
+      return await stored.getFile();
+    } catch (e) {
+      cache.mapping = null;
+      if (!isNotFound(e)) throw e;
+    }
+  }
+  const handle = await orNull(async () => {
+    const { dirs, name } = splitPath(MAPPING_FILE);
+    return withDir(cache, dirs, false, (dir) => (dir ?? cache.root).getFileHandle(name));
+  });
+  if (!handle) return null;
+  const file = await orNull(() => handle.getFile());
+  if (file) cache.mapping = handle;
+  return file;
+}
+
+async function listDirNames(
+  cache: HandleCache,
+  dirName: string[],
+  pick: (entry: FileHandleLike | DirectoryHandleLike) => Promise<string | null>,
+  /** Quantas conferências de `pick` rodam ao mesmo tempo. */
+  concurrency = 1,
+): Promise<string[]> {
+  const ids = await withDir(cache, dirName, false, async (dir) => {
+    if (!dir) return null;
+    const entries: (FileHandleLike | DirectoryHandleLike)[] = [];
+    for await (const entry of dir.values()) entries.push(entry);
+    const names = await mapLimit(entries, concurrency, (entry) => pick(entry));
+    return names.filter((name): name is string => name !== null);
+  });
+  return ids ? ids.sort() : [];
 }
 
 /**
@@ -262,7 +422,7 @@ async function removeProposalDir(root: DirectoryHandleLike, id: string): Promise
  * sem projeto; outros erros sobem.
  */
 export async function hasMappingFile(root: DirectoryHandleLike): Promise<boolean> {
-  return (await readFile(root, MAPPING_FILE)) !== null;
+  return (await readFile(createHandleCache(root), MAPPING_FILE)) !== null;
 }
 
 /**
@@ -273,127 +433,119 @@ export function createFolderStorage(
   root: DirectoryHandleLike,
   options: { readonly copyId?: string } = {},
 ): ProjectStorage {
+  const cache = createHandleCache(root);
+  const read = (path: string) => readFile(cache, path);
+  const readText = async (path: string) => (await read(path))?.text() ?? null;
+  const stamp = async (path: string) => {
+    const file = await read(path);
+    return file ? `${file.size}:${file.lastModified ?? 0}` : null;
+  };
+  const write = async (path: string, data: Blob | string) => {
+    await writeFile(cache, path, data);
+  };
   return {
     kind: 'folder',
     folderName: root.name,
     ...(options.copyId === undefined ? {} : { copyId: options.copyId }),
     async loadMapping() {
-      const blob = await readFile(root, MAPPING_FILE);
-      return blob ? blob.text() : null;
+      return (await readMapping(cache))?.text() ?? null;
     },
-    saveMapping: (text) => writeFile(root, MAPPING_FILE, text),
+    async loadMappingStamped() {
+      const file = await readMapping(cache);
+      return file
+        ? { text: await file.text(), lastModified: file.lastModified ?? 0 }
+        : null;
+    },
+    async saveMapping(text) {
+      cache.mapping = await writeFile(cache, MAPPING_FILE, text);
+    },
     async statMapping() {
-      const file = await readFile(root, MAPPING_FILE);
+      const file = await readMapping(cache);
       return file ? (file.lastModified ?? 0) : null;
     },
-    readImage: (path) => readFile(root, path),
-    async statImage(path) {
-      const file = await readFile(root, path);
-      return file ? `${file.size}:${file.lastModified ?? 0}` : null;
-    },
-    writeImage: (path, data) => writeFile(root, path, data),
-    async listImages() {
-      const dir = await resolveDir(root, [IMAGES_DIR], false);
-      if (!dir) return [];
-      const found: string[] = [];
-      for await (const entry of dir.values()) {
-        if (entry.kind === 'file') found.push(`${IMAGES_DIR}/${entry.name}`);
-      }
-      return found.sort();
-    },
-    removeImage: (path) => removeFile(root, path),
+    readImage: read,
+    statImage: stamp,
+    writeImage: write,
+    listImages: () =>
+      listDirNames(cache, [IMAGES_DIR], async (entry) =>
+        entry.kind === 'file' ? `${IMAGES_DIR}/${entry.name}` : null,
+      ),
+    removeImage: (path) => removeFile(cache, path),
     async readSpec(path) {
       assertSpecPath(path, 'file');
-      const blob = await readFile(root, path);
-      return blob ? blob.text() : null;
+      return readText(path);
     },
     async writeSpec(path, text) {
       assertSpecPath(path, 'file');
-      await writeFile(root, path, text);
+      await write(path, text);
     },
     async removeSpec(path) {
       assertSpecPath(path, 'file');
-      await removeFile(root, path);
+      await removeFile(cache, path);
     },
     async listSpecDir(dir) {
       assertSpecPath(dir, 'dir');
-      return listFiles(root, dir);
+      return listFiles(cache, dir);
     },
     async readSpecFile(path) {
       assertSpecPath(path, 'package');
-      return readFile(root, path);
+      return read(path);
     },
     async writeSpecFile(path, data) {
       assertSpecPath(path, 'package');
-      await writeFile(root, path, data);
+      await write(path, data);
     },
     async removeSpecFile(path) {
       assertSpecPath(path, 'package');
-      await removeFile(root, path);
+      await removeFile(cache, path);
     },
     async removeSpecDir(dir) {
       assertSpecPath(dir, 'dir');
-      await removeDirectory(root, dir);
+      await removeDirectory(cache, dir);
     },
-    async listProposals() {
-      const dir = await resolveDir(root, [PROPOSALS_DIR], false);
-      if (!dir) return [];
-      const ids: string[] = [];
-      for await (const entry of dir.values()) {
-        if (entry.kind !== 'directory' || !PROPOSAL_ID_RE.test(entry.name)) continue;
-        try {
-          await entry.getFileHandle(PROPOSAL_FILE);
-          ids.push(entry.name);
-        } catch (e) {
-          if (!isNotFound(e)) throw e;
-        }
-      }
-      return ids.sort();
-    },
-    async readProposal(id) {
-      const blob = await readFile(root, proposalFilePath(id));
-      return blob ? blob.text() : null;
-    },
-    writeProposal: (id, text) => writeFile(root, proposalFilePath(id), text),
-    removeProposal: (id) => removeProposalDir(root, id),
+    listProposals: () =>
+      listDirNames(
+        cache,
+        [PROPOSALS_DIR],
+        async (entry) => {
+          if (entry.kind !== 'directory' || !PROPOSAL_ID_RE.test(entry.name)) return null;
+          return (await orNull(() => entry.getFileHandle(PROPOSAL_FILE)))
+            ? entry.name
+            : null;
+        },
+        FOLDER_CONCURRENCY,
+      ),
+    readProposal: (id) => readText(proposalFilePath(id)),
+    writeProposal: (id, text) => write(proposalFilePath(id), text),
+    removeProposal: (id) => removeProposalDir(cache, id),
     async listProposalFiles(id) {
       if (!PROPOSAL_ID_RE.test(id)) throw new Error(`invalid proposal id: ${id}`);
-      return listFiles(root, proposalDir(id));
+      return listFiles(cache, proposalDir(id));
     },
-    async statProposal(id) {
-      const file = await readFile(root, proposalFilePath(id));
-      return file ? `${file.size}:${file.lastModified ?? 0}` : null;
-    },
-    async listThreads(resolved) {
-      const dirs = resolved ? RESOLVED_DIR.split('/') : [COMMENTS_DIR];
-      const dir = await resolveDir(root, dirs, false);
-      if (!dir) return [];
-      const ids: string[] = [];
-      for await (const entry of dir.values()) {
-        const id = entry.kind === 'file' ? threadIdOfFileName(entry.name) : null;
-        if (id !== null) ids.push(id);
-      }
-      return ids.sort();
-    },
+    statProposal: (id) => stamp(proposalFilePath(id)),
+    listThreads: (resolved) =>
+      listDirNames(
+        cache,
+        resolved ? RESOLVED_DIR.split('/') : [COMMENTS_DIR],
+        async (entry) => (entry.kind === 'file' ? threadIdOfFileName(entry.name) : null),
+      ),
     async readThread(id, resolved) {
       assertThreadId(id);
-      const blob = await readFile(root, threadFilePath(id, resolved));
-      return blob ? blob.text() : null;
+      return readText(threadFilePath(id, resolved));
     },
     async writeThread(id, resolved, text) {
       assertThreadId(id);
-      await writeFile(root, threadFilePath(id, resolved), text);
+      await write(threadFilePath(id, resolved), text);
     },
     async removeThread(id, resolved) {
       assertThreadId(id);
-      await removeFile(root, threadFilePath(id, resolved));
+      await removeFile(cache, threadFilePath(id, resolved));
     },
     async statThread(id, resolved) {
       assertThreadId(id);
-      const file = await readFile(root, threadFilePath(id, resolved));
-      return file ? `${file.size}:${file.lastModified ?? 0}` : null;
+      return stamp(threadFilePath(id, resolved));
     },
-    writeBackup: (name, text) => writeFile(root, `${BACKUPS_DIR}/${name}`, text),
+    writeBackup: (name, text) => write(`${BACKUPS_DIR}/${name}`, text),
   };
 }
 
@@ -403,10 +555,11 @@ export function createFolderStorage(
  * de `gitignoreWithBackups`, o mesmo do `create_project` do MCP). Devolve `true` se gravou.
  */
 export async function ensureGitignore(root: DirectoryHandleLike): Promise<boolean> {
-  const current = await readFile(root, GITIGNORE_FILE);
+  const cache = createHandleCache(root);
+  const current = await readFile(cache, GITIGNORE_FILE);
   const next = gitignoreWithBackups(current ? await current.text() : '');
   if (next === null) return false;
-  await writeFile(root, GITIGNORE_FILE, next);
+  await writeFile(cache, GITIGNORE_FILE, next);
   return true;
 }
 
@@ -429,7 +582,9 @@ export async function findExistingImages(
     }
     return found.sort((a, b) => a.name.localeCompare(b.name));
   };
-  const imagesDir = await resolveDir(root, [IMAGES_DIR], false);
+  const imagesDir = await resolveCached(createHandleCache(root), [IMAGES_DIR], false, {
+    stored: false,
+  });
   const inImages = imagesDir ? await list(imagesDir, `${IMAGES_DIR}/`) : [];
   return [...inImages, ...(await list(root, ''))];
 }
