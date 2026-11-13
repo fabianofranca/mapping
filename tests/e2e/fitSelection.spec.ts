@@ -4,6 +4,26 @@ import { addImage, canvasPoint, createProject, drawMarking } from './helpers';
 const viewportOf = async (page: import('@playwright/test').Page) =>
   page.locator('.canvas-host').getAttribute('data-viewport');
 
+/** A vista depois de parar de mudar (o enquadramento anima): três leituras iguais seguidas. */
+async function settledViewport(
+  page: import('@playwright/test').Page,
+): Promise<string | null> {
+  let last: string | null = null;
+  let same = 0;
+  await expect
+    .poll(
+      async () => {
+        const now = await viewportOf(page);
+        same = now === last ? same + 1 : 0;
+        last = now;
+        return same;
+      },
+      { intervals: [100], timeout: 10_000 },
+    )
+    .toBeGreaterThanOrEqual(3);
+  return last;
+}
+
 // Enquadrar seleção (EQ2): o botão e o `Shift+2` dão zoom e centram a vista nos itens
 // selecionados; sem seleção não fazem nada e, com o foco num campo, o atalho é do campo.
 
@@ -105,17 +125,18 @@ test('Shift+1 depois do Adicionar da Paleta enquadra; no campo da Posição é d
   await canvas.focus();
   await page.keyboard.press('Control+-');
   await page.keyboard.press('Control+-');
-  const zoomedOut = await viewportOf(page);
+  const zoomedOut = await settledViewport(page);
   await add.focus();
   await page.keyboard.press('Shift+1');
   await expect.poll(() => viewportOf(page)).not.toBe(zoomedOut);
-  const byKey = await viewportOf(page);
+  const byKey = await settledViewport(page);
 
   // ...para o mesmo valor do botão Enquadrar tudo.
   await canvas.focus();
   await page.keyboard.press('Control+-');
   await page.keyboard.press('Control+-');
   await expect.poll(() => viewportOf(page)).not.toBe(byKey);
+  await settledViewport(page);
   await fitAll.click();
   await expect.poll(() => viewportOf(page)).toBe(byKey);
 
