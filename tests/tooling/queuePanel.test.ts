@@ -448,12 +448,32 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
     // Decisão 6: a transição de um branch que subiu o teto no `ci.yml` antes da etapa.
     expect(item6).toMatch(/ficando com o `ci\.yml` da `main`/);
     expect(item6).toMatch(/`history`/);
-    expect(item6).toMatch(/chama o dono/);
     expect(item6).toMatch(/16 KiB/);
     expect(item6).toMatch(/até 14 KiB/);
     expect(item6).toMatch(/32 KiB/);
     expect(item6).toMatch(/64 KiB/);
     expect(item6).toMatch(/`send_message`/);
+  });
+
+  it('"Para a sessão da fase": o teto sempre sobe e a fase abre o `bug` do teto (#1802, decisões 1 a 6)', () => {
+    const teto = between(item6, '   - **Teto do `dist/index.html`:**', '**Transição:**');
+    expect(teto).not.toMatch(/chama o dono/);
+    expect(teto).not.toContain('peça a autorização ao dono');
+    expect(teto).toMatch(/sempre sobe/);
+    expect(teto).toContain('`bug:`');
+    expect(teto).toContain('Teto do dist/index.html acima dos limites');
+    expect(teto).toContain('`severity: low`');
+    expect(teto).toContain('is:issue in:title');
+    expect(teto).toMatch(/um por subida/);
+    expect(teto).toMatch(/depois do commit[^\n]*antes do aviso/);
+    expect(teto).toContain('Teto do `dist/index.html` subiu');
+    expect(teto).toContain('acima dos limites, `bug` #<n> para o dono revisar');
+    // o número do `bug` só existe depois de aberto: o 1º commit leva a linha sem ele, e o 2º o completa antes do push
+    expect(teto).toMatch(/termina em "; acima dos limites, `bug` para o dono revisar"/);
+    expect(teto).toMatch(/segundo commit completa a linha[^\n]*só então o push/);
+    expect(teto).toMatch(/sem `PushNotification`|o dono olha depois/);
+    expect(teto).toContain('#1493');
+    expect(teto).toMatch(/outra falha/);
   });
 
   it('o CI de uma fase fica só no item 6 (decisão do dono)', () => {
@@ -487,7 +507,9 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
     const fases = between(skill, '2. **Fases**', '3. **Testador.**');
     expect(fases).toContain('espera o coordenador');
     expect(fases).toContain('CI travado');
-    expect(fases).toContain('chama o dono');
+    expect(fases).toContain(
+      'A subida do teto não espera mais o dono (etapa #1802): traga a `main` (`git merge origin/main`), rode o `raise --write` de novo e siga o item 6 da "Para a sessão da fase".',
+    );
     expect(fases).toContain('row \'#n\' wait="<motivo curto>"');
     expect(fases).toContain('wait= childAt=now');
     const painel = section(skill, '## Painel');
@@ -518,9 +540,7 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
   it('"CI vermelho no PR do épico": regra do teto, script e roadmap (decisões 6 a 9)', () => {
     expect(ciVermelho).toContain('Tamanho do dist/index.html');
     expect(ciVermelho).toMatch(/16 KiB/);
-    expect(ciVermelho).toContain(
-      'até 14 KiB (14.336 bytes), para sobrar ao menos 2 KiB depois da subida',
-    );
+    expect(ciVermelho).toContain('até 14 KiB (14.336 bytes)');
     expect(ciVermelho).toContain('excesso acima de 14 KiB');
     expect(ciVermelho).toMatch(/32 KiB/);
     expect(ciVermelho).toMatch(/64 KiB/);
@@ -537,6 +557,50 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
     expect(ciVermelho).toContain('Teto na última revisão do dono');
     expect(ciVermelho).toMatch(/primeira subida/);
     expect(ciVermelho).toMatch(/inclusive as da fase|subida feita pela fase/);
+  });
+
+  it('"CI vermelho no PR do épico": o teto sempre sobe, o `bug` sai pelo subagente da subida (#1802, decisões 2, 3 e 6)', () => {
+    const teto = between(
+      ciVermelho,
+      '- **Teto do `dist/index.html`',
+      '\n\n**CI preso na fila',
+    );
+    expect(teto).toMatch(/sobe sozinho, sem esperar o dono/);
+    expect(teto).not.toMatch(/chama o dono/);
+    expect(teto).not.toContain('Fora disso, chame o dono');
+    expect(teto).toMatch(/outra falha/);
+    expect(teto).toMatch(/sempre sobe/);
+    expect(teto).toContain('"bug: …"');
+    expect(teto).toMatch(/`bug` do teto/);
+    expect(teto).toMatch(/subagente da subida/);
+    expect(teto).toContain('item 6 da "Para a sessão da fase"');
+    // o formato do `bug` fica no FLOW.md e não se copia para o skill
+    expect(teto).not.toContain('severity: low');
+    expect(teto).not.toContain('in:title');
+    expect(teto).toContain('sem `PushNotification`');
+    expect(teto).toContain('<código>: teto +<K> KiB acima dos limites, bug #<n>');
+    expect(teto).toMatch(/#1493[^\n]*cita o `bug`|cita o `bug`[^\n]*#1493/);
+    expect(teto).toContain('Teto do `dist/index.html` subiu');
+    expect(teto).toMatch(/segundo commit[^\n]*antes do push/);
+    expect(teto).toContain('até 14 KiB (14.336 bytes)');
+    expect(teto).toMatch(/32 KiB/);
+    expect(teto).toMatch(/64 KiB/);
+  });
+
+  it('detalhar-backlog: "1. Candidatas" deixa de fora o `bug` do teto do dist (#1802, decisão 10)', () => {
+    const candidatas = section(detalhar, '## 1. Candidatas');
+    const passo2 = between(candidatas, '2. ', '\n3. ');
+    expect(passo2).toContain('Teto do dist/index.html acima dos limites');
+    expect(passo2).toContain('chat do supervisor');
+    expect(passo2).toMatch(/título começa por/);
+  });
+
+  it('PROCESS.md, "Rótulos": o `bug` admite a subida do teto acima dos limites, severity: low (#1802, decisão 9)', () => {
+    const rotulos = between(processDoc, '**Rótulos:**', '\n');
+    expect(rotulos).toContain('subida do teto do `dist/index.html` acima dos limites');
+    expect(rotulos).toContain('pedido de revisão do dono');
+    expect(rotulos).toContain('severity: low');
+    expect(rotulos).toContain('`docs/FLOW.md`, item 6');
   });
 
   it('detalhar-backlog: gatilhos de risco (a) e reclassificação (b) (decisão 11)', () => {
