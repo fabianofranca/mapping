@@ -1,4 +1,4 @@
-# Toca por arquivo e seção na ficha da fila — [Não lançado] (épico `epic/toca-por-arquivo`, PR #0, MCP 0.39.1 sem mudança, schema v19)
+# Toca por arquivo e seção na ficha da fila — 2026-11-13 (épico `epic/toca-por-arquivo`, PR #0, MCP 0.39.1 sem mudança, schema v19)
 
 ## Alterado
 

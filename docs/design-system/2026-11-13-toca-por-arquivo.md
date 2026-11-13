@@ -1,4 +1,4 @@
-# Toca por arquivo e seção na ficha da fila — [Não lançado] (épico `epic/toca-por-arquivo`)
+# Toca por arquivo e seção na ficha da fila — 2026-11-13 (épico `epic/toca-por-arquivo`)
 
 ## Pendências
 
