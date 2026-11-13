@@ -9,8 +9,7 @@ import {
   type SpecOrigin,
 } from './components/origin';
 import { TOKEN_NAME_PATTERN, type SpecTokens } from './components/tokens';
-import { isPackagePath, packagePathError, type PackagePathError } from './packagePaths';
-import { originCodeForText, originSpecCodeForText } from './messages/textLookup';
+import { isPackagePath, packagePathError } from './packagePaths';
 import { childSets } from './specChildren';
 import { checkSignatureKeys } from './specSignature';
 import type { ModelMessageTemplateCode } from './messages';
@@ -18,6 +17,8 @@ import {
   addSpecIssue,
   forwardIssue,
   issueCoding,
+  packagePathMsg,
+  pathErrorMsg,
   specMsg,
   type MessageParams,
   type SpecMsg,
@@ -517,7 +518,7 @@ const fieldType = z.enum(
   {
     error: (issue) =>
       typeof issue.input === 'string'
-        ? `"${issue.input}" inválido; use "string", "number", "date", "enum", "table" ou "ref"`
+        ? specMsg('spec.fieldTypeInvalid', { value: issue.input }).text
         : 'obrigatório',
   },
 );
@@ -533,13 +534,6 @@ const dateString = z
   .string()
   .regex(DATE_RE, 'data inválida; use AAAA-MM-DD')
   .refine(isIsoDate, 'data inexistente');
-
-/** O erro de caminho do pacote como mensagem com código (o mesmo texto de `packagePathProblem`). */
-function packagePathMsg(error: PackagePathError): SpecMsg {
-  return error.kind === 'path'
-    ? specMsg('spec.packagePathInvalid')
-    : specMsg('spec.invalidExtension', { exts: error.exts.join(', ') });
-}
 
 /** Caminho de arquivo do pacote com a extensão (ou uma das extensões) dada. */
 function packagePath(ext: string | readonly string[]) {
@@ -600,7 +594,7 @@ const noticeShape = z
         issue.input === undefined
           ? 'obrigatório'
           : typeof issue.input === 'string'
-            ? `"${issue.input}" inválido; use "removed", "deprecated", "diverges" ou "pending"`
+            ? specMsg('spec.noticeKindInvalid', { value: issue.input }).text
             : 'deve ser "removed", "deprecated", "diverges" ou "pending"',
     }),
     message: z
@@ -1359,7 +1353,7 @@ const annotationTypeShape = z
         z.enum(SPEC_APPLIES_TO as [SpecAppliesTo, ...SpecAppliesTo[]], {
           error: (issue) =>
             typeof issue.input === 'string'
-              ? `"${issue.input}" inválido; use "marking" ou "arrow"`
+              ? specMsg('spec.appliesToInvalid', { value: issue.input }).text
               : 'deve ser "marking" ou "arrow"',
         }),
       )
@@ -1406,7 +1400,7 @@ function checkNoStructural(
       addSpecIssue(
         ctx,
         ['layers', li, 'annotationTypes', ti, 'structural'],
-        specMsg('spec.onlyFormat15'),
+        onlyFormat(15),
       );
     });
   });
@@ -1418,7 +1412,7 @@ function checkNoNotices(
   ctx: z.RefinementCtx,
 ): void {
   const only10 = (path: (string | number)[]) =>
-    addSpecIssue(ctx, [...path, 'notices'], specMsg('spec.onlyFormat10'));
+    addSpecIssue(ctx, [...path, 'notices'], onlyFormat(10));
   layers.forEach((layer, li) => {
     layer.annotationTypes.forEach((type, ti) => {
       const typePath = ['layers', li, 'annotationTypes', ti];
@@ -1701,20 +1695,6 @@ function checkNoLibraryKeys(
       }
     });
   });
-}
-
-/** O erro do `parsePath` (texto fixo do leitor de caminhos) na mensagem com código da variante. */
-function pathErrorMsg(path: string, error: string): SpecMsg {
-  const index = /^índice inválido: \[(.*)\]$/.exec(error)?.[1];
-  if (index !== undefined) return specMsg('spec.fieldPathBadIndex', { path, index });
-  const char = /^caractere inesperado: (.*)$/.exec(error)?.[1];
-  if (char !== undefined) return specMsg('spec.fieldPathBadChar', { path, char });
-  return specMsg(
-    error === 'faltou "]"'
-      ? 'spec.fieldPathMissingBracket'
-      : 'spec.fieldPathEmptySegment',
-    { path },
-  );
 }
 
 /**
@@ -2208,7 +2188,7 @@ function checkMigrations(
   });
 }
 
-/** Cada problema `"caminho: mensagem"` do `parseOrigins` vira uma issue no caminho exato. */
+/** Cada problema do `parseOrigins` (caminho, mensagem e código) vira uma issue no caminho exato. */
 type OriginsParse = ReturnType<typeof parseOrigins>;
 let originParses = new WeakMap<object, OriginsParse>();
 
@@ -2238,19 +2218,18 @@ function addOriginIssues(
   if (formatVersion < 15 && Array.isArray(raw)) {
     raw.forEach((item, index) => {
       if (isRecord(item) && item.kind !== undefined) {
-        addSpecIssue(ctx, ['origins', index, 'kind'], specMsg('spec.onlyFormat15'));
+        addSpecIssue(ctx, ['origins', index, 'kind'], onlyFormat(15));
       }
     });
   }
   for (const problem of originsOf(raw).problems) {
-    const cut = problem.indexOf(': ');
-    const message = cut < 0 ? problem : problem.slice(cut + 2);
-    const hit = originCodeForText(message) ?? originSpecCodeForText(message);
     ctx.addIssue({
       code: 'custom',
-      path: cut < 0 ? [] : parseSpecPath(problem.slice(0, cut)),
-      message,
-      ...(hit === undefined ? {} : { params: { messageCode: hit.code, ...hit.params } }),
+      path: parseSpecPath(problem.path),
+      message: problem.message,
+      ...(problem.code === undefined
+        ? {}
+        : { params: { messageCode: problem.code, ...problem.params } }),
     });
   }
 }
@@ -2485,10 +2464,7 @@ function checkAcceptsAnnotations(
   eachV11Type(spec.layers, (type, _layer, path, li) => {
     eachAccepts(type, path, (items, itemsPath) => {
       if (!current) {
-        add(
-          itemsPath,
-          specMsg('spec.onlyFormat', { version: ACCEPTS_ANNOTATIONS_VERSION }),
-        );
+        add(itemsPath, onlyFormat(ACCEPTS_ANNOTATIONS_VERSION));
         return;
       }
       items.forEach((item, ii) => {
@@ -2654,7 +2630,7 @@ function checkTokens(
   if (spec.tokens === undefined) return;
   const add = issueAdder(ctx);
   if (spec.formatVersion < 15) {
-    add(['tokens'], specMsg('spec.onlyFormat15'));
+    add(['tokens'], onlyFormat(15));
     return;
   }
   if (!isRecord(spec.tokens))
@@ -2679,7 +2655,7 @@ function checkIcons(
 ): void {
   if (spec.icons === undefined) return;
   const add = issueAdder(ctx);
-  if (spec.formatVersion < 15) return add(['icons'], specMsg('spec.onlyFormat15'));
+  if (spec.formatVersion < 15) return add(['icons'], onlyFormat(15));
   if (typeof spec.icons !== 'string') {
     return add(['icons'], 'deve ser o caminho de um arquivo .json do pacote');
   }

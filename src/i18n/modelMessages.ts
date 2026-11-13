@@ -284,8 +284,6 @@ const specEnUS: { readonly [C in keyof typeof specMessages as `model.${C}`]: str
   'model.spec.structuralNoComponent':
     'a structural type does not draw: it cannot have a component',
   'model.spec.labelFieldNotString': '"{key}" must be a string field of the type',
-  'model.spec.onlyFormat15': 'only allowed with formatVersion 15',
-  'model.spec.onlyFormat10': 'only allowed with formatVersion 10',
   'model.spec.urlInvalid': 'must start with http:// or https://, without spaces',
   'model.spec.urlTemplateNeedsPath': 'must contain {path}',
   'model.spec.repoIdInvalid': 'invalid repository id; use [a-z0-9-]+',
