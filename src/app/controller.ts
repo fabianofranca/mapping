@@ -518,7 +518,9 @@ export function createFolderProject(
       return opened.ok ? ok({ skipped: [], existing: true as const }) : opened;
     };
     if (await hasMappingFile(handle)) return openExisting();
-    const storage = createFolderStorage(countingDirectory(handle, createFolderCalls()));
+    // O mesmo alvo (e contador) da sessão que abre no fim: a criação já conta nele.
+    const target = folderTarget(handle);
+    const { storage } = target;
     const imported = await importExistingImages(
       storage,
       newProject(name.trim() || handle.name),
@@ -539,11 +541,13 @@ export function createFolderProject(
     );
     // A pasta pode já ter propostas (ex: restauradas do git sem o mapping.json): a abertura
     // as lê, como em qualquer pasta.
-    await openLoaded(folderTarget(handle), imported.project, {
-      readOnly: false,
-      text: mappingText,
-      migratedFrom: null,
-    });
+    await measureOpen(target, () =>
+      openLoaded(target, imported.project, {
+        readOnly: false,
+        text: mappingText,
+        migratedFrom: null,
+      }),
+    );
     return ok({ skipped: imported.skipped });
   });
 }

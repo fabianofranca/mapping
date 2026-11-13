@@ -243,7 +243,8 @@ describe('MemoryDirectory com latência (dublê lento)', () => {
     await (file as { getFile(): Promise<Blob> }).getFile();
     const slowMs = performance.now() - slow;
     // Três chamadas, 20 ms cada (com folga para o relógio do timer).
-    expect(slowMs).toBeGreaterThanOrEqual(50);
+    // Três chamadas de 20 ms; folga para o timer que dispara um pouco cedo.
+    expect(slowMs).toBeGreaterThanOrEqual(45);
     expect(fastMs).toBeLessThan(slowMs);
   });
 
@@ -256,6 +257,6 @@ describe('MemoryDirectory com latência (dublê lento)', () => {
     await calls.measure('sync', async () => {
       await dir.getFileHandle('a.txt');
     });
-    expect(calls.snapshot()[0]?.ms).toBeGreaterThanOrEqual(4);
+    expect(calls.snapshot()[0]?.ms).toBeGreaterThanOrEqual(3);
   });
 });

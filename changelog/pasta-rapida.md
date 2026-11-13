@@ -1,4 +1,4 @@
-# Pasta rápida — [Não lançado] (épico `epic/pasta-rapida`, PR a abrir, MCP sem mudança, schema v19)
+# Pasta rápida — [Não lançado] (épico `epic/pasta-rapida`, PR #0, MCP sem mudança, schema v19)
 
 ## Adicionado
 
