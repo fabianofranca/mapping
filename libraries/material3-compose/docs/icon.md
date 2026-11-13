@@ -29,12 +29,13 @@ Icon(
 
 Notas do `code` (o que a ferramenta entrega ao agente):
 
-> O ícone vem de `Icons.Filled.<imageVector>`, por exemplo `Icon(imageVector = Icons.Filled.Home, contentDescription = <contentDescription>)`; sem descrição use `contentDescription = null`. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`. `tint` só entra quando preenchido; o tamanho é o padrão de 24 dp.
+> O ícone vem de `Icons.Filled.<imageVector>`, por exemplo `Icon(imageVector = Icons.Filled.Home, contentDescription = <contentDescription>)`; sem descrição use `contentDescription = null`. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`, e em `rtl` o desenho os vira na horizontal (o `mirror` do conjunto). `tint` só entra quando preenchido; o tamanho é o padrão de 24 dp.
 
 ## Exemplos
 
 - **Início**: imageVector=Home, contentDescription=Início
 - **Favorito colorido**: imageVector=Favorite, tint=error
+- **Voltar**: imageVector=ArrowBack, contentDescription=Voltar
 
 ## Fidelidade
 
@@ -51,11 +52,12 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 
 - O nó `icon` do formato 4 escolhe o desenho no conjunto da biblioteca. O campo `imageVector` guarda o nome do Compose (`Home`, `KeyboardArrowRight`, o que vai em `Icons.Default.<nome>`) e o componente o traduz para o nome do conjunto (`home`, `keyboard_arrow_right`) por um `$switch`; os `$switch` de caminhos SVG saíram do componente.
 - O tamanho é o do `viewBox` do ícone (24 por 24), escalado para a caixa da marcação.
+- Em `rtl`, o ícone com `mirror` no conjunto (a seta de voltar, o chevron do fim) desenha virado dentro da mesma caixa; a caixa e o layout não mudam (ver `docs/COMPONENT-FORMAT.md`, "Direção de leitura").
 - A cor é o papel de `tint`; sem `tint`, a cor do conteúdo herdada (`Icon.kt`, linha 69: `tint = LocalContentColor.current`): dentro de um `surface` ou `scaffold` sai na cor que o pai oferece, e sem pai, em `on-surface`.
 
 **O que ainda difere do Compose**
 
 - O conjunto tem um subconjunto fechado do `Icons.Default` (ver as sugestões do campo `imageVector`). Um nome fora dele desenha o reservado (um quadrado contornado) e o Diagnóstico mostra o aviso `ícone desconhecido`; para usar outro ícone, acrescente-o ao conjunto (`icons/LEIA-ME.txt`).
 - Só a variante `Filled`: `Outlined`, `Rounded`, `Sharp` e `TwoTone` ficam fora da etapa.
-- Os ícones que espelham em idiomas da direita para a esquerda (`Icons.AutoMirrored.Filled`) desenham sempre na direção da esquerda para a direita.
+- O conjunto (`formatVersion` 2) marca com `mirror: true` os 24 ícones que o androidx põe em `Icons.AutoMirrored.Filled` (`arrow_back`, `arrow_forward`, `keyboard_arrow_left`, `keyboard_arrow_right`, `list`, `send`, `help`…, lidos nos artefatos `material-icons-core` e `-extended` 1.7.8: o commit fixado não traz os arquivos dos ícones, que são gerados e publicados à parte). Em `rtl` (a direção do container ou do projeto) o desenho os vira na horizontal, como o `AutoMirrored` faz com `LayoutDirection.Rtl`; em `ltr` nada muda. Os outros ícones nunca viram (um relógio, uma câmera).
 - `PhotoCamera` e os outros ícones do pacote que têm formas além de `<path>` (círculo, por exemplo) não estão no subconjunto.

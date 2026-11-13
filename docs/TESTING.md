@@ -263,7 +263,7 @@ Também conta como achado: lentidão perceptível (mais de um segundo para respo
 <!-- /roteiros -->
 <!-- roteiros: R3 -->
 
-- R3.10 a R3.21 usam o projeto próprio `biblioteca` (pasta nova com o `cadastro.png`) e o pacote `libraries/material3-compose/` (R3.14 a R3.17, em ordem, também as cópias `mat-v14` a `mat-v17` do preparo do R3.14; o R3.18, a `mat-v5`; o R3.19, a `mat-main` que o próprio passo monta); o R3.10 a R3.19 não dependem do `principal` nem do MCP; o R3.20 e o R3.21 usam o MCP (seção 6) e a pasta `design/mapeamentos/biblioteca`, que o R3.20 copia.
+- R3.10 a R3.21 usam o projeto próprio `biblioteca` (pasta nova com o `cadastro.png`) e o pacote `libraries/material3-compose/` (R3.14 a R3.17, em ordem, também as cópias `mat-v15` a `mat-v18` do preparo do R3.14; o R3.18, a `mat-v5`; o R3.19, a `mat-main` que o próprio passo monta); o R3.10 a R3.19 não dependem do `principal` nem do MCP; o R3.20 e o R3.21 usam o MCP (seção 6) e a pasta `design/mapeamentos/biblioteca`, que o R3.20 copia.
 
 <!-- /roteiros -->
 <!-- roteiros: R1 R3 -->
@@ -346,6 +346,7 @@ Também conta como achado: lentidão perceptível (mais de um segundo para respo
 <!-- roteiros: R17 -->
 
 - R17 usa a pasta própria `tela-m3` (criada pelo MCP no R17.2), o `material3-compose.zip` (conferido e descompactado em `RAIZ/m3` no R17.1, aplicado na app no R17.3), o MCP por stdio e, nos passos R17.3, R17.5 e R17.9, a app; R17.1 a R17.9 seguem em sequência, sem depender de outro roteiro. O R17.22 ao R17.47 usam também o ImageMagick (MF5, MC6, L5, densidade, hero, slider, S5 e rótulo do carousel); a app, nos R17.22, R17.30, R17.31, R17.34, R17.35 a R17.39 e R17.42 a R17.47. Sem o MCP, marque todos "não executado (sem MCP)".
+- R17.48 a R17.54 (âncoras e a tela `rtl`) continuam no `tela-m3`, com um container novo cada um (**Âncoras** e **Tela RTL**), e usam o MCP por stdio, o ImageMagick, o `jq` e a app só para aceitar as propostas (R17.49 e R17.53).
 
 <!-- /roteiros -->
 <!-- roteiros: R18 -->
@@ -606,11 +607,11 @@ Use uma pasta vazia `principal` e o `cadastro.png`. Depois de cada passo que gra
    fi
    ```
 
-**Preparo do R3.14 a R3.17** (versões novas do Material 3 (Compose), com migração). Salve o script abaixo como `evolve.py`, fora do repositório da app, e, com o shell na raiz dela e `python3` disponível, gere as quatro cópias em cadeia, `mat-v14` a `mat-v17` (o número é a versão da especialização de cada cópia) (cada uma parte da anterior, e a primeira, do pacote do repositório, que já está na versão 13; o pacote do repositório não muda):
+**Preparo do R3.14 a R3.17** (versões novas do Material 3 (Compose), com migração). Salve o script abaixo como `evolve.py`, fora do repositório da app, e, com o shell na raiz dela e `python3` disponível, gere as quatro cópias em cadeia, `mat-v15` a `mat-v18` (o número é a versão da especialização de cada cópia) (cada uma parte da anterior, e a primeira, do pacote do repositório, que já está na versão 14; o pacote do repositório não muda):
 
 ```python
 import json, shutil, sys
-src, dst, step = sys.argv[1:4]  # pasta atual, pasta nova, v5 | v14 | v15 | v16 | v17
+src, dst, step = sys.argv[1:4]  # pasta atual, pasta nova, v5 | v15 | v16 | v17 | v18
 shutil.copytree(src, dst)
 p = dst + '/material3-compose.spec.json'
 s = json.load(open(p))
@@ -627,12 +628,12 @@ if step == 'v5':  # o pacote anterior: o slider com valor em décimos (enum), se
     slider['examples'] = [e for e in slider.get('examples', []) if all(str(e['values'][k]) in tenths for k in ('value', 'valueStart', 'valueEnd') if k in e['values'])]
     for e in slider['examples']:
         e['values'] = {k: (str(v) if k in ('value', 'valueStart', 'valueEnd') else v) for k, v in e['values'].items()}
-elif step == 'v14':  # aditiva: campo opcional novo
-    s['version'] = 14
+elif step == 'v15':  # aditiva: campo opcional novo
+    s['version'] = 15
     s.pop('migrations', None)
     fab['fields'].append({'key': 'note', 'label': 'Nota', 'type': 'string'})
-elif step == 'v15':  # containerColor -> tone
-    s['version'] = 15
+elif step == 'v16':  # containerColor -> tone
+    s['version'] = 16
     for f in fab['fields']:
         if f['key'] == 'containerColor': f['key'], f['label'] = 'tone', 'Tone'
     code = fab['code']['compose']
@@ -643,13 +644,13 @@ elif step == 'v15':  # containerColor -> tone
     c = dst + '/components/fab.json'
     t = open(c).read().replace('"$switch": "containerColor"', '"$switch": "tone"').replace('"containerColor": "primaryContainer"', '"tone": "primaryContainer"')
     open(c, 'w').write(t)
-    s['migrations'] = [{'from': 14, 'to': 15, 'steps': [{'op': 'rename-field', 'type': 'fab', 'from': 'containerColor', 'to': 'tone'}]}]
-elif step == 'v16':  # remove o campo note
-    s['version'] = 16
-    fab['fields'] = [f for f in fab['fields'] if f['key'] != 'note']
-    s['migrations'].append({'from': 15, 'to': 16, 'steps': [{'op': 'remove-field', 'type': 'fab', 'field': 'note'}]})
-elif step == 'v17':  # remove um tipo SEM migração
+    s['migrations'] = [{'from': 15, 'to': 16, 'steps': [{'op': 'rename-field', 'type': 'fab', 'from': 'containerColor', 'to': 'tone'}]}]
+elif step == 'v17':  # remove o campo note
     s['version'] = 17
+    fab['fields'] = [f for f in fab['fields'] if f['key'] != 'note']
+    s['migrations'].append({'from': 16, 'to': 17, 'steps': [{'op': 'remove-field', 'type': 'fab', 'field': 'note'}]})
+elif step == 'v18':  # remove um tipo SEM migração
+    s['version'] = 18
     for l in s['layers']:
         l['annotationTypes'] = [t for t in l['annotationTypes'] if t['id'] != 'badge']
 json.dump(s, open(p, 'w'), ensure_ascii=False, indent=2)
@@ -658,11 +659,11 @@ json.dump(s, open(p, 'w'), ensure_ascii=False, indent=2)
 ```bash
 M=libraries/material3-compose
 python3 evolve.py $M mat-v5 v5   # o pacote anterior (o slider em décimos), só para o R3.14
-python3 evolve.py $M mat-v14 v14 && python3 evolve.py mat-v14 mat-v15 v15 \
-  && python3 evolve.py mat-v15 mat-v16 v16 && python3 evolve.py mat-v16 mat-v17 v17
+python3 evolve.py $M mat-v15 v15 && python3 evolve.py mat-v15 mat-v16 v16 \
+  && python3 evolve.py mat-v16 mat-v17 v17 && python3 evolve.py mat-v17 mat-v18 v18
 ```
 
-A cópia `mat-v5` (fora da cadeia) é o pacote anterior: versão 5, sem `migrations` e com `value`, `valueStart` e `valueEnd` do slider como `enum` em décimos. O que cada cópia da cadeia muda no tipo `fab` (FAB): **v14**, o campo opcional `note` (aditiva, sem `migrations`); **v15**, `containerColor` ("Cor do botão") renomeado para `tone`, com `rename-field` em `migrations` (o rótulo do campo vira "Tone" e o componente e os exemplos acompanham); **v16**, o campo `note` removido, com `remove-field`; **v17**, o tipo `badge` (Badge) removido **sem** `migrations` (os arquivos `components/badge.json`, `docs/badge.md`, `signatures/badge.compose.json` e `signatures/badge.large.compose.json` ficam na pasta, órfãos).
+A cópia `mat-v5` (fora da cadeia) é o pacote anterior: versão 5, sem `migrations` e com `value`, `valueStart` e `valueEnd` do slider como `enum` em décimos. O que cada cópia da cadeia muda no tipo `fab` (FAB): **v15**, o campo opcional `note` (aditiva, sem `migrations`); **v16**, `containerColor` ("Cor do botão") renomeado para `tone`, com `rename-field` em `migrations` (o rótulo do campo vira "Tone" e o componente e os exemplos acompanham); **v17**, o campo `note` removido, com `remove-field`; **v18**, o tipo `badge` (Badge) removido **sem** `migrations` (os arquivos `components/badge.json`, `docs/badge.md`, `signatures/badge.compose.json` e `signatures/badge.large.compose.json` ficam na pasta, órfãos).
 
 Todos os roteiros partem de **projetos novos**: o `sdui.json` mudou (ganhou `path` e perdeu o campo `implementacao`) sem subir a versão, e um projeto criado antes não recebe o arquivo novo por **Atualizar versão…**. Use o MCP 0.4.0 (seção 6).
 
@@ -682,17 +683,17 @@ Todos os roteiros partem de **projetos novos**: o `sdui.json` mudou (ganhou `pat
 | R3.8d | **Projeto v12 com herança (sem herança).** Abra a pasta `migracao12` (preparo acima) com **Abrir pasta** **[pessoa]** (ou `select_folder`). Olhe a barra de status, abra **Configurações** › **Diagnóstico**; antes de editar, leia o `mapping.json` pela shell. Selecione a pai e a filha e olhe a Árvore e os Detalhes de cada uma; abra o editor da anotação da pai. Renomeie a filha (Enter), espere **Salvo**, olhe a faixa e leia o `mapping.json` e `backups/`. | **Tela:** abre sem erro e sem faixa; a barra de status mostra `schema v20`. Depois do **Salvo**, a faixa "Projeto atualizado do formato v12; uma cópia do original foi guardada." fica até Dispensar. O **Diagnóstico** registra a herança descartada (erro esperado `open.migration`): 1 anotação e a marcação-pai. Nos Detalhes e na Árvore da **filha** não aparece a anotação da pai (sem "Herdadas" nem bolinha esmaecida); a anotação continua na **pai**, com o par `estilo` = `primário`. **Disco:** antes de editar, o arquivo ainda é v12 com `"inherit": true`. Depois do **Salvo**: `backups/mapping.v12.<data-hora>.json` igual ao do preparo; o `mapping.json` novo com `"schemaVersion": 20`, `revision` maior, a anotação da pai intacta (mesmo `id`) e nenhuma chave `inherit`; as marcações ganharam `"floating": false` e os containers `"parentId": null`. |
 | R3.8e | **Projeto v13 (papéis no vínculo).** Abra a pasta `migracao13` (preparo acima) com **Abrir pasta** **[pessoa]** (ou `select_folder`). Olhe a barra de status, abra **Configurações** › **Diagnóstico**; antes de editar, leia o `mapping.json` pela shell. Selecione a **Caixa** e olhe, nos **Detalhes**, a linha **Vinculadas** da **Dona**. Renomeie a marcação (Enter), espere **Salvo**, olhe a faixa e leia o `mapping.json` e `backups/`. | **Tela:** abre sem erro e sem faixa; a barra de status mostra `schema v20`. O **Diagnóstico** não registra nenhuma entrada `open.migration`. Nos Detalhes, a **Filha** continua vinculada à **Dona** (sem papel nem pendência: as duas são livres). Depois do **Salvo**, a faixa "Projeto atualizado do formato v13; uma cópia do original foi guardada." fica até Dispensar. **Disco:** antes de editar, o arquivo ainda é v13, sem `docRepos` nem `parentRole` (abrir não grava). Depois do **Salvo**: `backups/mapping.v13.<data-hora>.json` igual ao `migracao13-original.json`; o `mapping.json` novo com `"schemaVersion": 20`, `"docRepos": {}`, `revision` maior e `"parentRole": null` nas duas anotações (o vínculo fica sem papel); a **Filha** mantém `"parentAnnotationId": "A1"`. |
 | R3.9 | Num projeto novo em pasta, `antiga`, com o `cadastro.png` e uma marcação, abra **Especializações** e aplique o `sdui-antigo.json` **[pessoa]** (ou `open_file`). Feche, crie na marcação um **Screen** (camada **Telas**) e leia o `mapping.json`. | **Tela:** a SDUI é aplicada e um aviso diz "Campos ignorados: screen.implementacao." (o tipo de campo `codeRef` saiu do formato; a especialização foi aplicada sem eles). O Screen nasce só com `nome` e `rota`. **Disco:** `values` do Screen só com `nome` e `rota`. |
-| R3.10 | Num projeto novo em pasta, `biblioteca` (com o `cadastro.png`), abra **Especializações** › **Aplicar pasta…** (só no Chrome/Edge; sem o botão, pule para o R3.12) e escolha `libraries/material3-compose/` **[pessoa]** (ou `select_folder`). Espere a janela **Pacote "Material 3 (Compose)"** e olhe a lista de avisos; depois **Aplicar** e espere **Salvo**. | **Tela:** o botão pode mostrar "Conferindo o pacote…" enquanto confere (é rápido: se não der tempo de ler, não é defeito). A janela diz "v13 · 50 tipo(s) · 50 componente(s) · 50 documento(s) · 2 fonte(s)" e "0 erro(s) e 59 aviso(s)." (o número é de hoje: a curadoria da #1134 pode mudá-lo); os avisos da lista são todos `parâmetro fora da ficha` (um parâmetro da assinatura do androidx que o tipo ainda não liga a campo) (provisório: decisão do dono pendente no bug #1774; curadoria na #1134): qualquer outro aviso, ou qualquer erro, é defeito (a Roboto vem no pacote). **Aplicar** fica habilitado. Depois: "\"Material 3 (Compose)\" aplicada: 3 camada(s) criada(s)." (com o nome entre aspas) e a linha "v13 · 3 camada(s)" (Layout, Conteúdo e Componentes). **Disco:** `specs/material3-compose/` com `material3-compose.spec.json`, `components/` (50 arquivos), `docs/` (50), `signatures/` (98 fichas `*.compose.json`), `fonts/` (as duas `.woff2`, `LEIA-ME.txt` e `LICENSE-Roboto.txt`) e `icons/` (`material-icons.json`, `LEIA-ME.txt` e `LICENSE-material-icons.txt`); em `specializations[]`, `"file": "specs/material3-compose/material3-compose.spec.json"`; não existe `specs/material3-compose.json`. |
+| R3.10 | Num projeto novo em pasta, `biblioteca` (com o `cadastro.png`), abra **Especializações** › **Aplicar pasta…** (só no Chrome/Edge; sem o botão, pule para o R3.12) e escolha `libraries/material3-compose/` **[pessoa]** (ou `select_folder`). Espere a janela **Pacote "Material 3 (Compose)"** e olhe a lista de avisos; depois **Aplicar** e espere **Salvo**. | **Tela:** o botão pode mostrar "Conferindo o pacote…" enquanto confere (é rápido: se não der tempo de ler, não é defeito). A janela diz "v14 · 50 tipo(s) · 50 componente(s) · 50 documento(s) · 2 fonte(s)" e "0 erro(s) e 59 aviso(s)." (o número é de hoje: a curadoria da #1134 pode mudá-lo); os avisos da lista são todos `parâmetro fora da ficha` (um parâmetro da assinatura do androidx que o tipo ainda não liga a campo) (provisório: decisão do dono pendente no bug #1774; curadoria na #1134): qualquer outro aviso, ou qualquer erro, é defeito (a Roboto vem no pacote). **Aplicar** fica habilitado. Depois: "\"Material 3 (Compose)\" aplicada: 3 camada(s) criada(s)." (com o nome entre aspas) e a linha "v14 · 3 camada(s)" (Layout, Conteúdo e Componentes). **Disco:** `specs/material3-compose/` com `material3-compose.spec.json`, `components/` (50 arquivos), `docs/` (50), `signatures/` (98 fichas `*.compose.json`), `fonts/` (as duas `.woff2`, `LEIA-ME.txt` e `LICENSE-Roboto.txt`) e `icons/` (`material-icons.json`, `LEIA-ME.txt` e `LICENSE-material-icons.txt`); em `specializations[]`, `"file": "specs/material3-compose/material3-compose.spec.json"`; não existe `specs/material3-compose.json`. |
 | R3.11 | Feche e reabra o projeto `biblioteca`; abra **Diagnóstico** (ícone da faixa lateral). | **Tela:** a seção **Biblioteca** traz a linha "Material 3 (Compose): 0 erro(s) e 59 aviso(s)", com a lista dos mesmos avisos `parâmetro fora da ficha` do R3.10 (provisório: decisão do dono pendente no bug #1774; curadoria na #1134) e nenhum erro (a seção só lista problemas). O registro de erros não ganha nenhum erro **novo** neste passo (os erros tratados de passos anteriores, como `open.migration` e `open.repair`, podem continuar nele; recarregar a página o esvazia: "Nenhum erro registrado."). |
 | R3.12 | **Especializações** › Material 3 (Compose) › **Remover** › **Converter em camadas livres** › **Converter**. Depois, **Aplicar zip…** e escolha o `examples/material3-compose.zip` (conteúdo na raiz do zip) **[pessoa]** (ou `open_file`); **Aplicar**. Repita com um zip que tenha a pasta-raiz (pela shell, `cd libraries && zip -r RAIZ/material3-compose-pasta.zip material3-compose`) depois de remover de novo. | **Tela:** "\"Material 3 (Compose)\" removida." (com o nome entre aspas) e, ao aplicar o zip, a mesma janela do R3.10 (0 erros e só os avisos `parâmetro fora da ficha`). **Disco:** depois de remover, `specs/material3-compose/` some; depois de aplicar, volta igual à do R3.10, com o zip de qualquer um dos dois jeitos. |
 | R3.13 | **Antes, no projeto `biblioteca`, remova o Material 3 (Compose)** (**Especializações** › Material 3 (Compose) › **Remover** › **Converter em camadas livres** › **Converter**): o R3.12 deixa a especialização aplicada e, aplicada, o **Aplicar zip…** de um pacote quebrado mostra "Nada a fazer" em vez da janela de erro. Num zip de teste (descompacte o `examples/material3-compose.zip` numa pasta nova, apague `components/button.json` e compacte de novo), tente **Aplicar zip…** com ele. Depois, num projeto sem a especialização, escolha o `material3-compose.spec.json` solto em **Aplicar especialização…**. | **Tela:** a janela do pacote mostra um erro em `material3-compose.spec.json` (`arquivo não encontrado: components/button.json`), "Corrija os erros e tente de novo" e **Aplicar** desabilitado; nada muda no projeto. O arquivo solto é recusado com "… cita arquivos do pacote (componentes, documentos, exemplos ou fontes) e precisa da pasta inteira: um arquivo .json isolado não basta. Use \"Aplicar pasta…\" ou \"Aplicar zip…\"." |
-| R3.14 | No projeto `biblioteca` (do R3.12, com o Material 3 (Compose) na versão 13), selecione a marcação, na camada **Componentes** da especialização (a última da lista, a que tem o selo "Material 3 (Compose)", e não as camadas livres do mesmo nome do R3.12) clique em **+** e crie um **FAB** com **Cor do botão** = `secondary`. Espere **Salvo**. Depois, **Especializações** › Material 3 (Compose) › **Atualizar de pasta…** (só no Chrome/Edge; cada especialização tem os próprios botões) e escolha a pasta `mat-v14` **[pessoa]** (ou `select_folder`). Confira a janela e **Atualizar**. Por fim, nos Detalhes do FAB, preencha **Nota** = `teste` e espere **Salvo**. | **Tela:** a janela diz "Da versão 13 para a 14." e "Atualização aditiva: os dados ficam como estão."; não há "Passos da migração" nem perda; **Atualizar** habilitado (a conferência do pacote lista, além dos avisos `parâmetro fora da ficha` do R3.10, o aviso do campo `note`, que o desenho do FAB não usa; nenhum impede). Depois, a linha mostra "v14" e o FAB continua com **Cor do botão** = `secondary`, agora com o campo **Nota**. **Disco:** `specs/material3-compose/material3-compose.spec.json` com `"version": 14` e o campo `note`; em `mapping.json` o FAB segue com `"containerColor": "secondary"`. |
-| R3.15 | **Especializações** › Material 3 (Compose) › **Atualizar de pasta…** › a pasta `mat-v15` **[pessoa]** (ou `select_folder`). Confira a janela e **Atualizar**; feche e espere **Salvo**. Depois, **Desfazer** (`Ctrl+Z`). Por fim, repita a atualização com `mat-v15` e espere **Salvo**. | **Tela:** a janela mostra "Passos da migração" com "Renomear o campo containerColor → tone em fab", "1 anotação(ões)" e "1 valor(es)", e a janela não traz as seções de perda nem de pendência, e a linha "Nenhuma camada criada ou removida."; **Atualizar** habilitado. Depois de atualizar, os Detalhes do FAB mostram o campo **Tone** = `secondary` (e a **Nota** `teste`), a linha diz "v15". **Disco:** `"tone": "secondary"` no `values` do FAB e nenhum `containerColor`; `specs/material3-compose/` na versão 15. Depois do **Desfazer**: o campo **Cor do botão** = `secondary` volta, a linha diz "v14" e `specs/material3-compose/material3-compose.spec.json` volta a `"version": 14` com `containerColor` (biblioteca e dados voltam numa só entrada). Repetida, termina na v15. |
-| R3.16 | Na linha do Material 3 (Compose), **Atualizar de pasta…** › `mat-v16` **[pessoa]** (ou `select_folder`). Confira a janela, **Atualizar**; feche e espere **Salvo**. Depois, **Desfazer** (`Ctrl+Z`) e repita a atualização com `mat-v16` até **Salvo**. | **Tela:** a janela mostra "Passos da migração" com "Remover o campo note em fab" e, **em destaque** (aviso de erro), "Esta atualização apaga 1 valor(es) e 0 anotação(ões)." com a linha da perda: o campo `note` removido (valor "teste"); **Atualizar** habilitado. Atualizar aplica: os Detalhes do FAB já não têm **Nota**, a linha diz "v16"; **Disco:** `mapping.json` sem a chave `note` no `values` do FAB. **Desfazer** devolve a **Nota** = `teste` e a versão 15 (inclusive em `specs/material3-compose/`); repetida, volta à v15 sem a nota. |
-| R3.17 | Na linha do Material 3 (Compose), **Atualizar de pasta…** › `mat-v17` **[pessoa]** (ou `select_folder`). | **Tela:** erros do contrato de versão na lista (o tipo `badge` foi removido; declare um passo "remove-type" ou "rename-type" em migrations), "Esta atualização não pode ser aplicada: faltam migrações declaradas para estas quebras." e **Atualizar** desabilitado; ao fechar, nada muda (a linha segue "v16", `specs/material3-compose/` e `mapping.json` iguais). Os arquivos órfãos `components/badge.json`, `docs/badge.md`, `signatures/badge.compose.json` e `signatures/badge.large.compose.json` aparecem como 4 avisos ("arquivo não referenciado pela especialização"), além dos avisos `parâmetro fora da ficha` do R3.10. |
-| R3.18 | **Migração do slider (EX6).** No projeto `biblioteca`, **Especializações** › Material 3 (Compose) › **Remover** › **Converter em camadas livres** › **Converter**; **Aplicar pasta…** › `mat-v5` **[pessoa]** (ou `select_folder`) › **Aplicar**; na camada **Componentes** da especialização crie um **Slider** com **Valor** = `0.3`, espere **Salvo**; **Atualizar de pasta…** › `libraries/material3-compose/` **[pessoa]** (ou `select_folder`), confira a janela e **Atualizar**. | **Tela:** "Da versão 5 para a 13.", "Passos da migração" com "Preencher value em slider com 0.5" (e `valueStart` com 0.2, `valueEnd` com 0.8) e, em destaque, "Esta atualização apaga 3 valor(es) e 0 anotação(ões)." (o texto em décimos do `enum` antigo não vale num campo numérico e vira o padrão; decisão do dono: nenhum projeto usava ainda). Depois: linha "v13" e o Slider com **Valor** = `0.5`. **Disco:** `"value": 0.5` (número) no `values`. |
-| R3.19 | **Atualização aditiva da biblioteca da `main` (MF5).** Pela shell, na raiz do repositório da app, `mkdir mat-main && git archive dcef058 libraries/material3-compose \| tar -x -C mat-main` (o pacote da `main` antes da MF4, na versão 6). No projeto `biblioteca`, **Especializações** › Material 3 (Compose) › **Remover** › **Converter em camadas livres** › **Converter**; **Aplicar pasta…** › `mat-main/libraries/material3-compose` **[pessoa]** (ou `select_folder`) › **Aplicar**; na camada **Componentes** da especialização crie um **FAB** com **Cor do botão** = `secondary`, espere **Salvo**; **Atualizar de pasta…** › `libraries/material3-compose/` **[pessoa]** (ou `select_folder`), confira a janela e **Atualizar**. | **Tela:** a janela diz "Da versão 6 para a 13." e "Atualização aditiva: os dados ficam como estão."; não há "Passos da migração" nem perda; **Atualizar** habilitado. Depois, a linha mostra "v13" e o FAB continua com **Cor do botão** = `secondary`. **Disco:** `specs/material3-compose/material3-compose.spec.json` com `"version": 13`; em `mapping.json` o FAB segue com `"containerColor": "secondary"`. |
-| R3.20 | **Button com cor, na versão 13.** No projeto `biblioteca` (do R3.19, com o Material 3 (Compose) na versão 13), selecione a marcação, na camada **Componentes** da especialização clique em **+** e crie um **Button** com **Rótulo** = `Salvar` e **Cor do contêiner** = `primary` (o resto fica como está). Espere **Salvo**, feche o projeto e copie a pasta dele: `cp -r biblioteca design/mapeamentos/biblioteca` (a partir da pasta onde o `biblioteca` está). | **Tela:** o Button nasce completo (só o **Rótulo** é obrigatório), com **Cor do contêiner** = `primary` nos Detalhes e a linha **Definição** "Jetpack Compose · Button.kt". **Disco:** no `mapping.json`, `"label": "Salvar"` e `"containerColor": "primary"` no `values` do Button e as demais cores sem valor; `design/mapeamentos/biblioteca/specs/material3-compose/` com `"version": 13` e a pasta `signatures/`. |
+| R3.14 | No projeto `biblioteca` (do R3.12, com o Material 3 (Compose) na versão 14), selecione a marcação, na camada **Componentes** da especialização (a última da lista, a que tem o selo "Material 3 (Compose)", e não as camadas livres do mesmo nome do R3.12) clique em **+** e crie um **FAB** com **Cor do botão** = `secondary`. Espere **Salvo**. Depois, **Especializações** › Material 3 (Compose) › **Atualizar de pasta…** (só no Chrome/Edge; cada especialização tem os próprios botões) e escolha a pasta `mat-v15` **[pessoa]** (ou `select_folder`). Confira a janela e **Atualizar**. Por fim, nos Detalhes do FAB, preencha **Nota** = `teste` e espere **Salvo**. | **Tela:** a janela diz "Da versão 14 para a 15." e "Atualização aditiva: os dados ficam como estão."; não há "Passos da migração" nem perda; **Atualizar** habilitado (a conferência do pacote lista, além dos avisos `parâmetro fora da ficha` do R3.10, o aviso do campo `note`, que o desenho do FAB não usa; nenhum impede). Depois, a linha mostra "v15" e o FAB continua com **Cor do botão** = `secondary`, agora com o campo **Nota**. **Disco:** `specs/material3-compose/material3-compose.spec.json` com `"version": 15` e o campo `note`; em `mapping.json` o FAB segue com `"containerColor": "secondary"`. |
+| R3.15 | **Especializações** › Material 3 (Compose) › **Atualizar de pasta…** › a pasta `mat-v16` **[pessoa]** (ou `select_folder`). Confira a janela e **Atualizar**; feche e espere **Salvo**. Depois, **Desfazer** (`Ctrl+Z`). Por fim, repita a atualização com `mat-v16` e espere **Salvo**. | **Tela:** a janela mostra "Passos da migração" com "Renomear o campo containerColor → tone em fab", "1 anotação(ões)" e "1 valor(es)", e a janela não traz as seções de perda nem de pendência, e a linha "Nenhuma camada criada ou removida."; **Atualizar** habilitado. Depois de atualizar, os Detalhes do FAB mostram o campo **Tone** = `secondary` (e a **Nota** `teste`), a linha diz "v16". **Disco:** `"tone": "secondary"` no `values` do FAB e nenhum `containerColor`; `specs/material3-compose/` na versão 16. Depois do **Desfazer**: o campo **Cor do botão** = `secondary` volta, a linha diz "v15" e `specs/material3-compose/material3-compose.spec.json` volta a `"version": 15` com `containerColor` (biblioteca e dados voltam numa só entrada). Repetida, termina na v16. |
+| R3.16 | Na linha do Material 3 (Compose), **Atualizar de pasta…** › `mat-v17` **[pessoa]** (ou `select_folder`). Confira a janela, **Atualizar**; feche e espere **Salvo**. Depois, **Desfazer** (`Ctrl+Z`) e repita a atualização com `mat-v17` até **Salvo**. | **Tela:** a janela mostra "Passos da migração" com "Remover o campo note em fab" e, **em destaque** (aviso de erro), "Esta atualização apaga 1 valor(es) e 0 anotação(ões)." com a linha da perda: o campo `note` removido (valor "teste"); **Atualizar** habilitado. Atualizar aplica: os Detalhes do FAB já não têm **Nota**, a linha diz "v17"; **Disco:** `mapping.json` sem a chave `note` no `values` do FAB. **Desfazer** devolve a **Nota** = `teste` e a versão 16 (inclusive em `specs/material3-compose/`); repetida, volta à v16 sem a nota. |
+| R3.17 | Na linha do Material 3 (Compose), **Atualizar de pasta…** › `mat-v18` **[pessoa]** (ou `select_folder`). | **Tela:** erros do contrato de versão na lista (o tipo `badge` foi removido; declare um passo "remove-type" ou "rename-type" em migrations), "Esta atualização não pode ser aplicada: faltam migrações declaradas para estas quebras." e **Atualizar** desabilitado; ao fechar, nada muda (a linha segue "v17", `specs/material3-compose/` e `mapping.json` iguais). Os arquivos órfãos `components/badge.json`, `docs/badge.md`, `signatures/badge.compose.json` e `signatures/badge.large.compose.json` aparecem como 4 avisos ("arquivo não referenciado pela especialização"), além dos avisos `parâmetro fora da ficha` do R3.10. |
+| R3.18 | **Migração do slider (EX6).** No projeto `biblioteca`, **Especializações** › Material 3 (Compose) › **Remover** › **Converter em camadas livres** › **Converter**; **Aplicar pasta…** › `mat-v5` **[pessoa]** (ou `select_folder`) › **Aplicar**; na camada **Componentes** da especialização crie um **Slider** com **Valor** = `0.3`, espere **Salvo**; **Atualizar de pasta…** › `libraries/material3-compose/` **[pessoa]** (ou `select_folder`), confira a janela e **Atualizar**. | **Tela:** "Da versão 5 para a 14.", "Passos da migração" com "Preencher value em slider com 0.5" (e `valueStart` com 0.2, `valueEnd` com 0.8) e, em destaque, "Esta atualização apaga 3 valor(es) e 0 anotação(ões)." (o texto em décimos do `enum` antigo não vale num campo numérico e vira o padrão; decisão do dono: nenhum projeto usava ainda). Depois: linha "v14" e o Slider com **Valor** = `0.5`. **Disco:** `"value": 0.5` (número) no `values`. |
+| R3.19 | **Atualização aditiva da biblioteca da `main` (MF5).** Pela shell, na raiz do repositório da app, `mkdir mat-main && git archive dcef058 libraries/material3-compose \| tar -x -C mat-main` (o pacote da `main` antes da MF4, na versão 6). No projeto `biblioteca`, **Especializações** › Material 3 (Compose) › **Remover** › **Converter em camadas livres** › **Converter**; **Aplicar pasta…** › `mat-main/libraries/material3-compose` **[pessoa]** (ou `select_folder`) › **Aplicar**; na camada **Componentes** da especialização crie um **FAB** com **Cor do botão** = `secondary`, espere **Salvo**; **Atualizar de pasta…** › `libraries/material3-compose/` **[pessoa]** (ou `select_folder`), confira a janela e **Atualizar**. | **Tela:** a janela diz "Da versão 6 para a 14." e "Atualização aditiva: os dados ficam como estão."; não há "Passos da migração" nem perda; **Atualizar** habilitado. Depois, a linha mostra "v14" e o FAB continua com **Cor do botão** = `secondary`. **Disco:** `specs/material3-compose/material3-compose.spec.json` com `"version": 14`; em `mapping.json` o FAB segue com `"containerColor": "secondary"`. |
+| R3.20 | **Button com cor, na versão 14.** No projeto `biblioteca` (do R3.19, com o Material 3 (Compose) na versão 14), selecione a marcação, na camada **Componentes** da especialização clique em **+** e crie um **Button** com **Rótulo** = `Salvar` e **Cor do contêiner** = `primary` (o resto fica como está). Espere **Salvo**, feche o projeto e copie a pasta dele: `cp -r biblioteca design/mapeamentos/biblioteca` (a partir da pasta onde o `biblioteca` está). | **Tela:** o Button nasce completo (só o **Rótulo** é obrigatório), com **Cor do contêiner** = `primary` nos Detalhes e a linha **Definição** "Jetpack Compose · Button.kt". **Disco:** no `mapping.json`, `"label": "Salvar"` e `"containerColor": "primary"` no `values` do Button e as demais cores sem valor; `design/mapeamentos/biblioteca/specs/material3-compose/` com `"version": 14` e a pasta `signatures/`. |
 | R3.21 | **`get_code_hints` do Button com cor.** **Com o Claude Code** (seção 6) **[pessoa]** (ou o cliente stdio, apêndice A): `list_markings` do projeto `biblioteca` e, com a referência da marcação, `get_code_hints` com `platform` `compose`. | **Resposta:** na `tree`, a anotação do Button traz em `args` o item `colors` com `call` `androidx.compose.material3.ButtonDefaults.buttonColors` e, dentro dele, só `containerColor` = `MaterialTheme.colorScheme.primary` (os outros campos de cor estão vazios e não entram), ou seja, `colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)`. Em `types["material3-compose/button"]`, o `code` traz `calls` (`colors`, `elevation`, `border` e `contentPadding`) e o `unmapped` com `onClick` (`callback`, obrigatório) e `content` (`slot`, obrigatório): é o rastro do que a ficha de assinatura pede e a tela ainda não modela (o `modifier` e o `interactionSource` ficam fora, pelo `ignore`). **Disco:** nada muda. |
 
 ### R4 — Propostas sem agente (com o `proposta-exemplo.zip`)
@@ -832,7 +833,7 @@ Prepare um segundo print de tela, `login.png` (qualquer tela de login; pode ser 
 | R9.20 | **Operação antiga ainda aplica.** **[pessoa]** (ou o cliente stdio) No Claude Code, peça: "No projeto `telas`, rode `plan_changes` com um `add_image` `Velha` com `file: cartao.png` e outro com `add_blank_image` `Antiga` 100 × 100 `#FFFFFF`, e me diga os avisos." | **Resposta do agente:** cada `plan_changes` vale (`valid: true`) e traz em `warnings` o código `deprecated-op` ("… é antiga: use add_container"); o efeito é o do `add_container` correspondente. **Disco:** o `plan_changes` não grava nada: o `mapping.json` do `telas` não muda (mesma `revision`). |
 | R9.21 | **Pilha de fonte na app.** Pela shell, copie `libraries/material3-compose/` para `m3-pilha` e `m3-sistema` e, no `material3-compose.spec.json`, troque `tokens.values.font-sans` por `"system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", sans-serif"` em `m3-pilha` e por `"system-ui"` em `m3-sistema`. Em dois projetos novos (`pilha` e `pilha-sistema`), **Aplicar pasta…** com cada cópia **[pessoa]** (ou `select_folder`), **Novo container** › **Celular · 360 × 800**, **Adicionar na tela** o **Button**, troque o rótulo dele para `L` e use zoom 100% + três `Ctrl+=`. Por Playwright/CDP, a 1280×720 e `deviceScaleFactor` 1, tire do Button de cada um e do `telas` (**Roboto**) um recorte PNG (`clip`) e meça a altura da haste da "L" do rótulo, em pixels. No `telas`, use um Button do **Row** (rótulo `L`, devolva depois; o solto do `Configurações` fica sob o Text field). | **Tela:** nos três o rótulo sai no tamanho (14) e no peso (500): a "L" tem a mesma altura (até 1 px de diferença) **entre os projetos, no mesmo container de celular**, e nunca perto de 14 px. Pilha e `system-ui` saem iguais (±1 px). Os três lado a lado são a **passada visual**. **Disco:** o `material3-compose.spec.json` do projeto traz a pilha como escrita em `font-sans`; o `mapping.json`, nada do desenho. |
 | R9.22 | **Aviso de `font.family` inválido.** Pela shell, faça uma cópia `m3-invalida` de `libraries/material3-compose/` e acrescente, em `components/button.json`, ao `font` do nó `rótulo` (`template.children[4].children[2]`: o quadro `conteúdo` é o quinto filho da raiz, e o `children[1]` dele é o `$switch` do ícone, não o rótulo; o rótulo não tem `family`, então a chave é nova) `"family": "\"Segoe UI, Roboto"` (aspas sem fechar). Na tela inicial, **Abrir biblioteca** com `m3-invalida` **[pessoa]** (ou `select_folder`); olhe a linha de problemas no topo. Depois, pela shell, rode `validate_library` do R10.11 na pasta (cliente stdio). | **Tela:** a linha de problemas diz que o pacote tem nenhum erro e os avisos de sempre (os `parâmetro fora da ficha` que o pacote já traz, como no R3.10: 59 hoje, o número muda com a curadoria) mais 1, e o único aviso que cita o `button.json` é o novo, com o caminho do nó (`template.children[4].children[2].font.family`) e o valor `"\"Segoe UI, Roboto"` com "família de fonte inválida para o CSS". **Resposta do agente:** `valid: true`, `errors` vazio e em `warnings` os mesmos avisos de sempre mais 1, o único de `components/button.json`, com o mesmo caminho e valor. **Disco:** nada criado nem alterado. |
-| R9.23 | **Preview no MCP, no mesmo lote.** Com o cliente stdio (seção 6), em uma cópia do `telas` com o Material 3 (Compose) **v5** aplicado, em `design/mapeamentos/telas-preview`, e uma cópia `m3-v13` do pacote (sem mudar nada: a `version` já é 13): `plan_changes` com, num lote só, `update_specialization` (`file: m3-v13`) e `create_marking` num container sem arquivo, **sem `rect`**, com `annotation: { type: "material3-compose/button", values: { style: "tonal" } }` (o `label`, obrigatório, fica de fora). Depois, `create_annotation` do `button` com `values: { style: "tonal" }` numa marcação que já existe. | **Resposta do agente:** o lote vale (`valid: true`), sem `required-empty` nem aviso de componente; o passo do `create_marking` diz "tamanho inicial do componente" e a anotação criada tem `label: "Salvar"` (o `preview.label` do Button) e `style: "tonal"` (o informado). O `plan_changes` só devolve `summary`, `issues` e `created`: os valores se leem em `proposals/<id>/proposal.json`, após `propose_changes` do lote numa cópia descartável. Na marcação existente, o `create_annotation` cria a anotação só com os `default` (sem `label`, obrigatório: a app lista em **Incompletas**). Nenhuma `proposals/` nova em `telas-preview` o `mapping.json` não muda (mesma `revision`). |
+| R9.23 | **Preview no MCP, no mesmo lote.** Com o cliente stdio (seção 6), em uma cópia do `telas` com o Material 3 (Compose) **v5** aplicado, em `design/mapeamentos/telas-preview`, e uma cópia `m3-v14` do pacote (sem mudar nada: a `version` já é 14): `plan_changes` com, num lote só, `update_specialization` (`file: m3-v14`) e `create_marking` num container sem arquivo, **sem `rect`**, com `annotation: { type: "material3-compose/button", values: { style: "tonal" } }` (o `label`, obrigatório, fica de fora). Depois, `create_annotation` do `button` com `values: { style: "tonal" }` numa marcação que já existe. | **Resposta do agente:** o lote vale (`valid: true`), sem `required-empty` nem aviso de componente; o passo do `create_marking` diz "tamanho inicial do componente" e a anotação criada tem `label: "Salvar"` (o `preview.label` do Button) e `style: "tonal"` (o informado). O `plan_changes` só devolve `summary`, `issues` e `created`: os valores se leem em `proposals/<id>/proposal.json`, após `propose_changes` do lote numa cópia descartável. Na marcação existente, o `create_annotation` cria a anotação só com os `default` (sem `label`, obrigatório: a app lista em **Incompletas**). Nenhuma `proposals/` nova em `telas-preview` o `mapping.json` não muda (mesma `revision`). |
 | R9.24 | **Filha no slot, sem `rect`** (R9.24 a R9.28: cliente stdio no `telas` com o R9.18 aplicado, no `Cartão`; o `mapping.json` não muda). `plan_changes` e `propose_changes` do mesmo lote: um `material3-compose/column` (`as` `$col`, sem `rect`) e três `material3-compose/button` com `inside` `$col`, sem `rect`. Leia `proposals/<id>/proposal.json`. | **Cliente:** sem `issues` nem aviso; o pai dos três é a Column (resumo "Cartão › Column › Button"; `parentId` no `proposal.json`); empilhados no slot: mesmo `x`, `y` da Column, +48, +96 (40 de altura + `gap` 8, `padding` 0), 89 × 40 (o tamanho do conteúdo, medido, e não o 136 do `size` do componente); os mesmos retângulos no plano e na proposta. **Disco:** só uma pasta nova em `proposals/`. |
 | R9.25 | **`inside` + `rect`.** Column com `rect` `{"x":20,"y":20,"width":260,"height":160}` e Button com `inside` e `rect` `{"x":0,"y":0,"width":200,"height":60}`; repita com o `rect` do Button em 20 × 20. | **Cliente:** o Button nasce 200 × 60 em `x` 20, `y` 20 (o `x` e o `y` pedidos não valem; o pai é a Column); com 20 × 20, `rect-too-small`. |
 | R9.26 | **Slot cheio.** Column com `rect` `{"x":20,"y":20,"width":260,"height":100}` e três Buttons com `inside`, sem `rect`. | **Cliente:** `valid: true`; os dois primeiros cabem (88 de 100) sem aviso; o terceiro **cabe** (sem `ignored-argument`): sai dentro da Column (resumo "Cartão › Column › Button"), numa segunda coluna (x 20 + 89 + 8 = 117) e encostado no fundo (y 80 = 20 + 100 − 40), o lugar livre mais perto de onde o slot o poria. O aviso `ignored-argument` "não coube no slot de …: aumente o componente ou use Arrumar na app" (com "; ficou dentro de …" se a geometria o pôs numa irmã) vem quando não há lugar livre no slot (repita com a Column de `width` 100). |
@@ -977,12 +978,12 @@ Prepare um segundo print de tela, `login.png` (qualquer tela de login; pode ser 
 
 **O que cobre:** a âncora no modelo e no MCP (R3 da etapa Direção e âncora, schema v20, MCP na versão de `mcp/version.ts`): `create_marking` com `anchor` e **sem `rect`** (a peça nasce no tamanho medido, encostada), a op `snap_to_anchor` (do lote: não há tool própria) sozinha e no lote, a proposta com âncora na `formatVersion` 9, `get_marking` e `get_code_hints` com a âncora, mover a âncora (leva as ancoradas) e redimensionar (não leva), e os erros `anchor-*`, `not-anchored` e `locked`. Os pedidos são do MCP; a app só abre a pasta e aceita as propostas. Todos os passos são feitos pela nuvem sozinha (cliente stdio, shell e a app por CDP).
 
-**Preparo.** Seção 6 pronta (o repositório de teste e o `mapping-mcp.js`); os pedidos ao MCP são feitos pelo cliente stdio (apêndice A: `WS=<workspace> node scripts/testing/mcp-stdio-client.mjs calls.json`, com os argumentos de cada tool tirados de `[{"list":true}]`). `RAIZ` é a raiz de projetos do servidor (`design/mapeamentos` na seção 6) e `REPO`, o clone do repositório do Mapping. O tooltip desta etapa é o da biblioteca `material3-compose` (sem `anchor` na raiz do componente: os padrões vêm do que o pedido diz). Os passos seguem a ordem: o R12.34 cria a pasta `ancora` e o R12.35 a aceita; os outros dependem dela.
+**Preparo.** Seção 6 pronta (o repositório de teste e o `mapping-mcp.js`); os pedidos ao MCP são feitos pelo cliente stdio (apêndice A: `WS=<workspace> node scripts/testing/mcp-stdio-client.mjs calls.json`, com os argumentos de cada tool tirados de `[{"list":true}]`). `RAIZ` é a raiz de projetos do servidor (`design/mapeamentos` na seção 6) e `REPO`, o clone do repositório do Mapping. O tooltip desta etapa é o da biblioteca `material3-compose`, que declara `anchor` na raiz (`top`, `center`, 4) e desenha a seta quando a marcação tem âncora: o pedido do R12.35 diz o lado, o alinhamento e o deslocamento (8), que vencem os padrões da raiz. Os passos seguem a ordem: o R12.34 cria a pasta `ancora` e o R12.35 a aceita; os outros dependem dela.
 
 | Passo | Ação | Esperado |
 | --- | --- | --- |
 | R12.34 | **A pasta e o alvo.** Pela shell, `cp -r REPO/libraries/material3-compose RAIZ/m3-r12`. Pelo cliente stdio, `create_project` com `path` `ancora`, `name` `Âncora` e `root` `design/mapeamentos`; depois `propose_changes` nesse projeto (título "Alvo") com `apply_specialization` (`file` `m3-r12/material3-compose.spec.json`), `add_container` (`name` `Tela`, `width` 400, `height` 300, `background` `#FFFFFF`) e, nele, `create_marking` com `name` `Alvo` e `rect` `{ x: 150, y: 140, width: 100, height: 40 }`. Na app, **Abrir pasta** `ancora` (**[pessoa]** ou `select_folder`), **Propostas** (`Ctrl+Shift+7`) › **Revisar**, **Aceitar tudo**, **Aplicar aceitas**; espere **Salvo**. | **Cliente:** projeto criado e proposta válida, 1 container e 1 marcação criados. **Disco:** `schemaVersion` 20; a especialização `material3-compose` aplicada; o container `Tela` (400 × 300, `#FFFFFF`) e a marcação `Alvo` com `rect` `{"x":150,"y":140,"width":100,"height":40}`, `parentId` `null` e **sem a chave `anchor`** (a chave só é gravada quando há âncora: `grep -c '"anchor"' ancora/mapping.json` dá `0`). |
-| R12.35 | **`create_marking` com `anchor` e sem `rect`.** Pelo cliente stdio, `list_markings` e `get_marking` do `Alvo` (a `ref` dele); depois `propose_changes` (título "Dica") com `create_marking` no container `Tela` (`name` `Dica`, `annotation` `{ "type": "material3-compose/tooltip" }` sem `values`, **sem `rect`**, `anchor` `{ "to": "<a ref do Alvo>", "side": "top", "align": "center", "offset": { "main": 8, "cross": 0 } }`, `as` `$dica`). Na app (**Sair da revisão**, se for o caso), **Revisar**, **Aceitar tudo**, **Aplicar aceitas**; espere **Salvo** e **ler o disco**. | **Cliente:** a proposta é válida, sem `errors`, com 1 marcação criada e o resumo da `Dica` com o retângulo que ela vai ter (`x` 127, `y` 108, 147 × 24, "tamanho inicial do componente"). **`proposal.json`:** `formatVersion` **9** (a proposta usa `anchor`). **Tela:** a `Dica` desenhada **acima** do `Alvo`, centrada nele, sem sobrepor. **Disco:** a `Dica` tem `anchor` `{"to": "<id do Alvo>", "side": "top", "align": "center", "offset": {"main": 8, "cross": 0}}`; com `L` e `A` o `width` e o `height` dela (147 e 24), `y + A` é exatamente `132` (o topo do `Alvo`, 140, menos 8) e `2x + L` fica entre `399` e `401` (centrada no centro do `Alvo`, x 200; deu `x` 127, `y` 108); a `Dica` e o `Alvo` com `parentId` `null` (a âncora não é pertencimento); o `Alvo` segue sem `anchor`. |
+| R12.35 | **`create_marking` com `anchor` e sem `rect`.** Pelo cliente stdio, `list_markings` e `get_marking` do `Alvo` (a `ref` dele); depois `propose_changes` (título "Dica") com `create_marking` no container `Tela` (`name` `Dica`, `annotation` `{ "type": "material3-compose/tooltip" }` sem `values`, **sem `rect`**, `anchor` `{ "to": "<a ref do Alvo>", "side": "top", "align": "center", "offset": { "main": 8, "cross": 0 } }`, `as` `$dica`). Na app (**Sair da revisão**, se for o caso), **Revisar**, **Aceitar tudo**, **Aplicar aceitas**; espere **Salvo** e **ler o disco**. | **Cliente:** a proposta é válida, sem `errors`, com 1 marcação criada e o resumo da `Dica` com o retângulo que ela vai ter (`x` 127, `y` 108, 147 × 24, "tamanho inicial do componente"). **`proposal.json`:** `formatVersion` **9** (a proposta usa `anchor`). **Tela:** a `Dica` desenhada **acima** do `Alvo`, centrada nele, sem sobrepor, com a seta apontando para baixo (8 de altura: encosta no topo do `Alvo`). **Disco:** a `Dica` tem `anchor` `{"to": "<id do Alvo>", "side": "top", "align": "center", "offset": {"main": 8, "cross": 0}}`; com `L` e `A` o `width` e o `height` dela (147 e 24), `y + A` é exatamente `132` (o topo do `Alvo`, 140, menos 8) e `2x + L` fica entre `399` e `401` (centrada no centro do `Alvo`, x 200; deu `x` 127, `y` 108); a `Dica` e o `Alvo` com `parentId` `null` (a âncora não é pertencimento); o `Alvo` segue sem `anchor`. |
 | R12.36 | **Ler a âncora.** Pelo cliente stdio, `get_marking` da `Dica` e do `Alvo`; `get_code_hints` da `Dica` com `platform` `compose`. | **`get_marking` da `Dica`:** `anchor` com `to` como **referência** (`mapping://ancora/m/<código>` do `Alvo`), `side` `top`, `align` `center` e `offset` `{ main: 8, cross: 0 }`; `anchoredBy` `[]`. **Do `Alvo`:** `anchor` `null` (a chave vem sempre) e `anchoredBy` com a referência da `Dica`. **`get_code_hints`:** `anchor` `{ "marking": "mapping://ancora/m/<código do Alvo>", "side": "top", "align": "center" }` no topo e no nó da `tree` da `Dica`, e nada de `anchor` dentro do `code` do tipo. |
 | R12.37 | **A op `snap_to_anchor`, sozinha e no lote.** Pelo cliente stdio, três `plan_changes` em `ancora` (não gravam nada): (a) só `snap_to_anchor` da `Dica`; (b) `update_marking` da `Dica` com `rect` `{ x: 20, y: 20, width: <L>, height: <A> }` (o tamanho do R12.35) e depois `snap_to_anchor` da `Dica`; (c) `update_annotation` do valor `text` da `Dica` para `Um texto bem mais longo que o de antes, que ocupa a linha toda`, `fit_marking` da `Dica` e `snap_to_anchor` da `Dica` (a anotação da `Dica` sai do `get_marking`). | **(a):** válido, o passo diz que **nada mudou** (já está encostada). **(b):** válido; o passo do `snap_to_anchor` diz o retângulo **antes** (`x` 20, `y` 20) e **depois** (o do disco do R12.35: `y + A` = `132`, centrada em x 200). **(c):** válido; o `fit_marking` aumenta a largura e a altura (o canto de cima à esquerda fica; deu 147 × 24 → 200 × 56) e o `snap_to_anchor` diz o retângulo antes e depois, com `y + A` = `132` e `2x + L` entre `399` e `401` com a largura nova (L maior que a do disco). **Disco:** nada muda (o `mapping.json` segue igual ao do R12.35). |
 | R12.38 | **Mover a âncora leva a ancorada; redimensionar, não.** Pelo cliente stdio, `propose_changes` (título "Mover o Alvo") com `update_marking` do `Alvo` com `move` `{ "dx": 60, "dy": 20 }` e, depois, `update_marking` do `Alvo` com `rect` `{ x: 210, y: 160, width: 140, height: 40 }` (anote o `rect` da `Dica` do R12.35). Na app, **Revisar**, **Aceitar tudo**, **Aplicar aceitas**; espere **Salvo** e **ler o disco**. | **Disco:** o `Alvo` com `rect` `{"x":210,"y":160,"width":140,"height":40}`; a `Dica` com o `x` e o `y` do R12.35 **mais 60 e mais 20** (mesmo `width` e `height`: o mover a levou, o redimensionar não mudou nada nela); a `anchor` da `Dica` igual à de antes; `parentId` `null` nas duas. **Tela:** a `Dica` já não está centrada no `Alvo` (foi só movida). |
@@ -1144,7 +1145,7 @@ O campo somente leitura (revisão de propostas) não mostra lista; isso é cober
 
 ### R17 — Biblioteca Material 3 (Compose)
 
-**O que cobre:** a etapa Biblioteca Material 3 (MD5): o pacote pronto `libraries/material3-compose/` (50 tipos, `formatVersion` 16, só Jetpack Compose), entregue em `examples/material3-compose.zip`. Os passos conferem o zip e o pacote pelo MCP (`validate_library`), a aplicação do zip na app (**Aplicar zip…**), o mapeamento de uma tela de contatos feita só com a biblioteca (Scaffold, Top app bar, LazyColumn com dois List items, um Button `outlined` e um FAB) por uma proposta do MCP e, no fim, que o agente lê a **árvore da tela com o composable certo em cada nó**: `get_code_hints` devolve `Scaffold` > `TopAppBar`, `LazyColumn` > `ListItem` ×2, `OutlinedButton` e `FloatingActionButton`, e a variante `outlined` troca o símbolo (`OutlinedButton`) sem mudar o arquivo (`Button.kt`). **Regra a conferir no fim:** nenhum `code` de anotação traz `variants`; só o `types` do `get_code_hints` e o JSON cru da especialização trazem. MF5 (R17.22 a R17.30): a peça **Fiel**, lida no PNG do MCP (ImageMagick) e, no R17.30, na app: o `text-field` outlined (vão com cantos arredondados), o `card` elevated (duas sombras), o `switch` desabilitado (opaco), o número sob a alça do `time-picker` às 10:37, o `date-picker` com `today` e o `text` sem `color` num `surface` `primary` (cor herdada). MC6 (R17.31 a R17.34): a peça **Linhas**: o `snackbar` de 1, 2 e 3 linhas (48, 68 e 81), o `alert-dialog` com os botões em duas linhas e, na app, o `flow-row` quebrado pelo Arrumar. Densidade da captura (R17.39 e R17.40): o `button` de 174 × 120 num container 3x desenhado pelo `render_marking` igual ao de 58 × 40 num container 1x a `zoom` 3, o `component-overflow` do `plan_changes` com `update_container` `density` 3 e o `container-density` com 12. O carousel `centered-hero` (R17.41 e R17.42): o de 3 itens em 360 de largura com `itemSpacing` 8 desenhado como o Compose sem `maxItemWidth`, o item grande de 264 a partir de x 48 e o pequeno de 40 em x 320, no PNG do `render_marking` e, em proporção, na app. O slider com 2000 passos (R17.43): sem as marcas e sem o aviso `repeat limitado`, uma faixa de 4 por trecho, com as cores certas no PNG e, em proporção, na app. O rótulo do carousel legível sobre o reservado (R17.47): o véu de 0,55 deixa o `rótulo` com contraste de pelo menos 4,5:1, no PNG do `render_marking` (`575658`) e, na app, em proporção (`202022`). Importação pela assinatura (S5, R17.44 a R17.46): o `button` com `shape` `small`, `horizontal` 12, `vertical` 4 e `containerColor` `tertiary` em `light` e `dark`, a `color` `primary` do `divider` e o `subtitle` da `top-app-bar` `small`, no PNG do `render_marking`. No R17.7, o caso `outlined` traz `calls.colors` `outlinedButtonColors`.
+**O que cobre:** a etapa Biblioteca Material 3 (MD5): o pacote pronto `libraries/material3-compose/` (50 tipos, `formatVersion` 16, só Jetpack Compose), entregue em `examples/material3-compose.zip`. Os passos conferem o zip e o pacote pelo MCP (`validate_library`), a aplicação do zip na app (**Aplicar zip…**), o mapeamento de uma tela de contatos feita só com a biblioteca (Scaffold, Top app bar, LazyColumn com dois List items, um Button `outlined` e um FAB) por uma proposta do MCP e, no fim, que o agente lê a **árvore da tela com o composable certo em cada nó**: `get_code_hints` devolve `Scaffold` > `TopAppBar`, `LazyColumn` > `ListItem` ×2, `OutlinedButton` e `FloatingActionButton`, e a variante `outlined` troca o símbolo (`OutlinedButton`) sem mudar o arquivo (`Button.kt`). **Regra a conferir no fim:** nenhum `code` de anotação traz `variants`; só o `types` do `get_code_hints` e o JSON cru da especialização trazem. MF5 (R17.22 a R17.30): a peça **Fiel**, lida no PNG do MCP (ImageMagick) e, no R17.30, na app: o `text-field` outlined (vão com cantos arredondados), o `card` elevated (duas sombras), o `switch` desabilitado (opaco), o número sob a alça do `time-picker` às 10:37, o `date-picker` com `today` e o `text` sem `color` num `surface` `primary` (cor herdada). MC6 (R17.31 a R17.34): a peça **Linhas**: o `snackbar` de 1, 2 e 3 linhas (48, 68 e 81), o `alert-dialog` com os botões em duas linhas e, na app, o `flow-row` quebrado pelo Arrumar. Densidade da captura (R17.39 e R17.40): o `button` de 174 × 120 num container 3x desenhado pelo `render_marking` igual ao de 58 × 40 num container 1x a `zoom` 3, o `component-overflow` do `plan_changes` com `update_container` `density` 3 e o `container-density` com 12. O carousel `centered-hero` (R17.41 e R17.42): o de 3 itens em 360 de largura com `itemSpacing` 8 desenhado como o Compose sem `maxItemWidth`, o item grande de 264 a partir de x 48 e o pequeno de 40 em x 320, no PNG do `render_marking` e, em proporção, na app. O slider com 2000 passos (R17.43): sem as marcas e sem o aviso `repeat limitado`, uma faixa de 4 por trecho, com as cores certas no PNG e, em proporção, na app. O rótulo do carousel legível sobre o reservado (R17.47): o véu de 0,55 deixa o `rótulo` com contraste de pelo menos 4,5:1, no PNG do `render_marking` (`575658`) e, na app, em proporção (`202022`). Importação pela assinatura (S5, R17.44 a R17.46): o `button` com `shape` `small`, `horizontal` 12, `vertical` 4 e `containerColor` `tertiary` em `light` e `dark`, a `color` `primary` do `divider` e o `subtitle` da `top-app-bar` `small`, no PNG do `render_marking`. No R17.7, o caso `outlined` traz `calls.colors` `outlinedButtonColors`. Âncoras e direção (R17.48 a R17.54, a etapa Direção e âncora, `material3-compose` na versão 14): o `tooltip` ancorado num `icon-button` com a seta de 16 × 8 sob o centro do botão, o `badge` no canto de um `icon` (o ponto de 6 e o contador de 16, com os deslocamentos do `BadgedBox`), o `dropdown-menu` sob um `text-field` (e o `get_code_hints` com o lado e o alinhamento que a raiz de cada componente declara) e a tela `rtl` (a seta de voltar e o chevron virados, o ícone de busca igual), no PNG do `render_marking` e do `render_container`, em `light` e em `dark`.
 
 **Preparo.** Seção 6 pronta; os pedidos ao MCP são feitos pelo cliente stdio (apêndice A: `WS=<workspace> node scripts/testing/mcp-stdio-client.mjs calls.json`, com os argumentos de cada tool tirados de `[{"list":true}]`). **Caixa da cor com `%@` (R17.19, R17.21, R17.41 e R17.42):** os comandos medem a caixa numa linha de 1 px e levam `-bordercolor black -border 1` antes do `-format`, porque o ImageMagick 6 (6.9.12, o da nuvem) erra a caixa de uma imagem de 1 linha quando a cor encosta na borda (altura 2 e largura errada, como `272x2+48+0`); com a borda preta de 1 px, o `X` e o `Y` da caixa contam 1 a mais, e os esperados já vêm assim. `RAIZ` é a raiz de projetos do servidor (`design/mapeamentos` na seção 6) e `REPO` é o clone do repositório do Mapping, onde está `examples/material3-compose.zip`. O pacote traz a fonte Roboto (`fonts/Roboto-Regular.woff2` e `Roboto-Medium.woff2`, com a licença OFL ao lado): os textos saem em Roboto. O lote de operações do R17.4 (sem `apply_specialization`: o zip já foi aplicado na app no R17.3):
 
@@ -1298,6 +1299,263 @@ O campo somente leitura (revisão de propostas) não mostra lista; isso é cober
 ]
 ```
 
+O lote do R17.48 (âncoras: um container novo; o `update_annotation` dos itens do menu usa o apelido `$menua` da anotação criada pela marcação **Menu**):
+
+```json
+[
+  {
+    "op": "add_container",
+    "as": "$c",
+    "name": "Âncoras",
+    "width": 360,
+    "height": 480,
+    "background": "#FFFFFF"
+  },
+  {
+    "op": "create_marking",
+    "as": "$botao",
+    "container": "$c",
+    "name": "Botão",
+    "rect": {
+      "x": 156,
+      "y": 200,
+      "width": 48,
+      "height": 48
+    },
+    "annotation": {
+      "type": "material3-compose/icon-button",
+      "values": {
+        "icon": "Menu"
+      }
+    }
+  },
+  {
+    "op": "create_marking",
+    "as": "$dica",
+    "container": "$c",
+    "name": "Dica",
+    "anchor": {
+      "to": "$botao",
+      "side": "top"
+    },
+    "annotation": {
+      "type": "material3-compose/tooltip",
+      "values": {
+        "text": "Abrir o menu"
+      }
+    }
+  },
+  {
+    "op": "create_marking",
+    "as": "$sino",
+    "container": "$c",
+    "name": "Sino",
+    "rect": {
+      "x": 40,
+      "y": 60,
+      "width": 24,
+      "height": 24
+    },
+    "annotation": {
+      "type": "material3-compose/icon",
+      "values": {
+        "imageVector": "Notifications"
+      }
+    }
+  },
+  {
+    "op": "create_marking",
+    "as": "$selo",
+    "container": "$c",
+    "name": "Selo",
+    "anchor": {
+      "to": "$sino"
+    },
+    "annotation": {
+      "type": "material3-compose/badge",
+      "values": {
+        "style": "small"
+      }
+    }
+  },
+  {
+    "op": "create_marking",
+    "as": "$sino2",
+    "container": "$c",
+    "name": "Sino 2",
+    "rect": {
+      "x": 120,
+      "y": 60,
+      "width": 24,
+      "height": 24
+    },
+    "annotation": {
+      "type": "material3-compose/icon",
+      "values": {
+        "imageVector": "Notifications"
+      }
+    }
+  },
+  {
+    "op": "create_marking",
+    "as": "$selo2",
+    "container": "$c",
+    "name": "Selo 2",
+    "anchor": {
+      "to": "$sino2",
+      "offset": {
+        "main": -12,
+        "cross": -2
+      }
+    },
+    "annotation": {
+      "type": "material3-compose/badge",
+      "values": {
+        "style": "large",
+        "count": "3"
+      }
+    }
+  },
+  {
+    "op": "create_marking",
+    "as": "$campo",
+    "container": "$c",
+    "name": "Campo",
+    "rect": {
+      "x": 40,
+      "y": 300,
+      "width": 280,
+      "height": 56
+    },
+    "annotation": {
+      "type": "material3-compose/text-field",
+      "values": {
+        "label": "País",
+        "value": "Brasil"
+      }
+    }
+  },
+  {
+    "op": "create_marking",
+    "as": "$menu",
+    "container": "$c",
+    "name": "Menu",
+    "anchor": {
+      "to": "$campo"
+    },
+    "annotationAs": "$menua",
+    "annotation": {
+      "type": "material3-compose/dropdown-menu",
+      "values": {
+        "style": "menu",
+        "expanded": "true"
+      }
+    }
+  },
+  {
+    "op": "update_annotation",
+    "annotation": "$menua",
+    "values": {
+      "items": [
+        {
+          "text": "Editar",
+          "leadingIcon": "Edit",
+          "trailingIcon": "",
+          "enabled": "true",
+          "selected": "false"
+        },
+        {
+          "text": "Excluir",
+          "leadingIcon": "Delete",
+          "trailingIcon": "",
+          "enabled": "true",
+          "selected": "false"
+        }
+      ]
+    }
+  },
+  {
+    "op": "fit_marking",
+    "marking": "$menu"
+  },
+  {
+    "op": "snap_to_anchor",
+    "marking": "$menu"
+  }
+]
+```
+
+O lote do R17.53 (a tela `rtl`: outro container novo):
+
+```json
+[
+  {
+    "op": "add_container",
+    "as": "$c",
+    "name": "Tela RTL",
+    "width": 360,
+    "height": 200,
+    "background": "#FFFFFF"
+  },
+  {
+    "op": "create_marking",
+    "container": "$c",
+    "name": "Barra",
+    "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 360,
+      "height": 64
+    },
+    "annotation": {
+      "type": "material3-compose/top-app-bar",
+      "values": {
+        "title": "Contatos",
+        "style": "small",
+        "navigationIcon": "ArrowBack",
+        "actionIcon1": "Search"
+      }
+    }
+  },
+  {
+    "op": "create_marking",
+    "container": "$c",
+    "name": "Item",
+    "rect": {
+      "x": 0,
+      "y": 64,
+      "width": 360,
+      "height": 56
+    },
+    "annotation": {
+      "type": "material3-compose/list-item",
+      "values": {
+        "headlineContent": "Ana",
+        "leadingIcon": "Person",
+        "trailingIcon": "KeyboardArrowRight"
+      }
+    }
+  },
+  {
+    "op": "create_marking",
+    "container": "$c",
+    "name": "Voltar",
+    "rect": {
+      "x": 16,
+      "y": 140,
+      "width": 24,
+      "height": 24
+    },
+    "annotation": {
+      "type": "material3-compose/icon",
+      "values": {
+        "imageVector": "ArrowBack"
+      }
+    }
+  }
+]
+```
+
 | Passo | Ação | Esperado |
 | --- | --- | --- |
 | R17.1 | **Conferir o zip e o pacote.** Pela shell: `unzip -Z1 REPO/examples/material3-compose.zip` (lista o conteúdo), `unzip -Z1 REPO/examples/material3-compose.zip \| grep -c '^components/'` e o mesmo com `'^docs/'`; depois `unzip -q REPO/examples/material3-compose.zip -d RAIZ/m3`. Pelo cliente stdio, `validate_library` com `path` `m3`. | **Resposta (shell):** a lista traz `material3-compose.spec.json` na raiz do zip (sem pasta-raiz), e as duas contagens dão `50`. **Resposta (MCP):** `valid: true`, sem erros; `spec` com `id` `material3-compose`, `formatVersion` 16, `types` 50, `components` 50 e `docs` 50 (a validação traz 0 erros e só avisos `parâmetro fora da ficha` (provisório: decisão do dono pendente no bug #1774; curadoria na #1134): qualquer outro aviso reprova; `fonts` 2 e as duas fontes `.woff2` estão no zip). |
@@ -1347,6 +1605,13 @@ O campo somente leitura (revisão de propostas) não mostra lista; isso é cober
 | R17.45 | **A `color` do `divider` (S5).** Pelo cliente stdio, `propose_changes` em `tela-m3` (título "Divisor S5") que cria o container **Divisor** (`add_container` `360 × 16`, `#FFFFFF`) com `dv` (`0,0,360,16`, `divider`, `{"color":"primary"}`). Na app, **Propostas** › **Revisar** › **Aceitar tudo** › **Aplicar aceitas** › **Sair da revisão**; espere **Salvo**. Pelo cliente, `render_marking` de `dv` com `drawingMode` `light` (`zoom` `2`, `padding` `0`, `dv-claro.png`) e com `dark` (`dv-escuro.png`). Pela shell, com o `px` do R17.44: `px dv-claro.png 180 15`, `px dv-claro.png 180 6` e o mesmo em `dv-escuro.png`. | **Resposta:** `width` `720` e `height` `32`, sem aviso (`warnings` vazio). **Shell (±3 por canal; pixels do PNG do `render_marking` a 2x, não coordenadas do modelo de cena):** (180, 15) `6750A4` em `dv-claro.png` e `D0BCFF` em `dv-escuro.png` (o `primary` de cada modo: a linha de 1 unidade fica em y 7,5 a 8,5, ou 15 a 17 a 2x; sem `color`, o divisor usa o `outline-variant`); (180, 6) `FFFFFF` nos dois. **Disco:** `dv` com `"color": "primary"` nos `values`. |
 | R17.46 | **O `subtitle` da `top-app-bar` small (S5).** Pelo cliente stdio, `propose_changes` em `tela-m3` (título "Subtítulo S5") que cria o container **Barra com subtítulo** (`add_container` `360 × 64`, `#FFFFFF`) com `bsub` (`0,0,360,64`, `top-app-bar`, `{"title":"Contatos","style":"small","subtitle":"Favoritos"}`) e o container **Barra sem subtítulo** (`360 × 64`, `#FFFFFF`) com `bsem` (`0,0,360,64`, `top-app-bar`, `{"title":"Contatos","style":"small"}`). Na app, **Propostas** › **Revisar** › **Aceitar tudo** › **Aplicar aceitas** › **Sair da revisão**; espere **Salvo**. Pelo cliente, `render_marking` de `bsub` e de `bsem` com `drawingMode` `light` (`zoom` `1`, `padding` `0`, `bsub.png` e `bsem.png`). Pela shell: `compare -metric AE bsub.png bsem.png null:; echo` e, em cada um, `convert bsub.png -crop 200x64+0+0 +repage -fuzz 20% -fill black +opaque white -negate -trim -format '%wx%h%O\n' info:` (a tinta do texto na metade esquerda; o mesmo com `bsem.png`). | **Resposta:** `width` `360` e `height` `64` nas duas, sem aviso (`warnings` vazio). Os números do passo (altura da tinta, `Y`) são medidas no PNG do `render_marking`, não valores do modelo de cena. **Comparação:** o `compare` imprime um número maior que `0` (as imagens diferem). **Tinta do texto:** a altura `A` da `LxA+X+Y` é ≥ 28 em `bsub.png` (título e subtítulo, um sob o outro, mais ou menos 35) e ≤ 24 em `bsem.png` (só o título, mais ou menos 17); o título sobe no `bsub.png` para abrir lugar ao subtítulo (o `Y` é menor que o de `bsem.png`). **Disco:** `bsub` com `"subtitle": "Favoritos"` nos `values`; `bsem` sem valor em `subtitle` (a app grava `null` no campo opcional vazio, então a chave pode existir com `null`). |
 | R17.47 | **O rótulo legível sobre o reservado (MCP e app).** Usa a marcação **Carrossel** do R17.41 (rótulos `A`, `B` e `C`; as imagens vazias desenham o reservado). Pelo cliente stdio, `render_marking` de **Carrossel** em `light` (`zoom` `1`, `padding` `0`, `rotulo.png`). Pela shell, `px() { convert "$1" -format "%[hex:p{$2,$3}]\n" info:; }` e `px rotulo.png 180 200` (abaixo da linha do rótulo, dentro do véu). Na app, com o recorte do R17.42 (`heroapp.png`, projeto em `dark` desde o R17.10; `W` e `A` a largura e a altura): `px heroapp.png $((W*500/1000)) $((A*975/1000))`. O contraste com o `E8DEF8` (`secondary-fixed`, a cor do rótulo) de cada cor lida, `COR` sem o `#`: `python3 -c "import sys;f=lambda h:[(lambda s:s/12.92 if s<=.03928 else((s+.055)/1.055)**2.4)(int(h[i:i+2],16)/255)for i in(0,2,4)];L=lambda h:sum(a*b for a,b in zip((.2126,.7152,.0722),f(h)));c=lambda a,b:(max(L(a),L(b))+.05)/(min(L(a),L(b))+.05);print(round(c('E8DEF8',sys.argv[1]),2))" COR`. | **MCP:** `575658` (±4 por canal): o `C2BFC4` do reservado sob o `scrim` de 0,55 do véu (antes da etapa dava `C2BFC4`, sem véu no PNG). **App:** `202022` (±4): o `48474C` sob o 0,55 (no `light` seria `5C5A5D`). **Contraste:** pelo menos 4,5 nos dois (5,64 para `575658` e 12,57 para `202022`). **Disco:** nada muda. |
+| R17.48 | **Âncoras: o plano (MCP).** Pelo cliente stdio, `plan_changes` e depois `propose_changes` em `tela-m3` (título "Âncoras M3") com o lote de âncoras acima: o container **Âncoras** (360 × 480, em branco), o **Botão** (`icon-button`) com a **Dica** (`tooltip`), o **Sino** (`icon`) com o **Selo** (`badge` `small`), o **Sino 2** com o **Selo 2** (`badge` `large`, `offset` `{ main: -12, cross: -2 }`) e o **Campo** (`text-field`) com o **Menu** (`dropdown-menu`). A **Dica**, os dois selos e o **Menu** nascem **sem `rect`**: o tamanho medido, encostado na âncora com o `anchor` da raiz do componente; os itens do menu entram por `update_annotation`, e então `fit_marking` e `snap_to_anchor`. | **`plan_changes`:** válido, sem `errors` e com `issues.new` vazio (sem `component-overflow`). **`propose_changes`:** 1 container, 8 marcações e 8 anotações; `summary`: **Dica** "x 135, y 172, 90×24, tamanho inicial do componente" (172 + 24 + 4 = 200, o topo do **Botão**, e 2 × 135 + 90 = 360, centrada nele); **Selo** "x 58, y 60, 6×6, …" (o canto de cima à direita do **Sino**, de x 40 a 64: 64 − 6); **Selo 2** "x 132, y 58, 16×16, …" (144 − 12 e 60 − 2); **Menu** "x 40, y 356, 112×16, tamanho inicial do componente" (abaixo do **Campo**, que acaba em 356, alinhado ao início dele), depois "Ajustar … 112×16 px em (40, 356) → 112×112 px em (40, 356)" e "… já está encostada na âncora (112×112 px em (40, 356)): nada muda" (os itens só entram depois da criação). **`proposal.json`:** `formatVersion` **9** (a proposta usa `anchor`). **Disco:** nada muda. |
+| R17.49 | **Âncoras: aceitar e ler o disco (app).** Na app (**Sair da revisão**, se for o caso), **Propostas** (`Ctrl+Shift+7`) › **Revisar**, **Aceitar tudo**, **Aplicar aceitas**; espere **Salvo**. Pela shell: `jq -c '.markings[] \| select(.name=="Dica" or .name=="Selo" or .name=="Selo 2" or .name=="Menu") \| [.name, .rect, .anchor, (.parentId != null)]' RAIZ/tela-m3/mapping.json`. | **Tela:** o container **Âncoras** com o tooltip "Abrir o menu" sobre o botão de menu, o sino com o ponto vermelho no canto, o outro com o contador 3 e o menu "Editar" e "Excluir" colado embaixo do campo "País"; **Diagnóstico** sem erro. **Disco** (quatro linhas): `["Dica",{"x":135,"y":172,"width":90,"height":24},{"to":"<id do Botão>","side":"top"},false]`; `["Selo",{"x":58,"y":60,"width":6,"height":6},{"to":"<id do Sino>"},true]` (o ponto cai dentro do ícone: o pai sai da geometria, e a âncora não é pertencimento); `["Selo 2",{"x":132,"y":58,"width":16,"height":16},{"to":"<id do Sino 2>","offset":{"main":-12,"cross":-2}},false]`; `["Menu",{"x":40,"y":356,"width":112,"height":112},{"to":"<id do Campo>"},false]` (a âncora só traz o que o pedido disse; o resto vem da raiz do componente). |
+| R17.50 | **A seta do tooltip, em `light` e `dark`.** Pelo cliente stdio, `render_marking` da **Dica** (a `ref` vem de `list_markings`) com `zoom` `1`, `padding` `16` e `drawingMode` `light` (grave `dica-claro.png`) e com `dark` (`dica-escuro.png`). Pela shell: `px() { convert "$1" -format "%[hex:p{$2,$3}]\n" info:; }`, `identify -format '%wx%h\n' dica-claro.png` e, em cada imagem, `px <imagem> 61 42`, `px <imagem> 47 42`, `px <imagem> 75 42` e `px <imagem> 61 50`. | **Resposta:** `width` `122` e `height` `56` (90 × 24 mais 16 de cada lado: a seta passa 8 da base da caixa e cabe no respiro); **shell:** `122x56`. A seta (16 × 8, o `TooltipDefaults.caretSize`) fica na borda de baixo da **Dica**, aponta para baixo e a ponta cai no centro do **Botão** (x 180 − 119 = 61): em `dica-claro.png`, (61, 42) `322F35` (o `inverse-surface` do `light`, a cor do cartão) e (47, 42), (75, 42) e (61, 50) `FFFFFF` (fora do triângulo e abaixo da ponta); em `dica-escuro.png`, (61, 42) `E6E0E9` (o `inverse-surface` do `dark`) e os outros três `FFFFFF`. **Disco:** nada muda. |
+| R17.51 | **O badge no canto do ícone, em `light` e `dark`.** Pelo cliente stdio, `render_marking` do **Sino** (`zoom` `1`, `padding` `16`, `light` e `dark`; `sino-claro.png` e `sino-escuro.png`) e do **Selo 2** (`selo2-claro.png` e `selo2-escuro.png`, nas mesmas opções). Pela shell, com o `px()` do R17.50: `px sino-claro.png 37 19`, `px sino-claro.png 43 19`, `px sino-claro.png 10 19`, `px selo2-claro.png 19 24`, `px selo2-claro.png 4 24`, `px selo2-claro.png 24 4` e `px selo2-claro.png 40 24` (e o mesmo nos arquivos `escuro`). | **Resposta:** `width` e `height` `56` do **Sino** (24 mais 16 de cada lado; o ponto de 6, no canto de cima à direita, cabe dentro) e `48` do **Selo 2** (16 mais 32). **Sino:** (37, 19), o centro do ponto (x 58 a 64 menos 24 da região, y 60 a 66 menos 44), é `B3261E` no `light` e `F2B8B5` no `dark` (o papel `error` do modo); (43, 19) e (10, 19) `FFFFFF`. **Selo 2:** (19, 24), no círculo de 16 à esquerda do dígito, `B3261E` e `F2B8B5`; (4, 24), (24, 4) e (40, 24) `FFFFFF`. **Disco:** nada muda. |
+| R17.52 | **O menu sob o campo e o que o agente lê da âncora.** Pelo cliente stdio, `render_container` do **Âncoras** (`zoom` `1`, `light` e `dark`; `a-claro.png` e `a-escuro.png`) e `get_code_hints` (`platform` `compose`) da **Dica**, do **Selo** e do **Menu**. Pela shell, com o `px()`: `px a-claro.png 100 340`, `px a-claro.png 100 360`, `px a-claro.png 41 400` e `px a-claro.png 200 400` (e o mesmo no `escuro`). | **Imagens** (360 × 480): (100, 340), dentro do **Campo**, `E6E0E9` no `light` e `36343B` no `dark` (o `surface-container-highest`); (100, 360) e (41, 400), dentro do **Menu**, `F3EDF7` e `211F26` (o `surface-container`): o menu começa em y 356, colado no campo, e em x 40, alinhado ao início dele; (200, 400) `FFFFFF` (o menu acaba em x 152: a âncora posiciona e não dá a largura). **`get_code_hints`:** `direction` `ltr` e `anchor` com `marking` (a referência do **Botão**, do **Sino** e do **Campo**) e o `side` e o `align` da raiz de cada componente, que a marcação não disse: **Dica** `top` e `center`; **Selo** `end` e `start`; **Menu** `bottom` e `start`. **Disco:** nada muda. |
+| R17.53 | **A tela `rtl`: propor e aceitar.** Pelo cliente stdio, `propose_changes` em `tela-m3` (título "Tela RTL") com o lote da tela `rtl` acima: um container **Tela RTL** de 360 × 200 com a **Barra** (`top-app-bar`, `navigationIcon` `ArrowBack` e `actionIcon1` `Search`), o **Item** (`list-item`, `leadingIcon` `Person` e `trailingIcon` `KeyboardArrowRight`) e o **Voltar** (`icon` `ArrowBack`). Na app, **Propostas** › **Revisar**, **Aceitar tudo**, **Aplicar aceitas**; espere **Salvo** e **ler o disco**. | **Cliente:** a proposta é válida, com 1 container, 3 marcações e 3 anotações. **Tela:** a **Tela RTL** desenhada da esquerda para a direita (o projeto e o container seguem `ltr`): a seta de voltar à esquerda da **Barra** e o chevron à direita do **Item**. **Disco:** o `mapping.json` com mais 1 container, 3 marcações e 3 anotações e **sem** `direction` no projeto nem no container (a direção só vai no pedido de imagem do próximo passo). |
+| R17.54 | **A tela `rtl` pelo `render_container`, em `light` e `dark`.** Pelo cliente stdio, `render_container` da **Tela RTL** com `zoom` `1` e: `light` e `direction` `ltr` (`l-ltr.png`), `light` e `rtl` (`l-rtl.png`), `dark` e `ltr` (`d-ltr.png`), `dark` e `rtl` (`d-rtl.png`). Pela shell, com `ae() { compare -metric AE "$1" "$2" null: 2>&1; echo; }`, para `l-ltr.png`/`l-rtl.png` (e `d-`): (a) `convert l-ltr.png -crop 24x24+16+140 +repage -flop a.png; convert l-rtl.png -crop 24x24+16+140 +repage b.png; ae a.png b.png` (o **Voltar**); (b) o mesmo com `+16+20` espelhado e `+320+20` (a seta da **Barra**); (c) com `+324+88` espelhado e `+12+88` (o chevron do **Item**); (d) sem `-flop`, `+272+20` de `l-ltr.png` contra `+64+20` de `l-rtl.png` (a busca da **Barra**); (e) o **Voltar** de `l-ltr.png` sem `-flop` contra `b.png`. | **Resposta:** `direction` `ltr` nas duas primeiras e `rtl` nas outras, `drawings` `3`, `360` por `200`. **AE** `0` em (a), (b), (c) e (d), em `light` e em `dark`: em `rtl` a seta de voltar (um ícone `AutoMirrored` do Compose, `mirror` no conjunto) e o chevron do fim viram, no lugar espelhado da caixa (a marcação não se move: o **Voltar** segue em x 16), e a busca, que não espelha, só troca de lado. **(e)** maior que `0` (a seta mudou de direção; 90 no `light` e 86 no `dark` nos renders conferidos). O texto "Contatos" e "Ana" encosta à direita (o `font.align` padrão é `start`). **Disco:** nada muda. |
 
 ### R18 — Avisos na especialização
 
@@ -2514,7 +2779,7 @@ Para quem mantém o projeto, depois de uma rodada completa sem achados altos ou 
 | A15 Desfazer profundo | 100 ações seguidas, 100 `Ctrl+Z`, 100 `Ctrl+Shift+Z`, com um **Aplicar aceitas** no meio. | Cada desfazer volta exatamente um gesto; o aplicar volta inteiro num só desfazer. | pilha de desfazer, um gesto = uma entrada |
 | A16 Só teclado | Faça R1.6 a R1.12 sem mouse (Tab, setas, Enter, o **+** da camada, `Alt+L`, Delete, Esc), exceto o desenho das marcações. | Todo controle alcançável e com nome; o foco nunca some depois de fechar um diálogo. | foco perdido, controles sem nome, armadilhas de foco |
 | A17 Zip grande | Exporte o projeto do A2 (mais de 100 MB); abra o zip como projeto neste dispositivo; exporte de novo e compare. | Os dois zips com o mesmo conteúdo no `mapping.json` e as mesmas imagens. | zip em memória, arquivos grandes no navegador |
-| A18 Especialização evoluindo | Aplique o `sdui.json`; edite uma cópia dele para a versão seguinte com um campo novo obrigatório; **Atualizar versão…** (por linha). Depois, com o Material 3 (Compose) aplicado (R3.10), suba a versão com as cópias do R3.14: 14 (aditiva), 15 (`rename-field`), 16 (`remove-field`, perda avisada) e 17 (apaga tipo sem `migrations`); **Atualizar de pasta…** (ou **de zip…**). Varie com `map-values` fora das opções e `remove-type` em `delete`. No MCP (stdio): `plan_library_update` com `mat-v14` e `propose_changes` (`update_specialization`); o `path` do pacote é relativo a uma raiz do servidor (ex.: `mat-v14`, com a pasta das cópias como raiz), não à pasta de trabalho; aplique a proposta na app. | As anotações sem o campo novo ficam em **Incompletas**; as propostas antigas abrem. Aditiva: "Da versão 1 para a 2.", **Atualizar** habilitado, `specs/material3-compose/` regravada. Com migração: "Passos da migração" com contagens, valores no campo novo, perda em destaque, pendência em **Incompletas**, **Desfazer** devolve biblioteca e dados. Quebra sem migração: erro de contrato, **Atualizar** desabilitado. MCP: a prévia lista passos, perdas e pendências sem gravar; a proposta aplicada copia a pasta e migra como a app. | migração de especialização, pendências retroativas, `spec-unavailable` no MCP |
+| A18 Especialização evoluindo | Aplique o `sdui.json`; edite uma cópia dele para a versão seguinte com um campo novo obrigatório; **Atualizar versão…** (por linha). Depois, com o Material 3 (Compose) aplicado (R3.10), suba a versão com as cópias do R3.14: 14 (aditiva), 15 (`rename-field`), 16 (`remove-field`, perda avisada) e 17 (apaga tipo sem `migrations`); **Atualizar de pasta…** (ou **de zip…**). Varie com `map-values` fora das opções e `remove-type` em `delete`. No MCP (stdio): `plan_library_update` com `mat-v15` e `propose_changes` (`update_specialization`); o `path` do pacote é relativo a uma raiz do servidor (ex.: `mat-v15`, com a pasta das cópias como raiz), não à pasta de trabalho; aplique a proposta na app. | As anotações sem o campo novo ficam em **Incompletas**; as propostas antigas abrem. Aditiva: "Da versão 1 para a 2.", **Atualizar** habilitado, `specs/material3-compose/` regravada. Com migração: "Passos da migração" com contagens, valores no campo novo, perda em destaque, pendência em **Incompletas**, **Desfazer** devolve biblioteca e dados. Quebra sem migração: erro de contrato, **Atualizar** desabilitado. MCP: a prévia lista passos, perdas e pendências sem gravar; a proposta aplicada copia a pasta e migra como a app. | migração de especialização, pendências retroativas, `spec-unavailable` no MCP |
 
 ## 10. Templates
 

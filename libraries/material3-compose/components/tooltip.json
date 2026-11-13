@@ -16,6 +16,14 @@
     "width": "hug",
     "height": "hug"
   },
+  "anchor": {
+    "side": "top",
+    "align": "center",
+    "offset": {
+      "main": 4,
+      "cross": 0
+    }
+  },
   "preview": {
     "style": "plain",
     "text": "Adicionar aos favoritos",
@@ -25,6 +33,7 @@
   "template": {
     "type": "frame",
     "name": "tooltip",
+    "clip": false,
     "layout": {
       "type": "none"
     },
@@ -309,6 +318,144 @@
             ]
           }
         ]
+      },
+      {
+        "type": "path",
+        "name": "seta",
+        "d": "M0 0H16L8 8Z",
+        "viewBox": [16, 8],
+        "width": 16,
+        "height": 8,
+        "visible": {
+          "$eq": ["$anchor.side", "top"]
+        },
+        "anchors": {
+          "left": {
+            "$sub": [
+              {
+                "$field": "$anchor.x",
+                "default": 0
+              },
+              8
+            ]
+          },
+          "bottom": -8
+        },
+        "fill": {
+          "$if": {
+            "$eq": ["style", "rich"]
+          },
+          "then": {
+            "$token": "surface-container"
+          },
+          "else": {
+            "$token": "inverse-surface"
+          }
+        }
+      },
+      {
+        "type": "path",
+        "name": "seta",
+        "d": "M0 8H16L8 0Z",
+        "viewBox": [16, 8],
+        "width": 16,
+        "height": 8,
+        "visible": {
+          "$eq": ["$anchor.side", "bottom"]
+        },
+        "anchors": {
+          "left": {
+            "$sub": [
+              {
+                "$field": "$anchor.x",
+                "default": 0
+              },
+              8
+            ]
+          },
+          "top": -8
+        },
+        "fill": {
+          "$if": {
+            "$eq": ["style", "rich"]
+          },
+          "then": {
+            "$token": "surface-container"
+          },
+          "else": {
+            "$token": "inverse-surface"
+          }
+        }
+      },
+      {
+        "type": "path",
+        "name": "seta",
+        "d": "M0 0V16L8 8Z",
+        "viewBox": [8, 16],
+        "width": 8,
+        "height": 16,
+        "visible": {
+          "$eq": ["$anchor.side", "start"]
+        },
+        "anchors": {
+          "end": -8,
+          "top": {
+            "$sub": [
+              {
+                "$field": "$anchor.y",
+                "default": 0
+              },
+              8
+            ]
+          }
+        },
+        "fill": {
+          "$if": {
+            "$eq": ["style", "rich"]
+          },
+          "then": {
+            "$token": "surface-container"
+          },
+          "else": {
+            "$token": "inverse-surface"
+          }
+        },
+        "mirror": true
+      },
+      {
+        "type": "path",
+        "name": "seta",
+        "d": "M8 0V16L0 8Z",
+        "viewBox": [8, 16],
+        "width": 8,
+        "height": 16,
+        "visible": {
+          "$eq": ["$anchor.side", "end"]
+        },
+        "anchors": {
+          "start": -8,
+          "top": {
+            "$sub": [
+              {
+                "$field": "$anchor.y",
+                "default": 0
+              },
+              8
+            ]
+          }
+        },
+        "fill": {
+          "$if": {
+            "$eq": ["style", "rich"]
+          },
+          "then": {
+            "$token": "surface-container"
+          },
+          "else": {
+            "$token": "inverse-surface"
+          }
+        },
+        "mirror": true
       }
     ]
   }

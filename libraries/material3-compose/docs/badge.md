@@ -32,9 +32,9 @@ BadgedBox(badge = { Badge { Text("3") } }) {    // style small: badge = { Badge(
 
 Notas do `code` (o que a ferramenta entrega ao agente):
 
-> `Badge()` sem `content` desenha o ponto de 6dp. O Badge sozinho não se posiciona: para ancorá-lo ao canto de um ícone use `BadgedBox(badge = { Badge() }) { Icon(Icons.Filled.Notifications, contentDescription = …) }`, que cuida do deslocamento. Cores padrão `error` (fundo) e `onError` (texto); `containerColor` e `contentColor` só entram para mudá-las. Nem Badge nem BadgedBox exigem opt-in.
+> `Badge()` sem `content` desenha o ponto de 6dp. O Badge sozinho não se posiciona: para ancorá-lo ao canto de um ícone use `BadgedBox(badge = { Badge() }) { Icon(Icons.Filled.Notifications, contentDescription = …) }`, que cuida do deslocamento. Cores padrão `error` (fundo) e `onError` (texto); `containerColor` e `contentColor` só entram para mudá-las. Nem Badge nem BadgedBox exigem opt-in. Ancorado (`anchor`, lado `end`, alinhamento `start`), o `BadgedBox` põe o ponto com a borda do início a 6 dp da borda do fim da âncora (`BadgeOffset`), no topo dela; o contador, a 12 dp (`BadgeWithContentHorizontalOffset`) e 2 dp acima do topo (a 14 dp de sobreposição vertical, `BadgeWithContentVerticalOffset`): para o `large`, declare `offset` principal -12 e cruzado -2 na marcação.
 
-Variante `large`: `Badge(content = { Text(<count>) })` desenha o contador de 16dp, que cresce com o texto (use `99+` para valores grandes). Ancorado: `BadgedBox(badge = { Badge { Text(<count>) } }) { Icon(Icons.Filled.Notifications, contentDescription = …) }`. Não exige opt-in.
+Variante `large`: `Badge(content = { Text(<count>) })` desenha o contador de 16dp, que cresce com o texto (use `99+` para valores grandes). Ancorado: `BadgedBox(badge = { Badge { Text(<count>) } }) { Icon(Icons.Filled.Notifications, contentDescription = …) }`. Não exige opt-in. Posição ancorada: `offset` principal -12 e cruzado -2 (`BadgeWithContentHorizontalOffset` 12 dp e `BadgeWithContentVerticalOffset` 14 dp).
 
 ## Exemplos
 
@@ -60,6 +60,6 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 
 **O que ainda difere do Compose**
 
-- O posicionamento no canto do ícone (`BadgedBox`, deslocamento de 6 sem conteúdo e de 12 por 14 com conteúdo) é da marcação ao redor, não deste componente.
+- O `BadgedBox` em si não existe: o posicionamento no canto do ícone é a âncora da marcação (a raiz declara `anchor` `end`/`start` com `offset.main` -6, o `BadgeOffset` do ponto, e o Encostar na âncora o põe no canto do ícone). Para o contador (`large`), o `BadgedBox` usa 12 (`BadgeWithContentHorizontalOffset`) e 14 de sobreposição vertical (`BadgeWithContentVerticalOffset`): declare `offset` principal -12 e cruzado -2 na marcação, porque o padrão da raiz é um só e vale o do ponto (o `small`, o padrão do tipo). O limite do `BadgeEndRuler`/`BadgeTopRuler` (o badge preso à janela) não é desenhado.
 - Sem o limite de texto do contador do Compose (quem chama corta, por exemplo `99+`).
 - A altura do contador é a do texto (`hug`), com o mínimo de 16 (`minHeight`), como o `defaultMinSize` do Compose: a prova de desenho da biblioteca mede o texto com o tamanho e a linha do token do modo (`label-small-line-height`, 16), então não avisa.

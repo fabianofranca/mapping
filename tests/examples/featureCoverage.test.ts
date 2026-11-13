@@ -125,16 +125,11 @@ const MISSING_TODAY: string[] = [
   // etapa; cobertos por tests/model/components/direction.test.ts, directionParse.test.ts,
   // layoutDirection.test.ts, tests/mcp/directionRaster.test.ts e pelo roteiro R27.
   'component:node.direction',
-  // As âncoras lógicas `start` e `end` (RTL) também não aparecem em biblioteca distribuída.
-  'component:anchors.start',
-  'component:anchors.end',
+  // As âncoras lógicas `start` e `end` já têm exemplo: a seta do tooltip da Material 3 (etapa #1096, R5).
   'component:cond.$direction',
   'component:node.icon.mirror',
-  // Âncora (etapa #1096, R3): `anchor` na raiz do componente e os `$anchor.*`; a Material 3 os adota na R5
-  // (tooltip, badge e menu); cobertos por tests/model/components/anchorParse.test.ts, anchorFields.test.ts,
-  // tests/model/componentDrawingsAnchorEngine.test.ts e pelos roteiros R12 e R25.
-  'component:root.anchor',
-  'component:node.path.mirror',
+  // Âncora (etapa #1096, R3 e R5): `anchor` na raiz do componente e os `$anchor.*` já têm exemplo no tooltip,
+  // no badge e no menu da Material 3, e o `mirror` do `path`, na seta do tooltip (R5).
   // Tela e traço em escala (CF8, etapa #747): `screen` na raiz e `stroke.scale` (formato 4) e
   // `structural` no tipo (formatVersion 15); as bibliotecas distribuídas não migram; coberto por
   // tests/model/components/ e pelo roteiro R25.

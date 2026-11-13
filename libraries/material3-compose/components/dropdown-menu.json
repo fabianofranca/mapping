@@ -18,6 +18,14 @@
     },
     "height": "hug"
   },
+  "anchor": {
+    "side": "bottom",
+    "align": "start",
+    "offset": {
+      "main": 0,
+      "cross": 0
+    }
+  },
   "preview": {
     "style": "menu",
     "expanded": "true",

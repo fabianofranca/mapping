@@ -17,6 +17,7 @@ import {
   unknownWarnings,
   drawIn,
   files,
+  instantiateOptions,
   findText,
   solid,
   spec,
@@ -25,6 +26,11 @@ import {
   types,
 } from '../support/material3Library';
 import { drawFitted } from '../support/material3Fitted';
+import autoMirroredFixture from '../fixtures/material3-automirrored-filled.json';
+import { instantiate } from '../../src/model/components/instantiate';
+import { absoluteBoxes, walk } from '../../src/model/components/scene';
+import { componentAnchorDefaults } from '../../src/model/components/anchor';
+import { defaultValues } from '../../src/model/libraryDrawing';
 
 const COMMIT = '5113b82a4ed6416d6344efa50e41db8cb65928ff';
 
@@ -301,11 +307,11 @@ describe('biblioteca Material 3 (Compose)', () => {
     expect(known.missing).toEqual([]);
   });
 
-  it('é a formatVersion 16, versão 13, com tokens nos modos light e dark e a plataforma compose no androidx fixado no commit', () => {
+  it('é a formatVersion 16, versão 14, com tokens nos modos light e dark e a plataforma compose no androidx fixado no commit', () => {
     expect(spec).toMatchObject({
       formatVersion: 16,
       id: 'material3-compose',
-      version: 13,
+      version: 14,
       icons: 'icons/material-icons.json',
     });
     expect(spec.tokens?.modes).toEqual(['light', 'dark']);
@@ -519,7 +525,7 @@ const snake = (name: string): string =>
 const iconSet = JSON.parse(text('icons/material-icons.json') || '{"icons":{}}') as {
   format: string;
   formatVersion: number;
-  icons: Record<string, { paths: { d: string }[] }>;
+  icons: Record<string, { mirror?: boolean; paths: { d: string }[] }>;
 };
 
 describe('tokens da biblioteca Material 3 (Compose) v2', () => {
@@ -580,7 +586,7 @@ describe('tokens da biblioteca Material 3 (Compose) v2', () => {
 describe('conjunto de ícones da biblioteca Material 3 (Compose) v2', () => {
   it('é um mapping-icons válido (a biblioteca valida com 0 erros e só os avisos conhecidos (provisório, #1774) nos três níveis)', () => {
     expect(iconSet.format).toBe('mapping-icons');
-    expect(iconSet.formatVersion).toBe(1);
+    expect(iconSet.formatVersion).toBe(2);
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
     expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
@@ -687,11 +693,11 @@ describe('atualização da biblioteca Material 3 (Compose) com o slider numéric
           );
     expect(missingMigrations(previous, spec)).toEqual([]);
     expect(spec.migrations?.map((m) => [m.from, m.to])).toEqual([
-      [1, 13],
-      [2, 13],
-      [3, 13],
-      [4, 13],
-      [5, 13],
+      [1, 14],
+      [2, 14],
+      [3, 14],
+      [4, 14],
+      [5, 14],
     ]);
     const report = validateLibrary({ files, specPath: SPEC_FILE, previous });
     expect(report.errors).toEqual([]);
@@ -725,4 +731,304 @@ describe('MC5 (#1033): todo exemplo desenha sem aviso no size e no tamanho ajust
       }
     },
   );
+});
+
+// R5 (#1110, decisões 16 e 20 da #1096): a Material 3 adota a direção de leitura e a âncora.
+describe('direção de leitura e âncora na biblioteca Material 3 (Compose) (R5, #1110)', () => {
+  const autoMirrored = new Set<string>(
+    (autoMirroredFixture as { names: string[] }).names,
+  );
+  const pascal = (name: string): string =>
+    name
+      .split('_')
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join('');
+  const catalog = buildCatalog(files);
+
+  it('o conjunto de ícones é o formatVersion 2 e a especialização está na versão 14', () => {
+    expect(iconSet.formatVersion).toBe(2);
+    expect(spec.version).toBe(14);
+  });
+
+  it('todo ícone AutoMirrored do androidx tem mirror: true no conjunto, e nenhum outro', () => {
+    const marked: string[] = [];
+    for (const [name, icon] of Object.entries(iconSet.icons)) {
+      const expected = autoMirrored.has(pascal(name));
+      expect(icon.mirror === true, `${name}: mirror`).toBe(expected);
+      if (!expected) expect(icon.mirror, `${name}: sem a chave`).toBeUndefined();
+      if (expected) marked.push(name);
+    }
+    for (const name of [
+      ...['arrow_back', 'arrow_forward', 'keyboard_arrow_left', 'keyboard_arrow_right'],
+      ...['list', 'send', 'help'],
+    ])
+      expect(marked, name).toContain(name);
+    expect(marked.length).toBeGreaterThanOrEqual(24);
+  });
+
+  /** A âncora da instância (unidades): o centro relativo à caixa e o lado lógico. */
+  const anchorOf = (
+    side: 'top' | 'bottom' | 'start' | 'end',
+    centerX: number,
+    centerY: number,
+  ) => ({ side, centerX, centerY, width: 40, height: 40 });
+
+  type Values = Parameters<typeof instantiate>[1];
+  function drawWith(
+    id: string,
+    values: Values,
+    extra: {
+      mode?: 'light' | 'dark';
+      direction?: 'ltr' | 'rtl';
+      anchor?: ReturnType<typeof anchorOf>;
+      box?: { width: number; height: number };
+    } = {},
+  ) {
+    const entry = findEntry(catalog, id)!;
+    const component = entry.component!;
+    const box = { x: 0, y: 0, ...(extra.box ?? component.size) };
+    const result = instantiate(
+      component,
+      { ...defaultValues(entry.type), ...values },
+      box,
+      {
+        ...instantiateOptions(catalog, extra.mode ?? 'light'),
+        ...(extra.direction === undefined ? {} : { direction: extra.direction }),
+        ...(extra.anchor === undefined ? {} : { anchor: extra.anchor }),
+      },
+    );
+    const boxes = absoluteBoxes(result.root);
+    const nodes = [...walk(result.root)];
+    return { ...result, boxes, nodes, box };
+  }
+
+  /** As setas visíveis desenhadas pelo tooltip. */
+  const carets = (drawn: ReturnType<typeof drawWith>) =>
+    drawn.nodes.filter((n) => n.name === 'seta' && n.visible);
+
+  describe('o tooltip ancorado desenha a seta sob o centro da âncora', () => {
+    // O tooltip plain de 120 × 24 e a âncora de 40 × 40 a 4 de distância (o espaçamento do Compose).
+    const W = 120;
+    const H = 24;
+    const box = { width: W, height: H };
+    const cases = [
+      {
+        side: 'top',
+        anchor: anchorOf('top', 50, H + 4 + 20),
+        x: 50 - 8,
+        y: H,
+        w: 16,
+        h: 8,
+      },
+      {
+        side: 'bottom',
+        anchor: anchorOf('bottom', 70, -4 - 20),
+        x: 70 - 8,
+        y: -8,
+        w: 16,
+        h: 8,
+      },
+      {
+        side: 'start',
+        anchor: anchorOf('start', W + 4 + 20, 10),
+        x: W,
+        y: 10 - 8,
+        w: 8,
+        h: 16,
+      },
+      {
+        side: 'end',
+        anchor: anchorOf('end', -4 - 20, 16),
+        x: -8,
+        y: 16 - 8,
+        w: 8,
+        h: 16,
+      },
+    ] as const;
+
+    it.each(cases)(
+      'lado $side (ltr): a seta de 16 × 8 na borda voltada para a âncora, no centro dela',
+      ({ anchor, x, y, w, h }) => {
+        const drawn = drawWith('tooltip', { text: 'Ajuda' }, { anchor, box });
+        expect(drawn.warnings).toEqual([]);
+        const [caret, ...rest] = carets(drawn);
+        expect(rest).toEqual([]);
+        const at = drawn.boxes.get(caret!.id)!;
+        expect({ x: at.x, y: at.y, w: caret!.width, h: caret!.height }).toEqual({
+          x,
+          y,
+          w,
+          h,
+        });
+        expect(caret!.type).toBe('path');
+      },
+    );
+
+    it('em rtl, start e end trocam de borda e a seta vira para continuar apontando para a âncora', () => {
+      const start = drawWith(
+        'tooltip',
+        { text: 'Ajuda' },
+        { anchor: cases[2].anchor, box, direction: 'rtl' },
+      );
+      const end = drawWith(
+        'tooltip',
+        { text: 'Ajuda' },
+        { anchor: cases[3].anchor, box, direction: 'rtl' },
+      );
+      // `start` em rtl: a âncora está à esquerda do tooltip, e a seta sai pela borda da esquerda.
+      const startCaret = carets(start)[0]!;
+      const endCaret = carets(end)[0]!;
+      const horizontalExtent = (n: typeof startCaret) => {
+        const tx = n.transform[4];
+        return n.transform[0] < 0 ? [tx - n.width, tx] : [tx, tx + n.width];
+      };
+      expect(horizontalExtent(startCaret)).toEqual([-8, 0]);
+      expect(horizontalExtent(endCaret)).toEqual([W, W + 8]);
+      // Espelhada (rtl): a escala horizontal é negativa nas duas.
+      expect(startCaret.transform[0]).toBeLessThan(0);
+      expect(endCaret.transform[0]).toBeLessThan(0);
+    });
+
+    it('sem âncora, sem seta, e sem aviso (como hoje)', () => {
+      const drawn = drawWith('tooltip', { text: 'Ajuda' }, { box });
+      expect(carets(drawn)).toEqual([]);
+      expect(drawn.warnings).toEqual([]);
+    });
+
+    it('o tooltip rich também leva a seta, na cor do cartão, em light e dark', () => {
+      for (const mode of ['light', 'dark'] as const) {
+        const drawn = drawWith(
+          'tooltip',
+          { style: 'rich', text: 'Texto do tooltip rich', title: 'Título' },
+          { anchor: cases[0].anchor, box: { width: 200, height: 80 }, mode },
+        );
+        expect(drawn.warnings, mode).toEqual([]);
+        const [caret] = carets(drawn);
+        expect(caret, mode).toBeDefined();
+        const tokens = resolveTokens(spec.tokens, {}, mode);
+        expect(solid(caret!.fills), mode).toBe(tokens['surface-container']);
+      }
+    });
+
+    it('a seta do plain é inverse-surface e acompanha o centro da âncora fora do centro do tooltip', () => {
+      const drawn = drawWith(
+        'tooltip',
+        { text: 'Ajuda' },
+        { anchor: anchorOf('top', 100, 48), box },
+      );
+      const [caret] = carets(drawn);
+      expect(drawn.boxes.get(caret!.id)!.x).toBe(100 - 8);
+      expect(solid(caret!.fills)).toBe(
+        resolveTokens(spec.tokens, {}, 'light')['inverse-surface'],
+      );
+    });
+  });
+
+  describe('anchor na raiz do tooltip, do badge e do dropdown-menu (os números do commit)', () => {
+    const rootAnchor = (id: string) => findEntry(catalog, id)!.component!.anchor;
+
+    it('tooltip: top/center, 4 de espaçamento (SpacingBetweenTooltipAndAnchor)', () => {
+      expect(rootAnchor('tooltip')).toEqual({
+        side: 'top',
+        align: 'center',
+        offset: { main: 4, cross: 0 },
+      });
+    });
+
+    it('badge: end/start, o ponto 6 sobre a borda (BadgeOffset)', () => {
+      expect(rootAnchor('badge')).toEqual({
+        side: 'end',
+        align: 'start',
+        offset: { main: -6, cross: 0 },
+      });
+    });
+
+    it('dropdown-menu: bottom/start, sem deslocamento (DropdownMenu offset 0, 0)', () => {
+      expect(rootAnchor('dropdown-menu')).toEqual({
+        side: 'bottom',
+        align: 'start',
+        offset: { main: 0, cross: 0 },
+      });
+    });
+
+    it('os três padrões saem em pixels pela densidade do container', () => {
+      const file = findEntry(catalog, 'tooltip')!.component!;
+      expect(componentAnchorDefaults(file, 3).offset).toEqual({ main: 12, cross: 0 });
+    });
+  });
+
+  describe('a tela rtl: top-app-bar, list-item e icon arrow-back desenham espelhados', () => {
+    /** O `transform` horizontal do primeiro caminho do ícone `name`. */
+    const iconScale = (drawn: ReturnType<typeof drawWith>, name: string): number => {
+      const group = drawn.nodes.find((n) => n.type === 'group' && n.name === name) as
+        { children: { transform: number[] }[] } | undefined;
+      expect(group, `ícone ${name}`).toBeDefined();
+      return group!.children[0]!.transform[0]!;
+    };
+
+    it('o icon ArrowBack vira em rtl e não em ltr', () => {
+      const values = { imageVector: 'ArrowBack', contentDescription: 'Voltar' };
+      expect(iconScale(drawWith('icon', values), 'arrow_back')).toBeGreaterThan(0);
+      expect(
+        iconScale(drawWith('icon', values, { direction: 'rtl' }), 'arrow_back'),
+      ).toBeLessThan(0);
+    });
+
+    it('a top-app-bar rtl espelha a seta de voltar e a mantém em ltr', () => {
+      const values = { title: 'Perfil', style: 'center', navigationIcon: 'ArrowBack' };
+      expect(iconScale(drawWith('top-app-bar', values), 'arrow_back')).toBeGreaterThan(0);
+      const rtl = drawWith('top-app-bar', values, { direction: 'rtl' });
+      expect(iconScale(rtl, 'arrow_back')).toBeLessThan(0);
+      expect(rtl.warnings).toEqual([]);
+    });
+
+    it('o list-item rtl vira o chevron do fim e põe o ícone do início à direita', () => {
+      const values = {
+        headlineContent: 'Reunião',
+        leadingIcon: 'DateRange',
+        trailingIcon: 'KeyboardArrowRight',
+      };
+      const ltr = drawWith('list-item', values);
+      const rtl = drawWith('list-item', values, { direction: 'rtl' });
+      expect(iconScale(ltr, 'keyboard_arrow_right')).toBeGreaterThan(0);
+      expect(iconScale(rtl, 'keyboard_arrow_right')).toBeLessThan(0);
+      const lead = (d: typeof ltr) =>
+        d.boxes.get(d.nodes.find((n) => n.name === 'date_range')!.id)!.x;
+      expect(lead(ltr)).toBeLessThan(ltr.box.width / 2);
+      expect(lead(rtl)).toBeGreaterThan(rtl.box.width / 2);
+      expect(rtl.warnings).toEqual([]);
+    });
+
+    it('o exemplo "Voltar" do icon e o da top-app-bar existem e cobrem a seta de voltar', () => {
+      const icon = typeOf('icon').examples?.find((e) => e.name === 'Voltar');
+      expect(icon?.values).toMatchObject({ imageVector: 'ArrowBack' });
+      const bar = typeOf('top-app-bar').examples?.some(
+        (e) => (e.values as Record<string, unknown>)?.navigationIcon === 'ArrowBack',
+      );
+      expect(bar).toBe(true);
+    });
+  });
+
+  describe('todo exemplo desenha sem aviso em light e dark, em ltr e em rtl', () => {
+    const cases = ALL_TYPES.flatMap((id) =>
+      (findEntry(catalog, id)?.examples ?? []).map((example) => ({
+        id,
+        name: example.name,
+        values: (example.values ?? {}) as Values,
+      })),
+    );
+
+    it.each([
+      ['light', 'ltr'],
+      ['light', 'rtl'],
+      ['dark', 'ltr'],
+      ['dark', 'rtl'],
+    ] as const)('modo %s, direção %s', (mode, direction) => {
+      expect(cases.length).toBeGreaterThan(100);
+      for (const { id, name, values } of cases) {
+        const drawn = drawWith(id, values, { mode, direction });
+        expect(drawn.warnings, `${id} / ${name}`).toEqual([]);
+      }
+    });
+  });
 });
