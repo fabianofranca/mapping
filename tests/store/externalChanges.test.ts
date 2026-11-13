@@ -556,6 +556,18 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
     let readsHeld = 0;
     let reads = 0;
     let stats = 0;
+    const gatedRead = async <T>(read: () => Promise<T>): Promise<T> => {
+      reads++;
+      if (failReads) throw failReads;
+      const result = await read();
+      const gate = readGate;
+      readGate = null;
+      if (gate) {
+        readsHeld++;
+        await gate;
+      }
+      return result;
+    };
     const s = openSession({
       storage: {
         ...storage,
@@ -566,18 +578,10 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
           await storage.saveMapping(data);
           if (hold?.afterWrite) await hold.gate;
         },
-        loadMapping: async () => {
-          reads++;
-          if (failReads) throw failReads;
-          const read = await storage.loadMapping();
-          const gate = readGate;
-          readGate = null;
-          if (gate) {
-            readsHeld++;
-            await gate;
-          }
-          return read;
-        },
+        loadMapping: () => gatedRead(() => storage.loadMapping()),
+        // A sessão lê por aqui (texto e data numa leitura só): os mesmos ganchos valem.
+        loadMappingStamped: () =>
+          gatedRead(async () => (await storage.loadMappingStamped?.()) ?? null),
         statMapping: async () => {
           stats++;
           return storage.statMapping ? storage.statMapping() : null;
@@ -1025,5 +1029,80 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
       expect(await session.flush()).toEqual({ ok: true });
       expect((await diskProject(root)).project.name).toBe('Aplicado');
     }
+  });
+});
+
+// Etapa #1777 (decisão 8): `session.busy()` é o que `useExternalChanges` lê para adiar o ciclo.
+describe('session.busy: trabalho em curso que adia a conferência (etapa #1777)', () => {
+  let session: ProjectSession | null = null;
+  afterEach(async () => {
+    await session?.close();
+    session = null;
+  });
+
+  it('em repouso, não está ocupada; com gravação agendada, sim; gravada, não', async () => {
+    const { root, text, project } = projectOnDisk(sampleProject());
+    session = open(root, project, text);
+    expect(session.busy()).toBe(false);
+    session.actions.renameProject('Agendada');
+    expect(session.saveStatus.value).toBe('saving');
+    expect(session.busy()).toBe(true);
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
+    expect(session.saveStatus.value).toBe('saved');
+    expect(session.busy()).toBe(false);
+  });
+
+  it('um gesto em andamento a deixa ocupada', async () => {
+    const { root, text, project } = projectOnDisk(sampleProject());
+    session = open(root, project, text);
+    session.store.beginGesture();
+    expect(session.busy()).toBe(true);
+    session.store.cancelGesture();
+    expect(session.busy()).toBe(false);
+  });
+
+  it('com a gravação em erro não fica ocupada (a conferência precisa abrir o conflito)', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const { root, text, project } = projectOnDisk(sampleProject());
+    session = open(root, project, text);
+    root.failWrites = new Error('NoModificationAllowedError');
+    session.actions.renameProject('Falha');
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
+    expect(session.saveStatus.value).toBe('error');
+    expect(session.busy()).toBe(false);
+  });
+
+  it('uma decisão de proposta sendo gravada a deixa ocupada até terminar', async () => {
+    const { base, proposal, ids } = richScenario();
+    const { root, text, project } = projectOnDisk(base);
+    root.put('proposals/P1/proposal.json', serializeProposal(proposal));
+    session = openSession({
+      storage: createFolderStorage(root),
+      project,
+      loadedText: text,
+      proposals: await loadProposals(createFolderStorage(root)),
+      prepareImage: () => Promise.reject(new Error('sem imagens aqui')),
+      now: () => NOW,
+    });
+    expect(session.busy()).toBe(false);
+    const deciding = session.proposalActions.decide(
+      'P1',
+      { level: 'change', id: ids.name },
+      'accepted',
+    );
+    expect(session.busy()).toBe(true);
+    expect(await deciding).toMatchObject({ ok: true });
+    expect(session.busy()).toBe(false);
+  });
+
+  it('fechada, não está ocupada', async () => {
+    const { root, text, project } = projectOnDisk(sampleProject());
+    session = open(root, project, text);
+    session.actions.renameProject('Pendente');
+    const closing = session.close();
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
+    await closing;
+    expect(session.busy()).toBe(false);
+    session = null;
   });
 });

@@ -82,6 +82,20 @@ export function formatReportedErrors(errors: readonly ReportedError[]): string {
     .join('\n');
 }
 
+/** Uma operação da pasta já medida (ver `storage/folderCalls`). */
+export interface FolderMeasureLine {
+  readonly op: string;
+  readonly calls: number;
+  readonly ms: number;
+}
+
+/** `folder: open 412 calls 8300 ms; save 23 calls 900 ms`, ou `folder: no measurements`. */
+function formatFolderLine(measures: readonly FolderMeasureLine[]): string {
+  if (measures.length === 0) return 'folder: no measurements';
+  const parts = measures.map((m) => `${m.op} ${m.calls} calls ${Math.round(m.ms)} ms`);
+  return `folder: ${parts.join('; ')}`;
+}
+
 /**
  * Ambiente de quem relata um problema, sem nomes nem caminhos (privacidade). Os
  * campos do projeto são `null` fora do editor.
@@ -93,6 +107,11 @@ export interface DiagnosticsInfo {
   /** Origens de imagem remota permitidas neste navegador. */
   readonly remoteImageOrigins?: number;
   readonly storage: string | null;
+  /**
+   * As últimas medidas de cada operação da pasta (`folder:`); `null` (ou ausente) fora de
+   * projeto em pasta, onde a linha não existe.
+   */
+  readonly folder?: readonly FolderMeasureLine[] | null;
   readonly userAgent: string;
   readonly window: { readonly width: number; readonly height: number };
   readonly language: string;
@@ -136,6 +155,7 @@ export function formatDiagnosticsReport(
   const header = [
     formatBuildInfo(info),
     `storage: ${info.storage ?? none}`,
+    ...(info.folder ? [formatFolderLine(info.folder)] : []),
     `userAgent: ${info.userAgent}`,
     `window: ${info.window.width}x${info.window.height}`,
     `language: ${info.language}`,

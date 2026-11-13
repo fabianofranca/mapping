@@ -7,6 +7,8 @@ import {
   reportRemoteImageIssue,
 } from '../../src/store/diagnostics';
 import { createAutoSaver } from '../../src/storage/autosave';
+import type { ProjectSession } from '../../src/store/session';
+import { createFolderCalls } from '../../src/storage/folderCalls';
 import {
   DiagnosticsActions,
   DiagnosticsView,
@@ -141,6 +143,32 @@ describe('Diagnóstico: o texto copiado identifica o ambiente', () => {
     // Privacidade: nem nome do projeto nem caminhos de imagem.
     expect(text).not.toContain(project.project.name);
     for (const image of project.containers) expect(text).not.toContain(image.file);
+  });
+
+  it('em pasta, a linha folder: traz as operações medidas; sem contador (fora de pasta), não há linha', async () => {
+    const user = userEvent.setup();
+    const writeText = mockClipboard();
+    const harness = createHarness(sampleProject());
+    const calls = createFolderCalls();
+    const withCalls: ProjectSession = { ...harness.context.session, folderCalls: calls };
+    const Copy = ({ session }: { session: ProjectSession }) => (
+      <EditorContext.Provider value={{ ...harness.context, session }}>
+        <Diagnostics />
+      </EditorContext.Provider>
+    );
+
+    const view = render(<Copy session={withCalls} />);
+    await user.click(screen.getByRole('button', { name: t('diagnostics.copy') }));
+    expect(writeText.mock.calls[0]?.[0]).toContain('\nfolder: no measurements\n');
+
+    await calls.measure('open', async () => undefined);
+    await user.click(screen.getByRole('button', { name: t('diagnostics.copy') }));
+    expect(writeText.mock.calls[1]?.[0]).toMatch(/\nfolder: open 0 calls \d+ ms\n/);
+
+    view.unmount();
+    render(<Copy session={{ ...withCalls, folderCalls: null }} />);
+    await user.click(screen.getByRole('button', { name: t('diagnostics.copy') }));
+    expect(writeText.mock.calls[2]?.[0]).not.toContain('folder:');
   });
 
   it('sem erros, Copiar leva o cabeçalho (para relatar um problema sem erro)', async () => {
