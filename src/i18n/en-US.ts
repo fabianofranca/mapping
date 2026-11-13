@@ -1229,7 +1229,7 @@ export const enUS: Dictionary = {
   'anchor.offset': 'Offset',
   'anchor.offsetHint':
     'In container pixels: the distance from the anchor edge (negative overlaps) and the shift along the side.',
-  'anchor.offsetMainShort': 'Dist.',
+  'anchor.offsetMainShort': 'Gap',
   'anchor.offsetMain': 'Distance from edge',
   'anchor.offsetCrossShort': 'Shift',
   'anchor.offsetCross': 'Shift along the side',

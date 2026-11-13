@@ -66,7 +66,7 @@ test('seção Âncora: mostra a âncora, grava lado e alinhamento e Encostar mov
   await openAnchored(page);
   const section = page.getByRole('region', { name: 'Âncora' });
   await expect(section).toBeVisible();
-  await expect(section.getByLabel('Ancorada a')).toHaveValue('M1');
+  await expect(section.getByLabel('Ancorada a', { exact: true })).toHaveValue('M1');
   const x = page.getByRole('spinbutton', { name: 'X', exact: true });
   const y = page.getByRole('spinbutton', { name: 'Y', exact: true });
   await expect(x).toHaveValue('100');
