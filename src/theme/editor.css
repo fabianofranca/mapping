@@ -447,15 +447,14 @@
 
 /*
  * Contador: 4px de vão para o rótulo (CL1, 1.1: eram 2px, e o contador parecia colado), fonte
- * `--t-micro` e recuo de 1px. Medidas no Chromium do ambiente (fonte do sistema), com contador
- * nas seis abas e o do Avisos com 2 dígitos: a 900 px o conteúdo das abas soma 353,6 px (antes do
- * ajuste, 344,1 px com vão de 2px e fonte pequena) para 360 px de faixa (356 antes: o recuo de
- * 4px do cabeçalho passou para o botão de fechar), sem rolar nem cortar a primeira aba; a
- * 1280 px a faixa tem 417 px.
+ * `--t-kbd` (11px, peso 400) e recuo de 1px. A 900px a faixa tem 360px (356 antes: o recuo de
+ * 4px do cabeçalho passou para o botão de fechar) e as abas com rótulo, com contador em todas e o
+ * do Avisos com 2 dígitos, cabem sem rolar nem cortar a primeira aba, também com a fonte mais
+ * larga do CI (teste e2e `bottomTabs.spec.ts`); a 1280px a faixa tem 417px.
  */
 .tool-window-bottom .tool-window-tabs .tab-badge {
   padding: 0 var(--space-px);
-  font: var(--t-micro);
+  font: var(--t-kbd);
 }
 
 /* As tabelas da janela inferior ocupam a largura toda. */
