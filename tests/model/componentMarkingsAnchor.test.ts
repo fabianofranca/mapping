@@ -7,9 +7,11 @@ import {
   componentAnchoredPlacement,
   componentSize,
   createMarking,
+  imageCanvasRect,
   setContainerDensity,
   snapToAnchor,
   type NewComponentArgs,
+  validateProject,
   type Project,
 } from '../../src/model';
 import { FIT_SPEC_ID, LONG_LABEL, fitCatalog, fitProject } from './fitFixtures';
@@ -118,5 +120,42 @@ describe('instância nova ancorada', () => {
       approximateMeasurer,
     );
     expect(far.warnings.map((w) => w.code)).toEqual(['arrange.outside']);
+  });
+});
+
+describe('o assentar leva a instância nova para outro espaço que o alvo', () => {
+  /** T0 no canvas sobre a borda direita de I1; a instância ancorada à esquerda dele cai dentro de I1. */
+  function straddling(): { p: Project; anchor: NewComponentArgs['anchor'] } {
+    const p0 = fitProject();
+    const box = imageCanvasRect(p0.containers[0]!, p0.containers[0]!.placement);
+    const edge = box.x + box.width;
+    const p = createMarking(p0, {
+      id: 'T0',
+      containerId: null,
+      rect: { x: edge - 20, y: box.y + 100, width: 100, height: 40 },
+    });
+    return { p, anchor: { to: 'T0', side: 'start', align: 'center' } };
+  }
+  const canvasArgs = (anchor: NewComponentArgs['anchor']): NewComponentArgs => ({
+    ...args('fit-plain'),
+    containerId: null,
+    anchor,
+  });
+
+  it('addComponentMarking cria a marcação e solta a âncora (não falha a criação inteira)', () => {
+    const { p, anchor } = straddling();
+    const out = addComponentMarking(p, catalog, canvasArgs(anchor), approximateMeasurer);
+    const b = marking(out, 'B');
+    expect(b.containerId).toBe('I1');
+    expect(b.anchor ?? null).toBeNull();
+    expect(out.annotations.some((a) => a.markingId === 'B')).toBe(true);
+    expect(validateProject(out)).toEqual([]);
+  });
+
+  it('o alvo inexistente continua falhando (a âncora nunca foi aceitável)', () => {
+    const { p } = straddling();
+    expect(() =>
+      addComponentMarking(p, catalog, canvasArgs({ to: 'nada' }), approximateMeasurer),
+    ).toThrowError(/^anchor-missing/);
   });
 });

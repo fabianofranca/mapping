@@ -10,6 +10,7 @@ import {
   createDrawingCache,
   createMarking,
   createProject,
+  imageCanvasRect,
   serialize,
   setMarkingAnchor,
   setMarkingLocked,
@@ -262,6 +263,43 @@ describe('create_marking com anchor', () => {
     expect(missing.errors[0]!.op).toBe('create_marking');
     const other = await run([createTip({ anchor: { to: CANVAS } })]);
     expect(other.errors[0]).toMatchObject({ code: 'anchor-other-space' });
+  });
+});
+
+describe('create_marking com anchor: o assentar leva a nova para outro espaço que o alvo', () => {
+  /** Um alvo do canvas sobre a borda direita da imagem e o retângulo (do canvas) dentro dela. */
+  function edge(): { target: Operation; inside: Record<string, number> } {
+    const image = loaded.project.containers.find((c) => c.id === IMAGE)!;
+    const box = imageCanvasRect(image, image.placement);
+    const x = Math.round(box.x + box.width);
+    const top = Math.round(box.y);
+    return {
+      target: {
+        op: 'create_marking',
+        as: '$edge',
+        rect: { x: x - 20, y: top + 100, width: 100, height: 40 },
+      } as Operation,
+      inside: { x: x - 200, y: top + 100, width: 50, height: 40 },
+    };
+  }
+
+  it('sem componente: a marcação nasce sem âncora, com um aviso (a operação não falha)', async () => {
+    const { target, inside } = edge();
+    const result = await run([
+      target,
+      {
+        op: 'create_marking',
+        as: '$m',
+        rect: inside,
+        anchor: { to: '$edge', side: 'start' },
+      } as Operation,
+    ]);
+    expect(result.errors).toEqual([]);
+    const m = markingIn(result, aliasId(result, '$m'));
+    expect(m.containerId).toBe(IMAGE);
+    expect(m.anchor ?? null).toBeNull();
+    expect(result.deprecations.map((d) => d.message).join(' ')).toContain('âncora');
+    expect(result.invariantIssues).toEqual([]);
   });
 });
 

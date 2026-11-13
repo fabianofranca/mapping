@@ -1,4 +1,4 @@
-import type { AnchorDefaults } from './anchorPlacement';
+import type { AnchorDefaultsUnits } from './anchorPlacement';
 import { markingComponent, type ComponentCatalog } from './componentCatalog';
 import type { ComponentFile } from './components/componentFormat';
 import type { Marking, Project } from './types';
@@ -7,8 +7,8 @@ import type { Marking, Project } from './types';
 // `snapToAnchor` e a instância nova ancorada leem (`options.defaults`/`anchorDefaults`): o
 // `offset` fica em UNIDADES do componente (quem usa multiplica pela densidade).
 
-/** O `anchor` da raiz do componente como `AnchorDefaults`; `undefined` quando ele não declara nenhum. */
-export function fileAnchorDefaults(file: ComponentFile): AnchorDefaults | undefined {
+/** O `anchor` da raiz do componente como `AnchorDefaultsUnits`; `undefined` quando ele não declara nenhum. */
+export function fileAnchorDefaults(file: ComponentFile): AnchorDefaultsUnits | undefined {
   const { anchor } = file;
   if (anchor === undefined) return undefined;
   return {
@@ -25,7 +25,7 @@ export function typeAnchorDefaults(
   catalog: ComponentCatalog,
   specId: string,
   typeId: string,
-): AnchorDefaults | undefined {
+): AnchorDefaultsUnits | undefined {
   const file = catalog.get(specId)?.byType.get(typeId);
   return file === undefined ? undefined : fileAnchorDefaults(file);
 }
@@ -37,7 +37,7 @@ export function typeAnchorDefaults(
 export function markingAnchorDefaults(
   p: Project,
   catalog: ComponentCatalog,
-): (marking: Marking) => AnchorDefaults | undefined {
+): (marking: Marking) => AnchorDefaultsUnits | undefined {
   return (marking) => {
     const mc = markingComponent(p, catalog, marking.id);
     return mc === null ? undefined : fileAnchorDefaults(mc.component);

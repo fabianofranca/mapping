@@ -77,6 +77,25 @@ export function setMarkingAnchor(
 }
 
 /**
+ * Grava a âncora de uma marcação RECÉM-CRIADA depois do assentar: como `setMarkingAnchor`, mas se o
+ * assentar deixou a marcação e o alvo em espaços diferentes (ex.: uma marcação do canvas encostada
+ * num alvo do canvas cai inteira dentro de um container e passa a ser dele), a âncora é solta em
+ * vez de falhar (a regra de sempre: o assentar solta a relação, `releaseStrandedAnchors`); devolve
+ * `p` como está. A âncora tem de ter passado por `checkAnchorTarget` antes da criação (os outros
+ * erros, alvo inexistente e a própria marcação, continuam falhando aqui).
+ */
+export function setNewMarkingAnchor(
+  p: Project,
+  markingId: string,
+  anchor: MarkingAnchor,
+): Project {
+  const marking = findById(p.markings, markingId);
+  const target = projectIndex(p).markings.get(anchor.to);
+  if (target !== undefined && target.containerId !== marking.containerId) return p;
+  return setMarkingAnchor(p, markingId, anchor);
+}
+
+/**
  * O que anda junto quando `ids` se movem: as marcações ancoradas em qualquer delas, as
  * descendentes delas (dentro de um container; no canvas a marcação é uma lente e anda sozinha) e
  * as ancoradas dessas, transitivamente. Sem duplicar: um id que já está em `ids` ou que várias

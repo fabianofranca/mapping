@@ -193,21 +193,22 @@ mostra a **lista exata** dos problemas (regra, tipo do item, id e nome), com **C
 Quando todos os problemas têm reparo mecânico e inequívoco (`repairProject` em `src/model/repair.ts`), o
 diálogo oferece **Reparar e abrir**:
 
-| Problema                                                                                                 | Reparo                                                                     |
-| -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Par com `id` já usado (em outra anotação ou na mesma)                                                    | O primeiro fica com o id; os outros ganham um id novo.                     |
-| `rect` fora da imagem                                                                                    | Recortado aos limites da imagem; se não sobra área, a marcação é removida. |
-| Marcação de imagem inexistente                                                                           | Removida.                                                                  |
-| Seta com ponta inexistente (ou que é outra seta) ou ligada a ela mesma (v13)                             | Removida, com as anotações dela (na rodada seguinte).                      |
-| Anotação de marcação ou camada inexistente                                                               | Removida, com as anotações que ela possui (`parentAnnotationId`).          |
-| `parentId` inexistente ou ciclo na hierarquia de marcações                                               | A marcação (no ciclo, cada uma do ciclo) vira raiz do espaço dela.         |
-| Marcação flutuante dentro de um container ou com pai (v13)                                               | Vai para o canvas, com o `rect` convertido, e fica sem pai.                |
-| Pai de marcação flutuante; pai de container inexistente, que não é do canvas ou que não o contém (v13)   | O `parentId` vira `null`.                                                  |
-| Imagens sobrepostas                                                                                      | A de maior índice vai para a direita da caixa das anteriores.              |
-| Perspectiva com item de raiz inexistente, que não é raiz ou repetida; camada escondida inexistente (v16) | O item (o segundo, se repetido) ou a camada sai da perspectiva.            |
-| Perspectiva com `id` repetido (v16)                                                                      | A primeira fica com o id; as outras ganham um id novo.                     |
-| Perspectiva com nome repetido (v16)                                                                      | A primeira fica com o nome; as outras ganham " (2)", " (3)"…               |
-| Chegada de raiz inexistente, que não é raiz ou repetida (v16)                                            | Removida (a segunda, se repetida).                                         |
+| Problema                                                                                                 | Reparo                                                                       |
+| -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Par com `id` já usado (em outra anotação ou na mesma)                                                    | O primeiro fica com o id; os outros ganham um id novo.                       |
+| `rect` fora da imagem                                                                                    | Recortado aos limites da imagem; se não sobra área, a marcação é removida.   |
+| Marcação de imagem inexistente                                                                           | Removida.                                                                    |
+| Seta com ponta inexistente (ou que é outra seta) ou ligada a ela mesma (v13)                             | Removida, com as anotações dela (na rodada seguinte).                        |
+| Anotação de marcação ou camada inexistente                                                               | Removida, com as anotações que ela possui (`parentAnnotationId`).            |
+| `parentId` inexistente ou ciclo na hierarquia de marcações                                               | A marcação (no ciclo, cada uma do ciclo) vira raiz do espaço dela.           |
+| Marcação flutuante dentro de um container ou com pai (v13)                                               | Vai para o canvas, com o `rect` convertido, e fica sem pai.                  |
+| Pai de marcação flutuante; pai de container inexistente, que não é do canvas ou que não o contém (v13)   | O `parentId` vira `null`.                                                    |
+| Imagens sobrepostas                                                                                      | A de maior índice vai para a direita da caixa das anteriores.                |
+| Perspectiva com item de raiz inexistente, que não é raiz ou repetida; camada escondida inexistente (v16) | O item (o segundo, se repetido) ou a camada sai da perspectiva.              |
+| Perspectiva com `id` repetido (v16)                                                                      | A primeira fica com o id; as outras ganham um id novo.                       |
+| Perspectiva com nome repetido (v16)                                                                      | A primeira fica com o nome; as outras ganham " (2)", " (3)"…                 |
+| Chegada de raiz inexistente, que não é raiz ou repetida (v16)                                            | Removida (a segunda, se repetida).                                           |
+| Âncora com alvo inexistente, nela mesma, noutro espaço ou em ciclo (v20)                                 | A marcação fica onde está, com `anchor: null` (no ciclo, cada uma do ciclo). |
 
 Um reparo pode expor outro (a marcação removida deixa as anotações dela sem marcação e os filhos sem pai):
 cada rodada resolve o que a anterior expôs. Qualquer outro problema (id repetido de imagem, marcação,
@@ -1114,7 +1115,8 @@ liga uma marcação a outra do mesmo espaço (tooltip, badge, menu) e entra na m
 - **Invariantes** (no mesmo conjunto das outras regras de validade): `anchor-missing` (`to` não é uma marcação
   existente), `anchor-self` (a marcação ancorada nela mesma), `anchor-other-space` (a âncora está em outro
   container, ou uma está no canvas e a outra num container) e `anchor-cycle` (A ancorada em B e B em A, direta ou
-  por uma cadeia). Sem reparo mecânico: o arquivo é recusado com a lista exata dos problemas. Só marcações
+  por uma cadeia). O reparo mecânico é soltar a âncora (`anchor: null`; a marcação fica onde está, e num ciclo
+  cada uma das que o fecham é solta), o mesmo que o modelo faz ao excluir o alvo. Só marcações
   entram (nunca um container ou uma seta).
 - **Não é pertencimento.** A âncora é uma relação ao lado da árvore de pertencimento, como a seta: `parentId`
   continua decidido só pela geometria (`settleHierarchy` não a lê), e o `rect` continua sendo a verdade. A

@@ -15,6 +15,7 @@ import {
   translateRect,
   type Size,
 } from './geometry';
+import { releasedAnchors } from './anchorRelease';
 import { withAnchoredFollowers } from './anchors';
 import { arrowIdsAttachedTo, withoutArrows } from './arrows';
 import { descendantIds, descendantsOf } from './hierarchy';
@@ -400,16 +401,6 @@ export function removeMarking(
   findById(p.markings, markingId);
   requireUnlocked(canDeleteMarking(p, markingId));
   return settleFrom(p, cascadeRemove(p, markingId), options);
-}
-
-/** As marcações com a âncora tirada de quem apontava para uma que sai (elas ficam, sem âncora). */
-function releasedAnchors(p: Project, removed: ReadonlySet<string>): readonly Marking[] {
-  const { anchorOf } = projectIndex(p);
-  if (anchorOf.size === 0) return p.markings;
-  return p.markings.map((m) => {
-    const to = anchorOf.get(m.id);
-    return to !== undefined && removed.has(to) ? { ...m, anchor: null } : m;
-  });
 }
 
 /** A exclusão em si, sem a trava nem o assentar: também serve para contar o impacto. */

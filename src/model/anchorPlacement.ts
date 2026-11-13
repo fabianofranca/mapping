@@ -10,8 +10,12 @@ import type {
 // Geometria do encosto da âncora (R3, decisão 12). Pura: recebe os retângulos e devolve o
 // retângulo; quem grava (`snapToAnchor`, a criação da instância) fica nos outros módulos.
 
-/** Padrões da âncora vindos do componente: o `offset` está em UNIDADES (× densidade ao usar). */
-export interface AnchorDefaults {
+/**
+ * Padrões da âncora vindos do componente, como o arquivo os declara: o `offset` está em UNIDADES
+ * (× densidade ao usar) e tudo é opcional. O par em pixels, já completo, é `AnchorDefaultsPx`
+ * (`components/anchor.ts`).
+ */
+export interface AnchorDefaultsUnits {
   readonly side?: AnchorSide;
   readonly align?: AnchorAlign;
   readonly offset?: { readonly main: number; readonly cross: number };
@@ -19,7 +23,7 @@ export interface AnchorDefaults {
 
 /** Os padrões do componente de uma marcação: um objeto ou uma função de quem os sabe ler. */
 export type AnchorDefaultsSource<M> =
-  AnchorDefaults | ((marking: M) => AnchorDefaults | undefined);
+  AnchorDefaultsUnits | ((marking: M) => AnchorDefaultsUnits | undefined);
 
 /** A âncora completa: lado, alinhamento e deslocamento em pixels do espaço. */
 export interface ResolvedMarkingAnchor {
@@ -31,7 +35,7 @@ export interface ResolvedMarkingAnchor {
 /** O que a âncora não informa vem dos padrões (offset em unidades × `density`), e então de `top`/`center`/0. */
 export function resolveMarkingAnchor(
   anchor: MarkingAnchor,
-  defaults: AnchorDefaults | undefined,
+  defaults: AnchorDefaultsUnits | undefined,
   density: number,
 ): ResolvedMarkingAnchor {
   const fallback = defaults?.offset;

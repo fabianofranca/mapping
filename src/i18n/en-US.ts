@@ -417,6 +417,7 @@ export const enUS: Dictionary = {
   'repair.made-root': 'becomes a root of the image',
   'repair.moved': 'moved to the right of the previous ones',
   'repair.renamed': 'renamed with a number',
+  'repair.released': 'anchor released (the marking stays where it is)',
   'error.invalid-zip': 'The file is not a valid zip.',
   'error.missing-mapping': 'The zip has no mapping.json.',
   'error.not-found': 'Project not found.',

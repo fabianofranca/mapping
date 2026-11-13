@@ -5,6 +5,7 @@ import {
   type ResolvedGrid,
   type ResolvedSlotLayout,
 } from './components/arrange';
+import type { InstanceAnchor } from './components/anchor';
 import { placeCells, trackCount, trackOffset, trackSize } from './components/gridLayout';
 import { lineExtents } from './components/gridPlan';
 import { WRAP_EPS, breakLines, stackLines } from './components/wrapLines';
@@ -17,16 +18,16 @@ import {
   markingComponent,
   type ComponentCatalog,
 } from './componentCatalog';
-import { drawingValues } from './componentValues';
+import { anchorValues, drawingValues } from './componentValues';
 import { effectiveDensity, unitSpaceOf, unitsToPixels } from './density';
 import { componentForDrawing, drawOptions } from './drawingMode';
 import {
   anchoredRect,
   clampedInto,
   resolveMarkingAnchor,
-  type AnchorDefaults,
+  type AnchorDefaultsUnits,
 } from './anchorPlacement';
-import { checkAnchorTarget, setMarkingAnchor } from './anchors';
+import { checkAnchorTarget, setNewMarkingAnchor } from './anchors';
 import { effectiveDirection } from './direction';
 import { fail, ModelError } from './errors';
 import { modelMessage, type ModelMessage } from './modelMessage';
@@ -146,7 +147,7 @@ export interface NewComponentArgs {
    */
   readonly anchor?: MarkingAnchor;
   /** Padrões da âncora do componente (o `offset` em unidades) para o que `anchor` não informa. */
-  readonly anchorDefaults?: AnchorDefaults;
+  readonly anchorDefaults?: AnchorDefaultsUnits;
 }
 
 interface Resolved {
@@ -317,6 +318,8 @@ type PlacementArgs = Pick<
 > & {
   /** Substitui o `size` do componente (MCP: o `rect` de `inside`), com as mesmas regras. */
   readonly size?: { readonly width: number; readonly height: number };
+  /** A âncora da instância (`$anchor.*`) com que o tamanho é medido; ausente = sem âncora. */
+  readonly instanceAnchor?: InstanceAnchor;
 };
 
 /** O que a colocação de uma instância nova precisa: o tipo, o pai alvo, o slot dele e a área. */
@@ -437,7 +440,7 @@ function wantedSize(
   const fitted = fitComponentSize(
     drawn.component,
     values,
-    { measure, ...drawOptions(drawn) },
+    { measure, ...drawOptions({ ...drawn, anchor: args.instanceAnchor }) },
     { base: component.size },
   );
   return fitted === undefined
@@ -482,7 +485,13 @@ export function componentSize(
   catalog: ComponentCatalog,
   args: Pick<
     PlacementArgs,
-    'containerId' | 'parentId' | 'specId' | 'typeId' | 'size' | 'values'
+    | 'containerId'
+    | 'parentId'
+    | 'specId'
+    | 'typeId'
+    | 'size'
+    | 'values'
+    | 'instanceAnchor'
   >,
   measure: TextMeasurer,
 ): Size {
@@ -844,18 +853,29 @@ export function componentAnchoredPlacement(
   measure: TextMeasurer,
 ): { readonly rect: Rect; readonly warnings: readonly ModelMessage[] } {
   const target = checkAnchorTarget(p, args.markingId, args.containerId, args.anchor);
-  const size = componentSize(p, catalog, args, measure);
-  const resolved = resolveMarkingAnchor(
-    args.anchor,
-    args.anchorDefaults,
-    effectiveDensity(p, args.containerId),
-  );
-  const wanted = anchoredRect(
+  const density = effectiveDensity(p, args.containerId);
+  const direction = effectiveDirection(p, args.containerId);
+  const resolved = resolveMarkingAnchor(args.anchor, args.anchorDefaults, density);
+  // O `$anchor.*` entra na medida (um `hug` que depende do lado mede no ramo em que desenha). O
+  // `rect` da instância ainda não existe: `$anchor.side`, `.width` e `.height` são exatos; `.x` e
+  // `.y` (o centro da âncora relativo à caixa) usam a caixa estimada pelo tamanho SEM âncora,
+  // encostada como será. Um tamanho que dependa do `.x`/`.y` pode diferir um pouco do desenhado
+  // (o `snap_to_anchor` e o `fit_marking` depois da criação medem com o `rect` real).
+  const estimate = anchoredRect(
     target.rect,
-    size,
+    componentSize(p, catalog, args, measure),
     resolved,
-    effectiveDirection(p, args.containerId),
+    direction,
   );
+  const instanceAnchor = anchorValues({
+    rect: estimate,
+    anchorRect: target.rect,
+    side: resolved.side,
+    defaults: { side: resolved.side },
+    density,
+  });
+  const size = componentSize(p, catalog, { ...args, instanceAnchor }, measure);
+  const wanted = anchoredRect(target.rect, size, resolved, direction);
   const container =
     args.containerId === null
       ? undefined
@@ -891,6 +911,9 @@ export function addComponentMarking(
   const { component, type, layerId } = resolveType(p, catalog, args.specId, args.typeId);
   const layer =
     projectLayerFor(p, args.specId, layerId) ?? fail('type-not-in-layer', args.typeId);
+  // A âncora é conferida antes de criar nada (os erros da invariante); depois do assentar, só o
+  // espaço pode ter mudado e então ela é solta (`setNewMarkingAnchor`).
+  if (args.anchor) checkAnchorTarget(p, args.markingId, args.containerId, args.anchor);
   // Tipo flutuante (decisão 10): nasce marcação flutuante no canvas, fora do pertencimento.
   const floating = type.floating === true;
   const defaultSize = (): Size =>
@@ -960,5 +983,6 @@ export function addComponentMarking(
   for (const [key, value] of Object.entries(args.values ?? {})) {
     next = setFieldValue(next, args.annotationId, key, value);
   }
-  return args.anchor ? setMarkingAnchor(next, args.markingId, args.anchor) : next;
+  // O assentar pode ter posto a nova noutro espaço que o alvo: a âncora é solta, não falha a criação.
+  return args.anchor ? setNewMarkingAnchor(next, args.markingId, args.anchor) : next;
 }

@@ -33,6 +33,8 @@ import {
   fitMarking,
   snapToAnchor,
   setMarkingAnchor,
+  setNewMarkingAnchor,
+  checkAnchorTarget,
   componentAnchoredPlacement,
   typeAnchorDefaults,
   markingAnchorDefaults,
@@ -2182,6 +2184,9 @@ class Batch {
       );
     }
     const anchor = op.anchor === undefined ? null : this.markingAnchor(op.anchor);
+    // A âncora é conferida antes de criar (os erros da invariante); depois do assentar, só o espaço
+    // pode ter mudado e então a nova nasce sem âncora, com um aviso.
+    if (anchor !== null) checkAnchorTarget(p, markingId, containerId, anchor);
     if (anchor !== null && (op.near !== undefined || inside !== null)) {
       throw new ToolError(
         'invalid-arguments',
@@ -2300,7 +2305,7 @@ class Batch {
         rect: op.rect!,
         name: op.name ?? null,
       });
-      if (anchor !== null) project = setMarkingAnchor(project, markingId, anchor);
+      if (anchor !== null) project = setNewMarkingAnchor(project, markingId, anchor);
       if (annotation && typeRef !== null) {
         annotationId = crypto.randomUUID();
         project = this.typedAnnotation(project, annotationId, markingId, {
@@ -2325,6 +2330,11 @@ class Batch {
       }
     }
     const { rect } = created;
+    if (anchor !== null && created.anchor == null) {
+      notes.push(
+        'a âncora foi solta: pela geometria a marcação nasceu em outro espaço que o alvo (o container ou o canvas); ancore-a depois com `update_marking`, no mesmo espaço do alvo',
+      );
+    }
     const label = this.createdMarkingLabel(p, project, created, component?.name ?? null);
     return {
       project,

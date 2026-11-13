@@ -417,6 +417,7 @@ export const ptBR = {
   'repair.made-root': 'vira raiz da imagem',
   'repair.moved': 'movida para a direita das anteriores',
   'repair.renamed': 'renomeada com um número',
+  'repair.released': 'âncora solta (a marcação fica onde está)',
   'error.invalid-zip': 'O arquivo não é um zip válido.',
   'error.missing-mapping': 'O zip não contém um mapping.json.',
   'error.not-found': 'Projeto não encontrado.',

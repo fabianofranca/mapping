@@ -579,7 +579,7 @@ export const operationSchema = z.discriminatedUnion('op', [
   z.object({
     op: z.literal('snap_to_anchor'),
     marking: item('Marcação').describe(
-      'Uma marcação com `anchor` (veja `update_marking`). Ela é encostada na âncora: o retângulo sai do `side`, do `align` e do `offset` (o que a âncora não diz vem do `anchor` da raiz do componente; o `offset` dele é em unidades × `density`), com o tamanho que a marcação já tem (use `fit_marking` antes para o tamanho acompanhar o conteúdo). Preso dentro do container, com aviso quando foi preciso. Chame-a depois de mudar o tamanho da marcação ou de ancorá-la: nada se encosta sozinho (só mover a âncora leva as ancoradas junto). O resumo diz o retângulo antes e depois (ou que nada mudou). Falha com `not-anchored` (sem âncora) e `locked` (geometria trancada que mudaria).',
+      'Uma marcação com `anchor` (veja `update_marking`). Ela é encostada na âncora: o retângulo sai do `side`, do `align` e do `offset` (o que a âncora não diz vem do `anchor` da raiz do componente; o `offset` dele é em unidades × `density`), com o tamanho que a marcação já tem (use `fit_marking` antes para o tamanho acompanhar o conteúdo). Preso dentro do container, com aviso quando foi preciso. Chame-a depois de mudar o tamanho da marcação ou de ancorá-la: nada se encosta sozinho (só mover a âncora leva as ancoradas junto). Ao encostar, as filhas da marcação e as ancoradas nela (com as filhas e ancoradas delas) andam o mesmo deslocamento. O resumo diz o retângulo antes e depois (ou que nada mudou). Falha com `not-anchored` (sem âncora) e `locked` (geometria trancada que mudaria).',
     ),
   }),
   z.object({

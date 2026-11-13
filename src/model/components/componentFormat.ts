@@ -14,6 +14,7 @@
  * desenho se adaptar ao tamanho do retângulo.
  */
 import type { IconSet } from './icons';
+import type { AnchorAlign, AnchorSide } from '../types';
 
 export const COMPONENT_FORMAT = 'mapping-component';
 /** Versão em que os componentes sem `repeat` são escritos (os geradores do repositório a gravam). */
@@ -661,12 +662,9 @@ export interface ScreenSpec {
   readonly anchor?: ScreenAnchor;
 }
 
-/** Os lados da âncora (`anchor.side`): lógicos, `start`/`end` seguem a direção efetiva. */
-export const ANCHOR_SIDES = ['top', 'bottom', 'start', 'end'] as const;
-export type AnchorSide = (typeof ANCHOR_SIDES)[number];
-/** O alinhamento ao longo do lado da âncora (`anchor.align`). */
-export const ANCHOR_ALIGNS = ['start', 'center', 'end'] as const;
-export type AnchorAlign = (typeof ANCHOR_ALIGNS)[number];
+// Os lados e o alinhamento da âncora têm uma só definição, em `../types` (o formato do projeto, que
+// não importa daqui): o arquivo do componente os reexporta.
+export { ANCHOR_ALIGNS, ANCHOR_SIDES, type AnchorAlign, type AnchorSide } from '../types';
 
 /**
  * Como o tipo prefere encostar na âncora (v4, só na raiz do arquivo): os padrões de `side`, `align`

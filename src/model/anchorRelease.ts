@@ -84,3 +84,20 @@ export function releaseStrandedAnchors(
   );
   return { ...p, markings };
 }
+
+/**
+ * As marcações com a âncora tirada de quem apontava para uma que sai (`removed`): elas ficam, sem
+ * âncora. Devolve o mesmo array quando nada aponta para quem sai. Serve à exclusão de uma
+ * marcação (`removeMarking`) e à da seleção (`removeItems`).
+ */
+export function releasedAnchors(
+  p: Project,
+  removed: ReadonlySet<string>,
+): readonly Marking[] {
+  const { anchorOf } = projectIndex(p);
+  if (anchorOf.size === 0) return p.markings;
+  return p.markings.map((m) => {
+    const to = anchorOf.get(m.id);
+    return to !== undefined && removed.has(to) ? { ...m, anchor: null } : m;
+  });
+}

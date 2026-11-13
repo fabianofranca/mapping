@@ -245,3 +245,63 @@ describe('snapToAnchor: limites, trava e sem mudança', () => {
     expect(snap(locked).project).toBe(locked);
   });
 });
+
+describe('snapToAnchor leva as ancoradas na marcação (como moveMarking)', () => {
+  /** M encosta em T; F ancorada em M (e G em F); D é filha de M; Z não tem relação. */
+  function chain(): Project {
+    let p = base({ to: 'T', side: 'top', align: 'start' });
+    p = createMarking(p, {
+      id: 'D',
+      containerId: 'I1',
+      rect: { x: 12, y: 12, width: 20, height: 10 },
+    });
+    p = createMarking(p, {
+      id: 'F',
+      containerId: 'I1',
+      rect: { x: 100, y: 500, width: 50, height: 30 },
+    });
+    p = createMarking(p, {
+      id: 'G',
+      containerId: 'I1',
+      rect: { x: 200, y: 500, width: 50, height: 30 },
+    });
+    p = createMarking(p, {
+      id: 'Z',
+      containerId: 'I1',
+      rect: { x: 900, y: 700, width: 50, height: 30 },
+    });
+    p = setMarkingAnchor(p, 'F', { to: 'M' });
+    return setMarkingAnchor(p, 'G', { to: 'F' });
+  }
+
+  it('encostar M leva as filhas e as ancoradas nela (e as ancoradas das ancoradas), sem tocar nas outras', () => {
+    const p = chain();
+    // M vai de (10,10) a (400,260): dx 390, dy 250.
+    const out = snap(p).project;
+    expect(at(out, 'M')).toEqual({ x: 400, y: 260 });
+    expect(at(out, 'D')).toEqual({ x: 402, y: 262 });
+    expect(at(out, 'F')).toEqual({ x: 490, y: 750 });
+    expect(at(out, 'G')).toEqual({ x: 590, y: 750 });
+    expect(at(out, 'Z')).toEqual(at(p, 'Z'));
+  });
+
+  it('a ancorada que o encosto leva fica na mesma posição relativa (marcação do canvas inclusive)', () => {
+    let p = base({ to: 'T', side: 'top', align: 'start' });
+    p = createMarking(p, {
+      id: 'CF',
+      containerId: null,
+      rect: { x: -3500, y: -3500, width: 50, height: 30 },
+    });
+    p = setMarkingAnchor(p, 'CF', { to: 'CM' });
+    const out = snap(p, 'CM').project;
+    const dx = at(out, 'CM').x - at(p, 'CM').x;
+    const dy = at(out, 'CM').y - at(p, 'CM').y;
+    expect(dx !== 0 || dy !== 0).toBe(true);
+    expect(at(out, 'CF')).toEqual({ x: -3500 + dx, y: -3500 + dy });
+  });
+
+  it('sem mudança devolve o mesmo projeto (com ancoradas também)', () => {
+    const once = snap(chain()).project;
+    expect(snap(once).project).toBe(once);
+  });
+});

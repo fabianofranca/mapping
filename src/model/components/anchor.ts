@@ -10,8 +10,11 @@ import { ANCHOR_FIELDS } from './expressions';
 // Âncora no motor dos componentes (etapa #1096, R3): os padrões do `anchor` da raiz do arquivo e os
 // pseudo-campos `$anchor.*` que a instância recebe. Funções puras, sem DOM.
 
-/** Os padrões de como o tipo encosta, JÁ em pixels (o `offset` do arquivo é em unidades). */
-export interface AnchorDefaults {
+/**
+ * Os padrões de como o tipo encosta, completos e JÁ em pixels (o `offset` do arquivo é em unidades).
+ * O par em unidades e opcional (o que o encosto lê), é `AnchorDefaultsUnits` (`anchorPlacement.ts`).
+ */
+export interface AnchorDefaultsPx {
   readonly side: AnchorSide;
   readonly align: AnchorAlign;
   readonly offset: { readonly main: number; readonly cross: number };
@@ -26,7 +29,7 @@ export interface AnchorDefaults {
 export function componentAnchorDefaults(
   file: ComponentFile,
   density: number,
-): AnchorDefaults {
+): AnchorDefaultsPx {
   const declared: ComponentAnchor = file.anchor ?? {};
   const offset = declared.offset ?? {};
   return {
