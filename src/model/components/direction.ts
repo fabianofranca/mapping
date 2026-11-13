@@ -26,15 +26,36 @@ export function ownDirection(node: TemplateNode): Direction | undefined {
     : undefined;
 }
 
-/** O template cita `direction` num nó ou `$direction` numa condição? */
-export function usesDirection(tree: unknown): boolean {
-  if (Array.isArray(tree)) return tree.some(usesDirection);
+/** Algum par chave/valor da árvore (em qualquer profundidade) passa por `hit`? */
+function someEntry(
+  tree: unknown,
+  hit: (key: string, value: unknown) => boolean,
+): boolean {
+  if (Array.isArray(tree)) return tree.some((item) => someEntry(item, hit));
   if (!isRecord(tree)) return false;
   return Object.entries(tree).some(
-    ([key, value]) =>
-      key === '$direction' ||
-      (key === 'direction' && (value === 'ltr' || value === 'rtl')) ||
-      usesDirection(value),
+    ([key, value]) => hit(key, value) || someEntry(value, hit),
+  );
+}
+
+/** `direction` literal num nó (no `repeat` o valor é `row`/`column`, que não entra) ou `$direction`. */
+const directionEntry = (key: string, value: unknown): boolean =>
+  key === '$direction' || (key === 'direction' && (value === 'ltr' || value === 'rtl'));
+
+/** O template cita `direction` num nó ou `$direction` numa condição? */
+export function usesDirection(tree: unknown): boolean {
+  return someEntry(tree, directionEntry);
+}
+
+/**
+ * A árvore pede uma passada em `rtl`? Sim quando ela fala de direção (`usesDirection`) ou espelha
+ * (`mirror: true`). Fora isso o `rtl` é o espelho exato do `ltr` — os mesmos tamanhos, porque a
+ * medida do texto não olha a direção —, então nenhum resultado muda e a passada se dispensa.
+ */
+export function isDirectionSensitive(tree: unknown): boolean {
+  return someEntry(
+    tree,
+    (key, value) => directionEntry(key, value) || (key === 'mirror' && value === true),
   );
 }
 

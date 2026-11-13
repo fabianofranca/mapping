@@ -1410,6 +1410,11 @@ function noneAlignNodeIssues(node: Rec, at: string, out: ComponentIssue[]): void
   if (isRecord(layout) && layout.type === 'none')
     for (const key of ['align', 'justify'])
       if (key in layout) addIssue(out, join(at, `layout.${key}`), V4_ONLY_MESSAGE);
+  v4NodeKeyIssues(node, at, out);
+}
+
+/** As outras chaves da v4 num nó: o `clip` literal do slot, o `layout` do `repeat` e o `direction`. */
+function v4NodeKeyIssues(node: Rec, at: string, out: ComponentIssue[]): void {
   if (node.type === 'slot' && 'clip' in node && !isExprObject(node.clip))
     addIssue(out, join(at, 'clip'), V4_ONLY_MESSAGE);
   if (node.type === 'repeat' && 'layout' in node)

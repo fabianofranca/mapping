@@ -648,6 +648,10 @@ function createEngine(
       ? undefined
       : toNumber(ev<unknown>(expr as Expr<unknown>, undefined));
 
+  /** `centerX`/`centerY` da âncora: `true` literal ou expressão verdadeira. */
+  const anchorCenter = (value: Anchors['centerX']): boolean =>
+    value === true || (typeof value === 'object' && bool(value, false));
+
   /**
    * As âncoras do nó no eixo, como distância das bordas físicas (`start` = esquerda ou topo): no eixo
    * horizontal `anchors.start`/`end` são lógicos e viram `left`/`right` pela direção `dir` do quadro
@@ -661,16 +665,12 @@ function createEngine(
       ? {
           start: anchorNumber(a.left) ?? anchorNumber(rtl ? a.end : a.start),
           end: anchorNumber(a.right) ?? anchorNumber(rtl ? a.start : a.end),
-          center:
-            a.centerX === true ||
-            (typeof a.centerX === 'object' && bool(a.centerX, false)),
+          center: anchorCenter(a.centerX),
         }
       : {
           start: anchorNumber(a.top),
           end: anchorNumber(a.bottom),
-          center:
-            a.centerY === true ||
-            (typeof a.centerY === 'object' && bool(a.centerY, false)),
+          center: anchorCenter(a.centerY),
         };
   };
 
@@ -2808,6 +2808,43 @@ function createEngine(
     return top === undefined ? undefined : Math.max(top, baselinesOf(node, w).first);
   };
 
+  /** As chaves do `style` que só entram fora do padrão: decoração, quebra, elipse e limite de linhas. */
+  const textStyleExtras = (node: TextTemplate, font: MeasureFont): Partial<TextStyle> => {
+    const font0: FontSpec = node.font ?? {};
+    const decoration = oneOf(
+      font0.decoration,
+      ['none', 'underline', 'line-through'],
+      'none',
+    );
+    return {
+      ...(decoration === 'none' ? {} : { decoration }),
+      ...(font.wrap === 'none' ? { wrap: 'none' as const } : {}),
+      ...(font.ellipsis === true ? { ellipsis: true } : {}),
+      ...(font.maxLines !== undefined ? { maxLines: font.maxLines } : {}),
+    };
+  };
+
+  /** O `style` da cena de um nó de texto: a fonte medida, a direção efetiva e a linha de base. */
+  const textStyleOf = (
+    node: TextTemplate,
+    font: MeasureFont,
+    baselineTop: number | undefined,
+  ): TextStyle => ({
+    fontFamily: font.family,
+    fontSize: font.size,
+    fontWeight: font.weight,
+    italic: font.italic,
+    lineHeight: font.lineHeight,
+    letterSpacing: font.letterSpacing,
+    // `justify` só existe na formatVersion 4; antes, vindo de expressão, é valor fora do conjunto.
+    align: styleAlign(node),
+    ...(dirOf(node) === 'rtl' ? { direction: 'rtl' as const } : {}),
+    // Com `baselinePadding.top` o `verticalAlign` deixa de valer (a primeira linha de base manda).
+    verticalAlign: baselineTop === undefined ? verticalAlignOf(node) : 'top',
+    ...(baselineTop === undefined ? {} : { baselineTop }),
+    ...textStyleExtras(node, font),
+  });
+
   const buildText = (
     node: TextTemplate,
     id: string,
@@ -2817,31 +2854,7 @@ function createEngine(
     h: number,
   ): SceneNode => {
     const font = textFont(node);
-    const font0: FontSpec = node.font ?? {};
-    const baselineTop = baselineTopOf(node, w);
-    const decoration = oneOf(
-      font0.decoration,
-      ['none', 'underline', 'line-through'],
-      'none',
-    );
-    const style: TextStyle = {
-      fontFamily: font.family,
-      fontSize: font.size,
-      fontWeight: font.weight,
-      italic: font.italic,
-      lineHeight: font.lineHeight,
-      letterSpacing: font.letterSpacing,
-      // `justify` só existe na formatVersion 4; antes, vindo de expressão, é valor fora do conjunto.
-      align: styleAlign(node),
-      ...(dirOf(node) === 'rtl' ? { direction: 'rtl' as const } : {}),
-      // Com `baselinePadding.top` o `verticalAlign` deixa de valer (a primeira linha de base manda).
-      verticalAlign: baselineTop === undefined ? verticalAlignOf(node) : 'top',
-      ...(baselineTop === undefined ? {} : { baselineTop }),
-      ...(decoration === 'none' ? {} : { decoration }),
-      ...(font.wrap === 'none' ? { wrap: 'none' as const } : {}),
-      ...(font.ellipsis === true ? { ellipsis: true } : {}),
-      ...(font.maxLines !== undefined ? { maxLines: font.maxLines } : {}),
-    };
+    const style = textStyleOf(node, font, baselineTopOf(node, w));
     const { text, extra } = textContent(node, font, w, h);
     const color = str(node.color, '#000000');
     const stroke = strokeOf(node.stroke, 'inside', 1);

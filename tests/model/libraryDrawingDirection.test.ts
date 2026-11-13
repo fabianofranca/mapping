@@ -1,6 +1,7 @@
 // R1 (#1096): a prova de desenho roda cada caso em ltr e em rtl; o aviso que só aparece em rtl é
 // relatado como os de hoje (com o prefixo "em rtl"); os que valem nos dois saem uma vez.
 import { describe, expect, it } from 'vitest';
+import { isDirectionSensitive } from '../../src/model/components/direction';
 import { validateLibrary } from '../../src/model/library';
 
 type Raw = Record<string, unknown>;
@@ -96,5 +97,49 @@ describe('prova de desenho nos dois sentidos', () => {
     const texts = [...report.errors, ...report.warnings].map((i) => i.message);
     expect(texts.length).toBeGreaterThan(0);
     expect(texts.some((m) => m.includes('em rtl'))).toBe(false);
+  });
+});
+
+// A passada em `rtl` dobra o custo da prova, então ela só roda no componente que pode render aviso
+// novo: o que fala de direção (`direction`, `$direction`) ou espelha (`mirror`). Nos outros o `rtl`
+// é o espelho exato do `ltr` (mesmos tamanhos; o `approximateMeasurer` não olha a direção), e um
+// aviso novo é impossível.
+describe('a prova em rtl só roda no componente sensível à direção', () => {
+  it('componente sem direção nem espelho não é provado em rtl', () => {
+    expect(isDirectionSensitive(frame([rect('a', 30), rect('b', 30)]))).toBe(false);
+  });
+
+  it('`$direction` numa condição pede a prova em rtl', () => {
+    expect(
+      isDirectionSensitive(frame([rect('a', 30, { visible: { $direction: 'rtl' } })])),
+    ).toBe(true);
+  });
+
+  it('`direction` num nó pede a prova em rtl', () => {
+    expect(isDirectionSensitive(frame([rect('a', 30, { direction: 'ltr' })]))).toBe(true);
+  });
+
+  it('`mirror` pede a prova em rtl', () => {
+    expect(isDirectionSensitive(frame([rect('a', 30, { mirror: true })]))).toBe(true);
+  });
+
+  it('`mirror: false` e o `direction` do `repeat` (row/column) não pedem', () => {
+    expect(isDirectionSensitive(frame([rect('a', 30, { mirror: false })]))).toBe(false);
+    expect(
+      isDirectionSensitive({
+        type: 'repeat',
+        name: 'r',
+        direction: 'row',
+        children: [rect('a', 30)],
+      }),
+    ).toBe(false);
+  });
+
+  it('o componente sensível continua sendo provado nos dois sentidos', () => {
+    const report = validate(
+      frame([rect('a', 30), rect('largo', 300, { visible: { $direction: 'rtl' } })]),
+    );
+    const texts = [...report.errors, ...report.warnings].map((i) => i.message);
+    expect(texts.every((m) => m.includes('em rtl'))).toBe(true);
   });
 });

@@ -1,5 +1,6 @@
 import type { ComponentFile, Direction, FieldValues } from './components/componentFormat';
 import { type Box, approximateMeasurer, instantiate } from './components/instantiate';
+import { isDirectionSensitive } from './components/direction';
 import { type Library, type TextFile, loadLibrary } from './components/library';
 import { type Origin, screenFromSource } from './components/origin';
 import type { IconSet } from './components/icons';
@@ -315,7 +316,9 @@ function proveCase(
   };
   const ltr = run('ltr');
   emit(ltr);
-  emit(rtlOnly(ltr, run('rtl')));
+  // A passada em `rtl` só roda no componente sensível à direção (`isDirectionSensitive`): nos
+  // outros ela custaria o dobro para repetir, espelhados, os mesmos avisos do `ltr`.
+  if (isDirectionSensitive(component)) emit(rtlOnly(ltr, run('rtl')));
 }
 
 /** O que `rtl` dá a mais que o `ltr` do mesmo modo: avisos novos com o prefixo "em rtl"; erro só de `rtl` idem. */

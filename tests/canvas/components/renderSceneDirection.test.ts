@@ -86,7 +86,10 @@ describe('renderScene: direção', () => {
     const box = (d?: 'rtl') => {
       const g = render([{ type: 'icon', name: 'back', width: 24, height: 24 }], d);
       const [p] = paths(g);
-      return p!.getClientRect({ relativeTo: g.getLayer() ?? undefined, skipStroke: true });
+      return p!.getClientRect({
+        relativeTo: g.getLayer() ?? undefined,
+        skipStroke: true,
+      });
     };
     expect(box('rtl').width).toBeCloseTo(box().width, 6);
     expect(box('rtl').height).toBeCloseTo(box().height, 6);

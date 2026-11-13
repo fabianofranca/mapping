@@ -83,7 +83,9 @@ describe('parseIconsFile', () => {
     });
     expect(bad.ok).toBe(false);
     if (!bad.ok)
-      expect(bad.errors.join('\n')).toContain('icons.back.mirror: esperava true ou false');
+      expect(bad.errors.join('\n')).toContain(
+        'icons.back.mirror: esperava true ou false',
+      );
   });
 
   it('mirror na formatVersion 1 é só é permitido com formatVersion 2', () => {

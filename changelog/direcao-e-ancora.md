@@ -1,4 +1,4 @@
-# Direção de leitura (RTL) e âncora entre marcações — [Não lançado] (épico `epic/direcao-e-ancora`, PR #TBD, MCP 0.40.0, schema v20)
+# Direção de leitura (RTL) e âncora entre marcações — [Não lançado] (épico `epic/direcao-e-ancora`, PR #0, MCP 0.40.0, schema v20)
 
 ## Adicionado
 

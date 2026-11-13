@@ -190,7 +190,12 @@ function partText(value: unknown): string {
   return typeof value === 'number' ? formatNumber(value) : String(value);
 }
 
-export function evaluateCondition(condition: Condition, values: FieldValues): boolean {
+/**
+ * As condições folha, na ordem em que a `evaluateCondition` as consulta: comparação, `$field`,
+ * `$eq` e `$has`. `undefined` quando a condição não é nenhuma delas (as de combinar e a `$direction`
+ * ficam na `evaluateCondition`, que mantém a ordem de antes).
+ */
+function evaluateLeaf(condition: Condition, values: FieldValues): boolean | undefined {
   for (const op of COMPARISON_OPS)
     if (op in condition)
       return compare(op, (condition as Record<string, unknown>)[op], values);
@@ -198,10 +203,15 @@ export function evaluateCondition(condition: Condition, values: FieldValues): bo
   if ('$eq' in condition) {
     const [field, expected] = condition.$eq;
     const actual = values[field];
-    if (isEmpty(actual)) return false;
-    return String(actual) === String(expected);
+    return isEmpty(actual) ? false : String(actual) === String(expected);
   }
   if ('$has' in condition) return !isEmpty(values[condition.$has]);
+  return undefined;
+}
+
+export function evaluateCondition(condition: Condition, values: FieldValues): boolean {
+  const leaf = evaluateLeaf(condition, values);
+  if (leaf !== undefined) return leaf;
   if ('$not' in condition) return !evaluateCondition(condition.$not, values);
   if ('$direction' in condition)
     return (values[DIRECTION_FIELD] ?? 'ltr') === condition.$direction;

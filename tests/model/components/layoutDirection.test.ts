@@ -81,7 +81,10 @@ const SPEC = {
 
 const library = loadLibrary([
   { path: 'spec.json', text: JSON.stringify(SPEC) },
-  ...COMPONENTS.map((c) => ({ path: `components/${c.id}.json`, text: JSON.stringify(c) })),
+  ...COMPONENTS.map((c) => ({
+    path: `components/${c.id}.json`,
+    text: JSON.stringify(c),
+  })),
 ]);
 
 const W = 300;
