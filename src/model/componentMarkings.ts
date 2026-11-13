@@ -20,7 +20,16 @@ import {
 import { drawingValues } from './componentValues';
 import { effectiveDensity, unitSpaceOf, unitsToPixels } from './density';
 import { componentForDrawing, drawOptions } from './drawingMode';
+import {
+  anchoredRect,
+  clampedInto,
+  resolveMarkingAnchor,
+  type AnchorDefaults,
+} from './anchorPlacement';
+import { checkAnchorTarget, setMarkingAnchor } from './anchors';
+import { effectiveDirection } from './direction';
 import { fail, ModelError } from './errors';
+import { modelMessage, type ModelMessage } from './modelMessage';
 import {
   MIN_STORED_MARKING_SIZE,
   clamp,
@@ -46,6 +55,7 @@ import { findSpecType, projectLayerFor } from './specLookup';
 import { addTypedAnnotation, setFieldValue } from './typed';
 import type {
   Marking,
+  MarkingAnchor,
   Project,
   ProjectContainer,
   ReadingDirection,
@@ -130,6 +140,13 @@ export interface NewComponentArgs {
    */
   readonly values?: TypedValues;
   readonly name?: string | null;
+  /**
+   * Âncora (v20): a instância fica ligada a outra marcação do mesmo espaço. Sem `rect`, nasce no
+   * tamanho medido e já encostada (`componentAnchoredPlacement`); com `rect`, ele manda.
+   */
+  readonly anchor?: MarkingAnchor;
+  /** Padrões da âncora do componente (o `offset` em unidades) para o que `anchor` não informa. */
+  readonly anchorDefaults?: AnchorDefaults;
 }
 
 interface Resolved {
@@ -805,6 +822,58 @@ function applyPreview(
 }
 
 /**
+ * O retângulo de uma instância nova ancorada, sem criar nada (o MCP e `addComponentMarking`): o
+ * tamanho medido (`componentSize`, com os `values`) encostado na âncora (`anchoredRect`, com os
+ * padrões de `anchorDefaults` e a densidade e a direção do espaço), preso à imagem do container
+ * com um aviso (`arrange.outside`). A âncora é conferida como em `setMarkingAnchor`.
+ */
+export function componentAnchoredPlacement(
+  p: Project,
+  catalog: ComponentCatalog,
+  args: Pick<
+    NewComponentArgs,
+    | 'markingId'
+    | 'containerId'
+    | 'parentId'
+    | 'specId'
+    | 'typeId'
+    | 'values'
+    | 'name'
+    | 'anchorDefaults'
+  > & { readonly anchor: MarkingAnchor },
+  measure: TextMeasurer,
+): { readonly rect: Rect; readonly warnings: readonly ModelMessage[] } {
+  const target = checkAnchorTarget(p, args.markingId, args.containerId, args.anchor);
+  const size = componentSize(p, catalog, args, measure);
+  const resolved = resolveMarkingAnchor(
+    args.anchor,
+    args.anchorDefaults,
+    effectiveDensity(p, args.containerId),
+  );
+  const wanted = anchoredRect(
+    target.rect,
+    size,
+    resolved,
+    effectiveDirection(p, args.containerId),
+  );
+  const container =
+    args.containerId === null
+      ? undefined
+      : projectIndex(p).containers.get(args.containerId);
+  if (container === undefined) return { rect: wanted, warnings: [] };
+  const { rect, clamped } = clampedInto(wanted, imagePixelRect(container));
+  if (!clamped) return { rect, warnings: [] };
+  const label = args.name ?? args.markingId;
+  const where = container.name ?? container.id;
+  return {
+    rect,
+    warnings: [
+      modelMessage('arrange.outside', { label, where }, `${label}: não cabe em ${where}`),
+    ],
+  };
+}
+
+/**
  * Cria a marcação e a anotação tipada que a desenha, numa operação só (o store faz uma
  * entrada de desfazer). `parentId` é o componente com slot alvo onde a instância é posicionada;
  * o pai gravado é o que o assentar decide pela geometria (`createMarking` assenta), nunca o
@@ -843,6 +912,10 @@ export function addComponentMarking(
   const near = floating && args.near && !args.rect ? args.near : null;
   const rect =
     args.rect ??
+    (args.anchor
+      ? componentAnchoredPlacement(p, catalog, { ...args, anchor: args.anchor }, measure)
+          .rect
+      : null) ??
     (near ? placeFloatingNear(p, near, defaultSize()) : null) ??
     componentPlacement(
       p,
@@ -887,5 +960,5 @@ export function addComponentMarking(
   for (const [key, value] of Object.entries(args.values ?? {})) {
     next = setFieldValue(next, args.annotationId, key, value);
   }
-  return next;
+  return args.anchor ? setMarkingAnchor(next, args.markingId, args.anchor) : next;
 }

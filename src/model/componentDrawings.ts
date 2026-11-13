@@ -32,7 +32,7 @@ import { effectiveDrawingMode } from './drawingMode';
 import { topDown } from './hierarchy';
 import { projectIndex } from './projectIndex';
 import { multiply, type FrameNode, type Matrix } from './components/scene';
-import type { Project, ReadingDirection, Rect } from './types';
+import type { AnchorSide, Marking, Project, ReadingDirection, Rect } from './types';
 
 // Desenhos dos componentes (etapa Biblioteca, B3): a cena instanciada de cada marcação que
 // tem componente, derivada do projeto (retângulo da marcação, tipo e valores da anotação,
@@ -71,6 +71,18 @@ export interface ComponentDrawing {
    * `root.transform` (pixels da imagem ou unidades do canvas). O desenho só aparece dentro dela.
    */
   readonly clip?: Rect;
+  /**
+   * Âncora da marcação (v20): o lado gravado (ausente = o padrão do componente) e o retângulo da
+   * marcação-alvo, no mesmo espaço do `rect` (pixels do container ou unidades do canvas). É o que
+   * o motor lê nos pseudo-campos `$anchor.*` (R3, parte 2); ausente sem âncora.
+   */
+  readonly anchor?: DrawingAnchor;
+}
+
+/** O lado e o retângulo da âncora de um desenho (ver `ComponentDrawing.anchor`). */
+export interface DrawingAnchor {
+  readonly side?: AnchorSide;
+  readonly rect: Rect;
 }
 
 /** Por id de marcação, inserido em ordem de desenho (pais antes das filhas; irmãs na ordem do array). */
@@ -106,6 +118,8 @@ interface Entry {
   readonly density: number;
   /** Direção de leitura efetiva da marcação (`ltr` por padrão): `rtl` espelha o desenho. */
   readonly direction: ReadingDirection;
+  /** A âncora da marcação (lado e retângulo do alvo); `undefined` sem âncora (decisão 15). */
+  readonly anchor: DrawingAnchor | undefined;
   /** Retângulos das filhas diretas (só containers). */
   readonly childRects: readonly Rect[];
   /** Cor herdada: só os valores oferecidos pelos ancestrais que o componente lê (`$provided`). */
@@ -123,6 +137,24 @@ interface Entry {
 
 function sameRect(a: Rect, b: Rect): boolean {
   return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+}
+
+/** A âncora de um desenho: o lado gravado e o retângulo do alvo; `undefined` sem âncora ou sem alvo. */
+function anchorOfMarking(
+  marking: Marking,
+  markings: ReadonlyMap<string, Marking>,
+): DrawingAnchor | undefined {
+  const { anchor } = marking;
+  const target = anchor == null ? undefined : markings.get(anchor.to);
+  if (anchor == null || target === undefined) return undefined;
+  return anchor.side === undefined
+    ? { rect: target.rect }
+    : { side: anchor.side, rect: target.rect };
+}
+
+function sameAnchor(a: DrawingAnchor | undefined, b: DrawingAnchor | undefined): boolean {
+  if (a === undefined || b === undefined) return a === b;
+  return a.side === b.side && sameRect(a.rect, b.rect);
 }
 
 function sameRects(a: readonly Rect[], b: readonly Rect[]): boolean {
@@ -287,6 +319,7 @@ function draw(
   clip: Rect | undefined,
   density: number,
   direction: ReadingDirection,
+  anchor: DrawingAnchor | undefined,
 ): {
   drawing: ComponentDrawing;
   offers: ProvidedValues | undefined;
@@ -321,6 +354,7 @@ function draw(
     overflow: Object.keys(found).length > 0,
     shortfalls: found,
     ...placement(screen, rect, clip),
+    ...(anchor === undefined ? {} : { anchor }),
   };
   // Com `screen` a cena está na origem (pixels de tela): a caixa do slot não está no espaço das filhas.
   const slotClip = slotClipOf(screen, instantiated.root, space);
@@ -331,7 +365,8 @@ function draw(
  * Cache dos desenhos de um projeto. A cada chamada devolve, em ordem de desenho, um desenho
  * por marcação com componente. Uma marcação só é reinstanciada quando muda algo de que o
  * desenho dela depende: o retângulo, o componente (por identidade), os valores resolvidos
- * (comparação rasa), o medidor, a época das fontes, o modo, a densidade e a direção efetivos e,
+ * (comparação rasa), o medidor, a época das fontes, o modo, a densidade e a direção efetivos, a âncora
+ * (lado e retângulo do alvo; só as ancoradas dependem dela) e,
  * nos containers, os retângulos das filhas; senão volta o mesmo `ComponentDrawing`. Mesmas entradas devolvem o mesmo `Map`.
  */
 export function createDrawingCache(): DrawingCache {
@@ -362,7 +397,7 @@ export function createDrawingCache(): DrawingCache {
       return NO_DRAWINGS;
     }
 
-    const children = projectIndex(p).children;
+    const { children, markings: markingsById } = projectIndex(p);
     const next = new Map<string, Entry>();
     const drawings = new Map<string, ComponentDrawing>();
     // Cor herdada: o que as filhas de cada marcação herdam (o do pai, com o que ele oferece por
@@ -398,6 +433,7 @@ export function createDrawingCache(): DrawingCache {
       const mode = effectiveDrawingMode(p, marking.containerId);
       const density = effectiveDensity(p, marking.containerId);
       const direction = effectiveDirection(p, marking.containerId);
+      const anchor = anchorOfMarking(marking, markingsById);
       const before = entries.get(marking.id);
       if (
         before !== undefined &&
@@ -411,6 +447,7 @@ export function createDrawingCache(): DrawingCache {
         before.mode === mode &&
         before.density === density &&
         before.direction === direction &&
+        sameAnchor(before.anchor, anchor) &&
         shallowEqual(before.values, values) &&
         before.valueWarnings.length === valueWarnings.length &&
         before.valueWarnings.every((w, i) => w.text === valueWarnings[i]?.text) &&
@@ -449,6 +486,7 @@ export function createDrawingCache(): DrawingCache {
         clip,
         density,
         direction,
+        anchor,
       );
       const stableClip = stableRect(before?.slotClip, slotClip);
       const childClip = stableRect(before?.childClip, intersectClips(stableClip, clip));
@@ -467,6 +505,7 @@ export function createDrawingCache(): DrawingCache {
         mode,
         density,
         direction,
+        anchor,
         childRects,
         provided,
         offers,

@@ -72,6 +72,12 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
     'a marcação não é um container com layout em linha ou coluna e filhas para arrumar',
   'not-fittable':
     'a marcação não tem eixo que dependa do conteúdo (o sizing do componente precisa ser hug ou uma expressão), ou é um componente com filhas no slot',
+  'anchor-missing': 'a âncora aponta para uma marcação que não existe',
+  'anchor-self': 'a marcação não pode ser ancorada nela mesma',
+  'anchor-cycle': 'a âncora fecharia um ciclo de âncoras',
+  'anchor-other-space':
+    'a âncora precisa ser do mesmo espaço: o mesmo container, ou as duas no canvas',
+  'not-anchored': 'a marcação não tem âncora',
   'perspective-name-empty': 'o nome da perspectiva está vazio',
   'perspective-name-taken':
     'já existe uma perspectiva com esse nome (sem diferença de maiúsculas)',

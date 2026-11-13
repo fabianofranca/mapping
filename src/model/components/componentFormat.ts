@@ -661,6 +661,25 @@ export interface ScreenSpec {
   readonly anchor?: ScreenAnchor;
 }
 
+/** Os lados da âncora (`anchor.side`): lógicos, `start`/`end` seguem a direção efetiva. */
+export const ANCHOR_SIDES = ['top', 'bottom', 'start', 'end'] as const;
+export type AnchorSide = (typeof ANCHOR_SIDES)[number];
+/** O alinhamento ao longo do lado da âncora (`anchor.align`). */
+export const ANCHOR_ALIGNS = ['start', 'center', 'end'] as const;
+export type AnchorAlign = (typeof ANCHOR_ALIGNS)[number];
+
+/**
+ * Como o tipo prefere encostar na âncora (v4, só na raiz do arquivo): os padrões de `side`, `align`
+ * e `offset` de uma marcação que declara âncora sem dizê-los. Tudo opcional: ausentes valem `top`,
+ * `center` e `{ main: 0, cross: 0 }`. O `offset` é em UNIDADES do componente (a densidade do
+ * container o converte em pixels ao aplicar); ver `componentAnchorDefaults`.
+ */
+export interface ComponentAnchor {
+  readonly side?: AnchorSide;
+  readonly align?: AnchorAlign;
+  readonly offset?: { readonly main?: number; readonly cross?: number };
+}
+
 export interface ComponentFile {
   readonly format: typeof COMPONENT_FORMAT;
   readonly formatVersion: ComponentFormatVersion;
@@ -676,6 +695,8 @@ export interface ComponentFile {
   readonly sizing?: ComponentSizing;
   /** Desenho em pixels de tela ancorado no retângulo da marcação (v4); ver `ScreenSpec`. */
   readonly screen?: ScreenSpec;
+  /** Como o tipo prefere encostar na âncora (v4); ver `ComponentAnchor`. */
+  readonly anchor?: ComponentAnchor;
   /**
    * Valores de pré-visualização dos campos (biblioteca e instância nova): os campos vêm do
    * tipo da especialização; aqui só os valores de exemplo.

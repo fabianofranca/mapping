@@ -112,6 +112,23 @@ export const INDEX_FIELD = '$index';
 /** O campo de valores onde o motor entrega a direção da instância (`{ "$direction": … }` fora de um nó). */
 export const DIRECTION_FIELD = '$direction';
 
+/** O prefixo dos pseudo-campos da âncora (`$anchor.side`, `$anchor.x`…; v4). */
+export const ANCHOR_PREFIX = '$anchor.';
+
+/** Os pseudo-campos da âncora que o motor entrega (o resto de `$anchor.*` não existe). */
+export const ANCHOR_FIELDS = [
+  '$anchor.side',
+  '$anchor.x',
+  '$anchor.y',
+  '$anchor.width',
+  '$anchor.height',
+] as const;
+
+/** O nome é de um pseudo-campo da âncora (válido ou não: o prefixo basta)? */
+export function isAnchorFieldName(name: string): boolean {
+  return name.startsWith(ANCHOR_PREFIX);
+}
+
 /** As linhas de um campo `table` (valor que não é lista conta 0). */
 function rowCount(value: FieldValue): number {
   return Array.isArray(value) ? value.length : 0;
@@ -397,10 +414,11 @@ export function referencedFields(
       (key === '$field' || key === '$has' || key === '$switch' || key === '$rows') &&
       typeof value === 'string'
     ) {
-      // `$index` é o índice da linha de um `repeat`, não um campo do tipo.
-      if (value !== INDEX_FIELD || key === '$rows') out.add(value);
+      // `$index` é o índice da linha de um `repeat` e `$anchor.*` vêm da âncora: não são campos do tipo.
+      if (key === '$rows' || (value !== INDEX_FIELD && !isAnchorFieldName(value)))
+        out.add(value);
     } else if (key === '$eq' && Array.isArray(value) && typeof value[0] === 'string') {
-      if (value[0] !== INDEX_FIELD) out.add(value[0]);
+      if (value[0] !== INDEX_FIELD && !isAnchorFieldName(value[0])) out.add(value[0]);
     } else {
       referencedFields(value, out);
     }

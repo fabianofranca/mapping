@@ -28,8 +28,16 @@ import {
   type TextMeasurer,
 } from './components/instantiate';
 import { markingComponent, type ComponentCatalog } from './componentCatalog';
+import {
+  anchoredRect,
+  clampedInto,
+  resolveMarkingAnchor,
+  type AnchorDefaults,
+  type AnchorDefaultsSource,
+} from './anchorPlacement';
 import { drawingValues } from './componentValues';
 import { componentForDrawing, drawOptions } from './drawingMode';
+import { effectiveDirection } from './direction';
 import { fail } from './errors';
 import {
   MIN_STORED_MARKING_SIZE,
@@ -693,4 +701,86 @@ export function fitMarking(
     { ...p, markings: p.markings.map((m) => (m.id === markingId ? { ...m, rect } : m)) },
     options,
   );
+}
+
+/** Opções do encosto: o assentar e os padrões da âncora do componente (offset em unidades). */
+export interface SnapToAnchorOptions extends SettleOptions {
+  readonly defaults?: AnchorDefaultsSource<Marking>;
+}
+
+function defaultsOf(
+  source: AnchorDefaultsSource<Marking> | undefined,
+  marking: Marking,
+): AnchorDefaults | undefined {
+  return typeof source === 'function' ? source(marking) : source;
+}
+
+/** O retângulo da marcação encostada na âncora, preso à imagem do container (e se foi preciso prender). */
+function snappedRect(
+  p: Project,
+  marking: Marking,
+  options: SnapToAnchorOptions | undefined,
+): { readonly rect: Rect; readonly clamped: boolean } {
+  const index = projectIndex(p);
+  const anchor = marking.anchor ?? fail('not-anchored', marking.id);
+  const target = index.markings.get(anchor.to) ?? fail('anchor-missing', anchor.to);
+  const resolved = resolveMarkingAnchor(
+    anchor,
+    defaultsOf(options?.defaults, marking),
+    effectiveDensity(p, marking.containerId),
+  );
+  const wanted = anchoredRect(
+    target.rect,
+    marking.rect,
+    resolved,
+    effectiveDirection(p, marking.containerId),
+  );
+  const container =
+    marking.containerId === null ? undefined : index.containers.get(marking.containerId);
+  return container === undefined
+    ? { rect: wanted, clamped: false }
+    : clampedInto(wanted, imagePixelRect(container));
+}
+
+/** O aviso de que o encosto passou do container e foi preso dentro dele. */
+function clampedWarning(p: Project, marking: Marking): ModelMessage {
+  const label = marking.name ?? marking.id;
+  const container =
+    marking.containerId === null
+      ? undefined
+      : projectIndex(p).containers.get(marking.containerId);
+  const where = container?.name ?? marking.containerId ?? '';
+  return modelMessage(
+    'arrange.outside',
+    { label, where },
+    `${label}: não cabe em ${where}`,
+  );
+}
+
+/**
+ * Encosta a marcação ancorada (`anchor`) na âncora (R3, decisão 12): calcula o retângulo pelo
+ * `side`, `align` e `offset` (`anchoredRect`; o que falta vem de `options.defaults`, o `offset`
+ * dele em unidades × a densidade do container), mantém o tamanho e, num container, prende o
+ * resultado dentro da imagem com um aviso (`arrange.outside`). Assenta ao fim, numa entrada de
+ * desfazer. Devolve o mesmo `Project` quando o retângulo não muda (a trava não conta);
+ * falha com `not-found`, `not-anchored` (a marcação não tem âncora) e `locked` (a geometria
+ * é travada e mudaria). Só por ação da pessoa ou do agente.
+ */
+export function snapToAnchor(
+  p: Project,
+  markingId: string,
+  options?: SnapToAnchorOptions,
+): ArrangeResult {
+  const marking = projectIndex(p).markings.get(markingId) ?? fail('not-found', markingId);
+  const { rect, clamped } = snappedRect(p, marking, options);
+  if (sameRect(rect, marking.rect)) return { project: p, warnings: [] };
+  if (markingLockStates(p).has(markingId)) fail('locked');
+  const next = {
+    ...p,
+    markings: p.markings.map((m) => (m.id === markingId ? { ...m, rect } : m)),
+  };
+  return {
+    project: settleFrom(p, next, options),
+    warnings: clamped ? [clampedWarning(p, marking)] : [],
+  };
 }

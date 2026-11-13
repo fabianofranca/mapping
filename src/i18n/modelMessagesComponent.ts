@@ -130,6 +130,7 @@ export const componentEnUS: {
     'repeat.layout: the key goes inside layout ({key})',
   'model.component.repeatLayoutNotNone': 'repeat.layout: use row, column or grid',
   'model.component.v4Only': 'only allowed with formatVersion 4',
+  'model.component.anchorFieldUnknown': 'field does not exist: {name}',
   'model.component.indexOnlyInRepeat': '$index is only valid inside a repeat',
   'model.component.repeatOnlyV2': 'the repeat node only exists in formatVersion 2',
   'model.component.imageOnlyV3': 'the image node only exists in formatVersion 3',

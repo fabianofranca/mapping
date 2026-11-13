@@ -103,6 +103,7 @@ import {
   parseSizeSpec,
 } from './layoutValues';
 import { providingSlot } from './provided';
+import { anchorFieldValues, type InstanceAnchor } from './anchor';
 import { ownDirection, resolveDirections } from './direction';
 import { createMessageSet, textsOf, type Params } from '../messages/collector';
 import type { ModelMessageTemplateCode } from '../messages';
@@ -237,6 +238,12 @@ export interface InstantiateOptions {
    * final continua física (x da esquerda): ver "Direção de leitura" no `docs/COMPONENT-FORMAT.md`.
    */
   readonly direction?: Direction;
+  /**
+   * A âncora da marcação (v4), já em unidades do componente e relativa à caixa da instância (ver
+   * `anchorValues`, em `componentValues.ts`): é o que o molde lê por `$anchor.side`, `$anchor.x`,
+   * `$anchor.y`, `$anchor.width` e `$anchor.height`. Ausente = sem âncora (os cinco ficam vazios).
+   */
+  readonly anchor?: InstanceAnchor;
 }
 
 export interface Instantiated {
@@ -585,6 +592,7 @@ function createEngine(
   } = expandRepeats(source, {
     ...sourceValues,
     [DIRECTION_FIELD]: rootDirection,
+    ...anchorFieldValues(options.anchor),
     ...providedFields(options.provided),
     [sizeKey('width')]: instanceSize.width,
     [sizeKey('height')]: instanceSize.height,

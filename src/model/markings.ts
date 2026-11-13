@@ -15,6 +15,7 @@ import {
   translateRect,
   type Size,
 } from './geometry';
+import { withAnchoredFollowers } from './anchors';
 import { arrowIdsAttachedTo, withoutArrows } from './arrows';
 import { descendantIds, descendantsOf } from './hierarchy';
 import {
@@ -222,7 +223,8 @@ export function setMarkingSpace(
  * descendentes (trancados inclusive: a posição relativa entre eles e a marcação não muda); no
  * canvas, a marcação é uma lente e se move sozinha (flutuante inclusive). Nada prende a
  * marcação ao container: ela pode sair dele, e o assentar decide o espaço novo, convertendo o
- * `rect` dela e o das descendentes. Deslocamento zero não é mudança: devolve `p` como está,
+ * `rect` dela e o das descendentes. As marcações ancoradas nela (v20) vão junto, com as descendentes
+ * e as ancoradas delas (a posição relativa se mantém, trancadas inclusive). Deslocamento zero não é mudança: devolve `p` como está,
  * sem conferir a trava.
  */
 export function moveMarking(
@@ -233,12 +235,11 @@ export function moveMarking(
   options?: RectOptions,
 ): Project {
   if (!Number.isInteger(dx) || !Number.isInteger(dy)) fail('rect-not-integer');
-  const marking = findById(p.markings, markingId);
+  findById(p.markings, markingId);
   if (dx === 0 && dy === 0) return p;
   requireUnlocked(canEditMarkingGeometry(p, markingId));
-  const affected =
-    marking.containerId === null ? new Set<string>() : descendantIds(p, markingId);
-  affected.add(markingId);
+  // Leva as descendentes (num container) e as ancoradas, com as descendentes e ancoradas delas.
+  const affected = withAnchoredFollowers(p, [markingId]);
   return settled(
     p,
     {
@@ -401,13 +402,23 @@ export function removeMarking(
   return settleFrom(p, cascadeRemove(p, markingId), options);
 }
 
+/** As marcações com a âncora tirada de quem apontava para uma que sai (elas ficam, sem âncora). */
+function releasedAnchors(p: Project, removed: ReadonlySet<string>): readonly Marking[] {
+  const { anchorOf } = projectIndex(p);
+  if (anchorOf.size === 0) return p.markings;
+  return p.markings.map((m) => {
+    const to = anchorOf.get(m.id);
+    return to !== undefined && removed.has(to) ? { ...m, anchor: null } : m;
+  });
+}
+
 /** A exclusão em si, sem a trava nem o assentar: também serve para contar o impacto. */
 function cascadeRemove(p: Project, markingId: string): Project {
   const ids = descendantIds(p, markingId).add(markingId);
   return withoutArrows(
     {
       ...p,
-      markings: p.markings.filter((m) => !ids.has(m.id)),
+      markings: releasedAnchors(p, ids).filter((m) => !ids.has(m.id)),
       annotations: p.annotations.filter((a) => !ids.has(a.markingId)),
     },
     arrowIdsAttachedTo(p, ids),

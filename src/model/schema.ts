@@ -2,6 +2,8 @@ import { HEX_COLOR_RE } from './hexColor';
 import { z } from 'zod';
 import { PLATFORM_ID_RE } from './spec';
 import {
+  ANCHOR_ALIGNS,
+  ANCHOR_SIDES,
   APP_ID,
   LEGACY_APP_ID,
   COORDINATE_SYSTEM,
@@ -20,6 +22,12 @@ const id = z.string().min(1);
 const hexColor = z.string().regex(HEX_COLOR_RE);
 const finite = z.number().finite();
 const readingDirection = z.enum(READING_DIRECTIONS);
+const anchorSchema = z.object({
+  to: id,
+  side: z.enum(ANCHOR_SIDES).optional(),
+  align: z.enum(ANCHOR_ALIGNS).optional(),
+  offset: z.object({ main: finite, cross: finite }).optional(),
+});
 
 /** Data ISO 8601 como gravada pela app: UTC com `Z`; com fuso, normalizada para UTC. */
 export function normalizeIsoDate(value: string): string {
@@ -99,6 +107,8 @@ export const markingSchema = z.object({
   /** Flutuante (v13). Ausente num v13 anterior a este campo: `false`. */
   floating: z.boolean().default(false),
   source: sourceSchema.nullable(),
+  /** Âncora (v20); ausente ou `null` = sem âncora. */
+  anchor: anchorSchema.nullable().optional(),
 });
 
 const pointSchema = z.object({ x: finite, y: finite });

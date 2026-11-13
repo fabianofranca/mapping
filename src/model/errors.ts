@@ -64,6 +64,12 @@ export type ModelErrorCode =
   // Componentes (etapa Biblioteca)
   | 'not-arrangeable'
   | 'not-fittable'
+  // Âncora da marcação (v20): `setMarkingAnchor` e `snapToAnchor`
+  | 'anchor-missing'
+  | 'anchor-self'
+  | 'anchor-cycle'
+  | 'anchor-other-space'
+  | 'not-anchored'
   // Perspectivas (v16): o nome é vazio ou repetido; o id não é de uma raiz
   | 'perspective-name-empty'
   | 'perspective-name-taken'

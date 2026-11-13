@@ -53,6 +53,24 @@
       },
       "description": "formatVersion 4, só na raiz. O template é desenhado no size do componente em pixels de tela, em qualquer zoom, ancorado no ponto anchor (padrão center) do retângulo da marcação; o desenho pode passar do retângulo (sem a pendência 'não cabe'). Numa formatVersion menor o parseComponent recusa com 'só é permitido com formatVersion 4'."
     },
+    "anchor": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "side": { "enum": ["top", "bottom", "start", "end"] },
+        "align": { "enum": ["start", "center", "end"] },
+        "offset": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "main": { "type": "number" },
+            "cross": { "type": "number" }
+          },
+          "description": "Em unidades do componente (a densidade do container as converte em pixels). Ausentes valem 0."
+        }
+      },
+      "description": "formatVersion 4, só na raiz. Como o tipo prefere encostar na âncora de uma marcação: side (padrão top), align (padrão center) e offset (padrão 0, 0). Tudo opcional. Numa formatVersion menor o parseComponent recusa com 'só é permitido com formatVersion 4'."
+    },
     "preview": {
       "type": "object",
       "additionalProperties": {

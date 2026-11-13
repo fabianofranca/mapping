@@ -13,14 +13,18 @@ import {
   DIRECTIONS,
   IMAGE_FITS_V4,
   SCREEN_ANCHORS,
+  ANCHOR_ALIGNS,
+  ANCHOR_SIDES,
   STROKE_SIDES,
   type ComponentFile,
 } from './componentFormat';
 import { checkRemoteImageUrl } from '../remoteImages';
 import { isValidFontFamily } from './fontFamily';
 import {
+  ANCHOR_FIELDS,
   COMPARISON_OPS,
   NUMERIC_OPS,
+  isAnchorFieldName,
   isNumericOp,
   referencedFields,
 } from './expressions';
@@ -1624,12 +1628,25 @@ function numericVersionIssues(version: unknown, template: unknown): ComponentIss
   return out;
 }
 
-/** A chave cita `$index` (`$field`, `$has`, `$switch` ou o primeiro item de `$eq`)? Devolve o sufixo do caminho. */
-function indexCitation(key: string, value: unknown): string | undefined {
-  if ((key === '$field' || key === '$has' || key === '$switch') && value === '$index')
-    return '';
-  if (key === '$eq' && Array.isArray(value) && value[0] === '$index') return '[0]';
+/** A chave cita um campo (`$field`, `$has`, `$switch` ou o primeiro item de `$eq`)? O nome e o sufixo do caminho. */
+function citedField(
+  key: string,
+  value: unknown,
+): { readonly name: string; readonly suffix: string } | undefined {
+  if (
+    (key === '$field' || key === '$has' || key === '$switch') &&
+    typeof value === 'string'
+  )
+    return { name: value, suffix: '' };
+  if (key === '$eq' && Array.isArray(value) && typeof value[0] === 'string')
+    return { name: value[0], suffix: '[0]' };
   return undefined;
+}
+
+/** A chave cita `$index`? Devolve o sufixo do caminho. */
+function indexCitation(key: string, value: unknown): string | undefined {
+  const cited = citedField(key, value);
+  return cited?.name === '$index' ? cited.suffix : undefined;
 }
 
 /**
@@ -1655,6 +1672,33 @@ function indexIssues(version: unknown, template: unknown): ComponentIssue[] {
     }
   };
   walk(template, 'template', false);
+  return out;
+}
+
+/**
+ * `$anchor.*` (os pseudo-campos da âncora): antes da 4 `só é permitido com formatVersion 4`; na 4, só
+ * valem os cinco nomes de `ANCHOR_FIELDS` (outro é `campo não existe: $anchor.foo`). O caminho é o da
+ * chave que o cita.
+ */
+function anchorFieldIssues(version: unknown, template: unknown): ComponentIssue[] {
+  const out: ComponentIssue[] = [];
+  const v4 = typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY;
+  const walk = (node: unknown, at: string): void => {
+    if (Array.isArray(node)) return node.forEach((n, i) => walk(n, `${at}[${i}]`));
+    if (!isRecord(node)) return;
+    for (const [key, value] of Object.entries(node)) {
+      const here = join(at, key);
+      const cited = citedField(key, value);
+      if (cited !== undefined && isAnchorFieldName(cited.name)) {
+        const where = `${here}${cited.suffix}`;
+        if (!v4) addIssue(out, where, V4_ONLY_MESSAGE);
+        else if (!(ANCHOR_FIELDS as readonly string[]).includes(cited.name))
+          addIssue(out, where, `campo não existe: ${cited.name}`);
+      }
+      walk(value, here);
+    }
+  };
+  walk(template, 'template');
   return out;
 }
 
@@ -1768,6 +1812,7 @@ const ROOT_KEYS = [
   'minSize',
   'sizing',
   'screen',
+  'anchor',
   'preview',
   'template',
 ];
@@ -1829,6 +1874,22 @@ function checkScreen(value: unknown, path: string, out: Ctx): void {
   if (!isRecord(value)) return add(out, path, 'esperava objeto');
   checkKeys(value, ['anchor'], path, out);
   if ('anchor' in value) oneOf(SCREEN_ANCHORS)(value.anchor, join(path, 'anchor'), out);
+}
+
+/** `anchor` (só v4, só na raiz): `side`, `align` e `offset { main, cross }`, todos opcionais. */
+function checkAnchor(value: unknown, path: string, out: Ctx): void {
+  if (!isRecord(value)) return add(out, path, 'esperava objeto');
+  checkKeys(value, ['side', 'align', 'offset'], path, out);
+  if ('side' in value) oneOf(ANCHOR_SIDES)(value.side, join(path, 'side'), out);
+  if ('align' in value) oneOf(ANCHOR_ALIGNS)(value.align, join(path, 'align'), out);
+  if (!('offset' in value)) return;
+  const at = join(path, 'offset');
+  const offset = value.offset;
+  if (!isRecord(offset)) return add(out, at, 'esperava objeto');
+  checkKeys(offset, ['main', 'cross'], at, out);
+  for (const axis of ['main', 'cross'])
+    if (axis in offset && !isFiniteNumber(offset[axis]))
+      add(out, join(at, axis), 'esperava número');
 }
 
 /** Os problemas do arquivo e o `template` sem `let` nem `$var` (o que o motor lê). */
@@ -1950,6 +2011,12 @@ function collectIssues(
       add(out, 'screen', V4_ONLY_MESSAGE);
   }
 
+  if ('anchor' in input) {
+    checkAnchor(input.anchor, 'anchor', out);
+    if (typeof version === 'number' && version < COMPONENT_FORMAT_VERSION_FIDELITY)
+      add(out, 'anchor', V4_ONLY_MESSAGE);
+  }
+
   if ('preview' in input) {
     if (!isRecord(input.preview)) add(out, 'preview', 'esperava objeto');
     else
@@ -2000,6 +2067,7 @@ function collectIssues(
     issues.push(...numericVersionIssues(version, template));
     issues.push(...linesIssues(template));
     issues.push(...indexIssues(version, template));
+    issues.push(...anchorFieldIssues(version, template));
     if (version === 1 || version === 2) {
       for (const node of nodesOfTypes(template, 'template', ['image'])) {
         add(out, node.path, 'o nó image só existe na formatVersion 3');

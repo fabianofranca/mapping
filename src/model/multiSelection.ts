@@ -1,3 +1,4 @@
+import { withAnchoredFollowers } from './anchors';
 import { arrowIdsAttachedTo, withoutArrows } from './arrows';
 import { fail } from './errors';
 import {
@@ -184,8 +185,12 @@ export function moveItems(
     if (marking.containerId === null) {
       const cx = Math.round(dx);
       const cy = Math.round(dy);
-      if (cx !== 0 || cy !== 0)
-        rects.set(marking.id, translateRect(marking.rect, cx, cy));
+      if (cx === 0 && cy === 0) continue;
+      // Com as ancoradas (v20), também do canvas.
+      for (const id of withAnchoredFollowers(p, [marking.id])) {
+        const m = index.markings.get(id);
+        if (m !== undefined) rects.set(id, translateRect(m.rect, cx, cy));
+      }
       continue;
     }
     // Marcação de container: o deslocamento do canvas em pixels do container, para ela e as
@@ -194,7 +199,10 @@ export function moveItems(
     const mx = Math.round(dx / space.placement.scale);
     const my = Math.round(dy / space.placement.scale);
     if (mx === 0 && my === 0) continue;
-    for (const m of [marking, ...descendantsOf(p, marking.id)]) {
+    // Com as descendentes e as ancoradas (v20), que andam junto.
+    for (const id of withAnchoredFollowers(p, [marking.id])) {
+      const m = index.markings.get(id);
+      if (m === undefined) continue;
       const next = translateRect(m.rect, mx, my);
       if (space.bounds && !containsRect(space.bounds, next)) {
         fail('rect-out-of-image', m.id);
