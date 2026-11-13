@@ -47,6 +47,7 @@ import type {
   BoolExpr,
   Color,
   ComponentFile,
+  Direction,
   Expr,
   FieldValues,
   FillSpec,
@@ -77,6 +78,7 @@ import {
   evaluate,
   evaluateBoolean,
   evaluateText,
+  DIRECTION_FIELD,
   linesCitations,
   linesKey,
   linesNodeName,
@@ -101,6 +103,7 @@ import {
   parseSizeSpec,
 } from './layoutValues';
 import { providingSlot } from './provided';
+import { ownDirection, resolveDirections } from './direction';
 import { createMessageSet, textsOf, type Params } from '../messages/collector';
 import type { ModelMessageTemplateCode } from '../messages';
 import type { ModelMessage } from '../modelMessage';
@@ -193,6 +196,8 @@ export interface MeasureFont {
   ellipsis?: boolean;
   /** Inteiro ≥ 1; as linhas além dele são cortadas. */
   maxLines?: number;
+  /** `rtl` quando o texto lê da direita para a esquerda (ausente = `ltr`); o medidor o repassa à sonda. */
+  direction?: 'rtl';
 }
 
 /** Mede um texto com a fonte dada (largura máxima opcional, para quebra de linha). */
@@ -226,6 +231,12 @@ export interface InstantiateOptions {
    * do template o lê (com `default` quando falta). Ausente = nenhum ancestral oferece nada.
    */
   readonly provided?: ProvidedValues;
+  /**
+   * Direção de leitura da instância (v4; padrão `ltr`): em `rtl` as fileiras, as grades, as
+   * posições `start`/`end` e o `font.align` padrão espelham, e os nós `mirror` viram. A posição
+   * final continua física (x da esquerda): ver "Direção de leitura" no `docs/COMPONENT-FORMAT.md`.
+   */
+  readonly direction?: Direction;
 }
 
 export interface Instantiated {
@@ -409,6 +420,8 @@ interface Kid {
 }
 
 interface FrameLayout {
+  /** A direção de leitura do quadro (a efetiva do nó): decide o espelho de `start`/`end`. */
+  readonly dir: Direction;
   readonly kind: 'none' | 'row' | 'column' | 'grid';
   /** Eixo principal (`null` em `none` e `grid`). */
   readonly main: Axis | null;
@@ -467,6 +480,7 @@ const FLEX_EPS = 1e-9;
 const NO_SIZE_LIMIT: SizeLimit = { min: 0, max: Infinity };
 const NO_LIMITS: Limits = { w: null, h: null };
 const NONE_LAYOUT: FrameLayout = {
+  dir: 'ltr',
   kind: 'none',
   main: null,
   gap: 0,
@@ -563,16 +577,24 @@ function createEngine(
   // O `repeat` vira quadros com os valores de cada linha antes de o motor começar.
   // `$size`: o tamanho da instância entra como dois valores reservados (sem DOM), já na expansão,
   // para o `count` de um `repeat` também poder segui-lo.
+  const rootDirection: Direction = options.direction ?? 'ltr';
   const {
-    component,
+    component: expanded,
     values: expandedValues,
     messages: expansionMessages,
   } = expandRepeats(source, {
     ...sourceValues,
+    [DIRECTION_FIELD]: rootDirection,
     ...providedFields(options.provided),
     [sizeKey('width')]: instanceSize.width,
     [sizeKey('height')]: instanceSize.height,
   });
+  // A direção efetiva de cada nó entra no template (e a condição `$direction` vira literal).
+  const directed = resolveDirections(expanded.template, rootDirection);
+  const component =
+    directed === expanded.template ? expanded : { ...expanded, template: directed };
+  /** A direção efetiva do nó: a escrita pelo `resolveDirections`, ou a da instância sem ele. */
+  const dirOf = (node: TemplateNode): Direction => ownDirection(node) ?? rootDirection;
   // `$lines`: o número de linhas de cada nó citado entra nos valores (1 na primeira passagem).
   const citedLines = linesCitations(component.template);
   const values: FieldValues =
@@ -626,13 +648,19 @@ function createEngine(
       ? undefined
       : toNumber(ev<unknown>(expr as Expr<unknown>, undefined));
 
-  const anchorsOf = (node: TemplateNode, axis: Axis): ResolvedAnchors => {
+  /**
+   * As âncoras do nó no eixo, como distância das bordas físicas (`start` = esquerda ou topo): no eixo
+   * horizontal `anchors.start`/`end` são lógicos e viram `left`/`right` pela direção `dir` do quadro
+   * pai; `left`/`right`, físicos, vencem a lógica que cair no mesmo lado.
+   */
+  const anchorsOf = (node: TemplateNode, axis: Axis, dir: Direction): ResolvedAnchors => {
     const a: Anchors | undefined = node.anchors;
     if (!a) return { center: false };
+    const rtl = dir === 'rtl';
     return axis === 'w'
       ? {
-          start: anchorNumber(a.left),
-          end: anchorNumber(a.right),
+          start: anchorNumber(a.left) ?? anchorNumber(rtl ? a.end : a.start),
+          end: anchorNumber(a.right) ?? anchorNumber(rtl ? a.start : a.end),
           center:
             a.centerX === true ||
             (typeof a.centerX === 'object' && bool(a.centerX, false)),
@@ -681,6 +709,7 @@ function createEngine(
       italic: bool(font.italic, false),
       lineHeight: lh <= 3 ? lh * size : lh,
       letterSpacing: num(font.letterSpacing, 0),
+      ...(dirOf(node) === 'rtl' ? { direction: 'rtl' as const } : {}),
     };
   };
 
@@ -746,6 +775,25 @@ function createEngine(
     return { scene, runs };
   };
 
+  /**
+   * O `align` físico do texto: `start` (o padrão da v4) e `end` seguem a direção efetiva do nó; fora
+   * do conjunto da versão, vale o padrão. `justify` só existe na v4 e o texto rico não o usa.
+   */
+  const physicalAlign = (node: TextTemplate): 'left' | 'center' | 'right' | 'justify' => {
+    const v4 = original.formatVersion >= 4;
+    const value = oneOf<string>(
+      node.font?.align as Expr<string> | undefined,
+      v4
+        ? ['left', 'center', 'right', 'justify', 'start', 'end']
+        : ['left', 'center', 'right'],
+      v4 ? 'start' : 'left',
+    );
+    const rtl = dirOf(node) === 'rtl';
+    if (value === 'start') return rtl ? 'right' : 'left';
+    if (value === 'end') return rtl ? 'left' : 'right';
+    return value as 'left' | 'center' | 'right' | 'justify';
+  };
+
   /** O `align` do layout do texto rico (sem `justify`). */
   const richAlign = (align: string): 'left' | 'center' | 'right' =>
     align === 'center' || align === 'right' ? align : 'left';
@@ -755,9 +803,7 @@ function createEngine(
     size: font.size,
     lineHeight: font.lineHeight,
     // O texto rico (com `runs`) ainda não justifica: `justify` cai em `left`.
-    align: richAlign(
-      oneOf(node.font?.align, ['left', 'center', 'right', 'justify'], 'left'),
-    ),
+    align: richAlign(physicalAlign(node)),
     ...(font.wrap === 'none' ? { wrap: 'none' as const } : {}),
     ...(font.ellipsis === true ? { ellipsis: true } : {}),
     ...(font.maxLines !== undefined ? { maxLines: font.maxLines } : {}),
@@ -1090,6 +1136,7 @@ function createEngine(
 
   /** O layout `grid`: `justify` é o eixo das trilhas e `align` o das linhas (só os quatro valores). */
   const gridLayoutOf = (spec: LayoutSpec): FrameLayout => ({
+    dir: 'ltr',
     kind: 'grid',
     main: null,
     gap: Math.max(0, num(spec.gap, 0)),
@@ -1102,12 +1149,14 @@ function createEngine(
     grid: gridTracksOf(spec),
   });
 
-  const layoutOf = (frame: FrameTemplate): FrameLayout => {
+  /** O layout do quadro sem a direção (`dir` ltr); `layoutOf` põe a efetiva do nó. */
+  const layoutBase = (frame: FrameTemplate): FrameLayout => {
     const spec = frame.layout;
     const kind = checked(spec?.type, LAYOUT_TYPES, 'none', 'layout.type');
     if (!spec || kind === 'none') return noneLayoutOf(spec);
     if (kind === 'grid') return gridLayoutOf(spec);
     return {
+      dir: 'ltr',
       kind,
       main: kind === 'row' ? 'w' : 'h',
       gap: Math.max(0, num(spec.gap, 0)),
@@ -1117,6 +1166,12 @@ function createEngine(
       reverse: bool(spec.reverse, false),
       ...wrapOf(spec),
     };
+  };
+
+  const layoutOf = (frame: FrameTemplate): FrameLayout => {
+    const layout = layoutBase(frame);
+    const dir = dirOf(frame);
+    return layout.dir === dir ? layout : { ...layout, dir };
   };
 
   const visibleKids = (frame: FrameTemplate): Kid[] =>
@@ -1314,7 +1369,7 @@ function createEngine(
   const kidIntrinsic = (kid: Kid, layout: FrameLayout, mode: IntrinsicSize): number => {
     const { node } = kid;
     const spec = specOf(node, 'w');
-    const anchors = layout.kind === 'none' ? anchorsOf(node, 'w') : undefined;
+    const anchors = layout.kind === 'none' ? anchorsOf(node, 'w', layout.dir) : undefined;
     const natural = (): number => {
       if (typeof spec === 'number') return spec;
       if (spec === 'fill' || spec === 'hug') return intrinsicWidth(node, mode);
@@ -1424,7 +1479,8 @@ function createEngine(
   ): number | 'fill' => {
     const { node } = kid;
     const spec = specOf(node, axis);
-    const anchors = layout.kind === 'none' ? anchorsOf(node, axis) : undefined;
+    const anchors =
+      layout.kind === 'none' ? anchorsOf(node, axis, layout.dir) : undefined;
     const early =
       anchoredSize(anchors, space.content) ??
       (typeof spec === 'number' ? spec : undefined) ??
@@ -1538,9 +1594,10 @@ function createEngine(
     kids: readonly Kid[],
     axis: Axis,
     sizes: readonly number[],
+    dir: Direction,
   ): number =>
     kids.reduce((widest, kid, i) => {
-      const a = anchorsOf(kid.node, axis);
+      const a = anchorsOf(kid.node, axis, dir);
       const size = sizes[i] ?? 0;
       return Math.max(widest, a.center ? size : (a.start ?? 0) + size + (a.end ?? 0));
     }, -Infinity);
@@ -1609,7 +1666,9 @@ function createEngine(
     if (space.content !== null) {
       const content = space.content;
       const widest =
-        layout.kind === 'none' ? noneExtent(kids, axis, numbers) : Math.max(...numbers);
+        layout.kind === 'none'
+          ? noneExtent(kids, axis, numbers, layout.dir)
+          : Math.max(...numbers);
       if (widest > content + tolerance)
         warnShort('engine.contentTooBig', nodeName(frame), widest - content);
     }
@@ -1628,7 +1687,7 @@ function createEngine(
     if (layout.kind === 'none') {
       let edge = 0;
       kids.forEach((kid, i) => {
-        const a = anchorsOf(kid.node, axis);
+        const a = anchorsOf(kid.node, axis, layout.dir);
         const size = sizes[i] ?? 0;
         edge = Math.max(edge, a.center ? size : (a.start ?? 0) + size + (a.end ?? 0));
       });
@@ -1639,6 +1698,16 @@ function createEngine(
         sizes.reduce((sum, s) => sum + s, 0) + layout.gap * (sizes.length - 1) + padding
       );
     return Math.max(...sizes) + padding;
+  };
+
+  /** `start` e `end` trocados quando o eixo horizontal corre da direita para a esquerda. */
+  const logicalSide = <T extends LayoutAlign | LayoutJustify>(
+    value: T,
+    flip: boolean,
+  ): T => {
+    if (!flip) return value;
+    if (value === 'start') return 'end' as T;
+    return value === 'end' ? ('start' as T) : value;
   };
 
   /** A posição de um filho sem âncora no eixo de um quadro `none` (`start` e `stretch`: 0). */
@@ -1659,14 +1728,20 @@ function createEngine(
     const startPad = axis === 'w' ? layout.pad.left : layout.pad.top;
     const endPad = axis === 'w' ? layout.pad.right : layout.pad.bottom;
     const content = total - startPad - endPad;
+    // No eixo horizontal de um quadro `rtl`, `start`/`end` do alinhamento trocam de lado.
+    const flipSide = axis === 'w' && layout.dir === 'rtl';
     if (layout.kind === 'none') {
       return kids.map((kid, i) => {
-        const a = anchorsOf(kid.node, axis);
+        const a = anchorsOf(kid.node, axis, layout.dir);
         const size = sizes[i] ?? 0;
         if (a.center) return (content - size) / 2;
         if (a.start !== undefined) return a.start;
         if (a.end !== undefined) return content - a.end - size;
-        return alignFree(axis === 'h' ? layout.align : layout.justify, content, size);
+        return alignFree(
+          axis === 'h' ? layout.align : logicalSide(layout.justify, flipSide),
+          content,
+          size,
+        );
       });
     }
     if (layout.main === axis) {
@@ -1678,12 +1753,16 @@ function createEngine(
       return sizes.map((size) => {
         const position = cursor;
         cursor += size + layout.gap + extra;
-        return layout.reverse ? mirrorMain(position, size, startPad, content) : position;
+        // `reverse` e a direção `rtl` (no eixo horizontal) espelham; juntos se compensam.
+        return layout.reverse !== flipSide
+          ? mirrorMain(position, size, startPad, content)
+          : position;
       });
     }
+    const align = logicalSide(layout.align, flipSide);
     return sizes.map((size) => {
-      if (layout.align === 'center') return startPad + (content - size) / 2;
-      if (layout.align === 'end') return startPad + content - size;
+      if (align === 'center') return startPad + (content - size) / 2;
+      if (align === 'end') return startPad + content - size;
       return startPad;
     });
   };
@@ -1909,9 +1988,13 @@ function createEngine(
         const c = line.cross[i] ?? 0;
         const mainPos = line.mainPos[i] ?? 0;
         const crossPos = crossStart + (stacked.tops[k] ?? 0) + (line.offsets[i] ?? 0);
-        return row
-          ? { kid, x: mainPos, y: crossPos, w: m, h: c }
-          : { kid, x: crossPos, y: mainPos, w: c, h: m };
+        if (row) return { kid, x: mainPos, y: crossPos, w: m, h: c };
+        // Em `rtl` as colunas empilham da direita para a esquerda (o `align` vai junto).
+        const x =
+          layout.dir === 'rtl'
+            ? mirrorMain(crossPos, c, layout.pad.left, crossSize - padAxis(layout, cross))
+            : crossPos;
+        return { kid, x, y: mainPos, w: c, h: m };
       }),
     );
     return row
@@ -2125,12 +2208,24 @@ function createEngine(
       axis === t ? solveTracks(space, axis, others) : solveLines(space, axis, others);
     const horizontal = solve('w', null);
     const vertical = solve('h', horizontal.sizes);
+    // Em `rtl` as trilhas (ou as linhas de fluxo) correm da direita para a esquerda.
+    const xOf = (i: number): number => {
+      const x = horizontal.offsets[i] ?? 0;
+      return layout.dir === 'rtl'
+        ? mirrorMain(
+            x,
+            horizontal.sizes[i] ?? 0,
+            layout.pad.left,
+            horizontal.total - padAxis(layout, 'w'),
+          )
+        : x;
+    };
     const byKid = new Map(
       ordered.map((kid, i): [Kid, Placement] => [
         kid,
         {
           kid,
-          x: horizontal.offsets[i] ?? 0,
+          x: xOf(i),
           y: vertical.offsets[i] ?? 0,
           w: horizontal.sizes[i] ?? 0,
           h: vertical.sizes[i] ?? 0,
@@ -2486,7 +2581,9 @@ function createEngine(
     }
     const scale = (Math.abs(sx) + Math.abs(sy)) / 2 || 1;
     const stroke = strokeOf(node.stroke, 'center', scale);
-    const transform: Matrix = [sx, 0, 0, sy, x, y];
+    // `mirror` em `rtl`: espelha na horizontal dentro da caixa do nó (x + w é a borda direita).
+    const mirror = dirOf(node) === 'rtl' && bool(node.mirror, false);
+    const transform: Matrix = mirror ? [-sx, 0, 0, sy, x + w, y] : [sx, 0, 0, sy, x, y];
     return {
       ...common(node, id, x, y, vbW, vbH),
       transform,
@@ -2585,9 +2682,12 @@ function createEngine(
     const color = str(node.color, '#000000');
     const strokeWidth =
       node.strokeWidth === undefined ? undefined : Math.max(0, num(node.strokeWidth, 1));
+    // `mirror` do nó (ou, ausente, o do ícone no conjunto): em `rtl` os caminhos viram dentro da caixa.
+    const mirror = dirOf(node) === 'rtl' && bool(node.mirror, found.def.mirror === true);
+    const matrix: Matrix = mirror ? [-sx, 0, 0, sy, w, 0] : [sx, 0, 0, sy, 0, 0];
     const children = found.def.paths.map((iconPath, i) => ({
       ...iconPathNode(iconPath, `${id}/${i}`, found.viewBox, color, strokeWidth),
-      transform: [sx, 0, 0, sy, 0, 0] as Matrix,
+      transform: matrix,
     }));
     return { ...base, type: 'group', children };
   };
@@ -2687,15 +2787,8 @@ function createEngine(
   };
 
   /** O `align` da cena. O texto rico (`runs`) não justifica: a cena diz `left`, que é o que se arrumou. */
-  const styleAlign = (
-    node: TextTemplate,
-    align: FontSpec['align'],
-  ): TextStyle['align'] => {
-    const allowed: readonly TextStyle['align'][] =
-      original.formatVersion >= 4
-        ? ['left', 'center', 'right', 'justify']
-        : ['left', 'center', 'right'];
-    const value = oneOf(align, allowed, 'left');
+  const styleAlign = (node: TextTemplate): TextStyle['align'] => {
+    const value = physicalAlign(node);
     return value === 'justify' && node.runs !== undefined ? 'left' : value;
   };
 
@@ -2739,7 +2832,8 @@ function createEngine(
       lineHeight: font.lineHeight,
       letterSpacing: font.letterSpacing,
       // `justify` só existe na formatVersion 4; antes, vindo de expressão, é valor fora do conjunto.
-      align: styleAlign(node, font0.align),
+      align: styleAlign(node),
+      ...(dirOf(node) === 'rtl' ? { direction: 'rtl' as const } : {}),
       // Com `baselinePadding.top` o `verticalAlign` deixa de valer (a primeira linha de base manda).
       verticalAlign: baselineTop === undefined ? verticalAlignOf(node) : 'top',
       ...(baselineTop === undefined ? {} : { baselineTop }),

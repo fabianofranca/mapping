@@ -15,7 +15,12 @@
 import { mergeMessages, textsOf } from '../messages/collector';
 import { templateMessage, type ModelMessageTemplateCode } from '../messages';
 import type { ModelMessage } from '../modelMessage';
-import type { FieldValue, FieldValues } from './componentFormat';
+import {
+  DIRECTIONS,
+  type Direction,
+  type FieldValue,
+  type FieldValues,
+} from './componentFormat';
 import type { TextMeasurer } from './instantiate';
 import {
   LAYOUT_ANCHORS,
@@ -65,6 +70,8 @@ export interface ScreenSource {
   readonly width: ValueSource;
   readonly height: ValueSource;
   readonly background?: ValueSource;
+  /** Direção de leitura da tela (padrão `ltr`); repassada ao `layoutScreen`. Só literal. */
+  readonly direction?: Direction;
   readonly roots: readonly RootSource[];
 }
 
@@ -488,7 +495,7 @@ function parseScreen(
   const before = problems.length;
   checkKeys(
     raw,
-    ['id', 'name', 'width', 'height', 'background', 'roots'],
+    ['id', 'name', 'width', 'height', 'background', 'direction', 'roots'],
     path,
     problems,
   );
@@ -508,6 +515,7 @@ function parseScreen(
   };
   const width = required('width');
   const height = required('height');
+  const direction = parseScreenDirection(raw.direction, `${path}.direction`, problems);
   const roots: RootSource[] = [];
   if (!Array.isArray(raw.roots) || raw.roots.length === 0) {
     problem(problems, `${path}.roots`, 'esperava uma lista com pelo menos uma raiz');
@@ -526,8 +534,23 @@ function parseScreen(
     width,
     height,
     ...(background !== undefined ? { background } : {}),
+    ...(direction !== undefined ? { direction } : {}),
     roots,
   };
+}
+
+/** `screen.direction`: literal `ltr` ou `rtl` (ausente = padrão); outro valor é problema no caminho da chave. */
+function parseScreenDirection(
+  raw: unknown,
+  path: string,
+  problems: OriginProblem[],
+): Direction | undefined {
+  if (raw === undefined) return undefined;
+  if (typeof raw === 'string' && (DIRECTIONS as readonly string[]).includes(raw)) {
+    return raw as Direction;
+  }
+  codedProblem(problems, path, 'origins.expectedKind', { kinds: DIRECTIONS.join(', ') });
+  return undefined;
 }
 
 function parseBooleans(
@@ -1139,6 +1162,7 @@ function translate(
     width,
     height,
     background: text(origin.screen.background, '#FFFFFF'),
+    ...(origin.screen.direction === 'rtl' ? { direction: 'rtl' as const } : {}),
     roots,
   };
   return result(messages, { layout });

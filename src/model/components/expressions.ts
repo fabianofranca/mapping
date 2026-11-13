@@ -109,6 +109,9 @@ export function providedKey(name: string): string {
 /** O nome de campo do índice da linha de um `repeat` (`{ "$field": "$index" }`). */
 export const INDEX_FIELD = '$index';
 
+/** O campo de valores onde o motor entrega a direção da instância (`{ "$direction": … }` fora de um nó). */
+export const DIRECTION_FIELD = '$direction';
+
 /** As linhas de um campo `table` (valor que não é lista conta 0). */
 function rowCount(value: FieldValue): number {
   return Array.isArray(value) ? value.length : 0;
@@ -200,6 +203,8 @@ export function evaluateCondition(condition: Condition, values: FieldValues): bo
   }
   if ('$has' in condition) return !isEmpty(values[condition.$has]);
   if ('$not' in condition) return !evaluateCondition(condition.$not, values);
+  if ('$direction' in condition)
+    return (values[DIRECTION_FIELD] ?? 'ltr') === condition.$direction;
   if ('$and' in condition)
     return condition.$and.every((c) => evaluateCondition(c, values));
   if ('$or' in condition) return condition.$or.some((c) => evaluateCondition(c, values));
@@ -279,7 +284,15 @@ export function evaluate<T>(expr: Expr<T>, values: FieldValues, fallback: T): T 
     .join('') as T;
 }
 
-const CONDITION_KEYS = ['$eq', '$has', '$not', '$and', '$or', ...COMPARISON_OPS];
+const CONDITION_KEYS = [
+  '$eq',
+  '$has',
+  '$not',
+  '$and',
+  '$or',
+  '$direction',
+  ...COMPARISON_OPS,
+];
 
 function isCondition(value: unknown): value is Condition {
   return (

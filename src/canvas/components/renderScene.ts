@@ -337,6 +337,7 @@ class Renderer {
           textDecoration: style.decoration ?? '',
           wrap: style.wrap === 'none' ? 'none' : 'word',
           ellipsis: style.ellipsis === true,
+          ...(style.direction === 'rtl' ? { direction: 'rtl' as const } : {}),
         };
         // `wrap: none` sem `ellipsis` numa caixa fixa: o Text não leva `width` (o Konva tiraria a
         // letra inteira) e o grupo recorta por pixel na caixa; o `align` é do `x` (decisão 19).
@@ -1069,7 +1070,11 @@ export function fontStyle(weight: number, italic: boolean): string {
   return parts.length > 0 ? parts.join(' ') : 'normal';
 }
 
-/** Decompõe a matriz do nó em x, y, rotação, escala e inclinação, como o Konva espera. */
+/**
+ * Decompõe a matriz do nó em x, y, rotação, escala e inclinação, como o Konva espera. Com
+ * determinante negativo (o espelho do `mirror` em rtl) o Konva devolveria rotação 180° e `scaleY`
+ * negativo; aqui o espelho fica no `scaleX` (a mesma geometria, sem rotação espúria).
+ */
 export function decompose(m: Matrix): {
   x: number;
   y: number;
@@ -1079,7 +1084,9 @@ export function decompose(m: Matrix): {
   skewX: number;
   skewY: number;
 } {
-  return new Konva.Transform([...m]).decompose();
+  if (m[0] * m[3] - m[1] * m[2] >= 0) return new Konva.Transform([...m]).decompose();
+  const flipped = new Konva.Transform([-m[0], -m[1], m[2], m[3], m[4], m[5]]).decompose();
+  return { ...flipped, scaleX: -flipped.scaleX };
 }
 
 /** O que `roundedRectPath` usa do contexto: serve ao do Konva e ao nativo do canvas 2D. */

@@ -10,6 +10,7 @@ import {
   COMPONENT_FORMAT,
   COMPONENT_FORMAT_VERSIONS,
   COMPONENT_FORMAT_VERSION_FIDELITY,
+  DIRECTIONS,
   IMAGE_FITS_V4,
   SCREEN_ANCHORS,
   STROKE_SIDES,
@@ -120,6 +121,7 @@ const CONDITION_OPS: readonly string[] = [
   '$not',
   '$and',
   '$or',
+  '$direction',
   ...COMPARISON_OPS,
 ];
 /** Operadores que só existem em condição (`$field` é ambíguo e fica como expressão). */
@@ -129,6 +131,7 @@ const DIRECT_CONDITION_OPS: readonly string[] = [
   '$not',
   '$and',
   '$or',
+  '$direction',
   ...COMPARISON_OPS,
 ];
 const ID_PATTERN = /^[a-z0-9][a-z0-9_-]*$/;
@@ -159,6 +162,7 @@ const BASE_KEYS = [
   'cornerRadius',
   'span',
   'weight',
+  'direction',
 ];
 
 /** Um objeto com algum operador `$…`: uma expressão, não um literal. */
@@ -329,6 +333,8 @@ function checkCondition(value: unknown, path: string, out: Ctx): void {
       return;
     case '$not':
       return checkCondition(operand, at, out);
+    case '$direction':
+      return oneOf(DIRECTIONS)(operand, at, out);
     case '$gt':
     case '$gte':
     case '$lt':
@@ -599,10 +605,19 @@ function checkNodeSizes(value: Rec, path: string, nodeType: string, out: Ctx): v
 
 function checkAnchors(value: unknown, path: string, out: Ctx): void {
   if (!isRecord(value)) return add(out, path, 'esperava objeto');
-  checkKeys(value, ['left', 'right', 'top', 'bottom', 'centerX', 'centerY'], path, out);
-  for (const key of ['left', 'right', 'top', 'bottom']) {
+  checkKeys(
+    value,
+    ['left', 'right', 'start', 'end', 'top', 'bottom', 'centerX', 'centerY'],
+    path,
+    out,
+  );
+  for (const key of ['left', 'right', 'start', 'end', 'top', 'bottom']) {
     if (key in value) checkExpr(value[key], join(path, key), checkNumber, out);
   }
+  if ('start' in value && 'left' in value)
+    add(out, join(path, 'start'), 'não combina com left');
+  if ('end' in value && 'right' in value)
+    add(out, join(path, 'end'), 'não combina com right');
   for (const key of ['centerX', 'centerY']) {
     if (key in value) checkBoolExpr(value[key], join(path, key), out);
   }
@@ -736,7 +751,7 @@ function checkFont(value: unknown, path: string, out: Ctx): void {
     italic: checkBoolean,
     lineHeight: checkNumber,
     letterSpacing: checkNumber,
-    align: oneOf(['left', 'center', 'right', 'justify']),
+    align: oneOf(['left', 'center', 'right', 'justify', 'start', 'end']),
     verticalAlign: oneOf(['top', 'middle', 'bottom', 'cap-middle']),
     decoration: oneOf(['none', 'underline', 'line-through']),
     wrap: oneOf(['word', 'none']),
@@ -1092,7 +1107,7 @@ function checkNode(
     rect: [],
     ellipse: [],
     text: ['text', 'runs', 'font', 'color', 'baselinePadding'],
-    path: ['d', 'viewBox', 'fillRule'],
+    path: ['d', 'viewBox', 'fillRule', 'mirror'],
     slot: ['label', 'layout', 'clip', 'provide'],
     repeat: [
       'field',
@@ -1108,7 +1123,7 @@ function checkNode(
       'template',
     ],
     image: ['src', 'fit'],
-    icon: ['name', 'color', 'strokeWidth'],
+    icon: ['name', 'color', 'strokeWidth', 'mirror'],
   };
   // children/layout em nó que não é quadro têm mensagem própria, em vez de "chave desconhecida"
   for (const key of ['children', 'layout']) {
@@ -1131,6 +1146,8 @@ function checkNode(
     checkString(value.name, join(path, 'name'), out);
   if ('visible' in value) checkBoolExpr(value.visible, join(path, 'visible'), out);
   if ('opacity' in value) checkExpr(value.opacity, join(path, 'opacity'), checkUnit, out);
+  if ('direction' in value && type !== 'repeat')
+    oneOf(DIRECTIONS)(value.direction, join(path, 'direction'), out);
   if ('rotation' in value)
     checkExpr(value.rotation, join(path, 'rotation'), checkNumber, out);
   checkNodeSizes(value, path, type, out);
@@ -1166,6 +1183,7 @@ function checkNode(
       else checkViewBox(value.viewBox, join(path, 'viewBox'), out);
       if ('fillRule' in value)
         oneOf(['nonzero', 'evenodd'])(value.fillRule, join(path, 'fillRule'), out);
+      if ('mirror' in value) checkBoolExpr(value.mirror, join(path, 'mirror'), out);
       return;
     case 'slot':
       if ('label' in value) checkExpr(value.label, join(path, 'label'), checkString, out);
@@ -1192,6 +1210,7 @@ function checkIconNode(value: Rec, path: string, out: Ctx): void {
   if ('color' in value) checkExpr(value.color, join(path, 'color'), checkColor, out);
   if ('strokeWidth' in value)
     checkExpr(value.strokeWidth, join(path, 'strokeWidth'), checkNonNegative, out);
+  if ('mirror' in value) checkBoolExpr(value.mirror, join(path, 'mirror'), out);
 }
 
 /**
@@ -1326,6 +1345,9 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
   ['runs'],
   ['rotation'],
   ['provide'],
+  ['mirror'],
+  ['anchors', 'start'],
+  ['anchors', 'end'],
 ];
 
 /** Chaves que valem em qualquer versão como literal, mas só com expressão na formatVersion 4. */
@@ -1349,6 +1371,8 @@ const V4_EXPR_KEYS: readonly (readonly string[])[] = [
 const V4_LITERAL_VALUES: readonly (readonly [readonly string[], string])[] = [
   [['font', 'verticalAlign'], 'cap-middle'],
   [['font', 'align'], 'justify'],
+  [['font', 'align'], 'start'],
+  [['font', 'align'], 'end'],
   ...IMAGE_FITS_V4.map((fit): readonly [readonly string[], string] => [['fit'], fit]),
   [['layout', 'justify'], 'space-around'],
   [['layout', 'justify'], 'space-evenly'],
@@ -1380,7 +1404,7 @@ function noneAlignVersionIssues(version: unknown, template: unknown): ComponentI
   return out;
 }
 
-/** As chaves da v4 de um nó só: `align`/`justify` do layout `none` e o `clip` literal do slot. */
+/** As chaves da v4 de um nó só: `align`/`justify` do layout `none`, o `clip` literal do slot e o `direction`. */
 function noneAlignNodeIssues(node: Rec, at: string, out: ComponentIssue[]): void {
   const layout = node.layout;
   if (isRecord(layout) && layout.type === 'none')
@@ -1390,6 +1414,9 @@ function noneAlignNodeIssues(node: Rec, at: string, out: ComponentIssue[]): void
     addIssue(out, join(at, 'clip'), V4_ONLY_MESSAGE);
   if (node.type === 'repeat' && 'layout' in node)
     addIssue(out, join(at, 'layout'), V4_ONLY_MESSAGE);
+  // `direction` ltr/rtl é da v4; no `repeat` a chave é o empilhamento das linhas, de toda versão.
+  if (node.type !== 'repeat' && 'direction' in node)
+    addIssue(out, join(at, 'direction'), V4_ONLY_MESSAGE);
 }
 
 /** `shadow` como lista (v4) numa versão anterior à 4: `só é permitido com formatVersion 4`, no caminho de `shadow`. */
@@ -1495,6 +1522,7 @@ function isV4OnlyOp(key: string): boolean {
     key === '$size' ||
     key === '$lines' ||
     key === '$provided' ||
+    key === '$direction' ||
     (COMPARISON_OPS as readonly string[]).includes(key)
   );
 }

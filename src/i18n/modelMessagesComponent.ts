@@ -119,6 +119,8 @@ export const componentEnUS: {
   'model.component.trackOnlyGrid': 'only valid in a grid layout',
   'model.component.notInGrid': 'not valid in a grid layout',
   'model.component.spanOnlyInGrid': 'span: only valid on a child of a grid layout',
+  'model.component.anchorStartLeft': 'does not combine with left',
+  'model.component.anchorEndRight': 'does not combine with right',
   'model.component.weightOnlyFill':
     'weight: only valid on a fill child on the main axis of a row or column',
   'model.component.repeatLayoutConflict':
@@ -169,8 +171,9 @@ export const iconsFileEnUS: {
   'model.iconsFile.expectedPathData': 'expected the path data (text)',
   'model.iconsFile.expectedPaths': 'expected a non-empty list of paths',
   'model.iconsFile.formatInvalid': 'must be "{format}"',
-  'model.iconsFile.formatVersionInvalid':
-    'must be {version} (the only version of the format)',
+  'model.iconsFile.formatVersionInvalid': 'must be {versions}',
+  'model.iconsFile.v2Only': 'only allowed with formatVersion 2',
+  'model.iconsFile.expectedBoolean': 'expected true or false',
   'model.iconsFile.required': 'required field',
   'model.iconsFile.expectedIcons': 'expected an object with at least one icon',
   'model.iconsFile.nameInvalid': 'invalid name; use [a-z0-9][a-z0-9-_]*',
