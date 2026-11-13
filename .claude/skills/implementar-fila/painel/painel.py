@@ -1097,8 +1097,8 @@ def covers(a, b):
 def by_section(path):
     """O arquivo se compara por âncora (seção `##`, ou roteiro no docs/TESTING.md)? Todo `.md` sob `docs/`,
     todo `.md` da raiz (sem `/`) e os SKILL.md; os outros arquivos, inclusive `.md` de outras pastas, contam inteiros."""
-    if not path.endswith(".md"):
-        return False
+    if not path.endswith(".md") or any(c in path for c in "*?"):
+        return False  # glob (`docs/*.md`) cobre tudo o que casa, com ou sem âncora
     return path.startswith("docs/") or "/" not in path or fnmatch.fnmatchcase(path, SECTION_GLOB)
 
 

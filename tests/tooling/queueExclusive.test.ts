@@ -375,6 +375,8 @@ describe('painel.py — todo .md de docs/ e da raiz por seção (TS1, decisões 
       '#2 arquivo docs/FLOW.md#a com #1',
     );
     expect(motivo('*.md', 'CLAUDE.md#a')).toBe('#2 arquivo CLAUDE.md#a com #1');
+    expect(motivo('docs/*.md#a', 'docs/*.md#b')).toBe('#2 arquivo docs/*.md#b com #1');
+    expect(motivo('*.md#a', '*.md#b')).toBe('#2 arquivo *.md#b com #1');
   });
 
   it('fora de docs/ e da raiz, ou não .md: arquivo inteiro (âncoras diferentes conflitam)', () => {
