@@ -1,4 +1,4 @@
-# Teto do dist/index.html que sempre sobe — [Não lançado] (épico `epic/teto-sempre-sobe`, PR #0, MCP sem mudança, schema v19)
+# Teto do dist/index.html que sempre sobe — 2026-11-13 (épico `epic/teto-sempre-sobe`, PR #1821, MCP sem mudança, schema v19)
 
 ## Alterado
 
