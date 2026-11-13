@@ -103,4 +103,20 @@ describe('origem: direction chega ao layoutScreen', () => {
     expect(x(ltr)).toBe(0);
     expect(x(rtl)).toBe(300);
   });
+
+  it('options.direction vence a da origem (e vale em ltr explícito)', () => {
+    const rtlOrigin = library('rtl');
+    const forced = translateSource(rtlOrigin, DOC, { direction: 'ltr' }).layout;
+    expect(forced?.direction).toBeUndefined();
+    expect(translateSource(library(), DOC, { direction: 'rtl' }).layout?.direction).toBe(
+      'rtl',
+    );
+    const x = (d?: 'ltr' | 'rtl') =>
+      screenFromSource(rtlOrigin, DOC, {
+        measure: approximateMeasurer,
+        ...(d ? { direction: d } : {}),
+      }).screen?.instances[0]?.box.x;
+    expect(x()).toBe(300);
+    expect(x('ltr')).toBe(0);
+  });
 });

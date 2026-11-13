@@ -115,6 +115,16 @@ body {
   cursor: pointer;
 }
 
+.react-lab select {
+  height: var(--demo-control-height);
+  padding: 0 var(--demo-space-1);
+  border-radius: var(--demo-control-radius);
+  border: 1px solid var(--demo-color-border-control);
+  background: var(--demo-color-surface);
+  color: inherit;
+  font: inherit;
+}
+
 .react-lab button:hover {
   background: var(--demo-color-hover);
 }

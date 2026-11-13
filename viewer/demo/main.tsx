@@ -164,6 +164,7 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
   const [click, setClick] = useState<Click | undefined>();
   const [selection, setSelection] = useState<readonly string[]>([]);
   const [canvasSelect, setCanvasSelect] = useState(true);
+  const [direction, setDirection] = useState<'ltr' | 'rtl'>('ltr');
   /** O JSON do SDUI entregue ao visualizador (só vale no conjunto SDUI). */
   const [source, setSource] = useState<unknown>(settingsSdui);
   const [sourceWarnings, setSourceWarnings] = useState<readonly string[]>([]);
@@ -312,6 +313,16 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
             />{' '}
             Seleção pelo canvas
           </label>
+          <label className="toggle">
+            Direção{' '}
+            <select
+              value={direction}
+              onChange={(e) => setDirection(e.target.value === 'rtl' ? 'rtl' : 'ltr')}
+            >
+              <option value="ltr">Esquerda para a direita (ltr)</option>
+              <option value="rtl">Direita para a esquerda (rtl)</option>
+            </select>
+          </label>
         </div>
         <textarea
           aria-label={dataset === 'sdui' ? 'SDUI (JSON)' : 'Tela (JSON)'}
@@ -332,6 +343,7 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
               library={library}
               screen={screen}
               source={dataset === 'sdui' ? source : undefined}
+              direction={direction}
               onSource={onSource}
               selection={selection}
               hover={hover}

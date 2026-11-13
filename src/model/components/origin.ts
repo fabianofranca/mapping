@@ -175,6 +175,8 @@ export interface SourceResult {
 export interface SourceOptions {
   /** Sistema da origem; ausente = a primeira origem da especialização. */
   readonly system?: string;
+  /** Direção de leitura da tela; vence a `screen.direction` da origem (ausente = a da origem, senão `ltr`). */
+  readonly direction?: Direction;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -534,9 +536,13 @@ function parseScreen(
     width,
     height,
     ...(background !== undefined ? { background } : {}),
-    ...(direction !== undefined ? { direction } : {}),
+    ...directionKey(direction),
     roots,
   };
+}
+
+function directionKey(direction: Direction | undefined): { direction?: Direction } {
+  return direction === undefined ? {} : { direction };
 }
 
 /** `screen.direction`: literal `ltr` ou `rtl` (ausente = padrão); outro valor é problema no caminho da chave. */
@@ -1162,7 +1168,9 @@ function translate(
     width,
     height,
     background: text(origin.screen.background, '#FFFFFF'),
-    ...(origin.screen.direction === 'rtl' ? { direction: 'rtl' as const } : {}),
+    ...((options.direction ?? origin.screen.direction) === 'rtl'
+      ? { direction: 'rtl' as const }
+      : {}),
     roots,
   };
   return result(messages, { layout });

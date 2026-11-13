@@ -40,7 +40,8 @@ describe('layoutChildren com direção', () => {
 
   it('justify start/end são lógicos; center não muda', () => {
     expect(xs({ justify: 'end' }, 'rtl')).toEqual([50, 30, 0]);
-    expect(xs({ justify: 'center' }, 'rtl')).toEqual([50, 30, 0].map((x) => x + 20 - 20 + 20).map((_, i) => [70, 50, 20][i]));
+    expect(xs({ justify: 'center' }, 'ltr')).toEqual([20, 30, 50]);
+    expect(xs({ justify: 'center' }, 'rtl')).toEqual([70, 50, 20]);
   });
 
   it('reverse compõe com rtl: volta à ordem física de ltr', () => {
@@ -60,27 +61,34 @@ describe('layoutChildren com direção', () => {
       layoutChildren(slot, layout({ type: 'column', align }), kids, direction).map(
         (b) => [b.x, b.width],
       );
-    expect(col('start', 'rtl')).toEqual([[90, 10], [80, 20], [70, 30]]);
-    expect(col('end', 'rtl')).toEqual([[0, 10], [0, 20], [0, 30]]);
+    expect(col('start', 'rtl')).toEqual([
+      [90, 10],
+      [80, 20],
+      [70, 30],
+    ]);
+    expect(col('end', 'rtl')).toEqual([
+      [0, 10],
+      [0, 20],
+      [0, 30],
+    ]);
     expect(col('stretch', 'rtl').map(([, w]) => w)).toEqual([100, 100, 100]);
   });
 
   it('wrap: cada linha espelha', () => {
     const wrapped = layout({ wrap: 'wrap' });
-    const out = layoutChildren(
-      { ...slot, width: 40 },
-      wrapped,
-      kids,
-      'rtl',
-    );
+    const out = layoutChildren({ ...slot, width: 40 }, wrapped, kids, 'rtl');
     // linhas: [10,20] e [30]
-    expect(out.map((b) => [b.x, b.y])).toEqual([[30, 0], [10, 0], [10, 10]]);
+    expect(out.map((b) => [b.x, b.y])).toEqual([
+      [30, 0],
+      [10, 0],
+      [10, 10],
+    ]);
   });
 
   it('grade: as colunas espelham', () => {
     const grid = layout({
       type: 'grid',
-      grid: { columns: 2, rows: undefined, direction: 'row' },
+      grid: { count: 2, orientation: 'vertical' },
     } as unknown as Partial<ResolvedSlotLayout>);
     const ltr = layoutChildren(slot, grid, kids).map((b) => b.x);
     const rtl = layoutChildren(slot, grid, kids, 'rtl').map((b) => b.x);
@@ -104,8 +112,20 @@ describe('dropIndex com direção', () => {
     background: '#fff',
     instances: [
       { id: 'p', typeId: 't', values: {}, box: slot },
-      { id: 'a', typeId: 't', values: {}, parentId: 'p', box: { x: 90, y: 0, width: 10, height: 10 } },
-      { id: 'b', typeId: 't', values: {}, parentId: 'p', box: { x: 60, y: 0, width: 20, height: 10 } },
+      {
+        id: 'a',
+        typeId: 't',
+        values: {},
+        parentId: 'p',
+        box: { x: 90, y: 0, width: 10, height: 10 },
+      },
+      {
+        id: 'b',
+        typeId: 't',
+        values: {},
+        parentId: 'p',
+        box: { x: 60, y: 0, width: 20, height: 10 },
+      },
     ],
   } as unknown as Screen;
 
@@ -119,5 +139,88 @@ describe('dropIndex com direção', () => {
     expect(
       dropIndex(screen, 'p', layout({ reverse: true }), { x: 5, y: 0 }, undefined, 'rtl'),
     ).toBe(0);
+  });
+});
+
+describe('arrange com direção', () => {
+  it('repassa a direção: rtl espelha a row na caixa do container; o padrão é ltr', async () => {
+    // Reusa o cenário de arrange.test.ts em miniatura: container row-start com 3 filhas.
+    const { arrange } = await import('../../../src/model/components/arrange');
+    const { approximateMeasurer } =
+      await import('../../../src/model/components/instantiate');
+    const { loadLibrary } = await import('../../../src/model/components/library');
+    const comp = (id: string, template: unknown) =>
+      JSON.stringify({
+        format: 'mapping-component',
+        formatVersion: 1,
+        id,
+        name: id,
+        size: { width: 100, height: 40 },
+        template,
+      });
+    const spec = {
+      format: 'mapping-spec',
+      formatVersion: 4,
+      id: 'm',
+      name: 'M',
+      version: 1,
+      layers: [
+        {
+          id: 'l',
+          name: 'L',
+          annotationTypes: [
+            { id: 'row', name: 'Row', component: 'components/row.json', fields: [] },
+            { id: 'leaf', name: 'Leaf', component: 'components/leaf.json', fields: [] },
+          ],
+        },
+      ],
+    };
+    const library = loadLibrary([
+      { path: 'spec.json', text: JSON.stringify(spec) },
+      {
+        path: 'components/row.json',
+        text: comp('row', {
+          type: 'frame',
+          name: 'row',
+          layout: { type: 'none' },
+          children: [{ type: 'slot', name: 's', layout: { type: 'row' } }],
+        }),
+      },
+      {
+        path: 'components/leaf.json',
+        text: comp('leaf', { type: 'frame', name: 'leaf', layout: { type: 'none' } }),
+      },
+    ]);
+    const leaf = (id: string, width: number) => ({
+      id,
+      typeId: 'leaf',
+      values: {},
+      parentId: 'p',
+      box: { x: 0, y: 0, width, height: 10 },
+    });
+    const screen = {
+      id: 's',
+      name: 'S',
+      width: 400,
+      height: 100,
+      background: '#fff',
+      instances: [
+        {
+          id: 'p',
+          typeId: 'row',
+          values: {},
+          box: { x: 0, y: 0, width: 200, height: 40 },
+        },
+        leaf('a', 20),
+        leaf('b', 30),
+      ],
+    } as unknown as Screen;
+    const xsOf = (s: Screen) => s.instances.filter((i) => i.parentId).map((i) => i.box.x);
+    expect(library.problems).toEqual([]);
+    expect(xsOf(arrange(screen, library, approximateMeasurer))).toEqual([0, 20]);
+    expect(xsOf(arrange(screen, library, approximateMeasurer, 'ltr'))).toEqual([0, 20]);
+    expect(xsOf(arrange(screen, library, approximateMeasurer, 'rtl'))).toEqual([
+      180, 150,
+    ]);
   });
 });
