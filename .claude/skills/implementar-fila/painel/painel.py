@@ -1639,28 +1639,34 @@ def cmd_slug(a):
     print(slugify(a.title))
 
 
+def invalid_lines(cites):
+    """As linhas `inválida: <citação> — <motivo>` das citações que não valem (a lista vazia se todas valem)."""
+    out = []
+    for x in cites:
+        why = toca_invalid(x)
+        if why:
+            out.append(f"inválida: {x} — {why}")
+    return out
+
+
 def cmd_toca(a):
     """Confere uma lista de citações do `toca=` (decisão 7 da #1812): `ok` (0) ou `inválida: … — <motivo>` (1)."""
-    bad = [(x, toca_invalid(x)) for x in norm_toca(a.cites)]
-    bad = [(x, why) for x, why in bad if why]
-    for x, why in bad:
-        print(f"inválida: {x} — {why}")
+    bad = invalid_lines(norm_toca(a.cites))
     if bad:
+        print("\n".join(bad))
         return 1
     print("ok")
     return 0
 
 
 def conflict_others(d):
-    """[(#N, status, citações)] da pasta que um `toca` novo precisa respeitar: as começadas e não mescladas
-    (`is_started`) e as que o `slots_plan` faz começar agora. Só lê."""
+    """[(#N, status, citações)] da pasta que um `toca` novo precisa respeitar, como o `slots_plan` as lê: as começadas
+    (`is_started`) e as que ele faz começar agora. Só lê."""
     q, m = load(d, "queue"), load(d, "meta")
-    meta = m[0] if m else {}
-    merged = set(meta.get("merged", []))
-    starting = slots_plan(q, meta)[1]
+    starting = slots_plan(q, m[0] if m else {})[1]
     out = []
     for r in q:
-        if is_started(r) and r["issue"] not in merged:
+        if is_started(r):
             out.append((r["issue"], r["status"], toca_list(r.get("plan", ""))))
         elif r["issue"] in starting:
             out.append((r["issue"], "começa agora", toca_list(r.get("plan", ""))))
@@ -1675,16 +1681,6 @@ def parse_com(items):
         if not sep:
             raise Erro(f"--com '{item}' inválido (use \"#N=<toca>\")")
         out.append((norm_issue(num), norm_toca(cites)))
-    return out
-
-
-def invalid_lines(cites):
-    """As linhas `inválida: <citação> — <motivo>` das citações que não valem (a lista vazia se todas valem)."""
-    out = []
-    for x in cites:
-        why = toca_invalid(x)
-        if why:
-            out.append(f"inválida: {x} — {why}")
     return out
 
 
@@ -1707,8 +1703,7 @@ def cmd_conflito(a):
         print("\n".join(bad))
         return 2
     others = conflict_others(a.pasta) if a.pasta else []
-    known = {n for n, _, _ in others}
-    others += [(n, "fora do painel", cites) for n, cites in extra if n not in known]
+    others += [(n, "fora do painel", cites) for n, cites in extra]
     found = conflict_lines(mine, others)
     print("\n".join(found) if found else "livre")
     return 1 if found else 0

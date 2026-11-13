@@ -100,13 +100,29 @@ describe('painel.py conflito (VR1, #1864)', () => {
   );
 
   it(
-    'aguardando com started conta; a etapa mesclada (meta.merged) não',
+    'aguardando com started conta; a linha em meta.merged ainda começada segue o show (conta)',
     () => {
       etapa('#5', 'src/e.ts', 'started=2026-11-13T09:00:00Z');
       etapa('#6', 'src/f.ts', 'status=em andamento', 'started=2026-11-13T09:00:00Z');
       run('merged', dir, '#6');
+      etapa('#8', 'src/f.ts');
+      expect(run('show', dir)).toContain('#8 arquivo src/f.ts com #6');
       const r = conflito('src/e.ts, src/f.ts', '--pasta', dir);
-      expect(r.stdout).toBe('conflito: src/e.ts com #5 (aguardando)\n');
+      expect(r.stdout.trim().split('\n')).toEqual([
+        'conflito: src/e.ts com #5 (aguardando)',
+        'conflito: src/f.ts com #6 (em andamento)',
+      ]);
+      expect(r.status).toBe(1);
+    },
+    TEMPO_SUBPROCESSOS,
+  );
+
+  it(
+    'o --com de uma etapa que também está na pasta é comparado, não descartado',
+    () => {
+      etapa('#7', 'src/a.ts', 'status=em andamento', 'started=2026-11-13T09:00:00Z');
+      const r = conflito('src/b.ts', '--pasta', dir, '--com', '#7=src/b.ts');
+      expect(r.stdout).toBe('conflito: src/b.ts com #7 (fora do painel)\n');
       expect(r.status).toBe(1);
     },
     TEMPO_SUBPROCESSOS,
