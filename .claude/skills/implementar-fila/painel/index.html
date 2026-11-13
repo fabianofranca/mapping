@@ -444,6 +444,143 @@
       min-height: 44px;
       cursor: pointer;
     }
+    #mp h3 {
+      font-size: var(--cds-font-size-body);
+      font-weight: var(--cds-font-weight-medium);
+      margin: var(--cds-gap-md) 0 4px;
+    }
+    #mp .somas {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+      gap: var(--cds-gap-md);
+    }
+    #mp .soma .val {
+      font-family: var(--font-anthropic-serif);
+      font-size: 1.25rem;
+      font-variant-numeric: tabular-nums;
+      overflow-wrap: anywhere;
+    }
+    #mp .dias {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(3rem, 1fr);
+      gap: 8px;
+      align-items: end;
+      border-bottom: 1px solid var(--color-border-line);
+    }
+    #mp .col,
+    #mp .hb {
+      background: none;
+      border: 0;
+      padding: 0;
+      margin: 0;
+      font: inherit;
+      color: inherit;
+      text-align: left;
+      cursor: pointer;
+      min-width: 0;
+      min-height: 44px;
+    }
+    #mp .col:focus-visible,
+    #mp .hb:focus-visible {
+      outline: 2px solid var(--color-fg-muted);
+      outline-offset: 2px;
+    }
+    #mp .col {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: stretch;
+    }
+    #mp .col .zona {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      height: 8rem;
+    }
+    #mp .col .v {
+      text-align: center;
+      font-size: var(--cds-font-size-caption);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    #mp .col .rot {
+      text-align: center;
+      font-size: var(--cds-font-size-caption);
+      color: var(--color-fg-muted);
+    }
+    #mp .pilha {
+      display: flex;
+      flex-direction: column-reverse;
+      border-radius: 4px 4px 0 0;
+      overflow: hidden;
+    }
+    #mp .pilha i {
+      display: block;
+      width: 100%;
+    }
+    #mp .cor-0 {
+      background: var(--color-ok);
+    }
+    #mp .cor-1 {
+      background: var(--color-warn);
+    }
+    #mp .cor-2 {
+      background: var(--color-bad);
+    }
+    #mp .cor-3,
+    #mp .cor-neutra {
+      background: var(--color-fg-muted);
+    }
+    #mp .cor-dash {
+      background: var(--cor);
+    }
+    #mp .amostra.k {
+      width: 10px;
+      height: 10px;
+      border: 0;
+      border-radius: 2px;
+    }
+    #mp .duas {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+      gap: var(--cds-gap-md);
+      align-items: start;
+    }
+    #mp .hbars {
+      display: grid;
+    }
+    #mp .hb {
+      display: grid;
+      grid-template-columns: minmax(3.5rem, 26%) minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      font-size: var(--cds-font-size-caption);
+    }
+    #mp .hb .n {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    #mp .hb .trilha {
+      display: block;
+      height: 10px;
+      border-radius: 5px;
+      background: var(--color-border-line);
+      overflow: hidden;
+    }
+    #mp .hb .trilha i {
+      display: block;
+      height: 100%;
+      border-radius: 5px;
+    }
+    #mp .hb .v {
+      color: var(--color-fg-muted);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      text-align: right;
+    }
     @media (max-width: 560px) {
       #mp .onda {
         grid-template-columns: 64px minmax(0, 1fr);
@@ -509,22 +646,57 @@
       <p class="sub" id="mp-concluidas-resumo">—</p>
       <div id="mp-concluidas-lista">—</div>
     </div>
-    <div class="card">
+    <div class="card" id="mp-custo-card">
       <h2>Custo da fila</h2>
-      <p class="sub" id="mp-custo-total">—</p>
-      <div class="scroll">
-        <table id="mp-custo">
-          <thead>
-            <tr>
-              <th>Grupo</th>
-              <th>Sessões</th>
-              <th>US$</th>
-              <th>Mediana US$</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+      <div class="somas">
+        <div class="soma">
+          <div class="lab">Total</div>
+          <div class="val" id="mp-custo-total">—</div>
+        </div>
+        <div class="soma">
+          <div class="lab">Por etapa concluída</div>
+          <div class="val" id="mp-custo-etapa">—</div>
+        </div>
+        <div class="soma">
+          <div class="lab">Por hora de fila</div>
+          <div class="val" id="mp-custo-hora">—</div>
+        </div>
       </div>
+      <h3>Por dia (horário de Brasília)</h3>
+      <div class="scroll">
+        <div class="dias" id="mp-custo-dias" data-source="custoDia">—</div>
+      </div>
+      <ul class="legenda" id="mp-custo-chaves"></ul>
+      <p class="ajuda" id="mp-custo-semdata" hidden></p>
+      <div class="duas">
+        <div>
+          <h3>Por tipo de sessão</h3>
+          <div class="hbars" id="mp-custo-tipo" data-source="custo">—</div>
+        </div>
+        <div>
+          <h3>Etapas mais caras</h3>
+          <div class="hbars" id="mp-custo-etapas" data-source="custo">—</div>
+        </div>
+      </div>
+      <p class="ajuda" id="mp-custo-dica" aria-live="polite">
+        Toque numa barra ou coluna para ver o valor.
+      </p>
+      <details id="mp-custo-tabela">
+        <summary>Ver a tabela de todas as etapas e tipos</summary>
+        <div class="scroll">
+          <table id="mp-custo">
+            <thead>
+              <tr>
+                <th>Grupo</th>
+                <th>Sessões</th>
+                <th>US$</th>
+                <th>Mediana US$</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </details>
     </div>
     <div class="card">
       <h2>Pedidos do supervisor</h2>
@@ -583,6 +755,16 @@
           ];
         },
       });
+      // Os tipos de sessão do painel.py, na ordem do `custo`, das barras e das cores.
+      const KINDS = [
+        'fase',
+        'correção',
+        'testador',
+        'reteste',
+        'fechamento',
+        'coordenador',
+        'supervisor',
+      ];
       // Custo da fila: meta.sessions (com `cost`), por tipo e por etapa; sem ele o card mostra "—".
       dash.calc('custo', {
         inputs: ['meta'],
@@ -595,15 +777,6 @@
             const h = o.length >> 1;
             return o.length % 2 ? o[h] : (o[h - 1] + o[h]) / 2;
           };
-          const KINDS = [
-            'fase',
-            'correção',
-            'testador',
-            'reteste',
-            'fechamento',
-            'coordenador',
-            'supervisor',
-          ];
           const group = (kind, key) => {
             const m = {};
             es.forEach((e) => {
@@ -634,6 +807,75 @@
           ]
             .concat(group('tipo', 'kind'))
             .concat(group('etapa', 'issue'));
+        },
+      });
+      // Somas do card "Custo da fila" (etapa #1840): o total, as etapas concluídas e a janela da fila
+      // (`inicio` e `fim` em ms; `fim` nulo quer dizer "até agora"); a página divide por hora no tick.
+      dash.calc('custoResumo', {
+        inputs: ['meta', 'queue'],
+        title: 'Somas do custo da fila',
+        description:
+          'Total e sessões, custo por etapa concluída e a janela de tempo da fila (para o custo por hora).',
+        fn: (meta, queue) => {
+          const m = meta[0] || {};
+          const es = (asList(m.sessions) || []).filter((e) => e && e.cost);
+          const usd = es.reduce((a, e) => a + (+e.cost.usd || 0), 0);
+          const rows = (queue || []).filter((r) => r && typeof r === 'object');
+          const done = rows.filter((r) => r.status === 'concluída');
+          const rs = Date.parse(m.runStart);
+          let inicio = rs > 0 ? rs : null;
+          let fim = null;
+          if (rows.length && done.length === rows.length) {
+            fim = Math.max(...done.map((r) => Date.parse(r.ended)));
+            if (!Number.isFinite(fim)) {
+              fim = null;
+              inicio = null;
+            }
+          }
+          return [
+            {
+              usd,
+              sessoes: es.length,
+              concluidas: done.length,
+              porEtapa: es.length && done.length ? usd / done.length : null,
+              inicio,
+              fim,
+            },
+          ];
+        },
+      });
+      // Custo por dia de Brasília e tipo de sessão: o dia é o do `created` (sem ele, o `cost.at`, como o
+      // `costed` do painel.py); a sessão sem nenhum dos dois sai com `dia` nulo, fora do gráfico.
+      dash.calc('custoDia', {
+        inputs: ['meta'],
+        title: 'Custo por dia e tipo de sessão',
+        description:
+          'Custo das sessões por dia (horário de Brasília) e por tipo de sessão.',
+        fn: (meta) => {
+          const es = (asList((meta[0] || {}).sessions) || []).filter((e) => e && e.cost);
+          const m = new Map();
+          es.forEach((e) => {
+            let ms = Date.parse(e.created);
+            if (!Number.isFinite(ms)) ms = Date.parse(e.cost.at);
+            const dia = Number.isFinite(ms)
+              ? new Date(ms).toLocaleDateString('en-CA', {
+                  timeZone: 'America/Sao_Paulo',
+                })
+              : null;
+            const tipo = e.kind || '—';
+            const key = dia + '|' + tipo;
+            if (!m.has(key)) m.set(key, { dia, tipo, usd: 0, sessoes: 0 });
+            const r = m.get(key);
+            r.usd += +e.cost.usd || 0;
+            r.sessoes += 1;
+          });
+          const pos = (k) => KINDS.indexOf(k) + 1 || 99;
+          return Array.from(m.values()).sort(
+            (a, b) =>
+              (a.dia === null) - (b.dia === null) ||
+              String(a.dia).localeCompare(String(b.dia)) ||
+              pos(a.tipo) - pos(b.tipo),
+          );
         },
       });
       const pad = (n) => String(n).padStart(2, '0');
@@ -1095,6 +1337,209 @@
         }
         return usd;
       }
+      // Custo da fila (etapa #1840, PA2): somas, coluna por dia, barras por tipo e das etapas mais caras.
+      // As cores dos tipos vêm de dash.colors (lista ou função); sem elas, as cores de estado em rodízio.
+      const money = (x) => 'US$ ' + brl(x);
+      const sessoesTxt = (k) => k + (k === 1 ? ' sessão' : ' sessões');
+      const DICA_PADRAO = 'Toque numa barra ou coluna para ver o valor.';
+      let resumo = null;
+      let dica = '';
+      function seriesPalette() {
+        const c = dash.colors;
+        const pick = (v) => (typeof v === 'string' && v ? v : null);
+        if (Array.isArray(c) && c.length)
+          return KINDS.map((k, i) => pick(c[i % c.length]));
+        if (typeof c === 'function') {
+          return KINDS.map((k) => {
+            try {
+              return pick(c(k));
+            } catch (e) {
+              return null;
+            }
+          });
+        }
+        return KINDS.map(() => null);
+      }
+      function paintKind(node, tipo, pal) {
+        const i = KINDS.indexOf(tipo);
+        const color = i >= 0 ? pal[i] : null;
+        if (color) {
+          node.classList.add('cor-dash');
+          node.style.setProperty('--cor', color);
+        } else {
+          node.classList.add('cor-' + ((i < 0 ? KINDS.length : i) % 4));
+        }
+      }
+      function showDica(txt) {
+        dica = txt;
+        byId('mp-custo-dica').textContent = txt || DICA_PADRAO;
+      }
+      function horaText() {
+        if (!resumo || !resumo.sessoes || resumo.inicio == null) return '—';
+        const ms = (resumo.fim == null ? Date.now() : resumo.fim) - resumo.inicio;
+        return ms >= 60000 ? money(resumo.usd / (ms / 3600000)) : '—';
+      }
+      function renderSomas() {
+        byId('mp-custo-etapa').textContent =
+          resumo && resumo.porEtapa != null ? money(finite(resumo.porEtapa)) : '—';
+        byId('mp-custo-hora').textContent = horaText();
+      }
+      function hbar(nome, share, valor, titulo, dicaTxt, tipo, pal) {
+        const b = el('button', 'hb');
+        b.type = 'button';
+        b.title = titulo;
+        const fill = el('i');
+        fill.style.width = share + '%';
+        if (tipo) {
+          fill.dataset.tipo = tipo;
+          paintKind(fill, tipo, pal);
+        } else {
+          fill.className = 'cor-neutra';
+        }
+        const trilha = el('span', 'trilha');
+        trilha.append(fill);
+        b.append(el('span', 'n', nome), trilha, el('span', 'v', valor));
+        b.addEventListener('click', () => showDica(dicaTxt));
+        return b;
+      }
+      function fillBars(id, itens, pal) {
+        const host = byId(id);
+        host.replaceChildren();
+        if (!itens.length) {
+          host.textContent = '—';
+          return;
+        }
+        const max = Math.max(...itens.map((i) => i.usd));
+        for (const i of itens) {
+          const share = max > 0 ? (100 * i.usd) / max : 0;
+          host.append(hbar(i.nome, share, i.valor, i.titulo, i.titulo, i.tipo, pal));
+        }
+      }
+      function renderTipos(crows, pal) {
+        const itens = crows
+          .filter((r) => r && r.kind === 'tipo')
+          .map((r) => {
+            const valor = money(finite(r.usd)) + ' · ' + sessoesTxt(finite(r.count));
+            return {
+              nome: asText(r.name),
+              usd: finite(r.usd),
+              valor,
+              titulo: asText(r.name) + ': ' + valor,
+              tipo: asText(r.name),
+            };
+          });
+        fillBars('mp-custo-tipo', itens, pal);
+      }
+      function renderEtapas(crows, pal) {
+        const itens = crows
+          .filter((r) => r && r.kind === 'etapa' && r.name !== '—')
+          .sort(
+            (a, b) =>
+              finite(b.usd) - finite(a.usd) ||
+              asText(a.name).localeCompare(asText(b.name), 'pt-BR', { numeric: true }),
+          )
+          .slice(0, 8)
+          .map((r) => {
+            const valor = money(finite(r.usd));
+            return {
+              nome: asText(r.name),
+              usd: finite(r.usd),
+              valor,
+              titulo: asText(r.name) + ': ' + valor,
+              tipo: null,
+            };
+          });
+        fillBars('mp-custo-etapas', itens, pal);
+      }
+      const diaRotCurto = (dia) => dia.slice(8, 10) + '/' + dia.slice(5, 7);
+      const kindPos = (k) => KINDS.indexOf(k) + 1 || 99;
+      function buildCol(dia, parts, max, pal) {
+        const total = parts.reduce((a, p) => a + p.usd, 0);
+        const rot = diaRotCurto(dia);
+        const txt =
+          rot +
+          ' · ' +
+          parts.map((p) => p.tipo + ': ' + money(p.usd)).join(' · ') +
+          ' · total ' +
+          money(total);
+        const col = el('button', 'col');
+        col.type = 'button';
+        col.dataset.dia = dia;
+        col.title = txt;
+        const pilha = el('div', 'pilha');
+        pilha.style.height = Math.max(2, Math.round((100 * total) / max)) + 'px';
+        for (const p of parts) {
+          const seg = el('i');
+          seg.dataset.tipo = p.tipo;
+          seg.title = p.tipo + ': ' + money(p.usd);
+          seg.style.height = (100 * p.usd) / total + '%';
+          paintKind(seg, p.tipo, pal);
+          pilha.append(seg);
+        }
+        const zona = el('div', 'zona');
+        zona.append(el('div', 'v', money(total)), pilha);
+        col.append(zona, el('div', 'rot', rot));
+        col.addEventListener('click', () => showDica(txt));
+        return col;
+      }
+      function renderChaves(tipos, pal) {
+        const ul = byId('mp-custo-chaves');
+        ul.replaceChildren();
+        for (const tipo of tipos) {
+          const sw = el('span', 'amostra k');
+          paintKind(sw, tipo, pal);
+          const li = el('li');
+          li.append(sw, tipo);
+          ul.append(li);
+        }
+      }
+      function renderDias(rowsDia, pal) {
+        const host = byId('mp-custo-dias');
+        host.replaceChildren();
+        const dated = rowsDia.filter((r) => r && r.dia);
+        const sem = rowsDia
+          .filter((r) => r && !r.dia)
+          .reduce((a, r) => a + finite(r.sessoes), 0);
+        const nota = byId('mp-custo-semdata');
+        nota.hidden = sem === 0;
+        nota.textContent = sem ? sessoesTxt(sem) + ' sem data fora do gráfico' : '';
+        if (!dated.length) {
+          host.textContent = '—';
+          renderChaves([], pal);
+          return;
+        }
+        const dias = new Map();
+        for (const r of dated) {
+          if (!dias.has(r.dia)) dias.set(r.dia, []);
+          dias.get(r.dia).push({ tipo: asText(r.tipo), usd: finite(r.usd) });
+        }
+        for (const parts of dias.values())
+          parts.sort((a, b) => kindPos(a.tipo) - kindPos(b.tipo));
+        const keys = Array.from(dias.keys()).sort();
+        const sum = (parts) => parts.reduce((a, p) => a + p.usd, 0);
+        const max = Math.max(...keys.map((k) => sum(dias.get(k))));
+        for (const k of keys) {
+          if (sum(dias.get(k)) > 0) host.append(buildCol(k, dias.get(k), max, pal));
+        }
+        if (!host.children.length) host.textContent = '—';
+        const tipos = new Set();
+        for (const parts of dias.values()) for (const p of parts) tipos.add(p.tipo);
+        renderChaves(
+          Array.from(tipos).sort((a, b) => kindPos(a) - kindPos(b)),
+          pal,
+        );
+      }
+      function renderCusto(crows) {
+        const pal = seriesPalette();
+        const rd = dash.data('custoResumo');
+        resumo = rd.status === 'ok' && rd.data[0] ? rd.data[0] : null;
+        renderSomas();
+        const dd = dash.data('custoDia');
+        renderDias(dd.status === 'ok' ? dd.data : [], pal);
+        renderTipos(crows, pal);
+        renderEtapas(crows, pal);
+        byId('mp-custo-dica').textContent = dica || DICA_PADRAO;
+      }
       function tick() {
         const m = q('meta')[0] || {};
         const now = Date.now();
@@ -1111,6 +1556,7 @@
           tot.textContent = fmt(now - t(m.waitingSince));
           lab.textContent = 'aguardando comando do dono (tempo de espera)';
         }
+        byId('mp-custo-hora').textContent = horaText();
         document.querySelectorAll('#mp .dur[data-s]').forEach((d) => {
           d.textContent = fmt(now - Number(d.dataset.s));
         });
@@ -1170,6 +1616,7 @@
           });
           ctb.appendChild(tr);
         }
+        renderCusto(crows);
         // Pedidos do supervisor e regras em vigor (meta.requests e meta.rules); sem eles os cards mostram "—".
         const fillList = (id, items) => {
           const ul = document.getElementById(id);
