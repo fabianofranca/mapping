@@ -5,6 +5,7 @@ import {
   type ModelMessageTemplateCode,
 } from './messages';
 import { specCodeForText, type SpecMessageCode } from './messages/textLookup';
+import type { PackagePathError } from './packagePaths';
 
 // Códigos dos problemas da especialização (`parseSpec`): cada problema do zod sai com o código e
 // os parâmetros do catálogo `spec` (`src/model/messages/spec.ts`), por esta ordem: o
@@ -29,6 +30,31 @@ export interface SpecMsg {
 
 export function specMsg(code: SpecMessageCode, params: MessageParams = {}): SpecMsg {
   return { code, params, text: fillTemplate(MODEL_MESSAGE_TEMPLATES[code], params) };
+}
+
+/** O erro de caminho do pacote como mensagem com código (o texto do catálogo, sem duplicá-lo). */
+export function packagePathMsg(error: PackagePathError): SpecMsg {
+  return error.kind === 'path'
+    ? specMsg('spec.packagePathInvalid')
+    : specMsg('spec.invalidExtension', { exts: error.exts.join(', ') });
+}
+
+/**
+ * O erro do `parsePath` (texto fixo do leitor de caminhos, que devolve só texto) na mensagem com
+ * código da variante. Serve a `spec.ts` (`fieldPathProblem`) e a `components/origin.ts`
+ * (`checkPath`); fica aqui porque `origin.ts` não pode importar `spec.ts` (ciclo).
+ */
+export function pathErrorMsg(path: string, error: string): SpecMsg {
+  const index = /^índice inválido: \[(.*)\]$/s.exec(error)?.[1];
+  if (index !== undefined) return specMsg('spec.fieldPathBadIndex', { path, index });
+  const char = /^caractere inesperado: (.*)$/s.exec(error)?.[1];
+  if (char !== undefined) return specMsg('spec.fieldPathBadChar', { path, char });
+  return specMsg(
+    error === 'faltou "]"'
+      ? 'spec.fieldPathMissingBracket'
+      : 'spec.fieldPathEmptySegment',
+    { path },
+  );
 }
 
 const quoted = (keys: readonly string[]): string => keys.map((k) => `"${k}"`).join(', ');

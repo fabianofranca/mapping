@@ -5,7 +5,9 @@ import { parseSpec, type SpecIssue } from '../../src/model/spec';
 import { validateLibrary } from '../../src/model/library';
 import { locale } from '../../src/store/settings';
 import { messageText } from '../../src/ui/modelMessage';
-import { specCodeForText } from '../../src/model/messages/textLookup';
+import { SPEC_PATTERN_CODES, specCodeForText } from '../../src/model/messages/textLookup';
+import { specMessages } from '../../src/model/messages/spec';
+import { specMsg } from '../../src/model/specIssueCode';
 import { issueText } from '../../src/ui/LibraryIssueList';
 
 // MB2 (#1357): os problemas da especialização até `layerShape` (campos, sugestões, `code`,
@@ -430,9 +432,9 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
     (s) => ((type(s).structural = true), (type(s).component = 'components/a.json')),
   ],
   ['spec.labelFieldNotString', (s) => (type(s).labelField = 'zz')],
-  ['spec.onlyFormat15', (s) => ((s.formatVersion = 14), (type(s).structural = true))],
+  ['spec.onlyFormat', (s) => ((s.formatVersion = 14), (type(s).structural = true))],
   [
-    'spec.onlyFormat10',
+    'spec.onlyFormat',
     (s) => (
       (s.formatVersion = 9),
       (type(s).notices = [{ kind: 'removed', message: 'm' }])
@@ -962,4 +964,37 @@ describe('código da mensagem da especialização sem falso casamento', () => {
       `só é permitido com formatVersion ${only?.params?.version}`,
     );
   });
+});
+
+describe('contrato de SPEC_PATTERN_CODES (decisão 6 da #1589)', () => {
+  const HOSTILE = 'x" inválido; use "marking';
+  const MUTATE: Readonly<Record<string, (s: Raw, value: string) => void>> = {
+    'spec.fieldTypeInvalid': (s, value) => (field(s).type = value),
+    'spec.noticeKindInvalid': (s, value) =>
+      (type(s).notices = [{ kind: value, message: 'm' }]),
+    'spec.appliesToInvalid': (s, value) => (type(s).appliesTo = [value]),
+  };
+
+  it('cada código tem um mutador neste teste', () => {
+    expect(Object.keys(MUTATE).sort()).toEqual([...SPEC_PATTERN_CODES].sort());
+  });
+
+  it.each(SPEC_PATTERN_CODES.map((code) => [code]))(
+    '%s: o modelo pt-BR tem exatamente um {…}',
+    (code) => {
+      const text = (specMessages as Readonly<Record<string, string>>)[code] ?? '';
+      expect(text.match(/\{\w+\}/g)).toHaveLength(1);
+    },
+  );
+
+  it.each(SPEC_PATTERN_CODES.map((code) => [code]))(
+    '%s: o valor hostil volta inteiro em params.value, com o texto do catálogo',
+    (code) => {
+      const issue = issuesOf((s) => MUTATE[code]?.(s, HOSTILE)).find(
+        (i) => i.code === code,
+      );
+      expect(issue?.params?.value).toBe(HOSTILE);
+      expect(issue?.message).toBe(specMsg(code, { value: HOSTILE }).text);
+    },
+  );
 });
