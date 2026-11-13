@@ -272,6 +272,21 @@ describe('seção Âncora dos Detalhes', () => {
     expect(screen.getByRole('region', { name: t('anchor.section') })).toBeTruthy();
   });
 
+  it('uma marcação que não mostra a seção não calcula as candidatas a âncora', async () => {
+    const { harness } = await scene();
+    const created = harness.actions.createMarking('I1', {
+      x: 5,
+      y: 5,
+      width: 30,
+      height: 30,
+    });
+    if (!created.ok) throw new Error(created.error);
+    const read = vi.spyOn(harness.context.derived.markingsBySpace, 'value', 'get');
+    renderPanel(harness, created.value);
+    expect(screen.queryByRole('region', { name: t('anchor.section') })).toBeNull();
+    expect(read).not.toHaveBeenCalled();
+  });
+
   it('em en-US os textos vêm de t()', async () => {
     const { harness, fab } = await scene();
     locale.value = 'en-US';

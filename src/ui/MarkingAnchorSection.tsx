@@ -9,6 +9,7 @@ import {
   markingAnchorDefaults,
   markingComponent,
   markingTypeName,
+  projectIndex,
   resolveMarkingAnchor,
   type AnchorAlign,
   type AnchorSide,
@@ -56,8 +57,6 @@ interface AnchorForm {
   readonly anchor: MarkingAnchor | null;
   /** Lado, alinhamento e deslocamento efetivos (o padrão do componente onde a âncora não diz). */
   readonly resolved: ResolvedMarkingAnchor | null;
-  /** As marcações do mesmo espaço a que esta pode se ancorar (mais a atual, se for outra). */
-  readonly candidates: readonly Marking[];
   readonly error: string | null;
   readonly setError: (message: string | null) => void;
   /** Mostra o erro de uma action recusada; `true` se foi aceita. */
@@ -83,13 +82,9 @@ function useAnchorForm(project: Project, marking: Marking): AnchorForm {
           markingAnchorDefaults(project, derived.catalog.value)(marking),
           effectiveDensity(project, marking.containerId),
         );
-  const candidates = (
-    derived.markingsBySpace.value.get(marking.containerId) ?? []
-  ).filter((m) => canAnchorTo(project, marking.id, m.id) || m.id === anchor?.to);
   return {
     anchor,
     resolved,
-    candidates,
     error,
     setError,
     report,
@@ -111,16 +106,34 @@ interface FieldsProps {
   readonly disabled: boolean;
 }
 
+/**
+ * As marcações do mesmo espaço a que esta pode se ancorar (mais a atual, se for outra). Só o
+ * `Select` as lê: a marcação que não mostra a seção não paga a varredura do espaço.
+ */
+function useAnchorCandidates(
+  project: Project,
+  marking: Marking,
+  anchor: MarkingAnchor | null,
+): readonly Marking[] {
+  const { derived } = useEditor();
+  return (derived.markingsBySpace.value.get(marking.containerId) ?? []).filter(
+    (m) => canAnchorTo(project, marking.id, m.id) || m.id === anchor?.to,
+  );
+}
+
 function TargetField({
   form,
   project,
+  marking,
   readOnly,
 }: {
   readonly form: AnchorForm;
   readonly project: Project;
+  readonly marking: Marking;
   readonly readOnly: boolean;
 }) {
   const id = useId();
+  const candidates = useAnchorCandidates(project, marking, form.anchor);
   return (
     <Property label={t('anchor.target')} for={id} hint={t('anchor.targetHint')}>
       <Select
@@ -131,7 +144,7 @@ function TargetField({
         onChange={(e) => form.setTarget(e.currentTarget.value)}
       >
         <option value="">{t('anchor.none')}</option>
-        {form.candidates.map((m) => (
+        {candidates.map((m) => (
           <option key={m.id} value={m.id}>
             {optionLabel(project, m)}
           </option>
@@ -281,7 +294,8 @@ export function MarkingAnchorSection({
   const drawsComponent = markingComponent(project, derived.catalog.value, marking.id);
   if (form.anchor === null && drawsComponent === null) return null;
   const disabled = readOnly || form.anchor === null;
-  const target = form.candidates.find((m) => m.id === form.anchor?.to);
+  const target =
+    form.anchor === null ? undefined : projectIndex(project).markings.get(form.anchor.to);
   return (
     <Section
       section={{ kind: 'anchor' }}
@@ -289,7 +303,12 @@ export function MarkingAnchorSection({
       summary={target ? optionLabel(project, target) : t('anchor.none')}
     >
       <PropertyGrid>
-        <TargetField form={form} project={project} readOnly={readOnly} />
+        <TargetField
+          form={form}
+          project={project}
+          marking={marking}
+          readOnly={readOnly}
+        />
         <SideAndAlignFields form={form} disabled={disabled} />
         <OffsetFields form={form} disabled={disabled} />
       </PropertyGrid>
