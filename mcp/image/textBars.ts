@@ -281,6 +281,10 @@ export function plainLines(
  * Posição horizontal de uma linha de largura `width` no nó, pelo `align`. No texto cortado
  * (`cutsText`), `width` é a da linha inteira e `blockWidth`, a da mais larga: as linhas se alinham
  * pelo bloco (`cutLineLeft`, decisão 30).
+ *
+ * O `align` já é físico (o motor resolveu `start`/`end` pela direção), então o texto `rtl` cai no
+ * lado certo sem ler `style.direction`. Limite conhecido: os glifos saem na ordem do texto, sem
+ * bidi (nem reordenação nem forma contextual do árabe); só o Konva (o navegador) faz o bidi.
  */
 export function lineLeft(node: TextNode, width: number, blockWidth = width): number {
   const { align } = node.style;

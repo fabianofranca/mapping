@@ -22,4 +22,6 @@ export const engineMessages = {
   'engine.screenTooTall': 'tela: conteúdo maior que a altura da tela',
   // Prova de desenho da biblioteca: o aviso do motor com o sufixo de medida aproximada.
   'engine.approximate': '{reason} (aproximado)',
+  // Prova de desenho em `rtl`: o aviso que só aparece nesse sentido (o `ltr` não o deu).
+  'engine.inRtl': 'em rtl: {reason}',
 } as const;

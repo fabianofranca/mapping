@@ -73,6 +73,18 @@ describe('o exemplo da biblioteca (formatVersion 4)', () => {
     expect(jsonValidator.safeParse(v4()).success).toBe(true);
   });
 
+  it('o JSON Schema aceita origins[].screen.direction literal ltr/rtl e recusa outro valor', () => {
+    for (const direction of ['ltr', 'rtl']) {
+      const spec = v4();
+      spec.origins[0].screen.direction = direction;
+      expect(jsonValidator.safeParse(spec).success, direction).toBe(true);
+      expect(parseSpec(spec).ok, direction).toBe(true);
+    }
+    const bad = v4();
+    bad.origins[0].screen.direction = 'up';
+    expect(jsonValidator.safeParse(bad).success).toBe(false);
+  });
+
   it('lê as chaves novas e elas sobrevivem à leitura', () => {
     const spec = parsed(v4());
     expect(spec.formatVersion).toBe(4);

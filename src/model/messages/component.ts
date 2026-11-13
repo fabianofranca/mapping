@@ -113,6 +113,8 @@ export const componentMessages = {
   'component.trackOnlyGrid': 'só vale em layout grid',
   'component.notInGrid': 'não vale em layout grid',
   'component.spanOnlyInGrid': 'span: só vale em filho de layout grid',
+  'component.anchorStartLeft': 'não combina com left',
+  'component.anchorEndRight': 'não combina com right',
   'component.weightOnlyFill':
     'weight: só vale em filho fill no eixo principal de row ou column',
   'component.repeatLayoutConflict': 'repeat.layout: não combina com direction nem gap',

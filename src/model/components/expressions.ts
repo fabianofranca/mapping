@@ -109,6 +109,9 @@ export function providedKey(name: string): string {
 /** O nome de campo do índice da linha de um `repeat` (`{ "$field": "$index" }`). */
 export const INDEX_FIELD = '$index';
 
+/** O campo de valores onde o motor entrega a direção da instância (`{ "$direction": … }` fora de um nó). */
+export const DIRECTION_FIELD = '$direction';
+
 /** As linhas de um campo `table` (valor que não é lista conta 0). */
 function rowCount(value: FieldValue): number {
   return Array.isArray(value) ? value.length : 0;
@@ -187,7 +190,12 @@ function partText(value: unknown): string {
   return typeof value === 'number' ? formatNumber(value) : String(value);
 }
 
-export function evaluateCondition(condition: Condition, values: FieldValues): boolean {
+/**
+ * As condições folha, na ordem em que a `evaluateCondition` as consulta: comparação, `$field`,
+ * `$eq` e `$has`. `undefined` quando a condição não é nenhuma delas (as de combinar e a `$direction`
+ * ficam na `evaluateCondition`, que mantém a ordem de antes).
+ */
+function evaluateLeaf(condition: Condition, values: FieldValues): boolean | undefined {
   for (const op of COMPARISON_OPS)
     if (op in condition)
       return compare(op, (condition as Record<string, unknown>)[op], values);
@@ -195,11 +203,18 @@ export function evaluateCondition(condition: Condition, values: FieldValues): bo
   if ('$eq' in condition) {
     const [field, expected] = condition.$eq;
     const actual = values[field];
-    if (isEmpty(actual)) return false;
-    return String(actual) === String(expected);
+    return isEmpty(actual) ? false : String(actual) === String(expected);
   }
   if ('$has' in condition) return !isEmpty(values[condition.$has]);
+  return undefined;
+}
+
+export function evaluateCondition(condition: Condition, values: FieldValues): boolean {
+  const leaf = evaluateLeaf(condition, values);
+  if (leaf !== undefined) return leaf;
   if ('$not' in condition) return !evaluateCondition(condition.$not, values);
+  if ('$direction' in condition)
+    return (values[DIRECTION_FIELD] ?? 'ltr') === condition.$direction;
   if ('$and' in condition)
     return condition.$and.every((c) => evaluateCondition(c, values));
   if ('$or' in condition) return condition.$or.some((c) => evaluateCondition(c, values));
@@ -279,7 +294,15 @@ export function evaluate<T>(expr: Expr<T>, values: FieldValues, fallback: T): T 
     .join('') as T;
 }
 
-const CONDITION_KEYS = ['$eq', '$has', '$not', '$and', '$or', ...COMPARISON_OPS];
+const CONDITION_KEYS = [
+  '$eq',
+  '$has',
+  '$not',
+  '$and',
+  '$or',
+  '$direction',
+  ...COMPARISON_OPS,
+];
 
 function isCondition(value: unknown): value is Condition {
   return (

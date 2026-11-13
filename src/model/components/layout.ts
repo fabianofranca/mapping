@@ -25,6 +25,7 @@ import type { ModelMessage } from '../modelMessage';
 import { findSlot, resolveSlotLayout, type ResolvedSlotLayout } from './arrange';
 import type {
   ComponentFile,
+  Direction,
   FieldValues,
   IntrinsicSize,
   SlotTemplate,
@@ -106,6 +107,12 @@ export interface LayoutRoot {
 export interface LayoutScreen {
   readonly id: string;
   readonly name: string;
+  /**
+   * Direção de leitura da tela (padrão `ltr`): em `rtl` as âncoras lógicas (`start`/`end`), as
+   * raízes em fluxo e os filhos de cada slot espelham dentro da área de conteúdo (o `padding`
+   * continua físico), como no motor dos componentes.
+   */
+  readonly direction?: Direction;
   readonly width: number;
   readonly height: number;
   readonly background: string;
@@ -283,22 +290,25 @@ function gridContentWidth(layout: ResolvedSlotLayout, widths: readonly number[])
   return sum(extents) + layout.lineGap * Math.max(0, extents.length - 1);
 }
 
-/** Posição de uma raiz ancorada num eixo: `margin` na borda tocada, ou centralizada. */
+/**
+ * Posição de uma raiz ancorada num eixo: `margin` na borda tocada, ou centralizada. No eixo x,
+ * `start`/`end` são lógicos: em `rtl`, `start` é a borda direita.
+ */
 function anchorOffset(
   anchor: LayoutAnchor,
   axis: 'x' | 'y',
   screenSize: number,
   size: number,
   margin: number,
+  dir: Direction,
 ): number {
+  const logicalNear = anchor.endsWith('start') || anchor === 'start';
+  const logicalFar = anchor.endsWith('end') || anchor === 'end';
+  const flip = axis === 'x' && dir === 'rtl';
   const near =
-    axis === 'x'
-      ? anchor.endsWith('start') || anchor === 'start'
-      : anchor.startsWith('top');
+    axis === 'x' ? (flip ? logicalFar : logicalNear) : anchor.startsWith('top');
   const far =
-    axis === 'x'
-      ? anchor.endsWith('end') || anchor === 'end'
-      : anchor.startsWith('bottom');
+    axis === 'x' ? (flip ? logicalNear : logicalFar) : anchor.startsWith('bottom');
   if (near) return margin;
   if (far) return screenSize - margin - size;
   return (screenSize - size) / 2;
@@ -313,6 +323,9 @@ export function layoutScreen(
   const warn = (code: ModelMessageTemplateCode, params?: Params) =>
     messageSet.add(code, params);
   const types = new Map(library.types.map((t) => [t.id, t]));
+  const direction: Direction = input.direction ?? 'ltr';
+  /** As opções do motor comuns a toda instância desta tela (a direção, acima de tudo). */
+  const engine = { measure, ...(direction === 'rtl' ? { direction } : {}) } as const;
 
   // --- preparo: tipo, componente, slot e layout de cada nó ---------------------------------
 
@@ -367,7 +380,7 @@ export function layoutScreen(
     slotContent: { width: number; height: number },
   ): Box | undefined => {
     const { root } = instantiate(p.component, p.node.values, box, {
-      measure,
+      ...engine,
       idPrefix: p.node.id,
       slotContent,
     });
@@ -441,8 +454,8 @@ export function layoutScreen(
   function intrinsicWidth(p: Prepared, mode: Mode = 'hug'): number {
     return cached(p, `iw|${mode}`, () => {
       const options = p.slot
-        ? { measure, slotContent: { width: slotContentWidth(p, mode), height: 0 } }
-        : { measure };
+        ? { ...engine, slotContent: { width: slotContentWidth(p, mode), height: 0 } }
+        : engine;
       const { width } = measureComponent(
         p.component,
         p.node.values,
@@ -480,7 +493,7 @@ export function layoutScreen(
         p.component,
         p.node.values,
         { width, height: null },
-        p.slot ? { measure, slotContent } : { measure },
+        p.slot ? { ...engine, slotContent } : engine,
       );
       return withMin(p, 'height', hugValue(height));
     });
@@ -717,6 +730,20 @@ export function layoutScreen(
       : arrangeLinear(kids, layout, cw, ch, emit, owner);
   }
 
+  /**
+   * Em `rtl`, os retângulos já arrumados espelhados dentro da área de conteúdo
+   * (`x' = conteúdo − x − w`): vale de uma vez para `row`, `column`, `none`, grade e `wrap`. O
+   * `padding` do slot fica físico, porque a origem do conteúdo é somada depois. Em `ltr`, os mesmos.
+   */
+  const mirroredRects = (
+    arranged: Arranged,
+    content: number | null,
+  ): readonly KidRect[] => {
+    if (direction === 'ltr') return arranged.rects;
+    const width = content ?? arranged.usedW;
+    return arranged.rects.map((r) => ({ ...r, x: width - r.x - r.w }));
+  };
+
   /** `arrangeKids` de `row`, `column`, `none` e dos que quebram em linhas (`wrap`). */
   function arrangeLinear(
     kids: readonly Prepared[],
@@ -910,10 +937,11 @@ export function layoutScreen(
       slotBoxOf(p, box, { width: probe.width, height: pre.usedH + padH(p) }) ?? probe;
     const ch = hugH && layout.type !== 'row' ? null : Math.max(0, slot.height - padH(p));
     const arranged = arrangeKids(p.kids, layout, cw, ch, true, node.id);
+    const rects = mirroredRects(arranged, cw);
     const originX = slot.x + layout.padding.left;
     const originY = slot.y + layout.padding.top;
     p.kids.forEach((kid, i) => {
-      const r = arranged.rects[i];
+      const r = rects[i];
       if (!r) return;
       place(
         kid,
@@ -944,12 +972,15 @@ export function layoutScreen(
   );
   if (flowed.usedH > input.height + EPS) warn('engine.screenTooTall');
 
+  /** As raízes em fluxo (a tela é uma coluna): em `rtl` espelhadas na largura da tela. */
+  const flowedRects = mirroredRects(flowed, input.width);
+
   const rootBox = (
     root: LayoutRoot,
     p: Prepared,
   ): { box: Box; hugW: boolean; hugH: boolean } => {
     const flowIndex = flow.findIndex((r) => r.prepared === p);
-    const rect = flowed.rects[flowIndex];
+    const rect = flowedRects[flowIndex];
     if (root.anchor === undefined && rect)
       return {
         box: { x: rect.x, y: rect.y, width: rect.w, height: rect.h },
@@ -978,8 +1009,8 @@ export function layoutScreen(
           : intrinsicHeight(p, width, specW === 'hug'),
     );
     const anchor = root.anchor ?? 'top-start';
-    const x = anchorOffset(anchor, 'x', input.width, width, margin);
-    const y = anchorOffset(anchor, 'y', input.height, height, margin);
+    const x = anchorOffset(anchor, 'x', input.width, width, margin, direction);
+    const y = anchorOffset(anchor, 'y', input.height, height, margin, direction);
     return {
       box: { x, y, width, height },
       hugW: specW === 'hug',

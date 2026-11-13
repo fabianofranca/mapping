@@ -8,6 +8,7 @@
  */
 import type {
   ComponentFile,
+  Direction,
   Expr,
   FieldValues,
   LayoutAlign,
@@ -252,15 +253,17 @@ export function resolveSlotLayout(
   };
 }
 
-/** Caixa absoluta (na tela) do slot de uma instância, instanciando o componente na caixa da instância; nenhuma se o slot estiver invisível. */
+/** Caixa absoluta (na tela) do slot de uma instância, instanciando o componente na caixa da instância (na `direction` da tela, `ltr` por padrão); nenhuma se o slot estiver invisível. */
 export function slotBox(
   component: ComponentFile,
   instance: Instance,
   measure: TextMeasurer,
+  direction: Direction = 'ltr',
 ): Box | undefined {
   const { root } = instantiate(component, instance.values, instance.box, {
     measure,
     idPrefix: instance.id,
+    ...(direction === 'rtl' ? { direction } : {}),
   });
   for (const node of walk(root)) {
     if (node.type !== 'unknown' || node.sourceType !== 'slot') continue;
@@ -370,6 +373,31 @@ function crossInLine(
  * Os filhos além de `maxLines` linhas não se movem (a arrumação devolve a caixa que já tinham).
  */
 export function layoutChildren(
+  slot: Box,
+  layout: ResolvedSlotLayout,
+  children: readonly LayoutChild[],
+  direction: Direction = 'ltr',
+): Box[] {
+  const boxes = layoutPhysical(slot, layout, children);
+  return direction === 'rtl' ? mirrorInContent(slot, layout.padding, boxes) : boxes;
+}
+
+/**
+ * Em `rtl`, as caixas já arrumadas (como em `ltr`) espelhadas dentro da área de conteúdo do slot
+ * (`x' = esquerda + largura útil − (x − esquerda) − w`): vale de uma vez para `row`, `column`,
+ * `none`, grade e `wrap`, e `reverse` compõe. O `padding` fica físico (a área é a mesma).
+ */
+function mirrorInContent(
+  slot: Box,
+  padding: ResolvedSlotLayout['padding'],
+  boxes: readonly Box[],
+): Box[] {
+  const left = slot.x + padding.left;
+  const content = slot.width - padding.left - padding.right;
+  return boxes.map((b) => ({ ...b, x: Math.round(2 * left + content - b.x - b.width) }));
+}
+
+function layoutPhysical(
   slot: Box,
   layout: ResolvedSlotLayout,
   children: readonly LayoutChild[],
@@ -650,6 +678,7 @@ function childTargets(
   children: readonly Instance[],
   measure: TextMeasurer,
   types: ReadonlyMap<string, TypeDef>,
+  direction: Direction,
 ): Box[] | null {
   if (!raw || children.length === 0) return null;
   const component = tokenizedComponent(raw);
@@ -657,7 +686,7 @@ function childTargets(
   if (!slot) return null;
   const layout = resolveSlotLayout(slot, instance.values);
   if (isPlainNone(layout)) return null;
-  const box = slotBox(component, instance, measure);
+  const box = slotBox(component, instance, measure, direction);
   if (!box) return null;
   const baselines =
     layout.align === 'baseline'
@@ -667,11 +696,17 @@ function childTargets(
     box,
     layout,
     children.map((child, i) => ({ box: child.box, baseline: baselines[i] })),
+    direction,
   );
 }
 
 /** Recalcula e grava os retângulos dos filhos de todos os componentes com slot com layout row/column. Puro; devolve o MESMO objeto quando nada muda. */
-export function arrange(screen: Screen, library: Library, measure: TextMeasurer): Screen {
+export function arrange(
+  screen: Screen,
+  library: Library,
+  measure: TextMeasurer,
+  direction: Direction = 'ltr',
+): Screen {
   const types = new Map(library.types.map((t) => [t.id, t]));
   let current = screen;
   // Pais antes dos filhos; a ordem é fixada no início, as instâncias são relidas a cada passo
@@ -690,6 +725,7 @@ export function arrange(screen: Screen, library: Library, measure: TextMeasurer)
       children,
       measure,
       types,
+      direction,
     );
     if (!targets) continue;
     children.forEach((child, i) => {
@@ -709,6 +745,7 @@ export function dropIndex(
   layout: ResolvedSlotLayout,
   point: { x: number; y: number },
   excludeId?: string,
+  direction: Direction = 'ltr',
 ): number {
   const siblings = childrenOf(screen, parentId).filter((i) => i.id !== excludeId);
   if (layout.type === 'none') return siblings.length;
@@ -717,6 +754,8 @@ export function dropIndex(
       layout.type === 'row' ? s.box.x + s.box.width / 2 : s.box.y + s.box.height / 2;
     const at = layout.type === 'row' ? point.x : point.y;
     // Em `reverse` a ordem corre do fim para o início: antes dele são os irmãos depois do ponto.
-    return layout.reverse ? center > at : center < at;
+    // Numa `row` em `rtl` ela também inverte (a linha corre para a esquerda); as duas compõem.
+    const backwards = layout.reverse !== (layout.type === 'row' && direction === 'rtl');
+    return backwards ? center > at : center < at;
   }).length;
 }

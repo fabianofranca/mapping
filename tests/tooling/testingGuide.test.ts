@@ -499,8 +499,8 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
       expect(r16).toContain('OutlinedButton');
     });
 
-    it('o prompt da nuvem lista os roteiros até o R26', () => {
-      expect(prompt).toContain('R0 a R26');
+    it('o prompt da nuvem lista os roteiros até o R27', () => {
+      expect(prompt).toContain('R0 a R27');
     });
   });
 
@@ -568,8 +568,8 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
       expect(r17).toContain('Aplicar zip…');
     });
 
-    it('o prompt da nuvem lista os roteiros até o R26', () => {
-      expect(prompt).toContain('R0 a R26');
+    it('o prompt da nuvem lista os roteiros até o R27', () => {
+      expect(prompt).toContain('R0 a R27');
     });
   });
 
@@ -643,8 +643,13 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
       expect(JSON.parse(block)).toEqual(JSON.parse(fixture));
     });
 
-    it('o prompt da nuvem lista os roteiros até o R26', () => {
-      expect(prompt).toContain('R0 a R26');
+    it('o prompt da nuvem lista os roteiros até o R27', () => {
+      expect(prompt).toContain('R0 a R27');
+    });
+
+    it('a enumeração da ordem da rodada completa termina no R27, como o cabeçalho', () => {
+      expect(prompt).toContain('R5, R8 e R9 a R27.');
+      expect(prompt).not.toContain('R9 a R26');
     });
   });
 });

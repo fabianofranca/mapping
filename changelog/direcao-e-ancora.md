@@ -1,0 +1,9 @@
+# Direção de leitura (RTL) e âncora entre marcações — [Não lançado] (épico `epic/direcao-e-ancora`, PR #0, MCP 0.40.0, schema v20)
+
+## Adicionado
+
+- **Direção de leitura no desenho dos componentes.** O motor passa a desenhar da direita para a esquerda (`rtl`) quando quem o chama pede: a fileira (`row`) e cada linha de uma quebra (`wrap`) correm da direita para a esquerda, a coluna alinha `start` à direita, a grade preenche as trilhas da direita para a esquerda e o quadro `none` alinhado espelha. O `reverse` compõe com a direção, como no CSS. O eixo vertical e o `padding` não mudam, e em `ltr` nenhum desenho de hoje muda.
+- **Chaves lógicas no formato do componente** (`formatVersion` 4): `anchors.start` e `anchors.end` (a borda de onde a leitura começa e a oposta; `left` e `right` continuam físicas), `font.align` com `start` e `end` (e o padrão passando de `left` a `start`, o mesmo desenho em `ltr`), e `layout.align`/`layout.justify` `start`/`end` passando a seguir a direção no eixo horizontal.
+- **Ícones espelhados:** o arquivo de ícones (`mapping-icons`) vai à `formatVersion` 2, com `mirror` por ícone (a 1 continua aceita); os nós `icon` e `path` ganham `mirror`, que em `rtl` vira o desenho na horizontal. Só o que o molde marca espelha.
+- **Direção por nó e condição:** qualquer nó pode fixar `direction` (`ltr` ou `rtl`) para a própria subárvore (um número de telefone, um trecho de código), e a condição `{ "$direction": "rtl" }` vale onde vale uma condição (`$if`, `visible`, `$and`, `$or`, `$not`).
+- **Telas sem geometria e visualizador:** a tela (e o `screen` de uma origem) ganha `direction`; as âncoras `top-start`, `start` e `bottom-start` passam a ser lógicas (em `rtl`, à direita), e o visualizador embutível aceita `direction`, com um seletor na demonstração.

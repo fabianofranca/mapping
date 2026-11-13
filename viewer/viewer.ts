@@ -34,6 +34,7 @@ import { Layer } from 'konva/lib/Layer';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Stage } from 'konva/lib/Stage';
 import { type Library, withHostTokens } from '../src/model/components/library';
+import type { Direction } from '../src/model/components/componentFormat';
 import type { HostFonts } from '../src/model/components/tokens';
 import { tokenValue } from '../src/theme/tokens';
 import type { TextMeasurer } from '../src/model/components/instantiate';
@@ -61,6 +62,13 @@ export interface ViewerInput {
    * recarregar a biblioteca nem a tela.
    */
   readonly drawingMode: string | undefined;
+  /**
+   * Direção de leitura da tela calculada de `source` (`ltr`, o padrão, ou `rtl`): vai ao
+   * `layoutScreen` (espelha as raízes, as âncoras lógicas e os slots) e ao motor dos componentes.
+   * Ausente, vale a `screen.direction` da origem; uma `screen` pronta (sem `source`) já traz as
+   * caixas e não é recalculada.
+   */
+  readonly direction: Direction | undefined;
 }
 
 export interface ViewerOptions {
@@ -71,6 +79,8 @@ export interface ViewerOptions {
   readonly sourceSystem?: string;
   /** Modo inicial dos tokens do desenho (ver `ViewerInput.drawingMode`); muda por `update`. */
   readonly drawingMode?: string;
+  /** Direção de leitura inicial (ver `ViewerInput.direction`); muda por `update`. */
+  readonly direction?: Direction;
   /** Resultado de cada cálculo da tela a partir de `source` (tela, avisos e `error`). */
   readonly onSource?: (result: SourceResult) => void;
   /** O ponteiro entrou/saiu de uma instância (`undefined` = nenhuma). */
@@ -266,6 +276,7 @@ export function createViewer(
   let passedScreen: Screen | undefined = options.screen;
   let source: unknown = options.source;
   let sourceSystem: string | undefined = options.sourceSystem;
+  let direction: Direction | undefined = options.direction;
   /** A tela efetiva: a calculada de `source` (se definido) ou `passedScreen`. */
   let screen: Screen | undefined = passedScreen;
   let selection: readonly string[] = [];
@@ -373,6 +384,7 @@ export function createViewer(
     }
     const result = screenFromSource(withFonts(library) ?? library, source, {
       system: sourceSystem,
+      ...(direction !== undefined ? { direction } : {}),
       measure,
     });
     screen = result.screen;
@@ -387,7 +399,11 @@ export function createViewer(
       fill: current.background,
       visible: screen !== undefined,
     });
-    const changed = renderer.update(withFonts(library), current, { force, zBase: 1 });
+    const changed = renderer.update(withFonts(library), current, {
+      force,
+      zBase: 1,
+      ...(direction !== undefined ? { direction } : {}),
+    });
     if (screen && fittedKey !== fitKeyOf(screen)) applyFit();
     syncOverlay();
     if (changed || force) emitWarnings();
@@ -483,6 +499,10 @@ export function createViewer(
       if ('sourceSystem' in input && input.sourceSystem !== sourceSystem) {
         sourceSystem = input.sourceSystem;
         recompute = true;
+      }
+      if ('direction' in input && input.direction !== direction) {
+        direction = input.direction;
+        if (source !== undefined) recompute = true;
       }
       if ('drawingMode' in input && input.drawingMode !== drawingMode) {
         drawingMode = input.drawingMode;

@@ -41,6 +41,7 @@ export {
 export type { Box, Instance, Screen } from '../src/model/components/screen';
 export type {
   ComponentFile,
+  Direction,
   FieldValue,
   FieldValues,
 } from '../src/model/components/componentFormat';
