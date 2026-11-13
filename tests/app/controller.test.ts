@@ -225,6 +225,32 @@ describe('projeto em pasta', () => {
     expect(app.openProject.value).toBeNull();
   });
 
+  it('o contador de chamadas da pasta mede a abertura e a gravação; fora de pasta não há contador', async () => {
+    const root = folderWith({ 'mapping.json': v1 });
+    pickDirectory.mockResolvedValue(root);
+    expect((await app.openFolder()).ok).toBe(true);
+    const { session } = await openedOf(app);
+    const calls = session.folderCalls;
+    expect(calls).not.toBeNull();
+    const opened = calls?.snapshot().find((m) => m.op === 'open');
+    expect(opened?.calls).toBeGreaterThan(0);
+    expect(calls?.snapshot().some((m) => m.op === 'save' || m.op === 'library')).toBe(
+      false,
+    );
+
+    session.actions.renameProject('Medido');
+    await session.flush();
+    // O v1 migrado ganha a biblioteca de notas: a primeira gravação leva um pacote (`library`).
+    const saved = calls?.snapshot().find((m) => m.op === 'library');
+    expect(saved?.calls).toBeGreaterThan(0);
+    // O contador não muda o que foi gravado.
+    expect(await root.files.get('mapping.json')?.text()).toContain('Medido');
+    await app.closeProject();
+
+    expect((await app.createLocalProject('Local')).ok).toBe(true);
+    expect((await openedOf(app)).session.folderCalls).toBeNull();
+  });
+
   it('projeto v1: grava o backup antes do primeiro salvamento', async () => {
     const root = folderWith({ 'mapping.json': v1 });
     pickDirectory.mockResolvedValue(root);
