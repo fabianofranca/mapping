@@ -305,10 +305,14 @@ describe('ScreenRenderer: direção de leitura (R1, #1096)', () => {
   it('o padrão (sem a opção) é ltr e mudar a direção redesenha as instâncias', () => {
     const { group, renderer } = setup();
     renderer.update(library, SAMPLE_SCREEN);
-    const before = (group.find('Text') as Konva.Text[]).map((t) => t.getAbsolutePosition().x);
+    const before = (group.find('Text') as Konva.Text[]).map(
+      (t) => t.getAbsolutePosition().x,
+    );
     expect(renderer.update(library, SAMPLE_SCREEN, { direction: 'ltr' })).toBe(false);
     expect(renderer.update(library, SAMPLE_SCREEN, { direction: 'rtl' })).toBe(true);
-    const after = (group.find('Text') as Konva.Text[]).map((t) => t.getAbsolutePosition().x);
+    const after = (group.find('Text') as Konva.Text[]).map(
+      (t) => t.getAbsolutePosition().x,
+    );
     expect(after).not.toEqual(before);
   });
 });
