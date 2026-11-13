@@ -17,6 +17,10 @@ slug ou `inicio`; nos outros, um slug ou `inicio`) dão `ficha incompleta (toca:
 `fichas a refazer:`, inclusive na etapa já começada, cujas citações antigas seguem na comparação como hoje até a ficha ser
 refeita; a linha `exclusive=sim` não passa por essa validação (só o `?` a deixa incompleta). `toca "<citações separadas
 por vírgula>"` confere uma lista: `ok` (código 0) ou uma linha `inválida: <citação> — <motivo>` por citação (código 1).
+`conflito "<toca>" [--pasta <dir>] [--com "#N=<toca>"]…` (decisão 9 da #1864, só leitura, fora do `apply`) confere um `toca` contra
+as etapas começadas e não mescladas da pasta, as que o `show` lista em `começar agora:` e cada `--com`, com o mesmo cálculo da fila:
+`livre` (código 0, também sem `--pasta` e sem `--com`), uma linha `conflito: <citação> com #N (<status>|começa agora|fora do painel)`
+por etapa em conflito (código 1) ou `inválida: <citação> — <motivo>` (código 2).
 `exclusive=sim` na linha (`exclusive=` limpa) faz a etapa começar só com a fila
 sem etapa começada e não mesclada (`exclusiva (espera a fila esvaziar)`). Começada e ainda não mesclada, ela segura todas
 as outras em qualquer estado (`em andamento`, `aguardando` com `started`, `esperando dono`, `falhou`), e o motivo diz o
@@ -1008,7 +1012,7 @@ def cmd_published(a):
     print("alterados: meta.json")
 
 
-BATCH_REJECTED = ("show", "apply", "init", "published", "slug", "toca", "costs", "roles", "requests", "import")
+BATCH_REJECTED = ("show", "apply", "init", "published", "slug", "toca", "conflito", "costs", "roles", "requests", "import")
 
 
 def batch_lines(src):
@@ -1635,16 +1639,74 @@ def cmd_slug(a):
     print(slugify(a.title))
 
 
+def invalid_lines(cites):
+    """As linhas `inválida: <citação> — <motivo>` das citações que não valem (a lista vazia se todas valem)."""
+    out = []
+    for x in cites:
+        why = toca_invalid(x)
+        if why:
+            out.append(f"inválida: {x} — {why}")
+    return out
+
+
 def cmd_toca(a):
     """Confere uma lista de citações do `toca=` (decisão 7 da #1812): `ok` (0) ou `inválida: … — <motivo>` (1)."""
-    bad = [(x, toca_invalid(x)) for x in norm_toca(a.cites)]
-    bad = [(x, why) for x, why in bad if why]
-    for x, why in bad:
-        print(f"inválida: {x} — {why}")
+    bad = invalid_lines(norm_toca(a.cites))
     if bad:
+        print("\n".join(bad))
         return 1
     print("ok")
     return 0
+
+
+def conflict_others(d):
+    """[(#N, status, citações)] da pasta que um `toca` novo precisa respeitar, como o `slots_plan` as lê: as começadas
+    (`is_started`) e as que ele faz começar agora. Só lê."""
+    q, m = load(d, "queue"), load(d, "meta")
+    starting = slots_plan(q, m[0] if m else {})[1]
+    out = []
+    for r in q:
+        if is_started(r):
+            out.append((r["issue"], r["status"], toca_list(r.get("plan", ""))))
+        elif r["issue"] in starting:
+            out.append((r["issue"], "começa agora", toca_list(r.get("plan", ""))))
+    return out
+
+
+def parse_com(items):
+    """`--com "#N=<toca>"` → [(#N, citações)]; sem o `=` ou com o número fora de `#N` é erro de uso."""
+    out = []
+    for item in items or []:
+        num, sep, cites = item.partition("=")
+        if not sep:
+            raise Erro(f"--com '{item}' inválido (use \"#N=<toca>\")")
+        out.append((norm_issue(num), norm_toca(cites)))
+    return out
+
+
+def conflict_lines(mine, others):
+    """Uma linha `conflito: <citação> com #N (<status>)` por etapa de `others` que mexe no mesmo lugar."""
+    out = []
+    for n, status, cites in others:
+        cite = first_conflict(mine, cites)
+        if cite:
+            out.append(f"conflito: {cite} com {n} ({status})")
+    return out
+
+
+def cmd_conflito(a):
+    """Confere um `toca` contra a fila (decisão 9 da #1864): `livre` (0), `conflito: …` (1) ou `inválida: …` (2)."""
+    extra = parse_com(a.com)
+    mine = norm_toca(a.toca)
+    bad = invalid_lines(mine)
+    if bad:
+        print("\n".join(bad))
+        return 2
+    others = conflict_others(a.pasta) if a.pasta else []
+    others += [(n, "fora do painel", cites) for n, cites in extra]
+    found = conflict_lines(mine, others)
+    print("\n".join(found) if found else "livre")
+    return 1 if found else 0
 
 
 def cmd_show(a):
@@ -1780,6 +1842,11 @@ def build_parser():
     sp = sub.add_parser("toca", help="confere citações do toca= (arquivos e seções): ok, ou `inválida: … — <motivo>` e código 1")
     sp.add_argument("cites", metavar="citações", help="separadas por vírgula, como no toca= da ficha")
     sp.set_defaults(fn=cmd_toca)
+    sp = sub.add_parser("conflito", help="confere um toca contra a fila (só leitura): livre (0), `conflito: … com #N (…)` (1) ou `inválida: …` (2)")
+    sp.add_argument("toca", metavar="toca", help="citações separadas por vírgula, como no toca= da ficha")
+    sp.add_argument("--pasta", help="pasta do painel: as começadas e não mescladas e as de `começar agora:` contam")
+    sp.add_argument("--com", action="append", metavar="#N=<toca>", help="etapa de fora do painel e o toca dela (repetível)")
+    sp.set_defaults(fn=cmd_conflito)
     sp = sub.add_parser("costs", help="total, por tipo e por etapa (lê só o meta; --desde <ISO> filtra por created)")
     sp.add_argument("--desde", help="só as sessões com created a partir desta data (ISO UTC)")
     sp.add_argument("dir", help="pasta dos arquivos JSON")
