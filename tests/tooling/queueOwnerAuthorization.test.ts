@@ -38,13 +38,20 @@ describe('AF1 — autorização do dono no chat da fase (#1602)', () => {
     expect(item8).toContain('\n   - **Autorização do dono:**');
   });
 
-  it('a lista fechada cobre os três casos e manda o resto ao sub-item "Decisão de produto"', () => {
+  it('a lista fechada tem dois casos e manda o resto ao sub-item "Decisão de produto" (#1802, decisão 7)', () => {
     const autorizacao = autorizacaoDoDono();
-    expect(autorizacao).toMatch(/chama o dono/);
-    expect(autorizacao).toContain('distBudget.mjs');
-    expect(autorizacao).toContain('.github/workflows/');
-    expect(autorizacao).toContain('.claude/settings.json');
-    expect(autorizacao).toContain('exceção a uma guarda');
+    expect(autorizacao).toMatch(/só tem dois casos/);
+    expect(autorizacao).not.toMatch(/três casos/);
+    expect(autorizacao).not.toMatch(/chama o dono/);
+    expect(autorizacao).not.toContain('(c)');
+    const casoA = between(autorizacao, '(a) ', '(b) ');
+    expect(casoA).toContain('.github/workflows/');
+    expect(casoA).toContain('.claude/settings.json');
+    // o `distBudget.mjs` só aparece dentro do (b), como a guarda "por fora do `raise`"
+    expect(casoA).not.toContain('distBudget.mjs');
+    const casoB = between(autorizacao, '(b) ', 'O que não está nesta lista');
+    expect(casoB).toContain('exceção a uma guarda');
+    expect(casoB).toContain('subir um orçamento por fora do `distBudget.mjs raise`');
     expect(autorizacao).toMatch(/lista é fechada/);
     expect(autorizacao).toMatch(/subagente parado/);
     expect(autorizacao).toContain('como seguir');
@@ -95,10 +102,13 @@ describe('AF1 — autorização do dono no chat da fase (#1602)', () => {
     expect(lista).not.toContain('"chama o dono"');
   });
 
-  it('item 6: o teto aponta para o item 8 e não manda mais os números ao coordenador', () => {
+  it('item 6: o teto não pede mais autorização ao dono; "outra falha" continua indo ao coordenador (#1802, decisão 7)', () => {
     const teto = tail(item6, '   - **Teto do `dist/index.html`:**');
-    expect(teto).toContain('item 8 (Autorização do dono)');
+    expect(teto).not.toContain('item 8 (Autorização do dono)');
+    expect(teto).not.toMatch(/chama o dono/);
     expect(teto).not.toContain('mande os números e o motivo ao coordenador');
+    expect(teto).toMatch(/outra falha/);
+    expect(teto).toContain('"Decisão de produto"');
   });
 
   it('"Orquestrador — passo a passo": os limites não repassam autorização e leem a pergunta da fase parada', () => {
@@ -267,11 +277,16 @@ describe('AF2 — skill implementar-fila: o coordenador não repassa autorizaç�
     expect(coordenadorParagrafo()).not.toContain('do teto');
   });
 
-  it('"Filha que espera o dono": a lista fechada, o painel e a regra 1 fora dela', () => {
+  it('"Filha que espera o dono": a lista fechada com dois casos, o painel e a regra 1 fora dela (#1802, decisão 7)', () => {
     expect(donoParagrafo()).toContain('Esperando o dono');
-    for (const caso of ['chama o dono', 'edição de CI', 'exceção a uma guarda']) {
-      expect(donoParagrafo()).toContain(caso);
-    }
+    expect(donoParagrafo()).toMatch(
+      /lista é fechada[^:]*:[^:]*\(a\)[^;]*edição de CI[^;]*, \(b\)[^;]*exceção a uma guarda/,
+    );
+    expect(donoParagrafo()).not.toMatch(/três casos|os três/);
+    // a fase de um épico anterior ainda usa as letras antigas: o coordenador confere o motivo, não a letra
+    expect(donoParagrafo()).toMatch(/confira o motivo[^.]*e não a letra/);
+    expect(donoParagrafo()).toContain('(a) teto, (b) CI, (c) guarda');
+    expect(donoParagrafo()).not.toContain('do `distBudget.mjs raise`, (b)');
     expect(donoParagrafo()).toContain('status="esperando dono"');
     expect(donoParagrafo()).toContain('dono no chat da fase');
     expect(donoParagrafo()).toContain('wait=');
@@ -280,6 +295,16 @@ describe('AF2 — skill implementar-fila: o coordenador não repassa autorizaç�
     expect(donoParagrafo()).toContain('`send_message`');
     expect(donoParagrafo()).toContain('priority: "now"');
     expect(donoParagrafo()).toMatch(/regra 1/);
+  });
+
+  it('"Filha que espera o dono": a fase antiga com o "chama o dono" do teto ganha a transição (#1802, decisão 8)', () => {
+    const transicao = tail(donoParagrafo(), 'com o "chama o dono" do teto');
+    expect(transicao).toContain(
+      'A subida do teto não espera mais o dono (etapa #1802): traga a `main` (`git merge origin/main`), rode o `raise --write` de novo e siga o item 6 da "Para a sessão da fase".',
+    );
+    expect(transicao).toContain('priority: "now"');
+    expect(transicao).toContain('wait= childAt=now');
+    expect(transicao).toMatch(/não mande `PushNotification`/);
   });
 
   it('"Filha que espera o dono": O dono respondeu e o aviso final voltam a "em andamento"', () => {
@@ -472,11 +497,11 @@ describe('CL1 — texto da conferência, do prompt da fase e do fallback de entr
     expect(autorizacao).toContain('`priority: "now"`');
   });
 
-  it('achado 6: o caso (c) é uma lista objetiva', () => {
+  it('achado 6: o caso (b) é uma lista objetiva', () => {
     expect(autorizacao).toContain('eslint-suppressions.json');
     expect(autorizacao).toContain('`eslint-disable` de `complexity`');
     expect(autorizacao).toContain('push forçado');
-    expect(autorizacao).toMatch(/o que não está nesta lista não é \(c\)/i);
+    expect(autorizacao).toMatch(/o que não está nesta lista não é \(b\)/i);
     expect(autorizacao).not.toContain(
       'além do que uma regra escrita já deixa a fase fazer sozinha',
     );
