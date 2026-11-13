@@ -150,6 +150,18 @@ export const specMessages = {
   'spec.fieldPathWildcard':
     'caminho inválido "{path}" ("[*]" só vale em roots[].path de uma origem)',
   'spec.ignoreRepeated': '"{prop}" repetido',
+  // Modelos de campo, calls e formats (formatVersion 16, `specSignature.ts`)
+  'spec.likeNotField': '"{like}" não é um campo de um tipo da especialização',
+  'spec.formatNeedsPlaceholder': 'o molde precisa conter {placeholder}',
+  'spec.modelTypeInvalid': '"{value}" inválido; use "number", "string" ou "enum"',
+  'spec.optionsNotTextList': 'deve ser uma lista de textos não vazios',
+  'spec.optionsRequiredInEnum': 'obrigatório em enum',
+  'spec.expandParamsRequired': 'declare ao menos um parâmetro (nome → tipo na fonte)',
+  'spec.mustBeNonEmptyText': 'deve ser texto não vazio',
+  'spec.modelFormRequired': 'declare uma forma: "like", "type", "expand" ou "ignore"',
+  'spec.modelFormsConflict': 'use só uma forma: {forms}',
+  'spec.mustBeTrue': 'deve ser true',
+  'spec.callNotDeclared': '"{call}" não está em calls',
   'spec.exampleSystemUndeclared': 'sistema "{system}" não declarado em origins',
   'spec.fontRepeated': 'fonte "{family}" (peso {weight}, {style}) repetida',
   'spec.fontRepeatedNoWeight': 'fonte "{family}" (sem peso, {style}) repetida',

@@ -83,26 +83,27 @@ function checkLike(
   fields: ReadonlyMap<string, ReadonlySet<string>>,
   add: Add,
 ): void {
-  if (typeof like !== 'string' || like === '') return add(path, 'deve ser texto');
+  if (typeof like !== 'string' || like === '')
+    return add(path, specMsg('spec.mustBeText'));
   const dot = like.indexOf('.');
   const found =
     dot > 0 && (fields.get(like.slice(0, dot))?.has(like.slice(dot + 1)) ?? false);
-  if (!found) add(path, `"${like}" não é um campo de um tipo da especialização`);
+  if (!found) add(path, specMsg('spec.likeNotField', { like }));
 }
 
 function checkFormat(format: unknown, path: Path, add: Add): void {
   if (typeof format !== 'string' || !format.includes(FORMAT_PLACEHOLDER)) {
-    add(path, `o molde precisa conter ${FORMAT_PLACEHOLDER}`);
+    add(
+      path,
+      specMsg('spec.formatNeedsPlaceholder', { placeholder: FORMAT_PLACEHOLDER }),
+    );
   }
 }
 
 function checkTypeForm(model: Record<string, unknown>, path: Path, add: Add): void {
   const type = model.type;
   if (!(MODEL_TYPES as readonly unknown[]).includes(type)) {
-    add(
-      [...path, 'type'],
-      `${quoted([String(type)])} inválido; use "number", "string" ou "enum"`,
-    );
+    add([...path, 'type'], specMsg('spec.modelTypeInvalid', { value: String(type) }));
   }
   const options = model.options;
   if (options !== undefined) {
@@ -111,23 +112,22 @@ function checkTypeForm(model: Record<string, unknown>, path: Path, add: Add): vo
       options.length === 0 ||
       options.some((o) => typeof o !== 'string' || o === '')
     ) {
-      add([...path, 'options'], 'deve ser uma lista de textos não vazios');
-    } else if (type !== 'enum') add([...path, 'options'], 'só é permitido em enum');
-  } else if (type === 'enum') add([...path, 'options'], 'obrigatório em enum');
+      add([...path, 'options'], specMsg('spec.optionsNotTextList'));
+    } else if (type !== 'enum')
+      add([...path, 'options'], specMsg('spec.optionsOnlyEnum'));
+  } else if (type === 'enum')
+    add([...path, 'options'], specMsg('spec.optionsRequiredInEnum'));
   if (model.format !== undefined) checkFormat(model.format, [...path, 'format'], add);
 }
 
 function checkExpand(expand: unknown, path: Path, add: Add): void {
-  if (!isRecord(expand)) return add(path, 'deve ser um objeto');
+  if (!isRecord(expand)) return add(path, specMsg('spec.mustBeObject'));
   const extra = Object.keys(expand).filter((k) => k !== 'call' && k !== 'params');
   if (extra.length > 0) add(path, specMsg('spec.unknownKeys', { keys: quoted(extra) }));
   if (expand.call !== undefined) checkNonEmptyText(expand.call, [...path, 'call'], add);
   const params = expand.params;
   if (!isRecord(params) || Object.keys(params).length === 0) {
-    return add(
-      [...path, 'params'],
-      'declare ao menos um parâmetro (nome → tipo na fonte)',
-    );
+    return add([...path, 'params'], specMsg('spec.expandParamsRequired'));
   }
   for (const [name, type] of Object.entries(params)) {
     checkNonEmptyText(type, [...path, 'params', name], add);
@@ -135,7 +135,8 @@ function checkExpand(expand: unknown, path: Path, add: Add): void {
 }
 
 function checkNonEmptyText(value: unknown, path: Path, add: Add): void {
-  if (typeof value !== 'string' || value === '') add(path, 'deve ser texto não vazio');
+  if (typeof value !== 'string' || value === '')
+    add(path, specMsg('spec.mustBeNonEmptyText'));
 }
 
 /** As formas que o modelo declara (`like`, `type`, `expand`, `ignore`); `type` conta com `options` e `format` soltos. */
@@ -153,23 +154,24 @@ function checkModel(
   fields: ReadonlyMap<string, ReadonlySet<string>>,
   add: Add,
 ): void {
-  if (!isRecord(model)) return add(path, 'deve ser um objeto');
+  if (!isRecord(model)) return add(path, specMsg('spec.mustBeObject'));
   const extra = Object.keys(model).filter(
     (k) => !(MODEL_KEYS as readonly string[]).includes(k),
   );
   if (extra.length > 0) add(path, specMsg('spec.unknownKeys', { keys: quoted(extra) }));
   const forms = declaredForms(model);
   if (forms.length === 0) {
-    return add(path, 'declare uma forma: "like", "type", "expand" ou "ignore"');
+    return add(path, specMsg('spec.modelFormRequired'));
   }
-  if (forms.length > 1) return add(path, `use só uma forma: ${quoted(forms)}`);
+  if (forms.length > 1)
+    return add(path, specMsg('spec.modelFormsConflict', { forms: quoted(forms) }));
   switch (forms[0]) {
     case 'like':
       return checkLike(model.like, [...path, 'like'], fields, add);
     case 'expand':
       return checkExpand(model.expand, [...path, 'expand'], add);
     case 'ignore':
-      if (model.ignore !== true) add([...path, 'ignore'], 'deve ser true');
+      if (model.ignore !== true) add([...path, 'ignore'], specMsg('spec.mustBeTrue'));
       return;
     default:
       return checkTypeForm(model, path, add);
@@ -179,7 +181,7 @@ function checkModel(
 function checkFieldModels(spec: RawSpec, add: Add): void {
   const models = spec.fieldModels;
   if (models === undefined) return;
-  if (!isRecord(models)) return add(['fieldModels'], 'deve ser um objeto');
+  if (!isRecord(models)) return add(['fieldModels'], specMsg('spec.mustBeObject'));
   const fields = new Map<string, ReadonlySet<string>>();
   for (const layer of spec.layers) {
     for (const type of layer.annotationTypes) {
@@ -188,7 +190,7 @@ function checkFieldModels(spec: RawSpec, add: Add): void {
   }
   for (const [target, byType] of Object.entries(models)) {
     if (!isRecord(byType)) {
-      add(['fieldModels', target], 'deve ser um objeto');
+      add(['fieldModels', target], specMsg('spec.mustBeObject'));
       continue;
     }
     for (const [sourceType, model] of Object.entries(byType)) {
@@ -220,7 +222,10 @@ function checkCodeEntry(
   for (const [key, value] of Object.entries(code.params ?? {})) {
     const target = paramTarget(value);
     if (target.kind === 'path' && !Object.hasOwn(calls, target.call)) {
-      add([...path, 'params', key], `"${target.call}" não está em calls`);
+      add(
+        [...path, 'params', key],
+        specMsg('spec.callNotDeclared', { call: target.call }),
+      );
     }
   }
 }

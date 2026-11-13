@@ -7,6 +7,7 @@ import type {
   SpecMigrationStep,
   SpecNotice,
 } from '../spec';
+import { interpretsParamTargets, PARAM_TARGETS_FORMAT_VERSION } from '../codeParams';
 import { diffSpecs } from '../specVersions';
 import { findTypeInSpec } from '../specLookup';
 import { callName, unmappedParams } from './codeLink';
@@ -698,6 +699,16 @@ export function planSignatureImport(
   spec: Spec,
   options: PlanSignatureImportOptions,
 ): PlanSignatureImportResult {
+  // `signature`, `calls` e `formats` só valem na 16, e subir a versão mudaria o que os `params`
+  // da especialização antiga querem dizer (caminho e `#n` passam a ser interpretados): recusa.
+  if (!interpretsParamTargets(spec.formatVersion)) {
+    return {
+      ok: false,
+      code: 'spec-version',
+      detail: `a especialização "${spec.id}" é formatVersion ${spec.formatVersion}; a ficha de assinatura (signature, calls, formats) só vale a partir da ${PARAM_TARGETS_FORMAT_VERSION}`,
+      hint: `suba a especialização para a formatVersion ${PARAM_TARGETS_FORMAT_VERSION} (confira que os valores de params continuam certos: caminho e #n passam a ser interpretados) e chame de novo`,
+    };
+  }
   const clone = structuredClone(spec);
   const found = findTypeInSpec(clone, options.type);
   if (found === null) {

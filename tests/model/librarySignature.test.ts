@@ -232,6 +232,30 @@ describe('o caso de variants e a ficha (achados da revisão)', () => {
     ]);
   });
 
+  it('CL2 R-2: o caso sem ficha própria confere o símbolo e o arquivo dele contra a ficha herdada', () => {
+    const list = files(
+      withCase({
+        symbol: 'androidx.compose.material3.OutlinedButton',
+        path: 'compose/OutlinedButton.kt',
+      }),
+    );
+    expect(found(list).map((i) => [i.severity, i.path])).toEqual([
+      ['error', `${CASE_AT}.symbol`],
+      ['error', `${CASE_AT}.path`],
+    ]);
+    const codes = validateLibrary({ files: list, level: 2 })
+      .issues.map((i) => i.code)
+      .sort();
+    expect(codes).toEqual([
+      'library.signaturePathMismatch',
+      'library.signatureSymbolMismatch',
+    ]);
+  });
+
+  it('CL2 R-2: o caso sem símbolo nem arquivo próprios herda os da base e não reclama', () => {
+    expect(found(files(withCase({ params: { label: 'enabled' } })))).toEqual([]);
+  });
+
   it('a ficha que falta é erro em cada lugar que a cita, não só no primeiro', () => {
     const list = files(withCase({ signature: SIG }), null);
     expect(found(list).map((i) => [i.severity, i.path])).toEqual([

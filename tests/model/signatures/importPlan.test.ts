@@ -954,3 +954,33 @@ describe('correção CL1: plataforma da ficha e campo removed (S5-b, S5-a)', () 
     expect(again.spec).toEqual(first.spec);
   });
 });
+
+describe('CL2 R-1: a especialização anterior à 16 não recebe as chaves novas', () => {
+  const v15 = (): Spec =>
+    librarySpec((raw) => {
+      raw.formatVersion = 15;
+      delete raw.fieldModels;
+    });
+
+  it('o plano sobre uma spec v15 recusa com erro claro, em vez de devolver spec v15 inválida', () => {
+    const result = planSignatureImport(v15(), {
+      type: 'button',
+      target: { platform: 'compose' },
+      signature: composeSignature([text('label')]),
+    });
+    expect(result).toMatchObject({ ok: false, code: 'spec-version' });
+    if (!result.ok) {
+      expect(result.detail).toContain('15');
+      expect(result.hint).toContain('16');
+    }
+  });
+
+  it('a spec v16 segue sendo planejada', () => {
+    const result = planSignatureImport(librarySpec(), {
+      type: 'button',
+      target: { platform: 'compose' },
+      signature: composeSignature([text('label')]),
+    });
+    expect(result.ok).toBe(true);
+  });
+});

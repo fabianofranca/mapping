@@ -285,6 +285,31 @@ describe('plan_signature_import: erros', () => {
     expect(mismatch.data.error.hint).toBeTruthy();
   });
 
+  it('CL2 R-1: pacote com a especialização anterior à 16 é recusado (invalid-spec), sem plano', async () => {
+    const old = join(base, 'old');
+    cpSync(join(FIXTURES, 'library'), old, { recursive: true });
+    const file = join(old, 'lib.spec.json');
+    const raw = JSON.parse(readFileSync(file, 'utf8'));
+    raw.formatVersion = 15;
+    delete raw.fieldModels;
+    for (const layer of raw.layers)
+      for (const t of layer.annotationTypes)
+        for (const code of Object.values<Record<string, unknown>>(t.code ?? {})) {
+          for (const key of ['signature', 'ignore', 'calls', 'formats']) delete code[key];
+        }
+    writeFileSync(file, JSON.stringify(raw));
+    const r = await call('plan_signature_import', {
+      path: 'old',
+      type: 'button',
+      platform: 'compose',
+      signature: ficha(),
+    });
+    expect(r.isError).toBe(true);
+    expect(r.data.error.code).toBe('invalid-spec');
+    expect(r.data.error.message).toContain('15');
+    expect(r.data.error.hint).toBeTruthy();
+  });
+
   it('pede exatamente uma ficha e um alvo', async () => {
     const none = await call('plan_signature_import', {
       path: 'lib',
