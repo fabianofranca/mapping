@@ -1,4 +1,4 @@
-import { projectIndex, type ProjectIndex } from './projectIndex';
+import { memoByProject, projectIndex, type ProjectIndex } from './projectIndex';
 import type { Marking, Project } from './types';
 
 // Fim do assentar: a âncora exige o mesmo espaço (`anchor-other-space`). Quando a geometria
@@ -29,10 +29,36 @@ function stranded(
 }
 
 /**
+ * Alguma marcação tem âncora. Uma varredura barata por versão (sem montar o índice): quem edita
+ * um projeto sem âncoras não paga a montagem do índice a cada operação.
+ */
+export const hasAnchors = memoByProject((p: Project): boolean =>
+  p.markings.some((m) => m.anchor != null),
+);
+
+/** Ids mexidos (em `p`) que têm relação de âncora: a própria, ou ancoradas nelas em `before`. */
+function touchedAnchorIds(
+  p: Project,
+  touched: readonly number[],
+  idx: ProjectIndex | null,
+): string[] {
+  const list: string[] = [];
+  for (const i of touched) {
+    const m = p.markings[i];
+    if (m === undefined) continue;
+    if (m.anchor != null || idx?.anchorOf.has(m.id) || idx?.anchoredBy.has(m.id)) {
+      list.push(m.id);
+    }
+  }
+  return list;
+}
+
+/**
  * Solta a âncora de quem ficou noutro espaço que o alvo. `touched` são as posições (em
  * `p.markings`) das marcações que a operação mexeu; `null` confere o projeto inteiro (só as
- * ancoradas). Com `touched`, o índice de `before` dá as ancoradas de cada alvo mexido, e o de `p`
- * só é montado quando alguma marcação mexida tem relação de âncora.
+ * ancoradas). Com `touched`, o índice de `before` dá as ancoradas de cada alvo mexido, e só é
+ * montado quando `before` tem alguma âncora; sem âncora em `before`, só importam as mexidas que
+ * já nascem com uma. O índice de `p` só é montado quando alguma marcação mexida tem relação de âncora.
  */
 export function releaseStrandedAnchors(
   p: Project,
@@ -42,17 +68,11 @@ export function releaseStrandedAnchors(
   let ids: Iterable<string>;
   let was: ProjectIndex | null = null;
   if (touched === null) {
+    if (!hasAnchors(p)) return p;
     ids = projectIndex(p).anchorOf.keys();
   } else {
-    const idx = projectIndex(before);
-    const list: string[] = [];
-    for (const i of touched) {
-      const m = p.markings[i];
-      if (m === undefined) continue;
-      if (m.anchor != null || idx.anchorOf.has(m.id) || idx.anchoredBy.has(m.id)) {
-        list.push(m.id);
-      }
-    }
+    const idx = hasAnchors(before) ? projectIndex(before) : null;
+    const list = touchedAnchorIds(p, touched, idx);
     if (list.length === 0) return p;
     ids = list;
     was = idx;
