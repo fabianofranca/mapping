@@ -1,4 +1,4 @@
-# Andamento da fila no painel — [Não lançado] (épico `epic/painel-andamento`)
+# Andamento da fila no painel — 2026-11-13 (épico `epic/painel-andamento`)
 
 ## Pendências
 
