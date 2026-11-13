@@ -112,8 +112,9 @@ describe('DN1 — a correção que falha de novo cita "Chamar o dono" com os mes
     return linha;
   };
   const ultimaFrase = (): string => {
-    const frases = correcao.trimEnd().split('. ');
-    return frases[frases.length - 1]!;
+    const de = correcao.lastIndexOf('Na segunda falha');
+    if (de < 0) throw new Error('última frase da Fase de correção não achada');
+    return correcao.slice(de).trimEnd();
   };
 
   it('o item "com ❌" do orquestrador', () => {
