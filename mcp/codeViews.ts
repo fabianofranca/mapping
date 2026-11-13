@@ -2,6 +2,7 @@ import {
   codeBlueprint,
   codeLocalPath,
   effectiveDirection,
+  markingAnchorDefaults,
   findPlatform,
   findSpecType,
   placedTypeNotices,
@@ -296,6 +297,22 @@ function hintAnnotation(
   };
 }
 
+/**
+ * A âncora da marcação para quem escreve o código: a marcação-alvo e o lado e o alinhamento
+ * efetivos (os declarados na marcação ou, na falta, os do componente: `top` e `center` sem eles).
+ * `null` sem âncora.
+ */
+function hintAnchor(refs: Refs, markingId: string): Json | null {
+  const marking = projectIndex(refs.project).markings.get(markingId);
+  if (marking?.anchor == null) return null;
+  const defaults = markingAnchorDefaults(refs.project, refs.loaded.catalog)(marking);
+  return {
+    marking: refs.ref('m', marking.anchor.to),
+    side: marking.anchor.side ?? defaults?.side ?? 'top',
+    align: marking.anchor.align ?? defaults?.align ?? 'center',
+  };
+}
+
 function hintNode(
   node: BlueprintNode,
   refs: Refs,
@@ -304,12 +321,14 @@ function hintNode(
   const annotations = node.annotations.map((a) => hintAnnotation(a, refs, codes));
   const children = node.children.map((c) => hintNode(c, refs, codes));
   const marking = projectIndex(refs.project).markings.get(node.markingId);
+  const anchor = hintAnchor(refs, node.markingId);
   return {
     ref: refs.ref('m', node.markingId),
     name: node.name,
     rect: node.rect,
     // Direção de leitura efetiva do espaço da marcação (o container dela, senão a do projeto).
     direction: effectiveDirection(refs.project, marking?.containerId ?? null),
+    ...(anchor === null ? {} : { anchor }),
     ...(annotations.length > 0 ? { annotations } : {}),
     ...(children.length > 0 ? { children } : {}),
   };
@@ -407,6 +426,7 @@ export async function codeHintsView(
       );
     }
   }
+  const rootAnchor = hintAnchor(refs, markingId);
   return {
     marking: refs.ref('m', markingId),
     platform: {
@@ -420,6 +440,7 @@ export async function codeHintsView(
       refs.project,
       projectIndex(refs.project).markings.get(markingId)?.containerId ?? null,
     ),
+    ...(rootAnchor === null ? {} : { anchor: rootAnchor }),
     types,
     ...(unmapped.length > 0
       ? {

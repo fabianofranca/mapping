@@ -31,6 +31,14 @@ import {
   componentPlacement,
   componentSize,
   fitMarking,
+  snapToAnchor,
+  setMarkingAnchor,
+  setNewMarkingAnchor,
+  checkAnchorTarget,
+  componentAnchoredPlacement,
+  typeAnchorDefaults,
+  markingAnchorDefaults,
+  type MarkingAnchor,
   placementFitsSlot,
   hasComponentSlot,
   componentTypes,
@@ -1401,6 +1409,8 @@ class Batch {
       }
       case 'fit_marking':
         return this.fitMarkingOp(op, p);
+      case 'snap_to_anchor':
+        return this.snapToAnchorOp(op, p);
       case 'update_marking': {
         const id = this.item(op.marking, 'm');
         this.requireNotArrow(id, 'update_arrow');
@@ -1458,6 +1468,15 @@ class Batch {
           );
           const r = op.rect;
           changes.push(`retângulo x ${r.x}, y ${r.y}, ${r.width}×${r.height}`);
+        }
+        if (op.anchor !== undefined) {
+          const anchor = op.anchor === null ? null : this.markingAnchor(op.anchor);
+          project = setMarkingAnchor(project, id, anchor);
+          changes.push(
+            anchor === null
+              ? 'tirar a âncora'
+              : `ancorar em "${this.markingLabel(project, anchor.to)}"`,
+          );
         }
         if (op.confirmReview === true) {
           project = confirmMarkingReview(project, id);
@@ -1849,6 +1868,51 @@ class Batch {
     };
   }
 
+  /** A âncora do passo: o alvo (referência, id ou apelido) vira id; `side`, `align` e `offset` só entram se vierem. */
+  private markingAnchor(
+    anchor: NonNullable<Extract<Operation, { op: 'update_marking' }>['anchor']>,
+  ): MarkingAnchor {
+    return {
+      to: this.item(anchor.to, 'm'),
+      ...(anchor.side === undefined ? {} : { side: anchor.side }),
+      ...(anchor.align === undefined ? {} : { align: anchor.align }),
+      ...(anchor.offset === undefined ? {} : { offset: anchor.offset }),
+    };
+  }
+
+  /**
+   * `snap_to_anchor`: o `snapToAnchor` do modelo (o mesmo Encostar da app), com os padrões do
+   * componente da marcação. O resumo diz o retângulo antes e depois; o aviso de "preso dentro do
+   * container" vai para `warnings`.
+   */
+  private snapToAnchorOp(
+    op: Extract<Operation, { op: 'snap_to_anchor' }>,
+    p: Project,
+  ): Step {
+    const id = this.item(op.marking, 'm');
+    this.requireNotArrow(id, 'update_arrow');
+    const label = this.markingLabel(p, id);
+    const before = projectIndex(p).markings.get(id)?.rect;
+    if (before === undefined) throw new ModelError('not-found', id);
+    const { project, warnings } = snapToAnchor(p, id, {
+      defaults: markingAnchorDefaults(p, this.catalog),
+    });
+    const notes = warnings.map((w) => w.text);
+    const rectText = (r: Rect): string => `${r.width}×${r.height} px em (${r.x}, ${r.y})`;
+    if (project === p) {
+      return {
+        project,
+        description: `A marcação "${label}" já está encostada na âncora (${rectText(before)}): nada muda`,
+      };
+    }
+    const after = projectIndex(project).markings.get(id)!.rect;
+    return {
+      project,
+      ...(notes.length > 0 ? { notes } : {}),
+      description: `Encostar a marcação "${label}" na âncora: ${rectText(before)} → ${rectText(after)}`,
+    };
+  }
+
   /** `delete_container` e a antiga `delete_image`. */
   private deleteContainerOp(id: string, p: Project): Step {
     const impact = containerDeletionImpact(p, id);
@@ -2119,6 +2183,16 @@ class Batch {
         '`inside` só vale com `annotation` de um tipo com componente (veja list_components)',
       );
     }
+    const anchor = op.anchor === undefined ? null : this.markingAnchor(op.anchor);
+    // A âncora é conferida antes de criar (os erros da invariante); depois do assentar, só o espaço
+    // pode ter mudado e então a nova nasce sem âncora, com um aviso.
+    if (anchor !== null) checkAnchorTarget(p, markingId, containerId, anchor);
+    if (anchor !== null && (op.near !== undefined || inside !== null)) {
+      throw new ToolError(
+        'invalid-arguments',
+        '`anchor` e `near`/`inside` são posições diferentes: informe só uma',
+      );
+    }
     if (op.rect === undefined && component === null) {
       throw new ToolError(
         'invalid-arguments',
@@ -2173,6 +2247,7 @@ class Batch {
         nearRect ??
         (inside ? this.insideRect(op, inside.id, containerId, typeRef, minSize) : null) ??
         op.rect ??
+        this.anchoredRect(p, notes, markingId, containerId, typeRef, op, anchor) ??
         componentPlacement(
           p,
           catalog,
@@ -2205,6 +2280,7 @@ class Batch {
             ...typeRef,
             rect,
             name: op.name ?? null,
+            ...(anchor === null ? {} : { anchor }),
           },
           this.measurer,
         ),
@@ -2229,6 +2305,7 @@ class Batch {
         rect: op.rect!,
         name: op.name ?? null,
       });
+      if (anchor !== null) project = setNewMarkingAnchor(project, markingId, anchor);
       if (annotation && typeRef !== null) {
         annotationId = crypto.randomUUID();
         project = this.typedAnnotation(project, annotationId, markingId, {
@@ -2253,6 +2330,11 @@ class Batch {
       }
     }
     const { rect } = created;
+    if (anchor !== null && created.anchor == null) {
+      notes.push(
+        'a âncora foi solta: pela geometria a marcação nasceu em outro espaço que o alvo (o container ou o canvas); ancore-a depois com `update_marking`, no mesmo espaço do alvo',
+      );
+    }
     const label = this.createdMarkingLabel(p, project, created, component?.name ?? null);
     return {
       project,
@@ -2268,6 +2350,39 @@ class Batch {
       ],
       rowAliases,
     };
+  }
+
+  /**
+   * O retângulo de uma instância nova com `anchor` e sem `rect`: o tamanho medido encostado no alvo,
+   * com os padrões do componente; `null` quando não há `anchor` ou o `rect` manda. O aviso de "preso
+   * dentro do container" vai para as notas.
+   */
+  private anchoredRect(
+    p: Project,
+    notes: string[],
+    markingId: string,
+    containerId: string | null,
+    typeRef: AnnotationTypeRef,
+    op: Extract<Operation, { op: 'create_marking' }>,
+    anchor: MarkingAnchor | null,
+  ): Rect | null {
+    if (anchor === null || op.rect !== undefined) return null;
+    const placed = componentAnchoredPlacement(
+      p,
+      this.catalog,
+      {
+        markingId,
+        containerId,
+        parentId: null,
+        ...typeRef,
+        ...initialValuesArg(op.annotation?.values),
+        anchor,
+        anchorDefaults: typeAnchorDefaults(this.catalog, typeRef.specId, typeRef.typeId),
+      },
+      this.measurer,
+    );
+    notes.push(...placed.warnings.map((w) => w.text));
+    return placed.rect;
   }
 
   /**

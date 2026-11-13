@@ -258,6 +258,7 @@ const FIELD_KEYS: Readonly<Record<string, TranslationKey>> = {
   'marking.locked': 'review.field.locked',
   'marking.source': 'review.field.source',
   'marking.position': 'review.field.position',
+  'marking.anchor': 'review.field.anchor',
   'image.name': 'review.field.name',
   'image.file': 'review.field.file',
   'image.background': 'review.field.background',
@@ -506,6 +507,28 @@ function compact(value: JsonValue): string {
   return json.length > 80 ? `${json.slice(0, 79)}…` : json;
 }
 
+/** A âncora de uma marcação: "acima/início de Botão" (o que não foi dito é "padrão") e o deslocamento, se houver. */
+function anchorText(names: ReviewNames, value: JsonValue): string {
+  if (!isRecord(value) || typeof value.to !== 'string') return compact(value);
+  const word = (kind: 'side' | 'align', v: JsonValue | undefined): string =>
+    typeof v === 'string'
+      ? t(`review.value.anchor.${kind}.${v}` as TranslationKey)
+      : t('review.value.anchor.default');
+  const summary = t('review.value.anchor', {
+    side: word('side', value.side),
+    align: word('align', value.align),
+    name: markingName(names, value.to),
+  });
+  const { offset } = value;
+  return isRecord(offset)
+    ? t('review.value.anchor.offset', {
+        summary,
+        main: String(offset.main),
+        cross: String(offset.cross),
+      })
+    : summary;
+}
+
 /** Texto de uma direção de leitura; `null` (ausente) é "Segue o projeto" no container e `ltr` no projeto. */
 function directionText(entity: Change['entity'], value: JsonValue): string {
   if (value === 'ltr' || value === 'rtl') return t(`review.value.direction.${value}`);
@@ -588,6 +611,7 @@ export function valueParts(
     return [{ text: formatDensity(typeof value === 'number' ? value : 1) }];
   }
   if (field === 'direction') return [{ text: directionText(c.entity, value) }];
+  if (field === 'anchor' && value !== null) return [{ text: anchorText(names, value) }];
   if (value === null) return [{ text: t('review.value.empty') }];
   if (field.startsWith(VALUES_FIELD_PREFIX)) {
     const typedParts = typedValueParts(names, value);

@@ -34,6 +34,13 @@ export interface ProjectIndex {
    * sob o destino (`to`); uma seta de uma marcação a ela mesma (projeto inválido) aparece uma vez.
    */
   readonly arrowsByMarking: ReadonlyMap<string, readonly Arrow[]>;
+  /**
+   * Marcações ancoradas em cada alvo (v20, `anchor.to`), na ordem do array. Só as que têm âncora;
+   * o alvo pode nem existir (projeto inválido).
+   */
+  readonly anchoredBy: ReadonlyMap<string, readonly Marking[]>;
+  /** Alvo da âncora de cada marcação ancorada (`anchor.to`); as sem âncora não têm entrada. */
+  readonly anchorOf: ReadonlyMap<string, string>;
   readonly annotations: ReadonlyMap<string, Annotation>;
   /** Tuplas de cada anotação, por id. */
   readonly entries: ReadonlyMap<string, ReadonlyMap<string, Entry>>;
@@ -199,6 +206,8 @@ function buildIndex(p: Project): ProjectIndex {
   const canvasRoots: Marking[] = [];
   const arrowsByMarking = new Map<string, Arrow[]>();
   const annotationsByMarking = new Map<string, Annotation[]>();
+  const anchoredBy = new Map<string, Marking[]>();
+  const anchorOf = new Map<string, string>();
   const annotationsByOwner = new Map<string, Annotation[]>();
   const types = new Map<string, ResolvedType>();
   const specLayers = new Map<string, SpecLayer>();
@@ -214,6 +223,10 @@ function buildIndex(p: Project): ProjectIndex {
   for (const m of p.markings) {
     push(children, m.parentId, m);
     if (m.containerId === null && m.parentId === null) canvasRoots.push(m);
+    if (m.anchor != null) {
+      push(anchoredBy, m.anchor.to, m);
+      anchorOf.set(m.id, m.anchor.to);
+    }
   }
   for (const c of p.containers) push(containersByParent, c.parentId, c);
   for (const a of p.arrows) {
@@ -235,6 +248,8 @@ function buildIndex(p: Project): ProjectIndex {
     markings: markingsById,
     arrows: byId(p.arrows),
     arrowsByMarking,
+    anchoredBy,
+    anchorOf,
     annotations: byId(p.annotations),
     entries,
     children,

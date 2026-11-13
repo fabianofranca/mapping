@@ -9,7 +9,7 @@ import {
 } from './geometry';
 import { isValidDensity } from './density';
 import { tableRows } from './refs';
-import type { Entry, Perspective, Project, Rect } from './types';
+import type { Entry, Marking, Perspective, Project, Rect } from './types';
 
 export type InvariantCode =
   | 'duplicate-id'
@@ -34,6 +34,10 @@ export type InvariantCode =
   | 'parent-floating'
   | 'arrow-endpoint-missing'
   | 'arrow-self'
+  | 'anchor-missing'
+  | 'anchor-self'
+  | 'anchor-cycle'
+  | 'anchor-other-space'
   | 'missing-parent-annotation'
   | 'annotation-parent-other-marking'
   | 'annotation-parent-same-layer'
@@ -226,6 +230,42 @@ function validatePerspectives(p: Project, perspective: Report, arrival: Report):
 }
 
 /**
+ * Âncoras (v20): o alvo existe, não é a própria marcação, está no mesmo espaço (o mesmo container,
+ * ou as duas no canvas) e a cadeia de âncoras não fecha um ciclo. O ciclo é reportado em cada
+ * marcação que a cadeia dela alcança de volta; quem só entra num ciclo não é reportada.
+ */
+function validateAnchors(
+  p: Project,
+  markings: ReadonlyMap<string, Marking>,
+  report: Report,
+): void {
+  for (const m of p.markings) {
+    const to = m.anchor?.to;
+    if (to === undefined) continue;
+    const target = markings.get(to);
+    if (target === undefined) report('anchor-missing', m, to);
+    else if (to === m.id) report('anchor-self', m, to);
+    else if (target.containerId !== m.containerId) report('anchor-other-space', m, to);
+    else if (anchorChainReturns(markings, m.id)) report('anchor-cycle', m, to);
+  }
+}
+
+/** Seguindo `anchor.to` a partir de `start`, a cadeia volta a `start` (sem travar em outro ciclo). */
+function anchorChainReturns(
+  markings: ReadonlyMap<string, Marking>,
+  start: string,
+): boolean {
+  const seen = new Set<string>();
+  let next = markings.get(start)?.anchor?.to;
+  while (next !== undefined && !seen.has(next)) {
+    if (next === start) return true;
+    seen.add(next);
+    next = markings.get(next)?.anchor?.to;
+  }
+  return false;
+}
+
+/**
  * Checa os invariantes que o schema zod não expressa. Lista vazia = projeto válido.
  * Ver docs/FORMAT.md, "Regras de validade". A seta (v13) tem as suas:
  * `arrow-endpoint-missing` (ponta que não é uma marcação existente) e `arrow-self`. As regras das especializações (camada × tipo,
@@ -358,6 +398,8 @@ export function validateProject(p: Project): InvariantIssue[] {
     if (!markings.has(a.to)) arrow('arrow-endpoint-missing', a, a.to);
     if (a.from === a.to) arrow('arrow-self', a, a.from);
   }
+
+  validateAnchors(p, markings, marking);
 
   // Pai de um container (v13): uma marcação do canvas, não flutuante, que o contém inteiro.
   for (const c of p.containers) {

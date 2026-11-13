@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { READING_DIRECTIONS } from '../src/model';
+import { ANCHOR_ALIGNS, ANCHOR_SIDES, READING_DIRECTIONS } from '../src/model';
 import { MAX_BASE64_TEXT } from './image/formats';
 
 // Operações de `plan_changes` (etapa 3a.5). Cada uma vira uma ou mais operações puras do
@@ -113,6 +113,37 @@ const noPoints = z
   .unknown()
   .optional()
   .describe('Não use: a rota é da pessoa (recusado com `invalid-arguments`).');
+
+/**
+ * A âncora de uma marcação (schema v20): `to` é a marcação-alvo (referência, id ou apelido); `side`,
+ * `align` e `offset` ausentes valem os padrões do componente (`anchor` na raiz dele; sem eles, `top`,
+ * `center` e 0).
+ */
+const anchorShape = z
+  .object({
+    to: item('Marcação-alvo da âncora (do mesmo espaço)'),
+    side: z
+      .enum(ANCHOR_SIDES)
+      .optional()
+      .describe(
+        'Lado do alvo em que a marcação fica: `top`, `bottom`, `start` ou `end` (os dois últimos seguem a direção de leitura: em `rtl`, `start` é o lado direito). Ausente: o `anchor.side` do componente, senão `top`.',
+      ),
+    align: z
+      .enum(ANCHOR_ALIGNS)
+      .optional()
+      .describe(
+        'Alinhamento ao longo desse lado: `start`, `center` ou `end`. Ausente: o `anchor.align` do componente, senão `center`.',
+      ),
+    offset: z
+      .object({ main: z.number().finite(), cross: z.number().finite() })
+      .optional()
+      .describe(
+        'Deslocamento em pixels do container (no canvas, unidades do canvas): `main` é a distância da borda do alvo (negativo sobrepõe) e `cross` anda ao longo do lado. Ausente: o `anchor.offset` do componente (em unidades × `density`), senão 0.',
+      ),
+  })
+  .describe(
+    'Âncora: a marcação fica encostada em outra do mesmo espaço (`to`). Ela só liga as duas (o desenho do componente lê o lado e a posição do alvo por `$anchor.*`); `snap_to_anchor` encosta de fato. Mover o alvo leva a marcação ancorada junto; redimensionar o alvo não.',
+  );
 
 const drawingModeField = z
   .string()
@@ -447,6 +478,11 @@ export const operationSchema = z.discriminatedUnion('op', [
       ),
     name: name.optional(),
     source: externalSource.optional(),
+    anchor: anchorShape
+      .optional()
+      .describe(
+        'Âncora (veja `anchor` em `update_marking`). Com `annotation` de um tipo com componente e sem `rect`, a marcação nasce no tamanho medido já encostada na âncora (o lado, o alinhamento e o deslocamento que `anchor` não diz vêm do `anchor` da raiz do componente); com `rect`, o `rect` manda e a âncora só é gravada. Não vale com `near` nem `inside`.',
+      ),
     parent: item('Marcação pai')
       .nullable()
       .optional()
@@ -541,10 +577,22 @@ export const operationSchema = z.discriminatedUnion('op', [
     ),
   }),
   z.object({
+    op: z.literal('snap_to_anchor'),
+    marking: item('Marcação').describe(
+      'Uma marcação com `anchor` (veja `update_marking`). Ela é encostada na âncora: o retângulo sai do `side`, do `align` e do `offset` (o que a âncora não diz vem do `anchor` da raiz do componente; o `offset` dele é em unidades × `density`), com o tamanho que a marcação já tem (use `fit_marking` antes para o tamanho acompanhar o conteúdo). Preso dentro do container, com aviso quando foi preciso. Chame-a depois de mudar o tamanho da marcação ou de ancorá-la: nada se encosta sozinho (só mover a âncora leva as ancoradas junto). Ao encostar, as filhas da marcação e as ancoradas nela (com as filhas e ancoradas delas) andam o mesmo deslocamento. O resumo diz o retângulo antes e depois (ou que nada mudou). Falha com `not-anchored` (sem âncora) e `locked` (geometria trancada que mudaria).',
+    ),
+  }),
+  z.object({
     op: z.literal('update_marking'),
     marking: item('Marcação'),
     name: name.optional(),
     source: externalSource.optional(),
+    anchor: anchorShape
+      .nullable()
+      .optional()
+      .describe(
+        'Grava a âncora (sem mover a marcação: use `snap_to_anchor` para encostar), ou `null` para tirá-la. Ausente não muda. Erros: `anchor-missing` (o alvo não existe), `anchor-self`, `anchor-other-space` (o alvo precisa estar no mesmo container, ou os dois no canvas) e `anchor-cycle`. Num `rect`/`container` do mesmo passo, a âncora vale depois dele. Excluir o alvo tira a âncora das ancoradas.',
+      ),
     rect: rect
       .optional()
       .describe(

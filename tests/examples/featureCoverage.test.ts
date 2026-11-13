@@ -130,6 +130,10 @@ const MISSING_TODAY: string[] = [
   'component:anchors.end',
   'component:cond.$direction',
   'component:node.icon.mirror',
+  // Âncora (etapa #1096, R3): `anchor` na raiz do componente e os `$anchor.*`; a Material 3 os adota na R5
+  // (tooltip, badge e menu); cobertos por tests/model/components/anchorParse.test.ts, anchorFields.test.ts,
+  // tests/model/componentDrawingsAnchorEngine.test.ts e pelos roteiros R12 e R25.
+  'component:root.anchor',
   'component:node.path.mirror',
   // Tela e traço em escala (CF8, etapa #747): `screen` na raiz e `stroke.scale` (formato 4) e
   // `structural` no tipo (formatVersion 15); as bibliotecas distribuídas não migram; coberto por

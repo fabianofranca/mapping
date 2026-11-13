@@ -14,6 +14,7 @@
  * desenho se adaptar ao tamanho do retângulo.
  */
 import type { IconSet } from './icons';
+import type { AnchorAlign, AnchorSide } from '../anchorSides';
 
 export const COMPONENT_FORMAT = 'mapping-component';
 /** Versão em que os componentes sem `repeat` são escritos (os geradores do repositório a gravam). */
@@ -661,6 +662,27 @@ export interface ScreenSpec {
   readonly anchor?: ScreenAnchor;
 }
 
+// Os lados e o alinhamento da âncora têm uma só definição, em `../types` (o formato do projeto, que
+// não importa daqui): o arquivo do componente os reexporta.
+export {
+  ANCHOR_ALIGNS,
+  ANCHOR_SIDES,
+  type AnchorAlign,
+  type AnchorSide,
+} from '../anchorSides';
+
+/**
+ * Como o tipo prefere encostar na âncora (v4, só na raiz do arquivo): os padrões de `side`, `align`
+ * e `offset` de uma marcação que declara âncora sem dizê-los. Tudo opcional: ausentes valem `top`,
+ * `center` e `{ main: 0, cross: 0 }`. O `offset` é em UNIDADES do componente (a densidade do
+ * container o converte em pixels ao aplicar); ver `componentAnchorDefaults`.
+ */
+export interface ComponentAnchor {
+  readonly side?: AnchorSide;
+  readonly align?: AnchorAlign;
+  readonly offset?: { readonly main?: number; readonly cross?: number };
+}
+
 export interface ComponentFile {
   readonly format: typeof COMPONENT_FORMAT;
   readonly formatVersion: ComponentFormatVersion;
@@ -676,6 +698,8 @@ export interface ComponentFile {
   readonly sizing?: ComponentSizing;
   /** Desenho em pixels de tela ancorado no retângulo da marcação (v4); ver `ScreenSpec`. */
   readonly screen?: ScreenSpec;
+  /** Como o tipo prefere encostar na âncora (v4); ver `ComponentAnchor`. */
+  readonly anchor?: ComponentAnchor;
   /**
    * Valores de pré-visualização dos campos (biblioteca e instância nova): os campos vêm do
    * tipo da especialização; aqui só os valores de exemplo.

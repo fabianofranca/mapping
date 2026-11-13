@@ -106,6 +106,27 @@ export interface ProjectContainer {
   readonly direction?: ReadingDirection | null;
 }
 
+import {
+  ANCHOR_ALIGNS,
+  ANCHOR_SIDES,
+  type AnchorAlign,
+  type AnchorSide,
+} from './anchorSides';
+export { ANCHOR_ALIGNS, ANCHOR_SIDES, type AnchorAlign, type AnchorSide };
+
+/**
+ * Âncora de uma marcação (v20): a marcação fica encostada em outra do mesmo espaço (`to`), do lado
+ * `side`, alinhada por `align`, com o `offset` em pixels do espaço (`main` = distância da borda
+ * da âncora, negativo sobrepõe; `cross` = deslocamento ao longo do lado). Os campos ausentes
+ * valem os padrões do componente. Não entra no pertencimento: quem contém quem é só geometria.
+ */
+export interface MarkingAnchor {
+  readonly to: string;
+  readonly side?: AnchorSide;
+  readonly align?: AnchorAlign;
+  readonly offset?: { readonly main: number; readonly cross: number };
+}
+
 export interface Marking {
   readonly id: string;
   /**
@@ -135,6 +156,11 @@ export interface Marking {
   readonly floating: boolean;
   /** Identidade no sistema de origem (v8); `null` = sem origem. */
   readonly source: ExternalSource | null;
+  /**
+   * Âncora (v20): encosta a marcação em outra do mesmo espaço; ausente ou `null` = sem âncora.
+   * Mover a âncora leva as ancoradas; redimensioná-la não.
+   */
+  readonly anchor?: MarkingAnchor | null;
 }
 
 /** Lado de uma marcação onde a seta se prende (v13). */

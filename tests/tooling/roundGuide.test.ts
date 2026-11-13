@@ -591,20 +591,21 @@ describe('round-guide.mjs: base, índice e trechos (#1232, GL1)', () => {
       expect(out.split('\n').filter((l) => l.startsWith('Passos ('))).toHaveLength(1);
     });
 
-    it('R12: as duas subseções com os preparos e uma linha Passos por trecho de tabela', async () => {
+    it('R12: as três subseções com os preparos e uma linha Passos por trecho de tabela', async () => {
       const { guideExcerpt } = await load();
       const guide = await guideOf(['R12']);
       const out = guideExcerpt(guide, ['R12']);
       expect(out).toContain('#### R12.17 a R12.22');
       expect(out).toContain('#### R12.23 a R12.28');
-      expect(out.match(/\*\*Preparo\.\*\*/g)?.length).toBeGreaterThanOrEqual(3);
+      expect(out).toContain('#### R12.34 a R12.40');
+      expect(out.match(/\*\*Preparo\.\*\*/g)?.length).toBeGreaterThanOrEqual(4);
       const passos = out.split('\n').filter((l) => l.startsWith('Passos ('));
-      expect(passos).toHaveLength(3);
+      expect(passos).toHaveLength(4);
       const sum = passos.reduce(
         (n, l) => n + Number(/^Passos \((\d+)\)/.exec(l)?.[1]),
         0,
       );
-      expect(sum).toBe(53);
+      expect(sum).toBe(60);
       expect(out).not.toMatch(/^\| R12\.\d/m);
     });
 

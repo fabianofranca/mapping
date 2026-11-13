@@ -1,10 +1,13 @@
+import { anchorValues } from './componentValues';
+import { componentAnchorDefaults, type InstanceAnchor } from './components/anchor';
 import type { ComponentFile } from './components/componentFormat';
 import { applyTokens, type ResolvedTokens } from './components/tokens';
+import { effectiveDensity } from './density';
 import { effectiveDirection } from './direction';
 import { fail } from './errors';
 import { updateById } from './project';
 import { projectIndex } from './projectIndex';
-import type { Project, ReadingDirection } from './types';
+import type { Marking, Project, ReadingDirection } from './types';
 
 // Modo do desenho (schema v18, etapa "componentes fiéis"): escolhe o modo dos `tokens` das
 // especializações (`light`, `dark`…). É do projeto; o container pode fixar o seu. Não depende do
@@ -114,15 +117,43 @@ export function componentForDrawing(
 }
 
 /**
- * As opções do motor que vêm do espaço (`tokens` e `direction`): só leva a chave quando há o que
- * passar (`tokens` definidos, direção `rtl`), então em `ltr` as opções são as de antes da direção.
+ * A âncora de uma marcação existente na forma que a instância lê (`$anchor.*`), para as MEDIÇÕES
+ * (`fitMarking`, o arrumar): a mesma que o desenho recebe (`componentDrawings`), com o `rect` atual
+ * da marcação, o lado gravado ou, sem ele, o padrão do componente. `undefined` sem âncora ou sem o
+ * alvo. Sem isso o `$anchor.*` fica nulo e um `sizing` que depende do lado mede noutro ramo.
+ */
+export function measuringAnchor(
+  p: Project,
+  marking: Marking,
+  component: ComponentFile,
+): InstanceAnchor | undefined {
+  const { anchor } = marking;
+  if (anchor == null) return undefined;
+  const target = projectIndex(p).markings.get(anchor.to);
+  if (target === undefined) return undefined;
+  const density = effectiveDensity(p, marking.containerId);
+  return anchorValues({
+    rect: marking.rect,
+    anchorRect: target.rect,
+    side: anchor.side,
+    defaults: componentAnchorDefaults(component, density),
+    density,
+  });
+}
+
+/**
+ * As opções do motor que vêm do espaço (`tokens`, `direction` e, numa marcação ancorada, `anchor`):
+ * só leva a chave quando há o que passar (`tokens` definidos, direção `rtl`, âncora), então em `ltr`
+ * e sem âncora as opções são as de antes.
  */
 export function drawOptions(drawn: {
   readonly tokens: ResolvedTokens | undefined;
   readonly direction: ReadingDirection;
-}): { tokens?: ResolvedTokens; direction?: 'rtl' } {
+  readonly anchor?: InstanceAnchor | undefined;
+}): { tokens?: ResolvedTokens; direction?: 'rtl'; anchor?: InstanceAnchor } {
   return {
     ...(drawn.tokens === undefined ? {} : { tokens: drawn.tokens }),
     ...(drawn.direction === 'rtl' ? { direction: 'rtl' as const } : {}),
+    ...(drawn.anchor === undefined ? {} : { anchor: drawn.anchor }),
   };
 }

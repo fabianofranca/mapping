@@ -1,3 +1,4 @@
+import { releaseStrandedAnchors } from './anchorRelease';
 import {
   EPSILON,
   IDENTITY_PLACEMENT,
@@ -199,7 +200,8 @@ function settleSpace(
  * retângulos iguais (`chainOrder`) e de retângulos fora da grade (largura ou altura nula ou minúscula).
  */
 export function settleHierarchy(p: Project, options?: SettleOptions): Project {
-  return reconcilePerspectives(options?.before ?? p, settleGeometry(p, options, null));
+  const settled = releaseStrandedAnchors(settleGeometry(p, options, null), null, p);
+  return reconcilePerspectives(options?.before ?? p, settled);
 }
 
 /** As marcações do assentar: a lista só é copiada na primeira troca (quase nunca muda tudo). */
@@ -248,6 +250,8 @@ interface TableHolder {
   readonly built: Map<string | null, SpaceEntry>;
   /** Alguma marcação trocou de espaço no assentar: a tabela de antes não vale mais para o resultado. */
   moved?: boolean;
+  /** Posições das marcações que a operação mexeu (mudaram ou trocaram de espaço), do recorte. */
+  touched?: readonly number[];
 }
 
 /**
@@ -277,7 +281,10 @@ function settleGeometry(
     touched: [],
   };
   moveToSpaces(w, delta);
-  if (delta !== null) collectDirty(w, delta);
+  if (delta !== null) {
+    collectDirty(w, delta);
+    table.touched = w.touched;
+  }
   const containers = settleParents(w);
   if (!w.list.copied() && containers === p.containers) return p;
   const markings = w.list.items() as Marking[];
@@ -506,8 +513,10 @@ export function settleFrom(
     known: delta?.stable ? knownPositions(before.markings) : undefined,
     built: new Map(),
   };
-  const settled = settleGeometry(next, merged, delta, table);
-  rememberTable(before, settled, delta, table);
+  const geometry = settleGeometry(next, merged, delta, table);
+  rememberTable(before, geometry, delta, table);
+  const touched = delta === null ? null : (table.touched ?? []);
+  const settled = releaseStrandedAnchors(geometry, touched, before);
   return reconcileSettled(merged.before ?? next, settled);
 }
 

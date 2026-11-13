@@ -314,6 +314,18 @@ function linkTree(refs: Refs, own: readonly Annotation[]): LinkNode[] | null {
   return own.filter((a) => a.parentAnnotationId === null).map(node);
 }
 
+/** A âncora da marcação com `to` como referência (os campos que ela não diz ficam ausentes); `null` sem âncora. */
+function anchorView(refs: Refs, marking: Marking): Json | null {
+  const { anchor } = marking;
+  if (anchor == null) return null;
+  return {
+    to: refs.ref('m', anchor.to),
+    ...(anchor.side === undefined ? {} : { side: anchor.side }),
+    ...(anchor.align === undefined ? {} : { align: anchor.align }),
+    ...(anchor.offset === undefined ? {} : { offset: anchor.offset }),
+  };
+}
+
 /** Tudo sobre a marcação (`get_marking`). Com `platform`, o `code` mostra só essa plataforma. */
 export async function markingView(
   ctx: CodeContext,
@@ -385,6 +397,9 @@ export async function markingView(
     },
     needsReview: marking.needsReview,
     parent: marking.parentId === null ? null : refs.ref('m', marking.parentId),
+    // Âncora (v20): a marcação a que esta está ligada e as que estão ligadas a ela.
+    anchor: anchorView(refs, marking),
+    anchoredBy: (index.anchoredBy.get(marking.id) ?? []).map((m) => refs.ref('m', m.id)),
     children: childRows,
     ...(children.length > LIST_LIMIT ? { childrenTotal: children.length } : {}),
     // Quem tem esta marcação como pai (derivado da geometria): marcações do mesmo espaço e,

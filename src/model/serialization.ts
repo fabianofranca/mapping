@@ -14,10 +14,23 @@ import { projectSchema } from './schema';
 import { parseSpecText, type Spec } from './spec';
 import {
   SCHEMA_VERSION,
+  type MarkingAnchor,
   type Project,
   type ProjectFile,
   type ProjectSpecialization,
 } from './types';
+
+/** A âncora da marcação com as chaves sempre na mesma ordem e só as presentes. */
+function canonicalAnchor(a: MarkingAnchor): MarkingAnchor {
+  return {
+    to: a.to,
+    ...(a.side === undefined ? {} : { side: a.side }),
+    ...(a.align === undefined ? {} : { align: a.align }),
+    ...(a.offset === undefined
+      ? {}
+      : { offset: { main: a.offset.main, cross: a.offset.cross } }),
+  };
+}
 
 /**
  * Gera o texto do `mapping.json`: chaves sempre na mesma ordem, indentação de
@@ -87,6 +100,7 @@ export function serialize(p: Project): string {
       locked: m.locked,
       floating: m.floating,
       source: m.source && { system: m.source.system, id: m.source.id, url: m.source.url },
+      ...(m.anchor == null ? {} : { anchor: canonicalAnchor(m.anchor) }),
     })),
     arrows: p.arrows.map((a) => ({
       id: a.id,

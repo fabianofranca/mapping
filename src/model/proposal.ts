@@ -7,6 +7,7 @@ import {
   containerSchema,
   jsonValue,
   layerSchema,
+  anchorSchema,
   markingSchema,
   normalizeIsoDate,
   placementSchema,
@@ -24,7 +25,9 @@ import { READING_DIRECTIONS, type JsonValue } from './types';
 export const PROPOSAL_FORMAT = 'mapping-proposal';
 export const PROPOSAL_FORMAT_VERSION = 4;
 /**
- * Versões lidas, de 1 a 8: a 8 acrescenta a direção de leitura (campo `direction` do container e
+ * Versões lidas, de 1 a 9: a 9 acrescenta a âncora da marcação (campo `anchor` da marcação e `anchor` no
+ * valor de uma marcação criada, schema v20) e só é gravada quando a proposta a usa (inclui o que a 8 e
+ * as anteriores têm); a 8 acrescenta a direção de leitura (campo `direction` do container e
  * do projeto, schema v20) e só é gravada quando a proposta a usa (inclui o que a 7 e a 6 têm); a 7
  * acrescenta a densidade do container (campo `density`, schema v19) e só
  * é gravada quando a proposta a usa (inclui o que a 6 tem); a 6 acrescenta o modo do desenho (a entidade `project` e o campo
@@ -37,7 +40,7 @@ export const PROPOSAL_FORMAT_VERSION = 4;
  * acrescenta `add_container` às `operations`; a 1 continua válida. A criação grava a 4 (a 6, com
  * o modo do desenho).
  */
-export const PROPOSAL_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8] as const;
+export const PROPOSAL_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 
 /**
  * Versão da proposta que traz o modo do desenho (schema v18): a entidade `project` (campo
@@ -114,15 +117,44 @@ function hasDirection(value: JsonValue): boolean {
 }
 
 /**
- * A `formatVersion` que a criação ou a revisão grava: a 8 com direção, a 7 com densidade, a 6 com
+ * Versão da proposta que traz a âncora da marcação (schema v20): o campo `anchor` de uma marcação
+ * (o valor da âncora ou `null`) e o `anchor` no valor de uma marcação criada. Uma versão anterior
+ * descartaria em silêncio a âncora da marcação criada (e recusaria o campo novo); por isso a proposta
+ * que a usa grava a 9. `snap_to_anchor` não precisa dela: é só a mudança de Posição (`rect`).
+ */
+export const PROPOSAL_ANCHOR_FORMAT_VERSION = 9;
+
+/** A proposta usa a âncora da marcação (e por isso só a `formatVersion` 9 a representa)? */
+export function proposalUsesAnchor(changes: readonly Change[]): boolean {
+  return changes.some(
+    (c) =>
+      c.entity === 'marking' &&
+      (c.field === 'anchor' || hasAnchor(c.to) || hasAnchor(c.from)),
+  );
+}
+
+function hasAnchor(value: JsonValue): boolean {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    (value as { readonly anchor?: JsonValue }).anchor != null
+  );
+}
+
+/**
+ * A `formatVersion` que a criação ou a revisão grava: a 9 com âncora, a 8 com direção, a 7 com densidade, a 6 com
  * modo do desenho, senão `fallback` (4 na criação, 5 na revisão). `current` é a versão da proposta
- * que se regrava: uma 6, 7 ou 8 nunca desce.
+ * que se regrava: uma 6, 7, 8 ou 9 nunca desce.
  */
 export function proposalFormatVersionFor(
   changes: readonly Change[],
   fallback: number,
   current = 0,
 ): (typeof PROPOSAL_FORMAT_VERSIONS)[number] {
+  if (current === PROPOSAL_ANCHOR_FORMAT_VERSION || proposalUsesAnchor(changes)) {
+    return PROPOSAL_ANCHOR_FORMAT_VERSION;
+  }
   if (current === PROPOSAL_DIRECTION_FORMAT_VERSION || proposalUsesDirection(changes)) {
     return PROPOSAL_DIRECTION_FORMAT_VERSION;
   }
@@ -228,6 +260,7 @@ export const MARKING_FIELDS = [
   'locked',
   'source',
   'position',
+  'anchor',
 ] as const;
 /**
  * A seta (v13, ME4) só tem criação e remoção (`create-arrow`, `delete-arrow`): nenhum campo é
@@ -551,6 +584,7 @@ const markingFieldSchemas: Record<(typeof MARKING_FIELDS)[number], z.ZodType> = 
   locked: z.boolean(),
   source: sourceSchema.nullable(),
   position: z.number().int().min(0),
+  anchor: anchorSchema.nullable(),
 };
 
 const annotationFieldSchemas: Record<(typeof ANNOTATION_FIELDS)[number], z.ZodType> = {
@@ -821,8 +855,9 @@ export const proposalSchema = z
         z.literal(6),
         z.literal(7),
         z.literal(8),
+        z.literal(9),
       ],
-      { error: 'deve ser 1, 2, 3, 4, 5, 6, 7 ou 8' },
+      { error: 'deve ser 1, 2, 3, 4, 5, 6, 7, 8 ou 9' },
     ),
     id: proposalId,
     title: z.string().trim().min(1, 'não pode ser vazio'),

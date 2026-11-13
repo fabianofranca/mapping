@@ -31,7 +31,7 @@ import type {
 
 /** O que o reparo fez com o item. */
 export type RepairAction =
-  'new-id' | 'clipped' | 'removed' | 'made-root' | 'moved' | 'renamed';
+  'new-id' | 'clipped' | 'removed' | 'made-root' | 'moved' | 'renamed' | 'released';
 
 export interface RepairRecord {
   readonly action: RepairAction;
@@ -78,6 +78,10 @@ const REPAIRABLE: ReadonlySet<InvariantCode> = new Set<InvariantCode>([
   'arrival-root-missing',
   'arrival-root-not-root',
   'arrival-duplicate',
+  'anchor-missing',
+  'anchor-self',
+  'anchor-cycle',
+  'anchor-other-space',
 ]);
 
 /**
@@ -107,7 +111,7 @@ const MAX_ROUNDS = 8;
  * saem na rodada seguinte (a dona deixou de existir); perspectiva (v16): item de raiz inexistente,
  * que não é raiz ou repetido → removido, camada escondida inexistente → tirada da lista, id
  * repetido → a repetida ganha id novo, nome repetido → a repetida ganha " (2)", " (3)"…; chegada
- * de raiz inexistente, que não é raiz ou repetida → removida. Só torna o
+ * de raiz inexistente, que não é raiz ou repetida → removida; âncora (v20) com alvo inexistente, nela mesma, noutro espaço ou em ciclo → a marcação fica sem âncora (`anchor: null`). Só torna o
  * projeto válido: não assenta (quem assenta é a próxima operação de geometria). O que sobra
  * depois dos reparos (`validateProject` de novo) é `unrepaired`.
  */
@@ -162,6 +166,30 @@ function inCycle(m: Marking, markings: ReadonlyMap<string, Marking>): boolean {
     parentId = markings.get(parentId)?.parentId ?? null;
   }
   return false;
+}
+
+const ANCHOR_CODES: readonly InvariantCode[] = [
+  'anchor-missing',
+  'anchor-self',
+  'anchor-other-space',
+  'anchor-cycle',
+];
+
+/**
+ * Âncora (v20) que quebra uma invariante (alvo inexistente, a própria marcação, outro espaço ou
+ * ciclo): a marcação fica onde está, sem âncora. Num ciclo, todas as que a cadeia alcança de volta
+ * são soltas (cada uma é reportada).
+ */
+function releaseBrokenAnchor(
+  m: Marking,
+  has: (entity: InvariantEntity, id: string, code: InvariantCode) => boolean,
+  out: RepairRecord[],
+): Marking {
+  if (m.anchor == null) return m;
+  const code = ANCHOR_CODES.find((c) => has('marking', m.id, c));
+  if (code === undefined) return m;
+  record(out, 'released', code, 'marking', m);
+  return { ...m, anchor: null };
 }
 
 function repairRound(
@@ -220,6 +248,7 @@ function repairRound(
     }
     markings.push(next);
   }
+  const anchored = markings.map((m) => releaseBrokenAnchor(m, has, out));
 
   // Setas: sem uma das pontas ou ligadas a si mesmas, não há o que ligar. As anotações delas
   // saem na rodada seguinte, como as de qualquer dona que deixou de existir.
@@ -320,7 +349,7 @@ function repairRound(
   return {
     ...p,
     containers: projectImages,
-    markings,
+    markings: anchored,
     arrows,
     ...repairPerspectives(p, issues, newId, out),
     annotations: kept,
