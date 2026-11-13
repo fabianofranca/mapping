@@ -11,3 +11,7 @@
 - **Direção de leitura na app.** O campo **Direção** nos Detalhes do container ("Segue o projeto", "Da esquerda para a direita" ou "Da direita para a esquerda"), a seção **Direção de leitura** nas Configurações do projeto, a seção do Diagnóstico (só com `rtl`, listando os containers que fixam outra direção) e a revisão de proposta, que mostra a mudança como o campo "Direção".
 - **Direção no MCP.** `direction` (`ltr`/`rtl`) em `update_project`, `add_container` e `update_container` (`null` volta a seguir o projeto); `get_project`, `get_container` e `get_marking` devolvem a fixada e a efetiva; `render_marking` e `render_container` ganham `direction` para fixar na imagem; `get_code_hints` devolve `direction` (a efetiva do container); a proposta com direção grava a `formatVersion` 8; o `docs/AGENT-GUIDE.md` diz como Compose e web a aplicam; o R27.11 cobre a direção do container na app e no MCP.
 - **Visualizador e texto rico em `rtl`.** A `screen.direction` da origem (ou a opção `direction` do visualizador) chega ao interior de cada componente da tela, não só às caixas; o texto rico em `rtl` inverte a ordem dos trechos dentro de cada linha e leva `direction: rtl` ao canvas (a ordem dos glifos dentro de um trecho continua sem bidi no raster do MCP).
+
+## Alterado
+
+- Teto do `dist/index.html` subiu 16 KiB, de 2146304 para 2162688, pela regra do orçamento.
