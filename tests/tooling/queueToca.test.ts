@@ -298,6 +298,10 @@ describe('os textos da regra do toca (TA2, #1812, decisão 12)', () => {
     );
     expect(briefing).toContain('painel.py toca');
     expect(briefing).toContain('#inicio');
+    // a conferência é uma frase própria, depois da lista do que cada fase leva (revisão: não no meio dela)
+    expect(briefing.indexOf('painel.py toca')).toBeGreaterThan(
+      briefing.indexOf('os checkboxes e o aceite'),
+    );
   });
 
   it('o docs/PROCESS.md e o docs/FLOW.md dizem "nunca pasta"', () => {

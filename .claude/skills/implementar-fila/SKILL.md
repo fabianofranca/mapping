@@ -206,7 +206,7 @@ Siga o `docs/FLOW.md` ("Orquestrador — passo a passo" e as mensagens), com o q
    - dependência fora da fila que entrou na `main` (a etapa de outro orquestrador, por exemplo): o subagente do ciclo confere e o coordenador grava `painel.py merged <pasta> '#N'`, para a nota de vagas deixar de a contar como aberta;
    - confira o contexto e se o skill mudou na `main` ("Troca de sessão"), com `git fetch -q origin main && git diff --quiet HEAD origin/main -- .claude/skills/implementar-fila/SKILL.md`;
    - regra em vigor cuja saída é "#N mesclada" (as `regras em vigor:` do `show`), com #N já mesclada (etapa `concluída` ou `merged`): cai no mesmo ciclo, com `rule end R<k> motivo="#N mesclada"` no `apply` do ciclo, antes do `show`;
-   - merge que traz um `painel.py` que passa a invalidar fichas (como o da etapa #1812, depois da #1804): no mesmo ciclo do merge, dê o `git pull`, rode o `show` e refaça as fichas das etapas `aguardando` do `fichas a refazer:` a partir do "Toca em:" das sub-issues de fase (arquivos e seções, "Ficha da etapa"), sem editar o corpo de nenhuma issue; as exclusivas ficam como estão;
+   - merge que traz um `painel.py` que passa a invalidar fichas (como a validação do `toca`): no mesmo ciclo do merge, dê o `git pull`, rode o `show` e refaça as fichas das etapas `aguardando` do `fichas a refazer:` a partir do "Toca em:" das sub-issues de fase (arquivos e seções, "Ficha da etapa"), sem editar o corpo de nenhuma issue; as exclusivas ficam como estão;
    - rode `painel.py show` e comece cada etapa listada em `começar agora:`, no mesmo ciclo.
 
 **Arquivar as sessões** (`archive_session`, para a lista de sessões do dono ficar legível):
