@@ -1,12 +1,14 @@
 // @vitest-environment node
 // Fase TA1 (etapa #1812, decisões 1 a 7 e 12): o `toca` da ficha lista arquivos e seções. Pasta, `**`, padrão
 // fora da regra, documento com seções inteiro e âncora fora da forma dão `ficha incompleta (toca: <citação>)`;
-// o comando `painel.py toca "<citações>"` confere uma lista.
+// o comando `painel.py toca "<citações>"` confere uma lista. Fase TA2 (decisões 10 e 12): os textos dos skills
+// e dos docs dizem a regra só nas seções do "Toca em:".
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { between, section } from '../support/textSlice';
 
 const SCRIPT = '.claude/skills/implementar-fila/painel/painel.py';
 const NOW = '2026-11-13T10:00:00Z';
@@ -255,5 +257,52 @@ describe('painel.py toca "<citações>" (TA1, decisão 7)', () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+});
+
+describe('os textos da regra do toca (TA2, #1812, decisão 12)', () => {
+  const fila = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
+  const detalhar = readFileSync('.claude/skills/detalhar-backlog/SKILL.md', 'utf8');
+  const process = readFileSync('docs/PROCESS.md', 'utf8');
+  const flow = readFileSync('docs/FLOW.md', 'utf8');
+
+  it('a "Ficha da etapa" manda rodar o painel.py toca, cita #inicio e diz "nunca pasta"', () => {
+    const ficha = section(fila, '### Ficha da etapa');
+    expect(ficha).toContain('painel.py toca');
+    expect(ficha).toContain('#inicio');
+    expect(ficha).toContain('nunca pasta');
+  });
+
+  it('o "Paralelo" diz o motivo ficha incompleta (toca: <citação>)', () => {
+    expect(section(fila, '## Paralelo')).toContain('ficha incompleta (toca:');
+  });
+
+  it('o "Painel" lista o comando painel.py toca', () => {
+    expect(section(fila, '## Painel')).toContain('painel.py toca');
+  });
+
+  it('o "3. Por etapa" cita a citação inválida e, no "Entre etapas", o refazer sem editar issue', () => {
+    const etapa = section(fila, '## 3. Por etapa');
+    expect(etapa).toContain('citação inválida');
+    const entre = etapa.slice(etapa.indexOf('7. **Entre etapas:**'));
+    expect(entre).toContain('fichas a refazer');
+    expect(entre).toContain('"Toca em:" das sub-issues');
+    expect(entre).toContain('sem editar');
+  });
+
+  it('o briefing do detalhar-backlog confere o "Toca em:" com o painel.py toca e cita #inicio', () => {
+    const briefing = between(
+      detalhar,
+      '3. Rascunhe o plano inteiro',
+      '5. Decisão de produto',
+    );
+    expect(briefing).toContain('painel.py toca');
+    expect(briefing).toContain('#inicio');
+  });
+
+  it('o docs/PROCESS.md e o docs/FLOW.md dizem "nunca pasta"', () => {
+    const linha = process.split('\n').find((l) => l.includes('**Detalhar uma etapa:**'));
+    expect(linha).toContain('nunca pasta');
+    expect(section(flow, '## Para o dono, nos três chats')).toContain('nunca pasta');
   });
 });
