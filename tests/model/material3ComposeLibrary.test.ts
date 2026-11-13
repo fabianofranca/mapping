@@ -889,6 +889,26 @@ describe('direção de leitura e âncora na biblioteca Material 3 (Compose) (R5,
       expect(endCaret.transform[0]).toBeLessThan(0);
     });
 
+    it('em rtl, top e bottom seguem o centro físico da âncora (o x do pseudo-campo não espelha)', () => {
+      for (const anchorCase of [cases[0], cases[1]]) {
+        const ltr = drawWith(
+          'tooltip',
+          { text: 'Ajuda' },
+          { anchor: anchorCase.anchor, box },
+        );
+        const rtl = drawWith(
+          'tooltip',
+          { text: 'Ajuda' },
+          { anchor: anchorCase.anchor, box, direction: 'rtl' },
+        );
+        const at = (d: typeof ltr) => d.boxes.get(carets(d)[0]!.id)!;
+        expect(at(rtl).x, anchorCase.side).toBe(at(ltr).x);
+        expect(at(rtl).y, anchorCase.side).toBe(anchorCase.y);
+        expect(carets(rtl)[0]!.transform[0]).toBeGreaterThan(0);
+        expect(rtl.warnings).toEqual([]);
+      }
+    });
+
     it('sem âncora, sem seta, e sem aviso (como hoje)', () => {
       const drawn = drawWith('tooltip', { text: 'Ajuda' }, { box });
       expect(carets(drawn)).toEqual([]);

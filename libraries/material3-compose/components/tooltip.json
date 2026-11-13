@@ -34,6 +34,37 @@
     "type": "frame",
     "name": "tooltip",
     "clip": false,
+    "let": {
+      "corDaSeta": {
+        "$if": {
+          "$eq": ["style", "rich"]
+        },
+        "then": {
+          "$token": "surface-container"
+        },
+        "else": {
+          "$token": "inverse-surface"
+        }
+      },
+      "xDaSeta": {
+        "$sub": [
+          {
+            "$field": "$anchor.x",
+            "default": 0
+          },
+          8
+        ]
+      },
+      "yDaSeta": {
+        "$sub": [
+          {
+            "$field": "$anchor.y",
+            "default": 0
+          },
+          8
+        ]
+      }
+    },
     "layout": {
       "type": "none"
     },
@@ -331,26 +362,12 @@
         },
         "anchors": {
           "left": {
-            "$sub": [
-              {
-                "$field": "$anchor.x",
-                "default": 0
-              },
-              8
-            ]
+            "$var": "xDaSeta"
           },
           "bottom": -8
         },
         "fill": {
-          "$if": {
-            "$eq": ["style", "rich"]
-          },
-          "then": {
-            "$token": "surface-container"
-          },
-          "else": {
-            "$token": "inverse-surface"
-          }
+          "$var": "corDaSeta"
         }
       },
       {
@@ -365,26 +382,12 @@
         },
         "anchors": {
           "left": {
-            "$sub": [
-              {
-                "$field": "$anchor.x",
-                "default": 0
-              },
-              8
-            ]
+            "$var": "xDaSeta"
           },
           "top": -8
         },
         "fill": {
-          "$if": {
-            "$eq": ["style", "rich"]
-          },
-          "then": {
-            "$token": "surface-container"
-          },
-          "else": {
-            "$token": "inverse-surface"
-          }
+          "$var": "corDaSeta"
         }
       },
       {
@@ -400,25 +403,11 @@
         "anchors": {
           "end": -8,
           "top": {
-            "$sub": [
-              {
-                "$field": "$anchor.y",
-                "default": 0
-              },
-              8
-            ]
+            "$var": "yDaSeta"
           }
         },
         "fill": {
-          "$if": {
-            "$eq": ["style", "rich"]
-          },
-          "then": {
-            "$token": "surface-container"
-          },
-          "else": {
-            "$token": "inverse-surface"
-          }
+          "$var": "corDaSeta"
         },
         "mirror": true
       },
@@ -435,25 +424,11 @@
         "anchors": {
           "start": -8,
           "top": {
-            "$sub": [
-              {
-                "$field": "$anchor.y",
-                "default": 0
-              },
-              8
-            ]
+            "$var": "yDaSeta"
           }
         },
         "fill": {
-          "$if": {
-            "$eq": ["style", "rich"]
-          },
-          "then": {
-            "$token": "surface-container"
-          },
-          "else": {
-            "$token": "inverse-surface"
-          }
+          "$var": "corDaSeta"
         },
         "mirror": true
       }
