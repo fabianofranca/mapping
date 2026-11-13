@@ -1,4 +1,4 @@
-# Rótulo do Carousel legível e roteiros alinhados — [Não lançado] (épico `epic/rotulo-carousel-roteiros`, PR #0, MCP sem mudança, schema v19)
+# Rótulo do Carousel legível e roteiros alinhados — 2026-11-13 (épico `epic/rotulo-carousel-roteiros`, PR #1828, MCP 0.39.1 sem mudança, schema v19)
 
 ## Alterado
 
