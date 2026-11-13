@@ -76,7 +76,8 @@ describe('R25.22 e R25.23: o tokens.mjs do guia mescla os tokens do pacote', () 
     expect(report.errors).toEqual([]);
     expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
     expect(report.ok).toBe(true);
-  });
+    // Valida o pacote inteiro (229 exemplos): passa de 5 s com a cobertura ligada no CI.
+  }, 30_000);
 
   it('m3-tokens-erro: exatamente os dois erros do card.json', () => {
     const report = validate(erro);
@@ -89,7 +90,7 @@ describe('R25.22 e R25.23: o tokens.mjs do guia mescla os tokens do pacote', () 
       'o token "inexistente" não existe nos tokens da especialização',
       'o token "primary" é cor, mas aqui se espera número',
     ]);
-  });
+  }, 30_000);
 
   it('m3-tokens-v14: tokens e icons pedem a 15 e todo o resto é da 16 (fieldModels e assinaturas)', () => {
     const report = validate(v14);
@@ -104,7 +105,7 @@ describe('R25.22 e R25.23: o tokens.mjs do guia mescla os tokens do pacote', () 
         .map((e) => e.path)
         .sort(),
     ).toEqual(['icons', 'tokens']);
-  });
+  }, 30_000);
 });
 
 describe('R25.43 e R25.44: as pastas de tela do guia', () => {
