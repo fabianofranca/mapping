@@ -158,3 +158,53 @@ test('1.4 Árvore + Detalhes: o corte tem dica e o resumo da camada vazia não �
   expect(report.cutNoTip).toEqual([]);
   expect(report.summaryCut).toEqual([]);
 });
+
+/** Linhas da paleta (CL2, 1.1a): nome sem quebra no meio da palavra, botão de uma linha, sem rolagem lateral. */
+async function paletteReport(page: Page): Promise<{
+  width: number;
+  brokenNames: string[];
+  wrappedButtons: number;
+  cut: string[];
+  scrollX: boolean;
+}> {
+  const base = await page.evaluate(() => {
+    const win = document.querySelector<HTMLElement>(
+      'section.tool-window[aria-label="Catálogo"]',
+    )!;
+    const body = win.querySelector<HTMLElement>('.tool-window-body')!;
+    const heights = [...win.querySelectorAll<HTMLElement>('.library-type > button')].map(
+      (b) => b.getBoundingClientRect().height,
+    );
+    const single = Math.min(...heights);
+    const wrapped = heights.filter((h) => h > single + 2);
+    const cut = [...win.querySelectorAll<HTMLElement>('[class*="library-type-"]')]
+      .filter((el) => el.scrollWidth > el.clientWidth)
+      .map((el) => `${el.textContent} ${el.scrollWidth}>${el.clientWidth}`);
+    return {
+      width: Math.round(win.getBoundingClientRect().width),
+      wrappedButtons: wrapped.length,
+      cut,
+      scrollX: body.scrollWidth > body.clientWidth,
+    };
+  });
+  return { ...base, brokenNames: await brokenWords(page, '.library-type-name') };
+}
+
+test('1.1a Paleta com os Detalhes abertos e fechados: nome inteiro, botão inteiro, sem rolagem lateral', async ({
+  page,
+}) => {
+  await openWithLibrary(page);
+  await page.keyboard.press('Control+Shift+9');
+  await page.getByRole('tab', { name: 'Paleta' }).click();
+  await expect(page.locator('.library-type').first()).toBeVisible();
+  const closed = await paletteReport(page);
+  await page.keyboard.press('Control+Shift+3');
+  await expect(page.locator('section.tool-window[aria-label="Detalhes"]')).toBeVisible();
+  const open = await paletteReport(page);
+  for (const r of [closed, open]) {
+    expect(r.brokenNames).toEqual([]);
+    expect(r.wrappedButtons).toBe(0);
+    expect(r.cut).toEqual([]);
+    expect(r.scrollX).toBe(false);
+  }
+});
