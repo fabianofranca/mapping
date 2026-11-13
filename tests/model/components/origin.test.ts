@@ -3,12 +3,14 @@ import { describe, expect, it } from 'vitest';
 import settings from '../../../viewer/samples/settings.sdui.json';
 import {
   formatPath,
+  originProblemText,
   parseFieldSources,
   parseOrigins,
   parsePath,
   readPath,
   translateSource,
   screenFromSource,
+  type OriginProblem,
 } from '../../../src/model/components/origin';
 import type { LayoutNode } from '../../../src/model/components/layout';
 import { approximateMeasurer } from '../../../src/model/components/instantiate';
@@ -141,7 +143,7 @@ describe('parseOrigins', () => {
       [[ORIGIN, ORIGIN], 'origins[1].system: origem repetida: sdui'],
     ];
     for (const [raw, expected] of cases) {
-      const { problems } = parseOrigins(raw);
+      const problems = parseOrigins(raw).problems.map(originProblemText);
       expect(
         problems.some((p) => p.includes(expected)),
         `${expected} em ${JSON.stringify(problems)}`,
@@ -158,7 +160,7 @@ describe('parseOrigins', () => {
       'spec.origins',
     );
     expect(origins.map((o) => o.system)).toEqual(['ok']);
-    expect(problems[0]).toMatch(/^spec\.origins\[0\]\.extra/);
+    expect(originProblemText(problems[0]!)).toMatch(/^spec\.origins\[0\]\.extra/);
   });
 });
 
@@ -522,9 +524,9 @@ describe('translateSource', () => {
 
 describe('parseFieldSources: path', () => {
   const parse = (raw: unknown) => {
-    const problems: string[] = [];
+    const problems: OriginProblem[] = [];
     const sources = parseFieldSources(raw, 'f.sources', problems);
-    return { sources, problems };
+    return { sources, problems: problems.map(originProblemText) };
   };
 
   it('lê path e name juntos, ou só um dos dois', () => {
