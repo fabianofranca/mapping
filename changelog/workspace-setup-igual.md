@@ -1,4 +1,4 @@
-# mappings-workspace igual ao examples/workspace — [Não lançado] (épico `epic/workspace-setup-igual`, MCP sem mudança, schema v19)
+# mappings-workspace igual ao examples/workspace — [Não lançado] (épico `epic/workspace-setup-igual`, PR #1809, MCP sem mudança, schema v19)
 
 ## Corrigido
 
