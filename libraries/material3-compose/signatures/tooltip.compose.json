@@ -1,0 +1,103 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.PlainTooltip",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Tooltip.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "caretShape",
+      "role": "value",
+      "type": "(Shape)?",
+      "default": "null",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "maxWidth",
+      "role": "value",
+      "type": "Dp",
+      "default": "TooltipDefaults.plainTooltipMaxWidth",
+      "value": {
+        "kind": "dimension"
+      }
+    },
+    {
+      "name": "shape",
+      "role": "value",
+      "type": "Shape",
+      "default": "TooltipDefaults.plainTooltipContainerShape",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "contentColor",
+      "role": "value",
+      "type": "Color",
+      "default": "TooltipDefaults.plainTooltipContentColor",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "containerColor",
+      "role": "value",
+      "type": "Color",
+      "default": "TooltipDefaults.plainTooltipContainerColor",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "tonalElevation",
+      "role": "value",
+      "type": "Dp",
+      "default": "0.dp",
+      "value": {
+        "kind": "dimension",
+        "default": 0
+      }
+    },
+    {
+      "name": "shadowElevation",
+      "role": "value",
+      "type": "Dp",
+      "default": "0.dp",
+      "value": {
+        "kind": "dimension",
+        "default": 0
+      }
+    },
+    {
+      "name": "content",
+      "role": "slot",
+      "type": "@Composable () -> Unit",
+      "required": true
+    }
+  ],
+  "doc": {
+    "modifier": "the [Modifier] to be applied to the tooltip.",
+    "caretShape": "[shape] for the caret of the tooltip. If a default caret is desired with a specific dimension please use [TooltipDefaults.caretShape]. To see the default dimensions please see [TooltipDefaults.caretSize]. If no caret is desired, please pass in null.",
+    "maxWidth": "the maximum width for the plain tooltip",
+    "shape": "the [Shape] that should be applied to the tooltip container.",
+    "contentColor": "[Color] that will be applied to the tooltip's content.",
+    "containerColor": "[Color] that will be applied to the tooltip's container.",
+    "tonalElevation": "the tonal elevation of the tooltip.",
+    "shadowElevation": "the shadow elevation of the tooltip.",
+    "content": "the composable that will be used to populate the tooltip's content."
+  }
+}

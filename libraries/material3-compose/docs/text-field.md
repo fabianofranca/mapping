@@ -117,4 +117,4 @@ O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o des
 - O raio superior do filled é a lista de 4 raios com `$token` por item (`corner-extra-small` em cima, 0 embaixo), sem retângulo mais alto recortado.
 - A largura do campo é `fill` no `sizing` (como o `fillMaxWidth()` das telas do Material): numa marcação com retângulo a raiz ocupa a caixa e o `minWidth` de 280 da raiz não muda nada, como o `minSize`; o Arrumar não mexe na largura. A altura vem do `sizing`, mas só conta uma linha de apoio (16): um apoio que quebra em duas linhas passa da caixa ajustada (o Compose cresce o campo com as linhas).
 - `singleLine` mostra o começo do texto (o `BasicTextField` rola até o cursor); `maxLines` corta o texto, sem rolagem vertical.
-- Sem prefixo, sufixo, contador, `labelPosition` acima, área de toque de 48 dos ícones e demais parâmetros de `TextField`.
+- Sem contador, `labelPosition` acima, área de toque de 48 dos ícones e demais parâmetros de `TextField`.

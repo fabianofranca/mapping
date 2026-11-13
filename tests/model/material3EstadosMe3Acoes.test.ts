@@ -72,7 +72,10 @@ function checkField(id: string, descriptionPattern: RegExp) {
     options: ['none', 'hovered', 'focused', 'pressed'],
   });
   expect(field?.required).not.toBe(true);
-  expect(JSON.stringify(type.code ?? {})).not.toContain('interaction');
+  // `interactionSource` é o parâmetro do Compose que o `ignore` deixa de fora (importação, #1079 S5): não é o campo.
+  expect(
+    JSON.stringify(type.code ?? {}).replaceAll('interactionSource', ''),
+  ).not.toContain('interaction');
   expect(JSON.stringify((type as { variants?: unknown }).variants ?? {})).not.toContain(
     'interaction',
   );

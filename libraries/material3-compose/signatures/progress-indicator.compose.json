@@ -1,0 +1,82 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.CircularProgressIndicator",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ProgressIndicator.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1",
+    "overload": 1
+  },
+  "params": [
+    {
+      "name": "progress",
+      "role": "callback",
+      "type": "() -> Float",
+      "required": true
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "color",
+      "role": "value",
+      "type": "Color",
+      "default": "ProgressIndicatorDefaults.circularColor",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "strokeWidth",
+      "role": "value",
+      "type": "Dp",
+      "default": "ProgressIndicatorDefaults.CircularStrokeWidth",
+      "value": {
+        "kind": "dimension"
+      }
+    },
+    {
+      "name": "trackColor",
+      "role": "value",
+      "type": "Color",
+      "default": "ProgressIndicatorDefaults.circularDeterminateTrackColor",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "strokeCap",
+      "role": "value",
+      "type": "StrokeCap",
+      "default": "ProgressIndicatorDefaults.CircularDeterminateStrokeCap",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "gapSize",
+      "role": "value",
+      "type": "Dp",
+      "default": "ProgressIndicatorDefaults.CircularIndicatorTrackGapSize",
+      "value": {
+        "kind": "dimension"
+      }
+    }
+  ],
+  "doc": {
+    "progress": "the progress of this progress indicator, where 0.0 represents no progress and 1.0 represents full progress. Values outside of this range are coerced into the range.",
+    "modifier": "the [Modifier] to be applied to this progress indicator",
+    "color": "color of this progress indicator",
+    "strokeWidth": "stroke width of this progress indicator",
+    "trackColor": "color of the track behind the indicator, visible when the progress has not reached the area of the overall indicator yet",
+    "strokeCap": "stroke cap to use for the ends of this progress indicator",
+    "gapSize": "size of the gap between the progress indicator and the track"
+  }
+}

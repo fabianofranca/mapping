@@ -1,4 +1,5 @@
 import { paramTarget } from '../codeParams';
+import type { SpecFieldModel } from '../spec';
 import type { Signature, SignatureParam, SignatureRole } from './types';
 
 /** O nome que se escreve na chamada: o rótulo externo do Swift, ou o nome. */
@@ -64,6 +65,16 @@ export function unmappedParams(signature: Signature, code: CodeLinks): UnmappedP
     }));
 }
 
+/** Os modelos do `fieldModels` da plataforma; o validador lê só o `expand`. */
+export type ExpandModels = Readonly<Record<string, SpecFieldModel>>;
+
+/** O membro é um dos parâmetros que o `expand` do modelo do tipo do parâmetro dono expande. */
+function expandsTo(model: SpecFieldModel | undefined, member: string): boolean {
+  return (
+    model !== undefined && 'expand' in model && Object.hasOwn(model.expand.params, member)
+  );
+}
+
 /** Um `params` do `code` que a ficha não tem: o campo e o valor escrito. */
 export interface OutsideParam {
   readonly field: string;
@@ -78,6 +89,7 @@ export interface OutsideParam {
 export function paramsOutsideSignature(
   signature: Signature,
   code: Pick<CodeLinks, 'params'>,
+  models?: ExpandModels,
 ): OutsideParam[] {
   const byName = new Map<string, SignatureParam>();
   for (const param of signature.params) {
@@ -87,18 +99,26 @@ export function paramsOutsideSignature(
   const positions = positionalParams(signature).length;
   const outside: OutsideParam[] = [];
   for (const [field, value] of Object.entries(code.params ?? {})) {
-    const target = paramTarget(value);
-    let found: boolean;
-    if (target.kind === 'name') found = byName.has(target.name);
-    else if (target.kind === 'position') found = target.position < positions;
-    else {
-      const owner = byName.get(target.call);
-      found =
-        owner !== undefined &&
-        (owner.factory === undefined ||
-          owner.factory.params.some((param) => param.name === target.name));
-    }
-    if (!found) outside.push({ field, name: value });
+    if (!targetExists(paramTarget(value), byName, positions, models))
+      outside.push({ field, name: value });
   }
   return outside;
+}
+
+/** O alvo de um `params` existe na ficha: um nome, um posicional ou o argumento de uma fábrica. */
+function targetExists(
+  target: ReturnType<typeof paramTarget>,
+  byName: ReadonlyMap<string, SignatureParam>,
+  positions: number,
+  models: ExpandModels | undefined,
+): boolean {
+  if (target.kind === 'name') return byName.has(target.name);
+  if (target.kind === 'position') return target.position < positions;
+  const owner = byName.get(target.call);
+  return (
+    owner !== undefined &&
+    (owner.factory === undefined ||
+      owner.factory.params.some((param) => param.name === target.name) ||
+      expandsTo(models?.[owner.type], target.name))
+  );
 }

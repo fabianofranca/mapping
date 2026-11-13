@@ -1,0 +1,200 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.ElevatedButton",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Button.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "onClick",
+      "role": "callback",
+      "type": "() -> Unit",
+      "required": true
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "enabled",
+      "role": "value",
+      "type": "Boolean",
+      "default": "true",
+      "value": {
+        "kind": "boolean",
+        "default": true
+      }
+    },
+    {
+      "name": "shape",
+      "role": "value",
+      "type": "Shape",
+      "default": "ButtonDefaults.elevatedShape",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "colors",
+      "role": "value",
+      "type": "ButtonColors",
+      "default": "ButtonDefaults.elevatedButtonColors()",
+      "factory": {
+        "call": "androidx.compose.material3.ButtonDefaults.elevatedButtonColors",
+        "params": [
+          {
+            "name": "containerColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "contentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledContainerColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "elevation",
+      "role": "value",
+      "type": "ButtonElevation?",
+      "default": "ButtonDefaults.elevatedButtonElevation()",
+      "factory": {
+        "call": "androidx.compose.material3.ButtonDefaults.elevatedButtonElevation",
+        "params": [
+          {
+            "name": "defaultElevation",
+            "role": "value",
+            "type": "Dp",
+            "default": "ElevatedButtonTokens.ContainerElevation",
+            "value": {
+              "kind": "dimension"
+            }
+          },
+          {
+            "name": "pressedElevation",
+            "role": "value",
+            "type": "Dp",
+            "default": "ElevatedButtonTokens.PressedContainerElevation",
+            "value": {
+              "kind": "dimension"
+            }
+          },
+          {
+            "name": "focusedElevation",
+            "role": "value",
+            "type": "Dp",
+            "default": "ElevatedButtonTokens.FocusedContainerElevation",
+            "value": {
+              "kind": "dimension"
+            }
+          },
+          {
+            "name": "hoveredElevation",
+            "role": "value",
+            "type": "Dp",
+            "default": "ElevatedButtonTokens.HoveredContainerElevation",
+            "value": {
+              "kind": "dimension"
+            }
+          },
+          {
+            "name": "disabledElevation",
+            "role": "value",
+            "type": "Dp",
+            "default": "ElevatedButtonTokens.DisabledContainerElevation",
+            "value": {
+              "kind": "dimension"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "border",
+      "role": "value",
+      "type": "BorderStroke?",
+      "default": "null",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "contentPadding",
+      "role": "value",
+      "type": "PaddingValues",
+      "default": "ButtonDefaults.ContentPadding",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "interactionSource",
+      "role": "state",
+      "type": "MutableInteractionSource?",
+      "default": "null"
+    },
+    {
+      "name": "content",
+      "role": "slot",
+      "type": "@Composable RowScope.() -> Unit",
+      "required": true
+    }
+  ],
+  "doc": {
+    "onClick": "called when this button is clicked",
+    "modifier": "the [Modifier] to be applied to this button",
+    "enabled": "controls the enabled state of this button. When `false`, this component will not respond to user input, and it will appear visually disabled and disabled to accessibility services.",
+    "shape": "defines the shape of this button's container, border (when [border] is not null), and shadow (when using [elevation])",
+    "colors": "[ButtonColors] that will be used to resolve the colors for this button in different states. See [ButtonDefaults.elevatedButtonColors].",
+    "colors.containerColor": "the container color of this [ElevatedButton] when enabled",
+    "colors.contentColor": "the content color of this [ElevatedButton] when enabled",
+    "colors.disabledContainerColor": "the container color of this [ElevatedButton] when not enabled",
+    "colors.disabledContentColor": "the content color of this [ElevatedButton] when not enabled",
+    "elevation": "[ButtonElevation] used to resolve the elevation for this button in different states. This controls the size of the shadow below the button. Additionally, when the container color is [ColorScheme.surface], this controls the amount of primary color applied as an overlay. See [ButtonDefaults.elevatedButtonElevation].",
+    "elevation.defaultElevation": "the elevation used when the [ElevatedButton] is enabled, and has no other [Interaction]s.",
+    "elevation.pressedElevation": "the elevation used when this [ElevatedButton] is enabled and pressed.",
+    "elevation.focusedElevation": "the elevation used when the [ElevatedButton] is enabled and focused.",
+    "elevation.hoveredElevation": "the elevation used when the [ElevatedButton] is enabled and hovered.",
+    "elevation.disabledElevation": "the elevation used when the [ElevatedButton] is not enabled.",
+    "border": "the border to draw around the container of this button",
+    "contentPadding": "the spacing values to apply internally between the container and the content",
+    "interactionSource": "an optional hoisted [MutableInteractionSource] for observing and emitting [Interaction]s for this button. You can use this to change the button's appearance or preview the button in different states. Note that if `null` is provided, interactions will still happen internally.",
+    "content": "The content displayed on the button, expected to be text, icon or image."
+  }
+}

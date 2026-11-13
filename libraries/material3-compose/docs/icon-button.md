@@ -81,4 +81,4 @@ O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o des
 - A camada de estado do standard e do outlined usa `on-surface-variant`, a cor que os tokens dão ao estado; o ícone e o contorno parados continuam em `on-surface` (a divergência acima), então a camada não tem a mesma cor do ícone nesses dois estilos.
 - O conteúdo do `standard` e do `outlined` é o `LocalContentColor` (`IconButtonDefaults.kt`, linhas 44 e 515): o desenho lê a cor do conteúdo herdada (`on-surface` sem pai) quando o botão está habilitado. O `filled` e o `tonal` têm conteúdo próprio (`on-primary`, `on-secondary-container`) e o desabilitado segue `on-surface`: esses não herdam.
 - O desabilitado de 0,1 no contêiner é literal no componente (o token `state-disabled-container` vale 0,12).
-- `minimumInteractiveComponentSize` (48 de área de toque) e as larguras `Narrow` e `Wide` não são campos do tipo.
+- `minimumInteractiveComponentSize` (48 de área de toque) não é campo do tipo; `shape` e `width` (largura em dp) são campos e código, mas o desenho não os usa; as larguras `Narrow` e `Wide` não têm campo próprio.

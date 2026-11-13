@@ -1,0 +1,254 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.ElevatedAssistChip",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Chip.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "onClick",
+      "role": "callback",
+      "type": "() -> Unit",
+      "required": true
+    },
+    {
+      "name": "label",
+      "role": "slot",
+      "type": "@Composable () -> Unit",
+      "required": true
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "enabled",
+      "role": "value",
+      "type": "Boolean",
+      "default": "true",
+      "value": {
+        "kind": "boolean",
+        "default": true
+      }
+    },
+    {
+      "name": "leadingIcon",
+      "role": "slot",
+      "type": "@Composable (() -> Unit)?",
+      "default": "null"
+    },
+    {
+      "name": "trailingIcon",
+      "role": "slot",
+      "type": "@Composable (() -> Unit)?",
+      "default": "null"
+    },
+    {
+      "name": "shape",
+      "role": "value",
+      "type": "Shape",
+      "default": "AssistChipDefaults.shape",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "colors",
+      "role": "value",
+      "type": "ChipColors",
+      "default": "AssistChipDefaults.elevatedAssistChipColors()",
+      "factory": {
+        "call": "androidx.compose.material3.AssistChipDefaults.elevatedAssistChipColors",
+        "params": [
+          {
+            "name": "containerColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "labelColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "leadingIconContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "trailingIconContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledContainerColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledLabelColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledLeadingIconContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledTrailingIconContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "elevation",
+      "role": "value",
+      "type": "ChipElevation?",
+      "default": "AssistChipDefaults.elevatedAssistChipElevation()",
+      "factory": {
+        "call": "androidx.compose.material3.AssistChipDefaults.elevatedAssistChipElevation",
+        "params": [
+          {
+            "name": "elevation",
+            "role": "value",
+            "type": "Dp",
+            "default": "AssistChipTokens.ElevatedContainerElevation",
+            "value": {
+              "kind": "dimension"
+            }
+          },
+          {
+            "name": "pressedElevation",
+            "role": "value",
+            "type": "Dp",
+            "default": "AssistChipTokens.ElevatedPressedContainerElevation",
+            "value": {
+              "kind": "dimension"
+            }
+          },
+          {
+            "name": "focusedElevation",
+            "role": "value",
+            "type": "Dp",
+            "default": "AssistChipTokens.ElevatedFocusContainerElevation",
+            "value": {
+              "kind": "dimension"
+            }
+          },
+          {
+            "name": "hoveredElevation",
+            "role": "value",
+            "type": "Dp",
+            "default": "AssistChipTokens.ElevatedHoverContainerElevation",
+            "value": {
+              "kind": "dimension"
+            }
+          },
+          {
+            "name": "draggedElevation",
+            "role": "value",
+            "type": "Dp",
+            "default": "AssistChipTokens.DraggedContainerElevation",
+            "value": {
+              "kind": "dimension"
+            }
+          },
+          {
+            "name": "disabledElevation",
+            "role": "value",
+            "type": "Dp",
+            "default": "AssistChipTokens.ElevatedDisabledContainerElevation",
+            "value": {
+              "kind": "dimension"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "border",
+      "role": "value",
+      "type": "BorderStroke?",
+      "default": "null",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "interactionSource",
+      "role": "state",
+      "type": "MutableInteractionSource?",
+      "default": "null"
+    }
+  ],
+  "doc": {
+    "onClick": "called when this chip is clicked",
+    "label": "text label for this chip",
+    "modifier": "the [Modifier] to be applied to this chip",
+    "enabled": "controls the enabled state of this chip. When `false`, this component will not respond to user input, and it will appear visually disabled and disabled to accessibility services.",
+    "leadingIcon": "optional icon at the start of the chip, preceding the [label] text",
+    "trailingIcon": "optional icon at the end of the chip",
+    "shape": "defines the shape of this chip's container, border (when [border] is not null), and shadow (when using [elevation])",
+    "colors": "[ChipColors] that will be used to resolve the colors used for this chip in different states. See [AssistChipDefaults.elevatedAssistChipColors].",
+    "colors.containerColor": "the container color of this chip when enabled",
+    "colors.labelColor": "the label color of this chip when enabled",
+    "colors.leadingIconContentColor": "the color of this chip's start icon when enabled",
+    "colors.trailingIconContentColor": "the color of this chip's end icon when enabled",
+    "colors.disabledContainerColor": "the container color of this chip when not enabled",
+    "colors.disabledLabelColor": "the label color of this chip when not enabled",
+    "colors.disabledLeadingIconContentColor": "the color of this chip's start icon when not enabled",
+    "colors.disabledTrailingIconContentColor": "the color of this chip's end icon when not enabled",
+    "elevation": "[ChipElevation] used to resolve the elevation for this chip in different states. This controls the size of the shadow below the chip. Additionally, when the container color is [ColorScheme.surface], this controls the amount of primary color applied as an overlay. See [AssistChipDefaults.elevatedAssistChipElevation].",
+    "elevation.elevation": "the elevation used when the [AssistChip] is has no other [Interaction]s",
+    "elevation.pressedElevation": "the elevation used when the chip is pressed.",
+    "elevation.focusedElevation": "the elevation used when the chip is focused",
+    "elevation.hoveredElevation": "the elevation used when the chip is hovered",
+    "elevation.draggedElevation": "the elevation used when the chip is dragged",
+    "elevation.disabledElevation": "the elevation used when the chip is not enabled",
+    "border": "the border to draw around the container of this chip",
+    "interactionSource": "an optional hoisted [MutableInteractionSource] for observing and emitting [Interaction]s for this chip. You can use this to change the chip's appearance or preview the chip in different states. Note that if `null` is provided, interactions will still happen internally."
+  }
+}

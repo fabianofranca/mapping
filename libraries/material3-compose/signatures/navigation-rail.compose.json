@@ -1,0 +1,69 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.NavigationRail",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationRail.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1",
+    "overload": 0
+  },
+  "params": [
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "containerColor",
+      "role": "value",
+      "type": "Color",
+      "default": "NavigationRailDefaults.ContainerColor",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "contentColor",
+      "role": "value",
+      "type": "Color",
+      "default": "contentColorFor(containerColor)",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "header",
+      "role": "slot",
+      "type": "@Composable (ColumnScope.() -> Unit)?",
+      "default": "null"
+    },
+    {
+      "name": "windowInsets",
+      "role": "value",
+      "type": "WindowInsets",
+      "default": "NavigationRailDefaults.windowInsets",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "content",
+      "role": "slot",
+      "type": "@Composable ColumnScope.() -> Unit",
+      "required": true
+    }
+  ],
+  "doc": {
+    "modifier": "the [Modifier] to be applied to this navigation rail",
+    "containerColor": "the color used for the background of this navigation rail. Use [Color.Transparent] to have no color.",
+    "contentColor": "the preferred color for content inside this navigation rail. Defaults to either the matching content color for [containerColor], or to the current [LocalContentColor] if [containerColor] is not a color from the theme.",
+    "header": "optional header that may hold a [FloatingActionButton] or a logo",
+    "windowInsets": "a window insets of the navigation rail.",
+    "content": "the content of this navigation rail, typically 3-7 [NavigationRailItem]s"
+  }
+}

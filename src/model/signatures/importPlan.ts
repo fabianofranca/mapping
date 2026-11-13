@@ -9,7 +9,7 @@ import type {
 } from '../spec';
 import { diffSpecs } from '../specVersions';
 import { findTypeInSpec } from '../specLookup';
-import { unmappedParams } from './codeLink';
+import { callName, unmappedParams } from './codeLink';
 import {
   capitalize,
   keyOf,
@@ -67,6 +67,8 @@ class Importer {
   private readonly before: ReadonlyMap<string, FlatLike>;
   private readonly newType: boolean;
   private readonly models: Models;
+  /** Os nomes que o `ignore` do `code` (ou do caso) deixa de fora de propósito (decisão 6). */
+  private readonly configured: ReadonlySet<string>;
 
   constructor(
     private readonly original: Spec,
@@ -76,6 +78,9 @@ class Importer {
     private readonly prepared: Prepared,
   ) {
     this.models = spec.fieldModels?.[prepared.id] ?? {};
+    this.configured = new Set(
+      (prepared.scope as Scope | undefined)?.ignore ?? prepared.code?.ignore ?? [],
+    );
     this.before = flatLikeOf(options.previous);
     this.newType = type.fields.length === 0 && options.previous === undefined;
   }
@@ -156,6 +161,7 @@ class Importer {
   // --- uma unidade ---
 
   private apply(unit: Unit): void {
+    if (this.isConfiguredIgnore(unit)) return;
     const context: ResolveContext = {
       models: this.models,
       like: (ref) => this.likePlan(ref),
@@ -166,6 +172,14 @@ class Importer {
     else if (resolution.kind === 'field') this.bindField(unit, resolution.plan);
   }
 
+  /** O `ignore` do `code` (ou do caso) cita a unidade pelo nome interno, pelo de chamada ou pelo dono. */
+  private isConfiguredIgnore(unit: Unit): boolean {
+    return (
+      this.configured.has(unit.owner ?? unit.param.name) ||
+      this.configured.has(callName(unit.param))
+    );
+  }
+
   /** O campo que o `params` já liga à unidade: pelo nome de chamada ou, sem dono, pelo nome interno. */
   private linkedKey(unit: Unit): string | undefined {
     const byCall = this.existing.get(unit.target);
@@ -173,18 +187,28 @@ class Importer {
     return this.existing.get(unit.param.name);
   }
 
-  private findLinked(unit: Unit): { field: SpecField; via: ImportLinkVia } | undefined {
+  /**
+   * Pelo nome só vale um campo do mesmo tipo quando o argumento é de uma fábrica ou de um composto
+   * (o `width` do `border` não é o `width` de tamanho): sem o mesmo tipo, nasce um campo novo.
+   */
+  private findLinked(
+    unit: Unit,
+    plan: FieldPlan,
+  ): { field: SpecField; via: ImportLinkVia } | undefined {
     const byParams = this.fieldOf(this.linkedKey(unit));
     if (byParams !== undefined) return { field: byParams, via: 'params' };
     const normal = normalizeName(unit.name);
     const byName = this.type.fields.find(
-      (f) => !this.linked.has(f.key) && normalizeName(f.key) === normal,
+      (f) =>
+        !this.linked.has(f.key) &&
+        normalizeName(f.key) === normal &&
+        (unit.owner === undefined || f.type === plan.type),
     );
     return byName === undefined ? undefined : { field: byName, via: 'name' };
   }
 
   private bindField(unit: Unit, plan: FieldPlan): void {
-    let found = this.findLinked(unit);
+    let found = this.findLinked(unit, plan);
     const isNew = found === undefined;
     if (found === undefined) {
       const field = this.makeField(unit, plan);
@@ -249,7 +273,15 @@ class Importer {
     this.syncOptions(unit, field, plan, isNew);
   }
 
+  /**
+   * O padrão de um campo existente só muda quando o da ficha mudou (decisão 12): a primeira importação
+   * não grava `default` onde o campo não tinha (a curadoria "vazio = X" fica).
+   */
   private updateDefault(unit: Unit, field: SpecField, plan: FieldPlan): void {
+    const changed = this.diff().changed.some(
+      (c) => c.kind === 'changed' && c.aspect === 'default' && c.param === unit.target,
+    );
+    if (!changed) return;
     const value = defaultFor(unit.param, plan);
     if (value === undefined || field.type !== plan.type) return;
     if (field.type === 'enum' && !field.options.includes(String(value))) return;
@@ -401,19 +433,42 @@ class Importer {
       .map(([target, field]) => ({ target, field }));
   }
 
+  /** Os campos que esta ficha já sinalizou como `removed`: reimportar não os reporta de novo. */
+  private reportedRemoved(): ReadonlySet<string> {
+    return new Set(
+      this.type.fields
+        .filter((f) =>
+          f.notices?.some((n) => n.kind === 'removed' && n.ref === this.path),
+        )
+        .map((f) => f.key),
+    );
+  }
+
+  private diffMemo: SignatureDiff | undefined;
+
   private diff(): SignatureDiff {
+    if (this.diffMemo !== undefined) return this.diffMemo;
     const previous = this.options.previous;
-    return previous === undefined
-      ? { renamed: [], removed: [], added: [], changed: [] }
-      : diffSignatures(previous, this.signature);
+    this.diffMemo =
+      previous === undefined
+        ? { renamed: [], removed: [], added: [], changed: [] }
+        : diffSignatures(previous, this.signature);
+    return this.diffMemo;
   }
 
   private keyOfTarget(target: string): string | undefined {
     return this.links.find((l) => l.param === target)?.field ?? this.existing.get(target);
   }
 
+  /**
+   * `<plataforma>: <texto>`; na ficha de um caso de `variants`, `<plataforma>: caso \`<caso>\`: <texto>`
+   * (o mesmo parâmetro sem campo na base e no caso daria dois avisos iguais, o erro `aviso repetido`).
+   */
   private message(text: string): string {
-    return `${this.prefix}: ${text}`;
+    const variant = this.options.variant;
+    return variant === undefined
+      ? `${this.prefix}: ${text}`
+      : `${this.prefix}: caso \`${variant}\`: ${text}`;
   }
 
   private writeNotices(
@@ -421,19 +476,8 @@ class Importer {
     diff: SignatureDiff,
   ): ImportNotice[] {
     const ours: ImportNotice[] = [];
-    const keep = (list: SpecNotice[] | undefined): SpecNotice[] | undefined => {
-      const kept = list?.filter((n) => n.ref !== this.path);
-      return kept === undefined || kept.length === 0 ? undefined : kept;
-    };
-    const set = (
-      target: { notices?: SpecNotice[] },
-      list: SpecNotice[] | undefined,
-    ): void => {
-      if (list === undefined) delete target.notices;
-      else target.notices = list;
-    };
-    set(this.type, keep(this.type.notices));
-    for (const field of this.type.fields) set(field, keep(field.notices));
+    const slot = this.detachOwnNotices();
+    const fresh = new Map<{ notices?: SpecNotice[] }, SpecNotice[]>();
     const add = (
       at: ImportNotice['at'],
       kind: SpecNotice['kind'],
@@ -442,7 +486,7 @@ class Importer {
       const notice: SpecNotice = { kind, message: this.message(text), ref: this.path };
       const holder = at === 'type' ? this.type : this.fieldOf(at.field);
       if (holder === undefined) return;
-      holder.notices = [...(holder.notices ?? []), notice];
+      fresh.set(holder, [...(fresh.get(holder) ?? []), notice]);
       ours.push({ at, kind, message: notice.message, ref: this.path });
     };
     for (const unit of this.pending) {
@@ -457,7 +501,33 @@ class Importer {
         add({ field: field.key }, 'diverges', text);
     }
     this.writeOutside(outside, diff, add);
+    for (const [holder, list] of fresh) {
+      const kept = holder.notices ?? [];
+      const at = Math.min(slot.get(holder) ?? kept.length, kept.length);
+      holder.notices = [...kept.slice(0, at), ...list, ...kept.slice(at)];
+    }
     return ours;
+  }
+
+  /**
+   * Tira os avisos antigos desta ficha (pelo `ref`) do tipo e dos campos e devolve a posição em
+   * que estavam: os novos ocupam o lugar deles (reimportar a base depois de um caso não reordena
+   * a lista); sem avisos antigos, vão para o fim.
+   */
+  private detachOwnNotices(): Map<{ notices?: SpecNotice[] }, number> {
+    const slot = new Map<{ notices?: SpecNotice[] }, number>();
+    const holders: { notices?: SpecNotice[] }[] = [this.type, ...this.type.fields];
+    for (const holder of holders) {
+      const list = holder.notices;
+      if (list === undefined) continue;
+      const first = list.findIndex((n) => n.ref === this.path);
+      if (first >= 0)
+        slot.set(holder, list.slice(0, first).filter((n) => n.ref !== this.path).length);
+      const kept = list.filter((n) => n.ref !== this.path);
+      if (kept.length === 0) delete holder.notices;
+      else holder.notices = kept;
+    }
+    return slot;
   }
 
   private writeOutside(
@@ -518,11 +588,12 @@ class Importer {
     this.collectExisting();
     for (const unit of unitsOf(this.signature, this.models)) this.apply(unit);
     const outside = this.outside();
+    const reported = this.reportedRemoved();
+    const news = outside.filter((o) => !reported.has(o.field));
     const diff = this.diff();
     const notices = this.writeNotices(outside, diff);
     const code = this.prepared.code;
-    const scope = this.prepared.scope as Scope;
-    const ignore = [...(scope.ignore ?? code?.ignore ?? []), ...this.ignored];
+    const ignore = [...this.configured, ...this.ignored];
     const unmapped = unmappedParams(this.signature, {
       params: this.paramsView(),
       ignore,
@@ -537,8 +608,8 @@ class Importer {
       ...(this.prepared.source === undefined ? {} : { sources: this.type.sources ?? [] }),
       notices,
       unmapped,
-      changes: this.changesOf(outside, diff),
-      suggestedMigrations: this.migrations(outside, diff),
+      changes: this.changesOf(news, diff),
+      suggestedMigrations: this.migrations(news, diff),
       versionBump: diffSpecs(this.original, this.spec).length > 0,
     };
   }

@@ -56,7 +56,10 @@ function describeField(id: string, options: string[]) {
       options,
     });
     expect(field?.required).not.toBe(true);
-    expect(JSON.stringify(typeOf(id).code ?? {})).not.toContain('interaction');
+    // `interactionSource` é o parâmetro do Compose que o `ignore` deixa de fora (importação, #1079 S5): não é o campo.
+    expect(
+      JSON.stringify(typeOf(id).code ?? {}).replaceAll('interactionSource', ''),
+    ).not.toContain('interaction');
   });
   it('a descrição diz o que acontece com o desabilitado', () => {
     expect(field?.description).toMatch(/habilitado|enabled/i);

@@ -59,7 +59,7 @@ A app testada é a que você compila do commit da mensagem (`npm ci && npm run b
 
 ## MCP
 
-O servidor MCP é o **compilado do mesmo commit** (`dist-mcp/mapping-mcp.js`), usado pelo cliente por stdio (`scripts/testing/mcp-stdio-client.mjs`, receita 9 da nuvem), com o workspace da seção 6 do guia apontando para esse arquivo. A release candidate (download da Release, `.sha256`, `setup.sh`) só entra quando a mensagem pedir. Sem o MCP, faça da seção 6 só o passo 2 (o repositório de teste, que o R3.1 a R3.5 usam) e marque o R3.6 e o R5 como "não executado (sem MCP)". No cabeçalho do relato, registre que os pedidos foram feitos por stdio.
+O servidor MCP é o **compilado do mesmo commit** (`dist-mcp/mapping-mcp.js`), usado pelo cliente por stdio (`scripts/testing/mcp-stdio-client.mjs`, receita 9 da nuvem), com o workspace da seção 6 do guia apontando para esse arquivo. A release candidate (download da Release, `.sha256`, `setup.sh`) só entra quando a mensagem pedir. Sem o MCP, faça da seção 6 só o passo 2 (o repositório de teste, que o R3.1 a R3.5 usam) e marque o R3.6, o R3.21 e o R5 como "não executado (sem MCP)". No cabeçalho do relato, registre que os pedidos foram feitos por stdio.
 
 ## Como agir
 
@@ -126,11 +126,11 @@ A rodada completa (R0 a R26) roda em **5 sessões ao mesmo tempo**, uma por bloc
 
 | Bloco | Roteiros, na ordem do guia                                                          | Passos |
 | ----- | ----------------------------------------------------------------------------------- | ------ |
-| 1     | R0, R1, R2, seção 6, R3, R6.3 a R6.7, R6.12 a R6.14, R7, R5, R8 e R14               | 129    |
+| 1     | R0, R1, R2, seção 6, R3, R6.3 a R6.7, R6.12 a R6.14, R7, R5, R8 e R14               | 131    |
 | 2     | R0, seção 6, R15 e R25                                                              | 143    |
-| 3     | R0, seção 6, R12, R18 e R19                                                         | 113    |
+| 3     | R0, seção 6, R12, R18 e R19                                                         | 114    |
 | 4     | R0, seção 6, R4, R6.8a a R6.11, R9, R10, R13, R16, R22, R24, R26 e a passada visual | 157    |
-| 5     | R0, seção 6, R11, R17, R20, R21 e R23                                               | 124    |
+| 5     | R0, seção 6, R11, R17, R20, R21 e R23                                               | 127    |
 
 São 5 blocos por decisão do dono (2026-11-09). A passada visual fica no bloco 4 (decisão 6 da etapa #841). O limite do guia gerado de cada bloco (`MAX_BLOCK_GUIDE_CHARS`, no `tests/tooling/roundBlocks.test.ts`), os tamanhos de antes, as dependências por bloco e as linhas de base: `cloud.mjs secao consulta.historico`.
 

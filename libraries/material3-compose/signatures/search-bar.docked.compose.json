@@ -1,0 +1,127 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.DockedSearchBar",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SearchBar.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "inputField",
+      "role": "slot",
+      "type": "@Composable () -> Unit",
+      "required": true
+    },
+    {
+      "name": "expanded",
+      "role": "value",
+      "type": "Boolean",
+      "required": true,
+      "value": {
+        "kind": "boolean"
+      }
+    },
+    {
+      "name": "onExpandedChange",
+      "role": "callback",
+      "type": "(Boolean) -> Unit",
+      "required": true
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "shape",
+      "role": "value",
+      "type": "Shape",
+      "default": "SearchBarDefaults.dockedShape",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "colors",
+      "role": "value",
+      "type": "SearchBarColors",
+      "default": "SearchBarDefaults.colors()",
+      "factory": {
+        "call": "androidx.compose.material3.SearchBarDefaults.colors",
+        "params": [
+          {
+            "name": "containerColor",
+            "role": "value",
+            "type": "Color",
+            "default": "SearchBarTokens.ContainerColor.value",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "dividerColor",
+            "role": "value",
+            "type": "Color",
+            "default": "SearchViewTokens.DividerColor.value",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "inputFieldColors",
+            "role": "value",
+            "type": "TextFieldColors",
+            "default": "inputFieldColors(focusedContainerColor = containerColor, unfocusedContainerColor = containerColor, disabledContainerColor = containerColor,)",
+            "value": {
+              "kind": "opaque"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "tonalElevation",
+      "role": "value",
+      "type": "Dp",
+      "default": "SearchBarDefaults.TonalElevation",
+      "value": {
+        "kind": "dimension"
+      }
+    },
+    {
+      "name": "shadowElevation",
+      "role": "value",
+      "type": "Dp",
+      "default": "SearchBarDefaults.ShadowElevation",
+      "value": {
+        "kind": "dimension"
+      }
+    },
+    {
+      "name": "content",
+      "role": "slot",
+      "type": "@Composable ColumnScope.() -> Unit",
+      "required": true
+    }
+  ],
+  "doc": {
+    "inputField": "the input field of this search bar that allows entering a query, typically a [SearchBarDefaults.InputField].",
+    "expanded": "whether this search bar is expanded and showing search results.",
+    "onExpandedChange": "the callback to be invoked when this search bar's expanded state is changed.",
+    "modifier": "the [Modifier] to be applied to this search bar.",
+    "shape": "the shape of this search bar.",
+    "colors": "[SearchBarColors] that will be used to resolve the colors used for this search bar in different states. See [SearchBarDefaults.colors].",
+    "colors.containerColor": "the container color of the search bar",
+    "colors.dividerColor": "the color of the divider between the input field and the search results",
+    "colors.inputFieldColors": "the colors of the input field. This can be accessed using [SearchBarColors.inputFieldColors] and should be passed to the `inputField` slot of the search bar.",
+    "tonalElevation": "when [SearchBarColors.containerColor] is [ColorScheme.surface], a translucent primary color overlay is applied on top of the container. A higher tonal elevation value will result in a darker color in light theme and lighter color in dark theme. See also: [Surface].",
+    "shadowElevation": "the elevation for the shadow below the search bar.",
+    "content": "the content of this search bar to display search results below the [inputField]."
+  }
+}

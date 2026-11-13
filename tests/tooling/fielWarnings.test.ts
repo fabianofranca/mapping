@@ -1,4 +1,5 @@
-// R25.1: a biblioteca m3-fiel (cópia do pacote com oito componentes trocados pelo fiel.mjs) valida sem aviso.
+// R25.1: a biblioteca m3-fiel (cópia do pacote com oito componentes trocados pelo fiel.mjs) valida sem erro e só com os
+// avisos `parâmetro fora da ficha` conhecidos do pacote (S5, #1079; provisório: bug #1774, curadoria na #1134).
 import { execFileSync } from 'node:child_process';
 import { cpSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -9,6 +10,7 @@ import { isFontPath } from '../../src/model/components/library';
 import { parseComponentText } from '../../src/model/components/parseComponent';
 import { absoluteBoxes, walk } from '../../src/model/components/scene';
 import { validateLibrary } from '../../src/model/library';
+import { unknownWarnings } from '../support/material3Library';
 
 const REPO = join(__dirname, '../..');
 
@@ -19,7 +21,7 @@ function list(dir: string, base = dir): string[] {
 }
 
 describe('fiel.mjs (R25.1)', () => {
-  it('m3-fiel: sem erro nem aviso (o interaction dos tipos trocados não fica sem uso)', () => {
+  it('m3-fiel: sem erro e só com avisos conhecidos (o interaction dos tipos trocados não fica sem uso)', () => {
     const dir = join(mkdtempSync(join(tmpdir(), 'fiel-')), 'm3-fiel');
     cpSync(join(REPO, 'libraries/material3-compose'), dir, { recursive: true });
     execFileSync('node', [join(REPO, 'scripts/testing/fiel.mjs'), dir, '4']);
@@ -33,7 +35,7 @@ describe('fiel.mjs (R25.1)', () => {
       );
     const report = validateLibrary({ files });
     expect(report.errors).toEqual([]);
-    expect(report.warnings).toEqual([]);
+    expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
   });
 
   it('top-app-bar: a caixa vermelha mede 48, 68 e 88 com 1, 2 e 3 linhas (R25.95)', () => {

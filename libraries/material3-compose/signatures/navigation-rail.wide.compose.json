@@ -1,0 +1,138 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.WideNavigationRail",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/WideNavigationRail.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1",
+    "overload": 0
+  },
+  "params": [
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "state",
+      "role": "state",
+      "type": "WideNavigationRailState",
+      "default": "rememberWideNavigationRailState()"
+    },
+    {
+      "name": "shape",
+      "role": "value",
+      "type": "Shape",
+      "default": "WideNavigationRailDefaults.shape",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "colors",
+      "role": "value",
+      "type": "WideNavigationRailColors",
+      "default": "WideNavigationRailDefaults.colors()",
+      "factory": {
+        "call": "androidx.compose.material3.WideNavigationRailDefaults.colors",
+        "params": [
+          {
+            "name": "containerColor",
+            "role": "value",
+            "type": "Color",
+            "default": "WideNavigationRailDefaults.containerColor",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "contentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "contentColorFor(containerColor)",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "modalContainerColor",
+            "role": "value",
+            "type": "Color",
+            "default": "NavigationRailExpandedTokens.ModalContainerColor.value",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "modalScrimColor",
+            "role": "value",
+            "type": "Color",
+            "default": "ScrimTokens.ContainerColor.value.copy(ScrimTokens.ContainerOpacity)",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "modalContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "contentColorFor(modalContainerColor)",
+            "value": {
+              "kind": "color"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "header",
+      "role": "slot",
+      "type": "@Composable (() -> Unit)?",
+      "default": "null"
+    },
+    {
+      "name": "windowInsets",
+      "role": "value",
+      "type": "WindowInsets",
+      "default": "WideNavigationRailDefaults.windowInsets",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "arrangement",
+      "role": "value",
+      "type": "Arrangement.Vertical",
+      "default": "WideNavigationRailDefaults.arrangement",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "content",
+      "role": "slot",
+      "type": "@Composable () -> Unit",
+      "required": true
+    }
+  ],
+  "doc": {
+    "modifier": "the [Modifier] to be applied to this wide navigation rail",
+    "state": "the [WideNavigationRailState] of this wide navigation rail",
+    "shape": "defines the shape of this wide navigation rail's container.",
+    "colors": "[WideNavigationRailColors] that will be used to resolve the colors used for this wide navigation rail. See [WideNavigationRailDefaults.colors]",
+    "colors.containerColor": "the color used for the background of a non-modal wide navigation rail.",
+    "colors.contentColor": "the preferred color for content inside a wide navigation rail. Defaults to either the matching content color for [containerColor], or to the current [LocalContentColor] if [containerColor] is not a color from the theme",
+    "colors.modalContainerColor": "the color used for the background of a modal wide navigation rail.",
+    "colors.modalScrimColor": "the color used for the scrim overlay for background content of a modal wide navigation rail",
+    "colors.modalContentColor": "the preferred color for content inside a modal wide navigation rail. Defaults to either the matching content color for [modalContainerColor], or to the current [LocalContentColor] if [modalContainerColor] is not a color from the theme",
+    "header": "optional header that may hold a [FloatingActionButton] or a logo",
+    "windowInsets": "a window insets of the wide navigation rail",
+    "arrangement": "the [Arrangement.Vertical] of this wide navigation rail for its content. Note that if there's a header present, the items will be arranged on the remaining space below it, except for the center arrangement which considers the entire height of the container",
+    "content": "the content of this wide navigation rail, typically [WideNavigationRailItem]s"
+  }
+}

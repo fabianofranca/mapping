@@ -96,34 +96,494 @@
                   "$eq": ["enabled", "false"]
                 },
                 "then": {
-                  "$token": "on-surface"
+                  "$if": {
+                    "$field": "selected"
+                  },
+                  "then": {
+                    "$switch": "disabledSelectedColor",
+                    "cases": {
+                      "primary": {
+                        "$token": "primary"
+                      },
+                      "onPrimary": {
+                        "$token": "on-primary"
+                      },
+                      "primaryContainer": {
+                        "$token": "primary-container"
+                      },
+                      "onPrimaryContainer": {
+                        "$token": "on-primary-container"
+                      },
+                      "secondary": {
+                        "$token": "secondary"
+                      },
+                      "onSecondary": {
+                        "$token": "on-secondary"
+                      },
+                      "secondaryContainer": {
+                        "$token": "secondary-container"
+                      },
+                      "onSecondaryContainer": {
+                        "$token": "on-secondary-container"
+                      },
+                      "tertiary": {
+                        "$token": "tertiary"
+                      },
+                      "onTertiary": {
+                        "$token": "on-tertiary"
+                      },
+                      "tertiaryContainer": {
+                        "$token": "tertiary-container"
+                      },
+                      "onTertiaryContainer": {
+                        "$token": "on-tertiary-container"
+                      },
+                      "error": {
+                        "$token": "error"
+                      },
+                      "onError": {
+                        "$token": "on-error"
+                      },
+                      "errorContainer": {
+                        "$token": "error-container"
+                      },
+                      "onErrorContainer": {
+                        "$token": "on-error-container"
+                      },
+                      "background": {
+                        "$token": "background"
+                      },
+                      "onBackground": {
+                        "$token": "on-background"
+                      },
+                      "surface": {
+                        "$token": "surface"
+                      },
+                      "onSurface": {
+                        "$token": "on-surface"
+                      },
+                      "surfaceVariant": {
+                        "$token": "surface-variant"
+                      },
+                      "onSurfaceVariant": {
+                        "$token": "on-surface-variant"
+                      },
+                      "surfaceTint": {
+                        "$token": "surface-tint"
+                      },
+                      "inverseSurface": {
+                        "$token": "inverse-surface"
+                      },
+                      "inverseOnSurface": {
+                        "$token": "inverse-on-surface"
+                      },
+                      "inversePrimary": {
+                        "$token": "inverse-primary"
+                      },
+                      "outline": {
+                        "$token": "outline"
+                      },
+                      "outlineVariant": {
+                        "$token": "outline-variant"
+                      },
+                      "scrim": {
+                        "$token": "scrim"
+                      },
+                      "surfaceBright": {
+                        "$token": "surface-bright"
+                      },
+                      "surfaceDim": {
+                        "$token": "surface-dim"
+                      },
+                      "surfaceContainerLowest": {
+                        "$token": "surface-container-lowest"
+                      },
+                      "surfaceContainerLow": {
+                        "$token": "surface-container-low"
+                      },
+                      "surfaceContainer": {
+                        "$token": "surface-container"
+                      },
+                      "surfaceContainerHigh": {
+                        "$token": "surface-container-high"
+                      },
+                      "surfaceContainerHighest": {
+                        "$token": "surface-container-highest"
+                      }
+                    },
+                    "default": {
+                      "$token": "on-surface"
+                    }
+                  },
+                  "else": {
+                    "$switch": "disabledUnselectedColor",
+                    "cases": {
+                      "primary": {
+                        "$token": "primary"
+                      },
+                      "onPrimary": {
+                        "$token": "on-primary"
+                      },
+                      "primaryContainer": {
+                        "$token": "primary-container"
+                      },
+                      "onPrimaryContainer": {
+                        "$token": "on-primary-container"
+                      },
+                      "secondary": {
+                        "$token": "secondary"
+                      },
+                      "onSecondary": {
+                        "$token": "on-secondary"
+                      },
+                      "secondaryContainer": {
+                        "$token": "secondary-container"
+                      },
+                      "onSecondaryContainer": {
+                        "$token": "on-secondary-container"
+                      },
+                      "tertiary": {
+                        "$token": "tertiary"
+                      },
+                      "onTertiary": {
+                        "$token": "on-tertiary"
+                      },
+                      "tertiaryContainer": {
+                        "$token": "tertiary-container"
+                      },
+                      "onTertiaryContainer": {
+                        "$token": "on-tertiary-container"
+                      },
+                      "error": {
+                        "$token": "error"
+                      },
+                      "onError": {
+                        "$token": "on-error"
+                      },
+                      "errorContainer": {
+                        "$token": "error-container"
+                      },
+                      "onErrorContainer": {
+                        "$token": "on-error-container"
+                      },
+                      "background": {
+                        "$token": "background"
+                      },
+                      "onBackground": {
+                        "$token": "on-background"
+                      },
+                      "surface": {
+                        "$token": "surface"
+                      },
+                      "onSurface": {
+                        "$token": "on-surface"
+                      },
+                      "surfaceVariant": {
+                        "$token": "surface-variant"
+                      },
+                      "onSurfaceVariant": {
+                        "$token": "on-surface-variant"
+                      },
+                      "surfaceTint": {
+                        "$token": "surface-tint"
+                      },
+                      "inverseSurface": {
+                        "$token": "inverse-surface"
+                      },
+                      "inverseOnSurface": {
+                        "$token": "inverse-on-surface"
+                      },
+                      "inversePrimary": {
+                        "$token": "inverse-primary"
+                      },
+                      "outline": {
+                        "$token": "outline"
+                      },
+                      "outlineVariant": {
+                        "$token": "outline-variant"
+                      },
+                      "scrim": {
+                        "$token": "scrim"
+                      },
+                      "surfaceBright": {
+                        "$token": "surface-bright"
+                      },
+                      "surfaceDim": {
+                        "$token": "surface-dim"
+                      },
+                      "surfaceContainerLowest": {
+                        "$token": "surface-container-lowest"
+                      },
+                      "surfaceContainerLow": {
+                        "$token": "surface-container-low"
+                      },
+                      "surfaceContainer": {
+                        "$token": "surface-container"
+                      },
+                      "surfaceContainerHigh": {
+                        "$token": "surface-container-high"
+                      },
+                      "surfaceContainerHighest": {
+                        "$token": "surface-container-highest"
+                      }
+                    },
+                    "default": {
+                      "$token": "on-surface"
+                    }
+                  }
                 },
                 "else": {
                   "$if": {
                     "$field": "selected"
                   },
                   "then": {
-                    "$token": "primary"
+                    "$switch": "selectedColor",
+                    "cases": {
+                      "primary": {
+                        "$token": "primary"
+                      },
+                      "onPrimary": {
+                        "$token": "on-primary"
+                      },
+                      "primaryContainer": {
+                        "$token": "primary-container"
+                      },
+                      "onPrimaryContainer": {
+                        "$token": "on-primary-container"
+                      },
+                      "secondary": {
+                        "$token": "secondary"
+                      },
+                      "onSecondary": {
+                        "$token": "on-secondary"
+                      },
+                      "secondaryContainer": {
+                        "$token": "secondary-container"
+                      },
+                      "onSecondaryContainer": {
+                        "$token": "on-secondary-container"
+                      },
+                      "tertiary": {
+                        "$token": "tertiary"
+                      },
+                      "onTertiary": {
+                        "$token": "on-tertiary"
+                      },
+                      "tertiaryContainer": {
+                        "$token": "tertiary-container"
+                      },
+                      "onTertiaryContainer": {
+                        "$token": "on-tertiary-container"
+                      },
+                      "error": {
+                        "$token": "error"
+                      },
+                      "onError": {
+                        "$token": "on-error"
+                      },
+                      "errorContainer": {
+                        "$token": "error-container"
+                      },
+                      "onErrorContainer": {
+                        "$token": "on-error-container"
+                      },
+                      "background": {
+                        "$token": "background"
+                      },
+                      "onBackground": {
+                        "$token": "on-background"
+                      },
+                      "surface": {
+                        "$token": "surface"
+                      },
+                      "onSurface": {
+                        "$token": "on-surface"
+                      },
+                      "surfaceVariant": {
+                        "$token": "surface-variant"
+                      },
+                      "onSurfaceVariant": {
+                        "$token": "on-surface-variant"
+                      },
+                      "surfaceTint": {
+                        "$token": "surface-tint"
+                      },
+                      "inverseSurface": {
+                        "$token": "inverse-surface"
+                      },
+                      "inverseOnSurface": {
+                        "$token": "inverse-on-surface"
+                      },
+                      "inversePrimary": {
+                        "$token": "inverse-primary"
+                      },
+                      "outline": {
+                        "$token": "outline"
+                      },
+                      "outlineVariant": {
+                        "$token": "outline-variant"
+                      },
+                      "scrim": {
+                        "$token": "scrim"
+                      },
+                      "surfaceBright": {
+                        "$token": "surface-bright"
+                      },
+                      "surfaceDim": {
+                        "$token": "surface-dim"
+                      },
+                      "surfaceContainerLowest": {
+                        "$token": "surface-container-lowest"
+                      },
+                      "surfaceContainerLow": {
+                        "$token": "surface-container-low"
+                      },
+                      "surfaceContainer": {
+                        "$token": "surface-container"
+                      },
+                      "surfaceContainerHigh": {
+                        "$token": "surface-container-high"
+                      },
+                      "surfaceContainerHighest": {
+                        "$token": "surface-container-highest"
+                      }
+                    },
+                    "default": {
+                      "$token": "primary"
+                    }
                   },
                   "else": {
-                    "$if": {
-                      "$or": [
-                        {
-                          "$eq": ["interaction", "hovered"]
-                        },
-                        {
-                          "$eq": ["interaction", "focused"]
-                        },
-                        {
-                          "$eq": ["interaction", "pressed"]
-                        }
-                      ]
+                    "$switch": "unselectedColor",
+                    "cases": {
+                      "primary": {
+                        "$token": "primary"
+                      },
+                      "onPrimary": {
+                        "$token": "on-primary"
+                      },
+                      "primaryContainer": {
+                        "$token": "primary-container"
+                      },
+                      "onPrimaryContainer": {
+                        "$token": "on-primary-container"
+                      },
+                      "secondary": {
+                        "$token": "secondary"
+                      },
+                      "onSecondary": {
+                        "$token": "on-secondary"
+                      },
+                      "secondaryContainer": {
+                        "$token": "secondary-container"
+                      },
+                      "onSecondaryContainer": {
+                        "$token": "on-secondary-container"
+                      },
+                      "tertiary": {
+                        "$token": "tertiary"
+                      },
+                      "onTertiary": {
+                        "$token": "on-tertiary"
+                      },
+                      "tertiaryContainer": {
+                        "$token": "tertiary-container"
+                      },
+                      "onTertiaryContainer": {
+                        "$token": "on-tertiary-container"
+                      },
+                      "error": {
+                        "$token": "error"
+                      },
+                      "onError": {
+                        "$token": "on-error"
+                      },
+                      "errorContainer": {
+                        "$token": "error-container"
+                      },
+                      "onErrorContainer": {
+                        "$token": "on-error-container"
+                      },
+                      "background": {
+                        "$token": "background"
+                      },
+                      "onBackground": {
+                        "$token": "on-background"
+                      },
+                      "surface": {
+                        "$token": "surface"
+                      },
+                      "onSurface": {
+                        "$token": "on-surface"
+                      },
+                      "surfaceVariant": {
+                        "$token": "surface-variant"
+                      },
+                      "onSurfaceVariant": {
+                        "$token": "on-surface-variant"
+                      },
+                      "surfaceTint": {
+                        "$token": "surface-tint"
+                      },
+                      "inverseSurface": {
+                        "$token": "inverse-surface"
+                      },
+                      "inverseOnSurface": {
+                        "$token": "inverse-on-surface"
+                      },
+                      "inversePrimary": {
+                        "$token": "inverse-primary"
+                      },
+                      "outline": {
+                        "$token": "outline"
+                      },
+                      "outlineVariant": {
+                        "$token": "outline-variant"
+                      },
+                      "scrim": {
+                        "$token": "scrim"
+                      },
+                      "surfaceBright": {
+                        "$token": "surface-bright"
+                      },
+                      "surfaceDim": {
+                        "$token": "surface-dim"
+                      },
+                      "surfaceContainerLowest": {
+                        "$token": "surface-container-lowest"
+                      },
+                      "surfaceContainerLow": {
+                        "$token": "surface-container-low"
+                      },
+                      "surfaceContainer": {
+                        "$token": "surface-container"
+                      },
+                      "surfaceContainerHigh": {
+                        "$token": "surface-container-high"
+                      },
+                      "surfaceContainerHighest": {
+                        "$token": "surface-container-highest"
+                      }
                     },
-                    "then": {
-                      "$token": "on-surface"
-                    },
-                    "else": {
-                      "$token": "on-surface-variant"
+                    "default": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$eq": ["interaction", "hovered"]
+                          },
+                          {
+                            "$eq": ["interaction", "focused"]
+                          },
+                          {
+                            "$eq": ["interaction", "pressed"]
+                          }
+                        ]
+                      },
+                      "then": {
+                        "$token": "on-surface"
+                      },
+                      "else": {
+                        "$token": "on-surface-variant"
+                      }
                     }
                   }
                 }
@@ -155,17 +615,477 @@
                 "$eq": ["enabled", "false"]
               },
               "then": {
-                "$token": "on-surface"
+                "$if": {
+                  "$field": "selected"
+                },
+                "then": {
+                  "$switch": "disabledSelectedColor",
+                  "cases": {
+                    "primary": {
+                      "$token": "primary"
+                    },
+                    "onPrimary": {
+                      "$token": "on-primary"
+                    },
+                    "primaryContainer": {
+                      "$token": "primary-container"
+                    },
+                    "onPrimaryContainer": {
+                      "$token": "on-primary-container"
+                    },
+                    "secondary": {
+                      "$token": "secondary"
+                    },
+                    "onSecondary": {
+                      "$token": "on-secondary"
+                    },
+                    "secondaryContainer": {
+                      "$token": "secondary-container"
+                    },
+                    "onSecondaryContainer": {
+                      "$token": "on-secondary-container"
+                    },
+                    "tertiary": {
+                      "$token": "tertiary"
+                    },
+                    "onTertiary": {
+                      "$token": "on-tertiary"
+                    },
+                    "tertiaryContainer": {
+                      "$token": "tertiary-container"
+                    },
+                    "onTertiaryContainer": {
+                      "$token": "on-tertiary-container"
+                    },
+                    "error": {
+                      "$token": "error"
+                    },
+                    "onError": {
+                      "$token": "on-error"
+                    },
+                    "errorContainer": {
+                      "$token": "error-container"
+                    },
+                    "onErrorContainer": {
+                      "$token": "on-error-container"
+                    },
+                    "background": {
+                      "$token": "background"
+                    },
+                    "onBackground": {
+                      "$token": "on-background"
+                    },
+                    "surface": {
+                      "$token": "surface"
+                    },
+                    "onSurface": {
+                      "$token": "on-surface"
+                    },
+                    "surfaceVariant": {
+                      "$token": "surface-variant"
+                    },
+                    "onSurfaceVariant": {
+                      "$token": "on-surface-variant"
+                    },
+                    "surfaceTint": {
+                      "$token": "surface-tint"
+                    },
+                    "inverseSurface": {
+                      "$token": "inverse-surface"
+                    },
+                    "inverseOnSurface": {
+                      "$token": "inverse-on-surface"
+                    },
+                    "inversePrimary": {
+                      "$token": "inverse-primary"
+                    },
+                    "outline": {
+                      "$token": "outline"
+                    },
+                    "outlineVariant": {
+                      "$token": "outline-variant"
+                    },
+                    "scrim": {
+                      "$token": "scrim"
+                    },
+                    "surfaceBright": {
+                      "$token": "surface-bright"
+                    },
+                    "surfaceDim": {
+                      "$token": "surface-dim"
+                    },
+                    "surfaceContainerLowest": {
+                      "$token": "surface-container-lowest"
+                    },
+                    "surfaceContainerLow": {
+                      "$token": "surface-container-low"
+                    },
+                    "surfaceContainer": {
+                      "$token": "surface-container"
+                    },
+                    "surfaceContainerHigh": {
+                      "$token": "surface-container-high"
+                    },
+                    "surfaceContainerHighest": {
+                      "$token": "surface-container-highest"
+                    }
+                  },
+                  "default": {
+                    "$token": "on-surface"
+                  }
+                },
+                "else": {
+                  "$switch": "disabledUnselectedColor",
+                  "cases": {
+                    "primary": {
+                      "$token": "primary"
+                    },
+                    "onPrimary": {
+                      "$token": "on-primary"
+                    },
+                    "primaryContainer": {
+                      "$token": "primary-container"
+                    },
+                    "onPrimaryContainer": {
+                      "$token": "on-primary-container"
+                    },
+                    "secondary": {
+                      "$token": "secondary"
+                    },
+                    "onSecondary": {
+                      "$token": "on-secondary"
+                    },
+                    "secondaryContainer": {
+                      "$token": "secondary-container"
+                    },
+                    "onSecondaryContainer": {
+                      "$token": "on-secondary-container"
+                    },
+                    "tertiary": {
+                      "$token": "tertiary"
+                    },
+                    "onTertiary": {
+                      "$token": "on-tertiary"
+                    },
+                    "tertiaryContainer": {
+                      "$token": "tertiary-container"
+                    },
+                    "onTertiaryContainer": {
+                      "$token": "on-tertiary-container"
+                    },
+                    "error": {
+                      "$token": "error"
+                    },
+                    "onError": {
+                      "$token": "on-error"
+                    },
+                    "errorContainer": {
+                      "$token": "error-container"
+                    },
+                    "onErrorContainer": {
+                      "$token": "on-error-container"
+                    },
+                    "background": {
+                      "$token": "background"
+                    },
+                    "onBackground": {
+                      "$token": "on-background"
+                    },
+                    "surface": {
+                      "$token": "surface"
+                    },
+                    "onSurface": {
+                      "$token": "on-surface"
+                    },
+                    "surfaceVariant": {
+                      "$token": "surface-variant"
+                    },
+                    "onSurfaceVariant": {
+                      "$token": "on-surface-variant"
+                    },
+                    "surfaceTint": {
+                      "$token": "surface-tint"
+                    },
+                    "inverseSurface": {
+                      "$token": "inverse-surface"
+                    },
+                    "inverseOnSurface": {
+                      "$token": "inverse-on-surface"
+                    },
+                    "inversePrimary": {
+                      "$token": "inverse-primary"
+                    },
+                    "outline": {
+                      "$token": "outline"
+                    },
+                    "outlineVariant": {
+                      "$token": "outline-variant"
+                    },
+                    "scrim": {
+                      "$token": "scrim"
+                    },
+                    "surfaceBright": {
+                      "$token": "surface-bright"
+                    },
+                    "surfaceDim": {
+                      "$token": "surface-dim"
+                    },
+                    "surfaceContainerLowest": {
+                      "$token": "surface-container-lowest"
+                    },
+                    "surfaceContainerLow": {
+                      "$token": "surface-container-low"
+                    },
+                    "surfaceContainer": {
+                      "$token": "surface-container"
+                    },
+                    "surfaceContainerHigh": {
+                      "$token": "surface-container-high"
+                    },
+                    "surfaceContainerHighest": {
+                      "$token": "surface-container-highest"
+                    }
+                  },
+                  "default": {
+                    "$token": "on-surface"
+                  }
+                }
               },
               "else": {
                 "$if": {
                   "$field": "selected"
                 },
                 "then": {
-                  "$token": "primary"
+                  "$switch": "selectedColor",
+                  "cases": {
+                    "primary": {
+                      "$token": "primary"
+                    },
+                    "onPrimary": {
+                      "$token": "on-primary"
+                    },
+                    "primaryContainer": {
+                      "$token": "primary-container"
+                    },
+                    "onPrimaryContainer": {
+                      "$token": "on-primary-container"
+                    },
+                    "secondary": {
+                      "$token": "secondary"
+                    },
+                    "onSecondary": {
+                      "$token": "on-secondary"
+                    },
+                    "secondaryContainer": {
+                      "$token": "secondary-container"
+                    },
+                    "onSecondaryContainer": {
+                      "$token": "on-secondary-container"
+                    },
+                    "tertiary": {
+                      "$token": "tertiary"
+                    },
+                    "onTertiary": {
+                      "$token": "on-tertiary"
+                    },
+                    "tertiaryContainer": {
+                      "$token": "tertiary-container"
+                    },
+                    "onTertiaryContainer": {
+                      "$token": "on-tertiary-container"
+                    },
+                    "error": {
+                      "$token": "error"
+                    },
+                    "onError": {
+                      "$token": "on-error"
+                    },
+                    "errorContainer": {
+                      "$token": "error-container"
+                    },
+                    "onErrorContainer": {
+                      "$token": "on-error-container"
+                    },
+                    "background": {
+                      "$token": "background"
+                    },
+                    "onBackground": {
+                      "$token": "on-background"
+                    },
+                    "surface": {
+                      "$token": "surface"
+                    },
+                    "onSurface": {
+                      "$token": "on-surface"
+                    },
+                    "surfaceVariant": {
+                      "$token": "surface-variant"
+                    },
+                    "onSurfaceVariant": {
+                      "$token": "on-surface-variant"
+                    },
+                    "surfaceTint": {
+                      "$token": "surface-tint"
+                    },
+                    "inverseSurface": {
+                      "$token": "inverse-surface"
+                    },
+                    "inverseOnSurface": {
+                      "$token": "inverse-on-surface"
+                    },
+                    "inversePrimary": {
+                      "$token": "inverse-primary"
+                    },
+                    "outline": {
+                      "$token": "outline"
+                    },
+                    "outlineVariant": {
+                      "$token": "outline-variant"
+                    },
+                    "scrim": {
+                      "$token": "scrim"
+                    },
+                    "surfaceBright": {
+                      "$token": "surface-bright"
+                    },
+                    "surfaceDim": {
+                      "$token": "surface-dim"
+                    },
+                    "surfaceContainerLowest": {
+                      "$token": "surface-container-lowest"
+                    },
+                    "surfaceContainerLow": {
+                      "$token": "surface-container-low"
+                    },
+                    "surfaceContainer": {
+                      "$token": "surface-container"
+                    },
+                    "surfaceContainerHigh": {
+                      "$token": "surface-container-high"
+                    },
+                    "surfaceContainerHighest": {
+                      "$token": "surface-container-highest"
+                    }
+                  },
+                  "default": {
+                    "$token": "primary"
+                  }
                 },
                 "else": {
-                  "$token": "on-surface-variant"
+                  "$switch": "unselectedColor",
+                  "cases": {
+                    "primary": {
+                      "$token": "primary"
+                    },
+                    "onPrimary": {
+                      "$token": "on-primary"
+                    },
+                    "primaryContainer": {
+                      "$token": "primary-container"
+                    },
+                    "onPrimaryContainer": {
+                      "$token": "on-primary-container"
+                    },
+                    "secondary": {
+                      "$token": "secondary"
+                    },
+                    "onSecondary": {
+                      "$token": "on-secondary"
+                    },
+                    "secondaryContainer": {
+                      "$token": "secondary-container"
+                    },
+                    "onSecondaryContainer": {
+                      "$token": "on-secondary-container"
+                    },
+                    "tertiary": {
+                      "$token": "tertiary"
+                    },
+                    "onTertiary": {
+                      "$token": "on-tertiary"
+                    },
+                    "tertiaryContainer": {
+                      "$token": "tertiary-container"
+                    },
+                    "onTertiaryContainer": {
+                      "$token": "on-tertiary-container"
+                    },
+                    "error": {
+                      "$token": "error"
+                    },
+                    "onError": {
+                      "$token": "on-error"
+                    },
+                    "errorContainer": {
+                      "$token": "error-container"
+                    },
+                    "onErrorContainer": {
+                      "$token": "on-error-container"
+                    },
+                    "background": {
+                      "$token": "background"
+                    },
+                    "onBackground": {
+                      "$token": "on-background"
+                    },
+                    "surface": {
+                      "$token": "surface"
+                    },
+                    "onSurface": {
+                      "$token": "on-surface"
+                    },
+                    "surfaceVariant": {
+                      "$token": "surface-variant"
+                    },
+                    "onSurfaceVariant": {
+                      "$token": "on-surface-variant"
+                    },
+                    "surfaceTint": {
+                      "$token": "surface-tint"
+                    },
+                    "inverseSurface": {
+                      "$token": "inverse-surface"
+                    },
+                    "inverseOnSurface": {
+                      "$token": "inverse-on-surface"
+                    },
+                    "inversePrimary": {
+                      "$token": "inverse-primary"
+                    },
+                    "outline": {
+                      "$token": "outline"
+                    },
+                    "outlineVariant": {
+                      "$token": "outline-variant"
+                    },
+                    "scrim": {
+                      "$token": "scrim"
+                    },
+                    "surfaceBright": {
+                      "$token": "surface-bright"
+                    },
+                    "surfaceDim": {
+                      "$token": "surface-dim"
+                    },
+                    "surfaceContainerLowest": {
+                      "$token": "surface-container-lowest"
+                    },
+                    "surfaceContainerLow": {
+                      "$token": "surface-container-low"
+                    },
+                    "surfaceContainer": {
+                      "$token": "surface-container"
+                    },
+                    "surfaceContainerHigh": {
+                      "$token": "surface-container-high"
+                    },
+                    "surfaceContainerHighest": {
+                      "$token": "surface-container-highest"
+                    }
+                  },
+                  "default": {
+                    "$token": "on-surface-variant"
+                  }
                 }
               }
             },

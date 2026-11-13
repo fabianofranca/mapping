@@ -1,5 +1,11 @@
 import type { Spec, SpecCode, SpecCodeCase } from './spec';
-import { paramsOutsideSignature, parseSignatureText, type Signature } from './signatures';
+import {
+  paramsOutsideSignature,
+  parseSignatureText,
+  type ExpandModels,
+  type Signature,
+} from './signatures';
+import type { ModelMessageTemplateCode } from './messages';
 
 // A ficha `mapping-signature` no pacote da biblioteca (formatVersion 16; etapa #1079): a que o
 // `code` (ou o caso de `variants`) e a `sources` do tipo citam existe, é uma ficha válida e é a
@@ -14,6 +20,9 @@ export interface SignatureProblem {
   readonly message: string;
   /** Só o arquivo citado que não existe: o caminho, para a mensagem com código do catálogo. */
   readonly missing?: string;
+  /** Código do catálogo de mensagens e os dados da tradução, quando o problema tem. */
+  readonly code?: ModelMessageTemplateCode;
+  readonly params?: Readonly<Record<string, string | number>>;
 }
 
 export interface SignatureCheck {
@@ -42,6 +51,7 @@ class Checker {
     path: string,
     message: string,
     missing?: string,
+    coding?: { code: ModelMessageTemplateCode; params: Record<string, string | number> },
   ): void {
     this.problems.push({
       severity,
@@ -49,6 +59,7 @@ class Checker {
       path,
       message,
       ...(missing === undefined ? {} : { missing }),
+      ...(coding ?? {}),
     });
   }
 
@@ -91,13 +102,16 @@ class Checker {
     signature: Signature,
     at: string,
     params: Readonly<Record<string, string>> | undefined,
+    models?: ExpandModels,
   ): void {
-    for (const outside of paramsOutsideSignature(signature, { params })) {
+    for (const outside of paramsOutsideSignature(signature, { params }, models)) {
       this.add(
         'warning',
         this.reader.specPath,
         `${at}.params.${outside.field}`,
         `parâmetro fora da ficha: "${outside.name}"`,
+        undefined,
+        { code: 'library.paramOutsideSignature', params: { name: outside.name } },
       );
     }
   }
@@ -109,6 +123,7 @@ class Checker {
     symbol: string,
     path: string | undefined,
     params: Readonly<Record<string, string>> | undefined,
+    models?: ExpandModels,
   ): void {
     const { specPath } = this.reader;
     const source = signature.source;
@@ -137,7 +152,7 @@ class Checker {
         `o arquivo da ficha ("${source.path}") difere do path do code ("${path}")`,
       );
     }
-    this.params(signature, at, params);
+    this.params(signature, at, params, models);
   }
 }
 
@@ -151,19 +166,24 @@ function checkCase(
   entry: SpecCode,
   kase: SpecCodeCase,
   at: string,
+  models?: ExpandModels,
 ): void {
   if (kase.signature === undefined) {
     if (entry.signature === undefined || kase.params === undefined) return;
     const inherited = checker.open(entry.signature, `${at}.signature`, false);
-    if (inherited !== null) checker.params(inherited, at, kase.params);
+    if (inherited !== null) checker.params(inherited, at, kase.params, models);
     return;
   }
   const signature = checker.open(kase.signature, `${at}.signature`);
   if (signature === null) return;
-  checker.code(signature, at, kase.symbol ?? entry.symbol, kase.path ?? entry.path, {
-    ...entry.params,
-    ...kase.params,
-  });
+  checker.code(
+    signature,
+    at,
+    kase.symbol ?? entry.symbol,
+    kase.path ?? entry.path,
+    { ...entry.params, ...kase.params },
+    models,
+  );
 }
 
 /** Confere as fichas que a especialização cita (no `code`, nos casos de `variants` e nas `sources`). */
@@ -174,14 +194,15 @@ export function checkSignatures(spec: Spec, reader: Reader): SignatureCheck {
       const tp = `layers[${li}].annotationTypes[${ti}]`;
       for (const [platform, entry] of Object.entries(type.code ?? {})) {
         const at = `${tp}.code.${platform}`;
+        const models = spec.fieldModels?.[platform];
         if (entry.signature !== undefined) {
           const signature = checker.open(entry.signature, `${at}.signature`);
           if (signature !== null) {
-            checker.code(signature, at, entry.symbol, entry.path, entry.params);
+            checker.code(signature, at, entry.symbol, entry.path, entry.params, models);
           }
         }
         for (const [value, kase] of Object.entries(entry.variants?.cases ?? {})) {
-          checkCase(checker, entry, kase, `${at}.variants.cases.${value}`);
+          checkCase(checker, entry, kase, `${at}.variants.cases.${value}`, models);
         }
       }
       (type.sources ?? []).forEach((source, si) => {

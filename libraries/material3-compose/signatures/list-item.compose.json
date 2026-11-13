@@ -1,0 +1,181 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.ListItem",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ListItem.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "headlineContent",
+      "role": "slot",
+      "type": "@Composable () -> Unit",
+      "required": true
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "overlineContent",
+      "role": "slot",
+      "type": "@Composable (() -> Unit)?",
+      "default": "null"
+    },
+    {
+      "name": "supportingContent",
+      "role": "slot",
+      "type": "@Composable (() -> Unit)?",
+      "default": "null"
+    },
+    {
+      "name": "leadingContent",
+      "role": "slot",
+      "type": "@Composable (() -> Unit)?",
+      "default": "null"
+    },
+    {
+      "name": "trailingContent",
+      "role": "slot",
+      "type": "@Composable (() -> Unit)?",
+      "default": "null"
+    },
+    {
+      "name": "colors",
+      "role": "value",
+      "type": "ListItemColors",
+      "default": "ListItemDefaults.colors()",
+      "factory": {
+        "call": "androidx.compose.material3.ListItemDefaults.colors",
+        "params": [
+          {
+            "name": "containerColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "headlineColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "leadingIconColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "overlineColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "supportingColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "trailingIconColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledHeadlineColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledLeadingIconColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledTrailingIconColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "tonalElevation",
+      "role": "value",
+      "type": "Dp",
+      "default": "ListItemDefaults.Elevation",
+      "value": {
+        "kind": "dimension"
+      }
+    },
+    {
+      "name": "shadowElevation",
+      "role": "value",
+      "type": "Dp",
+      "default": "ListItemDefaults.Elevation",
+      "value": {
+        "kind": "dimension"
+      }
+    }
+  ],
+  "doc": {
+    "headlineContent": "the headline content of the list item",
+    "modifier": "[Modifier] to be applied to the list item",
+    "overlineContent": "the content displayed above the headline content",
+    "supportingContent": "the supporting content of the list item",
+    "leadingContent": "the leading content of the list item",
+    "trailingContent": "the trailing meta text, icon, switch or checkbox",
+    "colors": "[ListItemColors] that will be used to resolve the background and content color for this list item in different states. See [ListItemDefaults.colors]",
+    "colors.containerColor": "the container color of this list item when enabled.",
+    "colors.headlineColor": "the headline text content color of this list item when enabled.",
+    "colors.leadingIconColor": "the color of this list item's leading content when enabled.",
+    "colors.overlineColor": "the overline text color of this list item",
+    "colors.supportingColor": "the supporting text color of this list item",
+    "colors.trailingIconColor": "the color of this list item's trailing content when enabled.",
+    "colors.disabledHeadlineColor": "the content color of this list item when not enabled.",
+    "colors.disabledLeadingIconColor": "the color of this list item's leading content when not enabled.",
+    "colors.disabledTrailingIconColor": "the color of this list item's trailing content when not enabled.",
+    "tonalElevation": "the tonal elevation of this list item",
+    "shadowElevation": "the shadow elevation of this list item"
+  }
+}

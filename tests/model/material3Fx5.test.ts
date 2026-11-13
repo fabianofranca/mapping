@@ -14,7 +14,15 @@ import type { FrameNode, SceneNode } from '../../src/model/components/scene';
 import { validateLibrary } from '../../src/model/library';
 import type { Spec } from '../../src/model/spec';
 import { missingMigrations } from '../../src/model/specVersions';
-import { SPEC_FILE, drawIn, files, spec, text, types } from '../support/material3Library';
+import {
+  SPEC_FILE,
+  drawIn,
+  files,
+  spec,
+  text,
+  types,
+  unknownWarnings,
+} from '../support/material3Library';
 
 type Json = unknown;
 type Mode = 'light' | 'dark';
@@ -110,10 +118,10 @@ describe('paliativos da Material 3 trocados pelas chaves novas (decisão 24)', (
     expect(badge).not.toMatch(/"height":\s*16/);
   });
 
-  it('valida sem erro e sem aviso nos três níveis, em todos os modos', () => {
+  it('valida sem erro e só com os avisos conhecidos nos três níveis, em todos os modos', () => {
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
-    expect(report.warnings).toEqual([]);
+    expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
   });
 });
 
@@ -277,8 +285,8 @@ describe('reverseLayout liga o layout.reverse: a ordem se inverte e o bloco fica
 });
 
 describe('atualização da biblioteca (version 4 → 5)', () => {
-  it('sobe a version uma vez por etapa: 5 na FX5, 6 na EX4 da #897, 7 na MF4 da #899 , 8 na MC5 da #898, 10 na D3 da #1085 (a 9 foi a L5) e 11 na VL2 da #1504', () => {
-    expect(spec.version).toBe(11);
+  it('sobe a version uma vez por etapa: 5 na FX5, 6 na EX4 da #897, 7 na MF4 da #899 , 8 na MC5 da #898, 10 na D3 da #1085 (a 9 foi a L5) 11 na VL2 da #1504 e 12 na S5 da #1120', () => {
+    expect(spec.version).toBe(12);
   });
 
   it('é aditiva: troca o desenho sem mudar campo, sem passos de migração', () => {

@@ -1,0 +1,152 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.TopAppBar",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/AppBar.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1",
+    "overload": 2
+  },
+  "params": [
+    {
+      "name": "title",
+      "role": "slot",
+      "type": "@Composable () -> Unit",
+      "required": true
+    },
+    {
+      "name": "subtitle",
+      "role": "slot",
+      "type": "@Composable () -> Unit",
+      "required": true
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "navigationIcon",
+      "role": "slot",
+      "type": "@Composable () -> Unit",
+      "default": "{}"
+    },
+    {
+      "name": "actions",
+      "role": "slot",
+      "type": "@Composable RowScope.() -> Unit",
+      "default": "{}"
+    },
+    {
+      "name": "titleHorizontalAlignment",
+      "role": "value",
+      "type": "Alignment.Horizontal",
+      "default": "Alignment.Start",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "expandedHeight",
+      "role": "value",
+      "type": "Dp",
+      "default": "TopAppBarDefaults.TopAppBarExpandedHeight",
+      "value": {
+        "kind": "dimension"
+      }
+    },
+    {
+      "name": "windowInsets",
+      "role": "value",
+      "type": "WindowInsets",
+      "default": "TopAppBarDefaults.windowInsets",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "colors",
+      "role": "value",
+      "type": "TopAppBarColors",
+      "default": "TopAppBarDefaults.topAppBarColors()",
+      "factory": {
+        "call": "androidx.compose.material3.TopAppBarDefaults.topAppBarColors",
+        "params": [
+          {
+            "name": "containerColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "scrolledContainerColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "navigationIconContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "titleContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "actionIconContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "subtitleContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "scrollBehavior",
+      "role": "state",
+      "type": "TopAppBarScrollBehavior?",
+      "default": "null"
+    }
+  ],
+  "doc": {
+    "colors.containerColor": "the container color",
+    "colors.scrolledContainerColor": "the container color when content is scrolled behind it",
+    "colors.navigationIconContentColor": "the content color used for the navigation icon",
+    "colors.titleContentColor": "the content color used for the title",
+    "colors.actionIconContentColor": "the content color used for actions",
+    "colors.subtitleContentColor": "the content color used for the subtitle"
+  }
+}

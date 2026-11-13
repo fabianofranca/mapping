@@ -1,0 +1,143 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.RichTooltip",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Tooltip.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "title",
+      "role": "slot",
+      "type": "(@Composable () -> Unit)?",
+      "default": "null"
+    },
+    {
+      "name": "action",
+      "role": "slot",
+      "type": "(@Composable () -> Unit)?",
+      "default": "null"
+    },
+    {
+      "name": "caretShape",
+      "role": "value",
+      "type": "(Shape)?",
+      "default": "null",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "maxWidth",
+      "role": "value",
+      "type": "Dp",
+      "default": "TooltipDefaults.richTooltipMaxWidth",
+      "value": {
+        "kind": "dimension"
+      }
+    },
+    {
+      "name": "shape",
+      "role": "value",
+      "type": "Shape",
+      "default": "TooltipDefaults.richTooltipContainerShape",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "colors",
+      "role": "value",
+      "type": "RichTooltipColors",
+      "default": "TooltipDefaults.richTooltipColors()",
+      "factory": {
+        "call": "androidx.compose.material3.TooltipDefaults.richTooltipColors",
+        "params": [
+          {
+            "name": "containerColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "contentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "titleContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "actionContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "tonalElevation",
+      "role": "value",
+      "type": "Dp",
+      "default": "ElevationTokens.Level0",
+      "value": {
+        "kind": "dimension"
+      }
+    },
+    {
+      "name": "shadowElevation",
+      "role": "value",
+      "type": "Dp",
+      "default": "RichTooltipTokens.ContainerElevation",
+      "value": {
+        "kind": "dimension"
+      }
+    },
+    {
+      "name": "text",
+      "role": "slot",
+      "type": "@Composable () -> Unit",
+      "required": true
+    }
+  ],
+  "doc": {
+    "modifier": "the [Modifier] to be applied to the tooltip.",
+    "title": "An optional title for the tooltip.",
+    "action": "An optional action for the tooltip.",
+    "caretShape": "[shape] for the caret of the tooltip. If a default caret is desired with a specific dimension please use [TooltipDefaults.caretShape]. To see the default dimensions please see [TooltipDefaults.caretSize]. If no caret is desired, please pass in null.",
+    "maxWidth": "the maximum width for the plain tooltip",
+    "shape": "the [Shape] that should be applied to the tooltip container.",
+    "colors": "[RichTooltipColors] that will be applied to the tooltip's container and content.",
+    "tonalElevation": "the tonal elevation of the tooltip.",
+    "shadowElevation": "the shadow elevation of the tooltip.",
+    "text": "the composable that will be used to populate the rich tooltip's text."
+  }
+}

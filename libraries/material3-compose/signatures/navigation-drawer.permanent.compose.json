@@ -1,0 +1,38 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.PermanentNavigationDrawer",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationDrawer.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "drawerContent",
+      "role": "slot",
+      "type": "@Composable () -> Unit",
+      "required": true
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "content",
+      "role": "slot",
+      "type": "@Composable () -> Unit",
+      "required": true
+    }
+  ],
+  "doc": {
+    "drawerContent": "content inside this drawer",
+    "modifier": "the [Modifier] to be applied to this drawer",
+    "content": "content of the rest of the UI"
+  }
+}

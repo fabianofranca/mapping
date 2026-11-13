@@ -68,17 +68,9 @@ const PENDING_AFTER_REMOVAL: string[] = [];
  * (decisão 'Fora' da #486); o recurso é coberto por tests/model/specV10.test.ts e pelo roteiro R18.
  */
 const MISSING_TODAY: string[] = [
-  // `fieldModels`, `signature`, `ignore`, `calls` e `formats` (formatVersion 16, etapa #1079, S1): a Material 3 o ganha na S5 (decisão 14);
-  // coberto por tests/model/specV16.test.ts e tests/model/librarySignature.test.ts.
-  'spec:fieldModels',
-  'spec:layers[].annotationTypes[].code{}.calls',
-  'spec:layers[].annotationTypes[].code{}.formats',
-  'spec:layers[].annotationTypes[].code{}.ignore',
-  'spec:layers[].annotationTypes[].code{}.signature',
-  'spec:layers[].annotationTypes[].code{}.variants.cases{}.calls',
-  'spec:layers[].annotationTypes[].code{}.variants.cases{}.formats',
-  'spec:layers[].annotationTypes[].code{}.variants.cases{}.ignore',
-  'spec:layers[].annotationTypes[].code{}.variants.cases{}.signature',
+  // `sources[].signature` (formatVersion 16, etapa #1079): a Material 3 cobre `fieldModels`, `signature`, `ignore`, `calls`,
+  // `formats` e os avisos do importador (S5); o `sources[].signature` é coberto por tests/model/specV16.test.ts e
+  // tests/model/librarySignature.test.ts.
   'spec:layers[].annotationTypes[].sources[].signature',
   // Layout do componente v4 (etapa #747, CF2): as bibliotecas distribuídas não migram para o
   // formato 4 nesta etapa (decisão 'Fora' da #747); coberto por
@@ -138,23 +130,12 @@ const MISSING_TODAY: string[] = [
   // etapa (o roteiro usa uma especialização inline); coberto por tests/model/specAcceptsAnnotations.
   'spec:layers[].annotationTypes[].fields[].accepts.annotations',
   'spec:layers[].annotationTypes[].fields[].columns[].accepts.annotations',
-  'spec:layers[].annotationTypes[].notices',
-  'spec:layers[].annotationTypes[].notices[].kind',
   'spec:layers[].annotationTypes[].notices[].kind=deprecated',
   'spec:layers[].annotationTypes[].notices[].kind=diverges',
-  'spec:layers[].annotationTypes[].notices[].kind=pending',
   'spec:layers[].annotationTypes[].notices[].kind=removed',
-  'spec:layers[].annotationTypes[].notices[].message',
-  'spec:layers[].annotationTypes[].notices[].ref',
   'spec:layers[].annotationTypes[].notices[].since',
-  'spec:layers[].annotationTypes[].fields[].notices',
-  'spec:layers[].annotationTypes[].fields[].notices[].kind',
   'spec:layers[].annotationTypes[].fields[].notices[].kind=deprecated',
-  'spec:layers[].annotationTypes[].fields[].notices[].kind=diverges',
   'spec:layers[].annotationTypes[].fields[].notices[].kind=pending',
-  'spec:layers[].annotationTypes[].fields[].notices[].kind=removed',
-  'spec:layers[].annotationTypes[].fields[].notices[].message',
-  'spec:layers[].annotationTypes[].fields[].notices[].ref',
   'spec:layers[].annotationTypes[].fields[].notices[].since',
   'spec:layers[].annotationTypes[].fields[].columns[].notices',
   'spec:layers[].annotationTypes[].fields[].columns[].notices[].kind',
