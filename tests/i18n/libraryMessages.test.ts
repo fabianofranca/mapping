@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { validateLibrary, type LibraryIssue } from '../../src/model/library';
@@ -10,9 +10,14 @@ import {
   type ModelMessageTemplateCode,
 } from '../../src/model/messages';
 import { parseSpecText } from '../../src/model/spec';
+import { buildCatalog } from '../../src/model/catalog';
+import { loadSpecComponents } from '../../src/model/componentCatalog';
+import { COMPONENTS, SPEC_FILE, testSpec } from '../model/componentFixtures';
+import type { ModelMessage } from '../../src/model/modelMessage';
 import { modelMessagesEnUS } from '../../src/i18n/modelMessages';
 import { locale } from '../../src/store/settings';
 import { issueText } from '../../src/ui/LibraryIssueList';
+import { messageText } from '../../src/ui/modelMessage';
 
 // MB1 (#1356): toda mensagem montada pelo validador da biblioteca tem código e sai na língua da
 // app. Em pt-BR o texto é idêntico ao `message`; em en-US não tem caractere do português fora
@@ -261,5 +266,61 @@ describe('mensagens do validador da biblioteca', () => {
         );
       }
     }
+  });
+});
+
+describe('regra do `detail` (decisão 9 da #1589)', () => {
+  const materials = (): readonly ModelMessage[] => {
+    const read = (path: string): string | undefined => {
+      if (path.endsWith('text.json')) return JSON.stringify({ format: 'outro' });
+      if (path.endsWith('icons.json')) return JSON.stringify({ format: 'outro' });
+      const id = /components\/(.+)\.json$/.exec(path)?.[1];
+      return id && COMPONENTS[id] ? JSON.stringify(COMPONENTS[id]) : undefined;
+    };
+    const loaded = loadSpecComponents(
+      { ...testSpec(), icons: 'icons.json' },
+      SPEC_FILE,
+      1,
+      read,
+    );
+    return loaded.problemMessages;
+  };
+
+  it('components.invalid e icons.invalid com `detail` não levam `reason` em params', () => {
+    const withDetail = materials().filter((m) => m.detail !== undefined);
+    expect(withDetail.map((m) => m.code).sort()).toEqual(
+      expect.arrayContaining(['components.invalid', 'icons.invalid']),
+    );
+    for (const m of withDetail) expect(m.params, m.code).not.toHaveProperty('reason');
+  });
+
+  it('catalog.invalidProblem com `detail` não leva `reason` em params', () => {
+    const root = join('tests/fixtures/material3');
+    const files = readdirSync(root, { recursive: true, encoding: 'utf8' })
+      .map((p) => p.split('\\').join('/'))
+      .filter((p) => p.endsWith('.json') || p.endsWith('.md'))
+      .map((path) => ({
+        path,
+        text:
+          path === 'components/m3-button.json'
+            ? '{"format":"outro"}'
+            : readFileSync(join(root, path), 'utf8'),
+      }));
+    const problem = buildCatalog(files)
+      .layers.flatMap((l) => l.entries)
+      .find(
+        (e) => e.componentProblem?.code === 'catalog.invalidProblem',
+      )?.componentProblem;
+    expect(problem?.detail).toBeDefined();
+    expect(problem?.params).not.toHaveProperty('reason');
+  });
+
+  it('o texto en-US mostrado é o mesmo de antes (o `detail` traduzido no {reason})', () => {
+    locale.value = 'en-US';
+    const m = materials().find((x) => x.code === 'icons.invalid');
+    expect(m).toBeDefined();
+    const shown = messageText(m as ModelMessage);
+    expect(shown).toContain(messageText((m as ModelMessage).detail as ModelMessage));
+    expect(shown).not.toContain('{reason}');
   });
 });

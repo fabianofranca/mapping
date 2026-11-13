@@ -8,7 +8,10 @@ export interface ModelMessage {
   readonly params: Readonly<Record<string, string | number>>;
   /** Texto em pt-BR (idêntico ao que o modelo devolvia como `string`). */
   readonly text: string;
-  /** Mensagem de dentro (o motivo de outro módulo): a interface a traduz e a põe em `{reason}`. */
+  /**
+   * Mensagem de dentro (o motivo de outro módulo): a interface a traduz e a põe em `{reason}`.
+   * Regra: com `detail`, `params` não leva `reason` (o texto de dentro mora só aqui).
+   */
   readonly detail?: ModelMessage;
 }
 
@@ -35,18 +38,24 @@ export interface IssueLike {
 /**
  * O problema do parser como pedaços de uma mensagem de fora: `at` é o caminho com `": "`
  * (vazio sem caminho), `reason` o texto pt-BR e `detail` o motivo com código (quando há), que a
- * interface traduz e põe no lugar de `{reason}`.
+ * interface traduz e põe no lugar de `{reason}`. `reasonParam` é o que entra nos `params`:
+ * `{ reason }` sem `detail` e `{}` com `detail` (a regra de `ModelMessage.detail`); `reason`
+ * segue servindo para montar o `text` pt-BR.
  */
 export function issueParts(issue: IssueLike): {
   readonly at: string;
   readonly reason: string;
+  readonly reasonParam: { readonly reason?: string };
   readonly detail?: ModelMessage;
 } {
   const at = issue.path === '' ? '' : `${issue.path}: `;
-  if (issue.code === undefined) return { at, reason: issue.message };
+  if (issue.code === undefined) {
+    return { at, reason: issue.message, reasonParam: { reason: issue.message } };
+  }
   return {
     at,
     reason: issue.message,
+    reasonParam: {},
     detail: modelMessage(issue.code, issue.params ?? {}, issue.message),
   };
 }

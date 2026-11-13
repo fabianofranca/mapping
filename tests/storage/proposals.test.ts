@@ -12,6 +12,7 @@ import {
   type Proposal,
 } from '../../src/model';
 import { createFolderStorage } from '../../src/storage/folder';
+import { countingDirectory, createFolderCalls } from '../../src/storage/folderCalls';
 import { loadProposals, readProposal } from '../../src/storage/loadProposals';
 import {
   openLocalLibrary,
@@ -32,6 +33,7 @@ import {
 import { clearReportedErrors } from '../../src/utils/report';
 import { sampleProject } from '../model/fixtures';
 import { propose } from '../model/proposalFixtures';
+import type { DirectoryHandleLike, FileHandleLike } from '../../src/storage/folder';
 import { MemoryDirectory } from './memoryFs';
 
 /** Uma proposta com uma imagem nova e uma anotação nova, como o MCP a deixaria. */
@@ -50,6 +52,30 @@ function sampleProposal(id = 'P1', title = 'Teste'): Proposal {
     name: 'Nova',
   });
   return propose(base, after, { id, title });
+}
+
+/**
+ * A pasta com um arquivo cujo `getFile` falha com um erro que não é "não existe" (um cliente de
+ * nuvem segurando o arquivo): o resto da pasta continua legível.
+ */
+function failingGetFile(root: MemoryDirectory, failing: string): DirectoryHandleLike {
+  const wrapFile = (handle: FileHandleLike, dirName: string): FileHandleLike =>
+    dirName === failing
+      ? { ...handle, getFile: () => Promise.reject(new Error('arquivo em uso')) }
+      : handle;
+  const wrapDir = (dir: DirectoryHandleLike): DirectoryHandleLike => ({
+    ...dir,
+    getDirectoryHandle: async (name, options) =>
+      wrapDir(await dir.getDirectoryHandle(name, options)),
+    getFileHandle: async (name, options) =>
+      wrapFile(await dir.getFileHandle(name, options), dir.name),
+    values: async function* () {
+      for await (const entry of dir.values()) {
+        yield entry.kind === 'directory' ? wrapDir(entry) : wrapFile(entry, dir.name);
+      }
+    },
+  });
+  return wrapDir(root);
 }
 
 afterEach(() => clearReportedErrors());
@@ -93,6 +119,55 @@ describe('pasta: proposals/', () => {
     expect(await storage.statProposal?.('A')).not.toBe(stamp);
     await storage.writeProposal('C', 'c');
     expect(await storage.listProposals()).toEqual(['A', 'B', 'C']);
+  });
+
+  it('stampProposals carimba todas as pastas válidas num passo só (decisão 9, etapa #1777)', async () => {
+    const root = new MemoryDirectory('p');
+    const storage = createFolderStorage(root);
+    expect(await storage.stampProposals?.()).toEqual(new Map());
+
+    root.put(proposalFilePath('B'), 'bb');
+    root.put(proposalFilePath('A'), 'a');
+    root.put('proposals/vazia/images/x.png', 'x');
+    root.put('proposals/.git/proposal.json', 'oculta');
+    root.put('proposals/solto.txt', 'solto');
+    const stamps = await storage.stampProposals?.();
+    // Como no `listProposals`, a pasta sem `proposal.json` (`vazia`) fica de fora, e `.git` e o
+    // arquivo solto também.
+    expect([...(stamps ?? [])]).toEqual([
+      ['A', await storage.statProposal?.('A')],
+      ['B', await storage.statProposal?.('B')],
+    ]);
+    expect(stamps?.get('A')).toMatch(/^1:\d+$/);
+    expect(stamps?.get('B')).toMatch(/^2:\d+$/);
+  });
+
+  it('stampProposals não confere os ids a pular (voltam com null) e faz bem menos chamadas', async () => {
+    const root = new MemoryDirectory('p');
+    for (const id of ['A', 'B', 'C']) root.put(proposalFilePath(id), id);
+    const calls = createFolderCalls();
+    const counted = createFolderStorage(countingDirectory(root, calls));
+    const all = await counted.stampProposals?.();
+    const full = calls.total;
+    const partial = await counted.stampProposals?.(new Set(['A', 'B']));
+    expect([...(partial ?? [])]).toEqual([
+      ['A', null],
+      ['B', null],
+      ['C', all?.get('C')],
+    ]);
+    expect(calls.total - full).toBeLessThan(full);
+  });
+
+  it('um proposal.json ilegível (erro que não é "não existe") não derruba a varredura', async () => {
+    const root = new MemoryDirectory('p');
+    for (const id of ['A', 'B']) root.put(proposalFilePath(id), id);
+    const storage = createFolderStorage(failingGetFile(root, 'A'));
+    const stamps = await storage.stampProposals?.();
+    // `A` continua presente (a varredura a relê), e o carimbo de `B` vem como sempre.
+    expect([...(stamps ?? [])]).toEqual([
+      ['A', null],
+      ['B', await createFolderStorage(root).statProposal?.('B')],
+    ]);
   });
 
   it('as imagens da proposta usam o caminho completo e coexistem com images/', async () => {

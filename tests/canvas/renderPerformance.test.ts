@@ -526,9 +526,14 @@ describe('desenho de componentes (Material 3)', () => {
 });
 
 // Grade com texto (decisão 23 da #1078, L3): 4 colunas e 6 linhas de 24 textos de 2 linhas, `fill` na
-// célula e `hug` na altura, instanciada e desenhada no Konva, no orçamento do pior componente.
+// célula e `hug` na altura, instanciada e desenhada no Konva.
+// Teto medido no runner (etapa #1765): o runner do CI vem em duas classes de máquina (nos jobs
+// rápidos a grade mede ~2,5 ms; nos lentos, ~4,1 a 4,5 ms; localmente, ~2,2 ms) e o `retry: 1` roda
+// na mesma máquina. Conta (decisão 7 da #1698): maior 1ª medida no CI × 1,25 = 4,469 × 1,25 = 5,59,
+// arredondado para cima ao 0,5 ms = 6 ms. Fonte: 90 jobs `build` do CI e do Deploy, de
+// 2026-11-12T17:44Z a 2026-11-13T09:00Z (maior valor entre este e o do plano, 4,446 ms).
 describe('grade com texto', () => {
-  const GRID_BUDGET_MS = 4;
+  const GRID_BUDGET_MS = 6;
   const BOX = { x: 0, y: 0, width: 400, height: 300 };
   const cells = Array.from({ length: 24 }, (_, i) => ({
     type: 'text',
@@ -598,10 +603,14 @@ describe('grade com texto', () => {
 });
 
 // Intrínseco aninhado em 3 níveis (decisão 23 da #1078, L4): `row` `max-content` › 4 `column`
-// `min-content` › 3 `row` com 2 textos cada, instanciado e desenhado no Konva em ≤ 4 ms e com no
-// máximo uma chamada ao medidor por (texto, limite) distinto.
+// `min-content` › 3 `row` com 2 textos cada, instanciado e desenhado no Konva e com no máximo uma
+// chamada ao medidor por (texto, limite) distinto.
+// Teto medido no runner (etapa #1765): duas classes de máquina no runner (nos jobs rápidos o
+// aninhado mede ~2,9 ms; nos lentos, ~4,7 a 5,1 ms; localmente, ~2,4 ms). Conta (decisão 7 da
+// #1698): maior 1ª medida no CI × 1,25 = 5,124 × 1,25 = 6,41, arredondado para cima ao 0,5 ms =
+// 6,5 ms. Fonte: 87 jobs `build` do CI e do Deploy, de 2026-11-12T17:44Z a 2026-11-13T09:00Z.
 describe('intrínseco aninhado em 3 níveis', () => {
-  const NESTED_BUDGET_MS = 4;
+  const NESTED_BUDGET_MS = 6.5;
   const BOX = { x: 0, y: 0, width: 800, height: 300 };
   const inner = (i: number, j: number) => ({
     type: 'frame',

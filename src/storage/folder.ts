@@ -279,6 +279,21 @@ async function withDir<T>(
   }
 }
 
+/**
+ * Roda `fn` e devolve `null` se o que ele procurava não existe, ou `undefined` se a chamada falhou
+ * por outro motivo (arquivo em uso, permissão): quem chama decide entre tratar como ausente e
+ * tentar de novo depois, em vez de o erro derrubar um lote inteiro.
+ */
+async function orUndefined<T>(
+  fn: () => Promise<T | null>,
+): Promise<T | null | undefined> {
+  try {
+    return await fn();
+  } catch (e) {
+    return isNotFound(e) ? null : undefined;
+  }
+}
+
 /** Roda `fn` e devolve `null` se o que ele procurava não existe. */
 async function orNull<T>(fn: () => Promise<T | null>): Promise<T | null> {
   try {
@@ -399,6 +414,29 @@ async function readMapping(cache: HandleCache): Promise<FileBlob | null> {
   return file;
 }
 
+/**
+ * Percorre uma pasta uma vez (`values()`) e devolve o que `pick` acha em cada entrada (as que
+ * devolvem `null` ficam de fora), com até `concurrency` conferências ao mesmo tempo. Pasta que
+ * não existe: `[]`. A ordem é a do resultado de `mapLimit` (a da listagem).
+ */
+async function mapDirEntries<T>(
+  cache: HandleCache,
+  dirName: string[],
+  pick: (entry: FileHandleLike | DirectoryHandleLike) => Promise<T | null>,
+  concurrency = 1,
+): Promise<T[]> {
+  const found = await withDir(cache, dirName, false, async (dir) => {
+    if (!dir) return null;
+    const entries: (FileHandleLike | DirectoryHandleLike)[] = [];
+    for await (const entry of dir.values()) entries.push(entry);
+    const picked = await mapLimit(entries, concurrency, (entry) => pick(entry));
+    const kept: T[] = [];
+    for (const item of picked) if (item !== null) kept.push(item);
+    return kept;
+  });
+  return found ?? [];
+}
+
 async function listDirNames(
   cache: HandleCache,
   dirName: string[],
@@ -406,14 +444,15 @@ async function listDirNames(
   /** Quantas conferências de `pick` rodam ao mesmo tempo. */
   concurrency = 1,
 ): Promise<string[]> {
-  const ids = await withDir(cache, dirName, false, async (dir) => {
-    if (!dir) return null;
-    const entries: (FileHandleLike | DirectoryHandleLike)[] = [];
-    for await (const entry of dir.values()) entries.push(entry);
-    const names = await mapLimit(entries, concurrency, (entry) => pick(entry));
-    return names.filter((name): name is string => name !== null);
-  });
-  return ids ? ids.sort() : [];
+  return (await mapDirEntries(cache, dirName, pick, concurrency)).sort();
+}
+
+/** O carimbo de um arquivo (tamanho e `lastModified`), o mesmo que `statProposal` devolve. */
+const stampOfFile = (file: FileBlob): string => `${file.size}:${file.lastModified ?? 0}`;
+
+/** Pares `[id, carimbo]` em ordem alfabética do id, como um `Map`. */
+function sortedStamps<V>(pairs: readonly (readonly [string, V])[]): Map<string, V> {
+  return new Map([...pairs].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
 }
 
 /**
@@ -438,7 +477,7 @@ export function createFolderStorage(
   const readText = async (path: string) => (await read(path))?.text() ?? null;
   const stamp = async (path: string) => {
     const file = await read(path);
-    return file ? `${file.size}:${file.lastModified ?? 0}` : null;
+    return file ? stampOfFile(file) : null;
   };
   const write = async (path: string, data: Blob | string) => {
     await writeFile(cache, path, data);
@@ -523,6 +562,27 @@ export function createFolderStorage(
       return listFiles(cache, proposalDir(id));
     },
     statProposal: (id) => stamp(proposalFilePath(id)),
+    async stampProposals(skip) {
+      const pairs = await mapDirEntries<readonly [string, string | null]>(
+        cache,
+        [PROPOSALS_DIR],
+        async (entry) => {
+          if (entry.kind !== 'directory' || !PROPOSAL_ID_RE.test(entry.name)) return null;
+          if (skip?.has(entry.name)) return [entry.name, null];
+          // Pelo handle da própria entrada: nada de resolver `proposals/<id>/` de novo.
+          const handle = await orNull(() => entry.getFileHandle(PROPOSAL_FILE));
+          // Sem `proposal.json`: fica de fora, como no `listProposals`. Ilegível por outro
+          // motivo (um cliente de nuvem segurando o arquivo): presente, sem carimbo — a
+          // varredura a relê, em vez de o lote inteiro falhar.
+          if (!handle) return null;
+          const file = await orUndefined(() => handle.getFile());
+          if (file === null) return null;
+          return [entry.name, file === undefined ? null : stampOfFile(file)];
+        },
+        FOLDER_CONCURRENCY,
+      );
+      return sortedStamps(pairs);
+    },
     listThreads: (resolved) =>
       listDirNames(
         cache,
@@ -544,6 +604,24 @@ export function createFolderStorage(
     async statThread(id, resolved) {
       assertThreadId(id);
       return stamp(threadFilePath(id, resolved));
+    },
+    async stampThreads(resolved) {
+      const pairs = await mapDirEntries<readonly [string, string | null]>(
+        cache,
+        resolved ? RESOLVED_DIR.split('/') : [COMMENTS_DIR],
+        async (entry) => {
+          const id = entry.kind === 'file' ? threadIdOfFileName(entry.name) : null;
+          if (entry.kind !== 'file' || id === null) return null;
+          // Pelo handle da própria entrada. O arquivo que sumiu no meio fica de fora; o
+          // ilegível por outro motivo volta presente, sem carimbo (a varredura o relê), para
+          // uma conversa travada não parecer apagada nem derrubar o lote.
+          const file = await orUndefined(() => entry.getFile());
+          if (file === null) return null;
+          return [id, file === undefined ? null : stampOfFile(file)];
+        },
+        FOLDER_CONCURRENCY,
+      );
+      return sortedStamps(pairs);
     },
     writeBackup: (name, text) => write(`${BACKUPS_DIR}/${name}`, text),
   };

@@ -6,7 +6,12 @@ import { CanvasNotices } from '../../src/app/CanvasNotices';
 import { EditorDialogs } from '../../src/app/EditorDialogs';
 import type { EditorDialogs as Dialogs } from '../../src/app/useEditorDialogs';
 import type { EditorNotices } from '../../src/app/useEditorNotices';
-import { EXTERNAL_POLL_MS, useExternalChanges } from '../../src/app/useExternalChanges';
+import {
+  EXTERNAL_POLL_FACTOR,
+  EXTERNAL_POLL_MAX_MS,
+  EXTERNAL_POLL_MS,
+  useExternalChanges,
+} from '../../src/app/useExternalChanges';
 import { t } from '../../src/i18n';
 import { serialize } from '../../src/model';
 import { AUTOSAVE_DELAY_MS } from '../../src/storage/autosave';
@@ -219,6 +224,134 @@ describe('useExternalChanges', () => {
     expect(sync).toHaveBeenLastCalledWith({ images: false });
     await vi.advanceTimersByTimeAsync(EXTERNAL_POLL_MS * 2);
     expect(sync).toHaveBeenCalledTimes(3);
+  });
+
+  // Etapa #1777 (decisão 8): o próximo ciclo começa `clamp(4 × duração, 3 s, 30 s)` depois de o
+  // último terminar, nunca com trabalho em curso, e o foco confere na hora.
+  describe('conferência adaptativa (etapa #1777)', () => {
+    /** Um `sync` que leva `ms` para terminar (relógio falso). */
+    const takes = (ms: number) => () =>
+      new Promise<'unchanged'>((resolve) => setTimeout(() => resolve('unchanged'), ms));
+
+    it('exporta os limites: mínimo de 3 s, teto de 30 s, fator 4', () => {
+      expect(EXTERNAL_POLL_MS).toBe(3000);
+      expect(EXTERNAL_POLL_MAX_MS).toBe(30_000);
+      expect(EXTERNAL_POLL_FACTOR).toBe(4);
+    });
+
+    it('numa pasta rápida, os ciclos seguem a cada 3 s', async () => {
+      const harness = createHarness(sampleProject());
+      const sync = vi
+        .spyOn(harness.context.session, 'sync')
+        .mockImplementation(takes(50));
+      mount(harness);
+      await vi.advanceTimersByTimeAsync(EXTERNAL_POLL_MS - 1);
+      expect(sync).toHaveBeenCalledTimes(0);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(sync).toHaveBeenCalledTimes(1);
+      // O ciclo terminou 50 ms depois: o próximo começa 3 s depois do fim (4 × 50 ms < 3 s).
+      await vi.advanceTimersByTimeAsync(50 + EXTERNAL_POLL_MS - 1);
+      expect(sync).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(sync).toHaveBeenCalledTimes(2);
+    });
+
+    it('com um ciclo de 2 s, o próximo começa 8 s depois do fim', async () => {
+      const harness = createHarness(sampleProject());
+      const sync = vi
+        .spyOn(harness.context.session, 'sync')
+        .mockImplementation(takes(2000));
+      mount(harness);
+      await vi.advanceTimersByTimeAsync(EXTERNAL_POLL_MS); // começa o ciclo 1
+      expect(sync).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(2000); // termina
+      await vi.advanceTimersByTimeAsync(8000 - 1);
+      expect(sync).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(sync).toHaveBeenCalledTimes(2);
+    });
+
+    it('com um ciclo de 10 s, o próximo espera o teto de 30 s', async () => {
+      const harness = createHarness(sampleProject());
+      const sync = vi
+        .spyOn(harness.context.session, 'sync')
+        .mockImplementation(takes(10_000));
+      mount(harness);
+      await vi.advanceTimersByTimeAsync(EXTERNAL_POLL_MS);
+      await vi.advanceTimersByTimeAsync(10_000);
+      await vi.advanceTimersByTimeAsync(EXTERNAL_POLL_MAX_MS - 1);
+      expect(sync).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(sync).toHaveBeenCalledTimes(2);
+    });
+
+    it('um ciclo rápido depois de um lento volta aos 3 s', async () => {
+      const harness = createHarness(sampleProject());
+      const sync = vi
+        .spyOn(harness.context.session, 'sync')
+        .mockImplementationOnce(takes(2000))
+        .mockImplementation(takes(0));
+      mount(harness);
+      await vi.advanceTimersByTimeAsync(EXTERNAL_POLL_MS + 2000 + 8000); // ciclo 2 começa
+      expect(sync).toHaveBeenCalledTimes(2);
+      await vi.advanceTimersByTimeAsync(1); // o ciclo 2 (quase instantâneo) termina
+      await vi.advanceTimersByTimeAsync(EXTERNAL_POLL_MS - 1);
+      expect(sync).toHaveBeenCalledTimes(2);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(sync).toHaveBeenCalledTimes(3);
+    });
+
+    it('com gravação em curso, o ciclo é adiado de 3 em 3 s e roda depois', async () => {
+      const harness = createHarness(sampleProject());
+      const sync = vi
+        .spyOn(harness.context.session, 'sync')
+        .mockResolvedValue('unchanged');
+      const busy = vi.spyOn(harness.context.session, 'busy').mockReturnValue(true);
+      mount(harness);
+      await vi.advanceTimersByTimeAsync(EXTERNAL_POLL_MS * 3);
+      expect(sync).not.toHaveBeenCalled();
+      busy.mockReturnValue(false);
+      await vi.advanceTimersByTimeAsync(EXTERNAL_POLL_MS);
+      expect(sync).toHaveBeenCalledTimes(1);
+      expect(sync).toHaveBeenLastCalledWith({ images: false });
+    });
+
+    it('o foco confere na hora, com as imagens, mesmo com trabalho em curso', async () => {
+      const harness = createHarness(sampleProject());
+      const sync = vi
+        .spyOn(harness.context.session, 'sync')
+        .mockResolvedValue('unchanged');
+      vi.spyOn(harness.context.session, 'busy').mockReturnValue(true);
+      mount(harness);
+      window.dispatchEvent(new Event('focus'));
+      expect(sync).toHaveBeenCalledTimes(1);
+      expect(sync).toHaveBeenLastCalledWith({ images: true });
+    });
+
+    it('um erro do ciclo não para a cadeia', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      const harness = createHarness(sampleProject());
+      const sync = vi
+        .spyOn(harness.context.session, 'sync')
+        .mockRejectedValueOnce(new Error('sem permissão'))
+        .mockResolvedValue('unchanged');
+      mount(harness);
+      await vi.advanceTimersByTimeAsync(EXTERNAL_POLL_MS * 2);
+      expect(sync).toHaveBeenCalledTimes(2);
+    });
+
+    it('desmontar durante um ciclo não agenda o seguinte', async () => {
+      const harness = createHarness(sampleProject());
+      const sync = vi
+        .spyOn(harness.context.session, 'sync')
+        .mockImplementation(takes(1000));
+      const view = mount(harness);
+      await vi.advanceTimersByTimeAsync(EXTERNAL_POLL_MS);
+      expect(sync).toHaveBeenCalledTimes(1);
+      view.unmount();
+      await vi.advanceTimersByTimeAsync(EXTERNAL_POLL_MAX_MS * 2);
+      expect(sync).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('com a janela escondida, não confere', async () => {
