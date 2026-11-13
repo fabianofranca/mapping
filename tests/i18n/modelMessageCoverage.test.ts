@@ -157,7 +157,8 @@ describe('guarda: todo problema e aviso do modelo tem código', () => {
       expect(out.messages.map((m) => m.text)).toEqual([...out.warnings]);
       for (const m of out.messages) expect(isModelMessageTemplateCode(m.code)).toBe(true);
     }
-  });
+    // 120 s como os testes vizinhos: leva ~1,3 s, mas estourou os 5 s padrão no shard sobrecarregado do CI (CL2).
+  }, 120_000);
 
   it('a guarda reprova um problema sem código', () => {
     check('simulado', [{ message: 'sem código' }, { message: 'x', code: 'nao.existe' }]);
