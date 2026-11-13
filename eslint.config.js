@@ -250,6 +250,44 @@ const mcpWriterImports = ['node:fs', 'node:fs/promises', 'fs', 'fs/promises'].ma
   }),
 );
 
+// signature/ (extrator de assinaturas, etapa #1079 S3) roda só no Node e não faz rede: lê o
+// arquivo de código que lhe dão e só grava o `--out` (módulo `cli.ts`). Do app, só `src/model/`.
+const signatureNetworkGlobals = [
+  'fetch',
+  'XMLHttpRequest',
+  'WebSocket',
+  'EventSource',
+].map((name) => ({ name, message: 'signature/ não faz requisições de rede.' }));
+const signatureImportPatterns = [
+  {
+    group: mcpOnlyFromModel.flatMap((dir) => [`**/src/${dir}`, `**/src/${dir}/**`]),
+    message: 'signature/ só pode importar src/model/.',
+  },
+  {
+    group: ['konva', 'konva/*', 'idb', 'jszip', 'preact', 'preact/*', '@preact/*'],
+    message: 'signature/ não pode importar UI, canvas nem storage.',
+  },
+  {
+    group: [
+      'node:http',
+      'node:https',
+      'node:http2',
+      'node:net',
+      'node:tls',
+      'node:dns',
+      'node:dgram',
+      'node:child_process',
+      'node:worker_threads',
+      'node:cluster',
+    ],
+    message: 'signature/ não faz requisições de rede nem abre processos.',
+  },
+];
+const signatureWriterImports = mcpWriterImports.map((entry) => ({
+  ...entry,
+  message: 'signature/ só grava em cli.ts (o `--out`).',
+}));
+
 export default tseslint.config(
   {
     ignores: [
@@ -408,6 +446,29 @@ export default tseslint.config(
       ],
     },
   },
+  // Extrator de assinaturas: Node puro; só `cli.ts` e o `build.mjs` gravam no disco.
+  {
+    files: ['signature/**/*.{ts,mjs}'],
+    languageOptions: { globals: globals.node },
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        ...restrictedGlobals,
+        ...signatureNetworkGlobals,
+      ],
+      'no-restricted-imports': [
+        'error',
+        { patterns: signatureImportPatterns, paths: signatureWriterImports },
+      ],
+    },
+  },
+  {
+    files: ['signature/cli.ts', 'signature/build.mjs'],
+    rules: {
+      'no-restricted-imports': ['error', { patterns: signatureImportPatterns }],
+    },
+  },
+  { files: ['tests/signature/**/*.ts'], languageOptions: { globals: globals.node } },
   { files: ['tests/mcp/**/*.ts'], languageOptions: { globals: globals.node } },
   { files: ['pwa/**/*.js'], languageOptions: { globals: globals.serviceworker } },
   { files: ['*.config.{js,ts}'], languageOptions: { globals: globals.node } },
@@ -453,7 +514,7 @@ export default tseslint.config(
   // pede `npx eslint --prune-suppressions` no mesmo PR). Fora: viewer/, scripts/, pwa/ e tests/.
   // `tests/tooling/complexityLint.test.ts` prova a regra.
   {
-    files: ['src/**/*.{ts,tsx}', 'mcp/**/*.ts'],
+    files: ['src/**/*.{ts,tsx}', 'mcp/**/*.ts', 'signature/**/*.ts'],
     rules: { complexity: ['error', 10] },
   },
   prettier,

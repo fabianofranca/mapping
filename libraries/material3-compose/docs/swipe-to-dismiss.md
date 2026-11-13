@@ -86,4 +86,4 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - No Compose o item só assenta fora da caixa (`EndToStart at -width`, `StartToEnd at width`), e os 56 são o limiar do gesto: o quadro desenhado é o de um arrasto de 56, não um estado assentado. Assentado em `StartToEnd` ou `EndToStart`, o `onDismiss` roda e o app remove o item.
 - O item é sempre um `ListItem` de título e apoio (uma linha cada); o `content` do Compose é livre (um `Card`, um `ListItem` com ícones), e a mudança de cor do fundo com o progresso do gesto (`state.dismissDirection`, `progress`) é do app.
 - O apoio longo termina em `…` numa linha, o que mantém o item em 72; o `ListItem` de três linhas (88) não é desenhado.
-- Sem o gesto, a animação, o `gesturesEnabled`, a velocidade de dispensa (`DismissVelocityThreshold`), o `onDismiss` e o estado de foco ou pressionado.
+- Sem o gesto, a animação, a velocidade de dispensa (`DismissVelocityThreshold`), o `onDismiss` e o estado de foco ou pressionado; `gesturesEnabled` é campo e código, mas o desenho não o usa.

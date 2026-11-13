@@ -67,6 +67,6 @@ Referência: Compose `foundation` do commit `5113b82a4ed6416d6344efa50e41db8cb65
 **O que ainda difere do Compose**
 
 - O servidor MCP desenha o reservado da imagem (sem a imagem de verdade), então os `fit` novos só aparecem na app e no visualizador.
-- Sem `alignment`, `alpha` nem `colorFilter` (não são campos do tipo).
+- `alpha` é campo e código, mas o desenho não o usa; sem `alignment` nem `colorFilter` (não são campos do tipo).
 - A imagem só é pedida à rede com a permissão da origem na app, e o servidor MCP desenha sempre o reservado; o Compose carrega a imagem pelo carregador do app.
 - O fundo `surface-variant` é uma escolha de desenho: o `Image` do Compose não tem fundo nem reservado.

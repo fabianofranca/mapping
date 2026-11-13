@@ -79,4 +79,3 @@ O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o des
 - A camada de 32 do desenho é menor que a de 40 do Compose, que passaria 4 acima e abaixo do trilho de 32 e, com a chave encostada na borda direita, 4 além da instância. No pressionado a área da alça cresce de 24 para 28 (e o recuo lateral cai de 4 para 2), para a alça de 28 caber nela sem mudar o centro. No pressionado o Compose também desloca a alça para dentro do trilho (o recuo); o desenho mantém a posição de parada.
 - O `thumbContent` do Compose é livre; o campo `thumbIcon` desenha `check` ligado e `close` desligado (o par do Material), e o `code` do tipo só passa o `check`.
 - O espaço de 16 entre o rótulo e a chave e o rótulo a 0,38 quando desabilitado são convenção do desenho: o Compose não tem rótulo.
-- `SwitchColors` próprio não é campo do tipo.

@@ -58,6 +58,19 @@ const libraryEnUS: {
   'model.library.notReferenced': 'file not referenced by the specialization',
   'model.library.emptyDoc': 'empty document',
   'model.library.fileNotFound': 'file not found: {path}',
+  'model.library.paramOutsideSignature': 'parameter outside the signature: "{name}"',
+  'model.library.signatureNotRead': 'file could not be read: {path}',
+  'model.library.signatureInvalid': '{reason}',
+  'model.library.signatureNotCode':
+    'the signature of a code entry must be a code signature',
+  'model.library.signatureNotDesign':
+    'the signature must be a design signature of the system "{system}"',
+  'model.library.signaturePlatformMismatch':
+    'the signature is for the platform "{found}", but the code is for the platform "{expected}"',
+  'model.library.signatureSymbolMismatch':
+    'the signature symbol ("{found}") differs from the code symbol ("{expected}")',
+  'model.library.signaturePathMismatch':
+    'the signature file ("{found}") differs from the code path ("{expected}")',
   'model.library.notRead': 'the file content was not read (expected the text)',
   'model.library.invalidJson': 'invalid JSON: {detail}',
   'model.library.specFileNotFound': 'specialization file not found: {path}',
@@ -303,6 +316,18 @@ const specEnUS: { readonly [C in keyof typeof specMessages as `model.${C}`]: str
   'model.spec.fieldPathWildcard':
     'invalid path "{path}" ("[*]" is only valid in roots[].path of an origin)',
   'model.spec.ignoreRepeated': '"{prop}" repeated',
+  'model.spec.likeNotField': '"{like}" is not a field of a type in the specialization',
+  'model.spec.formatNeedsPlaceholder': 'the template must contain {placeholder}',
+  'model.spec.modelTypeInvalid': '"{value}" is invalid; use "number", "string" or "enum"',
+  'model.spec.optionsNotTextList': 'must be a list of non-empty texts',
+  'model.spec.optionsRequiredInEnum': 'required in enum',
+  'model.spec.expandParamsRequired':
+    'declare at least one parameter (name → type in the source)',
+  'model.spec.mustBeNonEmptyText': 'must be non-empty text',
+  'model.spec.modelFormRequired': 'declare a form: "like", "type", "expand" or "ignore"',
+  'model.spec.modelFormsConflict': 'use only one form: {forms}',
+  'model.spec.mustBeTrue': 'must be true',
+  'model.spec.callNotDeclared': '"{call}" is not in calls',
   'model.spec.exampleSystemUndeclared': 'system "{system}" is not declared in origins',
   'model.spec.fontRepeated': 'font "{family}" (weight {weight}, {style}) repeated',
   'model.spec.fontRepeatedNoWeight': 'font "{family}" (no weight, {style}) repeated',

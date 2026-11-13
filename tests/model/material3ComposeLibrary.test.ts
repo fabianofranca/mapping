@@ -14,6 +14,7 @@ import reference from '../fixtures/material3-tokens-reference.json';
 import {
   MIGRATED,
   SPEC_FILE,
+  unknownWarnings,
   drawIn,
   files,
   findText,
@@ -231,6 +232,18 @@ const VARIANT_SYMBOLS: Record<
   },
 };
 
+/** As fichas de assinatura que o `code.compose` e os casos de `variants` citam (S5 da #1079). */
+function signatureFiles(): string[] {
+  const paths: string[] = [];
+  for (const type of types) {
+    const code = type.code?.compose;
+    if (code?.signature !== undefined) paths.push(code.signature);
+    for (const kase of Object.values(code?.variants?.cases ?? {}))
+      if (kase.signature !== undefined) paths.push(kase.signature);
+  }
+  return paths;
+}
+
 describe('biblioteca Material 3 (Compose)', () => {
   it('tem a especialização, as fontes, um componente e um documento por tipo', () => {
     expect(files.map((f) => f.path)).toEqual(
@@ -245,6 +258,7 @@ describe('biblioteca Material 3 (Compose)', () => {
         'icons/material-icons.json',
         ...ALL_TYPES.map((id) => `components/${id}.json`),
         ...ALL_TYPES.map((id) => `docs/${id}.md`),
+        ...signatureFiles(),
       ].sort(),
     );
   });
@@ -279,15 +293,19 @@ describe('biblioteca Material 3 (Compose)', () => {
       components: 50,
       docs: 50,
     });
-    // Nenhum aviso: as fontes vêm no pacote e o `code` cobre os campos que o desenho não usa.
-    expect(report.warnings.map((w) => `${w.file}:${w.path}: ${w.message}`)).toEqual([]);
+    // Só os avisos conhecidos `parâmetro fora da ficha` (provisório: decisão do dono pendente no bug #1774; curadoria
+    // na #1134): as fontes vêm no pacote e o `code` cobre os campos que o desenho não usa. O conjunto não pode crescer
+    // nem ficar com item que sumiu.
+    const known = unknownWarnings(report.warnings);
+    expect(known.unexpected).toEqual([]);
+    expect(known.missing).toEqual([]);
   });
 
-  it('é a formatVersion 15, versão 11, com tokens nos modos light e dark e a plataforma compose no androidx fixado no commit', () => {
+  it('é a formatVersion 16, versão 12, com tokens nos modos light e dark e a plataforma compose no androidx fixado no commit', () => {
     expect(spec).toMatchObject({
-      formatVersion: 15,
+      formatVersion: 16,
       id: 'material3-compose',
-      version: 11,
+      version: 12,
       icons: 'icons/material-icons.json',
     });
     expect(spec.tokens?.modes).toEqual(['light', 'dark']);
@@ -560,12 +578,12 @@ describe('tokens da biblioteca Material 3 (Compose) v2', () => {
 });
 
 describe('conjunto de ícones da biblioteca Material 3 (Compose) v2', () => {
-  it('é um mapping-icons válido (a biblioteca valida com 0 erros e 0 avisos nos três níveis)', () => {
+  it('é um mapping-icons válido (a biblioteca valida com 0 erros e só os avisos conhecidos (provisório, #1774) nos três níveis)', () => {
     expect(iconSet.format).toBe('mapping-icons');
     expect(iconSet.formatVersion).toBe(1);
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
-    expect(report.warnings).toEqual([]);
+    expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
     expect(report.summary.level).toBe(3);
   });
 
@@ -669,11 +687,11 @@ describe('atualização da biblioteca Material 3 (Compose) com o slider numéric
           );
     expect(missingMigrations(previous, spec)).toEqual([]);
     expect(spec.migrations?.map((m) => [m.from, m.to])).toEqual([
-      [1, 11],
-      [2, 11],
-      [3, 11],
-      [4, 11],
-      [5, 11],
+      [1, 12],
+      [2, 12],
+      [3, 12],
+      [4, 12],
+      [5, 12],
     ]);
     const report = validateLibrary({ files, specPath: SPEC_FILE, previous });
     expect(report.errors).toEqual([]);

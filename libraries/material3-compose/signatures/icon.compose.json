@@ -1,0 +1,55 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.Icon",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Icon.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1",
+    "overload": 0
+  },
+  "params": [
+    {
+      "name": "imageVector",
+      "role": "value",
+      "type": "ImageVector",
+      "required": true,
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "contentDescription",
+      "role": "value",
+      "type": "String?",
+      "required": true,
+      "value": {
+        "kind": "text"
+      }
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "tint",
+      "role": "value",
+      "type": "Color",
+      "default": "LocalContentColor.current",
+      "value": {
+        "kind": "color"
+      }
+    }
+  ],
+  "doc": {
+    "imageVector": "[ImageVector] to draw inside this icon",
+    "contentDescription": "text used by accessibility services to describe what this icon represents. This should always be provided unless this icon is used for decorative purposes, and does not represent a meaningful action that a user can take. This text should be localized, such as by using [androidx.compose.ui.res.stringResource] or similar",
+    "modifier": "the [Modifier] to be applied to this icon",
+    "tint": "tint to be applied to [imageVector]. If [Color.Unspecified] is provided, then no tint is applied."
+  }
+}

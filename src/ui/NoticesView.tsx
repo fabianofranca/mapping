@@ -110,7 +110,11 @@ export function NoticesView({ onGoToAnnotation }: NoticesViewProps) {
     <div class="list-view">
       <div class="list-filters">
         <Segmented
-          label={t('notices.kindFilter')}
+          label={t(
+            counts.unit === 'notices'
+              ? 'notices.kindFilterNotices'
+              : 'notices.kindFilter',
+          )}
           items={kindItems(counts, counts.present, kind)}
           value={kind ?? 'all'}
           onSelect={(id) => (ui.noticeKind.value = id === 'all' ? null : id)}

@@ -1,0 +1,99 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.Scaffold",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Scaffold.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "topBar",
+      "role": "slot",
+      "type": "@Composable () -> Unit",
+      "default": "{}"
+    },
+    {
+      "name": "bottomBar",
+      "role": "slot",
+      "type": "@Composable () -> Unit",
+      "default": "{}"
+    },
+    {
+      "name": "snackbarHost",
+      "role": "slot",
+      "type": "@Composable () -> Unit",
+      "default": "{}"
+    },
+    {
+      "name": "floatingActionButton",
+      "role": "slot",
+      "type": "@Composable () -> Unit",
+      "default": "{}"
+    },
+    {
+      "name": "floatingActionButtonPosition",
+      "role": "value",
+      "type": "FabPosition",
+      "default": "FabPosition.End",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "containerColor",
+      "role": "value",
+      "type": "Color",
+      "default": "MaterialTheme.colorScheme.background",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "contentColor",
+      "role": "value",
+      "type": "Color",
+      "default": "contentColorFor(containerColor)",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "contentWindowInsets",
+      "role": "value",
+      "type": "WindowInsets",
+      "default": "ScaffoldDefaults.contentWindowInsets",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "content",
+      "role": "slot",
+      "type": "@Composable (PaddingValues) -> Unit",
+      "required": true
+    }
+  ],
+  "doc": {
+    "modifier": "the [Modifier] to be applied to this scaffold",
+    "topBar": "top app bar of the screen, typically a [TopAppBar]",
+    "bottomBar": "bottom bar of the screen, typically a [NavigationBar]",
+    "snackbarHost": "component to host [Snackbar]s that are pushed to be shown via [SnackbarHostState.showSnackbar], typically a [SnackbarHost]",
+    "floatingActionButton": "Main action button of the screen, typically a [FloatingActionButton]",
+    "floatingActionButtonPosition": "position of the FAB on the screen. See [FabPosition].",
+    "containerColor": "the color used for the background of this scaffold. Use [Color.Transparent] to have no color.",
+    "contentColor": "the preferred color for content inside this scaffold. Defaults to either the matching content color for [containerColor], or to the current [LocalContentColor] if [containerColor] is not a color from the theme.",
+    "contentWindowInsets": "window insets to be passed to [content] slot via [PaddingValues] params. Scaffold will take the insets into account from the top/bottom only if the [topBar]/ [bottomBar] are not present, as the scaffold expect [topBar]/[bottomBar] to handle insets instead. Any insets consumed by other insets padding modifiers or [consumeWindowInsets] on a parent layout will be excluded from [contentWindowInsets].",
+    "content": "content of the screen. The lambda receives a [PaddingValues] that should be applied to the content root via [Modifier.padding] and [Modifier.consumeWindowInsets] to properly offset top and bottom bars. If using [Modifier.verticalScroll], apply this modifier to the child of the scroll, and not on the scroll itself."
+  }
+}

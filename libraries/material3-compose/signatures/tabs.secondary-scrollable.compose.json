@@ -1,0 +1,102 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.SecondaryScrollableTabRow",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/TabRow.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "selectedTabIndex",
+      "role": "value",
+      "type": "Int",
+      "required": true,
+      "value": {
+        "kind": "integer"
+      }
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "scrollState",
+      "role": "state",
+      "type": "ScrollState",
+      "default": "rememberScrollState()"
+    },
+    {
+      "name": "containerColor",
+      "role": "value",
+      "type": "Color",
+      "default": "TabRowDefaults.secondaryContainerColor",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "contentColor",
+      "role": "value",
+      "type": "Color",
+      "default": "TabRowDefaults.secondaryContentColor",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "edgePadding",
+      "role": "value",
+      "type": "Dp",
+      "default": "TabRowDefaults.ScrollableTabRowEdgeStartPadding",
+      "value": {
+        "kind": "dimension"
+      }
+    },
+    {
+      "name": "indicator",
+      "role": "slot",
+      "type": "@Composable TabIndicatorScope.() -> Unit",
+      "default": "@Composable { TabRowDefaults.SecondaryIndicator(Modifier.tabIndicatorOffset(selectedTabIndex, matchContentSize = false)) }"
+    },
+    {
+      "name": "divider",
+      "role": "slot",
+      "type": "@Composable () -> Unit",
+      "default": "@Composable { HorizontalDivider() }"
+    },
+    {
+      "name": "minTabWidth",
+      "role": "value",
+      "type": "Dp",
+      "default": "TabRowDefaults.ScrollableTabRowMinTabWidth",
+      "value": {
+        "kind": "dimension"
+      }
+    },
+    {
+      "name": "tabs",
+      "role": "slot",
+      "type": "@Composable () -> Unit",
+      "required": true
+    }
+  ],
+  "doc": {
+    "selectedTabIndex": "the index of the currently selected tab",
+    "modifier": "the [Modifier] to be applied to this tab row",
+    "scrollState": "the [ScrollState] of this tab row",
+    "containerColor": "the color used for the background of this tab row. Use [Color.Transparent] to have no color.",
+    "contentColor": "the preferred color for content inside this tab row. Defaults to either the matching content color for [containerColor], or to the current [LocalContentColor] if [containerColor] is not a color from the theme.",
+    "edgePadding": "the padding between the starting and ending edge of the scrollable tab row, and the tabs inside the row. This padding helps inform the user that this tab row can be scrolled, unlike a [TabRow].",
+    "indicator": "the indicator that represents which tab is currently selected. By default this will be a [TabRowDefaults.SecondaryIndicator], using a [TabRowDefaults.tabIndicatorOffset] modifier to animate its position. Note that this indicator will be forced to fill up the entire tab row, so you should use [TabRowDefaults.tabIndicatorOffset] or similar to animate the actual drawn indicator inside this space, and provide an offset from the start.",
+    "divider": "the divider displayed at the bottom of the tab row. This provides a layer of separation between the tab row and the content displayed underneath.",
+    "minTabWidth": "the minimum width for a [Tab] in this tab row regardless of content size.",
+    "tabs": "the tabs inside this tab row. Typically this will be multiple [Tab]s. Each element inside this lambda will be measured and placed evenly across the row, each taking up equal space."
+  }
+}

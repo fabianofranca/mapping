@@ -1,0 +1,120 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.foundation.lazy.grid.LazyVerticalGrid",
+    "path": "compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/lazy/grid/LazyGridDsl.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "columns",
+      "role": "value",
+      "type": "GridCells",
+      "required": true,
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "state",
+      "role": "state",
+      "type": "LazyGridState",
+      "default": "rememberLazyGridState()"
+    },
+    {
+      "name": "contentPadding",
+      "role": "value",
+      "type": "PaddingValues",
+      "default": "PaddingValues(0.dp)",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "reverseLayout",
+      "role": "value",
+      "type": "Boolean",
+      "default": "false",
+      "value": {
+        "kind": "boolean",
+        "default": false
+      }
+    },
+    {
+      "name": "verticalArrangement",
+      "role": "value",
+      "type": "Arrangement.Vertical",
+      "default": "if (!reverseLayout) Arrangement.Top else Arrangement.Bottom",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "horizontalArrangement",
+      "role": "value",
+      "type": "Arrangement.Horizontal",
+      "default": "Arrangement.Start",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "flingBehavior",
+      "role": "value",
+      "type": "FlingBehavior",
+      "default": "ScrollableDefaults.flingBehavior()",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "userScrollEnabled",
+      "role": "value",
+      "type": "Boolean",
+      "default": "true",
+      "value": {
+        "kind": "boolean",
+        "default": true
+      }
+    },
+    {
+      "name": "overscrollEffect",
+      "role": "value",
+      "type": "OverscrollEffect?",
+      "default": "rememberOverscrollEffect()",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "content",
+      "role": "callback",
+      "type": "LazyGridScope.() -> Unit",
+      "required": true
+    }
+  ],
+  "doc": {
+    "columns": "describes the count and the size of the grid's columns, see [GridCells] doc for more information",
+    "modifier": "the modifier to apply to this layout",
+    "state": "the state object to be used to control or observe the list's state",
+    "contentPadding": "specify a padding around the whole content",
+    "reverseLayout": "reverse the direction of scrolling and layout. When `true`, items will be laid out in the reverse order and [LazyGridState.firstVisibleItemIndex] == 0 means that grid is scrolled to the bottom. Note that [reverseLayout] does not change the behavior of [verticalArrangement], e.g. with [Arrangement.Top] (top) 123### (bottom) becomes (top) 321### (bottom).",
+    "verticalArrangement": "The vertical arrangement of the layout's children",
+    "horizontalArrangement": "The horizontal arrangement of the layout's children",
+    "flingBehavior": "logic describing fling behavior",
+    "userScrollEnabled": "whether the scrolling via the user gestures or accessibility actions is allowed. You can still scroll programmatically using the state even when it is disabled.",
+    "overscrollEffect": "the [OverscrollEffect] that will be used to render overscroll for this layout. Note that the [OverscrollEffect.node] will be applied internally as well - you do not need to use Modifier.overscroll separately.",
+    "content": "the [LazyGridScope] which describes the content"
+  }
+}

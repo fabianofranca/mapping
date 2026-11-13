@@ -66,7 +66,37 @@ async function bundleInputs(): Promise<string[]> {
     .filter((path) => !path.startsWith('wasm:') && !path.startsWith('stub:'));
 }
 
+/** Entradas do bundle do extrator (`signature/main.ts`), fora de node_modules. */
+async function signatureInputs(): Promise<string[]> {
+  const result = await build({
+    entryPoints: ['signature/main.ts'],
+    bundle: true,
+    platform: 'node',
+    format: 'esm',
+    write: false,
+    metafile: true,
+    logLevel: 'silent',
+  });
+  return Object.keys(result.metafile.inputs)
+    .filter((key) => !key.includes('node_modules'))
+    .map((key) => (key.startsWith('/') ? relative(ROOT, key) : key));
+}
+
 describe('entradas da release do MCP', () => {
+  it('o extrator de assinaturas: tudo o que o esbuild empacota e a pasta signature/ estão na lista', async () => {
+    const { readdirSync, statSync } = await import('node:fs');
+    const inputs = await signatureInputs();
+    expect(inputs).toContain('signature/main.ts');
+    expect(inputs.filter((path) => !isReleaseInput(path))).toEqual([]);
+    expect(RELEASE_INPUTS).toContain('signature/');
+    const walk = (dir: string): string[] =>
+      readdirSync(dir).flatMap((name) => {
+        const path = `${dir}/${name}`;
+        return statSync(path).isDirectory() ? walk(path) : [path];
+      });
+    for (const path of walk('signature')) expect(isReleaseInput(path), path).toBe(true);
+  }, 60_000);
+
   it('a lista cobre tudo o que o esbuild empacota (fora de node_modules)', async () => {
     const inputs = await bundleInputs();
     expect(inputs.length).toBeGreaterThan(100);

@@ -19,7 +19,7 @@ const at = 'layers[1].annotationTypes[1].allowedChildren[0]';
 
 describe('formatVersion 13: camada do próprio dono', () => {
   it('a versão atual é 15 e 13 está na lista', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(15);
+    expect(SPEC_FORMAT_VERSION).toBe(16);
     expect(SPEC_FORMAT_VERSIONS).toContain(13);
   });
 

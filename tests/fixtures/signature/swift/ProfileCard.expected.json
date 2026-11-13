@@ -1,0 +1,66 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "swiftui",
+    "language": "swift",
+    "symbol": "DS.ProfileCard",
+    "path": "Sources/DS/ProfileCard.swift",
+    "ref": "fixture",
+    "extractor": "mapping-signature/swift@1"
+  },
+  "params": [
+    {
+      "name": "title",
+      "label": "_",
+      "role": "value",
+      "type": "String",
+      "required": true,
+      "value": {
+        "kind": "text"
+      }
+    },
+    {
+      "name": "badgeCount",
+      "label": "badge",
+      "role": "value",
+      "type": "Int",
+      "default": "0",
+      "value": {
+        "kind": "integer",
+        "default": 0
+      }
+    },
+    {
+      "name": "style",
+      "role": "value",
+      "type": "Style",
+      "default": ".compact",
+      "value": {
+        "kind": "enum",
+        "default": "compact",
+        "options": ["compact", "regular"]
+      }
+    },
+    {
+      "name": "onTap",
+      "role": "callback",
+      "type": "(() -> Void)?",
+      "default": "nil"
+    },
+    {
+      "name": "content",
+      "role": "slot",
+      "type": "@ViewBuilder () -> Content",
+      "required": true
+    }
+  ],
+  "doc": {
+    "title": "The name shown at the top of the card.",
+    "badgeCount": "How many unread items the badge shows.",
+    "style": "How tall the card is. Compact is the default.",
+    "onTap": "Called when the card is tapped.",
+    "content": "The body of the card."
+  }
+}

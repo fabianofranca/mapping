@@ -87,4 +87,4 @@ O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o des
 - O raio 2 vem do token `corner-checkbox` (`compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/CheckboxTokens.kt`, linha 26: `ContainerShape = RoundedCornerShape(2.0.dp)`); `corner-extra-small` vale 4.
 - A área é de 48 por 40: a altura de 40 vem do `sizing` do tipo, abaixo dos 48 do toque mínimo. Com `onClick = null` o Compose desenha só 24.
 - O rótulo a 0,38 quando desabilitado é convenção do desenho: o `Text` do Compose herda a cor do conteúdo e não diminui sozinho.
-- `CheckboxColors` próprio, os `Stroke` trocáveis e o estado de erro não são campos do tipo.
+- `checkedColor`, `uncheckedColor`, `checkmarkColor`, `disabledCheckedColor`, `disabledUncheckedColor` e `disabledIndeterminateColor` são campos e código, mas o desenho não os usa; os `Stroke` trocáveis e o estado de erro não são campos do tipo.

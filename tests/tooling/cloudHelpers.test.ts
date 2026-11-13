@@ -511,6 +511,7 @@ describe('scripts/testing/ listado no repositório', () => {
     const files = readdirSync('scripts/testing').sort();
     expect(files).toEqual(
       [
+        'assinatura.mjs',
         'atspi-allow.py',
         'cloud-up.sh',
         'cloud.d.mts',

@@ -413,7 +413,12 @@
   justify-content: flex-end;
   height: auto;
   min-height: var(--size-tw-header);
-  padding: 0 var(--space-1) 0 0;
+  padding: 0;
+}
+
+/* O recuo da direita fica no último botão (fechar), para as abas usarem a largura toda da faixa. */
+.tool-window-bottom .tool-window-head > :last-child {
+  margin-right: var(--space-1);
 }
 
 .tool-window-bottom .tool-window-tabs {
@@ -428,21 +433,28 @@
   gap: 0;
 }
 
-/* Abas mais justas: as cinco cabem na largura mínima do canvas (`--size-canvas-min`). */
+/* Abas mais justas: as seis cabem na largura mínima do canvas (`--size-canvas-min`). */
 .tool-window-bottom .tool-window-tabs .tab {
-  padding: 0 calc(var(--space-0-5) / 2);
+  padding: 0;
   /* Seis abas: a fonte pequena deixa folga para as fontes mais largas de outras máquinas. */
   font: var(--t-text-small);
 }
 
 .tool-window-bottom .tool-window-tabs .tab-badge,
 .tool-window-bottom .tool-window-tabs .tab-alert {
-  margin-left: var(--space-0-5);
+  margin-left: var(--space-1);
 }
 
-/* Contador mais justo: com as seis abas e contagens em quase todas, a faixa de 356 px a 900 px de largura cabe inteira (sem rolar nem cortar a primeira aba), também com a fonte mais larga do CI (362 px de conteúdo antes, 342 depois). */
+/*
+ * Contador: 4px de vão para o rótulo (CL1, 1.1: eram 2px, e o contador parecia colado), fonte
+ * `--t-kbd` (11px, peso 400) e recuo de 1px. A 900px a faixa tem 360px (356 antes: o recuo de
+ * 4px do cabeçalho passou para o botão de fechar) e as abas com rótulo, com contador em todas e o
+ * do Avisos com 2 dígitos, cabem sem rolar nem cortar a primeira aba, também com a fonte mais
+ * larga do CI (teste e2e `bottomTabs.spec.ts`); a 1280px a faixa tem 417px.
+ */
 .tool-window-bottom .tool-window-tabs .tab-badge {
-  padding: 0 var(--space-0-5);
+  padding: 0 var(--space-px);
+  font: var(--t-kbd);
 }
 
 /* As tabelas da janela inferior ocupam a largura toda. */

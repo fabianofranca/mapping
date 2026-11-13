@@ -235,6 +235,315 @@ const MF5_EXAMPLES: Record<string, string[]> = {
   'alert-dialog': ['Botões em duas linhas'],
   'dropdown-menu': ['Itens de larguras diferentes'],
 };
+/**
+ * Campos que a importação pela assinatura (#1079, S5) acrescentou a cada tipo: um por parâmetro da ficha do `code`
+ * (`signatures/`), de forma aditiva. A v1 não os tinha.
+ */
+export const IMPORTED_FIELDS: Record<string, string[]> = {
+  'alert-dialog': [
+    'shape',
+    'containerColor',
+    'iconContentColor',
+    'titleContentColor',
+    'textContentColor',
+    'tonalElevation',
+  ],
+  badge: ['containerColor', 'contentColor'],
+  'bottom-app-bar': [
+    'containerColor',
+    'contentColor',
+    'tonalElevation',
+    'horizontal',
+    'vertical',
+  ],
+  'bottom-sheet': [
+    'sheetMaxWidth',
+    'sheetGesturesEnabled',
+    'shape',
+    'containerColor',
+    'contentColor',
+    'tonalElevation',
+    'scrimColor',
+    'sheetShape',
+    'sheetContainerColor',
+    'sheetContentColor',
+    'sheetTonalElevation',
+    'sheetShadowElevation',
+    'sheetSwipeEnabled',
+  ],
+  box: ['propagateMinConstraints'],
+  button: [
+    'shape',
+    'containerColor',
+    'contentColor',
+    'disabledContainerColor',
+    'disabledContentColor',
+    'defaultElevation',
+    'pressedElevation',
+    'focusedElevation',
+    'hoveredElevation',
+    'disabledElevation',
+    'borderWidth',
+    'color',
+    'horizontal',
+    'vertical',
+  ],
+  card: [
+    'shape',
+    'containerColor',
+    'contentColor',
+    'disabledContainerColor',
+    'disabledContentColor',
+    'defaultElevation',
+    'pressedElevation',
+    'focusedElevation',
+    'hoveredElevation',
+    'draggedElevation',
+    'disabledElevation',
+    'borderWidth',
+    'color',
+  ],
+  carousel: [
+    'userScrollEnabled',
+    'minSmallItemWidth',
+    'maxSmallItemWidth',
+    'horizontal',
+    'vertical',
+    'maxItemWidth',
+  ],
+  checkbox: [
+    'checkedColor',
+    'uncheckedColor',
+    'checkmarkColor',
+    'disabledCheckedColor',
+    'disabledUncheckedColor',
+    'disabledIndeterminateColor',
+  ],
+  chip: [
+    'shape',
+    'containerColor',
+    'labelColor',
+    'leadingIconContentColor',
+    'trailingIconContentColor',
+    'disabledContainerColor',
+    'disabledLabelColor',
+    'disabledLeadingIconContentColor',
+    'disabledTrailingIconContentColor',
+    'elevation',
+    'pressedElevation',
+    'focusedElevation',
+    'hoveredElevation',
+    'draggedElevation',
+    'disabledElevation',
+    'width',
+    'color',
+    'iconColor',
+    'disabledLeadingIconColor',
+    'disabledTrailingIconColor',
+    'selectedContainerColor',
+    'disabledSelectedContainerColor',
+    'selectedLabelColor',
+    'selectedLeadingIconColor',
+    'selectedTrailingIconColor',
+    'leadingIconColor',
+    'trailingIconColor',
+    'iconContentColor',
+    'disabledIconContentColor',
+  ],
+  'date-picker': [
+    'containerColor',
+    'titleContentColor',
+    'headlineContentColor',
+    'weekdayContentColor',
+    'subheadContentColor',
+    'navigationContentColor',
+    'yearContentColor',
+    'disabledYearContentColor',
+    'currentYearContentColor',
+    'selectedYearContentColor',
+    'disabledSelectedYearContentColor',
+    'selectedYearContainerColor',
+    'disabledSelectedYearContainerColor',
+    'dayContentColor',
+    'disabledDayContentColor',
+    'selectedDayContentColor',
+    'disabledSelectedDayContentColor',
+    'selectedDayContainerColor',
+    'disabledSelectedDayContainerColor',
+    'todayContentColor',
+    'todayDateBorderColor',
+    'dayInSelectionRangeContentColor',
+    'dayInSelectionRangeContainerColor',
+    'dividerColor',
+  ],
+  'dropdown-menu': [
+    'shape',
+    'containerColor',
+    'tonalElevation',
+    'shadowElevation',
+    'width',
+    'color',
+  ],
+  'extended-fab': [
+    'shape',
+    'contentColor',
+    'defaultElevation',
+    'pressedElevation',
+    'focusedElevation',
+    'hoveredElevation',
+  ],
+  fab: [
+    'shape',
+    'contentColor',
+    'defaultElevation',
+    'pressedElevation',
+    'focusedElevation',
+    'hoveredElevation',
+  ],
+  'horizontal-pager': ['horizontal', 'vertical', 'beyondViewportPageCount'],
+  'icon-button': ['shape', 'width', 'color'],
+  'icon-toggle-button': ['shape', 'width', 'color'],
+  image: ['alpha'],
+  'lazy-column': ['horizontal', 'vertical', 'userScrollEnabled'],
+  'lazy-row': ['horizontal', 'vertical', 'userScrollEnabled'],
+  'lazy-vertical-grid': ['horizontal', 'vertical', 'reverseLayout', 'userScrollEnabled'],
+  'list-item': [
+    'containerColor',
+    'headlineColor',
+    'leadingIconColor',
+    'overlineColor',
+    'supportingColor',
+    'trailingIconColor',
+    'disabledHeadlineColor',
+    'disabledLeadingIconColor',
+    'disabledTrailingIconColor',
+    'tonalElevation',
+    'shadowElevation',
+  ],
+  'navigation-bar': ['containerColor', 'contentColor', 'tonalElevation'],
+  'navigation-drawer': ['gesturesEnabled', 'scrimColor'],
+  'navigation-rail': [
+    'containerColor',
+    'contentColor',
+    'shape',
+    'colorsContainerColor',
+    'colorsContentColor',
+    'modalContainerColor',
+    'modalScrimColor',
+    'modalContentColor',
+    'hideOnCollapse',
+    'collapsedShape',
+    'expandedShape',
+    'colorsContainerColor2',
+    'colorsContentColor2',
+    'expandedHeaderTopPadding',
+  ],
+  'progress-indicator': ['color', 'strokeWidth', 'gapSize'],
+  'radio-button': [
+    'selectedColor',
+    'unselectedColor',
+    'disabledSelectedColor',
+    'disabledUnselectedColor',
+  ],
+  scaffold: ['contentColor'],
+  'search-bar': [
+    'shape',
+    'containerColor',
+    'dividerColor',
+    'tonalElevation',
+    'shadowElevation',
+  ],
+  'secure-text-field': ['shape', 'horizontal', 'vertical', 'prefix', 'suffix'],
+  'segmented-button': ['space'],
+  'short-navigation-bar': ['containerColor', 'contentColor'],
+  slider: [
+    'thumbColor',
+    'activeTrackColor',
+    'activeTickColor',
+    'inactiveTrackColor',
+    'inactiveTickColor',
+    'disabledThumbColor',
+    'disabledActiveTrackColor',
+    'disabledActiveTickColor',
+    'disabledInactiveTrackColor',
+    'disabledInactiveTickColor',
+  ],
+  snackbar: [
+    'shape',
+    'containerColor',
+    'contentColor',
+    'actionContentColor',
+    'dismissActionContentColor',
+  ],
+  surface: ['contentColor', 'shadowElevation', 'borderWidth', 'borderColor'],
+  'swipe-to-dismiss': ['gesturesEnabled'],
+  switch: [
+    'checkedThumbColor',
+    'checkedTrackColor',
+    'checkedBorderColor',
+    'checkedIconColor',
+    'uncheckedThumbColor',
+    'uncheckedTrackColor',
+    'uncheckedBorderColor',
+    'uncheckedIconColor',
+    'disabledCheckedThumbColor',
+    'disabledCheckedTrackColor',
+    'disabledCheckedBorderColor',
+    'disabledCheckedIconColor',
+    'disabledUncheckedThumbColor',
+    'disabledUncheckedTrackColor',
+    'disabledUncheckedBorderColor',
+    'disabledUncheckedIconColor',
+  ],
+  tabs: [
+    'selectedTabIndex',
+    'containerColor',
+    'contentColor',
+    'edgePadding',
+    'minTabWidth',
+  ],
+  text: ['fontSize', 'letterSpacing', 'lineHeight', 'softWrap', 'minLines'],
+  'text-field': ['readOnly', 'minLines', 'shape', 'prefix', 'suffix'],
+  'time-picker': [
+    'clockDialColor',
+    'clockDialSelectedContentColor',
+    'clockDialUnselectedContentColor',
+    'selectorColor',
+    'containerColor',
+    'periodSelectorBorderColor',
+    'periodSelectorSelectedContainerColor',
+    'periodSelectorUnselectedContainerColor',
+    'periodSelectorSelectedContentColor',
+    'periodSelectorUnselectedContentColor',
+    'timeSelectorSelectedContainerColor',
+    'timeSelectorUnselectedContainerColor',
+    'timeSelectorSelectedContentColor',
+    'timeSelectorUnselectedContentColor',
+  ],
+  tooltip: [
+    'maxWidth',
+    'shape',
+    'contentColor',
+    'containerColor',
+    'tonalElevation',
+    'shadowElevation',
+    'colorsContainerColor',
+    'colorsContentColor',
+    'titleContentColor',
+    'actionContentColor',
+  ],
+  'top-app-bar': [
+    'subtitle',
+    'expandedHeight',
+    'containerColor',
+    'scrolledContainerColor',
+    'navigationIconContentColor',
+    'titleContentColor',
+    'actionIconContentColor',
+    'subtitleContentColor',
+    'collapsedHeight',
+  ],
+};
 /** Os campos de valor do slider (EX6): eram `enum` em décimos na v1 e passaram a `number`. */
 const SLIDER_NUMBERS: Record<string, number> = {
   value: 0.5,
@@ -279,6 +588,12 @@ export const COMPOSE_SIZES: Record<string, { width: number; height: number }> = 
 const ADDED_COLUMNS: Record<string, Record<string, string[]>> = {
   'dropdown-menu': { items: ['selected'] },
 };
+/** Os avisos que a importação pela assinatura (#1079, S5) pôs nos campos (`diverges`): a v1 não os tinha. */
+function withoutImportNotices(field: Raw): Raw {
+  const { notices: _notices, ...rest } = field as Raw & { notices?: unknown };
+  void _notices;
+  return rest;
+}
 function withoutAddedColumns(id: string, field: Raw): Raw {
   const drop = field.key === undefined ? undefined : ADDED_COLUMNS[id]?.[field.key];
   const columns = (field as { columns?: Raw[] }).columns;
@@ -346,9 +661,10 @@ export function v1WithEstados(
           (f) =>
             f.key !== 'interaction' &&
             !EX4_FIELDS[id]?.includes(f.key as string) &&
-            !MF5_FIELDS[id]?.includes(f.key as string),
+            !MF5_FIELDS[id]?.includes(f.key as string) &&
+            !IMPORTED_FIELDS[id]?.includes(f.key as string),
         )
-        .map((f) => withoutAddedColumns(id, f)),
+        .map((f) => withoutImportNotices(withoutAddedColumns(id, f))),
       examples: (now.examples ?? [])
         .filter(
           (e) =>
@@ -369,4 +685,99 @@ export function v1WithEstados(
             ),
     },
   };
+}
+
+/**
+ * PROVISÓRIO (decisão do coordenador, #1079 S5; decisão do dono pendente no bug #1774; curadoria na #1134).
+ * Avisos `parâmetro fora da ficha` que a importação deixa: o `params` da base (ou o herdado) cita um parâmetro que a
+ * ficha do caso (`variants`) não tem (o `removed` não deixa mais: o importador tira o parâmetro do `params`, CL1/S5-a). Cada item é `<tipo>[.<caso>] <campo>=<parâmetro>`.
+ * Qualquer outro aviso, ou erro, continua falhando; um aviso conhecido que sumir também (a lista só encolhe).
+ */
+export const KNOWN_PARAM_WARNINGS: readonly string[] = [
+  'top-app-bar.center subtitle=subtitle',
+  'top-app-bar.medium subtitle=subtitle',
+  'top-app-bar.large subtitle=subtitle',
+  'chip.filter leadingIconContentColor=colors.leadingIconContentColor',
+  'chip.filter trailingIconContentColor=colors.trailingIconContentColor',
+  'chip.filter disabledLeadingIconContentColor=colors.disabledLeadingIconContentColor',
+  'chip.filter disabledTrailingIconContentColor=colors.disabledTrailingIconContentColor',
+  'chip.filter-elevated leadingIconContentColor=colors.leadingIconContentColor',
+  'chip.filter-elevated trailingIconContentColor=colors.trailingIconContentColor',
+  'chip.filter-elevated disabledLeadingIconContentColor=colors.disabledLeadingIconContentColor',
+  'chip.filter-elevated disabledTrailingIconContentColor=colors.disabledTrailingIconContentColor',
+  'chip.input leadingIconContentColor=colors.leadingIconContentColor',
+  'chip.input trailingIconContentColor=colors.trailingIconContentColor',
+  'chip.input disabledLeadingIconContentColor=colors.disabledLeadingIconContentColor',
+  'chip.input disabledTrailingIconContentColor=colors.disabledTrailingIconContentColor',
+  'chip.suggestion leadingIconContentColor=colors.leadingIconContentColor',
+  'chip.suggestion trailingIconContentColor=colors.trailingIconContentColor',
+  'chip.suggestion disabledLeadingIconContentColor=colors.disabledLeadingIconContentColor',
+  'chip.suggestion disabledTrailingIconContentColor=colors.disabledTrailingIconContentColor',
+  'chip.suggestion-elevated leadingIconContentColor=colors.leadingIconContentColor',
+  'chip.suggestion-elevated trailingIconContentColor=colors.trailingIconContentColor',
+  'chip.suggestion-elevated disabledLeadingIconContentColor=colors.disabledLeadingIconContentColor',
+  'chip.suggestion-elevated disabledTrailingIconContentColor=colors.disabledTrailingIconContentColor',
+  'card.elevated borderWidth=border.width',
+  'card.elevated color=border.color',
+  'bottom-sheet.standard sheetGesturesEnabled=sheetGesturesEnabled',
+  'bottom-sheet.standard shape=shape',
+  'bottom-sheet.standard tonalElevation=tonalElevation',
+  'bottom-sheet.standard scrimColor=scrimColor',
+  'tooltip.rich contentColor=contentColor',
+  'tooltip.rich containerColor=containerColor',
+  'progress-indicator.linear strokeWidth=strokeWidth',
+  'alert-dialog.basic confirmButton=confirmButton',
+  'alert-dialog.basic shape=shape',
+  'alert-dialog.basic containerColor=containerColor',
+  'alert-dialog.basic iconContentColor=iconContentColor',
+  'alert-dialog.basic titleContentColor=titleContentColor',
+  'alert-dialog.basic textContentColor=textContentColor',
+  'alert-dialog.basic tonalElevation=tonalElevation',
+  'alert-dialog.basic dismissButton=dismissButton',
+  'alert-dialog.basic title=title',
+  'alert-dialog.basic text=text',
+  'dropdown-menu.exposed shape=shape',
+  'dropdown-menu.exposed containerColor=containerColor',
+  'dropdown-menu.exposed tonalElevation=tonalElevation',
+  'dropdown-menu.exposed shadowElevation=shadowElevation',
+  'dropdown-menu.exposed width=border.width',
+  'dropdown-menu.exposed color=border.color',
+  'navigation-rail.wide containerColor=containerColor',
+  'navigation-rail.wide contentColor=contentColor',
+  'navigation-rail.modal-wide containerColor=containerColor',
+  'navigation-rail.modal-wide contentColor=contentColor',
+  'navigation-drawer.dismissible scrimColor=scrimColor',
+  'navigation-drawer.permanent gesturesEnabled=gesturesEnabled',
+  'navigation-drawer.permanent scrimColor=scrimColor',
+  'carousel.uncontained preferredItemWidth=preferredItemWidth',
+  'carousel.uncontained minSmallItemWidth=minSmallItemWidth',
+  'carousel.uncontained maxSmallItemWidth=maxSmallItemWidth',
+  'carousel.centered-hero preferredItemWidth=preferredItemWidth',
+];
+
+/** Compara os avisos da validação da biblioteca com o conjunto conhecido: só `parâmetro fora da ficha`, e exatamente esses. */
+export function unknownWarnings(warnings: readonly { path: string; message: string }[]): {
+  unexpected: string[];
+  missing: string[];
+} {
+  const seen = new Set<string>();
+  const unexpected: string[] = [];
+  const re =
+    /^layers\[(\d+)\]\.annotationTypes\[(\d+)\]\.code\.compose\.(?:variants\.cases\.([^.]+)\.)?params\.(.+)$/;
+  for (const w of warnings) {
+    const m = re.exec(w.path);
+    const param = /^parâmetro fora da ficha: "(.+)"$/.exec(w.message)?.[1];
+    const id =
+      m === null
+        ? undefined
+        : spec.layers[Number(m[1])]?.annotationTypes[Number(m[2])]?.id;
+    if (m === null || param === undefined || id === undefined) {
+      unexpected.push(`${w.path}: ${w.message}`);
+      continue;
+    }
+    const key = `${id}${m[3] === undefined ? '' : `.${m[3]}`} ${m[4]}=${param}`;
+    seen.add(key);
+    if (!KNOWN_PARAM_WARNINGS.includes(key)) unexpected.push(key);
+  }
+  return { unexpected, missing: KNOWN_PARAM_WARNINGS.filter((k) => !seen.has(k)) };
 }

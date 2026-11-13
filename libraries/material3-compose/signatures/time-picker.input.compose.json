@@ -1,0 +1,183 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.TimeInput",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/TimePicker.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "state",
+      "role": "state",
+      "type": "TimePickerState",
+      "required": true
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "colors",
+      "role": "value",
+      "type": "TimePickerColors",
+      "default": "TimePickerDefaults.colors()",
+      "factory": {
+        "call": "androidx.compose.material3.TimePickerDefaults.colors",
+        "params": [
+          {
+            "name": "clockDialColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "clockDialSelectedContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "clockDialUnselectedContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "selectorColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "containerColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "periodSelectorBorderColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "periodSelectorSelectedContainerColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "periodSelectorUnselectedContainerColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "periodSelectorSelectedContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "periodSelectorUnselectedContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "timeSelectorSelectedContainerColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "timeSelectorUnselectedContainerColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "timeSelectorSelectedContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "timeSelectorUnselectedContentColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "doc": {
+    "state": "state for this timepicker, allows to subscribe to changes to [TimePickerState.hour] and [TimePickerState.minute], and set the initial time for this picker.",
+    "modifier": "the [Modifier] to be applied to this time input",
+    "colors": "colors [TimePickerColors] that will be used to resolve the colors used for this time input in different states. See [TimePickerDefaults.colors].",
+    "colors.clockDialColor": "The color of the clock dial.",
+    "colors.clockDialSelectedContentColor": "the color of the numbers of the clock dial when they are selected or overlapping with the selector",
+    "colors.clockDialUnselectedContentColor": "the color of the numbers of the clock dial when they are unselected",
+    "colors.selectorColor": "The color of the clock dial selector.",
+    "colors.containerColor": "The container color of the time picker.",
+    "colors.periodSelectorBorderColor": "the color used for the border of the AM/PM toggle.",
+    "colors.periodSelectorSelectedContainerColor": "the color used for the selected container of the AM/PM toggle",
+    "colors.periodSelectorUnselectedContainerColor": "the color used for the unselected container of the AM/PM toggle",
+    "colors.periodSelectorSelectedContentColor": "color used for the selected content of the AM/PM toggle",
+    "colors.periodSelectorUnselectedContentColor": "color used for the unselected content of the AM/PM toggle",
+    "colors.timeSelectorSelectedContainerColor": "color used for the selected container of the display buttons to switch between hour and minutes",
+    "colors.timeSelectorUnselectedContainerColor": "color used for the unselected container of the display buttons to switch between hour and minutes",
+    "colors.timeSelectorSelectedContentColor": "color used for the selected content of the display buttons to switch between hour and minutes",
+    "colors.timeSelectorUnselectedContentColor": "color used for the unselected content of the display buttons to switch between hour and minutes"
+  }
+}

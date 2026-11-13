@@ -484,8 +484,8 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
       expect(r16).toContain('OutlinedButton');
     });
 
-    it('o prompt da nuvem lista os roteiros até o R25', () => {
-      expect(prompt).toContain('R0 a R25');
+    it('o prompt da nuvem lista os roteiros até o R26', () => {
+      expect(prompt).toContain('R0 a R26');
     });
   });
 
@@ -504,9 +504,9 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
       expect(guide).toContain('`material3-compose.zip` (R17)');
     });
 
-    it('tem os passos R17.1 a R17.43, em ordem, e nenhum depende do dono', () => {
+    it('tem os passos R17.1 a R17.46, em ordem, e nenhum depende do dono', () => {
       const codes = [...stepActions(r17).keys()];
-      expect(codes).toEqual(Array.from({ length: 43 }, (_, i) => `R17.${i + 1}`));
+      expect(codes).toEqual(Array.from({ length: 46 }, (_, i) => `R17.${i + 1}`));
       expect(/sem substituto/i.test(r17)).toBe(false);
       expect(r17).not.toContain('[pessoa]');
     });
@@ -553,8 +553,8 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
       expect(r17).toContain('Aplicar zip…');
     });
 
-    it('o prompt da nuvem lista os roteiros até o R25', () => {
-      expect(prompt).toContain('R0 a R25');
+    it('o prompt da nuvem lista os roteiros até o R26', () => {
+      expect(prompt).toContain('R0 a R26');
     });
   });
 
@@ -603,9 +603,9 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
       expect(guide).toMatch(/^- R18 usa a pasta própria `avisos`/m);
     });
 
-    it('tem os passos R18.1 a R18.13, em ordem, e nenhum depende do dono', () => {
+    it('tem os passos R18.1 a R18.14, em ordem, e nenhum depende do dono', () => {
       const codes = [...stepActions(r18).keys()];
-      expect(codes).toEqual(Array.from({ length: 13 }, (_, i) => `R18.${i + 1}`));
+      expect(codes).toEqual(Array.from({ length: 14 }, (_, i) => `R18.${i + 1}`));
       expect(/sem substituto/i.test(r18)).toBe(false);
       expect(r18).not.toContain('[pessoa]');
     });
@@ -628,8 +628,8 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
       expect(JSON.parse(block)).toEqual(JSON.parse(fixture));
     });
 
-    it('o prompt da nuvem lista os roteiros até o R25', () => {
-      expect(prompt).toContain('R0 a R25');
+    it('o prompt da nuvem lista os roteiros até o R26', () => {
+      expect(prompt).toContain('R0 a R26');
     });
   });
 });

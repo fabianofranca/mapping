@@ -1,0 +1,192 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.RangeSlider",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Slider.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1",
+    "overload": 0
+  },
+  "params": [
+    {
+      "name": "value",
+      "role": "value",
+      "type": "ClosedFloatingPointRange<Float>",
+      "required": true,
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "onValueChange",
+      "role": "callback",
+      "type": "(ClosedFloatingPointRange<Float>) -> Unit",
+      "required": true
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "enabled",
+      "role": "value",
+      "type": "Boolean",
+      "default": "true",
+      "value": {
+        "kind": "boolean",
+        "default": true
+      }
+    },
+    {
+      "name": "valueRange",
+      "role": "value",
+      "type": "ClosedFloatingPointRange<Float>",
+      "default": "0f..1f",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "steps",
+      "role": "value",
+      "type": "@IntRange(from = 0) Int",
+      "default": "0",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "onValueChangeFinished",
+      "role": "callback",
+      "type": "(() -> Unit)?",
+      "default": "null"
+    },
+    {
+      "name": "colors",
+      "role": "value",
+      "type": "SliderColors",
+      "default": "SliderDefaults.colors()",
+      "factory": {
+        "call": "androidx.compose.material3.SliderDefaults.colors",
+        "params": [
+          {
+            "name": "thumbColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "activeTrackColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "activeTickColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "inactiveTrackColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "inactiveTickColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledThumbColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledActiveTrackColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledActiveTickColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledInactiveTrackColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          },
+          {
+            "name": "disabledInactiveTickColor",
+            "role": "value",
+            "type": "Color",
+            "default": "Color.Unspecified",
+            "value": {
+              "kind": "color"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "doc": {
+    "value": "current values of the RangeSlider. If either value is outside of [valueRange] provided, it will be coerced to this range.",
+    "onValueChange": "lambda in which values should be updated",
+    "modifier": "modifiers for the Range Slider layout",
+    "enabled": "whether or not component is enabled and can we interacted with or not",
+    "valueRange": "range of values that Range Slider values can take. Passed [value] will be coerced to this range",
+    "steps": "if positive, specifies the amount of discrete allowable values between the endpoints of [valueRange]. For example, a range from 0 to 10 with 4 [steps] allows 4 values evenly distributed between 0 and 10 (i.e., 2, 4, 6, 8). If [steps] is 0, the slider will behave continuously and allow any value from the range. Must not be negative.",
+    "onValueChangeFinished": "lambda to be invoked when value change has ended. This callback shouldn't be used to update the range slider values (use [onValueChange] for that), but rather to know when the user has completed selecting a new value by ending a drag or a click.",
+    "colors": "[SliderColors] that will be used to determine the color of the Range Slider parts in different state. See [SliderDefaults.colors] to customize.",
+    "colors.thumbColor": "thumb color when enabled",
+    "colors.activeTrackColor": "color of the track in the part that is \"active\", meaning that the thumb is ahead of it",
+    "colors.activeTickColor": "colors to be used to draw tick marks on the active track, if `steps` is specified",
+    "colors.inactiveTrackColor": "color of the track in the part that is \"inactive\", meaning that the thumb is before it",
+    "colors.inactiveTickColor": "colors to be used to draw tick marks on the inactive track, if `steps` are specified on the Slider is specified",
+    "colors.disabledThumbColor": "thumb colors when disabled",
+    "colors.disabledActiveTrackColor": "color of the track in the \"active\" part when the Slider is disabled",
+    "colors.disabledActiveTickColor": "colors to be used to draw tick marks on the active track when Slider is disabled and when `steps` are specified on it",
+    "colors.disabledInactiveTrackColor": "color of the track in the \"inactive\" part when the Slider is disabled",
+    "colors.disabledInactiveTickColor": "colors to be used to draw tick marks on the inactive part of the track when Slider is disabled and when `steps` are specified on it"
+  }
+}

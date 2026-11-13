@@ -1,0 +1,129 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/carousel/Carousel.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "state",
+      "role": "state",
+      "type": "CarouselState",
+      "required": true
+    },
+    {
+      "name": "preferredItemWidth",
+      "role": "value",
+      "type": "Dp",
+      "required": true,
+      "value": {
+        "kind": "dimension"
+      }
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "itemSpacing",
+      "role": "value",
+      "type": "Dp",
+      "default": "0.dp",
+      "value": {
+        "kind": "dimension",
+        "default": 0
+      }
+    },
+    {
+      "name": "flingBehavior",
+      "role": "value",
+      "type": "TargetedFlingBehavior",
+      "default": "CarouselDefaults.singleAdvanceFlingBehavior(state = state)",
+      "factory": {
+        "call": "androidx.compose.material3.carousel.CarouselDefaults.singleAdvanceFlingBehavior",
+        "params": [
+          {
+            "name": "state",
+            "role": "state",
+            "type": "CarouselState",
+            "required": true
+          },
+          {
+            "name": "snapAnimationSpec",
+            "role": "value",
+            "type": "AnimationSpec<Float>",
+            "default": "spring(stiffness = Spring.StiffnessMediumLow)",
+            "value": {
+              "kind": "opaque"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "userScrollEnabled",
+      "role": "value",
+      "type": "Boolean",
+      "default": "true",
+      "value": {
+        "kind": "boolean",
+        "default": true
+      }
+    },
+    {
+      "name": "minSmallItemWidth",
+      "role": "value",
+      "type": "Dp",
+      "default": "CarouselDefaults.MinSmallItemSize",
+      "value": {
+        "kind": "dimension"
+      }
+    },
+    {
+      "name": "maxSmallItemWidth",
+      "role": "value",
+      "type": "Dp",
+      "default": "CarouselDefaults.MaxSmallItemSize",
+      "value": {
+        "kind": "dimension"
+      }
+    },
+    {
+      "name": "contentPadding",
+      "role": "value",
+      "type": "PaddingValues",
+      "default": "PaddingValues(0.dp)",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "content",
+      "role": "slot",
+      "type": "@Composable CarouselItemScope.(itemIndex: Int) -> Unit",
+      "required": true
+    }
+  ],
+  "doc": {
+    "state": "The state object to be used to control the carousel's state",
+    "preferredItemWidth": "The width that large, fully visible items would like to be in the horizontal axis. This width is a target and will likely be adjusted by carousel in order to fit a whole number of items within the container. Carousel adjusts small items first (between the [minSmallItemWidth] and [maxSmallItemWidth]) then medium items when present, and finally large items if necessary.",
+    "modifier": "A modifier instance to be applied to this carousel container",
+    "itemSpacing": "The amount of space used to separate items in the carousel",
+    "flingBehavior": "The [TargetedFlingBehavior] to be used for post scroll gestures",
+    "flingBehavior.state": "The [CarouselState] that controls which Carousel this TargetedFlingBehavior will be applied to.",
+    "flingBehavior.snapAnimationSpec": "The animation spec used to finally snap to the position.",
+    "userScrollEnabled": "whether the scrolling via the user gestures or accessibility actions is allowed.",
+    "minSmallItemWidth": "The minimum allowable width of small items in dp. Depending on the [preferredItemWidth] and the width of the carousel, the small item width will be chosen from a range of [minSmallItemWidth] and [maxSmallItemWidth]",
+    "maxSmallItemWidth": "The maximum allowable width of small items in dp. Depending on the [preferredItemWidth] and the width of the carousel, the small item width will be chosen from a range of [minSmallItemWidth] and [maxSmallItemWidth]",
+    "contentPadding": "a padding around the whole content. This will add padding for the content after it has been clipped. You can use it to add a padding before the first item or after the last one. Use [itemSpacing] to add spacing between the items.",
+    "content": "The carousel's content Composable"
+  }
+}

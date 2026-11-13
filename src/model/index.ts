@@ -72,6 +72,8 @@ export * from './typedDisplay';
 export * from './codeLocations';
 export * from './codeBlueprint';
 export * from './codeVariants';
+export * from './codeParams';
+export * from './signatures';
 export * from './sources';
 export * from './remoteImages';
 export * from './proposal';

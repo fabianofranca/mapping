@@ -1,0 +1,107 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.Snackbar",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Snackbar.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1",
+    "overload": 0
+  },
+  "params": [
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "action",
+      "role": "slot",
+      "type": "@Composable (() -> Unit)?",
+      "default": "null"
+    },
+    {
+      "name": "dismissAction",
+      "role": "slot",
+      "type": "@Composable (() -> Unit)?",
+      "default": "null"
+    },
+    {
+      "name": "actionOnNewLine",
+      "role": "value",
+      "type": "Boolean",
+      "default": "false",
+      "value": {
+        "kind": "boolean",
+        "default": false
+      }
+    },
+    {
+      "name": "shape",
+      "role": "value",
+      "type": "Shape",
+      "default": "SnackbarDefaults.shape",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "containerColor",
+      "role": "value",
+      "type": "Color",
+      "default": "SnackbarDefaults.color",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "contentColor",
+      "role": "value",
+      "type": "Color",
+      "default": "SnackbarDefaults.contentColor",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "actionContentColor",
+      "role": "value",
+      "type": "Color",
+      "default": "SnackbarDefaults.actionContentColor",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "dismissActionContentColor",
+      "role": "value",
+      "type": "Color",
+      "default": "SnackbarDefaults.dismissActionContentColor",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "content",
+      "role": "slot",
+      "type": "@Composable () -> Unit",
+      "required": true
+    }
+  ],
+  "doc": {
+    "modifier": "the [Modifier] to be applied to this snackbar",
+    "action": "action / button component to add as an action to the snackbar. Consider using [ColorScheme.inversePrimary] as the color for the action, if you do not have a predefined color you wish to use instead.",
+    "dismissAction": "action / button component to add as an additional close affordance action when a snackbar is non self-dismissive. Consider using [ColorScheme.inverseOnSurface] as the color for the action, if you do not have a predefined color you wish to use instead.",
+    "actionOnNewLine": "whether or not action should be put on a separate line. Recommended for action with long action text.",
+    "shape": "defines the shape of this snackbar's container",
+    "containerColor": "the color used for the background of this snackbar. Use [Color.Transparent] to have no color.",
+    "contentColor": "the preferred color for content inside this snackbar",
+    "actionContentColor": "the preferred content color for the optional [action] inside this snackbar",
+    "dismissActionContentColor": "the preferred content color for the optional [dismissAction] inside this snackbar",
+    "content": "content to show information about a process that an app has performed or will perform"
+  }
+}

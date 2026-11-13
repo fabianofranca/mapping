@@ -1,0 +1,83 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "swiftui",
+    "language": "swift",
+    "symbol": "Tag",
+    "path": "Tag.swift",
+    "extractor": "mapping-signature/swift@1"
+  },
+  "params": [
+    {
+      "name": "text",
+      "role": "value",
+      "type": "String",
+      "required": true,
+      "value": {
+        "kind": "text"
+      }
+    },
+    {
+      "name": "borderWidth",
+      "role": "value",
+      "type": "CGFloat",
+      "default": "1",
+      "value": {
+        "kind": "dimension",
+        "default": 1
+      }
+    },
+    {
+      "name": "tint",
+      "role": "value",
+      "type": "Color",
+      "default": ".blue",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "isSelected",
+      "role": "value",
+      "type": "Bool",
+      "default": "false",
+      "value": {
+        "kind": "boolean",
+        "default": false
+      }
+    },
+    {
+      "name": "level",
+      "role": "value",
+      "type": "Int?",
+      "default": "nil",
+      "value": {
+        "kind": "integer"
+      }
+    },
+    {
+      "name": "onRemove",
+      "role": "callback",
+      "type": "(() -> Void)?",
+      "default": "nil"
+    },
+    {
+      "name": "count",
+      "role": "state",
+      "type": "Binding<Int>",
+      "required": true
+    },
+    {
+      "name": "trailing",
+      "role": "slot",
+      "type": "@ViewBuilder () -> TrailingContent",
+      "required": true
+    }
+  ],
+  "doc": {
+    "text": "The text of the tag.",
+    "borderWidth": "How wide the border is."
+  }
+}

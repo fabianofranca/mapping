@@ -28,145 +28,343 @@
       "type": "none"
     },
     "fill": {
-      "$switch": "color",
-      "cases": {
-        "primary": {
-          "$token": "primary"
-        },
-        "onPrimary": {
-          "$token": "on-primary"
-        },
-        "primaryContainer": {
-          "$token": "primary-container"
-        },
-        "onPrimaryContainer": {
-          "$token": "on-primary-container"
-        },
-        "secondary": {
-          "$token": "secondary"
-        },
-        "onSecondary": {
-          "$token": "on-secondary"
-        },
-        "secondaryContainer": {
-          "$token": "secondary-container"
-        },
-        "onSecondaryContainer": {
-          "$token": "on-secondary-container"
-        },
-        "tertiary": {
-          "$token": "tertiary"
-        },
-        "onTertiary": {
-          "$token": "on-tertiary"
-        },
-        "tertiaryContainer": {
-          "$token": "tertiary-container"
-        },
-        "onTertiaryContainer": {
-          "$token": "on-tertiary-container"
-        },
-        "error": {
-          "$token": "error"
-        },
-        "onError": {
-          "$token": "on-error"
-        },
-        "errorContainer": {
-          "$token": "error-container"
-        },
-        "onErrorContainer": {
-          "$token": "on-error-container"
-        },
-        "background": {
-          "$token": "background"
-        },
-        "onBackground": {
-          "$token": "on-background"
-        },
-        "surface": {
-          "$token": "surface"
-        },
-        "onSurface": {
-          "$token": "on-surface"
-        },
-        "surfaceVariant": {
-          "$token": "surface-variant"
-        },
-        "onSurfaceVariant": {
-          "$token": "on-surface-variant"
-        },
-        "surfaceTint": {
-          "$token": "surface-tint"
-        },
-        "inverseSurface": {
-          "$token": "inverse-surface"
-        },
-        "inverseOnSurface": {
-          "$token": "inverse-on-surface"
-        },
-        "inversePrimary": {
-          "$token": "inverse-primary"
-        },
-        "outline": {
-          "$token": "outline"
-        },
-        "outlineVariant": {
-          "$token": "outline-variant"
-        },
-        "scrim": {
-          "$token": "scrim"
-        },
-        "surfaceBright": {
-          "$token": "surface-bright"
-        },
-        "surfaceDim": {
-          "$token": "surface-dim"
-        },
-        "surfaceContainerLowest": {
-          "$token": "surface-container-lowest"
-        },
-        "surfaceContainerLow": {
-          "$token": "surface-container-low"
-        },
-        "surfaceContainer": {
-          "$token": "surface-container"
-        },
-        "surfaceContainerHigh": {
-          "$token": "surface-container-high"
-        },
-        "surfaceContainerHighest": {
-          "$token": "surface-container-highest"
-        }
-      },
-      "default": {
-        "$token": "surface"
-      }
+      "$var": "fundo"
     },
     "cornerRadius": {
-      "$switch": "shape",
-      "cases": {
-        "extraSmall": {
-          "$token": "corner-extra-small"
-        },
-        "small": {
-          "$token": "corner-small"
-        },
-        "medium": {
-          "$token": "corner-medium"
-        },
-        "large": {
-          "$token": "corner-large"
-        },
-        "extraLarge": {
-          "$token": "corner-extra-large"
-        }
-      },
-      "default": {
-        "$token": "corner-none"
-      }
+      "$var": "raio"
     },
     "children": [
+      {
+        "type": "rect",
+        "name": "sombra nível 1",
+        "fill": {
+          "$var": "fundo"
+        },
+        "cornerRadius": {
+          "$var": "raio"
+        },
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "visible": {
+          "$and": [
+            {
+              "$gt": [
+                {
+                  "$field": "shadowElevation",
+                  "default": 0
+                },
+                0
+              ]
+            },
+            {
+              "$lt": [
+                {
+                  "$field": "shadowElevation",
+                  "default": 0
+                },
+                2
+              ]
+            }
+          ]
+        },
+        "shadow": [
+          {
+            "color": {
+              "$token": "elevation-point-shadow"
+            },
+            "y": {
+              "$token": "elevation-1-point-y"
+            },
+            "blur": {
+              "$token": "elevation-1-point-blur"
+            },
+            "spread": {
+              "$token": "elevation-1-point-spread"
+            }
+          },
+          {
+            "color": {
+              "$token": "elevation-ambient-shadow"
+            },
+            "y": {
+              "$token": "elevation-1-ambient-y"
+            },
+            "blur": {
+              "$token": "elevation-1-ambient-blur"
+            },
+            "spread": {
+              "$token": "elevation-1-ambient-spread"
+            }
+          }
+        ]
+      },
+      {
+        "type": "rect",
+        "name": "sombra nível 2",
+        "fill": {
+          "$var": "fundo"
+        },
+        "cornerRadius": {
+          "$var": "raio"
+        },
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "visible": {
+          "$and": [
+            {
+              "$gte": [
+                {
+                  "$field": "shadowElevation",
+                  "default": 0
+                },
+                2
+              ]
+            },
+            {
+              "$lt": [
+                {
+                  "$field": "shadowElevation",
+                  "default": 0
+                },
+                4
+              ]
+            }
+          ]
+        },
+        "shadow": [
+          {
+            "color": {
+              "$token": "elevation-point-shadow"
+            },
+            "y": {
+              "$token": "elevation-2-point-y"
+            },
+            "blur": {
+              "$token": "elevation-2-point-blur"
+            },
+            "spread": {
+              "$token": "elevation-2-point-spread"
+            }
+          },
+          {
+            "color": {
+              "$token": "elevation-ambient-shadow"
+            },
+            "y": {
+              "$token": "elevation-2-ambient-y"
+            },
+            "blur": {
+              "$token": "elevation-2-ambient-blur"
+            },
+            "spread": {
+              "$token": "elevation-2-ambient-spread"
+            }
+          }
+        ]
+      },
+      {
+        "type": "rect",
+        "name": "sombra nível 3",
+        "fill": {
+          "$var": "fundo"
+        },
+        "cornerRadius": {
+          "$var": "raio"
+        },
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "visible": {
+          "$and": [
+            {
+              "$gte": [
+                {
+                  "$field": "shadowElevation",
+                  "default": 0
+                },
+                4
+              ]
+            },
+            {
+              "$lt": [
+                {
+                  "$field": "shadowElevation",
+                  "default": 0
+                },
+                7
+              ]
+            }
+          ]
+        },
+        "shadow": [
+          {
+            "color": {
+              "$token": "elevation-point-shadow"
+            },
+            "y": {
+              "$token": "elevation-3-point-y"
+            },
+            "blur": {
+              "$token": "elevation-3-point-blur"
+            },
+            "spread": {
+              "$token": "elevation-3-point-spread"
+            }
+          },
+          {
+            "color": {
+              "$token": "elevation-ambient-shadow"
+            },
+            "y": {
+              "$token": "elevation-3-ambient-y"
+            },
+            "blur": {
+              "$token": "elevation-3-ambient-blur"
+            },
+            "spread": {
+              "$token": "elevation-3-ambient-spread"
+            }
+          }
+        ]
+      },
+      {
+        "type": "rect",
+        "name": "sombra nível 4",
+        "fill": {
+          "$var": "fundo"
+        },
+        "cornerRadius": {
+          "$var": "raio"
+        },
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "visible": {
+          "$and": [
+            {
+              "$gte": [
+                {
+                  "$field": "shadowElevation",
+                  "default": 0
+                },
+                7
+              ]
+            },
+            {
+              "$lt": [
+                {
+                  "$field": "shadowElevation",
+                  "default": 0
+                },
+                10
+              ]
+            }
+          ]
+        },
+        "shadow": [
+          {
+            "color": {
+              "$token": "elevation-point-shadow"
+            },
+            "y": {
+              "$token": "elevation-4-point-y"
+            },
+            "blur": {
+              "$token": "elevation-4-point-blur"
+            },
+            "spread": {
+              "$token": "elevation-4-point-spread"
+            }
+          },
+          {
+            "color": {
+              "$token": "elevation-ambient-shadow"
+            },
+            "y": {
+              "$token": "elevation-4-ambient-y"
+            },
+            "blur": {
+              "$token": "elevation-4-ambient-blur"
+            },
+            "spread": {
+              "$token": "elevation-4-ambient-spread"
+            }
+          }
+        ]
+      },
+      {
+        "type": "rect",
+        "name": "sombra nível 5",
+        "fill": {
+          "$var": "fundo"
+        },
+        "cornerRadius": {
+          "$var": "raio"
+        },
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "visible": {
+          "$and": [
+            {
+              "$gte": [
+                {
+                  "$field": "shadowElevation",
+                  "default": 0
+                },
+                10
+              ]
+            }
+          ]
+        },
+        "shadow": [
+          {
+            "color": {
+              "$token": "elevation-point-shadow"
+            },
+            "y": {
+              "$token": "elevation-5-point-y"
+            },
+            "blur": {
+              "$token": "elevation-5-point-blur"
+            },
+            "spread": {
+              "$token": "elevation-5-point-spread"
+            }
+          },
+          {
+            "color": {
+              "$token": "elevation-ambient-shadow"
+            },
+            "y": {
+              "$token": "elevation-5-ambient-y"
+            },
+            "blur": {
+              "$token": "elevation-5-ambient-blur"
+            },
+            "spread": {
+              "$token": "elevation-5-ambient-spread"
+            }
+          }
+        ]
+      },
       {
         "type": "rect",
         "name": "elevação tonal",
@@ -198,27 +396,7 @@
           "else": 0
         },
         "cornerRadius": {
-          "$switch": "shape",
-          "cases": {
-            "extraSmall": {
-              "$token": "corner-extra-small"
-            },
-            "small": {
-              "$token": "corner-small"
-            },
-            "medium": {
-              "$token": "corner-medium"
-            },
-            "large": {
-              "$token": "corner-large"
-            },
-            "extraLarge": {
-              "$token": "corner-extra-large"
-            }
-          },
-          "default": {
-            "$token": "corner-none"
-          }
+          "$var": "raio"
         },
         "visible": {
           "$or": [
@@ -443,6 +621,282 @@
           }
         }
       }
-    ]
+    ],
+    "stroke": {
+      "color": {
+        "$if": {
+          "$gt": [
+            {
+              "$field": "borderWidth",
+              "default": 0
+            },
+            0
+          ]
+        },
+        "then": {
+          "$switch": "borderColor",
+          "cases": {
+            "primary": {
+              "$token": "primary"
+            },
+            "onPrimary": {
+              "$token": "on-primary"
+            },
+            "primaryContainer": {
+              "$token": "primary-container"
+            },
+            "onPrimaryContainer": {
+              "$token": "on-primary-container"
+            },
+            "secondary": {
+              "$token": "secondary"
+            },
+            "onSecondary": {
+              "$token": "on-secondary"
+            },
+            "secondaryContainer": {
+              "$token": "secondary-container"
+            },
+            "onSecondaryContainer": {
+              "$token": "on-secondary-container"
+            },
+            "tertiary": {
+              "$token": "tertiary"
+            },
+            "onTertiary": {
+              "$token": "on-tertiary"
+            },
+            "tertiaryContainer": {
+              "$token": "tertiary-container"
+            },
+            "onTertiaryContainer": {
+              "$token": "on-tertiary-container"
+            },
+            "error": {
+              "$token": "error"
+            },
+            "onError": {
+              "$token": "on-error"
+            },
+            "errorContainer": {
+              "$token": "error-container"
+            },
+            "onErrorContainer": {
+              "$token": "on-error-container"
+            },
+            "background": {
+              "$token": "background"
+            },
+            "onBackground": {
+              "$token": "on-background"
+            },
+            "surface": {
+              "$token": "surface"
+            },
+            "onSurface": {
+              "$token": "on-surface"
+            },
+            "surfaceVariant": {
+              "$token": "surface-variant"
+            },
+            "onSurfaceVariant": {
+              "$token": "on-surface-variant"
+            },
+            "surfaceTint": {
+              "$token": "surface-tint"
+            },
+            "inverseSurface": {
+              "$token": "inverse-surface"
+            },
+            "inverseOnSurface": {
+              "$token": "inverse-on-surface"
+            },
+            "inversePrimary": {
+              "$token": "inverse-primary"
+            },
+            "outline": {
+              "$token": "outline"
+            },
+            "outlineVariant": {
+              "$token": "outline-variant"
+            },
+            "scrim": {
+              "$token": "scrim"
+            },
+            "surfaceBright": {
+              "$token": "surface-bright"
+            },
+            "surfaceDim": {
+              "$token": "surface-dim"
+            },
+            "surfaceContainerLowest": {
+              "$token": "surface-container-lowest"
+            },
+            "surfaceContainerLow": {
+              "$token": "surface-container-low"
+            },
+            "surfaceContainer": {
+              "$token": "surface-container"
+            },
+            "surfaceContainerHigh": {
+              "$token": "surface-container-high"
+            },
+            "surfaceContainerHighest": {
+              "$token": "surface-container-highest"
+            }
+          },
+          "default": {
+            "$token": "outline"
+          }
+        },
+        "else": "none"
+      },
+      "width": {
+        "$field": "borderWidth",
+        "default": 0
+      },
+      "align": "inside"
+    },
+    "let": {
+      "fundo": {
+        "$switch": "color",
+        "cases": {
+          "primary": {
+            "$token": "primary"
+          },
+          "onPrimary": {
+            "$token": "on-primary"
+          },
+          "primaryContainer": {
+            "$token": "primary-container"
+          },
+          "onPrimaryContainer": {
+            "$token": "on-primary-container"
+          },
+          "secondary": {
+            "$token": "secondary"
+          },
+          "onSecondary": {
+            "$token": "on-secondary"
+          },
+          "secondaryContainer": {
+            "$token": "secondary-container"
+          },
+          "onSecondaryContainer": {
+            "$token": "on-secondary-container"
+          },
+          "tertiary": {
+            "$token": "tertiary"
+          },
+          "onTertiary": {
+            "$token": "on-tertiary"
+          },
+          "tertiaryContainer": {
+            "$token": "tertiary-container"
+          },
+          "onTertiaryContainer": {
+            "$token": "on-tertiary-container"
+          },
+          "error": {
+            "$token": "error"
+          },
+          "onError": {
+            "$token": "on-error"
+          },
+          "errorContainer": {
+            "$token": "error-container"
+          },
+          "onErrorContainer": {
+            "$token": "on-error-container"
+          },
+          "background": {
+            "$token": "background"
+          },
+          "onBackground": {
+            "$token": "on-background"
+          },
+          "surface": {
+            "$token": "surface"
+          },
+          "onSurface": {
+            "$token": "on-surface"
+          },
+          "surfaceVariant": {
+            "$token": "surface-variant"
+          },
+          "onSurfaceVariant": {
+            "$token": "on-surface-variant"
+          },
+          "surfaceTint": {
+            "$token": "surface-tint"
+          },
+          "inverseSurface": {
+            "$token": "inverse-surface"
+          },
+          "inverseOnSurface": {
+            "$token": "inverse-on-surface"
+          },
+          "inversePrimary": {
+            "$token": "inverse-primary"
+          },
+          "outline": {
+            "$token": "outline"
+          },
+          "outlineVariant": {
+            "$token": "outline-variant"
+          },
+          "scrim": {
+            "$token": "scrim"
+          },
+          "surfaceBright": {
+            "$token": "surface-bright"
+          },
+          "surfaceDim": {
+            "$token": "surface-dim"
+          },
+          "surfaceContainerLowest": {
+            "$token": "surface-container-lowest"
+          },
+          "surfaceContainerLow": {
+            "$token": "surface-container-low"
+          },
+          "surfaceContainer": {
+            "$token": "surface-container"
+          },
+          "surfaceContainerHigh": {
+            "$token": "surface-container-high"
+          },
+          "surfaceContainerHighest": {
+            "$token": "surface-container-highest"
+          }
+        },
+        "default": {
+          "$token": "surface"
+        }
+      },
+      "raio": {
+        "$switch": "shape",
+        "cases": {
+          "extraSmall": {
+            "$token": "corner-extra-small"
+          },
+          "small": {
+            "$token": "corner-small"
+          },
+          "medium": {
+            "$token": "corner-medium"
+          },
+          "large": {
+            "$token": "corner-large"
+          },
+          "extraLarge": {
+            "$token": "corner-extra-large"
+          }
+        },
+        "default": {
+          "$token": "corner-none"
+        }
+      }
+    }
   }
 }

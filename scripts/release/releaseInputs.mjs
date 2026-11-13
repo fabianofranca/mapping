@@ -10,11 +10,14 @@ export const RELEASE_INPUTS = [
   'mcp/',
   // Modelo puro, o único trecho de `src/` que o bundle importa.
   'src/model/',
+  // Extrator de assinaturas: o bundle `mapping-signature.mjs` vai na Release, ao lado do servidor.
+  'signature/',
   // Documentação embutida por `?raw` (recursos do servidor e guia do agente).
   'docs/AGENT-GUIDE.md',
   'docs/COMMENT-FORMAT.md',
   'docs/COMPONENT-FORMAT.md',
   'docs/FORMAT.md',
+  'docs/SIGNATURE-FORMAT.md',
   'docs/SPEC-FORMAT.md',
   // Biblioteca de notas embutida.
   'libraries/notas/',

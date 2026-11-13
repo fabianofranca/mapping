@@ -79,17 +79,23 @@ jobs:
             echo "--version imprimiu '$got', esperado '$EXPECTED'." >&2
             exit 1
           fi
+          # O extrator de assinaturas (`.mjs`, sem dependências) também roda fora do repositório.
+          cp "$GITHUB_WORKSPACE/dist-mcp/mapping-signature.mjs" .
+          node mapping-signature.mjs --help > /dev/null
 
       - name: Checksum
         working-directory: dist-mcp
-        run: sha256sum mapping-mcp.js > mapping-mcp.js.sha256
+        run: |
+          sha256sum mapping-mcp.js > mapping-mcp.js.sha256
+          sha256sum mapping-signature.mjs > mapping-signature.mjs.sha256
 
-      # Os arquivos publicados ficam juntos em `release-assets/`: o servidor, o `.sha256` e os do
+      # Os arquivos publicados ficam juntos em `release-assets/`: o servidor, o extrator de assinaturas, os `.sha256` e os do
       # workspace (o script dos arquivos do workspace roda uma vez).
       - name: Arquivos da Release
         run: |
           mkdir release-assets
           cp dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 release-assets/
+          cp dist-mcp/mapping-signature.mjs dist-mcp/mapping-signature.mjs.sha256 release-assets/
           node scripts/release/workspaceAssets.mjs release-assets > /dev/null
 
       - uses: actions/upload-artifact@v7
@@ -118,7 +124,7 @@ jobs:
       # arquivos esperados (cada um com o seu `.sha256`).
       - name: Conferir os arquivos baixados
         run: |
-          expected="AGENTS.mapping.md AGENTS.mapping.md.sha256 SKILL.md SKILL.md.sha256 mapping-mcp.js mapping-mcp.js.sha256 setup.sh setup.sh.sha256 watch-comments.mjs watch-comments.mjs.sha256"
+          expected="AGENTS.mapping.md AGENTS.mapping.md.sha256 SKILL.md SKILL.md.sha256 mapping-mcp.js mapping-mcp.js.sha256 mapping-signature.mjs mapping-signature.mjs.sha256 setup.sh setup.sh.sha256 watch-comments.mjs watch-comments.mjs.sha256"
           expected="$(printf '%s\n' $expected | LC_ALL=C sort | tr '\n' ' ')"
           found="$(ls -1 release-assets | LC_ALL=C sort | tr '\n' ' ')"
           if [ "$found" != "$expected" ]; then
@@ -131,7 +137,7 @@ jobs:
           tag="mcp-snapshot-pr${PR}"
           title="$tag"
           assets=(release-assets/*)
-          notes="Build provisório do PR #${PR}, para testar antes de entrar no épico. Commit ${HEAD_SHA:0:7}. Sobrescrito a cada push e apagado quando o PR fecha. Traz também o \`setup.sh\`, a skill \`SKILL.md\`, as regras \`AGENTS.mapping.md\` e o watcher \`watch-comments.mjs\` do workspace, cada um com o \`.sha256\`. Instalação: \`./setup.sh ${tag}\` (examples/workspace/) ou baixe \`mapping-mcp.js\` e confira com o \`.sha256\`. Atualizar um workspace que ainda tem o \`setup.sh\` antigo, uma vez: \`curl -fsSL https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh\`."
+          notes="Build provisório do PR #${PR}, para testar antes de entrar no épico. Commit ${HEAD_SHA:0:7}. Sobrescrito a cada push e apagado quando o PR fecha. Traz também o \`setup.sh\`, a skill \`SKILL.md\`, as regras \`AGENTS.mapping.md\` e o watcher \`watch-comments.mjs\` do workspace e o extrator de assinaturas \`mapping-signature.mjs\`, cada um com o \`.sha256\`. Instalação: \`./setup.sh ${tag}\` (examples/workspace/) ou baixe \`mapping-mcp.js\` e confira com o \`.sha256\`. Atualizar um workspace que ainda tem o \`setup.sh\` antigo, uma vez: \`curl -fsSL https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh\`."
           if gh release view "$tag" > /dev/null 2>&1; then
             # Já existe: move a tag para o commit novo e troca os arquivos.
             gh api -X PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/${tag}" \
@@ -227,10 +233,15 @@ jobs:
             echo "--version imprimiu '$got', esperado '$EXPECTED'." >&2
             exit 1
           fi
+          # O extrator de assinaturas (`.mjs`, sem dependências) também roda fora do repositório.
+          cp "$GITHUB_WORKSPACE/dist-mcp/mapping-signature.mjs" .
+          node mapping-signature.mjs --help > /dev/null
 
       - name: Checksum
         working-directory: dist-mcp
-        run: sha256sum mapping-mcp.js > mapping-mcp.js.sha256
+        run: |
+          sha256sum mapping-mcp.js > mapping-mcp.js.sha256
+          sha256sum mapping-signature.mjs > mapping-signature.mjs.sha256
 
       # Os arquivos publicados ficam juntos em `release-assets/` (o script dos arquivos do
       # workspace roda uma vez).
@@ -238,6 +249,7 @@ jobs:
         run: |
           mkdir release-assets
           cp dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 release-assets/
+          cp dist-mcp/mapping-signature.mjs dist-mcp/mapping-signature.mjs.sha256 release-assets/
           node scripts/release/workspaceAssets.mjs release-assets > /dev/null
 
       - uses: actions/upload-artifact@v7
@@ -271,7 +283,7 @@ jobs:
       # arquivos esperados (cada um com o seu `.sha256`).
       - name: Conferir os arquivos baixados
         run: |
-          expected="AGENTS.mapping.md AGENTS.mapping.md.sha256 SKILL.md SKILL.md.sha256 mapping-mcp.js mapping-mcp.js.sha256 setup.sh setup.sh.sha256 watch-comments.mjs watch-comments.mjs.sha256"
+          expected="AGENTS.mapping.md AGENTS.mapping.md.sha256 SKILL.md SKILL.md.sha256 mapping-mcp.js mapping-mcp.js.sha256 mapping-signature.mjs mapping-signature.mjs.sha256 setup.sh setup.sh.sha256 watch-comments.mjs watch-comments.mjs.sha256"
           expected="$(printf '%s\n' $expected | LC_ALL=C sort | tr '\n' ' ')"
           found="$(ls -1 release-assets | LC_ALL=C sort | tr '\n' ' ')"
           if [ "$found" != "$expected" ]; then
@@ -291,4 +303,4 @@ jobs:
             "${assets[@]}" \
             --prerelease --target "$TARGET_SHA" \
             --title "$RC_TAG" \
-            --notes "Release candidate do épico \`${EPIC}\`, commit ${TARGET_SHA:0:7}. Provisória: apagada quando a estável mcp-v${SERVER_VERSION} for publicada. Traz também o \`setup.sh\`, a skill \`SKILL.md\`, as regras \`AGENTS.mapping.md\` e o watcher \`watch-comments.mjs\` do workspace, cada um com o \`.sha256\`. Instalação: \`./setup.sh ${RC_TAG}\` (examples/workspace/) ou baixe \`mapping-mcp.js\` e confira com o \`.sha256\`. Atualizar um workspace que ainda tem o \`setup.sh\` antigo, uma vez: \`curl -fsSL https://github.com/${GITHUB_REPOSITORY}/releases/download/${RC_TAG}/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh\`."
+            --notes "Release candidate do épico \`${EPIC}\`, commit ${TARGET_SHA:0:7}. Provisória: apagada quando a estável mcp-v${SERVER_VERSION} for publicada. Traz também o \`setup.sh\`, a skill \`SKILL.md\`, as regras \`AGENTS.mapping.md\` e o watcher \`watch-comments.mjs\` do workspace e o extrator de assinaturas \`mapping-signature.mjs\`, cada um com o \`.sha256\`. Instalação: \`./setup.sh ${RC_TAG}\` (examples/workspace/) ou baixe \`mapping-mcp.js\` e confira com o \`.sha256\`. Atualizar um workspace que ainda tem o \`setup.sh\` antigo, uma vez: \`curl -fsSL https://github.com/${GITHUB_REPOSITORY}/releases/download/${RC_TAG}/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh\`."

@@ -1,0 +1,141 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.ModalBottomSheet",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ModalBottomSheet.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "onDismissRequest",
+      "role": "callback",
+      "type": "() -> Unit",
+      "required": true
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "sheetState",
+      "role": "state",
+      "type": "SheetState",
+      "default": "rememberModalBottomSheetState()"
+    },
+    {
+      "name": "sheetMaxWidth",
+      "role": "value",
+      "type": "Dp",
+      "default": "BottomSheetDefaults.SheetMaxWidth",
+      "value": {
+        "kind": "dimension"
+      }
+    },
+    {
+      "name": "sheetGesturesEnabled",
+      "role": "value",
+      "type": "Boolean",
+      "default": "true",
+      "value": {
+        "kind": "boolean",
+        "default": true
+      }
+    },
+    {
+      "name": "shape",
+      "role": "value",
+      "type": "Shape",
+      "default": "BottomSheetDefaults.ExpandedShape",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "containerColor",
+      "role": "value",
+      "type": "Color",
+      "default": "BottomSheetDefaults.ContainerColor",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "contentColor",
+      "role": "value",
+      "type": "Color",
+      "default": "contentColorFor(containerColor)",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "tonalElevation",
+      "role": "value",
+      "type": "Dp",
+      "default": "0.dp",
+      "value": {
+        "kind": "dimension",
+        "default": 0
+      }
+    },
+    {
+      "name": "scrimColor",
+      "role": "value",
+      "type": "Color",
+      "default": "BottomSheetDefaults.ScrimColor",
+      "value": {
+        "kind": "color"
+      }
+    },
+    {
+      "name": "dragHandle",
+      "role": "slot",
+      "type": "@Composable (() -> Unit)?",
+      "default": "{ BottomSheetDefaults.DragHandle() }"
+    },
+    {
+      "name": "contentWindowInsets",
+      "role": "slot",
+      "type": "@Composable () -> WindowInsets",
+      "default": "{ BottomSheetDefaults.windowInsets }"
+    },
+    {
+      "name": "properties",
+      "role": "value",
+      "type": "ModalBottomSheetProperties",
+      "default": "ModalBottomSheetProperties()",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "content",
+      "role": "slot",
+      "type": "@Composable ColumnScope.() -> Unit",
+      "required": true
+    }
+  ],
+  "doc": {
+    "onDismissRequest": "Executes when the user clicks outside of the bottom sheet, after sheet animates to [Hidden].",
+    "modifier": "Optional [Modifier] for the bottom sheet.",
+    "sheetState": "The state of the bottom sheet.",
+    "sheetMaxWidth": "[Dp] that defines what the maximum width the sheet will take. Pass in [Dp.Unspecified] for a sheet that spans the entire screen width.",
+    "sheetGesturesEnabled": "Whether the bottom sheet can be interacted with by gestures.",
+    "shape": "The shape of the bottom sheet.",
+    "containerColor": "The color used for the background of this bottom sheet",
+    "contentColor": "The preferred color for content inside this bottom sheet. Defaults to either the matching content color for [containerColor], or to the current [LocalContentColor] if [containerColor] is not a color from the theme.",
+    "tonalElevation": "when [containerColor] is [ColorScheme.surface], a translucent primary color overlay is applied on top of the container. A higher tonal elevation value will result in a darker color in light theme and lighter color in dark theme. See also: [Surface].",
+    "scrimColor": "Color of the scrim that obscures content when the bottom sheet is open.",
+    "dragHandle": "Optional visual marker to swipe the bottom sheet.",
+    "contentWindowInsets": "callback which provides window insets to be passed to the bottom sheet content via [Modifier.windowInsetsPadding]. [ModalBottomSheet] will pre-emptively consume top insets based on it's current offset. This keeps content outside of the expected window insets at any position.",
+    "properties": "[ModalBottomSheetProperties] for further customization of this modal bottom sheet's window behavior.",
+    "content": "The content to be displayed inside the bottom sheet."
+  }
+}

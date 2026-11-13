@@ -1,0 +1,70 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 16,
+  "id": "assinatura-lib",
+  "name": "Biblioteca de teste da assinatura",
+  "version": 1,
+  "platforms": [
+    { "id": "compose", "name": "Compose", "language": "kotlin" },
+    { "id": "swiftui", "name": "SwiftUI", "language": "swift" }
+  ],
+  "fieldModels": {
+    "compose": {
+      "Color": { "like": "surface.color" },
+      "Dp": { "type": "number", "format": "{value}.dp" },
+      "PaddingValues": {
+        "expand": {
+          "call": "PaddingValues",
+          "params": { "horizontal": "Dp", "vertical": "Dp" }
+        }
+      },
+      "Modifier": { "ignore": true }
+    }
+  },
+  "layers": [
+    {
+      "id": "ui",
+      "name": "UI",
+      "color": "#336699",
+      "annotationTypes": [
+        {
+          "id": "surface",
+          "name": "Surface",
+          "fields": [
+            {
+              "key": "color",
+              "label": "Color",
+              "type": "enum",
+              "options": ["primary", "secondary"]
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.Surface",
+              "values": {
+                "color": {
+                  "primary": "MaterialTheme.colorScheme.primary",
+                  "secondary": "MaterialTheme.colorScheme.secondary"
+                }
+              }
+            }
+          }
+        },
+        {
+          "id": "button",
+          "name": "Button",
+          "fields": [
+            {
+              "key": "style",
+              "label": "Style",
+              "type": "enum",
+              "options": ["filled", "outlined"],
+              "default": "filled"
+            }
+          ]
+        },
+        { "id": "profile-card", "name": "Profile card", "fields": [] }
+      ]
+    }
+  ]
+}

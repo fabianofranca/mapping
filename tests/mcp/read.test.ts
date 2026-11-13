@@ -1022,6 +1022,7 @@ describe('recursos e instruções', () => {
       'mapping-docs://COMMENT-FORMAT.md',
       'mapping-docs://COMPONENT-FORMAT.md',
       'mapping-docs://FORMAT.md',
+      'mapping-docs://SIGNATURE-FORMAT.md',
       'mapping-docs://SPEC-FORMAT.md',
     ]);
     for (const file of [
@@ -1029,6 +1030,7 @@ describe('recursos e instruções', () => {
       'COMMENT-FORMAT.md',
       'COMPONENT-FORMAT.md',
       'FORMAT.md',
+      'SIGNATURE-FORMAT.md',
       'SPEC-FORMAT.md',
     ]) {
       const read = await mcp.client.readResource({ uri: `mapping-docs://${file}` });
@@ -1069,6 +1071,7 @@ describe('recursos e instruções', () => {
       'open_thread',
       'plan_changes',
       'plan_library_update',
+      'plan_signature_import',
       'post_message',
       'propose_changes',
       'render_container',
@@ -1104,6 +1107,7 @@ describe('recursos e instruções', () => {
         'validate_specialization',
         'validate_library',
         'plan_library_update',
+        'plan_signature_import',
         'list_components',
         'get_component',
         'list_proposals',

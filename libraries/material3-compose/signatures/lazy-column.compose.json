@@ -1,0 +1,110 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.foundation.lazy.LazyColumn",
+    "path": "compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/lazy/LazyDsl.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "state",
+      "role": "state",
+      "type": "LazyListState",
+      "default": "rememberLazyListState()"
+    },
+    {
+      "name": "contentPadding",
+      "role": "value",
+      "type": "PaddingValues",
+      "default": "PaddingValues(0.dp)",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "reverseLayout",
+      "role": "value",
+      "type": "Boolean",
+      "default": "false",
+      "value": {
+        "kind": "boolean",
+        "default": false
+      }
+    },
+    {
+      "name": "verticalArrangement",
+      "role": "value",
+      "type": "Arrangement.Vertical",
+      "default": "if (!reverseLayout) Arrangement.Top else Arrangement.Bottom",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "horizontalAlignment",
+      "role": "value",
+      "type": "Alignment.Horizontal",
+      "default": "Alignment.Start",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "flingBehavior",
+      "role": "value",
+      "type": "FlingBehavior",
+      "default": "ScrollableDefaults.flingBehavior()",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "userScrollEnabled",
+      "role": "value",
+      "type": "Boolean",
+      "default": "true",
+      "value": {
+        "kind": "boolean",
+        "default": true
+      }
+    },
+    {
+      "name": "overscrollEffect",
+      "role": "value",
+      "type": "OverscrollEffect?",
+      "default": "rememberOverscrollEffect()",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "content",
+      "role": "callback",
+      "type": "LazyListScope.() -> Unit",
+      "required": true
+    }
+  ],
+  "doc": {
+    "modifier": "the modifier to apply to this layout.",
+    "state": "the state object to be used to control or observe the list's state.",
+    "contentPadding": "a padding around the whole content. This will add padding for the. content after it has been clipped, which is not possible via [modifier] param. You can use it to add a padding before the first item or after the last one. If you want to add a spacing between each item use [verticalArrangement].",
+    "reverseLayout": "reverse the direction of scrolling and layout. When `true`, items are laid out in the reverse order and [LazyListState.firstVisibleItemIndex] == 0 means that column is scrolled to the bottom. Note that [reverseLayout] does not change the behavior of [verticalArrangement], e.g. with [Arrangement.Top] (top) 123### (bottom) becomes (top) 321### (bottom).",
+    "verticalArrangement": "The vertical arrangement of the layout's children. This allows to add a spacing between items and specify the arrangement of the items when we have not enough of them to fill the whole minimum size.",
+    "horizontalAlignment": "the horizontal alignment applied to the items.",
+    "flingBehavior": "logic describing fling behavior.",
+    "userScrollEnabled": "whether the scrolling via the user gestures or accessibility actions is allowed. You can still scroll programmatically using the state even when it is disabled",
+    "overscrollEffect": "the [OverscrollEffect] that will be used to render overscroll for this layout. Note that the [OverscrollEffect.node] will be applied internally as well - you do not need to use Modifier.overscroll separately.",
+    "content": "a block which describes the content. Inside this block you can use methods like [LazyListScope.item] to add a single item or [LazyListScope.items] to add a list of items."
+  }
+}

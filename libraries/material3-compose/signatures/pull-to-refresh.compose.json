@@ -1,0 +1,72 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "code",
+    "platform": "compose",
+    "language": "kotlin",
+    "symbol": "androidx.compose.material3.pulltorefresh.PullToRefreshBox",
+    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/pulltorefresh/PullToRefresh.kt",
+    "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+    "extractor": "mapping-signature/kotlin@1"
+  },
+  "params": [
+    {
+      "name": "isRefreshing",
+      "role": "value",
+      "type": "Boolean",
+      "required": true,
+      "value": {
+        "kind": "boolean"
+      }
+    },
+    {
+      "name": "onRefresh",
+      "role": "callback",
+      "type": "() -> Unit",
+      "required": true
+    },
+    {
+      "name": "modifier",
+      "role": "modifier",
+      "type": "Modifier",
+      "default": "Modifier"
+    },
+    {
+      "name": "state",
+      "role": "state",
+      "type": "PullToRefreshState",
+      "default": "rememberPullToRefreshState()"
+    },
+    {
+      "name": "contentAlignment",
+      "role": "value",
+      "type": "Alignment",
+      "default": "Alignment.TopStart",
+      "value": {
+        "kind": "opaque"
+      }
+    },
+    {
+      "name": "indicator",
+      "role": "slot",
+      "type": "@Composable BoxScope.() -> Unit",
+      "default": "{ Indicator(modifier = Modifier.align(Alignment.TopCenter), isRefreshing = isRefreshing, state = state,) }"
+    },
+    {
+      "name": "content",
+      "role": "slot",
+      "type": "@Composable BoxScope.() -> Unit",
+      "required": true
+    }
+  ],
+  "doc": {
+    "isRefreshing": "whether a refresh is occurring",
+    "onRefresh": "callback invoked when the user gesture crosses the threshold, thereby requesting a refresh.",
+    "modifier": "the [Modifier] to be applied to this container",
+    "state": "the state that keeps track of distance pulled",
+    "contentAlignment": "The default alignment inside the Box.",
+    "indicator": "the indicator that will be drawn on top of the content when the user begins a pull or a refresh is occurring",
+    "content": "the content of the pull refresh container, typically a scrollable layout such as [LazyColumn] or a layout using [Modifier.verticalScroll]"
+  }
+}

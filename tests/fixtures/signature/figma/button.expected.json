@@ -1,0 +1,52 @@
+{
+  "format": "mapping-signature",
+  "formatVersion": 1,
+  "source": {
+    "kind": "design",
+    "system": "figma",
+    "id": "12:34",
+    "name": "Button",
+    "extractor": "mapping-signature/figma@1"
+  },
+  "params": [
+    {
+      "name": "Style",
+      "role": "value",
+      "type": "VARIANT",
+      "default": "Filled",
+      "value": {
+        "kind": "enum",
+        "default": "Filled",
+        "options": ["Filled", "Outlined", "Text"]
+      }
+    },
+    {
+      "name": "Disabled",
+      "id": "1:2",
+      "role": "value",
+      "type": "BOOLEAN",
+      "default": "false",
+      "value": {
+        "kind": "boolean",
+        "default": false
+      }
+    },
+    {
+      "name": "Label",
+      "id": "1:3",
+      "role": "value",
+      "type": "TEXT",
+      "default": "Button",
+      "value": {
+        "kind": "text",
+        "default": "Button"
+      }
+    },
+    {
+      "name": "Icon",
+      "id": "1:4",
+      "role": "slot",
+      "type": "INSTANCE_SWAP"
+    }
+  ]
+}

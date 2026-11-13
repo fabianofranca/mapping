@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mapping.local/spec.schema.json",
-  "title": "Mapping — especialização (formatVersion 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 e 15)",
-  "description": "Valida a estrutura. Regras entre elementos (ids únicos, allowedChildren em outra camada (a partir da formatVersion 13, também na camada do próprio dono), requiresOwner, labelField, rowLabel, default compatível, rowLabel/tags, plataformas declaradas em platforms, chaves de params e values, platforms/code a partir do formatVersion 2, sources só no formatVersion 3, values de sources só em campos enum e com destinos nas options) e, na formatVersion 4, as chaves novas só com formatVersion 4, sources com slot/ignore/path só em sistema declarado em origins (com path obrigatório lá e name obrigatório fora), exemplos com um só modo e valores compatíveis com os campos do tipo, system dos exemplos declarado em origins, par family+weight+style único em fonts, faixa de peso com o primeiro valor menor, regras de origins (o detalhe está em origins, validado pelo parseOrigins) e as conferências das migrations (to maior que from e até version, from único, a chave de campo de um passo é campo ou tabela.coluna, o lado novo existe e o lado antigo não existe mais, destinos de map-values nas options, default de fill-field compatível) só são verificadas pelo validador da app; na formatVersion 5, platforms[].repo (a formatVersion 5 é a 4 mais repo; em versão anterior é erro) também só é verificado pelo validador da app; na formatVersion 6, containers (a 6 é a 5 mais containers; em versão anterior é erro, e o id repetido é verificado pelo validador da app); na formatVersion 7, floating e appliesTo no tipo e ref como tipo de coluna de table (a 7 é a 6 mais floating, appliesTo e a coluna ref; em versão anterior é erro, verificado pelo validador da app; appliesTo não vazio, sem repetição, e um tipo só de seta não tem component nem floating); na formatVersion 8, suggestions e linkedRef em campo e coluna string (a 8 é a 7 mais suggestions e linkedRef; linkedRef aponta para um campo ref do tipo ou uma coluna ref da table; em versão anterior ou em outro tipo é erro, verificado pelo validador da app; lista não vazia, até 200 textos únicos, não vazios e sem espaço nas pontas; não restringe o valor); na formatVersion 9, variants na entrada de code (a 9 é a 8 mais variants; em versão anterior é erro; field é a key de um campo enum do tipo no nível de cima, cada chave de cases é uma das options dele, o caso não é vazio e params e values dos casos seguem as regras dos da base, tudo verificado pelo validador da app); na formatVersion 10, notices no tipo, no campo e na coluna de table (a 10 é a 9 mais notices; em versão anterior é erro, verificado pelo validador da app; dois avisos com o mesmo kind e a mesma message na lista são erro, o que o JSON Schema não expressa; o aviso só informa); na formatVersion 11, a cláusula { layer, groups } em allowedChildren, layers[].groups, annotationTypes[].groups, childRoles, childRolesLabel, docRepos na raiz e o doc como objeto { repo, path } (a 11 é a 10 mais esses recursos; em versão anterior é erro; a camada da cláusula existe e, antes da formatVersion 13, não é a do próprio dono, os grupos existem na camada da cláusula, requiresOwner é conferido no conjunto resolvido dos filhos, ids de grupo únicos na camada, grupos do tipo só da própria camada, childRoles só em tipo com allowedChildren e childRolesLabel só com childRoles, ids de papel únicos no tipo, ids de docRepos únicos, o repo do doc existe em docRepos e urlTemplate com {path}, tudo verificado pelo validador da app); na formatVersion 12, os passos de migração de papel rename-role, remove-role e set-role (a 12 é a 11 mais esses passos; em versão anterior é erro; type é um tipo desta versão, com childRoles em rename-role e set-role; to e role de set-role são papéis do tipo, from de rename-role e role de remove-role não são mais; childType de set-role só tem o formato conferido; tudo verificado pelo validador da app); na formatVersion 13, allowedChildren aceita a cláusula { layer } da camada do próprio dono e o id de um tipo da mesma camada, inclusive o próprio tipo (a 13 é a 12 mais isso; em versão anterior é erro; verificado pelo validador da app); na formatVersion 14, accepts.annotations em campo e coluna ref (a 14 é a 13 mais isso; em versão anterior é erro; os itens usam a sintaxe do allowedChildren e camada, grupo e tipo precisam existir na especialização, verificado pelo validador da app); na formatVersion 15, structural no tipo (em versão anterior é erro; structural: true não pode ter component, verificado pelo validador da app) e origins[].kind (tree ou measured; em versão anterior é erro; a origem measured só tem system, kind, name e booleans, verificado pelo validador da app); veja SPEC-FORMAT.md.",
+  "title": "Mapping — especialização (formatVersion 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 e 16)",
+  "description": "Valida a estrutura. Regras entre elementos (ids únicos, allowedChildren em outra camada (a partir da formatVersion 13, também na camada do próprio dono), requiresOwner, labelField, rowLabel, default compatível, rowLabel/tags, plataformas declaradas em platforms, chaves de params e values, platforms/code a partir do formatVersion 2, sources só no formatVersion 3, values de sources só em campos enum e com destinos nas options) e, na formatVersion 4, as chaves novas só com formatVersion 4, sources com slot/ignore/path só em sistema declarado em origins (com path obrigatório lá e name obrigatório fora), exemplos com um só modo e valores compatíveis com os campos do tipo, system dos exemplos declarado em origins, par family+weight+style único em fonts, faixa de peso com o primeiro valor menor, regras de origins (o detalhe está em origins, validado pelo parseOrigins) e as conferências das migrations (to maior que from e até version, from único, a chave de campo de um passo é campo ou tabela.coluna, o lado novo existe e o lado antigo não existe mais, destinos de map-values nas options, default de fill-field compatível) só são verificadas pelo validador da app; na formatVersion 5, platforms[].repo (a formatVersion 5 é a 4 mais repo; em versão anterior é erro) também só é verificado pelo validador da app; na formatVersion 6, containers (a 6 é a 5 mais containers; em versão anterior é erro, e o id repetido é verificado pelo validador da app); na formatVersion 7, floating e appliesTo no tipo e ref como tipo de coluna de table (a 7 é a 6 mais floating, appliesTo e a coluna ref; em versão anterior é erro, verificado pelo validador da app; appliesTo não vazio, sem repetição, e um tipo só de seta não tem component nem floating); na formatVersion 8, suggestions e linkedRef em campo e coluna string (a 8 é a 7 mais suggestions e linkedRef; linkedRef aponta para um campo ref do tipo ou uma coluna ref da table; em versão anterior ou em outro tipo é erro, verificado pelo validador da app; lista não vazia, até 200 textos únicos, não vazios e sem espaço nas pontas; não restringe o valor); na formatVersion 9, variants na entrada de code (a 9 é a 8 mais variants; em versão anterior é erro; field é a key de um campo enum do tipo no nível de cima, cada chave de cases é uma das options dele, o caso não é vazio e params e values dos casos seguem as regras dos da base, tudo verificado pelo validador da app); na formatVersion 10, notices no tipo, no campo e na coluna de table (a 10 é a 9 mais notices; em versão anterior é erro, verificado pelo validador da app; dois avisos com o mesmo kind e a mesma message na lista são erro, o que o JSON Schema não expressa; o aviso só informa); na formatVersion 11, a cláusula { layer, groups } em allowedChildren, layers[].groups, annotationTypes[].groups, childRoles, childRolesLabel, docRepos na raiz e o doc como objeto { repo, path } (a 11 é a 10 mais esses recursos; em versão anterior é erro; a camada da cláusula existe e, antes da formatVersion 13, não é a do próprio dono, os grupos existem na camada da cláusula, requiresOwner é conferido no conjunto resolvido dos filhos, ids de grupo únicos na camada, grupos do tipo só da própria camada, childRoles só em tipo com allowedChildren e childRolesLabel só com childRoles, ids de papel únicos no tipo, ids de docRepos únicos, o repo do doc existe em docRepos e urlTemplate com {path}, tudo verificado pelo validador da app); na formatVersion 12, os passos de migração de papel rename-role, remove-role e set-role (a 12 é a 11 mais esses passos; em versão anterior é erro; type é um tipo desta versão, com childRoles em rename-role e set-role; to e role de set-role são papéis do tipo, from de rename-role e role de remove-role não são mais; childType de set-role só tem o formato conferido; tudo verificado pelo validador da app); na formatVersion 13, allowedChildren aceita a cláusula { layer } da camada do próprio dono e o id de um tipo da mesma camada, inclusive o próprio tipo (a 13 é a 12 mais isso; em versão anterior é erro; verificado pelo validador da app); na formatVersion 14, accepts.annotations em campo e coluna ref (a 14 é a 13 mais isso; em versão anterior é erro; os itens usam a sintaxe do allowedChildren e camada, grupo e tipo precisam existir na especialização, verificado pelo validador da app); na formatVersion 15, structural no tipo (em versão anterior é erro; structural: true não pode ter component, verificado pelo validador da app) e origins[].kind (tree ou measured; em versão anterior é erro; a origem measured só tem system, kind, name e booleans, verificado pelo validador da app); na formatVersion 16, fieldModels na raiz e signature, ignore, calls e formats no code (e no caso de variants) e signature nas sources do tipo (em versão anterior é erro; o caminho e o posicional em params só valem na 16; o conteúdo da ficha, verificado pelo validador do pacote); veja SPEC-FORMAT.md.",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "formatVersion", "id", "name", "version", "layers"],
@@ -11,7 +11,7 @@
       "enum": ["mapping-spec", "mapeador-spec"]
     },
     "formatVersion": {
-      "enum": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+      "enum": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
     },
     "id": {
       "type": "string",
@@ -78,6 +78,16 @@
     "icons": {
       "description": "Conjunto de ícones da biblioteca (formatVersion 15): o caminho de UM arquivo .json do pacote (format mapping-icons), relativo ao arquivo da especialização, lido pelo nó icon dos componentes de formato 4.",
       "$ref": "#/$defs/jsonFile"
+    },
+    "fieldModels": {
+      "type": "object",
+      "description": "formatVersion 16: modelos de campo por id de plataforma ou system e, dentro, por tipo na fonte (texto exato, ou boolean).",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "$ref": "#/$defs/fieldModel"
+        }
+      }
     }
   },
   "$defs": {
@@ -994,7 +1004,8 @@
           "additionalProperties": {
             "type": "string",
             "minLength": 1
-          }
+          },
+          "description": "Chave do campo → nome do parâmetro. Na formatVersion 16 o valor também pode ser um caminho (colors.containerColor, o argumento containerColor da fábrica de calls.colors) ou posicional (#0)."
         },
         "values": {
           "type": "object",
@@ -1011,6 +1022,38 @@
         },
         "variants": {
           "$ref": "#/$defs/codeVariants"
+        },
+        "signature": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?![A-Za-z]:)(?!/)(?!.*(^|/)\\.{1,2}(/|$))(?!.*//)(?!.*/$)[^\\u0000-\\u001f\\u007f\\\\]+\\.json$",
+          "description": "formatVersion 16: caminho da ficha mapping-signature no pacote (signatures/<tipo>.<plataforma>.json)."
+        },
+        "ignore": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "formatVersion 16: nomes de parâmetro da ficha que ficam fora de propósito, sem aviso."
+        },
+        "calls": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "formatVersion 16: nome do parâmetro → símbolo da fábrica do argumento aninhado (ButtonDefaults.buttonColors)."
+        },
+        "formats": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\{value\\}"
+          },
+          "description": "formatVersion 16: chave do campo → molde do valor, com {value} ({value}.dp)."
         }
       }
     },
@@ -1018,7 +1061,7 @@
       "type": "object",
       "additionalProperties": false,
       "minProperties": 1,
-      "description": "formatVersion 9: o que muda neste valor da variante. symbol, path e notes substituem os da base; params e values se somam aos da base.",
+      "description": "formatVersion 9: o que muda neste valor da variante. symbol, path, notes, signature e ignore substituem os da base; params, values, calls e formats se somam aos da base, chave por chave.",
       "properties": {
         "symbol": {
           "type": "string",
@@ -1048,6 +1091,38 @@
         },
         "notes": {
           "type": "string"
+        },
+        "signature": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?![A-Za-z]:)(?!/)(?!.*(^|/)\\.{1,2}(/|$))(?!.*//)(?!.*/$)[^\\u0000-\\u001f\\u007f\\\\]+\\.json$",
+          "description": "formatVersion 16: caminho da ficha mapping-signature no pacote (signatures/<tipo>.<plataforma>.json)."
+        },
+        "ignore": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "formatVersion 16: nomes de parâmetro da ficha que ficam fora de propósito, sem aviso."
+        },
+        "calls": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "formatVersion 16: nome do parâmetro → símbolo da fábrica do argumento aninhado (ButtonDefaults.buttonColors)."
+        },
+        "formats": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\{value\\}"
+          },
+          "description": "formatVersion 16: chave do campo → molde do valor, com {value} ({value}.dp)."
         }
       }
     },
@@ -1104,6 +1179,12 @@
                 "minLength": 1
               },
               "description": "formatVersion 4, só em sistema declarado em origins."
+            },
+            "signature": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^(?![A-Za-z]:)(?!/)(?!.*(^|/)\\.{1,2}(/|$))(?!.*//)(?!.*/$)[^\\u0000-\\u001f\\u007f\\\\]+\\.json$",
+              "description": "formatVersion 16: caminho da ficha mapping-signature no pacote (signatures/<tipo>.<plataforma>.json)."
             }
           }
         },
@@ -1137,6 +1218,12 @@
                 "minLength": 1
               },
               "description": "formatVersion 4, só em sistema declarado em origins."
+            },
+            "signature": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^(?![A-Za-z]:)(?!/)(?!.*(^|/)\\.{1,2}(/|$))(?!.*//)(?!.*/$)[^\\u0000-\\u001f\\u007f\\\\]+\\.json$",
+              "description": "formatVersion 16: caminho da ficha mapping-signature no pacote (signatures/<tipo>.<plataforma>.json)."
             }
           }
         }
@@ -1655,12 +1742,16 @@
           "description": "Valor de cada campo: texto, número ou null; num campo table, a lista de linhas (objetos coluna → texto, número ou null; uma coluna ref só aceita null).",
           "additionalProperties": {
             "anyOf": [
-              { "type": ["string", "number", "null"] },
+              {
+                "type": ["string", "number", "null"]
+              },
               {
                 "type": "array",
                 "items": {
                   "type": "object",
-                  "additionalProperties": { "type": ["string", "number", "null"] }
+                  "additionalProperties": {
+                    "type": ["string", "number", "null"]
+                  }
                 }
               }
             ]
@@ -1716,6 +1807,84 @@
           "description": "De onde o aviso vem (texto livre não vazio): a página do contrato, o arquivo do código."
         }
       }
+    },
+    "fieldModel": {
+      "description": "formatVersion 16: como um tipo da fonte vira campo. Exatamente uma das quatro formas; like, o texto do format e o cruzamento com os tipos são conferidos pelo validador da app.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["like"],
+          "properties": {
+            "like": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^[^.]+\\.[^.]+$",
+              "description": "<tipo>.<campo> de um campo que já existe na biblioteca."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type"],
+          "properties": {
+            "type": {
+              "enum": ["number", "string", "enum"]
+            },
+            "options": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "format": {
+              "type": "string",
+              "pattern": "\\{value\\}",
+              "description": "Molde do valor, com {value}."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["expand"],
+          "properties": {
+            "expand": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["params"],
+              "properties": {
+                "call": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "params": {
+                  "type": "object",
+                  "minProperties": 1,
+                  "additionalProperties": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ignore"],
+          "properties": {
+            "ignore": {
+              "const": true
+            }
+          }
+        }
+      ]
     }
   }
 }

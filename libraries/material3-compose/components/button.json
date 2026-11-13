@@ -39,7 +39,30 @@
           "$token": "surface-container-low"
         },
         "cornerRadius": {
-          "$token": "corner-full"
+          "$switch": "shape",
+          "cases": {
+            "none": {
+              "$token": "corner-none"
+            },
+            "extraSmall": {
+              "$token": "corner-extra-small"
+            },
+            "small": {
+              "$token": "corner-small"
+            },
+            "medium": {
+              "$token": "corner-medium"
+            },
+            "large": {
+              "$token": "corner-large"
+            },
+            "extraLarge": {
+              "$token": "corner-extra-large"
+            }
+          },
+          "default": {
+            "$token": "corner-full"
+          }
         },
         "visible": {
           "$and": [
@@ -95,29 +118,255 @@
             "$eq": ["enabled", "false"]
           },
           "then": {
-            "$switch": "style",
+            "$switch": "disabledContainerColor",
             "cases": {
-              "outlined": "none",
-              "text": "none"
+              "primary": {
+                "$token": "primary"
+              },
+              "onPrimary": {
+                "$token": "on-primary"
+              },
+              "primaryContainer": {
+                "$token": "primary-container"
+              },
+              "onPrimaryContainer": {
+                "$token": "on-primary-container"
+              },
+              "secondary": {
+                "$token": "secondary"
+              },
+              "onSecondary": {
+                "$token": "on-secondary"
+              },
+              "secondaryContainer": {
+                "$token": "secondary-container"
+              },
+              "onSecondaryContainer": {
+                "$token": "on-secondary-container"
+              },
+              "tertiary": {
+                "$token": "tertiary"
+              },
+              "onTertiary": {
+                "$token": "on-tertiary"
+              },
+              "tertiaryContainer": {
+                "$token": "tertiary-container"
+              },
+              "onTertiaryContainer": {
+                "$token": "on-tertiary-container"
+              },
+              "error": {
+                "$token": "error"
+              },
+              "onError": {
+                "$token": "on-error"
+              },
+              "errorContainer": {
+                "$token": "error-container"
+              },
+              "onErrorContainer": {
+                "$token": "on-error-container"
+              },
+              "background": {
+                "$token": "background"
+              },
+              "onBackground": {
+                "$token": "on-background"
+              },
+              "surface": {
+                "$token": "surface"
+              },
+              "onSurface": {
+                "$token": "on-surface"
+              },
+              "surfaceVariant": {
+                "$token": "surface-variant"
+              },
+              "onSurfaceVariant": {
+                "$token": "on-surface-variant"
+              },
+              "surfaceTint": {
+                "$token": "surface-tint"
+              },
+              "inverseSurface": {
+                "$token": "inverse-surface"
+              },
+              "inverseOnSurface": {
+                "$token": "inverse-on-surface"
+              },
+              "inversePrimary": {
+                "$token": "inverse-primary"
+              },
+              "outline": {
+                "$token": "outline"
+              },
+              "outlineVariant": {
+                "$token": "outline-variant"
+              },
+              "scrim": {
+                "$token": "scrim"
+              },
+              "surfaceBright": {
+                "$token": "surface-bright"
+              },
+              "surfaceDim": {
+                "$token": "surface-dim"
+              },
+              "surfaceContainerLowest": {
+                "$token": "surface-container-lowest"
+              },
+              "surfaceContainerLow": {
+                "$token": "surface-container-low"
+              },
+              "surfaceContainer": {
+                "$token": "surface-container"
+              },
+              "surfaceContainerHigh": {
+                "$token": "surface-container-high"
+              },
+              "surfaceContainerHighest": {
+                "$token": "surface-container-highest"
+              }
             },
             "default": {
-              "$token": "on-surface"
+              "$switch": "style",
+              "cases": {
+                "outlined": "none",
+                "text": "none"
+              },
+              "default": {
+                "$token": "on-surface"
+              }
             }
           },
           "else": {
-            "$switch": "style",
+            "$switch": "containerColor",
             "cases": {
-              "filled": {
+              "primary": {
                 "$token": "primary"
               },
-              "tonal": {
+              "onPrimary": {
+                "$token": "on-primary"
+              },
+              "primaryContainer": {
+                "$token": "primary-container"
+              },
+              "onPrimaryContainer": {
+                "$token": "on-primary-container"
+              },
+              "secondary": {
+                "$token": "secondary"
+              },
+              "onSecondary": {
+                "$token": "on-secondary"
+              },
+              "secondaryContainer": {
                 "$token": "secondary-container"
               },
-              "elevated": {
+              "onSecondaryContainer": {
+                "$token": "on-secondary-container"
+              },
+              "tertiary": {
+                "$token": "tertiary"
+              },
+              "onTertiary": {
+                "$token": "on-tertiary"
+              },
+              "tertiaryContainer": {
+                "$token": "tertiary-container"
+              },
+              "onTertiaryContainer": {
+                "$token": "on-tertiary-container"
+              },
+              "error": {
+                "$token": "error"
+              },
+              "onError": {
+                "$token": "on-error"
+              },
+              "errorContainer": {
+                "$token": "error-container"
+              },
+              "onErrorContainer": {
+                "$token": "on-error-container"
+              },
+              "background": {
+                "$token": "background"
+              },
+              "onBackground": {
+                "$token": "on-background"
+              },
+              "surface": {
+                "$token": "surface"
+              },
+              "onSurface": {
+                "$token": "on-surface"
+              },
+              "surfaceVariant": {
+                "$token": "surface-variant"
+              },
+              "onSurfaceVariant": {
+                "$token": "on-surface-variant"
+              },
+              "surfaceTint": {
+                "$token": "surface-tint"
+              },
+              "inverseSurface": {
+                "$token": "inverse-surface"
+              },
+              "inverseOnSurface": {
+                "$token": "inverse-on-surface"
+              },
+              "inversePrimary": {
+                "$token": "inverse-primary"
+              },
+              "outline": {
+                "$token": "outline"
+              },
+              "outlineVariant": {
+                "$token": "outline-variant"
+              },
+              "scrim": {
+                "$token": "scrim"
+              },
+              "surfaceBright": {
+                "$token": "surface-bright"
+              },
+              "surfaceDim": {
+                "$token": "surface-dim"
+              },
+              "surfaceContainerLowest": {
+                "$token": "surface-container-lowest"
+              },
+              "surfaceContainerLow": {
                 "$token": "surface-container-low"
+              },
+              "surfaceContainer": {
+                "$token": "surface-container"
+              },
+              "surfaceContainerHigh": {
+                "$token": "surface-container-high"
+              },
+              "surfaceContainerHighest": {
+                "$token": "surface-container-highest"
               }
             },
-            "default": "none"
+            "default": {
+              "$switch": "style",
+              "cases": {
+                "filled": {
+                  "$token": "primary"
+                },
+                "tonal": {
+                  "$token": "secondary-container"
+                },
+                "elevated": {
+                  "$token": "surface-container-low"
+                }
+              },
+              "default": "none"
+            }
           }
         },
         "opacity": {
@@ -125,20 +374,49 @@
             "$eq": ["enabled", "false"]
           },
           "then": {
-            "$switch": "style",
-            "cases": {
-              "tonal": {
-                "$token": "state-disabled-container"
-              }
+            "$if": {
+              "$has": "disabledContainerColor"
             },
-            "default": {
-              "$token": "state-disabled-container-filled"
+            "then": 1,
+            "else": {
+              "$switch": "style",
+              "cases": {
+                "tonal": {
+                  "$token": "state-disabled-container"
+                }
+              },
+              "default": {
+                "$token": "state-disabled-container-filled"
+              }
             }
           },
           "else": 1
         },
         "cornerRadius": {
-          "$token": "corner-full"
+          "$switch": "shape",
+          "cases": {
+            "none": {
+              "$token": "corner-none"
+            },
+            "extraSmall": {
+              "$token": "corner-extra-small"
+            },
+            "small": {
+              "$token": "corner-small"
+            },
+            "medium": {
+              "$token": "corner-medium"
+            },
+            "large": {
+              "$token": "corner-large"
+            },
+            "extraLarge": {
+              "$token": "corner-extra-large"
+            }
+          },
+          "default": {
+            "$token": "corner-full"
+          }
         },
         "shadow": [
           {
@@ -266,7 +544,30 @@
         "name": "contorno",
         "fill": "none",
         "cornerRadius": {
-          "$token": "corner-full"
+          "$switch": "shape",
+          "cases": {
+            "none": {
+              "$token": "corner-none"
+            },
+            "extraSmall": {
+              "$token": "corner-extra-small"
+            },
+            "small": {
+              "$token": "corner-small"
+            },
+            "medium": {
+              "$token": "corner-medium"
+            },
+            "large": {
+              "$token": "corner-large"
+            },
+            "extraLarge": {
+              "$token": "corner-extra-large"
+            }
+          },
+          "default": {
+            "$token": "corner-full"
+          }
         },
         "visible": {
           "$eq": ["style", "outlined"]
@@ -323,7 +624,30 @@
           "default": 0
         },
         "cornerRadius": {
-          "$token": "corner-full"
+          "$switch": "shape",
+          "cases": {
+            "none": {
+              "$token": "corner-none"
+            },
+            "extraSmall": {
+              "$token": "corner-extra-small"
+            },
+            "small": {
+              "$token": "corner-small"
+            },
+            "medium": {
+              "$token": "corner-medium"
+            },
+            "large": {
+              "$token": "corner-large"
+            },
+            "extraLarge": {
+              "$token": "corner-extra-large"
+            }
+          },
+          "default": {
+            "$token": "corner-full"
+          }
         },
         "visible": {
           "$and": [
@@ -355,27 +679,83 @@
           "gap": 8,
           "padding": {
             "$if": {
-              "$has": "icon"
+              "$or": [
+                {
+                  "$has": "horizontal"
+                },
+                {
+                  "$has": "vertical"
+                }
+              ]
             },
-            "then": {
-              "$if": {
-                "$eq": ["style", "text"]
-              },
-              "then": [8, 16, 8, 12],
-              "else": [8, 24, 8, 16]
-            },
+            "then": 0,
             "else": {
               "$if": {
-                "$eq": ["style", "text"]
+                "$has": "icon"
               },
-              "then": [8, 12],
-              "else": [8, 24]
+              "then": {
+                "$if": {
+                  "$eq": ["style", "text"]
+                },
+                "then": [8, 16, 8, 12],
+                "else": [8, 24, 8, 16]
+              },
+              "else": {
+                "$if": {
+                  "$eq": ["style", "text"]
+                },
+                "then": [8, 12],
+                "else": [8, 24]
+              }
             }
           },
           "align": "center",
           "justify": "center"
         },
         "children": [
+          {
+            "type": "frame",
+            "name": "recuo inicial",
+            "visible": {
+              "$or": [
+                {
+                  "$has": "horizontal"
+                },
+                {
+                  "$has": "vertical"
+                }
+              ]
+            },
+            "width": {
+              "$max": [
+                0,
+                {
+                  "$sub": [
+                    {
+                      "$field": "horizontal",
+                      "default": 24
+                    },
+                    8
+                  ]
+                }
+              ]
+            },
+            "height": {
+              "$add": [
+                {
+                  "$mul": [
+                    {
+                      "$field": "vertical",
+                      "default": 8
+                    },
+                    2
+                  ]
+                },
+                24
+              ]
+            },
+            "children": []
+          },
           {
             "type": "icon",
             "name": {
@@ -557,37 +937,263 @@
                 "$eq": ["enabled", "false"]
               },
               "then": {
-                "$switch": "style",
+                "$switch": "disabledContentColor",
                 "cases": {
-                  "tonal": {
+                  "primary": {
+                    "$token": "primary"
+                  },
+                  "onPrimary": {
+                    "$token": "on-primary"
+                  },
+                  "primaryContainer": {
+                    "$token": "primary-container"
+                  },
+                  "onPrimaryContainer": {
+                    "$token": "on-primary-container"
+                  },
+                  "secondary": {
+                    "$token": "secondary"
+                  },
+                  "onSecondary": {
+                    "$token": "on-secondary"
+                  },
+                  "secondaryContainer": {
+                    "$token": "secondary-container"
+                  },
+                  "onSecondaryContainer": {
+                    "$token": "on-secondary-container"
+                  },
+                  "tertiary": {
+                    "$token": "tertiary"
+                  },
+                  "onTertiary": {
+                    "$token": "on-tertiary"
+                  },
+                  "tertiaryContainer": {
+                    "$token": "tertiary-container"
+                  },
+                  "onTertiaryContainer": {
+                    "$token": "on-tertiary-container"
+                  },
+                  "error": {
+                    "$token": "error"
+                  },
+                  "onError": {
+                    "$token": "on-error"
+                  },
+                  "errorContainer": {
+                    "$token": "error-container"
+                  },
+                  "onErrorContainer": {
+                    "$token": "on-error-container"
+                  },
+                  "background": {
+                    "$token": "background"
+                  },
+                  "onBackground": {
+                    "$token": "on-background"
+                  },
+                  "surface": {
+                    "$token": "surface"
+                  },
+                  "onSurface": {
                     "$token": "on-surface"
+                  },
+                  "surfaceVariant": {
+                    "$token": "surface-variant"
+                  },
+                  "onSurfaceVariant": {
+                    "$token": "on-surface-variant"
+                  },
+                  "surfaceTint": {
+                    "$token": "surface-tint"
+                  },
+                  "inverseSurface": {
+                    "$token": "inverse-surface"
+                  },
+                  "inverseOnSurface": {
+                    "$token": "inverse-on-surface"
+                  },
+                  "inversePrimary": {
+                    "$token": "inverse-primary"
+                  },
+                  "outline": {
+                    "$token": "outline"
+                  },
+                  "outlineVariant": {
+                    "$token": "outline-variant"
+                  },
+                  "scrim": {
+                    "$token": "scrim"
+                  },
+                  "surfaceBright": {
+                    "$token": "surface-bright"
+                  },
+                  "surfaceDim": {
+                    "$token": "surface-dim"
+                  },
+                  "surfaceContainerLowest": {
+                    "$token": "surface-container-lowest"
+                  },
+                  "surfaceContainerLow": {
+                    "$token": "surface-container-low"
+                  },
+                  "surfaceContainer": {
+                    "$token": "surface-container"
+                  },
+                  "surfaceContainerHigh": {
+                    "$token": "surface-container-high"
+                  },
+                  "surfaceContainerHighest": {
+                    "$token": "surface-container-highest"
                   }
                 },
                 "default": {
-                  "$token": "on-surface-variant"
+                  "$switch": "style",
+                  "cases": {
+                    "tonal": {
+                      "$token": "on-surface"
+                    }
+                  },
+                  "default": {
+                    "$token": "on-surface-variant"
+                  }
                 }
               },
               "else": {
-                "$switch": "style",
+                "$switch": "contentColor",
                 "cases": {
-                  "filled": {
+                  "primary": {
+                    "$token": "primary"
+                  },
+                  "onPrimary": {
                     "$token": "on-primary"
                   },
-                  "tonal": {
+                  "primaryContainer": {
+                    "$token": "primary-container"
+                  },
+                  "onPrimaryContainer": {
+                    "$token": "on-primary-container"
+                  },
+                  "secondary": {
+                    "$token": "secondary"
+                  },
+                  "onSecondary": {
+                    "$token": "on-secondary"
+                  },
+                  "secondaryContainer": {
+                    "$token": "secondary-container"
+                  },
+                  "onSecondaryContainer": {
                     "$token": "on-secondary-container"
                   },
-                  "outlined": {
+                  "tertiary": {
+                    "$token": "tertiary"
+                  },
+                  "onTertiary": {
+                    "$token": "on-tertiary"
+                  },
+                  "tertiaryContainer": {
+                    "$token": "tertiary-container"
+                  },
+                  "onTertiaryContainer": {
+                    "$token": "on-tertiary-container"
+                  },
+                  "error": {
+                    "$token": "error"
+                  },
+                  "onError": {
+                    "$token": "on-error"
+                  },
+                  "errorContainer": {
+                    "$token": "error-container"
+                  },
+                  "onErrorContainer": {
+                    "$token": "on-error-container"
+                  },
+                  "background": {
+                    "$token": "background"
+                  },
+                  "onBackground": {
+                    "$token": "on-background"
+                  },
+                  "surface": {
+                    "$token": "surface"
+                  },
+                  "onSurface": {
+                    "$token": "on-surface"
+                  },
+                  "surfaceVariant": {
+                    "$token": "surface-variant"
+                  },
+                  "onSurfaceVariant": {
                     "$token": "on-surface-variant"
                   },
-                  "elevated": {
-                    "$token": "primary"
+                  "surfaceTint": {
+                    "$token": "surface-tint"
                   },
-                  "text": {
-                    "$token": "primary"
+                  "inverseSurface": {
+                    "$token": "inverse-surface"
+                  },
+                  "inverseOnSurface": {
+                    "$token": "inverse-on-surface"
+                  },
+                  "inversePrimary": {
+                    "$token": "inverse-primary"
+                  },
+                  "outline": {
+                    "$token": "outline"
+                  },
+                  "outlineVariant": {
+                    "$token": "outline-variant"
+                  },
+                  "scrim": {
+                    "$token": "scrim"
+                  },
+                  "surfaceBright": {
+                    "$token": "surface-bright"
+                  },
+                  "surfaceDim": {
+                    "$token": "surface-dim"
+                  },
+                  "surfaceContainerLowest": {
+                    "$token": "surface-container-lowest"
+                  },
+                  "surfaceContainerLow": {
+                    "$token": "surface-container-low"
+                  },
+                  "surfaceContainer": {
+                    "$token": "surface-container"
+                  },
+                  "surfaceContainerHigh": {
+                    "$token": "surface-container-high"
+                  },
+                  "surfaceContainerHighest": {
+                    "$token": "surface-container-highest"
                   }
                 },
                 "default": {
-                  "$token": "on-primary"
+                  "$switch": "style",
+                  "cases": {
+                    "filled": {
+                      "$token": "on-primary"
+                    },
+                    "tonal": {
+                      "$token": "on-secondary-container"
+                    },
+                    "outlined": {
+                      "$token": "on-surface-variant"
+                    },
+                    "elevated": {
+                      "$token": "primary"
+                    },
+                    "text": {
+                      "$token": "primary"
+                    }
+                  },
+                  "default": {
+                    "$token": "on-primary"
+                  }
                 }
               }
             },
@@ -631,37 +1237,263 @@
                 "$eq": ["enabled", "false"]
               },
               "then": {
-                "$switch": "style",
+                "$switch": "disabledContentColor",
                 "cases": {
-                  "tonal": {
+                  "primary": {
+                    "$token": "primary"
+                  },
+                  "onPrimary": {
+                    "$token": "on-primary"
+                  },
+                  "primaryContainer": {
+                    "$token": "primary-container"
+                  },
+                  "onPrimaryContainer": {
+                    "$token": "on-primary-container"
+                  },
+                  "secondary": {
+                    "$token": "secondary"
+                  },
+                  "onSecondary": {
+                    "$token": "on-secondary"
+                  },
+                  "secondaryContainer": {
+                    "$token": "secondary-container"
+                  },
+                  "onSecondaryContainer": {
+                    "$token": "on-secondary-container"
+                  },
+                  "tertiary": {
+                    "$token": "tertiary"
+                  },
+                  "onTertiary": {
+                    "$token": "on-tertiary"
+                  },
+                  "tertiaryContainer": {
+                    "$token": "tertiary-container"
+                  },
+                  "onTertiaryContainer": {
+                    "$token": "on-tertiary-container"
+                  },
+                  "error": {
+                    "$token": "error"
+                  },
+                  "onError": {
+                    "$token": "on-error"
+                  },
+                  "errorContainer": {
+                    "$token": "error-container"
+                  },
+                  "onErrorContainer": {
+                    "$token": "on-error-container"
+                  },
+                  "background": {
+                    "$token": "background"
+                  },
+                  "onBackground": {
+                    "$token": "on-background"
+                  },
+                  "surface": {
+                    "$token": "surface"
+                  },
+                  "onSurface": {
                     "$token": "on-surface"
+                  },
+                  "surfaceVariant": {
+                    "$token": "surface-variant"
+                  },
+                  "onSurfaceVariant": {
+                    "$token": "on-surface-variant"
+                  },
+                  "surfaceTint": {
+                    "$token": "surface-tint"
+                  },
+                  "inverseSurface": {
+                    "$token": "inverse-surface"
+                  },
+                  "inverseOnSurface": {
+                    "$token": "inverse-on-surface"
+                  },
+                  "inversePrimary": {
+                    "$token": "inverse-primary"
+                  },
+                  "outline": {
+                    "$token": "outline"
+                  },
+                  "outlineVariant": {
+                    "$token": "outline-variant"
+                  },
+                  "scrim": {
+                    "$token": "scrim"
+                  },
+                  "surfaceBright": {
+                    "$token": "surface-bright"
+                  },
+                  "surfaceDim": {
+                    "$token": "surface-dim"
+                  },
+                  "surfaceContainerLowest": {
+                    "$token": "surface-container-lowest"
+                  },
+                  "surfaceContainerLow": {
+                    "$token": "surface-container-low"
+                  },
+                  "surfaceContainer": {
+                    "$token": "surface-container"
+                  },
+                  "surfaceContainerHigh": {
+                    "$token": "surface-container-high"
+                  },
+                  "surfaceContainerHighest": {
+                    "$token": "surface-container-highest"
                   }
                 },
                 "default": {
-                  "$token": "on-surface-variant"
+                  "$switch": "style",
+                  "cases": {
+                    "tonal": {
+                      "$token": "on-surface"
+                    }
+                  },
+                  "default": {
+                    "$token": "on-surface-variant"
+                  }
                 }
               },
               "else": {
-                "$switch": "style",
+                "$switch": "contentColor",
                 "cases": {
-                  "filled": {
+                  "primary": {
+                    "$token": "primary"
+                  },
+                  "onPrimary": {
                     "$token": "on-primary"
                   },
-                  "tonal": {
+                  "primaryContainer": {
+                    "$token": "primary-container"
+                  },
+                  "onPrimaryContainer": {
+                    "$token": "on-primary-container"
+                  },
+                  "secondary": {
+                    "$token": "secondary"
+                  },
+                  "onSecondary": {
+                    "$token": "on-secondary"
+                  },
+                  "secondaryContainer": {
+                    "$token": "secondary-container"
+                  },
+                  "onSecondaryContainer": {
                     "$token": "on-secondary-container"
                   },
-                  "outlined": {
+                  "tertiary": {
+                    "$token": "tertiary"
+                  },
+                  "onTertiary": {
+                    "$token": "on-tertiary"
+                  },
+                  "tertiaryContainer": {
+                    "$token": "tertiary-container"
+                  },
+                  "onTertiaryContainer": {
+                    "$token": "on-tertiary-container"
+                  },
+                  "error": {
+                    "$token": "error"
+                  },
+                  "onError": {
+                    "$token": "on-error"
+                  },
+                  "errorContainer": {
+                    "$token": "error-container"
+                  },
+                  "onErrorContainer": {
+                    "$token": "on-error-container"
+                  },
+                  "background": {
+                    "$token": "background"
+                  },
+                  "onBackground": {
+                    "$token": "on-background"
+                  },
+                  "surface": {
+                    "$token": "surface"
+                  },
+                  "onSurface": {
+                    "$token": "on-surface"
+                  },
+                  "surfaceVariant": {
+                    "$token": "surface-variant"
+                  },
+                  "onSurfaceVariant": {
                     "$token": "on-surface-variant"
                   },
-                  "elevated": {
-                    "$token": "primary"
+                  "surfaceTint": {
+                    "$token": "surface-tint"
                   },
-                  "text": {
-                    "$token": "primary"
+                  "inverseSurface": {
+                    "$token": "inverse-surface"
+                  },
+                  "inverseOnSurface": {
+                    "$token": "inverse-on-surface"
+                  },
+                  "inversePrimary": {
+                    "$token": "inverse-primary"
+                  },
+                  "outline": {
+                    "$token": "outline"
+                  },
+                  "outlineVariant": {
+                    "$token": "outline-variant"
+                  },
+                  "scrim": {
+                    "$token": "scrim"
+                  },
+                  "surfaceBright": {
+                    "$token": "surface-bright"
+                  },
+                  "surfaceDim": {
+                    "$token": "surface-dim"
+                  },
+                  "surfaceContainerLowest": {
+                    "$token": "surface-container-lowest"
+                  },
+                  "surfaceContainerLow": {
+                    "$token": "surface-container-low"
+                  },
+                  "surfaceContainer": {
+                    "$token": "surface-container"
+                  },
+                  "surfaceContainerHigh": {
+                    "$token": "surface-container-high"
+                  },
+                  "surfaceContainerHighest": {
+                    "$token": "surface-container-highest"
                   }
                 },
                 "default": {
-                  "$token": "on-primary"
+                  "$switch": "style",
+                  "cases": {
+                    "filled": {
+                      "$token": "on-primary"
+                    },
+                    "tonal": {
+                      "$token": "on-secondary-container"
+                    },
+                    "outlined": {
+                      "$token": "on-surface-variant"
+                    },
+                    "elevated": {
+                      "$token": "primary"
+                    },
+                    "text": {
+                      "$token": "primary"
+                    }
+                  },
+                  "default": {
+                    "$token": "on-primary"
+                  }
                 }
               }
             },
@@ -702,6 +1534,49 @@
                 }
               ]
             }
+          },
+          {
+            "type": "frame",
+            "name": "recuo final",
+            "visible": {
+              "$or": [
+                {
+                  "$has": "horizontal"
+                },
+                {
+                  "$has": "vertical"
+                }
+              ]
+            },
+            "width": {
+              "$max": [
+                0,
+                {
+                  "$sub": [
+                    {
+                      "$field": "horizontal",
+                      "default": 24
+                    },
+                    8
+                  ]
+                }
+              ]
+            },
+            "height": {
+              "$add": [
+                {
+                  "$mul": [
+                    {
+                      "$field": "vertical",
+                      "default": 8
+                    },
+                    2
+                  ]
+                },
+                24
+              ]
+            },
+            "children": []
           }
         ]
       }
