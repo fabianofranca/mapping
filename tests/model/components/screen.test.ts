@@ -60,10 +60,16 @@ describe('screen', () => {
     expect('direction' in parseScreen(JSON.parse(serializeScreen(SAMPLE_SCREEN)))).toBe(
       false,
     );
-    const ltr = parseScreen({ ...JSON.parse(serializeScreen(SAMPLE_SCREEN)), direction: 'ltr' });
+    const ltr = parseScreen({
+      ...JSON.parse(serializeScreen(SAMPLE_SCREEN)),
+      direction: 'ltr',
+    });
     expect('direction' in ltr).toBe(false);
     // valor inválido: ignorado, como `background` e `name` (a tela relida segue ltr)
-    const bad = parseScreen({ ...JSON.parse(serializeScreen(SAMPLE_SCREEN)), direction: 'up' });
+    const bad = parseScreen({
+      ...JSON.parse(serializeScreen(SAMPLE_SCREEN)),
+      direction: 'up',
+    });
     expect('direction' in bad).toBe(false);
   });
 

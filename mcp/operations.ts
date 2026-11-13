@@ -122,13 +122,12 @@ const drawingModeField = z
     'Modo do desenho (`[a-z0-9][a-z0-9-]*`, ex: `dark`): escolhe os valores dos `tokens` das especializações. `null` volta a seguir o do projeto; ausente não muda.',
   );
 
-const directionField = z
-  .enum(READING_DIRECTIONS)
-  .nullable()
-  .optional()
-  .describe(
-    '`direction`: direção de leitura que fixa o container (`ltr`, `rtl`; `null` segue o projeto; ausente não muda). Em `rtl` as fileiras, as grades e as posições `start`/`end` do componente espelham.',
-  );
+/** `ltr`/`rtl`, `null` (remove) ou ausente (não muda): o campo comum do container e do projeto. */
+const readingDirectionField = z.enum(READING_DIRECTIONS).nullable().optional();
+
+const directionField = readingDirectionField.describe(
+  '`direction`: direção de leitura que fixa o container (`ltr`, `rtl`; `null` segue o projeto; ausente não muda). Em `rtl` as fileiras, as grades e as posições `start`/`end` do componente espelham.',
+);
 
 const densityField = z
   .number()
@@ -208,13 +207,9 @@ export const operationSchema = z.discriminatedUnion('op', [
       .describe(
         'Modo do desenho do projeto (`[a-z0-9][a-z0-9-]*`, ex: `dark`): escolhe os valores dos `tokens` das especializações (não é o tema claro/escuro da app). `null` remove (volta ao primeiro modo de cada especialização); ausente não muda.',
       ),
-    direction: z
-      .enum(['ltr', 'rtl'])
-      .nullable()
-      .optional()
-      .describe(
-        'Direção de leitura do projeto (`ltr`, `rtl`): em `rtl` as fileiras, as grades, as posições `start`/`end` e os ícones `mirror` dos componentes espelham, nos containers que não fixam a sua. `null` remove (volta a `ltr`); ausente não muda.',
-      ),
+    direction: readingDirectionField.describe(
+      'Direção de leitura do projeto (`ltr`, `rtl`): em `rtl` as fileiras, as grades, as posições `start`/`end` e os ícones `mirror` dos componentes espelham, nos containers que não fixam a sua. `null` remove (volta a `ltr`); ausente não muda.',
+    ),
   }),
   // Repositórios por plataforma
   z.object({

@@ -513,7 +513,9 @@ describe('plan_changes: prova de desenho × direção', () => {
   it('um lote só mudando a direção do container prova o componente que estoura só em rtl', async () => {
     const project = await seedDir();
     const container = project.containers.find((c) => c.file === null)!;
-    const same = await plan(seeded, [{ op: 'update_container', container: container.id }]);
+    const same = await plan(seeded, [
+      { op: 'update_container', container: container.id },
+    ]);
     expect(overflows(same)).toEqual([]);
     const rtl = await plan(seeded, [
       { op: 'update_container', container: container.id, direction: 'rtl' },

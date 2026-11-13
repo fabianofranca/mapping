@@ -49,7 +49,8 @@ const drawingCaches = new WeakMap<FontBook, DrawingCache>();
 /** O espaço mudou o que vale nele para o desenho: modo, densidade ou direção de leitura efetivos. */
 function spaceChanged(before: Project, after: Project, containerId: string | null) {
   return (
-    effectiveDrawingMode(before, containerId) !== effectiveDrawingMode(after, containerId) ||
+    effectiveDrawingMode(before, containerId) !==
+      effectiveDrawingMode(after, containerId) ||
     effectiveDensity(before, containerId) !== effectiveDensity(after, containerId) ||
     effectiveDirection(before, containerId) !== effectiveDirection(after, containerId)
   );
