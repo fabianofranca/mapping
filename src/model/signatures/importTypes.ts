@@ -29,7 +29,11 @@ export interface PlanSignatureImportOptions {
 }
 
 export type ImportErrorCode =
-  'type-not-found' | 'platform-not-declared' | 'signature-mismatch' | 'variant-not-found';
+  | 'type-not-found'
+  | 'platform-not-declared'
+  | 'signature-mismatch'
+  | 'variant-not-found'
+  | 'spec-version';
 
 /** Como o parâmetro ficou ligado ao campo: já citado, pelo nome ou campo novo (decisão 7). */
 export type ImportLinkVia = 'params' | 'name' | 'new';

@@ -11,7 +11,14 @@ import {
   type EnumTable,
   type Range,
 } from '../paramList';
-import { errorAtToken, isPunct, joinTokens, topLevel, type TokenStream } from '../tokens';
+import {
+  errorAtToken,
+  isPunct,
+  joinTokens,
+  topLevel,
+  unquoteName,
+  type TokenStream,
+} from '../tokens';
 import { valueFor } from './literals';
 
 // A lista de parâmetros de uma função: separa por vírgulas no nível de cima (parênteses, chaves,
@@ -135,7 +142,7 @@ function declare(stream: TokenStream, range: Range): Declared {
     throw errorAtToken(stream, eq, `parâmetro "${name.text}" sem valor depois do "="`);
   }
   const defaultRange = eq === undefined ? undefined : { from: eq + 1, to: range.to };
-  return { range, annotations, vararg, name: name.text, type, defaultRange };
+  return { range, annotations, vararg, name: unquoteName(name.text), type, defaultRange };
 }
 
 function typeText(stream: TokenStream, d: Declared): string {

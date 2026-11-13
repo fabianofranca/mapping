@@ -762,3 +762,10 @@ fun Foo(s: ToggleState = ToggleState.On, t: OtherState) {}
     expect(sig.params[1]?.role).toBe('state');
   });
 });
+
+describe('CL2 R-3: nome de parâmetro com crases', () => {
+  it('`object`: String vira o parâmetro object (sem as crases), como o nome de função', () => {
+    const sig = extractJson(composable('`object`: String, label: String'), 'Foo');
+    expect(sig.params.map((p) => p.name)).toEqual(['object', 'label']);
+  });
+});

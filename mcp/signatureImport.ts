@@ -19,12 +19,13 @@ type Json = Record<string, unknown>;
 // especialização já importada. Somente leitura: não grava nada (quem grava é o agente). O servidor
 // só lê JSON; um `signatureFile` que não é `.json` é recusado sem ser aberto.
 
-/** Os erros do importador viram os códigos do servidor, com o mesmo nome. */
+/** Os erros do importador viram os códigos do servidor, com o mesmo nome (a spec anterior à 16 é `invalid-spec`). */
 const CODES = {
   'type-not-found': 'type-not-found',
   'platform-not-declared': 'platform-not-declared',
   'signature-mismatch': 'signature-mismatch',
   'variant-not-found': 'variant-not-found',
+  'spec-version': 'invalid-spec',
 } as const satisfies Record<ImportErrorCode, ToolErrorCode>;
 
 export interface PlanSignatureImportArgs {

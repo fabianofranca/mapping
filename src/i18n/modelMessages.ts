@@ -316,6 +316,18 @@ const specEnUS: { readonly [C in keyof typeof specMessages as `model.${C}`]: str
   'model.spec.fieldPathWildcard':
     'invalid path "{path}" ("[*]" is only valid in roots[].path of an origin)',
   'model.spec.ignoreRepeated': '"{prop}" repeated',
+  'model.spec.likeNotField': '"{like}" is not a field of a type in the specialization',
+  'model.spec.formatNeedsPlaceholder': 'the template must contain {placeholder}',
+  'model.spec.modelTypeInvalid': '"{value}" is invalid; use "number", "string" or "enum"',
+  'model.spec.optionsNotTextList': 'must be a list of non-empty texts',
+  'model.spec.optionsRequiredInEnum': 'required in enum',
+  'model.spec.expandParamsRequired':
+    'declare at least one parameter (name → type in the source)',
+  'model.spec.mustBeNonEmptyText': 'must be non-empty text',
+  'model.spec.modelFormRequired': 'declare a form: "like", "type", "expand" or "ignore"',
+  'model.spec.modelFormsConflict': 'use only one form: {forms}',
+  'model.spec.mustBeTrue': 'must be true',
+  'model.spec.callNotDeclared': '"{call}" is not in calls',
   'model.spec.exampleSystemUndeclared': 'system "{system}" is not declared in origins',
   'model.spec.fontRepeated': 'font "{family}" (weight {weight}, {style}) repeated',
   'model.spec.fontRepeatedNoWeight': 'font "{family}" (no weight, {style}) repeated',

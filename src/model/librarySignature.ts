@@ -131,6 +131,27 @@ class Checker {
     }
   }
 
+  /** O símbolo e o arquivo da ficha são os do `code` (ou do caso); `where` diz onde cada erro aponta. */
+  identity(
+    source: Extract<Signature['source'], { kind: 'code' }>,
+    expected: { symbol?: string | undefined; path?: string | undefined },
+    where: { symbol: string; path: string },
+  ): void {
+    const { specPath } = this.reader;
+    if (expected.symbol !== undefined && source.symbol !== expected.symbol) {
+      this.add('error', specPath, where.symbol, 'library.signatureSymbolMismatch', {
+        found: source.symbol,
+        expected: expected.symbol,
+      });
+    }
+    if (expected.path !== undefined && source.path !== expected.path) {
+      this.add('error', specPath, where.path, 'library.signaturePathMismatch', {
+        found: source.path,
+        expected: expected.path,
+      });
+    }
+  }
+
   /** A ficha do `code` é a da mesma plataforma, símbolo e arquivo, e os `params` estão nela. */
   code(
     signature: Signature,
@@ -154,18 +175,7 @@ class Checker {
         expected: platform,
       });
     }
-    if (source.symbol !== symbol) {
-      this.add('error', specPath, where, 'library.signatureSymbolMismatch', {
-        found: source.symbol,
-        expected: symbol,
-      });
-    }
-    if (path !== undefined && source.path !== path) {
-      this.add('error', specPath, where, 'library.signaturePathMismatch', {
-        found: source.path,
-        expected: path,
-      });
-    }
+    this.identity(source, { symbol, path }, { symbol: where, path: where });
     this.params(signature, at, params, models);
   }
 }
@@ -184,9 +194,17 @@ function checkCase(
   models?: ExpandModels,
 ): void {
   if (kase.signature === undefined) {
-    if (entry.signature === undefined || kase.params === undefined) return;
+    if (entry.signature === undefined) return;
     const inherited = checker.open(entry.signature, `${at}.signature`, false);
-    if (inherited !== null) checker.params(inherited, at, kase.params, models);
+    if (inherited === null) return;
+    // O símbolo e o arquivo que o caso troca têm de ser os da ficha herdada: `resolveCode` os pareia.
+    if (inherited.source.kind === 'code') {
+      checker.identity(inherited.source, kase, {
+        symbol: `${at}.symbol`,
+        path: `${at}.path`,
+      });
+    }
+    if (kase.params !== undefined) checker.params(inherited, at, kase.params, models);
     return;
   }
   const signature = checker.open(kase.signature, `${at}.signature`);

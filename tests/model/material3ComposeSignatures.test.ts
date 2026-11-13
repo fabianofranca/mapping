@@ -92,23 +92,29 @@ describe('Material 3 (Compose): as fichas de assinatura (decisão 14 da #1079)',
     expect(report.errors).toEqual([]);
   });
 
-  it('reimportar cada ficha não muda a especialização (idempotência)', () => {
-    for (const { id, variant, path } of cited) {
-      const name = `${id}${variant === undefined ? '' : `/${variant}`}`;
-      const signature = readSignature(path as string);
-      const result = planSignatureImport(spec, {
-        type: id,
-        target: { platform: 'compose' },
-        ...(variant === undefined ? {} : { variant }),
-        signature,
-        previous: signature,
-      });
-      expect(result.ok, name).toBe(true);
-      if (!result.ok) continue;
-      expect(result.plan.spec, name).toEqual(spec);
-      expect(result.plan.changes, name).toEqual([]);
-      expect(result.plan.versionBump, name).toBe(false);
-    }
+  // Um `it` por ficha: o laço único levava ~1,4 s e estourava os 5 s do teste no shard sob carga do CI (CL2, E-1).
+  it.each(
+    cited.map(({ id, variant, path }) => ({
+      name: `${id}${variant === undefined ? '' : `/${variant}`}`,
+      id,
+      variant,
+      path,
+    })),
+  )('reimportar a ficha $name não muda a especialização (idempotência)', (entry) => {
+    const { name, id, variant, path } = entry;
+    const signature = readSignature(path as string);
+    const result = planSignatureImport(spec, {
+      type: id,
+      target: { platform: 'compose' },
+      ...(variant === undefined ? {} : { variant }),
+      signature,
+      previous: signature,
+    });
+    expect(result.ok, name).toBe(true);
+    if (!result.ok) return;
+    expect(result.plan.spec, name).toEqual(spec);
+    expect(result.plan.changes, name).toEqual([]);
+    expect(result.plan.versionBump, name).toBe(false);
   });
 
   it('o fieldModels.compose traz os modelos da prova (decisão 14)', () => {

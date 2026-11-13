@@ -23,6 +23,11 @@ export interface TokenStream {
 
 const OPENERS = new Set(['(', '[', '{']);
 
+/** O nome sem as crases de Kotlin: `` `object` `` → `object`. */
+export function unquoteName(text: string): string {
+  return text.replace(/^`|`$/g, '');
+}
+
 export function isOpener(token: Token | undefined): boolean {
   return token !== undefined && token.kind === 'punct' && OPENERS.has(token.text);
 }

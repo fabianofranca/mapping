@@ -640,6 +640,24 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
     (s) => (s.tokens = { modes: ['a', 'b'], values: { x: { a: 'v', b: 1 } } }),
   ],
   ['spec.iconsPathShape', (s) => (s.icons = 3)],
+  // formatVersion 16 (`specSignature.ts`)
+  ['spec.likeNotField', v16Models({ like: 'zz.k' })],
+  ['spec.formatNeedsPlaceholder', v16Models({ type: 'number', format: 'x' })],
+  ['spec.modelTypeInvalid', v16Models({ type: 'zz' })],
+  ['spec.optionsNotTextList', v16Models({ type: 'enum', options: [] })],
+  ['spec.optionsRequiredInEnum', v16Models({ type: 'enum' })],
+  ['spec.expandParamsRequired', v16Models({ expand: { call: 'c' } })],
+  ['spec.mustBeNonEmptyText', v16Models({ expand: { call: 'c', params: { a: '' } } })],
+  ['spec.modelFormRequired', v16Models({})],
+  ['spec.modelFormsConflict', v16Models({ like: 't.k', ignore: true })],
+  ['spec.mustBeTrue', v16Models({ ignore: false })],
+  [
+    'spec.callNotDeclared',
+    (s) => {
+      v16Models({ ignore: true })(s);
+      type(s).code = { a: { symbol: 'S', params: { k: 'border.color' } } };
+    },
+  ],
   // Os textos padrão do zod, um por código que a especialização produz.
   ['spec.zod.invalid_type', (s) => (s.name = 3)],
   ['spec.zod.unrecognized_keys', (s) => (layer(s).zz = 1)],
@@ -656,6 +674,15 @@ const ZOD_CODES = [
   'spec.zod.unrecognized_keys',
   'spec.zod.too_small',
 ];
+
+/** Uma especialização v16 com o modelo de campo dado em `fieldModels.a.X` (a plataforma `a`). */
+function v16Models(model: unknown): (s: Raw) => void {
+  return (s) => {
+    s.formatVersion = 16;
+    s.platforms = [{ id: 'a', name: 'A' }];
+    s.fieldModels = { a: { X: model } };
+  };
+}
 
 function issuesOf(mutate: (s: Raw) => void): SpecIssue[] {
   const spec = base();

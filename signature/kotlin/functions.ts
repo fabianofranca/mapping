@@ -1,4 +1,4 @@
-import { isOpener, isPunct, skipAngle, type TokenStream } from '../tokens';
+import { isOpener, isPunct, skipAngle, unquoteName, type TokenStream } from '../tokens';
 import { positionOf } from '../source';
 
 // Acha as funções `fun nome(…)` de um arquivo, com as anotações que vêm antes (`@Composable`,
@@ -114,7 +114,7 @@ function readHeader(
   const open = findOpenParen(stream, funIndex);
   const name = open === undefined ? undefined : stream.tokens[open - 1];
   if (open === undefined || name?.kind !== 'ident') return undefined;
-  return { name: name.text.replace(/^`|`$/g, ''), open };
+  return { name: unquoteName(name.text), open };
 }
 
 const FUNCTIONS = new WeakMap<TokenStream, FunctionDecl[]>();

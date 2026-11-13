@@ -91,7 +91,8 @@ describe('guarda: todo problema e aviso do modelo tem código', () => {
     }
     expect(checked).toBeGreaterThan(500);
     expect(problems).toEqual([]);
-  }, 60_000);
+    // 120 s como os testes vizinhos: leva ~24 s (igual no épico sem a CL2) e estourou os 60 s no shard sobrecarregado do CI.
+  }, 120_000);
 
   it('o componente (parseComponent)', () => {
     for (const doc of [
@@ -157,7 +158,8 @@ describe('guarda: todo problema e aviso do modelo tem código', () => {
       expect(out.messages.map((m) => m.text)).toEqual([...out.warnings]);
       for (const m of out.messages) expect(isModelMessageTemplateCode(m.code)).toBe(true);
     }
-  });
+    // 120 s como os testes vizinhos: leva ~1,3 s, mas estourou os 5 s padrão no shard sobrecarregado do CI (CL2).
+  }, 120_000);
 
   it('a guarda reprova um problema sem código', () => {
     check('simulado', [{ message: 'sem código' }, { message: 'x', code: 'nao.existe' }]);
