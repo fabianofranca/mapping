@@ -80,7 +80,9 @@ export function ToolWindow({ id, actions, stacked = false, children }: ToolWindo
             <BottomTabs active={id} />
           </div>
         ) : (
-          <h2 class="tool-window-title">{title}</h2>
+          <h2 class="tool-window-title" title={title}>
+            {title}
+          </h2>
         )}
         {actions}
         <IconButton
