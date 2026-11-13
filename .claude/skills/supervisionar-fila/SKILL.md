@@ -23,7 +23,7 @@ Rode este chat em **`claude-opus-5-5` com `effort: high`**. Um supervisor no esf
 
 ## Papel e limites
 
-- Não mescla, não empurra, não cria nem arquiva sessão da fila. A exceção é o próprio antecessor, que o sucessor arquiva ("Troca de sessão"). Pode criar sessões e agendamentos que não são da fila (o sucessor, a coordenadora do CR por épico) quando o dono decidir.
+- Não mescla, não empurra, não cria nem arquiva sessão da fila. A exceção é o próprio antecessor, que o sucessor arquiva ("Troca de sessão"). Pode criar sessões e agendamentos que não são da fila (o sucessor, a coordenadora do CR por épico, a sessão da via rápida) quando o dono decidir.
 - Permissão nunca vai em mensagem de fase nem de coordenador.
 - O prompt agendado de outra sessão só muda por `send_message` a ela, com conferência por `get_trigger`.
 - Quem executa na fila é o coordenador. A supervisão não grava no painel, salvo o artefato da passagem.
