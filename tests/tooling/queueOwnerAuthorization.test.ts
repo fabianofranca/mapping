@@ -282,8 +282,10 @@ describe('AF2 — skill implementar-fila: o coordenador não repassa autorizaç�
     expect(donoParagrafo()).toMatch(
       /lista é fechada[^:]*:[^:]*\(a\)[^;]*edição de CI[^;]*, \(b\)[^;]*exceção a uma guarda/,
     );
-    expect(donoParagrafo()).not.toContain('(c)');
     expect(donoParagrafo()).not.toMatch(/três casos|os três/);
+    // a fase de um épico anterior ainda usa as letras antigas: o coordenador confere o motivo, não a letra
+    expect(donoParagrafo()).toMatch(/confira o motivo[^.]*e não a letra/);
+    expect(donoParagrafo()).toContain('(a) teto, (b) CI, (c) guarda');
     expect(donoParagrafo()).not.toContain('do `distBudget.mjs raise`, (b)');
     expect(donoParagrafo()).toContain('status="esperando dono"');
     expect(donoParagrafo()).toContain('dono no chat da fase');

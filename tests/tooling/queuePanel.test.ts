@@ -468,6 +468,9 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
     expect(teto).toMatch(/depois do commit[^\n]*antes do aviso/);
     expect(teto).toContain('Teto do `dist/index.html` subiu');
     expect(teto).toContain('acima dos limites, `bug` #<n> para o dono revisar');
+    // o número do `bug` só existe depois de aberto: o 1º commit leva a linha sem ele, e o 2º o completa antes do push
+    expect(teto).toMatch(/termina em "; acima dos limites, `bug` para o dono revisar"/);
+    expect(teto).toMatch(/segundo commit completa a linha[^\n]*só então o push/);
     expect(teto).toMatch(/sem `PushNotification`|o dono olha depois/);
     expect(teto).toContain('#1493');
     expect(teto).toMatch(/outra falha/);
@@ -578,6 +581,7 @@ describe('CI resiliente: fase, conferência e teto do dist (CR1)', () => {
     expect(teto).toContain('<código>: teto +<K> KiB acima dos limites, bug #<n>');
     expect(teto).toMatch(/#1493[^\n]*cita o `bug`|cita o `bug`[^\n]*#1493/);
     expect(teto).toContain('Teto do `dist/index.html` subiu');
+    expect(teto).toMatch(/segundo commit[^\n]*antes do push/);
     expect(teto).toContain('até 14 KiB (14.336 bytes)');
     expect(teto).toMatch(/32 KiB/);
     expect(teto).toMatch(/64 KiB/);
