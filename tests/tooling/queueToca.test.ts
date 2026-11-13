@@ -159,6 +159,12 @@ describe('painel.py — validação do toca na ficha (TA1, #1812)', () => {
     expect(run('show', dir)).toContain('fichas a refazer: #1 #3');
   });
 
+  it('o ? no meio da lista também deixa a ficha incompleta (achado da revisão)', () => {
+    etapa('#1', ficha('nenhuma', 'src/a.ts, ?'));
+    expect(motivos()[0]).toBe('#1 ficha incompleta (toca: ?)');
+    expect(run('show', dir)).toContain('fichas a refazer: #1');
+  });
+
   it('a exclusiva não passa pela validação (só o ? a deixa incompleta)', () => {
     etapa('#1', ficha('nenhuma', 'tests/**, docs/FLOW.md'), 'exclusive=sim');
     expect(motivos()[0]).toBe('#1 começa');
@@ -208,10 +214,13 @@ describe('painel.py toca "<citações>" (TA1, decisão 7)', () => {
     ]);
   });
 
-  it('? diz que a ficha não diz e sai com 1', () => {
+  it('? diz que a ficha não diz e sai com 1, sozinho ou no meio da lista', () => {
     const r = runRaw('toca', '?');
     expect(r.status).toBe(1);
     expect(r.stdout).toBe('inválida: ? — a ficha não diz\n');
+    const meio = runRaw('toca', 'src/a.ts, ?');
+    expect(meio.status).toBe(1);
+    expect(meio.stdout).toBe('inválida: ? — a ficha não diz\n');
   });
 
   it('a pasta e o documento se leem na raiz do repositório, não no diretório atual', () => {

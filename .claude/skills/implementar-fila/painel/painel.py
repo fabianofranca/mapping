@@ -1146,6 +1146,8 @@ def toca_invalid(x):
     A citação já vem normalizada e fora do filtro do que não conta. Pasta e documento existentes se leem na
     raiz do repositório (`repo_root`), nunca no diretório atual. A âncora é só de forma: a seção pode ser nova.
     """
+    if x == "?":
+        return "a ficha não diz"  # `?` no meio de uma lista (o campo todo em `?` dá só `toca`)
     p, _, anc = x.partition("#")
     if is_folder(p):
         return "pasta"
@@ -1573,11 +1575,7 @@ def cmd_slug(a):
 
 def cmd_toca(a):
     """Confere uma lista de citações do `toca=` (decisão 7 da #1812): `ok` (0) ou `inválida: … — <motivo>` (1)."""
-    cites = norm_toca(a.cites)
-    if cites == ["?"]:
-        print("inválida: ? — a ficha não diz")
-        return 1
-    bad = [(x, toca_invalid(x)) for x in cites]
+    bad = [(x, toca_invalid(x)) for x in norm_toca(a.cites)]
     bad = [(x, why) for x, why in bad if why]
     for x, why in bad:
         print(f"inválida: {x} — {why}")
@@ -1739,7 +1737,6 @@ def main(argv=None):
     except Erro as e:
         print(f"erro: {e}", file=sys.stderr)
         return 2
-    return 0
 
 
 if __name__ == "__main__":
