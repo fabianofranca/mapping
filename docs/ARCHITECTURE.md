@@ -500,16 +500,16 @@ Vale para toda imagem que entra pela app (arquivo, câmera, colar, arrastar e tr
   caso que piorou mais de 25% sem explicação é defeito. Nenhum orçamento chegou perto do limite na linha de base (o mais
   próximo é o quadro inteiro da tela de componentes no `CanvasController`: ~6,6 de 24 ms).
 - **Orçamentos do layout Flexbox e CSS Grid** (decisão 23 da #1078; `tests/canvas/renderPerformance.test.ts`, no `npm run test:perf`,
-  com `retry: 1` e o `approximateMeasurer`; nenhum orçamento de antes foi afrouxado). A grade e o aninhado (os de 4 ms) usam o
+  com `retry: 1` e o `approximateMeasurer`; nenhum orçamento de antes foi afrouxado, salvo a grade e o aninhado, recalibrados pela medição no runner, abaixo). A grade e o aninhado usam o
   `measureBudget` de `tests/support/perfReport.ts` (etapas #1698 e CL1): 10 aquecimentos, `gc` fora do tempo antes de cada amostra
   e 3 levas de 41 amostras, valendo a menor mediana entre as levas (sob disputa de CPU a fase ruim do runner cobria as 41
   amostras seguidas de uma leva só; uma regressão real sobe as três; o `gc` vem de `collectGarbage`, sem `execArgv`, que o
   `perf-app` em `vmThreads` não aceita). Medido no `test:perf` completo, em 2 CPUs com 2 processos `yes` (0 de 20 casos acima de
   4 ms, máximo 3,3 ms; com a medida de uma leva eram 3 de 20, até 7,8 ms); a tela de exemplo e o
-  quadro no `CanvasController` seguem com 3 aquecimentos e mediana de 15. **Grade com texto** (L3): um `grid` de 4 colunas e 6
-  linhas, com 24 textos de 2 linhas, instanciado e desenhado no Konva em ≤ 4 ms (o pior componente de antes; mede ~2,2 ms).
-  **Intrínseco aninhado em 3 níveis** (L4): `row` `max-content` › 4 `column` `min-content` › 3 `row` com 2 textos, em ≤ 4 ms (~2,4 ms)
-  e com no máximo uma chamada ao medidor por (texto, limite) distinto. **A tela de exemplo
+  quadro no `CanvasController` seguem com 3 aquecimentos e mediana de 15. Os tetos de 6 e 6,5 ms vêm do runner (etapa #1765: o maior valor da 1ª tentativa no CI × 1,25, arredondado ao 0,5 ms; o runner vem em duas classes de máquina). **Grade com texto** (L3): um `grid` de 4 colunas e 6
+  linhas, com 24 textos de 2 linhas, instanciado e desenhado no Konva em ≤ 6 ms (mede ~2,2 ms localmente e ~2,5–4,4 ms no CI).
+  **Intrínseco aninhado em 3 níveis** (L4): `row` `max-content` › 4 `column` `min-content` › 3 `row` com 2 textos, em ≤ 6,5 ms (~2,4 ms localmente e
+  ~2,7–5,1 ms no CI) e com no máximo uma chamada ao medidor por (texto, limite) distinto. **A tela de exemplo
   inteira no layout novo** (L6): o fixture `tests/fixtures/material3` está na `formatVersion` 4 e usa a sobreposição alinhada (`none`
   com `align`/`justify`), a `grid`, o `weight` e o `max-content` onde o Compose usa `Box`, grade, `weight` e `IntrinsicSize`; as 21
   instâncias da tela, instanciadas e desenhadas, cabem em 16 ms (~4,5 ms) e o quadro inteiro no `CanvasController` (21 desenhos

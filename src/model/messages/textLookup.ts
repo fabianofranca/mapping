@@ -1,9 +1,9 @@
 // Acha o código de uma mensagem pelo texto pt-BR que o parser montou: as entradas sem parâmetro
 // pelo texto exato; as com parâmetro por um padrão montado do modelo (o texto fixo escapado e
-// cada `{nome}` um grupo). Os parsers do componente, dos ícones e das origens (etapa #1263, MB4)
-// montam o texto uma vez e o código sai daqui, então o texto devolvido não muda. A especialização
-// usa o padrão só nos códigos de `SPEC_PATTERN_CODES` (os textos que o zod monta com o valor
-// recebido); o resto sai com o código no emissor. Sem DOM.
+// cada `{nome}` um grupo). Os parsers do componente e dos ícones (etapa #1263, MB4) montam o texto
+// uma vez e o código sai daqui, então o texto devolvido não muda. A especialização usa o padrão só
+// nos códigos de `SPEC_PATTERN_CODES` (os textos que o zod monta com o valor recebido) e as origens
+// só o texto exato; o resto sai com o código no emissor. Sem DOM.
 
 import { componentMessages } from './component';
 import { iconsFileMessages } from './icons';
@@ -74,7 +74,15 @@ export type OriginMessageCode = keyof typeof originMessages;
 
 export const componentCodeForText = textLookup<ComponentMessageCode>(componentMessages);
 export const iconsFileCodeForText = textLookup<IconsFileMessageCode>(iconsFileMessages);
-export const originCodeForText = textLookup<OriginMessageCode>(originMessages);
+/**
+ * As origens (`origin.ts`) acham o código só pelo texto exato (`patterns: []`): o texto de um
+ * problema com valor do usuário (chave, âncora, nome de exemplo, caminho) sai com o código no
+ * emissor (`codedProblem`), porque um padrão lido de volta no texto pode casar errado quando o
+ * valor traz o texto fixo do modelo (`x: y`, `a; use b`).
+ */
+export const originCodeForText = textLookup<OriginMessageCode>(originMessages, {
+  patterns: [],
+});
 
 export type SpecMessageCode = Exclude<keyof typeof specMessages, `spec.zod.${string}`>;
 
@@ -83,6 +91,11 @@ export type SpecMessageCode = Exclude<keyof typeof specMessages, `spec.zod.${str
  * recebido (as funções `error` dos enums). Os outros saem com o código no emissor
  * (`specMsg` + `addSpecIssue`) ou, se o texto é constante, pelo texto exato (`known` de
  * `issueCoding`). Mensagem nova com parâmetro em `spec.ts` sai com o código no emissor.
+ *
+ * Contrato (imposto por `tests/i18n/specMessages.test.ts`, "contrato de SPEC_PATTERN_CODES"):
+ * o modelo pt-BR de cada código tem exatamente um `{…}`, e o texto do zod é montado por
+ * `specMsg(código, { value })`, então um valor que traz o texto fixo do modelo volta inteiro em
+ * `params.value`. Código novo nesta lista entra no mesmo teste.
  */
 export const SPEC_PATTERN_CODES: readonly SpecMessageCode[] = [
   'spec.fieldTypeInvalid',
@@ -98,22 +111,7 @@ export const specCodeForText = textLookup<SpecMessageCode>(specCatalog, {
   patterns: SPEC_PATTERN_CODES,
 });
 
-/**
- * O que a leitura das origens (`origin.ts`, que devolve só o texto) diz com o texto de uma
- * mensagem do catálogo `spec`: chave desconhecida, nome repetido, caminho de campo inválido e
- * extensão inválida do caminho de pacote. O texto vem do `origin.ts`, não do arquivo do usuário,
- * então o padrão não tem falso casamento; `spec.ts` o usa só nos problemas das origens.
- */
-export const ORIGIN_SPEC_PATTERN_CODES: readonly SpecMessageCode[] = [
-  'spec.tokenKeyUnknown',
-  'spec.exampleNameRepeated',
-  'spec.fieldPathEmptySegment',
-  'spec.fieldPathMissingBracket',
-  'spec.fieldPathBadIndex',
-  'spec.fieldPathBadChar',
-  'spec.invalidExtension',
-];
-
+/** O mesmo para os textos constantes da leitura das origens que são do catálogo `spec` (só o texto exato). */
 export const originSpecCodeForText = textLookup<SpecMessageCode>(specCatalog, {
-  patterns: ORIGIN_SPEC_PATTERN_CODES,
+  patterns: [],
 });

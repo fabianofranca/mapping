@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parseSpec } from '../../../src/model';
-import { parseOrigins } from '../../../src/model/components/origin';
+import { originProblemText, parseOrigins } from '../../../src/model/components/origin';
 import { importMeasured } from '../../../src/model/components/measured';
 import type { Spec } from '../../../src/model/spec';
 
@@ -102,15 +102,17 @@ describe('origins[].kind', () => {
 
   it('kind desconhecido falha; sem kind segue tree (pede node e screen)', () => {
     const unknown = parseOrigins([{ system: 'x', kind: 'nope' }]);
-    expect(unknown.problems.join(' ')).toContain('origins[0].kind');
+    expect(unknown.problems.map(originProblemText).join(' ')).toContain(
+      'origins[0].kind',
+    );
     const tree = parseOrigins([{ system: 'x' }]);
-    expect(tree.problems.join(' ')).toContain('origins[0].node');
-    expect(tree.problems.join(' ')).toContain('origins[0].screen');
+    expect(tree.problems.map(originProblemText).join(' ')).toContain('origins[0].node');
+    expect(tree.problems.map(originProblemText).join(' ')).toContain('origins[0].screen');
   });
 
   it('measured não aceita node nem screen', () => {
     const { problems } = parseOrigins([{ ...MEASURED, node: {}, screen: {} }]);
-    expect(problems.join(' ')).toContain('origins[0].node');
+    expect(problems.map(originProblemText).join(' ')).toContain('origins[0].node');
   });
 });
 

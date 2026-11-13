@@ -5,7 +5,9 @@ import type { ModelMessage } from './modelMessage';
 /**
  * Problema da biblioteca montado pelo catálogo de mensagens (`src/model/messages/`): o `message`
  * é o texto pt-BR de sempre; `code`, `params` e `detail` seguem para a interface traduzir. O
- * `detail` é a mensagem de outro módulo que entra no `{reason}` do texto de fora.
+ * `detail` é a mensagem de outro módulo que entra no `{reason}` do texto de fora. Regra: com
+ * `detail`, `params` não leva `reason`; o texto de dentro só entra no `message` (aqui) e fica
+ * em `detail`, que a interface traduz.
  */
 export function libraryIssue(
   severity: LibraryIssue['severity'],

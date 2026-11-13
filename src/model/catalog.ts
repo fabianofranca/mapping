@@ -411,8 +411,13 @@ function parseProblem(issue: ComponentIssue | undefined): ModelMessage {
   if (issue === undefined) {
     return modelMessage('catalog.invalidComponent', {}, 'componente inválido');
   }
-  const { at, reason, detail } = issueParts(issue);
-  return modelMessage('catalog.invalidProblem', { at, reason }, `${at}${reason}`, detail);
+  const { at, reason, reasonParam, detail } = issueParts(issue);
+  return modelMessage(
+    'catalog.invalidProblem',
+    { at, ...reasonParam },
+    `${at}${reason}`,
+    detail,
+  );
 }
 
 /** Entradas por id de tipo, uma vez por catálogo (o catálogo é imutável). */
