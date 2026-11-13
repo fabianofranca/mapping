@@ -93,6 +93,14 @@ export const MODEL_ERROR_HINTS: Readonly<Partial<Record<ModelErrorCode, string>>
     'aumente `width` e `height` do `rect` até pelo menos o mínimo (cada lado, em pixels do container; no canvas, em unidades do canvas)',
   'not-fittable':
     'só uma marcação de componente com `sizing` `hug` ou por expressão (veja `get_component`) e sem marcações no slot se ajusta ao conteúdo; as demais não precisam de `fit_marking`',
+  'not-anchored':
+    'a marcação precisa de uma âncora: grave `anchor` com `update_marking` (ou `create_marking`) antes de `snap_to_anchor`',
+  'anchor-missing':
+    '`anchor.to` precisa ser uma marcação que existe (referência, id ou apelido de uma marcação do lote)',
+  'anchor-other-space':
+    'a âncora e a marcação precisam estar no mesmo espaço (o mesmo container, ou as duas no canvas): mova uma delas antes, com `update_marking` e `container`',
+  'anchor-cycle':
+    'a âncora já depende desta marcação (direta ou indiretamente): ancore em outra marcação ou tire a âncora do outro lado com `anchor: null`',
   'container-density':
     'de 0,5 a 8; 3 para uma captura 1080 px de um celular de 360 dp (pixels da imagem por unidade do componente); `null` volta a 1',
   'image-overlap':

@@ -23,7 +23,8 @@ import {
   type ComponentCatalog,
   type MarkingComponent,
 } from './componentCatalog';
-import { drawingValues } from './componentValues';
+import { anchorValues, drawingValues } from './componentValues';
+import { componentAnchorDefaults } from './components/anchor';
 import type { ModelMessage } from './modelMessage';
 import { DEFAULT_LABEL_TEXTS } from './refs';
 import { effectiveDensity, unitSpaceOf, type UnitSpace } from './density';
@@ -256,13 +257,31 @@ function overflowsOf(
   return found;
 }
 
-/** As opções do `instantiate` de uma marcação: só leva `tokens`, `provided` e `direction` quando há. */
+/** A âncora na forma que a instância lê (`$anchor.*`, em unidades); `undefined` sem âncora. */
+function instanceAnchor(
+  anchor: DrawingAnchor | undefined,
+  rect: Rect,
+  component: ComponentFile,
+  density: number,
+): InstantiateOptions['anchor'] {
+  if (anchor === undefined) return undefined;
+  return anchorValues({
+    rect,
+    anchorRect: anchor.rect,
+    side: anchor.side,
+    defaults: componentAnchorDefaults(component, density),
+    density,
+  });
+}
+
+/** As opções do `instantiate` de uma marcação: só leva `tokens`, `provided`, `direction` e `anchor` quando há. */
 function instantiateOptions(
   markingId: string,
   measure: TextMeasurer,
   tokens: ResolvedTokens | undefined,
   provided: ProvidedValues,
   direction: ReadingDirection,
+  anchor: InstantiateOptions['anchor'],
 ): InstantiateOptions {
   return {
     measure,
@@ -270,6 +289,7 @@ function instantiateOptions(
     ...(tokens === undefined ? {} : { tokens }),
     ...(provided === NO_PROVIDED ? {} : { provided }),
     ...(direction === 'rtl' ? { direction } : {}),
+    ...(anchor === undefined ? {} : { anchor }),
   };
 }
 
@@ -337,7 +357,14 @@ function draw(
     mc.component,
     values,
     box,
-    instantiateOptions(markingId, measure, tokens, provided, direction),
+    instantiateOptions(
+      markingId,
+      measure,
+      tokens,
+      provided,
+      direction,
+      instanceAnchor(anchor, rect, mc.component, space.density),
+    ),
   );
   const { messages, provides } = instantiated;
   // Com `screen` o desenho pode passar do retângulo da marcação: não há pendência "não cabe".

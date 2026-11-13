@@ -871,7 +871,9 @@ Uma marcação pode declarar outra marcação do **mesmo espaço** como **âncor
 | `side`         | `top`, `bottom`, `start`, `end` | `top`    | De que lado da âncora a marcação fica (fora dela). `start` e `end` seguem a direção efetiva. |
 | `align`        | `start`, `center`, `end`        | `center` | O alinhamento ao longo desse lado.                                                           |
 | `offset.main`  | número                          | `0`      | A distância da borda da âncora, em **unidades do componente** (negativo sobrepõe).           |
-| `offset.cross` | número                          | `0`      | O deslocamento ao longo do lado, em unidades.                                                |
+| `offset.cross` | número                          | `0`      | O deslocamento ao longo do lado, em unidades (lógico: ver abaixo).                           |
+
+O `offset.cross` é **lógico**: com `side` `top` ou `bottom`, positivo vai no sentido da leitura (para a direita em `ltr`, para a esquerda em `rtl`); com `start` ou `end`, positivo vai para baixo. O `offset.main` é sempre a distância para fora da borda da âncora.
 
 Tudo é opcional (`anchor: {}` vale os padrões). São os padrões de uma marcação que declara âncora sem dizer o lado, o alinhamento ou o deslocamento; o que a marcação diz vence. O `offset` é em **unidades** (ver "Unidades e densidade"): ao aplicar, a densidade do container o converte em pixels (`componentAnchorDefaults(arquivo, densidade)` devolve os três padrões já em pixels). Valor fora do conjunto é erro (`esperava um de: top, bottom, start, end`), chave desconhecida também; numa `formatVersion` 1 a 3 o erro é `só é permitido com formatVersion 4`, no caminho da chave (`anchor`).
 

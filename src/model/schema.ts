@@ -22,7 +22,7 @@ const id = z.string().min(1);
 const hexColor = z.string().regex(HEX_COLOR_RE);
 const finite = z.number().finite();
 const readingDirection = z.enum(READING_DIRECTIONS);
-const anchorSchema = z.object({
+export const anchorSchema = z.object({
   to: id,
   side: z.enum(ANCHOR_SIDES).optional(),
   align: z.enum(ANCHOR_ALIGNS).optional(),

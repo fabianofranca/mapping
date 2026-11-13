@@ -34,6 +34,7 @@ export * from './markings';
 export * from './arrows';
 export * from './anchors';
 export * from './anchorPlacement';
+export * from './anchorDefaults';
 export * from './multiSelection';
 // Motor dos componentes: só o que quem desenha ou mede precisa pelo índice do modelo.
 export { approximateMeasurer, type TextMeasurer } from './components/instantiate';

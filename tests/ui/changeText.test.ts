@@ -5,7 +5,10 @@ import {
   addBackgroundContainer,
   changeType,
   createArrow,
+  createMarking,
   setContainerDensity,
+  setMarkingAnchor,
+  snapToAnchor,
   setContainerDirection,
   setProjectDirection,
   setProjectDrawingMode,
@@ -237,6 +240,84 @@ describe('changeTitle e changeSummary: a direção de leitura (R2 da etapa #1096
     locale.value = 'en-US';
     expect(summaryOf(base, setContainerDirection(base, 'c1', 'rtl'), 'image')).toBe(
       'Direction: Follows the project → right to left',
+    );
+  });
+});
+
+describe('changeTitle e changeSummary: a âncora da marcação (R3 da etapa #1096)', () => {
+  beforeEach(() => {
+    locale.value = 'pt-BR';
+  });
+  const base = createMarking(
+    createMarking(
+      addBackgroundContainer(emptyProject(), {
+        id: 'c1',
+        width: 400,
+        height: 400,
+        background: '#FFFFFF',
+      }),
+      {
+        id: 'T',
+        containerId: 'c1',
+        name: 'Botão',
+        rect: { x: 100, y: 100, width: 80, height: 30 },
+      },
+    ),
+    {
+      id: 'B',
+      containerId: 'c1',
+      name: 'Dica',
+      rect: { x: 300, y: 10, width: 60, height: 20 },
+    },
+  );
+  const summaryOf = (before: typeof base, after: typeof base, field = 'anchor') => {
+    const proposal = propose(before, after);
+    const change = proposal.changes.find((c) => c.field === field);
+    if (!change) throw new Error(`sem mudança de ${field}`);
+    const names = { current: before, preview: null, proposal };
+    return `${changeTitle(names, change)}: ${changeSummary(names, change)}`;
+  };
+
+  it('ancorar mostra "Âncora: … → lado/alinhamento de <nome da âncora>"', () => {
+    const anchored = setMarkingAnchor(base, 'B', {
+      to: 'T',
+      side: 'top',
+      align: 'start',
+    });
+    expect(summaryOf(base, anchored)).toBe(
+      `Âncora: ${t('review.value.empty')} → acima/início de Botão`,
+    );
+  });
+
+  it('o que a âncora não diz aparece como "padrão" e tirar a âncora volta a vazio', () => {
+    const anchored = setMarkingAnchor(base, 'B', { to: 'T' });
+    expect(summaryOf(base, anchored)).toBe(
+      `Âncora: ${t('review.value.empty')} → padrão/padrão de Botão`,
+    );
+    expect(summaryOf(anchored, base)).toBe(
+      `Âncora: padrão/padrão de Botão → ${t('review.value.empty')}`,
+    );
+  });
+
+  it('em en-US o campo e os valores vêm de t()', () => {
+    locale.value = 'en-US';
+    const anchored = setMarkingAnchor(base, 'B', {
+      to: 'T',
+      side: 'end',
+      align: 'center',
+    });
+    expect(summaryOf(base, anchored)).toBe(
+      `Anchor: ${t('review.value.empty')} → end/center of Botão`,
+    );
+  });
+
+  it('o snap_to_anchor é a Posição de sempre, do tipo movida', () => {
+    const anchored = setMarkingAnchor(base, 'B', { to: 'T', side: 'bottom' });
+    const proposal = propose(anchored, snapToAnchor(anchored, 'B').project);
+    const rect = proposal.changes.find((c) => c.field === 'rect')!;
+    expect(changeType(rect)).toBe('moved');
+    expect(changeTitle({ current: anchored, preview: null, proposal }, rect)).toBe(
+      t('review.field.rect'),
     );
   });
 });
