@@ -4,6 +4,9 @@ import {
   approximateMeasurer,
   createMarking,
   setContainerPlacement,
+  setMarkingRect,
+  applySpecialization,
+  addContainer,
   setFieldValue,
   type NewComponentArgs,
   type Project,
@@ -13,7 +16,8 @@ import { createProjectStore, type ProjectStore } from '../../src/store/history';
 import { createProjectActions, clampToMinSize } from '../../src/store/project';
 import { SPEC_ID, componentProject, testCatalog } from '../model/componentFixtures';
 import { FIT_SPEC_ID, LONG_LABEL, fitCatalog, fitProject } from '../model/fitFixtures';
-import { marking } from '../model/fixtures';
+import { emptyProject, marking } from '../model/fixtures';
+import { catalog as m3Catalog, spec as m3Spec } from '../support/material3Adoption';
 
 const catalog = testCatalog();
 
@@ -230,6 +234,60 @@ describe('addComponent', () => {
         typeId: 'text',
       }).ok,
     ).toBe(false);
+  });
+});
+
+describe('addComponent: top-app-bar da Material 3 (TB1, decisão 1 da #1335)', () => {
+  const m3setup = () => {
+    let n = 0;
+    let p = applySpecialization(emptyProject(), m3Spec, {
+      newId: () => `TB${++n}`,
+      packageSpecName: 'material3-compose.spec.json',
+    });
+    p = addContainer(p, { id: 'I1', file: null, width: 360, height: 800 } as never);
+    const store = createProjectStore({ now: () => '2026-10-01T00:00:00.000Z' });
+    let ids = 0;
+    const actions = createProjectActions(store, {
+      newId: () => `N${++ids}`,
+      components: () => m3Catalog,
+      measure: () => approximateMeasurer,
+    });
+    store.load(p);
+    return { store, actions };
+  };
+
+  it('a Paleta cria a top-app-bar com 64 e o Row em Y 100 fica fora, irmão dela', () => {
+    const { store, actions } = m3setup();
+    const bar = actions.addComponent({
+      containerId: 'I1',
+      parentId: null,
+      specId: m3Spec.id,
+      typeId: 'top-app-bar',
+      center: { x: 180, y: 400 },
+    });
+    expect(bar.ok).toBe(true);
+    if (!bar.ok) return;
+    // A barra nasce no lugar que a Paleta pede (centro 180, 400): a altura é a que importa aqui.
+    expect(marking(current(store), bar.value).rect.height).toBe(64);
+    store.load(
+      setMarkingRect(current(store), bar.value, { x: 0, y: 0, width: 360, height: 64 }),
+    );
+    const row = actions.addComponent({
+      containerId: 'I1',
+      parentId: null,
+      specId: m3Spec.id,
+      typeId: 'row',
+      center: { x: 180, y: 400 },
+    });
+    expect(row.ok).toBe(true);
+    if (!row.ok) return;
+    // Como no R9.4: a Paleta cria e o Y se digita nos Detalhes (aqui 100, abaixo dos 64 da barra).
+    const made = marking(current(store), row.value).rect;
+    store.load(setMarkingRect(current(store), row.value, { ...made, y: 100 }));
+    const p = current(store);
+    expect(marking(p, row.value).rect.y).toBe(100);
+    expect(marking(p, row.value).parentId).toBeNull();
+    expect(marking(p, bar.value).parentId).toBeNull();
   });
 });
 

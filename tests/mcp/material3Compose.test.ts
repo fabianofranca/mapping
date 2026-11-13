@@ -14,7 +14,7 @@ import {
 } from '../../src/model';
 import { emptyProject } from '../model/fixtures';
 import { idGen, layerOf } from '../model/specFixtures';
-import { ok } from './proposalSupport';
+import { ok, propose, readProposal } from './proposalSupport';
 import {
   PNG_1X1,
   allIds,
@@ -198,5 +198,51 @@ describe('tela mapeada com a biblioteca Material 3 (Compose)', () => {
       }),
     );
     expect(base.matches.flatMap((m) => m.annotations)).toHaveLength(0);
+  });
+});
+
+describe('Top app bar sem rect: nasce com a altura do estilo (TB1, decisão 1 da #1335)', () => {
+  // A tela `TELA` tem 360 × 800. O lote vai por `propose_changes` (o mesmo lote preparado do
+  // `plan_changes`), e o retângulo da marcação nova se lê na proposta.
+  const topAppBar = (extra: Record<string, unknown> = {}, values?: unknown) => ({
+    op: 'create_marking',
+    as: '$barra',
+    container: `mapping://contatos/i/${codeOf(ids['TELA']!)}`,
+    annotation: {
+      type: 'material3-compose/top-app-bar',
+      ...(values ? { values } : {}),
+    },
+    ...extra,
+  });
+  const created = async (operation: unknown) => {
+    const proposed = await propose(mcp, 'contatos', [operation]);
+    expect(proposed.errors ?? []).toEqual([]);
+    const proposal = readProposal(
+      join(root, 'projetos', 'contatos'),
+      proposed.proposal.id,
+    );
+    const marking = proposal.changes.find(
+      (c) => c.entity === 'marking' && c.kind === 'create',
+    );
+    return (marking?.to ?? {}) as { rect?: { width: number; height: number } };
+  };
+
+  it('sem rect, o estilo small nasce com altura 64 e a largura presa aos 360 da tela', async () => {
+    const m = await created(topAppBar());
+    expect(m.rect).toMatchObject({ width: 360, height: 64 });
+  });
+
+  it.each([
+    ['medium', 112],
+    ['large', 152],
+  ])('o estilo %s nasce com altura %i', async (style, height) => {
+    const m = await created(topAppBar({}, { style }));
+    expect(m.rect).toMatchObject({ width: 360, height });
+  });
+
+  it('com rect explícito, o rect manda', async () => {
+    const rect = { x: 0, y: 700, width: 360, height: 90 };
+    const m = await created(topAppBar({ rect }));
+    expect(m.rect).toEqual(rect);
   });
 });
