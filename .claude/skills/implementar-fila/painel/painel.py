@@ -13,7 +13,12 @@ sem etapa começada e não mesclada (`exclusiva (espera a fila esvaziar)`). Come
 as outras em qualquer estado (`em andamento`, `aguardando` com `started`, `esperando dono`, `falhou`), e o motivo diz o
 estado: `exclusiva #N <status>` (`em andamento` também para a que começa no mesmo cálculo). A saída é só do dono: com a ordem
 dele escrita no chat da fila, o coordenador grava `row '#N' exclusive=` e o `log` "exclusiva #N liberada pelo dono" (decisões
-2 e 3 da #1595). Todo `.md` sob `docs/`, os `.md` da raiz (`CLAUDE.md`, `README.md`) e os `.claude/skills/*/SKILL.md` se comparam
+2 e 3 da #1595). A exclusiva na frente drena a fila (#1813): a primeira candidata pela `order`, sem `hold`, com a ficha
+completa, as dependências mescladas e que não começa neste cálculo, se for exclusiva, segura as candidatas de depois dela
+(`segurada para a exclusiva #N`, depois de `exclusiva #N <status>` e antes de `exclusiva (espera a fila esvaziar)`) até a
+última começada ser mesclada; comum na frente que espera arquivo, schema ou vaga é a primeira e não há drenagem. O `show`
+diz `drenando para a exclusiva: #N` (ou `nenhuma`) depois de `começar agora:`; nada se grava (recalculado em toda gravação).
+Todo `.md` sob `docs/`, os `.md` da raiz (`CLAUDE.md`, `README.md`) e os `.claude/skills/*/SKILL.md` se comparam
 por seção (`docs/ARCHITECTURE.md#desempenho`, `CLAUDE.md#regras-de-arquitetura`; o `docs/TESTING.md` por roteiro, `#R12`); os outros
 arquivos, inclusive os `.md` de outras pastas, contam inteiros; `slug "<título>"` imprime o slug de um `##`.
 `ciWait` (o PR cujo CI espera o coordenador, ex. `PR #7`) e `ciWaitAt` (desde quando; `ciWait=` limpa os
@@ -79,7 +84,9 @@ Grafo da fila (etapa #1761): toda gravação grava, logo depois de `vagas` e `va
 ordem onda, `rank` (`null` por último) e `order`; `estado` é `rodando`, `dono`, `arquivo`, `dep`, `exclusiva`, `segurada`, `livre`
 ou `ficha`, lido do motivo que o `slots_plan` deu à candidata. Ondas, em rodadas: a 0 tem as começadas e as que começam agora; a
 cada rodada entram as que só dependem de nós já postos (as que esperam arquivo, vaga ou a exclusiva que roda ficam na 1), e a
-exclusiva entra sozinha, a primeira pela `order`, se só houver exclusiva elegível; num ciclo, o que sobra entra junto na última.
+exclusiva da frente (a primeira pela `order`, sem `hold` e com a ficha completa) entra sozinha depois das comuns que vêm antes
+dela e antes das que ela segura (`estado` `exclusiva`, motivo `segurada para a exclusiva #N`); num ciclo, o que sobra entra
+junto na última.
 `rank` (1, 2, 3…): as `aguardando` sem `started`, menos `segurada` e `ficha`, por onda e `order`; as outras ficam `null`. Seta
 `{de, para, tipo}` (`de` segura `para`): `dep` pelo `dep=` da ficha entre nós (sem `:main` nem `meta.merged`), só a redução
 transitiva, e `arquivo` de `#N` quando o motivo é `arquivo <x> com #N` ou `schema com #N`.
@@ -227,7 +234,7 @@ class Sessao:
             # A ficha completou fases: a mudança entra na publicação, mesmo num `context`, que sozinho é quieto.
             self.touch("queue")
             self.loud = True
-        text, _, items, reasons = slots_plan(self.get("queue"), meta[0])
+        text, _, items, reasons, _ = slots_plan(self.get("queue"), meta[0])
         meta[0]["vagas"] = text
         meta[0]["vagasItens"] = items
         meta[0]["grafoNos"], meta[0]["grafoSetas"] = queue_graph(self.get("queue"), meta[0], reasons)
@@ -1048,6 +1055,7 @@ IGNORED_PREFIXES = ("changelog/", "docs/design-system/")
 IGNORED_EXACT = ("mcp/version.ts", "docs/TESTING-NUVEM.md#blocos")
 SECTION_GLOB = ".claude/skills/*/SKILL.md"  # além de todo `.md` de docs/ e da raiz: comparados por âncora (seção `##`)
 STARTED_STATUS = ("em andamento", "esperando dono", "falhou")
+EXCLUSIVE_WAITS = "exclusiva (espera a fila esvaziar)"  # a exclusiva que espera a fila esvaziar (e drena, se na frente)
 STARTS_NOW = "começa"  # o motivo da candidata que o `slots_plan` faz começar agora (o grafo a põe na onda 0)
 
 
@@ -1173,28 +1181,36 @@ def plan_block(plan, merged, done):
     return "dep " + ", ".join(miss) if miss else ""
 
 
-def exclusive_block(r, taking):
+def exclusive_block(r, taking, front=""):
     """Decisão 12: a exclusiva só começa com ninguém começado; com uma exclusiva começada, ninguém começa.
 
     Decisões 2 e 3 da #1595: a exclusiva segura a fila em qualquer estado, e o motivo diz o `status` da linha
     (`falhou`, `esperando dono`, `aguardando` com `started`); `em andamento` e a que começa no mesmo cálculo dão
-    `em andamento`.
+    `em andamento`. Decisões 3 e 4 da #1813: com a exclusiva na frente (`front`, o `#N`), as candidatas de depois dela
+    dão `segurada para a exclusiva #N`; ela mesma, e a exclusiva que não está na frente, dão `exclusiva (espera a fila
+    esvaziar)`.
     """
     for o in taking:
         if o.get("exclusive") == "sim":
             # `aguardando` sem `started` é a que começa no mesmo cálculo (entrou em `taking` agora)
             state = "em andamento" if o["status"] == "aguardando" and not o.get("started") else o["status"]
             return f"exclusiva {o['issue']} {state}"
+    if front:
+        return f"segurada para a exclusiva {front}"
     if r.get("exclusive") == "sim" and taking:
-        return "exclusiva (espera a fila esvaziar)"
+        return EXCLUSIVE_WAITS
     return ""
 
 
 def slots_plan(q, meta):
-    """(texto de meta.vagas, [issues que começam agora], pedaços do texto, motivos); decisões 4 e 5 da #1440.
+    """(texto de meta.vagas, [issues que começam agora], pedaços do texto, motivos, exclusiva na frente).
 
-    Os motivos (decisão 4 da #1761) são `{issue: (texto do motivo, #N que segura)}` por candidata; o `#N` só vem nos
-    motivos `arquivo <x> com #N` e `schema com #N`, senão é "".
+    Decisões 4 e 5 da #1440. Os motivos (decisão 4 da #1761) são `{issue: (texto do motivo, #N que segura)}` por
+    candidata; o `#N` só vem nos motivos `arquivo <x> com #N` e `schema com #N`, senão é "".
+
+    Decisão 1 da #1813: a exclusiva na frente é a primeira candidata, pela `order`, sem `hold`, com a ficha completa e
+    as dependências mescladas, que não começa neste cálculo, se for exclusiva e esperar a fila esvaziar ("" se a primeira
+    é comum, ou se não há). Recalculada a cada chamada, sem estado.
     """
     n = meta.get("paralelo") or DEFAULT_PARALELO
     merged = set(meta.get("merged", []))
@@ -1208,14 +1224,19 @@ def slots_plan(q, meta):
     now_list = []
     reasons = {}
     taking = list(started)
+    front, decided = "", False
     for r in cands:
         plan = r.get("plan", "")
         holder = ""
         why = r.get("hold") or ""
+        counts = not why
         if not why:
             why = plan_block(plan, merged, done)
+            counts = not why
         if not why:
-            why = exclusive_block(r, taking)
+            why = exclusive_block(r, taking, front)
+            if why == EXCLUSIVE_WAITS and not decided:
+                front = r["issue"]
         mine = toca_list(plan)
         if not why:
             for o in taking:
@@ -1236,11 +1257,12 @@ def slots_plan(q, meta):
                 taking.append(r)
             else:
                 why = "vagas cheias"
+        decided = decided or (counts and why != STARTS_NOW)
         parts.append(f"{r['issue']} {why}")
         reasons[r["issue"]] = (why, holder)
     if free > 0:
         parts.append("nenhuma ready elegível")
-    return " · ".join(parts), now_list, parts, reasons
+    return " · ".join(parts), now_list, parts, reasons, front
 
 
 # --- grafo da fila (etapa #1761) ---
@@ -1268,7 +1290,7 @@ def candidate_state(r, why):
         return "segurada"
     if why.startswith("ficha incompleta"):
         return "ficha"
-    if r.get("exclusive") == "sim" or why.startswith("exclusiva"):
+    if r.get("exclusive") == "sim" or why.startswith(("exclusiva", "segurada para a exclusiva")):
         return "exclusiva"
     if why.startswith("dep "):
         return "dep"
@@ -1305,8 +1327,28 @@ def reduce_deps(issue, deps, anc):
             if not any(q != p and p in anc[q] and q not in anc[p] for q in mine)]
 
 
+def eligible_exclusive(r):
+    """Exclusiva sem `hold` e com a ficha completa: a que pode ficar na frente da ordem (decisão 6 da #1813)."""
+    return (r.get("exclusive") == "sim" and not r.get("hold")
+            and not incomplete_fields(r.get("plan", "")))
+
+
+def wave_round(pending, ready):
+    """As linhas de uma rodada das ondas; `E` é a primeira exclusiva elegível entre as prontas (decisão 6 da #1813).
+
+    Entram as comuns que vêm antes de `E` na `order`, mais as comuns com `hold` ou ficha incompleta (em qualquer
+    posição); sem nenhuma delas, `E` sozinha; sem `E`, todas as comuns; sem comuns nem `E`, a primeira pronta; num ciclo,
+    o que sobra entra junto.
+    """
+    front = next((r for r in ready if eligible_exclusive(r)), None)
+    plain = [r for r in ready if r.get("exclusive") != "sim"]
+    before = [r for r in plain if front is None or r["order"] < front["order"]
+              or r.get("hold") or incomplete_fields(r.get("plan", ""))]
+    return before or ([front] if front else ready[:1]) or pending
+
+
 def assign_waves(rows, wave, deps):
-    """Decisão 6 da #1761: simulação em rodadas; `wave` já traz a onda 0 e recebe as outras."""
+    """Decisões 6 da #1761 e da #1813: simulação em rodadas; `wave` já traz a onda 0 e recebe as outras."""
     w = 0
     total = len({r["issue"] for r in rows})  # issue repetida em duas linhas conta uma vez
     while len(wave) < total:
@@ -1315,14 +1357,7 @@ def assign_waves(rows, wave, deps):
         if not pending:
             break
         ready = [r for r in pending if all(d in wave for d in deps[r["issue"]])]
-        plain = [r for r in ready if r.get("exclusive") != "sim"]
-        if plain:
-            chosen = plain
-        elif ready:
-            chosen = ready[:1]
-        else:
-            chosen = pending  # ciclo: o que sobrou entra junto e a simulação termina
-        for r in chosen:
+        for r in wave_round(pending, ready):
             wave[r["issue"]] = w
 
 
@@ -1456,9 +1491,10 @@ def cmd_show(a):
         print(f"  {st}: {sum(1 for r in q if r['status'] == st)}")
     meta = m[0] if m else {}
     print(f"atual: {meta.get('current') or '—'}")
-    vagas, agora, _, _ = slots_plan(q, meta)
+    vagas, agora, _, _, drena = slots_plan(q, meta)
     print(f"vagas: {vagas}")
     print("começar agora: " + (" ".join(agora) or "nenhuma"))
+    print(f"drenando para a exclusiva: {drena or 'nenhuma'}")
     print(f"início: {meta.get('runStart') or '—'}  atualizado: {meta.get('updatedAt', '—')}")
     print(f"reserva: {meta.get('reserve') or '—'}")
     redo = redo_rows(q)
