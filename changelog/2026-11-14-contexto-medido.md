@@ -1,4 +1,4 @@
-# Contexto do coordenador medido pelo painel — [Não lançado] (épico `epic/contexto-medido`, PR #1874, MCP sem mudança, schema v19)
+# Contexto do coordenador medido pelo painel — 2026-11-14 (épico `epic/contexto-medido`, PR #1909, MCP sem mudança, schema v19)
 
 ## Adicionado
 

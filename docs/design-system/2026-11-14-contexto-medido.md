@@ -1,4 +1,4 @@
-# Contexto do coordenador medido pelo painel — [Não lançado] (épico `epic/contexto-medido`)
+# Contexto do coordenador medido pelo painel — 2026-11-14 (épico `epic/contexto-medido`)
 
 ## Pendências
 
