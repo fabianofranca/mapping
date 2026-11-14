@@ -30,7 +30,7 @@ describe('reference field at narrow width', () => {
   });
 });
 
-// R24.14/R24.15 (finding 3.1 of #954): "(broken reference)" appeared cut ("(broken refer…") 
+// R24.14/R24.15 (finding 3.1 of #954): "(broken reference)" appeared cut ("(broken refer…")
 // at 1280 and 900 px. The broken reference text wraps to a new line instead of being cut.
 describe('broken reference cell', () => {
   it('the text wraps to a new line instead of being cut with an ellipsis', () => {

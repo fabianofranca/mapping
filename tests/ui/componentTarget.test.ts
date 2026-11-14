@@ -18,9 +18,7 @@ describe('Add label inside a component with a slot', () => {
 
   it('uses the marking name when it has one', () => {
     const p = project();
-    expect(slotTargetName(p, { id: 'N1', name: 'Product list' })).toBe(
-      'Product list',
-    );
+    expect(slotTargetName(p, { id: 'N1', name: 'Product list' })).toBe('Product list');
   });
 
   it('with no name, uses the name of the type the instance draws', () => {

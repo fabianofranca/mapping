@@ -73,6 +73,7 @@ function loadWorker(cacheNames: string[] = [], channel: 'main' | 'preview' = 'ma
   return { dispatch, skipWaiting, claim, stored, deleted, fetched };
 }
 
+// pt-BR kept: `guia/` is the real directory name of the interactive guide (public/guia), asserted verbatim
 describe('sw.js', () => {
   it('installs the app in the cache without activating by itself (waits for the user)', async () => {
     const worker = loadWorker();

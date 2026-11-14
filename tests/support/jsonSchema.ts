@@ -78,7 +78,8 @@ function walk(root: Rec, schema: unknown, value: unknown, at: string): string[] 
   }
   if (Array.isArray(schema.enum) && !schema.enum.some((e) => same(e, value)))
     out.push(`${at}: not in enum`);
-  if ('const' in schema && !same(schema.const, value)) out.push(`${at}: not equal to const`);
+  if ('const' in schema && !same(schema.const, value))
+    out.push(`${at}: not equal to const`);
   if (Array.isArray(schema.anyOf)) {
     if (!schema.anyOf.some((s) => walk(root, s, value, at).length === 0))
       out.push(`${at}: no anyOf alternative accepts it`);
@@ -123,8 +124,7 @@ function walk(root: Rec, schema: unknown, value: unknown, at: string): string[] 
       if (typeof names === 'string' && !new RegExp(names).test(key))
         out.push(`${path}: name outside the pattern ${names}`);
       if (key in props) out.push(...walk(root, props[key], item, path));
-      else if (schema.additionalProperties === false)
-        out.push(`${path}: unknown key`);
+      else if (schema.additionalProperties === false) out.push(`${path}: unknown key`);
       else if (schema.additionalProperties !== undefined)
         out.push(...walk(root, schema.additionalProperties, item, path));
     }

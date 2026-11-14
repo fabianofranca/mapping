@@ -22,7 +22,14 @@ const FAMILIES: Record<string, readonly string[]> = {
   font: ['font-sans', 'font-mono'],
   typography: ['t-display', 't-body', 't-cv-name', 't-code', 't-kbd'],
   spacing: ['space-0-5', 'space-1-5', 'space-3', 'space-4', 'space-8'],
-  radius: ['radius-xs', 'radius-sm', 'radius-md', 'radius-lg', 'radius-xl', 'radius-full'],
+  radius: [
+    'radius-xs',
+    'radius-sm',
+    'radius-md',
+    'radius-lg',
+    'radius-xl',
+    'radius-full',
+  ],
   size: [
     'size-touch',
     'size-target-min',

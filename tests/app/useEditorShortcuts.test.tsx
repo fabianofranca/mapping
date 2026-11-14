@@ -1217,7 +1217,7 @@ describe('useEditorShortcuts: Wrap (Ctrl/Cmd+G)', () => {
 
   it('does not act when nothing of the selection qualifies (only a note or an arrow)', () => {
     const s = setup();
-    selectItems(s.harness.ui, [{ kind: 'arrow', id: 'nada' }]);
+    selectItems(s.harness.ui, [{ kind: 'arrow', id: 'none' }]);
     expect(s.press('g', { ctrl: true }).defaultPrevented).toBe(false);
     expect(ids(s.harness)).toEqual(['M1', 'M2', 'M3', 'M4']);
   });
