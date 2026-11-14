@@ -11,11 +11,11 @@ import { cadastroProject } from '../model/specFixtures';
 import { annotationOf, createHarness, renderLive, type Harness } from './harness';
 import { layerOf } from '../model/specFixtures';
 
-// R5: Detalhes redesenhado (identidade, PropertyGrid, LayerGroup recolhível, pendências
-// com links, KeyValueGrid com arrasto e teclado). Edição e desfazer iguais aos de antes.
+// R5: redesigned Details (identity, PropertyGrid, collapsible LayerGroup, pending items
+// with links, KeyValueGrid with drag and keyboard). Editing and undo are the same as before.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
@@ -39,110 +39,114 @@ function renderMarking(markingId: string, project: Project = cadastroProject()) 
   return { harness, user: userEvent.setup() };
 }
 
-describe('Detalhes — todas as camadas escondidas', () => {
-  it('a seção Anotações diz que estão escondidas e "Mostrar todas" as volta', async () => {
+describe('Details — all layers hidden', () => {
+  it('the Annotations section says they are hidden and "Show all" brings them back', async () => {
     const { harness, user } = renderMarking('MN');
-    expect(screen.queryByText('Todas as camadas estão escondidas.')).toBeNull();
+    expect(screen.queryByText('All layers are hidden.')).toBeNull();
     act(() => {
       harness.ui.hiddenLayers.value = new Set(harness.project().layers.map((l) => l.id));
     });
-    expect(screen.getByText('Todas as camadas estão escondidas.')).toBeTruthy();
+    expect(screen.getByText('All layers are hidden.')).toBeTruthy();
     expect(
-      screen.queryByRole('button', { name: /^Adicionar anotação na camada/ }),
+      screen.queryByRole('button', { name: /^Add annotation in layer/ }),
     ).toBeNull();
-    expect(screen.queryByRole('button', { name: '+ Anotação' })).toBeNull();
-    await user.click(screen.getByRole('button', { name: 'Mostrar todas' }));
+    expect(screen.queryByRole('button', { name: '+ Annotation' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Show all' }));
     expect(harness.ui.hiddenLayers.value.size).toBe(0);
-    expect(screen.queryByText('Todas as camadas estão escondidas.')).toBeNull();
+    expect(screen.queryByText('All layers are hidden.')).toBeNull();
   });
 });
 
-describe('Detalhes — marcação', () => {
-  it('identidade: nome, onde está e o ID com copiar', async () => {
+describe('Details — marking', () => {
+  it('identity: name, where it is and the ID with copy', async () => {
     const { user } = renderMarking('MN');
+    // pt-BR kept: shared fixture data asserted by tests/model (specFixtures)
     expect(screen.getByText('Nome', { selector: '.identity-name' })).toBeTruthy();
-    expect(screen.getByText('Em images/cadastro.png › Formulário')).toBeTruthy();
-    await user.click(screen.getByRole('button', { name: 'Copiar ID: MN' }));
-    // O user-event troca a área de transferência por uma em memória.
+    // pt-BR kept: shared fixture data asserted by tests/model (specFixtures)
+    expect(screen.getByText('In images/cadastro.png › Formulário')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Copy ID: MN' }));
+    // user-event swaps the clipboard for an in-memory one.
     expect(await navigator.clipboard.readText()).toBe('MN');
-    expect(screen.getByText('ID copiado.').getAttribute('role')).toBe('status');
+    expect(screen.getByText('ID copied.').getAttribute('role')).toBe('status');
   });
 
-  it('seção Marcação: posição e tamanho em pares; recolhida, mostra o resumo', async () => {
+  it('Marking section: position and size in pairs; collapsed, it shows the summary', async () => {
     const { harness, user } = renderMarking('MT');
     const x = screen.getByLabelText('X');
     await user.clear(x);
     await user.type(x, '120{Enter}');
     expect(harness.project().markings.find((m) => m.id === 'MT')?.rect.x).toBe(120);
-    expect(screen.getByLabelText('Largura')).toHaveProperty('value', '800');
+    expect(screen.getByLabelText('Width')).toHaveProperty('value', '800');
 
-    await user.click(screen.getByRole('button', { name: /^Marcação/ }));
+    await user.click(screen.getByRole('button', { name: /^Marking/ }));
     expect(screen.queryByLabelText('X')).toBeNull();
     expect(screen.getByText('X 120 · Y 50 · 800 × 100 px')).toBeTruthy();
-    // Um passo de desfazer volta o X (recolher não entra no histórico).
+    // One undo step restores the X (collapsing does not enter the history).
     harness.store.undo();
     expect(harness.project().markings.find((m) => m.id === 'MT')?.rect.x).toBe(100);
   });
 
-  // Devolução da 8.3 (segunda leitura, A1): depois de desfazer, o mesmo nome era engolido
-  // pela guarda do Enter (o campo mostrava o texto e o projeto não mudava).
-  it('nome: gravar, desfazer e redigitar o mesmo nome grava de novo com Enter', async () => {
+  // 8.3 rework (second read, A1): after undo, the same name was swallowed by the Enter
+  // guard (the field showed the text and the project did not change).
+  it('name: saving, undoing and retyping the same name saves again with Enter', async () => {
     const { harness, user } = renderMarking('MN');
-    const name = () => screen.getByLabelText<HTMLInputElement>('Nome');
+    const name = () => screen.getByLabelText<HTMLInputElement>('Name');
     const stored = () => harness.project().markings.find((m) => m.id === 'MN')?.name;
     await user.clear(name());
-    await user.type(name(), 'Novo nome{Enter}');
-    expect(stored()).toBe('Novo nome');
+    await user.type(name(), 'New name{Enter}');
+    expect(stored()).toBe('New name');
     act(() => {
       harness.store.undo();
     });
+    // pt-BR kept: shared fixture data asserted by tests/model (specFixtures)
     expect(stored()).toBe('Nome');
+    // pt-BR kept: shared fixture data asserted by tests/model (specFixtures)
     expect(name().value).toBe('Nome');
     await user.clear(name());
-    await user.type(name(), 'Novo nome{Enter}');
-    expect(stored()).toBe('Novo nome');
+    await user.type(name(), 'New name{Enter}');
+    expect(stored()).toBe('New name');
     expect(document.activeElement).toBe(name());
   });
 
-  it('pendências: cada motivo leva o foco ao campo', async () => {
+  it('pending items: each reason moves the focus to the field', async () => {
     const { user } = renderMarking('MT');
-    const notice = screen.getByText('Incompleta: 1 pendência').closest('.issues');
-    if (!(notice instanceof HTMLElement)) throw new Error('sem aviso de pendências');
+    const notice = screen.getByText('Incomplete: 1 issue').closest('.issues');
+    if (!(notice instanceof HTMLElement)) throw new Error('no pending-items notice');
     const id = screen.getByLabelText('id');
     expect(id.getAttribute('aria-invalid')).toBe('true');
     await user.click(
-      within(notice).getByRole('button', { name: /id: obrigatório vazio/ }),
+      within(notice).getByRole('button', { name: /id: required and empty/ }),
     );
     await vi.waitFor(() => expect(document.activeElement).toBe(id));
   });
 
-  it('LayerGroup recolhido resume a primeira anotação e não monta as anotações', async () => {
+  it('a collapsed LayerGroup summarizes the first annotation and does not mount the annotations', async () => {
     const { user } = renderMarking('MF');
     const group = screen.getByRole('button', { name: /^Model/ });
     expect(group.getAttribute('aria-expanded')).toBe('true');
-    expect(screen.getByLabelText('Nome da anotação')).toBeTruthy();
+    expect(screen.getByLabelText('Annotation name')).toBeTruthy();
     await user.click(group);
-    expect(screen.queryByLabelText('Nome da anotação')).toBeNull();
+    expect(screen.queryByLabelText('Annotation name')).toBeNull();
     expect(group.textContent).toContain('User — name: string · age: number');
   });
 
-  it('ir até uma anotação de uma camada recolhida abre a camada e foca a anotação', async () => {
+  it('going to an annotation of a collapsed layer opens the layer and focuses the annotation', async () => {
     const { harness, user } = renderMarking('MF');
     await user.click(screen.getByRole('button', { name: /^Model/ }));
-    expect(screen.queryByLabelText('Nome da anotação')).toBeNull();
+    expect(screen.queryByLabelText('Annotation name')).toBeNull();
     act(() => goToAnnotation(harness.ui, annotationOf(harness.project(), 'AU')));
     await vi.waitFor(() =>
-      expect(document.activeElement).toBe(screen.getByLabelText('Nome da anotação')),
+      expect(document.activeElement).toBe(screen.getByLabelText('Annotation name')),
     );
   });
 
-  it('anotação recolhida mostra o resumo no lugar do corpo', async () => {
+  it('a collapsed annotation shows the summary in place of the body', async () => {
     const { user } = renderMarking('MF');
-    await user.click(screen.getByRole('button', { name: 'Recolher User' }));
-    expect(screen.queryAllByLabelText('Chave')).toHaveLength(0);
+    await user.click(screen.getByRole('button', { name: 'Collapse User' }));
+    expect(screen.queryAllByLabelText('Key')).toHaveLength(0);
     expect(screen.getByText('User — name: string · age: number')).toBeTruthy();
-    await user.click(screen.getByRole('button', { name: 'Mostrar User' }));
-    expect(screen.getAllByLabelText('Chave')).toHaveLength(2);
+    await user.click(screen.getByRole('button', { name: 'Show User' }));
+    expect(screen.getAllByLabelText('Key')).toHaveLength(2);
   });
 });
 
@@ -168,39 +172,39 @@ const keys = (h: Harness, id: string) =>
   annotationOf(h.project(), id).entries.map((e) => e.key);
 
 describe('Detalhes — KeyValueGrid', () => {
-  it('Alt+Shift+↓ move o par e o foco segue a linha', async () => {
+  it('Alt+Shift+↓ moves the pair and the focus follows the row', async () => {
     const { harness, user } = renderAnnotation('AU');
-    const [first] = screen.getAllByLabelText('Chave');
+    const [first] = screen.getAllByLabelText('Key');
     first?.focus();
     await user.keyboard('{Alt>}{Shift>}{ArrowDown}{/Shift}{/Alt}');
     expect(keys(harness, 'AU')).toEqual(['age', 'name']);
     await vi.waitFor(() =>
       expect(document.activeElement).toBe(
-        screen.getByRole('button', { name: 'Mover o par name' }),
+        screen.getByRole('button', { name: 'Move pair name' }),
       ),
     );
-    // ↑ na alça devolve.
+    // ↑ on the handle moves it back.
     await user.keyboard('{ArrowUp}');
     expect(keys(harness, 'AU')).toEqual(['name', 'age']);
   });
 
-  it('Alt+Enter cria um par novo com o foco na chave', async () => {
+  it('Alt+Enter creates a new pair with the focus on the key', async () => {
     const { harness, user } = renderAnnotation('AU');
-    screen.getAllByLabelText('Valor')[0]?.focus();
+    screen.getAllByLabelText('Value')[0]?.focus();
     await user.keyboard('{Alt>}{Enter}{/Alt}');
-    const created = screen.getAllByLabelText('Chave')[2];
+    const created = screen.getAllByLabelText('Key')[2];
     await vi.waitFor(() => expect(document.activeElement).toBe(created));
     await user.keyboard('email{Enter}');
     expect(keys(harness, 'AU')).toEqual(['name', 'age', 'email']);
   });
 
-  it('arrastar pela alça reordena com uma única entrada de desfazer', () => {
+  it('dragging by the handle reorders with a single undo entry', () => {
     const { harness } = renderAnnotation('AU');
     const rows = [...document.querySelectorAll<HTMLElement>('[data-drag-row]')];
     rows.forEach((row, i) => {
       row.getBoundingClientRect = () => new DOMRect(0, i * 30, 300, 30);
     });
-    const grip = screen.getByRole('button', { name: 'Mover o par name' });
+    const grip = screen.getByRole('button', { name: 'Move pair name' });
     fireEvent.pointerDown(grip, { button: 0, clientY: 15, pointerId: 1 });
     fireEvent.pointerMove(grip, { clientY: 40, pointerId: 1 });
     expect(rows[0]?.classList.contains('is-dragging')).toBe(true);
@@ -212,45 +216,45 @@ describe('Detalhes — KeyValueGrid', () => {
     expect(keys(harness, 'AU')).toEqual(['name', 'age']);
   });
 
-  it('arrasto cancelado não muda nada', () => {
+  it('a canceled drag changes nothing', () => {
     const { harness } = renderAnnotation('AU');
-    const grip = screen.getByRole('button', { name: 'Mover o par name' });
+    const grip = screen.getByRole('button', { name: 'Move pair name' });
     fireEvent.pointerDown(grip, { button: 0, clientY: 0, pointerId: 1 });
     fireEvent.pointerMove(grip, { clientY: 500, pointerId: 1 });
     fireEvent.pointerCancel(grip, { pointerId: 1 });
     expect(keys(harness, 'AU')).toEqual(['name', 'age']);
   });
 
-  it('Esc no par novo descarta a linha', async () => {
+  it('Esc on the new pair discards the row', async () => {
     const { user } = renderAnnotation('AU');
-    await user.click(screen.getByRole('button', { name: '+ Par' }));
-    const created = screen.getAllByLabelText('Chave')[2];
+    await user.click(screen.getByRole('button', { name: '+ Pair' }));
+    const created = screen.getAllByLabelText('Key')[2];
     await vi.waitFor(() => expect(document.activeElement).toBe(created));
     await user.keyboard('x{Escape}');
-    expect(screen.getAllByLabelText('Chave')).toHaveLength(2);
-    // Etapa 8 (8.3), F5: a linha descartada levava o foco; ele vai ao "+ Par".
+    expect(screen.getAllByLabelText('Key')).toHaveLength(2);
+    // Stage 8 (8.3), F5: the discarded row held the focus; it goes to "+ Pair".
     await vi.waitFor(() =>
-      expect(document.activeElement).toBe(screen.getByRole('button', { name: '+ Par' })),
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: '+ Pair' })),
     );
   });
 
-  // Etapa 8 (8.3), achado F5 (O5): Enter no Valor tirava o foco do campo (ia ao body).
-  it('Enter no Valor grava e mantém o foco no campo', async () => {
+  // Stage 8 (8.3), finding F5 (O5): Enter in the Value took the focus out of the field (it went to the body).
+  it('Enter in the Value saves and keeps the focus on the field', async () => {
     const { harness, user } = renderAnnotation('AU');
-    const [value] = screen.getAllByLabelText('Valor');
-    if (!value) throw new Error('sem o Valor');
+    const [value] = screen.getAllByLabelText('Value');
+    if (!value) throw new Error('no Value');
     await user.clear(value);
     await user.type(value, 'text{Enter}');
     expect(annotationOf(harness.project(), 'AU').entries[0]?.value).toBe('text');
-    expect(document.activeElement).toBe(screen.getAllByLabelText('Valor')[0]);
+    expect(document.activeElement).toBe(screen.getAllByLabelText('Value')[0]);
   });
 
-  // Devolução da 8.3 (segunda leitura, A1): a guarda do Enter dos pares nunca era zerada, e
-  // o rascunho gravado voltava ao campo depois de desfazer. Redigitar o mesmo texto não
-  // gravava.
-  it('Valor: gravar, desfazer e redigitar o mesmo valor grava de novo com Enter', async () => {
+  // 8.3 rework (second read, A1): the Enter guard of the pairs was never reset, and
+  // the saved draft came back to the field after undo. Retyping the same text did not
+  // save.
+  it('Value: saving, undoing and retyping the same value saves again with Enter', async () => {
     const { harness, user } = renderAnnotation('AU');
-    const value = () => screen.getAllByLabelText<HTMLInputElement>('Valor')[0];
+    const value = () => screen.getAllByLabelText<HTMLInputElement>('Value')[0];
     const stored = () => annotationOf(harness.project(), 'AU').entries[0]?.value;
     await user.clear(value()!);
     await user.type(value()!, 'text{Enter}');
@@ -259,46 +263,46 @@ describe('Detalhes — KeyValueGrid', () => {
       harness.store.undo();
     });
     expect(stored()).toBe('string');
-    // O campo acompanha o par gravado, não o rascunho de antes.
+    // The field follows the saved pair, not the earlier draft.
     expect(value()?.value).toBe('string');
     await user.clear(value()!);
     await user.type(value()!, 'text{Enter}');
     expect(stored()).toBe('text');
   });
 
-  it('Chave: gravar, desfazer e redigitar a mesma chave grava de novo', async () => {
+  it('Key: saving, undoing and retyping the same key saves again', async () => {
     const { harness, user } = renderAnnotation('AU');
-    const key = () => screen.getAllByLabelText<HTMLInputElement>('Chave')[0];
+    const key = () => screen.getAllByLabelText<HTMLInputElement>('Key')[0];
     await user.clear(key()!);
-    await user.type(key()!, 'nome{Enter}');
-    expect(keys(harness, 'AU')).toEqual(['nome', 'age']);
+    await user.type(key()!, 'renamed{Enter}');
+    expect(keys(harness, 'AU')).toEqual(['renamed', 'age']);
     act(() => {
       harness.store.undo();
     });
     expect(keys(harness, 'AU')).toEqual(['name', 'age']);
     expect(key()?.value).toBe('name');
     await user.clear(key()!);
-    await user.type(key()!, 'nome{Enter}');
-    expect(keys(harness, 'AU')).toEqual(['nome', 'age']);
+    await user.type(key()!, 'renamed{Enter}');
+    expect(keys(harness, 'AU')).toEqual(['renamed', 'age']);
   });
 
-  // A linha é identificada pela posição: a que gravou o par novo vira o par gravado e, ao
-  // desfazer a criação com outro par novo aberto, volta a ser o par novo (mesma instância).
-  it('par novo: criar, desfazer com outro par novo aberto e recriar a mesma chave grava', async () => {
+  // The row is identified by position: the one that saved the new pair becomes the saved pair and, when
+  // the creation is undone with another new pair open, it goes back to being the new pair (same instance).
+  it('new pair: creating, undoing with another new pair open and recreating the same key saves', async () => {
     const { harness, user } = renderAnnotation('AU');
-    const addButton = () => screen.getByRole('button', { name: '+ Par' });
+    const addButton = () => screen.getByRole('button', { name: '+ Pair' });
     await user.click(addButton());
-    await user.type(screen.getAllByLabelText('Chave')[2]!, 'email{Enter}');
+    await user.type(screen.getAllByLabelText('Key')[2]!, 'email{Enter}');
     expect(keys(harness, 'AU')).toEqual(['name', 'age', 'email']);
     await user.click(addButton());
-    expect(screen.getAllByLabelText('Chave')).toHaveLength(4);
+    expect(screen.getAllByLabelText('Key')).toHaveLength(4);
     act(() => {
       harness.store.undo();
     });
     expect(keys(harness, 'AU')).toEqual(['name', 'age']);
-    const created = screen.getAllByLabelText<HTMLInputElement>('Chave');
+    const created = screen.getAllByLabelText<HTMLInputElement>('Key');
     expect(created).toHaveLength(3);
-    // A linha nova começa vazia, não com o rascunho da criação desfeita.
+    // The new row starts empty, not with the draft of the undone creation.
     expect(created[2]?.value).toBe('');
     await user.type(created[2]!, 'email{Enter}');
     expect(keys(harness, 'AU')).toEqual(['name', 'age', 'email']);
@@ -306,16 +310,18 @@ describe('Detalhes — KeyValueGrid', () => {
 });
 
 describe('Detalhes — DataGrid', () => {
-  it('Alt+Enter na tabela cria uma linha', async () => {
+  it('Alt+Enter in the table creates a row', async () => {
     const { harness, user } = renderAnnotation('AC');
+    // pt-BR kept: shared fixture data asserted by tests/model (specFixtures)
     screen.getByLabelText('exemplo (email)').focus();
     await user.keyboard('{Alt>}{Enter}{/Alt}');
     const rows = annotationOf(harness.project(), 'AC').values?.['atributos'];
     expect(Array.isArray(rows) ? rows.length : 0).toBe(2);
   });
 
-  it('linhas numeradas, com o nome da linha', () => {
+  it('numbered rows, with the row name', () => {
     renderAnnotation('AC');
+    // pt-BR kept: shared fixture data asserted by tests/model (specFixtures)
     const table = screen.getByRole('table', { name: 'atributos' });
     const [, row] = within(table).getAllByRole('row');
     expect(row?.textContent).toContain('1');
@@ -323,12 +329,12 @@ describe('Detalhes — DataGrid', () => {
   });
 });
 
-// Etapa 8 (8.3), achado F3: o passo "tipo" troca pelo passo "dono" no mesmo slot; o diálogo
-// novo guardava como "quem abriu" o botão do tipo, que já tinha saído, e o foco se perdia.
-describe('Detalhes — nova anotação tipada com dono (F3)', () => {
-  it('tipo › dono › Cancelar volta ao + da camada', async () => {
+// Stage 8 (8.3), finding F3: the "type" step is replaced by the "owner" step in the same slot; the new
+// dialog kept as "who opened it" the type button, which had already left, and the focus was lost.
+describe('Details — new typed annotation with owner (F3)', () => {
+  it('type › owner › Cancel goes back to the layer's +', async () => {
     const { harness, user } = renderMarking('MC');
-    // O + da camada Eventos (o único jeito de adicionar anotação: não há botão no topo).
+    // The + of the Events layer (the only way to add an annotation: there is no button at the top).
     const eventos = layerOf(harness.project(), 'sdui', 'eventos');
     const layerName = harness.project().layers.find((l) => l.id === eventos)?.name ?? '';
     const add = await screen.findByRole('button', {
@@ -337,7 +343,7 @@ describe('Detalhes — nova anotação tipada com dono (F3)', () => {
     await user.click(add);
     const types = await vi.waitFor(() => {
       const el = document.querySelector('dialog');
-      if (!el) throw new Error('sem o passo do tipo');
+      if (!el) throw new Error('no type step');
       return el;
     });
     await user.click(
@@ -345,7 +351,7 @@ describe('Detalhes — nova anotação tipada com dono (F3)', () => {
     );
     const owner = await vi.waitFor(() => {
       const el = document.querySelector('dialog');
-      if (!el?.textContent?.includes('Dono do')) throw new Error('sem o passo do dono');
+      if (!el?.textContent?.includes('Owner of the')) throw new Error('no owner step');
       return el;
     });
     owner.dispatchEvent(new Event('cancel', { cancelable: true }));
@@ -354,7 +360,7 @@ describe('Detalhes — nova anotação tipada com dono (F3)', () => {
   });
 });
 
-/** Elementos que receberam o foco enquanto `run` roda (na ordem). */
+/** Elements that received focus while `run` runs (in order). */
 async function focusTrail(run: () => Promise<void>): Promise<Element[]> {
   const focused: Element[] = [];
   const track = (e: FocusEvent) => focused.push(e.target as Element);
@@ -367,12 +373,12 @@ async function focusTrail(run: () => Promise<void>): Promise<Element[]> {
   return focused;
 }
 
-// Etapa 8 (8.3), achado F2: "escolher e ir" (Ctrl+Enter no seletor) tinha dois donos do
-// foco: o retorno do seletor (ao campo `dado`) e o painel (à anotação de destino), e o certo
-// vencia só pela ordem das filas. Agora o painel é o dono e age no commit; o retorno do
-// seletor vê o foco já no destino e não mexe. O foco vai direto, sem passar por outro lugar.
-describe('Detalhes — escolher e ir até o alvo (F2)', () => {
-  it('Ctrl+Enter no seletor leva o foco direto à anotação de destino', async () => {
+// Stage 8 (8.3), finding F2: "choose and go" (Ctrl+Enter in the picker) had two owners of the
+// focus: the picker's return (to the `dado` field) and the panel (to the target annotation), and the right one
+// won only by queue order. Now the panel is the owner and acts on commit; the picker's
+// return sees the focus already at the destination and leaves it alone. The focus goes straight there.
+describe('Details — choose and go to the target (F2)', () => {
+  it('Ctrl+Enter in the picker takes the focus straight to the target annotation', async () => {
     const harness = createHarness(cadastroProject());
     harness.ui.selection.value = { kind: 'marking', id: 'MN' };
     renderLive(harness, (p) => {
@@ -394,17 +400,18 @@ describe('Detalhes — escolher e ir até o alvo (F2)', () => {
       );
     });
     const user = userEvent.setup();
+    // pt-BR kept: shared fixture data asserted by tests/model (specFixtures)
     await user.click(screen.getByRole('button', { name: /: dado$/ }));
     await vi.waitFor(() => {
       const el = document.querySelector('dialog');
-      if (!el?.contains(document.activeElement)) throw new Error('o seletor não abriu');
+      if (!el?.contains(document.activeElement)) throw new Error('the picker did not open');
     });
     let target: Element | null = null;
     const trail = await focusTrail(async () => {
-      // Abre no atual (User.name); ↓ vai para User.age, da anotação User no Formulário.
+      // Opens on the current one (User.name); ↓ goes to User.age, of the User annotation in the Form.
       await user.keyboard('{ArrowDown}{Control>}{Enter}{/Control}');
       await vi.waitFor(() => expect(document.querySelector('dialog')).toBeNull());
-      const name = await screen.findByLabelText('Nome da anotação');
+      const name = await screen.findByLabelText('Annotation name');
       target = name;
       await vi.waitFor(() => expect(document.activeElement).toBe(name));
       await new Promise((resolve) => setTimeout(resolve, 50));

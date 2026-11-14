@@ -13,7 +13,7 @@ import { sampleThread } from '../model/threadFixtures';
 import { createHarness } from './harness';
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
@@ -32,7 +32,7 @@ function probe(harness = createHarness(sampleProject())) {
 }
 
 describe('useCitationContext', () => {
-  it('devolve o projeto à vista, o nome da pasta e as listas do projeto', () => {
+  it('returns the project in view, the folder name and the project lists', () => {
     const { harness, seen } = probe();
     const ctx = seen.current!;
     expect(ctx.project).toBe(harness.context.review.derived.shownProject.value);
@@ -41,7 +41,7 @@ describe('useCitationContext', () => {
     expect(ctx.proposals).toEqual([]);
   });
 
-  it('subjectOf é o assunto da conversa (sem marcação do markdown)', () => {
+  it('subjectOf is the thread subject (without markdown markup)', () => {
     const { seen } = probe();
     const thread = sampleThread({
       messages: [
@@ -49,27 +49,29 @@ describe('useCitationContext', () => {
           id: 'x',
           author: { kind: 'human', name: 'M', email: 'm@x.com' },
           at: '2026-11-06T10:00:00.000Z',
-          text: '**Alto** contraste',
+          text: '**High** contrast',
           proposal: null,
         },
       ],
     });
-    expect(seen.current!.subjectOf!(thread)).toBe('Alto contraste');
+    expect(seen.current!.subjectOf!(thread)).toBe('High contrast');
   });
 
-  it('acompanha as conversas novas sem remontar', async () => {
+  it('follows new threads without remounting', async () => {
     const { harness, seen } = probe();
-    await harness.context.session.threads.create(sampleThread({ id: 'nova1' }));
+    await harness.context.session.threads.create(sampleThread({ id: 'new1' }));
     await waitFor(() =>
-      expect(seen.current!.threads.map((th) => th.id)).toEqual(['nova1']),
+      expect(seen.current!.threads.map((th) => th.id)).toEqual(['new1']),
     );
   });
 });
 
 describe('citationNameFallback', () => {
-  it('é o texto neutro traduzido', () => {
+  it('is the translated neutral text (en-US and pt-BR)', () => {
     expect(citationNameFallback()).toBe(t('citation.unnamed'));
-    locale.value = 'en-US';
     expect(citationNameFallback()).toBe('(unnamed)');
+    // pt-BR kept: the test checks that the fallback is translated
+    locale.value = 'pt-BR';
+    expect(citationNameFallback()).toBe('(sem nome)');
   });
 });

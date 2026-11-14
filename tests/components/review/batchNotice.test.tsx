@@ -5,25 +5,25 @@ import { ReviewHeader } from '../../../src/ui/review/ReviewHeader';
 import { richScenario } from '../../store/proposalHarness';
 import { openReviewHarness, renderInEditor } from './reviewHarness';
 
-// Etapa #950, item 6 (#963): "Aceitar as N que faltam" e "Rejeitar as N que causam" são uma
-// decisão só (uma gravação, um Desfazer), não N decisões.
+// Stage #950, item 6 (#963): "Accept the N missing" and "Reject the N that cause it" are a
+// single decision (one write, one Undo), not N decisions.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   localStorage.clear();
 });
 afterEach(cleanup);
 
 /**
- * Um aviso de dependência com várias mudanças: a validação é substituída por um aviso
- * montado (o cenário natural exige uma proposta adulterada).
+ * A dependency notice with several changes: the validation is replaced by an assembled
+ * notice (the natural scenario requires a tampered proposal).
  */
 async function openWithIssue() {
   const { base, proposal, ids } = richScenario();
   const h = await openReviewHarness({ project: base, proposals: [proposal] });
   expect(h.review.open('P1').ok).toBe(true);
   const real = h.review.derived.validation.value;
-  if (!real) throw new Error('sem validação');
+  if (!real) throw new Error('no validation');
   vi.spyOn(h.review.derived.validation, 'value', 'get').mockReturnValue({
     ...real,
     ok: false,
@@ -44,13 +44,13 @@ async function openWithIssue() {
 const stateOf = (h: Awaited<ReturnType<typeof openWithIssue>>['h'], id: string) =>
   h.review.derived.proposal.value?.decisions[id]?.state ?? null;
 
-describe('aviso de dependência: decisão em lote', () => {
-  it('"Aceitar as N que faltam" decide numa chamada só e o Desfazer devolve todas ao pendente', async () => {
+describe('dependency notice: batch decision', () => {
+  it('"Accept the N missing" decides in a single call and Undo returns all of them to pending', async () => {
     const { h, ids } = await openWithIssue();
     const decideMany = vi.spyOn(h.review, 'decideMany');
     const decide = vi.spyOn(h.review, 'decide');
     fireEvent.click(
-      await screen.findByRole('button', { name: /^Aceitar a\(s\) que falta/ }),
+      await screen.findByRole('button', { name: /^Accept the missing one\(s\)/ }),
     );
     await waitFor(() => expect(stateOf(h, ids.annotation)).toBe('accepted'));
     expect(stateOf(h, ids.marking)).toBe('accepted');
@@ -63,11 +63,11 @@ describe('aviso de dependência: decisão em lote', () => {
     expect(stateOf(h, ids.annotation)).toBeNull();
   });
 
-  it('"Rejeitar as N que causam" decide numa chamada só e o Desfazer devolve todas', async () => {
+  it('"Reject the N that cause it" decides in a single call and Undo returns all of them', async () => {
     const { h, ids } = await openWithIssue();
     const decideMany = vi.spyOn(h.review, 'decideMany');
     fireEvent.click(
-      await screen.findByRole('button', { name: /^Rejeitar a\(s\) que causa/ }),
+      await screen.findByRole('button', { name: /^Reject the cause/ }),
     );
     await waitFor(() => expect(stateOf(h, ids.name)).toBe('rejected'));
     expect(stateOf(h, ids.rect)).toBe('rejected');

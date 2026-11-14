@@ -10,12 +10,13 @@ import { richScenario } from '../store/proposalHarness';
 import { createHarness } from './harness';
 import { openReviewHarness } from './review/reviewHarness';
 
-// Navegação do clique num chip de citação (etapa Comentários, CM5): reaproveita as funções do
-// store (seleção, ir até a anotação, selecionar conversa, abrir a revisão).
+// Navigation on clicking a citation chip (Comments stage, CM5): reuses the store functions
+// (selection, go to the annotation, select the thread, open the review).
+// pt-BR kept: shared fixture data asserted by tests/model (sampleProject field keys 'tipo' and 'itens')
 
 beforeEach(() => {
   localStorage.clear();
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(() => {
   hideToolWindow('proposals');
@@ -23,14 +24,14 @@ afterEach(() => {
 
 const withArrow = () =>
   createHarness(
-    createArrow(sampleProject(), { id: 'R1', from: 'M1', to: 'M2', name: 'Fluxo' }),
+    createArrow(sampleProject(), { id: 'R1', from: 'M1', to: 'M2', name: 'Flow' }),
   );
 
 const go = (h: ReturnType<typeof createHarness>, target: CitationTarget) =>
   goToCitation(h.context, target);
 
 describe('goToCitation', () => {
-  it('marcação, container e seta: seleciona o item', () => {
+  it('marking, container and arrow: selects the item', () => {
     const h = withArrow();
     go(h, { kind: 'marking', id: 'M2' });
     expect(h.ui.selection.value).toEqual({ kind: 'marking', id: 'M2' });
@@ -40,14 +41,14 @@ describe('goToCitation', () => {
     expect(h.ui.selection.value).toEqual({ kind: 'arrow', id: 'R1' });
   });
 
-  it('marcação numa camada escondida mostra a camada', () => {
+  it('marking on a hidden layer shows the layer', () => {
     const h = withArrow();
     h.ui.hiddenLayers.value = new Set(['L1']);
     go(h, { kind: 'annotation', id: 'A1' });
     expect(h.ui.hiddenLayers.value.has('L1')).toBe(false);
   });
 
-  it('anotação: seleciona a marcação dona e foca a anotação', () => {
+  it('annotation: selects the owner marking and focuses the annotation', () => {
     const h = withArrow();
     go(h, { kind: 'annotation', id: 'A3' });
     expect(h.ui.selection.value).toEqual({ kind: 'marking', id: 'M2' });
@@ -55,7 +56,7 @@ describe('goToCitation', () => {
     expect(h.ui.focusField.value).toBeNull();
   });
 
-  it('campo e linha: selecionam o dono da anotação e focam o campo', () => {
+  it('field and row: select the annotation owner and focus the field', () => {
     const h = withArrow();
     go(h, { kind: 'field', annotationId: 'A1', key: 'tipo' });
     expect(h.ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
@@ -67,16 +68,16 @@ describe('goToCitation', () => {
     expect(h.ui.focusField.value).toBe('itens');
   });
 
-  it('par: seleciona o dono da anotação e foca a anotação, sem campo', () => {
+  it('pair: selects the annotation owner and focuses the annotation, no field', () => {
     const h = withArrow();
-    h.ui.focusField.value = 'velho';
+    h.ui.focusField.value = 'old';
     go(h, { kind: 'entry', annotationId: 'A2', entryId: 'E3' });
     expect(h.ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
     expect(h.ui.focusAnnotation.value).toBe('A2');
     expect(h.ui.focusField.value).toBeNull();
   });
 
-  it('camada: mostra a camada escondida e abre a janela Camadas', () => {
+  it('layer: shows the hidden layer and opens the Layers window', () => {
     const h = withArrow();
     h.ui.hiddenLayers.value = new Set(['L2']);
     hideToolWindow('layers');
@@ -85,15 +86,15 @@ describe('goToCitation', () => {
     expect(isToolWindowOpen('layers')).toBe(true);
   });
 
-  it('camada escondida pela perspectiva aberta: sai das escondidas dela, com desfazer', () => {
+  it('layer hidden by the open perspective: leaves its hidden ones, with undo', () => {
     const h = withArrow();
     const { session } = h.context;
     const created = session.perspectiveActions.createPerspective({
-      name: 'Fluxo A',
+      name: 'Flow A',
       startFrom: null,
       local: false,
     });
-    if (!created.ok) throw new Error('perspectiva não criada');
+    if (!created.ok) throw new Error('perspective not created');
     session.perspectiveActions.setPerspectiveHiddenLayers(created.value, ['L2']);
     session.perspective.open(created.value);
     const hiddenOf = () =>
@@ -105,15 +106,15 @@ describe('goToCitation', () => {
     expect(hiddenOf()).toEqual(['L2']);
   });
 
-  it('camada já visível na perspectiva aberta: não grava no histórico', () => {
+  it('layer already visible in the open perspective: does not write to the history', () => {
     const h = withArrow();
     const { session } = h.context;
     const created = session.perspectiveActions.createPerspective({
-      name: 'Fluxo A',
+      name: 'Flow A',
       startFrom: null,
       local: false,
     });
-    if (!created.ok) throw new Error('perspectiva não criada');
+    if (!created.ok) throw new Error('perspective not created');
     session.perspective.open(created.value);
     const before = h.store.canUndo.value;
     go(h, { kind: 'layer', id: 'L2' });
@@ -121,7 +122,7 @@ describe('goToCitation', () => {
     expect(h.store.canUndo.value).toBe(before);
   });
 
-  it('conversa: seleciona a conversa e o item dela', async () => {
+  it('thread: selects the thread and its item', async () => {
     const h = withArrow();
     await h.context.session.threads.create(
       sampleThread({ id: 'cx1', anchor: { kind: 'marking', id: 'M3' } }),
@@ -131,13 +132,13 @@ describe('goToCitation', () => {
     expect(h.ui.selection.value).toEqual({ kind: 'marking', id: 'M3' });
   });
 
-  it('conversa que não existe mais: não muda a seleção', () => {
+  it('thread that no longer exists: does not change the selection', () => {
     const h = withArrow();
-    go(h, { kind: 'thread', id: 'sumiu' });
+    go(h, { kind: 'thread', id: 'gone' });
     expect(h.ui.selection.value).toBeNull();
   });
 
-  it('proposta: abre a revisão e as janelas Detalhes e Propostas', async () => {
+  it('proposal: opens the review and the Details and Proposals windows', async () => {
     const { proposal } = richScenario();
     const h = await openReviewHarness({ proposals: [proposal] });
     hideToolWindow('proposals');
@@ -147,9 +148,9 @@ describe('goToCitation', () => {
     expect(isToolWindowOpen('details')).toBe(true);
   });
 
-  it('proposta que não existe: avisa num toast e não abre a revisão', async () => {
+  it('proposal that does not exist: warns in a toast and does not open the review', async () => {
     const h = await openReviewHarness({ proposals: [] });
-    goToCitation(h.context, { kind: 'proposal', id: 'nenhuma' });
+    goToCitation(h.context, { kind: 'proposal', id: 'none' });
     expect(h.review.proposalId.value).toBeNull();
     expect(h.ui.toast.value).not.toBeNull();
   });

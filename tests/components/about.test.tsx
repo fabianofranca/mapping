@@ -11,8 +11,8 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('Configurações › Sobre', () => {
-  it('mostra build, canal e schema, e copia os três', async () => {
+describe('Settings › About', () => {
+  it('shows build, channel and schema, and copies all three', async () => {
     const user = userEvent.setup();
     const writeText = vi.fn<(text: string) => Promise<void>>(async () => undefined);
     Object.defineProperty(navigator, 'clipboard', {

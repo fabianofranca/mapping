@@ -5,10 +5,10 @@ import { ReviewLevels } from '../../../src/ui/review/ReviewLevels';
 import { NEW_IMAGE_PATH, richScenario } from '../../store/proposalHarness';
 import { openReviewHarness, renderInEditor } from './reviewHarness';
 
-// Rodapé de atalhos da revisão: em janela estreita (até BREAKPOINTS.compact) mostra só
-// Aceitar, Rejeitar e Próxima pendente; acima disso, os seis.
+// Review shortcuts footer: in a narrow window (up to BREAKPOINTS.compact) shows only
+// Accept, Reject and Next pending; above that, all six.
 
-/** `matchMedia` que casa as consultas de `max-width` só quando `narrow` é verdadeiro. */
+/** `matchMedia` that matches `max-width` queries only when `narrow` is true. */
 function stubMatchMedia(narrow: boolean) {
   vi.stubGlobal('matchMedia', (query: string) => ({
     matches: /max-width/.test(query) ? narrow : false,
@@ -19,7 +19,7 @@ function stubMatchMedia(narrow: boolean) {
 }
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   localStorage.clear();
 });
 afterEach(() => {
@@ -31,22 +31,22 @@ async function renderLevels() {
   const { proposal } = richScenario();
   const h = await openReviewHarness({
     proposals: [proposal],
-    files: { [NEW_IMAGE_PATH]: 'imagem' },
+    files: { [NEW_IMAGE_PATH]: 'image' },
   });
   expect(h.review.open('P1').ok).toBe(true);
   renderInEditor(h, <ReviewLevels />);
-  return screen.getByLabelText('Atalhos da revisão');
+  return screen.getByLabelText('Review shortcuts');
 }
 
-describe('rodapé de atalhos da revisão', () => {
-  it('em janela estreita mostra só os três atalhos principais', async () => {
+describe('review shortcuts footer', () => {
+  it('in a narrow window shows only the three main shortcuts', async () => {
     stubMatchMedia(true);
     const footer = await renderLevels();
     expect(footer.querySelectorAll('span')).toHaveLength(3);
     expect(footer.className).toContain('review-footer-compact');
   });
 
-  it('em janela larga mostra os seis atalhos', async () => {
+  it('in a wide window shows all six shortcuts', async () => {
     stubMatchMedia(false);
     const footer = await renderLevels();
     expect(footer.querySelectorAll('span')).toHaveLength(6);

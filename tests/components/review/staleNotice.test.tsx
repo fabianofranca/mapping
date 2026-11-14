@@ -7,10 +7,10 @@ import { sampleProject } from '../../model/fixtures';
 import { richScenario } from '../../store/proposalHarness';
 import { openReviewHarness, renderInEditor } from './reviewHarness';
 
-// AC1 (#641): o aviso de conflitos novos numa linha, com a frase completa na dica e o X.
+// AC1 (#641): the new-conflicts notice on one line, with the full sentence in the hint and the X.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   localStorage.clear();
 });
 afterEach(cleanup);
@@ -20,7 +20,7 @@ async function staleWindow() {
   const first = await openReviewHarness({ proposals: [proposal], copyId: 'c' });
   first.review.open('P1');
   first.review.close();
-  const edited = renameMarking(sampleProject(), 'M1', 'Porta traseira');
+  const edited = renameMarking(sampleProject(), 'M1', 'Rear door');
   const h = await openReviewHarness({
     project: edited,
     proposals: [proposal],
@@ -34,38 +34,38 @@ async function staleWindow() {
   return { h, notice };
 }
 
-describe('aviso de conflitos novos numa linha', () => {
-  it('mostra o texto curto, Ver conflitos e o X; a frase completa fica na dica e para o leitor de tela', async () => {
+describe('new-conflicts notice on one line', () => {
+  it('shows the short text, Show conflicts and the X; the full sentence stays in the hint and for the screen reader', async () => {
     const { notice } = await staleWindow();
-    expect(within(notice).getByText('1 conflito(s) novo(s)')).toBeTruthy();
+    expect(within(notice).getByText('1 new conflict(s)')).toBeTruthy();
     expect(
-      within(notice).getByRole('button', { name: 'Ver os conflitos novos (1)' })
+      within(notice).getByRole('button', { name: 'Show the new conflicts (1)' })
         .textContent,
-    ).toBe('Ver conflitos');
-    expect(within(notice).getByRole('button', { name: 'Dispensar' })).toBeTruthy();
+    ).toBe('Show conflicts');
+    expect(within(notice).getByRole('button', { name: 'Dismiss' })).toBeTruthy();
     expect(notice.querySelector('.notice-box-text')?.textContent).toBe(
-      '1 conflito(s) novo(s)',
+      '1 new conflict(s)',
     );
     const phrase = within(notice).getAllByText(
-      /O projeto mudou desde a sua última sessão\./,
+      /The project changed since your last session\./,
     );
     expect(phrase.some((n) => n.classList.contains('visually-hidden'))).toBe(true);
     expect(phrase.some((n) => n.getAttribute('data-tooltip') !== null)).toBe(true);
   });
 
-  it('Ver conflitos liga Só conflitos e não fecha o aviso', async () => {
+  it('Show conflicts turns on Conflicts only and does not close the notice', async () => {
     const { h, notice } = await staleWindow();
     fireEvent.click(
-      within(notice).getByRole('button', { name: 'Ver os conflitos novos (1)' }),
+      within(notice).getByRole('button', { name: 'Show the new conflicts (1)' }),
     );
     expect(h.review.filters.value.onlyConflicts).toBe(true);
-    expect(screen.getByRole('button', { name: /^Filtros · 1/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^Filters · 1/ })).toBeTruthy();
     expect(document.querySelector('.notice-box-line')).toBeTruthy();
   });
 
-  it('o X some com o aviso e o foco vai para a lista da revisão', async () => {
+  it('the X removes the notice and focus goes to the review list', async () => {
     const { h, notice } = await staleWindow();
-    fireEvent.click(within(notice).getByRole('button', { name: 'Dispensar' }));
+    fireEvent.click(within(notice).getByRole('button', { name: 'Dismiss' }));
     expect(document.querySelector('.notice-box-line')).toBeNull();
     expect(h.review.staleNotice.value.size).toBe(0);
     expect(document.activeElement).toBe(screen.getByRole('tree'));

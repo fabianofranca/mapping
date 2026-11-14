@@ -13,8 +13,8 @@ import { Dialog } from '../../src/ui/Dialog';
 import { HELP_PROPOSALS, HELP_SHORTCUTS, HelpDialog } from '../../src/ui/HelpDialog';
 import { SettingsDialog } from '../../src/ui/SettingsDialog';
 
-// `window.location` não é redefinível no contexto do `vmThreads`: o protocolo `file:` entra
-// pelo próprio `guideUrl`, que lê `globalThis.location.protocol` só quando o chamador não passa um.
+// `window.location` is not redefinable in the `vmThreads` context: the `file:` protocol comes in
+// through `guideUrl` itself, which reads `globalThis.location.protocol` only when the caller passes none.
 const protocolOverride = vi.hoisted(() => ({ value: null as string | null }));
 vi.mock('../../src/utils/guideLink', async (importOriginal) => {
   const original = await importOriginal<typeof import('../../src/utils/guideLink')>();
@@ -25,38 +25,41 @@ vi.mock('../../src/utils/guideLink', async (importOriginal) => {
   };
 });
 
+beforeEach(() => {
+  locale.value = 'en-US';
+});
 afterEach(() => {
   protocolOverride.value = null;
   cleanup();
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   theme.value = 'system';
   vi.restoreAllMocks();
 });
 
-/** O `<dialog>` aberto (o jsdom o deixa fora da árvore de acessibilidade). */
+/** The open `<dialog>` (jsdom leaves it out of the accessibility tree). */
 const dialogEl = () => document.querySelector('dialog') as HTMLElement;
 
 describe('Dialog', () => {
-  // Etapa 8 (8.3), F10: só a confirmação (`alert`) é descrita pelo corpo; num diálogo
-  // comprido (Ajuda) o leitor de tela leria o corpo inteiro ao abrir.
-  it('diálogo comum: role dialog, sem aria-describedby', () => {
+  // Stage 8 (8.3), F10: only the confirmation (`alert`) is described by the body; in a long
+  // dialog (Help) the screen reader would read the whole body on opening.
+  it('plain dialog: role dialog, no aria-describedby', () => {
     render(<HelpDialog onClose={() => undefined} />);
     expect(dialogEl().getAttribute('role')).toBeNull();
     expect(dialogEl().hasAttribute('aria-describedby')).toBe(false);
   });
 
-  it('cabeçalho com título e fechar, corpo e rodapé', async () => {
+  it('header with title and close, body and footer', async () => {
     const onCancel = vi.fn();
     render(
-      <Dialog title="Título" onCancel={onCancel} actions={<button>Ação</button>}>
-        <p>Conteúdo</p>
+      <Dialog title="Title" onCancel={onCancel} actions={<button>Action</button>}>
+        <p>Content</p>
       </Dialog>,
     );
     const dialog = within(dialogEl());
-    expect(dialog.getByRole('heading', { name: 'Título', hidden: true })).toBeTruthy();
+    expect(dialog.getByRole('heading', { name: 'Title', hidden: true })).toBeTruthy();
     expect(dialogEl().querySelector('.dialog-header')).not.toBeNull();
-    expect(dialogEl().querySelector('.dialog-body')?.textContent).toBe('Conteúdo');
-    expect(dialogEl().querySelector('.dialog-actions')?.textContent).toBe('Ação');
+    expect(dialogEl().querySelector('.dialog-body')?.textContent).toBe('Content');
+    expect(dialogEl().querySelector('.dialog-actions')?.textContent).toBe('Action');
 
     await userEvent.click(
       dialog.getByRole('button', { name: t('dialog.close'), hidden: true }),
@@ -64,13 +67,13 @@ describe('Dialog', () => {
     expect(onCancel).toHaveBeenCalledOnce();
   });
 
-  // Devolução do portão da 8.4: o rastro do Abrir (`folders.reopen`) registra como o aviso
-  // fechou; o `onCancel` diz de onde veio, como parâmetro opcional.
-  it('onCancel recebe a origem: cancel (Esc), backdrop (fundo) e close-button', async () => {
+  // Return from the 8.4 gate: the trace of Open (`folders.reopen`) records how the notice
+  // closed; `onCancel` says where it came from, as an optional parameter.
+  it('onCancel receives the origin: cancel (Esc), backdrop and close-button', async () => {
     const onCancel = vi.fn();
     render(
-      <Dialog title="Título" onCancel={onCancel} actions={<button>Ação</button>}>
-        <p>Conteúdo</p>
+      <Dialog title="Title" onCancel={onCancel} actions={<button>Action</button>}>
+        <p>Content</p>
       </Dialog>,
     );
     dialogEl().dispatchEvent(new Event('cancel', { cancelable: true }));
@@ -78,20 +81,20 @@ describe('Dialog', () => {
     await userEvent.click(
       within(dialogEl()).getByRole('button', { name: t('dialog.close'), hidden: true }),
     );
-    await userEvent.click(within(dialogEl()).getByText('Conteúdo'));
+    await userEvent.click(within(dialogEl()).getByText('Content'));
     expect(onCancel.mock.calls).toEqual([['cancel'], ['backdrop'], ['close-button']]);
   });
 
-  // #957: só o clique inteiro no fundo fecha; um arrasto que começa no conteúdo não.
-  it('fundo: pointerdown no conteúdo + click no <dialog> não fecha; pointerdown e click no <dialog> fecham', () => {
+  // #957: only a whole click on the backdrop closes; a drag that starts on the content does not.
+  it('backdrop: pointerdown on the content + click on the <dialog> does not close; pointerdown and click on the <dialog> close', () => {
     const onCancel = vi.fn();
     render(
-      <Dialog title="Título" onCancel={onCancel} actions={<button>Ação</button>}>
-        <p>Conteúdo</p>
+      <Dialog title="Title" onCancel={onCancel} actions={<button>Action</button>}>
+        <p>Content</p>
       </Dialog>,
     );
-    const conteudo = within(dialogEl()).getByText('Conteúdo');
-    fireEvent.pointerDown(conteudo);
+    const content = within(dialogEl()).getByText('Content');
+    fireEvent.pointerDown(content);
     fireEvent.click(dialogEl());
     expect(onCancel).not.toHaveBeenCalled();
 
@@ -101,16 +104,16 @@ describe('Dialog', () => {
     expect(onCancel).toHaveBeenCalledWith('backdrop');
   });
 
-  // Etapa 6 (6.2), achado 9: um diálogo de escolha obrigatória não mostra um X que não faz nada.
-  it('closable={false}: sem o fechar do cabeçalho; Esc e o fundo não fazem nada', async () => {
+  // Stage 6 (6.2), finding 9: a mandatory-choice dialog does not show an X that does nothing.
+  it('closable={false}: no header close; Esc and the backdrop do nothing', async () => {
     const onClick = vi.fn();
     render(
       <Dialog
-        title="Escolha"
+        title="Choice"
         closable={false}
         actions={<button onClick={onClick}>Ok</button>}
       >
-        <p>Conteúdo</p>
+        <p>Content</p>
       </Dialog>,
     );
     const dialog = within(dialogEl());
@@ -127,38 +130,38 @@ describe('Dialog', () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 
-  it('closable={false}: se o navegador fechar o <dialog> mesmo assim, ele volta a abrir', () => {
-    render(<Dialog title="Escolha" closable={false} actions={<button>Ok</button>} />);
+  it('closable={false}: if the browser closes the <dialog> anyway, it reopens', () => {
+    render(<Dialog title="Choice" closable={false} actions={<button>Ok</button>} />);
     const dialog = dialogEl() as HTMLDialogElement;
     expect(dialog.open).toBe(true);
-    // O jsdom não tem `close()`: tira o `open` como o navegador faria ao fechar.
+    // jsdom has no `close()`: it removes `open` as the browser would on closing.
     dialog.removeAttribute('open');
     dialog.dispatchEvent(new Event('close'));
     expect(dialog.open).toBe(true);
   });
 
-  it('o botão do cabeçalho não repete o nome do "Fechar" do rodapé', () => {
+  it('the header button does not repeat the name of the footer "Close"', () => {
     expect(t('dialog.close')).not.toBe(t('common.close'));
   });
 
-  it('o foco inicial vai para o corpo, ou para o rodapé, e não para o fechar', () => {
+  it('the initial focus goes to the body, or to the footer, and not to the close', () => {
     const { unmount } = render(
       <Dialog title="a" onCancel={vi.fn()} actions={<button>Ok</button>}>
-        <input aria-label="campo" hidden />
-        <input aria-label="nome" />
+        <input aria-label="field" hidden />
+        <input aria-label="name" />
       </Dialog>,
     );
-    expect(document.activeElement?.getAttribute('aria-label')).toBe('nome');
+    expect(document.activeElement?.getAttribute('aria-label')).toBe('name');
     unmount();
     render(
-      <Dialog title="a" onCancel={vi.fn()} actions={<button>Cancelar</button>}>
-        <p>Só texto</p>
+      <Dialog title="a" onCancel={vi.fn()} actions={<button>Cancel</button>}>
+        <p>Text only</p>
       </Dialog>,
     );
-    expect(document.activeElement?.textContent).toBe('Cancelar');
+    expect(document.activeElement?.textContent).toBe('Cancel');
   });
 
-  it('tamanhos: 480px (padrão), 560px e 820px', () => {
+  it('sizes: 480px (default), 560px and 820px', () => {
     const { rerender } = render(<Dialog title="a" onCancel={vi.fn()} actions={null} />);
     expect(dialogEl().className).toBe('dialog');
     rerender(<Dialog title="a" size="md" onCancel={vi.fn()} actions={null} />);
@@ -168,23 +171,23 @@ describe('Dialog', () => {
     expect(dialogEl().querySelector('.dialog-body-flush')).not.toBeNull();
   });
 
-  // Etapa 6 (6.4), achado 4: ao fechar, o foco volta para quem abriu (e não ao `body`).
+  // Stage 6 (6.4), finding 4: on closing, the focus returns to whoever opened it (not to `body`).
   function Opener() {
     const [outer, setOuter] = useState(false);
     const [inner, setInner] = useState(false);
     return (
       <>
-        <button onClick={() => setOuter(true)}>Abrir</button>
+        <button onClick={() => setOuter(true)}>Open</button>
         {outer && (
           <Dialog
-            title="Externo"
+            title="Outer"
             onCancel={() => setOuter(false)}
-            actions={<button onClick={() => setInner(true)}>Detalhar</button>}
+            actions={<button onClick={() => setInner(true)}>Detail</button>}
           />
         )}
         {inner && (
           <Dialog
-            title="Interno"
+            title="Inner"
             onCancel={() => setInner(false)}
             actions={<button onClick={() => setInner(false)}>Ok</button>}
           />
@@ -193,18 +196,18 @@ describe('Dialog', () => {
     );
   }
 
-  it('ao fechar, devolve o foco a quem abriu (inclusive diálogo sobre diálogo)', async () => {
+  it('on closing, returns the focus to whoever opened it (including dialog over dialog)', async () => {
     const user = userEvent.setup();
     const { getByRole } = render(<Opener />);
-    const opener = getByRole('button', { name: 'Abrir' });
+    const opener = getByRole('button', { name: 'Open' });
     opener.focus();
     await user.keyboard('{Enter}');
-    await waitFor(() => expect(document.activeElement?.textContent).toBe('Detalhar'));
+    await waitFor(() => expect(document.activeElement?.textContent).toBe('Detail'));
     const detail = document.activeElement as HTMLElement;
     await user.keyboard('{Enter}');
     await waitFor(() => expect(document.activeElement?.textContent).toBe('Ok'));
     await user.keyboard('{Enter}');
-    // O interno fechou: o foco volta ao botão do externo que o abriu.
+    // The inner one closed: the focus returns to the outer button that opened it.
     await waitFor(() => expect(document.querySelectorAll('dialog')).toHaveLength(1));
     expect(document.activeElement).toBe(detail);
     await user.click(
@@ -215,23 +218,23 @@ describe('Dialog', () => {
   });
 });
 
-// Etapa 7 (7.1), achado A1: quem abriu saiu do DOM ao fechar (item de menu, linha removida…).
-describe('Dialog: foco quando quem abriu não existe mais', () => {
-  /** "Abrir" some ao confirmar com "Ok", como a linha excluída pelo próprio diálogo. */
+// Stage 7 (7.1), finding A1: whoever opened it left the DOM on closing (menu item, removed row…).
+describe('Dialog: focus when whoever opened it no longer exists', () => {
+  /** "Open" vanishes on confirming with "Ok", like a row deleted by the dialog itself. */
   function Vanishing({ explicit }: { readonly explicit: boolean }) {
     const [open, setOpen] = useState(false);
     const [gone, setGone] = useState(false);
     const target = useRef<HTMLButtonElement>(null);
     return (
       <div>
-        <button ref={target}>Alvo</button>
+        <button ref={target}>Target</button>
         <div>
-          {!gone && <button onClick={() => setOpen(true)}>Abrir</button>}
-          <button>Vizinho</button>
+          {!gone && <button onClick={() => setOpen(true)}>Open</button>}
+          <button>Neighbor</button>
         </div>
         {open && (
           <Dialog
-            title="Confirmar"
+            title="Confirm"
             onCancel={() => setOpen(false)}
             returnFocus={explicit ? () => target.current : undefined}
             actions={
@@ -253,9 +256,9 @@ describe('Dialog: foco quando quem abriu não existe mais', () => {
   async function openAndConfirm() {
     const user = userEvent.setup();
     const opener = [...document.querySelectorAll('button')].find(
-      (b) => b.textContent === 'Abrir',
+      (b) => b.textContent === 'Open',
     );
-    if (!opener) throw new Error('sem o botão Abrir');
+    if (!opener) throw new Error('no Open button');
     opener.focus();
     await user.keyboard('{Enter}');
     await waitFor(() => expect(document.activeElement?.textContent).toBe('Ok'));
@@ -263,27 +266,27 @@ describe('Dialog: foco quando quem abriu não existe mais', () => {
     await waitFor(() => expect(document.querySelector('dialog')).toBeNull());
   }
 
-  it('vai ao alvo de retorno explícito, e não ao body', async () => {
+  it('goes to the explicit return target, and not to the body', async () => {
     render(<Vanishing explicit />);
     await openAndConfirm();
-    expect(document.activeElement?.textContent).toBe('Alvo');
+    expect(document.activeElement?.textContent).toBe('Target');
   });
 
-  it('sem alvo explícito, vai ao contêiner mais próximo de quem abriu', async () => {
+  it('with no explicit target, goes to the nearest container of whoever opened it', async () => {
     render(<Vanishing explicit={false} />);
     await openAndConfirm();
-    expect(document.activeElement?.textContent).toBe('Vizinho');
+    expect(document.activeElement?.textContent).toBe('Neighbor');
   });
 
-  /** Aberto sem botão (atalho com o foco no body): não há quem abriu nem contêiner. */
+  /** Opened without a button (shortcut with the focus on the body): there is no opener nor container. */
   function Orphan() {
     const [open, setOpen] = useState(true);
     return (
       <div data-focus-root>
-        <button>Primeiro</button>
+        <button>First</button>
         {open && (
           <Dialog
-            title="Atalho"
+            title="Shortcut"
             onCancel={() => setOpen(false)}
             actions={<button onClick={() => setOpen(false)}>Ok</button>}
           />
@@ -292,30 +295,30 @@ describe('Dialog: foco quando quem abriu não existe mais', () => {
     );
   }
 
-  it('sem quem abriu nem contêiner, vai ao primeiro controle da app (data-focus-root), e não ao body', async () => {
+  it('with no opener nor container, goes to the first control of the app (data-focus-root), and not to the body', async () => {
     (document.activeElement as HTMLElement | null)?.blur();
     render(<Orphan />);
     await waitFor(() => expect(document.activeElement?.textContent).toBe('Ok'));
     dialogEl().dispatchEvent(new Event('cancel', { cancelable: true }));
     await waitFor(() => expect(document.querySelector('dialog')).toBeNull());
-    expect(document.activeElement?.textContent).toBe('Primeiro');
+    expect(document.activeElement?.textContent).toBe('First');
   });
 
-  /** Dentro de uma janela de ferramenta: ao sumir quem abriu, o foco vai à janela. */
+  /** Inside a tool window: when the opener vanishes, the focus goes to the window. */
   function InWindow({ withWindow }: { readonly withWindow: boolean }) {
     const [open, setOpen] = useState(false);
     const [gone, setGone] = useState(false);
     const inner = (
       <div>
-        {!gone && <button onClick={() => setOpen(true)}>Abrir</button>}
-        <button>Vizinho</button>
+        {!gone && <button onClick={() => setOpen(true)}>Open</button>}
+        <button>Neighbor</button>
       </div>
     );
     return (
       <div data-focus-root>
-        <button>Primeiro</button>
+        <button>First</button>
         {withWindow ? (
-          <section data-window="details" tabIndex={-1} aria-label="Detalhes">
+          <section data-window="details" tabIndex={-1} aria-label="Details">
             {inner}
           </section>
         ) : (
@@ -323,7 +326,7 @@ describe('Dialog: foco quando quem abriu não existe mais', () => {
         )}
         {open && (
           <Dialog
-            title="Confirmar"
+            title="Confirm"
             onCancel={() => setOpen(false)}
             returnFocus={() => null}
             actions={
@@ -342,7 +345,7 @@ describe('Dialog: foco quando quem abriu não existe mais', () => {
     );
   }
 
-  it('com alvo explícito que sumiu e quem abriu numa janela de ferramenta, vai à janela', async () => {
+  it('with an explicit target that vanished and an opener in a tool window, goes to the window', async () => {
     render(<InWindow withWindow />);
     await openAndConfirm();
     expect(document.activeElement).toBe(
@@ -350,22 +353,22 @@ describe('Dialog: foco quando quem abriu não existe mais', () => {
     );
   });
 
-  it('com alvo explícito que sumiu e sem janela em volta, vai ao primeiro controle da app', async () => {
+  it('with an explicit target that vanished and no window around, goes to the first control of the app', async () => {
     render(<InWindow withWindow={false} />);
     await openAndConfirm();
-    expect(document.activeElement?.textContent).toBe('Primeiro');
+    expect(document.activeElement?.textContent).toBe('First');
   });
 
-  it('quem abriu continua no DOM: o foco volta para ele (o alvo explícito fica de reserva)', async () => {
+  it('the opener is still in the DOM: the focus returns to it (the explicit target is the fallback)', async () => {
     const user = userEvent.setup();
     render(<Vanishing explicit />);
     const opener = [...document.querySelectorAll('button')].find(
-      (b) => b.textContent === 'Abrir',
+      (b) => b.textContent === 'Open',
     ) as HTMLElement;
     opener.focus();
     await user.keyboard('{Enter}');
     await waitFor(() => expect(document.activeElement?.textContent).toBe('Ok'));
-    // Esc (o jsdom não dispara o `cancel` sozinho).
+    // Esc (jsdom does not fire `cancel` by itself).
     dialogEl().dispatchEvent(new Event('cancel', { cancelable: true }));
     await waitFor(() => expect(document.querySelector('dialog')).toBeNull());
     expect(document.activeElement).toBe(opener);
@@ -379,7 +382,7 @@ describe('HelpDialog', () => {
 
   const toc = () => within(dialogEl()).getByRole('navigation', { hidden: true });
 
-  it('o guia interativo é a primeira seção, com o link em outra aba', () => {
+  it('the interactive guide is the first section, with the link in another tab', () => {
     render(<HelpDialog onClose={vi.fn()} />);
     const links = within(toc()).getAllByRole('link', { hidden: true });
     expect(links[0]?.textContent).toBe(t('help.guide.title'));
@@ -394,7 +397,7 @@ describe('HelpDialog', () => {
     expect(within(section).getByText(t('help.guide.example'))).toBeTruthy();
   });
 
-  it('em file:// a seção do guia mostra o aviso no lugar do link', () => {
+  it('on file:// the guide section shows the notice in place of the link', () => {
     protocolOverride.value = 'file:';
     try {
       render(<HelpDialog onClose={vi.fn()} />);
@@ -409,7 +412,7 @@ describe('HelpDialog', () => {
     }
   });
 
-  it('índice lateral com as seções, os downloads e os atalhos', () => {
+  it('side index with the sections, the downloads and the shortcuts', () => {
     render(<HelpDialog onClose={vi.fn()} />);
     const links = within(toc())
       .getAllByRole('link', { hidden: true })
@@ -419,7 +422,7 @@ describe('HelpDialog', () => {
     expect(links.length).toBeGreaterThan(5);
   });
 
-  it('tocar num item do índice rola até a seção', async () => {
+  it('tapping an index item scrolls to the section', async () => {
     render(<HelpDialog onClose={vi.fn()} />);
     await userEvent.click(
       within(toc()).getByRole('link', { name: t('help.shortcuts.title'), hidden: true }),
@@ -429,13 +432,13 @@ describe('HelpDialog', () => {
     expect(scroll.mock.contexts[0]).toBe(document.getElementById('help-shortcuts'));
   });
 
-  it('abre direto na seção pedida', () => {
+  it('opens straight on the requested section', () => {
     render(<HelpDialog onClose={vi.fn()} section={HELP_SHORTCUTS} />);
     const scroll = vi.mocked(Element.prototype.scrollIntoView);
     expect(scroll.mock.contexts.at(-1)).toBe(document.getElementById('help-shortcuts'));
   });
 
-  it('seção Propostas: abre direto nela e tem os atalhos da revisão em Atalhos', () => {
+  it('Proposals section: opens straight on it and has the review shortcuts in Shortcuts', () => {
     render(<HelpDialog onClose={vi.fn()} section={HELP_PROPOSALS} />);
     const scroll = vi.mocked(Element.prototype.scrollIntoView);
     const section = document.getElementById('help-proposals') as HTMLElement;
@@ -450,7 +453,7 @@ describe('HelpDialog', () => {
     ).toBeTruthy();
   });
 
-  it('seção Atalhos: mostra Ctrl+Shift+1 para a Árvore e F1', () => {
+  it('Shortcuts section: shows Ctrl+Shift+1 for the Tree and F1', () => {
     render(<HelpDialog onClose={vi.fn()} />);
     const section = document.getElementById('help-shortcuts') as HTMLElement;
     const tree = within(section).getByRole('rowheader', {
@@ -464,7 +467,9 @@ describe('HelpDialog', () => {
     expect(section.textContent).toContain('F1');
   });
 
-  it('a busca filtra as seções e ignora acentos', async () => {
+  // pt-BR kept: the search is accent-insensitive and the query is Portuguese text
+  it('search filters the sections and ignores accents (pt-BR)', async () => {
+    locale.value = 'pt-BR';
     render(<HelpDialog onClose={vi.fn()} />);
     await userEvent.type(
       within(dialogEl()).getByRole('searchbox', { name: t('help.search'), hidden: true }),
@@ -475,7 +480,7 @@ describe('HelpDialog', () => {
     expect(document.getElementById('help-downloads')).toBeNull();
   });
 
-  it('achar pelo texto da tecla', async () => {
+  it('find by the key text', async () => {
     render(<HelpDialog onClose={vi.fn()} />);
     await userEvent.type(
       within(dialogEl()).getByRole('searchbox', { hidden: true }),
@@ -484,7 +489,7 @@ describe('HelpDialog', () => {
     expect(document.getElementById('help-shortcuts')).not.toBeNull();
   });
 
-  it('sem resultado diz o que foi buscado', async () => {
+  it('no result says what was searched', async () => {
     render(<HelpDialog onClose={vi.fn()} />);
     await userEvent.type(
       within(dialogEl()).getByRole('searchbox', { hidden: true }),
@@ -495,17 +500,18 @@ describe('HelpDialog', () => {
     ).toBeTruthy();
   });
 
-  it('segue o idioma', () => {
-    locale.value = 'en-US';
+  // pt-BR kept: the test checks that the dialog follows the language
+  it('follows the language (pt-BR)', () => {
+    locale.value = 'pt-BR';
     render(<HelpDialog onClose={vi.fn()} />);
     expect(
-      within(toc()).getByRole('link', { name: 'Keyboard shortcuts', hidden: true }),
+      within(toc()).getByRole('link', { name: 'Atalhos de teclado', hidden: true }),
     ).toBeTruthy();
   });
 });
 
 describe('SettingsDialog', () => {
-  it('tema em segmentado: escolher muda o tema', async () => {
+  it('segmented theme: choosing changes the theme', async () => {
     render(<SettingsDialog onClose={vi.fn()} onShowShortcuts={vi.fn()} />);
     const group = within(dialogEl()).getByRole('group', {
       name: t('settings.theme'),
@@ -521,7 +527,7 @@ describe('SettingsDialog', () => {
     expect(dark.getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('idioma troca na hora', async () => {
+  it('language switches immediately', async () => {
     render(<SettingsDialog onClose={vi.fn()} onShowShortcuts={vi.fn()} />);
     await userEvent.selectOptions(
       within(dialogEl()).getByLabelText(t('settings.language'), { selector: 'select' }),
@@ -530,8 +536,8 @@ describe('SettingsDialog', () => {
     expect(locale.value).toBe('en-US');
   });
 
-  // B3/P7: a opção por pessoa, ao lado do zoom semântico.
-  it('Mostrar componentes sobre fotos: liga, desliga e grava', async () => {
+  // B3/P7: the per-person option, next to the semantic zoom.
+  it('Show components on photos: turns on, turns off and saves', async () => {
     localStorage.clear();
     setShowComponentsOnPhotos(false);
     render(<SettingsDialog onClose={vi.fn()} onShowShortcuts={vi.fn()} />);
@@ -548,7 +554,7 @@ describe('SettingsDialog', () => {
     expect(showComponentsOnPhotos.value).toBe(false);
   });
 
-  it('link para os atalhos', async () => {
+  it('link to the shortcuts', async () => {
     const onShowShortcuts = vi.fn();
     render(<SettingsDialog onClose={vi.fn()} onShowShortcuts={onShowShortcuts} />);
     await userEvent.click(

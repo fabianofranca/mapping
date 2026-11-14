@@ -13,12 +13,12 @@ import { sampleProject } from '../model/fixtures';
 import { AGENT, HUMAN, message, sampleThread } from '../model/threadFixtures';
 import { createHarness, type Harness } from './harness';
 
-// Chip vivo da citação nas mensagens (etapa Comentários, CM5, decisões 28 e 29).
+// Live citation chip in messages (Comments stage, CM5, decisions 28 and 29).
 
 beforeEach(() => {
   localStorage.clear();
-  locale.value = 'pt-BR';
-  setIdentity('Marina Alves', 'marina@exemplo.com');
+  locale.value = 'en-US';
+  setIdentity('Marina Alves', 'marina@example.com');
 });
 afterEach(() => {
   cleanup();
@@ -27,16 +27,16 @@ afterEach(() => {
 
 const urlOf = (h: Harness, target: CitationTarget): string => {
   const url = citationUrl(
-    h.context.session.storage.folderName ?? 'projeto',
+    h.context.session.storage.folderName ?? 'project',
     h.project(),
     [],
     target,
   );
-  if (url === null) throw new Error('alvo sem URL');
+  if (url === null) throw new Error('target without URL');
   return url;
 };
 
-function renderChip(h: Harness, url: string, label = 'reserva') {
+function renderChip(h: Harness, url: string, label = 'fallback') {
   return render(
     <EditorContext.Provider value={h.context}>
       <CitationChip url={url} label={label} />
@@ -45,65 +45,67 @@ function renderChip(h: Harness, url: string, label = 'reserva') {
 }
 
 describe('CitationChip', () => {
-  it('mostra o nome vivo do alvo, com o nome acessível "<nome>, citação"', () => {
+  it('shows the live name of the target, with the accessible name "<name>, citation"', () => {
     const h = createHarness(sampleProject());
-    renderChip(h, urlOf(h, { kind: 'marking', id: 'M1' }), 'nome antigo');
+    renderChip(h, urlOf(h, { kind: 'marking', id: 'M1' }), 'old name');
     const chip = screen.getByRole('button', {
+      // pt-BR kept: shared fixture data asserted by tests/model (sampleProject)
       name: t('citation.chipLabel', { name: 'Porta' }),
     });
+    // pt-BR kept: shared fixture data asserted by tests/model (sampleProject)
     expect(chip.textContent).toBe('Porta');
     expect(chip.classList.contains('citation-chip')).toBe(true);
     expect(chip.classList.contains('citation-chip-broken')).toBe(false);
     expect(chip.getAttribute('type')).toBe('button');
   });
 
-  it('renomear o alvo muda o chip', () => {
+  it('renaming the target changes the chip', () => {
     const h = createHarness(sampleProject());
     const view = renderChip(h, urlOf(h, { kind: 'marking', id: 'M1' }));
     act(() => {
-      h.actions.renameMarking('M1', 'Porta traseira');
+      h.actions.renameMarking('M1', 'Rear door');
     });
     view.rerender(
       <EditorContext.Provider value={h.context}>
-        <CitationChip url={urlOf(h, { kind: 'marking', id: 'M1' })} label="reserva" />
+        <CitationChip url={urlOf(h, { kind: 'marking', id: 'M1' })} label="fallback" />
       </EditorContext.Provider>,
     );
-    expect(screen.getByRole('button').textContent).toBe('Porta traseira');
+    expect(screen.getByRole('button').textContent).toBe('Rear door');
   });
 
-  it('alvo sem nome mostra o texto neutro traduzido', () => {
+  it('an unnamed target shows the translated neutral text', () => {
     const h = createHarness(sampleProject());
     renderChip(h, urlOf(h, { kind: 'marking', id: 'M4' }), '');
     expect(screen.getByRole('button').textContent).toBe(t('citation.unnamed'));
   });
 
-  it('alvo apagado: chip riscado com o rótulo de reserva e a dica', () => {
+  it('deleted target: struck-through chip with the fallback label and the tip', () => {
     const h = createHarness(sampleProject());
     const url = urlOf(h, { kind: 'marking', id: 'M3' });
     act(() => {
       h.actions.removeMarking('M3');
     });
-    renderChip(h, url, 'Fechadura antiga');
+    renderChip(h, url, 'Old lock');
     const chip = screen.getByRole('button');
-    expect(chip.textContent).toBe('Fechadura antiga');
+    expect(chip.textContent).toBe('Old lock');
     expect(chip.classList.contains('citation-chip-broken')).toBe(true);
     expect(chip.getAttribute('title')).toBe(t('citation.missing'));
   });
 
-  it('o clique leva ao alvo; o chip quebrado não vai a lugar nenhum', async () => {
+  it('clicking goes to the target; the broken chip goes nowhere', async () => {
     const h = createHarness(sampleProject());
     renderChip(h, urlOf(h, { kind: 'marking', id: 'M2' }));
     await userEvent.click(screen.getByRole('button'));
     expect(h.ui.selection.value).toEqual({ kind: 'marking', id: 'M2' });
     cleanup();
     h.ui.selection.value = null;
-    renderChip(h, 'mapping://projeto/m/zzzz', 'perdida');
+    renderChip(h, 'mapping://project/m/zzzz', 'lost');
     await userEvent.click(screen.getByRole('button'));
     expect(h.ui.selection.value).toBeNull();
   });
 });
 
-describe('chip nas mensagens', () => {
+describe('chip in messages', () => {
   function thread(h: Harness, text: string) {
     return sampleThread({
       id: 'v1',
@@ -111,32 +113,34 @@ describe('chip nas mensagens', () => {
     });
   }
 
-  it('a citação [rótulo](mapping://…) vira chip dentro do texto da mensagem', async () => {
+  it('the citation [label](mapping://…) becomes a chip inside the message text', async () => {
     const h = createHarness(sampleProject());
     const url = urlOf(h, { kind: 'marking', id: 'M1' });
     render(
       <EditorContext.Provider value={h.context}>
-        <ThreadView thread={thread(h, `veja [velho](${url}) agora`)} />
+        <ThreadView thread={thread(h, `see [old](${url}) now`)} />
       </EditorContext.Provider>,
     );
-    const chip = screen.getByRole('button', { name: 'Porta, citação' });
-    expect(chip.closest('p')?.textContent).toContain('veja Porta agora');
+    // pt-BR kept: shared fixture data asserted by tests/model (sampleProject)
+    const chip = screen.getByRole('button', { name: 'Porta, citation' });
+    // pt-BR kept: shared fixture data asserted by tests/model (sampleProject)
+    expect(chip.closest('p')?.textContent).toContain('see Porta now');
     await userEvent.click(chip);
     expect(h.ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
   });
 
-  it('link do Catálogo (mapping://spec/tipo) continua como estava: texto, sem chip', () => {
+  it('Catalog link (mapping://spec/type) stays as it was: text, no chip', () => {
     const h = createHarness(sampleProject());
     render(
       <EditorContext.Provider value={h.context}>
-        <ThreadView thread={thread(h, 'veja [o botão](mapping://project/M1)')} />
+        <ThreadView thread={thread(h, 'see [the button](mapping://project/M1)')} />
       </EditorContext.Provider>,
     );
-    expect(screen.queryByRole('button', { name: /citação/ })).toBeNull();
-    expect(screen.getByText(/o botão/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /citation/ })).toBeNull();
+    expect(screen.getByText(/the button/)).toBeTruthy();
   });
 
-  it('mensagem de agente também tem chip', () => {
+  it('an agent message also has a chip', () => {
     const h = createHarness(sampleProject());
     const url = urlOf(h, { kind: 'container', id: 'I1' });
     render(
@@ -148,19 +152,19 @@ describe('chip nas mensagens', () => {
         />
       </EditorContext.Provider>,
     );
-    expect(screen.getByRole('button', { name: /citação/ }).textContent).toBe(
+    expect(screen.getByRole('button', { name: /citation/ }).textContent).toBe(
       'lateral.jpg',
     );
   });
 });
 
 describe('Markdown › renderMapping', () => {
-  it('chama o renderizador antes de onLink, só para links que não são da biblioteca', async () => {
+  it('calls the renderer before onLink, only for links that are not from the library', async () => {
     const calls: string[][] = [];
     const clicked: string[] = [];
     render(
       <Markdown
-        text="[x](mapping://p/m/ab) e [y](mapping://spec/tipo) e [z](mapping://tipo)"
+        text="[x](mapping://p/m/ab) and [y](mapping://spec/type) and [z](mapping://type)"
         onLink={(href) => clicked.push(href)}
         renderMapping={(href, label) => {
           calls.push([href, label]);
@@ -171,10 +175,10 @@ describe('Markdown › renderMapping', () => {
     expect(calls).toEqual([['mapping://p/m/ab', 'x']]);
     expect(screen.getByText('chip:x')).toBeTruthy();
     await userEvent.click(screen.getByText('y'));
-    expect(clicked).toEqual(['mapping://spec/tipo']);
+    expect(clicked).toEqual(['mapping://spec/type']);
   });
 
-  it('se o renderizador devolve null, vale o link de sempre', async () => {
+  it('if the renderer returns null, the usual link applies', async () => {
     const clicked: string[] = [];
     render(
       <Markdown

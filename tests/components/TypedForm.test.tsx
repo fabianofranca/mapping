@@ -8,20 +8,20 @@ import { TypedForm } from '../../src/ui/TypedForm';
 import { descriptionOf } from './describedBy';
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
 const fields: SpecField[] = [
-  { key: 'nome', type: 'string', required: true, description: 'Nome visível' },
-  { key: 'idade', type: 'number' },
-  { key: 'estilo', type: 'enum', options: ['a', 'b'] },
-  { key: 'destino', type: 'ref', accepts: {} } as SpecField,
+  { key: 'name', type: 'string', required: true, description: 'Visible name' },
+  { key: 'age', type: 'number' },
+  { key: 'style', type: 'enum', options: ['a', 'b'] },
+  { key: 'target', type: 'ref', accepts: {} } as SpecField,
   {
-    key: 'itens',
+    key: 'items',
     type: 'table',
-    rowLabel: 'nome',
-    columns: [{ key: 'nome', type: 'string' }],
+    rowLabel: 'name',
+    columns: [{ key: 'name', type: 'string' }],
   },
 ];
 
@@ -33,123 +33,123 @@ function setup(values: Record<string, unknown> = {}, readOnly = false) {
   return { onChange, user: userEvent.setup() };
 }
 
-describe('TypedForm (sem projeto nem EditorProvider)', () => {
-  it('renderiza um controle por tipo de campo', () => {
+describe('TypedForm (without a project or EditorProvider)', () => {
+  it('renders one control per field type', () => {
     setup();
-    expect(screen.getByLabelText('nome')).toBeTruthy();
-    expect(screen.getByLabelText('idade')).toBeTruthy();
-    expect(screen.getByRole('group', { name: 'estilo' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /destino/ })).toBeTruthy();
-    // A descrição do campo é um ícone com dica, não um texto sempre visível.
+    expect(screen.getByLabelText('name')).toBeTruthy();
+    expect(screen.getByLabelText('age')).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'style' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /target/ })).toBeTruthy();
+    // The field description is an icon with a hint, not an always-visible text.
     expect(document.querySelector('.props-note')).toBeNull();
-    const help = screen.getByRole('button', { name: 'Sobre nome' });
-    expect(descriptionOf(help)).toBe('Nome visível');
-    expect(descriptionOf(screen.getByLabelText('nome'))).toBe('Nome visível');
-    expect(screen.getByRole('button', { name: '+ Linha' })).toBeTruthy();
+    const help = screen.getByRole('button', { name: 'About name' });
+    expect(descriptionOf(help)).toBe('Visible name');
+    expect(descriptionOf(screen.getByLabelText('name'))).toBe('Visible name');
+    expect(screen.getByRole('button', { name: '+ Row' })).toBeTruthy();
   });
 
-  it('texto, número e opção chamam onChange com chave e valor', async () => {
+  it('text, number and option call onChange with key and value', async () => {
     const { onChange, user } = setup();
-    await user.type(screen.getByLabelText('nome'), 'Ana{Enter}');
-    expect(onChange).toHaveBeenLastCalledWith('nome', 'Ana');
-    await user.type(screen.getByLabelText('idade'), '12,5{Enter}');
-    expect(onChange).toHaveBeenLastCalledWith('idade', 12.5);
+    await user.type(screen.getByLabelText('name'), 'Ann{Enter}');
+    expect(onChange).toHaveBeenLastCalledWith('name', 'Ann');
+    await user.type(screen.getByLabelText('age'), '12,5{Enter}');
+    expect(onChange).toHaveBeenLastCalledWith('age', 12.5);
     await user.click(
-      within(screen.getByRole('group', { name: 'estilo' })).getByRole('button', {
+      within(screen.getByRole('group', { name: 'style' })).getByRole('button', {
         name: 'b',
       }),
     );
-    expect(onChange).toHaveBeenLastCalledWith('estilo', 'b');
+    expect(onChange).toHaveBeenLastCalledWith('style', 'b');
   });
 
-  it('tabela: adiciona, edita e remove linhas', async () => {
+  it('table: adds, edits and removes rows', async () => {
     const { onChange, user } = setup({
-      itens: [{ _id: 'r1', nome: 'um' }],
+      items: [{ _id: 'r1', name: 'one' }],
     });
-    await user.click(screen.getByRole('button', { name: '+ Linha' }));
+    await user.click(screen.getByRole('button', { name: '+ Row' }));
     const added = onChange.mock.calls.at(-1) as [string, { _id: string }[]];
-    expect(added[0]).toBe('itens');
+    expect(added[0]).toBe('items');
     expect(added[1]).toHaveLength(2);
     expect(added[1][0]?._id).toBe('r1');
 
-    const cell = screen.getByLabelText('nome (um)');
+    const cell = screen.getByLabelText('name (one)');
     await user.clear(cell);
-    await user.type(cell, 'dois{Enter}');
-    expect(onChange).toHaveBeenLastCalledWith('itens', [{ _id: 'r1', nome: 'dois' }]);
+    await user.type(cell, 'two{Enter}');
+    expect(onChange).toHaveBeenLastCalledWith('items', [{ _id: 'r1', name: 'two' }]);
 
-    await user.click(screen.getByRole('button', { name: /Ações da linha/ }));
-    await user.click(screen.getByRole('menuitem', { name: /Remover linha/ }));
-    expect(onChange).toHaveBeenLastCalledWith('itens', []);
+    await user.click(screen.getByRole('button', { name: /Actions for row/ }));
+    await user.click(screen.getByRole('menuitem', { name: /Remove row/ }));
+    expect(onChange).toHaveBeenLastCalledWith('items', []);
   });
 
-  it('readOnly desabilita os controles e a referência fica desabilitada', () => {
-    setup({ itens: [{ _id: 'r1', nome: 'um' }] }, true);
-    expect((screen.getByLabelText('nome') as HTMLInputElement).disabled).toBe(true);
-    expect((screen.getByLabelText('idade') as HTMLInputElement).disabled).toBe(true);
-    expect((screen.getByLabelText('nome (um)') as HTMLInputElement).disabled).toBe(true);
+  it('readOnly disables the controls and the reference is disabled', () => {
+    setup({ items: [{ _id: 'r1', name: 'one' }] }, true);
+    expect((screen.getByLabelText('name') as HTMLInputElement).disabled).toBe(true);
+    expect((screen.getByLabelText('age') as HTMLInputElement).disabled).toBe(true);
+    expect((screen.getByLabelText('name (one)') as HTMLInputElement).disabled).toBe(true);
     expect(
-      (screen.getByRole('button', { name: /destino/ }) as HTMLButtonElement).disabled,
+      (screen.getByRole('button', { name: /target/ }) as HTMLButtonElement).disabled,
     ).toBe(true);
   });
 
-  it('referência sem projeto: desabilitada mesmo editável', () => {
+  it('reference without a project: disabled even when editable', () => {
     setup();
-    // SN2: o nome começa pelo texto visível.
+    // SN2: the name starts with the visible text.
     const button = screen.getByRole('button', {
-      name: 'Escolher: destino',
+      name: 'Choose: target',
     }) as HTMLButtonElement;
     expect(button.disabled).toBe(true);
-    expect(button.title).toContain('projeto');
+    expect(button.title).toContain('project');
   });
 });
 
-describe('TypedForm: texto longo', () => {
-  it('a célula de tabela com texto longo continua de uma linha', () => {
+describe('TypedForm: long text', () => {
+  it('the table cell with long text stays on one line', () => {
     const long = 'y'.repeat(MULTILINE_MIN_LENGTH + 20);
-    setup({ itens: [{ _id: 'r1', nome: long }] });
-    expect(screen.getByLabelText(/^nome \(/).tagName).toBe('INPUT');
+    setup({ items: [{ _id: 'r1', name: long }] });
+    expect(screen.getByLabelText(/^name \(/).tagName).toBe('INPUT');
   });
 });
 
-describe('TypedForm: coluna ref de uma tabela (sem projeto)', () => {
-  it('a célula ref mostra o seletor indisponível, e as outras colunas continuam editáveis', async () => {
+describe('TypedForm: ref column of a table (without a project)', () => {
+  it('the ref cell shows the unavailable picker, and the other columns stay editable', async () => {
     const onChange = vi.fn();
     const withRef: SpecField[] = [
       {
-        key: 'alvos',
-        label: 'Alvos',
+        key: 'targets',
+        label: 'Targets',
         type: 'table',
         columns: [
-          { key: 'nota', type: 'string' },
-          { key: 'alvo', label: 'Alvo', type: 'ref', accepts: { free: true } },
+          { key: 'note', type: 'string' },
+          { key: 'target', label: 'Target', type: 'ref', accepts: { free: true } },
         ],
       },
     ];
     render(<TypedForm fields={withRef} values={{}} onChange={onChange} />);
     const user = userEvent.setup();
-    await user.click(screen.getByRole('button', { name: '+ Linha' }));
-    expect(onChange).toHaveBeenLastCalledWith('alvos', [
-      expect.objectContaining({ nota: null, alvo: null }),
+    await user.click(screen.getByRole('button', { name: '+ Row' }));
+    expect(onChange).toHaveBeenLastCalledWith('targets', [
+      expect.objectContaining({ note: null, target: null }),
     ]);
   });
 
-  it('com a linha na tabela, o botão da célula ref fica desabilitado e explica por quê', () => {
+  it('with the row in the table, the ref cell button is disabled and explains why', () => {
     const withRef: SpecField[] = [
       {
-        key: 'alvos',
+        key: 'targets',
         type: 'table',
-        columns: [{ key: 'alvo', label: 'Alvo', type: 'ref', accepts: { free: true } }],
+        columns: [{ key: 'target', label: 'Target', type: 'ref', accepts: { free: true } }],
       },
     ];
     render(
       <TypedForm
         fields={withRef}
-        values={{ alvos: [{ _id: 'R1', alvo: null }] }}
+        values={{ targets: [{ _id: 'R1', target: null }] }}
         onChange={vi.fn()}
       />,
     );
-    const button = screen.getByRole('button', { name: 'Escolher: Alvo (Linha 1)' });
+    const button = screen.getByRole('button', { name: 'Choose: Target (Row 1)' });
     expect(button).toHaveProperty('disabled', true);
-    expect(button.title).toBe('Escolher referência só funciona dentro de um projeto.');
+    expect(button.title).toBe('Picking a reference only works inside a project.');
   });
 });

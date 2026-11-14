@@ -21,16 +21,16 @@ import { applySpecialization, type Project, type Spec } from '../../src/model';
 import { sampleProject } from '../model/fixtures';
 import { createHarness, renderLive, type Harness } from './harness';
 
-// B3/P7: o diálogo "Novo container" e os campos de tamanho e cor nos Detalhes da tela.
+// B3/P7: the "New container" dialog and the size and color fields in the screen Details.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
 const dialogEl = () => document.querySelector('dialog') as HTMLElement;
 const inDialog = () => within(dialogEl());
-/** O erro mostrado sob o campo (ou `null`): o aviso fica na mesma célula do controle. */
+/** The error shown under the field (or `null`): the notice sits in the same cell as the control. */
 const alertOf = (control: HTMLElement): string | null =>
   control.closest('.props-value')?.querySelector('[role="alert"]')?.textContent ?? null;
 const field = (name: string) => inDialog().getByLabelText<HTMLInputElement>(name);
@@ -56,7 +56,7 @@ const SPEC: Spec = {
   name: 'Design System',
   version: 1,
   containers: [
-    { id: 'phone', name: 'Celular', width: 360, height: 800 },
+    { id: 'phone', name: 'Phone', width: 360, height: 800 },
     { id: 'tablet', name: 'Tablet', width: 800, height: 1280, background: '#EEEEEE' },
   ],
   layers: [],
@@ -71,8 +71,8 @@ const submit = (user: ReturnType<typeof userEvent.setup>) =>
     inDialog().getByRole('button', { name: t('container.create'), hidden: true }),
   );
 
-describe('leitura do formulário', () => {
-  it('lados inteiros de 1 ao máximo; cor #RRGGBB', () => {
+describe('reading the form', () => {
+  it('integer sides from 1 to the maximum; #RRGGBB color', () => {
     expect(parseContainerSide('360')).toBe(360);
     expect(parseContainerSide(' 20000 ')).toBe(MAX_CONTAINER_SIZE);
     for (const bad of ['0', '-1', '12.5', 'abc', '', String(MAX_CONTAINER_SIZE + 1)]) {
@@ -85,8 +85,8 @@ describe('leitura do formulário', () => {
   });
 });
 
-describe('diálogo Novo container', () => {
-  it('o preset da especialização preenche tamanho e fundo; cria, seleciona e enquadra', async () => {
+describe('New container dialog', () => {
+  it('the specialization preset fills in size and background; creates, selects and frames', async () => {
     const harness = createHarness(withSpec(sampleProject()));
     const { user, canvas, onClose } = renderDialog(harness);
     await user.type(field(t('container.name')), 'Login');
@@ -113,7 +113,7 @@ describe('diálogo Novo container', () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it('com a especialização, os presets ficam agrupados pelo nome dela', () => {
+  it('with the specialization, the presets are grouped under its name', () => {
     renderDialog(createHarness(withSpec(sampleProject())));
     const select = inDialog().getByLabelText<HTMLSelectElement>(t('container.preset'));
     const group = select.querySelector('optgroup');
@@ -125,7 +125,7 @@ describe('diálogo Novo container', () => {
     expect(field(t('container.width')).value).toBe('360');
   });
 
-  it('sem especialização só Personalizado e Tamanho da seleção (desabilitado sem seleção)', () => {
+  it('without a specialization only Custom and Selection size (disabled without a selection)', () => {
     renderDialog(createHarness(sampleProject()));
     const select = inDialog().getByLabelText<HTMLSelectElement>(t('container.preset'));
     expect(Array.from(select.options).map((o) => o.value)).toEqual([
@@ -137,10 +137,10 @@ describe('diálogo Novo container', () => {
     expect(select.value).toBe('custom');
   });
 
-  it('Tamanho da seleção usa o retângulo da marcação selecionada', async () => {
+  it('Selection size uses the rectangle of the selected marking', async () => {
     const harness = createHarness(sampleProject());
     const marking = harness.project().markings[0];
-    if (!marking) throw new Error('sem marcação');
+    if (!marking) throw new Error('no marking');
     harness.ui.selection.value = { kind: 'marking', id: marking.id };
     expect(selectionSize(harness.project(), harness.ui.selection.value)).toEqual({
       width: marking.rect.width,
@@ -155,7 +155,7 @@ describe('diálogo Novo container', () => {
     expect(field(t('container.height')).value).toBe(String(marking.rect.height));
   });
 
-  it('presetGroups ignora especialização sem containers ou sem cópia', () => {
+  it('presetGroups ignores a specialization without containers or without a copy', () => {
     expect(
       presetGroups([
         { id: 'a', spec: { ...SPEC, containers: undefined } },
@@ -164,7 +164,7 @@ describe('diálogo Novo container', () => {
     ).toEqual([]);
   });
 
-  it('editar o tamanho passa a predefinição para Personalizado', async () => {
+  it('editing the size switches the preset to Custom', async () => {
     const { user } = renderDialog(createHarness(withSpec(sampleProject())));
     await user.clear(field(t('container.width')));
     await user.type(field(t('container.width')), '361');
@@ -173,7 +173,7 @@ describe('diálogo Novo container', () => {
     ).toBe('custom');
   });
 
-  it('valida: nome obrigatório, tamanho e cor; nada é criado', async () => {
+  it('validates: required name, size and color; nothing is created', async () => {
     const harness = createHarness(sampleProject());
     const before = harness.project().containers.length;
     const { user, onClose } = renderDialog(harness);
@@ -194,7 +194,7 @@ describe('diálogo Novo container', () => {
     await user.clear(field(t('container.width')));
     await user.type(field(t('container.width')), '300');
     await user.clear(field(t('container.background')));
-    await user.type(field(t('container.background')), 'azul');
+    await user.type(field(t('container.background')), 'blue');
     await submit(user);
     expect(inDialog().getByRole('alert', { hidden: true }).textContent).toBe(
       t('container.error.color'),
@@ -205,7 +205,7 @@ describe('diálogo Novo container', () => {
   });
 });
 
-describe('Detalhes do container', () => {
+describe('Container Details', () => {
   function renderContainer() {
     const harness = createHarness(sampleProject());
     const created = harness.actions.addBackgroundContainer({
@@ -230,13 +230,13 @@ describe('Detalhes do container', () => {
     });
     const image = (): ReturnType<Harness['project']>['containers'][number] => {
       const found = harness.project().containers.find((i) => i.id === created.value);
-      if (!found) throw new Error('sem tela');
+      if (!found) throw new Error('no screen');
       return found;
     };
     return { harness, image, user: userEvent.setup() };
   }
 
-  it('Largura, Altura e Cor de fundo no lugar de Arquivo', async () => {
+  it('Width, Height and Background color in place of File', async () => {
     const { image, user } = renderContainer();
     expect(screen.queryByText(t('image.file'))).toBeNull();
     const width = screen.getByLabelText<HTMLInputElement>(t('container.width'));
@@ -255,11 +255,11 @@ describe('Detalhes do container', () => {
     expect(image().background).toBe('#00FF00');
   });
 
-  it('valor inválido mostra o erro e não grava', async () => {
+  it('an invalid value shows the error and does not save', async () => {
     const { image, user } = renderContainer();
     const color = screen.getByLabelText<HTMLInputElement>(t('container.background'));
     await user.clear(color);
-    await user.type(color, 'vermelho{Enter}');
+    await user.type(color, 'red{Enter}');
     expect(screen.getByRole('alert').textContent).toBe(t('container.error.color'));
     expect(image().background).toBe('#FFFFFF');
 
@@ -271,7 +271,7 @@ describe('Detalhes do container', () => {
     expect(image().height).toBe(800);
   });
 
-  it('o erro de largura, de altura e de cor aparece sob o próprio campo (CR #954, item 36)', async () => {
+  it('the width, height and color errors appear under their own field (code review #954, item 36)', async () => {
     const { user } = renderContainer();
     const width = screen.getByLabelText<HTMLInputElement>(t('container.width'));
     const height = screen.getByLabelText<HTMLInputElement>(t('container.height'));
@@ -283,9 +283,9 @@ describe('Detalhes do container', () => {
     expect(alertOf(color)).toBeNull();
   });
 
-  it('trocar o container selecionado zera os erros (CR #954, item 36)', async () => {
+  it('switching the selected container clears the errors (code review #954, item 36)', async () => {
     const harness = createHarness(sampleProject());
-    const ids = ['Home', 'Perfil'].map((name) => {
+    const ids = ['Home', 'Profile'].map((name) => {
       const created = harness.actions.addBackgroundContainer({
         name,
         width: 360,
@@ -297,7 +297,7 @@ describe('Detalhes do container', () => {
     });
     const panel = (id: string | undefined) => {
       const image = harness.project().containers.find((i) => i.id === id);
-      if (!image) throw new Error('sem tela');
+      if (!image) throw new Error('no screen');
       return (
         <EditorContext.Provider value={harness.context}>
           <SelectionPanel
@@ -315,13 +315,13 @@ describe('Detalhes do container', () => {
     const user = userEvent.setup();
     const color = screen.getByLabelText<HTMLInputElement>(t('container.background'));
     await user.clear(color);
-    await user.type(color, 'vermelho{Enter}');
+    await user.type(color, 'red{Enter}');
     expect(screen.getByRole('alert').textContent).toBe(t('container.error.color'));
     rerender(panel(ids[1]));
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('uma foto continua com Arquivo e Tamanho, sem os campos da tela', () => {
+  it('a photo keeps File and Size, without the screen fields', () => {
     const harness = createHarness(sampleProject());
     renderLive(harness, (project) => {
       const image = project.containers[0];
@@ -341,7 +341,7 @@ describe('Detalhes do container', () => {
   });
 });
 
-describe('entrada pela barra principal', () => {
+describe('entry through the main bar', () => {
   function renderBar(harness: Harness) {
     const dialogs = { show: vi.fn(), exportButton: { current: null } };
     render(
@@ -357,13 +357,13 @@ describe('entrada pela barra principal', () => {
     return dialogs;
   }
 
-  it('o botão ao lado de Adicionar imagens abre o diálogo', async () => {
+  it('the button next to Add images opens the dialog', async () => {
     const dialogs = renderBar(createHarness(sampleProject()));
     await userEvent.click(screen.getByRole('button', { name: t('container.new') }));
     expect(dialogs.show).toHaveBeenCalledWith({ kind: 'container' });
   });
 
-  it('somente leitura: desabilitado', () => {
+  it('read-only: disabled', () => {
     renderBar(createHarness(sampleProject(), true));
     expect(
       screen.getByRole<HTMLButtonElement>('button', { name: t('container.new') })

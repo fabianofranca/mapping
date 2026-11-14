@@ -14,9 +14,9 @@ import { rowDomId } from '../../../src/ui/review/levelRows';
 import { AT, propose } from '../../model/proposalFixtures';
 import { openReviewHarness, renderInEditor } from './reviewHarness';
 
-// Etapa #954, fase 5 (itens 58, 60 e 61): a medida da linha vem de uma linha de item (não do
-// cabeçalho de grupo), o rodapé de atalhos é um grupo nomeado e a árvore rola até a
-// selecionada mesmo quando a medida só chega depois da primeira renderização.
+// Stage #954, phase 5 (items 58, 60 and 61): the row measure comes from an item row (not from
+// the group header), the shortcuts footer is a named group and the tree scrolls to the
+// selected one even when the measure only arrives after the first render.
 
 const ROW = 30;
 const GROUP = 50;
@@ -24,9 +24,9 @@ const VIEW = 300;
 const scrollTops = new WeakMap<Element, number>();
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   localStorage.clear();
-  // O jsdom não tem layout: linhas de 30 px, cabeçalho de grupo de 50 px, janela de 300 px.
+  // jsdom has no layout: 30 px rows, 50 px group header, 300 px window.
   vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (
     this: HTMLElement,
   ) {
@@ -58,9 +58,9 @@ afterEach(() => {
 function manyMarkings(count: number): { base: Project; proposal: Proposal } {
   const base = addContainer(
     createProject({
-      name: 'Grande',
+      name: 'Large',
       now: AT,
-      firstLayer: { id: 'L1', name: 'Camada 1', color: '#D32F2F' },
+      firstLayer: { id: 'L1', name: 'Layer 1', color: '#D32F2F' },
     }),
     { id: 'I1', file: 'images/a.webp', width: 800, height: 600 },
   );
@@ -73,11 +73,11 @@ function manyMarkings(count: number): { base: Project; proposal: Proposal } {
       name: `Item ${i}`,
     });
   }
-  return { base, proposal: propose(base, after, { id: 'P1', title: 'Grande' }) };
+  return { base, proposal: propose(base, after, { id: 'P1', title: 'Large' }) };
 }
 
-describe('árvore da revisão: janela virtual', () => {
-  it('58: a altura da linha vem de uma linha de item, não do cabeçalho de grupo', async () => {
+describe('review tree: virtual window', () => {
+  it('58: the row height comes from an item row, not from the group header', async () => {
     const { base, proposal } = manyMarkings(120);
     const old: Proposal = { ...proposal, status: 'superseded' };
     const next = propose(base, base, { id: 'P2', title: 'v2', supersedes: 'P1' });
@@ -86,7 +86,7 @@ describe('árvore da revisão: janela virtual', () => {
     renderInEditor(h, <ReviewLevels />);
     const tree = screen.getByRole('tree');
     const drawn = tree.querySelectorAll('[data-row]').length;
-    const total = 1 + old.changes.length; // um cabeçalho de grupo + as mudanças
+    const total = 1 + old.changes.length; // one group header + the changes
     expect(drawn).toBeLessThan(total);
     const spacer = tree.lastElementChild as HTMLElement;
     const after = [...tree.children].filter((c) => c.getAttribute('aria-hidden')).at(-1);
@@ -94,7 +94,7 @@ describe('árvore da revisão: janela virtual', () => {
     expect(spacer).toBeTruthy();
   });
 
-  it('60: o rodapé de atalhos é um grupo com nome', async () => {
+  it('60: the shortcuts footer is a named group', async () => {
     const { base, proposal } = manyMarkings(2);
     const h = await openReviewHarness({ project: base, proposals: [proposal] });
     expect(h.review.open('P1').ok).toBe(true);
@@ -102,7 +102,7 @@ describe('árvore da revisão: janela virtual', () => {
     expect(screen.getByRole('group', { name: t('review.shortcuts') })).toBeTruthy();
   });
 
-  it('61: rola até a selecionada que está além das linhas da primeira renderização', async () => {
+  it('61: scrolls to the selected one that is beyond the rows of the first render', async () => {
     const { base, proposal } = manyMarkings(100);
     const h = await openReviewHarness({ project: base, proposals: [proposal] });
     expect(h.review.open('P1').ok).toBe(true);
@@ -115,7 +115,7 @@ describe('árvore da revisão: janela virtual', () => {
     expect(document.getElementById(rowDomId(`change:${last.id}`))).not.toBeNull();
   });
 
-  it('61: expandir ou recolher um grupo não faz a lista pular de volta', async () => {
+  it('61: expanding or collapsing a group does not make the list jump back', async () => {
     const { base, proposal } = manyMarkings(100);
     const h = await openReviewHarness({ project: base, proposals: [proposal] });
     expect(h.review.open('P1').ok).toBe(true);
@@ -125,7 +125,7 @@ describe('árvore da revisão: janela virtual', () => {
     renderInEditor(h, <ReviewLevels />);
     const tree = screen.getByRole('tree');
     expect(tree.scrollTop).toBeGreaterThan(0);
-    // A pessoa rola para o topo e recolhe tudo: a lista não volta à selecionada.
+    // The person scrolls to the top and collapses everything: the list does not go back to the selected one.
     act(() => {
       tree.scrollTop = 0;
     });
@@ -134,9 +134,9 @@ describe('árvore da revisão: janela virtual', () => {
     expect(tree.scrollTop).toBe(0);
   });
 
-  // #1184 (item 8 da #1530): a seleção sai da janela virtual com End/Home/setas e o elemento do
-  // `aria-activedescendant` continua desenhado, selecionado e com a posição certa.
-  it('End, Home e seta a partir do fim: o activedescendant é uma linha desenhada e selecionada', async () => {
+  // #1184 (item 8 of #1530): the selection leaves the virtual window with End/Home/arrows and the
+  // `aria-activedescendant` element stays drawn, selected and in the right position.
+  it('End, Home and arrow from the end: the activedescendant is a drawn, selected row', async () => {
     const count = 100;
     const { base, proposal } = manyMarkings(count);
     const h = await openReviewHarness({ project: base, proposals: [proposal] });
@@ -145,13 +145,13 @@ describe('árvore da revisão: janela virtual', () => {
     const tree = screen.getByRole('tree');
     tree.focus();
 
-    // A árvore da fixture é uma corrente: proposta > container > marcação 0 > [criação da
-    // marcação 1, marcação 1] > ... Cada marcação k < count - 1 tem dois filhos (a mudança que a
-    // cria e a marcação k + 1); a última tem só a mudança que a cria. A mudança da última
-    // marcação é a última da proposta e está na profundidade count + 3.
+    // The fixture tree is a chain: proposal > container > marking 0 > [creation of marking
+    // 1, marking 1] > ... Each marking k < count - 1 has two children (the change that creates
+    // it and marking k + 1); the last one has only the change that creates it. The change of the
+    // last marking is the last of the proposal and is at depth count + 3.
     const lastChange = proposal.changes.at(-1);
     if (!lastChange) throw new Error('fixture');
-    const lastItemLevel = { posinset: 2, setsize: 2, level: count + 2 }; // marcação count - 1
+    const lastItemLevel = { posinset: 2, setsize: 2, level: count + 2 }; // marking count - 1
     const lastChangeLevel = { posinset: 1, setsize: 1, level: count + 3 };
     const proposalLevel = { posinset: 1, setsize: 1, level: 1 };
 
@@ -164,7 +164,7 @@ describe('árvore da revisão: janela virtual', () => {
       const id = tree.getAttribute('aria-activedescendant');
       expect(id, `${key}: aria-activedescendant`).toBeTruthy();
       const row = document.getElementById(id ?? '');
-      expect(row, `${key}: a linha do activedescendant está no DOM`).not.toBeNull();
+      expect(row, `${key}: the activedescendant row is in the DOM`).not.toBeNull();
       return row as HTMLElement;
     };
     const expectRow = (

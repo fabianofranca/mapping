@@ -22,32 +22,35 @@ import {
 import { simulateModalFocus, restoreModalFocus } from './modalFocus';
 import { createHarness, renderLive, type Harness } from './harness';
 
-// Janela Comentários (etapa Comentários, CM3): tabela, filtros, contagem, Nova conversa, apagar
-// (uma e em lote), revisão só leitura.
+// Comments window (Comments stage, CM3): table, filters, count, New thread, delete
+// (one and in bulk), read-only review.
 
-const OTHER = { kind: 'human', name: 'Paulo Reis', email: 'paulo@exemplo.com' } as const;
+const OTHER = { kind: 'human', name: 'Paulo Reis', email: 'paulo@example.com' } as const;
 
-// Aberta, aguardando o humano (a última é do agente), de Marina.
+// Open, awaiting the human (the last one is from the agent), by Marina.
 const WAITING_HUMAN = sampleThread({
   id: 'ta',
   anchor: { kind: 'marking', id: 'M1' },
   messages: [
-    message('a1', T0, HUMAN, 'Falta contraste no botão'),
-    message('a2', T1, AGENT, 'Ajustei a cor'),
+    message('a1', T0, HUMAN, 'The button lacks contrast'),
+    message('a2', T1, AGENT, 'I adjusted the color'),
   ],
 });
-// Resolvida, só de Marina.
+// Resolved, only by Marina.
 const RESOLVED = sampleThread({
   id: 'tb',
   anchor: { kind: 'container', id: 'I1' },
-  resolved: { by: { name: 'Marina Alves', email: 'marina@exemplo.com' }, at: T2 },
-  messages: [message('b1', T0, HUMAN, 'Título está CORRETO')],
+  resolved: { by: { name: 'Marina Alves', email: 'marina@example.com' }, at: T2 },
+  messages: [message('b1', T0, HUMAN, 'Title is CORRECT')],
 });
-// Órfã (a marcação não existe), aberta, de Paulo; a última é de pessoa: aguarda o agente.
+// Orphan (the marking does not exist), open, by Paulo; the last one is from a person: it awaits the agent.
 const ORPHAN = sampleThread({
   id: 'tc',
   anchor: { kind: 'marking', id: 'MX' },
-  messages: [message('c1', T0, OTHER, 'Ação perdida')],
+  messages: [
+    // pt-BR kept: accent-insensitive search is the object of the search test
+    message('c1', T0, OTHER, 'Ação perdida'),
+  ],
 });
 
 async function seed(harness: Harness, threads: readonly Thread[]) {
@@ -88,8 +91,8 @@ const ids = () =>
 beforeEach(() => {
   localStorage.clear();
   clearIdentity();
-  setIdentity('Marina Alves', 'marina@exemplo.com');
-  locale.value = 'pt-BR';
+  setIdentity('Marina Alves', 'marina@example.com');
+  locale.value = 'en-US';
   hideToolWindow('details');
 });
 afterEach(() => {
@@ -97,12 +100,13 @@ afterEach(() => {
   restoreModalFocus();
 });
 
-describe.each(['pt-BR', 'en-US'] as const)('Janela Comentários (%s)', (lang) => {
+// pt-BR kept: the window is checked in both locales
+describe.each(['pt-BR', 'en-US'] as const)('Comments window (%s)', (lang) => {
   beforeEach(() => {
     locale.value = lang;
   });
 
-  it('colunas, e por padrão só as abertas', async () => {
+  it('columns, and by default only the open ones', async () => {
     await mount();
     const headers = within(table())
       .getAllByRole('columnheader')
@@ -120,13 +124,13 @@ describe.each(['pt-BR', 'en-US'] as const)('Janela Comentários (%s)', (lang) =>
     const row = rowOf('ta');
     expect(within(row).getByText('MA')).toBeTruthy();
     expect(within(row).getByText('Marina Alves')).toBeTruthy();
-    expect(within(row).getByText('Ajustei a cor')).toBeTruthy();
+    expect(within(row).getByText('I adjusted the color')).toBeTruthy();
     expect(within(row).getByText('2')).toBeTruthy();
     expect(within(row).getByText(t('comments.badge.awaitingHuman'))).toBeTruthy();
     expect(within(rowOf('tc')).getByText(t('comments.badge.awaitingAgent'))).toBeTruthy();
   });
 
-  it('o selo de estado leva o glifo do estado antes do texto, escondido dos leitores de tela', async () => {
+  it('the state badge carries the state glyph before the text, hidden from screen readers', async () => {
     await mount();
     const glyphOf = (id: string) => {
       const badge = rowOf(id).querySelector('.comments-badge');
@@ -141,14 +145,14 @@ describe.each(['pt-BR', 'en-US'] as const)('Janela Comentários (%s)', (lang) =>
     expect(glyphOf('tc').d).toBe(AWAITING_AGENT_PATHS[0]);
   });
 
-  it('o selo de cada estado usa a classe do estado (a cor do pino)', async () => {
+  it('the badge of each state uses the state class (the pin color)', async () => {
     await mount();
     const badgeOf = (id: string) => rowOf(id).querySelector('.comments-badge');
     expect(badgeOf('ta')?.classList.contains('comments-badge-human')).toBe(true);
     expect(badgeOf('tc')?.classList.contains('comments-badge-agent')).toBe(true);
   });
 
-  it('filtro de status: todas, resolvidas, aguardando agente e humano', async () => {
+  it('status filter: all, resolved, awaiting agent and human', async () => {
     const { user } = await mount();
     const status = screen.getByLabelText(t('comments.filter.status'));
     await user.selectOptions(status, t('comments.filter.statusAll'));
@@ -161,7 +165,7 @@ describe.each(['pt-BR', 'en-US'] as const)('Janela Comentários (%s)', (lang) =>
     expect(ids()).toEqual(['ta']);
   });
 
-  it('filtro de usuário pelo e-mail da pessoa e pelo nome do agente', async () => {
+  it('user filter by the person's e-mail and by the agent name', async () => {
     const { user, harness } = await mount();
     const select = screen.getByLabelText(t('comments.filter.user'));
     const options = Array.from(select.querySelectorAll('option')).map(
@@ -169,34 +173,35 @@ describe.each(['pt-BR', 'en-US'] as const)('Janela Comentários (%s)', (lang) =>
     );
     expect(options[0]).toBe(t('comments.filter.userAll'));
     expect(options[0]).not.toMatch(/\d/);
-    expect(options.some((o) => o?.includes('marina@exemplo.com'))).toBe(true);
+    expect(options.some((o) => o?.includes('marina@example.com'))).toBe(true);
     expect(options).toContain(
       t('comments.filter.userAgent', { name: 'Claude Code' }) + ' (1)',
     );
     await user.selectOptions(
       select,
       Array.from(select.querySelectorAll('option')).find((o) =>
-        o.textContent?.includes('paulo@exemplo.com'),
+        o.textContent?.includes('paulo@example.com'),
       ) as HTMLOptionElement,
     );
-    expect(harness.ui.commentsUser.value).toBe('human:paulo@exemplo.com');
+    expect(harness.ui.commentsUser.value).toBe('human:paulo@example.com');
     expect(ids()).toEqual(['tc']);
   });
 
-  it('busca no texto sem diferença de caixa nem de acento', async () => {
+  it('text search ignoring case and accents (pt-BR text)', async () => {
     const { user } = await mount();
     await user.selectOptions(
       screen.getByLabelText(t('comments.filter.status')),
       t('comments.filter.statusAll'),
     );
+    // pt-BR kept: accent-insensitive search is the object of this test
     await user.type(screen.getByLabelText(t('comments.filter.text')), 'acao PERDIDA');
     expect(ids()).toEqual(['tc']);
     await user.clear(screen.getByLabelText(t('comments.filter.text')));
-    await user.type(screen.getByLabelText(t('comments.filter.text')), 'correto');
+    await user.type(screen.getByLabelText(t('comments.filter.text')), 'correct');
     expect(ids()).toEqual(['tb']);
   });
 
-  it('contagem de abertas, aguardando agente e resolvidas', async () => {
+  it('count of open, awaiting agent and resolved', async () => {
     await mount();
     const summary = screen.getByRole('status');
     expect(summary.textContent).toContain(t('comments.count.open', { count: 2 }));
@@ -206,7 +211,7 @@ describe.each(['pt-BR', 'en-US'] as const)('Janela Comentários (%s)', (lang) =>
     expect(summary.textContent).toContain(t('comments.count.resolvedOne'));
   });
 
-  it('a resolvida tem a âncora riscada; a órfã, em aviso; a não lida, em negrito', async () => {
+  it('the resolved one has the anchor struck through; the orphan, in warning; the unread one, in bold', async () => {
     const { user, harness } = await mount();
     await user.selectOptions(
       screen.getByLabelText(t('comments.filter.status')),
@@ -215,9 +220,9 @@ describe.each(['pt-BR', 'en-US'] as const)('Janela Comentários (%s)', (lang) =>
     expect(rowOf('tb').dataset.resolved).toBe('');
     expect(rowOf('tc').dataset.orphan).toBe('');
     expect(rowOf('ta').dataset.orphan).toBeUndefined();
-    // A última de `ta` é do agente e Marina nunca leu: não lida.
+    // The last message of `ta` is from the agent and Marina never read it: unread.
     expect(rowOf('ta').dataset.unread).toBe('');
-    // O nome acessível do botão da âncora diz que há mensagem não lida (item 47).
+    // The accessible name of the anchor button says there is an unread message (item 47).
     const anchorA = anchorLabel(harness.project(), WAITING_HUMAN.anchor);
     expect(
       within(rowOf('ta')).getByRole('button', {
@@ -225,9 +230,10 @@ describe.each(['pt-BR', 'en-US'] as const)('Janela Comentários (%s)', (lang) =>
       }),
     ).toBeTruthy();
     expect(
+      // pt-BR kept: the window is checked in both locales
       within(rowOf('tb')).queryByRole('button', { name: /(não lida|unread)/ }),
     ).toBeNull();
-    // A resolvida de Marina é lida para ela.
+    // Marina's resolved thread is read for her.
     expect(rowOf('tb').dataset.unread).toBeUndefined();
     expect(harness.context.derived.threads.unreadIds.value.has('ta')).toBe(true);
     expect(
@@ -235,7 +241,7 @@ describe.each(['pt-BR', 'en-US'] as const)('Janela Comentários (%s)', (lang) =>
     ).toBeTruthy();
   });
 
-  it('escolher a linha seleciona a conversa e o item, e abre os Detalhes', async () => {
+  it('choosing the row selects the thread and the item, and opens the Details', async () => {
     const { user, harness } = await mount();
     const label = anchorLabel(harness.project(), WAITING_HUMAN.anchor);
     await user.click(
@@ -248,7 +254,7 @@ describe.each(['pt-BR', 'en-US'] as const)('Janela Comentários (%s)', (lang) =>
     expect(isToolWindowOpen('details')).toBe(true);
   });
 
-  it('Nova conversa com a seleção: abre o rascunho ancorado nela', async () => {
+  it('New thread with a selection: opens the draft anchored to it', async () => {
     const { user, harness } = await mount();
     act(() => {
       harness.ui.selection.value = { kind: 'image', id: 'I1' };
@@ -258,7 +264,7 @@ describe.each(['pt-BR', 'en-US'] as const)('Janela Comentários (%s)', (lang) =>
     expect(isToolWindowOpen('details')).toBe(true);
   });
 
-  it('Nova conversa sem seleção fica desabilitada, com a dica', async () => {
+  it('New thread without a selection is disabled, with the hint', async () => {
     await mount();
     const button = screen.getByRole('button', { name: t('comments.new') });
     expect((button as HTMLButtonElement).disabled).toBe(true);
@@ -267,7 +273,7 @@ describe.each(['pt-BR', 'en-US'] as const)('Janela Comentários (%s)', (lang) =>
     ).toContain(t('comments.newNoSelection'));
   });
 
-  it('Nova conversa sem identidade ainda abre o rascunho', async () => {
+  it('New thread without an identity still opens the draft', async () => {
     const { user, harness } = await mount();
     clearIdentity();
     act(() => {
@@ -278,11 +284,11 @@ describe.each(['pt-BR', 'en-US'] as const)('Janela Comentários (%s)', (lang) =>
   });
 });
 
-describe('apagar uma conversa', () => {
-  it('direto quando todas as mensagens são da pessoa', async () => {
+describe('delete a thread', () => {
+  it('directly when all the messages are the person's', async () => {
     const mine = sampleThread({
       id: 'td',
-      messages: [message('d1', T0, HUMAN, 'só minha')],
+      messages: [message('d1', T0, HUMAN, 'only mine')],
     });
     const { user, harness } = await mount([mine]);
     await user.click(
@@ -300,7 +306,7 @@ describe('apagar uma conversa', () => {
     expect(harness.context.session.threads.list.value).toEqual([]);
   });
 
-  it('com mensagem de outro autor, pede confirmação e lista os autores', async () => {
+  it('with a message from another author, asks for confirmation and lists the authors', async () => {
     const { user, harness } = await mount([WAITING_HUMAN]);
     await user.click(
       screen.getByRole('button', {
@@ -321,7 +327,7 @@ describe('apagar uma conversa', () => {
     expect(harness.context.session.threads.list.value).toEqual([]);
   });
 
-  it('Esc e Cancelar devolvem o foco ao ⋯ da linha', async () => {
+  it('Esc and Cancel return the focus to the row's ⋯', async () => {
     simulateModalFocus();
     const { user, harness } = await mount([WAITING_HUMAN]);
     const more = screen.getByRole('button', {
@@ -347,7 +353,7 @@ describe('apagar uma conversa', () => {
     }
   });
 
-  it('o item Apagar fica desabilitado sem identidade e com o projeto somente leitura', async () => {
+  it('the Delete item is disabled without an identity and with a read-only project', async () => {
     const { user, harness } = await mount([WAITING_HUMAN]);
     clearIdentity();
     const more = () =>
@@ -366,7 +372,7 @@ describe('apagar uma conversa', () => {
     ).toBe(true);
     cleanup();
     const ro = await mount([WAITING_HUMAN], true);
-    setIdentity('Marina Alves', 'marina@exemplo.com');
+    setIdentity('Marina Alves', 'marina@example.com');
     await ro.user.click(
       screen.getByRole('button', {
         name: t('comments.row.more', {
@@ -384,11 +390,11 @@ describe('apagar uma conversa', () => {
   });
 });
 
-describe('apagar conversas em lote', () => {
+describe('delete threads in bulk', () => {
   const OLD_RESOLVED = sampleThread({
     id: 'te',
-    resolved: { by: { name: 'Marina Alves', email: 'marina@exemplo.com' }, at: T1 },
-    messages: [message('e1', '2026-01-01T10:00:00.000Z', HUMAN, 'antiga')],
+    resolved: { by: { name: 'Marina Alves', email: 'marina@example.com' }, at: T1 },
+    messages: [message('e1', '2026-01-01T10:00:00.000Z', HUMAN, 'old')],
   });
   const openMenu = async (user: ReturnType<typeof userEvent.setup>) => {
     await user.click(screen.getByRole('button', { name: t('comments.windowMore') }));
@@ -396,7 +402,7 @@ describe('apagar conversas em lote', () => {
     return screen.getByRole('alertdialog');
   };
 
-  it('só as resolvidas por padrão, com contagem e autores; a data restringe', async () => {
+  it('only the resolved ones by default, with count and authors; the date narrows it', async () => {
     const { user, harness } = await mount([
       WAITING_HUMAN,
       RESOLVED,
@@ -417,7 +423,7 @@ describe('apagar conversas em lote', () => {
     expect(dialog.textContent).toContain(t('comments.bulk.threadsOne'));
     expect(dialog.textContent).toContain('1');
     await user.click(only);
-    // Sem "só resolvidas", com a data: tudo cuja última mensagem é anterior a 2026-06-01.
+    // Without "only resolved", with the date: everything whose last message is before 2026-06-01.
     expect(dialog.textContent).toContain(t('comments.bulk.threadsOne'));
     await user.click(
       within(dialog).getByRole('button', { name: t('comments.delete.confirm') }),
@@ -432,14 +438,14 @@ describe('apagar conversas em lote', () => {
     ]);
   });
 
-  it('a data vale como meia-noite local: a mensagem das 23h30 de 31/10 entra em "antes de 01/11"', async () => {
-    // Construída no fuso local: em UTC−3 é 02h30Z de 01/11, depois da meia-noite UTC que o
-    // `Date.parse` de "2026-11-01" daria (o teste só distingue a correção em fuso a oeste de UTC).
+  it('the date counts as local midnight: the 11:30 pm message of 10/31 falls under "before 11/01"', async () => {
+    // Built in the local time zone: in UTC−3 it is 02:30Z on 11/01, after the UTC midnight that
+    // `Date.parse` of "2026-11-01" would give (the test only tells the fix apart in a zone west of UTC).
     const late = new Date(2026, 9, 31, 23, 30).toISOString();
     const LATE = sampleThread({
       id: 'tf',
-      resolved: { by: { name: 'Marina Alves', email: 'marina@exemplo.com' }, at: T1 },
-      messages: [message('f1', late, HUMAN, 'tarde')],
+      resolved: { by: { name: 'Marina Alves', email: 'marina@example.com' }, at: T1 },
+      messages: [message('f1', late, HUMAN, 'late')],
     });
     const { user } = await mount([LATE]);
     const dialog = await openMenu(user);
@@ -450,7 +456,7 @@ describe('apagar conversas em lote', () => {
     expect(dialog.textContent).toContain(t('comments.bulk.threadsOne'));
   });
 
-  it('zero candidatas desabilita o Apagar', async () => {
+  it('zero candidates disable Delete', async () => {
     const { user } = await mount([WAITING_HUMAN]);
     const dialog = await openMenu(user);
     expect(dialog.textContent).toContain(t('comments.bulk.none'));
@@ -463,7 +469,7 @@ describe('apagar conversas em lote', () => {
     ).toBe(true);
   });
 
-  it('Esc e Cancelar devolvem o foco ao ⋯ da janela', async () => {
+  it('Esc and Cancel return the focus to the window's ⋯', async () => {
     simulateModalFocus();
     const { user } = await mount([RESOLVED]);
     const more = screen.getByRole('button', { name: t('comments.windowMore') });
@@ -483,7 +489,7 @@ describe('apagar conversas em lote', () => {
     }
   });
 
-  it('o item fica desabilitado sem identidade e com o projeto somente leitura', async () => {
+  it('the item is disabled without an identity and with a read-only project', async () => {
     const { user } = await mount([RESOLVED]);
     clearIdentity();
     await user.click(screen.getByRole('button', { name: t('comments.windowMore') }));
@@ -495,7 +501,7 @@ describe('apagar conversas em lote', () => {
       ).disabled,
     ).toBe(true);
     cleanup();
-    setIdentity('Marina Alves', 'marina@exemplo.com');
+    setIdentity('Marina Alves', 'marina@example.com');
     const ro = await mount([RESOLVED], true);
     await ro.user.click(screen.getByRole('button', { name: t('comments.windowMore') }));
     expect(
@@ -508,8 +514,8 @@ describe('apagar conversas em lote', () => {
   });
 });
 
-describe('revisão de proposta (decisão 26)', () => {
-  it('a janela fica só para leitura, com o aviso, sem Nova conversa nem Apagar', async () => {
+describe('proposal review (decision 26)', () => {
+  it('the window is read-only, with the notice, without New thread or Delete', async () => {
     const { harness, user } = await mount([WAITING_HUMAN]);
     act(() => {
       harness.store.setReviewing('R');
@@ -524,7 +530,7 @@ describe('revisão de proposta (decisão 26)', () => {
       }),
     ).toBeNull();
     expect(ids()).toEqual(['ta']);
-    // Escolher a linha na revisão não muda a seleção.
+    // Choosing the row in review does not change the selection.
     await user.click(rowOf('ta'));
     expect(selectedThreadId(harness.ui)).toBeNull();
   });

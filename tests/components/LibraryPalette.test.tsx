@@ -9,10 +9,10 @@ import { LibraryPalette } from '../../src/ui/LibraryPalette';
 import { libraryHarness, type LibraryHarness } from './libraryHarness';
 import { notesHarness } from './notesHarness';
 
-// B3/P7: a paleta da Biblioteca (paleta de componentes).
+// B3/P7: the Library palette (components palette).
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
@@ -30,11 +30,12 @@ const addButton = (name: string) =>
     name: new RegExp(`^${t('library.add')}.*: ${name}$`),
   });
 
-describe('paleta da Biblioteca', () => {
-  it('lista os tipos por especialização e camada, com o ícone de container e sem tamanho', async () => {
+describe('Library palette', () => {
+  it('lists the types by specialization and layer, with the container icon and without size', async () => {
     const harness = await libraryHarness();
     renderLibrary(harness);
     const group = screen.getByRole('region', { name: 'Material Design 3 (baseline)' });
+    // pt-BR kept: layer name of the shared library data (libraries/material3-compose)
     expect(within(group).getByText('Componentes')).toBeTruthy();
     expect(within(group).getAllByRole('listitem')).toHaveLength(15);
 
@@ -53,7 +54,7 @@ describe('paleta da Biblioteca', () => {
     expect(group.textContent).not.toMatch(/\d+ × \d+/);
   });
 
-  it('Adicionar põe o componente no centro da tela à vista e o seleciona', async () => {
+  it('Add puts the component at the center of the visible screen and selects it', async () => {
     const harness = await libraryHarness();
     const { user } = renderLibrary(harness);
     const before = harness.project().markings.length;
@@ -64,7 +65,7 @@ describe('paleta da Biblioteca', () => {
     const created = project.markings.at(-1);
     expect(created?.containerId).toBe('I1');
     expect(created?.parentId).toBeNull();
-    // O ponto do viewport (200, 150 do canvas da I1, escala 0,25) cai em (800, 600) da imagem.
+    // The viewport point (200, 150 of I1's canvas, scale 0.25) falls at (800, 600) of the image.
     const image = project.containers.find((i) => i.id === 'I1');
     const scale = image?.placement.scale ?? 1;
     expect((created?.rect.x ?? 0) + (created?.rect.width ?? 0) / 2).toBeCloseTo(
@@ -76,20 +77,20 @@ describe('paleta da Biblioteca', () => {
       -1,
     );
     expect(harness.ui.selection.value).toEqual({ kind: 'marking', id: created?.id });
-    // A anotação tipada que desenha a marcação.
+    // The typed annotation that draws the marking.
     expect(project.annotations.find((a) => a.markingId === created?.id)?.type).toEqual({
       specId: 'material3',
       typeId: 'm3-button',
     });
   });
 
-  it('com um container selecionado, o componente novo entra nele', async () => {
+  it('with a container selected, the new component goes into it', async () => {
     const harness = await libraryHarness();
     const { user } = renderLibrary(harness);
     await user.click(addButton('Column'));
     const column = harness.project().markings.at(-1);
     expect(column?.parentId).toBeNull();
-    // O container recém-criado está selecionado.
+    // The newly created container is selected.
     await user.click(addButton('Button'));
     const button = harness.project().markings.at(-1);
     expect(button?.id).not.toBe(column?.id);
@@ -97,7 +98,7 @@ describe('paleta da Biblioteca', () => {
     expect(harness.ui.selection.value).toEqual({ kind: 'marking', id: button?.id });
   });
 
-  it('com seleção numa imagem que não é a do centro, vai para a selecionada, centrada nela', async () => {
+  it('with a selection on an image that is not the center one, it goes to the selected one, centered on it', async () => {
     const harness = await libraryHarness();
     harness.ui.selection.value = { kind: 'image', id: 'I2' };
     const { user } = renderLibrary(harness);
@@ -116,7 +117,7 @@ describe('paleta da Biblioteca', () => {
     expect(harness.canvas.revealSelection).toHaveBeenCalledTimes(1);
   });
 
-  it('com seleção na imagem do centro, o componente nasce no centro da vista', async () => {
+  it('with a selection on the center image, the component is born at the center of the view', async () => {
     const harness = await libraryHarness();
     harness.ui.selection.value = { kind: 'image', id: 'I1' };
     const { user } = renderLibrary(harness);
@@ -130,7 +131,7 @@ describe('paleta da Biblioteca', () => {
     );
   });
 
-  it('sem seleção, usa a imagem do centro da vista', async () => {
+  it('without a selection, it uses the image at the center of the view', async () => {
     const harness = await libraryHarness();
     harness.ui.selection.value = null;
     const { user } = renderLibrary(harness);
@@ -138,7 +139,7 @@ describe('paleta da Biblioteca', () => {
     expect(harness.project().markings.at(-1)?.containerId).toBe('I1');
   });
 
-  it('sem tela sob o centro nem seleção, Adicionar cria no canvas e o rótulo diz o destino', async () => {
+  it('with no screen under the center nor a selection, Add creates on the canvas and the label states the destination', async () => {
     const harness = await libraryHarness();
     harness.canvas.viewportCenter.mockReturnValue({ x: -5000, y: -5000 });
     harness.ui.selection.value = null;
@@ -152,7 +153,7 @@ describe('paleta da Biblioteca', () => {
     expect(harness.ui.selection.value).toEqual({ kind: 'marking', id: created?.id });
   });
 
-  it('o rótulo mostra a tela de destino quando há container sob o centro', async () => {
+  it('the label shows the destination screen when there is a container under the center', async () => {
     const harness = await libraryHarness();
     harness.ui.selection.value = null;
     renderLibrary(harness);
@@ -162,7 +163,7 @@ describe('paleta da Biblioteca', () => {
     );
   });
 
-  it('seleção numa marcação do canvas sem slot: adiciona no canvas', async () => {
+  it('selection on a canvas marking without a slot: adds on the canvas', async () => {
     const harness = await libraryHarness();
     const placed = harness.actions.createMarking(null, {
       x: -400,
@@ -177,7 +178,7 @@ describe('paleta da Biblioteca', () => {
     expect(addButton('Button').textContent).toBe(t('library.addToCanvas'));
   });
 
-  it('com a tela do centro fora de vista, a imagem selecionada serve (sem centro)', async () => {
+  it('with the center screen out of view, the selected image will do (no center)', async () => {
     const harness = await libraryHarness();
     harness.canvas.viewportCenter.mockReturnValue({ x: -5000, y: -5000 });
     harness.ui.selection.value = { kind: 'image', id: 'I2' };
@@ -188,7 +189,7 @@ describe('paleta da Biblioteca', () => {
     expect(harness.project().markings.at(-1)?.containerId).toBe('I2');
   });
 
-  it('somente leitura: desabilitado', async () => {
+  it('read-only: disabled', async () => {
     const harness = await libraryHarness({ readOnly: true });
     renderLibrary(harness);
     const button = addButton('Button');
@@ -196,7 +197,7 @@ describe('paleta da Biblioteca', () => {
     expect(button.title).toBe(t('library.readOnly'));
   });
 
-  it('erro da action aparece como alerta', async () => {
+  it('action error appears as an alert', async () => {
     const harness = await libraryHarness();
     vi.spyOn(harness.actions, 'addComponent').mockReturnValue({
       ok: false,
@@ -209,7 +210,7 @@ describe('paleta da Biblioteca', () => {
     );
   });
 
-  it('sem biblioteca com componentes: estado vazio com atalho para as Especializações', async () => {
+  it('without a library with components: empty state with a shortcut to the Specializations', async () => {
     const harness = await libraryHarness({ apply: false });
     const { user, onOpenSpecs } = renderLibrary(harness);
     expect(screen.getByText(t('library.empty'))).toBeTruthy();
@@ -218,13 +219,13 @@ describe('paleta da Biblioteca', () => {
   });
 });
 
-describe('arrastar da paleta', () => {
+describe('dragging from the palette', () => {
   const li = (name: string) =>
     screen
       .getByText(name, { selector: '.library-type-name' })
       .closest('li') as HTMLElement;
 
-  it('o item é arrastável e grava o MIME e o tipo em arrasto', async () => {
+  it('the item is draggable and records the MIME and the type being dragged', async () => {
     const harness = await libraryHarness();
     Object.assign(harness.canvas, { setDropTarget: vi.fn() });
     renderLibrary(harness);
@@ -248,22 +249,24 @@ describe('arrastar da paleta', () => {
     expect(draggedComponent()).toBeNull();
   });
 
-  it('somente leitura: o item não arrasta', async () => {
+  it('read-only: the item does not drag', async () => {
     const harness = await libraryHarness({ readOnly: true });
     renderLibrary(harness);
     expect(li('Button').getAttribute('draggable')).toBe('false');
   });
 });
 
-describe('paleta da Biblioteca: tipo flutuante (notas)', () => {
-  it('a linha da nota diz "Adicionar no canvas" mesmo com um container selecionado, e cria a flutuante', async () => {
+describe('Library palette: floating type (notes)', () => {
+  it('the note row says "Add on the canvas" even with a container selected, and creates the floating one', async () => {
     const harness = await notesHarness();
     harness.ui.selection.value = { kind: 'image', id: 'I1' };
     const { user } = renderLibrary(harness);
+    // pt-BR kept: type name of the shared notes library data (libraries/notas)
     const note = addButton('Nota');
     expect(note.textContent).toBe(t('library.addToCanvas'));
-    // O tipo comum continua apontando para o container selecionado.
+    // The common type still points to the selected container.
     expect(addButton('Button').textContent).toBe(
+      // pt-BR kept: shared fixture data asserted by tests/model, tests/components (file name in tests/model/fixtures.ts)
       t('library.addToScreen', { name: 'images/lateral.jpg' }),
     );
 

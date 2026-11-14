@@ -35,7 +35,7 @@ import { signal } from '@preact/signals';
 const features = app.features as unknown as { value: unknown };
 const recentProjects = app.recentProjects as unknown as { value: unknown[] };
 
-/** O botão Abrir de uma linha: o texto visível seguido do nome do projeto (NE1). */
+/** A row's Open button: the visible text followed by the project name (NE1). */
 const OPEN_NAMED = new RegExp(`^${t('common.open')} `);
 const DELETE_NAMED = new RegExp(`^${t('common.delete')} `);
 const FORGET_NAMED = new RegExp(`^${t('home.forgetFolder')}: `);
@@ -49,7 +49,7 @@ beforeEach(() => {
     {
       kind: 'local',
       id: 'p1',
-      name: 'Carro',
+      name: 'Car',
       usedAt: '2026-09-20T18:30:00.000Z',
       unexported: true,
     },
@@ -62,52 +62,52 @@ afterEach(() => {
 });
 
 describe('Home', () => {
-  it('antes de detectar os recursos mostra "carregando"', () => {
+  it('before detecting the features it shows "loading"', () => {
     features.value = null;
     render(<Home />);
     expect(screen.getByText(t('app.loading'))).toBeTruthy();
   });
 
-  it('sem nenhum recurso avisa que o navegador não é suportado', () => {
+  it('with no feature at all it warns that the browser is not supported', () => {
     features.value = { folder: false, local: false, fileProtocol: false };
     render(<Home />);
     expect(screen.getByText(t('home.unsupported'))).toBeTruthy();
     expect(screen.queryByText(t('home.newProject'))).toBeNull();
   });
 
-  it('em file:// avisa sobre o armazenamento', () => {
+  it('on file:// it warns about storage', () => {
     features.value = { folder: false, local: true, fileProtocol: true };
     render(<Home />);
     expect(screen.getByText(t('home.fileProtocolWarning'))).toBeTruthy();
   });
 
-  it('lista os projetos locais com o indicador de não exportado', () => {
+  it('lists the local projects with the not-exported indicator', () => {
     render(<Home />);
-    expect(screen.getByText('Carro')).toBeTruthy();
+    expect(screen.getByText('Car')).toBeTruthy();
     expect(screen.getByText(t('status.unexported'))).toBeTruthy();
   });
 
-  it('sem projetos locais mostra o texto vazio', () => {
+  it('with no local projects it shows the empty text', () => {
     recentProjects.value = [];
     render(<Home />);
     expect(screen.getByText(t('home.noRecentProjects'))).toBeTruthy();
   });
 
-  it('criar projeto: pede o nome e chama o controller', async () => {
+  it('create project: asks for the name and calls the controller', async () => {
     controller.createLocalProject.mockReturnValue(ok());
     render(<Home />);
     const user = userEvent.setup();
     await user.click(screen.getByText(t('home.newProject')));
-    await user.type(await screen.findByLabelText(t('project.name')), 'Novo');
+    await user.type(await screen.findByLabelText(t('project.name')), 'New');
     await user.click(screen.getByRole('button', { name: t('common.create') }));
     await waitFor(() =>
-      expect(controller.createLocalProject).toHaveBeenCalledWith('Novo'),
+      expect(controller.createLocalProject).toHaveBeenCalledWith('New'),
     );
   });
 
-  // Etapa 8 (8.3), F9: o campo do nome focava sozinho na montagem, além do foco inicial do
-  // diálogo (o primeiro controle do corpo): dois donos do mesmo foco.
-  it('Novo projeto foca o nome uma vez só', async () => {
+  // Stage 8 (8.3), F9: the name field focused itself on mount, besides the dialog's initial focus
+  // (the first control of the body): two owners of the same focus.
+  it('New project focuses the name only once', async () => {
     const focus = vi.spyOn(HTMLElement.prototype, 'focus');
     render(<Home />);
     const user = userEvent.setup();
@@ -119,39 +119,39 @@ describe('Home', () => {
     focus.mockRestore();
   });
 
-  // Etapa 8 (8.3), F10: a confirmação destrutiva é um alertdialog, descrito pelo corpo.
-  it('Excluir é um alertdialog descrito pelo corpo', async () => {
+  // Stage 8 (8.3), F10: the destructive confirmation is an alertdialog, described by the body.
+  it('Delete is an alertdialog described by the body', async () => {
     render(<Home />);
     const user = userEvent.setup();
     await user.click(
-      screen.getByRole('button', { name: t('home.deleteNamed', { name: 'Carro' }) }),
+      screen.getByRole('button', { name: t('home.deleteNamed', { name: 'Car' }) }),
     );
-    await screen.findByText(t('home.deleteMessage', { name: 'Carro' }));
+    await screen.findByText(t('home.deleteMessage', { name: 'Car' }));
     const dialog = document.querySelector('dialog') as HTMLElement;
     expect(dialog.getAttribute('role')).toBe('alertdialog');
     const body = document.getElementById(dialog.getAttribute('aria-describedby') ?? '');
-    expect(body?.textContent).toContain(t('home.deleteMessage', { name: 'Carro' }));
+    expect(body?.textContent).toContain(t('home.deleteMessage', { name: 'Car' }));
   });
 
-  it('abrir projeto local; erro aparece traduzido', async () => {
+  it('open local project; error appears translated', async () => {
     controller.openLocalProject.mockReturnValue(fail('not-found'));
     render(<Home />);
     await userEvent.click(
-      screen.getByRole('button', { name: t('home.openNamed', { name: 'Carro' }) }),
+      screen.getByRole('button', { name: t('home.openNamed', { name: 'Car' }) }),
     );
     expect((await screen.findByRole('alert')).textContent).toBe(t('error.not-found'));
     expect(controller.openLocalProject).toHaveBeenCalledWith('p1');
   });
 
-  it('excluir pede confirmação', async () => {
+  it('delete asks for confirmation', async () => {
     controller.deleteLocalProject.mockReturnValue(ok());
     render(<Home />);
     const user = userEvent.setup();
     await user.click(
-      screen.getByRole('button', { name: t('home.deleteNamed', { name: 'Carro' }) }),
+      screen.getByRole('button', { name: t('home.deleteNamed', { name: 'Car' }) }),
     );
     expect(controller.deleteLocalProject).not.toHaveBeenCalled();
-    await screen.findByText(t('home.deleteMessage', { name: 'Carro' }));
+    await screen.findByText(t('home.deleteMessage', { name: 'Car' }));
     const dialog = document.querySelector('dialog') as HTMLElement;
     await user.click(
       within(dialog).getByRole('button', { name: t('common.delete'), hidden: true }),
@@ -159,8 +159,8 @@ describe('Home', () => {
     await waitFor(() => expect(controller.deleteLocalProject).toHaveBeenCalledWith('p1'));
   });
 
-  it('abrir pasta sem mapping.json pede o nome e cria o projeto', async () => {
-    const handle = { name: 'minha-pasta' };
+  it('open folder without mapping.json asks for the name and creates the project', async () => {
+    const handle = { name: 'my-folder' };
     controller.openFolder.mockReturnValue(
       ok({ kind: 'needs-setup', handle, images: [{ name: 'a.jpg' }] }),
     );
@@ -179,14 +179,14 @@ describe('Home', () => {
     );
   });
 
-  it('pasta que ganhou projeto: o aviso sobrevive à saída da tela inicial (abre o editor)', async () => {
-    const handle = { name: 'minha-pasta' };
+  it('folder that gained a project: the notice survives leaving the home screen (opens the editor)', async () => {
+    const handle = { name: 'my-folder' };
     const editorOpen = signal(false);
     controller.openFolder.mockReturnValue(
       ok({ kind: 'needs-setup', handle, images: [] }),
     );
     controller.createFolderProject.mockImplementation(() => {
-      editorOpen.value = true; // a tela inicial é desmontada, como no App
+      editorOpen.value = true; // the home screen is unmounted, as in the App
       return ok({ skipped: [], existing: true });
     });
     projectNotice.value = null;
@@ -210,7 +210,7 @@ describe('Home', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
-  it('abrir zip chama importZip com o arquivo escolhido', async () => {
+  it('open zip calls importZip with the chosen file', async () => {
     controller.importZip.mockReturnValue(ok());
     const { container } = render(<Home />);
     const file = new File(['z'], 'p.zip', { type: 'application/zip' });
@@ -221,7 +221,7 @@ describe('Home', () => {
 });
 
 describe('Home (B10)', () => {
-  it('coluna lateral com Projetos, Ajuda e Configurações', async () => {
+  it('side column with Projects, Help and Settings', async () => {
     render(<Home />);
     const side = screen.getByRole('complementary', { name: t('home.sideLabel') });
     expect(within(side).getByRole('button', { name: t('home.projects') })).toBeTruthy();
@@ -237,7 +237,7 @@ describe('Home (B10)', () => {
     ).toBeTruthy();
   });
 
-  it('coluna lateral tem o link Guia interativo, em outra aba e sem referrer', () => {
+  it('side column has the Interactive guide link, in another tab and without referrer', () => {
     render(<Home />);
     const side = screen.getByRole('complementary', { name: t('home.sideLabel') });
     const link = within(side).getByRole('link', { name: t('home.guide') });
@@ -246,7 +246,7 @@ describe('Home (B10)', () => {
     expect(link.getAttribute('rel')).toContain('noopener');
   });
 
-  it('Configurações → atalhos abre a Ajuda na seção Atalhos', async () => {
+  it('Settings → shortcuts opens Help at the Shortcuts section', async () => {
     Element.prototype.scrollIntoView = vi.fn();
     render(<Home />);
     const user = userEvent.setup();
@@ -259,7 +259,7 @@ describe('Home (B10)', () => {
     expect(scroll.mock.contexts.at(-1)).toBe(document.getElementById('help-shortcuts'));
   });
 
-  it('tabela de recentes com origem e data, e Abrir na linha', async () => {
+  it('recents table with origin and date, and Open on the row', async () => {
     controller.openLocalProject.mockReturnValue(ok());
     render(<Home />);
     const table = screen.getByRole('table');
@@ -271,14 +271,15 @@ describe('Home (B10)', () => {
       t('home.colOrigin'),
       t('home.colUsed'),
     ]);
-    const row = within(table).getByRole('row', { name: /Carro/ });
+    const row = within(table).getByRole('row', { name: /Car/ });
     expect(within(row).getByText(t('status.targetLocal'))).toBeTruthy();
     expect(within(row).getByText(t('status.unexported'))).toBeTruthy();
     await userEvent.click(within(row).getByRole('button', { name: OPEN_NAMED }));
     expect(controller.openLocalProject).toHaveBeenCalledWith('p1');
   });
 
-  it('busca filtra os projetos (sem acento nem maiúsculas)', async () => {
+  // pt-BR kept: the object of the test is accent- and case-insensitive search of Portuguese text
+  it('search filters the projects (accent- and case-insensitive)', async () => {
     recentProjects.value = [
       ...recentProjects.value,
       {
@@ -292,34 +293,34 @@ describe('Home (B10)', () => {
     render(<Home />);
     const user = userEvent.setup();
     await user.type(screen.getByRole('searchbox', { name: t('home.search') }), 'AVIAO');
-    expect(screen.queryByText('Carro')).toBeNull();
+    expect(screen.queryByText('Car')).toBeNull();
     expect(screen.getByText('Avião')).toBeTruthy();
     await user.clear(screen.getByRole('searchbox'));
     await user.type(screen.getByRole('searchbox'), 'zzz');
     expect(screen.getByText(t('home.noResults', { query: 'zzz' }))).toBeTruthy();
   });
 
-  it('sem projetos não mostra busca nem tabela', () => {
+  it('without projects it shows neither search nor table', () => {
     recentProjects.value = [];
     render(<Home />);
     expect(screen.queryByRole('searchbox')).toBeNull();
     expect(screen.queryByRole('table')).toBeNull();
   });
 
-  it('com a pasta disponível, recomenda o formato pasta para quem usa git', () => {
+  it('with the folder available, it recommends the folder format for those who use git', () => {
     render(<Home />);
     expect(screen.getByText(t('home.gitHint'))).toBeTruthy();
     expect(screen.getByText(t('home.gitHint')).textContent).toContain('.gitignore');
     expect(screen.queryByText(t('home.folderUnavailable'))).toBeNull();
   });
 
-  it('sem suporte a pasta, mostra o motivo no lugar da recomendação', () => {
+  it('without folder support, it shows the reason in place of the recommendation', () => {
     features.value = { folder: false, local: true, fileProtocol: false };
     render(<Home />);
     expect(screen.queryByText(t('home.gitHint'))).toBeNull();
   });
 
-  it('Abrir pasta desabilitado diz o motivo na tela', () => {
+  it('disabled Open folder states the reason on screen', () => {
     features.value = { folder: false, local: true, fileProtocol: false };
     render(<Home />);
     expect(
@@ -329,12 +330,12 @@ describe('Home (B10)', () => {
   });
 });
 
-describe('Home: recentes de pasta (fase 6.6)', () => {
+describe('Home: folder recents (phase 6.6)', () => {
   const folder = {
     kind: 'folder',
     id: 'f1',
-    name: 'Principal',
-    folderName: 'principal-pasta',
+    name: 'Main',
+    folderName: 'main-folder',
     showFolderName: true,
     usedAt: '2026-10-01T10:00:00.000Z',
   };
@@ -343,39 +344,39 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
     recentProjects.value = [folder, ...recentProjects.value];
   });
 
-  it('pasta na mesma lista, com o selo Pasta, o nome da pasta e Remover da lista', async () => {
+  it('folder in the same list, with the Folder badge, the folder name and Remove from list', async () => {
     controller.forgetFolder.mockReturnValue(ok());
     render(<Home />);
     const rows = within(screen.getByRole('table')).getAllByRole('row').slice(1);
     expect(rows.map((r) => r.querySelector('.project-name')?.textContent)).toEqual([
-      'Principal',
-      'Carro',
+      'Main',
+      'Car',
     ]);
     const row = rows[0] as HTMLElement;
     expect(within(row).getByText(t('status.targetFolder'))).toBeTruthy();
-    expect(within(row).getByText('principal-pasta')).toBeTruthy();
+    expect(within(row).getByText('main-folder')).toBeTruthy();
     expect(within(row).queryByRole('button', { name: DELETE_NAMED })).toBeNull();
     await userEvent.click(within(row).getByRole('button', { name: FORGET_NAMED }));
     expect(controller.forgetFolder).toHaveBeenCalledWith('f1');
   });
 
-  // NE1 (#538, item 2): linhas de mesmo nome se distinguem pelo nome e pela descrição dos botões.
-  it('duas linhas "Loja" (local e pasta) têm botões com o nome do projeto e descrições diferentes', async () => {
+  // NE1 (#538, item 2): rows with the same name are told apart by the name and the description of the buttons.
+  it('two "Shop" rows (local and folder) have buttons with the project name and different descriptions', async () => {
     controller.openLocalProject.mockReturnValue(ok());
     controller.forgetFolder.mockReturnValue(ok());
     recentProjects.value = [
       {
         kind: 'folder',
         id: 'f9',
-        name: 'Loja',
-        folderName: 'loja',
+        name: 'Shop',
+        folderName: 'shop',
         showFolderName: true,
         usedAt: '2026-09-21T10:00:00.000Z',
       },
       {
         kind: 'local',
         id: 'p9',
-        name: 'Loja',
+        name: 'Shop',
         usedAt: '2026-09-20T18:30:00.000Z',
         unexported: false,
       },
@@ -385,7 +386,7 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
       .getAllByRole('row')
       .slice(1) as [HTMLElement, HTMLElement];
     const open = (row: HTMLElement) =>
-      within(row).getByRole('button', { name: t('home.openNamed', { name: 'Loja' }) });
+      within(row).getByRole('button', { name: t('home.openNamed', { name: 'Shop' }) });
     const description = (button: HTMLElement) =>
       (button.getAttribute('aria-describedby') ?? '')
         .split(' ')
@@ -393,23 +394,23 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
         .join(' ');
     expect(
       within(folderRow).getByRole('button', {
-        name: t('home.forgetNamed', { name: 'Loja' }),
+        name: t('home.forgetNamed', { name: 'Shop' }),
       }),
     ).toBeTruthy();
     expect(
       within(localRow).getByRole('button', {
-        name: t('home.deleteNamed', { name: 'Loja' }),
+        name: t('home.deleteNamed', { name: 'Shop' }),
       }),
     ).toBeTruthy();
     const folderText = description(open(folderRow));
     const localText = description(open(localRow));
     expect(folderText).toContain(t('status.targetFolder'));
-    expect(folderText).toContain('loja');
+    expect(folderText).toContain('shop');
     expect(localText).toContain(t('status.targetLocal'));
     expect(localText).not.toBe(folderText);
-    // Os três botões da linha apontam para a mesma descrição, e os ids são únicos entre as linhas.
+    // The three buttons of the row point to the same description, and the ids are unique across rows.
     const forget = within(folderRow).getByRole('button', {
-      name: t('home.forgetNamed', { name: 'Loja' }),
+      name: t('home.forgetNamed', { name: 'Shop' }),
     });
     expect(description(forget)).toBe(folderText);
     const ids = [...document.querySelectorAll('[aria-describedby]')]
@@ -423,13 +424,13 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
     expect(controller.openLocalProject).toHaveBeenCalledWith('p9');
   });
 
-  // TE1 (#1151): mesmo nome, mesma origem e mesmo minuto, segundos diferentes: a descrição traz
-  // a hora com segundos; a célula visível segue só até o minuto.
-  it('duas linhas Local de mesmo nome e minuto têm descrições diferentes (segundos)', () => {
+  // TE1 (#1151): same name, same origin and same minute, different seconds: the description carries
+  // the time with seconds; the visible cell goes only down to the minute.
+  it('two Local rows with the same name and minute have different descriptions (seconds)', () => {
     const twin = (id: string, usedAt: string) => ({
       kind: 'local' as const,
       id,
-      name: 'Rascunho',
+      name: 'Draft',
       usedAt,
       unexported: false,
     });
@@ -452,17 +453,17 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
     expect(visible(a)).not.toMatch(/\d:\d\d:\d\d/);
   });
 
-  // Etapa 8 (8.4), R7: duas pastas com o mesmo nome (do projeto e da pasta) mostram o nome
-  // da pasta nas duas linhas; a lista decide (`showFolderName`), a tabela só obedece. Com os
-  // dois nomes iguais, as linhas continuam iguais (`['loja', 'loja']` nas duas): é o limite
-  // do R7, porque o navegador não dá o caminho da pasta; a coluna Último uso as distingue
-  // (`docs/ARCHITECTURE.md`, recentes; 8.7).
-  it('nome repetido: as duas linhas mostram o nome da pasta', () => {
+  // Stage 8 (8.4), R7: two folders with the same name (of the project and of the folder) show the
+  // folder name on both rows; the list decides (`showFolderName`), the table just obeys. With both
+  // names equal, the rows remain equal (`['shop', 'shop']` on both): that is the limit of R7,
+  // because the browser does not give the folder path; the Last used column tells them apart
+  // (`docs/ARCHITECTURE.md`, recents; 8.7).
+  it('repeated name: both rows show the folder name', () => {
     const twin = (id: string, usedAt: string) => ({
       kind: 'folder',
       id,
-      name: 'loja',
-      folderName: 'loja',
+      name: 'shop',
+      folderName: 'shop',
       showFolderName: true,
       usedAt,
     });
@@ -476,12 +477,12 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
     const names = rows.map((r) =>
       [...r.querySelectorAll('.project-name')].map((n) => n.textContent),
     );
-    expect(names).toEqual([['loja', 'loja'], ['loja', 'loja'], ['Principal']]);
+    expect(names).toEqual([['shop', 'shop'], ['shop', 'shop'], ['Main']]);
   });
 
-  // Etapa 7 (7.1), regressão G4: a linha sai da lista e o foco caía no body.
-  describe('foco depois de Remover da lista', () => {
-    /** `forgetFolder` tira a pasta da lista, como o controller faz. */
+  // Stage 7 (7.1), G4 regression: the row leaves the list and the focus used to fall on the body.
+  describe('focus after Remove from list', () => {
+    /** `forgetFolder` takes the folder off the list, as the controller does. */
     const forgetting = () =>
       controller.forgetFolder.mockImplementation((id: string) => {
         recentProjects.value = recentProjects.value.filter(
@@ -494,31 +495,31 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
         name: OPEN_NAMED,
       });
 
-    it('vai ao Abrir da linha seguinte', async () => {
+    it('goes to the Open of the next row', async () => {
       forgetting();
       render(<Home />);
-      const row = screen.getByRole('row', { name: /Principal/ });
+      const row = screen.getByRole('row', { name: /Main/ });
       await userEvent.click(within(row).getByRole('button', { name: FORGET_NAMED }));
-      await waitFor(() => expect(screen.queryByText('Principal')).toBeNull());
-      await waitFor(() => expect(document.activeElement).toBe(openOf(/Carro/)));
+      await waitFor(() => expect(screen.queryByText('Main')).toBeNull());
+      await waitFor(() => expect(document.activeElement).toBe(openOf(/Car/)));
     });
 
-    it('na última linha, vai ao Abrir da anterior', async () => {
+    it('on the last row, goes to the Open of the previous one', async () => {
       forgetting();
       recentProjects.value = [...recentProjects.value].reverse();
       render(<Home />);
-      const row = screen.getByRole('row', { name: /Principal/ });
+      const row = screen.getByRole('row', { name: /Main/ });
       await userEvent.click(within(row).getByRole('button', { name: FORGET_NAMED }));
-      await waitFor(() => expect(screen.queryByText('Principal')).toBeNull());
-      await waitFor(() => expect(document.activeElement).toBe(openOf(/Carro/)));
+      await waitFor(() => expect(screen.queryByText('Main')).toBeNull());
+      await waitFor(() => expect(document.activeElement).toBe(openOf(/Car/)));
     });
 
-    it('sem linhas, vai ao título da lista', async () => {
+    it('with no rows, goes to the list title', async () => {
       forgetting();
       recentProjects.value = [folder];
       render(<Home />);
       await userEvent.click(screen.getByRole('button', { name: FORGET_NAMED }));
-      await waitFor(() => expect(screen.queryByText('Principal')).toBeNull());
+      await waitFor(() => expect(screen.queryByText('Main')).toBeNull());
       await waitFor(() =>
         expect(document.activeElement).toBe(
           screen.getByRole('heading', { name: t('home.recentProjects') }),
@@ -526,8 +527,8 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
       );
     });
 
-    // Etapa 8 (8.3), F1/F2: os dois pelo diálogo rodam 20 vezes por rodada (`repeats`).
-    it('Excluir um projeto deste dispositivo faz o mesmo', { repeats: 19 }, async () => {
+    // Stage 8 (8.3), F1/F2: the two through the dialog run 20 times per round (`repeats`).
+    it('Deleting a project of this device does the same', { repeats: 19 }, async () => {
       controller.deleteLocalProject.mockImplementation((id: string) => {
         recentProjects.value = recentProjects.value.filter(
           (p) => (p as { id: string }).id !== id,
@@ -536,26 +537,26 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
       });
       render(<Home />);
       const user = userEvent.setup();
-      const row = screen.getByRole('row', { name: /Carro/ });
+      const row = screen.getByRole('row', { name: /Car/ });
       await user.click(within(row).getByRole('button', { name: DELETE_NAMED }));
       const dialog = document.querySelector('dialog') as HTMLElement;
       await user.click(
         within(dialog).getByRole('button', { name: t('common.delete'), hidden: true }),
       );
-      await waitFor(() => expect(screen.queryByText('Carro')).toBeNull());
-      await waitFor(() => expect(document.activeElement).toBe(openOf(/Principal/)));
+      await waitFor(() => expect(screen.queryByText('Car')).toBeNull());
+      await waitFor(() => expect(document.activeElement).toBe(openOf(/Main/)));
     });
 
-    it('pelo aviso "Pasta indisponível" também', { repeats: 19 }, async () => {
+    it('through the "Folder unavailable" notice too', { repeats: 19 }, async () => {
       forgetting();
       controller.openRecentFolder.mockReturnValue(
         ok({ kind: 'unavailable', reason: 'missing' }),
       );
       render(<Home />);
       const user = userEvent.setup();
-      const row = screen.getByRole('row', { name: /Principal/ });
+      const row = screen.getByRole('row', { name: /Main/ });
       await user.click(within(row).getByRole('button', { name: OPEN_NAMED }));
-      await screen.findByText(t('home.folderMissing', { folder: 'principal-pasta' }));
+      await screen.findByText(t('home.folderMissing', { folder: 'main-folder' }));
       const dialog = document.querySelector('dialog') as HTMLElement;
       await user.click(
         within(dialog).getByRole('button', {
@@ -564,24 +565,24 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
         }),
       );
       await waitFor(() => expect(document.querySelector('dialog')).toBeNull());
-      await waitFor(() => expect(screen.queryByText('Principal')).toBeNull());
-      await waitFor(() => expect(document.activeElement).toBe(openOf(/Carro/)));
+      await waitFor(() => expect(screen.queryByText('Main')).toBeNull());
+      await waitFor(() => expect(document.activeElement).toBe(openOf(/Car/)));
     });
 
-    // Etapa AC2: fechar o aviso sem remover devolve o foco ao Abrir da linha de origem,
-    // não ao da primeira linha.
+    // Stage AC2: closing the notice without removing returns the focus to the Open of the row of origin,
+    // not to the first row's.
     describe.each([
       [
         'Esc',
         async () => {
-          // O jsdom não traduz a tecla em `cancel`: dispara o evento que o navegador envia.
+          // jsdom does not translate the key into `cancel`: it dispatches the event the browser sends.
           document
             .querySelector('dialog')
             ?.dispatchEvent(new Event('cancel', { cancelable: true }));
         },
       ],
       [
-        'Cancelar',
+        'Cancel',
         async (u: ReturnType<typeof userEvent.setup>) =>
           u.click(
             within(document.querySelector('dialog') as HTMLElement).getByRole('button', {
@@ -590,11 +591,11 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
             }),
           ),
       ],
-    ])('fechar "Pasta indisponível" com %s', (_name, close) => {
-      it('devolve o foco ao Abrir da linha que não é a primeira', async () => {
+    ])('closing "Folder unavailable" with %s', (_name, close) => {
+      it('returns the focus to the Open of the row that is not the first', async () => {
         recentProjects.value = [...recentProjects.value.slice(1), folder];
-        // No navegador, o Abrir fica desabilitado enquanto a pasta abre e perde o foco
-        // (o jsdom não faz isso): quando o aviso abre, quem abriu já é o `body`.
+        // In the browser, Open is disabled while the folder opens and loses focus
+        // (jsdom does not do that): when the notice opens, whoever opened it is already the `body`.
         controller.openRecentFolder.mockImplementation(async () => {
           (document.activeElement as HTMLElement | null)?.blur();
           return ok({ kind: 'unavailable', reason: 'missing' });
@@ -602,20 +603,20 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
         render(<Home />);
         const user = userEvent.setup();
         const rows = within(screen.getByRole('table')).getAllByRole('row').slice(1);
-        expect(rows[rows.length - 1]?.textContent).toContain('Principal');
-        await user.click(openOf(/Principal/));
-        await screen.findByText(t('home.folderMissing', { folder: 'principal-pasta' }));
+        expect(rows[rows.length - 1]?.textContent).toContain('Main');
+        await user.click(openOf(/Main/));
+        await screen.findByText(t('home.folderMissing', { folder: 'main-folder' }));
         await close(user);
         await waitFor(() => expect(document.querySelector('dialog')).toBeNull());
-        await waitFor(() => expect(document.activeElement).toBe(openOf(/Principal/)));
+        await waitFor(() => expect(document.activeElement).toBe(openOf(/Main/)));
       });
     });
 
-    // Etapa 8 (8.3), achado F2: com a exclusão ainda em curso, o retorno do diálogo punha o
-    // foco num contêiner (a busca) e depois o `refocusRow` da Home o levava à linha: dois
-    // donos. Agora o diálogo fecha depois da ação e o foco vai direto à linha que ficou.
+    // Stage 8 (8.3), finding F2: with the deletion still in progress, the dialog's return put the
+    // focus on a container (the search) and then the Home's `refocusRow` took it to the row: two
+    // owners. Now the dialog closes after the action and the focus goes straight to the row that remained.
     it(
-      'Excluir pelo diálogo leva o foco direto à linha que ficou (um dono só)',
+      'Deleting through the dialog takes the focus straight to the row that remained (one owner only)',
       { repeats: 19 },
       async () => {
         let finish: () => void = () => undefined;
@@ -632,11 +633,11 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
         );
         render(<Home />);
         const user = userEvent.setup();
-        const row = screen.getByRole('row', { name: /Carro/ });
+        const row = screen.getByRole('row', { name: /Car/ });
         await user.click(within(row).getByRole('button', { name: DELETE_NAMED }));
         const dialog = await waitFor(() => {
           const el = document.querySelector('dialog');
-          if (!el?.contains(document.activeElement)) throw new Error('não abriu');
+          if (!el?.contains(document.activeElement)) throw new Error('did not open');
           return el;
         });
         const focused: Element[] = [];
@@ -651,32 +652,30 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
           );
           await new Promise((resolve) => setTimeout(resolve, 30));
           finish();
-          await waitFor(() => expect(screen.queryByText('Carro')).toBeNull());
-          await waitFor(() => expect(document.activeElement).toBe(openOf(/Principal/)));
+          await waitFor(() => expect(screen.queryByText('Car')).toBeNull());
+          await waitFor(() => expect(document.activeElement).toBe(openOf(/Main/)));
           await new Promise((resolve) => setTimeout(resolve, 30));
         } finally {
           document.removeEventListener('focusin', track);
         }
-        expect(focused.filter((el) => !dialog.contains(el))).toEqual([
-          openOf(/Principal/),
-        ]);
+        expect(focused.filter((el) => !dialog.contains(el))).toEqual([openOf(/Main/)]);
       },
     );
   });
 
-  it('a busca também acha pelo nome da pasta', async () => {
+  it('the search also finds by the folder name', async () => {
     render(<Home />);
-    await userEvent.type(screen.getByRole('searchbox'), 'pasta');
-    expect(screen.getByText('Principal')).toBeTruthy();
-    expect(screen.queryByText('Carro')).toBeNull();
+    await userEvent.type(screen.getByRole('searchbox'), 'folder');
+    expect(screen.getByText('Main')).toBeTruthy();
+    expect(screen.queryByText('Car')).toBeNull();
   });
 
-  it('Abrir chama openRecentFolder no próprio clique', async () => {
+  it('Open calls openRecentFolder on the click itself', async () => {
     controller.openRecentFolder.mockReturnValue(ok({ kind: 'opened' }));
     render(<Home />);
-    const row = screen.getByRole('row', { name: /Principal/ });
+    const row = screen.getByRole('row', { name: /Main/ });
     await userEvent.click(within(row).getByRole('button', { name: OPEN_NAMED }));
-    // Com o rastro do Abrir (devolução do portão da 8.4), que segue junto no mesmo clique.
+    // With the Open trace (return of the 8.4 gate), which goes along on the same click.
     expect(controller.openRecentFolder).toHaveBeenCalledWith(
       'f1',
       expect.objectContaining({ step: expect.any(Function) }),
@@ -684,7 +683,7 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
     expect(document.querySelector('dialog')).toBeNull();
   });
 
-  it('pasta indisponível: aviso com Localizar pasta… e Remover da lista', async () => {
+  it('unavailable folder: notice with Locate folder… and Remove from list', async () => {
     controller.openRecentFolder.mockReturnValue(
       ok({ kind: 'unavailable', reason: 'missing' }),
     );
@@ -692,12 +691,12 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
     controller.forgetFolder.mockReturnValue(ok());
     render(<Home />);
     const user = userEvent.setup();
-    const row = screen.getByRole('row', { name: /Principal/ });
+    const row = screen.getByRole('row', { name: /Main/ });
     await user.click(within(row).getByRole('button', { name: OPEN_NAMED }));
-    await screen.findByText(t('home.folderMissing', { folder: 'principal-pasta' }));
+    await screen.findByText(t('home.folderMissing', { folder: 'main-folder' }));
     const dialog = document.querySelector('dialog') as HTMLElement;
 
-    // A pasta escolhida não tem mapping.json: o aviso continua, com o motivo.
+    // The chosen folder has no mapping.json: the notice stays, with the reason.
     await user.click(
       within(dialog).getByRole('button', {
         name: t('home.relocateFolder'),
@@ -705,7 +704,7 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
       }),
     );
     expect(controller.relocateFolder).toHaveBeenCalledWith('f1');
-    await within(dialog).findByText(t('home.folderNoProject', { name: 'Principal' }));
+    await within(dialog).findByText(t('home.folderNoProject', { name: 'Main' }));
 
     await user.click(
       within(dialog).getByRole('button', { name: t('home.forgetFolder'), hidden: true }),
@@ -714,23 +713,23 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
     await waitFor(() => expect(document.querySelector('dialog')).toBeNull());
   });
 
-  it('permissão negada: o aviso diz que o navegador não deu acesso', async () => {
+  it('permission denied: the notice says the browser did not grant access', async () => {
     controller.openRecentFolder.mockReturnValue(
       ok({ kind: 'unavailable', reason: 'denied' }),
     );
     render(<Home />);
-    const row = screen.getByRole('row', { name: /Principal/ });
+    const row = screen.getByRole('row', { name: /Main/ });
     await userEvent.click(within(row).getByRole('button', { name: OPEN_NAMED }));
     expect(
-      await screen.findByText(t('home.folderDenied', { folder: 'principal-pasta' })),
+      await screen.findByText(t('home.folderDenied', { folder: 'main-folder' })),
     ).toBeTruthy();
   });
 });
 
-// Etapa 8 (8.3), achado F3: Configurações › Ver atalhos troca o diálogo no mesmo slot; o
-// novo guardava o body como "quem abriu" e o Esc não voltava ao botão Configurações.
-describe('Home: troca de diálogo (F3)', () => {
-  it('Configurações › Ver atalhos › Esc volta ao botão Configurações', async () => {
+// Stage 8 (8.3), finding F3: Settings › View shortcuts swaps the dialog in the same slot; the
+// new one kept the body as "who opened" and Esc did not return to the Settings button.
+describe('Home: dialog swap (F3)', () => {
+  it('Settings › View shortcuts › Esc returns to the Settings button', async () => {
     Element.prototype.scrollIntoView = vi.fn();
     render(<Home />);
     const user = userEvent.setup();
@@ -741,7 +740,7 @@ describe('Home: troca de diálogo (F3)', () => {
     );
     const help = await waitFor(() => {
       const el = document.querySelector('dialog');
-      if (!el?.querySelector('.help')) throw new Error('a Ajuda ainda não abriu');
+      if (!el?.querySelector('.help')) throw new Error('Help has not opened yet');
       return el;
     });
     help.dispatchEvent(new Event('cancel', { cancelable: true }));
@@ -750,15 +749,15 @@ describe('Home: troca de diálogo (F3)', () => {
   });
 });
 
-// Devolução do portão da 8.4 (achado 1): pasta renomeada depois do pedido de permissão. O
-// Abrir leva um rastro ao `openRecentFolder` (o controller simulado escreve nele como o real)
-// e a Home grava no Diagnóstico o que fez com o resultado e como o aviso fechou.
-describe('Home: rastro do Abrir de pasta (folders.reopen)', () => {
+// Return of the 8.4 gate (finding 1): folder renamed after the permission request. The
+// Open carries a trace to `openRecentFolder` (the mocked controller writes to it as the real one does)
+// and the Home records in the Diagnostics what it did with the result and how the notice closed.
+describe('Home: trace of the folder Open (folders.reopen)', () => {
   const folder = {
     kind: 'folder',
     id: 'f1',
-    name: 'Principal',
-    folderName: 'principal-pasta',
+    name: 'Main',
+    folderName: 'main-folder',
     showFolderName: true,
     usedAt: '2026-10-01T10:00:00.000Z',
   };
@@ -767,7 +766,7 @@ describe('Home: rastro do Abrir de pasta (folders.reopen)', () => {
     reportedErrors.value
       .filter((e) => e.context === 'folders.reopen')
       .map((e) => e.message);
-  /** O controller simulado: escreve os passos no rastro e devolve o resultado. */
+  /** The mocked controller: writes the steps to the trace and returns the result. */
   const answers = (steps: readonly string[], result: Promise<unknown>) =>
     controller.openRecentFolder.mockImplementation((_id: string, trace: Steps) => {
       for (const s of steps) trace?.step(s);
@@ -778,9 +777,9 @@ describe('Home: rastro do Abrir de pasta (folders.reopen)', () => {
 
   const openAndWaitDialog = async () => {
     const user = userEvent.setup();
-    const row = screen.getByRole('row', { name: /Principal/ });
+    const row = screen.getByRole('row', { name: /Main/ });
     await user.click(within(row).getByRole('button', { name: OPEN_NAMED }));
-    await screen.findByText(t('home.folderMissing', { folder: 'principal-pasta' }));
+    await screen.findByText(t('home.folderMissing', { folder: 'main-folder' }));
     return { user, dialog: document.querySelector('dialog') as HTMLDialogElement };
   };
 
@@ -789,7 +788,7 @@ describe('Home: rastro do Abrir de pasta (folders.reopen)', () => {
     recentProjects.value = [folder, ...recentProjects.value];
   });
 
-  it('o caso do relato grava o caminho, o aviso na tela e o fechamento por Cancelar', async () => {
+  it('the reported case records the path, the notice on screen and the closing by Cancel', async () => {
     answers(PROMPTED, missing());
     render(<Home />);
     const { user, dialog } = await openAndWaitDialog();
@@ -808,7 +807,7 @@ describe('Home: rastro do Abrir de pasta (folders.reopen)', () => {
     expect(lines()[1]).toMatch(/^notice closed: cancel-button after \d+ms$/);
   });
 
-  it('Esc e o clique no fundo gravam a origem do fechamento', async () => {
+  it('Esc and the click on the backdrop record the origin of the closing', async () => {
     answers(PROMPTED, missing());
     render(<Home />);
     const first = await openAndWaitDialog();
@@ -819,7 +818,7 @@ describe('Home: rastro do Abrir de pasta (folders.reopen)', () => {
     await waitFor(() => expect(lines()[3]).toMatch(/^notice closed: backdrop after/));
   });
 
-  it('Remover da lista pelo aviso grava forget', async () => {
+  it('Remove from list through the notice records forget', async () => {
     answers(PROMPTED, missing());
     controller.forgetFolder.mockReturnValue(ok());
     render(<Home />);
@@ -830,7 +829,7 @@ describe('Home: rastro do Abrir de pasta (folders.reopen)', () => {
     await waitFor(() => expect(lines()[1]).toMatch(/^notice closed: forget after/));
   });
 
-  it('aviso sem pedido (o caminho que funciona) não grava', async () => {
+  it('notice without a request (the path that works) does not record', async () => {
     answers(['handle=memory', 'query=granted', 'branch=no-mapping'], missing());
     render(<Home />);
     const { user, dialog } = await openAndWaitDialog();
@@ -841,23 +840,23 @@ describe('Home: rastro do Abrir de pasta (folders.reopen)', () => {
     expect(lines()).toEqual([]);
   });
 
-  it('Abrir que abre o projeto, mesmo com pedido, não grava', async () => {
+  it('Open that opens the project, even with a request, does not record', async () => {
     answers(
       ['handle=idb', 'query=prompt', 'request=granted', 'branch=opened'],
       ok({ kind: 'opened' }),
     );
     render(<Home />);
-    const row = screen.getByRole('row', { name: /Principal/ });
+    const row = screen.getByRole('row', { name: /Main/ });
     await userEvent.click(within(row).getByRole('button', { name: OPEN_NAMED }));
     await waitFor(() => expect(controller.openRecentFolder).toHaveBeenCalled());
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(lines()).toEqual([]);
   });
 
-  it('erro mostrado como mensagem grava o código', async () => {
+  it('error shown as a message records the code', async () => {
     answers(['handle=memory', 'query=granted'], fail('storage-failed'));
     render(<Home />);
-    const row = screen.getByRole('row', { name: /Principal/ });
+    const row = screen.getByRole('row', { name: /Main/ });
     await userEvent.click(within(row).getByRole('button', { name: OPEN_NAMED }));
     await screen.findByText(t('error.storage-failed'));
     expect(lines()).toHaveLength(1);
@@ -869,7 +868,7 @@ describe('Home: Abrir biblioteca (B5)', () => {
   const openButton = () => screen.getByRole('button', { name: t('catalog.home.open') });
   const zipField = () => {
     const input = document.querySelector<HTMLInputElement>('input[data-library-zip]');
-    if (!input) throw new Error('sem input de zip da biblioteca');
+    if (!input) throw new Error('no library zip input');
     return input;
   };
 
@@ -877,7 +876,7 @@ describe('Home: Abrir biblioteca (B5)', () => {
     Reflect.deleteProperty(globalThis, 'showDirectoryPicker');
   });
 
-  it('com showDirectoryPicker abre a pasta, sem projeto', async () => {
+  it('with showDirectoryPicker it opens the folder, without a project', async () => {
     Object.defineProperty(globalThis, 'showDirectoryPicker', {
       value: vi.fn(),
       configurable: true,
@@ -892,7 +891,7 @@ describe('Home: Abrir biblioteca (B5)', () => {
     expect(controller.openFolder).not.toHaveBeenCalled();
   });
 
-  it('sem showDirectoryPicker escolhe o zip do pacote', async () => {
+  it('without showDirectoryPicker it picks the package zip', async () => {
     controller.openLibraryPackage.mockResolvedValue({ kind: 'opened' });
     render(<Home />);
     const click = vi.spyOn(zipField(), 'click');
@@ -900,14 +899,14 @@ describe('Home: Abrir biblioteca (B5)', () => {
     expect(click).toHaveBeenCalledOnce();
     expect(controller.openLibraryPackage).not.toHaveBeenCalled();
 
-    const file = new File(['x'], 'pacote.zip', { type: 'application/zip' });
+    const file = new File(['x'], 'package.zip', { type: 'application/zip' });
     await userEvent.upload(zipField(), file);
     await waitFor(() =>
       expect(controller.openLibraryPackage).toHaveBeenCalledWith({ kind: 'zip', file }),
     );
   });
 
-  it('cancelar o seletor não mostra mensagem', async () => {
+  it('cancelling the picker shows no message', async () => {
     Object.defineProperty(globalThis, 'showDirectoryPicker', {
       value: vi.fn(),
       configurable: true,
@@ -924,15 +923,18 @@ describe('Home: Abrir biblioteca (B5)', () => {
     ['too-big', t('spec.packageTooBig', { files: 500, mb: 64 })],
     ['empty', t('spec.packageEmpty')],
     ['unreadable', t('spec.packageReadFailed')],
-  ] as const)('pacote que não pôde ser lido (%s) avisa na tela', async (reason, text) => {
-    Object.defineProperty(globalThis, 'showDirectoryPicker', {
-      value: vi.fn(),
-      configurable: true,
-      writable: true,
-    });
-    controller.openLibraryPackage.mockResolvedValue({ kind: 'failed', reason });
-    render(<Home />);
-    await userEvent.click(openButton());
-    expect((await screen.findByRole('alert')).textContent).toBe(text);
-  });
+  ] as const)(
+    'package that could not be read (%s) warns on screen',
+    async (reason, text) => {
+      Object.defineProperty(globalThis, 'showDirectoryPicker', {
+        value: vi.fn(),
+        configurable: true,
+        writable: true,
+      });
+      controller.openLibraryPackage.mockResolvedValue({ kind: 'failed', reason });
+      render(<Home />);
+      await userEvent.click(openButton());
+      expect((await screen.findByRole('alert')).textContent).toBe(text);
+    },
+  );
 });

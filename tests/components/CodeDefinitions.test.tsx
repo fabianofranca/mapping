@@ -12,12 +12,12 @@ import { ANDROID_REPO, codeProject, withSpecRepo } from '../model/specFixtures';
 import { variantsProject } from '../model/variantsFixtures';
 import { annotationOf, createHarness, renderLive } from './harness';
 
-// Etapas 3b.3, 9 e Código de instanciação: a linha "Definição" (o `path` do `code` do tipo, com
-// o link pelo `repo` da especialização) nos Detalhes, a Lista sem referência ao código gerado, o
-// clone local por plataforma nas Configurações, as plataformas no diálogo de especializações e a
-// Ajuda de uso.
+// Stages 3b.3, 9 and Instantiation code: the "Definition" line (the `path` of the type's `code`,
+// with the link through the specialization's `repo`) in the Details, the List without a reference
+// to the generated code, the local clone per platform in the Settings, the platforms in the
+// specializations dialog and the usage Help.
 
-// O exemplo SDUI pode renomear a plataforma `bff`: o nome vem da própria especialização.
+// The SDUI example may rename the `bff` platform: the name comes from the specialization itself.
 const BFF = codeProject()
   .specializations.flatMap((s) => s.spec?.platforms ?? [])
   .find((platform) => platform.id === 'bff');
@@ -25,13 +25,13 @@ const BFF_NAME = BFF?.name ?? 'bff';
 const BFF_LANGUAGE = BFF?.language ?? '';
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   Element.prototype.scrollIntoView = () => undefined;
 });
 afterEach(cleanup);
 
-describe('Lista e herdadas (AnnotationLines)', () => {
-  it('o Screen mostra só os campos do tipo, sem entradas de código nem ações', () => {
+describe('List and inherited (AnnotationLines)', () => {
+  it('the Screen shows only the type fields, with no code entries or actions', () => {
     const harness = createHarness(codeProject());
     renderLive(harness, (p) => (
       <AnnotationLines
@@ -43,13 +43,14 @@ describe('Lista e herdadas (AnnotationLines)', () => {
     ));
     expect(
       Array.from(document.querySelectorAll('.list-entry')).map((l) => l.textContent),
+    // pt-BR kept: shared fixture data asserted by tests/model (specFixtures)
     ).toEqual(['nome: Cadastro', 'rota: /cadastro']);
     expect(screen.queryByRole('link')).toBeNull();
     expect(screen.queryByRole('button')).toBeNull();
   });
 });
 
-describe('Detalhes: linha "Definição" do tipo (code.<plataforma>.path)', () => {
+describe('Details: type "Definition" line (code.<platform>.path)', () => {
   function setupDetails(annotationId: string, readOnly = false) {
     const harness = createHarness(codeProject(), readOnly);
     renderLive(harness, (p) => (
@@ -66,9 +67,9 @@ describe('Detalhes: linha "Definição" do tipo (code.<plataforma>.path)', () =>
     return { lines, user: userEvent.setup() };
   }
 
-  it('uma linha por plataforma com path: "Plataforma · arquivo", com a dica do caminho e do símbolo', () => {
+  it('one line per platform with a path: "Platform · file", with the path and symbol hint', () => {
     const { lines } = setupDetails('AB');
-    expect(screen.getByText('Definição')).toBeTruthy();
+    expect(screen.getByText('Definition')).toBeTruthy();
     expect(
       lines().map((l) => l.querySelector('.code-definition-name')?.textContent),
     ).toEqual(expect.arrayContaining(['Android · DSButton.kt', 'iOS · DSButton.swift']));
@@ -77,25 +78,25 @@ describe('Detalhes: linha "Definição" do tipo (code.<plataforma>.path)', () =>
     ).toBeTruthy();
   });
 
-  it('"Abrir no repositório" só onde há repositório; "Copiar caminho" em todas', async () => {
+  it('"Open in repository" only where there is a repository; "Copy path" on all', async () => {
     const { lines, user } = setupDetails('AB');
     const [android, ios] = lines() as HTMLElement[];
-    const link = within(android!).getByRole('link', { name: /^Abrir no repositório/ });
+    const link = within(android!).getByRole('link', { name: /^Open in repository/ });
     expect(link.getAttribute('href')).toBe(
       'https://github.com/org/app-android/blob/main/app/src/main/java/com/app/ds/DSButton.kt',
     );
     expect(link.getAttribute('target')).toBe('_blank');
     expect(link.getAttribute('rel')).toBe('noopener noreferrer');
-    // iOS não tem repositório: mostra o caminho e "Copiar caminho", sem link.
+    // iOS has no repository: shows the path and "Copy path", without a link.
     expect(within(ios!).queryByRole('link')).toBeNull();
-    await user.click(within(ios!).getByRole('button', { name: /^Copiar caminho/ }));
+    await user.click(within(ios!).getByRole('button', { name: /^Copy path/ }));
     expect(await navigator.clipboard.readText()).toBe('App/DesignSystem/DSButton.swift');
     await waitFor(() =>
-      expect(within(ios!).getByRole('status').textContent).toBe('Caminho copiado'),
+      expect(within(ios!).getByRole('status').textContent).toBe('Path copied'),
     );
   });
 
-  it('o link vem só da especialização: sem nada em Configurações; sem urlTemplate só o caminho', () => {
+  it('the link comes only from the specialization: nothing in Settings; without urlTemplate only the path', () => {
     const base = codeProject();
     const project = { ...base, platformRepos: {} };
     const harness = createHarness(project);
@@ -110,7 +111,7 @@ describe('Detalhes: linha "Definição" do tipo (code.<plataforma>.path)', () =>
       />
     ));
     expect(
-      screen.getByRole('link', { name: /^Abrir no repositório/ }).getAttribute('href'),
+      screen.getByRole('link', { name: /^Open in repository/ }).getAttribute('href'),
     ).toBe(
       'https://github.com/org/app-android/blob/main/app/src/main/java/com/app/ds/DSButton.kt',
     );
@@ -129,33 +130,33 @@ describe('Detalhes: linha "Definição" do tipo (code.<plataforma>.path)', () =>
       />
     ));
     expect(screen.queryByRole('link')).toBeNull();
-    expect(screen.getAllByRole('button', { name: /^Copiar caminho/ })).not.toHaveLength(
+    expect(screen.getAllByRole('button', { name: /^Copy path/ })).not.toHaveLength(
       0,
     );
   });
 
-  it('também aparece com o projeto somente leitura (não há o que editar)', () => {
+  it('also appears with a read-only project (there is nothing to edit)', () => {
     const { lines } = setupDetails('AB', true);
     expect(lines().length).toBeGreaterThanOrEqual(2);
   });
 
-  it('tipo sem path (Screen) não tem a linha', () => {
+  it('a type without a path (Screen) has no line', () => {
     for (const id of ['AS']) {
       cleanup();
       const { lines } = setupDetails(id);
       expect(lines()).toHaveLength(0);
-      expect(screen.queryByText('Definição')).toBeNull();
+      expect(screen.queryByText('Definition')).toBeNull();
     }
   });
 
-  it('em en-US o rótulo é "Definition"', () => {
+  it('the label is "Definition"', () => {
     locale.value = 'en-US';
     setupDetails('AB');
     expect(screen.getByText('Definition')).toBeTruthy();
   });
 });
 
-describe('Configurações: clone local por plataforma', () => {
+describe('Settings: local clone per platform', () => {
   function setupSettings(project: Project = codeProject(), readOnly = false) {
     const harness = createHarness(project, readOnly);
     renderLive(harness, (p) => (
@@ -171,7 +172,7 @@ describe('Configurações: clone local por plataforma', () => {
   const group = (name: string) =>
     within(screen.getByRole('group', { name, hidden: true }));
 
-  it('uma linha por plataforma declarada, só com o caminho local e sem aviso', () => {
+  it('one line per declared platform, with only the local path and no warning', () => {
     setupSettings();
     expect(
       screen
@@ -179,25 +180,25 @@ describe('Configurações: clone local por plataforma', () => {
         .map((g) => g.getAttribute('aria-label')),
     ).toEqual(expect.arrayContaining(['Android', 'iOS', BFF_NAME]));
     expect(
-      group('Android').getByLabelText('Caminho local da raiz', { selector: 'input' }),
+      group('Android').getByLabelText('Local path of the root', { selector: 'input' }),
     ).toHaveProperty('value', '../../..');
     expect(
-      group('iOS').getByLabelText('Caminho local da raiz', { selector: 'input' }),
+      group('iOS').getByLabelText('Local path of the root', { selector: 'input' }),
     ).toHaveProperty('value', '');
-    // O endereço vem da especialização: não há campo nem aviso de repositório ausente.
-    expect(screen.queryByLabelText('Endereço do arquivo')).toBeNull();
+    // The address comes from the specialization: there is no field or missing-repository warning.
+    expect(screen.queryByLabelText('File address')).toBeNull();
     for (const name of ['Android', 'iOS', BFF_NAME]) {
       expect(group(name).queryByRole('status', { hidden: true })).toBeNull();
     }
   });
 
-  it('grava pelas actions, com os erros traduzidos, e limpa a configuração', async () => {
+  it('saves through the actions, with translated errors, and clears the configuration', async () => {
     const { harness, user } = setupSettings();
     const ios = group('iOS');
-    const local = ios.getByLabelText('Caminho local da raiz', { selector: 'input' });
-    await user.type(local, '/absoluto{Enter}');
+    const local = ios.getByLabelText('Local path of the root', { selector: 'input' });
+    await user.type(local, '/absolute{Enter}');
     expect(ios.getByRole('alert', { hidden: true }).textContent).toMatch(
-      /relativo à pasta do projeto/,
+      /relative to the project folder/,
     );
     expect(harness.project().platformRepos.ios).toBeUndefined();
 
@@ -207,16 +208,16 @@ describe('Configurações: clone local por plataforma', () => {
     expect(ios.queryByRole('alert', { hidden: true })).toBeNull();
 
     await user.click(
-      ios.getByRole('button', { name: 'Limpar repositório de iOS', hidden: true }),
+      ios.getByRole('button', { name: 'Clear the repository of iOS', hidden: true }),
     );
     expect(harness.project().platformRepos.ios).toBeUndefined();
     expect((local as HTMLInputElement).value).toBe('');
-    // Um passo de desfazer por ação.
+    // One undo step per action.
     harness.store.undo();
     expect(harness.project().platformRepos.ios?.localPath).toBe('../ios');
   });
 
-  it('sem plataformas (ou fora do editor) a seção não aparece', () => {
+  it('without platforms (or outside the editor) the section does not appear', () => {
     const harness = createHarness({ ...codeProject(), specializations: [] });
     renderLive(harness, (p) => (
       <SettingsDialog
@@ -225,12 +226,12 @@ describe('Configurações: clone local por plataforma', () => {
         onShowShortcuts={() => undefined}
       />
     ));
-    expect(screen.queryByText('Repositórios')).toBeNull();
+    expect(screen.queryByText('Repositories')).toBeNull();
   });
 });
 
-describe('Especializações e Ajuda', () => {
-  it('o diálogo mostra as plataformas de cada especialização: nome, id e linguagem', () => {
+describe('Specializations and Help', () => {
+  it('the dialog shows the platforms of each specialization: name, id and language', () => {
     const harness = createHarness(codeProject());
     renderLive(harness, (p) => (
       <SpecsDialog project={p} readOnly={false} onClose={() => undefined} />
@@ -238,18 +239,19 @@ describe('Especializações e Ajuda', () => {
     expect(screen.getByText('Android · android · kotlin')).toBeTruthy();
     expect(screen.getByText('iOS · ios · swift')).toBeTruthy();
     expect(screen.getByText(`${BFF_NAME} · bff · ${BFF_LANGUAGE}`)).toBeTruthy();
-    // O repo declarado aparece como link comum, com a ref (só o Android declara).
+    // The declared repo appears as a plain link, with the ref (only Android declares it).
     const link = screen.getByRole('link', { name: ANDROID_REPO.url });
     expect(link.getAttribute('href')).toBe(ANDROID_REPO.url);
     expect(link.getAttribute('target')).toBe('_blank');
     expect(link.getAttribute('rel')).toBe('noopener noreferrer');
-    expect(screen.getByText('referência v1.2.0')).toBeTruthy();
+    expect(screen.getByText('ref v1.2.0')).toBeTruthy();
     expect(screen.getAllByRole('link')).toHaveLength(1);
-    // O Modelo de dados (v1) não declara plataformas: só uma lista.
-    expect(screen.getAllByText('Plataformas')).toHaveLength(1);
+    // The Data model (v1) declares no platforms: just one list.
+    expect(screen.getAllByText('Platforms')).toHaveLength(1);
   });
 
-  it('a Ajuda tem a seção de uso das plataformas e do code, nos dois idiomas', () => {
+  it('the Help has the usage section for the platforms and the code, in both languages', () => {
+    // pt-BR kept: the Help section must exist in both locales
     for (const l of ['pt-BR', 'en-US'] as const) {
       locale.value = l;
       cleanup();
@@ -264,7 +266,7 @@ describe('Especializações e Ajuda', () => {
   });
 });
 
-describe('Detalhes: a Definição pelo caso de variants (formatVersion 9)', () => {
+describe('Details: the Definition through the variants case (formatVersion 9)', () => {
   function definitionOf(annotationId: string) {
     const harness = createHarness(variantsProject());
     renderLive(harness, (p) => (
@@ -280,14 +282,14 @@ describe('Detalhes: a Definição pelo caso de variants (formatVersion 9)', () =
     return document.querySelector('[data-definition="compose"]') as HTMLElement;
   }
 
-  it('o botão text mostra o arquivo do caso, com o link pelo repo', () => {
+  it('the text button shows the case file, with the link through the repo', () => {
     const line = definitionOf('BT');
     expect(line.querySelector('.code-definition-name')?.textContent).toBe(
       'Compose · TextButton.kt',
     );
     expect(
       within(line)
-        .getByRole('link', { name: /^Abrir no repositório/ })
+        .getByRole('link', { name: /^Open in repository/ })
         .getAttribute('href'),
     ).toBe(
       'https://github.com/androidx/androidx/blob/main/compose/material3/TextButton.kt',
@@ -299,7 +301,7 @@ describe('Detalhes: a Definição pelo caso de variants (formatVersion 9)', () =
     ).toBeTruthy();
   });
 
-  it('o outlined mostra o símbolo do caso sobre o arquivo da base; o filled, a base', () => {
+  it('the outlined shows the case symbol over the base file; the filled shows the base', () => {
     expect(definitionOf('BO').querySelector('.code-definition-name')?.textContent).toBe(
       'Compose · Button.kt',
     );

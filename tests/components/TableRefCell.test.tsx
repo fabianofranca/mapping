@@ -1,5 +1,6 @@
-// A célula de uma coluna `ref` de `table` nos Detalhes (ME4, decisão (e)): a versão compacta do
-// campo `ref`, com o seletor de referência compacto.
+// The cell of a `ref` column of a `table` in the Details (ME4, decision (e)): the compact version of
+// the `ref` field, with the compact reference picker.
+// pt-BR kept: shared fixture data (names such as Alvo, alvos, Cliente.cpf, Glossário.termo) asserted by tests/model and tests/store
 import { cleanup, screen, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -15,7 +16,7 @@ import { R1, build } from '../model/refColumnFixtures';
 import { annotationOf, createHarness, renderLive } from './harness';
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
@@ -27,7 +28,7 @@ function setup(project: Project, readOnly = false) {
     const field = typeOfAnnotation(p, annotation)?.type.fields.find(
       (f) => f.key === 'alvos',
     );
-    if (!field) throw new Error('campo alvos não existe');
+    if (!field) throw new Error('field alvos does not exist');
     return (
       <TypedField
         field={field}
@@ -41,53 +42,53 @@ function setup(project: Project, readOnly = false) {
   return { harness, onGoToAnnotation, user: userEvent.setup() };
 }
 
-/** O botão da célula `alvo` da linha 1 (o nome acessível é "<valor>: Alvo (Linha 1)"). */
-const cellButton = () => screen.getByRole('button', { name: /: Alvo \(Linha 1\)$/ });
+/** The button of the `alvo` cell of row 1 (the accessible name is "<value>: Alvo (Row 1)"). */
+const cellButton = () => screen.getByRole('button', { name: /: Alvo \(Row 1\)$/ });
 
 const cellValue = (h: { project(): Project }) => {
   const rows = annotationOf(h.project(), 'AL').values?.alvos as Record<string, unknown>[];
   return rows[0]?.alvo;
 };
 
-describe('TableField: célula de coluna ref', () => {
-  it('célula vazia mostra "Escolher…", o cabeçalho da coluna e o botão Limpar desabilitado', () => {
+describe('TableField: ref column cell', () => {
+  it('an empty cell shows "Choose…", the column header and the Clear button disabled', () => {
     setup(build());
-    expect(cellButton().textContent).toContain('Escolher…');
-    // SN2: o nome começa pelo texto visível, sem as reticências.
-    expect(cellButton().getAttribute('aria-label')).toBe('Escolher: Alvo (Linha 1)');
+    expect(cellButton().textContent).toContain('Choose…');
+    // SN2: the name starts with the visible text, without the ellipsis.
+    expect(cellButton().getAttribute('aria-label')).toBe('Choose: Alvo (Row 1)');
     expect(cellButton().className).toContain('is-empty');
     expect(screen.getByRole('columnheader', { name: 'Alvo *' })).toBeTruthy();
     expect(
-      screen.getByRole('button', { name: 'Limpar (Alvo (Linha 1))' }),
+      screen.getByRole('button', { name: 'Clear (Alvo (Row 1))' }),
     ).toHaveProperty('disabled', true);
   });
 
-  it('abre o seletor compacto: título da coluna, só os alvos aceitos, sem a barra de atalhos', async () => {
+  it('opens the compact picker: column title, only the accepted targets, without the shortcut bar', async () => {
     const { user } = setup(build());
     await user.click(cellButton());
     const dialog = await screen.findByRole('dialog');
     expect(dialog.className).toContain('picker-compact');
-    expect(within(dialog).getByText('Escolher alvo de "Alvo"')).toBeTruthy();
+    expect(within(dialog).getByText('Choose the target of "Alvo"')).toBeTruthy();
     expect(
       within(dialog)
         .getAllByRole('option')
         .map((o) => o.textContent ?? '')
-        .map((text) => text.replace(/(free|livre|data-field).*$/, '')),
+        .map((text) => text.replace(/(free|data-field).*$/, '')),
     ).toEqual([
       expect.stringContaining('Cliente.cpf'),
       expect.stringContaining('Cliente.nome'),
       expect.stringContaining('Glossário.termo'),
     ]);
     expect(dialog.querySelector('.picker-foot')).toBeNull();
-    // As abas por etiqueta aceita seguem como no campo (Todos, a etiqueta e Livres).
+    // The tabs by accepted tag stay as in the field (All, the tag and Free).
     expect(
       within(dialog)
         .getAllByRole('tab')
         .map((tab) => tab.textContent),
-    ).toEqual(['Todos', 'data-field', 'Livres']);
+    ).toEqual(['All', 'data-field', 'Free']);
   });
 
-  it('escolher grava a referência na célula, fecha o seletor e devolve o foco à célula', async () => {
+  it('choosing writes the reference in the cell, closes the picker and returns focus to the cell', async () => {
     const { harness, user } = setup(build());
     await user.click(cellButton());
     const dialog = await screen.findByRole('dialog');
@@ -105,7 +106,7 @@ describe('TableField: célula de coluna ref', () => {
     expect(document.activeElement).toBe(cellButton());
   });
 
-  it('teclado: Ctrl+B abre, a busca filtra, Enter escolhe; o atual vem marcado ao reabrir', async () => {
+  it('keyboard: Ctrl+B opens, the search filters, Enter chooses; the current one comes marked on reopening', async () => {
     const { harness, user } = setup(build());
     cellButton().focus();
     await user.keyboard('{Control>}b{/Control}');
@@ -119,10 +120,10 @@ describe('TableField: célula de coluna ref', () => {
     const again = await screen.findByRole('dialog');
     const current = within(again).getByRole('option', { selected: true });
     expect(current.textContent).toContain('Glossário.termo');
-    expect(current.textContent).toContain('atual');
+    expect(current.textContent).toContain('current');
   });
 
-  it('Esc fecha o seletor sem mudar nada', async () => {
+  it('Esc closes the picker without changing anything', async () => {
     const { harness, user } = setup(build());
     await user.click(cellButton());
     const dialog = await screen.findByRole('dialog');
@@ -132,17 +133,17 @@ describe('TableField: célula de coluna ref', () => {
     expect(document.activeElement).toBe(cellButton());
   });
 
-  it('Limpar remove a referência da célula', async () => {
+  it('Clear removes the reference from the cell', async () => {
     const { harness, user } = setup(
       setTableCell(build(), 'AL', 'alvos', 'L1', 'alvo', R1),
     );
     expect(cellButton().textContent).toContain('Cliente.cpf');
-    await user.click(screen.getByRole('button', { name: 'Limpar (Alvo (Linha 1))' }));
+    await user.click(screen.getByRole('button', { name: 'Clear (Alvo (Row 1))' }));
     expect(cellValue(harness)).toBeNull();
-    expect(cellButton().textContent).toContain('Escolher…');
+    expect(cellButton().textContent).toContain('Choose…');
   });
 
-  it('Ctrl+clique vai até o alvo, sem abrir o seletor', async () => {
+  it('Ctrl+click goes to the target, without opening the picker', async () => {
     const { onGoToAnnotation, user } = setup(
       setTableCell(build(), 'AL', 'alvos', 'L1', 'alvo', R1),
     );
@@ -154,44 +155,44 @@ describe('TableField: célula de coluna ref', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('alvo que não existe mais aparece como referência quebrada, com o motivo na dica', () => {
+  it('a target that no longer exists shows as a broken reference, with the reason in the hint', () => {
     const linked = setTableCell(build(), 'AL', 'alvos', 'L1', 'alvo', R1);
     setup(removeTableRow(linked, 'AM', 'campos', 'R1'));
-    expect(cellButton().textContent).toContain('(referência quebrada)');
+    expect(cellButton().textContent).toContain('(broken reference)');
     expect(cellButton().getAttribute('aria-label')).toBe(
-      'Referência quebrada: Alvo (Linha 1)',
+      'Broken reference: Alvo (Row 1)',
     );
     expect(cellButton().className).toContain('is-broken');
   });
 
-  it('célula preenchida: o nome começa pelo alvo e termina no campo com a linha', () => {
+  it('filled cell: the name starts with the target and ends in the field with the row', () => {
     setup(setTableCell(build(), 'AL', 'alvos', 'L1', 'alvo', R1));
     const name = cellButton().getAttribute('aria-label') ?? '';
-    expect(name).toMatch(/: Alvo \(Linha 1\)$/);
+    expect(name).toMatch(/: Alvo \(Row 1\)$/);
     expect(name.startsWith(cellButton().textContent?.trim() ?? '?')).toBe(true);
   });
 
-  it('somente leitura: a célula e o Limpar ficam desabilitados', () => {
+  it('read-only: the cell and Clear are disabled', () => {
     setup(setTableCell(build(), 'AL', 'alvos', 'L1', 'alvo', R1), true);
     expect(cellButton()).toHaveProperty('disabled', true);
     expect(
-      screen.getByRole('button', { name: 'Limpar (Alvo (Linha 1))' }),
+      screen.getByRole('button', { name: 'Clear (Alvo (Row 1))' }),
     ).toHaveProperty('disabled', true);
   });
 
-  it('a coluna obrigatória vazia aparece como inválida', () => {
+  it('an empty required column shows as invalid', () => {
     setup(build());
     expect(cellButton().getAttribute('aria-invalid')).toBe('true');
   });
 
-  it('as outras colunas da linha seguem com o editor simples', async () => {
+  it('the other columns of the row keep the simple editor', async () => {
     const { harness, user } = setup(build());
-    const note = screen.getByLabelText('nota (Linha 1)');
-    await user.type(note, 'primeira{Enter}');
+    const note = screen.getByLabelText('nota (Row 1)');
+    await user.type(note, 'first{Enter}');
     const rows = annotationOf(harness.project(), 'AL').values?.alvos as Record<
       string,
       unknown
     >[];
-    expect(rows[0]?.nota).toBe('primeira');
+    expect(rows[0]?.nota).toBe('first');
   });
 });

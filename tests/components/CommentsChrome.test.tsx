@@ -21,17 +21,17 @@ import { sampleProject } from '../model/fixtures';
 import { AGENT, HUMAN, T0, T1, message, sampleThread } from '../model/threadFixtures';
 import { createHarness, renderLive, type Harness } from './harness';
 
-// Janela Comentários na faixa, nas abas, na barra de status e no menu da camada (CM3).
+// Comments window in the strip, in the tabs, in the status bar and in the layer menu (CM3).
 
 const OPEN_A = sampleThread({
   id: 'oa',
-  messages: [message('a1', T0, HUMAN, 'oi'), message('a2', T1, AGENT, 'olá')],
+  messages: [message('a1', T0, HUMAN, 'hi'), message('a2', T1, AGENT, 'hello')],
 });
-// A última é da pessoa: aguarda o agente.
+// The last one is from the person: it awaits the agent.
 const OPEN_B = sampleThread({
   id: 'ob',
   anchor: { kind: 'marking', id: 'M2' },
-  messages: [message('b1', T0, HUMAN, 'e agora?')],
+  messages: [message('b1', T0, HUMAN, 'and now?')],
 });
 
 async function harnessWith(threads: readonly Thread[], readOnly = false) {
@@ -49,14 +49,14 @@ function withContext(harness: Harness, ui: preact.ComponentChildren) {
 beforeEach(() => {
   localStorage.clear();
   clearIdentity();
-  setIdentity('Marina Alves', 'marina@exemplo.com');
-  locale.value = 'pt-BR';
+  setIdentity('Marina Alves', 'marina@example.com');
+  locale.value = 'en-US';
   hideToolWindow('comments');
 });
 afterEach(cleanup);
 
-describe('atalhos da janela Comentários', () => {
-  it('Ctrl+Shift+0 e Alt+0 alternam a janela Comentários', () => {
+describe('Comments window shortcuts', () => {
+  it('Ctrl+Shift+0 and Alt+0 toggle the Comments window', () => {
     const key = (k: string, mods: Partial<KeyboardEvent>) =>
       shortcutFor({
         key: k,
@@ -77,14 +77,15 @@ describe('atalhos da janela Comentários', () => {
   });
 });
 
+// pt-BR kept: the strip, tab and status bar are checked in both locales
 describe.each(['pt-BR', 'en-US'] as const)(
-  'faixa, aba e barra de status (%s)',
+  'strip, tab and status bar (%s)',
   (lang) => {
     beforeEach(() => {
       locale.value = lang;
     });
 
-    it('a faixa e a aba mostram a contagem das abertas', async () => {
+    it('the strip and the tab show the count of open threads', async () => {
       const harness = await harnessWith([OPEN_A, OPEN_B]);
       showToolWindow('comments');
       withContext(
@@ -92,7 +93,7 @@ describe.each(['pt-BR', 'en-US'] as const)(
         <>
           <ToolStrip side="left" />
           <ToolWindow id="comments">
-            <span>corpo</span>
+            <span>body</span>
           </ToolWindow>
         </>,
       );
@@ -107,14 +108,14 @@ describe.each(['pt-BR', 'en-US'] as const)(
       expect(tab?.textContent).toContain('2');
     });
 
-    it('sem conversas abertas não há selo', async () => {
+    it('with no open threads there is no badge', async () => {
       const harness = await harnessWith([]);
       withContext(harness, <ToolStrip side="left" />);
       const strip = document.querySelector<HTMLElement>('[data-strip-window="comments"]');
       expect(strip?.getAttribute('aria-label') ?? '').not.toContain('(');
     });
 
-    it('a barra de status diz quantas abertas e aguardando o agente, e abre a janela', async () => {
+    it('the status bar says how many are open and awaiting the agent, and opens the window', async () => {
       const user = userEvent.setup();
       const harness = await harnessWith([OPEN_A, OPEN_B]);
       renderLive(harness, () => (
@@ -135,7 +136,7 @@ describe.each(['pt-BR', 'en-US'] as const)(
       expect(isToolWindowOpen('comments')).toBe(true);
     });
 
-    it('singular e some com zero abertas', async () => {
+    it('singular, and disappears with zero open', async () => {
       const harness = await harnessWith([OPEN_B]);
       renderLive(harness, () => (
         <EditorContext.Provider value={harness.context}>
@@ -154,14 +155,14 @@ describe.each(['pt-BR', 'en-US'] as const)(
   },
 );
 
-describe('Comentar no menu da camada', () => {
-  it('abre uma conversa em rascunho ancorada na camada e leva aos Detalhes', async () => {
+describe('Comment in the layer menu', () => {
+  it('opens a draft thread anchored to the layer and goes to the Details', async () => {
     const user = userEvent.setup();
     hideToolWindow('details');
     const harness = await harnessWith([]);
     renderLive(harness, (p) => <LayersPanel project={p} readOnly={false} />);
     const layer = harness.project().layers[0];
-    if (!layer) throw new Error('sem camada');
+    if (!layer) throw new Error('no layer');
     await user.click(
       screen.getByRole('button', { name: t('layer.more', { name: layer.name }) }),
     );
@@ -173,12 +174,12 @@ describe('Comentar no menu da camada', () => {
     expect(isToolWindowOpen('details')).toBe(true);
   });
 
-  it('fica desabilitado em somente leitura e na revisão', async () => {
+  it('is disabled in read-only and in review', async () => {
     const user = userEvent.setup();
     const harness = await harnessWith([], true);
     renderLive(harness, (p) => <LayersPanel project={p} readOnly={true} />);
     const layer = harness.project().layers[0];
-    if (!layer) throw new Error('sem camada');
+    if (!layer) throw new Error('no layer');
     await user.click(
       screen.getByRole('button', { name: t('layer.more', { name: layer.name }) }),
     );
@@ -200,8 +201,8 @@ describe('Comentar no menu da camada', () => {
   });
 });
 
-describe('foco ao fechar a janela Comentários', () => {
-  it('fechar com o foco dentro devolve o foco ao botão da faixa', async () => {
+describe('focus when closing the Comments window', () => {
+  it('closing with focus inside returns the focus to the strip button', async () => {
     const user = userEvent.setup();
     const harness = await harnessWith([OPEN_A]);
     withContext(
@@ -209,12 +210,12 @@ describe('foco ao fechar a janela Comentários', () => {
       <>
         <ToolStrip side="left" />
         <ToolWindow id="comments">
-          <button type="button">dentro</button>
+          <button type="button">inside</button>
         </ToolWindow>
       </>,
     );
     showToolWindow('comments');
-    await user.click(screen.getByRole('button', { name: 'dentro' }));
+    await user.click(screen.getByRole('button', { name: 'inside' }));
     await user.click(
       screen.getByRole('button', {
         name: t('window.closeWindow', { name: t('comments.title') }),

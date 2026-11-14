@@ -5,22 +5,25 @@ import { within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { t } from '../../src/i18n';
 import { typeOfAnnotation } from '../../src/model';
+import { locale } from '../../src/store/settings';
 import { Dialog } from '../../src/ui/Dialog';
 import { RefPicker, type RefFieldDef } from '../../src/ui/RefPicker';
 import { cadastroProject } from '../model/specFixtures';
 import { annotationOf } from './harness';
 
-// Etapa 8 (8.3), achado F1: o `Dialog` (e o `RefPicker`) abria e registrava o retorno do
-// foco num `useEffect`, que roda no quadro seguinte. Quem renderiza fora de `act` (o
-// `user-event` com outra versão do `@testing-library/dom`) podia clicar num botão do
-// diálogo e desmontá-lo antes do efeito: sem cleanup registrado, nenhum retorno, e o foco
-// caía no `body` (o flake de foco). Aqui o `render` do Preact roda sem `act`, de forma
-// determinística: o diálogo que entra no DOM já está aberto, com o foco dentro e com o
-// retorno registrado, mesmo que saia antes do próximo quadro.
+// Stage 8 (8.3), finding F1: the `Dialog` (and the `RefPicker`) opened and registered the focus
+// return in a `useEffect`, which runs on the next frame. Whoever renders outside `act` (the
+// `user-event` with another version of `@testing-library/dom`) could click a button of the
+// dialog and unmount it before the effect: with no cleanup registered, no return, and the focus
+// fell to the `body` (the focus flake). Here Preact's `render` runs without `act`, in a
+// deterministic way: the dialog that enters the DOM is already open, with the focus inside and
+// with the return registered, even if it leaves before the next frame.
+// pt-BR kept: shared fixture data asserted by tests/model (cadastroProject field key 'dado')
 
 let host: HTMLElement;
 
 beforeEach(() => {
+  locale.value = 'en-US';
   host = document.createElement('div');
   document.body.append(host);
 });
@@ -30,18 +33,18 @@ afterEach(() => {
   host.remove();
 });
 
-/** Deixa a renderização agendada e as microtarefas rodarem (sem chegar ao próximo quadro). */
+/** Lets the scheduled rendering and the microtasks run (without reaching the next frame). */
 const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
-/** Controles do fluxo: abrir o modal e confirmar (o que tira o modal e quem o abriu). */
+/** Flow controls: open the modal and confirm (which removes the modal and whoever opened it). */
 interface Flow {
   open(): void;
   confirm(): void;
 }
 
 /**
- * "Abrir" abre o modal; a confirmação tira o modal e o próprio "Abrir" (como a linha
- * excluída pelo diálogo). O retorno explícito é "Alvo".
+ * "Open" opens the modal; the confirmation removes the modal and "Open" itself (like the row
+ * deleted by the dialog). The explicit return is "Target".
  */
 function Vanishing({
   flow,
@@ -59,8 +62,8 @@ function Vanishing({
   flow.current = { open: () => setOpen(true), confirm };
   return (
     <div>
-      {!gone && <button data-opener="">Abrir</button>}
-      <button data-target="">Alvo</button>
+      {!gone && <button data-opener="">Open</button>}
+      <button data-target="">Target</button>
       {open && modal(confirm, () => host.querySelector<HTMLElement>('[data-target]'))}
     </div>
   );
@@ -75,36 +78,36 @@ async function openThenConfirmBeforeNextFrame(
   flow.current?.open();
   await settle();
   const dialog = host.querySelector('dialog');
-  if (!dialog) throw new Error('o modal não entrou no DOM');
+  if (!dialog) throw new Error('the modal did not enter the DOM');
   const state = {
     open: dialog.open,
     focusInside: dialog.contains(document.activeElement),
   };
-  // A confirmação chega antes do próximo quadro (o clique do teste, o Enter rápido).
+  // The confirmation arrives before the next frame (the test click, the quick Enter).
   flow.current?.confirm();
   await settle();
   return state;
 }
 
-describe('Dialog fora de act (F1)', () => {
+describe('Dialog outside act (F1)', () => {
   const modal = (confirm: () => void, target: () => HTMLElement | null) => (
     <Dialog
-      title="Confirmar"
+      title="Confirm"
       onCancel={() => undefined}
       returnFocus={target}
-      actions={<button onClick={confirm}>Excluir</button>}
+      actions={<button onClick={confirm}>Delete</button>}
     >
-      <p>Texto</p>
+      <p>Text</p>
     </Dialog>
   );
 
-  it('no DOM, já está aberto e com o foco dentro', { repeats: 19 }, async () => {
+  it('in the DOM, it is already open and with the focus inside', { repeats: 19 }, async () => {
     const state = await openThenConfirmBeforeNextFrame(modal);
     expect(state).toEqual({ open: true, focusInside: true });
   });
 
   it(
-    'confirmado antes do próximo quadro, o foco vai ao alvo e não ao body',
+    'confirmed before the next frame, the focus goes to the target and not to the body',
     { repeats: 19 },
     async () => {
       await openThenConfirmBeforeNextFrame(modal);
@@ -113,7 +116,7 @@ describe('Dialog fora de act (F1)', () => {
   );
 });
 
-describe('RefPicker fora de act (F1)', () => {
+describe('RefPicker outside act (F1)', () => {
   const project = cadastroProject();
   const annotation = annotationOf(project, 'AIN');
   const field = typeOfAnnotation(project, annotation)?.type.fields.find(
@@ -130,13 +133,13 @@ describe('RefPicker fora de act (F1)', () => {
     />
   );
 
-  it('no DOM, já está aberto e com o foco na busca', { repeats: 19 }, async () => {
+  it('in the DOM, it is already open and with the focus on the search', { repeats: 19 }, async () => {
     const state = await openThenConfirmBeforeNextFrame(modal);
     expect(state).toEqual({ open: true, focusInside: true });
   });
 
   it(
-    'escolhido antes do próximo quadro, o foco vai ao alvo e não ao body',
+    'chosen before the next frame, the focus goes to the target and not to the body',
     { repeats: 19 },
     async () => {
       await openThenConfirmBeforeNextFrame(modal);
@@ -145,10 +148,10 @@ describe('RefPicker fora de act (F1)', () => {
   );
 });
 
-// Etapa 8 (8.3), achado F7 (resíduo 7 da auditoria, 8.7): o fechar do seletor é um
-// `IconButton` da biblioteca de controles, com nome acessível, e fecha o seletor.
-describe('RefPicker: botão de fechar (F7)', () => {
-  it('tem o nome acessível "Fechar" e chama onClose', async () => {
+// Stage 8 (8.3), finding F7 (residue 7 of the audit, 8.7): the picker's close is an
+// `IconButton` of the controls library, with an accessible name, and closes the picker.
+describe('RefPicker: close button (F7)', () => {
+  it('has the accessible name "Close" and calls onClose', async () => {
     const project = cadastroProject();
     const annotation = annotationOf(project, 'AIN');
     const field = typeOfAnnotation(project, annotation)?.type.fields.find(

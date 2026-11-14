@@ -7,11 +7,11 @@ import { LayerActions, LayersPanel } from '../../src/ui/LayersPanel';
 import { cadastroProject } from '../model/specFixtures';
 import { createHarness, renderLive } from './harness';
 
-// Camadas (B3): o conteúdo da janela é o `LayersPanel`; Nova camada e Mostrar todas
-// vêm de `LayerActions`.
+// Layers (B3): the window content is the `LayersPanel`; New layer and Show all
+// come from `LayerActions`.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
@@ -28,64 +28,64 @@ function setup(project: Project = cadastroProject(), readOnly = false) {
 
 const names = (p: Project) => p.layers.map((l) => l.name);
 
-/** Abre o menu de ações (⋯) da camada pelo índice e devolve o item pedido. */
+/** Opens the layer's actions menu (⋯) by name and returns the requested item. */
 async function menuItem(
   user: ReturnType<typeof userEvent.setup>,
   layerName: string,
   item: string,
 ) {
   await user.click(
-    screen.getByRole('button', { name: `Mais ações da camada ${layerName}` }),
+    screen.getByRole('button', { name: `More actions for layer ${layerName}` }),
   );
-  const menu = screen.getByRole('menu', { name: `Mais ações da camada ${layerName}` });
+  const menu = screen.getByRole('menu', { name: `More actions for layer ${layerName}` });
   return within(menu).getByRole('menuitem', { name: item });
 }
 
 describe('LayersPanel', () => {
-  it('lista as camadas na ordem do projeto', () => {
+  it('lists the layers in the project order', () => {
     const { harness } = setup();
     const inputs = screen
-      .getAllByLabelText('Nome da camada')
+      .getAllByLabelText('Layer name')
       .map((i) => (i as HTMLInputElement).value);
     expect(inputs).toEqual(names(harness.project()));
   });
 
-  it('nova camada: nome padrão e cor da paleta', async () => {
+  it('new layer: default name and palette color', async () => {
     const { harness, user } = setup();
     const before = harness.project().layers.length;
-    await user.click(screen.getByRole('button', { name: 'Nova camada' }));
+    await user.click(screen.getByRole('button', { name: 'New layer' }));
     const layers = harness.project().layers;
     expect(layers).toHaveLength(before + 1);
-    expect(layers[before]?.name).toBe(`Camada ${before + 1}`);
+    expect(layers[before]?.name).toBe(`Layer ${before + 1}`);
     expect(LAYER_PALETTE.map((c) => c.toUpperCase())).toContain(
       layers[before]?.color.toUpperCase(),
     );
   });
 
-  it('renomeia uma camada livre ao confirmar, na própria linha', async () => {
+  it('renames a free layer on confirm, in its own row', async () => {
     const { harness, user } = setup();
-    const input = screen.getAllByLabelText('Nome da camada')[0];
-    if (!input) throw new Error('sem camadas');
+    const input = screen.getAllByLabelText('Layer name')[0];
+    if (!input) throw new Error('no layers');
     await user.clear(input);
-    await user.type(input, 'Modelo{Enter}');
-    expect(harness.project().layers[0]?.name).toBe('Modelo');
+    await user.type(input, 'Model{Enter}');
+    expect(harness.project().layers[0]?.name).toBe('Model');
   });
 
-  it('camadas de especialização não podem ser renomeadas nem excluídas', async () => {
+  it('specialization layers cannot be renamed or deleted', async () => {
     const { harness, user } = setup();
     const p = harness.project();
     for (const [index, layer] of p.layers.entries()) {
-      expect(screen.getAllByLabelText('Nome da camada')[index]).toHaveProperty(
+      expect(screen.getAllByLabelText('Layer name')[index]).toHaveProperty(
         'disabled',
         layer.spec !== null,
       );
-      const del = await menuItem(user, layer.name, 'Excluir camada');
+      const del = await menuItem(user, layer.name, 'Delete layer');
       expect(del).toHaveProperty('disabled', layer.spec !== null);
       await user.keyboard('{Escape}');
     }
   });
 
-  it('o selo da especialização leva a dica com o nome inteiro', () => {
+  it('the specialization badge carries the tip with the full name', () => {
     const { harness } = setup();
     const owned = harness.project().layers.filter((l) => l.spec !== null);
     expect(owned.length).toBeGreaterThan(0);
@@ -93,105 +93,109 @@ describe('LayersPanel', () => {
     expect(badges).toHaveLength(owned.length);
     for (const badge of badges) {
       const tip = badge.parentElement?.querySelector('[data-tooltip]');
-      expect(tip?.textContent).toBe(`Especialização ${badge.textContent}`);
+      expect(tip?.textContent).toBe(`Specialization ${badge.textContent}`);
     }
   });
 
-  it('muda a cor pela paleta, que abre em popover e fecha ao escolher', async () => {
+  it('changes the color through the palette, which opens as a popover and closes on pick', async () => {
     const { harness, user } = setup();
     const layer = harness.project().layers[0];
-    if (!layer) throw new Error('sem camadas');
+    if (!layer) throw new Error('no layers');
     expect(
-      screen.queryByRole('group', { name: `Cor da camada ${layer.name}` }),
+      screen.queryByRole('group', { name: `Color of layer ${layer.name}` }),
     ).toBeNull();
-    await user.click(screen.getByRole('button', { name: `Cor da camada ${layer.name}` }));
-    const palette = screen.getByRole('group', { name: `Cor da camada ${layer.name}` });
+    await user.click(
+      screen.getByRole('button', { name: `Color of layer ${layer.name}` }),
+    );
+    const palette = screen.getByRole('group', { name: `Color of layer ${layer.name}` });
     const color = LAYER_PALETTE.find(
       (c) => c.toUpperCase() !== layer.color.toUpperCase(),
     );
-    if (!color) throw new Error('paleta sem alternativa');
+    if (!color) throw new Error('palette without an alternative');
     await user.click(within(palette).getByRole('button', { name: color }));
     expect(harness.project().layers[0]?.color.toUpperCase()).toBe(color.toUpperCase());
     expect(
-      screen.queryByRole('group', { name: `Cor da camada ${layer.name}` }),
+      screen.queryByRole('group', { name: `Color of layer ${layer.name}` }),
     ).toBeNull();
   });
 
-  it('o popover fecha com Esc e devolve o foco ao botão', async () => {
+  it('the popover closes with Esc and returns the focus to the button', async () => {
     const { harness, user } = setup();
     const layer = harness.project().layers[0];
-    if (!layer) throw new Error('sem camadas');
-    const trigger = screen.getByRole('button', { name: `Cor da camada ${layer.name}` });
+    if (!layer) throw new Error('no layers');
+    const trigger = screen.getByRole('button', { name: `Color of layer ${layer.name}` });
     await user.click(trigger);
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
     await user.keyboard('{Escape}');
     expect(
-      screen.queryByRole('group', { name: `Cor da camada ${layer.name}` }),
+      screen.queryByRole('group', { name: `Color of layer ${layer.name}` }),
     ).toBeNull();
     expect(document.activeElement).toBe(trigger);
   });
 
-  it('o popover fecha com o clique fora', async () => {
+  it('the popover closes on an outside click', async () => {
     const { harness, user } = setup();
     const layer = harness.project().layers[0];
-    if (!layer) throw new Error('sem camadas');
-    const trigger = screen.getByRole('button', { name: `Cor da camada ${layer.name}` });
+    if (!layer) throw new Error('no layers');
+    const trigger = screen.getByRole('button', { name: `Color of layer ${layer.name}` });
     await user.click(trigger);
-    // O listener de fora entra num efeito; o Preact o roda no máximo 100ms depois do
-    // desenho (`requestAnimationFrame` com limite), então espera um pouco mais.
+    // The outside listener is added in an effect; Preact runs it at most 100ms after
+    // the paint (`requestAnimationFrame` with a limit), so wait a little longer.
     await new Promise((resolve) => setTimeout(resolve, 150));
     await user.click(document.body);
     expect(
-      screen.queryByRole('group', { name: `Cor da camada ${layer.name}` }),
+      screen.queryByRole('group', { name: `Color of layer ${layer.name}` }),
     ).toBeNull();
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
   });
 
-  it('reordena pelo menu e desabilita os extremos', async () => {
+  it('reorders through the menu and disables the extremes', async () => {
     const { harness, user } = setup();
     const before = harness.project().layers;
     const first = before[0];
     const lastLayer = before[before.length - 1];
-    if (!first || !lastLayer) throw new Error('sem camadas');
-    expect(await menuItem(user, first.name, 'Subir camada')).toHaveProperty(
+    if (!first || !lastLayer) throw new Error('no layers');
+    expect(await menuItem(user, first.name, 'Move layer up')).toHaveProperty(
       'disabled',
       true,
     );
     await user.keyboard('{Escape}');
-    expect(await menuItem(user, lastLayer.name, 'Descer camada')).toHaveProperty(
+    expect(await menuItem(user, lastLayer.name, 'Move layer down')).toHaveProperty(
       'disabled',
       true,
     );
     await user.keyboard('{Escape}');
 
-    await user.click(await menuItem(user, first.name, 'Descer camada'));
+    await user.click(await menuItem(user, first.name, 'Move layer down'));
     const after = harness.project().layers.map((l) => l.id);
     expect(after[0]).toBe(before[1]?.id);
     expect(after[1]).toBe(first.id);
-    // Escolher uma ação fecha o menu.
+    // Choosing an action closes the menu.
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
-  it('menu ⋮: itens menuitem, foco no primeiro habilitado, setas circulam e Esc devolve o foco', async () => {
+  it('⋮ menu: menuitem items, focus on the first enabled one, arrows wrap around and Esc returns the focus', async () => {
     const { harness, user } = setup();
     const first = harness.project().layers[0];
-    if (!first) throw new Error('sem camadas');
+    if (!first) throw new Error('no layers');
     const more = screen.getByRole('button', {
-      name: `Mais ações da camada ${first.name}`,
+      name: `More actions for layer ${first.name}`,
     });
     await user.click(more);
-    const menu = screen.getByRole('menu', { name: `Mais ações da camada ${first.name}` });
+    const menu = screen.getByRole('menu', {
+      name: `More actions for layer ${first.name}`,
+    });
     const items = within(menu).getAllByRole('menuitem');
     expect(items.map((i) => i.textContent)).toEqual([
-      'Subir camada',
-      'Descer camada',
-      'Comentar',
-      'Citar na conversa',
-      'Copiar referência',
-      'Excluir camada',
+      'Move layer up',
+      'Move layer down',
+      'Comment',
+      'Cite in the conversation',
+      'Copy reference',
+      'Delete layer',
     ]);
-    // Na primeira camada "Subir" está desabilitado: o foco vai ao "Descer". Sem compositor
-    // aberto, "Citar na conversa" também está desabilitado e as setas passam por ele.
+    // On the first layer "Move up" is disabled: the focus goes to "Move down". With no composer
+    // open, "Cite in the conversation" is also disabled and the arrows skip it.
     expect(items[3]?.hasAttribute('disabled')).toBe(true);
     expect(document.activeElement).toBe(items[1]);
     await user.keyboard('{ArrowDown}');
@@ -209,34 +213,34 @@ describe('LayersPanel', () => {
     expect(document.activeElement).toBe(more);
   });
 
-  it('excluir pede confirmação com a contagem de anotações afetadas', async () => {
+  it('delete asks for confirmation with the count of affected annotations', async () => {
     const { harness, user } = setup();
     const free = harness.project().layers.find((l) => l.spec === null);
-    if (!free) throw new Error('sem camada livre');
-    await user.click(await menuItem(user, free.name, 'Excluir camada'));
-    const heading = await screen.findByRole('heading', { name: 'Excluir camada?' });
+    if (!free) throw new Error('no free layer');
+    await user.click(await menuItem(user, free.name, 'Delete layer'));
+    const heading = await screen.findByRole('heading', { name: 'Delete layer?' });
     const dialog = heading.closest('dialog');
-    if (!dialog) throw new Error('sem diálogo');
-    expect(within(dialog).getByText(/anotação/)).toBeTruthy();
-    // Etapa 8 (8.3), F10: confirmação destrutiva, anunciada como alerta.
+    if (!dialog) throw new Error('no dialog');
+    expect(within(dialog).getByText(/annotation/)).toBeTruthy();
+    // Stage 8 (8.3), F10: destructive confirmation, announced as an alert.
     expect(dialog.getAttribute('role')).toBe('alertdialog');
 
-    await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Cancel' }));
     expect(harness.project().layers).toContain(free);
 
-    await user.click(await menuItem(user, free.name, 'Excluir camada'));
-    const again = (
-      await screen.findByRole('heading', { name: 'Excluir camada?' })
-    ).closest('dialog');
+    await user.click(await menuItem(user, free.name, 'Delete layer'));
+    const again = (await screen.findByRole('heading', { name: 'Delete layer?' })).closest(
+      'dialog',
+    );
     await user.click(
-      within(again as HTMLElement).getByRole('button', { name: 'Excluir' }),
+      within(again as HTMLElement).getByRole('button', { name: 'Delete' }),
     );
     expect(harness.project().layers.some((l) => l.id === free.id)).toBe(false);
-    // As anotações da camada saem junto.
+    // The layer's annotations go with it.
     expect(harness.project().annotations.some((a) => a.layerId === free.id)).toBe(false);
   });
 
-  it('a última camada não pode ser excluída', async () => {
+  it('the last layer cannot be deleted', async () => {
     const { harness } = setup();
     cleanup();
     const only = createHarness({
@@ -247,37 +251,37 @@ describe('LayersPanel', () => {
     renderLive(only, (p) => <LayersPanel project={p} readOnly={false} />);
     const user = userEvent.setup();
     const name = only.project().layers[0]?.name ?? '';
-    expect(await menuItem(user, name, 'Excluir camada')).toHaveProperty('disabled', true);
+    expect(await menuItem(user, name, 'Delete layer')).toHaveProperty('disabled', true);
   });
 
-  it('visibilidade: não há "Tornar ativa" e qualquer camada, até a última visível, pode ser escondida', async () => {
+  it('visibility: there is no "Make active" and any layer, even the last visible one, can be hidden', async () => {
     const { harness, user } = setup();
     const p = harness.project();
     const second = p.layers[1];
     const first = p.layers[0];
-    if (!first || !second) throw new Error('precisa de duas camadas');
-    expect(screen.queryByRole('button', { name: /^Tornar ativa/ })).toBeNull();
+    if (!first || !second) throw new Error('needs two layers');
+    expect(screen.queryByRole('button', { name: /^Make active/ })).toBeNull();
     expect(document.querySelectorAll('.layer-row-active')).toHaveLength(0);
-    const box = screen.getByLabelText(`Mostrar a camada ${first.name}`);
+    const box = screen.getByLabelText(`Show layer ${first.name}`);
     expect(box).toHaveProperty('checked', true);
     expect(box).toHaveProperty('disabled', false);
     await user.click(box);
     expect(harness.ui.hiddenLayers.value.has(first.id)).toBe(true);
-    const last = screen.getByLabelText(`Mostrar a camada ${second.name}`);
+    const last = screen.getByLabelText(`Show layer ${second.name}`);
     expect(last).toHaveProperty('disabled', false);
     await user.click(last);
     expect(harness.ui.hiddenLayers.value.has(second.id)).toBe(true);
-    expect(screen.getByLabelText(`Mostrar a camada ${second.name}`)).toHaveProperty(
+    expect(screen.getByLabelText(`Show layer ${second.name}`)).toHaveProperty(
       'checked',
       false,
     );
-    await user.click(screen.getByRole('button', { name: 'Mostrar todas' }));
+    await user.click(screen.getByRole('button', { name: 'Show all' }));
     expect(harness.ui.hiddenLayers.value.size).toBe(0);
   });
 
-  it('o modo de exibição das marcações fica no rodapé e é guardado nas configurações', async () => {
+  it('the markings display mode stays in the footer and is kept in the settings', async () => {
     const { user } = setup();
-    const select = screen.getByLabelText('Marcações sem anotação');
+    const select = screen.getByLabelText('Markings without annotations');
     await user.selectOptions(select, 'hide');
     expect(markingDisplay.value).toBe('hide');
     await user.selectOptions(select, 'all');
@@ -285,27 +289,27 @@ describe('LayersPanel', () => {
     setMarkingDisplay('dim');
   });
 
-  it('somente leitura desabilita criar, renomear, cor, mover e excluir', async () => {
+  it('read-only disables create, rename, color, move and delete', async () => {
     const { harness, user } = setup(cadastroProject(), true);
-    expect(screen.getByRole('button', { name: 'Nova camada' })).toHaveProperty(
+    expect(screen.getByRole('button', { name: 'New layer' })).toHaveProperty(
       'disabled',
       true,
     );
-    for (const input of screen.getAllByLabelText('Nome da camada')) {
+    for (const input of screen.getAllByLabelText('Layer name')) {
       expect(input).toHaveProperty('disabled', true);
     }
     const layer = harness.project().layers[0];
-    if (!layer) throw new Error('sem camadas');
+    if (!layer) throw new Error('no layers');
     expect(
-      screen.getByRole('button', { name: `Cor da camada ${layer.name}` }),
+      screen.getByRole('button', { name: `Color of layer ${layer.name}` }),
     ).toHaveProperty('disabled', true);
     for (const l of harness.project().layers) {
-      expect(await menuItem(user, l.name, 'Excluir camada')).toHaveProperty(
+      expect(await menuItem(user, l.name, 'Delete layer')).toHaveProperty(
         'disabled',
         true,
       );
       expect(
-        await screen.findByRole('menuitem', { name: 'Subir camada' }),
+        await screen.findByRole('menuitem', { name: 'Move layer up' }),
       ).toHaveProperty('disabled', true);
       await user.keyboard('{Escape}');
     }

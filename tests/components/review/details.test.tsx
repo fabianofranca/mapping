@@ -38,14 +38,15 @@ import {
   type ReviewHarness,
 } from './reviewHarness';
 
-// Detalhes na revisão (fases 9.5 e 9.6, HANDOFF-REVIEW-DETAILS): imagem e item mostram o
-// painel normal, somente leitura, sobre o projeto à vista, com um marcador em cada campo
-// alterado e o popover com os valores e a decisão do campo; o cabeçalho do item decide o
-// item. As decisões, a criação, a remoção, as notas, "Outras mudanças" e a navegação têm os
-// arquivos deles nesta pasta; aqui ficam o painel, os valores e o teclado do marcador.
+// Details in the review (phases 9.5 and 9.6, HANDOFF-REVIEW-DETAILS): image and item show
+// the normal panel, read-only, over the project on view, with a marker on each changed field
+// and the popover with the values and the field's decision; the item header decides the item.
+// The decisions, creation, removal, notes, "Other changes" and navigation have their own
+// files in this folder; here live the panel, the values and the marker keyboard.
+// pt-BR kept: shared fixture data asserted by tests/model and tests/store (names from sampleProject, richScenario and firstImport: Porta, Fechadura, Lataria, Vidros, Amassado, gravidade, Formulário, Importação, Eventos)
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   localStorage.clear();
 });
 afterEach(() => {
@@ -53,7 +54,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-/** Abre a proposta, seleciona o nível e monta os Detalhes da revisão. */
+/** Opens the proposal, selects the level and mounts the review Details. */
 async function showLevel(
   options: Parameters<typeof openReviewHarness>[0],
   target: Parameters<ReviewHarness['review']['select']>[0],
@@ -65,126 +66,126 @@ async function showLevel(
   return h;
 }
 
-/** O campo de texto (desabilitado) com o rótulo. */
+/** The (disabled) text field with the label. */
 const field = (name: string) => screen.getByRole('textbox', { name }) as HTMLInputElement;
 
-describe('Detalhes na revisão: o painel normal com os marcadores', () => {
-  it('alteração: o campo mostra o proposto, o marcador diz atual e proposto, e o popover abre', async () => {
+describe('Details in the review: the normal panel with the markers', () => {
+  it('change: the field shows the proposed value, the marker says current and proposed, and the popover opens', async () => {
     const { proposal } = richScenario();
     const h = await showLevel({ proposals: [proposal] }, { level: 'item', id: 'M1' });
-    // O painel normal, somente leitura, com o valor da visão Proposto.
-    expect(field('Nome').value).toBe('Porta dianteira');
-    expect(field('Nome').disabled).toBe(true);
+    // The normal panel, read-only, with the value of the Proposed view.
+    expect(field('Name').value).toBe('Porta dianteira');
+    expect(field('Name').disabled).toBe(true);
     const mark = screen.getByRole('button', {
-      name: 'Nome: alterado, pendente. Atual: Porta. Proposto: Porta dianteira',
+      name: 'Name: changed, pending. Current: Porta. Proposed: Porta dianteira',
     });
     expect(mark.getAttribute('aria-expanded')).toBe('false');
-    // Só o campo alterado tem marcador; o conteúdo do popover só existe aberto.
-    expect(screen.queryAllByRole('button', { name: /: alterado, / })).toHaveLength(1);
+    // Only the changed field has a marker; the popover content only exists when open.
+    expect(screen.queryAllByRole('button', { name: /: changed, / })).toHaveLength(1);
     expect(screen.queryByRole('dialog')).toBeNull();
 
     fireEvent.click(mark);
-    const pop = screen.getByRole('dialog', { name: 'Nome · alterado' });
+    const pop = screen.getByRole('dialog', { name: 'Name · changed' });
     expect(mark.getAttribute('aria-expanded')).toBe('true');
     expect(mark.getAttribute('aria-controls')).toBe(pop.id);
-    // Na visão Proposto, o outro lado (Atual) primeiro.
+    // In the Proposed view, the other side (Current) first.
     expect([...pop.querySelectorAll('dt')].map((dt) => dt.textContent)).toEqual([
-      'Atual',
-      'Proposto',
+      'Current',
+      'Proposed',
     ]);
     expect(within(pop).getByText('Porta')).toBeTruthy();
-    expect(within(pop).getByText('Decisão: Sem decisão')).toBeTruthy();
+    expect(within(pop).getByText('Decision: Undecided')).toBeTruthy();
 
-    // Visão Atual: o painel acompanha e o popover põe o proposto primeiro.
+    // Current view: the panel follows and the popover puts the proposed value first.
     act(() => h.review.setView('current'));
-    expect(field('Nome').value).toBe('Porta');
+    expect(field('Name').value).toBe('Porta');
     expect(
       [...screen.getByRole('dialog').querySelectorAll('dt')].map((dt) => dt.textContent),
-    ).toEqual(['Proposto', 'Atual']);
+    ).toEqual(['Proposed', 'Current']);
   });
 
-  it('todo HelpTip dos Detalhes da revisão tem nome com o assunto (Posição / Tamanho incluso)', async () => {
+  it('every HelpTip of the review Details has a name with the subject (Position / Size included)', async () => {
     const { proposal } = richScenario();
     await showLevel({ proposals: [proposal] }, { level: 'item', id: 'M4' });
     const tips = screen
       .getAllByRole('button')
-      .filter((b) => (b.getAttribute('aria-label') ?? '').startsWith('Sobre'));
+      .filter((b) => (b.getAttribute('aria-label') ?? '').startsWith('About'));
     expect(tips.length).toBeGreaterThan(0);
     for (const tip of tips) {
-      expect((tip.getAttribute('aria-label') ?? '').replace('Sobre', '').trim()).not.toBe(
+      expect((tip.getAttribute('aria-label') ?? '').replace('About', '').trim()).not.toBe(
         '',
       );
     }
-    expect(screen.getByRole('button', { name: 'Sobre Posição / Tamanho' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'About Position / Size' })).toBeTruthy();
   });
 
-  it('o cabeçalho do item decide o item e o marcador mostra a decisão', async () => {
+  it('the item header decides the item and the marker shows the decision', async () => {
     const { proposal } = richScenario();
     const h = await showLevel({ proposals: [proposal] }, { level: 'item', id: 'M4' });
-    // Posição e tamanho: um marcador só, com a ajuda e só o número que muda em negrito.
-    const mark = screen.getByRole('button', { name: /^Posição: movido, pendente\./ });
+    // Position and size: a single marker, with the help and only the number that changes in bold.
+    const mark = screen.getByRole('button', { name: /^Position: moved, pending\./ });
     fireEvent.click(mark);
-    const pop = screen.getByRole('dialog', { name: 'Posição · movido' });
+    const pop = screen.getByRole('dialog', { name: 'Position · moved' });
     expect([...pop.querySelectorAll('b')].map((b) => b.textContent)).toEqual([
       'x 0',
       'y 0',
       'x 10',
       'y 10',
     ]);
-    expect(within(pop).getByText('Posição e tamanho são decididos juntos.')).toBeTruthy();
+    expect(within(pop).getByText('Position and size are decided together.')).toBeTruthy();
     fireEvent.click(
-      screen.getByRole('button', { name: /^Aceitar marcação: Marcação sem nome$/ }),
+      screen.getByRole('button', { name: /^Accept marking: Unnamed marking$/ }),
     );
     await waitFor(() =>
       expect(h.review.derived.levels.value.get('item:M4')?.state).toBe('accepted'),
     );
     expect(
-      screen.getByRole('button', { name: /^Posição: movido, aceito\./ }),
+      screen.getByRole('button', { name: /^Position: moved, accepted\./ }),
     ).toBeTruthy();
   });
 
-  it('tudo novo: na visão Proposto, os campos com o marcador "novo"; na Atual, o aviso', async () => {
+  it('all new: in the Proposed view, the fields with the "new" marker; in the Current one, the notice', async () => {
     const { base, proposal } = firstImport();
     const h = await showLevel(
       { project: base, proposals: [proposal] },
       { level: 'item', id: 'M1' },
     );
-    expect(field('Nome').value).toBe('Formulário');
-    expect(screen.getByText('Criada pela proposta')).toBeTruthy();
-    // Parte da criação: o tipo só, sem decisão própria; o popover diz onde decidir.
+    expect(field('Name').value).toBe('Formulário');
+    expect(screen.getByText('Created by the proposal')).toBeTruthy();
+    // Part of the creation: the type only, with no decision of its own; the popover says where to decide.
     const name = screen.getByRole('button', {
-      name: 'Nome: novo, parte da criação de Formulário. Proposto: Formulário',
+      name: 'Name: new, part of creating Formulário. Proposed: Formulário',
     });
     expect(name.querySelector('.decision-mark')).toBeNull();
     expect(
-      screen.getByRole('button', { name: /^Posição: novo, parte da criação/ }),
+      screen.getByRole('button', { name: /^Position: new, part of creating/ }),
     ).toBeTruthy();
     fireEvent.click(name);
     const pop = screen.getByRole('dialog');
-    expect(within(pop).getByText('(não existe)')).toBeTruthy();
+    expect(within(pop).getByText("(doesn't exist)")).toBeTruthy();
     expect(
       within(pop).getByText(
-        'Faz parte da criação da marcação: decida no cabeçalho, acima.',
+        'Part of creating the marking: decide in the header above.',
       ),
     ).toBeTruthy();
-    // A anotação criada, na camada criada, com o marcador da criação no cabeçalho.
+    // The created annotation, in the created layer, with the creation marker in the header.
     expect(
-      screen.getByRole('button', { name: /^Anotação onClick criada: novo, pendente\./ }),
+      screen.getByRole('button', { name: /^Annotation onClick created: new, pending\./ }),
     ).toBeTruthy();
 
-    // Na visão Atual o item ainda não existe: o painel mostra como ficaria, com o aviso.
+    // In the Current view the item does not exist yet: the panel shows how it would look, with the notice.
     act(() => h.review.setView('current'));
     expect(
       screen.getByText(
-        'Ainda não existe no projeto atual. O painel mostra como ficaria.',
+        'Not in the current project yet. Showing how it would look.',
       ),
     ).toBeTruthy();
-    expect(field('Nome').value).toBe('Formulário');
-    fireEvent.click(screen.getByRole('button', { name: 'Ver em Proposto' }));
+    expect(field('Name').value).toBe('Formulário');
+    fireEvent.click(screen.getByRole('button', { name: 'See in Proposed' }));
     expect(h.review.view.value).toBe('proposed');
   });
 
-  it('criação rejeitada: o painel ainda mostra o que a proposta criaria', async () => {
+  it('creation rejected: the panel still shows what the proposal would create', async () => {
     const { base, proposal } = firstImport();
     const h = await showLevel(
       { project: base, proposals: [proposal] },
@@ -195,13 +196,13 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     });
     expect(
       screen.getByText(
-        'A criação foi rejeitada: o painel mostra o que a proposta criaria.',
+        'The creation was rejected: showing what the proposal would create.',
       ),
     ).toBeTruthy();
-    expect(field('Nome').value).toBe('Formulário');
+    expect(field('Name').value).toBe('Formulário');
   });
 
-  it('remoção: na visão Proposto, o projeto atual com "Será removida"; na Atual, sem aviso', async () => {
+  it('removal: in the Proposed view, the current project with "Will be removed"; in the Current one, no notice', async () => {
     const base = sampleProject();
     const proposal = propose(base, removeMarking(base, 'M3'));
     const h = await showLevel(
@@ -210,37 +211,37 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     );
     expect(
       screen.getByText(
-        'Na visão Proposto este item não existe. O painel mostra o projeto atual.',
+        "This item doesn't exist in the Proposed view. Showing the current project.",
       ),
     ).toBeTruthy();
-    expect(screen.getAllByText('Será removida').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Will be removed').length).toBeGreaterThan(0);
     expect(document.querySelector('del.identity-name')?.textContent).toBe('Fechadura');
-    expect(field('Nome').value).toBe('Fechadura');
+    expect(field('Name').value).toBe('Fechadura');
     expect(
       screen.getByRole('button', {
-        name: 'Nome: será removido com Fechadura. Atual: Fechadura',
+        name: 'Name: removed with Fechadura. Current: Fechadura',
       }),
     ).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Ver na visão Atual' }));
+    fireEvent.click(screen.getByRole('button', { name: 'See in the Current view' }));
     expect(h.review.view.value).toBe('current');
     expect(
       screen.queryByText(
-        'Na visão Proposto este item não existe. O painel mostra o projeto atual.',
+        "This item doesn't exist in the Proposed view. Showing the current project.",
       ),
     ).toBeNull();
   });
 
-  it('fantasmas: par e anotação removidos aparecem riscados no lugar, na visão Proposto', async () => {
+  it('ghosts: removed pair and annotation show struck through in place, in the Proposed view', async () => {
     const base = sampleProject();
     let after = removeEntry(base, 'A1', 'E2');
-    after = updateEntry(after, 'A1', 'E1', { key: 'tipo', value: 'risco' });
+    after = updateEntry(after, 'A1', 'E1', { key: 'tipo', value: 'scratch' });
     after = removeAnnotation(after, 'A2');
     const h = await showLevel(
       { project: base, proposals: [propose(base, after)] },
       { level: 'item', id: 'M1' },
     );
-    // O par que sai: riscado, com o marcador na coluna de ações.
-    const pairs = screen.getByRole('table', { name: 'Pares da anotação' });
+    // The pair that goes away: struck through, with the marker in the actions column.
+    const pairs = screen.getByRole('table', { name: 'Annotation pairs' });
     const rows = within(pairs).getAllByRole('row');
     expect(rows.map((r) => r.classList.contains('is-removed'))).toEqual([
       false,
@@ -250,87 +251,87 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     expect(rows[2]?.querySelector('del')?.textContent).toBe('gravidade');
     expect(
       within(rows[2] as HTMLElement).getByRole('button', {
-        name: /^gravidade · Amassado: removido, pendente\. Atual: gravidade: média\. Proposto: \(não existe\)$/,
+        name: /^gravidade · Amassado: removed, pending\. Current: gravidade: média\. Proposed: \(doesn't exist\)$/,
       }),
     ).toBeTruthy();
-    // O par alterado mostra o proposto, com o marcador no lugar do menu ⋯.
+    // The changed pair shows the proposed value, with the marker in place of the ⋯ menu.
     expect(
       within(rows[1] as HTMLElement).getByRole('button', {
-        name: /^tipo · Amassado: alterado/,
+        name: /^tipo · Amassado: changed/,
       }),
     ).toBeTruthy();
-    expect(within(pairs).queryByRole('button', { name: /Ações/ })).toBeNull();
-    // A anotação que sai: cabeçalho riscado, "Será removida" e "Ver na visão Atual".
+    expect(within(pairs).queryByRole('button', { name: /Actions/ })).toBeNull();
+    // The annotation that goes away: struck-through header, "Will be removed" and "See in the Current view".
     const ghost = document.querySelector('[data-annotation="A2"]') as HTMLElement;
     expect(ghost.classList.contains('annotation-removed')).toBe(true);
-    expect(within(ghost).getByText('Será removida')).toBeTruthy();
+    expect(within(ghost).getByText('Will be removed')).toBeTruthy();
 
-    // Na visão Atual, o par e a anotação existem: sem fantasma, com o marcador "removido".
+    // In the Current view, the pair and the annotation exist: no ghost, with the "removed" marker.
     act(() => h.review.setView('current'));
     expect(document.querySelector('.is-removed')).toBeNull();
     expect(document.querySelector('.annotation-removed')).toBeNull();
     expect(
-      screen.getByRole('button', { name: /^Anotação .* removida: removido, pendente\./ }),
+      screen.getByRole('button', { name: /^Annotation .* removed: removed, pending\./ }),
     ).toBeTruthy();
   });
 
-  it('conflito: o marcador âmbar e o popover com Atual, Antes e Depois', async () => {
+  it('conflict: the amber marker and the popover with Current, Before and After', async () => {
     const { proposal, ids } = richScenario();
-    const edited = renameMarking(sampleProject(), 'M1', 'Porta traseira');
+    const edited = renameMarking(sampleProject(), 'M1', 'Rear door');
     await showLevel(
       { project: edited, proposals: [proposal] },
       { level: 'change', id: ids.name },
     );
     const mark = screen.getByRole('button', {
-      name: /^Nome: alterado, pendente, em conflito\./,
+      name: /^Name: changed, pending, in conflict\./,
     });
     expect(mark.classList.contains('is-conflict')).toBe(true);
     fireEvent.click(mark);
     const pop = screen.getByRole('dialog');
     expect([...pop.querySelectorAll('dt')].map((dt) => dt.textContent)).toEqual([
-      'Atual',
-      'Antes',
-      'Depois',
+      'Current',
+      'Before',
+      'After',
     ]);
-    expect(within(pop).getByText('Conflito')).toBeTruthy();
+    expect(within(pop).getByText('Conflict')).toBeTruthy();
     expect(
-      within(pop).getByText(/Aceitar troca Porta traseira por Porta dianteira/),
+      within(pop).getByText(/Accepting replaces Rear door with Porta dianteira/),
     ).toBeTruthy();
-    // A decisão do campo é no popover, e os botões dizem o efeito.
+    // The field decision is in the popover, and the buttons state the effect.
     const describedBy = (el: HTMLElement) =>
       document.getElementById(el.getAttribute('aria-describedby') ?? '')?.textContent;
-    const overwrite = within(pop).getByRole('button', { name: 'Sobrescrever: Nome' });
+    const overwrite = within(pop).getByRole('button', { name: 'Overwrite: Name' });
     expect(describedBy(overwrite)).toBe(
-      'Aceitar: sobrescreve Porta traseira por Porta dianteira',
+      'Accept: overwrites Rear door with Porta dianteira',
     );
-    const keep = within(pop).getByRole('button', { name: 'Manter atual: Nome' });
-    expect(describedBy(keep)).toBe('Rejeitar: mantém Porta traseira');
+    const keep = within(pop).getByRole('button', { name: 'Keep current: Name' });
+    expect(describedBy(keep)).toBe('Reject: keeps Rear door');
   });
 
-  it('teclado: Tab chega ao marcador e abre; Esc fecha e devolve o foco ao marcador', async () => {
+  it('keyboard: Tab reaches the marker and opens it; Esc closes and returns focus to the marker', async () => {
     const base = sampleProject();
-    const long = 'Porta '.repeat(60).trim();
+    const long = 'Doors '.repeat(60).trim();
     const user = userEvent.setup();
     await showLevel(
       { project: base, proposals: [propose(base, renameMarking(base, 'M1', long))] },
       { level: 'item', id: 'M1' },
     );
-    const mark = screen.getByRole('button', { name: /^Nome: alterado, pendente\./ });
+    const mark = screen.getByRole('button', { name: /^Name: changed, pending\./ });
     for (let i = 0; i < 60 && document.activeElement !== mark; i++) await user.tab();
     expect(document.activeElement).toBe(mark);
-    // O foco abre na hora; o valor longo vem por "Ver tudo", dentro do popover.
-    const pop = screen.getByRole('dialog', { name: 'Nome · alterado' });
+    // Focus opens it at once; the long value comes through "Show all", inside the popover.
+    const pop = screen.getByRole('dialog', { name: 'Name · changed' });
     await user.tab();
-    const showAll = within(pop).getByRole('button', { name: 'Ver tudo' });
+    const showAll = within(pop).getByRole('button', { name: 'Show all' });
     expect(document.activeElement).toBe(showAll);
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(document.activeElement).toBe(mark);
-    // Enter fixa aberto; Tab percorre Ver tudo, Aceitar, Rejeitar e Nota, e depois do
-    // último o popover fecha e o foco segue para o próximo controle.
+    // Enter pins it open; Tab goes through Show all, Accept, Reject and Note, and after the
+    // last one the popover closes and focus moves on to the next control.
     await user.keyboard('{Enter}');
     expect(screen.getByRole('dialog')).toBeTruthy();
-    for (const name of ['Ver tudo', /^Aceitar: /, /^Rejeitar: /, 'Adicionar nota']) {
+    for (const name of ['Show all', /^Accept: /, /^Reject: /, 'Add note']) {
       await user.tab();
       expect(document.activeElement).toBe(
         within(screen.getByRole('dialog')).getByRole('button', { name }),
@@ -341,11 +342,11 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     expect(document.activeElement).not.toBe(document.body);
   });
 
-  it('hover: abre depois do atraso de intenção e fecha ao sair; um aberto por vez', async () => {
+  it('hover: opens after the intent delay and closes on leaving; one open at a time', async () => {
     const { proposal } = richScenario();
     await showLevel({ proposals: [proposal] }, { level: 'item', id: 'M4' });
     vi.useFakeTimers();
-    const mark = screen.getByRole('button', { name: /^Posição: movido/ });
+    const mark = screen.getByRole('button', { name: /^Position: moved/ });
     const host = mark.closest('.change-mark-host') as HTMLElement;
     fireEvent.mouseEnter(host);
     act(() => {
@@ -363,26 +364,26 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('seções com mudanças abrem; recolhida, a seção diz quantas mudanças tem', async () => {
+  it('sections with changes open; collapsed, the section says how many changes it has', async () => {
     const { proposal } = richScenario();
     const h = await openReviewHarness({ proposals: [proposal] });
     h.ui.collapsed.value = new Set(['marking', 'annotations']);
     expect(h.review.open('P1').ok).toBe(true);
     act(() => h.review.select({ level: 'item', id: 'M1' }));
     renderInEditor(h, <ReviewPanel onGoToAnnotation={() => {}} />);
-    // A seção Marcação (com a mudança) abriu; as Anotações (sem mudanças) ficaram.
+    // The Marking section (with the change) opened; the Annotations (without changes) stayed.
     expect(h.ui.collapsed.value.has('marking')).toBe(false);
     expect(h.ui.collapsed.value.has('annotations')).toBe(true);
     act(() => {
       h.ui.collapsed.value = new Set(['marking']);
     });
-    const head = screen.getByRole('button', { name: /^Marcação/ });
-    expect(within(head).getByText('1 mudança(s)')).toBeTruthy();
+    const head = screen.getByRole('button', { name: /^Marking/ });
+    expect(within(head).getByText('1 change(s)')).toBeTruthy();
   });
 
-  it('camada escondida: o aviso conta as mudanças e "Mostrar aqui" mostra a camada só no painel', async () => {
+  it('hidden layer: the notice counts the changes and "Show here" shows the layer only in the panel', async () => {
     const base = sampleProject();
-    const after = updateEntry(base, 'A2', 'E3', { key: 'tipo', value: 'quebra' });
+    const after = updateEntry(base, 'A2', 'E3', { key: 'tipo', value: 'break' });
     const h = await openReviewHarness({
       project: base,
       proposals: [propose(base, after)],
@@ -391,20 +392,20 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     expect(h.review.open('P1').ok).toBe(true);
     act(() => h.review.select({ level: 'item', id: 'M1' }));
     renderInEditor(h, <ReviewPanel onGoToAnnotation={() => {}} />);
-    expect(screen.getByText('1 mudança(s) em camada escondida: Vidros')).toBeTruthy();
+    expect(screen.getByText('1 change(s) in a hidden layer: Vidros')).toBeTruthy();
     expect(document.querySelector('[data-layer="L2"]')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Mostrar aqui' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show here' }));
     const group = document.querySelector('[data-layer="L2"]') as HTMLElement;
-    expect(within(group).getByText('escondida')).toBeTruthy();
-    // Só no painel: a camada continua escondida no editor.
+    expect(within(group).getByText('hidden')).toBeTruthy();
+    // Only in the panel: the layer stays hidden in the editor.
     expect(h.ui.hiddenLayers.value.has('L2')).toBe(true);
-    fireEvent.click(screen.getByRole('button', { name: 'Ocultar de novo' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Hide again' }));
     expect(document.querySelector('[data-layer="L2"]')).toBeNull();
   });
 
-  it('camada escondida sem exceção: esconder a L1 (a primeira) também conta no aviso', async () => {
+  it('hidden layer with no exception: hiding L1 (the first) also counts in the notice', async () => {
     const base = sampleProject();
-    const after = updateEntry(base, 'A1', 'E1', { key: 'tipo', value: 'quebra' });
+    const after = updateEntry(base, 'A1', 'E1', { key: 'tipo', value: 'break' });
     const h = await openReviewHarness({
       project: base,
       proposals: [propose(base, after)],
@@ -413,11 +414,11 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     expect(h.review.open('P1').ok).toBe(true);
     act(() => h.review.select({ level: 'item', id: 'M1' }));
     renderInEditor(h, <ReviewPanel onGoToAnnotation={() => {}} />);
-    expect(screen.getByText(/em camada escondida: Lataria/)).toBeTruthy();
+    expect(screen.getByText(/in a hidden layer: Lataria/)).toBeTruthy();
     expect(document.querySelector('[data-layer="L1"]')).toBeNull();
   });
 
-  it('item grande: camada com mais de 8 anotações começa recolhida, com as contagens', async () => {
+  it('large item: a layer with more than 8 annotations starts collapsed, with the counts', async () => {
     const base = sampleProject();
     let after = base;
     for (let i = 1; i <= 9; i++) {
@@ -435,23 +436,23 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     expect(h.ui.collapsed.value.has('layer:L1')).toBe(true);
     expect(h.ui.collapsed.value.has('annotation:N1')).toBe(true);
     const group = document.querySelector('[data-layer="L1"]') as HTMLElement;
-    expect(within(group).getByText('9 mudança(s)')).toBeTruthy();
+    expect(within(group).getByText('9 change(s)')).toBeTruthy();
   });
 
-  it('o que não tem campo no painel continua decidível em "Outras mudanças", pelo marcador', async () => {
+  it('what has no field in the panel is still decidable in "Other changes", through the marker', async () => {
     const base = sampleProject();
     const proposal = propose(base, setMarkingLocked(base, 'M4', true));
     const h = await showLevel(
       { project: base, proposals: [proposal] },
       { level: 'item', id: 'M4' },
     );
-    const others = screen.getByRole('region', { name: 'Outras mudanças' });
+    const others = screen.getByRole('region', { name: 'Other changes' });
     fireEvent.click(
-      within(others).getByRole('button', { name: /^Trava: alterado, pendente\./ }),
+      within(others).getByRole('button', { name: /^Lock: changed, pending\./ }),
     );
     fireEvent.click(
       within(screen.getByRole('dialog')).getByRole('button', {
-        name: /^Aceitar: Trava$/,
+        name: /^Accept: Lock$/,
       }),
     );
     await waitFor(() =>
@@ -459,67 +460,67 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     );
   });
 
-  it('item trancado: aviso acima do painel; aceitar continua permitido', async () => {
+  it('locked item: notice above the panel; accepting is still allowed', async () => {
     const base = setMarkingLocked(sampleProject(), 'M4', true);
     const { proposal } = richScenario();
     await showLevel(
       { project: base, proposals: [proposal] },
       { level: 'item', id: 'M4' },
     );
-    expect(screen.getByText('Item trancado')).toBeTruthy();
+    expect(screen.getByText('Locked item')).toBeTruthy();
     const accept = screen.getByRole('button', {
-      name: /^Aceitar marcação: Marcação sem nome$/,
+      name: /^Accept marking: Unnamed marking$/,
     });
     expect((accept as HTMLButtonElement).disabled).toBe(false);
   });
 
-  it('nota do item: o botão do cabeçalho abre o campo, que grava ao sair dele', async () => {
+  it('item note: the header button opens the field, which saves when leaving it', async () => {
     const { proposal } = richScenario();
     const h = await showLevel({ proposals: [proposal] }, { level: 'item', id: 'M1' });
-    expect(screen.queryByRole('textbox', { name: 'Nota para o agente' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Adicionar nota' }));
-    const box = screen.getByRole('textbox', { name: 'Nota para o agente' });
+    expect(screen.queryByRole('textbox', { name: 'Note for the agent' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Add note' }));
+    const box = screen.getByRole('textbox', { name: 'Note for the agent' });
     expect(document.activeElement).toBe(box);
-    fireEvent.input(box, { target: { value: 'O nome antigo estava certo.' } });
+    fireEvent.input(box, { target: { value: 'The old name was right.' } });
     fireEvent.blur(box);
     await waitFor(() =>
       expect(h.review.derived.notes.value.get('item:M1')?.[0]?.text).toBe(
-        'O nome antigo estava certo.',
+        'The old name was right.',
       ),
     );
-    // Texto vazio apaga a nota.
-    const saved = await screen.findByRole('textbox', { name: 'Nota para o agente' });
+    // Empty text deletes the note.
+    const saved = await screen.findByRole('textbox', { name: 'Note for the agent' });
     fireEvent.input(saved, { target: { value: '  ' } });
     fireEvent.blur(saved);
     await waitFor(() => expect(h.review.derived.notes.value.has('item:M1')).toBe(false));
   });
 
-  // Fase 8.2 (P8, O9 da rodada 4): "sugerida numa rejeição" só com uma rejeição no nível;
-  // "parcial" por aceitas e pendentes não é rejeição.
-  it('a nota só é "sugerida numa rejeição" quando o nível tem alguma mudança rejeitada', async () => {
+  // Phase 8.2 (P8, O9 of round 4): "suggested on a rejection" only with a rejection in the
+  // level; "partial" from accepted and pending is not a rejection.
+  it('the note is only "suggested on a rejection" when the level has a rejected change', async () => {
     const { proposal, ids } = richScenario();
     const h = await openReviewHarness({ proposals: [proposal] });
     h.review.open('P1');
-    // A imagem I3 fica parcial: a marcação (e, junto, a imagem) aceita, a anotação pendente.
+    // Image I3 becomes partial: the marking (and, with it, the image) accepted, the annotation pending.
     await h.review.decide({ level: 'change', id: ids.marking }, 'accepted');
     act(() => h.review.select({ level: 'image', id: 'I3' }));
     renderInEditor(h, <ReviewPanel onGoToAnnotation={() => {}} />);
     expect(h.review.derived.levels.value.get('image:I3')?.state).toBe('partial');
-    // O painel da imagem nova, com o arquivo marcado como parte da criação.
+    // The panel of the new image, with the file marked as part of the creation.
     expect(
-      screen.getByRole('button', { name: /^Arquivo da imagem: novo, parte da criação/ }),
+      screen.getByRole('button', { name: /^Image file: new, part of creating/ }),
     ).toBeTruthy();
-    expect(screen.queryByText(/sugerida numa rejeição/)).toBeNull();
-    // Uma rejeição no nível: a nota passa a ser sugerida.
+    expect(screen.queryByText(/suggested on a rejection/)).toBeNull();
+    // A rejection in the level: the note becomes suggested.
     await act(async () => {
       await h.review.decide({ level: 'change', id: ids.annotation }, 'rejected');
     });
     expect(
-      screen.getByText('sugerida numa rejeição: o agente lê na próxima rodada'),
+      screen.getByText('suggested on a rejection: the agent reads it next round'),
     ).toBeTruthy();
   });
 
-  it('fora da revisão o painel é o de sempre: sem marcadores, com o menu dos pares', async () => {
+  it('outside the review the panel is the usual one: no markers, with the pairs menu', async () => {
     const { proposal } = richScenario();
     const h = await openReviewHarness({ proposals: [proposal] });
     const project = h.session.store.committed.value as Project;
@@ -537,58 +538,58 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
         onGoToAnnotation={() => {}}
       />,
     );
-    // A célula do rótulo também existe com o ícone de ajuda: só o marcador da revisão não.
+    // The label cell also exists with the help icon: only the review marker does not.
     expect(document.querySelector('.change-mark, .change-mark-host')).toBeNull();
-    expect(field('Nome').disabled).toBe(false);
-    expect(screen.getAllByRole('button', { name: /^Ações do par/ }).length).toBe(3);
+    expect(field('Name').disabled).toBe(false);
+    expect(screen.getAllByRole('button', { name: /^Actions for pair/ }).length).toBe(3);
   });
 
-  it('a proposta tem identidade, Aceitar tudo, "Outras mudanças" do grupo Projeto e as imagens com Abrir', async () => {
+  it('the proposal has identity, Accept all, "Other changes" of the Project group and the images with Open', async () => {
     const { base, proposal } = firstImport();
     const h = await showLevel(
       { project: base, proposals: [proposal] },
       { level: 'proposal', id: null },
     );
     expect(screen.getByText('Importação', { selector: 'strong' })).toBeTruthy();
-    expect(screen.getByText('Proposta')).toBeTruthy();
+    expect(screen.getByText('Proposal')).toBeTruthy();
     expect(
-      screen.getByRole('button', { name: 'Aceitar tudo: Importação' }).textContent,
-    ).toBe('Aceitar tudo');
-    // O grupo Projeto: a criação da camada, com marcador e popover.
-    const others = screen.getByRole('region', { name: 'Outras mudanças' });
+      screen.getByRole('button', { name: 'Accept all: Importação' }).textContent,
+    ).toBe('Accept all');
+    // The Project group: the layer creation, with marker and popover.
+    const others = screen.getByRole('region', { name: 'Other changes' });
     expect(within(others).getAllByRole('listitem')).toHaveLength(1);
     expect(
       within(others).getByRole('button', {
-        name: /^Camada Eventos criada: novo, pendente/,
+        name: /^Layer Eventos created: new, pending/,
       }),
     ).toBeTruthy();
-    // As imagens: uma linha por imagem com mudanças e Abrir.
-    const images = screen.getByRole('region', { name: 'Imagens' });
-    fireEvent.click(within(images).getByRole('button', { name: /^Abrir / }));
+    // The images: one row per image with changes and Open.
+    const images = screen.getByRole('region', { name: 'Images' });
+    fireEvent.click(within(images).getByRole('button', { name: /^Open / }));
     expect(h.review.selected.value).toEqual({ level: 'image', id: 'I1' });
   });
 
-  it('o grupo Projeto é o mesmo painel, só com "Outras mudanças"', async () => {
+  it('the Project group is the same panel, only with "Other changes"', async () => {
     const { base, proposal } = firstImport();
     await showLevel(
       { project: base, proposals: [proposal] },
       { level: 'project', id: null },
     );
-    expect(screen.getByText('Grupo Projeto')).toBeTruthy();
-    expect(screen.getByRole('region', { name: 'Outras mudanças' })).toBeTruthy();
-    expect(screen.queryByRole('region', { name: 'Imagens' })).toBeNull();
+    expect(screen.getByText('Project group')).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Other changes' })).toBeTruthy();
+    expect(screen.queryByRole('region', { name: 'Images' })).toBeNull();
     expect(
-      screen.getByRole('button', { name: 'Aceitar o grupo Projeto: Projeto' })
+      screen.getByRole('button', { name: 'Accept the Project group: Project' })
         .textContent,
-    ).toBe('Aceitar o grupo Projeto');
+    ).toBe('Accept the Project group');
   });
 });
 
-// Devolução do portão da 8.2: o "Aplicar bloqueado" nomeia camada, especialização e
-// anotação (antes só marcação e imagem; o resto saía com o id cru), e diz quando o alvo
-// da mudança não existe mais.
-describe('Aplicar bloqueado: o nome do alvo, nunca o id', () => {
-  /** Abre a proposta, aceita tudo e mostra o nível da proposta (todos os problemas). */
+// Return from the 8.2 gate: "Apply blocked" names the layer, specialization and annotation
+// (before, only marking and image; the rest came out with the raw id), and says when the
+// target of the change no longer exists.
+describe('Apply blocked: the name of the target, never the id', () => {
+  /** Opens the proposal, accepts everything and shows the proposal level (all the problems). */
   async function blocked(project: Project, proposal: Proposal) {
     const h = await openReviewHarness({ project, proposals: [proposal] });
     expect(h.review.open(proposal.id).ok).toBe(true);
@@ -599,19 +600,19 @@ describe('Aplicar bloqueado: o nome do alvo, nunca o id', () => {
     return h;
   }
 
-  it('camada: a criação de uma camada que já existe cita o nome dela', async () => {
+  it('layer: creating a layer that already exists cites its name', async () => {
     const { base, proposal } = firstImport();
     await blocked(
       addLayer(base, { id: 'L2', name: 'Eventos', color: '#1E88E5' }),
       proposal,
     );
     expect(
-      screen.getByText('A mudança em Eventos não cabe mais no projeto atual.'),
+      screen.getByText('The change to Eventos no longer fits the current project.'),
     ).toBeTruthy();
-    expect(screen.queryByText(/A mudança em L2 /)).toBeNull();
+    expect(screen.queryByText(/The change to L2 /)).toBeNull();
   });
 
-  it('especialização: a aplicação de uma especialização que já está no projeto cita o nome dela', async () => {
+  it('specialization: applying a specialization that is already in the project cites its name', async () => {
     const base = sampleProject();
     const sdui = loadExample('sdui');
     const proposal = propose(
@@ -620,12 +621,12 @@ describe('Aplicar bloqueado: o nome do alvo, nunca o id', () => {
     );
     await blocked(applySpecialization(base, sdui, { newId: idGen('LX') }), proposal);
     expect(
-      screen.getByText('A mudança em SDUI não cabe mais no projeto atual.'),
+      screen.getByText('The change to SDUI no longer fits the current project.'),
     ).toBeTruthy();
-    expect(screen.queryByText(/A mudança em sdui /)).toBeNull();
+    expect(screen.queryByText(/The change to sdui /)).toBeNull();
   });
 
-  it('anotação: a criação de uma anotação que já existe cita o título dela', async () => {
+  it('annotation: creating an annotation that already exists cites its title', async () => {
     const base = sampleProject();
     const proposal = propose(
       base,
@@ -636,17 +637,17 @@ describe('Aplicar bloqueado: o nome do alvo, nunca o id', () => {
       proposal,
     );
     expect(
-      screen.getByText('A mudança em onClick não cabe mais no projeto atual.'),
+      screen.getByText('The change to onClick no longer fits the current project.'),
     ).toBeTruthy();
-    expect(screen.queryByText(/A mudança em A9 /)).toBeNull();
+    expect(screen.queryByText(/The change to A9 /)).toBeNull();
   });
 
-  it('alvo que não existe mais: diz que o alvo (camada) saiu do projeto, sem o id', async () => {
+  it('target that no longer exists: says the target (layer) left the project, without the id', async () => {
     const base = sampleProject();
-    const proposal = propose(base, renameLayer(base, 'L2', 'Janelas'));
+    const proposal = propose(base, renameLayer(base, 'L2', 'Windows'));
     await blocked(removeLayer(base, 'L2'), proposal);
     expect(
-      screen.getByText('O alvo desta mudança (camada) não existe mais no projeto atual.'),
+      screen.getByText('The target of this change (layer) no longer exists in the current project.'),
     ).toBeTruthy();
     expect(screen.queryByText(/L2/)).toBeNull();
   });

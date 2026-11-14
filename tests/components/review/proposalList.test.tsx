@@ -19,35 +19,35 @@ import { AT, decided } from '../../model/proposalFixtures';
 import { diskProposal, richScenario, writeOutside } from '../../store/proposalHarness';
 import { openReviewHarness, renderInEditor } from './reviewHarness';
 
-// Janela Propostas fora da revisão (HANDOFF-PROPOSALS 5.1, passo 3 da seção 9): lista,
-// estado vazio, a "Nova" que chegou, as aceitas aguardando aplicação e o aviso de
-// proposta nova sobre o canvas.
+// Proposals window outside the review (HANDOFF-PROPOSALS 5.1, step 3 of section 9): list,
+// empty state, the "New" that arrived, the accepted changes awaiting apply and the notice
+// of a new proposal over the canvas.
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
   localStorage.clear();
 });
 afterEach(cleanup);
 
 const noop = () => {};
 
-describe('janela Propostas: lista', () => {
-  it('estado vazio explica como as propostas chegam', async () => {
+describe('Proposals window: list', () => {
+  it('empty state explains how proposals arrive', async () => {
     const h = await openReviewHarness();
     const onHelp = vi.fn();
     const onScan = vi.fn();
     renderInEditor(h, <ProposalList onHelp={onHelp} onScan={onScan} />);
-    expect(screen.getByRole('heading', { name: 'Nenhuma proposta ainda' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'No proposals yet' })).toBeTruthy();
     fireEvent.click(
-      screen.getByRole('button', { name: 'Como o agente envia propostas' }),
+      screen.getByRole('button', { name: 'How the agent sends proposals' }),
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Verificar a pasta agora' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Check the folder now' }));
     expect(onHelp).toHaveBeenCalled();
     expect(onScan).toHaveBeenCalled();
-    expect(screen.getByText(/zips importados também mostram e aplicam/)).toBeTruthy();
+    expect(screen.getByText(/imported zips also show and apply/)).toBeTruthy();
   });
 
-  it('proposta que chegou: "Nova", contagens e Revisar como ação principal', async () => {
+  it('arrived proposal: "New", counts and Review as the primary action', async () => {
     const { proposal } = richScenario();
     const h = await openReviewHarness({
       proposals: [{ ...proposal, title: 'Checkout' }],
@@ -55,29 +55,29 @@ describe('janela Propostas: lista', () => {
     renderInEditor(h, <ProposalList onHelp={noop} onScan={noop} />);
     const row = screen.getByRole('listitem');
     expect(within(row).getByText('Checkout')).toBeTruthy();
-    expect(within(row).getByText('Nova')).toBeTruthy();
-    const action = within(row).getByRole('button', { name: 'Revisar: Checkout' });
+    expect(within(row).getByText('New')).toBeTruthy();
+    const action = within(row).getByRole('button', { name: 'Review: Checkout' });
     expect(action.className).toContain('button-primary');
-    // ○ pendentes, ✓ aceitas, ✕ rejeitadas.
-    expect(within(row).getByTitle('sem decisão').textContent).toContain(
+    // ○ pending, ✓ accepted, ✕ rejected.
+    expect(within(row).getByTitle('undecided').textContent).toContain(
       String(proposal.changes.length),
     );
     fireEvent.click(action);
     expect(h.review.proposalId.value).toBe('P1');
   });
 
-  it('em andamento: "Em revisão", Continuar e as aceitas aguardando aplicação', async () => {
+  it('in progress: "In review", Continue and the accepted changes awaiting apply', async () => {
     const { base, proposal } = richScenario();
     const accepted = decided(proposal, base, { level: 'image', id: 'I3' }, 'accepted');
     const h = await openReviewHarness({ proposals: [accepted] });
     renderInEditor(h, <ProposalList onHelp={noop} onScan={noop} />);
     const row = screen.getByRole('listitem');
-    expect(within(row).getByText('Em revisão')).toBeTruthy();
-    expect(within(row).getByText('3 aceitas aguardando aplicação')).toBeTruthy();
-    expect(within(row).getByRole('button', { name: /^Continuar/ })).toBeTruthy();
+    expect(within(row).getByText('In review')).toBeTruthy();
+    expect(within(row).getByText('3 accepted changes awaiting apply')).toBeTruthy();
+    expect(within(row).getByRole('button', { name: /^Continue/ })).toBeTruthy();
   });
 
-  it('substituída: o que ficou para trás, no grupo das fechadas', async () => {
+  it('superseded: what was left behind, in the closed group', async () => {
     const { base, proposal } = richScenario();
     const old = supersedeProposal(
       decided(proposal, base, { level: 'item', id: 'M1' }, 'accepted'),
@@ -85,28 +85,28 @@ describe('janela Propostas: lista', () => {
     const next = {
       ...richScenario('P2').proposal,
       supersedes: 'P1',
-      title: 'Nova versão',
+      title: 'New version',
     };
     const h = await openReviewHarness({ proposals: [old, next] });
     renderInEditor(h, <ProposalList onHelp={noop} onScan={noop} />);
-    expect(screen.getByText('Fechadas')).toBeTruthy();
-    expect(screen.getByText('Substituída')).toBeTruthy();
+    expect(screen.getByText('Closed')).toBeTruthy();
+    expect(screen.getByText('Superseded')).toBeTruthy();
     expect(
       screen.getByText(
-        `1 aceitas e ${proposal.changes.length - 1} sem decisão ficaram para trás`,
+        `1 accepted and ${proposal.changes.length - 1} undecided were left behind`,
       ),
     ).toBeTruthy();
-    // A fechada não leva "Nova"; a aberta que chegou, sim.
-    expect(screen.getAllByText('Nova')).toHaveLength(1);
+    // The closed one does not get "New"; the open one that arrived does.
+    expect(screen.getAllByText('New')).toHaveLength(1);
   });
 
-  // Fase 8.2 (P4, O6 da rodada 4): `rows[].fresh` é a verdade; toda linha `fresh` leva o
-  // selo e a ação principal, e a barra de status conta as mesmas.
-  it('duas propostas que chegaram juntas: dois selos "Nova", duas ações principais e a barra conta 2', async () => {
+  // Phase 8.2 (P4, O6 of round 4): `rows[].fresh` is the truth; every `fresh` row gets the
+  // badge and the primary action, and the status bar counts the same ones.
+  it('two proposals that arrived together: two "New" badges, two primary actions and the bar counts 2', async () => {
     const a = { ...richScenario('P1').proposal, title: 'Checkout' };
     const b = {
       ...richScenario('P2').proposal,
-      title: 'Correções',
+      title: 'Fixes',
       createdAt: '2026-10-10T12:00:00.000Z',
     };
     const h = await openReviewHarness({ proposals: [a, b] });
@@ -117,30 +117,30 @@ describe('janela Propostas: lista', () => {
         <StatusBar />
       </>,
     );
-    expect(screen.getAllByText('Nova')).toHaveLength(2);
-    for (const title of ['Checkout', 'Correções']) {
-      const action = screen.getByRole('button', { name: `Revisar: ${title}` });
+    expect(screen.getAllByText('New')).toHaveLength(2);
+    for (const title of ['Checkout', 'Fixes']) {
+      const action = screen.getByRole('button', { name: `Review: ${title}` });
       expect(action.className).toContain('button-primary');
     }
-    expect(screen.getByRole('button', { name: '2 proposta(s) nova(s)' })).toBeTruthy();
-    // Abrir uma delas tira o selo e a conta dela, e só dela.
+    expect(screen.getByRole('button', { name: '2 new proposal(s)' })).toBeTruthy();
+    // Opening one of them removes its badge and its count, and only its own.
     act(() => {
       h.review.open('P2');
       h.review.close();
     });
-    expect(screen.getAllByText('Nova')).toHaveLength(1);
-    expect(screen.getByRole('button', { name: '1 proposta(s) nova(s)' })).toBeTruthy();
+    expect(screen.getAllByText('New')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: '1 new proposal(s)' })).toBeTruthy();
     expect(
-      screen.getByRole('button', { name: 'Revisar: Correções' }).className,
+      screen.getByRole('button', { name: 'Review: Fixes' }).className,
     ).not.toContain('button-primary');
   });
 
-  it('aplicada com uma só mudança diz "1 mudança aplicada" (singular)', async () => {
+  it('applied with a single change says "1 change applied" (singular)', async () => {
     const { base, proposal } = richScenario();
     const accepted = decided(proposal, base, { level: 'proposal', id: null }, 'accepted');
     const [first, ...rest] = accepted.changes;
     if (!first || rest.length === 0)
-      throw new Error('cenário precisa de várias mudanças');
+      throw new Error('scenario needs several changes');
     const one: Proposal = {
       ...accepted,
       status: 'applied',
@@ -148,7 +148,7 @@ describe('janela Propostas: lista', () => {
     };
     const h = await openReviewHarness({ proposals: [one] });
     renderInEditor(h, <ProposalList onHelp={noop} onScan={noop} />);
-    expect(screen.getByText('1 mudança aplicada')).toBeTruthy();
+    expect(screen.getByText('1 change applied')).toBeTruthy();
     cleanup();
     const many: Proposal = {
       ...accepted,
@@ -158,13 +158,13 @@ describe('janela Propostas: lista', () => {
     const h2 = await openReviewHarness({ proposals: [many] });
     renderInEditor(h2, <ProposalList onHelp={noop} onScan={noop} />);
     expect(
-      screen.getByText(`${accepted.changes.length} mudanças aplicadas`),
+      screen.getByText(`${accepted.changes.length} changes applied`),
     ).toBeTruthy();
   });
 
-  // Achado 13 (parte da app): a proposta já revisada e aplicada não muda de status ao ser
-  // substituída; a linha mostra quem a substituiu e leva à nova.
-  it('aplicada e substituída: "Aplicada · substituída por …" e Abrir a nova, sem mudar o arquivo', async () => {
+  // Finding 13 (app part): a proposal already reviewed and applied does not change status when
+  // superseded; the row shows who superseded it and leads to the new one.
+  it('applied and superseded: "Applied · superseded by …" and Open the new one, without changing the file', async () => {
     const { base, proposal } = richScenario();
     const accepted = decided(proposal, base, { level: 'proposal', id: null }, 'accepted');
     const applied: Proposal = {
@@ -175,43 +175,43 @@ describe('janela Propostas: lista', () => {
     const next = {
       ...richScenario('P2').proposal,
       supersedes: 'P1',
-      title: 'Só a correção',
+      title: 'Only the fix',
     };
     const h = await openReviewHarness({ proposals: [applied, next] });
     renderInEditor(h, <ProposalList onHelp={noop} onScan={noop} />);
     const row = screen
       .getAllByRole('listitem')
       .find((r) => r.getAttribute('data-proposal') === 'P1');
-    if (!row) throw new Error('linha da P1');
-    expect(within(row).getByText('Aplicada')).toBeTruthy();
-    expect(within(row).getByText('substituída por Só a correção')).toBeTruthy();
-    expect(within(row).getByRole('button', { name: 'Ver: Teste' })).toBeTruthy();
+    if (!row) throw new Error('row of P1');
+    expect(within(row).getByText('Applied')).toBeTruthy();
+    expect(within(row).getByText('superseded by Only the fix')).toBeTruthy();
+    expect(within(row).getByRole('button', { name: 'View: Teste' })).toBeTruthy();
     fireEvent.click(
-      within(row).getByRole('button', { name: 'Abrir a nova: Só a correção' }),
+      within(row).getByRole('button', { name: 'Open the new one: Only the fix' }),
     );
     expect(h.review.proposalId.value).toBe('P2');
     expect((await diskProposal(h.root)).status).toBe('applied');
   });
 
-  it('busca por título, origem e autor e filtro Abertas/Fechadas', async () => {
+  it('search by title, origin and author and Open/Closed filter', async () => {
     const a = { ...richScenario('P1').proposal, title: 'Checkout', origin: 'Figma' };
-    const b = { ...richScenario('P2').proposal, title: 'Home', author: 'Agente X' };
+    const b = { ...richScenario('P2').proposal, title: 'Home', author: 'Agent X' };
     const h = await openReviewHarness({ proposals: [a, b] });
     renderInEditor(h, <ProposalList onHelp={noop} onScan={noop} />);
     expect(screen.getAllByRole('listitem')).toHaveLength(2);
-    fireEvent.input(screen.getByRole('searchbox', { name: 'Buscar propostas' }), {
-      target: { value: 'agente' },
+    fireEvent.input(screen.getByRole('searchbox', { name: 'Search proposals' }), {
+      target: { value: 'agent' },
     });
     expect(screen.getAllByRole('listitem')).toHaveLength(1);
     expect(screen.getByText('Home')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Fechadas 0' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Closed 0' }));
     expect(screen.queryAllByRole('listitem')).toHaveLength(0);
-    expect(screen.getByText('Nenhuma proposta com este filtro.')).toBeTruthy();
+    expect(screen.getByText('No proposal matches this filter.')).toBeTruthy();
   });
 });
 
-describe('aviso de proposta nova', () => {
-  it('aparece quando a pasta traz uma proposta nova, com Revisar', async () => {
+describe('new proposal notice', () => {
+  it('appears when the folder brings a new proposal, with Review', async () => {
     const h = await openReviewHarness({ skipProposals: true });
     renderInEditor(h, <ProposalNotices />);
     expect(screen.queryByRole('status')).toBeNull();
@@ -220,16 +220,16 @@ describe('aviso de proposta nova', () => {
       await h.session.proposals.scan();
     });
     const notice = screen.getByRole('status');
-    expect(within(notice).getByText('Nova proposta')).toBeTruthy();
+    expect(within(notice).getByText('New proposal')).toBeTruthy();
     expect(within(notice).getByText('Checkout')).toBeTruthy();
-    fireEvent.click(within(notice).getByRole('button', { name: 'Revisar' }));
+    fireEvent.click(within(notice).getByRole('button', { name: 'Review' }));
     expect(h.review.proposalId.value).toBe('P1');
     expect(h.session.proposals.notices.value).toEqual([]);
   });
 
-  // Fase 8.2 (P4): abrir a proposta por qualquer caminho tira o aviso dela da fila (ação
-  // do store), e ele não volta ao sair da revisão.
-  it('some ao abrir a proposta pela janela Propostas e não volta ao sair da revisão', async () => {
+  // Phase 8.2 (P4): opening the proposal by any path removes its notice from the queue (store
+  // action), and it does not come back when leaving the review.
+  it('disappears when opening the proposal from the Proposals window and does not come back on leaving the review', async () => {
     const h = await openReviewHarness({ skipProposals: true });
     renderInEditor(
       h,
@@ -243,7 +243,7 @@ describe('aviso de proposta nova', () => {
       await h.session.proposals.scan();
     });
     expect(screen.getByRole('status')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Revisar: Checkout' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Review: Checkout' }));
     expect(h.review.proposalId.value).toBe('P1');
     expect(screen.queryByRole('status')).toBeNull();
     act(() => h.review.close());
@@ -254,35 +254,35 @@ describe('aviso de proposta nova', () => {
 
 describe('formatWhen', () => {
   const now = new Date(2026, 9, 9, 15, 0);
-  it('hoje, ontem e data curta', () => {
-    expect(formatWhen(new Date(2026, 9, 9, 9, 40).toISOString(), now, 'pt-BR')).toBe(
-      'hoje 09:40',
+  it('today, yesterday and short date', () => {
+    expect(formatWhen(new Date(2026, 9, 9, 9, 40).toISOString(), now, 'en-US')).toBe(
+      'today 09:40 AM',
     );
-    expect(formatWhen(new Date(2026, 9, 8, 18, 12).toISOString(), now, 'pt-BR')).toBe(
-      'ontem 18:12',
+    expect(formatWhen(new Date(2026, 9, 8, 18, 12).toISOString(), now, 'en-US')).toBe(
+      'yesterday 06:12 PM',
     );
-    expect(formatWhen(new Date(2026, 9, 6, 8, 0).toISOString(), now, 'pt-BR')).toBe(
-      '06/10',
+    expect(formatWhen(new Date(2026, 9, 6, 8, 0).toISOString(), now, 'en-US')).toBe(
+      '10/06',
     );
-    expect(formatWhen(new Date(2025, 9, 6, 8, 0).toISOString(), now, 'pt-BR')).toBe(
-      '06/10/2025',
+    expect(formatWhen(new Date(2025, 9, 6, 8, 0).toISOString(), now, 'en-US')).toBe(
+      '10/06/2025',
     );
   });
 });
 
-// Fase 9.2: menu ⋯ "Apagar proposta…" só nas linhas fechadas, com confirmação e foco.
-describe('apagar proposta pelo menu ⋯ (fase 9.2)', () => {
-  /** P1 aberta, P2 retirada e P3 aplicada: a lista mostra P1, P2, P3 nessa ordem. */
+// Phase 9.2: ⋯ menu "Delete proposal…" only on closed rows, with confirmation and focus.
+describe('delete proposal from the ⋯ menu (phase 9.2)', () => {
+  /** P1 open, P2 withdrawn and P3 applied: the list shows P1, P2, P3 in that order. */
   async function threeProposals() {
-    const open = { ...richScenario('P1').proposal, title: 'Aberta' };
+    const open = { ...richScenario('P1').proposal, title: 'Open one' };
     const withdrawn: Proposal = {
       ...richScenario('P2').proposal,
-      title: 'Retirada pelo agente',
+      title: 'Withdrawn by the agent',
       status: 'withdrawn',
     };
     const applied: Proposal = {
       ...richScenario('P3').proposal,
-      title: 'Já aplicada',
+      title: 'Already applied',
       status: 'applied',
     };
     const h = await openReviewHarness({
@@ -297,33 +297,33 @@ describe('apagar proposta pelo menu ⋯ (fase 9.2)', () => {
     const row = screen
       .getAllByRole('listitem')
       .find((r) => r.getAttribute('data-proposal') === id);
-    if (!row) throw new Error(`linha ${id}`);
+    if (!row) throw new Error(`row ${id}`);
     return row;
   };
   const menuOf = (id: string) =>
-    within(rowOf(id)).queryByRole('button', { name: /^Ações da proposta:/ });
+    within(rowOf(id)).queryByRole('button', { name: /^Proposal actions:/ });
   const actionOf = (id: string) =>
-    within(rowOf(id)).getByRole('button', { name: /^(Revisar|Continuar|Ver):/ });
+    within(rowOf(id)).getByRole('button', { name: /^(Review|Continue|View):/ });
 
   async function askToRemove(user: ReturnType<typeof userEvent.setup>, id: string) {
     const trigger = menuOf(id);
-    if (!trigger) throw new Error(`sem menu em ${id}`);
+    if (!trigger) throw new Error(`no menu on ${id}`);
     await user.click(trigger);
-    await user.click(screen.getByRole('menuitem', { name: 'Apagar proposta…' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Delete proposal…' }));
     return trigger;
   }
 
-  it('o menu ⋯ só existe nas linhas fechadas: a aberta não tem a ação', async () => {
+  it('the ⋯ menu only exists on closed rows: the open one has no such action', async () => {
     await threeProposals();
     expect(menuOf('P1')).toBeNull();
     expect(menuOf('P2')).not.toBeNull();
     expect(menuOf('P3')).not.toBeNull();
     expect(menuOf('P2')?.getAttribute('aria-label')).toBe(
-      'Ações da proposta: Retirada pelo agente',
+      'Proposal actions: Withdrawn by the agent',
     );
   });
 
-  it('durante a revisão a ação não existe (a janela mostra os níveis, não a lista)', async () => {
+  it('during the review the action does not exist (the window shows the levels, not the list)', async () => {
     const h = await threeProposals();
     cleanup();
     renderInEditor(h, <ProposalsWindow onHelp={noop} />);
@@ -332,11 +332,11 @@ describe('apagar proposta pelo menu ⋯ (fase 9.2)', () => {
       h.review.open('P1');
     });
     expect(screen.queryAllByRole('listitem')).toHaveLength(0);
-    expect(screen.queryByRole('button', { name: /^Ações da proposta:/ })).toBeNull();
-    expect(screen.queryByText('Apagar proposta…')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Proposal actions:/ })).toBeNull();
+    expect(screen.queryByText('Delete proposal…')).toBeNull();
   });
 
-  it('a confirmação é um alertdialog com o título e o aviso; Cancelar não apaga e devolve o foco ao ⋯', async () => {
+  it('the confirmation is an alertdialog with the title and the warning; Cancel does not delete and returns focus to the ⋯', async () => {
     const h = await threeProposals();
     const user = userEvent.setup();
     const trigger = await askToRemove(user, 'P3');
@@ -344,13 +344,13 @@ describe('apagar proposta pelo menu ⋯ (fase 9.2)', () => {
     const dialog = document.querySelector('dialog') as HTMLElement;
     expect(dialog.getAttribute('role')).toBe('alertdialog');
     const body = document.getElementById(dialog.getAttribute('aria-describedby') ?? '');
-    expect(body?.textContent).toContain('"Já aplicada"');
-    expect(body?.textContent).toContain('Isso não pode ser desfeito');
-    // A aplicada avisa que o projeto não perde as mudanças já aplicadas.
-    expect(body?.textContent).toContain('As mudanças já aplicadas continuam no projeto');
+    expect(body?.textContent).toContain('"Already applied"');
+    expect(body?.textContent).toContain('This cannot be undone');
+    // The applied one warns that the project does not lose the changes already applied.
+    expect(body?.textContent).toContain('The changes already applied stay in the project');
 
     await user.click(
-      within(dialog).getByRole('button', { name: 'Cancelar', hidden: true }),
+      within(dialog).getByRole('button', { name: 'Cancel', hidden: true }),
     );
     await waitFor(() => expect(document.querySelector('dialog')).toBeNull());
     expect(await diskProposal(h.root, 'P3')).toMatchObject({ id: 'P3' });
@@ -358,54 +358,54 @@ describe('apagar proposta pelo menu ⋯ (fase 9.2)', () => {
     await waitFor(() => expect(document.activeElement).toBe(trigger));
   });
 
-  it('a retirada não leva o aviso das mudanças aplicadas', async () => {
+  it('the withdrawn one does not carry the applied-changes warning', async () => {
     await threeProposals();
     const user = userEvent.setup();
     await askToRemove(user, 'P2');
     const dialog = document.querySelector('dialog') as HTMLElement;
-    expect(dialog.textContent).toContain('"Retirada pelo agente"');
-    expect(dialog.textContent).not.toContain('já aplicadas');
+    expect(dialog.textContent).toContain('"Withdrawn by the agent"');
+    expect(dialog.textContent).not.toContain('already applied');
   });
 
-  it('Apagar: tira a pasta do disco, a linha some sem aviso "apagada por fora", há um aviso e o foco vai à ação da linha seguinte', async () => {
+  it('Delete: removes the folder from disk, the row disappears without a "deleted outside" notice, there is a toast and focus goes to the action of the next row', async () => {
     const h = await threeProposals();
     const user = userEvent.setup();
     await askToRemove(user, 'P2');
     const dialog = document.querySelector('dialog') as HTMLElement;
     await user.click(
-      within(dialog).getByRole('button', { name: 'Apagar', hidden: true }),
+      within(dialog).getByRole('button', { name: 'Delete', hidden: true }),
     );
 
     await waitFor(() => expect(screen.getAllByRole('listitem')).toHaveLength(2));
-    expect(screen.queryByText('Retirada pelo agente')).toBeNull();
+    expect(screen.queryByText('Withdrawn by the agent')).toBeNull();
     expect(h.root.dirs.get('proposals')?.dirs.has('P2')).toBe(false);
     expect(await h.root.read('proposals/P2/images/nova.webp')).toBeNull();
     expect(h.session.proposals.notices.value).toEqual([]);
-    expect(h.ui.toast.value).toBe('Proposta apagada: Retirada pelo agente');
+    expect(h.ui.toast.value).toBe('Proposal deleted: Withdrawn by the agent');
     await waitFor(() => expect(document.querySelector('dialog')).toBeNull());
-    // Ocupou o lugar dela a P3.
+    // P3 took its place.
     await waitFor(() => expect(document.activeElement).toBe(actionOf('P3')));
-    // A conferência seguinte da pasta também não avisa nada.
+    // The next folder check does not warn about anything either.
     await h.session.proposals.scan();
     expect(h.session.proposals.notices.value).toEqual([]);
   });
 
-  it('apagar a última linha leva o foco à anterior', async () => {
+  it('deleting the last row moves focus to the previous one', async () => {
     await threeProposals();
     const user = userEvent.setup();
     await askToRemove(user, 'P3');
     const dialog = document.querySelector('dialog') as HTMLElement;
     await user.click(
-      within(dialog).getByRole('button', { name: 'Apagar', hidden: true }),
+      within(dialog).getByRole('button', { name: 'Delete', hidden: true }),
     );
     await waitFor(() => expect(screen.getAllByRole('listitem')).toHaveLength(2));
     await waitFor(() => expect(document.activeElement).toBe(actionOf('P2')));
   });
 
-  it('apagar a única proposta mostra o estado vazio e o foco fica nele', async () => {
+  it('deleting the only proposal shows the empty state and focus stays on it', async () => {
     const only: Proposal = {
       ...richScenario('P1').proposal,
-      title: 'Única',
+      title: 'Only one',
       status: 'withdrawn',
     };
     const h = await openReviewHarness({ proposals: [only] });
@@ -414,53 +414,53 @@ describe('apagar proposta pelo menu ⋯ (fase 9.2)', () => {
     await askToRemove(user, 'P1');
     const dialog = document.querySelector('dialog') as HTMLElement;
     await user.click(
-      within(dialog).getByRole('button', { name: 'Apagar', hidden: true }),
+      within(dialog).getByRole('button', { name: 'Delete', hidden: true }),
     );
-    await screen.findByRole('heading', { name: 'Nenhuma proposta ainda' });
+    await screen.findByRole('heading', { name: 'No proposals yet' });
     await waitFor(() => expect(document.querySelector('dialog')).toBeNull());
     await waitFor(() =>
       expect(document.activeElement).toBe(
-        screen.getByRole('button', { name: 'Como o agente envia propostas' }),
+        screen.getByRole('button', { name: 'How the agent sends proposals' }),
       ),
     );
   });
 
-  it('falha ao apagar: a linha continua, o erro vai ao aviso e o foco volta ao ⋯', async () => {
+  it('delete failure: the row stays, the error goes to the toast and focus returns to the ⋯', async () => {
     const h = await threeProposals();
-    vi.spyOn(h.storage, 'removeProposal').mockRejectedValue(new Error('sem permissão'));
+    vi.spyOn(h.storage, 'removeProposal').mockRejectedValue(new Error('no permission'));
     const user = userEvent.setup();
     const trigger = await askToRemove(user, 'P2');
     const dialog = document.querySelector('dialog') as HTMLElement;
     await user.click(
-      within(dialog).getByRole('button', { name: 'Apagar', hidden: true }),
+      within(dialog).getByRole('button', { name: 'Delete', hidden: true }),
     );
     await waitFor(() =>
-      expect(h.ui.toast.value).toBe('Não foi possível apagar a proposta.'),
+      expect(h.ui.toast.value).toBe('The proposal could not be deleted.'),
     );
     expect(screen.getAllByRole('listitem')).toHaveLength(3);
     expect(await diskProposal(h.root, 'P2')).toMatchObject({ id: 'P2' });
     await waitFor(() => expect(document.activeElement).toBe(trigger));
   });
 
-  it('se o agente reabriu a proposta por fora, a confirmação recusa e explica', async () => {
+  it('if the agent reopened the proposal outside, the confirmation refuses and explains', async () => {
     const h = await threeProposals();
     const user = userEvent.setup();
     await askToRemove(user, 'P2');
-    // O arquivo volta a estar aberto antes do clique em Apagar.
+    // The file is open again before the Delete click.
     writeOutside(h.root, {
       ...richScenario('P2').proposal,
-      title: 'Reaberta',
+      title: 'Reopened',
       revision: 3,
     });
     const dialog = document.querySelector('dialog') as HTMLElement;
     await user.click(
-      within(dialog).getByRole('button', { name: 'Apagar', hidden: true }),
+      within(dialog).getByRole('button', { name: 'Delete', hidden: true }),
     );
-    await waitFor(() => expect(h.ui.toast.value).toContain('Esta proposta está aberta'));
+    await waitFor(() => expect(h.ui.toast.value).toContain('This proposal is open'));
     expect(await diskProposal(h.root, 'P2')).toMatchObject({ status: 'open' });
   });
 
-  it('projeto somente leitura: o menu fica desabilitado', async () => {
+  it('read-only project: the menu is disabled', async () => {
     const h = await threeProposals();
     act(() => {
       const project = h.session.store.project.value;

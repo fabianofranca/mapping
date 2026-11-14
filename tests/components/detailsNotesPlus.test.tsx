@@ -9,10 +9,11 @@ import { emptyProject } from '../model/fixtures';
 import { notesProject, withNoteInstance } from '../model/notesFixtures';
 import { createHarness, renderLive, type Harness } from './harness';
 
-// O + da camada Notas nos Detalhes (etapa #1280, decisões 4 a 6).
+// The + of the Notes layer in the Details (stage #1280, decisions 4 to 6).
+// pt-BR kept: names of the bundled notes library (layer 'Notas', types 'Nota' and 'Tabela'), asserted by the test
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
@@ -21,7 +22,7 @@ const emptyMessage = () => t('typed.empty.floating');
 function renderPanel(harness: Harness, markingId: string, ownerKind?: 'arrow') {
   renderLive(harness, (p) => {
     const marking = p.markings.find((m) => m.id === markingId);
-    if (!marking) throw new Error('sem marcação');
+    if (!marking) throw new Error('no marking');
     return (
       <AnnotationsPanel
         project={p}
@@ -50,8 +51,8 @@ function plainMarking() {
 const plusOfNotes = () =>
   screen.getByRole('button', { name: t('annotation.addIn', { layer: 'Notas' }) });
 
-describe('+ da camada Notas', () => {
-  it('numa marcação comum não oferece Nota nem Tabela e diz que a nota nasce pela Paleta', async () => {
+describe('+ of the Notes layer', () => {
+  it('on a plain marking it offers neither Note nor Table and says the note comes from the Palette', async () => {
     const harness = createHarness(plainMarking());
     const user = renderPanel(harness, 'M1');
     await user.click(plusOfNotes());
@@ -61,14 +62,14 @@ describe('+ da camada Notas', () => {
     expect(within(dialog).queryByRole('button', { name: /^Tabela/ })).toBeNull();
   });
 
-  it('numa seta, a mesma mensagem', async () => {
+  it('on an arrow, the same message', async () => {
     const harness = createHarness(plainMarking());
     const user = renderPanel(harness, 'M1', 'arrow');
     await user.click(plusOfNotes());
     expect(screen.getByText(emptyMessage())).toBeTruthy();
   });
 
-  it('numa marcação flutuante (a Nota), continua oferecendo os tipos', async () => {
+  it('on a floating marking (the Note), it still offers the types', async () => {
     const harness = createHarness(withNoteInstance(emptyProject()));
     const user = renderPanel(harness, 'N1');
     await user.click(plusOfNotes());

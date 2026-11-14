@@ -19,18 +19,18 @@ import {
 afterEach(cleanup);
 
 describe('Button', () => {
-  it('é type="button" por padrão e leva a variante e o tamanho nas classes', () => {
+  it('is type="button" by default and carries the variant and the size in the classes', () => {
     render(
       <Button variant="danger" size="sm" class="extra">
-        Excluir
+        Delete
       </Button>,
     );
-    const button = screen.getByRole('button', { name: 'Excluir' });
+    const button = screen.getByRole('button', { name: 'Delete' });
     expect(button.getAttribute('type')).toBe('button');
     expect(button.className).toBe('button button-danger button-sm extra');
   });
 
-  it('desabilitado não dispara o clique', async () => {
+  it('disabled does not fire the click', async () => {
     const onClick = vi.fn();
     render(
       <Button disabled onClick={onClick}>
@@ -43,38 +43,38 @@ describe('Button', () => {
 });
 
 describe('IconButton', () => {
-  it('só com ícone: o rótulo é o nome acessível e vai para a dica com o atalho', () => {
+  it('icon only: the label is the accessible name and goes to the tooltip with the shortcut', () => {
     const { container } = render(
-      <IconButton icon="undo" label="Desfazer" shortcut="Ctrl+Z" />,
+      <IconButton icon="undo" label="Undo" shortcut="Ctrl+Z" />,
     );
-    const button = screen.getByRole('button', { name: 'Desfazer' });
-    // Etapa 8 (8.3), F5: o atributo na sintaxe ARIA; o rótulo humano fica na dica.
+    const button = screen.getByRole('button', { name: 'Undo' });
+    // Stage 8 (8.3), F5: the attribute in ARIA syntax; the human label stays in the tooltip.
     expect(button.getAttribute('aria-keyshortcuts')).toBe('Control+Z');
     expect(button.querySelector('svg')).not.toBeNull();
     const tip = container.querySelector('.tooltip');
-    expect(tip?.textContent).toContain('Desfazer');
+    expect(tip?.textContent).toContain('Undo');
     expect(tip?.querySelector('kbd')?.textContent).toBe('Ctrl+Z');
-    // A dica é decorativa: não duplica o nome para leitores de tela.
+    // The tooltip is decorative: it does not duplicate the name for screen readers.
     expect(tip?.getAttribute('aria-hidden')).toBe('true');
   });
 
-  it('com texto visível, o nome vem do texto; a dica pode ter outro texto', () => {
+  it('with visible text, the name comes from the text; the tooltip can have other text', () => {
     const { container } = render(
-      <IconButton icon="list" label="Mostrar lista" text="Lista" tooltip="Outra dica" />,
+      <IconButton icon="list" label="Show list" text="List" tooltip="Another tip" />,
     );
-    expect(screen.getByRole('button', { name: 'Lista' })).toBeTruthy();
-    expect(container.querySelector('.tooltip')?.textContent).toBe('Outra dica');
+    expect(screen.getByRole('button', { name: 'List' })).toBeTruthy();
+    expect(container.querySelector('.tooltip')?.textContent).toBe('Another tip');
   });
 
-  it('alternância usa aria-pressed', () => {
-    render(<IconButton icon="text" label="Texto" pressed />);
+  it('toggle uses aria-pressed', () => {
+    render(<IconButton icon="text" label="Text" pressed />);
     expect(
-      screen.getByRole('button', { name: 'Texto' }).getAttribute('aria-pressed'),
+      screen.getByRole('button', { name: 'Text' }).getAttribute('aria-pressed'),
     ).toBe('true');
   });
 
-  it('Esc dispensa a dica sem tirar o foco', async () => {
-    const { container } = render(<IconButton icon="undo" label="Desfazer" />);
+  it('Esc dismisses the tooltip without taking the focus', async () => {
+    const { container } = render(<IconButton icon="undo" label="Undo" />);
     const user = userEvent.setup();
     await user.tab();
     const anchor = container.querySelector('.tooltip-anchor');
@@ -84,37 +84,37 @@ describe('IconButton', () => {
     expect(document.activeElement).toBe(screen.getByRole('button'));
   });
 
-  // Etapa 6 (6.4), achados 2 e 6: a dica fica fora do fluxo (posição fixa, calculada ao
-  // aparecer) e dentro da janela do navegador, sem ser cortada pela borda do painel.
-  it('a dica se posiciona na tela ao passar o mouse, sem sair pela borda', () => {
+  // Stage 6 (6.4), findings 2 and 6: the tooltip stays out of the flow (fixed position, computed
+  // when it appears) and inside the browser window, without being cut by the panel edge.
+  it('the tooltip positions itself on screen on hover, without leaving through the edge', () => {
     const { container } = render(
-      <IconButton icon="undo" label="Mostrar Classe · Contato" />,
+      <IconButton icon="undo" label="Show Class · Contact" />,
     );
     const anchor = container.querySelector<HTMLElement>('.tooltip-anchor');
     const tip = container.querySelector<HTMLElement>('.tooltip');
-    if (!anchor || !tip) throw new Error('sem dica');
+    if (!anchor || !tip) throw new Error('no tooltip');
     vi.spyOn(anchor, 'getBoundingClientRect').mockReturnValue(
       DOMRect.fromRect({ x: 2, y: 100, width: 24, height: 24 }),
     );
     vi.spyOn(tip, 'offsetWidth', 'get').mockReturnValue(160);
     vi.spyOn(tip, 'offsetHeight', 'get').mockReturnValue(20);
     fireEvent.pointerEnter(anchor);
-    // Centrada no botão iria para x = 14 − 80 < 0: fica encostada na margem da janela.
+    // Centered on the button it would go to x = 14 − 80 < 0: it sticks to the window margin.
     expect(tip.style.left).toBe('8px');
     expect(tip.style.top).toBe('128px');
   });
 
-  // #497 (AC1): na faixa lateral a dica sai ao lado do botão, e não embaixo, onde cobria o
-  // conteúdo da janela aberta.
-  it('placement="end" põe a dica à direita do controle, centrada na vertical', () => {
+  // #497 (AC1): on the side strip the tooltip comes out beside the button, not below, where it
+  // covered the content of the open window.
+  it('placement="end" puts the tooltip to the right of the control, vertically centered', () => {
     const { container } = render(
-      <Tooltip label="Catálogo" placement="end">
+      <Tooltip label="Catalog" placement="end">
         <button type="button">x</button>
       </Tooltip>,
     );
     const anchor = container.querySelector<HTMLElement>('.tooltip-anchor');
     const tip = container.querySelector<HTMLElement>('.tooltip');
-    if (!anchor || !tip) throw new Error('sem dica');
+    if (!anchor || !tip) throw new Error('no tooltip');
     expect(anchor.className).toContain('tooltip-end');
     vi.spyOn(anchor, 'getBoundingClientRect').mockReturnValue(
       DOMRect.fromRect({ x: 2, y: 100, width: 36, height: 28 }),
@@ -122,20 +122,20 @@ describe('IconButton', () => {
     vi.spyOn(tip, 'offsetWidth', 'get').mockReturnValue(80);
     vi.spyOn(tip, 'offsetHeight', 'get').mockReturnValue(20);
     fireEvent.pointerEnter(anchor);
-    // Direita do botão (2 + 36) mais o espaço (4); centro vertical 100 + 14 − 10.
+    // Right of the button (2 + 36) plus the gap (4); vertical center 100 + 14 − 10.
     expect(tip.style.left).toBe('42px');
     expect(tip.style.top).toBe('104px');
   });
 
-  it('placement="end" fica dentro da janela: sem espaço à direita, vai para a esquerda', () => {
+  it('placement="end" stays inside the window: with no room on the right, it goes to the left', () => {
     const { container } = render(
-      <Tooltip label="Propriedades" placement="end">
+      <Tooltip label="Properties" placement="end">
         <button type="button">x</button>
       </Tooltip>,
     );
     const anchor = container.querySelector<HTMLElement>('.tooltip-anchor');
     const tip = container.querySelector<HTMLElement>('.tooltip');
-    if (!anchor || !tip) throw new Error('sem dica');
+    if (!anchor || !tip) throw new Error('no tooltip');
     const width = globalThis.innerWidth;
     vi.spyOn(anchor, 'getBoundingClientRect').mockReturnValue(
       DOMRect.fromRect({ x: width - 38, y: 100, width: 36, height: 28 }),
@@ -143,26 +143,26 @@ describe('IconButton', () => {
     vi.spyOn(tip, 'offsetWidth', 'get').mockReturnValue(120);
     vi.spyOn(tip, 'offsetHeight', 'get').mockReturnValue(20);
     fireEvent.pointerEnter(anchor);
-    // À direita não cabe: a dica sai pela esquerda do botão (x − 4 − 120).
+    // It does not fit on the right: the tooltip comes out on the left of the button (x − 4 − 120).
     expect(tip.style.left).toBe(`${width - 38 - 4 - 120}px`);
     expect(tip.style.top).toBe('104px');
   });
 });
 
 describe('TextField', () => {
-  it('com rótulo, o campo fica dentro do label', () => {
-    render(<TextField label="Nome" value="a" onInput={() => undefined} />);
-    expect(screen.getByLabelText<HTMLInputElement>('Nome').value).toBe('a');
+  it('with a label, the field stays inside the label', () => {
+    render(<TextField label="Name" value="a" onInput={() => undefined} />);
+    expect(screen.getByLabelText<HTMLInputElement>('Name').value).toBe('a');
   });
 
-  it('inválido marca a classe e aria-invalid', () => {
+  it('invalid marks the class and aria-invalid', () => {
     render(<TextField aria-label="x" value="" invalid onInput={() => undefined} />);
     const input = screen.getByLabelText('x');
     expect(input.className).toContain('input-invalid');
     expect(input.getAttribute('aria-invalid')).toBe('true');
   });
 
-  it('com onCommit só grava ao confirmar', async () => {
+  it('with onCommit it only saves on confirming', async () => {
     const onCommit = vi.fn(() => true);
     render(<TextField aria-label="x" value="a" onCommit={onCommit} />);
     const user = userEvent.setup();
@@ -174,7 +174,7 @@ describe('TextField', () => {
     expect(onCommit).toHaveBeenCalledWith('b');
   });
 
-  it('inputRef dá acesso ao <input>', () => {
+  it('inputRef gives access to the <input>', () => {
     const ref: { current: HTMLInputElement | null } = { current: null };
     render(
       <TextField aria-label="x" value="" inputRef={ref} onInput={() => undefined} />,
@@ -184,15 +184,15 @@ describe('TextField', () => {
 });
 
 describe('Select', () => {
-  it('troca de opção e esconde a seta decorativa dos leitores de tela', async () => {
+  it('changes the option and hides the decorative arrow from screen readers', async () => {
     const onChange = vi.fn();
     const { container } = render(
-      <Select label="Tema" value="a" onChange={(e) => onChange(e.currentTarget.value)}>
+      <Select label="Theme" value="a" onChange={(e) => onChange(e.currentTarget.value)}>
         <option value="a">A</option>
         <option value="b">B</option>
       </Select>,
     );
-    await userEvent.setup().selectOptions(screen.getByLabelText('Tema'), 'b');
+    await userEvent.setup().selectOptions(screen.getByLabelText('Theme'), 'b');
     expect(onChange).toHaveBeenCalledWith('b');
     expect(container.querySelector('.select-chevron')?.getAttribute('aria-hidden')).toBe(
       'true',
@@ -201,24 +201,24 @@ describe('Select', () => {
 });
 
 describe('Choice', () => {
-  it('o rótulo e a dica ficam no mesmo label e o clique no texto marca', async () => {
+  it('the label and the hint stay in the same label and clicking the text checks it', async () => {
     const onChange = vi.fn();
     render(
       <Choice
-        label="Texto"
-        hint="dica"
+        label="Text"
+        hint="hint"
         onChange={(e) => onChange(e.currentTarget.checked)}
       />,
     );
-    const box = screen.getByLabelText<HTMLInputElement>(/Texto/);
+    const box = screen.getByLabelText<HTMLInputElement>(/Text/);
     expect(box.type).toBe('checkbox');
-    await userEvent.setup().click(screen.getByText('Texto'));
+    await userEvent.setup().click(screen.getByText('Text'));
     expect(onChange).toHaveBeenCalledWith(true);
   });
 
-  it('rádio', () => {
-    render(<Choice type="radio" name="g" label="Um" />);
-    expect(screen.getByRole('radio', { name: 'Um' })).toBeTruthy();
+  it('radio', () => {
+    render(<Choice type="radio" name="g" label="One" />);
+    expect(screen.getByRole('radio', { name: 'One' })).toBeTruthy();
   });
 });
 
@@ -228,17 +228,17 @@ describe('Segmented', () => {
     { id: 'b', label: 'B', disabled: true },
   ];
 
-  it('marca o escolhido com aria-pressed e chama onSelect (inclusive no já escolhido)', async () => {
+  it('marks the chosen one with aria-pressed and calls onSelect (including on the already chosen one)', async () => {
     const onSelect = vi.fn();
-    render(<Segmented items={items} value="a" label="Grupo" onSelect={onSelect} />);
-    expect(screen.getByRole('group', { name: 'Grupo' })).toBeTruthy();
+    render(<Segmented items={items} value="a" label="Group" onSelect={onSelect} />);
+    expect(screen.getByRole('group', { name: 'Group' })).toBeTruthy();
     const a = screen.getByRole('button', { name: 'A' });
     expect(a.getAttribute('aria-pressed')).toBe('true');
     await userEvent.setup().click(a);
     expect(onSelect).toHaveBeenCalledWith('a');
   });
 
-  it('item desabilitado e grupo desabilitado não respondem', async () => {
+  it('disabled item and disabled group do not respond', async () => {
     const onSelect = vi.fn();
     const { rerender } = render(
       <Segmented items={items} value={null} onSelect={onSelect} />,
@@ -249,16 +249,16 @@ describe('Segmented', () => {
     expect(screen.getByRole('button', { name: 'A' }).hasAttribute('disabled')).toBe(true);
   });
 
-  it('item só com ícone tem nome acessível e dica', () => {
+  it('icon-only item has an accessible name and tooltip', () => {
     const { container } = render(
       <Segmented
-        items={[{ id: 'a', label: 'Navegar', icon: 'pan' }]}
+        items={[{ id: 'a', label: 'Navigate', icon: 'pan' }]}
         value="a"
         onSelect={() => undefined}
       />,
     );
-    expect(screen.getByRole('button', { name: 'Navegar' })).toBeTruthy();
-    expect(container.querySelector('.tooltip')?.textContent).toBe('Navegar');
+    expect(screen.getByRole('button', { name: 'Navigate' })).toBeTruthy();
+    expect(container.querySelector('.tooltip')?.textContent).toBe('Navigate');
   });
 });
 
@@ -267,7 +267,7 @@ describe('Tabs', () => {
     const [value, setValue] = useState<'a' | 'b' | 'c'>('a');
     return (
       <Tabs
-        label="Abas"
+        label="Tabs"
         value={value}
         onChange={(id) => {
           setValue(id);
@@ -282,13 +282,13 @@ describe('Tabs', () => {
     );
   }
 
-  it('só a aba escolhida entra na ordem do Tab', () => {
+  it('only the chosen tab enters the Tab order', () => {
     render(<Harness />);
     expect(screen.getByRole('tab', { name: 'A' }).getAttribute('tabindex')).toBe('0');
     expect(screen.getByRole('tab', { name: 'C' }).getAttribute('tabindex')).toBe('-1');
   });
 
-  it('setas, Home e End movem o foco e a seleção, pulando abas desabilitadas', () => {
+  it('arrows, Home and End move the focus and the selection, skipping disabled tabs', () => {
     render(<Harness />);
     const a = screen.getByRole('tab', { name: 'A' });
     const c = screen.getByRole('tab', { name: 'C' });
@@ -304,7 +304,7 @@ describe('Tabs', () => {
     expect(a.getAttribute('aria-selected')).toBe('true');
   });
 
-  it('reage ao redimensionamento da lista e desconecta no cleanup', () => {
+  it('reacts to the list resizing and disconnects on cleanup', () => {
     let notify: () => void = () => undefined;
     const disconnect = vi.fn();
     class FakeObserver {
@@ -326,19 +326,19 @@ describe('Tabs', () => {
       Object.defineProperty(HTMLElement.prototype, key, {
         configurable: true,
         get(this: HTMLElement) {
-          // Só as abas têm geometria; a lista fica em 0.
+          // Only the tabs have geometry; the list stays at 0.
           return this.getAttribute('role') === 'tab' ? value : 0;
         },
       });
     try {
       const { unmount } = render(<Harness />);
       const list = screen.getByRole('tablist');
-      // Faixa larga: a aba escolhida (300 a 380) já cabe, nada rola.
+      // Wide strip: the chosen tab (300 to 380) already fits, nothing scrolls.
       Object.defineProperty(list, 'clientWidth', { configurable: true, value: 500 });
       list.scrollLeft = 0;
       notify();
       expect(list.scrollLeft).toBe(0);
-      // Janela estreitada depois: a faixa passa a 200 e a aba escolhida volta à vista.
+      // Window narrowed afterwards: the strip becomes 200 and the chosen tab comes back into view.
       Object.defineProperty(list, 'clientWidth', { configurable: true, value: 200 });
       notify();
       expect(list.scrollLeft).toBe(180);
@@ -353,7 +353,7 @@ describe('Tabs', () => {
     }
   });
 
-  it('clique troca a aba', async () => {
+  it('click switches the tab', async () => {
     const onChange = vi.fn();
     render(<Harness onChange={onChange} />);
     await userEvent.setup().click(screen.getByRole('tab', { name: 'C' }));
@@ -361,84 +361,84 @@ describe('Tabs', () => {
   });
 });
 
-// Variantes da revisão de propostas (HANDOFF-PROPOSALS 2.2).
-describe('variantes da revisão', () => {
-  it('Button accept/reject e fantasma', () => {
+// Variants of the proposal review (HANDOFF-PROPOSALS 2.2).
+describe('review variants', () => {
+  it('Button accept/reject and ghost', () => {
     render(
       <>
         <Button variant="accept" aria-pressed={true}>
-          Aceitar item
+          Accept item
         </Button>
-        <Button variant="reject">Rejeitar item</Button>
-        <Button variant="ghost">Sair</Button>
+        <Button variant="reject">Reject item</Button>
+        <Button variant="ghost">Leave</Button>
       </>,
     );
-    const accept = screen.getByRole('button', { name: 'Aceitar item' });
+    const accept = screen.getByRole('button', { name: 'Accept item' });
     expect(accept.className).toBe('button button-accept');
     expect(accept.getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByRole('button', { name: 'Rejeitar item' }).className).toBe(
+    expect(screen.getByRole('button', { name: 'Reject item' }).className).toBe(
       'button button-reject',
     );
-    expect(screen.getByRole('button', { name: 'Sair' }).className).toBe(
+    expect(screen.getByRole('button', { name: 'Leave' }).className).toBe(
       'button button-ghost',
     );
   });
 
-  it('IconButton accept/reject compacto e com selo numérico', () => {
+  it('IconButton accept/reject compact and with a numeric badge', () => {
     render(
       <>
-        <IconButton icon="check" variant="accept" size="sm" label="Aceitar" />
-        <IconButton icon="proposal" label="Propostas" badge="2" />
+        <IconButton icon="check" variant="accept" size="sm" label="Accept" />
+        <IconButton icon="proposal" label="Proposals" badge="2" />
       </>,
     );
-    expect(screen.getByRole('button', { name: 'Aceitar' }).className).toBe(
+    expect(screen.getByRole('button', { name: 'Accept' }).className).toBe(
       'icon-button icon-button-accept icon-button-sm',
     );
-    const proposals = screen.getByRole('button', { name: 'Propostas' });
+    const proposals = screen.getByRole('button', { name: 'Proposals' });
     expect(proposals.querySelector('.icon-button-badge')?.textContent).toBe('2');
   });
 
-  it('Tabs com contador informativo', () => {
+  it('Tabs with an informative counter', () => {
     render(
       <Tabs
-        label="Janelas"
+        label="Windows"
         value="a"
         onChange={() => {}}
         tabs={[
-          { id: 'a', label: 'Lista', badge: '3' },
-          { id: 'b', label: 'Propostas', badge: '1', badgeTone: 'info' },
+          { id: 'a', label: 'List', badge: '3' },
+          { id: 'b', label: 'Proposals', badge: '1', badgeTone: 'info' },
         ]}
       />,
     );
     expect(
-      screen.getByRole('tab', { name: /^Propostas/ }).querySelector('.tab-badge-info'),
+      screen.getByRole('tab', { name: /^Proposals/ }).querySelector('.tab-badge-info'),
     ).toBeTruthy();
     expect(
-      screen.getByRole('tab', { name: /^Lista/ }).querySelector('.tab-badge-info'),
+      screen.getByRole('tab', { name: /^List/ }).querySelector('.tab-badge-info'),
     ).toBeNull();
   });
 
-  it('TextArea: várias linhas, grava ao sair do campo', () => {
+  it('TextArea: several lines, saves on leaving the field', () => {
     const onCommit = vi.fn();
-    render(<TextArea aria-label="Nota" value="" onCommit={onCommit} />);
-    const area = screen.getByRole('textbox', { name: 'Nota' });
+    render(<TextArea aria-label="Note" value="" onCommit={onCommit} />);
+    const area = screen.getByRole('textbox', { name: 'Note' });
     expect(area.tagName).toBe('TEXTAREA');
     expect(area.className).toBe('input input-area');
-    fireEvent.input(area, { target: { value: 'linha 1\nlinha 2' } });
+    fireEvent.input(area, { target: { value: 'line 1\nline 2' } });
     fireEvent.blur(area);
-    expect(onCommit).toHaveBeenCalledWith('linha 1\nlinha 2');
+    expect(onCommit).toHaveBeenCalledWith('line 1\nline 2');
   });
 });
 
 describe('LinkButton', () => {
-  it('é um <a> com a aparência do botão, abre em outra aba e leva o ícone', () => {
+  it('is an <a> with the button look, opens in another tab and carries the icon', () => {
     render(
       <LinkButton href="guia/index.html" class="extra">
         <Icon name="info" />
-        Abrir guia
+        Open guide
       </LinkButton>,
     );
-    const link = screen.getByRole('link', { name: 'Abrir guia' });
+    const link = screen.getByRole('link', { name: 'Open guide' });
     expect(link.tagName).toBe('A');
     expect(link.className).toBe('button extra');
     expect(link.getAttribute('href')).toBe('guia/index.html');

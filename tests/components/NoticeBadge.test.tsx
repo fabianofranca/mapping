@@ -7,35 +7,36 @@ import { NoticeBadge, TypeNoticeBadge } from '../../src/ui/NoticeBadge';
 import { noticeSpec } from './noticeFixtures';
 
 beforeEach(() => {
-  locale.value = 'pt-BR';
+  locale.value = 'en-US';
 });
 afterEach(cleanup);
 
 const KINDS: readonly [SpecNoticeKind, string, string][] = [
-  ['removed', 'Removido', 'blocked'],
-  ['deprecated', 'Obsoleto', 'warning'],
-  ['diverges', 'Diverge', 'compare'],
-  ['pending', 'Pendente', 'info'],
+  ['removed', 'Removed', 'blocked'],
+  ['deprecated', 'Deprecated', 'warning'],
+  ['diverges', 'Diverges', 'compare'],
+  ['pending', 'Pending', 'info'],
 ];
 
 describe('NoticeBadge', () => {
-  it.each(KINDS)('%s: rótulo, classe, dica e nome acessível', (kind, label) => {
-    render(<NoticeBadge notice={{ kind, message: 'a mensagem' }} />);
-    const badge = screen.getByRole('img', { name: `Aviso ${label}: a mensagem` });
+  it.each(KINDS)('%s: label, class, tip and accessible name', (kind, label) => {
+    render(<NoticeBadge notice={{ kind, message: 'the message' }} />);
+    const badge = screen.getByRole('img', { name: `Notice ${label}: the message` });
     expect(badge.classList.contains('notice-badge')).toBe(true);
     expect(badge.classList.contains(`notice-${kind}`)).toBe(true);
     expect(badge.textContent).toContain(label);
     expect(badge.querySelector('svg.icon')).not.toBeNull();
-    expect(document.querySelector('[data-tooltip]')?.textContent).toBe('a mensagem');
+    expect(document.querySelector('[data-tooltip]')?.textContent).toBe('the message');
   });
 
-  it('em inglês usa o rótulo em inglês', () => {
-    locale.value = 'en-US';
+  it('in pt-BR it uses the Portuguese label', () => {
+    locale.value = 'pt-BR';
     render(<NoticeBadge notice={{ kind: 'removed', message: 'gone' }} />);
-    expect(screen.getByRole('img', { name: 'Notice Removed: gone' })).toBeTruthy();
+    // pt-BR kept: the object of the test is the Portuguese label of the badge
+    expect(screen.getByRole('img', { name: 'Aviso Removido: gone' })).toBeTruthy();
   });
 
-  it('o ícone de cada kind é distinto', () => {
+  it('the icon of each kind is distinct', () => {
     const paths = KINDS.map(([kind]) => {
       render(<NoticeBadge notice={{ kind, message: 'm' }} />);
       const d = [...document.querySelectorAll('svg.icon path')]
@@ -51,22 +52,23 @@ describe('NoticeBadge', () => {
 describe('TypeNoticeBadge', () => {
   const types = () => noticeSpec().layers[0]?.annotationTypes ?? [];
 
-  it('mostra a maior gravidade entre o tipo, os campos e as colunas, e lista todos na dica', () => {
+  it('shows the highest severity among the type, the fields and the columns, and lists all in the tip', () => {
     const alert = types().find((x) => x.id === 'alert');
-    if (!alert) throw new Error('sem alert');
+    if (!alert) throw new Error('no alert');
     render(<TypeNoticeBadge type={alert} />);
-    // deprecated (campo) e diverges (coluna) vencem o pending do tipo; empate: deprecated.
-    const badge = screen.getByRole('img', { name: /^Aviso Obsoleto: Use variant\./ });
+    // deprecated (field) and diverges (column) beat the type's pending; tie: deprecated.
+    const badge = screen.getByRole('img', { name: /^Notice Deprecated: Use variant\./ });
     expect(badge.textContent).toContain(t('notice.kind.deprecated'));
     const tip = document.querySelector('[data-tooltip]')?.textContent ?? '';
     expect(tip).toContain('Use variant.');
+    // pt-BR kept: shared fixture data asserted by tests/model, tests/components (messages of noticeFixtures)
     expect(tip).toContain('Nome diferente no contrato.');
     expect(tip).toContain('O contrato aceita avatarVariant');
   });
 
-  it('não renderiza nada num tipo sem aviso', () => {
+  it('renders nothing on a type without a notice', () => {
     const plain = types().find((x) => x.id === 'plain');
-    if (!plain) throw new Error('sem plain');
+    if (!plain) throw new Error('no plain');
     const { container } = render(<TypeNoticeBadge type={plain} />);
     expect(container.innerHTML).toBe('');
     expect(within(container as HTMLElement).queryByRole('img')).toBeNull();
