@@ -1,32 +1,32 @@
 # FAB
 
-Botão de ação flutuante de 56 px, com o ícone de mais ou de anel. O anel usa a regra de preenchimento par-ímpar.
+Floating action button of 56 px, with the plus or the ring icon. The ring uses the even-odd fill rule.
 
-Tipo de anotação: `sdui-fab` (FAB).
+Annotation type: `sdui-fab` (FAB).
 
-## Tamanho
+## Size
 
-- Inicial: 56 × 56 px
-- Mínimo: 40 × 40 px
-- Dimensionamento: largura 56, altura 56
+- Initial: 56 × 56 px
+- Minimum: 40 × 40 px
+- Sizing: width 56, height 56
 
-## Campos
+## Fields
 
-| Chave   | Rótulo | Tipo | Obrigatório | Opções             | Padrão  |
-| ------- | ------ | ---- | ----------- | ------------------ | ------- |
-| `icon`  | Icon   | enum | não         | add, ring          | add     |
-| `color` | Color  | enum | sim         | primary, secondary | primary |
+| Key     | Label | Type | Required | Options            | Default |
+| ------- | ----- | ---- | -------- | ------------------ | ------- |
+| `icon`  | Icon  | enum | no       | add, ring          | add     |
+| `color` | Color | enum | yes      | primary, secondary | primary |
 
-## Exemplos
+## Examples
 
-- **Mais**: icon=add, color=primary
-- **Anel**: icon=ring, color=secondary
+- **Plus**: icon=add, color=primary
+- **Ring**: icon=ring, color=secondary
 
-## Origem externa
+## External origin
 
-- Sistema `sdui`: tipo externo `FAB`
+- System `sdui`: external type `FAB`
 
-| Campo   | Caminho em `props` |
-| ------- | ------------------ |
-| `icon`  | `icon`             |
-| `color` | `color`            |
+| Field   | Path in `props` |
+| ------- | --------------- |
+| `icon`  | `icon`          |
+| `color` | `color`         |

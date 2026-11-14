@@ -431,7 +431,7 @@ describe('review variants', () => {
 describe('LinkButton', () => {
   it('is an <a> with the button look, opens in another tab and carries the icon', () => {
     render(
-      <LinkButton href="guia/index.html" class="extra">
+      <LinkButton href="guide/index.html" class="extra">
         <Icon name="info" />
         Open guide
       </LinkButton>,
@@ -439,7 +439,7 @@ describe('LinkButton', () => {
     const link = screen.getByRole('link', { name: 'Open guide' });
     expect(link.tagName).toBe('A');
     expect(link.className).toBe('button extra');
-    expect(link.getAttribute('href')).toBe('guia/index.html');
+    expect(link.getAttribute('href')).toBe('guide/index.html');
     expect(link.getAttribute('target')).toBe('_blank');
     expect(link.getAttribute('rel')).toBe('noopener noreferrer');
     expect(link.querySelector('svg.icon')).not.toBeNull();

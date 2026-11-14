@@ -23,7 +23,7 @@ import { emptyProject } from './fixtures';
 
 // pt-BR kept: shared fixture data asserted by tests/mcp, tests/components, tests/store, tests/storage, tests/app and tests/model (Portuguese marking names, field keys and values, layer ids)
 
-export function loadExample(name: 'sdui' | 'modelo-de-dados' | 'papeis-migracao'): Spec {
+export function loadExample(name: 'sdui' | 'data-model' | 'roles-migration'): Spec {
   // From the project root: in the jsdom environment, `import.meta.url` is not `file:`.
   const text = readFileSync(
     join(process.cwd(), 'examples', 'specs', `${name}.json`),
@@ -67,7 +67,7 @@ export function specProject(): Project {
   let p = emptyProject();
   p = addLayer(p, { id: 'LM', name: 'Model', color: '#757575' });
   p = applySpecialization(p, loadLegacySdui(), { newId: idGen('LS') });
-  p = applySpecialization(p, loadExample('modelo-de-dados'), { newId: idGen('LD') });
+  p = applySpecialization(p, loadExample('data-model'), { newId: idGen('LD') });
   return p;
 }
 
@@ -89,7 +89,7 @@ function typed(
     onHold: 'eventos',
     onChange: 'eventos',
     screen: 'telas',
-    classe: 'classes',
+    class: 'classes',
     endpoint: 'endpoints',
   };
   const layerId = layerOf(p, specId, layers[typeId] ?? '');
@@ -110,7 +110,7 @@ function typed(
  * Sign-up screen of the 13.9 script (steps 2 to 7): Formulário › Nome, Idade,
  * E-mail, Cadastrar; and Título. Annotations:
  * - AU (Model, free, Formulário): User with EN `name: string` and EA `age: number`;
- * - AC (Classe, Formulário): Contato, with the row R1 `email` in `atributos`;
+ * - AC (Class, Formulário): Contato, with the row R1 `email` in `attributes`;
  * - AIN/AII/AIE: Inputs with `dado` → User.name, User.age and Contato.email;
  * - AB: Button of Cadastrar, with AOC (onClick) and AOH (onHold) linked;
  * - AT: Text of the Título with an empty `id` (incomplete);
@@ -177,14 +177,14 @@ export function cadastroProject(): Project {
       { id: 'EA', key: 'age', value: 'number' },
     ],
   });
-  p = typed(p, 'AC', 'MF', 'modelo-dados', 'classe', {
-    nome: 'Contato',
-    revisadoEm: '2026-10-02',
+  p = typed(p, 'AC', 'MF', 'data-model', 'class', {
+    name: 'Contato',
+    reviewedAt: '2026-10-02',
   });
-  p = addTableRow(p, 'AC', 'atributos', 'R1');
-  p = setTableCell(p, 'AC', 'atributos', 'R1', 'nome', 'email');
-  p = setTableCell(p, 'AC', 'atributos', 'R1', 'tipo', 'String');
-  p = setTableCell(p, 'AC', 'atributos', 'R1', 'exemplo', 'ana@exemplo.com');
+  p = addTableRow(p, 'AC', 'attributes', 'R1');
+  p = setTableCell(p, 'AC', 'attributes', 'R1', 'name', 'email');
+  p = setTableCell(p, 'AC', 'attributes', 'R1', 'type', 'String');
+  p = setTableCell(p, 'AC', 'attributes', 'R1', 'example', 'ana@exemplo.com');
 
   p = typed(p, 'AIN', 'MN', 'sdui', 'input', {
     id: 'input_nome',
@@ -199,7 +199,7 @@ export function cadastroProject(): Project {
     id: 'input_email',
     tipo: 'email',
     obrigatorio: 'sim',
-    dado: { annotationId: 'AC', key: 'atributos', rowId: 'R1' },
+    dado: { annotationId: 'AC', key: 'attributes', rowId: 'R1' },
   });
   p = typed(p, 'AB', 'MC', 'sdui', 'button', { id: 'btn_cadastrar', texto: 'Cadastrar' });
   p = typed(p, 'AT', 'MT', 'sdui', 'text', { conteudo: 'Crie sua conta' });
@@ -226,8 +226,8 @@ export function cadastroProject(): Project {
     { acao: 'validate', regra: 'email' },
     'AIE',
   );
-  p = typed(p, 'AE', 'MF', 'modelo-dados', 'endpoint', {
-    metodo: 'POST',
+  p = typed(p, 'AE', 'MF', 'data-model', 'endpoint', {
+    method: 'POST',
     path: '/v1/usuarios',
     request: 'User',
     response: 'User',

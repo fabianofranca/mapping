@@ -16,7 +16,7 @@ import { comboText, shortcutGroups, type KeyCombo } from './shortcutList';
 export const HELP_SHORTCUTS = 'shortcuts';
 /** Id of the proposals section ("How the agent sends proposals"). */
 export const HELP_PROPOSALS = 'proposals';
-/** Id of the interactive guide section (`guia/` page, opened in another tab). */
+/** Id of the interactive guide section (`guide/` page, opened in another tab). */
 export const HELP_GUIDE = 'guide';
 
 function Block({ block }: { readonly block: HelpBlock }) {

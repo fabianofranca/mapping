@@ -391,7 +391,7 @@ describe('HelpDialog', () => {
       name: t('help.guide.open'),
       hidden: true,
     });
-    expect(open.getAttribute('href')).toBe('guia/index.html');
+    expect(open.getAttribute('href')).toBe('guide/index.html');
     expect(open.getAttribute('target')).toBe('_blank');
     expect(open.getAttribute('rel')).toContain('noopener');
     expect(within(section).getByText(t('help.guide.example'))).toBeTruthy();

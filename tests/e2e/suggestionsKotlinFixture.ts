@@ -20,19 +20,18 @@ import {
 } from '../../src/model';
 import { solidPng } from './png';
 
-// Text-field Suggestions stage: the "Sugestões Kotlin" project (Kotlin library applied and
+// Text-field Suggestions stage: the "Kotlin Suggestions" project (Kotlin library applied and
 // two data classes) for script R14 of `docs/TESTING.md`. The zip comes from here
 // (`scripts/suggestionsKotlin.mjs`) and the test `tests/examples/suggestionsKotlin.test.ts`
-// checks that `examples/sugestoes-kotlin.zip` is up to date.
+// checks that `examples/suggestions-kotlin.zip` is up to date.
 
-// pt-BR kept: shared fixture data (project name, 'Usuario'/'Endereco' names, layer 'Notas') asserted by tests/examples (examples/sugestoes-kotlin.zip byte check)
 export const PACKAGE_DIR = 'libraries/kotlin';
 export const NOW = '2026-10-28T12:00:00.000Z';
 /** Fixed date on the zip entries: the same content always generates the same bytes. */
 const ENTRY_DATE = new Date('2026-10-28T00:00:00Z');
-export const IMAGE_FILE = 'images/telas.png';
-export const NAMES = { user: 'Usuario', address: 'Endereco' } as const;
-export const ANNOTATION_IDS = { user: 'A_USUARIO', address: 'A_ENDERECO' } as const;
+export const IMAGE_FILE = 'images/screens.png';
+export const NAMES = { user: 'User', address: 'Address' } as const;
+export const ANNOTATION_IDS = { user: 'A_USER', address: 'A_ADDRESS' } as const;
 
 /** All text files of the Kotlin package (relative path → text), sorted. */
 export function packageTexts(): Map<string, string> {
@@ -66,28 +65,28 @@ const PROPERTIES: Record<
 > = {
   user: [
     { name: 'id', type: 'Long' },
-    { name: 'nome', type: 'String' },
+    { name: 'name', type: 'String' },
     { name: 'email', type: 'String?' },
-    { name: 'endereco', type: 'Endereco' },
-    // Tipo vazio: o roteiro R14 o preenche.
-    { name: 'ativo', type: null },
+    { name: 'address', type: 'Address' },
+    // Empty type: script R14 fills it in.
+    { name: 'active', type: null },
   ],
   address: [
-    { name: 'rua', type: 'String' },
-    { name: 'cidade', type: 'String' },
+    { name: 'street', type: 'String' },
+    { name: 'city', type: 'String' },
   ],
 };
 
-/** The project: image, applied Kotlin library and the data classes `Usuario` and `Endereco`. */
+/** The project: image, applied Kotlin library and the data classes `User` and `Address`. */
 export function project(): Project {
   const spec = loadKotlinSpec();
   const texts = packageTexts();
   let n = 0;
   let p = createProject({
     id: '00000000-0000-4000-8000-000000000e2e',
-    name: 'Sugestões Kotlin',
+    name: 'Kotlin Suggestions',
     now: NOW,
-    firstLayer: { id: 'L1', name: 'Notas', color: '#1e88e5' },
+    firstLayer: { id: 'L1', name: 'Notes', color: '#1e88e5' },
   });
   p = applySpecialization(p, spec, {
     newId: () => `LS${++n}`,
@@ -106,8 +105,8 @@ export function project(): Project {
     ],
   ]);
   for (const [key, name, markingId, x, y] of [
-    ['user', NAMES.user, 'M_USUARIO', 220, 300],
-    ['address', NAMES.address, 'M_ENDERECO', 580, 300],
+    ['user', NAMES.user, 'M_USER', 220, 300],
+    ['address', NAMES.address, 'M_ADDRESS', 580, 300],
   ] as const) {
     const annotationId = ANNOTATION_IDS[key];
     p = addComponentMarking(
@@ -151,7 +150,7 @@ export function files(): Map<string, string | Buffer> {
   return out;
 }
 
-/** The bytes of `examples/sugestoes-kotlin.zip` (deterministic). */
+/** The bytes of `examples/suggestions-kotlin.zip` (deterministic). */
 export async function suggestionsZip(): Promise<Buffer> {
   const all = files();
   const zip = new JSZip();

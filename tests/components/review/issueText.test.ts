@@ -16,6 +16,5 @@ it('missing-image: readable text, without the internal code', () => {
     changeIds: [],
     related: [],
   });
-  // pt-BR kept: shared fixture data asserted by tests/e2e (marking name Cabeçalho from proposalFixture)
-  expect(text).toBe('Cabeçalho depends on an image that is not in the project.');
+  expect(text).toBe('Header depends on an image that is not in the project.');
 });

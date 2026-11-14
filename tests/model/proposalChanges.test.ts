@@ -315,20 +315,20 @@ describe('change computation: annotations', () => {
 
   it('type change (annotation converted to free): one `type` change with values and entries', () => {
     const base = cadastroProject();
-    const after = removeSpecialization(base, 'modelo-dados', 'convert', {
+    const after = removeSpecialization(base, 'data-model', 'convert', {
       newId: idGen('X'),
     });
     const p = propose(base, after);
     const change = changeOf(p, 'annotation', 'AC', 'type');
     expect(change.from).toMatchObject({
-      type: { specId: 'modelo-dados', typeId: 'classe' },
+      type: { specId: 'data-model', typeId: 'class' },
       entries: [],
     });
     expect(change.to).toMatchObject({ type: null, values: null });
     expect(
       p.changes.some((c) => c.entityId === 'AC' && c.field?.startsWith('values.')),
     ).toBe(false);
-    expect(changeOf(p, 'specialization', 'modelo-dados').kind).toBe('remove');
+    expect(changeOf(p, 'specialization', 'data-model').kind).toBe('remove');
   });
 });
 

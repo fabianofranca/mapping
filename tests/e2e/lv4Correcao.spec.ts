@@ -66,8 +66,7 @@ test('Review at 900 px: X, Y, W and H fit the digits of 3- to 4-digit values', a
     .getByRole('button', { name: /^Review/ })
     .first()
     .click();
-  // pt-BR kept: shared fixture data asserted by tests/e2e/proposalFixture.ts (marking name 'Botão Pagar')
-  await page.locator('.tree-row', { hasText: 'Botão P' }).click();
+  await page.locator('.tree-row', { hasText: 'Pay b' }).click();
   const panel = page.locator('.review-details-panel');
   await expect(panel).toBeVisible();
   const fields = panel.locator('.props-pair-item .input');

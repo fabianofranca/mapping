@@ -7,7 +7,7 @@ coverage
 dist-mcp
 dist-viewer
 dist-viewer-demo
-examples/exemplo-completo/specs/
+examples/full-example/specs/
 .cache
 .vitest
 __pycache__/

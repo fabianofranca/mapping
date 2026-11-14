@@ -55,17 +55,17 @@ function declarations(file: string): Declaration[] {
 }
 
 /**
- * The `<style>` of the interactive guide (`scripts/guia/template.html`) is also part of the scan
+ * The `<style>` of the interactive guide (`scripts/guide/template.html`) is also part of the scan
  * (stage #971, decision 12). The `@media` breakpoints stay (CSS does not accept `var()` there).
  */
 function guideDeclarations(): Declaration[] {
-  const html = readFileSync('scripts/guia/template.html', 'utf8');
+  const html = readFileSync('scripts/guide/template.html', 'utf8');
   const css = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)]
     .map((m) => m[1] ?? '')
     .join('\n')
     .replaceAll(/\/\*[\s\S]*?\*\//g, '');
   return [...css.matchAll(/([a-z-]+)\s*:\s*([^;{}]+);/g)].map((m) => ({
-    file: 'scripts/guia/template.html',
+    file: 'scripts/guide/template.html',
     property: m[1]!,
     // The `0px` fallback of `env()` (safe area) is not a design value.
     value: m[2]!

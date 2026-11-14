@@ -34,7 +34,7 @@ let mcp: Connection;
 beforeAll(async () => {
   root = mkdtempSync(join(tmpdir(), 'mapping-spec-'));
   mkdirSync(join(root, 'fontes'), { recursive: true });
-  for (const name of ['sdui', 'modelo-de-dados']) {
+  for (const name of ['sdui', 'data-model']) {
     copyFileSync(
       join('examples', 'specs', `${name}.json`),
       join(root, 'fontes', `${name}.json`),
@@ -88,7 +88,7 @@ const text = (spec: Json) => JSON.stringify(spec);
 
 describe('valid files', () => {
   it('the repository examples are valid, with the summary and without errors', async () => {
-    for (const name of ['sdui', 'modelo-de-dados']) {
+    for (const name of ['sdui', 'data-model']) {
       const result = ok(
         await mcp.call<Validated>('validate_specialization', {
           path: `fontes/${name}.json`,

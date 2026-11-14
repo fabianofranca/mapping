@@ -7,9 +7,8 @@ import {
 } from './proposalFixture';
 
 // Stage 4 (phase 4.4): review and partially apply a proposal.
-// The example zip (the same as examples/proposta-exemplo.zip) brings the project "Loja" with
-// the proposal "Checkout a partir do Figma"; nothing here depends on the agent.
-// pt-BR kept: shared fixture data (marking, image and proposal names) asserted by tests/e2e/proposalFixture.ts
+// The example zip (the same as examples/proposal-example.zip) brings the project "Store" with
+// the proposal "Checkout from Figma"; nothing here depends on the agent.
 
 const NOTE = 'The old header name was right.';
 
@@ -54,16 +53,16 @@ test('review and partially apply a proposal', async ({ page }) => {
   await expect(page.getByText('Read-only').first()).toBeVisible();
 
   // Accepts the new image (with its marking) and the new item; rejects the header.
-  await row(page, 'Confirmação')
+  await row(page, 'Confirmation')
     .getByRole('button', { name: /^Accept/ })
     .click();
-  await row(page, 'Campo Cupom')
+  await row(page, 'Coupon field')
     .getByRole('button', { name: /^Accept/ })
     .click();
-  await row(page, 'Cabeçalho')
+  await row(page, 'Header')
     .getByRole('button', { name: /^Reject/ })
     .click();
-  await row(page, 'Cabeçalho').click();
+  await row(page, 'Header').click();
 
   // The rejection note lives in Details: the header's note button opens the field, which
   // saves when leaving it.
@@ -92,13 +91,13 @@ test('review and partially apply a proposal', async ({ page }) => {
     (await zip.file('mapping.json')?.async('string')) ?? '{}',
   ) as MappingJson;
   const image = mapping.containers.find((i) => i.id === 'I3');
-  expect(image?.file).toBe('images/confirmacao.png');
-  expect(zip.file('images/confirmacao.png')).not.toBeNull();
+  expect(image?.file).toBe('images/confirmation.png');
+  expect(zip.file('images/confirmation.png')).not.toBeNull();
   const markings = new Map(mapping.markings.map((m) => [m.id, m]));
   expect(markings.has('M7')).toBe(true);
   expect(markings.has('M8')).toBe(true);
   // Rejected and undecided ones stay as they were.
-  expect(markings.get('M1')?.name).toBe('Cabeçalho');
+  expect(markings.get('M1')?.name).toBe('Header');
   expect(markings.has('M5')).toBe(true);
   expect(mapping.layers.some((l) => l.id === 'L2')).toBe(false);
   expect(mapping.annotations.some((a) => a.id === 'A7')).toBe(true);
@@ -134,14 +133,14 @@ test('deciding through Details: the item header, the field popover and the keybo
     .click();
 
   // The header decides the whole item (the created marking and annotation).
-  await row(page, 'Campo Cupom').click();
+  await row(page, 'Coupon field').click();
   const header = page.getByRole('region', { name: 'Decision' });
   await expect(header.getByText('Marking created')).toBeVisible();
-  await header.getByRole('button', { name: /^Accept [^:]+: Campo Cupom$/ }).click();
+  await header.getByRole('button', { name: /^Accept [^:]+: Coupon field$/ }).click();
   await expect(header.getByText('2 accepted, 0 rejected, 0 undecided')).toBeVisible();
 
   // The field popover decides only the field; it stays open showing the decision.
-  await row(page, 'Cabeçalho').click();
+  await row(page, 'Header').click();
   const mark = page.getByRole('button', { name: /^Name: changed/ });
   await mark.click();
   const popover = page.getByRole('dialog', { name: 'Name · changed' });
@@ -168,7 +167,7 @@ test('rejecting the creation through the marker takes the annotation along; Undo
     .getByRole('button', { name: /^Review/ })
     .first()
     .click();
-  await row(page, 'Campo Cupom').click();
+  await row(page, 'Coupon field').click();
   const header = page.getByRole('region', { name: 'Decision' });
 
   // The "+" marker is part of the creation: the panel says to decide in the header, and `R` with
@@ -215,7 +214,7 @@ async function openCreatedAnnotation(page: Page) {
     .getByRole('button', { name: /^Review/ })
     .first()
     .click();
-  await row(page, 'Campo Cupom').click();
+  await row(page, 'Coupon field').click();
   return page.locator('[data-annotation]').first();
 }
 

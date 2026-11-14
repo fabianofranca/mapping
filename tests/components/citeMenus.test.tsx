@@ -23,7 +23,7 @@ import { annotationOf, createHarness, renderLive, type Harness } from './harness
 
 // Cite in the thread, Comment and Copy reference in the menus (CM5, decision 32): simple typed
 // field (new ⋯ menu), pair, row, annotation, Tree item, canvas menu, layer and thread.
-// pt-BR kept: shared fixture data asserted by tests/model (cadastroProject field keys 'texto', 'atributos'; sampleProject names 'Maçaneta', 'Amassado', 'images/frente.jpg'; harness folder 'projeto')
+// pt-BR kept: shared fixture data asserted by tests/model (cadastroProject field key 'texto'; sampleProject names 'Maçaneta', 'Amassado', 'images/frente.jpg'; harness folder 'projeto')
 
 const disposers: (() => void)[] = [];
 const insert = vi.fn();
@@ -283,7 +283,7 @@ describe('row (TableField)', () => {
     renderLive(harness, (p: Project) => {
       const annotation = annotationOf(p, 'AC');
       const field = typeOfAnnotation(p, annotation)?.type.fields.find(
-        (f) => f.key === 'atributos',
+        (f) => f.key === 'attributes',
       );
       if (!field) throw new Error('no table');
       return (
@@ -301,7 +301,7 @@ describe('row (TableField)', () => {
 
   it('exposes the table and the row to the DOM', () => {
     renderTable(createHarness(cadastroProject()));
-    const field = document.querySelector('[data-field="atributos"]');
+    const field = document.querySelector('[data-field="attributes"]');
     expect(field).not.toBeNull();
     expect(field?.querySelector('[data-row-id="R1"]')).not.toBeNull();
   });
@@ -321,7 +321,7 @@ describe('row (TableField)', () => {
     await user.click(within(menu).getByRole('menuitem', { name: t('copy.reference') }));
     await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
     expect(parseAnyRef(urlOf(writeText))).toMatchObject({
-      ref: { type: 'row', key: 'atributos' },
+      ref: { type: 'row', key: 'attributes' },
     });
 
     await user.click(more());
@@ -329,7 +329,7 @@ describe('row (TableField)', () => {
     expect(insert).toHaveBeenCalledWith({
       kind: 'row',
       annotationId: 'AC',
-      key: 'atributos',
+      key: 'attributes',
       rowId: 'R1',
     });
 
@@ -338,7 +338,7 @@ describe('row (TableField)', () => {
     expect(harness.ui.composing.value?.anchor).toEqual({
       kind: 'row',
       annotationId: 'AC',
-      key: 'atributos',
+      key: 'attributes',
       rowId: 'R1',
     });
   });

@@ -304,10 +304,10 @@ describe('SpecsDialog', () => {
       .mockImplementation(() => {});
     await user.click(screen.getByRole('button', { name: 'Update version…' }));
     click.mockRestore();
-    choose(exampleText('modelo-de-dados'));
+    choose(exampleText('data-model'));
     const dialog = await dialogTitled('Invalid specialization file');
     expect(
-      within(dialog).getByText(/is for specialization "modelo-dados", not "sdui"/),
+      within(dialog).getByText(/is for specialization "data-model", not "sdui"/),
     ).toBeTruthy();
     expect(harness.project().specializations.map((s) => s.id)).toEqual(['sdui']);
   });

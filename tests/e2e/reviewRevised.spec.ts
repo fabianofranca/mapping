@@ -20,7 +20,6 @@ import {
 // CP3 (#644): the agent's revision in the app. "Fixture 5" is written here: the sample
 // proposal, with the header rename rejected, a note on the banner removal, and then
 // revised as the MCP would write it (the header name is swapped and the removal is withdrawn).
-// pt-BR kept: shared fixture data (proposalFixture names such as 'Cabeçalho do checkout', 'Botão Pagar') asserted by tests/examples and tests/store
 
 const REVISED_AT = '2026-11-07T10:00:00.000Z';
 
@@ -60,7 +59,7 @@ async function revisedZip(): Promise<Buffer> {
   expect(proposal.formatVersion).toBe(5);
   const files = fixtureFiles();
   files.set(proposalFilePath(proposal.id), serializeProposal(proposal));
-  for (const file of ['images/confirmacao.png', 'images/carrinho-v2.png'] as const) {
+  for (const file of ['images/confirmation.png', 'images/cart-v2.png'] as const) {
     files.set(proposalImagePath(proposal.id, file), FIXTURE_IMAGES[file]);
   }
   const zip = new JSZip();
@@ -105,11 +104,11 @@ test('agent revision in the app: badge, filter, before the revision and note of 
 
   // The note of the withdrawn change moved up to the proposal notes (the tree root row).
   await page
-    .getByRole('treeitem', { name: /^Checkout a partir do Figma/ })
+    .getByRole('treeitem', { name: /^Checkout from Figma/ })
     .first()
     .click();
   await expect(
-    page.getByText(/From the withdrawn change: .*Banner promoção/).first(),
+    page.getByText(/From the withdrawn change: .*Promo banner/).first(),
   ).toBeVisible();
   await expect(
     page.getByRole('textbox', { name: 'Note for the agent' }).first(),
@@ -123,7 +122,7 @@ test('agent revision in the app: badge, filter, before the revision and note of 
   await page.keyboard.press('Escape');
   const rows = page.locator('.review-row');
   await expect(renamed).toBeVisible();
-  await expect(rows.filter({ hasText: 'Botão Pagar' })).toHaveCount(0);
+  await expect(rows.filter({ hasText: 'Pay button' })).toHaveCount(0);
   expect(await rows.count()).toBeLessThan(total);
 
   // The "Before the revision" block in the details of the swapped change.
@@ -132,6 +131,6 @@ test('agent revision in the app: badge, filter, before the revision and note of 
   await expect(before).toBeVisible();
   await expect(before).toContainText('Before the revision');
   await expect(before).toContainText('The agent had proposed');
-  await expect(before).toContainText('Cabeçalho do checkout');
+  await expect(before).toContainText('Checkout header');
   await expect(before).toContainText('You had rejected');
 });

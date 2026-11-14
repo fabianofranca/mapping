@@ -60,8 +60,8 @@
     "type": "BottomSheet",
     "props": {
       "title": "Sort by",
-      "subtitle": "Escolha a ordem da lista",
-      "footer": "Cancelar"
+      "subtitle": "Choose the list order",
+      "footer": "Cancel"
     }
   }
 }

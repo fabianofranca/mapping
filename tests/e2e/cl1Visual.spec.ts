@@ -135,7 +135,7 @@ test('1.4 Tree + Details: the cut has a hint and the summary of the empty layer 
   await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   await page.keyboard.press('Control+Shift+1');
   // pt-BR kept: shared fixture data (proposalFixture.ts) asserted by other e2e specs
-  await page.locator('.tree-row', { hasText: 'Cabeçalho' }).first().click();
+  await page.locator('.tree-row', { hasText: 'Header' }).first().click();
   await page.keyboard.press('Control+Shift+3');
   await expect(page.locator('.layer-group-empty').first()).toBeVisible();
   const report = await page.evaluate(() => {

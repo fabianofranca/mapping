@@ -16,9 +16,9 @@
       "file": "specs/sdui.json"
     },
     {
-      "id": "modelo-dados",
+      "id": "data-model",
       "version": 1,
-      "file": "specs/modelo-dados.json"
+      "file": "specs/data-model.json"
     }
   ],
   "platformRepos": {},
@@ -68,7 +68,7 @@
       "name": "Classes",
       "color": "#43A047",
       "spec": {
-        "specId": "modelo-dados",
+        "specId": "data-model",
         "layerId": "classes"
       }
     },
@@ -77,7 +77,7 @@
       "name": "Endpoints",
       "color": "#8E24AA",
       "spec": {
-        "specId": "modelo-dados",
+        "specId": "data-model",
         "layerId": "endpoints"
       }
     }
@@ -233,21 +233,21 @@
       "parentAnnotationId": null,
       "parentRole": null,
       "type": {
-        "specId": "modelo-dados",
-        "typeId": "classe"
+        "specId": "data-model",
+        "typeId": "class"
       },
       "values": {
-        "nome": "Contato",
-        "descricao": null,
-        "versao": 1,
-        "revisadoEm": "2026-10-02",
-        "atributos": [
+        "name": "Contato",
+        "description": null,
+        "version": 1,
+        "reviewedAt": "2026-10-02",
+        "attributes": [
           {
             "_id": "R1",
-            "nome": "email",
-            "tipo": "String",
-            "obrigatorio": "sim",
-            "exemplo": "ana@exemplo.com"
+            "name": "email",
+            "type": "String",
+            "required": "yes",
+            "example": "ana@exemplo.com"
           }
         ]
       },
@@ -320,7 +320,7 @@
         "maxLength": null,
         "dado": {
           "annotationId": "AC",
-          "key": "atributos",
+          "key": "attributes",
           "rowId": "R1"
         }
       },
@@ -417,11 +417,11 @@
       "parentAnnotationId": null,
       "parentRole": null,
       "type": {
-        "specId": "modelo-dados",
+        "specId": "data-model",
         "typeId": "endpoint"
       },
       "values": {
-        "metodo": "POST",
+        "method": "POST",
         "path": "/v1/usuarios",
         "request": "User",
         "response": "User",

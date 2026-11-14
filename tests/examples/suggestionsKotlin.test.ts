@@ -11,15 +11,15 @@ import {
   suggestionsZip,
 } from '../e2e/suggestionsKotlinFixture';
 
-// `examples/sugestoes-kotlin.zip`: a biblioteca Kotlin aplicada e as data classes `Usuario` e
-// `Endereco`, para o roteiro R14 (Sugestões no campo de texto) do docs/TESTING.md. O zip sai de
-// `tests/e2e/suggestionsKotlinFixture.ts`. Para gerar de novo: `npm run build:suggestions-kotlin`.
+// `examples/suggestions-kotlin.zip`: the Kotlin library applied and the data classes `User` and
+// `Address`, for script R14 (Text field suggestions) of docs/TESTING.md. The zip comes from
+// `tests/e2e/suggestionsKotlinFixture.ts`. To generate it again: `npm run build:suggestions-kotlin`.
 
-const EXAMPLE = 'examples/sugestoes-kotlin.zip';
-const HINT = 'Rode `npm run build:suggestions-kotlin` para regerar o zip.';
+const EXAMPLE = 'examples/suggestions-kotlin.zip';
+const HINT = 'Run `npm run build:suggestions-kotlin` to regenerate the zip.';
 
-describe('zip de exemplo das sugestões Kotlin', () => {
-  it('examples/sugestoes-kotlin.zip está em dia com o gerador', async () => {
+describe('Kotlin suggestions example zip', () => {
+  it('examples/suggestions-kotlin.zip is up to date with the generator', async () => {
     if (process.env.UPDATE_EXAMPLES === '1') {
       writeFileSync(EXAMPLE, await suggestionsZip());
     }
@@ -38,7 +38,7 @@ describe('zip de exemplo das sugestões Kotlin', () => {
     }
   });
 
-  it('o pacote specs/kotlin/ do zip é uma biblioteca válida', async () => {
+  it('the specs/kotlin/ package of the zip is a valid library', async () => {
     const zip = await JSZip.loadAsync(readFileSync(EXAMPLE));
     const prefix = 'specs/kotlin/';
     const libFiles: LibraryFile[] = [];
@@ -54,11 +54,11 @@ describe('zip de exemplo das sugestões Kotlin', () => {
     expect(report.ok).toBe(true);
   });
 
-  it('a app lê o zip: Usuario e Endereco com as propriedades e uma com Tipo vazio', async () => {
+  it('the app reads the zip: User and Address with the properties and one with an empty Type', async () => {
     const read = await readProjectZip(new Blob([readFileSync(EXAMPLE)]));
-    if (!read.ok) throw new Error(`zip ilegível: ${read.error}`);
+    if (!read.ok) throw new Error(`unreadable zip: ${read.error}`);
     const parsed = deserialize(read.files.mapping, undefined, read.files.specs);
-    if (!parsed.ok) throw new Error(`mapping.json inválido: ${parsed.error.code}`);
+    if (!parsed.ok) throw new Error(`invalid mapping.json: ${parsed.error.code}`);
     const p = parsed.project;
     expect(p.specializations.map((s) => `${s.id}@${s.version}`)).toEqual(['kotlin@3']);
     const rowsOf = (id: string) => {
@@ -72,14 +72,14 @@ describe('zip de exemplo das sugestões Kotlin', () => {
     );
     expect(rowsOf(ANNOTATION_IDS.user).map((r) => [r.name, r.type])).toEqual([
       ['id', 'Long'],
-      ['nome', 'String'],
+      ['name', 'String'],
       ['email', 'String?'],
-      ['endereco', 'Endereco'],
-      ['ativo', null],
+      ['address', 'Address'],
+      ['active', null],
     ]);
     expect(rowsOf(ANNOTATION_IDS.address).map((r) => [r.name, r.type])).toEqual([
-      ['rua', 'String'],
-      ['cidade', 'String'],
+      ['street', 'String'],
+      ['city', 'String'],
     ]);
   });
 });

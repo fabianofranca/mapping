@@ -491,7 +491,7 @@ Rules:
 
 ### Importing a measured layout (`import_measured`)
 
-When the screen already exists in a browser or in an app (a web page, a view hierarchy) and you can **measure** its rectangles, do not recreate each marking by hand: the batch's `import_measured` op reads the measured tree and translates it into `create_marking`s, each one with the annotation of the type that matched. It needs an applied specialization with an origin `kind: "measured"` (`origins`, `formatVersion` 15) and types with `sources` in that `system`; the example library is `examples/libraries/medido/` (`system` `dom`).
+When the screen already exists in a browser or in an app (a web page, a view hierarchy) and you can **measure** its rectangles, do not recreate each marking by hand: the batch's `import_measured` op reads the measured tree and translates it into `create_marking`s, each one with the annotation of the type that matched. It needs an applied specialization with an origin `kind: "measured"` (`origins`, `formatVersion` 15) and types with `sources` in that `system`; the example library is `examples/libraries/measured/` (`system` `dom`).
 
 | Parameter   | Description                                                                                                                                       |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |

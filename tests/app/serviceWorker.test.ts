@@ -73,7 +73,6 @@ function loadWorker(cacheNames: string[] = [], channel: 'main' | 'preview' = 'ma
   return { dispatch, skipWaiting, claim, stored, deleted, fetched };
 }
 
-// pt-BR kept: `guia/` is the real directory name of the interactive guide (public/guia), asserted verbatim
 describe('sw.js', () => {
   it('installs the app in the cache without activating by itself (waits for the user)', async () => {
     const worker = loadWorker();
@@ -88,9 +87,26 @@ describe('sw.js', () => {
     const worker = loadWorker();
     await worker.dispatch('install');
     const [cache] = [...worker.stored.values()];
-    expect(cache?.has('https://example.com/app/guia/index.html')).toBe(true);
+    expect(cache?.has('https://example.com/app/guide/index.html')).toBe(true);
     // Navigation to the guide (with or without index.html, with a query) comes from the cache, not the network.
-    for (const path of ['guia/', 'guia/index.html', 'guia/index.html?x=1']) {
+    for (const path of ['guide/', 'guide/index.html', 'guide/index.html?x=1']) {
+      const [response] = await worker.dispatch('fetch', {
+        request: {
+          method: 'GET',
+          mode: 'navigate',
+          url: `https://example.com/app/${path}`,
+        },
+      });
+      expect(response, path).toBe('cached');
+    }
+  });
+
+  it('the old guia/ address is cached too and serves the redirect page', async () => {
+    const worker = loadWorker();
+    await worker.dispatch('install');
+    const [cache] = [...worker.stored.values()];
+    expect(cache?.has('https://example.com/app/guia/index.html')).toBe(true);
+    for (const path of ['guia/', 'guia/index.html']) {
       const [response] = await worker.dispatch('fetch', {
         request: {
           method: 'GET',
@@ -109,7 +125,7 @@ describe('sw.js', () => {
       request: {
         method: 'GET',
         mode: 'navigate',
-        url: 'https://example.com/app/preview/guia/index.html',
+        url: 'https://example.com/app/preview/guide/index.html',
       },
     });
     expect(responses).toEqual([]);
@@ -119,7 +135,7 @@ describe('sw.js', () => {
       request: {
         method: 'GET',
         mode: 'navigate',
-        url: 'https://example.com/app/guia/',
+        url: 'https://example.com/app/guide/',
       },
     });
     expect(response).toBe('cached');

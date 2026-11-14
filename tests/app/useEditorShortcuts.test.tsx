@@ -834,7 +834,6 @@ describe('useEditorShortcuts: copy reference and crop', () => {
     // Only the URL: without the readable path (stage referencia-url, decision 1).
     // pt-BR kept: shared fixture data (project slug `projeto` of sampleProject) asserted by tests/mcp, tests/examples
     expect(text).toBe('mapping://projeto/m/m2');
-    // pt-BR kept: shared fixture data (project slug `projeto`, table `atributos`) asserted by tests/mcp, tests/examples
     expect(parseRef(text)).toEqual({ project: 'projeto', kind: 'm', code: 'm2' });
     await vi.waitFor(() =>
       expect(s.harness.ui.toast.value).toBe(t('copy.referenceDone')),
@@ -874,10 +873,8 @@ describe('useEditorShortcuts: copy reference and crop', () => {
       `web ${ITEM_CLIPBOARD_MIME}`,
     ]);
     const data = JSON.parse(await item.data[`web ${ITEM_CLIPBOARD_MIME}`]!.text());
-    // pt-BR kept: shared fixture data (project slug `projeto`, table `atributos`) asserted by tests/mcp, tests/examples
     expect(data).toMatchObject({ format: 'mapping-item', kind: 'm', project: 'projeto' });
     expect(data.item.id).toBe('M1');
-    // pt-BR kept: shared fixture data (project slug `projeto`, table `atributos`) asserted by tests/mcp, tests/examples
     expect(data.ref).toMatch(/^mapping:\/\/projeto\/m\/[0-9a-z]+$/);
     expect(await item.data['text/plain']!.text()).toBe(data.ref);
   });
@@ -925,7 +922,7 @@ describe('useEditorShortcuts: copy reference and crop', () => {
   });
 
   describe('with focus on a property (CM5, decision 32)', () => {
-    /** Card `A1` with the field `type`, the pair `E1` and a table `atributos` with one row `R1`. */
+    /** Card `A1` with the field `type`, the pair `E1` and a table `attributes` with one row `R1`. */
     function propertyCard() {
       const card = document.body.appendChild(document.createElement('div'));
       card.setAttribute('data-annotation', 'AC');
@@ -939,8 +936,7 @@ describe('useEditorShortcuts: copy reference and crop', () => {
       entry.setAttribute('data-entry', 'EN');
       const entryButton = entry.appendChild(document.createElement('button'));
       const table = card.appendChild(document.createElement('div'));
-      // pt-BR kept: shared fixture data (`atributos` table of cadastroProject) asserted by tests/mcp, tests/examples
-      table.setAttribute('data-field', 'atributos');
+      table.setAttribute('data-field', 'attributes');
       const tableButton = table.appendChild(document.createElement('button'));
       const row = table.appendChild(document.createElement('div'));
       row.setAttribute('data-row-id', 'R1');
@@ -960,12 +956,10 @@ describe('useEditorShortcuts: copy reference and crop', () => {
       expect(pressOn(fieldButton, 'c', { ctrl: true }).defaultPrevented).toBe(true);
       await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
       expect(parseAnyRef(copiedRef(writeText))).toMatchObject({
-        // pt-BR kept: shared fixture data (project slug `projeto`, table `atributos`) asserted by tests/mcp, tests/examples
         project: 'projeto',
         ref: { type: 'field', key: 'name' },
       });
       expect(copiedRef(writeText)).toMatch(
-        // pt-BR kept: shared fixture data (project slug `projeto`, table `atributos`) asserted by tests/mcp, tests/examples
         /^mapping:\/\/projeto\/a\/[0-9a-z]+\/f\/name$/,
       );
     });
@@ -978,7 +972,6 @@ describe('useEditorShortcuts: copy reference and crop', () => {
       expect(pressOn(entryButton, 'c', { ctrl: true }).defaultPrevented).toBe(true);
       await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
       expect(copiedRef(writeText)).toMatch(
-        // pt-BR kept: shared fixture data (project slug `projeto`, table `atributos`) asserted by tests/mcp, tests/examples
         /^mapping:\/\/projeto\/a\/[0-9a-z]+\/e\/[0-9a-z]+$/,
       );
       expect(s.harness.ui.toast.value).not.toBe(t('copy.failed'));
@@ -992,8 +985,7 @@ describe('useEditorShortcuts: copy reference and crop', () => {
       expect(pressOn(rowInput, 'c', { ctrl: true }).defaultPrevented).toBe(true);
       await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
       expect(copiedRef(writeText)).toMatch(
-        // pt-BR kept: shared fixture data (project slug `projeto`, table `atributos`) asserted by tests/mcp, tests/examples
-        /^mapping:\/\/projeto\/a\/[0-9a-z]+\/f\/atributos\/r\/[0-9a-z]+$/,
+        /^mapping:\/\/projeto\/a\/[0-9a-z]+\/f\/attributes\/r\/[0-9a-z]+$/,
       );
     });
 
@@ -1004,8 +996,7 @@ describe('useEditorShortcuts: copy reference and crop', () => {
       tableButton.focus();
       pressOn(tableButton, 'c', { ctrl: true });
       await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
-      // pt-BR kept: shared fixture data (project slug `projeto`, table `atributos`) asserted by tests/mcp, tests/examples
-      expect(copiedRef(writeText)).toMatch(/\/f\/atributos$/);
+      expect(copiedRef(writeText)).toMatch(/\/f\/attributes$/);
     });
 
     it('in a text field without a selection copies the property; with selected text, native copy continues', async () => {

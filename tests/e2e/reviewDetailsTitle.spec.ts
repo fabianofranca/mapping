@@ -4,7 +4,6 @@ import { fixtureZip } from './proposalFixture';
 // Review at 900×720: the Details title does not break in the middle of a word and the Slide
 // handle stays whole inside the comparison area, also with the divider at 0% and 100%.
 
-// pt-BR kept: shared fixture data (proposalFixture names such as 'Cabeçalho', 'Carrinho') asserted by tests/examples and tests/store
 test.use({ viewport: { width: 900, height: 720 } });
 
 async function openReview(page: Page) {
@@ -29,9 +28,9 @@ test('the Details title stays on a single line, without breaking the word', asyn
   page,
 }) => {
   await openReview(page);
-  await page.locator('.tree-row', { hasText: 'Cabeçalho' }).first().click();
+  await page.locator('.tree-row', { hasText: 'Header' }).first().click();
   const name = page.locator('.identity-name').first();
-  await expect(name).toContainText('Cabeçalho do checkout');
+  await expect(name).toContainText('Checkout header');
   // The name width covers the text on a single line (or the whole row): no broken word.
   const { width, natural, row } = await name.evaluate((e) => {
     const width = e.clientWidth;
@@ -45,7 +44,7 @@ test('the Details title stays on a single line, without breaking the word', asyn
 
 test('the Slide handle stays whole at 0% and at 100%', async ({ page }) => {
   await openReview(page);
-  await page.locator('.tree-row', { hasText: 'Carrinho' }).first().click();
+  await page.locator('.tree-row', { hasText: 'Cart' }).first().click();
   await page
     .getByRole('button', { name: /Image file/ })
     .first()

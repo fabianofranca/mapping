@@ -13,8 +13,7 @@ import {
 } from './helpers';
 
 const SDUI = join(process.cwd(), 'examples', 'specs', 'sdui.json');
-// pt-BR kept: the example spec file is named 'modelo-de-dados.json' (examples/specs)
-const MODELO = join(process.cwd(), 'examples', 'specs', 'modelo-de-dados.json');
+const MODELO = join(process.cwd(), 'examples', 'specs', 'data-model.json');
 
 test('new project → image → marking → annotation → zip with the mapping.json', async ({
   page,
@@ -64,7 +63,7 @@ test('new project → image → marking → annotation → zip with the mapping.
   ]);
 });
 
-test('SDUI example → Input with `dado` pointing to a free tuple', async ({ page }) => {
+test('SDUI example → Input with `data` pointing to a free tuple', async ({ page }) => {
   await createProject(page, 'SDUI project');
   await addImage(page);
   await drawMarking(page, await canvasPoint(page));
@@ -86,23 +85,21 @@ test('SDUI example → Input with `dado` pointing to a free tuple', async ({ pag
   // Input in the components layer.
   await page
     .getByRole('button', {
-      // pt-BR kept: layer name of examples/specs/sdui.json
-      name: 'Add annotation to layer Componentes',
+      name: 'Add annotation to layer Components',
     })
     .click();
   await page.getByRole('button', { name: /^Input/ }).click();
   await page.getByLabel('id', { exact: true }).fill('input_name');
   await page.getByLabel('id', { exact: true }).press('Enter');
   // Reference picker in a popup (B14): search and Enter picks.
-  // pt-BR kept: field id `dado` of examples/specs/sdui.json
-  const dado = page.getByRole('button', { name: /: dado$/ });
-  await dado.click();
+  const dataField = page.getByRole('button', { name: /: data$/ });
+  await dataField.click();
   await page.getByRole('combobox', { name: 'Search target' }).fill('name');
   await page.getByRole('combobox', { name: 'Search target' }).press('Enter');
   // A single arrow in the field: the icon (stage 7, O2); the text arrow stays in the hint.
-  await expect(dado).toContainText('User.name');
-  await expect(dado).not.toContainText('→');
-  await expect(dado.locator('xpath=..').locator('[data-tooltip]')).toContainText(
+  await expect(dataField).toContainText('User.name');
+  await expect(dataField).not.toContainText('→');
+  await expect(dataField.locator('xpath=..').locator('[data-tooltip]')).toContainText(
     /→ User\.name/,
   );
 
@@ -120,7 +117,7 @@ test('SDUI example → Input with `dado` pointing to a free tuple', async ({ pag
   expect(input?.type).toEqual({ specId: 'sdui', typeId: 'input' });
   expect(input?.values).toMatchObject({
     id: 'input_name',
-    dado: { annotationId: free?.id, entryId: free?.entries[0]?.id },
+    data: { annotationId: free?.id, entryId: free?.entries[0]?.id },
   });
 });
 
@@ -570,7 +567,7 @@ test('specialization badge inside the row with the Layers window short', async (
   }
 });
 
-test('`atributos` table without overlapping columns at the default width of Details', async ({
+test('`attributes` table without overlapping columns at the default width of Details', async ({
   page,
 }) => {
   await createProject(page, 'Table');
@@ -579,23 +576,21 @@ test('`atributos` table without overlapping columns at the default width of Deta
   await applySpecialization(page, MODELO);
   await page
     .getByRole('button', {
-      // pt-BR kept: layer and type names of examples/specs/modelo-de-dados.json
       name: 'Add annotation to layer Classes',
     })
     .click();
   await page
     .getByRole('dialog')
-    .getByRole('button', { name: /^Classe/ })
+    .getByRole('button', { name: /^Class/ })
     .click();
   const details = page.getByRole('region', { name: 'Details' });
   await details.getByRole('button', { name: '+ Row' }).click();
-  // pt-BR kept: field labels `exemplo` and `obrigatório` of examples/specs/modelo-de-dados.json
-  await details.getByLabel('exemplo (Row 1)').fill('ana@example.com');
-  await details.getByLabel('exemplo (Row 1)').press('Enter');
-  const required = details.getByRole('group', { name: 'obrigatório (Row 1)' });
+  await details.getByLabel('example (Row 1)').fill('ana@example.com');
+  await details.getByLabel('example (Row 1)').press('Enter');
+  const required = details.getByRole('group', { name: 'required (Row 1)' });
   const [seg, example] = await Promise.all([
     required.boundingBox(),
-    details.getByLabel('exemplo (Row 1)').boundingBox(),
+    details.getByLabel('example (Row 1)').boundingBox(),
   ]);
   if (!seg || !example) throw new Error('table has no size');
   expect(seg.x + seg.width).toBeLessThanOrEqual(example.x + 0.5);

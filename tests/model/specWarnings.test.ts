@@ -30,7 +30,7 @@ const LEGACY_SDUI = 'tests/fixtures/sdui-v2.json';
 
 describe('specWarnings', () => {
   it('the repository examples only have the warning for the type without code (screen)', () => {
-    expect(specWarnings(load('examples/specs/modelo-de-dados.json'))).toEqual([]);
+    expect(specWarnings(load('examples/specs/data-model.json'))).toEqual([]);
     // The SDUI declares the `repo` of the three platforms: no `path-without-repo`.
     const sdui = specWarnings(load('examples/specs/sdui.json'));
     expect(sdui).toEqual([
@@ -187,14 +187,14 @@ describe('specWarnings', () => {
   });
 
   it('without declared platforms, a type without code is not an oversight', () => {
-    const spec = load('examples/specs/modelo-de-dados.json', (raw) => {
+    const spec = load('examples/specs/data-model.json', (raw) => {
       raw.layers[0].annotationTypes[0].code = undefined;
     });
     expect(specWarnings(spec)).toEqual([]);
   });
 
   it('the old format warns', () => {
-    const spec = load('examples/specs/modelo-de-dados.json', (raw) => {
+    const spec = load('examples/specs/data-model.json', (raw) => {
       raw.format = 'mapeador-spec';
     });
     expect(specWarnings(spec)).toEqual([

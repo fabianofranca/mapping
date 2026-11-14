@@ -87,7 +87,7 @@ describe('codeBlueprint', () => {
     expect(outline(blueprint.root)).toEqual({
       Formulário: {
         // Free annotations (User) are left out; types without code come in with symbol null.
-        annotations: [{ 'Classe:-': [] }, { 'Endpoint:-': [] }, { 'Screen:-': [] }],
+        annotations: [{ 'Class:-': [] }, { 'Endpoint:-': [] }, { 'Screen:-': [] }],
         children: [
           {
             Nome: {
@@ -266,22 +266,22 @@ describe('codeBlueprint', () => {
       linked: [],
       targets: [],
     });
-    // Classe (specialization v1, without platforms): no code, with the mapping values.
-    const classe = root.annotations.find((a) => a.typeId === 'classe');
-    expect(classe).toMatchObject({
+    // Class (specialization v1, without platforms): no code, with the mapping values.
+    const classElement = root.annotations.find((a) => a.typeId === 'class');
+    expect(classElement).toMatchObject({
       symbol: null,
       params: [],
       label: 'Contato',
       values: {
-        nome: 'Contato',
-        versao: 1,
-        revisadoEm: '2026-10-02',
-        atributos: [
+        name: 'Contato',
+        version: 1,
+        reviewedAt: '2026-10-02',
+        attributes: [
           {
-            nome: 'email',
-            tipo: 'String',
-            obrigatorio: 'sim',
-            exemplo: 'ana@exemplo.com',
+            name: 'email',
+            type: 'String',
+            required: 'yes',
+            example: 'ana@exemplo.com',
           },
         ],
       },
@@ -316,7 +316,7 @@ describe('codeBlueprint', () => {
     });
     // Two specializations: `url`/`ref` from the first one that declares `repo`.
     const second = applySpecialization(
-      removeSpecialization(p, 'modelo-dados', 'convert'),
+      removeSpecialization(p, 'data-model', 'convert'),
       {
         format: 'mapping-spec',
         formatVersion: 5,

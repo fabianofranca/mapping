@@ -7,7 +7,6 @@ import { fixtureZip } from './proposalFixture';
 // target, Read-only) stay whole, the long texts shrink with ellipsis and tooltip,
 // nothing goes past the edge and schema and channel disappear; at 1440×900 they come back. jsdom has no layout.
 
-// pt-BR kept: shared fixture data (proposalFixture 'Banner promoção'; exemplo-completo 'Cadastro', 'Formulário', 'Cadastrar') asserted by tests/examples and tests/store
 const LONG_NAME = 'Order confirmation button with a name that is far too long to fit';
 
 interface ItemReport {
@@ -218,10 +217,7 @@ test.describe('readable path at 900×720 (BS3)', () => {
       .getByRole('button', { name: /^Atual$/ })
       .first()
       .click();
-    await page
-      .getByRole('button', { name: 'Banner promoção', exact: true })
-      .first()
-      .click();
+    await page.getByRole('button', { name: 'Promo banner', exact: true }).first().click();
     const m = await page.locator('.canvas-bar').evaluate((bar) => {
       const crumbs = bar.querySelector<HTMLElement>('.crumbs')!;
       const items = [...crumbs.querySelectorAll<HTMLElement>('.crumb-item')];
@@ -282,10 +278,7 @@ test.describe('at 1440×900', () => {
       .getByRole('button', { name: /^Current$/ })
       .first()
       .click();
-    await page
-      .getByRole('button', { name: 'Banner promoção', exact: true })
-      .first()
-      .click();
+    await page.getByRole('button', { name: 'Promo banner', exact: true }).first().click();
     const m = await page.locator('.crumbs').evaluate((crumbs) => {
       const items = [...crumbs.querySelectorAll<HTMLElement>('.crumb-item')];
       // How much of each name is hidden (the shrinking is proportional to `flex-shrink`).
@@ -330,28 +323,28 @@ async function openExample(page: Page): Promise<void> {
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
     .setInputFiles({
-      name: 'exemplo-completo.zip',
+      name: 'full-example.zip',
       mimeType: 'application/zip',
-      buffer: readFileSync('examples/exemplo-completo.zip'),
+      buffer: readFileSync('examples/full-example.zip'),
     });
   await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
 }
 
-async function selectCadastrar(page: Page): Promise<void> {
+async function selectRegister(page: Page): Promise<void> {
   const tree = page.getByRole('list', { name: 'Marking tree' });
-  await tree.getByRole('button', { name: 'Cadastrar', exact: true }).click();
+  await tree.getByRole('button', { name: 'Register', exact: true }).click();
 }
 
 test.describe('collapsed path at 900×720 outside the review (BC1)', () => {
   test.use({ viewport: { width: 900, height: 720 } });
 
-  test('Canvas › … › Cadastrar; Enter on the "…" opens the full path and Esc returns the focus', async ({
+  test('Canvas › … › Register; Enter on the "…" opens the full path and Esc returns the focus', async ({
     page,
   }) => {
     await openExample(page);
     for (const key of ['1', '2', '7', '3'])
       await page.keyboard.press(`Control+Shift+Digit${key}`);
-    await selectCadastrar(page);
+    await selectRegister(page);
     const more = page.getByRole('button', { name: 'Show full path' });
     await expect(more).toBeVisible();
     const m = await page.locator('.canvas-bar').evaluate((bar) => {
@@ -371,7 +364,7 @@ test.describe('collapsed path at 900×720 outside the review (BC1)', () => {
       JSON.stringify(m),
     ).toBe(true);
     expect(m.last, JSON.stringify(m)).toBeGreaterThanOrEqual(40);
-    expect(m.lastTitle).toBe('Cadastrar');
+    expect(m.lastTitle).toBe('Register');
     expect(m.barScroll, JSON.stringify(m)).toBeLessThanOrEqual(m.barClient);
     await more.focus();
     await page.keyboard.press('Enter');
@@ -379,9 +372,9 @@ test.describe('collapsed path at 900×720 outside the review (BC1)', () => {
     await expect(menu.getByRole('menuitem')).toHaveCount(4);
     await expect(menu.getByRole('menuitem')).toHaveText([
       'Canvas',
-      'Cadastro',
-      'Formulário',
-      'Cadastrar',
+      'Sign up',
+      'Form',
+      'Register',
     ]);
     await page.keyboard.press('Escape');
     await expect(menu).toBeHidden();
@@ -394,7 +387,7 @@ test.describe('full path at 1440×900 (BC1)', () => {
 
   test('without "…": all runs visible, as today', async ({ page }) => {
     await openExample(page);
-    await selectCadastrar(page);
+    await selectRegister(page);
     await expect(page.getByRole('button', { name: 'Show full path' })).toBeHidden();
     const widths = await page
       .locator('.crumbs .crumb-item')

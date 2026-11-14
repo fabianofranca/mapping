@@ -5,7 +5,6 @@ import { readFileSync } from 'node:fs';
 // layer header fits in the label, the + stays in view and the Details gain no horizontal
 // scrollbar (#372, SN3).
 
-// pt-BR kept: shared fixture data (exemplo-completo names such as 'Dados da conta', 'Componentes M3') asserted by tests/examples
 test.use({ viewport: { width: 900, height: 720 } });
 
 async function revealHiddenLayer(page: Page): Promise<Locator> {
@@ -13,9 +12,9 @@ async function revealHiddenLayer(page: Page): Promise<Locator> {
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
     .setInputFiles({
-      name: 'exemplo-completo.zip',
+      name: 'full-example.zip',
       mimeType: 'application/zip',
-      buffer: readFileSync('examples/exemplo-completo.zip'),
+      buffer: readFileSync('examples/full-example.zip'),
     });
   await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   // Tree, Proposals and Details open; Layers is the left window.
@@ -23,7 +22,7 @@ async function revealHiddenLayer(page: Page): Promise<Locator> {
   await page.keyboard.press('Control+Shift+Digit7');
   await page.keyboard.press('Control+Shift+Digit2');
   await page
-    .getByRole('button', { name: 'Review: Tela de Perfil e ajuste no Cadastro' })
+    .getByRole('button', { name: 'Review: Profile screen and Sign up tweak' })
     .click();
   await expect(page.getByText('Read-only').first()).toBeVisible();
 
@@ -37,12 +36,12 @@ async function revealHiddenLayer(page: Page): Promise<Locator> {
     .getByRole('group', { name: 'Canvas view' })
     .getByRole('button', { name: 'Proposed', exact: true })
     .click();
-  await page.locator('.tree-row', { hasText: 'Dados da conta' }).first().click();
+  await page.locator('.tree-row', { hasText: 'Account details' }).first().click();
   await page.getByRole('button', { name: 'Show here' }).first().click();
 
   const head = page
     .locator('.layer-group-head')
-    .filter({ hasText: 'Componentes M3' })
+    .filter({ hasText: 'Components M3' })
     .first();
   await expect(head.locator('.flag')).toBeVisible();
   return head;

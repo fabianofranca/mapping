@@ -361,7 +361,7 @@ describe('LocalLibrary (IndexedDB)', () => {
     expect(again.files.mapping).toBe(mapping);
     expect(again.files.specs).toEqual(specs);
     expect([...again.files.specs.keys()].sort()).toEqual([
-      'specs/modelo-dados.json',
+      'specs/data-model.json',
       'specs/sdui.json',
     ]);
     expect(await again.files.images.get('images/cadastro.png')?.text()).toBe('CADASTRO');

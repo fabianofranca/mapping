@@ -28,7 +28,17 @@ function loadV3(): Spec {
   );
   const parsed = parseSpecText(text);
   if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
-  return parsed.spec;
+  // The frozen v3 fixture predates the English layer ids; a layer id is not part of the version
+  // contract, so the v3 project is built with the ids the current example uses.
+  const layerIds: Record<string, string> = {
+    componentes: 'components',
+    eventos: 'events',
+    telas: 'screens',
+  };
+  return {
+    ...parsed.spec,
+    layers: parsed.spec.layers.map((l) => ({ ...l, id: layerIds[l.id] ?? l.id })),
+  };
 }
 
 function projectV3() {
@@ -43,13 +53,13 @@ function projectV3() {
   p = addTypedAnnotation(p, {
     id: 'B',
     markingId: 'M1',
-    layerId: layerOf(p, 'sdui', 'componentes'),
+    layerId: layerOf(p, 'sdui', 'components'),
     type: { specId: 'sdui', typeId: 'button' },
   });
   p = addTypedAnnotation(p, {
     id: 'E',
     markingId: 'M1',
-    layerId: layerOf(p, 'sdui', 'eventos'),
+    layerId: layerOf(p, 'sdui', 'events'),
     type: { specId: 'sdui', typeId: 'onClick' },
     parentAnnotationId: 'B',
   });
@@ -83,16 +93,16 @@ describe('exemplo SDUI v12', () => {
     expect(e?.type).toEqual({ specId: 'sdui', typeId: 'action' });
     expect(e?.parentAnnotationId).toBe('B');
     expect(e?.parentRole).toBe('click');
-    expect(e?.values).toMatchObject({ acao: 'submit' });
+    expect(e?.values).toMatchObject({ action: 'submit' });
     expect(getAnnotationIssues(after, 'E').map((i) => i.code)).not.toContain(
       'missing-role',
     );
   });
 });
 
-describe('papeis-migracao example (rename-role and remove-role)', () => {
+describe('roles-migration example (rename-role and remove-role)', () => {
   it('validates at formatVersion 12 and declares the three role steps', () => {
-    const spec = loadExample('papeis-migracao');
+    const spec = loadExample('roles-migration');
     expect(spec.formatVersion).toBe(12);
     expect(specWarnings(spec)).toEqual([]);
     const ops = (spec.migrations ?? []).flatMap((m) => m.steps.map((s) => s.op));

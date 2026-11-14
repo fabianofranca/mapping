@@ -58,8 +58,11 @@ export function serviceWorker(channel: BuildChannel): Plugin {
         const html = bundle['index.html'];
         if (html?.type !== 'asset')
           throw new Error('index.html não encontrado no bundle');
-        // O guia (public/guia/, gerado antes do build) também está no cache: mudou, o sw.js muda.
-        const guide = readFileSync('public/guia/index.html', 'utf8');
+        // The guide (public/guide/, generated before the build) and the redirect page of its old
+        // address (public/guia/) are in the cache too: if they change, the sw.js changes.
+        const guide =
+          readFileSync('public/guide/index.html', 'utf8') +
+          readFileSync('public/guia/index.html', 'utf8');
         const sw = stampServiceWorker(
           readFileSync('pwa/sw.js', 'utf8'),
           hash(String(html.source) + guide),

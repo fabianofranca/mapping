@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "sdui-button",
   "name": "Button",
-  "description": "Botão com quatro variantes. O modo troca a decoração do rótulo: sublinhado no link e tachado no botão descontinuado.",
+  "description": "Button with four variants. The mode changes the label decoration: underlined in the link and struck through in the deprecated button.",
   "size": {
     "width": 120,
     "height": 40
@@ -20,15 +20,15 @@
     "label": "Label",
     "variant": "filled",
     "mode": "normal",
-    "disabled": "não"
+    "disabled": "no"
   },
   "template": {
     "type": "frame",
-    "name": "botão",
+    "name": "button",
     "opacity": {
       "$switch": "disabled",
       "cases": {
-        "sim": 0.38
+        "yes": 0.38
       },
       "default": 1
     },
@@ -60,7 +60,7 @@
     "children": [
       {
         "type": "text",
-        "name": "rótulo",
+        "name": "label",
         "text": {
           "$field": "label"
         },

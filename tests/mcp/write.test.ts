@@ -57,8 +57,8 @@ beforeAll(async () => {
   // `cadastroProject`); the data model is the example.
   copyFileSync(join('tests', 'fixtures', 'sdui-v2.json'), join(sources, 'sdui.json'));
   copyFileSync(
-    join('examples', 'specs', 'modelo-de-dados.json'),
-    join(sources, 'modelo-de-dados.json'),
+    join('examples', 'specs', 'data-model.json'),
+    join(sources, 'data-model.json'),
   );
   writeFileSync(join(sources, 'cadastro.png'), await encodePng(quadrants(1000, 2000)));
   mcp = await connect([ws.root]);
@@ -134,7 +134,7 @@ function normalize(p: Project) {
 const CADASTRO_OPERATIONS = [
   { op: 'create_layer', as: '$model', name: 'Model', color: '#757575' },
   { op: 'apply_specialization', file: 'fontes/sdui.json' },
-  { op: 'apply_specialization', file: 'fontes/modelo-de-dados.json' },
+  { op: 'apply_specialization', file: 'fontes/data-model.json' },
   { op: 'add_container', as: '$tela', file: 'fontes/cadastro.png' },
   {
     op: 'create_marking',
@@ -193,12 +193,12 @@ const CADASTRO_OPERATIONS = [
     op: 'create_annotation',
     as: '$contato',
     marking: '$form',
-    type: 'modelo-dados/classe',
+    type: 'data-model/class',
     values: {
-      nome: 'Contato',
-      revisadoEm: '2026-10-02',
-      atributos: [
-        { _as: '$attrEmail', nome: 'email', tipo: 'String', exemplo: 'ana@exemplo.com' },
+      name: 'Contato',
+      reviewedAt: '2026-10-02',
+      attributes: [
+        { _as: '$attrEmail', name: 'email', type: 'String', example: 'ana@exemplo.com' },
       ],
     },
   },
@@ -227,7 +227,7 @@ const CADASTRO_OPERATIONS = [
       id: 'input_email',
       tipo: 'email',
       obrigatorio: 'sim',
-      dado: { annotation: '$contato', key: 'atributos', row: '$attrEmail' },
+      dado: { annotation: '$contato', key: 'attributes', row: '$attrEmail' },
     },
   },
   {
@@ -272,7 +272,7 @@ const CADASTRO_OPERATIONS = [
     op: 'create_annotation',
     marking: '$form',
     type: 'endpoint',
-    values: { metodo: 'POST', path: '/v1/usuarios', request: 'User', response: 'User' },
+    values: { method: 'POST', path: '/v1/usuarios', request: 'User', response: 'User' },
   },
 ];
 

@@ -1,0 +1,117 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 2,
+  "id": "event",
+  "name": "Event",
+  "description": "Table of an analytics event: a purple header with the event name and one row per property, the name on the left and the value on the right.",
+  "size": {
+    "width": 260,
+    "height": 140
+  },
+  "minSize": {
+    "width": 200,
+    "height": 136
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "fill"
+  },
+  "preview": {
+    "name": "checkout_started",
+    "properties": [
+      { "property": "source", "value": "cart" },
+      { "property": "items", "value": "3" },
+      { "property": "total", "value": "149.90" }
+    ]
+  },
+  "template": {
+    "type": "frame",
+    "name": "event",
+    "layout": {
+      "type": "column",
+      "gap": 0
+    },
+    "cornerRadius": 6,
+    "fill": "#FFFFFF",
+    "stroke": {
+      "color": "#7B3FE4",
+      "width": 1
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "header",
+        "layout": {
+          "type": "row",
+          "padding": 10
+        },
+        "fill": "#7B3FE4",
+        "width": "fill",
+        "children": [
+          {
+            "type": "text",
+            "name": "name",
+            "text": {
+              "$field": "name"
+            },
+            "font": {
+              "size": 14,
+              "weight": 700,
+              "lineHeight": 20
+            },
+            "color": "#FFFFFF",
+            "width": "fill"
+          }
+        ]
+      },
+      {
+        "type": "repeat",
+        "name": "properties",
+        "field": "properties",
+        "direction": "column",
+        "gap": 4,
+        "template": {
+          "type": "frame",
+          "name": "property",
+          "layout": {
+            "type": "row",
+            "gap": 12,
+            "padding": 6
+          },
+          "width": "fill",
+          "children": [
+            {
+              "type": "text",
+              "name": "property",
+              "text": {
+                "$field": "property"
+              },
+              "font": {
+                "size": 12,
+                "weight": 600,
+                "lineHeight": 16
+              },
+              "color": "#2A1457",
+              "width": "hug"
+            },
+            {
+              "type": "text",
+              "name": "value",
+              "text": {
+                "$field": "value"
+              },
+              "font": {
+                "size": 12,
+                "weight": 400,
+                "lineHeight": 16,
+                "align": "right"
+              },
+              "color": "#2A1457",
+              "width": "fill"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

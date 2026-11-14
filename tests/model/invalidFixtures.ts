@@ -327,9 +327,9 @@ export const INVALID_CASES: readonly InvalidCase[] = [
     repairable: false,
     build: (p) =>
       annotations(p, (a) => {
-        const rows = a.values?.atributos;
+        const rows = a.values?.attributes;
         if (a.id !== 'AC' || !Array.isArray(rows) || !a.values) return a;
-        return { ...a, values: { ...a.values, atributos: [...rows, rows[0] ?? null] } };
+        return { ...a, values: { ...a.values, attributes: [...rows, rows[0] ?? null] } };
       }),
   },
 ];

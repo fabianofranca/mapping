@@ -1,8 +1,8 @@
 // @vitest-environment node
-// Watcher de conversas do workspace (`examples/workspace/watch-comments.mjs`, etapa #645, fase CM6,
-// decisão 39): observa `projetos/*/comments/`, espera a quietude e roda UM comando por vez, só
-// quando alguma conversa aberta aguarda o agente. Os testes sobem o watcher de verdade, com um
-// comando falso que anota cada execução, e esperam por polling com prazo (sem sleeps longos).
+// Thread watcher of the workspace (`examples/workspace/watch-comments.mjs`, stage #645, phase CM6,
+// decision 39): watches `projetos/*/comments/`, waits for quiet and runs ONE command at a time,
+// only when some open thread awaits the agent. The tests start the real watcher, with a fake
+// command that records each run, and wait by polling with a deadline (no long sleeps).
 import { spawn, type ChildProcess } from 'node:child_process';
 import {
   appendFileSync,
@@ -47,22 +47,22 @@ setTimeout(() => line({ event: 'end', at: Date.now() }), Number(process.env.FAKE
 
 function author(kind: 'human' | 'agent') {
   return kind === 'human'
-    ? { kind, name: 'Marina', email: 'marina@exemplo.com' }
+    ? { kind, name: 'Marina', email: 'marina@example.com' }
     : { kind, name: 'Claude Code', email: null };
 }
 
-/** Uma conversa no formato `mapping-thread`; `kinds` são os autores das mensagens, em ordem. */
+/** A thread in the `mapping-thread` format; `kinds` are the authors of the messages, in order. */
 function threadJson(id: string, kinds: ('human' | 'agent')[], resolved = false): string {
   return JSON.stringify({
     format: 'mapping-thread',
     formatVersion: 1,
     id,
-    anchor: { kind: 'layer', id: 'camada-1' },
+    anchor: { kind: 'layer', id: 'layer-1' },
     createdAt: '2026-11-07T09:00:00.000Z',
     revision: kinds.length,
     resolved: resolved
       ? {
-          by: { name: 'Marina', email: 'marina@exemplo.com' },
+          by: { name: 'Marina', email: 'marina@example.com' },
           at: '2026-11-07T12:00:00.000Z',
         }
       : null,
@@ -116,7 +116,7 @@ async function waitFor(pred: () => boolean, what: string, timeout = 8000): Promi
 
 const pause = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
-/** Sobe o watcher com o comando falso e espera ele começar a observar. */
+/** Starts the watcher with the fake command and waits for it to begin watching. */
 async function startWatcher(env: Record<string, string> = {}): Promise<void> {
   const fake = join(h.dir, 'fake.mjs');
   writeFileSync(fake, FAKE);
@@ -148,7 +148,7 @@ beforeEach(() => {
 afterEach(async () => {
   const child = h.child;
   if (child && child.exitCode === null) {
-    // SIGTERM: o watcher mata o comando em andamento; SIGKILL só se ele não sair a tempo.
+    // SIGTERM: the watcher kills the running command; SIGKILL only if it does not exit in time.
     const closed = new Promise((resolve) => child.once('close', resolve));
     child.kill('SIGTERM');
     const timer = setTimeout(() => child.kill('SIGKILL'), 2000);
@@ -159,88 +159,88 @@ afterEach(async () => {
 });
 
 describe('examples/workspace/watch-comments.mjs', { timeout: 20000 }, () => {
-  it('uma conversa que já aguarda o agente ao iniciar dispara uma execução', async () => {
+  it('a thread that already awaits the agent at startup triggers a run', async () => {
     putThread('t1', ['human']);
     await startWatcher();
-    await waitFor(() => runs().length === 1, 'a primeira execução');
+    await waitFor(() => runs().length === 1, 'the first run');
     await pause(700);
     expect(runs()).toHaveLength(1);
   });
 
-  it('só as conversas abertas que aguardam o agente entram; humano, resolvida e inválida ficam de fora', async () => {
+  it('only open threads that await the agent get in; human, resolved and invalid ones stay out', async () => {
     putThread('espera-humano', ['human', 'agent']);
     putThread('resolvida', ['human'], { resolvedDir: true });
-    const aguarda = putThread('aguarda-agente', ['human', 'agent', 'human']);
-    writeFileSync(join(h.root, 'p1', 'comments', 'quebrada.json'), '{ não é json');
+    const awaiting = putThread('awaits-agent', ['human', 'agent', 'human']);
+    writeFileSync(join(h.root, 'p1', 'comments', 'broken.json'), '{ not json');
     await startWatcher();
-    await waitFor(() => runs().length === 1, 'a execução');
+    await waitFor(() => runs().length === 1, 'the run');
     const [run] = runs();
     expect(run?.awaiting).toEqual([
-      { project: 'p1', thread: 'aguarda-agente', path: aguarda },
+      { project: 'p1', thread: 'awaits-agent', path: awaiting },
     ]);
-    expect(h.stderr).toContain('quebrada.json');
+    expect(h.stderr).toContain('broken.json');
   });
 
-  it('não dispara quando nenhuma conversa aguarda o agente', async () => {
+  it('does not trigger when no thread awaits the agent', async () => {
     putThread('espera-humano', ['human', 'agent']);
     await startWatcher();
-    // O controle positivo prova que o watcher estava de pé e já tinha avaliado o estado inicial.
+    // The positive control proves the watcher was up and had already evaluated the initial state.
     await pause(800);
     putThread('controle', ['human']);
-    await waitFor(() => runs().length === 1, 'a execução do controle');
+    await waitFor(() => runs().length === 1, 'the control run');
     expect(runs()[0]?.awaiting.map((a) => a.thread)).toEqual(['controle']);
   });
 
-  it('uma conversa nova com a última mensagem de pessoa dispara depois da quietude, uma vez só', async () => {
+  it('a new thread whose last message is from a person triggers after the quiet period, once only', async () => {
     await startWatcher();
     const file = putThread('t1', ['human']);
     for (let i = 0; i < 3; i++) {
       await pause(60);
       writeFileSync(file, threadJson('t1', ['human']));
     }
-    await waitFor(() => runs().length === 1, 'a execução');
+    await waitFor(() => runs().length === 1, 'the run');
     await pause(700);
     expect(runs()).toHaveLength(1);
   });
 
-  it('roda um comando de cada vez: a segunda execução só começa depois que a primeira termina', async () => {
+  it('runs one command at a time: the second run only starts after the first one ends', async () => {
     putThread('t1', ['human']);
     await startWatcher({ FAKE_SLEEP_MS: '1000' });
-    await waitFor(() => runs().length === 1, 'a primeira execução');
+    await waitFor(() => runs().length === 1, 'the first run');
     putThread('t2', ['human']);
-    await waitFor(() => runs().length === 2, 'a segunda execução', 10000);
+    await waitFor(() => runs().length === 2, 'the second run', 10000);
     const [first, second] = runs();
     expect(first?.end).not.toBeNull();
     expect(second?.start).toBeGreaterThanOrEqual(first?.end ?? Infinity);
     expect(second?.awaiting.map((a) => a.thread)).toEqual(['t2']);
   });
 
-  it('o mesmo par conversa:mensagem não repete, mas uma mensagem nova de pessoa gera outro', async () => {
+  it('the same thread:message pair does not repeat, but a new message from a person creates another', async () => {
     const file = putThread('t1', ['human']);
     await startWatcher();
-    await waitFor(() => runs().length === 1, 'a primeira execução');
-    // Regrava a mesma conversa (o agente ignorou): não pode virar laço.
+    await waitFor(() => runs().length === 1, 'the first run');
+    // Rewrites the same thread (the agent ignored it): it must not turn into a loop.
     writeFileSync(file, threadJson('t1', ['human']));
     putThread('t2', ['human']);
-    await waitFor(() => runs().length === 2, 'a execução da conversa nova');
+    await waitFor(() => runs().length === 2, 'the run of the new thread');
     expect(runs()[1]?.awaiting.map((a) => a.thread)).toEqual(['t2']);
-    // Mensagem nova de pessoa na t1: outro par.
+    // New message from a person in t1: another pair.
     writeFileSync(file, threadJson('t1', ['human', 'agent', 'human']));
-    await waitFor(() => runs().length === 3, 'a execução da mensagem nova');
+    await waitFor(() => runs().length === 3, 'the run of the new message');
     expect(runs()[2]?.awaiting.map((a) => a.thread)).toEqual(['t1']);
   });
 
-  it('MAPPING_AWAITING traz projeto, conversa e caminho absoluto', async () => {
+  it('MAPPING_AWAITING brings project, thread and absolute path', async () => {
     mkdirSync(join(h.root, 'p2'), { recursive: true });
     const file = putThread('abc-123', ['human'], { project: 'p2' });
     await startWatcher();
-    await waitFor(() => runs().length === 1, 'a execução');
+    await waitFor(() => runs().length === 1, 'the run');
     expect(runs()[0]?.awaiting).toEqual([
       { project: 'p2', thread: 'abc-123', path: file },
     ]);
   });
 
-  it('sem "--" e comando, mostra o uso no stderr e sai com 2', async () => {
+  it('without "--" and a command, prints the usage on stderr and exits with 2', async () => {
     const child = spawn(process.execPath, [SCRIPT, '--root', h.root], {
       stdio: ['ignore', 'ignore', 'pipe'],
     });
@@ -256,7 +256,7 @@ describe('examples/workspace/watch-comments.mjs', { timeout: 20000 }, () => {
     expect(err).toContain('usage');
   });
 
-  it('encerra limpo em SIGTERM', async () => {
+  it('exits cleanly on SIGTERM', async () => {
     await startWatcher();
     const child = h.child as ChildProcess;
     const closed = new Promise<number | null>((resolve) => child.on('close', resolve));
@@ -274,7 +274,7 @@ describe('awaitingAgent e scanAwaiting', () => {
     >;
   }
 
-  it('olha a última mensagem por at e, no empate, por id; só conversa aberta aguarda', async () => {
+  it('looks at the last message by at and, on a tie, by id; only an open thread awaits', async () => {
     const { awaitingAgent } = await load();
     const msg = (id: string, at: string, kind: string) => ({ id, at, author: { kind } });
     const call = awaitingAgent as (t: unknown) => unknown;
@@ -315,7 +315,7 @@ describe('awaitingAgent e scanAwaiting', () => {
     expect(call({ resolved: null, messages: [] })).toBeNull();
   });
 
-  it('scanAwaiting lê só comments/*.json de cada projeto', async () => {
+  it('scanAwaiting reads only comments/*.json of each project', async () => {
     const { scanAwaiting } = await load();
     putThread('t1', ['human']);
     putThread('t2', ['human'], { resolvedDir: true });

@@ -3,8 +3,44 @@
   "formatVersion": 7,
   "id": "analytics",
   "name": "Analytics",
-  "version": 1,
-  "description": "Eventos de analytics no canvas: a tabela de um evento (nome e propriedades), ligada por uma seta ao elemento que o dispara, e a transição anotada na seta entre a origem e o destino de um fluxo.",
+  "version": 2,
+  "description": "Analytics events on the canvas: the table of an event (name and properties), linked by an arrow to the element that fires it, and the transition annotated on the arrow between the source and the destination of a flow.",
+  "migrations": [
+    {
+      "from": 1,
+      "to": 2,
+      "steps": [
+        { "op": "rename-type", "from": "evento", "to": "event" },
+        { "op": "rename-type", "from": "transicao", "to": "transition" },
+        { "op": "rename-field", "type": "event", "from": "nome", "to": "name" },
+        {
+          "op": "rename-field",
+          "type": "event",
+          "from": "propriedades",
+          "to": "properties"
+        },
+        {
+          "op": "rename-field",
+          "type": "event",
+          "from": "properties.propriedade",
+          "to": "properties.property"
+        },
+        {
+          "op": "rename-field",
+          "type": "event",
+          "from": "properties.valor",
+          "to": "properties.value"
+        },
+        {
+          "op": "rename-field",
+          "type": "transition",
+          "from": "condicao",
+          "to": "condition"
+        },
+        { "op": "rename-field", "type": "transition", "from": "evento", "to": "event" }
+      ]
+    }
+  ],
   "layers": [
     {
       "id": "analytics",
@@ -12,79 +48,79 @@
       "color": "#7B3FE4",
       "annotationTypes": [
         {
-          "id": "evento",
-          "name": "Evento",
-          "description": "Evento de analytics disparado por um elemento da interface. É uma tabela solta no canvas (nome do evento e uma linha por propriedade); a ligação com o elemento que o dispara é uma seta, não um campo.",
-          "labelField": "nome",
+          "id": "event",
+          "name": "Event",
+          "description": "Analytics event fired by an interface element. It is a loose table on the canvas (the event name and one row per property); the link to the element that fires it is an arrow, not a field.",
+          "labelField": "name",
           "floating": true,
-          "component": "components/evento.json",
-          "doc": "docs/evento.md",
+          "component": "components/event.json",
+          "doc": "docs/event.md",
           "fields": [
             {
-              "key": "nome",
-              "label": "Nome",
+              "key": "name",
+              "label": "Name",
               "type": "string",
               "required": true,
-              "description": "O nome do evento como o SDK de analytics o recebe (checkout_started, button_click)."
+              "description": "The event name as the analytics SDK receives it (checkout_started, button_click)."
             },
             {
-              "key": "propriedades",
-              "label": "Propriedades",
+              "key": "properties",
+              "label": "Properties",
               "type": "table",
-              "description": "Uma linha por propriedade enviada com o evento: o nome dela e o valor ou a descrição do valor.",
+              "description": "One row per property sent with the event: its name and the value or a description of the value.",
               "columns": [
                 {
-                  "key": "propriedade",
-                  "label": "Propriedade",
+                  "key": "property",
+                  "label": "Property",
                   "type": "string",
                   "required": true,
-                  "description": "O nome da propriedade (origem, itens, total)."
+                  "description": "The property name (source, items, total)."
                 },
                 {
-                  "key": "valor",
-                  "label": "Valor",
+                  "key": "value",
+                  "label": "Value",
                   "type": "string",
-                  "description": "O valor fixo ou de onde ele vem (carrinho, tamanho da lista, soma dos preços)."
+                  "description": "The fixed value or where it comes from (cart, list size, sum of prices)."
                 }
               ]
             }
           ],
           "examples": [
             {
-              "name": "Início do checkout",
-              "description": "Só o nome entra num exemplo; as propriedades (origem, itens, total) vêm do preview do componente.",
+              "name": "Checkout started",
+              "description": "Only the name goes in an example; the properties (source, items, total) come from the component preview.",
               "values": {
-                "nome": "checkout_started"
+                "name": "checkout_started"
               }
             }
           ]
         },
         {
-          "id": "transicao",
-          "name": "Transição",
-          "description": "Anotação de uma seta: a passagem da tela de origem para a de destino de um fluxo, com a condição em que ela acontece e, se houver, o evento que a acompanha.",
+          "id": "transition",
+          "name": "Transition",
+          "description": "Annotation of an arrow: the move from the source screen to the destination screen of a flow, with the condition under which it happens and, if any, the event that goes with it.",
           "appliesTo": ["arrow"],
-          "doc": "docs/transicao.md",
+          "doc": "docs/transition.md",
           "fields": [
             {
-              "key": "condicao",
-              "label": "Condição",
+              "key": "condition",
+              "label": "Condition",
               "type": "string",
-              "description": "Quando a transição acontece (toque em Contratar, pagamento aprovado, sessão expirada)."
+              "description": "When the transition happens (tap on Subscribe, payment approved, session expired)."
             },
             {
-              "key": "evento",
-              "label": "Evento",
+              "key": "event",
+              "label": "Event",
               "type": "string",
-              "description": "O nome do evento de analytics disparado nesta transição, se houver."
+              "description": "The name of the analytics event fired on this transition, if any."
             }
           ],
           "examples": [
             {
-              "name": "Pagamento aprovado",
+              "name": "Payment approved",
               "values": {
-                "condicao": "Pagamento aprovado",
-                "evento": "purchase_completed"
+                "condition": "Payment approved",
+                "event": "purchase_completed"
               }
             }
           ]

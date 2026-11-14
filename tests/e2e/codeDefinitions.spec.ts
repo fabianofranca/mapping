@@ -16,8 +16,7 @@ import {
 // path"), the Screen without a code field, importing an old specialization with the
 // `codeRef` field (ignored, with a warning) and the local clone edited from outside in `mapping.json`.
 
-// pt-BR kept: shared fixture data (examples/specs/sdui.json: layers Telas and Componentes, fields nome and rota)
-// asserted by other tests; the labels below that mention them are data, not UI.
+// Shared fixture data: examples/specs/sdui.json (layers Screens and Components, fields name and route).
 const SDUI = join(process.cwd(), 'examples', 'specs', 'sdui.json');
 const FOLDER = 'code-mapping';
 const ANDROID_REPO = {
@@ -70,12 +69,12 @@ function downgradeToV5(spec: Record<string, unknown>): void {
   }
 }
 
-/** The SDUI v1 (no platforms, `code` or Telas layer): the starting point of step 1. */
+/** The SDUI v1 (no platforms, `code` or Screens layer): the starting point of step 1. */
 async function sduiV1(): Promise<Buffer> {
   const spec = JSON.parse(await readFile(SDUI, 'utf8')) as Record<string, unknown>;
   downgradeToV5(spec);
   const layers = (spec.layers as { id: string; annotationTypes: object[] }[])
-    .filter((layer) => layer.id !== 'telas')
+    .filter((layer) => layer.id !== 'screens')
     .map((layer) => ({
       ...layer,
       annotationTypes: layer.annotationTypes.map((type) => {
@@ -134,7 +133,7 @@ async function updateSduiToV2(page: Page): Promise<void> {
     buffer: await sduiV5(),
   });
   const confirm = page.getByRole('dialog', { name: 'Update "SDUI"?' });
-  await expect(confirm).toContainText('New layers: Telas');
+  await expect(confirm).toContainText('New layers: Screens');
   await confirm.getByRole('button', { name: 'Update', exact: true }).click();
   await expect(page.getByRole('status').filter({ hasText: /version \d+/ })).toBeVisible();
 }
@@ -175,24 +174,24 @@ async function createAnnotations(page: Page, withLocalPath = false): Promise<voi
     await configureLocalPath(page);
     await closeDialog(page);
   }
-  await page.getByRole('button', { name: 'Add annotation to layer Telas' }).click();
+  await page.getByRole('button', { name: 'Add annotation to layer Screens' }).click();
   await page.getByRole('button', { name: /^Screen/ }).click();
-  await page.getByLabel('nome', { exact: true }).fill('Signup');
-  await page.getByLabel('nome', { exact: true }).press('Enter');
-  await page.getByLabel('rota', { exact: true }).fill('/signup');
-  await page.getByLabel('rota', { exact: true }).press('Enter');
-  await page.getByRole('button', { name: 'Add annotation to layer Componentes' }).click();
+  await page.getByLabel('name', { exact: true }).fill('Signup');
+  await page.getByLabel('name', { exact: true }).press('Enter');
+  await page.getByLabel('route', { exact: true }).fill('/signup');
+  await page.getByLabel('route', { exact: true }).press('Enter');
+  await page.getByRole('button', { name: 'Add annotation to layer Components' }).click();
   await page.getByRole('button', { name: /^Button/ }).click();
   await page.getByLabel('id', { exact: true }).fill('btn_signup');
   await page.getByLabel('id', { exact: true }).press('Enter');
-  await page.getByLabel('texto', { exact: true }).fill('Sign up');
-  await page.getByLabel('texto', { exact: true }).press('Enter');
+  await page.getByLabel('text', { exact: true }).fill('Sign up');
+  await page.getByLabel('text', { exact: true }).press('Enter');
 }
 
 /** The entries of the "Definition" row in Details (one per platform with `path`). */
 const definitions = (page: Page) => page.locator('[data-definition]');
 
-test('step 1: updating the SDUI to v2 shows the Telas layer and the platforms', async ({
+test('step 1: updating the SDUI to v2 shows the Screens layer and the platforms', async ({
   page,
 }) => {
   await openFolderProject(page);
@@ -212,12 +211,12 @@ test('step 1: updating the SDUI to v2 shows the Telas layer and the platforms', 
   await expect(specs.getByText(/^Ignored fields/)).toHaveCount(0);
   await closeDialog(page);
 
-  // The Telas layer came with the update (the Layers panel lists all of them).
+  // The Screens layer came with the update (the Layers panel lists all of them).
   await expect(
-    page.getByRole('button', { name: 'Add annotation to layer Telas' }),
+    page.getByRole('button', { name: 'Add annotation to layer Screens' }),
   ).toBeVisible();
   const { mapping } = await exportMapping(page);
-  expect(mapping.layers.map((l) => l.name)).toContain('Telas');
+  expect(mapping.layers.map((l) => l.name)).toContain('Screens');
   expect(mapping.schemaVersion).toBe(20);
 });
 
@@ -314,7 +313,7 @@ test('step 3: "Definition" of the Button ("Open in repository" and "Copy path") 
     platformRepos: {},
   });
   const screen = mapping.annotations.find((a) => a.type?.typeId === 'screen');
-  expect(screen?.values).toEqual({ nome: 'Signup', rota: '/signup' });
+  expect(screen?.values).toEqual({ name: 'Signup', route: '/signup' });
 });
 
 test('step 4: an old specialization with a codeRef field is applied without it, with a warning', async ({
@@ -340,13 +339,13 @@ test('step 4: an old specialization with a codeRef field is applied without it, 
   await closeDialog(page);
 
   // The Screen is born only with the fields of the current format.
-  await page.getByRole('button', { name: 'Add annotation to layer Telas' }).click();
+  await page.getByRole('button', { name: 'Add annotation to layer Screens' }).click();
   await page.getByRole('button', { name: /^Screen/ }).click();
-  await expect(page.getByLabel('nome', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('name', { exact: true })).toBeVisible();
   await expect(page.getByText('implementation')).toHaveCount(0);
   const { mapping } = await exportMapping(page);
   const screen = mapping.annotations.find((a) => a.type?.typeId === 'screen');
-  expect(Object.keys(screen?.values ?? {})).toEqual(['nome', 'rota']);
+  expect(Object.keys(screen?.values ?? {})).toEqual(['name', 'route']);
 });
 
 test('step 5: local clone edited from outside (JSON) reaches Settings; the link does not change', async ({
@@ -358,7 +357,7 @@ test('step 5: local clone edited from outside (JSON) reaches Settings; the link 
   await expect
     .poll(async () => {
       const m = await readMapping(page);
-      return m.annotations.find((a) => a.type?.typeId === 'button')?.values?.texto;
+      return m.annotations.find((a) => a.type?.typeId === 'button')?.values?.text;
     })
     .toBe('Sign up');
 

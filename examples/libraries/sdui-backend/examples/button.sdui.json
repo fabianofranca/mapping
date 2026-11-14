@@ -1,10 +1,10 @@
 {
   "type": "Button",
   "props": {
-    "text": "Salvar",
+    "text": "Save",
     "style": "tonal",
     "mode": "link",
     "disabled": false,
-    "contentDescription": "Salvar"
+    "contentDescription": "Save"
   }
 }

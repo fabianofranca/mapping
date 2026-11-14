@@ -13,9 +13,9 @@ async function openExample(page: Page): Promise<void> {
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
     .setInputFiles({
-      name: 'exemplo-completo.zip',
+      name: 'full-example.zip',
       mimeType: 'application/zip',
-      buffer: readFileSync('examples/exemplo-completo.zip'),
+      buffer: readFileSync('examples/full-example.zip'),
     });
   await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   await page.keyboard.press('Control+Shift+Digit3');
@@ -26,8 +26,7 @@ test('long labels in the Linked by arrow section do not create a horizontal bar 
 }) => {
   await openExample(page);
   const tree = page.getByRole('list', { name: 'Marking tree' });
-  // pt-BR kept: shared fixture data (examples/exemplo-completo.zip) asserted by other tests
-  await tree.getByRole('button', { name: 'Cadastrar', exact: true }).click();
+  await tree.getByRole('button', { name: 'Register', exact: true }).click();
   await page.getByRole('button', { name: 'Link to…', exact: true }).click();
   const picker = page.getByRole('dialog', { name: /^Link .* to…$/ });
   await picker.getByRole('option').first().click();
@@ -36,7 +35,7 @@ test('long labels in the Linked by arrow section do not create a horizontal bar 
   // The arrow is born selected: give it a long name.
   await page.getByLabel('Name', { exact: true }).fill(LONG);
   await page.keyboard.press('Enter');
-  await tree.getByRole('button', { name: 'Cadastrar', exact: true }).click();
+  await tree.getByRole('button', { name: 'Register', exact: true }).click();
 
   const section = page.getByRole('region', { name: 'Linked by arrow' });
   await expect(section).toBeVisible();

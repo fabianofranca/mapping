@@ -61,10 +61,9 @@ describe('help: specializations', () => {
   });
 
   it('the files to download are the examples and the repository schema', () => {
-    // pt-BR kept: file names of the downloadable help assets are defined in src/ui/helpAssets
     expect(HELP_ASSETS.map((a) => a.fileName)).toEqual([
       'sdui.json',
-      'modelo-de-dados.json',
+      'data-model.json',
       'spec.schema.json',
     ]);
     for (const asset of HELP_ASSETS.filter((a) => a.id !== 'schema')) {

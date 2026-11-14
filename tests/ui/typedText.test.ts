@@ -26,7 +26,7 @@ describe('typed annotation texts', () => {
   it('displayed name and source label', () => {
     const p = cadastroProject();
     // pt-BR kept: shared fixture data asserted by tests/model (cadastroProject names)
-    expect(annotationDisplayName(p, annotation(p, 'AC'))).toBe('Classe · Contato');
+    expect(annotationDisplayName(p, annotation(p, 'AC'))).toBe('Class · Contato');
     expect(annotationDisplayName(p, annotation(p, 'AU'))).toBe('User');
     expect(annotationSourceLabel(p, annotation(p, 'AIN'))).toBe('Input input_nome');
   });
@@ -38,7 +38,7 @@ describe('typed annotation texts', () => {
     expect(issuesOf(p, 'AT').map((i) => issueMessage(p, text, i))).toEqual([
       'id — required and empty',
     ]);
-    p = removeTableRow(p, 'AC', 'atributos', 'R1');
+    p = removeTableRow(p, 'AC', 'attributes', 'R1');
     expect(
       issuesOf(p, 'AIE').map((i) => issueMessage(p, annotation(p, 'AIE'), i)),
     ).toEqual(['dado — broken reference']);

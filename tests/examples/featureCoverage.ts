@@ -4,11 +4,11 @@ import type { z } from 'zod';
 import { specSchema } from '../../src/model/spec';
 
 /**
- * Auxiliar da guarda de cobertura dos exemplos (`featureCoverage.test.ts`): lista os recursos
- * dos formatos de especialização e de componente e diz quais um arquivo de exemplo usa.
- * Um recurso é um texto: um caminho de chave (`a[].b`, `{}` para chaves livres de um `record`) ou
- * um valor aceito (`a[].b=valor`). Os da especialização saem do `specSchema`; os do
- * componente são uma lista explícita (o formato é lido à mão em `parseComponent.ts`).
+ * Helper of the examples coverage guard (`featureCoverage.test.ts`): lists the features
+ * of the specialization and component formats and says which ones an example file uses.
+ * A feature is a text: a key path (`a[].b`, `{}` for the free keys of a `record`) or
+ * an accepted value (`a[].b=value`). The specialization ones come from `specSchema`; the
+ * component ones are an explicit list (the format is read by hand in `parseComponent.ts`).
  */
 
 type Rec = Record<string, unknown>;
@@ -49,13 +49,13 @@ export function classify(data: unknown): FileKind {
 }
 
 // ---------------------------------------------------------------------------------------
-// Especialização: percorre o schema (zod 4), com ou sem um dado
+// Specialization: walks the schema (zod 4), with or without a datum
 // ---------------------------------------------------------------------------------------
 
-/** Campos da coluna de uma `table` que não fazem sentido numa coluna (o schema os aceita). */
+/** Fields of a `table` column that make no sense in a column (the schema accepts them). */
 const COLUMN_SKIP = new Set(['columns', 'rowLabel', 'tags', 'platforms']);
 
-/** Marca "sem dado": percorre o schema inteiro. */
+/** "No datum" mark: walks the whole schema. */
 const ALL = Symbol('all');
 
 function unwrap(schema: Zod): Zod {
@@ -74,8 +74,8 @@ function unwrap(schema: Zod): Zod {
 }
 
 /**
- * Percorre `schema`. Com `ALL`, emite todo caminho e valor possíveis; com um dado, só os que o
- * dado usa. `format` e `formatVersion` entram só como caminho (os literais são ignorados).
+ * Walks `schema`. With `ALL`, emits every possible path and value; with a datum, only the ones the
+ * datum uses. `format` and `formatVersion` go in only as a path (the literals are ignored).
  */
 function visit(
   schema: Zod,
@@ -104,8 +104,8 @@ function visit(
           childDef.type === 'array' &&
           defOf(childDef.element as Zod).type === 'unknown'
         ) {
-          // as colunas são lidas pela mesma forma do campo (`fieldShape`), mas o schema as
-          // declara como `unknown[]`: percorre a forma do próprio campo, sem as chaves de tabela
+          // the columns are read by the same shape as the field (`fieldShape`), but the schema
+          // declares them as `unknown[]`: walks the shape of the field itself, without the table keys
           const items = all ? [ALL] : Array.isArray(value) ? value : [];
           for (const item of items) visit(inner, item, `${p}[]`, out, COLUMN_SKIP);
           continue;
@@ -148,9 +148,9 @@ function visit(
 }
 
 /**
- * `origins` é `z.unknown()` no schema (validado por `parseOrigins`, em
- * `src/model/components/origin.ts`): os recursos ficam à mão aqui. Um "valor de origem"
- * (`ValueSource`) é um literal ou `{ path, values?, default? }`.
+ * `origins` is `z.unknown()` in the schema (validated by `parseOrigins`, in
+ * `src/model/components/origin.ts`): the features are kept by hand here. An "origin value"
+ * (`ValueSource`) is a literal or `{ path, values?, default? }`.
  */
 export const ORIGIN_FEATURES = [
   'origins[]',
@@ -244,7 +244,7 @@ function originFeatures(origins: unknown, out: Set<string>): void {
   }
 }
 
-/** Todos os recursos da especialização: o schema inteiro mais os de `origins`. */
+/** All the specialization features: the whole schema plus the `origins` ones. */
 export function specFeatureList(): string[] {
   const out = new Set<string>();
   visit(specSchema as unknown as Zod, ALL, '', out);
@@ -252,7 +252,7 @@ export function specFeatureList(): string[] {
   return [...out].sort();
 }
 
-/** Os recursos da especialização que um arquivo usa. */
+/** The specialization features that a file uses. */
 export function specFeaturesUsed(data: unknown): Set<string> {
   const out = new Set<string>();
   visit(specSchema as unknown as Zod, data, '', out);
@@ -261,7 +261,7 @@ export function specFeaturesUsed(data: unknown): Set<string> {
 }
 
 // ---------------------------------------------------------------------------------------
-// Componente: lista explícita (docs/COMPONENT-FORMAT.md e parseComponent.ts)
+// Component: explicit list (docs/COMPONENT-FORMAT.md and parseComponent.ts)
 // ---------------------------------------------------------------------------------------
 
 export const NODE_TYPES = [
@@ -309,7 +309,7 @@ export const ROOT_KEYS = [
   'preview',
   'template',
 ] as const;
-/** Chaves comuns a todo nó (fora `type`). */
+/** Keys common to every node (except `type`). */
 export const BASE_KEYS = [
   'name',
   'visible',
@@ -330,7 +330,7 @@ export const BASE_KEYS = [
   'weight',
   'direction',
 ] as const;
-/** Chaves de cada tipo de nó, além das comuns. */
+/** Keys of each node type, besides the common ones. */
 export const EXTRA_KEYS: Record<(typeof NODE_TYPES)[number], readonly string[]> = {
   frame: ['clip', 'layout', 'children'],
   rect: [],
@@ -354,7 +354,7 @@ export const EXTRA_KEYS: Record<(typeof NODE_TYPES)[number], readonly string[]> 
   image: ['src', 'fit'],
   icon: ['name', 'color', 'strokeWidth', 'mirror'],
 };
-/** O `repeat` só aceita estas chaves comuns: o desenho é do `template` de cada linha. */
+/** `repeat` only accepts these common keys: the drawing belongs to the `template` of each row. */
 export const REPEAT_BASE_KEYS = [
   'name',
   'visible',
@@ -424,7 +424,7 @@ const ENUM_VALUES = {
   'image.fit': ['cover', 'contain', 'fill'],
   'repeat.direction': ['column', 'row'],
 } as const;
-/** Formas de um valor: `size` (largura/altura do nó), `padding`, `fill`, `cornerRadius` etc. */
+/** Shapes of a value: `size` (width/height of the node), `padding`, `fill`, `cornerRadius` etc. */
 const SHAPE_FEATURES = [
   'size=px',
   'size=fill',
@@ -477,7 +477,7 @@ export function componentFeatureList(): string[] {
 
 const DIRECT_CONDITION_OPS: readonly string[] = ['$eq', '$has', '$not', '$and', '$or'];
 
-/** As folhas de uma expressão (o literal ou objeto de cada ramo), sem os operadores. */
+/** The leaves of an expression (the literal or object of each branch), without the operators. */
 function leaves(expr: unknown): unknown[] {
   if (isRec(expr)) {
     if ('$if' in expr) return [...leaves(expr.then), ...leaves(expr.else)];
@@ -498,7 +498,7 @@ function sizeFeature(value: unknown, prefix: 'size' | 'sizing'): string | undefi
   return undefined;
 }
 
-/** Operadores de expressão e de condição em qualquer lugar do valor. */
+/** Expression and condition operators anywhere in the value. */
 function exprFeatures(value: unknown, out: Set<string>, inCondition = false): void {
   if (Array.isArray(value)) {
     for (const item of value) exprFeatures(item, out, inCondition);
@@ -580,8 +580,8 @@ function nodeFeatures(node: unknown, out: Set<string>): void {
   out.add(`node.${type}`);
   for (const key of Object.keys(node)) {
     if (key === 'type') continue;
-    // O `direction` do `repeat` é o empilhamento das linhas (`row`/`column`), não a direção de
-    // leitura da chave comum: ele conta como chave própria do `repeat`.
+    // The `direction` of `repeat` is the stacking of the rows (`row`/`column`), not the reading
+    // direction of the common key: it counts as a key of `repeat` itself.
     const common =
       (BASE_KEYS as readonly string[]).includes(key) &&
       !(type === 'repeat' && key === 'direction');
@@ -625,7 +625,7 @@ function nodeFeatures(node: unknown, out: Set<string>): void {
     if (typeof node.src === 'string') out.add('image.src=literal');
     else if (isRec(node.src) && '$field' in node.src) out.add('image.src=$field');
   }
-  // expressões e condições nos atributos do nó (não nos filhos, visitados abaixo)
+  // expressions and conditions in the node attributes (not in the children, visited below)
   const { children, template, ...rest } = node;
   exprFeatures(rest, out);
   if (Array.isArray(children)) for (const child of children) nodeFeatures(child, out);

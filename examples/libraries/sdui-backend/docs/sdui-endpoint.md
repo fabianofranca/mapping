@@ -1,22 +1,22 @@
 # Endpoint
 
-O endpoint que entrega uma tela ou um bloco. Só se aplica a marcações (não a setas): ele descreve o que a área mostra.
+The endpoint that delivers a screen or a block. It applies only to markings (not to arrows): it describes what the area shows.
 
-Tipo de anotação: `sdui-endpoint` (Endpoint).
+Annotation type: `sdui-endpoint` (Endpoint).
 
-## Campos
+## Fields
 
-| Chave      | Rótulo           | Tipo   | Obrigatório | Opções | Padrão |
-| ---------- | ---------------- | ------ | ----------- | ------ | ------ |
-| `url`      | URL              | string | sim         |        |        |
-| `typeName` | Tipo da resposta | string | não         |        |        |
-| `typeRef`  | Declaração       | ref    | não         |        |        |
-| `params`   | Parâmetros       | table  | não         |        |        |
+| Key        | Label            | Type   | Required | Options | Default |
+| ---------- | ---------------- | ------ | -------- | ------- | ------- |
+| `url`      | URL              | string | yes      |         |         |
+| `typeName` | Type da resposta | string | no       |         |         |
+| `typeRef`  | Declaration      | ref    | no       |         |         |
+| `params`   | Parameters       | table  | no       |         |         |
 
-## Exemplos
+## Examples
 
-- **Tela de configurações**: url=/v1/screens/settings
+- **Settings screen**: url=/v1/screens/settings
 
-## Quando usar
+## When to use
 
-Só em marcações: o tipo declara `appliesTo: ["marking"]`, então a app não o oferece numa seta.
+Only on markings: the type declares `appliesTo: ["marking"]`, so the app does not offer it on an arrow.

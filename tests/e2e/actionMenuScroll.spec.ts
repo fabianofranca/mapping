@@ -45,7 +45,7 @@ test('the ⋮ of an out-of-view row opens on the first click, three times', asyn
   await page
     .getByRole('region', { name: 'Marking tree' })
     // pt-BR kept: shared fixture data (proposalFixture.ts) asserted by other e2e specs
-    .getByRole('button', { name: 'Cabeçalho', exact: true })
+    .getByRole('button', { name: 'Header', exact: true })
     .click();
   const last = page.getByRole('button', { name: `Actions for pair key${PAIRS}` });
   await expect(last).toHaveCount(1);

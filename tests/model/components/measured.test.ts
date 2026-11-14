@@ -132,7 +132,10 @@ describe('measured origin: parse → write → re-read cycle', () => {
 
   it('the measured library of the examples re-reads after being written', () => {
     const raw = JSON.parse(
-      readFileSync(join('examples', 'libraries', 'medido', 'medido.spec.json'), 'utf8'),
+      readFileSync(
+        join('examples', 'libraries', 'measured', 'measured.spec.json'),
+        'utf8',
+      ),
     ) as Json;
     const first = parseSpec(raw);
     expect(first.ok).toBe(true);

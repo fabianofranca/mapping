@@ -122,16 +122,15 @@ test('outside review, in a 280 px panel, the 3-digit Y fits whole', async ({ pag
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
     .setInputFiles({
-      name: 'exemplo-completo.zip',
+      name: 'full-example.zip',
       mimeType: 'application/zip',
-      buffer: readFileSync('examples/exemplo-completo.zip'),
+      buffer: readFileSync('examples/full-example.zip'),
     });
   // pt-BR kept: UI text in pt-BR (locale pinned above)
   await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
   await page.keyboard.press('Control+Shift+Digit3');
   await page.keyboard.press('Control+Shift+Digit2');
-  // pt-BR kept: shared fixture data (examples/exemplo-completo.zip) asserted by other tests
-  await page.locator('.tree-row', { hasText: 'Cadastrar' }).first().click();
+  await page.locator('.tree-row', { hasText: 'Register' }).first().click();
   const y = page.getByRole('spinbutton', { name: 'Y', exact: true });
   await expect(y).toHaveValue('347');
   await expectFieldsFit(page, 2);

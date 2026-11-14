@@ -1,33 +1,33 @@
 # Bottom sheet
 
-Folha modal: logo, título, legenda e rodapé. A legenda fica no topo da caixa, o rodapé no fundo, e a linha do rodapé alinha no fim.
+Modal sheet: logo, title, caption and footer. The caption sits at the top of the box, the footer at the bottom, and the footer row aligns to the end.
 
-Tipo de anotação: `sdui-sheet` (Bottom sheet).
+Annotation type: `sdui-sheet` (Bottom sheet).
 
-## Tamanho
+## Size
 
-- Inicial: 412 × 220 px
-- Mínimo: 240 × 200 px
-- Dimensionamento: largura fill, altura 220
+- Initial: 412 × 220 px
+- Minimum: 240 × 200 px
+- Sizing: width fill, height 220
 
-## Campos
+## Fields
 
-| Chave      | Rótulo   | Tipo   | Obrigatório | Opções | Padrão |
-| ---------- | -------- | ------ | ----------- | ------ | ------ |
-| `title`    | Title    | string | sim         |        |        |
-| `subtitle` | Subtitle | string | não         |        |        |
-| `footer`   | Footer   | string | não         |        |        |
+| Key        | Label    | Type   | Required | Options | Default |
+| ---------- | -------- | ------ | -------- | ------- | ------- |
+| `title`    | Title    | string | yes      |         |         |
+| `subtitle` | Subtitle | string | no       |         |         |
+| `footer`   | Footer   | string | no       |         |         |
 
-## Exemplos
+## Examples
 
-- **Ordenar**: title=Sort by, subtitle=Escolha a ordem da lista, footer=Cancelar
+- **Sort**: title=Sort by, subtitle=Choose the list order, footer=Cancel
 
-## Origem externa
+## External origin
 
-- Sistema `sdui`: tipo externo `BottomSheet`
+- System `sdui`: external type `BottomSheet`
 
-| Campo      | Caminho em `props` |
-| ---------- | ------------------ |
-| `title`    | `title`            |
-| `subtitle` | `subtitle`         |
-| `footer`   | `footer`           |
+| Field      | Path in `props` |
+| ---------- | --------------- |
+| `title`    | `title`         |
+| `subtitle` | `subtitle`      |
+| `footer`   | `footer`        |

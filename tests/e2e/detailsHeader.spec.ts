@@ -20,7 +20,7 @@ const FOLDER = 'example-folder-ag1';
 
 /** Unzips the example into an OPFS folder and makes it the folder chosen in "Open folder". */
 async function openExampleFolder(page: Page): Promise<void> {
-  const zip = await JSZip.loadAsync(readFileSync('examples/exemplo-completo.zip'));
+  const zip = await JSZip.loadAsync(readFileSync('examples/full-example.zip'));
   const files: { path: string; data: number[] }[] = [];
   for (const [path, entry] of Object.entries(zip.files)) {
     if (!entry.dir) files.push({ path, data: [...(await entry.async('uint8array'))] });
@@ -104,8 +104,7 @@ test.describe('annotation header in Details', () => {
     await page.setViewportSize({ width: 900, height: 720 });
     await openExampleFolder(page);
     await page.keyboard.press('Control+Shift+Digit3');
-    // pt-BR kept: shared fixture data (examples/exemplo-completo.zip) asserted by other tests
-    for (const name of ['Barra', 'Chip Dados']) {
+    for (const name of ['Bar', 'Chip Data']) {
       await page.locator('.tree-row', { hasText: name }).first().click();
       const header = page.locator('.annotation-header').first();
       await expect(header.getByRole('button', { name: 'Copy reference' })).toBeVisible();
@@ -134,8 +133,7 @@ test.describe('annotation header in Details', () => {
     await page.mouse.down();
     await page.mouse.move(box.x - 400, box.y + 100, { steps: 5 });
     await page.mouse.up();
-    // pt-BR kept: shared fixture data (examples/exemplo-completo.zip: the marking is named 'E-mail')
-    await page.locator('.tree-row', { hasText: 'E-mail' }).first().click();
+    await page.locator('.tree-row', { hasText: 'Email' }).first().click();
     const height = await page
       .locator('.annotation-header')
       .first()

@@ -3,7 +3,6 @@ import { fixtureZip } from './proposalFixture';
 
 // Proposal review at 900 px: the Details decision header and the shortcuts footer
 // show the buttons and hints in full, without horizontal scrolling.
-// pt-BR kept: shared fixture data (proposalFixture names such as 'Botão Pagar') asserted by tests/examples and tests/store
 
 test.use({ viewport: { width: 900, height: 720 } });
 
@@ -26,7 +25,7 @@ test('review at 900 px: whole decision in the Details and footer without clippin
     .first()
     .click();
   // A marking changed by the proposal shows the item decision header in the Details.
-  await page.locator('.tree-row', { hasText: 'Botão P' }).click();
+  await page.locator('.tree-row', { hasText: 'Pay b' }).click();
   const header = page.locator('.review-header-actions').first();
   await expect(header).toBeVisible();
   if (process.env.LAYOUT_SHOTS)

@@ -1,8 +1,8 @@
-// Projeto de exemplo (`examples/exemplo-completo/`): a pasta (fora de `specs/`) mais o manifesto
-// `EXAMPLE_SPECS` (destino → fonte) formam a vista do exemplo; o zip é derivado dela.
-// `node scripts/exampleProject.mjs` regera `examples/exemplo-completo.zip` e materializa `specs/`
-// (fora do git) para "Abrir pasta"; tests/examples/exampleProject.test.ts prova que o zip em disco
-// tem o conteúdo da vista.
+// Example project (`examples/full-example/`): the folder (outside `specs/`) plus the
+// `EXAMPLE_SPECS` manifest (target → source) make up the example's view; the zip is derived from it.
+// `node scripts/exampleProject.mjs` regenerates `examples/full-example.zip` and materializes `specs/`
+// (outside git) for "Open folder"; tests/examples/exampleProject.test.ts proves that the zip on disk
+// has the content of the view.
 import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,29 +10,26 @@ import process from 'node:process';
 import { Buffer } from 'node:buffer';
 import JSZip from 'jszip';
 
-export const EXAMPLE_DIR = 'examples/exemplo-completo';
-export const EXAMPLE_ZIP = 'examples/exemplo-completo.zip';
+export const EXAMPLE_DIR = 'examples/full-example';
+export const EXAMPLE_ZIP = 'examples/full-example.zip';
 
-/** Data fixa nas entradas do zip: o mesmo conteúdo gera sempre os mesmos bytes. */
+/** Fixed date on the zip entries: the same content always produces the same bytes. */
 const ENTRY_DATE = new Date('2026-10-18T00:00:00Z');
 
 /**
- * Manifesto das especializações do exemplo: cada destino em `specs/` vem de uma fonte do repositório
- * (arquivo ou pasta); `exclude` lista caminhos (relativos à fonte) que não entram; `indent` grava o
- * JSON com recuo de 2 espaços e quebra de linha final (a fonte é formatada pelo prettier).
+ * Manifest of the example's specializations: each target in `specs/` comes from a source in the
+ * repository (file or folder); `exclude` lists paths (relative to the source) that are left out;
+ * `indent` writes the JSON with a 2-space indent and a final line break (the source is formatted
+ * by prettier).
  */
 export const EXAMPLE_SPECS = [
   { target: 'material3-compose', source: 'libraries/material3-compose' },
   { target: 'notas', source: 'libraries/notas', exclude: ['index.ts'] },
   { target: 'sdui.json', source: 'examples/specs/sdui.json', indent: true },
-  {
-    target: 'modelo-dados.json',
-    source: 'examples/specs/modelo-de-dados.json',
-    indent: true,
-  },
+  { target: 'data-model.json', source: 'examples/specs/data-model.json', indent: true },
 ];
 
-/** Pasta onde `npm run build:example` materializa as especializações (não versionada). */
+/** Folder where `npm run build:example` materializes the specializations (not versioned). */
 const SPECS_DIR = 'specs';
 
 const compareSegments = (a, b) => {
@@ -44,10 +41,10 @@ const compareSegments = (a, b) => {
   return x.length - y.length;
 };
 
-/** Lixo de sistema e de ferramenta que nunca entra no zip nem na vista do exemplo. */
+/** System and tool junk that never goes into the zip or the example's view. */
 const IGNORED_NAMES = new Set(['.DS_Store', 'Thumbs.db', 'node_modules']);
 
-/** Caminho relativo (com `/`) → conteúdo de cada arquivo da pasta, em ordem alfabética. */
+/** Relative path (with `/`) → content of each file in the folder, in alphabetical order. */
 export async function folderFiles(root, skip = () => false) {
   const files = new Map();
   const walk = async (dir) => {
@@ -65,8 +62,8 @@ export async function folderFiles(root, skip = () => false) {
 }
 
 /**
- * Os arquivos do manifesto, já nos destinos (`specs/...`). `root`: a raiz do repositório contra a
- * qual as fontes do manifesto são resolvidas (padrão: a pasta atual).
+ * The manifest's files, already at their targets (`specs/...`). `root`: the repository root against
+ * which the manifest's sources are resolved (default: the current folder).
  */
 async function specFiles(root = '.') {
   const files = new Map();
@@ -97,8 +94,8 @@ async function specFiles(root = '.') {
 }
 
 /**
- * A vista do exemplo: a pasta fora de `specs/` mais o manifesto. O `specs/` do disco (cópia
- * materializada) é ignorado, para nunca vazar para o zip.
+ * The example's view: the folder outside `specs/` plus the manifest. The `specs/` on disk
+ * (materialized copy) is ignored, so it never leaks into the zip.
  */
 export async function exampleFiles(root = EXAMPLE_DIR) {
   const own = await folderFiles(root, (relative) => relative === SPECS_DIR);
@@ -118,17 +115,17 @@ async function zipOf(files) {
   });
 }
 
-/** O zip de uma pasta qualquer (sem manifesto), com o conteúdo na raiz. */
+/** The zip of any folder (no manifest), with the content at the root. */
 export async function folderZip(root) {
   return zipOf(await folderFiles(root));
 }
 
-/** O zip do projeto de exemplo: o conteúdo na raiz, como o "Abrir zip" espera. */
+/** The example project's zip: the content at the root, as "Open zip" expects. */
 export async function exampleZip(root = EXAMPLE_DIR) {
   return zipOf(await exampleFiles(root));
 }
 
-/** Apaga e reescreve `specs/` na pasta do exemplo a partir do manifesto. */
+/** Deletes and rewrites `specs/` in the example's folder from the manifest. */
 export async function materializeSpecs(root = EXAMPLE_DIR) {
   const dir = join(root, SPECS_DIR);
   await rm(dir, { recursive: true, force: true });
@@ -144,7 +141,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const bytes = await exampleZip();
   await mkdir(dirname(EXAMPLE_ZIP), { recursive: true });
   await writeFile(EXAMPLE_ZIP, bytes);
-  process.stdout.write(`escrito ${EXAMPLE_ZIP} (${bytes.length} bytes)\n`);
+  process.stdout.write(`wrote ${EXAMPLE_ZIP} (${bytes.length} bytes)\n`);
   const count = await materializeSpecs();
-  process.stdout.write(`materializado ${EXAMPLE_DIR}/specs/ (${count} arquivos)\n`);
+  process.stdout.write(`materialized ${EXAMPLE_DIR}/specs/ (${count} files)\n`);
 }

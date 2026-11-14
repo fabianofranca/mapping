@@ -1,5 +1,5 @@
-// Biblioteca de exemplo `sdui-backend` (EX1): a origem executável (um backend de SDUI fictício),
-// com `sources`, `slot`, âncoras, `scrim`, exemplos do sistema externo e o contrato de versão.
+// Example library `sdui-backend` (EX1): the executable origin (a fictional SDUI backend),
+// with `sources`, `slot`, anchors, `scrim`, external-system examples and the version contract.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -25,8 +25,8 @@ const files = listDisk(ROOT)
   .map((path) => ({ path, text: readFileSync(join(ROOT, path), 'utf8') }));
 const text = (path: string): string => files.find((f) => f.path === path)?.text ?? '';
 
-describe('biblioteca de exemplo sdui-backend', () => {
-  it('tem a especialização, um componente por tipo visual, um documento por tipo e os JSON do sistema externo', () => {
+describe('example library sdui-backend', () => {
+  it('has the specialization, one component per visual type, one document per type and the external-system JSON', () => {
     expect(files.map((f) => f.path)).toEqual(
       [
         SPEC_FILE,
@@ -47,7 +47,7 @@ describe('biblioteca de exemplo sdui-backend', () => {
     );
   });
 
-  it('valida sem erro nos três níveis e sem aviso', () => {
+  it('validates with no error on the three levels and no warning', () => {
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
     expect(report.warnings).toEqual([]);
@@ -55,12 +55,12 @@ describe('biblioteca de exemplo sdui-backend', () => {
     expect(report.summary).toMatchObject({ level: 3, types: 6, components: 5, docs: 6 });
   });
 
-  it('é a versão 2, com uma migração da 1 e os seis passos', () => {
+  it('is version 3, with a migration from 1 (the six steps) and one from 2', () => {
     const parsed = parseSpecText(text(SPEC_FILE));
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
-    expect(parsed.spec.version).toBe(2);
-    expect(parsed.spec.migrations).toHaveLength(1);
+    expect(parsed.spec.version).toBe(3);
+    expect(parsed.spec.migrations).toHaveLength(2);
     const steps = parsed.spec.migrations?.[0]?.steps ?? [];
     expect([...new Set(steps.map((s) => s.op))].sort()).toEqual([
       'fill-field',
@@ -82,7 +82,7 @@ describe('contrato da origem do pacote', () => {
       .map((f) => ({ path: f.path, text: f.text })),
   );
 
-  it('a declaração traduz examples/settings.sdui.json sem aviso', () => {
+  it('the declaration translates examples/settings.sdui.json with no warning', () => {
     expect(library.problems).toEqual([]);
     const result = screenFromSource(
       library,
@@ -94,7 +94,7 @@ describe('contrato da origem do pacote', () => {
     expect(result.screen).toBeDefined();
   });
 
-  it('a tela traz a coluna, a flutuante e a folha com a película', () => {
+  it('the screen brings the column, the floating one and the sheet with the scrim', () => {
     const result = screenFromSource(
       library,
       JSON.parse(text('examples/settings.sdui.json')),

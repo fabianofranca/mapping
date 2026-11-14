@@ -1,0 +1,121 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 1,
+  "id": "data-model",
+  "name": "Data model",
+  "version": 1,
+  "description": "Data classes and endpoints related to the mapped areas.",
+  "layers": [
+    {
+      "id": "classes",
+      "name": "Classes",
+      "color": "#43A047",
+      "annotationTypes": [
+        {
+          "id": "class",
+          "name": "Class",
+          "labelField": "name",
+          "fields": [
+            {
+              "key": "name",
+              "type": "string",
+              "required": true
+            },
+            {
+              "key": "description",
+              "type": "string"
+            },
+            {
+              "key": "version",
+              "type": "number",
+              "default": 1
+            },
+            {
+              "key": "reviewedAt",
+              "label": "reviewed at",
+              "type": "date"
+            },
+            {
+              "key": "attributes",
+              "type": "table",
+              "columns": [
+                {
+                  "key": "name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "key": "type",
+                  "type": "enum",
+                  "options": [
+                    "String",
+                    "Int",
+                    "Long",
+                    "Double",
+                    "Boolean",
+                    "Date",
+                    "List",
+                    "Object"
+                  ],
+                  "required": true
+                },
+                {
+                  "key": "required",
+                  "type": "enum",
+                  "options": ["yes", "no"],
+                  "default": "yes"
+                },
+                {
+                  "key": "example",
+                  "type": "string"
+                }
+              ],
+              "tags": ["data-field"],
+              "rowLabel": "name"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "endpoints",
+      "name": "Endpoints",
+      "color": "#8E24AA",
+      "annotationTypes": [
+        {
+          "id": "endpoint",
+          "name": "Endpoint",
+          "fields": [
+            {
+              "key": "method",
+              "type": "enum",
+              "required": true,
+              "options": ["GET", "POST", "PUT", "PATCH", "DELETE"]
+            },
+            {
+              "key": "path",
+              "type": "string",
+              "required": true
+            },
+            {
+              "key": "request",
+              "type": "string",
+              "description": "Weak reference to a Class, e.g. Credentials"
+            },
+            {
+              "key": "response",
+              "type": "string",
+              "description": "Weak reference to a Class, e.g. Session"
+            },
+            {
+              "key": "timeoutMs",
+              "label": "timeout (ms)",
+              "type": "number",
+              "default": 10000
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
