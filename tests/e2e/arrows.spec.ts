@@ -33,10 +33,10 @@ const FIT_PADDING = 24;
 /** Novo container (Personalizado) com o nome dado, pelo diálogo. */
 async function addContainer(page: Page, host: Locator, name: string): Promise<void> {
   const before = Number((await host.getAttribute('data-images')) ?? 0);
-  await page.getByRole('button', { name: 'Novo container' }).first().click();
+  await page.getByRole('button', { name: 'New container' }).first().click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Nome', { exact: true }).fill(name);
-  await dialog.getByRole('button', { name: 'Criar container' }).click();
+  await dialog.getByLabel('Name', { exact: true }).fill(name);
+  await dialog.getByRole('button', { name: 'Create container' }).click();
   await expect(dialog).toBeHidden();
   await expect(host).toHaveAttribute('data-images', String(before + 1));
 }
@@ -44,7 +44,7 @@ async function addContainer(page: Page, host: Locator, name: string): Promise<vo
 /** Enquadrar tudo, esperando o canvas desenhar o enquadramento novo. */
 async function fitAll(page: Page, host: Locator): Promise<void> {
   const before = Number((await host.getAttribute('data-fits')) ?? 0);
-  await page.getByRole('button', { name: 'Enquadrar tudo' }).click();
+  await page.getByRole('button', { name: 'Fit all' }).click();
   await expect(host).toHaveAttribute('data-fits', String(before + 1));
 }
 
@@ -107,13 +107,13 @@ async function twoMarkedScreens(page: Page, host: Locator): Promise<[Rect, Rect]
       width: screen.width * 0.25,
       height: screen.height * 0.2,
     };
-    await setMode(page, 'Desenhar');
+    await setMode(page, 'Draw');
     await drag(
       page,
       { x: mark.x, y: mark.y },
       { x: mark.x + mark.width, y: mark.y + mark.height },
     );
-    await setMode(page, 'Navegar');
+    await setMode(page, 'Navigate');
     marks.push(mark);
   }
   const [first, second] = marks;
@@ -185,11 +185,11 @@ test('o menu do traço troca o estilo (reta, curva, canto), uma entrada cada, e 
     x: (centerOf(first).x + centerOf(second).x) / 2,
     y: (centerOf(first).y + centerOf(second).y) / 2,
   };
-  const menu = page.getByRole('menu', { name: 'Menu do item no canvas' });
+  const menu = page.getByRole('menu', { name: 'Canvas item menu' });
   for (const [label, style] of [
-    ['Canto', 'elbow'],
-    ['Reta', 'straight'],
-    ['Curva', 'curve'],
+    ['Elbow', 'elbow'],
+    ['Straight', 'straight'],
+    ['Curve', 'curve'],
   ] as const) {
     await page.mouse.click(middle.x, middle.y, { button: 'right' });
     await expect(menu).toBeVisible();
@@ -200,11 +200,11 @@ test('o menu do traço troca o estilo (reta, curva, canto), uma entrada cada, e 
 
   // O estilo atual vem marcado no menu.
   await page.mouse.click(middle.x, middle.y, { button: 'right' });
-  await expect(menu.getByRole('menuitemradio', { name: 'Curva' })).toHaveAttribute(
+  await expect(menu.getByRole('menuitemradio', { name: 'Curve' })).toHaveAttribute(
     'aria-checked',
     'true',
   );
-  await menu.getByRole('menuitem', { name: 'Excluir seta' }).click();
+  await menu.getByRole('menuitem', { name: 'Delete arrow' }).click();
   await expect(host).toHaveAttribute('data-arrows', '0');
   expect(await arrowsOf(page)).toHaveLength(0);
 });
@@ -227,7 +227,7 @@ test('no menu do traço, o espaço entre o check e o rótulo é o de sempre (6 p
     y: (centerOf(first).y + centerOf(second).y) / 2,
   };
   await page.mouse.click(middle.x, middle.y, { button: 'right' });
-  const menu = page.getByRole('menu', { name: 'Menu do item no canvas' });
+  const menu = page.getByRole('menu', { name: 'Canvas item menu' });
   await expect(menu).toBeVisible();
   const checked = menu.locator('[role=menuitemradio][aria-checked=true]');
   await expect(checked).toHaveCount(1);
@@ -272,7 +272,7 @@ test('Ligar a… nos Detalhes cria a seta curva sem arrastar (o caminho do agent
 
   // Seleciona a primeira marcação e abre o seletor pelo botão dos Detalhes.
   await page.mouse.click(centerOf(first).x, centerOf(first).y);
-  await page.getByRole('button', { name: 'Ligar a…', exact: true }).click();
+  await page.getByRole('button', { name: 'Link to…', exact: true }).click();
   const picker = page.getByRole('dialog', { name: /^Ligar .* a…$/ });
   await expect(picker).toBeVisible();
   // A própria marcação não aparece: só a outra é oferecida.

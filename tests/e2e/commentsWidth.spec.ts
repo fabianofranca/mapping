@@ -25,14 +25,14 @@ async function exampleWithFourThreads(): Promise<Buffer> {
 
 async function openComments(
   page: Page,
-  status: 'Todas' | 'Resolvidas',
+  status: 'All' | 'Resolved',
   buffer: Buffer = readFileSync(EXAMPLE_ZIP),
 ): Promise<void> {
   await page.goto('/');
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
     .setInputFiles({ name: 'exemplo-completo.zip', mimeType: 'application/zip', buffer });
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   for (const n of ['1', '2', '3', '0']) await page.keyboard.press(`Control+Shift+${n}`);
   await page.getByRole('combobox', { name: 'Status', exact: true }).selectOption({
     label: status,
@@ -65,11 +65,11 @@ async function expectFits(page: Page): Promise<void> {
 
 async function expectDeleteMenu(page: Page): Promise<void> {
   await page.locator('.comments-row .comments-menu button').first().click();
-  await expect(page.getByRole('menuitem', { name: 'Apagar' })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: 'Delete' })).toBeVisible();
   await page.keyboard.press('Escape');
 }
 
-for (const status of ['Todas', 'Resolvidas'] as const) {
+for (const status of ['All', 'Resolved'] as const) {
   test.describe(`${status}`, () => {
     test.describe('janela de 887 px (1591 × 1052)', () => {
       test.use({ viewport: { width: 1591, height: 1052 } });
@@ -98,7 +98,7 @@ for (const status of ['Todas', 'Resolvidas'] as const) {
         await expect(page.locator('.comments-when').first()).toBeHidden();
         await expect(page.locator('.comments-by-name').first()).toBeHidden();
         await expect(page.locator('.comments-avatar').first()).toBeVisible();
-        for (const name of ['Âncora', 'Última mensagem', 'Status']) {
+        for (const name of ['Anchor', 'Last message', 'Status']) {
           await expect(page.getByRole('columnheader', { name })).toBeVisible();
         }
         await expect(page.locator('.comments-row .comments-last').first()).toBeVisible();
@@ -114,7 +114,7 @@ test.describe('altura inicial da janela inferior (900 × 720, sem altura gravada
   test('Comentários mostra 4 linhas inteiras, todas com a altura de uma linha', async ({
     page,
   }) => {
-    await openComments(page, 'Todas', await exampleWithFourThreads());
+    await openComments(page, 'All', await exampleWithFourThreads());
     // O ponto de não lida fica na mesma linha da âncora: nenhuma linha passa de uma linha de texto.
     const sizes = await page.locator('.comments-view .list-scroll').evaluate((el) => {
       const rows = [...el.querySelectorAll('.comments-row')];
@@ -143,7 +143,7 @@ test.describe('faixa de abas da janela inferior (900 × 720)', () => {
   const SLACK = 12;
 
   test('as seis abas cabem inteiras, sem rolar e com folga', async ({ page }) => {
-    await openComments(page, 'Todas');
+    await openComments(page, 'All');
     const strip = page.locator('.tool-window-bottom [role=tablist]');
     const sizes = await strip.evaluate((el) => ({
       s: el.scrollWidth,
@@ -167,7 +167,7 @@ test.describe('faixa de abas da janela inferior (900 × 720)', () => {
 test.describe('âncora da conversa resolvida (900 × 720)', () => {
   test.use({ viewport: { width: 900, height: 720 } });
 
-  for (const status of ['Resolvidas', 'Todas'] as const) {
+  for (const status of ['Resolved', 'All'] as const) {
     test(`${status}: o botão da âncora fica riscado e em cinza`, async ({ page }) => {
       await openComments(page, status);
       const row = page.locator('.comments-row[data-resolved]').first();

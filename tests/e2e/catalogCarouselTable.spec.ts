@@ -19,7 +19,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.emulateMedia({ colorScheme: scheme });
       await page.setViewportSize(size);
       await createProject(page, 'Carousel');
-      await projectAction(page, 'Especializações');
+      await projectAction(page, 'Specializations');
       await page
         .locator('input[type=file][accept=".zip,application/zip"]')
         .setInputFiles({
@@ -27,7 +27,7 @@ for (const scheme of ['light', 'dark'] as const) {
           mimeType: 'application/zip',
           buffer: readFileSync('examples/material3-compose.zip'),
         });
-      const confirm = page.getByRole('button', { name: 'Aplicar', exact: true });
+      const confirm = page.getByRole('button', { name: 'Apply', exact: true });
       await expect(confirm).toBeEnabled();
       await confirm.click();
       await expect(
@@ -35,7 +35,7 @@ for (const scheme of ['light', 'dark'] as const) {
       ).toBeVisible();
       await page
         .getByRole('dialog')
-        .getByRole('button', { name: 'Fechar', exact: true })
+        .getByRole('button', { name: 'Close', exact: true })
         .click();
 
       await page.keyboard.press('Control+Shift+9');

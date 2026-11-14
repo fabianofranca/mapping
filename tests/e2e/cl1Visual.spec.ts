@@ -27,19 +27,19 @@ async function packageZip(): Promise<Buffer> {
 
 async function openWithLibrary(page: Page): Promise<void> {
   await createProject(page, 'Espaço');
-  await projectAction(page, 'Especializações');
+  await projectAction(page, 'Specializations');
   await page.locator('input[type=file][accept=".zip,application/zip"]').setInputFiles({
     name: 'material3-compose.zip',
     mimeType: 'application/zip',
     buffer: await packageZip(),
   });
-  const confirm = page.getByRole('button', { name: 'Aplicar', exact: true });
+  const confirm = page.getByRole('button', { name: 'Apply', exact: true });
   await expect(confirm).toBeEnabled();
   await confirm.click();
   await expect(page.getByRole('status').filter({ hasText: 'aplicada' })).toBeVisible();
   await page
     .getByRole('dialog')
-    .getByRole('button', { name: 'Fechar', exact: true })
+    .getByRole('button', { name: 'Close', exact: true })
     .click();
 }
 
@@ -48,7 +48,7 @@ test('1.1 Paleta: nome do tipo legível e botão Adicionar inteiro em todas as l
 }) => {
   await openWithLibrary(page);
   await page.keyboard.press('Control+Shift+9');
-  await page.getByRole('tab', { name: 'Paleta' }).click();
+  await page.getByRole('tab', { name: 'Palette' }).click();
   await expect(page.locator('.library-type').first()).toBeVisible();
   const cut = await page.evaluate(() =>
     [...document.querySelectorAll<HTMLElement>('.library-type')].flatMap((row) =>
@@ -96,7 +96,7 @@ test('1.3 Catálogo: palavras da tabela Campos e da lista não partem no meio', 
     mimeType: 'application/zip',
     buffer: await packageZip(),
   });
-  const screen = page.getByRole('main', { name: 'Catálogo da biblioteca' });
+  const screen = page.getByRole('main', { name: 'Library catalog' });
   const entries = screen
     .getByRole('navigation', { name: 'Componentes' })
     .locator('button[data-type-id]');
@@ -132,7 +132,7 @@ test('1.4 Árvore + Detalhes: o corte tem dica e o resumo da camada vazia não �
       mimeType: 'application/zip',
       buffer: await fixtureZip(),
     });
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   await page.keyboard.press('Control+Shift+1');
   await page.locator('.tree-row', { hasText: 'Cabeçalho' }).first().click();
   await page.keyboard.press('Control+Shift+3');
@@ -195,11 +195,11 @@ test('1.1a Paleta com os Detalhes abertos e fechados: nome inteiro, botão intei
 }) => {
   await openWithLibrary(page);
   await page.keyboard.press('Control+Shift+9');
-  await page.getByRole('tab', { name: 'Paleta' }).click();
+  await page.getByRole('tab', { name: 'Palette' }).click();
   await expect(page.locator('.library-type').first()).toBeVisible();
   const closed = await paletteReport(page);
   await page.keyboard.press('Control+Shift+3');
-  await expect(page.locator('section.tool-window[aria-label="Detalhes"]')).toBeVisible();
+  await expect(page.locator('section.tool-window[aria-label="Details"]')).toBeVisible();
   const open = await paletteReport(page);
   for (const r of [closed, open]) {
     expect(r.brokenNames).toEqual([]);

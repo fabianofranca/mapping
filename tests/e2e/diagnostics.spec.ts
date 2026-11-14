@@ -7,16 +7,16 @@ import { createProject } from './helpers';
 const BUILD_ID = /^([0-9a-f]{7}|dev) · \d{4}-\d{2}-\d{2}$/;
 
 async function aboutBuildId(page: Page): Promise<string> {
-  await page.getByRole('button', { name: 'Configurações', exact: true }).click();
-  const about = page.getByRole('region', { name: 'Sobre' });
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  const about = page.getByRole('region', { name: 'About' });
   await expect(about).toBeVisible();
   const id = (await about.getByTestId('build-id').textContent()) ?? '';
   expect(id).toMatch(BUILD_ID);
-  await expect(about.getByRole('button', { name: 'Copiar' })).toBeVisible();
+  await expect(about.getByRole('button', { name: 'Copy' })).toBeVisible();
   return id;
 }
 
-test('o build id aparece no "Sobre" das Configurações e na barra de status', async ({
+test('o build id aparece no "About" das Configurações e na barra de status', async ({
   page,
 }) => {
   await page.goto('/');
@@ -24,7 +24,7 @@ test('o build id aparece no "Sobre" das Configurações e na barra de status', a
   await page.keyboard.press('Escape');
 
   await createProject(page, 'Build');
-  const bar = page.getByRole('contentinfo', { name: 'Barra de status' });
+  const bar = page.getByRole('contentinfo', { name: 'Status bar' });
   await expect(bar.getByText(id, { exact: true })).toBeVisible();
 });
 

@@ -1,39 +1,39 @@
 # Column
 
-Container vertical do Compose: os filhos se empilham pela ordem, com spacing e padding.
+Vertical Compose container: the children stack in order, with spacing and padding.
 
-Tipo de anotação: `m3-column` (Column).
+Annotation type: `m3-column` (Column).
 
-## Tamanho
+## Size
 
-- Inicial: 380 × 200 px
-- Mínimo: 24 × 24 px
-- Dimensionamento: largura fill, altura hug
+- Initial: 380 × 200 px
+- Minimum: 24 × 24 px
+- Sizing: width fill, height hug
 
-## Campos
+## Fields
 
-| Chave        | Rótulo       | Tipo   | Obrigatório | Opções                                                                   | Padrão | Descrição |
+| Key | Label | Type | Required | Options | Default | Description |
 | ------------ | ------------ | ------ | ----------- | ------------------------------------------------------------------------ | ------ | --------- |
-| `spacing`    | Spacing (dp) | number | não         |                                                                          | 8      |           |
-| `padding`    | Padding (dp) | number | não         |                                                                          | 0      |           |
-| `background` | Background   | enum   | não         | none, surface, surface-container, primary-container, secondary-container | none   |           |
-| `shape`      | Shape        | enum   | não         | none, small, medium, large, extra-large                                  | none   |           |
+| `spacing`    | Spacing (dp) | number | no |                                                                          | 8      |           |
+| `padding`    | Padding (dp) | number | no |                                                                          | 0      |           |
+| `background` | Background   | enum   | no | none, surface, surface-container, primary-container, secondary-container | none   |           |
+| `shape`      | Shape        | enum   | no | none, small, medium, large, extra-large                                  | none   |           |
 
 ## Slot
 
-Este componente tem um slot que recebe os filhos.
+This component has a slot that receives the children.
 
-## Exemplos
+## Examples
 
-- **Padrão**: background=none, shape=none, spacing=8, padding=0
-- **Fundo primário**: background=primary-container, shape=none, spacing=8, padding=0
-- **Cantos grandes**: background=none, shape=large, spacing=8, padding=0
+- **Default**: background=none, shape=none, spacing=8, padding=0
+- **Primary background**: background=primary-container, shape=none, spacing=8, padding=0
+- **Large corners**: background=none, shape=large, spacing=8, padding=0
 
-## Origem externa
+## External origin
 
-Sistema `sdui`: tipo externo `Column`.
+System `sdui`: external type `Column`.
 
-| Campo        | Caminho em `props` |
+| Field | Path in `props` |
 | ------------ | ------------------ |
 | `spacing`    | `spacing`          |
 | `padding`    | `padding`          |

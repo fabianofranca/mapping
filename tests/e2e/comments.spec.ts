@@ -16,9 +16,9 @@ import {
 async function setIdentity(page: Page): Promise<void> {
   await page.keyboard.press('Control+,');
   const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Nome', { exact: true }).fill('Marina Alves');
-  await dialog.getByLabel('E-mail', { exact: true }).fill('marina@exemplo.com');
-  await dialog.getByRole('button', { name: 'Salvar' }).click();
+  await dialog.getByLabel('Name', { exact: true }).fill('Marina Alves');
+  await dialog.getByLabel('Email', { exact: true }).fill('marina@exemplo.com');
+  await dialog.getByRole('button', { name: 'Save' }).click();
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
 }
@@ -30,13 +30,13 @@ async function pins(host: Locator): Promise<number> {
 test('os pinos nascem escondidos, o Comentar abre o rascunho e o clique no pino abre a conversa', async ({
   page,
 }) => {
-  await createProject(page, 'Comentários');
+  await createProject(page, 'Comments');
   await addImage(page);
   await setIdentity(page);
   const host = page.locator('.canvas-host');
   const center = await canvasPoint(page);
   await drawMarking(page, center);
-  await setMode(page, 'Navegar');
+  await setMode(page, 'Navigate');
   const conversas = page.getByRole('button', { name: 'Conversas', exact: true });
   await expect(conversas).toHaveAttribute('aria-pressed', 'false');
   expect(await pins(host)).toBe(0);
@@ -105,15 +105,15 @@ async function openFolderProject(page: Page, name: string): Promise<void> {
   await page.goto('/');
   await page.getByRole('button', { name: /Abrir pasta/ }).click();
   await page.getByRole('textbox').fill(name);
-  await page.getByRole('button', { name: 'Criar' }).click();
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await page.getByRole('button', { name: 'Create' }).click();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
 }
 
 /** Desenha uma marcação em `fy`, dá nome a ela e a deixa selecionada. */
 async function namedMarking(page: Page, fy: number, name: string): Promise<Point> {
   const at = await canvasPoint(page, fy);
   await drawMarking(page, at);
-  const field = page.getByLabel('Nome', { exact: true }).first();
+  const field = page.getByLabel('Name', { exact: true }).first();
   await field.fill(name);
   await field.press('Enter');
   return at;
@@ -163,7 +163,7 @@ test('o @ abre a lista de itens e o Enter troca o @termo por um chip', async ({
   const composer = await openComposer(page, at);
 
   await composer.pressSequentially('Veja @Por');
-  const picker = page.getByRole('listbox', { name: 'Itens para citar' });
+  const picker = page.getByRole('listbox', { name: 'Items to cite' });
   await expect(picker).toBeVisible();
   await expect(composer).toHaveAttribute('aria-controls', /./);
   await expect(picker.getByRole('option').first()).toBeVisible();
@@ -281,7 +281,7 @@ test('papéis e nomes acessíveis do campo, do chip e da lista', async ({ page }
   await expect(composer).not.toHaveAttribute('aria-activedescendant', /./);
 
   await composer.pressSequentially('@');
-  const picker = page.getByRole('listbox', { name: 'Itens para citar' });
+  const picker = page.getByRole('listbox', { name: 'Items to cite' });
   await expect(picker).toBeVisible();
   const options = picker.getByRole('option');
   expect(await options.count()).toBeGreaterThan(1);
@@ -338,7 +338,7 @@ test('o chip é vivo: renomear o alvo muda o nome e apagar o alvo risca o chip',
 
   // Renomeia o alvo: a mensagem mostra o nome de agora.
   await page.mouse.click(target.x, target.y);
-  const name = page.getByLabel('Nome', { exact: true }).first();
+  const name = page.getByLabel('Name', { exact: true }).first();
   await name.fill('Janela lateral');
   await name.press('Enter');
   await page.mouse.click(anchor.x, anchor.y);

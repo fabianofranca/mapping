@@ -41,9 +41,9 @@ test('o ⋮ de uma linha fora da vista abre no primeiro clique, três vezes', as
       mimeType: 'application/zip',
       buffer: await zipWithManyPairs(),
     });
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   await page
-    .getByRole('region', { name: 'Árvore de marcações' })
+    .getByRole('region', { name: 'Marking tree' })
     .getByRole('button', { name: 'Cabeçalho', exact: true })
     .click();
   const last = page.getByRole('button', { name: `Ações do par chave${PAIRS}` });
@@ -105,11 +105,11 @@ test('o ⋮ da última camada e de uma linha da Árvore abre no primeiro clique,
       mimeType: 'application/zip',
       buffer: await zipWithLongLists(),
     });
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   await page.keyboard.press('Control+Shift+2');
-  const layers = page.getByRole('region', { name: 'Camadas', exact: true });
+  const layers = page.getByRole('region', { name: 'Layers', exact: true });
   await expect(layers).toBeVisible();
-  const tree = page.getByRole('region', { name: 'Árvore de marcações' });
+  const tree = page.getByRole('region', { name: 'Marking tree' });
   const cases = [
     {
       scope: layers,

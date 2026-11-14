@@ -101,7 +101,7 @@ test('revisão a 900 px: X, Y, L e A com 4 dígitos cabem inteiros', async ({ pa
       mimeType: 'application/zip',
       buffer: await bigNumbersZip(),
     });
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   await page.keyboard.press('Control+Shift+Digit3');
   await page.keyboard.press('Control+Shift+Digit7');
   await page.keyboard.press('Control+Shift+Digit2');
@@ -125,7 +125,7 @@ test('fora da revisão, num painel de 280 px, o Y de 3 dígitos cabe inteiro', a
       mimeType: 'application/zip',
       buffer: readFileSync('examples/exemplo-completo.zip'),
     });
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   await page.keyboard.press('Control+Shift+Digit3');
   await page.keyboard.press('Control+Shift+Digit2');
   await page.locator('.tree-row', { hasText: 'Cadastrar' }).first().click();

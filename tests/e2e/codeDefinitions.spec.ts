@@ -11,7 +11,7 @@ import {
 
 // Etapas 3b.3, 9 e Código de instanciação (o R3 do guia do testador): atualizar a SDUI para a
 // versão com `repo` (formatVersion 5), o `repo` da especialização em leitura nas Configurações
-// com só o caminho local editável, a linha "Definição" nos Detalhes ("Abrir no repositório" já
+// com só o caminho local editável, a linha "Definition" nos Detalhes ("Open in repository" já
 // pela especialização, sem configurar nada, só o `href`: nenhuma navegação, e "Copiar
 // caminho"), o Screen sem campo de código, a importação de uma especialização antiga com o
 // campo `codeRef` (ignorado, com aviso) e o clone local editado por fora no `mapping.json`.
@@ -41,8 +41,8 @@ async function openFolderProject(page: Page): Promise<void> {
   await page.goto('/');
   await page.getByRole('button', { name: /Abrir pasta/ }).click();
   await page.getByRole('textbox').fill('Roteiro 3b');
-  await page.getByRole('button', { name: 'Criar' }).click();
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await page.getByRole('button', { name: 'Create' }).click();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
 }
 
 /** Volta o SDUI atual (formatVersion 11) ao que a v5 conhece: sem grupos, papéis, documento externo nem `migrations`. */
@@ -109,7 +109,7 @@ const specInput = (page: Page) =>
 
 /** Aplica a SDUI v1 e atualiza para a v2 pelo diálogo (passo 1 do roteiro). */
 async function updateSduiToV2(page: Page): Promise<void> {
-  await projectAction(page, 'Especializações');
+  await projectAction(page, 'Specializations');
   await specInput(page).setInputFiles({
     name: 'sdui-v1.json',
     mimeType: 'application/json',
@@ -119,12 +119,12 @@ async function updateSduiToV2(page: Page): Promise<void> {
     page.getByRole('status').filter({ hasText: /^"SDUI" aplicada/ }),
   ).toBeVisible();
   // Sem plataformas na v1.
-  await expect(page.getByText('Plataformas', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Platforms', { exact: true })).toHaveCount(0);
 
   // O arquivo vai direto ao seletor (sem abrir o escolhedor nativo do navegador).
   // Uma linha por especialização (a biblioteca de notas já vem aplicada): a SDUI é a última.
   await expect(
-    page.getByRole('button', { name: 'Atualizar versão…' }).last(),
+    page.getByRole('button', { name: 'Update version…' }).last(),
   ).toBeVisible();
   await specInput(page).setInputFiles({
     name: 'sdui.json',
@@ -133,7 +133,7 @@ async function updateSduiToV2(page: Page): Promise<void> {
   });
   const confirm = page.getByRole('dialog', { name: 'Atualizar "SDUI"?' });
   await expect(confirm).toContainText('Camadas novas: Telas');
-  await confirm.getByRole('button', { name: 'Atualizar', exact: true }).click();
+  await confirm.getByRole('button', { name: 'Update', exact: true }).click();
   await expect(page.getByRole('status').filter({ hasText: /versão \d+/ })).toBeVisible();
 }
 
@@ -141,14 +141,14 @@ async function closeDialog(page: Page): Promise<void> {
   await page
     .getByRole('dialog')
     .last()
-    .getByRole('button', { name: 'Fechar', exact: true })
+    .getByRole('button', { name: 'Close', exact: true })
     .click();
 }
 
 async function openSettings(page: Page): Promise<void> {
-  await projectAction(page, 'Configurações');
+  await projectAction(page, 'Settings');
   await expect(
-    page.getByRole('heading', { name: 'Repositórios', exact: true }),
+    page.getByRole('heading', { name: 'Repositories', exact: true }),
   ).toBeVisible();
 }
 
@@ -156,7 +156,7 @@ async function openSettings(page: Page): Promise<void> {
 async function configureLocalPath(page: Page): Promise<void> {
   await openSettings(page);
   const android = page.getByRole('group', { name: 'Android' });
-  const local = android.getByLabel('Caminho local da raiz');
+  const local = android.getByLabel('Local path of the root');
   await local.fill('../../..');
   await local.press('Enter');
   await expect(local).toHaveValue('../../..');
@@ -189,7 +189,7 @@ async function createAnnotations(page: Page, withLocalPath = false): Promise<voi
   await page.getByLabel('texto', { exact: true }).press('Enter');
 }
 
-/** As entradas da linha "Definição" nos Detalhes (uma por plataforma com `path`). */
+/** As entradas da linha "Definition" nos Detalhes (uma por plataforma com `path`). */
 const definitions = (page: Page) => page.locator('[data-definition]');
 
 test('passo 1: atualizar a SDUI para a v2 mostra a camada Telas e as plataformas', async ({
@@ -201,7 +201,7 @@ test('passo 1: atualizar a SDUI para a v2 mostra a camada Telas e as plataformas
   await updateSduiToV2(page);
 
   // As plataformas de cada especialização: nome, id e linguagem; o `repo` do Android como link.
-  const specs = page.getByRole('dialog', { name: 'Especializações' });
+  const specs = page.getByRole('dialog', { name: 'Specializations' });
   await expect(specs.getByText('Android · android · kotlin')).toBeVisible();
   await expect(specs.getByText('iOS · ios · swift')).toBeVisible();
   const repoLink = specs.getByRole('link', { name: ANDROID_REPO.url });
@@ -244,12 +244,12 @@ test('passo 2: o repo da especialização em leitura e só o caminho local edit�
   // O iOS não declara: texto discreto, sem aviso.
   const ios = page.getByRole('group', { name: 'iOS' });
   await expect(
-    ios.getByText('A especialização não declara o repositório desta plataforma.'),
+    ios.getByText('The specialization does not declare the repository of this platform.'),
   ).toBeVisible();
   await expect(ios.getByRole('status')).toHaveCount(0);
   await expect(ios.getByRole('link')).toHaveCount(0);
 
-  const local = android.getByLabel('Caminho local da raiz');
+  const local = android.getByLabel('Local path of the root');
   await local.fill('/abs/olute');
   await local.press('Enter');
   await expect(android.getByRole('alert')).toContainText('relativo à pasta do projeto');
@@ -270,7 +270,7 @@ test('passo 2: o repo da especialização em leitura e só o caminho local edit�
   expect(mapping).toMatchObject({ platformRepos: {} });
 });
 
-test('passo 3: "Definição" do Button ("Abrir no repositório" e "Copiar caminho") e o Screen sem campo de código', async ({
+test('passo 3: "Definition" do Button ("Open in repository" e "Copy path") e o Screen sem campo de código', async ({
   page,
   context,
 }) => {
@@ -279,7 +279,7 @@ test('passo 3: "Definição" do Button ("Abrir no repositório" e "Copiar caminh
   await createAnnotations(page);
 
   // Button selecionado nos Detalhes: uma linha por plataforma com `path`.
-  await expect(page.getByText('Definição', { exact: true })).toBeVisible();
+  await expect(page.getByText('Definition', { exact: true })).toBeVisible();
   await expect(definitions(page).first()).toBeVisible();
   const android = page.locator('[data-definition="android"]');
   const ios = page.locator('[data-definition="ios"]');
@@ -296,10 +296,10 @@ test('passo 3: "Definição" do Button ("Abrir no repositório" e "Copiar caminh
   );
   await expect(open).toHaveAttribute('target', '_blank');
   await expect(open).toHaveAttribute('rel', 'noopener noreferrer');
-  // O iOS não declara repo na especialização: sem link, mas com "Copiar caminho".
+  // O iOS não declara repo na especialização: sem link, mas com "Copy path".
   await expect(ios.getByRole('link')).toHaveCount(0);
   await ios.getByRole('button', { name: /^Copiar caminho/ }).click();
-  await expect(ios.getByRole('status')).toHaveText('Caminho copiado');
+  await expect(ios.getByRole('status')).toHaveText('Path copied');
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(DS_BUTTON_SWIFT);
   await android.getByRole('button', { name: /^Copiar caminho/ }).click();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(DS_BUTTON_KT);
@@ -321,7 +321,7 @@ test('passo 4: especialização antiga com campo codeRef é aplicada sem ele, co
   await openFolderProject(page);
   await addImage(page);
   await drawMarking(page, await canvasPoint(page));
-  await projectAction(page, 'Especializações');
+  await projectAction(page, 'Specializations');
   await specInput(page).setInputFiles({
     name: 'sdui-antiga.json',
     mimeType: 'application/json',
@@ -366,10 +366,10 @@ test('passo 5: clone local editado por fora (JSON) chega às Configurações; o 
   ).toBeVisible({ timeout: 10_000 });
   await openSettings(page);
   await expect(
-    page.getByRole('group', { name: 'Android' }).getByLabel('Caminho local da raiz'),
+    page.getByRole('group', { name: 'Android' }).getByLabel('Local path of the root'),
   ).toHaveValue('../../outro');
   await closeDialog(page);
-  // O endereço é da especialização: o link da "Definição" continua.
+  // O endereço é da especialização: o link da "Definition" continua.
   await expect(page.locator('[data-definition="android"]').getByRole('link')).toHaveCount(
     1,
   );

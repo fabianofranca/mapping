@@ -1,33 +1,33 @@
 # Chip
 
-Assist/filter chip: 32 dp, forma small (8), outline; filtro selecionado em secondary container com check.
+Assist/filter chip: 32 dp, small shape (8), outline; a selected filter on secondary container with a check.
 
-Tipo de anotação: `m3-chip` (Chip).
+Annotation type: `m3-chip` (Chip).
 
-## Tamanho
+## Size
 
-- Inicial: 96 × 32 px
-- Mínimo: 40 × 32 px
-- Dimensionamento: largura hug, altura 32
+- Initial: 96 × 32 px
+- Minimum: 40 × 32 px
+- Sizing: width hug, height 32
 
-## Campos
+## Fields
 
-| Chave      | Rótulo   | Tipo   | Obrigatório | Opções                                                                                               | Padrão | Descrição |
+| Key | Label | Type | Required | Options | Default | Description |
 | ---------- | -------- | ------ | ----------- | ---------------------------------------------------------------------------------------------------- | ------ | --------- |
-| `label`    | Label    | string | sim         |                                                                                                      |        |           |
-| `selected` | Selected | enum   | não         | sim, não                                                                                             | não    |           |
-| `icon`     | Icon     | enum   | não         | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |        |           |
+| `label`    | Label    | string | yes |                                                                                                      |        |           |
+| `selected` | Selected | enum   | no | sim, não                                                                                             | não    |           |
+| `icon`     | Icon     | enum   | no | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |        |           |
 
-## Exemplos
+## Examples
 
-- **Padrão**: label=Label, selected=não
-- **Selecionado**: label=Label, selected=sim
+- **Default**: label=Label, selected=não
+- **Selected**: label=Label, selected=sim
 
-## Origem externa
+## External origin
 
-Sistema `sdui`: tipo externo `Chip`.
+System `sdui`: external type `Chip`.
 
-| Campo      | Caminho em `props` |
+| Field | Path in `props` |
 | ---------- | ------------------ |
 | `label`    | `text`             |
 | `selected` | `selected`         |

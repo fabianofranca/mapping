@@ -29,32 +29,32 @@ test('container com um componente da Biblioteca, sem desenho gravado', async ({
   const host = page.locator('.canvas-host');
 
   // Novo container (Personalizado, 360×800).
-  await page.getByRole('button', { name: 'Novo container' }).first().click();
+  await page.getByRole('button', { name: 'New container' }).first().click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Nome', { exact: true }).fill('Configurações');
-  await dialog.getByRole('button', { name: 'Criar container' }).click();
+  await dialog.getByLabel('Name', { exact: true }).fill('Settings');
+  await dialog.getByRole('button', { name: 'Create container' }).click();
   await expect(dialog).toBeHidden();
   await expect(host).toHaveAttribute('data-images', '1');
 
   // Aplica o pacote do Material 3 por zip.
-  await projectAction(page, 'Especializações');
+  await projectAction(page, 'Specializations');
   await page.locator('input[type=file][accept=".zip,application/zip"]').setInputFiles({
     name: 'material3.zip',
     mimeType: 'application/zip',
     buffer: await packageZip(),
   });
-  const confirm = page.getByRole('button', { name: 'Aplicar', exact: true });
+  const confirm = page.getByRole('button', { name: 'Apply', exact: true });
   await expect(confirm).toBeEnabled();
   await confirm.click();
   await expect(page.getByRole('status').filter({ hasText: 'aplicada' })).toBeVisible();
   await page
     .getByRole('dialog')
-    .getByRole('button', { name: 'Fechar', exact: true })
+    .getByRole('button', { name: 'Close', exact: true })
     .click();
 
   // Janela Catálogo, aba Paleta (Ctrl+Shift+9) e Adicionar de um botão.
   await page.keyboard.press('Control+Shift+9');
-  await page.getByRole('tab', { name: 'Paleta' }).click();
+  await page.getByRole('tab', { name: 'Palette' }).click();
   await page.getByRole('button', { name: /^Adicionar.*: Button$/ }).click();
   await expect(host).toHaveAttribute('data-components', /^[1-9]/);
 
@@ -73,37 +73,37 @@ test('arrastar um tipo da Paleta até o canvas cria a instância onde cai', asyn
 }) => {
   await createProject(page, 'Arrasto');
   const host = page.locator('.canvas-host');
-  await page.getByRole('button', { name: 'Novo container' }).first().click();
+  await page.getByRole('button', { name: 'New container' }).first().click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Nome', { exact: true }).fill('Home');
-  await dialog.getByRole('button', { name: 'Criar container' }).click();
+  await dialog.getByLabel('Name', { exact: true }).fill('Home');
+  await dialog.getByRole('button', { name: 'Create container' }).click();
   await expect(dialog).toBeHidden();
   await expect(host).toHaveAttribute('data-images', '1');
 
-  await projectAction(page, 'Especializações');
+  await projectAction(page, 'Specializations');
   await page.locator('input[type=file][accept=".zip,application/zip"]').setInputFiles({
     name: 'material3.zip',
     mimeType: 'application/zip',
     buffer: await packageZip(),
   });
-  const confirm = page.getByRole('button', { name: 'Aplicar', exact: true });
+  const confirm = page.getByRole('button', { name: 'Apply', exact: true });
   await expect(confirm).toBeEnabled();
   await confirm.click();
   await expect(page.getByRole('status').filter({ hasText: 'aplicada' })).toBeVisible();
   await page
     .getByRole('dialog')
-    .getByRole('button', { name: 'Fechar', exact: true })
+    .getByRole('button', { name: 'Close', exact: true })
     .click();
 
   await page.keyboard.press('Control+Shift+9');
-  await page.getByRole('tab', { name: 'Paleta' }).click();
+  await page.getByRole('tab', { name: 'Palette' }).click();
   const item = page.locator('li.library-type').filter({
     has: page.getByRole('button', { name: /^Adicionar.*: Button$/ }),
   });
   await expect(item).toHaveAttribute('draggable', 'true');
   // Enquadrar tudo: o único container (360 × 800, alto) fica no centro da vista, com vazio dos lados.
-  await page.getByRole('button', { name: 'Enquadrar tudo' }).click();
-  const canvas = page.getByRole('main', { name: 'Canvas do projeto' });
+  await page.getByRole('button', { name: 'Fit all' }).click();
+  const canvas = page.getByRole('main', { name: 'Project canvas' });
   const box = await canvas.boundingBox();
   if (!box) throw new Error('canvas sem tamanho');
 
@@ -129,22 +129,22 @@ test('projeto novo traz a biblioteca de notas: Adicionar › Nota cria um post-i
 }) => {
   await createProject(page, 'Notas');
   const host = page.locator('.canvas-host');
-  await page.getByRole('button', { name: 'Novo container' }).first().click();
+  await page.getByRole('button', { name: 'New container' }).first().click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Nome', { exact: true }).fill('Home');
-  await dialog.getByRole('button', { name: 'Criar container' }).click();
+  await dialog.getByLabel('Name', { exact: true }).fill('Home');
+  await dialog.getByRole('button', { name: 'Create container' }).click();
   await expect(dialog).toBeHidden();
   await expect(host).toHaveAttribute('data-images', '1');
 
   // Com o container selecionado, um tipo comum entraria nele; a nota (flutuante) vai sempre
   // para o canvas, e o rótulo do botão já diz isso.
   await page.keyboard.press('Control+Shift+9');
-  await page.getByRole('tab', { name: 'Paleta' }).click();
+  await page.getByRole('tab', { name: 'Palette' }).click();
   const add = page.getByRole('button', {
     name: 'Adicionar no canvas: Nota',
     exact: true,
   });
-  await expect(add).toHaveText('Adicionar no canvas');
+  await expect(add).toHaveText('Add to canvas');
   await add.click();
   await expect(host).toHaveAttribute('data-components', '1');
 

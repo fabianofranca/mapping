@@ -1,38 +1,38 @@
 # Bottom sheet
 
-Modal bottom sheet: surface-container-low, cantos superiores extra-large (28), alça de 32 × 4 a 22 dp do topo, título e itens de lista.
+Modal bottom sheet: surface-container-low, extra-large top corners (28), a 32 × 4 handle 22 dp from the top, a title and list items.
 
-Tipo de anotação: `m3-bottom-sheet` (Bottom sheet).
+Annotation type: `m3-bottom-sheet` (Bottom sheet).
 
-## Tamanho
+## Size
 
-- Inicial: 412 × 320 px
-- Mínimo: 240 × 96 px
-- Dimensionamento: largura fill, altura hug
+- Initial: 412 × 320 px
+- Minimum: 240 × 96 px
+- Sizing: width fill, height hug
 
-## Campos
+## Fields
 
-| Chave    | Rótulo      | Tipo   | Obrigatório | Opções                                                                                               | Padrão | Descrição |
+| Key | Label | Type | Required | Options | Default | Description |
 | -------- | ----------- | ------ | ----------- | ---------------------------------------------------------------------------------------------------- | ------ | --------- |
-| `title`  | Title       | string | não         |                                                                                                      |        |           |
-| `handle` | Drag handle | enum   | não         | sim, não                                                                                             | sim    |           |
-| `item1`  | Item 1      | string | não         |                                                                                                      |        |           |
-| `icon1`  | Icon 1      | enum   | não         | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |        |           |
-| `item2`  | Item 2      | string | não         |                                                                                                      |        |           |
-| `icon2`  | Icon 2      | enum   | não         | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |        |           |
-| `item3`  | Item 3      | string | não         |                                                                                                      |        |           |
-| `icon3`  | Icon 3      | enum   | não         | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |        |           |
+| `title`  | Title       | string | no |                                                                                                      |        |           |
+| `handle` | Drag handle | enum   | no | sim, não                                                                                             | sim    |           |
+| `item1`  | Item 1      | string | no |                                                                                                      |        |           |
+| `icon1`  | Icon 1      | enum   | no | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |        |           |
+| `item2`  | Item 2      | string | no |                                                                                                      |        |           |
+| `icon2`  | Icon 2      | enum   | no | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |        |           |
+| `item3`  | Item 3      | string | no |                                                                                                      |        |           |
+| `icon3`  | Icon 3      | enum   | no | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |        |           |
 
-## Exemplos
+## Examples
 
-- **Padrão**: title=Title, handle=sim, item1=Item one, icon1=favorite, item2=Item two, icon2=edit, item3=Item three, icon3=settings
-- **Sem alça**: title=Title, handle=não, item1=Item one, icon1=favorite, item2=Item two, icon2=edit, item3=Item three, icon3=settings
+- **Default**: title=Title, handle=sim, item1=Item one, icon1=favorite, item2=Item two, icon2=edit, item3=Item three, icon3=settings
+- **No handle**: title=Title, handle=não, item1=Item one, icon1=favorite, item2=Item two, icon2=edit, item3=Item three, icon3=settings
 
-## Origem externa
+## External origin
 
-Sistema `sdui`: tipo externo `BottomSheet`.
+System `sdui`: external type `BottomSheet`.
 
-| Campo    | Caminho em `props` |
+| Field | Path in `props` |
 | -------- | ------------------ |
 | `title`  | `title`            |
 | `handle` | `dragHandle`       |

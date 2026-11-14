@@ -37,7 +37,7 @@ test.describe('layout guardado malformado (#943)', () => {
       await page.reload();
       await expect(page.getByRole('button', { name: /Novo projeto/ })).toBeVisible();
       await createProject(page, 'Layout malformado');
-      await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+      await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
     });
   }
 });
@@ -63,6 +63,6 @@ test.describe('arquivo solto não tira a pessoa da app (#972)', () => {
     expect(await fileEventPrevented(page, '.app-editor', 'dragover')).toBe(true);
     expect(await fileEventPrevented(page, '.app-editor', 'drop')).toBe(true);
     expect(page.url()).toBe(url);
-    await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+    await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   });
 });

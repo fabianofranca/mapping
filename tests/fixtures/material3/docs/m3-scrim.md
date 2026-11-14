@@ -1,20 +1,20 @@
 # Scrim
 
-Película que escurece a tela atrás de um modal: scrim (#000) a 32 %. Cobre a tela inteira, por baixo da folha.
+Film that darkens the screen behind a modal: scrim (#000) at 32 %. Covers the whole screen, under the sheet.
 
-Tipo de anotação: `m3-scrim` (Scrim).
+Annotation type: `m3-scrim` (Scrim).
 
-## Tamanho
+## Size
 
-- Inicial: 412 × 917 px
-- Mínimo: 16 × 16 px
-- Dimensionamento: largura fill, altura fill
+- Initial: 412 × 917 px
+- Minimum: 16 × 16 px
+- Sizing: width fill, height fill
 
-## Campos
+## Fields
 
-| Chave | Rótulo | Tipo | Obrigatório | Opções | Padrão | Descrição |
+| Key | Label | Type | Required | Options | Default | Description |
 | ----- | ------ | ---- | ----------- | ------ | ------ | --------- |
 
-## Exemplos
+## Examples
 
-- **Padrão**:
+- **Default**:

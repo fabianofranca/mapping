@@ -1,38 +1,38 @@
 # Navigation bar
 
-Navigation bar de 80 dp com três destinos; indicador ativo 64 × 32 em secondary container.
+80 dp navigation bar with three destinations; 64 × 32 active indicator on secondary container.
 
-Tipo de anotação: `m3-navigation-bar` (Navigation bar).
+Annotation type: `m3-navigation-bar` (Navigation bar).
 
-## Tamanho
+## Size
 
-- Inicial: 412 × 80 px
-- Mínimo: 240 × 64 px
-- Dimensionamento: largura fill, altura 80
+- Initial: 412 × 80 px
+- Minimum: 240 × 64 px
+- Sizing: width fill, height 80
 
-## Campos
+## Fields
 
-| Chave    | Rótulo  | Tipo   | Obrigatório | Opções                                                                                               | Padrão | Descrição |
+| Key | Label | Type | Required | Options | Default | Description |
 | -------- | ------- | ------ | ----------- | ---------------------------------------------------------------------------------------------------- | ------ | --------- |
-| `label1` | Label 1 | string | sim         |                                                                                                      |        |           |
-| `icon1`  | Icon 1  | enum   | não         | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings | home   |           |
-| `label2` | Label 2 | string | sim         |                                                                                                      |        |           |
-| `icon2`  | Icon 2  | enum   | não         | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings | search |           |
-| `label3` | Label 3 | string | sim         |                                                                                                      |        |           |
-| `icon3`  | Icon 3  | enum   | não         | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings | person |           |
-| `active` | Active  | enum   | não         | 1, 2, 3                                                                                              | 1      |           |
+| `label1` | Label 1 | string | yes |                                                                                                      |        |           |
+| `icon1`  | Icon 1  | enum   | no | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings | home   |           |
+| `label2` | Label 2 | string | yes |                                                                                                      |        |           |
+| `icon2`  | Icon 2  | enum   | no | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings | search |           |
+| `label3` | Label 3 | string | yes |                                                                                                      |        |           |
+| `icon3`  | Icon 3  | enum   | no | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings | person |           |
+| `active` | Active  | enum   | no | 1, 2, 3                                                                                              | 1      |           |
 
-## Exemplos
+## Examples
 
-- **Padrão**: label1=Home, icon1=home, label2=Search, icon2=search, label3=Profile, icon3=person, active=1
-- **Segunda aba ativa**: label1=Home, icon1=home, label2=Search, icon2=search, label3=Profile, icon3=person, active=2
-- **Terceira aba ativa**: label1=Home, icon1=home, label2=Search, icon2=search, label3=Profile, icon3=person, active=3
+- **Default**: label1=Home, icon1=home, label2=Search, icon2=search, label3=Profile, icon3=person, active=1
+- **Second tab active**: label1=Home, icon1=home, label2=Search, icon2=search, label3=Profile, icon3=person, active=2
+- **Third tab active**: label1=Home, icon1=home, label2=Search, icon2=search, label3=Profile, icon3=person, active=3
 
-## Origem externa
+## External origin
 
-Sistema `sdui`: tipo externo `NavigationBar`.
+System `sdui`: external type `NavigationBar`.
 
-| Campo    | Caminho em `props` |
+| Field | Path in `props` |
 | -------- | ------------------ |
 | `label1` | `items[0].label`   |
 | `icon1`  | `items[0].icon`    |

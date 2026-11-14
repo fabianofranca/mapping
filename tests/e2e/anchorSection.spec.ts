@@ -54,7 +54,7 @@ async function openAnchored(page: Page): Promise<void> {
       mimeType: 'application/zip',
       buffer: await anchoredZip(),
     });
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   await page.keyboard.press('Control+Shift+Digit3');
   await page.keyboard.press('Control+Shift+Digit2');
   await page.locator('.tree-row', { hasText: 'Ancorada' }).first().click();
@@ -64,30 +64,30 @@ test('seção Âncora: mostra a âncora, grava lado e alinhamento e Encostar mov
   page,
 }) => {
   await openAnchored(page);
-  const section = page.getByRole('region', { name: 'Âncora' });
+  const section = page.getByRole('region', { name: 'Anchor' });
   await expect(section).toBeVisible();
-  await expect(section.getByLabel('Ancorada a', { exact: true })).toHaveValue('M1');
+  await expect(section.getByLabel('Anchored to', { exact: true })).toHaveValue('M1');
   const x = page.getByRole('spinbutton', { name: 'X', exact: true });
   const y = page.getByRole('spinbutton', { name: 'Y', exact: true });
   await expect(x).toHaveValue('100');
   await expect(y).toHaveValue('100');
 
   // Os padrões do lugar (sem componente): acima e ao centro; o Encostar leva à âncora.
-  await expect(section.getByRole('button', { name: 'Acima' })).toHaveAttribute(
+  await expect(section.getByRole('button', { name: 'Above' })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
-  await section.getByRole('button', { name: 'Encostar na âncora' }).click();
+  await section.getByRole('button', { name: 'Snap to anchor' }).click();
   await expect(x).toHaveValue('450');
   await expect(y).toHaveValue('260');
 
   // Abaixo da âncora (Y = 300 + 100): outra mudança, outra entrada de desfazer.
-  await section.getByRole('button', { name: 'Abaixo' }).click();
-  await section.getByRole('button', { name: 'Encostar na âncora' }).click();
+  await section.getByRole('button', { name: 'Below' }).click();
+  await section.getByRole('button', { name: 'Snap to anchor' }).click();
   await expect(y).toHaveValue('400');
 
   // O foco sai do campo e o Ctrl+Z desfaz o Encostar de cima numa entrada só.
-  await page.getByRole('heading', { name: 'Detalhes' }).first().click();
+  await page.getByRole('heading', { name: 'Details' }).first().click();
   await page.keyboard.press('Control+z');
   await expect(y).toHaveValue('260');
   await expect(x).toHaveValue('450');
@@ -97,9 +97,9 @@ test('seção Âncora a 900 px: os dois campos do Deslocamento cabem inteiros', 
   page,
 }) => {
   await openAnchored(page);
-  const section = page.getByRole('region', { name: 'Âncora' });
-  const main = section.getByLabel('Distância da borda');
-  const cross = section.getByLabel('Deslocamento ao longo do lado');
+  const section = page.getByRole('region', { name: 'Anchor' });
+  const main = section.getByLabel('Distance from edge');
+  const cross = section.getByLabel('Shift along the side');
   await main.fill('-1234');
   await main.press('Enter');
   await cross.fill('5678');

@@ -15,7 +15,7 @@ async function openExample(page: Page): Promise<void> {
       mimeType: 'application/zip',
       buffer: readFileSync('examples/exemplo-completo.zip'),
     });
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   await page.keyboard.press('Control+Shift+Digit3');
 }
 
@@ -24,7 +24,7 @@ test('selo longo da especialização encolhe sem criar barra horizontal nos Deta
 }) => {
   await openExample(page);
   await page
-    .getByRole('list', { name: 'Árvore de marcações' })
+    .getByRole('list', { name: 'Marking tree' })
     .getByRole('button', { name: 'Cadastrar', exact: true })
     .click();
 
@@ -77,7 +77,7 @@ test('o nome da camada só encolhe depois de o selo ter sumido (900 e 1000 px)',
     await page.setViewportSize({ width, height: 860 });
     await openExample(page);
     await page
-      .getByRole('list', { name: 'Árvore de marcações' })
+      .getByRole('list', { name: 'Marking tree' })
       .getByRole('button', { name: 'Cadastrar', exact: true })
       .click();
     const heads = await page.locator('.layer-group-head').evaluateAll((all) =>
@@ -109,7 +109,7 @@ test('a 1592 px os selos curtos (SDUI, Modelo de dados) continuam inteiros', asy
   await page.setViewportSize({ width: 1592, height: 860 });
   await openExample(page);
   await page
-    .getByRole('list', { name: 'Árvore de marcações' })
+    .getByRole('list', { name: 'Marking tree' })
     .getByRole('button', { name: 'Cadastrar', exact: true })
     .click();
   const tags = page.locator('.layer-group-head .tag');

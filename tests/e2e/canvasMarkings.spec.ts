@@ -18,10 +18,10 @@ const FIT_PADDING = 24;
 /** Novo container (Personalizado) com o nome dado, pelo diálogo. */
 async function addContainer(page: Page, host: Locator, name: string): Promise<void> {
   const before = Number((await host.getAttribute('data-images')) ?? 0);
-  await page.getByRole('button', { name: 'Novo container' }).first().click();
+  await page.getByRole('button', { name: 'New container' }).first().click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Nome', { exact: true }).fill(name);
-  await dialog.getByRole('button', { name: 'Criar container' }).click();
+  await dialog.getByLabel('Name', { exact: true }).fill(name);
+  await dialog.getByRole('button', { name: 'Create container' }).click();
   await expect(dialog).toBeHidden();
   await expect(host).toHaveAttribute('data-images', String(before + 1));
 }
@@ -29,7 +29,7 @@ async function addContainer(page: Page, host: Locator, name: string): Promise<vo
 /** Enquadrar tudo, esperando o canvas desenhar o enquadramento novo. */
 async function fitAll(page: Page, host: Locator): Promise<void> {
   const before = Number((await host.getAttribute('data-fits')) ?? 0);
-  await page.getByRole('button', { name: 'Enquadrar tudo' }).click();
+  await page.getByRole('button', { name: 'Fit all' }).click();
   await expect(host).toHaveAttribute('data-fits', String(before + 1));
 }
 
@@ -93,7 +93,7 @@ const union = (a: Rect, b: Rect): Rect => {
  * Botão Desfazer/Refazer da barra: um clique é um passo do histórico, como o atalho, sem depender
  * de onde o foco ficou depois de exportar o zip.
  */
-function historyButton(page: Page, name: 'Desfazer' | 'Refazer') {
+function historyButton(page: Page, name: 'Undo' | 'Redo') {
   return page.getByRole('button', { name: new RegExp(`^${name}`) }).first();
 }
 
@@ -103,7 +103,7 @@ test('desenhar no vazio em volta de dois containers cria uma marcação do canva
   await createProject(page, 'Canvas');
   const host = page.locator('.canvas-host');
   // Três telas lado a lado (variações dark, light e custom de uma mesma tela).
-  for (const name of ['Claro', 'Escuro', 'Custom']) await addContainer(page, host, name);
+  for (const name of ['Light', 'Dark', 'Custom']) await addContainer(page, host, name);
   await fitAll(page, host);
   await expect(host).toHaveAttribute('data-canvas-markings', '0');
 
@@ -132,13 +132,13 @@ test('desenhar no vazio em volta de dois containers cria uma marcação do canva
     : 16;
   const margin = Math.min(8, Math.floor(gap / 2));
   expect(margin).toBeGreaterThanOrEqual(2);
-  await setMode(page, 'Desenhar');
+  await setMode(page, 'Draw');
   await drag(
     page,
     { x: box.x - margin, y: box.y - margin },
     { x: box.x + box.width + margin, y: box.y + box.height + margin },
   );
-  await setMode(page, 'Navegar');
+  await setMode(page, 'Navigate');
   await expect(host).toHaveAttribute('data-canvas-markings', '1');
 
   // No disco: a marcação é do canvas e os dois containers têm `parentId` dela; o terceiro, não.
@@ -158,14 +158,14 @@ test('desenhar no vazio em volta de dois containers cria uma marcação do canva
   );
 
   // Ctrl+Z desfaz tudo de uma vez: a marcação e o pertencimento.
-  await historyButton(page, 'Desfazer').click();
+  await historyButton(page, 'Undo').click();
   await expect(host).toHaveAttribute('data-canvas-markings', '0');
   const undone = (await exportMapping(page)).mapping;
   expect(undone.markings).toHaveLength(0);
   expect(undone.containers.every((c) => c.parentId === null)).toBe(true);
 
   // E refazer traz as duas coisas de volta.
-  await historyButton(page, 'Refazer').click();
+  await historyButton(page, 'Redo').click();
   await expect(host).toHaveAttribute('data-canvas-markings', '1');
   const redone = (await exportMapping(page)).mapping;
   expect(redone.containers.filter((c) => c.parentId === canvasMarking.id)).toHaveLength(
@@ -193,13 +193,13 @@ test('arrastar uma marcação de uma tela para a outra a torna marcação da out
     width: from.width * 0.25,
     height: from.width * 0.25,
   };
-  await setMode(page, 'Desenhar');
+  await setMode(page, 'Draw');
   await drag(
     page,
     { x: ball.x, y: ball.y },
     { x: ball.x + ball.width, y: ball.y + ball.height },
   );
-  await setMode(page, 'Navegar');
+  await setMode(page, 'Navigate');
   const rect = await selectedRect(page);
   await expect(host).toHaveAttribute('data-canvas-markings', '0');
 
@@ -221,7 +221,7 @@ test('arrastar uma marcação de uma tela para a outra a torna marcação da out
   expect(mapping.containers.every((c) => c.parentId === null)).toBe(true);
 
   // Um Ctrl+Z devolve a marcação ao primeiro quadro.
-  await historyButton(page, 'Desfazer').click();
+  await historyButton(page, 'Undo').click();
   const undone = (await exportMapping(page)).mapping;
   expect(undone.markings[0]?.containerId).toBe(first);
 });
@@ -246,7 +246,7 @@ test('soltar um arrasto abaixo do mínimo avisa e não cria nada; clicar sem arr
   const start = { x: rect.x + rect.width / 3, y: rect.y + rect.height / 3 };
   const warning = page.getByRole('status').filter({ hasText: 'Cada lado precisa ter' });
 
-  await setMode(page, 'Desenhar');
+  await setMode(page, 'Draw');
   await page.mouse.click(start.x, start.y);
   await expect(warning).toHaveCount(0);
 

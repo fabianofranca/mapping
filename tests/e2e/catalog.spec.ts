@@ -42,14 +42,14 @@ test('Abrir biblioteca: lista, página do Button e playground que redesenha', as
     buffer: await packageZip(),
   });
 
-  const screen = page.getByRole('main', { name: 'Catálogo da biblioteca' });
+  const screen = page.getByRole('main', { name: 'Library catalog' });
   await expect(screen).toBeVisible();
   await expect(screen.locator('.catalog-screen-title')).toHaveText(
     'Material Design 3 (baseline)',
   );
 
   // Validação no topo e os 15 componentes na lista, por camada.
-  const validation = screen.getByRole('region', { name: 'Validação do pacote' });
+  const validation = screen.getByRole('region', { name: 'Package validation' });
   await expect(validation).toContainText('0 erro(s) e 2 aviso(s)');
   const list = screen.getByRole('navigation', { name: 'Componentes' });
   await expect(list.locator('button[data-type-id]')).toHaveCount(15);
@@ -67,7 +67,7 @@ test('Abrir biblioteca: lista, página do Button e playground que redesenha', as
   for (const heading of [
     'Documento',
     'Propriedades',
-    'Código',
+    'Code',
     'Origens',
     'Galeria',
     'Experimentar',
@@ -98,9 +98,9 @@ test('Abrir biblioteca: lista, página do Button e playground que redesenha', as
     .toBe(before);
 
   // Voltar à tela inicial.
-  await screen.getByRole('button', { name: 'Voltar à tela inicial' }).click();
+  await screen.getByRole('button', { name: 'Back to the home screen' }).click();
   await expect(screen).toBeHidden();
-  await expect(page.getByRole('button', { name: 'Abrir biblioteca' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open library' })).toBeVisible();
 });
 
 test('Abrir biblioteca: só a lista e a página rolam; link volta ao topo e o aviso fica à vista', async ({
@@ -116,7 +116,7 @@ test('Abrir biblioteca: só a lista e a página rolam; link volta ao topo e o av
         '\n\n[Ver o Chip](mapping://material3/m3-chip)\n\n[Destino que não existe](mapping://material3/nao-existe)\n',
     }),
   });
-  const screen = page.getByRole('main', { name: 'Catálogo da biblioteca' });
+  const screen = page.getByRole('main', { name: 'Library catalog' });
   await screen
     .getByRole('navigation', { name: 'Componentes' })
     .locator('button[data-type-id="m3-button"]')
@@ -159,10 +159,10 @@ test('dentro de um projeto: aplicar o pacote, abrir o Catálogo e adicionar um c
   await createProject(page, 'Telas');
   const host = page.locator('.canvas-host');
 
-  await page.getByRole('button', { name: 'Novo container' }).first().click();
+  await page.getByRole('button', { name: 'New container' }).first().click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Nome', { exact: true }).fill('Configurações');
-  await dialog.getByRole('button', { name: 'Criar container' }).click();
+  await dialog.getByLabel('Name', { exact: true }).fill('Settings');
+  await dialog.getByRole('button', { name: 'Create container' }).click();
   await expect(dialog).toBeHidden();
 
   // Só a biblioteca de notas, aplicada por padrão: o Catálogo lista a Nota e ainda não há
@@ -170,25 +170,25 @@ test('dentro de um projeto: aplicar o pacote, abrir o Catálogo e adicionar um c
   await page.keyboard.press('Control+Shift+9');
   await expect(page.locator('button[data-type-id="nota"]')).toBeVisible();
   await expect(page.locator('button[data-type-id="m3-button"]')).toHaveCount(0);
-  await page.getByRole('tab', { name: 'Paleta' }).click();
+  await page.getByRole('tab', { name: 'Palette' }).click();
   await expect(
     page.getByRole('button', { name: 'Adicionar no canvas: Nota' }),
-  ).toHaveText('Adicionar no canvas');
+  ).toHaveText('Add to canvas');
   await page.getByRole('tab', { name: 'Componentes' }).click();
 
-  await projectAction(page, 'Especializações');
+  await projectAction(page, 'Specializations');
   await page.locator('input[type=file][accept=".zip,application/zip"]').setInputFiles({
     name: 'material3.zip',
     mimeType: 'application/zip',
     buffer: await packageZip(),
   });
-  const confirm = page.getByRole('button', { name: 'Aplicar', exact: true });
+  const confirm = page.getByRole('button', { name: 'Apply', exact: true });
   await expect(confirm).toBeEnabled();
   await confirm.click();
   await expect(page.getByRole('status').filter({ hasText: 'aplicada' })).toBeVisible();
   await page
     .getByRole('dialog')
-    .getByRole('button', { name: 'Fechar', exact: true })
+    .getByRole('button', { name: 'Close', exact: true })
     .click();
 
   // Aba Componentes, agora com duas bibliotecas: escolhe a Material 3, e o Button abre a
@@ -201,6 +201,6 @@ test('dentro de um projeto: aplicar o pacote, abrir o Catálogo e adicionar um c
   await entry.click();
   const pageDialog = page.getByRole('dialog', { name: 'Button' });
   await expect(pageDialog).toBeVisible();
-  await pageDialog.getByRole('button', { name: 'Adicionar à tela' }).click();
+  await pageDialog.getByRole('button', { name: 'Add to screen' }).click();
   await expect(host).toHaveAttribute('data-components', /^[1-9]/);
 });

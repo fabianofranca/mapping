@@ -28,45 +28,45 @@ test('captura 3x: sugestão, Aplicar, desfazer numa entrada e gravação da dens
   await createProject(page, 'Captura');
 
   // Pacote do Material 3 (traz o tamanho pronto Celular 360 × 800).
-  await projectAction(page, 'Especializações');
+  await projectAction(page, 'Specializations');
   await page.locator('input[type=file][accept=".zip,application/zip"]').setInputFiles({
     name: 'material3.zip',
     mimeType: 'application/zip',
     buffer: await packageZip(),
   });
-  const confirm = page.getByRole('button', { name: 'Aplicar', exact: true });
+  const confirm = page.getByRole('button', { name: 'Apply', exact: true });
   await expect(confirm).toBeEnabled();
   await confirm.click();
   await expect(page.getByRole('status').filter({ hasText: 'aplicada' })).toBeVisible();
   await page
     .getByRole('dialog')
-    .getByRole('button', { name: 'Fechar', exact: true })
+    .getByRole('button', { name: 'Close', exact: true })
     .click();
 
   // Novo container 1080 × 2400: o campo Densidade existe, vem em 1x e não grava a chave.
-  await page.getByRole('button', { name: 'Novo container' }).first().click();
+  await page.getByRole('button', { name: 'New container' }).first().click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Nome', { exact: true }).fill('Captura 3x');
-  await dialog.getByLabel('Largura').fill('1080');
-  await dialog.getByLabel('Altura').fill('2400');
-  await expect(dialog.getByLabel('Densidade', { exact: true })).toHaveValue('1');
-  await dialog.getByRole('button', { name: 'Criar container' }).click();
+  await dialog.getByLabel('Name', { exact: true }).fill('Captura 3x');
+  await dialog.getByLabel('Width').fill('1080');
+  await dialog.getByLabel('Height').fill('2400');
+  await expect(dialog.getByLabel('Density', { exact: true })).toHaveValue('1');
+  await dialog.getByRole('button', { name: 'Create container' }).click();
   await expect(dialog).toBeHidden();
 
   // Detalhes: a sugestão aparece (1080 = 3 × 360) e o Aplicar a grava.
   const details = page.locator('.props');
-  const density = details.getByLabel('Densidade', { exact: true });
+  const density = details.getByLabel('Density', { exact: true });
   await expect(density).toHaveValue('1');
   await expect(details.getByText('Sugestão: 3x (Celular 360 × 800)')).toBeVisible();
-  await details.getByRole('button', { name: 'Aplicar', exact: true }).click();
+  await details.getByRole('button', { name: 'Apply', exact: true }).click();
   await expect(density).toHaveValue('3');
   await expect(details.getByText(/Sugestão/)).toBeHidden();
   await expect(
-    details.getByRole('button', { name: 'Aplicar', exact: true }),
+    details.getByRole('button', { name: 'Apply', exact: true }),
   ).toBeHidden();
 
   // Ctrl+Z volta numa entrada só (foco fora de campo).
-  await page.getByRole('heading', { name: 'Detalhes' }).first().click();
+  await page.getByRole('heading', { name: 'Details' }).first().click();
   await page.keyboard.press('Control+z');
   await expect(density).toHaveValue('1');
   await expect(details.getByText('Sugestão: 3x (Celular 360 × 800)')).toBeVisible();
@@ -75,10 +75,10 @@ test('captura 3x: sugestão, Aplicar, desfazer numa entrada e gravação da dens
 
   // Personalizada aceita 2,625 e recusa 0,2.
   await density.selectOption('custom');
-  const custom = details.getByLabel('Densidade personalizada');
+  const custom = details.getByLabel('Custom density');
   await custom.fill('0,2');
   await custom.press('Enter');
-  await expect(details.getByRole('alert')).toHaveText('Use um número de 0,5 a 8.');
+  await expect(details.getByRole('alert')).toHaveText('Use a number from 0.5 to 8.');
   await custom.fill('2,625');
   await custom.press('Enter');
   await expect(details.getByRole('alert')).toBeHidden();
@@ -95,12 +95,12 @@ test('captura 3x: sugestão, Aplicar, desfazer numa entrada e gravação da dens
 });
 
 test('Novo container grava a densidade escolhida', async ({ page }) => {
-  await createProject(page, 'Densidade');
-  await page.getByRole('button', { name: 'Novo container' }).first().click();
+  await createProject(page, 'Density');
+  await page.getByRole('button', { name: 'New container' }).first().click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Nome', { exact: true }).fill('Tela');
-  await dialog.getByLabel('Densidade', { exact: true }).selectOption('2');
-  await dialog.getByRole('button', { name: 'Criar container' }).click();
+  await dialog.getByLabel('Name', { exact: true }).fill('Tela');
+  await dialog.getByLabel('Density', { exact: true }).selectOption('2');
+  await dialog.getByRole('button', { name: 'Create container' }).click();
   await expect(dialog).toBeHidden();
   const { mapping } = await exportMapping(page);
   expect(mapping.containers[0]).toMatchObject({ density: 2 });

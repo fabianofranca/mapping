@@ -3,9 +3,9 @@ import { readFileSync } from 'node:fs';
 import { addImage, canvasPoint, createProject, drag, setMode } from './helpers';
 
 // Dica do modo Desenhar na barra do canvas (etapa #810, AD1): ela não flutua mais sobre a
-// imagem; ocupa o lugar de "Nada selecionado" e, a 900 px, encolhe com reticências e `title`.
+// imagem; ocupa o lugar de "Nothing selected" e, a 900 px, encolhe com reticências e `title`.
 
-const HINT = 'Arraste sobre uma imagem para criar uma marcação.';
+const HINT = 'Drag over an image to create a marking.';
 
 async function openExample(page: Page): Promise<void> {
   await page.goto('/');
@@ -16,12 +16,12 @@ async function openExample(page: Page): Promise<void> {
       mimeType: 'application/zip',
       buffer: readFileSync('examples/exemplo-completo.zip'),
     });
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
 }
 
 async function drawAtLowZoom(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Desenhar', exact: true }).click();
-  await page.getByRole('main', { name: 'Canvas do projeto' }).click({
+  await page.getByRole('button', { name: 'Draw', exact: true }).click();
+  await page.getByRole('main', { name: 'Project canvas' }).click({
     position: { x: 4, y: 4 },
   });
   await page.keyboard.press('Escape');
@@ -84,7 +84,7 @@ for (const size of [
     await page.setViewportSize({ width: size.width, height: size.height });
     await createProject(page, 'Aviso');
     if (size.panels) {
-      for (const name of ['Árvore de marcações', 'Detalhes']) {
+      for (const name of ['Marking tree', 'Details']) {
         const toggle = page.getByRole('button', { name, exact: true });
         if ((await toggle.getAttribute('aria-pressed')) !== 'true') await toggle.click();
       }
@@ -93,11 +93,11 @@ for (const size of [
     // Zoom acima de 100%: 7 px de tela são menos que os 8 px da imagem.
     for (let i = 0; i < 2; i++) await page.keyboard.press('Control+Equal');
     const start = await canvasPoint(page, 1 / 2);
-    await setMode(page, 'Desenhar');
+    await setMode(page, 'Draw');
     await page.mouse.click(start.x, start.y);
     await drag(page, start, { x: start.x + 7, y: start.y + 7 });
     const box = (await page
-      .getByRole('main', { name: 'Canvas do projeto' })
+      .getByRole('main', { name: 'Project canvas' })
       .boundingBox())!;
 
     const notice = page.locator('.canvas-overlay-foot .notice', {

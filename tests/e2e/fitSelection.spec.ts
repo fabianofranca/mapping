@@ -35,7 +35,7 @@ test('Enquadrar seleção: botão, atalho, sem seleção e com o foco num campo'
   await createProject(page, 'Enquadrar');
   await addImage(page);
   const host = page.locator('.canvas-host');
-  const fit = page.getByRole('button', { name: 'Enquadrar seleção' });
+  const fit = page.getByRole('button', { name: 'Fit selection' });
 
   // Sem seleção (a imagem recém-adicionada vem selecionada): botão desabilitado e atalho sem efeito.
   await page.keyboard.press('Escape');
@@ -88,7 +88,7 @@ test('Enquadrar seleção: botão, atalho, sem seleção e com o foco num campo'
   // Com o foco num campo dos Detalhes, o Shift+2 é do campo e a vista não muda.
   await page.keyboard.press('Control+-');
   await expect.poll(async () => numbers(await viewport())[2]).toBeLessThan(fitted);
-  const field = page.getByLabel('Nome', { exact: true }).first();
+  const field = page.getByLabel('Name', { exact: true }).first();
   await field.focus();
   const typing = await viewport();
   await page.keyboard.press('Shift+2');
@@ -101,16 +101,16 @@ test('Enquadrar seleção: botão, atalho, sem seleção e com o foco num campo'
 test('Shift+1 depois do Adicionar da Paleta enquadra; no campo da Posição é do campo', async ({
   page,
 }) => {
-  await createProject(page, 'Paleta');
+  await createProject(page, 'Palette');
   const host = page.locator('.canvas-host');
-  await page.getByRole('button', { name: 'Novo container' }).first().click();
+  await page.getByRole('button', { name: 'New container' }).first().click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Nome', { exact: true }).fill('Home');
-  await dialog.getByRole('button', { name: 'Criar container' }).click();
+  await dialog.getByLabel('Name', { exact: true }).fill('Home');
+  await dialog.getByRole('button', { name: 'Create container' }).click();
   await expect(dialog).toBeHidden();
 
   await page.keyboard.press('Control+Shift+Digit9');
-  await page.getByRole('tab', { name: 'Paleta' }).click();
+  await page.getByRole('tab', { name: 'Palette' }).click();
   const add = page.getByRole('button', {
     name: 'Adicionar no canvas: Nota',
     exact: true,
@@ -121,7 +121,7 @@ test('Shift+1 depois do Adicionar da Paleta enquadra; no campo da Posição é d
 
   // Afasta a vista; com o foco no botão da Paleta, o atalho enquadra...
   const canvas = page.locator('main[data-canvas-area]');
-  const fitAll = page.getByRole('button', { name: 'Enquadrar tudo' });
+  const fitAll = page.getByRole('button', { name: 'Fit all' });
   await canvas.focus();
   await page.keyboard.press('Control+-');
   await page.keyboard.press('Control+-');

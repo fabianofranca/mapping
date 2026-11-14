@@ -16,7 +16,7 @@ test('o título dos Detalhes não quebra letra a letra com as três janelas aber
   await page.keyboard.press('Control+Shift+2');
   await page.keyboard.press('Control+Shift+3');
   const name = page.locator('.identity-name').first();
-  await expect(name).toHaveText('Marcação sem nome');
+  await expect(name).toHaveText('Unnamed marking');
   const box = await name.boundingBox();
   // Uma linha só (altura da fonte de título), não "Marca/ção/sem/nome".
   expect(box?.height ?? 99).toBeLessThan(30);

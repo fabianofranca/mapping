@@ -3,14 +3,14 @@ import JSZip from 'jszip';
 import { readFileSync } from 'node:fs';
 
 // Detalhes a 900 px com o projeto aberto por pasta: o cabeçalho do item tem o botão
-// "Copiar referência" (só existe com pasta de origem) e nenhum filho passa da largura do
+// "Copy reference" (só existe com pasta de origem) e nenhum filho passa da largura do
 // painel, sem barra horizontal.
 
 test.use({ viewport: { width: 900, height: 720 } });
 
 const FOLDER = 'exemplo-pasta-e2e';
 
-/** Descompacta o exemplo numa pasta do OPFS e faz dela a pasta escolhida em "Abrir pasta". */
+/** Descompacta o exemplo numa pasta do OPFS e faz dela a pasta escolhida em "Open folder". */
 async function openExampleFolder(page: Page): Promise<void> {
   const zip = await JSZip.loadAsync(readFileSync('examples/exemplo-completo.zip'));
   const files: { path: string; data: number[] }[] = [];
@@ -39,7 +39,7 @@ async function openExampleFolder(page: Page): Promise<void> {
   );
   await page.goto('/');
   await page.getByRole('button', { name: /Abrir pasta/ }).click();
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
 }
 
 test('Detalhes na revisão a 900 px sem barra horizontal com o projeto aberto por pasta', async ({
@@ -53,7 +53,7 @@ test('Detalhes na revisão a 900 px sem barra horizontal com o projeto aberto po
   await page
     .getByRole('button', { name: 'Revisar: Tela de Perfil e ajuste no Cadastro' })
     .click();
-  await expect(page.getByText('Somente leitura').first()).toBeVisible();
+  await expect(page.getByText('Read-only').first()).toBeVisible();
   for (const box of await page
     .getByRole('checkbox', { name: /^Mostrar a camada / })
     .all()) {
@@ -61,13 +61,13 @@ test('Detalhes na revisão a 900 px sem barra horizontal com o projeto aberto po
       await box.uncheck({ force: true });
   }
   await page
-    .getByRole('group', { name: 'Visão do canvas' })
+    .getByRole('group', { name: 'Canvas view' })
     .getByRole('button', { name: 'Proposto', exact: true })
     .click();
   await page.locator('.tree-row', { hasText: 'Dados da conta' }).first().click();
   await page.getByRole('button', { name: 'Mostrar aqui' }).first().click();
   await expect(
-    page.getByRole('button', { name: 'Copiar referência' }).first(),
+    page.getByRole('button', { name: 'Copy reference' }).first(),
   ).toBeVisible();
 
   // Nada do painel passa da borda direita dele, e o campo do nome da anotação não é

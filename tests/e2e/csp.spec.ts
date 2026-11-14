@@ -27,13 +27,13 @@ async function mainFlow(page: Page, url = '/') {
     .getByRole('button', { name: /Adicionar anotação na camada/ })
     .first()
     .click();
-  await page.getByLabel('Nome da anotação').fill('Botão Entrar');
-  await page.getByLabel('Nome da anotação').press('Enter');
-  await page.getByRole('button', { name: '+ Par' }).click();
-  await page.getByLabel('Chave').fill('acao');
-  await page.getByLabel('Chave').press('Tab');
-  await page.getByLabel('Valor').fill('login');
-  await page.getByLabel('Valor').press('Enter');
+  await page.getByLabel('Annotation name').fill('Botão Entrar');
+  await page.getByLabel('Annotation name').press('Enter');
+  await page.getByRole('button', { name: '+ Pair' }).click();
+  await page.getByLabel('Key').fill('acao');
+  await page.getByLabel('Key').press('Tab');
+  await page.getByLabel('Value').fill('login');
+  await page.getByLabel('Value').press('Enter');
 
   const { mapping, files } = await exportMapping(page);
   expect(files).toContain('images/tela.webp');
@@ -249,7 +249,7 @@ test.describe('CSP do index.html', () => {
     await createProject(page, 'Projeto TT');
     await addImage(page);
     await drawMarking(page, await canvasPoint(page));
-    await projectAction(page, 'Configurações');
+    await projectAction(page, 'Settings');
     await expect(page.getByRole('dialog')).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toBeHidden();
@@ -368,7 +368,7 @@ test.describe('CSP do index.html', () => {
         const drop = new DataTransfer();
         drop.items.add(file('arrastada-1.png', a));
         drop.items.add(file('arrastada-2.png', b));
-        const target = document.querySelector('main[aria-label="Canvas do projeto"]');
+        const target = document.querySelector('main[aria-label="Project canvas"]');
         for (const type of ['dragover', 'drop']) {
           target?.dispatchEvent(
             new DragEvent(type, {
@@ -416,7 +416,7 @@ test.describe('CSP do index.html', () => {
     await addImage(page);
     await drawMarking(page, await canvasPoint(page));
     await openExport(page);
-    await page.getByRole('button', { name: 'Compartilhar' }).click();
+    await page.getByRole('button', { name: 'Share' }).click();
     await expect
       .poll(() =>
         page.evaluate(() => (window as unknown as { __shared: string[] }).__shared),

@@ -1,34 +1,34 @@
 # FAB
 
-Floating action button: 56 dp, forma large (16), primary container; extended com rótulo.
+Floating action button: 56 dp, large shape (16), primary container; extended with a label.
 
-Tipo de anotação: `m3-fab` (FAB).
+Annotation type: `m3-fab` (FAB).
 
-## Tamanho
+## Size
 
-- Inicial: 56 × 56 px
-- Mínimo: 40 × 40 px
-- Dimensionamento: largura 56, altura 56
+- Initial: 56 × 56 px
+- Minimum: 40 × 40 px
+- Sizing: width 56, height 56
 
-## Campos
+## Fields
 
-| Chave   | Rótulo           | Tipo   | Obrigatório | Opções                                                                                               | Padrão  | Descrição |
+| Key | Label | Type | Required | Options | Default | Description |
 | ------- | ---------------- | ------ | ----------- | ---------------------------------------------------------------------------------------------------- | ------- | --------- |
-| `icon`  | Icon             | enum   | não         | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings | add     |           |
-| `label` | Label (extended) | string | não         |                                                                                                      |         |           |
-| `color` | Color            | enum   | não         | primary, secondary, surface                                                                          | primary |           |
+| `icon`  | Icon             | enum   | no | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings | add     |           |
+| `label` | Label (extended) | string | no |                                                                                                      |         |           |
+| `color` | Color            | enum   | no | primary, secondary, surface                                                                          | primary |           |
 
-## Exemplos
+## Examples
 
-- **Padrão**: icon=add, color=primary
-- **Secundário**: icon=add, color=secondary
-- **Superfície**: icon=add, color=surface
+- **Default**: icon=add, color=primary
+- **Secondary**: icon=add, color=secondary
+- **Surface**: icon=add, color=surface
 
-## Origem externa
+## External origin
 
-Sistema `sdui`: tipo externo `FAB`.
+System `sdui`: external type `FAB`.
 
-| Campo   | Caminho em `props` |
+| Field | Path in `props` |
 | ------- | ------------------ |
 | `icon`  | `icon`             |
 | `label` | `label`            |

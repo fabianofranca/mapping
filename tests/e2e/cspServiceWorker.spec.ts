@@ -166,9 +166,9 @@ test('GitHub Pages e preview: service worker instala, faz cache e avisa da vers�
   await page.evaluate(() =>
     navigator.serviceWorker.getRegistration().then((r) => r?.update()),
   );
-  await expect(page.getByText('Nova versão disponível.')).toBeVisible();
-  await page.getByRole('button', { name: 'Atualizar', exact: true }).click();
-  await expect(page.getByText('Nova versão disponível.')).toBeHidden();
+  await expect(page.getByText('New version available.')).toBeVisible();
+  await page.getByRole('button', { name: 'Update', exact: true }).click();
+  await expect(page.getByText('New version available.')).toBeHidden();
   await expect
     .poll(() => page.evaluate(() => caches.keys()))
     .toEqual([expect.stringMatching(/-nova$/)]);

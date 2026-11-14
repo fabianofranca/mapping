@@ -13,12 +13,12 @@ async function openZip(page: Page, name: string, buffer: Buffer): Promise<void> 
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
     .setInputFiles({ name, mimeType: 'application/zip', buffer });
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
 }
 
 const FOLDER = 'exemplo-pasta-ag1';
 
-/** Descompacta o exemplo numa pasta do OPFS e faz dela a pasta escolhida em "Abrir pasta". */
+/** Descompacta o exemplo numa pasta do OPFS e faz dela a pasta escolhida em "Open folder". */
 async function openExampleFolder(page: Page): Promise<void> {
   const zip = await JSZip.loadAsync(readFileSync('examples/exemplo-completo.zip'));
   const files: { path: string; data: number[] }[] = [];
@@ -47,7 +47,7 @@ async function openExampleFolder(page: Page): Promise<void> {
   );
   await page.goto('/');
   await page.getByRole('button', { name: /Abrir pasta/ }).click();
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
 }
 
 /** O placeholder do campo cabe na largura útil dele? (medida pelo texto, sem o `...`). */
@@ -93,7 +93,7 @@ test.describe('cabeçalho da anotação nos Detalhes', () => {
       const width = await page.locator('.panel-details').evaluate((e) => e.clientWidth);
       expect(width, name).toBeLessThanOrEqual(360);
       const m = await placeholderFits(page);
-      expect(m.placeholder).toBe('Rótulo da instância (opcional)');
+      expect(m.placeholder).toBe('Instance label (optional)');
       expect(m.text, name).toBeLessThanOrEqual(m.inner);
     }
   });
@@ -108,11 +108,11 @@ test.describe('cabeçalho da anotação nos Detalhes', () => {
       await page.locator('.tree-row', { hasText: name }).first().click();
       const header = page.locator('.annotation-header').first();
       await expect(
-        header.getByRole('button', { name: 'Copiar referência' }),
+        header.getByRole('button', { name: 'Copy reference' }),
       ).toBeVisible();
       const m = await header.evaluate((h) => {
         const top = (e: Element | null) => e?.getBoundingClientRect().top ?? -1;
-        const copy = h.querySelector('[aria-label="Copiar referência"]');
+        const copy = h.querySelector('[aria-label="Copy reference"]');
         const trash = h.querySelector('.icon-button-danger');
         const panel = document.querySelector('.panel-details')!;
         return {
@@ -135,7 +135,7 @@ test.describe('cabeçalho da anotação nos Detalhes', () => {
     await page.mouse.down();
     await page.mouse.move(box.x - 400, box.y + 100, { steps: 5 });
     await page.mouse.up();
-    await page.locator('.tree-row', { hasText: 'E-mail' }).first().click();
+    await page.locator('.tree-row', { hasText: 'Email' }).first().click();
     const height = await page
       .locator('.annotation-header')
       .first()
