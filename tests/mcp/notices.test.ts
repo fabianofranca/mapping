@@ -219,8 +219,8 @@ describe('validate_specialization e a formatVersion 10', () => {
     expect(result.valid).toBe(false);
     expect(result.errors).toEqual(
       expect.arrayContaining([
-        'layers[0].annotationTypes[0].notices: só é permitido com formatVersion 10',
-        'layers[0].annotationTypes[1].fields[1].columns[0].notices: só é permitido com formatVersion 10',
+        'layers[0].annotationTypes[0].notices: only allowed with formatVersion 10',
+        'layers[0].annotationTypes[1].fields[1].columns[0].notices: only allowed with formatVersion 10',
       ]),
     );
   });

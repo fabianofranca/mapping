@@ -89,7 +89,7 @@ describe('validate_library com icons', () => {
       expect.objectContaining({
         file: 'components/badge.json',
         path: 'template.children[0].name',
-        message: 'o ícone "nuvem" não existe no conjunto de ícones (icons/set.json)',
+        message: 'the icon "nuvem" does not exist in the icon set (icons/set.json)',
       }),
     ]);
   });

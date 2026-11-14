@@ -234,7 +234,7 @@ describe('create_marking com anchor', () => {
       { op: 'create_marking', container: IMAGE, anchor: { to: TARGET } } as Operation,
     ]);
     expect(result.errors[0]).toMatchObject({ code: 'invalid-arguments' });
-    expect(result.errors[0]!.message).toContain('`rect` é obrigatório');
+    expect(result.errors[0]!.message).toContain('`rect` é required');
   });
 
   it('sem componente e com rect, a âncora é gravada sem mover', async () => {

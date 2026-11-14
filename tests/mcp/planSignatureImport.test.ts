@@ -188,7 +188,7 @@ describe('plan_signature_import: Compose', () => {
 });
 
 describe('plan_signature_import: SwiftUI e Figma', () => {
-  it('a view SwiftUI: tipo novo (obrigatório), posicional e rótulo externo', async () => {
+  it('a view SwiftUI: tipo novo (required), posicional e rótulo externo', async () => {
     const result = await plan({
       type: 'profile-card',
       platform: 'swiftui',
