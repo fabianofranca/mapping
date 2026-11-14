@@ -29,7 +29,7 @@ const SPEC_TYPE = 'application/json';
 export const MAX_LOCAL_BACKUPS = 3;
 const BACKUP_PREFIX = `${BACKUPS_DIR}/`;
 
-/** Mais recente primeiro. */
+/** Most recent first. */
 function byNewestBackup(a: string, b: string): number {
   return backupTimestamp(b).localeCompare(backupTimestamp(a)) || b.localeCompare(a);
 }

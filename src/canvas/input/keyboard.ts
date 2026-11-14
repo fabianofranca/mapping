@@ -32,7 +32,7 @@ export function watchSpaceKey(onChange: () => void, target: Window = window): Sp
   const onKey = (e: KeyboardEvent) => {
     if (e.code !== 'Space') return;
     if (e.type === 'keyup') {
-      // Solta em qualquer alvo (o foco pode ter ido para um campo depois do keydown).
+      // Releases on any target (focus may have moved to a field after the keydown).
       const wasDown = down;
       down = false;
       if (wasDown) onChange();

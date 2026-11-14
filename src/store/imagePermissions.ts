@@ -38,7 +38,7 @@ const dismissed = signal<ReadonlySet<string>>(new Set());
 export const allowedOrigins: ReadonlySignal<readonly string[]> = origins;
 /** "Allow images from any origin" (does not apply to the local network). */
 export const allowAnyOrigin: ReadonlySignal<boolean> = anyOrigin;
-/** "Permitir imagens sem criptografia (http)". */
+/** "Allow unencrypted images (http)". */
 export const allowHttp: ReadonlySignal<boolean> = http;
 /** "Permitir imagens da rede local". */
 export const allowLocalNetwork: ReadonlySignal<boolean> = localNetwork;
@@ -74,7 +74,7 @@ export function allowOrigins(list: readonly string[]): void {
   saveAllowedOrigins(next);
 }
 
-/** Revoga uma origem permitida. */
+/** Revokes an allowed origin. */
 export function revokeOrigin(origin: string): void {
   const next = origins.peek().filter((o) => o !== origin);
   origins.value = next;

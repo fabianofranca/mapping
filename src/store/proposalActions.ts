@@ -78,7 +78,7 @@ export type ApplyError =
   | 'image-missing'
   /** The destination file already belongs to another image of the project (`path`). */
   | 'image-exists'
-  /** Nenhum arquivo do pacote de biblioteca em `proposals/<id>/specs/<pasta>/` (`path`). */
+  /** No file of the library package in `proposals/<id>/specs/<folder>/` (`path`). */
   | 'package-missing'
   /** The proposal's package fails the library validation (or exceeds the limits) (`path`). */
   | 'package-invalid'
@@ -96,7 +96,7 @@ export type ApplyResult =
       readonly proposal: Proposal;
       /** Changes made effective now. */
       readonly applied: number;
-      /** Imagens movidas para `images/`. */
+      /** Images moved to `images/`. */
       readonly files: number;
     }
   | {
@@ -107,7 +107,7 @@ export type ApplyResult =
     };
 
 export type RemoveError =
-  /** Projeto somente leitura: nada do armazenamento muda. */
+  /** Read-only project: nothing in the storage changes. */
   | 'read-only'
   /** A proposal is under review: deleting belongs to the list, outside the review. */
   | 'reviewing'
@@ -150,7 +150,7 @@ export interface ProposalActions {
     | { readonly ok: false; readonly error: RestoreError }
   >;
   addNote(proposalId: string, target: ReviewTarget, text: string): Promise<NoteResult>;
-  /** Texto vazio remove a nota. */
+  /** Empty text removes the note. */
   editNote(proposalId: string, noteId: string, text: string): Promise<NoteResult>;
   removeNote(proposalId: string, noteId: string): Promise<NoteResult>;
   /**
@@ -196,7 +196,7 @@ export interface ProposalActionsDeps {
     spec: { readonly id: string; readonly version: number },
     files: SpecPackageFiles,
   ) => void;
-  /** Grava agora o que o projeto tem pendente (o `mapping.json` antes da proposta) e diz se gravou. */
+  /** Saves now what the project has pending (the `mapping.json` before the proposal) and says whether it saved. */
   readonly flush: () => Promise<FlushResult>;
   /**
    * Measures on the folder's call counter (`decide`: writing a decision or note; `apply`:

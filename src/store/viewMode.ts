@@ -9,9 +9,9 @@ import type { EditorUi } from './ui';
 // it only applies to the session. The mode itself (on or off) is never stored: it starts off.
 
 export interface ViewShow {
-  /** O nome acima do container e o contorno do container sem arquivo (o fundo continua). */
+  /** The name above the container and the outline of the container without a file (the background stays). */
   readonly containers: boolean;
-  /** O bitmap das fotos. */
+  /** The photos' bitmap. */
   readonly images: boolean;
   /** The border and halo of the markings. */
   readonly outline: boolean;
@@ -40,7 +40,7 @@ export const VIEW_SHOW_START: ViewShow = {
   hiddenDrawingLayers: NO_LAYERS,
 };
 
-/** Muda os itens dados; o resto fica. */
+/** Changes the given items; the rest stays. */
 export function setViewShow(
   ui: EditorUi,
   patch: Partial<Pick<ViewShow, ViewFlag>>,
@@ -66,7 +66,7 @@ export function hideViewDrawingLayer(ui: EditorUi, layerId: string): void {
   };
 }
 
-/** Mostrar tudo: marca tudo, inclusive o contorno e todas as camadas com desenho. */
+/** Show everything: checks everything, including the outline and every layer with a drawing. */
 export function showEverything(ui: EditorUi): void {
   ui.viewShow.value = {
     containers: true,

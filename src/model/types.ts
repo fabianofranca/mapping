@@ -154,7 +154,7 @@ export interface Marking {
    * above everything.
    */
   readonly floating: boolean;
-  /** Identidade no sistema de origem (v8); `null` = sem origem. */
+  /** Identity in the source system (v8); `null` = no source. */
   readonly source: ExternalSource | null;
   /**
    * Anchor (v20): snaps the marking to another in the same space; absent or `null` = no anchor.

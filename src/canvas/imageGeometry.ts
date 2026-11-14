@@ -13,7 +13,7 @@ import type { Point } from './viewport';
 export type Corner = 'nw' | 'ne' | 'sw' | 'se';
 export const CORNERS: readonly Corner[] = ['nw', 'ne', 'sw', 'se'];
 
-/** Menor lado maior de uma imagem redimensionada, em unidades do canvas. */
+/** Smallest longer side of a resized image, in canvas units. */
 export const MIN_IMAGE_CANVAS_SIZE = 50;
 
 export function pointInRect(p: Point, r: Rect): boolean {
@@ -80,8 +80,8 @@ export function cornerAt(rect: Rect, p: Point, radius: number): Corner | null {
 }
 
 /**
- * Redimensionamento proporcional pelo canto `corner`: o canto oposto fica fixo
- * e a escala segue o ponteiro no eixo em que ele mais se afastou.
+ * Proportional resize by the `corner` corner: the opposite corner stays fixed
+ * and the scale follows the pointer on the axis where it moved farthest.
  */
 export function resizeFromCorner(
   image: Pick<ProjectContainer, 'width' | 'height'>,

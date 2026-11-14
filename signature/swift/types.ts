@@ -9,11 +9,11 @@ const OPENERS = '([<{';
 const CLOSERS = ')]>}';
 
 export interface TypeParts {
-  /** Os nomes dos atributos na frente (`escaping`, `ViewBuilder`). */
+  /** The attribute names up front (`escaping`, `ViewBuilder`). */
   readonly attributes: readonly string[];
-  /** `inout` e afins. */
+  /** `inout` and the like. */
   readonly specifier: boolean;
-  /** O tipo sem os atributos nem os especificadores. */
+  /** The type without the attributes or the specifiers. */
   readonly core: string;
 }
 
