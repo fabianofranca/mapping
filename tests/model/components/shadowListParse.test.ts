@@ -51,11 +51,11 @@ describe('shadow as a list (decision 3)', () => {
   });
 
   it('each item is validated at its own path', () => {
-    const list = [shadow(), { x: 1 }, shadow({ blur: -1 }), shadow({ cor: 1 })];
+    const list = [shadow(), { x: 1 }, shadow({ blur: -1 }), shadow({ colour: 1 })];
     expect(validateComponent(withChild(rect({ shadow: list })))).toEqual([
       'template.children[0].shadow[1].color: required field',
       'template.children[0].shadow[2].blur: expected a number greater than or equal to 0',
-      'template.children[0].shadow[3].cor: unknown key: cor',
+      'template.children[0].shadow[3].colour: unknown key: colour',
     ]);
   });
 

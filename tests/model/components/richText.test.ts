@@ -636,7 +636,7 @@ describe('component.schema.json: runs', () => {
             text: { $field: 'label' },
             weight: { $switch: 'tom', cases: { forte: 700 } },
             italic: true,
-            color: { $field: 'cor', default: '#000000' },
+            color: { $field: 'color', default: '#000000' },
             decoration: 'line-through',
             family: 'Inter',
             size: 12,

@@ -100,7 +100,7 @@ describe('component format 4', () => {
   it('sides with $switch that returns ["left"] is accepted', () => {
     const stroke = {
       color: '#000',
-      sides: { $switch: 'lado', cases: { e: ['left'] }, default: ['bottom'] },
+      sides: { $switch: 'side', cases: { e: ['left'] }, default: ['bottom'] },
     };
     expect(validateComponent(withStroke(stroke))).toEqual([]);
   });

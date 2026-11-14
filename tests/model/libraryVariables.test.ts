@@ -89,7 +89,9 @@ describe('validateLibrary with variables', () => {
   it('a variable that cites a type field, used only inside the repeat, counts the field as used', () => {
     const report = validate(component({ tone: { $field: 'color' } }, { $var: 'tone' }));
     expect(report.errors).toEqual([]);
-    expect(report.warnings.map((w) => w.message).join('\n')).not.toContain('field "color"');
+    expect(report.warnings.map((w) => w.message).join('\n')).not.toContain(
+      'field "color"',
+    );
   });
 
   it('a variable that cites what is neither a column nor a type field, used in the repeat, is an error', () => {
@@ -103,9 +105,7 @@ describe('validateLibrary with variables', () => {
   });
 
   it('an unused variable that cites a missing field gives no error and does not count as use', () => {
-    const report = validate(
-      component({ loose: { $field: 'gone' } }, { $field: 'key' }),
-    );
+    const report = validate(component({ loose: { $field: 'gone' } }, { $field: 'key' }));
     expect(report.errors).toEqual([]);
   });
 });

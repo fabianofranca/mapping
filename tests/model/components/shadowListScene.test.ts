@@ -156,7 +156,7 @@ describe('stroke.gap in the scene (decision 7)', () => {
             },
             ...outline,
           },
-          { type: 'text', name: 'label', text: 'Nome', ...label },
+          { type: 'text', name: 'label', text: 'Name', ...label },
         ],
       },
       {},

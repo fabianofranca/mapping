@@ -98,7 +98,9 @@ describe('library with an inherited color', () => {
   });
 
   it('a provide that cites a field the type does not have is an error', () => {
-    const report = validateLibrary({ files: pack({ ink: { $field: 'does-not-exist' } }) });
+    const report = validateLibrary({
+      files: pack({ ink: { $field: 'does-not-exist' } }),
+    });
     expect(JSON.stringify(report.errors)).toContain('does-not-exist');
   });
 });

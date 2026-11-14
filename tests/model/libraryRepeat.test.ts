@@ -166,7 +166,9 @@ describe('validateLibrary with repeat', () => {
       }),
     );
     expect(report.errors).toEqual([]);
-    expect(report.warnings.map((w) => w.message).join('\n')).not.toContain('field "color"');
+    expect(report.warnings.map((w) => w.message).join('\n')).not.toContain(
+      'field "color"',
+    );
     expect(report.warnings.map((w) => w.message).join('\n')).toContain('field "total"');
   });
 

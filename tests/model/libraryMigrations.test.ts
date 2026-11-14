@@ -489,11 +489,11 @@ describe('fill-field', () => {
       { id: 'B2', type: 'button', values: { size: 5 } },
       { id: 'B3', type: 'button' },
     ]);
-    p = setRaw(p, 'B3', { label: 'sem size' });
+    p = setRaw(p, 'B3', { label: 'no size' });
     const out = run(p, nextFill(1));
     expect(valuesOf(out.project, 'B1').size).toBe(1);
     expect(valuesOf(out.project, 'B2').size).toBe(5);
-    expect(valuesOf(out.project, 'B3')).toEqual({ label: 'sem size', size: 1 });
+    expect(valuesOf(out.project, 'B3')).toEqual({ label: 'no size', size: 1 });
     expect(out.steps[0]).toMatchObject({ annotations: 2, values: 2 });
     expect(out.losses).toEqual([]);
   });
@@ -563,7 +563,9 @@ describe('fill-field', () => {
     // `size` was renamed later in the chain: the type exists, the field does not.
     const next = libSpec(
       2,
-      { c: [buttonType({ fields: [{ key: 'dimension', type: 'number' }] }), badgeType()] },
+      {
+        c: [buttonType({ fields: [{ key: 'dimension', type: 'number' }] }), badgeType()],
+      },
       {
         migrations: [
           {
@@ -975,7 +977,7 @@ describe('set-role', () => {
 });
 
 describe('role steps in sequence', () => {
-  it('a step after the owner rename-type identifies the owner by the new typeId', () => {
+  it('a step after the rename-type of the owner identifies the owner by the new typeId', () => {
     const p = roleProject();
     const out = run(
       p,
@@ -992,7 +994,7 @@ describe('role steps in sequence', () => {
     expect(out.steps[2]).toMatchObject({ annotations: 0 });
   });
 
-  it('set-role with childType before the child rename-type uses the child old id', () => {
+  it('set-role with childType before the rename-type of the child uses the old id of the child', () => {
     const p = roleProject();
     const before = run(
       p,

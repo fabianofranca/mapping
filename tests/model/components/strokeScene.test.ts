@@ -104,12 +104,12 @@ describe('stroke in the scene (format 4)', () => {
             height: 10,
             stroke: {
               color: '#000',
-              sides: { $switch: 'lado', cases: { e: ['left'] }, default: ['top'] },
+              sides: { $switch: 'side', cases: { e: ['left'] }, default: ['top'] },
             },
           },
         ],
       },
-      { lado: 'e' },
+      { side: 'e' },
     );
     expect(root.children[0]?.stroke?.sides).toEqual(['left']);
   });

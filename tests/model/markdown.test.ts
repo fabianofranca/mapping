@@ -61,11 +61,13 @@ describe('markdown: building', () => {
   });
 
   it('paragraphs, bold, italic, inline code', () => {
-    const b = parseMarkdown('one **strong** and *emphasis* and __x__ and _y_ and `c`\n\nOther');
-    expect(b).toHaveLength(2);
-    const types = inlinesOf('one **strong** and *emphasis* and __x__ and _y_ and `c`').map(
-      (i) => i.type,
+    const b = parseMarkdown(
+      'one **strong** and *emphasis* and __x__ and _y_ and `c`\n\nOther',
     );
+    expect(b).toHaveLength(2);
+    const types = inlinesOf(
+      'one **strong** and *emphasis* and __x__ and _y_ and `c`',
+    ).map((i) => i.type);
     expect(types).toEqual([
       'text',
       'strong',
