@@ -73,13 +73,13 @@ describe('proposta formatVersion 5', () => {
   it('a 4 com revisions dá erro com o caminho', () => {
     const json = sample5();
     json.formatVersion = 4;
-    expect(errorsOf(json)).toContain('revisions: só na formatVersion 5 ou mais');
+    expect(errorsOf(json)).toContain('revisions: only in formatVersion 5 or later');
   });
 
   it('a 5 sem revisions dá erro', () => {
     const json = sample5();
     delete json.revisions;
-    expect(errorsOf(json)).toContain('revisions: obrigatório na formatVersion 5');
+    expect(errorsOf(json)).toContain('revisions: required in formatVersion 5');
   });
 
   it('um id de dropped que está em changes dá erro', () => {

@@ -132,7 +132,10 @@ class Checker {
     }
   }
 
-  /** The sheet's symbol and file are those of the `code` (or the case); `where` says where each error points. */
+  /**
+   * The sheet's symbol and file are those of the `code` (or the case); `where` says where each
+   * error points.
+   */
   identity(
     source: Extract<Signature['source'], { kind: 'code' }>,
     expected: { symbol?: string | undefined; path?: string | undefined },
@@ -153,7 +156,9 @@ class Checker {
     }
   }
 
-  /** The `code`'s sheet is that of the same platform, symbol and file, and the `params` are in it. */
+  /**
+   * The `code`'s sheet is that of the same platform, symbol and file, and the `params` are in it.
+   */
   code(
     signature: Signature,
     at: string,
@@ -199,7 +204,8 @@ function checkCase(
     if (entry.signature === undefined) return;
     const inherited = checker.open(entry.signature, `${at}.signature`, false);
     if (inherited === null) return;
-    // The symbol and file that the case swaps must be those of the inherited sheet: `resolveCode` pairs them.
+    // The symbol and file that the case swaps must be those of the inherited sheet: `resolveCode`
+    // pairs them.
     if (inherited.source.kind === 'code') {
       checker.identity(inherited.source, kase, {
         symbol: `${at}.symbol`,
@@ -222,7 +228,10 @@ function checkCase(
   );
 }
 
-/** Checks the sheets the specialization cites (in `code`, in the `variants` cases and in the `sources`). */
+/**
+ * Checks the sheets the specialization cites (in `code`, in the `variants` cases and in the
+ * `sources`).
+ */
 export function checkSignatures(spec: Spec, reader: Reader): SignatureCheck {
   const checker = new Checker(reader);
   spec.layers.forEach((layer, li) => {

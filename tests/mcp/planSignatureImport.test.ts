@@ -117,7 +117,7 @@ describe('plan_signature_import: Compose', () => {
       contentPadding: 'PaddingValues',
     });
     expect(result.notices.map((n) => n.message)).toEqual([
-      'compose: o parâmetro `shape` (Shape) ainda não é campo',
+      'compose: the parameter `shape` (Shape) is not a field yet',
     ]);
     expect(result.notices.every((n) => n.ref === result.signaturePath)).toBe(true);
     expect(result.unmapped.map((u) => u.name)).toEqual([
@@ -219,7 +219,7 @@ describe('plan_signature_import: SwiftUI e Figma', () => {
       signature: 'signatures/button.figma.json',
     });
     expect(result.notices.map((n) => n.message)).toEqual([
-      'figma: a opção `Text` da fonte não existe no campo',
+      'figma: the option `Text` of the source does not exist in the field',
     ]);
   });
 

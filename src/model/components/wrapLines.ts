@@ -5,7 +5,9 @@
  * the cross axis.
  */
 
-/** Tolerance (px) for "fits on the line": the same as the arrangement and the new child's position. */
+/**
+ * Tolerance (px) for "fits on the line": the same as the arrangement and the new child's position.
+ */
 export const WRAP_EPS = 0.001;
 
 export interface LineBreakOptions {
@@ -24,7 +26,10 @@ export interface BrokenLines {
   readonly dropped: number;
 }
 
-/** Does the child fit on the current line (or is the line empty: a child larger than the line stays alone)? */
+/**
+ * Does the child fit on the current line (or is the line empty: a child larger than the line stays
+ * alone)?
+ */
 function fitsLine(
   count: number,
   used: number,

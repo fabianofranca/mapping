@@ -387,10 +387,10 @@ const ORIGIN_TEXT_CASES: readonly (readonly [unknown, readonly string[]])[] = [
     ORIGIN_CASES[1],
     [
       'origins[0]: esperava um objeto',
-      'origins[1].system: esperava texto não vazio',
+      'origins[1].system: expected non-empty text',
       'origins[1].node: esperava um objeto com type, props e children',
       'origins[1].screen: obrigatório',
-      'origins[2].kind: esperava um de: tree, measured',
+      'origins[2].kind: expected one of: tree, measured',
     ],
   ],
   [
@@ -408,15 +408,15 @@ const ORIGIN_TEXT_CASES: readonly (readonly [unknown, readonly string[]])[] = [
       'origins[0].node.type: obrigatório (nome da chave, texto não vazio)',
       'origins[0].node.props: obrigatório (nome da chave, texto não vazio)',
       'origins[0].node.children: obrigatório (nome da chave, texto não vazio)',
-      'origins[0].screen.anchor: chave desconhecida: anchor',
-      'origins[0].screen.margin: chave desconhecida: margin',
-      'origins[0].screen.scrim: chave desconhecida: scrim',
+      'origins[0].screen.anchor: unknown key: anchor',
+      'origins[0].screen.margin: unknown key: margin',
+      'origins[0].screen.scrim: unknown key: scrim',
       'origins[0].screen.width.path: esperava um caminho (texto não vazio)',
       'origins[0].screen.height.path: caminho inválido "a[" (faltou "]")',
       'origins[0].screen.roots: esperava uma lista com pelo menos uma raiz',
       'origins[0].booleans: esperava { "true": texto, "false": texto }',
       'origins[0].examples[0]: esperava um objeto',
-      'origins[0].examples[1].name: esperava texto não vazio',
+      'origins[0].examples[1].name: expected non-empty text',
       'origins[0].examples[1].file: esperava o caminho de um arquivo .json do pacote',
       'origins[0].examples[2].file: extensão inválida: esperava .json',
       'origins[0].examples[3].name: nome "x" repetido',
@@ -427,7 +427,7 @@ const ORIGIN_TEXT_CASES: readonly (readonly [unknown, readonly string[]])[] = [
   [
     [{ system: 'a', 'x: y': 1 }],
     [
-      'origins[0].x: y: chave desconhecida: x: y',
+      'origins[0].x: y: unknown key: x: y',
       'origins[0].node: esperava um objeto com type, props e children',
       'origins[0].screen: obrigatório',
     ],
@@ -532,7 +532,7 @@ describe('origin with a user value in the key name or in the anchor (RM1 defect)
     );
     expect(issue).toEqual({
       path: 'origins[0].x: y',
-      message: 'chave desconhecida: x: y',
+      message: 'unknown key: x: y',
       code: 'spec.tokenKeyUnknown',
       params: { key: 'x: y' },
     });

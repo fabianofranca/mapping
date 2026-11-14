@@ -116,7 +116,7 @@ function lookup(scope: Scope | null, name: string): Scope | null {
 
 function substitute(use: Rec, path: string, scope: Scope | null, st: State): unknown {
   const extra = Object.keys(use).filter((key) => key !== '$var');
-  for (const key of extra) report(st, join(path, key), `chave desconhecida: ${key}`);
+  for (const key of extra) report(st, join(path, key), `unknown key: ${key}`);
   if (extra.length > 0) return use;
   const name = use.$var;
   if (typeof name !== 'string' || !VARIABLE_NAME_PATTERN.test(name)) {
@@ -220,7 +220,7 @@ function openScope(
   if (node.type !== 'frame' || !('let' in node)) return null;
   const at = join(path, 'let');
   if (!isRecord(node.let)) {
-    report(st, at, 'esperava objeto');
+    report(st, at, 'expected an object');
     return null;
   }
   for (const name of Object.keys(node.let))

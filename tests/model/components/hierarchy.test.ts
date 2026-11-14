@@ -151,7 +151,7 @@ describe('slot com layout no formato', () => {
 
   it('recusa layout inválido no slot e layout em nós que não são frame nem slot', () => {
     expect(validateComponent(component({ layout: { type: 'diagonal' } }))[0]).toMatch(
-      /children\[0\]\.layout\.type: esperava/,
+      /children\[0\]\.layout\.type: expected/,
     );
     const rect = component({});
     (rect.template.children as object[]).push({ type: 'rect', layout: { type: 'row' } });

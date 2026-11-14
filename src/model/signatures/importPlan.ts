@@ -526,10 +526,10 @@ class Importer {
   }
 
   /**
-   * The `removed` field no longer cites the parameter that left in `params` (the validator would warn
-   * "parameter outside the signature"), and that is why the next `outside()` does not find it:
-   * the warning that
-   * the previous import saved stays as it is, until the parameter is linked to the field again.
+   * The `removed` field no longer cites the parameter that left in `params` (the validator would
+   * warn "parameter outside the signature"), and that is why the next `outside()` does not find
+   * it: the warning that the previous import saved stays as it is, until the parameter is linked
+   * to the field again.
    */
   private keepRemoved(
     previous: ReadonlyMap<SpecField, SpecNotice[]>,

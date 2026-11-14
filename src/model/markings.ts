@@ -240,7 +240,8 @@ export function moveMarking(
   findById(p.markings, markingId);
   if (dx === 0 && dy === 0) return p;
   requireUnlocked(canEditMarkingGeometry(p, markingId));
-  // Takes the descendants (in a container) and the anchored ones, with their descendants and anchored ones.
+  // Takes the descendants (in a container) and the anchored ones, with their descendants and
+  // anchored ones.
   const affected = withAnchoredFollowers(p, [markingId]);
   return settled(
     p,
@@ -300,7 +301,7 @@ export function adjustMarkingRect(
 }
 
 /**
- * Turns the floating marking on or off (v13): a comment over the canvas, outside the membership
+ * Turns the floating marking on or off (v13): a comment over the canvas, outside the containment
  * tree in both directions. Turning on takes the marking out of the container (converts the
  * `rect` to canvas units, as the person sees it) and zeroes `containerId` and `parentId`; the
  * children stay where they are and the settle reparents them. Turning off only clears the flag:
@@ -334,7 +335,8 @@ export function setMarkingFloating(
   } else {
     next = { ...marking, floating: false };
   }
-  // Turning on the floating one takes the marking out of the container: attached arrows lose their waypoints.
+  // Turning on the floating one takes the marking out of the container: attached arrows lose their
+  // waypoints.
   const moved = floating && marking.containerId !== null;
   const base = { ...p, markings: updateById(p.markings, markingId, () => next) };
   return settled(
@@ -362,7 +364,9 @@ export function markingDeletionImpact(
   lockedDescendants: number;
   /** Annotations that go away: those of the markings that go and of the arrows attached to them. */
   annotations: number;
-  /** Containers that have the marking (or a descendant) as parent: they stay, moving to its parent. */
+  /**
+   * Containers that have the marking (or a descendant) as parent: they stay, moving to its parent.
+   */
   containers: number;
   /** Arrows attached to some marking that goes (as origin or destination): they go along. */
   arrows: number;
@@ -470,7 +474,10 @@ export function reorderMarking(p: Project, markingId: string, index: number): Pr
 // ---------------------------------------------------------------------------
 // Placement of a floating marking near a target (Spatial markings stage, ME4)
 
-/** Constant gap, in canvas units, between the floating marking, the target and the other floating ones. */
+/**
+ * Constant gap, in canvas units, between the floating marking, the target and the other floating
+ * ones.
+ */
 export const FLOATING_GAP = 24;
 
 /** Target of `near`: a container or a marking. */

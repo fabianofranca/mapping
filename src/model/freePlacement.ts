@@ -17,15 +17,26 @@ import type { Marking, Project, Rect } from './types';
 
 /** Where a new piece can be born: the placement parent, the area it fits in and what blocks it. */
 export interface PlacementLevel {
-  /** The smallest marking in the space that contains the requested rectangle (and differs from it); `null` = the root. */
+  /**
+   * The smallest marking in the space that contains the requested rectangle (and differs from it);
+   * `null` = the root.
+   */
   readonly parent: Marking | null;
-  /** The rectangle of `parent`, the image or, on the canvas without `parent`, none (`null`: no limit). */
+  /**
+   * The rectangle of `parent`, the image or, on the canvas without `parent`, none (`null`: no
+   * limit).
+   */
   readonly area: Rect | null;
-  /** Every non-floating marking that crosses `area`, except the parent and the ancestors; on the canvas, also the containers. */
+  /**
+   * Every non-floating marking that crosses `area`, except the parent and the ancestors; on the
+   * canvas, also the containers.
+   */
   readonly obstacles: readonly Rect[];
 }
 
-/** Ids of the non-floating markings of `containerId` that contain `rect` and are not equal to it. */
+/**
+ * Ids of the non-floating markings of `containerId` that contain `rect` and are not equal to it.
+ */
 function containingIds(p: Project, containerId: string | null, rect: Rect): Set<string> {
   const ids = new Set<string>();
   for (const m of p.markings) {
@@ -42,7 +53,8 @@ function containingIds(p: Project, containerId: string | null, rect: Rect): Set<
  */
 function levelParent(p: Project, containerId: string | null, rect: Rect): Marking | null {
   const candidates = containingIds(p, containerId, rect);
-  // A single candidate is the parent without ordering the space (rank only breaks ties among several).
+  // A single candidate is the parent without ordering the space (rank only breaks ties among
+  // several).
   const [only] = candidates;
   const id =
     candidates.size === 1 && only !== undefined
@@ -134,7 +146,10 @@ function overlapArea(a: Rect, b: Rect): number {
   return w > 0 && h > 0 ? w * h : 0;
 }
 
-/** Candidate positions of `rect` in the area, every half size (plus that of `rect` clamped to the area). */
+/**
+ * Candidate positions of `rect` in the area, every half size (plus that of `rect` clamped to the
+ * area).
+ */
 function crowdedCandidates(area: Rect, rect: Rect): Rect[] {
   const maxX = area.x + area.width - rect.width;
   const maxY = area.y + area.height - rect.height;
@@ -149,7 +164,10 @@ function crowdedCandidates(area: Rect, rect: Rect): Rect[] {
   return out;
 }
 
-/** Every candidate coincides with some piece: shifts `rect` one pixel at a time diagonally until none contains it. */
+/**
+ * Every candidate coincides with some piece: shifts `rect` one pixel at a time diagonally until
+ * none contains it.
+ */
 function nudgedOut(obstacles: readonly Rect[], area: Rect, rect: Rect): Rect {
   const maxX = area.x + area.width - rect.width;
   const maxY = area.y + area.height - rect.height;

@@ -315,9 +315,15 @@ export interface SpecUpdateImpact {
   readonly migrations: readonly SpecMigrationStep[];
   /** `false` when the applied copy is not available (`spec: null`): it cannot be compared. */
   readonly comparable: boolean;
-  /** Comparable, no break and no layer that becomes free: the update applies directly, without an impact dialog. */
+  /**
+   * Comparable, no break and no layer that becomes free: the update applies directly, without an
+   * impact dialog.
+   */
   readonly additive: boolean;
-  /** The contract refuses: v4, comparable and with a break without a migration (`spec-missing-migrations`). */
+  /**
+   * The contract refuses: v4, comparable and with a break without a migration
+   * (`spec-missing-migrations`).
+   */
   readonly refused: boolean;
   /** What each step of the chain does in this project (the `runLibraryMigrations` report). */
   readonly steps: readonly MigrationStepReport[];
@@ -343,7 +349,10 @@ export interface SpecUpdateImpact {
 const issueKey = (i: AnnotationIssue): string =>
   [i.code, i.key ?? '', i.rowId ?? '', i.column ?? ''].join('\u0000');
 
-/** Pending items that exist in `after` and did not exist in `before`, in the specialization's annotations. */
+/**
+ * Pending items that exist in `after` and did not exist in `before`, in the specialization's
+ * annotations.
+ */
 function newIssues(
   before: Project,
   after: Project,
@@ -365,7 +374,10 @@ function newIssues(
   return pending;
 }
 
-/** Additive: comparable, no break and no layer that becomes free (its annotations would become free). */
+/**
+ * Additive: comparable, no break and no layer that becomes free (its annotations would become
+ * free).
+ */
 const isAdditive = (
   comparable: boolean,
   breaking: readonly SpecChange[],

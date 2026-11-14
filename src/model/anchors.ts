@@ -5,7 +5,7 @@ import { projectIndex } from './projectIndex';
 import type { Marking, MarkingAnchor, Project } from './types';
 
 // Marking anchor (schema v20, stage "direction and anchor", R3). The anchor links a marking to
-// another in the same space; it does not take part in membership (`settleHierarchy` does not
+// another in the same space; it does not take part in containment (`settleHierarchy` does not
 // read it). Here live the checking, the writing and the set that moves along when the anchor
 // moves.
 

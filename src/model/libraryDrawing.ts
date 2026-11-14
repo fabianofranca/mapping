@@ -35,7 +35,10 @@ import type { Spec, SpecAnnotationType } from './spec';
 // Text measurement is the approximate one (`approximateMeasurer`): whoever really draws uses the
 // browser's, so the drawing engine's warnings carry `(approximate)` at the end.
 
-/** Size of the frame that receives the node of an external-system example (a component, not a screen). */
+/**
+ * Size of the frame that receives the node of an external-system example (a component, not a
+ * screen).
+ */
 const NODE_SCREEN = 1000;
 
 /** Suffix of the warnings that depend on the text measurement. */
@@ -48,7 +51,10 @@ export interface DrawingContext {
   readonly resolve: (ref: string) => string;
   /** Valid components, by resolved path. */
   readonly components: ReadonlyMap<string, ComponentFile>;
-  /** JSON already read from a file (external example), by resolved path; missing or invalid = `undefined`. */
+  /**
+   * JSON already read from a file (external example), by resolved path; missing or invalid =
+   * `undefined`.
+   */
   readonly jsonOf: (path: string) => unknown;
   /** The package's `.json` files with text, the specialization first (feeds `loadLibrary`). */
   readonly textFiles: readonly TextFile[];
@@ -59,10 +65,16 @@ export interface DrawingContext {
 const messageOf = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
-/** The engine's "field not provided" for a field the type does not even declare: level 2 already gave the error. */
+/**
+ * The engine's "field not provided" for a field the type does not even declare: level 2 already
+ * gave the error.
+ */
 const NOT_INFORMED_CODE: ModelMessageTemplateCode = 'engine.fieldMissing';
 
-/** The engine warning with the approximate-measure suffix (the warning goes in `detail`, which the interface translates). */
+/**
+ * The engine warning with the approximate-measure suffix (the warning goes in `detail`, which the
+ * interface translates).
+ */
 const approximate = (message: ModelMessage): ModelMessage => {
   const params = { reason: message.text };
   const text = fillTemplate(MODEL_MESSAGE_TEMPLATES['engine.approximate'], params);
@@ -80,7 +92,10 @@ export function defaultValues(
   return values;
 }
 
-/** The warning that only appears in `rtl`: the engine's with the "in rtl" prefix (the warning goes in `detail`, which the interface translates). */
+/**
+ * The warning that only appears in `rtl`: the engine's with the "in rtl" prefix (the warning goes
+ * in `detail`, which the interface translates).
+ */
 const inRtl = (message: ModelMessage): ModelMessage => {
   const params = { reason: message.text };
   const text = fillTemplate(MODEL_MESSAGE_TEMPLATES['engine.inRtl'], params);
@@ -139,7 +154,9 @@ const DRAW_CODES = {
   readonly [ModelMessageTemplateCode, ModelMessageTemplateCode]
 >;
 
-/** The same cases drawn at the size fitted to the content (decision 10 of #898): "fitted size W×H". */
+/**
+ * The same cases drawn at the size fitted to the content (decision 10 of #898): "fitted size W×H".
+ */
 const FITTED_DRAW_CODES = {
   defaults: ['library.drawFitted.defaults', 'library.drawFitted.defaultsMode'],
   preview: ['library.drawFitted.preview', 'library.drawFitted.previewMode'],
@@ -149,7 +166,10 @@ const FITTED_DRAW_CODES = {
   readonly [ModelMessageTemplateCode, ModelMessageTemplateCode]
 >;
 
-/** The case's message code, with or without a mode (one code per variant, whole text in the catalog). */
+/**
+ * The case's message code, with or without a mode (one code per variant, whole text in the
+ * catalog).
+ */
 function drawCode(
   kind: DrawKind,
   withMode: boolean,
@@ -292,7 +312,8 @@ function proveCase(
         return { mode, box: boxes[i] as Box, texts: [], error: messageOf(error) };
       }
     });
-  // The warning that holds in every mode is reported once, without a mode; what depends on the mode cites the mode.
+  // The warning that holds in every mode is reported once, without a mode; what depends on the mode
+  // cites the mode.
   const emit = (perMode: readonly ModeResult[]): void => {
     const first = boxes[0] as Box;
     const common =
@@ -324,7 +345,10 @@ function proveCase(
   if (isDirectionSensitive(component)) emit(rtlOnly(ltr, run('rtl')));
 }
 
-/** What `rtl` gives beyond the `ltr` of the same mode: new warnings with the "in rtl" prefix; an `rtl`-only error likewise. */
+/**
+ * What `rtl` gives beyond the `ltr` of the same mode: new warnings with the "in rtl" prefix; an
+ * `rtl`-only error likewise.
+ */
 function rtlOnly(ltr: readonly ModeResult[], rtl: readonly ModeResult[]): ModeResult[] {
   return rtl.map((r, i) => {
     const base = ltr[i] as ModeResult;
@@ -340,7 +364,10 @@ function rtlOnly(ltr: readonly ModeResult[], rtl: readonly ModeResult[]): ModeRe
   });
 }
 
-/** The exception only `rtl` throws, as an "in rtl" warning (the proof goes on; the `ltr` error already counts). */
+/**
+ * The exception only `rtl` throws, as an "in rtl" warning (the proof goes on; the `ltr` error
+ * already counts).
+ */
 function rtlError(error: string): ModelMessage[] {
   return [inRtl(templateMessage('library.drawFailed', { error }))];
 }
@@ -380,7 +407,10 @@ function typeDrawing(
   }
 }
 
-/** Engine library to prove the external examples; `undefined` (and the reason) if it cannot be built. */
+/**
+ * Engine library to prove the external examples; `undefined` (and the reason) if it cannot be
+ * built.
+ */
 function buildLibrary(ctx: DrawingContext): { library?: Library; reason?: string } {
   try {
     return { library: loadLibrary(ctx.textFiles) };
@@ -428,7 +458,8 @@ export function withoutNodePrefixMessage(message: ModelMessage): ModelMessage {
       ...message.params,
       path: withoutNodePrefix(path),
     });
-  // Without `path` (or without translation): the text loses the prefix, as before, and no longer has a code.
+  // Without `path` (or without translation): the text loses the prefix, as before, and no longer
+  // has a code.
   const text = withoutNodePrefix(message.text);
   return text === message.text ? message : rawMessage(text);
 }

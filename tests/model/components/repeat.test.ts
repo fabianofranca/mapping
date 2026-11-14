@@ -190,7 +190,7 @@ describe('parseComponent: repeat', () => {
   it('não vale fill, stroke, shadow nem cornerRadius no repeat (o desenho é do template)', () => {
     for (const key of ['fill', 'stroke', 'shadow', 'cornerRadius']) {
       expect(errorsOf(raw({}, { [key]: key === 'fill' ? '#fff' : {} }))[0]).toContain(
-        `template.children[1].${key}: não vale em repeat`,
+        `template.children[1].${key}: not valid in a repeat`,
       );
     }
   });
@@ -956,7 +956,7 @@ describe('validação do repeat por count e das chaves da EX2', () => {
   it('$rows pede o nome de um campo', () => {
     expect(sizeProblems({ $rows: 'linhas' })).toEqual([]);
     expect(sizeProblems({ $rows: 3 }).join('\n')).toContain(
-      'template.children[0].text.$rows: esperava chave de campo',
+      'template.children[0].text.$rows: expected a field key',
     );
   });
 

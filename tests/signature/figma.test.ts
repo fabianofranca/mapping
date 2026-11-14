@@ -368,7 +368,7 @@ describe('a ficha Figma importada liga o campo existente por `sources`, com `val
       },
     ]);
     expect(result.notices.map((n) => n.message)).toContain(
-      'figma: a opção `Text` da fonte não existe no campo',
+      'figma: the option `Text` of the source does not exist in the field',
     );
     expect(result.code).toBeUndefined();
     // o slot Icon fica no unmapped

@@ -371,7 +371,7 @@ describe('parseComponent: nós', () => {
       c.template.layout.padding = [1, 2, 3];
     });
     expectProblem(problems, 'template.layout.justify', 'space-between');
-    expectProblem(problems, 'template.layout.padding', 'lista de 4');
+    expectProblem(problems, 'template.layout.padding', 'list of 4');
   });
 
   it('texto sem text', () => {
@@ -506,14 +506,14 @@ describe('parseComponent: expressões', () => {
     const problems = problemsAfter(
       (c) => (c.template.stroke.color.$if = { $eq: 'variant' }),
     );
-    expectProblem(problems, 'template.stroke.color.$if.$eq', 'esperava lista');
+    expectProblem(problems, 'template.stroke.color.$if.$eq', 'expected a list');
   });
 
   it('$eq com valor que não é texto nem número', () => {
     const problems = problemsAfter(
       (c) => (c.template.stroke.color.$if = { $eq: ['v', true] }),
     );
-    expectProblem(problems, 'template.stroke.color.$if.$eq', 'esperava lista');
+    expectProblem(problems, 'template.stroke.color.$if.$eq', 'expected a list');
   });
 
   it('condição sem operador ou com operador desconhecido', () => {
@@ -523,14 +523,14 @@ describe('parseComponent: expressões', () => {
 
   it('literal do tipo errado dentro de then', () => {
     const problems = problemsAfter((c) => (c.template.stroke.color.then = 12));
-    expectProblem(problems, 'template.stroke.color.then', 'esperava cor');
+    expectProblem(problems, 'template.stroke.color.then', 'expected a color');
   });
 
   it('literal do tipo errado em fill por $if e em $concat', () => {
     expectProblem(
       problemsAfter((c) => (c.template.fill = { $if: { $field: 'a' }, then: 12 })),
       'template.fill.then',
-      'esperava cor',
+      'expected a color',
     );
     expectProblem(
       problemsAfter((c) => (c.template.children[1].text.$concat[0] = true)),
@@ -545,7 +545,7 @@ describe('parseComponent: expressões', () => {
       c.template.fill.default = false;
       c.template.fill.cases = [];
     });
-    expectProblem(problems, 'template.fill.default', 'esperava cor');
+    expectProblem(problems, 'template.fill.default', 'expected a color');
     expectProblem(problems, 'template.fill.cases', 'objeto de casos');
   });
 
@@ -770,7 +770,7 @@ describe('parseComponent: operações numéricas e comparações (formato 4)', (
     expectProblem(
       problems({ gap: { $max: 3 } }),
       'template.layout.gap.$max',
-      'esperava lista',
+      'expected a list',
     );
     expectProblem(
       problems({ gap: { $clamp: [1, 2] } }),
@@ -843,7 +843,7 @@ describe('parseComponent: operações numéricas e comparações (formato 4)', (
     expectProblem(
       problems({ gap: { $add: [1, 2], extra: 1 } }),
       'template.layout.gap.extra',
-      'chave desconhecida',
+      'unknown key',
     );
     expectProblem(
       problems({ gap: { $add: [1, 2], $mul: [1, 2] } }),

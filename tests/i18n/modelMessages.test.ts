@@ -92,25 +92,25 @@ describe('component variable messages', () => {
     [
       'component.variableUndefined',
       lets({}, { $var: 'gap' }),
-      'variável não definida: gap',
+      'undefined variable: gap',
       'undefined variable: gap',
     ],
     [
       'component.variableCycle',
       lets({ a: { $var: 'b' }, b: { $var: 'a' } }, { $var: 'a' }),
-      'ciclo de variáveis: a → b → a',
+      'variable cycle: a → b → a',
       'variable cycle: a → b → a',
     ],
     [
       'component.expectedVariableName',
       lets({ Gap: 1 }, 1),
-      'esperava nome de variável ([a-z][a-zA-Z0-9]*)',
+      'expected a variable name ([a-z][a-zA-Z0-9]*)',
       'expected a variable name ([a-z][a-zA-Z0-9]*)',
     ],
     [
       'component.variablesTooBig',
       lets(big, { $var: 'v20' }),
-      'expansão das variáveis grande demais (mais de 100000 nós)',
+      'variable expansion too large (more than 100000 nodes)',
       'variable expansion too large (more than 100000 nodes)',
     ],
   ];

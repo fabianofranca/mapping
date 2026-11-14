@@ -48,7 +48,7 @@ function splitItems(value: string): string[] | undefined {
   return items;
 }
 
-/** Um nome entre aspas inteiro: abre e fecha com a mesma aspa, sem aquela aspa no meio. */
+/** A fully quoted name: opens and closes with the same quote, with no such quote in the middle. */
 function isQuotedName(item: string): boolean {
   const quote = item[0];
   if ((quote !== '"' && quote !== "'") || item.length < 3 || !item.endsWith(quote))

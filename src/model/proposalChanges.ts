@@ -127,7 +127,9 @@ class Diff {
     this.out.push(draft);
   }
 
-  /** Creation, removal or a per-field change, depending on whether it exists before and/or after. */
+  /**
+   * Creation, removal or a per-field change, depending on whether it exists before and/or after.
+   */
   entity<T>(
     entity: ChangeEntity,
     entityId: string,
@@ -356,7 +358,8 @@ export function computeChanges(base: Project, after: Project): Change[] {
   });
 
   // Images, markings and annotations, each collection in the after order and then the
-  // removed ones in the before order: applying everything appends the created ones in the same order.
+  // removed ones in the before order: applying everything appends the created ones in the same
+  // order.
   const baseImages = byId(base.containers);
   const afterImages = byId(after.containers);
   const baseMarkings = byId(base.markings);

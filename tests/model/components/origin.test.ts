@@ -137,7 +137,7 @@ describe('parseOrigins', () => {
             screen: { ...SCREEN, background: { path: 'b', values: { a: 1 } } },
           },
         ],
-        'origins[0].screen.background.values.a: expected text',
+        'origins[0].screen.background.values.a: esperava texto',
       ],
       [[{ ...ORIGIN, booleans: { true: 'sim' } }], 'origins[0].booleans.false'],
       [[ORIGIN, ORIGIN], 'origins[1].system: origem repetida: sdui'],
@@ -461,7 +461,7 @@ describe('translateSource', () => {
     const { layout, warnings } = translate(doc);
     expect(warnings).toEqual([
       'floating[0].anchor: âncora inválida: meio; usando top-start',
-      'floating[0].margin: expected a number greater than or equal to 0',
+      'floating[0].margin: esperava número maior ou igual a 0',
     ]);
     expect(layout!.roots[0]).toMatchObject({ anchor: 'top-start' });
   });

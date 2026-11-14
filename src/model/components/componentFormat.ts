@@ -1,89 +1,89 @@
 /**
- * Motor dos componentes (etapa Biblioteca): formato do arquivo de componente (`mapping-component`).
+ * Component engine (Library stage): format of the component file (`mapping-component`).
  *
- * Um componente é o desenho genérico de um tipo de anotação da especialização. Cada componente
- * fica no **próprio arquivo**; o tipo da especialização só o referencia
- * (`"component": "components/button.json"`, caminho relativo ao arquivo da especialização).
- * O desenho é um `template`: uma árvore de primitivas neutras (quadro, retângulo, elipse, texto,
- * caminho, slot, na `formatVersion` 2 `repeat` e, na 3, `image`) cujos atributos podem ser **ligados aos campos** do tipo por expressões
- * (`{"$field": "label"}`, `{"$if": …}`, `{"$switch": …}`). Trocar o valor de um campo na
- * anotação redesenha o componente.
+ * A component is the generic drawing of an annotation type of the specialization. Each component
+ * lives in its **own file**; the specialization's type only references it
+ * (`"component": "components/button.json"`, path relative to the specialization file).
+ * The drawing is a `template`: a tree of neutral primitives (frame, rectangle, ellipse, text,
+ * path, slot, `repeat` in `formatVersion` 2 and `image` in 3) whose attributes can be **bound to
+ * the fields** of the type by expressions (`{"$field": "label"}`, `{"$if": …}`, `{"$switch": …}`).
+ * Changing a field's value in the annotation redraws the component.
  *
- * Posição: a instância ocupa o retângulo da marcação. Dentro do template, cada nó tem um
- * `layout` que diz como os filhos se distribuem (`none` com âncoras, `row` ou `column`), para o
- * desenho se adaptar ao tamanho do retângulo.
+ * Position: the instance takes the marking's rectangle. Inside the template, each node has a
+ * `layout` that says how the children are distributed (`none` with anchors, `row` or `column`), so
+ * the drawing adapts to the size of the rectangle.
  */
 import type { IconSet } from './icons';
 import type { AnchorAlign, AnchorSide } from '../anchorSides';
 
 export const COMPONENT_FORMAT = 'mapping-component';
-/** Versão em que os componentes sem `repeat` são escritos (os geradores do repositório a gravam). */
+/** Version in which components without `repeat` are written (the repository's generators write it). */
 export const COMPONENT_FORMAT_VERSION = 1;
-/** A versão 2 acrescenta o nó `repeat` (a tabela desenhada); a 1 continua aceita e vale sem ele. */
+/** Version 2 adds the `repeat` node (the drawn table); 1 is still accepted and valid without it. */
 export const COMPONENT_FORMAT_VERSION_REPEAT = 2;
 /**
- * A versão 3 acrescenta o nó `image` (imagem remota por URL `https://`); a 1 e a 2 continuam
- * aceitas sem mudança (e o `repeat` vale na 2 e na 3).
+ * Version 3 adds the `image` node (remote image by `https://` URL); 1 and 2 are still
+ * accepted unchanged (and `repeat` is valid in 2 and 3).
  */
 export const COMPONENT_FORMAT_VERSION_IMAGE = 3;
 /**
- * A versão 4 (etapa "componentes fiéis") reúne as chaves novas do arquivo: `stroke.cap`,
- * `stroke.join` e `stroke.sides` já aqui. Toda chave da v4 numa versão anterior é o erro
- * `só é permitido com formatVersion 4`, no caminho da chave. As variáveis (`let` no quadro e
- * `{ "$var": … }` nas expressões e condições) também são chaves da 4, trocadas na leitura.
+ * Version 4 (the "faithful components" stage) gathers the file's new keys: `stroke.cap`,
+ * `stroke.join` and `stroke.sides` already here. Every v4 key in an earlier version is the error
+ * `only allowed with formatVersion 4`, at the key's path. Variables (`let` on the frame and
+ * `{ "$var": … }` in expressions and conditions) are also keys of 4, swapped on reading.
  */
 export const COMPONENT_FORMAT_VERSION_FIDELITY = 4;
-/** Versões aceitas. */
+/** Accepted versions. */
 export const COMPONENT_FORMAT_VERSIONS = [1, 2, 3, 4] as const;
 export type ComponentFormatVersion = (typeof COMPONENT_FORMAT_VERSIONS)[number];
 
 // ---------------------------------------------------------------------------------------
-// Expressões: um valor literal ou uma ligação a campos da anotação
+// Expressions: a literal value or a binding to fields of the annotation
 // ---------------------------------------------------------------------------------------
 
 /**
- * Uma linha de um campo `table`, como o `repeat` a lê: o valor de cada coluna (texto, número ou
- * vazio; a célula `ref` chega como o rótulo do alvo).
+ * A row of a `table` field, as `repeat` reads it: the value of each column (text, number or
+ * empty; the `ref` cell arrives as the target's label).
  */
 export type FieldRow = Readonly<Record<string, string | number | null | undefined>>;
 
 /**
- * Valor de campo como a anotação grava: texto, número ou vazio (enum e data são texto). Um
- * campo `table` chega como a lista das linhas, que só o nó `repeat` lê.
+ * Field value as the annotation saves it: text, number or empty (enum and date are text). A
+ * `table` field arrives as the list of rows, which only the `repeat` node reads.
  */
 export type FieldValue = string | number | null | undefined | readonly FieldRow[];
 
-/** Valores dos campos da instância, pela `key` do campo. */
+/** Values of the instance's fields, by the field's `key`. */
 export type FieldValues = Readonly<Record<string, FieldValue>>;
 
-/** Direção de leitura (v4): da esquerda para a direita (padrão) ou da direita para a esquerda. */
+/** Reading direction (v4): left to right (default) or right to left. */
 export type Direction = 'ltr' | 'rtl';
 export const DIRECTIONS: readonly Direction[] = ['ltr', 'rtl'];
 
 export type Condition =
-  /** Campo "verdadeiro": não vazio e diferente de `"não"`, `"false"`, `"0"`, `"off"`. */
+  /** "True" field: non-empty and different from `"não"`, `"false"`, `"0"`, `"off"`. */
   | { readonly $field: string }
   | { readonly $eq: readonly [field: string, value: string | number] }
   | { readonly $has: string }
   | { readonly $not: Condition }
-  /** A direção de leitura efetiva do nó (v4): `ltr` ou `rtl`; vale onde vale uma condição. */
+  /** The node's effective reading direction (v4): `ltr` or `rtl`; valid wherever a condition is. */
   | { readonly $direction: Direction }
   | { readonly $and: readonly Condition[] }
   | { readonly $or: readonly Condition[] }
-  /** Comparações numéricas (v4): operando sem valor dá falso. */
+  /** Numeric comparisons (v4): an operand without a value gives false. */
   | { readonly $gt: readonly [Expr<number>, Expr<number>] }
   | { readonly $gte: readonly [Expr<number>, Expr<number>] }
   | { readonly $lt: readonly [Expr<number>, Expr<number>] }
   | { readonly $lte: readonly [Expr<number>, Expr<number>] };
 
 /**
- * Expressão booleana: um literal, uma `Expr<boolean>` ou uma condição direta
- * (`{"$has": "label"}`, `{"$not": …}`). Um campo citado por `$field` é lido por veracidade
- * (`"sim"`/`"não"`, ver `truthy` em expressions.ts), nunca como texto.
+ * Boolean expression: a literal, an `Expr<boolean>` or a direct condition
+ * (`{"$has": "label"}`, `{"$not": …}`). A field cited by `$field` is read by truthiness
+ * (`"sim"`/`"não"`, see `truthy` in expressions.ts), never as text.
  */
 export type BoolExpr = Expr<boolean> | Condition;
 
-/** Expressão que produz um valor do tipo `T` (ou o literal). */
+/** Expression that produces a value of type `T` (or the literal). */
 export type Expr<T> =
   | T
   | { readonly $field: string; readonly default?: T }
@@ -94,16 +94,17 @@ export type Expr<T> =
       readonly default?: Expr<T>;
     }
   /**
-   * Cor herdada (v4): o valor que o slot de um ancestral oferece (`SlotTemplate.provide`) com esse
-   * nome, o do ancestral mais próximo que o oferece. Sem ancestral que o ofereça vale `default`
-   * (uma expressão); sem `default`, o padrão do lugar.
+   * Inherited color (v4): the value that an ancestor's slot offers (`SlotTemplate.provide`) with
+   * this name, the one from the nearest ancestor that offers it. Without an ancestor that offers
+   * it, `default` applies (an expression); without `default`, the place's default.
    */
   | { readonly $provided: string; readonly default?: Expr<T> }
-  /** Só para texto: concatena as partes (números viram texto). */
+  /** Text only: concatenates the parts (numbers become text). */
   | { readonly $concat: readonly Expr<string | number>[] }
   /**
-   * Só para número (v4): operações aritméticas e trigonométricas (`$sin`/`$cos` em graus). Operando
-   * sem valor (vazio, texto não numérico, divisão por zero) faz a operação não produzir valor.
+   * Number only (v4): arithmetic and trigonometric operations (`$sin`/`$cos` in degrees). An
+   * operand without a value (empty, non-numeric text, division by zero) makes the operation
+   * produce no value.
    */
   | { readonly $add: readonly Expr<number>[] }
   | { readonly $sub: readonly [Expr<number>, Expr<number>] }
@@ -119,19 +120,21 @@ export type Expr<T> =
   | { readonly $clamp: readonly [Expr<number>, Expr<number>, Expr<number>] }
   | { readonly $sin: Expr<number> }
   | { readonly $cos: Expr<number> }
-  /** Número de linhas do campo `table` (v4; sem linhas, 0). */
+  /** Number of rows of the `table` field (v4; with no rows, 0). */
   | { readonly $rows: string }
-  /** Largura ou altura da instância em px da imagem (v4; na prova de desenho e no `hug`, o `size` do componente). */
+  /** Width or height of the instance in image px (v4; in the drawing proof and in `hug`, the component's `size`). */
   | { readonly $size: 'width' | 'height' }
   /**
-   * Número de linhas medidas do nó `text` de nome dado (v4; no máximo `maxLines`, texto vazio = 0).
-   * O motor arruma em duas passagens quando o template usa `$lines` (decisão 8 da #898).
+   * Number of measured lines of the `text` node of the given name (v4; at most `maxLines`, empty
+   * text = 0).
+   * The engine lays out in two passes when the template uses `$lines` (decision 8 of #898).
    */
   | { readonly $lines: string }
   /**
-   * Valor nomeado da especialização, no modo do desenho (v4; ver `tokens.ts`). Em posição de cor,
-   * `alpha` (0 a 1, literal ou `$token` de número) multiplica o alfa da cor, e `over` (nome de
-   * um token de cor ou cor literal) compõe o resultado sobre essa cor, que o deixa opaco.
+   * Named value of the specialization, in the drawing's mode (v4; see `tokens.ts`). In a color
+   * position,
+   * `alpha` (0 to 1, literal or number `$token`) multiplies the color's alpha, and `over` (name of
+   * a color token or literal color) composes the result over that color, which makes it opaque.
    */
   | {
       readonly $token: string;
@@ -140,15 +143,15 @@ export type Expr<T> =
     };
 
 // ---------------------------------------------------------------------------------------
-// Estilo
+// Style
 // ---------------------------------------------------------------------------------------
 
-/** Cor CSS (`#rrggbb`, `#rrggbbaa`, `rgba(...)`) ou `"none"`. */
+/** CSS color (`#rrggbb`, `#rrggbbaa`, `rgba(...)`) or `"none"`. */
 export type Color = string;
 
 export interface GradientSpec {
   readonly type: 'linear';
-  /** Ângulo em graus (0 = da esquerda para a direita, 90 = de cima para baixo). */
+  /** Angle in degrees (0 = left to right, 90 = top to bottom). */
   readonly angle: number;
   readonly stops: readonly { readonly offset: number; readonly color: Expr<Color> }[];
 }
@@ -160,32 +163,32 @@ export interface StrokeSpec {
   readonly width?: Expr<number>;
   readonly align?: 'inside' | 'center' | 'outside';
   /**
-   * Tracejado: lista de números ≥ 0. Na v4 aceita expressão (`$switch`/`$if`/`$field` que devolvem
-   * a lista) e `$token` de número em cada item; o valor resolvido inválido dá o aviso
-   * `valor inválido em stroke.dash` e nenhum tracejado.
+   * Dashing: list of numbers ≥ 0. In v4 it accepts an expression (`$switch`/`$if`/`$field` that
+   * return the list) and a number `$token` in each item; an invalid resolved value gives the
+   * warning `invalid value in stroke.dash` and no dashing.
    */
   readonly dash?: Expr<readonly (number | { readonly $token: string })[]>;
   /**
-   * Afastamento do traço da forma (v4, px ≥ 0, em `frame`, `rect` e `ellipse`): o traço é
-   * desenhado sobre o contorno da forma crescida de `offset` de cada lado (como o `outline-offset`
-   * do CSS) e o `align` vale em relação a esse contorno.
+   * Offset of the stroke from the shape (v4, px ≥ 0, on `frame`, `rect` and `ellipse`): the stroke
+   * is drawn on the outline of the shape grown by `offset` on each side (like CSS's
+   * `outline-offset`) and `align` is relative to that outline.
    */
   readonly offset?: number | { readonly $token: string };
-  /** Ponta do traço (v4); o padrão é `butt`. */
+  /** Stroke end (v4); the default is `butt`. */
   readonly cap?: Expr<'butt' | 'round' | 'square'>;
-  /** Canto do traço (v4); o padrão é `miter`. */
+  /** Stroke corner (v4); the default is `miter`. */
   readonly join?: Expr<'miter' | 'round' | 'bevel'>;
-  /** Só estes lados têm traço (v4, em `frame` e `rect`); ausente = os quatro. */
+  /** Only these sides have a stroke (v4, on `frame` and `rect`); absent = all four. */
   readonly sides?: Expr<readonly StrokeSide[]>;
   /**
-   * Largura do traço (v4, literal): `true` (padrão) escala com o zoom; `false` mantém a largura
-   * em pixels de tela, em qualquer zoom.
+   * Stroke width (v4, literal): `true` (default) scales with the zoom; `false` keeps the width
+   * in screen pixels, at any zoom.
    */
   readonly scale?: boolean;
   /**
-   * Vão no contorno (v4, em `frame` e `rect`, sem `sides`): o lado que a caixa do nó `node` (o
-   * primeiro com esse nome no template) atravessa fica interrompido no trecho que ela cobre, mais
-   * `padding` (px, padrão 0) de cada lado: o recorte do contorno do `OutlinedTextField`.
+   * Gap in the outline (v4, on `frame` and `rect`, without `sides`): the side that the box of the
+   * node `node` (the first with that name in the template) crosses is interrupted over the span it
+   * covers, plus `padding` (px, default 0) on each side: the cut in the `OutlinedTextField` outline.
    */
   readonly gap?: StrokeGapSpec;
 }
@@ -198,16 +201,16 @@ export interface StrokeGapSpec {
 export type StrokeSide = 'top' | 'right' | 'bottom' | 'left';
 export const STROKE_SIDES: readonly StrokeSide[] = ['top', 'right', 'bottom', 'left'];
 
-/** Um raio de canto: número ≥ 0 ou, na v4, `$token` de número. */
+/** A corner radius: number ≥ 0 or, in v4, number `$token`. */
 type Radius = number | { readonly $token: string };
 
 export interface ShadowSpec {
   readonly color: Expr<Color>;
-  /** Na v4 cada medida também aceita `$token` de número. */
+  /** In v4 each measure also accepts a number `$token`. */
   readonly x?: number | { readonly $token: string };
   readonly y?: number | { readonly $token: string };
   readonly blur?: number | { readonly $token: string };
-  /** Cresce (ou, negativo, encolhe) a forma da sombra em cada lado (v4, px; literal ou `$token`). */
+  /** Grows (or, if negative, shrinks) the shadow's shape on each side (v4, px; literal or `$token`). */
   readonly spread?: number | { readonly $token: string };
 }
 
@@ -217,23 +220,23 @@ export interface FontSpec {
   /** 100..900. */
   readonly weight?: Expr<number>;
   readonly italic?: BoolExpr;
-  /** Múltiplo do tamanho (1.2) ou px quando > 3. */
+  /** Multiple of the size (1.2) or px when > 3. */
   readonly lineHeight?: Expr<number>;
   readonly letterSpacing?: Expr<number>;
   /**
-   * `justify` (v4): o texto ocupa a largura da caixa, e a última linha de cada parágrafo fica à
-   * esquerda. `start` (o padrão) e `end` (v4) seguem a direção de leitura: `left`/`right` em `ltr`,
-   * `right`/`left` em `rtl`; `left` e `right` continuam físicos.
+   * `justify` (v4): the text fills the box's width, and the last line of each paragraph stays on
+   * the left. `start` (the default) and `end` (v4) follow the reading direction: `left`/`right` in
+   * `ltr`, `right`/`left` in `rtl`; `left` and `right` remain physical.
    */
   readonly align?: Expr<'left' | 'center' | 'right' | 'justify' | 'start' | 'end'>;
-  /** `cap-middle` centra pela altura da maiúscula (só formatVersion 4). */
+  /** `cap-middle` centers by the capital letter's height (formatVersion 4 only). */
   readonly verticalAlign?: Expr<'top' | 'middle' | 'bottom' | 'cap-middle'>;
   readonly decoration?: Expr<'none' | 'underline' | 'line-through'>;
-  /** `word` (padrão) quebra por palavra; `none` é uma linha por parágrafo. Só formatVersion 4. */
+  /** `word` (default) wraps by word; `none` is one line per paragraph. formatVersion 4 only. */
   readonly wrap?: Expr<'word' | 'none'>;
-  /** Texto que não cabe termina em `…` (largura com `wrap: none`; altura com `maxLines`). Só v4. */
+  /** Text that does not fit ends in `…` (width with `wrap: none`; height with `maxLines`). v4 only. */
   readonly ellipsis?: BoolExpr;
-  /** Máximo de linhas (inteiro ≥ 1); a última leva o `…` (com `ellipsis`) ou é cortada. Só v4. */
+  /** Maximum lines (integer ≥ 1); the last one takes the `…` (with `ellipsis`) or is cut. v4 only. */
   readonly maxLines?: Expr<number>;
 }
 
@@ -242,15 +245,17 @@ export interface FontSpec {
 // ---------------------------------------------------------------------------------------
 
 /**
- * A medida intrínseca (v4, decisão 17 da #1078): `"min-content"` é o maior pedaço inquebrável
- * (texto: a palavra mais larga) e `"max-content"` o tamanho sem quebrar (texto: a linha mais larga).
+ * The intrinsic measure (v4, decision 17 of #1078): `"min-content"` is the largest unbreakable
+ * piece (text: the widest word) and `"max-content"` the size without wrapping (text: the widest
+ * line).
  */
 export type IntrinsicSize = 'min-content' | 'max-content';
 
 /**
- * Tamanho de um nó em um eixo: px fixos, `"fill"` (ocupa o que sobra no pai; em `row`/`column`
- * divide com os outros `fill`), `"hug"` (do conteúdo: texto medido, ou filhos), uma fração
- * do pai (`"50%"`) ou, na v4, `"min-content"`/`"max-content"` (`IntrinsicSize`).
+ * Size of a node on one axis: fixed px, `"fill"` (takes what is left in the parent; in
+ * `row`/`column` splits it with the other `fill`s), `"hug"` (from the content: measured text, or
+ * children), a fraction of the parent (`"50%"`) or, in v4, `"min-content"`/`"max-content"`
+ * (`IntrinsicSize`).
  */
 export type SizeSpec = number | 'fill' | 'hug' | IntrinsicSize | `${number}%`;
 
