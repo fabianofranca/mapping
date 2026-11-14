@@ -17,7 +17,7 @@ import { emptyProject } from '../model/fixtures';
 // View mode project: two layers with types that draw (`ca`, `cb`) and one without a
 // component (`cc`). The screen is a container without a file (B1) with one text of each layer
 // (TA and TB) and a plain marking (P); photo I1 has another text (TF).
-// pt-BR kept: shared fixture data asserted by tests/components, tests/canvas (spec id and layer/type names)
+// pt-BR kept: shared fixture data asserted by tests/components, tests/canvas (spec id, layer and type names)
 export const VIEW_SPEC_ID = 'duas';
 const FILE = 'specs/duas/duas.spec.json';
 
@@ -56,6 +56,7 @@ const SPEC = {
     },
     {
       id: 'cc',
+      // pt-BR kept: shared fixture data asserted by tests/components (viewModePanel)
       name: 'Só dados',
       color: '#43A047',
       annotationTypes: [

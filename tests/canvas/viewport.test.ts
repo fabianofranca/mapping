@@ -125,11 +125,11 @@ describe('revealRect', () => {
   const size = { width: 400, height: 300 };
   const v = { x: 0, y: 0, scale: 1 };
 
-  it('já à vista: devolve a mesma vista', () => {
+  it('already in view: returns the same view', () => {
     expect(revealRect(v, { x: 100, y: 100, width: 50, height: 50 }, size)).toBe(v);
   });
 
-  it('fora da vista: pan mínimo, sem mudar o zoom', () => {
+  it('out of view: minimal pan, without changing the zoom', () => {
     const r = revealRect(v, { x: 500, y: 100, width: 50, height: 50 }, size, 10);
     expect(r.scale).toBe(1);
     expect(r.x).toBe(400 - 10 - 550);
@@ -138,7 +138,7 @@ describe('revealRect', () => {
     expect(left.x).toBe(210);
   });
 
-  it('keepCenter mantém o ponto do centro (em unidades do canvas) e a escala', () => {
+  it('keepCenter keeps the center point (in canvas units) and the scale', () => {
     const from = { width: 800, height: 600 };
     const to = { width: 536, height: 480 };
     const next = keepCenter(v, from, to);
@@ -149,7 +149,7 @@ describe('revealRect', () => {
     );
   });
 
-  it('keepCenter sem mudança de tamanho devolve o mesmo viewport', () => {
+  it('keepCenter without a size change returns the same viewport', () => {
     const size = { width: 800, height: 600 };
     expect(keepCenter(v, size, { ...size })).toBe(v);
   });

@@ -46,7 +46,7 @@ describe('medidores do harness (palco pequeno)', () => {
     return { controller, container, flush, editor };
   }
 
-  it('as 5 camadas do palco têm nome', () => {
+  it('the 5 layers of the stage have a name', () => {
     const { controller, container } = smallStage();
     expect(
       stageOf(container)
@@ -65,14 +65,14 @@ describe('medidores do harness (palco pequeno)', () => {
     const counts = meter.take();
     expect(Object.keys(counts).sort()).toEqual([...LAYERS].sort());
     for (const name of LAYERS) expect(counts[name], name).toBeGreaterThanOrEqual(1);
-    // Sem quadro agendado, nada é redesenhado.
+    // Without a scheduled frame, nothing is redrawn.
     flush();
     expect(Object.values(meter.take()).every((n) => n === 0)).toBe(true);
     meter.restore();
     controller.destroy();
   });
 
-  it('o medidor soma o tempo do drawScene de cada camada e zera a cada leitura', () => {
+  it('the meter adds up the drawScene time of each layer and resets on each reading', () => {
     const { controller, container, flush } = smallStage();
     const meter = layerDrawMeter(stageOf(container));
     meter.takeMs();
@@ -83,15 +83,15 @@ describe('medidores do harness (palco pequeno)', () => {
     for (const name of LAYERS) expect(times[name], name).toBeGreaterThanOrEqual(0);
     const sum = Object.values(times).reduce((a, b) => a + b, 0);
     expect(sum).toBeGreaterThan(0);
-    // O desenho das camadas é parte do quadro, nunca mais que ele.
+    // The drawing of the layers is part of the frame, never more than it.
     expect(sum).toBeLessThanOrEqual(total);
-    // Lida uma vez, a soma volta a zero até o próximo quadro.
+    // Read once, the sum goes back to zero until the next frame.
     expect(Object.values(meter.takeMs()).every((ms) => ms === 0)).toBe(true);
     meter.restore();
     controller.destroy();
   });
 
-  it('o medidor de formas visíveis ignora nós escondidos e os de ancestral escondido', () => {
+  it('the visible shapes meter ignores hidden nodes and those of a hidden ancestor', () => {
     const { controller, container } = smallStage();
     const stage = stageOf(container);
     const layer = stage.findOne<Konva.Layer>('.markings');
@@ -108,17 +108,17 @@ describe('medidores do harness (palco pequeno)', () => {
   });
 });
 
-// Linha de base: só registra as contagens e os tempos de hoje, sem afirmar meta (as metas e os
-// orçamentos estão em renderPerformance.test.ts). 5.000 só com BASELINE_5000=1 (leva ~1 min);
-// rode com `--silent=false` para ver as linhas impressas.
+// Baseline: only records today's counts and times, without asserting a goal (the goals and the
+// budgets are in renderPerformance.test.ts). 5,000 only with BASELINE_5000=1 (takes ~1 min);
+// run with `--silent=false` to see the printed lines.
 const SIZES: ScenarioSize[] = process.env.BASELINE_5000 ? [500, 2000, 5000] : [500, 2000];
 
 interface Step {
-  /** Quadro inteiro (ms): `CanvasController.render` mais o desenho das camadas. */
+  /** Whole frame (ms): `CanvasController.render` plus the drawing of the layers. */
   readonly ms: number;
-  /** Soma do `drawScene` das camadas (ms); o `render` é a diferença. */
+  /** Sum of the `drawScene` of the layers (ms); `render` is the difference. */
   readonly draw: number;
-  /** `render` sozinho (ms): o quadro menos o desenho das camadas. */
+  /** `render` alone (ms): the frame minus the drawing of the layers. */
   readonly render: number;
   readonly layers: Record<string, number>;
   /** `drawScene` por camada (ms). */
@@ -127,7 +127,7 @@ interface Step {
 
 const round = (x: number): number => Math.round(x * 10) / 10;
 
-/** Roda `act`, o quadro agendado e devolve o tempo dele separado do `drawScene` por camada. */
+/** Runs `act`, the scheduled frame and returns its time apart from the per-layer `drawScene`. */
 function stepOf(
   s: ReturnType<typeof openWholeProject>,
   meter: ReturnType<typeof layerDrawMeter>,
@@ -145,7 +145,7 @@ function stepOf(
   return { ms: round(ms), draw: round(draw), render: round(ms - draw), layers, layerMs };
 }
 
-/** Pan, zoom, edição, seleção e um passo de arrasto, como o `perf:canvas` mede. */
+/** Pan, zoom, edit, selection and a drag step, as `perf:canvas` measures. */
 function recordSteps(
   s: ReturnType<typeof openWholeProject>,
   firstId: string,
@@ -166,8 +166,8 @@ function recordSteps(
   return steps;
 }
 
-describe.each<ScenarioSize>(SIZES)('projeto inteiro à vista, %i marcações', (size) => {
-  it('registra camadas redesenhadas, formas visíveis e nós criados', () => {
+describe.each<ScenarioSize>(SIZES)('whole project in view, %i markings', (size) => {
+  it('records redrawn layers, visible shapes and created nodes', () => {
     const s = openWholeProject(size);
     const stage = stageOf(s.container);
     const nodes = stage.find('Group, Shape').length;
@@ -178,7 +178,7 @@ describe.each<ScenarioSize>(SIZES)('projeto inteiro à vista, %i marcações', (
 
     const visible = visibleShapesByLayer(stage);
     console.log(
-      `[linha de base ${size}]`,
+      `[baseline ${size}]`,
       JSON.stringify({ nodes, visible, first: first_ms, steps }),
     );
     expect(Object.keys(visible).sort()).toEqual([...LAYERS].sort());
@@ -187,9 +187,9 @@ describe.each<ScenarioSize>(SIZES)('projeto inteiro à vista, %i marcações', (
   }, 120_000);
 });
 
-// Peso das setas e dos componentes (CD1, decisão 1): 2.000 marcações com 0, 500 e 1.000 setas e com as 21
-// instâncias da tela do Material 3 em cada container. Só registra, para a medida de partida.
-describe('projeto inteiro à vista, 2.000 marcações: setas e componentes', () => {
+// Weight of arrows and components (CD1, decision 1): 2,000 markings with 0, 500 and 1,000 arrows and with the 21
+// instances of the Material 3 screen in each container. Only records, for the starting measure.
+describe('whole project in view, 2,000 markings: arrows and components', () => {
   const cases: { label: string; options: ScenarioOptions }[] = [
     { label: '0 setas', options: { arrows: 0 } },
     { label: '500 setas', options: { arrows: 500 } },
@@ -226,20 +226,20 @@ describe('projeto inteiro à vista, 2.000 marcações: setas e componentes', () 
   );
 });
 
-// Nível de detalhe (DA3, decisão 4): com o projeto inteiro à vista, a camada das marcações tem no
-// máximo uma forma visível por marcação e nenhuma nas menores que 2 px.
-describe('nível de detalhe com o projeto inteiro à vista (2.000 marcações)', () => {
-  it('no máximo uma forma visível por marcação; as menores que 2 px não têm nenhuma', () => {
+// Level of detail (DA3, decision 4): with the whole project in view, the markings layer has at
+// most one visible shape per marking and none on those smaller than 2 px.
+describe('level of detail with the whole project in view (2,000 markings)', () => {
+  it('at most one visible shape per marking; those smaller than 2 px have none', () => {
     const s = openWholeProject(2000);
     const stage = stageOf(s.container);
     const layer = stage.findOne<Konva.Layer>('.markings');
-    if (!layer) throw new Error('camada das marcações');
+    if (!layer) throw new Error('markings layer');
     const scale = stage.scaleX();
-    // A camada tem o grupo das marcações (um grupo por marcação) e o das setas.
+    // The layer has the markings group (one group per marking) and the arrows one.
     const stack = (layer.getChildren() as Konva.Group[]).find(
       (g) => g.getChildren().length === s.project.markings.length,
     );
-    if (!stack) throw new Error('grupo das marcações');
+    if (!stack) throw new Error('markings group');
     const groups = stack.getChildren() as Konva.Group[];
     expect(groups.length).toBe(s.project.markings.length);
     let hidden = 0;
@@ -252,7 +252,7 @@ describe('nível de detalhe com o projeto inteiro à vista (2.000 marcações)',
       expect(biggestSide(group) * scale).toBeGreaterThanOrEqual(2);
     }
     expect(hidden).toBe(0);
-    // Afastando até o mínimo do zoom, as marcações pequenas (e as que ficam menores que 2 px) somem.
+    // Zooming out to the zoom minimum, the small markings (and those that get smaller than 2 px) disappear.
     s.controller.zoomBy(0.0001);
     s.flush();
     const far = stage.scaleX();
@@ -278,7 +278,7 @@ function visibleShapes(node: Konva.Node): number {
   return 0;
 }
 
-/** Maior lado (px do canvas) dos retângulos visíveis do grupo da marcação (borda, halo, ...). */
+/** Longest side (canvas px) of the visible rectangles of the marking group (border, halo, ...). */
 function biggestSide(group: Konva.Group): number {
   return Math.max(
     0,

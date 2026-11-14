@@ -1,6 +1,6 @@
-// MF1: o `align: "justify"` quebra igual na app (Konva) e no raster do MCP (textBars): num parágrafo
-// de 3 linhas, as duas primeiras ocupam a largura da caixa e a última fica à esquerda, no tamanho
-// natural, como o `TextAlign.Justify`. O `\n` abre outro parágrafo, com a última linha própria.
+// MF1: `align: "justify"` breaks the same in the app (Konva) and in the MCP raster (textBars): in a paragraph
+// of 3 lines, the first two take the box width and the last stays on the left, at the natural
+// size, like `TextAlign.Justify`. The `\n` opens another paragraph, with its own last line.
 import Konva from 'konva';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { installFakeCanvas } from '../harness';
@@ -10,7 +10,7 @@ import { baseNode, type TextNode } from '../../../src/model/components/scene';
 
 beforeAll(() => installFakeCanvas());
 
-// Mesma medida do contexto falso do Konva: 6 px por letra.
+// Same measure as the Konva fake context: 6 px per letter.
 const measure = (text: string) => ({ width: text.length * 6, height: 14 });
 
 function node(text: string): TextNode {
@@ -39,14 +39,14 @@ function node(text: string): TextNode {
 function konvaText(n: TextNode): Konva.Text {
   const { root } = renderScene({ root: n, warnings: [] });
   const found = (root.find('Text') as Konva.Text[])[0];
-  if (!found) throw new Error('sem texto');
+  if (!found) throw new Error('no text');
   return found;
 }
 
 describe('justify: paridade entre o Konva e o raster', () => {
   const paragraph = node('aaaa bbbb cccc dddd eeee ffff');
 
-  it('um parágrafo de 3 linhas: as duas primeiras justificadas, a última à esquerda', () => {
+  it('a 3-line paragraph: the first two justified, the last on the left', () => {
     const text = konvaText(paragraph);
     expect(text.align()).toBe('justify');
     expect(text.textArr.map((l) => l.text)).toEqual([
@@ -64,7 +64,7 @@ describe('justify: paridade entre o Konva e o raster', () => {
     ]);
   });
 
-  it('cada parágrafo (\\n) tem a sua última linha à esquerda, como no Konva', () => {
+  it('each paragraph (\\n) has its last line on the left, as in Konva', () => {
     const two = node('aaaa bbbb cccc dddd\neeee');
     const text = konvaText(two);
     expect(text.textArr.map((l) => l.lastInParagraph)).toEqual([false, true, true]);
@@ -72,16 +72,16 @@ describe('justify: paridade entre o Konva e o raster', () => {
     expect(bars.map((b) => b.width)).toEqual([60, 54, 24]);
   });
 
-  it('linha de uma palavra só (sem espaço) não é esticada, como no Konva', () => {
+  it('a one-word line (no space) is not stretched, as in Konva', () => {
     const word = node('abcdefgh ijklmnop');
     const bars = textBars(word, measure);
-    // 1ª linha: "abcdefgh" (48 px, sem espaço, não se estica); 2ª: "ijklmnop", a última
+    // 1st line: "abcdefgh" (48 px, no space, not stretched); 2nd: "ijklmnop", the last
     expect(bars.map((b) => b.width)).toEqual([48, 48]);
     const lines = konvaText(word).textArr;
     expect(lines.map((l) => l.text)).toEqual(['abcdefgh', 'ijklmnop']);
   });
 
-  it('com maxLines, o \\n continua fechando o parágrafo; sem largura, não há barra esticada', () => {
+  it('with maxLines, the \\n still closes the paragraph; without width, there is no stretched bar', () => {
     const plain = node('aaaa bbbb\ncccc dddd eeee');
     const capped = { ...plain, style: { ...plain.style, maxLines: 4 } };
     const measured = (text: string) => ({

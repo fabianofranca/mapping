@@ -27,14 +27,14 @@ const project = (store: ReturnType<typeof createProjectStore>) => {
   return store.project.value;
 };
 
-describe('store: actions e histórico', () => {
-  it('sem projeto aberto, as actions falham', () => {
+describe('store: actions and history', () => {
+  it('without an open project, the actions fail', () => {
     const store = createProjectStore();
     expect(store.apply((p) => p)).toEqual({ ok: false, error: 'no-project' });
     expect(store.undo()).toBe(false);
   });
 
-  it('aplica, desfaz e refaz', () => {
+  it('applies, undoes and redoes', () => {
     const { store, actions } = setup();
     const original = project(store);
     expect(store.canUndo.value).toBe(false);
@@ -46,6 +46,7 @@ describe('store: actions e histórico', () => {
     expect(store.revision.value).toBe(1);
 
     expect(store.undo()).toBe(true);
+    // pt-BR kept: shared fixture data (the sampleProject layer name 'Lataria') asserted by tests/mcp and tests/components
     expect(project(store).layers[0]?.name).toBe('Lataria');
     expect(store.canRedo.value).toBe(true);
 
@@ -54,7 +55,7 @@ describe('store: actions e histórico', () => {
     expect(store.canRedo.value).toBe(false);
   });
 
-  it('uma nova alteração limpa o refazer', () => {
+  it('a new change clears the redo', () => {
     const { store, actions } = setup();
     actions.renameLayer('L1', 'A');
     store.undo();
@@ -63,7 +64,7 @@ describe('store: actions e histórico', () => {
     expect(store.redo()).toBe(false);
   });
 
-  it('erro do modelo não altera o projeto nem o histórico', () => {
+  it('a model error changes neither the project nor the history', () => {
     const { store, actions } = setup();
     const before = project(store);
     expect(actions.removeLayer('L9')).toEqual({ ok: false, error: 'not-found' });
@@ -74,13 +75,13 @@ describe('store: actions e histórico', () => {
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('operação que não muda nada não entra no histórico', () => {
+  it('an operation that changes nothing does not enter the history', () => {
     const { store } = setup();
     store.apply((p) => p);
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('actions que criam itens devolvem o id gerado', () => {
+  it('actions that create items return the generated id', () => {
     const { store, actions } = setup();
     const layer = actions.addLayer('Tires', '#000000');
     expect(layer).toEqual({ ok: true, value: 'id1' });
@@ -91,7 +92,7 @@ describe('store: actions e histórico', () => {
     expect(project(store).markings.find((x) => x.id === 'id2')?.parentId).toBe('M1');
   });
 
-  it('limita o histórico a 100 entradas', () => {
+  it('limits the history to 100 entries', () => {
     const { store } = setup();
     for (let i = 0; i < HISTORY_LIMIT + 20; i++) {
       store.apply((p) => renameLayer(p, 'L1', `n${i}`));
@@ -102,7 +103,7 @@ describe('store: actions e histórico', () => {
     expect(project(store).layers[0]?.name).toBe('n19');
   });
 
-  it('referencedImageFiles junta as imagens do projeto e de todo o histórico', () => {
+  it('referencedImageFiles gathers the images of the project and of the whole history', () => {
     const store = createProjectStore({ now: () => NOW });
     let seq = 0;
     const actions = createProjectActions(store, { newId: () => `id${++seq}` });
@@ -117,13 +118,13 @@ describe('store: actions e histórico', () => {
       project(store).containers.find((i) => i.file === file)?.id ?? '';
     actions.removeContainer(containerId('images/a.jpg'));
     expect(project(store).containers.map((i) => i.file)).toEqual(['images/b.jpg']);
-    // a.jpg saiu do projeto, mas o desfazer ainda a restauraria.
+    // a.jpg left the project, but undo would still restore it.
     expect([...store.referencedImageFiles()].sort()).toEqual([
       'images/a.jpg',
       'images/b.jpg',
     ]);
 
-    // Desfazer tudo: a.jpg e b.jpg ficam só no "refazer".
+    // Undo everything: a.jpg and b.jpg stay only in the "redo".
     while (store.undo());
     expect(project(store).containers).toEqual([]);
     expect([...store.referencedImageFiles()].sort()).toEqual([
@@ -131,12 +132,12 @@ describe('store: actions e histórico', () => {
       'images/b.jpg',
     ]);
 
-    // Uma nova alteração descarta o "refazer": nada mais referencia as imagens.
+    // A new change discards the "redo": nothing references the images anymore.
     store.apply((p) => renameLayer(p, 'L1', 'new'));
     expect(store.referencedImageFiles().size).toBe(0);
   });
 
-  it('modo somente leitura bloqueia alterações', () => {
+  it('read-only mode blocks changes', () => {
     const store = createProjectStore();
     store.load(emptyProject(), { readOnly: true });
     expect(store.apply((p) => renameLayer(p, 'L1', 'x'))).toEqual({
@@ -146,7 +147,7 @@ describe('store: actions e histórico', () => {
     expect(store.beginGesture()).toEqual({ ok: false, error: 'read-only' });
   });
 
-  it('carregar outro projeto zera o histórico', () => {
+  it('loading another project resets the history', () => {
     const { store, actions } = setup();
     actions.renameLayer('L1', 'A');
     store.load(emptyProject());
@@ -156,8 +157,8 @@ describe('store: actions e histórico', () => {
   });
 });
 
-describe('store: gestos', () => {
-  it('um gesto gera uma única entrada no histórico', () => {
+describe('store: gestures', () => {
+  it('a gesture generates a single history entry', () => {
     const { store } = setup();
     const before = project(store);
     expect(store.beginGesture().ok).toBe(true);
@@ -177,7 +178,7 @@ describe('store: gestos', () => {
     expect(store.undo()).toBe(false);
   });
 
-  it('prévia inválida mantém a última posição válida', () => {
+  it('an invalid preview keeps the last valid position', () => {
     const { store } = setup();
     store.beginGesture();
     store.updateGesture((p) => moveContainer(p, 'I2', 1200, 0));
@@ -188,7 +189,7 @@ describe('store: gestos', () => {
     expect(project(store).containers[1]?.placement.x).toBe(1200);
   });
 
-  it('cancelar volta ao início sem histórico', () => {
+  it('cancelling goes back to the start without history', () => {
     const { store } = setup();
     const before = project(store);
     store.beginGesture();
@@ -198,21 +199,21 @@ describe('store: gestos', () => {
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('gesto sem mudança não entra no histórico', () => {
+  it('a gesture without a change does not enter the history', () => {
     const { store } = setup();
     store.beginGesture();
     store.commitGesture();
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('actions de gesto: mover imagem com prévias, sobreposição e uma entrada', () => {
+  it('gesture actions: move image with previews, overlap and one entry', () => {
     const { store, actions } = setup();
     const before = project(store);
     const start = before.containers[1]?.placement;
     if (!start) throw new Error('no I2');
     expect(actions.beginGesture().ok).toBe(true);
     expect(actions.previewImagePlacement('I2', { ...start, y: 900 }).ok).toBe(true);
-    // Em cima da I1 (0..1000 × 0..750): encosta nela (x = 1000) e desliza no y pedido.
+    // On top of I1 (0..1000 × 0..750): touches it (x = 1000) and slides in the asked y.
     expect(actions.previewImagePlacement('I2', { ...start, x: 100, y: 100 }).ok).toBe(
       true,
     );
@@ -232,7 +233,7 @@ describe('store: gestos', () => {
     expect(store.undo()).toBe(false);
   });
 
-  it('actions de gesto: redimensionar e cancelar', () => {
+  it('gesture actions: resize and cancel', () => {
     const { store, actions } = setup();
     const before = project(store);
     actions.beginGesture();
@@ -243,7 +244,7 @@ describe('store: gestos', () => {
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('durante o gesto, outras actions e undo ficam bloqueados', () => {
+  it('during the gesture, other actions and undo stay blocked', () => {
     const { store, actions } = setup();
     actions.renameLayer('L1', 'A');
     store.beginGesture();
@@ -258,7 +259,7 @@ describe('store: gestos', () => {
     store.cancelGesture();
     expect(store.undo()).toBe(true);
   });
-  it('actions de gesto: mover a marcação com as filhas, sem prender, e assentar ao soltar numa entrada', () => {
+  it('gesture actions: move the marking with its children, without trapping, and settle on release in one entry', () => {
     const { store, actions } = setup();
     const before = project(store);
     const rectOf = (id: string) => project(store).markings.find((m) => m.id === id)?.rect;
@@ -271,8 +272,8 @@ describe('store: gestos', () => {
     actions.commitGesture();
     expect(rectOf('M1')).toMatchObject({ x: 1100, y: 949 });
 
-    // Nada prende a marcação: ela sai do container (o `rect` passa de 4000 de largura) e o
-    // assentar a leva ao canvas, onde é uma marcação sem pai.
+    // Nothing traps the marking: it leaves the container (the `rect` goes past 4000 wide) and the
+    // settle takes it to the canvas, where it is a marking without a parent.
     expect(actions.beginGesture().ok).toBe(true);
     expect(actions.previewMarkingMove('M3', 10_000, 0).ok).toBe(true);
     expect(rectOf('M3')).toMatchObject({ x: 11_400 });
@@ -286,12 +287,12 @@ describe('store: gestos', () => {
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('actions de gesto: redimensionar marcação inválido fica na última prévia válida', () => {
+  it('gesture actions: an invalid marking resize stays at the last valid preview', () => {
     const { store, actions } = setup();
     actions.beginGesture();
     const ok = { x: 1000, y: 1000, width: 900, height: 900 };
     expect(actions.previewMarkingRect('M1', ok).ok).toBe(true);
-    // Fora do container: recusado, fica a última válida.
+    // Outside the container: refused, the last valid one stays.
     const bad = { x: 3900, y: 1000, width: 500, height: 100 };
     expect(actions.previewMarkingRect('M1', bad)).toEqual({
       ok: false,
@@ -305,29 +306,29 @@ describe('store: gestos', () => {
   });
 });
 
-// Etapa Marcações espaciais (ME1): as prévias não assentam e a operação final, dentro do mesmo
-// gesto, decide espaço e pai; desfazer volta tudo de uma vez.
-describe('store: gestos com assentar (ME1)', () => {
-  // sampleProject: I1 (4000×3000, escala 0,25: 1000×750 no canvas) em (0, 0); I2 (1000×1000,
-  // escala 1) à direita, em (1050, 0). M1 › M2 › M3 em I1; M4 em I2.
+// Spatial markings stage (ME1): previews do not settle and the final operation, within the same
+// gesture, decides space and parent; undo brings everything back at once.
+describe('store: gestures with settle (ME1)', () => {
+  // sampleProject: I1 (4000×3000, scale 0.25: 1000×750 on the canvas) at (0, 0); I2 (1000×1000,
+  // scale 1) to the right, at (1050, 0). M1 › M2 › M3 in I1; M4 in I2.
   const find = (store: ReturnType<typeof createProjectStore>, id: string) =>
     project(store).markings.find((m) => m.id === id);
   const container = (store: ReturnType<typeof createProjectStore>, id: string) =>
     project(store).containers.find((c) => c.id === id);
 
-  it('mover uma marcação de A para B leva as filhas, converte o rect e desfaz tudo de uma vez', () => {
+  it('moving a marking from A to B takes its children, converts the rect and undoes everything at once', () => {
     const { store, actions } = setup();
     const before = project(store);
-    // M2 (1200,1200,400×200 em I1) está em (300, 300) no canvas; levada para (1500, 400) cai
-    // inteira em I2: 1200 unidades do canvas = 4800 pixels de I1; 100 = 400.
+    // M2 (1200,1200,400×200 in I1) is at (300, 300) on the canvas; taken to (1500, 400) it falls
+    // entirely in I2: 1200 canvas units = 4800 pixels of I1; 100 = 400.
     expect(actions.beginGesture().ok).toBe(true);
     expect(actions.previewMarkingMove('M2', 2400, 200).ok).toBe(true);
-    // Durante o gesto o pertencimento está congelado.
+    // During the gesture the membership is frozen.
     expect(find(store, 'M2')).toMatchObject({ containerId: 'I1', parentId: 'M1' });
     expect(find(store, 'M3')).toMatchObject({ containerId: 'I1', parentId: 'M2' });
     expect(actions.previewMarkingMove('M2', 4800, 400).ok).toBe(true);
     expect(actions.finishMarkingMove('M2', 4800, 400).ok).toBe(true);
-    // O confirmado só muda no commit.
+    // The confirmed one only changes on commit.
     expect(store.committed.value).toBe(before);
     actions.commitGesture();
 
@@ -336,26 +337,26 @@ describe('store: gestos com assentar (ME1)', () => {
       parentId: null,
       rect: { x: 450, y: 400, width: 100, height: 50 },
     });
-    // M3 foi junto (descendente) e continua filha de M2, agora em pixels de I2.
+    // M3 went along (descendant) and is still a child of M2, now in pixels of I2.
     expect(find(store, 'M3')).toMatchObject({ containerId: 'I2', parentId: 'M2' });
     expect(validateProject(project(store))).toEqual([]);
 
     expect(store.undo()).toBe(true);
     expect(project(store).markings).toBe(before.markings);
     expect(store.canUndo.value).toBe(false);
-    // Refazer volta ao resultado do gesto inteiro.
+    // Redo goes back to the result of the whole gesture.
     expect(store.redo()).toBe(true);
     expect(find(store, 'M2')?.containerId).toBe('I2');
   });
 
-  it('a prévia de redimensionar não assenta; soltar tira do pai o que deixou de caber', () => {
+  it('the resize preview does not settle; releasing removes from the parent what stopped fitting', () => {
     const { store, actions } = setup();
     const before = project(store);
     expect(actions.beginGesture().ok).toBe(true);
-    // M1 encolhe para a ponta de cima à esquerda: M2 (1200..1600) deixa de caber.
+    // M1 shrinks to the top left tip: M2 (1200..1600) stops fitting.
     const smaller = { x: 1000, y: 1000, width: 300, height: 300 };
     expect(actions.previewMarkingRect('M1', smaller).ok).toBe(true);
-    expect(find(store, 'M2')?.parentId).toBe('M1'); // congelado na prévia
+    expect(find(store, 'M2')?.parentId).toBe('M1'); // frozen in the preview
     expect(actions.finishMarkingRect('M1', smaller).ok).toBe(true);
     actions.commitGesture();
     expect(find(store, 'M1')?.rect).toEqual(smaller);
@@ -365,9 +366,9 @@ describe('store: gestos com assentar (ME1)', () => {
     expect(project(store).markings).toBe(before.markings);
   });
 
-  it('mover um container para fora e para dentro de uma marcação do canvas, uma entrada cada', () => {
+  it('moving a container out of and into a canvas marking, one entry each', () => {
     const { store, actions } = setup();
-    // Marcação do canvas em volta só de I1 (0..1000 × 0..750); I2 (a partir de 1050) fica fora.
+    // Canvas marking around only I1 (0..1000 × 0..750); I2 (from 1050) stays outside.
     const created = actions.createMarking(null, {
       x: -50,
       y: -50,
@@ -380,7 +381,7 @@ describe('store: gestos com assentar (ME1)', () => {
     expect(container(store, 'I2')?.parentId).toBeNull();
     const afterCreate = project(store);
 
-    // I1 sai para longe: congelado durante o gesto, solto ao soltar.
+    // I1 goes far away: frozen during the gesture, released on release.
     expect(actions.beginGesture().ok).toBe(true);
     expect(actions.previewImagePlacement('I1', { x: 4000, y: 0, scale: 0.25 }).ok).toBe(
       true,
@@ -390,7 +391,7 @@ describe('store: gestos com assentar (ME1)', () => {
     actions.commitGesture();
     expect(container(store, 'I1')?.parentId).toBeNull();
 
-    // E volta: passa a ser membro de novo.
+    // And it comes back: it becomes a member again.
     expect(actions.beginGesture().ok).toBe(true);
     expect(actions.previewImagePlacement('I1', { x: 0, y: 0, scale: 0.25 }).ok).toBe(
       true,
@@ -405,13 +406,13 @@ describe('store: gestos com assentar (ME1)', () => {
     expect(project(store).containers).toBe(afterCreate.containers);
   });
 
-  it('a final de mover o container usa a última posição válida', () => {
+  it('the final of moving the container uses the last valid position', () => {
     const { store, actions } = setup();
     const start = container(store, 'I2')?.placement;
     if (!start) throw new Error('no I2');
     expect(actions.beginGesture().ok).toBe(true);
     expect(actions.previewImagePlacement('I2', { ...start, y: 900 }).ok).toBe(true);
-    // Por cima da I1: a prévia encosta nela (x = 1000, y = 100); a final assenta essa posição.
+    // On top of I1: the preview touches it (x = 1000, y = 100); the final settles that position.
     expect(actions.previewImagePlacement('I2', { ...start, x: 100, y: 100 }).ok).toBe(
       true,
     );
@@ -420,48 +421,48 @@ describe('store: gestos com assentar (ME1)', () => {
     expect(container(store, 'I2')?.placement).toEqual({ ...start, x: 1000, y: 100 });
   });
 
-  it('a operação final nunca falha: se falhar, assenta a última prévia válida', () => {
+  it('the final operation never fails: if it fails, it settles the last valid preview', () => {
     const { store, actions } = setup();
     expect(actions.beginGesture().ok).toBe(true);
     const smaller = { x: 1000, y: 1000, width: 300, height: 300 };
     expect(actions.previewMarkingRect('M1', smaller).ok).toBe(true);
-    // Um retângulo fora do container faria a final falhar...
+    // A rectangle outside the container would make the final fail...
     const bad = { x: 3900, y: 1000, width: 500, height: 100 };
     expect(actions.finishMarkingRect('M1', bad)).toEqual({
       ok: false,
       error: 'rect-out-of-image',
     });
-    // ...mas a prévia gravada já está assentada (M2 saiu do pai que encolheu).
+    // ...but the recorded preview is already settled (M2 left the parent that shrank).
     actions.commitGesture();
     expect(find(store, 'M1')?.rect).toEqual(smaller);
     expect(find(store, 'M2')?.parentId).toBeNull();
     expect(validateProject(project(store))).toEqual([]);
   });
 
-  it('sem mudança de verdade, o gesto não entra no histórico', () => {
+  it('without a real change, the gesture does not enter the history', () => {
     const { store, actions } = setup();
     expect(actions.beginGesture().ok).toBe(true);
     actions.previewMarkingMove('M2', 40, 40);
-    // A final volta ao ponto de partida.
+    // The final goes back to the starting point.
     expect(actions.finishMarkingMove('M2', 0, 0).ok).toBe(true);
     actions.commitGesture();
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('as actions fora de gesto assentam (mover e redimensionar são geometria)', () => {
+  it('actions outside a gesture settle (moving and resizing are geometry)', () => {
     const { store, actions } = setup();
     expect(actions.moveMarking('M2', 4800, 400).ok).toBe(true);
     expect(find(store, 'M2')?.containerId).toBe('I2');
     expect(store.undo()).toBe(true);
     expect(find(store, 'M2')?.containerId).toBe('I1');
-    // Encolher o pai por cima da filha é aceito e a filha sai do pertencimento.
+    // Shrinking the parent over the child is accepted and the child leaves the membership.
     expect(
       actions.setMarkingRect('M1', { x: 1000, y: 1000, width: 100, height: 100 }).ok,
     ).toBe(true);
     expect(find(store, 'M2')?.parentId).toBeNull();
   });
 
-  it('setMarkingFloating: a flutuante vai ao canvas e o desfazer a devolve', () => {
+  it('setMarkingFloating: the floating one goes to the canvas and undo brings it back', () => {
     const { store, actions } = setup();
     const before = project(store);
     expect(actions.setMarkingFloating('M4', true).ok).toBe(true);
@@ -471,14 +472,14 @@ describe('store: gestos com assentar (ME1)', () => {
       parentId: null,
     });
     expect(actions.setMarkingFloating('M4', false).ok).toBe(true);
-    // Desligar a devolve ao container que a contém inteira (M4 está sobre I2).
+    // Turning it off brings it back to the container that contains it whole (M4 is over I2).
     expect(find(store, 'M4')).toMatchObject({ floating: false, containerId: 'I2' });
     expect(store.undo()).toBe(true);
     expect(store.undo()).toBe(true);
     expect(project(store).markings).toBe(before.markings);
   });
 
-  it('marcação flutuante trancada não vira comum nem o contrário', () => {
+  it('a locked floating marking does not become plain nor the reverse', () => {
     const { actions } = setup();
     expect(actions.setMarkingLocked('M4', true).ok).toBe(true);
     expect(actions.setMarkingFloating('M4', true)).toEqual({
@@ -488,13 +489,13 @@ describe('store: gestos com assentar (ME1)', () => {
   });
 });
 
-describe('store: projeto confirmado (committed)', () => {
+describe('store: confirmed project (committed)', () => {
   const committed = (store: ReturnType<typeof createProjectStore>) => {
     if (!store.committed.value) throw new Error('no project');
     return store.committed.value;
   };
 
-  it('fora de um gesto é o mesmo objeto de project', () => {
+  it('outside a gesture it is the same object as project', () => {
     const { store, actions } = setup();
     expect(store.committed.value).toBe(store.project.value);
     actions.renameLayer('L1', 'A');
@@ -503,7 +504,7 @@ describe('store: projeto confirmado (committed)', () => {
     expect(store.committed.value).toBeNull();
   });
 
-  it('durante o gesto fica no projeto do início, mesmo com as prévias', () => {
+  it('during the gesture it stays on the starting project, even with the previews', () => {
     const { store } = setup();
     const before = project(store);
     store.beginGesture();
@@ -516,7 +517,7 @@ describe('store: projeto confirmado (committed)', () => {
     expect(committed(store).markings[0]?.rect.x).toBe(1000);
   });
 
-  it('commitGesture passa de uma vez para o projeto final', () => {
+  it('commitGesture goes at once to the final project', () => {
     const { store } = setup();
     const before = project(store);
     store.beginGesture();
@@ -529,11 +530,11 @@ describe('store: projeto confirmado (committed)', () => {
     dispose();
     expect(committed(store)).toBe(project(store));
     expect(committed(store).markings[0]?.rect.x).toBe(1100);
-    // Valor inicial + o final: nenhum valor intermediário.
+    // Initial value + the final one: no intermediate value.
     expect(seen).toEqual([before, project(store)]);
   });
 
-  it('gesto sem mudança mantém o mesmo projeto', () => {
+  it('a gesture without a change keeps the same project', () => {
     const { store } = setup();
     const before = project(store);
     store.beginGesture();
@@ -542,7 +543,7 @@ describe('store: projeto confirmado (committed)', () => {
     expect(project(store)).toBe(before);
   });
 
-  it('cancelGesture volta ao projeto do início', () => {
+  it('cancelGesture goes back to the starting project', () => {
     const { store } = setup();
     const before = project(store);
     store.beginGesture();
@@ -552,7 +553,7 @@ describe('store: projeto confirmado (committed)', () => {
     expect(project(store)).toBe(before);
   });
 
-  it('desfazer e refazer atualizam o projeto confirmado', () => {
+  it('undo and redo update the confirmed project', () => {
     const { store, actions } = setup();
     const before = project(store);
     store.beginGesture();
@@ -572,7 +573,7 @@ describe('store: projeto confirmado (committed)', () => {
     expect(committed(store).layers[0]?.name).toBe('X');
   });
 
-  it('carregar ou fechar durante um gesto limpa o projeto confirmado', () => {
+  it('loading or closing during a gesture clears the confirmed project', () => {
     const { store } = setup();
     store.beginGesture();
     store.updateGesture((p) => moveMarking(p, 'M1', 100, 0));
@@ -585,7 +586,7 @@ describe('store: projeto confirmado (committed)', () => {
   });
 });
 
-describe('store: revisão de propostas (etapa 4)', () => {
+describe('store: proposal review (stage 4)', () => {
   function linked() {
     const calls: string[] = [];
     const link = {
@@ -596,7 +597,7 @@ describe('store: revisão de propostas (etapa 4)', () => {
     return { calls, link };
   }
 
-  it('durante a revisão o projeto é somente leitura: apply, gestos e desfazer são recusados', () => {
+  it('during the review the project is read-only: apply, gestures and undo are refused', () => {
     const { store, actions } = setup();
     actions.renameLayer('L1', 'Before');
     store.setReviewing('P1');
@@ -616,7 +617,7 @@ describe('store: revisão de propostas (etapa 4)', () => {
     expect(store.undo()).toBe(true);
   });
 
-  it('uma entrada com efeito (a aplicação das aceitas) passa pelo bloqueio e desfaz e refaz o efeito junto', () => {
+  it('an entry with an effect (applying the accepted ones) goes through the lock and undoes and redoes the effect together', () => {
     const { store } = setup();
     const { calls, link } = linked();
     store.setReviewing('P1');
@@ -637,16 +638,16 @@ describe('store: revisão de propostas (etapa 4)', () => {
     expect(project(store).layers[0]?.name).toBe('Applied');
   });
 
-  it('na revisão só dá para desfazer entradas da própria revisão, não as de antes', () => {
+  it('in the review you can only undo entries of the review itself, not the earlier ones', () => {
     const { store, actions } = setup();
     actions.renameLayer('L1', 'From before');
     store.setReviewing('P1');
     const { calls, link } = linked();
-    store.apply((p) => renameLayer(p, 'L2', 'Da revisão'), { link });
+    store.apply((p) => renameLayer(p, 'L2', 'From the review'), { link });
 
     expect(store.undo()).toBe(true);
     expect(calls).toEqual(['undo']);
-    // A entrada anterior é de uma edição normal: fica para depois da revisão.
+    // The previous entry is from a normal edit: it waits until after the review.
     expect(store.canUndo.value).toBe(false);
     expect(store.undo()).toBe(false);
     store.setReviewing(null);
@@ -654,7 +655,7 @@ describe('store: revisão de propostas (etapa 4)', () => {
     expect(calls).toEqual(['undo']);
   });
 
-  it('na revisão de P2, uma entrada com vínculo de P1 não desfaz nem refaz; na de P1, sim', () => {
+  it('in the review of P2, an entry linked to P1 neither undoes nor redoes; in that of P1, it does', () => {
     const { store } = setup();
     const { calls, link } = linked();
     store.apply((p) => renameLayer(p, 'L1', 'Aplicado por P1'), { link });
@@ -681,14 +682,14 @@ describe('store: revisão de propostas (etapa 4)', () => {
     expect(calls).toEqual(['undo', 'redo']);
   });
 
-  it('o projeto só leitura (schema novo) continua recusando até as entradas da revisão', () => {
+  it('the read-only project (new schema) keeps refusing even for the review entries', () => {
     const store = createProjectStore();
     store.load(sampleProject(), { readOnly: true });
     const { link } = linked();
     expect(store.apply((p) => p, { link })).toEqual({ ok: false, error: 'read-only' });
   });
 
-  it('discardRedoOf descarta o "refazer" que tem o efeito da proposta, e só ele', () => {
+  it('discardRedoOf discards the "redo" that has the proposal effect, and only it', () => {
     const { store, actions } = setup();
     actions.renameLayer('L1', 'Normal');
     store.undo();
@@ -705,7 +706,7 @@ describe('store: revisão de propostas (etapa 4)', () => {
     expect(store.canRedo.value).toBe(false);
   });
 
-  it('detachLinks tira o vínculo da proposta do desfazer e do refazer, mantendo as entradas (fase 9.2)', () => {
+  it('detachLinks removes the proposal link from the undo and the redo, keeping the entries (phase 9.2)', () => {
     const { store, actions } = setup();
     const { calls, link } = linked();
     const other = {
@@ -722,7 +723,7 @@ describe('store: revisão de propostas (etapa 4)', () => {
 
     store.detachLinks('P1');
 
-    // O desfazer e o refazer do projeto seguem valendo, sem chamar o vínculo tirado.
+    // The project undo and redo keep working, without calling the removed link.
     store.undo();
     store.undo();
     expect(project(store).layers.find((l) => l.id === 'L1')?.name).not.toBe('Applied');
@@ -730,10 +731,10 @@ describe('store: revisão de propostas (etapa 4)', () => {
     store.redo();
     store.redo();
     expect(project(store).layers.find((l) => l.id === 'L1')?.name).toBe('Applied');
-    // O vínculo de outra proposta (P2) continua ligado.
+    // The link of another proposal (P2) stays linked.
     store.redo();
     expect(calls).toEqual(['undo-P2', 'redo-P2']);
-    // `discardRedoOf` já não enxerga a proposta tirada.
+    // `discardRedoOf` no longer sees the removed proposal.
     store.undo();
     store.undo();
     store.undo();
@@ -741,7 +742,7 @@ describe('store: revisão de propostas (etapa 4)', () => {
     expect(store.canRedo.value).toBe(true);
   });
 
-  it('detachLinks sem entradas daquela proposta não mexe no histórico', () => {
+  it('detachLinks without entries of that proposal does not touch the history', () => {
     const { store, actions } = setup();
     actions.renameLayer('L1', 'Before');
     store.undo();
@@ -750,7 +751,7 @@ describe('store: revisão de propostas (etapa 4)', () => {
     expect(store.canRedo.value).toBe(true);
   });
 
-  it('fechar o projeto desliga a revisão; carregar outro (recarga externa) não', () => {
+  it('closing the project turns the review off; loading another (external reload) does not', () => {
     const { store } = setup();
     store.setReviewing('P1');
     store.load(sampleProject());
@@ -760,7 +761,7 @@ describe('store: revisão de propostas (etapa 4)', () => {
   });
 });
 
-describe('store: vínculo assíncrono do histórico (desfazer espera a gravação da proposta)', () => {
+describe('store: asynchronous history link (undo waits for the proposal write)', () => {
   function deferred() {
     let resolve: (r: { ok: true } | { ok: false; error: string }) => void = () => {};
     const promise = new Promise<{ ok: true } | { ok: false; error: string }>((r) => {
@@ -779,7 +780,7 @@ describe('store: vínculo assíncrono do histórico (desfazer espera a gravaçã
     return { pending, link: { tag: 'P1', undo: next, redo: next } };
   }
 
-  it('com o desfazer pendente, canUndo/canRedo ficam falsos e undo/redo recusam; resolvido, voltam', async () => {
+  it('with the undo pending, canUndo/canRedo are false and undo/redo refuse; resolved, they come back', async () => {
     const { store } = setup();
     const { pending, link } = asyncLinked();
     store.apply((p) => renameLayer(p, 'L1', 'Applied'), { link });
@@ -802,7 +803,7 @@ describe('store: vínculo assíncrono do histórico (desfazer espera a gravaçã
     expect(store.canUndo.value).toBe(true);
   });
 
-  it('falha da gravação no desfazer: o passo é revertido (projeto e pilhas) e o erro fica à vista', async () => {
+  it('a write failure on undo: the step is reverted (project and stacks) and the error stays in sight', async () => {
     const { store } = setup();
     const { pending, link } = asyncLinked();
     store.apply((p) => renameLayer(p, 'L1', 'Applied'), { link });
@@ -820,7 +821,7 @@ describe('store: vínculo assíncrono do histórico (desfazer espera a gravaçã
     expect(store.linkFailure.value?.error).toBe('write-failed');
   });
 
-  it('commit, undo e redo escrevem os sinais num batch: um effect que lê os quatro roda uma vez', () => {
+  it('commit, undo and redo write the signals in a batch: an effect that reads the four runs once', () => {
     const { store } = setup();
     let runs = 0;
     const stop = effect(() => {
@@ -845,7 +846,7 @@ describe('store: vínculo assíncrono do histórico (desfazer espera a gravaçã
     }
   });
 
-  it('falha síncrona (exceção) no desfazer: o passo é revertido e linkFailure é definido', () => {
+  it('a synchronous failure (exception) on undo: the step is reverted and linkFailure is set', () => {
     const { store } = setup();
     const boom = () => {
       throw new Error('sync');
@@ -861,7 +862,7 @@ describe('store: vínculo assíncrono do histórico (desfazer espera a gravaçã
     expect(store.linkFailure.value?.error).toBe('failed');
   });
 
-  it('falha síncrona (exceção) no refazer: o passo é revertido e linkFailure é definido', async () => {
+  it('a synchronous failure (exception) on redo: the step is reverted and linkFailure is set', async () => {
     const { store } = setup();
     const { pending, link } = asyncLinked();
     const boom = () => {
@@ -881,7 +882,7 @@ describe('store: vínculo assíncrono do histórico (desfazer espera a gravaçã
     expect(store.linkFailure.value?.error).toBe('failed');
   });
 
-  it('falha da gravação no refazer: o passo é revertido e o erro fica à vista', async () => {
+  it('a write failure on redo: the step is reverted and the error stays in sight', async () => {
     const { store } = setup();
     const { pending, link } = asyncLinked();
     store.apply((p) => renameLayer(p, 'L1', 'Applied'), { link });
@@ -902,8 +903,8 @@ describe('store: vínculo assíncrono do histórico (desfazer espera a gravaçã
   });
 });
 
-describe('store: arrasto sem efeito', () => {
-  it('arrasto de container que não muda nada não cria entrada de desfazer', () => {
+describe('store: drag without effect', () => {
+  it('a container drag that changes nothing does not create an undo entry', () => {
     const { store, actions } = setup();
     const items = [{ kind: 'image' as const, id: 'I1' }];
     store.beginGesture();
@@ -914,7 +915,7 @@ describe('store: arrasto sem efeito', () => {
     expect(store.revision.value).toBe(0);
   });
 
-  it('mover o container sem prévia válida (placement igual) não cria entrada', () => {
+  it('moving the container without a valid preview (same placement) does not create an entry', () => {
     const { store, actions } = setup();
     store.beginGesture();
     actions.finishImagePlacement('I1');
@@ -923,7 +924,7 @@ describe('store: arrasto sem efeito', () => {
     expect(store.revision.value).toBe(0);
   });
 
-  it('mover a marcação sem efeito não cria entrada', () => {
+  it('moving the marking without an effect does not create an entry', () => {
     const { store, actions } = setup();
     store.beginGesture();
     actions.finishMarkingMove('M1', 0, 0);

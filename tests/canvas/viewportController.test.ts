@@ -15,7 +15,7 @@ function container(width: number, height: number): HTMLDivElement {
 const SIZE = { width: 380, height: 700 };
 
 describe('ViewportController', () => {
-  it('na primeira medida com tamanho, enquadra as imagens (uma vez só)', () => {
+  it('on the first measure with a size, it frames the images (only once)', () => {
     let content: Project | null = canvasProject();
     const view = new ViewportController(container(380, 700), () => content);
     const stop = view.observe();
@@ -30,7 +30,7 @@ describe('ViewportController', () => {
     stop();
   });
 
-  it('measure() sem mudança de tamanho não reescreve o sinal `size`', () => {
+  it('measure() without a size change does not rewrite the `size` signal', () => {
     const view = new ViewportController(container(380, 700), () => canvasProject());
     view.measure();
     const writes: unknown[] = [];
@@ -43,7 +43,7 @@ describe('ViewportController', () => {
     expect(view.size.value).toEqual(SIZE);
   });
 
-  it('sem tamanho, não enquadra; canvas vazio enquadra a área padrão', () => {
+  it('without a size, it does not frame; empty canvas frames the default area', () => {
     const el = container(0, 0);
     const view = new ViewportController(el, () => null);
     view.measure();
@@ -55,9 +55,9 @@ describe('ViewportController', () => {
     expect(view.viewport.value).toEqual(fitRect(EMPTY_CANVAS_RECT, SIZE));
   });
 
-  // Etapa 7 (7.2), regressão G3: fechar a janela de baixo e clicar em Enquadrar tudo
-  // usava a altura antiga (o ResizeObserver ainda não tinha disparado).
-  it('enquadrar tudo mede o container antes (sem esperar o ResizeObserver)', () => {
+  // Stage 7 (7.2), regression G3: closing the bottom window and clicking Fit all
+  // used the old height (the ResizeObserver had not fired yet).
+  it('fit all measures the container first (without waiting for the ResizeObserver)', () => {
     const el = container(380, 300);
     const view = new ViewportController(el, () => canvasProject());
     view.measure();
@@ -69,7 +69,7 @@ describe('ViewportController', () => {
     );
   });
 
-  it('enquadrar tudo inclui as marcações do canvas', () => {
+  it('fit all includes the canvas markings', () => {
     const base = canvasProject();
     const content = createMarking(base, {
       id: 'C1',
@@ -83,7 +83,7 @@ describe('ViewportController', () => {
     );
   });
 
-  it('centraliza num retângulo e converte tela ↔ canvas', () => {
+  it('centers on a rectangle and converts screen ↔ canvas', () => {
     const view = new ViewportController(container(380, 700), () => null);
     view.measure();
     view.centerOn({ x: 1000, y: 1000, width: 100, height: 100 });
@@ -93,7 +93,7 @@ describe('ViewportController', () => {
     expect(view.screenPoint({ clientX: 30, clientY: 40 })).toEqual({ x: 30, y: 40 });
   });
 
-  it('zoom no ponto mantém o ponto parado; pinça escala pela distância', () => {
+  it('zoom at a point keeps the point still; pinch scales by the distance', () => {
     const view = new ViewportController(container(380, 700), () => null);
     const before = view.toCanvas({ x: 100, y: 200 });
     view.zoomAt({ x: 100, y: 200 }, 2);
@@ -103,8 +103,8 @@ describe('ViewportController', () => {
     expect(view.scale).toBeCloseTo(1);
   });
 
-  // PC2: a faixa "Área de chegada" tem um rótulo em cima dela; Enquadrar tudo deixa o espaço dele.
-  it('com marcas de chegada, enquadrar tudo deixa folga extra para o rótulo da faixa', () => {
+  // PC2: the "Arrival area" strip has a label above it; Fit all leaves room for it.
+  it('with arrival marks, fit all leaves extra room for the strip label', () => {
     const root = canvasProject().containers[0]!.id;
     const marked: Project = {
       ...canvasProject(),
@@ -121,14 +121,14 @@ describe('ViewportController', () => {
     );
   });
 
-  // #1337: abrir ou fechar uma janela de ferramenta muda a largura do canvas; o centro fica.
-  describe('mudança de tamanho do container', () => {
+  // #1337: opening or closing a tool window changes the canvas width; the center stays.
+  describe('container size change', () => {
     function resize(el: HTMLElement, width: number, height: number): void {
       Object.defineProperty(el, 'clientWidth', { value: width, configurable: true });
       Object.defineProperty(el, 'clientHeight', { value: height, configurable: true });
     }
 
-    it('depois do primeiro enquadramento, mantém o centro e a escala', () => {
+    it('after the first framing, keeps the center and the scale', () => {
       const el = container(800, 600);
       const view = new ViewportController(el, () => canvasProject());
       view.measure();
@@ -143,7 +143,7 @@ describe('ViewportController', () => {
       expect(view.center().y).toBeCloseTo(center.y, 6);
     });
 
-    it('ir a 0 e voltar compara com o último tamanho não nulo', () => {
+    it('going to 0 and back compares with the last non-zero size', () => {
       const el = container(800, 600);
       const view = new ViewportController(el, () => canvasProject());
       view.measure();
@@ -159,7 +159,7 @@ describe('ViewportController', () => {
       expect(view.center().y).toBeCloseTo(center.y, 6);
     });
 
-    it('antes do primeiro enquadramento, só o fitAll de sempre', () => {
+    it('before the first framing, only the usual fitAll', () => {
       const el = container(0, 0);
       const view = new ViewportController(el, () => canvasProject());
       view.measure();
@@ -170,7 +170,7 @@ describe('ViewportController', () => {
       );
     });
 
-    it('fitAll depois de uma mudança enquadra como antes', () => {
+    it('fitAll after a change frames as before', () => {
       const el = container(800, 600);
       const view = new ViewportController(el, () => canvasProject());
       view.measure();

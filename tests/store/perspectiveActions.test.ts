@@ -13,14 +13,14 @@ import { createProjectActions } from '../../src/store/project';
 import { NOW } from '../model/fixtures';
 import { multiProjectAnnotated, rect } from '../model/multiSelectionFixtures';
 
-// As actions do projeto com uma perspectiva aberta (etapa #659, PE2, decisão 5). O canvas chama as
-// MESMAS actions com coordenadas da vista. Mundo (ver tests/model/multiSelectionFixtures.ts):
-// raízes G (marcação do canvas que cerca A, B e C), D e E (containers), H (marcação do canvas) e
-// N (flutuante). A perspectiva P mostra todas, deslocadas:
+// The project actions with a perspective open (stage #659, PE2, decision 5). The canvas calls the
+// SAME actions with view coordinates. World (see tests/model/multiSelectionFixtures.ts):
+// roots G (canvas marking that surrounds A, B and C), D and E (containers), H (canvas marking) and
+// N (floating). The perspective P shows them all, shifted:
 //
 //   G (1000,1000)   D (7000,3000)   E (9000,3000)   H (400,4000)   N (100,6000)
 //
-// (na Principal: G em (-100,-100), D em (7000,0), E em (9000,0), H em (400,1300), N em (100,1300)).
+// (on the Main one: G at (-100,-100), D at (7000,0), E at (9000,0), H at (400,1300), N at (100,1300)).
 
 const perspectiveOf = (store: ReturnType<typeof createProjectStore>): Perspective =>
   project(store).perspectives.find((x) => x.id === 'P')!;
@@ -30,7 +30,7 @@ const mark = (id: string): ItemRef => ({ kind: 'marking', id });
 
 const PERSPECTIVE: Perspective = {
   id: 'P',
-  name: 'Vista',
+  name: 'View',
   hiddenLayers: [],
   items: [
     { root: 'G', x: 1000, y: 1000 },
@@ -74,7 +74,7 @@ function setup(initialOpen: string | null = 'P') {
 type Store = ReturnType<typeof createProjectStore>;
 
 const project = (store: Store): Project => {
-  if (!store.project.value) throw new Error('sem projeto');
+  if (!store.project.value) throw new Error('no project');
   return store.project.value;
 };
 const item = (store: Store, root: string) =>
@@ -84,8 +84,8 @@ const container = (store: Store, id: string) =>
 const marking = (store: Store, id: string) =>
   project(store).markings.find((m) => m.id === id);
 
-describe('arrastar uma raiz numa perspectiva', () => {
-  it('container raiz: só a posição na perspectiva muda, numa entrada de desfazer', () => {
+describe('dragging a root in a perspective', () => {
+  it('root container: only the position in the perspective changes, in one undo entry', () => {
     const { store, actions } = setup();
     const before = project(store);
     expect(actions.beginGesture().ok).toBe(true);
@@ -112,7 +112,7 @@ describe('arrastar uma raiz numa perspectiva', () => {
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('marcação do canvas raiz: o rect dela não muda, só o item da perspectiva', () => {
+  it('root canvas marking: its rect does not change, only the perspective item', () => {
     const { store, actions } = setup();
     const before = project(store);
     actions.beginGesture();
@@ -129,7 +129,7 @@ describe('arrastar uma raiz numa perspectiva', () => {
     expect(item(store, 'H')).toEqual({ root: 'H', x: 400, y: 4000 });
   });
 
-  it('a flutuante também anda só na perspectiva', () => {
+  it('the floating one also moves only in the perspective', () => {
     const { store, actions } = setup();
     const before = project(store);
     expect(actions.moveMarking('N', -10, 5).ok).toBe(true);
@@ -138,7 +138,7 @@ describe('arrastar uma raiz numa perspectiva', () => {
     expect(store.revision.value).toBe(1);
   });
 
-  it('filha de marcação do canvas: arrasta a raiz inteira', () => {
+  it('child of a canvas marking: drags the whole root', () => {
     const { store, actions } = setup();
     const before = project(store);
     actions.beginGesture();
@@ -150,10 +150,10 @@ describe('arrastar uma raiz numa perspectiva', () => {
     expect(project(store).containers).toBe(before.containers);
   });
 
-  it('container dentro de uma marcação do canvas: arrasta a raiz inteira', () => {
+  it('container inside a canvas marking: drags the whole root', () => {
     const { store, actions } = setup();
     const before = project(store);
-    // A está em (0,0) na Principal e em (1100,1100) na vista (G foi para (1000,1000)).
+    // A is at (0,0) on the Main one and at (1100,1100) in the view (G went to (1000,1000)).
     actions.beginGesture();
     expect(actions.previewImagePlacement('A', { x: 1120, y: 1100, scale: 1 }).ok).toBe(
       true,
@@ -164,10 +164,10 @@ describe('arrastar uma raiz numa perspectiva', () => {
     expect(project(store).containers).toBe(before.containers);
   });
 
-  it('o container raiz que sobreporia outro da vista encosta nele (R12.10)', () => {
+  it('the root container that would overlap another one of the view touches it (R12.10)', () => {
     const { store, actions } = setup();
     actions.beginGesture();
-    // D (7000..8000) pedido em 8500 cairia sobre o E (9000): fica em 8000, encostado.
+    // D (7000..8000) asked at 8500 would fall over E (9000): stays at 8000, touching.
     const result = actions.previewImagePlacement('D', { x: 8500, y: 3000, scale: 1 });
     expect(result.ok).toBe(true);
     expect(actions.finishImagePlacement('D').ok).toBe(true);
@@ -178,7 +178,7 @@ describe('arrastar uma raiz numa perspectiva', () => {
     expect(item(store, 'D')).toEqual({ root: 'D', x: 7000, y: 3000 });
   });
 
-  it('o arrasto conjunto na perspectiva encosta no container que não se move', () => {
+  it('the joint drag in the perspective touches the container that does not move', () => {
     const { store, actions } = setup();
     actions.beginGesture();
     expect(actions.previewItemsMove([img('D')], 1500, 0).ok).toBe(true);
@@ -188,7 +188,7 @@ describe('arrastar uma raiz numa perspectiva', () => {
     expect(store.revision.value).toBe(1);
   });
 
-  it('o container trancado não anda', () => {
+  it('the locked container does not move', () => {
     const { store, actions } = setup();
     store.apply((p) => model.setImageLocked(p, 'D', true));
     expect(actions.setContainerPlacement('D', { x: 7100, y: 3000, scale: 1 })).toEqual({
@@ -197,7 +197,7 @@ describe('arrastar uma raiz numa perspectiva', () => {
     });
   });
 
-  it('redimensionar o container raiz: a escala vai ao projeto, a posição pedida ao item', () => {
+  it('resizing the root container: the scale goes to the project, the asked position to the item', () => {
     const { store, actions } = setup();
     actions.beginGesture();
     expect(actions.previewImagePlacement('D', { x: 6990, y: 3000, scale: 1.1 }).ok).toBe(
@@ -211,8 +211,8 @@ describe('arrastar uma raiz numa perspectiva', () => {
   });
 });
 
-describe('dentro de um container a geometria é a mesma', () => {
-  it('mover uma marcação de container muda o projeto, não a perspectiva', () => {
+describe('inside a container the geometry is the same', () => {
+  it('moving a container marking changes the project, not the perspective', () => {
     const { store, actions } = setup();
     const before = project(store);
     actions.beginGesture();
@@ -223,15 +223,15 @@ describe('dentro de um container a geometria é a mesma', () => {
     expect(project(store).perspectives).toBe(before.perspectives);
   });
 
-  it('redimensionar uma marcação de container muda o projeto', () => {
+  it('resizing a container marking changes the project', () => {
     const { store, actions } = setup();
     expect(actions.setMarkingRect('a3', rect(600, 600, 250, 250)).ok).toBe(true);
     expect(marking(store, 'a3')?.rect).toEqual(rect(600, 600, 250, 250));
   });
 });
 
-describe('flutuante: redimensionar', () => {
-  it('o tamanho vai ao projeto (x/y da Principal ficam) e a posição pedida ao item', () => {
+describe('floating: resize', () => {
+  it('the size goes to the project (x/y of the Main one stay) and the asked position to the item', () => {
     const { store, actions } = setup();
     actions.beginGesture();
     expect(actions.previewMarkingRect('N', rect(90, 6000, 260, 120)).ok).toBe(true);
@@ -242,7 +242,7 @@ describe('flutuante: redimensionar', () => {
     expect(store.revision.value).toBe(1);
   });
 
-  it('ajuste fino de x/y move o item; de largura/altura muda o projeto', () => {
+  it('fine adjustment of x/y moves the item; of width/height changes the project', () => {
     const { store, actions } = setup();
     expect(actions.adjustMarkingRect('N', 'x', 150).ok).toBe(true);
     expect(item(store, 'N')).toEqual({ root: 'N', x: 150, y: 6000 });
@@ -251,7 +251,7 @@ describe('flutuante: redimensionar', () => {
     expect(marking(store, 'N')?.rect.width).toBe(300);
   });
 
-  it('marcação do canvas que não é flutuante não se redimensiona fora da Principal', () => {
+  it('a canvas marking that is not floating is not resized outside the Main one', () => {
     const { store, actions } = setup();
     const before = project(store);
     expect(actions.setMarkingRect('H', rect(400, 1300, 300, 100))).toEqual({
@@ -268,21 +268,21 @@ describe('flutuante: redimensionar', () => {
   });
 });
 
-describe('arrasto conjunto e passo das setas', () => {
-  it('raízes andam na perspectiva e as marcações de container no projeto, numa entrada', () => {
+describe('joint drag and arrow step', () => {
+  it('roots move in the perspective and container markings in the project, in one entry', () => {
     const { store, actions } = setup();
     const before = project(store);
-    // D (container raiz), H (marcação raiz) e b1 (marcação de container, de B, cuja raiz G não anda).
+    // D (root container), H (root marking) and b1 (container marking, of B, whose root G does not move).
     const items = [img('D'), mark('H'), mark('b1')];
     actions.beginGesture();
     expect(actions.previewItemsMove(items, 10, 4.4).ok).toBe(true);
     expect(actions.finishItemsMove(items, 10, 4.4).ok).toBe(true);
     actions.commitGesture();
 
-    // Há marcação raiz: o deslocamento do canvas é arredondado uma vez (10, 4).
+    // There is a root marking: the canvas offset is rounded once (10, 4).
     expect(item(store, 'D')).toEqual({ root: 'D', x: 7010, y: 3004 });
     expect(item(store, 'H')).toEqual({ root: 'H', x: 410, y: 4004 });
-    // b1 anda round(10/2) = 5, round(4.4/2) = 2 pixels do container B (escala 2).
+    // b1 moves round(10/2) = 5, round(4.4/2) = 2 pixels of container B (scale 2).
     expect(marking(store, 'b1')?.rect).toEqual(rect(55, 52, 100, 100));
     expect(container(store, 'D')?.placement).toEqual({ x: 7000, y: 0, scale: 1 });
     expect(store.revision.value).toBe(1);
@@ -293,7 +293,7 @@ describe('arrasto conjunto e passo das setas', () => {
     expect(project(store).perspectives).toEqual(before.perspectives);
   });
 
-  it('marcação de container cuja raiz também anda vai com a raiz', () => {
+  it('container marking whose root also moves goes with the root', () => {
     const { store, actions } = setup();
     const before = project(store);
     const items = [mark('G'), mark('b1')];
@@ -304,7 +304,7 @@ describe('arrasto conjunto e passo das setas', () => {
     expect(project(store).markings).toBe(before.markings);
   });
 
-  it('passo das setas: o container raiz anda o passo na perspectiva', () => {
+  it('arrow step: the root container moves the step in the perspective', () => {
     const { store, actions } = setup();
     const before = project(store);
     actions.beginGesture();
@@ -316,7 +316,7 @@ describe('arrasto conjunto e passo das setas', () => {
   });
 });
 
-describe('só na Principal', () => {
+describe('only on the Main one', () => {
   /** O comando é recusado na perspectiva, sem gravar, e funciona na Principal. */
   function refused(run: (a: ReturnType<typeof setup>['actions']) => unknown) {
     const inPerspective = setup('P');
@@ -327,21 +327,21 @@ describe('só na Principal', () => {
     expect(inPerspective.store.canUndo.value).toBe(false);
   }
 
-  it('desenhar marcação do canvas que não é flutuante', () => {
+  it('drawing a canvas marking that is not floating', () => {
     refused((a) => a.createMarking(null, rect(20000, 20000, 100, 100)));
     const { actions, store } = setup(null);
     expect(actions.createMarking(null, rect(20000, 20000, 100, 100)).ok).toBe(true);
     expect(marking(store, 'X')).toBeDefined();
   });
 
-  it('desenhar marcação dentro de um container continua valendo', () => {
+  it('drawing a marking inside a container keeps working', () => {
     const { actions, store, arrivals } = setup('P');
     expect(actions.createMarking('D', rect(10, 10, 50, 50)).ok).toBe(true);
     expect(marking(store, 'X')?.containerId).toBe('D');
     expect(arrivals).toEqual([]);
   });
 
-  it('a rota de uma seta', () => {
+  it('the route of an arrow', () => {
     refused((a) => a.setArrowRoute('r1', [{ x: 2100, y: 600 }]));
     const { actions } = setup('P');
     actions.beginGesture();
@@ -354,19 +354,19 @@ describe('só na Principal', () => {
     expect(principal.actions.setArrowRoute('r1', [{ x: 2100, y: 600 }]).ok).toBe(true);
   });
 
-  it('arrumar', () => {
+  it('arrange', () => {
     refused((a) => a.arrange('G'));
     const { actions } = setup(null);
     const result = actions.arrange('G');
     expect(result.ok || result.error !== 'principal-only').toBe(true);
   });
 
-  it('excluir uma raiz (container, marcação ou seleção)', () => {
+  it('delete a root (container, marking or selection)', () => {
     refused((a) => a.removeContainer('D'));
     refused((a) => a.removeMarking('H'));
     refused((a) => a.removeItems([img('D'), mark('c1')]));
     const { actions, store } = setup('P');
-    // Marcação de container não é raiz: exclui normalmente.
+    // A container marking is not a root: deletes normally.
     expect(actions.removeMarking('c1').ok).toBe(true);
     expect(marking(store, 'c1')).toBeUndefined();
     const principal = setup(null);
@@ -374,7 +374,7 @@ describe('só na Principal', () => {
     expect(principal.actions.removeMarking('H').ok).toBe(true);
   });
 
-  it('principalOnly diz à interface o que desabilitar', () => {
+  it('principalOnly tells the interface what to disable', () => {
     const p = world();
     expect(principalOnly(p, null, 'draw-canvas')).toBe(false);
     expect(principalOnly(p, null, 'delete', ['D'])).toBe(false);
@@ -384,12 +384,12 @@ describe('só na Principal', () => {
     expect(principalOnly(p, 'P', 'delete', ['D', 'c1'])).toBe(true);
     expect(principalOnly(p, 'P', 'delete', ['c1', 'a3'])).toBe(false);
     expect(principalOnly(p, 'P', 'delete')).toBe(false);
-    expect(principalOnly(p, 'nao-existe', 'arrange')).toBe(false);
+    expect(principalOnly(p, 'does-not-exist', 'arrange')).toBe(false);
   });
 });
 
-describe('criar numa perspectiva', () => {
-  it('o container novo entra nela onde foi criado e chega à Principal', () => {
+describe('creating in a perspective', () => {
+  it('the new container enters it where it was created and arrives on the Main one', () => {
     const { store, actions, arrivals } = setup();
     const before = project(store);
     const result = actions.addBackgroundContainer({
@@ -400,7 +400,7 @@ describe('criar numa perspectiva', () => {
       center: { x: 20000, y: 20000 },
     });
     expect(result).toEqual({ ok: true, value: 'X' });
-    // Onde o modelo o pôs ao criar (na Principal, antes de a chegada o mover).
+    // Where the model put it when creating (on the Main one, before the arrival moved it).
     const created = model.addBackgroundContainer(before, {
       id: 'X',
       width: 400,
@@ -410,10 +410,8 @@ describe('criar numa perspectiva', () => {
     });
     const at = model.rootPosition(created, 'X');
     expect(item(store, 'X')).toEqual({ root: 'X', ...at });
-    // Chegou à Principal: a área de chegada, com a marca.
-    expect(project(store).arrivals).toEqual([
-      { root: 'X', from: 'P', fromName: 'Vista' },
-    ]);
+    // It arrived on the Main one: the arrival area, with the mark.
+    expect(project(store).arrivals).toEqual([{ root: 'X', from: 'P', fromName: 'View' }]);
     expect(model.rootPosition(project(store), 'X')).not.toEqual(at);
     expect(arrivals).toEqual([
       [{ root: 'X', from: 'P', kind: 'arrival-area', referenceId: null }],
@@ -425,7 +423,7 @@ describe('criar numa perspectiva', () => {
     expect(item(store, 'X')).toBeUndefined();
   });
 
-  it('dois containers criados seguidos na perspectiva não se sobrepõem na vista dela', () => {
+  it('two containers created in a row in the perspective do not overlap in its view', () => {
     const { store, actions } = setup();
     const args = {
       name: null,
@@ -443,7 +441,7 @@ describe('criar numa perspectiva', () => {
     }
   });
 
-  it('a flutuante nova com seta para uma raiz da perspectiva chega perto dela', () => {
+  it('the new floating one with an arrow to a perspective root arrives near it', () => {
     const { store, actions, arrivals } = setup();
     const result = actions.applyCreating((p) =>
       model.createArrow(
@@ -463,12 +461,12 @@ describe('criar numa perspectiva', () => {
     expect(arrivals[0]).toEqual([
       { root: 'F', from: 'P', kind: 'near', referenceId: 'G' },
     ]);
-    // Na Principal fica à mesma distância de G que tinha na perspectiva (G: (1000,1000) na vista,
-    // (-100,-100) na Principal; F: (30000,30000) na vista).
+    // On the Main one it stays at the same distance from G that it had in the perspective (G: (1000,1000) in the view,
+    // (-100,-100) on the Main one; F: (30000,30000) in the view).
     expect(model.rootPosition(project(store), 'F')).toEqual({ x: 28900, y: 28900 });
   });
 
-  it('a marcação do canvas nova que não é flutuante recusa a operação inteira', () => {
+  it('the new canvas marking that is not floating refuses the whole operation', () => {
     const { store, actions, arrivals } = setup();
     const before = project(store);
     const result = actions.applyCreating((p) =>
@@ -483,12 +481,12 @@ describe('criar numa perspectiva', () => {
     expect(arrivals).toEqual([]);
   });
 
-  it('envolver a seleção cria marcação do canvas: só na Principal', () => {
+  it('wrapping the selection creates a canvas marking: only on the Main one', () => {
     const { actions } = setup();
     expect(actions.wrapItems([img('D')])).toEqual({ ok: false, error: 'principal-only' });
   });
 
-  it('na Principal nada muda: sem chegada, sem aviso', () => {
+  it('on the Main one nothing changes: no arrival, no notice', () => {
     const { store, actions, arrivals } = setup(null);
     const result = actions.addBackgroundContainer({
       name: null,
@@ -502,7 +500,7 @@ describe('criar numa perspectiva', () => {
     expect(arrivals).toEqual([]);
   });
 
-  it('o aviso só sai quando a operação entrou', () => {
+  it('the notice only comes out when the operation entered', () => {
     const onArrival = vi.fn();
     const store = createProjectStore();
     const actions = createProjectActions(store, {

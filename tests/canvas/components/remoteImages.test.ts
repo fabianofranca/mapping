@@ -1,4 +1,4 @@
-// A fonte de imagens remotas: as duas portas da app e o carregador, num só lugar.
+// The remote image source: the two gates of the app and the loader, in one place.
 import { signal } from '@preact/signals';
 import { describe, expect, it, vi } from 'vitest';
 import {
@@ -57,7 +57,7 @@ const allow = (url: string): RemoteImageGate => ({
 });
 
 describe('createRemoteImageSource', () => {
-  it('porta negada: devolve o estado, reporta e não pede nada ao carregador', () => {
+  it('gate denied: returns the state, reports and requests nothing from the loader', () => {
     const blocked = setup((): RemoteImageGate => ({
       allowed: false,
       state: 'blocked-consent',
@@ -77,7 +77,7 @@ describe('createRemoteImageSource', () => {
     expect(invalid.request).not.toHaveBeenCalled();
   });
 
-  it('porta liberada: pede ao carregador a URL normalizada, com o interruptor de CORS', () => {
+  it('gate open: requests the normalized URL from the loader, with the CORS switch', () => {
     const ctx = setup((url) => ({
       allowed: true,
       url: `${url}#n`,
@@ -91,7 +91,7 @@ describe('createRemoteImageSource', () => {
     expect(ctx.report).not.toHaveBeenCalled();
   });
 
-  it('reporta failed, timeout e too-large; loaded não reporta', () => {
+  it('reports failed, timeout and too-large; loaded does not report', () => {
     const ctx = setup(allow);
     ctx.request.mockReturnValueOnce({ state: 'failed', reason: 'failed' });
     ctx.source.resolve(URL);
@@ -108,7 +108,7 @@ describe('createRemoteImageSource', () => {
     expect(ctx.report).not.toHaveBeenCalled();
   });
 
-  it('o aviso do carregador chega com a URL do campo, não com a normalizada', () => {
+  it('the loader notice arrives with the field URL, not the normalized one', () => {
     const ctx = setup((url) => ({
       allowed: true,
       url: `${url}#n`,
@@ -122,7 +122,7 @@ describe('createRemoteImageSource', () => {
     expect(heard).toEqual([URL, 'https://desconhecida.test/z.png']);
   });
 
-  it('gate muda (outro objeto) com o consentimento ou o interruptor', () => {
+  it('gate changes (another object) with the consent or the switch', () => {
     const ctx = setup(allow);
     const first = ctx.source.gate.value;
     ctx.gateSignal.value = (url) => allow(url);
@@ -133,7 +133,7 @@ describe('createRemoteImageSource', () => {
   });
 });
 
-describe('Diagnóstico: a imagem que passou a ser mostrada sai da lista (R15.5)', () => {
+describe('Diagnostics: the image that started being shown leaves the list (R15.5)', () => {
   function realSource(initial: (url: string) => RemoteImageGate) {
     const view = { current: { state: 'loading' } as RemoteImageView };
     const loader = {
@@ -150,7 +150,7 @@ describe('Diagnóstico: a imagem que passou a ser mostrada sai da lista (R15.5)'
     return { source, gate, view };
   }
 
-  it('bloqueada por consentimento entra; depois de Permitir e carregar, sai', () => {
+  it('blocked by consent enters; after Allow and loading, it leaves', () => {
     clearRemoteImageIssues();
     const { source, gate, view } = realSource((): RemoteImageGate => ({
       allowed: false,
@@ -161,7 +161,7 @@ describe('Diagnóstico: a imagem que passou a ser mostrada sai da lista (R15.5)'
     expect(remoteImageIssues.value.map((i) => i.reason)).toEqual(['blocked-consent']);
     gate.value = allow;
     source.resolve(URL);
-    // Carregando ainda não a mostra: a linha fica até desenhar.
+    // Loading does not show it yet: the line stays until it draws.
     expect(remoteImageIssues.value).toHaveLength(1);
     view.current = { state: 'loaded' };
     source.resolve(URL);
@@ -169,7 +169,7 @@ describe('Diagnóstico: a imagem que passou a ser mostrada sai da lista (R15.5)'
     clearRemoteImageIssues();
   });
 
-  it('imagem que carregou sem CORS (opaca) também sai; outras linhas ficam', () => {
+  it('an image that loaded without CORS (opaque) also leaves; other lines stay', () => {
     clearRemoteImageIssues();
     const { source, gate, view } = realSource(allow);
     source.resolve('https://b.com/y.png');
@@ -185,7 +185,7 @@ describe('Diagnóstico: a imagem que passou a ser mostrada sai da lista (R15.5)'
     clearRemoteImageIssues();
   });
 
-  it('guarda o mapa de URLs normalizadas só até o limite do carregador (as mais antigas saem)', () => {
+  it('keeps the normalized URL map only up to the loader limit (the oldest leave)', () => {
     const normalized = (raw: string) => `norm:${raw}`;
     const ctx = setup((raw) => ({
       allowed: true,
@@ -196,9 +196,9 @@ describe('Diagnóstico: a imagem que passou a ser mostrada sai da lista (R15.5)'
     ctx.source.subscribe((u) => heard.push(u));
     const total = REMOTE_IMAGE_LIMITS.failureEntries + 100;
     for (let i = 0; i < total; i += 1) ctx.source.resolve(`https://cdn.exemplo.com/${i}`);
-    // A recente ainda traduz a URL normalizada para a do campo...
+    // The recent one still translates the normalized URL to the field one...
     ctx.emit(normalized(`https://cdn.exemplo.com/${total - 1}`));
-    // ...a mais antiga já saiu do mapa: o aviso vai com a normalizada.
+    // ...the oldest has already left the map: the notice goes with the normalized one.
     ctx.emit(normalized('https://cdn.exemplo.com/0'));
     expect(heard).toEqual([
       `https://cdn.exemplo.com/${total - 1}`,

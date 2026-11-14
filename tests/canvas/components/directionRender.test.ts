@@ -1,7 +1,7 @@
-// R1 (#1096): a direção de leitura no desenho do Konva. O `Text` leva `direction: 'rtl'` só quando
-// o estilo é rtl, e a matriz espelhada (scaleX negativo) do ícone e do caminho sai do `decompose`
-// sem rotação nem skew espúrios, na mesma caixa do nó. A paridade com o raster do MCP em pixels
-// está em tests/e2e/directionParity.spec.ts.
+// R1 (#1096): the reading direction in the Konva drawing. The `Text` carries `direction: 'rtl'` only when
+// the style is rtl, and the mirrored matrix (negative scaleX) of the icon and the path comes out of `decompose`
+// without spurious rotation or skew, in the same node box. Parity with the MCP raster in pixels
+// is in tests/e2e/directionParity.spec.ts.
 import Konva from 'konva';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { installFakeCanvas } from '../harness';
@@ -59,12 +59,12 @@ const path: Json = {
   fill: '#000000',
 };
 
-describe('espelho no Konva: decompose da matriz com scaleX negativo', () => {
+describe('mirror in Konva: decompose of the matrix with negative scaleX', () => {
   for (const [label, child, left, right] of [
-    ['ícone', icon, 40, 58],
-    ['caminho', path, 20, 56],
+    ['icon', icon, 40, 58],
+    ['path', path, 20, 56],
   ] as const) {
-    it(`${label} em rtl: sem rotação nem skew e a tinta espelhada na mesma caixa`, () => {
+    it(`${label} in rtl: no rotation nor skew and the mirrored ink in the same box`, () => {
       const root = build(child, 'rtl');
       const paths = root.find('Path') as Konva.Path[];
       expect(paths.length).toBeGreaterThan(0);
@@ -79,7 +79,7 @@ describe('espelho no Konva: decompose da matriz com scaleX negativo', () => {
           expect(n.skewY()).toBe(0);
         }
       }
-      // Os pontos x = 2 e x = 20 do caminho (em unidades do viewBox) caem espelhados na caixa.
+      // The points x = 2 and x = 20 of the path (in viewBox units) fall mirrored in the box.
       const [first] = paths;
       const at = (x: number) => first!.getAbsoluteTransform().point({ x, y: 0 }).x;
       const xs = [at(2), at(20)].sort((a, b) => a - b);
@@ -87,7 +87,7 @@ describe('espelho no Konva: decompose da matriz com scaleX negativo', () => {
       expect(xs[1]).toBeCloseTo(right, 6);
     });
 
-    it(`${label} em ltr: a matriz de sempre (sem espelho)`, () => {
+    it(`${label} in ltr: the usual matrix (no mirror)`, () => {
       const root = build(child, undefined);
       for (const p of root.find('Path') as Konva.Path[]) {
         expect(p.scaleX()).toBeGreaterThan(0);
@@ -125,12 +125,12 @@ describe('texto no Konva: direction', () => {
   const textOf = (n: TextNode): Konva.Text =>
     (renderScene({ root: n, warnings: [] }).root.find('Text') as Konva.Text[])[0]!;
 
-  it('o Text recebe direction rtl só quando o estilo é rtl', () => {
+  it('the Text receives direction rtl only when the style is rtl', () => {
     expect(textOf(textNode('right', 'rtl')).direction()).toBe('rtl');
     expect(textOf(textNode('right')).direction()).toBe('inherit');
   });
 
-  it('o align físico segue para o Konva', () => {
+  it('the physical align goes on to Konva', () => {
     expect(textOf(textNode('right', 'rtl')).align()).toBe('right');
     expect(textOf(textNode('left', 'rtl')).align()).toBe('left');
   });

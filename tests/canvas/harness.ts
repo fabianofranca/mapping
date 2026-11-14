@@ -1,5 +1,5 @@
-// Apoio aos testes do canvas: Konva em jsdom com um contexto 2D falso, um
-// projeto pequeno com posições conhecidas e o quadro montado do estado real.
+// Support for the canvas tests: Konva in jsdom with a fake 2D context, a small
+// project with known positions and the frame built from the real state.
 import { signal, type Signal } from '@preact/signals';
 import Konva from 'konva';
 import { vi } from 'vitest';
@@ -28,7 +28,7 @@ import { createEditorUi, itemsOf, setViewMode, type EditorUi } from '../../src/s
 import { onlyScreens } from '../../src/store/viewMode';
 import { SPEC_ID, componentProject, testCatalog } from '../model/componentFixtures';
 
-/** Contexto 2D que aceita qualquer chamada; `measureText` estima pela quantidade de letras. */
+/** 2D context that accepts any call; `measureText` estimates by the number of letters. */
 export function fakeContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
   const state: Record<string | symbol, unknown> = { canvas };
   return new Proxy(state, {
@@ -40,7 +40,7 @@ export function fakeContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D
       if (key === 'getImageData' || key === 'createImageData') {
         return () => ({ data: new Uint8ClampedArray(4) });
       }
-      // O Konva lê a matriz atual ao isolar uma forma (os selos da revisão): identidade.
+      // Konva reads the current matrix when isolating a shape (the review stamps): identity.
       if (key === 'getTransform') {
         return () => ({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 });
       }
@@ -56,7 +56,7 @@ export function fakeContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D
   }) as unknown as CanvasRenderingContext2D;
 }
 
-/** Troca o `getContext` do jsdom (que não desenha) pelo contexto falso. */
+/** Replaces jsdom's `getContext` (which does not draw) with the fake context. */
 export function installFakeCanvas(): void {
   const getContext = function (this: HTMLCanvasElement) {
     return fakeContext(this);
@@ -66,7 +66,7 @@ export function installFakeCanvas(): void {
   );
 }
 
-/** Valores de teste distintos entre si, para as asserções saberem de qual token veio a cor. */
+/** Test values distinct from one another, so the assertions know which token a color came from. */
 export const TOKENS: CanvasTokens = {
   line: '#fefefe',
   halo: 'rgba(1, 2, 3, 0.7)',
@@ -137,10 +137,12 @@ export const TOKENS: CanvasTokens = {
 export const NOW = '2026-10-02T12:00:00.000Z';
 
 /**
- * I1 (1000×800) em (0, 0) e I2 (500×500) em (1100, 0), ambas na escala 1:
- * canvas = pixels. M1 "Porta" em I1 com a filha M2 "Maçaneta"; M3 sem nome em
- * I2. Camada L1 com a anotação A1 (dois pares) em M1.
+ * I1 (1000×800) at (0, 0) and I2 (500×500) at (1100, 0), both at scale 1:
+ * canvas = pixels. M1 "Porta" in I1 with the child M2 "Maçaneta"; M3 without a name in
+ * I2. Layer L1 with the annotation A1 (two pairs) on M1.
  */
+// pt-BR kept: shared fixture data asserted by tests/canvas/renderers, tests/canvas/input and tests/app
+// (layer 'Lataria', markings 'Porta' and 'Maçaneta', annotation 'Amassado' and its pairs)
 export function canvasProject(): Project {
   let p = createProject({
     name: 'Canvas',
@@ -181,7 +183,7 @@ export function canvasProject(): Project {
   return p;
 }
 
-/** Store, actions, UI e estado derivado de um editor com `project` aberto. */
+/** Store, actions, UI and derived state of an editor with `project` open. */
 export function editorFor(
   project: Project = canvasProject(),
   readOnly = false,
@@ -205,7 +207,7 @@ export function editorFor(
 
 export type Editor = ReturnType<typeof editorFor>;
 
-/** Quadro com o estado atual do editor (viewport 1:1 numa tela de 380×700). */
+/** Frame with the editor's current state (1:1 viewport on a 380×700 screen). */
 export function frameOf(editor: Editor, overrides: Partial<Frame> = {}): Frame {
   const { store, ui, derived } = editor;
   return {
@@ -242,14 +244,14 @@ export function frameOf(editor: Editor, overrides: Partial<Frame> = {}): Frame {
   };
 }
 
-/** Fontes de componentes de teste: catálogo (editável) e época das fontes. */
+/** Test component sources: catalog (editable) and sources epoch. */
 export function componentSources(
   catalog: ComponentCatalog = testCatalog(),
 ): ComponentSources & { catalog: Signal<ComponentCatalog>; fontsEpoch: Signal<number> } {
   return { catalog: signal(catalog), fontsEpoch: signal(0) };
 }
 
-/** Quadro 1000×800 (foto I1) e container B1 (400×600, fundo branco) com dois textos. */
+/** 1000×800 frame (photo I1) and container B1 (400×600, white background) with two texts. */
 export function componentCanvasProject(): Project {
   let p = componentProject();
   p = addBackgroundContainer(p, {
@@ -282,33 +284,33 @@ export function componentCanvasProject(): Project {
   return p;
 }
 
-/** Editor da tela de componentes (`componentCanvasProject`), com as fontes de teste. */
+/** Editor of the components screen (`componentCanvasProject`), with the test sources. */
 export function componentEditor() {
   const sources = componentSources();
   return { ...editorFor(componentCanvasProject(), false, sources), sources };
 }
 
 /**
- * Liga ou desliga o modo visualização com **Só as telas** (containers, imagens e desenhos; sem
- * contorno, nome nem setas): o canvas que o antigo Ver limpo dava.
+ * Turns view mode on or off with **Screens only** (containers, images and drawings; without
+ * outline, name or arrows): the canvas that the old Clean view gave.
  */
 export function setOnlyScreens(ui: EditorUi, on: boolean): void {
   if (on) onlyScreens(ui);
   setViewMode(ui, on);
 }
 
-/** O palco do Konva que o `CanvasController` montou em `container`. */
+/** The Konva stage that `CanvasController` mounted in `container`. */
 export function stageOf(container: HTMLElement): Konva.Stage {
   const stage = Konva.stages.find((s) => s.container() === container);
-  if (!stage) throw new Error('palco não encontrado');
+  if (!stage) throw new Error('stage not found');
   return stage;
 }
 
 /**
- * Medidor de camadas redesenhadas por quadro: espia o `drawScene` de cada `Konva.Layer`
- * (identificada pelo `name`). `take()` devolve as contagens desde a última chamada e zera;
- * `takeMs()` devolve, do mesmo jeito, o tempo (ms) gasto no `drawScene` de cada camada, para separar
- * o `CanvasController.render` do desenho de cada camada.
+ * Meter of layers redrawn per frame: spies on the `drawScene` of each `Konva.Layer`
+ * (identified by `name`). `take()` returns the counts since the last call and resets them;
+ * `takeMs()` returns, the same way, the time (ms) spent in the `drawScene` of each layer, to separate
+ * the `CanvasController.render` from the drawing of each layer.
  */
 export function layerDrawMeter(stage: Konva.Stage): {
   take(): Record<string, number>;
@@ -354,7 +356,7 @@ export function layerDrawMeter(stage: Konva.Stage): {
   };
 }
 
-/** Formas (`Konva.Shape`) visíveis com todos os ancestrais visíveis, por nome de camada. */
+/** Visible shapes (`Konva.Shape`) with all ancestors visible, by layer name. */
 export function visibleShapesByLayer(stage: Konva.Stage): Record<string, number> {
   const count = (node: Konva.Node): number => {
     if (!node.isVisible()) return 0;
