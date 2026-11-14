@@ -16,16 +16,16 @@ import {
 } from './types';
 import { reportError } from '../utils/report';
 
-/** O preview usa outro banco (`-preview`): nunca enxerga os projetos da versão principal. */
-// O nome do banco continua o de antes do renome para "Mapping": mudá-lo faria os
-// projetos locais já salvos nos navegadores dos usuários sumirem sem uma migração.
+/** The preview uses another database (`-preview`): it never sees the main version's projects. */
+// The database name remains the one from before the rename to "Mapping": changing it would make the
+// local projects already saved in users' browsers vanish without a migration.
 const DB_NAME = channelDbName('mapeador-imagens');
 const DB_VERSION = 1;
-/** Tempo máximo para abrir o banco (em `file://` alguns navegadores nunca respondem). */
+/** Maximum time to open the database (on `file://` some browsers never answer). */
 const OPEN_TIMEOUT_MS = 3000;
-/** As cópias de `specs/` e os backups ficam no mesmo store das imagens, com este tipo. */
+/** The copies of `specs/` and the backups live in the same store as the images, with this type. */
 const SPEC_TYPE = 'application/json';
-/** Backups do `mapping.json` guardados por projeto (os mais recentes). */
+/** Backups of the `mapping.json` kept per project (the most recent ones). */
 export const MAX_LOCAL_BACKUPS = 3;
 const BACKUP_PREFIX = `${BACKUPS_DIR}/`;
 
@@ -34,14 +34,14 @@ function byNewestBackup(a: string, b: string): number {
   return backupTimestamp(b).localeCompare(backupTimestamp(a)) || b.localeCompare(a);
 }
 
-/** Resumo de um projeto guardado neste dispositivo. */
+/** Summary of a project saved on this device. */
 export interface LocalProjectMeta {
   readonly id: string;
   readonly name: string;
   readonly updatedAt: string;
-  /** Há alterações desde a última exportação (ou o projeto nunca foi exportado). */
+  /** There are changes since the last export (or the project was never exported). */
   readonly unexported: boolean;
-  /** Última abertura (ISO 8601), para a lista de recentes; ausente se nunca reaberto. */
+  /** Last opening (ISO 8601), for the recents list; absent if never reopened. */
   readonly openedAt?: string;
 }
 
@@ -49,7 +49,7 @@ interface StoredFile {
   readonly projectId: string;
   readonly path: string;
   readonly type: string;
-  // ArrayBuffer em vez de Blob: o Safari já teve vários problemas com Blob no IndexedDB.
+  // ArrayBuffer instead of Blob: Safari has had several problems with Blob in IndexedDB.
   readonly data: ArrayBuffer;
 }
 
@@ -65,7 +65,7 @@ interface Schema extends DBSchema {
 
 type Db = IDBPDatabase<Schema>;
 
-/** Nome e data lidos do texto do `mapping.json`, para a lista de projetos. */
+/** Name and date read from the text of the `mapping.json`, for the project list. */
 function readInfo(mapping: string): { name?: string; updatedAt?: string } {
   try {
     const raw: unknown = JSON.parse(mapping);
@@ -79,7 +79,7 @@ function readInfo(mapping: string): { name?: string; updatedAt?: string } {
       ...(typeof updatedAt === 'string' ? { updatedAt } : {}),
     };
   } catch {
-    // Metadados opcionais: um `mapping.json` ilegível aparece sem nome na lista.
+    // Optional metadata: an unreadable `mapping.json` shows up without a name in the list.
     return {};
   }
 }
@@ -97,12 +97,12 @@ export interface LocalProjectStorage extends ProjectStorage {
   readonly id: string;
 }
 
-/** Projetos guardados no IndexedDB deste navegador. */
+/** Projects saved in this browser's IndexedDB. */
 export interface LocalLibrary {
-  /** Os projetos, sem ordem: a ordem da tela inicial é a de `recentProjects` (último uso). */
+  /** The projects, unordered: the home screen order is that of `recentProjects` (last use). */
   list(): Promise<LocalProjectMeta[]>;
   get(id: string): Promise<LocalProjectMeta | undefined>;
-  /** Cria o projeto com o `mapping.json` e as imagens informadas. */
+  /** Creates the project with the given `mapping.json` and images. */
   create(
     id: string,
     files: ProjectFiles,
@@ -111,9 +111,9 @@ export interface LocalLibrary {
   open(id: string): LocalProjectStorage;
   remove(id: string): Promise<void>;
   setUnexported(id: string, unexported: boolean): Promise<void>;
-  /** Registra a abertura (`openedAt`), para a ordem dos recentes. */
+  /** Records the opening (`openedAt`), for the order of the recents. */
   markOpened(id: string, openedAt: string): Promise<void>;
-  /** Nomes dos backups do `mapping.json` do projeto, do mais recente ao mais antigo. */
+  /** Names of the project's `mapping.json` backups, from the most recent to the oldest. */
   listBackups(id: string): Promise<string[]>;
   close(): void;
 }
@@ -125,10 +125,10 @@ function createLibrary(db: Db): LocalLibrary {
     get: (id) => db.get('projects', id),
 
     async create(id, files, options = {}) {
-      // Converte antes de abrir a transação: ela fecha se esperar outra coisa.
+      // Convert before opening the transaction: it closes if it waits for anything else.
       const stored = await Promise.all([
         ...[...files.images].map(([path, blob]) => toStoredFile(id, path, blob)),
-        // Os arquivos do pacote primeiro: o mesmo caminho em `specs` (texto) prevalece.
+        // The package files first: the same path in `specs` (text) prevails.
         ...[...(files.specAssets ?? [])].map(([path, blob]) =>
           toStoredFile(id, path, blob),
         ),
@@ -145,8 +145,8 @@ function createLibrary(db: Db): LocalLibrary {
           name: info.name ?? '',
           updatedAt: info.updatedAt ?? new Date().toISOString(),
           unexported: options.unexported ?? true,
-          // Criar ou importar um zip conta como uso: o projeto vai para o topo dos recentes,
-          // e `updatedAt` continua sendo a data de dentro do zip (G2, etapa 7).
+          // Creating or importing a zip counts as use: the project goes to the top of the recents,
+          // and `updatedAt` remains the date from inside the zip (G2, stage 7).
           openedAt: new Date().toISOString(),
         }),
         tx.objectStore('mappings').put(files.mapping, id),
@@ -159,7 +159,7 @@ function createLibrary(db: Db): LocalLibrary {
       return {
         kind: 'local',
         id,
-        // A cópia do projeto local é ele mesmo (`ProjectStorage.copyId`).
+        // The local project's copy is itself (`ProjectStorage.copyId`).
         copyId: id,
         async loadMapping() {
           return (await db.get('mappings', id)) ?? null;
@@ -282,7 +282,7 @@ function createLibrary(db: Db): LocalLibrary {
         async writeProposal(proposalId, text) {
           const blob = new Blob([text], { type: SPEC_TYPE });
           const stored = await toStoredFile(id, proposalFilePath(proposalId), blob);
-          // Decidir numa proposta é trabalho a exportar, como salvar o `mapping.json`.
+          // Deciding on a proposal is work to export, like saving the `mapping.json`.
           const tx = db.transaction(['projects', 'files'], 'readwrite');
           const meta = await tx.objectStore('projects').get(id);
           if (!meta) throw new Error(`local project not found: ${id}`);
@@ -297,7 +297,7 @@ function createLibrary(db: Db): LocalLibrary {
             throw new Error(`invalid proposal id: ${proposalId}`);
           }
           const prefix = `${proposalDir(proposalId)}/`;
-          // Tudo na mesma transação: `proposals/<id>/…` (o `proposal.json` e as imagens).
+          // All in the same transaction: `proposals/<id>/…` (the `proposal.json` and the images).
           const tx = db.transaction(['projects', 'files'], 'readwrite');
           const meta = await tx.objectStore('projects').get(id);
           if (!meta) throw new Error(`local project not found: ${id}`);
@@ -335,7 +335,7 @@ function createLibrary(db: Db): LocalLibrary {
           assertThreadId(threadId);
           const blob = new Blob([text], { type: SPEC_TYPE });
           const stored = await toStoredFile(id, threadFilePath(threadId, resolved), blob);
-          // Conversar é trabalho a exportar, como decidir numa proposta.
+          // Talking is work to export, like deciding on a proposal.
           const tx = db.transaction(['projects', 'files'], 'readwrite');
           const meta = await tx.objectStore('projects').get(id);
           if (!meta) throw new Error(`local project not found: ${id}`);
@@ -416,8 +416,8 @@ function createLibrary(db: Db): LocalLibrary {
 }
 
 /**
- * Abre o banco local. Devolve `null` se o IndexedDB não estiver disponível
- * ou não responder (modo privado antigo, `file://` em alguns navegadores).
+ * Opens the local database. Returns `null` if IndexedDB is not available
+ * or does not respond (old private mode, `file://` in some browsers).
  */
 export async function openLocalLibrary(): Promise<LocalLibrary | null> {
   try {
@@ -434,26 +434,29 @@ export async function openLocalLibrary(): Promise<LocalLibrary | null> {
     );
     return db && createLibrary(db);
   } catch (e) {
-    // Sem IndexedDB o modo local fica indisponível; o motivo vai para o Diagnóstico.
+    // Without IndexedDB the local mode is unavailable; the reason goes to the Diagnostics.
     reportError('local.open', e);
     return null;
   }
 }
 
-/** O navegador tem IndexedDB? (O acesso ao global fica neste arquivo: regra de lint da fase 8.4.) */
+/**
+ * Does the browser have IndexedDB? (Access to the global stays in this file: lint rule of phase
+ * 8.4.)
+ */
 export function hasIndexedDb(): boolean {
   return typeof indexedDB !== 'undefined';
 }
 
 /**
- * Faixa da chave primária (`[projeto, caminho]`) com todos os caminhos do projeto que começam
- * por `prefix`: o IndexedDB entrega só essas chaves, sem carregar as de todas as imagens.
+ * Primary key range (`[project, path]`) with all the project's paths that start
+ * with `prefix`: IndexedDB hands over only those keys, without loading those of all the images.
  */
 function prefixRange(projectId: string, prefix: string): IDBKeyRange {
   return IDBKeyRange.bound([projectId, prefix], [projectId, `${prefix}\uffff`]);
 }
 
-/** A abertura do banco, ou `null` se demorar mais que `OPEN_TIMEOUT_MS`. */
+/** The database opening, or `null` if it takes longer than `OPEN_TIMEOUT_MS`. */
 export async function withTimeout<T extends { close(): void }>(
   open: Promise<T>,
 ): Promise<T | null> {
@@ -464,70 +467,71 @@ export async function withTimeout<T extends { close(): void }>(
   const db = await Promise.race([open, timeout]);
   clearTimeout(timer);
   if (!db) {
-    // A abertura demorou demais: se ela terminar depois, só fecha a conexão.
+    // The opening took too long: if it finishes later, it just closes the connection.
     void open.then((late) => late.close()).catch(() => undefined);
   }
   return db;
 }
 
-// ---- Recentes de pasta ----
+// ---- Folder recents ----
 
 /**
- * Banco à parte para os handles das pastas: criar um store no banco dos projetos locais
- * pediria uma versão nova, e uma aba antiga aberta bloquearia a atualização (o modo local
- * sumiria até ela fechar). Versão 2: os handles saíram dos registros da lista para um store
- * próprio (a versão 1 só existiu em preview; a atualização a descarta).
+ * A separate database for the folder handles: creating a store in the local projects database
+ * would ask for a new version, and an old open tab would block the update (the local mode
+ * would vanish until it closed). Version 2: the handles left the list records for a store of
+ * their own (version 1 only existed in preview; the update discards it).
  */
 const FOLDERS_DB_NAME = channelDbName('mapping-folders');
 const FOLDERS_DB_VERSION = 2;
 
-/** Pasta aberta recentemente (a linha da lista). O handle fica à parte, em `handles`. */
+/** Recently opened folder (the list row). The handle stays apart, in `handles`. */
 export interface StoredFolder {
   readonly id: string;
-  /** Nome do projeto na última vez que foi aberto. */
+  /** Name of the project the last time it was opened. */
   readonly name: string;
-  /** Nome da pasta (`handle.name`). */
+  /** Folder name (`handle.name`). */
   readonly folderName: string;
-  /** Último uso (ISO 8601). */
+  /** Last use (ISO 8601). */
   readonly usedAt: string;
 }
 
 interface FoldersSchema extends DBSchema {
   folders: { key: string; value: StoredFolder };
-  /** id da entrada → handle. Só o handle: o navegador não deixa saber o caminho. */
+  /** entry id → handle. Only the handle: the browser does not let you know the path. */
   handles: { key: string; value: ReopenableDirectory };
 }
 
-/** As pastas abertas, no IndexedDB deste navegador. */
+/** The open folders, in this browser's IndexedDB. */
 export interface FolderLibrary {
   /**
-   * Do uso mais recente ao mais antigo. Só os dados da lista: nenhum handle é lido (um
-   * handle que o navegador não consiga reconstruir não chega a atrapalhar a tela inicial).
+   * From the most recent use to the oldest. Only the list data: no handle is read (a
+   * handle the browser cannot reconstruct does not get in the way of the home screen).
    */
   list(): Promise<StoredFolder[]>;
-  /** O handle de uma entrada (`null` se não houver). */
+  /** The handle of an entry (`null` if there is none). */
   handle(id: string): Promise<ReopenableDirectory | null>;
   /**
-   * Guarda a pasta (ou atualiza a entrada da mesma pasta, por `isSameEntry`) e devolve o id.
-   * Com `replaceId` ("Localizar pasta…"), a entrada `replaceId` passa a apontar para ela.
+   * Saves the folder (or updates the entry of the same folder, by `isSameEntry`) and returns the
+   * id.
+   * With `replaceId` ("Locate folder…"), the `replaceId` entry comes to point to it.
    */
   remember(
     handle: ReopenableDirectory,
     info: { readonly name: string; readonly usedAt: string },
     replaceId?: string,
   ): Promise<string>;
-  /** Atualiza o nome do projeto e o último uso de uma entrada que ainda existe. */
+  /** Updates the project name and the last use of an entry that still exists. */
   touch(
     id: string,
     info: { readonly name: string; readonly usedAt: string },
   ): Promise<void>;
-  /** Tira da lista. Nada no disco muda. */
+  /** Removes from the list. Nothing on disk changes. */
   remove(id: string): Promise<void>;
   close(): void;
 }
 
 function createFolderLibrary(db: IDBPDatabase<FoldersSchema>): FolderLibrary {
-  /** A entrada guardada aponta para a mesma pasta? Um handle que falha conta como não. */
+  /** Does the saved entry point to the same folder? A handle that fails counts as no. */
   const sameFolder = async (id: string, handle: ReopenableDirectory) => {
     try {
       const stored = await db.get('handles', id);
@@ -548,8 +552,8 @@ function createFolderLibrary(db: IDBPDatabase<FoldersSchema>): FolderLibrary {
     },
 
     async remember(handle, info, replaceId) {
-      // `isSameEntry` é assíncrono e não cabe numa transação: compara antes de gravar. Só
-      // as entradas com o mesmo nome de pasta podem ser a mesma: só os handles delas são lidos.
+      // `isSameEntry` is asynchronous and does not fit in a transaction: compare before writing.
+      // Only the entries with the same folder name can be the same: only their handles are read.
       const candidates = (await db.getAll('folders')).filter(
         (f) => f.folderName === handle.name,
       );
@@ -562,7 +566,7 @@ function createFolderLibrary(db: IDBPDatabase<FoldersSchema>): FolderLibrary {
       }
       const id = same?.id ?? replaceId ?? crypto.randomUUID();
       const tx = db.transaction(['folders', 'handles'], 'readwrite');
-      // A pasta localizada já estava na lista: as duas entradas viram uma.
+      // The located folder was already in the list: the two entries become one.
       const merged = replaceId !== undefined && replaceId !== id ? replaceId : null;
       await Promise.all([
         tx
@@ -601,8 +605,8 @@ function createFolderLibrary(db: IDBPDatabase<FoldersSchema>): FolderLibrary {
 }
 
 /**
- * Abre a lista de pastas recentes. `null` sem IndexedDB (ou se ele não responder): a tela
- * inicial fica só com os projetos deste dispositivo.
+ * Opens the list of recent folders. `null` without IndexedDB (or if it does not respond): the home
+ * screen has only this device's projects.
  */
 export async function openFolderLibrary(): Promise<FolderLibrary | null> {
   try {
@@ -610,8 +614,8 @@ export async function openFolderLibrary(): Promise<FolderLibrary | null> {
     const db = await withTimeout(
       openDB<FoldersSchema>(FOLDERS_DB_NAME, FOLDERS_DB_VERSION, {
         upgrade(db) {
-          // Da versão 1 (handles dentro dos registros da lista) não se aproveita nada: o
-          // store é apagado sem ler os registros.
+          // From version 1 (handles inside the list records) nothing is reused: the
+          // store is deleted without reading the records.
           for (const name of [...db.objectStoreNames]) db.deleteObjectStore(name);
           db.createObjectStore('folders', { keyPath: 'id' });
           db.createObjectStore('handles');
@@ -625,11 +629,11 @@ export async function openFolderLibrary(): Promise<FolderLibrary | null> {
   }
 }
 
-/** Pede ao navegador para não apagar os dados locais sob pressão de espaço. */
+/** Asks the browser not to erase local data under storage pressure. */
 export async function requestPersistentStorage(): Promise<void> {
   try {
     await navigator.storage?.persist?.();
   } catch {
-    // Sem suporte ou negado: os dados continuam lá, só sem a garantia.
+    // Without support or denied: the data is still there, just without the guarantee.
   }
 }

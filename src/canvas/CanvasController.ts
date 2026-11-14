@@ -1,7 +1,7 @@
-// Canvas imperativo com Konva. Orquestra: monta o quadro a partir dos signals do
-// projeto, da UI e do estado derivado, agenda uma renderização por quadro e
-// delega o desenho aos renderers, a entrada a `input/` e o viewport ao
-// `ViewportController`. Único lugar (com `CanvasHost`) que conhece o Konva.
+// Imperative canvas with Konva. Orchestrates: builds the frame from the project, UI and
+// derived-state signals, schedules one render per frame and delegates the drawing to the
+// renderers, the input to `input/` and the viewport to the `ViewportController`. The only
+// place (with `CanvasHost`) that knows Konva.
 import { computed, effect, signal, untracked } from '@preact/signals';
 import Konva from 'konva/lib/Core';
 import {
@@ -82,8 +82,8 @@ import { sameCursor, type CanvasViewState } from './viewState';
 
 export type { DropTarget } from './frame';
 
-/** Mesmas imagens com as mesmas posições (por referência): zoom e pan não mudam isso. */
-/** Escreve ou apaga (valor nulo) um `data-*` do host. */
+/** Same images with the same positions (by reference): zoom and pan do not change this. */
+/** Writes or deletes (null value) a `data-*` on the host. */
 function setDataAttr(host: HTMLElement, key: string, value: string | null): void {
   if (value === null) delete host.dataset[key];
   else host.dataset[key] = value;
@@ -105,34 +105,34 @@ export interface CanvasControllerOptions {
   readonly display: DisplayImages<ImageBitmap>;
   readonly ui: EditorUi;
   readonly derived: EditorDerived;
-  /** Signals que a interface lê (zoom, cursor, minimapa). */
+  /** Signals that the interface reads (zoom, cursor, minimap). */
   readonly view: CanvasViewState;
   /**
-   * Revisão de propostas (etapa 4): com uma proposta aberta, o canvas desenha o projeto
-   * "como ficaria" (ou o atual, na visão Atual) com as marcas de revisão.
+   * Proposal review (stage 4): with an open proposal, the canvas draws the "how it would look"
+   * project (or the current one, in the Current view) with the review marks.
    */
   readonly review?: ReviewState;
   /**
-   * Perspectiva aberta (etapa #659, PE2): o canvas desenha o projeto à vista dela (as raízes que
-   * ela mostra, onde ela as põe) e não começa o que é só da Principal. Sem ele, a Principal.
+   * Open perspective (stage #659, PE2): the canvas draws its project in view (the roots it
+   * shows, where it places them) and does not start what is only for the Main one. Without it, the Main one.
    */
   readonly perspective?: PerspectiveState;
   /**
-   * Imagens remotas dos componentes (RI3): as duas portas da app e o carregador. Padrão: a fonte
-   * de produção; os testes passam uma falsa.
+   * Remote images of the components (RI3): the app's two gates and the loader. Default: the production
+   * source; tests pass a fake one.
    */
   readonly remoteImages?: RemoteImageSource;
 }
 
-/** Sem setas à vista ("Mostrar setas" desligado, ou o item Setas do modo visualização): sempre o mesmo array. */
+/** No arrows in view ("Show arrows" off, or the Arrows item of view mode): always the same array. */
 const NO_ARROWS: readonly ArrowShape[] = [];
 
-/** Seleção vazia (modo visualização): sempre o mesmo objeto, o quadro compara por referência. */
+/** Empty selection (view mode): always the same object, the frame compares by reference. */
 const NO_ITEMS: readonly SelectionItem[] = [];
 
 /**
- * Estado de interação por cima da imagem (rascunho, trava, hover, seleção, marcas da revisão,
- * seta e retângulo de seleção). No modo visualização nada disso aparece.
+ * Interaction state on top of the image (draft, lock, hover, selection, review marks,
+ * arrow and selection rectangle). In view mode none of it appears.
  */
 interface Overlays {
   readonly draft: Frame['draft'];
@@ -162,14 +162,14 @@ const NO_OVERLAYS: Overlays = {
   arrivals: null,
 };
 
-/** O que move o rótulo de nome das marcações (a etiqueta da selecionada desvia do do pai). */
+/** What moves the markings' name label (the selected one's label shifts away from the parent's). */
 const LABEL_KEYS = ['visibility', 'incomplete', 'view'] as const;
-/** O que muda as marcas da revisão, os pinos e as marcas de chegada (além do viewport e da tela). */
+/** What changes the review marks, the pins and the arrival marks (besides the viewport and the screen). */
 const REVIEW_KEYS = ['review', 'project', 'tokens', 'locale'] as const;
 const PIN_KEYS = ['pins', 'pinSelected', 'draftPin', 'tokens', 'locale'] as const;
 const ARRIVAL_KEYS = ['arrivals', 'tokens', 'locale'] as const;
 
-/** Põe em `into` os arquivos dos containers (o de fundo, sem arquivo, não tem bitmap). */
+/** Puts in `into` the containers' files (the background one, without a file, has no bitmap). */
 function addFiles(
   into: Set<string>,
   containers: readonly { readonly file: string | null }[] | undefined,
@@ -194,11 +194,11 @@ export class CanvasController {
   private readonly review: ReviewState | null;
   private readonly perspective: PerspectiveState | null;
   private readonly remoteImages: RemoteImageSource;
-  /** URLs cujas imagens mudaram desde o último quadro (o quadro refaz só as marcações delas). */
+  /** URLs whose images changed since the last frame (the frame redoes only their markings). */
   private readonly changedImageUrls = new Set<string>();
-  /** O consentimento ou um interruptor mudou: o quadro refaz todas as marcações com imagem. */
+  /** The consent or a switch changed: the frame redoes all markings with an image. */
   private allImagesChanged = false;
-  /** Último ponto de tela do mouse, lido no quadro (não a cada `pointermove`). */
+  /** Last mouse screen point, read in the frame (not on every `pointermove`). */
   private cursorPoint: Point | null = null;
   private cursorRequest: number | null = null;
 
@@ -210,9 +210,9 @@ export class CanvasController {
   private readonly view: ViewportController;
   private readonly pointer: PointerInput;
   private readonly images: ImageRenderer;
-  /** Camada dos desenhos de componentes, entre as imagens e as marcações. */
+  /** Layer of the component drawings, between the images and the markings. */
   private readonly componentGroup: Konva.Layer;
-  /** Camadas do palco por nome: o quadro redesenha só as que mudaram (`dirty`). */
+  /** Stage layers by name: the frame redraws only the ones that changed (`dirty`). */
   private readonly layers: {
     readonly images: Konva.Layer;
     readonly components: Konva.Layer;
@@ -220,12 +220,12 @@ export class CanvasController {
     readonly floating: Konva.Layer;
     readonly overlay: Konva.Layer;
   };
-  /** Camadas que algum renderizador mexeu no quadro em andamento (zeradas ao desenhar). */
+  /** Layers that some renderer touched in the current frame (reset when drawing). */
   private readonly dirty = new Set<Konva.Layer>();
   /**
-   * Grupo de arrasto (decisões 5 a 7): no fundo da camada de sobreposições, leva os nós do que se
-   * move num gesto, cada pilha no seu subgrupo e na ordem de desenho de sempre. O palco continua
-   * com 5 camadas.
+   * Drag group (decisions 5 to 7): at the bottom of the overlays layer, carries the nodes of what
+   * moves in a gesture, each stack in its own subgroup and in the usual drawing order. The stage
+   * still has 5 layers.
    */
   private readonly dragRoot: Konva.Group;
   private readonly dragGroups: {
@@ -236,41 +236,41 @@ export class CanvasController {
     readonly floatingComponents: Konva.Group;
     readonly floating: Konva.Group;
   };
-  /** O que se move no gesto em andamento (só cresce até soltar) e o projeto desenhado de antes dele. */
+  /** What moves in the gesture in progress (only grows until release) and the drawn project from before it. */
   private drag: DragSet = EMPTY_DRAG;
   private dragBase: Project | null = null;
   private componentLayer: ComponentLayerRenderer;
   /**
-   * Desenhos das marcações flutuantes (v13): camada acima das marcações, para ficarem sobre
-   * containers, componentes e bordas. Suas bordas ficam no grupo seguinte da mesma camada.
+   * Drawings of the floating markings (v13): layer above the markings, so they sit over
+   * containers, components and borders. Their borders stay in the next group of the same layer.
    */
   private readonly floatingDrawings: Konva.Group;
   private floatingLayer: ComponentLayerRenderer;
-  /** Cores com que `componentLayer` foi criado: mudou o tema, ele é refeito. */
+  /** Colors `componentLayer` was created with: if the theme changed, it is redone. */
   private componentPalette: CanvasTokens['component'];
   private readonly markings: MarkingRenderer;
-  /** Grupo das setas (na camada das marcações), entre os desenhos dos componentes e as marcações. */
+  /** Arrows group (in the markings layer), between the component drawings and the markings. */
   private readonly arrows: ArrowRenderer;
   private readonly overlay: OverlayRenderer;
   private readonly reviewLayer: ReviewRenderer;
   private readonly pinLayer: CommentPinRenderer;
   private readonly arrivalLayer: ArrivalRenderer;
-  /** O minimapa mudou de tamanho: o selo de chegada se refaz no próximo quadro. */
+  /** The minimap changed size: the arrival stamp is redone in the next frame. */
   private arrivalsStale = false;
 
   /**
-   * Projeto desenhado, derivado do projeto à vista (`review.derived.shownProject`, fase
-   * 8.2): quando ele é o confirmado (fora da revisão ou na visão Atual), o do store, com a
-   * prévia do gesto; quando é o "como ficaria" (visão Proposto), a prévia com as imagens
-   * novas ou trocadas lidas de `proposals/<id>/` (`proposedDisplay`). O canvas não decide
-   * Atual/Proposto: só traduz o arquivo das imagens. É também o que o toque, o cursor e o
-   * enquadrar consultam.
+   * Drawn project, derived from the project in view (`review.derived.shownProject`, phase
+   * 8.2): when it is the confirmed one (outside the review or in the Current view), the store's, with the
+   * gesture preview; when it is the "how it would look" (Proposed view), the preview with the new
+   * or replaced images read from `proposals/<id>/` (`proposedDisplay`). The canvas does not decide
+   * Current/Proposed: it only translates the images' file. It is also what touch, the cursor and
+   * fit consult.
    */
   private readonly drawnProject = computed(() => {
     const review = this.review;
-    // Fora da revisão: o projeto do store (com a prévia do gesto), recortado pela perspectiva
-    // aberta. A prévia muda `perspectives[].items`, então o recorte sai do projeto do store, e não
-    // do confirmado. Na revisão a perspectiva é a Principal (a troca fica travada).
+    // Outside the review: the store's project (with the gesture preview), cropped by the open
+    // perspective. The preview changes `perspectives[].items`, so the crop comes from the store's project, not
+    // from the confirmed one. In the review the perspective is the Main one (switching is locked).
     if (!review || review.proposalId.value === null) {
       return projectInPerspective(
         this.store.project.value,
@@ -285,7 +285,7 @@ export class CanvasController {
     return proposal ? proposedDisplay(shown, proposal) : shown;
   });
 
-  /** Marcas da revisão (tipo, conflito, inválida, fantasmas, removidas); `null` fora dela. */
+  /** Review marks (type, conflict, invalid, ghosts, removed); `null` outside it. */
   private readonly reviewCanvas = computed((): ReviewCanvas | null => {
     const review = this.review;
     if (!review || review.proposalId.value === null) return null;
@@ -308,17 +308,17 @@ export class CanvasController {
   });
 
   /**
-   * Desenhos dos componentes do projeto desenhado: na prévia de um gesto só a marcação
-   * arrastada é reinstanciada, e na visão Proposto são os valores propostos. O cache é o do
-   * derivado (as demais marcações mantêm o mesmo objeto).
+   * Drawings of the drawn project's components: in a gesture preview only the dragged marking
+   * is reinstantiated, and in the Proposed view they are the proposed values. The cache is the
+   * derived one's (the other markings keep the same object).
    */
   private readonly drawings = computed(() =>
     this.derived.drawingsOf(this.drawnProject.value),
   );
 
   /**
-   * Itens selecionados (o primário por último). Um `computed` guarda o array até a seleção mudar:
-   * refazer o quadro por causa de pan ou zoom não pode redesenhar a sobreposição à toa.
+   * Selected items (the primary last). A `computed` keeps the array until the selection changes:
+   * redoing the frame because of pan or zoom must not redraw the overlay needlessly.
    */
   private readonly selectedItems = computed(() =>
     this.ui.viewMode.value
@@ -326,21 +326,21 @@ export class CanvasController {
       : itemsOf(this.ui.selection.value, this.ui.selectionGroup.value),
   );
 
-  /** Container que receberia a marcação arrastada, como alvo de soltar. */
+  /** Container that would receive the dragged marking, as a drop target. */
   private readonly moveTargetFrame = computed((): DropTarget => {
     const id = this.state.moveTarget.value;
     return id === null ? null : { containerId: id };
   });
 
-  /** Marcação que receberia a ponta da seta (criar ou trocar a ponta) como alvo de soltar. */
+  /** Marking that would receive the arrow's end (creating or swapping the end) as a drop target. */
   private readonly arrowTargetFrame = computed((): DropTarget => {
     const id = this.state.arrowDraft.value?.target ?? null;
     return id === null ? null : { containerId: null, markingId: id };
   });
 
   /**
-   * O que o modo visualização mostra, ou `null` fora dele. O mesmo objeto enquanto os cinco itens
-   * não mudam: marcar uma camada com desenho não refaz imagens, marcações nem setas.
+   * What view mode shows, or `null` outside it. The same object while the five items
+   * do not change: toggling a layer with drawing does not redo images, markings or arrows.
    */
   private lastView: ViewFrame | null = null;
   private readonly viewFrame = computed((): ViewFrame | null => {
@@ -361,11 +361,11 @@ export class CanvasController {
   });
 
   /**
-   * Setas desenhadas: as do projeto desenhado (com a prévia do gesto) cujas duas pontas aparecem.
-   * Fora do modo visualização, só com "Mostrar setas" ligado; no modo, só com o item Setas do
-   * painel (as Configurações não valem) e sem o filtro "Marcações sem anotação". As rotas são
-   * guardadas por seta e por projeto/visibilidade (`visibleArrowShapes`): pan e zoom não as
-   * recalculam.
+   * Drawn arrows: those of the drawn project (with the gesture preview) whose two ends appear.
+   * Outside view mode, only with "Show arrows" on; in the mode, only with the panel's Arrows item
+   * (the Settings do not apply) and without the "Markings without annotation" filter. The routes are
+   * kept per arrow and per project/visibility (`visibleArrowShapes`): pan and zoom do not
+   * recompute them.
    */
   private readonly arrowShapes = computed((): readonly ArrowShape[] => {
     const view = this.viewFrame.value;
@@ -377,23 +377,23 @@ export class CanvasController {
   });
 
   /**
-   * Os pinos das conversas (decisão 24): os grupos do estado derivado postos no projeto desenhado.
-   * Nenhum na revisão (a conversa fica só para leitura, decisão 26); o viewport não entra aqui.
+   * The thread pins (decision 24): the derived state's groups placed on the drawn project.
+   * None in the review (the thread is read-only, decision 26); the viewport does not enter here.
    */
   private readonly pinPlaces = computed((): readonly PinPlace[] => {
     if (this.review?.proposalId.value != null) return NO_PINS;
     const project = this.drawnProject.value;
     const groups = this.derived.threads.pins.value;
     if (!project || groups.length === 0) return NO_PINS;
-    // Conversa num ponto do canvas só aparece na Principal (decisão 15).
+    // A thread on a canvas point only appears on the Main one (decision 15).
     const principal = (this.perspective?.id.value ?? null) === null;
     return pinPlaces(project, groups, this.derived.canvasVisibility.value, principal);
   });
 
   /**
-   * As marcas de chegada (PE3, decisão 8): o selo "Veio de <nome>" e a faixa, só na Principal.
-   * Nenhuma com uma perspectiva ou uma proposta aberta; memoizadas pelo projeto (pan e zoom não
-   * entram aqui).
+   * The arrival marks (PE3, decision 8): the "Came from <name>" stamp and the band, only on the Main one.
+   * None with a perspective or an open proposal; memoized by the project (pan and zoom do not
+   * enter here).
    */
   private readonly arrivalMarks = computed(() => {
     if (this.review?.proposalId.value != null) return null;
@@ -401,7 +401,7 @@ export class CanvasController {
     return arrivalMarks(this.drawnProject.value);
   });
 
-  /** O pino tracejado do rascunho de uma conversa nova num ponto. */
+  /** The dashed pin of the draft of a new thread at a point. */
   private readonly draftPin = computed((): Point | null => {
     const anchor = composingAnchor(this.ui);
     const project = this.drawnProject.value;
@@ -411,7 +411,7 @@ export class CanvasController {
     return pointCanvas(project, anchor.containerId, anchor.x, anchor.y);
   });
 
-  /** O estado de interação do quadro; vazio no modo visualização (só para ver). */
+  /** The frame's interaction state; empty in view mode (view only). */
   private readonly overlays = computed((): Overlays =>
     this.viewFrame.value !== null
       ? NO_OVERLAYS
@@ -430,7 +430,7 @@ export class CanvasController {
         },
   );
 
-  /** Entradas do quadro: projeto, UI, dados derivados e viewport. */
+  /** Frame inputs: project, UI, derived data and viewport. */
   private readonly frame = computed((): Frame => {
     const view = this.viewFrame.value;
     const over = this.overlays.value;
@@ -440,7 +440,7 @@ export class CanvasController {
       bitmaps: this.display.images.value,
       preview: this.state.preview.value,
       draft: over.draft,
-      // O alvo de soltar um arquivo ou, ao arrastar uma marcação, o container que a receberia.
+      // The file drop target or, when dragging a marking, the container that would receive it.
       dropTarget:
         this.dropTarget.value ??
         this.moveTargetFrame.value ??
@@ -471,20 +471,20 @@ export class CanvasController {
       arrivals: over.arrivals,
     };
   });
-  /** Último quadro desenhado: o que não mudou desde ele não é redesenhado. */
+  /** Last drawn frame: what has not changed since it is not redrawn. */
   private drawn: Frame | null = null;
-  /** Placements do último quadro (com a prévia do gesto aplicada). */
+  /** Placements of the last frame (with the gesture preview applied). */
   private placements: ReadonlyMap<string, Placement> = new Map();
   private frameRequest: number | null = null;
   private destroyed = false;
-  /** Imagens com bitmap pronto no último quadro e o que já foi publicado no container. */
+  /** Images with a ready bitmap in the last frame and what has already been published on the container. */
   private readyImages = 0;
   private drawnComponents = 0;
   private drawnArrows = 0;
   private countedProject: Project | null = null;
   private canvasMarkingCount = 0;
   private published = '';
-  /** `data-container-boxes`: texto guardado, array `containers` de que saiu e versão do texto. */
+  /** `data-container-boxes`: stored text, the `containers` array it came from and the text version. */
   private boxesText: string | null = null;
   private boxesContainers: readonly ProjectContainer[] | null = null;
   private boxesVersion = 0;
@@ -501,16 +501,16 @@ export class CanvasController {
     this.perspective = options.perspective ?? null;
     this.remoteImages = options.remoteImages ?? sharedRemoteImageSource();
 
-    // Os desenhos medem texto com o Konva (o layout bate com o que é pintado) e se redesenham
-    // quando o medidor muda; o modelo e o store nunca importam o Konva.
+    // The drawings measure text with Konva (the layout matches what is painted) and redraw themselves
+    // when the measurer changes; the model and the store never import Konva.
     if (textMeasurer.peek() !== konvaMeasurer) textMeasurer.value = konvaMeasurer;
 
     this.stage = new Konva.Stage({ container, width: 1, height: 1 });
-    // O `name` das camadas só serve para identificá-las (medidores dos testes e do perf:canvas).
+    // The layers' `name` only serves to identify them (test and perf:canvas meters).
     const imageLayer = new Konva.Layer({ listening: false, name: 'images' });
     this.componentGroup = new Konva.Layer({ listening: false, name: 'components' });
-    // Setas e marcações dividem uma camada (o Konva avisa no console a partir de seis): elas se
-    // redesenham juntas a cada edição, e um `Group` para cada mantém a ordem (setas por baixo).
+    // Arrows and markings share a layer (Konva warns in the console from six): they are
+    // redrawn together on every edit, and a `Group` for each keeps the order (arrows underneath).
     const arrowMarkingLayer = new Konva.Layer({ listening: false, name: 'markings' });
     const arrowLayer = new Konva.Group({ listening: false });
     const markingLayer = new Konva.Group({ listening: false });
@@ -541,7 +541,7 @@ export class CanvasController {
     this.markings = new MarkingRenderer(markingLayer, floatingMarkings);
     this.arrows = new ArrowRenderer(arrowLayer);
     this.overlay = new OverlayRenderer(overlayLayer, container);
-    // As marcas da revisão ficam por baixo das sobreposições (seleção, alças).
+    // The review marks sit below the overlays (selection, handles).
     const reviewGroup = new Konva.Group({ listening: false });
     overlayLayer.add(reviewGroup);
     reviewGroup.moveToBottom();
@@ -549,7 +549,7 @@ export class CanvasController {
     const pinGroup = new Konva.Group({ listening: false });
     overlayLayer.add(pinGroup);
     this.pinLayer = new CommentPinRenderer(pinGroup);
-    // A faixa e os selos de chegada ficam por baixo das sobreposições, acima das marcas da revisão.
+    // The arrival band and stamps sit below the overlays, above the review marks.
     const arrivalGroup = new Konva.Group({ listening: false });
     overlayLayer.add(arrivalGroup);
     arrivalGroup.moveToBottom();
@@ -557,8 +557,8 @@ export class CanvasController {
       this.arrivalsStale = true;
       this.requestRender();
     });
-    // O grupo de arrasto fica por baixo de tudo da camada (faixa de chegada, marcas da revisão,
-    // pinos e alças); ao soltar, os nós voltam às camadas de onde saíram.
+    // The drag group sits below everything in the layer (arrival band, review marks,
+    // pins and handles); on release, the nodes go back to the layers they came from.
     this.dragRoot = new Konva.Group({ listening: false, name: 'drag' });
     const dragGroup = () => {
       const group = new Konva.Group({ listening: false });
@@ -603,37 +603,37 @@ export class CanvasController {
       this.view.observe(),
       watchTheme(() => (this.tokens.value = readCanvasTokens())),
       effect(() => this.loadBitmaps()),
-      // Imagem remota que termina (ou falha, ou sai do cache): refaz só as marcações dela, num
-      // quadro só (`requestRender` coalesce várias no mesmo quadro).
+      // A remote image that finishes (or fails, or leaves the cache): redoes only its markings, in a
+      // single frame (`requestRender` coalesces several in the same frame).
       this.remoteImages.subscribe((url) => {
         if (this.destroyed) return;
         this.changedImageUrls.add(url);
         this.requestRender();
       }),
-      // Consentimento ou interruptor mudou: todas as marcações com imagem remota são refeitas.
+      // Consent or a switch changed: all markings with a remote image are redone.
       effect(() => {
         void this.remoteImages.gate.value;
         this.allImagesChanged = true;
         this.requestRender();
       }),
-      // O effect só agenda: várias mudanças no mesmo quadro geram um desenho só.
+      // The effect only schedules: several changes in the same frame produce a single drawing.
       effect(() => {
         void this.frame.value;
         this.requestRender();
       }),
-      // Soltar sem mudar nada não muda o quadro, mas os nós do grupo de arrasto precisam voltar.
+      // Releasing without changing anything does not change the frame, but the drag group's nodes need to go back.
       effect(() => {
         void this.store.gestureActive.value;
         this.requestRender();
       }),
-      // Espelha o viewport para a interface (barra de status, minimapa, campo de zoom).
+      // Mirrors the viewport to the interface (status bar, minimap, zoom field).
       effect(() => {
         this.viewState.viewport.value = this.view.viewport.value;
         this.viewState.size.value = this.view.size.value;
       }),
       effect(() => {
-        // Projeto à vista, sem a prévia do gesto: um gesto em andamento não refaz o
-        // minimapa a cada quadro; na visão Proposto, as imagens da prévia.
+        // Project in view, without the gesture preview: a gesture in progress does not redo the
+        // minimap on every frame; in the Proposed view, the preview's images.
         const shown =
           this.review?.derived.shownProject.value ??
           projectInPerspective(
@@ -655,14 +655,14 @@ export class CanvasController {
     );
   }
 
-  /** Enquadra todas as imagens (ou uma área padrão, com o canvas vazio). */
+  /** Fits all the images (or a default area, with the empty canvas). */
   fitAll(): void {
     this.view.fitAll();
   }
 
   /**
-   * Enquadra todos os itens selecionados (zoom e centro), com a folga do `fitAll`. Só mexe na
-   * vista: sem seleção, ou no modo Visualizar, não faz nada.
+   * Fits all the selected items (zoom and center), with `fitAll`'s margin. It only touches the
+   * view: with no selection, or in View mode, it does nothing.
    */
   fitSelection(): void {
     if (this.ui.viewMode.peek()) return;
@@ -673,31 +673,31 @@ export class CanvasController {
     if (bounds) this.view.fitTo(bounds);
   }
 
-  /** Aplica o zoom `factor` no centro da área visível (campo de zoom e atalhos). */
+  /** Applies zoom `factor` at the center of the visible area (zoom field and shortcuts). */
   zoomBy(factor: number): void {
     const size = this.view.size.peek();
     this.view.zoomAt({ x: size.width / 2, y: size.height / 2 }, factor);
   }
 
-  /** Vai para um zoom exato (1 = 100%), mantendo o centro da área visível. */
+  /** Goes to an exact zoom (1 = 100%), keeping the center of the visible area. */
   zoomTo(scale: number): void {
     const current = this.view.scale;
     if (current > 0) this.zoomBy(clampZoom(scale) / current);
   }
 
-  /** Centraliza a vista num ponto do canvas (clique no minimapa). */
+  /** Centers the view on a canvas point (minimap click). */
   centerOnPoint(point: Point): void {
     this.view.centerOnPoint(point);
   }
 
-  /** Centraliza o canvas no item selecionado (ajustando o zoom se ele for grande ou pequeno demais). */
+  /** Centers the canvas on the selected item (adjusting the zoom if it is too large or too small). */
   centerSelection(): void {
-    this.view.measure(); // O canvas pode ter acabado de reaparecer (aba Lista → Canvas).
+    this.view.measure(); // The canvas may have just reappeared (List → Canvas tab).
     const project = this.drawnProject.peek();
     const selected = resolveSelection(project, this.ui.selection.peek());
     if (!project || !selected) return;
     if (selected.kind === 'arrow') {
-      // A seta é enquadrada pela caixa do traço (a curva inclusive).
+      // The arrow is fitted by its stroke box (the curve included).
       const shape = arrowShape(project, selected.arrow);
       if (shape) this.view.centerOn(shape.bounds);
       return;
@@ -709,7 +709,7 @@ export class CanvasController {
     );
   }
 
-  /** Se a seleção está fora da área visível, faz o pan mínimo até ela (sem mudar o zoom). */
+  /** If the selection is outside the visible area, does the minimal pan to it (without changing the zoom). */
   revealSelection(): void {
     this.view.measure();
     const project = this.drawnProject.peek();
@@ -723,33 +723,33 @@ export class CanvasController {
     this.view.reveal(markingCanvasRect(selected.space.placement, selected.marking.rect));
   }
 
-  /** Ponto do canvas (unidades do canvas) sob uma coordenada de tela da página. */
+  /** Canvas point (canvas units) under a page screen coordinate. */
   canvasPointAt(clientX: number, clientY: number): Point {
     return this.view.toCanvas(this.view.screenPoint({ clientX, clientY }));
   }
 
-  /** Centro da área visível, em unidades do canvas. */
+  /** Center of the visible area, in canvas units. */
   viewportCenter(): Point {
     return this.view.center();
   }
 
-  /** Id da imagem sob uma coordenada de tela da página, ou `null` em área vazia. */
+  /** Id of the image under a page screen coordinate, or `null` in an empty area. */
   imageIdAt(clientX: number, clientY: number): string | null {
     const images = this.drawnProject.peek()?.containers ?? [];
     return imageAt(images, this.canvasPointAt(clientX, clientY))?.id ?? null;
   }
 
-  /** Destaca o alvo de um arrastar-e-soltar (`null` remove o destaque). */
+  /** Highlights the target of a drag-and-drop (`null` removes the highlight). */
   setDropTarget(target: DropTarget): void {
     this.dropTarget.value = target;
   }
 
-  /** Há um gesto de ponteiro em andamento (as setas do teclado esperam). */
+  /** A pointer gesture is in progress (the keyboard arrows wait). */
   isInteracting(): boolean {
     return this.pointer.isInteracting();
   }
 
-  /** Cancela o gesto de mover/redimensionar/desenhar em andamento. `true` se havia um. */
+  /** Cancels the move/resize/draw gesture in progress. `true` if there was one. */
   cancelInteraction(): boolean {
     return this.pointer.cancelInteraction();
   }
@@ -769,7 +769,7 @@ export class CanvasController {
   private newComponentLayer(parent: Konva.Group | Konva.Layer): ComponentLayerRenderer {
     return new ComponentLayerRenderer(parent, {
       placeholder: this.componentPalette,
-      // Uma imagem embutida terminou de carregar: pede um quadro (o nó já está atualizado).
+      // An embedded image finished loading: asks for a frame (the node is already updated).
       onImageLoaded: () => {
         if (!this.destroyed) this.requestRender();
       },
@@ -778,8 +778,8 @@ export class CanvasController {
   }
 
   /**
-   * Cursor do mouse em pixels da imagem (B8): o evento só guarda o ponto e agenda um
-   * quadro, então mover o mouse não escreve signals mais de uma vez por quadro.
+   * Mouse cursor in image pixels (B8): the event only stores the point and schedules a
+   * frame, so moving the mouse does not write signals more than once per frame.
    */
   private watchCursor(): () => void {
     const container = this.stage.container();
@@ -805,8 +805,8 @@ export class CanvasController {
     this.cursorRequest = requestFrame(() => {
       this.cursorRequest = null;
       const point = this.cursorPoint;
-      // O projeto desenhado: na visão Proposto, a imagem que só existe na proposta também
-      // dá coordenadas (fase 8.2, P1).
+      // The drawn project: in the Proposed view, the image that only exists in the proposal also
+      // gives coordinates (phase 8.2, P1).
       const project = this.drawnProject.peek();
       const canvas = point && this.canvasPointAt(point.x, point.y);
       const image = canvas && imageAt(project?.containers ?? [], canvas);
@@ -823,10 +823,10 @@ export class CanvasController {
   }
 
   /**
-   * Item sob o mouse para o cadeado e para a borda das marcações desenhadas: o primeiro da cadeia
-   * do toque (a flutuante, a marcação mais interna, o container, as marcações do canvas). Só
-   * escreve os signals quando o resultado muda, e nada é calculado sem itens trancados nem
-   * marcações desenhadas.
+   * Item under the mouse for the padlock and for the border of drawn markings: the first of the touch
+   * chain (the floating one, the innermost marking, the container, the canvas markings). It only
+   * writes the signals when the result changes, and nothing is computed without locked items or
+   * drawn markings.
    */
   private updateHover(project: Project | null, canvas: Point | null): void {
     const locks = this.derived.hasLocks.peek();
@@ -859,9 +859,9 @@ export class CanvasController {
   }
 
   /**
-   * Os arquivos das imagens do projeto e, na revisão, das novas ou trocadas que esperam em
-   * `proposals/`. Container sem arquivo (fundo) não tem bitmap. Devolve a mesma lista enquanto o
-   * conteúdo é igual: um passo de gesto não muda os arquivos e não reacende o `loadBitmaps`.
+   * The files of the project's images and, in the review, of the new or replaced ones waiting in
+   * `proposals/`. A container without a file (background) has no bitmap. Returns the same list while the
+   * content is equal: a gesture step does not change the files and does not retrigger `loadBitmaps`.
    */
   private readonly bitmapFiles = computed((): ReadonlySet<string> => {
     const files = new Set<string>();
@@ -879,7 +879,7 @@ export class CanvasController {
     const files = this.bitmapFiles.value;
     untracked(() => {
       for (const file of files) this.display.ensure(file);
-      // Arquivos que saíram do projeto (imagem excluída ou trocada) não ficam na memória.
+      // Files that left the project (deleted or replaced image) do not stay in memory.
       this.display.retain(files);
     });
   }
@@ -893,31 +893,31 @@ export class CanvasController {
   }
 
   /**
-   * Desenha o quadro. Pan e zoom só mudam o viewport: as imagens são refeitas só
-   * quando muda a escala (espessuras e textos), e as marcações reaproveitam os
-   * dados derivados e os cartões; só o recorte da parte visível é refeito.
+   * Draws the frame. Pan and zoom only change the viewport: the images are redone only
+   * when the scale changes (thicknesses and texts), and the markings reuse the derived
+   * data and the cards; only the cut of the visible part is redone.
    *
-   * Camadas sujas: cada renderizador diz se mexeu em algum nó (ou só roda quando o seu quadro
-   * mudou) e o quadro redesenha só as camadas assim marcadas (`dirty`), com `layer.batchDraw()`.
-   * Pan, zoom e mudança de tamanho sujam todas (a transformação é do palco). O Konva também
-   * agenda o desenho da camada de um nó cujo atributo mudou; a marcação explícita cobre o que ele
-   * não enxerga (o traçado das setas, que sai de dados e não de atributos).
+   * Dirty layers: each renderer says whether it touched any node (or only runs when its frame
+   * changed) and the frame redraws only the layers so marked (`dirty`), with `layer.batchDraw()`.
+   * Pan, zoom and size changes dirty all of them (the transform belongs to the stage). Konva also
+   * schedules the drawing of the layer of a node whose attribute changed; the explicit mark covers what it
+   * does not see (the arrows' path, which comes from data and not from attributes).
    */
   private render(frame: Frame): void {
     const last = this.drawn;
     this.drawn = frame;
     const { size, viewport: v } = frame;
     const scaleChanged = last?.viewport.scale !== v.scale;
-    // Levar ou devolver nós ao grupo de arrasto: todos os renderizadores passam pelo quadro.
+    // Taking nodes to or returning them from the drag group: all renderers go through the frame.
     const dragChanged = this.syncDrag(frame, last);
 
     this.stage.size({ width: Math.max(1, size.width), height: Math.max(1, size.height) });
-    // Posição e escala numa chamada só: o Konva agrupa os atributos de transformação numa
-    // cascata. Cada atributo separado (`scale()` sozinho são duas) limpa o cache de
-    // transformação de todos os nós do stage e dispara `absoluteTransformChange` neles.
+    // Position and scale in a single call: Konva groups the transform attributes in one
+    // cascade. Each separate attribute (`scale()` alone is two) clears the transform cache of
+    // every node on the stage and fires `absoluteTransformChange` on them.
     this.stage.setAttrs({ x: v.x, y: v.y, scaleX: v.scale, scaleY: v.scale });
 
-    // Pan, zoom e tamanho mexem na transformação do palco: todas as camadas se redesenham.
+    // Pan, zoom and size touch the stage's transform: all layers redraw.
     const moved = last === null || last.viewport !== v || last.size !== size;
     this.refreshRemoteImages();
 
@@ -933,24 +933,24 @@ export class CanvasController {
           (i) => i.file === null || frame.bitmaps.get(i.file)?.status === 'ready',
         ).length ?? 0;
     }
-    // Os desenhos dos componentes só se refazem quando eles, o conjunto visível, as posições
-    // das imagens ou o tema mudam.
+    // The component drawings are only redone when they, the visible set, the image positions
+    // or the theme change.
     if (placementsChanged || dragChanged || !sameFrame(last, frame, COMPONENT_KEYS)) {
       this.renderComponents(frame);
     } else if (moved) {
-      // Pan e zoom: o desenho nasce sob demanda (só na tela) e se esconde fora dela.
+      // Pan and zoom: the drawing is born on demand (only on screen) and hides outside it.
       const area = visibleArea(size, v);
       this.mark(this.layers.components, this.componentLayer.reveal(area, v.scale));
       this.mark(this.layers.floating, this.floatingLayer.reveal(area, v.scale));
     }
-    // Os desenhos em pixels de tela (`screen`) só reajustam escala e posição com o zoom.
+    // The screen-pixel drawings (`screen`) only readjust scale and position with the zoom.
     if (scaleChanged) {
       this.mark(this.layers.components, this.componentLayer.setZoom(v.scale));
       this.mark(this.layers.floating, this.floatingLayer.setZoom(v.scale));
     }
-    // As setas só se refazem com elas, o tema ou o zoom (a espessura e a ponta são de tela), e com
-    // o que decide o nível de detalhe de cada uma: a seleção e o mouse. No pan, só se confere a área
-    // visível (`reveal`), como nos desenhos dos componentes.
+    // The arrows are only redone with them, the theme or the zoom (thickness and tip are screen-based), and with
+    // what decides each one's level of detail: the selection and the mouse. On pan, only the visible
+    // area is checked (`reveal`), as in the component drawings.
     if (scaleChanged || dragChanged || !sameFrame(last, frame, ARROW_KEYS)) {
       this.updateArrows(this.arrows.render(frame, this.placements));
     } else if (moved || placementsChanged) {
@@ -960,13 +960,13 @@ export class CanvasController {
     this.mark(this.layers.markings, marked.main);
     this.mark(this.layers.floating, marked.floating);
     this.mark(this.layers.overlay, marked.drag);
-    // Os desenhos de componente que se movem também ficam no grupo de arrasto.
+    // The component drawings that move also stay in the drag group.
     this.mark(this.layers.overlay, this.componentLayer.takeDragChanged());
     this.mark(this.layers.overlay, this.floatingLayer.takeDragChanged());
     if (this.drag !== EMPTY_DRAG && this.dragRoot.zIndex() !== 0) this.dragRoot.zIndex(0);
     this.renderOverlayMarks(frame, last, moved || placementsChanged);
-    // A etiqueta do nome se ancora na parte visível: acompanha pan e tamanho da tela;
-    // e desvia do rótulo do pai, que muda com o zoom semântico e as camadas visíveis.
+    // The name label anchors to the visible part: follows pan and screen size;
+    // and shifts away from the parent's label, which changes with the semantic zoom and the visible layers.
     const viewMoved =
       last?.viewport !== v || last?.size !== size || !sameFrame(last, frame, LABEL_KEYS);
     if (
@@ -983,9 +983,9 @@ export class CanvasController {
   }
 
   /**
-   * O texto do `data-container-boxes` (colocações desenhadas): só se refaz com outra colocação ou
-   * outro array `containers` no projeto desenhado (um container redimensionado muda a largura sem
-   * mudar a colocação); pan e zoom não passam por aqui. Cada texto novo sobe a versão.
+   * The text of `data-container-boxes` (drawn placements): only redone with another placement or
+   * another `containers` array in the drawn project (a resized container changes the width without
+   * changing the placement); pan and zoom do not go through here. Each new text bumps the version.
    */
   private refreshContainerBoxes(frame: Frame, placementsChanged: boolean): void {
     const containers = frame.project?.containers ?? null;
@@ -997,7 +997,7 @@ export class CanvasController {
     this.boxesVersion += 1;
   }
 
-  /** O texto do `data-arrow-handles`: só com uma seta desenhada como seleção primária. */
+  /** The text of `data-arrow-handles`: only with a drawn arrow as the primary selection. */
   private arrowHandlesText(frame: Frame): string | null {
     const selection = frame.selection;
     if (selection?.kind !== 'arrow') return null;
@@ -1006,10 +1006,10 @@ export class CanvasController {
   }
 
   /**
-   * Os atributos `data-*` do host (só leitura, para os testes e2e esperarem o quadro em vez de um
-   * tempo fixo): enquadramento, imagens com bitmap, contagens desenhadas, vista, caixa da
-   * seleção, `data-selection`, `data-arrow-handles` e `data-container-boxes`. O DOM só é tocado
-   * quando a chave `drawn` muda; o `data-container-boxes` entra nela só pela versão do texto.
+   * The host's `data-*` attributes (read-only, so e2e tests wait for the frame instead of a fixed
+   * time): framing, images with a bitmap, drawn counts, view, selection box,
+   * `data-selection`, `data-arrow-handles` and `data-container-boxes`. The DOM is only touched
+   * when the `drawn` key changes; `data-container-boxes` enters it only through the text's version.
    */
   private publishHostAttributes(frame: Frame, v: Viewport): void {
     const canvasMarkings = this.countCanvasMarkings(frame.project);
@@ -1044,10 +1044,10 @@ export class CanvasController {
   }
 
   /**
-   * Gesto em andamento: o que a prévia move (comparada ao projeto desenhado de antes do gesto) vai
-   * para o grupo de arrasto; ao soltar ou cancelar, tudo volta. Devolve `true` quando o conjunto
-   * mudou (levou nós novos ou devolveu todos), para o quadro passar por todos os renderizadores.
-   * O pertencimento e a posição final continuam do modelo: aqui só se decide onde o nó fica.
+   * Gesture in progress: what the preview moves (compared with the drawn project from before the gesture) goes
+   * to the drag group; on release or cancel, everything goes back. Returns `true` when the set
+   * changed (took new nodes or returned all of them), so the frame goes through all the renderers.
+   * Membership and the final position remain the model's: here we only decide where the node sits.
    */
   private syncDrag(frame: Frame, last: Frame | null): boolean {
     if (!this.store.gestureActive.peek()) {
@@ -1070,7 +1070,7 @@ export class CanvasController {
     return true;
   }
 
-  /** Diz a cada renderizador quais nós ficam no grupo de arrasto (o conjunto vazio devolve tudo). */
+  /** Tells each renderer which nodes stay in the drag group (the empty set returns everything). */
   private applyDrag(set: DragSet): void {
     const on = set !== EMPTY_DRAG;
     const groups = this.dragGroups;
@@ -1084,21 +1084,21 @@ export class CanvasController {
     this.arrows.setDragged(on ? set.arrows : null, groups.arrows);
   }
 
-  /** Marca as camadas que as setas mexeram e guarda quantas estão pintadas (`data-arrows`). */
+  /** Marks the layers the arrows touched and stores how many are painted (`data-arrows`). */
   private updateArrows(changes: ArrowChanges): void {
     this.mark(this.layers.markings, changes.main);
     this.mark(this.layers.overlay, changes.drag);
     this.drawnArrows = this.arrows.painted;
   }
 
-  /** Suja a camada se o renderizador mexeu em algum nó dela. */
+  /** Dirties the layer if the renderer touched any of its nodes. */
   private mark(layer: Konva.Layer, changed: boolean): void {
     if (changed) this.dirty.add(layer);
   }
 
   /**
-   * As marcas da revisão, os pinos e as marcas de chegada (camada de sobreposições): só se
-   * refazem quando os dados delas, a tela ou as posições das imagens mudaram.
+   * The review marks, the pins and the arrival marks (overlays layer): only redone
+   * when their data, the screen or the image positions changed.
    */
   private renderOverlayMarks(frame: Frame, last: Frame | null, stale: boolean): void {
     const redo = (keys: readonly (keyof Frame)[]) =>
@@ -1118,14 +1118,14 @@ export class CanvasController {
     }
   }
 
-  /** Desenha o quadro: o palco inteiro se ele se moveu, senão só as camadas sujas. */
+  /** Draws the frame: the whole stage if it moved, otherwise only the dirty layers. */
   private drawDirtyLayers(all: boolean): void {
     if (all) this.stage.batchDraw();
     else for (const layer of this.dirty) layer.batchDraw();
     this.dirty.clear();
   }
 
-  /** Refaz as marcações cujas imagens remotas mudaram desde o último quadro. */
+  /** Redoes the markings whose remote images changed since the last frame. */
   private refreshRemoteImages(): void {
     if (!this.allImagesChanged && this.changedImageUrls.size === 0) return;
     const urls = this.allImagesChanged ? null : new Set(this.changedImageUrls);
@@ -1135,7 +1135,7 @@ export class CanvasController {
     this.mark(this.layers.floating, this.floatingLayer.refreshImages(urls));
   }
 
-  /** Quantas marcações do canvas (sem container) o quadro tem; recontado só quando o projeto muda. */
+  /** How many canvas markings (without a container) the frame has; recounted only when the project changes. */
   private countCanvasMarkings(project: Project | null): number {
     if (this.countedProject !== project) {
       this.countedProject = project;
@@ -1146,12 +1146,12 @@ export class CanvasController {
   }
 
   /**
-   * Desenha os componentes das marcações à vista (um nó por marcação; só o mudado é refeito).
-   * As flutuantes vão para a camada de cima, acima das bordas das demais marcações.
+   * Draws the components of the markings in view (one node per marking; only the changed one is redone).
+   * The floating ones go to the top layer, above the borders of the other markings.
    */
   private renderComponents(frame: Frame): void {
     if (frame.tokens.component !== this.componentPalette) {
-      // As cores do reservado são fixadas ao montar o desenho: tema novo, desenhos novos.
+      // The placeholder colors are fixed when the drawing is mounted: new theme, new drawings.
       this.componentLayer.destroy();
       this.floatingLayer.destroy();
       this.dirty.add(this.layers.components);

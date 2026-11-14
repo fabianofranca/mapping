@@ -805,7 +805,7 @@ describe('Home: rastro do Abrir de pasta (folders.reopen)', () => {
       within(dialog).getByRole('button', { name: t('common.cancel'), hidden: true }),
     );
     await waitFor(() => expect(lines()).toHaveLength(2));
-    expect(lines()[1]).toMatch(/^aviso fechado: cancel-button após \d+ms$/);
+    expect(lines()[1]).toMatch(/^notice closed: cancel-button after \d+ms$/);
   });
 
   it('Esc e o clique no fundo gravam a origem do fechamento', async () => {
@@ -813,10 +813,10 @@ describe('Home: rastro do Abrir de pasta (folders.reopen)', () => {
     render(<Home />);
     const first = await openAndWaitDialog();
     first.dialog.dispatchEvent(new Event('cancel', { cancelable: true }));
-    await waitFor(() => expect(lines()[1]).toMatch(/^aviso fechado: cancel após/));
+    await waitFor(() => expect(lines()[1]).toMatch(/^notice closed: cancel after/));
     const second = await openAndWaitDialog();
     await second.user.click(second.dialog);
-    await waitFor(() => expect(lines()[3]).toMatch(/^aviso fechado: backdrop após/));
+    await waitFor(() => expect(lines()[3]).toMatch(/^notice closed: backdrop after/));
   });
 
   it('Remover da lista pelo aviso grava forget', async () => {
@@ -827,7 +827,7 @@ describe('Home: rastro do Abrir de pasta (folders.reopen)', () => {
     await user.click(
       within(dialog).getByRole('button', { name: t('home.forgetFolder'), hidden: true }),
     );
-    await waitFor(() => expect(lines()[1]).toMatch(/^aviso fechado: forget após/));
+    await waitFor(() => expect(lines()[1]).toMatch(/^notice closed: forget after/));
   });
 
   it('aviso sem pedido (o caminho que funciona) não grava', async () => {

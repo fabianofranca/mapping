@@ -16,9 +16,9 @@ import {
 import { VIEW_SHOW_START, type ViewShow } from './viewMode';
 
 /**
- * Item **primário** da seleção (o último clicado): o que Detalhes, a trilha, as alças e os
- * atalhos de um item só usam. `null` = nada selecionado. A seleção inteira (ME2) é
- * `selectedItems(ui)`: o primário mais os outros de `selectionGroup`.
+ * **Primary** item of the selection (the last one clicked): what Details, the breadcrumb, the
+ * handles and the single-item shortcuts use. `null` = nothing selected. The whole selection (ME2)
+ * is `selectedItems(ui)`: the primary plus the others in `selectionGroup`.
  */
 export type Selection =
   | { readonly kind: 'image'; readonly id: string }
@@ -26,147 +26,151 @@ export type Selection =
   | { readonly kind: 'arrow'; readonly id: string }
   | null;
 
-/** Um item da seleção: um container (`image`), uma marcação ou uma seta (v13). */
+/** A selection item: a container (`image`), a marking or an arrow (v13). */
 export type SelectionItem = NonNullable<Selection>;
 
 /**
- * Os outros itens da seleção múltipla, presos ao primário em que foram juntados. Vale só
- * enquanto `primary` é **o mesmo objeto** que `selection`: qualquer escrita direta em
- * `ui.selection` (clique simples, criar, ir até uma anotação) desfaz o grupo sozinha, sem que
- * cada escritor precise saber da seleção múltipla.
+ * The other items of the multiple selection, tied to the primary they were gathered with. Only
+ * valid while `primary` is **the same object** as `selection`: any direct write to
+ * `ui.selection` (plain click, create, go to an annotation) undoes the group by itself, without
+ * every writer needing to know about multiple selection.
  */
 export interface SelectionGroup {
   readonly primary: SelectionItem;
-  /** Na ordem em que entraram; nunca contém o primário. */
+  /** In the order they joined; never contains the primary. */
   readonly others: readonly SelectionItem[];
 }
 
-/** Navegar: tocar seleciona, arrastar move ou faz pan. Desenhar: arrastar cria marcações. */
+/** Navigate: touch selects, drag moves or pans. Draw: drag creates markings. */
 export type EditorMode = 'navigate' | 'draw';
 
 /**
- * Estado da UI do editor: não vai para o JSON nem entra no desfazer.
- * O viewport fica com o `CanvasController`, que é quem o altera.
+ * Editor UI state: it does not go into the JSON or the undo.
+ * The viewport stays with the `CanvasController`, which is what changes it.
  */
 export interface EditorUi {
   readonly selection: Signal<Selection>;
-  /** Seleção múltipla: os outros itens além do primário (ver `SelectionGroup`). */
+  /** Multiple selection: the other items besides the primary (see `SelectionGroup`). */
   readonly selectionGroup: Signal<SelectionGroup | null>;
   readonly mode: Signal<EditorMode>;
   /**
-   * Modo visualização (Alt+H): o canvas é só para ver e mostra o que `viewShow` escolhe. Não é
-   * preferência: nasce desligado com o editor de cada projeto e não é gravado.
+   * View mode (Alt+H): the canvas is only for viewing and shows what `viewShow` chooses. It is not
+   * a preference: it is born off with each project's editor and is not saved.
    */
   readonly viewMode: Signal<boolean>;
-  /** O que o modo visualização mostra (`store/viewMode.ts`); guardado por cópia do projeto. */
+  /** What view mode shows (`store/viewMode.ts`); kept per project copy. */
   readonly viewShow: Signal<ViewShow>;
-  /** O painel "Mostrar no canvas" está aberto (abre ao entrar no modo, fecha ao sair). */
+  /** The "Show on canvas" panel is open (opens on entering the mode, closes on leaving). */
   readonly viewPanel: Signal<boolean>;
   /**
-   * Camadas escondidas. Guardar as escondidas (e não as visíveis) faz camadas
-   * novas, ou restauradas pelo desfazer, aparecerem visíveis por padrão.
+   * Hidden layers. Storing the hidden ones (and not the visible ones) makes new layers,
+   * or ones restored by undo, appear visible by default.
    */
   readonly hiddenLayers: Signal<ReadonlySet<string>>;
-  /** Visão de Lista: mostrar também marcações sem anotação nas camadas visíveis. */
+  /** List view: also show markings with no annotation in the visible layers. */
   readonly listShowEmpty: Signal<boolean>;
-  /** Visão de Lista: só anotações incompletas (docs/ARCHITECTURE.md, "Especializações no projeto e anotações tipadas"). */
+  /**
+   * List view: only incomplete annotations (docs/ARCHITECTURE.md, "Specializations in the project
+   * and typed annotations").
+   */
   readonly listIncompleteOnly: Signal<boolean>;
-  /** Janela Incompletas: só as pendências das camadas visíveis (B5). */
+  /** Incomplete window: only the pending items of the visible layers (B5). */
   readonly incompleteVisibleOnly: Signal<boolean>;
-  /** Janela Avisos: só os avisos de um `kind` (`null` = todos). */
+  /** Warnings window: only the warnings of one `kind` (`null` = all). */
   readonly noticeKind: Signal<SpecNoticeKind | null>;
-  /** Janela Avisos: só os avisos que alguma anotação usa (desmarcado mostra os sem uso). */
+  /** Warnings window: only the warnings some annotation uses (unchecked shows the unused ones). */
   readonly noticesInUseOnly: Signal<boolean>;
-  /** Janela Avisos: só as anotações das camadas visíveis. */
+  /** Warnings window: only the annotations of the visible layers. */
   readonly noticesVisibleOnly: Signal<boolean>;
-  /** Anotação para rolar até (e focar) no painel assim que ela aparecer. */
+  /** Annotation to scroll to (and focus) in the panel as soon as it appears. */
   readonly focusAnnotation: Signal<string | null>;
-  /** Nós recolhidos da janela Árvore (`treeKey`); vazio = tudo aberto. */
+  /** Collapsed nodes of the Tree window (`treeKey`); empty = all open. */
   readonly collapsedTree: Signal<ReadonlySet<string>>;
   /**
-   * Campo da anotação em `focusAnnotation` que recebe o foco (link de uma pendência):
-   * o `data-focus` do campo (`owner`, a chave do campo ou `chave:linha:coluna`).
+   * Field of the annotation in `focusAnnotation` that receives focus (link from a pending item):
+   * the field's `data-focus` (`owner`, the field key or `key:row:column`).
    */
   readonly focusField: Signal<string | null>;
   /**
-   * Seções recolhidas de Detalhes (B15): a da marcação, a das anotações, cada camada
-   * e cada anotação (`sectionKey`). Vale para a sessão: recolher uma camada vale em
-   * todas as marcações.
+   * Collapsed sections of Details (B15): the marking's, the annotations', each layer
+   * and each annotation (`sectionKey`). Holds for the session: collapsing a layer holds in
+   * all markings.
    */
   readonly collapsed: Signal<ReadonlySet<string>>;
-  /** Aviso curto sobre o canvas ("Referência copiada"); some sozinho (`showToast`). */
+  /** Short notice over the canvas ("Reference copied"); disappears by itself (`showToast`). */
   readonly toast: Signal<string | null>;
-  /** Menu de contexto do canvas (botão direito): onde abrir (tela) e o item sob o cursor. */
+  /** Canvas context menu (right click): where to open (screen) and the item under the cursor. */
   readonly canvasMenu: Signal<CanvasMenu | null>;
-  /** Revisão de propostas: legenda das marcas do canvas aberta (atalho L). */
+  /** Proposal review: legend of the canvas marks open (shortcut L). */
   readonly reviewLegend: Signal<boolean>;
-  /** Revisão: comparação antes/depois da imagem trocada aberta (id da imagem). */
+  /** Review: before/after comparison of the replaced image open (image id). */
   readonly compareImage: Signal<string | null>;
   /**
-   * Conversa selecionada (etapa Comentários, decisão 19), presa à seleção em que foi escolhida:
-   * vale só enquanto `selection` é o mesmo objeto (`selectedThreadId`), como o grupo da seleção
-   * múltipla. Nunca é gravada.
+   * Selected thread (Comments stage, decision 19), tied to the selection it was chosen in:
+   * only valid while `selection` is the same object (`selectedThreadId`), like the multiple
+   * selection group. Never saved.
    */
   readonly thread: Signal<SelectedThread | null>;
-  /** Rascunhos de mensagem por chave (`threadDraftKey`), em memória: sobrevivem à troca de seleção. */
+  /** Message drafts by key (`threadDraftKey`), in memory: they survive a selection change. */
   readonly threadDrafts: Signal<ReadonlyMap<string, string>>;
-  /** Conversa nova em rascunho (nada gravado até o primeiro Enviar) e onde ela ficará. */
+  /** New thread in draft (nothing saved until the first Send) and where it will go. */
   readonly composing: Signal<ComposingThread | null>;
-  /** Janela Comentários: filtros de status, usuário e busca (decisão 21). */
+  /** Comments window: status, user and search filters (decision 21). */
   readonly commentsStatus: Signal<ThreadStatusFilter>;
   readonly commentsUser: Signal<string>;
   readonly commentsText: Signal<string>;
   /**
-   * Filtro "Só as que citam a seleção" (decisão 34): com um item selecionado, a janela mostra as
-   * conversas ancoradas nele ou que o citam. Estado de UI: nasce desligado e não é gravado.
+   * "Only those citing the selection" filter (decision 34): with an item selected, the window shows
+   * the threads anchored to it or that cite it. UI state: born off and not saved.
    */
   readonly commentsCiteSelection: Signal<boolean>;
   /**
-   * Pinos das conversas no canvas (decisão 24): nasce desligado a cada abertura do editor e nunca
-   * é gravado. Só o botão Conversas o desliga; Comentar, Comentar aqui e Nova conversa o ligam.
+   * Thread pins on the canvas (decision 24): born off on each editor open and never
+   * saved. Only the Threads button turns it off; Comment, Comment here and New thread turn it on.
    */
   readonly commentPins: Signal<boolean>;
   /**
-   * Botão Comentar armado (decisão 25): o próximo clique no canvas abre o rascunho. Guarda a
-   * ferramenta de antes, para voltar a ela depois do clique ou do Esc.
+   * Comment button armed (decision 25): the next click on the canvas opens the draft. It keeps the
+   * previous tool, to return to it after the click or Esc.
    */
   readonly commentArm: Signal<ArmedComment | null>;
 }
 
-/** A colocação de um clique do botão Comentar e a ferramenta que volta depois dela. */
+/** The placement of a Comment button click and the tool that returns after it. */
 export interface ArmedComment {
   readonly mode: EditorMode;
 }
 
-/** O rascunho de conversa nova e a seleção em que ele vale. */
+/** The new thread draft and the selection it is valid for. */
 export interface ComposingThread {
   readonly anchor: ThreadAnchor;
   readonly selection: Selection;
 }
 
-/** A conversa escolhida e a seleção em que ela vale. */
+/** The chosen thread and the selection it is valid for. */
 export interface SelectedThread {
   readonly id: string;
   readonly selection: Selection;
 }
 
 export interface CanvasMenu {
-  /** Posição do cursor na janela (`clientX`/`clientY`). */
+  /** Cursor position in the window (`clientX`/`clientY`). */
   readonly x: number;
   readonly y: number;
-  /** `i` = container, `m` = marcação, `arrow` = seta (v13); `null` num lugar vazio. */
+  /** `i` = container, `m` = marking, `arrow` = arrow (v13); `null` in an empty place. */
   readonly target: { readonly kind: 'i' | 'm' | 'arrow'; readonly id: string } | null;
-  /** Âncora do item sob o cursor, para o Comentar do menu (decisão 25); `null` no vazio. */
+  /** Anchor of the item under the cursor, for the menu's Comment (decision 25); `null` in the empty. */
   readonly comment?: ThreadAnchor | null;
-  /** O ponto sob o cursor, para o Comentar aqui (container ou canvas); `null` sobre marcação ou seta. */
+  /** The point under the cursor, for Comment here (container or canvas); `null` over a marking/arrow. */
   readonly here?: Extract<ThreadAnchor, { kind: 'point' }> | null;
 }
 
 export function createEditorUi(): EditorUi {
   const ui = buildEditorUi();
-  // Mudar a seleção esquece a conversa escolhida e o rascunho de conversa nova (etapa #940,
-  // decisão 3): sem isso, a seleção vazia que volta faria a comparação valer de novo. O texto
-  // do rascunho continua em `threadDrafts`. A instância vive o tempo da app, sem desinscrever.
+  // Changing the selection forgets the chosen thread and the new-thread draft (stage #940,
+  // decision 3): without that, the empty selection that comes back would make the comparison valid
+  // again. The draft text stays in `threadDrafts`. The instance lives as long as the app, never
+  // unsubscribed.
   effect(() => {
     const selection = ui.selection.value;
     const chosen = ui.thread.peek();
@@ -213,17 +217,17 @@ function buildEditorUi(): EditorUi {
 }
 
 // ---------------------------------------------------------------------------
-// Seleção múltipla (ME2): um conjunto ordenado de itens com um primário, o último clicado.
+// Multiple selection (ME2): an ordered set of items with a primary, the last one clicked.
 
-/** Mesmo item (mesmo tipo e id). */
+/** Same item (same kind and id). */
 export function sameItem(a: SelectionItem | null, b: SelectionItem | null): boolean {
   return a !== null && b !== null && a.kind === b.kind && a.id === b.id;
 }
 
-/** Chave de um item para `Set`/`Map` (`kind:id`). */
+/** Key of an item for `Set`/`Map` (`kind:id`). */
 const itemKey = (item: SelectionItem): string => `${item.kind}:${item.id}`;
 
-/** A seleção inteira a partir do primário e do grupo: os outros primeiro, o primário por último. */
+/** The whole selection from the primary and the group: the others first, the primary last. */
 export function itemsOf(
   selection: Selection,
   group: SelectionGroup | null,
@@ -233,17 +237,17 @@ export function itemsOf(
   return [...group.others, selection];
 }
 
-/** Itens selecionados, com o primário por último. Lê os sinais com `.value` (reativo). */
+/** Selected items, with the primary last. Reads the signals with `.value` (reactive). */
 export function selectedItems(ui: EditorUi): readonly SelectionItem[] {
   return itemsOf(ui.selection.value, ui.selectionGroup.value);
 }
 
-/** Como `selectedItems`, sem assinar (handlers de evento). */
+/** Like `selectedItems`, without subscribing (event handlers). */
 export function peekSelectedItems(ui: EditorUi): readonly SelectionItem[] {
   return itemsOf(ui.selection.peek(), ui.selectionGroup.peek());
 }
 
-/** O item está na seleção? */
+/** Is the item in the selection? */
 export function isItemSelected(
   items: readonly SelectionItem[],
   item: SelectionItem,
@@ -252,8 +256,8 @@ export function isItemSelected(
 }
 
 /**
- * Troca a seleção inteira: o **último** item é o primário. Repetidos ficam uma vez só (na
- * última posição em que aparecem). Lista vazia = nada selecionado.
+ * Replaces the whole selection: the **last** item is the primary. Repeats appear only once (at the
+ * last position where they appear). Empty list = nothing selected.
  */
 export function selectItems(ui: EditorUi, items: readonly SelectionItem[]): void {
   const unique: SelectionItem[] = [];
@@ -271,7 +275,7 @@ export function selectItems(ui: EditorUi, items: readonly SelectionItem[]): void
       ui.selectionGroup.value = null;
       return;
     }
-    // Um objeto novo: o grupo fica preso a ele, e uma escrita direta depois o desfaz.
+    // A new object: the group is tied to it, and a later direct write undoes it.
     const fresh: SelectionItem = { kind: primary.kind, id: primary.id };
     ui.selection.value = fresh;
     ui.selectionGroup.value =
@@ -280,8 +284,8 @@ export function selectItems(ui: EditorUi, items: readonly SelectionItem[]): void
 }
 
 /**
- * Shift+clique: tira o item da seleção se ele está nela (o primário passa a ser o último dos
- * que ficam) ou o acrescenta como primário.
+ * Shift+click: removes the item from the selection if it is in it (the primary becomes the last of
+ * those that remain) or adds it as the primary.
  */
 export function toggleSelectedItem(ui: EditorUi, item: SelectionItem): void {
   const items = peekSelectedItems(ui);
@@ -296,9 +300,9 @@ export function toggleSelectedItem(ui: EditorUi, item: SelectionItem): void {
 }
 
 /**
- * Seleção por retângulo (Shift+arrasto): soma `items` à seleção sem tirar nada. O primário atual
- * continua; sem seleção antes, o primário é o primeiro dos novos. Os já selecionados são
- * ignorados e, sem nada novo, não escreve nada.
+ * Rectangle selection (Shift+drag): adds `items` to the selection without removing anything. The
+ * current primary stays; with no prior selection, the primary is the first of the new ones. Those
+ * already selected are ignored and, with nothing new, nothing is written.
  */
 export function addSelectedItems(ui: EditorUi, items: readonly SelectionItem[]): void {
   const current = peekSelectedItems(ui);
@@ -314,14 +318,14 @@ export function addSelectedItems(ui: EditorUi, items: readonly SelectionItem[]):
   selectItems(ui, current.length > 0 ? [...fresh, ...current] : [...rest, first]);
 }
 
-/** Esc com vários itens: fica só o primário. Devolve `true` se havia outros itens. */
+/** Esc with several items: only the primary remains. Returns `true` if there were other items. */
 export function collapseToPrimary(ui: EditorUi): boolean {
   if (peekSelectedItems(ui).length < 2) return false;
   ui.selectionGroup.value = null;
   return true;
 }
 
-/** Os itens que ainda existem no projeto (depois de desfazer, um pode ter sumido). */
+/** The items that still exist in the project (after undo, one may be gone). */
 export function existingItems(
   project: Project | null,
   items: readonly SelectionItem[],
@@ -338,8 +342,8 @@ export function existingItems(
 }
 
 /**
- * Liga ou desliga o modo visualização. Ligar volta ao Navegar e abre o painel "Mostrar no
- * canvas"; desligar o fecha e não mexe no modo.
+ * Turns view mode on or off. Turning on goes back to Navigate and opens the "Show on
+ * canvas" panel; turning off closes it and does not touch the mode.
  */
 export function setViewMode(ui: EditorUi, on: boolean): void {
   if (on && ui.mode.peek() === 'draw') ui.mode.value = 'navigate';
@@ -347,12 +351,12 @@ export function setViewMode(ui: EditorUi, on: boolean): void {
   ui.viewPanel.value = on;
 }
 
-/** Quanto tempo o aviso curto fica na tela. */
+/** How long the short notice stays on screen. */
 export const TOAST_MS = 2500;
 
 const toastTimers = new WeakMap<EditorUi, ReturnType<typeof setTimeout>>();
 
-/** Mostra um aviso curto sobre o canvas; um novo aviso substitui o anterior. */
+/** Shows a short notice over the canvas; a new notice replaces the previous one. */
 export function showToast(ui: EditorUi, text: string, duration = TOAST_MS): void {
   clearTimeout(toastTimers.get(ui));
   ui.toast.value = text;
@@ -365,7 +369,7 @@ export function showToast(ui: EditorUi, text: string, duration = TOAST_MS): void
   );
 }
 
-/** Seções recolhíveis de Detalhes. */
+/** Collapsible sections of Details. */
 export type DetailsSection =
   | {
       readonly kind:
@@ -382,7 +386,7 @@ export type DetailsSection =
     }
   | { readonly kind: 'layer' | 'annotation'; readonly id: string };
 
-/** Chave da seção no conjunto `collapsed`. */
+/** Key of the section in the `collapsed` set. */
 export function sectionKey(section: DetailsSection): string {
   return 'id' in section ? `${section.kind}:${section.id}` : section.kind;
 }
@@ -391,7 +395,7 @@ export function isSectionCollapsed(ui: EditorUi, section: DetailsSection): boole
   return ui.collapsed.value.has(sectionKey(section));
 }
 
-/** Recolhe ou abre a seção. */
+/** Collapses or opens the section. */
 export function toggleSection(ui: EditorUi, section: DetailsSection): void {
   const next = new Set(ui.collapsed.peek());
   const key = sectionKey(section);
@@ -399,7 +403,7 @@ export function toggleSection(ui: EditorUi, section: DetailsSection): void {
   ui.collapsed.value = next;
 }
 
-/** Abre as seções (ex.: para mostrar uma anotação pedida por um link). */
+/** Opens the sections (e.g. to show an annotation requested by a link). */
 export function expandSections(ui: EditorUi, sections: readonly DetailsSection[]): void {
   const current = ui.collapsed.peek();
   const keys = sections.map(sectionKey).filter((key) => current.has(key));
@@ -409,7 +413,7 @@ export function expandSections(ui: EditorUi, sections: readonly DetailsSection[]
   ui.collapsed.value = next;
 }
 
-/** Recolhe as seções (ex.: um grupo grande que a revisão mostra só pelos cabeçalhos). */
+/** Collapses the sections (e.g. a large group that the review shows only by headers). */
 export function collapseSections(
   ui: EditorUi,
   sections: readonly DetailsSection[],
@@ -422,7 +426,7 @@ export function collapseSections(
   ui.collapsed.value = next;
 }
 
-/** Camadas visíveis, na ordem do projeto. Qualquer uma pode estar escondida, até todas. */
+/** Visible layers, in project order. Any of them can be hidden, even all. */
 export function visibleLayers(
   project: Project | null,
   hidden: ReadonlySet<string>,
@@ -430,14 +434,14 @@ export function visibleLayers(
   return (project?.layers ?? []).filter((l) => !hidden.has(l.id));
 }
 
-/** Liga/desliga a visibilidade de uma camada. */
+/** Turns a layer's visibility on/off. */
 export function toggleLayerVisible(ui: EditorUi, layerId: string): void {
   const hidden = new Set(ui.hiddenLayers.peek());
   if (!hidden.delete(layerId)) hidden.add(layerId);
   ui.hiddenLayers.value = hidden;
 }
 
-/** Torna a camada visível. */
+/** Makes the layer visible. */
 export function showLayer(ui: EditorUi, layerId: string): void {
   if (!ui.hiddenLayers.peek().has(layerId)) return;
   const hidden = new Set(ui.hiddenLayers.peek());
@@ -445,15 +449,15 @@ export function showLayer(ui: EditorUi, layerId: string): void {
   ui.hiddenLayers.value = hidden;
 }
 
-/** O bastante para ir até uma anotação. */
+/** Enough to go to an annotation. */
 export type AnnotationLocation = Pick<Annotation, 'id' | 'markingId' | 'layerId'>;
 
 /**
- * Vai até a anotação (backlinks, "Ir para o alvo", vinculadas, pendências): mostra a
- * camada dela, abre as seções recolhidas que a escondem, seleciona a marcação (ou a seta, se a
- * dona é uma seta do `project` dado) e pede ao painel para rolar até ela (e focar `field`, se
- * houver). `show`: como a camada é mostrada (com uma perspectiva aberta, `layers.show` do editor
- * grava nas escondidas dela; o padrão é a Principal).
+ * Goes to the annotation (backlinks, "Go to target", linked, pending items): shows its
+ * layer, opens the collapsed sections that hide it, selects the marking (or the arrow, if the
+ * owner is an arrow of the given `project`) and asks the panel to scroll to it (and focus `field`, if
+ * any). `show`: how the layer is shown (with a perspective open, the editor's `layers.show`
+ * writes to its hidden ones; the default is the Main one).
  */
 export function goToAnnotation(
   ui: EditorUi,
@@ -484,15 +488,15 @@ export type ResolvedSelection =
   | {
       readonly kind: 'marking';
       readonly marking: Marking;
-      /** Container da marcação; `null` na marcação do canvas (v13). */
+      /** The marking's container; `null` on the canvas marking (v13). */
       readonly image: ProjectContainer | null;
-      /** Espaço do `rect`: o container (pixels dele) ou o canvas (`placement` identidade). */
+      /** Space of the `rect`: the container (its pixels) or the canvas (identity `placement`). */
       readonly space: Space;
     }
   | { readonly kind: 'arrow'; readonly arrow: Arrow }
   | null;
 
-/** Item selecionado no projeto atual (`null` se ele não existe mais, ex.: após desfazer). */
+/** Selected item in the current project (`null` if it no longer exists, e.g. after undo). */
 export function resolveSelection(
   project: Project | null,
   selection: Selection,
@@ -518,9 +522,9 @@ export function resolveSelection(
     : null;
 }
 
-// Árvore de marcações: quais nós estão recolhidos. Estado de UI, fora do projeto e do
-// desfazer. As chaves levam o tipo do nó porque ids de imagem e de marcação vêm de
-// geradores diferentes. A raiz Canvas (v13) é `treeKey('canvas', '')`.
+// Marking tree: which nodes are collapsed. UI state, outside the project and the
+// undo. The keys carry the node kind because image and marking ids come from
+// different generators. The Canvas root (v13) is `treeKey('canvas', '')`.
 
 export function treeKey(
   kind: 'image' | 'marking' | 'arrow' | 'canvas',
@@ -529,7 +533,7 @@ export function treeKey(
   return `${kind}:${id}`;
 }
 
-/** Recolhe ou abre um nó da árvore. */
+/** Collapses or opens a tree node. */
 export function toggleTreeNode(ui: EditorUi, key: string): void {
   const next = new Set(ui.collapsedTree.peek());
   if (!next.delete(key)) next.add(key);
@@ -537,8 +541,8 @@ export function toggleTreeNode(ui: EditorUi, key: string): void {
 }
 
 /**
- * Recolhe todos os nós que têm filhos: a raiz Canvas, os containers com marcações e as
- * marcações com filhas ou com containers membros.
+ * Collapses all the nodes that have children: the Canvas root, the containers with markings and the
+ * markings with children or with member containers.
  */
 export function collapseTree(ui: EditorUi, project: Project | null): void {
   if (!project) return;
@@ -551,20 +555,20 @@ export function collapseTree(ui: EditorUi, project: Project | null): void {
     );
     if (m.parentId !== null) parents.add(m.parentId);
   }
-  // Uma flutuante não tem filhos na árvore: não há o que recolher nela.
+  // A floating one has no children in the tree: there is nothing to collapse in it.
   for (const c of project.containers) {
     if (c.parentId !== null && !floating.has(c.parentId)) parents.add(c.parentId);
   }
-  // As setas aparecem sob a marcação de origem.
+  // Arrows appear under the origin marking.
   for (const a of project.arrows) parents.add(a.from);
   for (const id of parents) next.add(treeKey('marking', id));
   ui.collapsedTree.value = next;
 }
 
 /**
- * Abre os ancestrais do item para ele aparecer na árvore: a cadeia inteira (marcação de
- * container → container → marcações do canvas que o contêm → Canvas). Devolve se algo
- * mudou, para não regravar o signal à toa.
+ * Opens the item's ancestors so it shows up in the tree: the whole chain (container
+ * marking → container → canvas markings that contain it → Canvas). Returns whether anything
+ * changed, to avoid rewriting the signal needlessly.
  */
 export function revealInTree(
   ui: EditorUi,
@@ -577,7 +581,7 @@ export function revealInTree(
   const byId = index.markings;
   const next = new Set(collapsed);
 
-  /** Abre a marcação `startId` e as marcações acima dela (o limite evita laço em dados corrompidos). */
+  /** Opens marking `startId` and the markings above it (the limit avoids a loop on corrupted data). */
   const openMarkings = (startId: string | null): void => {
     let current = startId === null ? undefined : byId.get(startId);
     for (let guard = byId.size; current && guard > 0; guard--) {
@@ -585,7 +589,7 @@ export function revealInTree(
       current = current.parentId === null ? undefined : byId.get(current.parentId);
     }
   };
-  /** Abre o container e, se uma marcação do canvas o contém, a cadeia dela até o Canvas. */
+  /** Opens the container and, if a canvas marking contains it, its chain up to the Canvas. */
   const openContainer = (container: ProjectContainer): void => {
     next.delete(treeKey('image', container.id));
     if (container.parentId !== null) {
@@ -602,7 +606,7 @@ export function revealInTree(
       next.delete(treeKey('canvas', ''));
     }
   } else {
-    // A seta aparece sob a marcação de origem (ME4: a Árvore é de outro agente): abre a origem.
+    // The arrow appears under the origin marking (ME4: the Tree is another agent's): opens the origin.
     const arrow = selection.kind === 'arrow' ? index.arrows.get(selection.id) : undefined;
     if (selection.kind === 'arrow' && !arrow) return false;
     const marking = byId.get(arrow ? arrow.from : selection.id);

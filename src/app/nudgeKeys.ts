@@ -1,7 +1,7 @@
 import type { ItemRef } from '../model';
 import type { ActionResult } from '../store/history';
 
-/** O que o passo das setas pede às actions do store (um gesto: prévias e um fim com assentar). */
+/** What the arrow step asks of the store actions (one gesture: previews and an end with settle). */
 export interface NudgeActions {
   beginGesture(): ActionResult;
   previewItemsNudge(items: readonly ItemRef[], dx: number, dy: number): ActionResult;
@@ -12,15 +12,15 @@ export interface NudgeActions {
 interface Active {
   readonly key: string;
   readonly items: readonly ItemRef[];
-  /** Deslocamento pedido até agora e o último que a prévia aceitou (tudo ou nada). */
+  /** Displacement requested so far and the last one the preview accepted (all or nothing). */
   total: { dx: number; dy: number };
   valid: { dx: number; dy: number };
 }
 
 /**
- * A seta que está sendo apertada: apertar e soltar é um gesto de um passo, segurar (a repetição
- * do teclado) soma passos no mesmo gesto. `end` fecha o gesto (no `keyup`, na perda de foco ou
- * em outra tecla) com uma entrada no desfazer.
+ * The arrow being pressed: press and release is a one-step gesture, holding (keyboard
+ * repeat) adds steps to the same gesture. `end` closes the gesture (on `keyup`, on focus loss or
+ * on another key) with one undo entry.
  */
 export class NudgeSession {
   private active: Active | null = null;
@@ -30,7 +30,7 @@ export class NudgeSession {
     private readonly selectedItems: () => readonly ItemRef[],
   ) {}
 
-  /** Um `keydown` de seta: começa o gesto ou soma um passo ao que está aberto. */
+  /** An arrow `keydown`: starts the gesture or adds a step to the open one. */
   step(key: string, dx: number, dy: number): void {
     const a = this.active;
     if (a && a.key === key) {
@@ -41,7 +41,7 @@ export class NudgeSession {
     this.start(key, dx, dy);
   }
 
-  /** Fecha o gesto aberto (se houver): repete a operação final, assenta e grava uma entrada. */
+  /** Closes the open gesture (if any): repeats the final operation, settles and records one entry. */
   end(): void {
     const a = this.active;
     if (!a) return;

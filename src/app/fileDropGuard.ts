@@ -1,15 +1,15 @@
 import { dragHasFiles } from './imageIntake';
 
-// Guarda de documento (#972): arquivo solto fora de um alvo que o trate (painéis, tela inicial,
-// canvas somente leitura) faria o navegador abrir o arquivo na aba e desmontar a app. Cancelar a
-// ação padrão de `dragover` e `drop` com arquivos evita isso; quem trata o `drop` (canvas) segue
-// funcionando, porque o guarda não para a propagação. Arrastos internos, sem arquivo, não mudam.
+// Document guard (#972): a file dropped outside a target that handles it (panels, home screen,
+// read-only canvas) would make the browser open the file in the tab and unmount the app. Cancelling the
+// default action of `dragover` and `drop` with files prevents that; whoever handles the `drop` (canvas) keeps
+// working, because the guard does not stop propagation. Internal drags, without a file, do not change.
 
 const cancelFileDrag = (e: DragEvent) => {
   if (dragHasFiles(e.dataTransfer)) e.preventDefault();
 };
 
-/** Registra o guarda no documento; devolve quem o remove. */
+/** Registers the guard on the document; returns whoever removes it. */
 export function installFileDropGuard(doc: Document = document): () => void {
   doc.addEventListener('dragover', cancelFileDrag);
   doc.addEventListener('drop', cancelFileDrag);

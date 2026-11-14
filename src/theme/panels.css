@@ -1,4 +1,4 @@
-/* Títulos dentro das janelas de ferramenta. */
+/* Titles inside the tool windows. */
 .tool-window-body h2 {
   margin: 0 0 var(--space-4);
   font: var(--t-text-heading);
@@ -29,7 +29,7 @@
   padding: 0;
 }
 
-/* Linha da árvore (TreeRow): 28px. */
+/* Tree row (TreeRow): 28px. */
 .tree-row {
   display: flex;
   align-items: center;
@@ -107,9 +107,9 @@ button.tree-toggle:hover {
 }
 
 /*
- * Com a Árvore estreita (900×720 com três janelas abertas) a indentação e os botões fixos da linha
- * comiam a largura toda e o nome ficava com 0 px, sem reticências: o nome guarda um piso e a lista
- * rola na horizontal, em vez de sumir.
+ * With a narrow Tree (900×720 with three windows open) the indentation and the row's fixed buttons
+ * ate the whole width and the name was left with 0 px, with no ellipsis: the name keeps a floor and
+ * the list scrolls horizontally, instead of vanishing.
  */
 .tree-label {
   min-width: calc(var(--size-grid-col-min) * 0.5);
@@ -126,7 +126,7 @@ button.tree-toggle:hover {
   color: inherit;
 }
 
-/* Menu ⋯ da linha da árvore: aparece com o mouse, o foco ou a linha selecionada. */
+/* Tree row ⋯ menu: shows with the mouse, focus or the selected row. */
 .tree-menu {
   flex: none;
   opacity: 0;
@@ -145,8 +145,8 @@ button.tree-toggle:hover {
 }
 
 /*
- * Cadeado da linha da árvore. Fica escondido (mas focável) até o mouse, o foco ou a linha
- * selecionada o chamarem; trancado, fica sempre visível. O herdado do pai é só um sinal.
+ * Tree row padlock. Hidden (but focusable) until the mouse, focus or the selected row
+ * calls it; when locked, always visible. The one inherited from the parent is only a hint.
  */
 .tree-lock {
   flex: none;
@@ -188,7 +188,7 @@ button.tree-toggle:hover {
   cursor: default;
 }
 
-/* Bolinhas das camadas visíveis que chegam à marcação (as herdadas, esmaecidas). */
+/* Dots of the visible layers that reach the marking (the inherited ones, faded). */
 .tree-dots {
   flex: none;
   display: flex;
@@ -214,7 +214,7 @@ button.tree-toggle:hover {
   border-radius: 50%;
 }
 
-/* Janela Camadas e lista de camadas do diálogo */
+/* Layers window and the dialog's layer list */
 .layers-panel {
   display: flex;
   flex-direction: column;
@@ -233,7 +233,7 @@ button.tree-toggle:hover {
   list-style: none;
 }
 
-/* A linha não encolhe abaixo do conteúdo (o selo fica dentro): a lista rola. */
+/* The row does not shrink below its content (the badge stays inside): the list scrolls. */
 .layer-row {
   flex: none;
   display: grid;
@@ -349,7 +349,7 @@ button.tree-toggle:hover {
   cursor: pointer;
 }
 
-/* Paleta dentro do popover da camada: grade de 5 colunas e a cor livre embaixo. */
+/* Palette inside the layer popover: 5-column grid and the free color below. */
 .popover .palette {
   display: grid;
   grid-template-columns: repeat(5, var(--control-height));
@@ -404,9 +404,9 @@ button.tree-toggle:hover {
   min-width: 0;
 }
 
-/* Copiar e lixeira andam juntos; sem espaço para o campo, eles ficam na 1ª linha, à direita, e
-   o campo desce inteiro para a 2ª (`is-split`, medido por `useSplitHeader`). Onde tudo cabe, o
-   grupo não tem caixa e o cabeçalho é o de sempre. */
+/* Copy and trash go together; with no room for the field, they stay on the 1st row, on the right, and
+   the field drops whole to the 2nd (`is-split`, measured by `useSplitHeader`). Where everything fits, the
+   group has no box and the header is the usual one. */
 .annotation-header-actions {
   display: contents;
 }
@@ -424,7 +424,7 @@ button.tree-toggle:hover {
   flex: 1 1 100%;
 }
 
-/* Janela inferior: Lista (P7), Incompletas (B5) e Diagnóstico (B4) */
+/* Bottom window: List (P7), Incomplete (B5) and Diagnostics (B4) */
 .list-view,
 .diagnostics-view {
   display: flex;
@@ -432,7 +432,7 @@ button.tree-toggle:hover {
   height: 100%;
 }
 
-/* Os filtros ficam parados e só a tabela rola (o cabeçalho dela fica no topo). */
+/* The filters stay put and only the table scrolls (its header stays at the top). */
 .list-scroll {
   flex: 1;
   min-height: 0;
@@ -468,15 +468,15 @@ button.tree-toggle:hover {
   gap: var(--space-1) var(--space-4);
 }
 
-/* Tabela: cabeçalho fixo, uma linha por anotação, grupos por imagem */
+/* Table: fixed header, one row per annotation, groups by image */
 .list-table {
   width: 100%;
   border-collapse: collapse;
   font: var(--t-text);
 }
 
-/* Lista e Incompletas: larguras vêm do cabeçalho, então a tabela nunca passa da janela,
-   qualquer que seja a fonte. A última coluna (conteúdo/motivos) fica com o resto. */
+/* List and Incomplete: widths come from the header, so the table never goes past the window,
+   whatever the font. The last column (content/reasons) takes the rest. */
 .list-table-fixed {
   table-layout: fixed;
 }
@@ -546,7 +546,7 @@ button.tree-toggle:hover {
 }
 
 .list-layer-name {
-  /* inline-block para o max-width valer e o nome longo ganhar reticências */
+  /* inline-block so max-width applies and the long name gets an ellipsis */
   display: inline-block;
   max-width: 100%;
   min-width: 0;
@@ -601,8 +601,8 @@ button.tree-toggle:hover {
   padding-left: var(--space-4);
 }
 
-/* Incompletas: os motivos são o texto longo, então ficam com mais coluna que na Lista; a camada
-   (que já corta com reticências) e a marcação cedem. Sem isso, a 900×720 a palavra quebra no meio. */
+/* Incomplete: the reasons are the long text, so they get more column than in the List; the layer
+   (which already cuts with an ellipsis) and the marking give way. Without this, at 900×720 the word breaks mid-way. */
 .incomplete-table .list-col-marking {
   width: 20%;
 }
@@ -619,7 +619,7 @@ button.tree-toggle:hover {
   overflow-wrap: break-word;
 }
 
-/* Diagnóstico */
+/* Diagnostics */
 .diagnostics-status {
   font: var(--t-text-small);
 }
@@ -636,13 +636,13 @@ button.tree-toggle:hover {
   width: 100%;
 }
 
-/* Hora e Contexto numa linha só ("22:33:36", "open.repair"); a Mensagem quebra. */
+/* Time and Context on a single line ("22:33:36", "open.repair"); the Message wraps. */
 .diagnostics-nowrap {
   white-space: nowrap;
   overflow-wrap: normal;
 }
 
-/* Herança e vínculos (fase 10) */
+/* Inheritance and links (phase 10) */
 .annotation-linked {
   margin: 0;
   font: var(--t-text-small);
@@ -662,7 +662,7 @@ button.tree-toggle:hover {
   padding-top: 0;
 }
 
-/* "Referenciada por": os botões quebram de linha e o texto longo quebra dentro do botão. */
+/* "Referenced by": the buttons wrap and the long text wraps inside the button. */
 .annotation-referenced .referenced-item {
   min-width: 0;
   max-width: 100%;
@@ -677,7 +677,7 @@ button.tree-toggle:hover {
   gap: var(--space-1) var(--space-2);
 }
 
-/* Dono com papéis: uma linha por papel, em coluna. */
+/* Owner with roles: one row per role, in a column. */
 .annotation-linked-roles {
   flex-direction: column;
   align-items: stretch;
@@ -786,7 +786,7 @@ button.tree-toggle:hover {
   font-weight: 600;
 }
 
-/* Problemas da biblioteca aplicada (acima da tabela de erros) */
+/* Problems of the applied library (above the error table) */
 .diagnostics-library {
   flex: none;
   padding: var(--space-3);
@@ -801,7 +801,7 @@ button.tree-toggle:hover {
   margin: var(--space-1) 0;
 }
 
-/* Janela Catálogo (etapa Biblioteca, B5) e a paleta da B3: tipos por especialização e camada. */
+/* Catalog window (Library stage, B5) and the B3 palette: types by specialization and layer. */
 .catalog-window {
   display: flex;
   flex-direction: column;
@@ -812,8 +812,8 @@ button.tree-toggle:hover {
   margin-bottom: 0;
 }
 
-/* Janela estreita (Detalhes abertos, 180 px): as duas abas cabem sem rolagem lateral mesmo com
-   fonte larga (CL2, 1.1a); o rótulo continua inteiro. */
+/* Narrow window (Details open, 180 px): both tabs fit without side scrolling even with a
+   wide font (CL2, 1.1a); the label stays whole. */
 .catalog-window .tab {
   padding-inline: var(--space-1);
 }
@@ -865,15 +865,15 @@ button.tree-toggle:hover {
 }
 
 .library-type-main {
-  /* O nome e o ícone de container ficam na mesma linha; o nome quebra em vez de cortar, e o
-     botão Adicionar desce para a linha de baixo quando não cabe ao lado dele (CL1, 1.1). */
+  /* The name and the container icon stay on the same line; the name wraps instead of being cut, and the
+     Add button drops to the line below when it does not fit beside it (CL1, 1.1). */
   display: flex;
   flex: 1 1 auto;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-0-5) var(--space-1);
-  /* A palavra mais longa do nome cabe inteira: sem espaço ao lado do botão, a linha quebra
-     (CL2, 1.1a) em vez de partir o nome no meio com a janela estreita (Detalhes abertos). */
+  /* The longest word of the name fits whole: with no room beside the button, the line wraps
+     (CL2, 1.1a) instead of breaking the name in the middle with a narrow window (Details open). */
   min-width: min-content;
   max-width: 100%;
 }
@@ -888,15 +888,15 @@ button.tree-toggle:hover {
   overflow-wrap: break-word;
 }
 
-/* O botão Adicionar nunca é cortado: o rótulo fica inteiro e, sem espaço ao lado do nome, a
-   linha quebra e o botão vai para baixo, à direita. */
+/* The Add button is never cut: the label stays whole and, with no room beside the name, the
+   line wraps and the button goes below, on the right. */
 .library-type > button {
   flex: none;
   max-width: 100%;
   margin-left: auto;
 }
 
-/* Ordem entre irmãs (Detalhes da marcação): "N de M" e os dois botões. */
+/* Order among siblings (marking Details): "N of M" and the two buttons. */
 .order-field {
   display: flex;
   align-items: center;
@@ -907,14 +907,14 @@ button.tree-toggle:hover {
   flex: 1;
 }
 
-/* Diagnóstico › Componentes */
+/* Diagnostics › Components */
 .diagnostics-components ul {
   margin: 0 0 var(--space-2);
   padding-left: var(--space-4);
   overflow-wrap: anywhere;
 }
 
-/* Diálogo do container sem arquivo: largura e altura lado a lado. */
+/* Container dialog without a file: width and height side by side. */
 .container-size {
   display: flex;
   gap: var(--space-2);
@@ -924,7 +924,7 @@ button.tree-toggle:hover {
   flex: 1;
 }
 
-/* Densidade do container: a lista e, em "Personalizada", o campo de número ao lado. */
+/* Container density: the list and, in "Custom", the number field beside it. */
 .density-control {
   display: flex;
   gap: var(--space-2);
@@ -935,7 +935,7 @@ button.tree-toggle:hover {
   min-width: 0;
 }
 
-/* A sugestão de densidade e o botão Aplicar, sob o campo. */
+/* The density suggestion and the Apply button, below the field. */
 .density-suggestion {
   display: flex;
   align-items: center;
@@ -953,7 +953,7 @@ button.tree-toggle:hover {
   margin: 0;
 }
 
-/* Janela Avisos (etapa #486): cabeçalho de cada aviso, com selo, lugar, mensagem e contagem */
+/* Warnings window (stage #486): header of each warning, with badge, place, message and count */
 .notices-group-row th {
   height: var(--size-row);
   padding: var(--space-1) var(--space-3);
@@ -982,7 +982,7 @@ button.tree-toggle:hover {
   border-bottom: 1px solid var(--color-border);
 }
 
-/* Janela Comentários (etapa Comentários, CM3): tabela de conversas, filtros e selos de status */
+/* Comments window (Comments stage, CM3): thread table, filters and status badges */
 .comments-view {
   container: comments-window / inline-size;
 }
@@ -1018,7 +1018,7 @@ button.tree-toggle:hover {
   width: 7%;
 }
 
-/* "Aguardando humano" inteiro a 887 px: 19% dão 168 px, 144 úteis para o selo de ~120 px. */
+/* "Waiting for human" whole at 887 px: 19% gives 168 px, 144 usable for the ~120 px badge. */
 .comments-col-status {
   width: 19%;
 }
@@ -1027,8 +1027,8 @@ button.tree-toggle:hover {
   width: 9%;
 }
 
-/* A coluna do ⋯ tem o tamanho do botão (28 px) mais um respiro de cada lado; sem o padding
-   de 12 px da .list-cell, que não deixava espaço útil e cortava o botão. */
+/* The ⋯ column is the size of the button (28 px) plus some breathing room on each side; without the 12 px
+   padding of .list-cell, which left no usable space and cut the button. */
 .comments-col-menu {
   width: calc(var(--control-height) + 2 * var(--space-1));
 }
@@ -1081,7 +1081,7 @@ button.tree-toggle:hover {
   text-align: left;
 }
 
-/* Âncora truncada e ponto de não lida na mesma linha: a linha nunca passa de uma linha de texto. */
+/* Truncated anchor and unread dot on the same line: the row never goes past one line of text. */
 .comments-anchor-line {
   display: flex;
   align-items: center;
@@ -1145,7 +1145,7 @@ button.tree-toggle:hover {
   border-radius: var(--radius-full);
 }
 
-/* Não lida: negrito. Resolvida: âncora riscada e em cinza. Órfã: cor de aviso. */
+/* Unread: bold. Resolved: anchor struck through and gray. Orphan: warning color. */
 .comments-row[data-unread] {
   font-weight: 600;
 }
@@ -1165,7 +1165,7 @@ button.tree-toggle:hover {
   color: var(--color-warning);
 }
 
-/* Menu do botão direito: perspectivas (etapa #659, PE3) */
+/* Right-click menu: perspectives (stage #659, PE3) */
 .menu-items-group {
   margin-top: var(--space-1);
   padding-top: var(--space-1);
@@ -1193,7 +1193,7 @@ button.tree-toggle:hover {
   min-width: 200px;
 }
 
-/* Sem espaço à direita, o submenu abre à esquerda do item pai. */
+/* With no room on the right, the submenu opens to the left of the parent item. */
 .menu-submenu-left {
   right: 100%;
   left: auto;
@@ -1225,19 +1225,19 @@ button.tree-toggle:hover {
 }
 
 /*
- * Janela estreita (#734): quem decide é a largura da janela, não a do viewport. Abaixo de 640 px
- * (a 900 × 720 com Árvore, Camadas e Detalhes abertos a janela tem ~340 px) Msgs e Quando somem
- * e Por mostra só o avatar; sobram Âncora, Última mensagem, Status e o ⋯, sem barra horizontal.
- * 640 px é onde a coluna Status (19%, ~120 px) ainda deixa o selo de ~100 px quase inteiro e a
- * Âncora (20%, ~128 px) mostra o nome; mais estreito que isso as 7 colunas já não cabem legíveis.
+ * Narrow window (#734): what decides is the window width, not the viewport's. Below 640 px
+ * (at 900 × 720 with Tree, Layers and Details open the window is ~340 px) Msgs and When disappear
+ * and By shows only the avatar; Anchor, Last message, Status and the ⋯ remain, with no horizontal bar.
+ * 640 px is where the Status column (19%, ~120 px) still leaves the ~100 px badge almost whole and the
+ * Anchor (20%, ~128 px) shows the name; narrower than that the 7 columns no longer fit legibly.
  */
 @container comments-window (max-width: 640px) {
   /*
-   * Filtros em duas linhas de duas (Status | Usuário, busca | Citam a seleção) em vez de quatro
-   * empilhados: a 900 × 720 a janela tem 360 px de altura (teto de `BOTTOM_MAX_FRACTION`, 60% do
-   * corpo; subir o token não cabe) e a lista ganha 1 px por px que os filtros devolvem. Medido
-   * com o exemplo: filtros de 121 para 65 px e lista de 151 para 207 px, que comportam 4 linhas
-   * inteiras (37 + 3 × 53 px, âncoras longas quebradas) e a 900 × 720 (decisão 6 da #734).
+   * Filters in two rows of two (Status | User, search | Cite the selection) instead of four
+   * stacked: at 900 × 720 the window is 360 px tall (ceiling of `BOTTOM_MAX_FRACTION`, 60% of the
+   * body; raising the token does not fit) and the list gains 1 px for each px the filters give back. Measured
+   * with the example: filters from 121 to 65 px and list from 151 to 207 px, which hold 4 whole
+   * rows (37 + 3 × 53 px, long anchors wrapped) and at 900 × 720 (decision 6 of #734).
    */
   .comments-filters {
     display: grid;

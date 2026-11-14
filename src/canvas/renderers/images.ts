@@ -1,4 +1,4 @@
-// Imagens no canvas: bitmap (ou espaço reservado com aviso) e o nome acima.
+// Images on the canvas: bitmap (or a placeholder with a notice) and the name above.
 import Konva from 'konva/lib/Core';
 import { Image as KonvaImage } from 'konva/lib/shapes/Image';
 import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
@@ -16,7 +16,7 @@ import type { Frame, ViewFrame } from '../frame';
 import type { CanvasTokens } from '../theme';
 import { HALO_WIDTH, fontStyle, sameInputs } from './metrics';
 
-/** Rótulo da imagem (px de tela): distância da borda e largura mínima (a fonte é `t-cv-image`). */
+/** Image label (screen px): distance from the edge and minimum width (the font is `t-cv-image`). */
 const IMAGE_TITLE_GAP = 4;
 const IMAGE_TITLE_MIN_WIDTH = 48;
 
@@ -25,9 +25,9 @@ export interface ImageNode {
   readonly bitmap: KonvaImage;
   readonly placeholder: KonvaRect;
   readonly label: KonvaText;
-  /** Nome da imagem, como rótulo acima dela. */
+  /** Image name, as a label above it. */
   readonly title: KonvaText;
-  /** Entradas do último `updateNode`: iguais, o nó já está certo. */
+  /** Inputs of the last `updateNode`: equal, the node is already right. */
   drawn: readonly unknown[] | null;
 }
 
@@ -36,7 +36,7 @@ export type ImageFrame = Pick<
   'project' | 'preview' | 'bitmaps' | 'tokens' | 'viewport' | 'view' | 'locale'
 >;
 
-/** Nós das imagens, reaproveitados entre quadros (um grupo por imagem). */
+/** Image nodes, reused between frames (one group per image). */
 export class ImageRenderer {
   private readonly layer: Konva.Layer;
   private readonly nodes = new Map<string, ImageNode>();
@@ -46,32 +46,32 @@ export class ImageRenderer {
     this.layer = layer;
   }
 
-  /** Nó desenhado para a imagem (ou `undefined` se ela não está no canvas). */
+  /** Node drawn for the image (or `undefined` if it is not on the canvas). */
   node(id: string): ImageNode | undefined {
     return this.nodes.get(id);
   }
 
   /**
-   * Retângulo do texto do nome de cada container com o rótulo visível, em coordenadas do canvas
-   * (do último `render`). Container com o rótulo escondido pelo zoom não entra.
+   * Rectangle of each container's name text with the label visible, in canvas coordinates
+   * (from the last `render`). A container whose label is hidden by zoom is not included.
    */
   titleRects(): ReadonlyMap<string, Rect> {
     return this.titles;
   }
 
-  /** `true` se o último `render` mexeu em algum nó (criou, refez, reordenou ou removeu). */
+  /** `true` if the last `render` touched any node (created, rebuilt, reordered or removed). */
   changed = false;
 
-  /** `true` se o último `render` mexeu em algum nó levado ao grupo de arrasto. */
+  /** `true` if the last `render` touched any node taken to the drag group. */
   draggedChanged = false;
 
-  /** As imagens que se movem num gesto e o grupo em que ficam até soltar (decisões 5 e 6). */
+  /** The images that move in a gesture and the group they stay in until release (decisions 5 and 6). */
   private dragIds: ReadonlySet<string> | null = null;
   private dragTarget: Konva.Container | null = null;
 
   /**
-   * Leva as imagens de `ids` para o grupo de arrasto no próximo `render` (os nós são os mesmos,
-   * movidos com `moveTo`), ou as devolve à camada com `null`.
+   * Takes the images in `ids` to the drag group on the next `render` (the nodes are the same,
+   * moved with `moveTo`), or returns them to the layer with `null`.
    */
   setDragged(ids: ReadonlySet<string> | null, target: Konva.Container): void {
     this.dragIds = ids && ids.size > 0 ? ids : null;
@@ -79,13 +79,13 @@ export class ImageRenderer {
   }
 
   /**
-   * Desenha as imagens na ordem do projeto e devolve a posição de cada uma
-   * (com a prévia do gesto em andamento aplicada). `changed` diz se algum nó mudou.
+   * Draws the images in the project order and returns the position of each
+   * (with the preview of the gesture in progress applied). `changed` says whether any node changed.
    */
   render(frame: ImageFrame): ReadonlyMap<string, Placement> {
     let changed = false;
     let draggedChanged = false;
-    // Posição na pilha da camada: as imagens que se movem num gesto não contam (saíram dela).
+    // Position in the layer stack: images that move in a gesture do not count (they left it).
     let position = 0;
     const images = frame.project?.containers ?? [];
     const placements = new Map<string, Placement>();
@@ -112,15 +112,15 @@ export class ImageRenderer {
     return placements;
   }
 
-  /** Onde o nó da imagem fica: o grupo de arrasto se ela se move num gesto, senão a camada. */
+  /** Where the image node sits: the drag group if it moves in a gesture, otherwise the layer. */
   private homeOf(id: string): Konva.Container {
     return this.dragTarget && this.dragIds?.has(id) ? this.dragTarget : this.layer;
   }
 
   /**
-   * Desenha uma imagem: põe o nó no grupo certo (a camada, ou o grupo de arrasto se ela se move), o
-   * refaz se as entradas mudaram e acerta a posição na pilha da camada. Devolve a posição dela
-   * (com a prévia do gesto), o retângulo do nome e o que mexeu.
+   * Draws an image: puts the node in the right group (the layer, or the drag group if it moves),
+   * rebuilds it if the inputs changed and fixes the position in the layer stack. Returns its position
+   * (with the gesture preview), the name rectangle and what moved.
    */
   private renderOne(
     image: ProjectContainer,
@@ -132,7 +132,7 @@ export class ImageRenderer {
     const node = this.nodes.get(image.id) ?? this.createNode(image.id);
     const home = this.homeOf(image.id);
     const dragged = home !== this.layer;
-    // Sai de uma e entra na outra: as duas se redesenham.
+    // Leaves one and enters the other: both are redrawn.
     const moved = node.group.getParent() !== home;
     if (moved) node.group.moveTo(home);
     const redrawn = refreshNode(node, image, placement, frame);
@@ -163,18 +163,18 @@ export class ImageRenderer {
   }
 }
 
-/** O que `renderOne` devolve de uma imagem. */
+/** What `renderOne` returns for an image. */
 interface OneImage {
   readonly placement: Placement;
   readonly title: Rect | null;
   readonly dragged: boolean;
-  /** A camada das imagens mexeu. */
+  /** The images layer moved. */
   readonly layer: boolean;
-  /** O grupo de arrasto mexeu. */
+  /** The drag group moved. */
   readonly drag: boolean;
 }
 
-/** Posição da imagem: a da prévia do gesto, se é a dela, ou a do projeto. */
+/** Image position: the gesture preview's, if it is its own, or the project's. */
 function placementOfImage(
   image: ProjectContainer,
   preview: ImageFrame['preview'],
@@ -182,7 +182,7 @@ function placementOfImage(
   return preview?.containerId === image.id ? preview.placement : image.placement;
 }
 
-/** Refaz o nó se as entradas mudaram; `true` se refez. */
+/** Rebuilds the node if the inputs changed; `true` if it rebuilt. */
 function refreshNode(
   node: ImageNode,
   image: ProjectContainer,
@@ -198,7 +198,7 @@ function refreshNode(
   return true;
 }
 
-/** Qual grupo mexeu: a camada (nó novo, trocado, refeito ou reordenado) e/ou o de arrasto. */
+/** Which group moved: the layer (new, swapped, rebuilt or reordered node) and/or the drag one. */
 function touchedBy(
   dragged: boolean,
   fresh: boolean,
@@ -212,7 +212,7 @@ function touchedBy(
   };
 }
 
-/** Retângulo do texto do nome (canvas), ou `null` com o rótulo escondido pelo zoom. */
+/** Name text rectangle (canvas), or `null` with the label hidden by zoom. */
 function titleRect(
   node: ImageNode,
   image: ProjectContainer,
@@ -229,8 +229,8 @@ function titleRect(
 }
 
 /**
- * Um `ImageBitmap` fechado (`close()`) fica com largura e altura zero; desenhá-lo lança
- * `InvalidStateError`. O nó nunca recebe um, mesmo que o mapa de exibição o traga.
+ * A closed `ImageBitmap` (`close()`) ends up with zero width and height; drawing it throws
+ * `InvalidStateError`. The node never receives one, even if the display map brings it.
  */
 function isClosed(bitmap: ImageBitmap): boolean {
   return bitmap.width === 0 && bitmap.height === 0;
@@ -248,7 +248,7 @@ function updateNode(
   const rect = imageCanvasRect(image, placement);
   node.group.position({ x: rect.x, y: rect.y });
   const box = { width: rect.width, height: rect.height };
-  // Modo visualização: Containers liga o nome e o contorno do container; Imagens, o bitmap.
+  // View mode: Containers turns on the container name and outline; Images, the bitmap.
   const containers = view?.containers ?? true;
   if (isBackgroundContainer(image)) {
     updateBackground(node, image, box, tokens, zoom, containers);
@@ -259,9 +259,9 @@ function updateNode(
 }
 
 /**
- * Container sem arquivo: um retângulo cheio com a cor de fundo, sempre pronto. Nunca o reservado
- * de "carregando": não há bitmap para esperar. Sem Containers (modo visualização) o contorno some
- * e o fundo continua: ele é a tela.
+ * Container without a file: a filled rectangle with the background color, always ready. Never the
+ * "loading" placeholder: there is no bitmap to wait for. Without Containers (view mode) the outline goes away
+ * and the background stays: it is the screen.
  */
 function updateBackground(
   node: ImageNode,
@@ -285,8 +285,8 @@ function updateBackground(
 }
 
 /**
- * Foto: o bitmap, ou o espaço reservado com o aviso de "carregando" ou de arquivo que falta. Sem
- * Imagens (modo visualização) a foto não aparece, nem o reservado.
+ * Photo: the bitmap, or the placeholder with the "loading" notice or the missing-file one. Without
+ * Images (view mode) the photo does not appear, nor the placeholder.
  */
 function updatePhoto(
   node: ImageNode,
@@ -342,7 +342,7 @@ function updatePhoto(
   });
 }
 
-/** Rótulo com o nome da imagem (ou do arquivo) logo acima dela. */
+/** Label with the image name (or the file's) right above it. */
 function updateTitle(
   node: ImageNode,
   image: ProjectContainer,
@@ -351,7 +351,7 @@ function updateTitle(
   zoom: number,
   shown: boolean,
 ): void {
-  // Tela pequena demais para caber um rótulo legível (ou sem Containers no modo visualização): esconde.
+  // Screen too small to fit a legible label (or without Containers in view mode): hides.
   if (!shown || width * zoom < IMAGE_TITLE_MIN_WIDTH) {
     node.title.visible(false);
     return;
@@ -368,8 +368,8 @@ function updateTitle(
     fontFamily: tokens.fontFamily,
     fontStyle: fontStyle(weight),
     fill: image.name === null ? tokens.textMuted : tokens.text,
-    // Contorno da cor da superfície (como o halo dos nomes das marcações): o título se lê sobre
-    // a imagem de outra raiz nos dois temas. Espessura em px de tela.
+    // Outline in the surface color (like the marking-name halo): the title reads over
+    // an image from another root in both themes. Thickness in screen px.
     stroke: tokens.surface,
     strokeWidth: (2 * HALO_WIDTH) / zoom,
     fillAfterStrokeEnabled: true,

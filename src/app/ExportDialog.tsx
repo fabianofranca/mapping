@@ -14,14 +14,14 @@ import { markExported } from './controller';
 import { Button } from '../ui/controls';
 
 /**
- * O zip é gerado antes de abrir este diálogo; o toque em "Baixar" ou "Compartilhar" é um
- * gesto novo do usuário, que o navegador exige para `showSaveFilePicker` e `navigator.share`.
+ * The zip is generated before this dialog opens; the tap on "Download" or "Share" is a
+ * new user gesture, which the browser requires for `showSaveFilePicker` and `navigator.share`.
  *
- * O projeto só conta como exportado quando o arquivo saiu: pelo "Salvar como"
- * (`showSaveFilePicker`), depois de gravado; pelo compartilhamento, quando a promessa
- * resolve. Cancelar não muda nada. Sem o seletor, o `<a download>` não diz se a pessoa
- * salvou: o aviso sai no clique e o texto do diálogo avisa para exportar de novo se ela
- * cancelar.
+ * The project only counts as exported when the file went out: through "Save as"
+ * (`showSaveFilePicker`), after it is written; through sharing, when the promise
+ * resolves. Cancelling changes nothing. Without the picker, the `<a download>` does not say whether the person
+ * saved: the notice goes out on the click and the dialog text warns to export again if they
+ * cancel.
  */
 export function ExportDialog({
   file,
@@ -31,14 +31,14 @@ export function ExportDialog({
 }: {
   readonly file: File;
   /**
-   * `false` com a gravação em erro: o zip leva as últimas alterações, que o armazenamento do
-   * projeto ainda não tem (`collectFiles().saved`).
+   * `false` with the write in error: the zip carries the latest changes, which the project's
+   * storage does not have yet (`collectFiles().saved`).
    */
   readonly saved?: boolean;
   readonly onDone: () => void;
   /**
-   * O botão Exportar da barra (`buttonRef`): o zip é gerado com ele desabilitado, então o
-   * foco pode já ter saído dele quando o diálogo abriu.
+   * The bar's Export button (`buttonRef`): the zip is generated with it disabled, so the
+   * focus may have already left it when the dialog opened.
    */
   readonly returnFocus?: FocusReturn;
 }) {

@@ -5,83 +5,83 @@ import type { RootPlacement } from '../model/perspectivePlace';
 import { readSetting, writeSetting } from '../utils/safeStorage';
 import type { ProjectStore } from './history';
 
-// Perspectivas na store (etapa #659, PE2). CONTRATO compartilhado pelas frentes da fase:
-// a sessão cria o estado (`createPerspectiveState`), as actions do projeto leem a perspectiva
-// aberta por `openId()`, a revisão trava a troca e o derivado monta o projeto à vista.
+// Perspectives in the store (stage #659, PE2). CONTRACT shared by the fronts of the phase:
+// the session creates the state (`createPerspectiveState`), the project actions read the open
+// perspective through `openId()`, the review locks the switch and the derived state builds the project in view.
 //
-// - A perspectiva aberta é estado da UI (não entra no desfazer); `null` = a Principal. Fica
-//   guardada neste navegador por `project.id` (localStorage, por `safeStorage`).
-// - As "Para todos" e as "Só eu" ficam juntas em `project.perspectives` NA MEMÓRIA (assim o
-//   desfazer, os gestos, a reconciliação no assentar e as operações valem para as duas). As
-//   "Só eu" são as de id em `localIds`: a sessão as tira do que grava no `mapping.json`
-//   (`fileProject`) e as guarda no IndexedDB por `project.id`.
+// - The open perspective is UI state (it does not enter undo); `null` = Main. It is kept
+//   in this browser by `project.id` (localStorage, through `safeStorage`).
+// - The "For everyone" and the "Only me" ones stay together in `project.perspectives` IN MEMORY (so
+//   undo, the gestures, the reconciliation on settle and the operations apply to both). The
+//   "Only me" ones are those with an id in `localIds`: the session removes them from what it writes to `mapping.json`
+//   (`fileProject`) and keeps them in IndexedDB by `project.id`.
 
-/** Onde a raiz criada fora da Principal foi parar nela (para o aviso dos Detalhes, PE3). */
+/** Where the root created outside Main ended up in it (for the Details notice, PE3). */
 export interface ArrivalInfo {
   readonly root: string;
-  /** A perspectiva de origem. */
+  /** The source perspective. */
   readonly from: string;
   readonly kind: RootPlacement['kind'];
-  /** A raiz de referência (`near`/`occupied`), ou `null` na área de chegada. */
+  /** The reference root (`near`/`occupied`), or `null` in the arrival area. */
   readonly referenceId: string | null;
 }
 
-/** Aviso de troca forçada para a Principal. */
+/** Notice of a forced switch to Main. */
 export type PerspectiveNotice =
-  /** A perspectiva aberta sumiu (apagada aqui, noutro navegador ou numa recarga externa). */
+  /** The open perspective disappeared (deleted here, in another browser or in an external reload). */
   | { readonly kind: 'removed'; readonly name: string }
-  /** A revisão de uma proposta abriu a Principal. */
+  /** The review of a proposal opened Main. */
   | { readonly kind: 'review' };
 
 export interface PerspectiveState {
-  /** A perspectiva aberta (`null` = a Principal). Escrever só por `open`. */
+  /** The open perspective (`null` = Main). Write only through `open`. */
   readonly id: ReadonlySignal<string | null>;
-  /** O id aberto sem rastrear (para as actions, dentro de operações). */
+  /** The open id without tracking (for the actions, inside operations). */
   openId(): string | null;
   /**
-   * Abre a perspectiva (`null` = a Principal). Recusa (devolve `false`) com a troca travada ou
-   * um id que o projeto não tem. Não entra no desfazer; guarda a escolha neste navegador.
+   * Opens the perspective (`null` = Main). Refuses (returns `false`) with the switch locked or
+   * an id the project does not have. It does not enter undo; keeps the choice in this browser.
    */
   open(id: string | null): boolean;
-  /** Troca travada (a revisão de uma proposta mostra só a Principal, decisão 12). */
+  /** Switch locked (the review of a proposal shows only Main, decision 12). */
   readonly locked: ReadonlySignal<boolean>;
-  /** Trava/destrava a troca. Travar abre a Principal (com o aviso `review` se estava noutra). */
+  /** Locks/unlocks the switch. Locking opens Main (with the `review` notice if it was in another). */
   setLocked(locked: boolean): void;
-  /** Último aviso de troca forçada para a Principal; a interface o mostra e o limpa. */
+  /** Last notice of a forced switch to Main; the interface shows it and clears it. */
   readonly notice: Signal<PerspectiveNotice | null>;
-  /** As chegadas da última operação que criou raízes fora da Principal (vazio se nenhuma). */
+  /** The arrivals of the last operation that created roots outside Main (empty if none). */
   readonly arrivals: Signal<readonly ArrivalInfo[]>;
-  /** Ids das perspectivas "Só eu" (as demais de `project.perspectives` são "Para todos"). */
+  /** Ids of the "Only me" perspectives (the others in `project.perspectives` are "For everyone"). */
   readonly localIds: ReadonlySignal<ReadonlySet<string>>;
-  /** Há IndexedDB para as "Só eu" (sem ele, a opção fica desabilitada, decisão 14). */
+  /** There is IndexedDB for the "Only me" ones (without it, the option is disabled, decision 14). */
   readonly localAvailable: boolean;
 }
 
-/** A perspectiva aberta em `p` (`null` = a Principal ou um id que `p` não tem). */
+/** The open perspective in `p` (`null` = Main or an id that `p` does not have). */
 export function openPerspectiveIn(p: Project, id: string | null): Perspective | null {
   if (id === null) return null;
   return p.perspectives.find((x) => x.id === id) ?? null;
 }
 
-/** `p` como vai para o arquivo: sem as perspectivas "Só eu" (o mesmo objeto se não há). */
+/** `p` as it goes to the file: without the "Only me" perspectives (the same object if there are none). */
 export function fileProject(p: Project, localIds: ReadonlySet<string>): Project {
   if (localIds.size === 0 || !p.perspectives.some((x) => localIds.has(x.id))) return p;
   return { ...p, perspectives: p.perspectives.filter((x) => !localIds.has(x.id)) };
 }
 
 // ---------------------------------------------------------------------------
-// A perspectiva aberta, guardada neste navegador
+// The open perspective, kept in this browser
 
 const OPEN_KEY = 'mapping.openPerspective';
 const OPEN_VERSION = 1;
-/** Projetos com a perspectiva aberta guardada (os mais recentes), no molde de `viewMode`. */
+/** Projects with the open perspective kept (the most recent ones), in the mold of `viewMode`. */
 const MAX_PROJECTS = 20;
 
 const openSchema = z.object({ id: z.string().min(1), name: z.string() });
 type StoredOpen = z.infer<typeof openSchema>;
 type OpenBlob = Readonly<Record<string, StoredOpen>>;
 
-/** Lê o blob do `localStorage`; texto corrompido, outra versão ou entrada inválida somem. */
+/** Reads the blob from `localStorage`; corrupted text, another version or an invalid entry vanish. */
 function readOpenBlob(): OpenBlob {
   const text = readSetting(OPEN_KEY);
   if (text === null) return {};
@@ -101,7 +101,7 @@ function readOpenBlob(): OpenBlob {
   }
 }
 
-/** Guarda a escolha deste projeto (`null` a apaga: a Principal é o começo). */
+/** Keeps this project's choice (`null` erases it: Main is the start). */
 function writeOpen(projectId: string, entry: StoredOpen | null): void {
   const others = Object.entries(readOpenBlob()).filter(([key]) => key !== projectId);
   const next = entry === null ? others : [...others, [projectId, entry] as const];
@@ -115,38 +115,38 @@ function writeOpen(projectId: string, entry: StoredOpen | null): void {
 }
 
 // ---------------------------------------------------------------------------
-// O estado
+// The state
 
-/** O estado das perspectivas mais o que a sessão e as actions precisam por dentro. */
+/** The perspectives state plus what the session and the actions need internally. */
 export interface PerspectiveStateHandle extends PerspectiveState {
-  /** Troca o conjunto das "Só eu" (a sessão, depois de uma recarga externa). */
+  /** Replaces the set of "Only me" ones (the session, after an external reload). */
   setLocalIds(ids: ReadonlySet<string>): void;
-  /** Marca/desmarca uma perspectiva como "Só eu". */
+  /** Marks/unmarks a perspective as "Only me". */
   setLocal(id: string, local: boolean): void;
-  /** Para de observar o projeto (fechar a sessão). */
+  /** Stops observing the project (closing the session). */
   dispose(): void;
 }
 
 export interface PerspectiveStateDeps {
   readonly store: ProjectStore;
-  /** `project.id` do projeto aberto: chaveia a escolha guardada. */
+  /** `project.id` of the open project: keys the kept choice. */
   readonly projectId: string;
-  /** Há IndexedDB para as "Só eu". */
+  /** There is IndexedDB for the "Only me" ones. */
   readonly localAvailable: boolean;
-  /** Ids das "Só eu" que a sessão já juntou ao projeto ao abrir. */
+  /** Ids of the "Only me" ones that the session already merged into the project on opening. */
   readonly localIds?: ReadonlySet<string>;
 }
 
-/** O nome da perspectiva `id` em `p`, ou `null` se `p` não a tem. */
+/** The name of the perspective `id` in `p`, or `null` if `p` does not have it. */
 function nameOf(p: Project | null, id: string): string | null {
   return p?.perspectives.find((x) => x.id === id)?.name ?? null;
 }
 
 /**
- * Cria o estado das perspectivas de uma sessão. A aberta nasce da escolha guardada para o
- * `project.id` (se a perspectiva sumiu, abre a Principal com o aviso `removed`); um `effect`
- * sobre o projeto confirmado leva à Principal, com o aviso, quem estava numa perspectiva que
- * deixou de existir (apagada aqui, desfeita ou numa recarga externa).
+ * Creates the perspectives state of a session. The open one is born from the choice kept for the
+ * `project.id` (if the perspective disappeared, opens Main with the `removed` notice); an `effect`
+ * over the confirmed project takes to Main, with the notice, whoever was in a perspective that
+ * ceased to exist (deleted here, undone or in an external reload).
  */
 export function createPerspectiveState(
   deps: PerspectiveStateDeps,
@@ -157,7 +157,7 @@ export function createPerspectiveState(
   const notice = signal<PerspectiveNotice | null>(null);
   const arrivals = signal<readonly ArrivalInfo[]>([]);
   const localIds = signal<ReadonlySet<string>>(deps.localIds ?? new Set());
-  /** O nome da aberta na última vez que o projeto a teve (para o aviso `removed`). */
+  /** The name of the open one the last time the project had it (for the `removed` notice). */
   let knownName = '';
 
   const saved = readOpenBlob()[projectId];
@@ -211,7 +211,7 @@ export function createPerspectiveState(
     setLocked(value) {
       batch(() => {
         locked.value = value;
-        // Só a escolha em memória muda: a guardada volta quando a revisão acaba e a app reabre.
+        // Only the in-memory choice changes: the kept one returns when the review ends and the app reopens.
         if (value && openId.peek() !== null) {
           openId.value = null;
           notice.value = { kind: 'review' };

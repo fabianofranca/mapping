@@ -477,7 +477,8 @@ button.layer-group-label:hover {
 }
 
 .layer-group-name {
-  /* Header priority: name > flag > badge. The name shrinks only after the badge (#447): the badge yields almost everything. */
+  /* Header priority: name > flag > badge. The name shrinks only after the badge (#447): the
+     badge yields almost everything. */
   flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
@@ -517,7 +518,8 @@ button.layer-group-label:hover {
 }
 
 /* Layer without annotations (CL1, 1.4): "No annotations in this layer." sits in a note below the
-   header, which wraps onto lines instead of turning into "No an…" and takes no room from the name or the badge. */
+   header, which wraps onto lines instead of turning into "No an…" and takes no room from the
+   name or the badge. */
 .layer-group-empty {
   margin: 0;
   padding: 0 var(--space-2) var(--space-1)
@@ -704,13 +706,15 @@ button.layer-group-label:hover {
   display: none;
 }
 
-/* TE1: the control's `min-width: 0` takes the word out of the column minimum and `break-word` alone still
-   splits "reference" at 900 px; the broken cell asks for the content minimum (the longest word). */
+/* TE1: the control's `min-width: 0` takes the word out of the column minimum and `break-word`
+   alone still splits "reference" at 900 px; the broken cell asks for the content minimum (the
+   longest word). */
 .ref-cell .ref-control.is-broken {
   min-width: min-content;
 }
 
-/* `break-word` (not `anywhere`): the broken reference wraps between words, without splitting "reference". */
+/* `break-word` (not `anywhere`): the broken reference wraps between words, without splitting
+   "reference". */
 .ref-cell .ref-control .ref-control-text {
   overflow-wrap: break-word;
   text-overflow: clip;
@@ -1039,7 +1043,8 @@ button.layer-group-label:hover {
   white-space: nowrap;
 }
 
-/* Broken reference: the whole warning matters more than the single line; it wraps instead of cutting. */
+/* Broken reference: the whole warning matters more than the single line; it wraps instead of
+   cutting. */
 .ref-control.is-broken .ref-control-text {
   overflow-wrap: break-word;
   text-overflow: clip;
@@ -1257,7 +1262,8 @@ button.layer-group-label:hover {
 }
 
 /* Specialization warnings (formatVersion 10): badge, type block and field/column row.
-   The color comes from the `kind` (always with icon and text); they only inform, they do not block. */
+   The color comes from the `kind` (always with icon and text); they only inform, they do not
+   block. */
 .notice-removed {
   color: var(--color-danger);
   background: var(--color-danger-bg);
