@@ -48,18 +48,19 @@ const ROTULO_BASH = 40;
 const SALTOS_GUARDADOS = 3;
 const SESSION_ID = /^[A-Za-z0-9_-]+$/;
 
-/** Texto do prompt de uma linha `user` do transcript (string, ou o primeiro bloco `text`). */
-export function promptText(entry) {
+/** Textos do prompt de uma linha `user` do transcript (a string, ou os blocos `text`). */
+export function promptTexts(entry) {
   const content = entry?.message?.content;
-  if (typeof content === 'string') return content;
-  if (!Array.isArray(content)) return '';
-  const block = content.find((b) => b?.type === 'text' && typeof b.text === 'string');
-  return block ? block.text : '';
+  if (typeof content === 'string') return [content];
+  if (!Array.isArray(content)) return [];
+  return content
+    .filter((b) => b?.type === 'text' && typeof b.text === 'string')
+    .map((b) => b.text);
 }
 
 /**
- * Prompt da primeira linha `type: "user"` (a que não é meta) do começo do transcript, ou `null`
- * quando ainda não há uma linha completa dessas. Com `partial`, o texto é um pedaço do arquivo e a
+ * Textos da primeira linha `type: "user"` (a que não é meta) do começo do transcript, ou `null`
+ * quando ainda não há uma linha completa dessas. Um bloco de lembrete antes do prompt não o esconde. Com `partial`, o texto é um pedaço do arquivo e a
  * última linha, que pode estar cortada, fica de fora.
  */
 export function firstPrompt(head, partial = false) {
@@ -72,15 +73,17 @@ export function firstPrompt(head, partial = false) {
     } catch {
       continue;
     }
-    if (entry?.type === 'user' && entry.isMeta !== true) return promptText(entry);
+    if (entry?.type === 'user' && entry.isMeta !== true) return promptTexts(entry);
   }
   return null;
 }
 
-/** Se o prompt inicial é o de uma sessão de fase ou de correção. */
-export function isPhasePrompt(prompt) {
-  const text = prompt.trimStart();
-  return text.startsWith(MARCADOR) || MARCADOR_FILA.test(text);
+/** Se algum dos textos do prompt inicial abre uma sessão de fase ou de correção. */
+export function isPhasePrompt(texts) {
+  return texts.some((raw) => {
+    const text = raw.trimStart();
+    return text.startsWith(MARCADOR) || MARCADOR_FILA.test(text);
+  });
 }
 
 /** Rótulo da chamada para atribuir os saltos: `Bash: <40 caracteres>`, `Read: <arquivo>`, … */
@@ -197,11 +200,11 @@ function readInput(raw) {
 /** Decide se a sessão é de fase pelo prompt inicial; `null` enquanto o transcript não o traz. */
 function decidePhase(transcript) {
   const size = statSync(transcript).size;
-  const prompt = firstPrompt(
+  const texts = firstPrompt(
     readRange(transcript, 0, Math.min(size, HEAD_BYTES)),
     size > HEAD_BYTES,
   );
-  return prompt === null ? null : isPhasePrompt(prompt);
+  return texts === null ? null : isPhasePrompt(texts);
 }
 
 /**
@@ -255,7 +258,9 @@ export function handle(input, env = process.env) {
       : Array.isArray(state?.saltos)
         ? state.saltos
         : [];
-  const lastWarning = Number.isFinite(state?.ultimoAviso) ? state.ultimoAviso : null;
+  // Contexto que volta ao gatilho ou abaixo (compactação) zera o aviso: o próximo cruzamento avisa.
+  const lastWarning =
+    contexto > GATILHO && Number.isFinite(state?.ultimoAviso) ? state.ultimoAviso : null;
   const warn = shouldWarn(contexto, lastWarning);
   saveState(file, {
     fase: true,
@@ -303,7 +308,7 @@ function main() {
   } catch (error) {
     recordError(raw, error);
   }
-  process.exit(0);
+  process.exitCode = 0;
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) main();

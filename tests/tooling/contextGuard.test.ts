@@ -238,6 +238,18 @@ describe('GC1 — contextGuard.mjs: o prompt da sessão de fase (decisão 4)', (
     expect(stateOf(box).fase).toBe(true);
   });
 
+  it('um bloco text de lembrete antes do prompt não esconde a sessão de fase', () => {
+    const box = sandbox([
+      userLine([
+        { type: 'text', text: '<system-reminder>CLAUDE.md …</system-reminder>' },
+        { type: 'text', text: queuePrompt },
+      ]),
+      measure(100_000),
+    ]);
+    silent(hook(box));
+    expect(stateOf(box).fase).toBe(true);
+  });
+
   it('a primeira linha user vale, mesmo com outras linhas antes dela e uma user depois', () => {
     const box = sandbox([
       JSON.stringify({ type: 'queue-operation', operation: 'enqueue' }),
@@ -295,6 +307,31 @@ describe('GC1 — contextGuard.mjs: o estado e o gatilho (decisões 5, 6 e 8)', 
     const out = warningOf(hook(box));
     expect(out.hookSpecificOutput.additionalContext).toContain('281 mil');
     expect(stateOf(box).ultimoAviso).toBe(280_001);
+  });
+});
+
+describe('GC1 — contextGuard.mjs: a medida cai depois de uma compactação (achado da revisão)', () => {
+  it('o contexto que volta ao gatilho ou abaixo zera o último aviso: o próximo cruzamento avisa', () => {
+    const box = sandbox([userLine(phasePrompt), measure(290_000)]);
+    warningOf(hook(box));
+    expect(stateOf(box).ultimoAviso).toBe(290_000);
+
+    appendFileSync(box.transcript, measure(100_000) + '\n'); // compactação
+    silent(hook(box));
+    expect(stateOf(box).ultimoAviso).toBeNull();
+
+    appendFileSync(box.transcript, measure(275_000) + '\n');
+    const out = warningOf(hook(box));
+    expect(out.hookSpecificOutput.additionalContext).toContain('275 mil');
+    expect(stateOf(box).ultimoAviso).toBe(275_000);
+  });
+
+  it('exatamente no gatilho também zera o último aviso', () => {
+    const box = sandbox([userLine(phasePrompt), measure(TRIGGER + 1)]);
+    warningOf(hook(box));
+    appendFileSync(box.transcript, measure(TRIGGER) + '\n');
+    silent(hook(box));
+    expect(stateOf(box).ultimoAviso).toBeNull();
   });
 });
 
