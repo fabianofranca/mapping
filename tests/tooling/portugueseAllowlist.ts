@@ -3449,12 +3449,6 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
       'shared fixture data: the marking `Formulário` and the annotation `Título` of the `cadastro` workspace project (tests/mcp/workspace.ts, specFixtures), asserted across tests/mcp',
   },
   {
-    path: 'tests/mcp/justificadoScript.test.ts',
-    pattern: /véu|translúcido/,
-    reason:
-      'node names of the component written by scripts/testing/justificado.mjs, which the test looks up',
-  },
-  {
     path: 'tests/mcp/previewInBatch.test.ts',
     pattern: /disabled: 'não'/,
     reason:
