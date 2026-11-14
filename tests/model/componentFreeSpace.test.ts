@@ -110,7 +110,7 @@ describe('placement in free space (EL1)', () => {
     expectValid(p);
   });
 
-  it('(e) full area: today\'s position, without an error', () => {
+  it("(e) full area: today's position, without an error", () => {
     let p = plain(componentProject(), 'P', rect(440, 370, 120, 60));
     p = plain(p, 'X1', rect(440, 370, 60, 60));
     p = plain(p, 'X2', rect(500, 370, 60, 60));

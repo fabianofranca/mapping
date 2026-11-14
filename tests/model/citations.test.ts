@@ -23,6 +23,7 @@ import {
 import { build } from './refColumnFixtures';
 import { message, sampleThread, T0 } from './threadFixtures';
 
+// pt-BR kept: the names titulo, campos, alvos, cpf, nome, termo, Cliente, Lista, Alvos and Glossário come from refColumnFixtures (data of the fixture)
 // Project: I1 (a.png) with M1, M2, M3 (unnamed); AM (model "Cliente", table campos with the
 // rows R1 "cpf" and R2 "nome"), AL (list, table alvos with the row L1 without a label) and AF (free
 // "Glossário" with the pair E1 "termo"). Here M2 becomes "Button" and the arrow R1 from M1 to M2 is added.
@@ -67,6 +68,7 @@ function refOf(path: string, folder = 'any-folder'): AnyRef {
 
 const url = (path: string) => `mapping://folder/${path}`;
 
+// pt-BR kept: the names titulo, campos, alvos, cpf, nome, termo, Cliente, Lista, Alvos and Glossário come from refColumnFixtures (data of the fixture)
 describe('extractCitations', () => {
   it('returns empty for text without a link', () => {
     expect(extractCitations('just text, nothing else')).toEqual([]);
@@ -202,6 +204,7 @@ describe('escapeCitationLabel / formatCitation', () => {
   });
 });
 
+// pt-BR kept: the names titulo, campos, alvos, cpf, nome, termo, Cliente, Lista, Alvos and Glossário come from refColumnFixtures (data of the fixture)
 describe('resolveCitation', () => {
   const ctx = ctxOf();
 
@@ -367,6 +370,7 @@ describe('resolveCitation', () => {
   });
 });
 
+// pt-BR kept: the names titulo, campos, alvos, cpf, nome, termo, Cliente, Lista, Alvos and Glossário come from refColumnFixtures (data of the fixture)
 describe('liveLabel', () => {
   const resolve = (ctx: CitationContext, path: string, fallback = 'fallback') => {
     const res = resolveCitation(ctx, refOf(path));
@@ -507,6 +511,7 @@ describe('backlinks', () => {
   });
 });
 
+// pt-BR kept: the names titulo, campos, alvos, cpf, nome, termo, Cliente, Lista, Alvos and Glossário come from refColumnFixtures (data of the fixture)
 describe('citedTargets / citationTargetKey', () => {
   it('cited targets, found and without repetition, in text order', () => {
     const ctx = ctxOf();

@@ -70,6 +70,7 @@ const freeAnnotation = (p: Project, annotation: Partial<Annotation>): Project =>
       parentRole: null,
       type: null,
       values: null,
+      // pt-BR kept: the generated JSON in tests/fixtures/invalid/ must stay byte-identical (outside this batch)
       entries: [{ id: 'EX', key: 'campo', value: 'texto' }],
       ...annotation,
     },
@@ -112,6 +113,7 @@ const secondImage = (p: Project, at?: { x: number; y: number }): Project => {
       {
         ...first,
         id: 'I2',
+        // pt-BR kept: the generated JSON in tests/fixtures/invalid/ must stay byte-identical (outside this batch)
         name: 'Segunda',
         file: 'images/segunda.png',
         width: 500,
@@ -129,6 +131,7 @@ export const INVALID_CASES: readonly InvalidCase[] = [
     code: 'duplicate-entry-id',
     repairable: true,
     // Pair with the id `EN`, already used in another annotation (AU).
+    // pt-BR kept: the generated JSON in tests/fixtures/invalid/ must stay byte-identical (outside this batch)
     build: (p) =>
       freeAnnotation(p, { entries: [{ id: 'EN', key: 'campo', value: 'x' }] }),
   },
@@ -147,6 +150,7 @@ export const INVALID_CASES: readonly InvalidCase[] = [
     code: 'rect-out-of-image',
     repairable: true,
     // Entirely outside the image: once clipped it has no area and is removed.
+    // pt-BR kept: the generated JSON in tests/fixtures/invalid/ must stay byte-identical (outside this batch)
     build: (p) =>
       extraMarking(p, { name: 'Fora', rect: { x: 1200, y: 100, width: 50, height: 50 } }),
   },
@@ -154,6 +158,7 @@ export const INVALID_CASES: readonly InvalidCase[] = [
     name: 'missing-image',
     code: 'missing-image',
     repairable: true,
+    // pt-BR kept: the generated JSON in tests/fixtures/invalid/ must stay byte-identical (outside this batch)
     build: (p) => extraMarking(p, { name: 'Órfã', containerId: 'I9' }),
   },
   {
@@ -218,6 +223,7 @@ export const INVALID_CASES: readonly InvalidCase[] = [
       return {
         ...q,
         containers: q.containers.map((i) =>
+          // pt-BR kept: file name of the cadastroProject fixture (specFixtures.ts, outside this batch)
           i.id === 'I2' ? { ...i, file: 'images/cadastro.png' } : i,
         ),
       };

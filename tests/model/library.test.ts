@@ -343,7 +343,9 @@ describe('validateLibrary: level 1 (each file)', () => {
         'there are 2 specializations in the package (mini.spec.json, other.spec.json): say which one to validate',
       ],
     ]);
-    expect(validate(miniPackage(), { specPath: 'nothing.json' }).issues.map(brief)).toEqual([
+    expect(
+      validate(miniPackage(), { specPath: 'nothing.json' }).issues.map(brief),
+    ).toEqual([
       ['error', 'nothing.json', '', 'specialization file not found: nothing.json'],
     ]);
   });
@@ -488,12 +490,7 @@ describe('validateLibrary: level 1 (each file)', () => {
     const report = validate(files);
     expect(report.ok).toBe(true);
     expect(report.warnings.map(brief)).toEqual([
-      [
-        'warning',
-        'components/old.json',
-        '',
-        'file not referenced by the specialization',
-      ],
+      ['warning', 'components/old.json', '', 'file not referenced by the specialization'],
       ['warning', 'docs/loose.md', '', 'file not referenced by the specialization'],
     ]);
   });

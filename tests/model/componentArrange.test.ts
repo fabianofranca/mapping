@@ -712,7 +712,7 @@ describe('arrangeMarking: align "baseline" in the slot (MC1, decision 4)', () =>
     expectValid(project);
   });
 
-  it('without baseline, the children stay at the top (today\'s behavior)', () => {
+  it("without baseline, the children stay at the top (today's behavior)", () => {
     let p = add(componentProject(), 'C', 'row', box(100, 100, 300, 100));
     p = add(p, 'T1', 'text', box(120, 150, 100, 40), 'C');
     p = add(p, 'T2', 'text', box(240, 150, 100, 40), 'C');

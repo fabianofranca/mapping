@@ -1,4 +1,4 @@
-// Laboratório Componentes: o modelo da tela é imutável e serializa/relê sem perda.
+// Components lab: the screen model is immutable and serializes/re-reads without loss.
 import { describe, expect, it } from 'vitest';
 import {
   addInstance,
@@ -19,7 +19,7 @@ import {
 import { SAMPLE_SCREEN } from '../../../viewer/samples/samples';
 
 describe('screen', () => {
-  it('adiciona, move, edita, traz para frente e remove sem mutar o objeto anterior', () => {
+  it('adds, moves, edits, brings to front and removes without mutating the previous object', () => {
     const empty = newScreen('T', 100, 200);
     const one = addInstance(empty, {
       typeId: 'button',
@@ -46,13 +46,13 @@ describe('screen', () => {
     expect(resize(front, 390.4, 0).height).toBe(1);
   });
 
-  it('serializa e relê a tela de exemplo', () => {
+  it('serializes and re-reads the sample screen', () => {
     const text = serializeScreen(SAMPLE_SCREEN);
     const back = parseScreen(JSON.parse(text));
     expect(back).toEqual(SAMPLE_SCREEN);
   });
 
-  it('a direção rtl sobrevive ao serializar e reler; em ltr a chave continua ausente', () => {
+  it('the rtl direction survives serializing and re-reading; in ltr the key stays absent', () => {
     const rtl = { ...SAMPLE_SCREEN, direction: 'rtl' as const };
     const back = parseScreen(JSON.parse(serializeScreen(rtl)));
     expect(back.direction).toBe('rtl');
@@ -65,7 +65,7 @@ describe('screen', () => {
       direction: 'ltr',
     });
     expect('direction' in ltr).toBe(false);
-    // valor inválido: ignorado, como `background` e `name` (a tela relida segue ltr)
+    // invalid value: ignored, like `background` and `name` (the re-read screen stays ltr)
     const bad = parseScreen({
       ...JSON.parse(serializeScreen(SAMPLE_SCREEN)),
       direction: 'up',
@@ -73,7 +73,7 @@ describe('screen', () => {
     expect('direction' in bad).toBe(false);
   });
 
-  it('recusa telas malformadas com mensagem em português', () => {
+  it('refuses malformed screens with an error message', () => {
     expect(() => parseScreen(null)).toThrow(/Invalid screen/);
     expect(() => parseScreen({ format: 'x' })).toThrow(/format/);
     expect(() =>
@@ -97,26 +97,26 @@ function roundTrip(screen: Screen): Screen {
   return parseScreen(JSON.parse(serializeScreen(screen)));
 }
 
-describe('parseScreen: tabelas (#952)', () => {
-  it('o round-trip mantém a tabela, com células de texto, número e null', () => {
+describe('parseScreen: tables (#952)', () => {
+  it('the round-trip keeps the table, with text, number and null cells', () => {
     const screen = screenWith({
       id: 'a',
       typeId: 't',
       box: BOX,
-      values: { rows: [{ a: 'x', n: 1, z: null }], title: 'oi' },
+      values: { rows: [{ a: 'x', n: 1, z: null }], title: 'hi' },
     });
     expect(roundTrip(screen).instances[0]?.values).toEqual({
       rows: [{ a: 'x', n: 1, z: null }],
-      title: 'oi',
+      title: 'hi',
     });
   });
 
-  it('descarta só a linha que não é objeto e a célula de outro tipo', () => {
+  it('discards only the row that is not an object and the cell of another type', () => {
     const raw = JSON.parse(
       serializeScreen(screenWith({ id: 'a', typeId: 't', box: BOX, values: {} })),
     );
     raw.instances[0].values = {
-      rows: [{ a: 'x', bad: { deep: 1 }, flag: true }, 'texto', 7, null, ['x'], { n: 2 }],
+      rows: [{ a: 'x', bad: { deep: 1 }, flag: true }, 'text', 7, null, ['x'], { n: 2 }],
     };
     expect(parseScreen(raw).instances[0]?.values).toEqual({
       rows: [{ a: 'x' }, { n: 2 }],
@@ -133,7 +133,7 @@ describe('parseScreen: parentId (#952)', () => {
     ...(parentId === undefined ? {} : { parentId }),
   });
 
-  it('recusa auto-referência, ciclo, pai inexistente e id repetido', () => {
+  it('refuses self-reference, cycle, a missing parent and a repeated id', () => {
     expect(() => roundTrip(screenWith(inst('a', 'a')))).toThrow(
       /Invalid screen: instances\[0\]\.parentId/,
     );
@@ -148,12 +148,12 @@ describe('parseScreen: parentId (#952)', () => {
     );
   });
 
-  it('aceita uma hierarquia válida, em qualquer ordem da lista', () => {
+  it('accepts a valid hierarchy, in any list order', () => {
     const screen = screenWith(inst('b', 'a'), inst('a'), inst('c', 'b'));
     expect(roundTrip(screen)).toEqual(screen);
   });
 
-  it('descendantsOf termina mesmo com um ciclo montado à mão', () => {
+  it('descendantsOf ends even with a cycle built by hand', () => {
     const cyclic = screenWith(inst('a', 'b'), inst('b', 'a'));
     expect(() => descendantsOf(cyclic, 'a')).not.toThrow();
     expect(descendantsOf(cyclic, 'a').sort()).toEqual(['a', 'b']);
@@ -161,7 +161,7 @@ describe('parseScreen: parentId (#952)', () => {
 });
 
 describe('moveSibling', () => {
-  it('move um só: [A,B,C] com A +1 vira [B,A,C]', () => {
+  it('moves just one: [A,B,C] with A +1 becomes [B,A,C]', () => {
     const inst = (id: string): Instance => ({ id, typeId: 't', box: BOX, values: {} });
     const s = screenWith(inst('A'), inst('B'), inst('C'));
     const ids = (x: Screen) => childrenOf(x, undefined).map((i) => i.id);

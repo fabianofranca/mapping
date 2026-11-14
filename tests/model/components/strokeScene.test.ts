@@ -1,4 +1,4 @@
-// Formato 4 na cena: cap/join/sides propagados ao traço e o recorte da raiz (A3).
+// Format 4 in the scene: cap/join/sides propagated to the stroke and the root clip (A3).
 import { describe, expect, it } from 'vitest';
 import type {
   ComponentFile,
@@ -30,8 +30,8 @@ function run(template: FrameTemplate, values = {}) {
   return scene.root as FrameNode;
 }
 
-describe('traço na cena (formato 4)', () => {
-  it('cap, join e sides chegam ao traço', () => {
+describe('stroke in the scene (format 4)', () => {
+  it('cap, join and sides reach the stroke', () => {
     const root = run({
       type: 'frame',
       children: [
@@ -50,7 +50,7 @@ describe('traço na cena (formato 4)', () => {
     });
   });
 
-  it('os quatro lados dão a cena sem stroke.sides (o contorno inteiro, MC0)', () => {
+  it('the four sides give the scene without stroke.sides (the whole outline, MC0)', () => {
     const root = run({
       type: 'frame',
       children: [
@@ -66,7 +66,7 @@ describe('traço na cena (formato 4)', () => {
     expect(root.children[0]?.stroke).not.toHaveProperty('sides');
   });
 
-  it('três lados ficam, na ordem de STROKE_SIDES', () => {
+  it('three sides stay, in the order of STROKE_SIDES', () => {
     const root = run({
       type: 'frame',
       children: [
@@ -81,7 +81,7 @@ describe('traço na cena (formato 4)', () => {
     expect(root.children[0]?.stroke?.sides).toEqual(['top', 'bottom', 'left']);
   });
 
-  it('sem as chaves novas o traço não ganha cap, join nem sides', () => {
+  it('without the new keys the stroke does not get cap, join or sides', () => {
     const root = run({
       type: 'frame',
       children: [{ type: 'rect', width: 10, height: 10, stroke: { color: '#000' } }],
@@ -93,7 +93,7 @@ describe('traço na cena (formato 4)', () => {
     expect(stroke).not.toHaveProperty('sides');
   });
 
-  it('sides por $switch é resolvido', () => {
+  it('sides by $switch is resolved', () => {
     const root = run(
       {
         type: 'frame',
@@ -115,8 +115,8 @@ describe('traço na cena (formato 4)', () => {
   });
 });
 
-describe('recorte da raiz (A3)', () => {
-  it('o traço outside cresce o recorte (antes o anel sumia)', () => {
+describe('root clip (A3)', () => {
+  it('the outside stroke grows the clip (before, the ring disappeared)', () => {
     const root = run({
       type: 'frame',
       stroke: { color: '#f00', width: 4, align: 'outside' },
@@ -126,7 +126,7 @@ describe('recorte da raiz (A3)', () => {
     expect(root.clipBox).toEqual({ x: -4, y: -4, width: 108, height: 48 });
   });
 
-  it('o traço center cresce metade da largura', () => {
+  it('the center stroke grows half the width', () => {
     const root = run({
       type: 'frame',
       stroke: { color: '#f00', width: 4, align: 'center' },
@@ -135,7 +135,7 @@ describe('recorte da raiz (A3)', () => {
     expect(root.clipBox).toEqual({ x: -2, y: -2, width: 104, height: 44 });
   });
 
-  it('o traço inside não muda o recorte', () => {
+  it('the inside stroke does not change the clip', () => {
     const root = run({
       type: 'frame',
       stroke: { color: '#f00', width: 4 },
@@ -144,7 +144,7 @@ describe('recorte da raiz (A3)', () => {
     expect(root.clipBox).toBeUndefined();
   });
 
-  it('a sombra da raiz cresce o recorte por lado (blur 8, y 4)', () => {
+  it('the root shadow grows the clip per side (blur 8, y 4)', () => {
     const root = run({
       type: 'frame',
       fill: '#fff',
@@ -154,7 +154,7 @@ describe('recorte da raiz (A3)', () => {
     expect(root.clipBox).toEqual({ x: -8, y: -4, width: 116, height: 56 });
   });
 
-  it('a sombra de um filho que passa da caixa só por ela entra no recorte', () => {
+  it('a shadow of a child that goes past the box only by it enters the clip', () => {
     const root = run({
       type: 'frame',
       layout: { type: 'row' },
@@ -171,7 +171,7 @@ describe('recorte da raiz (A3)', () => {
     expect(root.clipBox).toEqual({ x: -8, y: -4, width: 116, height: 56 });
   });
 
-  it('um filho com texto que passa da caixa continua recortado em 100×40', () => {
+  it('a child with text that goes past the box is still clipped at 100×40', () => {
     const root = run({
       type: 'frame',
       children: [
@@ -179,7 +179,7 @@ describe('recorte da raiz (A3)', () => {
           type: 'text',
           width: 300,
           height: 40,
-          text: 'um texto muito mais largo que a caixa da instância',
+          text: 'a text much wider than the box of the instance',
         },
       ],
     });
@@ -187,7 +187,7 @@ describe('recorte da raiz (A3)', () => {
     expect(root.clipBox).toBeUndefined();
   });
 
-  it('um filho que passa da caixa pelo conteúdo não alarga o recorte além da sua sombra', () => {
+  it('a child that goes past the box by content does not widen the clip beyond its shadow', () => {
     const root = run({
       type: 'frame',
       layout: { type: 'row' },

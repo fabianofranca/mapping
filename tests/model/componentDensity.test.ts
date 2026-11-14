@@ -122,7 +122,7 @@ describe('initial size × density', () => {
     expect(size).toEqual({ width: 180, height: 72 });
   });
 
-  it('density 1 does not change today\'s size', () => {
+  it("density 1 does not change today's size", () => {
     expect(
       componentSize(
         componentProject(),

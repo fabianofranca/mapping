@@ -275,7 +275,12 @@ export function componentProject(): Project {
     })(),
     packageSpecName: 'test.spec.json',
   });
-  return addContainer(p, { id: 'I1', file: 'images/screen.png', width: 1000, height: 800 });
+  return addContainer(p, {
+    id: 'I1',
+    file: 'images/screen.png',
+    width: 1000,
+    height: 800,
+  });
 }
 
 /**

@@ -93,7 +93,8 @@ export function typedAnnotations(
         dado: { annotationId: target, entryId: `${target}-e1` },
       });
     } else {
-      const rowId = i % 100 === 1 ? 'does-not-exist' : `C${i - 1}-r${i % 4 === 1 ? 1 : 2}`;
+      const rowId =
+        i % 100 === 1 ? 'does-not-exist' : `C${i - 1}-r${i % 4 === 1 ? 1 : 2}`;
       typed(`N${i}`, marking.id, layer.componentes, 'sdui', 'input', {
         id: `input_${i}`,
         tipo: 'text',

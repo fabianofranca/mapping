@@ -17,19 +17,21 @@ import {
 import { build } from './refColumnFixtures';
 import { message, sampleThread } from './threadFixtures';
 
-// Mesmo projeto de citations.test.ts: I1 (a.png) com M1 e M3 sem nome e M2 "Botão"; AM (modelo
-// "Cliente": titulo, campos com as linhas cpf e nome, solto), AL (lista) e AF ("Glossário", par
-// "termo"); a seta R1 "Fluxo" de M1 para M2.
+// pt-BR kept: the names titulo, campos, alvos, cpf, nome, termo, solto, principal, Modelo, Cliente, Alvos and Glossário come from refColumnFixtures (data of the fixture)
+// pt-BR kept: M2 is named "Botão" because the accent-insensitive search test (`botao` matches `Botão`) needs an accented name
+// Same project as citations.test.ts: I1 (a.png) with unnamed M1 and M3 and M2 "Botão"; AM (model
+// "Cliente": titulo, campos with the rows cpf and nome, solto), AL (list) and AF ("Glossário", pair
+// "termo"); the arrow R1 "Flow" from M1 to M2.
 function baseProject(): Project {
   let p = build();
   p = renameMarking(p, 'M2', 'Botão');
-  p = createArrow(p, { id: 'R1', from: 'M1', to: 'M2', name: 'Fluxo' });
+  p = createArrow(p, { id: 'R1', from: 'M1', to: 'M2', name: 'Flow' });
   return p;
 }
 
-const NAME = 'Meu projeto';
-const PROPOSALS = [{ id: 'prop-20261106-ab', title: 'Renomear o botão' }];
-const UNNAMED = 'sem nome';
+const NAME = 'My project';
+const PROPOSALS = [{ id: 'prop-20261106-ab', title: 'Rename the button' }];
+const UNNAMED = 'unnamed';
 
 function thread(id: string, text: string, overrides: Partial<Thread> = {}): Thread {
   return sampleThread({
@@ -40,8 +42,8 @@ function thread(id: string, text: string, overrides: Partial<Thread> = {}): Thre
 }
 
 const THREADS: readonly Thread[] = [
-  thread('c1b2', 'Primeira conversa sobre o botão'),
-  thread('c9f0', 'Outra conversa'),
+  thread('c1b2', 'First conversation about the button'),
+  thread('c9f0', 'Another conversation'),
 ];
 
 function ctxOf(
@@ -62,56 +64,56 @@ describe('citationUrl', () => {
   const layerId = ctx.project.layers.find((l) => l.spec !== null)!.id;
 
   const targets: readonly [string, CitationTarget, string][] = [
-    ['marcação', { kind: 'marking', id: 'M2' }, 'm/m2'],
-    ['seta', { kind: 'arrow', id: 'R1' }, 'm/r1'],
+    ['marking', { kind: 'marking', id: 'M2' }, 'm/m2'],
+    ['arrow', { kind: 'arrow', id: 'R1' }, 'm/r1'],
     ['container', { kind: 'container', id: 'I1' }, 'i/i1'],
-    ['anotação', { kind: 'annotation', id: 'AM' }, 'a/am'],
-    ['conversa', { kind: 'thread', id: 'c1b2' }, 'c/c1b2'],
-    ['proposta', { kind: 'proposal', id: 'prop-20261106-ab' }, 'p/prop-20261106-ab'],
-    ['campo', { kind: 'field', annotationId: 'AM', key: 'titulo' }, 'a/am/f/titulo'],
-    ['par', { kind: 'entry', annotationId: 'AF', entryId: 'E1' }, 'a/af/e/e1'],
+    ['annotation', { kind: 'annotation', id: 'AM' }, 'a/am'],
+    ['conversation', { kind: 'thread', id: 'c1b2' }, 'c/c1b2'],
+    ['proposal', { kind: 'proposal', id: 'prop-20261106-ab' }, 'p/prop-20261106-ab'],
+    ['field', { kind: 'field', annotationId: 'AM', key: 'titulo' }, 'a/am/f/titulo'],
+    ['pair', { kind: 'entry', annotationId: 'AF', entryId: 'E1' }, 'a/af/e/e1'],
     [
-      'linha',
+      'row',
       { kind: 'row', annotationId: 'AM', key: 'campos', rowId: 'R1' },
       'a/am/f/campos/r/r1',
     ],
   ];
 
   it.each(targets)(
-    'monta a URL de %s e ela resolve para o mesmo alvo',
+    'builds the URL of %s and it resolves to the same target',
     (_n, target, path) => {
       const url = urlOf(ctx, target);
-      expect(url).toBe(`mapping://Meu%20projeto/${path}`);
+      expect(url).toBe(`mapping://My%20project/${path}`);
       const parsed = parseAnyRef(url!);
       expect(parsed?.project).toBe(NAME);
       expect(resolveCitation(ctx, parsed!.ref)).toEqual({ found: true, target });
     },
   );
 
-  it('camada: letra l com o código curto da camada', () => {
+  it('layer: letter l with the short code of the layer', () => {
     const target: CitationTarget = { kind: 'layer', id: layerId };
     const url = urlOf(ctx, target)!;
-    expect(url.startsWith('mapping://Meu%20projeto/l/')).toBe(true);
+    expect(url.startsWith('mapping://My%20project/l/')).toBe(true);
     expect(resolveCitation(ctx, parseAnyRef(url)!.ref)).toEqual({ found: true, target });
   });
 
-  it('campo com chave que pede codificação ainda fecha a ida e volta', () => {
+  it('a field with a key that needs encoding still round-trips', () => {
     const target: CitationTarget = {
       kind: 'field',
       annotationId: 'AM',
-      key: 'Tabela de dados',
+      key: 'Data table',
     };
-    // O campo não existe na anotação: a URL sai, mas a resolução diz que falta.
+    // The field does not exist on the annotation: the URL comes out, but the resolution says it is missing.
     const url = urlOf(ctx, target)!;
-    expect(url).toBe('mapping://Meu%20projeto/a/am/f/Tabela%20de%20dados');
+    expect(url).toBe('mapping://My%20project/a/am/f/Data%20table');
     expect(parseAnyRef(url)?.ref).toEqual({
       type: 'field',
       annotation: 'am',
-      key: 'Tabela de dados',
+      key: 'Data table',
     });
   });
 
-  it('alvo que não existe no projeto: null', () => {
+  it('a target that does not exist in the project: null', () => {
     for (const target of [
       { kind: 'marking', id: 'X' },
       { kind: 'container', id: 'X' },
@@ -123,13 +125,13 @@ describe('citationUrl', () => {
       { kind: 'entry', annotationId: 'X', entryId: 'E1' },
       { kind: 'row', annotationId: 'AM', key: 'campos', rowId: 'X' },
       { kind: 'row', annotationId: 'AM', key: 'titulo', rowId: 'R1' },
-      { kind: 'proposal', id: 'com espaço' },
+      { kind: 'proposal', id: 'with space' },
     ] as const) {
       expect(urlOf(ctx, target)).toBeNull();
     }
   });
 
-  it('ids que dividem o prefixo ganham código mais longo e ainda resolvem', () => {
+  it('ids that share the prefix get a longer code and still resolve', () => {
     let p = baseProject();
     for (const id of ['abcdefgh-1', 'abcdefgh-2']) {
       p = createMarking(p, {
@@ -152,7 +154,7 @@ describe('citationUrl', () => {
     );
   });
 
-  it('conversas com ids parecidos: o código é único entre todas', () => {
+  it('conversations with similar ids: the code is unique among all', () => {
     const threads = [thread('c1b2aaaa-1', 'x'), thread('c1b2aaaa-2', 'y')];
     const local = ctxOf(baseProject(), threads);
     for (const t of threads) {
@@ -169,23 +171,23 @@ describe('citationUrl', () => {
 describe('citationLabel', () => {
   const ctx = ctxOf();
 
-  it('é o nome de agora do alvo', () => {
+  it('is the current name of the target', () => {
     expect(citationLabel(ctx, { kind: 'marking', id: 'M2' }, UNNAMED)).toBe('Botão');
-    expect(citationLabel(ctx, { kind: 'arrow', id: 'R1' }, UNNAMED)).toBe('Fluxo');
+    expect(citationLabel(ctx, { kind: 'arrow', id: 'R1' }, UNNAMED)).toBe('Flow');
     expect(
       citationLabel(ctx, { kind: 'field', annotationId: 'AM', key: 'titulo' }, UNNAMED),
     ).toBe('titulo');
     expect(citationLabel(ctx, { kind: 'thread', id: 'c9f0' }, UNNAMED)).toBe(
-      'Outra conversa',
+      'Another conversation',
     );
     expect(
       citationLabel(ctx, { kind: 'proposal', id: 'prop-20261106-ab' }, UNNAMED),
-    ).toBe('Renomear o botão');
+    ).toBe('Rename the button');
   });
 
-  it('sem nome ou alvo ausente: o texto neutro recebido', () => {
+  it('unnamed or missing target: the neutral text received', () => {
     expect(citationLabel(ctx, { kind: 'marking', id: 'M1' }, UNNAMED)).toBe(UNNAMED);
-    expect(citationLabel(ctx, { kind: 'marking', id: 'nada' }, UNNAMED)).toBe(UNNAMED);
+    expect(citationLabel(ctx, { kind: 'marking', id: 'nothing' }, UNNAMED)).toBe(UNNAMED);
     const empty = ctxOf(baseProject(), [thread('t1', '')]);
     expect(citationLabel(empty, { kind: 'thread', id: 't1' }, UNNAMED)).toBe(UNNAMED);
   });
@@ -197,7 +199,7 @@ describe('citeCandidates', () => {
 
   const labels = (list: readonly { label: string }[]) => list.map((c) => c.label);
 
-  it('primeiro os campos, linhas e pares do item da conversa, depois os grupos em ordem', () => {
+  it('first the fields, rows and pairs of the conversation item, then the groups in order', () => {
     const list = citeCandidates(ctx, '', hereM1, OPTIONS);
     const here = list.filter((c) => c.group === 'here');
     expect(list.slice(0, here.length)).toEqual(here);
@@ -221,23 +223,23 @@ describe('citeCandidates', () => {
     ]);
   });
 
-  it('detail é o caminho curto', () => {
+  it('detail is the short path', () => {
     const list = citeCandidates(ctx, '', hereM1, OPTIONS);
     const by = (label: string, kind: string) =>
       list.find((c) => c.label === label && c.target.kind === kind)!;
     expect(by('titulo', 'field').detail).toBe('Modelo · Cliente › titulo');
     expect(by('cpf', 'row').detail).toBe('Modelo · Cliente › campos › cpf');
     expect(by('Botão', 'marking').detail).toBe('a.png › Botão');
-    expect(by('Fluxo', 'arrow').detail).toBe(`${UNNAMED} › Botão`);
+    expect(by('Flow', 'arrow').detail).toBe(`${UNNAMED} › Botão`);
   });
 
-  it('sem âncora não há grupo here', () => {
+  it('without an anchor there is no here group', () => {
     const list = citeCandidates(ctx, '', null, OPTIONS);
     expect(list.some((c) => c.group === 'here')).toBe(false);
     expect(list[0]!.group).toBe('marking');
   });
 
-  it('âncora de campo, linha, anotação ou par abre os campos da anotação', () => {
+  it('an anchor of field, row, annotation or pair opens the fields of the annotation', () => {
     const inAf = citeCandidates(
       ctx,
       '',
@@ -264,7 +266,7 @@ describe('citeCandidates', () => {
     expect(viaRow.map((c) => c.label)).toEqual(inAl.map((c) => c.label));
   });
 
-  it('âncora sem anotações (camada, container, ponto solto) não tem here', () => {
+  it('an anchor without annotations (layer, container, loose point) has no here', () => {
     for (const here of [
       { kind: 'layer', id: ctx.project.layers[0]!.id },
       { kind: 'container', id: 'I1' },
@@ -276,7 +278,7 @@ describe('citeCandidates', () => {
     }
   });
 
-  it('casa por nome sem diferença de caixa nem de acento', () => {
+  it('matches by name regardless of case and accent', () => {
     expect(labels(citeCandidates(ctx, 'botao', null, OPTIONS))).toContain('Botão');
     expect(
       citeCandidates(ctx, 'GLOSSARIO', null, OPTIONS).find(
@@ -286,17 +288,17 @@ describe('citeCandidates', () => {
     expect(citeCandidates(ctx, 'zzzz', null, OPTIONS)).toEqual([]);
   });
 
-  it('todas as palavras da consulta precisam casar (no nome ou no caminho)', () => {
+  it('all the query words must match (in the name or the path)', () => {
     const list = citeCandidates(ctx, 'cliente titulo', hereM1, OPTIONS);
     expect(list.map((c) => c.label)).toEqual(['titulo']);
   });
 
-  it('só as conversas abertas; excludeThreadId tira a própria conversa', () => {
+  it('only open conversations; excludeThreadId removes the conversation itself', () => {
     const threads = [
       ...THREADS,
-      thread('c7aa', 'Resolvida', {
+      thread('c7aa', 'Resolved', {
         resolved: {
-          by: { name: 'Marina Alves', email: 'marina@exemplo.com' },
+          by: { name: 'Marina Alves', email: 'marina@example.com' },
           at: '2026-11-06T12:00:00.000Z',
         },
       }),
@@ -309,7 +311,7 @@ describe('citeCandidates', () => {
       { kind: 'thread', id: 'c1b2' },
       { kind: 'thread', id: 'c9f0' },
     ]);
-    expect(all[0]!.label).toBe('Primeira conversa sobre o botão');
+    expect(all[0]!.label).toBe('First conversation about the button');
     const without = citeCandidates(local, '', null, {
       ...OPTIONS,
       excludeThreadId: 'c1b2',
@@ -319,29 +321,29 @@ describe('citeCandidates', () => {
     ]);
   });
 
-  it('no mesmo grupo, quem casa pelo nome vem antes de quem casa só pelo caminho', () => {
+  it('in the same group, whoever matches by name comes before whoever matches only by path', () => {
     const threads = [
-      thread('t-por-caminho', 'Outra', { anchor: { kind: 'marking', id: 'M2' } }),
-      thread('t-por-nome', 'Sobre o botão'),
+      thread('t-by-path', 'Other', { anchor: { kind: 'marking', id: 'M2' } }),
+      thread('t-by-name', 'About the button'),
     ];
     const local = ctxOf(baseProject(), threads);
     const list = citeCandidates(local, 'botao', null, OPTIONS).filter(
       (c) => c.group === 'thread',
     );
     expect(list.map((c) => c.target)).toEqual([
-      { kind: 'thread', id: 't-por-nome' },
-      { kind: 'thread', id: 't-por-caminho' },
+      { kind: 'thread', id: 't-by-name' },
+      { kind: 'thread', id: 't-by-path' },
     ]);
   });
 
-  it('o sem nome usa o texto neutro', () => {
+  it('the unnamed one uses the neutral text', () => {
     const marking = citeCandidates(ctx, '', null, OPTIONS).find(
       (c) => c.target.kind === 'marking' && c.target.id === 'M1',
     );
     expect(marking?.label).toBe(UNNAMED);
   });
 
-  it('respeita o limite (padrão 30)', () => {
+  it('respects the limit (default 30)', () => {
     let p = baseProject();
     for (let i = 0; i < 40; i++) {
       p = createMarking(p, {
@@ -359,7 +361,7 @@ describe('citeCandidates', () => {
     );
   });
 
-  it('toda candidata tem URL que resolve para o próprio alvo', () => {
+  it('every candidate has a URL that resolves to its own target', () => {
     for (const c of citeCandidates(ctx, '', hereM1, { ...OPTIONS, limit: 200 })) {
       const url = urlOf(ctx, c.target);
       expect(url, JSON.stringify(c.target)).not.toBeNull();

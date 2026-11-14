@@ -429,7 +429,7 @@ describe('createDrawingCache: slot clip (L2)', () => {
     expect(drawings.get('C')?.clip).toBeUndefined();
   });
 
-  it('a slot without clip (or with clip false): the child carries no clip and the drawing is today\'s', () => {
+  it("a slot without clip (or with clip false): the child carries no clip and the drawing is today's", () => {
     const plain = createDrawingCache()(
       inScreen(catalog),
       catalog,

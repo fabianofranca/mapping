@@ -1,4 +1,4 @@
-// Formato 4: stroke.cap, stroke.join e stroke.sides, e a regra genérica "only allowed with formatVersion 4".
+// Format 4: stroke.cap, stroke.join and stroke.sides, and the generic rule "only allowed with formatVersion 4".
 import { describe, expect, it } from 'vitest';
 import {
   COMPONENT_FORMAT,
@@ -30,18 +30,18 @@ function withStroke(
   };
 }
 
-describe('formato 4 do componente', () => {
-  it('as versões aceitas são 1 a 4', () => {
+describe('component format 4', () => {
+  it('the accepted versions are 1 to 4', () => {
     expect([...COMPONENT_FORMAT_VERSIONS]).toEqual([1, 2, 3, 4]);
   });
 
-  it('cap e join valem na formatVersion 4', () => {
+  it('cap and join are valid in formatVersion 4', () => {
     expect(
       validateComponent(withStroke({ color: '#000', cap: 'round', join: 'bevel' })),
     ).toEqual([]);
   });
 
-  it('cap e join na formatVersion 3 dão o erro de versão, no caminho da chave', () => {
+  it('cap and join in formatVersion 3 give the version error, at the key path', () => {
     expect(
       validateComponent(withStroke({ color: '#000', cap: 'round', join: 'bevel' }, 3)),
     ).toEqual([
@@ -50,7 +50,7 @@ describe('formato 4 do componente', () => {
     ]);
   });
 
-  it('cap fora da lista falha com os valores aceitos', () => {
+  it('cap outside the list fails with the accepted values', () => {
     expect(validateComponent(withStroke({ color: '#000', cap: 'pointy' }))).toEqual([
       'template.children[0].stroke.cap: expected one of: butt, round, square',
     ]);
@@ -59,7 +59,7 @@ describe('formato 4 do componente', () => {
     ]);
   });
 
-  it('cap e join aceitam expressão', () => {
+  it('cap and join accept an expression', () => {
     const stroke = {
       color: '#000',
       cap: { $switch: 'k', cases: { a: 'round' }, default: 'butt' },
@@ -68,13 +68,13 @@ describe('formato 4 do componente', () => {
     expect(validateComponent(withStroke(stroke))).toEqual([]);
   });
 
-  it('sides aceito em rect e em frame', () => {
+  it('sides accepted on rect and on frame', () => {
     const stroke = { color: '#000', sides: ['top', 'bottom'] };
     expect(validateComponent(withStroke(stroke))).toEqual([]);
     expect(validateComponent(withStroke(stroke, 4, 'frame'))).toEqual([]);
   });
 
-  it('sides vazio, repetido ou com lado inválido falha', () => {
+  it('empty, repeated or with an invalid side fails', () => {
     const at = 'template.children[0].stroke.sides';
     expect(validateComponent(withStroke({ color: '#000', sides: [] }))).toEqual([
       `${at}: expected at least one side`,
@@ -87,7 +87,7 @@ describe('formato 4 do componente', () => {
     ]);
   });
 
-  it('sides em ellipse e em path é erro', () => {
+  it('sides on ellipse and on path is an error', () => {
     for (const type of ['ellipse', 'path'] as const) {
       expect(
         validateComponent(withStroke({ color: '#000', sides: ['top'] }, 4, type)),
@@ -97,7 +97,7 @@ describe('formato 4 do componente', () => {
     }
   });
 
-  it('sides com $switch que devolve ["left"] é aceito', () => {
+  it('sides with $switch that returns ["left"] is accepted', () => {
     const stroke = {
       color: '#000',
       sides: { $switch: 'lado', cases: { e: ['left'] }, default: ['bottom'] },
@@ -105,13 +105,13 @@ describe('formato 4 do componente', () => {
     expect(validateComponent(withStroke(stroke))).toEqual([]);
   });
 
-  it('sides na formatVersion 3 dá o erro de versão', () => {
+  it('sides on formatVersion 3 gives the version error', () => {
     expect(validateComponent(withStroke({ color: '#000', sides: ['top'] }, 3))).toEqual([
       'template.children[0].stroke.sides: only allowed with formatVersion 4',
     ]);
   });
 
-  it('a regra de versão é genérica: uma chave fictícia na v3 devolve a mesma mensagem', () => {
+  it('the generic rule of version: a fictitious key on v3 gives the same message', () => {
     const template = { type: 'frame', fictional: { deep: 1 } };
     const out = v4OnlyKeyIssues(3, template, 'template', [['fictional', 'deep']]);
     expect(out).toEqual([

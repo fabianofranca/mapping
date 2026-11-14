@@ -293,9 +293,7 @@ describe('codeLink', () => {
     expect(codeLink(hashRoute, at('B.kt'))).toBe('https://git.internal/#/app/B.kt');
     // {line} outside a fragment: becomes empty.
     const query = withTemplate('https://git.internal/view?file={path}&line={line}');
-    expect(codeLink(query, at('B.kt'))).toBe(
-      'https://git.internal/view?file=B.kt&line=',
-    );
+    expect(codeLink(query, at('B.kt'))).toBe('https://git.internal/view?file=B.kt&line=');
     const plain = withTemplate('https://git.internal/{path}');
     expect(codeLink(plain, at('B.kt'))).toBe('https://git.internal/B.kt');
   });
