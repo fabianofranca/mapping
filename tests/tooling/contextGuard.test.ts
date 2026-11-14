@@ -1,5 +1,5 @@
 // @vitest-environment node
-// Etapa #1856, fase GC1 (decisões 1 a 8, 10 e 12a): o gancho `PostToolUse` que mede o contexto da
+// Etapa #1856, fases GC1 (decisões 1 a 8, 10 e 12a) e GC2 (o texto do `docs/FLOW.md`, decisões 9 e 10): o gancho `PostToolUse` que mede o contexto da
 // sessão de fase depois de cada chamada de ferramenta e avisa a troca acima do gatilho
 // (`scripts/ci/contextGuard.mjs`), e a entrada dele no `.claude/settings.json`. O gancho roda como
 // processo (`spawnSync`), com a entrada no stdin e `CLAUDE_CODE_REMOTE` e `TMPDIR` no `env`; o
@@ -17,6 +17,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { between, section } from '../support/textSlice';
 // @ts-expect-error módulo .mjs sem declaração de tipos
 import { GATILHO, MARCADOR } from '../../scripts/ci/contextGuard.mjs';
 
@@ -528,5 +529,61 @@ describe('GC1 — .claude/settings.json (decisão 10)', () => {
       'mcp__claude-code-remote__archive_session',
     );
     expect(Object.keys(settings.hooks).sort()).toEqual(['PostToolUse', 'SessionStart']);
+  });
+});
+
+describe('GC2 — docs/FLOW.md: a regra do gancho na sessão da fase (decisões 9 e 10)', () => {
+  const flow = readFileSync('docs/FLOW.md', 'utf8');
+  const phase = section(flow, '## Para a sessão da fase');
+  const teto = between(
+    phase,
+    '   - **Teto de contexto da fase:**',
+    '4. Todo briefing de mudança',
+  );
+  const mil = `${TRIGGER / 1000} mil`;
+
+  it('o sub-item "Teto de contexto da fase" cita o gancho, o PostToolUse e o gatilho do script', () => {
+    expect(teto).toContain('**Gancho:**');
+    expect(teto).toContain('scripts/ci/contextGuard.mjs');
+    expect(teto).toContain('PostToolUse');
+    expect(teto).toContain(`gatilho de ${mil}`);
+  });
+
+  it('as conferências (a) e (b) rodam o script com --teto igual ao gatilho', () => {
+    expect(teto).toContain(`node scripts/ci/contextUsage.mjs --teto ${TRIGGER}`);
+    const conferencias = between(
+      teto,
+      'Confira em dois pontos',
+      'Depois que o PR da fase',
+    );
+    expect(conferencias).toContain(`--teto ${TRIGGER}`);
+    expect(conferencias.indexOf('(a)')).toBeGreaterThan(conferencias.indexOf('--teto'));
+    expect(conferencias.indexOf('(b)')).toBeGreaterThan(conferencias.indexOf('(a)'));
+    // Sem o `--teto`, o `acima=true` vale só para os 300 mil: o texto diz isso, e a etapa é citada pelo número.
+    expect(teto).toContain('Sem `--teto`');
+    expect(teto).toContain('#1856');
+    expect(teto).not.toContain('desta etapa');
+  });
+
+  it('passa a vez acima do gatilho, e o teto de 300 mil continua', () => {
+    expect(teto).toContain(`Acima do gatilho de ${mil}`);
+    expect(teto).not.toContain('Com mais de 300 mil, a fase passa a vez:');
+    expect(teto).toContain('300 mil');
+    expect(teto).toContain('300.000');
+  });
+
+  it('o passo 3 da passagem cita os maiores saltos do último aviso do gancho', () => {
+    const passo3 = between(
+      teto,
+      '     3. comenta na sub-issue',
+      '     4. manda ao coordenador',
+    );
+    expect(passo3).toContain('maiores saltos do último aviso do gancho');
+    expect(passo3).toContain('sem aviso do gancho');
+  });
+
+  it('a mensagem da fase (o primeiro bloco text) começa pelo MARCADOR', () => {
+    const bloco = between(phase, '```text\n', '\n```').slice('```text\n'.length);
+    expect(bloco.startsWith(MARK)).toBe(true);
   });
 });
