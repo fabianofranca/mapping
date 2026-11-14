@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "m3-text-field",
   "name": "Text field",
-  "description": "Outlined text field: caixa de 56 dp, forma extra-small (4), rótulo flutuante e texto de apoio.",
+  "description": "Outlined text field: 56 dp box, extra-small shape (4), floating label and supporting text.",
   "size": {
     "width": 280,
     "height": 80

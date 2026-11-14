@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "m3-navigation-bar",
   "name": "Navigation bar",
-  "description": "Navigation bar de 80 dp com três destinos; indicador ativo 64 × 32 em secondary container.",
+  "description": "80 dp navigation bar with three destinations; 64 × 32 active indicator in secondary container.",
   "size": {
     "width": 412,
     "height": 80

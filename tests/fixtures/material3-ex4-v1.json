@@ -1,5 +1,5 @@
 {
-  "source": "Cenas do date-picker e do time-picker na biblioteca material3-compose version 5, antes da EX4 (etapa #897): os nós visíveis (tipo, nome, texto, caixa absoluta, preenchimento) e a união das faixas do intervalo por linha.",
+  "source": "Date-picker and time-picker scenes in the material3-compose library version 5, before EX4 (stage #897): the visible nodes (type, name, text, absolute box, fill) and the union of the range bands per row.",
   "scenes": {
     "date-ex0-light": {
       "id": "date-picker",

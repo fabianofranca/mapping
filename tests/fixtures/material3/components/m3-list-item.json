@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "m3-list-item",
   "name": "List item",
-  "description": "Item de lista de uma ou duas linhas: avatar ou ícone à esquerda, headline, texto de apoio e ícone à direita.",
+  "description": "One- or two-line list item: avatar or icon on the left, headline, supporting text and icon on the right.",
   "size": {
     "width": 412,
     "height": 72

@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "m3-top-app-bar",
   "name": "Top app bar",
-  "description": "Small top app bar: 64 dp, surface, ícone de navegação, título title-large e ação.",
+  "description": "Small top app bar: 64 dp, surface, navigation icon, title-large title and action.",
   "size": {
     "width": 412,
     "height": 64

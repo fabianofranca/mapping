@@ -3,19 +3,19 @@
   "app": "mapeador-imagens",
   "coordinateSystem": "image-pixels-exif-oriented",
   "project": {
-    "name": "Carro",
+    "name": "Car",
     "createdAt": "2026-09-01T10:00:00.000Z",
     "updatedAt": "2026-09-20T18:30:00.000Z"
   },
   "layers": [
     {
       "id": "L1",
-      "name": "Lataria",
+      "name": "Bodywork",
       "color": "#E53935"
     },
     {
       "id": "L2",
-      "name": "Vidros",
+      "name": "Glass",
       "color": "#1E88E5"
     }
   ],
@@ -48,7 +48,7 @@
       "id": "M1",
       "imageId": "I1",
       "parentId": null,
-      "name": "Porta",
+      "name": "Door",
       "rect": {
         "x": 1000,
         "y": 1000,
@@ -61,7 +61,7 @@
       "id": "M2",
       "imageId": "I1",
       "parentId": "M1",
-      "name": "Maçaneta",
+      "name": "Handle",
       "rect": {
         "x": 1200,
         "y": 1200,
@@ -74,7 +74,7 @@
       "id": "M3",
       "imageId": "I1",
       "parentId": "M2",
-      "name": "Fechadura",
+      "name": "Lock",
       "rect": {
         "x": 1300,
         "y": 1250,
@@ -102,15 +102,15 @@
       "id": "A1",
       "markingId": "M1",
       "layerId": "L1",
-      "name": "Amassado",
+      "name": "Dent",
       "entries": [
         {
-          "key": "tipo",
-          "value": "amassado"
+          "key": "type",
+          "value": "dent"
         },
         {
-          "key": "gravidade",
-          "value": "média"
+          "key": "severity",
+          "value": "medium"
         }
       ]
     },
@@ -121,8 +121,8 @@
       "name": null,
       "entries": [
         {
-          "key": "tipo",
-          "value": "trinca"
+          "key": "type",
+          "value": "crack"
         }
       ]
     },
