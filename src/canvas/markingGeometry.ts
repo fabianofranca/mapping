@@ -70,8 +70,10 @@ export function isDrawableRect(rect: Rect): boolean {
 /**
  * Markings of the space under the point (container pixels, or canvas units with
  * null `containerId`): the innermost first, followed by the ancestors up to the root. The
- * innermost is the deepest in the hierarchy; on a tie, the one with the smaller area and then the last in the array.
- * Floating ones are left out (they get their turn first, in `floatingAt`): they do not belong to the chain.
+ * innermost is the deepest in the hierarchy; on a tie, the one with the smaller area and then the
+ * last in the array.
+ * Floating ones are left out (they get their turn first, in `floatingAt`): they do not belong to
+ * the chain.
  */
 export function markingChainAt(
   markings: readonly Marking[],
@@ -136,7 +138,10 @@ export function nextInChain(
   return first;
 }
 
-/** Minimum of an ordinary marking in gestures (a component-drawing one passes its own, of 1 px or more). */
+/**
+ * Minimum of an ordinary marking in gestures (a component-drawing one passes its own, of 1 px or
+ * more).
+ */
 const DEFAULT_MIN_SIZE: Size = { width: MIN_MARKING_SIZE, height: MIN_MARKING_SIZE };
 
 export interface RectLimits {

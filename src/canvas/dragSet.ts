@@ -31,7 +31,8 @@ export function isEmptyDrag(set: DragSet): boolean {
  *    all its markings (they travel with the image without changing object);
  *  - the marking whose object changed (it and the descendants the preview moved along with it);
  *  - the arrow whose object changed (route, tip) or that touches any marking that moves.
- * None of them is decided by the canvas: it is only the difference between the two projects, which the model already
+ * None of them is decided by the canvas: it is only the difference between the two projects, which
+ * the model already
  * produced. The ids are the drawn project's.
  */
 export function dragSetOf(

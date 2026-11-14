@@ -147,7 +147,8 @@ interface Bound {
 
 /**
  * What to open. `storage` is the reading one; `bind` runs after reading and before the session
- * opens, on the normal path and on "Repair and open": it stores the folder in the recents (and gives the `copyId`) or
+ * opens, on the normal path and on "Repair and open": it stores the folder in the recents (and
+ * gives the `copyId`) or
  * marks the local project as used. Without `bind`, the session uses `storage` itself.
  */
 interface OpenTarget {
@@ -182,7 +183,8 @@ function localPerspectiveStore(): Promise<LocalPerspectiveStore | null> {
 }
 
 /**
- * Binds (recents, `copyId`) and opens the session of the project already read. `text`: the `mapping.json`
+ * Binds (recents, `copyId`) and opens the session of the project already read. `text`: the
+ * `mapping.json`
  * as it was read (`SessionOptions.loadedText`); `migratedFrom`: old schema (or repair), the
  * original goes to `backups/` before the first save.
  */

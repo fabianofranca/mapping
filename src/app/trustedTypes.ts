@@ -5,7 +5,10 @@
 // `TypeError` and emit `securitypolicyviolation`. No `createScript`: script by string is refused.
 import { reportError } from '../utils/report';
 
-/** The service worker is registered with this URL (`src/app/pwa.ts`): the only one accepted in `createScriptURL`. */
+/**
+ * The service worker is registered with this URL (`src/app/pwa.ts`): the only one accepted in
+ * `createScriptURL`.
+ */
 export const SERVICE_WORKER_URL = './sw.js';
 
 /**
@@ -51,7 +54,8 @@ export type TrustedTypesStatus = 'installed' | 'unsupported' | 'failed';
 
 /**
  * Creates the `default` policy. `unsupported` when the browser has no Trusted Types (the CSP
- * `require-trusted-types-for` is then ignored and the app carries on); `failed` when the browser refused it
+ * `require-trusted-types-for` is then ignored and the app carries on); `failed` when the browser
+ * refused it
  * (goes to Diagnostics).
  */
 export function installTrustedTypesPolicy(

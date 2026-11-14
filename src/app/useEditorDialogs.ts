@@ -59,7 +59,10 @@ export interface EditorDialogs {
   requestDeleteImage(image: ProjectContainer): void;
   /** In cascade asks for confirmation; simple, does not (undo covers it). Locked item: does nothing. */
   requestDeleteMarking(marking: Marking): void;
-  /** With annotations asks for confirmation; without, deletes directly (undo covers it). Locked: nothing. */
+  /**
+   * With annotations asks for confirmation; without, deletes directly (undo covers it). Locked:
+   * nothing.
+   */
   requestDeleteArrow(arrow: Arrow): void;
   /** Several items: a single confirmation; if any locked one prevents it, does nothing. */
   requestDeleteItems(items: readonly ItemRef[]): void;

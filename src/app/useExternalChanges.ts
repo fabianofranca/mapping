@@ -15,7 +15,8 @@ export const EXTERNAL_POLL_FACTOR = 4;
 
 /**
  * How long to wait after a cycle of `durationMs`: `clamp(4 × duration, minimum, 30 s)`. On a
- * fast folder the cycle lasts well under 750 ms and the interval stays at the minimum (3 s); on a slow one,
+ * fast folder the cycle lasts well under 750 ms and the interval stays at the minimum (3 s); on a
+ * slow one,
  * the folder is never busy all the time (at most ~1/5 of the time checking).
  */
 export function nextPollDelay(durationMs: number, minMs = EXTERNAL_POLL_MS): number {
@@ -31,7 +32,8 @@ export function nextPollDelay(durationMs: number, minMs = EXTERNAL_POLL_MS): num
  * folder, up to 30 s on a slow one), and with work in progress (`session.busy()`: save, gesture,
  * proposal decision or application) it is postponed to the next minimum interval. With no pending
  * local changes the project is reloaded on its own, with a discreet notice; with the save in error, the
- * session opens the "Project changed outside the app" dialog (`session.conflict`), without reloading. Calls
+ * session opens the "Project changed outside the app" dialog (`session.conflict`), without
+ * reloading. Calls
  * to `session.sync` join the session queue and concurrent ones are merged (a `focus`
  * during the cycle does not lose the image check), so this hook does not control
  * concurrency. Selection, visible layers and viewport stay as they are (they are UI state); the
@@ -75,7 +77,8 @@ export function useExternalChanges(interval = EXTERNAL_POLL_MS): void {
     };
   }, [session, ui, interval]);
 
-  // After reloading (on its own or through the dialog), a selection that vanished from the file is cleared.
+  // After reloading (on its own or through the dialog), a selection that vanished from the file is
+  // cleared.
   // By the project in view: in the review's Proposed view, an item that only exists in the preview
   // stays selected (phase 8.2, P1), and so does one from a rejected creation.
   useEffect(

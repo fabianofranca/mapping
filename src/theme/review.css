@@ -1400,7 +1400,10 @@
   gap: var(--space-3);
 }
 
-/* Label with the help icon and the marker on the same row: the label wraps between words, the (i) never drops alone. */
+/*
+ * Label with the help icon and the marker on the same row: the label wraps between words, the (i)
+ * never drops alone.
+ */
 .props-label-cell {
   display: flex;
   flex-wrap: nowrap;
@@ -1424,7 +1427,10 @@
     );
 }
 
-/* At 900 px the control column is narrow: the X, Y, W and H fields trade side breathing room for digits. */
+/*
+ * At 900 px the control column is narrow: the X, Y, W and H fields trade side breathing room for
+ * digits.
+ */
 .review-details-panel .props-pair {
   gap: var(--space-1);
 }

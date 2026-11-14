@@ -17,7 +17,8 @@ export interface FontSyncDeps {
 export interface FontSync {
   /**
    * Opens a new round (the previous one becomes stale: if it has not registered yet, it does
-   * not even register) and reads the bytes of each item, in parallel and in order. `read` returns the font's bytes or `null`.
+   * not even register) and reads the bytes of each item, in parallel and in order. `read` returns
+   * the font's bytes or `null`.
    */
   start<T>(
     items: readonly T[],

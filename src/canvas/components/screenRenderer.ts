@@ -8,7 +8,8 @@
  *
  * `update` diffs per instance: it compares the library and each instance's object by identity
  * (`===`); only new instances or ones with a new object are (re)instantiated, those that
- * vanished are destroyed. The renderer does not know "board", "artboard" or "active screen": only the group it
+ * vanished are destroyed. The renderer does not know "board", "artboard" or "active screen": only
+ * the group it
  * receives. It has no drag events (the editor wires its own in `onInstanceCreated`).
  */
 import Konva from 'konva/lib/Core';
@@ -80,11 +81,15 @@ export interface ScreenRendererOptions {
 export interface ScreenRendererUpdateOptions {
   /** Re-instantiates everything (loaded fonts, for example). */
   readonly force?: boolean;
-  /** Index, in the group, of the first instance (the caller may have other children before). Default 0. */
+  /**
+   * Index, in the group, of the first instance (the caller may have other children before). Default
+   * 0.
+   */
   readonly zBase?: number;
   /**
    * Reading direction of the components' interior. When absent, the `screen.direction` applies (the
-   * `rtl` screen of `layoutScreen`), otherwise `ltr`; when present, it overrides the screen's. Changing it re-instantiates everything.
+   * `rtl` screen of `layoutScreen`), otherwise `ltr`; when present, it overrides the screen's.
+   * Changing it re-instantiates everything.
    */
   readonly direction?: Direction;
 }
@@ -101,7 +106,10 @@ interface Mounted {
   offers: ProvidedValues | undefined;
   /** Slot box (on the screen) when it has `clip`: the children only appear inside it. */
   slotClip: Box | undefined;
-  /** The clip (on the screen) that the children receive: the `slotClip` inside the instance's own clip. */
+  /**
+   * The clip (on the screen) that the children receive: the `slotClip` inside the instance's own
+   * clip.
+   */
   childClip: Box | undefined;
 }
 
@@ -174,7 +182,8 @@ export class ScreenRenderer {
 
   /**
    * Creates, redraws or only reorders an instance (the identity diff, plus the inherited color: it
-   * is also redrawn when the offered value the component reads changes). Returns true if anything changed.
+   * is also redrawn when the offered value the component reads changes). Returns true if anything
+   * changed.
    */
   private syncInstance(
     instance: Instance,

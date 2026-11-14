@@ -260,7 +260,8 @@ function updateNode(
 
 /**
  * Container without a file: a filled rectangle with the background color, always ready. Never the
- * "loading" placeholder: there is no bitmap to wait for. Without Containers (view mode) the outline goes away
+ * "loading" placeholder: there is no bitmap to wait for. Without Containers (view mode) the outline
+ * goes away
  * and the background stays: it is the screen.
  */
 function updateBackground(
