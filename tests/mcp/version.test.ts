@@ -4,7 +4,7 @@ import { BUILD_VERSION, SERVER_VERSION } from '../../mcp/version';
 
 // Server version × documentation (phase 8.5, M13): `SERVER_VERSION` (`mcp/version.ts`) is the
 // only place with the version in the code; the docs that cite it must cite the same one. The
-// `docs/TESTING.md` is not covered here: it says "a versão em `mcp/version.ts`" and has its own rule.
+// `docs/TESTING.md` is not covered here: it points to the version in `mcp/version.ts` and has its own rule.
 
 const VERSION = /\b\d+\.\d+\.\d+\b/g;
 const TAG = /mcp-v(\d+\.\d+\.\d+)/g;

@@ -179,7 +179,7 @@ describe('create_marking with annotation', () => {
     const button = p.markings.find((m) => m.id === buttonId)!;
     expect(rowMarking.rect).toMatchObject({ width: 380, height: 48 });
     expect(button.parentId).toBe(rowId);
-    // `hug` width: the new instance is born with the measured size of the `preview` label (MC3), not the `size` (120).
+    // `hug` width: the new instance is born with the measured size of the `preview` label (MC3), not the `size` (120). The 91 is the measured width of the label "Sign in": relabel the fixture and this number changes with it (it was 87 for the Portuguese "Entrar").
     expect(button.rect).toMatchObject({ width: 91, height: 40 });
     expect(p.annotations.find((a) => a.id === noteId)).toMatchObject({
       markingId: rowId,
