@@ -8,7 +8,7 @@ import { useEditor } from './EditorContext';
 import { captureFocusOrigin, FOCUSABLE } from './focus';
 import { focusCanvasArea } from './toolWindowLayout';
 
-/** A origem por extenso, marcando `http` ("sem criptografia") e rede local. */
+/** The origin in full, flagging `http` ("unencrypted") and local network. */
 export function describeImageOrigin(item: RemoteImageOrigin): string {
   const marks = [
     item.insecure ? t('imageConsent.insecure') : null,
@@ -17,7 +17,7 @@ export function describeImageOrigin(item: RemoteImageOrigin): string {
   return marks.length === 0 ? item.origin : `${item.origin} (${marks.join(', ')})`;
 }
 
-/** Foca `el` se ele ainda está no DOM e confere que o foco foi mesmo para ele. */
+/** Focuses `el` if it is still in the DOM and checks that focus really went to it. */
 function tryFocus(el: Element | null): boolean {
   if (!(el instanceof HTMLElement) || !el.isConnected || el === document.body)
     return false;
@@ -26,8 +26,8 @@ function tryFocus(el: Element | null): boolean {
 }
 
 /**
- * Faixa de consentimento das imagens remotas: aparece quando o projeto à vista usa origens
- * sem permissão. Nada é permitido sem uma ação explícita; "Agora não" vale só nesta sessão.
+ * Banner for consent to remote images: appears when the project in view uses origins
+ * without permission. Nothing is allowed without an explicit action; "Not now" only applies to this session.
  */
 export function ImageConsentBanner() {
   const { derived } = useEditor();
@@ -39,8 +39,8 @@ export function ImageConsentBanner() {
     document.activeElement !== null &&
     (document.activeElement === dismissRef.current ||
       document.activeElement === allowRef.current);
-  // Quem tinha o foco quando a faixa apareceu (ex.: o campo URL da imagem), e o `id` dele:
-  // o campo pode ser trocado por outro (`input` ↔ `textarea`, URL com mais de 60 caracteres).
+  // Who had focus when the banner appeared (e.g. the image URL field), and its `id`:
+  // the field may be swapped for another (`input` ↔ `textarea`, URL longer than 60 characters).
   const previous = useRef<Element | null>(null);
   const previousId = useRef('');
   const previousParent = useRef<Element | null>(null);
@@ -52,8 +52,8 @@ export function ImageConsentBanner() {
     };
     remember(focusInBanner() ? null : captureFocusOrigin().opener);
     if (!visible) return;
-    // Enquanto a faixa está aberta, acompanha o foco fora dela: o campo trocado pega o foco
-    // depois de a faixa aparecer.
+    // While the banner is open, follows focus outside it: the swapped field takes focus
+    // after the banner appears.
     const onFocusIn = (e: FocusEvent) => {
       const target = e.target;
       const inBanner = target === dismissRef.current || target === allowRef.current;
@@ -62,7 +62,7 @@ export function ImageConsentBanner() {
     document.addEventListener('focusin', onFocusIn);
     return () => document.removeEventListener('focusin', onFocusIn);
   }, [visible]);
-  // O campo foi trocado e o novo não recebeu o foco: acha-o pelo mesmo `id`, ao lado do antigo.
+  // The field was swapped and the new one did not get focus: finds it by the same `id`, next to the old one.
   const target = (): Element | null => {
     if (previous.current?.isConnected || previousId.current === '')
       return previous.current;
@@ -71,8 +71,8 @@ export function ImageConsentBanner() {
   };
   if (!visible) return null;
   const origins = pending.map((o) => o.origin);
-  // Ao fechar com o foco na faixa, ele volta a quem o tinha (se ainda está no DOM) ou ao
-  // canvas, ainda com a faixa no DOM: nunca ao `body`. Foco fora da faixa: nada é mexido.
+  // On close with focus in the banner, it goes back to whoever had it (if still in the DOM) or to the
+  // canvas, still with the banner in the DOM: never to `body`. Focus outside the banner: nothing is touched.
   const close = (action: (origins: readonly string[]) => void) => () => {
     const inside = focusInBanner();
     action(origins);

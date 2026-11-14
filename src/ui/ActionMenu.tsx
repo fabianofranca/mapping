@@ -9,7 +9,8 @@ import { menuKeyDown, useFocusFirstItem } from './useMenuNavigation';
 
 // Row ⋯ menu (KeyValueGrid and DataGrid): move up, move down, remove. Simple
 // popover, no dialog: closes on Esc, on an outside click and on choosing an item, and on every
-// close the focus that was inside returns to the button (stage 8, F6). Arrows move between the items.
+// close the focus that was inside returns to the button (stage 8, F6). Arrows move between
+// the items.
 
 export interface ActionMenuItem {
   readonly label: string;

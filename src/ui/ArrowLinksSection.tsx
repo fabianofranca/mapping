@@ -19,7 +19,7 @@ import { useEditor } from './EditorContext';
 import { Icon } from './icons';
 import { arrowEndLabel, arrowText } from './labels';
 
-/** A outra ponta está fora da perspectiva aberta? (decisão 16; na Principal nunca) */
+/** Is the other endpoint outside the open perspective? (decision 16; never in Main) */
 function useOutsidePerspective(otherId: string): boolean {
   const { session, store } = useEditor();
   const project = store.committed.value;
@@ -30,16 +30,17 @@ function useOutsidePerspective(otherId: string): boolean {
   return root !== null && !perspectiveRootSet(open).has(root);
 }
 
-// Seção "Ligado por seta" dos Detalhes da marcação (etapa #658): uma linha por seta que sai ou
-// chega, com a outra ponta e as anotações dela (e as da própria seta) nas camadas visíveis. É só
-// leitura: para editar, a pessoa vai à outra ponta ou à seta, pelos botões da linha.
+// "Linked by arrow" section of the marking Details (stage #658): one row per arrow that leaves or
+// arrives, with the other endpoint and its annotations (and those of the arrow itself) in the
+// visible layers. Read-only: to edit, the person goes to the other endpoint or to the arrow, via
+// the row buttons.
 
 interface LayerGroupData {
   readonly layer: Layer;
   readonly annotations: readonly Annotation[];
 }
 
-/** As anotações do dono por camada visível (na ordem das camadas); camada sem anotação não entra. */
+/** The owner's annotations per visible layer (in layer order); a layer without annotations is left out. */
 function annotationGroups(
   project: Project,
   ownerId: string,
@@ -108,7 +109,7 @@ interface ArrowLinkRowProps {
   readonly layers: readonly Layer[];
 }
 
-/** A outra ponta: botão que a seleciona; a marcação que não existe mais vira texto neutro. */
+/** The other endpoint: a button that selects it; a marking that no longer exists becomes neutral text. */
 function OtherEnd({
   project,
   other,
@@ -185,8 +186,8 @@ function ArrowLinkRow({ project, link, layers }: ArrowLinkRowProps) {
 }
 
 /**
- * Seção "Ligado por seta": só existe quando a marcação tem seta. A lista usa a paginação dos
- * Detalhes (`annotationPage` da revisão), sem limite próprio.
+ * "Linked by arrow" section: only exists when the marking has an arrow. The list uses the
+ * pagination of the Details (`annotationPage` of the review), with no limit of its own.
  */
 export function ArrowLinksSection({
   project,
@@ -197,8 +198,8 @@ export function ArrowLinksSection({
 }) {
   const { derived, session, store } = useEditor();
   const ext = useDetailsExtension();
-  // Com perspectiva aberta, `project` é o recorte dela, que descarta as setas cuja outra ponta
-  // está fora (decisão 16: elas aparecem como "Sai para…" com o selo): consulta o projeto inteiro.
+  // With a perspective open, `project` is its slice, which drops the arrows whose other endpoint
+  // is outside (decision 16: they appear as "Goes to…" with the badge): queries the whole project.
   const whole = session.perspective.id.value !== null ? store.committed.value : null;
   const source = whole ?? project;
   const links = arrowLinksOf(source, marking.id);

@@ -114,7 +114,10 @@ function ignoredText(ignored: readonly IgnoredSpecField[]): string | null {
   });
 }
 
-/** Specializations menu: apply, update version and remove (docs/ARCHITECTURE.md, "Specializations in the project and typed annotations"). */
+/**
+ * Specializations menu: apply, update version and remove (docs/ARCHITECTURE.md,
+ * "Specializations in the project and typed annotations").
+ */
 export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
   const { actions } = useEditor();
   const [step, setStep] = useState<Step | null>(null);
@@ -146,8 +149,8 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
   };
 
   /**
-   * Checks the package or file read: the expected `id` (the specialization being updated) and whether
-   * the version is newer. Returns the decision, or `null` after showing the notice.
+   * Checks the package or file read: the expected `id` (the specialization being updated) and
+   * whether the version is newer. Returns the decision, or `null` after showing the notice.
    */
   const gate = (
     spec: Spec,
@@ -174,7 +177,7 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
     return null;
   };
 
-  /** Reads, validates (three levels) and opens the package review; nothing changes in the project yet. */
+  /** Reads, validates (three levels) and opens the package review; nothing changes yet. */
   const reviewPackage = async (
     read: () => Promise<PackageReadResult>,
     expectedId: string | null = expected.current,
@@ -583,8 +586,8 @@ function UpdateConfirm({
 }
 
 /**
- * Review of a package that was read: summary, errors (they block) and warnings (they allow applying). In an
- * update, it also shows the effect on the layers, like the single-file confirmation.
+ * Review of a package that was read: summary, errors (they block) and warnings (they allow
+ * applying). In an update, it also shows the effect on the layers, like the single-file confirmation.
  */
 function PackageReview({
   project,

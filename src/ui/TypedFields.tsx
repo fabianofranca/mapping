@@ -164,7 +164,8 @@ function RefField({
   const layer = target
     ? projectIndex(project).layers.get(target.annotation.layerId)
     : undefined;
-  // The arrow icon already marks the reference in the field; the text arrow stays only in the tooltip (O2).
+  // The arrow icon already marks the reference in the field; the text arrow stays only in the
+  // tooltip (O2).
   const tip = hasValue && !broken ? `→ ${text}` : text;
 
   const goTo = () => {
@@ -187,7 +188,7 @@ function RefField({
       <Tooltip
         label={`${tip}${layer ? ` (${layer.name})` : ''} · ${t('ref.choose')}  ${SHORTCUT_LABELS.pickRef}`}
       >
-        {/* Exceção ao Button: campo de referência (cara de select) (docs/DESIGN-SYSTEM.md, "Botões avulsos") */}
+        {/* Exception to Button: reference field (looks like a select) (docs/DESIGN-SYSTEM.md, "Loose buttons") */}
         <button
           ref={button}
           id={id}
@@ -239,7 +240,8 @@ function RefField({
           project={project}
           annotation={annotation}
           field={field}
-          // The picker returns the focus to the field on close (while it is open, the field is inert).
+          // The picker returns the focus to the field on close (while it is open, the field is
+          // inert).
           returnFocus={() => button.current}
           onClose={() => setPicking(false)}
           onPick={(picked, andGo) => {

@@ -4,19 +4,19 @@ import type { DisplayImage } from '../../store/displayImages';
 import { Segmented } from '../controls';
 import { Icon } from '../icons';
 
-// Comparação antes/depois de uma imagem trocada (HANDOFF-PROPOSALS 2.1, ImageCompare):
-// lado a lado, deslizar (padrão) e sobrepor. A alça é um `role="slider"` (← → movem; no
-// Deslizar a alça mede o recorte do antes, então Home mostra só o depois e End só o antes;
-// no Sobrepor ela mede o depois, então Home mostra só o antes e End só o depois).
-// Os bitmaps são os de exibição, desenhados em `<canvas>` (sem URL nem requisição:
-// vale em `file://` e com a CSP).
+// Before/after comparison of a replaced image (HANDOFF-PROPOSALS 2.1, ImageCompare): side by side,
+// slide (default) and overlay. The handle is a `role="slider"` (← → move it; in Slide mode the
+// handle measures the crop of the before, so Home shows only the after and End only the before; in
+// Overlay it measures the after, so Home shows only the before and End only the after). The bitmaps
+// are the display ones, drawn in `<canvas>` (no URL or request: works on `file://` and with the
+// CSP).
 
 export type CompareMode = 'side' | 'slide' | 'overlay';
 
-/** Passo das setas na alça (porcentagem). */
+/** Step of the arrow keys on the handle (percentage). */
 const STEP = 5;
 
-/** A alça segue a divisória, mas fica inteira dentro da área, também em 0% e 100%. */
+/** The handle follows the divider but stays fully inside the area, also at 0% and 100%. */
 function gripLeft(value: number): string {
   const half = 'calc(var(--control-height) / 2)';
   return `clamp(${half}, ${value}%, calc(100% - ${half}))`;
@@ -40,7 +40,7 @@ function BitmapCanvas({
     try {
       ctx = canvas.getContext('2d');
     } catch {
-      // Sem canvas 2D (ambiente de teste): fica o espaço reservado.
+      // No 2D canvas (test environment): the reserved space stays.
     }
     ctx?.drawImage(bitmap, 0, 0);
   }, [bitmap]);
@@ -57,7 +57,7 @@ function BitmapCanvas({
 interface ImageCompareProps {
   readonly before: DisplayImage<ImageBitmap> | undefined;
   readonly after: DisplayImage<ImageBitmap> | undefined;
-  /** Nome do arquivo de cada lado (sempre à vista). */
+  /** File name of each side (always in view). */
   readonly beforeName: string;
   readonly afterName: string;
   readonly initialMode?: CompareMode;
@@ -86,7 +86,7 @@ export function ImageCompare({
     setValue(clamp(next));
   };
 
-  /** Arrastar a alça (ou tocar na imagem) leva a divisória ao ponteiro. */
+  /** Dragging the handle (or tapping the image) moves the divider to the pointer. */
   const onPointerDown = (e: PointerEvent) => {
     const el = stage.current;
     if (!el || mode === 'side') return;
@@ -97,7 +97,7 @@ export function ImageCompare({
     try {
       target.setPointerCapture(e.pointerId);
     } catch {
-      // Sem captura: o arrasto acaba ao sair da imagem.
+      // No capture: the drag ends on leaving the image.
     }
     const move = (m: PointerEvent) => setValue(at(m.clientX));
     const stop = () => {

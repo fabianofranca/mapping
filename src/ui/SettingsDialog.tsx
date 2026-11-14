@@ -89,9 +89,8 @@ function About() {
 
 /**
  * Settings: language, theme and canvas options, with a shortcut to the key list; in the
- * editor, also the code repositories per platform, the drawing mode and the reading direction; then the Identity (name and
- * editor, também os repositórios de código por plataforma, o modo do desenho e a direção de leitura; depois a Identidade (nome e e-mail
- * email of the threads), Privacy and, at the end, About.
+ * editor, also the code repositories per platform, the drawing mode and the reading direction;
+ * then the Identity (name and email of the threads), Privacy and, at the end, About.
  */
 export function SettingsDialog({
   onClose,

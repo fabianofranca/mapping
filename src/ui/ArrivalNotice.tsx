@@ -7,9 +7,9 @@ import { useEditor } from './EditorContext';
 import { imageLabel, markingLabel } from './labels';
 import { Notice } from './Notice';
 
-// Aviso da marca "Veio de…" no topo dos Detalhes de uma raiz (etapa #659, PE3, decisão 8): só na
-// Principal. Depois de recarregar só existe `project.arrivals` ("Veio de X."); na sessão em que a
-// raiz foi criada a explicação diz onde ela ficou.
+// "Came from…" mark notice at the top of the Details of a root (stage #659, PE3, decision 8): only on the
+// Main one. After reloading only `project.arrivals` exists ("Came from X."); in the session where the
+// root was created the explanation says where it ended up.
 
 function referenceLabel(project: Project, id: string | null): string {
   if (id === null) return '';
@@ -21,8 +21,8 @@ function referenceLabel(project: Project, id: string | null): string {
 }
 
 /**
- * A explicação: sem referência (deduzida das setas de agora, também depois de recarregar), "foi
- * para a área de chegada"; com referência, "perto de"/"ocupado" só na sessão em que chegou.
+ * The explanation: without a reference (deduced from the current arrows, also after reloading), "went
+ * to the arrival area"; with a reference, "near"/"occupied" only in the session where it arrived.
  */
 function whyText(
   project: Project,

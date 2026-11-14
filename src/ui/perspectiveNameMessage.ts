@@ -1,6 +1,6 @@
 import { t } from '../i18n';
 
-/** A mensagem de erro do nome de uma perspectiva (vazio ou repetido). */
+/** The error message of a perspective's name (empty or repeated). */
 export function perspectiveNameMessage(issue: 'empty' | 'taken', name: string): string {
   return issue === 'empty'
     ? t('perspective.new.nameEmpty')

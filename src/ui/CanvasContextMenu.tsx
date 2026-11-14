@@ -60,8 +60,8 @@ const ARROW_STYLE_LABELS: Readonly<
 };
 
 /**
-  * Items of an arrow's menu (ME4): the stroke style (Straight, Curve, Elbow; the current one checked) and
-  * Delete. Each choice is a history entry. When locked (or the project read-only), the
+  * Items of an arrow's menu (ME4): the stroke style (Straight, Curve, Elbow; the current one
+  * checked) and Delete. Each choice is a history entry. When locked (or the project read-only), the
   * items are disabled.
  */
 function ArrowMenuItems({
@@ -110,8 +110,8 @@ function ArrowMenuItems({
 }
 
 /**
-  * Comment (item under the cursor) and Comment here (empty place of a container or the canvas), decision
-  * 25: they open the thread's draft; nothing is saved before Send. Read-only: disabled.
+  * Comment (item under the cursor) and Comment here (empty place of a container or the canvas),
+  * decision 25: they open the thread's draft; nothing is saved before Send. Read-only: disabled.
  */
 function CommentMenuItems({
   comment,
@@ -157,9 +157,9 @@ function CommentMenuItems({
 }
 
 /**
-  * Canvas context menu (right mouse button): copy the reference and the crop, Wrap
-  * (Ctrl/Cmd+G) the item under the cursor, which the right click selects; on an arrow, the style and Delete. Opened by
-  * `ui.canvasMenu`; closes with Esc, a click outside, scrolling or on choosing an item.
+  * Canvas context menu (right mouse button): copy the reference and the crop, Wrap (Ctrl/Cmd+G) the
+  * item under the cursor, which the right click selects; on an arrow, the style and Delete. Opened
+  * by `ui.canvasMenu`; closes with Esc, a click outside, scrolling or on choosing an item.
  */
 export function CanvasContextMenu() {
   const editor = useEditor();
@@ -195,7 +195,8 @@ export function CanvasContextMenu() {
     el.querySelector<HTMLElement>('button')?.focus();
   }, [menu]);
 
-  // In a layout effect: the listeners enter together with the menu, with no gap for a click outside.
+  // In a layout effect: the listeners enter together with the menu, with no gap for a click
+  // outside.
   useLayoutEffect(() => {
     if (!menu) return;
     const onDown = (e: PointerEvent) => {
@@ -240,10 +241,11 @@ export function CanvasContextMenu() {
       ? target.id
       : null;
   const selectable = target?.kind === 'm';
-  // Marking and image (container) always have Wrap, with or without a folder (`WrapMenuItem` vanishes
-  // by itself when it does not exist: read-only, review).
+  // Marking and image (container) always have Wrap, with or without a folder (`WrapMenuItem`
+  // vanishes by itself when it does not exist: read-only, review).
   const wrappable = copyTarget !== null && wrapAvailable(editor);
-  // The target's items (the selection, if the item under the cursor is in it): Send uses each one's root.
+  // The target's items (the selection, if the item under the cursor is in it): Send uses each one's
+  // root.
   const picked = peekSelectedItems(ui);
   const perspectiveIds: readonly string[] =
     copyTarget === null

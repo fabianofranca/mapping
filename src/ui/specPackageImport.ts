@@ -3,9 +3,10 @@ import { MAX_PACKAGE_FILES, isTextPackageFile, packageWithinLimits } from '../mo
 import type { DirectoryHandleLike } from '../storage/folder';
 import type { SpecPackageFiles } from '../store/project';
 
-// Import a library package (docs/SPEC-FORMAT.md, "Library: the package") chosen
-// by the user: reads the folder (`showDirectoryPicker`) or the zip into memory, with the limits
-// of `libraryPackage.ts`, and validates through the three levels. Writing to `specs/<id>/` is the session's.
+// Import a library package (docs/SPEC-FORMAT.md, "Library: the package") chosen by the user: reads
+// the folder (`showDirectoryPicker`) or the zip into memory, with the limits of
+// `libraryPackage.ts`, and validates through the three levels. Writing to `specs/<id>/` is the
+// session's.
 
 export type PackageReadResult =
   | { readonly ok: true; readonly files: SpecPackageFiles }
@@ -146,7 +147,8 @@ export async function readPackageFromZip(zipFile: Blob): Promise<PackageReadResu
   return finish(collector);
 }
 
-// The (pure) validation lives in the store, which uses it when applying a proposal; here it is only re-exported.
+// The (pure) validation lives in the store, which uses it when applying a proposal; here it is only
+// re-exported.
 export {
   libraryInputFiles,
   readPackageSpec,

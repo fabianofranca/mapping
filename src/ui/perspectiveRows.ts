@@ -1,7 +1,7 @@
 import { t } from '../i18n';
 import { perspectiveRootSet, type Perspective, type Project } from '../model';
 
-/** Uma linha do menu "Enviar para perspectiva": a Principal (`perspective: null`) ou uma delas. */
+/** A row of the "Send to perspective" menu: the Main one (`perspective: null`) or one of them. */
 export interface PerspectiveRow {
   readonly perspective: Perspective | null;
   readonly checked: boolean;
@@ -10,10 +10,10 @@ export interface PerspectiveRow {
 }
 
 /**
- * As linhas do menu de envio para as raízes `roots`: a Principal (sempre marcada e travada) e uma
- * por perspectiva, marcada quando tem todas as raízes. A aberta fica travada e, com
- * `openAlwaysChecked`, marcada mesmo sem as raízes (o submenu do botão direito); sem ele, só
- * marcada se as tem (o menu dos Detalhes).
+ * The rows of the send menu for the roots `roots`: the Main one (always checked and locked) and one
+ * per perspective, checked when it has all the roots. The open one is locked and, with
+ * `openAlwaysChecked`, checked even without the roots (the right-click submenu); without it, only
+ * checked if it has them (the Details menu).
  */
 export function perspectiveRows(
   project: Project,

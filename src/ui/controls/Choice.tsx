@@ -8,11 +8,11 @@ type NativeInput = Omit<
 interface ChoiceProps extends NativeInput {
   readonly type?: 'checkbox' | 'radio';
   readonly label: ComponentChildren;
-  /** Texto de apoio, em cinza, logo depois do rótulo. */
+  /** Supporting text, in gray, right after the label. */
   readonly hint?: string;
 }
 
-/** Caixa de seleção ou rádio com o rótulo na mesma linha (e clicável). */
+/** Checkbox or radio with the label on the same line (and clickable). */
 export function Choice({ type = 'checkbox', label, hint, ...rest }: ChoiceProps) {
   return (
     <label class="choice">

@@ -5,17 +5,17 @@ import { useDetailsExtension } from './DetailsExtension';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
 
-// Seção recolhível de Detalhes (B15): Marcação, Imagem e Anotações. Recolhida, mostra
-// um resumo no cabeçalho e não monta o conteúdo.
+// Collapsible Details section (B15): Marking, Image and Annotations. Collapsed, it shows
+// a summary in the header and does not mount the content.
 
 interface SectionProps {
   readonly section: DetailsSection;
   readonly title: string;
-  /** Resumo mostrado quando recolhida (ex.: "X 112 · Y 236 · 346 × 84 px"). */
+  /** Summary shown when collapsed (e.g. "X 112 · Y 236 · 346 × 84 px"). */
   readonly summary?: string;
-  /** Contagem ao lado do título (ex.: número de anotações). */
+  /** Count beside the title (e.g. number of annotations). */
   readonly count?: number;
-  /** Ações à direita do cabeçalho (ex.: "+ Anotação"). */
+  /** Actions on the right of the header (e.g. "+ Annotation"). */
   readonly actions?: ComponentChildren;
   readonly children: ComponentChildren;
 }

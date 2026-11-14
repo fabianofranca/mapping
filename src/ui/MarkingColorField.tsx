@@ -7,15 +7,15 @@ import { useEditor } from './EditorContext';
 interface MarkingColorFieldProps {
   readonly image: ProjectContainer;
   readonly disabled: boolean;
-  /** Peça depois do rótulo (o marcador da revisão). */
+  /** Piece after the label (the review marker). */
   readonly mark?: ComponentChildren;
-  /** Linha embaixo do campo (a nota da mudança, na revisão). */
+  /** Line below the field (the change note, in the review). */
   readonly below?: ComponentChildren;
 }
 
 /**
- * Cor da borda das marcações da imagem: grupo de rádios (a neutra do tema e a paleta,
- * alvos de 24px) e uma cor livre.
+ * Border color of the image's markings: radio group (the theme's neutral and the palette,
+ * 24px targets) and a free color.
  */
 export function MarkingColorField({
   image,

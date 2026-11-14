@@ -11,8 +11,8 @@ import { useEditor } from './EditorContext';
 import { FOCUSABLE } from './focus';
 import { Popover } from './Popover';
 
-// The "Show on canvas" panel of view mode (decision 8 of stage #656): the button that
-// reopens it and the popover with the elements, the layers with drawing and the two footer shortcuts.
+// The "Show on canvas" panel of view mode (decision 8 of stage #656): the button that reopens it
+// and the popover with the elements, the layers with drawing and the two footer shortcuts.
 
 type Flag = 'containers' | 'images' | 'outline' | 'names' | 'arrows';
 
@@ -111,8 +111,8 @@ export function viewControl(): HTMLElement | null {
 
 /**
   * The "Show on canvas" button (only enabled in the mode) and the panel it opens. The panel that
-  * opened on turning the mode on gives focus back, on closing, to View (the active button in the bar); the
-  * one opened by "Show on canvas" itself gives it back to that.
+  * opened on turning the mode on gives focus back, on closing, to View (the active button in the
+  * bar); the one opened by "Show on canvas" itself gives it back to that.
  */
 export function ViewModePanel() {
   const { ui } = useEditor();

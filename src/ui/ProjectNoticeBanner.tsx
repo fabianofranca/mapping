@@ -2,7 +2,7 @@ import { t } from '../i18n';
 import { dismissProjectNotice, projectNotice } from '../store/banners';
 import { Banner } from './Banner';
 
-/** Aviso de uma abertura (ex.: pasta que já tinha projeto): fica no topo, na tela inicial e no editor, até ser dispensado. */
+/** Notice of an opening (e.g. a folder that already had a project): stays at the top, on the home screen and in the editor, until dismissed. */
 export function ProjectNoticeBanner() {
   const key = projectNotice.value;
   if (!key) return null;

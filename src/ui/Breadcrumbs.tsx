@@ -183,7 +183,8 @@ export function Breadcrumbs({
 }) {
   const { review, store, ui } = useEditor();
   // The project in view: in the review's Proposed view, an item that only exists in the proposal
-  // also has a path (phase 8.2, P1), and that of a rejected creation, through the preview without decisions.
+  // also has a path (phase 8.2, P1), and that of a rejected creation, through the preview without
+  // decisions.
   const selection = ui.selection.value;
   const crumbs = crumbsOf(selectionProject(review, selection), selection);
   const hint = drawHintVisible({

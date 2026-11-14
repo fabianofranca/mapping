@@ -6,8 +6,8 @@ import { useFocusOrigin, useModal, type FocusReturn } from './focus';
 import { Icon } from './icons';
 import { imageLabel, markingLabel, markingPath } from './labels';
 
-// Seletor de marcação ("Ligar a…"): o mesmo popup do `RefPicker` (busca, ↑↓, Enter escolhe,
-// Esc fecha), mas a lista são as marcações do projeto, nunca as setas, sem a própria.
+// Marking picker ("Link to…"): the same popup as `RefPicker` (search, ↑↓, Enter chooses,
+// Esc closes), but the list is the project's markings, never the arrows, without the marking itself.
 
 interface MarkingOption {
   readonly marking: Marking;
@@ -15,7 +15,7 @@ interface MarkingOption {
   readonly context: string;
 }
 
-/** As marcações que podem ser destino, com o contexto "container › caminho". */
+/** The markings that can be a target, with the context "container › path". */
 export function markingOptions(project: Project, excludeId: string): MarkingOption[] {
   const index = projectIndex(project);
   return project.markings
@@ -35,12 +35,12 @@ export function markingOptions(project: Project, excludeId: string): MarkingOpti
 
 interface MarkingPickerProps {
   readonly project: Project;
-  /** A marcação de origem, que não aparece na lista; também dá o título. */
+  /** The source marking, which does not appear in the list; it also gives the title. */
   readonly source: Marking;
-  /** Esc, clique fora ou escolha feita. */
+  /** Esc, click outside or a choice made. */
   readonly onClose: () => void;
   readonly onPick: (marking: Marking) => void;
-  /** Alvo do foco ao fechar se quem abriu não estiver mais no DOM. */
+  /** Focus target on close if whoever opened it is no longer in the DOM. */
   readonly returnFocus?: FocusReturn;
 }
 
@@ -60,7 +60,7 @@ export function MarkingPicker({
   const origin = useFocusOrigin();
   useModal(dialog, origin, returnFocus, () => input.current?.focus());
 
-  // Memorizado: o hover só troca o item ativo e não deve refazer a lista.
+  // Memoized: hover only changes the active item and must not rebuild the list.
   const all = useMemo(() => markingOptions(project, source.id), [project, source.id]);
   const needle = query.trim().toLocaleLowerCase();
   const options =

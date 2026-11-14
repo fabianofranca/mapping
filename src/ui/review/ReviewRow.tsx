@@ -9,13 +9,13 @@ import { DecisionMark, type DecisionCounts } from './DecisionMark';
 import { badgeText, RevisedFlag, type RevisedBadge } from './RevisedFlag';
 import { rowDomId, type RowPosition } from './levelRows';
 
-// Linha dos níveis da revisão (HANDOFF-PROPOSALS 2.1, ReviewRow): um TreeRow de três
-// colunas — nome (chevron, decisão, tipo, rótulo e sinalizadores), resumo (contagens ou
-// "antes → depois") e o DecisionControl. 28px de altura.
+// Row of the review levels (HANDOFF-PROPOSALS 2.1, ReviewRow): a three-column TreeRow
+// — name (chevron, decision, type, label and flags), summary (counts or
+// "before → after") and the DecisionControl. 28px tall.
 
 export interface ReviewRowProps {
   readonly rowKey: string;
-  /** Profundidade (0 = proposta). */
+  /** Depth (0 = proposal). */
   readonly depth: number;
   readonly label: string;
   readonly state: LevelState;
@@ -24,13 +24,13 @@ export interface ReviewRowProps {
   readonly expandable: boolean;
   readonly expanded: boolean;
   readonly selected: boolean;
-  /** Posição entre as irmãs (`aria-posinset`/`aria-setsize`). */
+  /** Position among siblings (`aria-posinset`/`aria-setsize`). */
   readonly position?: RowPosition;
-  /** Faz parte do conjunto que bloqueia "Aplicar" (`is-invalid`). */
+  /** Part of the set that blocks "Apply" (`is-invalid`). */
   readonly invalid?: boolean;
-  /** Sinalizadores depois do rótulo (Flag, cadeado, nota…). */
+  /** Flags after the label (Flag, lock, note…). */
   readonly flags?: ComponentChildren;
-  /** Marca "Revisada" à vista (etapa #644): o selo depois do rótulo e o nome acessível dela. */
+  /** Shows the "Reviewed" mark (stage #644): the badge after the label and its accessible name. */
   readonly revised?: RevisedBadge | null;
   readonly summary: ComponentChildren;
   readonly decision: DecisionValue;
@@ -42,7 +42,7 @@ export interface ReviewRowProps {
   readonly onDecide: (state: DecisionValue) => void;
 }
 
-/** Atributos ARIA do `treeitem` (posição e total entre as irmãs, para a lista virtualizada). */
+/** ARIA attributes of the `treeitem` (position and total among siblings, for the virtualized list). */
 function treeitemAttrs(
   r: Pick<
     ReviewRowProps,
@@ -111,7 +111,7 @@ export function ReviewRow({
       data-row={rowKey}
       style={{ '--depth': depth }}
       onClick={(e) => {
-        // Os botões da linha (chevron e decisão) cuidam do próprio clique.
+        // The row's buttons (chevron and decision) handle their own click.
         if ((e.target as Element).closest('button')) return;
         onSelect();
       }}

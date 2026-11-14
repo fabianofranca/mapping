@@ -11,10 +11,10 @@ import {
 } from '../canvas/minimap';
 import { imageCanvasRect, type Rect } from '../model';
 
-// Minimapa (proposta P3): visão geral das imagens no canto do canvas; clicar move a
-// vista. Desenhado em DOM (sem Konva): as contas ficam em `canvas/minimap.ts`.
+// Minimap (proposal P3): overview of the images in the canvas corner; clicking moves the
+// view. Drawn in DOM (no Konva): the math lives in `canvas/minimap.ts`.
 
-/** Caixa máxima do minimapa, em pixels (tokens `size-minimap-*`, a mesma nos dois temas). */
+/** Maximum minimap box, in pixels (tokens `size-minimap-*`, the same in both themes). */
 const BOX = {
   width: Number.parseInt(tokenValue('size-minimap-width', 'light'), 10),
   height: Number.parseInt(tokenValue('size-minimap-height', 'light'), 10),
@@ -34,11 +34,11 @@ export function Minimap() {
   const bounds = view.bounds.value;
   const viewport = view.viewport.value;
   const size = view.size.value;
-  // O projeto à vista (sem a prévia do gesto: um gesto em andamento não redesenha o
-  // minimapa a cada quadro); na visão Proposto da revisão, as imagens da prévia.
+  // The project in view (without the gesture preview: a gesture in progress does not redraw the
+  // minimap on every frame); in the Proposed view of the review, the preview's images.
   const containers = review.derived.shownProject.value?.containers;
-  // O que depende só do projeto (o retângulo de cada imagem no canvas) é calculado uma vez
-  // por projeto; pan e zoom só refazem a vista e, se o enquadramento mudar, o mapeamento.
+  // What depends only on the project (each image's rectangle on the canvas) is computed once
+  // per project; pan and zoom only redo the view and, if the framing changes, the mapping.
   const canvasRects = useMemo(
     () =>
       (containers ?? []).map((image) => ({
@@ -59,7 +59,7 @@ export function Minimap() {
             <span key={id} class="minimap-image" style={style(toMinimap(layout, rect))} />
           ))
         : null,
-    // `layout` é novo a cada quadro; só o enquadramento (escala e origem) muda o desenho.
+    // `layout` is new on every frame; only the framing (scale and origin) changes the drawing.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [canvasRects, scale, originX, originY],
   );

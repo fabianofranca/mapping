@@ -2,20 +2,20 @@ import { changeNotices, compareNotices, type Change } from '../../model';
 import { useEditor } from '../EditorContext';
 import { NoticeLine } from '../NoticeBadge';
 
-// Avisos da especialização na revisão (etapa #486, decisão 10): logo abaixo da mudança que
-// cria uma anotação de tipo com aviso, troca o tipo ou grava valor num campo ou coluna com aviso,
-// no estilo do `kind`. Só informam: Aceitar e Aplicar não dependem deles.
+// Specialization notices in the review (stage #486, decision 10): right below the change that
+// creates an annotation of a type with a notice, changes the type or writes a value into a field or column with a notice,
+// in the `kind` style. They only inform: Accept and Apply do not depend on them.
 
 export function ChangeNotices({
   change,
   field,
 }: {
   readonly change: Change;
-  /** Campo mostrado no marcador (`''`: a anotação inteira). */
+  /** Field shown in the marker (`''`: the whole annotation). */
   readonly field: string;
 }) {
   const { review } = useEditor();
-  // A prévia com todas as mudanças não aplicadas: o aviso aparece também na rejeitada.
+  // The preview with all the unapplied changes: the notice also appears on the rejected one.
   const preview = review.derived.fullPreview.value;
   if (!preview) return null;
   const usages = [...changeNotices(preview, change, field)].sort((a, b) =>

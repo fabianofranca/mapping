@@ -122,11 +122,12 @@ export function ChangeMark(subject: MarkSubject) {
   const panelId = useId();
   useEffect(() => () => clearTimeout(timer.current), []);
 
-  // The change selected in the Proposals window: the marker scrolls itself into view and, on a click or Enter
-  // in the list (`review.requestMark`), gets focus (the popover opens on focus). With the arrows it only
-  // scrolls and highlights. In the commit that draws the marker, even if the section that hides it has
-  // just opened (focus model of stage 8: the element's owner fulfils the request).
-  // One computed per marker: changing the selection redoes only what leaves and what becomes the target.
+  // The change selected in the Proposals window: the marker scrolls itself into view and, on a
+  // click or Enter in the list (`review.requestMark`), gets focus (the popover opens on focus).
+  // With the arrows it only scrolls and highlights. In the commit that draws the marker, even if
+  // the section that hides it has just opened (focus model of stage 8: the element's owner fulfils
+  // the request). One computed per marker: changing the selection redoes only what leaves and what
+  // becomes the target.
   const targetSignal = useMemo(
     () =>
       computed(() => {

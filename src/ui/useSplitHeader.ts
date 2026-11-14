@@ -1,14 +1,14 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import type { RefObject } from 'preact';
 
-// Cabeçalho da anotação em duas linhas (etapa #552, decisão 2): quando o campo do nome não cabe
-// na linha com o resto, ele desce inteiro para a 2ª linha e os botões ficam juntos, à direita,
-// na 1ª. A medida é feita aqui (o CSS sozinho não separa o campo dos botões que vêm depois dele
-// ao quebrar a linha) e vira só a classe `is-split`.
+// Annotation header on two lines (stage #552, decision 2): when the name field does not fit
+// on the line with the rest, it drops whole to the 2nd line and the buttons stay together, on the right,
+// on the 1st. The measurement is done here (CSS alone does not separate the field from the buttons that come after it
+// when the line wraps) and becomes just the `is-split` class.
 
 let probe: CanvasRenderingContext2D | null | undefined;
 
-/** Largura do texto na fonte do campo, ou 0 se o navegador não mede (testes de componente). */
+/** Width of the text in the field's font, or 0 if the browser does not measure (component tests). */
 function textWidth(text: string, font: string): number {
   if (probe === undefined) {
     try {
@@ -26,7 +26,7 @@ function px(value: string): number {
   return Number.parseFloat(value) || 0;
 }
 
-/** O cabeçalho não comporta, numa linha só, o resto dos itens e o campo do nome com o placeholder inteiro? */
+/** Does the header fail to fit, on a single line, the rest of the items and the name field with its whole placeholder? */
 export function headerNeedsSplit(header: HTMLElement): boolean {
   const name = header.querySelector<HTMLInputElement>(':scope > input');
   if (!name) return false;
@@ -51,7 +51,7 @@ export function headerNeedsSplit(header: HTMLElement): boolean {
   return used + wanted > header.clientWidth + 0.5;
 }
 
-/** Ref do cabeçalho e se ele está em duas linhas (`is-split`). Re-mede a cada render e a cada redimensionamento. */
+/** Header ref and whether it is on two lines (`is-split`). Re-measures on every render and every resize. */
 export function useSplitHeader(): {
   readonly ref: RefObject<HTMLDivElement>;
   readonly split: boolean;

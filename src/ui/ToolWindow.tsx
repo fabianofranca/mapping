@@ -46,8 +46,8 @@ const ESC_CLOSES: readonly ToolWindowId[] = ['details', 'comments'];
 
 /**
  * Esc without modifiers, not consumed by a menu, popover or tooltip, with no modal open and outside
- * a text field (the field's Esc is its own): closes the window the same way as the X and does not let
- * Esc reach the editor shortcuts (it does not clear the selection).
+ * a text field (the field's Esc is its own): closes the window the same way as the X and does
+ * not let Esc reach the editor shortcuts (it does not clear the selection).
  */
 function closeOnEscape(id: ToolWindowId, e: KeyboardEvent): void {
   if (!ESC_CLOSES.includes(id) || e.key !== 'Escape') return;

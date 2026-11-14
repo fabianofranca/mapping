@@ -33,10 +33,12 @@ function NoteArea({ target, note, readOnly, focusSeq, onSettled }: NoteAreaProps
   const { report } = useReviewCommands();
   const [text, setText] = useState(note?.text ?? '');
   const area = useRef<HTMLTextAreaElement>(null);
-  // The field leaves the DOM with the focus inside it (the decision swaps the card and remounts the popover): the
+  // The field leaves the DOM with the focus inside it (the decision swaps the card and remounts
+  // the popover): the
   // browser fires `blur` on removal, and that is not "the person left the field". Saving the
-  // text is fine; hiding the field and clearing the suggested-note request is not, otherwise the new field
-  // (which fulfils the request on mount) is born without a request. The cleanup runs before the DOM goes away.
+  // text is fine; hiding the field and clearing the suggested-note request is not, otherwise
+  // the new field (which fulfils the request on mount) is born without a request. The cleanup
+  // runs before the DOM goes away.
   const leaving = useRef(false);
   useLayoutEffect(
     () => () => {

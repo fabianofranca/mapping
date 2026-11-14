@@ -7,16 +7,16 @@ type NativeButton = Omit<
 >;
 
 interface ChipProps extends NativeButton {
-  /** Filtro ligado (`aria-pressed`). */
+  /** Filter on (`aria-pressed`). */
   readonly pressed: boolean;
   readonly children: ComponentChildren;
-  /** Contagem ao lado do rótulo (ex.: "Só conflitos 3"). */
+  /** Count beside the label (e.g. "Only conflicts 3"). */
   readonly count?: number;
 }
 
 /**
- * Chip de filtro (Chip do DS 2.0): alternância compacta de 24px, com
- * contagem opcional. Usado nos filtros da revisão (tipo de mudança, só conflitos).
+ * Filter chip (DS 2.0 Chip): compact 24px toggle, with an
+ * optional count. Used in the review filters (change type, only conflicts).
  */
 export function Chip({ pressed, children, count, type = 'button', ...rest }: ChipProps) {
   return (

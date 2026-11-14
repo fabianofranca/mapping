@@ -43,10 +43,11 @@ export function toggleReviewLegend(ui: { readonly reviewLegend: Signal<boolean> 
 }
 
 /**
-  * Esc with the legend open and focus on the button that opens it or on the canvas (or on no control):
-  * closes only the legend and leaves focus where it was, so the next Esc does what it did before
-  * (clear the selection). With focus inside the legend, the panel itself closes it; elsewhere
-  * (Proposals, Details) Esc belongs to whoever has focus. Returns `true` when it consumed Esc.
+  * Esc with the legend open and focus on the button that opens it or on the canvas (or on no
+  * control): closes only the legend and leaves focus where it was, so the next Esc does what it did
+  * before (clear the selection). With focus inside the legend, the panel itself closes it;
+  * elsewhere (Proposals, Details) Esc belongs to whoever has focus. Returns `true` when it consumed
+  * Esc.
  */
 export function closeReviewLegendOnEscape(ui: {
   readonly reviewLegend: Signal<boolean>;
@@ -189,7 +190,8 @@ function LegendPanel() {
   const { ui } = useEditor();
   const panel = legendPanel;
   useLegendPlacement(panel);
-  // Closing (X or Esc) gives focus back to the button that opens it, never to body (stage #515, FN1).
+  // Closing (X or Esc) gives focus back to the button that opens it, never to body (stage #515,
+  // FN1).
   const close = () => {
     ui.reviewLegend.value = false;
     legendToggle.current?.focus();

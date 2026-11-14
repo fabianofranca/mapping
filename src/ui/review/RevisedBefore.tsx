@@ -16,9 +16,9 @@ import {
 import { DiffValue, type DiffRow } from './DiffValue';
 import { useReviewNames } from './useReview';
 
-// Bloco "Antes da revisão" do popover da mudança que o agente trocou (etapa #644, CP3,
-// decisão 5): o que ele tinha proposto, só o que difere numa criação, e a decisão de antes.
-// Só para uma mudança com marca à vista (sem decisão); a nova na revisão não tem "antes".
+// "Before the review" block of the popover of the change the agent swapped (stage #644, CP3,
+// decision 5): what it had proposed, only what differs in a creation, and the earlier decision.
+// Only for a change with a visible mark (no decision); the new one in review has no "before".
 
 const same = (a: JsonValue | undefined, b: JsonValue | undefined) =>
   JSON.stringify(a) === JSON.stringify(b);
@@ -26,7 +26,7 @@ const same = (a: JsonValue | undefined, b: JsonValue | undefined) =>
 const asRecord = (v: JsonValue | undefined): Record<string, JsonValue> =>
   isRecord(v) ? v : {};
 
-/** Linhas de `values`: uma por campo da tipada que mudou, com o rótulo da especialização. */
+/** Rows of `values`: one per field of the typed annotation that changed, with the specialization's label. */
 function valuesRows(
   names: ReviewNames,
   c: Change,
@@ -50,7 +50,7 @@ function valuesRows(
     }));
 }
 
-/** Valor de um par de `entries` por chave (a chave identifica o par). */
+/** Value of an `entries` pair by key (the key identifies the pair). */
 function entryMap(value: JsonValue | undefined): Map<string, JsonValue | undefined> {
   const map = new Map<string, JsonValue | undefined>();
   if (!Array.isArray(value)) return map;
@@ -63,7 +63,7 @@ function entryMap(value: JsonValue | undefined): Map<string, JsonValue | undefin
 const entryText = (v: JsonValue | undefined): string =>
   typeof v === 'string' && v !== '' ? v : t('review.value.empty');
 
-/** Linhas de `entries`: uma por par (pela chave) que mudou, entrou ou saiu. */
+/** Rows of `entries`: one per pair (by key) that changed, was added or was removed. */
 function entriesRows(
   before: JsonValue | undefined,
   now: JsonValue | undefined,
@@ -81,7 +81,7 @@ function entriesRows(
     }));
 }
 
-/** Linhas de uma criação: só o que mudou, descendo em `values` e `entries`. */
+/** Rows of a creation: only what changed, descending into `values` and `entries`. */
 function creationRows(names: ReviewNames, c: Change, before: JsonValue): DiffRow[] {
   if (!isRecord(before) || !isRecord(c.to)) return [];
   const now = c.to;
@@ -105,7 +105,7 @@ function creationRows(names: ReviewNames, c: Change, before: JsonValue): DiffRow
   ];
 }
 
-/** As linhas do que o agente tinha proposto antes da revisão. */
+/** The rows of what the agent had proposed before the review. */
 export function beforeRows(
   names: ReviewNames,
   c: Change,

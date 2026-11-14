@@ -7,21 +7,21 @@ import { useEditor } from './EditorContext';
 import { perspectiveContentText } from './perspectiveContentText';
 import { perspectiveNameMessage } from './perspectiveNameMessage';
 
-/** Onde o foco abre quando o Gerenciar volta de uma confirmação de apagar (etapa #764, AP1). */
+/** Where the focus opens when Manage comes back from a delete confirmation (stage #764, AP1). */
 export type ManageFocus =
   { readonly kind: 'delete'; readonly id: string } | { readonly kind: 'close' };
 
 interface ManageProps {
   readonly onClose: () => void;
-  /** Foco inicial; sem ele vale o de sempre (o primeiro controle do corpo). */
+  /** Initial focus; without it the usual one applies (the first control of the body). */
   readonly focus?: ManageFocus;
-  /** Abre "Nova perspectiva". */
+  /** Opens "New perspective". */
   readonly onNew: () => void;
-  /** Abre a confirmação de apagar. */
+  /** Opens the delete confirmation. */
   readonly onDelete: (id: string) => void;
 }
 
-/** Um nome de cópia que ainda não existe: "X (cópia)", "X (cópia) 2"… */
+/** A copy name that does not exist yet: "X (copy)", "X (copy) 2"… */
 function copyName(project: Project, source: string): string {
   const base = t('perspective.manage.copyName', { name: source });
   const names = project.perspectives.map((p) => p.name);
@@ -64,7 +64,7 @@ interface RowProps {
   readonly perspective: Perspective;
   readonly onDelete: (id: string) => void;
   readonly onError: () => void;
-  /** Uma operação deu certo: o erro da tabela some. */
+  /** An operation succeeded: the table's error goes away. */
   readonly onOk: () => void;
 }
 
@@ -74,7 +74,7 @@ function WhoSelect({
   onOk,
 }: Pick<RowProps, 'perspective' | 'onError' | 'onOk'>) {
   const { session } = useEditor();
-  // Muda quando a gravação falha: remonta o <select> para ele voltar ao valor da perspectiva.
+  // Changes when saving fails: remounts the <select> so it goes back to the perspective's value.
   const [revert, setRevert] = useState(0);
   const local = session.perspective.localIds.value.has(perspective.id);
   return (
@@ -116,7 +116,7 @@ function NameCell({
   readonly onDone: () => void;
 }) {
   if (!editing) return <>{perspective.name}</>;
-  // `key` pelo nome: se ele muda por fora (desfazer, recarga), o rascunho recomeça dele.
+  // `key` by name: if it changes from outside (undo, reload), the draft restarts from it.
   return (
     <RenameForm
       key={perspective.name}
@@ -128,7 +128,7 @@ function NameCell({
   );
 }
 
-/** O formulário de renomear; existe só enquanto edita, então o rascunho nasce do nome atual. */
+/** The rename form; exists only while editing, so the draft is born from the current name. */
 function RenameForm({
   project,
   perspective,
@@ -242,7 +242,7 @@ function PerspectiveRow(props: RowProps) {
   );
 }
 
-/** Gerenciar perspectivas: tabela com Quem vê trocável na linha, renomear, duplicar e apagar. */
+/** Manage perspectives: table with a switchable Who sees in the row, rename, duplicate and delete. */
 export function ManagePerspectivesDialog({
   onClose,
   focus,
@@ -253,7 +253,7 @@ export function ManagePerspectivesDialog({
   const [failed, setFailed] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const project = store.project.value;
-  // Depois do foco inicial do `Dialog` (efeito do filho, que roda antes deste).
+  // After the initial focus of the `Dialog` (the child's effect, which runs before this one).
   useLayoutEffect(() => {
     if (!focus) return;
     const dialog = root.current?.closest('dialog');
@@ -264,7 +264,7 @@ export function ManagePerspectivesDialog({
             (el) => el.dataset.deleteFor === focus.id,
           );
     target?.focus();
-    // Uma vez, ao abrir.
+    // Once, on opening.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   if (!project) return null;
