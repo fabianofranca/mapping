@@ -208,14 +208,14 @@ describe('Link — owner with roles', () => {
     };
     setup(project);
     const row = document.querySelector('[data-role-row-missing]') as HTMLElement;
-    expect(within(row).getByText('No trigger:')).toBeTruthy();
+    expect(within(row).getByText('No Trigger:')).toBeTruthy();
     expect(row.querySelector('.issue-badge')).not.toBeNull();
     expect(within(row).getAllByRole('button')).toHaveLength(2);
     // The two role rows stay empty.
     expect(screen.getAllByText('none')).toHaveLength(2);
   });
 
-  it('without a declared label, the row is "No role"', () => {
+  it('without a declared label, the row is "No Role"', () => {
     const project = addChild(
       roleProject((s) => {
         withRoles(s);
@@ -226,7 +226,7 @@ describe('Link — owner with roles', () => {
       null,
     );
     setup(project);
-    expect(screen.getByText('No role:')).toBeTruthy();
+    expect(screen.getByText('No Role:')).toBeTruthy();
   });
 
   it('without children lacking a role, the "No <label>" row does not appear', () => {
