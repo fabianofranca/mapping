@@ -442,7 +442,7 @@ describe('validação: min-content e max-content só na formatVersion 4', () => 
     };
     expect(run('a').width).toBeCloseTo(SENTENCE_MAX, 9);
     const bad = run('b');
-    expect(bad.warnings).toContain('valor inválido em width: banana');
+    expect(bad.warnings).toContain('invalid value in width: banana');
   });
 
   it('numa v3, o valor vindo de expressão cai no padrão com o aviso', () => {
@@ -452,6 +452,6 @@ describe('validação: min-content e max-content só na formatVersion 4', () => 
       BOX,
       { measure: approximateMeasurer },
     );
-    expect(old.warnings).toContain('valor inválido em width: max-content');
+    expect(old.warnings).toContain('invalid value in width: max-content');
   });
 });

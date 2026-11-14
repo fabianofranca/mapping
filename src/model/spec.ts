@@ -501,19 +501,19 @@ const TAG_RE = /^[a-z0-9-]+$/;
 export const PLATFORM_ID_RE = /^[a-z0-9-]+$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-const nonEmpty = z.string().min(1, 'não pode ser vazio');
-const color = z.string().regex(HEX_COLOR_RE, 'cor inválida; use o formato #RRGGBB');
-const tag = z.string().regex(TAG_RE, 'etiqueta inválida; use [a-z0-9-]+');
+const nonEmpty = z.string().min(1, 'cannot be empty');
+const color = z.string().regex(HEX_COLOR_RE, 'invalid color; use the format #RRGGBB');
+const tag = z.string().regex(TAG_RE, 'invalid tag; use [a-z0-9-]+');
 const tags = z.array(tag);
 
 const key = z
   .string()
-  .regex(KEY_RE, 'chave inválida; use apenas [A-Za-z0-9_], sem espaços')
-  .refine((k) => !k.startsWith('_'), 'chave não pode começar com "_" (reservado)');
+  .regex(KEY_RE, 'invalid key; use only [A-Za-z0-9_], without spaces')
+  .refine((k) => !k.startsWith('_'), 'a key cannot start with "_" (reserved)');
 
 const platformId = z
   .string()
-  .regex(PLATFORM_ID_RE, 'id de plataforma inválido; use [a-z0-9-]+');
+  .regex(PLATFORM_ID_RE, 'invalid platform id; use [a-z0-9-]+');
 
 // The removed type is still accepted here so the field can be read and ignored (`dropRemovedFields`).
 const fieldType = z.enum(
@@ -522,7 +522,7 @@ const fieldType = z.enum(
     error: (issue) =>
       typeof issue.input === 'string'
         ? specMsg('spec.fieldTypeInvalid', { value: issue.input }).text
-        : 'obrigatório',
+        : 'required',
   },
 );
 
@@ -535,12 +535,12 @@ export function isIsoDate(s: string): boolean {
 
 const dateString = z
   .string()
-  .regex(DATE_RE, 'data inválida; use AAAA-MM-DD')
-  .refine(isIsoDate, 'data inexistente');
+  .regex(DATE_RE, 'invalid date; use YYYY-MM-DD')
+  .refine(isIsoDate, 'nonexistent date');
 
 /** Package file path with the given extension (or one of the extensions). */
 function packagePath(ext: string | readonly string[]) {
-  return z.string({ error: () => 'deve ser texto' }).superRefine((path, ctx) => {
+  return z.string({ error: () => 'must be text' }).superRefine((path, ctx) => {
     const error = packagePathError(path, ext);
     if (error !== undefined) addSpecIssue(ctx, [], packagePathMsg(error));
   });
@@ -557,7 +557,7 @@ const typeSourceShape = z
     signature: packagePath('.json').optional(),
   })
   .strict()
-  .refine((s) => s.id !== undefined || s.name !== undefined, 'precisa de "id" ou "name"');
+  .refine((s) => s.id !== undefined || s.name !== undefined, 'needs "id" or "name"');
 
 // `name` and `path` are optional here; which one is required depends on whether the `system` is in
 // `origins` (cross rule, `checkFieldSources`).
@@ -579,7 +579,7 @@ const acceptsSchema = z
       .array(z.lazy(() => allowedChildShape))
       .refine(
         (a) => a.length > 0,
-        'não pode ser vazio; tire a chave ou liste ao menos um item',
+        'cannot be empty; remove the key or list at least one item',
       )
       .optional(),
   })
@@ -587,7 +587,7 @@ const acceptsSchema = z
   .refine(
     (a) =>
       (a.tags?.length ?? 0) > 0 || a.free === true || (a.annotations?.length ?? 0) > 0,
-    'precisa de pelo menos uma etiqueta, "free": true ou "annotations"',
+    'needs at least one tag, "free": true or "annotations"',
   );
 
 const noticeShape = z
@@ -595,16 +595,16 @@ const noticeShape = z
     kind: z.enum(SPEC_NOTICE_KINDS, {
       error: (issue) =>
         issue.input === undefined
-          ? 'obrigatório'
+          ? 'required'
           : typeof issue.input === 'string'
             ? specMsg('spec.noticeKindInvalid', { value: issue.input }).text
-            : 'deve ser "removed", "deprecated", "diverges" ou "pending"',
+            : 'must be "removed", "deprecated", "diverges" or "pending"',
     }),
     message: z
       .string({
-        error: (issue) => (issue.input === undefined ? 'obrigatório' : 'deve ser texto'),
+        error: (issue) => (issue.input === undefined ? 'required' : 'must be text'),
       })
-      .refine((m) => m.trim() !== '', 'não pode ser vazio'),
+      .refine((m) => m.trim() !== '', 'cannot be empty'),
     since: dateString.optional(),
     ref: nonEmpty.optional(),
   })
@@ -625,7 +625,7 @@ function checkNotices(
       ctx.addIssue({
         code: 'custom',
         path: [...path, 'notices', i],
-        message: 'aviso repetido',
+        message: 'repeated notice',
       });
     }
     seen.add(id);
@@ -668,23 +668,23 @@ function valueProblem(
 ): string | undefined {
   switch (type) {
     case 'string':
-      return typeof value === 'string' ? undefined : 'deve ser texto';
+      return typeof value === 'string' ? undefined : 'must be text';
     case 'number':
       return typeof value === 'number' && Number.isFinite(value)
         ? undefined
-        : 'deve ser número';
+        : 'must be a number';
     case 'date':
       return dateString.safeParse(value).success
         ? undefined
-        : 'deve ser uma data AAAA-MM-DD válida';
+        : 'must be a valid date YYYY-MM-DD';
     case 'enum':
       return typeof value === 'string' && (options ?? []).includes(value)
         ? undefined
-        : 'deve ser uma das options';
+        : 'must be one of the options';
     case 'table':
-      return 'não existe para table';
+      return 'does not exist for table';
     case 'ref':
-      return 'não existe para ref';
+      return 'does not exist for ref';
     default:
       return undefined;
   }
@@ -698,19 +698,19 @@ function checkSuggestions(
   add: (sub: string, message: string | SpecMsg) => void,
 ): void {
   if (suggestions.length === 0) {
-    add('suggestions', 'não pode ser vazio; tire a chave ou liste ao menos uma sugestão');
+    add('suggestions', 'cannot be empty; remove the key or list at least one suggestion');
     return;
   }
   if (suggestions.length > MAX_SUGGESTIONS) {
     add('suggestions', specMsg('spec.suggestionsMax', { max: MAX_SUGGESTIONS }));
   }
   if (suggestions.some((x) => x === ''))
-    add('suggestions', 'sugestões não podem ser vazias');
+    add('suggestions', 'suggestions cannot be empty');
   if (suggestions.some((x) => x !== x.trim())) {
-    add('suggestions', 'sugestões não podem ter espaço no começo nem no fim');
+    add('suggestions', 'suggestions cannot have spaces at the start or the end');
   }
   if (new Set(suggestions).size !== suggestions.length) {
-    add('suggestions', 'sugestões repetidas');
+    add('suggestions', 'repeated suggestions');
   }
 }
 
@@ -738,18 +738,18 @@ function checkField(
   if (type === 'enum') {
     const options = field.options;
     if (!options || options.length === 0) {
-      add('options', 'obrigatório e não vazio em enum');
+      add('options', 'required and not empty in an enum');
     } else {
-      if (options.some((o) => o === '')) add('options', 'opções não podem ser vazias');
-      if (new Set(options).size !== options.length) add('options', 'opções repetidas');
+      if (options.some((o) => o === '')) add('options', 'options cannot be empty');
+      if (new Set(options).size !== options.length) add('options', 'repeated options');
     }
   } else if (field.options !== undefined) {
-    add('options', 'só é permitido em enum');
+    add('options', 'only allowed in an enum');
   }
 
   if (field.suggestions !== undefined) {
     if (type !== 'string') {
-      add('suggestions', 'só é permitido em campo ou coluna string');
+      add('suggestions', 'only allowed in a string field or column');
     } else {
       checkSuggestions(field.suggestions, add);
     }
@@ -757,7 +757,7 @@ function checkField(
 
   if (field.linkedRef !== undefined) {
     if (type !== 'string') {
-      add('linkedRef', 'só é permitido em campo ou coluna string');
+      add('linkedRef', 'only allowed in a string field or column');
     } else {
       const target = siblings.get(field.linkedRef);
       const key = field.linkedRef;
@@ -778,14 +778,14 @@ function checkField(
   }
 
   if (type !== 'table') {
-    if (field.columns !== undefined) add('columns', 'só é permitido em table');
-    if (field.rowLabel !== undefined) add('rowLabel', 'só é permitido em table');
+    if (field.columns !== undefined) add('columns', 'only allowed in a table');
+    if (field.rowLabel !== undefined) add('rowLabel', 'only allowed in a table');
   }
   if (type !== 'ref' && field.accepts !== undefined) {
-    add('accepts', 'só é permitido em ref');
+    add('accepts', 'only allowed in a ref');
   }
   if (field.platforms !== undefined) {
-    add('platforms', 'não é permitido neste tipo de campo');
+    add('platforms', 'not allowed in this field type');
   }
 
   if (field.default !== undefined) {
@@ -794,13 +794,13 @@ function checkField(
   }
 
   if (type === 'ref') {
-    if (!field.accepts) add('accepts', 'obrigatório em ref');
-    if (field.tags !== undefined) add('tags', 'ref não pode ter etiquetas');
+    if (!field.accepts) add('accepts', 'required in a ref');
+    if (field.tags !== undefined) add('tags', 'a ref cannot have tags');
   }
   (field.sources ?? []).forEach((source, i) => {
     if (source.values === undefined) return;
     if (type !== 'enum') {
-      add2(['sources', i, 'values'], 'só é permitido em campos enum');
+      add2(['sources', i, 'values'], 'only allowed in enum fields');
       return;
     }
     for (const [from, to] of Object.entries(source.values)) {
@@ -812,7 +812,7 @@ function checkField(
 
   if (type === 'table' && column) return;
   if (column && field.tags !== undefined) {
-    add('tags', 'colunas não têm etiquetas; use "tags" na table');
+    add('tags', 'columns have no tags; use "tags" on the table');
   }
 }
 
@@ -857,7 +857,7 @@ function checkFields(
       ctx.addIssue({
         code: 'custom',
         path: [...p, 'columns'],
-        message: 'obrigatório e não vazio em table',
+        message: 'required and not empty in a table',
       });
       return;
     }
@@ -891,7 +891,7 @@ function checkFields(
         ctx.addIssue({
           code: 'custom',
           path: [...p, 'rowLabel'],
-          message: 'obrigatório em table com tags',
+          message: 'required in a table with tags',
         });
       }
     }
@@ -917,18 +917,18 @@ const signatureKeys = {
 };
 
 const codePathShape = z
-  .string({ error: () => 'deve ser texto' })
-  .min(1, 'não pode ser vazio')
+  .string({ error: () => 'must be text' })
+  .min(1, 'cannot be empty')
   .refine(isValidCodePath, {
     error:
-      'caminho inválido: use um caminho relativo à raiz do repositório, com "/", sem "." nem ".." e sem unidade (ex: app/src/Main.kt)',
+      'invalid path: use a path relative to the repository root, with "/", without "." or ".." and without a drive (e.g. app/src/Main.kt)',
   });
 
 const codeCaseShape = z
   .object({
     symbol: z
-      .string({ error: () => 'deve ser texto' })
-      .min(1, 'não pode ser vazio')
+      .string({ error: () => 'must be text' })
+      .min(1, 'cannot be empty')
       .optional(),
     path: codePathShape.optional(),
     params: z.record(z.string(), nonEmpty).optional(),
@@ -942,12 +942,11 @@ const codeVariantsShape = z
   .object({
     field: z
       .string({
-        error: (issue) => (issue.input === undefined ? 'obrigatório' : 'deve ser texto'),
+        error: (issue) => (issue.input === undefined ? 'required' : 'must be text'),
       })
-      .min(1, 'não pode ser vazio'),
+      .min(1, 'cannot be empty'),
     cases: z.record(z.string(), codeCaseShape, {
-      error: (issue) =>
-        issue.input === undefined ? 'obrigatório' : 'deve ser um objeto',
+      error: (issue) => (issue.input === undefined ? 'required' : 'must be an object'),
     }),
   })
   .strict();
@@ -956,9 +955,9 @@ const codeEntryShape = z
   .object({
     symbol: z
       .string({
-        error: (issue) => (issue.input === undefined ? 'obrigatório' : 'deve ser texto'),
+        error: (issue) => (issue.input === undefined ? 'required' : 'must be text'),
       })
-      .min(1, 'não pode ser vazio'),
+      .min(1, 'cannot be empty'),
     path: codePathShape.optional(),
     params: z.record(z.string(), nonEmpty).optional(),
     values: z.record(z.string(), z.record(z.string(), nonEmpty)).optional(),
@@ -1020,14 +1019,14 @@ function checkCodeVariants(
     options = field.options ?? [];
   }
   const entries = Object.entries(variants.cases);
-  if (entries.length === 0) add([...vp, 'cases'], 'declare ao menos um caso');
+  if (entries.length === 0) add([...vp, 'cases'], 'declare at least one case');
   for (const [value, kase] of entries) {
     const cp = [...vp, 'cases', value];
     if (options !== undefined && !options.includes(value)) {
       add(cp, specMsg('spec.notInOptionsOf', { value, field: variants.field }));
     }
     if (Object.keys(kase).length === 0) {
-      add(cp, 'caso vazio: declare symbol, path, params, values ou notes');
+      add(cp, 'empty case: declare symbol, path, params, values or notes');
       continue;
     }
     checkCodeMaps(kase, fields, cp, add);
@@ -1061,8 +1060,7 @@ const exampleShape = z
         // The list of rows of a `table` field; the rows and cells are checked in
         // `checkExamples`, with the exact message and path.
         z.union([z.string(), z.number(), z.null(), z.array(z.unknown())], {
-          error:
-            'deve ser texto, número ou null (ou uma lista de linhas, num campo table)',
+          error: 'must be text, a number or null (or a list of rows, in a table field)',
         }),
       )
       .optional(),
@@ -1094,12 +1092,12 @@ function checkExamples(
 
     const external = example.system !== undefined || example.file !== undefined;
     if (example.values !== undefined && external) {
-      add([], 'use "values" ou "system" com "file", não os dois modos juntos');
+      add([], 'use "values" or "system" with "file", not both modes together');
     } else if (example.values === undefined && !external) {
-      add([], 'precisa de "values" ou de "system" com "file"');
+      add([], 'needs "values" or "system" with "file"');
     } else if (example.values === undefined) {
-      if (example.system === undefined) add(['system'], 'obrigatório com "file"');
-      if (example.file === undefined) add(['file'], 'obrigatório com "system"');
+      if (example.system === undefined) add(['system'], 'required with "file"');
+      if (example.file === undefined) add(['file'], 'required with "system"');
     }
 
     for (const [k, value] of Object.entries(example.values ?? {})) {
@@ -1113,7 +1111,7 @@ function checkExamples(
           checkExampleRows(field, value, [...p, 'values', k], ctx);
         else add(['values', k], specMsg('spec.exampleTableNeedsRows'));
       } else if (field.type === 'ref') {
-        add(['values', k], 'campo "ref" não aceita valor em exemplo');
+        add(['values', k], 'a "ref" field takes no value in an example');
       } else {
         const problem = valueProblem(field.type, field.options, value);
         if (problem !== undefined) add(['values', k], problem);
@@ -1172,39 +1170,38 @@ function checkAppliesTo(
   const add = (path: (string | number)[], message: string) =>
     addSpecIssue(ctx, path, message);
   if (appliesTo.length === 0) {
-    add(['appliesTo'], 'não pode ser vazio; use "marking", "arrow" ou os dois');
+    add(['appliesTo'], 'cannot be empty; use "marking", "arrow" or both');
     return;
   }
   if (new Set(appliesTo).size !== appliesTo.length) {
-    add(['appliesTo'], 'valores repetidos');
+    add(['appliesTo'], 'repeated values');
   }
   if (!appliesTo.includes('marking')) {
     if (type.component !== undefined) {
-      add(['component'], 'um tipo só de seta não pode ter component');
+      add(['component'], 'an arrow-only type cannot have a component');
     }
     if (type.floating !== undefined) {
-      add(['floating'], 'um tipo só de seta não pode ter floating');
+      add(['floating'], 'an arrow-only type cannot have floating');
     }
   }
 }
 
-const GROUPS_EMPTY = 'não pode ser vazio; tire a chave ou liste ao menos um grupo';
+const GROUPS_EMPTY = 'cannot be empty; remove the key or list at least one group';
 const ALLOWED_CHILD_SHAPE_MESSAGE =
-  'deve ser um id de tipo (texto) ou uma cláusula { layer, groups }';
-const DOC_SHAPE_MESSAGE =
-  'deve ser texto (arquivo do pacote) ou um objeto { repo, path }';
+  'must be a type id (text) or a clause { layer, groups }';
+const DOC_SHAPE_MESSAGE = 'must be text (a package file) or an object { repo, path }';
 
 /** Required, non-empty text (the messages of the new v11 objects). */
 const requiredText = z
   .string({
-    error: (issue) => (issue.input === undefined ? 'obrigatório' : 'deve ser texto'),
+    error: (issue) => (issue.input === undefined ? 'required' : 'must be text'),
   })
-  .min(1, 'não pode ser vazio');
+  .min(1, 'cannot be empty');
 
 const childClauseShape = z
   .object({
     layer: requiredText,
-    groups: z.array(nonEmpty, { error: 'deve ser uma lista de ids de grupo' }).optional(),
+    groups: z.array(nonEmpty, { error: 'must be a list of group ids' }).optional(),
   })
   .strict();
 
@@ -1213,7 +1210,7 @@ function forwardIssues(
   result: { success: boolean; error?: { issues: readonly z.core.$ZodIssue[] } },
   ctx: z.RefinementCtx,
 ): void {
-  // The extra property comes out in Portuguese, in the mold of the other specialization errors.
+  // The extra property comes out in English, in the mold of the other specialization errors.
   for (const issue of result.error?.issues ?? [])
     forwardIssue(ctx, issue, [], true, KNOWN_SPEC_MSGS);
 }
@@ -1221,7 +1218,7 @@ function forwardIssues(
 /** An `allowedChildren` item: a type's id or a `{ layer, groups? }` clause. */
 function checkAllowedChild(value: unknown, ctx: z.RefinementCtx): void {
   if (typeof value === 'string') {
-    if (value === '') ctx.addIssue({ code: 'custom', message: 'não pode ser vazio' });
+    if (value === '') ctx.addIssue({ code: 'custom', message: 'cannot be empty' });
     return;
   }
   if (!isRecord(value)) {
@@ -1254,7 +1251,7 @@ const docRefShape = z
     repo: requiredText,
     path: z
       .string({
-        error: (issue) => (issue.input === undefined ? 'obrigatório' : 'deve ser texto'),
+        error: (issue) => (issue.input === undefined ? 'required' : 'must be text'),
       })
       .superRefine((path, ctx) => {
         const problem = docPathProblem(path);
@@ -1298,15 +1295,15 @@ function checkChildRoles(
   const { childRoles } = type;
   if (childRoles === undefined) {
     if (type.childRolesLabel !== undefined) {
-      add(['childRolesLabel'], 'só é permitido com childRoles');
+      add(['childRolesLabel'], 'only allowed with childRoles');
     }
     return;
   }
   if ((type.allowedChildren ?? []).length === 0) {
-    add(['childRoles'], 'só é permitido em tipo com allowedChildren');
+    add(['childRoles'], 'only allowed in a type with allowedChildren');
   }
   if (childRoles.length === 0) {
-    add(['childRoles'], 'não pode ser vazio; tire a chave ou declare ao menos um papel');
+    add(['childRoles'], 'cannot be empty; remove the key or declare at least one role');
   }
   const seen = new Set<string>();
   childRoles.forEach((role, i) => {
@@ -1360,12 +1357,12 @@ const annotationTypeShape = z
           error: (issue) =>
             typeof issue.input === 'string'
               ? specMsg('spec.appliesToInvalid', { value: issue.input }).text
-              : 'deve ser "marking" ou "arrow"',
+              : 'must be "marking" or "arrow"',
         }),
       )
       .optional(),
     notices: noticesShape.optional(),
-    structural: z.boolean({ error: 'deve ser true ou false' }).optional(),
+    structural: z.boolean({ error: 'must be true or false' }).optional(),
   })
   .strict()
   .superRefine((type, ctx) => {
@@ -1373,7 +1370,7 @@ const annotationTypeShape = z
       ctx.addIssue({
         code: 'custom',
         path: ['structural'],
-        message: 'um tipo estrutural não desenha: não pode ter component',
+        message: 'a structural type does not draw: it cannot have a component',
       });
     }
     checkNotices(type.notices, ctx, []);
@@ -1463,14 +1460,14 @@ const repoShape = z
   .object({
     url: z
       .string({
-        error: (issue) => (issue.input === undefined ? 'obrigatório' : 'deve ser texto'),
+        error: (issue) => (issue.input === undefined ? 'required' : 'must be text'),
       })
-      .regex(/^https?:\/\/\S+$/i, 'deve começar com http:// ou https://, sem espaços'),
+      .regex(/^https?:\/\/\S+$/i, 'must start with http:// or https://, without spaces'),
     urlTemplate: z
-      .string({ error: () => 'deve ser texto' })
+      .string({ error: () => 'must be text' })
       .refine(
         (t) => /^https?:\/\/\S+$/i.test(t),
-        'deve começar com http:// ou https://, sem espaços',
+        'must start with http:// or https://, without spaces',
       )
       .refine(
         (t) => !/^https?:\/\/\S+$/i.test(t) || isValidUrlTemplate(t),
@@ -1483,7 +1480,7 @@ const repoShape = z
 
 const docRepoShape = z
   .object({
-    id: requiredText.regex(PLATFORM_ID_RE, 'id de repositório inválido; use [a-z0-9-]+'),
+    id: requiredText.regex(PLATFORM_ID_RE, 'invalid repository id; use [a-z0-9-]+'),
     ...repoShape.shape,
   })
   .strict();
@@ -1521,14 +1518,14 @@ const KNOWN_SPEC_MSGS: readonly SpecMsg[] = [
 ];
 
 const containerSide = z
-  .number({ error: 'deve ser um número' })
-  .int('deve ser inteiro')
-  .min(1, 'deve ser >= 1')
+  .number({ error: 'must be a number' })
+  .int('must be an integer')
+  .min(1, 'must be >= 1')
   .max(MAX_CONTAINER_SIZE, CONTAINER_SIDE_MAX.text);
 
 const containerShape = z
   .object({
-    id: z.string().regex(TAG_RE, 'id de container inválido; use [a-z0-9-]+'),
+    id: z.string().regex(TAG_RE, 'invalid container id; use [a-z0-9-]+'),
     name: nonEmpty,
     width: containerSide,
     height: containerSide,
@@ -1559,14 +1556,14 @@ const fontShape = z
     file: packagePath(FONT_EXTENSIONS),
     weight: fontWeight.optional(),
     style: z
-      .enum(['normal', 'italic'], { error: 'estilo inválido; use "normal" ou "italic"' })
+      .enum(['normal', 'italic'], { error: 'invalid style; use "normal" or "italic"' })
       .optional(),
   })
   .strict();
 
 const migrationVersion = z
-  .number({ error: 'deve ser um número' })
-  .int('deve ser inteiro');
+  .number({ error: 'must be a number' })
+  .int('must be an integer');
 
 const migrationStepShape = z.discriminatedUnion(
   'op',
@@ -1576,7 +1573,7 @@ const migrationStepShape = z.discriminatedUnion(
       .object({
         op: z.literal('remove-type'),
         type: nonEmpty,
-        mode: z.enum(['convert', 'delete'], { error: 'use "convert" ou "delete"' }),
+        mode: z.enum(['convert', 'delete'], { error: 'use "convert" or "delete"' }),
       })
       .strict(),
     z
@@ -1601,7 +1598,7 @@ const migrationStepShape = z.discriminatedUnion(
         op: z.literal('fill-field'),
         type: nonEmpty,
         field: nonEmpty,
-        default: z.union([z.string(), z.number()], { error: 'deve ser texto ou número' }),
+        default: z.union([z.string(), z.number()], { error: 'must be text or a number' }),
       })
       .strict(),
     // Role steps of the link (`formatVersion` 12 only); `type` is the owner's type.
@@ -1618,7 +1615,7 @@ const migrationStepShape = z.discriminatedUnion(
         op: z.literal('remove-role'),
         type: nonEmpty,
         role: nonEmpty,
-        mode: z.enum(['clear', 'unlink'], { error: 'use "clear" ou "unlink"' }),
+        mode: z.enum(['clear', 'unlink'], { error: 'use "clear" or "unlink"' }),
       })
       .strict(),
     z
@@ -1632,15 +1629,15 @@ const migrationStepShape = z.discriminatedUnion(
   ],
   {
     error:
-      '"op" inválido; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role" ou "set-role"',
+      'invalid "op"; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role" or "set-role"',
   },
 );
 
 const migrationShape = z
   .object({
-    from: migrationVersion.min(1, 'deve ser >= 1'),
+    from: migrationVersion.min(1, 'must be >= 1'),
     to: migrationVersion,
-    steps: z.array(migrationStepShape).min(1, 'não pode ser vazia'),
+    steps: z.array(migrationStepShape).min(1, 'cannot be empty'),
   })
   .strict();
 
@@ -1732,17 +1729,16 @@ function checkFieldSources(
     const isExecutable = version >= 4 && executable.has(source.system);
     if (source.path !== undefined) {
       if (version < 4) add('path', onlyFormat(4));
-      else if (!isExecutable)
-        add('path', 'só é permitido em sistema declarado em origins');
+      else if (!isExecutable) add('path', 'only allowed in a system declared in origins');
       else {
         const problem = fieldPathProblem(source.path);
         if (problem !== undefined) add('path', problem);
       }
     } else if (isExecutable) {
-      add('path', 'obrigatório em sistema declarado em origins');
+      add('path', 'required in a system declared in origins');
     }
     if (source.name === undefined && !isExecutable) {
-      add('name', 'obrigatório em sistema que não está em origins');
+      add('name', 'required in a system that is not in origins');
     }
   });
 }
@@ -1765,7 +1761,7 @@ function checkTypeSources(
         ctx.addIssue({
           code: 'custom',
           path: [...at, key],
-          message: 'só é permitido em sistema declarado em origins',
+          message: 'only allowed in a system declared in origins',
         });
       }
     }
@@ -2568,14 +2564,14 @@ function tokenModes(
 ): readonly string[] | null {
   const modes = tokens.modes;
   if (!Array.isArray(modes) || modes.length === 0) {
-    add(['tokens', 'modes'], 'deve ser uma lista com ao menos um modo');
+    add(['tokens', 'modes'], 'must be a list with at least one mode');
     return null;
   }
   const seen = new Set<string>();
   let ok = true;
   modes.forEach((mode: unknown, i) => {
     if (typeof mode !== 'string' || !TOKEN_MODE_RE.test(mode)) {
-      add(['tokens', 'modes', i], 'modo inválido; use [a-z0-9][a-z0-9-]*');
+      add(['tokens', 'modes', i], 'invalid mode; use [a-z0-9][a-z0-9-]*');
       ok = false;
     } else if (seen.has(mode)) {
       add(['tokens', 'modes', i], specMsg('spec.tokenModeRepeated', { mode }));
@@ -2599,7 +2595,7 @@ function checkTokenValue(
   const path = ['tokens', 'values', name];
   if (isTokenLiteral(value)) return;
   if (!isRecord(value)) {
-    add(path, 'deve ser texto, número ou um valor por modo');
+    add(path, 'must be text, a number or one value per mode');
     return;
   }
   const given = Object.keys(value);
@@ -2613,9 +2609,9 @@ function checkTokenValue(
   }
   const literals = given.map((m) => value[m]);
   if (!literals.every(isTokenLiteral)) {
-    add(path, 'cada modo deve ter texto ou número');
+    add(path, 'each mode must have text or a number');
   } else if (new Set(literals.map((l) => typeof l)).size > 1) {
-    add(path, 'os modos de um token devem ter o mesmo tipo (texto ou número)');
+    add(path, 'the modes of a token must have the same type (text or number)');
   }
 }
 
@@ -2640,14 +2636,14 @@ function checkTokens(
     return;
   }
   if (!isRecord(spec.tokens))
-    return add(['tokens'], 'deve ser um objeto com modes e values');
+    return add(['tokens'], 'must be an object with modes and values');
   checkTokenKeys(spec.tokens, add);
   const modes = tokenModes(spec.tokens, add);
   const values = spec.tokens.values;
-  if (!isRecord(values)) return add(['tokens', 'values'], 'deve ser um objeto');
+  if (!isRecord(values)) return add(['tokens', 'values'], 'must be an object');
   for (const [name, value] of Object.entries(values)) {
     if (!TOKEN_NAME_PATTERN.test(name)) {
-      add(['tokens', 'values', name], 'nome inválido; use [a-z0-9][a-z0-9-]*');
+      add(['tokens', 'values', name], 'invalid name; use [a-z0-9][a-z0-9-]*');
     } else if (modes !== null) {
       checkTokenValue(name, value, modes, add);
     }
@@ -2663,7 +2659,7 @@ function checkIcons(
   const add = issueAdder(ctx);
   if (spec.formatVersion < 15) return add(['icons'], onlyFormat(15));
   if (typeof spec.icons !== 'string') {
-    return add(['icons'], 'deve ser o caminho de um arquivo .json do pacote');
+    return add(['icons'], 'must be the path of a .json file in the package');
   }
   const error = packagePathError(spec.icons, '.json');
   if (error !== undefined) add(['icons'], packagePathMsg(error));
@@ -2686,7 +2682,7 @@ export const specSchema = z
     ),
     id: nonEmpty,
     name: nonEmpty,
-    version: z.number().int('deve ser inteiro').min(1, 'deve ser >= 1'),
+    version: z.number().int('must be an integer').min(1, 'must be >= 1'),
     description: z.string().optional(),
     platforms: z.array(platformShape).optional(),
     docRepos: z.array(docRepoShape).optional(),
@@ -2871,7 +2867,7 @@ export const specSchema = z
             ctx.addIssue({
               code: 'custom',
               path: [...tp, 'code'],
-              message: 'só é permitido em especializações que declaram platforms',
+              message: 'only allowed in specializations that declare platforms',
             });
           } else {
             for (const id of Object.keys(type.code)) {
@@ -2894,7 +2890,7 @@ export const specSchema = z
   });
 
 /**
- * Problem of the specialization: the `message` in Portuguese (what the MCP and the tests read)
+ * Problem of the specialization: the `message` in English (what the MCP and the tests read)
  * and, when there is one, the `code` and `params` of the model's message catalog
  * (`src/model/messages/spec.ts`), which the interface translates.
  */
@@ -3066,12 +3062,12 @@ export function parseSpecText(text: string): SpecParseResult {
       issues: [
         {
           path: '',
-          message: `JSON inválido: ${message}`,
+          message: `invalid JSON: ${message}`,
           code: 'library.invalidJson',
           params: { detail: message },
         },
       ],
-      errors: [`JSON inválido: ${message}`],
+      errors: [`invalid JSON: ${message}`],
     };
   }
   return parseSpec(data);

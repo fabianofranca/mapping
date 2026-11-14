@@ -90,7 +90,7 @@ describe('direction por nó', () => {
       expect(validateComponent(withChild(rect({ direction: d })))).toEqual([]);
   });
 
-  it('literal fora de ltr/rtl é erro (esperava um de: ltr, rtl)', () => {
+  it('literal fora de ltr/rtl é erro (expected one of: ltr, rtl)', () => {
     expect(validateComponent(withChild(rect({ direction: 'auto' })))).toEqual([
       'template.children[0].direction: expected one of: ltr, rtl',
     ]);

@@ -209,7 +209,7 @@ describe('stroke.gap (decisão 7)', () => {
     );
   });
 
-  it('forma errada: node é obrigatório, chave desconhecida, padding numérico', () => {
+  it('forma errada: node é required, chave desconhecida, padding numérico', () => {
     expect(validateComponent(labelled({ gap: {} }))).toEqual([
       'template.children[0].stroke.gap.node: required field',
     ]);

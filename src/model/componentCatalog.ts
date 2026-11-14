@@ -90,7 +90,7 @@ function invalidComponent(typeId: string, issue: IssueLike | undefined): ModelMe
     return modelMessage(
       'components.invalidFallback',
       { typeId },
-      `${typeId}: componente inválido`,
+      `${typeId}: invalid component`,
     );
   }
   const { at, reason, reasonParam, detail } = issueParts(issue);
@@ -126,7 +126,7 @@ function loadIcons(
   if (text === undefined) {
     pushProblem(
       problems,
-      modelMessage('icons.fileMissing', { path }, `icons: arquivo ausente (${path})`),
+      modelMessage('icons.fileMissing', { path }, `icons: missing file (${path})`),
     );
     return undefined;
   }
@@ -136,7 +136,7 @@ function loadIcons(
   if (issue === undefined) {
     pushProblem(
       problems,
-      modelMessage('icons.invalidFallback', {}, 'icons: conjunto de ícones inválido'),
+      modelMessage('icons.invalidFallback', {}, 'icons: invalid icon set'),
     );
     return undefined;
   }
@@ -212,7 +212,7 @@ export function loadSpecComponents(
           modelMessage(
             'components.fileMissing',
             { typeId: type.id, path },
-            `${type.id}: arquivo ausente (${path})`,
+            `${type.id}: missing file (${path})`,
           ),
         );
         continue;

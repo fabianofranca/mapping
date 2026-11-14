@@ -19,8 +19,8 @@ const jsonValidator = z.fromJSONSchema(jsonSchema as never);
 
 type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-const VERSION_5 = 'só é permitido com formatVersion 5';
-const HTTP = 'deve começar com http:// ou https://, sem espaços';
+const VERSION_5 = 'only allowed with formatVersion 5';
+const HTTP = 'must start with http:// or https://, without spaces';
 
 const REPO = {
   url: 'https://github.com/acme/android',
@@ -87,7 +87,7 @@ describe('formatVersion 5: repo nas plataformas', () => {
   it('url é obrigatória', () => {
     expect(issuesOf(withRepo({ ref: 'main' }))).toContainEqual({
       path: 'platforms[0].repo.url',
-      message: 'obrigatório',
+      message: 'required',
     });
     expect(jsonValidator.safeParse(withRepo({ ref: 'main' })).success).toBe(false);
   });
@@ -96,7 +96,7 @@ describe('formatVersion 5: repo nas plataformas', () => {
     const spec = withRepo({ url: REPO.url, urlTemplate: 'https://github.com/acme/x' });
     expect(issuesOf(spec)).toContainEqual({
       path: 'platforms[0].repo.urlTemplate',
-      message: 'deve conter {path}',
+      message: 'must contain {path}',
     });
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
@@ -114,7 +114,7 @@ describe('formatVersion 5: repo nas plataformas', () => {
     const spec = withRepo({ url: REPO.url, ref: '' });
     expect(issuesOf(spec)).toContainEqual({
       path: 'platforms[0].repo.ref',
-      message: 'não pode ser vazio',
+      message: 'cannot be empty',
     });
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });

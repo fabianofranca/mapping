@@ -382,71 +382,71 @@ describe('origins declaration messages', () => {
 // component library, which shows them in this format.
 // The same cases as `ORIGIN_CASES`, plus a repeated origin and an invalid anchor that are otherwise valid.
 const ORIGIN_TEXT_CASES: readonly (readonly [unknown, readonly string[]])[] = [
-  [ORIGIN_CASES[0], ['origins: esperava uma lista']],
+  [ORIGIN_CASES[0], ['origins: expected a list']],
   [
     ORIGIN_CASES[1],
     [
-      'origins[0]: esperava um objeto',
+      'origins[0]: expected an object',
       'origins[1].system: expected non-empty text',
-      'origins[1].node: esperava um objeto com type, props e children',
-      'origins[1].screen: obrigatório',
+      'origins[1].node: expected an object with type, props and children',
+      'origins[1].screen: required',
       'origins[2].kind: expected one of: tree, measured',
     ],
   ],
   [
     ORIGIN_CASES[2],
     [
-      'origins[0].node: esperava um objeto com type, props e children',
-      'origins[0].screen: obrigatório',
-      'origins[1].node: esperava um objeto com type, props e children',
-      'origins[1].screen: obrigatório',
+      'origins[0].node: expected an object with type, props and children',
+      'origins[0].screen: required',
+      'origins[1].node: expected an object with type, props and children',
+      'origins[1].screen: required',
     ],
   ],
   [
     ORIGIN_CASES[3],
     [
-      'origins[0].node.type: obrigatório (nome da chave, texto não vazio)',
-      'origins[0].node.props: obrigatório (nome da chave, texto não vazio)',
-      'origins[0].node.children: obrigatório (nome da chave, texto não vazio)',
+      'origins[0].node.type: required (key name, non-empty text)',
+      'origins[0].node.props: required (key name, non-empty text)',
+      'origins[0].node.children: required (key name, non-empty text)',
       'origins[0].screen.anchor: unknown key: anchor',
       'origins[0].screen.margin: unknown key: margin',
       'origins[0].screen.scrim: unknown key: scrim',
-      'origins[0].screen.width.path: esperava um caminho (texto não vazio)',
-      'origins[0].screen.height.path: caminho inválido "a[" (faltou "]")',
-      'origins[0].screen.roots: esperava uma lista com pelo menos uma raiz',
-      'origins[0].booleans: esperava { "true": texto, "false": texto }',
-      'origins[0].examples[0]: esperava um objeto',
+      'origins[0].screen.width.path: expected a path (non-empty text)',
+      'origins[0].screen.height.path: invalid path "a[" (missing "]")',
+      'origins[0].screen.roots: expected a list with at least one root',
+      'origins[0].booleans: expected { "true": text, "false": text }',
+      'origins[0].examples[0]: expected an object',
       'origins[0].examples[1].name: expected non-empty text',
-      'origins[0].examples[1].file: esperava o caminho de um arquivo .json do pacote',
-      'origins[0].examples[2].file: extensão inválida: esperava .json',
-      'origins[0].examples[3].name: nome "x" repetido',
+      'origins[0].examples[1].file: expected the path of a .json file in the package',
+      'origins[0].examples[2].file: invalid extension: expected .json',
+      'origins[0].examples[3].name: name "x" repeated',
     ],
   ],
-  [ORIGIN_CASES[4], ['origins[0].screen: obrigatório']],
+  [ORIGIN_CASES[4], ['origins[0].screen: required']],
   // The unknown key with `": "` in the name and the anchor with `"; use "` (the RM1 defect).
   [
     [{ system: 'a', 'x: y': 1 }],
     [
       'origins[0].x: y: unknown key: x: y',
-      'origins[0].node: esperava um objeto com type, props e children',
-      'origins[0].screen: obrigatório',
+      'origins[0].node: expected an object with type, props and children',
+      'origins[0].screen: required',
     ],
   ],
   [
     [ORIGIN_VALID_WITH_ANCHOR('a; use b')],
     [
-      'origins[0].screen.roots[0].anchor: âncora inválida: a; use b; use top-start, top, top-end, start, center, end, bottom-start, bottom, bottom-end',
+      'origins[0].screen.roots[0].anchor: invalid anchor: a; use b; use top-start, top, top-end, start, center, end, bottom-start, bottom, bottom-end',
     ],
   ],
   [
     [ORIGIN_VALID_WITH_ANCHOR('zz')],
     [
-      'origins[0].screen.roots[0].anchor: âncora inválida: zz; use top-start, top, top-end, start, center, end, bottom-start, bottom, bottom-end',
+      'origins[0].screen.roots[0].anchor: invalid anchor: zz; use top-start, top, top-end, start, center, end, bottom-start, bottom, bottom-end',
     ],
   ],
   [
     [ORIGIN_VALID_WITH_ANCHOR('top'), ORIGIN_VALID_WITH_ANCHOR('top')],
-    ['origins[1].system: origem repetida: a'],
+    ['origins[1].system: repeated origin: a'],
   ],
   [
     [
@@ -465,10 +465,10 @@ const ORIGIN_TEXT_CASES: readonly (readonly [unknown, readonly string[]])[] = [
       },
     ],
     [
-      'origins[0].screen.roots[0].margin: margin só vale com anchor',
-      'origins[0].screen.roots[1].path: caminho inválido "a[x]" (índice inválido: [x])',
-      'origins[0].screen.roots[2].path: caminho inválido "a..b" (segmento vazio)',
-      'origins[0].screen.roots[3].path: esperava um caminho (texto não vazio)',
+      'origins[0].screen.roots[0].margin: margin is only valid with anchor',
+      'origins[0].screen.roots[1].path: invalid path "a[x]" (invalid index: [x])',
+      'origins[0].screen.roots[2].path: invalid path "a..b" (empty segment)',
+      'origins[0].screen.roots[3].path: expected a path (non-empty text)',
     ],
   ],
   [
@@ -478,7 +478,7 @@ const ORIGIN_TEXT_CASES: readonly (readonly [unknown, readonly string[]])[] = [
         screen: { width: { path: 'a[*]' }, height: 1, roots: [{ path: 'a' }] },
       },
     ],
-    ['origins[0].screen.width.path: "[*]" só vale em roots[].path'],
+    ['origins[0].screen.width.path: "[*]" is only valid in roots[].path'],
   ],
   [
     [
@@ -489,8 +489,8 @@ const ORIGIN_TEXT_CASES: readonly (readonly [unknown, readonly string[]])[] = [
       },
     ],
     [
-      'origins[0].screen.width.path: caminho inválido "a]b" (caractere inesperado: ])',
-      'origins[0].examples[0].file: caminho inválido: use um caminho relativo à pasta da especialização, com "/", sem "." nem ".." e sem unidade (ex: components/button.json)',
+      'origins[0].screen.width.path: invalid path "a]b" (unexpected character: ])',
+      'origins[0].examples[0].file: invalid path: use a path relative to the specialization folder, with "/", without "." or ".." and without a drive (e.g. components/button.json)',
     ],
   ],
   // The invalid index can be a line break: the code follows the variant's (flag `s`).
@@ -501,7 +501,7 @@ const ORIGIN_TEXT_CASES: readonly (readonly [unknown, readonly string[]])[] = [
         screen: { width: 1, height: { path: 'a[\n]' }, roots: [{ path: 'a' }] },
       },
     ],
-    ['origins[0].screen.height.path: caminho inválido "a[\n]" (índice inválido: [\n])'],
+    ['origins[0].screen.height.path: invalid path "a[\n]" (invalid index: [\n])'],
   ],
 ];
 

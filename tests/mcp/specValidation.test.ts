@@ -142,7 +142,9 @@ describe('arquivos válidos', () => {
     expect(result.warnings).toContainEqual({
       code: 'ignored-field',
       path: 'layers[2].annotationTypes[0].fields[2]',
-      message: expect.stringContaining('"implementacao" do tipo "screen" é "codeRef"'),
+      message: expect.stringContaining(
+        'the field "implementacao" of the type "screen" is "codeRef"',
+      ),
     });
   });
 
@@ -278,7 +280,7 @@ describe('erros: os mesmos da importação da app, com o caminho exato', () => {
     );
     expect(result.valid).toBe(false);
     expect(result.errors).toEqual(expected.ok ? [] : expected.errors);
-    expect(result.errors[0]).toMatch(/^JSON inválido/);
+    expect(result.errors[0]).toMatch(/^invalid JSON/);
   });
 
   it('limita a quantidade de erros devolvidos e diz quantos faltaram', async () => {

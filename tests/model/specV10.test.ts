@@ -112,9 +112,9 @@ describe('formatVersion 10: notices', () => {
   it('notices numa v9 (e anteriores) é erro no caminho do tipo, do campo e da coluna', () => {
     for (const v of [1, 5, 8, 9]) {
       expect(issuesOf(withNotices(v)), `v${v}`).toEqual([
-        { path: `${TYPE}.notices`, message: 'só é permitido com formatVersion 10' },
-        { path: `${FIELD}.notices`, message: 'só é permitido com formatVersion 10' },
-        { path: `${COLUMN}.notices`, message: 'só é permitido com formatVersion 10' },
+        { path: `${TYPE}.notices`, message: 'only allowed with formatVersion 10' },
+        { path: `${FIELD}.notices`, message: 'only allowed with formatVersion 10' },
+        { path: `${COLUMN}.notices`, message: 'only allowed with formatVersion 10' },
       ]);
     }
     expect(issuesOf(spec(9))).toEqual([]);
@@ -125,23 +125,23 @@ describe('formatVersion 10: notices', () => {
       {
         path: `${TYPE}.notices[0].kind`,
         message:
-          '"obsolete" inválido; use "removed", "deprecated", "diverges" ou "pending"',
+          '"obsolete" is invalid; use "removed", "deprecated", "diverges" or "pending"',
       },
     ]);
     expect(issuesOf(typeNotice({ message: 'x' }))).toEqual([
-      { path: `${TYPE}.notices[0].kind`, message: 'obrigatório' },
+      { path: `${TYPE}.notices[0].kind`, message: 'required' },
     ]);
   });
 
   it('message ausente, vazia ou só de espaços', () => {
     expect(issuesOf(typeNotice({ kind: 'pending' }))).toEqual([
-      { path: `${TYPE}.notices[0].message`, message: 'obrigatório' },
+      { path: `${TYPE}.notices[0].message`, message: 'required' },
     ]);
     for (const message of ['', '   ', '\t\n']) {
       expect(
         issuesOf(typeNotice({ kind: 'pending', message })),
         JSON.stringify(message),
-      ).toEqual([{ path: `${TYPE}.notices[0].message`, message: 'não pode ser vazio' }]);
+      ).toEqual([{ path: `${TYPE}.notices[0].message`, message: 'cannot be empty' }]);
     }
   });
 
@@ -149,18 +149,18 @@ describe('formatVersion 10: notices', () => {
     const since = (value: string) =>
       issuesOf(typeNotice({ kind: 'pending', message: 'x', since: value }));
     const path = `${TYPE}.notices[0].since`;
-    expect(since('2026-02-30')).toEqual([{ path, message: 'data inexistente' }]);
+    expect(since('2026-02-30')).toEqual([{ path, message: 'nonexistent date' }]);
     // O formato errado também reprova a existência (o `dateString` do formato é o mesmo dos campos).
     expect(since('04/11/2026')).toEqual([
-      { path, message: 'data inválida; use AAAA-MM-DD' },
-      { path, message: 'data inexistente' },
+      { path, message: 'invalid date; use YYYY-MM-DD' },
+      { path, message: 'nonexistent date' },
     ]);
     expect(since('2026-02-28')).toEqual([]);
   });
 
   it('ref vazio é erro', () => {
     expect(issuesOf(typeNotice({ kind: 'pending', message: 'x', ref: '' }))).toEqual([
-      { path: `${TYPE}.notices[0].ref`, message: 'não pode ser vazio' },
+      { path: `${TYPE}.notices[0].ref`, message: 'cannot be empty' },
     ]);
   });
 
@@ -171,7 +171,7 @@ describe('formatVersion 10: notices', () => {
     expect(issues[0]?.message).toContain('severity');
   });
 
-  it('aviso repetido (mesmo kind e mesma message) no tipo, no campo e na coluna', () => {
+  it('repeated notice (mesmo kind e mesma message) no tipo, no campo e na coluna', () => {
     const notices = [
       { kind: 'pending', message: 'a' },
       { kind: 'pending', message: 'b' },
@@ -179,9 +179,9 @@ describe('formatVersion 10: notices', () => {
       { kind: 'removed', message: 'a' },
     ];
     expect(issuesOf(withNotices(10, ['type', 'field', 'column'], notices))).toEqual([
-      { path: `${TYPE}.notices[2]`, message: 'aviso repetido' },
-      { path: `${FIELD}.notices[2]`, message: 'aviso repetido' },
-      { path: `${COLUMN}.notices[2]`, message: 'aviso repetido' },
+      { path: `${TYPE}.notices[2]`, message: 'repeated notice' },
+      { path: `${FIELD}.notices[2]`, message: 'repeated notice' },
+      { path: `${COLUMN}.notices[2]`, message: 'repeated notice' },
     ]);
   });
 

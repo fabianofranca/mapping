@@ -251,7 +251,7 @@ describe('A10: alpha no $token de cor', () => {
     ]);
   });
 
-  it('fora de 0..1 é "esperava número entre 0 e 1"', () => {
+  it('fora de 0..1 é "expected a number between 0 and 1"', () => {
     expect(fill(t('scrim', { alpha: 1.5 }))).toEqual([
       'template.children[0].fill.alpha: expected a number between 0 and 1',
     ]);
@@ -263,7 +263,7 @@ describe('A10: alpha no $token de cor', () => {
     ]);
   });
 
-  it('fora de posição de cor dá "alpha só vale em $token de cor", no caminho do $token', () => {
+  it('fora de posição de cor dá "alpha is only valid on a color $token", no caminho do $token', () => {
     expect(
       validateComponent(
         withChild({

@@ -183,7 +183,7 @@ describe('grid: span', () => {
       { s: 'abc' },
     );
     expect(at('a').width).toBe(100);
-    expect(warnings).toEqual(['valor inválido em span: abc']);
+    expect(warnings).toEqual(['invalid value in span: abc']);
   });
 
   it('span por expressão válido é lido', () => {
@@ -262,7 +262,7 @@ describe('grid: alinhamento na célula', () => {
       { j: 'space-between' },
     );
     expect(at('a').x).toBe(0);
-    expect(warnings).toEqual(['valor inválido em layout.justify: space-between']);
+    expect(warnings).toEqual(['invalid value in layout.justify: space-between']);
   });
 });
 
@@ -369,7 +369,7 @@ describe('grid: valores por expressão', () => {
     const { at, warnings } = build(grid({ columns: { $field: 'n' } }, cells(2)), BOX, {
       n: 'abc',
     });
-    expect(warnings).toEqual(['valor inválido em layout.columns: abc']);
+    expect(warnings).toEqual(['invalid value in layout.columns: abc']);
     expect(at('k0').width).toBe(320);
     expect(at('k1').y).toBe(20);
   });
@@ -377,10 +377,10 @@ describe('grid: valores por expressão', () => {
   it('columns 0 e fracionário também são inválidos', () => {
     expect(
       build(grid({ columns: { $field: 'n' } }, cells(1)), BOX, { n: 0 }).warnings,
-    ).toEqual(['valor inválido em layout.columns: 0']);
+    ).toEqual(['invalid value in layout.columns: 0']);
     expect(
       build(grid({ columns: { $field: 'n' } }, cells(1)), BOX, { n: 2.5 }).warnings,
-    ).toEqual(['valor inválido em layout.columns: 2.5']);
+    ).toEqual(['invalid value in layout.columns: 2.5']);
   });
 
   it('columns por $field válido define as trilhas', () => {
@@ -396,14 +396,14 @@ describe('grid: valores por expressão', () => {
     const min = build(grid({ minColumnWidth: { $field: 'n' } }, cells(2)), BOX, {
       n: -5,
     });
-    expect(min.warnings).toEqual(['valor inválido em layout.minColumnWidth: -5']);
+    expect(min.warnings).toEqual(['invalid value in layout.minColumnWidth: -5']);
     expect(min.at('k1').y).toBe(20);
     const rows = build(
       grid({ rows: { $field: 'n' } }, [rect('a', 50, 'fill'), rect('b', 50, 'fill')]),
       BOX,
       { n: 'x' },
     );
-    expect(rows.warnings).toEqual(['valor inválido em layout.rows: x']);
+    expect(rows.warnings).toEqual(['invalid value in layout.rows: x']);
     expect(rows.at('a').height).toBe(200);
     expect(rows.at('b').x).toBe(50);
   });
@@ -429,19 +429,19 @@ describe('grid: valores por expressão', () => {
 });
 
 describe('grid: avisos de tamanho', () => {
-  it('conteúdo maior que a caixa: soma das linhas além da altura', () => {
+  it('content larger than the box: soma das linhas além da altura', () => {
     const { warnings } = build(grid({ columns: 1, lineGap: 10 }, cells(5)), {
       x: 0,
       y: 0,
       width: 320,
       height: 80,
     });
-    expect(warnings).toEqual(['conteúdo maior que a caixa: g']);
+    expect(warnings).toEqual(['content larger than the box: g']);
   });
 
   it('um filho com px maior que a célula avisa', () => {
     const { warnings } = build(grid({ columns: 2 }, [rect('a', 200, 20)]));
-    expect(warnings).toEqual(['conteúdo maior que a caixa: g']);
+    expect(warnings).toEqual(['content larger than the box: g']);
   });
 
   it('sem excesso, sem aviso', () => {
@@ -497,15 +497,15 @@ describe('pesos (weight): o Modifier.weight e o flex-grow', () => {
       w: 'abc',
     });
     expect(at('k0').width).toBe(160);
-    expect(warnings).toEqual(['valor inválido em weight: abc']);
+    expect(warnings).toEqual(['invalid value in weight: abc']);
   });
 
   it('weight 0 e negativo também são inválidos', () => {
     expect(build(row({}, fills([{ $field: 'w' }, 1])), BOX, { w: 0 }).warnings).toEqual([
-      'valor inválido em weight: 0',
+      'invalid value in weight: 0',
     ]);
     expect(build(row({}, fills([{ $field: 'w' }, 1])), BOX, { w: -2 }).warnings).toEqual([
-      'valor inválido em weight: -2',
+      'invalid value in weight: -2',
     ]);
   });
 

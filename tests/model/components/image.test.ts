@@ -130,7 +130,7 @@ describe('parseComponent: image', () => {
     expect(problems(raw(plain, 2))).toEqual([]);
   });
 
-  it('src é obrigatório', () => {
+  it('src é required', () => {
     const node = image();
     delete node.src;
     expect(problems(raw(node))).toEqual(['template.children[0].src: required field']);

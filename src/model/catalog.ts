@@ -338,7 +338,7 @@ export function buildCatalog(files: readonly LibraryFile[]): Catalog {
           componentProblem = modelMessage(
             'catalog.fileMissing',
             { path },
-            `arquivo ausente (${path})`,
+            `missing file (${path})`,
           );
         } else {
           const parsed = parseComponentText(text);

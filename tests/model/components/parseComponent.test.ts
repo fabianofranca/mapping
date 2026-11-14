@@ -162,7 +162,7 @@ describe('parseComponent: componente válido', () => {
     ]);
   });
 
-  it('aceita o mínimo: só os campos obrigatórios', () => {
+  it('aceita o mínimo: só os campos requireds', () => {
     const minimal = {
       format: 'mapping-component',
       formatVersion: 1,

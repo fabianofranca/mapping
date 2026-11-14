@@ -85,7 +85,7 @@ describe('resolveSizing', () => {
       const r = resolveSizing(c, { h });
       expect(r.height).toEqual({ spec: 50, source: 'size' });
       expect(r.messages.map((m) => m.text)).toEqual([
-        `valor inválido em sizing.height: ${h}`,
+        `invalid value in sizing.height: ${h}`,
       ]);
     }
     expect(resolveSizing(c, {}).messages).toHaveLength(1);

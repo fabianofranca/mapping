@@ -112,7 +112,7 @@ describe('parseIconsFile', () => {
       );
   });
 
-  it('mirror na formatVersion 1 é só é permitido com formatVersion 2', () => {
+  it('mirror na formatVersion 1 é only allowed with formatVersion 2', () => {
     const result = parseIconsFile({
       ...FILE,
       icons: { back: { mirror: true, paths: FILE.icons.check.paths } },
@@ -193,7 +193,7 @@ describe('nó icon: validação', () => {
     expect(issues).toContain('template.children[0].d: unknown key: d');
   });
 
-  it('na v3 falha com só é permitido com formatVersion 4, no caminho do nó', () => {
+  it('na v3 falha com only allowed with formatVersion 4, no caminho do nó', () => {
     const issues = validateComponent(
       component({ type: 'frame', children: [{ type: 'icon', name: 'check' }] }, 3),
     );
@@ -275,7 +275,7 @@ describe('nó icon: cena', () => {
       { name: { $field: 'icone' } },
       { icone: 'nuvem' },
     );
-    expect(warnings).toContain('ícone desconhecido: nuvem');
+    expect(warnings).toContain('unknown icon: nuvem');
     expect(paths(root)).toEqual([]);
     const unknown = [...walk(root)].find((n) => n.type === 'unknown');
     expect(unknown).toMatchObject({ sourceType: 'icon' });
@@ -284,7 +284,7 @@ describe('nó icon: cena', () => {
   it('sem conjunto declarado o ícone também é desconhecido', () => {
     const c = component({ type: 'frame', children: [{ type: 'icon', name: 'check' }] });
     const { warnings } = instantiate(c, {}, box, { measure: approximateMeasurer });
-    expect(warnings).toContain('ícone desconhecido: check');
+    expect(warnings).toContain('unknown icon: check');
   });
 });
 
@@ -306,7 +306,7 @@ describe('icons na especialização', () => {
     if (!result.ok)
       expect(result.issues).toContainEqual({
         path: 'icons',
-        message: 'só é permitido com formatVersion 15',
+        message: 'only allowed with formatVersion 15',
         code: 'spec.onlyFormat',
         params: { version: '15' },
       });

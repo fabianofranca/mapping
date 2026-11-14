@@ -381,7 +381,7 @@ describe('let e $var: erros', () => {
     ]);
   });
 
-  it('let e $var na formatVersion 3: só é permitido com formatVersion 4', () => {
+  it('let e $var na formatVersion 3: only allowed with formatVersion 4', () => {
     const raw = file(
       frame({ let: { a: 1 }, children: [rect({ width: { $var: 'a' } })] }),
       3,

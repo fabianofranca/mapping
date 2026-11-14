@@ -83,7 +83,7 @@ describe('validação de runs', () => {
     );
   });
 
-  it('na formatVersion 3 falha só com "só é permitido com formatVersion 4" em …runs', () => {
+  it('na formatVersion 3 falha só com "only allowed with formatVersion 4" em …runs', () => {
     expect(validateComponent(component(richNode(RUNS), 3))).toEqual([
       `template.children[0].runs: ${V4}`,
     ]);

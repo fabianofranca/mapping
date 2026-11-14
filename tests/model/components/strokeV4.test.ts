@@ -1,4 +1,4 @@
-// Formato 4: stroke.cap, stroke.join e stroke.sides, e a regra genérica "só é permitido com formatVersion 4".
+// Formato 4: stroke.cap, stroke.join e stroke.sides, e a regra genérica "only allowed with formatVersion 4".
 import { describe, expect, it } from 'vitest';
 import {
   COMPONENT_FORMAT,

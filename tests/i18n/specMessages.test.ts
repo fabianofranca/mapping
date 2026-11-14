@@ -807,30 +807,30 @@ describe('specialization messages (up to layerShape)', () => {
 // of the pt-BR text, except for the three texts that zod builds with the received value.
 describe('specialization message code without false matches', () => {
   it('text that merely resembles a template with a parameter gets no code', () => {
-    expect(specCodeForText('deve ser "a" ou "b"')).toBeUndefined();
-    expect(specCodeForText('nome "a" e "b" repetido')).toBeUndefined();
-    expect(specCodeForText('só é permitido com formatVersion 4')).toBeUndefined();
+    expect(specCodeForText('must be "a" ou "b"')).toBeUndefined();
+    expect(specCodeForText('nome "a" e "b" repeated')).toBeUndefined();
+    expect(specCodeForText('only allowed with formatVersion 4')).toBeUndefined();
   });
 
   it('the pattern applies only to the three enum codes', () => {
-    expect(specCodeForText('"x" inválido; use "marking" ou "arrow"')).toEqual({
+    expect(specCodeForText('"x" is invalid; use "marking" or "arrow"')).toEqual({
       code: 'spec.appliesToInvalid',
       params: { value: 'x' },
     });
     expect(
       specCodeForText(
-        '"x" inválido; use "removed", "deprecated", "diverges" ou "pending"',
+        '"x" is invalid; use "removed", "deprecated", "diverges" or "pending"',
       ),
     ).toEqual({ code: 'spec.noticeKindInvalid', params: { value: 'x' } });
     expect(
       specCodeForText(
-        '"x" inválido; use "string", "number", "date", "enum", "table" ou "ref"',
+        '"x" is invalid; use "string", "number", "date", "enum", "table" or "ref"',
       ),
     ).toEqual({ code: 'spec.fieldTypeInvalid', params: { value: 'x' } });
   });
 
   it('the exact text of a template without a parameter still finds the code', () => {
-    expect(specCodeForText('obrigatório')).toEqual({ code: 'spec.required' });
+    expect(specCodeForText('required')).toEqual({ code: 'spec.required' });
   });
 
   // The same `code` and the same `params` as before, one case per group of decision 2.
@@ -951,17 +951,17 @@ describe('specialization message code without false matches', () => {
       (i) => i.code === 'spec.formatVersionInvalid',
     );
     expect(version?.message).toBe(
-      `deve ser ${version?.params?.versions} ou ${version?.params?.last}`,
+      `must be ${version?.params?.versions} or ${version?.params?.last}`,
     );
     const side = issuesOf((s) => (s.containers = [container({ width: 999999 })])).find(
       (i) => i.code === 'spec.containerSideMax',
     );
-    expect(side?.message).toBe(`deve ser <= ${side?.params?.max}`);
+    expect(side?.message).toBe(`must be <= ${side?.params?.max}`);
     const only = issuesOf(
       (s) => ((s.formatVersion = 1), (s.platforms = [{ id: 'a', name: 'A' }])),
     ).find((i) => i.code === 'spec.onlyFormat');
     expect(only?.message).toBe(
-      `só é permitido com formatVersion ${only?.params?.version}`,
+      `only allowed with formatVersion ${only?.params?.version}`,
     );
   });
 });

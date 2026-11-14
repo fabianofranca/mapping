@@ -376,7 +376,7 @@ describe('diffSpecs: quebras', () => {
     ]);
   });
 
-  it('campo que passou a obrigatório', () => {
+  it('campo que passou a required', () => {
     const next = spec(2, [
       withFields((f) => [{ ...f[0]!, required: true } as SpecField, ...f.slice(1)]),
       badge,
@@ -389,12 +389,12 @@ describe('diffSpecs: quebras', () => {
         typeId: 'button',
         fieldKey: 'label',
         message:
-          'o campo "label" do tipo "button" passou a ser obrigatório; declare um passo "fill-field" em migrations',
+          'o campo "label" do tipo "button" passou a ser required; declare um passo "fill-field" em migrations',
       },
     ]);
   });
 
-  it('campo novo já obrigatório', () => {
+  it('campo novo já required', () => {
     const next = spec(2, [
       withFields((f) => [...f, { key: 'icon', type: 'string', required: true }]),
       badge,
@@ -407,7 +407,7 @@ describe('diffSpecs: quebras', () => {
         typeId: 'button',
         fieldKey: 'icon',
         message:
-          'o campo "icon" do tipo "button" é novo e já obrigatório; declare um passo "fill-field" em migrations',
+          'o campo "icon" do tipo "button" é novo e já required; declare um passo "fill-field" em migrations',
       },
     ]);
   });
@@ -677,7 +677,7 @@ describe('migrationFor e missingMigrations: cada quebra, com e sem a migração'
     ).toBeUndefined();
   });
 
-  it('campo que passou a obrigatório: fill-field cobre', () => {
+  it('campo que passou a required: fill-field cobre', () => {
     const next = spec(2, [
       withFields((f) => [{ ...f[0]!, required: true } as SpecField, ...f.slice(1)]),
       badge,
@@ -690,7 +690,7 @@ describe('migrationFor e missingMigrations: cada quebra, com e sem a migração'
     );
   });
 
-  it('campo novo obrigatório: fill-field cobre', () => {
+  it('campo novo required: fill-field cobre', () => {
     const next = spec(2, [
       withFields((f) => [...f, { key: 'icon', type: 'string', required: true }]),
       badge,

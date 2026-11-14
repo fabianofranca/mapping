@@ -140,30 +140,30 @@ describe('migrations: versões', () => {
   it('from menor que 1', () => {
     const spec = withSteps({ op: 'remove-type', type: 'old', mode: 'delete' });
     spec.migrations[0].from = 0;
-    expectIssue(spec, `${M0}.from`, 'deve ser >= 1');
+    expectIssue(spec, `${M0}.from`, 'must be >= 1');
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
 
   it.each(['from', 'to'])('%s não inteiro', (key) => {
     const spec = withSteps({ op: 'remove-type', type: 'old', mode: 'delete' });
     spec.migrations[0][key] = 1.5;
-    expectIssue(spec, `${M0}.${key}`, 'deve ser inteiro');
+    expectIssue(spec, `${M0}.${key}`, 'must be an integer');
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
 
   it('to que não é maior que from', () => {
     const spec = withSteps({ op: 'remove-type', type: 'old', mode: 'delete' });
     spec.migrations[0].to = 1;
-    expectIssue(spec, `${M0}.to`, 'deve ser maior que "from" (1)');
+    expectIssue(spec, `${M0}.to`, 'must be greater than "from" (1)');
     spec.migrations[0].from = 2;
     spec.migrations[0].to = 1;
-    expectIssue(spec, `${M0}.to`, 'deve ser maior que "from" (2)');
+    expectIssue(spec, `${M0}.to`, 'must be greater than "from" (2)');
   });
 
   it('to além da version do pacote', () => {
     const spec = withSteps({ op: 'remove-type', type: 'old', mode: 'delete' });
     spec.migrations[0].to = 4;
-    expectIssue(spec, `${M0}.to`, 'não pode passar de "version" (3)');
+    expectIssue(spec, `${M0}.to`, 'cannot exceed "version" (3)');
   });
 
   it('to igual à version é aceito', () => {
@@ -182,13 +182,13 @@ describe('migrations: versões', () => {
     expectIssue(
       spec,
       'migrations[1].from',
-      'já existe uma migração a partir da versão 1',
+      'there is already a migration from version 1',
     );
   });
 
   it('steps vazia', () => {
     const spec = withSteps();
-    expectIssue(spec, `${M0}.steps`, 'não pode ser vazia');
+    expectIssue(spec, `${M0}.steps`, 'cannot be empty');
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
 
@@ -206,7 +206,7 @@ describe('migrations: chaves por op', () => {
     expectIssue(
       spec,
       `${M0}.steps[0].op`,
-      '"op" inválido; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role" ou "set-role"',
+      'invalid "op"; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role" or "set-role"',
     );
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
@@ -250,7 +250,7 @@ describe('migrations: chaves por op', () => {
 
   it('remove-type com mode inválido', () => {
     const spec = withSteps({ op: 'remove-type', type: 'old', mode: 'drop' });
-    expectIssue(spec, `${M0}.steps[0].mode`, 'use "convert" ou "delete"');
+    expectIssue(spec, `${M0}.steps[0].mode`, 'use "convert" or "delete"');
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
 
@@ -261,13 +261,13 @@ describe('migrations: chaves por op', () => {
       field: 'size',
       default: true,
     });
-    expectIssue(spec, `${M0}.steps[0].default`, 'deve ser texto ou número');
+    expectIssue(spec, `${M0}.steps[0].default`, 'must be text or a number');
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
 
   it('nomes vazios', () => {
     const spec = withSteps({ op: 'remove-field', type: '', field: 'color' });
-    expectIssue(spec, `${M0}.steps[0].type`, 'não pode ser vazio');
+    expectIssue(spec, `${M0}.steps[0].type`, 'cannot be empty');
   });
 
   it('map-values com destino vazio', () => {
@@ -277,7 +277,7 @@ describe('migrations: chaves por op', () => {
       field: 'style',
       values: { filled: '' },
     });
-    expectIssue(spec, `${M0}.steps[0].values.filled`, 'não pode ser vazio');
+    expectIssue(spec, `${M0}.steps[0].values.filled`, 'cannot be empty');
   });
 });
 
@@ -286,7 +286,7 @@ describe('migrations: o lado novo existe nesta versão', () => {
     const ok = withSteps({ op: 'rename-type', from: 'chip', to: 'badge' });
     expect(parseSpec(ok).ok).toBe(true);
     const spec = withSteps({ op: 'rename-type', from: 'chip', to: 'tag' });
-    expectIssue(spec, `${M0}.steps[0].to`, 'tipo "tag" não existe nesta versão');
+    expectIssue(spec, `${M0}.steps[0].to`, 'type "tag" does not exist in this version');
   });
 
   it.each(['rename-field', 'remove-field', 'map-values', 'fill-field'])(
@@ -303,7 +303,7 @@ describe('migrations: o lado novo existe nesta versão', () => {
       expectIssue(
         withSteps(step),
         `${M0}.steps[0].type`,
-        'tipo "ghost" não existe nesta versão',
+        'type "ghost" does not exist in this version',
       );
     },
   );
@@ -322,7 +322,11 @@ describe('migrations: o lado novo existe nesta versão', () => {
       from: 'texto',
       to: 'rotulo',
     });
-    expectIssue(spec, `${M0}.steps[0].to`, '"rotulo" não é um campo do tipo "button"');
+    expectIssue(
+      spec,
+      `${M0}.steps[0].to`,
+      '"rotulo" is not a field of the type "button"',
+    );
   });
 
   it('rename-field.to não vale para coluna de table', () => {
@@ -332,7 +336,7 @@ describe('migrations: o lado novo existe nesta versão', () => {
       from: 'texto',
       to: 'col',
     });
-    expectIssue(spec, `${M0}.steps[0].to`, '"col" não é um campo do tipo "button"');
+    expectIssue(spec, `${M0}.steps[0].to`, '"col" is not a field of the type "button"');
   });
 
   it('map-values: o campo existe e é enum', () => {
@@ -342,7 +346,11 @@ describe('migrations: o lado novo existe nesta versão', () => {
       field: 'cor',
       values: { a: 'primary' },
     });
-    expectIssue(missing, `${M0}.steps[0].field`, '"cor" não é um campo do tipo "button"');
+    expectIssue(
+      missing,
+      `${M0}.steps[0].field`,
+      '"cor" is not a field of the type "button"',
+    );
     const notEnum = withSteps({
       op: 'map-values',
       type: 'button',
@@ -352,7 +360,7 @@ describe('migrations: o lado novo existe nesta versão', () => {
     expectIssue(
       notEnum,
       `${M0}.steps[0].field`,
-      '"label" deve ser um campo enum do tipo',
+      '"label" must be an enum field of the type',
     );
   });
 
@@ -363,7 +371,7 @@ describe('migrations: o lado novo existe nesta versão', () => {
       field: 'style',
       values: { filled: 'primary', plain: 'secondary' },
     });
-    expectIssue(spec, `${M0}.steps[0].values.plain`, '"secondary" não está nas options');
+    expectIssue(spec, `${M0}.steps[0].values.plain`, '"secondary" is not in the options');
     expect(issuesOf(spec).filter((i) => i.path.endsWith('values.filled'))).toEqual([]);
   });
 
@@ -374,16 +382,20 @@ describe('migrations: o lado novo existe nesta versão', () => {
       field: 'cor',
       default: 'x',
     });
-    expectIssue(spec, `${M0}.steps[0].field`, '"cor" não é um campo do tipo "button"');
+    expectIssue(
+      spec,
+      `${M0}.steps[0].field`,
+      '"cor" is not a field of the type "button"',
+    );
   });
 
   it.each([
-    ['label', 5, 'deve ser texto'],
-    ['size', 'doze', 'deve ser número'],
-    ['when', '2026-02-30', 'deve ser uma data AAAA-MM-DD válida'],
-    ['when', 'hoje', 'deve ser uma data AAAA-MM-DD válida'],
-    ['style', 'secondary', 'deve ser uma das options'],
-    ['rows', 'x', 'não existe para table'],
+    ['label', 5, 'must be text'],
+    ['size', 'doze', 'must be a number'],
+    ['when', '2026-02-30', 'must be a valid date YYYY-MM-DD'],
+    ['when', 'hoje', 'must be a valid date YYYY-MM-DD'],
+    ['style', 'secondary', 'must be one of the options'],
+    ['rows', 'x', 'does not exist for table'],
   ])(
     'fill-field em %s com %j: o default tem de servir ao tipo',
     (field, value, message) => {
@@ -396,12 +408,16 @@ describe('migrations: o lado novo existe nesta versão', () => {
 describe('migrations: o lado antigo não existe mais nesta versão', () => {
   it('rename-type.from não pode ser um tipo daqui', () => {
     const spec = withSteps({ op: 'rename-type', from: 'button', to: 'badge' });
-    expectIssue(spec, `${M0}.steps[0].from`, 'tipo "button" ainda existe nesta versão');
+    expectIssue(
+      spec,
+      `${M0}.steps[0].from`,
+      'type "button" still exists in this version',
+    );
   });
 
   it('remove-type.type não pode ser um tipo daqui', () => {
     const spec = withSteps({ op: 'remove-type', type: 'badge', mode: 'delete' });
-    expectIssue(spec, `${M0}.steps[0].type`, 'tipo "badge" ainda existe nesta versão');
+    expectIssue(spec, `${M0}.steps[0].type`, 'type "badge" still exists in this version');
   });
 
   it('rename-field.from não pode ser um campo do tipo', () => {
@@ -414,7 +430,7 @@ describe('migrations: o lado antigo não existe mais nesta versão', () => {
     expectIssue(
       spec,
       `${M0}.steps[0].from`,
-      'campo "size" ainda existe no tipo "button" nesta versão',
+      'field "size" still exists in the type "button" in this version',
     );
   });
 
@@ -423,10 +439,14 @@ describe('migrations: o lado antigo não existe mais nesta versão', () => {
     expectIssue(
       spec,
       `${M0}.steps[0].field`,
-      'campo "label" ainda existe no tipo "button" nesta versão',
+      'field "label" still exists in the type "button" in this version',
     );
     const ghost = withSteps({ op: 'remove-field', type: 'ghost', field: 'label' });
-    expectIssue(ghost, `${M0}.steps[0].type`, 'tipo "ghost" não existe nesta versão');
+    expectIssue(
+      ghost,
+      `${M0}.steps[0].type`,
+      'type "ghost" does not exist in this version',
+    );
   });
 
   it('o erro aponta o passo certo quando há vários', () => {
@@ -458,9 +478,9 @@ const S0 = `${M0}.steps[0]`;
 
 /** Chaves malformadas: cada uma com a sua mensagem, em qualquer passo que a aceite. */
 const MALFORMED: [string, string][] = [
-  ['a.b.c', '"a.b.c" tem mais de um ponto; use "campo" ou "tabela.coluna"'],
-  ['.col', '".col" tem uma parte vazia; use "campo" ou "tabela.coluna"'],
-  ['rows.', '"rows." tem uma parte vazia; use "campo" ou "tabela.coluna"'],
+  ['a.b.c', '"a.b.c" has more than one dot; use "field" or "table.column"'],
+  ['.col', '".col" has an empty part; use "field" or "table.column"'],
+  ['rows.', '"rows." has an empty part; use "field" or "table.column"'],
 ];
 
 describe('migrations: tabela.coluna em rename-field', () => {
@@ -480,7 +500,7 @@ describe('migrations: tabela.coluna em rename-field', () => {
     expectIssue(
       rename('rows.old', 'rows.nope'),
       `${S0}.to`,
-      '"rows.nope" não é uma coluna da tabela "rows" do tipo "button"',
+      '"rows.nope" is not a column of the table "rows" of the type "button"',
     );
   });
 
@@ -488,7 +508,7 @@ describe('migrations: tabela.coluna em rename-field', () => {
     expectIssue(
       rename('rows.old', 'ghost.col'),
       `${S0}.to`,
-      '"ghost" não é um campo do tipo "button"',
+      '"ghost" is not a field of the type "button"',
     );
   });
 
@@ -496,7 +516,7 @@ describe('migrations: tabela.coluna em rename-field', () => {
     expectIssue(
       rename('rows.old', 'label.col'),
       `${S0}.to`,
-      '"label" não é uma tabela do tipo "button"',
+      '"label" is not a table of the type "button"',
     );
   });
 
@@ -508,7 +528,7 @@ describe('migrations: tabela.coluna em rename-field', () => {
     expectIssue(
       rename('rows.col', 'rows.kind'),
       `${S0}.from`,
-      'coluna "col" ainda existe na tabela "rows" do tipo "button" nesta versão',
+      'column "col" still exists in the table "rows" of the type "button" in this version',
     );
   });
 
@@ -516,7 +536,7 @@ describe('migrations: tabela.coluna em rename-field', () => {
     expectIssue(
       rename('label.old', 'rows.kind'),
       `${S0}.from`,
-      '"label" não é uma tabela do tipo "button"',
+      '"label" is not a table of the type "button"',
     );
   });
 
@@ -539,7 +559,7 @@ describe('migrations: tabela.coluna em remove-field', () => {
     expectIssue(
       remove('rows.col'),
       `${S0}.field`,
-      'coluna "col" ainda existe na tabela "rows" do tipo "button" nesta versão',
+      'column "col" still exists in the table "rows" of the type "button" in this version',
     );
   });
 
@@ -547,7 +567,7 @@ describe('migrations: tabela.coluna em remove-field', () => {
     expectIssue(
       remove('label.col'),
       `${S0}.field`,
-      '"label" não é uma tabela do tipo "button"',
+      '"label" is not a table of the type "button"',
     );
   });
 
@@ -557,7 +577,7 @@ describe('migrations: tabela.coluna em remove-field', () => {
 
   it('o tipo continua precisando existir', () => {
     const spec = withTable({ op: 'remove-field', type: 'ghost', field: 'rows.old' });
-    expectIssue(spec, `${S0}.type`, 'tipo "ghost" não existe nesta versão');
+    expectIssue(spec, `${S0}.type`, 'type "ghost" does not exist in this version');
   });
 });
 
@@ -574,7 +594,7 @@ describe('migrations: tabela.coluna em map-values', () => {
     expectIssue(
       map('rows.nope'),
       `${S0}.field`,
-      '"rows.nope" não é uma coluna da tabela "rows" do tipo "button"',
+      '"rows.nope" is not a column of the table "rows" of the type "button"',
     );
   });
 
@@ -582,7 +602,7 @@ describe('migrations: tabela.coluna em map-values', () => {
     expectIssue(
       map('ghost.kind'),
       `${S0}.field`,
-      '"ghost" não é um campo do tipo "button"',
+      '"ghost" is not a field of the type "button"',
     );
   });
 
@@ -590,7 +610,7 @@ describe('migrations: tabela.coluna em map-values', () => {
     expectIssue(
       map('label.kind'),
       `${S0}.field`,
-      '"label" não é uma tabela do tipo "button"',
+      '"label" is not a table of the type "button"',
     );
   });
 
@@ -602,14 +622,14 @@ describe('migrations: tabela.coluna em map-values', () => {
     expectIssue(
       map('rows.col'),
       `${S0}.field`,
-      '"rows.col" deve ser uma coluna enum da tabela',
+      '"rows.col" must be an enum column of the table',
     );
   });
 
   it('os destinos estão nas options da coluna (não nas de outro campo)', () => {
     // "primary" é option do campo "style", não da coluna "rows.kind"
     const spec = map('rows.kind', { x: 'a', y: 'primary' });
-    expectIssue(spec, `${S0}.values.y`, '"primary" não está nas options');
+    expectIssue(spec, `${S0}.values.y`, '"primary" is not in the options');
     expect(issuesOf(spec).filter((i) => i.path.endsWith('values.x'))).toEqual([]);
   });
 });
@@ -630,7 +650,7 @@ describe('migrations: tabela.coluna em fill-field', () => {
     expectIssue(
       fill('rows.nope'),
       `${S0}.field`,
-      '"rows.nope" não é uma coluna da tabela "rows" do tipo "button"',
+      '"rows.nope" is not a column of the table "rows" of the type "button"',
     );
   });
 
@@ -638,7 +658,7 @@ describe('migrations: tabela.coluna em fill-field', () => {
     expectIssue(
       fill('ghost.n'),
       `${S0}.field`,
-      '"ghost" não é um campo do tipo "button"',
+      '"ghost" is not a field of the type "button"',
     );
   });
 
@@ -646,7 +666,7 @@ describe('migrations: tabela.coluna em fill-field', () => {
     expectIssue(
       fill('label.n'),
       `${S0}.field`,
-      '"label" não é uma tabela do tipo "button"',
+      '"label" is not a table of the type "button"',
     );
   });
 
@@ -655,10 +675,10 @@ describe('migrations: tabela.coluna em fill-field', () => {
   });
 
   it.each([
-    ['rows.col', 5, 'deve ser texto'],
-    ['rows.n', 'doze', 'deve ser número'],
-    ['rows.d', '2026-02-30', 'deve ser uma data AAAA-MM-DD válida'],
-    ['rows.kind', 'z', 'deve ser uma das options'],
+    ['rows.col', 5, 'must be text'],
+    ['rows.n', 'doze', 'must be a number'],
+    ['rows.d', '2026-02-30', 'must be a valid date YYYY-MM-DD'],
+    ['rows.kind', 'z', 'must be one of the options'],
   ])('o default tem de servir ao tipo da coluna: %s com %j', (field, value, message) => {
     expectIssue(fill(field, value), `${S0}.default`, message);
   });
@@ -669,7 +689,7 @@ describe('migrations: versão do formato', () => {
     const spec = withSteps({ op: 'remove-type', type: 'old', mode: 'delete' });
     spec.formatVersion = 3;
     expect(issuesOf(spec)).toEqual([
-      { path: 'migrations', message: 'só é permitido com formatVersion 4' },
+      { path: 'migrations', message: 'only allowed with formatVersion 4' },
     ]);
   });
 

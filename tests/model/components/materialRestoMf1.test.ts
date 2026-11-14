@@ -181,7 +181,7 @@ describe('MF1: cor composta (over)', () => {
     expect([...r.tokenRefs].map((x) => x.name)).toEqual(['ink']);
   });
 
-  it('fora de posição de cor dá "over só vale em $token de cor", no caminho do $token', () => {
+  it('fora de posição de cor dá "over is only valid in a color $token", no caminho do $token', () => {
     expect(
       validateComponent(
         doc({

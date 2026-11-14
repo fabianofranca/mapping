@@ -25,7 +25,7 @@ const V4 = 'only allowed with formatVersion 4';
 const LONG = 'Texto longo demais para a caixa';
 type MeasureFont = Parameters<TextMeasurer>[1];
 
-/** 10 px, 5,5 px por caractere (aproximado), linha de 12 px. */
+/** 10 px, 5,5 px por caractere (approximate), linha de 12 px. */
 const FONT: MeasureFont = {
   family: 'Inter',
   size: 10,
@@ -220,7 +220,7 @@ function drawn(
 }
 
 describe('aviso texto maior que a caixa', () => {
-  const OVERFLOW = 'texto maior que a caixa: rotulo';
+  const OVERFLOW = 'text larger than the box: rotulo';
 
   it('3 linhas numa caixa que comporta 2, sem maxLines nem ellipsis: aviso', () => {
     // largura 80: "Texto longo demais para a caixa" quebra em 3 linhas de 12 px = 36 > 24.
@@ -279,11 +279,11 @@ describe('tolerância de 1 px no "conteúdo maior que a caixa" vindo de texto', 
     ).warnings;
 
   it('0,6 px de texto a mais não avisa', () => {
-    expect(warnings(12.6, 12)).not.toContain('conteúdo maior que a caixa: col');
+    expect(warnings(12.6, 12)).not.toContain('content larger than the box: col');
   });
 
   it('2 px de texto a mais avisa', () => {
-    expect(warnings(14, 12).some((w) => w.startsWith('conteúdo maior que a caixa'))).toBe(
+    expect(warnings(14, 12).some((w) => w.startsWith('content larger than the box'))).toBe(
       true,
     );
   });

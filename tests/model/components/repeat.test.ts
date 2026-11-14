@@ -162,7 +162,7 @@ describe('parseComponent: repeat', () => {
     expect(parseComponent(raw({ formatVersion: 3 })).ok).toBe(true);
   });
 
-  it('field e template são obrigatórios; field não pode ser vazio', () => {
+  it('field e template são requireds; field cannot be empty', () => {
     const noField = raw();
     delete noField.template.children[1].field;
     expect(errorsOf(noField)).toContain('template.children[1].field: required field');
@@ -441,12 +441,12 @@ describe('expandRepeats', () => {
     const drawn = instantiate(c, { titulo: 'T', linhas: [{ chave: 'a' }] }, BOX, {
       measure: approximateMeasurer,
     });
-    expect(drawn.warnings.filter((w) => w.startsWith('campo não informado'))).toEqual([]);
+    expect(drawn.warnings.filter((w) => w.startsWith('field not provided'))).toEqual([]);
   });
 
   it('o campo table não informado vira aviso; informado vazio ou nulo, não', () => {
     expect(expandRepeats(component(), {}).warnings).toEqual([
-      'campo não informado: linhas',
+      'field not provided: linhas',
     ]);
     expect(expandRepeats(component(), { linhas: null }).warnings).toEqual([]);
     expect(expandRepeats(component(), { linhas: [] }).warnings).toEqual([]);
@@ -601,7 +601,7 @@ describe('instantiate com repeat', () => {
       { titulo: 'T', linhas: [...ROWS, ...ROWS, ...ROWS] },
       { ...BOX, height: 40 },
     );
-    expect(warnings.some((w) => w.startsWith('conteúdo maior que a caixa'))).toBe(true);
+    expect(warnings.some((w) => w.startsWith('content larger than the box'))).toBe(true);
   });
 
   it('um componente da formatVersion 1 (sem repeat) desenha como antes', () => {
@@ -700,10 +700,10 @@ describe('repeat por count (formato 4)', () => {
   it('acima de 1000 desenha 1000 linhas com o aviso nomeando o nó', () => {
     const c = countComponent({ count: 1500, template: row([]) });
     const expanded = expandRepeats(c, {});
-    expect(expanded.warnings).toEqual(['repeat limitado a 1000 linhas: lista']);
+    expect(expanded.warnings).toEqual(['repeat limited to 1000 rows: lista']);
     const wrapper = (expanded.component.template as FrameTemplate).children?.[0];
     expect((wrapper as FrameTemplate).children).toHaveLength(1000);
-    expect(drawn(c).warnings).toContain('repeat limitado a 1000 linhas: lista');
+    expect(drawn(c).warnings).toContain('repeat limited to 1000 rows: lista');
   });
 
   it('sem nome, o aviso usa "repeat"', () => {
@@ -713,7 +713,7 @@ describe('repeat por count (formato 4)', () => {
     if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
     const c = parsed.component;
     expect(expandRepeats(c, {}).warnings).toEqual([
-      'repeat limitado a 1000 linhas: repeat',
+      'repeat limited to 1000 rows: repeat',
     ]);
   });
 
@@ -969,7 +969,7 @@ describe('validação do repeat por count e das chaves da EX2', () => {
     );
   });
 
-  it('nas versões 1 a 3 tudo isso dá só é permitido com formatVersion 4', () => {
+  it('nas versões 1 a 3 tudo isso dá only allowed with formatVersion 4', () => {
     for (const version of [2, 3]) {
       expect(problems({}, version)).toContain(
         'template.children[0].count: only allowed with formatVersion 4',

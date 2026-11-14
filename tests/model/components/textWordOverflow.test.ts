@@ -1,4 +1,4 @@
-// NC1 (decisão 4 da #1631): o motor avisa `texto maior que a caixa: <nó>` também quando a palavra mais
+// NC1 (decisão 4 da #1631): o motor avisa `text larger than the box: <nó>` também quando a palavra mais
 // larga do texto passa da largura do nó (o texto só quebra entre palavras), sem mudar o desenho.
 import { describe, expect, it } from 'vitest';
 import { COMPONENT_FORMAT } from '../../../src/model/components/componentFormat';
@@ -25,27 +25,27 @@ function drawBox(id: string, values: Json, width: number, height: number) {
 }
 
 const tooBig = (warnings: readonly string[]): string[] =>
-  warnings.filter((w) => w.startsWith('texto maior que a caixa'));
+  warnings.filter((w) => w.startsWith('text larger than the box'));
 
 describe('palavra mais larga que a caixa do texto avisa', () => {
   it('button "Salvar" em 58 × 40 avisa o rótulo; em 96 × 40 não avisa', () => {
     const small = drawBox('button', { label: 'Salvar' }, 58, 40);
-    expect(tooBig(small.warnings)).toEqual(['texto maior que a caixa: rótulo']);
+    expect(tooBig(small.warnings)).toEqual(['text larger than the box: rótulo']);
     const fits = drawBox('button', { label: 'Salvar' }, 96, 40);
     expect(tooBig(fits.warnings)).toEqual([]);
   });
 
   it('extended-fab "Novo" em 50 × 56 e "Confirmar compra" em 60 × 56 avisam o texto', () => {
     const novo = drawBox('extended-fab', { text: 'Novo' }, 50, 56);
-    expect(tooBig(novo.warnings)).toEqual(['texto maior que a caixa: texto']);
+    expect(tooBig(novo.warnings)).toEqual(['text larger than the box: texto']);
     const longo = drawBox('extended-fab', { text: 'Confirmar compra' }, 60, 56);
-    expect(tooBig(longo.warnings)).toEqual(['texto maior que a caixa: texto']);
+    expect(tooBig(longo.warnings)).toEqual(['text larger than the box: texto']);
   });
 
   it('button "Confirmar compra" em 58 × 40 mantém o aviso de conteúdo e ganha o do rótulo', () => {
     const made = drawBox('button', { label: 'Confirmar compra' }, 58, 40);
-    expect(made.warnings).toContain('conteúdo maior que a caixa: button');
-    expect(tooBig(made.warnings)).toEqual(['texto maior que a caixa: rótulo']);
+    expect(made.warnings).toContain('content larger than the box: button');
+    expect(tooBig(made.warnings)).toEqual(['text larger than the box: rótulo']);
   });
 });
 
@@ -90,7 +90,7 @@ describe('o que não avisa e o texto rico', () => {
   it('o mesmo texto sem maxLines nem ellipsis avisa', () => {
     const base = { type: 'text', name: 't', width: 40, height: 60, text: longWord };
     expect(tooBig(run({ ...base, font: { size: 14 } }).warnings)).toEqual([
-      'texto maior que a caixa: t',
+      'text larger than the box: t',
     ]);
   });
 
@@ -103,7 +103,7 @@ describe('o que não avisa e o texto rico', () => {
       font: { size: 14 },
       runs: [{ text: 'a ' }, { text: 'chipmuitolargo', background: '#cccccc' }],
     });
-    expect(tooBig(made.warnings)).toEqual(['texto maior que a caixa: rico']);
+    expect(tooBig(made.warnings)).toEqual(['text larger than the box: rico']);
   });
 });
 
@@ -113,9 +113,9 @@ describe('rótulo com espaço sem quebra e palavra com glifo largo', () => {
   it('wrap none com espaço mais largo que a caixa avisa, como o mesmo texto em runs', () => {
     const text = 'Confirmar compra';
     const plain = run({ ...base, text, font: { size: 14, wrap: 'none' } });
-    expect(tooBig(plain.warnings)).toEqual(['texto maior que a caixa: t']);
+    expect(tooBig(plain.warnings)).toEqual(['text larger than the box: t']);
     const rich = run({ ...base, font: { size: 14, wrap: 'none' }, runs: [{ text }] });
-    expect(tooBig(rich.warnings)).toEqual(['texto maior que a caixa: t']);
+    expect(tooBig(rich.warnings)).toEqual(['text larger than the box: t']);
   });
 
   it('wrap none com ellipsis não avisa e linha com espaço que cabe não avisa', () => {
@@ -128,7 +128,7 @@ describe('rótulo com espaço sem quebra e palavra com glifo largo', () => {
 
   it('palavra com tab mais larga que a caixa avisa (a quebra é só em espaço)', () => {
     const made = run({ ...base, text: 'Confirmar\tcompra', font: { size: 14 } });
-    expect(tooBig(made.warnings)).toEqual(['texto maior que a caixa: t']);
+    expect(tooBig(made.warnings)).toEqual(['text larger than the box: t']);
   });
 
   it('emoji mais largo que 1em não some no atalho', () => {
@@ -139,6 +139,6 @@ describe('rótulo com espaço sem quebra e palavra com glifo largo', () => {
       { x: 0, y: 0, width: 60, height: 60 },
       { measure: (text, font, max) => measureLines(text, font, max, wide) },
     );
-    expect(tooBig(made.warnings)).toEqual(['texto maior que a caixa: t']);
+    expect(tooBig(made.warnings)).toEqual(['text larger than the box: t']);
   });
 });

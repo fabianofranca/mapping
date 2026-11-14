@@ -311,9 +311,9 @@ export function defaultFontFamily(tokens: ResolvedTokens | undefined): string {
 
 /** Name of the kind of value, for the messages. */
 export const TOKEN_KIND_NAMES: Readonly<Record<TokenKind, string>> = {
-  color: 'cor',
-  number: 'número',
-  family: 'família de fonte',
+  color: 'color',
+  number: 'number',
+  family: 'font family',
 };
 
 /** Name → kind of each token of the specialization, plus the built-in ones (`font-sans`, `font-mono`). */

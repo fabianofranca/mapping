@@ -15,7 +15,7 @@ const jsonSchema = JSON.parse(readFileSync('docs/spec.schema.json', 'utf8')) as 
 const jsonValidator = z.fromJSONSchema(jsonSchema as never);
 
 const M0 = 'migrations[0]';
-const ONLY_V12 = 'só é permitido com formatVersion 12';
+const ONLY_V12 = 'only allowed with formatVersion 12';
 const ROLES = [
   { id: 'primary', name: 'Primário' },
   { id: 'secondary', name: 'Secundário' },
@@ -143,7 +143,7 @@ describe('formatVersion 12: rename-role', () => {
     expectIssue(
       withSteps([rename({ type: 'zzz' })]),
       `${M0}.steps[0].type`,
-      'tipo "zzz" não existe nesta versão',
+      'type "zzz" does not exist in this version',
     );
   });
 
@@ -151,7 +151,7 @@ describe('formatVersion 12: rename-role', () => {
     expectIssue(
       withSteps([rename({ type: 'image' })]),
       `${M0}.steps[0].type`,
-      'o tipo "image" não tem papéis (childRoles) nesta versão',
+      'the type "image" has no roles (childRoles) in this version',
     );
   });
 
@@ -159,7 +159,7 @@ describe('formatVersion 12: rename-role', () => {
     expectIssue(
       withSteps([rename({ to: 'nada' })]),
       `${M0}.steps[0].to`,
-      '"nada" não é um papel do tipo "button"',
+      '"nada" is not a role of the type "button"',
     );
   });
 
@@ -167,7 +167,7 @@ describe('formatVersion 12: rename-role', () => {
     expectIssue(
       withSteps([rename({ from: 'secondary' })]),
       `${M0}.steps[0].from`,
-      'papel "secondary" ainda existe no tipo "button" nesta versão',
+      'role "secondary" still exists in the type "button" in this version',
     );
   });
 
@@ -192,7 +192,7 @@ describe('formatVersion 12: remove-role', () => {
     expectIssue(
       withSteps([remove({ type: 'zzz' })]),
       `${M0}.steps[0].type`,
-      'tipo "zzz" não existe nesta versão',
+      'type "zzz" does not exist in this version',
     );
   });
 
@@ -200,13 +200,13 @@ describe('formatVersion 12: remove-role', () => {
     expectIssue(
       withSteps([remove({ role: 'primary' })]),
       `${M0}.steps[0].role`,
-      'papel "primary" ainda existe no tipo "button" nesta versão',
+      'role "primary" still exists in the type "button" in this version',
     );
   });
 
   it('mode inválido ou ausente', () => {
     const bad = withSteps([remove({ mode: 'drop' })]);
-    expectIssue(bad, `${M0}.steps[0].mode`, 'use "clear" ou "unlink"');
+    expectIssue(bad, `${M0}.steps[0].mode`, 'use "clear" or "unlink"');
     expect(jsonValidator.safeParse(bad).success).toBe(false);
     const missing = withSteps([{ op: 'remove-role', type: 'button', role: 'gone' }]);
     expect(issuesOf(missing).map((i) => i.path)).toContain(`${M0}.steps[0].mode`);
@@ -231,7 +231,7 @@ describe('formatVersion 12: set-role', () => {
     expectIssue(
       withSteps([setRole({ type: 'zzz' })]),
       `${M0}.steps[0].type`,
-      'tipo "zzz" não existe nesta versão',
+      'type "zzz" does not exist in this version',
     );
   });
 
@@ -239,7 +239,7 @@ describe('formatVersion 12: set-role', () => {
     expectIssue(
       withSteps([setRole({ type: 'text' })]),
       `${M0}.steps[0].type`,
-      'o tipo "text" não tem papéis (childRoles) nesta versão',
+      'the type "text" has no roles (childRoles) in this version',
     );
   });
 
@@ -247,7 +247,7 @@ describe('formatVersion 12: set-role', () => {
     expectIssue(
       withSteps([setRole({ role: 'nada' })]),
       `${M0}.steps[0].role`,
-      '"nada" não é um papel do tipo "button"',
+      '"nada" is not a role of the type "button"',
     );
   });
 
@@ -291,7 +291,7 @@ describe('formatVersion 12: erros no passo certo e op inválido', () => {
     expectIssue(
       spec,
       `${M0}.steps[0].op`,
-      '"op" inválido; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role" ou "set-role"',
+      'invalid "op"; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role" or "set-role"',
     );
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
@@ -435,7 +435,7 @@ describe('formatVersion 12: nível 2 (papéis que não existiam na versão anter
       'layers[0].annotationTypes[0].childRoles[0]',
       'layers[0].annotationTypes[0].childRoles[1]',
     ]);
-    expect(missing.errors[0]?.message).toContain('"rename-role" ou "remove-role"');
+    expect(missing.errors[0]?.message).toContain('"rename-role" or "remove-role"');
     expect(missing.errors[0]?.message).toContain('formatVersion 12');
 
     const covered = withSteps(

@@ -45,12 +45,12 @@ export function packagePathMsg(error: PackagePathError): SpecMsg {
  * (`checkPath`); it lives here because `origin.ts` cannot import `spec.ts` (cycle).
  */
 export function pathErrorMsg(path: string, error: string): SpecMsg {
-  const index = /^índice inválido: \[(.*)\]$/s.exec(error)?.[1];
+  const index = /^invalid index: \[(.*)\]$/s.exec(error)?.[1];
   if (index !== undefined) return specMsg('spec.fieldPathBadIndex', { path, index });
-  const char = /^caractere inesperado: (.*)$/s.exec(error)?.[1];
+  const char = /^unexpected character: (.*)$/s.exec(error)?.[1];
   if (char !== undefined) return specMsg('spec.fieldPathBadChar', { path, char });
   return specMsg(
-    error === 'faltou "]"'
+    error === 'missing "]"'
       ? 'spec.fieldPathMissingBracket'
       : 'spec.fieldPathEmptySegment',
     { path },

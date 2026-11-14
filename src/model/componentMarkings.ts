@@ -888,7 +888,7 @@ export function componentAnchoredPlacement(
   return {
     rect,
     warnings: [
-      modelMessage('arrange.outside', { label, where }, `${label}: não cabe em ${where}`),
+      modelMessage('arrange.outside', { label, where }, `${label}: does not fit in ${where}`),
     ],
   };
 }

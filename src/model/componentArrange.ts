@@ -467,7 +467,7 @@ export function arrangeMarking(
         modelMessage(
           'arrange.overflow',
           { label: info.label },
-          `${info.label}: conteúdo maior que o container`,
+          `${info.label}: content is larger than the container`,
         ),
       );
     }
@@ -526,7 +526,7 @@ export function arrangeMarking(
       modelMessage(
         'arrange.outside',
         { label: labelOf(id), where },
-        `${labelOf(id)}: não cabe em ${where}`,
+        `${labelOf(id)}: does not fit in ${where}`,
       ),
     );
   }
@@ -762,7 +762,7 @@ function clampedWarning(p: Project, marking: Marking): ModelMessage {
   return modelMessage(
     'arrange.outside',
     { label, where },
-    `${label}: não cabe em ${where}`,
+    `${label}: does not fit in ${where}`,
   );
 }
 

@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 // Especialização formatVersion 10 (etapa Avisos na especialização): `notices` no tipo, no campo
 // e na coluna de table. O JSON Schema (`docs/spec.schema.json`) descreve a estrutura; a unicidade
-// de kind + message, a data real e o `só é permitido com formatVersion 10` são do validador da
+// de kind + message, a data real e o `only allowed with formatVersion 10` são do validador da
 // app (tests/model/spec*).
 
 const jsonSchema = JSON.parse(readFileSync('docs/spec.schema.json', 'utf8')) as Record<
@@ -73,7 +73,7 @@ describe('formatVersion 10: notices', () => {
     expect(jsonValidator.safeParse(alert()).success).toBe(true);
   });
 
-  it('aceita os quatro kind, lista vazia e só os campos obrigatórios', () => {
+  it('aceita os quatro kind, lista vazia e só os campos requireds', () => {
     for (const kind of ['pending', 'deprecated', 'diverges', 'removed']) {
       const spec = alert();
       type(spec).notices = [{ kind, message: 'x' }];

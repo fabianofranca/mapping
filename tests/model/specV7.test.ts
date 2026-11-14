@@ -50,7 +50,7 @@ describe('formatVersion 7: floating no tipo', () => {
     expect(off.ok && off.spec.layers[0]?.annotationTypes[0]?.floating).toBe(false);
   });
 
-  it('floating numa versão anterior é o erro "só é permitido com formatVersion 7", no caminho exato', () => {
+  it('floating numa versão anterior é o erro "only allowed with formatVersion 7", no caminho exato', () => {
     for (const v of [1, 4, 6]) {
       const result = parseSpec(spec(v, true));
       expect(result.ok).toBe(false);
@@ -58,7 +58,7 @@ describe('formatVersion 7: floating no tipo', () => {
       expect(result.issues).toContainEqual(
         expect.objectContaining({
           path: 'layers[0].annotationTypes[0].floating',
-          message: 'só é permitido com formatVersion 7',
+          message: 'only allowed with formatVersion 7',
         }),
       );
     }

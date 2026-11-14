@@ -43,7 +43,7 @@ describe('provide no slot (decisão 8)', () => {
     ).toEqual(['template.children[0].provide: unknown key: provide']);
   });
 
-  it('nome vazio é erro; o valor é conferido no caminho dele', () => {
+  it('empty name é erro; o valor é conferido no caminho dele', () => {
     expect(validateComponent(withChild(slot({ provide: { '': '#fff' } })))).toEqual([
       'template.children[0].provide: empty name',
     ]);

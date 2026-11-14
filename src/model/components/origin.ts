@@ -199,25 +199,25 @@ export function parsePath(text: string): ParsedPath {
     return i > start ? text.slice(start, i) : undefined;
   };
   const first = readKey();
-  if (first === undefined) return { ok: false, error: 'segmento vazio' };
+  if (first === undefined) return { ok: false, error: 'empty segment' };
   segments.push(first);
   while (i < text.length) {
     const ch = text[i];
     if (ch === '.') {
       i++;
       const key = readKey();
-      if (key === undefined) return { ok: false, error: 'segmento vazio' };
+      if (key === undefined) return { ok: false, error: 'empty segment' };
       segments.push(key);
     } else if (ch === '[') {
       const close = text.indexOf(']', i);
-      if (close < 0) return { ok: false, error: 'faltou "]"' };
+      if (close < 0) return { ok: false, error: 'missing "]"' };
       const inner = text.slice(i + 1, close);
       if (inner === '*') segments.push(null);
       else if (/^\d+$/.test(inner)) segments.push(Number(inner));
-      else return { ok: false, error: `índice inválido: [${inner}]` };
+      else return { ok: false, error: `invalid index: [${inner}]` };
       i = close + 1;
     } else {
-      return { ok: false, error: `caractere inesperado: ${ch ?? ''}` };
+      return { ok: false, error: `unexpected character: ${ch ?? ''}` };
     }
   }
   return { ok: true, segments };
@@ -367,7 +367,7 @@ function checkPath(
   wildcard = false,
 ): boolean {
   if (!nonEmptyString(value)) {
-    problem(problems, path, 'esperava um caminho (texto não vazio)');
+    problem(problems, path, 'expected a path (non-empty text)');
     return false;
   }
   const parsed = parsePath(value);
@@ -377,7 +377,7 @@ function checkPath(
     return false;
   }
   if (!wildcard && parsed.segments.includes(null)) {
-    problem(problems, path, '"[*]" só vale em roots[].path');
+    problem(problems, path, '"[*]" is only valid in roots[].path');
     return false;
   }
   return true;
@@ -389,13 +389,13 @@ function parseStringMap(
   problems: OriginProblem[],
 ): Record<string, string> | undefined {
   if (!isRecord(raw)) {
-    problem(problems, path, 'esperava um objeto (origem → destino)');
+    problem(problems, path, 'expected an object (source → target)');
     return undefined;
   }
   const out: Record<string, string> = {};
   for (const [key, target] of Object.entries(raw)) {
     if (typeof target !== 'string') {
-      problem(problems, `${path}.${key}`, 'esperava texto');
+      problem(problems, `${path}.${key}`, 'expected text');
     } else {
       out[key] = target;
     }
@@ -412,7 +412,7 @@ function parseValueSource(
     return raw;
   }
   if (!isRecord(raw)) {
-    problem(problems, path, 'esperava um literal ou { path }');
+    problem(problems, path, 'expected a literal or { path }');
     return undefined;
   }
   const before = problems.length;
@@ -427,7 +427,7 @@ function parseValueSource(
     if (typeof raw.default === 'string' || typeof raw.default === 'number') {
       def = raw.default;
     } else {
-      problem(problems, `${path}.default`, 'esperava texto ou número');
+      problem(problems, `${path}.default`, 'expected text or a number');
     }
   }
   if (problems.length > before) return undefined;
@@ -444,7 +444,7 @@ function parseRoot(
   problems: OriginProblem[],
 ): RootSource | undefined {
   if (!isRecord(raw)) {
-    problem(problems, path, 'esperava um objeto');
+    problem(problems, path, 'expected an object');
     return undefined;
   }
   const before = problems.length;
@@ -471,10 +471,10 @@ function parseRoot(
       ? undefined
       : parseValueSource(raw.margin, `${path}.margin`, problems);
   if (margin !== undefined && anchor === undefined) {
-    problem(problems, `${path}.margin`, 'margin só vale com anchor');
+    problem(problems, `${path}.margin`, 'margin is only valid with anchor');
   }
   if (raw.scrim !== undefined && !nonEmptyString(raw.scrim)) {
-    problem(problems, `${path}.scrim`, 'esperava o id de um tipo (texto não vazio)');
+    problem(problems, `${path}.scrim`, 'expected the id of a type (non-empty text)');
   }
   if (problems.length > before) return undefined;
   return {
@@ -491,7 +491,7 @@ function parseScreen(
   problems: OriginProblem[],
 ): ScreenSource | undefined {
   if (!isRecord(raw)) {
-    problem(problems, path, 'esperava um objeto');
+    problem(problems, path, 'expected an object');
     return undefined;
   }
   const before = problems.length;
@@ -510,7 +510,7 @@ function parseScreen(
   const background = optional('background');
   const required = (key: 'width' | 'height'): ValueSource | undefined => {
     if (raw[key] === undefined) {
-      problem(problems, `${path}.${key}`, 'obrigatório');
+      problem(problems, `${path}.${key}`, 'required');
       return undefined;
     }
     return parseValueSource(raw[key], `${path}.${key}`, problems);
@@ -520,7 +520,7 @@ function parseScreen(
   const direction = parseScreenDirection(raw.direction, `${path}.direction`, problems);
   const roots: RootSource[] = [];
   if (!Array.isArray(raw.roots) || raw.roots.length === 0) {
-    problem(problems, `${path}.roots`, 'esperava uma lista com pelo menos uma raiz');
+    problem(problems, `${path}.roots`, 'expected a list with at least one root');
   } else {
     raw.roots.forEach((item, index) => {
       const root = parseRoot(item, `${path}.roots[${index}]`, problems);
@@ -566,14 +566,14 @@ function parseBooleans(
 ): Origin['booleans'] {
   if (raw === undefined) return undefined;
   if (!isRecord(raw)) {
-    problem(problems, path, 'esperava { "true": texto, "false": texto }');
+    problem(problems, path, 'expected { "true": text, "false": text }');
     return undefined;
   }
   checkKeys(raw, ['true', 'false'], path, problems);
   const t = raw.true;
   const f = raw.false;
-  if (typeof t !== 'string') problem(problems, `${path}.true`, 'esperava texto');
-  if (typeof f !== 'string') problem(problems, `${path}.false`, 'esperava texto');
+  if (typeof t !== 'string') problem(problems, `${path}.true`, 'expected text');
+  if (typeof f !== 'string') problem(problems, `${path}.false`, 'expected text');
   return typeof t === 'string' && typeof f === 'string'
     ? { true: t, false: f }
     : undefined;
@@ -588,10 +588,10 @@ function parseMeasuredOrigin(
   const before = problems.length;
   checkKeys(raw, ['system', 'kind', 'name', 'booleans'], path, problems);
   if (!nonEmptyString(raw.system)) {
-    problem(problems, `${path}.system`, 'esperava texto não vazio');
+    problem(problems, `${path}.system`, 'expected non-empty text');
   }
   if (raw.name !== undefined && typeof raw.name !== 'string') {
-    problem(problems, `${path}.name`, 'esperava texto');
+    problem(problems, `${path}.name`, 'expected text');
   }
   const booleans = parseBooleans(raw.booleans, `${path}.booleans`, problems);
   if (problems.length > before) return undefined;
@@ -611,7 +611,7 @@ function parseOrigin(
   problems: OriginProblem[],
 ): Origin | undefined {
   if (!isRecord(raw)) {
-    problem(problems, path, 'esperava um objeto');
+    problem(problems, path, 'expected an object');
     return undefined;
   }
   const kind = raw.kind === undefined ? 'tree' : raw.kind;
@@ -630,14 +630,14 @@ function parseOrigin(
     problems,
   );
   if (!nonEmptyString(raw.system)) {
-    problem(problems, `${path}.system`, 'esperava texto não vazio');
+    problem(problems, `${path}.system`, 'expected non-empty text');
   }
   if (raw.name !== undefined && typeof raw.name !== 'string') {
-    problem(problems, `${path}.name`, 'esperava texto');
+    problem(problems, `${path}.name`, 'expected text');
   }
   let node: Origin['node'] | undefined;
   if (!isRecord(raw.node)) {
-    problem(problems, `${path}.node`, 'esperava um objeto com type, props e children');
+    problem(problems, `${path}.node`, 'expected an object with type, props and children');
   } else {
     const nodePath = `${path}.node`;
     checkKeys(raw.node, ['type', 'props', 'children'], nodePath, problems);
@@ -646,7 +646,7 @@ function parseOrigin(
       problem(
         problems,
         `${nodePath}.${key}`,
-        'obrigatório (nome da chave, texto não vazio)',
+        'required (key name, non-empty text)',
       );
       return false;
     };
@@ -662,7 +662,7 @@ function parseOrigin(
   }
   const screen =
     raw.screen === undefined
-      ? (problem(problems, `${path}.screen`, 'obrigatório'), undefined)
+      ? (problem(problems, `${path}.screen`, 'required'), undefined)
       : parseScreen(raw.screen, `${path}.screen`, problems);
   const booleans = parseBooleans(raw.booleans, `${path}.booleans`, problems);
   const examples =
@@ -688,7 +688,7 @@ function parseOriginExamples(
   problems: OriginProblem[],
 ): OriginExample[] | undefined {
   if (!Array.isArray(raw)) {
-    problem(problems, path, 'esperava uma lista');
+    problem(problems, path, 'expected a list');
     return undefined;
   }
   const out: OriginExample[] = [];
@@ -696,13 +696,13 @@ function parseOriginExamples(
   raw.forEach((item, index) => {
     const at = `${path}[${index}]`;
     if (!isRecord(item)) {
-      problem(problems, at, 'esperava um objeto');
+      problem(problems, at, 'expected an object');
       return;
     }
     const before = problems.length;
     checkKeys(item, ['name', 'file'], at, problems);
     if (!nonEmptyString(item.name)) {
-      problem(problems, `${at}.name`, 'esperava texto não vazio');
+      problem(problems, `${at}.name`, 'expected non-empty text');
     } else if (seen.has(item.name)) {
       codedProblem(problems, `${at}.name`, 'spec.exampleNameRepeated', {
         name: item.name,
@@ -711,7 +711,7 @@ function parseOriginExamples(
       seen.add(item.name);
     }
     if (typeof item.file !== 'string') {
-      problem(problems, `${at}.file`, 'esperava o caminho de um arquivo .json do pacote');
+      problem(problems, `${at}.file`, 'expected the path of a .json file in the package');
     } else {
       const error = packagePathError(item.file, '.json');
       if (error !== undefined) {
@@ -738,7 +738,7 @@ export function parseOrigins(
   const origins: Origin[] = [];
   if (raw === undefined) return { origins, problems };
   if (!Array.isArray(raw)) {
-    problem(problems, path, 'esperava uma lista');
+    problem(problems, path, 'expected a list');
     return { origins, problems };
   }
   raw.forEach((item, index) => {
@@ -763,34 +763,34 @@ export function parseTypeSources(
 ): TypeSource[] {
   if (raw === undefined) return [];
   if (!Array.isArray(raw)) {
-    problem(problems, path, 'esperava uma lista');
+    problem(problems, path, 'expected a list');
     return [];
   }
   const out: TypeSource[] = [];
   raw.forEach((item, index) => {
     const at = `${path}[${index}]`;
     if (!isRecord(item)) {
-      problem(problems, at, 'esperava um objeto');
+      problem(problems, at, 'expected an object');
       return;
     }
     const before = problems.length;
     checkKeys(item, ['system', 'id', 'name', 'slot', 'ignore'], at, problems);
     if (!nonEmptyString(item.system))
-      problem(problems, `${at}.system`, 'esperava texto não vazio');
+      problem(problems, `${at}.system`, 'expected non-empty text');
     for (const key of ['id', 'name', 'slot'] as const) {
       if (item[key] !== undefined && !nonEmptyString(item[key])) {
-        problem(problems, `${at}.${key}`, 'esperava texto não vazio');
+        problem(problems, `${at}.${key}`, 'expected non-empty text');
       }
     }
     if (item.id === undefined && item.name === undefined) {
-      problem(problems, at, 'precisa de id ou name');
+      problem(problems, at, 'needs id or name');
     }
     let ignore: string[] | undefined;
     if (item.ignore !== undefined) {
       if (Array.isArray(item.ignore) && item.ignore.every(nonEmptyString)) {
         ignore = item.ignore as string[];
       } else {
-        problem(problems, `${at}.ignore`, 'esperava uma lista de textos');
+        problem(problems, `${at}.ignore`, 'expected a list of texts');
       }
     }
     if (problems.length > before) return;
@@ -813,25 +813,25 @@ export function parseFieldSources(
 ): FieldSource[] {
   if (raw === undefined) return [];
   if (!Array.isArray(raw)) {
-    problem(problems, path, 'esperava uma lista');
+    problem(problems, path, 'expected a list');
     return [];
   }
   const out: FieldSource[] = [];
   raw.forEach((item, index) => {
     const at = `${path}[${index}]`;
     if (!isRecord(item)) {
-      problem(problems, at, 'esperava um objeto');
+      problem(problems, at, 'expected an object');
       return;
     }
     const before = problems.length;
     checkKeys(item, ['system', 'name', 'path', 'values'], at, problems);
     if (!nonEmptyString(item.system))
-      problem(problems, `${at}.system`, 'esperava texto não vazio');
+      problem(problems, `${at}.system`, 'expected non-empty text');
     if (item.name !== undefined && !nonEmptyString(item.name))
-      problem(problems, `${at}.name`, 'esperava texto não vazio');
+      problem(problems, `${at}.name`, 'expected non-empty text');
     if (item.path !== undefined) checkPath(item.path, `${at}.path`, problems);
     if (item.name === undefined && item.path === undefined)
-      problem(problems, at, 'precisa de name ou path');
+      problem(problems, at, 'needs name or path');
     const values =
       item.values === undefined
         ? undefined

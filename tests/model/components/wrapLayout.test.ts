@@ -210,12 +210,12 @@ describe('wrap: maxPerLine, maxLines e filho maior que a linha', () => {
     expect(at('k1').x).toBe(54);
   });
 
-  it('maxLines 1 não desenha o que passa da linha e avisa "<n> filhos fora de maxLines: <nó>"', () => {
+  it('maxLines 1 não desenha o que passa da linha e avisa "<n> children outside maxLines: <nó>"', () => {
     const result = build(frame({ wrap: 'wrap', gap: 8, maxLines: 1 }, kids(5)));
     expect(result.has('k2')).toBe(true);
     expect(result.has('k3')).toBe(false);
     expect(result.has('k4')).toBe(false);
-    expect(result.warnings).toContain('2 filhos fora de maxLines: host');
+    expect(result.warnings).toContain('2 children outside maxLines: host');
     expect(result.messages.map((m) => m.code)).toContain(
       'engine.childrenOutsideMaxLines',
     );
@@ -233,7 +233,7 @@ describe('wrap: maxPerLine, maxLines e filho maior que a linha', () => {
     expect(at('a')).toMatchObject({ x: 0, y: 0 });
     expect(at('big')).toMatchObject({ x: 0, y: 24 });
     expect(at('b')).toMatchObject({ x: 0, y: 48 });
-    expect(warnings).toContain('conteúdo maior que a caixa: host');
+    expect(warnings).toContain('content larger than the box: host');
   });
 });
 
@@ -310,7 +310,7 @@ describe('wrap: repeat', () => {
     expect(ys).toEqual([0, 0, 0, 32, 32]);
     const limited = build(repeatFile({ wrap: 'wrap', lineGap: 12, maxLines: 1 }));
     expect([...walk(limited.root)].filter((n) => n.name === 'cell')).toHaveLength(3);
-    expect(limited.warnings).toContain('2 filhos fora de maxLines: rep');
+    expect(limited.warnings).toContain('2 children outside maxLines: rep');
   });
 
   it('um repeat em linha com wrap e sem largura ocupa a largura do pai (senão não teria onde quebrar)', () => {

@@ -42,8 +42,8 @@ function editJson(file: string, edit: (json: Record<string, unknown>) => void): 
   writeFileSync(file, JSON.stringify(json, null, 2));
 }
 
-const MSG_15 = 'só é permitido com formatVersion 15';
-const MSG_16 = 'só é permitido com formatVersion 16';
+const MSG_15 = 'only allowed with formatVersion 15';
+const MSG_16 = 'only allowed with formatVersion 16';
 
 /**
  * Com a especialização baixada para a 14, só há erros de versão: os da 15 (`tokens`, `icons`, `structural`) e, com o pacote
@@ -87,8 +87,8 @@ describe('R25.22 e R25.23: o tokens.mjs do guia mescla os tokens do pacote', () 
       'components/card.json',
     ]);
     expect(report.errors.map((e) => e.message).sort()).toEqual([
-      'o token "inexistente" não existe nos tokens da especialização',
-      'o token "primary" é cor, mas aqui se espera número',
+      'the token "inexistente" does not exist in the specialization tokens',
+      'the token "primary" is a color, but a number is expected here',
     ]);
   }, 30_000);
 
@@ -153,8 +153,8 @@ describe('R25.43 e R25.44: as pastas de tela do guia', () => {
     expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
   }, 30_000);
 
-  it('m3-tela-v3: erros "só é permitido com formatVersion 4", todos no divider', () => {
-    const msg = 'só é permitido com formatVersion 4';
+  it('m3-tela-v3: erros "only allowed with formatVersion 4", todos no divider', () => {
+    const msg = 'only allowed with formatVersion 4';
     expect(issues(telaV3).sort()).toEqual(
       [
         'screen',
@@ -180,7 +180,7 @@ describe('R25.43 e R25.44: as pastas de tela do guia', () => {
 
   it('m3-tela-st: um erro, o tipo estrutural com component', () => {
     expect(issues(st)).toEqual([
-      'material3-compose.spec.json:layers[2].annotationTypes[25].structural:um tipo estrutural não desenha: não pode ter component',
+      'material3-compose.spec.json:layers[2].annotationTypes[25].structural:a structural type does not draw: it cannot have a component',
     ]);
   });
 

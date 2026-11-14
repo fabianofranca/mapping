@@ -97,12 +97,12 @@ describe('especialização formatVersion 3 (sources)', () => {
         'destino fora das options',
         (s) =>
           (s.layers[0].annotationTypes[0].fields[2].sources[0].values.Primary = 'main'),
-        `${BUTTON}.fields[2].sources[0].values.Primary: "main" não está nas options`,
+        `${BUTTON}.fields[2].sources[0].values.Primary: "main" is not in the options`,
       ],
       [
         'values em campo string',
         (s) => (s.layers[0].annotationTypes[0].fields[1].sources[0].values = { A: 'a' }),
-        `${BUTTON}.fields[1].sources[0].values: só é permitido em campos enum`,
+        `${BUTTON}.fields[1].sources[0].values: only allowed in enum fields`,
       ],
       [
         'values em coluna string de table',
@@ -110,12 +110,12 @@ describe('especialização formatVersion 3 (sources)', () => {
           (s.layers[1].annotationTypes[0].fields[2].columns[0].sources[0].values = {
             A: 'a',
           }),
-        `${ON_CLICK}.fields[2].columns[0].sources[0].values: só é permitido em campos enum`,
+        `${ON_CLICK}.fields[2].columns[0].sources[0].values: only allowed in enum fields`,
       ],
       [
         'origem de tipo sem id nem name',
         (s) => (s.layers[0].annotationTypes[0].sources[1] = { system: 'figma' }),
-        `${BUTTON}.sources[1]: precisa de "id" ou "name"`,
+        `${BUTTON}.sources[1]: needs "id" or "name"`,
       ],
       [
         'origem de tipo sem system',
@@ -159,17 +159,17 @@ describe('especialização formatVersion 3 (sources)', () => {
     }
   });
 
-  it('sources só é permitido com formatVersion 3, apontando cada uso', () => {
+  it('sources only allowed with formatVersion 3, apontando cada uso', () => {
     const spec = v3();
     spec.formatVersion = 2;
     const errors = errorsOf(parseSpec(spec));
     expect(errors).toEqual(
       expect.arrayContaining([
-        `${BUTTON}.sources: só é permitido com formatVersion 3`,
-        `${BUTTON}.fields[1].sources: só é permitido com formatVersion 3`,
-        `${BUTTON}.fields[2].sources: só é permitido com formatVersion 3`,
-        `${ON_CLICK}.sources: só é permitido com formatVersion 3`,
-        `${ON_CLICK}.fields[2].columns[0].sources: só é permitido com formatVersion 3`,
+        `${BUTTON}.sources: only allowed with formatVersion 3`,
+        `${BUTTON}.fields[1].sources: only allowed with formatVersion 3`,
+        `${BUTTON}.fields[2].sources: only allowed with formatVersion 3`,
+        `${ON_CLICK}.sources: only allowed with formatVersion 3`,
+        `${ON_CLICK}.fields[2].columns[0].sources: only allowed with formatVersion 3`,
       ]),
     );
   });

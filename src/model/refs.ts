@@ -32,8 +32,8 @@ export interface LabelTexts {
 }
 
 export const DEFAULT_LABEL_TEXTS: LabelTexts = {
-  untitled: 'Anotação',
-  broken: '(referência quebrada)',
+  untitled: 'Annotation',
+  broken: '(broken reference)',
 };
 
 /** Valid rows (objects with a text `_id`) of a `table` value. */

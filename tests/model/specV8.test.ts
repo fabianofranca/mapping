@@ -80,15 +80,15 @@ describe('formatVersion 8: suggestions', () => {
     ).toBe(true);
   });
 
-  it('numa versão anterior é o erro "só é permitido com formatVersion 8", no caminho exato', () => {
+  it('numa versão anterior é o erro "only allowed with formatVersion 8", no caminho exato', () => {
     for (const v of [1, 4, 7]) {
       expect(issuesOf(spec(v, str({ suggestions: ['A'] })))).toContainEqual({
         path: `${fieldPath}.suggestions`,
-        message: 'só é permitido com formatVersion 8',
+        message: 'only allowed with formatVersion 8',
       });
       expect(issuesOf(spec(v, str({ suggestions: ['A'] }), true))).toContainEqual({
         path: `${columnPath}.suggestions`,
-        message: 'só é permitido com formatVersion 8',
+        message: 'only allowed with formatVersion 8',
       });
     }
   });
@@ -103,11 +103,11 @@ describe('formatVersion 8: suggestions', () => {
     for (const base of cases) {
       expect(issuesOf(spec(8, { ...base, suggestions: ['A'] }))).toContainEqual({
         path: `${fieldPath}.suggestions`,
-        message: 'só é permitido em campo ou coluna string',
+        message: 'only allowed in a string field or column',
       });
       expect(issuesOf(spec(8, { ...base, suggestions: ['A'] }, true))).toContainEqual({
         path: `${columnPath}.suggestions`,
-        message: 'só é permitido em campo ou coluna string',
+        message: 'only allowed in a string field or column',
       });
     }
     const table = spec(8, {
@@ -118,19 +118,19 @@ describe('formatVersion 8: suggestions', () => {
     });
     expect(issuesOf(table)).toContainEqual({
       path: `${fieldPath}.suggestions`,
-      message: 'só é permitido em campo ou coluna string',
+      message: 'only allowed in a string field or column',
     });
   });
 
   it('recusa lista vazia, mais de 200, repetida, item vazio e espaço nas pontas', () => {
     const many = Array.from({ length: 201 }, (_, i) => `v${i}`);
     const bad: [unknown[], string][] = [
-      [[], 'não pode ser vazio'],
-      [many, 'no máximo 200 sugestões'],
-      [['A', 'A'], 'sugestões repetidas'],
-      [['A', ''], 'sugestões não podem ser vazias'],
-      [[' A'], 'sugestões não podem ter espaço no começo nem no fim'],
-      [['A '], 'sugestões não podem ter espaço no começo nem no fim'],
+      [[], 'cannot be empty'],
+      [many, 'at most 200 suggestions'],
+      [['A', 'A'], 'repeated suggestions'],
+      [['A', ''], 'suggestions cannot be empty'],
+      [[' A'], 'suggestions cannot have spaces at the start or the end'],
+      [['A '], 'suggestions cannot have spaces at the start or the end'],
     ];
     for (const [suggestions, text] of bad) {
       const issues = issuesOf(spec(8, str({ suggestions })));
@@ -225,13 +225,13 @@ describe('formatVersion 8: linkedRef', () => {
     for (const base of cases) {
       expect(issuesOf(linkedSpec(8, { ...base, linkedRef: 'typeRef' }))).toContainEqual({
         path: `${linkedField}.linkedRef`,
-        message: 'só é permitido em campo ou coluna string',
+        message: 'only allowed in a string field or column',
       });
       expect(
         issuesOf(linkedSpec(8, { ...base, linkedRef: 'typeRef' }, true)),
       ).toContainEqual({
         path: `${linkedColumn}.linkedRef`,
-        message: 'só é permitido em campo ou coluna string',
+        message: 'only allowed in a string field or column',
       });
     }
   });
@@ -239,22 +239,22 @@ describe('formatVersion 8: linkedRef', () => {
   it('chave inexistente é erro', () => {
     expect(issuesOf(linkedSpec(8, linked({ linkedRef: 'nada' })))).toContainEqual({
       path: `${linkedField}.linkedRef`,
-      message: '"nada" não é um campo do tipo',
+      message: '"nada" is not a field of the type',
     });
     expect(issuesOf(linkedSpec(8, linked({ linkedRef: 'nada' }), true))).toContainEqual({
       path: `${linkedColumn}.linkedRef`,
-      message: '"nada" não é uma coluna da tabela',
+      message: '"nada" is not a column of the table',
     });
   });
 
   it('chave que existe mas não é ref é erro', () => {
     expect(issuesOf(linkedSpec(8, linked({ linkedRef: 'nome' })))).toContainEqual({
       path: `${linkedField}.linkedRef`,
-      message: '"nome" deve ser um campo ref',
+      message: '"nome" must be a ref field',
     });
     expect(issuesOf(linkedSpec(8, linked({ linkedRef: 'nome' }), true))).toContainEqual({
       path: `${linkedColumn}.linkedRef`,
-      message: '"nome" deve ser uma coluna ref',
+      message: '"nome" must be a ref column',
     });
   });
 
@@ -265,19 +265,19 @@ describe('formatVersion 8: linkedRef', () => {
     type.fields.push({ key: 'typeRef', type: 'ref', accepts: { free: true } });
     expect(issuesOf(raw)).toContainEqual({
       path: 'layers[0].annotationTypes[0].fields[0].columns[1].linkedRef',
-      message: '"typeRef" não é uma coluna da tabela',
+      message: '"typeRef" is not a column of the table',
     });
   });
 
-  it('numa versão anterior é o erro "só é permitido com formatVersion 8", no caminho exato', () => {
+  it('numa versão anterior é o erro "only allowed with formatVersion 8", no caminho exato', () => {
     for (const v of [1, 4, 7]) {
       expect(issuesOf(linkedSpec(v, linked()))).toContainEqual({
         path: `${linkedField}.linkedRef`,
-        message: 'só é permitido com formatVersion 8',
+        message: 'only allowed with formatVersion 8',
       });
       expect(issuesOf(linkedSpec(v, linked(), true))).toContainEqual({
         path: `${linkedColumn}.linkedRef`,
-        message: 'só é permitido com formatVersion 8',
+        message: 'only allowed with formatVersion 8',
       });
     }
   });

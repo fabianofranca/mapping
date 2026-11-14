@@ -370,12 +370,12 @@ describe('library', () => {
       expect(lib.types[0]!.sources).toEqual([{ system: 'sdui', name: 'Certo' }]);
       expect(lib.types[0]!.fields[0]!.sources).toEqual([{ system: 'sdui', name: 'ok' }]);
       expect(lib.problems).toEqual([
-        'card.fields[0].sources[0]: precisa de name ou path',
-        'card.fields[0].sources[2]: esperava um objeto',
-        'card.sources[0]: precisa de id ou name',
-        'card.sources[1].system: esperava texto não vazio',
-        'card.sources[2].extra: chave desconhecida: extra',
-        'card.sources[3].ignore: esperava uma lista de textos',
+        'card.fields[0].sources[0]: needs name or path',
+        'card.fields[0].sources[2]: expected an object',
+        'card.sources[0]: needs id or name',
+        'card.sources[1].system: expected non-empty text',
+        'card.sources[2].extra: unknown key: extra',
+        'card.sources[3].ignore: expected a list of texts',
       ]);
     });
 
@@ -400,8 +400,8 @@ describe('library', () => {
         ),
       );
       expect(lib.problems).toEqual([
-        'card.fields[0].sources[0].path: caminho inválido "a..b" (segmento vazio)',
-        'card.fields[0].sources[1].path: "[*]" só vale em roots[].path',
+        'card.fields[0].sources[0].path: invalid path "a..b" (empty segment)',
+        'card.fields[0].sources[1].path: "[*]" is only valid in roots[].path',
       ]);
       expect(lib.types[0]!.fields[0]!.sources.map((s) => s.system)).toEqual([
         'sdui',

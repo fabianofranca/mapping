@@ -307,7 +307,7 @@ describe('layout.align: "baseline"', () => {
       { x: 0, y: 0, width: 300, height: 100 },
       { measure: approximateMeasurer },
     );
-    expect(result.warnings).toContain('valor inválido em layout.align: baseline');
+    expect(result.warnings).toContain('invalid value in layout.align: baseline');
   });
 
   it('numa versão 3, baseline vindo de expressão também cai em start com o aviso', () => {
@@ -324,7 +324,7 @@ describe('layout.align: "baseline"', () => {
       { x: 0, y: 0, width: 300, height: 100 },
       { measure: approximateMeasurer },
     );
-    expect(result.warnings).toContain('valor inválido em layout.align: baseline');
+    expect(result.warnings).toContain('invalid value in layout.align: baseline');
   });
 });
 
@@ -395,7 +395,7 @@ describe('validação de baselinePadding e align: "baseline"', () => {
     ]);
   });
 
-  it('baselinePadding.top não combina com verticalAlign literal', () => {
+  it('baselinePadding.top does not combine with verticalAlign literal', () => {
     for (const verticalAlign of ['top', 'middle', 'bottom', 'cap-middle'])
       expect(
         validateComponent(

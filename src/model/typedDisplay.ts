@@ -28,7 +28,7 @@ export interface DisplayTexts extends LabelTexts {
 export const DEFAULT_DISPLAY_TEXTS: DisplayTexts = {
   ...DEFAULT_LABEL_TEXTS,
   empty: '—',
-  rows: (count) => (count === 1 ? '1 linha' : `${count} linhas`),
+  rows: (count) => (count === 1 ? '1 row' : `${count} rows`),
 };
 
 /** Label of a field or column: `label`, otherwise `key`. */
