@@ -616,7 +616,7 @@ describe('conjunto de ícones da biblioteca Material 3 (Compose) v2', () => {
     const catalog = sharedCatalog;
     const entry = findEntry(catalog, 'icon')!;
     const drawing = drawIn(catalog, entry, { imageVector: 'NaoExiste' }, 'light');
-    expect(drawing.warnings.join('|')).toMatch(/ícone desconhecido/);
+    expect(drawing.warnings.join('|')).toMatch(/unknown icon/);
   });
 });
 

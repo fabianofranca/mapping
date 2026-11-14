@@ -96,10 +96,7 @@ describe('parseOrigins', () => {
         [{ ...ORIGIN, node: { type: 'type', props: 'props' } }],
         'origins[0].node.children',
       ],
-      [
-        [{ ...ORIGIN, node: { ...NODE, key: 'k' } }],
-        'origins[0].node.key: unknown key',
-      ],
+      [[{ ...ORIGIN, node: { ...NODE, key: 'k' } }], 'origins[0].node.key: unknown key'],
       [[{ system: 'a', node: NODE }], 'origins[0].screen: required'],
       [
         [{ ...ORIGIN, screen: { ...SCREEN, width: undefined } }],

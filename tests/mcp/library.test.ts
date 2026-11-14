@@ -232,7 +232,7 @@ describe('validate_library com o nó image', () => {
     );
     expect(result.valid).toBe(false);
     expect(result.errors.map((e) => e.message).join('\n')).toMatch(
-      /o src da imagem lê "foto"/,
+      /the image src reads "foto"/,
     );
   });
 });
@@ -352,7 +352,7 @@ describe('validate_library', () => {
       }),
     );
     expect(result.valid).toBe(false);
-    const issue = result.errors.find((e) => e.message.includes('aceita só a lista'));
+    const issue = result.errors.find((e) => e.message.includes('takes only the list'));
     expect(issue?.message).toBe('a "table" field takes only the list of rows');
     expect(issue?.path).toMatch(/examples\[0\]\.values\.items$/);
     expect(Object.keys(issue ?? {}).sort()).toEqual([
@@ -399,7 +399,7 @@ describe('validate_library', () => {
       file: 'material3.spec.json',
       path: 'origins[0].examples[0].file',
     });
-    expect(bad.errors[0]?.message).toMatch(/largura da tela/);
+    expect(bad.errors[0]?.message).toMatch(/screen width missing or invalid/);
     // Com level 2 a prova de desenho não roda.
     const level2 = ok(
       await mcp.call<Validated>('validate_library', {
@@ -456,7 +456,7 @@ describe('validate_library', () => {
   it('pasta sem especialização: valid false com a mensagem do validador', async () => {
     const result = ok(await mcp.call<Validated>('validate_library', { path: 'vazia' }));
     expect(result.valid).toBe(false);
-    expect(result.errors[0]?.message).toMatch(/nenhuma especialização/);
+    expect(result.errors[0]?.message).toMatch(/no specialization found/);
     expect(result.spec).toBeUndefined();
   });
 });

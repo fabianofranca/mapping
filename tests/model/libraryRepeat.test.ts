@@ -226,7 +226,7 @@ describe('validateLibrary com repeat', () => {
       ['components/tab.json', 'preview'],
     ]);
     // O tamanho mínimo não é desenhado: só o tamanho inicial.
-    expect(overflow[0]?.message).toContain('tamanho inicial 200×100');
+    expect(overflow[0]?.message).toContain('initial size 200×100');
   });
 
   it('sem preview, a prova usa a tabela vazia e passa', () => {

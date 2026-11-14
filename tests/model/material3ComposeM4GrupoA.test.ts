@@ -103,7 +103,7 @@ describe('M4 grupo A — top-app-bar', () => {
       // a raiz tem a altura da large (152, ME2); a barra de uma linha fica no topo
       expect(d.root.height).toBe(152);
       expect(fillOf(d, 'top app bar')).toBe(tok('surface', mode));
-      expect(d.warnings.filter((w) => /ícone desconhecido|não cabe/.test(w))).toEqual([]);
+      expect(d.warnings.filter((w) => /unknown icon|não cabe/.test(w))).toEqual([]);
     }
   });
 
@@ -257,9 +257,9 @@ describe('M4 grupo A — top-app-bar', () => {
     }
   });
 
-  it('ícone fora do conjunto cai no reservado e avisa ícone desconhecido', () => {
+  it('ícone fora do conjunto cai no reservado e avisa unknown icon', () => {
     const d = both('top-app-bar', { title: 'X', navigationIcon: 'Nao-existe' }).light;
-    expect(d.warnings.some((w) => /ícone desconhecido/.test(w))).toBe(true);
+    expect(d.warnings.some((w) => /unknown icon/.test(w))).toBe(true);
   });
 });
 
@@ -319,7 +319,7 @@ describe('M4 grupo A — bottom-app-bar', () => {
     expect(named(empty, 'botão flutuante')).toBeUndefined();
     expect(named(empty, 'ação 1')).toBeUndefined();
     const bad = both('bottom-app-bar', { actionIcon1: 'Nao-existe' }).light;
-    expect(bad.warnings.some((w) => /ícone desconhecido/.test(w))).toBe(true);
+    expect(bad.warnings.some((w) => /unknown icon/.test(w))).toBe(true);
   });
 });
 
@@ -538,6 +538,6 @@ describe('M4 grupo A — dropdown-menu', () => {
       200,
       160,
     );
-    expect(bad.warnings.some((w) => /ícone desconhecido/.test(w))).toBe(true);
+    expect(bad.warnings.some((w) => /unknown icon/.test(w))).toBe(true);
   });
 });

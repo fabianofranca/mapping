@@ -129,7 +129,7 @@ const markedAll = (d: Drawing) =>
     });
 const markedOf = (d: Drawing, text: string) =>
   markedAll(d).find((m) => m.label.text === text);
-const BAD = /não cabe|texto maior que a caixa|ícone desconhecido|ícone esticado|token/i;
+const BAD = /não cabe|texto maior que a caixa|unknown icon|ícone esticado|token/i;
 
 describe('M5 date-picker — contêiner e cabeçalho (modo single)', () => {
   it('contêiner em surface-container-high com raio corner-extra-large (28), sem sombra, em light e dark', () => {

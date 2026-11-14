@@ -410,7 +410,7 @@ describe('examples do tipo', () => {
 
   it.each([
     ['text', 5, 'must be text'],
-    ['count', 'três', 'must be a number'],
+    ['count', 'três', 'the value must be a number'],
     ['when', '2026-02-30', 'must be a valid date YYYY-MM-DD'],
     ['when', 'ontem', 'must be a valid date YYYY-MM-DD'],
     ['when', 20260228, 'must be a valid date YYYY-MM-DD'],
@@ -477,7 +477,7 @@ describe('examples do tipo', () => {
     });
 
     it.each([
-      ['num', 'abc', 'must be a number'],
+      ['num', 'abc', 'the value must be a number'],
       ['kind', 'z', 'must be one of the options'],
       ['day', '2026-02-30', 'must be a valid date YYYY-MM-DD'],
       ['col', 5, 'must be text'],

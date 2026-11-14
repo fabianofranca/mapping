@@ -183,7 +183,8 @@ describe('diffSpecs: aditivas', () => {
         typeId: 'button',
         fieldKey: 'rows.kind',
         option: 'c',
-        message: 'the column "kind" of the field "rows" of the type "button" gained the option "c"',
+        message:
+          'the column "kind" of the field "rows" of the type "button" gained the option "c"',
       },
     ]);
   });

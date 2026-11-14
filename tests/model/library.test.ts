@@ -803,7 +803,12 @@ describe('validateLibrary: contrato de versão (previous)', () => {
   it('version que não cresceu é erro', () => {
     const report = validate(miniPackage(), { previous: previousSpec(2, false) });
     expect(report.errors.map(brief)).toEqual([
-      ['error', SPEC, 'version', 'the version did not grow: the previous one is 2 and this one is 2'],
+      [
+        'error',
+        SPEC,
+        'version',
+        'the version did not grow: the previous one is 2 and this one is 2',
+      ],
     ]);
   });
 
@@ -815,7 +820,12 @@ describe('validateLibrary: contrato de versão (previous)', () => {
     if (!parsed.ok) throw new Error(parsed.errors.join('; '));
     const report = validate(nextPackage(), { previous: parsed.spec });
     expect(report.errors.map(brief)).toEqual([
-      ['error', SPEC, 'id', 'the previous version is of the specialization "outra", not "mini"'],
+      [
+        'error',
+        SPEC,
+        'id',
+        'the previous version is of the specialization "outra", not "mini"',
+      ],
     ]);
   });
 

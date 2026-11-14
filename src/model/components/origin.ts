@@ -643,11 +643,7 @@ function parseOrigin(
     checkKeys(raw.node, ['type', 'props', 'children'], nodePath, problems);
     const keyOk = (key: 'type' | 'props' | 'children'): boolean => {
       if (nonEmptyString((raw.node as Record<string, unknown>)[key])) return true;
-      problem(
-        problems,
-        `${nodePath}.${key}`,
-        'required (key name, non-empty text)',
-      );
+      problem(problems, `${nodePath}.${key}`, 'required (key name, non-empty text)');
       return false;
     };
     const ok = [keyOk('type'), keyOk('props'), keyOk('children')].every(Boolean);

@@ -755,7 +755,7 @@ export const KNOWN_PARAM_WARNINGS: readonly string[] = [
   'carousel.centered-hero preferredItemWidth=preferredItemWidth',
 ];
 
-/** Compara os avisos da validação da biblioteca com o conjunto conhecido: só `parâmetro fora da ficha`, e exatamente esses. */
+/** Compara os avisos da validação da biblioteca com o conjunto conhecido: só `parameter outside the signature`, e exatamente esses. */
 export function unknownWarnings(warnings: readonly { path: string; message: string }[]): {
   unexpected: string[];
   missing: string[];
@@ -766,7 +766,7 @@ export function unknownWarnings(warnings: readonly { path: string; message: stri
     /^layers\[(\d+)\]\.annotationTypes\[(\d+)\]\.code\.compose\.(?:variants\.cases\.([^.]+)\.)?params\.(.+)$/;
   for (const w of warnings) {
     const m = re.exec(w.path);
-    const param = /^parâmetro fora da ficha: "(.+)"$/.exec(w.message)?.[1];
+    const param = /^parameter outside the signature: "(.+)"$/.exec(w.message)?.[1];
     const id =
       m === null
         ? undefined

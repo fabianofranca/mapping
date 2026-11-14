@@ -283,9 +283,9 @@ describe('tolerância de 1 px no "conteúdo maior que a caixa" vindo de texto', 
   });
 
   it('2 px de texto a mais avisa', () => {
-    expect(warnings(14, 12).some((w) => w.startsWith('content larger than the box'))).toBe(
-      true,
-    );
+    expect(
+      warnings(14, 12).some((w) => w.startsWith('content larger than the box')),
+    ).toBe(true);
   });
 });
 

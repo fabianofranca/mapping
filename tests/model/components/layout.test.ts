@@ -521,7 +521,9 @@ describe('layoutScreen: scrim', () => {
   it('tipo de película desconhecido: aviso e a raiz continua', () => {
     const result = run([root(node('modal', 'fixed'), { scrimTypeId: 'nao-existe' })]);
     expect(ids(result)).toEqual(['modal']);
-    expect(result.warnings).toEqual(['modal#scrim: type without a component: nao-existe']);
+    expect(result.warnings).toEqual([
+      'modal#scrim: type without a component: nao-existe',
+    ]);
   });
 });
 

@@ -369,12 +369,12 @@ describe('formatVersion 12: nível 2 (papéis que não existiam na versão anter
       [
         'warning',
         `${M0}.steps[1].from`,
-        'o papel "ghost" do tipo "button" não existia na versão 1',
+        'the role "ghost" of the type "button" did not exist in version 1',
       ],
       [
         'warning',
         `${M0}.steps[2].role`,
-        'o papel "ghost2" do tipo "button" não existia na versão 1',
+        'the role "ghost2" of the type "button" did not exist in version 1',
       ],
     ]);
   });
@@ -399,7 +399,7 @@ describe('formatVersion 12: nível 2 (papéis que não existiam na versão anter
       [
         'warning',
         `${M0}.steps[2].from`,
-        'o papel "nope" do tipo "btn" não existia na versão 1',
+        'the role "nope" of the type "btn" did not exist in version 1',
       ],
     ]);
   });
@@ -421,7 +421,7 @@ describe('formatVersion 12: nível 2 (papéis que não existiam na versão anter
     const result = report(spec, previous());
     expect(result.errors.map(brief)).toEqual([]);
     expect(result.warnings.map(brief)).toEqual([
-      ['warning', `${M0}.steps[0].type`, 'o tipo "newbie" não existia na versão 1'],
+      ['warning', `${M0}.steps[0].type`, 'the type "newbie" did not exist in version 1'],
     ]);
   });
 

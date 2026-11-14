@@ -590,7 +590,7 @@ describe('M4 grupo C — list-item', () => {
 
 describe('M4 grupo C — o padrão e os exemplos desenham sem aviso', () => {
   const BAD =
-    /não cabe|texto maior que a caixa|conteúdo maior que a caixa|ícone desconhecido|ícone esticado|token inexistente|token desconhecido|campo não informado/i;
+    /não cabe|texto maior que a caixa|conteúdo maior que a caixa|unknown icon|ícone esticado|token inexistente|token desconhecido|campo não informado/i;
   it.each(['tabs', 'list-item'])('%s: preview e exemplos, em light e dark', (id) => {
     const entry = entryOf(id);
     const preview = entry.component!.preview ?? {};

@@ -27,7 +27,7 @@ const M3 = [
   'progress-indicator',
 ];
 const BAD_WARNING =
-  /não cabe|texto maior que a caixa|ícone desconhecido|ícone esticado|token inexistente|token desconhecido/i;
+  /não cabe|texto maior que a caixa|unknown icon|ícone esticado|token inexistente|token desconhecido/i;
 
 type Rec = Record<string, unknown>;
 const rawSpec = JSON.parse(text(SPEC_FILE)) as { layers: { annotationTypes: Rec[] }[] };
