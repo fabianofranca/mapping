@@ -1,5 +1,5 @@
-# Painel da fila lê os campos-lista do meta — 2026-11-11 (épico `epic/painel-meta-texto`, PR #1624, MCP 0.34.3 sem mudança, schema v18)
+# Queue panel reads the list fields of the meta — 2026-11-11 (épico `epic/painel-meta-texto`, PR #1624, MCP 0.34.3 unchanged, schema v18)
 
 ## Corrigido
 
-- O card "Custo da fila", os de "Pedidos do supervisor" e "Regras em vigor" e o "Por que há vaga livre" do painel publicado deixam de ficar com "—" quando o tipo Dashboard entrega as listas do `meta` (`sessions`, `requests`, `rules` e `vagasItens`) como texto JSON: a página lê os quatro campos por um ajudante único (`asList`), que aceita a lista ou o texto JSON dela. O `tests/tooling/queuePanelPage.test.ts` carrega a página com o `meta` nas duas formas.
+- The "Custo da fila" card, those of "Pedidos do supervisor" and "Regras em vigor" and the "Por que há vaga livre" of the published panel stop showing "—" when the Dashboard type delivers the `meta` lists (`sessions`, `requests`, `rules` and `vagasItens`) as JSON text: the page reads the four fields through a single helper (`asList`), which accepts the list or its JSON text. `tests/tooling/queuePanelPage.test.ts` loads the page with the `meta` in both forms.

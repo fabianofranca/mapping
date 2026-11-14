@@ -1,10 +1,10 @@
-# Correções no motor de componentes — 2026-11-09 (épico `epic/correcoes-componentes`, PR #1173, MCP 0.28.9, schema v18)
+# Fixes in the component engine — 2026-11-09 (épico `epic/correcoes-componentes`, PR #1173, MCP 0.28.9, schema v18)
 
 ## Corrigido
 
-- Componentes: `visible` e `italic` com `{ "$field": "x", "default": true }` agora usam o `default` quando o campo está vazio (o nó não some mais).
-- Componentes: Arrumar, posicionar uma filha nova e o `hug` do slot passam a ler o `gap` e o `padding` do slot escritos como `$token`, com os tokens do modo do desenho (antes ficavam em 0).
-- `mapping-viewer`: `parseScreen` mantém as tabelas dos valores (round-trip com `serializeScreen` sem perda) e recusa `parentId` em auto-referência, ciclo ou inexistente, e `id` repetido; `descendantsOf` não trava mais com ciclo.
-- Troca de imagem: trocar o arquivo por outro do mesmo tamanho não altera mais nenhum retângulo, e a reescala respeita o tamanho mínimo de cada marcação de componente (sem inflar a 8 px); a que cresceu por causa do mínimo vai para revisão (MCP 0.28.9).
-- Componentes: o medidor de texto do canvas devolve a largura real da linha mais larga, e um texto `fill` dentro de um quadro `hug` deixa de ocupar o limite inteiro.
-- Troca de imagem pela proposta do MCP: a marcação de componente que cresceu até o tamanho mínimo agora ganha revisão (`needsReview`) ao aplicar, como na troca pela app.
+- Components: `visible` and `italic` with `{ "$field": "x", "default": true }` now use the `default` when the field is empty (the node no longer disappears).
+- Components: Arrange, positioning a new child and the slot's `hug` now read the slot's `gap` and `padding` written as `$token`, with the tokens of the drawing mode (before they stayed at 0).
+- `mapping-viewer`: `parseScreen` keeps the value tables (round-trip with `serializeScreen` without loss) and refuses a `parentId` that is self-referencing, cyclic or nonexistent, and a repeated `id`; `descendantsOf` no longer hangs on a cycle.
+- Image swap: swapping the file for another of the same size no longer changes any rectangle, and rescaling respects the minimum size of each component marking (without inflating to 8 px); one that grew because of the minimum goes to review (MCP 0.28.9).
+- Components: the canvas text measurer returns the real width of the widest line, and a `fill` text inside a `hug` frame no longer takes up the whole limit.
+- Image swap through an MCP proposal: a component marking that grew up to the minimum size now gets a review (`needsReview`) on apply, as in the swap through the app.

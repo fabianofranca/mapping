@@ -1,9 +1,9 @@
-# Testes de crescimento estáveis — 2026-11-09 (épico `epic/escala-estavel`, PR #1212, MCP 0.28.11, schema v18)
+# Stable growth tests — 2026-11-09 (épico `epic/escala-estavel`, PR #1212, MCP 0.28.11, schema v18)
 
 ## Alterado
 
-- Testes de crescimento (`npm run test:scale` e os casos de crescimento do `npm run test:perf`): medição n/4n intercalada (gc por par, ordem alternada, aquecimento igual nos dois tamanhos) e teto de 6× calibrado pela medição; só os testes mudam, nada muda para quem usa a app ou o MCP.
+- Growth tests (`npm run test:scale` and the growth cases of `npm run test:perf`): interleaved n/4n measurement (gc per pair, alternating order, same warm-up at both sizes) and a 6× ceiling calibrated by measurement; only the tests change, nothing changes for whoever uses the app or the MCP.
 
 ## Corrigido
 
-- Visualizador e editor de componentes: atualizar uma tela com milhares de instâncias deixa de custar tempo quadrático (a ordem de desenho, `renderOrder`, passa a ser calculada em um passo só; a ordem não muda). O MCP sobe para 0.28.11 só porque `src/model/components/screen.ts` vai na release; o resto da etapa muda apenas testes.
+- Viewer and component editor: updating a screen with thousands of instances no longer costs quadratic time (the drawing order, `renderOrder`, is now computed in a single pass; the order does not change). The MCP goes up to 0.28.11 only because `src/model/components/screen.ts` ships in the release; the rest of the stage changes only tests.

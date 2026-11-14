@@ -1,9 +1,9 @@
-# Revisor de código — 2026-11-08 (épico `epic/revisor-codigo`, PR #985, MCP 0.28.4, schema v18)
+# Code reviewer — 2026-11-08 (épico `epic/revisor-codigo`, PR #985, MCP 0.28.4, schema v18)
 
 ## Adicionado
 
-- Revisão de código automática, para o fluxo de entrega: todo épico mesclado na `main` é revisado de madrugada, e os achados viram uma issue da rodada e uma issue `bug` por defeito confirmado de severidade high ou medium, todas com o rótulo novo `code-review`. O ponto de partida é o CR base de 2026-11-08, que revisou a `main` inteira. Regras no `CLAUDE.md` ("Revisão de código") e mensagens no `docs/FLOW.md`.
+- Automatic code review, for the delivery flow: every epic merged into `main` is reviewed overnight, and the findings become a round issue and one `bug` issue per confirmed high- or medium-severity defect, all with the new `code-review` label. The starting point is the base CR of 2026-11-08, which reviewed the whole `main`. Rules in `CLAUDE.md` ("Revisão de código") and messages in `docs/FLOW.md`.
 
 ## Alterado
 
-- `/detalhar-backlog`: as issues do revisor (`code-review`) entram no detalhamento sem repetir achado. O item da rodada que já tem a sua issue `bug` fica com ela, e a rodada pode ser dividida por área entre etapas.
+- `/detalhar-backlog`: the reviewer's issues (`code-review`) enter the detailing without repeating a finding. The round item that already has its `bug` issue stays with it, and the round can be split by area among stages.

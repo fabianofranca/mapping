@@ -1,11 +1,11 @@
-# Passada visual das perspectivas e do canvas — 2026-11-10 (épico `epic/passada-perspectivas-canvas`, PR #1496, MCP sem mudança, schema v18)
+# Visual pass over perspectives and the canvas — 2026-11-10 (épico `epic/passada-perspectivas-canvas`, PR #1496, MCP unchanged, schema v18)
 
 ## Corrigido
 
-- O selo "Veio de…" não cobre o nome de outra tela: a raiz grande com outra raiz logo abaixo põe o selo acima da faixa do nome dela.
-- A legenda da Área de chegada não encosta na borda do canvas: fica a 8 px de cada borda da área visível e, mais larga que ela, ganha reticências.
-- O **Enviar para perspectiva…** tem a fonte, a altura e a borda dos outros botões.
-- Os avisos curtos do canvas (como "Cada lado precisa ter pelo menos 8 px.") e o de progresso ficam pequenos, no pé do canvas, à esquerda, e não cobrem o topo da imagem; erros e Somente leitura seguem no topo.
-- Na barra do canvas larga (acima de 470 px), a seleção é o último trecho do caminho a encolher.
-- O aviso curto do pé do canvas aparece inteiro com a Árvore e os Detalhes abertos a 900×720: quebra em duas linhas em vez de ser cortado com reticências.
-- O selo "Veio de…" não cai sobre o título de outra raiz nem sobre o título da Área de chegada, mesmo no zoom baixo do **Enquadrar tudo** ou com o topo da faixa fora da vista: cada lugar possível é puxado para dentro da vista antes de o selo escolher onde ficar.
+- The "Came from…" badge does not cover the name of another screen: a large root with another root right below puts the badge above the strip with its name.
+- The Arrival area caption does not touch the canvas edge: it stays 8 px from each edge of the visible area and, when wider than it, gets an ellipsis.
+- **Send to perspective…** has the same font, height and border as the other buttons.
+- The short canvas notices (such as "Each side must be at least 8 px.") and the progress one are small, at the foot of the canvas, on the left, and do not cover the top of the image; errors and Read-only stay at the top.
+- In the wide canvas bar (above 470 px), the selection is the last part of the path to shrink.
+- The short notice at the foot of the canvas appears whole with the Tree and the Details open at 900×720: it wraps onto two lines instead of being cut off with an ellipsis.
+- The "Came from…" badge does not fall over the title of another root or over the title of the Arrival area, even at the low zoom of **Fit all** or with the top of the strip out of view: each possible place is pulled into the view before the badge chooses where to sit.

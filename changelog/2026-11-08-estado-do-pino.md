@@ -1,12 +1,12 @@
-# Estado do pino — 2026-11-08 (épico `epic/estado-do-pino`, PR #924, MCP 0.28.2, schema v18)
+# Pin state — 2026-11-08 (épico `epic/estado-do-pino`, PR #924, MCP 0.28.2, schema v18)
 
 ## Alterado
 
-- O pino de conversa no canvas passa a mostrar o estado também por um glifo à esquerda do rótulo, e não só pela cor: uma pessoa (aguardando você), uma faísca de quatro pontas (aguardando o agente) e um visto (resolvida). O pino com várias conversas mostra o glifo do estado mais urgente; o pino de rascunho (tracejado) não tem glifo. Rótulo, anel do selecionado, ponto de não lida e tracejado seguem como antes, e o alvo de clique cresce com o glifo.
-- Os selos de estado da janela **Comentários** e da seção **Conversas** dos Detalhes mostram o mesmo glifo antes do texto.
-- O `.canvas-host` publica `data-pin-states` (os estados dos pinos visíveis, na ordem de desenho), ao lado do `data-pins`, para conferir os pinos sem captura.
+- The conversation pin on the canvas now shows the state also through a glyph to the left of the label, and not only through color: a person (waiting for you), a four-point spark (waiting for the agent) and a check mark (resolved). A pin with several conversations shows the glyph of the most urgent state; the draft pin (dashed) has no glyph. Label, selected ring, unread dot and dashes stay as before, and the click target grows with the glyph.
+- The state badges of the **Comments** window and of the **Conversations** section of Details show the same glyph before the text.
+- The `.canvas-host` publishes `data-pin-states` (the states of the visible pins, in drawing order), next to `data-pins`, so the pins can be checked without a screenshot.
 
 ## Corrigido
 
-- Os três estados do pino se distinguem sem depender da cor (acessibilidade, WCAG 1.4.1): os fundos têm quase a mesma luminosidade, e agora o glifo diferencia o estado em tons de cinza.
-- O roteiro R22 do `docs/TESTING.md` passa a bater com a app: o Esc desarma o **Comentar** mas os pinos seguem ligados, a opção ativa do `@Entr` já é a marcação **Entrar**, e os passos conferem o `data-pin-states` (#737).
+- The three pin states can be told apart without relying on color (accessibility, WCAG 1.4.1): the backgrounds have almost the same luminosity, and now the glyph tells the state apart in shades of gray.
+- The R22 script of `docs/TESTING.md` now matches the app: Esc disarms **Comment** but the pins stay on, the active option of `@Entr` is already the **Entrar** marking, and the steps check `data-pin-states` (#737).

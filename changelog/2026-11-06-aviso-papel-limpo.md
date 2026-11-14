@@ -1,5 +1,5 @@
-# Aviso de papel limpo — 2026-11-06 (épico `epic/aviso-papel-limpo`, PR #600, MCP 0.19.0, schema v14)
+# Cleared-role warning — 2026-11-06 (épico `epic/aviso-papel-limpo`, PR #600, MCP 0.19.0, schema v14)
 
 ## Adicionado
 
-- MCP: o `plan_changes` e o `propose_changes` avisam, antes de gravar, quando um `update_annotation` com `owner` limpa o papel da anotação sem o passo pedir (a nova dona não oferece o papel, ou `owner: null`). O passo do `summary` ganha `; papel "Clique" limpo` e `warnings` traz um aviso `role-cleared` por anotação (`op`, `annotation`, `role`, `roleName`, `message`). O comportamento não muda: o papel continua sendo limpo na mesma operação, e o aviso não bloqueia nada. Não avisa quando a anotação não tinha papel, quando a nova dona oferece o mesmo papel ou quando o mesmo passo traz `role`.
+- MCP: `plan_changes` and `propose_changes` warn, before saving, when an `update_annotation` with `owner` clears the annotation's role without the step asking for it (the new owner does not offer the role, or `owner: null`). The `summary` step gains `; role "Clique" cleared` and `warnings` carries a `role-cleared` warning per annotation (`op`, `annotation`, `role`, `roleName`, `message`). The behavior does not change: the role is still cleared in the same operation, and the warning blocks nothing. It does not warn when the annotation had no role, when the new owner offers the same role or when the same step carries `role`.

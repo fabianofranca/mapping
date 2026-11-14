@@ -1,19 +1,19 @@
-# Vista do canvas para o testador — 2026-11-11 (épico `epic/vista-do-canvas-2`, PR #1612, MCP 0.34.3, schema v18)
+# Canvas view for the tester — 2026-11-11 (épico `epic/vista-do-canvas-2`, PR #1612, MCP 0.34.3, schema v18)
 
 ## Adicionado
 
-- O `.canvas-host` publica três atributos de teste novos, só leitura, para quem testa e conduz o fluxo (nada muda na tela):
-  - `data-selection`: `"<tipo> <id>"` da seleção primária (`image`, `marking` ou `arrow`); some sem seleção ou com o item fora do projeto desenhado. Diz qual item o clique selecionou quando há sobreposição.
-  - `data-arrow-handles`: com uma seta desenhada como seleção primária, as entradas `"<nome> <x> <y>"` separadas por `;`, em px CSS relativos ao canto do host (como o `data-selection-box`): `center` (o meio do traço, onde o clique pega a seta), `from`, `to`, `point<i>`, `mid<i>` e `segment<i>`. Some com **Mostrar setas** desligado ou sem seta selecionada.
-  - `data-container-boxes`: uma entrada `"<id> <x> <y> <largura> <altura> <escala>"` por container colocado, em unidades do canvas e na colocação desenhada (perspectiva aberta e revisão). Pan e zoom não o refazem.
-- Auxiliares novos do testador em `scripts/testing/cloud.mjs`, para achar um ponto na tela sem capturar:
-  - `onCanvas(page, { x, y })` devolve `{ ok, element }`: o ponto cai no canvas ou o minimapa, uma janela ou a barra estão por cima? É a conferência única do `ponto`, do `drag` e do `paletteDrag`.
-  - `viewCenter(page)` devolve o centro da vista, em px de tela e em unidades do canvas.
-  - `arrowHandlesOf(page)` devolve o meio e as alças da seta selecionada já em ponto de tela, ou `null` (com `parseArrowHandles` e `parseContainerBoxes`, as partes puras).
-- A linha `Seleção:` do `state()`, depois do `Foco:`, diz o que o clique selecionou: `marcação "Lado" (<id>)`, `seta "A → B" (<id>)`, `container "Tela" (<id>)` ou `nenhuma` (sem pasta ou com item da proposta na revisão, `marking <id>`).
-- O apêndice A do `docs/TESTING.md` ganha os três atributos, o centro da vista, a área visível, a sobreposição, o exemplo com a seta e o `menuitemradio` do menu do traço.
+- `.canvas-host` publishes three new read-only test attributes, for whoever tests and drives the flow (nothing changes on screen):
+  - `data-selection`: `"<type> <id>"` of the primary selection (`image`, `marking` or `arrow`); it disappears with no selection or with the item outside the drawn project. It says which item the click selected when there is an overlay.
+  - `data-arrow-handles`: with an arrow drawn as the primary selection, the entries `"<name> <x> <y>"` separated by `;`, in CSS px relative to the host's corner (like `data-selection-box`): `center` (the middle of the stroke, where the click grabs the arrow), `from`, `to`, `point<i>`, `mid<i>` and `segment<i>`. It disappears with **Show arrows** turned off or with no arrow selected.
+  - `data-container-boxes`: one entry `"<id> <x> <y> <width> <height> <scale>"` per placed container, in canvas units and in the drawn placement (open perspective and review). Pan and zoom do not redo it.
+- New tester helpers in `scripts/testing/cloud.mjs`, to find a point on the screen without capturing:
+  - `onCanvas(page, { x, y })` returns `{ ok, element }`: does the point fall on the canvas, or is the minimap, a window or the bar on top of it? It is the single check for `ponto`, `drag` and `paletteDrag`.
+  - `viewCenter(page)` returns the center of the view, in screen px and in canvas units.
+  - `arrowHandlesOf(page)` returns the middle and the handles of the selected arrow already as a screen point, or `null` (with `parseArrowHandles` and `parseContainerBoxes`, the pure parts).
+- The `Seleção:` line of `state()`, after `Foco:`, says what the click selected: `marcação "Lado" (<id>)`, `seta "A → B" (<id>)`, `container "Tela" (<id>)` or `nenhuma` (without a folder or with a proposal item in the review, `marking <id>`).
+- Appendix A of `docs/TESTING.md` gains the three attributes, the view center, the visible area, the overlay, the example with the arrow and the `menuitemradio` of the stroke menu.
 
 ## Alterado
 
-- O `ponto` dá o ponto da posição **desenhada** (lê o `data-container-boxes`), também com outra perspectiva aberta e na revisão. Avisa no stderr quando a `--perspectiva` pedida não é a desenhada e quando o ponto cai fora do canvas. A saída da CLI continua `<x> <y>`.
-- O `drag` lança, antes de qualquer ação do mouse, quando o ponto de partida não cai no canvas (`{ allowOffCanvas: true }` segue) e avisa quando o clique de seleção não selecionou nada.
+- `ponto` gives the point of the **drawn** position (it reads `data-container-boxes`), also with another perspective open and in the review. It warns on stderr when the requested `--perspectiva` is not the drawn one and when the point falls outside the canvas. The CLI output stays `<x> <y>`.
+- `drag` throws, before any mouse action, when the starting point does not fall on the canvas (`{ allowOffCanvas: true }` still works) and warns when the selection click selected nothing.

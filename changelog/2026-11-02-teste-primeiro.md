@@ -1,10 +1,10 @@
-# Teste primeiro e portão de complexidade — 2026-11-02 (épico `epic/teste-primeiro`, PR #321, MCP 0.12.0, schema v13)
+# Test first and complexity gate — 2026-11-02 (épico `epic/teste-primeiro`, PR #321, MCP 0.12.0, schema v13)
 
 ## Adicionado
 
-- Portão de complexidade por função: a regra `complexity` do ESLint (limite 10, erro) vale em `src/**` e `mcp/**` e roda no `npm run lint` do CI. As 319 funções do legado acima do limite estão em `eslint-suppressions.json`, que só pode encolher (`npx eslint --prune-suppressions` quando uma é reduzida). Um teste de tooling prova que a regra pega em `src/` e `mcp/` e não vale em `tests/`, `scripts/`, `viewer/` e `pwa/`.
+- Per-function complexity gate: the ESLint `complexity` rule (limit 10, error) applies in `src/**` and `mcp/**` and runs in the CI's `npm run lint`. The 319 legacy functions above the limit are in `eslint-suppressions.json`, which can only shrink (`npx eslint --prune-suppressions` when one is reduced). A tooling test proves the rule catches in `src/` and `mcp/` and does not apply in `tests/`, `scripts/`, `viewer/` and `pwa/`.
 
 ## Alterado
 
-- Quem desenvolve com agentes: o briefing dos subagentes e a mensagem da sessão da fase passam a exigir **teste primeiro** para mudança de comportamento ou correção (teste visto falhando antes do código; o retorno traz o nome do teste e a falha). Refatoração, documentação e trabalho mecânico só exigem os testes existentes passando antes e depois.
-- Nada muda na app nem no servidor MCP.
+- For whoever develops with agents: the subagent briefing and the phase session message now require **test first** for a behavior change or fix (test seen failing before the code; the return carries the test name and the failure). Refactoring, documentation and mechanical work only require the existing tests passing before and after.
+- Nothing changes in the app or in the MCP server.

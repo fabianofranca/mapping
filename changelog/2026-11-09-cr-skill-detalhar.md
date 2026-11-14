@@ -1,8 +1,8 @@
-# CR do skill de detalhamento — 2026-11-09 (épico `epic/cr-skill-detalhar`, PR #1218, MCP 0.28.10 sem mudança, schema v18)
+# CR of the detailing skill — 2026-11-09 (épico `epic/cr-skill-detalhar`, PR #1218, MCP 0.28.10 unchanged, schema v18)
 
 ## Alterado
 
-- O `/detalhar-backlog` passa a tratar o grupo que junta `bug` e `roadmap`: a principal é o `bug` de maior severidade (no empate, o menor número), e a etapa fica `bug` com a maior severidade do grupo, sem `impact:`.
-- O `/detalhar-backlog` diz o que fazer com as sub-issues `step` abertas de uma `ready` que entra num grupo ou tem o plano mudado: a fase que continua passa para a principal e é atualizada, a que sai fecha `not_planned` com um comentário, e a conferência do `PRONTA` checa que nenhuma `step` aberta ficou pendurada.
-- O `/detalhar-backlog` manda carregar com o `ToolSearch` só o `PushNotification`; o `AskUserQuestion` só se for uma ferramenta adiada.
-- A regra de `changelog/` prevê o épico só do fluxo de entrega: as categorias falam a quem conduz o fluxo (o dono e os agentes).
+- `/detalhar-backlog` now handles the group that joins `bug` and `roadmap`: the main one is the `bug` of highest severity (on a tie, the lowest number), and the stage becomes `bug` with the group's highest severity, without `impact:`.
+- `/detalhar-backlog` says what to do with the open `step` sub-issues of a `ready` that enters a group or has its plan changed: the phase that continues moves to the main one and is updated, the one that leaves closes as `not_planned` with a comment, and the `PRONTA` check verifies that no open `step` was left hanging.
+- `/detalhar-backlog` has `ToolSearch` load only `PushNotification`; `AskUserQuestion` only if it is a deferred tool.
+- The `changelog/` rule provides for the epic of only the delivery flow: the categories speak to whoever drives the flow (the owner and the agents).

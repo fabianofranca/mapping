@@ -1,12 +1,12 @@
-# Rótulo do Carousel legível e roteiros alinhados — 2026-11-13 (épico `epic/rotulo-carousel-roteiros`, PR #1828, MCP 0.39.1 sem mudança, schema v19)
+# Readable Carousel label and aligned scripts — 2026-11-13 (épico `epic/rotulo-carousel-roteiros`, PR #1828, MCP 0.39.1 unchanged, schema v19)
 
 ## Alterado
 
-- Biblioteca `material3-compose` (versão 13, aditiva, sem migração): o véu sob o rótulo do `carousel` passa a ser um degradê de baixo para cima, de `scrim` com `alpha` 0,55 (sólido nos 36 px de baixo, onde fica a linha do rótulo) a 0 no topo. O 0,55 é escolha da biblioteca, não do Compose. O desenho de todo carrossel com rótulo muda; nenhum campo muda.
-- Para quem conduz os testes: os comandos `%@` de uma linha do R17 (R17.19, R17.21, R17.41 e R17.42) levam uma borda preta de 1 px e os esperados acompanham o ImageMagick 6.9.12 (o da nuvem); o R17.42 cita o reservado certo da app (`CCC8CE` no claro e `48474C` no escuro); o R10.13 passa a esperar o que a Galeria mostra (a moldura rola até o **Perfil**); o R3, o R9.23 e o A18 seguem a versão nova (cadeia `mat-v14` a `mat-v17`).
+- Library `material3-compose` (version 13, additive, no migration): the scrim under the `carousel` label becomes a bottom-to-top gradient, from `scrim` with `alpha` 0.55 (solid in the bottom 36 px, where the label line sits) to 0 at the top. The 0.55 is the library's choice, not Compose's. The drawing of every carousel with a label changes; no field changes.
+- For whoever runs the tests: the `%@` commands of an R17 line (R17.19, R17.21, R17.41 and R17.42) carry a 1 px black border and the expected values follow ImageMagick 6.9.12 (the cloud's); R17.42 cites the app's correct reserved color (`CCC8CE` in light and `48474C` in dark); R10.13 now expects what the Gallery shows (the frame scrolls to the **Profile**); R3, R9.23 and A18 follow the new version (chain `mat-v14` to `mat-v17`).
 
 ## Corrigido
 
-- O rótulo do Carousel da Material 3 fica legível sobre o reservado da imagem (contraste de pelo menos 4,5:1, antes cerca de 1,6:1), na app, no Catálogo e no PNG do MCP (que agora mostra o véu, uma faixa sólida de 0,55).
-- Roteiro novo R17.47: confere o rótulo legível no PNG do `render_marking` (`575658`) e na app (`202022`), com o contraste calculado.
-- A tabela **Campos** do Catálogo (diálogo de 820 px) cabe sem rolar na horizontal: a coluna Rótulo quebra entre palavras e a Descrição deixa de ser cortada, com "enum" e nomes como `preferredItemWidth` inteiros.
+- The Material 3 Carousel label is readable over the image's reserved color (contrast of at least 4.5:1, previously about 1.6:1), in the app, in the Catalog and in the MCP's PNG (which now shows the scrim, a solid 0.55 strip).
+- New script R17.47: checks the readable label in the PNG of `render_marking` (`575658`) and in the app (`202022`), with the contrast calculated.
+- The **Fields** table of the Catalog (820 px dialog) fits without horizontal scrolling: the Label column wraps between words and the Description is no longer cut off, with "enum" and names such as `preferredItemWidth` whole.

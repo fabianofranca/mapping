@@ -1,5 +1,5 @@
-# e2e paralelo — 2026-11-03 (épico `epic/e2e-paralelo`, PR #398, MCP 0.13.0, schema v13)
+# Parallel e2e — 2026-11-03 (épico `epic/e2e-paralelo`, PR #398, MCP 0.13.0, schema v13)
 
 ## Alterado
 
-- O job `e2e` do CI usa 3 workers (antes, 2) e só instala as bibliotecas do sistema do Chromium quando ele não abre. Nenhum teste foi removido, pulado ou enfraquecido; a app e o MCP não mudam.
+- The CI `e2e` job uses 3 workers (before, 2) and only installs Chromium's system libraries when it does not open. No test was removed, skipped or weakened; the app and the MCP do not change.

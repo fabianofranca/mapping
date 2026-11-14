@@ -1,5 +1,5 @@
-# Foco nos chamadores das janelas — 2026-11-02 (épico `epic/foco-chamadores`, PR #336, MCP 0.12.0, schema v13)
+# Focus on window callers — 2026-11-02 (épico `epic/foco-chamadores`, PR #336, MCP 0.12.0, schema v13)
 
 ## Corrigido
 
-- Fechar os Detalhes, as Propostas ou as Incompletas abertas pela revisão, por "mostrar o problema", pelo "ir para a anotação" de Incompletas ou pela atualização de especialização devolve o foco do teclado a quem as abriu, ou ao botão da faixa. Abrir a revisão a partir da Lista não perde mais o foco.
+- Closing Details, Proposals or Incomplete, opened by the review, by "show the problem", by Incomplete's "go to the annotation" or by the specialization update, returns keyboard focus to whoever opened them, or to the bar button. Opening the review from the List no longer loses focus.

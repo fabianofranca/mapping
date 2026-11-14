@@ -1,5 +1,5 @@
-# Estável do MCP no merge do épico — 2026-11-08 (épico `epic/release-automatica`, PR #933, MCP 0.28.2 sem mudança, schema v18)
+# MCP stable release on epic merge — 2026-11-08 (épico `epic/release-automatica`, PR #933, MCP 0.28.2 no change, schema v18)
 
 ## Alterado
 
-- A versão estável do servidor MCP é publicada sozinha quando o épico entra na `main` com uma versão nova; antes, o dono criava a tag `mcp-v<versão>` à mão.
+- The stable version of the MCP server is published on its own when the epic enters `main` with a new version; before, the owner created the `mcp-v<versão>` tag by hand.

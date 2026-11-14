@@ -1,10 +1,10 @@
-# Ajustes de papéis e documentos externos — 2026-11-05 (épico `epic/ajustes-papeis-docs`, PR #584, MCP 0.18.1, schema v14)
+# Role and external document adjustments — 2026-11-05 (épico `epic/ajustes-papeis-docs`, PR #584, MCP 0.18.1, schema v14)
 
 ## Corrigido
 
-- Escolha de tipo: o campo de busca diz "Buscar entre 1 tipo" (singular) quando a camada tem um tipo só (em inglês, "Search among 1 type").
-- Revisão da proposta: o título da mudança de repositório concorda em gênero ("Repositório de documentos … criado", "atualizado", "removido"; o mesmo vale para o repositório de código).
-- `validate_specialization` e `validate_library`: a propriedade a mais num `doc` objeto ou numa cláusula de `allowedChildren` volta em português (`propriedade desconhecida: "x"`), em vez da mensagem em inglês do validador.
-- MCP `get_component`: a `hint` de documento externo sem `urlTemplate` diz o caminho e o repositório, sem mandar "abrir o link" que não existe.
-- MCP `validate_library`: `summary.docs` conta todos os documentos, os do pacote e os de repositório externo, e concorda com `spec.docs` (um pacote só com documentos externos dizia `0`).
-- Documento em markdown (Catálogo, documento externo): link `https://` ou `http://` absoluto agora é um link clicável (abre em outra aba, com `rel="noopener noreferrer"`); links relativos e âncoras inexistentes continuam texto.
+- Type picker: the search field says "Search among 1 type" (singular) when the layer has a single type (in Portuguese, "Buscar entre 1 tipo").
+- Proposal review: the title of a repository change agrees in gender in Portuguese ("Repositório de documentos … criado", "atualizado", "removido"; the same goes for the code repository).
+- `validate_specialization` and `validate_library`: the extra property in an object `doc` or in an `allowedChildren` clause comes back in Portuguese (`propriedade desconhecida: "x"`) instead of the validator's English message.
+- MCP `get_component`: the `hint` for an external document without `urlTemplate` gives the path and the repository, without telling you to "open the link" that does not exist.
+- MCP `validate_library`: `summary.docs` counts all documents, those in the package and those in an external repository, and agrees with `spec.docs` (a package with only external documents said `0`).
+- Markdown document (Catalog, external document): an absolute `https://` or `http://` link is now a clickable link (opens in another tab, with `rel="noopener noreferrer"`); relative links and nonexistent anchors remain text.

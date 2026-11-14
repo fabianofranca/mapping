@@ -1,5 +1,5 @@
-# Build resistente à ordem dos plugins — 2026-11-08 (épico `epic/ordem-plugins-build`, PR #1069, MCP 0.28.4, schema v18)
+# Build resilient to plugin order — 2026-11-08 (épico `epic/ordem-plugins-build`, PR #1069, MCP 0.28.4, schema v18)
 
 ## Corrigido
 
-- O `npm run build` não quebra mais com o `vite-plugin-singlefile` 2.3.4 ou mais novo: a CSP e o service worker passam a rodar sempre depois de o JS e o CSS serem embutidos no `index.html`, qualquer que seja a versão do plugin.
+- `npm run build` no longer breaks with `vite-plugin-singlefile` 2.3.4 or newer: the CSP and the service worker now always run after the JS and CSS are embedded in `index.html`, whatever the plugin version.

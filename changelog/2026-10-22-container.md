@@ -2,5 +2,5 @@
 
 ## Alterado
 
-- O objeto de topo do canvas passa a se chamar container (`containers` e `containerId` no `mapping.json`; tools `*_container` no MCP, com as antigas aceitas com aviso por uma versão).
-- Os presets de dispositivo vêm da especialização (`formatVersion` 6) e a proposta passa à `formatVersion` 2.
+- The top-level canvas object is now called a container (`containers` and `containerId` in `mapping.json`; `*_container` tools in the MCP, with the old ones accepted with a notice for one version).
+- Device presets come from the specialization (`formatVersion` 6) and the proposal moves to `formatVersion` 2.

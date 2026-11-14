@@ -39,7 +39,7 @@ describe('changelog/', () => {
     const slug = NAME.exec(f)?.[2];
     expect(first).toContain(`épico \`epic/${slug}\``);
     if (!WITHOUT_PR.has(f)) expect(first).toMatch(/PRs? #\d+/);
-    expect(first).toMatch(/MCP (\d+\.\d+\.\d+|sem mudança)/);
+    expect(first).toMatch(/MCP (\d+\.\d+\.\d+|unchanged|no change|sem mudança)/);
     expect(first).toMatch(/schema v\d+/);
   });
 

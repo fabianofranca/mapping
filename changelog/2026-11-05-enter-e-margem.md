@@ -1,7 +1,7 @@
-# Enter grava o campo longo e Envolver com margem exata — 2026-11-05 (épico `epic/enter-e-margem`, PR #523, MCP 0.16.0, schema v13)
+# Enter saves the long field and Wrap with exact margin — 2026-11-05 (épico `epic/enter-e-margem`, PR #523, MCP 0.16.0, schema v13)
 
 ## Corrigido
 
-- Um campo de texto longo sem quebra de linha (como a URL de uma imagem, com mais de 60 caracteres) grava com Enter, como o campo curto; o Shift+Enter quebra a linha, e com uma quebra no texto o Enter volta a quebrar. A faixa de consentimento das imagens remotas acompanha a URL na hora, sem sair do campo, e o foco fica no campo.
-- O Envolver (na app e no `wrap_items` do MCP) dá 8 px de margem em volta de containers com posição inteira, também quando o arrasto deixou ruído de ponto flutuante no `placement` (antes dava 9 px). Com fração de verdade, o retângulo inteiro continua cobrindo o conjunto.
-- Ir e voltar com um container pelo arrasto não deixa mais ruído (como `-2,27e-13`) no `placement` do `mapping.json`; a fração de verdade do arrasto suave com zoom continua.
+- A long text field without a line break (such as an image URL, over 60 characters) saves with Enter, like the short field; Shift+Enter breaks the line, and with a break in the text Enter breaks lines again. The consent strip for remote images follows the URL right away, without leaving the field, and the focus stays in the field.
+- Wrap (in the app and in the MCP `wrap_items`) gives an 8 px margin around containers with an integer position, also when the drag left floating-point noise in the `placement` (before it gave 9 px). With a real fraction, the whole rectangle still covers the set.
+- Moving a container back and forth by dragging no longer leaves noise (such as `-2.27e-13`) in the `placement` of `mapping.json`; the real fraction of a smooth drag with zoom is kept.
