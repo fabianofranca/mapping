@@ -1626,7 +1626,7 @@ The batch of R17.53 (the `rtl` screen: another new container):
   "format": "mapping-spec",
   "formatVersion": 10,
   "id": "avisos-demo",
-  "name": "Avisos Demo",
+  "name": "Notices Demo",
   "version": 1,
   "platforms": [
     {
@@ -1643,61 +1643,61 @@ The batch of R17.53 (the `rtl` screen: another new container):
       "color": "#1E88E5",
       "annotationTypes": [
         {
-          "id": "legado",
-          "name": "Legado",
-          "code": { "demo": { "symbol": "Legado" } },
-          "notices": [{ "kind": "removed", "message": "Saiu do contrato; use Cartao." }],
-          "fields": [{ "key": "titulo", "type": "string" }]
+          "id": "legacy",
+          "name": "Legacy",
+          "code": { "demo": { "symbol": "Legacy" } },
+          "notices": [{ "kind": "removed", "message": "Removed from the contract; use Card." }],
+          "fields": [{ "key": "heading", "type": "string" }]
         },
         {
-          "id": "cartao",
-          "name": "Cartao",
-          "code": { "demo": { "symbol": "Cartao" } },
+          "id": "card",
+          "name": "Card",
+          "code": { "demo": { "symbol": "Card" } },
           "notices": [
             {
               "kind": "pending",
-              "message": "O contrato aceita avatar; o SDK ainda não.",
+              "message": "The contract accepts avatar; the SDK does not yet.",
               "since": "2026-11-04",
-              "ref": "contrato/cartao.md"
+              "ref": "contract/card.md"
             }
           ],
           "fields": [
             {
-              "key": "estilo",
+              "key": "style",
               "type": "string",
-              "notices": [{ "kind": "deprecated", "message": "Use variante." }]
+              "notices": [{ "kind": "deprecated", "message": "Use variant." }]
             },
             {
-              "key": "variante",
+              "key": "variant",
               "type": "string",
               "notices": [
-                { "kind": "diverges", "message": "As fontes discordam do padrão." }
+                { "kind": "diverges", "message": "The sources disagree on the default." }
               ]
             },
             {
-              "key": "itens",
+              "key": "items",
               "type": "table",
               "columns": [
                 {
-                  "key": "rotulo",
+                  "key": "label",
                   "type": "string",
-                  "notices": [{ "kind": "pending", "message": "Coluna ainda sem SDK." }]
+                  "notices": [{ "kind": "pending", "message": "Column not in the SDK yet." }]
                 },
-                { "key": "valor", "type": "string" }
+                { "key": "value", "type": "string" }
               ]
             }
           ]
         },
         {
-          "id": "simples",
-          "name": "Simples",
-          "code": { "demo": { "symbol": "Simples" } },
+          "id": "simple",
+          "name": "Simple",
+          "code": { "demo": { "symbol": "Simple" } },
           "fields": [
-            { "key": "texto", "type": "string" },
+            { "key": "text", "type": "string" },
             {
-              "key": "rascunho",
+              "key": "draft",
               "type": "string",
-              "notices": [{ "kind": "removed", "message": "Campo fora do contrato." }]
+              "notices": [{ "kind": "removed", "message": "Field outside the contract." }]
             }
           ]
         }
@@ -1711,17 +1711,17 @@ The batch of R17.53 (the `rtl` screen: another new container):
 | --- | --- | --- |
 | R18.1 | **Write and validate the specialization.** In the shell, write the JSON above to `ROOT/avisos.json`. In the stdio client, `validate_specialization` with `path` `avisos.json` (with `text`, if `path` is not accepted). | **Response:** no errors; the `formatVersion` read is 10. |
 | R18.2 | **Refusal in v9, at the exact path.** In the stdio client, `validate_specialization` with `text` equal to the JSON, changing only `formatVersion` to `9`. | **Response:** invalid, with an `only allowed with formatVersion 10` error at each of these paths, all under `layers[0].annotationTypes`: `[0].notices`, `[1].notices`, `[1].fields[0].notices`, `[1].fields[1].notices`, `[1].fields[2].columns[0].notices` and `[2].fields[1].notices`. |
-| R18.3 | **Project and proposal with notices.** In the stdio client, `create_project` with `path` `avisos`, `name` `Notices` and `root` `design/mapeamentos`; then `propose_changes` in that project with one batch: `apply_specialization` (`file` `avisos.json`), `add_container` (`name` `Screen`, 360 × 800, `background` `#FFFFFF`) and, in it, three markings with their own `rect` and one `create_annotation` in each: **Old** (type `avisos-demo/legado`, `titulo` `a`), **Card** (type `avisos-demo/cartao`, `estilo` `x`, `variante` `y`, `itens` with one row of `rotulo` `r`) and **Simple** (type `avisos-demo/simples`, `texto` `t`, no `rascunho`). | **Response:** project created; proposal with an id, `valid` `true` and no error. `notices.new` brings, **in this order**: `removed` (annotation of **Old**, `type` `legado`, `message` "Saiu do contrato; use Cartao."), `deprecated` (**Card**, `key` `estilo`), `diverges` (**Card**, `key` `variante`) and two `pending` (**Card**: one of the type, with no `key`, and one of the column, with `key` `itens` and `column` `rotulo`); none for **Simple** (`rascunho` empty). `issues.new` has nothing for notices. **Disk:** the `mapping.json` of `avisos` unchanged. |
-| R18.4 | **Review with a notice, acceptable.** Open the `avisos` folder (**Open folder** `select_folder`), **Proposals** › **Review** the proposal. Select each of the three markings (**Old**, **Card**, **Simple**) and, in **Details**, open (mouse, focus or click) the change marker's box (`.change-popover`) of the annotation, of the fields `estilo` and `variante` and of the `rotulo` cell of `itens`: the notice is the line at the end of the box, after the value. **Accept all changes** (in the review bar; below 1200 px of width, in the **Bulk** menu), **Apply accepted** and **Exit review**. | **Screen:** each notice line shows the kind's icon and the message; the kind word is in the accessible name ("Notice Deprecated: …"). In the marker box for the creation of the **Old** annotation there is a Removed notice line; in the one for the `estilo` value, Deprecated; in the one for `variante`, Diverges; in the one for the creation of **Card**, the four notices (Deprecated, Diverges and the two Pending); in the one for the `rotulo` column value, Pending; no notice line in the **Simple** boxes (the Removed "Campo fora do contrato." of `rascunho` is left for R18.7, in the **Details**; check only the boxes, not the whole DOM; the selector is in appendix A). **Accept all changes** stays enabled; **Apply accepted · 0** stays disabled until something is decided. After applying, the **Screen** container with the three markings. **Disk:** the `mapping.json` stores the three annotations; `specs/avisos-demo.json` exists with `formatVersion` 10 and the `notices`. |
-| R18.5 | **`get_code_hints` with the type's notices.** In the stdio client, `list_markings` in `avisos` and `get_code_hints` (`platform` `demo`) of **Card**, **Simple** and **Old**. | **Card:** `types["avisos-demo/cartao"].notices` brings, **in this order**, `deprecated` (`key` `estilo`), `diverges` (`key` `variante`), `pending` of the type (no `key`, `since` `2026-11-04`, `ref` `contrato/cartao.md`) and `pending` of the column (`key` `itens`, `column` `rotulo`), each with the `message` from the JSON. **Simple:** only the `removed` of the field `rascunho` (`key` `rascunho`, "Campo fora do contrato."), even with the empty value. **Old:** only the `removed` of the type (no `key`). No `unmappedTypes`. |
-| R18.6 | **Badge in the type picker.** In the app, select the **Simple** marking and, in the **UI** layer, click the **+** icon ("Add annotation to layer UI"); read the type list; hover the badge of **Legado** and **Cartao**; **Esc** closes the list. | **Screen:** **Legado** has the "Removed" badge (icon and text), **Cartao** has the "Deprecated" badge (`deprecated` and `diverges` tie: `deprecated` wins), **Simples**, "Removed" (from `rascunho`). The tooltip of **Legado** brings "Saiu do contrato; use Cartao."; the one of **Cartao** lists its four notices, from the most to the least severe. No type is disabled. |
-| R18.7 | **Notices in the Details.** Select the **Card** marking, open **Details** (`Ctrl+Shift+3`) and scroll through the annotation; select **Old** and read the top; select **Simple**. | **Screen:** in **Card**, the top of the annotation brings the "Pending" block with the message, "Since 2026-11-04" and "Source:" `contrato/cartao.md` in a monospaced font, plus the "Deprecated" badge in the header; the label of the **Estilo** field gets the notice icon and, right below the control, a line with the icon and "Use variante." (accessible name "Notice Deprecated: Use variante."); **Variante** has the Diverges notice line; below the **Itens** table, the line "Column rotulo: Coluna ainda sem SDK.". In **Old**, the "Removed" block at the top. In **Simple**, the "Removed" badge in the header and, on the `rascunho` field (empty), the notice icon on the label and, right below the control, the Removed notice line "Campo fora do contrato." (the field's notice appears even with no value); no block at the top of the annotation. With the Details narrow (360 px), the annotation name drops to the 2nd line, with the full placeholder "Instance label (optional)". |
-| R18.8 | **Badge in the Catalog.** In the shell, create the `avisos-pacote/` folder and copy the JSON from R18.1 to `avisos-pacote/avisos.spec.json`; on the home screen, click **Open library** (real click, not by script: the picker requires the person's gesture) and choose the folder (`select_folder`); read the type list of the **Components** tab. | **Screen:** the **Legado** and **Cartao** entries have the badge ("Removed" and "Deprecated"); **Simples** also has the "Removed" badge (from `rascunho`). |
-| R18.9 | **Notices window and the shortcut.** Go back to the `avisos` project; with focus on the canvas, press `Ctrl+Shift+8`. | **Screen:** the bottom window **Notices** opens, in a tab between **Incomplete** and **Diagnostics**; the tab's number is 2 (annotations with some notice: **Old** and **Card**). The groups come from the most to the least severe: "Legado (type)" `removed`, "Cartao › estilo (field)" `deprecated`, "Cartao › variante (field)" `diverges`, "Cartao (type)" `pending` with "Since 2026-11-04" and "Cartao › itens › rotulo (column)" `pending`; each header brings the badge, the message and "1 annotation(s)". The `rascunho` notice does not appear (no annotation has a value in it; the **Simple** Details show the line, R18.7). Choosing the **Card** row selects its annotation and opens the **Details**. |
-| R18.10 | **Filters.** In the **Notices** window: choose the "Removed" button of the kind filter; go back to "All"; clear **Only notices in use**; check it again; check **Only visible layers** and hide the **UI** layer (**Layers**); show it again. | **Screen:** "Removed" leaves only the **Legado** group; "All" shows the five. Without **Only notices in use**, "Simples › rascunho (field)" `removed` also appears with "No annotation uses this notice". With the **UI** layer hidden and **Only visible layers** checked, the list shows the empty state with a filter ("No notices match the current filters."); when you show it, the groups come back. The filter buttons carry the count of each `kind`. |
-| R18.11 | **Status bar.** Read the status bar; click **Notices: 2** with the **Notices** window closed. Then, in **Card**, empty the value of `estilo` and of `variante` (**Enter**) and wait for **Saved**; read again. | **Screen:** the bar shows "Notices: 2"; the click opens the **Notices** window. After emptying, **Card** still has the type's notice and the count stays 2; the `estilo` group and the `variante` group disappear from the list (no value, no affected annotation). **Incomplete** did not get a row for a notice. |
-| R18.12 | **`plan_changes` and `get_specialization` through the MCP.** In the stdio client, `plan_changes` in `avisos` with a batch that creates a marking with an annotation of type `avisos-demo/simples` (`texto` `t`) and another of type `avisos-demo/legado`; then `get_specialization` with `specId` `avisos-demo`. | **Response:** `plan_changes` returns `valid` `true`, with `notices.new` of **one** entry (`removed`, `type` `legado`, `annotation` of the new one) and `issues` with no notice; `plan_changes` with only **Simples** returns `notices` `{ "new": [] }`. `get_specialization` brings, in `spec`, the `notices` of the types `legado` and `cartao`, of the fields `estilo`, `variante` and `rascunho` and of the column `rotulo`, equal to the file. Nothing was written. |
-| R18.13 | **Update with only changed notices.** First, look at the **Notices** window (`Ctrl+Shift+8`) with "Only notices in use" cleared and the type list of the **+** of the **UI** layer: the `rascunho` row and the **Simples** badge disappear in this step. In the shell, copy `ROOT/avisos.json` to `ROOT/avisos-v2.json` with `version` `2`, the `legado` message changed to "Removed for good." and the notice of the `rascunho` field deleted. In the app, in the `avisos` project: **Specializations** › Avisos Demo › **Update version…** › `avisos-v2.json` (`open_file`); check the window and **Update**; close it and wait for **Saved**; open the **Notices** window (`Ctrl+Shift+8`) and the type list of the **+** of the **UI** layer. | **Screen:** the update window shows "Additive update: the data stays as it is." and no migration step or pending item; **Update** enabled. Afterwards, the **Legado** notice says "Removed for good."; without "Only notices in use", `rascunho` disappears, and **Simples** loses the badge in the type list of the **+**. **Disk:** `specs/avisos-demo.json` at version 2 with `formatVersion` 10 and the new message; `mapping.json` with the same annotations and values. |
+| R18.3 | **Project and proposal with notices.** In the stdio client, `create_project` with `path` `avisos`, `name` `Notices` and `root` `design/mapeamentos`; then `propose_changes` in that project with one batch: `apply_specialization` (`file` `avisos.json`), `add_container` (`name` `Screen`, 360 × 800, `background` `#FFFFFF`) and, in it, three markings with their own `rect` and one `create_annotation` in each: **Old** (type `avisos-demo/legacy`, `heading` `a`), **Card** (type `avisos-demo/card`, `style` `x`, `variant` `y`, `items` with one row of `label` `r`) and **Simple** (type `avisos-demo/simple`, `text` `t`, no `draft`). | **Response:** project created; proposal with an id, `valid` `true` and no error. `notices.new` brings, **in this order**: `removed` (annotation of **Old**, `type` `legacy`, `message` "Removed from the contract; use Card."), `deprecated` (**Card**, `key` `style`), `diverges` (**Card**, `key` `variant`) and two `pending` (**Card**: one of the type, with no `key`, and one of the column, with `key` `items` and `column` `label`); none for **Simple** (`draft` empty). `issues.new` has nothing for notices. **Disk:** the `mapping.json` of `avisos` unchanged. |
+| R18.4 | **Review with a notice, acceptable.** Open the `avisos` folder (**Open folder** `select_folder`), **Proposals** › **Review** the proposal. Select each of the three markings (**Old**, **Card**, **Simple**) and, in **Details**, open (mouse, focus or click) the change marker's box (`.change-popover`) of the annotation, of the fields `style` and `variant` and of the `label` cell of `items`: the notice is the line at the end of the box, after the value. **Accept all changes** (in the review bar; below 1200 px of width, in the **Bulk** menu), **Apply accepted** and **Exit review**. | **Screen:** each notice line shows the kind's icon and the message; the kind word is in the accessible name ("Notice Deprecated: …"). In the marker box for the creation of the **Old** annotation there is a Removed notice line; in the one for the `style` value, Deprecated; in the one for `variant`, Diverges; in the one for the creation of **Card**, the four notices (Deprecated, Diverges and the two Pending); in the one for the `label` column value, Pending; no notice line in the **Simple** boxes (the Removed "Field outside the contract." of `draft` is left for R18.7, in the **Details**; check only the boxes, not the whole DOM; the selector is in appendix A). **Accept all changes** stays enabled; **Apply accepted · 0** stays disabled until something is decided. After applying, the **Screen** container with the three markings. **Disk:** the `mapping.json` stores the three annotations; `specs/avisos-demo.json` exists with `formatVersion` 10 and the `notices`. |
+| R18.5 | **`get_code_hints` with the type's notices.** In the stdio client, `list_markings` in `avisos` and `get_code_hints` (`platform` `demo`) of **Card**, **Simple** and **Old**. | **Card:** `types["avisos-demo/card"].notices` brings, **in this order**, `deprecated` (`key` `style`), `diverges` (`key` `variant`), `pending` of the type (no `key`, `since` `2026-11-04`, `ref` `contract/card.md`) and `pending` of the column (`key` `items`, `column` `label`), each with the `message` from the JSON. **Simple:** only the `removed` of the field `draft` (`key` `draft`, "Field outside the contract."), even with the empty value. **Old:** only the `removed` of the type (no `key`). No `unmappedTypes`. |
+| R18.6 | **Badge in the type picker.** In the app, select the **Simple** marking and, in the **UI** layer, click the **+** icon ("Add annotation to layer UI"); read the type list; hover the badge of **Legacy** and **Card**; **Esc** closes the list. | **Screen:** **Legacy** has the "Removed" badge (icon and text), **Card** has the "Deprecated" badge (`deprecated` and `diverges` tie: `deprecated` wins), **Simple**, "Removed" (from `draft`). The tooltip of **Legacy** brings "Removed from the contract; use Card."; the one of **Card** lists its four notices, from the most to the least severe. No type is disabled. |
+| R18.7 | **Notices in the Details.** Select the **Card** marking, open **Details** (`Ctrl+Shift+3`) and scroll through the annotation; select **Old** and read the top; select **Simple**. | **Screen:** in **Card**, the top of the annotation brings the "Pending" block with the message, "Since 2026-11-04" and "Source:" `contract/card.md` in a monospaced font, plus the "Deprecated" badge in the header; the label of the **Estilo** field gets the notice icon and, right below the control, a line with the icon and "Use variant." (accessible name "Notice Deprecated: Use variant."); **Variante** has the Diverges notice line; below the **Itens** table, the line "Column label: Column not in the SDK yet.". In **Old**, the "Removed" block at the top. In **Simple**, the "Removed" badge in the header and, on the `draft` field (empty), the notice icon on the label and, right below the control, the Removed notice line "Field outside the contract." (the field's notice appears even with no value); no block at the top of the annotation. With the Details narrow (360 px), the annotation name drops to the 2nd line, with the full placeholder "Instance label (optional)". |
+| R18.8 | **Badge in the Catalog.** In the shell, create the `avisos-pacote/` folder and copy the JSON from R18.1 to `avisos-pacote/avisos.spec.json`; on the home screen, click **Open library** (real click, not by script: the picker requires the person's gesture) and choose the folder (`select_folder`); read the type list of the **Components** tab. | **Screen:** the **Legacy** and **Card** entries have the badge ("Removed" and "Deprecated"); **Simple** also has the "Removed" badge (from `draft`). |
+| R18.9 | **Notices window and the shortcut.** Go back to the `avisos` project; with focus on the canvas, press `Ctrl+Shift+8`. | **Screen:** the bottom window **Notices** opens, in a tab between **Incomplete** and **Diagnostics**; the tab's number is 2 (annotations with some notice: **Old** and **Card**). The groups come from the most to the least severe: "Legacy (type)" `removed`, "Card › style (field)" `deprecated`, "Card › variant (field)" `diverges`, "Card (type)" `pending` with "Since 2026-11-04" and "Card › items › label (column)" `pending`; each header brings the badge, the message and "1 annotation(s)". The `draft` notice does not appear (no annotation has a value in it; the **Simple** Details show the line, R18.7). Choosing the **Card** row selects its annotation and opens the **Details**. |
+| R18.10 | **Filters.** In the **Notices** window: choose the "Removed" button of the kind filter; go back to "All"; clear **Only notices in use**; check it again; check **Only visible layers** and hide the **UI** layer (**Layers**); show it again. | **Screen:** "Removed" leaves only the **Legacy** group; "All" shows the five. Without **Only notices in use**, "Simple › draft (field)" `removed` also appears with "No annotation uses this notice". With the **UI** layer hidden and **Only visible layers** checked, the list shows the empty state with a filter ("No notices match the current filters."); when you show it, the groups come back. The filter buttons carry the count of each `kind`. |
+| R18.11 | **Status bar.** Read the status bar; click **Notices: 2** with the **Notices** window closed. Then, in **Card**, empty the value of `style` and of `variant` (**Enter**) and wait for **Saved**; read again. | **Screen:** the bar shows "Notices: 2"; the click opens the **Notices** window. After emptying, **Card** still has the type's notice and the count stays 2; the `style` group and the `variant` group disappear from the list (no value, no affected annotation). **Incomplete** did not get a row for a notice. |
+| R18.12 | **`plan_changes` and `get_specialization` through the MCP.** In the stdio client, `plan_changes` in `avisos` with a batch that creates a marking with an annotation of type `avisos-demo/simple` (`text` `t`) and another of type `avisos-demo/legacy`; then `get_specialization` with `specId` `avisos-demo`. | **Response:** `plan_changes` returns `valid` `true`, with `notices.new` of **one** entry (`removed`, `type` `legacy`, `annotation` of the new one) and `issues` with no notice; `plan_changes` with only **Simple** returns `notices` `{ "new": [] }`. `get_specialization` brings, in `spec`, the `notices` of the types `legacy` and `card`, of the fields `style`, `variant` and `draft` and of the column `label`, equal to the file. Nothing was written. |
+| R18.13 | **Update with only changed notices.** First, look at the **Notices** window (`Ctrl+Shift+8`) with "Only notices in use" cleared and the type list of the **+** of the **UI** layer: the `draft` row and the **Simple** badge disappear in this step. In the shell, copy `ROOT/avisos.json` to `ROOT/avisos-v2.json` with `version` `2`, the `legacy` message changed to "Removed for good." and the notice of the `draft` field deleted. In the app, in the `avisos` project: **Specializations** › Notices Demo › **Update version…** › `avisos-v2.json` (`open_file`); check the window and **Update**; close it and wait for **Saved**; open the **Notices** window (`Ctrl+Shift+8`) and the type list of the **+** of the **UI** layer. | **Screen:** the update window shows "Additive update: the data stays as it is." and no migration step or pending item; **Update** enabled. Afterwards, the **Legacy** notice says "Removed for good."; without "Only notices in use", `draft` disappears, and **Simple** loses the badge in the type list of the **+**. **Disk:** `specs/avisos-demo.json` at version 2 with `formatVersion` 10 and the new message; `mapping.json` with the same annotations and values. |
 | R18.14 | **The `pending` notices from the signature importer (Material 3).** (`REPO`: the Mapping clone.) In the shell, `jq '[.. \| objects \| select(has("notices")) \| .notices[] \| select(.kind=="pending")] \| length' REPO/libraries/material3-compose/material3-compose.spec.json`. In the client, `create_project` with `path` `avisos-m3`, `name` `Notices M3` and `root` `design/mapeamentos`. In the app, **Open folder** `ROOT/avisos-m3` (`select_folder`); **Specializations** › **Apply folder…** › `REPO/libraries/material3-compose` (`select_folder`) › **Apply**; close the window and wait for **Saved**. Open the **Notices** window (`Ctrl+Shift+8`), clear **Only notices in use** and choose the "Pending" kind button; scroll the list. | **Shell:** `jq` prints `123` (today; the curation of #1134 may change it). **Screen:** it lists `pending` ("Pending") groups with no annotation in use ("No annotation uses this notice"), all with a message starting with `compose: ` (the androidx signature importer), e.g. "Scaffold (type)" with "compose: the parameter `floatingActionButtonPosition` (FabPosition) is not a field yet"; with **Only notices in use** cleared, the buttons count **listed notices** (one group per notice): "Pending" brings the `jq` count (`123` today) and the filter reads "Filter by notice kind (numbers count notices)" (a different count from grouped identical messages: note it, do not fail it). Checked, the buttons count annotations again. No `pending` row lacks the `compose: ` prefix and **Incomplete** gets no row for a notice. **Disk:** the `mapping.json` of `avisos-m3` without annotations; `specs/material3-compose/material3-compose.spec.json` with the same `notices`. |
 
 ### R19 — Roles in the link
@@ -1752,19 +1752,19 @@ The batch of R17.53 (the `rtl` screen: another new container):
             { "id": "click", "name": "Click" },
             { "id": "hold", "name": "Hold" }
           ],
-          "fields": [{ "key": "texto", "type": "string", "required": true }]
+          "fields": [{ "key": "text", "type": "string", "required": true }]
         },
         {
           "id": "link",
           "name": "Link",
           "allowedChildren": [{ "layer": "eventos" }],
-          "fields": [{ "key": "texto", "type": "string", "required": true }]
+          "fields": [{ "key": "text", "type": "string", "required": true }]
         },
         {
           "id": "chip",
           "name": "Chip",
           "allowedChildren": ["track"],
-          "fields": [{ "key": "texto", "type": "string", "required": true }]
+          "fields": [{ "key": "text", "type": "string", "required": true }]
         }
       ]
     },

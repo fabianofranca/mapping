@@ -2812,11 +2812,6 @@ export const PORTUGUESE_PATHS: readonly PathException[] = [
   // ID10 sweep: file entries added by area B
   // ID10 sweep: file entries added by area C
   {
-    path: 'tests/e2e/fixtures/avisos-demo.spec.json',
-    reason:
-      'fixture data that tests/tooling/testingGuide.test.ts requires equal to the Portuguese JSON block of script R18 in docs/TESTING.md (the notices messages)',
-  },
-  {
     path: 'tests/tooling/portugueseAllowlist.ts',
     reason:
       'this list: it holds the Portuguese protocol terms of decision 16 and quotes the exempted text in the reasons',
