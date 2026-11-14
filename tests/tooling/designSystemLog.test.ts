@@ -187,7 +187,7 @@ describe('log rule: the closing writes to the artifact (#1390, DS2)', () => {
 
   it('passes with an item that moved to the record of another existing epic', () => {
     const t = base(
-      'Nenhuma gravação.',
+      'No recording.',
       '- Passou para o registro do épico `epic/outro`: guia do X.',
     );
     expect(ruleViolation(NAME_, t, ['outro.md'])).toBeNull();
@@ -195,7 +195,7 @@ describe('log rule: the closing writes to the artifact (#1390, DS2)', () => {
     expect(ruleViolation(NAME_, t, [])).toContain('epic/outro');
     // the record of `epic/barra-canvas` is not that of `epic/canvas`
     const other = base(
-      'Nenhuma gravação.',
+      'No recording.',
       '- Passou para o registro do épico `epic/canvas`: guia.',
     );
     expect(ruleViolation(NAME_, other, ['2026-11-09-barra-canvas.md'])).toContain(
@@ -216,7 +216,7 @@ describe('log rule: the closing writes to the artifact (#1390, DS2)', () => {
 
   it('"- Nada gravado ainda: …" is a real pending item', () => {
     const t = base(
-      'Nenhuma gravação.',
+      'No recording.',
       '',
       '- Nada gravado ainda: the guide of X is missing.',
     );
@@ -225,12 +225,12 @@ describe('log rule: the closing writes to the artifact (#1390, DS2)', () => {
 
   it('"Passou para" does not point to its own record nor to an already closed epic', () => {
     const own = base(
-      'Nenhuma gravação.',
+      'No recording.',
       '- Passou para o registro do épico `epic/x`: guia.',
     );
     expect(ruleViolation(NAME_, own, ['2026-11-10-x.md'])).toContain('epic/x');
     const t = base(
-      'Nenhuma gravação.',
+      'No recording.',
       '- Passou para o registro do épico `epic/velho`: guia.',
     );
     expect(ruleViolation(NAME_, t, ['2026-11-01-velho.md'])).toContain('epic/velho');

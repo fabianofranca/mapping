@@ -101,7 +101,7 @@ describe('painel.py session with kind= (FM3, decision 5)', () => {
     expect(sessions()).toHaveLength(7);
   });
 
-  it('without kind, it still writes only the row\'s sessions, as today', () => {
+  it("without kind, it still writes only the row's sessions, as today", () => {
     run('session', dir, '#10', 'sess_a');
     expect(json('queue')[0]!.sessions).toBe('sess_a');
     expect(json('meta')[0]!.sessions).toBeUndefined();
@@ -234,7 +234,7 @@ describe('review findings (FM3)', () => {
   });
 
   it('registering the session again without label does not erase the label', () => {
-    run('session', dir, '#10', 'sess_l', 'kind=testador', 'label=bloco2');
+    run('session', dir, '#10', 'sess_l', 'kind=testador', 'label=block2');
     run('session', dir, '#10', 'sess_l', 'kind=testador');
     expect(sessions()[0]!.label).toBe('block2');
   });
@@ -547,7 +547,7 @@ describe('painel.py: the tester ceiling of 300 thousand (TC2, decision 9 of #163
     const line = run('show', dir).match(/^testador acima do teto: (.*)$/m);
     expect(line).not.toBeNull();
     expect(line![1]).toContain('#20 group2-R3-R13 339k');
-    expect(line![1]).toContain('#10 reteste1 523k');
+    expect(line![1]).toContain('#10 retest1 523k');
     expect(line![1]).not.toContain('group3-R17');
     expect(line![1]).not.toContain('TC2');
   });
@@ -574,9 +574,7 @@ describe('painel.py: the tester ceiling of 300 thousand (TC2, decision 9 of #163
     recordCost('sess_a', 'testador', 300000);
     expect(run('show', dir)).toMatch(/^testador acima do teto: nenhum$/m);
     recordCost('sess_nolabel', 'testador', 310000);
-    expect(run('show', dir)).toMatch(
-      /^testador acima do teto: #20 sess_nolabel 310k$/m,
-    );
+    expect(run('show', dir)).toMatch(/^testador acima do teto: #20 sess_nolabel 310k$/m);
   });
 
   it('show rounds the context up: above the ceiling never appears as 300k', () => {
@@ -647,11 +645,17 @@ describe('docs and skill: the tester ceiling checked by the queue (TC2, decision
   });
 
   it('the summary template gets the Context column and the Contexto: line', () => {
-    const summary = between(flow, '## Summary of the round in blocks', '## Final notification');
+    const summary = between(
+      flow,
+      '## Summary of the round in blocks',
+      '## Final notification',
+    );
     expect(summary).toMatch(
       /\| Block \| ✅ +\| ❌ +\| not executed \| Time +\| Context +\|/,
     );
-    expect(summary).toMatch(/\*\*Context:\*\* above the ceiling \(300 thousand\): .* or none/);
+    expect(summary).toMatch(
+      /\*\*Context:\*\* above the ceiling \(300 thousand\): .* or none/,
+    );
     expect(summary).toMatch(/groups/);
   });
 });

@@ -1,6 +1,6 @@
 ---
 name: supervisionar-fila
-description: Supervises the fabianofranca/mapping development queue in an Opus high session outside the queue. `/supervisionar-fila` with no arguments finds the panel and decides the session's role (new, successor or a session that does not act). Investigates the owner's questions, writes issues and sends the coordinator the type A requests (SUP-n). The owner switches session on returning after 1 h; the automatic switch happens only above ~50% of context. The handoff lives in the artifact "Supervisão da fila" (database). Does the cost analysis.
+description: Supervises the fabianofranca/mapping development queue in an Opus high session outside the queue. `/supervisionar-fila` with no arguments finds the panel and decides the session's role (new, successor or one that does not act). Investigates the owner's questions, writes issues and sends the coordinator type A requests (SUP-n). The owner's switch on return after 1 h; automatic switch only above ~50% of context. Handoff in the artifact "Supervisão da fila" (database). Does the cost analysis.
 ---
 
 # Supervise the queue
@@ -37,9 +37,9 @@ The coordinator applies **type A** requests without asking the owner; the list i
 
 - hold or release a stage (`hold`);
 - reorder, pause, resume and drain ("Queue changes during the run");
-- panel writing rule (`rule add`, with `origem=SUP-<n>`);
+- a panel writing rule (`rule add`, with `origem=SUP-<n>`);
 - "confira X": a read-only check, with the answer in the evidence;
-- register the supervisor: `role supervisor <id> link=<handoff>` and the predecessor's cost, which the request carries (`cost <pasta> <id> usd=… ctx=… model=… effort=… kind=supervisor`).
+- register the supervisor: `role supervisor <id> link=<handoff>` and the predecessor's cost, which the request carries (`cost <folder> <id> usd=… ctx=… model=… effort=… kind=supervisor`).
 
 - **Sending:** `send_message` to `roles.coordenador`, in the format `SUP-<n> (tipo A): <pedido>. Supervisor: <id desta sessão>`, with `n` = the largest number in the table plus 1. The coordinator records, applies and logs the evidence in the panel.
 - **Type B**, everything else (merge, `mesclar=auto`, scope or product decision, deleting something, permissions, a rule that is not a panel writing rule): explain to the owner and recommend. They answer in the queue chat, and the coordinator asks them there. Supervision never relays an owner's "yes": only their answer in the queue chat counts.
