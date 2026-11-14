@@ -8,16 +8,13 @@ import type { Marking, MarkingAnchor, Project } from './types';
 // outra do mesmo espaço; ela não entra no pertencimento (`settleHierarchy` não a lê). Aqui
 // ficam a conferência, o gravar e o conjunto que anda junto quando a âncora se move.
 
-/** `to` já depende de `id` pela cadeia de âncoras: ancorar `id` em `to` fecharia um ciclo. */
+/**
+ * Fechar a âncora de `id` em `to` faria `to` andar junto com `id` (ciclo da cadeia de âncoras,
+ * descendente de `id` ou seguidor, direto ou indireto, de um descendente): `withAnchoredFollowers`
+ * é o que move com ela, e mover o alvo junto deslocaria a marcação sem fim a cada encosto.
+ */
 function wouldCycle(p: Project, id: string, to: string): boolean {
-  const { anchorOf } = projectIndex(p);
-  const seen = new Set<string>();
-  for (let next: string | undefined = to; next !== undefined; next = anchorOf.get(next)) {
-    if (next === id) return true;
-    if (seen.has(next)) return false;
-    seen.add(next);
-  }
-  return false;
+  return withAnchoredFollowers(p, [id]).has(to);
 }
 
 /**
@@ -53,6 +50,22 @@ export function canAnchorTo(p: Project, markingId: string, targetId: string): bo
   return (
     target.containerId === marking.containerId && !wouldCycle(p, markingId, targetId)
   );
+}
+
+/**
+ * As marcações de `pool` (as do espaço da marcação, na ordem delas) em que `canAnchorTo` deixaria
+ * ancorar `markingId`, com uma varredura só: `canAnchorTo` por item refaz o conjunto que anda
+ * junto a cada chamada (quadrático quando a marcação é dona de muitas).
+ */
+export function anchorCandidates(
+  p: Project,
+  markingId: string,
+  pool: readonly Marking[],
+): Marking[] {
+  const marking = projectIndex(p).markings.get(markingId);
+  if (marking === undefined) return [];
+  const blocked = withAnchoredFollowers(p, [markingId]);
+  return pool.filter((m) => m.containerId === marking.containerId && !blocked.has(m.id));
 }
 
 function sameOffset(a: MarkingAnchor['offset'], b: MarkingAnchor['offset']): boolean {

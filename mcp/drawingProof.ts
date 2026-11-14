@@ -70,12 +70,26 @@ function touchedMarkings(before: Project, after: Project): Set<string> {
       annotationsChanged(old.annotations, next.annotationsByMarking, marking.id);
     if (changed) touched.add(marking.id);
   }
-  // A filha que muda pode deixar de caber no slot da dona: a dona também entra na prova.
+  addDependents(next, touched);
+  return touched;
+}
+
+/**
+ * Quem depende do desenho das marcações tocadas entra na prova: o seguidor (o desenho dele lê o
+ * alvo por `$anchor.*`: lado, centro e tamanho) e a dona (a filha que muda pode deixar de caber
+ * no slot dela).
+ */
+function addDependents(
+  next: ReturnType<typeof projectIndex>,
+  touched: Set<string>,
+): void {
+  for (const id of [...touched]) {
+    for (const follower of next.anchoredBy.get(id) ?? []) touched.add(follower.id);
+  }
   for (const id of [...touched]) {
     const parent = next.markings.get(id)?.parentId;
     if (parent != null) touched.add(parent);
   }
-  return touched;
 }
 
 type Annotations = ReturnType<typeof projectIndex>['annotations'];

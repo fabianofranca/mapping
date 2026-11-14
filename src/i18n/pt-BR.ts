@@ -1218,6 +1218,8 @@ export const ptBR = {
   'anchor.target': 'Ancorada a',
   'anchor.targetHint':
     'A marcação fica encostada nesta, do mesmo container. Mover a âncora leva as ancoradas; redimensioná-la não.',
+  'anchor.targetLimited':
+    'Só as {count} primeiras marcações do container aparecem na lista.',
   'anchor.none': 'Nenhuma',
   'anchor.side': 'Lado',
   'anchor.sideTop': 'Acima',

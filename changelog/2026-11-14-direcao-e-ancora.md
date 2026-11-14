@@ -29,3 +29,4 @@
 ## Corrigido
 
 - Menu ancorado criado sem `rect` nasce no tamanho do desenho com as linhas do lote; Detalhes: (i) ao lado do rótulo, Segmented sem opção sozinha, Select com reticências; cabeçalho do container só diz "Imagem alterada" quando a imagem muda; guia R17 e `fx.mjs` alinhados (CL1, #1890).
+- Proposta de formatVersion 6/7 deixa de zerar a direção do projeto; âncora recusa descendente e seguidor de descendente; o Encostar mantém os seguidores dentro do container e conserva o aviso "não cabe"; a prova de desenho inclui o seguidor do alvo alterado; a linha de base do Arrumar usa a direção do slot; a lista de âncoras candidatas é de uma varredura, memoizada e limitada (CL2, #1895).

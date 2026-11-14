@@ -1,9 +1,9 @@
-import { useId, useState } from 'preact/hooks';
+import { useId, useMemo, useState } from 'preact/hooks';
 import { t, type TranslationKey } from '../i18n';
 import {
   ANCHOR_ALIGNS,
   ANCHOR_SIDES,
-  canAnchorTo,
+  anchorCandidates,
   canEditMarkingGeometry,
   effectiveDensity,
   markingAnchorDefaults,
@@ -106,19 +106,30 @@ interface FieldsProps {
   readonly disabled: boolean;
 }
 
+/** Quantas candidatas a `<option>` a lista mostra (o espaço pode ter milhares de marcações). */
+export const ANCHOR_CANDIDATE_LIMIT = 200;
+
 /**
- * As marcações do mesmo espaço a que esta pode se ancorar (mais a atual, se for outra). Só o
- * `Select` as lê: a marcação que não mostra a seção não paga a varredura do espaço.
+ * As marcações do mesmo espaço a que esta pode se ancorar (`anchorCandidates`, uma varredura),
+ * até `ANCHOR_CANDIDATE_LIMIT`, mais a atual, se for outra; `more` diz que a lista foi cortada.
+ * Só o `Select` as lê: a marcação que não mostra a seção não paga a varredura do espaço. A conta
+ * é memoizada pelo projeto (a lista do espaço é a mesma enquanto ele não muda).
  */
 function useAnchorCandidates(
   project: Project,
   marking: Marking,
   anchor: MarkingAnchor | null,
-): readonly Marking[] {
+): { readonly list: readonly Marking[]; readonly more: boolean } {
   const { derived } = useEditor();
-  return (derived.markingsBySpace.value.get(marking.containerId) ?? []).filter(
-    (m) => canAnchorTo(project, marking.id, m.id) || m.id === anchor?.to,
-  );
+  const space = derived.markingsBySpace.value.get(marking.containerId);
+  const target = anchor?.to;
+  return useMemo(() => {
+    const all = anchorCandidates(project, marking.id, space ?? []);
+    const list = all.slice(0, ANCHOR_CANDIDATE_LIMIT);
+    const current = target === undefined ? undefined : all.find((m) => m.id === target);
+    if (current !== undefined && !list.includes(current)) list.push(current);
+    return { list, more: all.length > list.length };
+  }, [project, marking.id, space, target]);
 }
 
 function TargetField({
@@ -133,9 +144,12 @@ function TargetField({
   readonly readOnly: boolean;
 }) {
   const id = useId();
-  const candidates = useAnchorCandidates(project, marking, form.anchor);
+  const { list, more } = useAnchorCandidates(project, marking, form.anchor);
+  const hint = more
+    ? `${t('anchor.targetHint')} ${t('anchor.targetLimited', { count: ANCHOR_CANDIDATE_LIMIT })}`
+    : t('anchor.targetHint');
   return (
-    <Property label={t('anchor.target')} for={id} hint={t('anchor.targetHint')}>
+    <Property label={t('anchor.target')} for={id} hint={hint}>
       <Select
         id={id}
         size="sm"
@@ -144,7 +158,7 @@ function TargetField({
         onChange={(e) => form.setTarget(e.currentTarget.value)}
       >
         <option value="">{t('anchor.none')}</option>
-        {candidates.map((m) => (
+        {list.map((m) => (
           <option key={m.id} value={m.id}>
             {optionLabel(project, m)}
           </option>
