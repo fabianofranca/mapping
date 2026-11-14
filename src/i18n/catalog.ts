@@ -1,10 +1,101 @@
-// Textos da apresentação do Catálogo (etapa Biblioteca, B5): lista, página do componente,
-// galeria e playground. Entram nos dicionários por `...catalogPtBR` / `...catalogEnUS`. Mesmas
-// chaves e mesmos {parâmetros} nos dois idiomas. Subprefixos: `catalog.view.*`, `catalog.page.*`,
-// `catalog.doc.*`, `catalog.gallery.*`, `catalog.playground.*` (`catalog.home.*` e `catalog.window.*` ficam nos
-// dicionários gerais).
+// Texts of the Catalog presentation (Library stage, B5): list, component page, gallery and
+// playground. They enter the dictionaries through `...catalogEnUS` / `...catalogPtBR`. en-US is the
+// base (it defines the keys); pt-BR is typed against it: same keys and same {parameters} in both
+// languages. Subprefixes: `catalog.view.*`, `catalog.page.*`, `catalog.doc.*`, `catalog.gallery.*`,
+// `catalog.playground.*` (`catalog.home.*` and `catalog.window.*` live in the general dictionaries).
 
-export const catalogPtBR = {
+export const catalogEnUS = {
+  'catalog.view.validation': 'Package validation',
+  'catalog.view.valid': 'Valid package, no errors or warnings.',
+  'catalog.view.summary': '{errors} error(s) and {warnings} warning(s) in the package.',
+  'catalog.view.hasErrors':
+    'The package has errors, but you can still browse what was loaded.',
+  'catalog.view.showIssues': 'Show issues',
+  'catalog.view.hideIssues': 'Hide issues',
+  'catalog.view.components': 'Components',
+  'catalog.view.search': 'Search components',
+  'catalog.view.empty': 'This package has no components.',
+  'catalog.view.noMatch': 'No components found.',
+  'catalog.view.pick': 'Pick a component from the list.',
+  'catalog.view.close': 'Close',
+  'catalog.view.unknownLink': 'Destination not found: {link}',
+
+  'catalog.page.addToScreen': 'Add to screen',
+  'catalog.page.componentProblem': 'The component did not load: {problem}',
+  'catalog.page.document': 'Document',
+  'catalog.page.noDoc': 'This component has no document.',
+  'catalog.doc.openRepo': 'Open in repository',
+  'catalog.doc.connect': 'Connect the {repo} folder…',
+  'catalog.doc.allow': 'Allow access to {repo}',
+  'catalog.doc.change': 'Change folder…',
+  'catalog.doc.missing': '{path} is not in {repo}',
+  'catalog.doc.loading': 'Reading the document…',
+
+  'catalog.page.properties': 'Properties',
+  'catalog.page.noFields': 'This component has no properties.',
+  'catalog.page.col.key': 'Key',
+  'catalog.page.col.label': 'Label',
+  'catalog.page.col.type': 'Type',
+  'catalog.page.col.required': 'Required',
+  'catalog.page.col.options': 'Options',
+  'catalog.page.col.default': 'Default',
+  'catalog.page.col.description': 'Description',
+  'catalog.page.type.string': 'text',
+  'catalog.page.type.number': 'number',
+  'catalog.page.type.date': 'date',
+  'catalog.page.type.enum': 'options',
+  'catalog.page.type.table': 'table',
+  'catalog.page.type.ref': 'reference',
+  'catalog.page.yes': 'yes',
+  'catalog.page.refFree': 'any',
+  'catalog.page.code': 'Code',
+  'catalog.page.noCode': 'No platform declared for this component.',
+  'catalog.page.codeParams': 'Parameters',
+  'catalog.page.codeParamsArrow': '→',
+  'catalog.page.codeValues': 'Value translation',
+  'catalog.page.codeVariants': 'Variants ({field})',
+  'catalog.page.variantValue': 'Value',
+  'catalog.page.variantSymbol': 'Symbol',
+  'catalog.page.sources': 'Sources',
+  'catalog.page.noSources': 'No source declared for this component.',
+  'catalog.page.sourceSlot': '(slot: {slot})',
+
+  'catalog.gallery.title': 'Gallery',
+  'catalog.gallery.preview': 'Preview',
+  'catalog.gallery.empty': 'This component has no examples or preview.',
+  'catalog.gallery.unavailable': 'This example could not be drawn.',
+
+  'catalog.playground.title': 'Playground',
+  'catalog.playground.noComponent': 'This type has no component to draw.',
+  'catalog.playground.width': 'Width',
+  'catalog.playground.height': 'Height',
+  'catalog.playground.autoWidth': 'Width follows the content',
+  'catalog.playground.autoHeight': 'Height follows the content',
+  'catalog.playground.range':
+    'Size from {minWidth} × {minHeight} to {maxWidth} × {maxHeight}.',
+  'catalog.playground.reset': 'Restore values',
+  'catalog.playground.alt': 'Drawing of {name} with the playground values',
+  'catalog.playground.drawing': 'Drawing…',
+  'catalog.playground.warnings': 'Drawing warnings',
+  'catalog.playground.drawFailed': 'Could not draw with these values.',
+
+  'catalog.drawWarning.empty-group-shadow': 'Shadow on an empty group ignored.',
+  'catalog.drawWarning.inner-shadow': 'Inner shadows do not exist in canvas 2D: ignored.',
+  'catalog.drawWarning.extra-shadows':
+    'Only the first shadow applies to this node (text, path or image): the list and the spread were ignored.',
+  'catalog.drawWarning.unknown-node': 'Node not drawn ({type}): only its box is shown.',
+  'catalog.drawWarning.image-without-pixels':
+    'Image without pixels drawn as a placeholder.',
+  'catalog.drawWarning.image-decode-failed': 'An embedded image could not be decoded.',
+  'catalog.drawWarning.stroke-extra-paints': 'Only the first stroke paint was used.',
+  'catalog.drawWarning.stroke-align-centered':
+    'Inside/outside stroke on a path or line was centered.',
+  'catalog.drawWarning.stroke-radial-first-color':
+    'Stroke with a radial gradient drawn with its first color.',
+  'catalog.drawWarning.stroke-image-gray': 'Stroke with an image drawn in gray.',
+} as const;
+
+export const catalogPtBR: Record<keyof typeof catalogEnUS, string> = {
   'catalog.view.validation': 'Validação do pacote',
   'catalog.view.valid': 'Pacote válido, sem erros nem avisos.',
   'catalog.view.summary': '{errors} erro(s) e {warnings} aviso(s) no pacote.',
@@ -95,95 +186,4 @@ export const catalogPtBR = {
   'catalog.drawWarning.stroke-radial-first-color':
     'Traço com gradiente radial desenhado com a primeira cor.',
   'catalog.drawWarning.stroke-image-gray': 'Traço com imagem desenhado em cinza.',
-} as const;
-
-export const catalogEnUS: Record<keyof typeof catalogPtBR, string> = {
-  'catalog.view.validation': 'Package validation',
-  'catalog.view.valid': 'Valid package, no errors or warnings.',
-  'catalog.view.summary': '{errors} error(s) and {warnings} warning(s) in the package.',
-  'catalog.view.hasErrors':
-    'The package has errors, but you can still browse what was loaded.',
-  'catalog.view.showIssues': 'Show issues',
-  'catalog.view.hideIssues': 'Hide issues',
-  'catalog.view.components': 'Components',
-  'catalog.view.search': 'Search components',
-  'catalog.view.empty': 'This package has no components.',
-  'catalog.view.noMatch': 'No components found.',
-  'catalog.view.pick': 'Pick a component from the list.',
-  'catalog.view.close': 'Close',
-  'catalog.view.unknownLink': 'Destination not found: {link}',
-
-  'catalog.page.addToScreen': 'Add to screen',
-  'catalog.page.componentProblem': 'The component did not load: {problem}',
-  'catalog.page.document': 'Document',
-  'catalog.page.noDoc': 'This component has no document.',
-  'catalog.doc.openRepo': 'Open in repository',
-  'catalog.doc.connect': 'Connect the {repo} folder…',
-  'catalog.doc.allow': 'Allow access to {repo}',
-  'catalog.doc.change': 'Change folder…',
-  'catalog.doc.missing': '{path} is not in {repo}',
-  'catalog.doc.loading': 'Reading the document…',
-
-  'catalog.page.properties': 'Properties',
-  'catalog.page.noFields': 'This component has no properties.',
-  'catalog.page.col.key': 'Key',
-  'catalog.page.col.label': 'Label',
-  'catalog.page.col.type': 'Type',
-  'catalog.page.col.required': 'Required',
-  'catalog.page.col.options': 'Options',
-  'catalog.page.col.default': 'Default',
-  'catalog.page.col.description': 'Description',
-  'catalog.page.type.string': 'text',
-  'catalog.page.type.number': 'number',
-  'catalog.page.type.date': 'date',
-  'catalog.page.type.enum': 'options',
-  'catalog.page.type.table': 'table',
-  'catalog.page.type.ref': 'reference',
-  'catalog.page.yes': 'yes',
-  'catalog.page.refFree': 'any',
-  'catalog.page.code': 'Code',
-  'catalog.page.noCode': 'No platform declared for this component.',
-  'catalog.page.codeParams': 'Parameters',
-  'catalog.page.codeParamsArrow': '→',
-  'catalog.page.codeValues': 'Value translation',
-  'catalog.page.codeVariants': 'Variants ({field})',
-  'catalog.page.variantValue': 'Value',
-  'catalog.page.variantSymbol': 'Symbol',
-  'catalog.page.sources': 'Sources',
-  'catalog.page.noSources': 'No source declared for this component.',
-  'catalog.page.sourceSlot': '(slot: {slot})',
-
-  'catalog.gallery.title': 'Gallery',
-  'catalog.gallery.preview': 'Preview',
-  'catalog.gallery.empty': 'This component has no examples or preview.',
-  'catalog.gallery.unavailable': 'This example could not be drawn.',
-
-  'catalog.playground.title': 'Playground',
-  'catalog.playground.noComponent': 'This type has no component to draw.',
-  'catalog.playground.width': 'Width',
-  'catalog.playground.height': 'Height',
-  'catalog.playground.autoWidth': 'Width follows the content',
-  'catalog.playground.autoHeight': 'Height follows the content',
-  'catalog.playground.range':
-    'Size from {minWidth} × {minHeight} to {maxWidth} × {maxHeight}.',
-  'catalog.playground.reset': 'Restore values',
-  'catalog.playground.alt': 'Drawing of {name} with the playground values',
-  'catalog.playground.drawing': 'Drawing…',
-  'catalog.playground.warnings': 'Drawing warnings',
-  'catalog.playground.drawFailed': 'Could not draw with these values.',
-
-  'catalog.drawWarning.empty-group-shadow': 'Shadow on an empty group ignored.',
-  'catalog.drawWarning.inner-shadow': 'Inner shadows do not exist in canvas 2D: ignored.',
-  'catalog.drawWarning.extra-shadows':
-    'Only the first shadow applies to this node (text, path or image): the list and the spread were ignored.',
-  'catalog.drawWarning.unknown-node': 'Node not drawn ({type}): only its box is shown.',
-  'catalog.drawWarning.image-without-pixels':
-    'Image without pixels drawn as a placeholder.',
-  'catalog.drawWarning.image-decode-failed': 'An embedded image could not be decoded.',
-  'catalog.drawWarning.stroke-extra-paints': 'Only the first stroke paint was used.',
-  'catalog.drawWarning.stroke-align-centered':
-    'Inside/outside stroke on a path or line was centered.',
-  'catalog.drawWarning.stroke-radial-first-color':
-    'Stroke with a radial gradient drawn with its first color.',
-  'catalog.drawWarning.stroke-image-gray': 'Stroke with an image drawn in gray.',
 };

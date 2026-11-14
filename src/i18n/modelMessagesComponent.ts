@@ -1,5 +1,5 @@
-// en-US dos catálogos `component`, `iconsFile` e `origins` (etapa #1263, MB4). Termos do formato
-// (`table`, `slot`, `repeat`, `formatVersion`, nomes de chave, ids e caminhos) não se traduzem.
+// en-US of the `component`, `iconsFile` and `origins` catalogs (stage #1263, MB4). Format terms
+// (`table`, `slot`, `repeat`, `formatVersion`, key names, ids and paths) are not translated.
 
 import type { componentMessages } from '../model/messages/component';
 import type { iconsFileMessages } from '../model/messages/icons';

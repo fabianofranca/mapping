@@ -1,5 +1,5 @@
-// en-US do catálogo `engine` (etapa #1263, MB5): os avisos do motor de desenho. Termos do formato
-// (`fill`, `hug`, `repeat`, `slot`), nomes de nó, ids e caminhos não se traduzem.
+// en-US of the `engine` catalog (stage #1263, MB5): the drawing engine warnings. Format terms
+// (`fill`, `hug`, `repeat`, `slot`), node names, ids and paths are not translated.
 
 import type { engineMessages } from '../model/messages/engine';
 

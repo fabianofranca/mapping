@@ -1,9 +1,12 @@
+import type { Dictionary } from './en-US';
 import { catalogPtBR } from './catalog';
 import { modelMessagesPtBR } from './modelMessages';
 import { reviewPtBR } from './review';
 import { perspectivesPtBR } from './perspectives';
 
-export const ptBR = {
+// Values only: the keys and their context (comments) live in `en-US.ts`; `Dictionary` makes the
+// compiler reject a missing or an extra key.
+export const ptBR: Dictionary = {
   ...reviewPtBR,
   ...perspectivesPtBR,
   ...catalogPtBR,
@@ -750,7 +753,6 @@ export const ptBR = {
   'thread.anchor.missing.annotation': 'Anotação apagada · órfã',
   'thread.anchor.missing.entry': 'Par apagado · órfã',
   'thread.anchor.missing.row': 'Linha apagada · órfã',
-  // CM5-B: citações no compositor e nas mensagens
   'citation.unnamed': '(sem nome)',
   'citation.missing': 'O item citado não existe mais',
   'citation.chipLabel': '{name}, citação',
@@ -762,7 +764,6 @@ export const ptBR = {
   'citation.group.annotation': 'Anotações',
   'citation.group.layer': 'Camadas',
   'citation.group.thread': 'Conversas',
-  // CM5-D: Citada em, filtro da seleção e proposta na conversa
   'thread.citedIn': 'Citada em',
   'comments.filter.citesSelection': 'Citam a seleção',
   'comments.filter.citesSelectionHint':
@@ -775,7 +776,6 @@ export const ptBR = {
   'thread.proposal.removed': 'Proposta removida',
   'proposals.fromThread': 'da conversa',
   'thread.editorHint': 'Enter quebra a linha, Ctrl+Enter envia e @ cita um item.',
-  // CM5-C: citar e copiar referência nos menus
   'cite.insert': 'Citar na conversa',
   'cite.needComposer': 'Abra uma conversa para citar',
   'cite.fieldActions': 'Ações do campo {name}',
@@ -970,7 +970,6 @@ export const ptBR = {
   'issue.component-overflow': 'O componente não cabe',
   'list.incomplete': 'Só incompletas',
   'list.emptyIncomplete': 'Nenhuma anotação incompleta nas camadas visíveis.',
-  // Detalhes (R5)
   'marking.section': 'Marcação',
   'marking.position': 'Posição',
   'marking.size': 'Tamanho',
@@ -1019,8 +1018,6 @@ export const ptBR = {
   'ref.keyCtrlEnter': 'Ctrl+Enter',
   'ref.keyEsc': 'Esc',
   'ref.keyClose': 'fechar',
-
-  // Trava (etapa 2.5)
   'lock.markingLock': 'Trancar marcação',
   'lock.imageLock': 'Trancar imagem',
   'lock.treeLock': 'Trancar {name}',
@@ -1143,8 +1140,6 @@ export const ptBR = {
     'Definição: nos Detalhes de uma anotação tipada, uma linha por plataforma com path, como "Plataforma · Arquivo.ext", com o caminho completo e o símbolo na dica. Vem da especialização e não se edita na app.',
   'help.code.repos':
     'Repositórios: o endereço do repositório de cada plataforma (repo) vem da especialização. Em Configurações (engrenagem), na seção "Repositórios", subseção "Código", informe só o caminho local da raiz do clone, relativo à pasta do projeto. Plataforma em que algum tipo aponta um arquivo, sem repo, gera um aviso na importação da especialização.',
-  // Biblioteca de componentes na app (etapa Biblioteca, B3)
-  // Catálogo: janela do editor e tela da biblioteca sem projeto (etapa Biblioteca, B5)
   'catalog.window.title': 'Catálogo',
   'catalog.window.components': 'Componentes',
   'catalog.window.palette': 'Paleta',
@@ -1213,7 +1208,6 @@ export const ptBR = {
   'arrange.doneWarnings': 'Arrumado com {count} aviso(s): {first}',
   'arrange.nothing': 'Nada a arrumar',
   'arrange.hintAnchor': 'Encosta a marcação na âncora.',
-  // Âncora entre marcações (etapa "direção e âncora", R4)
   'anchor.section': 'Âncora',
   'anchor.target': 'Ancorada a',
   'anchor.targetHint':
@@ -1308,7 +1302,6 @@ export const ptBR = {
   'multi.deleteMessage':
     '{markings} marcação(ões), {containers} container(s) e {annotations} anotação(ões) serão excluídos. Dá para desfazer.',
   'multi.deleteBlocked': 'Destranque os itens trancados para excluir',
-  // Setas (etapa Marcações espaciais, ME4)
   'arrow.label': '{from} → {to}',
   'arrow.missingEnd': 'marcação removida',
   'arrow.section': 'Seta',
@@ -1331,12 +1324,10 @@ export const ptBR = {
     '"{name}" será excluída com {annotations} anotação(ões). Dá para desfazer.',
   'arrow.error.locked': 'A seta está trancada.',
   'arrow.error.generic': 'Não foi possível alterar a seta.',
-  // Perspectivas (etapa #659): erros das operações do modelo
   'perspective.error.name-empty': 'Dê um nome à perspectiva.',
   'perspective.error.name-taken': 'Já existe uma perspectiva com esse nome.',
   'perspective.error.not-root': 'Só itens soltos no canvas entram numa perspectiva.',
   'perspective.error.generic': 'Não foi possível alterar a perspectiva.',
-  // Seção "Ligado por seta" dos Detalhes da marcação (etapa #658)
   'arrowLinks.section': 'Ligado por seta',
   'arrowLinks.out': 'Sai para',
   'arrowLinks.in': 'Chega de',
@@ -1367,6 +1358,4 @@ export const ptBR = {
   'shortcuts.key.click': 'clique',
   'shortcuts.key.drag': 'arrasto',
   'shortcuts.key.doubleClick': 'duplo clique',
-} as const;
-
-export type Dictionary = Record<keyof typeof ptBR, string>;
+};

@@ -1,10 +1,13 @@
-import type { Dictionary } from './pt-BR';
 import { catalogEnUS } from './catalog';
 import { modelMessagesEnUS } from './modelMessages';
 import { reviewEnUS } from './review';
 import { perspectivesEnUS } from './perspectives';
 
-export const enUS: Dictionary = {
+// en-US is the base dictionary: it defines the keys (`TranslationKey`) and the comments here are the
+// context for whoever translates. `pt-BR.ts` is typed against it (`Dictionary`) and holds only the
+// values, with the same keys and the same {parameters}. The modules below (`review`, `perspectives`,
+// `catalog`, `modelMessages`) follow the same rule and enter the dictionary through a spread.
+export const enUS = {
   ...reviewEnUS,
   ...perspectivesEnUS,
   ...catalogEnUS,
@@ -966,7 +969,7 @@ export const enUS: Dictionary = {
   'issue.component-overflow': 'The component does not fit',
   'list.incomplete': 'Incomplete only',
   'list.emptyIncomplete': 'No incomplete annotations in the visible layers.',
-  // Detalhes (R5)
+  // Details (R5)
   'marking.section': 'Marking',
   'marking.position': 'Position',
   'marking.size': 'Size',
@@ -1363,3 +1366,6 @@ export const enUS: Dictionary = {
   'shortcuts.key.drag': 'drag',
   'shortcuts.key.doubleClick': 'double click',
 };
+
+/** Every dictionary has exactly the keys of the en-US one. */
+export type Dictionary = Record<keyof typeof enUS, string>;
