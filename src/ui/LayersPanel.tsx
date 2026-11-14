@@ -23,9 +23,9 @@ import { openToolWindow } from './toolWindowLayout';
 import { startComposing } from '../store/threadUi';
 import { Button, IconButton, Select, Tooltip } from './controls';
 
-// Conteúdo das camadas: a lista (visibilidade, camada ativa, nome, cor, ordem e
-// exclusão) e o modo de exibição das marcações sem anotação. É o miolo da janela
-// Camadas (o conteúdo da janela `LayersWindow`).
+// Contents of the layers: the list (visibility, active layer, name, color, order and
+// deletion) and the display mode of markings without annotation. It is the core of the
+// Layers window (the content of the `LayersWindow` window).
 
 interface LayersProps {
   readonly project: Project;
@@ -33,8 +33,8 @@ interface LayersProps {
 }
 
 /**
- * Visibilidade das camadas: com uma perspectiva aberta (etapa #659, decisão 11), as escondidas
- * são as dela e mudam no projeto (com desfazer); na Principal, as da interface (`ui.hiddenLayers`).
+  * Layer visibility: with a perspective open (stage #659, decision 11), the hidden ones
+  * are the perspective's and change in the project (with undo); in Main, those of the interface (`ui.hiddenLayers`).
  */
 function useLayerVisibility(readOnly: boolean) {
   const { layers, session } = useEditor();
@@ -42,13 +42,13 @@ function useLayerVisibility(readOnly: boolean) {
     hidden: layers.hidden(),
     toggle: layers.toggle,
     showAll: layers.showAll,
-    // Com perspectiva aberta a escrita vai ao projeto e é recusada somente leitura (ou na
-    // revisão); na Principal é só da interface e segue valendo.
+    // With a perspective open, the write goes to the project and is refused read-only (or in
+    // review); in Main it is interface-only and keeps applying.
     disabled: readOnly && session.perspective.id.value !== null,
   };
 }
 
-/** Nova camada e Mostrar todas: ícones no cabeçalho da janela. */
+/** New layer and Show all: icons in the window header. */
 export function LayerActions({ project, readOnly }: LayersProps) {
   const { actions } = useEditor();
   const visibility = useLayerVisibility(readOnly);
@@ -76,13 +76,13 @@ export function LayerActions({ project, readOnly }: LayersProps) {
   );
 }
 
-/** Nome da especialização dona da camada (ou o id, se a cópia não estiver disponível). */
+/** Name of the specialization that owns the layer (or the id, if the copy is not available). */
 function specName(project: Project, layer: Layer): string {
   const id = layer.spec?.specId ?? '';
   return projectIndex(project).specializations.get(id)?.spec?.name ?? id;
 }
 
-/** Paleta padrão mais uma cor livre, dentro do popover do botão de cor. */
+/** Default palette plus a free color, inside the color button's popover. */
 function Palette({
   layer,
   close,
@@ -268,7 +268,7 @@ function SpecBadge({ name }: { readonly name: string }) {
   );
 }
 
-/** Lista de camadas, modo de exibição e a confirmação de exclusão. */
+/** Layer list, display mode and the deletion confirmation. */
 export function LayersPanel({ project, readOnly }: LayersProps) {
   const [deleting, setDeleting] = useState<Layer | null>(null);
   const { hidden, toggle, disabled: visibilityDisabled } = useLayerVisibility(readOnly);
@@ -355,7 +355,7 @@ function DeleteLayerDialog({
   );
 }
 
-/** Contagens da exclusão: total e, por camada, incluindo as vinculadas em outras camadas. */
+/** Deletion counts: total and, per layer, including those linked in other layers. */
 function DeleteImpact({
   project,
   layer,

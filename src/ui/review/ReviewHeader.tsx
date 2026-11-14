@@ -33,36 +33,36 @@ import { OpenNewer } from './ReviewLevels';
 import { RevisionLine } from './RevisedFlag';
 import { useDecide, useDecideMany, useReviewNames } from './useReview';
 
-// Cabeçalho do que está selecionado nos Detalhes da revisão (HANDOFF-REVIEW-DETAILS 5.4, 5.5
-// e 5.7, fase 9.6): o que é (marcação alterada, criada, removida; imagem; proposta; grupo
-// Projeto), a decisão de três estados com as contagens, a criação ou a remoção por inteiro,
-// o conjunto inválido com as duas saídas, o item trancado, o "junto" com Desfazer, a nota
-// do item e a situação da proposta (aplicada ou substituída). Nada aqui calcula regra:
-// tudo vem de `review.derived`.
+// Header for what is selected in the review Details (HANDOFF-REVIEW-DETAILS 5.4, 5.5
+// and 5.7, phase 9.6): what it is (changed, created or removed marking; image; proposal; the
+// Project group), the three-state decision with the counts, whole-entity creation or removal,
+// the invalid set with its two exits, the locked item, the "together" notice with Undo, the
+// item note and the proposal status (applied or superseded). Nothing here computes a rule:
+// everything comes from `review.derived`.
 
-/** Quantas mudanças aparecem por extenso nas listas curtas ("e mais N"). */
+/** How many changes are listed in full in the short lists ("and N more"). */
 const LIST_MAX = 4;
 
-/** Quantas marcações (ou setas) a lista "Aceitar remove junto" mostra antes do "e mais N". */
+/** How many markings (or arrows) the "Accept also removes" list shows before "and N more". */
 const REMOVAL_MAX = LIST_MAX * 3;
 
-/** A linha "e mais N" das listas de marcações e setas cortadas em `REMOVAL_MAX`. */
+/** The "and N more" line of the marking and arrow lists truncated at `REMOVAL_MAX`. */
 function MoreItem({ total }: { readonly total: number }) {
   if (total <= REMOVAL_MAX) return null;
   return <li class="muted">{t('review.panel.more', { count: total - REMOVAL_MAX })}</li>;
 }
 
-/** Quantos nomes de dependências aparecem no aviso "junto". */
+/** How many dependency names appear in the "together" notice. */
 const TOGETHER_NAMES = 4;
 
 // ---------------------------------------------------------------------------
-// Textos por tipo de item
+// Texts per kind of item
 
 /**
- * A variante do cabeçalho: marcação ou imagem alterada, criada ou removida (a criação ou a
- * remoção da entidade inteira vem do índice por campo), a proposta ou o grupo Projeto.
- * Os rótulos têm uma chave para cada variante (não se montam por interpolação: "Aceitar
- * marcação" e "Aceitar remoção" não compõem igual nos dois idiomas).
+ * The header variant: changed, created or removed marking or image (the creation or
+ * removal of the whole entity comes from the per-field index), the proposal or the Project group.
+ * Each variant has its own label key (they are not built by interpolation: "Accept
+ * marking" and "Accept removal" do not compose the same way in both languages).
  */
 export type HeaderVariant =
   | 'marking'
@@ -94,16 +94,16 @@ export function headerVariant(
   const base = target.level === 'image' ? 'image' : 'marking';
   if (whole?.kind === 'create') return `${base}Create`;
   if (whole?.kind === 'remove') return `${base}Remove`;
-  // "Imagem alterada" só quando a proposta troca o arquivo ou as dimensões do container.
+  // "Image changed" only when the proposal replaces the container's file or dimensions.
   if (base === 'image' && !changes.some(replacesImage)) return 'container';
   return base;
 }
 
-/** A mudança troca a imagem do container (arquivo, ou tamanho do que não tem arquivo). */
+/** The change replaces the container's image (file, or size for one without a file). */
 const replacesImage = (c: Change): boolean =>
   c.entity === 'image' && (c.field === 'file' || c.field === 'size');
 
-/** Variante dos rótulos Aceitar/Rejeitar (criada e alterada decidem "a marcação"). */
+/** Variant of the Accept/Reject labels (created and changed both decide "the marking"). */
 function actionVariant(
   variant: HeaderVariant,
 ): Exclude<HeaderVariant, 'markingCreate' | 'imageCreate'> {
@@ -113,15 +113,15 @@ function actionVariant(
 }
 
 // ---------------------------------------------------------------------------
-// Problemas do conjunto aceito
+// Problems of the accepted set
 
-/** O tipo da entidade em minúsculas ("camada"), para o texto do problema. */
+/** The entity's kind in lower case ("layer"), for the problem text. */
 const kindText = (kind: Parameters<typeof entityLabel>[0]) =>
   entityLabel(kind).toLocaleLowerCase();
 
 /**
- * Texto de um problema do conjunto aceito. Cita a entidade pelo nome (marcação, imagem,
- * camada, anotação, especialização), nunca pelo id; sem nome em lugar nenhum, pelo tipo.
+ * Text of a problem in the accepted set. It cites the entity by name (marking, image,
+ * layer, annotation, specialization), never by id; with no name anywhere, by kind.
  */
 export function issueText(names: ReviewNames, issue: ProposalIssue): string {
   const name = (id: string | undefined) => {
@@ -129,7 +129,7 @@ export function issueText(names: ReviewNames, issue: ProposalIssue): string {
     const found = entityName(names, id);
     if (found !== null) return found;
     const kind = entityKindOf(names, id);
-    // Especialização e repositório têm id legível (`sdui`, `android`): é o próprio nome.
+    // Specialization and repository have a readable id (`sdui`, `android`): it is the name itself.
     if (
       kind === null ||
       kind === 'specialization' ||
@@ -139,7 +139,7 @@ export function issueText(names: ReviewNames, issue: ProposalIssue): string {
       return id;
     return kindText(kind);
   };
-  // A mudança cita um alvo que não existe mais (nem no projeto, nem na proposta).
+  // The change cites a target that no longer exists (neither in the project nor in the proposal).
   if (issue.code === 'entity-missing' && entityName(names, issue.id) === null) {
     const kind = entityKindOf(names, issue.id);
     if (kind !== null) return t('review.issue.gone', { entity: kindText(kind) });
@@ -167,7 +167,7 @@ export function issueText(names: ReviewNames, issue: ProposalIssue): string {
   }
 }
 
-/** "Aceitar a(s) que falta(m)" / "Rejeitar a(s) que causa(m)": a forma concreta se for uma só. */
+/** "Accept the missing one(s)" / "Reject the causing one(s)": concrete form if only one. */
 function exitLabel(
   names: ReviewNames,
   ids: readonly string[],
@@ -252,9 +252,9 @@ function IssueNotices({
 }
 
 // ---------------------------------------------------------------------------
-// Criação e remoção por inteiro
+// Whole creation and removal
 
-/** "+ N anotações criadas" e a ajuda: a criação é uma mudança só. */
+/** "+ N annotations created" and the help text: the creation is a single change. */
 function CreationInfo({
   names,
   target,
@@ -291,7 +291,7 @@ function CreationInfo({
   );
 }
 
-/** O que sai junto com uma marcação ou imagem removida: filhas (com link) e anotações. */
+/** What goes along with a removed marking or image: children (with a link) and annotations. */
 function RemovalList({
   names,
   target,
@@ -370,9 +370,9 @@ function RemovalList({
 }
 
 // ---------------------------------------------------------------------------
-// Junto e situação da proposta
+// Together and proposal status
 
-/** "N mudanças rejeitadas junto: …" com Desfazer (o aviso dos lotes, aqui no item). */
+/** "N changes rejected together: …" with Undo (the batch notice, here on the item). */
 function TogetherNotice({
   names,
   ids,
@@ -422,7 +422,7 @@ function TogetherNotice({
   );
 }
 
-/** Proposta aplicada (só para ver) ou substituída (com "Abrir a nova"). */
+/** Applied proposal (view only) or superseded (with "Open the new one"). */
 function ProposalStatusNotice({ names }: { readonly names: ReviewNames }) {
   const { review } = useEditor();
   const p = names.proposal;
@@ -456,9 +456,9 @@ function ProposalStatusNotice({ names }: { readonly names: ReviewNames }) {
 }
 
 // ---------------------------------------------------------------------------
-// Selos da identidade e decisão de uma mudança inteira
+// Identity badges and the decision of a whole change
 
-/** Selos embaixo do nome do item: criada, será removida, trancada e bloqueia aplicar. */
+/** Badges under the item name: created, will be removed, locked and blocks applying. */
 export function IdentityFlags({
   target,
   whole = null,
@@ -495,7 +495,7 @@ export function IdentityFlags({
   );
 }
 
-/** ✓ ✕ da criação ou remoção de uma entidade inteira (uma anotação), no cabeçalho dela. */
+/** ✓ ✕ of the creation or removal of a whole entity (an annotation), in its header. */
 export function WholeDecision({ change }: { readonly change: Change }) {
   const { review } = useEditor();
   const openMark = useContext(OpenMarkContext);
@@ -516,8 +516,9 @@ export function WholeDecision({ change }: { readonly change: Change }) {
       }
       takeFocus={() => review.takeControlFocus(change.id, 'card')}
       onRejectedByMouse={() => {
-        // A nota sugerida mora no popover da mudança: o pedido vai ao store e o popover
-        // abre (o cartão pode ser trocado pela rejeição; o novo cumpre o pedido ao montar).
+        // The suggested note lives in the change popover: the request goes to the store and
+        // the popover opens (the card may be swapped by the rejection; the new one fulfils it
+        // on mount).
         review.requestNote(change.id);
         if (openMark) openMark.value = `${change.id}|`;
       }}
@@ -526,12 +527,12 @@ export function WholeDecision({ change }: { readonly change: Change }) {
 }
 
 // ---------------------------------------------------------------------------
-// O cabeçalho
+// The header
 
 interface ReviewHeaderProps {
-  /** O nível decidido pelo cabeçalho: a proposta, o grupo Projeto, uma imagem ou um item. */
+  /** The level decided by the header: the proposal, the Project group, an image or an item. */
   readonly target: ReviewTarget;
-  /** Criação ou remoção da entidade inteira (do índice por campo), se houver. */
+  /** Creation or removal of the whole entity (from the per-field index), if any. */
   readonly whole?: Change | null;
 }
 

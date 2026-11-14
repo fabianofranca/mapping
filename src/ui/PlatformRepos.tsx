@@ -13,12 +13,12 @@ import {
 import { IconButton, TextField } from './controls';
 import { useEditor } from './EditorContext';
 
-// Repositórios, nas Configurações do editor, em duas subseções (etapa #559, PD5; decisão 26).
-// Código (etapa 3b.3; schema v11): uma linha por plataforma declarada pelas especializações
-// aplicadas. Documentos (schema v14): uma linha por repositório de documentos (`docRepos`)
-// declarado por elas. Em ambas, o endereço (`url` e `ref`) é da especialização e aparece só em
-// leitura; o único campo editável é o caminho local da raiz do clone (`localPath`), gravado no
-// projeto. As actions validam e devolvem o motivo do erro.
+// Repositories, in the editor Settings, in two subsections (stage #559, PD5; decision 26).
+// Code (stage 3b.3; schema v11): one row per platform declared by the applied
+// specializations. Documents (schema v14): one row per documents repository (`docRepos`)
+// declared by them. In both, the address (`url` and `ref`) belongs to the specialization and appears read-only;
+// the only editable field is the local path of the clone root (`localPath`), saved in the
+// project. The actions validate and return the reason for the error.
 
 const ERROR_TEXT: Readonly<Record<string, TranslationKey>> = {
   'invalid-local-path': 'repos.invalidLocalPath',
@@ -29,7 +29,7 @@ interface PlatformReposProps {
   readonly readOnly: boolean;
 }
 
-/** `true` se há o que mostrar na seção (alguma plataforma ou algum repositório de documentos). */
+/** `true` if there is something to show in the section (some platform or some documents repository). */
 export function hasRepos(project: Project): boolean {
   return projectPlatforms(project).length > 0 || projectDocRepos(project).length > 0;
 }
@@ -84,26 +84,26 @@ function specName(project: Project, specId: string): string {
 }
 
 interface RepoRowProps {
-  /** Nome acessível do grupo. */
+  /** Accessible name of the group. */
   readonly name: string;
-  /** Prefixo único para os ids de acessibilidade. */
+  /** Unique prefix for the accessibility ids. */
   readonly idPrefix: string;
   readonly title: string;
   readonly detail?: string | null;
   readonly clearLabel: string;
   readonly declared: readonly { readonly specId: string; readonly repo: SpecRepo }[];
   readonly specNames: (specId: string) => string;
-  /** Texto discreto quando a especialização não declara endereço. */
+  /** Discreet text when the specialization declares no address. */
   readonly noneDeclared: string;
-  /** Caminho local gravado no projeto; `null` se não houver. */
+  /** Local path saved in the project; `null` if there is none. */
   readonly localPath: string | null;
   readonly readOnly: boolean;
-  /** Grava o caminho; devolve o código do erro ou `null` se gravou. */
+  /** Saves the path; returns the error code or `null` if it saved. */
   readonly onSave: (text: string) => string | null;
   readonly onClear: () => void;
 }
 
-/** Uma linha de repositório: o endereço declarado em leitura e o caminho local editável. */
+/** A repository row: the declared address read-only and the editable local path. */
 function RepoRow(props: RepoRowProps) {
   const { name, idPrefix, declared, localPath, readOnly } = props;
   const [error, setError] = useState<string | null>(null);

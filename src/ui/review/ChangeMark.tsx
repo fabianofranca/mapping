@@ -32,32 +32,32 @@ import { DecisionMark } from './DecisionMark';
 import { belowReviewBar } from './reviewBarRef';
 import { useReviewNames } from './useReview';
 
-// Marcador do campo alterado (HANDOFF-REVIEW-DETAILS 2.1 e 4, fase 9.5): uma peça de 18 px
-// com o tipo à esquerda (o glifo do ChangeKind) e a decisão à direita (a forma do
-// DecisionMark); conflito com ⚠ em âmbar; parte de uma criação ou remoção só com o tipo,
-// tracejada. É um botão que abre o `ChangePopover` no `Popover` da app: pelo hover, com
-// `duration-hover-intent`; pelo foco, na hora; o clique (ou Enter) fixa. Esc e o clique
-// fora fecham e devolvem o foco ao marcador; um aberto por vez (`OpenMarkContext`). Focar
-// o marcador seleciona aquela mudança na revisão (fase 9.6): A, R e Backspace decidem o
-// campo focado, e a linha da mudança acende na janela Propostas.
+// Marker of the changed field (HANDOFF-REVIEW-DETAILS 2.1 and 4, phase 9.5): an 18 px piece
+// with the kind on the left (the ChangeKind glyph) and the decision on the right (the shape of
+// DecisionMark); conflict with ⚠ in amber; part of a creation or removal with the kind only,
+// dashed. It is a button that opens the `ChangePopover` in the app's `Popover`: on hover, with
+// `duration-hover-intent`; on focus, at once; click (or Enter) pins it. Esc and a click
+// outside close it and give focus back to the marker; one open at a time (`OpenMarkContext`).
+// Focusing the marker selects that change in the review (phase 9.6): A, R and Backspace decide
+// the focused field, and the change's row lights up in the Proposals window.
 
-/** Qual marcador está aberto (a chave dele) num painel; um por vez. */
+/** Which marker is open (its key) in a panel; one at a time. */
 export const OpenMarkContext = createContext<Signal<string | null> | null>(null);
 
-/** O estado "qual marcador está aberto" de um painel. */
+/** The "which marker is open" state of a panel. */
 export function createOpenMark(): Signal<string | null> {
   return signal<string | null>(null);
 }
 
-/** Milissegundos de um token de duração (`300ms` → 300). */
+/** Milliseconds of a duration token (`300ms` → 300). */
 function ms(token: string): number {
   return Number.parseInt(tokenValue(token, 'light'), 10);
 }
 
-/** Como o popover abriu: o hover fecha ao sair; o foco, ao sair o foco; o clique fixa. */
+/** How the popover opened: hover closes on leaving; focus, on losing focus; click pins it. */
 type OpenMode = 'hover' | 'focus' | 'pinned';
 
-/** Nome acessível do marcador (HANDOFF-REVIEW-DETAILS 7). */
+/** Accessible name of the marker (HANDOFF-REVIEW-DETAILS 7). */
 function markLabel(
   names: ReviewNames,
   subject: MarkSubject,
@@ -107,7 +107,7 @@ function markLabel(
   })}`;
 }
 
-/** Os atalhos que agem sobre a mudança do marcador focado (aceitar, rejeitar e limpar). */
+/** The shortcuts that act on the focused marker's change (accept, reject and clear). */
 const MARK_KEYS = [REVIEW_KEYS.accept, REVIEW_KEYS.reject, REVIEW_KEYS.clear];
 
 export function ChangeMark(subject: MarkSubject) {
@@ -122,11 +122,11 @@ export function ChangeMark(subject: MarkSubject) {
   const panelId = useId();
   useEffect(() => () => clearTimeout(timer.current), []);
 
-  // A mudança selecionada na janela Propostas: o marcador rola até si e, num clique ou Enter
-  // na lista (`review.requestMark`), recebe o foco (o popover abre pelo foco). Pelas setas só
-  // rola e destaca. No commit que desenha o marcador, ainda que a seção que o esconde tenha
-  // acabado de abrir (modelo de foco da etapa 8: o dono do elemento cumpre o pedido).
-  // Um computed por marcador: mudar a seleção refaz só o que deixa e o que passa a ser o alvo.
+  // The change selected in the Proposals window: the marker scrolls itself into view and, on a click or Enter
+  // in the list (`review.requestMark`), gets focus (the popover opens on focus). With the arrows it only
+  // scrolls and highlights. In the commit that draws the marker, even if the section that hides it has
+  // just opened (focus model of stage 8: the element's owner fulfils the request).
+  // One computed per marker: changing the selection redoes only what leaves and what becomes the target.
   const targetSignal = useMemo(
     () =>
       computed(() => {
@@ -146,7 +146,7 @@ export function ChangeMark(subject: MarkSubject) {
     if (asked === 0) return;
     review.clearMarkRequest();
     button.current?.focus({ preventScroll: true });
-    // Cada pedido vale uma vez.
+    // Each request counts once.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [asked]);
   if (!names || !openMark) return null;
@@ -162,7 +162,7 @@ export function ChangeMark(subject: MarkSubject) {
     clearTimeout(timer.current);
     if (openMark.peek() === key) {
       openMark.value = null;
-      // Fechado, o pedido da nota sugerida (rejeitar com o mouse) não vale mais.
+      // Closed, the request for the suggested note (rejecting with the mouse) no longer holds.
       review.clearNoteRequest();
     }
   };
@@ -205,7 +205,7 @@ export function ChangeMark(subject: MarkSubject) {
         timer.current = setTimeout(hide, ms('duration-base'));
       }}
       onFocusOut={(e) => {
-        // O foco saiu do marcador e do popover para outro lugar (Tab depois do último).
+        // Focus left the marker and the popover for somewhere else (Tab after the last one).
         const next = e.relatedTarget;
         if (next instanceof Node && !host.current?.contains(next)) hide();
       }}
@@ -219,7 +219,7 @@ export function ChangeMark(subject: MarkSubject) {
         limit={belowReviewBar}
         label={popoverTitle(names, subject)}
         trigger={() => (
-          /* Exceção ao Button: marcador de mudança (docs/DESIGN-SYSTEM.md, "Botões avulsos") */
+          /* Exception to Button: change marker (docs/DESIGN-SYSTEM.md, "Loose buttons") */
           <button
             ref={button}
             type="button"
@@ -242,14 +242,14 @@ export function ChangeMark(subject: MarkSubject) {
             data-state={part ? undefined : (decision ?? 'undecided')}
             onFocus={() => {
               if (openMark.peek() !== key) show('focus');
-              // Focar o marcador seleciona a mudança: os atalhos agem sobre ela.
+              // Focusing the marker selects the change: the shortcuts act on it.
               const now = review.selected.peek();
               if (!(now?.level === 'change' && now.id === change.id)) {
                 review.select({ level: 'change', id: change.id });
               }
             }}
             onClick={() => {
-              // Clique ou Enter fixa o popover aberto; de novo, fecha.
+              // Click or Enter pins the open popover; again, it closes.
               if (openMark.peek() === key && mode === 'pinned') hide();
               else {
                 show('pinned');

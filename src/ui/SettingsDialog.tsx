@@ -17,19 +17,19 @@ import { Button } from './controls';
 
 interface SettingsDialogProps {
   readonly onClose: () => void;
-  /** Abre a Ajuda na seção Atalhos. */
+  /** Opens Help at the Shortcuts section. */
   readonly onShowShortcuts: () => void;
   /**
-   * Projeto aberto no editor (na tela inicial não há): acrescenta os repositórios por
-   * plataforma, quando alguma especialização aplicada declara plataformas.
+   * Project open in the editor (on the start screen there is none): adds the repositories per
+   * platform, when some applied specialization declares platforms.
    */
   readonly project?: Project;
   readonly readOnly?: boolean;
 }
 
 /**
- * Sobre (fase 5.4): build, canal e schema, com "Copiar", para o relato de um problema
- * dizer de qual versão veio. Usa o mesmo leiaute da seção de repositórios.
+ * About (phase 5.4): build, channel and schema, with "Copy", so that a problem report
+ * can say which version it came from. Uses the same layout as the repositories section.
  */
 function About() {
   const [copied, setCopied] = useState<boolean | null>(null);
@@ -88,9 +88,10 @@ function About() {
 }
 
 /**
- * Configurações: idioma, tema e opções do canvas, com atalho para a lista de teclas; no
+ * Settings: language, theme and canvas options, with a shortcut to the key list; in the
+ * editor, also the code repositories per platform, the drawing mode and the reading direction; then the Identity (name and
  * editor, também os repositórios de código por plataforma, o modo do desenho e a direção de leitura; depois a Identidade (nome e e-mail
- * das conversas), a Privacidade e, no fim, o Sobre.
+ * email of the threads), Privacy and, at the end, About.
  */
 export function SettingsDialog({
   onClose,
@@ -100,7 +101,7 @@ export function SettingsDialog({
 }: SettingsDialogProps) {
   const repos = project !== undefined && hasRepos(project);
   const modes = project !== undefined && hasDrawingModes(project);
-  // A direção de leitura é do projeto: aparece sempre que há um projeto aberto.
+  // The reading direction belongs to the project: it always appears when a project is open.
   const direction = project !== undefined;
   return (
     <Dialog

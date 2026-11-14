@@ -39,17 +39,17 @@ import {
 import { useDecide, useReviewNames, useReviewNavigate } from './useReview';
 import { useReviewCommands } from './useReviewCommands';
 
-// Janela Propostas em modo revisão (HANDOFF-PROPOSALS 5.2 e 5.4): filtros (tipo, imagem,
-// camada, decisão, só conflitos), os níveis Projeto → Imagem → Item → Mudança com a
-// decisão de três estados em cada um, e o rodapé de atalhos. A lista é virtualizada
-// (milhares de mudanças): só as linhas à vista são desenhadas. Proposta grande começa
-// com as imagens recolhidas, menos a da seleção.
+// Proposals window in review mode (HANDOFF-PROPOSALS 5.2 and 5.4): filters (type, image,
+// layer, decision, conflicts only), the Project → Image → Item → Change levels with the
+// three-state decision on each one, and the shortcuts footer. The list is virtualized
+// (thousands of changes): only the rows in view are drawn. A large proposal starts
+// with the images collapsed, except the selected one.
 
-/** Acima disto a proposta começa com os grupos recolhidos (HANDOFF-PROPOSALS 5.4). */
+/** Above this the proposal starts with the groups collapsed (HANDOFF-PROPOSALS 5.4). */
 export const LARGE_PROPOSAL = 150;
-/** Linhas desenhadas além das visíveis, para a rolagem não piscar. */
+/** Rows drawn beyond the visible ones, so scrolling does not flicker. */
 const OVERSCAN = 12;
-/** Sem medida (primeiro quadro, testes), quantas linhas desenhar. */
+/** Without a measurement (first frame, tests), how many rows to draw. */
 const UNMEASURED_ROWS = 80;
 
 function decisionOf(p: Proposal, changeId: string): DecisionValue {
@@ -63,8 +63,8 @@ function levelValue(summary: LevelSummary | undefined): DecisionValue {
 }
 
 /**
- * Janela das linhas à vista dentro do contêiner que rola. Guarda só o índice da primeira
- * linha visível: rolar dentro da mesma linha não renderiza de novo.
+ * Window of the rows in view inside the scrolling container. Keeps only the index of the first
+ * visible row: scrolling within the same row does not render again.
  */
 function useVirtualWindow(count: number, scroller: { current: HTMLElement | null }) {
   const [view, setView] = useState({ first: 0, height: 0, row: 0 });
@@ -73,8 +73,8 @@ function useVirtualWindow(count: number, scroller: { current: HTMLElement | null
     const el = scroller.current;
     if (!el) return;
     const measure = () => {
-      // A altura vem de uma linha de item: o cabeçalho de grupo (proposta substituída) tem
-      // outra altura.
+      // The height comes from an item row: the group header (replaced proposal) has
+      // another height.
       const item = el.querySelector<HTMLElement>('[data-row]:not([data-group])');
       const row = item?.offsetHeight ?? 0;
       const next = {
@@ -99,7 +99,7 @@ function useVirtualWindow(count: number, scroller: { current: HTMLElement | null
       observer?.disconnect();
     };
   }, [scroller]);
-  // Linhas novas (ou a primeira vez com linhas): mede de novo a altura da linha.
+  // New rows (or the first time with rows): measures the row height again.
   useLayoutEffect(() => measureRef.current(), [count]);
   const measure = () => measureRef.current();
   if (view.row <= 0 || view.height <= 0) {
@@ -114,18 +114,18 @@ function useVirtualWindow(count: number, scroller: { current: HTMLElement | null
 }
 
 /**
- * Quantos grupos de filtro estão ativos (decisão, tipos, imagem, camada, só conflitos):
- * conta grupos, não valores.
+ * How many filter groups are active (decision, types, image, layer, conflicts only):
+ * counts groups, not values.
  */
 export function activeFilterGroups(f: ReviewFiltersState): number {
   return activeFilterConditions(f).filter(Boolean).length;
 }
 
 /**
- * Uma condição por grupo de filtro (decisão, tipos, imagem, camada, só conflitos, só
- * revisadas): `true` quando o grupo está ativo. `hasActiveFilters`
- * (`src/model/proposalView.ts`) tem a mesma lista; o teste de `activeFilterGroups` confere
- * as duas.
+ * One condition per filter group (decision, types, image, layer, conflicts only,
+ * reviewed only): `true` when the group is active. `hasActiveFilters`
+ * (`src/model/proposalView.ts`) has the same list; the `activeFilterGroups` test checks
+ * the two.
  */
 export function activeFilterConditions(f: ReviewFiltersState): readonly boolean[] {
   return [
@@ -139,8 +139,8 @@ export function activeFilterConditions(f: ReviewFiltersState): readonly boolean[
 }
 
 /**
- * Filtros da revisão, recolhidos numa linha: o botão **Filtros** (com a contagem de grupos
- * ativos) abre um popover com os controles. Escolher um filtro não fecha o popover.
+ * Review filters, collapsed into one row: the **Filters** button (with the count of active
+ * groups) opens a popover with the controls. Choosing a filter does not close the popover.
  */
 export function ReviewFilters({ names }: { readonly names: ReviewNames }) {
   const { review } = useEditor();
@@ -271,9 +271,9 @@ export function ReviewFilters({ names }: { readonly names: ReviewNames }) {
 }
 
 /**
- * Rodapé com os atalhos principais (desktop). Em janela estreita (mesmo limiar da
- * `ReviewBar`) mostra só os três primeiros, numa linha; os demais seguem valendo pelo
- * teclado e na Ajuda › Atalhos.
+ * Footer with the main shortcuts (desktop). In a narrow window (same threshold as
+ * `ReviewBar`) it shows only the first three, on one line; the others still work by
+ * keyboard and in Help › Shortcuts.
  */
 function ShortcutFooter() {
   const compact = useMediaQuery(`(max-width: ${BREAKPOINTS.compact}px)`);
@@ -302,7 +302,7 @@ function ShortcutFooter() {
   );
 }
 
-/** Linhas de uma proposta substituída: "Sem decisão / Aceitas sem aplicar / Rejeitadas". */
+/** Rows of a replaced proposal: "No decision / Accepted, not applied / Rejected". */
 type SupersededRow =
   | {
       readonly kind: 'group';
@@ -341,7 +341,7 @@ export function ReviewLevels() {
   const navigate = useReviewNavigate();
   const scroller = useRef<HTMLDivElement>(null);
 
-  // Nós recolhidos: estado desta janela, novo a cada proposta.
+  // Collapsed nodes: state of this window, new for each proposal.
   const [collapsedState, setCollapsed] = useState<{
     readonly id: string | null;
     readonly keys: ReadonlySet<string>;
@@ -367,7 +367,7 @@ export function ReviewLevels() {
   const selected = review.selected.value;
   const selectedKey = selected ? reviewKey(selected) : null;
 
-  // A seleção que muda (N, C, canvas, Detalhes) abre os grupos recolhidos até ela.
+  // A selection that changes (N, C, canvas, Details) opens the collapsed groups down to it.
   useEffect(() => {
     if (!selectedKey) return;
     const closed = ancestorKeys(parents, selectedKey).filter((k) => collapsed.has(k));
@@ -396,9 +396,9 @@ export function ReviewLevels() {
   const count = flat ? flat.length : rows.length;
   const win = useVirtualWindow(count, scroller);
 
-  // Rola até a linha selecionada quando ela muda (teclado, N, canvas) e quando a medida da
-  // linha chega depois da primeira renderização. Rola uma vez por seleção: expandir ou
-  // recolher um grupo depois não faz a lista pular de volta.
+  // Scrolls to the selected row when it changes (keyboard, N, canvas) and when the row's
+  // measurement arrives after the first render. Scrolls once per selection: expanding or
+  // collapsing a group afterwards does not make the list jump back.
   const measured = win.row > 0;
   const scrolledTo = useRef<string | null>(null);
   useEffect(() => {
@@ -419,7 +419,7 @@ export function ReviewLevels() {
     else if (top + win.row > el.scrollTop + el.clientHeight) {
       el.scrollTop = top + win.row - el.clientHeight;
     }
-    // A janela acompanha já: a linha selecionada fica desenhada (alvo do activedescendant).
+    // The window follows right away: the selected row stays drawn (target of the activedescendant).
     win.measure();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedKey, proposalId, count, measured]);
@@ -534,7 +534,7 @@ export function ReviewLevels() {
           </>
         }
         onSelect={() => {
-          // Clique na mudança: o foco vai ao marcador dela nos Detalhes (as setas só rolam).
+          // Click on the change: focus goes to its marker in Details (the arrows only scroll).
           navigate(target);
           review.requestMark(c.id);
         }}
@@ -619,7 +619,7 @@ export function ReviewLevels() {
     : rows.map((r) => r.key);
 
   const onKeyDown = (e: KeyboardEvent) => {
-    // Só com o foco na própria árvore: nos botões da linha as teclas são deles.
+    // Only with focus on the tree itself: on the row's buttons the keys belong to them.
     if (e.target !== e.currentTarget || e.altKey || e.ctrlKey || e.metaKey) return;
     const at = selectedKey ? keys.indexOf(selectedKey) : -1;
     const go = (index: number) => {
@@ -662,7 +662,7 @@ export function ReviewLevels() {
   };
 
   const supersession = d.supersession.value;
-  // O X some com o aviso: o foco vai para a lista, nunca para o body.
+  // The X goes away with the notice: focus goes to the list, never to the body.
   const dismissNotice = (dismiss: () => void) => {
     dismiss();
     scroller.current?.focus();
@@ -777,7 +777,7 @@ export function ReviewLevels() {
   );
 }
 
-/** Barra de progresso das propostas grandes (aceitas e rejeitadas). */
+/** Progress bar of large proposals (accepted and rejected). */
 export function ProgressBar({
   summary,
   wide,
@@ -808,7 +808,7 @@ export function ProgressBar({
   );
 }
 
-/** "Abrir a nova": a proposta que substituiu esta. */
+/** "Open the new one": the proposal that replaced this one. */
 export function OpenNewer({
   id,
   title,

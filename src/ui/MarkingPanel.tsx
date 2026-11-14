@@ -35,16 +35,16 @@ import { Property, PropertyGrid } from './PropertyGrid';
 interface MarkingPanelProps {
   readonly project: Project;
   readonly marking: Marking;
-  /** Container da marcação; `null` na marcação do canvas (v13). */
+  /** Container of the marking; `null` for a canvas marking (v13). */
   readonly image: ProjectContainer | null;
   readonly readOnly: boolean;
   readonly onDelete: (marking: Marking) => void;
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
-  /** Abre as Configurações (o aviso de conversa sem identidade leva até lá). */
+  /** Opens Settings (the notice about a thread without an identity leads there). */
   readonly onOpenSettings?: () => void;
 }
 
-/** Resumo da seção Marcação recolhida: "X 112 · Y 236 · 346 × 84 px". */
+/** Summary of the collapsed Marking section: "X 112 · Y 236 · 346 × 84 px". */
 export function rectSummary(rect: Rect): string {
   return t('marking.rectSummary', {
     x: rect.x,
@@ -55,8 +55,8 @@ export function rectSummary(rect: Rect): string {
 }
 
 /**
- * Detalhes da marcação: identidade, seção Marcação (nome, pai, posição e tamanho),
- * revisão, anotações por camada e exclusão.
+ * Marking details: identity, Marking section (name, parent, position and size),
+ * review, annotations per layer and deletion.
  */
 export function MarkingPanel({
   project,
@@ -70,10 +70,10 @@ export function MarkingPanel({
   const editor = useEditor();
   const { actions, ui, derived, layers } = editor;
   const ext = useDetailsExtension();
-  // O Editor recria o painel (via `key`) ao trocar de marcação, o que limpa o erro.
+  // The Editor recreates the panel (via `key`) when the marking changes, which clears the error.
   const [error, setError] = useState<string | null>(null);
   const nameId = useId();
-  // "Ligar a…": o seletor de marcações; escolher cria a seta e a seleciona.
+  // "Link to…": the marking picker; choosing creates the arrow and selects it.
   const [linking, setLinking] = useState(false);
   const linkButton = useRef<HTMLButtonElement>(null);
 
@@ -88,12 +88,12 @@ export function MarkingPanel({
       setError(markingErrorMessage('rect-not-integer'));
       return false;
     }
-    // Fora dos limites, o valor é ajustado ao limite; o campo mostra o valor gravado.
+    // Out of bounds, the value is clamped to the limit; the field shows the saved value.
     report(actions.adjustMarkingRect(marking.id, key, value));
     return false;
   };
 
-  // Trava: própria ou herdada de um ancestral (descendentes trancados não impedem nada).
+  // Lock: its own or inherited from an ancestor (locked descendants block nothing).
   const ancestors = ancestorsOf(project, marking.id);
   const lockedAncestor = ancestors.find((a) => a.locked) ?? null;
   const geometryEditable = canEditMarkingGeometry(project, marking.id);
@@ -123,7 +123,7 @@ export function MarkingPanel({
     </label>
   );
 
-  // Pertencimento é resolvido pela geometria (só leitura): o pai assentado, se houver.
+  // Belonging is resolved by geometry (read-only): the settled parent, if any.
   const parent =
     marking.parentId === null
       ? null
@@ -134,8 +134,8 @@ export function MarkingPanel({
   const arrangeable = canArrangeMarking(editor, marking.id);
   const arrangeBlocked = usePrincipalOnly('arrange');
   const deleteBlocked = usePrincipalOnly('delete', [marking.id]);
-  // Posição e tamanho são uma mudança só (`rect`): com um marcador, as duas linhas viram
-  // uma, com o rótulo de duas linhas e um colchete (HANDOFF-REVIEW-DETAILS 2.2).
+  // Position and size are a single change (`rect`): with a marker, the two rows become
+  // one, with a two-line label and a bracket (HANDOFF-REVIEW-DETAILS 2.2).
   const spaceHint = t(image ? 'marking.pixelsHint' : 'marking.canvasUnitsHint');
   const rectMark =
     ext?.mark(marking.id, 'rect') || ext?.mark(marking.id, 'space') || null;
@@ -223,7 +223,7 @@ export function MarkingPanel({
               placeholder={t('marking.namePlaceholder')}
               disabled={readOnly}
               onCommit={(text) => {
-                // Espaços em volta não contam como alteração.
+                // Surrounding spaces do not count as a change.
                 if ((text.trim() || null) === marking.name) return false;
                 return report(actions.renameMarking(marking.id, text));
               }}
@@ -237,7 +237,7 @@ export function MarkingPanel({
               {parent ? markingLabel(project, parent) : t('marking.noParent')}
             </span>
           </Property>
-          {/* Qualquer marcação pode virar flutuante: sai do container e passa ao canvas (decisão 10). */}
+          {/* Any marking can become floating: leaves the container, moves to the canvas (decision 10). */}
           <Property
             label={t('marking.floating')}
             hint={t('marking.floatingHint')}

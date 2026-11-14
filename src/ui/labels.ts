@@ -1,4 +1,4 @@
-// Textos derivados do projeto (nomes de marcações, caminhos, erros), sempre via `t()`.
+// Texts derived from the project (marking names, paths, errors), always via `t()`.
 import { t, type TranslationKey } from '../i18n';
 import {
   MAX_CONTAINER_SIZE,
@@ -16,12 +16,12 @@ import type { StoreErrorCode } from '../store/history';
 import type { ProposalActionError } from '../store/proposalActions';
 import type { ProposalNotice } from '../store/proposals';
 
-/** Nome da imagem; sem nome, o nome do arquivo (container sem arquivo: "Container"). */
+/** Image name; with no name, the file name (container with no file: "Container"). */
 export function imageLabel(image: Pick<ProjectContainer, 'name' | 'file'>): string {
   return image.name ?? image.file ?? t('image.containerUntitled');
 }
 
-/** Nome da marcação; sem nome, o do tipo que ela desenha (uma instância nasce sem nome). */
+/** Marking name; with no name, that of the type it draws (an instance is born unnamed). */
 export function markingLabel(
   project: Project,
   marking: Pick<Marking, 'id' | 'name'>,
@@ -29,7 +29,7 @@ export function markingLabel(
   return marking.name ?? markingTypeName(project, marking.id) ?? t('marking.unnamed');
 }
 
-/** Nome de uma ponta da seta; a marcação que não existe mais vira um texto neutro. */
+/** Name of an arrow endpoint; a marking that no longer exists becomes a neutral text. */
 export function arrowEndLabel(
   project: Project,
   marking: Pick<Marking, 'id' | 'name'> | null | undefined,
@@ -48,7 +48,7 @@ export function arrowEnds(
   return { from, to, text: t('arrow.label', { from, to }) };
 }
 
-/** Rótulo da seta: o nome dela; sem nome, "Origem → Destino". */
+/** Arrow label: its name; with no name, "Origin → Target". */
 export function arrowText(
   project: Project,
   arrow: Pick<Arrow, 'name' | 'from' | 'to'>,
@@ -57,8 +57,8 @@ export function arrowText(
 }
 
 /**
- * Texto curto da seta sob a marcação de origem (Árvore e Lista): o nome dela; sem nome,
- * "→ Destino".
+ * Short text of the arrow under the origin marking (Tree and List): its name; with no name,
+ * "→ Target".
  */
 export function arrowShort(
   project: Project,
@@ -69,7 +69,7 @@ export function arrowShort(
   return t('arrow.label', { from: '', to }).trim();
 }
 
-/** Caminho completo da marcação, da raiz até ela (ex.: "Porta › Maçaneta"). */
+/** Full path of the marking, from the root to it (e.g. "Door › Handle"). */
 export function markingPath(project: Project, marking: Marking): string {
   return [...ancestorsOf(project, marking.id).reverse(), marking]
     .map((m) => markingLabel(project, m))
@@ -101,7 +101,7 @@ const LIBRARY_ERRORS: Partial<Record<StoreErrorCode, TranslationKey>> = {
   reviewing: 'review.readOnly',
 };
 
-/** Erro de "Adicionar" na Biblioteca. */
+/** Error of "Add" in the Library. */
 export function libraryErrorMessage(code: StoreErrorCode): string {
   return t(LIBRARY_ERRORS[code] ?? 'library.error.generic');
 }
@@ -114,7 +114,7 @@ const CONTAINER_ERRORS: Partial<Record<StoreErrorCode, TranslationKey>> = {
   reviewing: 'review.readOnly',
 };
 
-/** Erro de editar o container sem arquivo (tamanho e cor de fundo). */
+/** Error of editing the container with no file (size and background color). */
 export function containerErrorMessage(code: StoreErrorCode): string {
   return t(CONTAINER_ERRORS[code] ?? 'container.error.generic', {
     max: MAX_CONTAINER_SIZE,
@@ -128,12 +128,15 @@ const PERSPECTIVE_ERRORS: Partial<Record<StoreErrorCode, TranslationKey>> = {
   reviewing: 'review.readOnly',
 };
 
-/** Erro de criar, renomear ou mexer numa perspectiva. */
+/** Error of creating, renaming or changing a perspective. */
 export function perspectiveErrorMessage(code: StoreErrorCode): string {
   return t(PERSPECTIVE_ERRORS[code] ?? 'perspective.error.generic');
 }
 
-/** `min` é o mínimo efetivo da marcação (8 px na comum; 1 px ou o `minSize` na que desenha componente). */
+/**
+ * `min` is the marking's effective minimum (8 px for a regular one; 1 px or the `minSize` for one
+ * that draws a component).
+ */
 export function markingErrorMessage(
   code: StoreErrorCode,
   min: number = MIN_MARKING_SIZE,
@@ -141,7 +144,7 @@ export function markingErrorMessage(
   return t(MARKING_ERRORS[code] ?? 'marking.error.generic', { min });
 }
 
-/** Nome da anotação; sem nome, o primeiro par como `chave: valor`. */
+/** Annotation name; with no name, the first pair as `key: value`. */
 export function annotationLabel(
   annotation: Pick<Annotation, 'name' | 'entries'>,
 ): string {
@@ -182,12 +185,15 @@ const PROPOSAL_ERRORS: Record<ProposalActionError, TranslationKey> = {
   revised: 'proposal.error.revised',
 };
 
-/** Mensagem de uma ação recusada na revisão (`path`: o arquivo ou a pasta de `image-missing`, `image-exists`, `package-missing` e `package-invalid`). */
+/**
+ * Message of an action refused in the review (`path`: the file or folder of `image-missing`,
+ * `image-exists`, `package-missing` and `package-invalid`).
+ */
 export function proposalErrorMessage(code: ProposalActionError, path = ''): string {
   return t(PROPOSAL_ERRORS[code], { path });
 }
 
-/** Aviso de uma proposta que chegou, mudou ou sumiu por fora da app. */
+/** Notice of a proposal that arrived, changed or vanished from outside the app. */
 export function proposalNoticeMessage(notice: ProposalNotice): string {
   return t(`proposal.notice.${notice.kind}`, { title: notice.title });
 }

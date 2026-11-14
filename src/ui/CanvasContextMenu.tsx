@@ -27,8 +27,8 @@ import {
 } from './PerspectiveMenuItems';
 
 /**
- * ↓/↑ movem o foco entre os itens habilitados do menu (ou do submenu, se o foco está nele), em
- * círculo. → e ← do submenu ficam com `PerspectiveMenuItems`.
+  * ↓/↑ move focus among the enabled items of the menu (or of the submenu, if focus is in it), in a
+  * loop. → and ← of the submenu belong to `PerspectiveMenuItems`.
  */
 function moveFocus(e: KeyboardEvent) {
   if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
@@ -45,7 +45,7 @@ function moveFocus(e: KeyboardEvent) {
   items[(at + step + items.length) % items.length]?.focus();
 }
 
-/** Folga mínima entre o menu e a borda da janela do navegador. */
+/** Minimum gap between the menu and the browser window's edge. */
 const EDGE = 8;
 
 const ARROW_STYLE_LABELS: Readonly<
@@ -60,9 +60,9 @@ const ARROW_STYLE_LABELS: Readonly<
 };
 
 /**
- * Itens do menu de uma seta (ME4): o estilo do traço (Reta, Curva, Canto; o atual marcado) e
- * Excluir. Cada escolha é uma entrada do histórico. Trancada (ou o projeto somente leitura), os
- * itens ficam desabilitados.
+  * Items of an arrow's menu (ME4): the stroke style (Straight, Curve, Elbow; the current one checked) and
+  * Delete. Each choice is a history entry. When locked (or the project read-only), the
+  * items are disabled.
  */
 function ArrowMenuItems({
   arrowId,
@@ -110,8 +110,8 @@ function ArrowMenuItems({
 }
 
 /**
- * Comentar (item sob o cursor) e Comentar aqui (lugar vazio de um container ou do canvas), decisão
- * 25: abrem o rascunho da conversa; nada é gravado antes do Enviar. Somente leitura: desabilitados.
+  * Comment (item under the cursor) and Comment here (empty place of a container or the canvas), decision
+  * 25: they open the thread's draft; nothing is saved before Send. Read-only: disabled.
  */
 function CommentMenuItems({
   comment,
@@ -136,7 +136,7 @@ function CommentMenuItems({
         anchor === null ? null : (
           <PrincipalOnlyItem
             key={label}
-            // O rascunho de um ponto do canvas aparece fora da Principal, mas o pino final não.
+            // The draft of a canvas point shows outside Main, but the final pin does not.
             blocked={
               anchor.kind === 'point' &&
               anchor.containerId === null &&
@@ -157,25 +157,25 @@ function CommentMenuItems({
 }
 
 /**
- * Menu de contexto do canvas (botão direito do mouse): copiar a referência e o recorte, Envolver
- * (Ctrl/Cmd+G) do item sob o cursor, que o clique direito seleciona; numa seta, o estilo e Excluir. Aberto por
- * `ui.canvasMenu`; fecha com Esc, clique fora, rolagem ou ao escolher um item.
+  * Canvas context menu (right mouse button): copy the reference and the crop, Wrap
+  * (Ctrl/Cmd+G) the item under the cursor, which the right click selects; on an arrow, the style and Delete. Opened by
+  * `ui.canvasMenu`; closes with Esc, a click outside, scrolling or on choosing an item.
  */
 export function CanvasContextMenu() {
   const editor = useEditor();
   const { ui } = editor;
   const menu = ui.canvasMenu.value;
   const panel = useRef<HTMLDivElement>(null);
-  // Quem tinha o foco antes de o menu abrir (não há gatilho: abre pelo botão direito) e o
-  // painel aberto: ao fechar (Esc, escolha, clique fora), o foco que estava no menu volta
-  // para lá em vez de cair no `body` (etapa 8, F6).
+  // Who had focus before the menu opened (there is no trigger: it opens by right click) and the
+  // open panel: on closing (Esc, choice, click outside), the focus that was in the menu returns
+  // there instead of falling on `body` (stage 8, F6).
   const origin = useRef<FocusOrigin | null>(null);
   const shown = useRef<HTMLElement | null>(null);
   const close = () => {
     ui.canvasMenu.value = null;
   };
 
-  // Ancora no cursor, sem sair da janela.
+  // Anchors at the cursor, without leaving the window.
   useLayoutEffect(() => {
     const el = panel.current;
     if (!menu || !el) {
@@ -195,7 +195,7 @@ export function CanvasContextMenu() {
     el.querySelector<HTMLElement>('button')?.focus();
   }, [menu]);
 
-  // Em layout effect: os listeners entram junto com o menu, sem brecha para um clique fora.
+  // In a layout effect: the listeners enter together with the menu, with no gap for a click outside.
   useLayoutEffect(() => {
     if (!menu) return;
     const onDown = (e: PointerEvent) => {
@@ -209,7 +209,7 @@ export function CanvasContextMenu() {
     };
     document.addEventListener('pointerdown', onDown);
     document.addEventListener('keydown', onKey, true);
-    // A rolagem que a própria abertura provoca não conta (openScrollGuard).
+    // The scrolling that the opening itself causes does not count (openScrollGuard).
     const scrollCloses = createOpenScrollGuard(() => panel.current);
     const onScroll = (e: Event) => {
       if (scrollCloses(e)) close();
@@ -224,7 +224,7 @@ export function CanvasContextMenu() {
       globalThis.removeEventListener('resize', close);
       globalThis.removeEventListener('blur', close);
     };
-    // `close` só escreve num signal estável.
+    // `close` only writes to a stable signal.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [menu]);
 
@@ -240,10 +240,10 @@ export function CanvasContextMenu() {
       ? target.id
       : null;
   const selectable = target?.kind === 'm';
-  // Marcação e imagem (container) sempre têm o Envolver, com ou sem pasta (`WrapMenuItem` some
-  // sozinho quando ele não existe: somente leitura, revisão).
+  // Marking and image (container) always have Wrap, with or without a folder (`WrapMenuItem` vanishes
+  // by itself when it does not exist: read-only, review).
   const wrappable = copyTarget !== null && wrapAvailable(editor);
-  // Os itens do alvo (a seleção, se o item sob o cursor está nela): o Enviar usa a raiz de cada um.
+  // The target's items (the selection, if the item under the cursor is in it): Send uses each one's root.
   const picked = peekSelectedItems(ui);
   const perspectiveIds: readonly string[] =
     copyTarget === null
@@ -256,7 +256,7 @@ export function CanvasContextMenu() {
         : [copyTarget.id];
   const openId = editor.session.perspective.id.value;
   const real = editor.store.committed.value;
-  // Excluir de uma raiz só vale na Principal: fora dela aparece desabilitado, com a dica.
+  // Delete of a root only applies in Main: outside it, it shows disabled, with the hint.
   const deleteBlocked =
     real !== null &&
     perspectiveIds.length > 0 &&
@@ -267,7 +267,7 @@ export function CanvasContextMenu() {
   if (
     !menu ||
     !(
-      // Citar na conversa vale para todo item, com ou sem pasta.
+      // Cite in the thread applies to every item, with or without a folder.
       copyTarget !== null ||
       copyable ||
       arrangeId !== null ||

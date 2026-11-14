@@ -27,9 +27,9 @@ import { markingErrorMessage, markingLabel } from './labels';
 import { usePrincipalOnly } from './PerspectivesSection';
 import { Property, PropertyGrid } from './PropertyGrid';
 
-// Seção Âncora dos Detalhes (etapa "direção e âncora", R4, decisão 13): a marcação encostada em
-// outra do mesmo espaço (Âncora, Lado, Alinhamento, Deslocamento) e o botão "Encostar na âncora".
-// Escolher a âncora só grava a relação; quem move é o Encostar (e o Arrumar).
+// Anchor section of the Details (stage "direction and anchor", R4, decision 13): the marking snapped to
+// another in the same space (Anchor, Side, Alignment, Offset) and the "Snap to anchor" button.
+// Picking the anchor only saves the relation; what moves it is Snap (and Tidy).
 
 const SIDE_LABELS: Readonly<Record<AnchorSide, TranslationKey>> = {
   top: 'anchor.sideTop',
@@ -44,7 +44,7 @@ const ALIGN_LABELS: Readonly<Record<AnchorAlign, TranslationKey>> = {
   end: 'anchor.alignEnd',
 };
 
-/** "Nome (Tipo)" quando a marcação tem os dois; senão o rótulo de sempre. */
+/** "Name (Type)" when the marking has both; otherwise the usual label. */
 function optionLabel(project: Project, marking: Marking): string {
   const type = markingTypeName(project, marking.id);
   return marking.name !== null && type !== null
@@ -52,16 +52,16 @@ function optionLabel(project: Project, marking: Marking): string {
     : markingLabel(project, marking);
 }
 
-/** O que os campos da seção compartilham: a âncora, o que ela vale de fato e como gravar. */
+/** What the section's fields share: the anchor, what it actually is and how to save. */
 interface AnchorForm {
   readonly anchor: MarkingAnchor | null;
-  /** Lado, alinhamento e deslocamento efetivos (o padrão do componente onde a âncora não diz). */
+  /** Effective side, alignment and offset (the component's default where the anchor does not say). */
   readonly resolved: ResolvedMarkingAnchor | null;
   readonly error: string | null;
   readonly setError: (message: string | null) => void;
-  /** Mostra o erro de uma action recusada; `true` se foi aceita. */
+  /** Shows the error of a refused action; `true` if it was accepted. */
   readonly report: (result: ActionResult) => boolean;
-  /** Grava a âncora com `patch` por cima da atual (só vale com âncora). */
+  /** Saves the anchor with `patch` on top of the current one (only valid with an anchor). */
   readonly write: (patch: Partial<MarkingAnchor>) => boolean;
   readonly setTarget: (to: string) => void;
 }
@@ -106,14 +106,14 @@ interface FieldsProps {
   readonly disabled: boolean;
 }
 
-/** Quantas candidatas a `<option>` a lista mostra (o espaço pode ter milhares de marcações). */
+/** How many `<option>` candidates the list shows (the space may have thousands of markings). */
 export const ANCHOR_CANDIDATE_LIMIT = 200;
 
 /**
- * As marcações do mesmo espaço a que esta pode se ancorar (`anchorCandidates`, uma varredura),
- * até `ANCHOR_CANDIDATE_LIMIT`, mais a atual, se for outra; `more` diz que a lista foi cortada.
- * Só o `Select` as lê: a marcação que não mostra a seção não paga a varredura do espaço. A conta
- * é memoizada pelo projeto (a lista do espaço é a mesma enquanto ele não muda).
+ * The markings of the same space this one can anchor to (`anchorCandidates`, one scan),
+ * up to `ANCHOR_CANDIDATE_LIMIT`, plus the current one, if it is another; `more` says the list was cut.
+ * Only the `Select` reads them: a marking that does not show the section does not pay for the space scan. The
+ * computation is memoized by the project (the space's list is the same while it does not change).
  */
 function useAnchorCandidates(
   project: Project,
@@ -196,7 +196,7 @@ function SideAndAlignFields({ form, disabled }: FieldsProps) {
   );
 }
 
-/** Um dos dois números do deslocamento (pixels do container): grava ao confirmar. */
+/** One of the two offset numbers (container pixels): saves on confirm. */
 function OffsetNumber({
   form,
   disabled,
@@ -261,7 +261,7 @@ function OffsetFields({ form, disabled }: FieldsProps) {
   );
 }
 
-/** O botão: com âncora, sem trava de geometria e na Principal (como o Arrumar). */
+/** The button: with an anchor, without a geometry lock and on the Main one (like Tidy). */
 function SnapButton({
   marking,
   project,
@@ -295,8 +295,8 @@ interface MarkingAnchorSectionProps {
 }
 
 /**
- * A seção vale para a marcação que desenha um componente (a âncora serve ao `$anchor.*` e ao
- * encosto do tipo) e para a que já traz uma âncora (vinda do MCP), para dar a ver e tirar.
+ * The section applies to a marking that draws a component (the anchor serves `$anchor.*` and the
+ * type's snapping) and to one that already carries an anchor (from the MCP), to show and remove it.
  */
 export function MarkingAnchorSection({
   project,

@@ -1,4 +1,4 @@
-// Textos das anotações tipadas (títulos, valores, pendências), sempre via `t()`.
+// Texts of the typed annotations (titles, values, pending items), always via `t()`.
 import { t, type TranslationKey } from '../i18n';
 import {
   annotationShortLabel,
@@ -24,15 +24,15 @@ export function labelTexts(): LabelTexts {
   return { untitled: t('annotation.untitled'), broken: t('ref.broken') };
 }
 
-/** Estado do botão da referência para o nome acessível. */
+/** State of the reference button for the accessible name. */
 export type RefButtonState =
   | { readonly kind: 'empty' }
   | { readonly kind: 'broken' }
   | { readonly kind: 'value'; readonly value: string; readonly layer?: string };
 
 /**
- * Nome acessível do botão da referência: começa pelo texto que ele mostra (WCAG 2.5.3) e
- * termina no campo ("User.name: Destino", "Escolher: Destino", "Referência quebrada: Destino").
+ * Accessible name of the reference button: starts with the text it shows (WCAG 2.5.3) and
+ * ends with the field ("User.name: Target", "Choose: Target", "Broken reference: Target").
  */
 export function refButtonName(field: string, state: RefButtonState): string {
   if (state.kind === 'empty') return t('ref.fieldEmpty', { field });
@@ -51,14 +51,14 @@ export function displayTexts(): DisplayTexts {
 }
 
 /**
- * Nome exibido da anotação: na tipada, "Button · Comprar" (ou só "Button"); na
- * livre, o nome ou o primeiro par.
+ * Displayed name of the annotation: for a typed one, "Button · Buy" (or just "Button"); for a
+ * free one, the name or the first pair.
  */
 export function annotationDisplayName(p: Project, a: Annotation): string {
   return a.type ? (annotationTitle(p, a) ?? '') : annotationLabel(a);
 }
 
-/** Rótulo curto de quem faz uma referência, ex.: "Input input_nome". */
+/** Short label of whoever makes a reference, e.g. "Input input_name". */
 export function annotationSourceLabel(p: Project, a: Annotation): string {
   return annotationShortLabel(p, a, labelTexts());
 }
@@ -71,7 +71,7 @@ export function displayLines(
   return typedDisplayLines(p, a, { tables, texts: displayTexts() });
 }
 
-/** Pendências do projeto, calculadas uma vez por versão do projeto. */
+/** Pending items of the project, computed once per project version. */
 export function projectIssues(
   p: Project,
 ): ReadonlyMap<string, readonly AnnotationIssue[]> {
@@ -82,7 +82,7 @@ export function issuesOf(p: Project, annotationId: string): readonly AnnotationI
   return projectIssues(p).get(annotationId) ?? [];
 }
 
-/** Nomes dos tipos que podem ser donos, ex.: "Button ou Image". */
+/** Names of the types that can be owners, e.g. "Button or Image". */
 export function ownerTypeNames(p: Project, a: Pick<Annotation, 'type'>): string {
   if (!a.type) return '';
   return ownerTypesOf(p, a.type)
@@ -90,7 +90,7 @@ export function ownerTypeNames(p: Project, a: Pick<Annotation, 'type'>): string 
     .join(t('typed.ownersJoin'));
 }
 
-/** Só o motivo da pendência (embaixo do próprio campo, o nome dele já está ao lado). */
+/** Only the reason for the pending item (below the field itself, whose name is already beside it). */
 export function issueReason(p: Project, a: Annotation, issue: AnnotationIssue): string {
   const owner =
     a.parentAnnotationId === null
@@ -104,7 +104,7 @@ export function issueReason(p: Project, a: Annotation, issue: AnnotationIssue): 
   });
 }
 
-/** Motivo da pendência, com o campo (e a linha/coluna da tabela) envolvido. */
+/** Reason for the pending item, with the field (and the table row/column) involved. */
 export function issueMessage(p: Project, a: Annotation, issue: AnnotationIssue): string {
   const reason = issueReason(p, a, issue);
   if (!issue.key) return reason;
@@ -128,8 +128,8 @@ export function issueMessage(p: Project, a: Annotation, issue: AnnotationIssue):
 }
 
 /**
- * Resumo de uma linha da anotação (cabeçalho recolhido): "Revisão — status: pendente".
- * Na livre sem nome, o primeiro par já é o nome.
+ * One-line summary of the annotation (collapsed header): "Review — status: pending".
+ * For a free one with no name, the first pair is already the name.
  */
 export function annotationSummary(p: Project, a: Annotation): string {
   const name = annotationDisplayName(p, a);
@@ -148,8 +148,8 @@ export function annotationSummary(p: Project, a: Annotation): string {
 }
 
 /**
- * Alvo do link de uma pendência (`data-focus` do campo em Detalhes): o dono, o papel, a célula
- * da tabela ou o campo; `null` quando a pendência não aponta um campo.
+ * Link target of a pending item (`data-focus` of the field in the Details): the owner, the role, the table
+ * cell or the field; `null` when the pending item does not point to a field.
  */
 export function issueFocusKey(issue: AnnotationIssue): string | null {
   if (issue.code === 'missing-owner' || issue.code === 'owner-not-allowed')

@@ -21,11 +21,11 @@ import { Button, IconButton } from './controls';
 import { keepFocusAfterAction } from './focus';
 import { Popover } from './Popover';
 
-// "Copiar referência" e "Copiar recorte" na interface: botões em Detalhes e no cartão da
-// anotação (`CopyButtons`), menu ⋯ da linha da Árvore (`ItemMenu`) e o menu do canvas
-// (`CanvasContextMenu`). Só aparecem em projetos abertos de uma pasta, o que o MCP alcança.
+// "Copy reference" and "Copy crop" in the interface: buttons in Details and in the annotation
+// card (`CopyButtons`), the ⋯ menu of the Tree row (`ItemMenu`) and the canvas menu
+// (`CanvasContextMenu`). They only appear in projects opened from a folder, which the MCP reaches.
 
-/** Botões ao lado do ID: copiar a referência e, em marcações, o recorte. */
+/** Buttons beside the ID: copy the reference and, on markings, the crop. */
 export function CopyButtons({ target }: { readonly target: ItemCopyTarget }) {
   const editor = useEditor();
   if (!canCopyItems(editor)) return null;
@@ -50,7 +50,7 @@ export function CopyButtons({ target }: { readonly target: ItemCopyTarget }) {
   );
 }
 
-/** "Selecionar com o conteúdo": a marcação e tudo o que ela cobre. Só para marcações. */
+/** "Select with contents": the marking and everything it covers. Only for markings. */
 export function SelectContentsItem({
   markingId,
   close,
@@ -76,9 +76,9 @@ export function SelectContentsItem({
 }
 
 /**
- * "Envolver": a seleção atual ou, se a linha/alvo do menu está fora dela, só esse item
- * (`currentWrapItems`). Desabilitado, com a dica, quando nada entra (nota, seta); some no
- * somente leitura e na revisão. Mostra o atalho Ctrl/Cmd+G.
+ * "Wrap": the current selection or, if the menu's row/target is outside it, just that item
+ * (`currentWrapItems`). Disabled, with the hint, when nothing fits (note, arrow); hidden in
+ * read-only and in review. Shows the Ctrl/Cmd+G shortcut.
  */
 export function WrapMenuItem({
   target,
@@ -110,7 +110,7 @@ export function WrapMenuItem({
   );
 }
 
-/** A âncora da conversa de um item (marcação, container ou anotação). */
+/** The thread anchor of an item (marking, container or annotation). */
 function anchorOf(target: ItemCopyTarget): ThreadAnchor {
   const kind =
     target.kind === 'm' ? 'marking' : target.kind === 'i' ? 'container' : 'annotation';
@@ -118,8 +118,8 @@ function anchorOf(target: ItemCopyTarget): ThreadAnchor {
 }
 
 /**
- * Itens do menu (botões) de um item da imagem, da marcação ou da anotação: copiar, Citar na
- * conversa, Comentar, selecionar e Envolver. `close` fecha o menu.
+ * Menu items (buttons) of an image, marking or annotation item: copy, Cite in the
+ * thread, Comment, select and Wrap. `close` closes the menu.
  */
 export function CopyMenuItems({
   target,
@@ -129,9 +129,9 @@ export function CopyMenuItems({
 }: {
   readonly target: ItemCopyTarget;
   readonly close: () => void;
-  /** Falso quando não há o que copiar (projeto fora de uma pasta): só as outras entradas. */
+  /** False when there is nothing to copy (project outside a folder): only the other entries. */
   readonly copyable?: boolean;
-  /** Falso quando o menu já tem o próprio Comentar (o do canvas, que sabe o ponto do clique). */
+  /** False when the menu already has its own Comment (the canvas's, which knows the click point). */
   readonly commentable?: boolean;
 }) {
   const editor = useEditor();
@@ -171,7 +171,7 @@ export function CopyMenuItems({
   );
 }
 
-/** Menu ⋯ de uma linha da Árvore (popover fixo: a rolagem da janela não o corta). */
+/** ⋯ menu of a Tree row (fixed popover: the window's scroll does not clip it). */
 export function ItemMenu({
   target,
   name,
@@ -202,7 +202,7 @@ export function ItemMenu({
         <CopyMenuItems
           target={target}
           close={() => {
-            // O fechamento devolve o foco ao ⋯; a ação que vem depois pode tirar a linha do lugar.
+            // Closing returns focus to the ⋯; the action that follows may move the row.
             close();
             keepFocusAfterAction(null);
           }}

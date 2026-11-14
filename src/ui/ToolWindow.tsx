@@ -19,18 +19,18 @@ import { modalOpen } from './focus';
 import { closeToolWindow, spaceFor } from './toolWindowLayout';
 import { toolWindowMeta } from './toolWindowMeta';
 
-// Janela de ferramenta encaixada (B1 e B2): cabeçalho de 32px com título (ou, na
-// inferior, as abas) e ações,
-// corpo com rolagem e divisória de arraste de 8px. O tamanho fica no estado de UI
-// (`store/toolWindows`), não no projeto. A largura da esquerda é da coluna que reúne
-// Árvore e Camadas (`EditorWindows`); a janela Camadas, quando está embaixo da Árvore,
-// ganha também uma divisória horizontal e a própria altura.
+// Docked tool window (B1 and B2): 32px header with a title (or, in the
+// bottom one, the tabs) and actions,
+// scrolling body and an 8px drag divider. The size lives in the UI state
+// (`store/toolWindows`), not in the project. The left width belongs to the column that holds
+// Tree and Layers (`EditorWindows`); the Layers window, when below the Tree,
+// also gets a horizontal divider and its own height.
 
 interface ToolWindowProps {
   readonly id: ToolWindowId;
-  /** Ações do cabeçalho, antes do botão de fechar. */
+  /** Header actions, before the close button. */
   readonly actions?: ComponentChildren;
-  /** Janela empilhada embaixo de outra da mesma coluna: ganha altura e divisória. */
+  /** Window stacked below another in the same column: gets a height and a divider. */
   readonly stacked?: boolean;
   readonly children: ComponentChildren;
 }
@@ -41,13 +41,13 @@ function windowStyle(side: ToolWindowSide, size: number, stacked: boolean) {
   return stacked ? { height: `${layersWindowHeight.value}px` } : undefined;
 }
 
-/** Janelas que o Esc fecha quando o foco está dentro delas (etapa #1273, decisão 2). */
+/** Windows that Esc closes when the focus is inside them (stage #1273, decision 2). */
 const ESC_CLOSES: readonly ToolWindowId[] = ['details', 'comments'];
 
 /**
- * Esc sem modificadores, não consumido por um menu, popover ou dica, sem modal aberto e fora de
- * um campo de texto (o Esc do campo é dele): fecha a janela pelo mesmo caminho do X e não deixa
- * o Esc chegar aos atalhos do editor (não limpa a seleção).
+ * Esc without modifiers, not consumed by a menu, popover or tooltip, with no modal open and outside
+ * a text field (the field's Esc is its own): closes the window the same way as the X and does not let
+ * Esc reach the editor shortcuts (it does not clear the selection).
  */
 function closeOnEscape(id: ToolWindowId, e: KeyboardEvent): void {
   if (!ESC_CLOSES.includes(id) || e.key !== 'Escape') return;
@@ -102,14 +102,14 @@ export function ToolWindow({ id, actions, stacked = false, children }: ToolWindo
   );
 }
 
-/** Pixels que a janela cresce quando o ponteiro anda `delta` no eixo do lado. */
+/** Pixels the window grows when the pointer moves `delta` along the axis of its side. */
 function growth(side: ToolWindowSide, delta: number): number {
   return side === 'left' ? delta : -delta;
 }
 
 /**
- * Arrasto de uma divisória com captura de ponteiro (sair da divisória não a solta): só o botão
- * principal; `onMove` recebe o ponteiro a cada movimento até soltar ou cancelar.
+ * Drag of a divider with pointer capture (leaving the divider does not release it): primary
+ * button only; `onMove` receives the pointer on every move until release or cancel.
  */
 function startDrag(e: PointerEvent, onMove: (move: PointerEvent) => void): void {
   if (e.button !== 0) return;
@@ -118,7 +118,7 @@ function startDrag(e: PointerEvent, onMove: (move: PointerEvent) => void): void 
   try {
     handle.setPointerCapture(e.pointerId);
   } catch {
-    // Sem captura: o arrasto termina se o ponteiro sair da divisória.
+    // Without capture: the drag ends if the pointer leaves the divider.
   }
   const stop = () => {
     handle.removeEventListener('pointermove', onMove);
@@ -131,8 +131,8 @@ function startDrag(e: PointerEvent, onMove: (move: PointerEvent) => void): void 
 }
 
 /**
- * Divisória: arrastar redimensiona, duplo clique volta ao padrão. O arrasto usa
- * captura de ponteiro, então sair da janela não solta a divisória.
+ * Divider: dragging resizes, double click returns to the default. The drag uses
+ * pointer capture, so leaving the window does not release the divider.
  */
 function ToolResizer({
   side,
@@ -163,14 +163,14 @@ function ToolResizer({
   );
 }
 
-/** Altura da coluna da esquerda, de onde sai o limite da divisória entre as janelas. */
+/** Height of the left column, from which the divider limit between the windows comes. */
 function columnHeight(el: Element): number {
   return el.closest('[data-tool-column]')?.getBoundingClientRect().height || 0;
 }
 
 /**
- * Divisória horizontal entre a Árvore e as Camadas: arrastar para cima aumenta as
- * Camadas, duplo clique volta à altura padrão. Mesmo arrasto da divisória lateral.
+ * Horizontal divider between the Tree and the Layers: dragging up grows the
+ * Layers, double click returns to the default height. Same drag as the side divider.
  */
 function ToolSplitter({ name }: { readonly name: string }) {
   const onPointerDown = (e: PointerEvent) => {

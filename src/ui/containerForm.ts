@@ -2,11 +2,11 @@ import { MAX_CONTAINER_SIZE } from '../model';
 import type { Project, Spec } from '../model';
 import { resolveSelection, type Selection } from '../store/ui';
 
-// Regras do diálogo "Novo container" (e dos campos de Detalhes do container): predefinições
-// de tamanho (as das especializações, Personalizado e Tamanho da seleção) e a leitura do que a pessoa digitou. O modelo valida de novo (`addBackgroundContainer`).
+// Rules of the "New container" dialog (and of the container Details fields): size presets
+// (those of the specializations, Custom and Selection size) and reading what the person typed. The model validates again (`addBackgroundContainer`).
 
 export interface ContainerPreset {
-  /** Único no diálogo: `<specId>:<id do preset>`. */
+  /** Unique in the dialog: `<specId>:<preset id>`. */
   readonly id: string;
   readonly name: string;
   readonly width: number;
@@ -14,24 +14,24 @@ export interface ContainerPreset {
   readonly background: string;
 }
 
-/** Presets de uma especialização aplicada, mostrados sob o nome dela. */
+/** Presets of an applied specialization, shown under its name. */
 export interface ContainerPresetGroup {
   readonly specId: string;
   readonly specName: string;
   readonly presets: readonly ContainerPreset[];
 }
 
-/** Id do "Personalizado" no seletor de predefinições. */
+/** Id of "Custom" in the preset selector. */
 export const CUSTOM_PRESET = 'custom';
-/** Id do "Tamanho da seleção": o retângulo da marcação selecionada. */
+/** Id of "Selection size": the rectangle of the selected marking. */
 export const SELECTION_PRESET = 'selection';
 
-/** Cor de fundo inicial de um container. */
+/** Initial background color of a container. */
 export const DEFAULT_CONTAINER_BACKGROUND = '#FFFFFF';
 
 const COLOR = /^#[0-9A-Fa-f]{6}$/;
 
-/** Presets das especializações aplicadas (as sem `containers` ou sem cópia legível ficam de fora). */
+/** Presets of the applied specializations (those without `containers` or without a readable copy are left out). */
 export function presetGroups(
   specs: readonly { readonly id: string; readonly spec: Spec | null }[],
 ): ContainerPresetGroup[] {
@@ -53,7 +53,7 @@ export function presetGroups(
   return groups;
 }
 
-/** Tamanho do retângulo da marcação selecionada, ou `null` sem marcação selecionada. */
+/** Size of the selected marking's rectangle, or `null` with no marking selected. */
 export function selectionSize(
   project: Project | null,
   selection: Selection,
@@ -63,7 +63,7 @@ export function selectionSize(
   return { width: resolved.marking.rect.width, height: resolved.marking.rect.height };
 }
 
-/** Lado do container: inteiro de 1 a `MAX_CONTAINER_SIZE`, ou `null`. */
+/** Container side: integer from 1 to `MAX_CONTAINER_SIZE`, or `null`. */
 export function parseContainerSide(text: string): number | null {
   const trimmed = text.trim();
   if (!/^\d+$/.test(trimmed)) return null;
@@ -71,7 +71,7 @@ export function parseContainerSide(text: string): number | null {
   return value >= 1 && value <= MAX_CONTAINER_SIZE ? value : null;
 }
 
-/** Cor `#RRGGBB` (maiúsculas), ou `null`. */
+/** `#RRGGBB` color (uppercase), or `null`. */
 export function parseContainerColor(text: string): string | null {
   const trimmed = text.trim();
   return COLOR.test(trimmed) ? trimmed.toUpperCase() : null;
@@ -96,7 +96,7 @@ export type ContainerResult =
     }
   | { readonly ok: false; readonly error: 'name' | 'size' | 'color' };
 
-/** Lê o formulário: nome obrigatório, lados inteiros de 1 a `MAX_CONTAINER_SIZE`, cor `#RRGGBB`. */
+/** Reads the form: required name, integer sides from 1 to `MAX_CONTAINER_SIZE`, `#RRGGBB` color. */
 export function readContainerForm(form: ContainerForm): ContainerResult {
   const name = form.name.trim();
   if (name === '') return { ok: false, error: 'name' };

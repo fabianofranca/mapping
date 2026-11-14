@@ -34,8 +34,8 @@ interface MarkingTreeProps {
 }
 
 /**
- * Rola até a linha selecionada (e, com `focus`, põe o foco nela). Chamado depois de a
- * árvore desenhar de novo, porque abrir os ancestrais troca as linhas.
+ * Scrolls to the selected row (and, with `focus`, puts focus on it). Called after the
+ * tree redraws, because opening the ancestors swaps the rows.
  */
 export function scrollToSelected(root: HTMLElement | null, focus = false): void {
   const row = root?.querySelector<HTMLElement>('[aria-current="true"]');
@@ -44,13 +44,13 @@ export function scrollToSelected(root: HTMLElement | null, focus = false): void 
   if (focus) row.focus();
 }
 
-/** Espera o desenho seguinte (a árvore se atualiza por signal) antes de mexer no DOM. */
+/** Waits for the next paint (the tree updates through a signal) before touching the DOM. */
 export function afterPaint(callback: () => void): void {
   if (typeof requestAnimationFrame === 'function') requestAnimationFrame(callback);
   else setTimeout(callback, 0);
 }
 
-/** Bolinhas das camadas visíveis com anotação na marcação. */
+/** Dots of the visible layers that have an annotation on the marking. */
 export function LayerDots({ dots }: { readonly dots: readonly LayerDot[] }) {
   return (
     <span class="tree-dots" aria-hidden="true">
@@ -67,9 +67,9 @@ export function LayerDots({ dots }: { readonly dots: readonly LayerDot[] }) {
 }
 
 /**
- * Árvore Imagem → marcações aninhadas, com nós que recolhem e as bolinhas das camadas
- * na linha. Escolher um item o seleciona; quando a seleção muda por fora (canvas,
- * lista, breadcrumbs), a árvore abre os ancestrais e rola até a linha.
+ * Image → nested markings tree, with collapsible nodes and the layer dots
+ * on the row. Choosing an item selects it; when the selection changes from outside (canvas,
+ * list, breadcrumbs), the tree opens the ancestors and scrolls to the row.
  */
 export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) {
   const { ui, derived, store, actions } = useEditor();
@@ -82,11 +82,11 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
   const containerLocks = useMemo(() => containerLockStates(project), [project]);
   const isSelected = (kind: SelectionItem['kind'], id: string) =>
     selection?.kind === kind && selection.id === id;
-  // Seleção múltipla: as outras linhas selecionadas (o primário tem o destaque de sempre).
+  // Multiple selection: the other selected rows (the primary keeps the usual highlight).
   const items = selectedItems(ui);
   const isGrouped = (kind: SelectionItem['kind'], id: string) =>
     items.length > 1 && isItemSelected(items, { kind, id });
-  /** Shift, Ctrl (fora do macOS) ou Cmd+clique acrescenta ou tira o item da seleção; o clique simples seleciona. */
+  /** Shift, Ctrl (outside macOS) or Cmd+click adds or removes the item from the selection; a plain click selects. */
   const pick = (e: MouseEvent, item: SelectionItem) => {
     if (isMultiSelectClick(e)) toggleSelectedItem(ui, item);
     else onSelect(item);
@@ -100,11 +100,11 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
     const { project: current, selection: selected } = latest.current;
     if (!selected) return;
     revealInTree(ui, current, selected);
-    // Só quando a seleção muda: recolher um nó depois não puxa a rolagem de volta.
+    // Only when the selection changes: collapsing a node afterwards does not pull the scroll back.
     afterPaint(() => scrollToSelected(list.current));
   }, [selectionKey, ui]);
 
-  /** Cadeado da linha: botão para a trava própria; esmaecido, sem ação, se vem do pai. */
+  /** Row lock: button for its own lock; dimmed, with no action, if it comes from the parent. */
   const lockControl = (
     name: string,
     locked: boolean,
@@ -170,11 +170,11 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
     </div>
   );
 
-  /** Containers membros de uma marcação do canvas (os que têm a marcação como pai). */
+  /** Member containers of a canvas marking (those that have the marking as parent). */
   const membersOfMarking = (m: Marking): readonly ProjectContainer[] =>
     m.floating ? [] : (projectIdx.containersByParent.get(m.id) ?? []);
 
-  /** Marcações da raiz de cada container, agrupadas uma vez por desenho. */
+  /** Markings at the root of each container, grouped once per draw. */
   const rootsByContainer = new Map<string | null, Marking[]>();
   for (const m of index.get(null) ?? []) {
     const siblings = rootsByContainer.get(m.containerId);
@@ -217,7 +217,7 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
     );
   };
 
-  /** A seta sob a marcação de origem: "→ destino" (ou o nome dela), com o cadeado própria. */
+  /** The arrow under the source marking: "→ target" (or its name), with its own lock. */
   const arrowNode = (arrow: Arrow, depth: number) => {
     const current = isSelected('arrow', arrow.id);
     const to = arrowEndLabel(project, projectIdx.markings.get(arrow.to));
@@ -258,7 +258,7 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
     markings.length > 0 && (
       <ul>
         {markings.map((m) => {
-          // Filhas da marcação e, na marcação do canvas, os containers que ela contém.
+          // Children of the marking and, on a canvas marking, the containers it contains.
           const children = index.get(m.id) ?? [];
           const members = membersOfMarking(m);
           const arrows = arrowsOf(project, m.id).outgoing;

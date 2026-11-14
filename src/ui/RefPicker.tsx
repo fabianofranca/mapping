@@ -21,22 +21,22 @@ import { Icon } from './icons';
 import { imageLabel, markingPath } from './labels';
 import { annotationSourceLabel, labelTexts } from './typedText';
 
-// Seletor de referência no estilo "ir para símbolo" (B14): popup de 600px no topo,
-// sem fundo escurecido, com busca, abas por etiqueta aceita
-// (P5) e teclado: ↑↓ navegam, Enter escolhe, Ctrl+Enter escolhe e vai até o alvo,
-// Esc fecha. Ao fechar (Esc, clique fora ou escolha), o foco volta a quem abriu, como no
-// `Dialog`: depois de o seletor sair da tela, porque com ele aberto o resto é inerte.
+// Reference picker in the "go to symbol" style (B14): 600px popup at the top,
+// without a darkened backdrop, with search, tabs by accepted label
+// (P5) and keyboard: ↑↓ navigate, Enter picks, Ctrl+Enter picks and goes to the target,
+// Esc closes. On closing (Esc, click outside or pick), focus returns to whoever opened it, as in
+// `Dialog`: after the picker leaves the screen, because with it open the rest is inert.
 
-/** Campo `ref` da anotação ou coluna `ref` de uma tabela: o seletor lê `key`, `label` e `accepts`. */
+/** `ref` field of the annotation or `ref` column of a table: the picker reads `key`, `label` and `accepts`. */
 export type RefFieldDef = Extract<SpecField, { type: 'ref' }> | SpecRefColumn;
 
-/** A célula que o seletor edita: a tabela do tipo e a linha (o `field` é a coluna). */
+/** The cell the picker edits: the type's table and the row (the `field` is the column). */
 export interface RefCellTarget {
   readonly tableKey: string;
   readonly rowId: string;
 }
 
-/** Aba do filtro: todos, uma etiqueta aceita, um tipo de anotação aceito ou só as tuplas livres. */
+/** Filter tab: all, an accepted label, an accepted annotation type or only the free tuples. */
 type Filter =
   | { readonly kind: 'all' }
   | { readonly kind: 'tag'; readonly tag: string }
@@ -49,7 +49,7 @@ interface TargetGroup {
   readonly items: RefTarget[];
 }
 
-/** Agrupa os alvos por anotação, com o contexto "imagem › marcação". */
+/** Groups the targets by annotation, with the "image › marking" context. */
 function groupTargets(project: Project, targets: readonly RefTarget[]): TargetGroup[] {
   const index = projectIndex(project);
   const groups = new Map<string, TargetGroup>();
@@ -86,14 +86,14 @@ function noTargetsMessage(field: RefFieldDef, typeNames: readonly string[]): str
   return t('ref.noTargetsFree');
 }
 
-/** "aceita: data-field, Modelo e livres". */
+/** "accepts: data-field, Model and free ones". */
 function acceptsText(field: RefFieldDef, typeNames: readonly string[]): string {
   const parts = [...(field.accepts.tags ?? []), ...typeNames];
   if (field.accepts.free) parts.push(t('ref.free'));
   return t('ref.accepts', { what: parts.join(t('ref.acceptsJoin')) });
 }
 
-/** Tipo do alvo quando ele é uma anotação inteira (`{ annotationId }`); `null` nos outros formatos. */
+/** Type of the target when it is a whole annotation (`{ annotationId }`); `null` in the other formats. */
 function wholeAnnotationType(
   project: Project,
   target: RefTarget,
@@ -127,7 +127,7 @@ const filterLabel = (filter: Filter) =>
         ? filter.name
         : filter.tag;
 
-/** Texto da etiqueta do alvo: as etiquetas, o tipo (anotação inteira) ou "livre". */
+/** Target label text: the labels, the type (whole annotation) or "free". */
 function optionTagText(project: Project, target: RefTarget): string {
   const whole = wholeAnnotationType(project, target);
   if (whole) return whole.name;
@@ -135,9 +135,9 @@ function optionTagText(project: Project, target: RefTarget): string {
 }
 
 /**
- * Onde `needle` (já em minúsculas) aparece em `text` ignorando maiúsculas, como índices do
- * texto original. O minúsculo de alguns caracteres tem outro tamanho ("İ" vira dois), então o
- * índice achado no texto minúsculo é levado de volta ao original, caractere a caractere.
+ * Where `needle` (already lowercase) appears in `text` ignoring case, as indices of the
+ * original text. The lowercase of some characters has another length ("İ" becomes two), so the
+ * index found in the lowercase text is mapped back to the original, character by character.
  */
 function findFolded(
   text: string,
@@ -165,7 +165,7 @@ function findFolded(
   };
 }
 
-/** Texto com o trecho buscado em `<mark>`. */
+/** Text with the searched part in `<mark>`. */
 function Highlight({ text, needle }: { readonly text: string; readonly needle: string }) {
   const match = findFolded(text, needle);
   if (!match) return <>{text}</>;
@@ -181,20 +181,20 @@ function Highlight({ text, needle }: { readonly text: string; readonly needle: s
 interface RefPickerProps {
   readonly project: Project;
   readonly annotation: Annotation;
-  /** O campo `ref`; com `cell`, a coluna `ref` da tabela. */
+  /** The `ref` field; with `cell`, the table's `ref` column. */
   readonly field: RefFieldDef;
-  /** Célula de uma coluna `ref` (variante da tabela): os alvos e o valor atual vêm da linha. */
+  /** Cell of a `ref` column (table variant): the targets and the current value come from the row. */
   readonly cell?: RefCellTarget;
   /**
-   * Versão compacta, para a célula de uma tabela: popup mais estreito e sem a barra de
-   * atalhos (o teclado é o mesmo).
+   * Compact version, for a table cell: narrower popup and without the shortcut
+   * bar (the keyboard is the same).
    */
   readonly compact?: boolean;
-  /** Esc, clique fora ou escolha feita. */
+  /** Esc, click outside or pick made. */
   readonly onClose: () => void;
-  /** Alvo escolhido; `goTo` = Ctrl+Enter (ou Ctrl+clique): também vai até ele. */
+  /** Chosen target; `goTo` = Ctrl+Enter (or Ctrl+click): also goes to it. */
   readonly onPick: (target: RefTarget, goTo: boolean) => void;
-  /** Alvo do foco ao fechar se quem abriu não estiver mais no DOM (o campo da referência). */
+  /** Focus target on close if whoever opened is no longer in the DOM (the reference field). */
   readonly returnFocus?: FocusReturn;
 }
 
@@ -226,7 +226,7 @@ export function RefPicker({
   const isCurrent = (target: RefTarget) =>
     current !== null && JSON.stringify(current) === JSON.stringify(target.ref);
   const [active, setActive] = useState(() => Math.max(0, targets.findIndex(isCurrent)));
-  // Quem tinha o foco ao abrir (o campo da referência), guardado antes de o seletor pegá-lo.
+  // Who had focus on open (the reference field), stored before the picker takes it.
   const origin = useFocusOrigin();
   useModal(dialog, origin, returnFocus, () => input.current?.focus());
 
@@ -282,7 +282,7 @@ export function RefPicker({
         ?.scrollIntoView({ block: 'nearest' });
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      // Enter (com ou sem Alt) só escolhe o alvo: não sobe ao campo da tabela, que acrescentaria uma linha.
+      // Enter (with or without Alt) only picks the target: it does not bubble to the table field, which would add a row.
       e.stopPropagation();
       choose(options[activeIndex], e.ctrlKey || e.metaKey);
     }
@@ -299,7 +299,7 @@ export function RefPicker({
         onClose();
       }}
       onClick={(e) => {
-        // Clique fora do conteúdo (no fundo transparente) fecha.
+        // Click outside the content (on the transparent backdrop) closes.
         if (e.target === dialog.current) onClose();
       }}
     >

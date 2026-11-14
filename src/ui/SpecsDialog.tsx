@@ -45,7 +45,7 @@ interface SpecsDialogProps {
   readonly onClose: () => void;
 }
 
-/** Resultado da última operação: sucesso (verde) ou erro (vermelho). */
+/** Result of the last operation: success (green) or error (red). */
 interface Feedback {
   readonly tone: 'success' | 'error';
   readonly text: string;
@@ -61,7 +61,7 @@ type Step =
   | { readonly kind: 'remove'; readonly entry: ProjectSpecialization }
   | {
       readonly kind: 'package';
-      /** `null`: o pacote não tem especialização legível (só erros). */
+      /** `null`: the package has no readable specialization (errors only). */
       readonly spec: Spec | null;
       readonly decision: 'apply' | 'update';
       readonly report: LibraryReport;
@@ -70,10 +70,10 @@ type Step =
 
 const MB = 1024 * 1024;
 
-/** Deixa o navegador pintar o estado "validando" antes do trabalho síncrono do nível 3. */
+/** Lets the browser paint the "validating" state before the synchronous level 3 work. */
 const nextFrame = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
-/** Mensagem de um pacote que não pôde ser lido. */
+/** Message for a package that could not be read. */
 function readFailure(result: Extract<PackageReadResult, { ok: false }>): string {
   return result.reason === 'too-big'
     ? t('spec.packageTooBig', {
@@ -83,7 +83,7 @@ function readFailure(result: Extract<PackageReadResult, { ok: false }>): string 
     : t('spec.packageEmpty');
 }
 
-/** Sucesso com o texto dado; erro com o código da action. */
+/** Success with the given text; error with the action's code. */
 function feedback(
   result: { readonly ok: true } | { readonly ok: false; readonly error: string },
   success: string,
@@ -91,7 +91,7 @@ function feedback(
   return result.ok ? { tone: 'success', text: success } : failureFeedback(result.error);
 }
 
-/** Erro da action: o código conhecido ganha texto próprio; os demais mostram o código. */
+/** Action error: the known code gets its own text; the others show the code. */
 function failureFeedback(code: string): Feedback {
   return {
     tone: 'error',
@@ -103,8 +103,8 @@ function failureFeedback(code: string): Feedback {
 }
 
 /**
- * Aviso dos campos lidos e ignorados (tipo de campo que saiu do formato, etapa 9): a
- * especialização foi aplicada sem eles. `null` sem campos ignorados.
+ * Notice of fields that were read and ignored (a field type that left the format, stage 9): the
+ * specialization was applied without them. `null` when no fields were ignored.
  */
 function ignoredText(ignored: readonly IgnoredSpecField[]): string | null {
   if (ignored.length === 0) return null;
@@ -114,18 +114,18 @@ function ignoredText(ignored: readonly IgnoredSpecField[]): string | null {
   });
 }
 
-/** Menu Especializações: aplicar, atualizar versão e remover (docs/ARCHITECTURE.md, "Especializações no projeto e anotações tipadas"). */
+/** Specializations menu: apply, update version and remove (docs/ARCHITECTURE.md, "Specializations in the project and typed annotations"). */
 export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
   const { actions } = useEditor();
   const [step, setStep] = useState<Step | null>(null);
   const [message, setMessage] = useState<Feedback | null>(null);
-  /** Campos ignorados da última especialização aplicada ou atualizada. */
+  /** Fields ignored from the last specialization applied or updated. */
   const [ignored, setIgnored] = useState<string | null>(null);
-  /** Conferindo um pacote (o nível 3 prova o desenho e pode levar um tempo). */
+  /** Checking a package (level 3 proves the drawing and may take a while). */
   const [busy, setBusy] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const zipInput = useRef<HTMLInputElement>(null);
-  /** Especialização esperada ao escolher o arquivo (`null`: qualquer uma). */
+  /** Specialization expected when choosing the file (`null`: any). */
   const expected = useRef<string | null>(null);
   const folders = canPickDirectory();
 
@@ -133,7 +133,7 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
     setMessage(null);
     setIgnored(null);
   };
-  // Arquivo e zip: a escolha vem num evento seguinte, que lê `expected`.
+  // File and zip: the choice arrives in a later event, which reads `expected`.
   const pick = (specId: string | null) => {
     expected.current = specId;
     reset();
@@ -146,8 +146,8 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
   };
 
   /**
-   * Confere o pacote ou arquivo lido: o `id` esperado (a especialização que se atualiza) e se
-   * a versão é mais nova. Devolve a decisão, ou `null` depois de mostrar o aviso.
+   * Checks the package or file read: the expected `id` (the specialization being updated) and whether
+   * the version is newer. Returns the decision, or `null` after showing the notice.
    */
   const gate = (
     spec: Spec,
@@ -174,7 +174,7 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
     return null;
   };
 
-  /** Lê, valida (três níveis) e abre a revisão do pacote; nada muda no projeto ainda. */
+  /** Reads, validates (three levels) and opens the package review; nothing changes in the project yet. */
   const reviewPackage = async (
     read: () => Promise<PackageReadResult>,
     expectedId: string | null = expected.current,
@@ -286,7 +286,7 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
     );
   };
 
-  /** Resultado de uma atualização: com pendências novas, abre Incompletas e conta quantas. */
+  /** Result of an update: with new pending items, opens Incomplete and counts how many. */
   const updateFeedback = (
     result: ReturnType<typeof actions.updateSpecialization>,
     spec: Spec,
@@ -583,8 +583,8 @@ function UpdateConfirm({
 }
 
 /**
- * Revisão de um pacote lido: resumo, erros (bloqueiam) e avisos (deixam aplicar). Numa
- * atualização, mostra também o efeito nas camadas, como a confirmação do arquivo único.
+ * Review of a package that was read: summary, errors (they block) and warnings (they allow applying). In an
+ * update, it also shows the effect on the layers, like the single-file confirmation.
  */
 function PackageReview({
   project,

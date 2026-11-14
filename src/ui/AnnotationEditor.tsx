@@ -43,14 +43,14 @@ import {
 interface AnnotationEditorProps {
   readonly project: Project;
   readonly annotation: Annotation;
-  /** Ids das camadas visíveis (as vinculadas em camadas ocultas oferecem mostrá-las). */
+  /** Ids of the visible layers (the ones linked in hidden layers offer to show them). */
   readonly visibleLayerIds: ReadonlySet<string>;
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
   readonly onShowLayer: (layerId: string) => void;
   readonly readOnly: boolean;
 }
 
-/** Confirmação de exclusão que quebra referências (anotação ou tupla). */
+/** Confirmation of a deletion that breaks references (annotation or tuple). */
 type PendingDelete =
   | { readonly kind: 'annotation'; readonly brokenRefs: number; readonly linked: number }
   | {
@@ -60,7 +60,7 @@ type PendingDelete =
       readonly brokenRefs: number;
     };
 
-/** Campos da anotação tipada; tipo inexistente: valores somente leitura e "Converter". */
+/** Fields of the typed annotation; nonexistent type: read-only values and "Convert". */
 function TypedBody({
   project,
   annotation,
@@ -120,9 +120,9 @@ function TypedBody({
 }
 
 /**
- * Uma anotação dentro do LayerGroup: cabeçalho recolhível (tipo, rótulo ou nome,
- * excluir) e o corpo, livre (KeyValueGrid) ou tipado (campos na grade de
- * propriedades), com herança, dono e vinculadas.
+ * An annotation inside the LayerGroup: collapsible header (type, label or name,
+ * delete) and the body, free (KeyValueGrid) or typed (fields in the
+ * properties grid), with inheritance, owner and linked ones.
  */
 export function AnnotationEditor({
   project,
@@ -137,7 +137,7 @@ export function AnnotationEditor({
   const ownerId = useId();
   const header = useSplitHeader();
   const [pending, setPending] = useState<PendingDelete | null>(null);
-  /** Filho criado numa camada oculta: oferece mostrá-la. */
+  /** Child created in a hidden layer: offers to show it. */
   const [hiddenChild, setHiddenChild] = useState<{
     readonly child: ChildType;
     readonly layer: Layer;
@@ -154,18 +154,18 @@ export function AnnotationEditor({
     : undefined;
   const ownerRequired = resolved?.type.requiresOwner === true;
   const owners = validAnnotationOwners(project, annotation.id);
-  /** Sem dono e sem ninguém que possa sê-lo: a lista só teria "Nenhuma". */
+  /** No owner and nobody who could be one: the list would only have "None". */
   const noOwnerOptions = owners.length === 0 && annotation.parentAnnotationId === null;
   const name = (a: Annotation) => annotationDisplayName(project, a);
-  // O dono gravado que deixou de ser válido segue no select (como o modo do desenho do
-  // container): a pessoa vê o valor real e pode trocá-lo.
+  // A stored owner that stopped being valid stays in the select (like the drawing mode of the
+  // container): the person sees the real value and can change it.
   const storedOwnerInvalid =
     annotation.parentAnnotationId !== null &&
     !owners.some((a) => a.id === annotation.parentAnnotationId);
   const ownerIssue = issuesOf(project, annotation.id).find(
     (i) => i.code === 'missing-owner' || i.code === 'owner-not-allowed',
   );
-  // O valor escolhido inteiro: a coluna estreita corta o texto, e os candidatos começam iguais.
+  // The whole chosen value: the narrow column cuts the text, and the candidates start the same.
   const ownerTitle = owner
     ? t('annotation.ownerOption', {
         layer: layerOf(owner.layerId)?.name ?? '',
@@ -175,7 +175,7 @@ export function AnnotationEditor({
   const ownerMark = ext?.mark(annotation.id, 'parentAnnotationId');
   const ownerBelow = ext?.below(annotation.id, 'parentAnnotationId');
   const hasContent = (c: unknown) => c !== undefined && c !== null && c !== false;
-  /** O campo só aparece quando tem algo a oferecer ou a explicar. */
+  /** The field only appears when it has something to offer or to explain. */
   const showOwner =
     owners.length > 0 ||
     annotation.parentAnnotationId !== null ||
