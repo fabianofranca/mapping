@@ -575,8 +575,7 @@ async function runAllowPermissionOnce(scriptPath) {
     const { stdout } = await execFileAsync('/usr/bin/python3.12', [scriptPath]);
     return stdout.trim();
   } catch (error) {
-    if (error.code === 1)
-      return (error.stdout ?? '').trim() || 'no allow button';
+    if (error.code === 1) return (error.stdout ?? '').trim() || 'no allow button';
     throw new Error(
       `allowPermission failed (code ${error.code}): ${(error.stdout ?? '').trim()} ${(error.stderr ?? '').trim()}`,
       { cause: error },
