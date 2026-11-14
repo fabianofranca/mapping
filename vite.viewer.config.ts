@@ -17,8 +17,7 @@ function contentSecurityPolicy(): Plugin {
       order: 'post',
       handler(_options, bundle) {
         const html = bundle['index.html'];
-        if (html?.type !== 'asset')
-          throw new Error('index.html not found in the bundle');
+        if (html?.type !== 'asset') throw new Error('index.html not found in the bundle');
         html.source = applyCsp(String(html.source), 'static');
       },
     },

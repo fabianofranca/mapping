@@ -43,7 +43,8 @@ function splitSymbol(symbol: string): { prefix: string; name: string } {
 function structList(candidates: readonly TypeDecl[]): string {
   return candidates
     .map((decl, i) => {
-      const inside = decl.enclosing.length === 0 ? 'at top level' : decl.enclosing.join('.');
+      const inside =
+        decl.enclosing.length === 0 ? 'at top level' : decl.enclosing.join('.');
       return `  ${i}: line ${decl.line} (inside ${inside})`;
     })
     .join('\n');

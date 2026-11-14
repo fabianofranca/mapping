@@ -106,9 +106,7 @@ function InstanceTree({
               onMouseLeave={() => onHover(undefined)}
             >
               <span className="react-lab-tree-label">{label}</span>
-              <span className="react-lab-tree-type">
-                {typeName ?? 'unknown type'}
-              </span>
+              <span className="react-lab-tree-type">{typeName ?? 'unknown type'}</span>
             </button>
           </li>
         );
@@ -379,8 +377,7 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
             </div>
           ) : null}
           <div>
-            Last update:{' '}
-            {updateMs === undefined ? '—' : `${updateMs.toFixed(1)} ms`}{' '}
+            Last update: {updateMs === undefined ? '—' : `${updateMs.toFixed(1)} ms`}{' '}
             <span className="react-lab-hint">
               (approximate: from the edit to the wrapper's effect, without Konva drawing)
             </span>

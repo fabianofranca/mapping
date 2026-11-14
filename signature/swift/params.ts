@@ -119,7 +119,11 @@ function readInitParam(stream: TokenStream, range: Range): RawParam {
   if (typeTo <= colon + 1)
     throw errorAtToken(stream, colon, `parameter "${names.name}" has no type`);
   if (eq !== undefined && eq + 1 >= range.to) {
-    throw errorAtToken(stream, eq, `parameter "${names.name}" has no value after the "="`);
+    throw errorAtToken(
+      stream,
+      eq,
+      `parameter "${names.name}" has no value after the "="`,
+    );
   }
   const attributes =
     lead.end > range.from ? joinTokens(stream, range.from, lead.end) : '';

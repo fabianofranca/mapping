@@ -404,8 +404,7 @@ export const M3_SWITCH: ComponentFile = {
   ...base,
   id: 'm3-switch',
   name: 'Switch',
-  description:
-    'Switch: 52 × 32 track, 24 handle (on) or 16 (off); optional label.',
+  description: 'Switch: 52 × 32 track, 24 handle (on) or 16 (off); optional label.',
   size: { width: 200, height: 32 },
   minSize: { width: 52, height: 32 },
   sizing: { width: 'fill', height: 32 },

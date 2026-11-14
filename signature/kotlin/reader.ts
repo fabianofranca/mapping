@@ -137,9 +137,7 @@ export function extractKotlin(request: CodeRequest): Signature {
   const name = simpleName(request.symbol, main.pkg, request.file.name);
   const candidates = candidatesOf(main.stream, name);
   if (candidates.length === 0) {
-    throw new CliError(
-      `@Composable function ${name} not found in ${request.file.name}`,
-    );
+    throw new CliError(`@Composable function ${name} not found in ${request.file.name}`);
   }
   const chosen = chooseOverload(main.stream, candidates, name, request.overload);
   const enums = collectEnums(files);

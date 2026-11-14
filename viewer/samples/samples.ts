@@ -412,8 +412,7 @@ export const SAMPLE_SPEC = {
   id: 'lab-components',
   name: 'Component lab',
   version: 1,
-  description:
-    'Generic components drawn from a template; each in its own file.',
+  description: 'Generic components drawn from a template; each in its own file.',
   layers: [
     {
       id: 'componentes',

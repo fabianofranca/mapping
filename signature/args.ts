@@ -99,9 +99,7 @@ function readerFrom(argv: readonly string[]): string {
     );
   }
   if (!READER_NAMES.includes(reader)) {
-    throw usageError(
-      `unknown reader: ${reader}; available: ${READER_NAMES.join(', ')}`,
-    );
+    throw usageError(`unknown reader: ${reader}; available: ${READER_NAMES.join(', ')}`);
   }
   return reader;
 }
