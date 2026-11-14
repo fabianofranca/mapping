@@ -36,7 +36,7 @@ function undoDepth(store: ProjectStore): number {
   return depth;
 }
 
-describe('addComponent com near (tipo flutuante)', () => {
+describe('addComponent with near (floating type)', () => {
   const project = createMarking(notesProject(), {
     id: 'B',
     containerId: 'I1',
@@ -49,6 +49,7 @@ describe('addComponent com near (tipo flutuante)', () => {
       containerId: null,
       parentId: null,
       specId: NOTES_SPEC_ID,
+      // pt-BR kept: shared fixture data (notesFixtures typeId) asserted by tests/model
       typeId: 'nota',
       near: { kind: 'marking', id: 'B' },
     });
@@ -57,10 +58,10 @@ describe('addComponent com near (tipo flutuante)', () => {
     const p = current(store);
     const container = p.containers[0]!;
     const canvas = imageCanvasRect(container, container.placement);
-    const nota = marking(p, result.value);
-    expect(nota).toMatchObject({ containerId: null, floating: true });
-    expect(nota.rect.x).toBe(right(canvas) + 24);
-    expect(nota.rect.y).toBe(Math.round(canvas.y + 200 * container.placement.scale));
+    const note = marking(p, result.value);
+    expect(note).toMatchObject({ containerId: null, floating: true });
+    expect(note.rect.x).toBe(right(canvas) + 24);
+    expect(note.rect.y).toBe(Math.round(canvas.y + 200 * container.placement.scale));
     expect(undoDepth(store)).toBe(1);
   });
 
@@ -70,6 +71,7 @@ describe('addComponent com near (tipo flutuante)', () => {
       containerId: null,
       parentId: null,
       specId: NOTES_SPEC_ID,
+      // pt-BR kept: shared fixture data (notesFixtures typeId) asserted by tests/model
       typeId: 'nota',
       near: { kind: 'container', id: 'I1' },
     } as const;

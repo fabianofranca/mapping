@@ -24,7 +24,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('medidores do harness (palco pequeno)', () => {
+describe('harness meters (small stage)', () => {
   function smallStage() {
     installFakeCanvas();
     const flush = stubFrames();
@@ -56,7 +56,7 @@ describe('medidores do harness (palco pequeno)', () => {
     controller.destroy();
   });
 
-  it('o medidor conta as camadas redesenhadas: pan redesenha as 5 hoje', () => {
+  it('the meter counts the redrawn layers: pan redraws all 5 today', () => {
     const { controller, container, flush } = smallStage();
     const meter = layerDrawMeter(stageOf(container));
     meter.take();
@@ -121,7 +121,7 @@ interface Step {
   /** `render` alone (ms): the frame minus the drawing of the layers. */
   readonly render: number;
   readonly layers: Record<string, number>;
-  /** `drawScene` por camada (ms). */
+  /** `drawScene` per layer (ms). */
   readonly layerMs: Record<string, number>;
 }
 
@@ -154,7 +154,7 @@ function recordSteps(
   const steps: Record<string, Step> = {};
   steps.zoom = stepOf(s, meter, () => s.controller.zoomBy(1.1));
   steps.pan = stepOf(s, meter, () => s.controller.centerOnPoint({ x: 500, y: 500 }));
-  steps.edit = stepOf(s, meter, () => s.actions.renameMarking(firstId, 'Renomeada'));
+  steps.edit = stepOf(s, meter, () => s.actions.renameMarking(firstId, 'Renamed'));
   steps.selection = stepOf(s, meter, () => {
     s.ui.selection.value = { kind: 'marking', id: firstId };
   });
@@ -191,13 +191,13 @@ describe.each<ScenarioSize>(SIZES)('whole project in view, %i markings', (size) 
 // instances of the Material 3 screen in each container. Only records, for the starting measure.
 describe('whole project in view, 2,000 markings: arrows and components', () => {
   const cases: { label: string; options: ScenarioOptions }[] = [
-    { label: '0 setas', options: { arrows: 0 } },
-    { label: '500 setas', options: { arrows: 500 } },
-    { label: '1.000 setas', options: { arrows: 1000 } },
-    { label: 'com componentes', options: { components: true } },
+    { label: '0 arrows', options: { arrows: 0 } },
+    { label: '500 arrows', options: { arrows: 500 } },
+    { label: '1,000 arrows', options: { arrows: 1000 } },
+    { label: 'with components', options: { components: true } },
   ];
   it.each(cases)(
-    'registra o quadro com $label',
+    'records the frame with $label',
     ({ label, options }) => {
       const s = openWholeProject(2000, 'fit', options);
       const first = s.project.markings.find((m) => m.parentId === null);
@@ -205,7 +205,7 @@ describe('whole project in view, 2,000 markings: arrows and components', () => {
       const first_ms = round(s.firstFrameMs);
       const steps = recordSteps(s, first.id);
       console.log(
-        `[setas e componentes 2000 ${label}]`,
+        `[arrows and components 2000 ${label}]`,
         JSON.stringify({
           markings: s.project.markings.length,
           arrows: s.project.arrows.length,

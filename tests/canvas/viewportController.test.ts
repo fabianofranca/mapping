@@ -108,7 +108,7 @@ describe('ViewportController', () => {
     const root = canvasProject().containers[0]!.id;
     const marked: Project = {
       ...canvasProject(),
-      arrivals: [{ root, from: 'V', fromName: 'Frente' }],
+      arrivals: [{ root, from: 'V', fromName: 'Front' }],
     };
     const view = new ViewportController(container(380, 700), () => marked);
     view.measure();

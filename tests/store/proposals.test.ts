@@ -36,7 +36,7 @@ const accept = (p: Proposal, changeId: string): Proposal => ({
   },
 });
 
-// pt-BR kept: shared fixture data asserted by tests/components and tests/store (proposalHarness image path 'images/nova.webp')
+// pt-BR kept: shared fixture data asserted by tests/components and tests/store (proposalHarness image path 'images/nova.webp' and proposal title 'Teste')
 describe('ProposalStore: write with file check', () => {
   it('writes with revision + 1 and updates the list; the proposal keeps its object while it does not change', async () => {
     const { proposal, ids } = richScenario();
@@ -366,7 +366,11 @@ describe('ProposalStore: cycle and full check (stage #1777)', () => {
   it('the `open` one is checked in every cycle, and the one that becomes final stops being', async () => {
     const { proposal } = richScenario();
     const { session, root } = await openHarness({ proposals: [proposal] });
-    writeOutside(root, { ...proposal, title: 'Changed', revision: proposal.revision + 1 });
+    writeOutside(root, {
+      ...proposal,
+      title: 'Changed',
+      revision: proposal.revision + 1,
+    });
     expect(await session.proposals.scan(cycle)).toEqual({ ...none, changed: ['P1'] });
     // Now `applied` outside: the cycle still sees it change (it was open); afterwards, no more.
     const applied: Proposal = {
@@ -415,7 +419,7 @@ describe('ProposalStore: cycle and full check (stage #1777)', () => {
   });
 });
 
-describe('ProposalStore.remove: delete a closed proposal (fase 9.2)', () => {
+describe('ProposalStore.remove: delete a closed proposal (phase 9.2)', () => {
   const closed = (id: string, status: Proposal['status']): Proposal => ({
     ...richScenario(id).proposal,
     status,
@@ -677,8 +681,7 @@ describe('apply accepted only completes if mapping.json was written (phase 5.2)'
     const h = await readyToApply();
     const save = vi
       .spyOn(h.storage, 'saveMapping')
-      .mockRejectedValue(new Error('quota exceeded'
-));
+      .mockRejectedValue(new Error('quota exceeded'));
 
     const result = await h.review.apply();
     expect(result).toEqual({ ok: false, error: 'save-failed' });
@@ -932,9 +935,7 @@ describe('apply: storage failures in before (items 39 and 40)', () => {
     let calls = 0;
     vi.spyOn(h.storage, 'writeImage').mockImplementation((path, data) => {
       calls++;
-      return calls === 2
-        ? Promise.reject(new Error('disk full'))
-        : original(path, data);
+      return calls === 2 ? Promise.reject(new Error('disk full')) : original(path, data);
     });
 
     const result = await h.review.apply();

@@ -109,7 +109,7 @@ describe('readCanvasTokens', () => {
   });
 });
 
-describe('tokens do cadeado', () => {
+describe('lock tokens', () => {
   it('background and stroke come from the name tag pair, in both themes', () => {
     for (const theme of ['light', 'dark'] as const) {
       const t = canvasTokensFrom(reader(theme));

@@ -23,13 +23,13 @@ async function read(path: string): Promise<string | null> {
   }
 }
 
-describe('readSpecComponents com icons', () => {
+describe('readSpecComponents with icons', () => {
   it('reads the icons file along with the components and the package icon draws', async () => {
     const loaded = await readSpecComponents(parsed.spec, SPEC_FILE, 1, read);
     expect(loaded.problems).toEqual([]);
     const component = loaded.byType.get('badge');
     expect(component?.resolvedIcons?.icons.check).toBeDefined();
-    if (component === undefined) throw new Error('sem componente');
+    if (component === undefined) throw new Error('no component');
     const { root, warnings } = instantiate(
       component,
       { icon: 'close', tint: '#0a7' },
@@ -46,7 +46,7 @@ describe('readSpecComponents com icons', () => {
     );
     expect(loaded.problems).toEqual(['icons: missing file (specs/icons/icons/set.json)']);
     const component = loaded.byType.get('badge');
-    if (component === undefined) throw new Error('sem componente');
+    if (component === undefined) throw new Error('no component');
     const { warnings } = instantiate(
       component,
       { icon: 'check' },

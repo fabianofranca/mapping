@@ -14,7 +14,7 @@ import { openHarness } from './proposalHarness';
 beforeEach(() => localStorage.clear());
 
 const budgetIt = it.skipIf(process.env.PERF_BUDGETS === 'off');
-/** One repetition separates runner noise from regression (ver tests/model/performance.test.ts). */
+/** One repetition separates runner noise from regression (see tests/model/performance.test.ts). */
 const BUDGET_OPTIONS = { retry: 1 };
 
 /** An image with `n` markings; the proposal renames all of them and creates an annotation on each. */

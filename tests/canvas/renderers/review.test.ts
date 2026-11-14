@@ -91,7 +91,7 @@ describe('marking line in the review', () => {
 });
 
 describe('ReviewRenderer', () => {
-  it('selos no canto superior direito, fantasma pontilhado e removida com hachura', () => {
+  it('badges at the top right corner, dotted ghost and removed one with hatching', () => {
     const { frame } = setup();
     const layer = new Konva.Layer();
     const renderer = new ReviewRenderer(layer);
@@ -129,12 +129,12 @@ describe('ReviewRenderer', () => {
     expect(badges.map((b) => b.getAttr('stroke')).sort()).toEqual(
       [TOKENS.line, TOKENS.warning, TOKENS.line].sort(),
     );
-    // Fantasma pontilhado e esmaecido.
+    // Dotted and dimmed ghost.
     const ghost = rects.find(
       (r) => r.getAttr('x') === 10 && r.getAttr('stroke') === TOKENS.line,
     );
     expect(ghost?.getAttr('dash')).toEqual([1.5, 3]);
-    // Removida: nome riscado.
+    // Removed: struck-through name.
     const name = layer.find('Text')[0];
     expect(name?.getAttr('text')).toBe('Banner');
 
@@ -254,7 +254,7 @@ describe('ReviewRenderer', () => {
               key: 'rejected:M7',
               placement: { x: 0, y: 0, scale: 1 },
               rect: { x: 20, y: 30, width: 120, height: 80 },
-              name: 'Novo',
+              name: 'New',
               badges: ['rejected'],
             },
           ],
@@ -266,7 +266,7 @@ describe('ReviewRenderer', () => {
       .find('Rect')
       .find((r) => r.getAttr('x') === 20 && r.getAttr('stroke') === TOKENS.line);
     expect(ghost?.getAttr('dash')).toEqual([1.5, 2.5]);
-    expect(layer.find('Text').map((t) => t.getAttr('text'))).toContain('Novo');
+    expect(layer.find('Text').map((t) => t.getAttr('text'))).toContain('New');
     expect(layer.find('Rect').some((r) => r.getAttr('fill') === TOKENS.badge)).toBe(true);
   });
 });

@@ -105,6 +105,7 @@ describe('OverlayRenderer', () => {
       const { overlay, render } = setup();
       render({ selection: SELECTED, viewport: at(100) });
       expect(overlay.nameTag.visible()).toBe(true);
+      // pt-BR kept: shared fixture data (sampleProject) asserted by tests/model, tests/components
       expect(overlay.nameTagText.text()).toBe('Maçaneta');
       expect(overlay.nameTagText.getAttrs()).toMatchObject({
         fill: TOKENS.nameTagText,
@@ -155,8 +156,7 @@ describe('OverlayRenderer', () => {
     });
 
     it('long name removed in the review: the strike does not go past the tag (clipped width)', () => {
-      const long =
-        'A very long marking name that goes past the limit of the tag, okay';
+      const long = 'A very long marking name that goes past the limit of the tag, okay';
       expect(long.length).toBeGreaterThan(60);
       const { overlay, render } = setup();
       const base = editorFor().store.project.peek();
@@ -316,7 +316,7 @@ describe('OverlayRenderer', () => {
     expect(handles().some((h) => h.visible())).toBe(false);
   });
 
-  it('rascunho: tracejado; vermelho enquanto for pequeno demais', () => {
+  it('draft: dashed; red while it is too small', () => {
     const { overlay, render } = setup();
     render({ draft: { containerId: 'I1', rect: { x: 10, y: 10, width: 2, height: 2 } } });
     expect(overlay.draftRect.visible()).toBe(true);
@@ -353,7 +353,7 @@ describe('OverlayRenderer', () => {
   });
 });
 
-describe('OverlayRenderer: trava (etapa 2.5)', () => {
+describe('OverlayRenderer: lock (stage 2.5)', () => {
   const lock = (
     editor: ReturnType<typeof editorFor>,
     kind: 'marking' | 'image',
@@ -590,7 +590,7 @@ describe('OverlayRenderer: canvas markings', () => {
       height: 200,
       stroke: TOKENS.halo,
     });
-    expect(overlay.marqueeHalo.strokeWidth()).toBe(2); // (2 + 2·1) px de tela ÷ zoom 2
+    expect(overlay.marqueeHalo.strokeWidth()).toBe(2); // (2 + 2·1) screen px ÷ zoom 2
     expect(overlay.marqueeHalo.dash()).toEqual([3, 2]);
     expect(overlay.marqueeHalo.fillEnabled()).toBe(false);
     // The halo must be in the same layer as the border, and under it.
@@ -762,6 +762,7 @@ describe('OverlayRenderer: multiple selection', () => {
     expect(editor.actions.setMarkingLocked('M3', true).ok).toBe(true);
     render({ selection: mk('M2'), items: [mk('M3'), mk('M1'), mk('M2')] });
     expect(overlay.nameTag.visible()).toBe(true);
+    // pt-BR kept: shared fixture data (sampleProject) asserted by tests/model, tests/components
     expect(overlay.nameTagText.text()).toBe('Maçaneta');
     // M3 (secondary) is locked, but the selection lock belongs to the primary, which is free.
     expect(overlay.selectionLock.group.visible()).toBe(false);
@@ -779,7 +780,7 @@ describe('OverlayRenderer: multiple selection', () => {
     render({ selection: mk('M2'), items: [im('I2'), mk('M3'), mk('M2')] }, moved);
     expect(lit()).toEqual([
       expect.objectContaining({ x: 1200, y: 40, width: 500, height: 500 }),
-      // M3 anda com o container: x = 1200 + 50, y = 40 + 50.
+      // M3 moves with the container: x = 1200 + 50, y = 40 + 50.
       expect.objectContaining({ x: 1250, y: 90, width: 200, height: 200 }),
     ]);
     const nodes = overlay.secondaryHighlights().slice();
@@ -793,7 +794,7 @@ describe('OverlayRenderer: multiple selection', () => {
 
   it('item that stopped existing (after undo) leaves no outline', () => {
     const { render, lit } = multiSetup();
-    render({ selection: mk('M2'), items: [mk('Fantasma'), im('I9'), mk('M2')] });
+    render({ selection: mk('M2'), items: [mk('Ghost'), im('I9'), mk('M2')] });
     expect(lit()).toHaveLength(0);
   });
 
@@ -806,7 +807,7 @@ describe('OverlayRenderer: multiple selection', () => {
 
 // Arrows (ME4): highlight of the selected one, handles of the primary, link handle of the marking and the
 // provisional arrow of the gesture.
-describe('OverlayRenderer: setas', () => {
+describe('OverlayRenderer: arrows', () => {
   function arrowSetup(project = arrowProject()) {
     const container = document.createElement('div');
     const overlay = new OverlayRenderer(new Konva.Layer(), container);

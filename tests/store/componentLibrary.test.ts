@@ -200,7 +200,7 @@ describe('session component library', () => {
     const project = signal<Project | null>(withSpec());
     const library = createComponentLibrary({
       project,
-      readText: () => Promise.reject(new Error('disco sumiu')),
+      readText: () => Promise.reject(new Error('disk vanished')),
       readBytes: async () => null,
       fonts: createFontRegistry(fakeHost().host),
     });
@@ -209,10 +209,10 @@ describe('session component library', () => {
     expect(reportedErrors.value.length).toBeGreaterThan(before);
     const components = library.catalog.value.get('material3');
     expect(components?.byType.size).toBe(0);
-    expect(components?.problems[0]).toContain('disco sumiu');
+    expect(components?.problems[0]).toContain('disk vanished');
   });
 
-  it('um componente ausente vira problema, os outros carregam', async () => {
+  it('a missing component becomes a problem, the others load', async () => {
     const files = diskFiles();
     files.delete(`${DIR}/components/m3-button.json`);
     const { library } = start(withSpec(), { files });
@@ -238,7 +238,7 @@ describe('session component library', () => {
     expect(library.catalog.value.get('material3')?.byType.has('m3-button')).toBe(false);
   });
 
-  describe('fontes', () => {
+  describe('fonts', () => {
     it('registers the declared fonts, with status per font, and raises the epoch', async () => {
       const files = diskFiles({
         'fonts/Roboto-Regular.ttf': new Uint8Array([0, 1, 2, 3]),
@@ -285,7 +285,7 @@ describe('session component library', () => {
       expect(library.fonts.value).toEqual([]);
     });
 
-    it('dispose tira as faces do documento', async () => {
+    it('dispose removes the faces from the document', async () => {
       const files = diskFiles({
         'fonts/Roboto-Regular.ttf': new Uint8Array([0, 1, 2, 3]),
       });

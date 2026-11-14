@@ -66,7 +66,7 @@ describe('ImageRenderer', () => {
     expect(node?.placeholder.visible()).toBe(false);
   });
 
-  // Achado 10: `drawImage … The image source is detached`. Um `ImageBitmap` fechado fica
+  // Finding 10: `drawImage … The image source is detached`. A closed `ImageBitmap` ends up
   // with zero width and height; drawing it throws. The node never receives a closed bitmap.
   it('does not draw a closed bitmap: the node stays without an image and goes back to the reserved space', () => {
     const { renderer, editor } = setup();
@@ -109,9 +109,9 @@ describe('ImageRenderer', () => {
     expect(renderer.node('I1')?.title.fill()).toBe(TOKENS.textMuted);
     expect(renderer.node('I1')?.title.stroke()).toBe(TOKENS.surface);
 
-    const named = renameContainer(canvasProject(), 'I1', 'Lateral');
+    const named = renameContainer(canvasProject(), 'I1', 'Side');
     renderer.render(frameOf(editor, { project: named }));
-    expect(renderer.node('I1')?.title.text()).toBe('Lateral');
+    expect(renderer.node('I1')?.title.text()).toBe('Side');
     expect(renderer.node('I1')?.title.fill()).toBe(TOKENS.text);
     expect(renderer.node('I1')?.title.stroke()).toBe(TOKENS.surface);
 
@@ -131,7 +131,7 @@ describe('ImageRenderer', () => {
       expect(title?.strokeWidth()).toBeCloseTo((2 * HALO_WIDTH) / scale);
       expect(title?.fillAfterStrokeEnabled()).toBe(true);
     }
-    const named = renameContainer(canvasProject(), 'I1', 'Lateral');
+    const named = renameContainer(canvasProject(), 'I1', 'Side');
     renderer.render(frameOf(editor, { project: named }));
     expect(renderer.node('I1')?.title.stroke()).toBe(TOKENS.surface);
     expect(renderer.node('I1')?.title.fillAfterStrokeEnabled()).toBe(true);
@@ -206,7 +206,7 @@ describe('ImageRenderer', () => {
     expect(node?.title.text()).toBe(t('image.containerUntitled'));
     expect(node?.title.fill()).toBe(TOKENS.textMuted);
 
-    // A espessura da borda segue o zoom.
+    // The border thickness follows the zoom.
     renderer.render(frameOf(editor, { project, viewport: { x: 0, y: 0, scale: 4 } }));
     expect(node?.placeholder.strokeWidth()).toBe(0.25);
   });

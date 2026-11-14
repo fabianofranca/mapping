@@ -26,12 +26,12 @@ const OPEN: Thread = sampleThread({
 const OTHER: Thread = sampleThread({
   id: 'b',
   anchor: { kind: 'marking', id: 'M2' },
-  messages: [message('b1', T0, HUMAN, 'e agora?')],
+  messages: [message('b1', T0, HUMAN, 'and now?')],
 });
 const DONE: Thread = sampleThread({
   id: 'r',
   anchor: { kind: 'marking', id: 'M4' },
-  resolved: { by: { name: 'Marina', email: 'marina@exemplo.com' }, at: T1 },
+  resolved: { by: { name: 'Marina', email: 'marina@example.com' }, at: T1 },
 });
 
 function setup(threads: readonly Thread[]) {
@@ -50,7 +50,7 @@ function setup(threads: readonly Thread[]) {
 beforeEach(() => localStorage.clear());
 afterEach(() => localStorage.clear());
 
-describe('visibilidade dos pinos', () => {
+describe('pin visibility', () => {
   it('is born off, without arming anything, and is never saved', () => {
     const { ui, derived } = setup([OPEN, OTHER]);
     expect(ui.commentPins.value).toBe(false);
@@ -87,14 +87,14 @@ describe('visibilidade dos pinos', () => {
     const derived = createEditorDerived(store, ui, undefined, undefined, {
       threads: signal([OPEN]),
       copyId: 'copy',
-      identity: signal({ name: 'Marina', email: 'marina@exemplo.com' }),
+      identity: signal({ name: 'Marina', email: 'marina@example.com' }),
     });
     ui.commentPins.value = true;
     // The last message is from the agent and was never read on this device.
     expect(derived.threads.pins.value[0]?.hasUnread).toBe(true);
   });
 
-  it('Nova conversa (rascunho) liga a visibilidade', () => {
+  it('New conversation (draft) turns on the visibility', () => {
     const { ui, project } = setup([]);
     startComposing(ui, project, { kind: 'marking', id: 'M1' });
     expect(ui.commentPins.value).toBe(true);

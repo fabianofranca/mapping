@@ -562,7 +562,7 @@ describe('project session', () => {
     expect([...files.images.keys()]).toEqual(['images/a.jpg']);
   });
 
-  describe('gesto em andamento (fase 5.1)', () => {
+  describe('gesture in progress (phase 5.1)', () => {
     /** Session over the folder, counting the writes of `mapping.json`. */
     function startCounting(root: MemoryDirectory) {
       const storage = createFolderStorage(root);
@@ -636,7 +636,7 @@ describe('project session', () => {
       expect(m4x(await savedProject(root))).toBe(50);
     });
 
-    it('collectFiles durante o gesto exporta o confirmado', async () => {
+    it('collectFiles during the gesture exports the committed state', async () => {
       const root = new MemoryDirectory('p');
       session = start(root, sampleProject());
       session.actions.beginGesture();
@@ -1260,7 +1260,7 @@ describe('project session', () => {
       if (!loaded.ok || loaded.migratedFrom !== 8) throw new Error('fixture v8');
       expect(
         loaded.project.annotations.find((a) => a.id === 'AS')?.values,
-      // pt-BR kept: legacy field name 'implementacao' of the v8 fixture (migration data)
+        // pt-BR kept: legacy field name 'implementacao' of the v8 fixture (migration data)
       ).not.toHaveProperty('implementacao');
       session = openSession({
         storage: createFolderStorage(root),

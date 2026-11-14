@@ -47,6 +47,7 @@ function addTip(
 
 /** I1 with the button B and the tooltip T far from it, no anchor yet. */
 function tipScene(): Project {
+  // pt-BR kept: shared fixture data (tooltipFixtures typeId) asserted by tests/model
   return addTip(addTip(tipProject(), 'B', 'botao', BUTTON), 'T', 'tooltip', TOOLTIP);
 }
 
@@ -257,8 +258,9 @@ describe('dragging the anchor takes the anchored ones along', () => {
   });
 });
 
-describe('addComponent ancorado (Paleta)', () => {
+describe('anchored addComponent (Palette)', () => {
   it('with `anchorTo` creates the instance anchored and already snapped, in one entry', () => {
+    // pt-BR kept: shared fixture data (tooltipFixtures typeId) asserted by tests/model
     const { store, actions } = setup(addTip(tipProject(), 'B', 'botao', BUTTON));
     const result = actions.addComponent({
       containerId: 'I1',
@@ -276,6 +278,7 @@ describe('addComponent ancorado (Paleta)', () => {
   });
 
   it('without `anchorTo` the current rule applies: no anchor, centered on the requested point', () => {
+    // pt-BR kept: shared fixture data (tooltipFixtures typeId) asserted by tests/model
     const { store, actions } = setup(addTip(tipProject(), 'B', 'botao', BUTTON));
     const result = actions.addComponent({
       containerId: 'I1',

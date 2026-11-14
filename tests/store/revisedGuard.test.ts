@@ -101,11 +101,11 @@ describe('Decision guard on revised content', () => {
     const result = await session.proposalActions.addNote(
       'P1',
       { level: 'change', id: ids.rect },
-      'Eu queria isto',
+      'I wanted this',
     );
     expect(result.ok).toBe(true);
     const disk = await diskProposal(root);
-    const note = disk.notes.find((n) => n.text === 'Eu queria isto');
+    const note = disk.notes.find((n) => n.text === 'I wanted this');
     expect(note?.target).toEqual({ level: 'proposal', id: null });
     expect(
       disk.revisions?.[0]?.dropped.find((d) => d.change.id === ids.rect)?.notes,

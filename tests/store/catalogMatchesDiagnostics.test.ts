@@ -35,7 +35,7 @@ async function open(project: Project, root: MemoryDirectory) {
     project,
     loadedText: text,
     libraryIssues: await loadLibraryIssues(storage, project),
-    prepareImage: () => Promise.reject(new Error('sem imagens')),
+    prepareImage: () => Promise.reject(new Error('no images')),
     now: () => NOW,
     autosaveDelay: 1,
   });

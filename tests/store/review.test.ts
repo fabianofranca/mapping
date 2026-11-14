@@ -46,7 +46,7 @@ async function projectOnDisk(h: Harness): Promise<Project> {
 }
 
 function must<T>(value: T | null | undefined): T {
-  if (value === null || value === undefined) throw new Error('valor ausente');
+  if (value === null || value === undefined) throw new Error('missing value');
   return value;
 }
 
@@ -258,7 +258,7 @@ describe('decide', () => {
   });
 });
 
-describe('notas', () => {
+describe('notes', () => {
   it('creates, edits and removes at any level, and groups by target', async () => {
     const { proposal, ids } = richScenario();
     const { root, review } = await openHarness({ proposals: [proposal] });
@@ -267,12 +267,12 @@ describe('notas', () => {
       { level: 'change', id: ids.rect },
       'The old position was right.',
     );
-    if (!created?.ok) throw new Error('nota recusada');
+    if (!created?.ok) throw new Error('note refused');
     const noteId = must(created.noteId);
     await review.addNote({ level: 'proposal', id: null }, 'Review the new screens.');
     await review.addNote({ level: 'item', id: 'M1' }, 'Name in English, please.');
     await review.addNote({ level: 'image', id: 'I3' }, 'Low-resolution image.');
-    await review.addNote({ level: 'project', id: null }, 'Camadas ok.');
+    await review.addNote({ level: 'project', id: null }, 'Layers ok.');
 
     expect(
       review.derived.notes.value.get(reviewKey({ level: 'change', id: ids.rect })),
@@ -993,7 +993,7 @@ describe('resume the review', () => {
 
   it('without localStorage or with corrupted text, opens at the first pending one', async () => {
     const { proposal, ids } = richScenario();
-    localStorage.setItem('mapping.reviewResume', '{ corrompido');
+    localStorage.setItem('mapping.reviewResume', '{ corrupted');
     const a = await openHarness({ proposals: [proposal] });
     expect(a.review.open('P1').ok).toBe(true);
     expect(a.review.selected.value).toEqual({
@@ -1438,7 +1438,7 @@ describe('apply accepted', () => {
   });
 });
 
-describe('como ficaria', () => {
+describe('preview', () => {
   it('the preview has the current one plus what was neither rejected nor applied', async () => {
     const { proposal, ids } = richScenario();
     const { review, session } = await openHarness({ proposals: [proposal] });
@@ -1727,7 +1727,7 @@ describe('changes by entity and field (phase 9.5)', () => {
 
   it('pairs and fields of the annotation, the removal and the marking swap (the ones that leave)', () => {
     const base = sampleProject();
-    let after = updateEntry(base, 'A1', 'E1', { key: 'tipo', value: 'risco' });
+    let after = updateEntry(base, 'A1', 'E1', { key: 'kind', value: 'risk' });
     after = removeEntry(after, 'A1', 'E2');
     after = removeAnnotation(after, 'A2');
     after = {
@@ -1806,7 +1806,7 @@ describe('focus request on the marker (Details, phase 9.6)', () => {
     review.requestMark(ids.name);
     expect(must(review.markRequest.value).seq).toBeGreaterThan(first.seq);
 
-    // Quem cumpre limpa.
+    // Whoever fulfills it clears it.
     review.clearMarkRequest();
     expect(review.markRequest.value).toBeNull();
 

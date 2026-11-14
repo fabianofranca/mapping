@@ -28,7 +28,7 @@ const project = (store: Store): Project => {
 const arrow = (store: Store, id: string) =>
   project(store).arrows.find((a) => a.id === id);
 
-describe('store: actions das setas', () => {
+describe('store: arrow actions', () => {
   it('addArrow returns the id, creates the arrow with the default route and enters the undo', () => {
     const { store, actions } = setup(arrowBase());
     const result = actions.addArrow('a1', 'b1');
@@ -52,13 +52,13 @@ describe('store: actions das setas', () => {
     const { store, actions } = setup(arrowBase());
     actions.addArrow('a1', 'b1', {
       style: 'straight',
-      name: 'abre',
+      name: 'opens',
       fromSide: 'top',
       toSide: 'left',
     });
     expect(arrow(store, 'id1')).toMatchObject({
       style: 'straight',
-      name: 'abre',
+      name: 'opens',
       fromSide: 'top',
       toSide: 'left',
     });
@@ -80,14 +80,14 @@ describe('store: actions das setas', () => {
   it('each action is an undo entry', () => {
     const { store, actions } = setup();
     expect(actions.setArrowStyle('r1', 'elbow').ok).toBe(true);
-    expect(actions.setArrowName('r1', 'abre').ok).toBe(true);
+    expect(actions.setArrowName('r1', 'opens').ok).toBe(true);
     expect(actions.setArrowRoute('r1', [{ x: 500, y: 100 }]).ok).toBe(true);
     expect(actions.setArrowEndpoint('r1', 'to', 'a2', 'top').ok).toBe(true);
     expect(actions.setArrowLocked('r1', true).ok).toBe(true);
     expect(store.revision.value).toBe(5);
     expect(arrow(store, 'r1')).toMatchObject({
       style: 'elbow',
-      name: 'abre',
+      name: 'opens',
       to: 'a2',
       toSide: 'top',
       locked: true,

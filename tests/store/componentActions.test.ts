@@ -75,7 +75,7 @@ function undoDepth(store: ProjectStore): number {
 
 const current = (store: ProjectStore): Project => store.project.value as Project;
 
-describe('actions do container', () => {
+describe('container actions', () => {
   let ctx: ReturnType<typeof setup>;
   beforeEach(() => {
     ctx = setup();
@@ -85,7 +85,7 @@ describe('actions do container', () => {
     const { store, actions } = ctx;
     const before = current(store);
     const result = actions.addBackgroundContainer({
-      name: 'Tela',
+      name: 'Screen',
       width: 360,
       height: 640,
       background: '#FFFFFF',
@@ -98,7 +98,7 @@ describe('actions do container', () => {
       background: '#FFFFFF',
       width: 360,
       height: 640,
-      name: 'Tela',
+      name: 'Screen',
     });
     expect(undoDepth(store)).toBe(1);
     store.undo();
@@ -121,7 +121,7 @@ describe('actions do container', () => {
         name: null,
         width: 100,
         height: 100,
-        background: 'branco',
+        background: 'white',
       }).ok,
     ).toBe(false);
     expect(current(store)).toBe(before);
@@ -212,7 +212,7 @@ describe('addComponent', () => {
     ).toEqual({ ok: false, error: 'unknown-type' });
     expect(
       actions.addComponent({
-        containerId: 'nada',
+        containerId: 'missing',
         parentId: null,
         specId: SPEC_ID,
         typeId: 'text',
@@ -576,7 +576,7 @@ describe('clampToMinSize', () => {
     expect(clampToMinSize(tiny, tiny, min)).toEqual(tiny);
   });
 
-  it('sem borda conhecida, ancora em x e y', () => {
+  it('without a known edge, anchors at x and y', () => {
     expect(clampToMinSize(box(120, 110, 10, 10), base, min)).toEqual(
       box(120, 110, 60, 24),
     );

@@ -99,7 +99,7 @@ describe('reviewMarks', () => {
         id: 'M9',
         containerId: 'I1',
         rect: { x: 10, y: 10, width: 50, height: 50 },
-        name: 'Novo',
+        name: 'New',
       }),
     );
     const noItem = decided(added, base, { level: 'item', id: 'M9' }, 'rejected');
@@ -119,7 +119,7 @@ describe('reviewMarks', () => {
         id: 'M9',
         containerId: 'I1',
         rect: { x: 10, y: 10, width: 50, height: 50 },
-        name: 'Novo',
+        name: 'New',
       }),
     );
     const item = { level: 'item', id: 'M9' } as const;
@@ -127,20 +127,20 @@ describe('reviewMarks', () => {
       m.ghosts
         .filter((g) => g.key.startsWith('rejected:'))
         .map((g) => [g.key, g.name, g.badges]);
-    const rejectedGhost = [['rejected:M9', 'Novo', ['rejected']]];
+    const rejectedGhost = [['rejected:M9', 'New', ['rejected']]];
     const createdMark = { line: 'created', dim: false, badges: ['created'] };
     const cases = [
-      ['pendente', created, undefined, createdMark, []],
-      ['aceita', decided(created, base, item, 'accepted'), undefined, createdMark, []],
+      ['pending', created, undefined, createdMark, []],
+      ['accepted', decided(created, base, item, 'accepted'), undefined, createdMark, []],
       [
-        'rejeitada',
+        'rejected',
         decided(created, base, item, 'rejected'),
         undefined,
         undefined,
         rejectedGhost,
       ],
       [
-        'inválida',
+        'invalid',
         created,
         [created.changes[0]!.id],
         { line: 'invalid', dim: false, badges: ['invalid', 'created'] },
@@ -157,13 +157,13 @@ describe('reviewMarks', () => {
       const proposed = marks(proposal, base, 'proposed', {
         invalid: invalid ? [...invalid] : [],
       });
-      expect(proposed.markings.get('M9'), `${state}, Proposto`).toEqual(mark);
-      expect(ghostsOf(proposed), `${state}, Proposto`).toEqual(ghosts);
+      expect(proposed.markings.get('M9'), `${state}, Proposed`).toEqual(mark);
+      expect(ghostsOf(proposed), `${state}, Proposed`).toEqual(ghosts);
       const current = marks(proposal, base, 'current', {
         invalid: invalid ? [...invalid] : [],
       });
-      expect(current.markings.has('M9'), `${state}, Atual`).toBe(false);
-      expect(ghostsOf(current), `${state}, Atual`).toEqual(ghosts);
+      expect(current.markings.has('M9'), `${state}, Current`).toBe(false);
+      expect(ghostsOf(current), `${state}, Current`).toEqual(ghosts);
     }
 
     // Existing changed: the rejected ghost only exists in the Current (the rejected change
@@ -171,8 +171,8 @@ describe('reviewMarks', () => {
     const moved = propose(base, moveMarking(base, 'M4', 10, 10));
     const rejectedMove = decided(moved, base, { level: 'item', id: 'M4' }, 'rejected');
     for (const [state, proposal] of [
-      ['pendente', moved],
-      ['aceita', decided(moved, base, { level: 'item', id: 'M4' }, 'accepted')],
+      ['pending', moved],
+      ['accepted', decided(moved, base, { level: 'item', id: 'M4' }, 'accepted')],
     ] as const) {
       for (const view of ['proposed', 'current'] as const)
         expect(ghostsOf(marks(proposal, base, view)), `${state}, ${view}`).toEqual([]);
@@ -196,7 +196,7 @@ describe('reviewMarks', () => {
     });
     base = addBackgroundContainer(base, {
       id: 'B1',
-      name: 'Tela',
+      name: 'Screen',
       width: 400,
       height: 600,
       background: '#FFFFFF',
@@ -239,7 +239,7 @@ describe('reviewMarks', () => {
       expect(m.removed).toEqual([
         expect.objectContaining({
           key: 'marking:M3',
-          name: 'Fechadura',
+          name: 'Lock',
           badges: ['removed'],
           rect: { x: 1300, y: 1250, width: 50, height: 50 },
         }),
@@ -281,7 +281,7 @@ describe('reviewMarks', () => {
     const preview = previewProject(base, proposal).project;
     const shown = proposedDisplay(preview, proposal);
     expect(shown.containers.find((i) => i.id === 'I3')?.file).toBe(
-      'proposals/P1/images/nova.webp',
+      'proposals/P1/images/new.webp',
     );
     // The other images do not change (same object).
     expect(shown.containers.find((i) => i.id === 'I1')).toBe(
@@ -301,7 +301,7 @@ describe('reviewMarks: canvas markings', () => {
       id: 'C1',
       containerId: null,
       rect: { x: -3000, y: -3000, width: 400, height: 300 },
-      name: 'Grupo',
+      name: 'Group',
     });
   }
 
@@ -311,7 +311,7 @@ describe('reviewMarks: canvas markings', () => {
       id: 'C9',
       containerId: null,
       rect: { x: -500, y: -400, width: 120, height: 80 },
-      name: 'Nova',
+      name: 'New',
     });
     const p = propose(base, after);
     const rejected = decided(p, base, { level: 'item', id: 'C9' }, 'rejected');
@@ -321,7 +321,7 @@ describe('reviewMarks: canvas markings', () => {
         key: 'rejected:C9',
         placement: IDENTITY_PLACEMENT,
         rect: { x: -500, y: -400, width: 120, height: 80 },
-        name: 'Nova',
+        name: 'New',
         badges: ['rejected'],
       }),
     ]);
@@ -390,7 +390,7 @@ describe('reviewMarks: canvas markings', () => {
       expect(marks(p, base, view).removed).toEqual([
         expect.objectContaining({
           key: 'marking:C1',
-          name: 'Grupo',
+          name: 'Group',
           placement: IDENTITY_PLACEMENT,
           rect: { x: -3000, y: -3000, width: 400, height: 300 },
         }),

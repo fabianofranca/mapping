@@ -22,7 +22,7 @@ const close = (a: { x: number; y: number }, b: { x: number; y: number }) => {
 describe('viewport', () => {
   const v = { x: 100, y: 50, scale: 2 };
 
-  it('converte tela ↔ canvas', () => {
+  it('converts screen ↔ canvas', () => {
     const p = { x: 10, y: 20 };
     expect(canvasToScreen(v, p)).toEqual({ x: 120, y: 90 });
     close(screenToCanvas(v, canvasToScreen(v, p)), p);
@@ -36,12 +36,12 @@ describe('viewport', () => {
     close(screenToCanvas(zoomed, anchor), before);
   });
 
-  it('zoom respeita os limites', () => {
+  it('zoom respects the limits', () => {
     expect(zoomAt(v, { x: 0, y: 0 }, 1e6).scale).toBe(MAX_ZOOM);
     expect(zoomAt(v, { x: 0, y: 0 }, 1e-9).scale).toBe(MIN_ZOOM);
   });
 
-  it('pan desloca sem mudar a escala', () => {
+  it('pan shifts without changing the scale', () => {
     expect(panBy(v, 5, -5)).toEqual({ x: 105, y: 45, scale: 2 });
   });
 
@@ -92,7 +92,7 @@ describe('viewport', () => {
   });
 });
 
-describe('centralizar', () => {
+describe('center', () => {
   const size = { width: 400, height: 800 };
 
   it('keeps the zoom when the rectangle fits well', () => {

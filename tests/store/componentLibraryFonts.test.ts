@@ -10,10 +10,10 @@ afterEach(() => {
   document.documentElement.style.removeProperty('--font-mono');
 });
 
-describe('readSpecComponents: fonte do hospedeiro', () => {
-  it('os componentes levam o font-sans e o font-mono do tema', async () => {
-    document.documentElement.style.setProperty('--font-sans', 'Tema Sans, sans-serif');
-    document.documentElement.style.setProperty('--font-mono', 'Tema Mono, monospace');
+describe('readSpecComponents: host font', () => {
+  it('the components carry the font-sans and the font-mono of the theme', async () => {
+    document.documentElement.style.setProperty('--font-sans', 'Theme Sans, sans-serif');
+    document.documentElement.style.setProperty('--font-mono', 'Theme Mono, monospace');
     const loaded = await readSpecComponents(
       testSpec(),
       SPEC_FILE,
@@ -21,7 +21,7 @@ describe('readSpecComponents: fonte do hospedeiro', () => {
       async (path) => texts.get(path) ?? null,
     );
     const file = [...loaded.byType.values()][0];
-    expect(file?.resolvedTokens?.['font-sans']).toBe('Tema Sans, sans-serif');
-    expect(file?.resolvedTokens?.['font-mono']).toBe('Tema Mono, monospace');
+    expect(file?.resolvedTokens?.['font-sans']).toBe('Theme Sans, sans-serif');
+    expect(file?.resolvedTokens?.['font-mono']).toBe('Theme Mono, monospace');
   });
 });

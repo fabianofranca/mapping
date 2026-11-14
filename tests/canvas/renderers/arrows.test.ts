@@ -174,12 +174,12 @@ describe('ArrowRenderer', () => {
 
 describe('ArrowRenderer: label', () => {
   it('in the middle of the stroke when there is a name, centered, at screen size', () => {
-    const named = setArrowName(arrowProject(), 'r1', 'Abre');
+    const named = setArrowName(arrowProject(), 'r1', 'Opens');
     const { renderer, render } = setup(named);
     render();
     const label = renderer.label('r1');
     if (!label) throw new Error('no label');
-    expect(label.text.text()).toBe('Abre');
+    expect(label.text.text()).toBe('Opens');
     expect(label.text.fill()).toBe(TOKENS.arrow.label);
     expect(label.box.fill()).toBe(TOKENS.arrow.labelBg);
     const width = label.box.width();
@@ -192,7 +192,7 @@ describe('ArrowRenderer: label', () => {
   });
 
   it('without a name there is no label; the label disappears with the arrow or with the name', () => {
-    const named = setArrowName(withArrow(arrowProject(), 'r2', 'a3', 'b2'), 'r2', 'Vai');
+    const named = setArrowName(withArrow(arrowProject(), 'r2', 'a3', 'b2'), 'r2', 'Goes');
     const { renderer, render, editor } = setup(named);
     render();
     expect(renderer.label('r1')).toBeUndefined();
@@ -200,15 +200,15 @@ describe('ArrowRenderer: label', () => {
     editor.actions.setArrowName('r2', null);
     render();
     expect(renderer.label('r2')).toBeUndefined();
-    editor.actions.setArrowName('r2', 'Outra');
+    editor.actions.setArrowName('r2', 'Other');
     render();
-    expect(renderer.label('r2')?.text.text()).toBe('Outra');
+    expect(renderer.label('r2')?.text.text()).toBe('Other');
     render({ arrows: [] });
     expect(renderer.label('r2')).toBeUndefined();
   });
 
   it('the same frame does not redo the label', () => {
-    const { renderer, render } = setup(setArrowName(arrowProject(), 'r1', 'Abre'));
+    const { renderer, render } = setup(setArrowName(arrowProject(), 'r1', 'Opens'));
     render();
     const group = renderer.label('r1')?.group;
     const x = group?.x();

@@ -152,7 +152,7 @@ describe('MarkingRenderer', () => {
     });
   });
 
-  describe('⚠ de incompleta no canto', () => {
+  describe('incomplete ⚠ in the corner', () => {
     const incomplete = new Set(['M1']);
 
     it('without the "to review" badge: against the corner, with the margin', () => {
@@ -244,7 +244,7 @@ describe('MarkingRenderer', () => {
       expect(m1.alert?.visible()).toBe(true);
     });
 
-    it('sob o mouse ou selecionada: a borda e o halo aparecem', () => {
+    it('under the mouse or selected: the border and the halo appear', () => {
       const { renderer, render } = setup();
       render({ drawn });
       render({ drawn, hoverMarking: 'M1' });
@@ -269,6 +269,7 @@ describe('MarkingRenderer', () => {
       // M3 (unnamed, in I2) and the others follow the usual path.
       render({ drawn: new Set(['M2']) });
       expect(node(renderer, 'M1').text?.group.visible()).toBe(true);
+      // pt-BR kept: shared fixture data (sampleProject) asserted by tests/model, tests/components
       expect(node(renderer, 'M1').text?.header.text()).toBe('Porta');
     });
   });
@@ -288,6 +289,7 @@ describe('MarkingRenderer', () => {
     render();
     const text = textOf(renderer, 'M1');
     expect(text.group.visible()).toBe(true);
+    // pt-BR kept: shared fixture data (sampleProject) asserted by tests/model, tests/components
     expect(text.header.text()).toBe('Porta');
     expect(text.header.getAttrs()).toMatchObject({
       fill: TOKENS.line,
@@ -304,6 +306,7 @@ describe('MarkingRenderer', () => {
     render({ viewport: { x: -1100, y: -1100, scale: 6 } });
     const text = textOf(renderer, 'M2');
     expect(text.group.visible()).toBe(true);
+    // pt-BR kept: shared fixture data (sampleProject) asserted by tests/model, tests/components
     expect(text.header.text()).toBe('Maçaneta');
     expect(text.group.getChildren()).toEqual([text.header]);
   });
@@ -433,7 +436,7 @@ describe('MarkingRenderer: canvas markings', () => {
       id: 'C2',
       containerId: null,
       rect: { x: 2000, y: 100, width: 600, height: 400 },
-      name: 'Grupo',
+      name: 'Group',
     });
     const layer = new Konva.Layer();
     const renderer = new MarkingRenderer(layer);
@@ -445,7 +448,7 @@ describe('MarkingRenderer: canvas markings', () => {
       }),
       PLACEMENTS,
     );
-    expect(node(renderer, 'C2').text?.header.text()).toBe('Grupo');
+    expect(node(renderer, 'C2').text?.header.text()).toBe('Group');
   });
 });
 
@@ -553,7 +556,7 @@ describe('level of detail by zoom', () => {
     expect(node(renderer, 'M2').alert?.visible()).toBe(true);
   });
 
-  it('voltando ao zoom aproximado, o detalhe volta', () => {
+  it('zooming back in, the detail comes back', () => {
     const { renderer, render } = setup();
     render({ ...fullDetail(), viewport: FAR });
     render({ ...fullDetail(), viewport: { x: 0, y: 0, scale: 1 } });

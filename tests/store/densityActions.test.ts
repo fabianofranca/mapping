@@ -22,7 +22,7 @@ const SPEC: Spec = {
   id: 'ds',
   name: 'Design System',
   version: 1,
-  containers: [{ id: 'phone', name: 'Celular', width: 360, height: 800 }],
+  containers: [{ id: 'phone', name: 'Phone', width: 360, height: 800 }],
   layers: [],
 };
 
@@ -38,7 +38,7 @@ function setup(project: Project = sampleProject()) {
 }
 
 describe('action setContainerDensity', () => {
-  it('grava, desfaz numa entrada e volta a 1 com null (remove a chave)', () => {
+  it('saves, undoes in one entry and goes back to 1 with null (removes the key)', () => {
     const { store, actions, current } = setup();
     const id = current().containers[0]?.id ?? '';
     expect(actions.setContainerDensity(id, 3).ok).toBe(true);
@@ -61,14 +61,14 @@ describe('action setContainerDensity', () => {
     for (const bad of [0.2, 9, Number.NaN]) {
       expect(actions.setContainerDensity(id, bad).ok, String(bad)).toBe(false);
     }
-    expect(actions.setContainerDensity('nada', 2).ok).toBe(false);
+    expect(actions.setContainerDensity('missing', 2).ok).toBe(false);
     expect(current()).toBe(before);
   });
 
   it('addBackgroundContainer with density saves the density in a single entry; 1 does not save the key', () => {
     const { store, actions, current } = setup();
     const args = {
-      name: 'Tela',
+      name: 'Screen',
       width: 1080,
       height: 2400,
       background: '#FFFFFF',
@@ -89,7 +89,7 @@ describe('action setContainerDensity', () => {
   });
 });
 
-describe('derivado densitySuggestions', () => {
+describe('derived densitySuggestions', () => {
   function derivedOf(project: Project) {
     const { store, actions, current } = setup(project);
     const sources = {
@@ -113,7 +113,7 @@ describe('derivado densitySuggestions', () => {
     const { derived } = derivedOf(screen(1080, 2400));
     expect(derived.densitySuggestions.value.get('C1')).toMatchObject({
       density: 3,
-      preset: { name: 'Celular', width: 360, height: 800 },
+      preset: { name: 'Phone', width: 360, height: 800 },
     });
     expect(
       derivedOf(screen(1080, 2400, false)).derived.densitySuggestions.value.size,
