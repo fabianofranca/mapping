@@ -12,11 +12,11 @@ Annotation type: `m3-fab` (FAB).
 
 ## Fields
 
-| Key | Label | Type | Required | Options | Default | Description |
-| ------- | ---------------- | ------ | ----------- | ---------------------------------------------------------------------------------------------------- | ------- | --------- |
-| `icon`  | Icon             | enum   | no | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings | add     |           |
-| `label` | Label (extended) | string | no |                                                                                                      |         |           |
-| `color` | Color            | enum   | no | primary, secondary, surface                                                                          | primary |           |
+| Key     | Label            | Type   | Required | Options                                                                                              | Default | Description |
+| ------- | ---------------- | ------ | -------- | ---------------------------------------------------------------------------------------------------- | ------- | ----------- |
+| `icon`  | Icon             | enum   | no       | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings | add     |             |
+| `label` | Label (extended) | string | no       |                                                                                                      |         |             |
+| `color` | Color            | enum   | no       | primary, secondary, surface                                                                          | primary |             |
 
 ## Examples
 
@@ -28,8 +28,8 @@ Annotation type: `m3-fab` (FAB).
 
 System `sdui`: external type `FAB`.
 
-| Field | Path in `props` |
-| ------- | ------------------ |
-| `icon`  | `icon`             |
-| `label` | `label`            |
-| `color` | `color`            |
+| Field   | Path in `props` |
+| ------- | --------------- |
+| `icon`  | `icon`          |
+| `label` | `label`         |
+| `color` | `color`         |

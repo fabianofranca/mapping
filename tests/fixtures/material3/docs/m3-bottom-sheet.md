@@ -12,16 +12,16 @@ Annotation type: `m3-bottom-sheet` (Bottom sheet).
 
 ## Fields
 
-| Key | Label | Type | Required | Options | Default | Description |
-| -------- | ----------- | ------ | ----------- | ---------------------------------------------------------------------------------------------------- | ------ | --------- |
-| `title`  | Title       | string | no |                                                                                                      |        |           |
-| `handle` | Drag handle | enum   | no | sim, não                                                                                             | sim    |           |
-| `item1`  | Item 1      | string | no |                                                                                                      |        |           |
-| `icon1`  | Icon 1      | enum   | no | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |        |           |
-| `item2`  | Item 2      | string | no |                                                                                                      |        |           |
-| `icon2`  | Icon 2      | enum   | no | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |        |           |
-| `item3`  | Item 3      | string | no |                                                                                                      |        |           |
-| `icon3`  | Icon 3      | enum   | no | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |        |           |
+| Key      | Label       | Type   | Required | Options                                                                                              | Default | Description |
+| -------- | ----------- | ------ | -------- | ---------------------------------------------------------------------------------------------------- | ------- | ----------- |
+| `title`  | Title       | string | no       |                                                                                                      |         |             |
+| `handle` | Drag handle | enum   | no       | sim, não                                                                                             | sim     |             |
+| `item1`  | Item 1      | string | no       |                                                                                                      |         |             |
+| `icon1`  | Icon 1      | enum   | no       | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |         |             |
+| `item2`  | Item 2      | string | no       |                                                                                                      |         |             |
+| `icon2`  | Icon 2      | enum   | no       | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |         |             |
+| `item3`  | Item 3      | string | no       |                                                                                                      |         |             |
+| `icon3`  | Icon 3      | enum   | no       | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |         |             |
 
 ## Examples
 
@@ -32,13 +32,13 @@ Annotation type: `m3-bottom-sheet` (Bottom sheet).
 
 System `sdui`: external type `BottomSheet`.
 
-| Field | Path in `props` |
-| -------- | ------------------ |
-| `title`  | `title`            |
-| `handle` | `dragHandle`       |
-| `item1`  | `items[0].label`   |
-| `icon1`  | `items[0].icon`    |
-| `item2`  | `items[1].label`   |
-| `icon2`  | `items[1].icon`    |
-| `item3`  | `items[2].label`   |
-| `icon3`  | `items[2].icon`    |
+| Field    | Path in `props`  |
+| -------- | ---------------- |
+| `title`  | `title`          |
+| `handle` | `dragHandle`     |
+| `item1`  | `items[0].label` |
+| `icon1`  | `items[0].icon`  |
+| `item2`  | `items[1].label` |
+| `icon2`  | `items[1].icon`  |
+| `item3`  | `items[2].label` |
+| `icon3`  | `items[2].icon`  |

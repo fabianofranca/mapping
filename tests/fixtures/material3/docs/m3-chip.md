@@ -12,11 +12,11 @@ Annotation type: `m3-chip` (Chip).
 
 ## Fields
 
-| Key | Label | Type | Required | Options | Default | Description |
-| ---------- | -------- | ------ | ----------- | ---------------------------------------------------------------------------------------------------- | ------ | --------- |
-| `label`    | Label    | string | yes |                                                                                                      |        |           |
-| `selected` | Selected | enum   | no | sim, não                                                                                             | não    |           |
-| `icon`     | Icon     | enum   | no | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |        |           |
+| Key        | Label    | Type   | Required | Options                                                                                              | Default | Description |
+| ---------- | -------- | ------ | -------- | ---------------------------------------------------------------------------------------------------- | ------- | ----------- |
+| `label`    | Label    | string | yes      |                                                                                                      |         |             |
+| `selected` | Selected | enum   | no       | sim, não                                                                                             | não     |             |
+| `icon`     | Icon     | enum   | no       | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |         |             |
 
 ## Examples
 
@@ -27,8 +27,8 @@ Annotation type: `m3-chip` (Chip).
 
 System `sdui`: external type `Chip`.
 
-| Field | Path in `props` |
-| ---------- | ------------------ |
-| `label`    | `text`             |
-| `selected` | `selected`         |
-| `icon`     | `icon`             |
+| Field      | Path in `props` |
+| ---------- | --------------- |
+| `label`    | `text`          |
+| `selected` | `selected`      |
+| `icon`     | `icon`          |

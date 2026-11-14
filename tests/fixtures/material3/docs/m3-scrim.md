@@ -13,7 +13,7 @@ Annotation type: `m3-scrim` (Scrim).
 ## Fields
 
 | Key | Label | Type | Required | Options | Default | Description |
-| ----- | ------ | ---- | ----------- | ------ | ------ | --------- |
+| --- | ----- | ---- | -------- | ------- | ------- | ----------- |
 
 ## Examples
 

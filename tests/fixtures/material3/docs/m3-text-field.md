@@ -12,14 +12,14 @@ Annotation type: `m3-text-field` (Text field).
 
 ## Fields
 
-| Key | Label | Type | Required | Options | Default | Description |
-| ------------- | --------------- | ------ | ----------- | ---------------------------------------------------------------------------------------------------- | ------- | --------- |
-| `label`       | Label           | string | yes |                                                                                                      |         |           |
-| `value`       | Input text      | string | no |                                                                                                      |         |           |
-| `placeholder` | Placeholder     | string | no |                                                                                                      |         |           |
-| `supporting`  | Supporting text | string | no |                                                                                                      |         |           |
-| `state`       | State           | enum   | no | enabled, focused, error, disabled                                                                    | enabled |           |
-| `trailing`    | Trailing icon   | enum   | no | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |         |           |
+| Key           | Label           | Type   | Required | Options                                                                                              | Default | Description |
+| ------------- | --------------- | ------ | -------- | ---------------------------------------------------------------------------------------------------- | ------- | ----------- |
+| `label`       | Label           | string | yes      |                                                                                                      |         |             |
+| `value`       | Input text      | string | no       |                                                                                                      |         |             |
+| `placeholder` | Placeholder     | string | no       |                                                                                                      |         |             |
+| `supporting`  | Supporting text | string | no       |                                                                                                      |         |             |
+| `state`       | State           | enum   | no       | enabled, focused, error, disabled                                                                    | enabled |             |
+| `trailing`    | Trailing icon   | enum   | no       | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |         |             |
 
 ## Examples
 
@@ -31,11 +31,11 @@ Annotation type: `m3-text-field` (Text field).
 
 System `sdui`: external type `TextField`.
 
-| Field | Path in `props` |
-| ------------- | ------------------ |
-| `label`       | `label`            |
-| `value`       | `value`            |
-| `placeholder` | `placeholder`      |
-| `supporting`  | `supportingText`   |
-| `state`       | `state`            |
-| `trailing`    | `trailingIcon`     |
+| Field         | Path in `props`  |
+| ------------- | ---------------- |
+| `label`       | `label`          |
+| `value`       | `value`          |
+| `placeholder` | `placeholder`    |
+| `supporting`  | `supportingText` |
+| `state`       | `state`          |
+| `trailing`    | `trailingIcon`   |

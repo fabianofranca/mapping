@@ -12,12 +12,12 @@ Annotation type: `m3-top-app-bar` (Top app bar).
 
 ## Fields
 
-| Key | Label | Type | Required | Options | Default | Description |
-| ------------ | --------------- | ------ | ----------- | ---------------------------------------------------------------------------------------------------- | ------ | --------- |
-| `title`      | Title           | string | yes |                                                                                                      |        |           |
-| `navigation` | Navigation icon | enum   | no | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings | menu   |           |
-| `action`     | Action icon     | enum   | no | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings | more   |           |
-| `align`      | Title align     | enum   | no | start, center                                                                                        | start  |           |
+| Key          | Label           | Type   | Required | Options                                                                                              | Default | Description |
+| ------------ | --------------- | ------ | -------- | ---------------------------------------------------------------------------------------------------- | ------- | ----------- |
+| `title`      | Title           | string | yes      |                                                                                                      |         |             |
+| `navigation` | Navigation icon | enum   | no       | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings | menu    |             |
+| `action`     | Action icon     | enum   | no       | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings | more    |             |
+| `align`      | Title align     | enum   | no       | start, center                                                                                        | start   |             |
 
 ## Examples
 
@@ -28,9 +28,9 @@ Annotation type: `m3-top-app-bar` (Top app bar).
 
 System `sdui`: external type `TopAppBar`.
 
-| Field | Path in `props` |
-| ------------ | ------------------ |
-| `title`      | `title`            |
-| `navigation` | `navigationIcon`   |
-| `action`     | `actionIcon`       |
-| `align`      | `titleAlign`       |
+| Field        | Path in `props`  |
+| ------------ | ---------------- |
+| `title`      | `title`          |
+| `navigation` | `navigationIcon` |
+| `action`     | `actionIcon`     |
+| `align`      | `titleAlign`     |

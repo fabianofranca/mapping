@@ -12,12 +12,12 @@ Annotation type: `m3-card` (Card).
 
 ## Fields
 
-| Key | Label | Type | Required | Options | Default | Description |
-| ---------- | --------------- | ------ | ----------- | -------------------------- | -------- | --------- |
-| `headline` | Headline        | string | yes |                            |          |           |
-| `subhead`  | Subhead         | string | no |                            |          |           |
-| `body`     | Supporting text | string | no |                            |          |           |
-| `variant`  | Variant         | enum   | no | elevated, filled, outlined | elevated |           |
+| Key        | Label           | Type   | Required | Options                    | Default  | Description |
+| ---------- | --------------- | ------ | -------- | -------------------------- | -------- | ----------- |
+| `headline` | Headline        | string | yes      |                            |          |             |
+| `subhead`  | Subhead         | string | no       |                            |          |             |
+| `body`     | Supporting text | string | no       |                            |          |             |
+| `variant`  | Variant         | enum   | no       | elevated, filled, outlined | elevated |             |
 
 ## Slot
 
@@ -35,9 +35,9 @@ System `sdui`: external type `Card`.
 
 - Slot: `ações`
 
-| Field | Path in `props` |
-| ---------- | ------------------ |
-| `headline` | `headline`         |
-| `subhead`  | `subhead`          |
-| `body`     | `body`             |
-| `variant`  | `style`            |
+| Field      | Path in `props` |
+| ---------- | --------------- |
+| `headline` | `headline`      |
+| `subhead`  | `subhead`       |
+| `body`     | `body`          |
+| `variant`  | `style`         |

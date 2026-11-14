@@ -12,11 +12,11 @@ Annotation type: `m3-checkbox` (Checkbox).
 
 ## Fields
 
-| Key | Label | Type | Required | Options | Default | Description |
-| --------- | ------- | ------ | ----------- | -------- | ------ | --------- |
-| `label`   | Label   | string | no |          |        |           |
-| `checked` | Checked | enum   | no | sim, não | não    |           |
-| `error`   | Error   | enum   | no | sim, não | não    |           |
+| Key       | Label   | Type   | Required | Options  | Default | Description |
+| --------- | ------- | ------ | -------- | -------- | ------- | ----------- |
+| `label`   | Label   | string | no       |          |         |             |
+| `checked` | Checked | enum   | no       | sim, não | não     |             |
+| `error`   | Error   | enum   | no       | sim, não | não     |             |
 
 ## Examples
 
@@ -28,8 +28,8 @@ Annotation type: `m3-checkbox` (Checkbox).
 
 System `sdui`: external type `Checkbox`.
 
-| Field | Path in `props` |
-| --------- | ------------------ |
-| `label`   | `label`            |
-| `checked` | `checked`          |
-| `error`   | `error`            |
+| Field     | Path in `props` |
+| --------- | --------------- |
+| `label`   | `label`         |
+| `checked` | `checked`       |
+| `error`   | `error`         |

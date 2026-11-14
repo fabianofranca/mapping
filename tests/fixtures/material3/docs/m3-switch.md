@@ -12,11 +12,11 @@ Annotation type: `m3-switch` (Switch).
 
 ## Fields
 
-| Key | Label | Type | Required | Options | Default | Description |
-| ---------- | -------- | ------ | ----------- | -------- | ------ | --------- |
-| `label`    | Label    | string | no |          |        |           |
-| `selected` | Selected | enum   | no | sim, não | não    |           |
-| `icon`     | Icon     | enum   | no | sim, não | não    |           |
+| Key        | Label    | Type   | Required | Options  | Default | Description |
+| ---------- | -------- | ------ | -------- | -------- | ------- | ----------- |
+| `label`    | Label    | string | no       |          |         |             |
+| `selected` | Selected | enum   | no       | sim, não | não     |             |
+| `icon`     | Icon     | enum   | no       | sim, não | não     |             |
 
 ## Examples
 
@@ -27,8 +27,8 @@ Annotation type: `m3-switch` (Switch).
 
 System `sdui`: external type `Switch`.
 
-| Field | Path in `props` |
-| ---------- | ------------------ |
-| `label`    | `label`            |
-| `selected` | `checked`          |
-| `icon`     | `showIcon`         |
+| Field      | Path in `props` |
+| ---------- | --------------- |
+| `label`    | `label`         |
+| `selected` | `checked`       |
+| `icon`     | `showIcon`      |

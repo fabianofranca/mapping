@@ -12,12 +12,12 @@ Annotation type: `m3-button` (Button).
 
 ## Fields
 
-| Key | Label | Type | Required | Options | Default | Description |
-| ---------- | -------- | ------ | ----------- | ---------------------------------------------------------------------------------------------------- | ------ | --------- |
-| `label`    | Label    | string | yes |                                                                                                      |        |           |
-| `variant`  | Variant  | enum   | no | filled, tonal, outlined, text, elevated                                                              | filled |           |
-| `icon`     | Icon     | enum   | no | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |        |           |
-| `disabled` | Disabled | enum   | no | sim, não                                                                                             | não    |           |
+| Key        | Label    | Type   | Required | Options                                                                                              | Default | Description |
+| ---------- | -------- | ------ | -------- | ---------------------------------------------------------------------------------------------------- | ------- | ----------- |
+| `label`    | Label    | string | yes      |                                                                                                      |         |             |
+| `variant`  | Variant  | enum   | no       | filled, tonal, outlined, text, elevated                                                              | filled  |             |
+| `icon`     | Icon     | enum   | no       | home, search, person, menu, more, add, check, back, favorite, edit, notifications, chevron, settings |         |             |
+| `disabled` | Disabled | enum   | no       | sim, não                                                                                             | não     |             |
 
 ## Examples
 
@@ -31,9 +31,9 @@ System `sdui`: external type `Button`.
 
 - Ignored props: `contentDescription`
 
-| Field | Path in `props` |
-| ---------- | ------------------ |
-| `label`    | `text`             |
-| `variant`  | `style`            |
-| `icon`     | `icon`             |
-| `disabled` | `disabled`         |
+| Field      | Path in `props` |
+| ---------- | --------------- |
+| `label`    | `text`          |
+| `variant`  | `style`         |
+| `icon`     | `icon`          |
+| `disabled` | `disabled`      |
