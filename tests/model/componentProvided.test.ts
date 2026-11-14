@@ -1,4 +1,4 @@
-// MF3: cor herdada nos desenhos dos componentes (decisões 8 a 10).
+// MF3: inherited color in the component drawings (decisions 8 to 10).
 import { describe, expect, it } from 'vitest';
 import {
   approximateMeasurer,
@@ -28,8 +28,8 @@ function colorOf(root: SceneNode, name = 'lbl'): string | undefined {
 
 const draw = (p: Project) => createDrawingCache()(p, cat, approximateMeasurer, 0);
 
-describe('cor herdada: quem vale (decisão 8)', () => {
-  it('a filha recebe o valor do pai, resolvido com os campos dele', () => {
+describe('inherited color: which one applies (decision 8)', () => {
+  it('the child receives the parent value, resolved with the parent fields', () => {
     let p = add(baseProject(), 'P', 'panel', {
       rect: { x: 100, y: 100, width: 300, height: 100 },
     });
@@ -39,7 +39,7 @@ describe('cor herdada: quem vale (decisão 8)', () => {
     expect(colorOf(draw(p).get('L')!.root)).toBe('#ff0000');
   });
 
-  it('um avô oferece e o pai não: vale o do avô', () => {
+  it('a grandparent offers and the parent does not: the grandparent value applies', () => {
     let p = add(baseProject(), 'G', 'grand', {
       rect: { x: 100, y: 100, width: 400, height: 200 },
     });
@@ -51,7 +51,7 @@ describe('cor herdada: quem vale (decisão 8)', () => {
     expect(colorOf(draw(p).get('L')!.root)).toBe('#00ff00');
   });
 
-  it('pai e avô oferecem: vale o do pai', () => {
+  it('parent and grandparent offer: the parent value applies', () => {
     let p = add(baseProject(), 'G', 'grand', {
       rect: { x: 100, y: 100, width: 400, height: 200 },
     });
@@ -63,12 +63,12 @@ describe('cor herdada: quem vale (decisão 8)', () => {
     expect(colorOf(draw(p).get('L')!.root)).toBe('#0000ff');
   });
 
-  it('sem ancestral que ofereça, na raiz ou fora da árvore, vale o default', () => {
+  it('without an ancestor that offers, at the root or outside the tree, the default applies', () => {
     const p = add(baseProject(), 'L', 'label');
     expect(colorOf(draw(p).get('L')!.root)).toBe('#999999');
   });
 
-  it('a marcação flutuante vale o default', () => {
+  it('the floating marking uses the default', () => {
     let p = add(baseProject(), 'P', 'panel', {
       rect: { x: 100, y: 100, width: 300, height: 100 },
     });
@@ -82,7 +82,7 @@ describe('cor herdada: quem vale (decisão 8)', () => {
     expect(colorOf(draw(p).get('L')!.root)).toBe('#0000ff');
   });
 
-  it('sem default vale o padrão do lugar (a cor do texto de sempre)', () => {
+  it('without a default the place default applies (the usual text color)', () => {
     const p = add(baseProject(), 'B', 'bare');
     const color = colorOf(draw(p).get('B')!.root);
     expect(color).toBeDefined();
@@ -90,7 +90,7 @@ describe('cor herdada: quem vale (decisão 8)', () => {
   });
 });
 
-describe('cor herdada: redesenho só da filha que lê (decisão 10)', () => {
+describe('inherited color: redraw only the child that reads it (decision 10)', () => {
   function scene(): Project {
     let p = add(baseProject(), 'P', 'panel', {
       rect: { x: 100, y: 100, width: 300, height: 100 },
@@ -101,7 +101,7 @@ describe('cor herdada: redesenho só da filha que lê (decisão 10)', () => {
     return p;
   }
 
-  it('trocar o campo do pai que muda o valor oferecido redesenha só a filha que lê', () => {
+  it('changing the parent field that changes the offered value redraws only the child that reads it', () => {
     const cache = createDrawingCache();
     const p1 = scene();
     const before = cache(p1, cat, approximateMeasurer, 0);
@@ -109,16 +109,16 @@ describe('cor herdada: redesenho só da filha que lê (decisão 10)', () => {
     const after = cache(p2, cat, approximateMeasurer, 0);
     expect(colorOf(after.get('L')!.root)).toBe('#ff0000');
     expect(after.get('L')).not.toBe(before.get('L'));
-    // As outras voltam com o mesmo objeto: a que não lê, a sem pai e a do pai que não mudou.
+    // The others come back as the same object: the one that does not read it, the one without a parent and the one of the unchanged parent.
     expect(after.get('D')).toBe(before.get('D'));
     expect(after.get('Q')).toBe(before.get('Q'));
   });
 
-  it('trocar um campo do pai que não muda o valor oferecido não redesenha ninguém', () => {
+  it('changing a parent field that does not change the offered value redraws nobody', () => {
     const cache = createDrawingCache();
     const p1 = scene();
     const before = cache(p1, cat, approximateMeasurer, 0);
-    // Pai com valor igual ao padrão do `provide`: o valor oferecido não muda.
+    // Parent with a value equal to the `provide` default: the offered value does not change.
     const p2 = setFieldValue(p1, 'A_P', 'ink', '#0000ff');
     const after = cache(p2, cat, approximateMeasurer, 0);
     expect(after.get('L')).toBe(before.get('L'));

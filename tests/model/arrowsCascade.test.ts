@@ -24,8 +24,8 @@ import {
 import { arrowProject, withArrow } from './arrowFixtures';
 import { expectValid } from './fixtures';
 
-// A cascata das setas: apagar uma marcação, um container ou uma seleção leva as setas presas e as
-// anotações delas, e a contagem entra no impacto. Fixture: tests/model/arrowFixtures.ts.
+// The arrows cascade: deleting a marking, a container or a selection takes the attached arrows and their
+// annotations, and the count enters the impact. Fixture: tests/model/arrowFixtures.ts.
 
 const mark = (id: string): ItemRef => ({ kind: 'marking', id });
 const img = (id: string): ItemRef => ({ kind: 'image', id });
@@ -33,9 +33,9 @@ const arr = (id: string): ItemRef => ({ kind: 'arrow', id });
 const ids = (list: readonly { id: string }[]) => list.map((x) => x.id);
 
 /**
- * `arrowProject` (r1: a1 → a3, com ra1 e ra2) mais r2: b1 → a1 (chega em a1), r3: a2 → b1 (sai de
- * uma descendente de a1) e r4: c1 → b1 (longe de A), uma anotação em cada seta de fora de r1 e uma
- * em a1.
+ * `arrowProject` (r1: a1 → a3, with ra1 and ra2) plus r2: b1 → a1 (arrives at a1), r3: a2 → b1 (leaves
+ * a descendant of a1) and r4: c1 → b1 (far from A), one annotation on each arrow other than r1 and one
+ * on a1.
  */
 function cascadeProject(): Project {
   let p = arrowProject();
@@ -47,13 +47,13 @@ function cascadeProject(): Project {
   return addAnnotation(p, { id: 'ma', markingId: 'a1', layerId: 'L1' });
 }
 
-describe('apagar marcação', () => {
-  it('leva as setas presas à marcação e às descendentes dela, e as anotações das setas', () => {
+describe('deleting a marking', () => {
+  it('takes the arrows attached to the marking and its descendants, and the arrows annotations', () => {
     const p = cascadeProject();
     expect(markingDeletionImpact(p, 'a1')).toEqual({
       descendants: 1,
       lockedDescendants: 0,
-      // ma (a1) + ra1, ra2 (r1) + rb (r2); r3 não tem anotação.
+      // ma (a1) + ra1, ra2 (r1) + rb (r2); r3 has no annotation.
       annotations: 4,
       containers: 0,
       arrows: 3,
@@ -65,20 +65,20 @@ describe('apagar marcação', () => {
     expect(next.markings.some((m) => m.id === 'a2')).toBe(false);
   });
 
-  it('a descendente também leva as dela', () => {
+  it('the descendant also takes its own', () => {
     const p = cascadeProject();
     const next = expectValid(removeMarking(p, 'a2'));
     expect(ids(next.arrows)).toEqual(['r1', 'r2', 'r4']);
     expect(markingDeletionImpact(p, 'a2').arrows).toBe(1);
   });
 
-  it('uma marcação sem seta tem impacto zero e as setas ficam como estão', () => {
+  it('a marking without an arrow has zero impact and the arrows stay as they are', () => {
     const p = cascadeProject();
     expect(markingDeletionImpact(p, 'e1').arrows).toBe(0);
     expect(removeMarking(p, 'e1').arrows).toBe(p.arrows);
   });
 
-  it('a trava da seta não impede apagar a marcação; a da marcação impede', () => {
+  it('the arrow lock does not prevent deleting the marking; the marking lock does', () => {
     let p = cascadeProject();
     p = setArrowLocked(p, 'r1', true);
     expect(ids(removeMarking(p, 'a3').arrows)).toEqual(['r2', 'r3', 'r4']);
@@ -86,16 +86,16 @@ describe('apagar marcação', () => {
     expect(() => removeMarking(p, 'a3')).toThrow('locked');
   });
 
-  it('a seta que liga duas marcações que saem conta uma vez', () => {
-    // r1 liga a1 e a3; excluir a1 e a3 juntos (removeItems) não conta r1 duas vezes.
+  it('an arrow that links two leaving markings counts once', () => {
+    // r1 links a1 and a3; deleting a1 and a3 together (removeItems) does not count r1 twice.
     const p = cascadeProject();
     const impact = itemsDeletionImpact(p, [mark('a1'), mark('a3')]);
     expect(impact.arrows).toBe(3);
   });
 });
 
-describe('apagar container', () => {
-  it('leva as setas das marcações dele, mesmo as que chegam de fora, e as anotações delas', () => {
+describe('deleting a container', () => {
+  it('takes the arrows of its markings, even those arriving from outside, and their annotations', () => {
     const p = cascadeProject();
     expect(containerDeletionImpact(p, 'A')).toEqual({
       markings: 3,
@@ -109,15 +109,15 @@ describe('apagar container', () => {
     expect(ids(next.annotations)).toEqual(['rc']);
   });
 
-  it('um container sem marcação com seta não tira nenhuma', () => {
+  it('a container without a marking with an arrow removes none', () => {
     const p = cascadeProject();
     expect(containerDeletionImpact(p, 'D').arrows).toBe(0);
     expect(removeContainer(p, 'D').arrows).toBe(p.arrows);
   });
 });
 
-describe('seleção múltipla com setas', () => {
-  it('excluir uma seta selecionada leva as anotações dela e nada mais', () => {
+describe('multiple selection with arrows', () => {
+  it('deleting a selected arrow takes its annotations and nothing else', () => {
     const p = cascadeProject();
     expect(itemsDeletionImpact(p, [arr('r4')])).toEqual({
       markings: 0,
@@ -134,7 +134,7 @@ describe('seleção múltipla com setas', () => {
     expect(next.markings).toEqual(p.markings);
   });
 
-  it('seta selecionada e marcação dela selecionada: conta uma vez', () => {
+  it('selected arrow and its marking selected: counts once', () => {
     const p = cascadeProject();
     const impact = itemsDeletionImpact(p, [mark('a1'), arr('r1'), arr('r4')]);
     expect(impact).toMatchObject({ markings: 2, arrows: 4, annotations: 5 });
@@ -143,43 +143,43 @@ describe('seleção múltipla com setas', () => {
     expect(next.annotations).toEqual([]);
   });
 
-  it('o container e a seta que chega a ele de fora saem juntos', () => {
+  it('the container and the arrow arriving at it from outside leave together', () => {
     const p = cascadeProject();
     const next = expectValid(removeItems(p, [img('A')]));
     expect(ids(next.arrows)).toEqual(['r4']);
   });
 
-  it('seta trancada selecionada bloqueia; sai junto com a ponta selecionada sem bloquear', () => {
+  it('a selected locked arrow blocks; it leaves together with the selected endpoint without blocking', () => {
     const p = setArrowLocked(cascadeProject(), 'r4', true);
     expect(canDeleteItems(p, [arr('r4')])).toBe(false);
     expect(() => removeItems(p, [arr('r4')])).toThrow('locked');
-    // Selecionada junto com uma das pontas, ela sai com a marcação e a trava não impede.
+    // Selected together with one of the endpoints, it leaves with the marking and the lock does not prevent it.
     expect(canDeleteItems(p, [arr('r4'), mark('c1')])).toBe(true);
     expect(ids(removeItems(p, [arr('r4'), mark('c1')]).arrows)).toEqual([
       'r1',
       'r2',
       'r3',
     ]);
-    // Uma seta trancada que só está presa a uma marcação que sai também não bloqueia.
+    // A locked arrow that is only attached to a marking that leaves does not block either.
     expect(canDeleteItems(p, [mark('c1')])).toBe(true);
   });
 
-  it('seta inexistente é ignorada', () => {
+  it('a nonexistent arrow is ignored', () => {
     const p = cascadeProject();
     expect(removeItems(p, [arr('zz')])).toBe(p);
     expect(itemsDeletionImpact(p, [arr('zz')]).arrows).toBe(0);
     expect(canDeleteItems(p, [arr('zz')])).toBe(false);
   });
 
-  it('mover não se aplica a setas: movingItems e moveItems as ignoram', () => {
+  it('moving does not apply to arrows: movingItems and moveItems ignore them', () => {
     const p = withArrow(cascadeProject(), 'r5', 'H', 'a1', {
       points: [{ x: 700, y: 700 }],
     });
     expect(movingItems(p, [arr('r5'), mark('H')])).toEqual([mark('H')]);
     expect(movingItems(p, [arr('r5')])).toEqual([]);
-    // Só setas: nada para mover, o mesmo projeto.
+    // Arrows only: nothing to move, the same project.
     expect(moveItems(p, [arr('r5')], 40, 40)).toBe(p);
-    // Com uma marcação: ela anda, a seta (e a rota) ficam como estão.
+    // With a marking: it moves, the arrow (and the route) stay as they are.
     const moved = moveItems(p, [arr('r5'), mark('H')], 40, 20);
     expect(moved.markings.find((m) => m.id === 'H')?.rect).toMatchObject({
       x: 440,
@@ -188,7 +188,7 @@ describe('seleção múltipla com setas', () => {
     expect(moved.arrows).toBe(p.arrows);
   });
 
-  it('trancar e destrancar a seleção alcança as setas', () => {
+  it('locking and unlocking the selection reaches the arrows', () => {
     const p = cascadeProject();
     const locked = setItemsLocked(p, [arr('r1'), mark('a1')], true);
     expect(locked.arrows.find((a) => a.id === 'r1')?.locked).toBe(true);
@@ -197,28 +197,28 @@ describe('seleção múltipla com setas', () => {
     expect(setItemsLocked(locked, [arr('r1'), mark('a1')], true)).toBe(locked);
     const open = setItemsLocked(locked, [arr('r1')], false);
     expect(open.arrows.find((a) => a.id === 'r1')?.locked).toBe(false);
-    // Só setas: as marcações não são tocadas.
+    // Arrows only: the markings are not touched.
     expect(open.markings).toBe(locked.markings);
   });
 });
 
-describe('trocar de espaço e trocar a imagem', () => {
+describe('switching space and switching the image', () => {
   const route = [{ x: 500, y: 100 }];
 
-  it('a marcação arrastada para fora do container apaga os pontos da seta', () => {
+  it('a marking dragged out of the container deletes the arrow points', () => {
     const p = setArrowRoute(arrowProject(), 'r1', route);
-    // Dentro do container a rota fica.
+    // Inside the container the route stays.
     expect(
       moveMarking(p, 'a3', 10, 10).arrows.find((a) => a.id === 'r1')?.points,
     ).toEqual(route);
-    // Para fora (600 px à direita, no vão entre A e B): vira marcação do canvas.
+    // Out (600 px to the right, in the gap between A and B): it becomes a canvas marking.
     const out = moveMarking(p, 'a3', 600, 0);
     expect(out.markings.find((m) => m.id === 'a3')?.containerId).toBeNull();
     expect(out.arrows.find((a) => a.id === 'r1')?.points).toEqual([]);
     expect(validateProject(out)).toEqual([]);
   });
 
-  it('tornar a marcação flutuante apaga os pontos da seta', () => {
+  it('making the marking floating deletes the arrow points', () => {
     const p = setArrowRoute(arrowProject(), 'r1', route);
     const next = setMarkingFloating(p, 'a3', true);
     expect(next.markings.find((m) => m.id === 'a3')).toMatchObject({
@@ -228,8 +228,8 @@ describe('trocar de espaço e trocar a imagem', () => {
     expect(next.arrows.find((a) => a.id === 'r1')?.points).toEqual([]);
   });
 
-  it('trocar o arquivo por um de outra resolução reescala os pontos do container', () => {
-    // Um container com arquivo: a1 → a3 no mesmo container, com rota em pixels dele.
+  it('replacing the file with one of another resolution rescales the container points', () => {
+    // A container with a file: a1 → a3 in the same container, with a route in its pixels.
     let p = arrowProject();
     p = {
       ...p,
@@ -255,7 +255,7 @@ describe('trocar de espaço e trocar a imagem', () => {
     expect(validateProject(bigger)).toEqual([]);
   });
 
-  it('a rota entre containers diferentes (no canvas) não é reescalada', () => {
+  it('the route between different containers (on the canvas) is not rescaled', () => {
     let p = withArrow(arrowProject(), 'r5', 'a1', 'b1', { points: [{ x: 1500, y: 50 }] });
     p = {
       ...p,

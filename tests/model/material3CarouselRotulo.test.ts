@@ -1,8 +1,8 @@
-// Etapa #1743 (RC1): o rótulo do carousel precisa ser legível sobre o reservado da imagem.
-// O Catálogo nunca carrega imagem remota, então o item aparece sempre como reservado: `CCC8CE` (app clara),
-// `48474C` (app escura), `C2BFC4` e `6A696C` (PNG do MCP). O teste lê a cena do carousel nos dois modos e nos
-// três estilos, toma o alfa do véu no topo da caixa do texto do `rótulo`, compõe o `scrim` sobre cada reservado
-// e confere contraste ≥ 4,5:1 (WCAG AA) contra a cor do rótulo (`secondary-fixed`).
+// Stage #1743 (RC1): the carousel label must be legible over the image placeholder.
+// The Catalog never loads a remote image, so the item always appears as a placeholder: `CCC8CE` (light app),
+// `48474C` (dark app), `C2BFC4` and `6A696C` (MCP PNG). The test reads the carousel scene in both modes and in the
+// three styles, takes the veil alpha at the top of the text box of the label (`rótulo`), composes the `scrim` over each placeholder
+// and checks contrast ≥ 4.5:1 (WCAG AA) against the label color (`secondary-fixed`).
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import { absoluteBoxes, walk } from '../../src/model/components/scene';
@@ -17,7 +17,7 @@ type Drawing = ReturnType<typeof drawIn>;
 
 const STYLES = ['multi-browse', 'uncontained', 'centered-hero'] as const;
 const MODES: Mode[] = ['light', 'dark'];
-/** Os reservados da imagem: o da app (`palette.ts`, sobre o token) e o do PNG do MCP (`sceneRaster.ts`). */
+/** The image placeholders: the app's (`palette.ts`, over the token) and the MCP PNG's (`sceneRaster.ts`). */
 const PLACEHOLDERS = ['#CCC8CE', '#48474C', '#C2BFC4', '#6A696C'] as const;
 const MIN_CONTRAST = 4.5;
 
@@ -56,13 +56,13 @@ const items = (): Values =>
 
 const named = (d: Drawing, name: string): SceneNode => {
   for (const node of walk(d.root)) if (node.name === name && node.visible) return node;
-  throw new Error(`nó ausente: ${name}`);
+  throw new Error(`node missing: ${name}`);
 };
 
-/** O alfa do véu (degradê linear) num ponto `y` do espaço local dele, pela projeção no eixo do degradê. */
+/** The veil alpha (linear gradient) at a point `y` of its local space, by projection on the gradient axis. */
 function veilAlphaAt(veil: SceneNode, y: number): number {
   const paint = veil.fills[0];
-  if (paint?.type !== 'linear') throw new Error('o véu não é um degradê');
+  if (paint?.type !== 'linear') throw new Error('the veil is not a gradient');
   const dy = paint.end.y - paint.start.y;
   const t = dy === 0 ? 0 : Math.min(1, Math.max(0, (y - paint.start.y) / dy));
   const stops = [...paint.stops].sort((a, b) => a.offset - b.offset);
@@ -75,23 +75,24 @@ function veilAlphaAt(veil: SceneNode, y: number): number {
   return alphaOf(before.color) * (1 - k) + alphaOf(after.color) * k;
 }
 
-describe('carousel — rótulo legível sobre o reservado (#1743)', () => {
+// pt-BR kept: 'véu' (veil) and 'rótulo' (label) are node names of the frozen material3 fixture package (tests/fixtures/material3)
+describe('carousel — label legible over the placeholder (#1743)', () => {
   for (const style of STYLES) {
     for (const mode of MODES) {
-      it(`${style}, ${mode}: contraste ≥ 4,5:1 do rótulo sobre o scrim sobre os quatro reservados`, () => {
+      it(`${style}, ${mode}: label contrast ≥ 4.5:1 over the scrim over the four placeholders`, () => {
         const d = drawIn(catalog, entry, { ...items(), style }, mode);
         const veil = named(d, 'véu');
         const label = named(d, 'rótulo');
         const boxes = absoluteBoxes(d.root);
         const veilBox = boxes.get(veil.id)!;
         const labelBox = boxes.get(label.id)!;
-        // O pior ponto da caixa do texto é o topo dela (onde o véu é mais transparente).
+        // The worst point of the text box is its top (where the veil is most transparent).
         const alpha = veilAlphaAt(veil, labelBox.y - veilBox.y);
         const scrim = rgb(tok('scrim', mode).slice(0, 7));
         const text = rgb(tok('secondary-fixed', mode).slice(0, 7));
         for (const placeholder of PLACEHOLDERS) {
           const ratio = contrast(text, over(scrim, alpha, rgb(placeholder)));
-          expect(ratio, `${placeholder} com alfa ${alpha}`).toBeGreaterThanOrEqual(
+          expect(ratio, `${placeholder} with alpha ${alpha}`).toBeGreaterThanOrEqual(
             MIN_CONTRAST,
           );
         }
@@ -99,7 +100,7 @@ describe('carousel — rótulo legível sobre o reservado (#1743)', () => {
     }
   }
 
-  it('o véu fica sólido nos 36 px de baixo e some no topo (0,55 até 0,75 e 0 em 1)', () => {
+  it('the veil is solid in the bottom 36 px and fades out at the top (0.55 up to 0.75 and 0 at 1)', () => {
     const d = drawIn(catalog, entry, { ...items(), style: 'multi-browse' }, 'light');
     const veil = named(d, 'véu');
     expect(veilAlphaAt(veil, 48)).toBeCloseTo(0.55, 2);

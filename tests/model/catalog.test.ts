@@ -1,4 +1,4 @@
-// Catálogo da biblioteca: o pacote Material 3 lido de tests/fixtures/material3/.
+// Library catalog: the Material 3 package read from tests/fixtures/material3/.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -36,8 +36,8 @@ const files: LibraryFile[] = listDisk(ROOT).map((path) =>
 const catalog = buildCatalog(files);
 const entries = catalog.layers.flatMap((l) => l.entries);
 
-describe('catálogo do Material 3', () => {
-  it('lê a especialização, o relatório e os quinze tipos', () => {
+describe('Material 3 catalog', () => {
+  it('reads the specialization, the report and the fifteen types', () => {
     expect(catalog.spec?.id).toBe('material3');
     expect(catalog.report.errors).toEqual([]);
     expect(catalog.layers.length).toBeGreaterThan(0);
@@ -45,7 +45,7 @@ describe('catálogo do Material 3', () => {
     expect(catalog.layers[0]?.entries[0]?.layerId).toBe(catalog.layers[0]?.id);
   });
 
-  it('todo tipo tem componente, documento e exemplos', () => {
+  it('every type has a component, a document and examples', () => {
     for (const entry of entries) {
       expect(entry.component, entry.type.id).not.toBeNull();
       expect(entry.docText, entry.type.id).toMatch(/\S/);
@@ -54,7 +54,7 @@ describe('catálogo do Material 3', () => {
     }
   });
 
-  it('marca como container os tipos com slot', () => {
+  it('marks the types with a slot as containers', () => {
     const containers = entries.filter((e) => e.container).map((e) => e.type.id);
     const plain = entries.filter((e) => !e.container).map((e) => e.type.id);
     expect(containers.length).toBeGreaterThan(0);
@@ -62,17 +62,17 @@ describe('catálogo do Material 3', () => {
     expect(plain).toContain('m3-button');
   });
 
-  it('monta a tabela de propriedades de um tipo conhecido', () => {
+  it('builds the properties table of a known type', () => {
     const button = findEntry(catalog, 'm3-button');
     expect(button?.fields.map((f) => f.key)).toContain('variant');
     const variant = button?.fields.find((f) => f.key === 'variant');
     expect(variant?.type).toBe('enum');
     expect(variant?.options?.length).toBeGreaterThan(1);
     expect(variant?.label).toMatch(/\S/);
-    expect(findEntry(catalog, 'não-existe')).toBeUndefined();
+    expect(findEntry(catalog, 'does-not-exist')).toBeUndefined();
   });
 
-  it('desenha o preview e cada exemplo sem erro', () => {
+  it('draws the preview and each example without error', () => {
     for (const entry of entries) {
       expect(
         exampleDrawing(catalog, entry, undefined, approximateMeasurer),
@@ -86,9 +86,9 @@ describe('catálogo do Material 3', () => {
     }
   });
 
-  it('o tamanho passado ao desenho vale na raiz', () => {
+  it('the size passed to the drawing applies at the root', () => {
     const button = findEntry(catalog, 'm3-button');
-    if (button === undefined) throw new Error('sem botão');
+    if (button === undefined) throw new Error('no button');
     const drawing = drawEntry(button, {}, approximateMeasurer, {
       width: 200,
       height: 60,
@@ -97,9 +97,9 @@ describe('catálogo do Material 3', () => {
     expect(drawing?.root.height).toBe(60);
   });
 
-  it('intervalo do playground: do minSize ao dobro do size', () => {
+  it('playground range: from the minSize to double the size', () => {
     const button = findEntry(catalog, 'm3-button')?.component;
-    if (!button) throw new Error('sem componente');
+    if (!button) throw new Error('no component');
     const { min, max } = playgroundSizeRange(button);
     expect(min).toEqual({
       width: button.minSize?.width ?? 1,
@@ -113,21 +113,21 @@ describe('catálogo do Material 3', () => {
     expect(clampPlaygroundSize(button, button.size)).toEqual(button.size);
   });
 
-  describe('tamanho que respeita o sizing', () => {
+  describe('size that respects the sizing', () => {
     const button = () => {
       const entry = findEntry(catalog, 'm3-button');
-      if (entry === undefined) throw new Error('sem botão');
+      if (entry === undefined) throw new Error('no button');
       return entry;
     };
     const overflow = /content larger than the box/;
 
-    it('hugAxes lê o sizing do componente', () => {
+    it('hugAxes reads the sizing of the component', () => {
       expect(hugAxes(button().component!)).toEqual({ width: true, height: false });
     });
 
-    it('label longo: a largura cresce e o desenho não corta', () => {
+    it('long label: the width grows and the drawing does not clip', () => {
       const entry = button();
-      const values = { ...entry.previewValues, label: 'Confirmar compra' };
+      const values = { ...entry.previewValues, label: 'Confirm purchase' };
       const size = fittedSize(entry, values, approximateMeasurer);
       expect(size.width).toBeGreaterThan(120);
       expect(size.height).toBe(40);
@@ -135,7 +135,7 @@ describe('catálogo do Material 3', () => {
       expect(drawing?.warnings.join('|')).not.toMatch(overflow);
     });
 
-    it('label curto: respeita o mínimo; eixo não-hug fica no size', () => {
+    it('short label: respects the minimum; a non-hug axis stays at the size', () => {
       const entry = button();
       const size = fittedSize(
         entry,
@@ -146,7 +146,7 @@ describe('catálogo do Material 3', () => {
       expect(size.height).toBe(40);
     });
 
-    it('label enorme: limita ao dobro do size', () => {
+    it('huge label: caps at double the size', () => {
       const entry = button();
       const values = { ...entry.previewValues, label: 'x'.repeat(200) };
       const size = fittedSize(entry, values, approximateMeasurer);
@@ -155,9 +155,9 @@ describe('catálogo do Material 3', () => {
       expect(drawing).not.toBeNull();
     });
 
-    it('eixo desligado em auto usa o base', () => {
+    it('axis switched off in auto uses the base', () => {
       const entry = button();
-      const values = { ...entry.previewValues, label: 'Confirmar compra' };
+      const values = { ...entry.previewValues, label: 'Confirm purchase' };
       expect(
         fittedSize(entry, values, approximateMeasurer, {
           base: { width: 150, height: 40 },
@@ -166,8 +166,8 @@ describe('catálogo do Material 3', () => {
       ).toEqual({ width: 150, height: 40 });
     });
 
-    describe('sizing por expressão (MC2, decisão 9 da #898)', () => {
-      /** A altura pelo `style` (64, 112, 152); o `size` 100 é o que vale se a expressão falhar. */
+    describe('sizing by expression (MC2, decision 9 of #898)', () => {
+      /** The height by `style` (64, 112, 152); `size` 100 is what applies if the expression fails. */
       function bar() {
         const entry = button();
         const component = {
@@ -185,7 +185,7 @@ describe('catálogo do Material 3', () => {
         return { ...entry, component };
       }
 
-      it('64, 112 e 152 no playground (fittedSize)', () => {
+      it('64, 112 and 152 in the playground (fittedSize)', () => {
         const entry = bar();
         const heightOf = (style: string) =>
           fittedSize(entry, { ...entry.previewValues, style }, approximateMeasurer)
@@ -195,36 +195,36 @@ describe('catálogo do Material 3', () => {
         expect(heightOf('large')).toBe(152);
       });
 
-      it('valor inválido ou ausente fica no size daquele eixo', () => {
+      it('invalid or missing value stays at the size of that axis', () => {
         const entry = bar();
-        for (const style of ['nope', 'outro', undefined])
+        for (const style of ['nope', 'other', undefined])
           expect(
             fittedSize(entry, { ...entry.previewValues, style }, approximateMeasurer)
               .height,
           ).toBe(100);
       });
 
-      it('hugAxes lê o sizing avaliado com os valores (hug ou px da expressão)', () => {
+      it('hugAxes reads the sizing evaluated with the values (hug or px of the expression)', () => {
         const { component } = bar();
         expect(hugAxes(component, { style: 'tall' })).toEqual({
           width: false,
           height: true,
         });
-        // O px que a expressão dá também acompanha o sizing (o playground o aplica).
+        // The px that the expression gives also follows the sizing (the playground applies it).
         expect(hugAxes(component, { style: 'small' }).height).toBe(true);
-        // Valor inválido cai no size: nada a acompanhar.
+        // Invalid value falls back to the size: nothing to follow.
         expect(hugAxes(component, { style: 'nope' }).height).toBe(false);
         expect(hugAxes(component).height).toBe(false);
       });
     });
 
-    it('sem componente devolve 1x1', () => {
+    it('without a component returns 1x1', () => {
       const entry = { ...button(), component: null };
       expect(fittedSize(entry, {}, approximateMeasurer)).toEqual({ width: 1, height: 1 });
     });
   });
 
-  it('expõe o código por plataforma e as fontes agrupadas', () => {
+  it('exposes the code per platform and the grouped sources', () => {
     const withCode = entries.filter((e) => e.code.length > 0);
     for (const entry of withCode) {
       for (const code of entry.code) {
@@ -238,8 +238,8 @@ describe('catálogo do Material 3', () => {
   });
 });
 
-describe('exemplo de sistema externo', () => {
-  it('passa o nó pela origem declarada e desenha a árvore', () => {
+describe('example from an external system', () => {
+  it('passes the node through the declared source and draws the tree', () => {
     const withExample = files.map((f) => {
       if (f.path === 'material3.spec.json' && f.text !== undefined) {
         const spec = JSON.parse(f.text);
@@ -247,7 +247,7 @@ describe('exemplo de sistema externo', () => {
           (t: { id: string }) => t.id === 'm3-top-app-bar',
         );
         type.examples.push({
-          name: 'Nó SDUI',
+          name: 'SDUI node',
           system: 'sdui',
           file: 'examples/bar.sdui.json',
         });
@@ -257,21 +257,21 @@ describe('exemplo de sistema externo', () => {
     });
     withExample.push({
       path: 'examples/bar.sdui.json',
-      text: JSON.stringify({ type: 'TopAppBar', props: { title: 'Olá' } }),
+      text: JSON.stringify({ type: 'TopAppBar', props: { title: 'Hello' } }),
     });
     const withSystem = buildCatalog(withExample);
     const entry = findEntry(withSystem, 'm3-top-app-bar');
-    const example = entry?.examples.find((e) => e.name === 'Nó SDUI');
+    const example = entry?.examples.find((e) => e.name === 'SDUI node');
     expect(example?.mode).toBe('system');
-    expect(example?.json).toEqual({ type: 'TopAppBar', props: { title: 'Olá' } });
+    expect(example?.json).toEqual({ type: 'TopAppBar', props: { title: 'Hello' } });
     const drawing = exampleDrawing(withSystem, entry!, example, approximateMeasurer);
     expect(drawing).not.toBeNull();
     expect(drawing?.root.children.length).toBeGreaterThan(0);
   });
 });
 
-describe('pacote quebrado de propósito', () => {
-  it('componente ausente: não lança, mantém o relatório e a entrada sem componente', () => {
+describe('deliberately broken package', () => {
+  it('missing component: does not throw, keeps the report and the entry without a component', () => {
     const broken = buildCatalog(
       files.filter((f) => f.path !== 'components/m3-button.json'),
     );
@@ -288,14 +288,14 @@ describe('pacote quebrado de propósito', () => {
     expect(findEntry(broken, 'm3-card')?.component).not.toBeNull();
   });
 
-  it('documento ausente: docText nulo', () => {
+  it('missing document: null docText', () => {
     const broken = buildCatalog(files.filter((f) => f.path !== 'docs/m3-button.md'));
     expect(broken.report.ok).toBe(false);
     expect(findEntry(broken, 'm3-button')?.docText).toBeNull();
     expect(findEntry(broken, 'm3-card')?.docText).not.toBeNull();
   });
 
-  it('sem especialização legível: catálogo vazio com o relatório', () => {
+  it('without a readable specialization: empty catalog with the report', () => {
     const broken = buildCatalog(files.filter((f) => f.path !== 'material3.spec.json'));
     expect(broken.spec).toBeNull();
     expect(broken.layers).toEqual([]);
@@ -305,7 +305,7 @@ describe('pacote quebrado de propósito', () => {
   });
 });
 
-describe('catálogo com variants no code (formatVersion 9)', () => {
+describe('catalog with variants in code (formatVersion 9)', () => {
   const build = (formatVersion = 9) =>
     buildCatalog([
       {
@@ -320,7 +320,7 @@ describe('catálogo com variants no code (formatVersion 9)', () => {
     return entry?.code[0];
   };
 
-  it('a base fica como está e variants traz o campo e os casos na ordem das options', () => {
+  it('the base stays as is and variants brings the field and the cases in the options order', () => {
     const code = codeOf('button');
     expect(code).toMatchObject({
       platform: { id: 'compose', name: 'Compose', language: 'kotlin' },
@@ -350,12 +350,12 @@ describe('catálogo com variants no code (formatVersion 9)', () => {
     });
   });
 
-  it('tipo sem variants não tem a chave', () => {
+  it('a type without variants has no key', () => {
     expect(codeOf('card')).toBeDefined();
     expect('variants' in codeOf('card')!).toBe(false);
   });
 
-  it('numa especialização 8 sem variants, o catálogo é o de sempre', () => {
+  it('in a specialization 8 without variants, the catalog is the usual one', () => {
     const json = variantsSpecJson(8) as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
     delete json.layers[0].annotationTypes[0].code.compose.variants;
     const code = buildCatalog([{ path: 'm3.json', text: JSON.stringify(json) }])
@@ -366,8 +366,8 @@ describe('catálogo com variants no code (formatVersion 9)', () => {
   });
 });
 
-describe('catálogo: documento externo (formatVersion 11)', () => {
-  const GITLAB = 'https://gitlab.empresa.com/grupo/design-docs';
+describe('catalog: external document (formatVersion 11)', () => {
+  const GITLAB = 'https://gitlab.example.com/group/design-docs';
   const build = (
     doc: unknown,
     repo: Record<string, unknown> = {
@@ -384,7 +384,7 @@ describe('catálogo: documento externo (formatVersion 11)', () => {
       .find((e) => e.type.id === 'button');
   };
 
-  it('doc objeto: docExternal com repo, caminho, url do repo e link do arquivo', () => {
+  it('object doc: docExternal with repo, path, repo url and file link', () => {
     const entry = build({ repo: 'design-docs', path: 'components/button.md' });
     expect(entry?.docText).toBeNull();
     expect(entry?.docExternal).toEqual({
@@ -395,7 +395,7 @@ describe('catálogo: documento externo (formatVersion 11)', () => {
     });
   });
 
-  it('sem urlTemplate: url nula, mas o repositório continua informado', () => {
+  it('without urlTemplate: null url, but the repository is still reported', () => {
     const entry = build(
       { repo: 'design-docs', path: 'components/button.md' },
       { id: 'design-docs', url: GITLAB },
@@ -408,18 +408,18 @@ describe('catálogo: documento externo (formatVersion 11)', () => {
     });
   });
 
-  it('doc texto continua dando docText e docExternal nulo', () => {
+  it('text doc still gives docText and a null docExternal', () => {
     const entry = build('docs/button.md');
-    expect(entry?.docText).toBeNull(); // arquivo fora do pacote de teste
+    expect(entry?.docText).toBeNull(); // file outside the test package
     expect(entry?.docExternal).toBeNull();
     expect(
       findEntry(catalog, 'm3-button')?.docExternal,
-      'tipo com doc texto no Material 3',
+      'type with a text doc in Material 3',
     ).toBeNull();
     expect(findEntry(catalog, 'm3-button')?.docText).toMatch(/\S/);
   });
 
-  it('sem doc: docExternal nulo', () => {
+  it('without doc: null docExternal', () => {
     expect(build(undefined)?.docExternal).toBeNull();
   });
 });

@@ -1,4 +1,4 @@
-// docs/component.schema.json contra os componentes reais e contra o parser.
+// docs/component.schema.json against the real components and against the parser.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { SAMPLE_COMPONENTS } from '../../../viewer/samples/samples';
@@ -17,23 +17,23 @@ function clone(): Record<string, unknown> {
 }
 
 describe('component.schema.json', () => {
-  it('cobre os quinze componentes do Material 3 e os de exemplo do laboratório', () => {
+  it('covers the fifteen Material 3 components and the lab example ones', () => {
     expect(M3_COMPONENTS).toHaveLength(15);
     expect(SAMPLE_COMPONENTS.length).toBeGreaterThan(0);
   });
 
-  it.each(all.map((c) => [c.id, c] as const))('aceita %s', (_id, component) => {
+  it.each(all.map((c) => [c.id, c] as const))('accepts %s', (_id, component) => {
     expect(checkSchema(schema, component)).toEqual([]);
   });
 
-  it('todo componente aceito pelo schema é aceito por parseComponent', () => {
+  it('every component accepted by the schema is accepted by parseComponent', () => {
     for (const component of all) {
       if (checkSchema(schema, component).length === 0)
         expect(parseComponent(component).ok, component.id).toBe(true);
     }
   });
 
-  it('recusa chave desconhecida na raiz e em nó', () => {
+  it('rejects an unknown key at the root and in a node', () => {
     const root = { ...clone(), extra: 1 };
     expect(checkSchema(schema, root).join('\n')).toContain('$.extra: chave desconhecida');
     const node = clone();
@@ -41,7 +41,7 @@ describe('component.schema.json', () => {
     expect(checkSchema(schema, node).length).toBeGreaterThan(0);
   });
 
-  it('recusa type de nó inválido', () => {
+  it('rejects an invalid node type', () => {
     const c = clone();
     (c.template as { children: Record<string, unknown>[] }).children[0] = {
       type: 'polygon',
@@ -49,17 +49,18 @@ describe('component.schema.json', () => {
     expect(checkSchema(schema, c).length).toBeGreaterThan(0);
   });
 
-  it('recusa componente sem size', () => {
+  it('rejects a component without size', () => {
     const c = clone();
     delete c.size;
+    // pt-BR kept: message text emitted by tests/support/jsonSchema.ts (not translated here)
     expect(checkSchema(schema, c)).toContain('$.size: obrigatório');
   });
 
-  it('recusa id fora do padrão', () => {
+  it('rejects an id outside the pattern', () => {
     expect(checkSchema(schema, { ...clone(), id: 'Ruim' }).length).toBeGreaterThan(0);
   });
 
-  describe('nó image (formatVersion 3)', () => {
+  describe('image node (formatVersion 3)', () => {
     const image = (extra: Record<string, unknown> = {}): Record<string, unknown> => ({
       type: 'image',
       src: { $field: 'foto' },
@@ -80,7 +81,7 @@ describe('component.schema.json', () => {
     const withImage = (node: Record<string, unknown>): Record<string, unknown> =>
       v3([node]);
 
-    it('aceita image com $field e com literal https, e o parseComponent também', () => {
+    it('accepts image with $field and with an https literal, and parseComponent too', () => {
       for (const node of [image(), image({ src: 'https://exemplo.invalid/a.png' })]) {
         const c = withImage(node);
         expect(checkSchema(schema, c)).toEqual([]);
@@ -88,7 +89,7 @@ describe('component.schema.json', () => {
       }
     });
 
-    it('aceita image dentro de repeat', () => {
+    it('accepts image inside repeat', () => {
       const c = v3([
         {
           type: 'repeat',
@@ -100,13 +101,13 @@ describe('component.schema.json', () => {
       expect(parseComponent(c).ok).toBe(true);
     });
 
-    it('recusa image sem src', () => {
+    it('rejects image without src', () => {
       const node = image();
       delete node.src;
       expect(checkSchema(schema, withImage(node)).length).toBeGreaterThan(0);
     });
 
-    it('recusa src com $concat, com default e literal que não é https', () => {
+    it('rejects src with $concat, with default and a literal that is not https', () => {
       for (const src of [
         { $concat: ['https://', { $field: 'host' }] },
         { $field: 'foto', default: 'https://exemplo.invalid/a.png' },
@@ -119,7 +120,7 @@ describe('component.schema.json', () => {
         ).toBeGreaterThan(0);
     });
 
-    it('recusa fit inválido e hug em width ou height', () => {
+    it('rejects invalid fit and hug in width or height', () => {
       expect(
         checkSchema(schema, withImage(image({ fit: 'stretch' }))).length,
       ).toBeGreaterThan(0);
@@ -134,7 +135,7 @@ describe('component.schema.json', () => {
     });
   });
 
-  describe('stroke.cap, join e sides (formatVersion 4)', () => {
+  describe('stroke.cap, join and sides (formatVersion 4)', () => {
     const v4 = (stroke: Record<string, unknown>): Record<string, unknown> => ({
       format: 'mapping-component',
       formatVersion: 4,
@@ -144,7 +145,7 @@ describe('component.schema.json', () => {
       template: { type: 'frame', stroke: { color: '#000', ...stroke } },
     });
 
-    it('aceita cap, join e sides, literais ou por expressão', () => {
+    it('accepts cap, join and sides, literal or by expression', () => {
       for (const stroke of [
         { cap: 'round', join: 'bevel', sides: ['top', 'bottom'] },
         { cap: { $field: 'ponta', default: 'square' } },
@@ -156,7 +157,7 @@ describe('component.schema.json', () => {
       }
     });
 
-    it('recusa valores inválidos e formatVersion 5', () => {
+    it('rejects invalid values and formatVersion 5', () => {
       for (const stroke of [
         { cap: 'pontudo' },
         { join: 'redondo' },
@@ -173,7 +174,7 @@ describe('component.schema.json', () => {
     });
   });
 
-  describe('limites, expressão de tamanho e layout, distribute (formatVersion 4)', () => {
+  describe('limits, size expression and layout, distribute (formatVersion 4)', () => {
     const v4 = (template: Record<string, unknown>): Record<string, unknown> => ({
       format: 'mapping-component',
       formatVersion: 4,
@@ -183,7 +184,7 @@ describe('component.schema.json', () => {
       template,
     });
 
-    it('aceita as chaves novas, e o parseComponent também', () => {
+    it('accepts the new keys, and parseComponent too', () => {
       for (const template of [
         { type: 'frame', minWidth: 10, maxWidth: { $field: 'm', default: 90 } },
         { type: 'frame', width: { $field: 'w', default: 'fill' }, height: '50%' },
@@ -217,7 +218,7 @@ describe('component.schema.json', () => {
       }
     });
 
-    it('recusa valores inválidos', () => {
+    it('rejects invalid values', () => {
       for (const template of [
         { type: 'frame', minWidth: -1 },
         { type: 'frame', width: { $field: 'w', default: 'enorme' } },
@@ -251,7 +252,7 @@ describe('component.schema.json', () => {
         ).toBeGreaterThan(0);
     });
   });
-  describe('expressões de wrap e maxLines em $if e $switch (formatVersion 4)', () => {
+  describe('wrap and maxLines expressions in $if and $switch (formatVersion 4)', () => {
     const v4 = (font: Record<string, unknown>): Record<string, unknown> => ({
       format: 'mapping-component',
       formatVersion: 4,
@@ -261,7 +262,7 @@ describe('component.schema.json', () => {
       template: { type: 'frame', children: [{ type: 'text', text: 'oi', font }] },
     });
 
-    it('aceita $if e $switch com ramos do tipo do campo (o parser também)', () => {
+    it('accepts $if and $switch with branches of the field type (the parser too)', () => {
       for (const font of [
         { maxLines: { $if: { $field: 'curto' }, then: 2, else: 3 } },
         { maxLines: { $switch: 'modo', cases: { a: 2 }, default: 3 } },
@@ -274,7 +275,7 @@ describe('component.schema.json', () => {
       }
     });
 
-    it('recusa ramo fora do tipo (maxLines 0 ou texto, wrap sublinhado)', () => {
+    it('rejects a branch outside the type (maxLines 0 or text, underlined wrap)', () => {
       for (const font of [
         { maxLines: { $if: { $field: 'curto' }, then: 0, else: 3 } },
         { maxLines: { $switch: 'modo', cases: { a: 'underline' }, default: 3 } },
@@ -287,7 +288,7 @@ describe('component.schema.json', () => {
     });
   });
 
-  describe('chaves da etapa "extensões" (formatVersion 4)', () => {
+  describe('keys of the "extensions" stage (formatVersion 4)', () => {
     const t = (name: string, extra: object = {}) => ({ $token: name, ...extra });
     const v4 = (child: Record<string, unknown>, layout?: Record<string, unknown>) => ({
       format: 'mapping-component',
@@ -298,7 +299,7 @@ describe('component.schema.json', () => {
       template: { type: 'frame', ...(layout ? { layout } : {}), children: [child] },
     });
 
-    it('aceita $token em sombra, raios e tracejado, alpha, offset, justify e reverse (o parser também)', () => {
+    it('accepts $token in shadow, radii and dashed, alpha, offset, justify and reverse (the parser too)', () => {
       const cases = [
         v4({
           type: 'rect',
@@ -334,7 +335,7 @@ describe('component.schema.json', () => {
       }
     });
 
-    it('recusa alpha fora de 0..1, offset negativo e justify desconhecido', () => {
+    it('rejects alpha outside 0..1, negative offset and unknown justify', () => {
       const bad = [
         v4({ type: 'rect', width: 1, height: 1, fill: t('x', { alpha: 2 }) }),
         v4({ type: 'rect', width: 1, height: 1, stroke: { color: '#000', offset: -1 } }),
@@ -344,7 +345,7 @@ describe('component.schema.json', () => {
         expect(checkSchema(schema, c).length, JSON.stringify(c)).toBeGreaterThan(0);
     });
   });
-  it('aceita as operações numéricas e as comparações (formatVersion 4) e o parser concorda', () => {
+  it('accepts the numeric operations and the comparisons (formatVersion 4) and the parser agrees', () => {
     const c: Record<string, unknown> = { ...clone(), formatVersion: 4 };
     (c.template as Record<string, unknown>).children = [
       {
@@ -365,7 +366,7 @@ describe('component.schema.json', () => {
 });
 
 describe('component.schema.json — rotation (EX3)', () => {
-  it('aceita rotation, literal ou expressão, em qualquer nó, e recusa o que não é número', () => {
+  it('accepts rotation, literal or expression, on any node, and rejects what is not a number', () => {
     const component = clone();
     const template = component.template as { children?: Record<string, unknown>[] };
     const turned = { type: 'rect', width: 4, height: 4, rotation: 45 };
@@ -379,7 +380,7 @@ describe('component.schema.json — rotation (EX3)', () => {
     expect(checkSchema(schema, component)).not.toEqual([]);
   });
 
-  it('aceita $lines e o sizing por expressão (MC2), e recusa $lines sem nome', () => {
+  it('accepts $lines and the sizing by expression (MC2), and rejects $lines without a name', () => {
     const c = clone();
     c.formatVersion = 4;
     c.sizing = {
@@ -392,12 +393,12 @@ describe('component.schema.json — rotation (EX3)', () => {
       else: 48,
     };
     expect(checkSchema(schema, c)).toEqual([]);
-    expect(parseComponent(c).ok).toBe(false); // o nó `msg` não existe neste componente
+    expect(parseComponent(c).ok).toBe(false); // the `msg` node does not exist in this component
     (c.template as Record<string, unknown>).minHeight = { $lines: '' };
     expect(checkSchema(schema, c).length).toBeGreaterThan(0);
   });
 
-  it('aceita let no quadro e $var onde vale expressão ou condição (formatVersion 4)', () => {
+  it('accepts let in the frame and $var where an expression or condition applies (formatVersion 4)', () => {
     const c = clone();
     c.formatVersion = 4;
     const template = c.template as Record<string, unknown>;
@@ -421,12 +422,13 @@ describe('component.schema.json — rotation (EX3)', () => {
     expect(parseComponent(c).ok).toBe(true);
   });
 
-  it('recusa nome de variável fora do padrão, $var com outra chave e let fora de quadro', () => {
+  it('rejects a variable name outside the pattern, $var with another key and let outside a frame', () => {
     const c = clone();
     c.formatVersion = 4;
     const template = c.template as Record<string, unknown>;
     template.let = { Pad: 8 };
     template.children = [];
+    // pt-BR kept: message text emitted by tests/support/jsonSchema.ts (not translated here)
     expect(checkSchema(schema, c).join('\n')).toContain('nome fora do padrão');
     template.let = { pad: 8 };
     template.children = [{ type: 'rect', width: { $var: 'pad', default: 1 }, height: 4 }];

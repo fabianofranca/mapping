@@ -9,7 +9,7 @@ import {
 } from '../../src/model';
 
 export const NOW = '2026-09-30T12:00:00.000Z';
-/** Identidade fixa dos projetos dos testes (os arquivos gerados precisam ser estáveis). */
+/** Fixed identity of the test projects (the generated files need to be stable). */
 export const PROJECT_ID = '00000000-0000-4000-8000-000000000001';
 
 export function emptyProject(): Project {
@@ -22,9 +22,10 @@ export function emptyProject(): Project {
 }
 
 /**
- * Projeto de exemplo dos testes do modelo:
- * I1 (4000×3000) com M1 › M2 › M3; I2 (1000×1000) com M4.
- * Camadas L1 e L2; anotações A1 (M1/L1), A2 (M1/L2), A3 (M2/L1), A4 (M4/L2).
+ * Sample project of the model tests:
+ * I1 (4000×3000) with M1 › M2 › M3; I2 (1000×1000) with M4.
+ * Layers L1 and L2; annotations A1 (M1/L1), A2 (M1/L2), A3 (M2/L1), A4 (M4/L2).
+ * The data values (names, keys) stay in Portuguese: other test files outside this phase assert on them.
  */
 export function sampleProject(): Project {
   let p = emptyProject();
@@ -92,7 +93,7 @@ export function image(p: Project, id: string) {
   return i;
 }
 
-/** Garante que a operação produziu um projeto válido. */
+/** Ensures the operation produced a valid project. */
 export function expectValid(p: Project): Project {
   const issues = validateProject(p);
   if (issues.length > 0)

@@ -1,5 +1,5 @@
-// O nó `image` (imagem remota, componente `formatVersion` 3): validação do `src` restrito,
-// versões, cena montada e layout independente da URL. Nenhuma requisição de rede.
+// The `image` node (remote image, `formatVersion` 3 component): validation of the restricted `src`,
+// versions, assembled scene and layout independent of the URL. No network request.
 import { describe, expect, it } from 'vitest';
 import type {
   ComponentFile,
@@ -23,11 +23,11 @@ import {
 
 type Raw = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-const URL_A = 'https://cdn.exemplo.com/a.png';
+const URL_A = 'https://cdn.example.com/a.png';
 
 const image = (extra: Raw = {}): Raw => ({
   type: 'image',
-  name: 'foto',
+  name: 'photo',
   src: URL_A,
   width: 40,
   height: 40,
@@ -44,7 +44,7 @@ function raw(node: Raw = image(), version = 3): Raw {
     template: {
       type: 'frame',
       layout: { type: 'row', gap: 8, padding: 8 },
-      children: [node, { type: 'text', text: { $field: 'nome' } }],
+      children: [node, { type: 'text', text: { $field: 'name' } }],
     },
   };
 }
@@ -66,7 +66,7 @@ function draw(c: ComponentFile, values: FieldValues) {
   return instantiate(c, values, BOX, { measure: approximateMeasurer });
 }
 
-/** O primeiro nó `rect` da cena (o nó `image` do componente vira um). */
+/** The first `rect` node of the scene (the component's `image` node becomes one). */
 function firstRect(node: SceneNode): SceneNode | undefined {
   if (node.type === 'rect') return node;
   if (node.type === 'frame') {
@@ -79,22 +79,22 @@ function firstRect(node: SceneNode): SceneNode | undefined {
 }
 
 describe('parseComponent: image', () => {
-  it('aceita na formatVersion 3 o literal https://, o $field e o fit', () => {
+  it('accepts the https:// literal, the $field and the fit in formatVersion 3', () => {
     expect(problems(raw())).toEqual([]);
-    expect(problems(raw(image({ src: { $field: 'foto' } })))).toEqual([]);
+    expect(problems(raw(image({ src: { $field: 'photo' } })))).toEqual([]);
     for (const fit of ['cover', 'contain', 'fill'])
       expect(problems(raw(image({ fit })))).toEqual([]);
   });
 
-  it('aceita um literal de host local (a política decide em execução)', () => {
+  it('accepts a local host literal (the policy decides at runtime)', () => {
     expect(problems(raw(image({ src: 'https://localhost:8443/a.png' })))).toEqual([]);
     expect(problems(raw(image({ src: 'https://192.168.0.2/a.png' })))).toEqual([]);
   });
 
-  it('vale dentro do template de um repeat', () => {
+  it('works inside the template of a repeat', () => {
     const input = raw({
       type: 'repeat',
-      field: 'fotos',
+      field: 'photos',
       template: {
         type: 'frame',
         children: [image({ src: { $field: 'url' } })],
@@ -103,7 +103,7 @@ describe('parseComponent: image', () => {
     expect(problems(input)).toEqual([]);
   });
 
-  it('o repeat vale na 2 e na 3, e a 1 o recusa', () => {
+  it('the repeat works in 2 and 3, and 1 rejects it', () => {
     const rep = {
       type: 'repeat',
       field: 'l',
@@ -116,7 +116,7 @@ describe('parseComponent: image', () => {
     ]);
   });
 
-  it('image na formatVersion 1 ou 2 é erro, no caminho do nó', () => {
+  it('image in formatVersion 1 or 2 is an error, at the node path', () => {
     for (const version of [1, 2]) {
       expect(problems(raw(image(), version))).toEqual([
         'template.children[0].type: the image node only exists in formatVersion 3',
@@ -124,25 +124,25 @@ describe('parseComponent: image', () => {
     }
   });
 
-  it('a 1 e a 2 continuam aceitas sem image', () => {
+  it('1 and 2 are still accepted without image', () => {
     const plain = { type: 'rect', width: 10, height: 10 };
     expect(problems(raw(plain, 1))).toEqual([]);
     expect(problems(raw(plain, 2))).toEqual([]);
   });
 
-  it('src é required', () => {
+  it('src is required', () => {
     const node = image();
     delete node.src;
     expect(problems(raw(node))).toEqual(['template.children[0].src: required field']);
   });
 
-  it('fit inválido', () => {
+  it('invalid fit', () => {
     expect(problems(raw(image({ fit: 'zoom' })))).toEqual([
       'template.children[0].fit: expected one of: cover, contain, fill, fill-width, fill-height, scale-down, none',
     ]);
   });
 
-  it('hug na largura e na altura é erro', () => {
+  it('hug on width and height is an error', () => {
     expect(problems(raw(image({ width: 'hug' })))).toEqual([
       'template.children[0].width: the image node does not accept hug: the layout does not depend on the downloaded image',
     ]);
@@ -151,7 +151,7 @@ describe('parseComponent: image', () => {
     ]);
   });
 
-  it('children e layout caem na mensagem de nó que não é quadro', () => {
+  it('children and layout fall into the message for a node that is not a frame', () => {
     expect(problems(raw(image({ children: [] })))).toEqual([
       'template.children[0].children: only nodes of type frame accept children (this is image)',
     ]);
@@ -161,12 +161,12 @@ describe('parseComponent: image', () => {
   });
 
   it.each([
-    ['relativo', 'imagens/a.png', 'invalid'],
-    ['http', 'http://cdn.exemplo.com/a.png', 'insecure'],
+    ['relative', 'images/a.png', 'invalid'],
+    ['http', 'http://cdn.example.com/a.png', 'insecure'],
     ['data', 'data:image/png;base64,AAAA', 'invalid'],
-    ['com credenciais', 'https://u:p@cdn.exemplo.com/a.png', 'credentials'],
-    ['vazio', '', 'empty'],
-  ])('src literal %s é erro de formato', (_name, src, reason) => {
+    ['with credentials', 'https://u:p@cdn.example.com/a.png', 'credentials'],
+    ['empty', '', 'empty'],
+  ])('literal src %s is a format error', (_name, src, reason) => {
     expect(problems(raw(image({ src })))).toEqual([
       `template.children[0].src: expected an absolute https:// URL (${reason})`,
     ]);
@@ -175,36 +175,36 @@ describe('parseComponent: image', () => {
   it.each([
     ['$concat', { $concat: ['https://x.com/', { $field: 'id' }] }],
     ['$switch', { $switch: 'k', cases: { a: URL_A } }],
-    ['$if', { $if: { $has: 'foto' }, then: URL_A }],
-    ['$field com default', { $field: 'foto', default: URL_A }],
-    ['número', 5],
-    ['objeto sem operador', { url: URL_A }],
-  ])('src com %s é erro', (_name, src) => {
+    ['$if', { $if: { $has: 'photo' }, then: URL_A }],
+    ['$field with default', { $field: 'photo', default: URL_A }],
+    ['number', 5],
+    ['object without operator', { url: URL_A }],
+  ])('src with %s is an error', (_name, src) => {
     expect(problems(raw(image({ src })))).toEqual([
       'template.children[0].src: src only accepts literal text or { "$field": "<field>" }',
     ]);
   });
 
-  it('$field vazio no src é erro de chave', () => {
+  it('empty $field in src is a key error', () => {
     expect(problems(raw(image({ src: { $field: '' } })))).toEqual([
       'template.children[0].src.$field: expected a field key (non-empty text)',
     ]);
   });
 
-  it('o $field do src entra nos campos citados', () => {
-    const c = component(raw(image({ src: { $field: 'foto' } })));
-    expect(collectFieldKeys(c)).toEqual(['foto', 'nome']);
-    expect([...referencedFields(c.template)].sort()).toEqual(['foto', 'nome']);
+  it('the src $field enters the referenced fields', () => {
+    const c = component(raw(image({ src: { $field: 'photo' } })));
+    expect(collectFieldKeys(c)).toEqual(['name', 'photo']);
+    expect([...referencedFields(c.template)].sort()).toEqual(['name', 'photo']);
   });
 });
 
 describe('instantiate: image', () => {
   const withField = component(
-    raw(image({ src: { $field: 'foto' }, fill: '#eeeeee', cornerRadius: 4 })),
+    raw(image({ src: { $field: 'photo' }, fill: '#eeeeee', cornerRadius: 4 })),
   );
   const imageNode = (root: FrameNode) => firstRect(root);
 
-  it('vira um rect com o fundo e depois o paint image com url e fit (padrão cover)', () => {
+  it('becomes a rect with the background and then the image paint with url and fit (default cover)', () => {
     const { root } = draw(
       component(raw(image({ fill: '#eeeeee', cornerRadius: 4 }))),
       {},
@@ -218,7 +218,7 @@ describe('instantiate: image', () => {
     expect(node?.type === 'rect' ? node.cornerRadius : undefined).toBe(4);
   });
 
-  it('respeita o fit e o stroke do nó', () => {
+  it('respects the fit and stroke of the node', () => {
     const c = component(
       raw(image({ fit: 'contain', stroke: { color: '#112233', width: 2 } })),
     );
@@ -227,32 +227,32 @@ describe('instantiate: image', () => {
     expect(node?.stroke).toMatchObject({ width: 2, align: 'inside' });
   });
 
-  it('o campo string vira a url (aparada); vazio, ausente ou número ficam sem url', () => {
+  it('the string field becomes the url (trimmed); empty, missing or number end up without url', () => {
     const url = (values: FieldValues) => {
       const paints = imageNode(draw(withField, values).root)?.fills ?? [];
       return paints[paints.length - 1];
     };
-    expect(url({ foto: `  ${URL_A} ` })).toEqual({
+    expect(url({ photo: `  ${URL_A} ` })).toEqual({
       type: 'image',
       fit: 'cover',
       url: URL_A,
     });
-    for (const foto of ['', '   ', null, 42, undefined])
-      expect(url({ foto })).toEqual({ type: 'image', fit: 'cover' });
+    for (const photo of ['', '   ', null, 42, undefined])
+      expect(url({ photo })).toEqual({ type: 'image', fit: 'cover' });
     expect(url({})).toEqual({ type: 'image', fit: 'cover' });
   });
 
-  it('o modelo não aplica a política: a url inválida passa como está', () => {
+  it('the model does not apply the policy: the invalid url passes as is', () => {
     const paints =
-      imageNode(draw(withField, { foto: 'http://10.0.0.1/a.png' }).root)?.fills ?? [];
+      imageNode(draw(withField, { photo: 'http://10.0.0.1/a.png' }).root)?.fills ?? [];
     expect(paints[paints.length - 1]).toMatchObject({ url: 'http://10.0.0.1/a.png' });
   });
 
-  it('dentro de um repeat, cada linha recebe a url da própria coluna', () => {
+  it('inside a repeat, each row gets the url of its own column', () => {
     const c = component(
       raw({
         type: 'repeat',
-        field: 'fotos',
+        field: 'photos',
         template: {
           type: 'frame',
           height: 20,
@@ -261,9 +261,9 @@ describe('instantiate: image', () => {
       }),
     );
     const { root } = draw(c, {
-      nome: 'x',
-      url: 'https://do.tipo/ignorada.png',
-      fotos: [{ url: 'https://a.com/1.png' }, { url: 'https://a.com/2.png' }, {}],
+      name: 'x',
+      url: 'https://of.type/ignored.png',
+      photos: [{ url: 'https://a.com/1.png' }, { url: 'https://a.com/2.png' }, {}],
     });
     const urls: (string | undefined)[] = [];
     const visit = (node: SceneNode): void => {
@@ -274,13 +274,13 @@ describe('instantiate: image', () => {
       if (node.type === 'frame') node.children.forEach(visit);
     };
     visit(root);
-    // A coluna sombreia o campo `url` do tipo: a linha sem valor fica sem url.
+    // The column shadows the type's `url` field: the row without a value ends up without url.
     expect(urls).toEqual(['https://a.com/1.png', 'https://a.com/2.png', undefined]);
   });
 
-  it('o layout é idêntico com e sem url', () => {
+  it('the layout is identical with and without url', () => {
     const boxes = (values: FieldValues) =>
       [...absoluteBoxes(draw(withField, values).root)].map(([id, b]) => [id, b]);
-    expect(boxes({ foto: URL_A, nome: 'Ana' })).toEqual(boxes({ nome: 'Ana' }));
+    expect(boxes({ photo: URL_A, name: 'Ana' })).toEqual(boxes({ name: 'Ana' }));
   });
 });

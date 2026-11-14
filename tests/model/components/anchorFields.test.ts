@@ -1,5 +1,5 @@
-// R3 (#1096, decisões 10 e 11): os pseudo-campos `$anchor.*` no motor (expressões, instância) e os
-// padrões do `anchor` da raiz do componente (`componentAnchorDefaults`).
+// R3 (#1096, decisions 10 and 11): the `$anchor.*` pseudo-fields in the engine (expressions, instance) and the
+// defaults of the component root's `anchor` (`componentAnchorDefaults`).
 import { describe, expect, it } from 'vitest';
 import { componentAnchorDefaults } from '../../../src/model/components/anchor';
 import type {
@@ -27,8 +27,8 @@ const VALUES: FieldValues = {
   '$anchor.height': 20,
 };
 
-describe('expressões com $anchor.*', () => {
-  it('$field, $switch, $eq, $has e as operações aritméticas leem os pseudo-campos', () => {
+describe('expressions with $anchor.*', () => {
+  it('$field, $switch, $eq, $has and the arithmetic operations read the pseudo-fields', () => {
     expect(evaluate({ $field: '$anchor.x' }, VALUES, 0)).toBe(30);
     expect(evaluate({ $field: '$anchor.y' }, VALUES, 0)).toBe(-12);
     expect(evaluate({ $sub: [{ $field: '$anchor.x' }, 8] } as never, VALUES, 0)).toBe(22);
@@ -49,7 +49,7 @@ describe('expressões com $anchor.*', () => {
     expect(evaluateBoolean({ $has: '$anchor.side' }, VALUES, false)).toBe(true);
   });
 
-  it('sem âncora ficam vazios: caem no default do $switch e no padrão do lugar', () => {
+  it('without an anchor they are empty: they fall to the $switch default and the place default', () => {
     const none: FieldValues = {};
     expect(evaluate({ $field: '$anchor.x', default: 7 }, none, 0)).toBe(7);
     expect(
@@ -58,7 +58,7 @@ describe('expressões com $anchor.*', () => {
     expect(evaluateBoolean({ $has: '$anchor.side' }, none, true)).toBe(false);
   });
 
-  it('referencedFields não conta os pseudo-campos como campos do tipo', () => {
+  it('referencedFields does not count the pseudo-fields as fields of the type', () => {
     const tree = {
       a: { $field: '$anchor.x' },
       b: { $switch: '$anchor.side', cases: {} },
@@ -70,7 +70,7 @@ describe('expressões com $anchor.*', () => {
   });
 });
 
-/** Um tooltip mínimo: corpo 100 × 40 e a seta (rect 16 × 8) sob o centro da âncora. */
+/** A minimal tooltip: 100 × 40 body and the arrow (rect 16 × 8) under the anchor center. */
 const TOOLTIP = {
   format: 'mapping-component',
   formatVersion: 4,
@@ -146,8 +146,8 @@ function drawn(anchor?: {
 const at = (n: SceneNode | undefined): [number, number] | undefined =>
   n === undefined ? undefined : [n.transform[4], n.transform[5]];
 
-describe('instância com a opção anchor (tooltip de teste)', () => {
-  it('a seta muda de lado e de posição quando o side muda', () => {
+describe('instance with the anchor option (test tooltip)', () => {
+  it('the arrow changes side and position when the side changes', () => {
     const top = drawn({ side: 'top', centerX: 50, centerY: 70, width: 20, height: 20 });
     expect(at(top.byName('seta-baixo'))).toEqual([42, 40]);
     expect(top.byName('seta-cima')).toBeUndefined();
@@ -174,12 +174,12 @@ describe('instância com a opção anchor (tooltip de teste)', () => {
     expect(at(start.byName('seta-lado'))).toEqual([92, 2]);
   });
 
-  it('x e y podem ser negativos ou passar da caixa', () => {
+  it('x and y can be negative or go past the box', () => {
     const far = drawn({ side: 'top', centerX: 300, centerY: 0, width: 20, height: 20 });
     expect(at(far.byName('seta-baixo'))?.[0]).toBe(292);
   });
 
-  it('sem âncora, os pseudo-campos ficam vazios: nenhuma seta, nenhum aviso', () => {
+  it('without an anchor, the pseudo-fields are empty: no arrow, no warning', () => {
     const none = drawn();
     expect(none.byName('seta-baixo')).toBeUndefined();
     expect(none.byName('seta-cima')).toBeUndefined();
@@ -188,7 +188,7 @@ describe('instância com a opção anchor (tooltip de teste)', () => {
     expect(none.warnings).toEqual([]);
   });
 
-  it('o tipo não declara os pseudo-campos: um campo de mesmo nome nos valores é sombreado', () => {
+  it('the type does not declare the pseudo-fields: a field of the same name in the values is shadowed', () => {
     const { root } = instantiate(
       tooltip(),
       { '$anchor.side': 'top', '$anchor.x': 99 },
@@ -198,7 +198,7 @@ describe('instância com a opção anchor (tooltip de teste)', () => {
     expect([...walk(root)].some((n) => n.name === 'seta-baixo' && n.visible)).toBe(false);
   });
 
-  it('measureComponent lê a mesma âncora (largura hug pela âncora)', () => {
+  it('measureComponent reads the same anchor (width hug by the anchor)', () => {
     const c = parseComponent({
       ...TOOLTIP,
       template: {
@@ -231,7 +231,7 @@ describe('componentAnchorDefaults', () => {
   const base = (anchor?: unknown): ComponentFile =>
     ({ ...tooltip(), anchor }) as ComponentFile;
 
-  it('sem anchor na raiz: top, center e 0', () => {
+  it('without anchor on the root: top, center and 0', () => {
     const { anchor, ...rest } = tooltip() as ComponentFile & { anchor?: unknown };
     void anchor;
     expect(componentAnchorDefaults(rest as ComponentFile, 2)).toEqual({
@@ -241,7 +241,7 @@ describe('componentAnchorDefaults', () => {
     });
   });
 
-  it('o offset do componente (unidades) vira pixels pela densidade', () => {
+  it('the component offset (units) becomes pixels by the density', () => {
     expect(componentAnchorDefaults(tooltip(), 1)).toEqual({
       side: 'top',
       align: 'center',
@@ -253,7 +253,7 @@ describe('componentAnchorDefaults', () => {
     });
   });
 
-  it('campos ausentes valem os padrões', () => {
+  it('missing fields take the defaults', () => {
     expect(
       componentAnchorDefaults(base({ side: 'end', offset: { cross: -2 } }), 2),
     ).toEqual({ side: 'end', align: 'center', offset: { main: 0, cross: -4 } });

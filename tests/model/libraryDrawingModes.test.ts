@@ -1,5 +1,5 @@
-// A prova de desenho (nível 3) roda cada caso em cada modo da especialização, com os tokens do
-// modo resolvidos (FX4, decisão 22 da #896): o aviso cita o modo e o tamanho vem do token tipado.
+// The drawing proof (level 3) runs each case in each mode of the specialization, with the mode's
+// tokens resolved (FX4, decision 22 of #896): the warning cites the mode and the size comes from the typed token.
 import { describe, expect, it } from 'vitest';
 import { validateLibrary } from '../../src/model/library';
 
@@ -59,28 +59,28 @@ function warnings(fontSize: unknown, tokens: unknown) {
   return report.warnings.map((w) => w.message);
 }
 
-describe('prova de desenho por modo (FX4)', () => {
+describe('drawing proof per mode (FX4)', () => {
   const TOKENS = {
     modes: ['light', 'dark'],
     values: { size: { light: 10, dark: 20 } },
   };
 
-  it('um caso que só não cabe no dark avisa citando o modo dark (e mede com o token)', () => {
-    // 11 caracteres × 0,55 × corpo: 10 px = 60,5 (cabe em 100); 20 px = 121 (não cabe). Sem o
-    // token resolvido o texto mediria 14 px (84,7) e não avisaria em modo nenhum.
+  it('a case that only does not fit in dark warns citing the dark mode (and measures with the token)', () => {
+    // 11 characters × 0.55 × body: 10 px = 60.5 (fits in 100); 20 px = 121 (does not fit). Without the
+    // resolved token the text would measure 14 px (84.7) and would not warn in any mode.
     expect(warnings({ $token: 'size' }, TOKENS)).toEqual([
       'type "t", the default values, mode dark, initial size 100×50: content larger than the box: frame (approximate)',
     ]);
   });
 
-  it('o aviso que vale em todos os modos sai uma vez, sem modo', () => {
+  it('a warning that applies in all modes comes out once, without a mode', () => {
     const both = { modes: ['light', 'dark'], values: { size: 40 } };
     expect(warnings({ $token: 'size' }, both)).toEqual([
       'type "t", the default values, initial size 100×50: content larger than the box: frame (approximate)',
     ]);
   });
 
-  it('sem tokens na especialização a mensagem não cita modo', () => {
+  it('without tokens in the specialization the message does not cite a mode', () => {
     expect(warnings(30, null)).toEqual([
       'type "t", the default values, initial size 100×50: content larger than the box: frame (approximate)',
     ]);

@@ -1,5 +1,5 @@
-// Fidelidade do layout (etapa Componentes fiéis, fase CF2): medição em duas passagens (B1),
-// `repeat.distribute` (B2), expressão nas chaves de layout (B3) e limites min/max (B4).
+// Layout fidelity (Faithful Components stage, phase CF2): two-pass measurement (B1),
+// `repeat.distribute` (B2), expression in layout keys (B3) and min/max limits (B4).
 import { describe, expect, it } from 'vitest';
 import type {
   ComponentFile,
@@ -17,14 +17,14 @@ import type { FrameNode, SceneNode } from '../../../src/model/components/scene';
 
 type Raw = Record<string, unknown>;
 
-const LINE = 16.8; // fonte 14, altura de linha 1,2
+const LINE = 16.8; // font 14, line height 1.2
 
 function file(template: Raw, formatVersion = 4, extra: Raw = {}): ComponentFile {
   return {
     format: 'mapping-component',
     formatVersion,
     id: 'fid',
-    name: 'Fidelidade',
+    name: 'Fidelity',
     size: { width: 200, height: 300 },
     template,
     ...extra,
@@ -42,9 +42,9 @@ function root(
 }
 
 function kid(node: SceneNode, index: number): SceneNode {
-  if (node.type !== 'frame') throw new Error('não é um quadro');
+  if (node.type !== 'frame') throw new Error('not a frame');
   const found = node.children[index];
-  if (!found) throw new Error(`sem filho ${index}`);
+  if (!found) throw new Error(`no child ${index}`);
   return found;
 }
 
@@ -59,12 +59,12 @@ const frame = (over: Raw, children: Raw[] = []): Raw => ({
 const rect = (over: Raw = {}): Raw => ({ type: 'rect', ...over });
 const label = (over: Raw = {}): Raw => ({
   type: 'text',
-  text: 'Quando o prazo vence',
+  text: 'The deadline is near',
   font: { size: 14, lineHeight: 1.2 },
   ...over,
 });
 
-/** Medidor espião: devolve as chamadas (texto e maxWidth) e delega ao aproximado. */
+/** Spy measurer: records the calls (text and maxWidth) and delegates to the approximate one. */
 function spy() {
   const calls: { text: string; maxWidth: number | undefined }[] = [];
   const measure: TextMeasurer = (text, font, maxWidth) => {
@@ -74,17 +74,17 @@ function spy() {
   return { calls, measure };
 }
 
-// --- B1: medição em duas passagens ---------------------------------------------------------
+// --- B1: two-pass measurement ---------------------------------------------------------
 
 const HUG_COLUMN = (): Raw =>
   frame({ layout: { type: 'column' } }, [
-    frame({ name: 'cartão', layout: { type: 'column' }, width: 'hug', height: 'hug' }, [
-      label({ name: 'texto', width: 'fill' }),
+    frame({ name: 'card', layout: { type: 'column' }, width: 'hug', height: 'hug' }, [
+      label({ name: 'text', width: 'fill' }),
     ]),
   ]);
 
-describe.each([4, 1])('B1: quadro hug com texto fill (formatVersion %i)', (version) => {
-  it('mede o texto dentro do limite do pai: não quebra palavra por palavra', () => {
+describe.each([4, 1])('B1: hug frame with fill text (formatVersion %i)', (version) => {
+  it('measures the text within the parent limit: does not wrap word by word', () => {
     const { calls, measure } = spy();
     const { root: scene } = root(HUG_COLUMN(), {}, undefined, measure, version);
     const card = kid(scene, 0);
@@ -98,8 +98,8 @@ describe.each([4, 1])('B1: quadro hug com texto fill (formatVersion %i)', (versi
   });
 });
 
-describe('B1: regressões e aviso', () => {
-  it('fill no eixo principal de um quadro hug continua valendo 0, com o aviso', () => {
+describe('B1: regressions and warning', () => {
+  it('fill on the main axis of a hug frame is still 0, with the warning', () => {
     const { root: scene, warnings } = root(
       frame({ layout: { type: 'column' } }, [
         frame({ layout: { type: 'row' }, width: 'hug', height: 'hug' }, [
@@ -111,7 +111,7 @@ describe('B1: regressões e aviso', () => {
     expect(warnings).toContain('fill inside hug becomes 0');
   });
 
-  it('texto hug continua medido sem quebra', () => {
+  it('hug text is still measured without wrapping', () => {
     const { root: scene } = root(
       frame({ layout: { type: 'column' } }, [
         frame({ layout: { type: 'column' }, width: 'hug', height: 'hug' }, [label()]),
@@ -124,25 +124,25 @@ describe('B1: regressões e aviso', () => {
     expect(kid(card, 0).height).toBeCloseTo(LINE, 5);
   });
 
-  it('texto medido com largura 0 avisa com o nome do nó', () => {
+  it('text measured with width 0 warns with the node name', () => {
     const { warnings } = root(
       frame({ layout: { type: 'column' } }, [
         frame({ layout: { type: 'row' }, width: 'hug', height: 'hug' }, [
-          label({ name: 'rótulo', width: 'fill' }),
+          label({ name: 'label', width: 'fill' }),
         ]),
       ]),
     );
-    expect(warnings).toContain('text measured with width 0: rótulo');
+    expect(warnings).toContain('text measured with width 0: label');
   });
 });
 
 // --- B2: repeat.distribute ------------------------------------------------------------------
 
 describe('B2: repeat.distribute', () => {
-  const rows: FieldValues = { linhas: [{ a: '1' }, { a: '2' }, { a: '3' }] };
+  const rows: FieldValues = { rows: [{ a: '1' }, { a: '2' }, { a: '3' }] };
   const repeat = (extra: Raw, template: Raw = {}): Raw => ({
     type: 'repeat',
-    field: 'linhas',
+    field: 'rows',
     gap: 6,
     template: frame({ layout: { type: 'row' }, ...template }, [
       label({ text: { $field: 'a' } }),
@@ -152,7 +152,7 @@ describe('B2: repeat.distribute', () => {
   const tree = (extra: Raw, template: Raw = {}) =>
     frame({ layout: { type: 'column' } }, [repeat(extra, template)]);
 
-  it('distribute fill: as linhas dividem o eixo menos os gaps (96 cada)', () => {
+  it('distribute fill: the rows split the axis minus the gaps (96 each)', () => {
     const { root: scene, warnings } = root(tree({ distribute: 'fill' }), rows);
     const list = kid(scene, 0) as FrameNode;
     expect(list.height).toBe(300);
@@ -161,34 +161,34 @@ describe('B2: repeat.distribute', () => {
     expect(warnings).toEqual([]);
   });
 
-  it('distribute fill com height fill explícito no template vale a fração', () => {
+  it('distribute fill with explicit height fill in the template is worth the fraction', () => {
     const { root: scene } = root(tree({ distribute: 'fill' }, { height: 'fill' }), rows);
     expect((kid(scene, 0) as FrameNode).children.map((c) => c.height)).toEqual([
       96, 96, 96,
     ]);
   });
 
-  it('distribute fill com px explícito no template mantém o px', () => {
+  it('distribute fill with explicit px in the template keeps the px', () => {
     const { root: scene } = root(tree({ distribute: 'fill' }, { height: 30 }), rows);
     expect((kid(scene, 0) as FrameNode).children.map((c) => c.height)).toEqual([
       30, 30, 30,
     ]);
   });
 
-  it('sem distribute, height fill no template vale 0 com o aviso de hoje', () => {
+  it('without distribute, height fill in the template is 0 with the current warning', () => {
     const { root: scene, warnings } = root(tree({}, { height: 'fill' }), rows);
     expect((kid(scene, 0) as FrameNode).children.map((c) => c.height)).toEqual([0, 0, 0]);
     expect(warnings).toContain('fill inside hug becomes 0');
   });
 });
 
-// --- B3: expressão nas chaves de layout -----------------------------------------------------
+// --- B3: expression in layout keys -----------------------------------------------------
 
-describe('B3: expressão em layout e tamanho', () => {
+describe('B3: expression in layout and size', () => {
   const two = (layout: Raw) =>
     frame({ layout }, [rect({ width: 40, height: 20 }), rect({ width: 40, height: 20 })]);
 
-  it('layout.type por expressão arruma em linha; fora do conjunto cai em none com aviso', () => {
+  it('layout.type by expression arranges in a row; outside the set it falls back to none with a warning', () => {
     const tree = two({ type: { $field: 'dir' }, gap: 10 });
     const ok = root(tree, { dir: 'row' });
     expect(ok.root.children.map(xOf)).toEqual([0, 50]);
@@ -198,7 +198,7 @@ describe('B3: expressão em layout e tamanho', () => {
     expect(bad.warnings).toContain('invalid value in layout.type: diagonal');
   });
 
-  it('width por $switch: fill, hug, % e px', () => {
+  it('width by $switch: fill, hug, % and px', () => {
     const tree = frame({ layout: { type: 'row' } }, [
       rect({
         height: 20,
@@ -212,7 +212,7 @@ describe('B3: expressão em layout e tamanho', () => {
     expect(widthOf('d')).toBe(120);
   });
 
-  it('width numérico em texto puro vale o número; inválido cai no padrão com aviso', () => {
+  it('numeric width in plain text is the number; invalid falls back to the default with a warning', () => {
     const tree = frame({ layout: { type: 'row' } }, [
       rect({ height: 20, width: { $field: 'w' } }),
     ]);
@@ -224,14 +224,14 @@ describe('B3: expressão em layout e tamanho', () => {
     expect(negative.warnings).toContain('invalid value in width: -5');
   });
 
-  it('height inválido avisa com height', () => {
+  it('invalid height warns with height', () => {
     const tree = frame({ layout: { type: 'column' } }, [
       rect({ width: 20, height: { $field: 'h' } }),
     ]);
     expect(root(tree, { h: 'x' }).warnings).toContain('invalid value in height: x');
   });
 
-  it('justify e align por expressão', () => {
+  it('justify and align by expression', () => {
     const tree = frame(
       { layout: { type: 'row', justify: { $field: 'j' }, align: { $field: 'a' } } },
       [rect({ width: 50, height: 20 })],
@@ -242,17 +242,17 @@ describe('B3: expressão em layout e tamanho', () => {
     };
     expect(at({ j: 'end', a: 'end' })).toEqual([150, 280]);
     expect(at({ j: 'center', a: 'center' })).toEqual([75, 140]);
-    const bad = root(tree, { j: 'bogus', a: 'nada' });
+    const bad = root(tree, { j: 'bogus', a: 'nothing' });
     expect(xOf(kid(bad.root, 0))).toBe(0);
     expect(bad.warnings).toContain('invalid value in layout.justify: bogus');
-    expect(bad.warnings).toContain('invalid value in layout.align: nada');
+    expect(bad.warnings).toContain('invalid value in layout.align: nothing');
   });
 });
 
 // --- B4: min/max ----------------------------------------------------------------------------
 
-describe('B4: minWidth, maxWidth, minHeight e maxHeight', () => {
-  it('minWidth sobe um nó hug de 40 px para 80', () => {
+describe('B4: minWidth, maxWidth, minHeight and maxHeight', () => {
+  it('minWidth raises a 40 px hug node to 80', () => {
     const tree = frame({ layout: { type: 'row' } }, [
       frame({ width: 'hug', height: 20, minWidth: 80 }, [
         rect({ width: 40, height: 20, anchors: { left: 0, top: 0 } }),
@@ -261,7 +261,7 @@ describe('B4: minWidth, maxWidth, minHeight e maxHeight', () => {
     expect(kid(root(tree).root, 0).width).toBe(80);
   });
 
-  it('maxWidth num fill devolve a sobra ao outro fill', () => {
+  it('maxWidth on a fill gives the excess back to the other fill', () => {
     const tree = frame({ layout: { type: 'row' } }, [
       rect({ width: 'fill', height: 20, maxWidth: 100 }),
       rect({ width: 'fill', height: 20 }),
@@ -271,7 +271,7 @@ describe('B4: minWidth, maxWidth, minHeight e maxHeight', () => {
     expect(xOf(kid(scene, 1))).toBe(100);
   });
 
-  it('minWidth num fill congela o nó e os outros dividem o resto', () => {
+  it('minWidth on a fill freezes the node and the others split the rest', () => {
     const tree = frame({ layout: { type: 'row' } }, [
       rect({ width: 'fill', height: 20, minWidth: 150 }),
       rect({ width: 'fill', height: 20 }),
@@ -281,7 +281,7 @@ describe('B4: minWidth, maxWidth, minHeight e maxHeight', () => {
     expect(scene.children.map((c) => c.width)).toEqual([150, 75, 75]);
   });
 
-  it('limites por expressão; inválido ou negativo = ausente; min maior que max vale o min', () => {
+  it('limits by expression; invalid or negative = absent; min greater than max is the min', () => {
     const tree = frame({ layout: { type: 'row' } }, [
       rect({ width: 200, height: 20, maxWidth: { $field: 'max' } }),
       rect({ width: 200, height: 20, maxWidth: -10 }),
@@ -295,7 +295,7 @@ describe('B4: minWidth, maxWidth, minHeight e maxHeight', () => {
     expect(scene.children.map((c) => c.width)).toEqual([90, 200, 120]);
   });
 
-  it('minHeight e maxHeight valem no eixo vertical', () => {
+  it('minHeight and maxHeight apply on the vertical axis', () => {
     const tree = frame({ layout: { type: 'column' } }, [
       rect({ width: 20, height: 10, minHeight: 40 }),
       rect({ width: 20, height: 100, maxHeight: 30 }),
@@ -304,14 +304,14 @@ describe('B4: minWidth, maxWidth, minHeight e maxHeight', () => {
     expect(scene.children.map((c) => c.height)).toEqual([40, 30]);
   });
 
-  it('texto hug cortado por maxWidth mede a altura quebrando na largura cortada', () => {
+  it('hug text cut by maxWidth measures the height wrapping at the cut width', () => {
     const tree = frame({ layout: { type: 'column' } }, [label({ maxWidth: 50 })]);
     const text = kid(root(tree).root, 0);
     expect(text.width).toBe(50);
     expect(text.height).toBeGreaterThan(3 * LINE);
   });
 
-  it('raiz hug: measureComponent aplica o max e mede a altura na largura limitada', () => {
+  it('hug root: measureComponent applies the max and measures the height at the limited width', () => {
     const tree = frame({ layout: { type: 'column' }, maxWidth: 100 }, [
       label({ width: 'hug' }),
       rect({ width: 150, height: 10 }),
@@ -326,7 +326,7 @@ describe('B4: minWidth, maxWidth, minHeight e maxHeight', () => {
     expect(measured.width).toBe(100);
   });
 
-  it('raiz hug: o texto fill da raiz mede dentro do maxWidth e a altura acompanha', () => {
+  it('hug root: the fill text of the root measures within the maxWidth and the height follows', () => {
     const tree = frame({ layout: { type: 'column' }, maxWidth: 100 }, [
       label({ width: 'fill' }),
     ]);
@@ -341,7 +341,7 @@ describe('B4: minWidth, maxWidth, minHeight e maxHeight', () => {
     expect(measured.height).toBeGreaterThan(1.5 * LINE);
   });
 
-  it('raiz hug: minWidth sobe o resultado', () => {
+  it('hug root: minWidth raises the result', () => {
     const tree = frame({ layout: { type: 'row' }, minWidth: 90 }, [
       rect({ width: 30, height: 10 }),
     ]);
@@ -354,16 +354,16 @@ describe('B4: minWidth, maxWidth, minHeight e maxHeight', () => {
     expect(measured.width).toBe(90);
   });
 
-  it('com caixa dada, a raiz ocupa a caixa e os limites dela não se aplicam', () => {
+  it('with a given box, the root fills the box and its limits do not apply', () => {
     const tree = frame({ layout: { type: 'row' }, maxWidth: 100 });
     const { root: scene } = root(tree, {}, { x: 0, y: 0, width: 200, height: 50 });
     expect(scene.width).toBe(200);
   });
 });
 
-// --- B4 em layoutScreen: o minSize da instância vem depois do max --------------------------
+// --- B4 in layoutScreen: the minSize of the instance comes after the max --------------------------
 
-describe('B4: minSize da instância depois do max da raiz', () => {
+describe('B4: minSize of the instance after the max of the root', () => {
   function build(extra: Raw) {
     const component = file(
       frame({ layout: { type: 'row' }, maxWidth: 100 }, [
@@ -401,7 +401,7 @@ describe('B4: minSize da instância depois do max da raiz', () => {
     return layoutScreen(
       {
         id: 's',
-        name: 'Tela',
+        name: 'Screen',
         width: 400,
         height: 400,
         background: '#FFF',
@@ -412,11 +412,11 @@ describe('B4: minSize da instância depois do max da raiz', () => {
     ).screen.instances[0]?.box;
   }
 
-  it('o max da raiz limita o hug da instância', () => {
+  it('the max of the root limits the hug of the instance', () => {
     expect(build({})?.width).toBe(100);
   });
 
-  it('o minSize da instância sobe acima do max', () => {
+  it('the minSize of the instance rises above the max', () => {
     expect(build({ minSize: { width: 150, height: 10 } })?.width).toBe(150);
   });
 });

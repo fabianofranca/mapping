@@ -13,8 +13,8 @@ import {
 import { SPEC_ID, componentProject, testCatalog } from './componentFixtures';
 import { addContainer } from '../../src/model';
 
-// Densidade (schema v19): o desenho instancia o componente na caixa em unidades e a raiz da cena
-// leva `translate(rect.x, rect.y) · scale(density)`.
+// Density (schema v19): the drawing instantiates the component in the box in units and the scene
+// root carries `translate(rect.x, rect.y) · scale(density)`.
 
 const catalog = testCatalog();
 
@@ -43,11 +43,11 @@ function add(
 const draw = (p: Project, id: string) =>
   createDrawingCache()(p, catalog, approximateMeasurer, 0).get(id)!;
 
-/** Os filhos da cena, sem a matriz da raiz (o que não depende da densidade). */
+/** The scene children, without the root matrix (what does not depend on the density). */
 const inside = (root: { children?: unknown }) => JSON.stringify(root.children);
 
-describe('desenho com densidade', () => {
-  it('3x em 180×72 desenha a cena de 60×24 unidades com escala 3 na raiz', () => {
+describe('drawing with density', () => {
+  it('3x at 180×72 draws the 60×24 unit scene with scale 3 on the root', () => {
     const base = componentProject();
     const at1 = add(base, 'T', 'text', { rect: { x: 40, y: 50, width: 60, height: 24 } });
     const at3 = setContainerDensity(
@@ -64,7 +64,7 @@ describe('desenho com densidade', () => {
     expect(inside(three.root as never)).toBe(inside(one.root as never));
   });
 
-  it('a densidade 1 não muda nada: a raiz mede o retângulo e a matriz é só a translação', () => {
+  it('density 1 changes nothing: the root measures the rectangle and the matrix is just the translation', () => {
     const p = add(componentProject(), 'T', 'text', {
       rect: { x: 7, y: 9, width: 61, height: 25 },
     });
@@ -73,7 +73,7 @@ describe('desenho com densidade', () => {
     expect(root.transform).toEqual([1, 0, 0, 1, 7, 9]);
   });
 
-  it('o "não cabe" de um filho fora da caixa vem em pixels (faltam × densidade)', () => {
+  it('the "does not fit" of a child outside the box comes in pixels (shortfall × density)', () => {
     const base = componentProject();
     const at1 = add(base, 'W', 'wide', {
       rect: { x: 10, y: 10, width: 100, height: 40 },
@@ -93,7 +93,7 @@ describe('desenho com densidade', () => {
     expect(Object.values(b.shortfalls)[0]).toBeCloseTo(miss1 * 3, 6);
   });
 
-  it('a filha do slot é conferida em pixels da imagem (caixa do slot × densidade)', () => {
+  it('the slot child is checked in image pixels (slot box × density)', () => {
     const base = setContainerDensity(componentProject(), 'I1', 3);
     const ok = add(
       add(base, 'C', 'column', { rect: { x: 30, y: 30, width: 900, height: 700 } }),
@@ -102,7 +102,7 @@ describe('desenho com densidade', () => {
       { parentId: 'C', rect: { x: 40, y: 40, width: 180, height: 72 } },
     );
     expect(draw(ok, 'C').overflow).toBe(false);
-    // A filha passa da borda direita da mãe (30 + 900 = 930) por 50 px: não cabe.
+    // The child goes past the right edge of its parent (30 + 900 = 930) by 50 px: it does not fit.
     const wide = setMarkingRect(
       ok,
       'T1',
@@ -115,10 +115,10 @@ describe('desenho com densidade', () => {
   });
 });
 
-describe('cache com densidade', () => {
-  it('mudar a densidade de um container reinstancia só as marcações dele', () => {
+describe('cache with density', () => {
+  it('changing the density of a container re-instantiates only its markings', () => {
     let p = componentProject();
-    p = addContainer(p, { id: 'I2', file: 'images/outra.png', width: 500, height: 400 });
+    p = addContainer(p, { id: 'I2', file: 'images/other.png', width: 500, height: 400 });
     p = add(p, 'A', 'text', { rect: { x: 10, y: 10, width: 60, height: 24 } });
     p = add(p, 'B', 'text', {
       containerId: 'I2',
@@ -132,7 +132,7 @@ describe('cache com densidade', () => {
     expect(after.get('A')!.root.transform).toEqual([2, 0, 0, 2, 10, 10]);
   });
 
-  it('pan e zoom (mesmo projeto, container 3x) não instanciam nem medem nada', () => {
+  it('pan and zoom (same project, 3x container) neither instantiate nor measure anything', () => {
     const p = setContainerDensity(
       add(componentProject(), 'T', 'text', {
         rect: { x: 0, y: 0, width: 180, height: 72 },
@@ -148,7 +148,7 @@ describe('cache com densidade', () => {
     expect(measure.mock.calls.length).toBe(calls);
   });
 
-  it('effectiveDensity do container usado pelo cache é o do projeto', () => {
+  it('the container effectiveDensity used by the cache is the project one', () => {
     const p = setContainerDensity(componentProject(), 'I1', 3);
     expect(effectiveDensity(p, 'I1')).toBe(3);
   });

@@ -28,21 +28,21 @@ import {
 } from './componentFixtures';
 
 describe('componentPaths', () => {
-  it('resolve o component de cada tipo contra o arquivo da especialização, sem repetição', () => {
+  it('resolves the component of each type against the specialization file, without repetition', () => {
     const paths = componentPaths(testSpec(), SPEC_FILE);
     expect(paths).toHaveLength(Object.keys(COMPONENTS).length);
     expect(paths[0]).toBe('specs/test/components/text.json');
     expect(new Set(paths).size).toBe(paths.length);
   });
 
-  it('o exemplo do Material 3: specs/material3/material3.spec.json + components/m3-chip.json', () => {
+  it('the Material 3 example: specs/material3/material3.spec.json + components/m3-chip.json', () => {
     const spec = loadMaterial3();
     const paths = componentPaths(spec, 'specs/material3/material3.spec.json');
     expect(paths).toContain('specs/material3/components/m3-chip.json');
     expect(paths).toHaveLength(15);
   });
 
-  it('tipo sem component não entra', () => {
+  it('a type without a component is left out', () => {
     const spec = testSpec();
     expect(componentPaths(spec, SPEC_FILE).some((p) => p.includes('plain'))).toBe(false);
   });
@@ -65,7 +65,7 @@ describe('loadSpecComponents', () => {
     return id && COMPONENTS[id] ? JSON.stringify(COMPONENTS[id]) : undefined;
   };
 
-  it('carrega todos os componentes válidos', () => {
+  it('loads all the valid components', () => {
     const loaded = loadSpecComponents(testSpec(), SPEC_FILE, 1, read({}));
     expect(loaded.specId).toBe(SPEC_ID);
     expect(loaded.version).toBe(1);
@@ -73,15 +73,15 @@ describe('loadSpecComponents', () => {
     expect([...loaded.byType.keys()]).toEqual(Object.keys(COMPONENTS));
   });
 
-  it('arquivo ausente, invalid JSON e componente inválido viram "tipo: motivo"', () => {
+  it('a missing file, invalid JSON and an invalid component become "type: reason"', () => {
     const loaded = loadSpecComponents(
       testSpec(),
       SPEC_FILE,
       1,
       read({
         'specs/test/components/text.json': undefined,
-        'specs/test/components/wide.json': '{ não é json',
-        'specs/test/components/row.json': JSON.stringify({ format: 'outro' }),
+        'specs/test/components/wide.json': '{ not json',
+        'specs/test/components/row.json': JSON.stringify({ format: 'other' }),
       }),
     );
     expect(loaded.byType.has('text')).toBe(false);
@@ -94,7 +94,7 @@ describe('loadSpecComponents', () => {
     );
     expect(loaded.problems[1]).toMatch(/^wide: invalid JSON/);
     expect(loaded.problems[2]).toMatch(/^row: .+/);
-    // Os mesmos problemas com código e parâmetros (#945): mesmo tamanho e ordem.
+    // The same problems with code and parameters (#945): same size and order.
     expect(loaded.problemMessages.map((m) => m.text)).toEqual(loaded.problems);
     expect(loaded.problemMessages[0]).toEqual(
       modelMessage(
@@ -109,7 +109,7 @@ describe('loadSpecComponents', () => {
     });
   });
 
-  it('problemMessages tem o tamanho e a ordem de problems (ícones e caminhos fora)', () => {
+  it('problemMessages has the size and order of problems (icons and paths aside)', () => {
     const spec = { ...testSpec(), icons: 'icons.json' };
     const loaded = loadSpecComponents(
       spec,
@@ -122,14 +122,14 @@ describe('loadSpecComponents', () => {
     expect(loaded.problemMessages.some((m) => m.code === 'icons.fileMissing')).toBe(true);
   });
 
-  it('especialização v1 a v3 não carrega componente', () => {
+  it('specialization v1 to v3 does not load a component', () => {
     const spec = { ...testSpec(), formatVersion: 3 as const };
     const loaded = loadSpecComponents(spec, SPEC_FILE, 1, read({}));
     expect(loaded.byType.size).toBe(0);
     expect(loaded.problems).toEqual([]);
   });
 
-  it('o Material 3 inteiro carrega do disco, sem problemas', () => {
+  it('the whole Material 3 loads from disk, without problems', () => {
     const root = join(process.cwd(), 'tests/fixtures/material3');
     const loaded = loadSpecComponents(
       loadMaterial3(),
@@ -148,7 +148,7 @@ describe('loadSpecComponents', () => {
   });
 });
 
-describe('markingComponent e componentMinSize', () => {
+describe('markingComponent and componentMinSize', () => {
   function withMarking() {
     let p = componentProject();
     p = createMarking(p, {
@@ -159,7 +159,7 @@ describe('markingComponent e componentMinSize', () => {
     return p;
   }
 
-  it('marcação sem anotação, ou com anotação comum, não tem componente', () => {
+  it('a marking without an annotation, or with a plain annotation, has no component', () => {
     const p = withMarking();
     expect(markingComponent(p, testCatalog(), 'M1')).toBeNull();
     expect(componentMinSize(p, testCatalog(), 'M1')).toBeNull();
@@ -172,7 +172,7 @@ describe('markingComponent e componentMinSize', () => {
     expect(markingComponent(plain, testCatalog(), 'M1')).toBeNull();
   });
 
-  it('a primeira anotação tipada com componente desenha (na ordem de annotations)', () => {
+  it('the first typed annotation with a component draws (in annotations order)', () => {
     let p = withMarking();
     const typed = (id: string, typeId: string) => {
       p = addTypedAnnotation(p, {
@@ -187,12 +187,12 @@ describe('markingComponent e componentMinSize', () => {
     const found = markingComponent(p, testCatalog(), 'M1');
     expect(found?.annotation.id).toBe('A1');
     expect(found?.typeId).toBe('row');
-    expect(found?.type.name).toBe('Tipo row');
+    expect(found?.type.name).toBe('Type row');
     expect(found?.component.id).toBe('row');
     expect(componentMinSize(p, testCatalog(), 'M1')).toEqual({ width: 50, height: 30 });
   });
 
-  it('componente sem minSize devolve 1×1 (o mínimo de quem tem componente)', () => {
+  it('a component without minSize returns 1×1 (the minimum for anything that has a component)', () => {
     let p = withMarking();
     p = addTypedAnnotation(p, {
       id: 'A1',
@@ -204,7 +204,7 @@ describe('markingComponent e componentMinSize', () => {
     expect(componentMinSize(p, testCatalog(), 'M1')).toEqual({ width: 1, height: 1 });
   });
 
-  it('pula a anotação cujo tipo não tem componente e usa a seguinte', () => {
+  it('skips the annotation whose type has no component and uses the next one', () => {
     let p = withMarking();
     p = addTypedAnnotation(p, {
       id: 'A1',
@@ -221,7 +221,7 @@ describe('markingComponent e componentMinSize', () => {
     expect(markingComponent(p, testCatalog(), 'M1')?.annotation.id).toBe('A2');
   });
 
-  it('versão do catálogo diferente da aplicada, ou catálogo vazio: marcação comum', () => {
+  it('catalog version different from the applied one, or empty catalog: plain marking', () => {
     let p = withMarking();
     p = addTypedAnnotation(p, {
       id: 'A1',
@@ -238,7 +238,7 @@ describe('markingComponent e componentMinSize', () => {
     expect(markingComponent(p, testCatalog(), 'M1')).not.toBeNull();
   });
 
-  it('muda quando a anotação muda de valores (continua a mesma anotação)', () => {
+  it('changes when the annotation changes values (it is still the same annotation)', () => {
     let p = withMarking();
     p = addTypedAnnotation(p, {
       id: 'A1',
@@ -246,9 +246,9 @@ describe('markingComponent e componentMinSize', () => {
       layerId: 'LS1',
       type: { specId: SPEC_ID, typeId: 'text' },
     });
-    p = setFieldValue(p, 'A1', 'label', 'Novo');
+    p = setFieldValue(p, 'A1', 'label', 'New');
     expect(markingComponent(p, testCatalog(), 'M1')?.annotation.values?.label).toBe(
-      'Novo',
+      'New',
     );
   });
 });
@@ -274,32 +274,32 @@ describe('markingTypeName', () => {
       type: { specId: SPEC_ID, typeId },
     });
 
-  it('marcação sem anotação, ou com anotação comum, não tem nome de tipo', () => {
+  it('a marking without an annotation, or with a plain annotation, has no type name', () => {
     const p = withMarking();
     expect(markingTypeName(p, 'M1')).toBeNull();
-    expect(markingTypeName(p, 'inexistente')).toBeNull();
-    const free = addLayer(p, { id: 'LF', name: 'Livre', color: '#336699' });
+    expect(markingTypeName(p, 'nonexistent')).toBeNull();
+    const free = addLayer(p, { id: 'LF', name: 'Free', color: '#336699' });
     const common = addAnnotation(free, { id: 'A0', markingId: 'M1', layerId: 'LF' });
     expect(markingTypeName(common, 'M1')).toBeNull();
   });
 
-  it('o tipo com componente dá o nome, sem precisar do catálogo', () => {
+  it('a type with a component gives the name, without needing the catalog', () => {
     const p = typed(withMarking(), 'A1', 'text');
-    expect(markingTypeName(p, 'M1')).toBe('Tipo text');
+    expect(markingTypeName(p, 'M1')).toBe('Type text');
   });
 
-  it('a primeira anotação com componente vence, na ordem de annotations', () => {
+  it('the first annotation with a component wins, in annotations order', () => {
     let p = withMarking();
     p = typed(p, 'A1', 'row');
     p = typed(p, 'A2', 'text');
-    expect(markingTypeName(p, 'M1')).toBe('Tipo row');
+    expect(markingTypeName(p, 'M1')).toBe('Type row');
   });
 
-  it('o tipo sem component não dá nome; pula para a seguinte', () => {
+  it('a type without a component gives no name; skips to the next one', () => {
     let p = withMarking();
     p = typed(p, 'A1', 'plain', 'LS2');
     expect(markingTypeName(p, 'M1')).toBeNull();
     p = typed(p, 'A2', 'text');
-    expect(markingTypeName(p, 'M1')).toBe('Tipo text');
+    expect(markingTypeName(p, 'M1')).toBe('Type text');
   });
 });

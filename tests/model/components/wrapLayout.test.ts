@@ -1,5 +1,5 @@
-// MC4 (decisões 11 a 13 da #898): `layout.wrap`, `lineGap`, `maxPerLine` e `maxLines` no quadro,
-// no `repeat` e a validação das chaves novas.
+// MC4 (decisions 11 to 13 of #898): `layout.wrap`, `lineGap`, `maxPerLine` and `maxLines` on the frame,
+// on `repeat` and the validation of the new keys.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
@@ -36,7 +36,7 @@ function file(template: Json, formatVersion = 4, extra: Json = {}): Json {
   };
 }
 
-/** Um retângulo de lado `w` × `h` com o nome dado (filho do quadro de teste). */
+/** A rectangle of `w` × `h` with the given name (child of the test frame). */
 function rect(name: string, w = 100, h = 20, extra: Json = {}): Json {
   return { type: 'rect', name, width: w, height: h, ...extra };
 }
@@ -67,7 +67,7 @@ function build(template: Json, box = BOX, formatVersion = 4) {
   const nodes = [...walk(result.root)];
   const at = (name: string): { x: number; y: number; width: number; height: number } => {
     const node = nodes.find((n) => n.name === name) as SceneNode | undefined;
-    if (node === undefined) throw new Error(`sem nó ${name}`);
+    if (node === undefined) throw new Error(`no node ${name}`);
     const b = boxes.get(node.id) ?? { x: 0, y: 0 };
     return { x: b.x, y: b.y, width: node.width, height: node.height };
   };
@@ -75,12 +75,12 @@ function build(template: Json, box = BOX, formatVersion = 4) {
   return { ...result, at, has };
 }
 
-describe('wrap: o FlowRow (decisão 13)', () => {
-  it('5 filhos de 100 numa row de 320, gap 8, lineGap 12: 3 + 2 nas posições do FlowRow', () => {
+describe('wrap: the FlowRow (decision 13)', () => {
+  it('5 children of 100 in a row of 320, gap 8, lineGap 12: 3 + 2 at the FlowRow positions', () => {
     const { at, warnings } = build(
       frame({ wrap: 'wrap', gap: 8, lineGap: 12, align: 'start' }, kids(5)),
     );
-    // 3 × 100 + 2 × 8 = 316 ≤ 320; o quarto não cabe (316 + 8 + 100 > 320).
+    // 3 × 100 + 2 × 8 = 316 ≤ 320; the fourth does not fit (316 + 8 + 100 > 320).
     expect([0, 1, 2].map((i) => at(`k${i}`).x)).toEqual([0, 108, 216]);
     expect([0, 1, 2].map((i) => at(`k${i}`).y)).toEqual([0, 0, 0]);
     expect([3, 4].map((i) => at(`k${i}`).x)).toEqual([0, 108]);
@@ -88,64 +88,64 @@ describe('wrap: o FlowRow (decisão 13)', () => {
     expect(warnings).toEqual([]);
   });
 
-  it('sem wrap (padrão), os mesmos filhos ficam numa linha só, como hoje', () => {
+  it('without wrap (default), the same children stay on a single line, as today', () => {
     const { at } = build(frame({ gap: 8 }, kids(5)));
     expect(at('k4').y).toBe(0);
     expect(at('k4').x).toBe(432);
   });
 
-  it('wrap: "none" literal vale como sem wrap', () => {
+  it('literal wrap: "none" counts as no wrap', () => {
     const { at } = build(frame({ wrap: 'none', gap: 8 }, kids(5)));
     expect(at('k4').y).toBe(0);
   });
 
-  it('column com wrap: as colunas se enfileiram da esquerda para a direita', () => {
+  it('column with wrap: the columns line up from left to right', () => {
     const { at } = build(
       {
         ...frame({ type: 'column', wrap: 'wrap', gap: 4, lineGap: 10 }, kids(5, 60, 80)),
       },
       { x: 0, y: 0, width: 320, height: 200 },
     );
-    // 2 × 80 + 4 = 164 ≤ 200; o terceiro não cabe (164 + 4 + 80 > 200).
+    // 2 × 80 + 4 = 164 ≤ 200; the third does not fit (164 + 4 + 80 > 200).
     expect([0, 1].map((i) => at(`k${i}`).y)).toEqual([0, 84]);
     expect([2, 3].map((i) => at(`k${i}`).y)).toEqual([0, 84]);
     expect([0, 2, 4].map((i) => at(`k${i}`).x)).toEqual([0, 70, 140]);
     expect(at('k4').y).toBe(0);
   });
 
-  it('wrap-reverse: a linha nova fica acima da primeira', () => {
+  it('wrap-reverse: the new line sits above the first', () => {
     const { at } = build(frame({ wrap: 'wrap-reverse', gap: 8, lineGap: 12 }, kids(5)));
-    // duas linhas de 20, lineGap 12 → bloco de 52; a primeira linha vai embaixo.
+    // two lines of 20, lineGap 12 → block of 52; the first line goes at the bottom.
     expect([0, 1, 2].map((i) => at(`k${i}`).y)).toEqual([32, 32, 32]);
     expect([3, 4].map((i) => at(`k${i}`).y)).toEqual([0, 0]);
     expect(at('k0').x).toBe(0);
     expect(at('k3').x).toBe(0);
   });
 
-  it('justify vale em cada linha: space-between e space-evenly', () => {
+  it('justify applies in each line: space-between and space-evenly', () => {
     const between = build(
       frame({ wrap: 'wrap', gap: 8, justify: 'space-between' }, kids(5)),
     );
-    // linha 1: 3 filhos em 320 → extra (320 − 300) / 2 = 10; linha 2: 2 filhos, folga 120.
+    // line 1: 3 children in 320 → extra (320 − 300) / 2 = 10; line 2: 2 children, slack 120.
     expect([0, 1, 2].map((i) => between.at(`k${i}`).x)).toEqual([0, 110, 220]);
     expect([3, 4].map((i) => between.at(`k${i}`).x)).toEqual([0, 220]);
     const evenly = build(
       frame({ wrap: 'wrap', gap: 0, justify: 'space-evenly' }, kids(5)),
     );
-    // linha 1: 3 × 100, folga 20 → 5 por vão; linha 2: 2 × 100, folga 120 → 40 por vão.
+    // line 1: 3 × 100, slack 20 → 5 per gap; line 2: 2 × 100, slack 120 → 40 per gap.
     expect([0, 1, 2].map((i) => evenly.at(`k${i}`).x)).toEqual([5, 110, 215]);
     expect([3, 4].map((i) => evenly.at(`k${i}`).x)).toEqual([40, 180]);
   });
 
-  it('reverse espelha cada linha (não a pilha de linhas)', () => {
+  it('reverse mirrors each line (not the stack of lines)', () => {
     const { at } = build(frame({ wrap: 'wrap', gap: 8, reverse: true }, kids(5)));
-    // linha 1 (k0..k2) espelhada: k0 no fim; linha 2 (k3, k4), `start` passa a ser o fim.
+    // line 1 (k0..k2) mirrored: k0 at the end; line 2 (k3, k4), `start` becomes the end.
     expect([0, 1, 2].map((i) => at(`k${i}`).x)).toEqual([220, 112, 4]);
     expect([3, 4].map((i) => at(`k${i}`).x)).toEqual([220, 112]);
     expect(at('k3').y).toBe(20);
   });
 
-  it('align center no eixo cruzado vale dentro de cada linha', () => {
+  it('align center on the cross axis applies within each line', () => {
     const children = [
       rect('a', 100, 40),
       rect('b', 100, 20),
@@ -155,14 +155,14 @@ describe('wrap: o FlowRow (decisão 13)', () => {
     const { at } = build(
       frame({ wrap: 'wrap', gap: 8, align: 'center', lineGap: 6 }, children),
     );
-    // linha 1: a, b, c (altura 40): b e c centrados; linha 2: d sozinho (altura 10) em y = 46.
+    // line 1: a, b, c (height 40): b and c centered; line 2: d alone (height 10) at y = 46.
     expect(at('a').y).toBe(0);
     expect(at('b').y).toBe(10);
     expect(at('c').y).toBe(10);
     expect(at('d').y).toBe(46);
   });
 
-  it('align baseline vale por linha, pela primeira linha de base de cada linha', () => {
+  it('align baseline applies per line, by the first baseline of each line', () => {
     const text = (name: string, size: number, lineHeight: number): Json => ({
       type: 'text',
       name,
@@ -177,7 +177,7 @@ describe('wrap: o FlowRow (decisão 13)', () => {
       text('d', 14, 20),
       text('e', 22, 28),
     ];
-    // Larguras: o texto "Ok" mede pouco; força a quebra com `maxPerLine` 2.
+    // Widths: the text "Ok" is narrow; force the break with `maxPerLine` 2.
     const { at } = build(
       frame(
         { wrap: 'wrap', align: 'baseline', maxPerLine: 2, gap: 4, lineGap: 2 },
@@ -192,17 +192,17 @@ describe('wrap: o FlowRow (decisão 13)', () => {
       ascent: APPROX_ASCENT_RATIO * 22,
       descent: APPROX_DESCENT_RATIO * 22,
     });
-    // linha 1 (a, b): as linhas de base coincidem; linha 2 (c, d): iguais, sem deslocar; linha 3: e sozinho.
+    // line 1 (a, b): the baselines coincide; line 2 (c, d): equal, no shift; line 3: e alone.
     expect(at('a').y + small).toBeCloseTo(at('b').y + big, 6);
     expect(at('c').y).toBeCloseTo(at('d').y, 6);
-    // a linha 2 começa depois da linha 1 (a altura da linha 1 + lineGap).
+    // line 2 starts after line 1 (the height of line 1 + lineGap).
     const line1 = Math.max(at('a').y + 20, at('b').y + 28);
     expect(at('c').y).toBeCloseTo(line1 + 2, 6);
   });
 });
 
-describe('wrap: maxPerLine, maxLines e filho maior que a linha', () => {
-  it('maxPerLine 2 quebra a cada 2 filhos mesmo com espaço', () => {
+describe('wrap: maxPerLine, maxLines and a child larger than the line', () => {
+  it('maxPerLine 2 breaks every 2 children even with room', () => {
     const { at } = build(frame({ wrap: 'wrap', maxPerLine: 2, gap: 4 }, kids(5, 50)));
     expect([0, 1].map((i) => at(`k${i}`).y)).toEqual([0, 0]);
     expect([2, 3].map((i) => at(`k${i}`).y)).toEqual([20, 20]);
@@ -210,7 +210,7 @@ describe('wrap: maxPerLine, maxLines e filho maior que a linha', () => {
     expect(at('k1').x).toBe(54);
   });
 
-  it('maxLines 1 não desenha o que passa da linha e avisa "<n> children outside maxLines: <nó>"', () => {
+  it('maxLines 1 does not draw what goes past the line and warns "<n> children outside maxLines: <node>"', () => {
     const result = build(frame({ wrap: 'wrap', gap: 8, maxLines: 1 }, kids(5)));
     expect(result.has('k2')).toBe(true);
     expect(result.has('k3')).toBe(false);
@@ -221,13 +221,13 @@ describe('wrap: maxPerLine, maxLines e filho maior que a linha', () => {
     );
   });
 
-  it('maxLines com todos os filhos dentro não avisa', () => {
+  it('maxLines with all children inside does not warn', () => {
     const result = build(frame({ wrap: 'wrap', gap: 8, maxLines: 2 }, kids(5)));
     expect(result.has('k4')).toBe(true);
     expect(result.warnings).toEqual([]);
   });
 
-  it('um filho maior que a linha inteira fica sozinho numa linha (e avisa que não cabe)', () => {
+  it('a child larger than the whole line stays alone on a line (and warns it does not fit)', () => {
     const children = [rect('a', 100), rect('big', 400), rect('b', 100)];
     const { at, warnings } = build(frame({ wrap: 'wrap', gap: 8, lineGap: 4 }, children));
     expect(at('a')).toMatchObject({ x: 0, y: 0 });
@@ -258,7 +258,7 @@ describe('wrap: hug', () => {
     );
   }
 
-  it('hug no eixo principal sem largura dada mede uma linha só (max-content)', () => {
+  it('hug on the main axis with no given width measures a single line (max-content)', () => {
     const size = measured({ wrap: 'wrap', gap: 8, lineGap: 12 }, kids(5), {
       width: null,
       height: null,
@@ -267,7 +267,7 @@ describe('wrap: hug', () => {
     expect(size.height).toBe(20);
   });
 
-  it('hug no eixo cruzado é a soma das linhas com os lineGap', () => {
+  it('hug on the cross axis is the sum of the lines with the lineGaps', () => {
     const size = measured({ wrap: 'wrap', gap: 8, lineGap: 12 }, kids(5), {
       width: 320,
       height: null,
@@ -275,7 +275,7 @@ describe('wrap: hug', () => {
     expect(size.height).toBe(20 + 12 + 20);
   });
 
-  it('hug nos dois eixos com maxPerLine: a largura é a da linha mais cheia', () => {
+  it('hug on both axes with maxPerLine: the width is that of the fullest line', () => {
     const size = measured({ wrap: 'wrap', gap: 8, lineGap: 4, maxPerLine: 2 }, kids(5), {
       width: null,
       height: null,
@@ -301,7 +301,7 @@ describe('wrap: repeat', () => {
     ]);
   }
 
-  it('um repeat em linha com wrap, lineGap e maxLines quebra as linhas como o quadro', () => {
+  it('a row repeat with wrap, lineGap and maxLines breaks the lines like the frame', () => {
     const result = build(repeatFile({ wrap: 'wrap', lineGap: 12 }));
     const cells = [...walk(result.root)].filter((n) => n.name === 'cell');
     expect(cells).toHaveLength(5);
@@ -313,7 +313,7 @@ describe('wrap: repeat', () => {
     expect(limited.warnings).toContain('2 children outside maxLines: rep');
   });
 
-  it('um repeat em linha com wrap e sem largura ocupa a largura do pai (senão não teria onde quebrar)', () => {
+  it('a row repeat with wrap and no width takes the width of the parent (otherwise it would have nowhere to break)', () => {
     const result = build(
       frame({ type: 'column' }, [
         {
@@ -333,7 +333,7 @@ describe('wrap: repeat', () => {
     expect(cells.map((c) => boxes.get(c.id)?.y)).toEqual([0, 0, 0, 32, 32]);
   });
 
-  it('o repeat sem wrap continua numa linha só', () => {
+  it('the repeat without wrap stays on a single line', () => {
     const result = build(repeatFile({}));
     const boxes = absoluteBoxes(result.root);
     const cells = [...walk(result.root)].filter((n) => n.name === 'cell');
@@ -341,13 +341,13 @@ describe('wrap: repeat', () => {
   });
 });
 
-describe('wrap: validação', () => {
+describe('wrap: validation', () => {
   const issues = (template: Json, version = 4): string[] =>
     validateComponent(file(template, version));
 
   const flow = (layout: Json): Json => frame(layout, kids(2));
 
-  it('as chaves novas válidas passam, também por expressão', () => {
+  it('the valid new keys pass, also by expression', () => {
     expect(
       issues(
         flow({
@@ -361,7 +361,7 @@ describe('wrap: validação', () => {
     expect(issues(flow({ wrap: { $field: 'w' }, lineGap: 2 }))).toEqual([]);
   });
 
-  it('lineGap, maxPerLine e maxLines sem wrap (ausente ou "none") são erro', () => {
+  it('lineGap, maxPerLine and maxLines without wrap (absent or "none") are an error', () => {
     expect(issues(flow({ lineGap: 4 }))).toContain(
       'template.layout.lineGap: only valid with wrap',
     );
@@ -373,8 +373,8 @@ describe('wrap: validação', () => {
     );
   });
 
-  it('valores inválidos', () => {
-    expect(issues(flow({ wrap: 'sim' })).join('\n')).toMatch(/template\.layout\.wrap/);
+  it('invalid values', () => {
+    expect(issues(flow({ wrap: 'yes' })).join('\n')).toMatch(/template\.layout\.wrap/);
     expect(issues(flow({ wrap: 'wrap', lineGap: -1 })).join('\n')).toMatch(
       /template\.layout\.lineGap: .*greater than or equal to 0/,
     );
@@ -386,12 +386,12 @@ describe('wrap: validação', () => {
     );
   });
 
-  it('layout none não aceita wrap (só type vale)', () => {
+  it('layout none does not accept wrap (only type counts)', () => {
     const list = issues(frame({ type: 'none', wrap: 'wrap' }, kids(1)));
     expect(list.join('\n')).toMatch(/template\.layout\.wrap: unknown key: wrap/);
   });
 
-  it.each([1, 2, 3])('numa formatVersion %i as chaves novas são erro', (version) => {
+  it.each([1, 2, 3])('in formatVersion %i the new keys are an error', (version) => {
     const list = issues(
       flow({ wrap: 'wrap', lineGap: 4, maxPerLine: 2, maxLines: 2 }),
       version,
@@ -400,7 +400,7 @@ describe('wrap: validação', () => {
       expect(list).toContain(`template.layout.${key}: ${V4}`);
   });
 
-  it('o repeat aceita as quatro chaves e confere os valores', () => {
+  it('the repeat accepts the four keys and checks the values', () => {
     const repeat = (extra: Json): Json =>
       frame({ type: 'column' }, [
         {
@@ -425,7 +425,7 @@ describe('wrap: validação', () => {
     );
   });
 
-  it('o schema JSON aceita as chaves novas (quadro, slot e repeat)', () => {
+  it('the JSON schema accepts the new keys (frame, slot and repeat)', () => {
     const doc = file(
       frame({ wrap: 'wrap', lineGap: 4, maxPerLine: 3, maxLines: 2 }, [
         {
@@ -441,7 +441,7 @@ describe('wrap: validação', () => {
       ]),
     );
     expect(checkSchema(schema, doc)).toEqual([]);
-    // Expressão em `wrap` (`$if`, `$switch`) vale os valores de `wrap`, não os do `justify`.
+    // An expression in `wrap` (`$if`, `$switch`) takes the values of `wrap`, not those of `justify`.
     const byField = (wrap: Json) => file(frame({ wrap }, kids(1)));
     expect(
       checkSchema(

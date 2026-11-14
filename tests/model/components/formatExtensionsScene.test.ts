@@ -1,6 +1,6 @@
-// Formato 4, etapa "extensões" (FX3): a cena recebe sombra, raios, tracejado e cor já resolvidos;
-// justify space-around/space-evenly e layout.reverse arrumam os filhos; stroke.offset chega ao
-// traço e ao recorte ampliado.
+// Format 4, "extensions" stage (FX3): the scene receives shadow, radii, dashed and color already resolved;
+// justify space-around/space-evenly and layout.reverse arrange the children; stroke.offset reaches the
+// stroke and the enlarged clip.
 import { describe, expect, it } from 'vitest';
 import type {
   ComponentFile,
@@ -60,13 +60,13 @@ const rootOf = (template: Raw, values: FieldValues = {}) =>
 
 const t = (name: string, extra: Raw = {}) => ({ $token: name, ...extra });
 
-describe('A1 na cena: $token em shadow', () => {
+describe('A1 in the scene: $token in shadow', () => {
   const rect = (shadow: Raw) => ({
     type: 'frame',
     children: [{ type: 'rect', width: 50, height: 20, shadow }],
   });
 
-  it('x, y e blur chegam resolvidos ao efeito', () => {
+  it('x, y and blur reach the effect resolved', () => {
     const root = rootOf(
       rect({ color: '#000', x: 1, y: t('elev-y'), blur: t('elev-blur') }),
     );
@@ -76,15 +76,15 @@ describe('A1 na cena: $token em shadow', () => {
     });
   });
 
-  it('blur resolvido negativo cai em 0 com o aviso valor inválido em shadow.blur', () => {
+  it('a negative resolved blur falls to 0 with the invalid value warning in shadow.blur', () => {
     const { root, warnings } = run(rect({ color: '#000', blur: t('elev-neg') }));
     expect((root as FrameNode).children[0]?.effects[0]?.blur).toBe(0);
     expect(warnings).toContain('invalid value in shadow.blur: -3');
   });
 });
 
-describe('A2 na cena: $token nos itens de cornerRadius', () => {
-  it('cada item resolve; os literais ficam', () => {
+describe('A2 in the scene: $token in the cornerRadius items', () => {
+  it('each item resolves; the literals stay', () => {
     const root = rootOf({
       type: 'frame',
       children: [
@@ -101,7 +101,7 @@ describe('A2 na cena: $token nos itens de cornerRadius', () => {
   });
 });
 
-describe('A19 na cena: stroke.dash por expressão e $token', () => {
+describe('A19 in the scene: stroke.dash by expression and $token', () => {
   const dashOf = (dash: unknown, values: FieldValues = {}) => {
     const { root, warnings } = run(
       {
@@ -115,7 +115,7 @@ describe('A19 na cena: stroke.dash por expressão e $token', () => {
     return { dash: (root as FrameNode).children[0]?.stroke?.dash, warnings };
   };
 
-  it('$switch escolhe a lista', () => {
+  it('$switch chooses the list', () => {
     const dash = {
       $switch: 'estilo',
       cases: { tracejado: [4, 2], pontilhado: [1, 3] },
@@ -125,11 +125,11 @@ describe('A19 na cena: stroke.dash por expressão e $token', () => {
     expect(dashOf(dash, { estilo: 'pontilhado' }).dash).toEqual([1, 3]);
   });
 
-  it('$token de número em cada item', () => {
+  it('number $token in each item', () => {
     expect(dashOf([t('dash-on'), 2]).dash).toEqual([6, 2]);
   });
 
-  it('valor resolvido inválido: sem tracejado e com o aviso', () => {
+  it('invalid resolved value: no dashed and with the warning', () => {
     const bad = dashOf([t('dash-bad'), 2]);
     expect(bad.dash).toBeUndefined();
     expect(bad.warnings).toContain('invalid value in stroke.dash: [-2,2]');
@@ -138,12 +138,12 @@ describe('A19 na cena: stroke.dash por expressão e $token', () => {
     expect(notList.warnings).toContain('invalid value in stroke.dash: abc');
   });
 
-  it('a lista literal de sempre continua igual', () => {
+  it('the usual literal list stays the same', () => {
     expect(dashOf([4, 2]).dash).toEqual([4, 2]);
   });
 });
 
-describe('A10: alpha no $token de cor', () => {
+describe('A10: alpha on the color $token', () => {
   const colorOf = (ref: unknown) => {
     const component = parse({
       type: 'frame',
@@ -161,29 +161,29 @@ describe('A10: alpha no $token de cor', () => {
     return fills[0] && 'color' in fills[0] ? fills[0].color : undefined;
   };
 
-  it('multiplica o alfa de uma cor opaca', () => {
+  it('multiplies the alpha of an opaque color', () => {
     expect(colorOf(t('ink', { alpha: 0.5 }))).toBe('#11223380');
   });
 
-  it('multiplica o alfa que a cor já tinha (#rrggbbaa)', () => {
-    // #00000080 (alfa 128/255 ≈ 0,5) com alpha 0,5 dá ≈ 0,25 → 0x40
+  it('multiplies the alpha the color already had (#rrggbbaa)', () => {
+    // #00000080 (alpha 128/255 ≈ 0.5) with alpha 0.5 gives ≈ 0.25 → 0x40
     expect(colorOf(t('scrim', { alpha: 0.5 }))).toBe('#00000040');
   });
 
-  it('alpha 0 é transparente e alpha 1 não muda a cor', () => {
+  it('alpha 0 is transparent and alpha 1 does not change the color', () => {
     expect(colorOf(t('ink', { alpha: 0 }))).toBe('#11223300');
     expect(colorOf(t('ink', { alpha: 1 }))).toBe('#112233ff');
   });
 
-  it('alpha pode ser $token de número', () => {
+  it('alpha can be a number $token', () => {
     expect(colorOf(t('ink', { alpha: t('scrim-a') }))).toBe('#11223380');
   });
 
-  it('sem alpha o $token continua como era', () => {
+  it('without alpha the $token stays as it was', () => {
     expect(colorOf(t('ink'))).toBe('#112233');
   });
 
-  it('none continua none', () => {
+  it('none stays none', () => {
     const none = resolveTokens(
       { modes: ['light'], values: { nada: 'none' } },
       {},
@@ -202,7 +202,7 @@ describe('A10: alpha no $token de cor', () => {
     expect((root as FrameNode).children[0]?.fills).toEqual([]);
   });
 
-  it('o alfa vale também nas paradas de um degradê (parada transparente)', () => {
+  it('the alpha also applies on the stops of a gradient (transparent stop)', () => {
     const root = rootOf({
       type: 'frame',
       children: [
@@ -230,7 +230,7 @@ describe('A10: alpha no $token de cor', () => {
 });
 
 // ---------------------------------------------------------------------------------------
-// A4: justify e reverse
+// A4: justify and reverse
 // ---------------------------------------------------------------------------------------
 
 const box = (w: number, h: number): Raw => ({ type: 'rect', width: w, height: h });
@@ -249,7 +249,7 @@ function ys(layout: Raw, kids: Raw[], height = 100): number[] {
   return root.children.map((c) => c.transform[5] ?? 0);
 }
 
-describe('A4: justify space-around e space-evenly', () => {
+describe('A4: justify space-around and space-evenly', () => {
   const kids = [box(10, 10), box(10, 10), box(10, 10)];
 
   function rowXs(justify: string, children: Raw[] = kids): number[] {
@@ -261,28 +261,28 @@ describe('A4: justify space-around e space-evenly', () => {
     return root.children.map((c) => c.transform[4] ?? 0);
   }
 
-  it('space-around: meia folga nas pontas e folga inteira entre os filhos', () => {
-    // livre = 100 - 30 = 70; por filho 70/3; ponta 35/3
+  it('space-around: half gap at the ends and a full gap between the children', () => {
+    // free = 100 - 30 = 70; per child 70/3; end 35/3
     const p = rowXs('space-around');
     expect(p[0]).toBeCloseTo(70 / 6, 6);
     expect(p[1]).toBeCloseTo(70 / 6 + 10 + 70 / 3, 6);
     expect(p[2]).toBeCloseTo(70 / 6 + 20 + 140 / 3, 6);
   });
 
-  it('space-evenly: a mesma folga nas pontas e entre os filhos', () => {
-    // livre 70, 4 vãos de 17,5
+  it('space-evenly: the same gap at the ends and between the children', () => {
+    // free 70, 4 gaps of 17.5
     const p = rowXs('space-evenly');
     expect(p[0]).toBeCloseTo(17.5, 6);
     expect(p[1]).toBeCloseTo(17.5 + 10 + 17.5, 6);
     expect(p[2]).toBeCloseTo(17.5 + 20 + 35, 6);
   });
 
-  it('com um filho só, os dois centram', () => {
+  it('with a single child, both center', () => {
     expect(rowXs('space-around', [box(10, 10)])).toEqual([45]);
     expect(rowXs('space-evenly', [box(10, 10)])).toEqual([45]);
   });
 
-  it('vale em column', () => {
+  it('applies in column', () => {
     const root = rootAt(20, 100, {
       type: 'frame',
       layout: { type: 'column', justify: 'space-evenly' },
@@ -293,13 +293,13 @@ describe('A4: justify space-around e space-evenly', () => {
     expect(p[2]).toBeCloseTo(17.5 + 20 + 35, 6);
   });
 
-  it('respeita gap e padding', () => {
+  it('respects gap and padding', () => {
     const root = rootAt(100, 20, {
       type: 'frame',
       layout: { type: 'row', justify: 'space-evenly', gap: 5, padding: [0, 10] },
       children: [box(10, 10), box(10, 10)],
     });
-    // conteúdo 80; usados 10+5+10=25; livre 55; em 3 vãos de 55/3
+    // content 80; used 10+5+10=25; free 55; in 3 gaps of 55/3
     const p = root.children.map((c) => c.transform[4] ?? 0);
     expect(p[0]).toBeCloseTo(10 + 55 / 3, 6);
     expect(p[1]).toBeCloseTo(10 + 55 / 3 + 10 + 5 + 55 / 3, 6);
@@ -309,34 +309,34 @@ describe('A4: justify space-around e space-evenly', () => {
 describe('A4: layout.reverse', () => {
   const kids = [box(10, 10), box(20, 10), box(30, 10)];
 
-  it('row: o primeiro filho vai para o fim e o start passa a ser o fim', () => {
-    // start (padrão): empacotados à direita, na ordem inversa: [30][20][10] da esquerda p/ direita? não:
-    // o primeiro filho (10) fica mais à direita.
+  it('row: the first child goes to the end and start becomes the end', () => {
+    // start (default): packed to the right, in reverse order: [30][20][10] from left to right? no:
+    // the first child (10) stays farthest to the right.
     const p = xs({ type: 'row', reverse: true }, kids);
     expect(p).toEqual([90, 70, 40]);
   });
 
-  it('row: justify end sob reverse empacota à esquerda', () => {
+  it('row: justify end under reverse packs to the left', () => {
     expect(xs({ type: 'row', reverse: true, justify: 'end' }, kids)).toEqual([50, 30, 0]);
   });
 
-  it('row: com gap', () => {
+  it('row: with gap', () => {
     expect(xs({ type: 'row', reverse: true, gap: 4 }, kids)).toEqual([90, 66, 32]);
   });
 
-  it('row: space-between põe o primeiro filho na ponta direita', () => {
+  it('row: space-between puts the first child at the right end', () => {
     const p = xs({ type: 'row', reverse: true, justify: 'space-between' }, kids);
     expect(p[0]).toBe(90);
     expect(p[2]).toBe(0);
     expect(p[1]).toBeCloseTo(100 - 10 - 20 - (100 - 60) / 2, 6);
   });
 
-  it('column: o primeiro filho vai para baixo', () => {
+  it('column: the first child goes to the bottom', () => {
     const tall = [box(10, 10), box(10, 20), box(10, 30)];
     expect(ys({ type: 'column', reverse: true }, tall)).toEqual([90, 70, 40]);
   });
 
-  it('reverse por expressão', () => {
+  it('reverse by expression', () => {
     const layout = { type: 'row', reverse: { $field: 'rtl' } };
     const root = (rtl: string) =>
       run(
@@ -345,21 +345,21 @@ describe('A4: layout.reverse', () => {
         100,
         20,
       ).root as FrameNode;
-    expect(root('sim').children.map((c) => c.transform[4])).toEqual([90, 70, 40]);
-    expect(root('não').children.map((c) => c.transform[4])).toEqual([0, 10, 30]);
+    expect(root('yes').children.map((c) => c.transform[4])).toEqual([90, 70, 40]);
+    expect(root('no').children.map((c) => c.transform[4])).toEqual([0, 10, 30]);
   });
 
-  it('reverse falso é a ordem de sempre', () => {
+  it('reverse false is the usual order', () => {
     expect(xs({ type: 'row', reverse: false }, kids)).toEqual([0, 10, 30]);
   });
 
-  it('combina com space-evenly', () => {
+  it('combines with space-evenly', () => {
     const p = xs({ type: 'row', reverse: true, justify: 'space-evenly' }, kids);
-    // livre 40, 4 vãos de 10: normal [10, 30, 60]; espelhado em 100: 100-10-10=80? [80, 50, 10]
+    // free 40, 4 gaps of 10: normal [10, 30, 60]; mirrored in 100: 100-10-10=80? [80, 50, 10]
     expect(p).toEqual([80, 50, 10]);
   });
 
-  it('um quadro hug mede igual e espelha dentro dele', () => {
+  it('a hug frame measures the same and mirrors inside it', () => {
     const root = rootAt(300, 100, {
       type: 'frame',
       layout: { type: 'column' },
@@ -378,7 +378,7 @@ describe('A4: layout.reverse', () => {
     expect(hug.children.map((c) => c.transform[4])).toEqual([54, 32, 0]);
   });
 
-  it('em repeat: o bloco das linhas anda como um filho só e as linhas guardam a ordem', () => {
+  it('in repeat: the block of the lines moves as a single child and the lines keep the order', () => {
     const root = run(
       {
         type: 'frame',
@@ -408,7 +408,7 @@ describe('A4: layout.reverse', () => {
 // A15: stroke.offset
 // ---------------------------------------------------------------------------------------
 
-describe('A15: stroke.offset na cena e no recorte', () => {
+describe('A15: stroke.offset in the scene and in the clip', () => {
   const ring = (stroke: Raw) => ({
     type: 'frame',
     children: [
@@ -416,7 +416,7 @@ describe('A15: stroke.offset na cena e no recorte', () => {
     ],
   });
 
-  it('o offset literal ou por $token chega ao Stroke da cena', () => {
+  it('the literal offset or by $token reaches the scene Stroke', () => {
     expect(
       rootOf(ring({ width: 3, align: 'outside', offset: 2 })).children[0]?.stroke,
     ).toMatchObject({ offset: 2 });
@@ -426,21 +426,21 @@ describe('A15: stroke.offset na cena e no recorte', () => {
     ).toMatchObject({ offset: 2 });
   });
 
-  it('sem offset (ou com 0) o Stroke não ganha a chave', () => {
+  it('without offset (or with 0) the Stroke does not get the key', () => {
     expect(rootOf(ring({ width: 3 })).children[0]?.stroke).not.toHaveProperty('offset');
     expect(rootOf(ring({ width: 3, offset: 0 })).children[0]?.stroke).not.toHaveProperty(
       'offset',
     );
   });
 
-  it('um filho que ocupa a forma com traço outside e offset 2 amplia o recorte em offset + largura', () => {
-    // anel do M3: 3 em secondary, afastado 2 → 5 por fora da caixa
+  it('a child that fills the shape with an outside stroke and offset 2 enlarges the clip by offset + width', () => {
+    // M3 ring: 3 in secondary, offset 2 → 5 outside the box
     const root = rootAt(100, 100, ring({ width: 3, align: 'outside', offset: 2 }));
     expect(root.clip).toBe(true);
     expect(root.clipBox).toEqual({ x: -5, y: -5, width: 110, height: 110 });
   });
 
-  it('com align center conta offset + metade da largura; com inside, só o offset', () => {
+  it('with align center it counts offset + half the width; with inside, only the offset', () => {
     expect(
       rootAt(100, 100, ring({ width: 4, align: 'center', offset: 2 })).clipBox,
     ).toEqual({ x: -4, y: -4, width: 108, height: 108 });
@@ -452,7 +452,7 @@ describe('A15: stroke.offset na cena e no recorte', () => {
     });
   });
 
-  it('o offset no traço da própria raiz também amplia o recorte', () => {
+  it('the offset on the stroke of the root itself also enlarges the clip', () => {
     const root = rootAt(100, 100, {
       type: 'frame',
       stroke: { color: '#f00', width: 3, align: 'outside', offset: 2 },
@@ -461,7 +461,7 @@ describe('A15: stroke.offset na cena e no recorte', () => {
     expect(root.clipBox).toEqual({ x: -5, y: -5, width: 110, height: 110 });
   });
 
-  it('com sides, o afastamento vale só nos lados pedidos', () => {
+  it('with sides, the offset applies only on the requested sides', () => {
     const root = rootAt(
       100,
       100,
@@ -470,7 +470,7 @@ describe('A15: stroke.offset na cena e no recorte', () => {
     expect(root.clipBox).toEqual({ x: -5, y: 0, width: 105, height: 105 });
   });
 
-  it('o conteúdo continua recortado na caixa: um filho maior que a caixa não alarga o recorte', () => {
+  it('the content stays clipped in the box: a child larger than the box does not widen the clip', () => {
     const root = rootAt(100, 100, {
       type: 'frame',
       children: [
@@ -482,11 +482,11 @@ describe('A15: stroke.offset na cena e no recorte', () => {
         },
       ],
     });
-    // o retângulo passa da caixa, mas o recorte só cresce até a extensão do traço (5), não até 300
+    // the rectangle goes past the box, but the clip only grows up to the stroke extent (5), not up to 300
     expect(root.clipBox).toEqual({ x: -5, y: -5, width: 110, height: 110 });
   });
 
-  it('sem offset o recorte é o de sempre', () => {
+  it('without offset the clip is the usual one', () => {
     expect(rootAt(100, 100, ring({ width: 3, align: 'outside' })).clipBox).toEqual({
       x: -3,
       y: -3,
@@ -496,7 +496,7 @@ describe('A15: stroke.offset na cena e no recorte', () => {
   });
 });
 
-describe('A10: alpha em cores funcionais (rgb/hsl) lidas do token', () => {
+describe('A10: alpha in functional colors (rgb/hsl) read from the token', () => {
   const colorFor = (value: string, alpha: number) => {
     const tokens = resolveTokens({ modes: ['light'], values: { c: value } }, {}, 'light');
     const component = parse({
@@ -513,23 +513,23 @@ describe('A10: alpha em cores funcionais (rgb/hsl) lidas do token', () => {
     return fills[0] && 'color' in fills[0] ? fills[0].color : undefined;
   };
 
-  it('rgb com vírgulas e rgba', () => {
+  it('rgb with commas and rgba', () => {
     expect(colorFor('rgb(255, 0, 0)', 0.5)).toBe('#ff000080');
     expect(colorFor('rgba(0, 0, 0, 0.5)', 0.5)).toBe('#00000040');
   });
 
-  it('alfa e canais em porcentagem (sintaxe moderna com barra)', () => {
+  it('alpha and channels in percentage (modern syntax with slash)', () => {
     expect(colorFor('rgb(0 0 0 / 50%)', 0.5)).toBe('#00000040');
     expect(colorFor('rgb(100% 0% 0%)', 1)).toBe('#ff0000ff');
   });
 
-  it('hsl, com hue negativo e com unidade', () => {
+  it('hsl, with negative hue and with unit', () => {
     expect(colorFor('hsl(330, 100%, 50%)', 1)).toBe(colorFor('hsl(-30, 100%, 50%)', 1));
     expect(colorFor('hsl(0.5turn 100% 50%)', 1)).toBe(colorFor('hsl(180, 100%, 50%)', 1));
     expect(colorFor('hsl(120, 100%, 50%)', 1)).toBe('#00ff00ff');
   });
 
-  it('uma cor que não se entende fica como está', () => {
+  it('a color that is not understood stays as is', () => {
     expect(colorFor('rebeccapurple', 0.5)).toBe('rebeccapurple');
   });
 });

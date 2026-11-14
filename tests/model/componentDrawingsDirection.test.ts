@@ -12,9 +12,9 @@ import {
 } from '../../src/model';
 import { SPEC_ID, componentProject, testCatalog } from './componentFixtures';
 
-// Direção (schema v20, decisão 8): o cache compara a direção efetiva por entrada, como o modo e a
-// densidade. Mudar a de um container reinstancia só as marcações dele; mudar a do projeto,
-// as que a seguem; pan e zoom (mesmo projeto) não reinstanciam nada.
+// Direction (schema v20, decision 8): the cache compares the effective direction per entry, like the mode and the
+// density. Changing a container's re-instantiates only its markings; changing the project's,
+// the ones that follow it; pan and zoom (same project) re-instantiate nothing.
 
 const catalog = testCatalog();
 
@@ -41,13 +41,13 @@ function add(
   );
 }
 
-/** Dois containers (I1 e I2), uma marcação em cada e uma no canvas. */
+/** Two containers (I1 and I2), one marking in each and one on the canvas. */
 function twoContainers(): Project {
   let p = componentProject();
-  p = addContainer(p, { id: 'I2', file: 'images/outra.png', width: 500, height: 400 });
+  p = addContainer(p, { id: 'I2', file: 'images/other.png', width: 500, height: 400 });
   p = add(p, 'A', 'I1');
   p = add(p, 'B', 'I2');
-  // Longe das imagens: fica no canvas (containerId nulo).
+  // Far from the images: it stays on the canvas (null containerId).
   p = add(p, 'C', null, { rect: { x: 4000, y: 4000, width: 60, height: 24 } });
   return p;
 }
@@ -55,8 +55,8 @@ function twoContainers(): Project {
 const run = (cache: ReturnType<typeof createDrawingCache>, p: Project) =>
   cache(p, catalog, approximateMeasurer, 0);
 
-describe('cache com direção', () => {
-  it('mudar a direção de um container reinstancia só as marcações dele', () => {
+describe('cache with direction', () => {
+  it('changing the direction of a container re-instantiates only its markings', () => {
     const p = twoContainers();
     const cache = createDrawingCache();
     const before = run(cache, p);
@@ -66,18 +66,18 @@ describe('cache com direção', () => {
     expect(after.get('C')).toBe(before.get('C'));
   });
 
-  it('mudar a direção do projeto reinstancia as dos espaços que a seguem', () => {
+  it('changing the project direction re-instantiates those of the spaces that follow it', () => {
     const p = setContainerDirection(twoContainers(), 'I2', 'ltr');
     const cache = createDrawingCache();
     const before = run(cache, p);
     const after = run(cache, setProjectDirection(p, 'rtl'));
     expect(after.get('A')).not.toBe(before.get('A'));
-    // O canvas (containerId nulo) segue o projeto; o I2 fixa ltr e fica.
+    // The canvas (null containerId) follows the project; I2 pins ltr and stays.
     expect(after.get('C')).not.toBe(before.get('C'));
     expect(after.get('B')).toBe(before.get('B'));
   });
 
-  it('fixar no container a direção que ele já seguia não reinstancia nada', () => {
+  it('pinning on the container the direction it already followed re-instantiates nothing', () => {
     const p = setProjectDirection(twoContainers(), 'rtl');
     const cache = createDrawingCache();
     const before = run(cache, p);
@@ -86,7 +86,7 @@ describe('cache com direção', () => {
     expect(after).toBe(before);
   });
 
-  it('pan e zoom (mesmo projeto em rtl) não instanciam nem medem nada', () => {
+  it('pan and zoom (same project in rtl) neither instantiate nor measure anything', () => {
     const p = setProjectDirection(twoContainers(), 'rtl');
     const measure = vi.fn<TextMeasurer>(approximateMeasurer);
     const cache = createDrawingCache();
@@ -96,7 +96,7 @@ describe('cache com direção', () => {
     expect(measure.mock.calls.length).toBe(calls);
   });
 
-  it('um projeto novo com a mesma direção reaproveita todos os desenhos', () => {
+  it('a new project with the same direction reuses all the drawings', () => {
     const p = setProjectDirection(twoContainers(), 'rtl');
     const cache = createDrawingCache();
     const before = run(cache, p);

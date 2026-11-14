@@ -1,4 +1,4 @@
-// L3 (#1078, decisões 10 a 16): validação de `layout.type: "grid"`, `span`, `weight` e `repeat.layout`.
+// L3 (#1078, decisions 10 to 16): validation of `layout.type: "grid"`, `span`, `weight` and `repeat.layout`.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { COMPONENT_FORMAT } from '../../../src/model/components/componentFormat';
@@ -38,8 +38,8 @@ function host(layout: unknown, children: Json[] = [], version = 4): Json {
 
 const issues = (doc: Json): string[] => validateComponent(doc);
 
-describe('layout grid: tipo e chaves', () => {
-  it('aceita grid literal com uma trilha e as chaves da grade', () => {
+describe('layout grid: type and keys', () => {
+  it('accepts a literal grid with one track and the grid keys', () => {
     const layout = {
       type: 'grid',
       columns: 3,
@@ -60,13 +60,13 @@ describe('layout grid: tipo e chaves', () => {
       expect(issues(host({ type: 'grid', ...track }))).toEqual([]);
   });
 
-  it('o tipo inválido cita grid na mensagem', () => {
+  it('the invalid type cites grid in the message', () => {
     expect(issues(host({ type: 'diagonal' }))).toEqual([
       'template.layout.type: expected "none", "row", "column" or "grid"',
     ]);
   });
 
-  it('exige exatamente uma trilha', () => {
+  it('requires exactly one track', () => {
     expect(issues(host({ type: 'grid' }))).toEqual([`template.layout: ${TRACKS}`]);
     expect(issues(host({ type: 'grid', columns: 2, rows: 2 }))).toEqual([
       `template.layout: ${TRACKS}`,
@@ -76,7 +76,7 @@ describe('layout grid: tipo e chaves', () => {
     ]);
   });
 
-  it('confere os valores das trilhas', () => {
+  it('checks the values of the tracks', () => {
     expect(issues(host({ type: 'grid', columns: 0 }))).toEqual([
       'template.layout.columns: expected an integer greater than or equal to 1',
     ]);
@@ -91,7 +91,7 @@ describe('layout grid: tipo e chaves', () => {
     ]);
   });
 
-  it('wrap, maxPerLine e maxLines não valem na grade', () => {
+  it('wrap, maxPerLine and maxLines do not apply in the grid', () => {
     expect(
       issues(
         host({ type: 'grid', columns: 2, wrap: 'wrap', maxPerLine: 2, maxLines: 3 }),
@@ -103,7 +103,7 @@ describe('layout grid: tipo e chaves', () => {
     ]);
   });
 
-  it('align e justify da grade: start, center, end e stretch', () => {
+  it('align and justify of the grid: start, center, end and stretch', () => {
     expect(issues(host({ type: 'grid', columns: 2, align: 'baseline' }))).toEqual([
       'template.layout.align: expected one of: start, center, end, stretch',
     ]);
@@ -112,7 +112,7 @@ describe('layout grid: tipo e chaves', () => {
     ]);
   });
 
-  it('chave de trilha fora de layout grid literal', () => {
+  it('track key outside a literal layout grid', () => {
     expect(issues(host({ type: 'row', columns: 2 }))).toEqual([
       'template.layout.columns: only valid in a grid layout',
     ]);
@@ -121,13 +121,13 @@ describe('layout grid: tipo e chaves', () => {
     ]);
   });
 
-  it('com type por expressão aceita as chaves de trilha', () => {
+  it('with a type by expression it accepts the track keys', () => {
     const type = { $field: 't', default: 'row' };
     expect(issues(host({ type, columns: 2 }))).toEqual([]);
     expect(issues(host({ type: { $field: 't', default: 'grid' }, rows: 2 }))).toEqual([]);
   });
 
-  it('o slot aceita layout grid com as mesmas regras', () => {
+  it('the slot accepts layout grid with the same rules', () => {
     const doc = (layout: Json): Json =>
       component({ type: 'frame', children: [{ type: 'slot', layout }] });
     expect(issues(doc({ type: 'grid', columns: 2 }))).toEqual([]);
@@ -136,7 +136,7 @@ describe('layout grid: tipo e chaves', () => {
     ]);
   });
 
-  it('numa formatVersion de 1 a 3 grid e as trilhas são só da v4', () => {
+  it('in a formatVersion 1 to 3 grid and the tracks are v4 only', () => {
     for (const version of [1, 2, 3]) {
       expect(issues(host({ type: 'grid', columns: 2 }, [], version))).toContain(
         `template.layout.type: ${V4}`,
@@ -154,7 +154,7 @@ describe('layout grid: tipo e chaves', () => {
 describe('span', () => {
   const grid = { type: 'grid', columns: 3 };
 
-  it('vale em filho direto de grade, literal ou expressão', () => {
+  it('is valid on a direct child of a grid, literal or expression', () => {
     expect(
       issues(
         host(grid, [rect({ span: 2 }), rect({ span: { $field: 's', default: 1 } })]),
@@ -162,7 +162,7 @@ describe('span', () => {
     ).toEqual([]);
   });
 
-  it('literal fora de grade é erro no caminho do filho', () => {
+  it('a literal outside a grid is an error on the child path', () => {
     expect(issues(host({ type: 'row' }, [rect({ span: 2 })]))).toEqual([
       'template.children[0].span: span: only valid on a child of a grid layout',
     ]);
@@ -171,7 +171,7 @@ describe('span', () => {
     ]);
   });
 
-  it('com o type do pai por expressão, ou expressão em span, aceita', () => {
+  it('with the parent type by expression, or an expression in span, it accepts', () => {
     const type = { $field: 't', default: 'grid' };
     expect(issues(host({ type, columns: 2 }, [rect({ span: 2 })]))).toEqual([]);
     expect(
@@ -179,7 +179,7 @@ describe('span', () => {
     ).toEqual([]);
   });
 
-  it('inteiro maior ou igual a 1', () => {
+  it('an integer greater than or equal to 1', () => {
     expect(issues(host(grid, [rect({ span: 0 })]))).toEqual([
       'template.children[0].span: expected an integer greater than or equal to 1',
     ]);
@@ -188,7 +188,7 @@ describe('span', () => {
     ]);
   });
 
-  it('o template do repeat é filho da grade de repeat.layout', () => {
+  it('the repeat template is a child of the repeat.layout grid', () => {
     const repeat = (layout: Json): Json => ({
       type: 'repeat',
       count: 3,
@@ -207,7 +207,7 @@ describe('span', () => {
     ]);
   });
 
-  it('numa formatVersion de 1 a 3 span é da v4', () => {
+  it('in a formatVersion 1 to 3 span is v4', () => {
     expect(issues(host({ type: 'row' }, [rect({ span: 2 })], 3))).toContain(
       `template.children[0].span: ${V4}`,
     );
@@ -217,7 +217,7 @@ describe('span', () => {
 describe('weight', () => {
   const WEIGHT = 'weight: only valid on a fill child on the main axis of a row or column';
 
-  it('vale em filho fill no eixo principal (ausente, "fill" ou expressão)', () => {
+  it('is valid on a fill child on the main axis (absent, "fill" or expression)', () => {
     const fillRow = [
       { type: 'rect', weight: 2 },
       { type: 'rect', width: 'fill', weight: 0.5 },
@@ -230,14 +230,14 @@ describe('weight', () => {
     ).toEqual([]);
   });
 
-  it('filho hug, px ou % é erro no caminho do peso', () => {
+  it('a hug, px or % child is an error on the weight path', () => {
     for (const width of ['hug', 40, '50%'])
       expect(issues(host({ type: 'row' }, [rect({ width, weight: 2 })]))).toEqual([
         `template.children[0].weight: ${WEIGHT}`,
       ]);
   });
 
-  it('o eixo principal da row é a largura e o da column é a altura', () => {
+  it('the main axis of the row is the width and that of the column is the height', () => {
     expect(
       issues(
         host({ type: 'row' }, [
@@ -254,7 +254,7 @@ describe('weight', () => {
     ).toEqual([`template.children[0].weight: ${WEIGHT}`]);
   });
 
-  it('texto sem tamanho é hug: erro; com fill vale', () => {
+  it('text without a size is hug: error; with fill it is valid', () => {
     expect(
       issues(host({ type: 'row' }, [{ type: 'text', text: 'a', weight: 1 }])),
     ).toEqual([`template.children[0].weight: ${WEIGHT}`]);
@@ -265,7 +265,7 @@ describe('weight', () => {
     ).toEqual([]);
   });
 
-  it('pai none, sem layout ou grid é erro; pai com type por expressão aceita', () => {
+  it('parent none, without layout or grid is an error; a parent with a type by expression accepts', () => {
     const child = [{ type: 'rect', weight: 1 }];
     expect(issues(host({ type: 'none' }, child))).toEqual([
       `template.children[0].weight: ${WEIGHT}`,
@@ -279,13 +279,13 @@ describe('weight', () => {
     expect(issues(host({ type: { $field: 't', default: 'row' } }, child))).toEqual([]);
   });
 
-  it('número maior que 0', () => {
+  it('a number greater than 0', () => {
     expect(issues(host({ type: 'row' }, [{ type: 'rect', weight: 0 }]))).toEqual([
       'template.children[0].weight: expected a number greater than 0',
     ]);
   });
 
-  it('o template do repeat segue o tipo do quadro gerado', () => {
+  it('the repeat template follows the type of the generated frame', () => {
     const repeat = (extra: Json): Json => ({
       type: 'repeat',
       count: 3,
@@ -310,7 +310,7 @@ describe('weight', () => {
     ).toEqual([`template.children[0].template.weight: ${WEIGHT}`]);
   });
 
-  it('numa formatVersion de 1 a 3 weight é da v4', () => {
+  it('in a formatVersion 1 to 3 weight is v4', () => {
     expect(issues(host({ type: 'row' }, [{ type: 'rect', weight: 2 }], 3))).toContain(
       `template.children[0].weight: ${V4}`,
     );
@@ -327,7 +327,7 @@ describe('repeat.layout', () => {
       version,
     );
 
-  it('aceita um layout completo e confere as regras do layout', () => {
+  it('accepts a complete layout and checks the layout rules', () => {
     expect(
       issues(repeat({ layout: { type: 'grid', minColumnWidth: 60, gap: 4 } })),
     ).toEqual([]);
@@ -342,7 +342,7 @@ describe('repeat.layout', () => {
     ).toEqual(['template.children[0].layout.wrap: not valid in a grid layout']);
   });
 
-  it('não combina com direction nem gap', () => {
+  it('does not combine with direction or gap', () => {
     const layout = { type: 'grid', columns: 2 };
     expect(issues(repeat({ layout, direction: 'row' }))).toEqual([
       'template.children[0]: repeat.layout: does not combine with direction or gap',
@@ -352,7 +352,7 @@ describe('repeat.layout', () => {
     ]);
   });
 
-  it('as chaves de quebra soltas do repeat não combinam com repeat.layout (code-review)', () => {
+  it('the loose wrap keys of the repeat do not combine with repeat.layout (code-review)', () => {
     expect(
       issues(repeat({ layout: { type: 'column' }, wrap: 'wrap', lineGap: 2 })),
     ).toEqual([
@@ -361,13 +361,13 @@ describe('repeat.layout', () => {
     ]);
   });
 
-  it('repeat.layout com type none não vale (code-review)', () => {
+  it('repeat.layout with type none does not apply (code-review)', () => {
     expect(issues(repeat({ layout: { type: 'none' } }))).toEqual([
       'template.children[0].layout.type: repeat.layout: use row, column or grid',
     ]);
   });
 
-  it('distribute fill não vale com layout grid', () => {
+  it('distribute fill does not apply with layout grid', () => {
     expect(
       issues(repeat({ layout: { type: 'grid', columns: 2 }, distribute: 'fill' })),
     ).toEqual([
@@ -379,7 +379,7 @@ describe('repeat.layout', () => {
     ).toEqual([]);
   });
 
-  it('numa formatVersion de 1 a 3 repeat.layout é da v4', () => {
+  it('in a formatVersion 1 to 3 repeat.layout is v4', () => {
     expect(issues(repeat({ layout: { type: 'row' }, field: undefined }, 3))).toContain(
       `template.children[0].layout: ${V4}`,
     );
@@ -391,7 +391,7 @@ describe('docs/component.schema.json', () => {
   const bad = (doc: Json): void =>
     expect(checkSchema(schema, doc).length).toBeGreaterThan(0);
 
-  it('aceita a grade, span, weight e repeat.layout', () => {
+  it('accepts the grid, span, weight and repeat.layout', () => {
     ok(
       host({
         type: 'grid',
@@ -430,7 +430,7 @@ describe('docs/component.schema.json', () => {
     );
   });
 
-  it('recusa chave solta, valor fora do tipo e align fora do conjunto da grade', () => {
+  it('rejects a loose key, a value outside the type and align outside the grid set', () => {
     bad(host({ type: 'grid', columns: 0 }));
     bad(host({ type: 'grid', minColumnWidth: 0 }));
     bad(host({ type: 'grid', columns: 2, wrap: 'wrap' }));

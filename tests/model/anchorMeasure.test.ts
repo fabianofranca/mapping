@@ -1,6 +1,6 @@
-// Revisão da R3 (#1096): as medições (`fitMarking`, tamanho da instância nova ancorada) recebem a
-// âncora como o desenho: um componente `hug` cujo tamanho depende de `$anchor.side` mede no mesmo
-// ramo em que desenha.
+// R3 review (#1096): the measurements (`fitMarking`, size of the new anchored instance) receive the
+// anchor like the drawing: a `hug` component whose size depends on `$anchor.side` measures in the same
+// branch it draws.
 import { describe, expect, it } from 'vitest';
 import {
   addComponentMarking,
@@ -23,7 +23,7 @@ import { emptyProject, marking } from './fixtures';
 
 const SPEC_ID = 'hugtip';
 
-/** Corpo cuja altura (e o `hug` do componente) depende do lado: 90 em `bottom`, 30 nos outros. */
+/** Body whose height (and the component's `hug`) depends on the side: 90 on `bottom`, 30 on the others. */
 function hugTip(id: string, anchor: Record<string, unknown> | undefined) {
   return {
     format: 'mapping-component',
@@ -40,7 +40,7 @@ function hugTip(id: string, anchor: Record<string, unknown> | undefined) {
       children: [
         {
           type: 'rect',
-          name: 'corpo',
+          name: 'body',
           width: 100,
           height: { $switch: '$anchor.side', cases: { bottom: 90 }, default: 30 },
           fill: '#ffffff',
@@ -63,8 +63,8 @@ const SPEC_JSON = {
   version: 1,
   layers: [
     {
-      id: 'componentes',
-      name: 'Componentes',
+      id: 'components',
+      name: 'Components',
       color: '#6750A4',
       annotationTypes: Object.keys(COMPONENTS).map((id) => ({
         id,
@@ -104,7 +104,7 @@ function project(): Project {
     })(),
     packageSpecName: 'hugtip.spec.json',
   });
-  p = addContainer(p, { id: 'I1', file: 'images/tela.png', width: 1000, height: 800 });
+  p = addContainer(p, { id: 'I1', file: 'images/screen.png', width: 1000, height: 800 });
   return createMarking(p, {
     id: 'T',
     containerId: 'I1',
@@ -125,7 +125,7 @@ const args = (
   ...extra,
 });
 
-/** B no lugar, com o tamanho de `size` e a âncora dada. */
+/** B in place, with the size of `size` and the given anchor. */
 function withB(typeId: string, anchor: { to: string; side?: 'top' | 'bottom' }) {
   const p = addComponentMarking(
     project(),
@@ -136,15 +136,15 @@ function withB(typeId: string, anchor: { to: string; side?: 'top' | 'bottom' }) 
   return setMarkingAnchor(p, 'B', anchor);
 }
 
-/** A altura do corpo no desenho da marcação B (em pixels; densidade 1). */
+/** The body height in the drawing of marking B (in pixels; density 1). */
 function drawnBodyHeight(p: Project): number {
   const drawing = createDrawingCache()(p, catalog, approximateMeasurer, 0).get('B')!;
-  const node = [...walk(drawing.root)].find((n) => n.name === 'corpo')!;
+  const node = [...walk(drawing.root)].find((n) => n.name === 'body')!;
   return node.height;
 }
 
-describe('fitMarking mede com a âncora da marcação', () => {
-  it('o lado declarado na marcação escolhe o ramo do $switch (o mesmo do desenho)', () => {
+describe('fitMarking measures with the marking anchor', () => {
+  it('the side declared on the marking picks the $switch branch (the same as the drawing)', () => {
     const bottom = fitMarking(
       withB('hug', { to: 'T', side: 'bottom' }),
       catalog,
@@ -162,7 +162,7 @@ describe('fitMarking mede com a âncora da marcação', () => {
     expect(marking(top, 'B').rect.height).toBe(30);
   });
 
-  it('sem lado declarado vale o padrão do componente', () => {
+  it('without a declared side the component default applies', () => {
     const p = fitMarking(
       withB('hug-bottom', { to: 'T' }),
       catalog,
@@ -173,7 +173,7 @@ describe('fitMarking mede com a âncora da marcação', () => {
     expect(drawnBodyHeight(p)).toBe(90);
   });
 
-  it('sem âncora o ramo é o padrão (como o desenho)', () => {
+  it('without an anchor the branch is the default (like the drawing)', () => {
     const p = addComponentMarking(
       project(),
       catalog,
@@ -186,8 +186,8 @@ describe('fitMarking mede com a âncora da marcação', () => {
   });
 });
 
-describe('a instância nova ancorada nasce no tamanho que o desenho usa', () => {
-  it('componentAnchoredPlacement mede com o lado da âncora', () => {
+describe('the new anchored instance is born at the size the drawing uses', () => {
+  it('componentAnchoredPlacement measures with the anchor side', () => {
     const place = (typeId: string, side?: 'top' | 'bottom') =>
       componentAnchoredPlacement(
         project(),
@@ -197,11 +197,11 @@ describe('a instância nova ancorada nasce no tamanho que o desenho usa', () => 
       ).rect;
     expect(place('hug', 'bottom').height).toBe(90);
     expect(place('hug', 'top').height).toBe(30);
-    // Sem lado na âncora vale o padrão do componente (`anchorDefaults` ou `top`).
+    // Without a side on the anchor the component default applies (`anchorDefaults` or `top`).
     expect(place('hug').height).toBe(30);
   });
 
-  it('addComponentMarking sem rect cria no tamanho medido e o desenho confere', () => {
+  it('addComponentMarking without rect creates at the measured size and the drawing matches', () => {
     const p = addComponentMarking(
       project(),
       catalog,

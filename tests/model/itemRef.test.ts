@@ -16,7 +16,7 @@ import { emptyProject, sampleProject } from './fixtures';
 const UUID_A = '3f2a9c1e-7b4d-4e0a-9d51-0a1b2c3d4e5f';
 const UUID_B = '9a8b7c6d-1111-4222-8333-444455556666';
 
-/** Projeto com marcações de ids dados, todas na mesma imagem. */
+/** Project with markings of the given ids, all in the same image. */
 function withMarkings(ids: readonly string[]): Project {
   let p = addContainer(emptyProject(), {
     id: 'I1',
@@ -36,19 +36,19 @@ function withMarkings(ids: readonly string[]): Project {
 }
 
 describe('shortCode', () => {
-  it('usa os 8 primeiros caracteres do id, sem hífens e em minúsculas', () => {
+  it('uses the first 8 characters of the id, without hyphens and in lowercase', () => {
     const p = withMarkings([UUID_A, UUID_B.toUpperCase()]);
     expect(shortCode(p, 'm', UUID_A)).toBe('3f2a9c1e');
     expect(shortCode(p, 'm', UUID_B.toUpperCase())).toBe('9a8b7c6d');
   });
 
-  it('cresce de 4 em 4 caracteres até ficar único', () => {
+  it('grows 4 characters at a time until it is unique', () => {
     const a = '3f2a9c1e-aaaa-4000-8000-000000000001';
     const b = '3f2a9c1e-aaaa-4000-8000-000000000002';
     const c = '3f2a9c1e-bbbb-4000-8000-000000000003';
     const p = withMarkings([a, b, c, UUID_B]);
     const codes = shortCodes(p, 'm');
-    // a e b só diferem no último caractere: o código é o id inteiro (32).
+    // a and b differ only in the last character: the code is the whole id (32).
     expect(codes.get(a)).toBe('3f2a9c1eaaaa4000800000000000' + '0001');
     expect(codes.get(b)).toBe('3f2a9c1eaaaa4000800000000000' + '0002');
     expect(codes.get(c)).toBe('3f2a9c1ebbbb');
@@ -58,7 +58,7 @@ describe('shortCode', () => {
     expect(codes.get(a)!.length % 4).toBe(0);
   });
 
-  it('passa de 8 para 12 quando só os 8 primeiros colidem', () => {
+  it('goes from 8 to 12 when only the first 8 collide', () => {
     const a = '3f2a9c1e-1000-4000-8000-000000000001';
     const b = '3f2a9c1e-2000-4000-8000-000000000001';
     const codes = shortCodes(withMarkings([a, b]), 'm');
@@ -66,7 +66,7 @@ describe('shortCode', () => {
     expect(codes.get(b)).toBe('3f2a9c1e2000');
   });
 
-  it('é calculado por tipo: marcação e imagem com o mesmo começo não colidem', () => {
+  it('is computed per kind: a marking and an image with the same start do not collide', () => {
     let p = withMarkings(['3f2a9c1e-0000-4000-8000-000000000001']);
     p = addContainer(p, {
       id: '3f2a9c1e-9999-4000-8000-000000000002',
@@ -78,15 +78,15 @@ describe('shortCode', () => {
     expect(shortCode(p, 'i', '3f2a9c1e-9999-4000-8000-000000000002')).toBe('3f2a9c1e');
   });
 
-  it('cobre os três tipos (anotações também) e falha com not-found', () => {
+  it('covers the three kinds (annotations too) and fails with not-found', () => {
     const p = sampleProject();
     expect(shortCode(p, 'a', 'A1')).toBe('a1');
     expect(shortCode(p, 'i', 'I1')).toBe('i1');
     expect(shortCode(p, 'm', 'M1')).toBe('m1');
-    expect(() => shortCode(p, 'm', 'nao-existe')).toThrow();
+    expect(() => shortCode(p, 'm', 'does-not-exist')).toThrow();
   });
 
-  it('é memoizado por projeto', () => {
+  it('is memoized per project', () => {
     const p = sampleProject();
     expect(shortCodes(p, 'm')).toBe(shortCodes(p, 'm'));
     expect(shortCodes({ ...p }, 'm')).not.toBe(shortCodes(p, 'm'));
@@ -94,7 +94,7 @@ describe('shortCode', () => {
 });
 
 describe('shortCodesFor', () => {
-  it('vale para qualquer lista de ids (ex: as propostas de um projeto)', () => {
+  it('works for any list of ids (e.g. the proposals of a project)', () => {
     const a = '3f2a9c1e-1000-4000-8000-000000000001';
     const b = '3f2a9c1e-2000-4000-8000-000000000001';
     const c = '9b1c0000-0000-4000-8000-000000000003';
@@ -111,19 +111,19 @@ describe('matchShortCode', () => {
   const b = '3f2a9c1e-2000-4000-8000-000000000001';
   const p = withMarkings([a, b, UUID_A.replace('3f2a9c1e', '77777777')]);
 
-  it('acha por código, por prefixo, por id completo e ignora hífens e caixa', () => {
+  it('finds by code, by prefix, by full id and ignores hyphens and case', () => {
     expect(matchShortCode(p, 'm', '3f2a9c1e1000')).toEqual([{ kind: 'm', id: a }]);
     expect(matchShortCode(p, 'm', a.toUpperCase())).toEqual([{ kind: 'm', id: a }]);
     expect(matchShortCode(p, 'm', '7777')).toHaveLength(1);
   });
 
-  it('devolve os candidatos quando o código é ambíguo e vazio quando não acha', () => {
+  it('returns the candidates when the code is ambiguous and empty when nothing is found', () => {
     expect(matchShortCode(p, 'm', '3f2a9c1e').map((m) => m.id)).toEqual([a, b]);
     expect(matchShortCode(p, 'm', 'ffff')).toEqual([]);
     expect(matchShortCode(p, 'm', '')).toEqual([]);
   });
 
-  it('com kind nulo procura nos três tipos; o id exato vence o prefixo', () => {
+  it('with a null kind searches the three kinds; the exact id beats the prefix', () => {
     const q = sampleProject();
     expect(matchShortCode(q, null, 'm1')).toEqual([{ kind: 'm', id: 'M1' }]);
     expect(matchShortCode(q, null, 'i')).toHaveLength(2);
@@ -132,19 +132,20 @@ describe('matchShortCode', () => {
 });
 
 describe('formatRef', () => {
-  it('monta só a URL', () => {
-    expect(formatRef({ project: 'carro', kind: 'm', code: '3f2a9c1e' })).toBe(
-      'mapping://carro/m/3f2a9c1e',
+  it('builds only the URL', () => {
+    expect(formatRef({ project: 'car', kind: 'm', code: '3f2a9c1e' })).toBe(
+      'mapping://car/m/3f2a9c1e',
     );
   });
 
-  it('codifica o projeto pelo conjunto unreserved', () => {
+  it('encodes the project by the unreserved set', () => {
     const cases: [string, string][] = [
-      ['Meu Projeto (v2)', 'Meu%20Projeto%20%28v2%29'],
+      ['My Project (v2)', 'My%20Project%20%28v2%29'],
+      // pt-BR kept: the non-ASCII character is the object of the encoding test
       ['ç', '%C3%A7'],
       ['a~b.c-d_e', 'a~b.c-d_e'],
       ["a!b'c*d", 'a%21b%27c%2Ad'],
-      ['meu app/v 2', 'meu%20app%2Fv%202'],
+      ['my app/v 2', 'my%20app%2Fv%202'],
     ];
     for (const [project, encoded] of cases) {
       const ref = formatRef({ project, kind: 'i', code: 'ab12cd34' });
@@ -154,15 +155,15 @@ describe('formatRef', () => {
     }
   });
 
-  it('encodeRefSegment codifica tudo fora de unreserved', () => {
+  it('encodeRefSegment encodes everything outside unreserved', () => {
     expect(encodeRefSegment('a b(c)')).toBe('a%20b%28c%29');
   });
 });
 
 describe('parseRef', () => {
-  it('aceita `_` no código (ids de componentes como A_N0)', () => {
-    expect(parseRef('mapping://componentes/a/a_n0')).toEqual({
-      project: 'componentes',
+  it('accepts `_` in the code (component ids such as A_N0)', () => {
+    expect(parseRef('mapping://components/a/a_n0')).toEqual({
+      project: 'components',
       kind: 'a',
       code: 'a_n0',
     });
@@ -170,26 +171,27 @@ describe('parseRef', () => {
     expect(parseRef('A_N0')).toEqual({ project: null, kind: null, code: 'a_n0' });
   });
 
-  it('lê a referência completa', () => {
-    expect(parseRef('mapping://carro/m/3f2a9c1e')).toEqual({
-      project: 'carro',
+  it('reads the full reference', () => {
+    expect(parseRef('mapping://car/m/3f2a9c1e')).toEqual({
+      project: 'car',
       kind: 'm',
       code: '3f2a9c1e',
     });
-    expect(parseRef('  mapping://carro/i/3F2A9C1E  ')).toEqual({
-      project: 'carro',
+    expect(parseRef('  mapping://car/i/3F2A9C1E  ')).toEqual({
+      project: 'car',
       kind: 'i',
       code: '3f2a9c1e',
     });
   });
 
-  it('decodifica o projeto, com %xx maiúsculo ou minúsculo', () => {
-    expect(parseRef('mapping://meu%20app/a/ab12cd34')?.project).toBe('meu app');
+  it('decodes the project, with uppercase or lowercase %xx', () => {
+    expect(parseRef('mapping://my%20app/a/ab12cd34')?.project).toBe('my app');
+    // pt-BR kept: the non-ASCII character is the object of the decoding test
     expect(parseRef('mapping://pro%c3%a7/a/ab12cd34')?.project).toBe('proç');
     expect(parseRef('mapping://pro%C3%A7/a/ab12cd34')?.project).toBe('proç');
   });
 
-  it('lê "m/código" sem projeto e o id completo ou código sozinho', () => {
+  it('reads "m/code" without a project and the full id or the code alone', () => {
     expect(parseRef('m/3f2a9c1e')).toEqual({
       project: null,
       kind: 'm',
@@ -203,28 +205,29 @@ describe('parseRef', () => {
     expect(parseRef('3f2a9c1e')).toEqual({ project: null, kind: null, code: '3f2a9c1e' });
   });
 
-  it('recusa o que não é referência', () => {
+  it('refuses what is not a reference', () => {
     for (const bad of [
       '',
       '   ',
       'x/3f2a9c1e',
       'mapping://carro',
-      'mapping://carro/x/3f2a9c1e',
+      'mapping://car/x/3f2a9c1e',
       'mapping:///m/3f2a9c1e',
-      'mapping://carro/m/',
+      'mapping://car/m/',
       'http://carro/m/3f2a9c1e',
-      'duas palavras',
+      'two words',
       '---',
     ]) {
       expect(parseRef(bad), bad).toBeNull();
     }
   });
 
-  it('recusa o formato antigo e o projeto mal codificado', () => {
+  it('refuses the old format and the badly encoded project', () => {
     for (const bad of [
-      'mapping://cadastro/m/2f7c4a1d (cadastro.png › Formulário)',
-      'mapping://Meu Projeto/m/2f7c4a1d',
-      'mapping://projeção/m/2f7c4a1d',
+      'mapping://signup/m/2f7c4a1d (signup.png › Form)',
+      'mapping://My Project/m/2f7c4a1d',
+      // pt-BR kept: an unencoded non-ASCII project is the object of the test
+      'mapping://café/m/2f7c4a1d',
       'mapping://p%ZZ/m/2f7c4a1d',
       'mapping://p%C3/m/2f7c4a1d',
       'mapping://p%/m/2f7c4a1d',
@@ -236,9 +239,10 @@ describe('parseRef', () => {
     }
   });
 
-  it('é o inverso de formatRef', () => {
+  it('is the inverse of formatRef', () => {
     const p = withMarkings([UUID_A, UUID_B]);
-    for (const project of ['meu app', 'Meu Projeto (v2)', 'ç~.']) {
+    // pt-BR kept: the non-ASCII character is the object of the round trip
+    for (const project of ['my app', 'My Project (v2)', 'ç~.']) {
       const text = formatRef({
         project,
         kind: 'm',

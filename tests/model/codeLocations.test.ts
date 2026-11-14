@@ -33,10 +33,10 @@ import {
 } from './specFixtures';
 import { BUTTON_PATH, TEXT_BUTTON_PATH, variantsProject } from './variantsFixtures';
 
-// Código de instanciação das especializações (etapa 3b; schema v11): plataformas com o `repo`
-// de cada especialização, o clone local do projeto, link (pela especialização dona do tipo) e
-// caminho local do `path` de um tipo, a "Definição" e a busca de tipos por arquivo ou símbolo
-// (`findByCode`).
+// Instantiation code of the specializations (stage 3b; schema v11): platforms with the `repo`
+// of each specialization, the project's local clone, link (through the specialization that
+// owns the type) and local path of a type's `path`, the "Definition" and the search for types
+// by file or symbol (`findByCode`).
 
 function codeOf(fn: () => unknown): string | null {
   try {
@@ -52,24 +52,24 @@ const DS_BUTTON = 'app/src/main/java/com/app/ds/DSButton.kt';
 const DS_TEXT_FIELD = 'app/src/main/java/com/app/ds/DSTextField.kt';
 const DS_BUTTON_SWIFT = 'App/DesignSystem/DSButton.swift';
 
-/** O `repo` de `android` da outra especialização: outra biblioteca, outro repositório. */
+/** The `repo` of `android` of the other specialization: another library, another repository. */
 const OTHER_ANDROID_REPO = {
-  url: 'https://gitlab.com/org/outra-android',
-  urlTemplate: 'https://gitlab.com/org/outra-android/-/blob/main/{path}',
+  url: 'https://gitlab.com/org/other-android',
+  urlTemplate: 'https://gitlab.com/org/other-android/-/blob/main/{path}',
 } as const;
 
-/** Outra especialização que também declara `android` (com outro nome) e `web`. */
+/** Another specialization that also declares `android` (with another name) and `web`. */
 function otherSpec(withRepo = false): Spec {
   return {
     format: 'mapping-spec',
     formatVersion: withRepo ? 5 : 2,
-    id: 'outra',
-    name: 'Outra',
+    id: 'other',
+    name: 'Other',
     version: 1,
     platforms: [
       {
         id: 'android',
-        name: 'Android (outro nome)',
+        name: 'Android (other name)',
         language: 'java',
         ...(withRepo ? { repo: OTHER_ANDROID_REPO } : {}),
       },
@@ -77,17 +77,17 @@ function otherSpec(withRepo = false): Spec {
     ],
     layers: [
       {
-        id: 'paginas',
-        name: 'Páginas',
+        id: 'pages',
+        name: 'Pages',
         color: '#5E35B1',
         annotationTypes: [
           {
-            id: 'pagina',
-            name: 'Página',
-            fields: [{ key: 'titulo', type: 'string' }],
+            id: 'page',
+            name: 'Page',
+            fields: [{ key: 'title', type: 'string' }],
             code: {
-              android: { symbol: 'PaginaScreen', path: 'outro/modulo/DSButton.kt' },
-              web: { symbol: 'Pagina', path: 'src/Pagina.tsx' },
+              android: { symbol: 'PageScreen', path: 'other/module/DSButton.kt' },
+              web: { symbol: 'Page', path: 'src/Page.tsx' },
             },
           },
         ],
@@ -96,8 +96,8 @@ function otherSpec(withRepo = false): Spec {
   };
 }
 
-describe('plataformas do projeto', () => {
-  it('consolida as plataformas das especializações aplicadas, na ordem de aplicação', () => {
+describe('project platforms', () => {
+  it('consolidates the platforms of the applied specializations, in application order', () => {
     expect(projectPlatforms(specProject())).toEqual([
       {
         id: 'android',
@@ -115,7 +115,7 @@ describe('plataformas do projeto', () => {
         repos: [],
       },
     ]);
-    // Especialização v1 (Modelo de dados) não declara plataformas.
+    // Specialization v1 (Data model) does not declare platforms.
     expect(projectPlatforms(cadastroProject()).map((p) => p.id)).toEqual([
       'android',
       'ios',
@@ -123,14 +123,14 @@ describe('plataformas do projeto', () => {
     ]);
   });
 
-  it('mesmo id em duas especializações é a mesma plataforma: vale a da primeira aplicada', () => {
+  it('the same id in two specializations is the same platform: the first applied wins', () => {
     const p = applySpecialization(specProject(), otherSpec(), { newId: idGen('LO') });
     expect(projectPlatforms(p)).toEqual([
       {
         id: 'android',
         name: 'Android',
         language: 'kotlin',
-        specIds: ['sdui', 'outra'],
+        specIds: ['sdui', 'other'],
         repos: [],
       },
       { id: 'ios', name: 'iOS', language: 'swift', specIds: ['sdui'], repos: [] },
@@ -141,27 +141,27 @@ describe('plataformas do projeto', () => {
         specIds: ['sdui'],
         repos: [],
       },
-      { id: 'web', name: 'Web', language: null, specIds: ['outra'], repos: [] },
+      { id: 'web', name: 'Web', language: null, specIds: ['other'], repos: [] },
     ]);
     expect(findPlatform(p, 'web')?.name).toBe('Web');
     expect(findPlatform(p, 'desktop')).toBeNull();
-    // Removida a primeira, a outra passa a definir o nome.
+    // With the first removed, the other one defines the name.
     const only = removeSpecialization(p, 'sdui', 'delete');
     expect(findPlatform(only, 'android')).toEqual({
       id: 'android',
-      name: 'Android (outro nome)',
+      name: 'Android (other name)',
       language: 'java',
-      specIds: ['outra'],
+      specIds: ['other'],
       repos: [],
     });
   });
 
-  it('leva o repo de cada especialização que declara a plataforma, na ordem de aplicação', () => {
+  it('carries the repo of each specialization that declares the platform, in application order', () => {
     let p = withSpecRepo(specProject(), 'sdui', 'android', ANDROID_REPO);
     p = applySpecialization(p, otherSpec(true), { newId: idGen('LO') });
     expect(findPlatform(p, 'android')?.repos).toEqual([
       { specId: 'sdui', repo: ANDROID_REPO },
-      { specId: 'outra', repo: OTHER_ANDROID_REPO },
+      { specId: 'other', repo: OTHER_ANDROID_REPO },
     ]);
     expect(findPlatform(p, 'ios')?.repos).toEqual([]);
     expect(findPlatform(p, 'web')?.repos).toEqual([]);
@@ -169,16 +169,16 @@ describe('plataformas do projeto', () => {
 });
 
 describe('specPlatformRepo', () => {
-  it('é o repo da especialização na plataforma; null sem repo, sem a plataforma ou sem cópia', () => {
+  it('is the specialization repo on the platform; null without repo, without the platform or without a copy', () => {
     const p = applySpecialization(codeProject(), otherSpec(true), {
       newId: idGen('LO'),
     });
     expect(specPlatformRepo(p, 'sdui', 'android')).toEqual(ANDROID_REPO);
-    expect(specPlatformRepo(p, 'outra', 'android')).toEqual(OTHER_ANDROID_REPO);
+    expect(specPlatformRepo(p, 'other', 'android')).toEqual(OTHER_ANDROID_REPO);
     expect(specPlatformRepo(p, 'sdui', 'ios')).toBeNull();
-    expect(specPlatformRepo(p, 'outra', 'ios')).toBeNull();
-    expect(specPlatformRepo(p, 'outra', 'web')).toBeNull();
-    expect(specPlatformRepo(p, 'nao-aplicada', 'android')).toBeNull();
+    expect(specPlatformRepo(p, 'other', 'ios')).toBeNull();
+    expect(specPlatformRepo(p, 'other', 'web')).toBeNull();
+    expect(specPlatformRepo(p, 'not-applied', 'android')).toBeNull();
     expect(specPlatformRepo(p, 'sdui', 'constructor')).toBeNull();
     const missing: Project = {
       ...p,
@@ -187,12 +187,12 @@ describe('specPlatformRepo', () => {
       ),
     };
     expect(specPlatformRepo(missing, 'sdui', 'android')).toBeNull();
-    expect(specPlatformRepo(missing, 'outra', 'android')).toEqual(OTHER_ANDROID_REPO);
+    expect(specPlatformRepo(missing, 'other', 'android')).toEqual(OTHER_ANDROID_REPO);
   });
 });
 
-describe('clone local por plataforma', () => {
-  it('informa, altera e remove', () => {
+describe('local clone per platform', () => {
+  it('sets, changes and removes', () => {
     let p = setPlatformRepo(specProject(), 'android', { localPath: '..\\..\\' });
     expect(p.platformRepos).toEqual({ android: { localPath: '../..' } });
     expect(hasLocalPath(p, 'android')).toBe(true);
@@ -202,7 +202,7 @@ describe('clone local por plataforma', () => {
     expect(Object.keys(p.platformRepos)).toEqual(['android', 'ios']);
     expect(p.platformRepos.ios).toEqual({ localPath: '.' });
 
-    // Texto vazio ou null remove a entrada: o arquivo não guarda configuração vazia.
+    // Empty text or null removes the entry: the file does not keep an empty configuration.
     p = setPlatformRepo(p, 'ios', { localPath: null });
     expect(Object.keys(p.platformRepos)).toEqual(['android']);
     p = setPlatformRepo(p, 'android', { localPath: '  ' });
@@ -212,12 +212,12 @@ describe('clone local por plataforma', () => {
     expect(p.platformRepos).toEqual({});
   });
 
-  it('só guarda o localPath, sem endereço', () => {
+  it('only stores the localPath, without an address', () => {
     const p = setPlatformRepo(specProject(), 'android', { localPath: '../..' });
     expect(Object.keys(p.platformRepos.android ?? {})).toEqual(['localPath']);
   });
 
-  it('repetir o valor atual devolve o mesmo projeto (sem entrada no desfazer)', () => {
+  it('repeating the current value returns the same project (no undo entry)', () => {
     const p = setPlatformRepo(specProject(), 'android', { localPath: '../..' });
     expect(setPlatformRepo(p, 'android', { localPath: '../..' })).toBe(p);
     const empty = specProject();
@@ -225,7 +225,7 @@ describe('clone local por plataforma', () => {
     expect(setPlatformRepo(empty, 'ios', { localPath: '' })).toBe(empty);
   });
 
-  it('valida a plataforma e o localPath', () => {
+  it('validates the platform and the localPath', () => {
     const p = specProject();
     expect(codeOf(() => setPlatformRepo(p, 'web', { localPath: '.' }))).toBe(
       'unknown-platform',
@@ -237,14 +237,14 @@ describe('clone local por plataforma', () => {
       ).toBe('invalid-local-path');
     }
     expect(codeOf(() => removePlatformRepo(p, 'android'))).toBe('not-found');
-    // Configuração de plataforma não declarada (editada à mão) pode ser removida.
+    // Configuration of an undeclared platform (edited by hand) can be removed.
     const orphan = { ...p, platformRepos: { web: { localPath: '.' } } };
     expect(removePlatformRepo(orphan, 'web').platformRepos).toEqual({});
   });
 });
 
-describe('caminhos de código', () => {
-  it('normalização e validação do caminho', () => {
+describe('code paths', () => {
+  it('path normalization and validation', () => {
     expect(normalizeCodePath(' .\\app\\src\\Main.kt/ ')).toBe('app/src/Main.kt');
     expect(normalizeCodePath(' ./ ')).toBeNull();
     expect(isValidCodePath('app/src/Main.kt')).toBe(true);
@@ -271,14 +271,14 @@ describe('codeLink', () => {
     platform,
     path,
   });
-  /** Projeto cuja especialização `sdui` declara `android` com esse `urlTemplate` (ou sem `repo`). */
+  /** Project whose `sdui` specialization declares `android` with this `urlTemplate` (or without `repo`). */
   const withTemplate = (urlTemplate: string | undefined) =>
     withSpecRepo(codeProject(), 'sdui', 'android', {
-      url: 'https://git.interno/org/app',
+      url: 'https://git.internal/org/app',
       ...(urlTemplate === undefined ? {} : { urlTemplate }),
     });
 
-  it('substitui {path} e remove o trecho a partir do último # que contém {line}', () => {
+  it('replaces {path} and removes the part from the last # that contains {line}', () => {
     expect(codeLink(codeProject(), at(DS_BUTTON))).toBe(
       `https://github.com/org/app-android/blob/main/${DS_BUTTON}`,
     );
@@ -288,40 +288,41 @@ describe('codeLink', () => {
     expect(codeLink(bitbucket, at('a/B.kt'))).toBe(
       'https://bitbucket.org/org/app/src/main/a/B.kt',
     );
-    // O # do roteamento da página (antes do {path}) não é removido.
-    const hashRoute = withTemplate('https://git.interno/#/app/{path}#L{line}');
-    expect(codeLink(hashRoute, at('B.kt'))).toBe('https://git.interno/#/app/B.kt');
-    // {line} fora de um fragmento: vira vazio.
-    const query = withTemplate('https://git.interno/ver?arquivo={path}&linha={line}');
+    // The # of the page routing (before {path}) is not removed.
+    const hashRoute = withTemplate('https://git.internal/#/app/{path}#L{line}');
+    expect(codeLink(hashRoute, at('B.kt'))).toBe('https://git.internal/#/app/B.kt');
+    // {line} outside a fragment: becomes empty.
+    const query = withTemplate('https://git.internal/view?file={path}&line={line}');
     expect(codeLink(query, at('B.kt'))).toBe(
-      'https://git.interno/ver?arquivo=B.kt&linha=',
+      'https://git.internal/view?file=B.kt&line=',
     );
-    const plain = withTemplate('https://git.interno/{path}');
-    expect(codeLink(plain, at('B.kt'))).toBe('https://git.interno/B.kt');
+    const plain = withTemplate('https://git.internal/{path}');
+    expect(codeLink(plain, at('B.kt'))).toBe('https://git.internal/B.kt');
   });
 
-  it('{line} na query e no fragmento: tira os dois, nenhum {line} sobra', () => {
-    const both = withTemplate('https://git.interno/{path}?linha={line}#L{line}');
-    expect(codeLink(both, at('B.kt'))).toBe('https://git.interno/B.kt?linha=');
+  it('{line} in the query and in the fragment: removes both, no {line} is left', () => {
+    const both = withTemplate('https://git.internal/{path}?line={line}#L{line}');
+    expect(codeLink(both, at('B.kt'))).toBe('https://git.internal/B.kt?line=');
     const link = codeLink(
-      withTemplate('https://git.interno/{path}?a={line}&b={line}'),
+      withTemplate('https://git.internal/{path}?a={line}&b={line}'),
       at('B.kt'),
     );
-    expect(link).toBe('https://git.interno/B.kt?a=&b=');
+    expect(link).toBe('https://git.internal/B.kt?a=&b=');
   });
 
-  it('codifica cada segmento do caminho e preserva as /', () => {
-    expect(codeLink(codeProject(), at('src/Minha Tela#1/Ação?.kt'))).toBe(
-      'https://github.com/org/app-android/blob/main/src/Minha%20Tela%231/A%C3%A7%C3%A3o%3F.kt',
+  it('encodes each path segment and preserves the /', () => {
+    // Non-ASCII (é) on purpose: percent-encoding of UTF-8.
+    expect(codeLink(codeProject(), at('src/My Screen#1/Café?.kt'))).toBe(
+      'https://github.com/org/app-android/blob/main/src/My%20Screen%231/Caf%C3%A9%3F.kt',
     );
   });
 
-  it('null sem repo, sem urlTemplate, com template inválido ou caminho inválido', () => {
+  it('null without repo, without urlTemplate, with an invalid template or an invalid path', () => {
     const p = codeProject();
     expect(codeLink(p, at(DS_BUTTON_SWIFT, 'ios'))).toBeNull();
     expect(codeLink(p, at(DS_BUTTON, 'constructor'))).toBeNull();
-    expect(codeLink(p, at(DS_BUTTON, 'android', 'nao-aplicada'))).toBeNull();
-    // `repo` só com `url`: sem `urlTemplate`, sem link.
+    expect(codeLink(p, at(DS_BUTTON, 'android', 'not-applied'))).toBeNull();
+    // `repo` with only `url`: without `urlTemplate`, no link.
     expect(codeLink(withTemplate(undefined), at(DS_BUTTON))).toBeNull();
     expect(codeLink(withTemplate('  '), at(DS_BUTTON))).toBeNull();
     expect(
@@ -332,34 +333,34 @@ describe('codeLink', () => {
     expect(codeLink(p, at('../x.kt'))).toBeNull();
   });
 
-  it('o link vem da especialização dona do tipo, não do projeto', () => {
-    // O projeto sobrepõe só o clone local: nada dele entra no link.
+  it('the link comes from the specialization that owns the type, not from the project', () => {
+    // The project overrides only the local clone: nothing from it goes into the link.
     expect(codeLink(codeProject(), at('a/B.kt'))).toBe(
       'https://github.com/org/app-android/blob/main/a/B.kt',
     );
-    // Duas especializações com a mesma plataforma e repo diferentes: cada uma tem o seu.
+    // Two specializations with the same platform and different repos: each has its own.
     const p = applySpecialization(codeProject(), otherSpec(true), {
       newId: idGen('LO'),
     });
     expect(codeLink(p, at('a/B.kt', 'android', 'sdui'))).toBe(
       'https://github.com/org/app-android/blob/main/a/B.kt',
     );
-    expect(codeLink(p, at('a/B.kt', 'android', 'outra'))).toBe(
-      'https://gitlab.com/org/outra-android/-/blob/main/a/B.kt',
+    expect(codeLink(p, at('a/B.kt', 'android', 'other'))).toBe(
+      'https://gitlab.com/org/other-android/-/blob/main/a/B.kt',
     );
-    // A outra não declara `repo` para a plataforma `web`.
-    expect(codeLink(p, at('src/Pagina.tsx', 'web', 'outra'))).toBeNull();
-    // Uma especialização sem `repo` não herda o da outra, mesmo na mesma plataforma.
-    const semRepo = applySpecialization(codeProject(), otherSpec(false), {
+    // The other one does not declare `repo` for the `web` platform.
+    expect(codeLink(p, at('src/Pagina.tsx', 'web', 'other'))).toBeNull();
+    // A specialization without `repo` does not inherit the other's, even on the same platform.
+    const withoutRepo = applySpecialization(codeProject(), otherSpec(false), {
       newId: idGen('LO'),
     });
-    expect(codeLink(semRepo, at('a/B.kt', 'android', 'outra'))).toBeNull();
-    expect(codeLink(semRepo, at('a/B.kt', 'android', 'sdui'))).not.toBeNull();
+    expect(codeLink(withoutRepo, at('a/B.kt', 'android', 'other'))).toBeNull();
+    expect(codeLink(withoutRepo, at('a/B.kt', 'android', 'sdui'))).not.toBeNull();
   });
 });
 
 describe('codeLocalPath', () => {
-  it('junta o localPath e o caminho, relativo à pasta do projeto', () => {
+  it('joins the localPath and the path, relative to the project folder', () => {
     const p = codeProject();
     const location = { specId: 'sdui', platform: 'android', path: DS_BUTTON };
     expect(codeLocalPath(p, location)).toBe(`../../../${DS_BUTTON}`);
@@ -368,33 +369,33 @@ describe('codeLocalPath', () => {
       platformRepos: { android: { localPath } },
     });
     expect(codeLocalPath(at('.'), location)).toBe(DS_BUTTON);
-    expect(codeLocalPath(at('repo/../outro'), { ...location, path: 'a.kt' })).toBe(
-      'outro/a.kt',
+    expect(codeLocalPath(at('repo/../other'), { ...location, path: 'a.kt' })).toBe(
+      'other/a.kt',
     );
     expect(codeLocalPath(at('/abs'), location)).toBeNull();
     expect(codeLocalPath(p, { ...location, platform: 'ios' })).toBeNull();
     expect(codeLocalPath(p, { ...location, path: null })).toBeNull();
   });
 
-  it('a sobreposição é da plataforma: vale para qualquer especialização', () => {
+  it('the override belongs to the platform: it applies to any specialization', () => {
     const p = applySpecialization(codeProject(), otherSpec(true), {
       newId: idGen('LO'),
     });
     const at = (specId: string) =>
       codeLocalPath(p, { specId, platform: 'android', path: 'a/B.kt' });
     expect(at('sdui')).toBe('../../../a/B.kt');
-    expect(at('outra')).toBe('../../../a/B.kt');
+    expect(at('other')).toBe('../../../a/B.kt');
   });
 });
 
-describe('Definição (path do code de um tipo)', () => {
+describe('Definition (path of a type code)', () => {
   const typeOf = (p: Project, annotationId: string) =>
     typeOfAnnotation(
       p,
       p.annotations.find((a) => a.id === annotationId)!,
     )!.type;
 
-  it('typeCodeDefinitions: uma entrada por plataforma com path, na ordem do code', () => {
+  it('typeCodeDefinitions: one entry per platform with a path, in code order', () => {
     const p = codeProject();
     expect(typeCodeDefinitions(p, 'sdui', typeOf(p, 'AB'))).toEqual([
       {
@@ -416,13 +417,13 @@ describe('Definição (path do code de um tipo)', () => {
     ]);
   });
 
-  it('tipo sem path (ou sem code) não tem definição', () => {
+  it('a type without a path (or without code) has no definition', () => {
     const p = codeProject();
     expect(typeCodeDefinitions(p, 'sdui', typeOf(p, 'AOC'))).toEqual([]);
     expect(typeCodeDefinitions(p, 'sdui', { code: undefined })).toEqual([]);
   });
 
-  it('projectTypeCode: as entradas do code de todos os tipos aplicados, uma vez por versão', () => {
+  it('projectTypeCode: the code entries of all applied types, once per version', () => {
     const p = codeProject();
     const all = projectTypeCode(p);
     expect(all).toBe(projectTypeCode(p));
@@ -434,13 +435,13 @@ describe('Definição (path do code de um tipo)', () => {
   });
 });
 
-describe('findByCode (tipos pelo path e pelo symbol do code)', () => {
+describe('findByCode (types by the path and the symbol of the code)', () => {
   const found = (p: Project, query: Parameters<typeof findByCode>[1]) =>
     findByCode(p, query).map(
       (m) => `${m.specId}/${m.typeId}:${m.code.map((c) => c.platform).join('+')}`,
     );
 
-  it('casa o caminho inteiro ou um sufixo de segmentos inteiros', () => {
+  it('matches the whole path or a suffix of whole segments', () => {
     const p = codeProject();
     expect(found(p, { path: 'DSButton.kt' })).toEqual(['sdui/button:android']);
     expect(found(p, { path: 'ds/DSButton.kt' })).toEqual(['sdui/button:android']);
@@ -448,7 +449,7 @@ describe('findByCode (tipos pelo path e pelo symbol do code)', () => {
     expect(found(p, { path: 'Button.kt' })).toEqual([]);
     expect(found(p, { path: 'SButton.kt' })).toEqual([]);
     expect(found(p, { path: 'dsbutton.kt' })).toEqual([]);
-    // A busca normaliza o caminho digitado.
+    // The search normalizes the typed path.
     expect(found(p, { path: ' ./App\\DesignSystem\\DSButton.swift ' })).toEqual([
       'sdui/button:ios',
     ]);
@@ -456,7 +457,7 @@ describe('findByCode (tipos pelo path e pelo symbol do code)', () => {
     expect(found(p, { path: DS_TEXT_FIELD })).toEqual(['sdui/input:android']);
   });
 
-  it('casa o símbolo por igualdade; com os dois, a mesma plataforma precisa casar ambos', () => {
+  it('matches the symbol by equality; with both, the same platform must match both', () => {
     const p = codeProject();
     expect(found(p, { symbol: 'DSButton' })).toEqual(['sdui/button:ios']);
     expect(found(p, { symbol: 'com.app.ds.OnClick' })).toEqual(['sdui/onClick:android']);
@@ -464,13 +465,13 @@ describe('findByCode (tipos pelo path e pelo symbol do code)', () => {
     expect(found(p, { path: 'DSButton.kt', symbol: 'com.app.ds.DSButton' })).toEqual([
       'sdui/button:android',
     ]);
-    // Arquivo do Android e símbolo do iOS: nenhuma plataforma casa com os dois.
+    // Android file and iOS symbol: no platform matches both.
     expect(found(p, { path: 'DSButton.kt', symbol: 'DSButton' })).toEqual([]);
     expect(found(p, {})).toEqual([]);
     expect(found(p, { path: '  ', symbol: '' })).toEqual([]);
   });
 
-  it('devolve o code que casou e as anotações do tipo, com imagem e marcação', () => {
+  it('returns the code that matched and the annotations of the type, with image and marking', () => {
     const [match] = findByCode(codeProject(), { path: 'DSButton.kt' });
     expect(match).toEqual({
       specId: 'sdui',
@@ -486,12 +487,12 @@ describe('findByCode (tipos pelo path e pelo symbol do code)', () => {
       ],
       annotations: [{ containerId: 'I1', markingId: 'MC', annotationId: 'AB' }],
     });
-    // O Input tem três anotações, na ordem do projeto.
+    // The Input has three annotations, in project order.
     const [input] = findByCode(codeProject(), { path: 'DSTextField.kt' });
     expect(input?.annotations.map((a) => a.annotationId)).toEqual(['AIN', 'AII', 'AIE']);
   });
 
-  it('tipo sem anotações aparece com a lista vazia; tipos de outra especialização também entram', () => {
+  it('a type without annotations shows up with an empty list; types of another specialization also match', () => {
     let p = codeProject();
     expect(findByCode(p, { symbol: 'com.app.ds.DSImage' })).toEqual([
       expect.objectContaining({ typeId: 'image', annotations: [] }),
@@ -499,20 +500,20 @@ describe('findByCode (tipos pelo path e pelo symbol do code)', () => {
     p = applySpecialization(p, otherSpec(), { newId: idGen('LO') });
     expect(found(p, { path: 'DSButton.kt' })).toEqual([
       'sdui/button:android',
-      'outra/pagina:android',
+      'other/page:android',
     ]);
     p = addTypedAnnotation(p, {
       id: 'AP',
       markingId: 'MT',
       layerId: 'LO1',
-      type: { specId: 'outra', typeId: 'pagina' },
+      type: { specId: 'other', typeId: 'page' },
     });
-    expect(findByCode(p, { path: 'Pagina.tsx' })[0]?.annotations).toEqual([
+    expect(findByCode(p, { path: 'Page.tsx' })[0]?.annotations).toEqual([
       { containerId: 'I1', markingId: 'MT', annotationId: 'AP' },
     ]);
   });
 
-  it('especialização sem cópia (spec null) não entra na busca', () => {
+  it('a specialization without a copy (spec null) is not searched', () => {
     const p = codeProject();
     const missing: Project = {
       ...p,
@@ -524,22 +525,22 @@ describe('findByCode (tipos pelo path e pelo symbol do code)', () => {
   });
 });
 
-describe('plataforma sem caminho local', () => {
-  it('não é problema: sem aviso e sem pendência', () => {
+describe('platform without a local path', () => {
+  it('is not a problem: no warning and nothing pending', () => {
     const p = codeProject();
     expect(hasLocalPath(p, 'ios')).toBe(false);
     expect(getAnnotationIssues(p, 'AB')).toEqual([]);
     const withoutAndroid = removePlatformRepo(p, 'android');
     expect(hasLocalPath(withoutAndroid, 'android')).toBe(false);
-    // O link continua vindo da especialização.
+    // The link still comes from the specialization.
     expect(
       codeLink(withoutAndroid, { specId: 'sdui', platform: 'android', path: 'a/B.kt' }),
     ).toBe('https://github.com/org/app-android/blob/main/a/B.kt');
   });
 });
 
-describe('exemplos', () => {
-  it('o Screen do SDUI v2 não tem code nem campo de código (o blueprint marca a falta de mapeamento)', () => {
+describe('examples', () => {
+  it('the SDUI v2 Screen has no code nor code field (the blueprint flags the missing mapping)', () => {
     const screen = loadExample('sdui')
       .layers.flatMap((l) => l.annotationTypes)
       .find((t) => t.id === 'screen');
@@ -548,19 +549,19 @@ describe('exemplos', () => {
   });
 });
 
-describe('findByCode com variants (formatVersion 9)', () => {
+describe('findByCode with variants (formatVersion 9)', () => {
   const annotationIds = (p: Project, query: Parameters<typeof findByCode>[1]) =>
     findByCode(p, query).map((m) => m.annotations.map((a) => a.annotationId).sort());
 
-  it('pelo símbolo da base traz só os botões da base, sem os outlined', () => {
+  it('by the base symbol returns only the base buttons, without the outlined ones', () => {
     const p = variantsProject();
-    // BF não tem valor (default filled); BO, BT e BN têm outro estilo.
+    // BF has no value (default filled); BO, BT and BN have another style.
     expect(annotationIds(p, { symbol: 'androidx.compose.material3.Button' })).toEqual([
       ['BF'],
     ]);
   });
 
-  it('pelo símbolo de um caso traz só as anotações dele; o code do resultado é o cru', () => {
+  it('by the symbol of a case returns only its annotations; the result code is the raw one', () => {
     const p = variantsProject();
     expect(
       annotationIds(p, { symbol: 'androidx.compose.material3.OutlinedButton' }),
@@ -572,7 +573,7 @@ describe('findByCode com variants (formatVersion 9)', () => {
     expect(match?.code[0]?.code.variants?.field).toBe('style');
   });
 
-  it('um tipo que casa e não tem anotação que case aparece com a lista vazia', () => {
+  it('a type that matches and has no matching annotation shows up with an empty list', () => {
     let p = variantsProject();
     p = { ...p, annotations: p.annotations.filter((a) => a.id !== 'BO') };
     const found = findByCode(p, { symbol: 'androidx.compose.material3.OutlinedButton' });
@@ -580,9 +581,9 @@ describe('findByCode com variants (formatVersion 9)', () => {
     expect(found[0]?.annotations).toEqual([]);
   });
 
-  it('pelo path traz todas quando os casos não trocam o path; o caso que troca, só ele', () => {
+  it('by the path returns all when the cases do not change the path; the case that changes it, only that one', () => {
     const p = variantsProject();
-    // BF, BO e BN usam o path da base; o text troca para TextButton.kt.
+    // BF, BO and BN use the base path; the text one switches to TextButton.kt.
     expect(annotationIds(p, { path: BUTTON_PATH }).flat().sort()).toEqual([
       'BF',
       'BN',
@@ -594,7 +595,7 @@ describe('findByCode com variants (formatVersion 9)', () => {
     expect(types).toEqual(['button', 'card']);
   });
 
-  it('com symbol e path, a mesma entrada resolvida precisa casar com os dois', () => {
+  it('with symbol and path, the same resolved entry must match both', () => {
     const p = variantsProject();
     expect(
       annotationIds(p, {
@@ -602,7 +603,7 @@ describe('findByCode com variants (formatVersion 9)', () => {
         path: 'TextButton.kt',
       }),
     ).toEqual([['BT']]);
-    // OutlinedButton fica no Button.kt da base: com o path do TextButton, nenhum caso casa.
+    // OutlinedButton lives in the base Button.kt: with the TextButton path, no case matches.
     expect(
       findByCode(p, {
         symbol: 'androidx.compose.material3.OutlinedButton',
@@ -611,7 +612,7 @@ describe('findByCode com variants (formatVersion 9)', () => {
     ).toEqual([]);
   });
 
-  it('sem variants (especialização 8) o resultado é o de sempre', () => {
+  it('without variants (specialization 8) the result is the usual one', () => {
     const p = codeProject();
     expect(findByCode(p, { symbol: 'com.app.ds.DSButton' }).map((m) => m.typeId)).toEqual(
       ['button'],
@@ -624,8 +625,8 @@ describe('findByCode com variants (formatVersion 9)', () => {
   });
 });
 
-describe('typeCodeDefinitions com variants (formatVersion 9)', () => {
-  it('usa o path e o symbol do caso da anotação', () => {
+describe('typeCodeDefinitions with variants (formatVersion 9)', () => {
+  it('uses the path and the symbol of the annotation case', () => {
     const p = variantsProject();
     const type = typeOfAnnotation(
       p,
@@ -642,7 +643,7 @@ describe('typeCodeDefinitions com variants (formatVersion 9)', () => {
       path: BUTTON_PATH,
       symbol: 'androidx.compose.material3.OutlinedButton',
     });
-    // Sem valores: o default do campo (filled, sem caso) e a base.
+    // Without values: the field default (filled, no case) and the base.
     expect(definition(null)).toMatchObject({ path: BUTTON_PATH });
     expect(typeCodeDefinitions(p, 'm3', type.type)[0]?.symbol).toBe(
       'androidx.compose.material3.Button',

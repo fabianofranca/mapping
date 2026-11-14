@@ -1,6 +1,6 @@
-// A prova de desenho também no tamanho ajustado (MC2, decisão 10 da #898): um componente com eixo
-// que depende do conteúdo (`sizing` `hug`, ou por expressão) é desenhado no `size` e no tamanho
-// ajustado, com os valores do caso; o aviso do segundo cita `tamanho ajustado W×H`.
+// The drawing proof also at the fitted size (MC2, decision 10 of #898): a component with an axis
+// that depends on the content (`sizing` `hug`, or by expression) is drawn at `size` and at the fitted
+// size, with the values of the case; the warning of the second cites `fitted size W×H`.
 import { describe, expect, it } from 'vitest';
 import { validateLibrary } from '../../src/model/library';
 
@@ -56,7 +56,7 @@ const spec = (examples: unknown[] = []): Raw => ({
           id: 't',
           name: 'T',
           component: 'components/m.json',
-          fields: [{ key: 'msg', label: 'Mensagem', type: 'string', default: LONG }],
+          fields: [{ key: 'msg', label: 'Message', type: 'string', default: LONG }],
           examples,
         },
       ],
@@ -76,17 +76,17 @@ function warnings(comp: Raw, examples: unknown[] = []): string[] {
   return report.warnings.map((w) => w.message);
 }
 
-describe('prova de desenho no tamanho ajustado (MC2, decisão 10)', () => {
-  it('o que não cabe no size e passa a caber no tamanho ajustado avisa só no size', () => {
-    // Duas linhas de 30 = 60 de texto numa caixa de 50; com a altura `hug` o tamanho ajustado é 200×60.
+describe('drawing proof at the fitted size (MC2, decision 10)', () => {
+  it('what does not fit in size and starts to fit at the fitted size warns only on size', () => {
+    // Two lines of 30 = 60 of text in a box of 50; with the `hug` height the fitted size is 200×60.
     const out = warnings(component({ sizing: { height: 'hug' } }));
     expect(out).toEqual([
       'type "t", the default values, initial size 200×50: content larger than the box: frame (approximate)',
     ]);
   });
 
-  it('o que não cabe nem no tamanho ajustado avisa citando `tamanho ajustado W×H`', () => {
-    // `maxHeight` 40 na raiz segura o ajuste: as duas linhas (60) não cabem em 200×40.
+  it('what does not fit even at the fitted size warns citing `fitted size W×H`', () => {
+    // `maxHeight` 40 at the root holds the fit: the two lines (60) do not fit in 200×40.
     const out = warnings(
       component({ sizing: { height: 'hug' }, template: { maxHeight: 40 } }),
     );
@@ -95,17 +95,17 @@ describe('prova de desenho no tamanho ajustado (MC2, decisão 10)', () => {
     );
   });
 
-  it('o exemplo de valores também é provado no tamanho ajustado, com os valores dele', () => {
+  it('the value example is also proven at the fitted size, with its values', () => {
     const out = warnings(
       component({ sizing: { height: 'hug' }, template: { maxHeight: 40 } }),
-      [{ name: 'longo', values: { msg: LONG } }],
+      [{ name: 'long', values: { msg: LONG } }],
     );
     expect(out).toContain(
-      'type "t", the example "longo", fitted size 200×40: content larger than the box: frame (approximate)',
+      'type "t", the example "long", fitted size 200×40: content larger than the box: frame (approximate)',
     );
   });
 
-  it('sizing por expressão que dá px entra no tamanho ajustado', () => {
+  it('sizing by an expression that gives px enters the fitted size', () => {
     const out = warnings(
       component({
         sizing: { height: { $if: { $has: 'msg' }, then: 40, else: 50 } },
@@ -116,14 +116,14 @@ describe('prova de desenho no tamanho ajustado (MC2, decisão 10)', () => {
     );
   });
 
-  it('componente sem eixo que depende do conteúdo não ganha o caso ajustado', () => {
+  it('a component without an axis that depends on the content does not get the fitted case', () => {
     const out = warnings(component({}));
     expect(out).toEqual([
       'type "t", the default values, initial size 200×50: content larger than the box: frame (approximate)',
     ]);
   });
 
-  it('nenhum desenho de hoje muda: sem aviso nos dois tamanhos quando cabe', () => {
+  it('no drawing of today changes: no warning at both sizes when it fits', () => {
     expect(
       warnings(
         component({ size: { width: 200, height: 80 }, sizing: { height: 'hug' } }),
@@ -132,11 +132,11 @@ describe('prova de desenho no tamanho ajustado (MC2, decisão 10)', () => {
     ).toEqual([]);
   });
 
-  it('sizing com valor inválido avisa no caso do size (sem `aproximado`: não depende da medida) e cai no size', () => {
+  it('sizing with an invalid value warns in the size case (without `approximate`: it does not depend on the measurement) and falls back to size', () => {
     const out = warnings(component({ sizing: { height: { $field: 'msg' } } }));
     expect(out).toContain(
       `type "t", the default values, initial size 200×50: invalid value in sizing.height: ${LONG}`,
     );
-    expect(out.some((w) => w.includes('tamanho ajustado'))).toBe(false);
+    expect(out.some((w) => w.includes('fitted size'))).toBe(false);
   });
 });

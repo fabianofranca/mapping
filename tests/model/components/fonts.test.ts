@@ -1,12 +1,12 @@
-// Biblioteca: as fontes do design system declaradas na especialização (os bytes vêm da pasta).
+// Library: the design system fonts declared in the specialization (the bytes come from the folder).
 import { describe, expect, it } from 'vitest';
 import { loadLibrary } from '../../../src/model/components/library';
 import { M3_FILES } from '../../../viewer/samples/samplesMaterial3';
 
 const bytes = new Uint8Array([0, 1, 0, 0]).buffer;
 
-describe('fontes', () => {
-  it('a especialização do Material 3 declara a Roboto; sem os arquivos, as fontes ficam sem bytes', () => {
+describe('fonts', () => {
+  it('the Material 3 specialization declares Roboto; without the files, the fonts have no bytes', () => {
     const lib = loadLibrary(M3_FILES);
     expect(lib.fonts.map((f) => [f.family, f.weight, f.path])).toEqual([
       ['Roboto', '400', 'fonts/Roboto-Regular.ttf'],
@@ -16,7 +16,7 @@ describe('fontes', () => {
     expect(lib.problems).toEqual([]);
   });
 
-  it('com os arquivos na pasta, os bytes ficam na fonte; faixa de peso e itálico são aceitos', () => {
+  it('with the files in the folder, the bytes stay in the font; weight range and italic are accepted', () => {
     const spec = JSON.parse(M3_FILES[0]!.text!) as Record<string, unknown>;
     spec.fonts = [
       { family: 'Roboto', file: 'fonts/Roboto-VF.ttf', weight: '100 900' },

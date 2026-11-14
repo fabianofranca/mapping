@@ -1,5 +1,5 @@
-// R1 (#1106, decisões 5 a 7 da #1096): a validação das chaves de direção — `anchors.start`/`end`,
-// `font.align` `start`/`end`, `direction` por nó, `$direction`, `mirror` de `icon` e `path`.
+// R1 (#1106, decisions 5 to 7 of #1096): the validation of the direction keys — `anchors.start`/`end`,
+// `font.align` `start`/`end`, `direction` per node, `$direction`, `mirror` of `icon` and `path`.
 import { describe, expect, it } from 'vitest';
 import { COMPONENT_FORMAT } from '../../../src/model/components/componentFormat';
 import { validateComponent } from '../../../src/model/components/parseComponent';
@@ -24,27 +24,27 @@ const rect = (extra: Record<string, unknown>) => ({
   ...extra,
 });
 
-describe('anchors.start e anchors.end', () => {
-  it('valem na v4, com número ou expressão', () => {
+describe('anchors.start and anchors.end', () => {
+  it('are valid in v4, with a number or expression', () => {
     expect(
       validateComponent(withChild(rect({ anchors: { start: 4, end: { $field: 'x' } } }))),
     ).toEqual([]);
   });
 
-  it('start com left e end com right no mesmo nó são erro', () => {
+  it('start with left and end with right on the same node are an error', () => {
     expect(
       validateComponent(withChild(rect({ anchors: { start: 4, left: 2 } }))),
     ).toEqual(['template.children[0].anchors.start: does not combine with left']);
     expect(validateComponent(withChild(rect({ anchors: { end: 4, right: 2 } })))).toEqual(
       ['template.children[0].anchors.end: does not combine with right'],
     );
-    // start com right (e end com left) não colidem em ltr: valem
+    // start with right (and end with left) do not collide in ltr: they are valid
     expect(
       validateComponent(withChild(rect({ anchors: { start: 4, right: 2 } }))),
     ).toEqual([]);
   });
 
-  it('numa versão 1 a 3, o erro de versão no caminho da chave', () => {
+  it('in a version 1 to 3, the version error on the key path', () => {
     for (const version of [1, 2, 3])
       expect(
         validateComponent(withChild(rect({ anchors: { start: 4, end: 5 } }), version)),
@@ -55,14 +55,14 @@ describe('anchors.start e anchors.end', () => {
   });
 });
 
-describe('font.align start e end', () => {
+describe('font.align start and end', () => {
   const text = (align: unknown) => ({
     type: 'text',
     text: 'a',
     font: { align },
   });
 
-  it('valem na v4 (literal e por expressão)', () => {
+  it('are valid in v4 (literal and by expression)', () => {
     expect(validateComponent(withChild(text('start')))).toEqual([]);
     expect(validateComponent(withChild(text('end')))).toEqual([]);
     expect(validateComponent(withChild(text({ $field: 'a', default: 'start' })))).toEqual(
@@ -70,13 +70,13 @@ describe('font.align start e end', () => {
     );
   });
 
-  it('valor fora do conjunto é erro', () => {
+  it('a value outside the set is an error', () => {
     expect(validateComponent(withChild(text('meio')))).toEqual([
       'template.children[0].font.align: expected one of: left, center, right, justify, start, end',
     ]);
   });
 
-  it('numa versão 1 a 3 o literal start/end dá o erro de versão', () => {
+  it('in a version 1 to 3 the literal start/end gives the version error', () => {
     for (const version of [1, 2, 3])
       expect(validateComponent(withChild(text('start'), version))).toEqual([
         `template.children[0].font.align: ${V4}`,
@@ -84,19 +84,19 @@ describe('font.align start e end', () => {
   });
 });
 
-describe('direction por nó', () => {
-  it('aceita ltr e rtl em qualquer nó', () => {
+describe('direction per node', () => {
+  it('accepts ltr and rtl on any node', () => {
     for (const d of ['ltr', 'rtl'])
       expect(validateComponent(withChild(rect({ direction: d })))).toEqual([]);
   });
 
-  it('literal fora de ltr/rtl é erro (expected one of: ltr, rtl)', () => {
+  it('a literal outside ltr/rtl is an error (expected one of: ltr, rtl)', () => {
     expect(validateComponent(withChild(rect({ direction: 'auto' })))).toEqual([
       'template.children[0].direction: expected one of: ltr, rtl',
     ]);
   });
 
-  it('numa versão 1 a 3, o erro de versão no caminho da chave', () => {
+  it('in a version 1 to 3, the version error on the key path', () => {
     for (const version of [1, 2, 3])
       expect(validateComponent(withChild(rect({ direction: 'rtl' }), version))).toEqual([
         `template.children[0].direction: ${V4}`,
@@ -104,8 +104,8 @@ describe('direction por nó', () => {
   });
 });
 
-describe('a condição $direction', () => {
-  it('vale em visible, $if, $and, $or e $not', () => {
+describe('the $direction condition', () => {
+  it('is valid in visible, $if, $and, $or and $not', () => {
     const issues = validateComponent(
       withChild(
         rect({
@@ -120,13 +120,13 @@ describe('a condição $direction', () => {
     expect(issues).toEqual([]);
   });
 
-  it('valor fora de ltr/rtl é erro', () => {
+  it('a value outside ltr/rtl is an error', () => {
     expect(
       validateComponent(withChild(rect({ visible: { $direction: 'auto' } }))),
     ).toEqual(['template.children[0].visible.$direction: expected one of: ltr, rtl']);
   });
 
-  it('numa versão 1 a 3, o erro de versão no caminho da chave', () => {
+  it('in a version 1 to 3, the version error on the key path', () => {
     for (const version of [1, 2, 3])
       expect(
         validateComponent(withChild(rect({ visible: { $direction: 'rtl' } }), version)),
@@ -134,7 +134,7 @@ describe('a condição $direction', () => {
   });
 });
 
-describe('mirror em icon e path', () => {
+describe('mirror on icon and path', () => {
   const path = (extra: Record<string, unknown>) => ({
     type: 'path',
     d: 'M0 0L1 1',
@@ -142,7 +142,7 @@ describe('mirror em icon e path', () => {
     ...extra,
   });
 
-  it('valem na v4: literal, campo e $direction', () => {
+  it('are valid in v4: literal, field and $direction', () => {
     expect(validateComponent(withChild(path({ mirror: true })))).toEqual([]);
     expect(
       validateComponent(
@@ -156,13 +156,13 @@ describe('mirror em icon e path', () => {
     ).toEqual([]);
   });
 
-  it('mirror não é chave de rect (chave desconhecida)', () => {
+  it('mirror is not a rect key (unknown key)', () => {
     expect(validateComponent(withChild(rect({ mirror: true })))).toEqual([
       'template.children[0].mirror: unknown key: mirror',
     ]);
   });
 
-  it('path com mirror numa versão 1 a 3 dá o erro de versão', () => {
+  it('path with mirror in a version 1 to 3 gives the version error', () => {
     for (const version of [1, 2, 3])
       expect(validateComponent(withChild(path({ mirror: true }), version))).toEqual([
         `template.children[0].mirror: ${V4}`,

@@ -14,12 +14,12 @@ function codes(p: Project) {
   return validateProject(p).map((i) => `${i.code}:${i.id}`);
 }
 
-describe('validador de invariantes', () => {
-  it('o projeto de exemplo é válido', () => {
+describe('invariant validator', () => {
+  it('the sample project is valid', () => {
     expect(validateProject(sampleProject())).toEqual([]);
   });
 
-  it('ids e arquivos repetidos', () => {
+  it('repeated ids and files', () => {
     const p = sampleProject();
     const layer = p.layers[0];
     const image = p.containers[1];
@@ -36,7 +36,7 @@ describe('validador de invariantes', () => {
     expect(image.id).toBe('I2');
   });
 
-  it('cada problema diz a entidade, o id e o nome quando houver', () => {
+  it('each problem states the entity, the id and the name when there is one', () => {
     const p = sampleProject();
     const layer = p.layers[1];
     const spec = { id: 'S1', version: 1, file: 'specs/s1.json', spec: null };
@@ -65,6 +65,7 @@ describe('validador de invariantes', () => {
           code: 'missing-image',
           entity: 'marking',
           id: 'M2',
+          // pt-BR kept: name comes from sampleProject in fixtures.ts (outside this batch)
           name: 'Maçaneta',
           otherId: 'I9',
         },
@@ -80,7 +81,7 @@ describe('validador de invariantes', () => {
     );
   });
 
-  it('imagens sobrepostas', () => {
+  it('overlapping images', () => {
     const p = sampleProject();
     const overlapping = {
       ...p,
@@ -97,7 +98,7 @@ describe('validador de invariantes', () => {
     });
   });
 
-  it('referências quebradas', () => {
+  it('broken references', () => {
     const p = sampleProject();
     const broken: Project = {
       ...p,
@@ -126,7 +127,7 @@ describe('validador de invariantes', () => {
     );
   });
 
-  it('retângulos: inteiros, tamanho mínimo, dentro da imagem e do pai', () => {
+  it('rectangles: integers, minimum size, inside the image and the parent', () => {
     const p = sampleProject();
     const withRect = (
       id: string,
@@ -138,7 +139,7 @@ describe('validador de invariantes', () => {
     expect(codes(withRect('M4', { x: 0.5, y: 0, width: 10, height: 10 }))).toContain(
       'rect-not-integer:M4',
     );
-    // O mínimo de leitura é 1 px (decisão 24): 7 px é aceito, abaixo de 1 px não.
+    // The reading minimum is 1 px (decision 24): 7 px is accepted, below 1 px is not.
     expect(codes(withRect('M4', { x: 0, y: 0, width: 7, height: 10 }))).not.toContain(
       'rect-too-small:M4',
     );
@@ -156,7 +157,7 @@ describe('validador de invariantes', () => {
     );
   });
 
-  it('pai em outra imagem e ciclos', () => {
+  it('parent in another image and cycles', () => {
     const p = sampleProject();
     const otherImage: Project = {
       ...p,
@@ -176,7 +177,7 @@ describe('validador de invariantes', () => {
     );
   });
 
-  it('chaves vazias ou duplicadas', () => {
+  it('empty or duplicate keys', () => {
     const p = sampleProject();
     const bad: Project = {
       ...p,
@@ -197,7 +198,7 @@ describe('validador de invariantes', () => {
   });
 });
 
-describe('validador de invariantes: container', () => {
+describe('invariant validator: container', () => {
   const bgContainer = () =>
     addBackgroundContainer(sampleProject(), {
       id: 'B1',
@@ -206,7 +207,7 @@ describe('validador de invariantes: container', () => {
       background: '#FFFFFF',
     });
 
-  it('container com cor é válida e não conta como arquivo repetido', () => {
+  it('a container with a color is valid and does not count as a repeated file', () => {
     const p = bgContainer();
     const two = addBackgroundContainer(p, {
       id: 'B2',
@@ -218,7 +219,7 @@ describe('validador de invariantes: container', () => {
     expect(validateProject(two)).toEqual([]);
   });
 
-  it('container-content: sem arquivo e sem cor, ou com arquivo e com cor', () => {
+  it('container-content: without file and without color, or with file and with color', () => {
     const p = bgContainer();
     const patch = (id: string, change: object): Project => ({
       ...p,
@@ -236,16 +237,16 @@ describe('validador de invariantes: container', () => {
   });
 });
 
-// Pertencimento por geometria (v13): marcação do canvas (`containerId` nulo), flutuante e pai de
-// container. A regra "o menor que contém" não é invariante: só o que o pai garante.
-describe('validador de invariantes: canvas e pertencimento', () => {
+// Membership by geometry (v13): canvas marking (null `containerId`), floating and container
+// parent. The "smallest that contains" rule is not an invariant: only what the parent guarantees.
+describe('invariant validator: canvas and membership', () => {
   const rect = (x: number, y: number, width: number, height: number) => ({
     x,
     y,
     width,
     height,
   });
-  /** sampleProject + K (canvas, cerca só a I1: (0,0)–(1000,750)) + J (canvas, dentro de K). */
+  /** sampleProject + K (canvas, surrounds only I1: (0,0)–(1000,750)) + J (canvas, inside K). */
   function withCanvas(): Project {
     let p = createMarking(sampleProject(), {
       id: 'K',
@@ -264,16 +265,16 @@ describe('validador de invariantes: canvas e pertencimento', () => {
     containers: p.containers.map((c) => (c.id === id ? { ...c, parentId } : c)),
   });
 
-  it('o projeto com marcações do canvas, aninhadas e com container dentro, é válido', () => {
+  it('the project with canvas markings, nested and with a container inside, is valid', () => {
     const p = withCanvas();
     expect(p.containers.find((c) => c.id === 'I1')?.parentId).toBe('K');
     expect(p.markings.find((m) => m.id === 'J')?.parentId).toBe('K');
     expect(validateProject(p)).toEqual([]);
   });
 
-  it('marcação do canvas não é órfã nem está "fora da imagem": x e y negativos valem', () => {
+  it('a canvas marking is neither orphaned nor "outside the image": negative x and y are valid', () => {
     const p = patchMarking(withCanvas(), 'J', { rect: rect(-9000, -9000, 200, 100) });
-    // Sai de K (que não a contém mais): só `rect-outside-parent`, nada de imagem.
+    // Leaves K (which no longer contains it): only `rect-outside-parent`, nothing about an image.
     expect(codes(p)).toEqual(['rect-outside-parent:J']);
     const free = patchMarking(patchMarking(p, 'J', { parentId: null }), 'K', {
       parentId: null,
@@ -281,7 +282,7 @@ describe('validador de invariantes: canvas e pertencimento', () => {
     expect(validateProject(free)).toEqual([]);
   });
 
-  it('o canvas não dispensa forma: inteiros e lado mínimo', () => {
+  it('the canvas does not waive shape: integers and minimum side', () => {
     const p = withCanvas();
     expect(codes(patchMarking(p, 'K', { rect: rect(0.5, 0, 1200, 1000) }))).toContain(
       'rect-not-integer:K',
@@ -291,12 +292,12 @@ describe('validador de invariantes: canvas e pertencimento', () => {
     );
   });
 
-  it('marcação de container continua dentro da imagem: x negativo é rect-out-of-image', () => {
+  it('a container marking stays inside the image: negative x is rect-out-of-image', () => {
     const p = patchMarking(sampleProject(), 'M4', { rect: rect(-5, 0, 100, 100) });
     expect(codes(p)).toEqual(['rect-out-of-image:M4']);
   });
 
-  it('pai no mesmo espaço: canvas com container (e o inverso) é parent-other-image', () => {
+  it('parent in the same space: canvas with container (and the inverse) is parent-other-image', () => {
     const p = withCanvas();
     expect(codes(patchMarking(p, 'M1', { parentId: 'K' }))).toContain(
       'parent-other-image:M1',
@@ -306,22 +307,22 @@ describe('validador de invariantes: canvas e pertencimento', () => {
     );
   });
 
-  it('o pai do canvas precisa conter a filha', () => {
+  it('the canvas parent must contain the child', () => {
     const p = withCanvas();
     const out = patchMarking(p, 'J', { rect: rect(900, 600, 400, 400) });
     expect(codes(out)).toContain('rect-outside-parent:J');
   });
 
-  it('o pai válido que não é o menor que contém NÃO é erro (a leitura não assenta)', () => {
+  it('a valid parent that is not the smallest that contains it is NOT an error (reading does not settle)', () => {
     let p = sampleProject();
-    p = patchMarking(p, 'M3', { parentId: 'M1' }); // M2 é menor e também a contém
+    p = patchMarking(p, 'M3', { parentId: 'M1' }); // M2 is smaller and also contains it
     expect(validateProject(p)).toEqual([]);
     expect(validateProject(patchContainer(withCanvas(), 'I1', 'K'))).toEqual([]);
-    // J cerca a I1? Não (200×100): o container fica em K, que o contém.
+    // Does J surround I1? No (200×100): the container stays in K, which contains it.
     expect(validateProject(patchContainer(withCanvas(), 'I2', null))).toEqual([]);
   });
 
-  it('flutuante com container ou pai: floating-in-container', () => {
+  it('floating with container or parent: floating-in-container', () => {
     const p = withCanvas();
     const inContainer = patchMarking(p, 'M4', { floating: true });
     expect(codes(inContainer)).toEqual(['floating-in-container:M4']);
@@ -333,19 +334,19 @@ describe('validador de invariantes: canvas e pertencimento', () => {
     expect(validateProject(ok)).toEqual([]);
   });
 
-  it('marcação com pai flutuante: parent-floating (e não parent-other-image nem rect-outside-parent)', () => {
+  it('marking with a floating parent: parent-floating (and not parent-other-image nor rect-outside-parent)', () => {
     const p = withCanvas();
     const q = patchMarking(patchMarking(p, 'K', { floating: true }), 'J', {
       parentId: 'K',
     });
-    // K flutuante e sem pai; J aponta para ela.
+    // K floating and without a parent; J points to it.
     expect(codes(patchMarking(q, 'K', { parentId: null }))).toEqual([
       'parent-floating:J',
       'container-parent-not-canvas:I1',
     ]);
   });
 
-  it('pai de container ausente: container-parent-missing', () => {
+  it('missing container parent: container-parent-missing', () => {
     expect(validateProject(patchContainer(sampleProject(), 'I1', 'ZZ'))).toEqual([
       {
         code: 'container-parent-missing',
@@ -357,13 +358,13 @@ describe('validador de invariantes: canvas e pertencimento', () => {
     ]);
   });
 
-  it('pai de container que não é do canvas: container-parent-not-canvas', () => {
+  it('container parent that is not on the canvas: container-parent-not-canvas', () => {
     const p = withCanvas();
-    // Marcação de container.
+    // Container marking.
     expect(codes(patchContainer(p, 'I1', 'M1'))).toEqual([
       'container-parent-not-canvas:I1',
     ]);
-    // Marcação flutuante.
+    // Floating marking.
     const floating = patchMarking(patchMarking(p, 'J', { parentId: null }), 'J', {
       floating: true,
     });
@@ -372,28 +373,28 @@ describe('validador de invariantes: canvas e pertencimento', () => {
     ]);
   });
 
-  it('container fora da marcação do canvas: container-outside-parent', () => {
+  it('container outside the canvas marking: container-outside-parent', () => {
     const p = withCanvas();
-    // K cerca só a I1; a I2 (1050,0)–(2050,1000) não cabe em K.
+    // K surrounds only I1; I2 (1050,0)–(2050,1000) does not fit in K.
     expect(codes(patchContainer(p, 'I2', 'K'))).toEqual(['container-outside-parent:I2']);
-    // J (200×100) não cerca a I1.
+    // J (200×100) does not surround I1.
     expect(codes(patchContainer(p, 'I1', 'J'))).toEqual(['container-outside-parent:I1']);
   });
 
-  it('a borda coincidente conta como dentro (com a folga do ponto flutuante)', () => {
+  it('a coinciding edge counts as inside (with floating-point slack)', () => {
     const p = createMarking(sampleProject(), {
       id: 'K',
       containerId: null,
       rect: rect(0, -50, 1000, 800),
     });
-    // Bordas esquerda e direita coincidem com as da I1 (0–1000).
+    // Left and right edges coincide with those of I1 (0–1000).
     expect(p.containers.find((c) => c.id === 'I1')?.parentId).toBe('K');
     expect(validateProject(p)).toEqual([]);
   });
 });
 
-// Setas (ME4): liga duas marcações existentes e diferentes; nada mais é invariante.
-describe('invariantes das setas', () => {
+// Arrows (ME4): links two existing, different markings; nothing else is an invariant.
+describe('arrow invariants', () => {
   const arrowOf = (id: string, from: string, to: string): Arrow => ({
     id,
     from,
@@ -402,40 +403,40 @@ describe('invariantes das setas', () => {
     toSide: null,
     points: [],
     style: 'curve',
-    name: 'Seta',
+    name: 'Arrow',
     locked: false,
   });
   const withArrows = (...arrows: Arrow[]): Project => ({ ...sampleProject(), arrows });
 
-  it('uma seta entre duas marcações existentes, de qualquer container, é válida', () => {
+  it('an arrow between two existing markings, of any container, is valid', () => {
     expect(validateProject(withArrows(arrowOf('R1', 'M1', 'M4')))).toEqual([]);
-    // Duas setas iguais também.
+    // Two equal arrows too.
     expect(
       validateProject(withArrows(arrowOf('R1', 'M1', 'M2'), arrowOf('R2', 'M1', 'M2'))),
     ).toEqual([]);
   });
 
-  it('ponta inexistente: arrow-endpoint-missing, com o id da ponta e o nome da seta', () => {
+  it('nonexistent end: arrow-endpoint-missing, with the id of the end and the name of the arrow', () => {
     expect(validateProject(withArrows(arrowOf('R1', 'M9', 'M1')))).toEqual([
       {
         code: 'arrow-endpoint-missing',
         entity: 'arrow',
         id: 'R1',
-        name: 'Seta',
+        name: 'Arrow',
         otherId: 'M9',
       },
     ]);
     expect(codes(withArrows(arrowOf('R1', 'M1', 'M9')))).toEqual([
       'arrow-endpoint-missing:R1',
     ]);
-    // As duas pontas faltando: um problema por ponta.
+    // Both ends missing: one problem per end.
     expect(codes(withArrows(arrowOf('R1', 'M8', 'M9')))).toEqual([
       'arrow-endpoint-missing:R1',
       'arrow-endpoint-missing:R1',
     ]);
   });
 
-  it('a ponta que é outra seta ou um container não é marcação', () => {
+  it('an end that is another arrow or a container is not a marking', () => {
     expect(
       codes(withArrows(arrowOf('R1', 'M1', 'M2'), arrowOf('R2', 'R1', 'M1'))),
     ).toEqual(['arrow-endpoint-missing:R2']);
@@ -444,13 +445,13 @@ describe('invariantes das setas', () => {
     ]);
   });
 
-  it('seta ligada a ela mesma: arrow-self', () => {
+  it('arrow linked to itself: arrow-self', () => {
     expect(validateProject(withArrows(arrowOf('R1', 'M1', 'M1')))).toEqual([
-      { code: 'arrow-self', entity: 'arrow', id: 'R1', name: 'Seta', otherId: 'M1' },
+      { code: 'arrow-self', entity: 'arrow', id: 'R1', name: 'Arrow', otherId: 'M1' },
     ]);
   });
 
-  it('id repetido entre seta e marcação, ou entre duas setas: duplicate-id na seta', () => {
+  it('id repeated between arrow and marking, or between two arrows: duplicate-id on the arrow', () => {
     expect(codes(withArrows(arrowOf('M2', 'M1', 'M4')))).toEqual(['duplicate-id:M2']);
     expect(validateProject(withArrows(arrowOf('M2', 'M1', 'M4')))[0]?.entity).toBe(
       'arrow',
@@ -460,7 +461,7 @@ describe('invariantes das setas', () => {
     ).toEqual(['duplicate-id:R1']);
   });
 
-  it('a anotação de uma seta é válida; a de um id que não é marcação nem seta, não', () => {
+  it('the annotation of an arrow is valid; that of an id that is neither marking nor arrow is not', () => {
     const p = addAnnotation(withArrows(arrowOf('R1', 'M1', 'M4')), {
       id: 'AR',
       markingId: 'R1',
@@ -475,17 +476,17 @@ describe('invariantes das setas', () => {
         ),
       }),
     ).toEqual(['missing-marking:AR']);
-    // A anotação de uma seta que sai fica sem dona: missing-marking.
+    // The annotation of an arrow that leaves is left without an owner: missing-marking.
     expect(codes({ ...p, arrows: [] })).toEqual(['missing-marking:AR']);
   });
 });
 
 describe('images-overlap', () => {
-  it('acha os mesmos pares que a comparação de todos contra todos, na mesma ordem', () => {
+  it('finds the same pairs as the all-against-all comparison, in the same order', () => {
     const base = sampleProject();
     const template = base.containers[0];
     if (!template) throw new Error('fixture');
-    // Gerador determinístico; posições e escalas variadas, com encostos, contidos e cruzados.
+    // Deterministic generator; varied positions and scales, with touching, contained and crossing ones.
     let seed = 7;
     const next = (max: number) => {
       seed = (seed * 1103515245 + 12345) % 2147483648;

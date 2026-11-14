@@ -7,7 +7,7 @@ const fields: readonly SpecField[] = type.fields;
 const base = type.code!.compose!;
 
 describe('resolveCode', () => {
-  it('valor com caso: symbol substituído, o resto da base fica', () => {
+  it('value with a case: symbol replaced, the rest of the base stays', () => {
     const code = resolveCode(base, { style: 'outlined' }, fields);
     expect(code).toEqual({
       symbol: 'androidx.compose.material3.OutlinedButton',
@@ -18,14 +18,14 @@ describe('resolveCode', () => {
     });
   });
 
-  it('symbol, path e notes do caso substituem os da base', () => {
+  it('symbol, path and notes of the case replace the base ones', () => {
     const code = resolveCode(base, { style: 'text' }, fields);
     expect(code.symbol).toBe('androidx.compose.material3.TextButton');
     expect(code.path).toBe('compose/material3/TextButton.kt');
     expect(code.notes).toBe('sem fundo');
   });
 
-  it('params e values somam chave a chave (o caso vence na mesma chave)', () => {
+  it('params and values add up key by key (the case wins on the same key)', () => {
     const code = resolveCode(base, { style: 'tonal' }, fields);
     expect(code.params).toEqual({ label: 'text', size: 'sizeHint' });
     expect(code.values).toEqual({ size: { large: 'XL' } });
@@ -45,7 +45,7 @@ describe('resolveCode', () => {
     });
   });
 
-  it('valor sem caso usa a base, sem a chave variants', () => {
+  it('a value without a case uses the base, without the variants key', () => {
     const code = resolveCode(base, { style: 'filled' }, fields);
     expect(code).toEqual({
       symbol: 'androidx.compose.material3.Button',
@@ -57,8 +57,8 @@ describe('resolveCode', () => {
     expect('variants' in code).toBe(false);
   });
 
-  it('sem valor: o default do campo; sem default, a base', () => {
-    // `style` tem default `filled` (sem caso): a base.
+  it('without a value: the field default; without a default, the base', () => {
+    // `style` has default `filled` (no case): the base.
     expect(resolveCode(base, {}, fields).symbol).toBe(
       'androidx.compose.material3.Button',
     );
@@ -68,7 +68,7 @@ describe('resolveCode', () => {
     expect(resolveCode(base, undefined, fields).symbol).toBe(
       'androidx.compose.material3.Button',
     );
-    // Default com caso: usa o caso.
+    // Default with a case: uses the case.
     const withDefault = fields.map((f) =>
       f.key === 'style' && f.type === 'enum' ? { ...f, default: 'outlined' } : f,
     );
@@ -81,7 +81,7 @@ describe('resolveCode', () => {
     expect(resolveCode(base, { style: null }, withDefault).symbol).toBe(
       'androidx.compose.material3.OutlinedButton',
     );
-    // Sem default e sem valor: a base, mesmo que exista caso.
+    // Without default and without value: the base, even if a case exists.
     const noDefault = fields.map((f) => {
       if (f.key !== 'style' || f.type !== 'enum') return f;
       const copy = { ...f };
@@ -91,13 +91,13 @@ describe('resolveCode', () => {
     expect(resolveCode(base, {}, noDefault).symbol).toBe(
       'androidx.compose.material3.Button',
     );
-    // O valor da anotação vence o default.
+    // The annotation value wins over the default.
     expect(resolveCode(base, { style: 'text' }, withDefault).symbol).toBe(
       'androidx.compose.material3.TextButton',
     );
   });
 
-  it('entrada sem variants volta igual (mesma referência)', () => {
+  it('an entry without variants comes back the same (same reference)', () => {
     const plain: SpecCode = {
       symbol: 'Card',
       path: 'a/B.kt',
@@ -107,9 +107,9 @@ describe('resolveCode', () => {
     expect(resolveCode(plain, null, [])).toBe(plain);
   });
 
-  it('o resultado nunca tem variants e a entrada original não muda', () => {
+  it('the result never has variants and the original entry does not change', () => {
     const snapshot = JSON.stringify(base);
-    for (const style of ['filled', 'outlined', 'text', 'tonal', 'inexistente', null]) {
+    for (const style of ['filled', 'outlined', 'text', 'tonal', 'missing', null]) {
       expect('variants' in resolveCode(base, { style }, fields)).toBe(false);
     }
     expect(JSON.stringify(base)).toBe(snapshot);

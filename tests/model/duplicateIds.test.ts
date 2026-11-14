@@ -10,10 +10,10 @@ import {
 } from '../../src/model';
 import { expectValid, sampleProject } from './fixtures';
 
-// As operações aceitam ids explícitos: um id já usado faria o projeto gravar o que o
-// carregador recusa (`duplicate-id`/`duplicate-entry-id` em `validateProject`).
-describe('operações recusam id explícito já existente', () => {
-  it('marcação', () => {
+// The operations accept explicit ids: an id already in use would make the project save what the
+// loader refuses (`duplicate-id`/`duplicate-entry-id` in `validateProject`).
+describe('operations refuse an explicit id that already exists', () => {
+  it('marking', () => {
     expect(() =>
       createMarking(sampleProject(), {
         id: 'M4',
@@ -23,56 +23,56 @@ describe('operações recusam id explícito já existente', () => {
     ).toThrow('duplicate-id');
   });
 
-  it('imagem', () => {
+  it('image', () => {
     expect(() =>
       addContainer(sampleProject(), {
         id: 'I1',
-        file: 'images/outra.jpg',
+        file: 'images/other.jpg',
         width: 100,
         height: 100,
       }),
     ).toThrow('duplicate-id');
   });
 
-  it('camada', () => {
+  it('layer', () => {
     expect(() =>
-      addLayer(sampleProject(), { id: 'L2', name: 'Outra', color: '#000000' }),
+      addLayer(sampleProject(), { id: 'L2', name: 'Another', color: '#000000' }),
     ).toThrow('duplicate-id');
   });
 
-  it('anotação', () => {
+  it('annotation', () => {
     expect(() =>
       addAnnotation(sampleProject(), { id: 'A1', markingId: 'M2', layerId: 'L2' }),
     ).toThrow('duplicate-id');
   });
 
-  it('par com id já usado em outra anotação', () => {
+  it('an entry with an id already used in another annotation', () => {
     const p = sampleProject();
     expect(() =>
       addAnnotation(p, {
         id: 'A9',
         markingId: 'M2',
         layerId: 'L2',
-        entries: [{ id: 'E1', key: 'tipo', value: 'x' }],
+        entries: [{ id: 'E1', key: 'type', value: 'x' }],
       }),
     ).toThrow('duplicate-id');
-    expect(() => addEntry(p, 'A2', { id: 'E1', key: 'outro', value: 'x' })).toThrow(
+    expect(() => addEntry(p, 'A2', { id: 'E1', key: 'other', value: 'x' })).toThrow(
       'duplicate-id',
     );
-    expect(() => setEntries(p, 'A3', [{ id: 'E3', key: 'tipo', value: 'x' }])).toThrow(
+    expect(() => setEntries(p, 'A3', [{ id: 'E3', key: 'type', value: 'x' }])).toThrow(
       'duplicate-id',
     );
   });
 
-  it('os ids da própria anotação continuam valendo', () => {
+  it("the annotation's own ids remain valid", () => {
     const p = sampleProject();
-    expectValid(updateEntry(p, 'A1', 'E1', { key: 'tipo', value: 'risco' }));
+    expectValid(updateEntry(p, 'A1', 'E1', { key: 'type', value: 'risk' }));
     expectValid(
       setEntries(p, 'A1', [
-        { id: 'E2', key: 'gravidade', value: 'alta' },
-        { id: 'E1', key: 'tipo', value: 'risco' },
+        { id: 'E2', key: 'severity', value: 'high' },
+        { id: 'E1', key: 'type', value: 'risk' },
       ]),
     );
-    expectValid(addEntry(p, 'A1', { key: 'novo', value: 'x' }));
+    expectValid(addEntry(p, 'A1', { key: 'new', value: 'x' }));
   });
 });

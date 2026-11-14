@@ -1,6 +1,6 @@
-// L4 (decisões 17 e 18 da #1078): `min-content` e `max-content` em `width`/`height` do nó e no
-// `sizing` da instância, no motor, com o `approximateMeasurer` (fonte de tamanho 10: 5,5 px por
-// caractere; linha de 12 px).
+// L4 (decisions 17 and 18 of #1078): `min-content` and `max-content` in `width`/`height` of the node and in
+// the `sizing` of the instance, in the engine, with the `approximateMeasurer` (font size 10: 5.5 px per
+// character; 12 px line).
 import { describe, expect, it } from 'vitest';
 import { COMPONENT_FORMAT } from '../../../src/model/components/componentFormat';
 import {
@@ -20,11 +20,11 @@ const CHAR = 5.5;
 const LINE_HEIGHT = 12;
 const V4 = 'only allowed with formatVersion 4';
 
-/** 16 caracteres: a linha inteira mede 88 e a palavra mais larga ("bbbbbbbb") 44. */
+/** 16 characters: the whole line measures 88 and the widest word ("bbbbbbbb") 44. */
 const SENTENCE = 'aaaa bbbbbbbb cc';
 const SENTENCE_MAX = 16 * CHAR;
 const SENTENCE_MIN = 8 * CHAR;
-/** 5 caracteres: uma linha de 27,5; a palavra mais larga é "yy" (11). */
+/** 5 characters: a line of 27.5; the widest word is "yy" (11). */
 const SHORT = 'xx yy';
 const SHORT_MAX = 5 * CHAR;
 const SHORT_MIN = 2 * CHAR;
@@ -49,7 +49,7 @@ function frame(name: string, layout: Json, children: Json[], extra: Json = {}): 
   return { type: 'frame', name, layout, children, ...extra };
 }
 
-/** O quadro `host` (coluna que ocupa a raiz) com o filho `kid` dentro. */
+/** The `host` frame (column that fills the root) with the child `kid` inside. */
 function host(kid: Json): Json {
   return frame('host', { type: 'column' }, [kid], { width: 'fill', height: 'fill' });
 }
@@ -62,15 +62,15 @@ function build(template: Json, box = BOX, measure: TextMeasurer = approximateMea
   const nodes = [...walk(result.root)];
   const at = (name: string): { x: number; y: number; width: number; height: number } => {
     const node = nodes.find((n) => n.name === name) as SceneNode | undefined;
-    if (node === undefined) throw new Error(`sem nó ${name}`);
+    if (node === undefined) throw new Error(`no node ${name}`);
     const b = boxes.get(node.id) ?? { x: 0, y: 0 };
     return { x: b.x, y: b.y, width: node.width, height: node.height };
   };
   return { ...result, at };
 }
 
-describe('texto: min-content e max-content', () => {
-  it('max-content é a linha mais larga sem quebra, mesmo num pai mais estreito', () => {
+describe('text: min-content and max-content', () => {
+  it('max-content is the widest line without wrapping, even in a narrower parent', () => {
     const { at } = build(
       host(text('t', SENTENCE, { width: 'max-content', height: 'hug' })),
       { x: 0, y: 0, width: 50, height: 200 },
@@ -79,7 +79,7 @@ describe('texto: min-content e max-content', () => {
     expect(at('t').height).toBe(LINE_HEIGHT);
   });
 
-  it('min-content é a palavra mais larga e o texto quebra uma palavra por linha', () => {
+  it('min-content is the widest word and the text wraps one word per line', () => {
     const { at } = build(
       host(text('t', SENTENCE, { width: 'min-content', height: 'hug' })),
     );
@@ -87,7 +87,7 @@ describe('texto: min-content e max-content', () => {
     expect(at('t').height).toBe(3 * LINE_HEIGHT);
   });
 
-  it('wrap none: min-content e max-content valem a linha inteira', () => {
+  it('wrap none: min-content and max-content are the whole line', () => {
     const font = { size: 10, wrap: 'none' };
     const min = build(host(text('t', SENTENCE, { width: 'min-content', font }))).at('t');
     const max = build(host(text('t', SENTENCE, { width: 'max-content', font }))).at('t');
@@ -95,7 +95,7 @@ describe('texto: min-content e max-content', () => {
     expect(max.width).toBeCloseTo(SENTENCE_MAX, 9);
   });
 
-  it('o texto com \\n: max-content é a linha mais larga e min-content a palavra mais larga', () => {
+  it('text with \\n: max-content is the widest line and min-content the widest word', () => {
     const value = 'aa\nbbbb cc';
     const max = build(host(text('t', value, { width: 'max-content' }))).at('t');
     const min = build(host(text('t', value, { width: 'min-content' }))).at('t');
@@ -103,27 +103,27 @@ describe('texto: min-content e max-content', () => {
     expect(min.width).toBeCloseTo(4 * CHAR, 9);
   });
 
-  it('o espaço sem quebra (NBSP) não separa palavras no min-content', () => {
+  it('the non-breaking space (NBSP) does not separate words in min-content', () => {
     const { at } = build(host(text('t', '10\u00a0kg aa', { width: 'min-content' })));
     expect(at('t').width).toBeCloseTo(5 * CHAR, 9);
   });
 
-  it('o texto rico: a palavra que atravessa trechos é uma só e o chip é atômico', () => {
+  it('rich text: a word that spans runs is a single word and the chip is atomic', () => {
     const runs = [
-      { text: 'Pa' },
-      { text: 'gar' },
-      { text: ' agora ' },
+      { text: 'Ch' },
+      { text: 'eck' },
+      { text: ' later ' },
       { text: 'ab cd', background: '#cccccc', padding: [2, 4] },
     ];
     const min = build(host(text('t', '', { runs, width: 'min-content' }))).at('t');
     const max = build(host(text('t', '', { runs, width: 'max-content' }))).at('t');
-    // Palavras: "Pagar" (27,5), "agora" (27,5); o chip "ab cd" mede 27,5 + 2 × 4 = 35,5.
+    // Words: "Check" (27.5), "later" (27.5); the "ab cd" chip measures 27.5 + 2 × 4 = 35.5.
     expect(min.width).toBeCloseTo(5 * CHAR + 8, 9);
-    // Tudo numa linha: "Pagar agora " (12 caracteres com os espaços entre os trechos) e o chip.
+    // All on one line: "Check later " (12 characters with the spaces between the runs) and the chip.
     expect(max.width).toBeCloseTo(12 * CHAR + 5 * CHAR + 8, 9);
   });
 
-  it('o limite maxWidth do próprio nó ainda corta o max-content', () => {
+  it('the maxWidth limit of the node itself still cuts the max-content', () => {
     const { at } = build(
       host(text('t', SENTENCE, { width: 'max-content', maxWidth: 60 })),
     );
@@ -131,11 +131,11 @@ describe('texto: min-content e max-content', () => {
   });
 });
 
-describe('quadros: min-content e max-content', () => {
+describe('frames: min-content and max-content', () => {
   const A = (extra: Json = {}) => text('a', SENTENCE, extra);
   const B = (extra: Json = {}) => text('b', SHORT, extra);
 
-  it('row: max-content soma os max-content dos filhos + gaps + padding', () => {
+  it('row: max-content sums the max-content of the children + gaps + padding', () => {
     const row = frame('r', { type: 'row', gap: 4, padding: 6 }, [A(), B()], {
       width: 'max-content',
       height: 'hug',
@@ -146,7 +146,7 @@ describe('quadros: min-content e max-content', () => {
     expect(at('r').height).toBe(LINE_HEIGHT + 12);
   });
 
-  it('row: min-content soma os min-content dos filhos + gaps + padding', () => {
+  it('row: min-content sums the min-content of the children + gaps + padding', () => {
     const row = frame('r', { type: 'row', gap: 4, padding: 6 }, [A(), B()], {
       width: 'min-content',
       height: 'hug',
@@ -155,7 +155,7 @@ describe('quadros: min-content e max-content', () => {
     expect(at('r').width).toBeCloseTo(SENTENCE_MIN + SHORT_MIN + 4 + 12, 9);
   });
 
-  it('row com wrap: max-content é uma linha só; min-content é o maior min-content', () => {
+  it('row with wrap: max-content is a single line; min-content is the largest min-content', () => {
     const wrapped = (width: string) =>
       frame('r', { type: 'row', gap: 4, wrap: 'wrap' }, [A(), B()], {
         width,
@@ -171,7 +171,7 @@ describe('quadros: min-content e max-content', () => {
     );
   });
 
-  it('column e none: o maior filho (o none soma as âncoras)', () => {
+  it('column and none: the largest child (none sums the anchors)', () => {
     const column = (width: string) =>
       frame('c', { type: 'column', gap: 3 }, [A(), B()], { width, height: 'hug' });
     expect(build(host(column('max-content'))).at('c').width).toBeCloseTo(SENTENCE_MAX, 9);
@@ -196,7 +196,7 @@ describe('quadros: min-content e max-content', () => {
     );
   });
 
-  it('grid: n × a maior célula + gaps + padding', () => {
+  it('grid: n × the largest cell + gaps + padding', () => {
     const grid = (width: string) =>
       frame(
         'g',
@@ -214,7 +214,7 @@ describe('quadros: min-content e max-content', () => {
     );
   });
 
-  it('grid adaptativa: min-content é uma coluna de minColumnWidth (ou da maior célula)', () => {
+  it('adaptive grid: min-content is one column of minColumnWidth (or of the largest cell)', () => {
     const grid = (min: number) =>
       frame('g', { type: 'grid', minColumnWidth: min, gap: 4 }, [A(), B()], {
         width: 'min-content',
@@ -224,7 +224,7 @@ describe('quadros: min-content e max-content', () => {
     expect(build(host(grid(10))).at('g').width).toBeCloseTo(SENTENCE_MIN, 9);
   });
 
-  it('um filho fill contribui com o próprio min/max-content; % contribui 0', () => {
+  it('a fill child contributes its own min/max-content; % contributes 0', () => {
     const row = (kid: Json, width: string) =>
       frame('r', { type: 'row' }, [kid, B()], { width, height: 'hug' });
     expect(
@@ -238,7 +238,7 @@ describe('quadros: min-content e max-content', () => {
     ).toBeCloseTo(SHORT_MAX, 9);
   });
 
-  it('um filho com tamanho em px contribui com o px; um filho com o próprio min-content, com ele', () => {
+  it('a child with a size in px contributes the px; a child with its own min-content contributes that', () => {
     const row = frame(
       'r',
       { type: 'row' },
@@ -248,7 +248,7 @@ describe('quadros: min-content e max-content', () => {
     expect(build(host(row)).at('r').width).toBeCloseTo(30 + SHORT_MIN, 9);
   });
 
-  it('aninhado: row max-content › column min-content › row com dois textos', () => {
+  it('nested: row max-content › column min-content › row with two texts', () => {
     const inner = () => frame('in', { type: 'row' }, [A(), B()], { width: 'fill' });
     const column = frame('col', { type: 'column' }, [inner(), inner()], {
       width: 'min-content',
@@ -259,11 +259,11 @@ describe('quadros: min-content e max-content', () => {
       height: 'hug',
     });
     const { at } = build(host(outer));
-    // O min-content da coluna é o da linha interna (a soma dos min-content dos filhos).
+    // The min-content of the column is that of the inner row (the sum of the children's min-content).
     expect(at('out').width).toBeCloseTo(2 * (SENTENCE_MIN + SHORT_MIN) + 2, 9);
   });
 
-  it('o hug continua igual: o shrink-to-fit limitado pelo espaço (o max-content não)', () => {
+  it('hug stays the same: the shrink-to-fit limited by the space (max-content is not)', () => {
     const row = (width: string) =>
       host(
         frame('r', { type: 'column' }, [A({ width: 'fill' })], { width, height: 'hug' }),
@@ -274,7 +274,7 @@ describe('quadros: min-content e max-content', () => {
     expect(build(row('max-content'), at60).at('r').width).toBeCloseTo(SENTENCE_MAX, 9);
   });
 
-  it('height: min-content e max-content valem o hug (a altura na largura já resolvida)', () => {
+  it('height: min-content and max-content equal hug (the height at the already resolved width)', () => {
     const col = (height: string) =>
       frame('c', { type: 'column' }, [A({ width: 'min-content' })], {
         width: 'fill',
@@ -285,7 +285,7 @@ describe('quadros: min-content e max-content', () => {
     expect(build(host(col('hug'))).at('c').height).toBe(3 * LINE_HEIGHT);
   });
 
-  it('um slot mede o conteúdo do slot', () => {
+  it('a slot measures the content of the slot', () => {
     const slot = { type: 'slot', name: 's', width: 'max-content', height: 'hug' };
     const result = instantiate(file(host(slot)) as never, {} as never, BOX, {
       measure: approximateMeasurer,
@@ -296,7 +296,7 @@ describe('quadros: min-content e max-content', () => {
   });
 });
 
-describe('o memo intrínseco e a contagem de chamadas ao medidor', () => {
+describe('the intrinsic memo and the count of calls to the measurer', () => {
   function spy() {
     const calls = new Map<string, number>();
     const measure: TextMeasurer = (
@@ -311,7 +311,7 @@ describe('o memo intrínseco e a contagem de chamadas ao medidor', () => {
     return { calls, measure };
   }
 
-  it('o max-content aninhado não mede duas vezes o mesmo (texto, limite)', () => {
+  it('nested max-content does not measure the same (text, limit) twice', () => {
     const { calls, measure } = spy();
     const inner = (i: number) =>
       frame('in', { type: 'row' }, [text('a', `${SENTENCE} ${i}`), text('b', SHORT)], {
@@ -333,14 +333,14 @@ describe('o memo intrínseco e a contagem de chamadas ao medidor', () => {
   });
 });
 
-describe('medida do componente (measureComponent e sizing)', () => {
+describe('component measure (measureComponent and sizing)', () => {
   const component = (template: Json, sizing?: Json): never =>
     file(template, 4, sizing === undefined ? {} : { sizing }) as never;
   const body = frame('root', { type: 'column', padding: 4 }, [
     text('a', SENTENCE, { width: 'fill' }),
   ]);
 
-  it('measureComponent mede o eixo max-content/min-content da raiz', () => {
+  it('measureComponent measures the max-content/min-content axis of the root', () => {
     const maxContent = measureComponent(
       component(body),
       {},
@@ -359,7 +359,7 @@ describe('medida do componente (measureComponent e sizing)', () => {
     expect(minContent.height).toBe(3 * LINE_HEIGHT + 8);
   });
 
-  it('o sizing aceita min-content e max-content (literal e por expressão)', () => {
+  it('sizing accepts min-content and max-content (literal and by expression)', () => {
     const literal = resolveSizing(
       component(body, { width: 'max-content', height: 'min-content' }),
       {},
@@ -373,18 +373,18 @@ describe('medida do componente (measureComponent e sizing)', () => {
     expect(expr.width).toEqual({ spec: 'min-content', source: 'expression' });
   });
 
-  it('fitComponentSize: o sizing max-content ajusta para a largura sem quebra', () => {
+  it('fitComponentSize: sizing max-content fits to the width without wrapping', () => {
     const fitted = fitComponentSize(
       component(body, { width: 'max-content' }),
       {},
       { measure: approximateMeasurer },
       { maxWidth: 80 },
     );
-    // max-content não quebra: o limite maxWidth da medida não vale.
+    // max-content does not wrap: the maxWidth limit of the measure does not apply.
     expect(fitted?.width).toBe(Math.ceil(SENTENCE_MAX + 8 - 1e-6));
   });
 
-  it('fitComponentSize: o sizing min-content ajusta para a palavra mais larga', () => {
+  it('fitComponentSize: sizing min-content fits to the widest word', () => {
     const fitted = fitComponentSize(
       component(body, { width: 'min-content' }),
       {},
@@ -394,11 +394,11 @@ describe('medida do componente (measureComponent e sizing)', () => {
   });
 });
 
-describe('validação: min-content e max-content só na formatVersion 4', () => {
+describe('validation: min-content and max-content only in formatVersion 4', () => {
   const nodeWith = (width: unknown): Json =>
     frame('r', { type: 'column' }, [text('t', 'a', { width })]);
 
-  it('na v4 o literal vale em width, height e no sizing', () => {
+  it('in v4 the literal applies in width, height and in sizing', () => {
     expect(validateComponent(file(nodeWith('max-content')))).toEqual([]);
     expect(validateComponent(file(nodeWith('min-content')))).toEqual([]);
     expect(
@@ -410,7 +410,7 @@ describe('validação: min-content e max-content só na formatVersion 4', () => 
     ).toEqual([]);
   });
 
-  it('numa versão 1 a 3 o literal é só da v4, no caminho da chave', () => {
+  it('in versions 1 to 3 the literal is v4-only, at the key path', () => {
     for (const version of [1, 2, 3]) {
       const list = validateComponent(file(nodeWith('max-content'), version));
       expect(list).toContain(`template.children[0].width: ${V4}`);
@@ -421,11 +421,11 @@ describe('validação: min-content e max-content só na formatVersion 4', () => 
     expect(sizingList).toContain(`sizing.width: ${V4}`);
   });
 
-  it('outro texto continua inválido', () => {
+  it('other text remains invalid', () => {
     expect(validateComponent(file(nodeWith('mid-content'))).length).toBeGreaterThan(0);
   });
 
-  it('por expressão, o valor inválido cai no padrão com o aviso', () => {
+  it('by expression, the invalid value falls back to the default with the warning', () => {
     const template = host(
       text('t', SENTENCE, {
         width: { $switch: 'style', cases: { a: 'max-content', b: 'banana' } },
@@ -445,7 +445,7 @@ describe('validação: min-content e max-content só na formatVersion 4', () => 
     expect(bad.warnings).toContain('invalid value in width: banana');
   });
 
-  it('numa v3, o valor vindo de expressão cai no padrão com o aviso', () => {
+  it('in a v3, the value coming from an expression falls back to the default with the warning', () => {
     const old = instantiate(
       file(host(text('t', SENTENCE, { width: { $field: 'w' } })), 3) as never,
       { w: 'max-content' } as never,

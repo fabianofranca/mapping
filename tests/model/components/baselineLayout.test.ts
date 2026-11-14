@@ -1,5 +1,5 @@
-// MC1 (decisões 2 a 5 da #898): a linha de base nos medidores, `baselinePadding` no nó `text` e
-// `layout.align: "baseline"` (quadro, `repeat`) e a validação das chaves novas.
+// MC1 (decisions 2 to 5 of #898): the baseline in the measurers, `baselinePadding` on the `text` node and
+// `layout.align: "baseline"` (frame, `repeat`) and the validation of the new keys.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
@@ -30,7 +30,7 @@ const schema: Record<string, unknown> = JSON.parse(
 const V4 = 'only allowed with formatVersion 4';
 type Json = Record<string, unknown>;
 
-/** Roboto 14/20 do Compose: a linha de base do aproximado dá ≈ 15 (14,83). */
+/** Compose Roboto 14/20: the baseline of the approximate one gives ≈ 15 (14.83). */
 const FONT: MeasureFont = {
   family: 'Inter',
   size: 14,
@@ -77,14 +77,14 @@ function build(template: Json, box = { x: 0, y: 0, width: 300, height: 100 }) {
   const nodes = [...walk(result.root)];
   const at = (name: string): { node: SceneNode; box: { x: number; y: number } } => {
     const node = nodes.find((n) => n.name === name);
-    if (node === undefined) throw new Error(`sem nó ${name}`);
+    if (node === undefined) throw new Error(`no node ${name}`);
     return { node, box: boxes.get(node.id) ?? { x: 0, y: 0 } };
   };
   return { ...result, at };
 }
 
-describe('medidor aproximado: linha de base', () => {
-  it('Roboto 14/20 dá 15 na primeira linha (14,83 sem arredondar)', () => {
+describe('approximate measurer: baseline', () => {
+  it('Roboto 14/20 gives 15 on the first line (14.83 unrounded)', () => {
     const m = approximateMeasurer('Ok', FONT);
     expect(m.firstBaseline).toBeCloseTo(BASE_14, 6);
     expect(Math.round(m.firstBaseline ?? 0)).toBe(15);
@@ -92,7 +92,7 @@ describe('medidor aproximado: linha de base', () => {
     expect(m.lineCount).toBe(1);
   });
 
-  it('com duas linhas a última está uma altura de linha abaixo', () => {
+  it('with two lines the last one is one line height below', () => {
     const m = approximateMeasurer('Ok', { ...FONT }, 1);
     expect(m.lineCount).toBeGreaterThanOrEqual(1);
     const two = approximateMeasurer('um\ndois', FONT);
@@ -101,7 +101,7 @@ describe('medidor aproximado: linha de base', () => {
   });
 });
 
-describe('baselinePadding no nó text', () => {
+describe('baselinePadding on the text node', () => {
   const column = (node: Json): Json => ({
     type: 'frame',
     layout: { type: 'column', align: 'start' },
@@ -109,7 +109,7 @@ describe('baselinePadding no nó text', () => {
     children: [node],
   });
 
-  it('top maior que a linha de base da fonte: o hug mede top + o que sobra embaixo', () => {
+  it('top greater than the font baseline: the hug measures top + what is left below', () => {
     const { at } = build(column(text('t', 14, 20, { baselinePadding: { top: 30 } })), {
       x: 0,
       y: 0,
@@ -121,14 +121,14 @@ describe('baselinePadding no nó text', () => {
     expect(t.height).toBeCloseTo(30 + (20 - BASE_14), 6);
   });
 
-  it('top menor que a da fonte: vale a da fonte (como o paddingFromBaseline do Compose)', () => {
+  it('top smaller than the font one: the font one applies (like Compose paddingFromBaseline)', () => {
     const { at } = build(column(text('t', 14, 20, { baselinePadding: { top: 5 } })));
     const t = at('t').node as TextNode;
     expect(t.style.baselineTop).toBeCloseTo(BASE_14, 6);
     expect(t.height).toBeCloseTo(20, 6);
   });
 
-  it('bottom: a distância da última linha de base ao fundo, nunca menor que a da fonte', () => {
+  it('bottom: the distance from the last baseline to the bottom, never smaller than the font one', () => {
     const big = build(column(text('t', 14, 20, { baselinePadding: { bottom: 10 } })));
     expect(big.at('t').node.height).toBeCloseTo(BASE_14 + 10, 6);
     expect((big.at('t').node as TextNode).style.baselineTop).toBeUndefined();
@@ -136,14 +136,14 @@ describe('baselinePadding no nó text', () => {
     expect(small.at('t').node.height).toBeCloseTo(20, 6);
   });
 
-  it('top e bottom juntos somam as duas distâncias', () => {
+  it('top and bottom together add up the two distances', () => {
     const { at } = build(
       column(text('t', 14, 20, { baselinePadding: { top: 30, bottom: 12 } })),
     );
     expect(at('t').node.height).toBeCloseTo(30 + 12, 6);
   });
 
-  it('duas linhas: a altura soma a distância entre a primeira e a última linha de base', () => {
+  it('two lines: the height adds the distance between the first and the last baseline', () => {
     const { at } = build(
       column({
         type: 'text',
@@ -156,13 +156,13 @@ describe('baselinePadding no nó text', () => {
     expect(at('t').node.height).toBeCloseTo(30 + 20 + 12, 6);
   });
 
-  it('sem baselinePadding nada muda: a altura é a medida e a cena não traz baselineTop', () => {
+  it('without baselinePadding nothing changes: the height is the measure and the scene has no baselineTop', () => {
     const { at } = build(column(text('t', 14, 20)));
     expect(at('t').node.height).toBe(20);
     expect((at('t').node as TextNode).style.baselineTop).toBeUndefined();
   });
 
-  it('o verticalAlign vindo de expressão deixa de valer no nó que tem top', () => {
+  it('the verticalAlign coming from an expression stops applying on the node that has top', () => {
     const { at } = build({
       type: 'frame',
       children: [
@@ -187,7 +187,7 @@ describe('baselinePadding no nó text', () => {
     expect(t.style.verticalAlign).toBe('top');
   });
 
-  it('o top aceita expressão (campo)', () => {
+  it('top accepts an expression (field)', () => {
     const result = instantiate(
       file({
         type: 'frame',
@@ -218,7 +218,7 @@ describe('layout.align: "baseline"', () => {
     ],
   });
 
-  it('textos de 14 e 22 px ficam na mesma linha de base e a fileira mede do topo ao fundo', () => {
+  it('texts of 14 and 22 px stay on the same baseline and the row measures from top to bottom', () => {
     const { at } = build(row([text('a', 14, 20), text('b', 22, 28)]));
     const a = at('a');
     const b = at('b');
@@ -229,14 +229,14 @@ describe('layout.align: "baseline"', () => {
     expect(at('r').node.height).toBeCloseTo(top + low, 6);
   });
 
-  it('o baselinePadding.top do texto entra na linha de base do filho', () => {
+  it('the text baselinePadding.top enters the baseline of the child', () => {
     const { at } = build(
       row([text('a', 14, 20, { baselinePadding: { top: 30 } }), text('b', 22, 28)]),
     );
     expect(at('a').box.y + 30).toBeCloseTo(at('b').box.y + BASE_22, 6);
   });
 
-  it('um quadro com texto dentro usa a linha de base do primeiro filho que tem uma', () => {
+  it('a frame with text inside uses the baseline of the first child that has one', () => {
     const { at } = build(
       row([
         {
@@ -254,7 +254,7 @@ describe('layout.align: "baseline"', () => {
     expect(inner.box.y + BASE_22).toBeCloseTo(at('b').box.y + BASE_14, 6);
   });
 
-  it('um rect sem linha de base alinha o fundo da caixa com a linha de base dos textos', () => {
+  it('a rect without a baseline aligns the bottom of the box with the baseline of the texts', () => {
     const { at } = build(
       row([{ type: 'rect', name: 'r1', width: 10, height: 12 }, text('b', 14, 20)]),
     );
@@ -262,7 +262,7 @@ describe('layout.align: "baseline"', () => {
     expect(bottomOfRect).toBeCloseTo(at('b').box.y + BASE_14, 6);
   });
 
-  it('num repeat em linha, as linhas também alinham pela linha de base', () => {
+  it('in a row repeat, the lines also align by the baseline', () => {
     const { at } = build({
       type: 'frame',
       name: 'host',
@@ -296,7 +296,7 @@ describe('layout.align: "baseline"', () => {
     });
   });
 
-  it('numa column, baseline vindo de expressão cai em start com o aviso de valor inválido', () => {
+  it('in a column, baseline coming from an expression falls to start with the invalid value warning', () => {
     const result = instantiate(
       file({
         type: 'frame',
@@ -310,7 +310,7 @@ describe('layout.align: "baseline"', () => {
     expect(result.warnings).toContain('invalid value in layout.align: baseline');
   });
 
-  it('numa versão 3, baseline vindo de expressão também cai em start com o aviso', () => {
+  it('in a version 3, baseline coming from an expression also falls to start with the warning', () => {
     const result = instantiate(
       file(
         {
@@ -328,8 +328,8 @@ describe('layout.align: "baseline"', () => {
   });
 });
 
-describe('medidor sem linha de base', () => {
-  it('cai na conta do aproximado', () => {
+describe('measurer without a baseline', () => {
+  it('falls to the approximate computation', () => {
     const bare: TextMeasurer = (value, font, maxWidth) => {
       const { width, height, lines } = approximateMeasurer(value, font, maxWidth);
       return { width, height, ...(lines ? { lines } : {}) };
@@ -351,7 +351,7 @@ describe('medidor sem linha de base', () => {
   });
 });
 
-describe('validação de baselinePadding e align: "baseline"', () => {
+describe('validation of baselinePadding and align: "baseline"', () => {
   const label = (extra: Json, version = 4): Json =>
     file(
       {
@@ -370,7 +370,7 @@ describe('validação de baselinePadding e align: "baseline"', () => {
       version,
     );
 
-  it('aceita top, bottom e expressão no formato 4', () => {
+  it('accepts top, bottom and expression in format 4', () => {
     expect(validateComponent(label({ baselinePadding: { top: 30, bottom: 8 } }))).toEqual(
       [],
     );
@@ -380,7 +380,7 @@ describe('validação de baselinePadding e align: "baseline"', () => {
     expect(validateComponent(rowAlign('baseline'))).toEqual([]);
   });
 
-  it.each([1, 2, 3])('numa versão %i as chaves novas falham com v4Only', (version) => {
+  it.each([1, 2, 3])('in a version %i the new keys fail with v4Only', (version) => {
     expect(validateComponent(label({ baselinePadding: { top: 30 } }, version))).toEqual([
       `template.children[0].baselinePadding: ${V4}`,
     ]);
@@ -389,7 +389,7 @@ describe('validação de baselinePadding e align: "baseline"', () => {
     ]);
   });
 
-  it('baseline literal numa column é erro', () => {
+  it('literal baseline in a column is an error', () => {
     expect(validateComponent(rowAlign('baseline', 'column'))).toEqual([
       'template.layout.align: baseline is only valid in row',
     ]);
@@ -414,7 +414,7 @@ describe('validação de baselinePadding e align: "baseline"', () => {
     ).toEqual([]);
   });
 
-  it('rejeita números negativos, chave desconhecida e tipo errado', () => {
+  it('rejects negative numbers, unknown key and wrong type', () => {
     expect(validateComponent(label({ baselinePadding: { top: -1 } }))).toEqual([
       'template.children[0].baselinePadding.top: expected a number greater than or equal to 0',
     ]);
@@ -429,7 +429,7 @@ describe('validação de baselinePadding e align: "baseline"', () => {
     ]);
   });
 
-  it('o schema JSON aceita as chaves novas', () => {
+  it('the JSON schema accepts the new keys', () => {
     expect(
       checkSchema(schema, label({ baselinePadding: { top: 30, bottom: 8 } })),
     ).toEqual([]);

@@ -14,8 +14,8 @@ import {
 import { emptyProject } from './fixtures';
 import { idGen, layerOf } from './specFixtures';
 
-// Fixtures das migrações da biblioteca: uma especialização `lib` (v4) com duas camadas
-// (`c`: componentes, `e`: eventos) e um projeto com as anotações pedidas.
+// Fixtures of the library migrations: a `lib` specialization (v4) with two layers
+// (`c`: components, `e`: events) and a project with the requested annotations.
 
 export function buttonType(over: Partial<SpecAnnotationType> = {}): SpecAnnotationType {
   return {
@@ -75,12 +75,12 @@ export function libSpec(
   over: Partial<Spec> & { migrations?: SpecMigration[] } = {},
 ): Spec {
   const specLayers: SpecLayer[] = [
-    { id: 'c', name: 'Componentes', color: '#1E88E5', annotationTypes: layers.c },
+    { id: 'c', name: 'Components', color: '#1E88E5', annotationTypes: layers.c },
   ];
   if (layers.e) {
     specLayers.push({
       id: 'e',
-      name: 'Eventos',
+      name: 'Events',
       color: '#FB8C00',
       annotationTypes: layers.e,
     });
@@ -102,11 +102,11 @@ export interface FixtureAnnotation {
   readonly type: string;
   readonly values?: TypedValues;
   readonly parent?: string;
-  /** Papel no dono (`childRoles` do tipo do dono); só com `parent`. */
+  /** Role in the owner (`childRoles` of the owner's type); only with `parent`. */
   readonly role?: string;
 }
 
-/** Projeto com `spec` aplicada, duas marcações (M1, M2) e as anotações dadas (valores por cima dos padrões). */
+/** Project with `spec` applied, two markings (M1, M2) and the given annotations (values over the defaults). */
 export function libProject(
   spec: Spec,
   annotations: readonly FixtureAnnotation[],
@@ -125,7 +125,7 @@ export function libProject(
   });
   for (const a of annotations) {
     const layer = spec.layers.find((l) => l.annotationTypes.some((t) => t.id === a.type));
-    if (!layer) throw new Error(`tipo ${a.type} fora da especialização`);
+    if (!layer) throw new Error(`type ${a.type} outside the specialization`);
     p = addTypedAnnotation(p, {
       id: a.id,
       markingId: a.marking ?? 'M1',
@@ -141,11 +141,11 @@ export function libProject(
 
 export function annotationOf(p: Project, id: string) {
   const found = p.annotations.find((a) => a.id === id);
-  if (!found) throw new Error(`anotação ${id} não encontrada`);
+  if (!found) throw new Error(`annotation ${id} not found`);
   return found;
 }
 
-/** Troca os `values` da anotação sem validar (para montar dados fora das regras do tipo). */
+/** Replaces the annotation's `values` without validating (to build data outside the type's rules). */
 export function setRaw(p: Project, id: string, values: TypedValues): Project {
   return {
     ...p,

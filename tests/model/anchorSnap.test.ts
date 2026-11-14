@@ -1,6 +1,6 @@
-// `snapToAnchor` (R3, decisão 12): encosta a marcação ancorada na âncora, do lado, alinhada e com o
-// deslocamento. `start`/`end` seguem a direção de leitura efetiva do espaço; `offset.cross` é no
-// sentido da leitura em `top`/`bottom` e para baixo em `start`/`end`.
+// `snapToAnchor` (R3, decision 12): snaps the anchored marking to the anchor, on the side, aligned and with the
+// offset. `start`/`end` follow the effective reading direction of the space; `offset.cross` is in the
+// reading direction on `top`/`bottom` and downwards on `start`/`end`.
 import { describe, expect, it } from 'vitest';
 import {
   addContainer,
@@ -20,7 +20,7 @@ import { emptyProject, marking } from './fixtures';
 
 const T: Rect = { x: 400, y: 300, width: 200, height: 100 };
 
-/** I1 1000×800 com T (200×100 em 400,300) e M (100×40 em 10,10); canvas com CT e CM. */
+/** I1 1000×800 with T (200×100 at 400,300) and M (100×40 at 10,10); canvas with CT and CM. */
 function base(anchor: MarkingAnchor = { to: 'T' }): Project {
   let p = emptyProject();
   p = addContainer(p, { id: 'I1', file: 'a.png', width: 1000, height: 800 });
@@ -56,8 +56,8 @@ const at = (p: Project, id = 'M') => {
   return { x, y };
 };
 
-describe('snapToAnchor: lados × alinhamentos (ltr, sem deslocamento)', () => {
-  // M é 100×40; T é 200×100 em (400,300).
+describe('snapToAnchor: sides × alignments (ltr, no offset)', () => {
+  // M is 100×40; T is 200×100 at (400,300).
   const cases: [AnchorSide, AnchorAlign, { x: number; y: number }][] = [
     ['top', 'start', { x: 400, y: 260 }],
     ['top', 'center', { x: 450, y: 260 }],
@@ -79,19 +79,19 @@ describe('snapToAnchor: lados × alinhamentos (ltr, sem deslocamento)', () => {
     expect(warnings).toEqual([]);
   });
 
-  it('sem side, align e offset vale top / center / 0', () => {
+  it('without side, align and offset it defaults to top / center / 0', () => {
     expect(at(snap(base()).project)).toEqual({ x: 450, y: 260 });
   });
 
-  it('a âncora não muda (só o retângulo da ancorada) e a âncora do alvo fica onde está', () => {
+  it('the anchor does not change (only the anchored rectangle) and the target anchor stays where it is', () => {
     const { project } = snap(base());
     expect(marking(project, 'T').rect).toEqual(T);
     expect(marking(project, 'M').anchor).toEqual({ to: 'T' });
   });
 });
 
-describe('snapToAnchor: deslocamento', () => {
-  it('main afasta da borda (negativo sobrepõe) e cross anda ao longo do lado', () => {
+describe('snapToAnchor: offset', () => {
+  it('main moves away from the edge (negative overlaps) and cross runs along the side', () => {
     const top = snap(
       base({ to: 'T', side: 'top', align: 'center', offset: { main: 10, cross: 5 } }),
     );
@@ -110,7 +110,7 @@ describe('snapToAnchor: deslocamento', () => {
     expect(at(left.project)).toEqual({ x: 288, y: 357 });
   });
 
-  it('o deslocamento da âncora é em pixels; os padrões do componente são em unidades × densidade', () => {
+  it('the anchor offset is in pixels; the component defaults are in units × density', () => {
     const dense = (anchor: MarkingAnchor) => setContainerDensity(base(anchor), 'I1', 2);
     const own = snap(dense({ to: 'T', side: 'top', offset: { main: 4, cross: 2 } }));
     expect(at(own.project)).toEqual({ x: 452, y: 256 });
@@ -121,7 +121,7 @@ describe('snapToAnchor: deslocamento', () => {
     expect(at(fromDefaults.project)).toEqual({ x: 404, y: 408 });
   });
 
-  it('o que a âncora informa vence os padrões; o resto vem deles (objeto ou função)', () => {
+  it('what the anchor specifies wins over the defaults; the rest comes from them (object or function)', () => {
     const defaults = {
       side: 'bottom',
       align: 'end',
@@ -135,7 +135,7 @@ describe('snapToAnchor: deslocamento', () => {
     expect(at(byFn.project)).toEqual({ x: 400, y: 402 });
   });
 
-  it('densidade 1 não escala o padrão', () => {
+  it('density 1 does not scale the default', () => {
     const r = snap(base({ to: 'T' }), 'M', {
       defaults: { offset: { main: 4, cross: 0 } },
     });
@@ -146,7 +146,7 @@ describe('snapToAnchor: deslocamento', () => {
 describe('snapToAnchor: rtl', () => {
   const rtl = (anchor: MarkingAnchor) => setProjectDirection(base(anchor), 'rtl');
 
-  it('em top/bottom, start é a direita e o cross positivo vai para a esquerda', () => {
+  it('on top/bottom, start is the right and a positive cross goes to the left', () => {
     expect(at(snap(rtl({ to: 'T', side: 'top', align: 'start' })).project)).toEqual({
       x: 500,
       y: 260,
@@ -165,7 +165,7 @@ describe('snapToAnchor: rtl', () => {
     expect(at(snap(rtl({ to: 'T', side: 'top', align: 'center' })).project).x).toBe(450);
   });
 
-  it('nos lados, start é o lado direito físico e end o esquerdo; align segue de cima para baixo', () => {
+  it('on the sides, start is the physical right side and end the left; align goes from top to bottom', () => {
     expect(at(snap(rtl({ to: 'T', side: 'start', align: 'start' })).project)).toEqual({
       x: 600,
       y: 300,
@@ -176,7 +176,7 @@ describe('snapToAnchor: rtl', () => {
     });
   });
 
-  it('o container que fixa ltr num projeto rtl encosta em ltr', async () => {
+  it('a container that pins ltr in an rtl project snaps in ltr', async () => {
     const { setContainerDirection } = await import('../../src/model');
     const p = setContainerDirection(
       rtl({ to: 'T', side: 'top', align: 'start' }),
@@ -187,8 +187,8 @@ describe('snapToAnchor: rtl', () => {
   });
 });
 
-describe('snapToAnchor: limites, trava e sem mudança', () => {
-  it('passando do container, prende dentro dele e avisa', () => {
+describe('snapToAnchor: bounds, lock and no change', () => {
+  it('going past the container, clamps inside it and warns', () => {
     const { project, warnings } = snap(
       base({ to: 'T', side: 'top', offset: { main: 1000, cross: 0 } }),
     );
@@ -201,7 +201,7 @@ describe('snapToAnchor: limites, trava e sem mudança', () => {
     expect(at(right.project).x).toBe(900);
   });
 
-  it('a marcação já no limite que o encosto prenderia mantém o aviso (achado 4 do CL2)', () => {
+  it('a marking already at the limit that the snap would clamp keeps the warning (finding 4 of CL2)', () => {
     let p = base({
       to: 'T',
       side: 'end',
@@ -214,7 +214,7 @@ describe('snapToAnchor: limites, trava e sem mudança', () => {
     expect(warnings.map((w) => w.code)).toEqual(['arrange.outside']);
   });
 
-  it('o seguidor perto da borda não sai do container nem solta a âncora (achado 3 do CL2)', () => {
+  it('the follower near the edge does not leave the container nor release the anchor (finding 3 of CL2)', () => {
     let p = base({ to: 'T', side: 'end', align: 'start' });
     p = createMarking(p, {
       id: 'F',
@@ -231,7 +231,7 @@ describe('snapToAnchor: limites, trava e sem mudança', () => {
     expect(warnings.map((w) => w.code)).toEqual(['arrange.outside']);
   });
 
-  it('no canvas não há limite nem aviso', () => {
+  it('on the canvas there is no limit nor warning', () => {
     const r = snap(
       base({ to: 'T', side: 'top', offset: { main: 100000, cross: 0 } }),
       'CM',
@@ -240,7 +240,7 @@ describe('snapToAnchor: limites, trava e sem mudança', () => {
     expect(r.warnings).toEqual([]);
   });
 
-  it('assenta: ao encostar dentro de outra marcação ela passa a ser a mãe', () => {
+  it('settles: when snapping inside another marking it becomes the parent', () => {
     let p = base({ to: 'T', side: 'top' });
     p = createMarking(p, {
       id: 'BIG',
@@ -251,7 +251,7 @@ describe('snapToAnchor: limites, trava e sem mudança', () => {
     expect(marking(snap(p).project, 'M').parentId).toBe('BIG');
   });
 
-  it('trancada recusa com locked', () => {
+  it('a locked marking is refused with locked', () => {
     const p = base();
     const locked = {
       ...p,
@@ -260,14 +260,14 @@ describe('snapToAnchor: limites, trava e sem mudança', () => {
     expect(() => snap(locked)).toThrowError(/^locked/);
   });
 
-  it('sem âncora falha com not-anchored; marcação inexistente com not-found', () => {
+  it('without an anchor it fails with not-anchored; a nonexistent marking with not-found', () => {
     const p = base();
     expect(() => snap(p, 'T')).toThrowError(/^not-anchored/);
     expect(() => snap(setMarkingAnchor(p, 'M', null))).toThrowError(/^not-anchored/);
-    expect(() => snap(p, 'nada')).toThrowError(/^not-found/);
+    expect(() => snap(p, 'nothing')).toThrowError(/^not-found/);
   });
 
-  it('já encostada: devolve o mesmo Project (inclusive trancada)', () => {
+  it('already snapped: returns the same Project (even when locked)', () => {
     const once = snap(base()).project;
     const again = snap(once);
     expect(again.project).toBe(once);
@@ -280,8 +280,8 @@ describe('snapToAnchor: limites, trava e sem mudança', () => {
   });
 });
 
-describe('snapToAnchor leva as ancoradas na marcação (como moveMarking)', () => {
-  /** M encosta em T; F ancorada em M (e G em F); D é filha de M; Z não tem relação. */
+describe('snapToAnchor carries the anchored markings of the marking (like moveMarking)', () => {
+  /** M snaps to T; F anchored to M (and G to F); D is a child of M; Z has no relation. */
   function chain(): Project {
     let p = base({ to: 'T', side: 'top', align: 'start' });
     p = createMarking(p, {
@@ -308,9 +308,9 @@ describe('snapToAnchor leva as ancoradas na marcação (como moveMarking)', () =
     return setMarkingAnchor(p, 'G', { to: 'F' });
   }
 
-  it('encostar M leva as filhas e as ancoradas nela (e as ancoradas das ancoradas), sem tocar nas outras', () => {
+  it('snapping M carries the children and the markings anchored to it (and the anchored of the anchored), without touching the others', () => {
     const p = chain();
-    // M vai de (10,10) a (400,260): dx 390, dy 250.
+    // M goes from (10,10) to (400,260): dx 390, dy 250.
     const out = snap(p).project;
     expect(at(out, 'M')).toEqual({ x: 400, y: 260 });
     expect(at(out, 'D')).toEqual({ x: 402, y: 262 });
@@ -319,7 +319,7 @@ describe('snapToAnchor leva as ancoradas na marcação (como moveMarking)', () =
     expect(at(out, 'Z')).toEqual(at(p, 'Z'));
   });
 
-  it('a ancorada que o encosto leva fica na mesma posição relativa (marcação do canvas inclusive)', () => {
+  it('the anchored marking that the snap carries keeps the same relative position (canvas marking included)', () => {
     let p = base({ to: 'T', side: 'top', align: 'start' });
     p = createMarking(p, {
       id: 'CF',
@@ -334,7 +334,7 @@ describe('snapToAnchor leva as ancoradas na marcação (como moveMarking)', () =
     expect(at(out, 'CF')).toEqual({ x: -3500 + dx, y: -3500 + dy });
   });
 
-  it('sem mudança devolve o mesmo projeto (com ancoradas também)', () => {
+  it('without change returns the same project (with anchored markings too)', () => {
     const once = snap(chain()).project;
     expect(snap(once).project).toBe(once);
   });

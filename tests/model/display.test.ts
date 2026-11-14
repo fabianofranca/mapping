@@ -7,43 +7,43 @@ import {
 } from '../../src/model';
 import { sampleProject } from './fixtures';
 
-// Porta (M1) › Maçaneta (M2) › Fechadura (M3); A1 (M1/L1) e A3 (M2/L1) são próprias.
+// Door (M1) › Handle (M2) › Lock (M3); A1 (M1/L1) and A3 (M2/L1) are own.
 const p = sampleProject();
 const [l1, l2] = p.layers;
 const both = p.layers;
 
-describe('bolinhas por camada', () => {
-  it('só considera as camadas visíveis', () => {
+describe('layer dots', () => {
+  it('only considers the visible layers', () => {
     const dots = layerDotsByMarking(p, [l2 as NonNullable<typeof l2>]);
     expect(dots.has('M3')).toBe(false);
     expect(dots.get('M1')?.map((d) => d.layer.id)).toEqual(['L2']);
   });
 });
 
-describe('bolinhas por camada: setas', () => {
-  it('a seta com anotação entra pelo id dela, como as marcações', () => {
+describe('layer dots: arrows', () => {
+  it('an arrow with an annotation is keyed by its own id, like markings', () => {
     let q = createArrow(p, { id: 'R1', from: 'M1', to: 'M4' });
     q = createArrow(q, { id: 'R2', from: 'M2', to: 'M3' });
     q = addAnnotation(q, { id: 'AR', markingId: 'R1', layerId: 'L2' });
     const dots = layerDotsByMarking(q, both);
     expect(dots.get('R1')?.map((d) => d.layer.id)).toEqual(['L2']);
     expect(dots.has('R2')).toBe(false);
-    // As marcações seguem como antes.
+    // Markings stay as before.
     expect(dots.get('M1')?.map((d) => d.layer.id)).toEqual(['L1', 'L2']);
   });
 });
 
-describe('modos de exibição', () => {
+describe('display modes', () => {
   const dots = layerDotsByMarking(p, both);
 
-  it('mostrar todas: tudo por inteiro', () => {
+  it('show all: everything in full', () => {
     const v = markingVisibility(p, dots, 'all', null);
     expect([...v.values()].every((x) => x === 'full')).toBe(true);
   });
 
-  it('esmaecer: só esmaece quem não tem anotação própria', () => {
+  it('dim: only dims what has no own annotation', () => {
     const v = markingVisibility(p, dots, 'dim', null);
-    expect(v.get('M4')).toBe('full'); // própria em L2
+    expect(v.get('M4')).toBe('full'); // own in L2
     const v1 = markingVisibility(
       sampleProject(),
       layerDotsByMarking(sampleProject(), both),
@@ -53,8 +53,8 @@ describe('modos de exibição', () => {
     expect(v1.get('M3')).toBe('dim');
   });
 
-  it('ocultar: quem não tem anotação some, e o ancestral de quem aparece fica só com a borda', () => {
-    // Só L1: M1 e M2 têm; M3 (filha de M2) e M4 não têm e não são pai de ninguém.
+  it('hide: what has no annotation disappears, and the ancestor of what shows keeps only its outline', () => {
+    // Only L1: M1 and M2 have one; M3 (child of M2) and M4 do not and are nobody's parent.
     const base = sampleProject();
     const only = [l1 as NonNullable<typeof l1>];
     const v = markingVisibility(base, layerDotsByMarking(base, only), 'hide', null);
@@ -64,8 +64,8 @@ describe('modos de exibição', () => {
     expect(v.get('M4')).toBe('hidden');
   });
 
-  it('ocultar: o pai sem anotação vira borda; a selecionada sempre aparece', () => {
-    // Só L2: M1 e M4 têm; M2 (só L1) contém a selecionada M3, então fica como borda.
+  it('hide: a parent without an annotation becomes an outline; the selected one always shows', () => {
+    // Only L2: M1 and M4 have one; M2 (only L1) contains the selected M3, so it stays as an outline.
     const base = sampleProject();
     const only = [l2 as NonNullable<typeof l2>];
     const v = markingVisibility(base, layerDotsByMarking(base, only), 'hide', 'M3');
@@ -75,8 +75,8 @@ describe('modos de exibição', () => {
     expect(v.get('M4')).toBe('full');
   });
 
-  it('ocultar: o pai sem anotação vira borda quando só um filho tem anotação', () => {
-    // Ativa = L2 com A2 só em M1: nenhum pai sem anotação. Sem A2, a cadeia M1 › M2 é borda.
+  it('hide: a parent without an annotation becomes an outline when only one child has an annotation', () => {
+    // Active = L2 with A2 only on M1: no parent without an annotation. Without A2, the M1 › M2 chain is an outline.
     const base = sampleProject();
     const v = markingVisibility(base, new Map([['M2', []]]), 'hide', null);
     expect(v.get('M2')).toBe('full');
@@ -86,17 +86,17 @@ describe('modos de exibição', () => {
   });
 });
 
-describe('marcações que desenham um componente', () => {
-  it('alwaysShown fica por inteiro em ocultar e esmaecer, e o pai não vira borda', () => {
+describe('markings that draw a component', () => {
+  it('alwaysShown stays in full under hide and dim, and the parent does not become an outline', () => {
     const base = sampleProject();
-    // Nenhuma camada visível com anotação: sem `alwaysShown`, tudo some.
+    // No visible layer with an annotation: without `alwaysShown`, everything disappears.
     const none = new Map<string, readonly never[]>();
     expect(markingVisibility(base, none, 'hide', null).get('M3')).toBe('hidden');
     const always = new Set(['M2', 'M3']);
     const hide = markingVisibility(base, none, 'hide', null, always);
     expect(hide.get('M2')).toBe('full');
     expect(hide.get('M3')).toBe('full');
-    // Quem não desenha segue a regra de hoje; o ancestral dele (M1) é só borda.
+    // What does not draw follows the usual rule; its ancestor (M1) is only an outline.
     expect(hide.get('M4')).toBe('hidden');
     expect(hide.get('M1')).toBe('outline');
     const dim = markingVisibility(base, none, 'dim', null, always);
@@ -104,7 +104,7 @@ describe('marcações que desenham um componente', () => {
     expect(dim.get('M4')).toBe('dim');
   });
 
-  it('sem alwaysShown nada muda', () => {
+  it('without alwaysShown nothing changes', () => {
     const base = sampleProject();
     const none = new Map<string, readonly never[]>();
     expect(markingVisibility(base, none, 'hide', null, new Set())).toEqual(
@@ -113,16 +113,16 @@ describe('marcações que desenham um componente', () => {
   });
 });
 
-describe('modos de exibição pelas camadas visíveis', () => {
-  it('a anotação em qualquer camada visível mantém a marcação; sem nenhuma, ela some', () => {
+describe('display modes by visible layers', () => {
+  it('an annotation in any visible layer keeps the marking; with none, it disappears', () => {
     const base = sampleProject();
-    // Visíveis = L1 e L2: as marcações com anotação em qualquer uma continuam.
+    // Visible = L1 and L2: markings with an annotation in either stay.
     const both = layerDotsByMarking(base, base.layers);
     const withAny = new Set(both.keys());
     expect(withAny.has('M1') && withAny.has('M2') && withAny.has('M4')).toBe(true);
     const v = markingVisibility(base, both, 'hide', null);
     expect(v.get('M2')).toBe('full');
-    // Só a L2 visível: M2 (só tem a L1) some, M1 e M4 ficam.
+    // Only L2 visible: M2 (only has L1) disappears, M1 and M4 stay.
     const onlyL2 = layerDotsByMarking(base, [l2 as NonNullable<typeof l2>]);
     const hide = markingVisibility(base, onlyL2, 'hide', null);
     expect(hide.get('M1')).toBe('full');

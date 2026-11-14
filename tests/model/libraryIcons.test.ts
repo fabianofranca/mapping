@@ -1,4 +1,4 @@
-// CF7: o conjunto de ícones no validador da biblioteca (níveis 1 a 3), no catálogo e no pacote.
+// CF7: the icon set in the library validator (levels 1 to 3), in the catalog and in the package.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -26,7 +26,7 @@ function pack(overrides: Record<string, string | null> = {}): LibraryFile[] {
 
 type JsonPath = readonly (string | number)[];
 
-/** O texto do arquivo com o valor trocado (ou, com `undefined`, apagado) no caminho. */
+/** The file text with the value replaced (or, with `undefined`, deleted) at the path. */
 const edit = (path: string, at: JsonPath, value: unknown): string => {
   const json: unknown = JSON.parse(read(path));
   let node: unknown = json;
@@ -44,21 +44,21 @@ const brief = (
   issues: readonly { severity: string; file: string; path: string; message: string }[],
 ) => issues.map((i) => `${i.severity} ${i.file} ${i.path}: ${i.message}`);
 
-describe('validateLibrary: conjunto de ícones', () => {
-  it('o pacote de teste passa sem erros nem avisos', () => {
+describe('validateLibrary: icon set', () => {
+  it('the test package passes with no errors or warnings', () => {
     const report = validateLibrary({ files: pack() });
     expect(brief(report.issues)).toEqual([]);
     expect(report.ok).toBe(true);
   });
 
-  it('arquivo de ícones ausente é erro de arquivo na especialização', () => {
+  it('a missing icons file is a file error in the specialization', () => {
     const report = validateLibrary({ files: pack({ 'icons/set.json': null }) });
     expect(brief(report.errors)).toEqual([
       `error ${SPEC} icons: file not found: icons/set.json`,
     ]);
   });
 
-  it('arquivo de ícones inválido dá os erros do arquivo, com o caminho', () => {
+  it('an invalid icons file gives the file errors, with the path', () => {
     const bad = read('icons/set.json').replace('"check"', '"Check"');
     const report = validateLibrary({ files: pack({ 'icons/set.json': bad }) });
     expect(brief(report.errors)).toContain(
@@ -66,23 +66,23 @@ describe('validateLibrary: conjunto de ícones', () => {
     );
   });
 
-  it('o arquivo de ícones não é "arquivo não referenciado"', () => {
+  it('the icons file is not an "unreferenced file"', () => {
     const report = validateLibrary({ files: pack() });
     expect(report.warnings.some((w) => w.file === 'icons/set.json')).toBe(false);
   });
 
-  it('nome literal fora do conjunto é erro no nível 2, no caminho do nó', () => {
-    const badComponent = edit('components/badge.json', NAME, 'nuvem');
+  it('a literal name outside the set is an error at level 2, at the node path', () => {
+    const badComponent = edit('components/badge.json', NAME, 'cloud');
     const report = validateLibrary({
       files: pack({ 'components/badge.json': badComponent }),
     });
     expect(brief(report.errors)).toEqual([
-      'error components/badge.json template.children[0].name: the icon "nuvem" does not exist in the icon set (icons/set.json)',
+      'error components/badge.json template.children[0].name: the icon "cloud" does not exist in the icon set (icons/set.json)',
     ]);
   });
 
-  it('nível 1 não confere o nome literal (só o nível 2 em diante)', () => {
-    const badComponent = edit('components/badge.json', NAME, 'nuvem');
+  it('level 1 does not check the literal name (only level 2 onwards)', () => {
+    const badComponent = edit('components/badge.json', NAME, 'cloud');
     const report = validateLibrary({
       files: pack({ 'components/badge.json': badComponent }),
       level: 1,
@@ -90,7 +90,7 @@ describe('validateLibrary: conjunto de ícones', () => {
     expect(report.errors).toEqual([]);
   });
 
-  it('nó icon com nome literal e sem icons na especialização é erro', () => {
+  it('an icon node with a literal name and no icons in the specialization is an error', () => {
     const noIcons = edit(SPEC, ['icons'], undefined);
     const literal = edit('components/badge.json', NAME, 'check');
     const report = validateLibrary({
@@ -101,50 +101,50 @@ describe('validateLibrary: conjunto de ícones', () => {
     );
   });
 
-  it('nível 3: enum lido em name com opção fora do conjunto avisa', () => {
-    const spec = edit(SPEC, OPTIONS, ['check', 'nuvem']);
+  it('level 3: an enum read in name with an option outside the set warns', () => {
+    const spec = edit(SPEC, OPTIONS, ['check', 'cloud']);
     const report = validateLibrary({ files: pack({ [SPEC]: spec }) });
     expect(report.ok).toBe(true);
     expect(brief(report.warnings)).toContain(
-      `warning ${SPEC} layers[0].annotationTypes[0].fields[0].options[1]: the option "nuvem" of the field "icon" is not in the icon set; the drawing falls back to the placeholder`,
+      `warning ${SPEC} layers[0].annotationTypes[0].fields[0].options[1]: the option "cloud" of the field "icon" is not in the icon set; the drawing falls back to the placeholder`,
     );
   });
 
-  it('nível 2 não dá o aviso do enum (é do nível 3)', () => {
-    const spec = edit(SPEC, OPTIONS, ['check', 'nuvem']);
+  it('level 2 does not give the enum warning (it belongs to level 3)', () => {
+    const spec = edit(SPEC, OPTIONS, ['check', 'cloud']);
     const report = validateLibrary({ files: pack({ [SPEC]: spec }), level: 2 });
     expect(report.warnings).toEqual([]);
   });
 
-  it('a prova de desenho avisa o unknown icon do preview', () => {
-    const comp = edit('components/badge.json', ['preview', 'icon'], 'nuvem');
+  it('the drawing proof warns the preview unknown icon', () => {
+    const comp = edit('components/badge.json', ['preview', 'icon'], 'cloud');
     const report = validateLibrary({ files: pack({ 'components/badge.json': comp }) });
-    expect(brief(report.warnings).join('\n')).toContain('unknown icon: nuvem');
+    expect(brief(report.warnings).join('\n')).toContain('unknown icon: cloud');
   });
 });
 
-describe('catálogo e biblioteca carregam o conjunto de ícones', () => {
+describe('catalog and library load the icon set', () => {
   const spec = (() => {
     const parsed = parseSpecText(read(SPEC));
-    if (!parsed.ok) throw new Error('spec inválida');
+    if (!parsed.ok) throw new Error('invalid spec');
     return parsed.spec;
   })();
   const readText = (path: string): string | undefined =>
     PATHS.includes(path) ? read(path) : undefined;
 
-  it('componentPaths inclui o arquivo de ícones', () => {
+  it('componentPaths includes the icons file', () => {
     expect(componentPaths(spec, SPEC)).toEqual([
       'components/badge.json',
       'icons/set.json',
     ]);
   });
 
-  it('loadSpecComponents põe o conjunto no componente e desenha o ícone do pacote', () => {
+  it('loadSpecComponents puts the set in the component and draws the package icon', () => {
     const loaded = loadSpecComponents(spec, SPEC, 1, readText);
     expect(loaded.problems).toEqual([]);
     const component = loaded.byType.get('badge');
     expect(component?.resolvedIcons?.icons.check).toBeDefined();
-    if (component === undefined) throw new Error('sem componente');
+    if (component === undefined) throw new Error('no component');
     const { root } = instantiate(
       component,
       { icon: 'check', tint: '#0a7' },
@@ -154,14 +154,14 @@ describe('catálogo e biblioteca carregam o conjunto de ícones', () => {
     expect(JSON.stringify(root)).toContain('M5 12l5 5L20 7');
   });
 
-  it('arquivo de ícones ausente vira problema do catálogo', () => {
+  it('a missing icons file becomes a catalog problem', () => {
     const loaded = loadSpecComponents(spec, SPEC, 1, (p) =>
       p === 'icons/set.json' ? undefined : readText(p),
     );
     expect(loaded.problems).toEqual(['icons: missing file (icons/set.json)']);
   });
 
-  it('loadLibrary (laboratório) lê icons e leva o conjunto aos componentes', () => {
+  it('loadLibrary (lab) reads icons and carries the set to the components', () => {
     const files = PATHS.map((path) => ({ path, text: read(path) }));
     const library = withHostTokens(loadLibrary(files), {});
     expect(library.problems).toEqual([]);
@@ -169,7 +169,7 @@ describe('catálogo e biblioteca carregam o conjunto de ícones', () => {
     expect(library.types[0]?.component?.resolvedIcons?.icons.close).toBeDefined();
   });
 
-  it('o pacote que declara icons é um pacote de arquivos', () => {
+  it('the package that declares icons is a file package', () => {
     expect(usesPackageFiles(spec)).toBe(true);
     expect(usesPackageFiles({ ...spec, icons: undefined, layers: [] })).toBe(false);
   });

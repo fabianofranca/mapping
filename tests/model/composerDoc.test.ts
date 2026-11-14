@@ -10,7 +10,7 @@ import {
   type ParsedAnyRef,
 } from '../../src/model';
 
-const url = (path: string) => `mapping://pasta/${path}`;
+const url = (path: string) => `mapping://folder/${path}`;
 const text = (t: string): ComposerPart => ({ type: 'text', text: t });
 const chip = (label: string, u: string): ComposerPart => ({
   type: 'chip',
@@ -19,39 +19,39 @@ const chip = (label: string, u: string): ComposerPart => ({
 });
 
 describe('composerToMarkdown', () => {
-  it('concatena texto e chips sem espaço extra', () => {
+  it('concatenates text and chips with no extra space', () => {
     const doc: ComposerDoc = [
-      text('Veja '),
-      chip('Botão', url('m/m2')),
-      text(', depois '),
-      chip('titulo', url('a/am/f/titulo')),
+      text('See '),
+      chip('Button', url('m/m2')),
+      text(', then '),
+      chip('title', url('a/am/f/title')),
       text('.'),
     ];
     expect(composerToMarkdown(doc)).toBe(
-      `Veja [Botão](${url('m/m2')}), depois [titulo](${url('a/am/f/titulo')}).`,
+      `See [Button](${url('m/m2')}), then [title](${url('a/am/f/title')}).`,
     );
   });
 
-  it('escapa o rótulo do chip', () => {
+  it('escapes the chip label', () => {
     expect(composerToMarkdown([chip('a[1] \\ b', url('m/m1'))])).toBe(
       formatCitation('a[1] \\ b', url('m/m1')),
     );
   });
 
-  it('rótulo vazio usa o texto neutro recebido (padrão ·)', () => {
+  it('an empty label uses the given neutral text (default ·)', () => {
     expect(composerToMarkdown([chip('', url('m/m1'))])).toBe(`[·](${url('m/m1')})`);
-    expect(composerToMarkdown([chip('', url('m/m1'))], 'sem nome')).toBe(
-      `[sem nome](${url('m/m1')})`,
+    expect(composerToMarkdown([chip('', url('m/m1'))], 'unnamed')).toBe(
+      `[unnamed](${url('m/m1')})`,
     );
   });
 
-  it('documento vazio dá texto vazio', () => {
+  it('an empty document gives empty text', () => {
     expect(composerToMarkdown([])).toBe('');
   });
 });
 
 describe('normalizeDoc', () => {
-  it('junta textos vizinhos e descarta textos vazios', () => {
+  it('merges neighboring texts and drops empty texts', () => {
     const c = chip('x', url('m/m1'));
     expect(
       normalizeDoc([text('a'), text(''), text('b'), c, text(''), text('c')]),
@@ -59,30 +59,30 @@ describe('normalizeDoc', () => {
     expect(normalizeDoc([text(''), text('')])).toEqual([]);
   });
 
-  it('não junta chips', () => {
+  it('does not merge chips', () => {
     const c = chip('x', url('m/m1'));
     expect(normalizeDoc([c, c])).toEqual([c, c]);
   });
 });
 
 describe('markdownToComposer', () => {
-  it('transforma a citação válida em chip', () => {
-    const md = `Veja ${formatCitation('Botão', url('m/m2'))} agora`;
+  it('turns a valid citation into a chip', () => {
+    const md = `See ${formatCitation('Button', url('m/m2'))} now`;
     expect(markdownToComposer(md)).toEqual([
-      text('Veja '),
-      chip('Botão', url('m/m2')),
-      text(' agora'),
+      text('See '),
+      chip('Button', url('m/m2')),
+      text(' now'),
     ]);
   });
 
-  it('desescapa o rótulo e aceita campo codificado', () => {
-    const md = formatCitation('a[1] \\ b', url('a/am/f/Tabela%20de%20dados'));
+  it('unescapes the label and accepts an encoded field', () => {
+    const md = formatCitation('a[1] \\ b', url('a/am/f/Data%20table'));
     expect(markdownToComposer(md)).toEqual([
-      chip('a[1] \\ b', url('a/am/f/Tabela%20de%20dados')),
+      chip('a[1] \\ b', url('a/am/f/Data%20table')),
     ]);
   });
 
-  it('chips colados um no outro', () => {
+  it('chips glued to each other', () => {
     const md = `${formatCitation('a', url('m/m1'))}${formatCitation('b', url('m/m2'))}`;
     expect(markdownToComposer(md)).toEqual([
       chip('a', url('m/m1')),
@@ -90,22 +90,22 @@ describe('markdownToComposer', () => {
     ]);
   });
 
-  it('deixa como texto: link externo, link de biblioteca, link quebrado, rótulo vazio', () => {
+  it('leaves as text: external link, library link, broken link, empty label', () => {
     for (const md of [
-      '[site](https://exemplo.com/m/m1)',
+      '[site](https://example.com/m/m1)',
       '[Button](mapping://button)',
       '[Button](mapping://spec/button)',
       `[a](${url('m/m1/extra')})`,
       `[b](${url('z/m1')})`,
       `[](${url('m/m1')})`,
-      '[a](mapping://pasta/m/m1',
-      '**negrito** e `código` e # título',
+      '[a](mapping://folder/m/m1',
+      '**bold** and `code` and # title',
     ]) {
       expect(markdownToComposer(md)).toEqual([text(md)]);
     }
   });
 
-  it('não vira chip dentro de código em linha nem em bloco', () => {
+  it('does not become a chip inside inline code or a code block', () => {
     const inline = `\`${formatCitation('x', url('m/m1'))}\``;
     expect(markdownToComposer(inline)).toEqual([text(inline)]);
     const block = ['```', formatCitation('y', url('m/m1')), '```'].join('\n');
@@ -114,46 +114,46 @@ describe('markdownToComposer', () => {
     expect(markdownToComposer(mixed)).toEqual([text('`a` '), chip('z', url('m/m1'))]);
   });
 
-  it('colchete escapado e [ solto ficam texto; o chip seguinte continua', () => {
-    const md = `\\[x](${url('m/m1')}) e [ solto ${formatCitation('ok', url('m/m2'))}`;
+  it('an escaped bracket and a loose [ stay text; the next chip still works', () => {
+    const md = `\\[x](${url('m/m1')}) and [ loose ${formatCitation('ok', url('m/m2'))}`;
     expect(markdownToComposer(md)).toEqual([
-      text(`\\[x](${url('m/m1')}) e [ solto `),
+      text(`\\[x](${url('m/m1')}) and [ loose `),
       chip('ok', url('m/m2')),
     ]);
   });
 
-  it('o texto devolvido já está normalizado', () => {
+  it('the returned text is already normalized', () => {
     const doc = markdownToComposer('a [b] c');
     expect(doc).toEqual([text('a [b] c')]);
     expect(markdownToComposer('')).toEqual([]);
   });
 });
 
-describe('ida e volta composerToMarkdown(markdownToComposer(s)) === s', () => {
+describe('round trip composerToMarkdown(markdownToComposer(s)) === s', () => {
   const fixed = [
     '',
-    'só texto',
-    formatCitation('Botão', url('m/m2')),
-    `antes ${formatCitation('a[1]', url('m/m2'))} depois ${formatCitation('b\\', url('i/i1'))}`,
+    'text only',
+    formatCitation('Button', url('m/m2')),
+    `before ${formatCitation('a[1]', url('m/m2'))} after ${formatCitation('b\\', url('i/i1'))}`,
     `[ ${formatCitation('x', url('m/m1'))}`,
-    `[a](${url('m/m1/extra')}) quebrado`,
-    '[a](mapping://pasta/m/m1',
-    '[a]( mapping://pasta/m/m1)',
+    `[a](${url('m/m1/extra')}) broken`,
+    '[a](mapping://folder/m/m1',
+    '[a]( mapping://folder/m/m1)',
     `\\${formatCitation('x', url('m/m1'))}`,
     `\`${formatCitation('x', url('m/m1'))}\` ${formatCitation('y', url('m/m1'))}`,
-    '``` sem fim [x](mapping://pasta/m/m1)',
+    '``` no end [x](mapping://folder/m/m1)',
     `[a\\x](${url('m/m1')})`,
     `[a\\\\](${url('m/m1')})`,
     '[]()',
-    '[[a]](mapping://pasta/m/m1)',
-    `linha\n${formatCitation('x', url('a/am/f/campos/r/r1'))}\nfim`,
+    '[[a]](mapping://folder/m/m1)',
+    `line\n${formatCitation('x', url('a/am/f/campos/r/r1'))}\nend`,
   ];
 
-  it.each(fixed.map((s) => [s]))('caso fixo %j', (s) => {
+  it.each(fixed.map((s) => [s]))('fixed case %j', (s) => {
     expect(composerToMarkdown(markdownToComposer(s))).toBe(s);
   });
 
-  it('propriedade em textos pseudoaleatórios', () => {
+  it('property over pseudo-random texts', () => {
     const pieces = [
       '[',
       ']',
@@ -166,11 +166,11 @@ describe('ida e volta composerToMarkdown(markdownToComposer(s)) === s', () => {
       ' ',
       '\n',
       '!',
-      'mapping://pasta/m/m1',
-      '](mapping://pasta/m/m1)',
-      '[x](mapping://pasta/m/m2)',
-      '[a\\]b](mapping://pasta/i/i1)',
-      '](mapping://pasta/z/m1)',
+      'mapping://folder/m/m1',
+      '](mapping://folder/m/m1)',
+      '[x](mapping://folder/m/m2)',
+      '[a\\]b](mapping://folder/i/i1)',
+      '](mapping://folder/z/m1)',
     ];
     let seed = 12345;
     const next = (n: number) => {
@@ -188,7 +188,7 @@ describe('ida e volta composerToMarkdown(markdownToComposer(s)) === s', () => {
 describe('pasteToParts', () => {
   const resolves = (ref: ParsedAnyRef) => {
     if (ref.ref.type === 'item' && ref.ref.kind === 'm' && ref.ref.code === 'm2') {
-      return { label: 'Botão vivo', url: url('m/m2') };
+      return { label: 'Live button', url: url('m/m2') };
     }
     if (ref.ref.type === 'field') {
       return { label: ref.ref.key, url: url(`a/${ref.ref.annotation}/f/${ref.ref.key}`) };
@@ -196,77 +196,77 @@ describe('pasteToParts', () => {
     return null;
   };
 
-  it('texto sem URL entra como texto puro', () => {
-    expect(pasteToParts('olá *mundo*', resolves)).toEqual([text('olá *mundo*')]);
+  it('text without a URL enters as plain text', () => {
+    expect(pasteToParts('hello *world*', resolves)).toEqual([text('hello *world*')]);
     expect(pasteToParts('', resolves)).toEqual([]);
   });
 
-  it('URL crua que resolve vira chip com o rótulo vivo', () => {
-    expect(pasteToParts(`veja ${url('m/m2')} aqui`, resolves)).toEqual([
-      text('veja '),
-      chip('Botão vivo', url('m/m2')),
-      text(' aqui'),
+  it('a raw URL that resolves becomes a chip with the live label', () => {
+    expect(pasteToParts(`see ${url('m/m2')} here`, resolves)).toEqual([
+      text('see '),
+      chip('Live button', url('m/m2')),
+      text(' here'),
     ]);
   });
 
-  it('URL crua que não resolve (ou não fecha a gramática) fica texto', () => {
+  it('a raw URL that does not resolve (or does not fit the grammar) stays text', () => {
     for (const s of [url('m/m9'), 'mapping://button', url('m/m2/extra'), url('z/m2')]) {
       expect(pasteToParts(s, resolves)).toEqual([text(s)]);
     }
   });
 
-  it('marcadores de ênfase colados em volta da URL não entram nela', () => {
+  it('emphasis markers glued around the URL do not enter it', () => {
     for (const mark of ['**', '*', '_', '__', '`', '~~']) {
       expect(pasteToParts(`${mark}${url('m/m2')}${mark}`, resolves)).toEqual([
         text(mark),
-        chip('Botão vivo', url('m/m2')),
+        chip('Live button', url('m/m2')),
         text(mark),
       ]);
     }
   });
 
-  it('rótulo com *, _ e crase: round-trip pelo markdown do compositor', () => {
+  it('label with *, _ and backtick: round trip through the composer markdown', () => {
     const doc: ComposerDoc = [chip('a*b_c`d', url('m/m1'))];
     expect(markdownToComposer(composerToMarkdown(doc))).toEqual(doc);
   });
 
-  it('pontuação final da frase não entra na URL', () => {
-    expect(pasteToParts(`Ver ${url('m/m2')}.`, resolves)).toEqual([
-      text('Ver '),
-      chip('Botão vivo', url('m/m2')),
+  it('trailing sentence punctuation does not enter the URL', () => {
+    expect(pasteToParts(`See ${url('m/m2')}.`, resolves)).toEqual([
+      text('See '),
+      chip('Live button', url('m/m2')),
       text('.'),
     ]);
     expect(pasteToParts(`(${url('m/m2')}), ok`, resolves)).toEqual([
       text('('),
-      chip('Botão vivo', url('m/m2')),
+      chip('Live button', url('m/m2')),
       text('), ok'),
     ]);
   });
 
-  it('link markdown colado inteiro vira chip com o rótulo vivo', () => {
-    expect(pasteToParts(`[antigo](${url('m/m2')})`, resolves)).toEqual([
-      chip('Botão vivo', url('m/m2')),
+  it('a pasted markdown link becomes a chip with the live label', () => {
+    expect(pasteToParts(`[old](${url('m/m2')})`, resolves)).toEqual([
+      chip('Live button', url('m/m2')),
     ]);
   });
 
-  it('link markdown que não resolve fica texto como estava', () => {
-    const md = `[antigo](${url('m/m9')})`;
+  it('a markdown link that does not resolve stays text as it was', () => {
+    const md = `[old](${url('m/m9')})`;
     expect(pasteToParts(md, resolves)).toEqual([text(md)]);
   });
 
-  it('vários, misturados, em várias linhas', () => {
-    const pasted = `a ${url('m/m2')}\n[x](${url('a/am/f/titulo')}) e ${url('m/m9')}`;
+  it('several, mixed, over several lines', () => {
+    const pasted = `a ${url('m/m2')}\n[x](${url('a/am/f/title')}) e ${url('m/m9')}`;
     expect(pasteToParts(pasted, resolves)).toEqual([
       text('a '),
-      chip('Botão vivo', url('m/m2')),
+      chip('Live button', url('m/m2')),
       text('\n'),
-      chip('titulo', url('a/am/f/titulo')),
+      chip('title', url('a/am/f/title')),
       text(` e ${url('m/m9')}`),
     ]);
   });
 
-  it('o rótulo do chip colado é o de resolves, mesmo com colchetes no rótulo antigo', () => {
+  it('the pasted chip label is the one from resolves, even with brackets in the old label', () => {
     const md = `[a\\[1\\]](${url('m/m2')})`;
-    expect(pasteToParts(md, resolves)).toEqual([chip('Botão vivo', url('m/m2'))]);
+    expect(pasteToParts(md, resolves)).toEqual([chip('Live button', url('m/m2'))]);
   });
 });

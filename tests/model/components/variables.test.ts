@@ -1,5 +1,5 @@
-// Variáveis do componente (formatVersion 4, etapa #1504): `let` nos quadros e `{ "$var": … }`
-// trocados na leitura. O componente lido não tem `let` nem `$var` e é igual ao escrito à mão.
+// Component variables (formatVersion 4, stage #1504): `let` on frames and `{ "$var": … }`
+// replaced on read. The component read has no `let` or `$var` and equals the hand-written one.
 import { describe, expect, it } from 'vitest';
 import type { ComponentFile } from '../../../src/model/components/componentFormat';
 import {
@@ -19,7 +19,7 @@ function file(template: Raw, formatVersion = 4): Raw {
     format: 'mapping-component',
     formatVersion,
     id: 'vars',
-    name: 'Variáveis',
+    name: 'Variables',
     size: { width: 200, height: 100 },
     template,
   };
@@ -39,8 +39,8 @@ const rect = (extra: Raw = {}): Raw => ({
 });
 const frame = (extra: Raw = {}): Raw => ({ type: 'frame', ...extra });
 
-describe('let e $var: a leitura troca e devolve o componente sem eles', () => {
-  it('let na raiz usado num neto', () => {
+describe('let and $var: reading substitutes them and returns the component without them', () => {
+  it('let at the root used in a grandchild', () => {
     const withLet = file(
       frame({
         let: { pad: 12 },
@@ -54,7 +54,7 @@ describe('let e $var: a leitura troca e devolve o componente sem eles', () => {
     expect(JSON.stringify(parsed(withLet))).not.toMatch(/"let"|\$var/);
   });
 
-  it('let num template de repeat: o $index é o da linha do uso', () => {
+  it('let in a repeat template: $index is the one of the row of the use', () => {
     const next = { $add: [{ $field: '$index' }, 1] };
     const text = (t: unknown): Raw => ({ type: 'text', text: t, font: { size: 10 } });
     const withLet = file(
@@ -85,7 +85,7 @@ describe('let e $var: a leitura troca e devolve o componente sem eles', () => {
     expect(parsed(withLet)).toEqual(parsed(byHand));
   });
 
-  it('o $index numa variável da raiz vale dentro do repeat que a usa', () => {
+  it('$index in a root variable is valid inside the repeat that uses it', () => {
     const next = { $add: [{ $field: '$index' }, 1] };
     const withLet = file(
       frame({
@@ -101,7 +101,7 @@ describe('let e $var: a leitura troca e devolve o componente sem eles', () => {
         ],
       }),
     );
-    // `rows` não existe: o erro é só dele (o $index continua a salvo de uma conferência fora do repeat)
+    // `rows` does not exist: the error is only about it ($index stays safe from a check outside the repeat)
     expect(validateComponent(withLet)).toEqual([
       'template.children[0].count: undefined variable: rows',
     ]);
@@ -120,11 +120,11 @@ describe('let e $var: a leitura troca e devolve o componente sem eles', () => {
       }),
     );
     expect(validateComponent(fixed)).toEqual([]);
-    const lido = parsed(fixed).template as unknown as { children: Raw[] };
-    expect(lido.children[0]?.count).toBe(3);
+    const read = parsed(fixed).template as unknown as { children: Raw[] };
+    expect(read.children[0]?.count).toBe(3);
   });
 
-  it('o $index numa variável usada fora de um repeat é erro no caminho do uso', () => {
+  it('$index in a variable used outside a repeat is an error at the path of the use', () => {
     const raw = file(
       frame({
         let: { n: { $field: '$index' } },
@@ -136,7 +136,7 @@ describe('let e $var: a leitura troca e devolve o componente sem eles', () => {
     ]);
   });
 
-  it('$size dentro da variável é o do lugar do uso', () => {
+  it('$size inside the variable is the one of the place of the use', () => {
     const withLet = file(
       frame({
         let: { w: { $size: 'width' } },
@@ -149,7 +149,7 @@ describe('let e $var: a leitura troca e devolve o componente sem eles', () => {
     expect(parsed(withLet)).toEqual(parsed(byHand));
   });
 
-  it('o let de dentro esconde o de fora, e o irmão vê o de fora', () => {
+  it('the inner let hides the outer one, and the sibling sees the outer one', () => {
     const withLet = file(
       frame({
         let: { x: 1 },
@@ -167,7 +167,7 @@ describe('let e $var: a leitura troca e devolve o componente sem eles', () => {
     expect(parsed(withLet)).toEqual(parsed(byHand));
   });
 
-  it('a ordem dentro do mesmo let é livre', () => {
+  it('the order inside the same let is free', () => {
     const withLet = file(
       frame({
         let: { b: { $add: [{ $var: 'a' }, 1] }, a: 5 },
@@ -178,7 +178,7 @@ describe('let e $var: a leitura troca e devolve o componente sem eles', () => {
     expect(parsed(withLet)).toEqual(parsed(byHand));
   });
 
-  it('o nome do mesmo let vale antes do de fora', () => {
+  it('a name in the same let wins over the outer one', () => {
     const withLet = file(
       frame({
         let: { a: 100 },
@@ -194,7 +194,7 @@ describe('let e $var: a leitura troca e devolve o componente sem eles', () => {
     expect(parsed(withLet)).toEqual(parsed(byHand));
   });
 
-  it('$var como condição (visible e $if), cor, texto e repeat.count', () => {
+  it('$var as a condition (visible and $if), color, text and repeat.count', () => {
     const withLet = file(
       frame({
         let: {
@@ -230,7 +230,7 @@ describe('let e $var: a leitura troca e devolve o componente sem eles', () => {
     expect(parsed(withLet)).toEqual(parsed(byHand));
   });
 
-  it('usa a variável em todas as chaves do próprio quadro (layout, tamanho, âncoras)', () => {
+  it('uses the variable in all keys of the frame itself (layout, size, anchors)', () => {
     const withLet = file(
       frame({
         let: { gap: 6 },
@@ -247,7 +247,7 @@ describe('let e $var: a leitura troca e devolve o componente sem eles', () => {
     expect(parsed(withLet)).toEqual(parsed(byHand));
   });
 
-  it('a chave __proto__ do arquivo segue sendo chave desconhecida depois da troca', () => {
+  it('the __proto__ key of the file remains an unknown key after substitution', () => {
     const raw = file(
       frame({
         let: { w: 3 },
@@ -261,22 +261,22 @@ describe('let e $var: a leitura troca e devolve o componente sem eles', () => {
     ]);
   });
 
-  it('sem let nem $var devolve o mesmo objeto', () => {
+  it('without let or $var returns the same object', () => {
     const raw = file(frame({ children: [rect()] }));
     const result = parseComponent(raw);
     expect(result.ok && result.component).toBe(raw);
   });
 
-  it('variável sem uso não gera erro nem aviso', () => {
+  it('an unused variable produces no error or warning', () => {
     const raw = file(
-      frame({ let: { unused: { $mul: 'quebrada' }, ghost: { $var: 'nobody' } } }),
+      frame({ let: { unused: { $mul: 'broken' }, ghost: { $var: 'nobody' } } }),
     );
     const result = parseComponent(raw);
     expect(result.ok).toBe(true);
     expect(result.ok && result.warnings).toEqual([]);
   });
 
-  it('o conteúdo da variável não é compartilhado entre os usos', () => {
+  it('the content of the variable is not shared between uses', () => {
     const raw = file(
       frame({
         let: { w: { $add: [1, 2] } },
@@ -289,8 +289,8 @@ describe('let e $var: a leitura troca e devolve o componente sem eles', () => {
   });
 });
 
-describe('let e $var: erros', () => {
-  it('nome fora de [a-z][a-zA-Z0-9]*', () => {
+describe('let and $var: errors', () => {
+  it('name outside [a-z][a-zA-Z0-9]*', () => {
     for (const bad of ['Gap', '1gap', 'gap-1', 'a_b', '$x'])
       expect(validateComponent(file(frame({ let: { [bad]: 1 } })))).toEqual([
         `template.let.${bad}: expected a variable name ([a-z][a-zA-Z0-9]*)`,
@@ -298,7 +298,7 @@ describe('let e $var: erros', () => {
     expect(validateComponent(file(frame({ let: { gap1A: 1, g: 2 } })))).toEqual([]);
   });
 
-  it('o nome do $var tem o mesmo padrão e é texto', () => {
+  it('the $var name has the same pattern and is text', () => {
     const at = (name: unknown) =>
       validateComponent(file(frame({ children: [rect({ width: { $var: name } })] })));
     expect(at('Gap')).toEqual([
@@ -309,13 +309,13 @@ describe('let e $var: erros', () => {
     ]);
   });
 
-  it('let precisa ser objeto', () => {
+  it('let must be an object', () => {
     expect(validateComponent(file(frame({ let: [1] })))).toEqual([
       'template.let: expected an object',
     ]);
   });
 
-  it('variável não definida, no caminho do uso', () => {
+  it('undefined variable, at the path of the use', () => {
     const raw = file(
       frame({ let: { a: 1 }, children: [rect({ width: { $var: 'gap' } })] }),
     );
@@ -324,7 +324,7 @@ describe('let e $var: erros', () => {
     ]);
   });
 
-  it('uma variável do irmão não vale (o escopo é do quadro e dos descendentes)', () => {
+  it('a sibling variable does not count (the scope is the frame and its descendants)', () => {
     const raw = file(
       frame({
         children: [
@@ -338,7 +338,7 @@ describe('let e $var: erros', () => {
     ]);
   });
 
-  it('ciclo a → b → a, no caminho do let', () => {
+  it('cycle a → b → a, at the path of the let', () => {
     const raw = file(
       frame({
         let: { a: { $add: [{ $var: 'b' }, 1] }, b: { $mul: [{ $var: 'a' }, 2] } },
@@ -348,7 +348,7 @@ describe('let e $var: erros', () => {
     expect(validateComponent(raw)).toEqual(['template.let.a: variable cycle: a → b → a']);
   });
 
-  it('a variável que usa a si mesma é um ciclo, mesmo escondendo a de fora', () => {
+  it('a variable that uses itself is a cycle, even when hiding the outer one', () => {
     const raw = file(
       frame({
         let: { a: 1 },
@@ -365,7 +365,7 @@ describe('let e $var: erros', () => {
     ]);
   });
 
-  it('$var com outra chave junto', () => {
+  it('$var with another key alongside', () => {
     const raw = file(
       frame({ let: { a: 1 }, children: [rect({ width: { $var: 'a', default: 2 } })] }),
     );
@@ -374,14 +374,14 @@ describe('let e $var: erros', () => {
     ]);
   });
 
-  it('let num rect é uma chave desconhecida', () => {
+  it('let on a rect is an unknown key', () => {
     const raw = file(frame({ children: [rect({ let: { a: 1 } })] }));
     expect(validateComponent(raw)).toEqual([
       'template.children[0].let: unknown key: let',
     ]);
   });
 
-  it('let e $var na formatVersion 3: only allowed with formatVersion 4', () => {
+  it('let and $var in formatVersion 3: only allowed with formatVersion 4', () => {
     const raw = file(
       frame({ let: { a: 1 }, children: [rect({ width: { $var: 'a' } })] }),
       3,
@@ -392,7 +392,7 @@ describe('let e $var: erros', () => {
     ]);
   });
 
-  it('uma variável de expressão na versão 3 não repete o erro do mesmo caminho', () => {
+  it('an expression variable in version 3 does not repeat the error of the same path', () => {
     const raw = file(
       frame({ let: { w: { $add: [1, 2] } }, children: [rect({ width: { $var: 'w' } })] }),
       3,
@@ -404,10 +404,10 @@ describe('let e $var: erros', () => {
     );
   });
 
-  it('o erro de tipo dentro da variável sai no caminho do uso, com $var(<nome>)', () => {
+  it('the type error inside the variable comes out at the path of the use, with $var(<name>)', () => {
     const inner = file(
       frame({
-        let: { gap: { $add: ['larga', 1] } },
+        let: { gap: { $add: ['wide', 1] } },
         children: [rect({ width: { $var: 'gap' } })],
       }),
     );
@@ -416,7 +416,7 @@ describe('let e $var: erros', () => {
     ]);
     const direct = file(
       frame({
-        let: { gap: 'larga' },
+        let: { gap: 'wide' },
         children: [rect({ width: { $add: [{ $var: 'gap' }, 1] } })],
       }),
     );
@@ -425,10 +425,10 @@ describe('let e $var: erros', () => {
     ]);
   });
 
-  it('variáveis dentro de variáveis acumulam os $var(<nome>) no caminho', () => {
+  it('variables inside variables accumulate the $var(<name>) in the path', () => {
     const raw = file(
       frame({
-        let: { outer: { $add: [{ $var: 'inner' }, 1] }, inner: 'texto' },
+        let: { outer: { $add: [{ $var: 'inner' }, 1] }, inner: 'text' },
         children: [rect({ width: { $var: 'outer' } })],
       }),
     );
@@ -437,7 +437,7 @@ describe('let e $var: erros', () => {
     ]);
   });
 
-  it('a mesma variável usada em dois lugares erra nos dois caminhos', () => {
+  it('the same variable used in two places errors at both paths', () => {
     const raw = file(
       frame({
         let: { w: 'x' },
@@ -450,7 +450,7 @@ describe('let e $var: erros', () => {
     expect(errors[1]).toMatch(/^template\.children\[1\]\.height\.\$var\(w\): /);
   });
 
-  it('a expansão passa do teto de nós: erro na raiz', () => {
+  it('the expansion exceeds the node ceiling: error at the root', () => {
     const lets: Raw = { v0: 1 };
     for (let i = 1; i <= 20; i++)
       lets[`v${i}`] = { $add: [{ $var: `v${i - 1}` }, { $var: `v${i - 1}` }] };
@@ -460,7 +460,7 @@ describe('let e $var: erros', () => {
     ]);
   });
 
-  it('um componente grande com uma variável pequena não passa do teto (só conta o que a troca cria)', () => {
+  it('a large component with a small variable does not exceed the ceiling (only what the substitution creates counts)', () => {
     const many = Array.from({ length: 30000 }, () => rect({ fill: '#112233' }));
     const raw = file(
       frame({ let: { w: 3 }, children: [...many, rect({ width: { $var: 'w' } })] }),
@@ -468,7 +468,7 @@ describe('let e $var: erros', () => {
     expect(validateComponent(raw)).toEqual([]);
   });
 
-  it('uma cadeia muito longa de variáveis é um erro de tamanho, sem estourar a pilha', () => {
+  it('a very long chain of variables is a size error, without overflowing the stack', () => {
     const lets: Raw = {};
     for (let i = 0; i < 20000; i++) lets[`a${i}`] = { $var: `a${i + 1}` };
     lets.a20000 = 1;
@@ -478,7 +478,7 @@ describe('let e $var: erros', () => {
     ]);
   });
 
-  it('o aviso de família de fonte de uma variável leva o $var(<nome>) no caminho', () => {
+  it('the font family warning of a variable carries the $var(<name>) in the path', () => {
     const raw = file(
       frame({
         let: { fam: '"Roboto' },
@@ -497,7 +497,7 @@ describe('let e $var: erros', () => {
     ]);
   });
 
-  it('os erros do resto do arquivo seguem quando a expansão falha', () => {
+  it('the errors of the rest of the file still come out when the expansion fails', () => {
     const raw = {
       ...file(frame({ children: [rect({ width: { $var: 'x' } })] })),
       id: '',
@@ -510,7 +510,7 @@ describe('let e $var: erros', () => {
 });
 
 describe('expandVariables', () => {
-  it('devolve o mesmo template quando não há let nem $var', () => {
+  it('returns the same template when there is no let or $var', () => {
     const template = frame({ children: [rect()] });
     const out = expandVariables(template);
     expect(out.value).toBe(template);
@@ -518,7 +518,7 @@ describe('expandVariables', () => {
     expect(out.rewrite('template.children[0]')).toBe('template.children[0]');
   });
 
-  it('variableSyntaxPaths acha o let dos quadros e todo $var, inclusive em variável sem uso', () => {
+  it('variableSyntaxPaths finds the let of frames and every $var, including in an unused variable', () => {
     const template = frame({
       let: { a: { $var: 'b' } },
       children: [rect({ width: { $var: 'a' } })],

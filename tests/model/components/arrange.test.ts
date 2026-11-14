@@ -1,4 +1,4 @@
-// Laboratório Componentes: containers com layout row/column gravam os retângulos dos filhos.
+// Components Lab: containers with a row/column layout write the rectangles of the children.
 import { describe, expect, it } from 'vitest';
 import {
   arrange,
@@ -18,7 +18,7 @@ import {
   updateBox,
 } from '../../../src/model/components/screen';
 
-// --- biblioteca montada em memória ----------------------------------------------------------
+// --- library built in memory ----------------------------------------------------------------
 
 interface SlotSpec {
   readonly layout?: Record<string, unknown>;
@@ -36,7 +36,7 @@ function component(id: string, children: unknown[], frame: Record<string, unknow
   };
 }
 
-/** Container: quadro `none` com um slot que ocupa tudo; o layout do slot varia por componente. */
+/** Container: `none` frame with a slot that fills everything; the slot layout varies per component. */
 function container(id: string, slot: SlotSpec = {}) {
   return component(id, [
     {
@@ -94,8 +94,8 @@ const COMPONENTS = [
 ];
 
 const FIELDS = [
-  { key: 'spacing', label: 'Espaço', type: 'number', default: 8 },
-  { key: 'padding', label: 'Margem', type: 'number', default: 0 },
+  { key: 'spacing', label: 'Spacing', type: 'number', default: 8 },
+  { key: 'padding', label: 'Padding', type: 'number', default: 0 },
 ];
 
 const SPEC = {
@@ -130,11 +130,11 @@ const measure = approximateMeasurer;
 
 function typeOf(id: string) {
   const type = library.types.find((t) => t.id === id);
-  if (!type?.component) throw new Error(`tipo sem componente: ${id}`);
+  if (!type?.component) throw new Error(`type without component: ${id}`);
   return { type, component: type.component };
 }
 
-// --- construtores de tela ---------------------------------------------------------------------
+// --- screen builders --------------------------------------------------------------------------
 
 function host(
   id: string,
@@ -159,7 +159,7 @@ function leaf(id: string, width: number, parentId: string, height = 20): Instanc
 function screenOf(...instances: Instance[]): Screen {
   return {
     id: 's',
-    name: 'Tela',
+    name: 'Screen',
     width: 600,
     height: 600,
     background: '#FFFFFF',
@@ -169,13 +169,13 @@ function screenOf(...instances: Instance[]): Screen {
 
 function boxOf(screen: Screen, id: string): Box {
   const found = screen.instances.find((i) => i.id === id);
-  if (!found) throw new Error(`instância ausente: ${id}`);
+  if (!found) throw new Error(`instance missing: ${id}`);
   return found.box;
 }
 
 const CONTAINER_BOX: Box = { x: 100, y: 50, width: 400, height: 100 };
 
-/** Container na posição `CONTAINER_BOX` com três folhas 40/60/20 de largura. */
+/** Container at the `CONTAINER_BOX` position with three leaves of widths 40/60/20. */
 function rowScreen(typeId: string, values?: Instance['values']): Screen {
   return screenOf(
     host('c', typeId, CONTAINER_BOX, values),
@@ -189,14 +189,14 @@ function xs(screen: Screen): number[] {
   return ['a', 'b', 'd'].map((id) => boxOf(screen, id).x);
 }
 
-// --- testes -----------------------------------------------------------------------------------
+// --- tests ------------------------------------------------------------------------------------
 
 describe('findSlot / hasSlot / resolveSlotLayout', () => {
-  it('a biblioteca de teste carrega sem problemas', () => {
+  it('the test library loads without problems', () => {
     expect(library.problems).toEqual([]);
   });
 
-  it('acha o slot em profundidade e reconhece containers', () => {
+  it('finds the slot in depth and recognizes containers', () => {
     expect(findSlot(typeOf('row-start').component)?.type).toBe('slot');
     expect(findSlot(typeOf('leaf').component)).toBeUndefined();
     expect(hasSlot(typeOf('row-start').type)).toBe(true);
@@ -214,7 +214,7 @@ describe('findSlot / hasSlot / resolveSlotLayout', () => {
     expect(slot?.name).toBe('fundo');
   });
 
-  it('resolve gap e padding dos campos, com os padrões da expressão', () => {
+  it('resolves gap and padding from the fields, with the expression defaults', () => {
     const slot = findSlot(typeOf('row-center').component)!;
     expect(resolveSlotLayout(slot, { spacing: 12, padding: 6 })).toEqual({
       type: 'row',
@@ -226,12 +226,12 @@ describe('findSlot / hasSlot / resolveSlotLayout', () => {
       wrap: 'none',
       lineGap: 0,
     });
-    // Sem valores: `default` da expressão no gap; padding sem padrão vale 0.
+    // Without values: the expression `default` in the gap; padding without a default is 0.
     expect(resolveSlotLayout(slot, {})).toMatchObject({
       gap: 8,
       padding: { top: 0, right: 0, bottom: 0, left: 0 },
     });
-    // Números chegam às vezes como texto.
+    // Numbers sometimes arrive as text.
     expect(resolveSlotLayout(slot, { spacing: '5', padding: '3' }).gap).toBe(5);
     expect(
       resolveSlotLayout(findSlot(typeOf('column-stretch').component)!, {}),
@@ -241,7 +241,7 @@ describe('findSlot / hasSlot / resolveSlotLayout', () => {
     });
   });
 
-  it('slot sem layout (Box) ou com layout none resolve para none', () => {
+  it('a slot without layout (Box) or with layout none resolves to none', () => {
     const slot = findSlot(typeOf('box').component)!;
     expect(resolveSlotLayout(slot, {}).type).toBe('none');
     const none = { type: 'slot', layout: { type: 'none' } } as const;
@@ -250,7 +250,7 @@ describe('findSlot / hasSlot / resolveSlotLayout', () => {
 });
 
 describe('slotBox', () => {
-  it('é a caixa da instância quando o slot ocupa o quadro', () => {
+  it('is the instance box when the slot fills the frame', () => {
     const instance = host('c', 'row-start', { x: 30, y: 40, width: 250, height: 120 });
     expect(slotBox(typeOf('row-start').component, instance, measure)).toEqual({
       x: 30,
@@ -260,7 +260,7 @@ describe('slotBox', () => {
     });
   });
 
-  it('respeita as âncoras do slot dentro de um quadro sem layout', () => {
+  it('respects the slot anchors inside a frame without layout', () => {
     const instance = host('c', 'inset', { x: 10, y: 20, width: 200, height: 100 });
     expect(slotBox(typeOf('inset').component, instance, measure)).toEqual({
       x: 20,
@@ -270,14 +270,14 @@ describe('slotBox', () => {
     });
   });
 
-  it('não devolve nada quando o slot está invisível', () => {
+  it('returns nothing when the slot is invisible', () => {
     const instance = host('c', 'hidden', CONTAINER_BOX);
     expect(slotBox(typeOf('hidden').component, instance, measure)).toBeUndefined();
   });
 });
 
 describe('arrange: row', () => {
-  it('start com gap e padding: x relativo 4, 52, 120; y no topo; tamanhos intactos', () => {
+  it('start with gap and padding: relative x 4, 52, 120; y at the top; sizes intact', () => {
     const result = arrange(
       rowScreen('row-start', { spacing: 8, padding: 4 }),
       library,
@@ -291,8 +291,8 @@ describe('arrange: row', () => {
     expect(boxOf(result, 'd')).toMatchObject({ width: 20, height: 20 });
   });
 
-  it('center, end e space-between distribuem a sobra no eixo principal', () => {
-    // Total = 40 + 60 + 20 + 2·8 = 136; sobra = 400 − 136 = 264.
+  it('center, end and space-between distribute the leftover on the main axis', () => {
+    // Total = 40 + 60 + 20 + 2·8 = 136; leftover = 400 − 136 = 264.
     const values = { spacing: 8, padding: 0 };
     expect(xs(arrange(rowScreen('row-center', values), library, measure))).toEqual([
       232, 280, 348,
@@ -300,13 +300,13 @@ describe('arrange: row', () => {
     expect(xs(arrange(rowScreen('row-end', values), library, measure))).toEqual([
       364, 412, 480,
     ]);
-    // Gap extra = 264 / 2 = 132; o último termina na borda direita (500).
+    // Extra gap = 264 / 2 = 132; the last one ends at the right edge (500).
     expect(xs(arrange(rowScreen('row-between', values), library, measure))).toEqual([
       100, 280, 480,
     ]);
   });
 
-  it('space-between com um filho só age como start', () => {
+  it('space-between with a single child acts as start', () => {
     const screen = screenOf(
       host('c', 'row-between', CONTAINER_BOX, { spacing: 8, padding: 4 }),
       leaf('a', 40, 'c'),
@@ -314,9 +314,9 @@ describe('arrange: row', () => {
     expect(boxOf(arrange(screen, library, measure), 'a').x).toBe(104);
   });
 
-  it('align center, end e stretch no eixo cruzado', () => {
+  it('align center, end and stretch on the cross axis', () => {
     const values = { spacing: 8, padding: 4 };
-    // Altura de conteúdo = 100 − 8 = 92.
+    // Content height = 100 − 8 = 92.
     const center = arrange(rowScreen('row-align-center', values), library, measure);
     expect(boxOf(center, 'a')).toMatchObject({ y: 90, height: 20 });
     const end = arrange(rowScreen('row-align-end', values), library, measure);
@@ -339,14 +339,14 @@ describe('arrange: column', () => {
     );
   }
 
-  it('start: y 24, 52, 90 e x 14', () => {
+  it('start: y 24, 52, 90 and x 14', () => {
     const result = arrange(columnScreen('column-start'), library, measure);
     expect(['a', 'b', 'd'].map((id) => boxOf(result, id).y)).toEqual([24, 52, 90]);
     for (const id of ['a', 'b', 'd']) expect(boxOf(result, id).x).toBe(14);
     expect(boxOf(result, 'b')).toMatchObject({ width: 50, height: 30 });
   });
 
-  it('stretch: largura vira a largura do conteúdo (192)', () => {
+  it('stretch: width becomes the content width (192)', () => {
     const result = arrange(columnScreen('column-stretch'), library, measure);
     for (const id of ['a', 'b', 'd'])
       expect(boxOf(result, id)).toMatchObject({ x: 14, width: 192 });
@@ -354,7 +354,7 @@ describe('arrange: column', () => {
   });
 });
 
-describe('arrange: aninhamento e movimento', () => {
+describe('arrange: nesting and movement', () => {
   function nested(): Screen {
     return screenOf(
       host(
@@ -381,14 +381,14 @@ describe('arrange: aninhamento e movimento', () => {
     );
   }
 
-  it('a coluna posiciona a linha e a linha posiciona as folhas (coordenadas absolutas)', () => {
+  it('the column positions the row and the row positions the leaves (absolute coordinates)', () => {
     const result = arrange(nested(), library, measure);
     expect(boxOf(result, 'inner')).toEqual({ x: 10, y: 10, width: 100, height: 40 });
     expect(boxOf(result, 'a')).toMatchObject({ x: 12, y: 12 });
     expect(boxOf(result, 'b')).toMatchObject({ x: 58, y: 12 });
   });
 
-  it('mover o container com updateBox leva os filhos; arrange os mantém coerentes', () => {
+  it('moving the container with updateBox carries the children; arrange keeps them consistent', () => {
     const arranged = arrange(nested(), library, measure);
     const moved = updateBox(arranged, 'outer', {
       x: 200,
@@ -403,7 +403,7 @@ describe('arrange: aninhamento e movimento', () => {
     expect(boxOf(again, 'b')).toMatchObject({ x: 258, y: 112 });
   });
 
-  it('mover um filho de container com layout o devolve ao lugar calculado', () => {
+  it('moving a child of a container with layout returns it to the computed place', () => {
     const arranged = arrange(nested(), library, measure);
     const dragged = updateBox(arranged, 'inner', {
       x: 200,
@@ -416,7 +416,7 @@ describe('arrange: aninhamento e movimento', () => {
     expect(boxOf(again, 'a')).toMatchObject({ x: 12, y: 12 });
   });
 
-  it('arrange conserta filhos que ficaram fora do lugar depois de mover o container', () => {
+  it('arrange fixes children that were left out of place after moving the container', () => {
     const arranged = arrange(
       rowScreen('row-start', { spacing: 8, padding: 4 }),
       library,
@@ -429,8 +429,8 @@ describe('arrange: aninhamento e movimento', () => {
   });
 });
 
-describe('arrange: sem mudança e reorganização', () => {
-  it('Box (slot sem layout) deixa os filhos e devolve a mesma tela', () => {
+describe('arrange: no change and rearrangement', () => {
+  it('Box (slot without layout) leaves the children and returns the same screen', () => {
     const screen = screenOf(host('c', 'box', CONTAINER_BOX), {
       ...leaf('a', 40, 'c'),
       box: { x: 7, y: 9, width: 40, height: 20 },
@@ -438,7 +438,7 @@ describe('arrange: sem mudança e reorganização', () => {
     expect(arrange(screen, library, measure)).toBe(screen);
   });
 
-  it('uma tela já organizada volta idêntica', () => {
+  it('an already arranged screen comes back identical', () => {
     const arranged = arrange(
       rowScreen('row-start', { spacing: 8, padding: 4 }),
       library,
@@ -454,7 +454,7 @@ describe('arrange: sem mudança e reorganização', () => {
     expect(arrange(between, library, measure)).toBe(between);
   });
 
-  it('container sem filhos, tipo ausente e slot invisível não mudam nada', () => {
+  it('container without children, missing type and invisible slot change nothing', () => {
     const empty = screenOf(host('c', 'row-start', CONTAINER_BOX));
     expect(arrange(empty, library, measure)).toBe(empty);
     const unknown = screenOf(host('c', 'nao-existe', CONTAINER_BOX), leaf('a', 40, 'c'));
@@ -464,7 +464,7 @@ describe('arrange: sem mudança e reorganização', () => {
     expect(boxOf(hidden, 'a')).toEqual({ x: 0, y: 0, width: 40, height: 20 });
   });
 
-  it('mudar o spacing com setValue e reorganizar espaça de novo', () => {
+  it('changing the spacing with setValue and rearranging spaces again', () => {
     const arranged = arrange(
       rowScreen('row-start', { spacing: 8, padding: 4 }),
       library,
@@ -481,23 +481,23 @@ describe('dropIndex', () => {
     library,
     measure,
   );
-  // Centros em x: 124, 182, 230.
+  // Centers in x: 124, 182, 230.
   const rowLayout = resolveSlotLayout(findSlot(typeOf('row-start').component)!, {});
 
-  it('row: conta os irmãos cujo centro x fica antes do ponto', () => {
+  it('row: counts the siblings whose center x is before the point', () => {
     const at = (x: number, exclude?: string) =>
       dropIndex(arranged, 'c', rowLayout, { x, y: 0 }, exclude);
     expect(at(100)).toBe(0);
     expect(at(150)).toBe(1);
     expect(at(200)).toBe(2);
     expect(at(300)).toBe(3);
-    // Sem o arrastado (b): sobram os centros 124 e 230.
+    // Without the dragged one (b): centers 124 and 230 remain.
     expect(at(150, 'b')).toBe(1);
     expect(at(200, 'b')).toBe(1);
     expect(at(300, 'b')).toBe(2);
   });
 
-  it('column: usa o centro y', () => {
+  it('column: uses the center y', () => {
     const column = arrange(
       screenOf(
         host(
@@ -516,7 +516,7 @@ describe('dropIndex', () => {
       library,
       measure,
     );
-    // Centros em y: 34, 67, 95.
+    // Centers in y: 34, 67, 95.
     const layout = resolveSlotLayout(findSlot(typeOf('column-start').component)!, {});
     expect(dropIndex(column, 'c', layout, { x: 0, y: 10 })).toBe(0);
     expect(dropIndex(column, 'c', layout, { x: 0, y: 50 })).toBe(1);
@@ -525,7 +525,7 @@ describe('dropIndex', () => {
     expect(dropIndex(column, 'c', layout, { x: 0, y: 80 }, 'a')).toBe(1);
   });
 
-  it('none devolve o fim da lista de irmãos', () => {
+  it('none returns the end of the sibling list', () => {
     const none = resolveSlotLayout(findSlot(typeOf('box').component)!, {});
     expect(dropIndex(arranged, 'c', none, { x: 0, y: 0 })).toBe(3);
     expect(dropIndex(arranged, 'c', none, { x: 0, y: 0 }, 'a')).toBe(2);
@@ -534,7 +534,7 @@ describe('dropIndex', () => {
 
 const withVersion4 = <T extends object>(c: T) => ({ ...c, formatVersion: 4 });
 
-describe('arrange: gap e padding do slot em $token (#948)', () => {
+describe('arrange: slot gap and padding as $token (#948)', () => {
   const tokenComponent = withVersion4(
     component('tk', [
       {
@@ -582,7 +582,7 @@ describe('arrange: gap e padding do slot em $token (#948)', () => {
       {},
       mode,
     );
-  it('a biblioteca carrega', () => {
+  it('the library loads', () => {
     const l = tokenLibrary();
     expect(l.problems ?? []).toEqual([]);
     expect(l.types.map((t) => t.id)).toEqual(['tk', 'leaf']);
@@ -593,7 +593,7 @@ describe('arrange: gap e padding do slot em $token (#948)', () => {
     leaf('b', 60, 'c'),
   );
 
-  it('slotBox e arrange usam o gap e o padding dos tokens do desenho', () => {
+  it('slotBox and arrange use the gap and padding of the design tokens', () => {
     const result = arrange(screen, tokenLibrary(), measure);
     expect(boxOf(result, 'a')).toMatchObject({
       x: CONTAINER_BOX.x + 10,
@@ -602,16 +602,16 @@ describe('arrange: gap e padding do slot em $token (#948)', () => {
     expect(boxOf(result, 'b').x).toBe(CONTAINER_BOX.x + 10 + 40 + 6);
   });
 
-  it('com a tabela de outro modo, vale o valor desse modo', () => {
+  it('with the table of another mode, the value of that mode applies', () => {
     const result = arrange(screen, tokenLibrary('dark'), measure);
     expect(boxOf(result, 'a').x).toBe(CONTAINER_BOX.x + 20);
     expect(boxOf(result, 'b').x).toBe(CONTAINER_BOX.x + 20 + 40 + 12);
   });
 });
 
-// --- MC4: quebra de fileira (wrap) no slot (decisão 12 da #898) -------------------------------
+// --- MC4: row wrap in the slot (decision 12 of #898) ------------------------------------------
 
-describe('arrange: wrap no slot (MC4)', () => {
+describe('arrange: wrap in the slot (MC4)', () => {
   function wrapLibrary(slotLayout: Record<string, unknown>) {
     const flowComponent = {
       format: 'mapping-component',
@@ -668,7 +668,7 @@ describe('arrange: wrap no slot (MC4)', () => {
     };
   };
 
-  it('a biblioteca com wrap carrega e resolveSlotLayout traz as chaves novas', () => {
+  it('the library with wrap loads and resolveSlotLayout brings the new keys', () => {
     const lib = wrapLibrary({
       type: 'row',
       wrap: 'wrap-reverse',
@@ -694,7 +694,7 @@ describe('arrange: wrap no slot (MC4)', () => {
     });
   });
 
-  it('5 filhas de 100 numa row de 320, gap 8, lineGap 12: 3 + 2 (o FlowRow do Compose)', () => {
+  it('5 children of 100 in a row of 320, gap 8, lineGap 12: 3 + 2 (Compose FlowRow)', () => {
     const at = place({ type: 'row', gap: 8, wrap: 'wrap', lineGap: 12 });
     expect([0, 1, 2].map((i) => at(i).x)).toEqual([0, 108, 216]);
     expect([0, 1, 2].map((i) => at(i).y)).toEqual([0, 0, 0]);
@@ -702,20 +702,20 @@ describe('arrange: wrap no slot (MC4)', () => {
     expect([3, 4].map((i) => at(i).y)).toEqual([32, 32]);
   });
 
-  it('column com wrap: as colunas se enfileiram da esquerda para a direita', () => {
+  it('column with wrap: the columns line up from left to right', () => {
     const at = place({ type: 'column', gap: 4, wrap: 'wrap', lineGap: 10 }, 5, 80);
-    // 2 × 80 + 4 = 164 ≤ 200; o terceiro não cabe.
+    // 2 × 80 + 4 = 164 ≤ 200; the third does not fit.
     expect([0, 1].map((i) => at(i).y)).toEqual([0, 84]);
     expect([0, 2, 4].map((i) => at(i).x)).toEqual([0, 110, 220]);
   });
 
-  it('wrap-reverse põe a linha nova acima', () => {
+  it('wrap-reverse puts the new line above', () => {
     const at = place({ type: 'row', gap: 8, wrap: 'wrap-reverse', lineGap: 12 });
     expect([0, 1, 2].map((i) => at(i).y)).toEqual([32, 32, 32]);
     expect([3, 4].map((i) => at(i).y)).toEqual([0, 0]);
   });
 
-  it('justify e reverse valem em cada linha', () => {
+  it('justify and reverse apply in each line', () => {
     const between = place({
       type: 'row',
       gap: 8,
@@ -729,20 +729,20 @@ describe('arrange: wrap no slot (MC4)', () => {
     expect([3, 4].map((i) => reversed(i).x)).toEqual([220, 112]);
   });
 
-  it('maxPerLine 2 quebra a cada duas', () => {
+  it('maxPerLine 2 breaks every two', () => {
     const at = place({ type: 'row', gap: 4, wrap: 'wrap', maxPerLine: 2 });
     expect([0, 1, 2, 3, 4].map((i) => at(i).y)).toEqual([0, 0, 20, 20, 40]);
   });
 
-  it('maxLines 1: as filhas além da última linha ficam onde estavam', () => {
+  it('maxLines 1: children beyond the last line stay where they were', () => {
     const at = place({ type: 'row', gap: 8, wrap: 'wrap', maxLines: 1 });
     expect([0, 1, 2].map((i) => at(i).x)).toEqual([0, 108, 216]);
-    // as outras duas não foram movidas (estavam em 0, 0 da tela).
+    // the other two were not moved (they were at 0, 0 of the screen).
     expect(at(3)).toEqual({ x: -FLOW_BOX.x, y: -FLOW_BOX.y });
     expect(at(4)).toEqual({ x: -FLOW_BOX.x, y: -FLOW_BOX.y });
   });
 
-  it('uma filha maior que a linha inteira fica sozinha numa linha', () => {
+  it('a child larger than the whole line stays alone in a line', () => {
     const lib = wrapLibrary({ type: 'row', gap: 8, wrap: 'wrap', lineGap: 4 });
     const screen = screenOf(
       host('c', 'flow', FLOW_BOX, {}),
@@ -756,7 +756,7 @@ describe('arrange: wrap no slot (MC4)', () => {
     expect(boxOf(result, 'b').y - FLOW_BOX.y).toBe(48);
   });
 
-  it('align center vale dentro de cada linha', () => {
+  it('align center applies inside each line', () => {
     const lib = wrapLibrary({
       type: 'row',
       gap: 8,

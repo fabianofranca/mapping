@@ -1,4 +1,4 @@
-// O nó `repeat` (ME4, componente `formatVersion` 2): validação, expansão e desenho.
+// The `repeat` node (ME4, component `formatVersion` 2): validation, expansion and drawing.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type {
@@ -39,7 +39,7 @@ type Raw = Record<string, any>; // eslint-disable-line @typescript-eslint/no-exp
 
 const row = (children: Raw[] = []): Raw => ({
   type: 'frame',
-  name: 'linha',
+  name: 'row',
   layout: { type: 'row', gap: 10 },
   children,
 });
@@ -51,26 +51,26 @@ const text = (field: string, extra: Raw = {}): Raw => ({
   ...extra,
 });
 
-/** Componente com um `repeat` de `linhas` dentro de uma coluna com um título. */
+/** Component with a `repeat` of `rows` inside a column with a title. */
 function raw(over: Raw = {}, repeat: Raw = {}, version = 2): Raw {
   return {
     format: 'mapping-component',
     formatVersion: version,
-    id: 'tabela',
-    name: 'Tabela',
+    id: 'table',
+    name: 'Table',
     size: { width: 200, height: 100 },
     template: {
       type: 'frame',
       layout: { type: 'column', gap: 6, padding: 8 },
       children: [
-        text('titulo', { name: 'título' }),
+        text('title', { name: 'heading' }),
         {
           type: 'repeat',
-          field: 'linhas',
+          field: 'rows',
           gap: 2,
           template: row([
-            text('chave', { width: 'hug' }),
-            text('valor', { width: 'fill' }),
+            text('key', { width: 'hug' }),
+            text('value', { width: 'fill' }),
           ]),
           ...repeat,
         },
@@ -88,16 +88,16 @@ function component(over: Raw = {}, repeat: Raw = {}, version = 2): ComponentFile
 
 function errorsOf(input: unknown): string[] {
   const parsed = parseComponent(input);
-  if (parsed.ok) throw new Error('era para falhar');
+  if (parsed.ok) throw new Error('was expected to fail');
   return parsed.errors;
 }
 
 const BOX: Box = { x: 0, y: 0, width: 200, height: 100 };
 
 const ROWS = [
-  { chave: 'origem', valor: 'carrinho' },
-  { chave: 'total', valor: '149,90' },
-  { chave: 'itens', valor: '3' },
+  { key: 'origin', value: 'cart' },
+  { key: 'total', value: '149,90' },
+  { key: 'items', value: '3' },
 ];
 
 function draw(c: ComponentFile, values: FieldValues, box: Box = BOX) {
@@ -130,14 +130,14 @@ function ids(node: SceneNode, found: string[] = []): string[] {
 }
 
 describe('parseComponent: repeat', () => {
-  it('aceita o repeat na formatVersion 2, com direction e gap', () => {
+  it('accepts the repeat in formatVersion 2, with direction and gap', () => {
     expect(parseComponent(raw()).ok).toBe(true);
     expect(
-      parseComponent(raw({}, { direction: 'row', gap: { $field: 'espaco' } })).ok,
+      parseComponent(raw({}, { direction: 'row', gap: { $field: 'space' } })).ok,
     ).toBe(true);
   });
 
-  it('o schema JSON aceita o mesmo componente e a formatVersion 1 sem repeat', () => {
+  it('the JSON schema accepts the same component and formatVersion 1 without repeat', () => {
     expect(checkSchema(schema, raw())).toEqual([]);
     expect(checkSchema(schema, raw({}, { direction: 'row' }))).toEqual([]);
     const v1 = raw({}, {}, 1);
@@ -146,23 +146,23 @@ describe('parseComponent: repeat', () => {
     expect(parseComponent(v1).ok).toBe(true);
   });
 
-  it('repeat numa formatVersion 1 é erro, no caminho do nó', () => {
+  it('repeat in a formatVersion 1 is an error, at the node path', () => {
     expect(errorsOf(raw({}, {}, 1))).toEqual([
       'template.children[1].type: the repeat node only exists in formatVersion 2',
     ]);
   });
 
-  it('a formatVersion 5 é recusada e as aceitas são citadas', () => {
+  it('formatVersion 5 is refused and the accepted ones are cited', () => {
     const v4 = raw({ formatVersion: 5 });
     v4.template.children.pop();
     expect(errorsOf(v4)).toEqual(['formatVersion: expected 1, 2, 3 or 4']);
   });
 
-  it('o repeat também vale na formatVersion 3', () => {
+  it('the repeat is also valid in formatVersion 3', () => {
     expect(parseComponent(raw({ formatVersion: 3 })).ok).toBe(true);
   });
 
-  it('field e template são requireds; field cannot be empty', () => {
+  it('field and template are required; field cannot be empty', () => {
     const noField = raw();
     delete noField.template.children[1].field;
     expect(errorsOf(noField)).toContain('template.children[1].field: required field');
@@ -174,20 +174,20 @@ describe('parseComponent: repeat', () => {
     expect(errorsOf(raw({}, { field: '' }))[0]).toContain('template.children[1].field:');
   });
 
-  it('direction só aceita column e row; gap não é negativo', () => {
+  it('direction only accepts column and row; gap is not negative', () => {
     expect(errorsOf(raw({}, { direction: 'grid' }))[0]).toContain(
       'template.children[1].direction: expected one of: column, row',
     );
     expect(errorsOf(raw({}, { gap: -1 }))[0]).toContain('template.children[1].gap:');
   });
 
-  it('o template de uma linha é um quadro', () => {
-    expect(errorsOf(raw({}, { template: text('chave') }))).toContain(
+  it('the template of a row is a frame', () => {
+    expect(errorsOf(raw({}, { template: text('key') }))).toContain(
       'template.children[1].template.type: the template of a row must be of type "frame"',
     );
   });
 
-  it('não vale fill, stroke, shadow nem cornerRadius no repeat (o desenho é do template)', () => {
+  it('fill, stroke, shadow and cornerRadius are not valid on the repeat (the drawing belongs to the template)', () => {
     for (const key of ['fill', 'stroke', 'shadow', 'cornerRadius']) {
       expect(errorsOf(raw({}, { [key]: key === 'fill' ? '#fff' : {} }))[0]).toContain(
         `template.children[1].${key}: not valid in a repeat`,
@@ -195,13 +195,13 @@ describe('parseComponent: repeat', () => {
     }
   });
 
-  it('repeat e slot dentro do repeat são recusados', () => {
+  it('repeat and slot inside the repeat are refused', () => {
     const nested = errorsOf(
       raw(
         {},
         {
           template: row([
-            { type: 'repeat', field: 'outro', template: row() },
+            { type: 'repeat', field: 'other', template: row() },
             { type: 'slot' },
           ]),
         },
@@ -215,13 +215,13 @@ describe('parseComponent: repeat', () => {
     );
   });
 
-  it('slot dentro de repeat aninhado é reportado uma vez', () => {
+  it('slot inside a nested repeat is reported once', () => {
     const errors = errorsOf(
       raw(
         {},
         {
           template: row([
-            { type: 'repeat', field: 'outro', template: row([{ type: 'slot' }]) },
+            { type: 'repeat', field: 'other', template: row([{ type: 'slot' }]) },
           ]),
         },
       ),
@@ -232,7 +232,7 @@ describe('parseComponent: repeat', () => {
     expect(slotErrors).toEqual([`${slotPath}: slot is not allowed inside a repeat`]);
   });
 
-  it('o template do repeat é conferido como qualquer nó', () => {
+  it('the repeat template is checked like any node', () => {
     const errors = errorsOf(
       raw({}, { template: row([{ type: 'text', text: 3, bogus: 1 }]) }),
     );
@@ -241,53 +241,53 @@ describe('parseComponent: repeat', () => {
     );
   });
 
-  it('o preview aceita linhas (lista de objetos) e confere cada célula', () => {
-    expect(parseComponent(raw({ preview: { titulo: 'T', linhas: ROWS } })).ok).toBe(true);
-    expect(checkSchema(schema, raw({ preview: { titulo: 'T', linhas: ROWS } }))).toEqual(
+  it('the preview accepts rows (list of objects) and checks each cell', () => {
+    expect(parseComponent(raw({ preview: { title: 'T', rows: ROWS } })).ok).toBe(true);
+    expect(checkSchema(schema, raw({ preview: { title: 'T', rows: ROWS } }))).toEqual(
       [],
     );
-    expect(errorsOf(raw({ preview: { linhas: ['x'] } }))).toContain(
-      'preview.linhas[0]: expected an object (a row)',
+    expect(errorsOf(raw({ preview: { rows: ['x'] } }))).toContain(
+      'preview.rows[0]: expected an object (a row)',
     );
-    expect(errorsOf(raw({ preview: { linhas: [{ chave: true }] } }))).toContain(
-      'preview.linhas[0].chave: expected text, a number or null',
+    expect(errorsOf(raw({ preview: { rows: [{ key: true }] } }))).toContain(
+      'preview.rows[0].key: expected text, a number or null',
     );
     expect(errorsOf(raw({ preview: { x: true } }))[0]).toContain('preview.x:');
   });
 });
 
-describe('campos citados', () => {
-  it('collectFieldKeys conta o campo table do repeat e as expressões do próprio nó, não as do template', () => {
-    const c = component({}, { visible: { $has: 'mostrar' }, gap: { $field: 'espaco' } });
-    expect(collectFieldKeys(c)).toEqual(['espaco', 'linhas', 'mostrar', 'titulo']);
-    expect([...repeatInnerFields(c.template)].sort()).toEqual(['chave', 'valor']);
+describe('cited fields', () => {
+  it('collectFieldKeys counts the table field of the repeat and the expressions of the node itself, not those of the template', () => {
+    const c = component({}, { visible: { $has: 'show' }, gap: { $field: 'space' } });
+    expect(collectFieldKeys(c)).toEqual(['rows', 'show', 'space', 'title']);
+    expect([...repeatInnerFields(c.template)].sort()).toEqual(['key', 'value']);
     expect([...referencedFields(c.template)].sort()).toEqual(
-      ['espaco', 'linhas', 'mostrar', 'titulo'].sort(),
+      ['rows', 'show', 'space', 'title'].sort(),
     );
   });
 
-  it('sem repeat, repeatInnerFields é vazio', () => {
+  it('without a repeat, repeatInnerFields is empty', () => {
     expect(repeatInnerFields({ type: 'frame', children: [text('a')] }).size).toBe(0);
   });
 
-  it('isEmpty e truthy leem a lista de linhas', () => {
+  it('isEmpty and truthy read the list of rows', () => {
     expect(isEmpty([])).toBe(true);
     expect(isEmpty(ROWS)).toBe(false);
     expect(truthy([])).toBe(false);
     expect(truthy(ROWS)).toBe(true);
-    expect(evaluateCondition({ $has: 'linhas' }, { linhas: ROWS })).toBe(true);
-    expect(evaluateCondition({ $has: 'linhas' }, { linhas: [] })).toBe(false);
+    expect(evaluateCondition({ $has: 'rows' }, { rows: ROWS })).toBe(true);
+    expect(evaluateCondition({ $has: 'rows' }, { rows: [] })).toBe(false);
   });
 });
 
 describe('expandRepeats', () => {
-  it('sem repeat devolve os mesmos objetos', () => {
+  it('without a repeat it returns the same objects', () => {
     const plain = component({}, {});
     const noRepeat: ComponentFile = {
       ...plain,
       template: { ...plain.template, children: [plain.template.children![0]!] },
     };
-    const values: FieldValues = { titulo: 'x' };
+    const values: FieldValues = { title: 'x' };
     const out = expandRepeats(noRepeat, values);
     expect(hasRepeat(noRepeat.template)).toBe(false);
     expect(out.component).toBe(noRepeat);
@@ -295,8 +295,8 @@ describe('expandRepeats', () => {
     expect(out.warnings).toEqual([]);
   });
 
-  it('troca o repeat por um quadro com uma cópia do template por linha e valores próprios de cada linha', () => {
-    const out = expandRepeats(component(), { titulo: 'T', linhas: ROWS });
+  it('replaces the repeat with a frame holding one copy of the template per row and each row own values', () => {
+    const out = expandRepeats(component(), { title: 'T', rows: ROWS });
     expect(hasRepeat(out.component.template)).toBe(false);
     const frame = out.component.template.children![1] as FrameTemplate;
     expect(frame).toMatchObject({
@@ -307,39 +307,39 @@ describe('expandRepeats', () => {
       layout: { type: 'column', gap: 2 },
     });
     expect(frame.children).toHaveLength(3);
-    // Cada cópia lê os campos extras da própria linha.
+    // Each copy reads the extra fields of its own row.
     const first = frame.children![0] as FrameTemplate;
     expect(first.height).toBe('hug');
-    expect(JSON.stringify(first)).toContain('$r0_0:chave');
-    expect(out.values['$r0_0:chave']).toBe('origem');
-    expect(out.values['$r0_2:valor']).toBe('3');
-    expect(out.values.titulo).toBe('T');
+    expect(JSON.stringify(first)).toContain('$r0_0:key');
+    expect(out.values['$r0_0:key']).toBe('origin');
+    expect(out.values['$r0_2:value']).toBe('3');
+    expect(out.values.title).toBe('T');
   });
 
-  it('as colunas dentro de operações e comparações viram o campo próprio da linha (formatVersion 4)', () => {
+  it('the columns inside operations and comparisons become the own field of the row (formatVersion 4)', () => {
     const c = component(
       {},
       {
         template: row([
-          text('chave', {
-            width: { $mul: [{ $field: 'valor' }, 2] },
-            visible: { $gt: [{ $add: [{ $field: 'valor' }, 1] }, 0] },
+          text('key', {
+            width: { $mul: [{ $field: 'value' }, 2] },
+            visible: { $gt: [{ $add: [{ $field: 'value' }, 1] }, 0] },
           }),
         ]),
       },
       4,
     );
-    const out = expandRepeats(c, { linhas: ROWS });
+    const out = expandRepeats(c, { rows: ROWS });
     const frame = out.component.template.children![1] as FrameTemplate;
     const json = JSON.stringify(frame.children![0]);
-    expect(json).toContain('"$mul":[{"$field":"$r0_0:valor"},2]');
-    expect(json).toContain('"$gt":[{"$add":[{"$field":"$r0_0:valor"},1]},0]');
-    expect(out.values['$r0_0:valor']).toBe('carrinho');
-    expect(referencedFields(frame.children![0]).has('$r0_0:valor')).toBe(true);
+    expect(json).toContain('"$mul":[{"$field":"$r0_0:value"},2]');
+    expect(json).toContain('"$gt":[{"$add":[{"$field":"$r0_0:value"},1]},0]');
+    expect(out.values['$r0_0:value']).toBe('cart');
+    expect(referencedFields(frame.children![0]).has('$r0_0:value')).toBe(true);
   });
 
-  it('o repeat em linha é hug na largura e fill na altura; o template da linha é hug na largura', () => {
-    const out = expandRepeats(component({}, { direction: 'row' }), { linhas: ROWS });
+  it('the row repeat is hug in width and fill in height; the row template is hug in width', () => {
+    const out = expandRepeats(component({}, { direction: 'row' }), { rows: ROWS });
     const frame = out.component.template.children![1] as FrameTemplate;
     expect(frame).toMatchObject({
       width: 'hug',
@@ -349,107 +349,107 @@ describe('expandRepeats', () => {
     expect((frame.children![0] as FrameTemplate).width).toBe('hug');
   });
 
-  it('o width/height do template e do nó prevalecem sobre o padrão', () => {
+  it('the width/height of the template and of the node prevail over the default', () => {
     const out = expandRepeats(
-      component({}, { height: 80, template: { ...row([text('chave')]), height: 20 } }),
-      { linhas: ROWS },
+      component({}, { height: 80, template: { ...row([text('key')]), height: 20 } }),
+      { rows: ROWS },
     );
     const frame = out.component.template.children![1] as FrameTemplate;
     expect(frame.height).toBe(80);
     expect((frame.children![0] as FrameTemplate).height).toBe(20);
   });
 
-  it('só a coluna sombreia o campo do tipo; o resto continua lendo o campo', () => {
+  it('only the column shadows the type field; the rest keeps reading the field', () => {
     const c = component(
       {},
       {
-        template: row([text('chave'), text('titulo')]),
+        template: row([text('key'), text('title')]),
       },
     );
-    const out = expandRepeats(c, { titulo: 'T', linhas: [{ chave: 'a' }] });
+    const out = expandRepeats(c, { title: 'T', rows: [{ key: 'a' }] });
     const body = JSON.stringify(out.component.template.children![1]);
-    expect(body).toContain('$r0_0:chave');
-    expect(body).not.toContain('$r0_0:titulo');
-    expect(body).toContain('"$field":"titulo"');
+    expect(body).toContain('$r0_0:key');
+    expect(body).not.toContain('$r0_0:title');
+    expect(body).toContain('"$field":"title"');
   });
 
-  it('reescreve $has, $eq, $switch e as expressões aninhadas', () => {
+  it('rewrites $has, $eq, $switch and the nested expressions', () => {
     const c = component(
       {},
       {
         template: row([
-          text('chave', { visible: { $has: 'valor' } }),
-          text('valor', {
+          text('key', { visible: { $has: 'value' } }),
+          text('value', {
             color: {
-              $if: { $eq: ['chave', 'total'] },
+              $if: { $eq: ['key', 'total'] },
               then: '#ff0000',
-              else: { $switch: 'chave', cases: { a: '#00ff00' }, default: '#000000' },
+              else: { $switch: 'key', cases: { a: '#00ff00' }, default: '#000000' },
             },
           }),
         ]),
       },
     );
-    const out = expandRepeats(c, { linhas: [{ chave: 'total', valor: '1' }] });
+    const out = expandRepeats(c, { rows: [{ key: 'total', value: '1' }] });
     const body = JSON.stringify(out.component.template.children![1]);
-    expect(body).toContain('"$has":"$r0_0:valor"');
-    expect(body).toContain('"$eq":["$r0_0:chave","total"]');
-    expect(body).toContain('"$switch":"$r0_0:chave"');
+    expect(body).toContain('"$has":"$r0_0:value"');
+    expect(body).toContain('"$eq":["$r0_0:key","total"]');
+    expect(body).toContain('"$switch":"$r0_0:key"');
   });
 
-  it('dois repeat no mesmo componente não misturam as linhas', () => {
+  it('two repeats in the same component do not mix the rows', () => {
     const base = raw();
     base.template.children.push({
       ...base.template.children[1],
       field: 'outras',
-      template: row([text('chave')]),
+      template: row([text('key')]),
     });
     const parsed = parseComponent(base);
     if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
     const out = expandRepeats(parsed.component, {
-      linhas: [{ chave: 'a', valor: 'b' }],
-      outras: [{ chave: 'z' }],
+      rows: [{ key: 'a', value: 'b' }],
+      outras: [{ key: 'z' }],
     });
-    expect(out.values['$r0_0:chave']).toBe('a');
-    expect(out.values['$r1_0:chave']).toBe('z');
+    expect(out.values['$r0_0:key']).toBe('a');
+    expect(out.values['$r1_0:key']).toBe('z');
   });
 
-  it('linhas esparsas: a coluna que falta numa linha fica vazia, não lê o campo do tipo', () => {
+  it('sparse rows: a column missing from a row stays empty, it does not read the type field', () => {
     const out = expandRepeats(component(), {
-      chave: 'DO TIPO',
-      linhas: [{ chave: 'a', valor: 'b' }, { chave: 'c' }],
+      key: 'OF TYPE',
+      rows: [{ key: 'a', value: 'b' }, { key: 'c' }],
     });
-    expect(out.values['$r0_1:valor']).toBeNull();
-    expect(out.values['$r0_1:chave']).toBe('c');
+    expect(out.values['$r0_1:value']).toBeNull();
+    expect(out.values['$r0_1:key']).toBe('c');
   });
 
-  it('coluna que nenhuma linha traz (projeto antigo) fica vazia, sem aviso de field not provided', () => {
+  it('a column that no row brings (old project) stays empty, with no field not provided warning', () => {
     const c = component(
       {},
       {
         template: row([
-          text('chave', { width: 'hug' }),
-          text('selecionada', {
+          text('key', { width: 'hug' }),
+          text('selected', {
             width: 'fill',
-            visible: { $eq: ['selecionada', 'true'] },
+            visible: { $eq: ['selected', 'true'] },
           }),
         ]),
       },
     );
-    const out = expandRepeats(c, { linhas: [{ chave: 'a' }, { chave: 'b' }] });
-    expect(out.values['$r0_0:selecionada']).toBeNull();
-    expect(out.values['$r0_1:selecionada']).toBeNull();
-    const drawn = instantiate(c, { titulo: 'T', linhas: [{ chave: 'a' }] }, BOX, {
+    const out = expandRepeats(c, { rows: [{ key: 'a' }, { key: 'b' }] });
+    expect(out.values['$r0_0:selected']).toBeNull();
+    expect(out.values['$r0_1:selected']).toBeNull();
+    const drawn = instantiate(c, { title: 'T', rows: [{ key: 'a' }] }, BOX, {
       measure: approximateMeasurer,
     });
     expect(drawn.warnings.filter((w) => w.startsWith('field not provided'))).toEqual([]);
   });
 
-  it('o campo table não informado vira aviso; informado vazio ou nulo, não', () => {
+  it('the table field not provided becomes a warning; provided empty or null, it does not', () => {
     expect(expandRepeats(component(), {}).warnings).toEqual([
-      'field not provided: linhas',
+      'field not provided: rows',
     ]);
-    expect(expandRepeats(component(), { linhas: null }).warnings).toEqual([]);
-    expect(expandRepeats(component(), { linhas: [] }).warnings).toEqual([]);
+    expect(expandRepeats(component(), { rows: null }).warnings).toEqual([]);
+    expect(expandRepeats(component(), { rows: [] }).warnings).toEqual([]);
   });
 
   it('rowsOf e columnsOf', () => {
@@ -465,173 +465,173 @@ describe('expandRepeats', () => {
   });
 });
 
-describe('instantiate com repeat', () => {
-  it('desenha o título e uma linha por registro, empilhadas, com a chave à esquerda e o valor à direita', () => {
-    const { root, warnings } = draw(component(), { titulo: 'T', linhas: ROWS });
+describe('instantiate with repeat', () => {
+  it('draws the title and one row per record, stacked, with the key on the left and the value on the right', () => {
+    const { root, warnings } = draw(component(), { title: 'T', rows: ROWS });
     expect(warnings).toEqual([]);
     const all = texts(root);
     expect(all.map((t) => t.text)).toEqual([
       'T',
-      'origem',
-      'carrinho',
+      'origin',
+      'cart',
       'total',
       '149,90',
-      'itens',
+      'items',
       '3',
     ]);
     const [, k1, v1, k2, , k3] = all;
-    // Mesma linha: chave antes do valor, no mesmo y. Linhas seguintes abaixo, com o gap.
+    // Same row: key before the value, at the same y. Following rows below, with the gap.
     expect(v1!.x).toBeGreaterThan(k1!.x);
     expect(v1!.y).toBe(k1!.y);
     expect(k2!.y).toBeGreaterThan(k1!.y);
     expect(k3!.y).toBeGreaterThan(k2!.y);
-    // A altura da linha é a do texto (12) e o gap entre linhas, 2.
+    // The row height is that of the text (12) and the gap between rows, 2.
     expect(k2!.y - k1!.y).toBe(14);
     expect(k3!.y - k2!.y).toBe(14);
   });
 
-  it('o valor ocupa o resto da linha (fill) e a largura da chave é a do texto', () => {
-    const { root } = draw(component(), { titulo: 'T', linhas: ROWS });
+  it('the value takes the rest of the row (fill) and the key width is that of the text', () => {
+    const { root } = draw(component(), { title: 'T', rows: ROWS });
     const [, key, value] = texts(root);
     expect(value!.node.width).toBeGreaterThan(key!.node.width);
     expect(key!.x + key!.node.width + 10).toBeCloseTo(value!.x, 5);
     expect(value!.x + value!.node.width).toBeCloseTo(200 - 8, 5);
   });
 
-  it('sem linhas (ou com a tabela nula) desenha só o título', () => {
-    for (const linhas of [[], null, undefined]) {
-      const { root, warnings } = draw(component(), { titulo: 'T', linhas });
+  it('without rows (or with a null table) it draws only the title', () => {
+    for (const rows of [[], null, undefined]) {
+      const { root, warnings } = draw(component(), { title: 'T', rows });
       expect(texts(root).map((t) => t.text)).toEqual(['T']);
       expect(warnings).toEqual([]);
     }
   });
 
-  it('o repeat em linha (row) coloca os registros lado a lado', () => {
+  it('the row repeat (row) places the records side by side', () => {
     const c = component({}, { direction: 'row' });
     const { root } = draw(
       c,
-      { titulo: 'T', linhas: ROWS.slice(0, 2) },
+      { title: 'T', rows: ROWS.slice(0, 2) },
       { ...BOX, width: 400 },
     );
-    const keys = texts(root).filter((t) => ['origem', 'total'].includes(t.text));
+    const keys = texts(root).filter((t) => ['origin', 'total'].includes(t.text));
     expect(keys[1]!.x).toBeGreaterThan(keys[0]!.x);
     expect(keys[1]!.y).toBe(keys[0]!.y);
   });
 
-  it('visible no repeat esconde a tabela inteira', () => {
-    const c = component({}, { visible: { $has: 'mostrar' } });
+  it('visible on the repeat hides the whole table', () => {
+    const c = component({}, { visible: { $has: 'show' } });
     expect(
-      texts(draw(c, { titulo: 'T', mostrar: null, linhas: ROWS }).root),
+      texts(draw(c, { title: 'T', show: null, rows: ROWS }).root),
     ).toHaveLength(1);
     expect(
-      texts(draw(c, { titulo: 'T', mostrar: 'sim', linhas: ROWS }).root),
+      texts(draw(c, { title: 'T', show: 'yes', rows: ROWS }).root),
     ).toHaveLength(7);
   });
 
-  it('o eixo das linhas é hug: mais linhas, mais altura medida; o quadro não é dividido com os fill', () => {
+  it('the row axis is hug: more rows, more measured height; the frame is not split with the fill ones', () => {
     const c = component();
-    const measure = (linhas: FieldValues[string]) =>
+    const measure = (rows: FieldValues[string]) =>
       measureComponent(
         c,
-        { titulo: 'T', linhas },
+        { title: 'T', rows },
         { width: 200, height: null },
         { measure: approximateMeasurer },
       );
     const none = measure([]);
     const one = measure(ROWS.slice(0, 1));
     const three = measure(ROWS);
-    // 8 + 12 (título) + 6 + 8 = 34 sem linhas (o repeat vazio ocupa 0 mas entra no gap).
+    // 8 + 12 (title) + 6 + 8 = 34 without rows (the empty repeat takes 0 but enters the gap).
     expect(none.warnings).toEqual([]);
     expect(one.height - none.height).toBeGreaterThan(0);
     expect(three.height - one.height).toBe(2 * 14);
   });
 
-  it('as colunas sombreiam os campos do tipo e os campos do tipo seguem valendo', () => {
+  it('the columns shadow the type fields and the type fields keep applying', () => {
     const c = component(
       {},
-      { template: row([text('chave'), text('titulo', { name: 'do tipo' })]) },
+      { template: row([text('key'), text('title', { name: 'of type' })]) },
     );
     const { root } = draw(c, {
-      titulo: 'DO TIPO',
-      chave: 'campo',
-      linhas: [{ chave: 'coluna' }],
+      title: 'OF TYPE',
+      key: 'field',
+      rows: [{ key: 'column' }],
     });
-    expect(texts(root).map((t) => t.text)).toEqual(['DO TIPO', 'coluna', 'DO TIPO']);
+    expect(texts(root).map((t) => t.text)).toEqual(['OF TYPE', 'column', 'OF TYPE']);
   });
 
-  it('uma condição que cita a coluna escolhe o ramo de cada linha', () => {
+  it('a condition that cites the column chooses the branch of each row', () => {
     const c = component(
       {},
       {
         template: row([
-          text('chave', {
-            color: { $if: { $eq: ['chave', 'total'] }, then: '#ff0000', else: '#00ff00' },
+          text('key', {
+            color: { $if: { $eq: ['key', 'total'] }, then: '#ff0000', else: '#00ff00' },
           }),
         ]),
       },
     );
-    const { root } = draw(c, { titulo: 'T', linhas: ROWS });
+    const { root } = draw(c, { title: 'T', rows: ROWS });
     const fills = texts(root)
-      .filter((t) => ['origem', 'total', 'itens'].includes(t.text))
+      .filter((t) => ['origin', 'total', 'items'].includes(t.text))
       .map((t) => t.node.fills[0] && 'color' in t.node.fills[0] && t.node.fills[0].color);
     expect(fills).toEqual(['#00ff00', '#ff0000', '#00ff00']);
   });
 
-  it('os ids dos nós são únicos e estáveis (prefixo/caminho.índice)', () => {
-    const a = ids(draw(component(), { titulo: 'T', linhas: ROWS }).root);
-    const b = ids(draw(component(), { titulo: 'T', linhas: ROWS }).root);
+  it('the node ids are unique and stable (prefix/path.index)', () => {
+    const a = ids(draw(component(), { title: 'T', rows: ROWS }).root);
+    const b = ids(draw(component(), { title: 'T', rows: ROWS }).root);
     expect(new Set(a).size).toBe(a.length);
     expect(b).toEqual(a);
   });
 
-  it('colunas com números viram texto; célula vazia vira texto vazio', () => {
+  it('columns with numbers become text; an empty cell becomes empty text', () => {
     const { root } = draw(component(), {
-      titulo: 'T',
-      linhas: [
-        { chave: 'n', valor: 42 },
-        { chave: 'vazio', valor: null },
+      title: 'T',
+      rows: [
+        { key: 'n', value: 42 },
+        { key: 'empty', value: null },
       ],
     });
-    expect(texts(root).map((t) => t.text)).toEqual(['T', 'n', '42', 'vazio', '']);
+    expect(texts(root).map((t) => t.text)).toEqual(['T', 'n', '42', 'empty', '']);
   });
 
-  it('o aviso de content larger than the box vale para as linhas que passam', () => {
+  it('the content larger than the box warning applies to the rows that overflow', () => {
     const { warnings } = draw(
       component(),
-      { titulo: 'T', linhas: [...ROWS, ...ROWS, ...ROWS] },
+      { title: 'T', rows: [...ROWS, ...ROWS, ...ROWS] },
       { ...BOX, height: 40 },
     );
     expect(warnings.some((w) => w.startsWith('content larger than the box'))).toBe(true);
   });
 
-  it('um componente da formatVersion 1 (sem repeat) desenha como antes', () => {
+  it('a formatVersion 1 component (without repeat) draws as before', () => {
     const base = raw({}, {}, 1);
     base.template.children.pop();
     const parsed = parseComponent(base);
     if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
-    const { root } = draw(parsed.component, { titulo: 'só o título' });
-    expect(texts(root).map((t) => t.text)).toEqual(['só o título']);
+    const { root } = draw(parsed.component, { title: 'only the title' });
+    expect(texts(root).map((t) => t.text)).toEqual(['only the title']);
   });
 });
 
-describe('o desenho não depende de o repeat estar numa posição fixa', () => {
-  it('um repeat dentro de um quadro aninhado também é expandido', () => {
+describe('the drawing does not depend on the repeat being in a fixed position', () => {
+  it('a repeat inside a nested frame is also expanded', () => {
     const base = raw();
     const repeat = base.template.children.pop() as TemplateNode;
     base.template.children.push({
       type: 'frame',
-      name: 'caixa',
+      name: 'box',
       layout: { type: 'column' },
       children: [repeat],
     });
     const parsed = parseComponent(base);
     if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
-    const { root } = draw(parsed.component, { titulo: 'T', linhas: ROWS });
+    const { root } = draw(parsed.component, { title: 'T', rows: ROWS });
     expect(texts(root)).toHaveLength(7);
   });
 });
 
-// --- EX2 (formato 4): `count`, `$index`, `$rows`, `$size` e âncoras por expressão ---------------
+// --- EX2 (format 4): `count`, `$index`, `$rows`, `$size` and anchors by expression ---------------
 
 const num = (expr: unknown): Raw => ({
   type: 'text',
@@ -640,13 +640,13 @@ const num = (expr: unknown): Raw => ({
 });
 const indexPlus1 = { $add: [{ $field: '$index' }, 1] };
 
-/** Componente v4 com um `repeat` por `count` (cada linha mostra o índice + 1, salvo o `template`). */
+/** v4 component with a `repeat` by `count` (each row shows the index + 1, except the `template`). */
 function countRaw(repeat: Raw = {}, over: Raw = {}): Raw {
   return {
     format: 'mapping-component',
     formatVersion: 4,
-    id: 'contagem',
-    name: 'Contagem',
+    id: 'counting',
+    name: 'Counting',
     size: { width: 200, height: 100 },
     template: {
       type: 'frame',
@@ -654,7 +654,7 @@ function countRaw(repeat: Raw = {}, over: Raw = {}): Raw {
       children: [
         {
           type: 'repeat',
-          name: 'lista',
+          name: 'list',
           count: 3,
           template: row([num(indexPlus1)]),
           ...repeat,
@@ -673,22 +673,22 @@ function countComponent(repeat: Raw = {}): ComponentFile {
 
 const drawn = (c: ComponentFile, values: FieldValues = {}) => draw(c, values);
 
-describe('repeat por count (formato 4)', () => {
-  it('count 31 com $index + 1 desenha de 1 a 31', () => {
+describe('repeat by count (format 4)', () => {
+  it('count 31 with $index + 1 draws from 1 to 31', () => {
     const { root } = drawn(countComponent({ count: 31 }));
     expect(texts(root).map((t) => t.text)).toEqual(
       Array.from({ length: 31 }, (_, i) => String(i + 1)),
     );
   });
 
-  it('count 0, 7 e 3,9 (piso)', () => {
+  it('count 0, 7 and 3.9 (floor)', () => {
     expect(texts(drawn(countComponent({ count: 0 })).root)).toHaveLength(0);
     expect(texts(drawn(countComponent({ count: 7 })).root)).toHaveLength(7);
     const fraction = countComponent({ count: { $add: [3, 0.9] } });
     expect(texts(drawn(fraction).root).map((t) => t.text)).toEqual(['1', '2', '3']);
   });
 
-  it('count por expressão: negativo vale 0, o campo manda, sem valor vale 0', () => {
+  it('count by expression: negative is 0, the field rules, without a value it is 0', () => {
     const negative = countComponent({ count: { $sub: [0, 5] } });
     expect(texts(drawn(negative).root)).toHaveLength(0);
     const byField = countComponent({ count: { $field: 'n' } });
@@ -697,16 +697,16 @@ describe('repeat por count (formato 4)', () => {
     expect(texts(drawn(byField, {}).root)).toHaveLength(0);
   });
 
-  it('acima de 1000 desenha 1000 linhas com o aviso nomeando o nó', () => {
+  it('above 1000 it draws 1000 rows with the warning naming the node', () => {
     const c = countComponent({ count: 1500, template: row([]) });
     const expanded = expandRepeats(c, {});
-    expect(expanded.warnings).toEqual(['repeat limited to 1000 rows: lista']);
+    expect(expanded.warnings).toEqual(['repeat limited to 1000 rows: list']);
     const wrapper = (expanded.component.template as FrameTemplate).children?.[0];
     expect((wrapper as FrameTemplate).children).toHaveLength(1000);
-    expect(drawn(c).warnings).toContain('repeat limited to 1000 rows: lista');
+    expect(drawn(c).warnings).toContain('repeat limited to 1000 rows: list');
   });
 
-  it('sem nome, o aviso usa "repeat"', () => {
+  it('without a name, the warning uses "repeat"', () => {
     const raw1001 = countRaw({ count: 1001, template: row([]) });
     delete raw1001.template.children[0].name;
     const parsed = parseComponent(raw1001);
@@ -717,33 +717,33 @@ describe('repeat por count (formato 4)', () => {
     ]);
   });
 
-  it('$index lê o campo do tipo de mesmo nome só fora do índice (o índice sombreia)', () => {
+  it('$index reads the type field of the same name only outside the index (the index shadows)', () => {
     const c = countComponent({ count: 2 });
-    const { root } = drawn(c, { $index: 'campo' });
+    const { root } = drawn(c, { $index: 'field' });
     expect(texts(root).map((t) => t.text)).toEqual(['1', '2']);
   });
 
-  it('$index também vale no repeat por field', () => {
+  it('$index also applies in the repeat by field', () => {
     const base = raw(
       {},
-      { template: row([num({ $field: '$index' }), text('chave')]) },
+      { template: row([num({ $field: '$index' }), text('key')]) },
       4,
     );
     const parsed = parseComponent(base);
     if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
-    const { root } = draw(parsed.component, { titulo: 'T', linhas: ROWS });
+    const { root } = draw(parsed.component, { title: 'T', rows: ROWS });
     expect(texts(root).map((t) => t.text)).toEqual([
       'T',
       '0',
-      'origem',
+      'origin',
       '1',
       'total',
       '2',
-      'itens',
+      'items',
     ]);
   });
 
-  it('num repeat dentro de outro vale o $index do mais interno', () => {
+  it('in a repeat inside another the $index of the innermost applies', () => {
     const inner: Raw = {
       type: 'repeat',
       count: 2,
@@ -752,13 +752,13 @@ describe('repeat por count (formato 4)', () => {
     };
     const outerRow = row([num({ $field: '$index' }), inner]);
     const c = countRaw({ count: 2, template: outerRow });
-    // O validador recusa repeat dentro de repeat; o motor o expande mesmo assim.
+    // The validator refuses a repeat inside a repeat; the engine expands it anyway.
     const component = c as unknown as ComponentFile;
     const { root } = draw(component, {});
     expect(texts(root).map((t) => t.text)).toEqual(['0', '0', '1', '1', '0', '1']);
   });
 
-  it('o índice entra como campo extra de cada linha, não como campo do tipo', () => {
+  it('the index enters as an extra field of each row, not as a type field', () => {
     const { values } = expandRepeats(countComponent({ count: 2 }), {});
     expect(Object.keys(values).sort()).toEqual(['$r0_0:$index', '$r0_1:$index']);
     expect(values['$r0_1:$index']).toBe(1);
@@ -768,27 +768,27 @@ describe('repeat por count (formato 4)', () => {
 describe('$rows', () => {
   const rowsComponent = (): ComponentFile => {
     const c = countRaw();
-    c.template.children = [num({ $rows: 'linhas' })];
+    c.template.children = [num({ $rows: 'rows' })];
     const parsed = parseComponent(c);
     if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
     return parsed.component;
   };
 
-  it('é o número de linhas do campo table (0 sem linhas)', () => {
+  it('is the number of rows of the table field (0 without rows)', () => {
     const c = rowsComponent();
-    expect(texts(drawn(c, { linhas: ROWS }).root).map((t) => t.text)).toEqual(['3']);
-    expect(texts(drawn(c, { linhas: [] }).root).map((t) => t.text)).toEqual(['0']);
+    expect(texts(drawn(c, { rows: ROWS }).root).map((t) => t.text)).toEqual(['3']);
+    expect(texts(drawn(c, { rows: [] }).root).map((t) => t.text)).toEqual(['0']);
     expect(texts(drawn(c, {}).root).map((t) => t.text)).toEqual(['0']);
   });
 
-  it('serve de count de outro repeat', () => {
-    const parsed = parseComponent(countRaw({ count: { $rows: 'linhas' } }));
+  it('serves as the count of another repeat', () => {
+    const parsed = parseComponent(countRaw({ count: { $rows: 'rows' } }));
     if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
-    expect(texts(drawn(parsed.component, { linhas: ROWS }).root)).toHaveLength(3);
+    expect(texts(drawn(parsed.component, { rows: ROWS }).root)).toHaveLength(3);
   });
 
-  it('conta o campo em referencedFields', () => {
-    expect([...referencedFields({ text: { $rows: 'linhas' } })]).toEqual(['linhas']);
+  it('counts the field in referencedFields', () => {
+    expect([...referencedFields({ text: { $rows: 'rows' } })]).toEqual(['rows']);
   });
 });
 
@@ -801,7 +801,7 @@ describe('$size', () => {
     return parsed.component;
   };
 
-  it('na instanciação é o retângulo da instância', () => {
+  it('in instantiation it is the rectangle of the instance', () => {
     const c = sizeComponent({ $size: 'width' });
     const at = (width: number, height: number) =>
       texts(draw(c, {}, { x: 0, y: 0, width, height }).root);
@@ -812,7 +812,7 @@ describe('$size', () => {
     );
   });
 
-  it('em measureComponent sem tamanho dado vale o size do componente', () => {
+  it('in measureComponent without a given size it is the size of the component', () => {
     const c = countRaw();
     c.template.width = 'hug';
     c.template.height = 'hug';
@@ -843,7 +843,7 @@ describe('$size', () => {
   });
 });
 
-describe('âncoras por expressão', () => {
+describe('anchors by expression', () => {
   const anchored = (anchors: Raw, width = 10): ComponentFile => {
     const c = countRaw();
     c.template.layout = { type: 'none' };
@@ -856,33 +856,33 @@ describe('âncoras por expressão', () => {
     (draw(c, values, { x: 0, y: 0, width, height: 100 }).root.children[0] as SceneNode)
       .transform[4] as number;
 
-  it('left pela largura da instância', () => {
+  it('left by the width of the instance', () => {
     const c = anchored({ left: { $mul: [{ $size: 'width' }, 0.5] }, top: 0 });
     expect(xOf(c, {}, 200)).toBe(100);
     expect(xOf(c, {}, 300)).toBe(150);
   });
 
-  it('right por campo', () => {
+  it('right by field', () => {
     const c = anchored({ right: { $field: 'm' }, top: 0 });
     expect(xOf(c, { m: 20 })).toBe(170);
   });
 
-  it('centerX por condição', () => {
+  it('centerX by condition', () => {
     const c = anchored({ centerX: { $gt: [{ $field: 'n' }, 5] }, left: 7, top: 0 });
     expect(xOf(c, { n: 9 })).toBe(95);
     expect(xOf(c, { n: 2 })).toBe(7);
   });
 
-  it('âncora sem valor vale como ausente', () => {
-    const c = anchored({ left: { $field: 'nada' }, right: 30, top: 0 });
+  it('an anchor without a value counts as absent', () => {
+    const c = anchored({ left: { $field: 'nothing' }, right: 30, top: 0 });
     expect(xOf(c, {})).toBe(160);
     const d = anchored({ left: { $div: [1, 0] }, top: 0 });
     expect(xOf(d, {})).toBe(0);
   });
 });
 
-describe('referencedFields e repeatInnerFields com as chaves da EX2', () => {
-  it('$index não é campo do tipo', () => {
+describe('referencedFields and repeatInnerFields with the EX2 keys', () => {
+  it('$index is not a type field', () => {
     expect([...referencedFields({ text: { $field: '$index' } })]).toEqual([]);
     expect([
       ...referencedFields({ visible: { $gt: [{ $field: '$index' }, 1] } }),
@@ -891,13 +891,13 @@ describe('referencedFields e repeatInnerFields com as chaves da EX2', () => {
     expect([...repeatInnerFields(node)]).toEqual([]);
   });
 
-  it('$rows e o que há dentro de uma operação contam', () => {
+  it('$rows and what is inside an operation count', () => {
     expect([
       ...referencedFields({ w: { $mul: [{ $rows: 'a' }, { $field: 'b' }] } }),
     ]).toEqual(['a', 'b']);
   });
 
-  it('o count do repeat conta; o template não', () => {
+  it('the count of the repeat counts; the template does not', () => {
     const node = {
       type: 'repeat',
       count: { $field: 'n' },
@@ -908,7 +908,7 @@ describe('referencedFields e repeatInnerFields com as chaves da EX2', () => {
   });
 });
 
-describe('validação do repeat por count e das chaves da EX2', () => {
+describe('validation of the repeat by count and of the EX2 keys', () => {
   const problems = (repeat: Raw = {}, version = 4): string[] => {
     const c = countRaw(repeat);
     c.formatVersion = version;
@@ -923,9 +923,9 @@ describe('validação do repeat por count e das chaves da EX2', () => {
     return parsed.ok ? [] : parsed.errors;
   };
 
-  it('exatamente um de count e field', () => {
+  it('exactly one of count and field', () => {
     expect(problems({})).toEqual([]);
-    expect(problems({ field: 'linhas' }).join('\n')).toContain(
+    expect(problems({ field: 'rows' }).join('\n')).toContain(
       'template.children[0]: use count or field, not both',
     );
     const neither = countRaw();
@@ -936,7 +936,7 @@ describe('validação do repeat por count e das chaves da EX2', () => {
     );
   });
 
-  it('count literal negativo ou não inteiro', () => {
+  it('literal count negative or non-integer', () => {
     expect(problems({ count: -1 }).join('\n')).toContain(
       'template.children[0].count: expected an integer greater than or equal to 0',
     );
@@ -946,21 +946,21 @@ describe('validação do repeat por count e das chaves da EX2', () => {
     expect(problems({ count: { $field: 'n' } })).toEqual([]);
   });
 
-  it('$size só aceita width ou height', () => {
+  it('$size only accepts width or height', () => {
     expect(sizeProblems({ $size: 'width' })).toEqual([]);
     expect(sizeProblems({ $size: 'depth' }).join('\n')).toContain(
       'template.children[0].text.$size: expected "width" or "height"',
     );
   });
 
-  it('$rows pede o nome de um campo', () => {
-    expect(sizeProblems({ $rows: 'linhas' })).toEqual([]);
+  it('$rows asks for the name of a field', () => {
+    expect(sizeProblems({ $rows: 'rows' })).toEqual([]);
     expect(sizeProblems({ $rows: 3 }).join('\n')).toContain(
       'template.children[0].text.$rows: expected a field key',
     );
   });
 
-  it('$index fora de um repeat é recusado', () => {
+  it('$index outside a repeat is refused', () => {
     expect(sizeProblems({ $field: '$index' }).join('\n')).toContain(
       'template.children[0].text.$field: $index is only valid inside a repeat',
     );
@@ -969,7 +969,7 @@ describe('validação do repeat por count e das chaves da EX2', () => {
     );
   });
 
-  it('nas versões 1 a 3 tudo isso dá only allowed with formatVersion 4', () => {
+  it('in versions 1 to 3 all of this gives only allowed with formatVersion 4', () => {
     for (const version of [2, 3]) {
       expect(problems({}, version)).toContain(
         'template.children[0].count: only allowed with formatVersion 4',
@@ -981,7 +981,7 @@ describe('validação do repeat por count e das chaves da EX2', () => {
         'template.children[0].text.$rows: only allowed with formatVersion 4',
       );
     }
-    const c = countRaw({ field: 'linhas' });
+    const c = countRaw({ field: 'rows' });
     delete c.template.children[0].count;
     c.formatVersion = 3;
     c.template.children[0].template = row([num({ $field: '$index' })]);
@@ -991,7 +991,7 @@ describe('validação do repeat por count e das chaves da EX2', () => {
     );
   });
 
-  it('âncoras com expressão só na versão 4', () => {
+  it('anchors with an expression only in version 4', () => {
     const c = countRaw();
     c.template.layout = { type: 'none' };
     c.template.children = [
@@ -1011,7 +1011,7 @@ describe('validação do repeat por count e das chaves da EX2', () => {
     ]);
   });
 
-  it('âncora com literal inválido continua sendo erro', () => {
+  it('an anchor with an invalid literal is still an error', () => {
     const c = countRaw();
     c.template.layout = { type: 'none' };
     c.template.children = [{ type: 'rect', anchors: { left: 'x', centerX: 3 } }];
@@ -1022,10 +1022,10 @@ describe('validação do repeat por count e das chaves da EX2', () => {
   });
 });
 
-describe('o schema JSON conhece as chaves da EX2', () => {
-  it('repeat por count, $rows, $size e âncoras por expressão', () => {
+describe('the JSON schema knows the EX2 keys', () => {
+  it('repeat by count, $rows, $size and anchors by expression', () => {
     expect(checkSchema(schema, countRaw())).toEqual([]);
-    expect(checkSchema(schema, countRaw({ count: { $rows: 'linhas' } }))).toEqual([]);
+    expect(checkSchema(schema, countRaw({ count: { $rows: 'rows' } }))).toEqual([]);
     const c = countRaw();
     c.template.layout = { type: 'none' };
     c.template.children = [
@@ -1042,22 +1042,22 @@ describe('o schema JSON conhece as chaves da EX2', () => {
     expect(checkSchema(schema, c)).toEqual([]);
   });
 
-  it('o repeat exige exatamente um de field e count', () => {
-    expect(checkSchema(schema, countRaw({ field: 'linhas' })).length).toBeGreaterThan(0);
+  it('the repeat requires exactly one of field and count', () => {
+    expect(checkSchema(schema, countRaw({ field: 'rows' })).length).toBeGreaterThan(0);
     const neither = countRaw();
     delete neither.template.children[0].count;
     expect(checkSchema(schema, neither).length).toBeGreaterThan(0);
   });
 
-  it('$size recusa outro valor', () => {
+  it('$size refuses another value', () => {
     const c = countRaw();
     c.template.children = [num({ $size: 'depth' })];
     expect(checkSchema(schema, c).length).toBeGreaterThan(0);
   });
 });
 
-describe('achados da revisão da EX2', () => {
-  it('count por $size segue a largura da instância', () => {
+describe('findings of the EX2 review', () => {
+  it('count by $size follows the width of the instance', () => {
     const c = countComponent({ count: { $div: [{ $size: 'width' }, 20] } });
     const at = (width: number) =>
       texts(draw(c, {}, { x: 0, y: 0, width, height: 100 }).root);
@@ -1065,13 +1065,13 @@ describe('achados da revisão da EX2', () => {
     expect(at(200)).toHaveLength(10);
   });
 
-  it('$index em $eq, $has e $switch não é campo do tipo', () => {
+  it('$index in $eq, $has and $switch is not a type field', () => {
     expect([...referencedFields({ v: { $eq: ['$index', 0] } })]).toEqual([]);
     expect([...referencedFields({ v: { $has: '$index' } })]).toEqual([]);
     expect([...referencedFields({ v: { $switch: '$index', cases: {} } })]).toEqual([]);
   });
 
-  it('a primeira linha por $eq do índice desenha só a linha 0', () => {
+  it('the first row by $eq of the index draws only row 0', () => {
     const c = countComponent({
       count: 3,
       template: row([{ ...num('x'), visible: { $eq: ['$index', 0] } }]),
@@ -1080,8 +1080,8 @@ describe('achados da revisão da EX2', () => {
   });
 });
 
-describe('repeat: span e weight vão ao quadro gerado (code-review da L3)', () => {
-  it('o quadro gerado herda span e weight do repeat', () => {
+describe('repeat: span and weight go to the generated frame (code-review of L3)', () => {
+  it('the generated frame inherits span and weight from the repeat', () => {
     const c = {
       format: 'mapping-component',
       formatVersion: 4,
@@ -1105,11 +1105,11 @@ describe('repeat: span e weight vão ao quadro gerado (code-review da L3)', () =
   });
 });
 
-describe('repeat.layout (L3, decisão 14 da #1078)', () => {
-  const OPTIONS = [{ rotulo: 'A' }, { rotulo: 'Mediano' }, { rotulo: 'Sim' }];
+describe('repeat.layout (L3, decision 14 of #1078)', () => {
+  const OPTIONS = [{ label: 'A' }, { label: 'Average' }, { label: 'Yes' }];
   const BOX400: Box = { x: 0, y: 0, width: 400, height: 100 };
 
-  /** Um componente da formatVersion 4 com o `repeat` numa fileira (sem passar pelo validador). */
+  /** A formatVersion 4 component with the `repeat` in a row (without going through the validator). */
   function v4(repeat: Raw): ComponentFile {
     return {
       format: 'mapping-component',
@@ -1119,21 +1119,21 @@ describe('repeat.layout (L3, decisão 14 da #1078)', () => {
       size: { width: 400, height: 100 },
       template: {
         type: 'frame',
-        name: 'raiz',
+        name: 'root',
         layout: { type: 'row' },
         children: [{ type: 'repeat', name: 'seg', ...repeat }],
       },
     } as unknown as ComponentFile;
   }
 
-  /** Posição e tamanho dos quadros `cel`, na ordem. */
+  /** Position and size of the `cell` frames, in order. */
   function cells(c: ComponentFile, values: FieldValues, box: Box = BOX400) {
     const { root } = draw(c, values, box);
     const out: { x: number; y: number; width: number; height: number }[] = [];
     const visit = (node: SceneNode, ox: number, oy: number): void => {
       const x = ox + node.transform[4];
       const y = oy + node.transform[5];
-      if (node.name === 'cel') out.push({ x, y, width: node.width, height: node.height });
+      if (node.name === 'cell') out.push({ x, y, width: node.width, height: node.height });
       if (node.type === 'frame') for (const child of node.children) visit(child, x, y);
     };
     visit(root, 0, 0);
@@ -1142,20 +1142,20 @@ describe('repeat.layout (L3, decisão 14 da #1078)', () => {
 
   const labelCell: Raw = {
     type: 'frame',
-    name: 'cel',
+    name: 'cell',
     layout: { type: 'row', padding: 10 },
-    children: [text('rotulo', { font: { size: 14, lineHeight: 16 } })],
+    children: [text('label', { font: { size: 14, lineHeight: 16 } })],
   };
 
-  it('grid com columns { $rows } e width hug: segmentos iguais pelo rótulo mais largo', () => {
+  it('grid with columns { $rows } and width hug: equal segments by the widest label', () => {
     const c = v4({
-      field: 'opcoes',
+      field: 'options',
       width: 'hug',
-      layout: { type: 'grid', columns: { $rows: 'opcoes' } },
+      layout: { type: 'grid', columns: { $rows: 'options' } },
       template: labelCell,
     });
-    const placed = cells(c, { opcoes: OPTIONS });
-    // "Mediano": 7 × 7,7 = 53,9 + 20 de padding.
+    const placed = cells(c, { options: OPTIONS });
+    // "Average": 7 × 7.7 = 53.9 + 20 of padding.
     const wide = 7 * 7.7 + 20;
     expect(placed).toHaveLength(3);
     for (const [i, cell] of placed.entries()) {
@@ -1163,102 +1163,102 @@ describe('repeat.layout (L3, decisão 14 da #1078)', () => {
       expect(cell.x).toBeCloseTo(i * wide, 9);
       expect(cell.y).toBe(0);
     }
-    const { warnings } = draw(c, { opcoes: OPTIONS }, BOX400);
+    const { warnings } = draw(c, { options: OPTIONS }, BOX400);
     expect(warnings).toEqual([]);
   });
 
-  it('a célula do template é fill na célula; o repeat grid abraça a altura', () => {
+  it('the template cell is fill in the cell; the grid repeat hugs the height', () => {
     const c = v4({
-      field: 'opcoes',
+      field: 'options',
       width: 'hug',
       layout: { type: 'grid', columns: 2, gap: 4, lineGap: 6 },
       template: labelCell,
     });
-    const placed = cells(c, { opcoes: OPTIONS });
-    // 2 colunas × 2 linhas (a última com 1); a linha tem a altura do conteúdo (16 + 20).
+    const placed = cells(c, { options: OPTIONS });
+    // 2 columns × 2 rows (the last with 1); the row has the content height (16 + 20).
     expect(placed.map((p) => p.height)).toEqual([36, 36, 36]);
     expect(placed[2]).toMatchObject({ x: 0, y: 36 + 6 });
     expect(placed[1]!.x).toBeCloseTo(placed[0]!.width + 4, 9);
   });
 
-  it('o width do próprio repeat manda: as trilhas dividem a largura', () => {
+  it('the width of the repeat itself rules: the tracks divide the width', () => {
     const c = v4({
-      field: 'opcoes',
+      field: 'options',
       width: 300,
       layout: { type: 'grid', columns: 3 },
       template: labelCell,
     });
-    expect(cells(c, { opcoes: OPTIONS }).map((p) => p.width)).toEqual([100, 100, 100]);
+    expect(cells(c, { options: OPTIONS }).map((p) => p.width)).toEqual([100, 100, 100]);
   });
 
-  it('layout row com gap equivale ao direction row + gap', () => {
-    const base = { field: 'opcoes', height: 'hug' };
+  it('layout row with gap is equivalent to direction row + gap', () => {
+    const base = { field: 'options', height: 'hug' };
     const tpl = { ...labelCell, width: 'hug' };
     const withLayout = cells(
       v4({ ...base, layout: { type: 'row', gap: 5 }, template: tpl }),
-      { opcoes: OPTIONS },
+      { options: OPTIONS },
     );
     const withDirection = cells(
       v4({ ...base, direction: 'row', gap: 5, template: tpl }),
-      { opcoes: OPTIONS },
+      { options: OPTIONS },
     );
     expect(withLayout).toEqual(withDirection);
     expect(withLayout[1]!.x).toBeCloseTo(withLayout[0]!.width + 5, 9);
   });
 
-  it('layout row com align end alinha as células no fundo', () => {
+  it('layout row with align end aligns the cells at the bottom', () => {
     const tpl = {
       type: 'frame',
-      name: 'cel',
+      name: 'cell',
       width: 20,
       height: { $field: 'h' },
       layout: { type: 'row' },
       children: [],
     };
     const c = v4({
-      field: 'opcoes',
+      field: 'options',
       height: 'hug',
       layout: { type: 'row', align: 'end' },
       template: tpl,
     });
-    const placed = cells(c, { opcoes: [{ h: 10 }, { h: 30 }] });
+    const placed = cells(c, { options: [{ h: 10 }, { h: 30 }] });
     expect(placed.map((p) => p.y)).toEqual([20, 0]);
     const start = cells(
       v4({
-        field: 'opcoes',
+        field: 'options',
         height: 'hug',
         layout: { type: 'row' },
         template: tpl,
       }),
-      { opcoes: [{ h: 10 }, { h: 30 }] },
+      { options: [{ h: 10 }, { h: 30 }] },
     );
     expect(start.map((p) => p.y)).toEqual([0, 0]);
   });
 
-  it('layout column com gap equivale ao direction column + gap', () => {
+  it('layout column with gap is equivalent to direction column + gap', () => {
     const tpl = { ...labelCell, height: 'hug' };
     const a = cells(
-      v4({ field: 'opcoes', layout: { type: 'column', gap: 3 }, template: tpl }),
-      { opcoes: OPTIONS },
+      v4({ field: 'options', layout: { type: 'column', gap: 3 }, template: tpl }),
+      { options: OPTIONS },
     );
-    const b = cells(v4({ field: 'opcoes', direction: 'column', gap: 3, template: tpl }), {
-      opcoes: OPTIONS,
+    const b = cells(v4({ field: 'options', direction: 'column', gap: 3, template: tpl }), {
+      options: OPTIONS,
     });
     expect(a).toEqual(b);
   });
 
-  it('expandRepeats leva o layout ao quadro gerado, sem direction nem gap soltos', () => {
+  it('expandRepeats takes the layout to the generated frame, without loose direction or gap', () => {
     const layout = { type: 'grid', columns: 2, gap: 4 };
-    const c = v4({ field: 'opcoes', layout, template: labelCell });
-    const expanded = expandRepeats(c, { opcoes: OPTIONS });
+    const c = v4({ field: 'options', layout, template: labelCell });
+    const expanded = expandRepeats(c, { options: OPTIONS });
     const wrapper = (expanded.component.template as FrameTemplate).children?.[0];
     expect((wrapper as FrameTemplate).layout).toEqual(layout);
     expect((wrapper as FrameTemplate).children).toHaveLength(3);
   });
 
-  it('sem layout, o quadro gerado é o de sempre (direction + gap)', () => {
-    const c = v4({ field: 'opcoes', direction: 'row', gap: 5, template: labelCell });
-    const expanded = expandRepeats(c, { opcoes: OPTIONS });
+  it('without layout, the generated frame is the usual one (direction + gap)', () => {
+    const c = v4({ field: 'options', direction: 'row', gap: 5, template: labelCell });
+    const expanded = expandRepeats(c, { options: OPTIONS });
     const wrapper = (expanded.component.template as FrameTemplate).children?.[0];
     expect((wrapper as FrameTemplate).layout).toEqual({ type: 'row', gap: 5 });
   });

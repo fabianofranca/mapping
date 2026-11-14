@@ -14,7 +14,7 @@ import { SPEC_ID, componentProject, testCatalog } from './componentFixtures';
 import { expectValid, marking } from './fixtures';
 import { NOTES_SPEC_ID, notesCatalog, notesProject } from './notesFixtures';
 
-// Etapa #1087 (EL1): a peça nova nasce em espaço livre (decisões 3 a 6 e "Fora" da etapa).
+// Stage #1087 (EL1): the new piece is born in free space (decisions 3 to 6 and the stage's "Out of scope").
 
 const catalog = testCatalog();
 
@@ -53,11 +53,11 @@ const plain = (p: Project, id: string, r: Rect, containerId: string | null = 'I1
 const rectOf = (p: Project, id: string): Rect => marking(p, id).rect;
 const overlaps = (a: Rect, b: Rect): boolean => rectsOverlap(a, b);
 
-// `text` mede 100 × 40: no centro da imagem 1000 × 800, o R0 é (450, 380, 100, 40).
+// `text` measures 100 × 40: at the center of the 1000 × 800 image, R0 is (450, 380, 100, 40).
 const R0 = rect(450, 380, 100, 40);
 
-describe('colocação em espaço livre (EL1)', () => {
-  it('(a) o R0 cobre uma marcação menor: a peça nasce fora dela, as duas sem pai', () => {
+describe('placement in free space (EL1)', () => {
+  it('(a) R0 covers a smaller marking: the piece is born outside it, both without a parent', () => {
     const card = rect(470, 390, 60, 24);
     let p = plain(componentProject(), 'CARD', card);
     p = add(p, 'NAV', 'text');
@@ -67,7 +67,7 @@ describe('colocação em espaço livre (EL1)', () => {
     expectValid(p);
   });
 
-  it('(b) duas peças iguais no mesmo ponto: lado a lado, as duas sem pai', () => {
+  it('(b) two equal pieces at the same spot: side by side, both without a parent', () => {
     let p = add(componentProject(), 'T1', 'text');
     p = add(p, 'T2', 'text');
     expect(rectOf(p, 'T1')).toEqual(R0);
@@ -78,7 +78,7 @@ describe('colocação em espaço livre (EL1)', () => {
     expectValid(p);
   });
 
-  it('(c) o R0 dentro de uma marcação maior: a peça vira filha e não cobre quem cruza o retângulo dela', () => {
+  it('(c) R0 inside a larger marking: the piece becomes a child and does not cover whatever crosses its rectangle', () => {
     const big = rect(300, 300, 400, 300);
     const inner = rect(480, 380, 30, 30);
     const crossing = rect(690, 290, 60, 60);
@@ -98,7 +98,7 @@ describe('colocação em espaço livre (EL1)', () => {
     expectValid(p);
   });
 
-  it('(d) slot sem layout com uma filha no início: a segunda não coincide e o pai é o componente', () => {
+  it('(d) slot without a layout with one child at the start: the second does not coincide and the parent is the component', () => {
     let p = add(componentProject(), 'B', 'box', { rect: rect(100, 100, 300, 200) });
     p = add(p, 'T1', 'text', { parentId: 'B' });
     p = add(p, 'T2', 'text', { parentId: 'B' });
@@ -110,7 +110,7 @@ describe('colocação em espaço livre (EL1)', () => {
     expectValid(p);
   });
 
-  it('(e) área cheia: a posição de hoje, sem erro', () => {
+  it('(e) full area: today\'s position, without an error', () => {
     let p = plain(componentProject(), 'P', rect(440, 370, 120, 60));
     p = plain(p, 'X1', rect(440, 370, 60, 60));
     p = plain(p, 'X2', rect(500, 370, 60, 60));
@@ -123,7 +123,7 @@ describe('colocação em espaço livre (EL1)', () => {
     expect(placed).toEqual(R0);
   });
 
-  it('(f) canvas: um container e uma marcação do canvas são obstáculos', () => {
+  it('(f) canvas: a container and a canvas marking are obstacles', () => {
     const base = componentProject();
     const container = base.containers.find((c) => c.id === 'I1')!;
     const area = imageCanvasRect(container, container.placement);
@@ -140,7 +140,7 @@ describe('colocação em espaço livre (EL1)', () => {
     expect(overlaps(placed, loose)).toBe(false);
   });
 
-  it('(g) o R0 encostado numa irmã, sem sobrepor: fica onde está', () => {
+  it('(g) R0 touching a sibling, without overlapping: stays where it is', () => {
     const p = plain(componentProject(), 'S', rect(550, 380, 60, 40));
     const placed = componentPlacement(
       p,
@@ -151,7 +151,7 @@ describe('colocação em espaço livre (EL1)', () => {
     expect(placed).toEqual(R0);
   });
 
-  it('(h) tipo flutuante no canvas: nasce no centro pedido, sem buscar', () => {
+  it('(h) floating type on the canvas: born at the requested center, without searching', () => {
     const notes = notesCatalog();
     const base = plain(notesProject(), 'L', rect(2900, 450, 200, 100), null);
     const p = addComponentMarking(
@@ -185,7 +185,7 @@ describe('colocação em espaço livre (EL1)', () => {
     ).toEqual(rect(2880, 440, 240, 120));
   });
 
-  it('(i) uma marcação Q que cruza o pai em parte é obstáculo: a peça fica fora dela e o pai é P', () => {
+  it('(i) a marking Q that partly crosses the parent is an obstacle: the piece stays outside it and the parent is P', () => {
     const pRect = rect(400, 300, 200, 200);
     const x = rect(480, 370, 40, 60);
     const q = rect(440, 430, 200, 100);
@@ -199,7 +199,7 @@ describe('colocação em espaço livre (EL1)', () => {
     expectValid(p);
   });
 
-  it('(j) cadeia de retângulos iguais que contêm o R0: o pai é a de dentro', () => {
+  it('(j) chain of equal rectangles that contain R0: the parent is the innermost one', () => {
     const same = rect(400, 300, 200, 200);
     let p = plain(componentProject(), 'P1', same);
     p = plain(p, 'P2', same);

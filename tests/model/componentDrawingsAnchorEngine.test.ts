@@ -1,5 +1,5 @@
-// R3 (#1096, decisão 11): o cache de desenhos entrega a âncora ao motor, e o tooltip de teste
-// desenha a seta pelo `$anchor.*`. Sem âncora, nada muda.
+// R3 (#1096, decision 11): the drawing cache hands the anchor to the engine, and the test tooltip
+// draws the arrow through `$anchor.*`. Without an anchor, nothing changes.
 import { describe, expect, it } from 'vitest';
 import {
   addComponentMarking,
@@ -38,38 +38,38 @@ function scene(anchor?: MarkingAnchor): Project {
   return anchor === undefined ? p : setMarkingAnchor(p, 'B', anchor);
 }
 
-/** A seta visível do desenho de B: o canto de cima à esquerda, relativo à caixa do tooltip (em unidades). */
+/** The visible arrow of B's drawing: the top left corner, relative to the tooltip box (in units). */
 function arrowOf(p: Project): [number, number] | undefined {
   const drawing = createDrawingCache()(p, catalog, approximateMeasurer, 0).get('B');
   const node = [...walk(drawing!.root)].find((n) => n.name === 'seta' && n.visible);
   return node === undefined ? undefined : [node.transform[4], node.transform[5]];
 }
 
-describe('a âncora chega ao motor', () => {
-  it('sem âncora a seta não aparece (os pseudo-campos ficam vazios)', () => {
+describe('the anchor reaches the engine', () => {
+  it('without an anchor the arrow does not show (the pseudo-fields stay empty)', () => {
     expect(arrowOf(scene())).toBeUndefined();
   });
 
-  it('side top: a seta fica embaixo do tooltip, sob o centro da âncora', () => {
-    // O centro da âncora é x = 500; o tooltip começa em 450: a seta (16) começa em 50 - 8 = 42.
+  it('side top: the arrow sits below the tooltip, under the anchor center', () => {
+    // The anchor center is x = 500; the tooltip starts at 450: the arrow (16) starts at 50 - 8 = 42.
     expect(arrowOf(scene({ to: 'T', side: 'top' }))).toEqual([42, 40]);
   });
 
-  it('side bottom: a seta sobe para o topo do tooltip', () => {
+  it('side bottom: the arrow moves up to the top of the tooltip', () => {
     expect(arrowOf(scene({ to: 'T', side: 'bottom' }))).toEqual([42, 0]);
   });
 
-  it('sem side declarado vale o padrão do componente (top)', () => {
+  it('without a declared side the component default (top) applies', () => {
     expect(arrowOf(scene({ to: 'T' }))).toEqual([42, 40]);
   });
 
-  it('muda de lado ao mudar o anchor.side do projeto', () => {
+  it('switches side when the project anchor.side changes', () => {
     const p = scene({ to: 'T', side: 'top' });
     expect(arrowOf(p)?.[1]).toBe(40);
     expect(arrowOf(setMarkingAnchor(p, 'B', { to: 'T', side: 'bottom' }))?.[1]).toBe(0);
   });
 
-  it('a seta acompanha o centro da âncora quando ela anda (o cache reinstancia)', () => {
+  it('the arrow follows the anchor center when it moves (the cache re-instantiates)', () => {
     const p = scene({ to: 'T', side: 'top' });
     const moved = {
       ...p,
@@ -81,8 +81,8 @@ describe('a âncora chega ao motor', () => {
   });
 });
 
-describe('padrões do componente para o encosto', () => {
-  it('markingAnchorDefaults: o anchor da raiz do componente da marcação (offset em unidades)', () => {
+describe('component defaults for the attachment', () => {
+  it('markingAnchorDefaults: the anchor of the root of the marking component (offset in units)', () => {
     const p = scene({ to: 'T' });
     const lookup = markingAnchorDefaults(p, catalog);
     expect(lookup(marking(p, 'B'))).toEqual({
@@ -92,18 +92,18 @@ describe('padrões do componente para o encosto', () => {
     });
   });
 
-  it('marcação sem componente ou componente sem anchor: sem padrões', () => {
+  it('marking without a component or component without an anchor: no defaults', () => {
     const p = scene({ to: 'T' });
     expect(markingAnchorDefaults(p, catalog)(marking(p, 'T'))).toBeUndefined();
   });
 
-  it('typeAnchorDefaults: pelo tipo (specId/typeId), para a instância nova', () => {
+  it('typeAnchorDefaults: by type (specId/typeId), for the new instance', () => {
     expect(typeAnchorDefaults(catalog, TIP_SPEC_ID, 'tooltip')).toEqual({
       side: 'top',
       align: 'center',
       offset: { main: 4, cross: 0 },
     });
-    expect(typeAnchorDefaults(catalog, TIP_SPEC_ID, 'botao')).toBeUndefined();
-    expect(typeAnchorDefaults(catalog, 'nada', 'x')).toBeUndefined();
+    expect(typeAnchorDefaults(catalog, TIP_SPEC_ID, 'button')).toBeUndefined();
+    expect(typeAnchorDefaults(catalog, 'nothing', 'x')).toBeUndefined();
   });
 });

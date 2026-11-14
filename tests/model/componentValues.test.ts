@@ -15,7 +15,7 @@ import { SPEC_ID, componentProject, testSpec } from './componentFixtures';
 
 const TEXT = (testSpec().layers[0]?.annotationTypes ?? []).find((t) => t.id === 'text')!;
 
-/** Grava valores direto na anotação, sem a validação das ações (cenários que o modelo recusaria). */
+/** Writes values straight into the annotation, without the actions' validation (scenarios the model would refuse). */
 function withValues(p: Project, id: string, patch: Record<string, JsonValue>): Project {
   return {
     ...p,
@@ -50,12 +50,12 @@ function base(): Project {
     layerId: 'LS1',
     type: { specId: SPEC_ID, typeId: 'text' },
   });
-  p = setFieldValue(p, 'A3', 'label', 'Alvo');
+  p = setFieldValue(p, 'A3', 'label', 'Target');
   p = addAnnotation(p, {
     id: 'A2',
     markingId: 'M2',
     layerId: 'L1',
-    entries: [{ id: 'E1', key: 'chave', value: 'Valor da tupla' }],
+    entries: [{ id: 'E1', key: 'key', value: 'Tuple value' }],
   });
   return p;
 }
@@ -63,10 +63,10 @@ function base(): Project {
 const annotation = (p: Project, id: string) => p.annotations.find((a) => a.id === id)!;
 const valuesOf = (p: Project, id = 'A1') => drawingValues(p, annotation(p, id), TEXT);
 
-describe('drawingValues: tipos simples', () => {
-  it('string, number, enum e date; vazio vira null; table vira a lista das linhas', () => {
+describe('drawingValues: simple types', () => {
+  it('string, number, enum and date; empty becomes null; table becomes the list of rows', () => {
     let p = base();
-    p = setFieldValue(p, 'A1', 'label', 'Olá');
+    p = setFieldValue(p, 'A1', 'label', 'Hi there');
     p = setFieldValue(p, 'A1', 'count', 7);
     p = setFieldValue(p, 'A1', 'kind', 'b');
     p = setFieldValue(p, 'A1', 'when', '2026-10-17');
@@ -74,7 +74,7 @@ describe('drawingValues: tipos simples', () => {
     p = setTableCell(p, 'A1', 'items', 'R1', 'name', 'x');
     const { values, warnings } = valuesOf(p);
     expect(values).toEqual({
-      label: 'Olá',
+      label: 'Hi there',
       count: 7,
       kind: 'b',
       when: '2026-10-17',
@@ -84,18 +84,18 @@ describe('drawingValues: tipos simples', () => {
     expect(warnings).toEqual([]);
   });
 
-  it('as chaves seguem a ordem dos campos do tipo', () => {
+  it('the keys follow the order of the type fields', () => {
     expect(Object.keys(valuesOf(base()).values)).toEqual(TEXT.fields.map((f) => f.key));
   });
 
-  it('o default do campo vale quando a anotação o recebeu ao ser criada', () => {
+  it('the field default applies when the annotation received it on creation', () => {
     const { values } = valuesOf(base());
     expect(values.label).toBe('Hello');
     expect(values.kind).toBe('a');
     expect(values.count).toBeNull();
   });
 
-  it('texto vazio e valor ausente viram null', () => {
+  it('empty text and an absent value become null', () => {
     let p = base();
     p = withValues(p, 'A1', { label: '', count: null });
     const { values } = valuesOf(withValues(p, 'A1', {}));
@@ -108,7 +108,7 @@ describe('drawingValues: tipos simples', () => {
     expect(valuesOf(noKey).values.kind).toBeNull();
   });
 
-  it('valor de tipo errado não vai para o desenho', () => {
+  it('a value of the wrong type does not go into the drawing', () => {
     const p = withValues(base(), 'A1', { label: 5, count: 'x', kind: 3 });
     const { values } = valuesOf(p);
     expect(values.label).toBeNull();
@@ -123,38 +123,38 @@ const BROKEN_TARGET = modelMessage(
   'broken reference: target',
 );
 
-describe('drawingValues: referências', () => {
-  it('FieldRef: o valor simples do campo alvo', () => {
+describe('drawingValues: references', () => {
+  it('FieldRef: the simple value of the target field', () => {
     let p = base();
     p = setFieldValue(p, 'A1', 'target', { annotationId: 'A3', key: 'label' });
-    expect(valuesOf(p).values.target).toBe('Alvo');
+    expect(valuesOf(p).values.target).toBe('Target');
     expect(valuesOf(p).warnings).toEqual([]);
   });
 
-  it('FieldRef para um número vira número', () => {
-    // O campo `count` não tem etiqueta: grava direto.
+  it('FieldRef to a number becomes a number', () => {
+    // The `count` field has no tag: write it directly.
     let p = withValues(base(), 'A3', { count: 12 });
     p = withValues(p, 'A1', { target: { annotationId: 'A3', key: 'count' } });
     expect(valuesOf(p).values.target).toBe(12);
   });
 
-  it('EntryRef: o value da tupla da anotação livre', () => {
+  it('EntryRef: the value of the tuple of the free annotation', () => {
     let p = base();
     p = setFieldValue(p, 'A1', 'target', { annotationId: 'A2', entryId: 'E1' });
-    expect(valuesOf(p).values.target).toBe('Valor da tupla');
+    expect(valuesOf(p).values.target).toBe('Tuple value');
   });
 
-  it('RowRef: o rótulo da linha (coluna rowLabel), ou a posição quando vazio', () => {
+  it('RowRef: the row label (rowLabel column), or the position when empty', () => {
     let p = base();
     p = addTableRow(p, 'A3', 'items', 'R1');
     p = addTableRow(p, 'A3', 'items', 'R2');
-    p = setTableCell(p, 'A3', 'items', 'R1', 'name', 'Linha um');
+    p = setTableCell(p, 'A3', 'items', 'R1', 'name', 'Row one');
     p = setFieldValue(p, 'A1', 'target', {
       annotationId: 'A3',
       key: 'items',
       rowId: 'R1',
     });
-    expect(valuesOf(p).values.target).toBe('Linha um');
+    expect(valuesOf(p).values.target).toBe('Row one');
     p = setFieldValue(p, 'A1', 'target', {
       annotationId: 'A3',
       key: 'items',
@@ -163,7 +163,7 @@ describe('drawingValues: referências', () => {
     expect(valuesOf(p).values.target).toBe('#2');
   });
 
-  it('mais de um nível: o alvo é outra referência, não é seguido', () => {
+  it('more than one level: the target is another reference, it is not followed', () => {
     let p = base();
     p = withValues(p, 'A3', { target: { annotationId: 'A2', entryId: 'E1' } });
     p = withValues(p, 'A1', { target: { annotationId: 'A3', key: 'target' } });
@@ -178,7 +178,7 @@ describe('drawingValues: referências', () => {
     ]);
   });
 
-  it('ciclo: o alvo volta à própria anotação', () => {
+  it('cycle: the target goes back to the annotation itself', () => {
     const p = withValues(base(), 'A1', { target: { annotationId: 'A1', key: 'label' } });
     const { values, warnings } = valuesOf(p);
     expect(values.target).toBeNull();
@@ -187,21 +187,21 @@ describe('drawingValues: referências', () => {
     ]);
   });
 
-  it('referência quebrada: alvo que não existe, ou formato que não é referência', () => {
+  it('broken reference: a target that does not exist, or a format that is not a reference', () => {
     let p = withValues(base(), 'A1', { target: { annotationId: 'ZZ', key: 'label' } });
     expect(valuesOf(p).values.target).toBeNull();
     expect(valuesOf(p).warnings).toEqual([BROKEN_TARGET]);
     p = withValues(p, 'A1', {
-      target: { annotationId: 'A3', key: 'items', rowId: 'inexistente' },
+      target: { annotationId: 'A3', key: 'items', rowId: 'nonexistent' },
     });
     expect(valuesOf(p).warnings).toEqual([BROKEN_TARGET]);
-    p = withValues(p, 'A1', { target: 'texto solto' });
+    p = withValues(p, 'A1', { target: 'loose text' });
     expect(valuesOf(p).warnings).toEqual([BROKEN_TARGET]);
     p = withValues(p, 'A1', { target: { annotationId: 'A2', entryId: 'EX' } });
     expect(valuesOf(p).warnings).toEqual([BROKEN_TARGET]);
   });
 
-  it('referência vazia não avisa', () => {
+  it('an empty reference does not warn', () => {
     const p = withValues(base(), 'A1', { target: null });
     expect(valuesOf(p)).toEqual({
       values: expect.objectContaining({ target: null }),

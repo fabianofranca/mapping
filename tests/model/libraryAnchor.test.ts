@@ -1,5 +1,5 @@
-// R3 (#1096, decisão 11): o validador de biblioteca aceita os cinco `$anchor.*` sem campo do tipo,
-// recusa os outros (`campo não existe`) e os limita à v4; o `anchor` da raiz também é conferido.
+// R3 (#1096, decision 11): the library validator accepts the five `$anchor.*` without a type field,
+// refuses the others (`field does not exist`) and limits them to v4; the root `anchor` is also checked.
 import { describe, expect, it } from 'vitest';
 import { validateLibrary } from '../../src/model/library';
 
@@ -53,8 +53,8 @@ const rect = (extra: Raw): Raw => ({
 const messages = (r: ReturnType<typeof validate>) =>
   [...r.errors, ...r.warnings].map((i) => `${i.path}: ${i.message}`);
 
-describe('$anchor.* na biblioteca', () => {
-  it('os cinco nomes valem sem campo no tipo (nem aviso de campo)', () => {
+describe('$anchor.* in the library', () => {
+  it('the five names are valid without a field in the type (and no field warning)', () => {
     const r = validate([
       rect({
         anchors: {
@@ -69,18 +69,18 @@ describe('$anchor.* na biblioteca', () => {
     expect(messages(r)).toEqual([]);
   });
 
-  it('outro $anchor.* é erro: campo não existe', () => {
+  it('another $anchor.* is an error: field does not exist', () => {
     const r = validate([rect({ anchors: { left: { $field: '$anchor.foo' } } })]);
     expect(messages(r).join('\n')).toContain('field does not exist: $anchor.foo');
-    expect(messages(r).join('\n')).not.toContain('não declarado');
+    expect(messages(r).join('\n')).not.toContain('does not declare');
   });
 
-  it('numa versão 1 a 3, só é permitido com formatVersion 4', () => {
+  it('in a version 1 to 3, it is only allowed with formatVersion 4', () => {
     const r = validate([rect({ visible: { $has: '$anchor.x' } })], {}, 3);
     expect(messages(r).join('\n')).toContain('only allowed with formatVersion 4');
   });
 
-  it('o anchor da raiz é conferido pela mesma validação do componente', () => {
+  it('the root anchor is checked by the same validation as the component', () => {
     const bad = validate([], { anchor: { side: 'left' } });
     expect(messages(bad).join('\n')).toContain(
       'expected one of: top, bottom, start, end',

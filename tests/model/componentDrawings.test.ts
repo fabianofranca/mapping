@@ -43,7 +43,7 @@ function add(
   );
 }
 
-/** C (linha) com T1 e T2, mais um texto T3 fora dele e uma marcação comum P. */
+/** C (row) with T1 and T2, plus a text T3 outside it and a plain marking P. */
 function screen(): Project {
   let p = componentProject();
   p = add(p, 'C', 'row', { rect: { x: 100, y: 100, width: 300, height: 100 } });
@@ -58,11 +58,11 @@ function screen(): Project {
   return p;
 }
 
-describe('createDrawingCache: o que desenha e em que ordem', () => {
-  it('um desenho por marcação com componente, pais antes das filhas, irmãs na ordem do array', () => {
+describe('createDrawingCache: what it draws and in which order', () => {
+  it('one drawing per marking with a component, parents before children, siblings in array order', () => {
     const p = screen();
     const drawings = createDrawingCache()(p, catalog, approximateMeasurer, 0);
-    // Raízes na ordem do array (C, T3, P comum), depois as filhas de C (T1, T2).
+    // Roots in array order (C, T3, plain P), then the children of C (T1, T2).
     expect([...drawings.keys()]).toEqual(['C', 'T3', 'T1', 'T2']);
     const c = drawings.get('C')!;
     expect(c).toMatchObject({
@@ -72,28 +72,28 @@ describe('createDrawingCache: o que desenha e em que ordem', () => {
       overflow: false,
       warnings: [],
     });
-    // A cena ocupa o retângulo da marcação, em pixels da imagem.
+    // The scene takes the marking rectangle, in image pixels.
     expect(c.root).toMatchObject({ width: 300, height: 100 });
     expect(c.root.transform.slice(4)).toEqual([100, 100]);
     expect(drawings.get('T1')?.root.width).toBe(100);
   });
 
-  it('projeto nulo ou sem componentes: nenhum desenho', () => {
+  it('null project or without components: no drawing', () => {
     const cache = createDrawingCache();
     expect(cache(null, catalog, approximateMeasurer, 0)).toBe(NO_DRAWINGS);
     expect(cache(screen(), EMPTY_CATALOG, approximateMeasurer, 0).size).toBe(0);
     expect(cache(componentProject(), catalog, approximateMeasurer, 0)).toBe(NO_DRAWINGS);
   });
 
-  it('o desenho usa os valores da anotação', () => {
+  it('the drawing uses the annotation values', () => {
     let p = add(componentProject(), 'T1', 'text');
-    p = setFieldValue(p, 'A_T1', 'label', 'Outro texto');
+    p = setFieldValue(p, 'A_T1', 'label', 'Another text');
     const root = createDrawingCache()(p, catalog, approximateMeasurer, 0).get('T1')!.root;
     const texts = JSON.stringify(root);
-    expect(texts).toContain('Outro texto');
+    expect(texts).toContain('Another text');
   });
 
-  it('os avisos das referências entram nos avisos do desenho', () => {
+  it('the reference warnings go into the drawing warnings', () => {
     let p = add(componentProject(), 'T1', 'text');
     p = {
       ...p,
@@ -109,15 +109,15 @@ describe('createDrawingCache: o que desenha e em que ordem', () => {
   });
 });
 
-describe('createDrawingCache: memoização', () => {
-  it('mesmo projeto, catálogo, medidor e época: o mesmo Map', () => {
+describe('createDrawingCache: memoization', () => {
+  it('same project, catalog, measurer and epoch: the same Map', () => {
     const cache = createDrawingCache();
     const p = screen();
     const first = cache(p, catalog, approximateMeasurer, 0);
     expect(cache(p, catalog, approximateMeasurer, 0)).toBe(first);
   });
 
-  it('só a marcação editada é reinstanciada; as demais mantêm o mesmo objeto', () => {
+  it('only the edited marking is re-instantiated; the others keep the same object', () => {
     const cache = createDrawingCache();
     const measure = vi.fn<TextMeasurer>(approximateMeasurer);
     const p = screen();
@@ -125,31 +125,31 @@ describe('createDrawingCache: memoização', () => {
     const calls = measure.mock.calls.length;
     expect(calls).toBeGreaterThan(0);
 
-    const edited = setFieldValue(p, 'A_T3', 'label', 'Editado');
+    const edited = setFieldValue(p, 'A_T3', 'label', 'Edited');
     const after = cache(edited, catalog, measure, 0);
     expect(after).not.toBe(before);
     expect(after.get('T3')).not.toBe(before.get('T3'));
     for (const id of ['C', 'T1', 'T2']) expect(after.get(id)).toBe(before.get(id));
-    // Uma instância de texto mede o texto uma vez (a de T3).
+    // A text instance measures the text once (T3's).
     const perText = measure.mock.calls.length - calls;
     expect(perText).toBeGreaterThan(0);
     expect(perText).toBeLessThan(calls);
     expect([...after.keys()]).toEqual([...before.keys()]);
   });
 
-  it('mexer no que não é desenho (nome, marcação comum) devolve o mesmo Map', () => {
+  it('touching what is not a drawing (name, plain marking) returns the same Map', () => {
     const cache = createDrawingCache();
     const p = screen();
     const before = cache(p, catalog, approximateMeasurer, 0);
     expect(
-      cache(renameMarking(p, 'T1', 'Novo nome'), catalog, approximateMeasurer, 0),
+      cache(renameMarking(p, 'T1', 'New name'), catalog, approximateMeasurer, 0),
     ).toBe(before);
     expect(cache(moveMarking(p, 'P', 10, 10), catalog, approximateMeasurer, 0)).toBe(
       before,
     );
   });
 
-  it('mover ou redimensionar a marcação reinstancia só ela', () => {
+  it('moving or resizing the marking re-instantiates only it', () => {
     const cache = createDrawingCache();
     const p = screen();
     const before = cache(p, catalog, approximateMeasurer, 0);
@@ -169,7 +169,7 @@ describe('createDrawingCache: memoização', () => {
     expect(resized.get('T3')?.root.width).toBe(110);
   });
 
-  it('mexer nas filhas de um container reinstancia o container (e só ele e a filha)', () => {
+  it('touching the children of a container re-instantiates the container (and only it and the child)', () => {
     const cache = createDrawingCache();
     const p = screen();
     const before = cache(p, catalog, approximateMeasurer, 0);
@@ -180,7 +180,7 @@ describe('createDrawingCache: memoização', () => {
     expect(moved.get('T3')).toBe(before.get('T3'));
   });
 
-  it('medidor novo ou época nova reinstanciam tudo', () => {
+  it('a new measurer or a new epoch re-instantiates everything', () => {
     const cache = createDrawingCache();
     const p = screen();
     const before = cache(p, catalog, approximateMeasurer, 0);
@@ -194,7 +194,7 @@ describe('createDrawingCache: memoização', () => {
       expect(withEpoch.get(id)).not.toBe(withOther.get(id));
   });
 
-  it('componente novo no catálogo reinstancia as marcações dele', () => {
+  it('a new component in the catalog re-instantiates its markings', () => {
     const cache = createDrawingCache();
     const p = screen();
     const before = cache(p, catalog, approximateMeasurer, 0);
@@ -208,7 +208,7 @@ describe('createDrawingCache: memoização', () => {
     expect(after.get('C')).toBe(before.get('C'));
   });
 
-  it('marcação que sumiu sai do cache e, ao voltar, é desenhada de novo', () => {
+  it('a marking that disappeared leaves the cache and, when it comes back, is drawn again', () => {
     const cache = createDrawingCache();
     const p = screen();
     const before = cache(p, catalog, approximateMeasurer, 0);
@@ -219,13 +219,13 @@ describe('createDrawingCache: memoização', () => {
     expect(back.get('T1')?.root.width).toBe(100);
   });
 
-  it('um valor resolvido por referência que muda redesenha quem o usa', () => {
+  it('a value resolved by reference that changes redraws whoever uses it', () => {
     const cache = createDrawingCache();
     let p = add(componentProject(), 'T1', 'text');
     p = add(p, 'T2', 'text', { center: { x: 200, y: 200 } });
     p = setFieldValue(p, 'A_T1', 'target', { annotationId: 'A_T2', key: 'label' });
     const before = cache(p, catalog, approximateMeasurer, 0);
-    const edited = setFieldValue(p, 'A_T2', 'label', 'Mudou');
+    const edited = setFieldValue(p, 'A_T2', 'label', 'Changed');
     const after = cache(edited, catalog, approximateMeasurer, 0);
     expect(after.get('T1')).not.toBe(before.get('T1'));
     expect(after.get('T2')).not.toBe(before.get('T2'));
@@ -233,7 +233,7 @@ describe('createDrawingCache: memoização', () => {
 });
 
 describe('overflow', () => {
-  it('o aviso "text larger than the box" também marca overflow (a pendência "não cabe")', () => {
+  it('the "text larger than the box" warning also marks overflow (the "does not fit" pending item)', () => {
     const tall = testCatalog({
       ...COMPONENTS,
       text: {
@@ -248,7 +248,7 @@ describe('overflow', () => {
           children: [
             {
               type: 'text',
-              name: 'rotulo',
+              name: 'label',
               text: 'aaaa bbbb cccc dddd',
               width: 30,
               height: 12,
@@ -273,17 +273,17 @@ describe('overflow', () => {
     );
     const drawing = createDrawingCache()(p, tall, approximateMeasurer, 0).get('T1')!;
     expect(drawing.warnings.map((w) => w.text)).toContain(
-      'text larger than the box: rotulo',
+      'text larger than the box: label',
     );
-    // Aviso do motor: com código (MB5), a interface o traduz.
+    // Engine warning: with a code (MB5), the UI translates it.
     expect(drawing.warnings.find((w) => w.text.startsWith('text larger'))).toMatchObject({
       code: 'engine.textTooBig',
-      params: { name: 'rotulo' },
+      params: { name: 'label' },
     });
     expect(drawing.overflow).toBe(true);
   });
 
-  it('palavra mais larga que a caixa do texto também marca overflow (#1631)', () => {
+  it('a word wider than the text box also marks overflow (#1631)', () => {
     const word = testCatalog({
       ...COMPONENTS,
       text: {
@@ -298,8 +298,8 @@ describe('overflow', () => {
           children: [
             {
               type: 'text',
-              name: 'rotulo',
-              text: 'Confirmar',
+              name: 'label',
+              text: 'Confirm',
               width: 30,
               height: 40,
               font: { size: 10, lineHeight: 12 },
@@ -323,12 +323,12 @@ describe('overflow', () => {
     );
     const drawing = createDrawingCache()(p, word, approximateMeasurer, 0).get('T1')!;
     expect(drawing.warnings).toMatchObject([
-      { code: 'engine.textTooBig', params: { name: 'rotulo' } },
+      { code: 'engine.textTooBig', params: { name: 'label' } },
     ]);
     expect(drawing.overflow).toBe(true);
   });
 
-  it('folha que cabe não estoura; o aviso do motor marca overflow', () => {
+  it('a leaf that fits does not overflow; the engine warning marks overflow', () => {
     let p = add(componentProject(), 'T1', 'text');
     p = add(p, 'W', 'wide', { center: { x: 600, y: 600 } });
     const drawings = createDrawingCache()(p, catalog, approximateMeasurer, 0);
@@ -340,30 +340,30 @@ describe('overflow', () => {
     ).toBe(true);
   });
 
-  it('container: filha com o retângulo fora da caixa do slot estoura', () => {
-    // O slot de `inset` fica 20 px para dentro do container.
+  it('container: a child with its rectangle outside the slot box overflows', () => {
+    // The `inset` slot sits 20 px inside the container.
     let p = add(componentProject(), 'C', 'inset', {
       rect: { x: 100, y: 100, width: 300, height: 200 },
     });
-    // No slot (120..380 × 120..280): cabe.
+    // Inside the slot (120..380 × 120..280): it fits.
     p = add(p, 'T1', 'text', { parentId: 'C' });
     const cache = createDrawingCache();
     const fits = cache(p, catalog, approximateMeasurer, 0);
     expect(fits.get('C')?.overflow).toBe(false);
     expect(fits.get('C')?.warnings).toEqual([]);
 
-    // Encostada na borda do container, fora do slot.
+    // Touching the container edge, outside the slot.
     const moved = moveMarking(p, 'T1', -20, -20);
     const out = cache(moved, catalog, approximateMeasurer, 0);
     expect(out.get('C')?.overflow).toBe(true);
     expect(out.get('T1')?.overflow).toBe(false);
 
-    // Voltando para dentro, o desenho do container é refeito e deixa de estourar.
+    // Going back inside, the container drawing is redone and stops overflowing.
     const back = cache(p, catalog, approximateMeasurer, 0);
     expect(back.get('C')?.overflow).toBe(false);
   });
 
-  it('a tolerância de 1 px do arredondamento não conta como estouro', () => {
+  it('the 1 px rounding tolerance does not count as an overflow', () => {
     let p = add(componentProject(), 'C', 'inset', {
       rect: { x: 100, y: 100, width: 300, height: 200 },
     });
@@ -381,8 +381,8 @@ describe('overflow', () => {
   });
 });
 
-describe('createDrawingCache: clip do slot (L2)', () => {
-  /** O container `inset` (slot a 20 px das bordas) com `clip: true` no slot (formato 4). */
+describe('createDrawingCache: slot clip (L2)', () => {
+  /** The `inset` container (slot 20 px from the edges) with `clip: true` on the slot (format 4). */
   function clippedCatalog(clip: unknown = true): ComponentCatalog {
     const base = COMPONENTS.inset as unknown as {
       template: { children: Record<string, unknown>[] };
@@ -420,7 +420,7 @@ describe('createDrawingCache: clip do slot (L2)', () => {
     return p;
   }
 
-  it('a filha de um slot com clip leva a caixa do slot da mãe', () => {
+  it('the child of a slot with clip carries the box of its parent slot', () => {
     const cat = clippedCatalog();
     const drawings = createDrawingCache()(inScreen(cat), cat, approximateMeasurer, 0);
     const slot = { x: 120, y: 120, width: 260, height: 160 };
@@ -429,7 +429,7 @@ describe('createDrawingCache: clip do slot (L2)', () => {
     expect(drawings.get('C')?.clip).toBeUndefined();
   });
 
-  it('slot sem clip (ou com clip falso): a filha não leva clip e o desenho é o de hoje', () => {
+  it('a slot without clip (or with clip false): the child carries no clip and the drawing is today\'s', () => {
     const plain = createDrawingCache()(
       inScreen(catalog),
       catalog,
@@ -442,7 +442,7 @@ describe('createDrawingCache: clip do slot (L2)', () => {
     expect('clip' in (drawings.get('T1') as object)).toBe(false);
   });
 
-  it('mover ou redimensionar a mãe atualiza o clip da filha', () => {
+  it('moving or resizing the parent updates the child clip', () => {
     const cat = clippedCatalog();
     const cache = createDrawingCache();
     const p = inScreen(cat);
@@ -460,7 +460,7 @@ describe('createDrawingCache: clip do slot (L2)', () => {
     expect(resized.get('T1')?.clip).toEqual({ x: 120, y: 120, width: 360, height: 160 });
   });
 
-  it('sem mudança, o clip é o mesmo objeto; mexer numa irmã ou noutra marcação não o troca', () => {
+  it('without a change, the clip is the same object; touching a sibling or another marking does not replace it', () => {
     const cat = clippedCatalog();
     const cache = createDrawingCache();
     const p = inScreen(cat);
@@ -472,7 +472,7 @@ describe('createDrawingCache: clip do slot (L2)', () => {
     expect(sibling.get('T2')?.clip).toBe(before.get('T1')?.clip);
   });
 
-  /** C (inset com clip) com D (box) meio fora do slot dele e o texto T dentro de D. */
+  /** C (inset with clip) with D (box) half outside its slot and the text T inside D. */
   function nested(cat: ComponentCatalog): Project {
     let p = componentProject();
     const put = (id: string, typeId: string, extra: Partial<NewComponentArgs> = {}) => {
@@ -497,7 +497,7 @@ describe('createDrawingCache: clip do slot (L2)', () => {
     return p;
   }
 
-  it('o clip do slot alcança as netas: a filha sem clip passa o recorte adiante', () => {
+  it('the slot clip reaches the grandchildren: a child without a clip passes the clipping on', () => {
     const cat = clippedCatalog();
     const p = nested(cat);
     expect(p.markings.find((m) => m.id === 'T')?.parentId).toBe('D');
@@ -507,7 +507,7 @@ describe('createDrawingCache: clip do slot (L2)', () => {
     expect(drawings.get('T')?.clip).toEqual(slot);
   });
 
-  it('slot com clip dentro de outro: a neta leva a interseção dos dois', () => {
+  it('a clip slot inside another: the grandchild carries the intersection of both', () => {
     const withClip = (component: unknown) => {
       const c = component as { template: { children: object[] } };
       return {
@@ -525,11 +525,11 @@ describe('createDrawingCache: clip do slot (L2)', () => {
       box: withClip(COMPONENTS.box),
     } as never);
     const drawings = createDrawingCache()(nested(cat), cat, approximateMeasurer, 0);
-    // Slot de C: 120..380 × 120..280; slot de D (a caixa toda): 300..390 × 150..230.
+    // Slot of C: 120..380 × 120..280; slot of D (the whole box): 300..390 × 150..230.
     expect(drawings.get('T')?.clip).toEqual({ x: 300, y: 150, width: 80, height: 80 });
   });
 
-  it('mãe com screen (cena na origem, em pixels de tela): a filha não leva o clip perto de 0,0', () => {
+  it('parent with screen (scene at the origin, in screen pixels): the child does not carry the clip near 0,0', () => {
     const base = COMPONENTS.inset as unknown as {
       template: { children: Record<string, unknown>[] };
     };
@@ -548,7 +548,7 @@ describe('createDrawingCache: clip do slot (L2)', () => {
     expect(drawings.get('T1')?.clip).toBeUndefined();
   });
 
-  it('o clip muda a filha mesmo que ela, em si, não tenha mudado', () => {
+  it('the clip changes the child even if the child itself has not changed', () => {
     const cat = clippedCatalog();
     const cache = createDrawingCache();
     const p = inScreen(cat);
@@ -566,8 +566,8 @@ describe('createDrawingCache: clip do slot (L2)', () => {
   });
 });
 
-describe('aviso do none: a app e a prova de desenho dão o mesmo (#1093)', () => {
-  // Raiz `none` com um quadro `hug` de padding 24 nas laterais e uma barra de 39: 87 de conteúdo.
+describe('none warning: the app and the drawing proof give the same (#1093)', () => {
+  // `none` root with a `hug` frame with padding 24 on the sides and a bar of 39: 87 of content.
   const chip = (id: string) => ({
     format: 'mapping-component',
     formatVersion: 4,
@@ -581,18 +581,18 @@ describe('aviso do none: a app e a prova de desenho dão o mesmo (#1093)', () =>
       children: [
         {
           type: 'frame',
-          name: 'miolo',
+          name: 'core',
           width: 'hug',
           height: 'hug',
           layout: { type: 'row', padding: [0, 24] },
-          children: [{ type: 'rect', name: 'barra', width: 39, height: 36 }],
+          children: [{ type: 'rect', name: 'bar', width: 39, height: 36 }],
         },
       ],
     },
   });
   const TOO_BIG = 'content larger than the box: chip';
 
-  it('a mesma instância pela app (componentDrawings) e pela prova (libraryDrawing) avisa igual', () => {
+  it('the same instance through the app (componentDrawings) and through the proof (libraryDrawing) warns the same', () => {
     const cat = testCatalog({ ...COMPONENTS, text: chip('text') } as never);
     const marked = addComponentMarking(
       componentProject(),
