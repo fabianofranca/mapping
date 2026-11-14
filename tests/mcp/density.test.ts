@@ -113,7 +113,7 @@ describe('density no add_container e no update_container', () => {
       );
       expect(bad.valid).toBe(false);
       expect(bad.errors.map((e) => e.code)).toEqual(['container-density']);
-      expect(bad.errors[0]!.hint).toMatch(/0,5 a 8/);
+      expect(bad.errors[0]!.hint).toMatch(/from 0\.5 to 8/);
       expect(bad.errors[0]!.detail).toBeTruthy();
     }
   });

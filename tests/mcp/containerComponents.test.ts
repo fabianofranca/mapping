@@ -316,7 +316,7 @@ describe('get_marking_image num container com componentes', () => {
     const out = await markingImage(roots, refs, marking, { padding: 10 });
     expect(out.json).toMatchObject({
       drawing: 'rendered',
-      drawingNote: expect.stringContaining('texto real'),
+      drawingNote: expect.stringContaining('real text'),
       container: { file: null, background: '#FFEBEE' },
       width: 180,
       height: 76,
@@ -530,8 +530,8 @@ describe('create_marking com inside (filha no slot)', () => {
     expect(result.errors).toEqual([]);
     const warning = result.deprecations.find((d) => d.index === 3);
     expect(warning).toMatchObject({ code: 'ignored-argument', op: 'create_marking' });
-    expect(warning?.message).toMatch(/não coube no slot de/);
-    expect(warning?.message).toMatch(/aumente o componente ou use Arrumar na app/);
+    expect(warning?.message).toMatch(/did not fit in the slot of/);
+    expect(warning?.message).toMatch(/enlarge the component or use Arrange in the app/);
   });
 
   it('slot cheio e a filha cai dentro de uma irmã: o aviso diz também em quem ficou', async () => {
@@ -544,8 +544,8 @@ describe('create_marking com inside (filha no slot)', () => {
     expect(result.errors).toEqual([]);
     expect(marking(result, '$b2').parentId).toBe(idOf(result, '$b1'));
     const warning = result.deprecations.find((d) => d.index === 3);
-    expect(warning?.message).toMatch(/não coube no slot de/);
-    expect(warning?.message).toMatch(/ficou dentro de/);
+    expect(warning?.message).toMatch(/did not fit in the slot of/);
+    expect(warning?.message).toMatch(/it ended up inside/);
   });
 
   it('irmã cobre o slot: a filha fica no componente, e não dentro da irmã (CL1, achado 3.1)', async () => {
@@ -570,7 +570,7 @@ describe('create_marking com inside (filha no slot)', () => {
     // Antes da CL1 a peça nascia contida em `$a` e virava filha dela, com o aviso "ficou dentro de".
     expect(marking(result, '$c').parentId).toBe(idOf(first, '$col'));
     const warning = result.deprecations.find((d) => d.index === 2);
-    expect(warning?.message ?? '').not.toMatch(/ficou dentro de/);
+    expect(warning?.message ?? '').not.toMatch(/it ended up inside/);
   });
 
   it('rect maior que o slot: o tamanho encolhe ao slot, com aviso', async () => {

@@ -104,10 +104,10 @@ describe('add_container: com arquivo e com fundo', () => {
     expect(result.valid).toBe(true);
     expect(result.warnings).toBeUndefined();
     expect(result.summary[0]).toMatch(
-      /^0\. Adicionar o container "Foto" com a imagem images\/foto\.webp \(300×200 px, /,
+      /^0\. Add the container "Foto" with the image images\/foto\.webp \(300×200 px, /,
     );
     expect(result.summary[1]).toBe(
-      '1. Adicionar o container "Cartão" (320×200 px, fundo #FFFFFF)',
+      '1. Add the container "Cartão" (320×200 px, background #FFFFFF)',
     );
     expect(result.changes).toMatchObject({
       containers: { created: 2 },
@@ -180,9 +180,9 @@ describe('add_container: com arquivo e com fundo', () => {
       [2, 'invalid-arguments'],
       [3, 'invalid-arguments'],
     ]);
-    expect(result.errors![0]!.message).toMatch(/ambígua.*`file`.*`width`/);
-    expect(result.errors![2]!.message).toMatch(/faltam: `width`, `height`, `background`/);
-    expect(result.errors![3]!.message).toMatch(/faltam: `height`/);
+    expect(result.errors![0]!.message).toMatch(/ambiguous.*`file`.*`width`/);
+    expect(result.errors![2]!.message).toMatch(/missing: `width`, `height`, `background`/);
+    expect(result.errors![3]!.message).toMatch(/missing: `height`/);
   });
 });
 
@@ -210,9 +210,9 @@ describe('update_container, replace_container e delete_container', () => {
     expect(result.errors).toBeUndefined();
     expect(result.valid).toBe(true);
     expect(result.warnings).toBeUndefined();
-    expect(result.summary[0]).toMatch(/^0\. Alterar o container ".*": nome "Cartão 2"/);
-    expect(result.summary[1]).toMatch(/^1\. Trocar a imagem do container /);
-    expect(result.summary[2]).toMatch(/^2\. Excluir o container /);
+    expect(result.summary[0]).toMatch(/^0\. Change the container ".*": name "Cartão 2"/);
+    expect(result.summary[1]).toMatch(/^1\. Replace the image of the container /);
+    expect(result.summary[2]).toMatch(/^2\. Delete the container /);
     expect(result.changes).toMatchObject({ containers: { updated: 1, deleted: 1 } });
   });
 
@@ -234,7 +234,7 @@ describe('update_container, replace_container e delete_container', () => {
     const update = await plan(name, [
       { op: 'update_container', container: box, x: 275.00000000000006 },
     ]);
-    expect(update.summary[0]).toContain('posição (275, -400)');
+    expect(update.summary[0]).toContain('position (275, -400)');
     const changed = await propose(mcp, name, [
       { op: 'update_container', container: box, x: 275.00000000000006 },
     ]);
@@ -264,7 +264,7 @@ describe('update_container, replace_container e delete_container', () => {
     const update = await plan(name, [
       { op: 'update_container', container: box, x: 100.1234567 },
     ]);
-    expect(update.summary[0]).toContain('posição (100.123457, -449.012346)');
+    expect(update.summary[0]).toContain('position (100.123457, -449.012346)');
     const changed = await propose(mcp, name, [
       { op: 'update_container', container: box, x: 100.1234567 },
     ]);
@@ -305,7 +305,7 @@ describe('update_container, replace_container e delete_container', () => {
       expect.stringContaining('delete_container'),
     ]);
     // O resultado é o mesmo das operações novas.
-    expect(result.summary[0]).toMatch(/^0\. Alterar o container ".*": nome "Cartão 2"/);
+    expect(result.summary[0]).toMatch(/^0\. Change the container ".*": name "Cartão 2"/);
     expect(result.changes).toMatchObject({ containers: { updated: 1, deleted: 1 } });
 
     const proposed = await propose(mcp, name, [{ op: 'delete_image', image: box }]);
@@ -328,7 +328,7 @@ describe('update_container, replace_container e delete_container', () => {
       },
     ]);
     expect(result.errors?.map((e) => e.code)).toEqual(['container-has-file']);
-    expect(result.errors![0]!.message).toMatch(/tem arquivo de imagem/);
+    expect(result.errors![0]!.message).toMatch(/has an image file/);
   });
 });
 
@@ -485,7 +485,7 @@ describe('leitura sempre em português, sem JSON bruto de erro', () => {
       await mcp.call('get_container_file', { ref: created.created[0]!.ref! }),
     );
     expect(error.code).toBe('container-without-file');
-    expect(error.message).toMatch(/não tem arquivo de imagem/);
+    expect(error.message).toMatch(/has no image file/);
     expect(error.message).not.toMatch(/[{}]/);
     expect(readProject(dir).containers).toHaveLength(1);
   });

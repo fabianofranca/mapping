@@ -135,9 +135,9 @@ describe('fit_marking no lote', () => {
     expect(rect).toMatchObject({ x: 20, y: 20, width: 120 });
     expect(rect.height).toBeGreaterThanOrEqual(76);
     const step = result.steps.find((s) => s.index === 1)!;
-    expect(step.description).toContain('Ajustar a marcação');
-    expect(step.description).toContain('120×40 px em (20, 20)');
-    expect(step.description).toContain(`120×${rect.height} px em (20, 20)`);
+    expect(step.description).toContain('Fit the marking');
+    expect(step.description).toContain('120×40 px at (20, 20)');
+    expect(step.description).toContain(`120×${rect.height} px at (20, 20)`);
     expect(result.invariantIssues).toEqual([]);
   });
 
@@ -149,13 +149,13 @@ describe('fit_marking no lote', () => {
   it('nada a mudar: o resumo diz isso e o projeto é o mesmo', async () => {
     const result = await run([fit()]);
     expect(result.errors).toEqual([]);
-    expect(result.steps[0]!.description).toContain('nada muda');
+    expect(result.steps[0]!.description).toContain('nothing changes');
     expect(result.project.markings).toEqual(loaded.project.markings);
   });
 
   it('ajustar duas vezes: a segunda não muda nada', async () => {
     const result = await run([relabel(LONG_LABEL), fit(), fit()]);
-    expect(result.steps[2]!.description).toContain('nada muda');
+    expect(result.steps[2]!.description).toContain('nothing changes');
   });
 
   it('os erros: not-fittable (com a dica), locked e referência desconhecida', async () => {
@@ -234,7 +234,7 @@ describe('plan_changes: a prévia direta do fit_marking', () => {
       () => Date.parse(NOW),
     );
     expect(plan.valid).toBe(true);
-    expect((plan.summary as string[]).join('\n')).toContain('Ajustar a marcação');
+    expect((plan.summary as string[]).join('\n')).toContain('Fit the marking');
     const again = await planChanges(roots, loaded.location, [fit(PLAIN)], () =>
       Date.parse(NOW),
     );
@@ -249,7 +249,7 @@ describe('plan_changes: a prévia direta do fit_marking', () => {
       }),
     );
     expect(plan.valid).toBe(true);
-    expect(plan.summary.join('\n')).toContain('Ajustar a marcação');
+    expect(plan.summary.join('\n')).toContain('Fit the marking');
     const failed = await mcp.call<{ valid: boolean; errors: { code: string }[] }>(
       'plan_changes',
       { project: 'telas', operations: [fit(PLAIN)] },

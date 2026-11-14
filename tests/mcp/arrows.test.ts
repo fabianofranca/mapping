@@ -261,7 +261,7 @@ describe('update_arrow e delete_arrow', () => {
       { op: 'update_arrow', arrow: arrow.id, name: 'explica', style: 'straight' },
     ]);
     expect(result.valid).toBe(true);
-    expect(result.summary[0]).toContain('estilo straight');
+    expect(result.summary[0]).toContain('style straight');
     expect(result.warnings).toEqual([
       expect.objectContaining({ code: 'ignored-argument', op: 0 }),
     ]);

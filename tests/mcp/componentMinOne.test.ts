@@ -104,7 +104,7 @@ describe('mínimo de 1 px com componente', () => {
     const result = await run([{ op: 'create_marking', container: PHOTO, rect: SMALL }]);
     expect(result.errors[0]).toMatchObject({
       code: 'rect-too-small',
-      detail: 'recebido 3×3 px; mínimo 8×8 px',
+      detail: 'received 3×3 px; minimum 8×8 px',
     });
   });
 

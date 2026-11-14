@@ -197,7 +197,7 @@ describe('create_marking com anchor', () => {
     expect(tip.rect).toEqual({ x: 310, y: 198, width: 100, height: 48 });
     expect(tip.anchor).toEqual({ to: target });
     expect(arrowOf(result.project, tip.id)).toEqual([42, 40]);
-    expect(result.steps[1]!.description).toContain('tamanho inicial do componente');
+    expect(result.steps[1]!.description).toContain('initial size of the component');
     expect(result.invariantIssues).toEqual([]);
   });
 
@@ -234,7 +234,7 @@ describe('create_marking com anchor', () => {
       { op: 'create_marking', container: IMAGE, anchor: { to: TARGET } } as Operation,
     ]);
     expect(result.errors[0]).toMatchObject({ code: 'invalid-arguments' });
-    expect(result.errors[0]!.message).toContain('`rect` é obrigatório');
+    expect(result.errors[0]!.message).toContain('`rect` is required');
   });
 
   it('sem componente e com rect, a âncora é gravada sem mover', async () => {
@@ -298,7 +298,7 @@ describe('create_marking com anchor: o assentar leva a nova para outro espaço q
     const m = markingIn(result, aliasId(result, '$m'));
     expect(m.containerId).toBe(IMAGE);
     expect(m.anchor ?? null).toBeNull();
-    expect(result.deprecations.map((d) => d.message).join(' ')).toContain('âncora');
+    expect(result.deprecations.map((d) => d.message).join(' ')).toContain('anchor');
     expect(result.invariantIssues).toEqual([]);
   });
 });
@@ -330,7 +330,7 @@ describe('update_marking com anchor', () => {
       width: 50,
       height: 50,
     });
-    expect(result.steps[0]!.description).toContain('ancorar em');
+    expect(result.steps[0]!.description).toContain('anchor to');
     const removed = await run([
       { op: 'update_marking', marking: TIP, anchor: null } as Operation,
     ]);
@@ -389,9 +389,9 @@ describe('mover a âncora e encostar de novo', () => {
     // Mais alto (70): o encosto sobe até a borda de baixo ficar 4 acima da âncora (y 200).
     expect(tip.rect).toEqual({ x: 200, y: 126, width: 100, height: 70 });
     const step = result.steps[1]!;
-    expect(step.description).toContain('Encostar a marcação');
-    expect(step.description).toContain('100×70 px em (200, 148)');
-    expect(step.description).toContain('100×70 px em (200, 126)');
+    expect(step.description).toContain('Snap the marking');
+    expect(step.description).toContain('100×70 px at (200, 148)');
+    expect(step.description).toContain('100×70 px at (200, 126)');
     expect(result.invariantIssues).toEqual([]);
   });
 
@@ -415,7 +415,7 @@ describe('mover a âncora e encostar de novo', () => {
   it('nada a mudar: o resumo diz isso e o projeto é o mesmo', async () => {
     const result = await run([snap(TIP)]);
     expect(result.errors).toEqual([]);
-    expect(result.steps[0]!.description).toContain('nada muda');
+    expect(result.steps[0]!.description).toContain('nothing changes');
     expect(result.project.markings).toEqual(loaded.project.markings);
   });
 
@@ -534,7 +534,7 @@ describe('plan_changes: a prévia direta', () => {
       () => Date.parse(NOW),
     );
     expect(plan.valid).toBe(true);
-    expect((plan.summary as string[]).join('\n')).toContain('Encostar a marcação');
+    expect((plan.summary as string[]).join('\n')).toContain('Snap the marking');
     const again = await planChanges(roots, loaded.location, [snap(LOOSE)], () =>
       Date.parse(NOW),
     );
@@ -588,7 +588,7 @@ describe('anchor e snap_to_anchor numa proposta', () => {
     )!;
     expect(anchor).toMatchObject({ from: null, to: { to: TARGET, side: 'bottom' } });
     expect(rect).toMatchObject({ from: { x: 400, y: 300, width: 50, height: 50 } });
-    expect(proposed.summary.join('\n')).toContain('Encostar a marcação');
+    expect(proposed.summary.join('\n')).toContain('Snap the marking');
   });
 
   it('aceitar só a âncora grava a âncora e deixa o retângulo', async () => {

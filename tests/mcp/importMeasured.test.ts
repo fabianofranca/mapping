@@ -281,7 +281,7 @@ describe('import_measured: erro por nó', () => {
       expect(result.errors).toEqual([]);
       expect(thrown).toBeGreaterThan(0);
       expect(result.deprecations.map((d) => d.message).join('\n')).toContain(
-        'não criada',
+        'not created',
       );
     } finally {
       spy.mockRestore();

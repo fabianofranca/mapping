@@ -364,7 +364,7 @@ describe('wrap_items: avisos e erros', () => {
       op: 'wrap_items',
       code: 'invalid-parent',
     });
-    expect(JSON.stringify(result.errors?.[0])).toMatch(/nota|seta|flutuante/i);
+    expect(JSON.stringify(result.errors?.[0])).toMatch(/notes|arrows|floating/i);
     const proposed = await propose(mcp, project, [{ op: 'wrap_items', items }]);
     expect(proposed.valid).toBe(false);
     expect(proposed.proposed).not.toBe(true);
@@ -396,7 +396,7 @@ describe('wrap_items: plano e revisão', () => {
     const result = await plan([
       { op: 'wrap_items', items: [byName(p, 'A').id, byName(p, 'B').id] },
     ]);
-    expect(result.summary.join('\n')).toMatch(/Envolver 2 itens/);
+    expect(result.summary.join('\n')).toMatch(/Wrap 2 items/);
     expect(hashOf(join(dir, 'mapping.json'))).toBe(hash);
   });
 
