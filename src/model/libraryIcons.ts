@@ -4,11 +4,11 @@ import { libraryIssue } from './libraryIssue';
 import type { SpecAnnotationType } from './spec';
 import { isRecord } from './isRecord';
 
-// Conferência dos ícones na biblioteca (CF7). Puro; `library.ts` chama estas funções com o que
-// já leu. Nível 2: todo nome LITERAL de um nó `icon` existe no conjunto declarado em `icons`.
-// Nível 3: um campo `enum` lido pelo `name` do nó cujas `options` não estão no conjunto avisa.
+// Icon checks in the library (CF7). Pure; `library.ts` calls these functions with what it
+// already read. Level 2: every LITERAL name of an `icon` node exists in the set declared in `icons`.
+// Level 3: an `enum` field read by the `name` of the node whose `options` are not in the set warns.
 
-/** Um nome de ícone escrito direto (texto) na expressão do `name`, com o caminho dele. */
+/** An icon name written directly (text) in the `name` expression, with its path. */
 export interface NameLiteral {
   readonly path: string;
   readonly value: string;
@@ -18,7 +18,7 @@ function branchLiterals(branches: readonly [unknown, string][]): NameLiteral[] {
   return branches.flatMap(([expr, at]) => nameLiterals(expr, at));
 }
 
-/** Os textos literais que a expressão pode produzir (`then`/`else` do `$if`, `cases`/`default` do `$switch`). */
+/** The literal texts the expression can produce (`then`/`else` of `$if`, `cases`/`default` of `$switch`). */
 export function nameLiterals(expr: unknown, path: string): NameLiteral[] {
   if (typeof expr === 'string') return [{ path, value: expr }];
   if (!isRecord(expr)) return [];
@@ -40,7 +40,7 @@ export function nameLiterals(expr: unknown, path: string): NameLiteral[] {
   return [];
 }
 
-/** Os campos que a expressão lê para produzir o nome (`$field`, direto ou dentro de `$if`/`$switch`). */
+/** The fields the expression reads to produce the name (`$field`, direct or inside `$if`/`$switch`). */
 export function nameFields(expr: unknown): string[] {
   if (!isRecord(expr)) return [];
   if (typeof expr.$field === 'string') return [expr.$field];
@@ -50,8 +50,8 @@ export function nameFields(expr: unknown): string[] {
 }
 
 /**
- * Nível 2: cada nome literal de nó `icon` existe no conjunto. Sem `icons` declarado na
- * especialização o nome não pode ser conferido e o nó só desenharia reservado: erro também.
+ * Level 2: every literal name of an `icon` node exists in the set. Without `icons` declared in the
+ * specialization the name cannot be checked and the node would only draw a placeholder: an error too.
  */
 export function iconLiteralIssues(
   file: string,
@@ -63,7 +63,7 @@ export function iconLiteralIssues(
   for (const node of nodes) {
     for (const literal of nameLiterals(node.name, node.path)) {
       if (set !== undefined && Object.hasOwn(set.icons, literal.value)) continue;
-      // Conjunto declarado mas ilegível: o erro do arquivo já foi dado no nível 1.
+      // Declared set but unreadable: the file's error was already given at level 1.
       if (iconsPath !== undefined && set === undefined) continue;
       out.push(
         iconsPath === undefined
@@ -80,7 +80,7 @@ export function iconLiteralIssues(
   return out;
 }
 
-/** Nível 3: opção de `enum` lida pelo `name` do nó `icon` que não está no conjunto de ícones. */
+/** Level 3: an `enum` option read by the `name` of the `icon` node that is not in the icon set. */
 export function iconOptionIssues(
   specPath: string,
   type: SpecAnnotationType,

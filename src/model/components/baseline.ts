@@ -1,33 +1,33 @@
 /**
- * Conta única da linha de base e do `cap-middle` (decisão 28 da #898). A app (Konva) e o PNG do MCP
- * (glifos e barras) leem estas funções; cada um traz só as medidas da fonte que desenha. Puro, sem
- * navegador: o modelo não conhece fonte, quem mede entra por parâmetro.
+ * Single computation of the baseline and of `cap-middle` (decision 28 of #898). The app (Konva)
+ * and the MCP PNG (glyphs and bars) read these functions; each brings only the measures of the
+ * font it draws. Pure, no browser: the model knows no font, whoever measures passes it in.
  */
 
-/** Medidas verticais da fonte do nó, em px no tamanho do nó. */
+/** Vertical measures of the node's font, in px at the node's size. */
 export interface CapMetrics {
   readonly ascent: number;
   readonly descent: number;
-  /** Altura da maiúscula. */
+  /** Height of the capital letter. */
   readonly capHeight: number;
 }
 
-/** Sem medida de fonte, o ascendente vale esta fração do corpo. */
+/** Without a font measure, the ascent is this fraction of the body size. */
 export const ASCENT_RATIO = 0.8;
-/** Sem medida de fonte, o descendente vale esta fração do corpo. */
+/** Without a font measure, the descent is this fraction of the body size. */
 export const DESCENT_RATIO = 0.2;
-/** Sem a medida do `H`, a maiúscula vale esta fração do corpo. */
+/** Without the measure of the `H`, the capital height is this fraction of the body size. */
 export const CAP_HEIGHT_RATIO = 0.7;
 
 /**
- * O medidor aproximado (Node e prova de desenho) não tem fonte: o ascendente vale esta fração do
- * corpo (dá 15 na linha de base do Roboto 14/20, como o Compose).
+ * The approximate measurer (Node and drawing proof) has no font: the ascent is this fraction of
+ * the body size (gives 15 at the Roboto 14/20 baseline, like Compose).
  */
 export const APPROX_ASCENT_RATIO = 0.93;
-/** O descendente do medidor aproximado, em fração do corpo. */
+/** The descent of the approximate measurer, as a fraction of the body size. */
 export const APPROX_DESCENT_RATIO = 0.24;
 
-/** Ascendente e descendente do medidor aproximado para o corpo `size`. */
+/** Ascent and descent of the approximate measurer for the body size `size`. */
 export const approximateExtents = (
   size: number,
 ): Pick<CapMetrics, 'ascent' | 'descent'> => ({
@@ -35,7 +35,7 @@ export const approximateExtents = (
   descent: APPROX_DESCENT_RATIO * size,
 });
 
-/** A reserva de quando não há medida de fonte: as proporções usuais do corpo `size`. */
+/** The fallback for when there is no font measure: the usual proportions of the body size `size`. */
 export const capMetricsFallback = (size: number): CapMetrics => ({
   ascent: ASCENT_RATIO * size,
   descent: DESCENT_RATIO * size,
@@ -43,9 +43,9 @@ export const capMetricsFallback = (size: number): CapMetrics => ({
 });
 
 /**
- * A linha de base de uma linha de altura `lineHeight` que começa em `top`: o centro da linha
- * mais metade da diferença entre ascendente e descendente (a mesma do Konva e do desenho dos
- * glifos).
+ * The baseline of a line of height `lineHeight` starting at `top`: the center of the line
+ * plus half the difference between ascent and descent (the same as Konva's and the glyph
+ * drawing's).
  */
 export function lineBaseline(
   top: number,
@@ -56,8 +56,9 @@ export function lineBaseline(
 }
 
 /**
- * `cap-middle`: quanto descer o texto, posto no topo, para o bloco do topo da maiúscula da
- * primeira linha à linha de base da última ficar no centro da caixa. 0 com `boxHeight ≤ 0`.
+ * `cap-middle`: how far to shift the text, placed at the top, so that the block from the top of
+ * the first line's capital to the last line's baseline ends up at the center of the box. 0 with
+ * `boxHeight ≤ 0`.
  */
 export function capMiddleShift(input: {
   readonly boxHeight: number;

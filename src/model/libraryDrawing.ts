@@ -19,49 +19,50 @@ import {
 } from './messages';
 import type { Spec, SpecAnnotationType } from './spec';
 
-// Nível 3 do validador da biblioteca: a prova de desenho. Instancia cada componente com os
-// valores do `preview` e de cada exemplo de valores, no tamanho inicial, e passa
-// cada exemplo de sistema externo pela declaração (`origins`). Puro: recebe tudo já lido
-// (`library.ts` monta o contexto) e nunca lê disco nem rede.
+// Level 3 of the library validator: the drawing proof. It instantiates each component with the
+// values of the `preview` and of each values example, at the initial size, and passes each
+// external-system example through the declaration (`origins`). Pure: receives everything already
+// read (`library.ts` builds the context) and never reads disk or network.
 //
-// Ordem das issues (fixa, os testes dependem dela): tipos na ordem da especialização (camadas e
-// tipos em ordem); em cada tipo com componente válido, primeiro o `preview` (ou os valores
-// padrão, quando o componente não tem `preview`), depois cada exemplo de valores, sempre no
-// `size` (o `minSize` não é desenhado: o aviso de conteúdo maior que a caixa nele só serve a quem
-// escreve o componente, não a quem vê o preview); depois os exemplos de sistema externo do tipo; por
-// fim as telas de exemplo de cada origem, na ordem de `origins`.
+// Order of the issues (fixed, the tests depend on it): types in the specialization's order
+// (layers and types in order); in each type with a valid component, first the `preview` (or the
+// default values, when the component has no `preview`), then each values example, always at the
+// `size` (the `minSize` is not drawn: the warning about content larger than the box at it only
+// serves whoever writes the component, not whoever views the preview); then the type's
+// external-system examples; finally the example screens of each origin, in the order of
+// `origins`.
 //
-// A medida do texto é a aproximada (`approximateMeasurer`): quem desenha de verdade usa a do
-// navegador, por isso os avisos do motor de desenho levam `(aproximado)` no fim.
+// Text measurement is the approximate one (`approximateMeasurer`): whoever really draws uses the
+// browser's, so the drawing engine's warnings carry `(approximate)` at the end.
 
-/** Tamanho do quadro que recebe o nó de um exemplo de sistema externo (um componente, não uma tela). */
+/** Size of the frame that receives the node of an external-system example (a component, not a screen). */
 const NODE_SCREEN = 1000;
 
-/** Sufixo dos avisos que dependem da medida do texto. */
-export const APPROXIMATE_SUFFIX = ' (aproximado)';
+/** Suffix of the warnings that depend on the text measurement. */
+export const APPROXIMATE_SUFFIX = ' (approximate)';
 
 export interface DrawingContext {
   readonly spec: Spec;
   readonly specPath: string;
-  /** Caminho de um arquivo citado pela especialização, relativo à raiz do pacote. */
+  /** Path of a file cited by the specialization, relative to the package root. */
   readonly resolve: (ref: string) => string;
-  /** Componentes válidos, pelo caminho resolvido. */
+  /** Valid components, by resolved path. */
   readonly components: ReadonlyMap<string, ComponentFile>;
-  /** JSON já lido de um arquivo (exemplo externo), pelo caminho resolvido; ausente ou inválido = `undefined`. */
+  /** JSON already read from a file (external example), by resolved path; missing or invalid = `undefined`. */
   readonly jsonOf: (path: string) => unknown;
-  /** Os `.json` do pacote com texto, a especialização primeiro (alimenta `loadLibrary`). */
+  /** The package's `.json` files with text, the specialization first (feeds `loadLibrary`). */
   readonly textFiles: readonly TextFile[];
-  /** O conjunto de ícones da especialização (`icons`), quando o arquivo é válido. */
+  /** The specialization's icon set (`icons`), when the file is valid. */
   readonly icons?: IconSet;
 }
 
 const messageOf = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
-/** "campo não informado" do motor para um campo que o tipo nem declara: o nível 2 já deu o erro. */
+/** The engine's "field not provided" for a field the type does not even declare: level 2 already gave the error. */
 const NOT_INFORMED_CODE: ModelMessageTemplateCode = 'engine.fieldMissing';
 
-/** O aviso do motor com o sufixo de medida aproximada (o aviso vai em `detail`, que a interface traduz). */
+/** The engine warning with the approximate-measure suffix (the warning goes in `detail`, which the interface translates). */
 const approximate = (message: ModelMessage): ModelMessage => {
   const params = { reason: message.text };
   const text = fillTemplate(MODEL_MESSAGE_TEMPLATES['engine.approximate'], params);
@@ -79,19 +80,19 @@ export function defaultValues(
   return values;
 }
 
-/** O aviso que só aparece em `rtl`: o do motor com o prefixo "em rtl" (o aviso vai em `detail`, que a interface traduz). */
+/** The warning that only appears in `rtl`: the engine's with the "in rtl" prefix (the warning goes in `detail`, which the interface translates). */
 const inRtl = (message: ModelMessage): ModelMessage => {
   const params = { reason: message.text };
   const text = fillTemplate(MODEL_MESSAGE_TEMPLATES['engine.inRtl'], params);
   return modelMessage('engine.inRtl', params, text, message);
 };
 
-/** O caso provado: um código de prova por caso e por haver modo ou não (ver `drawCode`). */
+/** The case proved: one proof code per case and per whether there is a mode (see `drawCode`). */
 type DrawKind = 'defaults' | 'preview' | 'example';
 
 interface DrawCase {
   readonly kind: DrawKind;
-  /** Nome do exemplo (só no caso `example`). */
+  /** Name of the example (only in the `example` case). */
   readonly name?: string;
   readonly values: FieldValues;
   readonly file: string;
@@ -138,7 +139,7 @@ const DRAW_CODES = {
   readonly [ModelMessageTemplateCode, ModelMessageTemplateCode]
 >;
 
-/** Os mesmos casos desenhados no tamanho ajustado ao conteúdo (decisão 10 da #898): "tamanho ajustado W×H". */
+/** The same cases drawn at the size fitted to the content (decision 10 of #898): "fitted size W×H". */
 const FITTED_DRAW_CODES = {
   defaults: ['library.drawFitted.defaults', 'library.drawFitted.defaultsMode'],
   preview: ['library.drawFitted.preview', 'library.drawFitted.previewMode'],
@@ -148,7 +149,7 @@ const FITTED_DRAW_CODES = {
   readonly [ModelMessageTemplateCode, ModelMessageTemplateCode]
 >;
 
-/** O código da mensagem do caso, com ou sem modo (um código por variante, texto inteiro no catálogo). */
+/** The case's message code, with or without a mode (one code per variant, whole text in the catalog). */
 function drawCode(
   kind: DrawKind,
   withMode: boolean,
@@ -158,8 +159,8 @@ function drawCode(
 }
 
 /**
- * Os modos em que a prova roda: cada modo de `tokens` com a tabela resolvida dele (como o desenho
- * faz com `resolvedTokensByMode`); sem `tokens`, uma passada só, sem modo na mensagem.
+ * The modes in which the proof runs: each mode of `tokens` with its resolved table (as the
+ * drawing does with `resolvedTokensByMode`); without `tokens`, a single pass, no mode in the message.
  */
 function drawingModes(spec: Spec): DrawingMode[] {
   const tokens = spec.tokens;
@@ -172,9 +173,10 @@ type DrawingMode = { mode?: string; tokens?: ResolvedTokens };
 const sameBox = (a: Box, b: Box): boolean => a.width === b.width && a.height === b.height;
 
 /**
- * O tamanho ajustado cabe o conteúdo por construção (mede o conteúdo, e o `min*` só o aumenta): só vale
- * prová-lo quando algo o segura, o `maxWidth`/`maxHeight` da raiz num eixo medido ou o px que uma
- * expressão dá ao eixo. Sem isso o caso no `size` já é o que importa, e o custo da prova não dobra.
+ * The fitted size fits the content by construction (it measures the content, and `min*` only
+ * increases it): proving it is only worth it when something holds it back, the root's
+ * `maxWidth`/`maxHeight` on a measured axis or the px that an expression gives the axis.
+ * Without that, the case at `size` is already what matters, and the proof's cost does not double.
  */
 function fitCanOverflow(component: ComponentFile, values: FieldValues): boolean {
   const sizing = resolveSizing(component, values);
@@ -191,9 +193,9 @@ function fitCanOverflow(component: ComponentFile, values: FieldValues): boolean 
 }
 
 /**
- * O tamanho ajustado do caso (o do ajuste, com os valores do caso e os tokens do modo dado);
- * `undefined` se o componente não tem eixo que dependa do conteúdo ou se o ajuste dá o `size` (o caso
- * no `size` já o prova).
+ * The case's fitted size (that of the fit, with the case's values and the tokens of the given
+ * mode); `undefined` if the component has no axis that depends on the content or if the fit
+ * gives `size` (the case at `size` already proves it).
  */
 function fittedBox(
   component: ComponentFile,
@@ -215,7 +217,7 @@ function fittedBox(
   }
 }
 
-/** O resultado da prova de um caso num modo: os avisos do motor ou o erro de uma exceção. */
+/** The result of proving a case in a mode: the engine's warnings or the error of an exception. */
 interface ModeResult {
   readonly mode: string | undefined;
   readonly box: Box;
@@ -224,9 +226,10 @@ interface ModeResult {
 }
 
 /**
- * Prova um caso em cada modo, num tamanho por modo, em `ltr` e depois em `rtl`: o aviso que vale
- * em todos os modos sai uma vez; o de `rtl` que o `ltr` do mesmo modo já deu não se repete, e o que
- * só `rtl` dá sai com o prefixo "em rtl" (um componente que estoura só em `rtl` é um problema dele).
+ * Proves a case in each mode, at one size per mode, in `ltr` and then in `rtl`: the warning that
+ * holds in every mode is reported once; an `rtl` one that the `ltr` of the same mode already gave
+ * is not repeated, and what only `rtl` gives is reported with the "in rtl" prefix (a component
+ * that overflows only in `rtl` is a problem of its own).
  */
 function proveCase(
   type: SpecAnnotationType,
@@ -265,8 +268,8 @@ function proveCase(
           ...(tokens === undefined ? {} : { tokens }),
           ...(direction === 'rtl' ? { direction } : {}),
         });
-        // O aviso do `sizing` não depende da medida do texto nem da direção: sai sem o sufixo
-        // `(aproximado)` e só na passada `ltr`.
+        // The `sizing` warning does not depend on the text measurement or the direction: it is
+        // reported without the `(approximate)` suffix and only in the `ltr` pass.
         const sizing =
           fitted || direction === 'rtl'
             ? []
@@ -289,7 +292,7 @@ function proveCase(
         return { mode, box: boxes[i] as Box, texts: [], error: messageOf(error) };
       }
     });
-  // O aviso que vale em todos os modos sai uma vez, sem modo; o que depende do modo cita o modo.
+  // The warning that holds in every mode is reported once, without a mode; what depends on the mode cites the mode.
   const emit = (perMode: readonly ModeResult[]): void => {
     const first = boxes[0] as Box;
     const common =
@@ -316,12 +319,12 @@ function proveCase(
   };
   const ltr = run('ltr');
   emit(ltr);
-  // A passada em `rtl` só roda no componente sensível à direção (`isDirectionSensitive`): nos
-  // outros ela custaria o dobro para repetir, espelhados, os mesmos avisos do `ltr`.
+  // The `rtl` pass only runs on the direction-sensitive component (`isDirectionSensitive`): on
+  // the others it would cost double to repeat, mirrored, the same warnings as `ltr`.
   if (isDirectionSensitive(component)) emit(rtlOnly(ltr, run('rtl')));
 }
 
-/** O que `rtl` dá a mais que o `ltr` do mesmo modo: avisos novos com o prefixo "em rtl"; erro só de `rtl` idem. */
+/** What `rtl` gives beyond the `ltr` of the same mode: new warnings with the "in rtl" prefix; an `rtl`-only error likewise. */
 function rtlOnly(ltr: readonly ModeResult[], rtl: readonly ModeResult[]): ModeResult[] {
   return rtl.map((r, i) => {
     const base = ltr[i] as ModeResult;
@@ -337,7 +340,7 @@ function rtlOnly(ltr: readonly ModeResult[], rtl: readonly ModeResult[]): ModeRe
   });
 }
 
-/** A exceção que só `rtl` lança, como um aviso "em rtl" (a prova segue; o erro de `ltr` já vale). */
+/** The exception only `rtl` throws, as an "in rtl" warning (the proof goes on; the `ltr` error already counts). */
 function rtlError(error: string): ModelMessage[] {
   return [inRtl(templateMessage('library.drawFailed', { error }))];
 }
@@ -362,7 +365,7 @@ function typeDrawing(
       false,
       out,
     );
-    // Componente com eixo que depende do conteúdo: o mesmo caso no tamanho ajustado.
+    // Component with an axis that depends on the content: the same case at the fitted size.
     const fit = fittedBox(component, drawCase.values, modes[0]);
     if (fit !== undefined)
       proveCase(
@@ -377,7 +380,7 @@ function typeDrawing(
   }
 }
 
-/** Biblioteca do motor para provar os exemplos externos; `undefined` (e o motivo) se não monta. */
+/** Engine library to prove the external examples; `undefined` (and the reason) if it cannot be built. */
 function buildLibrary(ctx: DrawingContext): { library?: Library; reason?: string } {
   try {
     return { library: loadLibrary(ctx.textFiles) };
@@ -387,8 +390,8 @@ function buildLibrary(ctx: DrawingContext): { library?: Library; reason?: string
 }
 
 /**
- * Biblioteca com a origem trocada por uma sintética que lê o JSON `{ node }` como a única raiz
- * de um quadro grande: só o desenho do nó importa, não a tela (`screen`) da origem declarada.
+ * Library with the origin replaced by a synthetic one that reads the JSON `{ node }` as the sole
+ * root of a large frame: only the node's drawing matters, not the declared origin's `screen`.
  */
 export function nodeProbeLibrary(lib: Library, origin: Origin): Library {
   return {
@@ -402,11 +405,11 @@ export function nodeProbeLibrary(lib: Library, origin: Origin): Library {
   };
 }
 
-/** Tira o `node.` que o quadro sintético põe na frente do caminho de um aviso da origem. */
+/** Removes the `node.` that the synthetic frame puts in front of an origin warning's path. */
 export const withoutNodePrefix = (message: string): string =>
   message.replace(/^node\.?/, '');
 
-/** O erro da tradução como `detail`: com código, ou o texto cru (uma exceção do motor). */
+/** The translation error as `detail`: with a code, or the raw text (an engine exception). */
 function errorDetail(
   result: { readonly error?: string; readonly errorMessage?: ModelMessage },
   strip: (text: string) => string = (text) => text,
@@ -415,8 +418,8 @@ function errorDetail(
 }
 
 /**
- * O aviso da origem sem o `node.` que o quadro sintético põe na frente do caminho: o `path` do
- * parâmetro perde o prefixo e o texto é montado de novo (igual a `withoutNodePrefix(text)`).
+ * The origin warning without the `node.` that the synthetic frame puts in front of the path: the
+ * parameter's `path` loses the prefix and the text is rebuilt (equal to `withoutNodePrefix(text)`).
  */
 export function withoutNodePrefixMessage(message: ModelMessage): ModelMessage {
   const path = message.params.path;
@@ -425,7 +428,7 @@ export function withoutNodePrefixMessage(message: ModelMessage): ModelMessage {
       ...message.params,
       path: withoutNodePrefix(path),
     });
-  // Sem `path` (ou sem tradução): o texto perde o prefixo, como antes, e deixa de ter código.
+  // Without `path` (or without translation): the text loses the prefix, as before, and no longer has a code.
   const text = withoutNodePrefix(message.text);
   return text === message.text ? message : rawMessage(text);
 }
@@ -472,8 +475,8 @@ export function drawingIssues(ctx: DrawingContext): LibraryIssue[] {
         const lib = libraryOrWarn(at);
         const origin = lib?.origins.find((o) => o.system === example.system);
         if (lib === undefined || origin === undefined) return;
-        // O nó do exemplo vai para uma origem sintética que o lê como a única raiz de um quadro
-        // grande: só o desenho do nó importa, não a tela (`screen`) da origem declarada.
+        // The example's node goes to a synthetic origin that reads it as the sole root of a large
+        // frame: only the node's drawing matters, not the declared origin's `screen`.
         const probe = nodeProbeLibrary(lib, origin);
         const result = screenFromSource(
           probe,

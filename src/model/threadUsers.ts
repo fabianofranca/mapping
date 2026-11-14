@@ -1,16 +1,16 @@
 import type { Thread, ThreadAuthor, ThreadAuthorKind } from './thread';
 
-// Usuários das conversas (decisão 13): pessoas agrupadas pelo e-mail, agentes pelo nome.
-// Puro: serve ao filtro Usuário, às iniciais do pino e ao diálogo de apagar.
+// Thread users (decision 13): people grouped by email, agents by name.
+// Pure: serves the User filter, the pin's initials and the delete dialog.
 
-/** E-mail comparável: sem espaços em volta e em minúsculas. Vazio quando não há. */
+/** Comparable email: no surrounding spaces and in lowercase. Empty when there is none. */
 export function normalizeEmail(email: string | null | undefined): string {
   return (email ?? '').trim().toLowerCase();
 }
 
 /**
- * Chave do usuário: `human:<e-mail normalizado>` ou `agent:<nome>`. O prefixo impede que um
- * agente e uma pessoa se confundam.
+ * User key: `human:<normalized email>` or `agent:<name>`. The prefix keeps an
+ * agent and a person from being confused.
  */
 export function userKey(author: ThreadAuthor): string {
   return author.kind === 'human'
@@ -18,12 +18,12 @@ export function userKey(author: ThreadAuthor): string {
     : `agent:${author.name.trim()}`;
 }
 
-/** Nome para mostrar (sem espaços sobrando). */
+/** Name to display (without extra spaces). */
 export function userLabel(author: ThreadAuthor): string {
   return author.name.trim();
 }
 
-/** Iniciais: a primeira letra da primeira e da última palavra do nome; o agente é sempre `AG`. */
+/** Initials: the first letter of the first and of the last word of the name; the agent is always `AG`. */
 export function initials(author: ThreadAuthor): string {
   if (author.kind === 'agent') return 'AG';
   const words = author.name.trim().split(/\s+/).filter(Boolean);
@@ -36,16 +36,16 @@ export function initials(author: ThreadAuthor): string {
 
 export interface ThreadUser {
   readonly key: string;
-  /** Nome da última mensagem do usuário, na ordem da entrada. */
+  /** Name from the user's last message, in input order. */
   readonly label: string;
   readonly kind: ThreadAuthorKind;
-  /** E-mail normalizado da pessoa (o filtro mostra as pessoas por ele); `null` no agente. */
+  /** The person's normalized email (the filter shows people by it); `null` for the agent. */
   readonly email: string | null;
-  /** Conversas em que o usuário escreveu. */
+  /** Threads in which the user wrote. */
   readonly count: number;
 }
 
-/** Locale fixo da ordenação: a mesma ordem em Node e no navegador, seja qual for o idioma da máquina. */
+/** Fixed locale for sorting: the same order in Node and in the browser, whatever the machine's language. */
 const USER_LOCALE = 'pt-BR';
 
 function compareUsers(a: ThreadUser, b: ThreadUser): number {
@@ -56,7 +56,7 @@ function compareUsers(a: ThreadUser, b: ThreadUser): number {
   );
 }
 
-/** Usuários distintos das conversas, com a contagem de conversas de cada um (filtro Usuário). */
+/** Distinct users of the threads, with the count of threads of each one (User filter). */
 export function threadUsers(threads: readonly Thread[]): readonly ThreadUser[] {
   const users = new Map<string, ThreadUser>();
   for (const t of threads) {
@@ -64,7 +64,7 @@ export function threadUsers(threads: readonly Thread[]): readonly ThreadUser[] {
     for (const m of t.messages) {
       const key = userKey(m.author);
       const prev = users.get(key);
-      // O rótulo acompanha a última mensagem; a conversa conta uma vez só.
+      // The label follows the last message; the thread counts only once.
       const counted = seen.has(key) ? 0 : 1;
       seen.add(key);
       users.set(key, {

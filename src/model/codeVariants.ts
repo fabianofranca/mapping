@@ -1,11 +1,11 @@
 import type { SpecCode, SpecField } from './spec';
 import type { JsonValue } from './types';
 
-// `resolveCode` (formatVersion 9): o único lugar que aplica o caso de `variants` ao `code` de
-// uma plataforma. Todo leitor de `code` por anotação (get_code_hints, find_by_code, a
-// "Definição" dos Detalhes, get_marking) passa por ela. Função pura, sem navegador.
+// `resolveCode` (formatVersion 9): the only place that applies the `variants` case to the `code` of
+// a platform. Every per-annotation `code` reader (get_code_hints, find_by_code, the
+// "Definition" in Details, get_marking) goes through it. Pure function, no browser.
 
-/** Caso escolhido por `variants` para esses valores, ou `undefined` (usa a base). */
+/** Case chosen by `variants` for these values, or `undefined` (uses the base). */
 function chosenValue(
   variants: NonNullable<SpecCode['variants']>,
   values: Readonly<Record<string, JsonValue>> | null | undefined,
@@ -20,12 +20,12 @@ function chosenValue(
 }
 
 /**
- * O `code` de uma plataforma para uma anotação: a base com o caso de `variants` do valor da
- * anotação no campo escolhido (ou o `default` do campo) aplicado. `symbol`, `path` e `notes`
- * do caso substituem os da base, e na `formatVersion` 16 também `signature` e `ignore`; `params`,
- * `values`, `calls` e `formats` se somam a eles, chave por chave (o `calls` do caso troca o da base
- * para o mesmo parâmetro: `ButtonDefaults.outlinedButtonColors`). Sem `variants` devolve o próprio
- * `code`; nunca devolve `variants`.
+ * The `code` of a platform for an annotation: the base with the `variants` case for the value of the
+ * annotation in the chosen field (or the field's `default`) applied. The case's `symbol`, `path` and `notes`
+ * replace the base's, and in `formatVersion` 16 so do `signature` and `ignore`; `params`,
+ * `values`, `calls` and `formats` are added to them, key by key (the case's `calls` replaces the base's
+ * for the same parameter: `ButtonDefaults.outlinedButtonColors`). Without `variants` returns the
+ * `code` itself; never returns `variants`.
  */
 export function resolveCode(
   code: SpecCode,
@@ -43,7 +43,7 @@ export function resolveCode(
   return applyCase(base, kase);
 }
 
-/** `symbol`, `path`, `notes`, `signature` e `ignore` do caso substituem; o resto se soma, chave por chave. */
+/** The case's `symbol`, `path`, `notes`, `signature` and `ignore` replace; the rest is added, key by key. */
 function applyCase(
   base: SpecCode,
   kase: NonNullable<SpecCode['variants']>['cases'][string],
@@ -63,7 +63,7 @@ function applyCase(
   };
 }
 
-/** `{ key: { ...base[key], ...kase[key] } }` quando o caso traz a chave; senão nada. */
+/** `{ key: { ...base[key], ...kase[key] } }` when the case brings the key; otherwise nothing. */
 function merged<K extends 'params' | 'calls' | 'formats'>(
   base: SpecCode,
   kase: { readonly [P in K]?: Record<string, string> | undefined },

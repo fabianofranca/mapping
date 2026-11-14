@@ -1,32 +1,32 @@
 /**
- * Motor dos componentes: a grade (`layout.type: "grid"`, v4). Funções puras sobre números: o motor
- * (`instantiate.ts`, o quadro e o `repeat`) e a arrumação do slot (`arrange.ts`, `layout.ts`,
- * `componentArrange.ts`, `componentMarkings.ts`) decidem com elas quantas trilhas há, em que célula
- * cada filho cai e onde fica a célula.
+ * Component engine: the grid (`layout.type: "grid"`, v4). Pure functions over numbers: the engine
+ * (`instantiate.ts`, the frame and the `repeat`) and the slot arrangement (`arrange.ts`, `layout.ts`,
+ * `componentArrange.ts`, `componentMarkings.ts`) use them to decide how many tracks there are, which cell
+ * each child falls in and where the cell is.
  *
- * Vocabulário (a grade vertical é a de `columns`/`minColumnWidth`; a horizontal, a de
- * `rows`/`minRowHeight`, troca os eixos): as **trilhas** são as colunas da grade vertical (as
- * linhas da horizontal), todas do mesmo tamanho; as **linhas de fluxo** são as que se formam ao
- * preencher, da trilha inicial à final, uma depois da outra (as colunas da grade horizontal). O
- * **eixo das trilhas** é o horizontal na grade vertical; o **eixo das linhas**, o outro.
+ * Vocabulary (the vertical grid is the one of `columns`/`minColumnWidth`; the horizontal one, of
+ * `rows`/`minRowHeight`, swaps the axes): the **tracks** are the columns of the vertical grid (the
+ * rows of the horizontal one), all of the same size; the **flow lines** are the ones formed when
+ * filling, from the start track to the end track, one after the other (the columns of the horizontal grid). The
+ * **track axis** is the horizontal one in the vertical grid; the **line axis**, the other.
  */
 import type { LayoutAlign, LayoutJustify } from './componentFormat';
 
-/** Um filho colocado: a linha de fluxo, a trilha onde começa e quantas ocupa. */
+/** A placed child: the flow line, the track where it starts and how many it occupies. */
 export interface GridCell {
-  /** Índice do filho na lista dada (a ordem de colocação). */
+  /** Index of the child in the given list (the placement order). */
   readonly index: number;
-  /** A linha de fluxo (0 é a primeira). */
+  /** The flow line (0 is the first). */
   readonly line: number;
-  /** A trilha onde começa (0 é a inicial). */
+  /** The track where it starts (0 is the start one). */
   readonly track: number;
-  /** As trilhas que ocupa (já limitado ao número de trilhas). */
+  /** The tracks it occupies (already limited to the number of tracks). */
   readonly span: number;
 }
 
 /**
- * O `span` de um filho: inteiro ≥ 1, limitado ao número de trilhas. Valor ausente, não inteiro ou
- * menor que 1 vale 1.
+ * The `span` of a child: integer ≥ 1, limited to the number of tracks. A missing, non-integer or
+ * less-than-1 value counts as 1.
  */
 export function clampSpan(value: unknown, count: number): number {
   const n = typeof value === 'number' ? value : parseFloat(String(value));
@@ -35,9 +35,9 @@ export function clampSpan(value: unknown, count: number): number {
 }
 
 /**
- * Quantas trilhas a grade tem. `count` (`columns`/`rows`) já vem inteiro ≥ 1. Com `min`
- * (`minColumnWidth`/`minRowHeight`), `max(1, floor((conteúdo + gap) / (min + gap)))`, o
- * `GridCells.Adaptive`; sem conteúdo conhecido (`null`), uma trilha.
+ * How many tracks the grid has. `count` (`columns`/`rows`) already comes as an integer ≥ 1. With `min`
+ * (`minColumnWidth`/`minRowHeight`), `max(1, floor((content + gap) / (min + gap)))`, the
+ * `GridCells.Adaptive`; with no known content (`null`), one track.
  */
 export function trackCount(
   spec: { readonly count?: number | undefined; readonly min?: number | undefined },
@@ -49,25 +49,25 @@ export function trackCount(
   return Math.max(1, Math.floor((content + gap) / (spec.min + gap) + 1e-9));
 }
 
-/** O tamanho de cada trilha: `(conteúdo − gaps) / n` (o `1fr` de cada). */
+/** The size of each track: `(content − gaps) / n` (the `1fr` of each). */
 export function trackSize(content: number, count: number, gap: number): number {
   return Math.max(0, (content - gap * Math.max(0, count - 1)) / Math.max(1, count));
 }
 
-/** A extensão de `span` trilhas vizinhas de tamanho `size`, com os `gap` entre elas. */
+/** The extent of `span` neighboring tracks of size `size`, with the `gaps` between them. */
 export function spanExtent(size: number, span: number, gap: number): number {
   return size * span + gap * Math.max(0, span - 1);
 }
 
-/** Onde a trilha `track` começa, a partir do início da área de conteúdo. */
+/** Where the track `track` starts, from the start of the content area. */
 export function trackOffset(track: number, size: number, gap: number): number {
   return track * (size + gap);
 }
 
 /**
- * Coloca os filhos (cada um com o seu `span`) nas células, na ordem: cada linha de fluxo se
- * preenche da trilha inicial à final; o filho que não cabe no que resta da linha vai para a
- * próxima e deixa o buraco (sem `dense`, como o `LazyVerticalGrid` e o auto-placement do CSS).
+ * Places the children (each with its `span`) in the cells, in order: each flow line is
+ * filled from the start track to the end track; a child that does not fit in what is left of the line goes to the
+ * next one and leaves the hole (without `dense`, like `LazyVerticalGrid` and CSS auto-placement).
  */
 export function placeCells(
   spans: readonly number[],
@@ -95,9 +95,9 @@ export function placeCells(
 }
 
 /**
- * Posição e tamanho de um filho de tamanho `size` dentro da célula de extensão `cell` (a partir do
- * início dela): `start` (padrão), `center` e `end` guardam o tamanho; `stretch` o faz ocupar a
- * célula. O filho maior que a célula começa no início dela (o excesso passa pelo fim).
+ * Position and size of a child of size `size` inside the cell of extent `cell` (from the
+ * start of it): `start` (default), `center` and `end` keep the size; `stretch` makes it fill the
+ * cell. A child larger than the cell starts at its start (the excess goes past the end).
  */
 export function alignInCell(
   align: LayoutAlign | LayoutJustify,

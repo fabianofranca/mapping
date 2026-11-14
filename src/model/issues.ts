@@ -18,53 +18,54 @@ import { checkSimpleValue, isEmptyValue } from './typed';
 import { typeAppliesTo, type SpecRefAccepts } from './spec';
 import type { Annotation, JsonValue, Project } from './types';
 
-// Pendências ("incompletas", docs/ARCHITECTURE.md, "Especializações no projeto e anotações tipadas"): calculadas a partir do projeto e das
-// especializações, nunca gravadas. Salvar incompleta é sempre permitido.
+// Issues ("incomplete", docs/ARCHITECTURE.md, "Especializações no projeto e anotações tipadas"):
+// computed from the project and the specializations, never stored. Saving incomplete is always
+// allowed.
 
 export type AnnotationIssueCode =
-  /** Campo obrigatório vazio (inclusive coluna obrigatória numa linha). */
+  /** Empty required field (including a required column in a row). */
   | 'required-empty'
-  /** Valor incompatível com o tipo do campo. */
+  /** Value incompatible with the field's type. */
   | 'invalid-value'
-  /** Valor de `enum` fora das `options`. */
+  /** `enum` value outside the `options`. */
   | 'unknown-option'
-  /** Chave que não existe no tipo. */
+  /** Key that does not exist in the type. */
   | 'unknown-field'
-  /** Tipo (ou a especialização) não existe mais. */
+  /** The type (or the specialization) no longer exists. */
   | 'unknown-type'
-  /** Tipada fora da camada do seu tipo, ou livre numa camada da especialização. */
+  /** Typed outside its type's layer, or free in a specialization layer. */
   | 'layer-mismatch'
-  /** Tipo com `requiresOwner` sem dono. */
+  /** Type with `requiresOwner` and no owner. */
   | 'missing-owner'
-  /** Dono cujo tipo não lista este em `allowedChildren`. */
+  /** Owner whose type does not list this one in `allowedChildren`. */
   | 'owner-not-allowed'
-  /** O dono tem `childRoles` e esta anotação não tem papel (v14). */
+  /** The owner has `childRoles` and this annotation has no role (v14). */
   | 'missing-role'
-  /** O papel não existe no dono (ou o dono não tem `childRoles`) (v14). */
+  /** The role does not exist on the owner (or the owner has no `childRoles`) (v14). */
   | 'unknown-role'
-  /** O tipo deixou de se aplicar à dona (marcação ou seta) depois de uma atualização. */
+  /** The type no longer applies to the owner (marking or arrow) after an update. */
   | 'type-not-applicable'
-  /** O alvo da referência não existe mais. */
+  /** The reference's target no longer exists. */
   | 'broken-ref'
-  /** O alvo existe, mas não é aceito pelo campo (perdeu a etiqueta, deixou de ser livre). */
+  /** The target exists but is not accepted by the field (lost its label, stopped being free). */
   | 'ref-not-accepted'
   /**
-   * O componente que desenha a marcação não cabe na caixa (etapa Biblioteca). O modelo não o
-   * produz: quem tem o desenho (`src/store/derived.ts`) o junta às pendências.
+   * The component that draws the marking does not fit in the box (Library stage). The model does
+   * not produce it: whoever has the drawing (`src/store/derived.ts`) adds it to the issues.
    */
   | 'component-overflow';
 
 export interface AnnotationIssue {
   readonly code: AnnotationIssueCode;
-  /** Campo envolvido. */
+  /** Field involved. */
   readonly key?: string;
-  /** Linha da tabela envolvida (o `_id`). */
+  /** Table row involved (the `_id`). */
   readonly rowId?: string;
-  /** Coluna da tabela envolvida. */
+  /** Table column involved. */
   readonly column?: string;
 }
 
-/** Pendência de uma referência (campo `ref` ou célula de coluna `ref`); `null` se está boa. */
+/** Issue of a reference (`ref` field or `ref` column cell); `null` if it is fine. */
 function refProblem(
   p: Project,
   a: Annotation,
@@ -164,7 +165,7 @@ function annotationIssues(p: Project, a: Annotation): AnnotationIssue[] {
     if (type.requiresOwner) issues.push({ code: 'missing-owner' });
   } else {
     const owner = index.annotations.get(a.parentAnnotationId);
-    // Dono de tipo inexistente já aparece como pendência nele mesmo.
+    // An owner of a nonexistent type already shows up as an issue on itself.
     const ownerUnknown = owner?.type != null && typeOfAnnotation(p, owner) === null;
     if (owner && !ownerUnknown && !isAllowedOwner(p, a.type, owner)) {
       issues.push({ code: 'owner-not-allowed' });
@@ -175,9 +176,9 @@ function annotationIssues(p: Project, a: Annotation): AnnotationIssue[] {
 }
 
 /**
- * Pendências de papel (v14): dono com `childRoles` e filho sem papel (`missing-role`); papel que o
- * dono não oferece, inclusive dono sem `childRoles` (`unknown-role`). Dono livre ou de tipo
- * desconhecido não gera pendência de papel.
+ * Role issues (v14): an owner with `childRoles` and a child with no role (`missing-role`); a role
+ * the owner does not offer, including an owner with no `childRoles` (`unknown-role`). A free
+ * owner or one of an unknown type does not generate a role issue.
  */
 function roleIssues(p: Project, a: Annotation, owner: Annotation): AnnotationIssue[] {
   if (owner.type === null) return [];
@@ -187,15 +188,15 @@ function roleIssues(p: Project, a: Annotation, owner: Annotation): AnnotationIss
   return known ? [] : [{ code: 'unknown-role' }];
 }
 
-/** Pendências da anotação; vazio = completa. */
+/** Issues of the annotation; empty = complete. */
 export function getAnnotationIssues(p: Project, annotationId: string): AnnotationIssue[] {
   const issues = projectIssues(p).get(findById(p.annotations, annotationId).id);
   return issues ? [...issues] : [];
 }
 
 /**
- * Pendências do projeto, calculadas uma vez por versão do projeto (o mesmo mapa
- * para a mesma versão). Só leitura.
+ * Issues of the project, computed once per project version (the same map
+ * for the same version). Read-only.
  */
 export const projectIssues: (
   p: Project,

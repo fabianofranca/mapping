@@ -1,22 +1,26 @@
 /**
- * Motor dos componentes (ME4): expansão do nó `repeat` (a tabela desenhada, `formatVersion` 2).
+ * Component engine (ME4): expansion of the `repeat` node (the drawn table, `formatVersion` 2).
  *
- * `expandRepeats` roda antes do motor (`instantiate` e `measureComponent`): troca cada `repeat`
- * por um quadro com uma cópia do `template` por linha do campo `table`, e entrega os valores
- * das colunas como campos extras com nome próprio de cada linha (`$r0_1:chave`). Nas cópias, as
- * expressões que citam uma coluna (`$field`, `$has`, `$eq`, `$switch`) passam a citar esse campo
- * extra, o que faz a coluna **sombrear** o campo do tipo de mesmo nome sem o motor saber de
- * escopo. Função pura: o resultado só tem nós que o motor já conhece.
+ * `expandRepeats` runs before the engine (`instantiate` and `measureComponent`): it replaces
+ * each `repeat` with a frame holding one copy of the `template` per row of the `table` field,
+ * and delivers the column values as extra fields with a name of their own for each row
+ * (`$r0_1:key`). In the copies, the expressions that cite a column (`$field`, `$has`, `$eq`,
+ * `$switch`) come to cite that extra field, which makes the column **shadow** the type's field
+ * of the same name without the engine knowing about scope. Pure function: the result only has
+ * nodes the engine already knows.
  *
- * Tamanho no eixo das linhas (`height` em `column`, `width` em `row`):
- * - sem `distribute` (ou `"none"`): o quadro gerado é `hug` nesse eixo e cada linha também, salvo
- *   o que o `repeat` e o `template` dizem; um `fill` no `template` vale 0 (aviso do motor);
- * - `layout` (formatVersion 4) no lugar de `direction` + `gap`: o quadro gerado leva esse `layout`
- *   (`row`, `column` ou `grid`) como está. `row`/`column` seguem a regra de `direction`; a grade abraça
- *   nos dois eixos (o `width`/`height` do `repeat` manda se existir) e cada célula é `fill` na célula;
- * - `distribute: "fill"` (formatVersion 4): o quadro gerado é `fill` nesse eixo (ocupa o do pai) e
- *   cada linha é `fill`, de modo que as linhas dividem o eixo igualmente menos os `gap`s. Valor
- *   explícito (px, `hug`, `%`, ou o próprio `fill`) no `repeat`/`template` vale como escrito.
+ * Size on the rows axis (`height` in `column`, `width` in `row`):
+ * - without `distribute` (or `"none"`): the generated frame is `hug` on that axis and so is each
+ *   row, except for what the `repeat` and the `template` say; a `fill` in the `template` counts
+ *   as 0 (engine warning);
+ * - `layout` (formatVersion 4) in place of `direction` + `gap`: the generated frame takes this
+ *   `layout` (`row`, `column` or `grid`) as is. `row`/`column` follow the `direction` rule; the
+ *   grid hugs on both axes (the `repeat`'s `width`/`height` rules if present) and each cell is
+ *   `fill` in the cell;
+ * - `distribute: "fill"` (formatVersion 4): the generated frame is `fill` on that axis (it takes
+ *   the parent's) and each row is `fill`, so the rows split the axis equally minus the `gap`s.
+ *   An explicit value (px, `hug`, `%`, or `fill` itself) in the `repeat`/`template` counts as
+ *   written.
  */
 import type {
   ComponentFile,
@@ -41,7 +45,7 @@ import {
   toNumber,
 } from './expressions';
 
-/** Teto de linhas de um `repeat` por `count`. */
+/** Ceiling on the rows of a `repeat` by `count`. */
 export const REPEAT_COUNT_LIMIT = 1000;
 
 const INHERITED_KEYS = [
@@ -57,14 +61,14 @@ const INHERITED_KEYS = [
   'weight',
 ] as const;
 
-/** O que o quadro gerado herda do `repeat` (só as chaves presentes). */
+/** What the generated frame inherits from the `repeat` (only the keys present). */
 function inheritedKeys(node: RepeatTemplate): Partial<FrameTemplate> {
   const out: Record<string, unknown> = {};
   for (const key of INHERITED_KEYS) if (node[key] !== undefined) out[key] = node[key];
   return out;
 }
 
-/** A quebra de fileira (v4) do `repeat`, que o quadro gerado leva no `layout` (só as chaves presentes). */
+/** The `repeat`'s line wrapping (v4), which the generated frame carries in its `layout` (only the keys present). */
 function wrapKeys(node: RepeatTemplate): Partial<LayoutSpec> {
   const out: Record<string, unknown> = {};
   for (const key of ['wrap', 'lineGap', 'maxPerLine', 'maxLines'] as const)
@@ -72,24 +76,24 @@ function wrapKeys(node: RepeatTemplate): Partial<LayoutSpec> {
   return out;
 }
 
-/** O layout das linhas do `repeat`: o de `layout` (v4, literal; por expressão vale `column`) ou o de `direction`. */
+/** The layout of the `repeat`'s rows: that of `layout` (v4, literal; by expression it counts as `column`) or that of `direction`. */
 function layoutKind(node: RepeatTemplate): 'row' | 'column' | 'grid' {
   const type = node.layout === undefined ? node.direction : node.layout.type;
   return type === 'row' || type === 'grid' ? type : 'column';
 }
 
-/** O `repeat` quebra? Com `wrap` o eixo das linhas precisa de um limite para quebrar: ocupa o do pai, como com `distribute`. */
+/** Does the `repeat` wrap? With `wrap` the rows axis needs a limit to wrap against: it takes the parent's, as with `distribute`. */
 function wraps(node: RepeatTemplate): boolean {
   const { wrap } = node.layout ?? node;
   return wrap !== undefined && wrap !== 'none';
 }
 
-/** Tamanhos do quadro gerado: `width`/`height` do `repeat`, ou o padrão do eixo (ver o topo). */
+/** Sizes of the generated frame: the `repeat`'s `width`/`height`, or the axis default (see the top). */
 function wrapperSize(
   node: RepeatTemplate,
   kind: 'row' | 'column' | 'grid',
 ): Pick<FrameTemplate, 'width' | 'height'> {
-  // A grade abraça nos dois eixos (o `width`/`height` do próprio `repeat` manda se existir).
+  // The grid hugs on both axes (the `repeat`'s own `width`/`height` rules if present).
   if (kind === 'grid')
     return { width: node.width ?? 'hug', height: node.height ?? 'hug' };
   const column = kind === 'column';
@@ -101,8 +105,8 @@ function wrapperSize(
 }
 
 /**
- * Tamanho de uma linha no eixo das linhas: o do `template`, ou `hug` (`fill` com `distribute`).
- * Na grade a célula é `fill` na célula (o padrão do quadro): nada a acrescentar.
+ * Size of a row on the rows axis: the `template`'s, or `hug` (`fill` with `distribute`).
+ * In the grid the cell is `fill` in the cell (the frame's default): nothing to add.
  */
 function rowSize(
   copy: FrameTemplate,
@@ -115,13 +119,13 @@ function rowSize(
   return column ? { height: copy.height ?? fallback } : { width: copy.width ?? fallback };
 }
 
-/** O template tem algum nó `repeat`? */
+/** Does the template have any `repeat` node? */
 export function hasRepeat(node: TemplateNode): boolean {
   if (node.type === 'repeat') return true;
   return node.type === 'frame' && (node.children ?? []).some(hasRepeat);
 }
 
-/** As linhas do campo `table` como o motor as recebe (itens que não são objeto ficam de fora). */
+/** The rows of the `table` field as the engine receives them (non-object items are left out). */
 export function rowsOf(value: FieldValue): readonly FieldRow[] {
   if (!Array.isArray(value)) return [];
   return (value as readonly unknown[]).filter(
@@ -130,7 +134,7 @@ export function rowsOf(value: FieldValue): readonly FieldRow[] {
   );
 }
 
-/** Colunas vistas nas linhas (a união das chaves, sem o `_id`), na ordem em que aparecem. */
+/** Columns seen in the rows (the union of the keys, without `_id`), in the order they appear. */
 export function columnsOf(rows: readonly FieldRow[]): string[] {
   const columns = new Set<string>();
   for (const row of rows) {
@@ -139,7 +143,7 @@ export function columnsOf(rows: readonly FieldRow[]): string[] {
   return [...columns];
 }
 
-/** Os nomes dos nós text do `template` que um `$lines` do mesmo `template` cita (o nó da mesma linha). */
+/** The names of the `template`'s text nodes that a `$lines` of the same `template` cites (the node on the same row). */
 function linesNames(template: unknown): ReadonlySet<string> {
   const cited = new Set([...linesCitations(template)].map(linesNodeName));
   const names = new Set<string>();
@@ -159,7 +163,7 @@ function linesNames(template: unknown): ReadonlySet<string> {
   return names;
 }
 
-/** Troca a chave de campo que é coluna pelo campo extra da linha (`$field`, `$has`, `$switch`, `$eq`). */
+/** Replaces the field key that is a column with the row's extra field (`$field`, `$has`, `$switch`, `$eq`). */
 function scopedFieldEntry(
   key: string,
   item: unknown,
@@ -178,7 +182,7 @@ function scopedFieldEntry(
   return undefined;
 }
 
-/** Uma entrada do JSON no escopo da linha: troca a chave de campo que é coluna pelo campo extra. */
+/** An entry of the JSON in the row's scope: replaces the field key that is a column with the extra field. */
 function scopedEntry(
   key: string,
   item: unknown,
@@ -188,13 +192,13 @@ function scopedEntry(
 ): unknown {
   const field = scopedFieldEntry(key, item, columns, scope);
   if (field !== undefined) return field;
-  // `$lines` de um nó da mesma linha passa a citar a contagem dele, com o escopo da linha.
+  // A `$lines` of a node on the same row comes to cite its count, with the row's scope.
   if (key === '$lines' && typeof item === 'string' && lines.has(linesNodeName(item)))
     return `${scope}:${linesNodeName(item)}`;
   return scoped(item, columns, scope, lines);
 }
 
-/** Copia o JSON trocando as chaves de campo que são colunas pelo campo extra da linha. */
+/** Copies the JSON replacing the field keys that are columns with the row's extra field. */
 function scoped(
   value: unknown,
   columns: ReadonlySet<string>,
@@ -204,7 +208,7 @@ function scoped(
   if (Array.isArray(value))
     return value.map((item) => scoped(item, columns, scope, lines));
   if (typeof value !== 'object' || value === null) return value;
-  // Num `repeat` aninhado o `$index` do `template` é o do mais interno: este escopo não o toca.
+  // In a nested `repeat` the `template`'s `$index` is the innermost one's: this scope does not touch it.
   const record = value as { type?: unknown; name?: unknown };
   const isRepeat = record.type === 'repeat';
   const inner = (): ReadonlySet<string> => {
@@ -232,16 +236,17 @@ function scoped(
 export interface ExpandedComponent {
   readonly component: ComponentFile;
   readonly values: FieldValues;
-  /** Avisos da expansão (o campo `table` do `repeat` não foi informado). */
+  /** Warnings from the expansion (the `repeat`'s `table` field was not provided). */
   readonly warnings: readonly string[];
-  /** Os mesmos avisos com código e parâmetros (`warnings` = textos destes). */
+  /** The same warnings with code and parameters (`warnings` = the texts of these). */
   readonly messages: readonly ModelMessage[];
 }
 
 /**
- * O componente sem `repeat` e os valores com os campos extras das linhas. Sem `repeat` no
- * template devolve os mesmos objetos. O `template` de cada linha é `hug` no eixo das linhas
- * quando não diz o contrário; o nó vira um quadro `hug` nesse eixo e `fill` no outro.
+ * The component without `repeat` and the values with the rows' extra fields. Without a `repeat`
+ * in the template it returns the same objects. Each row's `template` is `hug` on the rows axis
+ * unless it says otherwise; the node becomes a frame that is `hug` on that axis and `fill` on
+ * the other.
  */
 export function expandRepeats(
   component: ComponentFile,
@@ -254,7 +259,7 @@ export function expandRepeats(
   const messages: ModelMessage[] = [];
   let counter = 0;
 
-  /** As linhas de um `repeat` por `count`: uma por índice, vazias, até o teto. */
+  /** The rows of a `repeat` by `count`: one per index, empty, up to the ceiling. */
   const countRows = (node: RepeatTemplate): FieldRow[] => {
     const expr = node.count as Expr<number>;
     const wanted =
@@ -275,7 +280,7 @@ export function expandRepeats(
     );
   };
 
-  /** As linhas do `repeat`: a lista de um campo `table` ou, por `count`, uma por índice. */
+  /** The `repeat`'s rows: the list of a `table` field or, by `count`, one per index. */
   const rowsFor = (
     node: RepeatTemplate,
   ): { rows: readonly FieldRow[]; columns: Set<string> } => {
@@ -284,8 +289,9 @@ export function expandRepeats(
     if (!(field in values))
       messages.push(templateMessage('engine.fieldMissing', { key: field }));
     const rows = rowsOf(values[field]);
-    // Coluna que o `template` cita, não é campo do tipo e nenhuma linha traz (linha gravada antes
-    // de a coluna existir) também é coluna: fica vazia, em vez de virar "campo não informado".
+    // A column that the `template` cites, is not a field of the type and no row carries (a row
+    // saved before the column existed) is also a column: it stays empty, instead of becoming
+    // "field not provided".
     const columns = new Set(columnsOf(rows));
     if (rows.length > 0) {
       for (const key of referencedFields(node.template))
@@ -304,7 +310,7 @@ export function expandRepeats(
       const scope = `$r${n}_${i}`;
       for (const name of columns)
         extra[`${scope}:${name}`] = name === INDEX_FIELD ? i : (row[name] ?? null);
-      // O `template` pode trazer um `repeat` (o motor o aceita, o validador não): expande a cópia.
+      // The `template` may carry a `repeat` (the engine accepts it, the validator does not): expand the copy.
       const copy = expand(
         scoped(node.template, columns, scope, lines) as TemplateNode,
       ) as FrameTemplate;

@@ -12,12 +12,12 @@ import type {
   ProjectSpecialization,
 } from './types';
 
-// Índice do projeto (docs/ARCHITECTURE.md, "Desempenho"): mapas por id e agrupamentos montados uma vez
-// por versão do projeto. Como o projeto é imutável, a versão é o próprio objeto:
-// o `WeakMap` devolve o mesmo índice enquanto ele existir e o libera junto com
-// ele. Funciona igual no navegador e no Node.
+// Project index (docs/ARCHITECTURE.md, "Performance"): maps by id and groupings built once
+// per project version. Since the project is immutable, the version is the object itself:
+// the `WeakMap` returns the same index while it exists and releases it along with
+// it. It works the same in the browser and in Node.
 
-/** O grupo de uma raiz (v16): ela e tudo o que tem o pertencimento terminando nela. */
+/** A root's group (v16): it and everything whose membership chain ends in it. */
 export interface RootMembers {
   readonly markings: readonly Marking[];
   readonly containers: readonly ProjectContainer[];
@@ -27,63 +27,63 @@ export interface ProjectIndex {
   readonly layers: ReadonlyMap<string, Layer>;
   readonly containers: ReadonlyMap<string, ProjectContainer>;
   readonly markings: ReadonlyMap<string, Marking>;
-  /** Setas por id (v13). Ids no mesmo espaço das marcações. */
+  /** Arrows by id (v13). Ids share the same space as the markings'. */
   readonly arrows: ReadonlyMap<string, Arrow>;
   /**
-   * Setas presas a cada marcação, na ordem do array: cada seta aparece sob a origem (`from`) e
-   * sob o destino (`to`); uma seta de uma marcação a ela mesma (projeto inválido) aparece uma vez.
+   * Arrows attached to each marking, in array order: each arrow appears under the origin (`from`)
+   * and under the destination (`to`); an arrow from a marking to itself (invalid project) appears once.
    */
   readonly arrowsByMarking: ReadonlyMap<string, readonly Arrow[]>;
   /**
-   * Marcações ancoradas em cada alvo (v20, `anchor.to`), na ordem do array. Só as que têm âncora;
-   * o alvo pode nem existir (projeto inválido).
+   * Markings anchored to each target (v20, `anchor.to`), in array order. Only those with an anchor;
+   * the target may not even exist (invalid project).
    */
   readonly anchoredBy: ReadonlyMap<string, readonly Marking[]>;
-  /** Alvo da âncora de cada marcação ancorada (`anchor.to`); as sem âncora não têm entrada. */
+  /** Anchor target of each anchored marking (`anchor.to`); those without an anchor have no entry. */
   readonly anchorOf: ReadonlyMap<string, string>;
   readonly annotations: ReadonlyMap<string, Annotation>;
-  /** Tuplas de cada anotação, por id. */
+  /** Tuples of each annotation, by id. */
   readonly entries: ReadonlyMap<string, ReadonlyMap<string, Entry>>;
-  /** Filhas diretas de cada marcação (chave `null` = sem pai), na ordem do array. */
+  /** Direct children of each marking (key `null` = no parent), in array order. */
   readonly children: ReadonlyMap<string | null, readonly Marking[]>;
   /**
-   * Containers de cada marcação do canvas (v13; chave `null` = containers sem pai), na ordem
-   * do array. Com `children`, são os membros de uma marcação (`membersOf`).
+   * Containers of each canvas marking (v13; key `null` = containers with no parent), in array
+   * order. Together with `children`, they are the members of a marking (`membersOf`).
    */
   readonly containersByParent: ReadonlyMap<string | null, readonly ProjectContainer[]>;
-  /** Marcações do canvas sem pai (flutuantes inclusive), na ordem do array. */
+  /** Canvas markings with no parent (floating ones included), in array order. */
   readonly canvasRoots: readonly Marking[];
   /**
-   * Raiz de cada container e marcação (v16, perspectivas): o container ou a marcação do canvas
-   * sem pai (flutuante inclusive) em que a cadeia de pertencimento termina. Container sem pai,
-   * flutuante e marcação do canvas sem pai são a própria raiz. Ids de containers e de marcações
-   * dividem o mapa. Num ciclo (projeto inválido) todos os da cadeia ficam com o nó em que ela
-   * fecha.
+   * Root of each container and marking (v16, perspectives): the container or the canvas marking
+   * with no parent (floating included) where the membership chain ends. A container with no parent,
+   * a floating one and a canvas marking with no parent are their own root. Container and marking
+   * ids share the map. In a cycle (invalid project) everything in the chain gets the node where
+   * it closes.
    */
   readonly rootOf: ReadonlyMap<string, string>;
   /**
-   * Tudo o que tem uma raiz (ela inclusive), por id da raiz, na ordem dos arrays. Toda raiz
-   * tem entrada, mesmo sem mais ninguém.
+   * Everything that has a root (it included), by root id, in array order. Every root
+   * has an entry, even with nobody else.
    */
   readonly rootMembers: ReadonlyMap<string, RootMembers>;
-  /** Ids das raízes: containers sem pai (ordem do array), depois `canvasRoots`. */
+  /** Root ids: containers with no parent (array order), then `canvasRoots`. */
   readonly roots: readonly string[];
-  /** Perspectivas "Para todos" que têm cada raiz, na ordem de `perspectives`. */
+  /** "For everyone" perspectives that have each root, in `perspectives` order. */
   readonly perspectivesByRoot: ReadonlyMap<string, readonly Perspective[]>;
-  /** Anotações de cada marcação, na ordem do projeto. */
+  /** Annotations of each marking, in project order. */
   readonly annotationsByMarking: ReadonlyMap<string, readonly Annotation[]>;
-  /** Anotações vinculadas diretamente a cada dona, na ordem do projeto. */
+  /** Annotations linked directly to each owner, in project order. */
   readonly annotationsByOwner: ReadonlyMap<string, readonly Annotation[]>;
   readonly specializations: ReadonlyMap<string, ProjectSpecialization>;
-  /** Tipos das especializações carregadas, por `typeKey(specId, typeId)`. */
+  /** Types of the loaded specializations, by `typeKey(specId, typeId)`. */
   readonly types: ReadonlyMap<string, ResolvedType>;
-  /** Camadas das especializações carregadas, por `typeKey(specId, layerId)`. */
+  /** Layers of the loaded specializations, by `typeKey(specId, layerId)`. */
   readonly specLayers: ReadonlyMap<string, SpecLayer>;
-  /** Camada do projeto criada de cada camada de especialização, por `typeKey(specId, layerId)`. */
+  /** Project layer created from each specialization layer, by `typeKey(specId, layerId)`. */
   readonly layersBySpecLayer: ReadonlyMap<string, Layer>;
 }
 
-/** Chave composta especialização + id (tipo ou camada) dos mapas do índice. */
+/** Composite specialization + id (type or layer) key of the index maps. */
 export function typeKey(specId: string, id: string): string {
   return `${specId}\u0000${id}`;
 }
@@ -94,7 +94,7 @@ function push<K, V>(map: Map<K, V[]>, key: K, value: V): void {
   else map.set(key, [value]);
 }
 
-/** Mapa por id; com ids repetidos vale o primeiro, como em `find`. */
+/** Map by id; with repeated ids the first wins, as in `find`. */
 function byId<T extends { readonly id: string }>(list: readonly T[]): Map<string, T> {
   const map = new Map<string, T>();
   for (const item of list) if (!map.has(item.id)) map.set(item.id, item);
@@ -108,7 +108,7 @@ function indexSpec(
   specLayers: Map<string, SpecLayer>,
 ): void {
   for (const layer of spec.layers) {
-    // Ids são únicos na especialização; se repetirem, vale o primeiro (como `find`).
+    // Ids are unique in the specialization; if they repeat, the first wins (as in `find`).
     const layerKey = typeKey(specId, layer.id);
     if (!specLayers.has(layerKey)) specLayers.set(layerKey, layer);
     for (const type of layer.annotationTypes) {
@@ -119,9 +119,9 @@ function indexSpec(
 }
 
 /**
- * O nó acima de `id` na cadeia de pertencimento, ou `null` se `id` é raiz (container sem pai,
- * marcação do canvas sem pai, flutuante) ou o nó de cima não existe (projeto inválido). Acima de
- * uma marcação de container está o container; acima de um container, a marcação pai dele.
+ * The node above `id` in the membership chain, or `null` if `id` is a root (container with no
+ * parent, canvas marking with no parent, floating) or the node above does not exist (invalid
+ * project). Above a container marking is the container; above a container, its parent marking.
  */
 function upperNode(
   id: string,
@@ -135,7 +135,7 @@ function upperNode(
   return containers.has(up) || markings.has(up) ? up : null;
 }
 
-/** Raiz de cada nó, sem recursão (cadeias fundas) e sem travar em ciclo. */
+/** Root of each node, without recursion (deep chains) and without hanging on a cycle. */
 function computeRootOf(
   ids: Iterable<string>,
   upper: (id: string) => string | null,
@@ -239,7 +239,7 @@ function buildIndex(p: Project): ProjectIndex {
     if (a.parentAnnotationId !== null) push(annotationsByOwner, a.parentAnnotationId, a);
   }
   for (const s of p.specializations) {
-    // O id da especialização aplicada é o que as camadas e anotações usam.
+    // The applied specialization's id is the one layers and annotations use.
     if (s.spec) indexSpec(s.id, s.spec, types, specLayers);
   }
   return {
@@ -266,8 +266,8 @@ function buildIndex(p: Project): ProjectIndex {
 }
 
 /**
- * Memoiza `fn` por versão do projeto: a mesma versão devolve o mesmo resultado
- * (e o mesmo objeto). Serve para dados derivados que não dependem de mais nada.
+ * Memoizes `fn` by project version: the same version returns the same result
+ * (and the same object). It serves derived data that depends on nothing else.
  */
 export function memoByProject<T>(fn: (p: Project) => T): (p: Project) => T {
   const cache = new WeakMap<Project, T>();
@@ -279,13 +279,14 @@ export function memoByProject<T>(fn: (p: Project) => T): (p: Project) => T {
   };
 }
 
-/** Índice do projeto, montado na primeira consulta de cada versão. */
+/** Project index, built on the first query of each version. */
 export const projectIndex: (p: Project) => ProjectIndex = memoByProject(buildIndex);
 
 /**
- * O id já é de uma marcação, de uma seta ou de um container (`projectIndex` os trata como um
- * espaço só). Varre os arrays em vez de usar o índice: quem cria um item a cada versão do
- * projeto não pode pagar a montagem do índice por criação.
+ * The id already belongs to a marking, an arrow or a container (`projectIndex` treats them as a
+ * single space). It scans the arrays instead of using the index: whoever creates an item at each
+ * project version cannot pay for building the index per creation.
+
  */
 export function idInUse(p: Project, id: string): boolean {
   return (

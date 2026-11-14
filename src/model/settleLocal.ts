@@ -2,29 +2,30 @@ import { canContain, equalRectRanks, pickParent, type Entry } from './settlePare
 import type { SpaceEntry } from './settlePositions';
 import type { Marking, Rect } from './types';
 
-// Assentar só o que uma operação tocou dentro de um espaço (#882, fase 2). O pai de uma marcação só
-// depende de quem a contém, dos postos de retângulos iguais e do pai atual; nada disso muda para quem
-// não cabe (inclusive igual) em nenhum retângulo que mudou. Então se revê só quem cabe num deles, em
-// vez do espaço inteiro, com a mesma regra do assentar inteiro (`settleParent.ts`). Puro.
+// Settling only what an operation touched inside a space (#882, phase 2). A marking's parent only
+// depends on what contains it, on the ranks of equal rectangles and on the current parent; none of
+// that changes for whatever does not fit (equal included) in any rectangle that changed. So only
+// what fits in one of them is reviewed, instead of the whole space, with the same rule as the full
+// settle (`settleParent.ts`). Pure.
 
-/** Até quantos retângulos mudados e marcações a rever o recorte aguenta sem desistir. */
+/** Up to how many changed rectangles and markings to review the clipping holds before giving up. */
 export const LOCAL_RECTS = 8;
 const LOCAL_DIRTY = 24;
 
-/** O que mudou num espaço. */
+/** What changed in a space. */
 export interface Dirty {
-  /** Retângulos (de antes e de depois) de marcações novas, apagadas ou trocadas. */
+  /** Rectangles (before and after) of new, deleted or swapped markings. */
   readonly rects: Rect[];
-  /** Posições das marcações do espaço que a operação criou ou trocou (sempre a rever). */
+  /** Positions of the space's markings that the operation created or swapped (always to review). */
   readonly seeds: number[];
 }
 
-/** Chamada por posição com a caixa `x, y, x2, y2` da marcação; `false` interrompe a varredura. */
+/** Called per position with the marking's box `x, y, x2, y2`; `false` stops the scan. */
 type Visitor = (i: number, x: number, y: number, x2: number, y2: number) => boolean;
 
 /**
- * Visita as marcações do espaço: as da entrada, menos as posições de `skip` (crescentes: as que a
- * operação mexeu, de caixa desatualizada), e as `extras` (as mexidas que ficaram no espaço).
+ * Visits the space's markings: those in the entry, minus the `skip` positions (increasing: the ones
+ * the operation touched, with a stale box), and the `extras` (the touched ones that stayed in the space).
  */
 function visitSpace(
   list: readonly Marking[],
@@ -59,12 +60,12 @@ function visitSpace(
   return true;
 }
 
-/** Caixas `[x, y, x2, y2, ...]` dos retângulos. */
+/** Boxes `[x, y, x2, y2, ...]` of the rectangles. */
 function boxesOf(rects: readonly Rect[]): number[] {
   return rects.flatMap((r) => [r.x, r.y, r.x + r.width, r.y + r.height]);
 }
 
-/** O retângulo `(x, y, x2, y2)` contém (inclusive igual) a caixa que começa em `box[q]`? */
+/** Does the rectangle `(x, y, x2, y2)` contain (equal included) the box starting at `box[q]`? */
 function coversBox(
   box: readonly number[],
   q: number,
@@ -81,7 +82,7 @@ function coversBox(
   );
 }
 
-/** O retângulo `(x, y, x2, y2)` cabe (inclusive igual) em alguma das caixas `[x, y, x2, y2, ...]`? */
+/** Does the rectangle `(x, y, x2, y2)` fit (equal included) in any of the boxes `[x, y, x2, y2, ...]`? */
 function insideAny(
   box: readonly number[],
   x: number,
@@ -103,16 +104,16 @@ function insideAny(
 }
 
 interface Scan {
-  /** As marcações a rever. */
+  /** The markings to review. */
   readonly entries: readonly Entry[];
-  /** Para cada uma, as do espaço que a contêm (por geometria; o posto decide depois). */
+  /** For each one, the space's markings that contain it (by geometry; the rank decides later). */
   readonly candidates: readonly (readonly Entry[])[];
 }
 
 /**
- * Uma varredura acha as marcações a rever (as que cabem num dos retângulos que mudaram) e, para as
- * sementes, quem as contém. Se achou outras a rever (a nova contém antigas), uma segunda varredura acha
- * quem contém essas. `null` se são demais.
+ * One scan finds the markings to review (those that fit in one of the rectangles that changed) and,
+ * for the seeds, what contains them. If it found others to review (the new one contains old ones), a
+ * second scan finds what contains those. `null` if there are too many.
  */
 function scan(
   list: readonly Marking[],
@@ -145,7 +146,7 @@ function scan(
   return { entries, candidates };
 }
 
-/** Para cada marcação de `dirty`, as do espaço que a contêm. */
+/** For each marking in `dirty`, the space's markings that contain it. */
 function candidatesOf(
   list: readonly Marking[],
   entry: SpaceEntry,
@@ -168,9 +169,11 @@ function candidatesOf(
 }
 
 /**
- * Os pais novos (como marcações já com o `parentId` novo) das marcações do espaço que cabem em algum dos
- * `dirty.rects`, ou `null` quando são muitas demais: o espaço é então assentado inteiro. `entry` é o que
- * se sabe do espaço e `skip`, as posições (crescentes) mexidas pela operação, de caixa desatualizada.
+ * The new parents (as markings already carrying the new `parentId`) of the space's markings that fit
+ * in any of the `dirty.rects`, or `null` when there are too many: the space is then settled whole.
+ * `entry` is what is known about the space and `skip`, the (increasing) positions touched by the
+ * operation, with a stale box.
+
  */
 export function localParents(
   list: readonly Marking[],

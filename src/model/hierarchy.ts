@@ -1,7 +1,7 @@
 import { projectIndex } from './projectIndex';
 import type { Marking, Project } from './types';
 
-/** Filhas diretas de cada marcação (chave `null` = marcações sem pai), na ordem do array. */
+/** Direct children of each marking (key `null` = markings with no parent), in array order. */
 export function childrenIndex(
   markings: readonly Marking[],
 ): Map<string | null, Marking[]> {
@@ -18,7 +18,7 @@ export function childrenOf(p: Project, markingId: string): Marking[] {
   return [...(projectIndex(p).children.get(markingId) ?? [])];
 }
 
-/** Todos os descendentes (filhas, netas…), sem incluir a própria marcação. */
+/** All descendants (children, grandchildren…), not including the marking itself. */
 export function descendantsOf(p: Project, markingId: string): Marking[] {
   const index = projectIndex(p).children;
   const result: Marking[] = [];
@@ -35,7 +35,7 @@ export function descendantIds(p: Project, markingId: string): Set<string> {
   return new Set(descendantsOf(p, markingId).map((m) => m.id));
 }
 
-/** Profundidade na hierarquia: 0 para marcações sem pai. */
+/** Depth in the hierarchy: 0 for markings with no parent. */
 export function depthOf(p: Project, markingId: string): number {
   const byId = projectIndex(p).markings;
   let depth = 0;
@@ -48,15 +48,15 @@ export function depthOf(p: Project, markingId: string): number {
 }
 
 /**
- * Marcações de uma imagem ordenadas de cima para baixo na hierarquia
- * (todo pai aparece antes das filhas).
+ * Markings of an image ordered top-down in the hierarchy
+ * (every parent appears before its children).
  */
 export function topDown(markings: readonly Marking[]): Marking[] {
   const ids = new Set(markings.map((m) => m.id));
   const index = childrenIndex(markings);
   const roots = markings.filter((m) => m.parentId === null || !ids.has(m.parentId));
   const result: Marking[] = [];
-  // A fila é o próprio resultado, lido por um índice (sem `shift`, que seria O(n) por item).
+  // The queue is the result itself, read by an index (no `shift`, which would be O(n) per item).
   result.push(...roots);
   for (let read = 0; read < result.length; read++) {
     for (const child of index.get((result[read] as Marking).id) ?? []) result.push(child);
@@ -64,7 +64,7 @@ export function topDown(markings: readonly Marking[]): Marking[] {
   return result;
 }
 
-/** Ancestrais da marcação, do pai até a raiz. */
+/** Ancestors of the marking, from the parent up to the root. */
 export function ancestorsOf(p: Project, markingId: string): Marking[] {
   const byId = projectIndex(p).markings;
   const result: Marking[] = [];

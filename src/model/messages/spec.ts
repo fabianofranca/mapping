@@ -1,11 +1,11 @@
-// Mensagens da especialização (`src/model/spec.ts`): código → modelo do texto pt-BR de hoje, com
-// `{parâmetros}`. O `parseSpec` acha o código de uma mensagem fixa pelo texto exato (as entradas
-// sem `{}`), de uma com parâmetro por `params.messageCode` no `addIssue` e dá aos textos padrão
-// do zod o código `spec.zod.<código do zod>` (o modelo deles é uma tradução, não o `message`).
-// Um texto é de um código só entre as entradas fixas.
+// Specialization messages (`src/model/spec.ts`): code → template of today's pt-BR text, with
+// `{parameters}`. `parseSpec` finds the code of a fixed message by its exact text (the entries
+// without `{}`), of one with a parameter by `params.messageCode` in `addIssue`, and gives zod's default
+// texts the code `spec.zod.<zod code>` (their template is a translation, not the `message`).
+// A text belongs to a single code among the fixed entries.
 
 export const specMessages = {
-  // Texto, formato e valores
+  // Text, format and values
   'spec.required': 'obrigatório',
   'spec.mustBeText': 'deve ser texto',
   'spec.mustBeBoolean': 'deve ser true ou false',
@@ -24,7 +24,7 @@ export const specMessages = {
     'caminho inválido: use um caminho relativo à pasta da especialização, com "/", sem "." nem ".." e sem unidade (ex: components/button.json)',
   'spec.invalidExtension': 'extensão inválida: esperava {exts}',
   'spec.unknownKeys': 'propriedade desconhecida: {keys}',
-  // Fontes, aceitação e avisos
+  // Sources, acceptance and notices
   'spec.typeSourceNeedsIdOrName': 'precisa de "id" ou "name"',
   'spec.acceptsAnnotationsEmpty':
     'não pode ser vazio; tire a chave ou liste ao menos um item',
@@ -34,20 +34,20 @@ export const specMessages = {
     '"{value}" inválido; use "removed", "deprecated", "diverges" ou "pending"',
   'spec.noticeKindShape': 'deve ser "removed", "deprecated", "diverges" ou "pending"',
   'spec.noticeRepeated': 'aviso repetido',
-  // Valores de campo
+  // Field values
   'spec.valueMustBeNumber': 'deve ser número',
   'spec.valueMustBeDate': 'deve ser uma data AAAA-MM-DD válida',
   'spec.valueMustBeOption': 'deve ser uma das options',
   'spec.valueNotForTable': 'não existe para table',
   'spec.valueNotForRef': 'não existe para ref',
-  // Sugestões
+  // Suggestions
   'spec.suggestionsEmpty':
     'não pode ser vazio; tire a chave ou liste ao menos uma sugestão',
   'spec.suggestionsMax': 'no máximo {max} sugestões',
   'spec.suggestionsBlank': 'sugestões não podem ser vazias',
   'spec.suggestionsTrim': 'sugestões não podem ter espaço no começo nem no fim',
   'spec.suggestionsRepeated': 'sugestões repetidas',
-  // Campos e colunas
+  // Fields and columns
   'spec.columnTypeNotAllowed':
     '"{type}" não é permitido dentro de table; use "string", "number", "date", "enum" ou "ref"',
   'spec.optionsRequired': 'obrigatório e não vazio em enum',
@@ -71,14 +71,14 @@ export const specMessages = {
   'spec.columnsRequired': 'obrigatório e não vazio em table',
   'spec.rowLabelRequired': 'obrigatório em table com tags',
   'spec.rowLabelNotStringColumn': '"{key}" deve ser uma coluna string da tabela',
-  // Código de instanciação (`code`)
+  // Instantiation code (`code`)
   'spec.codePathInvalid':
     'caminho inválido: use um caminho relativo à raiz do repositório, com "/", sem "." nem ".." e sem unidade (ex: app/src/Main.kt)',
   'spec.codeFieldNotEnum': '"{key}" deve ser um campo enum do tipo',
   'spec.notInOptionsOf': '"{value}" não está nas options de "{field}"',
   'spec.variantsNoCases': 'declare ao menos um caso',
   'spec.variantsEmptyCase': 'caso vazio: declare symbol, path, params, values ou notes',
-  // Exemplos
+  // Examples
   'spec.exampleValueShape':
     'deve ser texto, número ou null (ou uma lista de linhas, num campo table)',
   'spec.exampleNameRepeated': 'nome "{name}" repetido',
@@ -92,14 +92,14 @@ export const specMessages = {
   'spec.exampleRowNotObject': 'deve ser um objeto (coluna → valor)',
   'spec.exampleNotColumn': '"{key}" não é coluna de "{field}"',
   'spec.exampleRefCell': 'coluna "ref" não aceita valor em exemplo',
-  // Onde se aplica
+  // Where it applies
   'spec.appliesToEmpty': 'não pode ser vazio; use "marking", "arrow" ou os dois',
   'spec.repeatedValues': 'valores repetidos',
   'spec.arrowOnlyNoComponent': 'um tipo só de seta não pode ter component',
   'spec.arrowOnlyNoFloating': 'um tipo só de seta não pode ter floating',
   'spec.appliesToInvalid': '"{value}" inválido; use "marking" ou "arrow"',
   'spec.appliesToShape': 'deve ser "marking" ou "arrow"',
-  // Filhos permitidos, documentos, papéis e grupos
+  // Allowed children, documents, roles and groups
   'spec.groupsEmpty': 'não pode ser vazio; tire a chave ou liste ao menos um grupo',
   'spec.groupsList': 'deve ser uma lista de ids de grupo',
   'spec.allowedChildShape':
@@ -113,10 +113,10 @@ export const specMessages = {
   'spec.childRolesEmpty': 'não pode ser vazio; tire a chave ou declare ao menos um papel',
   'spec.idRepeated': 'id "{id}" repetido',
   'spec.groupRepeated': 'grupo "{group}" repetido',
-  // Tipos
+  // Types
   'spec.structuralNoComponent': 'um tipo estrutural não desenha: não pode ter component',
   'spec.labelFieldNotString': '"{key}" deve ser um campo string do tipo',
-  // Repositórios, plataformas, containers, fontes e migrações (formas do arquivo)
+  // Repositories, platforms, containers, sources and migrations (file shapes)
   'spec.urlInvalid': 'deve começar com http:// ou https://, sem espaços',
   'spec.urlTemplateNeedsPath': 'deve conter {path}',
   'spec.repoIdInvalid': 'id de repositório inválido; use [a-z0-9-]+',
@@ -136,7 +136,7 @@ export const specMessages = {
   'spec.notEmptyList': 'não pode ser vazia',
   'spec.formatInvalid': 'deve ser "{format}"',
   'spec.formatVersionInvalid': 'deve ser {versions} ou {last}',
-  // Versão do formato, fontes externas e fontes (fontes de letra)
+  // Format version, external sources and fonts (typefaces)
   'spec.onlyFormat': 'só é permitido com formatVersion {version}',
   'spec.sourceOnlyOrigins': 'só é permitido em sistema declarado em origins',
   'spec.sourcePathRequired': 'obrigatório em sistema declarado em origins',
@@ -148,7 +148,7 @@ export const specMessages = {
   'spec.fieldPathWildcard':
     'caminho inválido "{path}" ("[*]" só vale em roots[].path de uma origem)',
   'spec.ignoreRepeated': '"{prop}" repetido',
-  // Modelos de campo, calls e formats (formatVersion 16, `specSignature.ts`)
+  // Field templates, calls and formats (formatVersion 16, `specSignature.ts`)
   'spec.likeNotField': '"{like}" não é um campo de um tipo da especialização',
   'spec.formatNeedsPlaceholder': 'o molde precisa conter {placeholder}',
   'spec.modelTypeInvalid': '"{value}" inválido; use "number", "string" ou "enum"',
@@ -166,7 +166,7 @@ export const specMessages = {
   'spec.platformUndeclared': 'plataforma "{id}" não declarada em platforms',
   'spec.codeNeedsPlatforms': 'só é permitido em especializações que declaram platforms',
   'spec.typeIdRepeated': 'id "{id}" repetido na especialização',
-  // Migrações
+  // Migrations
   'spec.migrationFromRepeated': 'já existe uma migração a partir da versão {from}',
   'spec.migrationToGreater': 'deve ser maior que "from" ({from})',
   'spec.migrationToMax': 'não pode passar de "version" ({version})',
@@ -185,7 +185,7 @@ export const specMessages = {
   'spec.fieldStillExists': 'campo "{key}" ainda existe no tipo "{typeId}" nesta versão',
   'spec.columnStillExists':
     'coluna "{column}" ainda existe na tabela "{table}" do tipo "{typeId}" nesta versão',
-  // Filhos permitidos, grupos, repositórios de documento e dono
+  // Allowed children, groups, document repositories and owner
   'spec.layerNotFound': 'camada "{layer}" não existe na especialização',
   'spec.layerIsOwn':
     'camada "{layer}" é a do próprio tipo; filhos devem estar em outra camada',
@@ -198,7 +198,7 @@ export const specMessages = {
     '"{typeId}" exige dono, mas nenhum tipo o lista em allowedChildren',
   'spec.ownerOnlySelf':
     '"{typeId}" exige dono, mas nenhum outro tipo o aceita como filho (só ele mesmo o lista em allowedChildren)',
-  // Tokens e ícones
+  // Tokens and icons
   'spec.tokensShape': 'deve ser um objeto com modes e values',
   'spec.tokenKeyUnknown': 'chave desconhecida: {key}',
   'spec.tokenModesEmpty': 'deve ser uma lista com ao menos um modo',
@@ -212,7 +212,7 @@ export const specMessages = {
   'spec.tokenModesSameType':
     'os modos de um token devem ter o mesmo tipo (texto ou número)',
   'spec.iconsPathShape': 'deve ser o caminho de um arquivo .json do pacote',
-  // Textos padrão do zod (tradução; o `message` segue o do zod, em inglês)
+  // zod's default texts (translation; the `message` follows zod's, in English)
   'spec.zod.invalid_type': 'tipo inválido: esperava {expected}, recebeu {received}',
   'spec.zod.unrecognized_keys': 'propriedade desconhecida: {keys}',
   'spec.zod.too_small': 'valor pequeno demais: o mínimo é {minimum}',

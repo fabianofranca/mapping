@@ -21,13 +21,13 @@ import type {
   TableRow,
 } from './types';
 
-// Referências fortes (`ref`) entre anotações. Ver docs/FORMAT.md, "Referências (`ref`)".
+// Strong references (`ref`) between annotations. See docs/FORMAT.md, "Referências (`ref`)".
 
-/** Textos usados nos rótulos; a interface passa os traduzidos. */
+/** Texts used in the labels; the interface passes the translated ones. */
 export interface LabelTexts {
-  /** Rótulo de anotação livre sem nome. */
+  /** Label of a free annotation with no name. */
   readonly untitled: string;
-  /** Rótulo de referência cujo alvo não existe mais. */
+  /** Label of a reference whose target no longer exists. */
   readonly broken: string;
 }
 
@@ -36,7 +36,7 @@ export const DEFAULT_LABEL_TEXTS: LabelTexts = {
   broken: '(referência quebrada)',
 };
 
-/** Linhas válidas (objetos com `_id` texto) de um valor de `table`. */
+/** Valid rows (objects with a text `_id`) of a `table` value. */
 export function tableRows(value: JsonValue | undefined): TableRow[] {
   if (!Array.isArray(value)) return [];
   return value.filter(
@@ -48,7 +48,7 @@ function nonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value !== '';
 }
 
-/** Chaves além de `annotationId` de cada formato de `ref` (as chaves ordenadas e unidas). */
+/** Keys besides `annotationId` of each `ref` shape (the keys sorted and joined). */
 const REF_SHAPES: ReadonlyMap<string, readonly ('entryId' | 'key' | 'rowId')[]> = new Map(
   [
     ['annotationId', []],
@@ -58,7 +58,7 @@ const REF_SHAPES: ReadonlyMap<string, readonly ('entryId' | 'key' | 'rowId')[]> 
   ],
 );
 
-/** Interpreta um valor como referência; `null` se não tiver um dos quatro formatos. */
+/** Interprets a value as a reference; `null` if it does not have one of the four shapes. */
 export function parseRefValue(value: JsonValue | undefined): RefValue | null {
   if (!isRecord(value) || !nonEmptyString(value.annotationId)) return null;
   const extra = REF_SHAPES.get(Object.keys(value).sort().join(','));
@@ -81,7 +81,7 @@ export type ResolvedRef =
       readonly key: string;
       readonly row: TableRow;
       readonly index: number;
-      /** Campo `table` no tipo; `null` se o tipo não existe mais. */
+      /** `table` field in the type; `null` if the type no longer exists. */
       readonly field: SpecField | null;
     }
   | {
@@ -92,8 +92,9 @@ export type ResolvedRef =
     };
 
 /**
- * Encontra o alvo da referência; `null` = referência quebrada. A resolução segue
- * os dados (o alvo existe?); se o alvo ainda é aceito é outra pergunta (`isRefAccepted`).
+ * Finds the reference's target; `null` = broken reference. The resolution follows
+ * the data (does the target exist?); whether the target is still accepted is another question
+ * (`isRefAccepted`).
  */
 export function resolveRef(p: Project, ref: RefValue): ResolvedRef | null {
   const index = projectIndex(p);
@@ -109,7 +110,7 @@ export function resolveRef(p: Project, ref: RefValue): ResolvedRef | null {
   return resolveValueRef(p, annotation, ref);
 }
 
-/** Alvo de linha ou de campo (`key`, com ou sem `rowId`) numa anotação com valores. */
+/** Row or field target (`key`, with or without `rowId`) in an annotation with values. */
 function resolveValueRef(
   p: Project,
   annotation: Annotation,
@@ -131,10 +132,10 @@ function resolveValueRef(
 }
 
 /**
- * Texto que representa o alvo para ser escrito num campo de texto (`linkedRef`): o nome da
- * declaração, não o rótulo "Dono.Campo" de `refLabel`. Campo simples: o valor (texto não vazio;
- * número e data viram texto); linha de `table`: o valor da coluna `rowLabel`; tupla livre: a
- * `key`. `null` se o alvo não resolve ou não tem texto.
+ * Text that represents the target to be written in a text field (`linkedRef`): the name of the
+ * declaration, not the "Owner.Field" label of `refLabel`. Simple field: the value (non-empty
+ * text; number and date become text); `table` row: the value of the `rowLabel` column; free
+ * entry: the `key`. `null` if the target does not resolve or has no text.
  */
 export function refTargetText(p: Project, ref: RefValue): string | null {
   const target = resolveRef(p, ref);
@@ -157,7 +158,7 @@ export function refTargetText(p: Project, ref: RefValue): string | null {
   }
 }
 
-/** Rótulo da instância: `name`; se vazio, o valor do `labelField` do tipo. */
+/** Label of the instance: `name`; if empty, the value of the type's `labelField`. */
 export function instanceLabel(p: Project, a: Annotation): string | null {
   if (a.name) return a.name;
   const labelField = typeOfAnnotation(p, a)?.type.labelField;
@@ -166,8 +167,8 @@ export function instanceLabel(p: Project, a: Annotation): string | null {
 }
 
 /**
- * Rótulo da anotação no texto das referências: `name`; senão o `labelField`;
- * senão o nome do tipo; numa anotação livre sem nome, `texts.untitled`.
+ * Label of the annotation in the references' text: `name`; otherwise the `labelField`;
+ * otherwise the type name; on a free annotation with no name, `texts.untitled`.
  */
 export function annotationRefLabel(
   p: Project,
@@ -177,7 +178,7 @@ export function annotationRefLabel(
   return instanceLabel(p, a) ?? typeOfAnnotation(p, a)?.type.name ?? texts.untitled;
 }
 
-/** Texto do alvo, ex.: `User.name`, `Contato.email`, `Contato.nome`. */
+/** Text of the target, e.g.: `User.name`, `Contato.email`, `Contato.nome`. */
 export function refLabel(
   p: Project,
   ref: RefValue,
@@ -194,7 +195,7 @@ export function refLabel(
     case 'row': {
       const rowLabel = target.field?.type === 'table' ? target.field.rowLabel : undefined;
       const value = rowLabel ? target.row[rowLabel] : null;
-      // Linha sem rótulo: posição (1, 2…) na tabela.
+      // Row with no label: position (1, 2…) in the table.
       return `${owner}.${nonEmptyString(value) ? value : `#${target.index + 1}`}`;
     }
     case 'field':
@@ -204,13 +205,13 @@ export function refLabel(
 
 const SIMPLE_TYPES: ReadonlySet<string> = new Set(['string', 'number', 'date', 'enum']);
 
-/** A especialização da anotação de origem de uma referência (resolve `accepts.annotations`). */
+/** The specialization of a reference's source annotation (resolves `accepts.annotations`). */
 export interface AcceptContext {
   readonly specId: string;
   readonly spec: Spec;
 }
 
-/** Contexto da anotação de origem; `null` se ela é livre ou a especialização não está aplicada. */
+/** Context of the source annotation; `null` if it is free or the specialization is not applied. */
 export function acceptContextOf(
   p: Project,
   sourceAnnotationId: string,
@@ -222,8 +223,8 @@ export function acceptContextOf(
 }
 
 /**
- * Decide se uma anotação inteira é alvo aceito: tipada, da MESMA especialização da origem e de um
- * tipo coberto por `accepts.annotations`. Os ids cobertos são resolvidos uma vez.
+ * Decides whether a whole annotation is an accepted target: typed, of the SAME specialization as
+ * the source and of a type covered by `accepts.annotations`. The covered ids are resolved once.
  */
 function annotationMatcher(
   accepts: SpecRefAccepts,
@@ -236,8 +237,8 @@ function annotationMatcher(
 }
 
 /**
- * Tipos cobertos por `accepts.annotations`, na ordem da especialização da anotação de origem
- * (vazio se `accepts` não aceita anotações ou a origem é livre).
+ * Types covered by `accepts.annotations`, in the order of the source annotation's specialization
+ * (empty if `accepts` does not accept annotations or the source is free).
  */
 export function acceptedAnnotationTypes(
   p: Project,
@@ -253,9 +254,9 @@ export function acceptedAnnotationTypes(
 }
 
 /**
- * `true` se o alvo existe e é aceito por `accepts`: tupla livre com `free`, linha
- * de `table` ou campo simples com alguma das etiquetas, ou a anotação inteira de um tipo de
- * `accepts.annotations`. Nunca a própria anotação.
+ * `true` if the target exists and is accepted by `accepts`: a free entry with `free`, a `table`
+ * row or simple field with one of the tags, or the whole annotation of a type in
+ * `accepts.annotations`. Never the annotation itself.
  */
 export function isRefAccepted(
   p: Project,
@@ -272,9 +273,9 @@ export function isRefAccepted(
 }
 
 /**
- * `true` se o alvo já resolvido é aceito por `accepts` (ver `isRefAccepted`). `context` é a
- * especialização da anotação de origem (`acceptContextOf`); sem ela, nenhuma anotação inteira
- * é aceita.
+ * `true` if the already-resolved target is accepted by `accepts` (see `isRefAccepted`). `context`
+ * is the source annotation's specialization (`acceptContextOf`); without it, no whole annotation
+ * is accepted.
  */
 export function isTargetAccepted(
   target: ResolvedRef,
@@ -297,7 +298,7 @@ export function isTargetAccepted(
   }
 }
 
-/** Campo `ref` do tipo da anotação; `null` se não existir. */
+/** `ref` field of the annotation's type; `null` if it does not exist. */
 export function refFieldOf(
   p: Project,
   annotationId: string,
@@ -310,7 +311,7 @@ export function refFieldOf(
   return field?.type === 'ref' ? field : null;
 }
 
-/** Coluna `ref` da tabela `tableKey` do tipo da anotação; `null` se não existir. */
+/** `ref` column of the table `tableKey` of the annotation's type; `null` if it does not exist. */
 export function refColumnOf(
   p: Project,
   annotationId: string,
@@ -328,18 +329,18 @@ export function refColumnOf(
 
 export interface RefTarget {
   readonly ref: RefValue;
-  /** Anotação que contém o alvo (para agrupar e mostrar imagem › marcação). */
+  /** Annotation that contains the target (to group and to show image › marking). */
   readonly annotation: Annotation;
   readonly label: string;
   /**
-   * Por que o alvo é aceito: as etiquetas do campo que o campo `ref` aceita (linha de
-   * tabela ou campo simples); vazio na tupla livre e na anotação inteira. Serve ao filtro do
-   * seletor.
+   * Why the target is accepted: the field's tags that the `ref` field accepts (table row or
+   * simple field); empty for a free entry and for a whole annotation. It serves the picker's
+   * filter.
    */
   readonly tags: readonly string[];
 }
 
-/** Alvos de campo e de linha de uma anotação tipada, pelas etiquetas de `accepts.tags`. */
+/** Field and row targets of a typed annotation, by the tags in `accepts.tags`. */
 function fieldTargets(
   a: Annotation,
   type: SpecAnnotationType,
@@ -361,9 +362,9 @@ function fieldTargets(
 }
 
 /**
- * Alvos aceitos por `accepts`, na ordem do projeto, nunca a anotação de origem: de cada
- * anotação, ela inteira (se o tipo é coberto por `accepts.annotations`) e depois os campos e
- * linhas com etiqueta aceita.
+ * Targets accepted by `accepts`, in project order, never the source annotation: of each
+ * annotation, the whole annotation (if the type is covered by `accepts.annotations`) and then the
+ * fields and rows with an accepted tag.
  */
 function targetsAccepted(
   p: Project,
@@ -394,8 +395,8 @@ function targetsAccepted(
 }
 
 /**
- * Alvos aceitos pelo campo `ref` `key` da anotação, na ordem do projeto: em
- * qualquer marcação e imagem, nunca a própria anotação. Vazio se o campo não é `ref`.
+ * Targets accepted by the annotation's `ref` field `key`, in project order: on any
+ * marking and image, never the annotation itself. Empty if the field is not `ref`.
  */
 export function findRefTargets(
   p: Project,
@@ -408,8 +409,8 @@ export function findRefTargets(
 }
 
 /**
- * Alvos aceitos pela coluna `ref` `column` da tabela `tableKey` da anotação (o mesmo `accepts`
- * de um campo `ref`). Vazio se a coluna não existe ou não é `ref`.
+ * Targets accepted by the `ref` column `column` of the annotation's table `tableKey` (the same
+ * `accepts` as a `ref` field). Empty if the column does not exist or is not `ref`.
  */
 export function findCellRefTargets(
   p: Project,
@@ -423,19 +424,19 @@ export function findCellRefTargets(
 }
 
 export interface AnnotationRef {
-  /** Chave do campo `ref`, ou da `table` quando a referência está numa célula. */
+  /** Key of the `ref` field, or of the `table` when the reference is in a cell. */
   readonly key: string;
   readonly ref: RefValue;
-  /** Célula de coluna `ref`: o `_id` da linha, a coluna e a posição dela (a partir de 0). */
+  /** Cell of a `ref` column: the row's `_id`, the column and its position (from 0). */
   readonly rowId?: string;
   readonly column?: string;
   readonly rowIndex?: number;
 }
 
 /**
- * Referências feitas pela anotação: os campos `ref` preenchidos do tipo e as células
- * preenchidas das colunas `ref` das tabelas. Se o tipo não existe mais, qualquer valor (ou
- * célula) no formato de referência conta.
+ * References made by the annotation: the filled `ref` fields of the type and the filled cells
+ * of the tables' `ref` columns. If the type no longer exists, any value (or cell) in the
+ * reference shape counts.
  */
 export function refsOf(p: Project, a: Annotation): AnnotationRef[] {
   if (!a.values) return [];
@@ -466,7 +467,7 @@ export function refsOf(p: Project, a: Annotation): AnnotationRef[] {
   return result;
 }
 
-/** O campo da referência como se lê no texto: `campo`, ou `tabela[2].coluna` numa célula. */
+/** The reference's field as read in the text: `field`, or `table[2].column` in a cell. */
 export function refPathText(
   r: Pick<AnnotationRef, 'key' | 'column' | 'rowIndex'>,
 ): string {
@@ -476,19 +477,19 @@ export function refPathText(
 }
 
 export interface Backlink extends AnnotationRef {
-  /** Anotação que faz a referência. */
+  /** Annotation that makes the reference. */
   readonly source: Annotation;
 }
 
 /**
- * Referências recebidas pela anotação (de qualquer tupla, linha ou campo dela),
- * na ordem do projeto. Para agrupar por alvo, use `ref.entryId`/`ref.rowId`/`ref.key`.
+ * References received by the annotation (on any of its entries, rows or fields),
+ * in project order. To group by target, use `ref.entryId`/`ref.rowId`/`ref.key`.
  */
 export function getBacklinks(p: Project, annotationId: string): Backlink[] {
   return [...(backlinkIndex(p).get(annotationId) ?? [])];
 }
 
-/** Referências recebidas por alvo, montadas uma vez por versão do projeto. */
+/** References received per target, built once per project version. */
 const backlinkIndex = memoByProject((p) => {
   const result = new Map<string, Backlink[]>();
   for (const source of p.annotations) {
@@ -503,9 +504,9 @@ const backlinkIndex = memoByProject((p) => {
 });
 
 /**
- * Quantas referências válidas em `before` ficam quebradas em `after`, contando só
- * as anotações de origem que continuam existindo. Serve para as confirmações de
- * exclusão e remoção ("1 referência vai quebrar").
+ * How many references valid in `before` become broken in `after`, counting only
+ * the source annotations that still exist. It serves the deletion and removal
+ * confirmations ("1 reference will break").
  */
 export function countBrokenRefs(before: Project, after: Project): number {
   const existed = new Set(before.annotations.map((a) => a.id));
@@ -519,7 +520,7 @@ export function countBrokenRefs(before: Project, after: Project): number {
   return count;
 }
 
-/** Referências que a operação quebraria (0 se ela falhar). */
+/** References the operation would break (0 if it fails). */
 export function refsBrokenBy(p: Project, op: (p: Project) => Project): number {
   try {
     return countBrokenRefs(p, op(p));

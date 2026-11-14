@@ -1,19 +1,19 @@
 /**
- * Motor dos componentes: contas puras do plano de uma grade (`layout.type: "grid"`) que não
- * dependem do fechamento do motor (`instantiate.ts`). As contas de trilhas e células ficam em
- * `gridLayout.ts`; aqui, as de medida: a maior célula (`hug`) e a extensão de cada linha de fluxo.
+ * Component engine: pure computations of a grid's plan (`layout.type: "grid"`) that do not
+ * depend on the engine's closure (`instantiate.ts`). The track and cell computations live in
+ * `gridLayout.ts`; here, the measurement ones: the largest cell (`hug`) and the extent of each flow line.
  */
 import type { GridCell } from './gridLayout';
 
-/** As trilhas da grade: quantas (`columns`/`rows`) ou o mínimo (`minColumnWidth`/`minRowHeight`). */
+/** The grid's tracks: how many (`columns`/`rows`) or the minimum (`minColumnWidth`/`minRowHeight`). */
 export interface GridTracks {
   readonly count?: number | undefined;
   readonly min?: number | undefined;
-  /** `true` = as trilhas são as colunas (largura); `false` = as linhas (grade horizontal). */
+  /** `true` = the tracks are the columns (width); `false` = the rows (horizontal grid). */
   readonly vertical: boolean;
 }
 
-/** As quatro chaves de trilha, com o rótulo do aviso e o que cada uma é. */
+/** The four track keys, with the warning label and what each one is. */
 export const TRACK_KEYS = [
   { key: 'columns', field: 'count', vertical: true },
   { key: 'minColumnWidth', field: 'min', vertical: true },
@@ -21,19 +21,19 @@ export const TRACK_KEYS = [
   { key: 'minRowHeight', field: 'min', vertical: false },
 ] as const;
 
-/** A expressão da chave de trilha não deu valor (campo vazio, `$if` sem `else`): a chave não foi informada. */
+/** The track key's expression yielded no value (empty field, `$if` without `else`): the key was not given. */
 export function isTrackAbsent(value: unknown): boolean {
   return value === undefined || value === null || String(value).trim() === '';
 }
 
-/** O número que um valor de expressão representa (número ou texto numérico); `NaN` se nenhum. */
+/** The number an expression value represents (a number or numeric text); `NaN` if neither. */
 export function numericValue(value: unknown): number {
   if (typeof value === 'number') return value;
   if (typeof value === 'string' && value.trim() !== '') return Number(value);
   return Number.NaN;
 }
 
-/** Um valor de trilha válido: inteiro ≥ 1 para `columns`/`rows`, número > 0 para o mínimo. */
+/** A valid track value: integer ≥ 1 for `columns`/`rows`, number > 0 for the minimum. */
 export function validTrack(field: 'count' | 'min', value: unknown): number | undefined {
   const n = numericValue(value);
   if (field === 'count') return Number.isInteger(n) && n >= 1 ? n : undefined;
@@ -41,8 +41,8 @@ export function validTrack(field: 'count' | 'min', value: unknown): number | und
 }
 
 /**
- * A trilha mais larga que as células pedem: cada filho de `span` trilhas pede `(tamanho − gaps do
- * span) / span` por trilha (colunas iguais pela maior, o `IntrinsicSize.Min` com `weight(1f)`).
+ * The widest track the cells ask for: each child spanning `span` tracks asks for `(size − the
+ * span's gaps) / span` per track (equal columns by the largest, the `IntrinsicSize.Min` with `weight(1f)`).
  */
 export function maxCellOf(
   cells: readonly GridCell[],
@@ -55,7 +55,8 @@ export function maxCellOf(
   }, 0);
 }
 
-/** A extensão de cada linha de fluxo: a do filho maior nela. */
+/** The extent of each flow line: that of its largest child. */
+
 export function lineExtents(
   cells: readonly GridCell[],
   lines: number,

@@ -269,7 +269,7 @@ describe('rótulos nas exibições e no repeat do componente', () => {
     );
     expect(out.values.itens).toEqual([{ alvo: 'Cliente' }, { alvo: null }]);
     expect(out.warnings.map((w) => w.text)).toEqual([
-      'referência quebrada: itens[2].alvo',
+      'broken reference: itens[2].alvo',
     ]);
   });
 });

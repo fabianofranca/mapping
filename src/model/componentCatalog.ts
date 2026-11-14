@@ -17,29 +17,29 @@ import type { Spec, SpecAnnotationType } from './spec';
 import { findSpecType } from './specLookup';
 import type { Annotation, Project } from './types';
 
-// Catálogo de componentes (etapa Biblioteca, B3): os componentes das especializações aplicadas
-// (pacote `specs/<id>/`, `formatVersion` 4), lidos uma vez e guardados em memória. O
-// `mapping.json` nunca guarda o desenho: o catálogo é montado por quem lê os arquivos
-// (sessão, MCP) e entregue às funções puras do modelo. Sem DOM, sem leitura de disco.
+// Component catalog (Library stage, B3): the components of the applied specializations
+// (package `specs/<id>/`, `formatVersion` 4), read once and kept in memory. `mapping.json` never
+// stores the drawing: the catalog is built by whoever reads the files (session, MCP) and handed
+// to the model's pure functions. No DOM, no disk reads.
 
 export interface SpecComponents {
   readonly specId: string;
-  /** Versão da especialização de onde os componentes foram lidos. */
+  /** Version of the specialization the components were read from. */
   readonly version: number;
-  /** Id do tipo → componente válido. */
+  /** Type id → valid component. */
   readonly byType: ReadonlyMap<string, ComponentFile>;
-  /** `"tipo: motivo"` dos componentes que não carregaram (texto pt-BR; o MCP lê este). */
+  /** `"type: reason"` of the components that did not load (pt-BR text; the MCP reads this one). */
   readonly problems: readonly string[];
-  /** Os mesmos problemas, com código e parâmetros para a interface: mesmo tamanho e ordem. */
+  /** The same problems, with a code and parameters for the interface: same size and order. */
   readonly problemMessages: readonly ModelMessage[];
 }
 
-/** Por id de especialização. */
+/** By specialization id. */
 export type ComponentCatalog = ReadonlyMap<string, SpecComponents>;
 
 export const EMPTY_CATALOG: ComponentCatalog = new Map();
 
-/** Tipos da especialização que citam um componente, na ordem das camadas e dos tipos. */
+/** Types of the specialization that cite a component, in the order of the layers and types. */
 function typesWithComponent(
   spec: Spec,
 ): readonly { readonly id: string; readonly component: string }[] {
@@ -55,9 +55,9 @@ function typesWithComponent(
 }
 
 /**
- * Caminhos (relativos à raiz do projeto) dos arquivos de componente citados pela
- * especialização, sem repetição, na ordem dos tipos. `specFile` é o arquivo da especialização
- * (`specs/material3/material3.spec.json`): o `component` do tipo é relativo a ele.
+ * Paths (relative to the project root) of the component files cited by the specialization,
+ * without repeats, in the order of the types. `specFile` is the specialization file
+ * (`specs/material3/material3.spec.json`): the type's `component` is relative to it.
  */
 export function componentPaths(spec: Spec, specFile: string): string[] {
   const paths = new Set<string>();
@@ -65,26 +65,26 @@ export function componentPaths(spec: Spec, specFile: string): string[] {
     const path = resolvePathChecked(specFile, type.component);
     if (path !== undefined) paths.add(path);
   }
-  // O conjunto de ícones (`icons`) é lido junto: os componentes dependem dele para desenhar.
+  // The icon set (`icons`) is read along with them: the components depend on it to draw.
   const icons =
     spec.icons === undefined ? undefined : resolvePathChecked(specFile, spec.icons);
   if (icons !== undefined) paths.add(icons);
   return [...paths];
 }
 
-/** Os problemas de carga: o texto pt-BR e a mensagem com código, sempre empurrados juntos. */
+/** The load problems: the pt-BR text and the message with a code, always pushed together. */
 export interface LoadProblems {
   readonly texts: string[];
   readonly messages: ModelMessage[];
 }
 
-/** Único ponto que registra um problema (mantém `problems` e `problemMessages` pareados). */
+/** The only place that records a problem (keeps `problems` and `problemMessages` paired). */
 export function pushProblem(problems: LoadProblems, message: ModelMessage): void {
   problems.texts.push(message.text);
   problems.messages.push(message);
 }
 
-/** O componente que não passou no parse: o erro vem do parser (texto); sem erro, o padrão. */
+/** The component that failed to parse: the error comes from the parser (text); with no error, the default. */
 function invalidComponent(typeId: string, issue: IssueLike | undefined): ModelMessage {
   if (issue === undefined) {
     return modelMessage(
@@ -102,7 +102,7 @@ function invalidComponent(typeId: string, issue: IssueLike | undefined): ModelMe
   );
 }
 
-/** O conjunto de ícones da especialização; arquivo ausente ou inválido vira um problema `icons: …`. */
+/** The specialization's icon set; a missing or invalid file becomes an `icons: …` problem. */
 function loadIcons(
   spec: Spec,
   specFile: string,
@@ -153,15 +153,15 @@ function loadIcons(
   return undefined;
 }
 
-/** O que vem de fora do modelo ao carregar: a fonte do hospedeiro e o modo do desenho. */
+/** What comes from outside the model on load: the host font and the drawing mode. */
 export interface LoadOptions {
-  /** A pilha `--font-sans`/`--font-mono` do tema (ou o que o hospedeiro usa); ausente = genéricas. */
+  /** The theme's `--font-sans`/`--font-mono` stack (or what the host uses); absent = generic. */
   readonly fonts?: HostFonts;
-  /** Modo dos `tokens` da especialização; ausente ou não declarado = o primeiro. */
+  /** Mode of the specialization's `tokens`; absent or undeclared = the first. */
   readonly mode?: string;
 }
 
-/** A tabela de tokens de cada modo declarado (sem `tokens`: nenhuma). */
+/** The token table of each declared mode (without `tokens`: none). */
 function tokensByMode(
   spec: Spec,
   fonts: HostFonts,
@@ -173,10 +173,10 @@ function tokensByMode(
 }
 
 /**
- * Lê e valida os componentes da especialização. `readText` devolve o texto de um caminho da
- * raiz do projeto, ou `undefined` se o arquivo não existe. Um componente ruim vira um
- * problema `"<tipo>: <motivo>"` e o tipo fica sem componente (as marcações dele seguem
- * comuns). Especialização v1 a v3, ou sem `component`, dá um `byType` vazio.
+ * Reads and validates the specialization's components. `readText` returns the text of a path
+ * from the project root, or `undefined` if the file does not exist. A bad component becomes a
+ * `"<type>: <reason>"` problem and the type is left with no component (its markings stay
+ * ordinary). A v1 to v3 specialization, or one without `component`, gives an empty `byType`.
  */
 export function loadSpecComponents(
   spec: Spec,
@@ -240,7 +240,7 @@ export function loadSpecComponents(
 }
 
 export interface MarkingComponent {
-  /** A anotação tipada que desenha a marcação. */
+  /** The typed annotation that draws the marking. */
   readonly annotation: Annotation;
   readonly specId: string;
   readonly typeId: string;
@@ -249,10 +249,10 @@ export interface MarkingComponent {
 }
 
 /**
- * A anotação que desenha a marcação, ou `null`: a **primeira** anotação tipada própria da
- * marcação (na ordem de `annotations`) cujo tipo tem componente no catálogo, com a versão do
- * catálogo igual à da especialização aplicada. As herdadas não desenham (são o "modelo").
- * Sem componente a marcação é comum.
+ * The annotation that draws the marking, or `null`: the **first** typed annotation owned by the
+ * marking (in the order of `annotations`) whose type has a component in the catalog, with the
+ * catalog version equal to the applied specialization's. Inherited ones do not draw (they are the
+ * "template"). Without a component the marking is ordinary.
  */
 export function markingComponent(
   p: Project,
@@ -277,9 +277,9 @@ export function markingComponent(
 }
 
 /**
- * Nome do tipo que a marcação desenha: o da primeira anotação própria cujo tipo declara
- * componente, ou `null`. Não usa o catálogo de componentes (é deliberado): o rótulo da
- * instância sem nome funciona em qualquer lugar que tenha o projeto, sem ler arquivos.
+ * Name of the type the marking draws: that of the first own annotation whose type declares a
+ * component, or `null`. It does not use the component catalog (deliberately): the label of an
+ * unnamed instance works anywhere that has the project, without reading files.
  */
 export function markingTypeName(p: Project, markingId: string): string | null {
   for (const annotation of projectIndex(p).annotationsByMarking.get(markingId) ?? []) {
@@ -292,16 +292,15 @@ export function markingTypeName(p: Project, markingId: string): string | null {
   return null;
 }
 
-/** Componente com slot: o componente tem um slot que recebe marcações filhas. */
+/** Component with a slot: the component has a slot that receives child markings. */
 export function hasSlotComponent(component: ComponentFile): boolean {
   return findSlot(component) !== undefined;
 }
 
 /**
- * Mínimo do componente que desenha a marcação, em pixels da imagem: o `minSize` dele (em
- * unidades) × a densidade do container, para cima, ou, sem `minSize`, 1×1 (a marcação com
- * componente aceita a partir de 1 px); `null` na marcação comum (vale o mínimo
- * de 8 px dos gestos).
+ * Minimum of the component that draws the marking, in image pixels: its `minSize` (in units) ×
+ * the container density, rounded up, or, without `minSize`, 1×1 (a marking with a component
+ * accepts from 1 px); `null` on an ordinary marking (the 8 px minimum of the gestures applies).
  */
 export function componentMinSize(
   p: Project,
@@ -317,7 +316,7 @@ export function componentMinSize(
   );
 }
 
-/** O tamanho mínimo de uma instância do componente: o `minSize` dele ou o menor armazenável. */
+/** The minimum size of an instance of the component: its `minSize` or the smallest storable. */
 export function componentFileMinSize(
   component: ComponentFile,
   density = 1,

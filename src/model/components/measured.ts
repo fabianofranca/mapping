@@ -1,16 +1,18 @@
 /**
- * Layout medido (etapa Componentes fiéis, CF11, decisão 29): uma árvore de retângulos de um
- * sistema externo (a página de um app web medida num navegador, o despejo da hierarquia de componentes visuais de
- * um app nativo) vira marcações, casando cada nó com um tipo de anotação pelas `sources` dele.
+ * Measured layout (Faithful components stage, CF11, decision 29): a tree of rectangles from an
+ * external system (a web app's page measured in a browser, the dump of a native app's visual
+ * component hierarchy) becomes markings, matching each node to an annotation type by its `sources`.
  *
- * Nó: `{ type, id?, classes?, rect: { x, y, width, height }, props?, children? }`. O tipo sai da
- * `source` do tipo no sistema (`origins[].kind: "measured"`): o `id` do nó contra o `id` da
- * source, depois cada classe contra o `name` e por fim o `type` contra o `name`. Cada campo vem
- * do `path` dele nas `props` (com `values` para `enum`), como na origem executável.
+ * Node: `{ type, id?, classes?, rect: { x, y, width, height }, props?, children? }`. The type comes
+ * from the type's `source` in the system (`origins[].kind: "measured"`): the node's `id` against
+ * the source's `id`, then each class against the `name` and finally the `type` against the `name`.
+ * Each field comes from its `path` in the `props` (with `values` for `enum`), as in the executable
+ * origin.
  *
- * O pertencimento nunca sai da árvore: o resultado é uma lista plana de marcações em pré-ordem e
- * quem as cria (o lote do MCP) deixa a geometria decidir quem contém quem (`settleHierarchy`).
- * Puro, sem API de navegador, e nunca lança: o que não deu certo vira `error` ou aviso.
+ * Ownership never comes from the tree: the result is a flat list of markings in pre-order and
+ * whoever creates them (the MCP batch) lets the geometry decide who contains whom
+ * (`settleHierarchy`). Pure, no browser API, and never throws: what did not work becomes `error`
+ * or a warning.
  */
 import { textsOf } from '../messages/collector';
 import { templateMessage } from '../messages';
@@ -28,31 +30,31 @@ import type { Box } from './box';
 import { isRecord } from '../isRecord';
 
 export interface MeasuredInput {
-  /** O `system` de uma origem `measured` declarada pela especialização. */
+  /** The `system` of a `measured` origin declared by the specialization. */
   readonly system: string;
-  /** A árvore medida (JSON lido de um arquivo ou inline). */
+  /** The measured tree (JSON read from a file or inline). */
   readonly tree: unknown;
-  /** Deslocamento somado depois da escala (padrão 0, 0). */
+  /** Offset added after the scale (default 0, 0). */
   readonly offset?: { readonly x: number; readonly y: number };
-  /** Multiplicador dos retângulos (padrão 1). */
+  /** Multiplier of the rectangles (default 1). */
   readonly scale?: number;
 }
 
-/** Uma marcação a criar: o tipo, o retângulo já com a escala e o deslocamento e os valores lidos. */
+/** A marking to create: the type, the rectangle already scaled and offset, and the values read. */
 export interface MeasuredMarking {
   readonly specId: string;
   readonly typeId: string;
   readonly rect: Box;
-  /** Só os campos que o nó trouxe (os outros ficam com o `preview` do componente). */
+  /** Only the fields the node brought (the others keep the component's `preview`). */
   readonly values: Readonly<Record<string, FieldValue>>;
-  /** Onde o nó está na árvore (`root.children[0]`), para as mensagens. */
+  /** Where the node is in the tree (`root.children[0]`), for the messages. */
   readonly path: string;
 }
 
 export interface MeasuredImport {
   readonly markings: readonly MeasuredMarking[];
   readonly warnings: readonly string[];
-  /** Os mesmos avisos com código e parâmetros (`warnings` = textos destes, na mesma ordem). */
+  /** The same warnings with code and parameters (`warnings` = the texts of these, in the same order). */
   readonly messages: readonly ModelMessage[];
   readonly error?: string;
 }
@@ -60,11 +62,11 @@ export interface MeasuredImport {
 interface Candidate {
   readonly spec: Spec;
   readonly type: SpecAnnotationType;
-  /** Os `booleans` da origem `measured` da especialização do tipo (cada uma tem os seus). */
+  /** The `booleans` of the `measured` origin of the type's specialization (each one has its own). */
   readonly booleans: Origin['booleans'];
 }
 
-/** Índices de id e de nome das `sources` do `system`, o primeiro candidato vence (como a varredura em ordem). */
+/** Id and name indexes of the `system`'s `sources`; the first candidate wins (like the in-order scan). */
 interface CandidateIndex {
   readonly byId: ReadonlyMap<string, Candidate>;
   readonly byName: ReadonlyMap<string, Candidate>;
@@ -82,7 +84,7 @@ interface Run {
 const isNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
 
-/** Os tipos da especialização com `source` no `system`. */
+/** The specialization's types with a `source` in the `system`. */
 function typesWithSource(
   spec: Spec,
   system: string,
@@ -94,7 +96,7 @@ function typesWithSource(
     .map((type) => ({ spec, type, booleans }));
 }
 
-/** As especializações que declaram `system` como origem `measured` e os tipos delas com `source` nele. */
+/** The specializations that declare `system` as a `measured` origin and their types with a `source` in it. */
 function candidatesOf(
   specs: readonly Spec[],
   system: string,
@@ -110,7 +112,7 @@ function candidatesOf(
   return { candidates, ...(origin ? { origin } : {}) };
 }
 
-/** Monta uma vez os mapas id → candidato e nome → candidato, na ordem dos candidatos. */
+/** Builds once the id → candidate and name → candidate maps, in the order of the candidates. */
 function indexCandidates(
   candidates: readonly Candidate[],
   system: string,
@@ -129,7 +131,7 @@ function indexCandidates(
   return { byId, byName };
 }
 
-/** `id` do nó contra o `id` da source; depois cada classe contra o `name`; por fim o `type`. */
+/** The node's `id` against the source's `id`; then each class against the `name`; finally the `type`. */
 function findCandidate(run: Run, node: Record<string, unknown>): Candidate | undefined {
   const { byId, byName } = run.index;
   const id = typeof node.id === 'string' ? node.id : undefined;
@@ -247,7 +249,7 @@ function place(raw: Record<string, unknown>, rect: Box, path: string, run: Run):
   });
 }
 
-/** `type`, `id` e classes do nó, para a mensagem de aviso; `undefined` quando o nó não traz nenhum. */
+/** The node's `type`, `id` and classes, for the warning message; `undefined` when the node has none. */
 function describe(node: Record<string, unknown>): string | undefined {
   const parts: string[] = [];
   if (typeof node.type === 'string') parts.push(node.type);
@@ -258,7 +260,7 @@ function describe(node: Record<string, unknown>): string | undefined {
   return parts.join(' ') || undefined;
 }
 
-/** A árvore medida → as marcações (pré-ordem), pelas `sources` dos tipos das especializações. Nunca lança. */
+/** The measured tree → the markings (pre-order), by the `sources` of the specializations' types. Never throws. */
 export function importMeasured(
   specs: readonly Spec[],
   input: MeasuredInput,
@@ -268,14 +270,14 @@ export function importMeasured(
     const declared = specs.some((s) => s.origins?.some((o) => o.system === input.system));
     return fail(
       declared
-        ? `a origem "${input.system}" não é do tipo measured (origins[].kind)`
-        : `origem "${input.system}" não declarada como measured em nenhuma especialização aplicada`,
+        ? `origin "${input.system}" is not of type measured (origins[].kind)`
+        : `origin "${input.system}" not declared as measured in any applied specialization`,
     );
   }
   if (!isRecord(input.tree))
-    return fail('a árvore medida deve ser um objeto (o nó raiz)');
+    return fail('the measured tree must be an object (the root node)');
   if (!isRecord(input.tree.rect)) {
-    return fail('o nó raiz não tem rect: esperava { x, y, width, height }');
+    return fail('the root node has no rect: expected { x, y, width, height }');
   }
   const run: Run = {
     system: input.system,

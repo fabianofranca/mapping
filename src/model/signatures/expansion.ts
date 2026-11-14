@@ -1,30 +1,31 @@
 import type { SpecFieldModel } from '../spec';
 import type { SignatureParam } from './types';
 
-// A regra única da expansão de um parâmetro composto (etapa #1079; CL1, S5-c): o importador
-// (`importUnits.ts`, que vira campos) e o validador (`codeLink.ts`, que confere o `params` do
-// `code`) perguntam a esta função o que um parâmetro expande, para nunca divergirem. Pura.
+// The single rule for expanding a composite parameter (stage #1079; CL1, S5-c): the importer
+// (`importUnits.ts`, which turns it into fields) and the validator (`codeLink.ts`, which checks the
+// `params` of the `code`) ask this function what a parameter expands to, so they never diverge. Pure.
 
-/** Os modelos do `fieldModels` da plataforma. */
+/** The models in the platform's `fieldModels`. */
 export type Models = Readonly<Record<string, SpecFieldModel>>;
-/** Os modelos como o validador os recebe (só o `expand` interessa). */
+/** The models as the validator receives them (only `expand` matters). */
 export type ExpandModels = Models;
 
 export const isPositional = (param: SignatureParam): boolean => param.label === '_';
 
 export const stripNullable = (type: string): string => type.replace(/\?$/, '');
 
-/** O que o parâmetro expande: o símbolo da chamada e os membros (nome e parâmetro). */
+/** What the parameter expands to: the call symbol and the members (name and parameter). */
 export interface Expansion {
   readonly call: string;
   readonly members: readonly SignatureParam[];
 }
 
 /**
- * O que um parâmetro expande, ou `null` (ele é uma unidade só). Só um `value` com rótulo expande:
- * pelo `expand` do modelo do tipo dele, ou, sem modelo, pela fábrica do padrão (os argumentos que
- * são `value`). Um modelo que não é `expand` (`like`, `type`, `ignore`) não expande, mesmo com
- * fábrica.
+ * What a parameter expands to, or `null` (it is a single unit). Only a labeled `value` expands:
+ * through the `expand` of its type's model or, with no model, through the pattern's factory (the
+ * arguments that are `value`). A model that is not `expand` (`like`, `type`, `ignore`) does not
+ * expand, even with a factory.
+
  */
 export function expansionOf(param: SignatureParam, models: Models): Expansion | null {
   if (param.role !== 'value' || isPositional(param)) return null;

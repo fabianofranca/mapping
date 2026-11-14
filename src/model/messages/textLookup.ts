@@ -1,9 +1,10 @@
-// Acha o código de uma mensagem pelo texto pt-BR que o parser montou: as entradas sem parâmetro
-// pelo texto exato; as com parâmetro por um padrão montado do modelo (o texto fixo escapado e
-// cada `{nome}` um grupo). Os parsers do componente e dos ícones (etapa #1263, MB4) montam o texto
-// uma vez e o código sai daqui, então o texto devolvido não muda. A especialização usa o padrão só
-// nos códigos de `SPEC_PATTERN_CODES` (os textos que o zod monta com o valor recebido) e as origens
-// só o texto exato; o resto sai com o código no emissor. Sem DOM.
+// Finds a message's code from the pt-BR text that the parser built: entries without parameters
+// by the exact text; those with parameters by a pattern built from the template (the fixed text
+// escaped and each `{name}` a group). The component and icon parsers (stage #1263, MB4) build the
+// text once and the code comes out of here, so the returned text does not change. The
+// specialization uses the pattern only for the codes in `SPEC_PATTERN_CODES` (the texts that zod
+// builds with the received value) and the origins only the exact text; the rest comes out with
+// the code at the emitter. No DOM.
 
 import { componentMessages } from './component';
 import { iconsFileMessages } from './icons';
@@ -19,7 +20,7 @@ const PLACEHOLDER = /\{(\w+)\}/g;
 const hasParams = (text: string): boolean => /\{\w+\}/.test(text);
 const escape = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-/** O modelo vira um regex: o texto fixo escapado e cada `{nome}` um grupo nomeado. */
+/** The template becomes a regex: the fixed text escaped and each `{name}` a named group. */
 function patternOf(text: string): RegExp {
   let source = '';
   let last = 0;
@@ -31,14 +32,14 @@ function patternOf(text: string): RegExp {
 }
 
 export interface TextLookupOptions<C extends string> {
-  /** Os únicos códigos achados por padrão; sem isso, todo modelo com parâmetro vale. */
+  /** The only codes found by pattern; without this, every template with a parameter counts. */
   readonly patterns?: readonly C[];
 }
 
 /**
- * Monta a busca de um catálogo: o texto exato dos modelos sem parâmetro e o padrão dos com
- * parâmetro (todos, ou só os de `patterns`); os modelos mais específicos (mais texto fixo) valem
- * primeiro.
+ * Builds the lookup of a catalog: the exact text of the templates without parameters and the
+ * pattern of those with parameters (all of them, or only those in `patterns`); the more specific
+ * templates (more fixed text) win first.
  */
 export function textLookup<C extends string>(
   catalog: Readonly<Record<C, string>>,
@@ -75,10 +76,10 @@ export type OriginMessageCode = keyof typeof originMessages;
 export const componentCodeForText = textLookup<ComponentMessageCode>(componentMessages);
 export const iconsFileCodeForText = textLookup<IconsFileMessageCode>(iconsFileMessages);
 /**
- * As origens (`origin.ts`) acham o código só pelo texto exato (`patterns: []`): o texto de um
- * problema com valor do usuário (chave, âncora, nome de exemplo, caminho) sai com o código no
- * emissor (`codedProblem`), porque um padrão lido de volta no texto pode casar errado quando o
- * valor traz o texto fixo do modelo (`x: y`, `a; use b`).
+ * The origins (`origin.ts`) find the code by the exact text only (`patterns: []`): the text of a
+ * problem with a user value (key, anchor, example name, path) comes out with the code at the
+ * emitter (`codedProblem`), because a pattern read back from the text can match wrongly when the
+ * value carries the template's fixed text (`x: y`, `a; use b`).
  */
 export const originCodeForText = textLookup<OriginMessageCode>(originMessages, {
   patterns: [],
@@ -87,15 +88,16 @@ export const originCodeForText = textLookup<OriginMessageCode>(originMessages, {
 export type SpecMessageCode = Exclude<keyof typeof specMessages, `spec.zod.${string}`>;
 
 /**
- * Os únicos códigos da especialização achados por padrão: o zod monta o texto deles com o valor
- * recebido (as funções `error` dos enums). Os outros saem com o código no emissor
- * (`specMsg` + `addSpecIssue`) ou, se o texto é constante, pelo texto exato (`known` de
- * `issueCoding`). Mensagem nova com parâmetro em `spec.ts` sai com o código no emissor.
+ * The only specialization codes found by pattern: zod builds their text with the received value
+ * (the enums' `error` functions). The others come out with the code at the emitter
+ * (`specMsg` + `addSpecIssue`) or, if the text is constant, by the exact text (`known` of
+ * `issueCoding`). A new message with a parameter in `spec.ts` comes out with the code at the
+ * emitter.
  *
- * Contrato (imposto por `tests/i18n/specMessages.test.ts`, "contrato de SPEC_PATTERN_CODES"):
- * o modelo pt-BR de cada código tem exatamente um `{…}`, e o texto do zod é montado por
- * `specMsg(código, { value })`, então um valor que traz o texto fixo do modelo volta inteiro em
- * `params.value`. Código novo nesta lista entra no mesmo teste.
+ * Contract (enforced by `tests/i18n/specMessages.test.ts`, "SPEC_PATTERN_CODES contract"):
+ * each code's pt-BR template has exactly one `{…}`, and the zod text is built by
+ * `specMsg(code, { value })`, so a value that carries the template's fixed text comes back whole
+ * in `params.value`. A new code in this list goes into the same test.
  */
 export const SPEC_PATTERN_CODES: readonly SpecMessageCode[] = [
   'spec.fieldTypeInvalid',
@@ -111,7 +113,7 @@ export const specCodeForText = textLookup<SpecMessageCode>(specCatalog, {
   patterns: SPEC_PATTERN_CODES,
 });
 
-/** O mesmo para os textos constantes da leitura das origens que são do catálogo `spec` (só o texto exato). */
+/** The same for the constant texts of the origins reading that belong to the `spec` catalog (exact text only). */
 export const originSpecCodeForText = textLookup<SpecMessageCode>(specCatalog, {
   patterns: [],
 });

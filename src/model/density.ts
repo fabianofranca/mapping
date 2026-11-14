@@ -4,21 +4,21 @@ import { projectIndex } from './projectIndex';
 import type { Spec, SpecContainer } from './spec';
 import type { Project, ProjectContainer, Rect } from './types';
 
-// Densidade do container (schema v19): quantos pixels da imagem vale uma unidade do componente
-// (dp, pt, px lógico a 1x). Os números do componente são unidades; as marcações seguem em pixels
-// da imagem. Funções puras, sem DOM.
+// Container density (schema v19): how many image pixels one component unit is worth
+// (dp, pt, logical px at 1x). The component's numbers are units; the markings stay in image
+// pixels. Pure functions, no DOM.
 
 export const MIN_DENSITY = 0.5;
 export const MAX_DENSITY = 8;
 
-/** Número finito de `MIN_DENSITY` a `MAX_DENSITY`. */
+/** A finite number from `MIN_DENSITY` to `MAX_DENSITY`. */
 export function isValidDensity(value: number): boolean {
   return Number.isFinite(value) && value >= MIN_DENSITY && value <= MAX_DENSITY;
 }
 
 /**
- * Densidade de um espaço: a do container (1 se ausente) ou 1 no canvas (`containerId` nulo, as
- * flutuantes) e num id desconhecido.
+ * Density of a space: the container's (1 if absent) or 1 on the canvas (null `containerId`, the
+ * floating ones) and for an unknown id.
  */
 export function effectiveDensity(
   p: Pick<Project, 'containers'>,
@@ -28,7 +28,7 @@ export function effectiveDensity(
   return projectIndex(p as Project).containers.get(containerId)?.density ?? 1;
 }
 
-/** O container sem a chave `density` (volta a valer 1). */
+/** The container without the `density` key (goes back to 1). */
 export function withoutDensity(container: ProjectContainer): ProjectContainer {
   const { density, ...rest } = container;
   void density;
@@ -36,9 +36,9 @@ export function withoutDensity(container: ProjectContainer): ProjectContainer {
 }
 
 /**
- * Define a densidade do container; `null` e 1 voltam a 1 (remove a chave). Fora de 0,5 a 8 falha com
- * `container-density`. Não mexe nos pixels: só o desenho dos componentes, o `minSize` e o ajuste
- * passam a multiplicar.
+ * Sets the container's density; `null` and 1 go back to 1 (removes the key). Outside 0.5 to 8 it
+ * fails with `container-density`. It does not touch the pixels: only the components' drawing, the
+ * `minSize` and the fitting start to multiply.
  */
 export function setContainerDensity(
   p: Project,
@@ -61,11 +61,11 @@ export function setContainerDensity(
 }
 
 /**
- * O espaço em que um componente é instanciado numa marcação: a caixa **em unidades** (`box`), a
- * densidade e a conversão de uma caixa da cena (em unidades, relativa à marcação) para pixels da
- * imagem. Com densidade 1 a cena já está em pixels, na própria caixa da marcação (`box = rect`), e
- * nada se converte; com outra, a caixa é `{ 0, 0, largura ÷ d, altura ÷ d }` e a raiz da cena leva
- * `translate(rect.x, rect.y) · scale(d)`.
+ * The space in which a component is instantiated in a marking: the box **in units** (`box`), the
+ * density and the conversion of a scene box (in units, relative to the marking) to image pixels.
+ * With density 1 the scene is already in pixels, in the marking's own box (`box = rect`), and
+ * nothing is converted; with another, the box is `{ 0, 0, width ÷ d, height ÷ d }` and the scene
+ * root carries `translate(rect.x, rect.y) · scale(d)`.
  */
 export interface UnitSpace {
   readonly density: number;
@@ -87,12 +87,12 @@ export function unitSpaceOf(rect: Rect, density: number): UnitSpace {
   };
 }
 
-/** Unidades do componente → pixels da imagem, para cima (o `minSize` e o tamanho inicial). */
+/** Component units → image pixels, rounding up (the `minSize` and the initial size). */
 export function unitsToPixels(units: number, density: number): number {
   return density === 1 ? units : Math.ceil(units * density - 1e-9);
 }
 
-/** Um retângulo em pixels da imagem → em unidades do componente (÷ densidade). */
+/** A rectangle in image pixels → in component units (÷ density). */
 export function rectToUnits(rect: Rect, density: number): Rect {
   if (density === 1) return rect;
   return {
@@ -103,14 +103,14 @@ export function rectToUnits(rect: Rect, density: number): Rect {
   };
 }
 
-/** Quanto dois números em unidades podem diferir e ainda valer o mesmo (resto de ponto flutuante). */
+/** How much two numbers in units may differ and still count as the same (floating-point residue). */
 const UNIT_EPS = 1e-6;
 
 /**
- * Um retângulo em unidades → em pixels inteiros da imagem (× densidade): as quatro bordas
- * arredondam e o tamanho sai da diferença (mínimo 1). `original` é o retângulo em pixels de onde
- * `unit` saiu: se `unit` ainda é o mesmo (sem diferença além do resto de ponto flutuante), volta
- * o `original` exato.
+ * A rectangle in units → in whole image pixels (× density): the four edges are rounded and the
+ * size comes from the difference (minimum 1). `original` is the rectangle in pixels that `unit`
+ * came from: if `unit` is still the same (no difference beyond floating-point residue), the exact
+ * `original` comes back.
  */
 export function rectFromUnits(unit: Rect, original: Rect, density: number): Rect {
   if (density === 1) return unit;
@@ -121,8 +121,8 @@ export function rectFromUnits(unit: Rect, original: Rect, density: number): Rect
     Math.abs(unit.width - back.width) < UNIT_EPS &&
     Math.abs(unit.height - back.height) < UNIT_EPS;
   if (same) return original;
-  // As bordas arredondam (esquerda/superior e direita/inferior) e o tamanho sai da diferença: um
-  // filho dentro do slot em unidades nunca passa da borda do slot em pixels.
+  // The edges are rounded (left/top and right/bottom) and the size comes from the difference: a
+  // child inside the slot in units never goes past the slot's edge in pixels.
   const left = Math.round(unit.x * density);
   const top = Math.round(unit.y * density);
   const right = Math.round((unit.x + unit.width) * density);
@@ -135,23 +135,23 @@ export function rectFromUnits(unit: Rect, original: Rect, density: number): Rect
   };
 }
 
-/** Os fatores que a app sugere (a lista pronta do campo traz também 1). */
+/** The factors the app suggests (the field's ready-made list also includes 1). */
 export const SUGGESTED_DENSITIES = [1.5, 2, 3, 4] as const;
 
-/** Os fatores comparados: o 1x entra para a sugestão não empurrar 3x a quem já bate em 1x. */
+/** The compared factors: 1x is included so the suggestion does not push 3x on whoever already matches 1x. */
 const COMPARED_DENSITIES = [1, ...SUGGESTED_DENSITIES] as const;
 
-/** Quantos pixels a largura do container pode diferir de `fator × largura do tamanho pronto`. */
+/** How many pixels the container's width may differ from `factor × preset width`. */
 const SUGGEST_TOLERANCE = 2;
 
-/** O que a app sugere: o fator e o tamanho pronto (de uma especialização aplicada) que o explica. */
+/** What the app suggests: the factor and the preset size (from an applied specialization) that explains it. */
 export interface DensitySuggestion {
   readonly density: number;
   readonly specId: string;
   readonly preset: SpecContainer;
 }
 
-/** O fator da lista cuja largura (`fator × presetWidth`) mais se aproxima de `width`, dentro da tolerância. */
+/** The list factor whose width (`factor × presetWidth`) comes closest to `width`, within the tolerance. */
 function closestFactor(width: number, presetWidth: number): number | undefined {
   let best: number | undefined;
   let bestGap = SUGGEST_TOLERANCE + 1;
@@ -166,11 +166,12 @@ function closestFactor(width: number, presetWidth: number): number | undefined {
 }
 
 /**
- * Sugestão de densidade para um container pelos tamanhos prontos (`containers[]`) das
- * especializações aplicadas: a largura do container ÷ a do tamanho pronto é 1,5, 2, 3 ou 4
- * (tolerância de 2 px no arredondamento; com dois fatores na tolerância, vale o mais próximo). A altura só desempata (a captura costuma recortar barras):
- * entre os candidatos vale o de altura mais próxima de `fator × altura do tamanho pronto` e, em
- * empate, o primeiro na ordem das especializações. Só sugere; quem decide é a pessoa ou o agente.
+ * Density suggestion for a container from the preset sizes (`containers[]`) of the applied
+ * specializations: the container's width ÷ the preset's is 1.5, 2, 3 or 4 (2 px tolerance for
+ * rounding; with two factors within the tolerance, the closest wins). The height only breaks ties
+ * (a capture often crops bars): among the candidates the one whose height is closest to
+ * `factor × preset height` wins and, on a tie, the first in the order of the specializations. It
+ * only suggests; the person or the agent decides.
  */
 export function suggestDensity(
   container: { readonly width: number; readonly height: number },
@@ -189,13 +190,14 @@ export function suggestDensity(
       }
     }
   }
-  // O melhor ser o 1x quer dizer que o container já está no tamanho pronto: nada a sugerir.
+  // The best being 1x means the container is already at the preset size: nothing to suggest.
   return best?.density === 1 ? null : best;
 }
 
 /**
- * A sugestão de cada container do projeto que tem uma (os demais não aparecem). Sem tamanho pronto
- * em nenhuma especialização aplicada, nem percorre os containers.
+ * The suggestion for each project container that has one (the others do not appear). With no preset
+ * size in any applied specialization, it does not even walk the containers.
+
  */
 export function suggestDensities(
   p: Pick<Project, 'containers' | 'specializations'>,

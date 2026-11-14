@@ -1,12 +1,12 @@
-// Ficha de assinatura `mapping-signature` (formatVersion 1; etapa #1079, decisão 4): a
-// assinatura de um componente (parâmetros de uma função `@Composable`, o `init` de uma view
-// SwiftUI, as propriedades de um componente do Figma) numa forma neutra. Só tipos: sem
-// navegador, reutilizável pelo servidor MCP e pelo extrator.
+// Signature sheet `mapping-signature` (formatVersion 1; stage #1079, decision 4): the
+// signature of a component (parameters of a `@Composable` function, the `init` of a SwiftUI
+// view, the properties of a Figma component) in a neutral form. Types only: no browser,
+// reusable by the MCP server and by the extractor.
 
 export const SIGNATURE_FORMAT = 'mapping-signature';
 export const SIGNATURE_FORMAT_VERSION = 1;
 
-/** O que o parâmetro é para a tela: dado (`value`), conteúdo, evento, modificador, estado ou outro. */
+/** What the parameter is for the screen: data (`value`), content, event, modifier, state or other. */
 export const SIGNATURE_ROLES = [
   'value',
   'slot',
@@ -17,7 +17,7 @@ export const SIGNATURE_ROLES = [
 ] as const;
 export type SignatureRole = (typeof SIGNATURE_ROLES)[number];
 
-/** A natureza de um `value`; `dimension` é em unidades do componente (1 dp, 1 pt ou 1 px CSS a 1x). */
+/** The nature of a `value`; `dimension` is in component units (1 dp, 1 pt or 1 CSS px at 1x). */
 export const SIGNATURE_VALUE_KINDS = [
   'text',
   'boolean',
@@ -30,39 +30,39 @@ export const SIGNATURE_VALUE_KINDS = [
 ] as const;
 export type SignatureValueKind = (typeof SIGNATURE_VALUE_KINDS)[number];
 
-/** Padrão literal que dá para representar (texto, número ou booleano). */
+/** A literal default that can be represented (text, number or boolean). */
 export type SignatureLiteral = string | number | boolean;
 
 export interface SignatureValue {
   readonly kind: SignatureValueKind;
-  /** Só quando o padrão é um literal representável. */
+  /** Only when the default is a representable literal. */
   readonly default?: SignatureLiteral;
-  /** `enum`: as constantes, no texto da fonte. */
+  /** `enum`: the constants, as written in the source. */
   readonly options?: readonly string[];
 }
 
 export interface SignatureParam {
   readonly name: string;
-  /** Rótulo externo do Swift; `_` é posicional. */
+  /** Swift's external label; `_` is positional. */
   readonly label?: string;
-  /** Id do parâmetro na fonte (o sufixo `#<id>` do nome no Figma). */
+  /** The parameter's id in the source (the `#<id>` suffix of the name in Figma). */
   readonly id?: string;
   readonly role: SignatureRole;
-  /** O texto do tipo na fonte, normalizado só nos espaços. */
+  /** The type's text in the source, normalized only for whitespace. */
   readonly type: string;
-  /** O texto do padrão na fonte. */
+  /** The default's text in the source. */
   readonly default?: string;
   readonly required?: boolean;
-  /** Só em `role: value`. */
+  /** Only for `role: value`. */
   readonly value?: SignatureValue;
-  /** A fábrica do padrão (`ButtonDefaults.buttonColors()`), num nível só. */
+  /** The default's factory (`ButtonDefaults.buttonColors()`), a single level deep. */
   readonly factory?: SignatureFactory;
 }
 
 export interface SignatureFactory {
-  /** O símbolo da fábrica (`androidx.compose.material3.ButtonDefaults.buttonColors`). */
+  /** The factory's symbol (`androidx.compose.material3.ButtonDefaults.buttonColors`). */
   readonly call: string;
-  /** Os parâmetros da fábrica; nenhum deles tem `factory`. */
+  /** The factory's parameters; none of them has a `factory`. */
   readonly params: readonly SignatureParam[];
 }
 
@@ -70,17 +70,17 @@ export interface CodeSignatureSource {
   readonly kind: 'code';
   readonly platform: string;
   readonly language: string;
-  /** O que se chama (`androidx.compose.material3.Button`). */
+  /** What is called (`androidx.compose.material3.Button`). */
   readonly symbol: string;
-  /** Arquivo que o define, relativo à raiz do repositório. */
+  /** The file that defines it, relative to the repository root. */
   readonly path: string;
-  /** Commit, tag ou branch lido. */
+  /** The commit, tag or branch read. */
   readonly ref?: string;
-  /** `mapping-signature/<leitor>@<versão>` ou `agent`. */
+  /** `mapping-signature/<reader>@<version>` or `agent`. */
   readonly extractor: string;
-  /** Sobrecarga escolhida (Kotlin, `--overload`). */
+  /** The overload chosen (Kotlin, `--overload`). */
   readonly overload?: number;
-  /** `init` escolhido (Swift, `--init`). */
+  /** The `init` chosen (Swift, `--init`). */
   readonly init?: number;
 }
 
@@ -98,8 +98,8 @@ export interface Signature {
   readonly format: typeof SIGNATURE_FORMAT;
   readonly formatVersion: typeof SIGNATURE_FORMAT_VERSION;
   readonly source: SignatureSource;
-  /** Na ordem da fonte. */
+  /** In the source's order. */
   readonly params: readonly SignatureParam[];
-  /** Documentação por nome de parâmetro (KDoc `@param`, `///`, `description` do Figma). */
+  /** Documentation per parameter name (KDoc `@param`, `///`, Figma's `description`). */
   readonly doc?: Readonly<Record<string, string>>;
 }

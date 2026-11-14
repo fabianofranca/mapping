@@ -66,7 +66,7 @@ describe('leitura', () => {
   it('recusa JSON inválido no texto', () => {
     const result = parseThreadText('{ nao é json');
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.errors[0]).toMatch(/^JSON inválido/);
+    if (!result.ok) expect(result.errors[0]).toMatch(/^invalid JSON/);
   });
 
   it('recusa formato e versão diferentes', () => {
@@ -153,7 +153,7 @@ describe('leitura', () => {
   it('recusa ids de mensagem repetidos, com o caminho da segunda', () => {
     const raw = rawThread();
     raw.messages[2].id = 'm1';
-    expect(errorsOf(raw)).toEqual(['messages[2].id: id "m1" repetido']);
+    expect(errorsOf(raw)).toEqual(['messages[2].id: duplicate id "m1"']);
   });
 
   it('revision é inteiro >= 0', () => {

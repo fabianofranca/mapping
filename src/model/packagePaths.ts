@@ -1,17 +1,18 @@
 import { isValidCodePath } from './codeLocations';
 
-// Caminhos de arquivos de um pacote (a pasta de uma especialização, formatVersion 4): relativos
-// ao arquivo da especialização, com `/`, sem `.` nem `..`, sem `/` no começo e sem unidade de
-// disco (a regra do `path` do `code`), mais a extensão esperada (em minúsculas). Fica fora de `spec.ts` para o
-// `components/origin.ts` poder usá-lo sem ciclo de importação; `spec.ts` o reexporta. O texto do erro não mora
-// aqui: vem só do catálogo (`packagePathMsg`, em `specIssueCode.ts`).
+// File paths of a package (the folder of a specialization, formatVersion 4): relative to the
+// specialization file, with `/`, without `.` or `..`, without a leading `/` and without a
+// drive letter (the rule of the `code` `path`), plus the expected extension (lowercase). It
+// lives outside `spec.ts` so `components/origin.ts` can use it without an import cycle;
+// `spec.ts` re-exports it. The error text does not live here: it comes only from the catalog
+// (`packagePathMsg`, in `specIssueCode.ts`).
 
-/** Por que o caminho não vale como arquivo do pacote: o motivo como dado (sem texto). */
+/** Why the path is not valid as a package file: the reason as data (no text). */
 export type PackagePathError =
   | { readonly kind: 'path' }
   | { readonly kind: 'extension'; readonly exts: readonly string[] };
 
-/** O motivo de o caminho não valer como arquivo do pacote com uma destas extensões; `undefined` se vale. */
+/** The reason the path is not valid as a package file with one of these extensions; `undefined` if valid. */
 export function packagePathError(
   path: string,
   ext: string | readonly string[],
@@ -25,7 +26,7 @@ export function packagePathError(
   return undefined;
 }
 
-/** `true` para um caminho de arquivo do pacote com a extensão (ou uma das extensões) dada. */
+/** `true` for a package file path with the given extension (or one of the extensions). */
 export function isPackagePath(path: string, ext: string | readonly string[]): boolean {
   return packagePathError(path, ext) === undefined;
 }

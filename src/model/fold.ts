@@ -1,6 +1,6 @@
 /**
- * Minúsculas e sem acentos: o critério de busca do modelo (o mesmo de `src/utils/search.ts`, que
- * o modelo não importa). Os acentos saem pela propriedade Unicode de marca combinante.
+ * Lowercase and accent-free: the model's search criterion (the same as `src/utils/search.ts`, which
+ * the model does not import). Accents are removed through the Unicode combining-mark property.
  */
 export function fold(text: string): string {
   return text.normalize('NFD').replaceAll(/\p{M}/gu, '').toLowerCase();

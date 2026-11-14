@@ -9,13 +9,13 @@ import type {
   ProjectContainer,
 } from './types';
 
-/** Anotações de uma marcação numa camada. */
+/** Annotations of a marking on a layer. */
 export interface LayerAnnotations {
   readonly layer: Layer;
   readonly annotations: readonly Annotation[];
 }
 
-/** Anotações agrupadas por marcação, cada lista na ordem do projeto. */
+/** Annotations grouped by marking, each list in project order. */
 export function annotationsByMarking(p: Project): Map<string, Annotation[]> {
   const index = new Map<string, Annotation[]>();
   for (const a of p.annotations) {
@@ -27,8 +27,8 @@ export function annotationsByMarking(p: Project): Map<string, Annotation[]> {
 }
 
 /**
- * Anotações da marcação por camada, só nas `layers` dadas (as visíveis), na
- * ordem delas. Camadas sem anotação na marcação não aparecem.
+ * Annotations of the marking by layer, only in the given `layers` (the visible ones), in
+ * their order. Layers with no annotation on the marking do not appear.
  */
 export function layerSections(
   byMarking: ReadonlyMap<string, readonly Annotation[]>,
@@ -45,7 +45,7 @@ export function layerSections(
   return sections;
 }
 
-/** As marcações sem pai por container (`null` = o canvas), na ordem do projeto: uma passada, não uma por container. */
+/** The markings without a parent per container (`null` = the canvas), in project order: one pass, not one per container. */
 export function groupRootsByContainer(
   roots: readonly Marking[],
 ): Map<string | null, Marking[]> {
@@ -59,39 +59,39 @@ export function groupRootsByContainer(
 }
 
 export interface ListedMarking {
-  /** A marcação; numa linha de seta (`arrow`), a marcação de origem dela. */
+  /** The marking; in an arrow row (`arrow`), its source marking. */
   readonly marking: Marking;
-  /** Da marcação raiz até ela mesma (o último item é `marking`). */
+  /** From the root marking to itself (the last item is `marking`). */
   readonly path: readonly Marking[];
   readonly sections: readonly LayerAnnotations[];
   /**
-   * Linha de uma seta (ME4): fica logo depois da marcação de origem, com as anotações da
-   * própria seta em `sections`.
+   * Row of an arrow (ME4): comes right after the source marking, with the annotations of the
+   * arrow itself in `sections`.
    */
   readonly arrow?: Arrow;
 }
 
 export interface ListedImage {
-  /** Container do grupo; `null` = o grupo Canvas (marcações do canvas, v13). */
+  /** Container of the group; `null` = the Canvas group (canvas markings, v13). */
   readonly image: ProjectContainer | null;
   readonly markings: readonly ListedMarking[];
 }
 
 export interface ListingOptions {
-  /** Inclui marcações (e imagens) sem anotação nas camadas visíveis. */
+  /** Includes markings (and images) without annotations in the visible layers. */
   readonly showEmpty: boolean;
   /**
-   * Só as anotações com estes ids (filtro "Incompletas"): as marcações
-   * sem nenhuma delas ficam de fora, e `showEmpty` é ignorado.
+   * Only the annotations with these ids ("Incomplete" filter): markings
+   * with none of them are left out, and `showEmpty` is ignored.
    */
   readonly onlyAnnotations?: ReadonlySet<string>;
 }
 
 /**
- * Dados da Visão de Lista: Imagem → Marcação → Camada → Anotações.
- * As marcações de cada imagem vêm em profundidade (o pai antes das filhas).
- * Respeita as camadas visíveis: sem `showEmpty`, só entram marcações com
- * anotação nelas, e imagens sem nenhuma marcação assim ficam de fora.
+ * Data for the List View: Image → Marking → Layer → Annotations.
+ * The markings of each image come depth-first (the parent before the children).
+ * Respects the visible layers: without `showEmpty`, only markings with an
+ * annotation in them come in, and images with no such marking are left out.
  */
 export function buildListing(
   p: Project,
@@ -111,7 +111,7 @@ export function buildListing(
   const rootsByContainer = groupRootsByContainer(children.get(null) ?? []);
   const result: ListedImage[] = [];
 
-  // O grupo Canvas vem primeiro (como a raiz da Árvore), depois um grupo por container.
+  // The Canvas group comes first (like the Tree's root), then one group per container.
   for (const image of [null, ...p.containers]) {
     const markings: ListedMarking[] = [];
     const visit = (marking: Marking, parents: readonly Marking[]) => {
@@ -125,14 +125,14 @@ export function buildListing(
         }
       };
       emit();
-      // As setas que saem da marcação, logo depois dela (as anotações são da seta).
+      // The arrows leaving the marking, right after it (the annotations belong to the arrow).
       for (const arrow of index.arrowsByMarking.get(marking.id) ?? []) {
         if (arrow.from === marking.id) emit(arrow);
       }
       for (const child of children.get(marking.id) ?? []) visit(child, path);
     };
     for (const root of rootsByContainer.get(image?.id ?? null) ?? []) visit(root, []);
-    // O grupo Canvas sem marcação nenhuma não aparece, nem com `showEmpty`.
+    // The Canvas group with no marking at all does not appear, not even with `showEmpty`.
     if (markings.length > 0 || (showEmpty && image !== null)) {
       result.push({ image, markings });
     }
@@ -140,26 +140,26 @@ export function buildListing(
   return result;
 }
 
-/** Anotação incompleta com o contexto para achá-la: onde está e por quê. */
+/** Incomplete annotation with the context to find it: where it is and why. */
 export interface IncompleteItem {
   readonly annotation: Annotation;
-  /** A marcação; numa anotação de seta (`arrow`), a marcação de origem dela. */
+  /** The marking; in an annotation of an arrow (`arrow`), its source marking. */
   readonly marking: Marking;
-  /** Da marcação raiz até ela mesma (o último item é `marking`). */
+  /** From the root marking to itself (the last item is `marking`). */
   readonly path: readonly Marking[];
   readonly layer: Layer;
   readonly issues: readonly AnnotationIssue[];
-  /** A anotação é desta seta (ME4), não da marcação. */
+  /** The annotation belongs to this arrow (ME4), not to the marking. */
   readonly arrow?: Arrow;
 }
 
 export interface IncompleteImage {
-  /** Container do grupo; `null` = o grupo Canvas (marcações do canvas, v13). */
+  /** Container of the group; `null` = the Canvas group (canvas markings, v13). */
   readonly image: ProjectContainer | null;
   readonly items: readonly IncompleteItem[];
 }
 
-/** Anotações com pendência do dono (a marcação, ou a seta `arrow` que sai dela), na ordem do projeto. */
+/** Annotations with an owner's pending item (the marking, or the `arrow` leaving it), in project order. */
 function collectPending(
   index: ProjectIndex,
   issues: ReadonlyMap<string, readonly AnnotationIssue[]>,
@@ -183,8 +183,8 @@ function collectPending(
 }
 
 /**
- * A camada da anotação; se ela não existe (`missing-layer`), uma camada de mentira com o id, para a
- * pendência aparecer na lista e o contador e a lista concordarem.
+ * The annotation's layer; if it does not exist (`missing-layer`), a made-up layer with the id, so the
+ * pending item shows up in the list and the counter and the list agree.
  */
 function layerOrOrphan(
   layers: ReadonlyMap<string, Layer>,
@@ -201,10 +201,10 @@ function layerOrOrphan(
 }
 
 /**
- * Pendências agrupadas por imagem (janela "Incompletas"): imagens na ordem do projeto,
- * marcações em profundidade (o pai antes das filhas) e, em cada uma, as anotações na
- * ordem do projeto. Com `onlyLayers`, só entram anotações dessas camadas (as
- * visíveis); sem ele, todas. Imagens sem pendência ficam de fora.
+ * Pending items grouped by image ("Incomplete" window): images in project order,
+ * markings depth-first (the parent before the children) and, in each one, the annotations in
+ * project order. With `onlyLayers`, only annotations of those layers come in (the
+ * visible ones); without it, all. Images with no pending item are left out.
  */
 export function buildIncompleteList(
   p: Project,

@@ -7,27 +7,28 @@ import {
 } from './signatures';
 import { templateMessage, type ModelMessageTemplateCode } from './messages';
 
-// A ficha `mapping-signature` no pacote da biblioteca (formatVersion 16; etapa #1079): a que o
-// `code` (ou o caso de `variants`) e a `sources` do tipo citam existe, é uma ficha válida e é a
-// do mesmo código (o símbolo e o arquivo batem); e o `params` que a ficha não tem vira aviso.
-// Pura: recebe os arquivos já lidos; quem coleta os problemas é o validador (`library.ts`).
+// The `mapping-signature` sheet in the library package (formatVersion 16; stage #1079): the one
+// that the type's `code` (or `variants` case) and `sources` cite exists, is a valid sheet and
+// has the same code (symbol and file match); and the `params` the sheet does not have becomes a
+// warning. Pure: receives the files already read; the validator (`library.ts`) collects the
+// problems.
 
 export interface SignatureProblem {
   readonly severity: 'error' | 'warning';
-  /** Arquivo do problema: a especialização ou a ficha. */
+  /** File of the problem: the specialization or the sheet. */
   readonly file: string;
   readonly path: string;
   readonly message: string;
-  /** Só o arquivo citado que não existe: o caminho, para a mensagem com código do catálogo. */
+  /** Only the cited file that does not exist: the path, for the catalog message with a code. */
   readonly missing?: string;
-  /** Código do catálogo de mensagens e os dados da tradução, quando o problema tem. */
+  /** Code from the message catalog and the translation data, when the problem has them. */
   readonly code?: ModelMessageTemplateCode;
   readonly params?: Readonly<Record<string, string | number>>;
 }
 
 export interface SignatureCheck {
   readonly problems: readonly SignatureProblem[];
-  /** Fichas citadas (caminho resolvido): contam como referenciadas. */
+  /** Cited sheets (resolved path): count as referenced. */
   readonly referenced: readonly string[];
 }
 
@@ -40,12 +41,12 @@ interface Reader {
 class Checker {
   readonly problems: SignatureProblem[] = [];
   readonly referenced: string[] = [];
-  /** Fichas já lidas: o problema de dentro da ficha sai uma vez só. */
+  /** Sheets already read: a problem inside a sheet is reported only once. */
   private readonly read = new Map<string, Signature | null>();
 
   constructor(private readonly reader: Reader) {}
 
-  /** Erro na especialização, com código do catálogo. */
+  /** Error in the specialization, with a catalog code. */
   fail(
     path: string,
     code: ModelMessageTemplateCode,
@@ -54,7 +55,7 @@ class Checker {
     this.add('error', this.reader.specPath, path, code, params);
   }
 
-  /** Todo problema de ficha sai com `code` do catálogo; o `message` é o texto pt-BR dele. */
+  /** Every sheet problem is reported with a catalog `code`; the `message` is its English text. */
   private add(
     severity: 'error' | 'warning',
     file: string,
@@ -75,10 +76,10 @@ class Checker {
   }
 
   /**
-   * A ficha citada em `at`: existe e é válida; `null` com o problema já anotado. O que a ficha
-   * tem por dentro sai uma vez só; a ficha que falta (ou não pôde ser lida) sai em cada lugar que
-   * a cita. `cited: false` só relê a ficha (a da base, vista do caso), sem contar de novo.
-   */
+   * The sheet cited at `at`: exists and is valid; `null` with the problem already recorded. What
+   * is wrong inside the sheet is reported only once; a sheet that is missing (or could not be
+   * read) is reported at every place that cites it. `cited: false` only rereads the sheet (the
+   * base's, seen from the case), without counting again.
   open(ref: string, at: string, cited = true): Signature | null {
     const { specPath, resolve, byPath } = this.reader;
     const file = resolve(ref);
@@ -97,7 +98,7 @@ class Checker {
     return this.parse(file, entry.text);
   }
 
-  /** Lê a ficha; o que ela tem de errado por dentro sai uma vez só. */
+  /** Reads the sheet; what is wrong inside it is reported only once. */
   private parse(file: string, text: string): Signature | null {
     if (this.read.has(file)) return this.read.get(file) ?? null;
     const parsed = parseSignatureText(text);
@@ -113,7 +114,7 @@ class Checker {
     return signature;
   }
 
-  /** Os `params` que a ficha não tem viram aviso. */
+  /** The `params` that the sheet does not have become a warning. */
   params(
     signature: Signature,
     at: string,
@@ -131,7 +132,7 @@ class Checker {
     }
   }
 
-  /** O símbolo e o arquivo da ficha são os do `code` (ou do caso); `where` diz onde cada erro aponta. */
+  /** The sheet's symbol and file are those of the `code` (or the case); `where` says where each error points. */
   identity(
     source: Extract<Signature['source'], { kind: 'code' }>,
     expected: { symbol?: string | undefined; path?: string | undefined },
@@ -152,7 +153,7 @@ class Checker {
     }
   }
 
-  /** A ficha do `code` é a da mesma plataforma, símbolo e arquivo, e os `params` estão nela. */
+  /** The `code`'s sheet is that of the same platform, symbol and file, and the `params` are in it. */
   code(
     signature: Signature,
     at: string,
@@ -181,9 +182,10 @@ class Checker {
 }
 
 /**
- * O caso de `variants`: com ficha própria, ela vale para o símbolo e o arquivo do caso e para os
- * `params` da base somados aos do caso (é o que `resolveCode` entrega); sem ela, vale a da base, e
- * só os `params` do caso são conferidos (os da base já foram, no `code`).
+ * The `variants` case: with its own sheet, it applies to the case's symbol and file and to the
+ * base's `params` plus the case's (which is what `resolveCode` delivers); without it, the
+ * base's sheet applies, and only the case's `params` are checked (the base's already were, in
+ * the `code`).
  */
 function checkCase(
   checker: Checker,
@@ -197,7 +199,7 @@ function checkCase(
     if (entry.signature === undefined) return;
     const inherited = checker.open(entry.signature, `${at}.signature`, false);
     if (inherited === null) return;
-    // O símbolo e o arquivo que o caso troca têm de ser os da ficha herdada: `resolveCode` os pareia.
+    // The symbol and file that the case swaps must be those of the inherited sheet: `resolveCode` pairs them.
     if (inherited.source.kind === 'code') {
       checker.identity(inherited.source, kase, {
         symbol: `${at}.symbol`,
@@ -220,7 +222,7 @@ function checkCase(
   );
 }
 
-/** Confere as fichas que a especialização cita (no `code`, nos casos de `variants` e nas `sources`). */
+/** Checks the sheets the specialization cites (in `code`, in the `variants` cases and in the `sources`). */
 export function checkSignatures(spec: Spec, reader: Reader): SignatureCheck {
   const checker = new Checker(reader);
   spec.layers.forEach((layer, li) => {

@@ -103,7 +103,7 @@ describe('createDrawingCache: o que desenha e em que ordem', () => {
       })),
     };
     const drawing = createDrawingCache()(p, catalog, approximateMeasurer, 0).get('T1')!;
-    expect(drawing.warnings.map((w) => w.text)).toEqual(['referência quebrada: target']);
+    expect(drawing.warnings.map((w) => w.text)).toEqual(['broken reference: target']);
     expect(drawing.warnings[0]?.code).toBe('value.refBroken');
     expect(drawing.overflow).toBe(false);
   });

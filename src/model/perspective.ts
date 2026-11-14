@@ -9,18 +9,19 @@ import type {
   Rect,
 } from './types';
 
-// Perspectivas (v16, etapa #659): o projeto à vista de uma perspectiva e as consultas de raiz.
-// A Principal é o próprio projeto (perspectiva `null` nas funções); uma perspectiva só diz quais
-// raízes aparecem, onde ficam no canvas e que camadas ficam escondidas. O conteúdo é o do projeto.
-// Raiz: container sem pai, marcação do canvas sem pai ou flutuante (`projectIndex(p).roots`).
+// Perspectives (v16, stage #659): the project as seen through a perspective and the root queries.
+// Main is the project itself (perspective `null` in the functions); a perspective only says which
+// roots appear, where they sit on the canvas and which layers are hidden. The content is the
+// project's. Root: container without a parent, canvas marking without a parent, or floating
+// (`projectIndex(p).roots`).
 
-/** Posição no canvas (canto de cima à esquerda, em unidades do canvas). */
+/** Position on the canvas (top-left corner, in canvas units). */
 export interface CanvasPosition {
   readonly x: number;
   readonly y: number;
 }
 
-/** Retângulo no canvas de uma marcação (o do container dela converte o `rect`). */
+/** Rectangle on the canvas of a marking (its container's converts the `rect`). */
 function markingFootprint(index: ProjectIndex, marking: Marking): Rect {
   const container =
     marking.containerId === null ? undefined : index.containers.get(marking.containerId);
@@ -28,8 +29,8 @@ function markingFootprint(index: ProjectIndex, marking: Marking): Rect {
 }
 
 /**
- * A pegada do item no canvas: o retângulo da imagem do container, ou o da marcação em unidades
- * do canvas. `null` para um id que não é de container nem de marcação.
+ * The item's footprint on the canvas: the rectangle of the container's image, or the marking's in
+ * canvas units. `null` for an id that is neither a container nor a marking.
  */
 export function rootFootprint(p: Project, id: string): Rect | null {
   const index = projectIndex(p);
@@ -40,40 +41,40 @@ export function rootFootprint(p: Project, id: string): Rect | null {
 }
 
 /**
- * Onde o item está no canvas (o canto de cima à esquerda da pegada): `placement` do container;
- * `rect` da marcação do canvas; `placement + rect × escala` da marcação de container.
+ * Where the item sits on the canvas (the top-left corner of the footprint): `placement` of the
+ * container; `rect` of the canvas marking; `placement + rect × scale` of the container marking.
  */
 export function rootPosition(p: Project, id: string): CanvasPosition | null {
   const rect = rootFootprint(p, id);
   return rect ? { x: rect.x, y: rect.y } : null;
 }
 
-/** A raiz do container ou da marcação (`null` se o id não existe). */
+/** The root of the container or marking (`null` if the id does not exist). */
 export function perspectiveRootOf(p: Project, id: string): string | null {
   return projectIndex(p).rootOf.get(id) ?? null;
 }
 
-/** `true` se `id` é um container ou uma marcação que é raiz. */
+/** `true` if `id` is a container or a marking that is a root. */
 export function isRootId(p: Project, id: string): boolean {
   return projectIndex(p).rootOf.get(id) === id;
 }
 
-/** `true` se a raiz é uma marcação (e não um container): a posição dela é inteira. */
+/** `true` if the root is a marking (and not a container): its position is whole. */
 export function isMarkingRoot(p: Project, id: string): boolean {
   const index = projectIndex(p);
   return !index.containers.has(id) && index.markings.has(id);
 }
 
 // ---------------------------------------------------------------------------
-// O projeto à vista
+// The project in view
 
-/** Deslocamento de cada raiz presente na vista (a primeira entrada de cada raiz vale). */
+/** Shift of each root present in the view (the first entry of each root wins). */
 function viewShifts(p: Project, perspective: Perspective): Map<string, CanvasPosition> {
   const shifts = new Map<string, CanvasPosition>();
   for (const item of perspective.items) {
     if (shifts.has(item.root) || !isRootId(p, item.root)) continue;
     const at = rootPosition(p, item.root) as CanvasPosition;
-    // Posição de marcação é inteira: o deslocamento também.
+    // A marking's position is whole: so is the shift.
     const whole = isMarkingRoot(p, item.root);
     const dx = item.x - at.x;
     const dy = item.y - at.y;
@@ -87,7 +88,7 @@ function viewShifts(p: Project, perspective: Perspective): Map<string, CanvasPos
 
 const isStill = (d: CanvasPosition) => d.x === 0 && d.y === 0;
 
-/** A seta da vista: pontos mantidos, deslocados ou apagados conforme o espaço das pontas. */
+/** The arrow in view: points kept, shifted or erased according to the space of the ends. */
 function arrowInView(
   index: ProjectIndex,
   arrow: Arrow,
@@ -97,7 +98,7 @@ function arrowInView(
   const to = index.markings.get(arrow.to);
   if (!from || !to) return null;
   if (arrow.points.length === 0) return arrow;
-  // Pontos em pixels do container: as pontas no mesmo container andam juntas com ele.
+  // Points in container pixels: ends in the same container move together with it.
   if (from.containerId !== null && from.containerId === to.containerId) return arrow;
   if (index.rootOf.get(from.id) !== index.rootOf.get(to.id))
     return { ...arrow, points: [] };
@@ -146,11 +147,11 @@ function buildView(p: Project, perspective: Perspective): Project {
 const viewCache = new WeakMap<Project, WeakMap<Perspective, Project>>();
 
 /**
- * O projeto como a perspectiva o mostra (decisão 3): só as raízes de `items` que existem e são
- * raiz, cada uma com o grupo dela, deslocadas para a posição do item; as setas com as duas
- * pontas na vista (os pontos de passagem acompanham); as anotações do que ficou. Nada do
- * pertencimento muda (`parentId`, `containerId`). A Principal (`null`) é o próprio projeto.
- * Memoizado: o mesmo projeto e o mesmo objeto de perspectiva dão o mesmo resultado.
+ * The project as the perspective shows it (decision 3): only the roots of `items` that exist and
+ * are roots, each with its group, shifted to the item's position; the arrows with both ends in
+ * the view (the waypoints follow); the annotations of what remains. Nothing about ownership
+ * changes (`parentId`, `containerId`). Main (`null`) is the project itself.
+ * Memoized: the same project and the same perspective object give the same result.
  */
 export function perspectiveView(p: Project, perspective: Perspective | null): Project {
   if (perspective === null) return p;
@@ -163,7 +164,7 @@ export function perspectiveView(p: Project, perspective: Perspective | null): Pr
 
 const rootSetCache = new WeakMap<Perspective, ReadonlySet<string>>();
 
-/** As raízes de `items`, em conjunto (memoizado por perspectiva). */
+/** The roots of `items`, as a set (memoized per perspective). */
 export function perspectiveRootSet(perspective: Perspective): ReadonlySet<string> {
   let set = rootSetCache.get(perspective);
   if (!set) {
@@ -174,8 +175,8 @@ export function perspectiveRootSet(perspective: Perspective): ReadonlySet<string
 }
 
 /**
- * A seta aparece na perspectiva? Na Principal sempre; senão, se as raízes das duas pontas estão
- * em `items` (decisão 7). Seta inexistente não aparece.
+ * Does the arrow appear in the perspective? In Main always; otherwise, if the roots of both ends
+ * are in `items` (decision 7). A nonexistent arrow does not appear.
  */
 export function arrowShownIn(
   p: Project,
@@ -193,8 +194,8 @@ export function arrowShownIn(
 }
 
 /**
- * Quantos containers-raiz e quantas marcações-raiz a perspectiva mostra (itens inexistentes ou
- * que deixaram de ser raiz não contam). O texto ("N telas · N tabelas") é da interface.
+ * How many root containers and how many root markings the perspective shows (nonexistent items or
+ * those that stopped being roots do not count). The text ("N screens · N tables") is the interface's.
  */
 export function perspectiveContentCount(
   p: Project,

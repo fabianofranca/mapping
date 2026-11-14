@@ -1,6 +1,6 @@
-// Mensagens do conjunto de ícones (`icons.ts`, formato `mapping-icons`): código → modelo do texto
-// pt-BR de hoje, com `{parâmetros}`. O prefixo é `iconsFile.` para não colidir com os
-// `icons.*` escritos à mão (carga dos componentes). O JSON inválido usa `library.invalidJson`.
+// Messages of the icon set (`icons.ts`, `mapping-icons` format): code → template of today's
+// pt-BR text, with `{parameters}`. The prefix is `iconsFile.` so as not to collide with the
+// hand-written `icons.*` (loading of the components). Invalid JSON uses `library.invalidJson`.
 
 export const iconsFileMessages = {
   'iconsFile.expectedObject': 'esperava um objeto',

@@ -1,10 +1,10 @@
-// Mensagens do validador da biblioteca (`library.ts`, `libraryDrawing.ts`, `libraryIcons.ts`):
-// código → modelo do texto pt-BR de hoje, com `{parâmetros}`. O código é a chave sem o prefixo
-// `model.` que a interface usa. Frase que varia por concordância ou por caso vira um código por
-// variante, com o texto inteiro (nunca montada por pedaços).
+// Messages of the library validator (`library.ts`, `libraryDrawing.ts`, `libraryIcons.ts`):
+// code → template of today's pt-BR text, with `{parameters}`. The code is the key without the
+// `model.` prefix that the interface uses. A phrase that varies by agreement or by case becomes one code per
+// variant, with the whole text (never assembled from pieces).
 
 export const libraryMessages = {
-  // Arquivos do pacote
+  // Package files
   'library.notReferenced': 'arquivo não referenciado pela especialização',
   'library.emptyDoc': 'documento vazio',
   'library.fileNotFound': 'arquivo não encontrado: {path}',
@@ -16,7 +16,7 @@ export const libraryMessages = {
   'library.specAmbiguous':
     'há {count} especializações no pacote ({files}): indique qual validar',
   'library.paramOutsideSignature': 'parâmetro fora da ficha: "{name}"',
-  // Fichas `mapping-signature` do pacote (`librarySignature.ts`)
+  // `mapping-signature` sheets of the package (`librarySignature.ts`)
   'library.signatureNotRead': 'arquivo não pôde ser lido: {path}',
   'library.signatureInvalid': '{reason}',
   'library.signatureNotCode': 'a ficha do code precisa ser de código',
@@ -27,7 +27,7 @@ export const libraryMessages = {
     'o símbolo da ficha ("{found}") difere do symbol do code ("{expected}")',
   'library.signaturePathMismatch':
     'o arquivo da ficha ("{found}") difere do path do code ("{expected}")',
-  // Componente e especialização
+  // Component and specialization
   'library.componentAlreadyUsed': 'o arquivo {path} já é o componente do tipo "{typeId}"',
   'library.noSlot': 'o componente {path} não tem slot',
   'library.slotMismatch': 'o slot do componente {path} é "{slot}", não "{expected}"',
@@ -57,7 +57,7 @@ export const libraryMessages = {
   'library.fontMissing':
     'arquivo da fonte "{family}" não encontrado: {path}; o desenho usa a fonte do sistema',
   'library.scrimMissing': 'o tipo "{typeId}" não existe na especialização',
-  // Tokens: um código por par (tipo do token, tipo esperado; `TOKEN_KIND_NAMES`)
+  // Tokens: one code per pair (token type, expected type; `TOKEN_KIND_NAMES`)
   'library.tokenMissing': 'o token "{name}" não existe nos tokens da especialização',
   'library.tokenWrongKind.color.number':
     'o token "{name}" é cor, mas aqui se espera número',
@@ -71,7 +71,7 @@ export const libraryMessages = {
     'o token "{name}" é família de fonte, mas aqui se espera cor',
   'library.tokenWrongKind.family.number':
     'o token "{name}" é família de fonte, mas aqui se espera número',
-  // Contrato de versão
+  // Version contract
   'library.versionOtherSpec':
     'a versão anterior é da especialização "{previous}", não "{id}"',
   'library.versionNotGrown':
@@ -83,14 +83,14 @@ export const libraryMessages = {
     'o campo "{key}" do tipo "{typeId}" não existia na versão {version}',
   'library.optionNotInVersion':
     '"{value}" não era opção do campo "{field}" na versão {version}',
-  // Ícones
+  // Icons
   'library.iconMissing': 'o ícone "{name}" não existe no conjunto de ícones ({path})',
   'library.iconUnverifiable':
     'o ícone "{name}" não pode ser conferido: a especialização não declara icons',
   'library.iconOptionMissing':
     'a opção "{option}" do campo "{key}" não está no conjunto de ícones; o desenho cai no reservado',
-  // Prova de desenho: um código por caso (valores padrão, preview, exemplo), com e sem modo.
-  // A mensagem de dentro (o aviso do motor, com código) entra em `{reason}`.
+  // Drawing proof: one code per case (default values, preview, example), with and without mode.
+  // The inner message (the engine's warning, with a code) goes into `{reason}`.
   'library.draw.defaults':
     'tipo "{typeId}", os valores padrão, tamanho inicial {size}: {reason}',
   'library.draw.defaultsMode':
@@ -102,7 +102,7 @@ export const libraryMessages = {
     'tipo "{typeId}", o exemplo "{name}", tamanho inicial {size}: {reason}',
   'library.draw.exampleMode':
     'tipo "{typeId}", o exemplo "{name}", modo {mode}, tamanho inicial {size}: {reason}',
-  // O mesmo caso no tamanho ajustado ao conteúdo (o ajuste da decisão 14 da #898).
+  // The same case at the size fitted to the content (the fit of decision 14 of #898).
   'library.drawFitted.defaults':
     'tipo "{typeId}", os valores padrão, tamanho ajustado {size}: {reason}',
   'library.drawFitted.defaultsMode':

@@ -33,12 +33,12 @@ import { countBrokenRefs } from './refs';
 import type { Marking, Project, Rect } from './types';
 
 /**
- * Opções das operações que mudam o retângulo. `minSize` é o tamanho mínimo do componente que
- * desenha a marcação (etapa Biblioteca): quem chama o lê do catálogo e o passa aqui; o modelo
- * não conhece componentes. Sem a opção nada muda. `settle` e `minSizeOf` são do assentar
- * (`SettleOptions`): `settle: false` só nas prévias de gesto; `minSizeOf` dá o mínimo de
- * qualquer marcação (as descendentes que trocam de espaço junto) e, quando falta, a própria
- * marcação da operação usa `minSize`.
+ * Options of the operations that change the rectangle. `minSize` is the minimum size of the
+ * component that draws the marking (Library stage): the caller reads it from the catalog and
+ * passes it here; the model does not know components. Without the option nothing changes.
+ * `settle` and `minSizeOf` belong to the settle (`SettleOptions`): `settle: false` only in
+ * gesture previews; `minSizeOf` gives the minimum of any marking (the descendants that change
+ * space along) and, when missing, the operation's own marking uses `minSize`.
  */
 export interface RectOptions extends SettleOptions {
   readonly minSize?: Size;
@@ -50,9 +50,9 @@ function checkRectShape(rect: Rect, options?: RectOptions): void {
 }
 
 /**
- * Assenta ao fim da operação (salvo `settle: false`). Sem `minSizeOf`, o `minSize` vale para a
- * marcação da operação; com `minSizeOf`, o `minSize` ainda vale para ela e o `minSizeOf` para
- * as demais.
+ * Settles at the end of the operation (unless `settle: false`). Without `minSizeOf`, `minSize`
+ * applies to the operation's marking; with `minSizeOf`, `minSize` still applies to it and
+ * `minSizeOf` to the others.
  */
 function settled(
   before: Project,
@@ -70,8 +70,8 @@ function settled(
 }
 
 /**
- * Limite onde a marcação pode ficar: o retângulo do container dela, em pixels dele; `null` na
- * marcação do canvas (sem limite). O pai não limita mais: o pai é derivado da geometria.
+ * Limit where the marking can stay: its container's rectangle, in its pixels; `null` for a
+ * canvas marking (no limit). The parent no longer limits: the parent is derived from geometry.
  */
 export function markingBounds(p: Project, markingId: string): Rect | null {
   return spaceOf(p, findById(p.markings, markingId)).bounds;
@@ -79,26 +79,26 @@ export function markingBounds(p: Project, markingId: string): Rect | null {
 
 export interface NewMarkingArgs {
   readonly id: string;
-  /** Container da marcação (`rect` em pixels dele) ou `null`: marcação do canvas (unidades do canvas). */
+  /** Container of the marking (`rect` in its pixels) or `null`: canvas marking (canvas units). */
   readonly containerId: string | null;
   readonly rect: Rect;
   readonly name?: string | null;
-  /** Flutuante (v13): só no canvas (`containerId` nulo); padrão `false`. */
+  /** Floating (v13): only on the canvas (`containerId` null); default `false`. */
   readonly floating?: boolean;
 }
 
 /**
- * Cria uma marcação. Com container, o `rect` (pixels dele) precisa estar inteiro dentro dele;
- * no canvas, qualquer posição inteira serve. Não escolhe o pai nem confere o espaço: assenta
- * (o pai é a menor marcação do mesmo espaço que a contém, e um retângulo do canvas que cabe
- * inteiro num container passa a ser dele).
+ * Creates a marking. With a container, the `rect` (in its pixels) must be entirely inside it;
+ * on the canvas, any integer position works. It does not choose the parent or check the space:
+ * it settles (the parent is the smallest marking in the same space that contains it, and a
+ * canvas rectangle that fits entirely inside a container becomes the container's).
  */
 export function createMarking(
   p: Project,
   args: NewMarkingArgs,
   options?: RectOptions,
 ): Project {
-  // Marcações, setas e containers dividem o espaço de ids.
+  // Markings, arrows and containers share the id space.
   if (idInUse(p, args.id)) fail('duplicate-id', args.id);
   const floating = args.floating ?? false;
   if (floating && args.containerId !== null) fail('invalid-space', args.id);
@@ -144,11 +144,11 @@ function sameRect(a: Rect, b: Rect): boolean {
 }
 
 /**
- * Altera o retângulo (redimensionar ou ajuste fino). Redimensionar é livre e não move as
- * filhas: o que deixa de caber no retângulo deixa de ser membro ao assentar. Só o container
- * limita (marcação de container fica inteira dentro dele; no canvas, sem limite). O retângulo
- * atual não é mudança: devolve `p` como está, sem conferir a trava (a reexportação completa
- * de um item trancado passa).
+ * Changes the rectangle (resize or fine adjustment). Resizing is free and does not move the
+ * children: whatever stops fitting in the rectangle stops being a member when settling. Only
+ * the container limits (a container marking stays entirely inside it; on the canvas, no limit).
+ * The current rectangle is not a change: it returns `p` as is, without checking the lock (the
+ * complete re-export of a locked item goes through).
  */
 export function setMarkingRect(
   p: Project,
@@ -175,12 +175,13 @@ export function setMarkingRect(
 }
 
 /**
- * Troca o espaço da marcação: `containerId` (container novo, ou `null` = o canvas) e o `rect`
- * nele, juntos (a mesma troca da mudança composta `space` das propostas). O `rect` está nos
- * pixels do container novo (no canvas, em unidades do canvas) e precisa caber nele. A marcação
- * flutuante só vive no canvas. Assenta ao fim (o pai e o espaço das demais saem da geometria;
- * um retângulo do canvas que cabe inteiro num container passa a ser dele). A seta presa perde
- * os pontos de passagem quando o espaço muda. É geometria: a trava impede.
+ * Changes the marking's space: `containerId` (new container, or `null` = the canvas) and the
+ * `rect` in it, together (the same change as the proposals' composite `space` change). The
+ * `rect` is in the new container's pixels (on the canvas, in canvas units) and must fit in it.
+ * A floating marking only lives on the canvas. Settles at the end (the parent and the space of
+ * the others come out of the geometry; a canvas rectangle that fits entirely in a container
+ * becomes the container's). An attached arrow loses its waypoints when the space changes. It is
+ * geometry: the lock prevents it.
  */
 export function setMarkingSpace(
   p: Project,
@@ -192,7 +193,7 @@ export function setMarkingSpace(
   const marking = findById(p.markings, markingId);
   if (marking.floating && containerId !== null) fail('invalid-space', markingId);
   const container = containerId === null ? null : findById(p.containers, containerId);
-  // O espaço e o retângulo atuais não são mudança: devolve `p` sem conferir a trava.
+  // The current space and rectangle are not a change: returns `p` without checking the lock.
   if (marking.containerId === containerId && sameRect(marking.rect, rect)) return p;
   checkRectShape(rect, options);
   requireUnlocked(canEditMarkingGeometry(p, markingId));
@@ -220,13 +221,13 @@ export function setMarkingSpace(
 }
 
 /**
- * Move a marcação pelo deslocamento (inteiro). Dentro de um container, leva também todos os
- * descendentes (trancados inclusive: a posição relativa entre eles e a marcação não muda); no
- * canvas, a marcação é uma lente e se move sozinha (flutuante inclusive). Nada prende a
- * marcação ao container: ela pode sair dele, e o assentar decide o espaço novo, convertendo o
- * `rect` dela e o das descendentes. As marcações ancoradas nela (v20) vão junto, com as descendentes
- * e as ancoradas delas (a posição relativa se mantém, trancadas inclusive). Deslocamento zero não é mudança: devolve `p` como está,
- * sem conferir a trava.
+ * Moves the marking by the (integer) offset. Inside a container, it also takes all the
+ * descendants along (locked ones included: the relative position between them and the marking
+ * does not change); on the canvas, the marking is a lens and moves alone (floating included).
+ * Nothing ties the marking to the container: it can leave it, and the settle decides the new
+ * space, converting its `rect` and the descendants'. The markings anchored to it (v20) go along,
+ * with the descendants and those anchored to them (the relative position is kept, locked ones
+ * included). A zero offset is not a change: it returns `p` as is, without checking the lock.
  */
 export function moveMarking(
   p: Project,
@@ -239,7 +240,7 @@ export function moveMarking(
   findById(p.markings, markingId);
   if (dx === 0 && dy === 0) return p;
   requireUnlocked(canEditMarkingGeometry(p, markingId));
-  // Leva as descendentes (num container) e as ancoradas, com as descendentes e ancoradas delas.
+  // Takes the descendants (in a container) and the anchored ones, with their descendants and anchored ones.
   const affected = withAnchoredFollowers(p, [markingId]);
   return settled(
     p,
@@ -255,12 +256,12 @@ export function moveMarking(
 }
 
 /**
- * Ajuste fino de um campo do retângulo (painel de detalhes), com o valor limitado às regras em
- * vez de rejeitado: `x`/`y` movem a marcação (com os descendentes, dentro de um container,
- * como arrastar) e, numa marcação de container, param no limite do container (o painel não
- * ejeta; no canvas são livres); `width`/`height` redimensionam mantendo o canto superior
- * esquerdo, do tamanho mínimo ao limite do container (no canvas, sem máximo). Com
- * `options.minSize` (componente), o mínimo do componente também limita por baixo.
+ * Fine adjustment of a rectangle field (details panel), with the value clamped to the rules
+ * instead of rejected: `x`/`y` move the marking (with the descendants, inside a container, like
+ * dragging) and, on a container marking, stop at the container's limit (the panel does not
+ * eject; on the canvas they are free); `width`/`height` resize keeping the top-left corner,
+ * from the minimum size to the container's limit (on the canvas, no maximum). With
+ * `options.minSize` (component), the component's minimum also limits from below.
  */
 export function adjustMarkingRect(
   p: Project,
@@ -299,11 +300,12 @@ export function adjustMarkingRect(
 }
 
 /**
- * Liga ou desliga a marcação flutuante (v13): comentário sobre o canvas, fora da árvore de
- * pertencimento nos dois sentidos. Ligar tira a marcação do container (converte o `rect` para
- * unidades do canvas, como a pessoa a vê) e zera `containerId` e `parentId`; as filhas ficam
- * onde estão e o assentar as reparenta. Desligar só limpa a flag: o assentar a devolve ao
- * container que a contém inteira, se houver. É geometria: a trava impede nos dois sentidos.
+ * Turns the floating marking on or off (v13): a comment over the canvas, outside the membership
+ * tree in both directions. Turning on takes the marking out of the container (converts the
+ * `rect` to canvas units, as the person sees it) and zeroes `containerId` and `parentId`; the
+ * children stay where they are and the settle reparents them. Turning off only clears the flag:
+ * the settle returns it to the container that fully contains it, if any. It is geometry: the
+ * lock prevents it in both directions.
  */
 export function setMarkingFloating(
   p: Project,
@@ -332,7 +334,7 @@ export function setMarkingFloating(
   } else {
     next = { ...marking, floating: false };
   }
-  // Ligar a flutuante tira a marcação do container: as setas presas perdem os pontos de passagem.
+  // Turning on the floating one takes the marking out of the container: attached arrows lose their waypoints.
   const moved = floating && marking.containerId !== null;
   const base = { ...p, markings: updateById(p.markings, markingId, () => next) };
   return settled(
@@ -343,7 +345,7 @@ export function setMarkingFloating(
   );
 }
 
-/** Limpa a flag `needsReview` ("Confirmar posição"). */
+/** Clears the `needsReview` flag ("Confirm position"). */
 export function confirmMarkingReview(p: Project, markingId: string): Project {
   return {
     ...p,
@@ -356,13 +358,13 @@ export function markingDeletionImpact(
   markingId: string,
 ): {
   descendants: number;
-  /** Quantos dos descendentes estão trancados (serão excluídos junto). */
+  /** How many of the descendants are locked (they will be deleted along). */
   lockedDescendants: number;
-  /** Anotações que saem: as das marcações que saem e as das setas presas a elas. */
+  /** Annotations that go away: those of the markings that go and of the arrows attached to them. */
   annotations: number;
-  /** Containers que têm a marcação (ou uma descendente) como pai: ficam, passam ao pai dela. */
+  /** Containers that have the marking (or a descendant) as parent: they stay, moving to its parent. */
   containers: number;
-  /** Setas presas a alguma marcação que sai (como origem ou destino): saem junto. */
+  /** Arrows attached to some marking that goes (as origin or destination): they go along. */
   arrows: number;
   brokenRefs: number;
 } {
@@ -388,10 +390,10 @@ export function markingDeletionImpact(
 }
 
 /**
- * Exclui a marcação, os descendentes (trancados ou não), as setas presas a qualquer uma delas e
- * as anotações de todos eles (setas inclusive); nunca um container: os que estavam dentro dela
- * passam ao pai dela, ou a nenhum (o assentar refaz). Falha só se a própria marcação estiver
- * trancada (a trava de uma seta presa não impede).
+ * Deletes the marking, the descendants (locked or not), the arrows attached to any of them and
+ * the annotations of all of them (arrows included); never a container: those that were inside
+ * move to its parent, or to none (the settle redoes it). Fails only if the marking itself is
+ * locked (the lock of an attached arrow does not prevent it).
  */
 export function removeMarking(
   p: Project,
@@ -403,7 +405,7 @@ export function removeMarking(
   return settleFrom(p, cascadeRemove(p, markingId), options);
 }
 
-/** A exclusão em si, sem a trava nem o assentar: também serve para contar o impacto. */
+/** The deletion itself, without the lock or the settle: also serves to count the impact. */
 function cascadeRemove(p: Project, markingId: string): Project {
   const ids = descendantIds(p, markingId).add(markingId);
   return withoutArrows(
@@ -417,11 +419,11 @@ function cascadeRemove(p: Project, markingId: string): Project {
 }
 
 // ---------------------------------------------------------------------------
-// Ordem entre irmãs
+// Order among siblings
 
 /**
- * Irmãs da marcação (mesmo pai e mesmo espaço, ela inclusive), na ordem do array: o mesmo
- * `containerId`, e `null` com `null` (as do canvas, flutuantes inclusive).
+ * Siblings of the marking (same parent and same space, itself included), in array order: the
+ * same `containerId`, and `null` with `null` (the canvas ones, floating included).
  */
 function siblingsOf(p: Project, marking: Marking): readonly Marking[] {
   const group = projectIndex(p).children.get(marking.parentId) ?? [];
@@ -429,8 +431,8 @@ function siblingsOf(p: Project, marking: Marking): readonly Marking[] {
 }
 
 /**
- * Posição da marcação entre as irmãs (0 = a primeira, desenhada por baixo) e quantas irmãs
- * existem, ela inclusive. A ordem é a do array `markings`.
+ * Position of the marking among its siblings (0 = the first, drawn at the bottom) and how many
+ * siblings there are, itself included. The order is that of the `markings` array.
  */
 export function siblingPosition(
   p: Project,
@@ -442,10 +444,10 @@ export function siblingPosition(
 }
 
 /**
- * Move a marcação para a posição `index` entre as irmãs (0 = por baixo, a última = por
- * cima). As irmãs ocupam as mesmas casas do array; as outras marcações não mudam de lugar.
- * Não é geometria: a trava não impede. Mesma posição devolve `p` como está; fora de
- * `[0, count - 1]` falha com `invalid-index`.
+ * Moves the marking to position `index` among its siblings (0 = at the bottom, the last = on
+ * top). The siblings occupy the same slots of the array; the other markings do not change
+ * place. It is not geometry: the lock does not prevent it. The same position returns `p` as is;
+ * outside `[0, count - 1]` it fails with `invalid-index`.
  */
 export function reorderMarking(p: Project, markingId: string, index: number): Project {
   const marking = findById(p.markings, markingId);
@@ -466,29 +468,29 @@ export function reorderMarking(p: Project, markingId: string, index: number): Pr
 }
 
 // ---------------------------------------------------------------------------
-// Lugar de uma flutuante perto de um alvo (etapa Marcações espaciais, ME4)
+// Placement of a floating marking near a target (Spatial markings stage, ME4)
 
-/** Vão constante, em unidades do canvas, entre a flutuante, o alvo e as outras flutuantes. */
+/** Constant gap, in canvas units, between the floating marking, the target and the other floating ones. */
 export const FLOATING_GAP = 24;
 
-/** Alvo do `near`: um container ou uma marcação. */
+/** Target of `near`: a container or a marking. */
 export interface FloatingNearTarget {
   readonly kind: 'container' | 'marking';
   readonly id: string;
 }
 
 /**
- * Retângulo (unidades do canvas) para uma marcação flutuante de `size` perto de `target`, num
- * lugar livre da margem. Determinístico: tenta a **direita** do alvo (na marcação de container,
- * a margem é a do container dela, começando na altura da marcação), empilhando de cima para
- * baixo com `FLOATING_GAP` sem sobrepor containers nem outras flutuantes; se o empilhamento
- * passaria da altura do alvo, tenta a **esquerda**, depois **embaixo** (empilhando para a
- * direita) e **em cima**; se nenhum lado couber, fica na direita, empilhada até achar vão.
- * O retângulo devolvido tem sempre valores inteiros (containers com `placement` fracionário dão
- * posições fracionárias): `size` sobe para o inteiro seguinte e a posição é arredondada para
- * longe do alvo (`ceil` à direita/embaixo, `floor` à esquerda/em cima) antes da checagem de
- * obstáculos, que roda sobre o retângulo já inteiro; assim o arredondamento nunca encolhe o vão
- * nem sobrepõe um obstáculo. Alvo inexistente falha com
+ * Rectangle (canvas units) for a floating marking of `size` near `target`, in a free spot of
+ * the margin. Deterministic: tries the **right** of the target (on a container marking, the
+ * margin is that of its container, starting at the marking's height), stacking from top to
+ * bottom with `FLOATING_GAP` without overlapping containers or other floating markings; if
+ * the stacking would go past the target's height, it tries the **left**, then **below**
+ * (stacking to the right) and **above**; if no side fits, it stays on the right, stacked until
+ * a gap is found. The returned rectangle always has integer values (containers with a
+ * fractional `placement` give fractional positions): `size` rises to the next integer and the
+ * position is rounded away from the target (`ceil` on the right/below, `floor` on the
+ * left/above) before the obstacle check, which runs on the already integer rectangle; this way
+ * the rounding never shrinks the gap or overlaps an obstacle. A nonexistent target fails with
  * `not-found`.
  */
 export function placeFloatingNear(
@@ -522,11 +524,12 @@ export function placeFloatingNear(
 }
 
 /**
- * O lugar de `placeFloatingNear` para qualquer conjunto de obstáculos (retângulos no canvas):
- * uma flutuante de `size` ao lado de `anchor` (o container, ou a marcação do canvas), começando
- * na altura de `start`. Tenta a direita, a esquerda, embaixo e em cima, empilhando com
- * `FLOATING_GAP` sem sobrepor nenhum obstáculo; se nenhum lado couber, fica na direita, empilhada
- * até achar vão. Inteiro, como em `placeFloatingNear`. Serve também à chegada das perspectivas.
+ * The spot of `placeFloatingNear` for any set of obstacles (rectangles on the canvas): a
+ * floating marking of `size` beside `anchor` (the container, or the canvas marking), starting
+ * at the height of `start`. Tries the right, the left, below and above, stacking with
+ * `FLOATING_GAP` without overlapping any obstacle; if no side fits, it stays on the right,
+ * stacked until a gap is found. Integer, as in `placeFloatingNear`. It also serves the arrival
+ * of perspectives.
  */
 export function floatingSpotNear(
   obstacles: readonly Rect[],
@@ -539,7 +542,7 @@ export function floatingSpotNear(
   const hit = (rect: Rect): Rect | undefined =>
     obstacles.find((o) => rectsOverlap(rect, o));
 
-  // Empilha para baixo (x fixo) ou para a direita (y fixo) até achar vão.
+  // Stacks downward (fixed x) or to the right (fixed y) until a gap is found.
   const stackDown = (x: number, y: number): Rect => {
     let rect: Rect = { x, y, width, height };
     for (let o = hit(rect); o; o = hit(rect))
@@ -553,8 +556,8 @@ export function floatingSpotNear(
     return rect;
   };
 
-  // Arredonda para longe do alvo (direita/embaixo: `ceil`; esquerda/em cima: `floor`) para o
-  // vão nunca encolher; ao longo do lado, `ceil`.
+  // Rounds away from the target (right/below: `ceil`; left/above: `floor`) so the gap never
+  // shrinks; along the side, `ceil`.
   const onRight = stackDown(Math.ceil(right(anchor) + FLOATING_GAP), Math.ceil(start.y));
   if (onRight.y <= bottom(anchor)) return onRight;
   const onLeft = stackDown(

@@ -3,22 +3,24 @@ import { settleHierarchy } from './hierarchySettle';
 import { insertAnchors, placeCreatedMarkings } from './proposalOrder';
 import type { Marking, Project, Rect } from './types';
 
-// Âncora que respeita o desempate (etapa #549, decisão 3). O aplicador (`patchProject`) monta o
-// array na ordem da base, com cada criada antes da âncora dela (ou no fim), e assenta: nos
-// empates, a relação atual vale (o `parentId` da base nas que já existiam, o do proposto nas
-// criadas), e o array só decide empate novo. A âncora de cada criada é escolhida para esses
-// empates novos saírem como no projeto proposto; `simulateApplied` refaz o mesmo array e o
-// mesmo assentar do aplicador, para o `position` emitido ser só o que falta.
+// Anchor that respects the tie-break (stage #549, decision 3). The applier (`patchProject`)
+// builds the array in the base's order, with each created marking before its anchor (or at the
+// end), and settles: in ties, the current relation holds (the base's `parentId` for those that
+// already existed, the proposed one for the created ones), and the array only decides a new
+// tie. Each created marking's anchor is chosen so that these new ties come out as in the
+// proposed project; `simulateApplied` redoes the same array and the same settle as the
+// applier, so the emitted `position` is only what is missing.
 
-/** `a` precisa vir antes de `b` no array aplicado (ao menos uma delas é criada). */
+/** `a` must come before `b` in the applied array (at least one of them is created). */
 type Before = readonly [string, string];
 
 const rectKey = (r: Rect): string => `${r.x},${r.y},${r.width},${r.height}`;
 
 /**
- * O projeto que `patchProject` daria com todas as mudanças, só no que importa ao pertencimento e
- * à ordem: as marcações que ficam na ordem da base, com a geometria do proposto e o pai da base;
- * as criadas (com o pai do proposto) antes da âncora; os containers com o pai da base. Assentado.
+ * The project that `patchProject` would give with all the changes, only in what matters to
+ * membership and order: the markings that stay, in the base's order, with the proposed
+ * geometry and the base's parent; the created ones (with the proposed parent) before the
+ * anchor; the containers with the base's parent. Settled.
  */
 export function simulateApplied(
   base: Project,
@@ -33,7 +35,7 @@ export function simulateApplied(
   });
   const created = after.markings.filter((m) => !baseIds.has(m.id));
   const baseContainers = new Map(base.containers.map((c) => [c.id, c]));
-  // Só o pertencimento e a ordem importam aqui: sem perspectivas, não há o que reconciliar.
+  // Only membership and order matter here: without perspectives, there is nothing to reconcile.
   return settleHierarchy({
     ...after,
     perspectives: [],
@@ -47,7 +49,7 @@ export function simulateApplied(
   });
 }
 
-/** O que o aplicador sabe de cada marcação antes de assentar: o pai da base, ou o do proposto. */
+/** What the applier knows about each marking before settling: the base's parent, or the proposed one. */
 class Ties {
   readonly out: Before[] = [];
   private readonly basePar: ReadonlyMap<string, string | null>;
@@ -62,20 +64,20 @@ class Ties {
     return !this.basePar.has(id);
   }
 
-  /** O `parentId` com que a marcação chega ao assentar do aplicador. */
+  /** The `parentId` with which the marking reaches the applier's settle. */
   pre(id: string): string | null {
     return this.isCreated(id)
       ? (this.afterById.get(id)?.parentId ?? null)
       : (this.basePar.get(id) ?? null);
   }
 
-  /** Registra `a` antes de `b`, se uma delas é criada (entre as da base, a ordem é a da base). */
+  /** Records `a` before `b`, if one of them is created (among the base's, the order is the base's). */
   before(a: string, b: string): void {
     if (a !== b && (this.isCreated(a) || this.isCreated(b))) this.out.push([a, b]);
   }
 }
 
-/** Grupo de retângulos iguais, de fora para dentro pelos `parentId` do proposto. */
+/** A group of equal rectangles, from the outside in by the proposed `parentId`s. */
 function chainOf(bucket: readonly Marking[]): Marking[] {
   const ids = new Set(bucket.map((m) => m.id));
   const done = new Set<string>();
@@ -93,9 +95,9 @@ function chainOf(bucket: readonly Marking[]): Marking[] {
 }
 
 /**
- * Retângulos iguais: o aplicador põe na ordem de fora para dentro primeiro quem não espera um
- * pai do grupo, e entre as livres decide o array. Para a cadeia sair a do proposto, cada uma
- * vem antes das outras livres no mesmo passo.
+ * Equal rectangles: the applier places, in outside-in order, first whoever is not waiting for
+ * a parent from the group, and among the free ones the array decides. For the chain to come
+ * out as the proposed one, each one comes before the other free ones in the same step.
  */
 function chainTies(ties: Ties, bucket: readonly Marking[]): void {
   if (bucket.length < 2 || !bucket.some((m) => ties.isCreated(m.id))) return;
@@ -124,7 +126,7 @@ function groupBy<T>(list: readonly T[], key: (item: T) => string): Map<string, T
   return out;
 }
 
-/** As candidatas de menor área, por grupo de retângulos iguais. */
+/** The smallest-area candidates, per group of equal rectangles. */
 function leastBuckets(candidates: readonly Marking[]): Marking[][] {
   let least = Infinity;
   for (const c of candidates) least = Math.min(least, area(c.rect));
@@ -133,9 +135,10 @@ function leastBuckets(candidates: readonly Marking[]): Marking[][] {
 }
 
 /**
- * Candidatas de mesma área a pai: de cada grupo de retângulos iguais conta a de dentro; se o
- * pai atual é uma delas, ele fica (e a âncora não muda isso); senão, ganha a do grupo que tem o
- * maior índice no array. O pai do proposto precisa vir depois de todas as dos outros grupos.
+ * Parent candidates of the same area: from each group of equal rectangles the inner one
+ * counts; if the current parent is one of them, it stays (and the anchor does not change
+ * that); otherwise, the one from the group with the highest index in the array wins. The
+ * proposed parent must come after all those of the other groups.
  */
 function areaTies(
   ties: Ties,
@@ -152,7 +155,7 @@ function areaTies(
   }
 }
 
-/** Os empates de um espaço: os grupos de retângulos iguais e as candidatas de mesma área. */
+/** The ties of a space: the groups of equal rectangles and the candidates of the same area. */
 function spaceTies(ties: Ties, group: readonly Marking[]): void {
   for (const bucket of groupBy(group, (m) => rectKey(m.rect)).values()) {
     chainTies(ties, bucket);
@@ -165,13 +168,13 @@ function spaceTies(ties: Ties, group: readonly Marking[]): void {
   }
 }
 
-/** As restrições de ordem que os empates do proposto impõem às criadas. */
+/** The ordering constraints that the proposed ties impose on the created markings. */
 function tieConstraints(base: Project, after: Project): Before[] {
   const ties = new Ties(base, after);
   const placed = after.markings.filter((m) => !m.floating);
   const bySpace = groupBy(placed, (m) => m.containerId ?? '');
   for (const group of bySpace.values()) spaceTies(ties, group);
-  // O pai do container: a menor marcação do canvas que o contém, com o mesmo desempate.
+  // The container's parent: the smallest canvas marking that contains it, with the same tie-break.
   const baseContainers = new Map(base.containers.map((c) => [c.id, c.parentId]));
   const canvas = placed.filter((m) => m.containerId === null);
   for (const c of after.containers) {
@@ -182,7 +185,7 @@ function tieConstraints(base: Project, after: Project): Before[] {
   return ties.out;
 }
 
-/** Limites da casa de cada criada (antes da marcação da base de índice `casa`; o fim é `n`). */
+/** Bounds of each created marking's slot (before the base marking of index `slot`; the end is `n`). */
 function bounds(
   constraints: readonly Before[],
   index: ReadonlyMap<string, number>,
@@ -200,9 +203,9 @@ function bounds(
 }
 
 /**
- * Entre duas criadas `a` antes de `b`: na mesma casa elas entram na ordem do proposto, então
- * `b` precisa da casa de `a` (se vem depois no proposto) ou da seguinte. `up` sobe a casa de
- * `b`; senão, desce a de `a`. Devolve `false` se nada mudou.
+ * Between two created markings, `a` before `b`: in the same slot they enter in the proposed
+ * order, so `b` needs `a`'s slot (if it comes later in the proposal) or the next one. `up`
+ * raises `b`'s slot; otherwise, it lowers `a`'s. Returns `false` if nothing changed.
  */
 function fix(
   slot: Map<string, number>,
@@ -228,10 +231,10 @@ interface Slots {
   readonly n: number;
 }
 
-/** As casas a partir das de partida, só subindo (ou só descendo); `null` se saem dos limites. */
+/** The slots from the starting ones, only rising (or only falling); `null` if they leave the bounds. */
 function solve(s: Slots, up: boolean): Map<string, number> | null {
   const slot = new Map(s.start);
-  // Cada volta move ao menos uma casa uma vez, e nenhuma sai de `-k … n + k` (k criadas).
+  // Each round moves at least one slot once, and none leaves `-k … n + k` (k created).
   const rounds = (s.n + 2 * s.order.size + 1) * s.order.size;
   for (let round = 0; round <= rounds; round++) {
     if (!s.pairs.some((pair) => fix(slot, s.order, pair, up))) break;
@@ -243,15 +246,15 @@ function solve(s: Slots, up: boolean): Map<string, number> | null {
 }
 
 /**
- * A âncora de cada marcação criada (`insertBefore`): a de sempre (a primeira da base depois dela
- * no proposto), deslocada o mínimo para os empates novos do aplicador saírem como no proposto.
- * A casa `k` é "antes da k-ésima marcação da base que fica"; `n`, o fim. Sem solução, fica a de
- * sempre.
+ * The anchor of each created marking (`insertBefore`): the usual one (the first base marking
+ * after it in the proposal), shifted the minimum so the applier's new ties come out as in the
+ * proposal. Slot `k` is "before the k-th base marking that stays"; `n`, the end. With no
+ * solution, the usual one stays.
  */
 export function proposalAnchors(base: Project, after: Project): Map<string, string> {
   const baseIds = new Set(base.markings.map((m) => m.id));
   const defaults = insertAnchors(baseIds, after.markings);
-  // Sem marcação criada não há âncora a empatar: o mapa dos padrões já é o final.
+  // Without a created marking there is no anchor to tie: the map of defaults is already the final one.
   if (defaults.size === 0 && after.markings.every((m) => baseIds.has(m.id))) {
     return defaults;
   }
@@ -277,7 +280,7 @@ export function proposalAnchors(base: Project, after: Project): Map<string, stri
   const order = new Map(created.map((m, i) => [m.id, i]));
   const pairs = constraints.filter(([a, b]) => order.has(a) && order.has(b));
   const slots: Slots = { start, lo, hi, order, pairs, n };
-  // Por último, as que têm restrição entre criadas a partir do limite de baixo.
+  // Lastly, those with a constraint between created markings, starting from the lower bound.
   const paired = new Set(pairs.flat());
   const low = new Map(
     [...start].map(([id, at]) => [id, paired.has(id) ? (lo.get(id) ?? 0) : at]),

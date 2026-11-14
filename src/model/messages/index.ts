@@ -7,10 +7,10 @@ import { originMessages } from './origins';
 import { specMessages } from './spec';
 import { versionMessages } from './versions';
 
-// Catálogo das mensagens do modelo que a interface traduz (etapa #1263). Cada módulo da pasta é
-// uma área (`library.ts`, ...) e exporta código → modelo do texto pt-BR de hoje, com
-// `{parâmetros}`. A interface monta o pt-BR dos dicionários daqui (`src/i18n/modelMessages.ts`),
-// então o texto em pt-BR é igual ao do modelo por construção. Sem DOM.
+// Catalog of the model messages that the interface translates (stage #1263). Each module in the
+// folder is an area (`library.ts`, ...) and exports code → template of today's pt-BR text, with
+// `{parameters}`. The interface builds the pt-BR of the dictionaries from here
+// (`src/i18n/modelMessages.ts`), so the pt-BR text equals the model's by construction. No DOM.
 
 export const MODEL_MESSAGE_TEMPLATES = {
   ...libraryMessages,
@@ -30,7 +30,7 @@ export function isModelMessageTemplateCode(
   return Object.hasOwn(MODEL_MESSAGE_TEMPLATES, code);
 }
 
-/** Troca literal de `{nome}` pelo valor (sem plural nem concordância); nome sem valor fica como está. */
+/** Literal replacement of `{name}` by the value (no plural or agreement); a name without a value stays as is. */
 export function fillTemplate(
   template: string,
   params: Readonly<Record<string, string | number>>,
@@ -41,7 +41,7 @@ export function fillTemplate(
   });
 }
 
-/** A mensagem do catálogo com os parâmetros no texto pt-BR (`code`, `params`, `text`). */
+/** The catalog message with the parameters in the pt-BR text (`code`, `params`, `text`). */
 export function templateMessage(
   code: ModelMessageTemplateCode,
   params: Readonly<Record<string, string | number>> = {},

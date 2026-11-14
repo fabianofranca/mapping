@@ -2,34 +2,34 @@ import { isRecord } from '../isRecord';
 import type { ModelMessageTemplateCode } from '../messages';
 import { iconsFileCodeForText } from '../messages/textLookup';
 /**
- * Conjunto de ícones da biblioteca (formato do componente 4, etapa "componentes fiéis", CF7).
+ * Icon set of the library (component format 4, "faithful components" stage, CF7).
  *
- * A especialização (`formatVersion` 15) aponta, em `icons`, para UM arquivo `.json` do pacote
- * (`"format": "mapping-icons"`): um `viewBox` padrão e os ícones por nome, cada um com seus
- * caminhos SVG. O nó `icon` do componente (`{ "type": "icon", "name": … }`) lê o conjunto no
- * lugar de um `$switch` com todos os caminhos dentro do componente.
+ * The specialization (`formatVersion` 15) points, in `icons`, to ONE `.json` file of the
+ * package (`"format": "mapping-icons"`): a default `viewBox` and the icons by name, each with
+ * its SVG paths. The component's `icon` node (`{ "type": "icon", "name": … }`) reads the set
+ * instead of a `$switch` with all the paths inside the component.
  *
- * Funções puras, sem DOM: o arquivo chega já lido (texto ou JSON).
+ * Pure functions, no DOM: the file arrives already read (text or JSON).
  */
 
 export const ICONS_FORMAT = 'mapping-icons';
-/** A versão atual do arquivo; a 1 (sem `mirror`) continua aceita. */
+/** The file's current version; version 1 (without `mirror`) is still accepted. */
 export const ICONS_FORMAT_VERSION = 2;
 export const ICONS_FORMAT_VERSIONS: readonly number[] = [1, 2];
-/** Padrão do nome de um ícone. */
+/** Pattern of an icon's name. */
 export const ICON_NAME_PATTERN = /^[a-z0-9][a-z0-9-_]*$/;
-/** Caixa usada quando não há conjunto para dizer o `viewBox` (ícone desconhecido). */
+/** Box used when there is no set to supply the `viewBox` (unknown icon). */
 export const DEFAULT_ICON_VIEWBOX: readonly [number, number] = [24, 24];
 
 export type IconCap = 'butt' | 'round' | 'square';
 export type IconJoin = 'miter' | 'round' | 'bevel';
 
-/** Um caminho de um ícone, no espaço do `viewBox`. */
+/** A path of an icon, in the `viewBox` space. */
 export interface IconPath {
   readonly d: string;
-  /** `true` = cor do nó; texto = cor própria; ausente com `stroke` ausente = cor do nó. */
+  /** `true` = the node's color; text = its own color; absent with `stroke` absent = the node's color. */
   readonly fill?: boolean | string;
-  /** `true` = cor do nó; texto = cor própria. Largura em unidades do `viewBox` (`width`). */
+  /** `true` = the node's color; text = its own color. Width in `viewBox` units (`width`). */
   readonly stroke?: boolean | string;
   readonly width?: number;
   readonly cap?: IconCap;
@@ -37,9 +37,9 @@ export interface IconPath {
 }
 
 export interface IconDef {
-  /** Sobrepõe o `viewBox` do conjunto. */
+  /** Overrides the set's `viewBox`. */
   readonly viewBox?: readonly [number, number];
-  /** O ícone vira na horizontal em `rtl` (formatVersion 2 do arquivo; padrão `false`). */
+  /** The icon flips horizontally in `rtl` (file formatVersion 2; default `false`). */
   readonly mirror?: boolean;
   readonly paths: readonly IconPath[];
 }
@@ -52,12 +52,12 @@ export interface IconSet {
 export interface IconsIssue {
   readonly path: string;
   readonly message: string;
-  /** Código e parâmetros do catálogo (`src/model/messages/`): a interface traduz por eles. */
+  /** Code and parameters of the catalog (`src/model/messages/`): the interface translates through them. */
   readonly code?: ModelMessageTemplateCode;
   readonly params?: Readonly<Record<string, string | number>>;
 }
 
-/** O problema com o código e os parâmetros que o catálogo acha pelo texto. */
+/** The issue with the code and parameters that the catalog finds by the text. */
 function issue(path: string, message: string): IconsIssue {
   const hit = iconsFileCodeForText(message);
   if (hit === undefined) return { path, message };
@@ -118,7 +118,7 @@ function checkUnknownKeys(
       out.push(issue(join(path, key), `chave desconhecida: ${key}`));
 }
 
-/** `fill`, `stroke`, `width`, `cap` e `join` de um caminho (todos opcionais). */
+/** `fill`, `stroke`, `width`, `cap` and `join` of a path (all optional). */
 function checkPathStyle(
   value: Record<string, unknown>,
   path: string,
@@ -194,14 +194,14 @@ function collectIssues(input: unknown): IconsIssue[] {
 const formatIssue = (issue: IconsIssue): string =>
   issue.path === '' ? issue.message : `${issue.path}: ${issue.message}`;
 
-/** Valida o JSON do arquivo `mapping-icons` (não lança). */
+/** Validates the JSON of the `mapping-icons` file (does not throw). */
 export function parseIconsFile(input: unknown): IconsParseResult {
   const issues = collectIssues(input);
   if (issues.length > 0) return { ok: false, issues, errors: issues.map(formatIssue) };
   return { ok: true, set: input as IconSet };
 }
 
-/** Valida o texto de um arquivo `mapping-icons` (JSON inválido vira um problema, sem lançar). */
+/** Validates the text of a `mapping-icons` file (invalid JSON becomes an issue, without throwing). */
 export function parseIconsText(text: string): IconsParseResult {
   let json: unknown;
   try {
@@ -221,7 +221,7 @@ export function parseIconsText(text: string): IconsParseResult {
   return parseIconsFile(json);
 }
 
-/** O ícone e o `viewBox` que vale para ele (o do ícone, senão o do conjunto); `undefined` se não existe. */
+/** The icon and the `viewBox` that applies to it (the icon's, else the set's); `undefined` if it does not exist. */
 export function resolveIcon(
   set: IconSet | undefined,
   name: string,
@@ -232,13 +232,13 @@ export function resolveIcon(
   return { def, viewBox: def.viewBox ?? set.viewBox };
 }
 
-/** Um nó `icon` do arquivo do componente: onde está e o `name` como foi escrito (literal ou expressão). */
+/** An `icon` node of the component file: where it is and the `name` as written (literal or expression). */
 export interface IconNodeRef {
   readonly path: string;
   readonly name: unknown;
 }
 
-/** Os nós `icon` de um template (pelos `children` dos quadros e `template` do `repeat`). */
+/** The `icon` nodes of a template (through the frames' `children` and the `repeat`'s `template`). */
 export function iconNodes(template: unknown, path = 'template'): IconNodeRef[] {
   if (!isRecord(template)) return [];
   const out: IconNodeRef[] = [];

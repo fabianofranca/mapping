@@ -1,61 +1,63 @@
 /**
- * Tokens de design do componente (formato 4, etapa "componentes fiéis", CF5): `{ "$token": "<nome>" }`
- * lê um valor nomeado da especialização (`tokens` da `formatVersion` 15), por modo (`light`/`dark`…).
- * Funções puras, sem DOM: o modo e a fonte do hospedeiro chegam de fora, já resolvidos em texto.
+ * Design tokens of the component (format 4, "faithful components" stage, CF5): `{ "$token": "<name>" }`
+ * reads a named value from the specialization (`tokens` of `formatVersion` 15), per mode
+ * (`light`/`dark`…). Pure functions, no DOM: the mode and the host font arrive from outside, already
+ * resolved to text.
  *
- * `resolveTokens` monta a tabela plana (nome → valor) de um modo; `applyTokens` troca cada
- * `{ "$token": … }` do componente pelo valor, antes de o motor começar, e por isso o token vale em
- * qualquer lugar onde a expressão vale (inclusive como resultado de `$switch` e `$if`).
+ * `resolveTokens` builds the flat table (name → value) of a mode; `applyTokens` replaces each
+ * `{ "$token": … }` of the component with the value, before the engine starts, and therefore the
+ * token is valid anywhere an expression is valid (including as the result of `$switch` and `$if`).
  */
 import type { ComponentFile } from './componentFormat';
 
-/** Valor de um token: cor ou família (texto) ou número. */
+/** Value of a token: color or family (text) or number. */
 export type TokenValue = string | number;
 
-/** `tokens` da especialização (o espelho do zod de `spec.ts`). */
+/** The specialization's `tokens` (the mirror of the zod in `spec.ts`). */
 export interface SpecTokens {
   readonly modes: readonly string[];
-  /** Valor simples (vale em todos os modos) ou um valor por modo. */
+  /** Simple value (applies in every mode) or one value per mode. */
   readonly values: Readonly<
     Record<string, TokenValue | Readonly<Record<string, TokenValue>>>
   >;
 }
 
-/** Os tokens de um modo: nome → valor. */
+/** The tokens of a mode: name → value. */
 export type ResolvedTokens = Readonly<Record<string, TokenValue>>;
 
-/** As fontes do hospedeiro (a pilha `--font-sans`/`--font-mono` do tema, ou o que a página tiver). */
+/** The host's fonts (the theme's `--font-sans`/`--font-mono` stack, or whatever the page has). */
 export interface HostFonts {
   readonly sans?: string;
   readonly mono?: string;
 }
 
-/** Tipo de valor que a posição do `$token` espera (e que o valor do token tem). */
+/** Kind of value that the `$token` position expects (and that the token's value has). */
 export type TokenKind = 'color' | 'number' | 'family';
 
 export const FONT_SANS_TOKEN = 'font-sans';
 export const FONT_MONO_TOKEN = 'font-mono';
-/** Nomes embutidos: existem em toda biblioteca, com o valor do hospedeiro. */
+/** Built-in names: they exist in every library, with the host's value. */
 export const BUILTIN_TOKENS: readonly string[] = [FONT_SANS_TOKEN, FONT_MONO_TOKEN];
-/** Padrão do nome de um token. */
+/** Pattern of a token name. */
 export const TOKEN_NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 
-/** Família quando o hospedeiro não informa nenhuma. */
+/** Family when the host provides none. */
 const DEFAULT_SANS = 'sans-serif';
 const DEFAULT_MONO = 'monospace';
 
 const COLOR_VALUE =
   /^(#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})|(rgb|hsl)a?\(.*\)|none|transparent)$/i;
 
-/** O tipo de um valor de token: número, cor (`#…`, `rgb()`, `hsl()`, `none`) ou família. */
+/** The kind of a token value: number, color (`#…`, `rgb()`, `hsl()`, `none`) or family. */
 export function tokenKind(value: TokenValue): TokenKind {
   if (typeof value === 'number') return 'number';
   return COLOR_VALUE.test(value.trim()) ? 'color' : 'family';
 }
 
 /**
- * A tabela do `mode` (ou do primeiro modo, se `mode` não foi declarado ou não veio), sem aviso.
- * `font-sans` e `font-mono` valem o que o hospedeiro deu; a especialização pode redefini-los.
+ * The table of `mode` (or of the first mode, if `mode` was not declared or not given), without a
+ * warning. `font-sans` and `font-mono` are worth what the host gave; the specialization can
+ * redefine them.
  */
 export function resolveTokens(
   tokens: SpecTokens | undefined,
@@ -76,7 +78,7 @@ export function resolveTokens(
   return out;
 }
 
-/** Um `{ "$token": … }`, com `alpha` (a opacidade de uma cor) e `over` (a cor de baixo) opcionais (v4). */
+/** A `{ "$token": … }`, with optional `alpha` (a color's opacity) and `over` (the color underneath) (v4). */
 type TokenRef = { $token: string; alpha?: unknown; over?: unknown };
 
 function isTokenRef(value: unknown): value is TokenRef {
@@ -114,7 +116,7 @@ function parseHex(text: string): Rgba | undefined {
   };
 }
 
-/** Converte `hsl(h, s, l)` (h em graus, s e l de 0 a 1) em RGB (0 a 255). */
+/** Converts `hsl(h, s, l)` (h in degrees, s and l from 0 to 1) to RGB (0 to 255). */
 function hslToRgb(h: number, s: number, l: number): [number, number, number] {
   const hue = ((h % 360) + 360) % 360;
   const k = (n: number): number => (n + hue / 30) % 12;
@@ -134,7 +136,7 @@ const DEGREES_PER_UNIT: Readonly<Record<string, number>> = {
   turn: 360,
 };
 
-/** Um argumento numérico de cor; `50%` vale `percentOf × 0,5`. */
+/** A numeric color argument; `50%` is worth `percentOf × 0.5`. */
 function colorNumber(text: string, percentOf: number): number | undefined {
   const match = WITH_PERCENT.exec(text);
   if (!match) return undefined;
@@ -142,14 +144,14 @@ function colorNumber(text: string, percentOf: number): number | undefined {
   return match[2] === '%' ? (n / 100) * percentOf : n;
 }
 
-/** O matiz de um `hsl()` em graus (aceita `deg`, `grad`, `rad` e `turn`). */
+/** The hue of an `hsl()` in degrees (accepts `deg`, `grad`, `rad` and `turn`). */
 function hueDegrees(text: string): number | undefined {
   const match = WITH_ANGLE_UNIT.exec(text);
   if (!match) return undefined;
   return parseFloat(match[1] ?? '') * (DEGREES_PER_UNIT[match[2] ?? 'deg'] ?? 1);
 }
 
-/** Os argumentos de `rgb()`/`hsl()` separados (vírgula, espaço ou barra); 3 ou 4, senão nenhum. */
+/** The `rgb()`/`hsl()` arguments split apart (comma, space or slash); 3 or 4, otherwise none. */
 function functionalParts(args: string): string[] | undefined {
   const parts = args.split(/[\s,/]+/).filter((p) => p !== '');
   return parts.length === 3 || parts.length === 4 ? parts : undefined;
@@ -173,7 +175,7 @@ function rgbArgs(parts: readonly string[], a: number): Rgba | undefined {
     : { r, g, b, a };
 }
 
-/** `rgb`/`rgba` ou `hsl`/`hsla` com os argumentos já separados; nenhum se algum não for número. */
+/** `rgb`/`rgba` or `hsl`/`hsla` with the arguments already split; none if any is not a number. */
 function functionalToRgba(fn: string, parts: readonly string[]): Rgba | undefined {
   const a = parts[3] === undefined ? 1 : colorNumber(parts[3], 1);
   if (a === undefined) return undefined;
@@ -195,14 +197,14 @@ function parseColor(text: string): Rgba | undefined {
   return parseHex(text) ?? parseFunctional(text);
 }
 
-/** O texto é uma cor literal (`#rgb`, `#rrggbb`, `#rrggbbaa`, `rgb(...)`, `hsl(...)`)? */
+/** Is the text a literal color (`#rgb`, `#rrggbb`, `#rrggbbaa`, `rgb(...)`, `hsl(...)`)? */
 export function isLiteralColor(text: string): boolean {
   return parseColor(text.trim()) !== undefined;
 }
 
 /**
- * A cor com o alfa multiplicado por `alpha` (0 a 1), em `#rrggbbaa`. `none`, `transparent` e o
- * que não for uma cor que se entenda ficam como estão.
+ * The color with its alpha multiplied by `alpha` (0 to 1), in `#rrggbbaa`. `none`, `transparent`
+ * and anything that is not an understood color stay as they are.
  */
 function withAlpha(color: string, alpha: number): string {
   const text = color.trim();
@@ -211,7 +213,7 @@ function withAlpha(color: string, alpha: number): string {
   return `#${toByte(rgba.r)}${toByte(rgba.g)}${toByte(rgba.b)}${toByte(rgba.a * alpha * 255)}`;
 }
 
-/** O `alpha` do `$token` como número de 0 a 1 (literal ou `$token` de número); nenhum se faltar ou não valer. */
+/** The `$token`'s `alpha` as a number from 0 to 1 (literal or number `$token`); none if missing or invalid. */
 function alphaOf(ref: TokenRef, tokens: ResolvedTokens): number | undefined {
   const raw = isTokenRef(ref.alpha) ? tokens[ref.alpha.$token] : ref.alpha;
   return typeof raw === 'number' && Number.isFinite(raw)
@@ -219,7 +221,7 @@ function alphaOf(ref: TokenRef, tokens: ResolvedTokens): number | undefined {
     : undefined;
 }
 
-/** A cor `top` composta sobre `base` (`compositeOver` do Compose); o alfa da base entra no resultado. */
+/** The color `top` composited over `base` (Compose's `compositeOver`); the base's alpha enters the result. */
 function compositeOver(top: string, base: string): string {
   const above = parseColor(top.trim());
   const below = parseColor(base.trim());
@@ -231,14 +233,14 @@ function compositeOver(top: string, base: string): string {
   return `#${toByte(mix(above.r, below.r))}${toByte(mix(above.g, below.g))}${toByte(mix(above.b, below.b))}${toByte(alpha * 255)}`;
 }
 
-/** A cor de baixo do `over`: o token de cor (da tabela) ou a cor literal; nenhuma se não valer. */
+/** The `over` underneath color: the color token (from the table) or the literal color; none if invalid. */
 function overColor(ref: TokenRef, tokens: ResolvedTokens): string | undefined {
   if (typeof ref.over !== 'string') return undefined;
   const value = isLiteralColor(ref.over) ? ref.over : tokens[ref.over];
   return typeof value === 'string' ? value : undefined;
 }
 
-/** O valor do `$token` na tabela (com `alpha` e `over` aplicados, se houver), ou nenhum se o nome não existe. */
+/** The `$token`'s value in the table (with `alpha` and `over` applied, if any), or none if the name does not exist. */
 function resolveRef(ref: TokenRef, tokens: ResolvedTokens): TokenValue | undefined {
   const resolved = tokens[ref.$token];
   if (typeof resolved !== 'string') return resolved;
@@ -250,7 +252,7 @@ function resolveRef(ref: TokenRef, tokens: ResolvedTokens): TokenValue | undefin
 
 function substitute(node: unknown, tokens: ResolvedTokens): unknown {
   if (Array.isArray(node)) {
-    // Um item de lista (`cornerRadius`, `dash`) não some: o `$token` sem valor fica como está.
+    // A list item (`cornerRadius`, `dash`) does not vanish: a `$token` with no value stays as it is.
     return node.map((item) =>
       isTokenRef(item) ? (resolveRef(item, tokens) ?? item) : substitute(item, tokens),
     );
@@ -278,9 +280,10 @@ function hasTokenRef(node: unknown): boolean {
 const cache = new WeakMap<ComponentFile, WeakMap<ResolvedTokens, ComponentFile>>();
 
 /**
- * O componente com cada `{ "$token": … }` trocado pelo valor da tabela (um token que a tabela
- * não tem some do nó, e o nó cai no padrão: a validação da biblioteca o recusa antes). Sem
- * nenhum `$token` devolve o próprio componente; o resultado é guardado por componente e tabela.
+ * The component with each `{ "$token": … }` replaced by the table's value (a token the table
+ * does not have vanishes from the node, and the node falls back to the default: the library
+ * validation rejects it beforehand). With no `$token` it returns the component itself; the result
+ * is cached per component and table.
  */
 export function applyTokens(
   component: ComponentFile,
@@ -300,20 +303,20 @@ export function applyTokens(
   return result;
 }
 
-/** A família padrão do texto: o `font-sans` da tabela. */
+/** The default text family: the table's `font-sans`. */
 export function defaultFontFamily(tokens: ResolvedTokens | undefined): string {
   const sans = tokens?.[FONT_SANS_TOKEN];
   return typeof sans === 'string' ? sans : DEFAULT_SANS;
 }
 
-/** Nome do tipo de valor, para as mensagens. */
+/** Name of the kind of value, for the messages. */
 export const TOKEN_KIND_NAMES: Readonly<Record<TokenKind, string>> = {
   color: 'cor',
   number: 'número',
   family: 'família de fonte',
 };
 
-/** Nome → tipo de cada token da especialização, mais os embutidos (`font-sans`, `font-mono`). */
+/** Name → kind of each token of the specialization, plus the built-in ones (`font-sans`, `font-mono`). */
 export function knownTokenKinds(tokens: SpecTokens | undefined): Map<string, TokenKind> {
   const out = new Map<string, TokenKind>(
     BUILTIN_TOKENS.map((name) => [name, 'family' as const]),

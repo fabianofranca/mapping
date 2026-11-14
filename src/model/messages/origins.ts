@@ -1,6 +1,6 @@
-// Mensagens da leitura da declaração das origens (`origin.ts`, `parseOrigins`): código → modelo
-// do texto pt-BR de hoje, com `{parâmetros}`. O caminho vem à parte (`origins[0].screen…`); aqui
-// fica só a mensagem. O caminho de pacote (`examples[].file`) usa as mensagens do catálogo `spec`.
+// Messages of the reading of the origins declaration (`origin.ts`, `parseOrigins`): code → template
+// of today's pt-BR text, with `{parameters}`. The path comes separately (`origins[0].screen…`); only
+// the message is here. The package path (`examples[].file`) uses the messages of the `spec` catalog.
 
 export const originMessages = {
   'origins.expectedList': 'esperava uma lista',
@@ -25,7 +25,7 @@ export const originMessages = {
   'origins.needsIdOrName': 'precisa de id ou name',
   'origins.expectedTextList': 'esperava uma lista de textos',
   'origins.needsNameOrPath': 'precisa de name ou path',
-  // Avisos de desenho (`translateSource`, `importMeasured`): `{path}` é o caminho do valor no JSON.
+  // Drawing warnings (`translateSource`, `importMeasured`): `{path}` is the path of the value in the JSON.
   'origins.draw.notScalar': '{path}: esperava valor simples',
   'origins.draw.optionOutside': '{path}: valor fora das opções de {key}: {value}',
   'origins.draw.nodeInvalid': '{path}: nó inválido (esperava objeto)',
@@ -39,7 +39,7 @@ export const originMessages = {
   'origins.draw.rectInvalid': '{path}: esperava { x, y, width, height } numéricos',
   'origins.draw.nodeUntyped': '{path}: nó sem tipo de anotação ({label}); ignorado',
   'origins.draw.nodeUntypedBare': '{path}: nó sem tipo de anotação (sem type); ignorado',
-  // Erros que impedem a tradução da tela (`translateSource`, `screenFromSource`): `errorMessage`.
+  // Errors that prevent translating the screen (`translateSource`, `screenFromSource`): `errorMessage`.
   'origins.error.systemUndeclared': 'origem não declarada na especialização: {system}',
   'origins.error.noOrigins': 'a especialização não declara origens',
   'origins.error.onlyMeasured':

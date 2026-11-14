@@ -1,7 +1,7 @@
 import { fold } from './fold';
-// Subconjunto de markdown para os documentos da biblioteca (Catálogo). Puro: só dados,
-// nenhum HTML. HTML cru é texto; só links `mapping://`, âncoras `#…` e `http(s)://` absolutos viram link.
-// Nunca lança: entrada hostil devolve algo, com limites de profundidade e de tamanho.
+// Markdown subset for the library documents (Catalog). Pure: only data, no HTML. Raw HTML is
+// text; only `mapping://` links, `#…` anchors and absolute `http(s)://` become links.
+// Never throws: hostile input returns something, with depth and size limits.
 
 export type MarkdownAlign = 'left' | 'center' | 'right' | null;
 
@@ -16,12 +16,12 @@ export type MarkdownInline =
       readonly kind: 'mapping' | 'anchor' | 'external';
       readonly children: readonly MarkdownInline[];
     }
-  /** Quebra de linha dentro do parágrafo; só existe com a opção `lineBreaks`. */
+  /** Line break inside the paragraph; only exists with the `lineBreaks` option. */
   | { readonly type: 'break' };
 
 export interface MarkdownListItem {
   readonly inlines: readonly MarkdownInline[];
-  /** Listas aninhadas (por indentação) deste item. */
+  /** Nested lists (by indentation) of this item. */
   readonly children: readonly MarkdownBlock[];
 }
 
@@ -49,20 +49,20 @@ export type MarkdownBlock =
 
 export interface MarkdownOptions {
   /**
-   * Quebra simples de linha dentro do parágrafo vira um nó `break` (mensagens das conversas).
-   * Padrão `false`: vira espaço, como nos documentos do Catálogo.
+   * A single line break inside the paragraph becomes a `break` node (thread messages).
+   * Default `false`: it becomes a space, as in the Catalog documents.
    */
   readonly lineBreaks?: boolean;
 }
 
-/** Profundidade máxima de inlines aninhados e de listas aninhadas. */
+/** Maximum depth of nested inlines and nested lists. */
 const MAX_INLINE_DEPTH = 6;
 const MAX_LIST_DEPTH = 6;
-/** Profundidade máxima de citações (`>`) aninhadas. */
+/** Maximum depth of nested quotes (`>`). */
 const MAX_QUOTE_DEPTH = 6;
-/** Trecho de texto inline analisado de uma vez (o resto vira outro trecho). */
+/** Inline text chunk analyzed at once (the rest becomes another chunk). */
 const MAX_INLINE_CHUNK = 20000;
-/** Janela de busca do fechamento de colchetes, parênteses e ênfase. */
+/** Search window for the closing of brackets, parentheses and emphasis. */
 const SEARCH_WINDOW = 2000;
 
 function hasControl(text: string): boolean {
@@ -70,7 +70,7 @@ function hasControl(text: string): boolean {
   return false;
 }
 
-/** Classifica o destino de um link: só `mapping://…`, `#âncora` e `http(s)://` absoluto são vivos. */
+/** Classifies a link target: only `mapping://…`, `#anchor` and absolute `http(s)://` are live. */
 export function linkKind(href: string): 'mapping' | 'anchor' | 'external' | null {
   if (hasControl(href)) return null;
   if (/^mapping:\/\/[^\s<>"'`\\]+$/.test(href)) return 'mapping';
@@ -83,7 +83,7 @@ export function isSafeLinkTarget(href: string): boolean {
   return linkKind(href) !== null;
 }
 
-/** Slug estável para âncora de título. */
+/** Stable slug for a heading anchor. */
 export function slugifyHeading(text: string): string {
   const slug = fold(text)
     .replace(/[^a-z0-9]+/g, '-')
@@ -91,7 +91,7 @@ export function slugifyHeading(text: string): string {
   return slug === '' ? 'secao' : slug;
 }
 
-/** Texto simples de uma sequência de inlines (sem marcação). */
+/** Plain text of a sequence of inlines (without markup). */
 export function inlinesToText(inlines: readonly MarkdownInline[]): string {
   let out = '';
   for (const n of inlines) {
@@ -129,7 +129,7 @@ function pushAll(out: MarkdownInline[], nodes: readonly MarkdownInline[]): void 
   }
 }
 
-/** Pareamento de colchetes do trecho, calculado uma vez (linear): abre -> fecha. */
+/** Bracket pairing of the chunk, computed once (linear): opens -> closes. */
 function matchBrackets(s: string): Map<number, number> {
   const pairs = new Map<number, number>();
   const stack: number[] = [];
@@ -145,7 +145,7 @@ function matchBrackets(s: string): Map<number, number> {
   return pairs;
 }
 
-/** Lê `(destino "título")` em `open` (um `(`); devolve o destino e o índice depois do `)`. */
+/** Reads `(target "title")` at `open` (a `(`); returns the target and the index after the `)`. */
 function readDestination(s: string, open: number): { href: string; end: number } | null {
   let level = 0;
   const end = Math.min(s.length, open + SEARCH_WINDOW);
@@ -170,15 +170,15 @@ function readDestination(s: string, open: number): { href: string; end: number }
   return null;
 }
 
-/** Fecha ênfase: índice do delimitador de fechamento ou -1. */
+/** Closes emphasis: index of the closing delimiter or -1. */
 function findEmphasisClose(
   s: string,
   from: number,
   delim: string,
   failedFrom: Map<string, number>,
 ): number {
-  // Se uma busca a partir de `p` não achou fechamento até o fim do trecho, nenhuma
-  // busca posterior acha (o fechamento só depende do próprio ponto).
+  // If a search from `p` found no closing up to the end of the chunk, no later search
+  // will (the closing depends only on the point itself).
   const failed = failedFrom.get(delim);
   if (failed !== undefined && from >= failed) return -1;
   let j = from;
@@ -190,7 +190,7 @@ function findEmphasisClose(
       continue;
     }
     if (delim.length === 1 && s[j + 1] === delim) {
-      j += 2; // um `**` dentro de `*…*`
+      j += 2; // a `**` inside `*…*`
       continue;
     }
     const prev = s[j - 1];
@@ -250,7 +250,7 @@ function parseInlineChunk(s: string, depth: number): MarkdownInline[] {
           const label = s.slice(open + 1, close);
           flush();
           if (isImage) {
-            // Imagem não é renderizada: só o texto alternativo, em texto simples.
+            // An image is not rendered: only the alt text, as plain text.
             pushText(out, inlinesToText(parseInlineChunk(label, depth + 1)));
           } else {
             const children = parseInlineChunk(label, depth + 1);
@@ -292,24 +292,24 @@ function parseInlineChunk(s: string, depth: number): MarkdownInline[] {
   return out;
 }
 
-/** Estado da varredura de `chunkEnd`: o que ficou aberto e os melhores pontos de corte vistos. */
+/** State of the `chunkEnd` scan: what was left open and the best cut points seen. */
 interface ChunkScan {
   brackets: number;
   marks: number;
-  /** Depois do último espaço da metade final em que nada ficou aberto (`-1`: nenhum). */
+  /** After the last space of the final half where nothing was left open (`-1`: none). */
   safe: number;
-  /** Depois do último espaço da metade final, aberto ou não (`-1`: nenhum). */
+  /** After the last space of the final half, open or not (`-1`: none). */
   anySpace: number;
 }
 
-/** Um caractere de marcação: abre/fecha colchete ou parêntese, ou conta um marcador de ênfase. */
+/** A markup character: opens/closes a bracket or parenthesis, or counts an emphasis marker. */
 function scanMark(scan: ChunkScan, c: string): void {
   if (c === '[' || c === '(') scan.brackets++;
   else if (c === ']' || c === ')') scan.brackets = Math.max(0, scan.brackets - 1);
   else if (c === '*' || c === '_' || c === '`' || c === '~') scan.marks++;
 }
 
-/** Registra o corte logo depois do espaço em `i`, se cair na metade final da janela. */
+/** Records the cut right after the space at `i`, if it falls in the final half of the window. */
 function scanSpace(scan: ChunkScan, i: number, floor: number): void {
   if (i + 1 <= floor) return;
   scan.anySpace = i + 1;
@@ -317,9 +317,9 @@ function scanSpace(scan: ChunkScan, i: number, floor: number): void {
 }
 
 /**
- * Onde termina o trecho que começa em `start`: logo depois do último espaço (ou quebra de linha)
- * da metade final da janela em que nenhum colchete, parêntese de link, crase nem marcador de
- * ênfase ficou aberto. Sem espaço assim, o corte nunca parte um par substituto.
+ * Where the chunk that starts at `start` ends: right after the last space (or line break) of
+ * the final half of the window in which no bracket, link parenthesis, backtick or emphasis
+ * marker was left open. With no such space, the cut never splits a surrogate pair.
  */
 function chunkEnd(source: string, start: number): number {
   const hardEnd = start + MAX_INLINE_CHUNK;
@@ -348,7 +348,7 @@ export function parseInlines(source: string): MarkdownInline[] {
   return out;
 }
 
-// ----------------------------------------------------------------- blocos
+// ----------------------------------------------------------------- blocks
 
 const FENCE = /^ {0,3}(`{3,}|~{3,})\s*([^\s`]*)/;
 const HEADING = /^ {0,3}(#{1,6})[ \t]+(.*?)(?:[ \t]+#+)?[ \t]*$/;
@@ -422,7 +422,7 @@ interface ListBuilder {
   readonly items: ItemBuilder[];
 }
 
-/** Consome uma lista a partir de `start`; devolve o bloco e a próxima linha. */
+/** Consumes a list from `start`; returns the block and the next line. */
 function parseList(lines: readonly string[], start: number): [MarkdownBlock[], number] {
   const roots: ListBuilder[] = [];
   const stack: { indent: number; list: ListBuilder }[] = [];
@@ -451,7 +451,7 @@ function parseList(lines: readonly string[], start: number): [MarkdownBlock[], n
     }
     const indent = (m[1] as string).length;
     const ordered = /\d/.test(m[2] as string);
-    // A raiz fica: recuo que volta abaixo do primeiro item continua na mesma lista.
+    // The root stays: an indent that goes back below the first item continues the same list.
     while (
       stack.length > 1 &&
       indent < (stack[stack.length - 1] as { indent: number }).indent
@@ -470,7 +470,7 @@ function parseList(lines: readonly string[], start: number): [MarkdownBlock[], n
       stack.push({ indent, list: target });
       parent.children.push(target);
     } else if (top.list.ordered !== ordered) {
-      // Troca de tipo de marcador no mesmo nível: nova lista irmã.
+      // Marker type change at the same level: a new sibling list.
       target = newList(ordered);
       stack.pop();
       const parentTop = stack[stack.length - 1];
@@ -504,7 +504,7 @@ function finishList(list: ListBuilder): MarkdownBlock {
   };
 }
 
-/** Linhas seguidas de citação (`> `): o conteúdo, sem o sinal, e a próxima linha. */
+/** Consecutive quote lines (`> `): the content, without the sign, and the next line. */
 function takeQuote(lines: readonly string[], start: number): [string[], number] {
   const body: string[] = [];
   let i = start;
@@ -517,7 +517,7 @@ function takeQuote(lines: readonly string[], start: number): [string[], number] 
   return [body, i];
 }
 
-/** Parágrafo a partir das linhas: espaço entre elas ou, com `lineBreaks`, nós de quebra. */
+/** Paragraph from the lines: a space between them or, with `lineBreaks`, break nodes. */
 function paragraphInlines(
   para: readonly string[],
   lineBreaks: boolean,
@@ -526,7 +526,7 @@ function paragraphInlines(
   return withBreaks(parseInlines(para.join('\n')));
 }
 
-/** Troca o `\n` dos textos por nós `break` (e o dos códigos em linha por espaço). */
+/** Replaces the `\n` in the texts with `break` nodes (and the one in inline code with a space). */
 function withBreaks(nodes: readonly MarkdownInline[]): MarkdownInline[] {
   const out: MarkdownInline[] = [];
   for (const n of nodes) {
@@ -628,7 +628,7 @@ function parseBlocks(
       continue;
     }
     if (RULE.test(line)) {
-      i++; // linha horizontal: fora do subconjunto, descartada
+      i++; // horizontal rule: outside the subset, discarded
       continue;
     }
     if (startsTable(lines, i)) {

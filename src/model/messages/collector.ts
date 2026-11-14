@@ -1,25 +1,25 @@
 import type { ModelMessage } from '../modelMessage';
 import { templateMessage, type ModelMessageTemplateCode } from './index';
 
-// Coletor dos avisos do motor de desenho: cada aviso é uma mensagem do catálogo (`engine`,
-// `origins`), sem repetição e na ordem em que entrou, o mesmo que o `Set<string>` de `warnings`
-// fazia (mesmo código e parâmetros, mesmo texto). `warnings` de texto = `textsOf(messages)`.
+// Collector of the drawing engine's warnings: each warning is a catalog message (`engine`,
+// `origins`), without repetition and in the order it came in, the same as the `Set<string>` of
+// `warnings` did (same code and parameters, same text). Text `warnings` = `textsOf(messages)`.
 
 export type Params = Readonly<Record<string, string | number>>;
 
 export interface MessageSet {
-  /** Acrescenta a mensagem do catálogo; a que já entrou (mesmo código e parâmetros) não se repete. */
+  /** Adds the catalog message; one that already came in (same code and parameters) is not repeated. */
   readonly add: (code: ModelMessageTemplateCode, params?: Params) => ModelMessage;
-  /** As mensagens, na ordem de entrada. */
+  /** The messages, in order of entry. */
   readonly list: () => ModelMessage[];
 }
 
 /**
- * A identidade de um aviso, sem montar o texto: o código (sozinho, sem alocar, quando não há
- * parâmetros) e os pares nome e valor dos parâmetros, ordenados pelo nome (a ordem em que
- * entraram não conta; nomes diferentes não se fundem), concatenados num laço. O tipo do valor
- * fica de fora de propósito: `1` e `'1'` dão o mesmo texto, e o coletor continua deduplicando
- * como o `Set<string>` de `warnings` que ele substituiu.
+ * The identity of a warning, without building the text: the code (alone, without allocating,
+ * when there are no parameters) and the name and value pairs of the parameters, sorted by name
+ * (the order they came in does not count; different names do not merge), concatenated in a
+ * loop. The value's type is left out on purpose: `1` and `'1'` give the same text, and the
+ * collector keeps deduplicating like the `Set<string>` of `warnings` it replaced.
  */
 const keyOf = (code: string, params: Params): string => {
   const names = Object.keys(params);
@@ -49,11 +49,11 @@ export function createMessageSet(initial: readonly ModelMessage[] = []): Message
   };
 }
 
-/** Os textos de uma lista de mensagens (o `warnings` que o MCP e o visualizador leem). */
+/** The texts of a list of messages (the `warnings` that the MCP and the viewer read). */
 export const textsOf = (messages: readonly ModelMessage[]): string[] =>
   messages.map((m) => m.text);
 
-/** Une listas de mensagens sem repetir, na ordem (a primeira vence). */
+/** Merges lists of messages without repeating, in order (the first one wins). */
 export function mergeMessages(
   ...lists: readonly (readonly ModelMessage[])[]
 ): ModelMessage[] {

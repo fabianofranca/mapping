@@ -1,7 +1,7 @@
-// Mensagens do motor de desenho (`instantiate.ts`, `layout.ts`, `repeat.ts`; etapa #1263, MB5):
-// código → modelo do texto pt-BR de hoje, com `{parâmetros}`. O `warnings` de texto do motor é o
-// `text` destas mensagens, letra por letra. O caminho do nó vai em `{path}` (`withoutNodePrefix`
-// de `libraryDrawing.ts` o recorta no parâmetro, não no texto).
+// Messages of the drawing engine (`instantiate.ts`, `layout.ts`, `repeat.ts`; stage #1263, MB5):
+// code → template of today's pt-BR text, with `{parameters}`. The engine's text `warnings` are
+// the `text` of these messages, letter for letter. The node path goes in `{path}`
+// (`withoutNodePrefix` of `libraryDrawing.ts` cuts it off in the parameter, not in the text).
 
 export const engineMessages = {
   'engine.fieldMissing': 'campo não informado: {key}',
@@ -20,8 +20,8 @@ export const engineMessages = {
   'engine.childrenOutsideMaxLines': '{count} filhos fora de maxLines: {name}',
   'engine.linesUnstable': '$lines instável: {name}',
   'engine.screenTooTall': 'tela: conteúdo maior que a altura da tela',
-  // Prova de desenho da biblioteca: o aviso do motor com o sufixo de medida aproximada.
+  // Library drawing proof: the engine warning with the approximate-measure suffix.
   'engine.approximate': '{reason} (aproximado)',
-  // Prova de desenho em `rtl`: o aviso que só aparece nesse sentido (o `ltr` não o deu).
+  // Drawing proof in `rtl`: the warning that only appears in that direction (`ltr` did not give it).
   'engine.inRtl': 'em rtl: {reason}',
 } as const;

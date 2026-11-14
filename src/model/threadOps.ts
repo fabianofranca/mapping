@@ -14,19 +14,19 @@ import {
   type ThreadResolver,
 } from './thread';
 
-// Operações puras e imutáveis sobre uma conversa (nunca alteram a entrada). Quem grava
-// (a sessão da app e o servidor MCP) relê o arquivo, refaz a operação sobre a versão do disco e
-// grava o resultado (decisão 6).
+// Pure, immutable operations on a thread (they never change the input). Whoever writes
+// (the app session and the MCP server) rereads the file, redoes the operation on the disk version and
+// writes the result (decision 6).
 //
-// Convenção de `revision`: toda operação que MUDA a conversa devolve `revision + 1`, como o
-// `bumpRevision` do projeto; a que não muda (resolver uma resolvida, reabrir uma aberta) devolve
-// a mesma conversa, sem tocar na `revision`. A junção das cópias (`mergeThreadCopies`) devolve a
-// maior `revision` das duas, sem somar: quem grava o resultado é que soma.
+// `revision` convention: every operation that CHANGES the thread returns `revision + 1`, like the
+// project's `bumpRevision`; one that does not change it (resolving a resolved one, reopening an open one) returns
+// the same thread, without touching `revision`. The merge of the copies (`mergeThreadCopies`) returns the
+// larger `revision` of the two, without adding: whoever writes the result is the one that adds.
 
 /**
- * Códigos de erro das operações. São próprios do módulo (não de `ModelErrorCode`): a UI e o MCP
- * os traduzem. `thread-resolved` (mensagem do MCP numa conversa resolvida) é regra de quem
- * chama e não é lançado aqui.
+ * Error codes of the operations. They belong to the module (not to `ModelErrorCode`): the UI and the MCP
+ * translate them. `thread-resolved` (the MCP's message on a resolved thread) is the caller's
+ * rule and is not thrown here.
  */
 export type ThreadErrorCode = 'thread-message-duplicate' | 'invalid-thread';
 
@@ -50,19 +50,19 @@ export interface OpenThreadArgs {
   readonly author: ThreadAuthor;
   readonly text: string;
   readonly at: string;
-  /** Id da primeira mensagem. */
+  /** Id of the first message. */
   readonly messageId: string;
   readonly proposal?: string | null;
 }
 
-/** Valida `data` com o formato e devolve a conversa lida; `invalid-thread` com os erros. */
+/** Validates `data` with the format and returns the thread read; `invalid-thread` with the errors. */
 function validated(data: unknown): Thread {
   const result = parseThread(data);
   if (!result.ok) failThread('invalid-thread', result.errors.join('; '));
   return result.thread;
 }
 
-/** Abre a conversa com a primeira mensagem: `revision` 0, não resolvida. */
+/** Opens the thread with the first message: `revision` 0, not resolved. */
 export function openThread(args: OpenThreadArgs): Thread {
   return validated({
     format: THREAD_FORMAT,
@@ -85,9 +85,9 @@ export function openThread(args: OpenThreadArgs): Thread {
 }
 
 /**
- * Acrescenta a mensagem (a ordem por `at` e `id` é mantida) e devolve `revision + 1`.
- * `thread-message-duplicate` se o id já existe; `invalid-thread` se a mensagem é inválida. Não
- * olha o estado: numa conversa resolvida a recusa é de quem chama (o MCP).
+ * Appends the message (the order by `at` and `id` is kept) and returns `revision + 1`.
+ * `thread-message-duplicate` if the id already exists; `invalid-thread` if the message is invalid. It does not
+ * look at the state: on a resolved thread the refusal is the caller's (the MCP).
  */
 export function appendMessage(thread: Thread, message: ThreadMessage): Thread {
   const parsed = threadMessageSchema.safeParse(message);
@@ -99,7 +99,7 @@ export function appendMessage(thread: Thread, message: ThreadMessage): Thread {
   }
   const next = parsed.data as ThreadMessage;
   if (thread.messages.some((m) => m.id === next.id)) {
-    failThread('thread-message-duplicate', `id "${next.id}" repetido`);
+    failThread('thread-message-duplicate', `id "${next.id}" repeated`);
   }
   return {
     ...thread,
@@ -109,8 +109,8 @@ export function appendMessage(thread: Thread, message: ThreadMessage): Thread {
 }
 
 /**
- * Resolve a conversa (`revision + 1`). Já resolvida: devolve a mesma, intacta (refazer a
- * operação sobre a versão do disco, que outra pessoa já resolveu, não muda nada).
+ * Resolves the thread (`revision + 1`). Already resolved: returns the same one, untouched (redoing the
+ * operation on the disk version, which someone else already resolved, changes nothing).
  */
 export function resolveThread(thread: Thread, by: ThreadResolver, at: string): Thread {
   if (thread.resolved !== null) return thread;
@@ -126,13 +126,13 @@ export function resolveThread(thread: Thread, by: ThreadResolver, at: string): T
   return { ...thread, revision: thread.revision + 1, resolved: parsed.data };
 }
 
-/** Reabre a conversa (`revision + 1`). Já aberta: devolve a mesma, intacta. */
+/** Reopens the thread (`revision + 1`). Already open: returns the same one, untouched. */
 export function reopenThread(thread: Thread): Thread {
   if (thread.resolved === null) return thread;
   return { ...thread, revision: thread.revision + 1, resolved: null };
 }
 
-/** Onde o arquivo da conversa deve ficar: o campo `resolved` é a verdade; a pasta é o índice. */
+/** Where the thread's file should be: the `resolved` field is the truth; the folder is the index. */
 export type ThreadLocation = 'open' | 'resolved';
 
 export function threadLocation(thread: Thread): ThreadLocation {
@@ -141,9 +141,9 @@ export function threadLocation(thread: Thread): ThreadLocation {
 
 export interface MergedThread {
   readonly thread: Thread;
-  /** `thread.resolved !== null`, para quem só quer o booleano. */
+  /** `thread.resolved !== null`, for whoever only wants the boolean. */
   readonly resolved: boolean;
-  /** A pasta onde a próxima gravação deve deixar o arquivo (e de onde apagar a outra cópia). */
+  /** The folder where the next write should leave the file (and from where to delete the other copy). */
   readonly location: ThreadLocation;
 }
 
@@ -155,7 +155,7 @@ function mergedMessages(a: Thread, b: Thread): readonly ThreadMessage[] {
   return [...byId.values()].sort(compareThreadMessages);
 }
 
-/** A resolução mais recente entre as duas cópias, ou `null`. */
+/** The most recent resolution between the two copies, or `null`. */
 function latestResolved(a: Thread, b: Thread): ThreadResolved | null {
   const options = [a.resolved, b.resolved].filter((r): r is ThreadResolved => r !== null);
   if (options.length === 0) return null;
@@ -163,9 +163,9 @@ function latestResolved(a: Thread, b: Thread): ThreadResolved | null {
 }
 
 /**
- * A resolução que vale na junção, ou `null` (aberta). Com as mesmas mensagens nas duas cópias e
- * `revision` diferente, a cópia de maior `revision` (`base`) decide; senão a resolução mais
- * recente vale só se for posterior à última mensagem da união.
+ * The resolution that holds in the merge, or `null` (open). With the same messages in both copies and
+ * a different `revision`, the copy with the larger `revision` (`base`) decides; otherwise the most
+ * recent resolution holds only if it is later than the last message of the union.
  */
 function joinedResolution(
   open: Thread,
@@ -186,23 +186,23 @@ function joinedResolution(
 }
 
 /**
- * Junta as duas cópias da mesma conversa (uma em `comments/`, outra em `comments/resolved/`),
- * como fica depois de uma mesclagem do git ou de uma mudança de pasta que parou no meio
- * (decisão 7):
- * - uma cópia só: vale ela, e o campo `resolved` diz o lugar;
- * - duas: as mensagens são a união por `id` (a cópia aberta vence um id repetido, que é a
- *   mesma mensagem) e a `revision` é a maior. Com as mesmas mensagens nas duas e `revision`
- *   diferente, a cópia de maior `revision` decide se está resolvida (a reabertura interrompida
- *   não se perde). Senão a conversa fica resolvida só se o `resolved.at` é posterior à última
- *   mensagem da união; mensagem nova depois da resolução reabre, com `resolved` `null`.
- * A âncora e o `createdAt` vêm da cópia de maior `revision` (a aberta, no empate).
- * `invalid-thread` se não há cópia ou se os ids diferem.
+ * Merges the two copies of the same thread (one in `comments/`, the other in `comments/resolved/`),
+ * as it is left after a git merge or a folder change that stopped halfway
+ * (decision 7):
+ * - only one copy: it holds, and the `resolved` field says the place;
+ * - two: the messages are the union by `id` (the open copy wins a repeated id, which is the
+ *   same message) and the `revision` is the larger. With the same messages in both and a different
+ *   `revision`, the copy with the larger `revision` decides whether it is resolved (the interrupted
+ *   reopening is not lost). Otherwise the thread is resolved only if `resolved.at` is later than the last
+ *   message of the union; a new message after the resolution reopens it, with `resolved` `null`.
+ * The anchor and `createdAt` come from the copy with the larger `revision` (the open one, on a tie).
+ * `invalid-thread` if there is no copy or if the ids differ.
  */
 export function mergeThreadCopies(
   open: Thread | null,
   resolved: Thread | null,
 ): MergedThread {
-  if (open === null && resolved === null) failThread('invalid-thread', 'nenhuma cópia');
+  if (open === null && resolved === null) failThread('invalid-thread', 'no copy');
   if (open === null || resolved === null) {
     const only = (open ?? resolved) as Thread;
     return {
@@ -212,7 +212,7 @@ export function mergeThreadCopies(
     };
   }
   if (open.id !== resolved.id) {
-    failThread('invalid-thread', `ids diferentes: "${open.id}" e "${resolved.id}"`);
+    failThread('invalid-thread', `different ids: "${open.id}" and "${resolved.id}"`);
   }
   const base = resolved.revision > open.revision ? resolved : open;
   const messages = mergedMessages(open, resolved);

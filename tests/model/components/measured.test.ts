@@ -141,7 +141,7 @@ describe('origem measured: ciclo parse → gravação → releitura', () => {
     expect(again.ok).toBe(true);
     if (!again.ok) return;
     expect(importMeasured([again.spec], { system: 'dom' } as never)).not.toMatchObject({
-      error: expect.stringContaining('não declarada'),
+      error: expect.stringContaining('not declared'),
     });
   });
 });

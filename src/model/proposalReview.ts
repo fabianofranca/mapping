@@ -27,24 +27,24 @@ import { projectIndex } from './projectIndex';
 import { isRecord } from './refs';
 import type { JsonValue, Project } from './types';
 
-// Revisão de uma proposta (etapa 4): dependências entre mudanças, níveis (proposta →
-// projeto/canvas/imagem → item → mudança), decisões de três estados com "parcial", conflitos
-// e o aviso de item trancado. Tudo puro: a app (estado derivado) e o MCP usam o mesmo.
+// Review of a proposal (stage 4): dependencies between changes, levels (proposal →
+// project/canvas/image → item → change), three-state decisions with "partial", conflicts
+// and the locked-item warning. All pure: the app (derived state) and the MCP use the same.
 
 // ---------------------------------------------------------------------------
-// Dependências
+// Dependencies
 
 export interface ProposalIndex {
   readonly changes: ReadonlyMap<string, Change>;
-  /** Mudança de criação de cada entidade criada pela proposta (por `entityKey`). */
+  /** The creation change of each entity created by the proposal (by `entityKey`). */
   readonly created: ReadonlyMap<string, string>;
   /**
-   * O que cada mudança exige: aceitar a mudança aceita estas (e as que elas exigem).
-   * Criação ou alteração que cita uma entidade criada na proposta exige a criação dela;
-   * remoção exige as mudanças que deixam de citar a entidade removida (a cascata).
+   * What each change requires: accepting the change accepts these (and what they require).
+   * A creation or update that cites an entity created in the proposal requires its creation;
+   * a removal requires the changes that stop citing the removed entity (the cascade).
    */
   readonly requires: ReadonlyMap<string, readonly string[]>;
-  /** O inverso de `requires`: rejeitar a mudança rejeita estas (e as que dependem delas). */
+  /** The inverse of `requires`: rejecting the change rejects these (and what depends on them). */
   readonly dependents: ReadonlyMap<string, readonly string[]>;
 }
 
@@ -54,7 +54,7 @@ function buildIndex(changes: readonly Change[]): ProposalIndex {
   for (const c of changes) {
     if (c.kind === 'create') created.set(entityKey(c.entity, c.entityId), c.id);
   }
-  // Quem cita cada entidade no estado anterior e deixa de citá-la.
+  // Who cites each entity in the previous state and stops citing it.
   const releasedBy = new Map<string, string[]>();
   for (const c of changes) {
     const after = new Set(
@@ -101,7 +101,7 @@ function buildIndex(changes: readonly Change[]): ProposalIndex {
 
 const indexCache = new WeakMap<readonly Change[], ProposalIndex>();
 
-/** Índice das mudanças, memoizado pela lista (decidir não muda a lista). */
+/** Index of the changes, memoized by the list (deciding does not change the list). */
 export function proposalIndex(p: Proposal): ProposalIndex {
   const cached = indexCache.get(p.changes);
   if (cached) return cached;
@@ -128,32 +128,32 @@ function closure(
   return out;
 }
 
-/** Mudanças exigidas (transitivamente) por `changeIds`, fora elas mesmas. */
+/** Changes required (transitively) by `changeIds`, not counting themselves. */
 export function requiredChanges(p: Proposal, changeIds: readonly string[]): string[] {
   return closure(changeIds, proposalIndex(p).requires);
 }
 
-/** Mudanças que dependem (transitivamente) de `changeIds`, fora elas mesmas. */
+/** Changes that depend (transitively) on `changeIds`, not counting themselves. */
 export function dependentChanges(p: Proposal, changeIds: readonly string[]): string[] {
   return closure(changeIds, proposalIndex(p).dependents);
 }
 
 // ---------------------------------------------------------------------------
-// Níveis
+// Levels
 
 export interface ReviewNode {
   readonly level: Exclude<ReviewLevel, 'change'>;
   readonly id: string | null;
-  /** Mudanças diretas do nível (na imagem: as da própria imagem). */
+  /** The level's direct changes (for an image: those of the image itself). */
   readonly changeIds: readonly string[];
   readonly children: readonly ReviewNode[];
 }
 
 export interface ReviewTree {
   readonly root: ReviewNode;
-  /** Nó de um nível (`level:id`, ex: `item:3f2a…`; `project:`, `proposal:`). */
+  /** Node of a level (`level:id`, e.g. `item:3f2a…`; `project:`, `proposal:`). */
   readonly nodes: ReadonlyMap<string, ReviewNode>;
-  /** Todas as mudanças do alvo (o nível e tudo abaixo), na ordem da proposta. */
+  /** All the target's changes (the level and everything below), in the proposal's order. */
   changeIdsOf(target: ReviewTarget): readonly string[];
 }
 
@@ -162,10 +162,11 @@ function nodeKey(level: ReviewLevel, id: string | null): string {
 }
 
 /**
- * Pai de cada marcação citada pela proposta, para aninhar os itens: o proposto (criação;
- * o `parentId` de uma alteração é derivado e não vem na proposta), senão o atual, senão o
- * anterior (marcação removida). O "pai" de uma seta é a marcação de origem (ME4): a seta fica
- * sob ela quando a origem também tem mudanças, senão sob o container (ou o Canvas).
+ * Parent of each marking cited by the proposal, to nest the items: the proposed one
+ * (creation; the `parentId` of an update is derived and does not come in the proposal), else
+ * the current one, else the previous one (removed marking). An arrow's "parent" is the origin
+ * marking (ME4): the arrow sits under it when the origin also has changes, otherwise under the
+ * container (or the Canvas).
  */
 function parentLookup(
   p: Proposal,
@@ -204,12 +205,12 @@ function parentLookup(
 }
 
 /**
- * Os níveis da revisão: Projeto (especializações, repositórios e camadas), Canvas (as
- * marcações do canvas, `imageId` nulo com `markingId`) e uma imagem
- * para cada imagem citada, com os itens (marcações com tudo que mudou nelas, inclusive
- * as anotações) aninhados pela hierarquia: a filha fica dentro do ancestral mais próximo
- * que também tem mudanças. `project` é o projeto atual (para achar os pais das marcações
- * que só foram alteradas).
+ * The review levels: Project (specializations, repositories and layers), Canvas (the
+ * canvas markings, `imageId` null with `markingId`) and one image
+ * for each cited image, with the items (markings with everything that changed in them,
+ * including the annotations) nested by the hierarchy: the child sits inside the nearest
+ * ancestor that also has changes. `project` is the current project (to find the parents of
+ * the markings that were only updated).
  */
 export function reviewTree(p: Proposal, project: Project): ReviewTree {
   interface MutableNode {
@@ -228,7 +229,7 @@ export function reviewTree(p: Proposal, project: Project): ReviewTree {
   let projectNode: MutableNode | null = null;
   let canvasNode: MutableNode | null = null;
   const containers = new Map<string, MutableNode>();
-  // `containerId` nulo: o item é do canvas.
+  // `containerId` null: the item belongs to the canvas.
   const items = new Map<string, { node: MutableNode; containerId: string | null }>();
 
   for (const c of p.changes) {
@@ -242,7 +243,7 @@ export function reviewTree(p: Proposal, project: Project): ReviewTree {
     }
     if (c.markingId !== null && c.imageId === null && !canvasNode) {
       canvasNode = make('canvas', null);
-      // Depois do Projeto e antes das imagens: o Canvas é irmão dos containers.
+      // After the Project and before the images: the Canvas is a sibling of the containers.
       root.children.splice(projectNode ? 1 : 0, 0, canvasNode);
     }
     let image: MutableNode | undefined;
@@ -267,7 +268,7 @@ export function reviewTree(p: Proposal, project: Project): ReviewTree {
     item.node.changeIds.push(c.id);
   }
 
-  // Aninha cada item no ancestral mais próximo com mudanças (no mesmo espaço).
+  // Nests each item under the nearest ancestor with changes (in the same space).
   const parentOf = parentLookup(p, project);
   for (const [markingId, { node, containerId: imageId }] of items) {
     const seen = new Set([markingId]);
@@ -319,23 +320,23 @@ export function reviewTree(p: Proposal, project: Project): ReviewTree {
 }
 
 // ---------------------------------------------------------------------------
-// Estado de um nível
+// State of a level
 
-/** Estado de um nível: os três estados mais "parcial" quando as mudanças divergem. */
+/** State of a level: the three states plus "partial" when the changes diverge. */
 export type LevelState = 'accepted' | 'rejected' | 'undecided' | 'partial';
 
 export interface LevelSummary {
   readonly state: LevelState;
   readonly total: number;
-  /** Aceitas (inclui as aplicadas). */
+  /** Accepted (includes the applied ones). */
   readonly accepted: number;
   readonly rejected: number;
   readonly undecided: number;
-  /** Aceitas e já aplicadas. */
+  /** Accepted and already applied. */
   readonly applied: number;
 }
 
-/** Resume as decisões de um conjunto de mudanças (ex: `tree.changeIdsOf(alvo)`). */
+/** Summarizes the decisions of a set of changes (e.g. `tree.changeIdsOf(target)`). */
 export function summarizeDecisions(
   p: Proposal,
   changeIds: readonly string[],
@@ -358,11 +359,11 @@ export function summarizeDecisions(
   return { state, total, accepted, rejected, undecided, applied };
 }
 
-/** Progresso da proposta inteira, para a lista de propostas e o aviso de substituição. */
+/** Progress of the whole proposal, for the list of proposals and the supersede warning. */
 export interface ReviewProgress extends LevelSummary {
-  /** Aceitas que ainda não foram aplicadas. */
+  /** Accepted ones that have not been applied yet. */
   readonly acceptedPending: number;
-  /** Nada sem decisão nem aceito sem aplicar: pode ser substituída sem deixar nada para trás. */
+  /** Nothing undecided and nothing accepted but unapplied: it can be superseded leaving nothing behind. */
   readonly complete: boolean;
 }
 
@@ -380,28 +381,28 @@ export function reviewProgress(p: Proposal): ReviewProgress {
 }
 
 // ---------------------------------------------------------------------------
-// Decidir
+// Deciding
 
 export type DecideResult =
   | {
       readonly ok: true;
       readonly decisions: ProposalDecisions;
-      /** Mudanças do alvo cujo estado mudou. */
+      /** Changes of the target whose state changed. */
       readonly changed: readonly string[];
-      /** Mudanças fora do alvo que mudaram pelas dependências ("4 rejeitadas junto"). */
+      /** Changes outside the target that changed through dependencies ("4 rejected along"). */
       readonly cascaded: readonly string[];
     }
   | { readonly ok: false; readonly reason: 'not-open' | 'unknown-target' };
 
 /**
- * Decide um nível: aceita (`accepted`), rejeita (`rejected`) ou limpa (`null`) todas as
- * mudanças do alvo ainda não aplicadas e resolve as dependências:
- * - aceitar exige o que as mudanças exigem (criação do item, dos ancestrais, da camada…,
- *   e na remoção, a cascata), que também passa a aceito;
- * - rejeitar rejeita o que depende delas (o que está dentro do item criado, o que cita
- *   o item, e na cascata de uma remoção, a remoção de quem a causa);
- * - limpar tira a aceitação do que dependia delas.
- * Mudanças aplicadas não mudam. Só uma proposta aberta aceita decisões.
+ * Decides a level: accepts (`accepted`), rejects (`rejected`) or clears (`null`) all the
+ * target's changes not yet applied and resolves the dependencies:
+ * - accepting requires what the changes require (creation of the item, of the ancestors, of
+ *   the layer…, and, for a removal, the cascade), which also becomes accepted;
+ * - rejecting rejects what depends on them (what is inside the created item, what cites
+ *   the item, and, in the cascade of a removal, the removal of whoever causes it);
+ * - clearing removes the acceptance of what depended on them.
+ * Applied changes do not change. Only an open proposal accepts decisions.
  */
 export function decide(
   p: Proposal,
@@ -442,26 +443,26 @@ export function decide(
 }
 
 // ---------------------------------------------------------------------------
-// Situação de cada mudança no projeto atual
+// Status of each change in the current project
 
 export interface ChangeStatus {
   readonly decision: DecisionState | null;
   readonly applied: boolean;
   /**
-   * O projeto mudou depois da proposta: o `from` não bate com o valor atual (ou a
-   * entidade a alterar sumiu, ou a entidade a criar já existe). Aceitar sobrescreve o
-   * valor atual; rejeitar mantém.
+   * The project changed after the proposal: the `from` does not match the current value (or
+   * the entity to update is gone, or the entity to create already exists). Accepting
+   * overwrites the current value; rejecting keeps it.
    */
   readonly conflict: boolean;
-  /** Valor atual na forma de `from`/`to`; `undefined` se a entidade não existe. */
+  /** Current value in the shape of `from`/`to`; `undefined` if the entity does not exist. */
   readonly current: JsonValue | undefined;
-  /** Geometria ou remoção de item trancado: aceitar é permitido e a trava continua. */
+  /** Geometry or removal of a locked item: accepting is allowed and the lock stays. */
   readonly locked: boolean;
 }
 
 /**
- * Remoção: compara a entidade sem o que não vira mudança (`needsReview`; a rota da seta, que é
- * da pessoa e pode ter mudado depois da proposta).
+ * Removal: compares the entity without what does not become a change (`needsReview`; the
+ * arrow's route, which is the person's and may have changed after the proposal).
  */
 function sameRemoved(c: Change, current: JsonValue): boolean {
   const normalize = REMOVED_NORMALIZERS[c.entity];
@@ -480,9 +481,10 @@ const without = (r: JsonRecord, key: string): JsonRecord => {
 };
 
 /**
- * O que a comparação da remoção deixa de lado, por entidade: `parentId` do container é derivado
- * da geometria (schema 13) e a leitura da proposta o completa só no `from`; a rota da seta é da
- * pessoa; `parentRole` ausente (proposta anterior à v14) vale `null`, dos dois lados.
+ * What the removal comparison sets aside, per entity: the container's `parentId` is derived
+ * from the geometry (schema 13) and the proposal reader fills it in only in the `from`; the
+ * arrow's route is the person's; a missing `parentRole` (proposal before v14) counts as
+ * `null`, on both sides.
  */
 const REMOVED_NORMALIZERS: Partial<Record<ChangeEntity, (r: JsonRecord) => JsonRecord>> =
   {
@@ -528,7 +530,7 @@ export function changeStatus(p: Proposal, c: Change, project: Project): ChangeSt
     else if (c.kind === 'remove')
       conflict = current === undefined || !sameRemoved(c, current);
     else if (current === undefined) {
-      // Alteração de uma entidade criada por esta mesma proposta: sem conflito.
+      // Update of an entity created by this same proposal: no conflict.
       conflict = !proposalIndex(p).created.has(entityKey(c.entity, c.entityId));
     } else if (!(c.field === 'position' && c.from === null)) {
       conflict = !jsonEqual(current, c.from);
@@ -543,15 +545,15 @@ export function changeStatus(p: Proposal, c: Change, project: Project): ChangeSt
   };
 }
 
-/** Situação de todas as mudanças, por id. */
+/** Status of all the changes, by id. */
 export function changeStatuses(p: Proposal, project: Project): Map<string, ChangeStatus> {
   return new Map(p.changes.map((c) => [c.id, changeStatus(p, c, project)]));
 }
 
 // ---------------------------------------------------------------------------
-// Notas e estado da proposta
+// Notes and proposal state
 
-/** Acrescenta uma nota (id padrão: `crypto.randomUUID()`). */
+/** Adds a note (default id: `crypto.randomUUID()`). */
 export function addNote(
   p: Proposal,
   target: ReviewTarget,
@@ -568,7 +570,7 @@ export function addNote(
   return { ...p, notes: [...p.notes, note] };
 }
 
-/** Troca o texto de uma nota; texto vazio a remove. */
+/** Replaces a note's text; empty text removes it. */
 export function editNote(
   p: Proposal,
   noteId: string,
@@ -586,19 +588,19 @@ export function removeNote(p: Proposal, noteId: string): Proposal {
   return { ...p, notes: p.notes.filter((n) => n.id !== noteId) };
 }
 
-/** Notas de um alvo, na ordem em que foram escritas. */
+/** Notes of a target, in the order they were written. */
 export function notesOf(p: Proposal, target: ReviewTarget): ProposalNote[] {
   return p.notes.filter(
     (n) => n.target.level === target.level && n.target.id === target.id,
   );
 }
 
-/** O agente retira uma proposta aberta. */
+/** The agent withdraws an open proposal. */
 export function withdrawProposal(p: Proposal): Proposal {
   return p.status === 'open' ? { ...p, status: 'withdrawn' } : p;
 }
 
-/** Marca a proposta como substituída (as decisões e notas continuam guardadas). */
+/** Marks the proposal as superseded (the decisions and notes stay stored). */
 export function supersedeProposal(p: Proposal): Proposal {
   return p.status === 'open' ? { ...p, status: 'superseded' } : p;
 }

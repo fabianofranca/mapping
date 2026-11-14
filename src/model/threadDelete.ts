@@ -2,8 +2,9 @@ import type { Thread, ThreadAuthorKind } from './thread';
 import { normalizeEmail, userKey, userLabel } from './threadUsers';
 import { lastMessage, type ThreadViewer } from './threadView';
 
-// Apagar conversas (decisão 23): o que vai embora e de quem. Só a pessoa apaga; o diálogo diz as
-// mensagens de cada autor, e a conversa só sai direto quando é toda da própria pessoa.
+// Deleting threads (decision 23): what goes away and whose it is. Only a person deletes; the
+// dialog lists each author's messages, and a thread is deleted directly only when it is
+// entirely the person's own.
 
 export interface DeleteAuthorCount {
   readonly key: string;
@@ -14,14 +15,14 @@ export interface DeleteAuthorCount {
 
 export interface MessageSummary {
   readonly messages: number;
-  /** Mais mensagens primeiro; no empate, pelo nome. */
+  /** Most messages first; ties broken by name. */
   readonly authors: readonly DeleteAuthorCount[];
 }
 
 export interface DeleteImpact extends MessageSummary {
-  /** Quantas conversas vão embora. */
+  /** How many threads go away. */
   readonly threads: number;
-  /** Todas as mensagens são de pessoa e do e-mail de `me`: apaga sem diálogo. */
+  /** Every message is from a person with the email of `me`: deletes without a dialog. */
   readonly direct: boolean;
 }
 
@@ -47,7 +48,7 @@ function summarize(threads: readonly Thread[]): MessageSummary {
   return { messages, authors: sorted };
 }
 
-/** O que se perde ao apagar uma conversa ou várias, e se dá para apagar direto. */
+/** What is lost when deleting one or several threads, and whether they can be deleted directly. */
 export function deleteImpact(
   threads: Thread | readonly Thread[],
   me: ThreadViewer | null,
@@ -67,9 +68,9 @@ export function deleteImpact(
 }
 
 export interface BulkDeleteCriteria {
-  /** "Só as resolvidas" (marcado por padrão na interface). */
+  /** "Only resolved" (checked by default in the interface). */
   readonly onlyResolved: boolean;
-  /** "Com a última mensagem antes de": ISO 8601 ou data (`2026-11-01`). Inválida: nenhuma. */
+  /** "With the last message before": ISO 8601 or a date (`2026-11-01`). Invalid: none. */
   readonly lastMessageBefore?: string;
 }
 
@@ -83,8 +84,9 @@ function isBefore(thread: Thread, limit: number): boolean {
 }
 
 /**
- * As conversas que "Apagar conversas…" levaria, com o impacto agregado (autores e contagens).
- * Os critérios são só estes dois; o filtro da janela não entra. Data inválida não apaga nada.
+ * The threads that "Delete threads…" would take, with the aggregated impact (authors and
+ * counts). The criteria are only these two; the window's filter does not apply. An invalid date
+ * deletes nothing.
  */
 export function bulkDeleteCandidates(
   threads: readonly Thread[],

@@ -58,7 +58,7 @@ export type InvariantCode =
   | 'arrival-root-not-root'
   | 'arrival-duplicate';
 
-/** Tipo do item com problema. */
+/** Kind of the item with the problem. */
 export type InvariantEntity =
   | 'image'
   | 'marking'
@@ -72,22 +72,22 @@ export type InvariantEntity =
 export interface InvariantIssue {
   readonly code: InvariantCode;
   readonly entity: InvariantEntity;
-  /** Id do item com problema. */
+  /** Id of the item with the problem. */
   readonly id: string;
-  /** Nome do item, quando houver (na imagem sem rótulo, o arquivo). */
+  /** Name of the item, when there is one (for an unlabeled image, the file). */
   readonly name?: string;
-  /** Id do outro item envolvido, quando houver (ex.: a imagem sobreposta). */
+  /** Id of the other item involved, when there is one (e.g. the overlapping image). */
   readonly otherId?: string;
 }
 
-/** O que `validateProject` lê de cada item para identificar o problema. */
+/** What `validateProject` reads from each item to identify the problem. */
 interface Named {
   readonly id: string;
   readonly name?: string | null;
   readonly file?: string | null;
 }
 
-/** Nome para a lista de problemas: o da imagem sem rótulo é o arquivo; especialização não tem. */
+/** Name for the problem list: an unlabeled image's is the file; a specialization has none. */
 function itemName(entity: InvariantEntity, item: Named): string | null {
   if (entity === 'spec') return null;
   if (entity === 'image') return item.name ?? item.file ?? null;
@@ -96,7 +96,7 @@ function itemName(entity: InvariantEntity, item: Named): string | null {
 
 export type EntryIssue = 'empty-key' | 'duplicate-key' | null;
 
-/** Erro de cada par, na mesma ordem de `entries`. Usado também pelo editor (erro inline). */
+/** Error of each entry, in the same order as `entries`. Also used by the editor (inline error). */
 export function validateEntries<T extends Pick<Entry, 'key'>>(
   entries: readonly T[],
 ): EntryIssue[] {
@@ -110,14 +110,14 @@ export function validateEntries<T extends Pick<Entry, 'key'>>(
   });
 }
 
-/** Nome de perspectiva para comparar: sem espaços nas pontas e sem diferença de caixa. */
+/** Perspective name for comparison: without surrounding spaces and ignoring case. */
 export function perspectiveNameKey(name: string): string {
   return name.trim().toLowerCase();
 }
 
 /**
- * Raízes do projeto (v16): o container sem pai e a marcação flutuante ou do canvas sem pai.
- * Só estas aparecem numa perspectiva (`items`) ou numa chegada (`arrivals`).
+ * Project roots (v16): the container without a parent and the floating or canvas marking without
+ * a parent. Only these appear in a perspective (`items`) or in an arrival (`arrivals`).
  */
 function rootIds(p: Project): { all: ReadonlySet<string>; roots: ReadonlySet<string> } {
   const all = new Set<string>();
@@ -133,7 +133,7 @@ function rootIds(p: Project): { all: ReadonlySet<string>; roots: ReadonlySet<str
   return { all, roots };
 }
 
-/** Código da raiz inválida (inexistente ou que não é raiz), ou `null` se a raiz serve. */
+/** Code of the invalid root (nonexistent or not a root), or `null` if the root is fine. */
 function rootProblem(
   root: string,
   ids: ReturnType<typeof rootIds>,
@@ -143,10 +143,10 @@ function rootProblem(
 }
 
 /**
- * Para cada container (pelo índice), os índices posteriores a ele, crescentes, cujo retângulo no
- * canvas o sobrepõe. Agrupa por células de grade do tamanho do maior container (cada retângulo cai
- * em até 4 células) e só compara vizinhos: cresce linear com os containers espalhados, em vez de
- * comparar todos os pares.
+ * For each container (by index), the later indices, ascending, whose canvas rectangle overlaps
+ * it. Groups by grid cells the size of the largest container (each rectangle falls in up to 4
+ * cells) and only compares neighbors: it grows linearly with scattered containers, instead of
+ * comparing every pair.
  */
 function overlappingContainers(containers: Project['containers']): number[][] {
   const rects = containers.map((c) => imageCanvasRect(c, c.placement));
@@ -172,7 +172,7 @@ function overlappingContainers(containers: Project['containers']): number[][] {
 
 type Report = (code: InvariantCode, item: Named, otherId?: string) => void;
 
-/** Camadas escondidas e itens (raiz existente, que é raiz e sem repetir) de uma perspectiva. */
+/** Hidden layers and items (an existing root, that is a root and without repeats) of a perspective. */
 function validatePerspectiveContent(
   x: Perspective,
   layerIds: ReadonlySet<string>,
@@ -191,7 +191,7 @@ function validatePerspectiveContent(
   }
 }
 
-/** A chegada aponta para uma raiz existente, e cada raiz tem no máximo uma. */
+/** The arrival points to an existing root, and each root has at most one. */
 function validateArrivals(
   p: Project,
   ids: ReturnType<typeof rootIds>,
@@ -208,9 +208,9 @@ function validateArrivals(
 }
 
 /**
- * Invariantes das perspectivas e das chegadas (v16). O item com problema é a perspectiva (id e
- * nome dela) com a raiz ou a camada em `otherId`; a chegada se identifica pela raiz (`id`).
- * Mapas e conjuntos: nada de busca em laço.
+ * Invariants of the perspectives and arrivals (v16). The item with the problem is the
+ * perspective (its id and name) with the root or layer in `otherId`; the arrival is identified
+ * by the root (`id`). Maps and sets: no lookups inside loops.
  */
 function validatePerspectives(p: Project, perspective: Report, arrival: Report): void {
   const ids = rootIds(p);
@@ -230,9 +230,10 @@ function validatePerspectives(p: Project, perspective: Report, arrival: Report):
 }
 
 /**
- * Âncoras (v20): o alvo existe, não é a própria marcação, está no mesmo espaço (o mesmo container,
- * ou as duas no canvas) e a cadeia de âncoras não fecha um ciclo. O ciclo é reportado em cada
- * marcação que a cadeia dela alcança de volta; quem só entra num ciclo não é reportada.
+ * Anchors (v20): the target exists, is not the marking itself, is in the same space (the same
+ * container, or both on the canvas) and the anchor chain does not close a cycle. The cycle is
+ * reported on each marking whose chain reaches back to itself; one that only enters a cycle is
+ * not reported.
  */
 function validateAnchors(
   p: Project,
@@ -250,7 +251,7 @@ function validateAnchors(
   }
 }
 
-/** Seguindo `anchor.to` a partir de `start`, a cadeia volta a `start` (sem travar em outro ciclo). */
+/** Following `anchor.to` from `start`, the chain returns to `start` (without hanging on another cycle). */
 function anchorChainReturns(
   markings: ReadonlyMap<string, Marking>,
   start: string,
@@ -266,15 +267,16 @@ function anchorChainReturns(
 }
 
 /**
- * Checa os invariantes que o schema zod não expressa. Lista vazia = projeto válido.
- * Ver docs/FORMAT.md, "Regras de validade". A seta (v13) tem as suas:
- * `arrow-endpoint-missing` (ponta que não é uma marcação existente) e `arrow-self`. As regras das especializações (camada × tipo,
- * `allowedChildren`, referências) não bloqueiam a abertura: viram pendências
- * (`getAnnotationIssues`). Só a unicidade dos ids de tupla e de linha fica aqui.
+ * Checks the invariants that the zod schema does not express. Empty list = valid project.
+ * See docs/FORMAT.md, "Validity rules". The arrow (v13) has its own:
+ * `arrow-endpoint-missing` (an end that is not an existing marking) and `arrow-self`. The
+ * specialization rules (layer × type, `allowedChildren`, references) do not block opening: they
+ * become pending items (`getAnnotationIssues`). Only the uniqueness of entry and row ids stays
+ * here.
  */
 export function validateProject(p: Project): InvariantIssue[] {
   const issues: InvariantIssue[] = [];
-  // Entidade e nome só são montados quando há problema: o caminho feliz não paga nada.
+  // Entity and name are only built when there is a problem: the happy path pays nothing.
   const issue =
     (entity: InvariantEntity) => (code: InvariantCode, item: Named, otherId?: string) => {
       const name = itemName(entity, item);
@@ -310,8 +312,8 @@ export function validateProject(p: Project): InvariantIssue[] {
     }
   }
 
-  // Marcações e setas dividem o espaço de ids (a anotação aponta para qualquer das duas): a
-  // seta que repete o id de uma marcação, ou de outra seta, é a duplicada.
+  // Markings and arrows share the id space (an annotation points to either): the arrow that
+  // repeats the id of a marking, or of another arrow, is the duplicate.
   const ownerIds = new Set(p.markings.map((m) => m.id));
   for (const a of p.arrows) {
     if (ownerIds.has(a.id)) arrow('duplicate-id', a);
@@ -342,7 +344,7 @@ export function validateProject(p: Project): InvariantIssue[] {
   const files = new Set<string>();
   const overlaps = overlappingContainers(p.containers);
   p.containers.forEach((image, i) => {
-    // Container sem arquivo (sem arquivo) não disputa nome; cor e arquivo são mutuamente exclusivos.
+    // A container without a file does not compete for a name; color and file are mutually exclusive.
     if (image.file !== null) {
       if (files.has(image.file)) imageIssue('duplicate-file', image);
       files.add(image.file);
@@ -362,7 +364,7 @@ export function validateProject(p: Project): InvariantIssue[] {
   const annotations = new Map(p.annotations.map((a) => [a.id, a]));
 
   for (const m of p.markings) {
-    // Marcação do canvas (v13): `containerId` nulo, `rect` em unidades do canvas, sem limite.
+    // Canvas marking (v13): null `containerId`, `rect` in canvas units, no bounds.
     const image = m.containerId === null ? undefined : containers.get(m.containerId);
     if (m.containerId !== null && !image) marking('missing-image', m, m.containerId);
     if (!isIntegerRect(m.rect)) marking('rect-not-integer', m);
@@ -375,7 +377,7 @@ export function validateProject(p: Project): InvariantIssue[] {
     if (image && !containsRect(imagePixelRect(image), m.rect)) {
       marking('rect-out-of-image', m);
     }
-    // A flutuante vive no canvas, fora da árvore de pertencimento.
+    // The floating one lives on the canvas, outside the containment tree.
     if (m.floating && (m.containerId !== null || m.parentId !== null)) {
       marking('floating-in-container', m);
     }
@@ -392,7 +394,7 @@ export function validateProject(p: Project): InvariantIssue[] {
       marking('rect-outside-parent', m, parent.id);
   }
 
-  // Seta (v13): liga duas marcações existentes e diferentes (nem outra seta, nem container).
+  // Arrow (v13): connects two existing, different markings (neither another arrow nor a container).
   for (const a of p.arrows) {
     if (!markings.has(a.from)) arrow('arrow-endpoint-missing', a, a.from);
     if (!markings.has(a.to)) arrow('arrow-endpoint-missing', a, a.to);
@@ -401,7 +403,7 @@ export function validateProject(p: Project): InvariantIssue[] {
 
   validateAnchors(p, markings, marking);
 
-  // Pai de um container (v13): uma marcação do canvas, não flutuante, que o contém inteiro.
+  // Parent of a container (v13): a canvas marking, not floating, that contains it entirely.
   for (const c of p.containers) {
     if (c.parentId === null) continue;
     const parent = markings.get(c.parentId);
@@ -414,7 +416,7 @@ export function validateProject(p: Project): InvariantIssue[] {
   }
 
   for (const m of p.markings) {
-    // Sobe a cadeia de pais; se passar de novo por um id já visto, há ciclo.
+    // Walks up the parent chain; if it passes through an already seen id again, there is a cycle.
     const visited = new Set<string>([m.id]);
     let parentId = m.parentId;
     while (parentId !== null) {
@@ -429,7 +431,7 @@ export function validateProject(p: Project): InvariantIssue[] {
 
   const layerIds = new Set(p.layers.map((l) => l.id));
   for (const a of p.annotations) {
-    // A dona da anotação é uma marcação ou uma seta (v13).
+    // The annotation's owner is a marking or an arrow (v13).
     if (!ownerIds.has(a.markingId)) annotation('missing-marking', a, a.markingId);
     if (!layerIds.has(a.layerId)) annotation('missing-layer', a, a.layerId);
     for (const entryIssue of validateEntries(a.entries)) {
@@ -448,13 +450,13 @@ export function validateProject(p: Project): InvariantIssue[] {
     if (owner.markingId !== a.markingId) {
       annotation('annotation-parent-other-marking', a, owner.id);
     }
-    // Só a livre: a tipada com dona da mesma camada que o tipo não aceita é a pendência `owner-not-allowed`.
+    // Only the free one: a typed one whose owner the type's layer does not accept is the `owner-not-allowed` pending item.
     if (owner.layerId === a.layerId && a.type === null)
       annotation('annotation-parent-same-layer', a, owner.id);
   }
 
   for (const a of p.annotations) {
-    // Mesma detecção de ciclo usada na hierarquia de marcações.
+    // The same cycle detection used in the marking hierarchy.
     const visited = new Set<string>([a.id]);
     let ownerId = a.parentAnnotationId;
     while (ownerId !== null) {

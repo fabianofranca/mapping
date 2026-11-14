@@ -1,10 +1,10 @@
-// Revisão do `mapping.json` (schema v6): quem grava (app ou MCP) confere se o arquivo em
-// disco ainda tem a revisão que carregou e grava `revision + 1`. Funções puras, sem DOM nem Node.
+// Revision of `mapping.json` (schema v6): whoever writes (app or MCP) checks that the file on
+// disk still has the revision it loaded and writes `revision + 1`. Pure functions, no DOM or Node.
 
 /**
- * Revisão escrita no texto de um `mapping.json`: o `revision` do arquivo, `0` num arquivo
- * sem o campo (schema anterior ao v6, que a migração também carrega como `0`) e `null`
- * se o texto não for um objeto JSON (ilegível, ou escrito pela metade por outro programa).
+ * Revision written in the text of a `mapping.json`: the file's `revision`, `0` for a file
+ * without the field (schema before v6, which the migration also loads as `0`) and `null`
+ * if the text is not a JSON object (unreadable, or half-written by another program).
  */
 export function readRevision(text: string): number | null {
   try {
@@ -16,7 +16,7 @@ export function readRevision(text: string): number | null {
       ? revision
       : null;
   } catch {
-    // Texto que não é JSON: quem chama trata `null` como "alterado por fora".
+    // Text that is not JSON: the caller treats `null` as "changed outside".
     return null;
   }
 }

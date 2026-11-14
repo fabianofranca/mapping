@@ -7,12 +7,12 @@ import {
 import { specCodeForText, type SpecMessageCode } from './messages/textLookup';
 import type { PackagePathError } from './packagePaths';
 
-// Códigos dos problemas da especialização (`parseSpec`): cada problema do zod sai com o código e
-// os parâmetros do catálogo `spec` (`src/model/messages/spec.ts`), por esta ordem: o
-// `params.messageCode` posto no `addIssue`; o texto exato de uma mensagem pronta que o zod recebe
-// (`known`: `SpecMsg` com valores constantes); o texto exato de um modelo sem parâmetro; o padrão
-// dos `SPEC_PATTERN_CODES` (o texto que o zod monta com o valor recebido); o texto padrão do zod
-// (`spec.zod.<código do zod>`). Sem DOM.
+// Codes of the specialization's problems (`parseSpec`): each zod problem comes out with the code and
+// the parameters of the `spec` catalog (`src/model/messages/spec.ts`), in this order: the
+// `params.messageCode` set in `addIssue`; the exact text of a ready-made message that zod receives
+// (`known`: `SpecMsg` with constant values); the exact text of a model without parameters; the pattern
+// of `SPEC_PATTERN_CODES` (the text zod builds with the received value); zod's default text
+// (`spec.zod.<zod code>`). No DOM.
 
 export type MessageParams = Readonly<Record<string, string | number>>;
 
@@ -21,7 +21,7 @@ export interface IssueCoding {
   readonly params?: MessageParams;
 }
 
-/** Uma mensagem do catálogo `spec` já preenchida, para o `addIssue`. */
+/** A `spec` catalog message already filled in, for `addIssue`. */
 export interface SpecMsg {
   readonly code: SpecMessageCode;
   readonly params: MessageParams;
@@ -32,7 +32,7 @@ export function specMsg(code: SpecMessageCode, params: MessageParams = {}): Spec
   return { code, params, text: fillTemplate(MODEL_MESSAGE_TEMPLATES[code], params) };
 }
 
-/** O erro de caminho do pacote como mensagem com código (o texto do catálogo, sem duplicá-lo). */
+/** The package path error as a message with a code (the catalog's text, without duplicating it). */
 export function packagePathMsg(error: PackagePathError): SpecMsg {
   return error.kind === 'path'
     ? specMsg('spec.packagePathInvalid')
@@ -40,9 +40,9 @@ export function packagePathMsg(error: PackagePathError): SpecMsg {
 }
 
 /**
- * O erro do `parsePath` (texto fixo do leitor de caminhos, que devolve só texto) na mensagem com
- * código da variante. Serve a `spec.ts` (`fieldPathProblem`) e a `components/origin.ts`
- * (`checkPath`); fica aqui porque `origin.ts` não pode importar `spec.ts` (ciclo).
+ * The `parsePath` error (fixed text from the path reader, which returns only text) as the message with
+ * the variant's code. Serves `spec.ts` (`fieldPathProblem`) and `components/origin.ts`
+ * (`checkPath`); it lives here because `origin.ts` cannot import `spec.ts` (cycle).
  */
 export function pathErrorMsg(path: string, error: string): SpecMsg {
   const index = /^índice inválido: \[(.*)\]$/s.exec(error)?.[1];
@@ -59,7 +59,7 @@ export function pathErrorMsg(path: string, error: string): SpecMsg {
 
 const quoted = (keys: readonly string[]): string => keys.map((k) => `"${k}"`).join(', ');
 
-/** Reemite no `ctx`: o texto fixo como veio, ou a mensagem do catálogo com o `messageCode`. */
+/** Re-emits on `ctx`: the fixed text as it came, or the catalog message with the `messageCode`. */
 export function addSpecIssue(
   ctx: z.RefinementCtx,
   path: (string | number)[],
@@ -77,7 +77,7 @@ export function addSpecIssue(
   });
 }
 
-/** O nome do tipo do valor recebido (`string`, `number`, `boolean`, `object`, `array`, `null`, `undefined`). */
+/** The type name of the received value (`string`, `number`, `boolean`, `object`, `array`, `null`, `undefined`). */
 export function receivedName(input: unknown): string {
   if (input === null) return 'null';
   if (Array.isArray(input)) return 'array';
@@ -86,7 +86,7 @@ export function receivedName(input: unknown): string {
 
 const ZOD_DEFAULT = /^(Invalid |Too (small|big): |Unrecognized keys?: )/;
 
-/** Os parâmetros do texto padrão de cada código do zod (o `input` vem do `reportInput`). */
+/** The parameters of the default text of each zod code (the `input` comes from `reportInput`). */
 function zodParams(issue: z.core.$ZodIssue): MessageParams {
   switch (issue.code) {
     case 'invalid_type':
@@ -132,7 +132,7 @@ function explicitCoding(issue: z.core.$ZodIssue): IssueCoding | undefined {
     : { code };
 }
 
-/** A mensagem pronta (`known`) cujo texto é o do problema; os parâmetros são os dela. */
+/** The ready-made message (`known`) whose text is the problem's; the parameters are its own. */
 function knownCoding(
   issue: z.core.$ZodIssue,
   known: readonly SpecMsg[],
@@ -144,7 +144,7 @@ function knownCoding(
     : { code: msg.code };
 }
 
-/** O código achado pelo texto: o exato dos modelos sem parâmetro, ou o padrão dos três enums. */
+/** The code found by the text: the exact one of the models without parameters, or the pattern of the three enums. */
 function textCoding(issue: z.core.$ZodIssue): IssueCoding | undefined {
   const hit = specCodeForText(issue.message);
   if (hit === undefined) return undefined;
@@ -154,8 +154,8 @@ function textCoding(issue: z.core.$ZodIssue): IssueCoding | undefined {
 }
 
 /**
- * O código e os parâmetros do problema do zod; `undefined` fica como texto cru. `known` são as
- * mensagens prontas com valores constantes que o schema entrega ao zod (achadas pelo texto exato).
+ * The code and parameters of the zod problem; `undefined` stays as raw text. `known` are the
+ * ready-made messages with constant values that the schema hands to zod (found by exact text).
  */
 export function issueCoding(
   issue: z.core.$ZodIssue,
@@ -170,9 +170,9 @@ export function issueCoding(
 }
 
 /**
- * Reemite no `ctx` um problema de outro schema, sob `prefix`, com o mesmo código. Com
- * `localizeKeys`, a propriedade a mais (`unrecognized_keys`) sai na mensagem própria da
- * especialização, no molde dos outros erros; sem ele, o texto do zod segue como veio.
+ * Re-emits on `ctx` a problem of another schema, under `prefix`, with the same code. With
+ * `localizeKeys`, the extra property (`unrecognized_keys`) comes out in the specialization's own
+ * message, in the mold of the other errors; without it, zod's text stays as it came.
  */
 export function forwardIssue(
   ctx: z.RefinementCtx,

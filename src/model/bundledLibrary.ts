@@ -6,24 +6,24 @@ import { applySpecialization, type SpecOpOptions } from './specializations';
 import { getSpecialization } from './specLookup';
 import type { Project } from './types';
 
-// Biblioteca embutida no build (etapa Marcações espaciais, ME3): um pacote comum (a pasta da
-// especialização) que a app e o MCP aplicam por padrão. O núcleo não sabe o que ela desenha;
-// quem a embute (`libraries/<id>/index.ts`) entrega os arquivos já como texto. Funções puras:
-// quem grava os arquivos (a sessão, o armazenamento, o MCP) fica fora do modelo.
+// Library bundled into the build (Spatial markings stage, ME3): an ordinary package (the
+// specialization's folder) that the app and the MCP apply by default. The core does not know what
+// it draws; whoever bundles it (`libraries/<id>/index.ts`) hands over the files already as text.
+// Pure functions: whoever writes the files (the session, the storage, the MCP) stays outside the model.
 
-/** Um pacote embutido: `files` mapeia o caminho dentro da pasta do pacote ao texto. */
+/** A bundled package: `files` maps the path inside the package folder to the text. */
 export interface BundledLibrary {
   readonly id: string;
-  /** Arquivo da especialização dentro de `files` (`notas.spec.json`). */
+  /** Specialization file inside `files` (`notas.spec.json`). */
   readonly specFile: string;
   readonly files: ReadonlyMap<string, string>;
 }
 
-/** O que `applyBundledLibrary` devolve: o projeto e o pacote para o cache da sessão. */
+/** What `applyBundledLibrary` returns: the project and the package for the session cache. */
 export interface AppliedBundledLibrary {
   readonly project: Project;
   readonly spec: Spec;
-  /** Os arquivos do pacote **sem** o da especialização (que vive no projeto). */
+  /** The package files **without** the specialization one (which lives in the project). */
   readonly packageFiles: ReadonlyMap<string, string>;
 }
 
@@ -31,12 +31,12 @@ function readSpec(library: BundledLibrary): Spec {
   const text = library.files.get(library.specFile);
   if (text === undefined) return fail('not-found', library.specFile);
   const parsed = parseSpecText(text);
-  // Um pacote embutido inválido é bug do build (o teste do pacote o pega): nunca chega à pessoa.
+  // An invalid bundled package is a build bug (the package test catches it): it never reaches the person.
   if (!parsed.ok) return fail('not-found', `${library.id}: ${parsed.errors.join('; ')}`);
   return parsed.spec;
 }
 
-/** O projeto já tem a especialização do pacote (aplicada por padrão ou pela pessoa)? */
+/** Does the project already have the package's specialization (applied by default or by the person)? */
 export function hasBundledLibrary(
   p: Project,
   library: Pick<BundledLibrary, 'id'>,
@@ -45,8 +45,8 @@ export function hasBundledLibrary(
 }
 
 /**
- * Aplica o pacote embutido como qualquer biblioteca (`applySpecialization`, com a cópia em
- * `specs/<id>/`). Falha com `spec-already-applied` se o projeto já a tem.
+ * Applies the bundled package like any library (`applySpecialization`, with the copy in
+ * `specs/<id>/`). Fails with `spec-already-applied` if the project already has it.
  */
 export function applyBundledLibrary(
   p: Project,
@@ -64,9 +64,9 @@ export function applyBundledLibrary(
 }
 
 /**
- * Todos os arquivos do pacote como ficam no disco do projeto: caminho a partir da raiz
- * (`specs/notas/notas.spec.json`, `specs/notas/docs/nota.md`…) → texto. Para criar o projeto
- * já com a biblioteca gravada (projeto novo), sem esperar a primeira gravação da sessão.
+ * All the package files as they sit on the project's disk: path from the root
+ * (`specs/notas/notas.spec.json`, `specs/notas/docs/nota.md`…) → text. To create the project
+ * with the library already written (new project), without waiting for the session's first write.
  */
 export function bundledLibraryDiskFiles(
   p: Project,

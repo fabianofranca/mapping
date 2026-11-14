@@ -3,21 +3,21 @@ import type { ItemKind } from './itemRef';
 import { fail } from './errors';
 import type { Project } from './types';
 
-// Gramática completa da referência `mapping://` (etapa dos comentários, decisão 27):
+// Full grammar of the `mapping://` reference (comments stage, decision 27):
 //
-//   mapping://<projeto>/<m|i|a|p|l|c>/<código>             item, proposta, camada, conversa
-//   mapping://<projeto>/a/<código>/f/<campo>               campo tipado (a key, codificada)
-//   mapping://<projeto>/a/<código>/e/<código>              par da anotação livre
-//   mapping://<projeto>/a/<código>/f/<campo>/r/<código>    linha de table
+//   mapping://<project>/<m|i|a|p|l|c>/<code>              item, proposal, layer, thread
+//   mapping://<project>/a/<code>/f/<field>                typed field (the key, encoded)
+//   mapping://<project>/a/<code>/e/<code>                 entry of the free annotation
+//   mapping://<project>/a/<code>/f/<field>/r/<code>       table row
 //
-// As letras e os segmentos vêm depois do código, nunca como sufixo. A leitura é estrita:
-// qualquer sufixo extra, `?`, `#`, espaço no meio, segmento vazio ou letra desconhecida dá
-// `null`. `parseRef`/`ParsedRef` (m|i|a) em `itemRef.ts` seguem como estavam; esta é a API
-// adicional. Os links dos documentos da biblioteca (`mapping://<typeId>` e
-// `mapping://<specId>/<typeId>`) têm no máximo dois segmentos e a nova gramática exige o
-// segundo ser uma letra e ter um código depois: nunca se confundem.
+// The letters and segments come after the code, never as a suffix. Reading is strict:
+// any extra suffix, `?`, `#`, inner space, empty segment or unknown letter gives
+// `null`. `parseRef`/`ParsedRef` (m|i|a) in `itemRef.ts` stay as they were; this is the
+// additional API. The library document links (`mapping://<typeId>` and
+// `mapping://<specId>/<typeId>`) have at most two segments and the new grammar requires the
+// second to be a letter followed by a code: they are never confused.
 
-/** Letras de referência: as de `ItemKind` mais proposta (`p`), camada (`l`) e conversa (`c`). */
+/** Reference letters: those of `ItemKind` plus proposal (`p`), layer (`l`) and thread (`c`). */
 export type AnyRefKind = ItemKind | 'p' | 'l' | 'c';
 
 export const ANY_REF_KINDS: readonly AnyRefKind[] = ['m', 'i', 'a', 'p', 'l', 'c'];
@@ -26,24 +26,24 @@ export interface ItemAnyRef {
   readonly type: 'item';
   readonly kind: AnyRefKind;
   /**
-   * `m`, `i`, `a`: normalizado (sem hífens, minúsculo), como em `parseRef`. `p`, `l`, `c`:
-   * como veio (ids de proposta têm ponto e sublinhado); quem compara usa `normalizeId`.
+   * `m`, `i`, `a`: normalized (no hyphens, lowercase), as in `parseRef`. `p`, `l`, `c`:
+   * as received (proposal ids have dots and underscores); whoever compares uses `normalizeId`.
    */
   readonly code: string;
 }
 
 export interface FieldAnyRef {
   readonly type: 'field';
-  /** Código da anotação (normalizado). */
+  /** Annotation code (normalized). */
   readonly annotation: string;
-  /** A key do campo, já decodificada. */
+  /** The field's key, already decoded. */
   readonly key: string;
 }
 
 export interface EntryAnyRef {
   readonly type: 'entry';
   readonly annotation: string;
-  /** Código do par entre os pares da anotação (como veio). */
+  /** Code of the entry among the annotation's entries (as received). */
   readonly entry: string;
 }
 
@@ -51,29 +51,29 @@ export interface RowAnyRef {
   readonly type: 'row';
   readonly annotation: string;
   readonly key: string;
-  /** Código da linha entre as linhas da table (como veio). */
+  /** Code of the row among the table's rows (as received). */
   readonly row: string;
 }
 
-/** Sub-referência: uma parte de uma anotação. */
+/** Sub-reference: a part of an annotation. */
 export type SubRef = FieldAnyRef | EntryAnyRef | RowAnyRef;
 
 export type AnyRef = ItemAnyRef | SubRef;
 
 export interface ParsedAnyRef {
-  /** Nome da pasta do projeto, decodificado; `null` nas formas curtas. */
+  /** Project folder name, decoded; `null` in the short forms. */
   readonly project: string | null;
   readonly ref: AnyRef;
 }
 
-/** `mapping://<projeto>/…` a partir de uma referência de qualquer forma. */
+/** `mapping://<project>/…` from a reference of any form. */
 export function formatAnyRef(project: string, ref: AnyRef): string {
   const base = `${REF_SCHEME}${encodeRefSegment(project)}`;
   if (ref.type === 'item') return `${base}/${ref.kind}/${ref.code}`;
   return `${base}/${subPath(ref)}`;
 }
 
-/** `mapping://<projeto>/a/<código>/f/<campo>[/r/<código>]` ou `…/e/<código>`. */
+/** `mapping://<project>/a/<code>/f/<field>[/r/<code>]` or `…/e/<code>`. */
 export function formatSubRef(project: string, ref: SubRef): string {
   return formatAnyRef(project, ref);
 }
@@ -85,9 +85,9 @@ function subPath(ref: SubRef): string {
 }
 
 const SEGMENT = /^(?:[A-Za-z0-9\-._~]|%[0-9A-Fa-f]{2})+$/;
-/** Código de m, i e a (e o da anotação nas sub-referências): como em `parseRef`. */
+/** Code of m, i and a (and the annotation's in sub-references): as in `parseRef`. */
 const CODE_ITEM = /^[0-9a-zA-Z-]+$/;
-/** Código de p, l, c, e, r: aceita ponto e sublinhado. */
+/** Code of p, l, c, e, r: accepts dot and underscore. */
 const CODE_WIDE = /^[0-9a-zA-Z._-]+$/;
 
 function decodeSegment(segment: string): string | null {
@@ -148,9 +148,9 @@ function parseTail(segs: readonly string[]): AnyRef | null {
 }
 
 /**
- * Interpreta a referência em qualquer forma: a URL completa (`mapping://projeto/…`) ou a
- * curta (`a/<código>/f/<campo>`, `c/<código>`…), esta com `project: null`. O `<campo>` é
- * decodificado (`%` inválido dá `null`). Não aceita código solto (isso é do `parseRef`).
+ * Parses the reference in any form: the full URL (`mapping://project/…`) or the short one
+ * (`a/<code>/f/<field>`, `c/<code>`…), the latter with `project: null`. The `<field>` is
+ * decoded (an invalid `%` gives `null`). Does not accept a bare code (that is `parseRef`'s job).
  */
 export function parseAnyRef(text: string): ParsedAnyRef | null {
   const input = text.trim();
@@ -165,11 +165,11 @@ export function parseAnyRef(text: string): ParsedAnyRef | null {
   return ref && { project: null, ref };
 }
 
-// ------------------------------------------------------------ camada e conversa
+// ------------------------------------------------------------ layer and thread
 
 const layerCache = new WeakMap<Project, ReadonlyMap<string, string>>();
 
-/** Código curto de cada camada do projeto, único entre elas (memoizado por projeto). */
+/** Short code of each project layer, unique among them (memoized per project). */
 export function layerShortCodes(p: Project): ReadonlyMap<string, string> {
   const cached = layerCache.get(p);
   if (cached) return cached;
@@ -178,14 +178,14 @@ export function layerShortCodes(p: Project): ReadonlyMap<string, string> {
   return codes;
 }
 
-/** Código curto da camada `id`. Falha com `not-found` se ela não existir. */
+/** Short code of layer `id`. Fails with `not-found` if it does not exist. */
 export function layerShortCode(p: Project, id: string): string {
   return layerShortCodes(p).get(id) ?? fail('not-found', id);
 }
 
 /**
- * Ids de camada que o código designa: o id cujo normalizado é exatamente o código (vence)
- * ou, na falta dele, todos os que começam com o código.
+ * Layer ids that the code designates: the id whose normalized form is exactly the code (wins)
+ * or, failing that, all those that start with the code.
  */
 export function matchLayerCode(p: Project, code: string): readonly string[] {
   const wanted = normalizeId(code);
@@ -197,7 +197,7 @@ export function matchLayerCode(p: Project, code: string): readonly string[] {
   return exact.length > 0 ? exact : ids;
 }
 
-/** Código curto de cada conversa, único entre as do projeto (abertas e resolvidas). */
+/** Short code of each thread, unique among the project's (open and resolved). */
 export function threadShortCodes(ids: readonly string[]): ReadonlyMap<string, string> {
   return shortCodesFor(ids);
 }

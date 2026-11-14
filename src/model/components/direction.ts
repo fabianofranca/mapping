@@ -1,13 +1,15 @@
 /**
- * Direção de leitura no motor dos componentes (etapa #1096, R1; formatVersion 4): resolve a direção
- * efetiva de cada nó do template antes de o motor medir e posicionar. Funções puras, sem DOM.
+ * Reading direction in the component engine (stage #1096, R1; formatVersion 4): resolves the
+ * effective direction of each template node before the engine measures and positions. Pure
+ * functions, no DOM.
  *
- * - A raiz segue a direção da instância (`options.direction`, padrão `ltr`); `direction` num nó
- *   (literal `ltr`/`rtl`) a fixa para ele e para a subárvore.
- * - Todo nó sai com `direction` já escrito (a efetiva), e a condição `{ "$direction": "rtl" }` vira
- *   o literal (`{ "$and": [] }` verdadeiro, `{ "$or": [] }` falso) pela direção do nó em que está.
- * - Sem `rtl` na instância e sem `direction`/`$direction` no template nada se reescreve: o motor lê
- *   `ltr` de todo nó e o desenho de hoje não muda.
+ * - The root follows the instance's direction (`options.direction`, default `ltr`); `direction` on
+ *   a node (literal `ltr`/`rtl`) pins it for that node and for the subtree.
+ * - Every node comes out with `direction` already written (the effective one), and the condition
+ *   `{ "$direction": "rtl" }` becomes the literal (`{ "$and": [] }` true, `{ "$or": [] }` false)
+ *   by the direction of the node it is in.
+ * - Without `rtl` on the instance and without `direction`/`$direction` in the template nothing is
+ *   rewritten: the engine reads `ltr` on every node and today's drawing does not change.
  */
 import type { Direction, TemplateNode } from './componentFormat';
 
@@ -16,8 +18,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * A direção que o próprio nó fixa (`direction` literal), se fixa. O `repeat` não conta: nele
- * `direction` continua sendo o empilhamento das linhas (`row`/`column`).
+ * The direction the node itself pins (literal `direction`), if it pins one. `repeat` does not
+ * count: on it `direction` remains the stacking of the rows (`row`/`column`).
  */
 export function ownDirection(node: TemplateNode): Direction | undefined {
   if (node.type === 'repeat') return undefined;
@@ -26,7 +28,7 @@ export function ownDirection(node: TemplateNode): Direction | undefined {
     : undefined;
 }
 
-/** Algum par chave/valor da árvore (em qualquer profundidade) passa por `hit`? */
+/** Does any key/value pair of the tree (at any depth) pass `hit`? */
 function someEntry(
   tree: unknown,
   hit: (key: string, value: unknown) => boolean,
@@ -38,25 +40,26 @@ function someEntry(
   );
 }
 
-/** `direction` literal num nó (no `repeat` o valor é `row`/`column`, que não entra) ou `$direction`. */
+/** Literal `direction` on a node (on `repeat` the value is `row`/`column`, which does not count) or `$direction`. */
 const directionEntry = (key: string, value: unknown): boolean =>
   key === '$direction' || (key === 'direction' && (value === 'ltr' || value === 'rtl'));
 
-/** O template cita `direction` num nó ou `$direction` numa condição? */
+/** Does the template mention `direction` on a node or `$direction` in a condition? */
 export function usesDirection(tree: unknown): boolean {
   return someEntry(tree, directionEntry);
 }
 
-/** `anchors` com âncora lógica: em `rtl` ela troca de lado e pode perder de uma física do mesmo lado. */
+/** `anchors` with a logical anchor: in `rtl` it swaps sides and can lose to a physical one on the same side. */
 const logicalAnchorEntry = (key: string, value: unknown): boolean =>
   key === 'anchors' && isRecord(value) && ('start' in value || 'end' in value);
 
 /**
- * A árvore pede uma passada em `rtl`? Sim quando ela fala de direção (`usesDirection`), espelha
- * (`mirror: true`) ou tem âncora lógica — os três casos que mudam o resultado, e não só o lado:
- * a condição muda o que entra na cena, e a âncora lógica que perde de uma física muda o tamanho.
- * Fora isso o `rtl` é o espelho exato do `ltr` (os mesmos tamanhos, porque a medida do texto e o
- * `font.align` não mexem na largura), então nenhum aviso é novo e a passada se dispensa.
+ * Does the tree need a pass in `rtl`? Yes when it talks about direction (`usesDirection`), mirrors
+ * (`mirror: true`) or has a logical anchor — the three cases that change the result, not just the
+ * side: the condition changes what enters the scene, and a logical anchor that loses to a physical
+ * one changes the size. Apart from that `rtl` is the exact mirror of `ltr` (the same sizes, because
+ * the text measurement and `font.align` do not affect the width), so no warning is new and the
+ * pass is skipped.
  */
 export function isDirectionSensitive(tree: unknown): boolean {
   return someEntry(
@@ -68,7 +71,7 @@ export function isDirectionSensitive(tree: unknown): boolean {
   );
 }
 
-/** Troca cada `{ "$direction": x }` do valor pelo literal da direção `dir`. */
+/** Replaces each `{ "$direction": x }` in the value with the literal of the direction `dir`. */
 function fixConditions(value: unknown, dir: Direction): unknown {
   if (Array.isArray(value)) return value.map((item) => fixConditions(item, dir));
   if (!isRecord(value)) return value;
@@ -80,7 +83,7 @@ function fixConditions(value: unknown, dir: Direction): unknown {
   return out;
 }
 
-/** O nó com a direção efetiva escrita, as condições `$direction` resolvidas e os filhos também. */
+/** The node with the effective direction written, the `$direction` conditions resolved and the children too. */
 function resolveNode(node: TemplateNode, inherited: Direction): TemplateNode {
   const dir: Direction = ownDirection(node) ?? inherited;
   const out: Record<string, unknown> = {};
@@ -94,8 +97,8 @@ function resolveNode(node: TemplateNode, inherited: Direction): TemplateNode {
 }
 
 /**
- * A árvore com a direção efetiva em todo nó (ver o comentário do topo). Devolve o próprio `template`
- * quando nada o pede (`root` `ltr` e nenhum `direction`/`$direction` nele).
+ * The tree with the effective direction on every node (see the comment at the top). Returns the
+ * `template` itself when nothing asks for it (`root` `ltr` and no `direction`/`$direction` in it).
  */
 export function resolveDirections<T extends TemplateNode>(
   template: T,
