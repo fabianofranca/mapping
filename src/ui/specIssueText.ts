@@ -3,7 +3,7 @@ import { messageText } from './modelMessage';
 
 /**
  * The translated text of a specialization problem: with a catalog `code`, in the app's language
- * (`messageText`); without it, the model's Portuguese `message`.
+ * (`messageText`); without it, the model's own `message`.
  */
 export function specIssueText(issue: {
   readonly code?: string | undefined;

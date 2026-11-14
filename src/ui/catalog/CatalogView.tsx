@@ -9,30 +9,30 @@ import { LibraryIssueList } from '../LibraryIssueList';
 import { CatalogPage } from './CatalogPage';
 import { type CatalogRenderer, defaultCatalogRenderer } from './renderer';
 
-// Catálogo de uma biblioteca: validação no topo, lista dos componentes por camada (com busca)
-// e a página do componente. `split`: lista e página lado a lado (tela inicial); `list`: só a
-// lista, e a página abre num diálogo (janela estreita do editor). Só apresentação.
+// Catalog of a library: validation at the top, list of components by layer (with search)
+// and the component page. `split`: list and page side by side (home screen); `list`: only the
+// list, and the page opens in a dialog (narrow editor window). Presentation only.
 
 export interface CatalogViewProps {
   readonly catalog: Catalog;
-  /** Id da especialização (chave do cache de imagens e do destino `mapping://<specId>/<typeId>`). */
+  /** Id of the specialization (key of the image cache and of the destination `mapping://<specId>/<typeId>`). */
   readonly specId: string;
   readonly version: number;
   readonly fontsEpoch?: number;
-  /** Projeto aberto: com ele o `path` do código vira link do repositório. */
+  /** Open project: with it the code `path` becomes a repository link. */
   readonly project?: Project | null;
   readonly layout: 'split' | 'list';
   readonly onAddToScreen?: (typeId: string) => void;
   /** Motivo de o Adicionar estar desabilitado (vira o `title`). */
   readonly addDisabledReason?: string;
   readonly initialTypeId?: string;
-  /** Medidor, rasterizador e cache; o padrão usa o Konva (testes injetam um falso). */
+  /** Measurer, rasterizer and cache; the default uses Konva (tests inject a fake). */
   readonly renderer?: CatalogRenderer;
 }
 
 const ISSUES_COLLAPSE_AT = 6;
 
-/** Resolve `mapping://<specId>/<typeId>` (ou `mapping://<typeId>`); `null` se não bate. */
+/** Resolves `mapping://<specId>/<typeId>` (or `mapping://<typeId>`); `null` if it does not match. */
 export function resolveCatalogLink(
   catalog: Catalog,
   specId: string,
@@ -119,11 +119,11 @@ export function CatalogView({
     }
   };
 
-  // Navegar para um componente abre a página no topo (tela cheia e diálogo).
+  // Navigating to a component opens the page at the top (full screen and dialog).
   useEffect(() => {
     if (navigation === 0) return;
     if (detailRef.current !== null) detailRef.current.scrollTop = 0;
-    // No diálogo, quem rola é um ancestral do conteúdo: zera todos até o próprio diálogo.
+    // In the dialog, the scroller is an ancestor of the content: resets all up to the dialog itself.
     for (
       let el = dialogContentRef.current?.parentElement;
       el && el.getAttribute('role') !== 'dialog';
@@ -142,7 +142,7 @@ export function CatalogView({
     select(typeId);
   };
 
-  // Setas movem o foco entre os itens da lista (Enter/Espaço ativam o botão).
+  // Arrows move focus between list items (Enter/Space activate the button).
   const onListKeyDown = (e: KeyboardEvent) => {
     if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
     const items = [
@@ -229,7 +229,7 @@ export function CatalogView({
                     {layer.entries.map((entry) => {
                       return (
                         <li key={entry.type.id}>
-                          {/* Exceção ao Button: opção da lista de tipos do catálogo (docs/DESIGN-SYSTEM.md, "Botões avulsos") */}
+                          {/* Exceção ao Button: list option of catalog types (docs/DESIGN-SYSTEM.md, "Botões avulsos") */}
                           <button
                             type="button"
                             class="catalog-entry"

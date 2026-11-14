@@ -12,8 +12,9 @@ interface ContainerDrawingModeFieldProps {
 }
 
 /**
- * Drawing mode of the container (v18): "Follow the project" (empty value, `null`) or one of the modes
- * of the specializations. It only appears with declared modes or with a mode already set on the container.
+ * Drawing mode of the container (v18): "Follow the project" (empty value, `null`) or one of
+ * the modes of the specializations. It only appears with declared modes or with a mode already
+ * set on the container.
  */
 export function ContainerDrawingModeField({
   image,

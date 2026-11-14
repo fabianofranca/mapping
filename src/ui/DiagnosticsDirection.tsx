@@ -4,9 +4,10 @@ import { imageLabel } from './labels';
 import { directionLabel } from './readingDirections';
 
 /**
- * Direção de leitura (somente leitura): a do projeto e os containers que fixam uma direção
- * diferente dela. Só aparece quando o projeto ou algum container está em `rtl`; num projeto
- * todo `ltr` não há nada a mostrar. O projeto vem de quem monta (o Diagnóstico, que lê o projeto real).
+ * Reading direction (read-only): the project's and the containers that fix a direction different
+ * from it. It only appears when the project or some container is `rtl`; in a project that is all
+ * `ltr` there is nothing to show. The project comes from whoever mounts it (Diagnostics, which
+ * reads the real project).
  */
 export function DiagnosticsDirection({ project }: { readonly project: Project }) {
   const own = effectiveDirection(project, null);

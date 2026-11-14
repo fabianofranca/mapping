@@ -11,16 +11,16 @@ import { Property } from './PropertyGrid';
 interface ContainerDensityFieldProps {
   readonly image: ProjectContainer;
   readonly disabled: boolean;
-  /** Marcador e nota da mudança, na revisão (pelo ponto de extensão dos Detalhes). */
+  /** Marker and note of the change, in review (through the Details extension point). */
   readonly mark?: ComponentChildren;
   readonly below?: ComponentChildren;
 }
 
 /**
- * Densidade do container (v19): quantos pixels da imagem vale uma unidade do componente. Lista
- * pronta (1x a 4x) e "Personalizada"; a sugestão pelos tamanhos prontos das especializações
- * ("Sugestão: 3x (Celular 360 × 800)") aparece quando difere do valor, com o botão Aplicar. Nunca
- * se aplica sozinha.
+ * Container density (v19): how many image pixels one unit of the component is worth. Ready list (1x
+ * to 4x) and "Custom"; the suggestion from the specializations' ready sizes ("Suggestion: 3x (Phone
+ * 360 × 800)") shows when it differs from the value, with the Apply button. It is never applied on
+ * its own.
  */
 export function ContainerDensityField({
   image,

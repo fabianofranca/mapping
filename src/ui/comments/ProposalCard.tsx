@@ -5,8 +5,8 @@ import { useEditor } from '../EditorContext';
 import { Icon } from '../icons';
 import { openReviewIn } from '../review/useReviewCommands';
 
-// The proposal card in a thread (decision 36): the message with `proposal` shows the proposal's title,
-// how many changes are left to review and the button that opens the review. The message text
+// The proposal card in a thread (decision 36): the message with `proposal` shows the proposal's
+// title, how many changes are left to review and the button that opens the review. The message text
 // stays below the card.
 
 /** "N change(s) to review" (with the singular) or, once decided, the state in short text. */

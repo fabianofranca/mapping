@@ -2,7 +2,7 @@ import { locale } from '../store/settings';
 
 const UNITS = ['B', 'KB', 'MB', 'GB'] as const;
 
-/** Tamanho legível ("1,4 MB"), no idioma da interface. */
+/** Readable size ("1.4 MB"), in the interface's language. */
 export function formatBytes(bytes: number): string {
   let value = Math.max(0, bytes);
   let unit = 0;

@@ -13,7 +13,10 @@ export const CUSTOM_DENSITY = 'custom';
 export const isDensityChoice = (value: number): boolean =>
   DENSITY_CHOICES.includes(value);
 
-/** The number in the interface language (1,5 in pt-BR; 1.5 in en-US), with up to 6 decimals (the MCP saves any value from 0.5 to 8). */
+/**
+ * The number in the interface language (1,5 in pt-BR; 1.5 in en-US), with up to 6 decimals
+ * (the MCP saves any value from 0.5 to 8).
+ */
 export function formatDensity(value: number): string {
   try {
     return new Intl.NumberFormat(locale.value, { maximumFractionDigits: 6 }).format(

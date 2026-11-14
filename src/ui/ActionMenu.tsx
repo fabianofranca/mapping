@@ -21,7 +21,7 @@ export interface ActionMenuItem {
   readonly danger?: boolean;
   /** The item that marks where one is (`aria-current`), like the last segment of a path. */
   readonly current?: boolean;
-  /** Liga/desliga: o item vira `menuitemcheckbox` e mostra o estado marcado. */
+  /** Toggle: the item becomes a `menuitemcheckbox` and shows the checked state. */
   readonly checked?: boolean;
   /** Shortcut, to the right of the text. */
   readonly shortcut?: string;

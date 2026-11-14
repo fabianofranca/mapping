@@ -10,21 +10,21 @@ import {
 } from '../../model';
 import { useEditor } from '../EditorContext';
 
-// O contexto das citações para a interface (etapa Comentários, CM5): o projeto à vista, todas as
-// conversas (abertas e resolvidas) e as propostas carregadas. Quem resolve, rotula ou busca
-// alvos usa o modelo (`src/model/citations.ts`); aqui só se monta o que ele pede.
+// The citations context for the interface (Comments stage, CM5): the project in view, all the
+// threads (open and resolved) and the loaded proposals. Whoever resolves, labels or searches
+// targets uses the model (`src/model/citations.ts`); here we only build what it asks for.
 
 export interface CitationUiContext extends CitationContext {
-  /** O `<projeto>` das URLs `mapping://`: a pasta no disco ou, no modo local, o nome do projeto. */
+  /** The `<project>` of the `mapping://` URLs: the folder on disk or, in local mode, the project name. */
   readonly projectName: string;
 }
 
 const subjectOf = (thread: Thread): string => threadSubject(thread);
 
 /**
- * O contexto de citações do projeto à vista (`review.derived.shownProject`, que segue a visão
- * Atual/Proposto), ou `null` sem projeto. Lê os signals no render, então quem usa re-renderiza
- * quando o projeto, as conversas ou as propostas mudam.
+ * The citations context of the project in view (`review.derived.shownProject`, which follows the
+ * Current/Proposed view), or `null` without a project. It reads the signals at render time, so
+ * whoever uses it re-renders when the project, the threads or the proposals change.
  */
 export function useCitationContext(): CitationUiContext | null {
   const { session, review } = useEditor();
@@ -51,22 +51,22 @@ export function useCitationContext(): CitationUiContext | null {
   );
 }
 
-/** O texto neutro do que não tem nome (rótulo do chip e valor gravado no link). */
+/** The neutral text for what has no name (chip label and the value stored in the link). */
 export function citationNameFallback(): string {
   return t('citation.unnamed');
 }
 
 /** Como um chip aparece: o nome, se o alvo sumiu e, achado, o alvo (para o clique). */
 export interface CitationView {
-  /** O nome vivo; sem nome, o texto neutro; quebrada, o rótulo de reserva. */
+  /** The live name; without a name, the neutral text; broken, the fallback label. */
   readonly name: string;
   readonly broken: boolean;
   readonly target: CitationTarget | null;
 }
 
 /**
- * Resolve `url` no projeto à vista e calcula o nome do chip (decisão 29). `label` é a reserva
- * de quando o alvo não existe mais; sem contexto (sem projeto), o chip fica quebrado.
+ * Resolves `url` in the project in view and computes the chip name (decision 29). `label` is the
+ * fallback for when the target no longer exists; without context (no project), the chip is broken.
  */
 export function describeCitation(
   ctx: CitationContext | null,

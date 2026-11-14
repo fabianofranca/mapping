@@ -8,8 +8,8 @@ import { Icon } from './icons';
 import { Popover } from './Popover';
 import { perspectiveContentText } from './perspectiveContentText';
 
-// Seletor de perspectivas da barra principal (etapa #659, PE3): o botão mostra a aberta e
-// quem a vê; a lista tem o grupo "Para todos" (Principal primeiro) e o "Só minhas".
+// Perspective picker of the main bar (stage #659, PE3): the button shows the open one and
+// who sees it; the list has the "For everyone" group (Main first) and "Only mine".
 
 const STOPS = '[role="option"], .perspective-action';
 
@@ -22,7 +22,7 @@ interface RowProps {
 
 function Row({ name, note, selected, onPick }: RowProps) {
   return (
-    /* Exceção ao Button: opção da lista (role="option") (docs/DESIGN-SYSTEM.md, "Botões avulsos") */
+    /* Exception to Button: list option (role="option") (docs/DESIGN-SYSTEM.md, "Loose buttons") */
     <button
       type="button"
       role="option"
@@ -40,7 +40,7 @@ function Row({ name, note, selected, onPick }: RowProps) {
   );
 }
 
-/** ↑/↓ andam em círculo entre as linhas e os botões da lista. */
+/** ↑/↓ cycle among the rows and the list's buttons. */
 function moveKeys(root: HTMLElement | null, e: KeyboardEvent): void {
   if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
   e.preventDefault();
@@ -62,7 +62,7 @@ function PickerList({ dialogs, close }: ListProps) {
   const openId = session.perspective.id.value;
   const localIds = session.perspective.localIds.value;
 
-  // O foco entra na linha aberta, no mesmo commit que abre a lista.
+  // Focus enters the open row, in the same commit that opens the list.
   useLayoutEffect(() => {
     root.current
       ?.querySelector<HTMLElement>('[aria-selected="true"]')
@@ -160,7 +160,7 @@ export function PerspectivePicker({ dialogs }: { readonly dialogs: EditorDialogs
       label={t('perspective.picker.list')}
       trigger={({ open, toggle }) => {
         const button = (
-          /* Exceção ao Button: gatilho com cara de select (menu-trigger) (docs/DESIGN-SYSTEM.md, "Botões avulsos") */
+          /* Exception to Button: select-like trigger (menu-trigger) (docs/DESIGN-SYSTEM.md, "Loose buttons") */
           <button
             type="button"
             class="menu-trigger perspective-trigger"

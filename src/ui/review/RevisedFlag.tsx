@@ -14,10 +14,10 @@ export interface RevisionSummary extends RevisionCounts {
 
 // "Revised" badge (stage #644, CP3): the mark of a change that the agent replaced or
 // added in a revision and that has no decision yet. On the row of an item or image that
-// contains it, the same badge with the general tooltip. The tooltip lives in the Tooltip and the text also goes to the
-// screen reader, inside the badge.
+// contains it, the same badge with the general tooltip. The tooltip lives in the Tooltip and
+// the text also goes to the screen reader, inside the badge.
 
-/** What the badge says: the replaced change, the one new in the revision or a level that contains one of them. */
+/** What the badge says: the replaced change, the new one in the revision or a level containing one. */
 export type RevisedBadge =
   | { readonly kind: 'changed' | 'added'; readonly at: string }
   | { readonly kind: 'contains' };
@@ -33,7 +33,10 @@ export function changeBadge(
   return mark ? { kind: mark.kind, at: mark.at } : null;
 }
 
-/** The badge of an image or item: `contains` if any of its changes has a visible mark (the proposal does not carry it). */
+/**
+ * The badge of an image or item: `contains` if any of its changes has a visible mark (the
+ * proposal does not carry it).
+ */
 export function levelBadge(
   level: string,
   revisedIds: ReadonlySet<string>,

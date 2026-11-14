@@ -16,9 +16,9 @@ import { useThreadAccess } from './threadAccess';
 import { ThreadView } from './ThreadView';
 
 interface ThreadsSectionProps {
-  /** O item (marcação, container ou seta) cujas conversas a seção mostra. */
+  /** The item (marking, container or arrow) whose threads the section shows. */
   readonly itemId: string;
-  /** A âncora de uma conversa nova neste item. */
+  /** The anchor of a new thread on this item. */
   readonly anchor: {
     readonly kind: 'marking' | 'container' | 'arrow';
     readonly id: string;
@@ -26,7 +26,7 @@ interface ThreadsSectionProps {
   readonly onOpenSettings?: () => void;
 }
 
-/** "em <onde>" quando a conversa não é do próprio item (anotação, campo, par, linha). */
+/** "on <where>" when the thread is not the item's own (annotation, field, pair, row). */
 function whereOf(project: Project, itemId: string, anchor: ThreadAnchor): string | null {
   const own = 'id' in anchor && anchor.id === itemId && anchor.kind !== 'annotation';
   return own ? null : anchorLabel(project, anchor);
@@ -80,12 +80,12 @@ function ThreadList({ entries, project, itemId, selectedId }: ThreadListProps) {
 }
 
 interface SectionView {
-  /** As conversas à vista: as abertas e a resolvida escolhida. */
+  /** The threads in view: the open ones and the chosen resolved one. */
   readonly visible: readonly ThreadEntry[];
   readonly selectedId: string | null;
   readonly composing: ThreadAnchor | null;
   readonly openCount: number;
-  /** A conversa mostrada inteira: a escolhida ou a única; nenhuma enquanto se compõe. */
+  /** The thread shown in full: the chosen one or the only one; none while composing. */
   readonly shown: ThreadEntry | null;
 }
 
@@ -152,9 +152,9 @@ function SectionBody({ view, project, itemId, anchor, onOpenSettings }: BodyProp
 }
 
 /**
- * Seção "Conversas" dos Detalhes (decisão 18): sem conversa aberta, o compositor; com uma, ela
- * inteira; com mais de uma, a lista e a escolhida embaixo. A resolvida só aparece escolhida.
- * Some na revisão de proposta.
+ * "Threads" section of the Details (decision 18): with no open thread, the composer; with one, all
+ * of it; with more than one, the list and the chosen one below. A resolved one only shows when
+ * chosen. Hidden in proposal review.
  */
 export function ThreadsSection(props: ThreadsSectionProps) {
   const { ui, derived, store, review } = useEditor();

@@ -10,31 +10,31 @@ import {
 } from './density';
 
 interface DensityControlProps {
-  /** `id` do `Select` (o rótulo de quem usa aponta para ele). */
+  /** `id` of the `Select` (the label of whoever uses it points to it). */
   readonly id?: string;
-  /** A densidade atual (1 quando o container não a declara). */
+  /** The current density (1 when the container does not declare one). */
   readonly value: number;
   readonly disabled?: boolean;
   readonly size?: 'md' | 'sm';
-  /** Marca o campo "Personalizada" como inválido. */
+  /** Marks the "Custom" field as invalid. */
   readonly invalid?: boolean;
   /**
-   * `confirm`: o número digitado só vale ao confirmar (Enter ou sair do campo), para não gerar uma
-   * entrada de desfazer por tecla (Detalhes). `live`: vale a cada tecla (o diálogo, que só grava
-   * ao criar).
+   * `confirm`: the typed number only counts on confirm (Enter or leaving the field), so as not to
+   * generate an undo entry per key (Details). `live`: counts on every key (the dialog, which only
+   * saves on create).
    */
   readonly mode: 'confirm' | 'live';
-  /** Uma densidade válida foi escolhida (da lista ou digitada). */
+  /** A valid density was chosen (from the list or typed). */
   readonly onChange: (density: number) => void;
-  /** O número digitado em "Personalizada" não é de 0,5 a 8. */
+  /** The number typed in "Custom" is not from 0.5 to 8. */
   readonly onInvalid: () => void;
-  /** A pessoa voltou a digitar no campo "Personalizada" (o aviso anterior deixa de valer). */
+  /** The person went back to typing in the "Custom" field (the previous warning no longer holds). */
   readonly onEdit?: () => void;
 }
 
 /**
- * Densidade do container: 1x, 1,5x, 2x, 3x, 4x ou "Personalizada", que abre um campo de número de
- * 0,5 a 8 (aceita 2,625). Um valor fora da lista abre direto em "Personalizada".
+ * Container density: 1x, 1.5x, 2x, 3x, 4x or "Custom", which opens a number field from
+ * 0.5 to 8 (accepts 2.625). A value outside the list opens straight on "Custom".
  */
 export function DensityControl({
   id,
@@ -52,7 +52,7 @@ export function DensityControl({
   const custom = customOpen || !isDensityChoice(value);
   const box = useRef<HTMLDivElement>(null);
   const opened = useRef(false);
-  // Ao abrir pela lista, o foco vai para o campo com o número selecionado (digitar substitui).
+  // When opened from the list, focus goes to the field with the number selected (typing replaces it).
   useEffect(() => {
     if (!customOpen || !opened.current) return;
     const field = box.current?.querySelector('input');

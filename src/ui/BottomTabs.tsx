@@ -7,8 +7,9 @@ import { openToolWindow } from './toolWindowLayout';
 import { toolWindowMeta, windowBadge, windowsOfSide } from './toolWindowMeta';
 
 /**
- * Tabs of the bottom window (List | Incomplete | Warnings | Diagnostics | Proposals | Comments). Incomplete shows
- * how many annotations are pending; Warnings, how many have a specialization warning; Diagnostics, the new-error alert dot (B4).
+ * Tabs of the bottom window (List | Incomplete | Warnings | Diagnostics | Proposals | Comments).
+ * Incomplete shows how many annotations are pending; Warnings, how many have a specialization
+ * warning; Diagnostics, the new-error alert dot (B4).
  */
 export function BottomTabs({ active }: { readonly active: ToolWindowId }) {
   const { derived, review } = useEditor();

@@ -4,8 +4,8 @@ import { Tooltip } from './controls/Tooltip';
 import { Icon } from './icons';
 
 /**
- * Marcador de "este tipo é um container": um ícone discreto, sem pílula. A palavra vem na
- * dica (hover e foco) e no nome acessível (`role="img"`).
+ * Marker of "this type is a container": a discreet icon, with no pill. The word comes in the
+ * hint (hover and focus) and in the accessible name (`role="img"`).
  */
 export function ContainerMark(): JSX.Element {
   const label = t('library.container');

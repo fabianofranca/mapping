@@ -3,9 +3,9 @@ import { t } from '../../i18n';
 import type { CiteCandidate, CiteGroup } from '../../model';
 import { place } from '../Popover';
 
-// The `@` picker in the composer (stage Comments, CM5, decision 31): a floating list of
-// grouped options ("here" first), anchored to the editor. The focus stays in the editor, which points to the
-// active option via `aria-activedescendant`; here it only draws and chooses with the mouse.
+// The `@` picker in the composer (stage Comments, CM5, decision 31): a floating list of grouped
+// options ("here" first), anchored to the editor. The focus stays in the editor, which points to
+// the active option via `aria-activedescendant`; here it only draws and chooses with the mouse.
 
 /** Id of option `index` of list `listId` (the editor uses it in `aria-activedescendant`). */
 export const optionId = (listId: string, index: number): string => `${listId}-${index}`;

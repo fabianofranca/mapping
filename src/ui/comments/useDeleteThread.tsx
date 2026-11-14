@@ -10,9 +10,10 @@ import { actionErrorText } from './commentsText';
 import { impactText } from './deleteText';
 
 // Delete a thread (decision 23): directly when all the messages are the person's own; with the
-// dialog (alert) when there is a message from someone else or from an agent. Whoever uses it puts `dialog` in the
-// tree and calls `request(thread)` from the ⋯ menu. The focus returns to the control that opened (the `Dialog`).
-// If the save fails (#959), the error shows: in the dialog, which stays open, or, on the direct path,
+// dialog (alert) when there is a message from someone else or from an agent. Whoever uses it
+// puts `dialog` in the tree and calls `request(thread)` from the ⋯ menu. The focus returns to
+// the control that opened (the `Dialog`). If the save fails (#959), the error shows: in the
+// dialog, which stays open, or, on the direct path,
 // as a notice in `dialog` itself. The dialog only closes on success.
 
 export interface DeleteThread {

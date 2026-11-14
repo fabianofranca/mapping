@@ -11,27 +11,27 @@ type NativeButton = Omit<
 
 interface IconButtonProps extends NativeButton {
   readonly icon: IconName;
-  /** Nome acessível (e texto da dica, se não houver `tooltip`). */
+  /** Accessible name (and tip text, if there is no `tooltip`). */
   readonly label: string;
-  /** Texto da dica quando difere do nome (ex.: o motivo de o botão estar desabilitado). */
+  /** Tip text when it differs from the name (e.g. why the button is disabled). */
   readonly tooltip?: string;
-  /** `accept` e `reject`: o par ✓ ✕ do `DecisionControl` (revisão de propostas). */
+  /** `accept` and `reject`: the ✓ ✕ pair of `DecisionControl` (proposal review). */
   readonly variant?: 'default' | 'danger' | 'accept' | 'reject';
-  /** `sm`: 24px (linhas e cartões da revisão). */
+  /** `sm`: 24px (review rows and cards). */
   readonly size?: 'md' | 'sm';
-  /** Texto visível ao lado do ícone; sem ele, o botão mostra só o ícone. */
+  /** Visible text beside the icon; without it, the button shows only the icon. */
   readonly text?: string;
   /** Atalho mostrado na dica (e, na sintaxe ARIA, em `aria-keyshortcuts`). */
   readonly shortcut?: string;
-  /** Botão de alternância (ex.: modo): `aria-pressed` e destaque visual. */
+  /** Toggle button (e.g. mode): `aria-pressed` and visual highlight. */
   readonly pressed?: boolean;
-  /** Ponto de alerta no canto do ícone (ex.: erro novo no Diagnóstico). */
+  /** Alert dot at the icon corner (e.g. new error in Diagnostics). */
   readonly alert?: boolean;
-  /** Selo numérico informativo no canto (ex.: propostas novas na faixa lateral). */
+  /** Informative numeric badge at the corner (e.g. new proposals on the side strip). */
   readonly badge?: string;
-  /** Esconde a dica (o painel que o botão abriu já está aberto). */
+  /** Hides the tip (the panel the button opened is already open). */
   readonly tooltipSuppressed?: boolean;
-  /** Onde a dica abre (`end`: ao lado, na faixa lateral); padrão: embaixo. */
+  /** Where the tip opens (`end`: beside it, on the side strip); default: below. */
   readonly tooltipPlacement?: TooltipPlacement;
   /** O `<button>` (para devolver o foco a ele), como o `inputRef` do `TextField`. */
   readonly buttonRef?: Ref<HTMLButtonElement>;
@@ -45,7 +45,7 @@ function iconButtonClass(variant: string, size: 'md' | 'sm'): string {
   );
 }
 
-/** Botão de ícone (28px), com dica. */
+/** Icon button (28px), with a tip. */
 export function IconButton({
   icon,
   label,
@@ -94,18 +94,18 @@ export function IconButton({
 
 interface IconLinkProps {
   readonly icon: IconName;
-  /** Nome acessível (e texto da dica, se não houver `tooltip`). */
+  /** Accessible name (and tip text, if there is no `tooltip`). */
   readonly label: string;
   /** Texto da dica quando difere do nome. */
   readonly tooltip?: string;
-  /** Endereço do link: sempre abre em outra aba e sem enviar o endereço da app (`noreferrer`). */
+  /** Link address: always opens in another tab and without sending the app's address (`noreferrer`). */
   readonly href: string;
   readonly variant?: 'default' | 'danger';
 }
 
 /**
- * Link com a aparência do botão de ícone (mesmo tamanho, hover e foco): um `<a>` comum,
- * sem nenhuma requisição feita pela app (quem navega é o navegador, ao clicar).
+ * Link with the icon button's look (same size, hover and focus): a plain `<a>`,
+ * with no request made by the app (the browser navigates, on click).
  */
 export function IconLink({
   icon,

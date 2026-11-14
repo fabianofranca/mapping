@@ -1,8 +1,8 @@
 import { t } from '../../i18n';
 import type { ThreadActionError } from '../../store/threadActions';
 
-// Textos curtos da janela Comentários, da barra de status e da faixa: contagens no singular e no
-// plural e o motivo de uma ação recusada.
+// Short texts of the Comments window, the status bar and the strip: counts in singular and
+// plural and the reason an action was refused.
 
 /** "5 abertas" / "1 aberta". */
 export function openCountText(count: number): string {
@@ -35,7 +35,7 @@ export function summaryText(
   ].join(' · ');
 }
 
-/** Por que a ação foi recusada, em texto para a pessoa. */
+/** Why the action was refused, as text for the person. */
 export function actionErrorText(error: ThreadActionError): string {
   switch (error) {
     case 'no-identity':

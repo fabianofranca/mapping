@@ -8,8 +8,8 @@ import { Markdown } from '../markdown/Markdown';
 
 // Document of a type whose `.md` lives in an external repository (`doc` object, `docRepos`).
 // The app reads the file from the folder the person connects (the picker only opens on click); the
-// read state belongs to the UI and does not enter the project. With no folder, no support or no access, it shows
-// what to do and the link to the repository.
+// read state belongs to the UI and does not enter the project. With no folder, no support or
+// no access, it shows what to do and the link to the repository.
 
 export interface ExternalDocProps {
   readonly external: CatalogDocExternal;
@@ -81,7 +81,7 @@ interface ActionsProps {
   readonly reload: () => void;
 }
 
-/** The state's buttons (each is a click by the person: the browser only opens the picker that way). */
+/** The state's buttons (each is a click by the person: only then can the browser open the picker). */
 function Actions({ external, repoUrl, access, status, reload }: ActionsProps) {
   const [denied, setDenied] = useState(false);
   const pick = async () => {

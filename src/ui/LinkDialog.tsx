@@ -15,17 +15,17 @@ import { annotationDisplayName } from './typedText';
 interface LinkDialogProps {
   readonly project: Project;
   readonly owner: Annotation;
-  /** O papel já escolhido (o "+ Vincular…" da linha do papel); `null` = dono sem papéis. */
+  /** The role already chosen (the "+ Link…" of the role row); `null` = owner without roles. */
   readonly role: SpecChildRole | null;
-  /** Os tipos que o dono aceita e que têm camada no projeto. */
+  /** The types the owner accepts and that have a layer in the project. */
   readonly children: readonly ChildType[];
   readonly onChoose: (child: ChildType) => void;
   readonly onCancel: () => void;
 }
 
 /**
- * Os grupos declarados da camada, quando todos os tipos oferecidos são dela; com tipos de
- * camadas diferentes a lista é plana (os grupos são de uma camada só).
+ * The layer's declared groups, when all the offered types belong to it; with types from
+ * different layers the list is flat (the groups belong to a single layer).
  */
 export function linkGroups(
   project: Project,
@@ -37,8 +37,8 @@ export function linkGroups(
 }
 
 /**
- * "Vincular a <dono>" (ou "Vincular a <dono> › <papel>"): escolhe o tipo do filho entre os que o
- * dono aceita, com busca e grupos; quem abre cria a anotação.
+ * "Link to <owner>" (or "Link to <owner> › <role>"): picks the child's type among those the
+ * owner accepts, with search and groups; whoever opens it creates the annotation.
  */
 export function LinkDialog({
   project,

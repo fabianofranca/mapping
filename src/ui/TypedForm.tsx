@@ -15,9 +15,9 @@ import { PropertyGrid, Property } from './PropertyGrid';
 import { TableEditor } from './TableField';
 import { refButtonName } from './typedText';
 
-// Formulário dos campos de um tipo, sem projeto: os valores vêm de fora e cada edição sai
-// por `onChange`. É o mesmo desenho dos Detalhes (SimpleEditor, TableEditor), usado pelo
-// playground do Catálogo. Não usa o store nem o EditorContext.
+// Form for a type's fields, without a project: the values come from outside and each edit goes out
+// through `onChange`. It is the same design as the Details (SimpleEditor, TableEditor), used by
+// the Catalog playground. It does not use the store or the EditorContext.
 
 type TableFieldDef = Extract<SpecField, { type: 'table' }>;
 
@@ -26,7 +26,7 @@ const OK: ActionResult = { ok: true, value: undefined };
 export interface TypedFormProps {
   readonly fields: readonly SpecField[];
   readonly values: Readonly<Record<string, unknown>>;
-  /** Uma edição: a chave do campo e o novo valor (`null` limpa; tabela = todas as linhas). */
+  /** An edit: the field key and the new value (`null` clears; table = all the rows). */
   readonly onChange: (key: string, value: JsonValue) => void;
   readonly readOnly?: boolean;
 }
@@ -77,7 +77,7 @@ function TypedFormField({ field, value, readOnly, onChange }: FieldProps) {
       notices={field.notices}
     >
       {field.type === 'ref' ? (
-        /* Exceção ao Button: campo de referência (cara de select), desabilitado (docs/DESIGN-SYSTEM.md, "Botões avulsos") */
+        /* Exceção ao Button: reference field (select look), disabled (docs/DESIGN-SYSTEM.md, "Botões avulsos") */
         <button
           id={id}
           type="button"

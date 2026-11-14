@@ -89,8 +89,9 @@ function useRoleExtras(annotationId: string) {
 }
 
 /**
- * The annotation's role in the owner (v14, decision 20): the list of the owner type's `childRoles`, with the
- * label `childRolesLabel`. It only appears with an owner that declares them, or to explain (and clear) a
+ * The annotation's role in the owner (v14, decision 20): the list of the owner type's
+ * `childRoles`, with the label `childRolesLabel`. It only appears with an owner that declares
+ * them, or to explain (and clear) a
  * role that the owner does not offer.
  */
 export function OwnerRoleField({

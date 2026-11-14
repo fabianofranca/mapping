@@ -7,7 +7,7 @@ import { anchorLabel } from './anchorLabel';
 import { Composer } from './Composer';
 import { ThreadView } from './ThreadView';
 
-/** A conversa escolhida (ou o rascunho em andamento) não tem item para selecionar? */
+/** Does the chosen thread (or the draft in progress) have no item to select? */
 export function hasStandaloneThread(
   ui: EditorUi,
   project: Project,
@@ -25,8 +25,8 @@ interface StandaloneProps {
 }
 
 /**
- * Detalhes de uma conversa sem item (camada, ponto solto, órfã): o cabeçalho diz onde ela
- * mora e abaixo vêm a conversa ou o compositor da conversa nova. No lugar do painel de seleção.
+ * Details of a thread without an item (layer, loose point, orphan): the header says where it lives
+ * and below come the thread or the composer of the new thread. In place of the selection panel.
  */
 export function StandaloneThreadPanel({ onOpenSettings }: StandaloneProps) {
   const { ui, derived, review } = useEditor();

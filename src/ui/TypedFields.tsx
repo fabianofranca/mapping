@@ -184,7 +184,7 @@ function RefField({
         open();
       }}
     >
-      {/* O valor pode sair cortado no campo ("→ User.no…"): o texto inteiro vai no Tooltip. */}
+      {/* The value may be cut off in the field ("→ User.no…"): the full text goes in the Tooltip. */}
       <Tooltip
         label={`${tip}${layer ? ` (${layer.name})` : ''} · ${t('ref.choose')}  ${SHORTCUT_LABELS.pickRef}`}
       >

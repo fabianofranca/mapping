@@ -10,8 +10,8 @@ import { Button } from './controls';
 import { Notice } from './Notice';
 
 /**
- * Orientação para instalar a app (Android/iOS/desktop) e, no iOS, o aviso de que
- * o Safari pode apagar os dados de sites não instalados. Só na versão hospedada.
+ * Guidance for installing the app (Android/iOS/desktop) and, on iOS, the warning that
+ * Safari may delete the data of sites that are not installed. Hosted version only.
  */
 export function InstallHint() {
   if (location.protocol !== 'https:' || isStandalone() || installHintDismissed.value) {

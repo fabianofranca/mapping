@@ -37,7 +37,7 @@ export function arrowEndLabel(
   return marking ? markingLabel(project, marking) : t('arrow.missingEnd');
 }
 
-/** "Origem → Destino" de uma seta (sempre as pontas, sem o nome dela). */
+/** "Origin → Target" of an arrow (always the endpoints, without its name). */
 export function arrowEnds(
   project: Project,
   arrow: Pick<Arrow, 'from' | 'to'>,

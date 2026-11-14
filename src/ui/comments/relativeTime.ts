@@ -1,8 +1,8 @@
 import { t } from '../../i18n';
 
-// Relative time of messages (stage Comments): "now", "2 min ago", "3 h ago", "yesterday",
-// "12/10" (day/month in pt-BR, month/day in en-US) and, from another year, with the year. The day follows the
-// device's local time. `now` comes in as a parameter for the tests.
+// Relative time of messages (stage Comments): "now", "2 min ago", "3 h ago", "yesterday", "12/10"
+// (day/month in pt-BR, month/day in en-US) and, from another year, with the year. The day follows
+// the device's local time. `now` comes in as a parameter for the tests.
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;

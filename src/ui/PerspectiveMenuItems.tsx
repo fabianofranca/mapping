@@ -8,11 +8,12 @@ import { useEditor } from './EditorContext';
 import { Icon } from './icons';
 import { perspectiveRows, type PerspectiveRow } from './perspectiveRows';
 
-// Itens do menu do botão direito ligados às perspectivas (etapa #659, PE3): Enviar para
-// perspectiva (submenu de caixas), Tirar desta perspectiva e a dica dos comandos que só valem na
-// Principal. O alvo é sempre a RAIZ do item sob o cursor (ou de cada item da seleção).
+// Right-click menu items tied to perspectives (stage #659, PE3): Send to perspective
+// (submenu of checkboxes), Remove from this perspective, and the hint for commands that only
+// apply on Main. The target is always the ROOT of the item under the cursor (or of each
+// selected item).
 
-/** As raízes distintas dos itens (`ids`), na ordem em que aparecem; ids sem raiz somem. */
+/** The distinct roots of the items (`ids`), in the order they appear; ids without a root drop out. */
 export function rootsOf(project: Project, ids: readonly string[]): readonly string[] {
   const { rootOf } = projectIndex(project);
   const roots = new Set<string>();
@@ -24,8 +25,8 @@ export function rootsOf(project: Project, ids: readonly string[]): readonly stri
 }
 
 /**
- * O comando só vale na Principal e há uma perspectiva aberta? A interface o desabilita e mostra
- * `PrincipalOnlyHint` (decisão 5).
+ * Does the command only apply on Main while a perspective is open? The interface disables it
+ * and shows `PrincipalOnlyHint` (decision 5).
  */
 export function blockedOutsideMain(
   project: Project,
@@ -36,7 +37,7 @@ export function blockedOutsideMain(
   return principalOnly(project, openId, command, targets);
 }
 
-/** A dica "só na Principal" sob o item desabilitado; o item a cita por `aria-describedby`. */
+/** The "Main only" hint under the disabled item; the item cites it through `aria-describedby`. */
 export function PrincipalOnlyHint({ id }: { readonly id: string }) {
   return (
     <span id={id} class="menu-hint">
@@ -77,9 +78,10 @@ export function PrincipalOnlyItem({
 }
 
 /**
- * "Enviar para perspectiva ›" e "Tirar desta perspectiva". `ids` são os itens (container ou
- * marcação) do alvo do menu; as ações usam a raiz de cada um. Marcar uma caixa envia, desmarcar
- * tira; a Principal e a aberta ficam marcadas e travadas. → abre o submenu e ← o fecha.
+ * "Send to perspective ›" and "Remove from this perspective". `ids` are the items (container
+ * or marking) of the menu target; the actions use each one's root. Checking a box sends,
+ * unchecking removes; Main and the open one stay checked and locked. → opens the submenu and
+ * ← closes it.
  */
 export function PerspectiveMenuItems({
   ids,
@@ -96,13 +98,13 @@ export function PerspectiveMenuItems({
   const openId = session.perspective.id.value;
   const localIds = session.perspective.localIds.value;
   const wasExpanded = useRef(false);
-  // Aberto pelo ponteiro: o foco fica onde está (abrir por hover não rouba o foco).
+  // Opened by the pointer: focus stays where it is (opening on hover does not steal focus).
   const byPointer = useRef(false);
   const [flip, setFlip] = useState(false);
-  // Aberto só pelo hover: o primeiro clique no item pai confirma (não fecha).
+  // Opened by hover only: the first click on the parent item confirms (does not close).
   const openedByHover = useRef(false);
 
-  // Sem espaço à direita, o submenu abre à esquerda do item pai (e fica dentro da janela).
+  // With no room on the right, the submenu opens to the left of the parent item (staying in the window).
   useLayoutEffect(() => {
     if (!expanded) {
       setFlip(false);
@@ -113,7 +115,7 @@ export function PerspectiveMenuItems({
     if (box && box.right > width) setFlip(true);
   }, [expanded]);
 
-  // Abrir leva o foco à primeira caixa habilitada; fechar devolve-o ao item pai.
+  // Opening takes focus to the first enabled checkbox; closing returns it to the parent item.
   useEffect(() => {
     if (byPointer.current) {
       byPointer.current = false;
@@ -127,7 +129,7 @@ export function PerspectiveMenuItems({
     wasExpanded.current = expanded;
   }, [expanded]);
 
-  // Sem nenhuma perspectiva, não há para onde enviar nem de onde tirar.
+  // With no perspective, there is nowhere to send to and nowhere to remove from.
   if (!project || project.perspectives.length === 0) return null;
   const roots = rootsOf(project, ids);
   if (roots.length === 0) return null;

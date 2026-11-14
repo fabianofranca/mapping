@@ -109,7 +109,7 @@ function stepCounts(report: MigrationStepReport): string {
   return parts.length > 0 ? parts.join(', ') : t('spec.impact.nothing');
 }
 
-/** "Marking › Annotation" of the loss's annotation, with the labels the rest of the interface uses. */
+/** "Marking › Annotation" of the loss's annotation, with the labels the rest of the UI uses. */
 function lossTarget(project: Project, loss: MigrationLoss): string {
   const index = projectIndex(project);
   const annotation = index.annotations.get(loss.annotationId);

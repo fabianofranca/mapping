@@ -9,7 +9,7 @@ export interface HelpAsset {
   readonly text: string;
 }
 
-/** Arquivos embutidos no build (a app é um único index.html, sem rede). */
+/** Files embedded in the build (the app is a single index.html, with no network). */
 export const HELP_ASSETS: readonly HelpAsset[] = [
   { id: 'sdui', fileName: 'sdui.json', text: sduiText },
   { id: 'data-model', fileName: 'modelo-de-dados.json', text: modelText },

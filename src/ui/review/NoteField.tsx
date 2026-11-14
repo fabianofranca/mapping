@@ -24,7 +24,7 @@ interface NoteAreaProps {
   readonly readOnly: boolean;
   /** Each new value takes the focus to the field (the note button, rejection by mouse). */
   readonly focusSeq: number;
-  /** O campo foi gravado e saiu: `empty` quando ficou sem texto. */
+  /** The field was saved and left: `empty` when it ended up without text. */
   readonly onSettled: (empty: boolean) => void;
 }
 

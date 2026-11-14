@@ -12,11 +12,11 @@ import { Icon } from './icons';
 import { guideUrl } from '../utils/guideLink';
 import { comboText, shortcutGroups, type KeyCombo } from './shortcutList';
 
-/** Id da seção Atalhos, para abrir a Ajuda direto nela (Configurações → atalhos). */
+/** Id of the Shortcuts section, to open Help straight on it (Settings → shortcuts). */
 export const HELP_SHORTCUTS = 'shortcuts';
-/** Id da seção das propostas de alteração ("Como o agente envia propostas"). */
+/** Id of the proposals section ("How the agent sends proposals"). */
 export const HELP_PROPOSALS = 'proposals';
-/** Id da seção do guia interativo (página `guia/`, aberta em outra aba). */
+/** Id of the interactive guide section (`guia/` page, opened in another tab). */
 export const HELP_GUIDE = 'guide';
 
 function Block({ block }: { readonly block: HelpBlock }) {
@@ -132,7 +132,7 @@ const PROPOSALS_HELP_KEYS = [
   'help.proposals.resume',
 ] as const satisfies readonly TranslationKey[];
 
-/** Propostas de alteração: como chegam, revisão, decisões, notas, aplicar e retomar. */
+/** Change proposals: how they arrive, review, decisions, notes, applying and resuming. */
 function ProposalsUsage() {
   return (
     <>
@@ -146,7 +146,7 @@ function ProposalsUsage() {
   );
 }
 
-/** Uso das plataformas e do `code` no app (o formato fica nas Especializações). */
+/** Use of platforms and of `code` in the app (the format stays in Specializations). */
 function CodeUsage() {
   return (
     <>
@@ -176,7 +176,7 @@ function Downloads() {
   );
 }
 
-/** Um assunto da Ajuda: entrada do índice lateral e seção do conteúdo. */
+/** A Help topic: entry of the side index and section of the content. */
 interface Topic {
   readonly id: string;
   readonly title: string;
@@ -243,34 +243,34 @@ function topics(): readonly Topic[] {
   ];
 }
 
-/** Rola até a seção sem mudar o hash da URL (o app não usa roteamento). */
+/** Scrolls to the section without changing the URL hash (the app does not use routing). */
 function scrollToTopic(content: HTMLElement | null, id: string): void {
   content?.querySelector(`[id="help-${id}"]`)?.scrollIntoView?.({ block: 'start' });
 }
 
 interface HelpDialogProps {
   readonly onClose: () => void;
-  /** Seção em que a Ajuda abre (padrão: o começo). */
+  /** Section where Help opens (default: the start). */
   readonly section?: string;
 }
 
 /**
- * Ajuda: índice lateral com busca e as seções Especializações (conceito, formato,
- * referências e downloads) e Atalhos de teclado (P10).
+ * Help: side index with search and the Specializations sections (concept, format,
+ * references and downloads) and Keyboard shortcuts (P10).
  */
 export function HelpDialog({ onClose, section }: HelpDialogProps) {
   const [query, setQuery] = useState('');
   const [current, setCurrent] = useState(section ?? null);
   const content = useRef<HTMLDivElement>(null);
 
-  // Abre direto na seção pedida (a lista só existe depois da montagem).
+  // Opens straight on the requested section (the list only exists after mounting).
   useEffect(() => {
     if (section) scrollToTopic(content.current, section);
   }, [section]);
 
-  // As seções só mudam com o idioma: a busca (a cada tecla) não as recria.
+  // The sections only change with the language: the search (on every key) does not recreate them.
   const language = locale.value;
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- `topics` lê o idioma por `t()`.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `topics` reads the language through `t()`.
   const all = useMemo(() => topics(), [language]);
   const shown = all.filter((topic) =>
     matchesSearch(`${topic.title} ${topic.text}`, query),

@@ -2,8 +2,8 @@ import { t } from '../i18n';
 import type { Spec } from '../model';
 import type { TokenValue } from '../model/components/tokens';
 
-// The library's design in the Specializations window (decision 16 of the "faithful components" stage):
-// the modes, the tokens (with the value of each mode) and the icon set file. Read-only.
+// The library's design in the Specializations window (decision 16 of the "faithful components"
+// stage): the modes, the tokens (with the value of each mode) and the icon set file. Read-only.
 
 type TokenEntry = readonly [string, TokenValue | Readonly<Record<string, TokenValue>>];
 

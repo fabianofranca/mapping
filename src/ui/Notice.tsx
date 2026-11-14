@@ -8,8 +8,8 @@ import { Icon, type IconName } from './icons';
 // (HANDOFF-PROPOSALS 2.2): `info` (`color-selection` background, accent icon) for the
 // new proposal and the dependencies, `sm` for compact notices inside the windows
 // (locked item, apply blocked), and `line` for a single-line notice (icon, short text
-// with an ellipsis and the full sentence in the tooltip, action and X). The short `.notice` text of the
-// canvas overlays stays as it is.
+// with an ellipsis and the full sentence in the tooltip, action and X). The short `.notice`
+// text of the canvas overlays stays as it is.
 
 export type NoticeTone = 'info' | 'warning' | 'error' | 'success';
 

@@ -2,12 +2,12 @@ import { projectIndex, proposalIndex, type ReviewTarget } from '../../model';
 import type { ReviewState } from '../../store/review';
 import type { Selection } from '../../store/ui';
 
-// A seleção do canvas que corresponde a um nível da revisão: uma função só para o painel de
-// Detalhes (`ReviewPanel`) e para a sincronia com o canvas (`useReviewSync`).
+// The canvas selection that corresponds to a review level: a single function for the Details
+// panel (`ReviewPanel`) and for the sync with the canvas (`useReviewSync`).
 
 /**
- * O item da revisão no canvas: a marcação, ou a seta (v13; os ids dividem o espaço), seja ela
- * do projeto à vista ou criada pela proposta.
+ * The review item on the canvas: the marking, or the arrow (v13; the ids share the space),
+ * whether it is from the project in view or created by the proposal.
  */
 function itemSelection(
   review: Pick<ReviewState, 'derived'>,
@@ -33,7 +33,7 @@ function changeSelection(
   return undefined;
 }
 
-/** Seleção do canvas que corresponde a um nível da revisão (`undefined`: não muda). */
+/** Canvas selection that corresponds to a review level (`undefined`: no change). */
 export function canvasSelectionOf(
   review: Pick<ReviewState, 'derived'>,
   target: ReviewTarget | null,

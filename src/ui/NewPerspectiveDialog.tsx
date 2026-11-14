@@ -28,8 +28,8 @@ function hiddenFrom(project: Project, value: string): readonly string[] {
 }
 
 /**
- * New perspective: name, where it starts from, who sees it and which layers appear. Once created, the new
- * perspective is opened.
+ * New perspective: name, where it starts from, who sees it and which layers appear. Once
+ * created, the new perspective is opened.
  */
 export function NewPerspectiveDialog({ onClose }: { readonly onClose: () => void }) {
   const { session, store } = useEditor();
