@@ -29,7 +29,7 @@ import {
 
 afterEach(() => clearReportedErrors());
 
-const ME = { name: 'Marina Alves', email: 'marina@exemplo.com' };
+const ME = { name: 'Marina Alves', email: 'marina@example.com' };
 
 function onDisk(root: MemoryDirectory, t: Thread, resolved = t.resolved !== null) {
   root.put(threadFilePath(t.id, resolved), serializeThread(t));
@@ -61,12 +61,12 @@ async function setup(
 }
 
 const append =
-  (id: string, at: string, text = 'oi') =>
+  (id: string, at: string, text = 'hi') =>
   (t: Thread) =>
     appendMessage(t, message(id, at, HUMAN, text));
 
-describe('conversas: lista inicial', () => {
-  it('traz as abertas e as resolvidas lidas na abertura, a mais nova primeiro', async () => {
+describe('threads: initial list', () => {
+  it('brings the open ones and the resolved ones read on opening, newest first', async () => {
     const a = sampleThread({ id: 'A', createdAt: T0 });
     const b = sampleThread({ id: 'B', createdAt: T2 });
     const r = sampleThread({
@@ -76,25 +76,25 @@ describe('conversas: lista inicial', () => {
     });
     const { store } = await setup([a, b, r]);
     expect(store.list.value.map((t) => t.id)).toEqual(['B', 'R', 'A']);
-    expect(store.get('R')?.resolved?.by.email).toBe('marina@exemplo.com');
+    expect(store.get('R')?.resolved?.by.email).toBe('marina@example.com');
   });
 
-  it('o arquivo inválido vira problema no Diagnóstico e não derruba as outras', async () => {
+  it('the invalid file becomes a problem in Diagnostics and does not take down the others', async () => {
     const root = new MemoryDirectory('p');
     onDisk(root, sampleThread({ id: 'A' }));
-    root.put(threadFilePath('quebrada', false), '{ não é json');
+    root.put(threadFilePath('broken', false), '{ not json');
     const storage = createFolderStorage(root);
     const store = createThreadStore({ storage, initial: await loadThreads(storage) });
     expect(store.list.value.map((t) => t.id)).toEqual(['A']);
-    expect(store.problems.value.map((p) => p.id)).toEqual(['quebrada']);
+    expect(store.problems.value.map((p) => p.id)).toEqual(['broken']);
     const entries = reportedErrors.value.filter((e) => e.context === 'threads.invalid');
     expect(entries).toHaveLength(1);
-    expect(entries[0]?.message).toContain('comments/quebrada.json');
+    expect(entries[0]?.message).toContain('comments/broken.json');
   });
 });
 
-describe('conversas: gravação com releitura e revision + 1', () => {
-  it('muda a conversa, grava revision + 1 e avisa o onChanged', async () => {
+describe('threads: write with reread and revision + 1', () => {
+  it('changes the thread, writes revision + 1 and notifies onChanged', async () => {
     const t = sampleThread({ id: 'A', revision: 3 });
     const { root, store, onChanged } = await setup([t]);
     const out = await store.mutate('A', append('m9', T3));
@@ -106,30 +106,30 @@ describe('conversas: gravação com releitura e revision + 1', () => {
     expect(onChanged).toHaveBeenCalledTimes(1);
   });
 
-  it('adota a versão do disco e refaz a operação: a mensagem do MCP no meio não se perde', async () => {
+  it('adopts the disk version and redoes the operation: the MCP message in the middle is not lost', async () => {
     const t = sampleThread({ id: 'A', revision: 3 });
     const { root, store } = await setup([t]);
-    // O servidor MCP acrescenta uma mensagem de agente por fora.
-    const fromAgent = appendMessage(t, message('mx', T3, AGENT, 'do agente'));
+    // The MCP server appends an agent message from outside.
+    const fromAgent = appendMessage(t, message('mx', T3, AGENT, 'from the agent'));
     onDisk(root, fromAgent);
     const out = await store.mutate('A', append('m9', '2026-11-06T14:00:00.000Z'));
     expect(out.ok).toBe(true);
     const disk = await diskThread(root, 'A');
     expect(disk?.messages.map((m) => m.id)).toEqual(['m1', 'm2', 'm3', 'mx', 'm9']);
-    // revision do disco (4) + 1.
+    // disk revision (4) + 1.
     expect(disk?.revision).toBe(5);
   });
 
-  it('um arquivo que ficou ilegível por fora não é sobrescrito', async () => {
+  it('a file that became unreadable from outside is not overwritten', async () => {
     const { root, store } = await setup([sampleThread({ id: 'A' })]);
-    root.put(threadFilePath('A', false), '{ meio escrito');
+    root.put(threadFilePath('A', false), '{ half written');
     const out = await store.mutate('A', append('m9', T3));
     expect(out).toEqual({ ok: false, error: 'unreadable' });
-    expect(await root.read(threadFilePath('A', false))).toBe('{ meio escrito');
+    expect(await root.read(threadFilePath('A', false))).toBe('{ half written');
     expect(store.get('A')).not.toBeNull();
   });
 
-  it('o arquivo que sumiu por fora tira a conversa da lista', async () => {
+  it('the file that vanished from outside removes the thread from the list', async () => {
     const { root, store } = await setup([sampleThread({ id: 'A' })]);
     await root.dirs.get('comments')?.removeEntry('A.json');
     expect(await store.mutate('A', append('m9', T3))).toEqual({
@@ -139,7 +139,7 @@ describe('conversas: gravação com releitura e revision + 1', () => {
     expect(store.get('A')).toBeNull();
   });
 
-  it('id desconhecido, id de mensagem repetido e gravação que falha', async () => {
+  it('unknown id, repeated message id and a write that fails', async () => {
     const { root, store } = await setup([sampleThread({ id: 'A' })]);
     expect(await store.mutate('Z', append('m9', T3))).toEqual({
       ok: false,
@@ -149,8 +149,8 @@ describe('conversas: gravação com releitura e revision + 1', () => {
       ok: false,
       error: 'duplicate-message',
     });
-    root.failWrites = new Error('disco cheio');
-    root.dirs.get('comments')!.failWrites = new Error('disco cheio');
+    root.failWrites = new Error('disk full');
+    root.dirs.get('comments')!.failWrites = new Error('disk full');
     expect(await store.mutate('A', append('m9', T3))).toEqual({
       ok: false,
       error: 'write-failed',
@@ -159,7 +159,7 @@ describe('conversas: gravação com releitura e revision + 1', () => {
     expect(reportedErrors.value.some((e) => e.context === 'threads.write')).toBe(true);
   });
 
-  it('uma operação que não muda nada (resolver uma resolvida) não grava', async () => {
+  it('an operation that changes nothing (resolving a resolved one) does not write', async () => {
     const r = sampleThread({ id: 'R', resolved: { by: ME, at: T3 } });
     const { root, store, onChanged } = await setup([r]);
     const before = await root.read(threadFilePath('R', true));
@@ -169,7 +169,7 @@ describe('conversas: gravação com releitura e revision + 1', () => {
     expect(onChanged).not.toHaveBeenCalled();
   });
 
-  it('as chamadas rodam em fila, uma de cada vez', async () => {
+  it('the calls run in a queue, one at a time', async () => {
     const { store, root } = await setup([sampleThread({ id: 'A', revision: 0 })]);
     const results = await Promise.all([
       store.mutate('A', append('n1', T3)),
@@ -183,8 +183,8 @@ describe('conversas: gravação com releitura e revision + 1', () => {
   });
 });
 
-describe('conversas: mover ao resolver e ao reabrir', () => {
-  it('resolver grava em resolved/ e apaga de comments/, sem deixar duas cópias', async () => {
+describe('threads: moving on resolve and reopen', () => {
+  it('resolving writes to resolved/ and deletes from comments/, leaving no two copies', async () => {
     const { root, store, storage } = await setup([sampleThread({ id: 'A' })]);
     const out = await store.mutate('A', (t) => resolveThread(t, ME, T3));
     expect(out.ok).toBe(true);
@@ -194,7 +194,7 @@ describe('conversas: mover ao resolver e ao reabrir', () => {
     expect(store.get('A')?.resolved).not.toBeNull();
   });
 
-  it('reabrir faz o caminho de volta', async () => {
+  it('reopening takes the way back', async () => {
     const r = sampleThread({ id: 'A', resolved: { by: ME, at: T3 } });
     const { store, storage } = await setup([r]);
     const out = await store.mutate('A', reopenThread);
@@ -204,35 +204,35 @@ describe('conversas: mover ao resolver e ao reabrir', () => {
     expect(store.get('A')?.resolved).toBeNull();
   });
 
-  it('se a gravação no destino falha, a origem fica intacta', async () => {
+  it('if the write at the destination fails, the source stays intact', async () => {
     const { root, store, storage } = await setup([sampleThread({ id: 'A' })]);
-    root.put('comments/resolved/vazia.json', '{}');
-    root.dirs.get('comments')!.dirs.get('resolved')!.failWrites = new Error('sem espaço');
+    root.put('comments/resolved/empty.json', '{}');
+    root.dirs.get('comments')!.dirs.get('resolved')!.failWrites = new Error('no space');
     const out = await store.mutate('A', (t) => resolveThread(t, ME, T3));
     expect(out).toEqual({ ok: false, error: 'write-failed' });
     expect(await storage.listThreads(false)).toEqual(['A']);
     expect(store.get('A')?.resolved).toBeNull();
   });
 
-  it('as duas cópias (mesclagem do git) são juntadas e a gravação deixa uma só', async () => {
+  it('the two copies (git merge) are joined and the write leaves just one', async () => {
     const open = sampleThread({ id: 'A', revision: 4 });
     const resolvedCopy = sampleThread({
       id: 'A',
       revision: 6,
       resolved: { by: ME, at: T3 },
-      messages: [message('m1', T0), message('mz', T1, AGENT, 'só nesta')],
+      messages: [message('m1', T0), message('mz', T1, AGENT, 'only in this one')],
     });
     const root = new MemoryDirectory('p');
     onDisk(root, open, false);
     onDisk(root, resolvedCopy, true);
     const storage = createFolderStorage(root);
     const store = createThreadStore({ storage, initial: await loadThreads(storage) });
-    // A leitura junta: união das mensagens, revision maior; a resolução é posterior à última.
+    // The read joins them: union of the messages, higher revision; the resolution is later than the last one.
     const merged = store.get('A');
     expect(merged?.messages.map((m) => m.id)).toEqual(['m1', 'm2', 'mz', 'm3']);
     expect(merged?.revision).toBe(6);
     await store.mutate('A', append('m9', '2026-11-06T14:00:00.000Z'));
-    // Resolvida (a resolução é posterior à última mensagem): fica em resolved/, a aberta sai.
+    // Resolved (the resolution is later than the last message): stays in resolved/, the open one leaves.
     expect(await storage.listThreads(false)).toEqual([]);
     expect(await storage.listThreads(true)).toEqual(['A']);
     const disk = await diskThread(root, 'A', true);
@@ -241,18 +241,18 @@ describe('conversas: mover ao resolver e ao reabrir', () => {
   });
 });
 
-describe('conversas: criar e apagar', () => {
+describe('threads: create and delete', () => {
   const fresh = (id = 'N1') =>
     openThread({
       id,
       anchor: { kind: 'marking', id: 'M1' },
       author: HUMAN,
-      text: 'olá',
+      text: 'hello',
       at: T0,
       messageId: 'm1',
     });
 
-  it('create grava comments/<id>.json e nunca sobrescreve uma conversa que existe', async () => {
+  it('create writes comments/<id>.json and never overwrites a thread that exists', async () => {
     const { root, store, onChanged } = await setup([sampleThread({ id: 'A' })]);
     expect((await store.create(fresh())).ok).toBe(true);
     expect((await diskThread(root, 'N1'))?.messages).toHaveLength(1);
@@ -263,22 +263,22 @@ describe('conversas: criar e apagar', () => {
     expect(await root.read(threadFilePath('A', false))).toBe(before);
   });
 
-  it('remove apaga as duas cópias e tira da lista; removeMany conta o que foi', async () => {
+  it('remove deletes both copies and removes from the list; removeMany counts what went', async () => {
     const r = sampleThread({ id: 'R', resolved: { by: ME, at: T3 } });
     const { store, storage } = await setup([sampleThread({ id: 'A' }), r]);
     expect(await store.remove('A')).toEqual({ ok: true });
     expect(await storage.listThreads(false)).toEqual([]);
     expect(store.get('A')).toBeNull();
     expect(await store.remove('A')).toEqual({ ok: false, error: 'unknown-thread' });
-    const many = await store.removeMany(['R', 'nao-existe']);
-    expect(many).toEqual({ removed: ['R'], failed: ['nao-existe'] });
+    const many = await store.removeMany(['R', 'does-not-exist']);
+    expect(many).toEqual({ removed: ['R'], failed: ['does-not-exist'] });
     expect(await storage.listThreads(true)).toEqual([]);
     expect(store.list.value).toEqual([]);
   });
 });
 
-describe('conversas: varredura da pasta (a conferência de ~3 s)', () => {
-  it('acha a conversa nova, a alterada e a apagada por fora', async () => {
+describe('threads: folder scan (the ~3 s check)', () => {
+  it('finds the new thread, the changed one and the one deleted from outside', async () => {
     const { root, store } = await setup([sampleThread({ id: 'A' })]);
     onDisk(root, sampleThread({ id: 'B' }));
     expect(await store.scan()).toEqual({ added: ['B'], changed: [], removed: [] });
@@ -294,7 +294,7 @@ describe('conversas: varredura da pasta (a conferência de ~3 s)', () => {
     expect(store.get('B')).toBeNull();
   });
 
-  it('só lê o arquivo que mudou e só lista comments/ (sem resolved/)', async () => {
+  it('reads only the file that changed and lists only comments/ (not resolved/)', async () => {
     const root = new MemoryDirectory('p');
     for (const id of ['A', 'B', 'C']) onDisk(root, sampleThread({ id }));
     onDisk(root, sampleThread({ id: 'R', resolved: { by: ME, at: T3 } }));
@@ -306,7 +306,7 @@ describe('conversas: varredura da pasta (a conferência de ~3 s)', () => {
         calls.list.push(resolved);
         return base.listThreads(resolved);
       },
-      // A varredura de hoje carimba `comments/` num passo só (decisão 9, etapa #1777).
+      // Today scan stamps `comments/` in a single step (decision 9, stage #1777).
       stampThreads: (resolved) => {
         calls.stamp.push(resolved);
         return base.stampThreads!(resolved);
@@ -330,7 +330,7 @@ describe('conversas: varredura da pasta (a conferência de ~3 s)', () => {
     expect(calls.read).toEqual(['o:B']);
   });
 
-  it('sem `stampThreads` (armazenamento que só lista e carimba), a varredura dá o mesmo resultado', async () => {
+  it('without `stampThreads` (storage that only lists and stamps), the scan gives the same result', async () => {
     const root = new MemoryDirectory('p');
     onDisk(root, sampleThread({ id: 'A' }));
     const storage: ProjectStorage = {
@@ -346,7 +346,7 @@ describe('conversas: varredura da pasta (a conferência de ~3 s)', () => {
     expect(await store.scan()).toEqual({ added: [], changed: [], removed: ['B'] });
   });
 
-  it('o scan sem mudança não republica a lista nem os problemas', async () => {
+  it('a scan with no change does not republish the list or the problems', async () => {
     const { store } = await setup([sampleThread({ id: 'A' })]);
     const list = store.list.value;
     const problems = store.problems.value;
@@ -356,9 +356,9 @@ describe('conversas: varredura da pasta (a conferência de ~3 s)', () => {
     expect(store.problems.value).toBe(problems);
   });
 
-  it('um arquivo desconhecido e ilegível vira problema (uma vez); o conhecido, ainda sendo escrito, fica como está', async () => {
+  it('an unknown unreadable file becomes a problem (once); the known one, still being written, stays as it is', async () => {
     const { root, store } = await setup([sampleThread({ id: 'A' })]);
-    root.put(threadFilePath('X', false), '{ meio');
+    root.put(threadFilePath('X', false), '{ half');
     await store.scan();
     await store.scan();
     expect(store.problems.value.map((p) => p.id)).toEqual(['X']);
@@ -366,12 +366,12 @@ describe('conversas: varredura da pasta (a conferência de ~3 s)', () => {
       reportedErrors.value.filter((e) => e.context === 'threads.invalid'),
     ).toHaveLength(1);
 
-    root.put(threadFilePath('A', false), '{ meio');
+    root.put(threadFilePath('A', false), '{ half');
     expect(await store.scan()).toEqual({ added: [], changed: [], removed: [] });
     expect(store.get('A')?.messages).toHaveLength(3);
   });
 
-  it('a conversa resolvida por fora (arquivo foi para resolved/) continua na lista', async () => {
+  it('a thread resolved from outside (file moved to resolved/) stays in the list', async () => {
     const { root, store } = await setup([sampleThread({ id: 'A' })], { resolved: false });
     await root.dirs.get('comments')?.removeEntry('A.json');
     onDisk(root, sampleThread({ id: 'A', resolved: { by: ME, at: T3 } }));
@@ -382,8 +382,8 @@ describe('conversas: varredura da pasta (a conferência de ~3 s)', () => {
   });
 });
 
-describe('conversas: resolvidas sob pedido', () => {
-  it('sem ler resolved/ na abertura, loadResolved as traz', async () => {
+describe('threads: resolved on demand', () => {
+  it('without reading resolved/ on opening, loadResolved brings them', async () => {
     const r = sampleThread({ id: 'R', resolved: { by: ME, at: T3 } });
     const { store } = await setup([sampleThread({ id: 'A' }), r], { resolved: false });
     expect(store.list.value.map((t) => t.id)).toEqual(['A']);
@@ -393,20 +393,20 @@ describe('conversas: resolvidas sob pedido', () => {
     expect(store.list.value.map((t) => t.id).sort()).toEqual(['A', 'R']);
   });
 
-  it('collect leva tudo: as resolvidas ainda não lidas e o texto exato dos inválidos', async () => {
+  it('collect carries everything: the resolved ones not yet read and the exact text of the invalid ones', async () => {
     const r = sampleThread({ id: 'R', resolved: { by: ME, at: T3 } });
     const { root, store } = await setup([sampleThread({ id: 'A' }), r], {
       resolved: false,
     });
-    root.put(threadFilePath('quebrada', false), '{ não é json');
+    root.put(threadFilePath('broken', false), '{ not json');
     await store.scan();
     const files = await store.collect();
     expect([...files.keys()].sort()).toEqual([
       'comments/A.json',
-      'comments/quebrada.json',
+      'comments/broken.json',
       'comments/resolved/R.json',
     ]);
-    expect(files.get('comments/quebrada.json')).toBe('{ não é json');
+    expect(files.get('comments/broken.json')).toBe('{ not json');
     expect(files.get('comments/A.json')).toBe(await root.read('comments/A.json'));
   });
 });

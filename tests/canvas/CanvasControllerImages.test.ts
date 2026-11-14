@@ -12,8 +12,8 @@ import { createDisplayImages } from '../../src/store/displayImages';
 import { type FrameNode, baseNode } from '../../src/model/components/scene';
 import { componentEditor, installFakeCanvas } from './harness';
 
-// Imagens remotas dentro do `CanvasController` (RI3): a imagem que termina pede um quadro, várias
-// no mesmo quadro desenham uma vez, e o consentimento que muda refaz as marcações com imagem.
+// Remote images inside `CanvasController` (RI3): the image that finishes asks for a frame, several
+// in the same frame draw once, and the consent that changes redraws the markings with an image.
 describe('CanvasController: imagens remotas', () => {
   const frames: FrameRequestCallback[] = [];
   const flush = () => {
@@ -36,7 +36,7 @@ describe('CanvasController: imagens remotas', () => {
     vi.unstubAllGlobals();
   });
 
-  /** Desenho de uma marcação com a imagem remota `url` (o nó `image` do componente). */
+  /** Drawing of a marking with the remote image `url` (the `image` node of the component). */
   function imageDrawing(markingId: string, url: string): LayerDrawing {
     const avatar = {
       ...baseNode({ id: `${markingId}-img`, name: 'img', width: 40, height: 40 }),
@@ -91,8 +91,8 @@ describe('CanvasController: imagens remotas', () => {
       placements: ReadonlyMap<string, { x: number; y: number; scale: number }>;
     };
     flush();
-    // Monta direto na camada três marcações com imagem (o catálogo de teste não tem componente
-    // com imagem); nenhum quadro as desmonta enquanto o projeto não muda.
+    // Mounts directly on the layer three markings with an image (the test catalog has no component
+    // with an image); no frame unmounts them while the project does not change.
     internals.componentLayer.render(
       new Map([
         ['m1', imageDrawing('m1', A)],
@@ -107,7 +107,7 @@ describe('CanvasController: imagens remotas', () => {
         internals.stage.find((n: Konva.Node) => n.getAttr('markingId') === id)[0] as
           Konva.Group | undefined
       )?.findOne('Image');
-    // A camada pediu cada imagem à fonte do controller ao montar as marcações.
+    // The layer asked for each image from the controller source when mounting the markings.
     const initialCalls = resolve.mock.calls.map(([u]) => u);
     resolve.mockClear();
     flush();
@@ -124,20 +124,20 @@ describe('CanvasController: imagens remotas', () => {
     };
   }
 
-  it('o canvas pede cada imagem à fonte ao desenhar a marcação, e o quadro seguinte não repete', () => {
+  it('the canvas asks for each image from the source when drawing the marking, and the next frame does not repeat', () => {
     const { controller, resolve, initialCalls } = setup();
     expect(initialCalls).toEqual([A, B, C]);
-    // O quadro não refaz marcações montadas sem motivo.
+    // The frame does not redo mounted markings for no reason.
     expect(resolve).not.toHaveBeenCalled();
     controller.destroy();
   });
 
-  it('imagem que carrega refaz só a marcação dela e pede um quadro', () => {
+  it('an image that loads redraws only its marking and asks for a frame', () => {
     const { controller, internals, resolve, states, emit, imagesOf } = setup();
-    // O quadro redesenha só as camadas sujas: a dos componentes é a que as imagens remotas mexem
-    // (conta os desenhos dela, não os pedidos: o Konva agrupa os pedidos num desenho por quadro).
+    // The frame redraws only the dirty layers: the components one is what the remote images touch
+    // (counts its draws, not the requests: Konva groups the requests into one draw per frame).
     const componentsLayer = internals.stage.getLayers()[1];
-    if (!componentsLayer) throw new Error('camada dos componentes');
+    if (!componentsLayer) throw new Error('components layer');
     const draw = vi.spyOn(componentsLayer, 'drawScene');
     expect(imagesOf('m1')).toBeUndefined();
     states.set(A, {
@@ -147,7 +147,7 @@ describe('CanvasController: imagens remotas', () => {
       height: 8,
     });
     emit(A);
-    // Nada é desenhado antes do quadro; o desenho vem no quadro seguinte.
+    // Nothing is drawn before the frame; the drawing comes in the next frame.
     expect(draw).not.toHaveBeenCalled();
     expect(frames).toHaveLength(1);
     flush();
@@ -158,12 +158,12 @@ describe('CanvasController: imagens remotas', () => {
     controller.destroy();
   });
 
-  it('várias imagens no mesmo quadro geram um desenho só', () => {
+  it('several images in the same frame generate a single draw', () => {
     const { controller, internals, resolve, states, emit, imagesOf } = setup();
-    // O quadro redesenha só as camadas sujas: a dos componentes é a que as imagens remotas mexem
-    // (conta os desenhos dela, não os pedidos: o Konva agrupa os pedidos num desenho por quadro).
+    // The frame redraws only the dirty layers: the components one is what the remote images touch
+    // (counts its draws, not the requests: Konva groups the requests into one draw per frame).
     const componentsLayer = internals.stage.getLayers()[1];
-    if (!componentsLayer) throw new Error('camada dos componentes');
+    if (!componentsLayer) throw new Error('components layer');
     const draw = vi.spyOn(componentsLayer, 'drawScene');
     const refresh = vi.spyOn(internals.componentLayer, 'refreshImages');
     for (const url of [A, B, C]) {
@@ -188,7 +188,7 @@ describe('CanvasController: imagens remotas', () => {
     controller.destroy();
   });
 
-  it('o consentimento ou um interruptor que muda refaz todas as marcações com imagem', () => {
+  it('the consent or a switch that changes redraws all the markings with an image', () => {
     const { controller, internals, resolve, gate } = setup();
     const refresh = vi.spyOn(internals.componentLayer, 'refreshImages');
     gate.value = {};
@@ -198,7 +198,7 @@ describe('CanvasController: imagens remotas', () => {
     controller.destroy();
   });
 
-  it('um quadro sem mudança de imagem não refaz nada', () => {
+  it('a frame without an image change redoes nothing', () => {
     const { controller, internals, resolve } = setup();
     const refresh = vi.spyOn(internals.componentLayer, 'refreshImages');
     internals.stage.batchDraw();

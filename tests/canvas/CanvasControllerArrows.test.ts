@@ -15,7 +15,7 @@ import { openHarness } from '../store/proposalHarness';
 import { editorFor, installFakeCanvas, setOnlyScreens } from './harness';
 
 // Setas no CanvasController (ME4): a camada, a visibilidade ("Mostrar setas", Ver limpo e as
-// pontas), o `data-arrows`, o enquadrar da seta e a visão Proposto da revisão.
+// ends), the `data-arrows`, the arrow fit and the Proposed view of the review.
 
 describe('CanvasController: setas', () => {
   const frames: FrameRequestCallback[] = [];
@@ -70,7 +70,7 @@ describe('CanvasController: setas', () => {
     controller.destroy();
   });
 
-  it('"Mostrar setas" desligado e o modo com Só as telas escondem todas', () => {
+  it('"Show arrows" off and the Screens only mode hide them all', () => {
     const { container, controller, ui } = setup();
     setShowArrows(false);
     flush();
@@ -87,24 +87,24 @@ describe('CanvasController: setas', () => {
     controller.destroy();
   });
 
-  it('a seta some quando uma das pontas está oculta pelo modo de exibição', () => {
-    // "Ocultar": sem anotação em nenhuma camada visível a marcação some, e a seta com ela. As setas
-    // têm anotações (ra1), mas as pontas a1 e a3 não.
+  it('the arrow disappears when one of the ends is hidden by the display mode', () => {
+    // "Hide": with no annotation in any visible layer the marking disappears, and the arrow with it. The arrows
+    // have annotations (ra1), but the ends a1 and a3 do not.
     const { container, controller, ui } = setup();
     setMarkingDisplay('hide');
     flush();
     expect(container.dataset.arrows).toBe('0');
-    // Selecionar uma ponta a mostra, mas a outra segue oculta: a seta continua escondida.
+    // Selecting an end shows it, but the other one stays hidden: the arrow remains hidden.
     ui.selection.value = { kind: 'marking', id: 'a1' };
     flush();
     expect(container.dataset.arrows).toBe('0');
     controller.destroy();
   });
 
-  it('no zoom mínimo a seta entre marcações invisíveis não é pintada; selecionar uma ponta a devolve', () => {
+  it('at minimum zoom the arrow between invisible markings is not painted; selecting an end brings it back', () => {
     const { container, controller, internals, ui } = setup();
     expect(container.dataset.arrows).toBe('1');
-    controller.zoomTo(0.005); // a1 (300) e a3 (200) ficam com 1,5 px e 1 px: invisíveis.
+    controller.zoomTo(0.005); // a1 (300) and a3 (200) get 1.5 px and 1 px: invisible.
     flush();
     expect(container.dataset.arrows).toBe('0');
     expect(internals.arrows.size).toBe(0);
@@ -117,7 +117,7 @@ describe('CanvasController: setas', () => {
     controller.destroy();
   });
 
-  it('a seta fora da área visível não é pintada', () => {
+  it('the arrow outside the visible area is not painted', () => {
     const { container, controller, internals } = setup();
     controller.zoomTo(1);
     controller.centerOnPoint({ x: 450, y: 450 });
@@ -130,7 +130,7 @@ describe('CanvasController: setas', () => {
     controller.destroy();
   });
 
-  it('pan e seleção não refazem as setas; zoom só muda o tamanho de tela', () => {
+  it('pan and selection do not rebuild the arrows; zoom only changes the screen size', () => {
     const { controller, internals, ui, container } = setup();
     const shape = internals.arrows.drawn[0];
     ui.selection.value = { kind: 'arrow', id: 'r1' };
@@ -139,15 +139,15 @@ describe('CanvasController: setas', () => {
       new WheelEvent('wheel', { deltaY: -40, clientX: 190, clientY: 350 }),
     );
     flush();
-    // A forma é a mesma: o zoom só muda a espessura e a ponta, na hora de pintar.
+    // The shape is the same: zoom only changes the thickness and the tip, at paint time.
     expect(internals.arrows.drawn[0]).toBe(shape);
     controller.destroy();
   });
 
-  it('editar uma marcação presa refaz a seta; editar outra coisa, não', () => {
+  it('editing a pinned marking rebuilds the arrow; editing something else does not', () => {
     const { controller, internals, actions } = setup();
     const shape = internals.arrows.drawn[0];
-    expect(actions.renameMarking('a2', 'Maçaneta').ok).toBe(true);
+    expect(actions.renameMarking('a2', 'Handle').ok).toBe(true);
     flush();
     expect(internals.arrows.drawn[0]).toBe(shape);
     expect(actions.moveMarking('a3', 40, 0).ok).toBe(true);
@@ -160,9 +160,9 @@ describe('CanvasController: setas', () => {
     controller.destroy();
   });
 
-  it('a seta selecionada tem realce e alças; no modo visualização, nada', () => {
+  it('the selected arrow has highlight and handles; in view mode, nothing', () => {
     const { controller, internals, ui } = setup();
-    controller.zoomTo(1); // O meio do trecho só ganha alça com folga na tela.
+    controller.zoomTo(1); // The middle of the stretch only gets a handle with room on the screen.
     ui.selection.value = { kind: 'arrow', id: 'r1' };
     flush();
     expect(
@@ -179,7 +179,7 @@ describe('CanvasController: setas', () => {
     controller.destroy();
   });
 
-  it('seleção múltipla com setas: todas ganham realce', () => {
+  it('multiple selection with arrows: all get a highlight', () => {
     const { controller, internals, ui } = setup(
       withArrow(arrowProject(), 'r2', 'a3', 'b2'),
     );
@@ -194,18 +194,18 @@ describe('CanvasController: setas', () => {
     controller.destroy();
   });
 
-  it('centralizar a seta enquadra o traço (a caixa dele)', () => {
+  it('centering the arrow frames the stroke (its box)', () => {
     const { controller, ui } = setup();
     ui.selection.value = { kind: 'arrow', id: 'r1' };
     controller.centerSelection();
-    // r1 vai de (400,250) a (600,700): o centro da caixa é (500, 475).
+    // r1 goes from (400,250) to (600,700): the center of the box is (500, 475).
     const center = controller.viewportCenter();
     expect(center.x).toBeCloseTo(500, 0);
     expect(center.y).toBeCloseTo(475, 0);
     controller.destroy();
   });
 
-  it('revelar a seta faz o pan mínimo até o traço', () => {
+  it('revealing the arrow does the minimal pan to the stroke', () => {
     const { controller, ui } = setup();
     controller.zoomTo(1);
     controller.centerOnPoint({ x: 5000, y: 5000 });
@@ -216,7 +216,7 @@ describe('CanvasController: setas', () => {
     controller.destroy();
   });
 
-  it('o alvo de soltar acende com a marcação de destino do gesto de seta', () => {
+  it('the drop target lights up with the destination marking of the arrow gesture', () => {
     const { controller, internals } = setup();
     const interaction = (
       controller as unknown as {
@@ -237,7 +237,7 @@ describe('CanvasController: setas', () => {
   });
 });
 
-describe('CanvasController: setas na revisão de propostas', () => {
+describe('CanvasController: arrows in proposal review', () => {
   const frames: FrameRequestCallback[] = [];
   const flush = () => {
     while (frames.length > 0) for (const frame of frames.splice(0)) frame(0);
@@ -256,7 +256,7 @@ describe('CanvasController: setas na revisão de propostas', () => {
     vi.unstubAllGlobals();
   });
 
-  it('a visão Proposto desenha a seta proposta; a Atual, não', async () => {
+  it('the Proposed view draws the proposed arrow; the Current one does not', async () => {
     const base = sampleProject();
     const after = createArrow(base, { id: 'R1', from: 'M1', to: 'M4' });
     const proposal = propose(base, after);

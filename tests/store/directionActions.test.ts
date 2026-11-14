@@ -4,21 +4,21 @@ import { createProjectStore } from '../../src/store/history';
 import { createProjectActions } from '../../src/store/project';
 import { NOW, sampleProject } from '../model/fixtures';
 
-// Direção de leitura (schema v20): passa por actions do store, uma entrada de desfazer cada.
+// Reading direction (schema v20): goes through store actions, one undo entry each.
 
 function setup() {
   const store = createProjectStore({ now: () => NOW });
   const actions = createProjectActions(store, { newId: () => 'id' });
   store.load(sampleProject());
   const project = () => {
-    if (!store.project.value) throw new Error('sem projeto');
+    if (!store.project.value) throw new Error('no project');
     return store.project.value;
   };
   return { store, actions, project };
 }
 
-describe('actions da direção de leitura', () => {
-  it('setProjectDirection grava, desfaz com uma entrada e remove com null', () => {
+describe('reading direction actions', () => {
+  it('setProjectDirection writes, undoes with one entry and removes with null', () => {
     const { store, actions, project } = setup();
     expect(project().direction).toBeUndefined();
     expect(actions.setProjectDirection('rtl').ok).toBe(true);
@@ -34,7 +34,7 @@ describe('actions da direção de leitura', () => {
     expect(project().direction).toBeUndefined();
   });
 
-  it('setContainerDirection fixa, volta a seguir o projeto com null e desfaz', () => {
+  it('setContainerDirection pins, goes back to following the project with null and undoes', () => {
     const { store, actions, project } = setup();
     const id = project().containers[0]?.id ?? '';
     expect(actions.setContainerDirection(id, 'rtl').ok).toBe(true);
@@ -48,7 +48,7 @@ describe('actions da direção de leitura', () => {
     expect(project().containers[0]?.direction).toBeUndefined();
   });
 
-  it('o que não muda nada não abre entrada de desfazer', () => {
+  it('what changes nothing does not open an undo entry', () => {
     const { store, actions, project } = setup();
     const id = project().containers[0]?.id ?? '';
     actions.setProjectDirection(null);
@@ -56,10 +56,10 @@ describe('actions da direção de leitura', () => {
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('container inexistente devolve erro, sem mudar o projeto', () => {
+  it('a nonexistent container returns an error, without changing the project', () => {
     const { actions, project } = setup();
     const before = project();
-    expect(actions.setContainerDirection('nada', 'rtl').ok).toBe(false);
+    expect(actions.setContainerDirection('nothing', 'rtl').ok).toBe(false);
     expect(project()).toBe(before);
   });
 });

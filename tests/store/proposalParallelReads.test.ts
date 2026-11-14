@@ -13,15 +13,15 @@ import { propose } from '../model/proposalFixtures';
 import { material3Package, material3Spec } from '../storage/packageFixture';
 import { openHarness, writeOutside, type Harness } from './proposalHarness';
 
-// FA2, decisão 10: ao aplicar uma proposta, as imagens (e os arquivos do pacote) esperando em
-// `proposals/<id>/` são lidas em paralelo com limite; as verificações, os erros e as gravações
-// de imagem da aplicação seguem na ordem de sempre.
+// FA2, decision 10: when applying a proposal, the images (and the package files) waiting in
+// `proposals/<id>/` are read in parallel with a limit; the checks, the errors and the image
+// writes of the application follow the usual order.
 
 afterEach(() => clearReportedErrors());
 
 const NAMES = ['a', 'b', 'c', 'd', 'e', 'f'];
 
-/** Proposta com seis imagens novas, aceita por inteiro e pronta para aplicar. */
+/** Proposal with six new images, fully accepted and ready to apply. */
 async function sixImages(missing?: string): Promise<Harness> {
   const base = sampleProject();
   let after = base;
@@ -47,7 +47,7 @@ async function sixImages(missing?: string): Promise<Harness> {
   return h;
 }
 
-/** Mede o pico de leituras de imagem simultâneas (com latência) e a ordem em que começaram. */
+/** Measures the peak of simultaneous image reads (with latency) and the order in which they started. */
 function probeReads(h: Harness) {
   const state = { inFlight: 0, peak: 0, started: [] as string[] };
   const original = h.storage.readImage.bind(h.storage);
@@ -62,8 +62,8 @@ function probeReads(h: Harness) {
   return state;
 }
 
-describe('aplicar uma proposta: leituras em paralelo com limite', () => {
-  it('as 6 imagens da proposta são lidas com pico de 4 e gravadas em série, na ordem', async () => {
+describe('applying a proposal: reads in parallel with a limit', () => {
+  it('the 6 images of the proposal are read with a peak of 4 and written in series, in order', async () => {
     const h = await sixImages();
     const reads = probeReads(h);
     const original = h.storage.writeImage.bind(h.storage);
@@ -88,7 +88,7 @@ describe('aplicar uma proposta: leituras em paralelo com limite', () => {
       expect(await h.root.read(`images/${n}.webp`)).toBe(n.toUpperCase());
   });
 
-  it('origem ausente: image-missing com o mesmo caminho, nada gravado', async () => {
+  it('missing source: image-missing with the same path, nothing written', async () => {
     const h = await sixImages('c');
     const reads = probeReads(h);
     const result = await h.review.apply();
@@ -104,13 +104,13 @@ describe('aplicar uma proposta: leituras em paralelo com limite', () => {
     );
   });
 
-  it('o pacote da proposta é lido com pico de 4 e a versão nova chega ao disco', async () => {
+  it('the package of the proposal is read with a peak of 4 and the new version reaches the disk', async () => {
     const h = await openHarness({ proposals: [] });
     const v1: Spec = { ...material3Spec(), version: 1 };
     h.session.actions.applySpecialization(v1, material3Package());
     await h.session.flush();
     const base = h.session.store.project.value;
-    if (!base) throw new Error('sem projeto');
+    if (!base) throw new Error('no project');
     const proposal: Proposal = propose(
       base,
       updateSpecialization(

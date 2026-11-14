@@ -9,11 +9,11 @@ import { firstImport } from '../components/review/reviewHarness';
 import { openHarness } from '../store/proposalHarness';
 import { installFakeCanvas } from './harness';
 
-// Fase 8.2 (P1): o canvas deriva o projeto desenhado de `review.derived.shownProject`, e
-// o cursor em pixels da imagem (barra de status) vale sobre uma imagem que só existe na
-// proposta, na visão Proposto. Na visão Atual, a imagem não está lá e o cursor é `null`.
+// Phase 8.2 (P1): the canvas derives the drawn project from `review.derived.shownProject`, and
+// the cursor in image pixels (status bar) works over an image that only exists in the
+// proposal, in the Proposed view. In the Current view, the image is not there and the cursor is `null`.
 
-describe('cursor do canvas na revisão de uma importação nova', () => {
+describe('canvas cursor in the review of a new import', () => {
   const frames: FrameRequestCallback[] = [];
   const flush = () => {
     while (frames.length > 0) for (const frame of frames.splice(0)) frame(0);
@@ -32,7 +32,7 @@ describe('cursor do canvas na revisão de uma importação nova', () => {
     vi.unstubAllGlobals();
   });
 
-  it('dá coordenadas sobre a imagem proposta na visão Proposto e nenhuma na visão Atual', async () => {
+  it('gives coordinates over the proposed image in the Proposed view and none in the Current view', async () => {
     const { base, proposal } = firstImport();
     const { session, review } = await openHarness({
       project: base,
@@ -56,9 +56,9 @@ describe('cursor do canvas na revisão de uma importação nova', () => {
       review,
     });
     flush();
-    // A área das imagens à vista é a da imagem proposta (a prévia dá a posição dela).
+    // The area of the images in view is the proposed image's (the preview gives its position).
     const image = review.derived.shownProject.value?.containers[0];
-    if (!image) throw new Error('a prévia não tem a imagem proposta');
+    if (!image) throw new Error('the preview has no proposed image');
     const rect = imageCanvasRect(image, image.placement);
     expect(view.bounds.value).toEqual(rect);
     controller.zoomTo(1);
@@ -78,7 +78,7 @@ describe('cursor do canvas na revisão de uma importação nova', () => {
     expect(view.cursor.value).toMatchObject({ containerId: 'I1' });
     expect(controller.imageIdAt(190, 350)).toBe('I1');
 
-    // Visão Atual: o projeto confirmado não tem a imagem.
+    // Current view: the confirmed project does not have the image.
     review.setView('current');
     move();
     expect(view.cursor.value).toBeNull();

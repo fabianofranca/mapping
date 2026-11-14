@@ -28,7 +28,7 @@ describe('viewport', () => {
     close(screenToCanvas(v, canvasToScreen(v, p)), p);
   });
 
-  it('zoom mantém fixo o ponto sob o cursor', () => {
+  it('zoom keeps the point under the cursor fixed', () => {
     const anchor = { x: 300, y: 200 };
     const before = screenToCanvas(v, anchor);
     const zoomed = zoomAt(v, anchor, 1.5);
@@ -45,7 +45,7 @@ describe('viewport', () => {
     expect(panBy(v, 5, -5)).toEqual({ x: 105, y: 45, scale: 2 });
   });
 
-  it('enquadra e centraliza o retângulo', () => {
+  it('fits and centers the rectangle', () => {
     const fitted = fitRect(
       { x: 0, y: 0, width: 2000, height: 1000 },
       { width: 400, height: 800 },
@@ -53,7 +53,7 @@ describe('viewport', () => {
     );
     expect(fitted.scale).toBeCloseTo(0.2);
     close(canvasToScreen(fitted, { x: 1000, y: 500 }), { x: 200, y: 400 });
-    // Com margem, o retângulo cabe dentro dela.
+    // With a margin, the rectangle fits inside it.
     const padded = fitRect(
       { x: 0, y: 0, width: 2000, height: 1000 },
       { width: 400, height: 800 },
@@ -62,7 +62,7 @@ describe('viewport', () => {
     expect(canvasToScreen(padded, { x: 0, y: 0 }).x).toBeCloseTo(20);
   });
 
-  it('pinça: afastar os dedos aproxima em volta do ponto médio', () => {
+  it('pinch: spreading the fingers zooms in around the midpoint', () => {
     const a0 = { x: 100, y: 100 };
     const b0 = { x: 200, y: 100 };
     const a1 = { x: 50, y: 100 };
@@ -74,7 +74,7 @@ describe('viewport', () => {
     close(screenToCanvas(next, mid), before);
   });
 
-  it('pinça: mover os dois dedos juntos faz pan', () => {
+  it('pinch: moving both fingers together pans', () => {
     const next = pinch(
       v,
       { x: 0, y: 0 },
@@ -85,7 +85,7 @@ describe('viewport', () => {
     expect(next).toEqual({ x: 105, y: 55, scale: 2 });
   });
 
-  it('roda: para cima aproxima, para baixo afasta', () => {
+  it('wheel: up zooms in, down zooms out', () => {
     expect(wheelZoomFactor(-100, 0, false)).toBeGreaterThan(1);
     expect(wheelZoomFactor(100, 0, false)).toBeLessThan(1);
     expect(wheelZoomFactor(3, 1, false)).toBeCloseTo(wheelZoomFactor(48, 0, false));
@@ -95,7 +95,7 @@ describe('viewport', () => {
 describe('centralizar', () => {
   const size = { width: 400, height: 800 };
 
-  it('mantém o zoom quando o retângulo cabe bem', () => {
+  it('keeps the zoom when the rectangle fits well', () => {
     const v = centerOn(
       { x: 0, y: 0, scale: 1 },
       { x: 100, y: 100, width: 200, height: 200 },
@@ -104,7 +104,7 @@ describe('centralizar', () => {
     expect(v).toEqual({ x: 0, y: 200, scale: 1 });
   });
 
-  it('ajusta o zoom para retângulos grandes ou pequenos demais', () => {
+  it('adjusts the zoom for rectangles that are too large or too small', () => {
     const big = centerOn(
       { x: 0, y: 0, scale: 1 },
       { x: 0, y: 0, width: 800, height: 100 },

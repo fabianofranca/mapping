@@ -1,6 +1,6 @@
-// MF2 no Konva: a lista de sombras (cada uma numa forma à parte, a primeira por cima), o aviso
-// "só a primeira sombra externa" que some, o `spread` (forma e raios), a sombra que volta pelo
-// deslocamento (com giro e zoom) e o contorno com vão (`stroke.gaps`).
+// MF2 in Konva: the shadow list (each in its own shape, the first on top), the "only the first
+// outer shadow" warning that goes away, the `spread` (shape and radii), the shadow that comes back through the
+// offset (with rotation and zoom) and the outline with a gap (`stroke.gaps`).
 import Konva from 'konva';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { installFakeCanvas } from '../harness';
@@ -34,16 +34,16 @@ const card = (effects: Shadow[], radius = 8): SceneNode => ({
 });
 
 /**
- * As formas de sombra do grupo: as `Konva.Shape` que não escutam o ponteiro (as formas do nó
- * escutam), na ordem de desenho, a última sombra da lista primeiro.
+ * The shadow shapes of the group: the `Konva.Shape`s that do not listen to the pointer (the node
+ * shapes do), in drawing order, the last shadow of the list first.
  */
 const casters = (group: Konva.Group): Konva.Shape[] =>
   group
     .getChildren()
     .filter((c): c is Konva.Shape => c instanceof Konva.Shape && !c.listening());
 
-describe('lista de sombras (decisão 3)', () => {
-  it('duas sombras externas desenham as duas, sem o aviso de só a primeira', () => {
+describe('shadow list (decision 3)', () => {
+  it('two outer shadows draw both, without the only-the-first warning', () => {
     const first = shadow({ color: '#111111' });
     const second = shadow({ color: '#222222', blur: 8 });
     const { byId, warnings } = renderScene({ root: card([first, second]), warnings: [] });
@@ -51,28 +51,28 @@ describe('lista de sombras (decisão 3)', () => {
     const group = byId.get('c')!;
     const list = casters(group);
     expect(list).toHaveLength(2);
-    // A primeira da lista fica por cima: a última vem antes na ordem de desenho.
+    // The first of the list stays on top: the last one comes first in drawing order.
     const colors = list.map((c) => {
       const { native } = recorder({ a: 1, b: 0, c: 0, d: 1 });
       (c.sceneFunc() as (ctx: unknown, shape: unknown) => void)({ _context: native }, c);
       return native.shadowColor;
     });
     expect(colors).toEqual(['#222222', '#111111']);
-    // A forma do nó não leva sombra própria (a cor dela não muda) e vem depois das sombras.
+    // The node shape carries no shadow of its own (its color does not change) and comes after the shadows.
     const fill = group.getChildren().at(-1) as Konva.Rect;
     expect(fill.fill()).toBe('#ffffff80');
     expect(fill.shadowBlur()).toBe(0);
     expect(list.every((c) => !c.listening())).toBe(true);
   });
 
-  it('uma sombra sem spread continua na própria forma, como sempre', () => {
+  it('a shadow without spread stays on the shape itself, as always', () => {
     const { byId } = renderScene({ root: card([shadow()]), warnings: [] });
     const group = byId.get('c')!;
     expect(casters(group)).toHaveLength(0);
     expect((group.getChildren()[0] as Konva.Rect).shadowBlur()).toBe(4);
   });
 
-  it('a sombra interna segue ignorada com aviso, e as externas valem', () => {
+  it('the inner shadow is still ignored with a warning, and the outer ones apply', () => {
     const { warnings, byId } = renderScene({
       root: card([shadow({ inner: true }), shadow(), shadow()]),
       warnings: [],
@@ -82,7 +82,7 @@ describe('lista de sombras (decisão 3)', () => {
   });
 });
 
-/** Um contexto 2D que anota o que a forma da sombra faz. */
+/** A 2D context that records what the shadow shape does. */
 function recorder(matrix: { a: number; b: number; c: number; d: number }) {
   const calls: [string, ...number[]][] = [];
   const note =
@@ -117,7 +117,7 @@ function draw(
   node = card(effects),
 ) {
   const { byId } = renderScene({ root: node, warnings: [] });
-  // A forma da primeira sombra da lista (a que fica por cima).
+  // The shape of the first shadow of the list (the one on top).
   const caster = casters(byId.get('c')!).at(-1);
   const { native, calls } = recorder(matrix);
   const fn = caster!.sceneFunc() as (ctx: unknown, shape: unknown) => void;
@@ -125,9 +125,9 @@ function draw(
   return { native, calls };
 }
 
-describe('a sombra que volta pelo deslocamento', () => {
+describe('the shadow that comes back through the offset', () => {
   const I = { a: 1, b: 0, c: 0, d: 1 };
-  /** Onde a origem da forma cai na tela somada ao deslocamento da sombra, menos a da forma. */
+  /** Where the shape origin lands on the screen plus the shadow offset, minus the shape one. */
   const net = (
     native: ReturnType<typeof recorder>['native'],
     calls: ReturnType<typeof recorder>['calls'],
@@ -136,18 +136,18 @@ describe('a sombra que volta pelo deslocamento', () => {
     const t = calls.find(([name]) => name === 'translate')!;
     const [tx, ty] = [t[1]!, t[2]!];
     return {
-      // A caixa começa em (−spread, −spread), no espaço local; o que sobra é o deslocamento puro.
+      // The box starts at (−spread, −spread), in local space; what is left is the pure offset.
       x: native.shadowOffsetX + m.a * tx + m.c * ty,
       y: native.shadowOffsetY + m.b * tx + m.d * ty,
     };
   };
 
   it.each([
-    ['sem giro', I],
-    ['girado 90°', { a: 0, b: 1, c: -1, d: 0 }],
-    ['com zoom 2', { a: 2, b: 0, c: 0, d: 2 }],
-    ['girado 30° com zoom 1,5', { a: 1.3, b: 0.75, c: -0.75, d: 1.3 }],
-  ])('a forma cai longe da tela e a sombra volta ao lugar: %s', (_name, m) => {
+    ['no rotation', I],
+    ['rotated 90°', { a: 0, b: 1, c: -1, d: 0 }],
+    ['with zoom 2', { a: 2, b: 0, c: 0, d: 2 }],
+    ['rotated 30° with zoom 1.5', { a: 1.3, b: 0.75, c: -0.75, d: 1.3 }],
+  ])('the shape lands far from the screen and the shadow comes back into place: %s', (_name, m) => {
     const first = shadow({ offset: { x: 3, y: 5 }, blur: 6 });
     const { native, calls } = draw([first, shadow()], m);
     const sx = Math.hypot(m.a, m.b);
@@ -155,7 +155,7 @@ describe('a sombra que volta pelo deslocamento', () => {
     const result = net(native, calls, m);
     expect(result.x).toBeCloseTo(3 * sx, 6);
     expect(result.y).toBeCloseTo(5 * sy, 6);
-    // Longe: o deslocamento da forma passa a tela inteira.
+    // Far away: the shape offset goes past the whole screen.
     const t = calls.find(([name]) => name === 'translate')!;
     expect(Math.hypot(m.a * t[1]!, m.b * t[1]!)).toBeGreaterThan(800 + 600);
     expect(native.shadowBlur).toBeCloseTo(6 * Math.min(sx, sy), 6);
@@ -163,37 +163,37 @@ describe('a sombra que volta pelo deslocamento', () => {
   });
 });
 
-describe('shadow.spread no Konva (decisão 4)', () => {
+describe('shadow.spread in Konva (decision 4)', () => {
   const I = { a: 1, b: 0, c: 0, d: 1 };
 
-  it('a forma cresce o spread de cada lado, com os raios mais o spread', () => {
+  it('the shape grows the spread on each side, with the radii plus the spread', () => {
     const { calls } = draw([shadow({ spread: 3, blur: 0, offset: { x: 0, y: 0 } })], I);
     const moves = calls.filter(([name]) => name === 'moveTo');
-    // Caixa 46 × 26 e raio 8 + 3 = 11: o caminho abre em (11, 0), no espaço da forma.
+    // Box 46 × 26 and radius 8 + 3 = 11: the path opens at (11, 0), in the shape space.
     expect(moves[0]).toEqual(['moveTo', 11, 0]);
     const lines = calls.filter(([name]) => name === 'lineTo');
     expect(lines[0]).toEqual(['lineTo', 46 - 11, 0]);
   });
 
-  it('o spread negativo encolhe a forma; some quando passa da metade', () => {
+  it('a negative spread shrinks the shape; it disappears when it passes half', () => {
     const small = draw([shadow({ spread: -4, offset: { x: 0, y: 0 } })], I).calls;
     expect(small.find(([name]) => name === 'moveTo')).toEqual(['moveTo', 4, 0]);
-    // 40 × 20 com spread −10 vira 20 × 0: nada a desenhar.
+    // 40 × 20 with spread −10 becomes 20 × 0: nothing to draw.
     const gone = draw([shadow({ spread: -10 })], I).calls;
     expect(gone.some(([name]) => name === 'fill')).toBe(false);
   });
 
-  it('um canto reto continua reto com o spread', () => {
+  it('a straight corner stays straight with the spread', () => {
     const { calls } = draw([shadow({ spread: 3 })], I, card([shadow({ spread: 3 })], 0));
     expect(calls.find(([name]) => name === 'moveTo')).toEqual(['moveTo', 0, 0]);
   });
 
-  it('uma sombra de spread positivo sem desfoque nem deslocamento ainda desenha (é um anel)', () => {
+  it('a shadow with positive spread without blur or offset still draws (it is a ring)', () => {
     const { calls } = draw([shadow({ spread: 3, blur: 0, offset: { x: 0, y: 0 } })], I);
     expect(calls.some(([name]) => name === 'fill')).toBe(true);
   });
 
-  it('a elipse leva a sombra pela elipse crescida', () => {
+  it('the ellipse carries the shadow through the grown ellipse', () => {
     const ellipse: SceneNode = {
       ...baseNode({
         id: 'c',
@@ -219,8 +219,8 @@ describe('shadow.spread no Konva (decisão 4)', () => {
   });
 });
 
-describe('contorno com vão no Konva (decisão 7)', () => {
-  it('o contorno vira linhas abertas que pulam o vão, sem a forma fechada', () => {
+describe('outline with a gap in Konva (decision 7)', () => {
+  it('the outline becomes open lines that skip the gap, without the closed shape', () => {
     const node: SceneNode = {
       ...baseNode({ id: 'o', name: 'o', width: 100, height: 40 }),
       type: 'rect',
@@ -240,12 +240,12 @@ describe('contorno com vão no Konva (decisão 7)', () => {
     expect(line.closed()).toBe(false);
     expect(line.stroke()).toBe('#ff0000');
     const points = line.points();
-    // Começa onde o vão termina (50, 0) e termina onde ele começa (20, 0).
+    // Starts where the gap ends (50, 0) and ends where it starts (20, 0).
     expect(points.slice(0, 2)).toEqual([50, 0]);
     expect(points.slice(-2)).toEqual([20, 0]);
   });
 
-  it('sem gaps o contorno é o retângulo de sempre', () => {
+  it('without gaps the outline is the usual rectangle', () => {
     const node: SceneNode = {
       ...baseNode({ id: 'o', name: 'o', width: 100, height: 40 }),
       type: 'rect',

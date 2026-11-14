@@ -24,11 +24,12 @@ import { MemoryDirectory } from '../storage/memoryFs';
 export const REVIEW_AT = '2026-10-09T14:00:00.000Z';
 
 /**
- * Uma proposta com uma imagem nova (`I3`) com uma marcação (`M5`) e uma anotação (`A9`),
- * uma marcação renomeada (`M1`) e outra movida (`M4`).
+ * A proposal with a new image (`I3`) with a marking (`M5`) and an annotation (`A9`),
+ * a renamed marking (`M1`) and a moved one (`M4`).
  */
 export function richScenario(id = 'P1') {
   const base = sampleProject();
+  // pt-BR kept: shared fixture data (names 'Porta dianteira', 'Botão' and the path 'nova.webp') asserted by tests/components and tests/store
   let after = renameMarking(base, 'M1', 'Porta dianteira');
   after = setMarkingRect(after, 'M4', { x: 10, y: 10, width: 100, height: 100 });
   after = addContainer(after, {
@@ -64,27 +65,29 @@ export function richScenario(id = 'P1') {
   };
 }
 
+// pt-BR kept: shared fixture data (the path 'nova.webp') asserted by tests/components
 export const NEW_IMAGE_PATH = 'proposals/P1/images/nova.webp';
 
 export interface HarnessOptions {
   readonly project?: Project;
   readonly proposals?: readonly Proposal[];
-  /** Arquivos extras (caminho → texto), ex: a imagem que espera em `proposals/P1/images/`. */
+  /** Extra files (path → text), e.g. the image waiting in `proposals/P1/images/`. */
   readonly files?: Readonly<Record<string, string>>;
-  /** Abre a sessão sem as propostas (depois `session.proposals.scan()` as encontra). */
+  /** Opens the session without the proposals (then `session.proposals.scan()` finds them). */
   readonly skipProposals?: boolean;
-  /** Nome da pasta (o `<projeto>` das referências; não identifica a cópia). */
+  /** Folder name (the `<project>` of the references; does not identify the copy). */
   readonly folderName?: string;
   /**
-   * A cópia do projeto (`ProjectStorage.copyId`, a chave do retomar da revisão): por
-   * padrão um id novo (cada harness é outra cópia); o mesmo id em dois harnesses é "a
-   * mesma cópia, reaberta"; `null` abre um storage sem o campo.
+   * The project copy (`ProjectStorage.copyId`, the review resume key): by
+   * default a new id (each harness is another copy); the same id in two harnesses is "the
+   * same copy, reopened"; `null` opens a storage without the field.
    */
   readonly copyId?: string | null;
 }
 
-/** Uma pasta com projeto e propostas, a sessão aberta sobre ela e o estado da revisão. */
+/** A folder with a project and proposals, the session open over it and the review state. */
 export async function openHarness(options: HarnessOptions = {}) {
+  // pt-BR kept: shared fixture data (default folder name 'projeto') asserted by tests/app
   const root = new MemoryDirectory(options.folderName ?? 'projeto');
   const project: Project = { ...(options.project ?? sampleProject()), revision: 3 };
   root.put('mapping.json', serialize(project));
@@ -102,7 +105,7 @@ export async function openHarness(options: HarnessOptions = {}) {
     loadedText: loaded.text,
     ...(options.skipProposals ? {} : { proposals: await loadProposals(storage) }),
     threads: await loadThreads(storage),
-    prepareImage: () => Promise.reject(new Error('sem imagens aqui')),
+    prepareImage: () => Promise.reject(new Error('no images here')),
     now: () => REVIEW_AT,
     newId: () => `id-${++n}`,
     autosaveDelay: 1,
@@ -113,7 +116,7 @@ export async function openHarness(options: HarnessOptions = {}) {
 
 export type Harness = Awaited<ReturnType<typeof openHarness>>;
 
-/** O `proposal.json` como está em disco. */
+/** The `proposal.json` as it is on disk. */
 export async function diskProposal(root: MemoryDirectory, id = 'P1'): Promise<Proposal> {
   const text = await root.read(proposalFilePath(id));
   const parsed = parseProposalText(text ?? '');
@@ -121,7 +124,7 @@ export async function diskProposal(root: MemoryDirectory, id = 'P1'): Promise<Pr
   return parsed.proposal;
 }
 
-/** Grava a proposta por fora, como o MCP faria (sem passar pela sessão). */
+/** Writes the proposal from outside, as the MCP would (without going through the session). */
 export function writeOutside(root: MemoryDirectory, p: Proposal): void {
   root.put(proposalFilePath(p.id), serializeProposal(p));
 }

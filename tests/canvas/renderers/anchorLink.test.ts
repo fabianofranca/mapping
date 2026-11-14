@@ -10,9 +10,9 @@ import {
 } from '../../../src/model';
 import { canvasProject, editorFor, frameOf, installFakeCanvas, TOKENS } from '../harness';
 
-// Ligação da âncora (R4, decisão 13): a marcação ancorada, selecionada ou sob o mouse, mostra uma
-// linha tracejada fina até a âncora; some fora deles. Pan e zoom não a recalculam além da
-// transformação (os pontos ficam, só a espessura e o tracejado seguem o zoom).
+// Anchor link (R4, decision 13): the anchored marking, selected or under the mouse, shows a thin
+// dashed line to the anchor; it disappears otherwise. Pan and zoom do not recompute it beyond the
+// transform (the points stay, only the thickness and the dashes follow the zoom).
 
 beforeAll(installFakeCanvas);
 afterAll(() => vi.restoreAllMocks());
@@ -22,7 +22,7 @@ const PLACEMENTS: ReadonlyMap<string, Placement> = new Map([
   ['I2', { x: 1100, y: 0, scale: 1 }],
 ]);
 
-/** `canvasProject` com M4 (100×100 em 800,100) ancorada em M1 (600×500 em 100,100), ambas em I1. */
+/** `canvasProject` with M4 (100×100 at 800,100) anchored to M1 (600×500 at 100,100), both in I1. */
 function anchoredProject(): Project {
   const p = createMarking(canvasProject(), {
     id: 'M4',
@@ -44,20 +44,20 @@ function setup(project: Project = anchoredProject()) {
 const M4_CENTER = [850, 150];
 const M1_CENTER = [400, 350];
 
-describe('ligação da âncora no canvas', () => {
-  it('sem seleção nem mouse, nenhuma linha', () => {
+describe('anchor link on the canvas', () => {
+  it('with no selection or mouse, no line', () => {
     const { render, shown } = setup();
     render();
     expect(shown()).toHaveLength(0);
   });
 
-  it('a ancorada selecionada mostra a linha tracejada do centro dela ao da âncora', () => {
+  it('the selected anchored marking shows the dashed line from its center to the anchor center', () => {
     const { render, shown } = setup();
     render({ selection: { kind: 'marking', id: 'M4' } });
     const [link] = shown();
     expect(shown()).toHaveLength(1);
     expect(link?.line.points()).toEqual([...M4_CENTER, ...M1_CENTER]);
-    // Traço fino tracejado na cor do controle, com o halo por baixo.
+    // Thin dashed stroke in the control color, with the halo underneath.
     expect(link?.line.getAttrs()).toMatchObject({
       stroke: TOKENS.borderControl,
       strokeWidth: 2,
@@ -71,7 +71,7 @@ describe('ligação da âncora no canvas', () => {
     });
   });
 
-  it('a ancorada sob o mouse mostra a linha, e ao sair some', () => {
+  it('the anchored marking under the mouse shows the line, and it disappears on leaving', () => {
     const { render, shown } = setup();
     render({ hoverMarking: 'M4' });
     expect(shown()).toHaveLength(1);
@@ -80,13 +80,13 @@ describe('ligação da âncora no canvas', () => {
     expect(shown()).toHaveLength(0);
   });
 
-  it('a âncora selecionada ou sob o mouse (não a ancorada) não mostra a linha', () => {
+  it('the selected or hovered anchor (not the anchored marking) shows no line', () => {
     const { render, shown } = setup();
     render({ selection: { kind: 'marking', id: 'M1' }, hoverMarking: 'M1' });
     expect(shown()).toHaveLength(0);
   });
 
-  it('marcação sem âncora e container selecionado não mostram linha', () => {
+  it('a marking without an anchor and a selected container show no line', () => {
     const { render, shown } = setup();
     render({ selection: { kind: 'marking', id: 'M2' }, hoverMarking: 'M3' });
     expect(shown()).toHaveLength(0);
@@ -94,7 +94,7 @@ describe('ligação da âncora no canvas', () => {
     expect(shown()).toHaveLength(0);
   });
 
-  it('a selecionada e a do mouse, ambas ancoradas, mostram as duas ligações', () => {
+  it('the selected one and the hovered one, both anchored, show both links', () => {
     let p = createMarking(anchoredProject(), {
       id: 'M5',
       containerId: 'I1',
@@ -107,12 +107,12 @@ describe('ligação da âncora no canvas', () => {
       [...M4_CENTER, ...M1_CENTER],
       [850, 350, ...M4_CENTER],
     ]);
-    // O mesmo item selecionado e sob o mouse tem uma ligação só.
+    // The same item selected and under the mouse has a single link.
     render({ selection: { kind: 'marking', id: 'M4' }, hoverMarking: 'M4' });
     expect(shown()).toHaveLength(1);
   });
 
-  it('segue as posições do quadro (a prévia do arrasto) e a colocação do container', () => {
+  it('follows the frame positions (the drag preview) and the container placement', () => {
     const { render, shown } = setup();
     render(
       { selection: { kind: 'marking', id: 'M4' } },
@@ -126,7 +126,7 @@ describe('ligação da âncora no canvas', () => {
     ]);
   });
 
-  it('pan não muda a ligação; o zoom só muda a espessura e o tracejado, não os pontos', () => {
+  it('pan does not change the link; zoom only changes the thickness and the dashes, not the points', () => {
     const { render, shown } = setup();
     const selection = { kind: 'marking', id: 'M4' } as const;
     render({ selection, viewport: { x: 0, y: 0, scale: 1 } });
@@ -140,7 +140,7 @@ describe('ligação da âncora no canvas', () => {
     expect(zoomed?.line.dash()).toEqual([6 / 4, 4 / 4]);
   });
 
-  it('o hover entra nas chaves que refazem as sobreposições', () => {
+  it('the hover is among the keys that redo the overlays', () => {
     expect(OVERLAY_KEYS).toContain('hoverMarking');
   });
 });

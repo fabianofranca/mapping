@@ -1,5 +1,5 @@
-// Ações do store sobre o papel do vínculo e o `docRepos` (etapa #559, PD2, decisão 15): cada
-// gesto é uma entrada de desfazer.
+// Store actions on the link role and on `docRepos` (stage #559, PD2, decision 15): each
+// gesture is one undo entry.
 import { describe, expect, it } from 'vitest';
 import type { Project } from '../../src/model';
 import { createProjectStore } from '../../src/store/history';
@@ -16,14 +16,14 @@ function setup(edit = withRoles) {
 
 const current = (store: ReturnType<typeof createProjectStore>): Project => {
   const p = store.project.value;
-  if (!p) throw new Error('sem projeto');
+  if (!p) throw new Error('no project');
   return p;
 };
 const annotation = (store: ReturnType<typeof createProjectStore>, id: string) =>
   current(store).annotations.find((a) => a.id === id);
 
-describe('store: criar vinculada com papel', () => {
-  it('uma entrada de desfazer com o dono e o papel', () => {
+describe('store: create linked with a role', () => {
+  it('one undo entry with the owner and the role', () => {
     const { store, actions } = setup();
     const layerId = layerOf(current(store), 's', 'eventos');
     const result = actions.addTypedAnnotation(
@@ -41,7 +41,7 @@ describe('store: criar vinculada com papel', () => {
     expect(current(store).annotations.some((a) => a.id === created?.id)).toBe(false);
   });
 
-  it('papel que o dono não oferece volta como erro, sem entrada no histórico', () => {
+  it('a role that the owner does not offer comes back as an error, with no history entry', () => {
     const { store, actions } = setup();
     const layerId = layerOf(current(store), 's', 'eventos');
     expect(
@@ -50,14 +50,14 @@ describe('store: criar vinculada com papel', () => {
         layerId,
         { specId: 's', typeId: 'onClick' },
         'A1',
-        'nao',
+        'no',
       ),
     ).toEqual({ ok: false, error: 'unknown-role' });
     expect(store.canUndo.value).toBe(false);
   });
 });
 
-describe('store: trocar papel e dono', () => {
+describe('store: change role and owner', () => {
   function withChild() {
     const ctx = setup();
     const layerId = layerOf(current(ctx.store), 's', 'eventos');
@@ -72,7 +72,7 @@ describe('store: trocar papel e dono', () => {
     return { ...ctx, id };
   }
 
-  it('trocar o papel é uma entrada; desfazer volta o anterior', () => {
+  it('changing the role is one entry; undo restores the previous one', () => {
     const { store, actions, id } = withChild();
     const before = store.revision.value;
     expect(actions.setAnnotationRole(id, 'hold').ok).toBe(true);
@@ -80,13 +80,13 @@ describe('store: trocar papel e dono', () => {
     expect(annotation(store, id)?.parentRole).toBe('hold');
     store.undo();
     expect(annotation(store, id)?.parentRole).toBe('click');
-    expect(actions.setAnnotationRole(id, 'nao')).toEqual({
+    expect(actions.setAnnotationRole(id, 'no')).toEqual({
       ok: false,
       error: 'unknown-role',
     });
   });
 
-  it('trocar o dono para um que oferece o papel o mantém, numa entrada', () => {
+  it('changing the owner to one that offers the role keeps it, in one entry', () => {
     const { store, actions, id } = withChild();
     const before = store.revision.value;
     expect(actions.setAnnotationParent(id, 'A2').ok).toBe(true);
@@ -97,7 +97,7 @@ describe('store: trocar papel e dono', () => {
     });
   });
 
-  it('tirar o dono limpa o papel na mesma entrada, e desfazer devolve os dois', () => {
+  it('removing the owner clears the role in the same entry, and undo restores both', () => {
     const { store, actions, id } = withChild();
     const before = store.revision.value;
     expect(actions.setAnnotationParent(id, null).ok).toBe(true);
@@ -114,8 +114,8 @@ describe('store: trocar papel e dono', () => {
   });
 });
 
-describe('store: localPath do docRepos', () => {
-  it('gravar e remover entram no desfazer; repetir o valor não cria entrada', () => {
+describe('store: localPath of docRepos', () => {
+  it('saving and removing enter undo; repeating the value creates no entry', () => {
     const { store, actions } = setup(withDocRepo);
     expect(actions.setDocRepo('design-docs', '../docs').ok).toBe(true);
     expect(current(store).docRepos).toEqual({ 'design-docs': { localPath: '../docs' } });
@@ -129,7 +129,7 @@ describe('store: localPath do docRepos', () => {
     expect(current(store).docRepos).toEqual({});
   });
 
-  it('erros do modelo voltam como ActionResult', () => {
+  it('model errors come back as ActionResult', () => {
     const { store, actions } = setup(withDocRepo);
     expect(actions.setDocRepo('outro', '../x')).toEqual({
       ok: false,

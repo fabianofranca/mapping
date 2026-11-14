@@ -27,7 +27,7 @@ const marking = (id: string): SelectionItem => ({ kind: 'marking', id });
 const arrow = (id: string): SelectionItem => ({ kind: 'arrow', id });
 const NONE: ReadonlyMap<string, MarkingVisibility> = new Map();
 
-/** Itens dentro de `rect`, com as setas desenhadas (ou nenhuma). */
+/** Items inside `rect`, with the arrows drawn (or none). */
 function pick(
   project: Project,
   rect: Rect,
@@ -41,7 +41,7 @@ function pick(
 }
 
 describe('rectFromCorners', () => {
-  it('normaliza os cantos em qualquer direção, sem arredondar', () => {
+  it('normalizes the corners in any direction, without rounding', () => {
     expect(rectFromCorners({ x: 10.5, y: 40 }, { x: 2, y: 5.25 })).toEqual(
       r(2, 5.25, 8.5, 34.75),
     );
@@ -50,7 +50,7 @@ describe('rectFromCorners', () => {
 });
 
 describe('treeOrder', () => {
-  it('segue a janela Árvore: canvas (marcação, filhas, containers membros, setas) e depois os containers soltos', () => {
+  it('follows the Tree window: canvas (marking, children, member containers, arrows) and then the loose containers', () => {
     expect(treeOrder(multiProject())).toEqual([
       marking('G'),
       marking('G2'),
@@ -70,7 +70,7 @@ describe('treeOrder', () => {
     ]);
   });
 
-  it('a seta fica logo depois das filhas da marcação de origem', () => {
+  it('the arrow comes right after the children of the source marking', () => {
     const order = treeOrder(arrowProject());
     const at = (item: SelectionItem) =>
       order.findIndex((i) => i.kind === item.kind && i.id === item.id);
@@ -81,33 +81,33 @@ describe('treeOrder', () => {
 describe('marqueeItems', () => {
   const base = multiProject();
 
-  it('entra o que está inteiro dentro; a borda que cruza deixa de fora', () => {
-    // A (0..1000) cabe em (-10..1010); G2 (-50..1050) cruza a borda.
+  it('what is entirely inside is picked; what crosses the edge is left out', () => {
+    // A (0..1000) fits in (-10..1010); G2 (-50..1050) crosses the edge.
     expect(pick(base, r(-10, -10, 1020, 1020))).toEqual([image('A')]);
     expect(pick(base, r(10, 10, 980, 980))).not.toContainEqual(image('A'));
   });
 
-  it('a borda coincidente conta como dentro', () => {
+  it('a coincident edge counts as inside', () => {
     expect(pick(base, r(0, 0, 1000, 1000))).toEqual([image('A')]);
   });
 
-  it('container: entra com o retângulo dele no canvas (escala aplicada)', () => {
-    // B é 500×500 com escala 2 em (2000,0): 1000×1000 no canvas.
+  it('container: picked with its rectangle on the canvas (scale applied)', () => {
+    // B is 500×500 with scale 2 at (2000,0): 1000×1000 on the canvas.
     expect(pick(base, r(1990, -10, 1020, 1020))).toEqual([image('B')]);
     expect(pick(base, r(1990, -10, 600, 1020))).toEqual([marking('b1')]);
   });
 
-  it('marcação de container entra pelo retângulo no canvas', () => {
+  it('container marking is picked by its rectangle on the canvas', () => {
     expect(pick(base, r(90, 90, 320, 320))).toEqual([marking('a1')]);
     expect(pick(base, r(2090, 90, 220, 220))).toEqual([marking('b1')]);
   });
 
-  it('marcação do canvas e flutuante entram', () => {
+  it('canvas marking and floating marking are picked', () => {
     expect(pick(base, r(390, 1290, 220, 120))).toEqual([marking('H')]);
     expect(pick(base, r(90, 1290, 220, 120))).toEqual([marking('N')]);
   });
 
-  it('seta: entra com todos os pontos da rota dentro; sem seta desenhada, não entra', () => {
+  it('arrow: picked with all route points inside; with no arrow drawn, it is not picked', () => {
     const p = arrowProject();
     const around = r(90, 90, 720, 720);
     expect(pick(p, around, { arrows: true })).toEqual([
@@ -118,13 +118,13 @@ describe('marqueeItems', () => {
     expect(pick(p, around)).toEqual([marking('a1'), marking('a3')]);
   });
 
-  it('seta com uma ponta fora do retângulo não entra', () => {
+  it('arrow with one end outside the rectangle is not picked', () => {
     expect(pick(arrowProject(), r(90, 90, 320, 320), { arrows: true })).toEqual([
       marking('a1'),
     ]);
   });
 
-  it('marcação invisível não entra; trancada entra', () => {
+  it('invisible marking is not picked; locked one is', () => {
     const hidden = new Map<string, MarkingVisibility>([['a1', 'hidden']]);
     expect(pick(base, r(90, 90, 320, 320), { visibility: hidden })).toEqual([
       marking('a2'),
@@ -136,27 +136,27 @@ describe('marqueeItems', () => {
     ]);
   });
 
-  it('só os de fora: a marcação de um container que entrou não entra', () => {
+  it('outermost only: the marking of a container that was picked is not picked', () => {
     expect(pick(base, r(-10, -10, 1020, 1020))).toEqual([image('A')]);
   });
 
-  it('só os de fora: a descendente de uma marcação que entrou não entra', () => {
-    // a2 está dentro de a1: só a1.
+  it('outermost only: the descendant of a marking that was picked is not picked', () => {
+    // a2 is inside a1: only a1.
     expect(pick(base, r(90, 90, 320, 320))).toEqual([marking('a1')]);
   });
 
-  it('só os de fora: no canvas nada leva nada (container dentro de marcação do canvas entra)', () => {
+  it('outermost only: on the canvas nothing carries anything (container inside a canvas marking is picked)', () => {
     expect(pick(base, r(-60, -60, 1120, 1120))).toEqual([marking('G2'), image('A')]);
   });
 
-  it('descendente cujo ancestral não entrou continua entrando', () => {
+  it('descendant whose ancestor was not picked is still picked', () => {
     const hidden = new Map<string, MarkingVisibility>([['a1', 'hidden']]);
     expect(pick(base, r(140, 140, 120, 120), { visibility: hidden })).toEqual([
       marking('a2'),
     ]);
   });
 
-  it('o resultado segue a ordem da Árvore', () => {
+  it('the result follows the Tree order', () => {
     expect(pick(base, r(-200, -200, 12000, 2000))).toEqual([
       marking('G'),
       marking('G2'),

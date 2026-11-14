@@ -1,5 +1,5 @@
-// Visualizador (L1): o ScreenRenderer desenha uma tela num Konva.Group e faz o diff por
-// instância (identidade dos objetos).
+// Viewer (L1): the ScreenRenderer draws a screen in a Konva.Group and diffs per
+// instance (object identity).
 import Konva from 'konva';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { installFakeCanvas } from '../harness';
@@ -22,10 +22,10 @@ beforeAll(() => installFakeCanvas());
 const library = loadLibrary(SAMPLE_FILES);
 
 const LABELS: ScreenRendererLabels = {
-  typeWithoutComponent: (name) => `${name}\n(sem componente)`,
-  unknownType: (id) => `${id}\n(tipo desconhecido)`,
-  warningTypeWithoutComponent: 'tipo sem componente na especialização',
-  warningUnknownType: 'tipo não existe na especialização',
+  typeWithoutComponent: (name) => `${name}\n(no component)`,
+  unknownType: (id) => `${id}\n(unknown type)`,
+  warningTypeWithoutComponent: 'type without component in the specialization',
+  warningUnknownType: 'type does not exist in the specialization',
   drawWarning: ({ code }) => code,
 };
 
@@ -39,7 +39,7 @@ function setup(options: Partial<ConstructorParameters<typeof ScreenRenderer>[1]>
   return { group, renderer };
 }
 
-/** Troca uma instância por um objeto novo com o valor `key` diferente. */
+/** Swaps an instance for a new object with a different `key` value. */
 function withValue(screen: Screen, id: string, key: string, value: string): Screen {
   return {
     ...screen,
@@ -50,7 +50,7 @@ function withValue(screen: Screen, id: string, key: string, value: string): Scre
 }
 
 describe('ScreenRenderer', () => {
-  it('cria um grupo por instância, com instanceId, na ordem de renderOrder', () => {
+  it('creates a group per instance, with instanceId, in renderOrder order', () => {
     const { group, renderer } = setup();
     expect(renderer.update(library, SAMPLE_SCREEN)).toBe(true);
     const expected = renderOrder(SAMPLE_SCREEN).map((i) => i.id);
@@ -70,7 +70,7 @@ describe('ScreenRenderer', () => {
     expect(renderer.labelOf('i-enter')).toBe('Entrar');
   });
 
-  it('respeita zBase (o chamador pode ter outros filhos antes)', () => {
+  it('respects zBase (the caller may have other children before)', () => {
     const { group, renderer } = setup();
     group.add(new Konva.Rect({ name: 'artboard' }));
     renderer.update(library, SAMPLE_SCREEN, { zBase: 1 });
@@ -81,7 +81,7 @@ describe('ScreenRenderer', () => {
     expect(group.getChildren()).toHaveLength(1 + SAMPLE_SCREEN.instances.length);
   });
 
-  it('segundo update com a mesma tela não re-instancia nada', () => {
+  it('a second update with the same screen does not re-instantiate anything', () => {
     const { renderer } = setup();
     renderer.update(library, SAMPLE_SCREEN);
     const before = renderer.ids().map((id) => renderer.nodeOf(id));
@@ -94,7 +94,7 @@ describe('ScreenRenderer', () => {
     });
   });
 
-  it('trocar uma instância re-instancia só ela', () => {
+  it('swapping one instance re-instantiates only it', () => {
     const { renderer } = setup();
     renderer.update(library, SAMPLE_SCREEN);
     const nodes = new Map(renderer.ids().map((id) => [id, renderer.nodeOf(id)]));
@@ -104,7 +104,7 @@ describe('ScreenRenderer', () => {
     const next = withValue(SAMPLE_SCREEN, 'i-enter', 'label', 'Continuar');
     expect(renderer.update(library, next)).toBe(true);
     for (const id of renderer.ids()) {
-      // Os grupos são os mesmos objetos.
+      // The groups are the same objects.
       expect(renderer.nodeOf(id)).toBe(nodes.get(id));
       if (id === 'i-enter') {
         expect(renderer.nodeOf(id)?.getChildren()[0]).not.toBe(inner.get(id));
@@ -116,7 +116,7 @@ describe('ScreenRenderer', () => {
     expect(renderer.instanceOf('i-enter')?.values.label).toBe('Continuar');
   });
 
-  it('remover uma instância destrói o grupo dela', () => {
+  it('removing an instance destroys its group', () => {
     const { group, renderer } = setup();
     renderer.update(library, SAMPLE_SCREEN);
     const node = renderer.nodeOf('i-create');
@@ -132,7 +132,7 @@ describe('ScreenRenderer', () => {
     expect(group.getChildren()).toHaveLength(next.instances.length);
   });
 
-  it('biblioteca trocada (objeto novo) re-instancia tudo', () => {
+  it('a swapped library (new object) re-instantiates everything', () => {
     const { renderer } = setup();
     renderer.update(library, SAMPLE_SCREEN);
     const inner = renderer.ids().map((id) => renderer.nodeOf(id)?.getChildren()[0]);
@@ -141,18 +141,18 @@ describe('ScreenRenderer', () => {
     renderer.ids().forEach((id, index) => {
       expect(renderer.nodeOf(id)?.getChildren()[0]).not.toBe(inner[index]);
     });
-    // force também re-instancia, mesmo com tudo igual.
+    // force also re-instantiates, even with everything equal.
     const again = renderer.nodeOf('i-bar')?.getChildren()[0];
     expect(renderer.update(other, SAMPLE_SCREEN)).toBe(false);
     expect(renderer.update(other, SAMPLE_SCREEN, { force: true })).toBe(true);
     expect(renderer.nodeOf('i-bar')?.getChildren()[0]).not.toBe(again);
   });
 
-  it('tipo desconhecido gera o reservado e um aviso', () => {
+  it('unknown type generates the placeholder and a warning', () => {
     const { renderer } = setup();
     const unknown: Instance = {
       id: 'x',
-      typeId: 'nao-existe',
+      typeId: 'does-not-exist',
       box: { x: 5, y: 6, width: 100, height: 40 },
       values: {},
     };
@@ -161,15 +161,15 @@ describe('ScreenRenderer', () => {
     const rect = node?.findOne<Konva.Rect>('Rect');
     expect(rect?.dash()).toEqual([6, 4]);
     expect(rect?.stroke()).toBe(DEFAULT_PALETTE.unknownLine);
-    expect(node?.findOne<Konva.Text>('Text')?.text()).toContain('nao-existe');
-    expect(renderer.warnings().get('x')).toEqual(['tipo não existe na especialização']);
-    // Sem biblioteca nenhuma: todos viram reservado.
+    expect(node?.findOne<Konva.Text>('Text')?.text()).toContain('does-not-exist');
+    expect(renderer.warnings().get('x')).toEqual(['type does not exist in the specialization']);
+    // Without any library: all become a placeholder.
     const empty = setup();
     empty.renderer.update(undefined, SAMPLE_SCREEN);
     expect(empty.renderer.warnings().size).toBe(SAMPLE_SCREEN.instances.length);
   });
 
-  it('render(instance) temporário muda instanceOf e o próximo update desfaz', () => {
+  it('a temporary render(instance) changes instanceOf and the next update undoes it', () => {
     const { renderer } = setup();
     renderer.update(library, SAMPLE_SCREEN);
     const original = renderer.instanceOf('i-enter');
@@ -185,12 +185,12 @@ describe('ScreenRenderer', () => {
     });
     expect(renderer.update(library, SAMPLE_SCREEN)).toBe(true);
     expect(renderer.instanceOf('i-enter')).toBe(original);
-    // Instância desconhecida: ignorada.
+    // Unknown instance: ignored.
     expect(() => renderer.render({ ...original, id: 'fantasma' })).not.toThrow();
     expect(renderer.nodeOf('fantasma')).toBeUndefined();
   });
 
-  it('instanceIdOf acha a instância a partir de um nó filho', () => {
+  it('instanceIdOf finds the instance from a child node', () => {
     const { renderer } = setup();
     renderer.update(library, SAMPLE_SCREEN);
     const hit = renderer.nodeOf('i-enter')?.findOne('.hit');
@@ -202,16 +202,16 @@ describe('ScreenRenderer', () => {
     expect(renderer.instanceIdOf(undefined)).toBeUndefined();
   });
 
-  it('instanceAt devolve a mais acima', () => {
+  it('instanceAt returns the topmost one', () => {
     const { renderer } = setup();
     renderer.update(library, SAMPLE_SCREEN);
-    // O campo de e-mail está dentro do card (desenhado depois, fica por cima).
+    // The e-mail field is inside the card (drawn later, stays on top).
     expect(renderer.instanceAt({ x: 100, y: 300 })).toBe('i-email');
     expect(renderer.instanceAt({ x: 30, y: 220 })).toBe('i-card');
     expect(renderer.instanceAt({ x: 380, y: 800 })).toBeUndefined();
   });
 
-  it('onInstanceCreated é chamado uma vez por instância', () => {
+  it('onInstanceCreated is called once per instance', () => {
     const created: string[] = [];
     const onInstanceCreated = vi.fn((id: string, node: Konva.Group) => {
       created.push(id);
@@ -226,7 +226,7 @@ describe('ScreenRenderer', () => {
     expect(new Set(created).size).toBe(created.length);
   });
 
-  it('os textos da caixa de tipo ausente e dos avisos vêm dos rótulos do chamador', () => {
+  it("the texts of the missing-type box and of the warnings come from the caller's labels", () => {
     const { renderer } = setup({
       labels: {
         ...LABELS,
@@ -237,29 +237,29 @@ describe('ScreenRenderer', () => {
     });
     const unknown: Instance = {
       id: 'x',
-      typeId: 'nao-existe',
+      typeId: 'does-not-exist',
       box: { x: 5, y: 6, width: 100, height: 40 },
       values: {},
     };
     renderer.update(library, { ...SAMPLE_SCREEN, instances: [unknown] });
     expect(renderer.nodeOf('x')?.findOne<Konva.Text>('Text')?.text()).toBe(
-      'nao-existe\n(unknown type)',
+      'does-not-exist\n(unknown type)',
     );
     expect(renderer.warnings().get('x')).toEqual(['type is not in the specialization']);
   });
 
-  it('cor, preenchimento, fonte e tamanho da caixa de tipo ausente vêm da paleta', () => {
+  it('color, fill, font and size of the missing-type box come from the palette', () => {
     const { renderer } = setup({
       palette: {
         unknownLine: '#123456',
         unknownFill: '#abcdef',
         labelFontSize: 20,
-        labelFontFamily: 'Fonte Teste',
+        labelFontFamily: 'Test Font',
       },
     });
     const unknown: Instance = {
       id: 'x',
-      typeId: 'nao-existe',
+      typeId: 'does-not-exist',
       box: { x: 0, y: 0, width: 100, height: 40 },
       values: {},
     };
@@ -271,10 +271,10 @@ describe('ScreenRenderer', () => {
     expect(rect?.fill()).toBe('#abcdef');
     expect(text?.fill()).toBe('#123456');
     expect(text?.fontSize()).toBe(20);
-    expect(text?.fontFamily()).toBe('Fonte Teste');
+    expect(text?.fontFamily()).toBe('Test Font');
   });
 
-  it('dispose destrói os grupos das instâncias', () => {
+  it('dispose destroys the instance groups', () => {
     const { group, renderer } = setup();
     renderer.update(library, SAMPLE_SCREEN);
     const node = renderer.nodeOf('i-bar');
@@ -287,22 +287,22 @@ describe('ScreenRenderer', () => {
   });
 });
 
-describe('ScreenRenderer: direção de leitura (R1, #1096)', () => {
-  /** Posição x, na tela, de cada texto desenhado dentro das instâncias. */
+describe('ScreenRenderer: reading direction (R1, #1096)', () => {
+  /** x position, on the screen, of each text drawn inside the instances. */
   function textXs(direction?: 'rtl'): number[] {
     const { group, renderer } = setup();
     renderer.update(library, SAMPLE_SCREEN, direction ? { direction } : {});
     return (group.find('Text') as Konva.Text[]).map((t) => t.getAbsolutePosition().x);
   }
 
-  it('em rtl o interior do componente é espelhado, não só a caixa da instância', () => {
+  it('in rtl the component interior is mirrored, not just the instance box', () => {
     const ltr = textXs();
     const rtl = textXs('rtl');
     expect(ltr.length).toBeGreaterThan(0);
     expect(rtl).not.toEqual(ltr);
   });
 
-  it('o padrão (sem a opção) é ltr e mudar a direção redesenha as instâncias', () => {
+  it('the default (without the option) is ltr and changing the direction redraws the instances', () => {
     const { group, renderer } = setup();
     renderer.update(library, SAMPLE_SCREEN);
     const before = (group.find('Text') as Konva.Text[]).map(

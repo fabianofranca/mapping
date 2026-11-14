@@ -36,8 +36,8 @@ const accept = (p: Proposal, changeId: string): Proposal => ({
   },
 });
 
-describe('ProposalStore: gravação com conferência do arquivo', () => {
-  it('grava com revision + 1 e atualiza a lista; a proposta mantém o objeto enquanto não muda', async () => {
+describe('ProposalStore: write with file check', () => {
+  it('writes with revision + 1 and updates the list; the proposal keeps its object while it does not change', async () => {
     const { proposal, ids } = richScenario();
     const { root, session } = await openHarness({
       proposals: [{ ...proposal, revision: 4 }],
@@ -47,16 +47,16 @@ describe('ProposalStore: gravação com conferência do arquivo', () => {
     const result = await session.proposals.mutate('P1', (p) => ({
       ok: true,
       proposal: accept(p, ids.name),
-      value: 'feito',
+      value: 'done',
     }));
-    expect(result).toMatchObject({ ok: true, value: 'feito' });
+    expect(result).toMatchObject({ ok: true, value: 'done' });
     const disk = await diskProposal(root);
     expect(disk.revision).toBe(5);
     expect(disk.decisions[ids.name]?.state).toBe('accepted');
     expect(session.proposals.list.value[0]).toBe(result.ok ? result.proposal : null);
     expect(session.proposals.list.value[0]).not.toBe(before);
 
-    // Sem mudança, nada é gravado.
+    // No change, nothing is written.
     const text = await root.read(proposalFilePath('P1'));
     const same = await session.proposals.mutate('P1', (p) => ({
       ok: true,
@@ -67,43 +67,43 @@ describe('ProposalStore: gravação com conferência do arquivo', () => {
     expect(await root.read(proposalFilePath('P1'))).toBe(text);
   });
 
-  it('proposta que não existe e erro da função de mudança', async () => {
+  it('proposal that does not exist and error from the change function', async () => {
     const { session } = await openHarness({ proposals: [richScenario().proposal] });
     expect(
-      await session.proposals.mutate('nada', (p) => ({
+      await session.proposals.mutate('missing', (p) => ({
         ok: true,
         proposal: p,
         value: 1,
       })),
     ).toEqual({ ok: false, error: 'unknown-proposal' });
     expect(
-      await session.proposals.mutate<number, 'recusei'>('P1', () => ({
+      await session.proposals.mutate<number, 'refused'>('P1', () => ({
         ok: false,
-        error: 'recusei',
+        error: 'refused',
       })),
-    ).toEqual({ ok: false, error: 'recusei' });
+    ).toEqual({ ok: false, error: 'refused' });
   });
 
-  it('se o arquivo mudou por fora, parte da versão do disco em vez de sobrescrevê-la', async () => {
+  it('if the file changed outside, starts from the disk version instead of overwriting it', async () => {
     const { proposal, ids } = richScenario();
     const { root, session } = await openHarness({ proposals: [proposal] });
-    // O MCP reescreve o arquivo (outro título, revision 9) sem a app saber.
-    writeOutside(root, { ...proposal, title: 'Título novo do agente', revision: 9 });
+    // The MCP rewrites the file (other title, revision 9) without the app knowing.
+    writeOutside(root, { ...proposal, title: 'New title from the agent', revision: 9 });
 
     const result = await session.proposals.mutate('P1', (p) => ({
       ok: true,
       proposal: accept(p, ids.name),
       value: p.title,
     }));
-    expect(result).toMatchObject({ ok: true, value: 'Título novo do agente' });
+    expect(result).toMatchObject({ ok: true, value: 'New title from the agent' });
     const disk = await diskProposal(root);
-    expect(disk.title).toBe('Título novo do agente');
+    expect(disk.title).toBe('New title from the agent');
     expect(disk.revision).toBe(10);
     expect(disk.decisions[ids.name]?.state).toBe('accepted');
     expect(session.proposals.notices.value.map((n) => n.kind)).toEqual(['changed']);
   });
 
-  it('proposta apagada por fora: erro "gone", sai da lista e avisa', async () => {
+  it('proposal deleted outside: "gone" error, leaves the list and warns', async () => {
     const { session, root } = await openHarness({ proposals: [richScenario().proposal] });
     root.dirs.get('proposals')?.dirs.delete('P1');
     const result = await session.proposals.mutate('P1', (p) => ({
@@ -116,34 +116,34 @@ describe('ProposalStore: gravação com conferência do arquivo', () => {
     expect(session.proposals.notices.value.map((n) => n.kind)).toEqual(['removed']);
   });
 
-  it('arquivo que mudou por fora e ficou ilegível não é sobrescrito', async () => {
+  it('file that changed outside and became unreadable is not overwritten', async () => {
     const { session, root } = await openHarness({ proposals: [richScenario().proposal] });
-    root.put(proposalFilePath('P1'), '{ editando...');
+    root.put(proposalFilePath('P1'), '{ editing...');
     const result = await session.proposals.mutate('P1', (p) => ({
       ok: true,
       proposal: { ...p, title: 'x' },
       value: null,
     }));
     expect(result).toEqual({ ok: false, error: 'unreadable' });
-    expect(await root.read(proposalFilePath('P1'))).toBe('{ editando...');
+    expect(await root.read(proposalFilePath('P1'))).toBe('{ editing...');
     expect(session.proposals.get('P1')?.title).toBe('Teste');
   });
 
-  it('falha ao gravar: erro "write-failed" e a memória fica como estava', async () => {
+  it('write failure: "write-failed" error and memory stays as it was', async () => {
     const { session, root } = await openHarness({ proposals: [richScenario().proposal] });
     const dir = root.dirs.get('proposals')?.dirs.get('P1');
-    if (!dir) throw new Error('sem pasta');
-    dir.failWrites = new Error('disco cheio');
+    if (!dir) throw new Error('no folder');
+    dir.failWrites = new Error('disk full');
     const result = await session.proposals.mutate('P1', (p) => ({
       ok: true,
-      proposal: { ...p, title: 'novo' },
+      proposal: { ...p, title: 'new' },
       value: null,
     }));
     expect(result).toEqual({ ok: false, error: 'write-failed' });
     expect(session.proposals.get('P1')?.title).toBe('Teste');
   });
 
-  it('as gravações rodam em fila, cada uma sobre o resultado da anterior', async () => {
+  it('writes run in a queue, each over the result of the previous one', async () => {
     const { proposal, ids } = richScenario();
     const { session, root } = await openHarness({ proposals: [proposal] });
     const bump = (changeId: string) =>
@@ -161,8 +161,8 @@ describe('ProposalStore: gravação com conferência do arquivo', () => {
   });
 });
 
-describe('ProposalStore: conferência da pasta', () => {
-  it('percebe a proposta nova, a alterada e a apagada; as próprias gravações não contam', async () => {
+describe('ProposalStore: folder check', () => {
+  it('notices the new, the changed and the deleted proposal; its own writes do not count', async () => {
     const { proposal, ids } = richScenario();
     const { session, root } = await openHarness({ proposals: [proposal] });
     expect(await session.proposals.scan()).toEqual({
@@ -171,7 +171,7 @@ describe('ProposalStore: conferência da pasta', () => {
       removed: [],
     });
 
-    // A app grava: a conferência seguinte não toma isso por mudança externa.
+    // The app writes: the next check does not take it as an external change.
     await session.proposals.mutate('P1', (p) => ({
       ok: true,
       proposal: accept(p, ids.name),
@@ -184,9 +184,9 @@ describe('ProposalStore: conferência da pasta', () => {
     });
     expect(session.proposals.notices.value).toEqual([]);
 
-    // O agente envia uma proposta nova e retira a primeira.
+    // The agent sends a new proposal and withdraws the first one.
     const other = richScenario('P2').proposal;
-    writeOutside(root, { ...other, title: 'Segunda' });
+    writeOutside(root, { ...other, title: 'Second' });
     expect(await session.proposals.scan()).toEqual({
       added: ['P2'],
       changed: [],
@@ -195,7 +195,7 @@ describe('ProposalStore: conferência da pasta', () => {
     expect(session.proposals.list.value.map((p) => p.id).sort()).toEqual(['P1', 'P2']);
 
     const current = session.proposals.get('P1');
-    if (!current) throw new Error('sem P1');
+    if (!current) throw new Error('no P1');
     writeOutside(root, {
       ...current,
       status: 'withdrawn',
@@ -219,15 +219,15 @@ describe('ProposalStore: conferência da pasta', () => {
       'changed:P1',
       'removed:P2',
     ]);
-    expect(session.proposals.notices.value[0]?.title).toBe('Segunda');
+    expect(session.proposals.notices.value[0]?.title).toBe('Second');
 
     session.proposals.clearNotices();
     expect(session.proposals.notices.value).toEqual([]);
   });
 
-  it('arquivo inválido vira problema (só uma vez) e some da lista; corrigido, aparece', async () => {
+  it('invalid file becomes a problem (only once) and leaves the list; once fixed, it appears', async () => {
     const { session, root } = await openHarness();
-    root.put(proposalFilePath('P7'), '{ não é json');
+    root.put(proposalFilePath('P7'), '{ not json');
     expect(await session.proposals.scan()).toEqual({
       added: [],
       changed: [],
@@ -245,28 +245,28 @@ describe('ProposalStore: conferência da pasta', () => {
     expect(session.proposals.problems.value).toEqual([]);
   });
 
-  it('problems republica quando o conjunto muda sem mudar de tamanho (item 37)', async () => {
+  it('problems republishes when the set changes without changing size (item 37)', async () => {
     const { session, root } = await openHarness();
-    root.put(proposalFilePath('P7'), '{ não é json');
+    root.put(proposalFilePath('P7'), '{ not json');
     await session.proposals.scan();
     expect(session.proposals.problems.value.map((p) => p.id)).toEqual(['P7']);
 
-    // O P7 some e outro arquivo quebra: continua um problema, mas é outro.
+    // P7 goes away and another file breaks: it is still one problem, but a different one.
     root.dirs.get('proposals')?.dirs.delete('P7');
-    root.put(proposalFilePath('P8'), '{ também quebrado');
+    root.put(proposalFilePath('P8'), '{ also broken');
     await session.proposals.scan();
     expect(session.proposals.problems.value.map((p) => p.id)).toEqual(['P8']);
 
-    // O mesmo arquivo continua quebrado, com outro erro.
+    // The same file stays broken, with another error.
     const before = session.proposals.problems.value[0]?.errors;
     root.put(proposalFilePath('P8'), '[1, 2]');
     await session.proposals.scan();
     expect(session.proposals.problems.value[0]?.errors).not.toEqual(before);
   });
 
-  it('uma proposta conhecida que fica ilegível um instante (editor escrevendo) é ignorada', async () => {
+  it('a known proposal that becomes unreadable for a moment (editor writing) is ignored', async () => {
     const { session, root } = await openHarness({ proposals: [richScenario().proposal] });
-    root.put(proposalFilePath('P1'), '{ editando');
+    root.put(proposalFilePath('P1'), '{ editing');
     expect(await session.proposals.scan()).toEqual({
       added: [],
       changed: [],
@@ -276,9 +276,9 @@ describe('ProposalStore: conferência da pasta', () => {
     expect(session.proposals.problems.value).toEqual([]);
   });
 
-  // Fase 8.2 (P4): o aviso de uma proposta sai da fila por ação do store (quem abre a
-  // revisão chama), do tipo dado ou todos.
-  it('dismissNotice tira da fila os avisos de uma proposta, por tipo ou todos', async () => {
+  // Phase 8.2 (P4): a proposal's notice leaves the queue through a store action (whoever opens the
+  // review calls it), of the given kind or all.
+  it('dismissNotice removes a notices of a proposal from the queue, by kind or all', async () => {
     const { session, root } = await openHarness({ skipProposals: true });
     writeOutside(root, richScenario('P1').proposal);
     writeOutside(root, richScenario('P2').proposal);
@@ -292,7 +292,7 @@ describe('ProposalStore: conferência da pasta', () => {
     expect(session.proposals.notices.value).toBe(before);
     session.proposals.dismissNotice('P1', 'added');
     expect(kinds()).toEqual(['added:P2']);
-    writeOutside(root, { ...richScenario('P2').proposal, title: 'Outro' });
+    writeOutside(root, { ...richScenario('P2').proposal, title: 'Other' });
     await session.proposals.scan();
     expect(kinds()).toEqual(['added:P2', 'changed:P2']);
     session.proposals.dismissNotice('P2');
@@ -309,10 +309,10 @@ describe('ProposalStore: conferência da pasta', () => {
   });
 });
 
-// Etapa #1777 (decisão 8): a conferência de ciclo não relê as propostas finais (`applied` e
-// `withdrawn`) já lidas com carimbo conhecido; a completa (foco, volta à página, "Verificar a
-// pasta agora") olha todas.
-describe('ProposalStore: conferência de ciclo e completa (etapa #1777)', () => {
+// Stage #1777 (decision 8): the cycle check does not re-read the final proposals (`applied` and
+// `withdrawn`) already read with a known stamp; the full one (focus, return to the page, "Check the
+// folder now") looks at all of them.
+describe('ProposalStore: cycle and full check (stage #1777)', () => {
   const cycle = { full: false } as const;
   const none = { added: [], changed: [], removed: [] };
 
@@ -324,13 +324,13 @@ describe('ProposalStore: conferência de ciclo e completa (etapa #1777)', () => 
   }
 
   it.each(['applied', 'withdrawn'] as const)(
-    'uma %s reescrita por fora só é relida na conferência completa',
+    'a %s rewritten outside is only re-read in the full check',
     async (status) => {
       const { session, root, final } = await withFinal(status);
       expect(await session.proposals.scan(cycle)).toEqual(none);
       writeOutside(root, {
         ...final,
-        title: 'Reescrita por fora',
+        title: 'Rewritten outside',
         revision: final.revision + 1,
       });
       expect(await session.proposals.scan(cycle)).toEqual(none);
@@ -339,35 +339,35 @@ describe('ProposalStore: conferência de ciclo e completa (etapa #1777)', () => 
         ...none,
         changed: ['P1'],
       });
-      expect(session.proposals.get('P1')?.title).toBe('Reescrita por fora');
+      expect(session.proposals.get('P1')?.title).toBe('Rewritten outside');
     },
   );
 
-  it('sem opção, a conferência é a completa (como o "Verificar a pasta agora")', async () => {
+  it('without an option, the check is the full one (like "Check the folder now")', async () => {
     const { session, root, final } = await withFinal('applied');
-    writeOutside(root, { ...final, title: 'Outra', revision: final.revision + 1 });
+    writeOutside(root, { ...final, title: 'Another', revision: final.revision + 1 });
     expect(await session.proposals.scan()).toEqual({ ...none, changed: ['P1'] });
   });
 
-  it('uma pasta nova em proposals/ aparece no ciclo, ao lado das finais puladas', async () => {
+  it('a new folder in proposals/ appears in the cycle, next to the skipped final ones', async () => {
     const { session, root } = await withFinal('applied');
     writeOutside(root, { ...richScenario('P2').proposal, title: 'Nova' });
     expect(await session.proposals.scan(cycle)).toEqual({ ...none, added: ['P2'] });
     expect(session.proposals.list.value.map((p) => p.id).sort()).toEqual(['P1', 'P2']);
   });
 
-  it('a `superseded` (ainda com aceitas a aplicar) é conferida em todo ciclo', async () => {
+  it('the `superseded` one (still with accepted changes to apply) is checked in every cycle', async () => {
     const { session, root, final } = await withFinal('superseded');
-    writeOutside(root, { ...final, title: 'Mudou', revision: final.revision + 1 });
+    writeOutside(root, { ...final, title: 'Changed', revision: final.revision + 1 });
     expect(await session.proposals.scan(cycle)).toEqual({ ...none, changed: ['P1'] });
   });
 
-  it('a `open` é conferida em todo ciclo, e a que passa a final deixa de ser', async () => {
+  it('the `open` one is checked in every cycle, and the one that becomes final stops being', async () => {
     const { proposal } = richScenario();
     const { session, root } = await openHarness({ proposals: [proposal] });
-    writeOutside(root, { ...proposal, title: 'Mudou', revision: proposal.revision + 1 });
+    writeOutside(root, { ...proposal, title: 'Changed', revision: proposal.revision + 1 });
     expect(await session.proposals.scan(cycle)).toEqual({ ...none, changed: ['P1'] });
-    // Agora `applied` por fora: o ciclo ainda a vê mudar (era aberta); depois, não mais.
+    // Now `applied` outside: the cycle still sees it change (it was open); afterwards, no more.
     const applied: Proposal = {
       ...proposal,
       status: 'applied',
@@ -377,19 +377,19 @@ describe('ProposalStore: conferência de ciclo e completa (etapa #1777)', () => 
     expect(await session.proposals.scan(cycle)).toEqual({ ...none, changed: ['P1'] });
     writeOutside(root, {
       ...applied,
-      title: 'Depois de aplicada',
+      title: 'After applied',
       revision: applied.revision + 1,
     });
     expect(await session.proposals.scan(cycle)).toEqual(none);
   });
 
-  it('uma final pulada cuja pasta foi apagada por fora some já no ciclo', async () => {
+  it('a skipped final one whose folder was deleted outside disappears right in the cycle', async () => {
     const { session, root } = await withFinal('applied');
     root.dirs.get('proposals')?.dirs.delete('P1');
     expect(await session.proposals.scan(cycle)).toEqual({ ...none, removed: ['P1'] });
   });
 
-  it('sem `stampProposals` (armazenamento que só lista e carimba), o resultado é o mesmo', async () => {
+  it('without `stampProposals` (storage that only lists and stamps), the result is the same', async () => {
     const { storage, final, root } = await withFinal('applied');
     const bare = { ...storage, stampProposals: undefined };
     const store = createProposalStore({
@@ -398,19 +398,19 @@ describe('ProposalStore: conferência de ciclo e completa (etapa #1777)', () => 
       now: () => REVIEW_AT,
     });
     expect(await store.scan(cycle)).toEqual(none);
-    writeOutside(root, { ...final, title: 'Por fora', revision: final.revision + 1 });
+    writeOutside(root, { ...final, title: 'Outside', revision: final.revision + 1 });
     expect(await store.scan({ full: true })).toEqual({ ...none, changed: ['P1'] });
     writeOutside(root, { ...richScenario('P2').proposal });
     expect(await store.scan(cycle)).toEqual({ ...none, added: ['P2'] });
   });
 
-  it('session.sync() só confere as finais na conferência completa (com `images`)', async () => {
+  it('session.sync() only checks the final ones in the full check (with `images`)', async () => {
     const { session, root, final } = await withFinal('applied');
-    writeOutside(root, { ...final, title: 'Reescrita', revision: final.revision + 1 });
+    writeOutside(root, { ...final, title: 'Rewritten', revision: final.revision + 1 });
     await session.sync();
     expect(session.proposals.get('P1')?.title).toBe(final.title);
     await session.sync({ images: true });
-    expect(session.proposals.get('P1')?.title).toBe('Reescrita');
+    expect(session.proposals.get('P1')?.title).toBe('Rewritten');
   });
 });
 
@@ -420,7 +420,7 @@ describe('ProposalStore.remove: apagar proposta fechada (fase 9.2)', () => {
     status,
   });
 
-  it('apaga proposals/<id>/ do disco (arquivo e imagens), tira da lista e não gera aviso "apagada por fora"', async () => {
+  it('deletes proposals/<id>/ from disk (file and images), removes it from the list and raises no "deleted outside" notice', async () => {
     const { session, root } = await openHarness({
       proposals: [closed('P1', 'withdrawn'), closed('P2', 'superseded')],
       files: { [NEW_IMAGE_PATH]: 'WEBP' },
@@ -432,7 +432,7 @@ describe('ProposalStore.remove: apagar proposta fechada (fase 9.2)', () => {
     expect(session.proposals.list.value.map((p) => p.id)).toEqual(['P2']);
     expect(session.proposals.notices.value).toEqual([]);
 
-    // A conferência seguinte da pasta não avisa nada.
+    // The next folder check warns nothing.
     expect(await session.proposals.scan()).toEqual({
       added: [],
       changed: [],
@@ -444,7 +444,7 @@ describe('ProposalStore.remove: apagar proposta fechada (fase 9.2)', () => {
     expect(await diskProposal(root, 'P2')).toMatchObject({ id: 'P2' });
   });
 
-  it('o zip exportado depois não leva a proposta apagada nem as imagens dela', async () => {
+  it('the zip exported afterwards carries neither the deleted proposal nor its images', async () => {
     const { session } = await openHarness({
       proposals: [closed('P1', 'applied'), closed('P2', 'withdrawn')],
       files: { [NEW_IMAGE_PATH]: 'WEBP', 'proposals/P2/images/nova.webp': 'W2' },
@@ -452,11 +452,11 @@ describe('ProposalStore.remove: apagar proposta fechada (fase 9.2)', () => {
     expect(await session.proposals.remove('P1')).toMatchObject({ ok: true });
     const files = await session.collectFiles();
     expect([...files.proposals.keys()]).toEqual([proposalFilePath('P2')]);
-    // As imagens só saem para a exportação se a proposta ainda espera por elas.
+    // The images only go out for the export if the proposal still waits for them.
     expect([...files.proposalImages.keys()]).not.toContain(NEW_IMAGE_PATH);
   });
 
-  it('recusa a proposta aberta, sem apagar nada', async () => {
+  it('refuses the open proposal, without deleting anything', async () => {
     const { session, root } = await openHarness({ proposals: [richScenario().proposal] });
     expect(await session.proposals.remove('P1')).toEqual({
       ok: false,
@@ -466,12 +466,12 @@ describe('ProposalStore.remove: apagar proposta fechada (fase 9.2)', () => {
     expect(session.proposals.get('P1')).not.toBeNull();
   });
 
-  it('relê o arquivo: se o agente reabriu a proposta por fora, recusa e adota a versão do disco', async () => {
+  it('re-reads the file: if the agent reopened the proposal outside, refuses and adopts the disk version', async () => {
     const { session, root } = await openHarness({
       proposals: [closed('P1', 'withdrawn')],
     });
     expect(session.proposals.get('P1')?.status).toBe('withdrawn');
-    // Fora da app, o arquivo volta a estar aberto (outra revision).
+    // Outside the app, the file is open again (another revision).
     writeOutside(root, { ...richScenario().proposal, revision: 5 });
 
     expect(await session.proposals.remove('P1')).toEqual({
@@ -482,30 +482,30 @@ describe('ProposalStore.remove: apagar proposta fechada (fase 9.2)', () => {
     expect(session.proposals.get('P1')).toMatchObject({ status: 'open', revision: 5 });
   });
 
-  it('arquivo que mudou por fora e ficou ilegível: recusa e não apaga', async () => {
+  it('file that changed outside and became unreadable: refuses and does not delete', async () => {
     const { session, root } = await openHarness({
       proposals: [closed('P1', 'withdrawn')],
       files: { [NEW_IMAGE_PATH]: 'WEBP' },
     });
-    root.put(proposalFilePath('P1'), '{ editando...');
+    root.put(proposalFilePath('P1'), '{ editing...');
     expect(await session.proposals.remove('P1')).toEqual({
       ok: false,
       error: 'unreadable',
     });
-    expect(await root.read(proposalFilePath('P1'))).toBe('{ editando...');
+    expect(await root.read(proposalFilePath('P1'))).toBe('{ editing...');
     expect(await root.read(NEW_IMAGE_PATH)).toBe('WEBP');
     expect(session.proposals.get('P1')).not.toBeNull();
   });
 
-  it('proposta desconhecida: unknown-proposal', async () => {
+  it('unknown proposal: unknown-proposal', async () => {
     const { session } = await openHarness({ proposals: [closed('P1', 'withdrawn')] });
-    expect(await session.proposals.remove('nada')).toEqual({
+    expect(await session.proposals.remove('missing')).toEqual({
       ok: false,
       error: 'unknown-proposal',
     });
   });
 
-  it('o arquivo já sumiu por fora: apaga o que sobrou da pasta, sem aviso', async () => {
+  it('the file already disappeared outside: deletes what is left of the folder, with no notice', async () => {
     const { session, root } = await openHarness({
       proposals: [closed('P1', 'withdrawn')],
       files: { [NEW_IMAGE_PATH]: 'WEBP' },
@@ -517,11 +517,11 @@ describe('ProposalStore.remove: apagar proposta fechada (fase 9.2)', () => {
     expect(session.proposals.notices.value).toEqual([]);
   });
 
-  it('falha ao apagar: remove-failed, a proposta continua na lista e o erro vai ao Diagnóstico', async () => {
+  it('delete failure: remove-failed, the proposal stays in the list and the error goes to Diagnostics', async () => {
     const { session, storage } = await openHarness({
       proposals: [closed('P1', 'withdrawn')],
     });
-    vi.spyOn(storage, 'removeProposal').mockRejectedValue(new Error('permissão negada'));
+    vi.spyOn(storage, 'removeProposal').mockRejectedValue(new Error('permission denied'));
     expect(await session.proposals.remove('P1')).toEqual({
       ok: false,
       error: 'remove-failed',
@@ -530,12 +530,12 @@ describe('ProposalStore.remove: apagar proposta fechada (fase 9.2)', () => {
     expect(reportedErrors.value.map((e) => e.context)).toContain('proposals.remove');
   });
 
-  it('tira os avisos daquela proposta e chama onRemoved só depois de apagar', async () => {
+  it('removes that notices of that proposal and calls onRemoved only after deleting', async () => {
     const { session, root } = await openHarness({
       proposals: [closed('P1', 'withdrawn')],
     });
-    // Alterada por fora (ainda fechada): o aviso "changed" entra na fila.
-    writeOutside(root, { ...closed('P1', 'withdrawn'), title: 'Mexida', revision: 2 });
+    // Changed outside (still closed): the "changed" notice enters the queue.
+    writeOutside(root, { ...closed('P1', 'withdrawn'), title: 'Touched', revision: 2 });
     await session.proposals.scan();
     expect(session.proposals.notices.value.map((n) => n.kind)).toEqual(['changed']);
 
@@ -547,7 +547,7 @@ describe('ProposalStore.remove: apagar proposta fechada (fase 9.2)', () => {
     expect(session.proposals.notices.value).toEqual([]);
   });
 
-  it('uma proposta nova com supersedes apontando para a apagada continua listada, sem erro', async () => {
+  it('a new proposal with supersedes pointing to the deleted one stays listed, with no error', async () => {
     const old = closed('P1', 'superseded');
     const newer: Proposal = { ...richScenario('P2').proposal, supersedes: 'P1' };
     const { session, review } = await openHarness({ proposals: [old, newer] });
@@ -560,7 +560,7 @@ describe('ProposalStore.remove: apagar proposta fechada (fase 9.2)', () => {
     const rows = review.derived.rows.value;
     expect(rows.map((r) => r.proposal.id)).toEqual(['P2']);
     expect(rows[0]).toMatchObject({ supersededBy: null, leftBehind: null });
-    // Abrir a nova na revisão não depende da apagada.
+    // Opening the new one in the review does not depend on the deleted one.
     expect(review.open('P2')).toMatchObject({ ok: true });
     expect(review.derived.supersession.value).toBeNull();
     review.close();
@@ -571,18 +571,18 @@ describe('ProposalStore.remove: apagar proposta fechada (fase 9.2)', () => {
     });
   });
 
-  it('entra na fila: uma gravação em curso termina antes de apagar', async () => {
+  it('goes into the queue: a write in progress finishes before deleting', async () => {
     const { session, root } = await openHarness({ proposals: [closed('P1', 'applied')] });
     const note = session.proposals.mutate('P1', (p) => ({
       ok: true,
-      proposal: { ...p, title: 'Com nota' },
+      proposal: { ...p, title: 'With note' },
       value: null,
     }));
     const removal = session.proposals.remove('P1');
     expect(await note).toMatchObject({ ok: true });
     expect(await removal).toMatchObject({ ok: true });
     expect(root.dirs.get('proposals')?.dirs.has('P1')).toBe(false);
-    // Nada de proposta ressuscitada pela gravação.
+    // No proposal resurrected by the write.
     expect(await session.proposals.scan()).toEqual({
       added: [],
       changed: [],
@@ -591,8 +591,8 @@ describe('ProposalStore.remove: apagar proposta fechada (fase 9.2)', () => {
   });
 });
 
-describe('exportar propostas', () => {
-  it('collectFiles leva as propostas e as imagens que aguardam aceitação', async () => {
+describe('export proposals', () => {
+  it('collectFiles carries the proposals and the images awaiting acceptance', async () => {
     const { proposal } = richScenario();
     const { session } = await openHarness({
       proposals: [proposal],
@@ -605,16 +605,16 @@ describe('exportar propostas', () => {
     expect(await files.proposalImages.get(NEW_IMAGE_PATH)?.text()).toBe('WEBP');
   });
 
-  it('o arquivo inválido também vai, para não perder nada ao exportar', async () => {
+  it('the invalid file also goes, so nothing is lost on export', async () => {
     const { session } = await openHarness({
-      files: { [proposalFilePath('P9')]: '{ quebrado' },
+      files: { [proposalFilePath('P9')]: '{ broken' },
     });
     const files = await session.collectFiles();
-    expect(files.proposals.get(proposalFilePath('P9'))).toBe('{ quebrado');
+    expect(files.proposals.get(proposalFilePath('P9'))).toBe('{ broken');
   });
 });
 
-describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () => {
+describe('apply accepted only completes if mapping.json was written (phase 5.2)', () => {
   const files = { [NEW_IMAGE_PATH]: 'WEBP' };
 
   /** Tudo aceito, pronto para aplicar. */
@@ -627,7 +627,7 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
     return h;
   }
 
-  /** Nada mudou: projeto sem as mudanças, histórico vazio, proposta aberta e imagens no lugar. */
+  /** Nothing changed: project without the changes, empty history, open proposal and images in place. */
   async function expectNothingApplied(h: Harness) {
     const { session, root, review } = h;
     expect(session.store.project.value?.containers.map((i) => i.id)).not.toContain('I3');
@@ -641,18 +641,18 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
     expect(Object.keys(disk.decisions)).toHaveLength(5);
     expect(await root.read(NEW_IMAGE_PATH)).toBe('WEBP');
     expect(await root.read('images/nova.webp')).toBeNull();
-    // A revisão continua aberta, com as decisões intactas.
+    // The review stays open, with the decisions intact.
     expect(review.proposalId.value).toBe('P1');
     expect(review.derived.counts.value).toMatchObject({ applied: 0, acceptedPending: 5 });
   }
 
-  it('mapping.json alterado por fora: save-failed, nada aplicado e o diálogo de conflito abre', async () => {
+  it('mapping.json changed outside: save-failed, nothing applied and the conflict dialog opens', async () => {
     const h = await readyToApply();
-    // O MCP grava o mapping.json por fora enquanto a revisão está aberta.
+    // The MCP writes mapping.json outside while the review is open.
     const base = sampleProject();
     const outside = serialize({
       ...base,
-      project: { ...base.project, name: 'Do agente' },
+      project: { ...base.project, name: 'From the agent' },
       revision: 4,
     });
     h.root.put('mapping.json', outside);
@@ -663,10 +663,10 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
     expect(h.session.conflict.value).toEqual({ reloadFailed: false });
     expect(await h.root.read('mapping.json')).toBe(outside);
 
-    // "Recarregar": o projeto do disco; a proposta continua aberta e pode ser aplicada.
+    // "Reload": the disk project; the proposal stays open and can be applied.
     await h.session.resolveConflict('reload');
     expect(h.session.conflict.value).toBeNull();
-    expect(h.session.store.project.value?.project.name).toBe('Do agente');
+    expect(h.session.store.project.value?.project.name).toBe('From the agent');
     expect(h.review.derived.counts.value.acceptedPending).toBe(5);
     expect(await h.review.apply()).toMatchObject({ ok: true, applied: 5, files: 1 });
     expect((await diskProposal(h.root)).status).toBe('applied');
@@ -676,14 +676,15 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
     const h = await readyToApply();
     const save = vi
       .spyOn(h.storage, 'saveMapping')
-      .mockRejectedValue(new Error('quota excedida'));
+      .mockRejectedValue(new Error('quota exceeded'
+));
 
     const result = await h.review.apply();
     expect(result).toEqual({ ok: false, error: 'save-failed' });
     await expectNothingApplied(h);
     expect(h.session.conflict.value).toBeNull();
 
-    // O armazenamento volta: aplicar de novo conclui.
+    // The storage comes back: applying again completes.
     save.mockRestore();
     expect(await h.review.apply()).toMatchObject({ ok: true, applied: 5, files: 1 });
     expect((await diskProposal(h.root)).status).toBe('applied');
@@ -692,21 +693,21 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
     expect(h.session.saveStatus.value).toBe('saved');
   });
 
-  /** O `mapping.json` em disco, lido de novo. */
+  /** The `mapping.json` on disk, read again. */
   async function diskProject(h: Harness) {
     const parsed = deserialize((await h.root.read('mapping.json')) ?? '');
-    if (!parsed.ok) throw new Error('mapping.json inválido');
+    if (!parsed.ok) throw new Error('invalid mapping.json');
     return parsed.project;
   }
 
-  // Terceira leitura da etapa 8 (auditoria, §6.1): uma conferência adota um mapping.json de
-  // fora durante a falha do proposal.json. O arquivo de fora cita a cópia; o rollback da
-  // compensação não pode apagá-la.
-  it('proposal.json falhando com o mapping.json recarregado por fora na janela: a cópia citada pelo disco fica', async () => {
+  // Third reading of stage 8 (audit, §6.1): a check adopts a mapping.json from
+  // outside during the proposal.json failure. The outside file cites the copy; the rollback of
+  // the compensation cannot delete it.
+  it('proposal.json failing with mapping.json reloaded outside in the window: the copy cited by the disk stays', async () => {
     const h = await readyToApply();
     vi.spyOn(h.storage, 'writeProposal').mockImplementationOnce(async () => {
-      // O mapping.json aplicado já gravou e cita images/nova.webp. Nessa janela, o MCP o
-      // relê, edita o nome do projeto e grava revision + 1 (o arquivo continua citando a cópia).
+      // The applied mapping.json already wrote and cites images/nova.webp. In that window, the MCP
+      // re-reads it, edits the project name and writes revision + 1 (the file keeps citing the copy).
       const applied = await diskProject(h);
       expect(applied.containers.map((i) => i.file)).toContain('images/nova.webp');
       h.root.put(
@@ -714,56 +715,56 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
         serialize({
           ...applied,
           revision: applied.revision + 1,
-          project: { ...applied.project, name: 'Do agente' },
+          project: { ...applied.project, name: 'From the agent' },
         }),
       );
-      // O poll do useExternalChanges confere e recarrega (sem pendência local: 'reloaded').
-      // Não dá para esperar a promessa inteira do sync aqui (a varredura das propostas fica
-      // atrás desta mesma mutação): espera só o trabalho da fila da sessão.
+      // The useExternalChanges poll checks and reloads (no local pending change: 'reloaded').
+      // We cannot wait for the whole sync promise here (the proposals scan stays
+      // behind this same mutation): wait only for the session queue's work.
       void h.session.sync();
       await h.session.flush();
       expect(h.session.reloads.value).toBe(1);
-      throw new Error('disco cheio');
+      throw new Error('disk full');
     });
 
     expect(await h.review.apply()).toEqual({ ok: false, error: 'write-failed' });
     await h.session.proposals.settled();
-    // O projeto em memória e no disco são o de fora, e ele cita a cópia.
-    expect(h.session.store.project.value?.project.name).toBe('Do agente');
+    // The in-memory and on-disk projects are the outside one, and it cites the copy.
+    expect(h.session.store.project.value?.project.name).toBe('From the agent');
     expect(h.session.store.project.value?.containers.map((i) => i.file)).toContain(
       'images/nova.webp',
     );
     expect((await diskProject(h)).containers.map((i) => i.file)).toContain(
       'images/nova.webp',
     );
-    // A proposta continua sem `applied` e a origem continua lá.
+    // The proposal stays without `applied` and the source is still there.
     expect((await diskProposal(h.root)).applied).toEqual({});
     expect(await h.root.read(NEW_IMAGE_PATH)).toBe('WEBP');
-    // O ponto da pergunta: o rollback da compensação não pode apagar um arquivo que o disco cita.
+    // The point of the question: the compensation rollback cannot delete a file that the disk cites.
     expect(await h.root.read('images/nova.webp')).toBe('WEBP');
   });
 
-  // Fase 8.2 (P7): o `mapping.json` gravou, mas o `proposal.json` falhou. Sem compensar, o
-  // projeto ficava com as mudanças e a proposta sem `applied` (reaplicar dava conflito,
-  // imagens duplicadas). Agora o aplicar é desfeito como no `save-failed`: a entrada de
-  // desfazer sai, o projeto de antes é regravado e as cópias saem de `images/`.
-  it('proposal.json falhando depois do mapping.json gravar: write-failed, o projeto volta ao de antes e aplicar de novo conclui (P7)', async () => {
+  // Phase 8.2 (P7): `mapping.json` wrote, but `proposal.json` failed. Without compensating, the
+  // project kept the changes and the proposal without `applied` (reapplying gave a conflict,
+  // duplicate images). Now the apply is undone as in `save-failed`: the undo entry
+  // leaves, the previous project is rewritten and the copies leave `images/`.
+  it('proposal.json failing after mapping.json wrote: write-failed, the project goes back to the previous one and applying again completes (P7)', async () => {
     const h = await readyToApply();
     const dir = h.root.dirs.get('proposals')?.dirs.get('P1');
-    if (!dir) throw new Error('sem a pasta da proposta');
-    dir.failWrites = new Error('disco cheio');
+    if (!dir) throw new Error('no proposal folder');
+    dir.failWrites = new Error('disk full');
 
     const result = await h.review.apply();
     expect(result).toEqual({ ok: false, error: 'write-failed' });
     await expectNothingApplied(h);
     expect(h.session.conflict.value).toBeNull();
-    // O disco tem o projeto de antes, regravado por cima do aplicado (duas revisões a mais).
+    // The disk has the previous project, rewritten over the applied one (two extra revisions).
     const disk = await diskProject(h);
     expect(disk.containers.map((i) => i.id)).not.toContain('I3');
     expect(disk.revision).toBe(5);
     expect(h.session.saveStatus.value).toBe('saved');
 
-    // O disco da proposta volta: aplicar de novo conclui, sem conflito nem duplicata.
+    // The proposal's disk comes back: applying again completes, with no conflict or duplicate.
     dir.failWrites = null;
     expect(await h.review.apply()).toMatchObject({ ok: true, applied: 5, files: 1 });
     expect((await diskProposal(h.root)).status).toBe('applied');
@@ -773,12 +774,12 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
     expect(h.session.store.canUndo.value).toBe(true);
   });
 
-  it('proposal.json e, em seguida, o mapping.json falhando: as cópias ficam até a gravação passar (P7)', async () => {
+  it('proposal.json and then mapping.json failing: the copies stay until the write goes through (P7)', async () => {
     const h = await readyToApply();
     const dir = h.root.dirs.get('proposals')?.dirs.get('P1');
-    if (!dir) throw new Error('sem a pasta da proposta');
-    dir.failWrites = new Error('disco cheio');
-    // A primeira gravação do mapping.json (o aplicado) passa; a da compensação falha.
+    if (!dir) throw new Error('no proposal folder');
+    dir.failWrites = new Error('disk full');
+    // The first write of mapping.json (the applied one) passes; the compensation one fails.
     const original = h.storage.saveMapping.bind(h.storage);
     let calls = 0;
     const save = vi.spyOn(h.storage, 'saveMapping').mockImplementation((text) => {
@@ -787,7 +788,7 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
     });
 
     expect(await h.review.apply()).toEqual({ ok: false, error: 'write-failed' });
-    // Em memória, o projeto de antes; no disco, ainda o aplicado, que cita a cópia: ela fica.
+    // In memory, the previous project; on disk, still the applied one, which cites the copy: it stays.
     expect(h.session.store.project.value?.containers.map((i) => i.id)).not.toContain(
       'I3',
     );
@@ -796,7 +797,7 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
     expect(await h.root.read('images/nova.webp')).toBe('WEBP');
     expect(h.session.saveStatus.value).toBe('error');
 
-    // "Tentar de novo": o projeto de antes vai ao disco e a limpeza tira a cópia órfã.
+    // "Try again": the previous project goes to disk and the cleanup removes the orphan copy.
     save.mockRestore();
     expect(await h.session.flush()).toEqual({ ok: true });
     expect((await diskProject(h)).containers.map((i) => i.id)).not.toContain('I3');
@@ -806,17 +807,17 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
     expect(await h.review.apply()).toMatchObject({ ok: true, applied: 5, files: 1 });
   });
 
-  it('desfazer a aplicação com o proposal.json falhando: o passo é revertido, a proposta continua aplicada em disco e o erro fica à vista', async () => {
+  it('undoing the application with proposal.json failing: the step is reverted, the proposal stays applied on disk and the error stays visible', async () => {
     const h = await readyToApply();
     expect(await h.review.apply()).toMatchObject({ ok: true });
     const store = h.session.store;
     const applied = store.project.value;
     const dir = h.root.dirs.get('proposals')?.dirs.get('P1');
-    if (!dir) throw new Error('sem a pasta da proposta');
-    dir.failWrites = new Error('disco cheio');
+    if (!dir) throw new Error('no proposal folder');
+    dir.failWrites = new Error('disk full');
 
     expect(store.undo()).toBe(true);
-    // Enquanto a gravação não termina, o histórico fica parado.
+    // While the write does not finish, the history stays still.
     expect(store.canUndo.value).toBe(false);
     expect(store.canRedo.value).toBe(false);
     expect(store.undo()).toBe(false);
@@ -832,9 +833,9 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
   });
 
   /**
-   * Segura a próxima gravação do `proposal.json`: `reached` resolve quando ela começa (o
-   * projeto já foi aplicado e o `mapping.json` gravado); `release()` a deixa seguir, ou
-   * falhar com o erro dado.
+   * Holds the next write of `proposal.json`: `reached` resolves when it starts (the
+   * project was already applied and `mapping.json` written); `release()` lets it go on, or
+   * fail with the given error.
    */
   function holdProposalWrite(h: Harness) {
     const original = h.storage.writeProposal.bind(h.storage);
@@ -855,7 +856,7 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
     return { reached, release };
   }
 
-  /** A revisão sem os avisos: conjunto válido, nenhum conflito, nada "novo". */
+  /** The review without warnings: valid set, no conflict, nothing "new". */
   function expectNoWarnings(h: Harness) {
     const d = h.review.derived;
     expect(d.validation.value?.ok).toBe(true);
@@ -866,16 +867,16 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
     expect(d.counts.value.conflicts).toBe(0);
   }
 
-  // Devolução do portão da 8.2 (achado 7): entre o `store.apply` e a publicação do
-  // `proposal.json` com `applied`, a revisão reavaliava as aceitas contra um projeto que
-  // já as tinha ("Aplicar bloqueado" e "O projeto mudou desde a sua última sessão").
-  it('durante o aplicar, com o proposal.json ainda gravando, a revisão não mostra aviso; depois, também não', async () => {
+  // Gate return of 8.2 (finding 7): between `store.apply` and the publication of
+  // `proposal.json` with `applied`, the review re-evaluated the accepted changes against a project that
+  // already had them ("Apply blocked" and "The project changed since your last session").
+  it('during the apply, with proposal.json still writing, the review shows no warning; afterwards, neither', async () => {
     const h = await readyToApply();
     expectNoWarnings(h);
     const hold = holdProposalWrite(h);
     const applying = h.review.apply();
     await hold.reached;
-    // O projeto já tem as mudanças e o mapping.json já gravou; a proposta ainda não diz.
+    // The project already has the changes and mapping.json already wrote; the proposal does not say so yet.
     expect(h.session.store.committed.value?.containers.map((i) => i.id)).toContain('I3');
     expect((await diskProject(h)).containers.map((i) => i.id)).toContain('I3');
     expect(h.review.derived.proposal.value?.applied).toEqual({});
@@ -888,13 +889,13 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
     expect((await diskProposal(h.root)).status).toBe('applied');
   });
 
-  it('durante o aplicar, o proposal.json falhando: depois da compensação, a revisão volta a valer o de antes', async () => {
+  it('during the apply, proposal.json failing: after the compensation, the review goes back to the previous state', async () => {
     const h = await readyToApply();
     const hold = holdProposalWrite(h);
     const applying = h.review.apply();
     await hold.reached;
     expectNoWarnings(h);
-    hold.release(new Error('disco cheio'));
+    hold.release(new Error('disk full'));
     expect(await applying).toEqual({ ok: false, error: 'write-failed' });
     await expectNothingApplied(h);
     expectNoWarnings(h);
@@ -903,7 +904,7 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
 });
 
 describe('aplicar: falhas de armazenamento no before (itens 39 e 40)', () => {
-  /** Uma proposta com duas imagens novas, tudo aceito. */
+  /** A proposal with two new images, all accepted. */
   async function twoImages(): Promise<Harness> {
     const base = sampleProject();
     let after = addContainer(base, {
@@ -924,14 +925,14 @@ describe('aplicar: falhas de armazenamento no before (itens 39 e 40)', () => {
     return h;
   }
 
-  it('falha ao gravar a segunda imagem: write-failed, a primeira cópia sai e a proposta continua aberta (39)', async () => {
+  it('failure writing the second image: write-failed, the first copy leaves and the proposal stays open (39)', async () => {
     const h = await twoImages();
     const original = h.storage.writeImage.bind(h.storage);
     let calls = 0;
     vi.spyOn(h.storage, 'writeImage').mockImplementation((path, data) => {
       calls++;
       return calls === 2
-        ? Promise.reject(new Error('disco cheio'))
+        ? Promise.reject(new Error('disk full'))
         : original(path, data);
     });
 
@@ -946,15 +947,15 @@ describe('aplicar: falhas de armazenamento no before (itens 39 e 40)', () => {
     expect((await diskProposal(h.root)).status).toBe('open');
   });
 
-  it('save-failed com o projeto já mudado (undo pulado): as cópias ficam, porque o projeto as cita (40)', async () => {
+  it('save-failed with the project already changed (undo skipped): the copies stay, because the project cites them (40)', async () => {
     const h = await twoImages();
     vi.spyOn(h.storage, 'saveMapping').mockImplementation(async () => {
-      // O projeto é trocado enquanto grava (recarga por fora): deixa de ser o aplicado.
+      // The project is swapped while writing (outside reload): it stops being the applied one.
       const current = h.session.store.project.peek();
       if (current)
         h.session.store.load({
           ...current,
-          project: { ...current.project, name: 'Outro' },
+          project: { ...current.project, name: 'Other' },
         });
       throw new Error('quota');
     });

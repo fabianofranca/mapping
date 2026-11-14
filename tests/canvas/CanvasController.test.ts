@@ -43,7 +43,7 @@ describe('CanvasController', () => {
     return { ...editor, container, controller, ensure, retain };
   }
 
-  it('monta o stage com no máximo cinco camadas (o Konva avisa no console a partir de seis) e pede os bitmaps das imagens', () => {
+  it('mounts the stage with at most five layers (Konva warns in the console from six) and asks for the image bitmaps', () => {
     const { container, controller, ensure } = setup();
     flush();
     const canvases = container.querySelectorAll('canvas');
@@ -56,7 +56,7 @@ describe('CanvasController', () => {
     expect(container.querySelectorAll('canvas')).toHaveLength(0);
   });
 
-  it('um gesto de arrasto não chama ensure nem retain: o conjunto de arquivos não mudou', () => {
+  it('a drag gesture calls neither ensure nor retain: the set of files did not change', () => {
     const { controller, ensure, retain, store } = setup();
     flush();
     expect(ensure).toHaveBeenCalled();
@@ -83,7 +83,7 @@ describe('CanvasController', () => {
     controller.destroy();
   });
 
-  it('a ordem de desenho segue a mesma: imagens, componentes, setas, marcações, flutuantes, sobreposições', () => {
+  it('the drawing order stays the same: images, components, arrows, markings, floating, overlays', () => {
     const { controller } = setup();
     flush();
     const inner = controller as unknown as {
@@ -94,7 +94,7 @@ describe('CanvasController', () => {
       floatingDrawings: Konva.Group;
       overlay: OverlayRenderer;
     };
-    // Ordem em que o Konva pinta os nós: camada por camada, cada filho depois do anterior.
+    // Order in which Konva paints the nodes: layer by layer, each child after the previous one.
     const painted: Konva.Node[] = [];
     const walk = (node: Konva.Node): void => {
       painted.push(node);
@@ -105,11 +105,11 @@ describe('CanvasController', () => {
     walk(inner.stage);
     const at = (node: Konva.Node): number => {
       const index = painted.indexOf(node);
-      expect(index, 'nó fora do palco').toBeGreaterThanOrEqual(0);
+      expect(index, 'node outside the stage').toBeGreaterThanOrEqual(0);
       return index;
     };
     const marking = [...inner.markings.nodes.values()][0]?.group;
-    expect(marking, 'o projeto de teste tem marcações').toBeDefined();
+    expect(marking, 'the test project has markings').toBeDefined();
     const order = [
       inner.componentGroup,
       inner.arrows.node,
@@ -121,13 +121,13 @@ describe('CanvasController', () => {
     expect(new Set(order).size).toBe(order.length);
   });
 
-  it('o stage refaz o cache de transformação uma vez por quadro de zoom e de pan, e nenhuma na edição', () => {
+  it('the stage rebuilds the transform cache once per zoom and pan frame, and none on edit', () => {
     const { controller, container, ui, actions } = setup();
     flush();
     const { stage } = controller as unknown as { stage: Konva.Stage };
     let cascades = 0;
     stage.on('absoluteTransformChange', () => cascades++);
-    /** Eventos de transformação absoluta do stage no quadro que `act` agenda. */
+    /** Absolute transform events of the stage in the frame that `act` schedules. */
     const count = (act: () => void): number => {
       cascades = 0;
       act();
@@ -146,13 +146,13 @@ describe('CanvasController', () => {
     const edit = count(() => {
       expect(actions.renameContainer('I1', 'Outro nome').ok).toBe(true);
     });
-    // Posição e escala numa chamada só: cada atributo separado refaz o cache de transformação
-    // de todos os nós do stage (docs/ARCHITECTURE.md, "Desempenho").
+    // Position and scale in a single call: each separate attribute rebuilds the transform cache
+    // of every node of the stage (docs/ARCHITECTURE.md, "Desempenho").
     expect({ zoom, pan, edit }).toEqual({ zoom: 1, pan: 1, edit: 0 });
     controller.destroy();
   });
 
-  it('comandos do editor: enquadrar, centralizar, ponto e imagem sob o dedo', () => {
+  it('editor commands: fit, center, point and image under the finger', () => {
     const { controller, ui } = setup();
     controller.fitAll();
     const center = controller.viewportCenter();
@@ -167,7 +167,7 @@ describe('CanvasController', () => {
     controller.destroy();
   });
 
-  it('seleção múltipla: contorno secundário nos não primários, vazio no modo visualização, e o pan não refaz a lista', () => {
+  it('multiple selection: secondary outline on the non-primary ones, empty in view mode, and the pan does not rebuild the list', () => {
     const { controller, ui } = setup();
     const internals = controller as unknown as {
       overlay: OverlayRenderer;
@@ -191,12 +191,12 @@ describe('CanvasController', () => {
     const items = internals.frame.peek().items;
     expect(items.map((i) => i.id)).toEqual(['I2', 'M3', 'M2']);
 
-    // Pan e zoom refazem o quadro, mas a lista de itens é o mesmo objeto.
+    // Pan and zoom redraw the frame, but the item list is the same object.
     controller.zoomBy(1.5);
     flush();
     expect(internals.frame.peek().items).toBe(items);
 
-    // o modo visualização esconde a seleção inteira, como esconde a primária.
+    // view mode hides the whole selection, as it hides the primary one.
     setOnlyScreens(ui, true);
     flush();
     expect(lit()).toHaveLength(0);
@@ -204,14 +204,14 @@ describe('CanvasController', () => {
     flush();
     expect(lit()).toHaveLength(2);
 
-    // Um clique simples volta a um item só.
+    // A simple click goes back to a single item.
     ui.selection.value = { kind: 'marking', id: 'M1' };
     flush();
     expect(lit()).toHaveLength(0);
     controller.destroy();
   });
 
-  it('alvo de soltar na área vazia marca o container no próximo quadro', () => {
+  it('drop target on the empty area marks the container in the next frame', () => {
     const { container, controller } = setup();
     flush();
     controller.setDropTarget({ containerId: null });
@@ -224,7 +224,7 @@ describe('CanvasController', () => {
     controller.destroy();
   });
 
-  it('marca no container os enquadramentos e as imagens prontas já desenhados (e2e)', async () => {
+  it('marks on the container the fits and ready images already drawn (e2e)', async () => {
     const editor = editorFor();
     const display = createDisplayImages<ImageBitmap>(
       async () => ({ width: 10, height: 10, close: () => undefined }) as ImageBitmap,
@@ -242,7 +242,7 @@ describe('CanvasController', () => {
     await Promise.resolve();
     flush();
     expect(container.dataset.images).toBe('2');
-    // Só o quadro seguinte ao enquadramento o publica.
+    // Only the frame after the fit publishes it.
     controller.fitAll();
     expect(container.dataset.fits).toBe('1');
     flush();
@@ -251,9 +251,9 @@ describe('CanvasController', () => {
   });
 
   // Achado 10: `InvalidStateError: drawImage … The image source is detached`. O `retain`
-  // fechava o bitmap na hora, enquanto o nó do Konva ainda o referenciava e um desenho
-  // pendente (o `batchDraw` do quadro anterior) ainda ia usá-lo.
-  it('o bitmap de uma imagem que sai do projeto só fecha depois do quadro que deixa de desenhá-lo', async () => {
+  // closed the bitmap right away, while the Konva node still referenced it and a pending
+  // draw (the `batchDraw` of the previous frame) would still use it.
+  it('the bitmap of an image that leaves the project only closes after the frame that stops drawing it', async () => {
     const editor = editorFor();
     const bitmaps = new Map<string, { closed: boolean }>();
     const display = createDisplayImages<ImageBitmap>(async (path) => {
@@ -281,8 +281,8 @@ describe('CanvasController', () => {
     const b = bitmaps.get('images/b.jpg');
     if (!b) throw new Error('bitmap de b.jpg');
 
-    // A imagem sai do projeto: o mapa de exibição a solta na hora, mas o bitmap continua
-    // aberto até o quadro seguinte (que tira a referência do nó) ser desenhado.
+    // The image leaves the project: the display map releases it at once, but the bitmap stays
+    // open until the next frame (which removes the node reference) is drawn.
     editor.actions.removeContainer('I2');
     expect(display.images.value.has('images/b.jpg')).toBe(false);
     expect(b.closed).toBe(false);
@@ -292,10 +292,10 @@ describe('CanvasController', () => {
     controller.destroy();
   });
 
-  it('publica zoom, área das imagens e cursor em pixels da imagem (B8, P3 e P4)', () => {
+  it('publishes zoom, image area and cursor in image pixels (B8, P3 and P4)', () => {
     const { container, controller, view } = setup();
     flush();
-    // O viewport e a área das imagens chegam à interface (barra de status, minimapa).
+    // The viewport and the image area reach the interface (status bar, minimap).
     expect(view.size.value).toEqual({ width: 380, height: 700 });
     expect(view.bounds.value).toEqual({ x: 0, y: 0, width: 1600, height: 800 });
 
@@ -308,7 +308,7 @@ describe('CanvasController', () => {
     expect(controller.viewportCenter().x).toBeCloseTo(500);
     expect(controller.viewportCenter().y).toBeCloseTo(400);
 
-    // O cursor só muda no quadro seguinte (uma escrita por quadro, HANDOFF seção 6).
+    // The cursor only changes in the next frame (one write per frame, HANDOFF section 6).
     container.dispatchEvent(
       new PointerEvent('pointermove', {
         pointerId: 1,
@@ -332,7 +332,7 @@ describe('CanvasController', () => {
     controller.destroy();
   });
 
-  it('depois de destruído, não escuta mais o ponteiro', () => {
+  it('after being destroyed, it no longer listens to the pointer', () => {
     const { container, controller, ui } = setup();
     controller.destroy();
     container.dispatchEvent(
@@ -345,7 +345,7 @@ describe('CanvasController', () => {
     expect(controller.cancelInteraction()).toBe(false);
   });
 
-  it('cadeado sob o mouse: só em itens trancados, escrito uma vez por quadro', () => {
+  it('lock under the mouse: only on locked items, written once per frame', () => {
     const { container, controller, actions } = setup();
     const hover = () =>
       (controller as unknown as { state: InteractionState }).state.hoverLock.value;
@@ -362,17 +362,17 @@ describe('CanvasController', () => {
     };
     flush();
     controller.zoomTo(1);
-    controller.centerOnPoint({ x: 250, y: 250 }); // o centro de M2 fica no centro da tela
+    controller.centerOnPoint({ x: 250, y: 250 }); // the center of M2 is at the center of the screen
     const [x, y] = [190, 350];
 
     move(x, y);
-    expect(hover()).toBeNull(); // projeto sem trava: nem calcula
+    expect(hover()).toBeNull(); // project without lock: it does not even compute
 
     actions.setMarkingLocked('M2', true);
     move(x, y);
     expect(hover()).toEqual({ kind: 'marking', id: 'M2' });
 
-    // Sobre a marcação livre (o pai, fora da filha): sem cadeado.
+    // Over the free marking (the parent, outside the child): no lock.
     controller.centerOnPoint({ x: 150, y: 150 });
     move(x, y);
     expect(hover()).toBeNull();
@@ -383,7 +383,7 @@ describe('CanvasController', () => {
     move(x, y);
     expect(hover()).toEqual({ kind: 'marking', id: 'M2' });
 
-    // Imagem trancada, fora das marcações.
+    // Locked image, outside the markings.
     actions.setMarkingLocked('M1', false);
     actions.setMarkingLocked('M2', false);
     actions.setImageLocked('I1', true);
@@ -397,8 +397,8 @@ describe('CanvasController', () => {
     controller.destroy();
   });
 
-  describe('marcações do canvas (ME1)', () => {
-    /** Uma marcação do canvas em volta das duas imagens e uma flutuante sobre a Porta. */
+  describe('canvas markings (ME1)', () => {
+    /** A canvas marking around the two images and a floating one over the Porta. */
     function spatial() {
       const ctx = setup();
       const created = ctx.actions.createMarking(null, {
@@ -411,14 +411,14 @@ describe('CanvasController', () => {
       return { ...ctx, id };
     }
 
-    it('publica no container quantas marcações do canvas há (e2e)', () => {
+    it('publishes on the container how many canvas markings there are (e2e)', () => {
       const { container, controller, actions } = setup();
       flush();
       expect(container.dataset.canvasMarkings).toBe('0');
       actions.createMarking(null, { x: 2000, y: 0, width: 100, height: 100 });
       flush();
       expect(container.dataset.canvasMarkings).toBe('1');
-      // As de container não contam, e a flutuante conta (vive no canvas).
+      // The container ones do not count, and the floating one counts (it lives on the canvas).
       actions.createMarking('I1', { x: 10, y: 10, width: 20, height: 20 });
       const note = actions.createMarking(null, { x: 2300, y: 0, width: 50, height: 50 });
       if (note.ok) actions.setMarkingFloating(note.value, true);
@@ -427,7 +427,7 @@ describe('CanvasController', () => {
       controller.destroy();
     });
 
-    it('Enquadrar tudo e o minimapa incluem as marcações do canvas', () => {
+    it('Fit all and the minimap include the canvas markings', () => {
       const { controller, view, actions } = setup();
       flush();
       expect(view.bounds.value).toEqual({ x: 0, y: 0, width: 1600, height: 800 });
@@ -441,7 +441,7 @@ describe('CanvasController', () => {
       controller.destroy();
     });
 
-    it('centraliza na marcação do canvas selecionada (espaço identidade)', () => {
+    it('centers on the selected canvas marking (identity space)', () => {
       const { controller, ui, id } = spatial();
       flush();
       ui.selection.value = { kind: 'marking', id };
@@ -452,7 +452,7 @@ describe('CanvasController', () => {
       controller.destroy();
     });
 
-    it('o container que receberia a marcação arrastada acende como alvo de soltar', () => {
+    it('the container that would receive the dragged marking lights up as a drop target', () => {
       const { container, controller } = setup();
       const internals = controller as unknown as {
         state: InteractionState;
@@ -463,7 +463,7 @@ describe('CanvasController', () => {
       flush();
       expect(internals.overlay.dropRect.visible()).toBe(true);
       expect(internals.overlay.dropRect.width()).toBe(500);
-      // O alvo de soltar um arquivo tem a vez enquanto existir.
+      // The drop target of a file takes precedence while it exists.
       controller.setDropTarget({ containerId: 'I1' });
       flush();
       expect(internals.overlay.dropRect.width()).toBe(1000);
@@ -495,7 +495,7 @@ describe('CanvasController', () => {
       controller.destroy();
     });
 
-    it('cadeado sob o mouse: a flutuante tem a vez; o container herda a trava da marcação do canvas', () => {
+    it('lock under the mouse: the floating one takes precedence; the container inherits the lock of the canvas marking', () => {
       const { container, controller, actions, id } = spatial();
       const hover = () =>
         (controller as unknown as { state: InteractionState }).state.hoverLock.value;
@@ -513,9 +513,9 @@ describe('CanvasController', () => {
       flush();
       controller.zoomTo(1);
       controller.centerOnPoint({ x: 900, y: 700 });
-      const [x, y] = [190, 350]; // o ponto do canvas (900, 700), dentro de I1 e sem marcação de I1
+      const [x, y] = [190, 350]; // the canvas point (900, 700), inside I1 and without an I1 marking
 
-      // A flutuante nasce antes de trancar (virar flutuante é geometria e a trava impede).
+      // The floating one is born before locking (becoming floating is geometry and the lock prevents it).
       const note = actions.createMarking(null, {
         x: 1000,
         y: 250,
@@ -524,15 +524,15 @@ describe('CanvasController', () => {
       });
       if (note.ok) actions.setMarkingFloating(note.value, true);
 
-      // Marcação do canvas trancada: o container dentro dela herda (e a área entre as imagens também).
+      // Locked canvas marking: the container inside it inherits (and so does the area between the images).
       actions.setMarkingLocked(id, true);
       move(x, y);
       expect(hover()).toEqual({ kind: 'image', id: 'I1' });
-      controller.centerOnPoint({ x: 1050, y: 100 }); // entre as imagens, fora da flutuante
+      controller.centerOnPoint({ x: 1050, y: 100 }); // between the images, outside the floating one
       move(x, y);
       expect(hover()).toEqual({ kind: 'marking', id });
 
-      // A flutuante livre sobre a área trancada tem a vez e não mostra o cadeado.
+      // The free floating one over the locked area takes precedence and does not show the lock.
       controller.centerOnPoint({ x: 1050, y: 300 });
       move(x, y);
       expect(hover()).toBeNull();

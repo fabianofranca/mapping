@@ -7,12 +7,12 @@ import { openHarness } from './proposalHarness';
 import { viewOf } from './perspectiveHarness';
 import type { OpenProject } from '../../src/app/controller';
 
-// Visibilidade de camada que conhece a perspectiva (etapa #956, CE2, decisões 4 e 5): com uma
-// perspectiva aberta, alternar, mostrar e ir até uma anotação mudam as escondidas dela (com
-// desfazer); na Principal, as da interface.
+// Layer visibility that knows the perspective (stage #956, CE2, decisions 4 and 5): with a
+// perspective open, toggling, showing and going to an annotation change its hidden ones (with
+// undo); on the Main one, the interface ones.
 
 function projectWithView(): Project {
-  let p = addLayer(canvasProject(), { id: 'L2', name: 'Pintura', color: '#00AA00' });
+  let p = addLayer(canvasProject(), { id: 'L2', name: 'Painting', color: '#00AA00' });
   p = addPerspective(p, viewOf(p, { root: 'I2', at: { x: 0, y: 2000 }, hide: ['L1'] }));
   return p;
 }
@@ -31,8 +31,8 @@ async function setup() {
   return { session, editor, hiddenOfV, visible };
 }
 
-describe('com uma perspectiva aberta', () => {
-  it('alternar grava as escondidas da perspectiva, com desfazer, e não mexe em ui.hiddenLayers', async () => {
+describe('with a perspective open', () => {
+  it('toggling writes the perspective hidden ones, with undo, and does not touch ui.hiddenLayers', async () => {
     const { session, editor, hiddenOfV, visible } = await setup();
     session.perspective.open('V');
     editor.layers.toggle('L2');
@@ -45,7 +45,7 @@ describe('com uma perspectiva aberta', () => {
     editor.review.dispose();
   });
 
-  it('mostrar tira a camada das escondidas da perspectiva, com desfazer; camada visível não grava nada', async () => {
+  it('showing removes the layer from the perspective hidden ones, with undo; a visible layer writes nothing', async () => {
     const { session, editor, hiddenOfV, visible } = await setup();
     session.perspective.open('V');
     editor.layers.show('L1');
@@ -60,7 +60,7 @@ describe('com uma perspectiva aberta', () => {
     editor.review.dispose();
   });
 
-  it('mostrar todas limpa as escondidas da perspectiva', async () => {
+  it('show all clears the perspective hidden ones', async () => {
     const { session, editor, hiddenOfV } = await setup();
     session.perspective.open('V');
     editor.layers.showAll();
@@ -68,7 +68,7 @@ describe('com uma perspectiva aberta', () => {
     editor.review.dispose();
   });
 
-  it('ir até uma anotação numa camada escondida pela perspectiva a mostra, com desfazer', async () => {
+  it('going to an annotation in a layer hidden by the perspective shows it, with undo', async () => {
     const { session, editor, hiddenOfV, visible } = await setup();
     session.perspective.open('V');
     goToAnnotation(
@@ -87,8 +87,8 @@ describe('com uma perspectiva aberta', () => {
   });
 });
 
-describe('na Principal', () => {
-  it('alternar e mostrar mexem em ui.hiddenLayers e não no projeto', async () => {
+describe('on the Main one', () => {
+  it('toggling and showing touch ui.hiddenLayers and not the project', async () => {
     const { session, editor, hiddenOfV } = await setup();
     editor.layers.toggle('L2');
     expect([...editor.ui.hiddenLayers.value]).toEqual(['L2']);

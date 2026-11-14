@@ -15,10 +15,10 @@ import { createMarking, setMarkingAnchor } from '../../src/model';
 import { createDisplayImages } from '../../src/store/displayImages';
 import { canvasProject, editorFor, installFakeCanvas } from './harness';
 
-// A ligação da âncora no `CanvasController` (R4, decisão 13): aparece com a ancorada selecionada
-// ou sob o mouse, some fora deles, e o pan não refaz as sobreposições (a linha vive em coordenadas
-// do canvas: a transformação do palco a leva junto).
-describe('CanvasController: ligação da âncora', () => {
+// The anchor link in `CanvasController` (R4, decision 13): appears with the anchored one selected
+// or under the mouse, disappears outside them, and the pan does not rebuild the overlays (the line lives in coordinates
+// of the canvas: the stage transform carries it along).
+describe('CanvasController: anchor link', () => {
   const frames: FrameRequestCallback[] = [];
   const flush = () => {
     while (frames.length > 0) for (const frame of frames.splice(0)) frame(0);
@@ -63,7 +63,7 @@ describe('CanvasController: ligação da âncora', () => {
     return { ...editor, controller, internals, shown };
   }
 
-  it('a ancorada selecionada mostra a ligação; ao trocar a seleção ela some', () => {
+  it('the selected anchored one shows the link; when the selection changes it disappears', () => {
     const { controller, ui, shown } = setup();
     expect(shown()).toHaveLength(0);
     ui.selection.value = { kind: 'marking', id: 'M4' };
@@ -75,7 +75,7 @@ describe('CanvasController: ligação da âncora', () => {
     controller.destroy();
   });
 
-  it('o mouse sobre a ancorada acende a ligação e sair a apaga', () => {
+  it('the mouse over the anchored one lights up the link and leaving it turns it off', () => {
     const { controller, internals, shown } = setup();
     internals.state.hoverMarking.value = 'M4';
     flush();
@@ -86,7 +86,7 @@ describe('CanvasController: ligação da âncora', () => {
     controller.destroy();
   });
 
-  it('pan não refaz as sobreposições nem mexe nos pontos da ligação', () => {
+  it('pan does not rebuild the overlays nor move the link points', () => {
     const { controller, ui, view, shown } = setup();
     ui.selection.value = { kind: 'marking', id: 'M4' };
     flush();
@@ -99,7 +99,7 @@ describe('CanvasController: ligação da âncora', () => {
     controller.destroy();
   });
 
-  it('arrastar a âncora leva a ligação junto (a prévia do gesto)', () => {
+  it('dragging the anchor carries the link along (the gesture preview)', () => {
     const { controller, ui, actions, shown } = setup();
     ui.selection.value = { kind: 'marking', id: 'M4' };
     flush();
@@ -108,7 +108,7 @@ describe('CanvasController: ligação da âncora', () => {
     actions.previewMarkingMove('M1', 40, 20);
     flush();
     const during = shown()[0]?.line.points() ?? [];
-    // A ancorada e a âncora andam o mesmo deslocamento: a linha anda inteira.
+    // The anchored one and the anchor move by the same offset: the line moves as a whole.
     expect(during).toEqual([
       (before[0] ?? 0) + 40,
       (before[1] ?? 0) + 20,

@@ -12,8 +12,8 @@ import { setViewMode } from '../../src/store/ui';
 import { AGENT, HUMAN, T0, T1, message, sampleThread } from '../model/threadFixtures';
 import { canvasProject, editorFor, installFakeCanvas } from './harness';
 
-// Os pinos das conversas no CanvasController (CM4, decisão 24): escondidos por padrão, no quadro de
-// sempre, sem recalcular nada com pan e zoom.
+// The conversation pins in CanvasController (CM4, decision 24): hidden by default, in the usual
+// frame, recomputing nothing on pan and zoom.
 describe('CanvasController: pinos das conversas', () => {
   const frames: FrameRequestCallback[] = [];
   let rafCalls = 0;
@@ -70,7 +70,7 @@ describe('CanvasController: pinos das conversas', () => {
     return { ...base, derived, controller, internals, container };
   }
 
-  it('nascem escondidos e aparecem pelo botão Conversas', () => {
+  it('they start hidden and appear through the Conversations button', () => {
     const { controller, ui, internals } = setup();
     expect(internals.pinLayer.size).toBe(0);
     ui.commentPins.value = true;
@@ -82,20 +82,20 @@ describe('CanvasController: pinos das conversas', () => {
     controller.destroy();
   });
 
-  it('o pino fica no canto de cima à direita da marcação, com o rótulo do estado', () => {
+  it('the pin sits at the top right corner of the marking, with the state label', () => {
     const { controller, ui, internals } = setup();
     ui.commentPins.value = true;
     flush();
     const node = internals.pinLayer.node('marking:M1');
-    // M1 está em (100,100,600,500): o canto de cima à direita é (700, 100).
+    // M1 is at (100,100,600,500): the top right corner is (700, 100).
     expect(node?.group.x()).toBeCloseTo(700);
     expect(node?.label.text()).toBe('MA 2');
-    // Aguardando humano: a última mensagem é do agente.
+    // Awaiting human: the last message is from the agent.
     expect(node?.box.fill()).toBe('#ffb020');
     controller.destroy();
   });
 
-  it('a conversa selecionada mostra só o próprio pino, mesmo com os pinos desligados', () => {
+  it('the selected conversation shows only its own pin, even with the pins turned off', () => {
     const other = sampleThread({ id: 't2', anchor: { kind: 'marking', id: 'M2' } });
     const { controller, ui, internals } = setup([OPEN, other]);
     ui.thread.value = { id: 't2', selection: ui.selection.peek() };
@@ -105,7 +105,7 @@ describe('CanvasController: pinos das conversas', () => {
     controller.destroy();
   });
 
-  it('somem no modo visualização', () => {
+  it('they disappear in view mode', () => {
     const { controller, ui, internals } = setup();
     ui.commentPins.value = true;
     flush();
@@ -118,7 +118,7 @@ describe('CanvasController: pinos das conversas', () => {
     controller.destroy();
   });
 
-  it('o rascunho num ponto mostra o pino tracejado e nada além dele', () => {
+  it('the draft at a point shows the dashed pin and nothing besides it', () => {
     const { controller, ui, store, internals } = setup([]);
     const project = store.project.peek()!;
     startComposing(ui, project, { kind: 'point', containerId: 'I1', x: 50, y: 60 });
@@ -129,7 +129,7 @@ describe('CanvasController: pinos das conversas', () => {
     controller.destroy();
   });
 
-  it('pan e zoom não recalculam os grupos e não pedem um segundo quadro', () => {
+  it('pan and zoom do not recompute the groups and do not ask for a second frame', () => {
     const { controller, ui, derived, internals } = setup();
     ui.commentPins.value = true;
     flush();
@@ -144,7 +144,7 @@ describe('CanvasController: pinos das conversas', () => {
     controller.destroy();
   });
 
-  it('ligar os pinos pede um quadro só', () => {
+  it('turning on the pins asks for a single frame', () => {
     const { controller, ui } = setup();
     rafCalls = 0;
     ui.commentPins.value = true;
@@ -153,13 +153,13 @@ describe('CanvasController: pinos das conversas', () => {
     controller.destroy();
   });
 
-  it('cada pino tem um glifo do estado mais urgente, em cv-pin-text; o rascunho não tem', () => {
+  it('each pin has a glyph of the most urgent state, in cv-pin-text; the draft has none', () => {
     const { controller, ui, store, internals } = setup();
     ui.commentPins.value = true;
     flush();
     const node = internals.pinLayer.node('marking:M1');
     const glyphs = node?.glyph.getChildren() ?? [];
-    // Aguardando humano (a última mensagem é do agente): a pessoa.
+    // Awaiting human (the last message is from the agent): the person.
     const drawn = glyphs
       .filter((g) => g.visible())
       .map((g) => (g as unknown as { data(): string }).data());
@@ -176,7 +176,7 @@ describe('CanvasController: pinos das conversas', () => {
     controller.destroy();
   });
 
-  it('data-pin-states traz os estados na ordem de desenho, um por item do data-pins', () => {
+  it('data-pin-states brings the states in drawing order, one per item of data-pins', () => {
     const agentLast: Thread = sampleThread({
       id: 't2',
       anchor: { kind: 'marking', id: 'M2' },

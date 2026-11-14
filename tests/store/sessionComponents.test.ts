@@ -14,7 +14,7 @@ async function settle() {
   await vi.advanceTimersByTimeAsync(0);
 }
 
-describe('sessão: componentes', () => {
+describe('session: components', () => {
   let session: ProjectSession | null = null;
   afterEach(async () => {
     await session?.close();
@@ -26,13 +26,13 @@ describe('sessão: componentes', () => {
     return openSession({
       storage: createFolderStorage(root),
       project: sampleProject(),
-      prepareImage: () => Promise.reject(new Error('sem imagens')),
+      prepareImage: () => Promise.reject(new Error('no images')),
       now: () => NOW,
       newId: () => `id-${++n}`,
     });
   }
 
-  it('aplicar a biblioteca carrega o catálogo e addComponent usa o tipo', async () => {
+  it('applying the library loads the catalog and addComponent uses the type', async () => {
     session = start(new MemoryDirectory('p'));
     expect(session.components.catalog.value.size).toBe(0);
     expect(
@@ -53,7 +53,7 @@ describe('sessão: componentes', () => {
     await settle();
   });
 
-  it('reabrir o projeto lê os componentes do disco', async () => {
+  it('reopening the project reads the components from disk', async () => {
     const root = new MemoryDirectory('p');
     session = start(root);
     session.actions.applySpecialization(material3Spec(), material3Package());
@@ -66,7 +66,7 @@ describe('sessão: componentes', () => {
     const reopened = openSession({
       storage: createFolderStorage(root),
       project: saved ?? sampleProject(),
-      prepareImage: () => Promise.reject(new Error('sem imagens')),
+      prepareImage: () => Promise.reject(new Error('no images')),
       now: () => NOW,
     });
     session = reopened;
@@ -76,7 +76,7 @@ describe('sessão: componentes', () => {
     ).toBeGreaterThan(5);
   });
 
-  it('desfazer a aplicação tira o catálogo e refazer o traz de volta', async () => {
+  it('undoing the application removes the catalog and redo brings it back', async () => {
     session = start(new MemoryDirectory('p'));
     session.actions.applySpecialization(material3Spec(), material3Package());
     await session.components.whenIdle();

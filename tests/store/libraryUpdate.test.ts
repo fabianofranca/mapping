@@ -12,8 +12,8 @@ import {
 } from '../model/libraryMigrationFixtures';
 import { MemoryDirectory } from '../storage/memoryFs';
 
-// Atualização de uma biblioteca (v4) pela sessão: dados migrados, pasta specs/<id>/ regravada,
-// uma entrada de histórico e a recusa de quebra sem migração.
+// Update of a library (v4) by the session: migrated data, specs/<id>/ folder rewritten,
+// one history entry and the refusal of a break without a migration.
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
@@ -21,7 +21,7 @@ afterEach(() => vi.useRealTimers());
 const DIR = 'specs/lib';
 const SPEC_FILE = `${DIR}/lib.spec.json`;
 
-/** v2 renomeia `label` → `title` em `button`, com a migração declarada (ou sem ela). */
+/** v2 renames `label` → `title` in `button`, with the migration declared (or without it). */
 function v2(migrated = true): Spec {
   const button = buttonType();
   return libSpec(
@@ -56,7 +56,7 @@ async function settle() {
   await vi.advanceTimersByTimeAsync(0);
 }
 
-describe('atualizar biblioteca pela sessão', () => {
+describe('update a library through the session', () => {
   let session: ProjectSession | null = null;
   afterEach(async () => {
     await session?.close();
@@ -80,7 +80,7 @@ describe('atualizar biblioteca pela sessão', () => {
     session = openSession({
       storage: createFolderStorage(root),
       project,
-      prepareImage: () => Promise.reject(new Error('sem imagens')),
+      prepareImage: () => Promise.reject(new Error('no images')),
       now: () => NOW,
       newId: () => `id-${++n}`,
     });
@@ -94,7 +94,7 @@ describe('atualizar biblioteca pela sessão', () => {
       specId: 'lib',
       typeId: 'button',
     });
-    if (!added.ok) throw new Error('sem anotação');
+    if (!added.ok) throw new Error('no annotation');
     const annotationId = session.store.project.value?.annotations[0]?.id ?? '';
     session.actions.setFieldValue(annotationId, 'label', 'OK');
     await settle();
@@ -105,7 +105,7 @@ describe('atualizar biblioteca pela sessão', () => {
     session?.store.project.value?.annotations.find((a) => a.id === id)?.values;
   const versionOf = () => session?.store.project.value?.specializations[0]?.version;
 
-  it('migra os valores, regrava a pasta e desfaz/refaz numa só entrada', async () => {
+  it('migrates the values, rewrites the folder and undoes/redoes in a single entry', async () => {
     const { root, annotationId, storage } = await start();
     expect(valuesOf(annotationId)).toMatchObject({ label: 'OK' });
 
@@ -124,7 +124,7 @@ describe('atualizar biblioteca pela sessão', () => {
     expect(files).toContain(`${DIR}/docs/v2.md`);
     expect(files).not.toContain(`${DIR}/docs/v1.md`);
 
-    // Uma entrada só: um desfazer volta tudo.
+    // A single entry: one undo brings everything back.
     session?.store.undo();
     await vi.advanceTimersByTimeAsync(300);
     await settle();
@@ -144,7 +144,7 @@ describe('atualizar biblioteca pela sessão', () => {
     expect(files).toContain(`${DIR}/docs/v2.md`);
   });
 
-  it('quebra sem migração é recusada e nada muda', async () => {
+  it('a break without a migration is refused and nothing changes', async () => {
     const { annotationId, storage } = await start();
     const before = session?.store.project.value;
     const next = v2(false);

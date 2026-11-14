@@ -15,8 +15,8 @@ const KEY = 'mapping.viewShow';
 beforeEach(() => localStorage.clear());
 afterEach(() => vi.restoreAllMocks());
 
-describe('modo visualização: estado', () => {
-  it('nasce desligado, com tudo marcado menos o contorno', () => {
+describe('view mode: state', () => {
+  it('starts off, with everything checked except the outline', () => {
     const ui = createEditorUi();
     expect(ui.viewMode.value).toBe(false);
     expect(ui.viewShow.value).toEqual({
@@ -30,7 +30,7 @@ describe('modo visualização: estado', () => {
     expect(ui.viewShow.value).toBe(VIEW_SHOW_START);
   });
 
-  it('ligar volta ao Navegar; desligar não mexe no modo', () => {
+  it('turning on goes back to Navigate; turning off does not touch the mode', () => {
     const ui = createEditorUi();
     ui.mode.value = 'draw';
     setViewMode(ui, true);
@@ -42,7 +42,7 @@ describe('modo visualização: estado', () => {
     expect(ui.mode.value).toBe('draw');
   });
 
-  it('cada item do painel liga e desliga só o que diz', () => {
+  it('each panel item toggles only what it says', () => {
     const ui = createEditorUi();
     for (const key of ['containers', 'images', 'outline', 'names', 'arrows'] as const) {
       const before = ui.viewShow.value;
@@ -61,7 +61,7 @@ describe('modo visualização: estado', () => {
     }
   });
 
-  it('uma camada com desenho desmarcada entra no conjunto; marcar de novo tira', () => {
+  it('an unchecked layer with drawing enters the set; checking it again removes it', () => {
     const ui = createEditorUi();
     toggleViewDrawingLayer(ui, 'L1');
     expect(ui.viewShow.value.hiddenDrawingLayers).toEqual(new Set(['L1']));
@@ -71,7 +71,7 @@ describe('modo visualização: estado', () => {
     expect(ui.viewShow.value.hiddenDrawingLayers).toEqual(new Set(['L2']));
   });
 
-  it('Mostrar tudo marca tudo; Só as telas deixa só containers, imagens e os desenhos', () => {
+  it('Show all checks everything; Screens only leaves just containers, images and the drawings', () => {
     const ui = createEditorUi();
     toggleViewDrawingLayer(ui, 'L1');
     setViewShow(ui, { images: false });
@@ -97,18 +97,18 @@ describe('modo visualização: estado', () => {
   });
 });
 
-describe('modo visualização: a escolha por cópia do projeto', () => {
+describe('view mode: the choice per project copy', () => {
   const stored = () => JSON.parse(localStorage.getItem(KEY) ?? 'null') as unknown;
 
-  it('volta para a mesma cópia e cada cópia tem a dela', () => {
+  it('comes back for the same copy and each copy has its own', () => {
     const first = createEditorUi();
-    const stop = attachViewShowPersistence(first, 'copia-1');
+    const stop = attachViewShowPersistence(first, 'copy-1');
     setViewShow(first, { arrows: false, outline: true });
     toggleViewDrawingLayer(first, 'L1');
     stop();
 
     const again = createEditorUi();
-    attachViewShowPersistence(again, 'copia-1')();
+    attachViewShowPersistence(again, 'copy-1')();
     expect(again.viewShow.value).toEqual({
       containers: true,
       images: true,
@@ -119,23 +119,23 @@ describe('modo visualização: a escolha por cópia do projeto', () => {
     });
 
     const other = createEditorUi();
-    attachViewShowPersistence(other, 'copia-2')();
+    attachViewShowPersistence(other, 'copy-2')();
     expect(other.viewShow.value).toEqual(VIEW_SHOW_START);
   });
 
-  it('o modo em si nunca é guardado: reabrir nasce desligado', () => {
+  it('the mode itself is never stored: reopening starts off', () => {
     const first = createEditorUi();
-    const stop = attachViewShowPersistence(first, 'copia-1');
+    const stop = attachViewShowPersistence(first, 'copy-1');
     setViewMode(first, true);
     setViewShow(first, { names: false });
     stop();
     const again = createEditorUi();
-    attachViewShowPersistence(again, 'copia-1')();
+    attachViewShowPersistence(again, 'copy-1')();
     expect(again.viewMode.value).toBe(false);
     expect(again.viewShow.value.names).toBe(false);
   });
 
-  it('sem copyId vale só para a sessão: nada é lido nem gravado', () => {
+  it('without copyId it only holds for the session: nothing is read or written', () => {
     localStorage.setItem(
       KEY,
       JSON.stringify({ v: 1, copies: { '': { outline: true } } }),
@@ -148,23 +148,23 @@ describe('modo visualização: a escolha por cópia do projeto', () => {
     expect(stored()).toEqual({ v: 1, copies: { '': { outline: true } } });
   });
 
-  it('blob corrompido ou de outra versão vira vazio', () => {
-    for (const text of ['{não é json', JSON.stringify({ v: 9, copies: {} }), '[]']) {
+  it('a corrupted blob or one from another version becomes empty', () => {
+    for (const text of ['{not json', JSON.stringify({ v: 9, copies: {} }), '[]']) {
       localStorage.setItem(KEY, text);
       const ui = createEditorUi();
-      attachViewShowPersistence(ui, 'copia-1')();
+      attachViewShowPersistence(ui, 'copy-1')();
       expect(ui.viewShow.value).toEqual(VIEW_SHOW_START);
     }
   });
 
-  it('uma cópia com campo inválido é descartada, sem estragar as outras', () => {
+  it('a copy with an invalid field is discarded, without spoiling the others', () => {
     localStorage.setItem(
       KEY,
       JSON.stringify({
         v: 1,
         copies: {
-          ruim: { containers: 'sim' },
-          boa: {
+          bad: { containers: 'yes' },
+          good: {
             containers: true,
             images: true,
             outline: true,
@@ -176,14 +176,14 @@ describe('modo visualização: a escolha por cópia do projeto', () => {
       }),
     );
     const bad = createEditorUi();
-    attachViewShowPersistence(bad, 'ruim')();
+    attachViewShowPersistence(bad, 'bad')();
     expect(bad.viewShow.value).toEqual(VIEW_SHOW_START);
     const good = createEditorUi();
-    attachViewShowPersistence(good, 'boa')();
+    attachViewShowPersistence(good, 'good')();
     expect(good.viewShow.value.outline).toBe(true);
   });
 
-  it('guarda só as cópias mais recentes', () => {
+  it('keeps only the most recent copies', () => {
     for (let i = 0; i < 30; i++) {
       const ui = createEditorUi();
       const stop = attachViewShowPersistence(ui, `c${i}`);
@@ -196,26 +196,26 @@ describe('modo visualização: a escolha por cópia do projeto', () => {
     expect(copies).not.toContain('c0');
   });
 
-  it('localStorage que falha não quebra nada', () => {
+  it('a failing localStorage breaks nothing', () => {
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
-      throw new Error('bloqueado');
+      throw new Error('blocked');
     });
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-      throw new Error('cheio');
+      throw new Error('full');
     });
     const ui = createEditorUi();
-    const stop = attachViewShowPersistence(ui, 'copia-1');
+    const stop = attachViewShowPersistence(ui, 'copy-1');
     expect(() => setViewShow(ui, { arrows: false })).not.toThrow();
     expect(ui.viewShow.value.arrows).toBe(false);
     expect(stop).not.toThrow();
   });
 });
 
-describe('modo visualização: ligado ao editor', () => {
-  it('o contexto do editor restaura e guarda a escolha da cópia do projeto', async () => {
+describe('view mode: wired to the editor', () => {
+  it('the editor context restores and stores the choice of the project copy', async () => {
     const { createHarness } = await import('../components/harness');
     const { sampleProject } = await import('../model/fixtures');
-    // O harness abre a cópia `harness`: o que se escolhe numa abertura volta na seguinte.
+    // The harness opens the `harness` copy: what is chosen in one opening comes back in the next.
     const first = createHarness(sampleProject());
     setViewShow(first.ui, { arrows: false });
     toggleViewDrawingLayer(first.ui, 'L1');

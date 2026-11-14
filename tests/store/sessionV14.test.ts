@@ -1,6 +1,6 @@
 // @vitest-environment node
-// Migração v13 → v14 pelo caminho das anteriores (etapa #559, PD2): o original vai para
-// `backups/mapping.v13.…`, o salvamento grava v16 e a faixa (`backupSaved`) mostra a versão.
+// Migration v13 → v14 through the path of the previous ones (stage #559, PD2): the original goes to
+// `backups/mapping.v13.…`, the save writes v16 and the strip (`backupSaved`) shows the version.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { deserialize, serialize, specFiles } from '../../src/model';
 import { createFolderStorage } from '../../src/storage/folder';
@@ -17,14 +17,14 @@ async function prepareImage(file: File): Promise<PreparedImage> {
   return { name: file.name, data: file, width: 1, height: 1 };
 }
 
-describe('sessão: projeto v13', () => {
+describe('session: v13 project', () => {
   let session: ProjectSession | null = null;
   afterEach(async () => {
     await session?.close();
     session = null;
   });
 
-  it('o original vai para backups/mapping.v13.… e o salvamento grava v16 com os vínculos sem papel', async () => {
+  it('the original goes to backups/mapping.v13.… and the save writes v16 with the links without role', async () => {
     const root = new MemoryDirectory('p');
     const project = cadastroProject();
     const raw = JSON.parse(serialize(project)) as Record<string, unknown> & {
@@ -48,12 +48,12 @@ describe('sessão: projeto v13', () => {
       migratedFrom: { version: loaded.migratedFrom, text: v13Text },
       prepareImage,
       now: () => NOW,
-      newId: () => 'novo',
+      newId: () => 'new',
     });
     await vi.advanceTimersByTimeAsync(2000);
     expect(root.dirs.has('backups')).toBe(false);
 
-    session.actions.renameProject('Cadastro v14');
+    session.actions.renameProject('Registry v14');
     await session.flush();
 
     const d = new Date(NOW);

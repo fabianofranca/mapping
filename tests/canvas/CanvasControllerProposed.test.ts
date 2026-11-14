@@ -46,13 +46,13 @@ import { changeOf, propose } from '../model/proposalFixtures';
 import { openHarness } from '../store/proposalHarness';
 import { componentSources, installFakeCanvas } from './harness';
 
-// Visão Proposto com componentes (PC1): o canvas desenha o "como ficaria" da proposta e as
-// marcas de revisão ficam por cima. O catálogo é o de teste, passado direto (o pacote que a
-// própria proposta traz é assunto do store).
+// Proposed view with components (PC1): the canvas draws the "how it would look" of the proposal and the
+// review marks stay on top. The catalog is the test one, passed directly (the package that the
+// proposal itself brings is the store's business).
 
 type Json = Record<string, unknown>;
 
-/** A especialização de teste com `label` obrigatório no tipo `text` (para a incompleta). */
+/** The test specialization with a required `label` on the `text` type (for the incomplete one). */
 function requiredSpec(): {
   spec: ReturnType<typeof parseSpec>;
   catalog: ComponentCatalog;
@@ -74,7 +74,7 @@ function requiredSpec(): {
   return { spec, catalog: new Map([[SPEC_ID, loaded]]) };
 }
 
-/** Base: tela em branco B1 (sem arquivo) e um texto existente T1 "Antigo". */
+/** Base: blank screen B1 (without a file) and an existing text T1 "Old". */
 function baseProject(required = false): { base: Project; catalog: ComponentCatalog } {
   let catalog = testCatalog();
   let spec = parseSpec(SPEC_JSON);
@@ -97,7 +97,7 @@ function baseProject(required = false): { base: Project; catalog: ComponentCatal
     background: '#FFFFFF',
     center: { x: 500, y: 300 },
   });
-  p = addText(p, catalog, 'T1', 20, 20, { label: 'Antigo' });
+  p = addText(p, catalog, 'T1', 20, 20, { label: 'Old' });
   return { base: p, catalog };
 }
 
@@ -126,7 +126,7 @@ function addText(
   );
 }
 
-describe('CanvasController: visão Proposto com componentes', () => {
+describe('CanvasController: Proposed view with components', () => {
   const frames: FrameRequestCallback[] = [];
   const flush = () => {
     while (frames.length > 0) for (const frame of frames.splice(0)) frame(0);
@@ -150,7 +150,7 @@ describe('CanvasController: visão Proposto com componentes', () => {
     localStorage.clear();
   });
 
-  /** Abre a proposta numa sessão e monta o canvas sobre ela (começa na visão Atual). */
+  /** Opens the proposal in a session and mounts the canvas over it (starts in the Current view). */
   async function setup(
     base: Project,
     catalog: ComponentCatalog,
@@ -165,7 +165,7 @@ describe('CanvasController: visão Proposto com componentes', () => {
     });
     expect(review.open('P1').ok).toBe(true);
     if (decide) await decide(review);
-    // Com `extraFiles` o catálogo é o do app (`review.components`: base + pacote da proposta).
+    // With `extraFiles` the catalog is the app one (`review.components`: base + the proposal package).
     const sources = Object.keys(extraFiles).length
       ? review.components
       : componentSources(catalog);
@@ -229,21 +229,21 @@ describe('CanvasController: visão Proposto com componentes', () => {
     };
   }
 
-  /** Base + uma proposta que cria o texto N1 "Novo" e muda T1 para "Mudado". */
+  /** Base + a proposal that creates the text N1 "New" and changes T1 to "Changed". */
   function scenario(required = false) {
     const { base, catalog } = baseProject(required);
-    let after = addText(base, catalog, 'N1', 20, 100, { label: 'Novo' });
-    after = setFieldValue(after, 'A_T1', 'label', 'Mudado');
+    let after = addText(base, catalog, 'N1', 20, 100, { label: 'New' });
+    after = setFieldValue(after, 'A_T1', 'label', 'Changed');
     return { base, catalog, proposal: propose(base, after) };
   }
 
-  it('pendente, Proposto: o componente criado é desenhado com os valores propostos e a marca de criada', async () => {
+  it('pending, Proposed: the created component is drawn with the proposed values and the created mark', async () => {
     const { base, catalog, proposal } = scenario();
     const t = await setup(base, catalog, proposal);
     t.show('proposed');
     expect(t.container.dataset.components).toBe('2');
     expect(t.drawing('N1')).toBeDefined();
-    expect(t.texts('N1')).toContain('Novo');
+    expect(t.texts('N1')).toContain('New');
     expect(t.marks()?.markings.get('N1')).toEqual({
       line: 'created',
       dim: false,
@@ -252,7 +252,7 @@ describe('CanvasController: visão Proposto com componentes', () => {
     t.controller.destroy();
   });
 
-  it('aceita, Proposto: igual à pendente', async () => {
+  it('accepted, Proposed: same as pending', async () => {
     const { base, catalog, proposal } = scenario();
     const pending = await setup(base, catalog, proposal);
     pending.show('proposed');
@@ -272,10 +272,10 @@ describe('CanvasController: visão Proposto com componentes', () => {
     t.controller.destroy();
   });
 
-  // Inválida: com o mínimo de 1 px (decisão 24) a criação com 3×3 px vale, e o assentar da
-  // hierarquia conserta pai, container e retângulo fora dos limites; a adulteração é a camada da
-  // anotação criada, que não existe no projeto (`missing-layer`).
-  it('inválida: desenhada, com a linha e o selo de inválida', async () => {
+  // Invalid: with the 1 px minimum (decision 24) the 3×3 px creation is valid, and the settling of the
+  // hierarchy fixes parent, container and out-of-bounds rectangle; the tampering is the layer of the
+  // created annotation, which does not exist in the project (`missing-layer`).
+  it('invalid: drawn, with the line and the invalid seal', async () => {
     const { base, catalog, proposal } = scenario();
     const create = changeOf(proposal, 'marking', 'N1');
     const annotation = changeOf(proposal, 'annotation', 'A_N1');
@@ -304,7 +304,7 @@ describe('CanvasController: visão Proposto com componentes', () => {
     t.controller.destroy();
   });
 
-  it('Atual: o componente criado não é desenhado e não tem marca', async () => {
+  it('Current: the created component is not drawn and has no mark', async () => {
     const { base, catalog, proposal } = scenario();
     const t = await setup(base, catalog, proposal);
     t.show('current');
@@ -314,10 +314,10 @@ describe('CanvasController: visão Proposto com componentes', () => {
     t.controller.destroy();
   });
 
-  it('criação rejeitada: sem desenho do componente e com o fantasma nas duas visões', async () => {
+  it('rejected creation: no component drawing and with the ghost in both views', async () => {
     const { base, catalog, proposal } = scenario();
     const changeId = changeOf(proposal, 'marking', 'N1').id;
-    // O nome do fantasma é o do tipo do componente, como a Árvore mostra a instância sem nome.
+    // The ghost name is the component type name, as the Tree shows the unnamed instance.
     const typeName = markingTypeName(base, 'T1');
     expect(typeName).toBeTruthy();
     const t = await setup(base, catalog, proposal, async (review) => {
@@ -335,13 +335,13 @@ describe('CanvasController: visão Proposto com componentes', () => {
     t.controller.destroy();
   });
 
-  it('remoção rejeitada da selecionada: o risco da etiqueta do nome some no mesmo quadro', async () => {
+  it('rejected removal of the selected one: the strikethrough of the name label disappears in the same frame', async () => {
     const plain = baseProject();
     const { catalog } = plain;
     const base: Project = {
       ...plain.base,
       markings: plain.base.markings.map((m) =>
-        m.id === 'T1' ? { ...m, name: 'Antigo texto' } : m,
+        m.id === 'T1' ? { ...m, name: 'Old text' } : m,
       ),
     };
     const proposal = propose(base, removeMarking(base, 'T1'));
@@ -358,18 +358,18 @@ describe('CanvasController: visão Proposto com componentes', () => {
     t.controller.destroy();
   });
 
-  it('componente existente alterado: valor proposto e linha dupla no Proposto', async () => {
+  it('changed existing component: proposed value and double line in the Proposed view', async () => {
     const { base, catalog, proposal } = scenario();
     const t = await setup(base, catalog, proposal);
     t.show('current');
-    expect(t.texts('T1')).toContain('Antigo');
+    expect(t.texts('T1')).toContain('Old');
     t.show('proposed');
-    expect(t.texts('T1')).toContain('Mudado');
+    expect(t.texts('T1')).toContain('Changed');
     expect(t.marks()?.markings.get('T1')).toMatchObject({ line: 'changed' });
     t.controller.destroy();
   });
 
-  it('campo obrigatório faltando num componente novo: desenho existe e a marcação é incompleta', async () => {
+  it('required field missing in a new component: the drawing exists and the marking is incomplete', async () => {
     const { base, catalog } = baseProject(true);
     const after = addText(base, catalog, 'N1', 20, 100, { label: '' });
     const proposal = propose(base, after);
@@ -383,7 +383,7 @@ describe('CanvasController: visão Proposto com componentes', () => {
     t.controller.destroy();
   });
 
-  it('pacote que a proposta cria: o componente do tipo novo é desenhado no Proposto e não na Atual', async () => {
+  it('package that the proposal creates: the component of the new type is drawn in the Proposed view and not in the Current one', async () => {
     const { base, catalog } = baseProject();
     const parsed = parseSpec({ ...SPEC_JSON, id: 'extra', name: 'extra', version: 1 });
     if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
@@ -412,7 +412,7 @@ describe('CanvasController: visão Proposto com componentes', () => {
     );
     const files: Record<string, string> = {};
     for (const [path, text] of packageTexts()) {
-      files[path] = text; // o pacote da especialização já aplicada (T1), em specs/test/
+      files[path] = text; // the package of the already applied specialization (T1), in specs/test/
       files[`proposals/P1/${path.replace('specs/test/', 'specs/extra/')}`] = text;
     }
     const t = await setup(base, catalog, propose(base, after), undefined, files);
@@ -429,17 +429,17 @@ describe('CanvasController: visão Proposto com componentes', () => {
   });
 
   describe('cache', () => {
-    it('trocar de visão mantém as cenas que a proposta não muda', async () => {
+    it('switching views keeps the scenes that the proposal does not change', async () => {
       const start = baseProject();
       const { catalog } = start;
       const base = addText(start.base, catalog, 'T2', 20, 200, { label: 'Dois' });
-      const after = addText(base, catalog, 'N1', 20, 100, { label: 'Novo' });
+      const after = addText(base, catalog, 'N1', 20, 100, { label: 'New' });
       const t = await setup(base, catalog, propose(base, after));
       const t1 = t.scenes().get('T1');
       const t2 = t.scenes().get('T2');
       expect(t1).toBeDefined();
       t.show('proposed');
-      // T2 já existe na base; só N1 é nova.
+      // T2 already exists in the base; only N1 is new.
       expect(t.scenes().get('T1')).toBe(t1);
       expect(t.scenes().get('T2')).toBe(t2);
       expect(t.scenes().has('N1')).toBe(true);
@@ -450,7 +450,7 @@ describe('CanvasController: visão Proposto com componentes', () => {
       t.controller.destroy();
     });
 
-    it('decidir uma mudança não reinstancia as demais; pan e zoom não reinstanciam nada', async () => {
+    it('deciding a change does not reinstantiate the others; pan and zoom do not reinstantiate anything', async () => {
       const { base, catalog, proposal } = scenario();
       const t = await setup(base, catalog, proposal);
       t.show('proposed');

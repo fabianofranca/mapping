@@ -7,8 +7,8 @@ import { openSession, type ProjectSession } from '../../src/store/session';
 import { NOW, sampleProject } from '../model/fixtures';
 import { MemoryDirectory } from '../storage/memoryFs';
 
-// `openSession` com `stagedPackages` (ME3): a biblioteca de notas aplicada em memória a um projeto
-// migrado. O projeto já a cita, o disco ainda não: a primeira gravação escreve `specs/notas/`.
+// `openSession` with `stagedPackages` (ME3): the notes library applied in memory to a migrated
+// project. The project already cites it, the disk does not yet: the first write writes `specs/notas/`.
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
@@ -21,7 +21,7 @@ async function settle() {
   await vi.advanceTimersByTimeAsync(0);
 }
 
-/** A pasta como a v12 a deixou (só o `mapping.json`) e a sessão com as notas em memória. */
+/** The folder as v12 left it (only `mapping.json`) and the session with the notes in memory. */
 function openMigrated(root: MemoryDirectory, calls: string[] = []) {
   const old = serialize(sampleProject());
   root.files.set('mapping.json', new Blob([old]));
@@ -51,21 +51,21 @@ function openMigrated(root: MemoryDirectory, calls: string[] = []) {
     loadedText: old,
     migratedFrom: { version: 12, text: old },
     stagedPackages: [{ spec: applied.spec, files: applied.packageFiles }],
-    prepareImage: () => Promise.reject(new Error('sem imagens')),
+    prepareImage: () => Promise.reject(new Error('no images')),
     now: () => NOW,
     newId: () => `id-${++n}`,
   });
   return { session, old, storage: inner };
 }
 
-describe('sessão com pacotes aplicados em memória (stagedPackages)', () => {
+describe('session with packages applied in memory (stagedPackages)', () => {
   let session: ProjectSession | null = null;
   afterEach(async () => {
     await session?.close();
     session = null;
   });
 
-  it('o catálogo de componentes enxerga o pacote antes de ele existir no disco', async () => {
+  it('the component catalog sees the package before it exists on disk', async () => {
     const root = new MemoryDirectory('p');
     const opened = openMigrated(root);
     session = opened.session;
@@ -76,7 +76,7 @@ describe('sessão com pacotes aplicados em memória (stagedPackages)', () => {
     expect(notes?.byType.has('nota')).toBe(true);
   });
 
-  it('abrir e esperar não grava nada; a primeira gravação escreve o pacote antes do mapping.json e o backup', async () => {
+  it('opening and waiting writes nothing; the first write writes the package before mapping.json and the backup', async () => {
     const root = new MemoryDirectory('p');
     const calls: string[] = [];
     const opened = openMigrated(root, calls);
@@ -89,8 +89,8 @@ describe('sessão com pacotes aplicados em memória (stagedPackages)', () => {
     expect(root.dirs.has('backups')).toBe(false);
     expect(session.store.canUndo.value).toBe(false);
 
-    // A primeira alteração da pessoa grava o projeto (abrir sozinho nunca grava).
-    session.actions.renameProject('Renomeado');
+    // The person's first change writes the project (opening alone never writes).
+    session.actions.renameProject('Renamed');
     expect((await session.flush()).ok).toBe(true);
 
     const onDisk = await opened.storage.listSpecDir(DIR);
@@ -103,7 +103,7 @@ describe('sessão com pacotes aplicados em memória (stagedPackages)', () => {
         `${DIR}/docs/tabela.md`,
       ].sort(),
     );
-    // Os arquivos do pacote entram antes do mapping.json que os cita.
+    // The package files go in before the mapping.json that cites them.
     const mappingAt = calls.indexOf('mapping');
     expect(mappingAt).toBeGreaterThan(0);
     expect(calls.slice(0, mappingAt)).toEqual(
@@ -113,12 +113,12 @@ describe('sessão com pacotes aplicados em memória (stagedPackages)', () => {
       ]),
     );
     const saved = deserialize((await root.read('mapping.json')) ?? '');
-    if (!saved.ok) throw new Error('mapping inválido');
+    if (!saved.ok) throw new Error('invalid mapping');
     expect(saved.project.specializations).toEqual([
       expect.objectContaining({ id: 'notas', file: SPEC_FILE }),
     ]);
     expect(saved.project.layers.some((l) => l.spec?.specId === 'notas')).toBe(true);
-    // O backup da migração guarda o original.
+    // The migration backup keeps the original.
     const [backup, ...rest] = [...(root.dirs.get('backups')?.files.keys() ?? [])];
     expect(rest).toEqual([]);
     expect(backup).toMatch(/^mapping\.v12\.\d{8}-\d{6}\.json$/);
@@ -128,17 +128,17 @@ describe('sessão com pacotes aplicados em memória (stagedPackages)', () => {
         ?.files.get(backup ?? '')
         ?.text(),
     ).toBe(opened.old);
-    // Só a renomeação entra no histórico; a biblioteca de notas não.
+    // Only the rename enters the history; the notes library does not.
     expect(session.store.canUndo.value).toBe(true);
     session.store.undo();
     expect(session.store.canUndo.value).toBe(false);
   });
 
-  it('o conteúdo gravado é o do pacote embutido', async () => {
+  it('the written content is that of the embedded package', async () => {
     const root = new MemoryDirectory('p');
     const opened = openMigrated(root);
     session = opened.session;
-    session.actions.renameProject('Renomeado');
+    session.actions.renameProject('Renamed');
     await session.flush();
     expect(await root.read(`${DIR}/components/nota.json`)).toBe(
       NOTES_LIBRARY.files.get('components/nota.json'),
@@ -150,11 +150,11 @@ describe('sessão com pacotes aplicados em memória (stagedPackages)', () => {
     expect(spec.id).toBe('notas');
   });
 
-  it('remover a especialização depois da primeira gravação apaga a pasta, como em qualquer biblioteca', async () => {
+  it('removing the specialization after the first write deletes the folder, as in any library', async () => {
     const root = new MemoryDirectory('p');
     const opened = openMigrated(root);
     session = opened.session;
-    session.actions.renameProject('Renomeado');
+    session.actions.renameProject('Renamed');
     await session.flush();
     expect((await opened.storage.listSpecDir(DIR)).length).toBe(5);
 
@@ -163,17 +163,17 @@ describe('sessão com pacotes aplicados em memória (stagedPackages)', () => {
     expect(await opened.storage.listSpecDir(DIR)).toEqual([]);
     expect(root.dirs.get('specs')?.dirs.has('notas') ?? false).toBe(false);
     const saved = deserialize((await root.read('mapping.json')) ?? '');
-    if (!saved.ok) throw new Error('mapping inválido');
+    if (!saved.ok) throw new Error('invalid mapping');
     expect(saved.project.specializations).toEqual([]);
 
-    // Desfazer traz o pacote de volta (ele está no cache da sessão).
+    // Undoing brings the package back (it is in the session cache).
     session.store.undo();
     await vi.advanceTimersByTimeAsync(300);
     await settle();
     expect((await opened.storage.listSpecDir(DIR)).length).toBe(5);
   });
 
-  it('remover antes da primeira gravação não deixa pasta nem especialização no disco', async () => {
+  it('removing before the first write leaves neither folder nor specialization on disk', async () => {
     const root = new MemoryDirectory('p');
     const opened = openMigrated(root);
     session = opened.session;
@@ -182,7 +182,7 @@ describe('sessão com pacotes aplicados em memória (stagedPackages)', () => {
     await session.flush();
     expect(await opened.storage.listSpecDir(DIR)).toEqual([]);
     const saved = deserialize((await root.read('mapping.json')) ?? '');
-    if (!saved.ok) throw new Error('mapping inválido');
+    if (!saved.ok) throw new Error('invalid mapping');
     expect(saved.project.specializations).toEqual([]);
   });
 });

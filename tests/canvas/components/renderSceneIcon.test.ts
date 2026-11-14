@@ -1,4 +1,4 @@
-// CF7: o nó `icon` chega ao Konva como caminhos com a cor do nó, a ponta e a escala do viewBox.
+// CF7: the `icon` node reaches Konva as paths with the node color, the cap and the viewBox scale.
 import Konva from 'konva';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { installFakeCanvas } from '../harness';
@@ -47,8 +47,8 @@ function render(children: unknown[], values = {}) {
 
 const pathsOf = (group: Konva.Group): Konva.Path[] => group.find('Path') as Konva.Path[];
 
-describe('renderScene: nó icon', () => {
-  it('desenha o traço com a cor do nó, ponta e canto redondos e a largura do ícone', () => {
+describe('renderScene: icon node', () => {
+  it('draws the stroke with the node color, round cap and join and the icon width', () => {
     const [path] = pathsOf(
       render([{ type: 'icon', name: 'check', color: '#0a7', width: 48, height: 48 }]),
     );
@@ -62,19 +62,19 @@ describe('renderScene: nó icon', () => {
     expect(holder?.scaleY()).toBe(2);
   });
 
-  it('preenche o caminho com a cor do nó quando pede fill', () => {
+  it('fills the path with the node color when fill is requested', () => {
     const [path] = pathsOf(render([{ type: 'icon', name: 'dot', color: '#c00' }]));
     expect(path?.fill()).toBe('#c00');
   });
 
-  it('nome desconhecido: só o reservado tracejado, sem aviso repetido do desenho', () => {
+  it('unknown name: only the dashed placeholder, without a repeated drawing warning', () => {
     const { root, warnings } = instantiate(
-      component([{ type: 'icon', name: { $field: 'icone' }, width: 24, height: 24 }]),
-      { icone: 'nuvem' },
+      component([{ type: 'icon', name: { $field: 'icon' }, width: 24, height: 24 }]),
+      { icon: 'missing' },
       { x: 0, y: 0, width: 48, height: 48 },
       { measure: approximateMeasurer, icons },
     );
-    expect(warnings).toEqual(['unknown icon: nuvem']);
+    expect(warnings).toEqual(['unknown icon: missing']);
     const rendered = renderScene({ root, warnings });
     expect(pathsOf(rendered.root)).toEqual([]);
     const boxes = rendered.root.find('Rect') as Konva.Rect[];

@@ -24,8 +24,8 @@ import { TOKENS, canvasProject } from './harness';
 
 const PIN = TOKENS.pin;
 
-// Derivação dos pinos das conversas (CM4, decisão 24): onde cada grupo fica no canvas, o acerto do
-// clique e o ponto de uma conversa nova. Funções puras, sem Konva.
+// Derivation of the conversation pins (CM4, decision 24): where each group sits on the canvas, the click
+// hit and the point of a new conversation. Pure functions, without Konva.
 
 const thread = (id: string, anchor: ThreadAnchor, extra: Partial<Thread> = {}) =>
   sampleThread({
@@ -45,8 +45,8 @@ const intersects = (a: Rect, b: Rect) =>
   a.y < b.y + b.height &&
   b.y < a.y + a.height;
 
-describe('pinPlaces: o lugar de cada pino', () => {
-  it('marcação: o canto de cima à direita, com o pino fora dela', () => {
+describe('pinPlaces: the place of each pin', () => {
+  it('marking: the top right corner, with the pin outside it', () => {
     const p = canvasProject();
     const places = pinPlaces(
       p,
@@ -54,7 +54,7 @@ describe('pinPlaces: o lugar de cada pino', () => {
       FULL,
     );
     expect(places).toHaveLength(1);
-    // M1 está em (100,100,600,500) no container I1, que está em (0,0), escala 1.
+    // M1 is at (100,100,600,500) in container I1, which is at (0,0), scale 1.
     expect(places[0]?.origin).toEqual({ x: 700, y: 100 });
     const m1: Rect = { x: 100, y: 100, width: 600, height: 500 };
     const box = pinBox(places[0]!, 1, PIN);
@@ -62,7 +62,7 @@ describe('pinPlaces: o lugar de cada pino', () => {
     expect(intersects(box, m1)).toBe(false);
   });
 
-  it('o tamanho é em pixels de tela: no zoom 2 a caixa ocupa metade do canvas', () => {
+  it('the size is in screen pixels: at zoom 2 the box takes half the canvas', () => {
     const p = canvasProject();
     const [place] = pinPlaces(
       p,
@@ -75,7 +75,7 @@ describe('pinPlaces: o lugar de cada pino', () => {
     expect(two.height).toBeCloseTo(one.height / 2);
   });
 
-  it('não cobre o emblema do cadeado de uma marcação pequena na tela', () => {
+  it('does not cover the lock badge of a marking that is small on the screen', () => {
     const p = canvasProject();
     const [place] = pinPlaces(
       p,
@@ -91,7 +91,7 @@ describe('pinPlaces: o lugar de cada pino', () => {
     expect(intersects(pinBox(place!, zoom, PIN), lock)).toBe(false);
   });
 
-  it('container: o canto de cima à direita da imagem', () => {
+  it('container: the top right corner of the image', () => {
     const p = canvasProject();
     const [place] = pinPlaces(
       p,
@@ -101,7 +101,7 @@ describe('pinPlaces: o lugar de cada pino', () => {
     expect(place?.origin).toEqual({ x: 1000, y: 0 });
   });
 
-  it('a conversa de um campo entra no pino da marcação dona, sem um segundo pino', () => {
+  it('the conversation of a field goes into the pin of the owning marking, without a second pin', () => {
     const p = canvasProject();
     const places = pinPlaces(
       p,
@@ -144,7 +144,7 @@ describe('pinPlaces: o lugar de cada pino', () => {
     expect(places.every((x) => x.align === 'center')).toBe(true);
   });
 
-  it('o pino anda com o item que se move e com o container do ponto', () => {
+  it('the pin moves with the item that moves and with the container of the point', () => {
     const p = canvasProject();
     const groups = groupsOf(p, [
       thread('c1', { kind: 'marking', id: 'M1' }),
@@ -157,7 +157,7 @@ describe('pinPlaces: o lugar de cada pino', () => {
     expect(after[1]).toEqual({ x: before[1]!.x, y: before[1]!.y + 900 });
   });
 
-  it('o pino some com a marcação escondida', () => {
+  it('the pin disappears with the hidden marking', () => {
     const p = canvasProject();
     const groups = groupsOf(p, [thread('c1', { kind: 'marking', id: 'M1' })]);
     const hidden = new Map<string, MarkingVisibility>([['M1', 'hidden']]);
@@ -165,8 +165,8 @@ describe('pinPlaces: o lugar de cada pino', () => {
   });
 });
 
-describe('pinHit: o clique no pino ganha da marcação embaixo', () => {
-  it('acerta dentro da caixa (em pixels de tela) e erra fora', () => {
+describe('pinHit: the click on the pin wins over the marking underneath', () => {
+  it('hits inside the box (in screen pixels) and misses outside', () => {
     const p = canvasProject();
     const places = pinPlaces(
       p,
@@ -180,8 +180,8 @@ describe('pinHit: o clique no pino ganha da marcação embaixo', () => {
   });
 });
 
-describe('o ponto de uma conversa nova', () => {
-  it('num container: pixels dele; fora de todos: unidades do canvas', () => {
+describe('the point of a new conversation', () => {
+  it('in a container: its pixels; outside all of them: canvas units', () => {
     const p = canvasProject();
     expect(pointAnchorAt(p, { x: 1150, y: 60 })).toEqual({
       kind: 'point',
@@ -207,28 +207,28 @@ describe('o ponto de uma conversa nova', () => {
     });
   });
 
-  it('pointCanvas é o inverso: container → canvas', () => {
+  it('pointCanvas is the inverse: container → canvas', () => {
     const p = canvasProject();
     expect(pointCanvas(p, 'I2', 50, 60)).toEqual({ x: 1150, y: 60 });
     expect(pointCanvas(p, null, 7, 8)).toEqual({ x: 7, y: 8 });
     expect(pointCanvas(p, 'nao-existe', 7, 8)).toBeNull();
   });
 
-  it('commentAnchorAt: sobre um item ancora no item; no vazio do container, num ponto', () => {
+  it('commentAnchorAt: over an item anchors to the item; on the empty part of the container, to a point', () => {
     const p = canvasProject();
     // M2 (a mais interna) em (200,200,100,100).
     expect(commentAnchorAt(p, FULL, { x: 250, y: 250 })).toEqual({
       kind: 'marking',
       id: 'M2',
     });
-    // Dentro de I1 e fora de qualquer marcação.
+    // Inside I1 and outside any marking.
     expect(commentAnchorAt(p, FULL, { x: 900, y: 700 })).toEqual({
       kind: 'point',
       containerId: 'I1',
       x: 900,
       y: 700,
     });
-    // Fora de tudo: o canvas.
+    // Outside everything: the canvas.
     expect(commentAnchorAt(p, FULL, { x: 5000, y: 5000 })).toEqual({
       kind: 'point',
       containerId: null,
@@ -238,14 +238,14 @@ describe('o ponto de uma conversa nova', () => {
   });
 });
 
-describe('pinWidth: o glifo de estado entra na largura do pino', () => {
-  it('conta o glifo e a folga até o rótulo; o rascunho (sem glifo) fica como era', () => {
+describe('pinWidth: the state glyph goes into the pin width', () => {
+  it('counts the glyph and the gap up to the label; the draft (without a glyph) stays as it was', () => {
     expect(pinGlyphExtra(PIN)).toBeGreaterThan(0);
     expect(pinWidth('MA 2', PIN)).toBe(4 * 7 + 16 + pinGlyphExtra(PIN));
     expect(pinWidth('+', PIN, false)).toBe(7 + 16);
   });
 
-  it('a largura e a altura seguem os tokens (nada fixo no código)', () => {
+  it('the width and height follow the tokens (nothing fixed in the code)', () => {
     const wide = { ...PIN, charWidth: 10, height: 30 };
     expect(pinWidth('MA 2', wide)).toBe(4 * 10 + 16 + pinGlyphExtra(wide));
     const place = pinPlaces(
@@ -256,7 +256,7 @@ describe('pinWidth: o glifo de estado entra na largura do pino', () => {
     expect(pinBox(place, 1, wide).height).toBe(30);
   });
 
-  it('pinBox e pinHit seguem a largura nova (o alvo de clique cresce junto)', () => {
+  it('pinBox and pinHit follow the new width (the click target grows along)', () => {
     const p = canvasProject();
     const places = pinPlaces(
       p,

@@ -20,9 +20,9 @@ import { viewOf } from '../store/perspectiveHarness';
 import { canvasProject, installFakeCanvas } from './harness';
 import { createCanvasViewState } from '../../src/canvas/viewState';
 
-// O canvas com uma perspectiva aberta (etapa #659, PE2, decisões 3 e 15): desenha o projeto à
-// vista (as raízes dela, onde ela as põe), os pinos das conversas num ponto do canvas só aparecem
-// na Principal e pan e zoom não recalculam nada nem pedem mais de um quadro.
+// The canvas with a perspective open (stage #659, PE2, decisions 3 and 15): draws the project in the
+// view (its roots, where it puts them), the conversation pins at a canvas point only appear
+// on the Main one and pan and zoom recompute nothing nor ask for more than one frame.
 
 describe('CanvasController: perspectiva aberta', () => {
   const frames: FrameRequestCallback[] = [];
@@ -49,7 +49,7 @@ describe('CanvasController: perspectiva aberta', () => {
     localStorage.clear();
   });
 
-  /** `canvasProject` + L2 + a perspectiva V (só I2, em 0,2000). */
+  /** `canvasProject` + L2 + the perspective V (only I2, at 0,2000). */
   function projectWithView(): Project {
     let p = addLayer(canvasProject(), { id: 'L2', name: 'Pintura', color: '#00AA00' });
     p = addPerspective(p, viewOf(p, { root: 'I2', at: { x: 0, y: 2000 } }));
@@ -118,7 +118,7 @@ describe('CanvasController: perspectiva aberta', () => {
     };
   }
 
-  it('desenha o projeto à vista: só as raízes da perspectiva, na posição dela', async () => {
+  it('draws the project in the view: only the roots of the perspective, at its position', async () => {
     const { controller, perspective, view, internals } = await setup();
     expect(view.bounds.value).toEqual({ x: 0, y: 0, width: 1600, height: 800 });
 
@@ -126,7 +126,7 @@ describe('CanvasController: perspectiva aberta', () => {
     flush();
     expect(internals.frame.peek().project?.containers.map((c) => c.id)).toEqual(['I2']);
     expect(view.bounds.value).toEqual({ x: 0, y: 2000, width: 500, height: 500 });
-    // A hierarquia do toque também lê a vista: a raiz está onde a perspectiva a pôs.
+    // The touch hierarchy also reads the view: the root is where the perspective put it.
     expect(controller.imageIdAt(0, 0)).toBeNull();
 
     perspective.open(null);
@@ -138,7 +138,7 @@ describe('CanvasController: perspectiva aberta', () => {
     controller.destroy();
   });
 
-  it('a prévia do gesto aparece na vista (muda `perspectives[].items`)', async () => {
+  it('the gesture preview appears in the view (changes `perspectives[].items`)', async () => {
     const { controller, perspective, store, internals } = await setup();
     perspective.open('V');
     flush();
@@ -159,7 +159,7 @@ describe('CanvasController: perspectiva aberta', () => {
     controller.destroy();
   });
 
-  it('pino de conversa num ponto do canvas só aparece na Principal; o de um container segue o container', async () => {
+  it('a conversation pin at a canvas point only appears on the Main one; the one of a container follows the container', async () => {
     const { controller, perspective, ui, internals } = await setup([
       CANVAS_POINT,
       CONTAINER_POINT,
@@ -171,7 +171,7 @@ describe('CanvasController: perspectiva aberta', () => {
 
     perspective.open('V');
     flush();
-    // Fica só o pino do container que a vista mostra (I2), onde a vista o põe: (0 + 10, 2000 + 20).
+    // Only the pin of the container that the view shows (I2) stays, where the view puts it: (0 + 10, 2000 + 20).
     expect(internals.pinLayer.size).toBe(1);
     const place = internals.frame.peek().pins[0] as { origin: { x: number; y: number } };
     expect(place.origin).toEqual({ x: 10, y: 2020 });
@@ -182,7 +182,7 @@ describe('CanvasController: perspectiva aberta', () => {
     controller.destroy();
   });
 
-  it('pan e zoom não recalculam o projeto à vista e pedem um quadro só', async () => {
+  it('pan and zoom do not recompute the project in the view and ask for a single frame', async () => {
     const { controller, perspective, derived, ui, internals, container } = await setup([
       CONTAINER_POINT,
     ]);

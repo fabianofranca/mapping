@@ -12,9 +12,9 @@ import { setShowArrows } from '../../../src/store/settings';
 import { arrowProject } from '../../model/arrowFixtures';
 import { canvasProject, editorFor } from '../harness';
 
-// Restrições "Só na Principal" do canvas com uma perspectiva aberta (etapa #659, PE2, decisão 5):
-// sem rota de seta (pontos de passagem), sem desenho no vazio do canvas e sem encaixe da raiz em
-// container. Viewport 1:1 em (0, 0): tela = canvas.
+// "Main only" restrictions of the canvas with a perspective open (stage #659, PE2, decision 5):
+// no arrow route (waypoints), no drawing on the empty canvas and no snapping of the root into a
+// container. Viewport 1:1 at (0, 0): screen = canvas.
 
 function setup(project: Project, perspectiveOpen: boolean) {
   const editor = editorFor(project);
@@ -84,9 +84,9 @@ function setup(project: Project, perspectiveOpen: boolean) {
 afterEach(() => setShowArrows(true));
 
 describe.each([
-  { open: false, label: 'na Principal' },
-  { open: true, label: 'com perspectiva aberta' },
-])('rota da seta $label', ({ open }) => {
+  { open: false, label: 'in Main' },
+  { open: true, label: 'with a perspective open' },
+])('arrow route $label', ({ open }) => {
   const project = () =>
     setArrowRoute(setArrowStyle(arrowProject(), 'r1', 'straight'), 'r1', [
       { x: 700, y: 300 },
@@ -94,7 +94,7 @@ describe.each([
     ]);
   const points = (s: ReturnType<typeof setup>) => s.index().arrows.get('r1')?.points;
 
-  it('arrastar o meio de um trecho cria o ponto de passagem só na Principal', () => {
+  it('dragging the middle of a segment creates the waypoint only in Main', () => {
     const s = setup(
       setArrowRoute(setArrowStyle(arrowProject(), 'r1', 'straight'), 'r1', []),
       open,
@@ -106,7 +106,7 @@ describe.each([
     s.cleanup();
   });
 
-  it('arrastar um ponto de passagem o move só na Principal', () => {
+  it('dragging a waypoint moves it only in Main', () => {
     const s = setup(project(), open);
     s.ui.selection.value = { kind: 'arrow', id: 'r1' };
     s.drag([700, 300], [760, 330]);
@@ -114,7 +114,7 @@ describe.each([
     s.cleanup();
   });
 
-  it('o clique duplo num ponto de passagem o remove só na Principal', () => {
+  it('double-clicking a waypoint removes it only in Main', () => {
     const s = setup(project(), open);
     s.ui.selection.value = { kind: 'arrow', id: 'r1' };
     s.doubleClick(700, 300);
@@ -124,27 +124,27 @@ describe.each([
 });
 
 describe.each([
-  { open: false, label: 'na Principal' },
-  { open: true, label: 'com perspectiva aberta' },
-])('desenho $label', ({ open }) => {
-  it('no vazio do canvas só desenha na Principal; sobre o container desenha sempre', () => {
+  { open: false, label: 'in Main' },
+  { open: true, label: 'with a perspective open' },
+])('drawing $label', ({ open }) => {
+  it('on the empty canvas it only draws in Main; over the container it always draws', () => {
     const s = setup(canvasProject(), open);
     s.ui.mode.value = 'draw';
     const count = () => s.index().markings.size;
     const before = count();
-    s.drag([300, 650], [450, 750]); // Dentro de I1 (livre de outras marcações).
+    s.drag([300, 650], [450, 750]); // Inside I1 (free of other markings).
     expect(count()).toBe(before + 1);
-    s.drag([-50, -50], [1700, 900]); // Em volta dos dois containers: marcação do canvas.
+    s.drag([-50, -50], [1700, 900]); // Around both containers: canvas marking.
     expect(count()).toBe(open ? before + 1 : before + 2);
     s.cleanup();
   });
 });
 
 describe.each([
-  { open: false, label: 'na Principal' },
-  { open: true, label: 'com perspectiva aberta' },
-])('encaixe da raiz $label', ({ open }) => {
-  it('a marcação do canvas solta quase inteira num container só encaixa nele na Principal', () => {
+  { open: false, label: 'in Main' },
+  { open: true, label: 'with a perspective open' },
+])('root snapping $label', ({ open }) => {
+  it('a canvas marking dropped almost entirely on a container only snaps into it in Main', () => {
     const s = setup(canvasProject(), false);
     const created = s.actions.createMarking(null, {
       x: 1000,
@@ -154,10 +154,10 @@ describe.each([
     });
     s.cleanup();
     const id = created.ok ? created.value : '';
-    // O mesmo projeto, num editor novo: a marcação já existe no canvas.
+    // The same project, in a new editor: the marking already exists on the canvas.
     const s2 = setup(s.store.project.peek() as Project, open);
     s2.ui.selection.value = { kind: 'marking', id };
-    s2.drag([1050, 350], [1140, 350]); // 90 para a direita: 90% dentro de I2.
+    s2.drag([1050, 350], [1140, 350]); // 90 to the right: 90% inside I2.
     const marking = s2.index().markings.get(id);
     expect(marking?.containerId ?? null).toBe(open ? null : 'I2');
     s2.cleanup();
@@ -165,10 +165,10 @@ describe.each([
 });
 
 describe.each([
-  { open: false, label: 'na Principal' },
-  { open: true, label: 'com perspectiva aberta' },
-])('arrasto só vertical do container $label', ({ open }) => {
-  it('não regrava o x (zoom fracionário, bit a bit)', () => {
+  { open: false, label: 'in Main' },
+  { open: true, label: 'with a perspective open' },
+])('vertical-only container drag $label', ({ open }) => {
+  it('does not rewrite x (fractional zoom, bit for bit)', () => {
     const base = canvasProject();
     const x0 = 3300.0000513292603;
     const project: Project = {
@@ -180,7 +180,7 @@ describe.each([
     const s = setup(project, open);
     s.viewport.viewport.value = { x: 0, y: 78.9, scale: 0.557 };
     s.ui.selection.value = { kind: 'image', id: 'I1' };
-    // 1900 em tela vira 3411.131… no canvas: `(x0 + c) - c` ≠ `x0` (a fórmula antiga regravava).
+    // 1900 on screen becomes 3411.131… on the canvas: `(x0 + c) - c` ≠ `x0` (the old formula rewrote it).
     const sx = 1900;
     const sy = 700 * 0.557 + 78.9;
     s.fire('pointerdown', sx, sy);

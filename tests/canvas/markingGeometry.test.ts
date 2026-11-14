@@ -22,10 +22,10 @@ import {
 import { SPEC_ID, componentProject, testCatalog } from '../model/componentFixtures';
 import { marking, sampleProject } from '../model/fixtures';
 
-describe('geometria das marcações no canvas', () => {
+describe('marking geometry on the canvas', () => {
   const placement = { x: 100, y: 50, scale: 0.25 };
 
-  it('converte pixels da imagem ↔ canvas', () => {
+  it('converts image pixels ↔ canvas', () => {
     const rect = { x: 400, y: 200, width: 80, height: 40 };
     expect(markingCanvasRect(placement, rect)).toEqual({
       x: 200,
@@ -36,7 +36,7 @@ describe('geometria das marcações no canvas', () => {
     expect(canvasToImagePixel(placement, { x: 200, y: 100 })).toEqual({ x: 400, y: 200 });
   });
 
-  it('desenho: retângulo inteiro entre dois pontos, limitado à imagem', () => {
+  it('drawing: whole-number rectangle between two points, limited to the image', () => {
     const image = { width: 1000, height: 500 };
     expect(rectFromPoints({ x: 10.4, y: 20.6 }, { x: 5, y: 5 }, image)).toEqual({
       x: 5,
@@ -54,7 +54,7 @@ describe('geometria das marcações no canvas', () => {
     expect(isDrawableRect({ x: 0, y: 0, width: 7, height: 100 })).toBe(false);
   });
 
-  it('desenho no vazio (sem imagem): inteiros do canvas, sem limite e com negativos', () => {
+  it('drawing on the empty canvas (no image): canvas integers, unbounded and with negatives', () => {
     expect(rectFromPoints({ x: 10.4, y: 20.6 }, { x: -30, y: -5 }, null)).toEqual({
       x: -30,
       y: -5,
@@ -69,16 +69,16 @@ describe('geometria das marcações no canvas', () => {
     });
   });
 
-  it('o espaço de uma marcação: a posição do container ou a identidade, no canvas', () => {
+  it("a marking's space: the container position or the identity, on the canvas", () => {
     const placements = new Map([['I1', placement]]);
     expect(placementOfSpace(placements, 'I1')).toBe(placement);
     expect(placementOfSpace(placements, 'X')).toBeUndefined();
     expect(placementOfSpace(placements, null)).toBe(IDENTITY_PLACEMENT);
   });
 
-  it('cadeia sob o ponto: a mais interna primeiro, depois os ancestrais', () => {
+  it('chain under the point: the innermost first, then the ancestors', () => {
     const p = sampleProject();
-    // M3 (Fechadura) fica em 1300..1350 × 1250..1300, dentro de M2 e M1.
+    // M3 (Lock) sits at 1300..1350 × 1250..1300, inside M2 and M1.
     const ids = (x: number, y: number, containerId = 'I1') =>
       markingChainAt(p.markings, containerId, { x, y }).map((m) => m.id);
     expect(ids(1320, 1270)).toEqual(['M3', 'M2', 'M1']);
@@ -88,8 +88,8 @@ describe('geometria das marcações no canvas', () => {
     expect(ids(10, 10, 'I2')).toEqual(['M4']);
   });
 
-  it('cadeia no canvas: marcações do canvas pelo ponto; as de container e as flutuantes não entram', () => {
-    // Longe das imagens (I1 ocupa 0..1000 × 0..750), para continuarem marcações do canvas.
+  it('chain on the canvas: canvas markings by the point; container and floating ones are not included', () => {
+    // Far from the images (I1 spans 0..1000 × 0..750), so they remain canvas markings.
     let p = sampleProject();
     p = createMarking(p, {
       id: 'C1',
@@ -113,16 +113,16 @@ describe('geometria das marcações no canvas', () => {
     expect(ids(-2780, -2780)).toEqual(['C2', 'C1']);
     expect(ids(-2100, -2100)).toEqual(['C1']);
     expect(ids(-500, -500)).toEqual([]);
-    // As de container (M1…) não entram na cadeia do canvas.
+    // Container ones (M1…) are not part of the canvas chain.
     expect(ids(1300, 1250)).toEqual([]);
-    // A flutuante tem a vez antes, em `floatingAt`, e nunca está numa cadeia.
+    // The floating one gets its turn earlier, in `floatingAt`, and is never in a chain.
     expect(floatingAt(p.markings, { x: -2780, y: -2780 }).map((m) => m.id)).toEqual([
       'N1',
     ]);
     expect(floatingAt(p.markings, { x: -2000, y: -2000 })).toEqual([]);
   });
 
-  it('flutuantes sobrepostas: a de cima (a última do array) vem primeiro', () => {
+  it('overlapping floating markings: the top one (the last in the array) comes first', () => {
     let p = sampleProject();
     p = createMarking(p, {
       id: 'N1',
@@ -142,7 +142,7 @@ describe('geometria das marcações no canvas', () => {
     ]);
   });
 
-  it('entre irmãs sobrepostas, a de menor área vence', () => {
+  it('among overlapping siblings, the smallest area wins', () => {
     let p = sampleProject();
     p = createMarking(p, {
       id: 'M5',
@@ -160,19 +160,19 @@ describe('geometria das marcações no canvas', () => {
     expect(chain.map((m) => m.id)).toEqual(['M6', 'M1']);
   });
 
-  it('tocar de novo no mesmo ponto sobe para o pai e depois volta à mais interna', () => {
+  it('touching the same point again goes up to the parent and then back to the innermost', () => {
     const chain = ['M3', 'M2', 'M1'];
     expect(nextInChain(chain, null, false)).toBe('M3');
     expect(nextInChain(chain, 'M3', true)).toBe('M2');
     expect(nextInChain(chain, 'M2', true)).toBe('M1');
     expect(nextInChain(chain, 'M1', true)).toBe('M3');
-    // Outro ponto (ou seleção fora da cadeia): volta para a mais interna.
+    // Another point (or selection outside the chain): back to the innermost.
     expect(nextInChain(chain, 'M2', false)).toBe('M3');
     expect(nextInChain(chain, 'M4', true)).toBe('M3');
     expect(nextInChain([], 'M1', true)).toBeNull();
   });
 
-  it('redimensionar: canto oposto fixo, inteiros e tamanho mínimo', () => {
+  it('resize: fixed opposite corner, integers and minimum size', () => {
     const limits = { outer: { x: 0, y: 0, width: 1000, height: 1000 } };
     const start = { x: 100, y: 100, width: 200, height: 100 };
     expect(resizeMarkingRect(start, 'se', { x: 400.4, y: 250.6 }, limits)).toEqual({
@@ -187,7 +187,7 @@ describe('geometria das marcações no canvas', () => {
       width: 250,
       height: 180,
     });
-    // Cruzar o canto oposto para no tamanho mínimo.
+    // Crossing the opposite corner stops at the minimum size.
     expect(resizeMarkingRect(start, 'ne', { x: 0, y: 900 }, limits)).toEqual({
       x: 100,
       y: 192,
@@ -196,7 +196,7 @@ describe('geometria das marcações no canvas', () => {
     });
   });
 
-  it('redimensionar com o mínimo de uma marcação com componente (1 px ou o minSize)', () => {
+  it('resize with the minimum of a marking with a component (1 px or the minSize)', () => {
     const limits = { outer: { x: 0, y: 0, width: 1000, height: 1000 } };
     const start = { x: 100, y: 100, width: 200, height: 100 };
     const to = { x: 0, y: 900 };
@@ -211,7 +211,7 @@ describe('geometria das marcações no canvas', () => {
     );
   });
 
-  it('redimensionar preso ao mínimo do componente × densidade do container (#1085)', () => {
+  it('resize bound to the component minimum × container density (#1085)', () => {
     const catalog = testCatalog();
     const withDensity = (density: number) =>
       setContainerDensity(
@@ -243,23 +243,23 @@ describe('geometria das marcações no canvas', () => {
         limits,
         componentMinSize(withDensity(density), catalog, 'T')!,
       );
-    // O `text` tem minSize 60×24 (unidades): 1x fica em 60×24, 3x em 180×72.
+    // The `text` has minSize 60×24 (units): 1x stays at 60×24, 3x at 180×72.
     expect(resized(1)).toMatchObject({ width: 60, height: 24 });
     expect(resized(3)).toMatchObject({ width: 180, height: 72 });
   });
 
-  it('redimensionar: só o container limita; as filhas e o pai não', () => {
+  it('resize: only the container limits; the children and the parent do not', () => {
     const p = sampleProject();
-    const m3 = marking(p, 'M3'); // dentro de M2 e M1, em I1 (4000×3000)
+    const m3 = marking(p, 'M3'); // inside M2 and M1, in I1 (4000×3000)
     const outer = { x: 0, y: 0, width: 4000, height: 3000 };
-    // Cresce até a borda da imagem, por cima do pai (o que não cabe sai do pertencimento ao soltar).
+    // Grows up to the image edge, over the parent (what does not fit leaves the membership on release).
     expect(resizeMarkingRect(m3.rect, 'se', { x: 9000, y: 9000 }, { outer })).toEqual({
       x: 1300,
       y: 1250,
       width: 2700,
       height: 1750,
     });
-    // O pai encolhe por cima das filhas: nada o segura.
+    // The parent shrinks over the children: nothing holds it.
     const m1 = marking(p, 'M1');
     expect(resizeMarkingRect(m1.rect, 'se', { x: 0, y: 0 }, { outer })).toEqual({
       x: 1000,
@@ -269,7 +269,7 @@ describe('geometria das marcações no canvas', () => {
     });
   });
 
-  it('redimensionar uma marcação do canvas: sem limite, com negativos', () => {
+  it('resize a canvas marking: unbounded, with negatives', () => {
     const start = { x: 0, y: 0, width: 100, height: 100 };
     expect(resizeMarkingRect(start, 'nw', { x: -500, y: -300 }, { outer: null })).toEqual(
       {
@@ -284,7 +284,7 @@ describe('geometria das marcações no canvas', () => {
     ).toEqual({ x: 0, y: 0, width: 90000, height: 60000 });
   });
 
-  it('alças encolhem em marcações pequenas, sem ficar abaixo de 24 px', () => {
+  it('handles shrink on small markings, without going below 24 px', () => {
     expect(handleHitRadius(300)).toBe(22);
     expect(handleHitRadius(45)).toBe(15);
     expect(handleHitRadius(6)).toBe(12);

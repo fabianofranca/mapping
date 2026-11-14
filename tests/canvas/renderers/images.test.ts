@@ -21,7 +21,7 @@ function setup() {
 }
 
 describe('ImageRenderer', () => {
-  it('cria um grupo por imagem, na posição e na ordem do projeto', () => {
+  it('creates one group per image, in the project position and order', () => {
     const { layer, renderer, editor } = setup();
     const placements = renderer.render(frameOf(editor));
     expect([...placements.keys()]).toEqual(['I1', 'I2']);
@@ -32,7 +32,7 @@ describe('ImageRenderer', () => {
     expect(i2?.placeholder.width()).toBe(500);
   });
 
-  it('usa a posição da prévia do gesto em andamento', () => {
+  it('uses the position of the gesture preview in progress', () => {
     const { renderer, editor } = setup();
     const preview = {
       containerId: 'I2',
@@ -45,7 +45,7 @@ describe('ImageRenderer', () => {
     expect(renderer.node('I2')?.placeholder.width()).toBe(1000);
   });
 
-  it('carregando: espaço reservado sem aviso; pronta: só o bitmap', () => {
+  it('loading: reserved space without a warning; ready: only the bitmap', () => {
     const { renderer, editor } = setup();
     renderer.render(frameOf(editor));
     const node = renderer.node('I1');
@@ -67,8 +67,8 @@ describe('ImageRenderer', () => {
   });
 
   // Achado 10: `drawImage … The image source is detached`. Um `ImageBitmap` fechado fica
-  // com largura e altura zero; desenhá-lo lança. O nó nunca recebe um bitmap fechado.
-  it('não desenha um bitmap fechado: o nó fica sem imagem e volta ao espaço reservado', () => {
+  // with zero width and height; drawing it throws. The node never receives a closed bitmap.
+  it('does not draw a closed bitmap: the node stays without an image and goes back to the reserved space', () => {
     const { renderer, editor } = setup();
     const open = { width: 1000, height: 800, close: () => undefined };
     const ready = (bitmap: typeof open) =>
@@ -87,11 +87,11 @@ describe('ImageRenderer', () => {
     expect(node?.bitmap.visible()).toBe(false);
     expect(node?.bitmap.image()).toBeUndefined();
     expect(node?.placeholder.visible()).toBe(true);
-    // Sem aviso: não é uma imagem ausente nem quebrada, só um quadro de transição.
+    // No warning: it is neither a missing nor a broken image, only a transition frame.
     expect(node?.label.visible()).toBe(false);
   });
 
-  it('imagem ausente: borda tracejada de aviso e mensagem com o arquivo', () => {
+  it('missing image: dashed warning border and message with the file', () => {
     const { renderer, editor } = setup();
     const bitmaps = new Map([['images/a.jpg', { status: 'missing' as const }]]);
     renderer.render(frameOf(editor, { bitmaps }));
@@ -102,7 +102,7 @@ describe('ImageRenderer', () => {
     expect(node?.label.text()).toBe(`⚠ ${t('canvas.imageMissing')}\nimages/a.jpg`);
   });
 
-  it('rótulo: nome da imagem (ou o arquivo, esmaecido); some quando fica estreito na tela', () => {
+  it('label: image name (or the file, dimmed); disappears when it gets narrow on screen', () => {
     const { renderer, editor } = setup();
     renderer.render(frameOf(editor));
     expect(renderer.node('I1')?.title.text()).toBe('images/a.jpg');
@@ -115,14 +115,14 @@ describe('ImageRenderer', () => {
     expect(renderer.node('I1')?.title.fill()).toBe(TOKENS.text);
     expect(renderer.node('I1')?.title.stroke()).toBe(TOKENS.surface);
 
-    // 500 px de largura × 0,05 = 25 px de tela: menos que o mínimo legível.
+    // 500 px wide × 0.05 = 25 screen px: less than the legible minimum.
     renderer.render(frameOf(editor, { viewport: { x: 0, y: 0, scale: 0.05 } }));
     expect(renderer.node('I2')?.title.visible()).toBe(false);
   });
 
-  // TE1, decisão 2: o título lê-se sobre qualquer raiz; o contorno da cor da superfície tem
-  // espessura em px de tela (2 * HALO_WIDTH / zoom) e fica atrás das letras.
-  it('rótulo: contorno da cor da superfície em px de tela, com e sem nome', () => {
+  // TE1, decision 2: the title reads over any root; the surface-color outline has
+  // a thickness in screen px (2 * HALO_WIDTH / zoom) and stays behind the letters.
+  it('label: surface-color outline in screen px, with and without a name', () => {
     const { renderer, editor } = setup();
     for (const scale of [1, 2]) {
       renderer.render(frameOf(editor, { viewport: { x: 0, y: 0, scale } }));
@@ -137,7 +137,7 @@ describe('ImageRenderer', () => {
     expect(renderer.node('I1')?.title.fillAfterStrokeEnabled()).toBe(true);
   });
 
-  it('titleRects: só o texto do rótulo visível, em coordenadas do canvas; some com zoom e remoção', () => {
+  it('titleRects: only the visible label text, in canvas coordinates; disappears with zoom and removal', () => {
     const { renderer, editor } = setup();
     renderer.render(frameOf(editor));
     const rect = renderer.titleRects().get('I1');
@@ -150,7 +150,7 @@ describe('ImageRenderer', () => {
     });
     expect(rect?.y).toBeLessThan(0);
 
-    // I2 (500 px) fica estreito demais na tela: sem rótulo, sem retângulo.
+    // I2 (500 px) is too narrow on screen: no label, no rectangle.
     renderer.render(frameOf(editor, { viewport: { x: 0, y: 0, scale: 0.05 } }));
     expect(renderer.titleRects().has('I2')).toBe(false);
 
@@ -158,7 +158,7 @@ describe('ImageRenderer', () => {
     expect([...renderer.titleRects().keys()]).toEqual(['I1']);
   });
 
-  it('espessuras em px de tela: divididas pelo zoom', () => {
+  it('thicknesses in screen px: divided by the zoom', () => {
     const { renderer, editor } = setup();
     const bitmaps = new Map([['images/a.jpg', { status: 'error' as const }]]);
     renderer.render(frameOf(editor, { bitmaps, viewport: { x: 0, y: 0, scale: 4 } }));
@@ -166,7 +166,7 @@ describe('ImageRenderer', () => {
     expect(renderer.node('I1')?.label.text()).toContain(t('canvas.imageError'));
   });
 
-  it('remove o nó de uma imagem que saiu do projeto', () => {
+  it('removes the node of an image that left the project', () => {
     const { layer, renderer, editor } = setup();
     renderer.render(frameOf(editor));
     const node = renderer.node('I2');
@@ -177,7 +177,7 @@ describe('ImageRenderer', () => {
     expect(node?.group.getParent()).toBeFalsy();
   });
 
-  it('container: retângulo cheio na cor de fundo, nunca o reservado de carregando', () => {
+  it('container: full rectangle in the background color, never the reserved loading one', () => {
     const { renderer, editor } = setup();
     const project = addBackgroundContainer(canvasProject(), {
       id: 'B1',
@@ -186,7 +186,7 @@ describe('ImageRenderer', () => {
       background: '#FFEEDD',
       center: { x: 3000, y: 300 },
     });
-    // Sem nenhum bitmap no mapa: continua pronta.
+    // No bitmap at all in the map: still ready.
     const placements = renderer.render(frameOf(editor, { project }));
     expect(placements.has('B1')).toBe(true);
     const node = renderer.node('B1');
@@ -202,7 +202,7 @@ describe('ImageRenderer', () => {
       stroke: TOKENS.border,
       dash: [],
     });
-    // Sem nome: o rótulo é o de tela sem nome, esmaecido.
+    // No name: the label is the unnamed-screen one, dimmed.
     expect(node?.title.text()).toBe(t('image.containerUntitled'));
     expect(node?.title.fill()).toBe(TOKENS.textMuted);
 

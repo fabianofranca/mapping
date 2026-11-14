@@ -1,5 +1,5 @@
-// Desenho de componentes e imagens (etapa #940, fase 3): imagem embutida segue `paint.fit`, sombra
-// de quadro transparente vai para o primeiro filho e os avisos levam código e parâmetros.
+// Drawing of components and images (stage #940, phase 3): embedded image follows `paint.fit`, the shadow
+// of a transparent frame goes to the first child and the warnings carry code and parameters.
 import Konva from 'konva';
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { installFakeCanvas } from '../harness';
@@ -39,7 +39,7 @@ afterEach(() => {
   globalThis.Image = original;
 });
 
-describe('imagem embutida (data:) segue paint.fit', () => {
+describe('embedded image (data:) follows paint.fit', () => {
   const SRC = 'data:image/png;base64,AAAA';
   const rect = (fit?: 'cover' | 'contain' | 'fill'): SceneNode => ({
     ...baseNode({ id: 'img', name: 'img', width: 40, height: 40 }),
@@ -55,7 +55,7 @@ describe('imagem embutida (data:) segue paint.fit', () => {
     return { image, loaded: () => loaded };
   };
 
-  it('contain encaixa a fonte inteira no centro (80×40 numa caixa 40×40)', () => {
+  it('contain fits the whole source at the center (80×40 in a 40×40 box)', () => {
     const { image, loaded } = draw('contain');
     expect(image.image()).toBe(FakeImage.instances[0]);
     expect(image.width()).toBe(40);
@@ -65,14 +65,14 @@ describe('imagem embutida (data:) segue paint.fit', () => {
     expect(loaded()).toBe(1);
   });
 
-  it('o padrão é cover: recorta o centro da fonte para cobrir a caixa', () => {
+  it('the default is cover: crops the center of the source to cover the box', () => {
     const { image } = draw();
     expect(image.width()).toBe(40);
     expect(image.height()).toBe(40);
     expect(image.crop()).toEqual({ x: 20, y: 0, width: 40, height: 40 });
   });
 
-  it('fill estica; um segundo desenho da mesma URL não cria outra Image', () => {
+  it('fill stretches; a second drawing of the same URL does not create another Image', () => {
     const { image } = draw('fill');
     expect(image.width()).toBe(40);
     expect(image.height()).toBe(40);
@@ -80,7 +80,7 @@ describe('imagem embutida (data:) segue paint.fit', () => {
     expect(FakeImage.instances).toHaveLength(1);
   });
 
-  it('com a imagem já carregada, o desenho a usa de imediato e não pede outro quadro', () => {
+  it('with the image already loaded, the drawing uses it at once and does not ask for another frame', () => {
     draw('contain');
     let loaded = 0;
     const again = renderScene(scene(rect('contain')), {
@@ -93,7 +93,7 @@ describe('imagem embutida (data:) segue paint.fit', () => {
   });
 });
 
-describe('sombra num quadro sem preenchimento nem traço', () => {
+describe('shadow on a frame without fill or stroke', () => {
   const shadow = { color: '#000000', offset: { x: 1, y: 2 }, blur: 3 };
   const frame = (children: SceneNode[]): FrameNode => ({
     ...baseNode({ id: 'f', name: 'f', width: 50, height: 50, effects: [shadow] }),
@@ -109,7 +109,7 @@ describe('sombra num quadro sem preenchimento nem traço', () => {
     fills: [{ type: 'solid', color: '#ff0000' }],
   };
 
-  it('a sombra vai para o primeiro filho; a área clicável invisível não é dona dela', () => {
+  it('the shadow goes to the first child; the invisible clickable area does not own it', () => {
     const { byId } = renderScene(scene(frame([child])));
     const hit = byId.get('f')?.getChildren()[0] as Konva.Rect;
     expect(hit.fill()).toBe('transparent');
@@ -119,14 +119,14 @@ describe('sombra num quadro sem preenchimento nem traço', () => {
     expect(painted.shadowOffset()).toEqual({ x: 1, y: 2 });
   });
 
-  it('sem filho nenhum, avisa que a sombra foi ignorada', () => {
+  it('with no child at all, warns that the shadow was ignored', () => {
     const { warnings } = renderScene(scene(frame([])));
     expect(warnings).toContainEqual({ code: 'empty-group-shadow' });
   });
 });
 
-describe('avisos do desenho levam código e parâmetros', () => {
-  it('nó desconhecido leva o tipo de origem', () => {
+describe('drawing warnings carry code and parameters', () => {
+  it('unknown node carries the source type', () => {
     const node: SceneNode = {
       ...baseNode({ id: 'u', name: 'u', width: 20, height: 10 }),
       type: 'unknown',
@@ -137,7 +137,7 @@ describe('avisos do desenho levam código e parâmetros', () => {
     ]);
   });
 
-  it('sombra interna avisa; várias sombras externas não avisam mais', () => {
+  it('inner shadow warns; several outer shadows no longer warn', () => {
     const node: SceneNode = {
       ...baseNode({
         id: 'r',
@@ -159,7 +159,7 @@ describe('avisos do desenho levam código e parâmetros', () => {
     expect(warnings).toEqual([{ code: 'inner-shadow' }]);
   });
 
-  it('o mesmo aviso não se repete', () => {
+  it('the same warning is not repeated', () => {
     const rect = (id: string): SceneNode => ({
       ...baseNode({ id, name: id, width: 5, height: 5 }),
       type: 'rect',
@@ -178,8 +178,8 @@ describe('avisos do desenho levam código e parâmetros', () => {
   });
 });
 
-describe('slot e nó desconhecido: opacidade e cor vêm da paleta', () => {
-  it('slotOpacity e unknownFill da paleta', () => {
+describe('slot and unknown node: opacity and color come from the palette', () => {
+  it('slotOpacity and unknownFill from the palette', () => {
     const slot: SceneNode = {
       ...baseNode({ id: 's', name: 's', width: 20, height: 10 }),
       type: 'unknown',

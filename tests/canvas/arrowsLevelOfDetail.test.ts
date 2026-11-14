@@ -1,6 +1,6 @@
-// Nível de detalhe das setas (etapa canvas-desempenho, CD3, decisão 7): de longe a seta curta é só o
-// traço, a que liga marcações invisíveis some, a fora da área visível não é pintada; a selecionada e as
-// ligadas ao que está selecionado ou sob o mouse ficam inteiras.
+// Arrow level of detail (canvas-performance stage, CD3, decision 7): from afar the short arrow is just the
+// stroke, the one linking invisible markings disappears, the one outside the visible area is not painted; the selected one and those
+// linked to what is selected or under the mouse stay whole.
 import { afterEach, describe, expect, it } from 'vitest';
 import type { ArrowPainter, ArrowRenderer } from '../../src/canvas/renderers/arrows';
 import type { InteractionState } from '../../src/canvas/frame';
@@ -17,7 +17,7 @@ interface Internals {
 }
 const internals = (s: WholeProjectScenario) => s.controller as unknown as Internals;
 
-/** As chamadas de pintura de uma passada do corpo das setas paradas. */
+/** The paint calls of one pass of the body of the idle arrows. */
 function record(s: WholeProjectScenario): string[] {
   const calls: string[] = [];
   const painter: ArrowPainter = {
@@ -34,7 +34,7 @@ function record(s: WholeProjectScenario): string[] {
 }
 const count = (calls: string[], op: string) => calls.filter((c) => c === op).length;
 
-/** O cenário de 2.000 com as 1.000 setas nomeadas, para os rótulos poderem existir. */
+/** The 2,000 scenario with the 1,000 arrows named, so the labels can exist. */
 function namedProject(): Project {
   const base = wholeProject(2000);
   return {
@@ -49,8 +49,8 @@ afterEach(() => {
   scenario = null;
 });
 
-describe('setas de longe (2.000 marcações em Enquadrar tudo)', () => {
-  it('as setas curtas entram só na passagem do traço e não têm rótulo', () => {
+describe('arrows from afar (2,000 markings in Fit all)', () => {
+  it('the short arrows only enter the stroke pass and have no label', () => {
     const s = (scenario = openWholeProject(2000, 'fit', { project: namedProject() }));
     const renderer = internals(s).arrows;
     const total = s.project.arrows.length;
@@ -60,17 +60,17 @@ describe('setas de longe (2.000 marcações em Enquadrar tudo)', () => {
     expect(full.length).toBeGreaterThan(0);
     expect(full.length + thin.length).toBe(total);
     expect(s.container.dataset.arrows).toBe(String(total));
-    // Cada seta inteira pinta o corpo no halo e no traço e a ponta nos dois; a curta, só o corpo no traço.
+    // Each whole arrow paints the body in the halo and in the stroke and the tip in both; the short one, only the body in the stroke.
     const calls = record(s);
     expect(count(calls, 'closePath')).toBe(2 * full.length);
     expect(count(calls, 'moveTo')).toBe(4 * full.length + thin.length);
-    // Rótulo: só as inteiras.
+    // Label: only the whole ones.
     for (const shape of thin) expect(renderer.label(shape.arrow.id)).toBeUndefined();
     const firstFull = full[0];
     expect(firstFull && renderer.label(firstFull.arrow.id)).toBeDefined();
   }, 120_000);
 
-  it('selecionar uma marcação devolve a seta curta dela inteira, e soltar a deixa só no traço', () => {
+  it('selecting a marking gives back its short arrow whole, and releasing it leaves it only as a stroke', () => {
     const s = (scenario = openWholeProject(2000, 'fit', { project: namedProject() }));
     const renderer = internals(s).arrows;
     const shape = renderer.thin[0];
@@ -88,7 +88,7 @@ describe('setas de longe (2.000 marcações em Enquadrar tudo)', () => {
     expect(renderer.label(id)).toBeUndefined();
   }, 120_000);
 
-  it('a seta selecionada, a ligada à marcação sob o mouse e a da seleção múltipla ficam inteiras', () => {
+  it('the selected arrow, the one linked to the marking under the mouse and the one of the multiple selection stay whole', () => {
     const s = (scenario = openWholeProject(2000, 'fit', { project: namedProject() }));
     const renderer = internals(s).arrows;
     const [a, b, c] = renderer.thin;
@@ -104,7 +104,7 @@ describe('setas de longe (2.000 marcações em Enquadrar tudo)', () => {
     internals(s).state.hoverMarking.value = null;
     s.flush();
     expect(isThin(b.arrow.id)).toBe(true);
-    // Seleção múltipla: duas marcações; as setas ligadas a qualquer uma ficam inteiras.
+    // Multiple selection: two markings; the arrows linked to either stay whole.
     s.ui.selection.value = { kind: 'marking', id: b.arrow.from };
     s.ui.selectionGroup.value = {
       primary: s.ui.selection.value,
@@ -115,7 +115,7 @@ describe('setas de longe (2.000 marcações em Enquadrar tudo)', () => {
     expect(isThin(c.arrow.id)).toBe(false);
   }, 120_000);
 
-  it('a seta fora da área visível não é pintada nem tem rótulo', () => {
+  it('the arrow outside the visible area is not painted nor has a label', () => {
     const s = (scenario = openWholeProject(2000, 'fit', { project: namedProject() }));
     const renderer = internals(s).arrows;
     const total = s.project.arrows.length;
@@ -137,14 +137,14 @@ describe('setas de longe (2.000 marcações em Enquadrar tudo)', () => {
     expect(renderer.size).toBe(0);
   }, 120_000);
 
-  it('o rótulo de uma seta que sai da área visível e volta é o mesmo nó (pan não recria rótulos)', () => {
+  it('the label of an arrow that leaves the visible area and comes back is the same node (pan does not recreate labels)', () => {
     const s = (scenario = openWholeProject(2000, 'fit', { project: namedProject() }));
     const renderer = internals(s).arrows;
     s.controller.zoomTo(1);
     s.controller.centerOnPoint({ x: 0, y: 0 });
     s.flush();
     const shape = renderer.drawn.find((candidate) => renderer.label(candidate.arrow.id));
-    if (!shape) throw new Error('fixture: nenhum rótulo à vista');
+    if (!shape) throw new Error('fixture: no label in view');
     const id = shape.arrow.id;
     const node = renderer.label(id);
     s.controller.centerOnPoint({ x: 1_000_000, y: 1_000_000 });

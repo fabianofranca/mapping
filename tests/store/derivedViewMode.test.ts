@@ -38,14 +38,14 @@ beforeEach(() => {
   setShowComponentsOnPhotos(false);
 });
 
-describe('derivado: camadas com desenho', () => {
-  it('são só as camadas que têm tipo com componente', () => {
+describe('derived: layers with a drawing', () => {
+  it('are only the layers that have a type with a component', () => {
     const { derived, ids } = setup();
     expect(derived.drawingLayers.value.map((l) => l.id)).toEqual([ids.a, ids.b]);
     expect(derived.drawingLayers.value.map((l) => l.id)).not.toContain(ids.c);
   });
 
-  it('sem nenhum componente, a lista é vazia (e estável)', () => {
+  it('without any component, the list is empty (and stable)', () => {
     const { derived } = setup();
     const store = createProjectStore({ now: () => '2026-01-01T00:00:00.000Z' });
     store.load(viewProject(), { readOnly: false });
@@ -55,7 +55,7 @@ describe('derivado: camadas com desenho', () => {
     expect(derived.drawingLayers.value.length).toBe(2);
   });
 
-  it('o desenho sabe a camada da anotação dele', () => {
+  it('the drawing knows the layer of its annotation', () => {
     const { derived, store, ids } = setup();
     const drawings = derived.drawingsOf(store.project.value);
     expect(drawings.get('TA')?.layerId).toBe(ids.a);
@@ -63,8 +63,8 @@ describe('derivado: camadas com desenho', () => {
   });
 });
 
-describe('derivado: desenho por camada no modo', () => {
-  it('fora do modo a escolha não vale: esconder a camada não tira o desenho', () => {
+describe('derived: per-layer drawing in the mode', () => {
+  it('outside the mode the choice does not apply: hiding the layer does not remove the drawing', () => {
     const { ui, derived, ids } = setup();
     const before = sorted(derived.drawnMarkings.value);
     expect(before).toEqual(['TA', 'TB']);
@@ -72,7 +72,7 @@ describe('derivado: desenho por camada no modo', () => {
     expect(sorted(derived.drawnMarkings.value)).toEqual(before);
   });
 
-  it('no modo, a camada desmarcada perde os desenhos e a outra fica', () => {
+  it('in the mode, the unchecked layer loses its drawings and the other stays', () => {
     const { ui, derived, ids } = setup();
     setViewMode(ui, true);
     expect(sorted(derived.drawnMarkings.value)).toEqual(['TA', 'TB']);
@@ -85,7 +85,7 @@ describe('derivado: desenho por camada no modo', () => {
     expect(derived.drawnMarkings.value.size).toBe(0);
   });
 
-  it('a escolha não refaz o cache de desenhos', () => {
+  it('the choice does not rebuild the drawings cache', () => {
     const { ui, derived, store, ids } = setup();
     setViewMode(ui, true);
     const project = store.project.value;
@@ -98,15 +98,15 @@ describe('derivado: desenho por camada no modo', () => {
     expect(after.get('TB')).toBe(before.get('TB'));
   });
 
-  it('camada que não existe é ignorada', () => {
+  it('a layer that does not exist is ignored', () => {
     const { ui, derived } = setup();
     setViewMode(ui, true);
-    hideViewDrawingLayer(ui, 'não-existe');
+    hideViewDrawingLayer(ui, 'does-not-exist');
     expect(sorted(derived.drawnMarkings.value)).toEqual(['TA', 'TB']);
     expect(derived.drawingLayers.value).toHaveLength(2);
   });
 
-  it('camada nova nasce marcada: só some a que foi desmarcada', () => {
+  it('a new layer is born checked: only the one that was unchecked goes away', () => {
     const { ui, derived, ids } = setup();
     setViewMode(ui, true);
     hideViewDrawingLayer(ui, ids.b);
@@ -114,7 +114,7 @@ describe('derivado: desenho por camada no modo', () => {
     expect(ui.viewShow.value.hiddenDrawingLayers.has(ids.a)).toBe(false);
   });
 
-  it('a foto segue "Mostrar componentes sobre fotos", também no modo', () => {
+  it('the photo follows "Show components over photos", also in the mode', () => {
     const { ui, derived } = setup();
     setViewMode(ui, true);
     expect(derived.drawnMarkings.value.has('TF')).toBe(false);
@@ -123,8 +123,8 @@ describe('derivado: desenho por camada no modo', () => {
   });
 });
 
-describe('derivado: visibilidade no modo', () => {
-  it('as marcações do toque ficam escondidas (nada se seleciona), como no Ver limpo', () => {
+describe('derived: visibility in the mode', () => {
+  it('the touch markings stay hidden (nothing is selected), as in Clean view', () => {
     const { ui, derived } = setup();
     ui.selection.value = { kind: 'marking', id: 'TA' };
     setViewMode(ui, true);
@@ -133,7 +133,7 @@ describe('derivado: visibilidade no modo', () => {
     expect([...marks.values()].every((v) => v === 'hidden')).toBe(true);
   });
 
-  it('o que o canvas desenha ignora o filtro: todas inteiras, mesmo com Ocultar', () => {
+  it('what the canvas draws ignores the filter: all whole, even with Hide', () => {
     const { ui, derived, store, ids } = setup();
     setMarkingDisplay('hide');
     showOnlyLayer(ui, store.project.value as Project, ids.c);
@@ -146,7 +146,7 @@ describe('derivado: visibilidade no modo', () => {
     expect(derived.canvasVisibility.value).toBe(derived.markingVisibility.value);
   });
 
-  it('esconder o contorno não esconde a marcação para a seta', () => {
+  it('hiding the outline does not hide the marking for the arrow', () => {
     const project = withArrow(viewProject(), 'R1', 'TA', 'TB');
     const { ui, derived } = setup(project);
     setViewMode(ui, true);

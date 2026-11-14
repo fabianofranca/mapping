@@ -10,15 +10,15 @@ import { canvasProject, editorFor, frameOf, installFakeCanvas, TOKENS } from '..
 beforeAll(installFakeCanvas);
 afterAll(() => vi.restoreAllMocks());
 
-// O selo "Veio de <nome>" e a faixa "Área de chegada" (PE3, decisão 8): tamanho em px de tela
-// (escala inversa do zoom), cores só dos tokens do tema.
+// The "Came from <name>" badge and the "Arrival area" band (PE3, decision 8): size in screen px
+// (inverse of the zoom scale), colors only from the theme tokens.
 
 const withArrival = (p: Project, root: string, fromName: string): Project => ({
   ...p,
   arrivals: [...p.arrivals, { root, from: 'V', fromName } satisfies Arrival],
 });
 
-function setup(project: Project = withArrival(canvasProject(), 'I2', 'Frente')) {
+function setup(project: Project = withArrival(canvasProject(), 'I2', 'Front')) {
   const editor = editorFor(project);
   const layer = new Konva.Group();
   const renderer = new ArrivalRenderer(layer);
@@ -32,27 +32,27 @@ function setup(project: Project = withArrival(canvasProject(), 'I2', 'Frente')) 
 }
 
 describe('ArrivalRenderer', () => {
-  it('sem marcas não desenha nada', () => {
+  it('without marks it draws nothing', () => {
     const { renderer, frame } = setup(canvasProject());
     renderer.render(frame());
     expect(renderer.badgeCount).toBe(0);
     expect(renderer.bandVisible).toBe(false);
   });
 
-  it('um selo por raiz com marca, com o texto traduzido e as cores dos tokens', () => {
+  it('one badge per root with a mark, with the translated text and the token colors', () => {
     const { renderer, frame } = setup();
     renderer.render(frame());
     expect(renderer.badgeCount).toBe(1);
     const badge = renderer.badge('I2');
     expect(badge?.label.text()).toBe(
-      t('perspective.canvas.cameFrom', { name: 'Frente' }),
+      t('perspective.canvas.cameFrom', { name: 'Front' }),
     );
-    // Pílula invertida, como a dica: clara no escuro, escura no claro (TE1, decisão 1).
+    // Inverted pill, like the tooltip: light on dark, dark on light (TE1, decision 1).
     expect(badge?.box.fill()).toBe(TOKENS.text);
     expect(badge?.label.fill()).toBe(TOKENS.surface);
   });
 
-  it('o primeiro desenho do selo mede o texto com a fonte do token', () => {
+  it('the first badge drawing measures the text with the token font', () => {
     const { renderer, frame } = setup();
     const widths: { fontSize: unknown; fontFamily: unknown }[] = [];
     const original = KonvaText.prototype.getTextWidth;
@@ -73,7 +73,7 @@ describe('ArrivalRenderer', () => {
     });
   });
 
-  it('o selo tem tamanho fixo na tela: a escala do nó é o inverso do zoom', () => {
+  it('the badge has a fixed size on screen: the node scale is the inverse of the zoom', () => {
     const { renderer, frame } = setup();
     renderer.render(frame(2));
     const badge = renderer.badge('I2');
@@ -83,7 +83,7 @@ describe('ArrivalRenderer', () => {
     expect(badge?.group.scaleX()).toBeCloseTo(4);
   });
 
-  it('a faixa é tracejada, tem o título e o subtítulo, e some com a marca', () => {
+  it('the band is dashed, has the title and the subtitle, and disappears with the mark', () => {
     const { renderer, frame } = setup();
     renderer.render(frame());
     expect(renderer.bandVisible).toBe(true);
@@ -96,8 +96,8 @@ describe('ArrivalRenderer', () => {
     expect(renderer.badgeCount).toBe(0);
   });
 
-  it('sem faixa quando a marca está no meio do conteúdo (só o selo)', () => {
-    const project = withArrival(canvasProject(), 'I1', 'Frente');
+  it('no band when the mark is in the middle of the content (only the badge)', () => {
+    const project = withArrival(canvasProject(), 'I1', 'Front');
     const { renderer, frame } = setup(project);
     renderer.render(frame());
     expect(renderer.badgeCount).toBe(1);

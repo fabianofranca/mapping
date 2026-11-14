@@ -25,30 +25,30 @@ function input(over: Partial<ArrowDetailInput> = {}): ArrowDetailInput {
 }
 
 describe('arrowDetail', () => {
-  it('a seta longa com pontas visíveis é inteira', () => {
+  it('a long arrow with visible ends is full', () => {
     expect(arrowDetail(input())).toBe('full');
   });
 
-  it('comprimento: 23 px é só o traço e 24 px é inteira', () => {
+  it('length: 23 px is only the stroke and 24 px is full', () => {
     expect(arrowDetail(input({ screenLength: 23 }))).toBe('thin');
     expect(arrowDetail(input({ screenLength: 24 }))).toBe('full');
   });
 
-  it('some só se as duas pontas são invisíveis: 1 px nas duas medidas some, 2 px não', () => {
+  it('hidden only if both ends are invisible: 1 px in both measures hides it, 2 px does not', () => {
     expect(arrowDetail(input({ from: dot(1), to: dot(1) }))).toBe('hidden');
     expect(arrowDetail(input({ from: dot(2), to: dot(1) }))).not.toBe('hidden');
     expect(arrowDetail(input({ from: dot(1), to: dot(2) }))).not.toBe('hidden');
-    // Uma medida basta para a ponta não ser invisível.
+    // One measure is enough for the end not to be invisible.
     const thinTall: ArrowEnd = { screenWidth: 1, screenHeight: 2, always: false };
     expect(arrowDetail(input({ from: thinTall, to: dot(1) }))).not.toBe('hidden');
   });
 
-  it('a seta entre uma ponta visível e outra invisível não some', () => {
+  it('an arrow between a visible end and an invisible one is not hidden', () => {
     expect(arrowDetail(input({ from: dot(1), to: BIG }))).toBe('full');
     expect(arrowDetail(input({ from: BIG, to: dot(1), screenLength: 10 }))).toBe('thin');
   });
 
-  it('a que liga duas pontas invisíveis some mesmo sendo longa ou curta', () => {
+  it('one that links two invisible ends is hidden whether long or short', () => {
     expect(arrowDetail(input({ from: dot(1), to: dot(1), screenLength: 500 }))).toBe(
       'hidden',
     );
@@ -57,12 +57,12 @@ describe('arrowDetail', () => {
     );
   });
 
-  it('a seta selecionada é sempre inteira', () => {
+  it('the selected arrow is always full', () => {
     const tiny = { from: dot(1), to: dot(1), screenLength: 3 };
     expect(arrowDetail(input({ ...tiny, always: true }))).toBe('full');
   });
 
-  it('a ligada a uma marcação selecionada ou sob o mouse é sempre inteira', () => {
+  it('one linked to a selected or hovered marking is always full', () => {
     const tiny = { screenLength: 3 };
     expect(arrowDetail(input({ ...tiny, from: dot(1, true), to: dot(1) }))).toBe('full');
     expect(arrowDetail(input({ ...tiny, from: dot(1), to: dot(1, true) }))).toBe('full');

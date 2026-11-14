@@ -26,7 +26,7 @@ const PLACEMENTS: ReadonlyMap<string, Placement> = new Map([
   ['I1', { x: 0, y: 0, scale: 1 }],
   ['I2', { x: 1100, y: 0, scale: 1 }],
 ]);
-/** Tela grande o bastante para M1 inteira (M3, em I2, continua fora). */
+/** Screen large enough for the whole M1 (M3, in I2, stays out). */
 const SIZE = { width: 1000, height: 800 };
 
 function setup() {
@@ -40,13 +40,13 @@ function setup() {
 
 function node(renderer: MarkingRenderer, id: string) {
   const n = renderer.node(id);
-  if (!n) throw new Error(`sem nó para ${id}`);
+  if (!n) throw new Error(`no node for ${id}`);
   return n;
 }
 
 function textOf(renderer: MarkingRenderer, id: string) {
   const text = node(renderer, id).text;
-  if (!text) throw new Error(`sem nome criado para ${id}`);
+  if (!text) throw new Error(`no name created for ${id}`);
   return text;
 }
 
@@ -58,7 +58,7 @@ function withReview(p: Project, id: string): Project {
 }
 
 describe('MarkingRenderer', () => {
-  it('borda na posição da marcação; filhas por cima dos pais', () => {
+  it('border at the marking position; children above parents', () => {
     const { renderer, render } = setup();
     render();
     const m1 = node(renderer, 'M1');
@@ -70,7 +70,7 @@ describe('MarkingRenderer', () => {
       stroke: TOKENS.line,
       strokeWidth: 1,
     });
-    // Halo em toda marcação: um traço 2 px mais largo (1 px de cada lado) por baixo da linha.
+    // Halo on every marking: a stroke 2 px wider (1 px on each side) under the line.
     expect(m1.halo?.getAttrs()).toMatchObject({
       visible: true,
       stroke: TOKENS.halo,
@@ -79,34 +79,34 @@ describe('MarkingRenderer', () => {
     expect(node(renderer, 'M2').group.zIndex()).toBeGreaterThan(m1.group.zIndex());
   });
 
-  it('selecionada: linha em cv-select, mais grossa, com halo', () => {
+  it('selected: line in cv-select, thicker, with halo', () => {
     const { renderer, render } = setup();
     render({
       selection: { kind: 'marking', id: 'M1' },
       viewport: { x: 0, y: 0, scale: 2 },
     });
     const m1 = node(renderer, 'M1');
-    // 2 px de tela com zoom 2; o halo soma 1 px de cada lado.
+    // 2 screen px at zoom 2; the halo adds 1 px on each side.
     expect(m1.border.getAttrs()).toMatchObject({ stroke: TOKENS.select, strokeWidth: 1 });
     expect(m1.halo?.getAttrs()).toMatchObject({ stroke: TOKENS.halo, strokeWidth: 2 });
   });
 
-  it('cor de borda escolhida para a imagem', () => {
+  it('border color chosen for the image', () => {
     const { renderer, render } = setup();
     render({ project: setContainerMarkingColor(canvasProject(), 'I1', '#00ff00') });
     expect(node(renderer, 'M1').border.stroke()).toBe('#00FF00');
   });
 
-  it('fora da tela ou oculta pelo modo de exibição: não aparece', () => {
+  it('off screen or hidden by the display mode: does not appear', () => {
     const { renderer, render } = setup();
     render({ visibility: new Map([['M2', 'hidden' as const]]) });
     expect(node(renderer, 'M1').group.visible()).toBe(true);
-    // Sem nó: o nó só nasce no primeiro quadro em que a marcação é desenhada.
+    // No node: the node is only born in the first frame where the marking is drawn.
     expect(renderer.node('M2')).toBeUndefined();
     expect(renderer.node('M3')).toBeUndefined();
   });
 
-  it('esmaecida e contorno de contexto (sem indicadores)', () => {
+  it('dimmed and context outline (without indicators)', () => {
     const { renderer, render } = setup();
     render({
       visibility: new Map([
@@ -120,14 +120,14 @@ describe('MarkingRenderer', () => {
     expect(node(renderer, 'M2').group.opacity()).toBe(TOKENS.opacity.dimmed);
   });
 
-  it('com camadas anotadas no frame, o nó não tem Circle nem texto "+N"', () => {
+  it('with annotated layers in the frame, the node has no Circle nor "+N" text', () => {
     const { renderer, render, editor } = setup();
     const layer = editor.store.project.peek()?.layers[0];
     if (!layer) throw new Error('fixture');
     const many: LayerDot[] = Array.from({ length: 6 }, (_, i) => ({
       layer: { ...layer, id: `L${i}` },
     }));
-    // O canal das bolinhas saiu do frame: mesmo se um chamador ainda o enviasse, nada é desenhado.
+    // The dots channel left the frame: even if a caller still sent it, nothing is drawn.
     render({ dots: new Map([['M1', many]]) } as Partial<Frame>);
     const m1 = node(renderer, 'M1');
     expect(m1.group.find('Circle')).toHaveLength(0);
@@ -135,8 +135,8 @@ describe('MarkingRenderer', () => {
     expect(texts.some((t) => /^\+\d+$/.test(t))).toBe(false);
   });
 
-  describe('nome do zoom semântico', () => {
-    it('num canto sem selo e sem ⚠ começa na margem do texto, na mesma altura de cabeçalho', () => {
+  describe('semantic zoom name', () => {
+    it('in a corner without a badge and without ⚠ it starts at the text margin, at the same header height', () => {
       const { renderer, render } = setup();
       render();
       const header = textOf(renderer, 'M1').header;
@@ -145,7 +145,7 @@ describe('MarkingRenderer', () => {
       expect(header.y()).toBe(100 + (14 - TOKENS.type.name.size) / 2);
     });
 
-    it('depois do ⚠ de incompleta', () => {
+    it('after the incomplete ⚠', () => {
       const { renderer, render } = setup();
       render({ incomplete: new Set(['M1']) });
       expect(node(renderer, 'M1').text?.header.x()).toBe(100 + ALERT_SIZE + 2);
@@ -155,7 +155,7 @@ describe('MarkingRenderer', () => {
   describe('⚠ de incompleta no canto', () => {
     const incomplete = new Set(['M1']);
 
-    it('sem o selo "a revisar": encostado no canto, com a margem', () => {
+    it('without the "to review" badge: against the corner, with the margin', () => {
       const { renderer, render } = setup();
       render({ incomplete });
       const m1 = node(renderer, 'M1');
@@ -169,7 +169,7 @@ describe('MarkingRenderer', () => {
       expect(m1.badge?.visible() ?? false).toBe(false);
     });
 
-    it('com o selo "a revisar": o selo no canto e o ⚠ depois dele', () => {
+    it('with the "to review" badge: the badge in the corner and the ⚠ after it', () => {
       const { renderer, render } = setup();
       render({ project: withReview(canvasProject(), 'M1'), incomplete });
       const m1 = node(renderer, 'M1');
@@ -178,7 +178,7 @@ describe('MarkingRenderer', () => {
       expect(m1.alert?.x()).toBe(100 + REVIEW_BADGE_SIZE + CORNER_MARGIN);
     });
 
-    it('sem pendência: o grupo do alerta fica invisível', () => {
+    it('without a pending item: the alert group is invisible', () => {
       const { renderer, render } = setup();
       render();
       const m1 = node(renderer, 'M1');
@@ -187,7 +187,7 @@ describe('MarkingRenderer', () => {
     });
   });
 
-  it('alerta de incompleta e selo de revisão', () => {
+  it('incomplete alert and review badge', () => {
     const { renderer, render } = setup();
     render({
       project: withReview(canvasProject(), 'M1'),
@@ -204,12 +204,12 @@ describe('MarkingRenderer', () => {
     expect(m1.border.dash()).toEqual([6, 4]);
   });
 
-  describe('⚠ de incompleta em zoom baixo (marcação que desenha componente)', () => {
+  describe('incomplete ⚠ at low zoom (marking that draws a component)', () => {
     const drawn = new Set(['M1']);
     const SMALL = { x: 0, y: 0, scale: 0.02 };
     const BIG = { x: 0, y: 0, scale: 0.2 };
 
-    it('aparece a partir de 24 px na tela; abaixo, só a borda (nível de detalhe)', () => {
+    it('appears from 24 px on screen; below that, only the border (level of detail)', () => {
       const { renderer, render } = setup();
       const incomplete = new Set(['M1']);
       render({ drawn, incomplete, viewport: SMALL });
@@ -220,10 +220,10 @@ describe('MarkingRenderer', () => {
     });
   });
 
-  describe('marcação com o desenho à vista', () => {
+  describe('marking with the drawing in view', () => {
     const drawn = new Set(['M1']);
 
-    it('sem hover nem seleção: sem borda nem halo e sem marca própria', () => {
+    it('without hover or selection: no border nor halo and no own mark', () => {
       const { renderer, render } = setup();
       render({ drawn });
       const m1 = node(renderer, 'M1');
@@ -231,12 +231,12 @@ describe('MarkingRenderer', () => {
       expect(m1.halo?.visible() ?? false).toBe(false);
       expect(m1.alertClip?.visible() ?? false).toBe(false);
       expect(m1.alert?.visible() ?? false).toBe(false);
-      // As outras marcações não mudam.
+      // The other markings do not change.
       expect(node(renderer, 'M2').border.visible()).toBe(true);
       expect(node(renderer, 'M2').halo?.visible()).toBe(true);
     });
 
-    it('a pendência de anotação continua visível sem a borda', () => {
+    it('the annotation pending item stays visible without the border', () => {
       const { renderer, render } = setup();
       render({ drawn, incomplete: new Set(['M1']) });
       const m1 = node(renderer, 'M1');
@@ -260,20 +260,20 @@ describe('MarkingRenderer', () => {
       });
     });
 
-    it('zoom semântico: sem cartão nem nome; as outras marcações mantêm o rótulo', () => {
+    it('semantic zoom: no card nor name; the other markings keep the label', () => {
       const { renderer, render } = setup();
       render();
       expect(node(renderer, 'M1').text?.group.visible()).toBe(true);
       render({ drawn });
       expect(node(renderer, 'M1').text?.group.visible() ?? false).toBe(false);
-      // M3 (sem nome, em I2) e as demais seguem o caminho de sempre.
+      // M3 (unnamed, in I2) and the others follow the usual path.
       render({ drawn: new Set(['M2']) });
       expect(node(renderer, 'M1').text?.group.visible()).toBe(true);
       expect(node(renderer, 'M1').text?.header.text()).toBe('Porta');
     });
   });
 
-  it('pan sem mudar a marcação não refaz a borda; zoom refaz', () => {
+  it('pan without changing the marking does not redo the border; zoom does', () => {
     const { renderer, render } = setup();
     render();
     const spy = vi.spyOn(node(renderer, 'M1').border, 'setAttrs');
@@ -283,7 +283,7 @@ describe('MarkingRenderer', () => {
     expect(spy).toHaveBeenCalledTimes(1);
   });
 
-  it('zoom semântico: só o nome no cabeçalho, sem cartão de anotações', () => {
+  it('semantic zoom: only the name in the header, without an annotations card', () => {
     const { renderer, render } = setup();
     render();
     const text = textOf(renderer, 'M1');
@@ -295,11 +295,11 @@ describe('MarkingRenderer', () => {
       fontFamily: TOKENS.fontFamily,
       fontSize: TOKENS.type.name.size,
     });
-    // A única coisa de texto do grupo é o nome: as anotações ficam no painel direito.
+    // The only text in the group is the name: the annotations stay in the right panel.
     expect(text.group.getChildren()).toEqual([text.header]);
   });
 
-  it('zoom semântico: marcação grande sem filhas mostra só o nome', () => {
+  it('semantic zoom: large marking without children shows only the name', () => {
     const { renderer, render } = setup();
     render({ viewport: { x: -1100, y: -1100, scale: 6 } });
     const text = textOf(renderer, 'M2');
@@ -308,11 +308,11 @@ describe('MarkingRenderer', () => {
     expect(text.group.getChildren()).toEqual([text.header]);
   });
 
-  // Etapa 6 (6.4), achado 6: filha no mesmo canto do pai ("Formulário …" sobre "Nome").
-  it('zoom semântico: o nome da filha no canto do pai desce para baixo do cabeçalho dele', () => {
+  // Stage 6 (6.4), finding 6: child at the same corner as the parent (the parent label over the child name).
+  it('semantic zoom: the name of the child at the parent corner moves below its header', () => {
     const { renderer, render, editor } = setup();
     const p = editor.store.committed.value;
-    if (!p) throw new Error('sem projeto');
+    if (!p) throw new Error('no project');
     const project: Project = {
       ...p,
       markings: p.markings.map((m) =>
@@ -327,13 +327,13 @@ describe('MarkingRenderer', () => {
     expect(child.y()).toBeGreaterThanOrEqual(parent.y() + parent.height());
   });
 
-  it('zoom semântico: marcação pequena na tela não mostra o nome', () => {
+  it('semantic zoom: small marking on screen does not show the name', () => {
     const { renderer, render } = setup();
     render({ viewport: { x: 0, y: 0, scale: 0.1 } });
     expect(node(renderer, 'M1').text?.group.visible() ?? false).toBe(false);
   });
 
-  it('remove o nó de uma marcação apagada', () => {
+  it('removes the node of a deleted marking', () => {
     const { layer, renderer, render } = setup();
     render();
     render({ project: removeMarking(canvasProject(), 'M2') });
@@ -342,9 +342,9 @@ describe('MarkingRenderer', () => {
   });
 });
 
-// Marcações do canvas e flutuantes (etapa Marcações espaciais, ME1).
-describe('MarkingRenderer: marcações do canvas', () => {
-  /** Uma marcação do canvas C1 em volta das duas imagens e a flutuante N1 sobre a Porta. */
+// Canvas and floating markings (Spatial markings stage, ME1).
+describe('MarkingRenderer: canvas markings', () => {
+  /** A canvas marking C1 around the two images and the floating N1 over the Door. */
   function spatial(): Project {
     const p = createMarking(canvasProject(), {
       id: 'C1',
@@ -373,7 +373,7 @@ describe('MarkingRenderer: marcações do canvas', () => {
     return { layer, floatingParent, renderer, render };
   }
 
-  it('a marcação do canvas é desenhada no espaço identidade, com borda tracejada e o token dela', () => {
+  it('the canvas marking is drawn in the identity space, with a dashed border and its token', () => {
     const { renderer, render } = twoParents();
     render({ viewport: { x: 0, y: 0, scale: 2 } });
     const c1 = node(renderer, 'C1');
@@ -386,12 +386,12 @@ describe('MarkingRenderer: marcações do canvas', () => {
       dash: [5, 3],
     });
     expect(c1.halo?.dash()).toEqual([5, 3]);
-    // A de container não é tracejada nem usa o token do canvas.
+    // The container one is neither dashed nor uses the canvas token.
     expect(node(renderer, 'M1').border.dash()).toEqual([]);
     expect(node(renderer, 'M1').border.stroke()).toBe(TOKENS.line);
   });
 
-  it('selecionada, a marcação do canvas usa a cor de seleção e continua tracejada', () => {
+  it('selected, the canvas marking uses the selection color and stays dashed', () => {
     const { renderer, render } = twoParents();
     render({ selection: { kind: 'marking', id: 'C1' } });
     expect(node(renderer, 'C1').border.getAttrs()).toMatchObject({
@@ -400,19 +400,19 @@ describe('MarkingRenderer: marcações do canvas', () => {
     });
   });
 
-  it('a flutuante fica no grupo de cima e as demais na camada; trocar de lado move o nó', () => {
+  it('the floating one stays in the top group and the others in the layer; switching sides moves the node', () => {
     const { layer, floatingParent, renderer, render } = twoParents();
     render();
     expect(node(renderer, 'N1').group.getParent()).toBe(floatingParent);
     expect(node(renderer, 'C1').group.getParent()).toBe(layer);
     expect(node(renderer, 'M1').group.getParent()).toBe(layer);
-    // Cada pilha tem a sua ordem (o pai antes das filhas).
+    // Each stack has its own order (parent before children).
     expect(node(renderer, 'M2').group.zIndex()).toBeGreaterThan(
       node(renderer, 'M1').group.zIndex(),
     );
     expect(node(renderer, 'N1').group.zIndex()).toBe(0);
 
-    // A Porta passa a flutuante: o nó muda de grupo.
+    // The Door becomes floating: the node changes group.
     const project = setMarkingFloating(spatial(), 'M1', true);
     render({ project });
     expect(node(renderer, 'M1').group.getParent()).toBe(floatingParent);
@@ -420,7 +420,7 @@ describe('MarkingRenderer: marcações do canvas', () => {
     expect(node(renderer, 'M1').group.getParent()).toBe(layer);
   });
 
-  it('sem grupo próprio das flutuantes, tudo fica na mesma camada (compatível)', () => {
+  it('without a group of its own for the floating ones, everything stays in the same layer (compatible)', () => {
     const layer = new Konva.Layer();
     const renderer = new MarkingRenderer(layer);
     const editor = editorFor(spatial());
@@ -428,7 +428,7 @@ describe('MarkingRenderer: marcações do canvas', () => {
     expect(node(renderer, 'N1').group.getParent()).toBe(layer);
   });
 
-  it('o nome da marcação do canvas aparece no zoom semântico como o das outras', () => {
+  it('the canvas marking name appears at semantic zoom like the others', () => {
     const named = createMarking(canvasProject(), {
       id: 'C2',
       containerId: null,
@@ -449,11 +449,11 @@ describe('MarkingRenderer: marcações do canvas', () => {
   });
 });
 
-describe('nível de detalhe pelo zoom', () => {
+describe('level of detail by zoom', () => {
   const LOD_SIZE = { width: 1000, height: 800 };
-  /** M1 (600×500) na tela: 18×15 px (só a borda). */
+  /** M1 (600×500) on screen: 18×15 px (only the border). */
   const FAR = { x: 0, y: 0, scale: 0.03 };
-  /** M1 na tela: 0,6×0,5 px (não aparece). */
+  /** M1 on screen: 0.6×0.5 px (does not appear). */
   const FARTHEST = { x: 0, y: 0, scale: 0.001 };
   const fullDetail = (incomplete = new Set(['M1'])) => ({
     project: withReview(canvasProject(), 'M1'),
@@ -461,7 +461,7 @@ describe('nível de detalhe pelo zoom', () => {
     size: LOD_SIZE,
   });
 
-  it('de longe: borda visível; halo, linha dupla, selo e ⚠ invisíveis', () => {
+  it('from afar: border visible; halo, double line, badge and ⚠ invisible', () => {
     const { renderer, render } = setup();
     render({ ...fullDetail(), viewport: FAR });
     const m1 = node(renderer, 'M1');
@@ -474,7 +474,7 @@ describe('nível de detalhe pelo zoom', () => {
     expect(m1.alert?.visible() ?? false).toBe(false);
   });
 
-  it('de longe, com marca "alterada" da revisão: a linha dupla continua (completa)', () => {
+  it('from afar, with the review mark "changed": the double line stays (full)', () => {
     const { renderer, render } = setup();
     const review = {
       view: 'proposed' as const,
@@ -490,7 +490,7 @@ describe('nível de detalhe pelo zoom', () => {
     expect(m1.badge?.visible()).toBe(true);
   });
 
-  it('de longe só nascem o grupo e a borda; a marca da revisão cria as partes da marcação pequena', () => {
+  it('from afar only the group and the border are born; the review mark creates the parts of the small marking', () => {
     const { renderer, render } = setup();
     render({ ...fullDetail(), viewport: FAR });
     const m1 = node(renderer, 'M1');
@@ -511,13 +511,13 @@ describe('nível de detalhe pelo zoom', () => {
     expect(m1.alert?.visible()).toBe(true);
   });
 
-  it('abaixo de 2 px nas duas medidas: não ganha nó', () => {
+  it('below 2 px in both measures: does not get a node', () => {
     const { renderer, render } = setup();
     render({ ...fullDetail(), viewport: FARTHEST });
     expect(renderer.node('M1')).toBeUndefined();
   });
 
-  it('selecionada, ou sob o mouse: completa em qualquer tamanho, mesmo abaixo de 2 px', () => {
+  it('selected, or under the mouse: full at any size, even below 2 px', () => {
     const { renderer, render } = setup();
     render({
       ...fullDetail(),
@@ -536,7 +536,7 @@ describe('nível de detalhe pelo zoom', () => {
     expect(node(other.renderer, 'M1').badge?.visible()).toBe(true);
   });
 
-  it('seleção múltipla: cada marcação selecionada aparece completa', () => {
+  it('multiple selection: each selected marking appears full', () => {
     const { renderer, render } = setup();
     render({
       ...fullDetail(new Set(['M1', 'M2'])),

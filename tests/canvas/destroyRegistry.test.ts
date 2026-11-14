@@ -1,7 +1,7 @@
-// `CanvasController.destroy` não deixa formas no registro de cores de acerto do Konva (`shapes`). As
-// partes do nó que o `syncParts` desencaixa do grupo (escondidas) não são destruídas junto com ele;
-// sem isso, abrir e fechar projetos grandes várias vezes na mesma aba enchia o registro e o
-// construtor de `Shape` passava a procurar cor livre por muito tempo.
+// `CanvasController.destroy` leaves no shapes in the Konva hit-color registry (`shapes`). The
+// node parts that `syncParts` detaches from the group (hidden) are not destroyed along with it;
+// without that, opening and closing large projects many times in the same tab filled the registry and the
+// `Shape` constructor started looking for a free color for a long time.
 import { shapes } from 'konva/lib/Shape';
 import { describe, expect, it } from 'vitest';
 import type { MarkingRenderer } from '../../src/canvas/renderers/markings';
@@ -9,11 +9,11 @@ import { openWholeProject } from './wholeProjectScenario';
 
 const registered = () => Object.keys(shapes).length;
 
-describe('registro de cores de acerto do Konva', () => {
-  it('abrir, aproximar, afastar e destruir devolve o registro ao que era', () => {
+describe('Konva hit-color registry', () => {
+  it('opening, zooming in, zooming out and destroying returns the registry to what it was', () => {
     const before = registered();
     const s = openWholeProject(500, 'fit');
-    // Aproximar cria as partes do nó; afastar as esconde e o `syncParts` as desencaixa do grupo.
+    // Zooming in creates the node parts; zooming out hides them and `syncParts` detaches them from the group.
     s.controller.zoomTo(2);
     s.controller.centerOnPoint({ x: 0, y: 0 });
     s.flush();
@@ -24,9 +24,9 @@ describe('registro de cores de acerto do Konva', () => {
     expect(registered()).toBe(before);
   }, 120_000);
 
-  it('apagar uma marcação com partes desencaixadas também as destrói', () => {
+  it('deleting a marking with detached parts also destroys them', () => {
     const s = openWholeProject(500, 'fit');
-    // Uma folha: apagar uma marcação com filhas apaga as filhas também.
+    // One leaf: deleting a marking with children deletes the children too.
     const target = s.project.markings.find(
       (m) => !s.project.markings.some((c) => c.parentId === m.id),
     );
@@ -46,7 +46,7 @@ describe('registro de cores de acerto do Konva', () => {
       node?.alert,
       node?.text?.header,
     ].filter((shape) => shape !== undefined).length;
-    // A borda e o halo, que a seleção criou e o `syncParts` desencaixou ao desselecionar.
+    // The border and the halo, which the selection created and `syncParts` detached on deselection.
     expect(ownShapes).toBe(2);
     const withParts = registered();
     s.actions.removeMarking(target.id);

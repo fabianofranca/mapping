@@ -1,13 +1,13 @@
-// Desenhos de componente sob demanda (CD2 da etapa canvas-desempenho, decisão 3): o desenho de uma
-// marcação só é montado (`renderScene`) no primeiro quadro em que ela está na tela e é desenhada, e
-// fica até ela sair do projeto ou o objeto do desenho mudar.
+// Component drawings on demand (CD2 of the canvas-performance stage, decision 3): a marking's
+// drawing is only mounted (`renderScene`) in the first frame in which it is on screen and drawn, and
+// stays until it leaves the project or the drawing object changes.
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { setShowComponentsOnPhotos } from '../../src/store/settings';
 import type { ComponentLayerRenderer } from '../../src/canvas/components/componentLayer';
 import { openWholeProject, type WholeProjectScenario } from './wholeProjectScenario';
 
 let scenario: WholeProjectScenario | null = null;
-// Os containers do cenário têm foto: o desenho do componente só aparece com a opção ligada.
+// The scenario's containers have a photo: the component drawing only shows with the option on.
 beforeEach(() => setShowComponentsOnPhotos(true));
 afterEach(() => {
   scenario?.destroy();
@@ -19,7 +19,7 @@ const mounted = (s: WholeProjectScenario) =>
   (s.controller as unknown as { componentLayer: ComponentLayerRenderer }).componentLayer
     .mountedCount;
 
-/** Leva a vista ao desenho `index` (ordem do projeto). */
+/** Takes the view to drawing `index` (project order). */
 function goTo(s: WholeProjectScenario, index: number): void {
   const drawing = [...s.derived.drawingsOf(s.project).values()][index];
   const marking = s.project.markings.find((m) => m.id === drawing?.markingId);
@@ -35,19 +35,19 @@ function goTo(s: WholeProjectScenario, index: number): void {
   s.flush();
 }
 
-describe('desenhos de componente sob demanda (2.000 marcações, com componentes)', () => {
-  it('aproximado num container, só os desenhos à vista são montados', () => {
+describe('component drawings on demand (2,000 markings, with components)', () => {
+  it('zoomed in on a container, only the drawings in view are mounted', () => {
     const s = (scenario = openWholeProject(2000, 'close', { components: true }));
     const total = s.derived.drawingsOf(s.project).size;
     expect(total).toBeGreaterThan(400);
     goTo(s, 0);
     expect(mounted(s)).toBeGreaterThan(0);
     expect(mounted(s)).toBeLessThan(total / 4);
-    // O atributo do host continua contando todos os que aparecem (os roteiros leem dele).
+    // The host attribute still counts all the ones that appear (the scripts read it).
     expect(Number(s.container.dataset.components)).toBe(total);
   }, 120_000);
 
-  it('rolar até outro container monta os desenhos dele e voltar não destrói os primeiros', () => {
+  it('scrolling to another container mounts its drawings and going back does not destroy the first ones', () => {
     const s = (scenario = openWholeProject(2000, 'close', { components: true }));
     const total = s.derived.drawingsOf(s.project).size;
     goTo(s, 0);

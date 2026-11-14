@@ -1,5 +1,5 @@
-// Formato 4, FX1: o centro pela altura da maiúscula (`verticalAlign: "cap-middle"`) no Konva.
-// As métricas da fonte entram injetadas (ascent 10, descent 3, capHeight 8), então a conta é exata.
+// Format 4, FX1: the center by the capital letter height (`verticalAlign: "cap-middle"`) in Konva.
+// The font metrics are injected (ascent 10, descent 3, capHeight 8), so the arithmetic is exact.
 import Konva from 'konva';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { installFakeCanvas } from '../harness';
@@ -16,13 +16,13 @@ beforeAll(() => installFakeCanvas());
 let measureSpy: { mockRestore: () => void } | undefined;
 afterEach(() => measureSpy?.mockRestore());
 
-/** ascent 10, descent 3 (a linha de base do Konva fica em (10−3)/2 + lh/2) e `H` com 8 de altura. */
+/** ascent 10, descent 3 (the Konva baseline sits at (10−3)/2 + lh/2) and `H` with height 8. */
 function injectMetrics(): void {
   measureSpy = vi.spyOn(Konva.Text.prototype, 'measureSize').mockImplementation(function (
     this: Konva.Text,
     text: string,
   ) {
-    // As métricas valem para o tamanho 10 do nó e escalam com o tamanho medido.
+    // The metrics hold for node size 10 and scale with the measured size.
     const k = this.fontSize() / 10;
     return {
       width: text.length * 6,
@@ -78,8 +78,8 @@ function texts(s: Scene): Konva.Text[] {
 }
 
 describe('capMiddleShift (conta pura)', () => {
-  it('uma linha: o centro da maiúscula cai no centro da caixa', () => {
-    // Linha de base natural (topo) em 9,5; maiúscula 8: o bloco ocupa [1,5 ; 9,5] e deve ir a [16 ; 24].
+  it('one line: the center of the capital falls on the center of the box', () => {
+    // Natural baseline (top) at 9.5; capital 8: the block occupies [1.5 ; 9.5] and must go to [16 ; 24].
     const shift = capMiddleShift({
       boxHeight: 40,
       capHeight: 8,
@@ -87,11 +87,11 @@ describe('capMiddleShift (conta pura)', () => {
       lastBaseline: 9.5,
     });
     expect(shift).toBeCloseTo(16 - 1.5, 9);
-    // Depois do deslocamento: topo da maiúscula = 9,5 + 14,5 − 8 = 16; a linha de base, 24.
+    // After the shift: capital top = 9.5 + 14.5 − 8 = 16; the baseline, 24.
     expect(9.5 + shift - 8 + 4).toBeCloseTo(20, 9);
   });
 
-  it('o bloco é da maiúscula da primeira linha à base da última', () => {
+  it('the block is from the capital of the first line to the base of the last', () => {
     const shift = capMiddleShift({
       boxHeight: 100,
       capHeight: 8,
@@ -103,16 +103,16 @@ describe('capMiddleShift (conta pura)', () => {
   });
 });
 
-describe('cap-middle no texto simples do Konva', () => {
-  it('uma linha: a base cai em (altura − capHeight)/2 + capHeight', () => {
+describe('cap-middle on the plain Konva text', () => {
+  it('one line: the base falls at (height − capHeight)/2 + capHeight', () => {
     injectMetrics();
     const [text] = texts(scene({ text: 'Ok' }));
-    // Konva (top) põe a base em (10 − 3)/2 + 12/2 = 9,5; a desejada é (40 − 8)/2 + 8 = 24.
+    // Konva (top) puts the base at (10 − 3)/2 + 12/2 = 9.5; the desired one is (40 − 8)/2 + 8 = 24.
     expect(text?.verticalAlign()).toBe('top');
     expect(text?.y()).toBeCloseTo(24 - 9.5, 9);
   });
 
-  it('duas linhas: o bloco da maiúscula à base da segunda fica centrado', () => {
+  it('two lines: the block from the capital to the base of the second is centered', () => {
     injectMetrics();
     // Largura 70 / 5,5 por letra: duas palavras de 10 letras quebram em duas linhas.
     const [text] = texts(scene({ text: 'abcdefghij abcdefghij', width: 70 }, 60));
@@ -121,7 +121,7 @@ describe('cap-middle no texto simples do Konva', () => {
     expect(text?.y()).toBeCloseTo(28 - 9.5, 9);
   });
 
-  it('maxLines cortando: o centro é o das linhas que sobram', () => {
+  it('maxLines cutting: the center is that of the lines that remain', () => {
     injectMetrics();
     const long = 'abcdefghij abcdefghij abcdefghij abcdefghij abcdefghij abcdefghij';
     const [text] = texts(
@@ -143,7 +143,7 @@ describe('cap-middle no texto simples do Konva', () => {
     expect(text?.y()).toBeCloseTo(24 - 9.5, 9);
   });
 
-  it('o middle não muda: continua o do Konva, sem deslocamento próprio', () => {
+  it('middle does not change: it stays the Konva one, without its own shift', () => {
     injectMetrics();
     const [text] = texts(
       scene({
@@ -157,16 +157,16 @@ describe('cap-middle no texto simples do Konva', () => {
 });
 
 describe('cap-middle nos trechos (runs)', () => {
-  it('a base da primeira linha vai a (altura − capHeight)/2 + capHeight', () => {
+  it('the base of the first line goes to (height − capHeight)/2 + capHeight', () => {
     injectMetrics();
     const [first] = texts(
       scene({ runs: [{ text: 'Vence em ' }, { text: '3 dias', weight: 700 }] }),
     );
-    // Linha única de altura 12 em y 0: base natural em 6 + (10 − 3)/2 = 9,5 → vai a 24.
+    // Single line of height 12 at y 0: natural base at 6 + (10 − 3)/2 = 9.5 → goes to 24.
     expect(first?.y()).toBeCloseTo(24 - 9.5, 9);
   });
 
-  it('duas linhas de trechos: o bloco vai da maiúscula da 1ª à base da 2ª', () => {
+  it('two lines of runs: the block goes from the capital of the 1st to the base of the 2nd', () => {
     injectMetrics();
     const runs = [{ text: 'abcdefghij abcdefghij' }];
     const shapes = texts(scene({ runs, width: 70 }, 60));

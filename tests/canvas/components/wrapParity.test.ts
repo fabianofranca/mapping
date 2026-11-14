@@ -1,6 +1,6 @@
-// MC4 (decisão 13 da #898): o `layout.wrap` desenha na app (Konva) onde o modelo põe cada filho,
-// a ≤ 0,5 px: 5 filhos de 100 numa row de 320, `gap` 8, `lineGap` 12, nas posições do `FlowRow`.
-// O raster do MCP tem o seu teste em `tests/mcp/wrapRaster.test.ts`.
+// MC4 (decision 13 of #898): `layout.wrap` draws in the app (Konva) where the model puts each child,
+// within ≤ 0.5 px: 5 children of 100 in a row of 320, `gap` 8, `lineGap` 12, at the `FlowRow` positions.
+// The MCP raster has its own test in `tests/mcp/wrapRaster.test.ts`.
 import Konva from 'konva';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { installFakeCanvas } from '../harness';
@@ -53,22 +53,22 @@ describe.each([
   ['wrap', { wrap: 'wrap', gap: 8, lineGap: 12 }],
   ['wrap-reverse', { wrap: 'wrap-reverse', gap: 8, lineGap: 12 }],
   [
-    'space-between por linha',
+    'space-between per line',
     { wrap: 'wrap', gap: 8, lineGap: 12, justify: 'space-between' },
   ],
-])('wrap: Konva × modelo (%s)', (name, layout) => {
+])('wrap: Konva × model (%s)', (name, layout) => {
   const root = scene(layout);
   const model = absoluteBoxes(root);
   const kids = [...walk(root)].filter((n) => /^k\d$/.test(n.name ?? ''));
 
-  it('o modelo põe 3 + 2 (o FlowRow)', () => {
+  it('the model puts 3 + 2 (the FlowRow)', () => {
     expect(kids).toHaveLength(5);
     const ys = kids.map((n) => model.get(n.id)?.y);
     const top = name === 'wrap-reverse' ? [32, 32, 32, 0, 0] : [0, 0, 0, 32, 32];
     expect(ys).toEqual(top);
   });
 
-  it('o Konva desenha cada filho onde o modelo o pôs', () => {
+  it('Konva draws each child where the model put it', () => {
     const { root: konva } = renderScene({ root, warnings: [] });
     const rects = konva.find('Rect') as Konva.Rect[];
     kids.forEach((n, i) => {

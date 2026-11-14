@@ -23,11 +23,11 @@ import { NOW, sampleProject } from '../model/fixtures';
 import { idGen, layerOf, loadExample } from '../model/specFixtures';
 import { MemoryDirectory } from '../storage/memoryFs';
 
-// Etapa Biblioteca Material 3, MD1, decisão 4 (integridade): um projeto com uma cópia em
-// `specs/` que a app não lê (aqui, `formatVersion` 99 com chaves desconhecidas, como `variants`
-// no `code`) abre com as anotações daquela especialização como "tipo inexistente". Editar OUTRA
-// coisa e gravar pela sessão precisa preservar os valores dessas anotações, a referência em
-// `specializations` e o arquivo da cópia, byte a byte.
+// Material 3 Library stage, MD1, decision 4 (integrity): a project with a copy in
+// `specs/` that the app does not read (here, `formatVersion` 99 with unknown keys, like `variants`
+// in `code`) opens with the annotations of that specialization as "nonexistent type". Editing ANOTHER
+// thing and saving through the session must preserve the values of those annotations, the reference in
+// `specializations` and the copy file, byte by byte.
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => {
@@ -49,7 +49,7 @@ interface RawMapping {
 
 const parse = (text: string | null): RawMapping => JSON.parse(text ?? '') as RawMapping;
 
-/** Anotações (cruas, como estão no `mapping.json`) da especialização `specId`. */
+/** Annotations (raw, as they are in `mapping.json`) of the specialization `specId`. */
 const rawOf = (m: RawMapping, specId: string) =>
   m.annotations.filter((a) => a.type?.specId === specId);
 
@@ -57,35 +57,35 @@ type Layout = 'flat' | 'package';
 
 interface Fixture {
   readonly root: MemoryDirectory;
-  /** O `mapping.json` como está no disco antes de a sessão abrir. */
+  /** The `mapping.json` as it is on disk before the session opens. */
   readonly mappingText: string;
   readonly project: Project;
-  /** Caminho da cópia que a app não lê. */
+  /** Path of the copy that the app does not read. */
   readonly futureFile: string;
-  /** Texto exato dessa cópia. */
+  /** Exact text of that copy. */
   readonly futureText: string;
-  /** Os outros arquivos do pacote da especialização ilegível (vazio no layout `flat`). */
+  /** The other files of the unreadable specialization package (empty in the `flat` layout). */
   readonly futureExtras: ReadonlyMap<string, string>;
-  /** Texto da cópia da especialização válida (`modelo-dados`). */
+  /** Text of the copy of the valid specialization (`modelo-dados`). */
   readonly validText: string;
   readonly validFile: string;
 }
 
 /**
- * Projeto com a SDUI-like `modelo-dados` (válida) e a `futuro` (ilegível), ambas com anotações
- * tipadas e com valores, mais as anotações livres do `sampleProject`. A `futuro` é gravada com
- * `formatVersion` 99 e `variants` no `code`, que a app não conhece.
+ * Project with the SDUI-like `modelo-dados` (valid) and the `future` (unreadable), both with typed
+ * annotations and values, plus the free annotations of `sampleProject`. The `future` is written with
+ * `formatVersion` 99 and `variants` in `code`, which the app does not know.
  */
 function fixture(layout: Layout): Fixture {
   const valid = loadExample('modelo-de-dados');
-  // A mesma especialização com outro id: dois tipos `classe`/`endpoint` em specIds distintos.
-  const future: Spec = { ...valid, id: 'futuro', name: 'Futuro', version: 3 };
+  // The same specialization with another id: two types `classe`/`endpoint` in distinct specIds.
+  const future: Spec = { ...valid, id: 'future', name: 'Future', version: 3 };
 
   let p = sampleProject();
   p = applySpecialization(p, valid, { newId: idGen('LV') });
   p = applySpecialization(p, future, {
     newId: idGen('LF'),
-    ...(layout === 'package' ? { packageSpecName: 'futuro.spec.json' } : {}),
+    ...(layout === 'package' ? { packageSpecName: 'future.spec.json' } : {}),
   });
 
   const add = (
@@ -103,34 +103,34 @@ function fixture(layout: Layout): Fixture {
       parentAnnotationId: null,
     });
   };
-  // Anotação de tipo válido, que a pessoa vai editar.
+  // Annotation of a valid type, which the person will edit.
   add('AV1', 'M2', 'modelo-dados', 'classes', 'classe');
-  p = setFieldValue(p, 'AV1', 'nome', 'Válida');
-  // Anotações da especialização ilegível, que não podem mudar.
-  add('AF1', 'M1', 'futuro', 'classes', 'classe');
-  p = setFieldValue(p, 'AF1', 'nome', 'Futura');
-  p = setFieldValue(p, 'AF1', 'descricao', 'Valores que a app não sabe interpretar');
+  p = setFieldValue(p, 'AV1', 'nome', 'Valid');
+  // Annotations of the unreadable specialization, which must not change.
+  add('AF1', 'M1', 'future', 'classes', 'classe');
+  p = setFieldValue(p, 'AF1', 'nome', 'Future');
+  p = setFieldValue(p, 'AF1', 'descricao', 'Values that the app cannot interpret');
   p = setFieldValue(p, 'AF1', 'versao', 7);
   p = addTableRow(p, 'AF1', 'atributos', 'R1');
   p = setTableCell(p, 'AF1', 'atributos', 'R1', 'nome', 'id');
   p = setTableCell(p, 'AF1', 'atributos', 'R1', 'tipo', 'Long');
-  add('AF2', 'M3', 'futuro', 'endpoints', 'endpoint');
+  add('AF2', 'M3', 'future', 'endpoints', 'endpoint');
   p = setFieldValue(p, 'AF2', 'metodo', 'POST');
-  p = setFieldValue(p, 'AF2', 'path', '/futuro/{id}');
+  p = setFieldValue(p, 'AF2', 'path', '/future/{id}');
   p = setFieldValue(p, 'AF2', 'timeoutMs', 250);
 
   const project: Project = { ...p, revision: 5 };
   const mappingText = serialize(project);
   const refOf = (id: string) => {
     const s = project.specializations.find((x) => x.id === id);
-    if (!s) throw new Error(`especialização ${id} sem referência`);
+    if (!s) throw new Error(`specialization ${id} without reference`);
     return s.file;
   };
   const validFile = refOf('modelo-dados');
-  const futureFile = refOf('futuro');
+  const futureFile = refOf('future');
 
-  // A cópia ilegível: formatVersion que a app não suporta e chaves desconhecidas, em ordem e
-  // com um espaçamento que o `serializeSpec` não reproduziria (para provar o "byte a byte").
+  // The unreadable copy: formatVersion that the app does not support and unknown keys, in an order and
+  // with a spacing that `serializeSpec` would not reproduce (to prove the "byte by byte").
   const futureJson = {
     ...future,
     formatVersion: 99,
@@ -139,14 +139,14 @@ function fixture(layout: Layout): Fixture {
       ...l,
       annotationTypes: l.annotationTypes.map((t) => ({
         ...t,
-        code: { symbol: 'Futuro', variants: { compose: { symbol: 'FuturoCompose' } } },
+        code: { symbol: 'Future', variants: { compose: { symbol: 'FutureCompose' } } },
       })),
     })),
   };
   const futureText = `${JSON.stringify(futureJson, null, 4)}\n\n`;
   const validText = serializeSpec(valid);
 
-  const root = new MemoryDirectory('mapeamento');
+  const root = new MemoryDirectory('mapping');
   root.put('mapping.json', mappingText);
   root.put(validFile, validText);
   root.put(futureFile, futureText);
@@ -157,7 +157,7 @@ function fixture(layout: Layout): Fixture {
       `${dir}/components/classe.json`,
       '{"formatVersion":99,"nodes":[]}\n',
     );
-    futureExtras.set(`${dir}/docs/classe.md`, '# Classe\n\nTexto do documento.\n');
+    futureExtras.set(`${dir}/docs/classe.md`, '# Class\n\nDocument text.\n');
     for (const [path, text] of futureExtras) root.put(path, text);
   }
   return {
@@ -172,7 +172,7 @@ function fixture(layout: Layout): Fixture {
   };
 }
 
-/** Abre como a app: `loadProject` e `openSession` com o texto lido. */
+/** Opens like the app: `loadProject` and `openSession` with the text read. */
 async function openLikeApp(root: MemoryDirectory) {
   const storage = createFolderStorage(root);
   const loaded = await loadProject(storage);
@@ -183,7 +183,7 @@ async function openLikeApp(root: MemoryDirectory) {
     readOnly: loaded.readOnly,
     loadedText: loaded.text,
     libraryIssues: loaded.libraryIssues,
-    prepareImage: () => Promise.reject(new Error('sem imagens aqui')),
+    prepareImage: () => Promise.reject(new Error('no images here')),
     now: () => NOW,
   });
   return { loaded, session };
@@ -194,7 +194,7 @@ async function save(session: ProjectSession) {
   expect(session.saveStatus.value).toBe('saved');
 }
 
-/** Nada que a gravação deveria mexer: cópias, pacote e anotações da especialização ilegível. */
+/** Nothing that the write should touch: copies, package and annotations of the unreadable specialization. */
 async function expectFutureIntact(f: Fixture) {
   expect(await f.root.read(f.futureFile)).toBe(f.futureText);
   expect(await f.root.read(f.validFile)).toBe(f.validText);
@@ -202,18 +202,18 @@ async function expectFutureIntact(f: Fixture) {
 
   const before = parse(f.mappingText);
   const after = parse(await f.root.read('mapping.json'));
-  // Valores, tipo, marcação e camada das anotações da especialização ilegível.
-  expect(rawOf(after, 'futuro')).toHaveLength(2);
-  expect(rawOf(after, 'futuro')).toEqual(rawOf(before, 'futuro'));
-  // A referência em `specializations` e as camadas da especialização.
+  // Values, type, marking and layer of the annotations of the unreadable specialization.
+  expect(rawOf(after, 'future')).toHaveLength(2);
+  expect(rawOf(after, 'future')).toEqual(rawOf(before, 'future'));
+  // The reference in `specializations` and the layers of the specialization.
   expect(after.specializations).toEqual(before.specializations);
-  expect(after.layers.filter((l) => l.spec?.specId === 'futuro')).toEqual(
-    before.layers.filter((l) => l.spec?.specId === 'futuro'),
+  expect(after.layers.filter((l) => l.spec?.specId === 'future')).toEqual(
+    before.layers.filter((l) => l.spec?.specId === 'future'),
   );
 }
 
 describe.each<Layout>(['flat', 'package'])(
-  'cópia de especialização que a app não lê (%s)',
+  'copy of a specialization that the app does not read (%s)',
   (layout) => {
     let session: ProjectSession | null = null;
     afterEach(async () => {
@@ -221,94 +221,94 @@ describe.each<Layout>(['flat', 'package'])(
       session = null;
     });
 
-    it('abre sem reparo nem migração, com a especialização ilegível sem spec', async () => {
+    it('opens without repair or migration, with the unreadable specialization having no spec', async () => {
       const f = fixture(layout);
       const { loaded, session: s } = await openLikeApp(f.root);
       session = s;
 
-      // Sem inconsistência (reparo) nem migração; nada foi gravado só por abrir.
+      // No inconsistency (repair) or migration; nothing was written just by opening.
       expect(loaded).toMatchObject({ ok: true, readOnly: false, migratedFrom: null });
       expect(loaded.ok && loaded.text).toBe(f.mappingText);
       expect(f.root.dirs.has('backups')).toBe(false);
-      // A cópia ilegível não vira `Spec`; a válida sim.
+      // The unreadable copy does not become a `Spec`; the valid one does.
       const specs = loaded.ok ? loaded.project.specializations : [];
-      expect(specs.find((x) => x.id === 'futuro')?.spec).toBeNull();
+      expect(specs.find((x) => x.id === 'future')?.spec).toBeNull();
       expect(specs.find((x) => x.id === 'modelo-dados')?.spec).not.toBeNull();
-      // As anotações da especialização ilegível continuam no projeto, com os valores.
+      // The annotations of the unreadable specialization stay in the project, with the values.
       const kept = loaded.ok
-        ? loaded.project.annotations.filter((a) => a.type?.specId === 'futuro')
+        ? loaded.project.annotations.filter((a) => a.type?.specId === 'future')
         : [];
       expect(kept.map((a) => a.id)).toEqual(['AF1', 'AF2']);
       expect(kept).toEqual(f.project.annotations.filter((a) => a.id.startsWith('AF')));
       expect(await f.root.read('mapping.json')).toBe(f.mappingText);
     });
 
-    it('editar outras marcações e anotações e gravar preserva valores, referência e cópia', async () => {
+    it('editing other markings and annotations and saving preserves values, reference and copy', async () => {
       const f = fixture(layout);
       const { session: s } = await openLikeApp(f.root);
       session = s;
 
-      // Edita OUTRAS coisas: marcação sem anotação do futuro, anotação livre, anotação válida.
-      s.actions.renameMarking('M4', 'Renomeada');
+      // Edits OTHER things: marking without future annotation, free annotation, valid annotation.
+      s.actions.renameMarking('M4', 'Renamed');
       s.actions.moveMarking('M4', 10, 10);
-      s.actions.updateEntry('A1', 'E1', { key: 'tipo', value: 'riscado' });
-      s.actions.renameAnnotation('A4', 'Outra nota');
-      s.actions.setFieldValue('AV1', 'nome', 'Válida editada');
+      s.actions.updateEntry('A1', 'E1', { key: 'type', value: 'crossed out' });
+      s.actions.renameAnnotation('A4', 'Another note');
+      s.actions.setFieldValue('AV1', 'nome', 'Valid edited');
       await save(s);
 
       const after = parse(await f.root.read('mapping.json'));
       expect(after.revision).toBe(6);
-      // A edição valeu (prova que a sessão gravou de fato).
-      expect(JSON.stringify(after)).toContain('Válida editada');
-      expect(JSON.stringify(after)).toContain('Renomeada');
+      // The edit took effect (proves that the session actually wrote).
+      expect(JSON.stringify(after)).toContain('Valid edited');
+      expect(JSON.stringify(after)).toContain('Renamed');
       await expectFutureIntact(f);
 
-      // Segunda gravação: continua intacto.
-      s.actions.renameMarking('M4', 'Renomeada de novo');
+      // Second write: still intact.
+      s.actions.renameMarking('M4', 'Renamed again');
       await save(s);
       expect(parse(await f.root.read('mapping.json')).revision).toBe(7);
       await expectFutureIntact(f);
 
-      // Fechar a sessão (grava o pendente) também não mexe.
+      // Closing the session (writes the pending) does not touch it either.
       await s.close();
       session = null;
       await expectFutureIntact(f);
 
-      // Reabrir: os valores continuam lá, ainda sem spec para interpretá-los.
+      // Reopening: the values are still there, still with no spec to interpret them.
       const again = await loadProject(createFolderStorage(f.root));
       expect(again.ok).toBe(true);
       if (!again.ok) return;
       expect(
-        again.project.specializations.find((x) => x.id === 'futuro')?.spec,
+        again.project.specializations.find((x) => x.id === 'future')?.spec,
       ).toBeNull();
       expect(
-        again.project.annotations.filter((a) => a.type?.specId === 'futuro'),
+        again.project.annotations.filter((a) => a.type?.specId === 'future'),
       ).toEqual(f.project.annotations.filter((a) => a.id.startsWith('AF')));
       expect(again.project.annotations.find((a) => a.id === 'AV1')?.values).toMatchObject(
         {
-          nome: 'Válida editada',
+          nome: 'Valid edited',
         },
       );
     });
 
-    it('mover a marcação que carrega anotações da especialização ilegível não muda os valores', async () => {
+    it('moving the marking that carries annotations of the unreadable specialization does not change the values', async () => {
       const f = fixture(layout);
       const { session: s } = await openLikeApp(f.root);
       session = s;
-      s.actions.renameMarking('M1', 'Porta renomeada');
+      s.actions.renameMarking('M1', 'Door renamed');
       s.actions.moveMarking('M3', 5, 5);
       await save(s);
       await expectFutureIntact(f);
     });
 
-    it('o zip exportado leva a cópia ilegível e o pacote dela como estavam', async () => {
+    it('the exported zip carries the unreadable copy and its package as they were', async () => {
       const f = fixture(layout);
       const { session: s } = await openLikeApp(f.root);
       session = s;
-      s.actions.renameMarking('M4', 'Renomeada');
+      s.actions.renameMarking('M4', 'Renamed');
       await save(s);
 
-      // O JSZip usa temporizadores: o resto roda com o relógio de verdade.
+      // JSZip uses timers: the rest runs with the real clock.
       vi.useRealTimers();
       const collected = await s.collectFiles();
       const zip = await writeProjectZip(collected);
@@ -316,12 +316,12 @@ describe.each<Layout>(['flat', 'package'])(
       expect(read.ok).toBe(true);
       if (!read.ok) return;
 
-      // O `mapping.json` do zip ainda cita a especialização: a cópia precisa estar junto.
-      expect(rawOf(parse(read.files.mapping), 'futuro')).toEqual(
-        rawOf(parse(f.mappingText), 'futuro'),
+      // The zip `mapping.json` still cites the specialization: the copy must come along.
+      expect(rawOf(parse(read.files.mapping), 'future')).toEqual(
+        rawOf(parse(f.mappingText), 'future'),
       );
       expect(parse(read.files.mapping).specializations.map((x) => x.id)).toContain(
-        'futuro',
+        'future',
       );
       expect.soft(read.files.specs.get(f.futureFile)).toBe(f.futureText);
       for (const [path, text] of f.futureExtras) {
@@ -329,23 +329,23 @@ describe.each<Layout>(['flat', 'package'])(
       }
     });
 
-    it('zip → neste dispositivo → zip: a cópia ilegível e o pacote dela ida e volta como estavam', async () => {
+    it('zip → this device → zip: the unreadable copy and its package round trip as they were', async () => {
       const f = fixture(layout);
       const { session: s } = await openLikeApp(f.root);
       session = s;
-      s.actions.renameMarking('M4', 'Renomeada');
+      s.actions.renameMarking('M4', 'Renamed');
       await save(s);
 
-      // O JSZip e o IndexedDB de teste usam temporizadores: o resto roda com o relógio de verdade.
+      // JSZip and the test IndexedDB use timers: the rest runs with the real clock.
       vi.useRealTimers();
       const first = await readProjectZip(await writeProjectZip(await s.collectFiles()));
       expect(first.ok).toBe(true);
       if (!first.ok) return;
 
-      // Importa o zip para o IndexedDB, como `importZip`, e abre como a app.
+      // Imports the zip into IndexedDB, like `importZip`, and opens like the app.
       const library = await openLocalLibrary();
-      if (!library) throw new Error('IndexedDB indisponível');
-      const id = 'ida-e-volta';
+      if (!library) throw new Error('IndexedDB unavailable');
+      const id = 'round-trip';
       let local: ProjectSession | null = null;
       try {
         await library.create(id, first.files, { unexported: false });
@@ -353,7 +353,7 @@ describe.each<Layout>(['flat', 'package'])(
         const loaded = await loadProject(storage);
         if (!loaded.ok) throw new Error(`loadProject: ${loaded.error}`);
         expect(
-          loaded.project.specializations.find((x) => x.id === 'futuro')?.spec,
+          loaded.project.specializations.find((x) => x.id === 'future')?.spec,
         ).toBeNull();
         local = openSession({
           storage,
@@ -361,7 +361,7 @@ describe.each<Layout>(['flat', 'package'])(
           readOnly: loaded.readOnly,
           loadedText: loaded.text,
           libraryIssues: loaded.libraryIssues,
-          prepareImage: () => Promise.reject(new Error('sem imagens aqui')),
+          prepareImage: () => Promise.reject(new Error('no images here')),
           now: () => NOW,
         });
         const again = await readProjectZip(
@@ -370,15 +370,15 @@ describe.each<Layout>(['flat', 'package'])(
         expect(again.ok).toBe(true);
         if (!again.ok) return;
 
-        expect(rawOf(parse(again.files.mapping), 'futuro')).toEqual(
-          rawOf(parse(f.mappingText), 'futuro'),
+        expect(rawOf(parse(again.files.mapping), 'future')).toEqual(
+          rawOf(parse(f.mappingText), 'future'),
         );
         expect.soft(again.files.specs.get(f.futureFile)).toBe(f.futureText);
         expect.soft(again.files.specs.get(f.validFile)).toBe(f.validText);
         for (const [path, text] of f.futureExtras) {
           expect.soft(await again.files.specAssets?.get(path)?.text()).toBe(text);
         }
-        // O mesmo conjunto de arquivos de `specs/` da primeira exportação.
+        // The same set of `specs/` files as the first export.
         expect([...again.files.specs.keys()].sort()).toEqual(
           [...first.files.specs.keys()].sort(),
         );
@@ -392,11 +392,11 @@ describe.each<Layout>(['flat', 'package'])(
       }
     });
 
-    it('cópia citada que não existe no armazenamento continua fora do zip', async () => {
+    it('a cited copy that does not exist in the storage stays out of the zip', async () => {
       const f = fixture(layout);
       const { session: s } = await openLikeApp(f.root);
       session = s;
-      // Some do disco entre a abertura e a exportação (alteração externa).
+      // It vanishes from the disk between opening and export (external change).
       const parts = f.futureFile.split('/');
       const name = parts.pop() ?? '';
       let dir = f.root;

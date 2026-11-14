@@ -16,12 +16,12 @@ function setup(readOnly = false) {
 
 const current = (store: ReturnType<typeof createProjectStore>) => {
   const p = store.project.value;
-  if (!p) throw new Error('sem projeto');
+  if (!p) throw new Error('no project');
   return p;
 };
 
-describe('store: trava', () => {
-  it('trancar e destrancar entram no desfazer', () => {
+describe('store: lock', () => {
+  it('locking and unlocking go into the undo', () => {
     const { store, actions } = setup();
     expect(actions.setMarkingLocked('M1', true).ok).toBe(true);
     expect(actions.setImageLocked('I2', true).ok).toBe(true);
@@ -29,17 +29,17 @@ describe('store: trava', () => {
     expect(actions.setMarkingLocked('M1', false).ok).toBe(true);
     expect(current(store).markings[0]?.locked).toBe(false);
 
-    expect(store.undo()).toBe(true); // volta a trava de M1
+    expect(store.undo()).toBe(true); // brings back the M1 lock
     expect(current(store).markings[0]?.locked).toBe(true);
-    expect(store.undo()).toBe(true); // desfaz a trava de I2
+    expect(store.undo()).toBe(true); // undoes the I2 lock
     expect(current(store).containers[1]?.locked).toBe(false);
-    expect(store.undo()).toBe(true); // desfaz a trava de M1
+    expect(store.undo()).toBe(true); // undoes the M1 lock
     expect(current(store).markings[0]?.locked).toBe(false);
     expect(store.redo()).toBe(true);
     expect(current(store).markings[0]?.locked).toBe(true);
   });
 
-  it('"trancar todas as marcações da imagem" é uma entrada só no histórico', () => {
+  it('"lock all the markings of the image" is a single history entry', () => {
     const { store, actions } = setup();
     expect(actions.setImageMarkingsLocked('I1', true).ok).toBe(true);
     expect(store.revision.value).toBe(1);
@@ -53,14 +53,14 @@ describe('store: trava', () => {
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('repetir o estado atual não cria entrada no histórico', () => {
+  it('repeating the current state does not create a history entry', () => {
     const { store, actions } = setup();
     expect(actions.setMarkingLocked('M1', false).ok).toBe(true);
     expect(actions.setImageMarkingsLocked('I1', false).ok).toBe(true);
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('as ações que mexem na geometria ou excluem voltam com erro "locked", sem alterar nada', () => {
+  it('the actions that touch the geometry or delete come back with a "locked" error, changing nothing', () => {
     const { store, actions } = setup();
     actions.setMarkingLocked('M2', true);
     actions.setImageLocked('I2', true);
@@ -75,7 +75,7 @@ describe('store: trava', () => {
     expect(current(store)).toBe(before);
   });
 
-  it('descendente trancado não impede o pai: mover leva o filho junto e excluir o leva embora, com um desfazer cada', () => {
+  it('a locked descendant does not block the parent: moving takes the child along and deleting takes it away, with one undo each', () => {
     const { store, actions } = setup();
     actions.setMarkingLocked('M3', true);
     const rect = (id: string) => current(store).markings.find((m) => m.id === id)?.rect;
@@ -96,7 +96,7 @@ describe('store: trava', () => {
     expect(current(store).markings.find((m) => m.id === 'M3')?.locked).toBe(true);
   });
 
-  it('um gesto de mover o pai leva o descendente trancado e vira uma entrada só', () => {
+  it('a gesture of moving the parent takes the locked descendant along and becomes a single entry', () => {
     const { store, actions } = setup();
     actions.setMarkingLocked('M3', true);
     const revision = store.revision.value;
@@ -107,7 +107,7 @@ describe('store: trava', () => {
     expect(current(store).markings.find((m) => m.id === 'M3')?.rect.x).toBe(1320);
   });
 
-  it('um gesto sobre item trancado não gera prévia nem entrada de desfazer', () => {
+  it('a gesture over a locked item generates neither a preview nor an undo entry', () => {
     const { store, actions } = setup();
     actions.setMarkingLocked('M1', true);
     const revision = store.revision.value;
@@ -121,9 +121,9 @@ describe('store: trava', () => {
     expect(current(store).markings[0]?.rect.x).toBe(1000);
   });
 
-  it('um gesto de mover container dentro de uma marcação do canvas trancada não vira entrada', () => {
+  it('a gesture of moving a container inside a locked canvas marking does not become an entry', () => {
     const { store, actions } = setup();
-    // Marcação do canvas em volta de I1 e I2 (a imagem I2 começa em 1050).
+    // Canvas marking around I1 and I2 (image I2 starts at 1050).
     const created = actions.createMarking(null, {
       x: -50,
       y: -50,
@@ -138,14 +138,14 @@ describe('store: trava', () => {
       ok: false,
       error: 'locked',
     });
-    // A final nunca falha, mas também não muda nada (a prévia é a do início).
+    // The final one never fails, but it does not change anything either (the preview is the starting one).
     actions.finishImagePlacement('I2');
     actions.commitGesture();
     expect(store.revision.value).toBe(revision);
     expect(current(store).containers.find((i) => i.id === 'I2')?.placement.x).toBe(1050);
   });
 
-  it('em projeto somente leitura, trancar falha', () => {
+  it('in a read-only project, locking fails', () => {
     const { actions } = setup(true);
     expect(actions.setMarkingLocked('M1', true)).toEqual({
       ok: false,
@@ -155,8 +155,8 @@ describe('store: trava', () => {
   });
 });
 
-describe('estado derivado: markingLocks', () => {
-  it('começa vazio e acompanha as trancas, próprias ou herdadas do pai', () => {
+describe('derived state: markingLocks', () => {
+  it('starts empty and follows the locks, own or inherited from the parent', () => {
     const { derived, actions } = setup();
     expect(derived.markingLocks.value.size).toBe(0);
     actions.setMarkingLocked('M2', true);
@@ -170,7 +170,7 @@ describe('estado derivado: markingLocks', () => {
     expect(Object.fromEntries(derived.markingLocks.value)).toEqual({ M3: 'self' });
   });
 
-  it('não depende da prévia de um gesto', () => {
+  it('does not depend on a gesture preview', () => {
     const { derived, actions, store } = setup();
     actions.setMarkingLocked('M4', true);
     const before = derived.markingLocks.value;
@@ -181,7 +181,7 @@ describe('estado derivado: markingLocks', () => {
     expect(store.gestureActive.value).toBe(false);
   });
 
-  it('uma marcação do canvas trancada conta como trava (hasLocks) e a herança chega aos descendentes', () => {
+  it('a locked canvas marking counts as a lock (hasLocks) and the inheritance reaches the descendants', () => {
     const { derived, actions } = setup();
     expect(derived.hasLocks.value).toBe(false);
     const outer = actions.createMarking(null, {
@@ -206,13 +206,13 @@ describe('estado derivado: markingLocks', () => {
     });
   });
 
-  it('sem projeto, é vazio', () => {
+  it('without a project, it is empty', () => {
     const store = createProjectStore();
     const derived = createEditorDerived(store, createEditorUi());
     expect(derived.markingLocks.value.size).toBe(0);
   });
 
-  it('markingLockStates: o pai trancado marca todos os descendentes como herdados', () => {
+  it('markingLockStates: the locked parent marks all the descendants as inherited', () => {
     const { actions, store } = setup();
     actions.setMarkingLocked('M1', true);
     expect(Object.fromEntries(markingLockStates(current(store)))).toEqual({

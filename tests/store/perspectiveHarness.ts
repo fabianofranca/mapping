@@ -1,6 +1,6 @@
 import { buildPerspective, type Perspective, type Project } from '../../src/model';
 
-/** A perspectiva dos testes: só a raiz `root` (em `at`) e as camadas `hide` escondidas. */
+/** The perspective of the tests: only the root `root` (at `at`) and the layers `hide` hidden. */
 export function viewOf(
   p: Project,
   args: {
@@ -12,7 +12,7 @@ export function viewOf(
 ): Perspective {
   const built = buildPerspective(p, {
     id: args.id ?? 'V',
-    name: 'Vista',
+    name: 'View',
     startFrom: 'empty',
     hiddenLayers: args.hide ?? [],
   });

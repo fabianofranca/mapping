@@ -27,14 +27,14 @@ function setup() {
 }
 
 describe('OverlayRenderer', () => {
-  it('sem seleção, nada aparece', () => {
+  it('without a selection, nothing appears', () => {
     const { overlay, render, handles } = setup();
     render();
     expect(overlay.selectionOutline.visible()).toBe(false);
     expect(handles().every((h) => !h.visible())).toBe(true);
   });
 
-  it('imagem selecionada: contorno e quatro alças nos cantos', () => {
+  it('selected image: outline and four corner handles', () => {
     const { overlay, render, handles } = setup();
     render({
       selection: { kind: 'image', id: 'I2' },
@@ -50,7 +50,7 @@ describe('OverlayRenderer', () => {
       strokeWidth: 1,
     });
     expect(handles().filter((h) => h.visible())).toHaveLength(4);
-    // Alça de `size-handle` (10 px de tela) centrada no canto, com a cor de seleção.
+    // `size-handle` handle (10 screen px) centered on the corner, with the selection color.
     expect(overlay.handles.get('se')?.getAttrs()).toMatchObject({
       x: 1600 - 2.5,
       y: 500 - 2.5,
@@ -60,7 +60,7 @@ describe('OverlayRenderer', () => {
     });
   });
 
-  it('posição inválida durante o gesto: contorno em vermelho, mais grosso', () => {
+  it('invalid position during the gesture: red outline, thicker', () => {
     const { overlay, render } = setup();
     const placement = { x: 500, y: 0, scale: 1 };
     render(
@@ -75,7 +75,7 @@ describe('OverlayRenderer', () => {
     expect(overlay.selectionOutline.x()).toBe(500);
   });
 
-  it('marcação selecionada: só as alças (a borda dela já engrossa)', () => {
+  it('selected marking: only the handles (its border already thickens)', () => {
     const { overlay, render, handles } = setup();
     render({ selection: { kind: 'marking', id: 'M2' } });
     expect(overlay.selectionOutline.visible()).toBe(false);
@@ -83,7 +83,7 @@ describe('OverlayRenderer', () => {
     expect(handles().every((h) => h.visible())).toBe(true);
   });
 
-  it('alça maior com toque (size-handle-touch)', () => {
+  it('larger handle with touch (size-handle-touch)', () => {
     const { overlay, render } = setup();
     render({
       selection: { kind: 'marking', id: 'M2' },
@@ -96,12 +96,12 @@ describe('OverlayRenderer', () => {
     });
   });
 
-  describe('etiqueta do nome da marcação selecionada', () => {
+  describe('name tag of the selected marking', () => {
     const SELECTED = { kind: 'marking', id: 'M2' } as const;
-    /** Tela 380×700 com a imagem I1 deslocada: o topo de M2 (y = 200) fica em `top`. */
+    /** 380×700 screen with image I1 shifted: the top of M2 (y = 200) is at `top`. */
     const at = (top: number, scale = 1) => ({ x: 0, y: top - 200 * scale, scale });
 
-    it('acima do canto superior esquerdo, com as cores da etiqueta', () => {
+    it('above the top left corner, with the tag colors', () => {
       const { overlay, render } = setup();
       render({ selection: SELECTED, viewport: at(100) });
       expect(overlay.nameTag.visible()).toBe(true);
@@ -112,17 +112,17 @@ describe('OverlayRenderer', () => {
         fontSize: TOKENS.type.name.size,
       });
       expect(overlay.nameTagBox.getAttrs()).toMatchObject({ fill: TOKENS.nameTag });
-      // Altura de 16 + 2·1 de halo e vão de 2 px: o fundo termina 2 px acima da borda.
+      // Height of 16 + 2·1 of halo and a 2 px gap: the background ends 2 px above the border.
       expect(overlay.nameTag.x()).toBe(200);
       expect(overlay.nameTag.y()).toBe(200 - 20);
     });
 
-    it('marcação removida na revisão: a etiqueta do nome leva o risco, a qualquer zoom', () => {
+    it('marking removed in the review: the name tag gets the strike, at any zoom', () => {
       const removed = {
         key: 'marking:M2',
         placement: { x: 0, y: 0, scale: 1 },
         rect: { x: 200, y: 200, width: 50, height: 50 },
-        name: 'Maçaneta',
+        name: 'Handle',
         badges: ['removed' as const],
       };
       for (const scale of [0.56, 1.1]) {
@@ -138,7 +138,7 @@ describe('OverlayRenderer', () => {
             removed: [removed],
           },
         });
-        // A etiqueta está em px de tela (o grupo tem a escala inversa): o risco também.
+        // The tag is in screen px (the group has the inverse scale): so is the strike.
         const strike = overlay.nameTag.findOne('.name-tag-strike');
         expect(strike?.visible()).toBe(true);
         expect(strike?.getAttr('stroke')).toBe(TOKENS.nameTagText);
@@ -148,15 +148,15 @@ describe('OverlayRenderer', () => {
         expect(points[1]).toBeGreaterThan(0);
         expect(points[1]).toBeLessThan(overlay.nameTagBox.height());
       }
-      // Sem revisão (ou não removida), a etiqueta fica como estava.
+      // Without a review (or not removed), the tag stays as it was.
       const { overlay, render } = setup();
       render({ selection: SELECTED, viewport: at(100) });
       expect(overlay.nameTag.findOne('.name-tag-strike')?.visible()).toBe(false);
     });
 
-    it('nome longo removido na revisão: o risco não passa da etiqueta (largura cortada)', () => {
+    it('long name removed in the review: the strike does not go past the tag (clipped width)', () => {
       const long =
-        'Um nome de marcação muito comprido que passa do limite da etiqueta ok';
+        'A very long marking name that goes past the limit of the tag, okay';
       expect(long.length).toBeGreaterThan(60);
       const { overlay, render } = setup();
       const base = editorFor().store.project.peek();
@@ -189,25 +189,25 @@ describe('OverlayRenderer', () => {
       expect(overlay.nameTagText.text()).toBe(long);
     });
 
-    it('mantém o tamanho em px de tela com zoom', () => {
+    it('keeps the screen px size with zoom', () => {
       const { overlay, render } = setup();
       render({ selection: SELECTED, viewport: at(100, 2) });
       expect(overlay.nameTag.scaleX()).toBe(0.5);
       expect(overlay.nameTag.y()).toBe(200 - 20 / 2);
     });
 
-    it('sem espaço acima na tela: por dentro da marcação', () => {
+    it('without room above on screen: inside the marking', () => {
       const { overlay, render } = setup();
       render({ selection: SELECTED, viewport: at(5) });
       expect(overlay.nameTag.y()).toBe(200 + 2);
     });
 
-    // Etapa 6 (6.4), achado 6: "Topo" por cima do título da imagem "Checkout".
-    it('marcação no topo da imagem: a etiqueta sobe acima do título da imagem', () => {
+    // Stage 6 (6.4), finding 6: a marking at the top over the image title ("Checkout").
+    it('marking at the top of the image: the tag goes up above the image title', () => {
       const { overlay } = setup();
       const editor = editorFor();
       const p = editor.store.committed.value;
-      if (!p) throw new Error('sem projeto');
+      if (!p) throw new Error('no project');
       const project = {
         ...p,
         markings: p.markings.map((m) =>
@@ -222,17 +222,17 @@ describe('OverlayRenderer', () => {
         }),
         PLACEMENTS,
       );
-      // Título da imagem: linha de 16 px terminando 4 px acima do topo (y = 0).
+      // Image title: 16 px line ending 4 px above the top (y = 0).
       const tagBottom = overlay.nameTag.y() + overlay.nameTagBox.height();
       expect(tagBottom).toBeLessThanOrEqual(-(TOKENS.type.image.line + 4));
     });
 
-    // Etapa 7 (7.2), achado A2: a 52%, a etiqueta "Nome" da filha encostada no topo do
-    // Formulário cobria o rótulo "Formulário …" do pai ("Fo[Nome]ulário").
-    it('filha no topo do pai: a etiqueta não cobre o rótulo do pai', () => {
+    // Stage 7 (7.2), finding A2: at 52%, the name tag of the child touching the top of the
+    // parent covered the parent's label (the two texts overlapped).
+    it('child at the top of the parent: the tag does not cover the parent label', () => {
       const editor = editorFor();
       const p = editor.store.committed.value;
-      if (!p) throw new Error('sem projeto');
+      if (!p) throw new Error('no project');
       const zoom = 0.52;
       const project = {
         ...p,
@@ -255,7 +255,7 @@ describe('OverlayRenderer', () => {
       overlay.render(frame, PLACEMENTS, markings.headers);
 
       const label = markings.node('M1')?.text?.header;
-      if (!label) throw new Error('sem rótulo do pai');
+      if (!label) throw new Error('no parent label');
       expect(label.visible()).toBe(true);
       const labelBox = {
         x: label.x(),
@@ -276,20 +276,20 @@ describe('OverlayRenderer', () => {
         tag.y < labelBox.bottom &&
         labelBox.y < tag.bottom;
       expect(overlaps).toBe(false);
-      // Deslocada para baixo do rótulo do pai, sem sair da linha de cima da filha.
+      // Moved below the parent's label, without leaving the top line of the child.
       expect(tag.y).toBeGreaterThanOrEqual(labelBox.bottom);
       expect(tag.x).toBe(110);
     });
 
-    it('canto fora da tela: ancorada na borda visível', () => {
+    it('corner off screen: anchored to the visible border', () => {
       const { overlay, render } = setup();
-      // M2 começa em x = 200 e y = 200; a tela mostra de (250, 250) em diante.
+      // M2 starts at x = 200 and y = 200; the screen shows from (250, 250) onward.
       render({ selection: SELECTED, viewport: { x: -250, y: -250, scale: 1 } });
       expect(overlay.nameTag.x()).toBe(250);
       expect(overlay.nameTag.y()).toBe(250 + 2);
     });
 
-    it('sem nome, imagem selecionada ou sem seleção: sem etiqueta', () => {
+    it('without a name, selected image or without a selection: no tag', () => {
       const { overlay, render } = setup();
       render({ selection: { kind: 'marking', id: 'M3' }, viewport: at(100) });
       expect(overlay.nameTag.visible()).toBe(false);
@@ -300,7 +300,7 @@ describe('OverlayRenderer', () => {
       expect(overlay.nameTag.visible()).toBe(false);
     });
 
-    it('followsView só enquanto a etiqueta aparece (pan precisa redesenhá-la)', () => {
+    it('followsView only while the tag appears (pan needs to redraw it)', () => {
       const { overlay, render } = setup();
       expect(overlay.followsView).toBe(false);
       render({ selection: SELECTED, viewport: at(100) });
@@ -308,7 +308,7 @@ describe('OverlayRenderer', () => {
     });
   });
 
-  it('sem alças no modo Desenhar e só em leitura', () => {
+  it('without handles in Draw mode and in read-only mode', () => {
     const { render, handles } = setup();
     render({ selection: { kind: 'marking', id: 'M2' }, mode: 'draw' });
     expect(handles().some((h) => h.visible())).toBe(false);
@@ -330,7 +330,7 @@ describe('OverlayRenderer', () => {
     expect(overlay.draftRect.visible()).toBe(false);
   });
 
-  it('alvo de soltar: imagem destacada; área vazia marca o container', () => {
+  it('drop target: highlighted image; empty area marks the container', () => {
     const { container, overlay, render } = setup();
     render({ dropTarget: { containerId: 'I1' } });
     expect(overlay.dropRect.visible()).toBe(true);
@@ -345,7 +345,7 @@ describe('OverlayRenderer', () => {
     expect(container.classList.contains('canvas-host--drop')).toBe(false);
   });
 
-  it('alvo de soltar com marcação: acende o retângulo dela, sem o fundo', () => {
+  it('drop target with a marking: lights up its rectangle, without the background', () => {
     const { container, overlay, render } = setup();
     render({ dropTarget: { containerId: null, markingId: 'M1' } });
     expect(overlay.dropRect.visible()).toBe(true);
@@ -375,21 +375,21 @@ describe('OverlayRenderer: trava (etapa 2.5)', () => {
     return { overlay, editor, render };
   }
 
-  it('marcação trancada e selecionada: sem alças, com o cadeado no canto superior direito', () => {
+  it('locked and selected marking: no handles, with the lock at the top right corner', () => {
     const { overlay, editor, render } = lockedSetup();
     lock(editor, 'marking', 'M2');
     render({ selection: { kind: 'marking', id: 'M2' } });
     expect([...overlay.handles.values()].every((h) => !h.visible())).toBe(true);
     const badge = overlay.selectionLock.group;
     expect(badge.visible()).toBe(true);
-    // M2 mede 100×100 e o cadeado tem 20 px: cabe por dentro, com vão de 2 px.
+    // M2 is 100×100 and the lock is 20 px: it fits inside, with a 2 px gap.
     expect(badge.x()).toBe(300 - 20 - 2);
     expect(badge.y()).toBe(200 + 2);
     expect(badge.opacity()).toBe(1);
     expect(overlay.hoverLockBadge.group.visible()).toBe(false);
   });
 
-  it('o cadeado usa os tokens e mantém o tamanho em px de tela com o zoom', () => {
+  it('the lock uses the tokens and keeps the screen px size with the zoom', () => {
     const { overlay, editor, render } = lockedSetup();
     lock(editor, 'marking', 'M1');
     render({
@@ -410,7 +410,7 @@ describe('OverlayRenderer: trava (etapa 2.5)', () => {
     expect(paths.every((p) => p.getAttrs().stroke === TOKENS.lock.glyph)).toBe(true);
   });
 
-  it('descendente de um pai trancado: sem alças e com o cadeado esmaecido', () => {
+  it('descendant of a locked parent: no handles and with the dimmed lock', () => {
     const { overlay, editor, render } = lockedSetup();
     lock(editor, 'marking', 'M1');
     render({ selection: { kind: 'marking', id: 'M2' } });
@@ -419,23 +419,23 @@ describe('OverlayRenderer: trava (etapa 2.5)', () => {
     expect(overlay.selectionLock.group.opacity()).toBe(TOKENS.opacity.inherited);
   });
 
-  it('marcação pequena na tela: o cadeado fica por fora, acima do canto', () => {
+  it('small marking on screen: the lock stays outside, above the corner', () => {
     const { overlay, editor, render } = lockedSetup();
     lock(editor, 'marking', 'M2');
     render({
       selection: { kind: 'marking', id: 'M2' },
       viewport: { x: 0, y: 0, scale: 0.25 },
     });
-    // 100 unidades a 0,25 = 25 px de tela: menos que dois cadeados de 20 px.
+    // 100 units at 0.25 = 25 screen px: less than two 20 px locks.
     const badge = overlay.selectionLock.group;
     expect(badge.x()).toBe(300 - 20 / 0.25);
     expect(badge.y()).toBe(200 - (20 + 2) / 0.25);
   });
 
-  it('imagem trancada e selecionada: sem alças e com o cadeado', () => {
+  it('locked and selected image: no handles and with the lock', () => {
     const { overlay, editor, render } = lockedSetup();
     lock(editor, 'image', 'I2');
-    // Metade da escala: I2 (1100–1600) cabe na tela de 380 px; o cadeado mede 40 unidades.
+    // Half the scale: I2 (1100–1600) fits in the 380 px screen; the lock is 40 units.
     render({
       selection: { kind: 'image', id: 'I2' },
       viewport: { x: -500, y: 0, scale: 0.5 },
@@ -445,7 +445,7 @@ describe('OverlayRenderer: trava (etapa 2.5)', () => {
     expect(overlay.selectionLock.group.x()).toBe(1600 - 40 - 4);
   });
 
-  it('item livre: alças e nenhum cadeado; destrancar traz as alças de volta', () => {
+  it('free item: handles and no lock; unlocking brings the handles back', () => {
     const { overlay, editor, render } = lockedSetup();
     lock(editor, 'marking', 'M2');
     render({ selection: { kind: 'marking', id: 'M2' } });
@@ -456,13 +456,13 @@ describe('OverlayRenderer: trava (etapa 2.5)', () => {
     expect([...overlay.handles.values()].every((h) => h.visible())).toBe(true);
   });
 
-  it('cadeado sob o mouse: aparece no item trancado que não é o selecionado', () => {
+  it('lock under the mouse: appears on the locked item that is not the selected one', () => {
     const { overlay, editor, render } = lockedSetup();
     lock(editor, 'marking', 'M1');
     render({ hoverLock: { kind: 'marking', id: 'M1' } });
     expect(overlay.hoverLockBadge.group.visible()).toBe(true);
     expect(overlay.selectionLock.group.visible()).toBe(false);
-    // Selecionado, o item usa o cadeado da seleção e o do mouse some.
+    // Selected, the item uses the selection lock and the mouse one disappears.
     render({
       selection: { kind: 'marking', id: 'M1' },
       hoverLock: { kind: 'marking', id: 'M1' },
@@ -473,7 +473,7 @@ describe('OverlayRenderer: trava (etapa 2.5)', () => {
     expect(overlay.hoverLockBadge.group.visible()).toBe(false);
   });
 
-  it('o cadeado acompanha a parte visível: pan precisa redesenhar', () => {
+  it('the lock follows the visible part: pan needs to redraw', () => {
     const { overlay, editor, render } = lockedSetup();
     expect(overlay.followsView).toBe(false);
     lock(editor, 'image', 'I1');
@@ -483,10 +483,10 @@ describe('OverlayRenderer: trava (etapa 2.5)', () => {
     expect(overlay.followsView).toBe(false);
   });
 
-  it('o cadeado do item grande é ancorado na borda visível', () => {
+  it('the lock of the large item is anchored to the visible border', () => {
     const { overlay, editor, render } = lockedSetup();
     lock(editor, 'image', 'I1');
-    // Metade direita de I1 fora da tela (tela de 380 px): o cadeado fica na borda da tela.
+    // Right half of I1 off screen (380 px screen): the lock stays at the screen border.
     render({
       selection: { kind: 'image', id: 'I1' },
       viewport: { x: 0, y: 0, scale: 1 },
@@ -494,7 +494,7 @@ describe('OverlayRenderer: trava (etapa 2.5)', () => {
     expect(overlay.selectionLock.group.x()).toBe(380 - 20 - 2);
   });
 
-  it('em tela estreita com o topo fora da tela: ancora no topo visível', () => {
+  it('on a narrow screen with the top off screen: anchors to the visible top', () => {
     const { overlay, editor, render } = lockedSetup();
     lock(editor, 'image', 'I1');
     render({
@@ -505,8 +505,8 @@ describe('OverlayRenderer: trava (etapa 2.5)', () => {
   });
 });
 
-// Marcações do canvas, absorção e trava herdada (etapa Marcações espaciais, ME1).
-describe('OverlayRenderer: marcações do canvas', () => {
+// Canvas markings, absorption and inherited lock (Spatial markings stage, ME1).
+describe('OverlayRenderer: canvas markings', () => {
   function spatialSetup() {
     const container = document.createElement('div');
     const overlay = new OverlayRenderer(new Konva.Layer(), container);
@@ -523,7 +523,7 @@ describe('OverlayRenderer: marcações do canvas', () => {
     return { overlay, editor, render, id };
   }
 
-  it('rascunho no vazio (sem imagem): no espaço identidade do canvas', () => {
+  it('draft in the void (no image): in the canvas identity space', () => {
     const { overlay, render } = spatialSetup();
     render({
       draft: { containerId: null, rect: { x: 1050, y: 600, width: 300, height: 200 } },
@@ -538,7 +538,7 @@ describe('OverlayRenderer: marcações do canvas', () => {
     });
   });
 
-  it('marcação do canvas selecionada: alças nos cantos dela e sem etiqueta de título de imagem', () => {
+  it('selected canvas marking: handles at its corners and no image title tag', () => {
     const { overlay, render, id } = spatialSetup();
     render({
       selection: { kind: 'marking', id },
@@ -552,7 +552,7 @@ describe('OverlayRenderer: marcações do canvas', () => {
     expect(overlay.handles.get('se')?.getAttrs()).toMatchObject({ x: 1695, y: 895 });
   });
 
-  it('retângulo de seleção: tracejado, com o token de seleção; some sem marquee', () => {
+  it('selection rectangle: dashed, with the selection token; disappears without marquee', () => {
     const { overlay, render } = spatialSetup();
     render({
       marquee: { x: 10, y: 20, width: 300, height: 200 },
@@ -567,7 +567,7 @@ describe('OverlayRenderer: marcações do canvas', () => {
       stroke: TOKENS.select,
       fill: TOKENS.selectFill,
     });
-    // Espessura e traço divididos pelo zoom: ficam constantes na tela.
+    // Thickness and dash divided by the zoom: they stay constant on screen.
     expect(overlay.marqueeRect.dash()).toEqual([3, 2]);
     expect(overlay.marqueeRect.strokeWidth()).toBe(1);
     render({ marquee: null });
@@ -575,13 +575,13 @@ describe('OverlayRenderer: marcações do canvas', () => {
     expect(overlay.marqueeHalo.visible()).toBe(false);
   });
 
-  it('retângulo de seleção: halo cv-halo por baixo da borda, mesmo traço e sem preenchimento', () => {
+  it('selection rectangle: cv-halo halo under the border, same stroke and no fill', () => {
     const { overlay, render } = spatialSetup();
     render({
       marquee: { x: 10, y: 20, width: 300, height: 200 },
       viewport: { x: 0, y: 0, scale: 2 },
     });
-    // O halo é um traço mais largo (1 px de tela de cada lado) desenhado antes da borda.
+    // The halo is a wider stroke (1 screen px on each side) drawn before the border.
     expect(overlay.marqueeHalo.getAttrs()).toMatchObject({
       visible: true,
       x: 10,
@@ -593,14 +593,14 @@ describe('OverlayRenderer: marcações do canvas', () => {
     expect(overlay.marqueeHalo.strokeWidth()).toBe(2); // (2 + 2·1) px de tela ÷ zoom 2
     expect(overlay.marqueeHalo.dash()).toEqual([3, 2]);
     expect(overlay.marqueeHalo.fillEnabled()).toBe(false);
-    // O halo precisa estar na mesma camada da borda, e por baixo dela.
+    // The halo must be in the same layer as the border, and under it.
     const parent = overlay.marqueeRect.getParent();
     expect(parent).not.toBeNull();
     expect(overlay.marqueeHalo.getParent()).toBe(parent);
     expect(overlay.marqueeHalo.zIndex()).toBeLessThan(overlay.marqueeRect.zIndex());
   });
 
-  it('itens a absorver acendem com o token novo e somem quando a lista esvazia', () => {
+  it('items to absorb light up with the new token and disappear when the list empties', () => {
     const { overlay, render } = spatialSetup();
     render({ absorb: [{ x: 10, y: 20, width: 30, height: 40 }] });
     const lit = overlay.absorbHighlights();
@@ -616,7 +616,7 @@ describe('OverlayRenderer: marcações do canvas', () => {
     });
     render({ absorb: [] });
     expect(overlay.absorbHighlights().every((r) => !r.visible())).toBe(true);
-    // Dois itens, depois um: o segundo nó some, o primeiro é reaproveitado.
+    // Two items, then one: the second node disappears, the first is reused.
     render({
       absorb: [
         { x: 1, y: 1, width: 5, height: 5 },
@@ -628,20 +628,20 @@ describe('OverlayRenderer: marcações do canvas', () => {
     expect(overlay.absorbHighlights().filter((r) => r.visible())).toHaveLength(1);
   });
 
-  it('container dentro de uma marcação do canvas trancada: cadeado esmaecido (trava herdada)', () => {
+  it('container inside a locked canvas marking: dimmed lock (inherited lock)', () => {
     const { overlay, editor, render, id } = spatialSetup();
     expect(editor.actions.setMarkingLocked(id, true).ok).toBe(true);
     render({ selection: { kind: 'image', id: 'I2' } });
     expect([...overlay.handles.values()].every((h) => !h.visible())).toBe(true);
     expect(overlay.selectionLock.group.visible()).toBe(true);
     expect(overlay.selectionLock.group.opacity()).toBe(TOKENS.opacity.inherited);
-    // O cadeado sob o mouse também mostra a herança.
+    // The lock under the mouse also shows the inheritance.
     render({ hoverLock: { kind: 'image', id: 'I1' } });
     expect(overlay.hoverLockBadge.group.visible()).toBe(true);
     expect(overlay.hoverLockBadge.group.opacity()).toBe(TOKENS.opacity.inherited);
   });
 
-  it('a marcação do canvas trancada tem o cadeado cheio e as filhas do espaço dela, o esmaecido', () => {
+  it('the locked canvas marking has the full lock and the children of its space, the dimmed one', () => {
     const { overlay, editor, render, id } = spatialSetup();
     const inner = editor.actions.createMarking(null, {
       x: -50,
@@ -659,9 +659,9 @@ describe('OverlayRenderer: marcações do canvas', () => {
   });
 });
 
-// Seleção múltipla (etapa Marcações espaciais, ME2): alças, cadeado e etiqueta só no primário;
-// contorno secundário nos demais.
-describe('OverlayRenderer: seleção múltipla', () => {
+// Multiple selection (Spatial markings stage, ME2): handles, lock and tag only on the primary;
+// secondary outline on the others.
+describe('OverlayRenderer: multiple selection', () => {
   const im = (id: string) => ({ kind: 'image', id }) as const;
   const mk = (id: string) => ({ kind: 'marking', id }) as const;
 
@@ -679,7 +679,7 @@ describe('OverlayRenderer: seleção múltipla', () => {
     return { overlay, editor, render, lit };
   }
 
-  it('sem seleção múltipla, nenhum contorno secundário', () => {
+  it('without multiple selection, no secondary outline', () => {
     const { overlay, render } = multiSetup();
     render({ selection: mk('M2'), items: [mk('M2')] });
     expect(overlay.secondaryHighlights().filter((r) => r.visible())).toHaveLength(0);
@@ -687,7 +687,7 @@ describe('OverlayRenderer: seleção múltipla', () => {
     expect(overlay.secondaryHighlights().filter((r) => r.visible())).toHaveLength(0);
   });
 
-  it('os não primários ganham contorno no retângulo deles, com o token novo', () => {
+  it('the non-primary ones get an outline on their rectangle, with the new token', () => {
     const { render, lit } = multiSetup();
     render({
       selection: mk('M2'),
@@ -696,16 +696,16 @@ describe('OverlayRenderer: seleção múltipla', () => {
     });
     const attrs = lit();
     expect(attrs).toHaveLength(3);
-    // Container: o retângulo dele no canvas.
+    // Container: its rectangle on the canvas.
     expect(attrs[0]).toMatchObject({
       x: 1100,
       y: 0,
       width: 500,
       height: 500,
       stroke: TOKENS.selectSecondary,
-      strokeWidth: 1, // 2 px de tela com zoom 2
+      strokeWidth: 1, // 2 screen px at zoom 2
     });
-    // Marcação de container: o retângulo dela pelo espaço do container.
+    // Container marking: its rectangle through the container space.
     expect(attrs[1]).toMatchObject({
       x: 1150,
       y: 50,
@@ -714,11 +714,11 @@ describe('OverlayRenderer: seleção múltipla', () => {
       stroke: TOKENS.selectSecondary,
     });
     expect(attrs[2]).toMatchObject({ x: 100, y: 100, width: 600, height: 500 });
-    // O primário não ganha contorno secundário.
+    // The primary does not get a secondary outline.
     expect(attrs.some((a) => a.x === 200 && a.y === 200)).toBe(false);
   });
 
-  it('marcação do canvas e container dentro do espaço do canvas', () => {
+  it('canvas marking and container inside the canvas space', () => {
     const { editor, overlay, render, lit } = multiSetup();
     const created = editor.actions.createMarking(null, {
       x: -100,
@@ -731,20 +731,20 @@ describe('OverlayRenderer: seleção múltipla', () => {
     expect(lit()).toEqual([
       expect.objectContaining({ x: -100, y: -100, width: 1800, height: 1000 }),
     ]);
-    expect(overlay.selectionOutline.visible()).toBe(true); // o contorno do primário (container)
+    expect(overlay.selectionOutline.visible()).toBe(true); // the outline of the primary (container)
   });
 
-  it('alças só no primário (marcação), sem alças nos demais', () => {
+  it('handles only on the primary (marking), no handles on the others', () => {
     const { overlay, render } = multiSetup();
     render({ selection: mk('M2'), items: [im('I2'), mk('M2')] });
     const visible = [...overlay.handles.values()].filter((h) => h.visible());
     expect(visible).toHaveLength(4);
-    // Em volta de M2 (200, 200, 100×100); nenhuma nos cantos de I2.
+    // Around M2 (200, 200, 100×100); none at the corners of I2.
     expect(overlay.handles.get('nw')?.getAttrs()).toMatchObject({ x: 195, y: 195 });
     expect(overlay.handles.get('se')?.getAttrs()).toMatchObject({ x: 295, y: 295 });
   });
 
-  it('alças só no primário (container): o contorno de seleção é o dele', () => {
+  it('handles only on the primary (container): the selection outline is its own', () => {
     const { overlay, render, lit } = multiSetup();
     render({ selection: im('I2'), items: [mk('M2'), im('I2')] });
     expect(overlay.selectionOutline.getAttrs()).toMatchObject({
@@ -757,20 +757,20 @@ describe('OverlayRenderer: seleção múltipla', () => {
     expect(lit()[0]).toMatchObject({ x: 200, y: 200 });
   });
 
-  it('a etiqueta de nome e o cadeado são só do primário', () => {
+  it('the name tag and the lock belong only to the primary', () => {
     const { editor, overlay, render } = multiSetup();
     expect(editor.actions.setMarkingLocked('M3', true).ok).toBe(true);
     render({ selection: mk('M2'), items: [mk('M3'), mk('M1'), mk('M2')] });
     expect(overlay.nameTag.visible()).toBe(true);
     expect(overlay.nameTagText.text()).toBe('Maçaneta');
-    // M3 (secundário) está trancada, mas o cadeado da seleção é do primário, que é livre.
+    // M3 (secondary) is locked, but the selection lock belongs to the primary, which is free.
     expect(overlay.selectionLock.group.visible()).toBe(false);
     render({ selection: mk('M3'), items: [mk('M2'), mk('M3')] });
     expect(overlay.selectionLock.group.visible()).toBe(true);
-    expect(overlay.nameTag.visible()).toBe(false); // M3 não tem nome
+    expect(overlay.nameTag.visible()).toBe(false); // M3 has no name
   });
 
-  it('o contorno acompanha a prévia do arrasto (posições do quadro) e o pool é reaproveitado', () => {
+  it('the outline follows the drag preview (frame positions) and the pool is reused', () => {
     const { overlay, render, lit } = multiSetup();
     const moved = new Map<string, Placement>([
       ['I1', { x: 0, y: 0, scale: 1 }],
@@ -785,27 +785,27 @@ describe('OverlayRenderer: seleção múltipla', () => {
     const nodes = overlay.secondaryHighlights().slice();
     render({ selection: mk('M2'), items: [im('I2'), mk('M2')] }, moved);
     expect(lit()).toHaveLength(1);
-    expect(overlay.secondaryHighlights()).toHaveLength(2); // o segundo nó só some
+    expect(overlay.secondaryHighlights()).toHaveLength(2); // the second node only disappears
     expect(overlay.secondaryHighlights()[0]).toBe(nodes[0]);
     render({ selection: mk('M2'), items: [mk('M2')] });
     expect(lit()).toHaveLength(0);
   });
 
-  it('item que deixou de existir (depois de desfazer) não deixa contorno', () => {
+  it('item that stopped existing (after undo) leaves no outline', () => {
     const { render, lit } = multiSetup();
     render({ selection: mk('M2'), items: [mk('Fantasma'), im('I9'), mk('M2')] });
     expect(lit()).toHaveLength(0);
   });
 
-  it('sem projeto, nada aparece', () => {
+  it('without a project, nothing appears', () => {
     const { render, lit } = multiSetup();
     render({ project: null, selection: mk('M2'), items: [im('I2'), mk('M2')] });
     expect(lit()).toHaveLength(0);
   });
 });
 
-// Setas (ME4): realce da selecionada, alças da primária, alça de ligação da marcação e a seta
-// provisória do gesto.
+// Arrows (ME4): highlight of the selected one, handles of the primary, link handle of the marking and the
+// provisional arrow of the gesture.
 describe('OverlayRenderer: setas', () => {
   function arrowSetup(project = arrowProject()) {
     const container = document.createElement('div');
@@ -822,7 +822,7 @@ describe('OverlayRenderer: setas', () => {
     return { overlay, editor, render, visible };
   }
 
-  it('seta selecionada: realce na cor da seleção, ponta e uma alça por ponta e por meio', () => {
+  it('selected arrow: highlight in the selection color, head and one handle per end and per middle', () => {
     const { overlay, render, visible } = arrowSetup();
     render({
       selection: { kind: 'arrow', id: 'r1' },
@@ -834,7 +834,7 @@ describe('OverlayRenderer: setas', () => {
       strokeWidth: TOKENS.arrow.widthSelected,
     });
     expect(visible(overlay.arrowHighlightNodes().map((h) => h.head))).toHaveLength(1);
-    // Curva sem pontos de passagem: as duas pontas e o meio do único trecho.
+    // Curve without waypoints: the two ends and the middle of the single segment.
     const circles = visible(overlay.arrowHandleCircles());
     expect(circles).toHaveLength(3);
     expect(circles[0]?.getAttrs()).toMatchObject({
@@ -843,16 +843,16 @@ describe('OverlayRenderer: setas', () => {
       fill: TOKENS.arrow.select,
     });
     expect(circles[1]?.getAttrs()).toMatchObject({ x: 600, y: 700 });
-    // O meio é menor e esmaecido; a ponta, maior que o ponto de passagem.
+    // The middle is smaller and dimmed; the end, larger than the waypoint.
     expect(circles[2]?.opacity()).toBe(TOKENS.opacity.inherited);
     expect(circles[2]?.radius()).toBeLessThan(circles[0]?.radius() ?? 0);
-    // Nada de contorno, alças de canto nem etiqueta de marcação.
+    // No outline, corner handles nor marking tag.
     expect(overlay.selectionOutline.visible()).toBe(false);
     expect([...overlay.handles.values()].every((h) => !h.visible())).toBe(true);
     expect(overlay.linkHandle.visible()).toBe(false);
   });
 
-  it('alças e realce em tamanho de tela: dividem pelo zoom', () => {
+  it('handles and highlight at screen size: they divide by the zoom', () => {
     const { overlay, render, visible } = arrowSetup();
     render({
       selection: { kind: 'arrow', id: 'r1' },
@@ -865,7 +865,7 @@ describe('OverlayRenderer: setas', () => {
     );
   });
 
-  it('seta secundária: realce na cor da seleção múltipla, sem alças', () => {
+  it('secondary arrow: highlight in the multiple selection color, no handles', () => {
     const { overlay, render, visible } = arrowSetup(
       withArrow(arrowProject(), 'r2', 'a3', 'b2'),
     );
@@ -881,13 +881,13 @@ describe('OverlayRenderer: setas', () => {
       TOKENS.selectSecondary,
       TOKENS.arrow.select,
     ]);
-    // Só a primária tem alças: a ponta e o meio do trecho dela (2 pontas e 1 meio).
+    // Only the primary has handles: its end and the middle of its segment (2 ends and 1 middle).
     const circles = visible(overlay.arrowHandleCircles());
     expect(circles).toHaveLength(3);
     expect(circles[0]?.x()).toBe(800);
   });
 
-  it('seta trancada: sem alças e com o cadeado; somente leitura e modo Desenhar também', () => {
+  it('locked arrow: no handles and with the lock; read-only and Draw mode too', () => {
     const locked = withArrow(arrowProject(), 'r2', 'a3', 'b2', { locked: true });
     const { overlay, render, visible } = arrowSetup(locked);
     render({ selection: { kind: 'arrow', id: 'r2' } });
@@ -902,7 +902,7 @@ describe('OverlayRenderer: setas', () => {
     expect(visible(overlay.arrowHandleCircles())).toHaveLength(0);
   });
 
-  it('seta que não está desenhada (ponta oculta) não tem realce nem alças', () => {
+  it('arrow that is not drawn (hidden head) has no highlight nor handles', () => {
     const { overlay, render, visible, editor } = arrowSetup();
     render({
       selection: { kind: 'arrow', id: 'r1' },
@@ -915,9 +915,9 @@ describe('OverlayRenderer: setas', () => {
     expect(visible(overlay.arrowHandleCircles())).toHaveLength(0);
   });
 
-  it('marcação selecionada: alça de ligação fora da borda direita; vários itens, não', () => {
+  it('selected marking: link handle outside the right border; several items, no', () => {
     const { overlay, render } = arrowSetup();
-    // a1 (100,100,300,300): a alça em (400 + 14, 250).
+    // a1 (100,100,300,300): the handle at (400 + 14, 250).
     render({ selection: { kind: 'marking', id: 'a1' } });
     expect(overlay.linkHandle.getAttrs()).toMatchObject({
       visible: true,
@@ -947,14 +947,14 @@ describe('OverlayRenderer: setas', () => {
     expect(overlay.linkHandle.visible()).toBe(false);
   });
 
-  it('alça de ligação também na marcação trancada (criar a seta não a altera)', () => {
+  it('link handle also on the locked marking (creating the arrow does not change it)', () => {
     const { overlay, render, editor } = arrowSetup();
     editor.actions.setMarkingLocked('a1', true);
     render({ selection: { kind: 'marking', id: 'a1' } });
     expect(overlay.linkHandle.visible()).toBe(true);
   });
 
-  it('seta provisória: tracejada, com a ponta, até o ponteiro', () => {
+  it('provisional arrow: dashed, with the head, up to the pointer', () => {
     const { overlay, render } = arrowSetup();
     render({
       arrowDraft: {
@@ -974,7 +974,7 @@ describe('OverlayRenderer: setas', () => {
     expect(overlay.arrowDraftHead.visible()).toBe(false);
   });
 
-  it('a marcação de destino acende com o destaque do alvo de soltar', () => {
+  it('the destination marking lights up with the drop target highlight', () => {
     const { overlay, render } = arrowSetup();
     render({ dropTarget: { containerId: null, markingId: 'a3' } });
     expect(overlay.dropRect.getAttrs()).toMatchObject({

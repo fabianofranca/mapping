@@ -6,7 +6,7 @@ import {
 } from '../../src/canvas/theme';
 import { TOKENS, tokenValue } from '../../src/theme/tokens';
 
-/** Leitor que resolve os tokens de `tokens.ts` (inclusive os `var(--…)`), como o navegador. */
+/** Reader that resolves the tokens of `tokens.ts` (including the `var(--…)` ones), like the browser. */
 function reader(theme: 'light' | 'dark') {
   const read = (name: string): string => {
     const value = tokenValue(name.slice(2), theme);
@@ -16,7 +16,7 @@ function reader(theme: 'light' | 'dark') {
   return read;
 }
 
-/** Todos os números e textos de `CanvasTokens`, achatados. */
+/** All the numbers and texts of `CanvasTokens`, flattened. */
 function leaves(value: unknown, path = ''): [string, unknown][] {
   return typeof value === 'object' && value !== null
     ? Object.entries(value).flatMap(([k, v]) => leaves(v, path ? `${path}.${k}` : k))
@@ -24,20 +24,20 @@ function leaves(value: unknown, path = ''): [string, unknown][] {
 }
 
 describe('hostFontsFrom', () => {
-  it('a fonte do hospedeiro é a pilha do --font-sans e do --font-mono do tema', () => {
+  it('the host font is the stack of --font-sans and --font-mono of the theme', () => {
     expect(hostFontsFrom(reader('light'))).toEqual({
       sans: tokenValue('font-sans', 'light'),
       mono: tokenValue('font-mono', 'light'),
     });
   });
 
-  it('valor vazio vira ausente (o padrão do modelo vale)', () => {
+  it('empty value becomes absent (the model default applies)', () => {
     expect(hostFontsFrom(() => '')).toEqual({});
   });
 });
 
 describe('canvasTokensFrom', () => {
-  it('lê cada token do canvas dos tokens do tema', () => {
+  it('reads each canvas token from the theme tokens', () => {
     const t = canvasTokensFrom(reader('light'));
     expect(t.line).toBe('#ffffff');
     expect(t.halo).toBe('rgba(10, 12, 16, 0.72)');
@@ -55,7 +55,7 @@ describe('canvasTokensFrom', () => {
     expect(t.fontFamily).toBe(tokenValue('font-sans', 'light'));
   });
 
-  it('o desenho dos componentes lê cor, preenchimento, opacidade do slot e fonte do tema', () => {
+  it('the drawing of the components reads color, fill, slot opacity and font from the theme', () => {
     for (const theme of ['light', 'dark'] as const) {
       const { component } = canvasTokensFrom(reader(theme));
       expect(component.unknownLine).toBe(tokenValue('cv-component-unknown', theme));
@@ -66,7 +66,7 @@ describe('canvasTokensFrom', () => {
     }
   });
 
-  it('nenhum valor vazio ou NaN, nos dois temas', () => {
+  it('no empty or NaN value, in both themes', () => {
     for (const theme of ['light', 'dark'] as const) {
       for (const [path, value] of leaves(canvasTokensFrom(reader(theme)))) {
         expect(value, `${theme}: ${path}`).not.toBe('');
@@ -75,7 +75,7 @@ describe('canvasTokensFrom', () => {
     }
   });
 
-  it('cores do tema mudam com ele; as do canvas, não', () => {
+  it('theme colors change with it; the canvas ones do not', () => {
     const light = canvasTokensFrom(reader('light'));
     const dark = canvasTokensFrom(reader('dark'));
     expect(light.surface).not.toBe(dark.surface);
@@ -84,11 +84,11 @@ describe('canvasTokensFrom', () => {
     expect(light.select).toBe(dark.select);
   });
 
-  it('alça de 10 px', () => {
+  it('10 px handle', () => {
     expect(canvasTokensFrom(reader('light')).handleSize).toBe(10);
   });
 
-  it('só usa tokens que existem', () => {
+  it('only uses tokens that exist', () => {
     const asked = new Set<string>();
     canvasTokensFrom((name) => {
       asked.add(name);
@@ -99,7 +99,7 @@ describe('canvasTokensFrom', () => {
 });
 
 describe('readCanvasTokens', () => {
-  it('lê o CSS do documento (os tokens são injetados em tests/setup.ts)', () => {
+  it('reads the CSS of the document (the tokens are injected in tests/setup.ts)', () => {
     const t = readCanvasTokens();
     for (const [path, value] of leaves(t)) {
       expect(value, path).not.toBe('');
@@ -110,7 +110,7 @@ describe('readCanvasTokens', () => {
 });
 
 describe('tokens do cadeado', () => {
-  it('fundo e traço vêm do par da etiqueta do nome, nos dois temas', () => {
+  it('background and stroke come from the name tag pair, in both themes', () => {
     for (const theme of ['light', 'dark'] as const) {
       const t = canvasTokensFrom(reader(theme));
       expect(t.lock.fill).toBe(t.nameTag);
@@ -118,13 +118,13 @@ describe('tokens do cadeado', () => {
     }
   });
 
-  it('o lado é 20 px', () => {
+  it('the side is 20 px', () => {
     expect(canvasTokensFrom(reader('light')).lock.size).toBe(20);
   });
 });
 
-describe('nível de detalhe das marcações', () => {
-  it('os limites vêm dos tokens size-lod-min-marking (24) e size-lod-hide-marking (2) nos dois temas', () => {
+describe('level of detail of the markings', () => {
+  it('the limits come from the tokens size-lod-min-marking (24) and size-lod-hide-marking (2) in both themes', () => {
     for (const theme of ['light', 'dark'] as const) {
       const tokens = canvasTokensFrom(reader(theme));
       expect(tokens.lodMinMarking).toBe(24);
@@ -133,8 +133,8 @@ describe('nível de detalhe das marcações', () => {
   });
 });
 
-describe('medidas dos pinos de conversa e do selo de chegada', () => {
-  it('vêm de tokens, com os valores de antes, nos dois temas', () => {
+describe('measures of the conversation pins and the arrival badge', () => {
+  it('come from tokens, with the previous values, in both themes', () => {
     for (const theme of ['light', 'dark'] as const) {
       const { pin, arrival } = canvasTokensFrom(reader(theme));
       expect(pin).toMatchObject({
