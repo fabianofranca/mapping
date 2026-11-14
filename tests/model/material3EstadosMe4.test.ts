@@ -300,7 +300,10 @@ describe('search-bar (SearchBarTokens.kt)', () => {
 });
 
 describe('list-item (ListTokens.kt)', () => {
-  const lines = { headlineContent: 'Ana Souza', supportingContent: 'Shall we have lunch?' };
+  const lines = {
+    headlineContent: 'Ana Souza',
+    supportingContent: 'Shall we have lunch?',
+  };
   interactionSuite({
     id: 'list-item',
     states: ['hovered', 'focused', 'pressed', 'dragged'],

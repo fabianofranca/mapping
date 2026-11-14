@@ -129,13 +129,13 @@ describe('M3 group B — text-field', () => {
 
     // error: indicator, label, supporting text and trailing icon in error; the value and the leading icon do not change
     const errored = both('text-field', { ...base, isError: 'true' });
-    expect(strokeColor(named(erro.light.root, 'indicador'))).toBe('#B3261E');
-    expect(strokeColor(named(erro.dark.root, 'indicador'))).toBe('#F2B8B5');
-    expect(textColor(texts(erro.light, 'rótulo'))).toBe('#B3261E');
-    expect(textColor(texts(erro.dark, 'apoio'))).toBe('#F2B8B5');
-    expect(iconOf(erro.light, 'lock').color).toBe('#B3261E');
-    expect(iconOf(erro.light, 'email').color).toBe('#49454F');
-    expect(textColor(texts(erro.light, 'valor'))).toBe('#1D1B20');
+    expect(strokeColor(named(errored.light.root, 'indicador'))).toBe('#B3261E');
+    expect(strokeColor(named(errored.dark.root, 'indicador'))).toBe('#F2B8B5');
+    expect(textColor(texts(errored.light, 'rótulo'))).toBe('#B3261E');
+    expect(textColor(texts(errored.dark, 'apoio'))).toBe('#F2B8B5');
+    expect(iconOf(errored.light, 'lock').color).toBe('#B3261E');
+    expect(iconOf(errored.light, 'email').color).toBe('#49454F');
+    expect(textColor(texts(errored.light, 'valor'))).toBe('#1D1B20');
     // the hint in error stays onSurfaceVariant (errorPlaceholderColor)
     const dicaErro = both('text-field', {
       label: 'Name',
@@ -207,7 +207,7 @@ describe('M3 group B — text-field', () => {
     expect(iconOf(light, 'email').node?.opacity).toBe(0.38);
     // disabled wins over error
     const errored = draw('text-field', { ...base, isError: 'true' }).root;
-    expect(strokeColor(named(erro, 'indicador'))).toBe('#1D1B20');
+    expect(strokeColor(named(errored, 'indicador'))).toBe('#1D1B20');
   });
 
   it('outlined: 1 outline with radius 4 by token, no fill, and 56 of field under the label on the border', () => {
@@ -234,8 +234,8 @@ describe('M3 group B — text-field', () => {
       style: 'outlined',
       isError: 'true',
     });
-    expect(strokeColor(named(erro.light.root, 'contorno'))).toBe('#B3261E');
-    expect(strokeColor(named(erro.dark.root, 'contorno'))).toBe('#F2B8B5');
+    expect(strokeColor(named(errored.light.root, 'contorno'))).toBe('#B3261E');
+    expect(strokeColor(named(errored.dark.root, 'contorno'))).toBe('#F2B8B5');
     // disabled: DisabledOutlineColor = onSurface at 0.12 (state-disabled-container)
     const off = draw('text-field', {
       label: 'Name',
@@ -374,11 +374,11 @@ describe('M3 group B — secure-text-field', () => {
       trailingIcon: 'Visibility',
     };
     const errored = both('secure-text-field', { ...base, isError: 'true' });
-    expect(strokeColor(named(erro.light.root, 'indicador'))).toBe('#B3261E');
-    expect(strokeColor(named(erro.dark.root, 'indicador'))).toBe('#F2B8B5');
-    expect(textColor(texts(erro.light, 'apoio'))).toBe('#B3261E');
-    expect(iconOf(erro.light, 'visibility').color).toBe('#B3261E');
-    expect(textColor(texts(erro.light, 'valor'))).toBe('#1D1B20');
+    expect(strokeColor(named(errored.light.root, 'indicador'))).toBe('#B3261E');
+    expect(strokeColor(named(errored.dark.root, 'indicador'))).toBe('#F2B8B5');
+    expect(textColor(texts(errored.light, 'apoio'))).toBe('#B3261E');
+    expect(iconOf(errored.light, 'visibility').color).toBe('#B3261E');
+    expect(textColor(texts(errored.light, 'valor'))).toBe('#1D1B20');
     const off = draw('secure-text-field', { ...base, enabled: 'false' }, 'dark');
     expect(named(off.root, 'indicador')?.opacity).toBe(0.38);
     expect(strokeColor(named(off.root, 'indicador'))).toBe('#E6E0E9');
@@ -426,7 +426,7 @@ describe('M3 group B — secure-text-field', () => {
       style: 'outlined',
       isError: 'true',
     });
-    expect(strokeColor(named(erro.root, 'contorno'))).toBe('#B3261E');
+    expect(strokeColor(named(errored.root, 'contorno'))).toBe('#B3261E');
   });
 });
 

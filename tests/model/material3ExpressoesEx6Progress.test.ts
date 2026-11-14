@@ -64,7 +64,7 @@ function arcOf(d: Drawing, name: string) {
 
 describe('EX6 progress-indicator — circular: the arc comes from the fraction, for any value', () => {
   it.each([0.333, 0.6667, 0.0123, 0.5, 0.874, 0.9991])(
-    'progress %s: the indicator starts at 12 o\'clock and ends at 360 × p, on radius 18',
+    "progress %s: the indicator starts at 12 o'clock and ends at 360 × p, on radius 18",
     (p) => {
       const d = drawCircular(p);
       const { node, start, end } = arcOf(d, 'indicador');

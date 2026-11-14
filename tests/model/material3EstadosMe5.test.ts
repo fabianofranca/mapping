@@ -118,12 +118,15 @@ function suite({ id, variants, color }: Suite) {
       },
     );
 
-    it.each(combos)('%s (%s): with no selected item nothing changes', (_n, values, mode) => {
-      const v = { ...values, items: unselected };
-      const base = json(id, { ...v, interaction: 'none' }, mode);
-      for (const interaction of STATES)
-        expect(json(id, { ...v, interaction }, mode), interaction).toBe(base);
-    });
+    it.each(combos)(
+      '%s (%s): with no selected item nothing changes',
+      (_n, values, mode) => {
+        const v = { ...values, items: unselected };
+        const base = json(id, { ...v, interaction: 'none' }, mode);
+        for (const interaction of STATES)
+          expect(json(id, { ...v, interaction }, mode), interaction).toBe(base);
+      },
+    );
   });
 }
 

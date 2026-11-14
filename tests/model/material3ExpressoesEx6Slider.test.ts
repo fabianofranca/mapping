@@ -535,9 +535,7 @@ describe('EX6 slider — many steps: strip in place of the marks (#1506)', () =>
         for (const c of cases) {
           const values = { ...c, steps: 2000, enabled } as Values;
           const d = drawAt(values, 328, mode);
-          expect(d.warnings.join('|'), JSON.stringify(c)).not.toContain(
-            'repeat limited',
-          );
+          expect(d.warnings.join('|'), JSON.stringify(c)).not.toContain('repeat limited');
           expect(d.warnings.join('|')).not.toContain('marks');
           expect(marksOf(d, mode, enabled === 'true'), 'marks').toEqual([]);
           const got = stripsOf(d, mode, enabled === 'true');

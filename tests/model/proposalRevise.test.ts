@@ -20,14 +20,14 @@ import { emptyProject, sampleProject } from './fixtures';
 import { CONTAINER, shape } from './proposalFuzzSupport';
 import { AT, changeOf, decided, propose } from './proposalFixtures';
 
-// Revisão da proposta pelo agente (etapa #644, CP1): `prepareRevision` fecha o `drop` e monta o
-// proposto inteiro; o lote (aqui, as operações puras do modelo) roda sobre ele; `reviseProposal`
-// classifica cada mudança (intocada, trocada, nova ou retirada) pelo efeito líquido do
-// resultado sobre o projeto atual. Regras: docs/PROPOSAL-FORMAT.md, "Revisão pelo agente".
+// Proposal revision by the agent (stage #644, CP1): `prepareRevision` closes the `drop` and builds the
+// whole proposed project; the batch (here, the model's pure operations) runs over it; `reviseProposal`
+// classifies each change (untouched, replaced, new or dropped) by the net effect of the
+// result on the current project. Rules: docs/PROPOSAL-FORMAT.md, "Agent revision".
 
 const AT2 = '2026-11-07T10:00:00.000Z';
 
-/** Prepara, aplica o lote ao proposto e revisa; sem `mutate`, só o `drop`. */
+/** Prepares, applies the batch to the proposed project and revises; without `mutate`, only the `drop`. */
 function revise(
   project: Project,
   p: Proposal,
@@ -44,21 +44,21 @@ function revise(
   return { prep, result: reviseProposal(project, p, args), after: args.after };
 }
 
-/** O resultado esperado como sucesso (falha com o código se for recusa). */
+/** The result expected as a success (fails with the code if it is a refusal). */
 function okOf(r: ReturnType<typeof reviseProposal>) {
-  if (!r.ok) throw new Error(`recusada: ${r.error.code} ${r.error.changeIds.join(',')}`);
+  if (!r.ok) throw new Error(`refused: ${r.error.code} ${r.error.changeIds.join(',')}`);
   return r;
 }
 
 function errorOf(r: ReturnType<typeof reviseProposal>) {
-  if (r.ok) throw new Error('esperava recusa');
+  if (r.ok) throw new Error('expected a refusal');
   return r.error;
 }
 
 const sorted = <T extends { readonly id: string }>(list: readonly T[]) =>
   [...list].sort((a, b) => a.id.localeCompare(b.id));
 
-/** O projeto sem a ordem global dos arrays e sem `updatedAt`. */
+/** The project without the global order of the arrays and without `updatedAt`. */
 function normalized(p: Project) {
   return {
     ...p,
@@ -71,7 +71,7 @@ function normalized(p: Project) {
   };
 }
 
-/** Fidelidade: aplicar a revisada ao projeto atual dá o `after` do lote. */
+/** Fidelity: applying the revised one to the current project gives the batch's `after`. */
 function expectFidelity(project: Project, revised: Proposal, after: Project) {
   const applied = patchProject(project, revised.changes);
   expect(applied.problems).toEqual([]);
@@ -81,7 +81,7 @@ function expectFidelity(project: Project, revised: Proposal, after: Project) {
 
 const json = (value: unknown) => JSON.stringify(value);
 
-/** Mudança nova de `base` com um marcação N1 em I2 (e, opcional, uma anotação). */
+/** New change of `base` with a marking N1 on I2 (and, optionally, an annotation). */
 function withNewMarking(base: Project, annotated: boolean): Project {
   const created = createMarking(base, {
     id: 'N1',
@@ -93,21 +93,21 @@ function withNewMarking(base: Project, annotated: boolean): Project {
     : created;
 }
 
-describe('reviseProposal: classificação das mudanças', () => {
-  it('troca o nome de um item cuja mudança foi rejeitada: trocada, sem decisão', () => {
+describe('reviseProposal: classification of the changes', () => {
+  it('replaces the name of an item whose change was rejected: replaced, without a decision', () => {
     const base = sampleProject();
-    let p = propose(base, renameMarking(base, 'M4', 'Farol'));
+    let p = propose(base, renameMarking(base, 'M4', 'Headlight'));
     const old = changeOf(p, 'marking', 'M4', 'name');
     p = decided(p, base, { level: 'change', id: old.id }, 'rejected');
-    p = addNote(p, { level: 'change', id: old.id }, 'Prefiro outro nome', AT, 'n1');
+    p = addNote(p, { level: 'change', id: old.id }, 'I prefer another name', AT, 'n1');
 
     const { result, after } = revise(base, p, [], (x) =>
-      renameMarking(x, 'M4', 'Lanterna'),
+      renameMarking(x, 'M4', 'Lantern'),
     );
     const r = okOf(result);
 
     const swapped = changeOf(r.proposal, 'marking', 'M4', 'name');
-    expect(swapped).toEqual({ ...old, to: 'Lanterna' });
+    expect(swapped).toEqual({ ...old, to: 'Lantern' });
     expect(r.proposal.decisions[old.id]).toBeUndefined();
     expect(r.proposal.notes).toEqual(p.notes);
     expect(r.summary).toEqual({ changed: [old.id], added: [], dropped: [] });
@@ -117,7 +117,7 @@ describe('reviseProposal: classificação das mudanças', () => {
         at: AT2,
         baseRevision: base.revision,
         operations: [],
-        changed: { [old.id]: { to: 'Farol', state: 'rejected' } },
+        changed: { [old.id]: { to: 'Headlight', state: 'rejected' } },
         added: [],
         dropped: [],
       },
@@ -125,14 +125,14 @@ describe('reviseProposal: classificação das mudanças', () => {
     expectFidelity(base, r.proposal, after as Project);
   });
 
-  it('retira a criação rejeitada com as anotações; a nota vai para a proposta', () => {
+  it('drops the rejected creation with the annotations; the note goes to the proposal', () => {
     const base = sampleProject();
     let p = propose(base, withNewMarking(base, true));
     const marking = changeOf(p, 'marking', 'N1');
     const annotation = changeOf(p, 'annotation', 'A9');
     p = decided(p, base, { level: 'change', id: marking.id }, 'rejected');
-    p = addNote(p, { level: 'change', id: marking.id }, 'Não precisa', AT, 'n1');
-    p = addNote(p, { level: 'proposal', id: null }, 'Geral', AT, 'n2');
+    p = addNote(p, { level: 'change', id: marking.id }, 'Not needed', AT, 'n1');
+    p = addNote(p, { level: 'proposal', id: null }, 'General', AT, 'n2');
 
     const { result } = revise(base, p, [marking.id]);
     const r = okOf(result);
@@ -141,7 +141,7 @@ describe('reviseProposal: classificação das mudanças', () => {
     expect(r.proposal.decisions).toEqual({});
     expect(r.summary.dropped).toEqual([marking.id, annotation.id]);
     expect(r.proposal.notes).toEqual([
-      { id: 'n1', target: { level: 'proposal', id: null }, text: 'Não precisa', at: AT },
+      { id: 'n1', target: { level: 'proposal', id: null }, text: 'Not needed', at: AT },
       p.notes[1],
     ]);
     const revision = r.proposal.revisions?.[0];
@@ -151,7 +151,7 @@ describe('reviseProposal: classificação das mudanças', () => {
     ]);
   });
 
-  it('acrescenta uma anotação a um item criado e aceito: nova; a aceita fica idêntica', () => {
+  it('adds an annotation to a created and accepted item: new; the accepted one stays identical', () => {
     const base = sampleProject();
     let p = propose(base, withNewMarking(base, true));
     const marking = changeOf(p, 'marking', 'N1');
@@ -181,25 +181,25 @@ describe('reviseProposal: classificação das mudanças', () => {
     expectFidelity(base, r.proposal, after as Project);
   });
 
-  it('recusa trocar um item criado e aceito: change-frozen com o id da criação', () => {
+  it('refuses to replace a created and accepted item: change-frozen with the id of the creation', () => {
     const base = sampleProject();
     let p = propose(base, withNewMarking(base, false));
     const marking = changeOf(p, 'marking', 'N1');
     p = decided(p, base, { level: 'change', id: marking.id }, 'accepted');
 
-    const { result } = revise(base, p, [], (x) => renameMarking(x, 'N1', 'Outro'));
+    const { result } = revise(base, p, [], (x) => renameMarking(x, 'N1', 'Other'));
     const error = errorOf(result);
 
     expect(error.code).toBe('change-frozen');
     expect(error.changeIds).toEqual([marking.id]);
   });
 
-  it('o lote devolve o valor ao from: a mudança é retirada', () => {
+  it('the batch returns the value to from: the change is dropped', () => {
     const base = sampleProject();
     const p = propose(base, renameMarking(base, 'M1', 'Portal'));
     const old = changeOf(p, 'marking', 'M1', 'name');
 
-    const { result } = revise(base, p, [], (x) => renameMarking(x, 'M1', 'Porta'));
+    const { result } = revise(base, p, [], (x) => // pt-BR kept: shared fixture data (sampleProject marking name) asserted by other tests\n      renameMarking(x, 'M1', 'Porta'));
     const r = okOf(result);
 
     expect(r.proposal.changes).toEqual([]);
@@ -209,7 +209,7 @@ describe('reviseProposal: classificação das mudanças', () => {
     ]);
   });
 
-  it('criação nova num grupo de irmãs com position: aplicar dá o mesmo do lote', () => {
+  it('new creation in a group of siblings with position: applying gives the same as the batch', () => {
     let base: Project = { ...emptyProject(), containers: [CONTAINER] };
     ['A', 'B', 'K'].forEach((id, i) => {
       base = createMarking(base, {
@@ -244,9 +244,9 @@ describe('reviseProposal: classificação das mudanças', () => {
     expectFidelity(base, r.proposal, revised as Project);
   });
 
-  it('âncora que precisa mudar: trocada; aceita: change-frozen', () => {
-    // Caso do fuzz (semente 644, caso 327): a criação de P0 entra antes de B2; o lote remove B2 e
-    // reordena B1, e a âncora de P0 passa a B3. O lugar no array faz parte do efeito da criação.
+  it('anchor that needs to change: replaced; accepted: change-frozen', () => {
+    // Fuzz case (seed 644, case 327): the creation of P0 enters before B2; the batch removes B2 and
+    // reorders B1, and the anchor of P0 becomes B3. The place in the array is part of the creation's effect.
     let base: Project = { ...emptyProject(), containers: [CONTAINER] };
     const rects = {
       B0: [50, 25, 25, 25],
@@ -299,16 +299,16 @@ describe('reviseProposal: classificação das mudanças', () => {
     expect(frozen.changeIds).toEqual([creation.id]);
   });
 
-  it('a numeração dos ids novos nunca reaproveita um id retirado', () => {
+  it('the numbering of new ids never reuses a dropped id', () => {
     const base = sampleProject();
-    const p = propose(base, renameMarking(base, 'M4', 'Farol'));
+    const p = propose(base, renameMarking(base, 'M4', 'Headlight'));
     const first = okOf(
       revise(base, p, ['c1'], (x) => renameMarking(x, 'M1', 'Portal')).result,
     );
     expect(first.summary).toEqual({ changed: [], added: ['c2'], dropped: ['c1'] });
 
     const second = okOf(
-      revise(base, first.proposal, ['c2'], (x) => renameMarking(x, 'M2', 'Puxador'))
+      revise(base, first.proposal, ['c2'], (x) => renameMarking(x, 'M2', 'Handle'))
         .result,
     );
     expect(second.summary.added).toEqual(['c3']);
@@ -317,10 +317,10 @@ describe('reviseProposal: classificação das mudanças', () => {
   });
 });
 
-describe('prepareRevision e reviseProposal: recusas', () => {
-  it('drop de um id que não existe: change-not-found', () => {
+describe('prepareRevision and reviseProposal: refusals', () => {
+  it('drop of an id that does not exist: change-not-found', () => {
     const base = sampleProject();
-    const p = propose(base, renameMarking(base, 'M4', 'Farol'));
+    const p = propose(base, renameMarking(base, 'M4', 'Headlight'));
     const prep = prepareRevision(base, p, ['c99']);
     expect(prep.ok).toBe(false);
     if (prep.ok) return;
@@ -331,9 +331,9 @@ describe('prepareRevision e reviseProposal: recusas', () => {
     );
   });
 
-  it('revisão sem efeito: no-changes (sem lote e com lote que não muda nada)', () => {
+  it('revision without effect: no-changes (without a batch and with a batch that changes nothing)', () => {
     const base = sampleProject();
-    const p = propose(base, renameMarking(base, 'M4', 'Farol'));
+    const p = propose(base, renameMarking(base, 'M4', 'Headlight'));
     expect(errorOf(reviseProposal(base, p, { at: AT2 })).code).toBe('no-changes');
     expect(errorOf(reviseProposal(base, p, { drop: [], at: AT2 })).code).toBe(
       'no-changes',
@@ -341,13 +341,13 @@ describe('prepareRevision e reviseProposal: recusas', () => {
 
     const { result } = revise(base, p, [], (x) => x);
     expect(errorOf(result).code).toBe('no-changes');
-    const rewrite = revise(base, p, [], (x) => renameMarking(x, 'M4', 'Farol'));
+    const rewrite = revise(base, p, [], (x) => renameMarking(x, 'M4', 'Headlight'));
     expect(errorOf(rewrite.result).code).toBe('no-changes');
   });
 
-  it('proposta com applied (proposal-applied) ou que não está aberta (not-open)', () => {
+  it('proposal with applied (proposal-applied) or that is not open (not-open)', () => {
     const base = sampleProject();
-    const p = propose(base, renameMarking(base, 'M4', 'Farol'));
+    const p = propose(base, renameMarking(base, 'M4', 'Headlight'));
     const applied: Proposal = {
       ...p,
       decisions: { c1: { state: 'accepted', at: AT } },
@@ -361,15 +361,15 @@ describe('prepareRevision e reviseProposal: recusas', () => {
       reviseProposal(base, { ...p, status: 'withdrawn' }, { at: AT2 }),
     );
     expect(closed.code).toBe('not-open');
-    // not-open vem antes de proposal-applied.
+    // not-open comes before proposal-applied.
     expect(
       errorOf(reviseProposal(base, { ...applied, status: 'applied' }, { at: AT2 })).code,
     ).toBe('not-open');
   });
 
-  it('drop de uma mudança aceita: change-frozen', () => {
+  it('drop of an accepted change: change-frozen', () => {
     const base = sampleProject();
-    let p = propose(base, renameMarking(base, 'M4', 'Farol'));
+    let p = propose(base, renameMarking(base, 'M4', 'Headlight'));
     p = decided(p, base, { level: 'change', id: 'c1' }, 'accepted');
     const prep = prepareRevision(base, p, ['c1']);
     expect(prep.ok).toBe(false);
@@ -378,11 +378,11 @@ describe('prepareRevision e reviseProposal: recusas', () => {
     expect(prep.error.changeIds).toEqual(['c1']);
   });
 
-  it('drop da criação aceita pelo fechamento (a aceita depende dela): change-frozen', () => {
+  it('drop of the creation accepted by closure (the accepted one depends on it): change-frozen', () => {
     const base = sampleProject();
     let p = propose(base, withNewMarking(base, true));
     const annotation = changeOf(p, 'annotation', 'A9');
-    // Aceitar a anotação aceita a criação; retirar a criação retira a anotação aceita.
+    // Accepting the annotation accepts the creation; dropping the creation drops the accepted annotation.
     p = decided(p, base, { level: 'change', id: annotation.id }, 'accepted');
     const error = errorOf(
       reviseProposal(base, p, { drop: [changeOf(p, 'marking', 'N1').id], at: AT2 }),
@@ -391,7 +391,7 @@ describe('prepareRevision e reviseProposal: recusas', () => {
     expect(error.changeIds).toContain(annotation.id);
   });
 
-  it('drop de uma remoção da cascata retira a remoção de quem a causa', () => {
+  it('drop of a cascade removal drops the removal of whoever causes it', () => {
     const base = sampleProject();
     const p = propose(base, removeMarking(base, 'M1'));
     const a3 = changeOf(p, 'annotation', 'A3');
@@ -404,12 +404,12 @@ describe('prepareRevision e reviseProposal: recusas', () => {
     );
     const r = okOf(result);
     expect(r.summary.dropped).toEqual(prep.ok ? prep.dropped : []);
-    // M3 continua sendo removida (filha de M2, que agora fica): a remoção dela não depende da causa.
+    // M3 is still removed (child of M2, which now stays): its removal does not depend on the cause.
     expect(r.proposal.changes.some((c) => c.entityId === 'M3')).toBe(true);
     expect(r.proposal.changes.some((c) => c.entityId === 'M1')).toBe(false);
   });
 
-  it('proposta que não aplica mais: proposal-not-applicable com os ids', () => {
+  it('proposal that no longer applies: proposal-not-applicable with the ids', () => {
     const base = sampleProject();
     const created = propose(base, withNewMarking(base, false));
     const exists = withNewMarking(base, false);
@@ -418,7 +418,7 @@ describe('prepareRevision e reviseProposal: recusas', () => {
     expect(e.changeIds).toEqual([changeOf(created, 'marking', 'N1').id]);
     expect(e.problems?.map((i) => i.code)).toContain('entity-exists');
 
-    const renamed = propose(base, renameMarking(base, 'M4', 'Farol'));
+    const renamed = propose(base, renameMarking(base, 'M4', 'Headlight'));
     const gone = errorOf(reviseProposal(removeMarking(base, 'M4'), renamed, { at: AT2 }));
     expect(gone.code).toBe('proposal-not-applicable');
     expect(gone.changeIds).toEqual(['c1']);
@@ -426,8 +426,8 @@ describe('prepareRevision e reviseProposal: recusas', () => {
   });
 });
 
-describe('proposta revisada: formato', () => {
-  it('lê de volta: parseProposal da serialização, formatVersion 5', () => {
+describe('revised proposal: format', () => {
+  it('reads back: parseProposal of the serialization, formatVersion 5', () => {
     const base = sampleProject();
     let p = propose(base, withNewMarking(base, true));
     p = decided(
@@ -437,7 +437,7 @@ describe('proposta revisada: formato', () => {
       'rejected',
     );
     const { result } = revise(base, p, [changeOf(p, 'annotation', 'A9').id], (x) =>
-      renameMarking(x, 'N1', 'Novo'),
+      renameMarking(x, 'N1', 'New'),
     );
     const r = okOf(result);
 
