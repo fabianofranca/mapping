@@ -21,7 +21,7 @@ function chunk(type: string, data: Uint8Array): Buffer {
   return out;
 }
 
-/** PNG RGB sólido de `width` × `height` (basta para os testes: nada de binário no repositório). */
+/** Solid RGB PNG of `width` × `height` (enough for the tests: no binary in the repository). */
 export function solidPng(
   width: number,
   height: number,
@@ -30,7 +30,7 @@ export function solidPng(
   const header = Buffer.alloc(13);
   header.writeUInt32BE(width, 0);
   header.writeUInt32BE(height, 4);
-  header[8] = 8; // 8 bits por canal
+  header[8] = 8; // 8 bits per channel
   header[9] = 2; // RGB
   const row = Buffer.alloc(1 + width * 3);
   for (let x = 0; x < width; x++) row.set(rgb, 1 + x * 3);
@@ -43,7 +43,7 @@ export function solidPng(
   ]);
 }
 
-/** Bloco retangular de uma tela de exemplo (pixels da imagem, cor RGB). */
+/** Rectangular block of a sample screen (image pixels, RGB color). */
 export interface PngBlock {
   readonly x: number;
   readonly y: number;
@@ -53,8 +53,8 @@ export interface PngBlock {
 }
 
 /**
- * PNG RGB com fundo sólido e blocos retangulares por cima: o bastante para parecer uma
- * tela (cabeçalho, lista, botão) nas propostas de exemplo e nos testes de ponta a ponta.
+ * RGB PNG with a solid background and rectangular blocks on top: enough to look like a
+ * screen (header, list, button) in the sample proposals and in the end-to-end tests.
  */
 export function blocksPng(
   width: number,

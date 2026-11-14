@@ -1,6 +1,6 @@
 {
   "format": "t|n|x,y,w,h|fill|opacity|text|d",
-  "source": "Cenas do slider, progress-indicator, carousel, short-navigation-bar e pull-to-refresh na biblioteca material3-compose version 6, antes da EX6 (etapa #897): os nós visíveis (tipo, nome, texto, caixa absoluta, preenchimento, dados do path, opacidade). Os valores do slider estão como o enum gravava (texto).",
+  "source": "Scenes of the slider, progress-indicator, carousel, short-navigation-bar and pull-to-refresh in the material3-compose library version 6, before EX6 (stage #897): the visible nodes (type, name, text, absolute box, fill, path data, opacity). The slider values are as the enum recorded them (text).",
   "scenes": {
     "slider-ex0-light": {
       "id": "slider",
