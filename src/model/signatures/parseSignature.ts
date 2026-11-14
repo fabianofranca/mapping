@@ -252,7 +252,7 @@ export function parseSignatureText(text: string): SignatureParseResult {
     data = JSON.parse(text);
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
-    return { ok: false, issues: [{ path: '', message: `Invalid JSON: ${message}` }] };
+    return { ok: false, issues: [{ path: '', message: `invalid JSON: ${message}` }] };
   }
   return parseSignature(data);
 }

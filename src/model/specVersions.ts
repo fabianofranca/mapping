@@ -84,7 +84,7 @@ export interface SpecChange {
   /** The role's `id` (in `added-role` and `removed-role`). */
   readonly role?: string;
   readonly message: string;
-  /** Message code in the `versions` catalog (the interface translates it); `message` stays in pt-BR. */
+  /** Message code in the `versions` catalog (the interface translates it); `message` is the catalog `en` text. */
   readonly messageCode?: ModelMessageTemplateCode;
   /** The `{parameters}` of the `messageCode`. */
   readonly messageParams?: Readonly<Record<string, string | number>>;

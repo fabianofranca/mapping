@@ -4,7 +4,7 @@
 
 export const iconsFileMessages = {
   'iconsFile.expectedObject': 'expected an object',
-  'iconsFile.expectedObjectShort': 'expected an object',
+  'iconsFile.expectedObjectShort': 'expected object',
   'iconsFile.expectedViewBox': 'expected [width, height] with numbers greater than 0',
   'iconsFile.expectedPaint': 'expected true, false or a color (text)',
   'iconsFile.expectedOneOf': 'expected one of: {options}',

@@ -672,7 +672,7 @@ function valueProblem(
     case 'number':
       return typeof value === 'number' && Number.isFinite(value)
         ? undefined
-        : 'must be a number';
+        : 'the value must be a number';
     case 'date':
       return dateString.safeParse(value).success
         ? undefined
@@ -1637,7 +1637,7 @@ const migrationShape = z
   .object({
     from: migrationVersion.min(1, 'must be >= 1'),
     to: migrationVersion,
-    steps: z.array(migrationStepShape).min(1, 'cannot be empty'),
+    steps: z.array(migrationStepShape).min(1, 'cannot be an empty list'),
   })
   .strict();
 

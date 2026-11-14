@@ -38,13 +38,13 @@ export interface SpecWarning {
   /** Path in the same format as the errors (e.g. `layers[0].annotationTypes[2]`). */
   readonly path: string;
   readonly message: string;
-  /** Message code in the `versions` catalog (the interface translates it); `message` stays in pt-BR. */
+  /** Message code in the `versions` catalog (the interface translates it); `message` is the catalog `en` text. */
   readonly messageCode: ModelMessageTemplateCode;
   /** The `{parameters}` of the `messageCode`. */
   readonly messageParams: Readonly<Record<string, string | number>>;
 }
 
-/** The warning with the catalog message (`message` is the usual pt-BR text). */
+/** The warning with the catalog message (`message` is the catalog `en` text). */
 function warning(
   code: SpecWarningCode,
   path: string,

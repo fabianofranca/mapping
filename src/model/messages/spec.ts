@@ -34,7 +34,7 @@ export const specMessages = {
   'spec.noticeKindShape': 'must be "removed", "deprecated", "diverges" or "pending"',
   'spec.noticeRepeated': 'repeated notice',
   // Field values
-  'spec.valueMustBeNumber': 'must be a number',
+  'spec.valueMustBeNumber': 'the value must be a number',
   'spec.valueMustBeDate': 'must be a valid date YYYY-MM-DD',
   'spec.valueMustBeOption': 'must be one of the options',
   'spec.valueNotForTable': 'does not exist for table',
@@ -132,7 +132,7 @@ export const specMessages = {
   'spec.migrationModeRemoveRole': 'use "clear" or "unlink"',
   'spec.migrationOpInvalid':
     'invalid "op"; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role" or "set-role"',
-  'spec.notEmptyList': 'cannot be empty',
+  'spec.notEmptyList': 'cannot be an empty list',
   'spec.formatInvalid': 'must be "{format}"',
   'spec.formatVersionInvalid': 'must be {versions} or {last}',
   // Format version, external sources and fonts (typefaces)

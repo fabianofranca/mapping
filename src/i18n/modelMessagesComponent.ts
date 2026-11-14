@@ -162,7 +162,7 @@ export const iconsFileEnUS: {
   readonly [C in keyof typeof iconsFileMessages as `model.${C}`]: string;
 } = {
   'model.iconsFile.expectedObject': 'expected an object',
-  'model.iconsFile.expectedObjectShort': 'expected an object',
+  'model.iconsFile.expectedObjectShort': 'expected object',
   'model.iconsFile.expectedViewBox':
     'expected [width, height] with numbers greater than 0',
   'model.iconsFile.expectedPaint': 'expected true, false or a color (text)',

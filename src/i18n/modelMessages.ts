@@ -169,7 +169,7 @@ const specEnUS: { readonly [C in keyof typeof specMessages as `model.${C}`]: str
   'model.spec.noticeKindShape':
     'must be "removed", "deprecated", "diverges" or "pending"',
   'model.spec.noticeRepeated': 'repeated notice',
-  'model.spec.valueMustBeNumber': 'must be a number',
+  'model.spec.valueMustBeNumber': 'the value must be a number',
   'model.spec.valueMustBeDate': 'must be a valid date YYYY-MM-DD',
   'model.spec.valueMustBeOption': 'must be one of the options',
   'model.spec.valueNotForTable': 'does not exist for table',
@@ -262,7 +262,7 @@ const specEnUS: { readonly [C in keyof typeof specMessages as `model.${C}`]: str
   'model.spec.migrationModeRemoveRole': 'use "clear" or "unlink"',
   'model.spec.migrationOpInvalid':
     'invalid "op"; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role" or "set-role"',
-  'model.spec.notEmptyList': 'cannot be empty',
+  'model.spec.notEmptyList': 'cannot be an empty list',
   'model.spec.formatInvalid': 'must be "{format}"',
   'model.spec.formatVersionInvalid': 'must be {versions} or {last}',
   'model.spec.onlyFormat': 'only allowed with formatVersion {version}',

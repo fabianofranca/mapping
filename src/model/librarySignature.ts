@@ -55,7 +55,7 @@ class Checker {
     this.add('error', this.reader.specPath, path, code, params);
   }
 
-  /** Every sheet problem comes out with a catalog `code`; the `message` is its pt-BR text. */
+  /** Every sheet problem comes out with a catalog `code`; the `message` is its catalog `en` text. */
   private add(
     severity: 'error' | 'warning',
     file: string,
