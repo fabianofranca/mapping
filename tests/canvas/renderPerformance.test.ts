@@ -51,6 +51,7 @@ import { textMeasurer } from '../../src/store/textMeasure';
 import { createEditorUi, setViewMode } from '../../src/store/ui';
 import { setViewShow } from '../../src/store/viewMode';
 import { M3_SCREEN } from '../../viewer/samples/samplesMaterial3';
+import { libraryOption } from '../model/scenarioProject';
 import { SPEC_ID, SPEC_JSON, testCatalog } from '../model/componentFixtures';
 import { emptyProject } from '../model/fixtures';
 import { propose } from '../model/proposalFixtures';
@@ -849,7 +850,7 @@ describe('components screen inside the CanvasController (Material 3)', () => {
           values: Object.fromEntries(
             Object.entries(instance.values).flatMap(([key, value]) =>
               typeof value === 'string' || typeof value === 'number'
-                ? [[key, value]]
+                ? [[key, libraryOption(instance.typeId, key, value)]]
                 : [],
             ),
           ),

@@ -321,16 +321,16 @@ describe('Portuguese guard (decision 10 of #741)', () => {
   });
 
   it('every protocol term has a source file that exists', () => {
+    // one `git ls-files` for all the terms (a process per term made this test time out on a loaded machine)
+    const all = trackedFiles();
+    const tracked = (source: string): boolean =>
+      all.some(
+        (path) => path === source || path.startsWith(`${source.replace(/\/$/, '')}/`),
+      );
     const missing = PROTOCOL_TERMS.filter((t) => !tracked(t.source)).map(
       (t) => `${t.term} → ${t.source}`,
     );
     expect(missing).toEqual([]);
-
-    function tracked(source: string): boolean {
-      return (
-        spawnSync('git', ['ls-files', '--', source], { cwd: ROOT }).stdout.length > 0
-      );
-    }
   });
 });
 
