@@ -715,7 +715,7 @@ When the answer to the question is a change, send it with `propose_changes({ …
 ### What you do and what you do not
 
 - **Answer only what is asked of you.** "Awaiting you" only means that the last message is from a person; it does not imply there is a question for you. A conversation **between people** (a comment to another reviewer, a note to oneself) also appears this way: if nothing is asked of you, **do not answer** and do not open a conversation to say you read it. A message that asks you, that cites you or that asks for the agent's code or decision, yes.
-- **Never sign as a person.** The authorship of every message from you is **agent**, without an email; the name is the `author` argument (optional), otherwise the MCP client's name, otherwise "agent". Do not pretend to be the person nor write on their behalf.
+- **Never sign as a person.** The authorship of every message from you is **agent**, without an email; the name is the `author` argument (optional), otherwise the MCP client's name, otherwise "agente" (the default stored in the file). Do not pretend to be the person nor write on their behalf.
 - **Never resolve, reopen or delete** a conversation: there is no tool for that, and it is the person's decision. Do not edit the `comments/` files by hand either.
 - The `mapping.json` does not change with a conversation. Whoever changes the mapping is still the proposal, reviewed in the app.
 
@@ -1053,7 +1053,7 @@ A `formatVersion` 11 specialization can say **at which point of the owner** a ch
   },
   {
     "op": "create_annotation",
-    "as": "$click",
+    "as": "$clique",
     "marking": "$m1",
     "type": "app/event",
     "owner": "$button",
@@ -1062,10 +1062,10 @@ A `formatVersion` 11 specialization can say **at which point of the owner** a ch
   },
   {
     "op": "create_annotation",
-    "as": "$success",
+    "as": "$sucesso",
     "marking": "$m1",
     "type": "app/event",
-    "owner": "$click",
+    "owner": "$clique",
     "role": "success",
     "values": { "nome": "Salvou" }
   },
@@ -1073,7 +1073,7 @@ A `formatVersion` 11 specialization can say **at which point of the owner** a ch
     "op": "create_annotation",
     "marking": "$m1",
     "type": "app/event",
-    "owner": "$click",
+    "owner": "$clique",
     "role": "failure",
     "values": { "nome": "Falhou" }
   }
