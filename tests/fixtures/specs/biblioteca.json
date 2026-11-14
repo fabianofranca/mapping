@@ -2,9 +2,9 @@
   "format": "mapping-spec",
   "formatVersion": 4,
   "id": "biblioteca",
-  "name": "Biblioteca de exemplo",
+  "name": "Example library",
   "version": 2,
-  "description": "Pacote mínimo da formatVersion 4: componente, documento, exemplos, fonte, origem executável e migração.",
+  "description": "Minimal formatVersion 4 package: component, document, examples, font, executable origin and migration.",
   "fonts": [{ "family": "Roboto", "file": "fonts/Roboto-Regular.ttf", "weight": 400 }],
   "origins": [
     {
@@ -24,7 +24,7 @@
   "layers": [
     {
       "id": "componentes",
-      "name": "Componentes",
+      "name": "Components",
       "color": "#1E88E5",
       "annotationTypes": [
         {
@@ -44,7 +44,7 @@
                 {
                   "system": "sdui",
                   "path": "variant",
-                  "name": "Variante",
+                  "name": "Variant",
                   "values": { "filled": "primary", "plain": "text" }
                 }
               ]
@@ -52,11 +52,11 @@
           ],
           "sources": [{ "system": "sdui", "name": "Button", "ignore": ["analytics"] }],
           "examples": [
-            { "name": "Primário", "values": { "label": "Salvar", "style": "primary" } },
+            { "name": "Primário", "values": { "label": "Save", "style": "primary" } },
             {
               "name": "Texto",
-              "description": "Botão sem preenchimento.",
-              "values": { "label": "Cancelar", "style": "text" }
+              "description": "Button without a fill.",
+              "values": { "label": "Cancel", "style": "text" }
             }
           ]
         },

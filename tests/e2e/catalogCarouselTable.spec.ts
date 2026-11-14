@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { createProject, projectAction } from './helpers';
 
-// CL1 (#1830, achado 1.1): a tabela "Campos" do Carousel, no diálogo do Catálogo (820 px), cabe
-// sem rolar na horizontal, sem cortar a Descrição e sem quebrar o Tipo ("enum").
+// CL1 (#1830, finding 1.1): the "Fields" table of the Carousel, in the Catalog dialog (820 px), fits
+// without scrolling horizontally, without cutting the Description and without breaking the Type ("enum").
 
 const sizes = [
   { width: 1280, height: 720 },
@@ -13,7 +13,7 @@ const sizes = [
 
 for (const scheme of ['light', 'dark'] as const) {
   for (const size of sizes) {
-    test(`Catálogo › Carousel: tabela Campos cabe no diálogo (${size.width}×${size.height}, ${scheme})`, async ({
+    test(`Catalog › Carousel: Fields table fits in the dialog (${size.width}×${size.height}, ${scheme})`, async ({
       page,
     }) => {
       await page.emulateMedia({ colorScheme: scheme });
@@ -31,7 +31,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(confirm).toBeEnabled();
       await confirm.click();
       await expect(
-        page.getByRole('status').filter({ hasText: 'aplicada' }),
+        page.getByRole('status').filter({ hasText: 'applied' }),
       ).toBeVisible();
       await page
         .getByRole('dialog')
@@ -39,8 +39,8 @@ for (const scheme of ['light', 'dark'] as const) {
         .click();
 
       await page.keyboard.press('Control+Shift+9');
-      await page.getByRole('tab', { name: 'Componentes' }).click();
-      await page.getByLabel('Biblioteca').selectOption({ label: 'Material 3 (Compose)' });
+      await page.getByRole('tab', { name: 'Components' }).click();
+      await page.getByLabel('Library').selectOption({ label: 'Material 3 (Compose)' });
       await page.locator('button[data-type-id="carousel"]').click();
       const dialog = page.getByRole('dialog', { name: 'Carousel' });
       await expect(dialog).toBeVisible();
@@ -50,7 +50,7 @@ for (const scheme of ['light', 'dark'] as const) {
         const cells = [
           ...el.querySelectorAll<HTMLElement>('tbody td:nth-child(3), tbody th'),
         ];
-        // Linhas do texto da célula (o Range ignora a altura da linha, esticada pela Descrição).
+        // Lines of the cell text (the Range ignores the row height, stretched by the Description).
         const lines = (c: HTMLElement) => {
           const range = document.createRange();
           range.selectNodeContents(c);

@@ -15,9 +15,9 @@
  */
 
 // Trecho de compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/AppBar.kt
-// do androidx (commit 5113b82a4ed6416d6344efa50e41db8cb65928ff): as três sobrecargas de `TopAppBar`
-// (a primeira `@Deprecated(level = HIDDEN)`, a terceira com `subtitle`), sem os corpos. Fixture dos
-// testes do extrator `mapping-signature`; não compila.
+// from androidx (commit 5113b82a4ed6416d6344efa50e41db8cb65928ff): the three overloads of `TopAppBar`
+// (the first `@Deprecated(level = HIDDEN)`, the third with `subtitle`), without the bodies. Fixture of the
+// tests of the `mapping-signature` extractor; it does not compile.
 
 package androidx.compose.material3
 

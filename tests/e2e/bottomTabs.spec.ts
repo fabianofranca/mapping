@@ -30,9 +30,7 @@ async function open(page: Page): Promise<void> {
 }
 
 for (const width of [900, 1280]) {
-  test(`the six bottom window tabs stay in view at ${width} px`, async ({
-    page,
-  }) => {
+  test(`the six bottom window tabs stay in view at ${width} px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 860 });
     await open(page);
     for (const active of TABS) {

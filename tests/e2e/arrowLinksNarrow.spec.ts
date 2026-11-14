@@ -1,12 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
-// Seção "Linked by arrow" a 900 px (etapa #658, LS1): com o nome da outra ponta, o da seta e o
-// da camada compridos, os Detalhes não ganham barra horizontal (como o R11.12).
+// "Linked by arrow" section at 900 px (stage #658, LS1): with the name of the other end, the arrow's and the
+// layer's all long, Details do not get a horizontal bar (like R11.12).
 
 test.use({ viewport: { width: 900, height: 720 } });
 
-const LONG = 'Nome muito comprido para conferir que a linha não cria barra horizontal';
+const LONG = 'Very long name to check that the row does not create a horizontal bar';
 
 async function openExample(page: Page): Promise<void> {
   await page.goto('/');
@@ -21,18 +21,18 @@ async function openExample(page: Page): Promise<void> {
   await page.keyboard.press('Control+Shift+Digit3');
 }
 
-test('rótulos longos na seção Ligado por seta não criam barra horizontal nos Detalhes', async ({
+test('long labels in the Linked by arrow section do not create a horizontal bar in Details', async ({
   page,
 }) => {
   await openExample(page);
   const tree = page.getByRole('list', { name: 'Marking tree' });
   await tree.getByRole('button', { name: 'Cadastrar', exact: true }).click();
   await page.getByRole('button', { name: 'Link to…', exact: true }).click();
-  const picker = page.getByRole('dialog', { name: /^Ligar .* a…$/ });
+  const picker = page.getByRole('dialog', { name: /^Link .* to…$/ });
   await picker.getByRole('option').first().click();
   await expect(picker).toBeHidden();
 
-  // A seta nasce selecionada: dá um nome comprido a ela.
+  // The arrow is born selected: give it a long name.
   await page.getByLabel('Name', { exact: true }).fill(LONG);
   await page.keyboard.press('Enter');
   await tree.getByRole('button', { name: 'Cadastrar', exact: true }).click();

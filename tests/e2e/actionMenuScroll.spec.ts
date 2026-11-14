@@ -3,9 +3,9 @@ import JSZip from 'jszip';
 import { addAnnotation, addLayer, createMarking, serialize } from '../../src/model';
 import { fixtureFiles, fixtureProject } from './proposalFixture';
 
-// Etapa #515 (FN1 e FN2, #446 item 2): o menu ⋮ de uma linha fora da vista abre no primeiro clique.
-// O clique rola a página até a linha, e essa rolagem chega depois de o menu abrir; o menu
-// ignora a rolagem que a própria abertura provoca (janela de 300 ms em `openScrollGuard`).
+// Stage #515 (FN1 and FN2, #446 item 2): the ⋮ menu of an out-of-view row opens on the first click.
+// The click scrolls the page to the row, and that scroll arrives after the menu opens; the menu
+// ignores the scroll that its own opening causes (300 ms window in `openScrollGuard`).
 
 test.use({ viewport: { width: 1280, height: 860 } });
 
@@ -17,11 +17,11 @@ async function zipWithManyPairs(): Promise<Buffer> {
     id: 'A9',
     markingId: 'M1',
     layerId: 'L1',
-    name: 'Muitos pares',
+    name: 'Many pairs',
     entries: Array.from({ length: PAIRS }, (_, i) => ({
       id: `EP${i + 1}`,
-      key: `chave${i + 1}`,
-      value: `valor ${i + 1}`,
+      key: `key${i + 1}`,
+      value: `value ${i + 1}`,
     })),
   });
   files.set('mapping.json', serialize(project));
@@ -30,43 +30,46 @@ async function zipWithManyPairs(): Promise<Buffer> {
   return zip.generateAsync({ type: 'nodebuffer' });
 }
 
-test('o ⋮ de uma linha fora da vista abre no primeiro clique, três vezes', async ({
+test('the ⋮ of an out-of-view row opens on the first click, three times', async ({
   page,
 }) => {
   await page.goto('/');
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
     .setInputFiles({
-      name: 'loja.zip',
+      name: 'store.zip',
       mimeType: 'application/zip',
       buffer: await zipWithManyPairs(),
     });
   await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   await page
     .getByRole('region', { name: 'Marking tree' })
+    // pt-BR kept: shared fixture data (proposalFixture.ts) asserted by other e2e specs
     .getByRole('button', { name: 'Cabeçalho', exact: true })
     .click();
-  const last = page.getByRole('button', { name: `Ações do par chave${PAIRS}` });
+  const last = page.getByRole('button', { name: `Actions for pair key${PAIRS}` });
   await expect(last).toHaveCount(1);
   for (let i = 0; i < 3; i++) {
-    await page.getByRole('button', { name: `Ações do par chave${PAIRS}` }).click();
+    await page.getByRole('button', { name: `Actions for pair key${PAIRS}` }).click();
     await expect(
-      page.getByRole('menu', { name: `Ações do par chave${PAIRS}` }),
+      page.getByRole('menu', { name: `Actions for pair key${PAIRS}` }),
     ).toBeVisible();
     await page.waitForTimeout(300);
     await expect(
-      page.getByRole('menu', { name: `Ações do par chave${PAIRS}` }),
+      page.getByRole('menu', { name: `Actions for pair key${PAIRS}` }),
     ).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.getByRole('menu')).toHaveCount(0);
-    // Volta ao topo para a próxima volta partir de uma linha fora da vista.
-    await page.getByRole('button', { name: 'Ações do par chave1', exact: true }).focus();
+    // Back to the top so the next round starts from an out-of-view row.
+    await page
+      .getByRole('button', { name: 'Actions for pair key1', exact: true })
+      .focus();
   }
 });
 
-// FN2 (achado 3 do relato da FN1): Camadas e a Árvore usam o Popover, e o ⋮ da última
-// linha de uma lista que rola só abria no segundo clique (a rolagem da lista chegava no
-// mesmo instante e fechava o menu).
+// FN2 (finding 3 of the FN1 report): Layers and the Tree use the Popover, and the ⋮ of the last
+// row of a scrolling list only opened on the second click (the list scroll arrived at the
+// same instant and closed the menu).
 const LAYERS = 10;
 const MARKS = 40;
 
@@ -84,7 +87,7 @@ async function zipWithLongLists(): Promise<Buffer> {
     project = createMarking(project, {
       id: `MX${i}`,
       containerId: 'I2',
-      name: `Linha ${i}`,
+      name: `Row ${i}`,
       rect: { x: 20, y: 70 + (i % 9) * 60, width: 40, height: 20 },
     });
   }
@@ -94,14 +97,14 @@ async function zipWithLongLists(): Promise<Buffer> {
   return zip.generateAsync({ type: 'nodebuffer' });
 }
 
-test('o ⋮ da última camada e de uma linha da Árvore abre no primeiro clique, três vezes', async ({
+test('the ⋮ of the last layer and of a Tree row opens on the first click, three times', async ({
   page,
 }) => {
   await page.goto('/');
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
     .setInputFiles({
-      name: 'loja.zip',
+      name: 'store.zip',
       mimeType: 'application/zip',
       buffer: await zipWithLongLists(),
     });
@@ -113,14 +116,14 @@ test('o ⋮ da última camada e de uma linha da Árvore abre no primeiro clique,
   const cases = [
     {
       scope: layers,
-      button: `Mais ações da camada Extra ${LAYERS}`,
+      button: `More actions for layer Extra ${LAYERS}`,
       list: '.layer-list',
     },
-    { scope: tree, button: `Ações de Linha ${MARKS}`, list: null },
+    { scope: tree, button: `Actions for Row ${MARKS}`, list: null },
   ] as const;
   for (const c of cases) {
     for (let i = 0; i < 3; i++) {
-      // Rolagem ao topo; o ⋮ alvo fica fora da vista e o clique não rola antes.
+      // Scroll to the top; the target ⋮ stays out of view and the click does not scroll first.
       await c.scope.evaluate((el, list) => {
         for (const box of el.querySelectorAll<HTMLElement>(list ?? '*'))
           box.scrollTop = 0;
