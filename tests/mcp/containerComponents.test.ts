@@ -103,7 +103,7 @@ describe('catalog when loading the project', () => {
   });
 });
 
-describe('add_container e update_container', () => {
+describe('add_container and update_container', () => {
   it('creates the container and edits background and size; on the photo, container-has-file', async () => {
     const result = await run([
       SCREEN,
@@ -132,7 +132,7 @@ describe('add_container e update_container', () => {
   });
 });
 
-describe('add_blank_image (antiga)', () => {
+describe('add_blank_image (old)', () => {
   it('still creates the container, with a warning to use add_container', async () => {
     const result = await run([{ ...SCREEN, op: 'add_blank_image' } as Operation]);
     expect(result.errors).toEqual([]);
@@ -286,7 +286,7 @@ describe('move_marking', () => {
   });
 });
 
-describe('leitura: ordem, componente e minSize', () => {
+describe('reading: order, component and minSize', () => {
   it('markingRow gives the order and, when it draws, component and minSize', async () => {
     const result = await run([SCREEN, BUTTON_ON_SCREEN]);
     const next: LoadedProject = { ...loaded, project: result.project };

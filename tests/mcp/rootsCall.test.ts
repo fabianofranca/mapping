@@ -47,7 +47,7 @@ describe('Roots: one resolution per tool call', () => {
 
   it('a new call resolves again (a root created after startup shows up)', async () => {
     const first = mkdtempSync(join(tmpdir(), 'mapping-call-a-'));
-    const late = join(first, 'tarde');
+    const late = join(first, 'later');
     const roots = new Roots([late], first);
     roots.beginCall();
     expect(await roots.realRoots()).toEqual([null]);

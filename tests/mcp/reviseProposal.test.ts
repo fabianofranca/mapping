@@ -142,7 +142,7 @@ async function open(extra: unknown[] = []) {
 beforeAll(async () => {
   base = mkdtempSync(join(tmpdir(), 'mapping-revise-'));
   root = join(base, 'raiz');
-  hooks = join(base, 'ganchos.json');
+  hooks = join(base, 'hooks.json');
   for (const folder of ['fontes', 'fontes2'])
     mkdirSync(join(root, folder), { recursive: true });
   const png = await encodePng(quadrants(600, 800));
@@ -253,7 +253,7 @@ describe('revise_proposal: swap, withdrawal and what stays the same', () => {
   });
 });
 
-describe('revise_proposal: recusas', () => {
+describe('revise_proposal: refusals', () => {
   it('change-frozen: the accepted change is not swapped and the file does not change', async () => {
     const t = await open();
     reviewDecide(dir(), t.id, { level: 'change', id: t.title }, 'accepted');
@@ -281,13 +281,13 @@ describe('revise_proposal: recusas', () => {
     expect(String(error.hint)).toContain('supersedes');
   });
 
-  it('not-open: proposta retirada', async () => {
+  it('not-open: withdrawn proposal', async () => {
     const t = await open();
     ok(await mcp.call('withdraw_proposal', { project: 'loja', ref: t.ref }));
     expect(errorOf(await revise(t.ref, { drop: [t.extra] })).code).toBe('not-open');
   });
 
-  it('change-not-found e invalid-arguments (nada a fazer)', async () => {
+  it('change-not-found and invalid-arguments (nothing to do)', async () => {
     const t = await open();
     const hash = hashOf(proposalPath(t.id));
     const missing = errorOf(await revise(t.ref, { drop: ['c999'] }));
@@ -371,7 +371,7 @@ describe('revise_proposal: concurrency', () => {
   /** The file the app would write: the current proposal with the accepted change (`revision + 1`). */
   function stageAccepted(id: string, changeId: string): string {
     const p = readProposal(dir(), id);
-    const staged = join(base, `aceita-${id}.json`);
+    const staged = join(base, `accepted-${id}.json`);
     writeFileSync(
       staged,
       serializeProposal({
@@ -455,7 +455,7 @@ describe('revise_proposal: concurrency', () => {
   });
 });
 
-describe('revise_proposal: imagens', () => {
+describe('revise_proposal: images', () => {
   const swap = (file: string) => ({
     op: 'replace_container',
     container: 'Screen',
@@ -464,7 +464,7 @@ describe('revise_proposal: imagens', () => {
   });
 
   it('the new file swap writes the image without overwriting; the image of the withdrawn swap goes away', async () => {
-    const first = await propose(mcp, 'loja', [swap('fontes/a.png')], { title: 'Imagem' });
+    const first = await propose(mcp, 'loja', [swap('fontes/a.png')], { title: 'Image' });
     const id = first.proposal.id;
     const before = imagesOf(id);
     expect(before).toHaveLength(1);
@@ -493,7 +493,7 @@ describe('revise_proposal: imagens', () => {
 
   it('withdrawing the file swap deletes the image; a failure to delete becomes a warning on stderr', async () => {
     const first = await propose(mcp, 'loja', [swap('fontes/b.png')], {
-      title: 'Imagem 2',
+      title: 'Image 2',
     });
     const id = first.proposal.id;
     const [name] = imagesOf(id);
@@ -521,10 +521,10 @@ describe('revise_proposal: imagens', () => {
 });
 
 describe('reads after the revision', () => {
-  it('get_proposal, get_proposal_review e list_proposals show the revision', async () => {
+  it('get_proposal, get_proposal_review and list_proposals show the revision', async () => {
     const t = await open();
     reviewDecide(dir(), t.id, { level: 'change', id: t.title }, 'rejected');
-    reviewNote(dir(), t.id, { level: 'change', id: t.title }, 'Nome errado.');
+    reviewNote(dir(), t.id, { level: 'change', id: t.title }, 'Wrong name.');
     reviewDecide(dir(), t.id, { level: 'change', id: t.extra }, 'rejected');
     reviewNote(dir(), t.id, { level: 'change', id: t.extra }, 'Not needed.');
 

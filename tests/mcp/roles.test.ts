@@ -103,11 +103,11 @@ describe('create_annotation with role', () => {
     expect(JSON.stringify(result.issues.new)).toContain('missing-role');
   });
 
-  it('o lote proposto e aplicado grava o parentRole', async () => {
+  it('the proposed and applied batch writes the parentRole', async () => {
     const proposed = await propose(mcp, ws.project, [
       {
         op: 'create_annotation',
-        as: '$novo',
+        as: '$new',
         marking: ws.ref('M1', 'm'),
         ...eventsType,
         owner: ws.ref('A2'),
@@ -240,7 +240,7 @@ describe('role-cleared warning: the owner change that clears the role', () => {
     for (const line of result.summary) expect(line).not.toContain('limpo');
   });
 
-  it('o propose_changes avisa igual e continua gravando a proposta', async () => {
+  it('propose_changes warns the same and still writes the proposal', async () => {
     const proposed = await propose(mcp, ws.project, [
       clickOnC1(),
       { op: 'update_annotation', annotation: ws.ref('C1'), owner: ws.ref('A3') },
@@ -302,7 +302,7 @@ describe('views: parentRole and children by role', () => {
   });
 });
 
-describe('set_doc_repo e remove_doc_repo', () => {
+describe('set_doc_repo and remove_doc_repo', () => {
   it('validates the operations through the model errors', async () => {
     const result = ok(
       await plan([

@@ -60,7 +60,7 @@ const read = (dir: string, id: string): Proposal => {
   return parsed.proposal;
 };
 
-describe('writeNewProposal e listStored', () => {
+describe('writeNewProposal and listStored', () => {
   it('writes the folder, the images and the proposal.json; a repeated id is refused', async () => {
     const { roots, dir, location, proposal } = setup();
     const result = await writeNewProposal(
@@ -175,10 +175,10 @@ describe('reservedImages', () => {
     });
     let after = base;
     for (const [id, file] of [
-      ['I1', 'images/aceita.webp'],
-      ['I2', 'images/pendente.webp'],
-      ['I3', 'images/rejeitada.webp'],
-      ['I4', 'images/aplicada.webp'],
+      ['I1', 'images/accepted.webp'],
+      ['I2', 'images/pending.webp'],
+      ['I3', 'images/rejected.webp'],
+      ['I4', 'images/applied.webp'],
     ] as const) {
       after = addContainer(after, { id, file, width: 100, height: 100 });
     }
@@ -201,16 +201,16 @@ describe('reservedImages', () => {
 
   it('open: pending and accepted not applied', () => {
     expect(reservedImages(withImages()).sort()).toEqual([
-      'images/aceita.webp',
-      'images/pendente.webp',
+      'images/accepted.webp',
+      'images/pending.webp',
     ]);
   });
 
   it('superseded: only the accepted ones not applied (the pending ones can no longer be applied)', () => {
     const superseded = { ...withImages(), status: 'superseded' as const };
-    expect(reservedImages(superseded)).toEqual(['images/aceita.webp']);
+    expect(reservedImages(superseded)).toEqual(['images/accepted.webp']);
     // The previous one of a `supersedes`, still open on disk, goes in by the state it will have.
-    expect(reservedImages(withImages(), 'superseded')).toEqual(['images/aceita.webp']);
+    expect(reservedImages(withImages(), 'superseded')).toEqual(['images/accepted.webp']);
   });
 
   it('applied or withdrawn: nothing', () => {
@@ -230,7 +230,7 @@ describe('symbolic link in proposals/<id>/images and specs (stage #942, phase 2)
     await expect(
       reviseStored(roots, location, 'prop-1', true, async (p) => ({
         proposal: p,
-        images: new Map([['images/nova.webp', new Uint8Array([1])]]),
+        images: new Map([['images/new.webp', new Uint8Array([1])]]),
         check: async () => {},
         result: null,
       })),
@@ -256,7 +256,7 @@ describe('symbolic link in proposals/<id>/images and specs (stage #942, phase 2)
   });
 });
 
-describe('listStored tolerante (etapa #942, fase 2)', () => {
+describe('tolerant listStored (stage #942, phase 2)', () => {
   it('a proposal.json that is too large goes to broken and the others carry on', async () => {
     const { roots, dir, location, proposal } = setup();
     await writeNewProposal(roots, location, proposal, new Map());

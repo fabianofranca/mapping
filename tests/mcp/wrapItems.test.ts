@@ -208,7 +208,7 @@ describe('wrap_items: creation', () => {
 
 describe('wrap_items: noise in the placement', () => {
   it('the floating-point noise from the drag does not remove the 8 px margin', async () => {
-    const name = 'ruido';
+    const name = 'noise';
     ok(await mcp.call('create_project', { path: `projetos/${name}`, name }));
     const noisyDir = join(root, 'projetos', name);
     const base = await propose(mcp, name, [

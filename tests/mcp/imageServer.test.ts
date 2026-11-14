@@ -49,7 +49,7 @@ describe('ImageServer', () => {
     expect(server!.address()?.address).toBe('127.0.0.1');
   });
 
-  it('mesmos bytes, mesma URL; bytes diferentes, outra', async () => {
+  it('same bytes, same URL; different bytes, another one', async () => {
     const s = make();
     const a = await s.publish(bytesOf(1), 'image/png', 'png');
     expect(await s.publish(bytesOf(1), 'image/png', 'png')).toBe(a);
@@ -92,7 +92,7 @@ describe('ImageServer', () => {
     expect((await send('POST', url)).status).toBe(405);
   });
 
-  it('LRU por quantidade: descarta a mais antiga e o GET renova', async () => {
+  it('LRU by count: discards the oldest and the GET renews', async () => {
     const s = make({ maxEntries: 2 });
     const a = await s.publish(bytesOf(1), 'image/png', 'png');
     const b = await s.publish(bytesOf(2), 'image/png', 'png');
@@ -118,7 +118,7 @@ describe('ImageServer', () => {
     expect((await send('GET', big)).status).toBe(200);
   });
 
-  it('close() encerra o servidor', async () => {
+  it('close() shuts the server down', async () => {
     const s = make();
     const url = await s.publish(bytesOf(1), 'image/png', 'png');
     await s.close();

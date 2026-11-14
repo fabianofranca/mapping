@@ -170,7 +170,7 @@ describe('container direction', () => {
   });
 });
 
-describe('vistas', () => {
+describe('views', () => {
   it('get_project and get_marking (in the item container) bring the pinned and the effective one', async () => {
     const container = await firstContainer();
     await apply([{ op: 'update_container', container: container.ref, direction: 'rtl' }]);
@@ -200,7 +200,7 @@ describe('vistas', () => {
   });
 });
 
-describe('render_marking e render_container', () => {
+describe('render_marking and render_container', () => {
   it('accept direction, cite the one used in the result and refuse a value outside the set', async () => {
     const container = await firstContainer();
     const marking = await mcp.call('render_marking', {

@@ -59,7 +59,7 @@ async function batchMs(project: Project, count: number): Promise<number> {
 }
 
 async function medianBatchMs(project: Project, count: number): Promise<number> {
-  await batchMs(project, count); // aquecimento
+  await batchMs(project, count); // warm-up
   const times: number[] = [];
   for (let i = 0; i < 5; i++) times.push(await batchMs(project, count));
   return median(times);
@@ -94,7 +94,7 @@ describe('MCP batch at scale', () => {
     },
   );
 
-  describe('plan_changes por operationsFile', () => {
+  describe('plan_changes by operationsFile', () => {
     const roots: string[] = [];
     let client: Client | undefined;
     afterAll(async () => {

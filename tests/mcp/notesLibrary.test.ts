@@ -81,7 +81,7 @@ describe('create_project with the notes library', () => {
     expect(project.issues.total).toBe(0);
   });
 
-  it('get_specialization devolve a notas: formatVersion 7, tipo nota flutuante', async () => {
+  it('get_specialization returns notas: formatVersion 7, floating note type', async () => {
     const data = ok(
       await mcp.call<{
         id: string;

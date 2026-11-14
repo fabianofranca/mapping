@@ -281,16 +281,16 @@ describe('script 13.9 created through the MCP', () => {
   let proposed: Proposed;
   let dir: string;
 
-  it('create_project + plan_changes valida o lote inteiro sem gravar', async () => {
+  it('create_project + plan_changes validates the whole batch without writing', async () => {
     const created = await mcp.call('create_project', {
-      path: 'novo/cadastro-mcp',
+      path: 'new/cadastro-mcp',
       name: 'Cadastro',
       firstLayerName: 'Lataria',
       // The script is not about notes: the starting project is just the "Lataria" layer.
       notes: false,
     });
     expect(created.isError).toBe(false);
-    dir = join(ws.root, 'novo', 'cadastro-mcp');
+    dir = join(ws.root, 'new', 'cadastro-mcp');
     const before = hashOf(join(dir, 'mapping.json'));
 
     const result = await mcp.call<Plan>('plan_changes', {
@@ -421,7 +421,7 @@ describe('invalid batch and stale revision', () => {
           rect: { x: 900, y: 0, width: 200, height: 50 },
         },
         { op: 'create_annotation', marking: '$fora', type: 'text' },
-        { op: 'create_annotation', marking: '$naoexiste', type: 'text' },
+        { op: 'create_annotation', marking: '$missing', type: 'text' },
       ],
     });
     expect(result.isError).toBe(false);
@@ -449,7 +449,7 @@ describe('invalid batch and stale revision', () => {
       title: 'Invalid',
       operations: [
         { op: 'update_marking', marking: ref('MN'), name: 'Full name' },
-        { op: 'create_annotation', marking: '$naoexiste', type: 'text' },
+        { op: 'create_annotation', marking: '$missing', type: 'text' },
       ],
     });
     expect(result.isError).toBe(false);
@@ -460,7 +460,7 @@ describe('invalid batch and stale revision', () => {
   });
 });
 
-describe('regras do modelo no lote', () => {
+describe('model rules in the batch', () => {
   const code = (key: string) => ws.ids[key]!.replaceAll('-', '').slice(0, 8);
 
   it('locked items are not moved, resized or deleted', async () => {
@@ -744,7 +744,7 @@ describe('images through the batch', () => {
   });
 });
 
-describe('projeto de schema antigo', () => {
+describe('project with an old schema', () => {
   it('the proposal is computed on the project migrated in memory and the file stays intact', async () => {
     const dir = ws.projectDir('legado');
     const path = join(dir, 'mapping.json');

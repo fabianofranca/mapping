@@ -18,7 +18,7 @@ async function toolDescription(name: string): Promise<string> {
   return tools.find((tool) => tool.name === name)?.description ?? '';
 }
 
-describe('textos desatualizados', () => {
+describe('stale texts', () => {
   it('the FORMAT.md description cites the current SCHEMA_VERSION', () => {
     const doc = DOC_RESOURCES.find((d) => d.name === 'format');
     expect(doc?.description).toContain(`schema v${SCHEMA_VERSION})`);

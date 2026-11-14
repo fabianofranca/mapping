@@ -60,7 +60,7 @@ describe('shadow.spread in the raster', () => {
     expect(pixel(raster, 24, 24)).toEqual([255, 0, 0, 255]);
   });
 
-  it('o spread negativo encolhe a sombra', () => {
+  it('a negative spread shrinks the shadow', () => {
     const raster = canvas(60, 60);
     paint(raster, ghost([sharp('#ff0000', -4)]));
     expect(pixel(raster, 22, 30)).toEqual(WHITE);
@@ -115,12 +115,12 @@ describe('outline with a gap (stroke.gaps) in the raster', () => {
   it('the four corners follow the radius and the other sides stay whole', () => {
     const raster = canvas(60, 50);
     paint(raster, outlined());
-    expect(pixel(raster, 10, 10)).toEqual(WHITE); // o canto reto ficaria aqui
+    expect(pixel(raster, 10, 10)).toEqual(WHITE); // the square corner would be here
     const k = Math.round(6 * (1 - Math.SQRT1_2));
-    expect(pixel(raster, 10 + k, 10 + k)[1]).toBeLessThan(200); // o arco passa por aqui
-    expect(pixel(raster, 10, 22)).toEqual([255, 0, 0, 255]); // lado esquerdo
-    expect(pixel(raster, 49, 22)).toEqual([255, 0, 0, 255]); // lado direito
-    expect(pixel(raster, 30, 33)).toEqual([255, 0, 0, 255]); // embaixo
+    expect(pixel(raster, 10 + k, 10 + k)[1]).toBeLessThan(200); // the arc passes here
+    expect(pixel(raster, 10, 22)).toEqual([255, 0, 0, 255]); // left side
+    expect(pixel(raster, 49, 22)).toEqual([255, 0, 0, 255]); // right side
+    expect(pixel(raster, 30, 33)).toEqual([255, 0, 0, 255]); // bottom
     expect(pixel(raster, 10 + 40 - k - 1, 10 + 24 - k - 1)[1]).toBeLessThan(200); // bottom corner
   });
 });

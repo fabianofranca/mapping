@@ -197,13 +197,13 @@ describe('create_marking without rect: born with the measured size (decision 16)
   ) =>
     ({
       op: 'create_marking',
-      as: '$novo',
+      as: '$new',
       container: IMAGE,
       annotation: { type: `${FIT_SPEC_ID}/fit-button`, ...annotation },
       ...extra,
     }) as Operation;
   const created = (result: BatchResult) =>
-    rectOf(result, (result.aliases.get('$novo') as { id: string }).id);
+    rectOf(result, (result.aliases.get('$new') as { id: string }).id);
 
   it('with the long label in the values, the height is already the content height', async () => {
     const result = await run([create({ values: { label: LONG_LABEL } })]);

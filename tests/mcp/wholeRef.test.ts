@@ -90,7 +90,7 @@ const SPEC = {
 let root: string;
 let dir: string;
 let mcp: Connection;
-const project = 'inteira';
+const project = 'whole';
 
 beforeAll(async () => {
   root = mkdtempSync(join(tmpdir(), 'mapping-wholeref-'));
@@ -172,7 +172,7 @@ describe('batch: ref to the whole annotation', () => {
     ]);
   });
 
-  it('o formato gravado { annotationId } continua aceito', async () => {
+  it('the stored format { annotationId } is still accepted', async () => {
     const first = await apply([item('$m1', '$p1', 'Target G', 0)]);
     const target = byTitle(first, 'Target G');
     const p = await apply([
@@ -233,7 +233,7 @@ interface View {
   }[];
 }
 
-describe('leituras', () => {
+describe('reads', () => {
   it('get_annotation of the source shows the ref with the label; get_marking of the target, the backlink', async () => {
     const operations = [
       item('$m1', '$p1', 'Target L', 0),
@@ -435,7 +435,7 @@ describe('get_code_hints: targets', () => {
       },
       {
         op: 'create_marking',
-        as: '$filha',
+        as: '$child',
         container: '$after',
         rect: { x: 20, y: 20, width: 60, height: 30 },
         annotationAs: '$pf',
@@ -598,7 +598,7 @@ describe('get_code_hints: targets', () => {
         as: '$mp',
         rect: { x: 0, y: 1200, width: 200, height: 100 },
         annotationAs: '$ap',
-        annotation: { type: 'sdui/item', values: { titulo: 'Dona B' } },
+        annotation: { type: 'sdui/item', values: { titulo: 'Owner B' } },
       },
       {
         op: 'create_annotation',
@@ -611,7 +611,7 @@ describe('get_code_hints: targets', () => {
     ]);
     const hints = ok(
       await mcp.call<Hints>('get_code_hints', {
-        ref: mRef(byTitle(created, 'Dona B').markingId),
+        ref: mRef(byTitle(created, 'Owner B').markingId),
         platform: 'web',
       }),
     );
@@ -631,7 +631,7 @@ describe('get_code_hints: targets', () => {
   });
 });
 
-describe('o lote do AGENT-GUIDE', () => {
+describe('the AGENT-GUIDE batch', () => {
   it('the batch of "Content outside the image", as written, is valid, applies and reaches get_code_hints', async () => {
     const guide = readFileSync('docs/AGENT-GUIDE.md', 'utf8');
     const block = /### Content outside the image[^]*?```json\n([^]*?)```/.exec(guide);

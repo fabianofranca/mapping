@@ -117,15 +117,15 @@ function buttonOf(result: BatchResult) {
 
 describe('create_marking with partial values (preview fills in the rest)', () => {
   it('(a) simple path: the library already applied on open', async () => {
-    const result = await run(await openProject('simples', true), [BUTTON]);
+    const result = await run(await openProject('simple', true), [BUTTON]);
     expect(result.errors).toEqual([]);
     const { annotation, issues } = buttonOf(result);
     expect(annotation.values).toMatchObject({ label: 'Label', variant: 'tonal' });
     expect(issues).toEqual([]);
   });
 
-  it('(b) depois de update_specialization no mesmo lote', async () => {
-    const result = await run(await openProject('atualiza', true), [
+  it('(b) after update_specialization in the same batch', async () => {
+    const result = await run(await openProject('update', true), [
       { op: 'update_specialization', file: join(base, 'lib2') },
       BUTTON,
     ]);
@@ -135,8 +135,8 @@ describe('create_marking with partial values (preview fills in the rest)', () =>
     expect(issues).toEqual([]);
   });
 
-  it('(c) depois de apply_specialization no mesmo lote', async () => {
-    const result = await run(await openProject('aplica', false), [
+  it('(c) after apply_specialization in the same batch', async () => {
+    const result = await run(await openProject('apply', false), [
       { op: 'apply_specialization', file: join(base, 'lib1') },
       BUTTON,
     ]);
@@ -149,7 +149,7 @@ describe('create_marking with partial values (preview fills in the rest)', () =>
 
 describe('the batch catalog follows apply/update/remove_specialization', () => {
   it('after apply_specialization, without rect uses the initial component size', async () => {
-    const result = await run(await openProject('aplica-sem-rect', false), [
+    const result = await run(await openProject('apply-without-rect', false), [
       { op: 'apply_specialization', file: join(base, 'lib1') },
       BUTTON,
     ]);
@@ -159,7 +159,7 @@ describe('the batch catalog follows apply/update/remove_specialization', () => {
   });
 
   it('after update_specialization, a rect smaller than the minSize is refused with the minimum', async () => {
-    const result = await run(await openProject('atualiza-min', true), [
+    const result = await run(await openProject('update-min', true), [
       { op: 'update_specialization', file: join(base, 'lib2') },
       {
         op: 'create_marking',
@@ -187,7 +187,7 @@ describe('the batch catalog follows apply/update/remove_specialization', () => {
 
 describe('create_annotation with type on an existing marking', () => {
   it('only the type defaults: without the component preview', async () => {
-    const result = await run(await openProject('anota', true), [
+    const result = await run(await openProject('note', true), [
       {
         op: 'create_marking',
         as: '$m',
@@ -219,10 +219,12 @@ describe('notice when the type declares a component and the batch does not find 
     annotation: { type: 'material3/m3-button' },
   };
 
-  it('arquivo do componente ausente na pasta do projeto: a nota diz o motivo', async () => {
-    const loaded = await openProject('sem-botao', true);
-    rmSync(join(base, 'sem-botao', 'specs', 'material3', 'components', 'm3-button.json'));
-    const reopened = await loadProject(roots, await findProject(roots, 'sem-botao'));
+  it('component file missing from the project folder: the notice gives the reason', async () => {
+    const loaded = await openProject('without-button', true);
+    rmSync(
+      join(base, 'without-button', 'specs', 'material3', 'components', 'm3-button.json'),
+    );
+    const reopened = await loadProject(roots, await findProject(roots, 'without-button'));
     expect(loaded.catalog.get('material3')?.problems).toEqual([]);
     const result = await run(reopened, [MARKING]);
     expect(result.errors).toEqual([]);
@@ -235,7 +237,7 @@ describe('notice when the type declares a component and the batch does not find 
   });
 
   it('component loaded: no notice', async () => {
-    const result = await run(await openProject('com-botao', true), [MARKING]);
+    const result = await run(await openProject('with-button', true), [MARKING]);
     expect(result.deprecations.filter((d) => d.code === 'ignored-argument')).toEqual([]);
   });
 });

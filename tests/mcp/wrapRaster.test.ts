@@ -60,7 +60,7 @@ describe.each([
   ['wrap', { wrap: 'wrap', gap: 8, lineGap: 12 }],
   ['wrap-reverse', { wrap: 'wrap-reverse', gap: 8, lineGap: 12 }],
   [
-    'space-between por linha',
+    'space-between per row',
     { wrap: 'wrap', gap: 8, lineGap: 12, justify: 'space-between' },
   ],
 ])('wrap: raster × model (%s)', (_name, layout) => {
