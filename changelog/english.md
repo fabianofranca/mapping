@@ -3,7 +3,7 @@
 ## Alterado
 
 - **Language rule in `CLAUDE.md` (for whoever runs the flow, #741, ID1):** everything in the repository and on GitHub (code, comments, documentation, tests, messages, commits, issues and PRs) is written in English; Brazilian Portuguese stays only in the app's pt-BR dictionary, the interactive guide's pt-BR strings, the locale tests, the declared fixtures, the protocol terms (`PROTOCOL_TERMS`) and `mappings-workspace/`. Chats with the owner stay in Portuguese. The line that allowed comments and documentation in Portuguese is gone.
-- **`CLAUDE.md` and `README.md` translated to English (#741, ID1):** no rule changes meaning; the section titles are now in English (`Project`, `Commands`, `Architecture rules`, `Runtime environment restrictions`, `Code`, `Workflow (summary)`, `Mapping workspace` in `CLAUDE.md`), and the anchors the stage sheets cite follow them (for example `CLAUDE.md#architecture-rules`).
+- **`CLAUDE.md` and `README.md` translated to English (#741, ID1):** no rule changes meaning; the section titles are now in English (`Project`, `Commands`, `Architecture rules`, `Runtime environment restrictions`, `Code`, `Workflow (summary)`, `Mapping workspace` in `CLAUDE.md`), and the anchors that stage sheets cite follow them (for example `CLAUDE.md#architecture-rules`): a sheet that still cites an old slug (`CLAUDE.md#regras-de-arquitetura`, `README.md#como-testar`) is rejected by `painel.py toca` until it is redone, as the stage plan foresees after the epic merges.
 
 ## Adicionado
 
