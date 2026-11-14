@@ -3208,7 +3208,7 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
     reason: 'type of the `quando` field of SECOES_SOB_DEMANDA (see round-guide.mjs)',
   },
   {
-    path: 'changelog/english.md',
+    path: 'changelog/2026-11-14-english.md',
     pattern: /Português \(Brasil\)|`sim`\/`não`/,
     reason:
       'the pt-BR language name in its own language, and the Kotlin option values that stay as stored data (decision 7 of #741)',
