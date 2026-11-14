@@ -45,7 +45,7 @@ function plain(text: string): string {
   return text.replaceAll(/<[^>]+>/g, '');
 }
 
-/** Os blocos <style> e <script> de um HTML. */
+/** The <style> and <script> blocks of an HTML. */
 function blocks(source: string, tag: 'style' | 'script'): string[] {
   return [
     ...source.matchAll(new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)</${tag}>`, 'g')),
@@ -74,7 +74,7 @@ describe('interactive guide', () => {
     expect(html).not.toMatch(/fonts\.(googleapis|gstatic)/);
   });
 
-  it('o CSS próprio usa só tokens da app: sem cor, fonte, espaço, raio, opacidade ou duração literais', () => {
+  it('the own CSS uses only app tokens: no literal color, font, spacing, radius, opacity or duration', () => {
     const [tokens, own] = blocks(html, 'style')[0]!.split(
       'Guide: walkthrough on the left',
     );
@@ -82,8 +82,8 @@ describe('interactive guide', () => {
     expect(own).toBeDefined();
     const css = own!.replaceAll(/\/\*[\s\S]*?\*\//g, '');
     expect(css).not.toMatch(/#[0-9a-fA-F]{3,8}\b|\b(rgb|rgba|hsl|hsla)\(/);
-    // As mesmas categorias de tests/theme/tokenLiterals.test.ts. O `1px` fino (respiro de um
-    // rótulo, largura de borda) e o `0px` do `env()` não são valores de design.
+    // The same categories as tests/theme/tokenLiterals.test.ts. The thin `1px` (breathing room of a
+    // label, border width) and the `0px` of `env()` are not design values.
     const categories: readonly [RegExp, RegExp][] = [
       [
         /^(padding|margin|gap|row-gap|column-gap|top|right|bottom|left|inset)(-[a-z]+)?$/,

@@ -55,7 +55,7 @@ export function classify(data: unknown): FileKind {
 /** Fields of a `table` column that make no sense in a column (the schema accepts them). */
 const COLUMN_SKIP = new Set(['columns', 'rowLabel', 'tags', 'platforms']);
 
-/** Marca "sem dado": percorre o schema inteiro. */
+/** "No datum" mark: walks the whole schema. */
 const ALL = Symbol('all');
 
 function unwrap(schema: Zod): Zod {

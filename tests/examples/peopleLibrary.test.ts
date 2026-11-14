@@ -1,5 +1,5 @@
-// Biblioteca de exemplo de pessoas (`tests/fixtures/pessoas/`, RI1): o pacote valida sem
-// erro e o Avatar desenha a imagem remota (reservado sem URL, com a URL quando a foto existe).
+// Example people library (`tests/fixtures/pessoas/`, RI1): the package validates with no
+// error and the Avatar draws the remote image (reserved without a URL, with the URL when the photo exists).
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -29,14 +29,14 @@ function flatten(node: SceneNode, out: SceneNode[] = []): SceneNode[] {
   return out;
 }
 
-describe('biblioteca de exemplo pessoas', () => {
-  it('tem a especialização, o componente e o documento do Avatar', () => {
+describe('people example library', () => {
+  it('has the specialization, the component and the document of the Avatar', () => {
     expect(files.map((f) => f.path)).toEqual(
       [SPEC_FILE, 'components/avatar.json', 'docs/avatar.md'].sort(),
     );
   });
 
-  it('valida sem erro nos três níveis e sem aviso', () => {
+  it('validates with no error on the three levels and no warning', () => {
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
     expect(report.warnings).toEqual([]);
@@ -44,7 +44,7 @@ describe('biblioteca de exemplo pessoas', () => {
     expect(report.summary).toMatchObject({ level: 3, types: 1, components: 1, docs: 1 });
   });
 
-  it('o componente é a formatVersion 3', () => {
+  it('the component is formatVersion 3', () => {
     const catalog = buildCatalog(files);
     expect(catalog.report.errors).toEqual([]);
     expect(findEntry(catalog, 'avatar')?.component?.formatVersion).toBe(3);
@@ -58,7 +58,7 @@ describe('biblioteca de exemplo pessoas', () => {
           Record<string, unknown> | undefined)
       : undefined;
 
-  it('sem foto no preview, o Avatar desenha o paint image sem url e o nome', () => {
+  it('without a photo in the preview, the Avatar draws the image paint without url and the name', () => {
     const catalog = buildCatalog(files);
     const entry = findEntry(catalog, 'avatar');
     const drawing = drawEntry(entry!, entry!.previewValues ?? {}, approximateMeasurer);
@@ -72,7 +72,7 @@ describe('biblioteca de exemplo pessoas', () => {
     ]);
   });
 
-  it('com a foto preenchida, o paint image leva a url', () => {
+  it('with the photo filled in, the image paint carries the url', () => {
     const catalog = buildCatalog(files);
     const entry = findEntry(catalog, 'avatar');
     const drawing = drawEntry(
