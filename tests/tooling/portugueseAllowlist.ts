@@ -2064,6 +2064,7 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'script-output',
   },
   // ID10 sweep: terms added by area A2 (queue tests)
+  { term: '<link do comentário>', source: 'docs/FLOW.md', group: 'session-notices' },
   {
     term: '<link da execução>',
     source: 'docs/FLOW.md',
@@ -3125,12 +3126,6 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
       'copy of the begin marker of the managed block (see examples/workspace/AGENTS.md)',
   },
   {
-    path: 'scripts/release/workspaceAssets.mjs',
-    pattern: /gerenciado pelo setup\.sh; não edite entre estas linhas/,
-    reason:
-      'the begin marker of the managed block, matched by setup.sh in installed workspaces',
-  },
-  {
     path: 'examples/workspace/setup.sh',
     pattern: /^## Fluxo típico'$/,
     reason:
@@ -3273,12 +3268,6 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
       'the session kinds painel.py accepts in kind= (frozen panel values), listed in the usage reference',
   },
   // ID10 sweep: line entries added by area A3
-  {
-    path: 'tests/tooling/cloudHelpers.test.ts',
-    pattern: /Selecione uma pasta que este site pode ver/,
-    reason:
-      "the title of Chrome's read-folder dialog in pt-BR, which OPEN_DIALOG_TITLES must recognise (fixture data)",
-  },
   {
     path: 'tests/tooling/cloudHelpers.test.ts',
     pattern: /'ãé✅'|'ç'/,
