@@ -122,7 +122,7 @@ jobs:
 
       # The artifact comes from a job that runs the PR's code: it only publishes if it has exactly the
       # expected files (each with its `.sha256`).
-      - name: Conferir os arquivos baixados
+      - name: Check the downloaded files
         run: |
           expected="AGENTS.mapping.md AGENTS.mapping.md.sha256 SKILL.md SKILL.md.sha256 mapping-mcp.js mapping-mcp.js.sha256 mapping-signature.mjs mapping-signature.mjs.sha256 setup.sh setup.sh.sha256 watch-comments.mjs watch-comments.mjs.sha256"
           expected="$(printf '%s\n' $expected | LC_ALL=C sort | tr '\n' ' ')"
@@ -281,7 +281,7 @@ jobs:
 
       # The artifact comes from a job that runs the PR's code: it only publishes if it has exactly the
       # expected files (each with its `.sha256`).
-      - name: Conferir os arquivos baixados
+      - name: Check the downloaded files
         run: |
           expected="AGENTS.mapping.md AGENTS.mapping.md.sha256 SKILL.md SKILL.md.sha256 mapping-mcp.js mapping-mcp.js.sha256 mapping-signature.mjs mapping-signature.mjs.sha256 setup.sh setup.sh.sha256 watch-comments.mjs watch-comments.mjs.sha256"
           expected="$(printf '%s\n' $expected | LC_ALL=C sort | tr '\n' ' ')"

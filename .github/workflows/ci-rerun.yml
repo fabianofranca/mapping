@@ -9,7 +9,7 @@ name: 'CI: rerun after an abandoned runner'
 #   - On a timeout alone, the job ends `cancelled` and so does the CI run (not `failure`):
 #     this workflow does not even run, skipped by the `if:` of the `rerun` job.
 #   - In a run that is `failure` for another reason, the `cancelled` job counts as a legitimate failure in
-#     `decide`, as the test "job cancelado conta como falha legítima" in
+#     `decide`, as the test "a cancelled job counts as a legitimate failure" in
 #     `tests/tooling/ciRerun.test.ts` checks.
 #
 # The real demonstration was done in stage #1532, with PRs #1586 and #1587 (record in

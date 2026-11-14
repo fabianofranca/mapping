@@ -1,18 +1,18 @@
 // @vitest-environment node
-// Etapa #1390, fase DS2: o fechamento grava no artefato do DS, e sem esta regra o classificador
-// do modo Auto nega o `Artifact` e a fila para. Que ela não suma numa limpeza.
+// Stage #1390, phase DS2: the closing writes to the DS artifact, and without this rule the Auto
+// mode classifier denies `Artifact` and the queue stops. It must not vanish in a cleanup.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 describe('.claude/settings.json', () => {
-  it('permissions.allow libera a ferramenta Artifact', () => {
+  it('permissions.allow allows the Artifact tool', () => {
     const settings = JSON.parse(readFileSync('.claude/settings.json', 'utf8')) as {
       permissions?: { allow?: string[] };
     };
     expect(settings.permissions?.allow).toContain('Artifact');
   });
 
-  it('permissions.allow libera o archive_session (o sucessor arquiva o coordenador anterior; FM4)', () => {
+  it('permissions.allow allows archive_session (the successor archives the previous coordinator; FM4)', () => {
     const settings = JSON.parse(readFileSync('.claude/settings.json', 'utf8')) as {
       permissions?: { allow?: string[] };
     };

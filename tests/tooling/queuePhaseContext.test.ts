@@ -1,9 +1,9 @@
 // @vitest-environment node
-// Fase CX1 (etapa #1638): teto de contexto da sessão da fase. Teste só de texto (leitura dos
-// arquivos do fluxo de entrega): a fase confere o próprio contexto a 300 mil, passa a vez por uma
-// passagem na sub-issue, o coordenador (ou o orquestrador de uma etapa só) cria a sucessora e
-// arquiva a anterior, e a quinta sessão não troca (PP2, etapa #1595: linha de retomada numa fonte
-// só, squash do WIP e até 5 sessões).
+// Phase CX1 (stage #1638): context ceiling of the phase session. Text-only test (reads the
+// delivery flow files): the phase checks its own context at 300 thousand, hands over through a
+// handoff on the sub-issue, the coordinator (or the orchestrator of a single stage) creates the
+// successor and archives the previous one, and the fifth session does not switch (PP2, stage
+// #1595: resume line in a single source, squash of the WIP and up to 5 sessions).
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -15,23 +15,23 @@ import { between, section } from '../support/textSlice';
 const flow = readFileSync('docs/FLOW.md', 'utf8');
 const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
 
-const phase = section(flow, '## Para a sessão da fase');
-const item3 = between(phase, '3. Subagentes e esforço', '4. Todo briefing');
-const ancora = item3.indexOf('   - **Teto de contexto da fase:**');
-if (ancora < 0)
-  throw new Error('âncora não achada: sub-item "Teto de contexto da fase" do item 3');
-const teto = item3.slice(ancora);
-const porEtapa = section(skill, '## 3. Por etapa');
-const troca = between(
-  porEtapa,
-  '**Fase que passa a vez por contexto**',
-  '**PR que espera o coordenador:**',
+const phase = section(flow, '## For the phase session');
+const item3 = between(phase, '3. Subagents and effort', '4. Every briefing');
+const anchor = item3.indexOf('   - **Phase context ceiling:**');
+if (anchor < 0)
+  throw new Error('anchor not found: sub-item "Phase context ceiling" of item 3');
+const ceiling = item3.slice(anchor);
+const perStage = section(skill, '## 3. Per stage');
+const handover = between(
+  perStage,
+  '**Phase that hands over by context**',
+  '**PR that waits for the coordinator:**',
 );
-const avisou = between(porEtapa, 'Quando a fase avisar (', '3. **Testador.**');
-const item6 = between(phase, '6. Acompanhe o PR', '7. Ao terminar, avise');
+const notified = between(perStage, 'When the phase notifies (', '3. **Tester.**');
+const item6 = between(phase, '6. Follow the PR', '7. When done, notify');
 const LINHA =
   'Retomada por contexto (<k> de 5): a sessão anterior (<id>) passou a vez com <n> mil; a passagem está em <link>. Continue no branch <branch>, que já existe (não o recrie da origin/epic/<nome>), e não refaça o que a passagem dá como feito.';
-const ocorrencias = (texto: string, trecho: string): number =>
+const occurrences = (texto: string, trecho: string): number =>
   texto.split(trecho).length - 1;
 
 describe('CX1 — "Para a sessão da fase" do docs/FLOW.md, sub-item do item 3', () => {

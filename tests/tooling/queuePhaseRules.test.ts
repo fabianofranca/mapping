@@ -1,7 +1,8 @@
 // @vitest-environment node
-// Fase FM6 (etapa #1532, decisões 15 e 16): o reteste pede só os passos dos achados, a correção
-// reproduz cada achado antes de mudar o código e o confere depois, e os subagentes que editam rodam
-// em `medium`. Teste só de texto (leitura dos arquivos); o `docs/TESTING-NUVEM.md` não entra.
+// Phase FM6 (stage #1532, decisions 15 and 16): the retest asks only for the steps of the findings,
+// the fix reproduces each finding before changing the code and checks it afterwards, and the
+// subagents that edit run at `medium`. Text-only test (reads the files); `docs/TESTING-NUVEM.md`
+// is not involved.
 import { readFileSync, statSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { between, section } from '../support/textSlice';
@@ -9,49 +10,45 @@ import { between, section } from '../support/textSlice';
 const flow = readFileSync('docs/FLOW.md', 'utf8');
 const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
 
-describe('FM6 — reteste restrito, correção que reproduz o achado, subagentes em medium', () => {
-  it('o passo a passo do orquestrador retesta só os passos, não os roteiros que falharam', () => {
-    const s = section(flow, '## Orquestrador — passo a passo');
-    expect(s).not.toContain('retesta só os roteiros que falharam');
-    expect(s).toContain('retesta só os passos');
+describe('FM6 — restricted retest, fix that reproduces the finding, subagents at medium', () => {
+  it("the orchestrator's step by step retests only the steps, not the scripts that failed", () => {
+    const s = section(flow, '## Orchestrator — step by step');
+    expect(s).not.toContain('retests only the scripts that failed');
+    expect(s).toContain('retests only the steps');
   });
 
-  it('a fase de correção reproduz o achado antes do código e o confere depois', () => {
-    const s = section(flow, '## Fase de correção');
-    expect(s).toContain('reproduz cada achado antes de mexer no código');
-    expect(s).toContain('confere de novo depois');
-    expect(s).toMatch(/"antes" e "depois"/);
-    expect(s).toContain('conferido depois');
-    expect(s).toContain('não reproduzido não é dado como corrigido');
+  it('the fix phase reproduces the finding before the code and checks it afterwards', () => {
+    const s = section(flow, '## Fix phase');
+    expect(s).toContain('reproduces each finding before touching the code');
+    expect(s).toContain('checks again afterwards');
+    expect(s).toMatch(/"before" and "after"/);
+    expect(s).toContain('checked after');
+    expect(s).toContain('a finding that was not reproduced is not reported as fixed');
   });
 
-  it('o item 3 da mensagem da fase põe os subagentes de edição em medium e troca acima de ~200k', () => {
+  it('item 3 of the phase message puts the editing subagents at medium and replaces above ~200k', () => {
     const s = between(
-      section(flow, '## Para a sessão da fase'),
-      '3. Subagentes e esforço',
-      '4. Todo briefing',
+      section(flow, '## For the phase session'),
+      '3. Subagents and effort',
+      '4. Every briefing',
     );
-    expect(s).toMatch(/edição[^.]*`medium`/);
-    expect(s).toMatch(/`high` só[^.]*revisão ou conferência/);
+    expect(s).toMatch(/Editing subagents[^.]*`medium`/);
+    expect(s).toMatch(/`high` only for review or check/);
     expect(s).toContain('~200k');
   });
 
-  it('o docs/PROCESS.md diz "passos que falharam" e cabe em 25.000 bytes', () => {
+  it('docs/PROCESS.md says "steps that failed" and fits in 25,000 bytes', () => {
     const p = readFileSync('docs/PROCESS.md', 'utf8');
-    expect(p).toContain('retesta só os passos que falharam');
-    expect(p).not.toContain('retesta só os roteiros que falharam');
+    expect(p).toContain('retests only the steps that failed');
+    expect(p).not.toContain('retests only the scripts that failed');
     expect(statSync('docs/PROCESS.md').size).toBeLessThanOrEqual(25000);
   });
 
-  it('o passo 4 do SKILL.md pede a reprodução de cada achado no briefing da correção', () => {
-    const s = between(
-      section(skill, '## 3. Por etapa'),
-      '4. **Correção**',
-      '5. **Fechamento**',
-    );
-    expect(s).toContain('reprodução de cada achado');
-    expect(s).toContain('**passos**, não roteiros');
-    expect(s).toContain('conferência depois');
-    expect(s).not.toContain('os roteiros que falharam');
+  it("step 4 of SKILL.md asks for the reproduction of each finding in the fix's briefing", () => {
+    const s = between(section(skill, '## 3. Per stage'), '4. **Fix**', '5. **Closing**');
+    expect(s).toContain('reproducing each finding');
+    expect(s).toContain('**steps**, not scripts');
+    expect(s).toContain('checking after');
+    expect(s).not.toContain('the scripts that failed');
   });
 });

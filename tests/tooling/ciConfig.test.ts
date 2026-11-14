@@ -1,6 +1,6 @@
 // @vitest-environment node
-// Fase 5.6: o que bloqueia uma publicação ruim é configuração (workflows, lint,
-// Playwright, Node). Estes testes leem os arquivos e falham se ela regredir.
+// Phase 5.6: what blocks a bad publication is configuration (workflows, lint,
+// Playwright, Node). These tests read the files and fail if it regresses.
 import { spawnSync } from 'node:child_process';
 import {
   copyFileSync,
@@ -21,7 +21,7 @@ const ci = read('.github/workflows/ci.yml');
 const deploy = read('.github/workflows/deploy.yml');
 const setupAction = read('.github/actions/setup-deps/action.yml');
 
-/** Bloco de um job de primeiro nível (`  nome:` até o próximo job), com as linhas de comentário. */
+/** Block of a top-level job (`  name:` up to the next job), with the comment lines. */
 const jobOf = (yaml: string, name: string): string => {
   const start = yaml.indexOf(`\n  ${name}:\n`);
   expect(start, `job ${name}`).toBeGreaterThan(-1);
@@ -30,7 +30,7 @@ const jobOf = (yaml: string, name: string): string => {
   return end < 0 ? rest : rest.slice(0, end + 1);
 };
 
-/** Corpo dos `run:` do arquivo (uma linha ou bloco `|`), para conferir interpolações. */
+/** Bodies of the file's `run:` entries (one line or a `|` block), to check interpolations. */
 const runBodies = (yaml: string): string[] => {
   const lines = yaml.split('\n');
   const bodies: string[] = [];
@@ -53,13 +53,13 @@ const runBodies = (yaml: string): string[] => {
   return bodies;
 };
 
-describe('deploy.yml roda o mesmo que o ci.yml antes de publicar', () => {
-  it('o ci.yml pode ser chamado por outro workflow, com o ref a validar', () => {
+describe('deploy.yml runs the same as ci.yml before publishing', () => {
+  it('ci.yml can be called by another workflow, with the ref to validate', () => {
     expect(ci).toMatch(/^ {2}workflow_call:/m);
     expect(ci).toMatch(/ref: \$\{\{ inputs\.ref \}\}/);
   });
 
-  it('o ci.yml valida tudo: typecheck, testes, perf, build, build:mcp, tamanho e e2e', () => {
+  it('ci.yml validates everything: typecheck, tests, perf, build, build:mcp, size and e2e', () => {
     for (const step of [
       'npm run lint',
       'npm run typecheck',
@@ -76,30 +76,30 @@ describe('deploy.yml roda o mesmo que o ci.yml antes de publicar', () => {
     }
   });
 
-  it('o deploy chama o ci.yml para a main e para o preview e só publica depois deles', () => {
+  it('the deploy calls ci.yml for main and for the preview and only publishes after them', () => {
     const calls = deploy.match(/uses: \.\/\.github\/workflows\/ci\.yml/g) ?? [];
     expect(calls).toHaveLength(2);
     const build = deploy.slice(deploy.indexOf('\n  build:'));
     expect(build).toMatch(/needs: \[.*checks-main.*checks-preview.*\]/);
     expect(build).toContain('upload-pages-artifact');
-    // Nenhuma validação própria que possa divergir do ci.yml.
+    // No validation of its own that could diverge from ci.yml.
     expect(deploy).not.toContain('npm run lint');
     expect(deploy).not.toMatch(/npm (run )?test/);
   });
 
-  it('o deploy publica mesmo sem preview (checks-preview skipped não o pula)', () => {
-    // Sem `if`, o `success()` implícito exige todos os ancestrais em sucesso, inclusive o
-    // `checks-preview` pulado: de 10/10 a 11/10 todo push na main terminou verde com o
-    // `deploy` skipped e o Pages ficou parado. O `if` precisa olhar só o `build`.
+  it('the deploy publishes even without a preview (a skipped checks-preview does not skip it)', () => {
+    // Without `if`, the implicit `success()` requires every ancestor to succeed, including the
+    // skipped `checks-preview`: from 10/10 to 11/10 every push to main ended green with the
+    // `deploy` skipped and Pages stood still. The `if` must look only at the `build`.
     const job = deploy.slice(deploy.indexOf('\n  deploy:'));
     expect(job).toMatch(/^ {4}needs: build$/m);
     expect(job).toMatch(/^ {4}if: .*!cancelled\(\).*needs\.build\.result == 'success'/m);
     expect(job).toContain('deploy-pages');
   });
 
-  it('orçamento do dist/index.html num só lugar, com o tamanho no resumo do job', () => {
-    // Etapa #1614 (decisões 1 e 2): o teto mora no `scripts/ci/dist-budget.json`, que o
-    // `distBudget.mjs raise --write` sobe sem mexer em `.github/`. O número não é fixado aqui.
+  it('the dist/index.html budget in a single place, with the size in the job summary', () => {
+    // Stage #1614 (decisions 1 and 2): the ceiling lives in `scripts/ci/dist-budget.json`, which
+    // `distBudget.mjs raise --write` raises without touching `.github/`. The number is not fixed here.
     const data = JSON.parse(read('scripts/ci/dist-budget.json')) as {
       indexHtmlMaxBytes: number;
       history: string[];
@@ -113,14 +113,14 @@ describe('deploy.yml roda o mesmo que o ci.yml antes de publicar', () => {
   });
 });
 
-describe('Node fixado no repositório', () => {
-  it('.nvmrc com 22 e engines >=22', () => {
+describe('Node pinned in the repository', () => {
+  it('.nvmrc with 22 and engines >=22', () => {
     expect(existsSync('.nvmrc') && read('.nvmrc').trim()).toBe('22');
     const pkg = JSON.parse(read('package.json')) as { engines?: { node?: string } };
     expect(pkg.engines?.node).toBe('>=22');
   });
 
-  it('os workflows leem a versão do .nvmrc', () => {
+  it('the workflows read the version from .nvmrc', () => {
     for (const workflow of [setupAction, deploy]) {
       expect(workflow).toContain('node-version-file:');
       expect(workflow).not.toMatch(/node-version: \d/);
@@ -129,7 +129,7 @@ describe('Node fixado no repositório', () => {
 });
 
 describe('Playwright', () => {
-  it('uma repetição no CI, com trace só nela', async () => {
+  it('one retry on CI, with trace only on it', async () => {
     vi.stubEnv('CI', 'true');
     vi.resetModules();
     const { default: config } = await import('../../playwright.config');
@@ -138,7 +138,7 @@ describe('Playwright', () => {
     expect(config.use?.trace).toBe('on-first-retry');
   });
 
-  it('addImage espera o canvas enquadrar, sem tempo fixo', () => {
+  it('addImage waits for the canvas to fit, with no fixed delay', () => {
     const helpers = read('tests/e2e/helpers.ts');
     const addImage = helpers.slice(
       helpers.indexOf('export async function addImage'),
@@ -153,7 +153,7 @@ describe('ESLint', () => {
   const eslint = new ESLint();
   const dirs = ['ui', 'app', 'store', 'storage', 'i18n', 'theme', 'utils'];
 
-  it.each(dirs)('konva é proibido em src/%s/', async (dir) => {
+  it.each(dirs)('konva is forbidden in src/%s/', async (dir) => {
     const [result] = await eslint.lintText(
       "import Konva from 'konva';\nexport const stage = Konva.Stage;\n",
       { filePath: `src/${dir}/KonvaProbe.ts` },
@@ -161,7 +161,7 @@ describe('ESLint', () => {
     expect(result?.messages.map((m) => m.ruleId)).toContain('no-restricted-imports');
   });
 
-  it('konva continua permitido em src/canvas/', async () => {
+  it('konva is still allowed in src/canvas/', async () => {
     const [result] = await eslint.lintText(
       "import Konva from 'konva';\nexport const stage = Konva.Stage;\n",
       { filePath: 'src/canvas/KonvaProbe.ts' },
@@ -169,7 +169,7 @@ describe('ESLint', () => {
     expect(result?.messages).toEqual([]);
   });
 
-  it('react-hooks/exhaustive-deps é erro', async () => {
+  it('react-hooks/exhaustive-deps is an error', async () => {
     const config = (await eslint.calculateConfigForFile('src/ui/Probe.tsx')) as {
       rules: Record<string, unknown>;
     };
@@ -179,7 +179,7 @@ describe('ESLint', () => {
 });
 
 describe('Dependabot', () => {
-  it('npm e github-actions, semanal, minor e patch agrupados', () => {
+  it('npm and github-actions, weekly, minor and patch grouped', () => {
     expect(existsSync('.github/dependabot.yml')).toBe(true);
     const config = read('.github/dependabot.yml');
     expect(config).toContain('package-ecosystem: npm');
@@ -189,31 +189,31 @@ describe('Dependabot', () => {
   });
 });
 
-describe('mcp-release.yml anexa o mapping-mcp.js à Release', () => {
+describe('mcp-release.yml attaches mapping-mcp.js to the Release', () => {
   const release = read('.github/workflows/mcp-release.yml');
 
-  it('roda os testes sem os orçamentos de desempenho (oscilam no runner e não dizem nada do MCP)', () => {
+  it('runs the tests without the performance budgets (they fluctuate on the runner and say nothing about the MCP)', () => {
     expect(release).toMatch(/PERF_BUDGETS=off npm test/);
     expect(release).not.toMatch(/^\s+- run: npm test\s*$/m);
   });
 
-  it('anexa à Release que já existe (criada pela tela do GitHub) em vez de falhar', () => {
+  it('attaches to the Release that already exists (created from the GitHub screen) instead of failing', () => {
     expect(release).toMatch(/gh release view/);
     expect(release).toMatch(/gh release upload [^\n]*--clobber/);
   });
 
-  it('pode ser disparado à mão para uma tag que já existe', () => {
+  it('can be triggered by hand for a tag that already exists', () => {
     expect(release).toMatch(/^ {2}workflow_dispatch:/m);
     expect(release).toMatch(/refs\/tags\/\{0\}/);
   });
 
-  // Etapa #920: a estável sai sozinha no merge do épico na main.
-  it('dispara no push na main, além da tag mcp-v*', () => {
+  // Stage #920: the stable release goes out on its own when the epic is merged into main.
+  it('triggers on push to main, besides the mcp-v* tag', () => {
     expect(release).toMatch(/^ {4}branches: \[main\]$/m);
     expect(release).toMatch(/^ {4}tags: \['mcp-v\*', '!mcp-v\*-\*'\]$/m);
   });
 
-  it('tem os jobs decide (contents: read) e release (contents: write, needs, if)', () => {
+  it('has the jobs decide (contents: read) and release (contents: write, needs, if)', () => {
     const decide = release.slice(
       release.indexOf('\n  decide:'),
       release.indexOf('\n  release:'),
@@ -227,7 +227,7 @@ describe('mcp-release.yml anexa o mapping-mcp.js à Release', () => {
     expect(release).toMatch(/^permissions:\n {2}contents: read/m);
   });
 
-  it('cria a tag e a Release juntas (--target) e não deixa duas publicações da mesma tag em paralelo', () => {
+  it('creates the tag and the Release together (--target) and does not let two publications of the same tag run in parallel', () => {
     expect(release).toMatch(
       /gh release create[\s\S]*--target "\$\(git rev-parse HEAD\)"/,
     );
@@ -236,7 +236,7 @@ describe('mcp-release.yml anexa o mapping-mcp.js à Release', () => {
     );
   });
 
-  it('nenhum dado de PR entra em run: por interpolação', () => {
+  it('no PR data enters run: by interpolation', () => {
     const runs = release.split('\n').filter((line) => /\$\{\{/.test(line));
     for (const line of runs) {
       expect(line).not.toMatch(/github\.event\.(pull_request|head_commit)/);
@@ -244,32 +244,32 @@ describe('mcp-release.yml anexa o mapping-mcp.js à Release', () => {
   });
 });
 
-describe('ci.yml trava a versão do MCP no PR do épico para a main', () => {
+describe("ci.yml locks the MCP version in the epic's PR to main", () => {
   const job = ci.slice(ci.indexOf('  epic:'), ci.indexOf('  static:'));
   const step = job.slice(job.indexOf('Versão do MCP'));
 
-  it('o job epic faz checkout com histórico e tags e chama o script', () => {
+  it('the epic job checks out with history and tags and calls the script', () => {
     expect(job).toMatch(/fetch-depth: 0/);
     expect(job).toMatch(/fetch-tags: true/);
     expect(step).toContain('node scripts/release/stableRelease.mjs epic');
   });
 
-  it('só roda em epic/* com base na main', () => {
+  it('only runs on epic/* with main as the base', () => {
     expect(job).toMatch(
       /github\.base_ref == 'main' && startsWith\(github\.head_ref, 'epic\/'\)/,
     );
   });
 });
 
-describe('ci.yml exige o changelog do épico nos PRs de épico para a main', () => {
+describe("ci.yml requires the epic's changelog in epic PRs to main", () => {
   const job = ci.slice(ci.indexOf('  epic:'), ci.indexOf('  static:'));
   const step = job.slice(
-    job.indexOf('Changelog atualizado'),
-    job.indexOf('Design system registrado'),
+    job.indexOf('Changelog updated'),
+    job.indexOf('Design system recorded'),
   );
 
-  it('o job epic confere o arquivo changelog/<nome>.md do próprio épico', () => {
-    expect(job).toContain('Changelog atualizado');
+  it("the epic job checks the epic's own changelog/<name>.md file", () => {
+    expect(job).toContain('Changelog updated');
     expect(step).toMatch(/pulls\/\$PR\/files/);
     expect(step).toContain('name="${HEAD#epic/}"');
     expect(step).toContain('grep -qxF "$name.md"');
@@ -277,29 +277,29 @@ describe('ci.yml exige o changelog do épico nos PRs de épico para a main', () 
     expect(step).not.toMatch(/grep -qx 'CHANGELOG\.md'/);
   });
 
-  it('continua só para epic/* com base na main', () => {
+  it('only continues for epic/* with main as the base', () => {
     expect(step).toMatch(/\[ "\$BASE" != "main" \]/);
     expect(step).toMatch(/epic\/\*\) ;;/);
   });
 
-  it('a mensagem de erro diz o caminho esperado', () => {
+  it('the error message states the expected path', () => {
     expect(step).toContain('changelog/$name.md');
-    expect(step).toContain('changelog/AAAA-MM-DD-$name.md');
+    expect(step).toContain('changelog/YYYY-MM-DD-$name.md');
   });
 
-  it('o docs/PROCESS.md descreve a regra e a pasta changelog/ existe', () => {
+  it('docs/PROCESS.md describes the rule and the changelog/ folder exists', () => {
     const claude = read('docs/PROCESS.md');
-    expect(claude).toContain('**Changelog por épico:**');
-    expect(claude).toContain('`changelog/<nome>.md`');
+    expect(claude).toContain('**Changelog per epic:**');
+    expect(claude).toContain('`changelog/<name>.md`');
     expect(existsSync('changelog/README.md')).toBe(true);
   });
 });
 
-describe('ci.yml exige o registro do DS do épico nos PRs de épico para a main', () => {
+describe("ci.yml requires the epic's DS record in epic PRs to main", () => {
   const job = ci.slice(ci.indexOf('  epic:'), ci.indexOf('  static:'));
-  const step = job.slice(job.indexOf('Design system registrado'));
+  const step = job.slice(job.indexOf('Design system recorded'));
 
-  it('o job epic confere o arquivo docs/design-system/<nome>.md do próprio épico', () => {
+  it("the epic job checks the epic's own docs/design-system/<name>.md file", () => {
     expect(step).toMatch(/pulls\/\$PR\/files/);
     expect(step).toContain('name="${HEAD#epic/}"');
     expect(step).toContain('grep -qxF "$name.md"');
@@ -307,25 +307,25 @@ describe('ci.yml exige o registro do DS do épico nos PRs de épico para a main'
     expect(step).not.toContain("grep -qx 'docs/DESIGN-SYSTEM.md'");
   });
 
-  it('continua só para epic/* com base na main', () => {
+  it('only continues for epic/* with main as the base', () => {
     expect(step).toMatch(/\[ "\$BASE" != "main" \]/);
     expect(step).toMatch(/epic\/\*\) ;;/);
   });
 
-  it('a mensagem de erro diz o caminho esperado', () => {
+  it('the error message states the expected path', () => {
     expect(step).toContain('docs/design-system/$name.md');
-    expect(step).toContain('docs/design-system/AAAA-MM-DD-$name.md');
+    expect(step).toContain('docs/design-system/YYYY-MM-DD-$name.md');
   });
 
-  it('o docs/PROCESS.md descreve a regra e a pasta existe', () => {
+  it('docs/PROCESS.md describes the rule and the folder exists', () => {
     const claude = read('docs/PROCESS.md');
-    expect(claude).toContain('`docs/design-system/<nome>.md`');
+    expect(claude).toContain('`docs/design-system/<name>.md`');
     expect(existsSync('docs/design-system')).toBe(true);
   });
 });
 
-// Etapa #375, fase CI1: cada commit de PR é validado uma vez (decisões 1, 2 e 3).
-describe('uma validação por commit', () => {
+// Stage #375, phase CI1: each PR commit is validated once (decisions 1, 2 and 3).
+describe('one validation per commit', () => {
   const preview = read('.github/workflows/preview-on-pr.yml');
   const job = (yaml: string, name: string): string => {
     const start = yaml.indexOf(`\n  ${name}:`);
@@ -333,16 +333,16 @@ describe('uma validação por commit', () => {
     return next < 0 ? yaml.slice(start) : yaml.slice(start, start + 1 + next);
   };
 
-  it('o ci.yml não roda em push (só pull_request e workflow_call)', () => {
+  it('ci.yml does not run on push (only pull_request and workflow_call)', () => {
     const on = ci.slice(ci.indexOf('\non:'), ci.indexOf('\npermissions:'));
     expect(on).toMatch(/^ {2}pull_request:/m);
     expect(on).toMatch(/^ {2}workflow_call:/m);
     expect(on).not.toMatch(/^ {2}push:/m);
   });
 
-  // Etapa #1466, decisões 5 e 6: editar o PR (título, corpo ou base) não roda o CI.
-  describe('CI sem `edited` no gatilho (etapa #1466)', () => {
-    it('o pull_request declara opened, synchronize e reopened, sem edited', () => {
+  // Stage #1466, decisions 5 and 6: editing the PR (title, body or base) does not run the CI.
+  describe('CI without `edited` in the trigger (stage #1466)', () => {
+    it('pull_request declares opened, synchronize and reopened, without edited', () => {
       const on = ci.slice(ci.indexOf('\non:'), ci.indexOf('\npermissions:'));
       expect(on).toMatch(
         /^ {2}pull_request:\n(?: {4}#.*\n)* {4}types: \[opened, synchronize, reopened\]\n/m,
@@ -351,7 +351,7 @@ describe('uma validação por commit', () => {
     });
 
     it.each(['epic', 'static', 'test', 'coverage', 'build', 'e2e', 'check'])(
-      'o job %s não olha github.event.action nem changes.base',
+      'the %s job does not look at github.event.action or changes.base',
       (name) => {
         const text = job(ci, name);
         expect(text).not.toContain('github.event.action');
@@ -359,27 +359,27 @@ describe('uma validação por commit', () => {
       },
     );
 
-    it('o check roda sempre e o epic só em pull_request', () => {
+    it('the check always runs and the epic only on pull_request', () => {
       expect(job(ci, 'check')).toContain('if: ${{ always() }}');
       expect(job(ci, 'epic')).toMatch(/^ {4}if: github\.event_name == 'pull_request'$/m);
     });
 
-    it('o coverage continua pulando junto com o test', () => {
+    it('the coverage still skips together with the test', () => {
       expect(job(ci, 'coverage')).toMatch(/needs\.test\.result != 'skipped'/);
     });
 
-    it('o grupo de concurrency não tem sufixo de run_id nem de troca de base', () => {
+    it('the concurrency group has no run_id suffix nor a base-change suffix', () => {
       const concurrency = ci.slice(ci.indexOf('\nconcurrency:'), ci.indexOf('\njobs:'));
       expect(concurrency).not.toContain('github.run_id');
       expect(concurrency).not.toContain('changes.base');
     });
 
-    it('o arquivo não guarda mais o risco aceito do job pulado', () => {
+    it('the file no longer keeps the accepted risk of the skipped job', () => {
       expect(ci).not.toMatch(/conta job pulado como sucesso/);
     });
   });
 
-  it('o preview sai por workflow_run do CI, só depois de sucesso num PR do próprio repositório', () => {
+  it('the preview goes out by workflow_run of the CI, only after success on a PR of the repository itself', () => {
     expect(preview).toMatch(
       /^ {2}workflow_run:\n {4}workflows: \[CI\]\n {4}types: \[completed\]/m,
     );
@@ -401,7 +401,7 @@ describe('uma validação por commit', () => {
     expect(preview).toContain('GITHUB_STEP_SUMMARY');
   });
 
-  it('o Deploy aceita o sha e o plan confere os check runs check e e2e dele', () => {
+  it('the Deploy accepts the sha and the plan checks its check and e2e check runs', () => {
     expect(deploy).toMatch(/^ {6}sha:\n/m);
     const plan = job(deploy, 'plan');
     expect(plan).toMatch(/commits\/\$SHA\/check-runs/);
@@ -411,7 +411,7 @@ describe('uma validação por commit', () => {
     expect(plan).toMatch(/^ {6}preview_sha: /m);
   });
 
-  it('o checks-preview só roda sem a validação dos check runs, no SHA quando há', () => {
+  it('the checks-preview only runs without the check-runs validation, on the SHA when there is one', () => {
     const checks = job(deploy, 'checks-preview');
     expect(checks).toMatch(
       /if: needs\.plan\.outputs\.preview != '' && needs\.plan\.outputs\.validated != 'true'/,
@@ -421,7 +421,7 @@ describe('uma validação por commit', () => {
     );
   });
 
-  it('o build aceita o checks-preview em sucesso ou pulado por já validado, e publica o SHA', () => {
+  it('the build accepts the checks-preview as success or skipped because already validated, and publishes the SHA', () => {
     const build = job(deploy, 'build');
     expect(build).toContain("needs.checks-preview.result == 'success'");
     expect(build).toMatch(
@@ -438,8 +438,8 @@ describe('uma validação por commit', () => {
   });
 });
 
-// Etapa #375, fase CI2: o `check` é o agregador de jobs em paralelo, com caches.
-describe('job check em paralelo e caches', () => {
+// Stage #375, phase CI2: the `check` is the aggregator of parallel jobs, with caches.
+describe('parallel check job and caches', () => {
   const block = (name: string): string => {
     const start = ci.indexOf(`\n  ${name}:\n`);
     const rest = ci.slice(start + 1);
@@ -448,14 +448,14 @@ describe('job check em paralelo e caches', () => {
   };
   const pkg = JSON.parse(read('package.json')) as { scripts: Record<string, string> };
 
-  it('static, test, coverage e build têm cada um as suas verificações', () => {
+  it('static, test, coverage and build each have their own checks', () => {
     expect(block('static')).toContain('npm run lint:ci');
     expect(block('static')).toContain('npm run typecheck');
     expect(block('test')).toMatch(
       /vitest run --coverage --shard=\$\{\{ matrix\.shard \}\}\/4 --reporter=blob/,
     );
     expect(block('test')).toMatch(/shard: \[1, 2, 3, 4\]/);
-    // Só o job `coverage` gera o relatório (no merge); os shards levam os dados no blob.
+    // Only the `coverage` job generates the report (on the merge); the shards carry the data in the blob.
     expect(block('test')).toContain('COVERAGE_REPORT: off');
     expect(block('coverage')).not.toContain('COVERAGE_REPORT');
     expect(block('coverage')).toContain('vitest run --merge-reports --coverage');
@@ -473,7 +473,7 @@ describe('job check em paralelo e caches', () => {
     }
   });
 
-  it('o check agrega os quatro jobs, sempre, e falha se algum não for success', () => {
+  it('the check aggregates the four jobs, always, and fails if any is not success', () => {
     const check = block('check');
     expect(check).toMatch(/needs: \[static, test, coverage, build\]/);
     expect(check).toContain('if: ${{ always() }}');
@@ -481,7 +481,7 @@ describe('job check em paralelo e caches', () => {
     expect(check).toContain('exit 1');
   });
 
-  it('todo job novo mantém o ref e o Node 22 sem .nvmrc; artifacts levam shard e label', () => {
+  it('every new job keeps the ref and Node 22 without .nvmrc; artifacts carry shard and label', () => {
     for (const name of ['static', 'test', 'coverage', 'build', 'e2e']) {
       const job = block(name);
       expect(job, name).toContain('ref: ${{ inputs.ref }}');
@@ -496,7 +496,7 @@ describe('job check em paralelo e caches', () => {
     expect(block('coverage')).toMatch(/pattern: vitest-blob\$\{\{ inputs\.label/);
   });
 
-  it('build e build:mcp não repetem o tsc (os tipos ficam no typecheck)', () => {
+  it('build and build:mcp do not repeat tsc (the types stay in typecheck)', () => {
     expect(pkg.scripts.build).not.toContain('tsc');
     expect(pkg.scripts['build:mcp']).not.toContain('tsc');
     expect(pkg.scripts.typecheck).toContain('tsc --noEmit -p mcp/tsconfig.json');
@@ -506,7 +506,7 @@ describe('job check em paralelo e caches', () => {
     );
   });
 
-  it('caches: node_modules (npm ci só sem hit), lint e navegador do Playwright', () => {
+  it('caches: node_modules (npm ci only without a hit), lint and the Playwright browser', () => {
     for (const name of ['static', 'test', 'coverage', 'build', 'e2e']) {
       expect(block(name), name).toContain('uses: ./.github/actions/setup-deps');
     }
@@ -518,7 +518,7 @@ describe('job check em paralelo e caches', () => {
     expect(read('.gitignore')).toMatch(/^\.cache$/m);
   });
 
-  it('o e2e usa 3 workers no CI e o install-deps só roda se o Chromium não abrir', () => {
+  it('the e2e uses 3 workers on CI and install-deps only runs if Chromium does not open', () => {
     expect(read('playwright.config.ts')).toContain(
       'workers: process.env.CI ? 3 : undefined',
     );
@@ -532,18 +532,18 @@ describe('job check em paralelo e caches', () => {
     expect(e2e).not.toMatch(/- run: npx playwright install-deps chromium/);
   });
 
-  it('o deploy continua olhando só o resultado do ci.yml chamado', () => {
+  it('the deploy still looks only at the result of the called ci.yml', () => {
     expect(deploy).toMatch(/checks-main:/);
     expect(deploy).toMatch(/checks-preview:/);
     expect(deploy).not.toMatch(/needs\.(static|coverage)/);
   });
 });
 
-// Etapa #971, fase 4 (item 73): o bloco de preparo do Node e das dependências é uma ação composta.
-describe('ação composta setup-deps', () => {
+// Stage #971, phase 4 (item 73): the Node and dependencies setup block is a composite action.
+describe('setup-deps composite action', () => {
   const jobs = ['static', 'test', 'coverage', 'build', 'e2e'];
 
-  it('os cinco jobs a usam depois do checkout, e nenhum repete setup-node nem npm ci', () => {
+  it('the five jobs use it after the checkout, and none repeats setup-node or npm ci', () => {
     for (const name of jobs) {
       const job = jobOf(ci, name);
       expect(job, name).toContain('uses: ./.github/actions/setup-deps');
@@ -556,7 +556,7 @@ describe('ação composta setup-deps', () => {
     expect(ci.match(/uses: \.\/\.github\/actions\/setup-deps/g)).toHaveLength(5);
   });
 
-  it('a ação é composta, mantém as chaves do cache e não restaura o cache do npm à toa', () => {
+  it('the action is composite, keeps the cache keys and does not restore the npm cache for nothing', () => {
     expect(setupAction).toContain('using: composite');
     expect(setupAction).toContain(
       "key: node-modules-${{ runner.os }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json') }}",
@@ -567,7 +567,7 @@ describe('ação composta setup-deps', () => {
     expect(ci).not.toMatch(/^\s+cache: npm/m);
   });
 
-  it('os nomes dos checks obrigatórios não mudam', () => {
+  it('the names of the required checks do not change', () => {
     for (const name of ['check', 'e2e', 'epic']) {
       expect(ci).toMatch(new RegExp(`^ {2}${name}:\\n`, 'm'));
       expect(jobOf(ci, name)).not.toMatch(/^ {4}name:/m);
@@ -575,28 +575,28 @@ describe('ação composta setup-deps', () => {
   });
 });
 
-// Etapa #971, fase 4 (item 72): o nome do épico é comparado sem regex e a falha da API aparece.
-describe('ci.yml: changelog e DS do épico sem regex e sem mascarar falha da API', () => {
+// Stage #971, phase 4 (item 72): the epic name is compared without regex and the API failure shows up.
+describe('ci.yml: epic changelog and DS without regex and without masking an API failure', () => {
   const epic = jobOf(ci, 'epic');
   for (const [title, next] of [
-    ['Changelog atualizado', 'Design system registrado'],
-    ['Design system registrado', 'A estável do MCP'],
+    ['Changelog updated', 'Design system recorded'],
+    ['Design system recorded', 'The MCP stable release'],
   ] as const) {
     const step = epic.slice(epic.indexOf(title), epic.indexOf(next));
 
-    it(`${title}: usa grep -qxF e falha o passo com a mensagem do gh api`, () => {
+    it(`${title}: uses grep -qxF and fails the step with the gh api message`, () => {
       expect(step).toContain('grep -qxF "$name.md"');
       expect(step).not.toMatch(/grep -qxE/);
       expect(step).toMatch(/if ! files="\$\(gh api /);
-      expect(step).toContain('Não foi possível listar os arquivos do PR');
+      expect(step).toContain('Could not list the files of PR');
       expect(step).toContain('$files');
     });
   }
 });
 
-// Etapa #971, fase 4 (itens 74 e 75, decisão 10): permissões por job e Deploy sem cancelar o deploy.
-describe('deploy.yml: permissões e concorrência', () => {
-  it('o nível do workflow é só contents: read; pages: write e id-token: write ficam no job deploy', () => {
+// Stage #971, phase 4 (items 74 and 75, decision 10): per-job permissions and Deploy without cancelling the deploy.
+describe('deploy.yml: permissions and concurrency', () => {
+  it('the workflow level is only contents: read; pages: write and id-token: write stay in the deploy job', () => {
     const top = deploy.slice(deploy.indexOf('\npermissions:'), deploy.indexOf('\njobs:'));
     expect(top).toMatch(/^permissions:\n {2}contents: read\n/m);
     expect(top).not.toMatch(/^ {2}(pages|id-token):/m);
@@ -609,14 +609,14 @@ describe('deploy.yml: permissões e concorrência', () => {
     }
   });
 
-  it('o job deploy tem o grupo pages sem cancel-in-progress; o resto do pipeline não usa esse grupo', () => {
+  it('the deploy job has the pages group without cancel-in-progress; the rest of the pipeline does not use that group', () => {
     const job = jobOf(deploy, 'deploy');
     expect(job).toMatch(/concurrency:\n {6}group: pages\n {6}cancel-in-progress: false/);
     const rest = deploy.replace(job, '');
     expect(rest).not.toMatch(/group: pages\n/);
   });
 
-  it('a fase plan/build ainda cancela a execução superada, num grupo próprio', () => {
+  it('the plan/build phase still cancels the superseded run, in a group of its own', () => {
     const build = jobOf(deploy, 'build');
     expect(build).toMatch(
       /concurrency:\n {6}group: pages-build\n {6}cancel-in-progress: true/,
@@ -626,11 +626,11 @@ describe('deploy.yml: permissões e concorrência', () => {
   });
 });
 
-// Etapa #971, fase 4 (itens 76 a 79, decisão 11): pre-releases do MCP.
+// Stage #971, phase 4 (items 76 to 79, decision 11): MCP pre-releases.
 describe('mcp-prerelease.yml', () => {
   const pre = read('.github/workflows/mcp-prerelease.yml');
 
-  it('o nível do workflow é contents: read; só os jobs que publicam e o cleanup escrevem', () => {
+  it('the workflow level is contents: read; only the publishing jobs and the cleanup write', () => {
     const top = pre.slice(pre.indexOf('\npermissions:'), pre.indexOf('\njobs:'));
     expect(top).toMatch(/^permissions:\n {2}contents: read\n/m);
     for (const name of ['snapshot-build', 'rc-build']) {
@@ -642,7 +642,7 @@ describe('mcp-prerelease.yml', () => {
     }
   });
 
-  it('o código do PR é compilado sem credencial persistida e o job que publica não faz checkout', () => {
+  it('the PR code is built without a persisted credential and the publishing job does no checkout', () => {
     for (const name of ['snapshot-build', 'rc-build']) {
       const job = jobOf(pre, name);
       expect(job, name).toContain('persist-credentials: false');
@@ -658,7 +658,7 @@ describe('mcp-prerelease.yml', () => {
     }
   });
 
-  it('o snapshot e o cleanup do mesmo PR dividem o grupo e cancelam o que está em andamento', () => {
+  it('the snapshot and the cleanup of the same PR share the group and cancel what is in progress', () => {
     const concurrency = pre.slice(pre.indexOf('\nconcurrency:'), pre.indexOf('\njobs:'));
     expect(concurrency).toContain('mcp-snapshot-pr{0}');
     expect(concurrency).toContain('github.event.pull_request.number');
@@ -666,7 +666,7 @@ describe('mcp-prerelease.yml', () => {
     expect(jobOf(pre, 'cleanup')).not.toMatch(/concurrency:/);
   });
 
-  it('a rc usa o mesmo grupo no PR e no workflow_dispatch (nome do branch, sem refs/heads/)', () => {
+  it('the rc uses the same group on the PR and on workflow_dispatch (branch name, without refs/heads/)', () => {
     for (const name of ['rc-build', 'rc-publish']) {
       const job = jobOf(pre, name);
       expect(job, name).toContain(
@@ -677,10 +677,10 @@ describe('mcp-prerelease.yml', () => {
     }
   });
 
-  it('os jobs que publicam conferem o conjunto exato de arquivos do artifact antes de publicar', () => {
+  it('the publishing jobs check the exact set of artifact files before publishing', () => {
     for (const name of ['snapshot-publish', 'rc-publish']) {
       const job = jobOf(pre, name);
-      expect(job, name).toContain('Conferir os arquivos baixados');
+      expect(job, name).toContain('Check the downloaded files');
       for (const file of [
         'AGENTS.mapping.md',
         'SKILL.md',
@@ -691,13 +691,13 @@ describe('mcp-prerelease.yml', () => {
       ]) {
         expect(job, `${name} ${file}`).toContain(`${file} ${file}.sha256`);
       }
-      expect(job.indexOf('Conferir os arquivos baixados'), name).toBeLessThan(
+      expect(job.indexOf('Check the downloaded files'), name).toBeLessThan(
         job.indexOf('gh release create'),
       );
     }
   });
 
-  it('a lista de esperados segue a ordem alfabética (LC_ALL=C) e as notas citam o extrator', () => {
+  it('the list of expected files follows alphabetical order (LC_ALL=C) and the notes cite the extractor', () => {
     for (const name of ['snapshot-publish', 'rc-publish']) {
       const job = jobOf(pre, name);
       const expected = /expected="([^"]+)"/.exec(job)?.[1]?.split(' ') ?? [];
@@ -707,11 +707,11 @@ describe('mcp-prerelease.yml', () => {
     expect(pre.match(/mapping-signature\.mjs/g)?.length).toBeGreaterThan(8);
   });
 
-  it('o número do PR entra em run: só por env:', () => {
+  it('the PR number enters run: only through env:', () => {
     for (const body of runBodies(pre)) expect(body).not.toContain('${{');
   });
 
-  it('o workspaceAssets roda uma vez por job e não há sed da versão', () => {
+  it('workspaceAssets runs once per job and there is no sed of the version', () => {
     for (const name of ['snapshot-build', 'rc-build']) {
       const job = jobOf(pre, name);
       expect(job.match(/workspaceAssets\.mjs/g) ?? [], name).toHaveLength(1);
@@ -723,30 +723,30 @@ describe('mcp-prerelease.yml', () => {
   });
 });
 
-// Etapa #971, fase 4 (itens 80 a 82): estável do MCP.
-describe('mcp-release.yml: tags de rc, tag que aparece no meio e uma passada por script', () => {
+// Stage #971, phase 4 (items 80 to 82): MCP stable release.
+describe('mcp-release.yml: rc tags, a tag that shows up midway and one pass per script', () => {
   const release = read('.github/workflows/mcp-release.yml');
 
-  it('o push de tag não casa as rc (mcp-v*-rc.N)', () => {
+  it('the tag push does not match the rcs (mcp-v*-rc.N)', () => {
     expect(release).toMatch(/^ {4}tags: \['mcp-v\*', '!mcp-v\*-\*'\]$/m);
   });
 
-  it('nenhum passo só emite ::notice::; a tag que aparece no meio só anexa', () => {
+  it('no step only emits ::notice::; a tag that shows up midway only attaches', () => {
     expect(release).not.toContain('::notice::');
-    expect(release).not.toContain('apareceu durante a execução; só anexa');
+    expect(release).not.toContain('appeared during the run; only attaches');
     expect(release).toMatch(/gh release view/);
     expect(release).toMatch(/gh release upload [^\n]*--clobber/);
   });
 
-  it('o workspaceAssets roda uma vez e a versão vem de readServerVersion (sem sed)', () => {
+  it('workspaceAssets runs once and the version comes from readServerVersion (no sed)', () => {
     expect(release.match(/workspaceAssets\.mjs/g)).toHaveLength(1);
     expect(release).toContain('stableRelease.mjs version --version-file mcp/version.ts');
     expect(release).not.toContain('sed -n "s/.*SERVER_VERSION');
   });
 });
 
-// Etapa #971, fase 4 (decisão 12 da #920): nenhum dado de PR entra em run: por interpolação.
-describe('nenhum workflow interpola dado de PR, entrada ou evento em run:', () => {
+// Stage #971, phase 4 (decision 12 of #920): no PR data enters run: by interpolation.
+describe('no workflow interpolates PR, input or event data in run:', () => {
   const files = [
     'ci.yml',
     'deploy.yml',
@@ -764,9 +764,9 @@ describe('nenhum workflow interpola dado de PR, entrada ou evento em run:', () =
   });
 });
 
-// Etapa #1325, fase CA1 (decisão 2): todo job do ci.yml tem timeout, perto do dobro do maior
-// tempo medido em 2026-11-09, para o check obrigatório terminar em vez de ficar pendente.
-describe('timeout-minutes em cada job do ci.yml', () => {
+// Stage #1325, phase CA1 (decision 2): every ci.yml job has a timeout, close to double the longest
+// time measured on 2026-11-09, so the required check finishes instead of staying pending.
+describe('timeout-minutes on every ci.yml job', () => {
   const table: Record<string, number> = {
     epic: 3,
     static: 4,
@@ -780,32 +780,32 @@ describe('timeout-minutes em cada job do ci.yml', () => {
     expect(jobOf(ci, name)).toMatch(new RegExp(`^ {4}timeout-minutes: ${minutes}$`, 'm'));
   });
 
-  it('a tabela cobre todos os jobs do arquivo', () => {
+  it('the table covers every job in the file', () => {
     const jobsBlock = ci.slice(ci.indexOf('\njobs:\n'));
     const all = [...jobsBlock.matchAll(/^ {2}([a-z0-9-]+):$/gm)].map((m) => m[1]);
     expect(all.sort()).toEqual(Object.keys(table).sort());
   });
 
-  it('o comentário registra a medida e a data', () => {
-    expect(ci).toMatch(/`timeout-minutes` em cada job[\s\S]*2026-11-09/);
-    expect(ci).toContain('dobro do maior tempo medido');
+  it('the comment records the measurement and the date', () => {
+    expect(ci).toMatch(/`timeout-minutes` on every job[\s\S]*2026-11-09/);
+    expect(ci).toContain('double the longest time measured');
   });
 });
 
-// Etapa #1325, fase CA1 (decisões 6 e 7): margem do dist/index.html no resumo, no fim do build.
+// Stage #1325, phase CA1 (decisions 6 and 7): dist/index.html margin in the summary, at the end of the build.
 describe('passo "Tamanho do dist/index.html"', () => {
   const build = jobOf(ci, 'build');
   const stepAt = build.indexOf('- name: Tamanho do dist/index.html');
   const step = build.slice(stepAt);
 
-  it('é o último passo do job build', () => {
+  it('is the last step of the build job', () => {
     expect(stepAt).toBeGreaterThan(-1);
     expect(build.indexOf('npm run build:mcp')).toBeLessThan(stepAt);
     expect(build.indexOf('npm run build:viewer')).toBeLessThan(stepAt);
     expect(step.match(/^ {6}- /gm)).toBeNull();
   });
 
-  it('escreve a margem no resumo e avisa abaixo de 2.048 bytes', () => {
+  it('writes the margin to the summary and warns below 2,048 bytes', () => {
     expect(step).toContain('GITHUB_STEP_SUMMARY');
     expect(step).toContain('margin=$((INDEX_HTML_MAX_BYTES - size))');
     expect(step).toContain('-lt 2048');
@@ -813,21 +813,21 @@ describe('passo "Tamanho do dist/index.html"', () => {
     expect(step).toContain('abaixo de 2 KiB: enxugue antes de subir o teto');
   });
 
-  it('mantém o ::error com a frase de sempre', () => {
+  it('keeps the ::error with the usual sentence', () => {
     expect(step).toContain(
       '::error file=dist/index.html::$size bytes, acima do orçamento de $INDEX_HTML_MAX_BYTES bytes.',
     );
   });
 
-  it('lê o teto pelo `node scripts/ci/distBudget.mjs ceiling` (etapa #1614, decisão 2)', () => {
+  it('reads the ceiling through `node scripts/ci/distBudget.mjs ceiling` (stage #1614, decision 2)', () => {
     expect(step).toContain('node scripts/ci/distBudget.mjs ceiling');
     expect(step).toContain('scripts/ci/dist-budget.json');
   });
 });
 
-// Etapa #1614 (decisão 2) e etapa #1594 (decisão 5): o `run:` do passo, extraído do ci.yml e rodado
-// com `bash`, acha o teto só no JSON; sem ele (ref anterior à etapa #1614) ou com ele inválido, dá erro.
-describe('passo "Tamanho do dist/index.html": de onde vem o teto (etapa #1614)', () => {
+// Stage #1614 (decision 2) and stage #1594 (decision 5): the step's `run:`, extracted from ci.yml and run
+// with `bash`, finds the ceiling only in the JSON; without it (ref older than stage #1614) or with it invalid, it errors.
+describe('passo "Tamanho do dist/index.html": where the ceiling comes from (stage #1614)', () => {
   const build = jobOf(ci, 'build');
   const stepAt = build.indexOf('- name: Tamanho do dist/index.html');
   const lines = build.slice(stepAt).split('\n');
@@ -878,14 +878,14 @@ describe('passo "Tamanho do dist/index.html": de onde vem o teto (etapa #1614)',
     );
   };
 
-  it('com o dist-budget.json e o distBudget.mjs no checkout: usa o teto do JSON', () => {
+  it('with dist-budget.json and distBudget.mjs in the checkout: uses the JSON ceiling', () => {
     const r = runStep(withJson(JSON_CEILING));
     expect(r.status).toBe(0);
-    expect(r.summary).toContain(`${SIZE} bytes (0 KiB) de ${JSON_CEILING} bytes`);
-    expect(r.summary).toContain(`Margem: ${JSON_CEILING - SIZE} bytes`);
+    expect(r.summary).toContain(`${SIZE} bytes (0 KiB) of ${JSON_CEILING} bytes`);
+    expect(r.summary).toContain(`Margin: ${JSON_CEILING - SIZE} bytes`);
   });
 
-  it('com o JSON, acima do teto: sai com 1 e o ::error de sempre', () => {
+  it('with the JSON, above the ceiling: exits with 1 and the usual ::error', () => {
     const r = runStep(withJson(SIZE - 1));
     expect(r.status).toBe(1);
     expect(r.out).toContain(
@@ -893,51 +893,47 @@ describe('passo "Tamanho do dist/index.html": de onde vem o teto (etapa #1614)',
     );
   });
 
-  it('sem o JSON e com um ci.yml antigo: sai com 1 e o ::error que manda trazer a main', () => {
+  it('without the JSON and with an old ci.yml: exits with 1 and the ::error that says to bring in main', () => {
     const r = runStep((dir) => {
       mkdirSync(path.join(dir, '.github/workflows'), { recursive: true });
       writeFileSync(
         path.join(dir, '.github/workflows/ci.yml'),
-        'jobs:\n  build:\n    env:\n      # Orçamento.\n      INDEX_HTML_MAX_BYTES: 2500\n',
+        'jobs:\n  build:\n    env:\n      # Budget.\n      INDEX_HTML_MAX_BYTES: 2500\n',
       );
     });
     expect(r.status).toBe(1);
-    expect(r.out).toContain('ref anterior à etapa #1614: traga a main');
+    expect(r.out).toContain('ref older than stage #1614: bring in main');
     expect(r.summary).not.toContain('2500');
   });
 
-  it('sem o JSON e sem o ci.yml antigo: sai com 1 e o ::error de teto não encontrado', () => {
+  it('without the JSON and without the old ci.yml: exits with 1 and the ::error of ceiling not found', () => {
     const r = runStep(() => undefined);
     expect(r.status).toBe(1);
-    expect(r.out).toContain(
-      '::error file=dist/index.html::Teto do orçamento não encontrado',
-    );
+    expect(r.out).toContain('::error file=dist/index.html::Budget ceiling not found');
   });
 
-  it('com o JSON inválido: sai com 1 e o ::error de teto não encontrado', () => {
+  it('with an invalid JSON: exits with 1 and the ::error of ceiling not found', () => {
     const r = runStep((dir) => {
       withJson(JSON_CEILING)(dir);
       writeFileSync(path.join(dir, 'scripts/ci/dist-budget.json'), '{}');
     });
     expect(r.status).toBe(1);
-    expect(r.out).toContain(
-      '::error file=dist/index.html::Teto do orçamento não encontrado',
-    );
+    expect(r.out).toContain('::error file=dist/index.html::Budget ceiling not found');
   });
 });
 
-// Etapa #1325, fase CA1 (decisões 3 e 4): reexecução de runner abandonado.
+// Stage #1325, phase CA1 (decisions 3 and 4): rerun after an abandoned runner.
 describe('ci-rerun.yml', () => {
   const rerun = read('.github/workflows/ci-rerun.yml');
 
-  it('dispara por workflow_run do CI, quando completed', () => {
-    expect(rerun).toMatch(/^name: 'CI: reexecução de runner abandonado'$/m);
+  it('triggers by workflow_run of the CI, when completed', () => {
+    expect(rerun).toMatch(/^name: 'CI: rerun after an abandoned runner'$/m);
     expect(rerun).toMatch(
       /^ {2}workflow_run:\n {4}workflows: \[CI\]\n {4}types: \[completed\]/m,
     );
   });
 
-  it('o if: do job tem as cinco condições', () => {
+  it("the job's if: has the five conditions", () => {
     for (const condition of [
       "github.event.workflow_run.conclusion == 'failure'",
       "github.event.workflow_run.event == 'pull_request'",
@@ -949,12 +945,12 @@ describe('ci-rerun.yml', () => {
     }
   });
 
-  it('permissões só no job, sem permissões no topo', () => {
+  it('permissions only on the job, none at the top', () => {
     expect(rerun).not.toMatch(/^permissions:/m);
     expect(rerun).toMatch(/^ {4}permissions:\n {6}contents: read\n {6}actions: write$/m);
   });
 
-  it('checkout da main sem código do PR, só ci.yml e scripts/ci', () => {
+  it('checkout of main without PR code, only ci.yml and scripts/ci', () => {
     expect(rerun).toContain('ref: main');
     expect(rerun).toContain('sparse-checkout');
     expect(rerun).toContain('.github/workflows/ci.yml');
@@ -962,7 +958,7 @@ describe('ci-rerun.yml', () => {
     expect(rerun).not.toMatch(/head_sha|head_branch|head_ref/);
   });
 
-  it('lê os jobs, decide pelo script e reexecuta só os falhos', () => {
+  it('reads the jobs, decides through the script and reruns only the failed ones', () => {
     expect(rerun).toContain('actions/runs/$RUN_ID/jobs?filter=latest&per_page=100');
     expect(rerun).toContain(
       'node scripts/ci/ciRerun.mjs decide --ci .github/workflows/ci.yml --jobs',
@@ -972,13 +968,13 @@ describe('ci-rerun.yml', () => {
     expect(rerun).toContain('não reexecuta:');
   });
 
-  it('o resumo sai sempre, mesmo quando o decide falha', () => {
-    const summary = rerun.slice(rerun.indexOf('- name: Resumo'));
+  it('the summary always goes out, even when decide fails', () => {
+    const summary = rerun.slice(rerun.indexOf('- name: Summary'));
     expect(summary).toMatch(/^ {8}if: always\(\)$/m);
     expect(summary).toContain('OUTCOME: ${{ steps.decide.outcome }}');
   });
 
-  it('timeout de 3 min e concurrency por execução, sem cancelar', () => {
+  it('3 min timeout and concurrency per run, without cancelling', () => {
     expect(rerun).toMatch(/^ {4}timeout-minutes: 3$/m);
     expect(rerun).toMatch(/group: ci-rerun-\$\{\{ github\.event\.workflow_run\.id \}\}/);
     expect(rerun).toMatch(/cancel-in-progress: false/);
